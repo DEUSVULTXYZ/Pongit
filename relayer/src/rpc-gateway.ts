@@ -1,20 +1,22 @@
 // Private, shared upstream budget for the relayer and Envio. Never publish this port.
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
-import {chunkedLogs} from "./log-ranges";
+import {chunkedLogs,historyGate} from "./log-ranges";
 import { rpcScheduler } from "./rpc-scheduler";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
 const spacing = Math.max(50, Number(process.env.RPC_SPACING_MS || 60));
 const scheduler=rpcScheduler(spacing);
+const historicalBatch=historyGate(4);
 let waiting = 0;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 async function request(method: string, params: unknown[]) {
   if(method==="eth_getLogs" && process.env.RPC_CHUNK_LOGS==="true") {
-    const result=await chunkedLogs(params[0],p=>request(method,[p]) as Promise<any[]>,100,2000);
-    if(result!==null)return result;
+    const filter=params[0] as any;
+    if(!filter?.blockHash && /^0x[\da-f]+$/i.test(filter?.fromBlock) && /^0x[\da-f]+$/i.test(filter?.toBlock) && BigInt(filter.toBlock)-BigInt(filter.fromBlock)>=100n)
+      return historicalBatch(()=>chunkedLogs(filter,p=>request(method,[p]) as Promise<any[]>,100,2000));
   }
   const key = JSON.stringify([method, params]);
   const cached = cache.get(key);

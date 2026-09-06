@@ -7,3 +7,9 @@ export async function chunkedLogs(filter:any,send:(filter:any)=>Promise<any[]>,c
  const logs:any[]=[];for(let i=0;i<ranges.length;i+=4){const group=await Promise.all(ranges.slice(i,i+4).map(send));for(const rows of group)logs.push(...rows);}
  return logs.sort((a,b)=>{for(const key of ['blockNumber','transactionIndex','logIndex']){const x=BigInt(a[key]),y=BigInt(b[key]);if(x!==y)return x<y?-1:1;}return 0;});
 }
+
+/** A slot is handed directly to the next waiter, including when an operation fails. */
+export function historyGate(limit:number){
+ let active=0;const queue:Array<()=>void>=[];
+ return async<T>(operation:()=>Promise<T>):Promise<T>=>{if(active<limit)active++;else await new Promise<void>(resolve=>queue.push(resolve));try{return await operation();}finally{const next=queue.shift();if(next)next();else active--;}};
+}
