@@ -130,6 +130,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   const ownerOpen = useRef(false);
   const clockOffset = useRef(0);
   const nowSeconds = () => Math.floor((Date.now() + clockOffset.current) / 1000);
+  const needsArcadeRenewal = !!account && (config?.version || 1) >= 3 &&
+    (!arcade.current || !arcadeExpires || arcadeExpires <= nowSeconds());
   const operationBusy = useRef(false), identityVersion = useRef(0), queueTicket = useRef("");
   const [inputLatency, setInputLatency] = useState<number | null>(null);
   const [archive, setArchive] = useState<any[]>([]),
@@ -173,7 +175,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           ? 1
           : -1
       : -1;
-  const canControl = side >= 0 && match?.status === 2 && !!session.current &&
+  const canControl = side >= 0 && match?.status === 2 && !!session.current && !needsArcadeRenewal &&
     selected === sessionMatch.current &&
     (side === 0 ? match.a.key : match.b.key).toLowerCase() === session.current.account.address.toLowerCase();
   useEffect(()=>{
@@ -234,6 +236,12 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     try {arcade.current=await createArcade(own,config);session.current=arcade.current.identity;setArcadeExpires(arcade.current.expires);setMessage("Arcade session ready · two hours of play in this tab.");}
     finally {closeOwner();}
     if(view.current.selected && view.current.match?.status===2 && [view.current.match.playerA,view.current.match.playerB].some((p:string)=>p.toLowerCase()===own.account.address.toLowerCase()))await restoreSession();
+  }
+  async function connectFromButton() {
+    setDirection(0);setShowAccount(false);setShowConnect(false);
+    if (owner.current && needsArcadeRenewal) await renewArcade();
+    else if (rememberedAccount()) await login("restore");
+    else setShowConnect(true);
   }
   function persistMatch() {
     if(config && (config.version||1)>=3)sessionStorage.setItem("pongit:pending-match",json({player:owner.current?.account.address,game:config.game,expected:expectedRoom.current,ticket:queueTicket.current,secret:secret.current,room:readyRoom.current,match:sessionMatch.current,reveal:revealSent.current,ready:pendingReady.current}));
@@ -657,10 +665,16 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   }
   async function joinQueue() {
     if (!account) {
-      setShowConnect(true);
+      await connectFromButton();
       return;
     }
-    const own = await gameplaySigner();
+    let own;
+    try { own = await gameplaySigner(); }
+    catch (e) {
+      if (!needsArcadeRenewal && !(e instanceof InvalidArcadeSession)) throw e;
+      await renewArcade();
+      own = await gameplaySigner();
+    }
     const expires = nowSeconds() + 300;
     const signature = await own.account.signMessage({
       message: (config?.version || 1)>=2 ? queueV2Message(account,expires,tournamentId,mode,config!) : queueMessage(account, expires, tournamentId),
@@ -1003,9 +1017,10 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             <span className={connected ? "dot pulse" : "dot"} />
             {config?.chainId === 31337 ? "LOCAL CHAIN" : "MONAD TESTNET"}
           </span>
-          <button aria-label={account ? "Open account details" : "Connect passkey"} disabled={!config} onClick={() => { setDirection(0); setCopiedAddress(false); account ? setShowAccount(true) : setShowConnect(true); }}>
-            {account ? short(account) : "Connect passkey"} <span>↗</span>
+          <button aria-label={needsArcadeRenewal ? "Renew arcade session" : account ? "Open account details" : "Connect passkey"} disabled={!config || busy} onClick={() => { setDirection(0); setCopiedAddress(false); account && !needsArcadeRenewal ? setShowAccount(true) : void act(connectFromButton); }}>
+            {needsArcadeRenewal ? "Reconnect" : account ? short(account) : "Connect passkey"} <span>↗</span>
           </button>
+          {(needsArcadeRenewal || (!account && remembered)) && <button aria-label="Account options" title="Choose another account or forget this passkey" disabled={busy} onClick={()=>{setDirection(0);account?setShowAccount(true):setShowConnect(true);}}>•••</button>}
         </div>
       </header>
       <nav aria-label="Main navigation">
@@ -1279,9 +1294,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                   <button
                     className="primary"
                     disabled={busy || canControl}
-                    onClick={() => void act(restoreSession)}
+                    onClick={() => void act(needsArcadeRenewal ? () => renewArcade() : restoreSession)}
                   >
-                    {canControl ? "Game session active" : "Restore game session ↗"}
+                    {canControl ? "Game session active" : needsArcadeRenewal ? "Reconnect & resume ↗" : "Restore game session ↗"}
                   </button>
                   <div className="split">
                     <button
@@ -1306,6 +1321,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 >
                   {queued
                     ? "Searching…"
+                    : needsArcadeRenewal
+                      ? "Reconnect & play"
                     : account
                       ? "Find an opponent"
                       : "Connect & play"}{" "}
@@ -1669,7 +1686,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
         ) : (
           <div className="empty">
             Connect an account with the onchain ADMIN_ROLE to open this console.
-            <button onClick={() => setShowConnect(true)}>
+            <button disabled={busy || !config} onClick={() => void act(connectFromButton)}>
               Connect passkey
             </button>
           </div>

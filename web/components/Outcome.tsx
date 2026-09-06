@@ -24,20 +24,36 @@ export function Outcome({id,match,account,rating,sound,replay,rematch,watch,agai
   useEffect(()=>{
     if(!result || result.victory===null)return;
     const previous=document.activeElement as HTMLElement|null;
-    dialog.current?.querySelector<HTMLButtonElement>(".outcome-skip,button")?.focus();
+    const root=document.documentElement,body=document.body;
+    const x=window.scrollX,y=window.scrollY,rootOverflow=root.style.overflow;
+    const properties=["position","top","left","width","overflow","paddingRight"] as const;
+    const saved=properties.map(key=>[key,body.style[key]] as const);
+    const scrollbar=window.innerWidth-root.clientWidth;
+    if(scrollbar)body.style.paddingRight=`${parseFloat(getComputedStyle(body).paddingRight)+scrollbar}px`;
+    root.style.overflow="hidden";
+    Object.assign(body.style,{position:"fixed",top:`-${y}px`,left:`-${x}px`,width:"100%",overflow:"hidden"});
+    dialog.current?.querySelector<HTMLButtonElement>(".outcome-skip,button")?.focus({preventScroll:true});
     const key=(e:KeyboardEvent)=>{if(e.key==="Escape"){e.preventDefault();setAnimate(false);}if(e.key==="Tab"){
       const list=[...(dialog.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")||[])];
       if(e.shiftKey && document.activeElement===list[0]){e.preventDefault();list.at(-1)?.focus();}
       else if(!e.shiftKey && document.activeElement===list.at(-1)){e.preventDefault();list[0]?.focus();}
-    }};window.addEventListener("keydown",key);return()=>{window.removeEventListener("keydown",key);previous?.focus();};
+    }};window.addEventListener("keydown",key);return()=>{
+      window.removeEventListener("keydown",key);
+      for(const [property,value] of saved)body.style[property]=value;
+      root.style.overflow=rootOverflow;
+      window.scrollTo({left:x,top:y,behavior:"instant"});
+      previous?.focus({preventScroll:true});
+    };
   },[result]);
   if(!result)return null;
   const delta=rating!==null && result.before!==null?rating-result.before:null;
   if(result.victory===null)return <aside className="inbox-banner spectator-result" role="status">{short(match.winner)} wins · {match.state.scoreA} : {match.state.scoreB}<button aria-label="Dismiss winner" onClick={()=>setResult(null)}>×</button></aside>;
   return <section ref={dialog} className={`outcome ${animate?"celebrate":""} ${result.victory===false?"defeat":"victory"}`} role="dialog" aria-modal="true" aria-label="Confirmed match result">
     <button className="outcome-close" onClick={()=>setResult(null)} aria-label="Close result">×</button>
-    <div className="result-vortex" aria-hidden="true"/><div className="result-ring ring-a" aria-hidden="true"/><div className="result-ring ring-b" aria-hidden="true"/><div className="result-scan" aria-hidden="true"/>
-    {animate && <div className="arcade-particles" aria-hidden="true">{Array.from({length:32},(_,i)=><i key={i} style={{"--i":i} as React.CSSProperties}/>)}</div>}
+    <div className="outcome-effects" aria-hidden="true">
+      <div className="result-vortex"/><div className="result-ring ring-a"/><div className="result-ring ring-b"/><div className="result-scan"/>
+      {animate && <div className="arcade-particles">{Array.from({length:32},(_,i)=><i key={i} style={{"--i":i} as React.CSSProperties}/>)}</div>}
+    </div>
     <p className="eyebrow">RESULT CONFIRMED ON MONAD</p><h2 data-title={result.victory?"VICTORY":"DEFEAT"}>{result.victory?"VICTORY":"DEFEAT"}</h2>
     <p className="outcome-score">{match.state.scoreA} : {match.state.scoreB}</p><p>{short(match.winner)} wins</p>
     {result.victory!==null && <p>{match.ranked===false?"Friendly match · ELO unchanged":!match.ratingFinalized?"ELO settlement pending…":delta!==null?`${match.mode===1?"Chaos":"Classic"} ELO ${delta>=0?"+":""}${delta}`:"ELO updated"}</p>}
