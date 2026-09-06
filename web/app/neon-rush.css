@@ -46,3 +46,6 @@ html[data-tab-hidden=true] *,html[data-tab-hidden=true] *:before,html[data-tab-h
 .rush-ribbon,.arcade-grid,.neon-mote{will-change:transform,opacity}.rush-environment{transform:translateZ(0)}
 
 .arcade-settings.side-card{max-height:calc(100dvh - 110px);overflow:auto;overscroll-behavior:contain}.arcade-settings .modal-close{position:sticky;top:0;align-self:flex-end;z-index:1;margin-bottom:-36px;flex:none;background:#100a1e}
+
+@media(min-width:801px){main.neon-rush.in-game{padding-top:16px}.in-game .topbar{height:64px}.in-game .brand .orbit-mark{width:42px;height:42px}.in-game .brand-word{font-size:34px}.in-game nav{height:46px}.in-game nav button{padding-top:14px;padding-bottom:14px}.in-game .arena-grid{width:min(100%,calc((100dvh - 425px)*1.77778 + 42px));min-width:min(540px,100%);margin-top:10px}.in-game .mode-switch{margin:8px 0}.in-game .status-line{padding-top:8px;padding-bottom:8px}.in-game .controls{padding-top:8px;padding-bottom:8px}.in-game .input-hint{font-size:8px;margin-bottom:8px}}
+@media(max-width:520px){.scoreboard strong,.scoreboard small{font-size:8px}.neon-rush .match-bar small,.neon-rush .court-footer{font-size:7px}}

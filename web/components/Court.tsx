@@ -55,6 +55,7 @@ export function Court({
   useEffect(() => {
     const el = canvas.current!;
     const ctx = el.getContext("2d")!;
+    const fontFamily=getComputedStyle(document.body).fontFamily;
     let previousSound:{vx:bigint;vy:bigint;score:number;time:number}|null=null;
     let frame = 0,
       count = 0,
@@ -131,9 +132,9 @@ export function Court({
       ctx.fillRect(990, yB - halfB, 12, halfB*2);
       if(s?.awaitingServe && !s.finished) {
         const remaining=Math.max(0,Number(s.resumeAt-p.clock)/1e6);
-        ctx.fillStyle="#e5e1ff";ctx.textAlign="center";ctx.font=`30px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillStyle="#e5e1ff";ctx.textAlign="center";ctx.font=`30px ${fontFamily}`;
         ctx.fillText(remaining>0?remaining.toFixed(1):"SYNCING SERVE",512,230);
-        ctx.font=`12px ${getComputedStyle(document.body).fontFamily}`;ctx.fillText("CHAOS / NEXT RALLY",512,190);ctx.textAlign="left";
+        ctx.font=`12px ${fontFamily}`;ctx.fillText("CHAOS / NEXT RALLY",512,190);ctx.textAlign="left";
       }
       if(s && !p.replay && !document.hidden){
         const score=s.scoreA+s.scoreB;
@@ -156,7 +157,7 @@ export function Court({
         ctx.strokeRect(506, 282, 12, 12);
       }
       ctx.fillStyle = "#222";
-      ctx.font = `10px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.font = `10px ${fontFamily}`;
       ctx.fillText("0,0", 12, 20);
       ctx.fillText("1024 × 576", 912, 560);
       count++;
@@ -172,7 +173,7 @@ export function Court({
       }
       frame = requestAnimationFrame(draw);
     }
-    const visibility=()=>{cancelAnimationFrame(frame);if(!document.hidden){lastDraw=performance.now();previousSound=null;frame=requestAnimationFrame(draw);}};
+    const visibility=()=>{cancelAnimationFrame(frame);if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;frame=requestAnimationFrame(draw);}};
     document.addEventListener("visibilitychange",visibility);
     if(!document.hidden)frame = requestAnimationFrame(draw);
     return () => {cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};

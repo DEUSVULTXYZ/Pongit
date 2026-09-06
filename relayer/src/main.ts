@@ -301,7 +301,7 @@ function readSponsor() {
 }
 async function observeReceipts() {
   const unfinished = await pool.query(
-    "SELECT * FROM relay_jobs WHERE status IN ('signed','sent') ORDER BY nonce LIMIT 8",
+    "SELECT * FROM relay_jobs WHERE status='sent' ORDER BY nonce LIMIT 8",
   );
   await Promise.all(unfinished.rows.map(async (row) => {
     try {
@@ -345,26 +345,20 @@ async function observeReceipts() {
     } catch (error) {
       if ((error as Error).name !== "TransactionReceiptNotFoundError")
         throw error;
-      // Re-broadcast precisely the persisted transaction after restart or transport failure.
-      if (
-        row.status === "signed" ||
-        Date.now() - new Date(row.updated_at).getTime() > 5000
-      ) {
-        try {
-          await publicClient.sendRawTransaction({
-            serializedTransaction: row.raw_tx,
-          });
-        } catch (e) {
-          if (!/already known|nonce too low/i.test(String(e))) throw e;
-        }
-        await pool.query(
-          "UPDATE relay_jobs SET status='sent',submitted_at=coalesce(submitted_at,now()),updated_at=now() WHERE id=$1 AND status IN ('signed','sent')",
-          [row.id],
-        );
-      }
+      // The independent broadcaster retries persisted bytes. A missing receipt
+      // never blocks allocation of the next sponsor nonce.
     }
   }));
  }
+async function broadcastTransactions() {
+  const rows=(await pool.query("SELECT * FROM relay_jobs WHERE status='signed' OR (status='sent' AND updated_at < now()-interval '5 seconds') ORDER BY nonce LIMIT 8")).rows;
+  const results=await Promise.allSettled(rows.map(async row=>{
+    try{await publicClient.sendRawTransaction({serializedTransaction:row.raw_tx});}
+    catch(error){if(!/already known|nonce too low/i.test(String(error)))throw error;}
+    await pool.query("UPDATE relay_jobs SET status='sent',submitted_at=coalesce(submitted_at,now()),updated_at=now() WHERE id=$1 AND status IN ('signed','sent')",[row.id]);
+  }));
+  const failure=results.find(r=>r.status==="rejected");if(failure?.status==="rejected")throw failure.reason;
+}
 async function dispatch() {
   const unfinished=await pool.query("SELECT id FROM relay_jobs WHERE status IN ('signed','sent') LIMIT 8");
   if (unfinished.rowCount! >= 8) return;
@@ -447,11 +441,6 @@ async function dispatch() {
     };
     const raw=row.input_lane?await inputs.lock(row.input_lane,sign):await sign();
     if(!raw)return;
-    await publicClient.sendRawTransaction({ serializedTransaction: raw });
-    await pool.query(
-      "UPDATE relay_jobs SET status='sent',submitted_at=now(),updated_at=now() WHERE id=$1 AND status IN ('signed','sent')",
-      [row.id],
-    );
   } catch (error) {
     // Signed jobs must remain recoverable; never allocate their nonce to a different payload.
     const failed = await pool.query(
@@ -1289,6 +1278,8 @@ async function dispatchLoop() {
   }
 }
 void dispatchLoop();
+async function broadcastLoop(){while(!stopping){try{await broadcastTransactions();}catch(error){lastError=safeError(error);}await new Promise(r=>setTimeout(r,50));}}
+void broadcastLoop();
 async function receiptLoop(){while(!stopping){try{await observeReceipts();}catch(error){lastError=safeError(error);}await new Promise(r=>setTimeout(r,100));}}
 void receiptLoop();
 async function maintenanceLoop(){while(!stopping){try{if(chainHealthy)await maintenance();}catch(error){lastError=safeError(error);}await new Promise(r=>setTimeout(r,1500));}}

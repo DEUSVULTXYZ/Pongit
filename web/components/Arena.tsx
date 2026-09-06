@@ -98,6 +98,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   useEffect(()=>{arcadeAudio.setGameplay(match?.status===2 && !state?.awaitingServe && tab!=="Archive");return()=>arcadeAudio.setGameplay(false);},[match?.status,state?.awaitingServe,tab]);
   const [inputTiming, setInputTiming] = useState<any>(null);
   const [inputRtt,setInputRtt]=useState<number|null>(null);
+  const [inputError,setInputError]=useState("");
   const [pendingInputs,setPendingInputs]=useState<PendingInput[]>([]);
   const [showNetwork,setShowNetwork]=useState(false);
   const [snapshotAge,setSnapshotAge]=useState(0),[paddleCorrection,setPaddleCorrection]=useState(0);
@@ -175,6 +176,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   const canControl = side >= 0 && match?.status === 2 && !!session.current &&
     selected === sessionMatch.current &&
     (side === 0 ? match.a.key : match.b.key).toLowerCase() === session.current.account.address.toLowerCase();
+  useEffect(()=>{
+    if(match?.status===2 && side>=0 && ["Play","Live"].includes(tab))window.scrollTo({top:0,behavior:"instant"});
+  },[selected,match?.status,side,tab]);
   async function act(fn: () => Promise<void>) {
     if (operationBusy.current) return;
     operationBusy.current = true;
@@ -614,12 +618,12 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   }, []);
   useEffect(() => {
     const controller=new InputController({
-      reset:()=>setPendingInputs([]),
+      reset:()=>{setPendingInputs([]);setInputError("");},
       state:()=>api(`/inputs/${view.current.selected}/${view.current.account}`),
       post:body=>api("/inputs",body),wait:waitJob,
       intent:(nonce,direction,at)=>setPendingInputs(old=>[...old.filter(i=>i.nonce!==nonce).slice(-15),{nonce,direction,at}]),pending:setInputPending,ack:setInputRtt,
-      confirmed:(job,ms)=>{setInputLatency(ms);setInputTiming(job.timing||null);},
-      error:message=>setError(message),
+      confirmed:(job,ms)=>{setInputError("");setInputLatency(ms);setInputTiming(job.timing||null);},
+      error:setInputError,
     });
     const tick=()=>{
       const v=view.current,key=session.current?.account;
@@ -1249,6 +1253,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               <p>The outline is diagnostic. Preview freezes at its time limit; a receipt is required for collisions and points.</p>
             </details>
             {canControl && <p className="input-hint">Local controls are responsive. Collisions and points wait for chain confirmation.</p>}
+            {canControl && inputError && <p className="input-hint" role="status">Controls resynchronizing. {inputError}</p>}
             {inputLatency !== null && inputLatency > 1000 && canControl && <p className="input-hint">Input confirmation is taking {(inputLatency / 1000).toFixed(1)} s. Anticipate your moves; the preview cannot remove inclusion delay.</p>}
           </section>
           <aside className="cabinet-tools">
