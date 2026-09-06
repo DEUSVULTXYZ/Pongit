@@ -31,4 +31,4 @@ The production database stays private. Backup retention is seven days; replay re
 
 ## Evidence
 
-Validation reports are published separately once measured. Local-chain timings must not be described as Monad timings. Audio analyser measurements verify generated browser output, not a user's physical speakers or headphones. Physical passkey synchronization remains a separate device test.
+[Release validation](NEON_RUSH_VALIDATION.md) and [machine-readable evidence](validation/neon-rush.json) contain the production measurements and transaction proofs. Local-chain timings must not be described as Monad timings. Audio analyser measurements verify generated browser output, not a user's physical speakers or headphones. Physical passkey synchronization remains a separate device test.

@@ -25,7 +25,7 @@ test("Arcade passkey continuity, direct duel, F5, rematch, finance and revocatio
     await b.unroute("**/challenges/*/accept");
     for(const p of [a,b])await expect(p.locator(".match-bar")).toContainText("IN PLAY",{timeout:45000});
     await a.bringToFront();await a.screenshot({path:"artifacts/neon-ingame-desktop.png"});
-    await a.setViewportSize({width:1280,height:720});await a.screenshot({path:"artifacts/neon-ingame-720.png"});await a.setViewportSize({width:1440,height:1000});
+    await a.setViewportSize({width:1280,height:720});expect(await a.evaluate(()=>scrollY)).toBe(0);const courtBox=await a.locator("canvas").boundingBox();expect(courtBox!.y+courtBox!.height).toBeLessThanOrEqual(720);await a.screenshot({path:"artifacts/neon-ingame-720.png"});await a.setViewportSize({width:1440,height:1000});
     const matches=async()=> (await (await s.request.get(api+"/matches")).json()).matches;
     const first=(await matches()).find((m:any)=>m.status===2&&[m.playerA,m.playerB].some((x:string)=>x.toLowerCase()===addresses[0].toLowerCase()));expect(first).toBeTruthy();
     a.on("response",async r=>{if(/\/jobs\//.test(r.url()))try{const j=await r.json();if(j.status==="succeeded"&&j.timing)timings.push(j.timing);}catch{}});

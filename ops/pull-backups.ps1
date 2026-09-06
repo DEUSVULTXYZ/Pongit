@@ -3,8 +3,11 @@ $ErrorActionPreference = 'Stop'
 $backupRoot = Join-Path $env:USERPROFILE '.ssh/pongit-secrets/backups'
 New-Item -ItemType Directory -Path $backupRoot -Force | Out-Null
 $backupRoot = (Resolve-Path -LiteralPath $backupRoot).Path
-$stamp = (& ssh -o BatchMode=yes -o ConnectTimeout=15 $SshHost 'find /opt/pongit/shared/backups -mindepth 2 -maxdepth 2 -name complete -printf "%h\n" | sort | tail -1').Trim().Split('/')[-1]
-if ($LASTEXITCODE -ne 0 -or $stamp -notmatch '^\d{8}T\d{6}Z$') { throw 'No completed remote backup available' }
+# Avoid nested native-argument quotes: Windows PowerShell 5.1 strips the
+# quotes around find's printf format before SSH passes it to the remote shell.
+$marker = (& ssh -o BatchMode=yes -o ConnectTimeout=15 $SshHost 'find /opt/pongit/shared/backups -mindepth 2 -maxdepth 2 -name complete | sort | tail -1').Trim()
+if ($LASTEXITCODE -ne 0 -or $marker -notmatch '^/opt/pongit/shared/backups/(\d{8}T\d{6}Z)/complete$') { throw 'No completed remote backup available' }
+$stamp = $Matches[1]
 $destination = Join-Path $backupRoot $stamp
 if (!(Test-Path -LiteralPath (Join-Path $destination 'complete'))) {
   $staging = [IO.Path]::GetFullPath((Join-Path $backupRoot ($stamp + '.partial')))

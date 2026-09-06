@@ -1,0 +1,505 @@
+{
+  "codeCommit": "e77ec833c5a41c30f7794dae544ede497007211b",
+  "network": 10143,
+  "website": "https://pongit.xyz",
+  "contractsUnchanged": true,
+  "inputBenchmark": {
+    "measuredAt": "2026-09-06T22:09:36.581Z",
+    "definition": "Real signed directions through the browser controller. ACK includes HTTP round-trip; queue includes validation and signing; confirmation includes receipt observation. Replaced intentions are counted separately from onchain inputs.",
+    "ackSampleIncludesAllAcknowledgedTransportAttempts": true,
+    "phases": [
+      {
+        "arenaCount": 1,
+        "matchRefs": [
+          "v4:19"
+        ],
+        "durationMs": 34605.941699999996,
+        "intentions": 186,
+        "accepted": 149,
+        "statuses": {
+          "succeeded": 42,
+          "superseded": 99,
+          "failed": 0,
+          "sent": 0,
+          "queued": 0
+        },
+        "latencyMs": {
+          "serverAck": {
+            "n": 186,
+            "p50": 93,
+            "p95": 294,
+            "p99": 411
+          },
+          "queue": {
+            "n": 42,
+            "p50": 156,
+            "p95": 454,
+            "p99": 1017
+          },
+          "broadcast": {
+            "n": 42,
+            "p50": 176,
+            "p95": 240,
+            "p99": 306
+          },
+          "confirmation": {
+            "n": 42,
+            "p50": 348,
+            "p95": 543,
+            "p99": 722
+          },
+          "total": {
+            "n": 42,
+            "p50": 741,
+            "p95": 1148,
+            "p99": 1187
+          }
+        },
+        "errors": [],
+        "uniqueAcceptedJobs": 141,
+        "confirmedTransactions": [
+          "0x020e84863b076b54a981ec88b3a05d042714ac9729134eda8327ca585ef59017",
+          "0x78a3c14782734c8ef95ea83d2d16c0f17f0dcea4a03125ab7872fa0a9ae803b0",
+          "0x73d9b0d177bdd06912285fc3159ab387d1f4e84fef9aeb3308a7767a73166749",
+          "0x6b7f2b8f278c28e3fe5bfe3eca9e84ba043e88616b2c8081bf2049294b38eb25",
+          "0xe5497ae9e66daaf24b04755d2c5d4d477d6d58026868b08a3166c64121b2fdc5",
+          "0x3d04a01f41fa55339cdb83a69022349c8030ab5f41990bf8bf33bee1c52b85a1",
+          "0xecdd39c760004e23a944f69e02d52c6bc694edc768253165251c830304eafeb2",
+          "0x9ca5733c6e06e76357b58f5eb8d94b130b904bd0dc342433ee1bc73cc445c400",
+          "0x1fa345b7b0d7bfc4b122a6092de0cc9ddb4820d93d122a758c2cf7f2820482a6",
+          "0x21fbb020c0021de1098911b48f02d89c936026ea601a6eb90dfafc6d75f87c07",
+          "0x64cc522057b62fd79110c36fb520ecef26626ea8227000f0c6380c2cd4e74086",
+          "0xf2d5e95b2a5e5e765fa863db4da2fa2454436b7b0debdb7acbdf7072e040747b",
+          "0x202283192c1ad056567c7727632d88122bf0d5058859d52989af0a6c2da471b9",
+          "0xe5b1d3827750f09f41fff41911da09cf6afc9948fc52b0f25056fb809472fac1",
+          "0xab30ea61cbb64371108e195450603f992dcb4fda3bc1c6e7317e7eea5c9528f8",
+          "0x289c7629aca9ff1b5c5899f7d6b89e967bf4add169eb729d648da883631209ce",
+          "0xa6baa68f285adc50fe126de38455df75d3789f0fa4b2475e0d8150d2ce507ff3",
+          "0x10acb916c6fd0dbf3e909782847715f31da5dc1cf11aafa739bf73fa61137e0b",
+          "0x5f7c0c467e3bc6d1600b31ff4265f20d2e3f6dbc6a6ae7606f6bebbdb7dcb4cd",
+          "0x559a57a47ca90beaf650f8407ba161ff8d5dbcd253e3c98d60ff5352d22c1196",
+          "0xc1695226b1012e129e2bac237cdfb64205e9e77b5c9507abc1b65ad37b0a236a",
+          "0x3495b9dc56c47d168706c4b2b8be02670dad110ee14094c61ee8d87fb4477c76",
+          "0x6e87499730c732bf642ffbfa396b31c7962b1f53282c47c1808b0b15085dc6c5",
+          "0x927401342d63b51a5ed06462367b2231f9d481563d83c4d0cf2030d456d46ef7",
+          "0x4c968a3cb19d652002743c18cd81ab0e498d4656479bb4ccd42c57204ed787df",
+          "0xfa5bd3b48d099d519742e81379af02f26216619e2cc90fb707294efd218e75ef",
+          "0x5cb0d2a5b126421efbb9855cf4d3e51289eed4f53110cb3dda76fc74cd75918b",
+          "0xcddd82001cd75ccb6113764e30b6c7113bc99810a47eeeff8a890fdfc60f1182",
+          "0x55334d67cec2fb1d94aa81d0e4d54b1ed12216fd637885f00c6c82259ec0bd33",
+          "0x99e87a5f053abc8cc593490afe23f479c82d58b5b6384992ae04e7c2bb5bbb48",
+          "0x1fecaeb68787b77f6673049acca7deba0d08e898b6f76484018f9f2df683d3e4",
+          "0xbcf7d1015c7b5d31dbfb57ca51a31998c6bb9086fe28f7a7b1bd188736a3e183",
+          "0x86a4b7c3bc8f8e80db27037eddd2bf15e9fefa48cafe34171b87be0d163a4634",
+          "0x050dd99e7e9560db6d83d99be311d609662a317de9919879066fa7bf06c08f2f",
+          "0x8ac8907a159401ee7b0568e95a2a418b29294c14f41a0f9ca087e56d6f8dd3bc",
+          "0x03c5f16cf1ef9e609b21f762f68ab500f40b7d676f9ec849b0ad614c84ce611e",
+          "0x070c1bfa2939bab6885456d2139325cd321cf5b883e112d89585cd7add7f8a9c",
+          "0x0538132030890f9bf6e61d8d4e3c1dd97f5b84c2308306b2da2b5f7102b8502e",
+          "0x822c73e08bade2de94d4fe696ab2f40a3ccb50c1112dbe0a1a4abce1b9ca179d",
+          "0x224f14241dde32a2fba3fa0d9eb79c4d23e88d5fd9d6824bbe0729febb0648f1",
+          "0x89e8b928f369aac3651105882e0ee33da660fbddd36118f51889b902ed26be4d",
+          "0x59a0dd0bfa4689c7152d0145c50b9d24b08c273271adcf44942dd5f4211ce64a"
+        ],
+        "confirmedPerSecondIncludingDrainAndConcession": 1.214
+      },
+      {
+        "arenaCount": 4,
+        "matchRefs": [
+          "v4:20",
+          "v4:22",
+          "v4:23",
+          "v4:21"
+        ],
+        "durationMs": 44759.809499999996,
+        "intentions": 358,
+        "accepted": 327,
+        "statuses": {
+          "succeeded": 44,
+          "superseded": 283,
+          "failed": 0,
+          "sent": 0,
+          "queued": 0
+        },
+        "latencyMs": {
+          "serverAck": {
+            "n": 358,
+            "p50": 223,
+            "p95": 472,
+            "p99": 721
+          },
+          "queue": {
+            "n": 44,
+            "p50": 226,
+            "p95": 2128,
+            "p99": 2873
+          },
+          "broadcast": {
+            "n": 44,
+            "p50": 180,
+            "p95": 285,
+            "p99": 293
+          },
+          "confirmation": {
+            "n": 44,
+            "p50": 404,
+            "p95": 677,
+            "p99": 794
+          },
+          "total": {
+            "n": 44,
+            "p50": 910,
+            "p95": 2765,
+            "p99": 3302
+          }
+        },
+        "errors": [],
+        "uniqueAcceptedJobs": 327,
+        "confirmedTransactions": [
+          "0x68591ab3a90db5c0bc4eed5396bb079d5027ce45c9a09844b408726facd4b909",
+          "0xd4aaa33358c836fc4662f25152e92401cdba1b8dbb8fa69f206875e4184b8053",
+          "0x176172491b5e3791e5e6c64c089a5bde7efdb278414c9bb16116c5210156ed22",
+          "0x240c5327f8742de6d59f5bd2fbe2d48026ccf7d6f933f5d39dfe180bf9ea5fe0",
+          "0xb5501996c89b2baf64a3c2b4bc06670c462e7aa60ae4a21b9fbb3e6094b2af74",
+          "0x3c47f824d3ad44981941a111ec2980c8e53c5af1e28ace66e5e6ae02264278dc",
+          "0x1ccb67818edb4068e5b2bb458de692c855897523a5485f0a670a81b44751b198",
+          "0x74d51a6613bca85db8a328589d0cc8320d233306c90cbfb792d99c1c811df7ca",
+          "0x12287df97610909bba0fbb711586d85c20ec811f3f78282c4ecb8ac242217a4d",
+          "0x06db9c24d532693e56a3e970f5b578ab3301c7f07dd82b1d40123501aa4a6c97",
+          "0x5b193e79f9371a1b150d3cf3cc0f3c0b458ed1fb0488fcaee61e0a3beea17e16",
+          "0xe844147d1a4241b473e080734982061c1d9c124eaf2f967dc67cd5ebc70f864b",
+          "0x11fc14f06ba41e62dff31d48c7562256fdfefa986650c88879329703fb5e6860",
+          "0x1cebb8422109b28ff04f3616e79b4b6173726648a2e74d2c89312fce177936e4",
+          "0x7d791f603c01765822074bf66b369b3e97da3a02bd8f03dfa6036181eecfaff8",
+          "0x527dd75d516d16ddaa56c3a7298a3b8f0c95053595d042421f25c0024e2a8ffb",
+          "0xe24b0c91755d397d34599d7728acc85282ef17cdd082966933608e9979da4f4d",
+          "0x5482116a0a19ed472f1935e9a7867395087c04c535344e7797c66fa9f260cafc",
+          "0x28b63643e5175c0f0540a7c843f789e1276930fbc2c052733181f931ae38a8e2",
+          "0x9736c14c6c3cda2bbfda64f8d4d9d0516e165f4e25e15f32414cea05992d1f51",
+          "0x675c46fddca2990825feb4bf0600136fca7c3db20855d1bf23a17cc6b1ae13bd",
+          "0x72f02c3ac6a66ad94b9c2133012a292256fdbcafcb948ac22fb560156384ea2a",
+          "0x3203bc11d9b630616f7e3c54b44489371d40a9c79f9ed98ef15cf39879fc0229",
+          "0xf1dd145dba41fcb83da19bdf2264062080b69fbf95114b6a9943694687f5a56a",
+          "0xa7f0171c99b8a861451560aa5fdbe36295eb7f9c6c43ce605720e8c0ecfb30a9",
+          "0xe2927a32cd077115d4c1b9b8f8aee86d1cb99e4404d4b5e686a63bf223a7fe1d",
+          "0x911bfabfcb90d98851658fc2286e943929763989905824e3a3eff76bdd525864",
+          "0xfdd6f63ff7934b8132970df5dbe9fdc2557663cfa493454f4e9701f16c16ef6a",
+          "0x9e53207585fc0f23cd666c1849abc0bdb7d2e83e77f3d8923e1133b2f0c622ca",
+          "0xae51dd4125e24f28a119de94b9ab78984ef1bf20d1f59c97c36a022f32630a02",
+          "0x230591c2488d087c937cf531c311ba1e5e0194e3c327c4bc9876058650a5916f",
+          "0x3d992ee34bd7eafa31583e022b1b4e0b338172d8e9331f71949401455c5cf1c4",
+          "0x14a677f35af3a118c3fb3dd95d319a4b7f39cfbf58fdf7f5bc665bda94324ca1",
+          "0xff665df5b11938e87b761642135f2575a34e08b6d5369d2411861728a9dcc5d8",
+          "0x49aecf141bf1ab198527f3a275e4e23b052b496e9619dcd188e7ffdeee1a9b1c",
+          "0xfb8650056fafa85489c6af839a7bf74025a15c83a9a6317df1d32f65637db97c",
+          "0x1a1bc491fa42981624a62e24c9dbc03ce10f1aaf33ab970958fface60d717a3b",
+          "0x51c5af5c3cde1894a1e6b237de0f85d2de25b23908b1ec1212b2c97ffc619585",
+          "0x243f60bbf9185b4474a1610215a9a1b50278f50b2b53a0d041862d76a2dbe464",
+          "0x4e27323a29079165f1ba60fece24224b6125ca123a18ec5abeec7719f26a9ba2",
+          "0x766a53b9a4bc3da7c65a4208c6a38fdd153c44cc21d759823b71492e951095ec",
+          "0xf8bbe75fecb2fcf76b9535c20432b790dad2479f0fe1eb4d7ca788fd503f5dad",
+          "0x36264f6c00202f44126d4a7b50f7cbf27b1a384a19448ac71765f8a5436c8356",
+          "0x421ad5721d5f1decbab56977e87fee3793f76a76c6eb2c21d966a9cf3a024a8d"
+        ],
+        "confirmedPerSecondIncludingDrainAndConcession": 0.983
+      }
+    ],
+    "baselineV4": {
+      "sampleSize": 32,
+      "queueP95Ms": 794,
+      "receiptObservationP95Ms": 717,
+      "totalP95Ms": 1229,
+      "limitation": "Earlier observation with a different workload, not a controlled A/B trial."
+    }
+  },
+  "tests": {
+    "solidityPassed": 77,
+    "typescriptPassed": 22,
+    "physicsCasesPerMode": 10000,
+    "physicsModes": 2,
+    "typechecks": "passed",
+    "inputStore": "Real PostgreSQL, signatures, revocation, expiry, replayed sequence, immutable submitted bytes and replacement intent passed",
+    "crashRecovery": [
+      "persistent signed transaction",
+      "process killed before inclusion",
+      "same nonce and raw transaction after restart into V2",
+      "V1 pending job retained through manifest migration",
+      "next V2 transaction uses the following nonce and its own vault",
+      "V2 pending signed bytes recovered unchanged in V3",
+      "V3 uses the following journal nonce and a separate vault",
+      "V3 pending signed bytes recovered unchanged in V4",
+      "V4 uses the following journal nonce and a separate vault",
+      "exactly one credit in each generation"
+    ],
+    "arcadeBrowser": {
+      "matches": [
+        "30",
+        "31"
+      ],
+      "checks": [
+        "Direct invitation and rematch",
+        "Same-tab reload without another passkey",
+        "Cloned-tab exclusion",
+        "Offline and reconnect",
+        "Financial action requires passkey",
+        "Confirmed revocation",
+        "Remembered account",
+        "720px arena fully visible",
+        "Mobile settings and no horizontal overflow"
+      ]
+    },
+    "administration": [
+      "Mera role grant",
+      "game pause/resume",
+      "market pause/resume",
+      "Mera funded tournament creation",
+      "expired tournament cancellation",
+      "roles revoked in cleanup"
+    ],
+    "tournament": {
+      "network": "Monad testnet",
+      "tournamentId": "6",
+      "matchIds": [
+        "25",
+        "26",
+        "27"
+      ],
+      "winner": "0xBbAD300E27B0cC55692c7D35Ac5138F5dC29367E",
+      "prize": "0.01 MON",
+      "naturalFinal": true,
+      "checks": [
+        "four signatures",
+        "bracket-constrained matchmaking",
+        "automatic attachment",
+        "two distinct round advances",
+        "exact native wallet payout without recipient signature",
+        "automatic round advancement"
+      ],
+      "completedAt": "2026-09-06T22:13:14.013Z"
+    },
+    "legacyWithdrawals": [
+      {
+        "deployment": "v1",
+        "vault": "0x49ba91379d2b52e219c7969d4fe9a647bf64d52d",
+        "player": "0x4e1764aBF396C06a858F695968809039EB8cfA61",
+        "deposit": "0x8cf4cdf1bff83a48fdc352209fc46c3f9a753b0fcd77eaf547623fe21bc8a90b",
+        "withdrawal": "0xa103a8efe7af108c2c6e1295650b2f6eaf1133aafff3682f8453294c9c27b899",
+        "amountWei": "1000000000000000",
+        "oldBalancePreserved": true,
+        "exactWalletCredit": true
+      },
+      {
+        "deployment": "v2",
+        "vault": "0x925bd397e02391557fd7e99028bea09f24bb5002",
+        "player": "0x4e1764aBF396C06a858F695968809039EB8cfA61",
+        "deposit": "0x96f056d97906aa66fd5fc13d75013026f8e16641d5152b3b3d803fe553381b97",
+        "withdrawal": "0xc2b1bb29a20112ed4e1a355908677b4a5b2b4c28ec26b2e6e85f981e731861f4",
+        "amountWei": "1000000000000000",
+        "oldBalancePreserved": true,
+        "exactWalletCredit": true
+      },
+      {
+        "deployment": "v3",
+        "vault": "0x405da4f0284b51a8a2b55ae93fbd7be7914d2e3e",
+        "player": "0x4e1764aBF396C06a858F695968809039EB8cfA61",
+        "deposit": "0xbc78c53bde46f93e5f42454fae0b3ff889512754bcb3f5f3339894e734d6d629",
+        "withdrawal": "0x0239f622d972824082d9f66f09343a0e4d48182dd6f684dc62d521879e74d53d",
+        "amountWei": "1000000000000000",
+        "oldBalancePreserved": true,
+        "exactWalletCredit": true
+      }
+    ]
+  },
+  "payments": {
+    "match": "v4:24",
+    "offlineBeneficiary": "0x2Da1053d86fec21B8E704CC9E6215A1978C0Cd00",
+    "noExtraReceivingPasskey": true,
+    "rows": [
+      {
+        "recipient": "0x56513dC49D5e8175a7539f7e02Abc5081e05ad50",
+        "amountWei": "3000000000000000",
+        "walletBefore": "0",
+        "walletAfter": "3000000000000000",
+        "state": "paid",
+        "transaction": "0x7221b38b979e2719ce9611ebf020d8763b97db07807d335b2cc26295d96dd142"
+      },
+      {
+        "recipient": "0x2Da1053d86fec21B8E704CC9E6215A1978C0Cd00",
+        "amountWei": "5000000000000000",
+        "walletBefore": "0",
+        "walletAfter": "5000000000000000",
+        "state": "paid",
+        "transaction": "0xcf83edd85ed37a9aa315f8496664c546ae03c40bf6c744fb021f404e53878413"
+      },
+      {
+        "recipient": "0x9d639F88B8f4CA8bF8E1C0F366B8452A20fcCD8e",
+        "amountWei": "0",
+        "walletBefore": "0",
+        "walletAfter": "0",
+        "state": "no_payout",
+        "transaction": null
+      }
+    ]
+  },
+  "replayMigration": {
+    "passed": true,
+    "allGenerations": [
+      "v1",
+      "v2",
+      "v3",
+      "v4"
+    ],
+    "matches": 53,
+    "framesBefore": 750,
+    "framesAfter": 664,
+    "pruned": [
+      "v1:9",
+      "v2:5"
+    ],
+    "players": 76,
+    "maxReplaysPerPlayer": 3,
+    "unchangedFinancialAndCompetitionEntities": {
+      "Player": {
+        "rows": 64,
+        "sha256": "faa161d465323027528a0e7eb7056dcb4bdc919fbd62aa6383ee3b903730d3f0"
+      },
+      "SeasonRating": {
+        "rows": 64,
+        "sha256": "04121144e93f2ae531b719f161d242c971f719268292eee10ffbf779337d1817"
+      },
+      "Bet": {
+        "rows": 22,
+        "sha256": "0910334bf5fd191a1977e69e70256adf799f1b5380600ccda62ee00d6037bf82"
+      },
+      "Pair": {
+        "rows": 48,
+        "sha256": "c3e9efb1681d07a5a31ae12e05376c75e0976fdea77085e26287f46d15711f87"
+      },
+      "Pattern": {
+        "rows": 9,
+        "sha256": "06d2c18cc4be4ecc8c761292817483b4b10eefb40ad7b2b9e98bf785bf5bb848"
+      },
+      "Alert": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "Tournament": {
+        "rows": 12,
+        "sha256": "3b5c87e202645eb95f05481acb501ab65b619d79e5d5893f0efa80a4420a7bed"
+      },
+      "PayoutCandidate": {
+        "rows": 11,
+        "sha256": "39d8dca150b7077aae189eb0c50eeae5984630f39875678bc56165b2f1cc8018"
+      },
+      "Payout": {
+        "rows": 10,
+        "sha256": "87a3cd000c413f516fa4014cb5b851c816662d12ad7abd4864e45afc6ae0a51f"
+      },
+      "TournamentEntry": {
+        "rows": 5,
+        "sha256": "191ffc35283431f778af10c722092eda86f1e483225c6755b0ea60b89490b100"
+      }
+    },
+    "definition": "Independent RPC reindex to a new database, exact entity comparison and last-three retention verification before cutover."
+  },
+  "retentionAfterBrowserTests": {
+    "passed": true,
+    "allGenerations": [
+      "v1",
+      "v2",
+      "v3",
+      "v4"
+    ],
+    "matches": 71,
+    "retainedFrames": 1123,
+    "pruned": [
+      "v1:9",
+      "v2:5"
+    ],
+    "players": 108,
+    "maxReplaysPerPlayer": 3
+  },
+  "audio": {
+    "chrome": {
+      "maximumMusicRms": 0.15978982358672011,
+      "maximumEffectPeak": 0.21934735774993896,
+      "errors": [],
+      "measuredAt": "2026-09-06T21:55:01.227Z"
+    },
+    "edge": {
+      "maximumMusicRms": 0.14560363137740714,
+      "maximumEffectPeak": 0.25560158491134644,
+      "errors": [],
+      "measuredAt": "2026-09-06T21:55:43.799Z"
+    }
+  },
+  "mobileEmulation": {
+    "emulation": "Chromium: 390x844, DPR 3, touch, CPU 4x slowdown; network 4 Mbps down / 1 Mbps up + 40ms latency. Not a physical phone.",
+    "frames": 210,
+    "averageFps": 68.3304591156086,
+    "frameGapMs": {
+      "p50": 12.100000000000364,
+      "p95": 36.19999999999891,
+      "p99": 48.30000000000109
+    },
+    "lcp": 4208,
+    "cls": 0,
+    "resourceBytes": 683725,
+    "checkedAt": "2026-09-06T22:11:55.843Z"
+  },
+  "limitations": [
+    "Chain confirmation is not immediate; four arenas have a 2765ms p95 confirmed response in this test.",
+    "The benchmark phase throughput includes drain and concession; it is not Monad capacity.",
+    "Audio output is measured inside browsers; physical speakers/headphones were not listened to.",
+    "Physical cross-device passkey synchronization is a separate check.",
+    "Mobile performance is Chromium emulation, not a physical phone.",
+    "No Interlude, Vercel or new contract deployment in this release."
+  ],
+  "updatedAt": "2026-09-06T22:35:05.371240+00:00",
+  "operations": {
+    "backupRestored": "20260906T223152Z",
+    "databasesRestoredAndCompared": 9,
+    "protectedOffsiteBackup": "20260906T223353Z",
+    "rollbackTarget": "2f40574eee7289aa737388e5683a497aa1fb081c",
+    "rollbackRoundTrip": "passed",
+    "journalAfterRestartAndRollback": {
+      "maxNonce": 1394,
+      "duplicateNonces": 0,
+      "pendingJobs": 0,
+      "journalBeforeRestartFingerprint": "54e55d50eb8eb36cd064a0656ceb6a2a",
+      "paidTasks": 15,
+      "paidWei": "58000000000000000",
+      "jobTableBytes": 4521984
+    },
+    "localCleanup": {
+      "pongitContainersRemoved": 14,
+      "postgresDatabasesRestoredBeforeRemoval": 18,
+      "onveilServicesPreserved": 4
+    },
+    "vpsCleanup": {
+      "diskUsedBefore": "37 GiB",
+      "diskUsedAfter": "23 GiB",
+      "availableAfter": "22 GiB",
+      "productionAndCompatibleRollbackImagesPreserved": true
+    },
+    "retentionDaysForBackups": 7,
+    "windowsScheduledBackup": {
+      "powershell51": "passed after native-argument quoting fix",
+      "manualScheduledTaskExitCode": 0
+    }
+  },
+  "publicationAudit": {
+    "knownOperatorSecrets": "none detected",
+    "gitleaks": "36 commits scanned; no leaks detected",
+    "dependencies": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "publicBranchAuthorsAndCommitters": "DEUSVULTXYZ <200296378+DEUSVULTXYZ@users.noreply.github.com>",
+    "unpublishedUserDraftsExcluded": true
+  }
+}
