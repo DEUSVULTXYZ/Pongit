@@ -47,6 +47,7 @@ import {
 } from "../../shared/protocol";
 import { next } from "../../shared/physics";
 import { pool, initializeStore } from "./store";
+import { readSponsorCosts } from "./budget";
 
 const deployment: Deployment = JSON.parse(
   await readFile(
@@ -139,6 +140,8 @@ const relaySchema = z.object({
 });
 const rates = new Map<string, { count: number; until: number }>();
 const matches = new Map<string, Awaited<ReturnType<typeof readMatch>>>();
+type MatchView = { id: string; match: Awaited<ReturnType<typeof readMatch>>; clock: bigint; head: bigint; observedAt: number };
+const matchViews = new Map<string, MatchView>();
 const seededMarkets = new Set<string>();
 const marketLockouts = new Map<string, bigint>();
 let discoveryCursor = 1n;
@@ -163,6 +166,16 @@ function readMatch(id: bigint, blockNumber?: bigint) {
     args: [id],
     blockNumber,
   });
+}
+function jobView(row: any) {
+  const duration = (a: any, b: any) => a && b ? Math.max(0, Math.round(new Date(b).getTime() - new Date(a).getTime())) : null;
+  return { id: row.id, status: row.status, tx_hash: row.tx_hash, error: row.error,
+    timing: { queueMs: duration(row.created_at, row.signed_at), broadcastMs: duration(row.signed_at, row.submitted_at),
+      confirmationMs: duration(row.submitted_at, row.confirmed_at), totalMs: duration(row.created_at, row.confirmed_at) } };
+}
+function matchView(id: string, m: Awaited<ReturnType<typeof readMatch>>, block: bigint, activeBlock: bigint, observedAt: number): MatchView {
+  const clock = m.status === 2 && activeBlock >= m.startBlock ? (activeBlock - m.startBlock) * 300000n : m.state.t;
+  return { id, match: m, clock, head: block, observedAt };
 }
 function send(res: ServerResponse, value: unknown, status = 200) {
   res.writeHead(status, {
@@ -252,13 +265,13 @@ async function dispatch() {
   const unfinished = await pool.query(
     "SELECT * FROM relay_jobs WHERE status IN ('signed','sent') ORDER BY nonce LIMIT 8",
   );
-  for (const row of unfinished.rows) {
+  await Promise.all(unfinished.rows.map(async (row) => {
     try {
       const receipt = await publicClient.getTransactionReceipt({
         hash: row.tx_hash,
       });
-      await pool.query(
-        "UPDATE relay_jobs SET status=$2, receipt=$3, error=$4, updated_at=now() WHERE id=$1",
+      const saved = await pool.query(
+        "UPDATE relay_jobs SET status=$2, receipt=$3, error=$4, confirmed_at=now(), updated_at=now() WHERE id=$1 RETURNING *",
         [
           row.id,
           receipt.status === "success" ? "succeeded" : "failed",
@@ -289,9 +302,7 @@ async function dispatch() {
       }
       broadcast({
         type: "job",
-        id: row.id,
-        status: receipt.status,
-        hash: row.tx_hash,
+        ...jobView(saved.rows[0]),
       });
     } catch (error) {
       if ((error as Error).name !== "TransactionReceiptNotFoundError")
@@ -309,12 +320,12 @@ async function dispatch() {
           if (!/already known|nonce too low/i.test(String(e))) throw e;
         }
         await pool.query(
-          "UPDATE relay_jobs SET status='sent',updated_at=now() WHERE id=$1",
+          "UPDATE relay_jobs SET status='sent',submitted_at=coalesce(submitted_at,now()),updated_at=now() WHERE id=$1",
           [row.id],
         );
       }
     }
-  }
+  }));
   if (unfinished.rowCount! >= 8) return;
   const pending = await pool.query(
     "SELECT * FROM relay_jobs WHERE status='queued' ORDER BY CASE WHEN payload->>'functionName'='submitInput' THEN 0 ELSE 1 END,created_at LIMIT 1",
@@ -347,16 +358,10 @@ async function dispatch() {
     const maxFeePerGas =
       gasPrice * 2n > gasPriceCap ? gasPriceCap : gasPrice * 2n;
     const cost = gas * maxFeePerGas + value;
-    const spent = await pool.query(
-      "SELECT coalesce(sum(cost),0) AS spent FROM relay_jobs WHERE created_at >= date_trunc('day',now()) AND status IN ('signed','sent','succeeded','failed')",
-    );
-    const commitments = await pool.query(
-      "SELECT coalesce(sum(cost),0) AS cost FROM relay_jobs WHERE raw_tx IS NOT NULL AND (status IN ('signed','sent') OR updated_at >= $1)",
-      [new Date(sponsor.at)],
-    );
+    const { spent, commitments } = await readSponsorCosts(pool, new Date(sponsor.at));
     if (
-      BigInt(spent.rows[0].spent) + cost > dailyBudget ||
-      balance < cost + minimumBalance + BigInt(commitments.rows[0].cost)
+      spent + cost > dailyBudget ||
+      balance < cost + minimumBalance + commitments
     ) {
       fundingWarning = "Test MON sponsorship budget or balance exhausted. Funding or the next UTC budget window is required.";
       return;
@@ -381,20 +386,21 @@ async function dispatch() {
     });
     const txHash = keccak256(raw);
     await pool.query(
-      "UPDATE relay_jobs SET status='signed',raw_tx=$2,tx_hash=$3,nonce=$4,cost=$5,updated_at=now() WHERE id=$1",
+      "UPDATE relay_jobs SET status='signed',raw_tx=$2,tx_hash=$3,nonce=$4,cost=$5,signed_at=now(),updated_at=now() WHERE id=$1",
       [row.id, raw, txHash, nonce, cost.toString()],
     );
     await publicClient.sendRawTransaction({ serializedTransaction: raw });
     await pool.query(
-      "UPDATE relay_jobs SET status='sent',updated_at=now() WHERE id=$1",
+      "UPDATE relay_jobs SET status='sent',submitted_at=now(),updated_at=now() WHERE id=$1",
       [row.id],
     );
   } catch (error) {
     // Signed jobs must remain recoverable; never allocate their nonce to a different payload.
-    await pool.query(
-      "UPDATE relay_jobs SET status='failed',error=$2 WHERE id=$1 AND status='queued'",
+    const failed = await pool.query(
+      "UPDATE relay_jobs SET status='failed',error=$2,updated_at=now() WHERE id=$1 AND status='queued' RETURNING *",
       [row.id, safeError(error)],
     );
+    if (failed.rows[0]) broadcast({ type: "job", ...jobView(failed.rows[0]) });
   }
 }
 function safeError(error: unknown) {
@@ -415,15 +421,14 @@ function broadcast(value: unknown) {
 async function refresh() {
   const latest = await publicClient.getBlockNumber({ cacheTime: 0 });
   if (latest === head) return;
-  head = latest;
-  lastObserved = Date.now();
-  chainHealthy = true;
+  const observedAt = Date.now();
   const existingIds = [...matches].filter(([, m]) => m.status < 3).map(([id]) => id);
   const [last, activeBlock, states] = await Promise.all([
-    publicClient.readContract({ address: deployment.game, abi: gameAbi, functionName: "nextId", blockNumber: head }),
-    publicClient.readContract({ address: deployment.game, abi: gameAbi, functionName: "activeBlock", blockNumber: head }),
-    Promise.all(existingIds.map(id => readMatch(BigInt(id), head))),
+    publicClient.readContract({ address: deployment.game, abi: gameAbi, functionName: "nextId", blockNumber: latest }),
+    publicClient.readContract({ address: deployment.game, abi: gameAbi, functionName: "activeBlock", blockNumber: latest }),
+    Promise.all(existingIds.map(id => readMatch(BigInt(id), latest))),
   ]);
+  head = latest; lastObserved = observedAt; chainHealthy = true;
   const preloaded = new Map(existingIds.map((id, i) => [id, states[i]]));
   const ids = new Set(
     [...matches].filter(([, m]) => m.status < 3).map(([id]) => id),
@@ -433,10 +438,15 @@ async function refresh() {
   // Bounded restart discovery also finds active matches older than the recent list.
   for (let n = 0; n < 20 && discoveryCursor < last; n++, discoveryCursor++)
     ids.add(String(discoveryCursor));
+  await Promise.all([...ids].filter(id => !preloaded.has(id)).map(async id => preloaded.set(id, await readMatch(BigInt(id), latest))));
   for (const rawId of ids) {
     const id = BigInt(rawId);
-    const m = preloaded.get(rawId) || await readMatch(id);
+    const m = preloaded.get(rawId)!;
     matches.set(id.toString(), m);
+    const frame = matchView(rawId, m, latest, activeBlock, observedAt);
+    matchViews.set(rawId, frame);
+    // Publish the coherent frame before provisioning markets or tournaments.
+    broadcast({ type: "match", ...frame });
     if (
       (m.status === 1 || m.status === 2) &&
       !seededMarkets.has(id.toString())
@@ -508,15 +518,7 @@ async function refresh() {
         }
       }
     }
-    const clock = m.status >= 2 && activeBlock >= m.startBlock ? (activeBlock - m.startBlock) * 300000n : 0n;
-    broadcast({
-      type: "match",
-      id,
-      match: m,
-      clock,
-      head,
-      observedAt: lastObserved,
-    });
+    const clock = frame.clock;
     if (
       m.status === 2 &&
       next(m.state).at <= clock
@@ -542,7 +544,7 @@ async function refresh() {
     }
   }
   for (const [id, m] of matches)
-    if (m.status >= 3 && BigInt(id) + 20n < last) matches.delete(id);
+    if (m.status >= 3 && BigInt(id) + 20n < last) { matches.delete(id); matchViews.delete(id); }
   broadcast({ type: "head", head, observedAt: lastObserved });
 }
 async function graphql(query: string, variables: unknown = {}) {
@@ -706,23 +708,24 @@ const server = createServer(async (req, res) => {
       });
     if (req.method === "GET" && /^\/matches\/\d+$/.test(path)) {
       const id = BigInt(path.split("/")[2]);
-      const m = await readMatch(id);
-      const clock = await publicClient.readContract({
-        address: deployment.game,
-        abi: gameAbi,
-        functionName: "clock",
-        args: [id],
-      });
-      return send(res, { match: m, clock, head, observedAt: lastObserved });
+      const cached = matchViews.get(String(id));
+      const force = new URL(req.url!, "http://localhost").searchParams.has("fresh");
+      if (!force && cached && (cached.match.status >= 3 || Date.now() - cached.observedAt < 2000)) return send(res, cached);
+      const block = await publicClient.getBlockNumber({ cacheTime: 0 });
+      const observedAt = Date.now();
+      const [m, activeBlock] = await Promise.all([readMatch(id, block), publicClient.readContract({
+        address: deployment.game, abi: gameAbi, functionName: "activeBlock", blockNumber: block,
+      })]);
+      return send(res, matchView(String(id), m, block, activeBlock, observedAt));
     }
     if (req.method === "GET" && path.startsWith("/jobs/")) {
       const row = await pool.query(
-        "SELECT id,status,tx_hash,error FROM relay_jobs WHERE id=$1",
+        "SELECT id,status,tx_hash,error,created_at,signed_at,submitted_at,confirmed_at FROM relay_jobs WHERE id=$1",
         [path.split("/")[2]],
       );
       return send(
         res,
-        row.rows[0] || { error: "Job not found" },
+        row.rows[0] ? jobView(row.rows[0]) : { error: "Job not found" },
         row.rowCount ? 200 : 404,
       );
     }
@@ -1158,7 +1161,7 @@ async function loop() {
       lastError = safeError(error);
       console.error(lastError);
     }
-    await new Promise((r) => setTimeout(r, failures ? Math.min(10000, 500 * 2 ** Math.min(failures, 5)) : (deployment.chainId === 10143 ? 500 : 150)));
+    await new Promise((r) => setTimeout(r, failures ? Math.min(10000, 500 * 2 ** Math.min(failures, 5)) : 150));
   }
 }
 void loop();

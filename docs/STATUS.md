@@ -2,6 +2,8 @@
 
 Le site est en ligne sur **https://pongit.xyz**, sur un VPS Ubuntu 24.04 avec HTTPS Let’s Encrypt. Le jeu et les fonds utilisent exclusivement Monad Testnet **10143**. Mera fournit les comptes ; Envio indexe les contrats via une passerelle RPC privée utilisant le point public Ankr. Aucun abonnement Alchemy n’est utilisé.
 
+Correctif du 6 septembre : prédiction des raquettes, ordre des snapshots, notifications de reçus, menu du compte et comptabilité du budget sponsorisé. Le délai onchain reste perceptible ; les nouvelles mesures et leurs limites sont dans [le diagnostic de latence](LATENCY.md).
+
 ## Contrats actifs
 
 | Contrat | Adresse |

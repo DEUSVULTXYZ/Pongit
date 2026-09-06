@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { advance, SCALE, type State } from "../../shared/physics";
+import { move, SCALE, type State } from "../../shared/physics";
+import { previewPaddle, projectConfirmed } from "../lib/presentation";
 type Props = {
   state: State | null;
   clock: bigint;
@@ -8,7 +9,10 @@ type Props = {
   direction: number;
   side: number;
   replay: boolean;
-  onStats: (fps: number, extrapolated: boolean) => void;
+  matchId: string;
+  controllable: boolean;
+  pending: boolean;
+  onStats: (fps: number, extrapolated: boolean, waiting: boolean) => void;
 };
 export function Court({
   state,
@@ -17,6 +21,9 @@ export function Court({
   direction,
   side,
   replay,
+  matchId,
+  controllable,
+  pending,
   onStats,
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -27,6 +34,7 @@ export function Court({
     direction,
     side,
     replay,
+    matchId, controllable, pending,
     onStats,
   });
   current.current = {
@@ -36,6 +44,7 @@ export function Court({
     direction,
     side,
     replay,
+    matchId, controllable, pending,
     onStats,
   };
   useEffect(() => {
@@ -44,8 +53,13 @@ export function Court({
     let frame = 0,
       count = 0,
       last = performance.now();
+    let lastDraw = last, renderedClock = 0n, visualY: number | null = null, context = "";
     function draw(now: number) {
       const p = current.current;
+      const identity = `${p.matchId}:${p.side}:${p.replay}:${p.controllable}`;
+      if (identity !== context) { context = identity; visualY = null; renderedClock = 0n; }
+      const dt = Math.max(0, Math.min(50, now - lastDraw));
+      lastDraw = now;
       const dpr = Math.min(devicePixelRatio || 1, 2);
       const width = el.clientWidth;
       const height = (width * 576) / 1024;
@@ -68,15 +82,38 @@ export function Court({
       const elapsed = p.replay
         ? 0
         : Math.min(Math.max(0, Date.now() - p.observedAt), 600);
-      const target = p.clock + BigInt(Math.floor(elapsed * 1000));
+      let target = p.clock + BigInt(Math.floor(elapsed * 1000));
+      if (!p.replay && target < renderedClock) target = renderedClock;
+      renderedClock = target;
+      let waiting = false;
       if (s) {
-        let predicted = { ...s };
-        if (p.side === 0) predicted.leftDir = p.direction;
-        if (p.side === 1) predicted.rightDir = p.direction;
-        [s] = advance(predicted, target > s.t ? target : s.t, 64);
+        const projected = p.replay ? { state: s, waiting: false } : projectConfirmed(s, target);
+        s = projected.state;
+        waiting = projected.waiting;
       }
-      const yA = s ? Number(s.left) / Number(SCALE) : 288,
+      let yA = s ? Number(s.left) / Number(SCALE) : 288,
         yB = s ? Number(s.right) / Number(SCALE) : 288;
+      if (p.state && !p.replay && target > p.state.t) {
+        // Paddles keep moving along their confirmed directions even while the
+        // ball waits at an unresolved impact; their bounds are independent.
+        const paddles = move(p.state, target);
+        yA = Number(paddles.left) / Number(SCALE);
+        yB = Number(paddles.right) / Number(SCALE);
+      }
+      const confirmedY = p.side === 0 ? yA : yB;
+      if (s && p.controllable && !p.replay && p.side >= 0) {
+        // Integrate only time since the last rendered frame. Never apply a new
+        // key direction retroactively from an old onchain snapshot.
+        visualY = previewPaddle(visualY ?? confirmedY, p.direction, dt);
+        const confirmedDir = p.side === 0 ? s.leftDir : s.rightDir;
+        if (!p.pending && confirmedDir === p.direction)
+          visualY += (confirmedY - visualY) * (1 - Math.exp(-dt / 140));
+        if (p.side === 0) yA = visualY; else yB = visualY;
+        if (Math.abs(visualY - confirmedY) > 3) {
+          ctx.strokeStyle = "#858585";
+          ctx.strokeRect(p.side === 0 ? 22 : 990, confirmedY - 48, 12, 96);
+        }
+      } else visualY = null;
       ctx.fillStyle = "#f4f4f4";
       ctx.fillRect(22, yA - 48, 12, 96);
       ctx.fillRect(990, yB - 48, 12, 96);
@@ -103,6 +140,7 @@ export function Court({
         p.onStats(
           Math.round((count * 1000) / (now - last)),
           !!s && !p.replay && target > (p.state?.t || 0n),
+          waiting,
         );
         count = 0;
         last = now;

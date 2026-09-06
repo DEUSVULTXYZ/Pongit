@@ -944,6 +944,11 @@ footer {
 .brand-sub { margin-left: 6px; font-size: 8px; }
 h1,h2,h3 { line-height: 1.35; }
 .side-card h2 { font-size: 20px; }
+.account-address { display: grid; gap: 12px; font-size: 11px; }
+.account-address textarea { width: 100%; min-width: 0; font: inherit; font-size: 11px; line-height: 1.8; padding: 14px 10px; background: #111; color: var(--white); border: 1px solid var(--line); resize: none; overflow-wrap: anywhere; }
+.account-explorer { font-size: 12px; padding: 8px 0; }
+.account-modal .account-explanation { font-size: 11px; line-height: 1.9; color: var(--muted); }
+.input-hint { color: var(--muted); font-size: 9px; line-height: 1.9; padding: 0 22px 14px; }
 nav { gap: 22px; }
 nav button { font-size: 11px; }
 .scoreboard strong { font-size: 10px; }

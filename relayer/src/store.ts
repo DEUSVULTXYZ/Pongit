@@ -16,6 +16,9 @@ export async function initializeStore() {
   await pool.query(`ALTER TABLE queue_players ADD COLUMN IF NOT EXISTS ticket text;
     ALTER TABLE rooms ADD COLUMN IF NOT EXISTS ticket_a text;
     ALTER TABLE rooms ADD COLUMN IF NOT EXISTS ticket_b text;`);
+  await pool.query(`ALTER TABLE relay_jobs ADD COLUMN IF NOT EXISTS signed_at timestamptz;
+    ALTER TABLE relay_jobs ADD COLUMN IF NOT EXISTS submitted_at timestamptz;
+    ALTER TABLE relay_jobs ADD COLUMN IF NOT EXISTS confirmed_at timestamptz;`);
   const connection = await pool.connect();
   const result = await connection.query(
     "SELECT pg_try_advisory_lock(701337) AS locked",

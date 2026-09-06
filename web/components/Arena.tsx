@@ -21,6 +21,7 @@ import {
   WS,
   relay,
   waitJob,
+  notifyJob,
   stateFromJson,
   short,
   type Config,
@@ -45,6 +46,7 @@ import {
 } from "../../shared/protocol";
 import { type State, stateComponents, advance } from "../../shared/physics";
 import { gameAbi, marketAbi, tournamentsAbi } from "../../shared/abis";
+import { acceptsSnapshot, type SnapshotCursor } from "../lib/presentation";
 
 const tabs = ["Play", "Live", "Ladder", "Tournaments", "Archive"];
 const money = (value: unknown) =>
@@ -74,6 +76,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     [predicted, setPredicted] = useState(false),
     [correction, setCorrection] = useState(0),
     [showConnect, setShowConnect] = useState(false);
+  const [showAccount, setShowAccount] = useState(false), [copiedAddress, setCopiedAddress] = useState(false);
+  const [inputPending, setInputPending] = useState(false), [waitingImpact, setWaitingImpact] = useState(false);
+  const [inputTiming, setInputTiming] = useState<any>(null);
+  const snapshotCursor = useRef<SnapshotCursor | null>(null);
+  const inputNonce = useRef({ key: "", nonce: 0n });
   const [ladder, setLadder] = useState<any[]>([]),
     [tournaments, setTournaments] = useState<any[]>([]),
     [alerts, setAlerts] = useState<any[]>([]);
@@ -142,6 +149,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           ? 1
           : -1
       : -1;
+  const canControl = side >= 0 && match?.status === 2 && !!session.current &&
+    selected === sessionMatch.current &&
+    (side === 0 ? match.a.key : match.b.key).toLowerCase() === session.current.account.address.toLowerCase();
   async function act(fn: () => Promise<void>) {
     if (operationBusy.current) return;
     operationBusy.current = true;
@@ -191,6 +201,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
         ? localIdentity(kind === "operator")
         : await connect(kind === "create");
     identityVersion.current++;
+    snapshotCursor.current = null;
+    inputNonce.current = { key: "", nonce: 0n };
+    setInputPending(false);
     session.current?.end();
     session.current = null;
     secret.current = null;
@@ -213,6 +226,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     setAccount(identity.account.address);
     setRecipient(identity.account.address);
     setShowConnect(false);
+    setShowAccount(false);
     setMessage(
       identity.local
         ? "Local test account — Anvil only."
@@ -224,20 +238,39 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     if (active && owner.current === identity) { setSelected(active.id); setTab("Play"); }
 
   }
+  async function disconnect() {
+    if (queued) {
+      await cancelQueue();
+      if (queueTicket.current) throw new Error("Match creation is already submitted. Wait for the match before disconnecting.");
+    }
+    identityVersion.current++;
+    owner.current?.end();
+    session.current?.end();
+    owner.current = null; ownerOpen.current = false; session.current = null;
+    secret.current = null; sessionMatch.current = ""; readyRoom.current = ""; revealSent.current = "";
+    queueTicket.current = ""; lastDirection.current = 0; lastState.current = null;
+    inputNonce.current = { key: "", nonce: 0n }; snapshotCursor.current = null;
+    setAccount(""); setPlayer(null); setDirection(0); setInputPending(false); setInputLatency(null);
+    setInputTiming(null); setQueued(false); setRecipient(""); setTournamentId("0");
+    setSelected(null); setMatch(null); setState(null); setFrames([]); setReplayPlaying(false);
+    setShowAccount(false); setShowConnect(false); setTab("Play");
+    setMessage("Disconnected. Your passkey and funds are preserved. Any submitted transaction can still complete.");
+  }
   useEffect(() => {
     let stop = false;
     let socket: WebSocket | undefined;
     let reconnect: ReturnType<typeof setTimeout>;
     const load = async () => {
       try {
+        const startedAt = Date.now();
         const c = await api<Config>("/config");
-        if (!stop) { clockOffset.current = c.serverTimeMs - Date.now(); setConfig(c); }
+        if (!stop) { clockOffset.current = c.serverTimeMs - (startedAt + Date.now()) / 2; setConfig(c); }
         const all = await api("/matches");
         const health = await api("/health");
         if (!stop) setFundingWarning(health.queueError || "");
         if (!stop) {
           setItems(all.matches.sort((a:any,b:any)=>Number(b.id)-Number(a.id)));
-          setHead(BigInt(all.head));
+          setHead((previous) => BigInt(all.head) > previous ? BigInt(all.head) : previous);
         }
       } catch {
         if (!stop)
@@ -260,7 +293,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       };
       socket.onmessage = (e) => {
         const data = JSON.parse(e.data);
-        if (data.head) setHead(BigInt(data.head));
+        if (data.head) setHead((previous) => BigInt(data.head) > previous ? BigInt(data.head) : previous);
+        if (data.type === "job") notifyJob(data);
         if (data.type === "match") {
           setItems((old) =>
             [
@@ -290,6 +324,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     };
   }, []);
   function applyMatch(data: any) {
+    const id = String(data.id ?? view.current.selected);
+    if (id !== view.current.selected || view.current.tab === "Archive") return;
+    const incoming = { id, head: BigInt(data.head), version: BigInt(data.match.version), clock: BigInt(data.clock) };
+    if (!acceptsSnapshot(snapshotCursor.current, incoming)) return;
+    snapshotCursor.current = incoming;
     const s = stateFromJson(data.match.state);
     const playable =
       Number(data.match.status) >= 2 && s.vx !== 0n && s.vy !== 0n;
@@ -309,24 +348,28 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     setObservedAt(data.observedAt ? data.observedAt - clockOffset.current : Date.now());
   }
   useEffect(() => {
+    let cancelled = false;
+    snapshotCursor.current = null;
+    lastState.current = null;
     if (selected && tab !== "Archive")
       void api(`/matches/${selected}`)
-        .then(applyMatch)
+        .then((data) => { if (!cancelled) applyMatch({ ...data, id: selected }); })
         .catch((e) => setError(e.message));
+    return () => { cancelled = true; };
   }, [selected, tab]);
   useEffect(() => {
-    if (!showConnect) return;
+    if (!showConnect && !showAccount) return;
     const previous = document.activeElement as HTMLElement | null;
     const modal = document.querySelector(".connect-modal")!;
     const controls = () =>
       Array.from(
         modal.querySelectorAll<HTMLElement>(
-          "button:not(:disabled),a[href],input",
+          "button:not(:disabled),a[href],input,textarea",
         ),
       );
     controls()[0]?.focus();
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowConnect(false);
+      if (e.key === "Escape") { setShowConnect(false); setShowAccount(false); }
       if (e.key === "Tab") {
         const list = controls();
         const first = list[0],
@@ -345,7 +388,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       document.removeEventListener("keydown", handler);
       previous?.focus();
     };
-  }, [showConnect]);
+  }, [showConnect, showAccount]);
   useEffect(() => {
     if (tab === "Ladder")
       void api("/leaderboard")
@@ -453,6 +496,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             : 0,
       );
     const down = (e: KeyboardEvent) => {
+      if (document.querySelector('[role="dialog"]')) return;
       if ((e.target as HTMLElement).matches("input,textarea,select")) return;
       if (["ArrowUp", "ArrowDown", "w", "s", "W", "S"].includes(e.key)) {
         e.preventDefault();
@@ -499,15 +543,19 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       )
         return;
       inputBusy.current = true;
+      setInputPending(true);
       const generation = identityVersion.current;
       const dir = v.direction;
       const submittedAt = performance.now();
+      const nonceKey = `${v.selected}:${session.current.account.address}`;
       try {
+        const knownNonce = inputNonce.current.key === nonceKey && inputNonce.current.nonce > BigInt(slot.nonce)
+          ? inputNonce.current.nonce : BigInt(slot.nonce);
         const input = {
           matchId: BigInt(v.selected!),
           player: v.account as Address,
           direction: dir,
-          nonce: BigInt(slot.nonce) + 1n,
+          nonce: knownNonce + 1n,
           observedBlock: v.head,
           validUntilBlock: v.head + 16n,
         };
@@ -517,22 +565,34 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           primaryType: "Input",
           message: input,
         });
-        await relay({
+        const completed = await relay({
           contract: "game",
           functionName: "submitInput",
           args: [input, signature],
         });
         if (generation !== identityVersion.current) return;
         setInputLatency(Math.round(performance.now() - submittedAt));
+        setInputTiming(completed.timing || null);
+        inputNonce.current = { key: nonceKey, nonce: input.nonce };
         lastDirection.current = dir;
-        const latest = await api(`/matches/${v.selected}`);
-        if (generation === identityVersion.current && view.current.selected === v.selected) applyMatch(latest);
       } catch (e) {
-        setError((e as Error).message);
+        if (generation === identityVersion.current) {
+          setError((e as Error).message);
+          // A failed command did not consume the game nonce. Refresh once for
+          // recovery, instead of making every successful command wait for RPC.
+          try {
+            const latest = await api(`/matches/${v.selected}?fresh=1`);
+            if (generation === identityVersion.current) {
+              inputNonce.current = { key: "", nonce: 0n };
+              applyMatch({ ...latest, id: v.selected });
+            }
+          } catch { /* The connection indicator exposes an unavailable service. */ }
+        }
       } finally {
         inputBusy.current = false;
+        if (generation === identityVersion.current) setInputPending(false);
       }
-    }, 80);
+    }, 25);
     return () => clearInterval(timer);
   }, []);
   async function joinQueue() {
@@ -556,7 +616,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   async function cancelQueue() {
     if (!config || !queueTicket.current) return;
     const own = await signingOwner();
-    const expires = Math.floor(Date.now()/1000)+120;
+    const expires = nowSeconds()+120;
     const ticket = queueTicket.current;
     const signature = await own.account.signMessage({message:cancelQueueMessage(account,ticket,expires,config.chainId,config.game)});
     closeOwner();
@@ -880,7 +940,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             <span className={connected ? "dot pulse" : "dot"} />
             {config?.chainId === 31337 ? "LOCAL CHAIN" : "MONAD TESTNET"}
           </span>
-          <button disabled={!config || busy || queued} onClick={() => setShowConnect(true)}>
+          <button aria-label={account ? "Open account details" : "Connect passkey"} disabled={!config} onClick={() => { setDirection(0); setCopiedAddress(false); account ? setShowAccount(true) : setShowConnect(true); }}>
             {account ? short(account) : "Connect passkey"} <span>↗</span>
           </button>
         </div>
@@ -1004,10 +1064,14 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 observedAt={observedAt}
                 direction={direction}
                 side={tab === "Archive" ? -1 : side}
-                replay={tab === "Archive"}
-                onStats={(f, p) => {
+                replay={tab === "Archive" || match?.status !== 2}
+                matchId={selected || ""}
+                controllable={canControl && !showAccount && !showConnect}
+                pending={inputPending || direction !== lastDirection.current}
+                onStats={(f, p, waiting) => {
                   setFps(f);
                   setPredicted(p);
+                  setWaitingImpact(waiting);
                 }}
               />
               {!state && (
@@ -1030,14 +1094,16 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               <span>
                 {tab === "Archive"
                   ? "CONFIRMED REPLAY"
+                  : waitingImpact
+                    ? "AWAITING IMPACT CONFIRMATION"
                   : predicted
-                    ? "EXTRAPOLATING"
+                    ? "LIVE PREVIEW"
                     : "CONFIRMED STATE"}{" "}
                 {correction > 8
                   ? `/ CORRECTION ${correction.toFixed(0)}px`
                   : ""}
               </span>
-              <span title="Input request to confirmed receipt, including queue and polling">
+              <span title={inputTiming ? `Queue & preparation: ${inputTiming.queueMs} ms; broadcast: ${inputTiming.broadcastMs} ms; chain & receipt: ${inputTiming.confirmationMs} ms` : "Input request to confirmed receipt, including queue and network"}>
                 {inputLatency === null ? "" : inputLatency + " ms INPUT / "}
                 {fps || "—"} FPS
               </span>
@@ -1076,6 +1142,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 <div className="touch-controls">
                   <button
                     aria-label="Move up"
+                    disabled={!canControl}
                     onPointerDown={(e) => {
                       e.currentTarget.setPointerCapture(e.pointerId);
                       setDirection(-1);
@@ -1087,6 +1154,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                   </button>
                   <button
                     aria-label="Move down"
+                    disabled={!canControl}
                     onPointerDown={(e) => {
                       e.currentTarget.setPointerCapture(e.pointerId);
                       setDirection(1);
@@ -1103,6 +1171,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               {busy ? "Working… " : ""}
               {message}
             </div>
+            {canControl && <p className="input-hint">Your paddle responds immediately. The outline shows its confirmed path; collisions wait for the chain.</p>}
+            {inputLatency !== null && inputLatency > 1000 && canControl && <p className="input-hint">Chain confirmation is taking {(inputLatency / 1000).toFixed(1)} s. Anticipate your moves; the preview cannot remove inclusion delay.</p>}
           </section>
           <aside>
             <section className="side-card">
@@ -1125,10 +1195,10 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 <>
                   <button
                     className="primary"
-                    disabled={busy}
+                    disabled={busy || canControl}
                     onClick={() => void act(restoreSession)}
                   >
-                    Restore game session ↗
+                    {canControl ? "Game session active" : "Restore game session ↗"}
                   </button>
                   <div className="split">
                     <button
@@ -1574,6 +1644,22 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           Explorer ↗
         </a>
       </footer>
+      {showAccount && account && (
+        <div className="modal-backdrop" onClick={() => setShowAccount(false)}>
+          <section role="dialog" aria-modal="true" aria-labelledby="account-title" className="connect-modal account-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" aria-label="Close account details" onClick={() => setShowAccount(false)}>×</button>
+            <p className="eyebrow">YOUR PONGIT ACCOUNT</p>
+            <h2 id="account-title">Account details</h2>
+            <p>{config?.chainId === 31337 ? "Local test account" : "Mera passkey · Monad Testnet"}</p>
+            <label className="account-address">Full address<textarea aria-label="Full account address" value={account} rows={3} readOnly onFocus={(e) => e.currentTarget.select()} /></label>
+            <button onClick={() => void navigator.clipboard.writeText(account).then(() => setCopiedAddress(true)).catch(() => setError("Copy unavailable. Select the full address above to copy it manually."))}>{copiedAddress ? "Address copied" : "Copy address"}</button>
+            {config?.chainId === 10143 && <a className="account-explorer" href={`https://testnet.monadscan.com/address/${account}`} target="_blank" rel="noreferrer">View account on explorer ↗</a>}
+            <p className="account-explanation">Disconnecting clears signing keys from this browser. Your passkey and funds stay available. It does not concede a match or cancel a transaction already submitted.</p>
+            {queued && <p className="account-explanation">Your match search must be cancelled before disconnecting. This can require your passkey.</p>}
+            <button className="primary" disabled={busy} onClick={() => void act(disconnect)}>{queued ? "Cancel search and disconnect" : "Disconnect"}</button>
+          </section>
+        </div>
+      )}
       {showConnect && (
         <div className="modal-backdrop" onClick={() => setShowConnect(false)}>
           <section

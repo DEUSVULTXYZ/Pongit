@@ -1,0 +1,66 @@
+{
+  "matchId": "9",
+  "definition": "Journal creation to observed receipt; excludes browser and HTTP time",
+  "samples": [
+    {
+      "id": "0xff6e69534877b0f44a89b5abbc4127c75f5947d23671941f0b552d53836cb7b0",
+      "elapsed_ms": 1163.018,
+      "status": "succeeded"
+    },
+    {
+      "id": "0xcb13f410117bca179aedf2f9d733ce8f2d887a554fa535ae605d5bb6da79e3d7",
+      "elapsed_ms": 843.996,
+      "status": "succeeded"
+    },
+    {
+      "id": "0x84b9c67830dd11ba49b87b7a2aae5df02268bd61904debfb9f953855b32766ff",
+      "elapsed_ms": 1013.986,
+      "status": "succeeded"
+    },
+    {
+      "id": "0xcc08bec639351633b20e6055cab90334ee16e76ed30ca6c17d0dbf98eb41b112",
+      "elapsed_ms": 826.298,
+      "status": "succeeded"
+    },
+    {
+      "id": "0x426ad9baf82a6f3ffcab79e1bdb883c6f077aa6939bdc2e300eb93e0fe54cb0b",
+      "elapsed_ms": 1378.272,
+      "status": "succeeded"
+    },
+    {
+      "id": "0xf17504ca630312d003c6f006f314755b6443c69882418640495b3be8b496a2e2",
+      "elapsed_ms": 1462.499,
+      "status": "succeeded"
+    },
+    {
+      "id": "0x9373d85bd622a36ebec9575b7584b587bd9ac7d5d7c3fd7d5c4d82dce6633742",
+      "elapsed_ms": 856.685,
+      "status": "succeeded"
+    },
+    {
+      "id": "0xde3be4f516cd44b61f6331e55e3d3ac989994fd35f515900b7a53d895627d259",
+      "elapsed_ms": 902.864,
+      "status": "succeeded"
+    },
+    {
+      "id": "0x386b81b2d300367a6fa96d5d8b425169ed98452c393be8c92b9e97a42f924369",
+      "elapsed_ms": 1227.738,
+      "status": "succeeded"
+    },
+    {
+      "id": "0x6d7201b5d49c9e256f6719ac9b3344034426e69cdad1cae1b52126e6cb0c3f52",
+      "elapsed_ms": 767.939,
+      "status": "succeeded"
+    },
+    {
+      "id": "0xd4e46f016cdbc800447a240dbd14c4c5c3f7395b76c7e52bef4bbe53bc5d8989",
+      "elapsed_ms": 1449.073,
+      "status": "succeeded"
+    },
+    {
+      "id": "0x76bd4061e1e843baa91add3a584ab10e1ec337b1ceb8debb16ecd0945266cbfe",
+      "elapsed_ms": 921.333,
+      "status": "succeeded"
+    }
+  ]
+}
