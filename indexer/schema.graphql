@@ -88,3 +88,33 @@ type Handicap {
   clock: BigInt!
   block: BigInt!
 }
+
+# Stable logical payment; cursor orders first discovery without duplicating repeated bets.
+type PayoutCandidate {
+  id: ID!
+  deployment: String!
+  module: String!
+  kind: Int!
+  sourceId: String!
+  recipient: String!
+  cursor: String!
+}
+type Payout {
+  id: ID!
+  deployment: String!
+  module: String!
+  payoutId: String!
+  sourceId: String!
+  recipient: String!
+  kind: Int!
+  amount: BigInt!
+  status: String!
+  attempts: Int!
+  block: BigInt!
+  txHash: String!
+}
+type TournamentEntry {
+  id: ID!
+  tournamentId: String!
+  recipient: String!
+}

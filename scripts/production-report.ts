@@ -3,7 +3,7 @@ import pg from "pg";
 import {parseTransaction} from "viem";
 import {readFile} from "node:fs/promises";
 import {json} from "../shared/protocol";
-const d=JSON.parse(await readFile(process.env.DEPLOYMENT_FILE || "deployments/testnet.json","utf8"));if(d.chainId!==10143 || ![2,3].includes(d.version))throw new Error("V2/V3 Monad Testnet report only");
+const d=JSON.parse(await readFile(process.env.DEPLOYMENT_FILE || "deployments/testnet.json","utf8"));if(d.chainId!==10143 || ![2,3,4].includes(d.version))throw new Error("V2/V3/V4 Monad Testnet report only");
 const version=`v${d.version}`;
 const db=new pg.Client({connectionString:process.env.DATABASE_URL});await db.connect();
 const quantiles=(values:number[])=>{if(!values.length)return null;const s=[...values].sort((a,b)=>a-b);return {n:s.length,p50:s[Math.ceil(.5*s.length)-1],p95:s[Math.ceil(.95*s.length)-1],p99:s[Math.ceil(.99*s.length)-1]};};

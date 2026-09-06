@@ -135,7 +135,7 @@ export function socialRoutes(d: Dependencies) {
     if(["/challenges","/challenges/rematch"].includes(path) && req.method==="POST") {
       const rematch=path.endsWith("/rematch");
       let r:{recipient:string|null;mode:number;ranked:boolean},source:string|null=null;
-      if(rematch){source=z.string().regex(/^v[123]:[1-9]\d*$/).parse((await d.readBody(req)).matchRef);const m=await d.sourceMatch(source);if(![m.playerA,m.playerB].includes(player))throw new Error("Only a participant can request this rematch");r={recipient:player===m.playerA?m.playerB:m.playerA,mode:m.mode,ranked:m.ranked};}
+      if(rematch){source=z.string().regex(/^v[1234]:[1-9]\d*$/).parse((await d.readBody(req)).matchRef);const m=await d.sourceMatch(source);if(![m.playerA,m.playerB].includes(player))throw new Error("Only a participant can request this rematch");r={recipient:player===m.playerA?m.playerB:m.playerA,mode:m.mode,ranked:m.ranked};}
       else r=z.object({recipient:address.nullable(),mode:z.number().int().min(0).max(1),ranked:z.boolean()}).parse(await d.readBody(req));
       if(r.recipient===player)throw new Error("Choose another player");
       await d.serialize(async()=>{

@@ -30,6 +30,7 @@ const port = Number(process.env.RECOVERY_PORT || 4001);
 const base = `http://127.0.0.1:${port}`;
 let child: ChildProcess | undefined;
 const file = "artifacts/recovery-deployment.json";
+const v4File = "artifacts/recovery-deployment-v4.json";
 const v3File = "artifacts/recovery-deployment-v3.json";
 const v2File = "artifacts/recovery-deployment-v2.json";
 await mkdir("artifacts", { recursive: true });
@@ -95,6 +96,8 @@ try {
   await new Promise<void>((resolve,reject)=>deployV2.once("exit", code=>code===0?resolve():reject(new Error("V2 recovery deployment failed"))));
   const deployV3=spawn(process.execPath,["--import","tsx","scripts/deploy-v3.ts"],{env:{...env,LEGACY_DEPLOYMENT_FILE:v2File,DEPLOYMENT_FILE:v3File},stdio:"ignore",windowsHide:true});
   await new Promise<void>((resolve,reject)=>deployV3.once("exit",code=>code===0?resolve():reject(new Error("V3 recovery deployment failed"))));
+  const deployV4=spawn(process.execPath,["--import","tsx","scripts/deploy-v4.ts"],{env:{...env,LEGACY_DEPLOYMENT_FILE:v3File,DEPLOYMENT_FILE:v4File},stdio:"ignore",windowsHide:true});
+  await new Promise<void>((resolve,reject)=>deployV4.once("exit",code=>code===0?resolve():reject(new Error("V4 recovery deployment failed"))));
   await start();
   await chain.publicClient.request({
     method: "evm_setAutomine" as never,
@@ -162,6 +165,17 @@ try {
   const firstV3=await until(()=>db.query("SELECT * FROM relay_jobs WHERE id=$1",[fourth.id]).then(r=>r.rows[0]),r=>r.status==="succeeded");
   assert.equal(Number(firstV3.nonce),Number(recoveredV2.nonce)+1);
   const v3=JSON.parse(await readFile(v3File,"utf8"));assert.equal(await chain.publicClient.readContract({address:v3.vault,abi:vaultAbi,functionName:"balances",args:[player.address]}),parseEther("0.02"));
+  await chain.publicClient.request({method:"evm_setAutomine" as never,params:[false] as never});
+  const fifth=await fetch(base+"/faucet",{method:"POST",headers:{"content-type":"application/json"},body:json({player:thirdPlayer.address,expires,signature:thirdSignature})}).then(r=>r.json());
+  const pendingV3=await until(()=>db.query("SELECT * FROM relay_jobs WHERE id=$1",[fifth.id]).then(r=>r.rows[0]),r=>r.status==="sent");
+  await stop();env.DEPLOYMENT_FILE=v4File;await start();await chain.mine();
+  const recoveredV3=await until(()=>db.query("SELECT * FROM relay_jobs WHERE id=$1",[fifth.id]).then(r=>r.rows[0]),r=>r.status==="succeeded");
+  assert.equal(recoveredV3.raw_tx,pendingV3.raw_tx);assert.equal(recoveredV3.nonce,pendingV3.nonce);assert.equal(await chain.publicClient.readContract({address:v3.vault,abi:vaultAbi,functionName:"balances",args:[thirdPlayer.address]}),parseEther("0.02"));
+  await chain.publicClient.request({method:"evm_setAutomine" as never,params:[true] as never});
+  const sixth=await fetch(base+"/faucet",{method:"POST",headers:{"content-type":"application/json"},body:json({player:player.address,expires,signature})}).then(r=>r.json());
+  const firstV4=await until(()=>db.query("SELECT * FROM relay_jobs WHERE id=$1",[sixth.id]).then(r=>r.rows[0]),r=>r.status==="succeeded");
+  assert.equal(Number(firstV4.nonce),Number(recoveredV3.nonce)+1);
+  const v4=JSON.parse(await readFile(v4File,"utf8"));assert.equal(await chain.publicClient.readContract({address:v4.vault,abi:vaultAbi,functionName:"balances",args:[player.address]}),parseEther("0.02"));
   await writeFile(
     "artifacts/recovery.json",
     json({
@@ -177,6 +191,8 @@ try {
         "next V2 transaction uses the following nonce and its own vault",
         "V2 pending signed bytes recovered unchanged in V3",
         "V3 uses the following journal nonce and a separate vault",
+        "V3 pending signed bytes recovered unchanged in V4",
+        "V4 uses the following journal nonce and a separate vault",
         "exactly one credit in each generation",
       ],
       completedAt: new Date().toISOString(),

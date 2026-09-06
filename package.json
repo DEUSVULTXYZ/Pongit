@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev web --hostname 127.0.0.1",
-    "build": "npm run contracts:build && npm run abi && npm run abi:v2 && npm run abi:v3 && next build web",
+    "build": "npm run contracts:build && npm run abi && npm run abi:v2 && npm run abi:v3 && npm run abi:v4 && next build web",
     "start": "next start web --hostname 0.0.0.0",
     "relayer": "tsx relayer/src/main.ts",
     "contracts:build": "forge build --root contracts",
@@ -31,7 +31,8 @@
     "bootstrap": "node scripts/bootstrap.mjs",
     "abi:v2": "tsx scripts/abi-v2.ts",
     "test:differential:v2": "tsx scripts/differential-v2.ts",
-    "abi:v3": "tsx scripts/abi-v3.ts"
+    "abi:v3": "tsx scripts/abi-v3.ts",
+    "abi:v4": "tsx scripts/abi-v4.ts"
   },
   "dependencies": {
     "@category-labs/mera": "0.2.0",

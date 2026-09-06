@@ -215,7 +215,8 @@ for (let round = 0; round < 2; round++) {
       sig,
     ]);
   }
-  await relay("tournaments", "advance", [tid]);
+  if(config.version===4)await until(()=>client.readContract({address:config.tournaments,abi:tournamentsAbi,functionName:"getTournament",args:[tid]}),t=>t.status===3||Number(t.round)>round);
+  else await relay("tournaments", "advance", [tid]);
   console.log(`Tournament ${tid}: round ${round + 1} settled.`);
 }
 const final = await client.readContract({
@@ -226,7 +227,7 @@ const final = await client.readContract({
 });
 assert.equal(final.status, 3);
 assert.equal(
-  await client.readContract({
+  config.version===4 ? await client.getBalance({address:final.winner}) : await client.readContract({
     address: config.vault,
     abi: vaultAbi,
     functionName: "balances",
@@ -249,7 +250,8 @@ await writeFile(
       "bracket-constrained matchmaking",
       "automatic attachment",
       "two distinct round advances",
-      "winner vault credit",
+      config.version===4?"exact native wallet payout without recipient signature":"winner vault credit",
+      config.version===4?"automatic round advancement":"manual round advancement",
     ],
     completedAt: new Date().toISOString(),
   }),

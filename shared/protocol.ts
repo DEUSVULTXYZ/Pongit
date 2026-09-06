@@ -1,3 +1,4 @@
+import {marketV4Abi,tournamentsV4Abi} from "./abis-v4";
 import {
   type Abi,
   type AbiParameter,
@@ -8,9 +9,9 @@ import {
 import { gameAbi, marketAbi, vaultAbi, tournamentsAbi } from "./abis";
 import { gameV2Abi, marketV2Abi, tournamentsV2Abi } from "./abis-v2";
 import { gameV3Abi, arcadeSessionsAbi, tournamentsV3Abi } from "./abis-v3";
-export type DeploymentId = "v1" | "v2" | "v3";
+export type DeploymentId = "v1" | "v2" | "v3" | "v4";
 export type Deployment = {
-  version?: 1 | 2 | 3;
+  version?: 1 | 2 | 3 | 4;
   arcade?: Address;
   legacy?: Deployment;
   chainId: number;
@@ -172,7 +173,7 @@ export function resolveDeployment(id: DeploymentId | undefined,d:Deployment):Dep
   if(!result)throw new Error("Unknown contract deployment");return result;
 }
 export function contractsFor(d:Deployment) {
-  return d.version === 3 ? {arcade:arcadeSessionsAbi,game:gameV3Abi,market:marketV2Abi,vault:vaultAbi,tournaments:tournamentsV3Abi} : d.version === 2 ? {arcade:arcadeSessionsAbi,game:gameV2Abi,market:marketV2Abi,vault:vaultAbi,tournaments:tournamentsV2Abi} : contracts;
+  return d.version === 4 ? {arcade:arcadeSessionsAbi,game:gameV3Abi,market:marketV4Abi,vault:vaultAbi,tournaments:tournamentsV4Abi} : d.version === 3 ? {arcade:arcadeSessionsAbi,game:gameV3Abi,market:marketV2Abi,vault:vaultAbi,tournaments:tournamentsV3Abi} : d.version === 2 ? {arcade:arcadeSessionsAbi,game:gameV2Abi,market:marketV2Abi,vault:vaultAbi,tournaments:tournamentsV2Abi} : contracts;
 }
 export const arcadeGrantTypes={ArcadeGrant:[{name:"player",type:"address"},{name:"key",type:"address"},{name:"game",type:"address"},{name:"expires",type:"uint64"},{name:"nonce",type:"uint256"}]} as const;
 export const arcadeRevokeTypes={ArcadeRevoke:[{name:"player",type:"address"},{name:"key",type:"address"},{name:"nonce",type:"uint256"},{name:"deadline",type:"uint64"}]} as const;

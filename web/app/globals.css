@@ -1040,3 +1040,17 @@ main {position:relative;isolation:isolate;}
 @media(max-width:380px) { .topbar {height:auto;min-height:110px;flex-wrap:wrap;gap:12px;padding:18px 0;} .top-right {width:100%;justify-content:flex-end;} .duel-notifications {top:150px;} }
 
 .game-panel, .arena-grid > aside {min-width:0;}
+
+/* Confirmed, fixed-recipient wallet settlements. */
+.match-payment {display:grid;gap:10px;margin:20px 0;padding:16px;border:1px solid var(--line);font-size:11px;line-height:1.8;}
+.match-payment span,.match-payment a {color:var(--cyan);overflow-wrap:anywhere;}
+.match-payment small,.payment-note {color:var(--muted);font-size:10px;line-height:1.8;}
+.wallet-balance {font-size:9px;line-height:2.2;color:var(--muted);}
+.wallet-balance strong {font-size:12px;color:var(--cyan);display:block;}
+.payment-history {border:1px solid var(--line);padding:20px;margin-top:18px;background:#100b1880;}
+.payment-history summary {cursor:pointer;font-size:12px;color:var(--cyan);}
+.payment-history p {font-size:10px;line-height:1.9;color:var(--muted);}
+.payment-row {display:flex;justify-content:space-between;gap:16px;border-top:1px solid var(--line);padding:16px 0;font-size:10px;line-height:1.8;}
+.payment-row>div {display:grid;gap:6px;min-width:0;overflow-wrap:anywhere;}
+.payment-row span {color:var(--muted);}.payment-row a {color:var(--cyan);}
+@media(max-width:700px){.payment-row{flex-direction:column;}.payment-history{padding:16px;}.payment-row button{width:100%;}}

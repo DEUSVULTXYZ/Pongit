@@ -1,3 +1,4 @@
+import { initializePayouts, createPayoutWorker, payoutKey } from "./payouts";
 import "dotenv/config";
 import {
   createServer,
@@ -97,6 +98,8 @@ const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as Hex);
 const wallet = createWalletClient({ account, chain, transport: http(rpc) });
 const signingLock = await initializeStore();
 await initializeSocial();
+await initializePayouts(pool);
+await pool.query("CREATE TABLE IF NOT EXISTS faucets_v4 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
 await pool.query("CREATE TABLE IF NOT EXISTS faucets_v3 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
 await pool.query("CREATE TABLE IF NOT EXISTS faucets_v2 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
 signingLock.on("error", () => { console.error("Signing lock lost; stopping to prevent concurrent nonce allocation"); process.exit(1); });
@@ -142,7 +145,7 @@ const allowed: Record<string, string[]> = {
   tournaments: ["enter", "start", "attach", "advance", "cancel", "refund"],
 };
 const relaySchema = z.object({
-  deployment: z.enum(["v1","v2","v3"]).optional(),
+  deployment: z.enum(["v1","v2","v3","v4"]).optional(),
   contract: z.enum(["game", "market", "vault", "tournaments", "arcade"]),
   functionName: z.string().max(40),
   args: z.array(z.unknown()).max(12),
@@ -222,8 +225,9 @@ async function enqueue(payload: RelayRequest, internal = false, value = 0n) {
           })
         ).round
       : undefined;
+  const payoutAttempt = payload.functionName === "retryPayout" ? Number((await publicClient.readContract({address:encoded.address,abi:encoded.abi,functionName:"payouts",args:[payload.args[0]]}) as readonly unknown[])[3]) : undefined;
   let id = keccak256(
-    toHex(json({ ...payload, round, value: value.toString(), fingerprint })),
+    toHex(json({ ...payload, round, payoutAttempt, value: value.toString(), fingerprint })),
   );
   const existing = await pool.query(
     "SELECT id,status,tx_hash,error FROM relay_jobs WHERE id=$1",
@@ -233,12 +237,12 @@ async function enqueue(payload: RelayRequest, internal = false, value = 0n) {
     if (
       existing.rows[0].status !== "failed" ||
       !internal ||
-      payload.functionName !== "open"
+      !["open","claim","refund","retryPayout","advance"].includes(payload.functionName)
     )
       return existing.rows[0];
     const pending = await pool.query(
-      "SELECT id,status FROM relay_jobs WHERE payload->>'contract'='market' AND payload->>'functionName'='open' AND payload->'args'->>0=$1 AND payload->>'deployment'=$2 AND status IN ('queued','signed','sent') LIMIT 1",
-      [String(payload.args[0]),payload.deployment],
+      "SELECT id,status FROM relay_jobs WHERE payload->>'contract'=$1 AND payload->>'functionName'=$2 AND payload->'args'=$3::jsonb AND payload->>'deployment'=$4 AND status IN ('queued','signed','sent') LIMIT 1",
+      [payload.contract,payload.functionName,json(payload.args),payload.deployment],
     );
     if (pending.rows[0]) return pending.rows[0];
     id = keccak256(toHex(`${id}:retry:${head}`));
@@ -340,7 +344,7 @@ async function dispatch() {
   }));
   if (unfinished.rowCount! >= 8) return;
   const pending = await pool.query(
-    "SELECT * FROM relay_jobs WHERE status='queued' ORDER BY CASE WHEN payload->>'functionName'='submitInput' THEN 0 ELSE 1 END,created_at LIMIT 1",
+    "SELECT * FROM relay_jobs WHERE status='queued' ORDER BY CASE WHEN payload->>'functionName'='submitInput' THEN 0 WHEN payload->>'functionName' IN ('claim','refund','retryPayout','advance') THEN 2 ELSE 1 END,created_at LIMIT 1",
   );
   const row = pending.rows[0];
   if (!row) return;
@@ -622,6 +626,7 @@ async function notifySocial(players:string[]) {
 const handleSocial = socialRoutes({deployment,origin,readBody:body,send,serialize:serializeMatchmaking,assertAvailable,verifyGameplayMessage,isGameplaySigner,notify:notifySocial,
   sourceMatch:async(ref:string)=>{const [version,id]=ref.split(":"); const d=resolveDeployment(version as any,deployment);if(!/^\d+$/.test(id))throw new Error("Invalid match reference"); const m=await publicClient.readContract({address:d.game,abi:contractsFor(d).game,functionName:"getMatch",args:[BigInt(id)]}) as any; if(m.status!==3)throw new Error("Finish this match before requesting a rematch"); return {playerA:m.playerA.toLowerCase(),playerB:m.playerB.toLowerCase(),mode:m.mode||0,ranked:m.ranked??true}; }
 });
+const payoutWorker=createPayoutWorker({db:pool,deployment,client:publicClient,graphql,enqueue});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)
@@ -653,9 +658,33 @@ const server = createServer(async (req, res) => {
       const ok = chainHealthy && Date.now() - lastObserved < 15000;
       return send(
         res,
-        { ok, head, queueError: fundingWarning || lastError, network: deployment.chainId },
+        { ok, head, queueError: fundingWarning || lastError, network: deployment.chainId, payments:payoutWorker.status() },
         ok ? 200 : 503,
       );
+    }
+    if(req.method==="GET" && /^\/payouts\/0x[\da-fA-F]{40}$/.test(path)) {
+      const offset=Number(new URL(req.url!,"http://localhost").searchParams.get("offset")||0);
+      if(!Number.isSafeInteger(offset)||offset<0||offset>100000)throw new Error("Invalid payment page");
+      return send(res,await payoutWorker.list(path.split("/")[2],offset));
+    }
+    if(req.method==="POST" && path==="/payouts/retry") {
+      const request=z.object({id:z.string().max(250)}).parse(await body(req));return send(res,await payoutWorker.retry(request.id));
+    }
+    if(req.method==="GET" && /^\/positions\/\d+\/0x[\da-fA-F]{40}$/.test(path)) {
+      const [, , id,player]=path.split("/"),playerAddress=player as Address;
+      const [result,position]=await Promise.all([
+        publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"result",args:[BigInt(id)]}),
+        publicClient.readContract({address:deployment.market,abi:marketAbi,functionName:"positions",args:[BigInt(id),playerAddress]})]);
+      const amount=result[3]<3?0n:result[3]===4?position[2]:result[2].toLowerCase()===result[0].toLowerCase()?position[0]:position[1];
+      let state=position[2]===0n?"none":result[3]<3?"open":amount===0n?"no_payout":position[3]?"credited":"pending";
+      let payment:any=null;
+      if(deployment.version===4 && position[2]>0n){
+        const native=await publicClient.readContract({address:deployment.market,abi:activeContracts.market,functionName:"payouts",args:[payoutKey(0,id,playerAddress)]}) as readonly unknown[];
+        const row=(await pool.query("SELECT id,state,tx_hash FROM payout_tasks WHERE deployment=$1 AND module='market' AND source_id=$2 AND recipient=$3",[activeVersion,id,player.toLowerCase()])).rows[0];
+        if(amount>0n)state=Number(native[2])===2?"paid":Number(native[2])===1?"delayed":row?.state||"pending";
+        payment=row?{id:row.id,txHash:row.tx_hash}:null;
+      }
+      return send(res,{paid:position[2],claimed:position[3],amount,state,payment,completed:result[3]>=3});
     }
     if (req.method === "GET" && path === "/config")
       return send(res, {
@@ -740,7 +769,7 @@ const server = createServer(async (req, res) => {
         throw new Error("Invalid credit request");
       const player = r.player.toLowerCase();
       const existing = await pool.query(
-        `SELECT job_id FROM ${activeVersion === "v3" ? "faucets_v3" : activeVersion === "v2" ? "faucets_v2" : "faucets"} WHERE player=$1`,
+        `SELECT job_id FROM ${activeVersion === "v4" ? "faucets_v4" : activeVersion === "v3" ? "faucets_v3" : activeVersion === "v2" ? "faucets_v2" : "faucets"} WHERE player=$1`,
         [player],
       );
       if (existing.rows[0]) return send(res, { id: existing.rows[0].job_id });
@@ -750,7 +779,7 @@ const server = createServer(async (req, res) => {
         parseEther(process.env.FAUCET_CREDIT_MON || "0.02"),
       );
       await pool.query(
-        `INSERT INTO ${activeVersion === "v3" ? "faucets_v3" : activeVersion === "v2" ? "faucets_v2" : "faucets"}(player,job_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
+        `INSERT INTO ${activeVersion === "v4" ? "faucets_v4" : activeVersion === "v3" ? "faucets_v3" : activeVersion === "v2" ? "faucets_v2" : "faucets"}(player,job_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
         [player, job.id],
       );
       return send(res, job, 202);
@@ -797,6 +826,7 @@ const server = createServer(async (req, res) => {
         vaultNonce,
         tournamentNonce,
         admin,
+        walletBalance,
       ] = await Promise.all([
         publicClient.readContract({
           address: deployment.game,
@@ -829,11 +859,12 @@ const server = createServer(async (req, res) => {
           functionName: "hasRole",
           args: [keccak256(toHex("ADMIN_ROLE")), player],
         }),
+        publicClient.getBalance({address:player}),
       ]);
       return send(res, {
         rating,
         chaosRating: (deployment.version || 1) >= 2 ? await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[player,1]}) : rating,
-        balance, gameNonce, marketNonce, vaultNonce, tournamentNonce, admin,
+        balance, walletBalance, gameNonce, marketNonce, vaultNonce, tournamentNonce, admin,
       });
     }
     if(req.method === "GET" && /^\/arcade\/0x[\da-fA-F]{40}$/.test(path)) {
@@ -1192,6 +1223,8 @@ async function dispatchLoop() {
   }
 }
 void dispatchLoop();
+async function payoutLoop(){while(!stopping){try{if(chainHealthy)await payoutWorker.tick();}catch{console.error("Automatic payment worker will retry.");}await new Promise(r=>setTimeout(r,2000));}}
+if(deployment.version===4)void payoutLoop();
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.on(signal, () => {
     stopping = true;
