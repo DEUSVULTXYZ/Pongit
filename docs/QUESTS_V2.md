@@ -1,23 +1,23 @@
-# Candidatures PONGIT V2
+# PONGIT V2 bounty evidence
 
-Track principal conservé : **Consumer Products & Payments**. Présenter le jeu accessible par passkey, le gas sponsorisé, les marchés de spectateurs solvables et les primes de tournoi. Le portail et son règlement complet restent la référence pour l’adéquation du track.
+Primary track: **Consumer Products & Payments**. Present passkey access, sponsored gas, funded spectator markets and tournament payouts as the consumer/payment experience. Final track fit depends on the portal's complete rules.
 
-| Bounty | Fonction livrée et preuve | État |
+| Bounty | Delivered functionality and evidence | Status |
 |---|---|---|
-| Best Mera-Powered UX on Monad — 2 500 USD affichés | Mera crée et récupère le compte, les signatures du propriétaire et les autorisations de jeu. `web/lib/wallet.ts`, parcours HTTPS dans le rapport de livraison. | Candidature technique pertinente ; démonstration réelle sur appareil à réaliser. |
-| Mera: One Passkey, Many Keys — 2 500 USD affichés | Carnet de rivaux, surnoms, notes horodatées et préférences chiffré avec un namespace PRF distinct du wallet. `web/lib/notebook.ts`, `web/components/Notebook.tsx`, `relayer/src/social.ts`. La clé AES-GCM et le contenu déchiffré restent en mémoire. | Usage hors wallet livré. Le test avec une même passkey synchronisée sur un deuxième appareil reste indispensable. |
-| Best Use of Envio — 1 000 USD affichés | Indexation des contrats V1/V2, classement, replays, pression Chaos et alertes sans sanction automatique. `indexer/src/handlers.ts`, schéma et configuration RPC explicite. | Intégration réelle auto-hébergée ; prouver une reprise et un replay issu des transactions de démonstration. |
-| Best Community Team Project — 5 000 USD affichés | Équipe issue d’une communauté partenaire éligible. | Condition externe, aucun code ne prouve l’appartenance. |
+| Best Mera-Powered UX on Monad — $2,500 shown | Mera account creation/recovery, owner signatures and scoped game authorization. `web/lib/wallet.ts`; HTTPS flows in the delivery report. | Relevant technical integration; complete a real-device demonstration. |
+| Mera: One Passkey, Many Keys — $2,500 shown | Private rivals, nicknames, timestamped replay notes and preferences encrypted through a PRF namespace separate from the wallet. `web/lib/notebook.ts`, `web/components/Notebook.tsx`, `relayer/src/social.ts`. AES-GCM keys and plaintext stay in memory. | Non-wallet functionality delivered. Recovery with the same synchronized passkey on a second physical device still needs demonstration. |
+| Best Use of Envio — $1,000 shown | V1/V2 contract indexing, ladders, replays, Chaos pressure and review signals without automatic sanctions. `indexer/src/handlers.ts`, schema and explicit RPC configuration. | Real self-hosted integration; indexing recovery and replay evidence are included in the delivery report. |
+| Best Community Team Project — $5,000 shown | Team membership in an eligible partner community. | External eligibility condition; code does not prove affiliation. |
 
-Les montants sont ceux des captures fournies. Aucun prix ni aucune éligibilité définitive n’est garanti. Alchemy et Interlude ne sont pas présentés comme intégrés : le RPC public Monad est utilisé et seul le contrat d’interface de transport prépare Interlude.
+Amounts are from the supplied screenshots. No award or final eligibility is guaranteed. Alchemy and Interlude are not claimed as integrated: the live release uses public Monad RPC and only prepares a future Interlude transport boundary.
 
-## Démonstration du carnet hors wallet
+## Demonstrating the non-wallet notebook
 
-1. Sur `https://pongit.xyz`, créer ou récupérer une passkey Mera, ouvrir Rivals et déverrouiller le carnet.
-2. Ajouter un rival privé et une note depuis « Note this moment » dans un replay. Sauvegarder le contenu chiffré.
-3. Fermer le carnet puis se déconnecter : le contenu n’apparaît plus dans l’interface ni dans localStorage/sessionStorage.
-4. Sur un deuxième appareil ayant accès à la même passkey synchronisée, récupérer le compte puis déverrouiller le carnet : l’adresse du wallet et les notes doivent être identiques.
-5. Montrer uniquement les champs techniques IV, ciphertext et revision côté serveur, jamais une clé ni le contenu privé.
-6. Provoquer deux sauvegardes concurrentes : la seconde doit signaler le conflit sans écraser la première.
+1. Create or recover a Mera passkey on `https://pongit.xyz`, open Rivals and unlock the notebook.
+2. Add a private rival and a replay note using **Note this moment**. Save the encrypted notebook.
+3. Lock it and disconnect. Private content must disappear from the interface and must not be present in localStorage/sessionStorage.
+4. On a second physical device with access to the same synchronized passkey, recover the account and unlock the notebook. Verify the same wallet address and notes.
+5. Show only technical server fields such as IV, ciphertext and revision, never a key or private content.
+6. Attempt concurrent saves from two sessions. The second save must report a revision conflict without overwriting the first.
 
-Le test Chromium utilise de vrais appels Mera/WebAuthn avec un authentificateur virtuel PRF. Il vérifie la dérivation et la récupération mais ne remplace pas l’étape 4 avec un fournisseur de passkeys réel.
+The Chromium tests use actual Mera/WebAuthn calls with a virtual PRF authenticator. They verify derivation and recovery but do not replace step 4 with a real passkey provider. See the [delivery report](V2_DELIVERY.md) for transaction evidence and remaining limits.

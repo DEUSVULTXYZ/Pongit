@@ -1,0 +1,50 @@
+[
+  {
+    "path": "/.env",
+    "status": 404,
+    "denied": true
+  },
+  {
+    "path": "/.env.local",
+    "status": 404,
+    "denied": true
+  },
+  {
+    "path": "/.git/config",
+    "status": 404,
+    "denied": true
+  },
+  {
+    "path": "/runtime.env",
+    "status": 404,
+    "denied": true
+  },
+  {
+    "path": "/backups/",
+    "status": 404,
+    "denied": true
+  },
+  {
+    "path": "/api/notebook",
+    "status": 400,
+    "denied": true,
+    "reason": "Authentication required; error only, no private data returned"
+  },
+  {
+    "path": "/api/blocks",
+    "status": 400,
+    "denied": true,
+    "reason": "Authentication required; error only, no private data returned"
+  },
+  {
+    "path": "/api/challenges",
+    "status": 400,
+    "denied": true,
+    "reason": "Authentication required; error only, no private data returned"
+  },
+  {
+    "path": "/v1/graphql",
+    "status": 404,
+    "denied": true
+  }
+]

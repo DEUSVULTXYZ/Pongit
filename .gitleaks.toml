@@ -1,0 +1,9 @@
+title = "PONGIT publication scan"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Foundry Anvil account zero: deliberately public local-development fixture, never an operator key"
+regexTarget = "secret"
+regexes = ['^(?:0x)?ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80$']

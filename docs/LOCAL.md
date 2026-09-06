@@ -1,64 +1,72 @@
-# Pile locale
+# Local development stack
 
-Les commandes ci-dessous supposent une première installation, Node 24+, Foundry et Docker. Les clés et mots de passe cités sont publics et destinés uniquement à une machine locale. Ne jamais financer la clé Anvil sur un réseau public.
+These commands assume a fresh development installation with Node.js 24+, Foundry and Docker. Shell examples use POSIX environment-assignment syntax; use `$env:NAME="value"` in PowerShell. The Anvil key and local passwords below are public test fixtures. Never fund that key on a public network.
 
-## 1. Contrats et base
+## 1. Contracts and database
 
 ```sh
 npm ci
 npm run bootstrap
 npm run contracts:build
 npm run abi
+npm run abi:v2
 docker run -d --name pong-postgres -p 127.0.0.1:15432:5432 -e POSTGRES_USER=pong -e POSTGRES_PASSWORD=pong-local-only -e POSTGRES_DB=pong -v pong-dev-postgres:/var/lib/postgresql/data postgres:17-alpine
 ```
 
-Dans un terminal dédié :
+In a separate terminal:
 
 ```sh
 anvil --host 0.0.0.0 --port 8545 --block-time 0.3 --silent
 ```
 
-Le bind `0.0.0.0` permet à Docker de joindre la chaîne ; l'utiliser uniquement sur une machine de développement dont le pare-feu bloque les accès entrants à 8545. Aucun Anvil dans la pile VPS testnet.
+Binding Anvil to `0.0.0.0` allows Docker to reach it. Use this only on a development computer whose firewall blocks incoming access to port 8545. Anvil is not part of the public VPS stack.
 
-Créer `.env` à partir de `.env.example`, puis utiliser :
+Create `.env` from `.env.example`, then configure:
 
 ```dotenv
+CHAIN_ID=31337
 RPC_URL=http://127.0.0.1:8545
 ALCHEMY_RPC_URL=
 RPC_FALLBACK_URL=
 DEPLOYER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 RELAYER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
-DEPLOYMENT_FILE=deployments/local.json
+DEPLOYMENT_FILE=deployments/local-v2.json
 DATABASE_URL=postgres://pong:pong-local-only@127.0.0.1:15432/pong
 ADMIN_ADDRESS=
 TREASURY_ADDRESS=
 LOCAL_DEV=true
 ALLOWED_ORIGIN=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_WS_URL=ws://localhost:4000/ws
+NEXT_PUBLIC_RP_ID=localhost
 INDEXER_RPC_URL=http://host.docker.internal:8545
 INDEXER_GRAPHQL_URL=http://localhost:18080/v1/graphql
 HASURA_ADMIN_SECRET=pong-local-indexer
 ```
 
+Create the legacy contracts first, then V2 on the same local chain:
+
 ```sh
-npm run deploy
+DEPLOYMENT_FILE=deployments/local-legacy.json npm run deploy
+LEGACY_DEPLOYMENT_FILE=deployments/local-legacy.json npx tsx scripts/deploy-v2.ts
 npm run indexer:configure
 ```
 
-La réutilisation du compte admin/sponsor est une commodité locale : éviter les appels admin pendant que le relayer envoie des transactions. Sur testnet, les comptes doivent être distincts.
+The new V2 manifest includes its V1 reference. Reusing the Anvil account as sponsor/admin is a local convenience: do not send direct admin transactions while the relayer uses that account. Testnet uses separate accounts.
 
-## 2. Indexer Linux
+## 2. Linux indexer
 
 ```sh
 docker run -d --name pong-hasura -p 127.0.0.1:18080:8080 -e HASURA_GRAPHQL_DATABASE_URL=postgres://pong:pong-local-only@host.docker.internal:15432/pong -e HASURA_GRAPHQL_ADMIN_SECRET=pong-local-indexer hasura/graphql-engine:v2.48.6
 docker build -t pong-indexer:local indexer
-docker run -d --name pong-indexer-v1 -e ENVIO_PG_HOST=host.docker.internal -e ENVIO_PG_PORT=15432 -e ENVIO_PG_USER=pong -e ENVIO_PG_PASSWORD=pong-local-only -e ENVIO_PG_DATABASE=pong -e ENVIO_PG_SCHEMA=indexer -e HASURA_GRAPHQL_ENDPOINT=http://host.docker.internal:18080/v1/metadata -e HASURA_GRAPHQL_ADMIN_SECRET=pong-local-indexer pong-indexer:local
+docker run -d --name pong-indexer-v2 -e ENVIO_PG_HOST=host.docker.internal -e ENVIO_PG_PORT=15432 -e ENVIO_PG_USER=pong -e ENVIO_PG_PASSWORD=pong-local-only -e ENVIO_PG_DATABASE=pong -e ENVIO_PG_SCHEMA=indexer -e HASURA_GRAPHQL_ENDPOINT=http://host.docker.internal:18080/v1/metadata -e HASURA_GRAPHQL_ADMIN_SECRET=pong-local-indexer pong-indexer:local
 ```
 
-Sur Linux natif, ajouter `--add-host=host.docker.internal:host-gateway` aux deux conteneurs. Vérifier que les services de développement sur l'hôte sont accessibles par cette passerelle ; Docker Desktop fournit ce nom automatiquement. Le démarrage Envio doit annoncer les handlers chargés et le passage à l'indexation en temps réel. Hasura reste privé.
+On native Linux add `--add-host=host.docker.internal:host-gateway` to both containers and make the host development services reachable through that gateway. Docker Desktop provides this name automatically. Envio should load the handlers, backfill both deployments and reach live indexing. Hasura remains private. Production uses separate databases and roles, unlike this disposable local setup.
 
-## 3. Site et relayer
+## 3. Site and relayer
 
-Dans deux terminaux séparés :
+Run in separate terminals:
 
 ```sh
 npm run relayer
@@ -68,7 +76,7 @@ npm run relayer
 npm run dev
 ```
 
-Ouvrir http://localhost:3000. Dans « Connect passkey », choisir « Local test player » pour simuler chaque joueur sans authentificateur. Utiliser trois profils/contextes de navigateur pour deux joueurs et un spectateur. « Local test operator » ouvre l'administration du déploiement Anvil.
+Open http://localhost:3000. In **Connect passkey**, choose **Local test player** to simulate an account without an authenticator. Use separate browser contexts for two players and a spectator. **Local test operator** opens Anvil administration. These controls are disabled outside local development.
 
 ```sh
 npm run test:e2e
@@ -80,6 +88,6 @@ npm run test:backup
 npm run benchmark:local
 ```
 
-`test:browser` utilise Chrome installé sur Windows ; définir `CHROME_PATH` ou installer Chromium Playwright sur les autres systèmes. `test:replay` attend `MATCH_ID` (3 par défaut), `DEPLOYMENT_FILE` et `E2E_API_URL` si différents. `test:recovery` crée sa propre chaîne et une base locale séparée, puis provoque une coupure du processus avant inclusion. Les bases de restauration et de reprise sont conservées pour inspection.
+Browser tests can use Chrome installed on Windows; set `CHROME_PATH` or install Playwright Chromium elsewhere. Configure `PONG_TEST_URL` and `PONG_TEST_API` for browser tests on nondefault ports; script-based flows use `E2E_API_URL`. Replay checks accept `MATCH_ID` and the intended `DEPLOYMENT_FILE`. Recovery tests create an isolated chain/database and interrupt the relayer before inclusion; inspect their required environment before running them against a different local setup. Testnet write tests require explicit opt-in and funded test accounts.
 
-Si Anvil est réinitialisé ou les contrats redéployés, créer un nouveau journal PostgreSQL et une nouvelle indexation. Ne pas appliquer un ancien checkpoint à une nouvelle chaîne portant les mêmes adresses. Le relayer refuse un journal lié à un autre manifest/signataire.
+If Anvil is reset or contracts are redeployed, use a fresh journal and indexer checkpoint. Never attach an old checkpoint to a new chain that happens to reuse the same addresses. A compatible V1-to-V2 migration preserves the journal using the registered manifests; a chain reset does not.

@@ -22,3 +22,6 @@ backups/
 test-results/
 
 deployments/local-*.json
+
+# Local drafts, audit tools and deployment archives are not publication inputs.
+/tmp/

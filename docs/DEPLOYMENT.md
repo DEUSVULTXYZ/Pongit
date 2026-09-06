@@ -1,46 +1,56 @@
-# Exploitation PONGIT
+# PONGIT operations
 
-Site canonique : https://pongit.xyz. VPS Ubuntu 24.04, 5.135.107.1, SSH 3333, utilisateur `pongit`. La configuration SSH locale associe les alias `pongit`, `pongit.xyz` et l’IP à la clé dédiée, avec vérification stricte de la clé d’hôte.
+Canonical site: https://pongit.xyz. The live deployment uses Ubuntu 24.04, Docker Compose and a dedicated SSH operator account. Keep strict SSH host-key verification and the existing SSH port when provisioning. Credentials, SSH keys and the private runtime environment are never distributed through this repository.
 
-## Installation reproductible
+## Reproducible installation
 
-`ops/provision.sh` installe Docker et Compose, active leur démarrage et ouvre 80/443 en conservant 3333. Copier une version validée sous `/opt/pongit/releases/<commit>`, placer la configuration privée dans `/opt/pongit/shared/runtime.env` (mode 600), puis lier `.env` dans la release à ce fichier. Renseigner les valeurs de `.env.example`. Les comptes et clés de déploiement/administration restent dans un fichier opérateur séparé, jamais dans le conteneur web ou relayer.
+`ops/provision.sh` installs Docker/Compose, enables startup and opens HTTP/HTTPS while preserving SSH on port 3333. Place a validated release under `/opt/pongit/releases/<commit>` and its private configuration at `/opt/pongit/shared/runtime.env` (mode 600). Symlink the release's `.env` to that file and configure the fields in `.env.example`. Deployment and administrator private keys belong in a separate operator environment, never in web or relayer containers.
 
-Déployer les contrats avec `npm run deploy`, conserver les reçus et le manifeste `deployments/testnet.json`, puis exécuter `INDEXER_RPC_URL=http://rpc:8545 npm run indexer:configure`. Le générateur utilise la passerelle privée pour la synchronisation Envio, des lots de 99 blocs et un polling de 1,5 seconde. L’image Envio installe les certificats racines nécessaires à son client RPC natif.
+For a fresh V1 deployment use `npm run deploy`. For the V2 migration, use `npx tsx scripts/deploy-v2.ts` with `LEGACY_DEPLOYMENT_FILE` pointing to the V1 manifest and `DEPLOYMENT_FILE` pointing to a new V2 manifest. Retain all deployment/binding receipts. Do not rerun deployment for an application-only update. The live `deployments/testnet.json` already contains the active V2 addresses and embedded legacy references.
 
-Le frontend se construit pour le domaine final (URLs API/WS et RP ID). Exécuter `docker compose build`, puis `docker compose up -d`. Le nom Compose fixe `pongit` conserve les volumes entre releases. Caddy obtient et renouvelle les certificats Let’s Encrypt ; ses données ACME sont persistantes. Les ports publics sont 80/443, plus SSH 3333. PostgreSQL, Hasura et le relayer restent sur le réseau privé Docker.
+Run `INDEXER_RPC_URL=http://rpc:8545 npm run indexer:configure`. The generator sets explicit RPC synchronization, 99-block batches and a 1.5-second poll interval. The Envio image includes root certificates and a 120-second RPC query timeout for backfill through the shared gateway.
 
-PostgreSQL conserve le journal `pong_relayer` et la base V1 `pong_indexer`. La V2 utilise `pong_indexer_v2_47dba35e`, avec le rôle restreint `pong_indexer`. Les anciennes bases de mise au point sont conservées. Hasura ne reçoit jamais les identifiants du journal. Ne jamais remplacer la base du journal par une autre chaîne ou un autre signer : le contrôle de fingerprint refuse ce mélange. Les déploiements de mise au point sont conservés dans les manifestes `*-superseded.json` et leurs bases restent archivées. Le manifeste `testnet.json` désigne toujours la version publique actuelle.
+Build the frontend for its final API/WS URLs and RP ID. Run `docker compose build` and `docker compose up -d`. The fixed Compose project name `pongit` preserves volumes across releases. Caddy obtains and renews Let's Encrypt certificates; ACME data is persistent. Public ports are 80/443 and SSH 3333. PostgreSQL, Hasura, RPC and relayer remain on the private Docker network.
 
-## Comptes et financement
+PostgreSQL retains the original `pong_relayer` journal and V1 `pong_indexer` database. V2 uses `pong_indexer_v2_47dba35e`, owned by the restricted indexer role. Hasura never receives journal credentials. Earlier development databases and `*-superseded.json` manifests remain archived. Do not reuse a journal with another chain or signer. Register compatible deployment migrations through the existing V2 journal logic instead of erasing history.
 
-Monad Testnet 10143 uniquement. Le gas sponsorisé, les crédits de démonstration et la liquidité utilisent des MON de test obtenus gratuitement. Le relayer a un budget quotidien et une réserve minimale configurables. Le plafond quotidien a été supprimé à la demande du propriétaire le 6 septembre 2026 (`RELAYER_DAILY_BUDGET_MON=0`). Le prix du gas reste plafonné à 200 gwei. Une valeur quotidienne positive permet de réactiver cette limite facultative. Elle réserve le gas maximal et la valeur pour les transactions signées/en attente, puis compte les frais du reçu et la valeur effectivement transférée à leur confirmation. Les réservations encore ouvertes sont conservées après minuit UTC. Le rapport de coût utilise les frais réellement facturés.
+## Accounts and funding
 
-Le relayer conserve une attente entre transferts de valeur lorsqu’il risque d’entamer la réserve Monad. Avec un solde suffisant, il évite cette attente en réservant 10 MON, tous les engagements en cours et une marge conservatrice de 30 millions de gas avant estimation. Référence : [sémantique de réserve Monad](https://github.com/category-labs/monad-revm#reserve-balance-precompile-0x1001). Une transaction déjà signée est toujours reprise avec les mêmes octets et le même nonce.
+Only Monad Testnet 10143 is allowed outside local Anvil. Sponsorship, demonstration credits, liquidity and prizes use test MON. The daily sponsorship ceiling was removed at the owner's request on September 6, 2026: **`RELAYER_DAILY_BUDGET_MON=0`**. A positive value restores the optional daily ceiling. The gas-price cap remains 200 gwei. Balance reservations count maximum gas and transferred value for signed/pending jobs, then actual receipt fees and transferred value on confirmation. Outstanding reservations survive midnight UTC.
 
-Pour attribuer les rôles fonctionnels à une passkey, utiliser depuis un environnement opérateur privé :
+Value transfers retain a waiting window when the sender risks entering the Monad reserve. A sufficiently funded sender avoids that wait while reserving 10 MON, all existing commitments and a conservative 30-million-gas allowance before estimation. See [Monad reserve semantics](https://github.com/category-labs/monad-revm#reserve-balance-precompile-0x1001). Already signed jobs always recover with the same bytes and nonce.
+
+To grant functional roles to a Mera account, run from a private operator environment:
 
 ```sh
-npx tsx scripts/admin.ts grant 0xADRESSE_MERA
-# ou revoke pour retirer ces mêmes rôles
+npx tsx scripts/admin.ts grant 0xMERA_ADDRESS
+# Use revoke to remove the same functional roles.
 ```
 
-Cette commande exige `ADMIN_PRIVATE_KEY`, `RPC_URL` et le manifeste correspondant. Elle n’accorde pas le rôle d’administration racine ni le droit sur la trésorerie. Les opérations de la console admin sont payées par le compte administrateur ; le financer en MON de test. Les adresses de trésorerie immuables nécessitent un redéploiement pour être remplacées ; les rôles transférables sont modifiables onchain.
+This requires `ADMIN_PRIVATE_KEY`, `RPC_URL` and the intended deployment manifest. It does not grant root administration or treasury ownership. Fund the administrator separately for console transactions. Transferable roles can change onchain; replacing an immutable treasury requires redeployment.
 
-## Sauvegarde, restauration et redémarrage
+## Backup, restore and restart
 
-Installer `ops/pongit-backup.service` et `.timer` dans `/etc/systemd/system`, activer le timer. Il appelle `ops/backup.sh` chaque jour vers 03:30 UTC avec sept jours de rétention. Les dumps, configuration privée, manifeste et référence de version sont sauvegardés sous `/opt/pongit/shared/backups` (droits privés). Copier les sauvegardes hors VPS par SSH vers un emplacement protégé ; la tâche Windows « PONGIT offsite backup » copie le dernier dump chaque jour à 05:40 (heure locale) et à la connexion de l’utilisateur. La destination `.ssh/pongit-secrets/backups` est protégée par ACL. La copie exige que cet ordinateur soit allumé, connecté et la session ouverte ; le timer VPS fonctionne indépendamment.
+Install `ops/pongit-backup.service` and `.timer` under `/etc/systemd/system` and enable the timer. It invokes `ops/backup.sh` daily around 03:30 UTC with seven-day retention. Database dumps, private configuration, manifests and the release reference are saved under `/opt/pongit/shared/backups` with restricted permissions.
 
-Avant une restauration, vérifier que le manifeste et le compte signataire correspondent. Exécuter explicitement `bash ops/restore.sh /opt/pongit/shared/backups/TIMESTAMP`. La commande arrête les écrivains, vérifie les checksums et restaure les bases présentes dans la sauvegarde avant leur reprise. Tester d’abord le dump dans une base temporaire. Une sauvegarde ancienne ne modifie pas la chaîne : vérifier/reconcilier les reçus déjà inclus avant toute reprise du relayer.
+Copy backups off the VPS over SSH to protected storage. The configured Windows task, **PONGIT offsite backup**, pulls the latest backup at 05:40 local time and at login into the operator's ACL-protected `.ssh/pongit-secrets/backups` directory. That copy requires the computer, network and user session to be available. The VPS timer operates independently.
 
-Contrôles : `docker compose ps`, `docker compose logs --tail=50`, `curl -f https://pongit.xyz/api/health`, puis ouvrir le classement et un replay. Docker redémarre les services après reboot ; conserver `ssh.socket` et le port 3333.
+Before restoring, verify the manifest and signing account. Test dumps in temporary databases first. Run explicitly:
 
-## Retour à une version précédente
+```sh
+bash ops/restore.sh /opt/pongit/shared/backups/TIMESTAMP
+```
 
-Pour V2, utiliser `bash ops/rollback-v2.sh COMMIT`. Le script refuse une ancienne application V1 ou des adresses de contrats différentes, sauvegarde les données, construit la version cible puis remplace le web et le relayer. Les contrats ne sont jamais annulés par un retour applicatif.
+The script stops writers, verifies checksums and restores the databases present in the backup before restarting services. An old database does not rewind the chain: reconcile already included receipts before resuming an old journal.
 
-Conserver la release précédente et ses images. Arrêter le relayer avant le changement ; repointer `/opt/pongit/current` vers la release validée, conserver le même fichier privé et le même manifeste, reconstruire si nécessaire puis relancer Compose. Les volumes restent en place. Ne pas revenir à des contrats remplacés avec le journal de leurs remplaçants. Les migrations additives permettent le retour applicatif ; une migration incompatible exige sa sauvegarde et une procédure dédiée.
+Check `docker compose ps`, service logs, `https://pongit.xyz/api/health`, a ladder and a replay. Docker restarts services after a VPS reboot. Preserve SSH access and its configured socket/port.
 
-## Services et quêtes
+## Application rollback
 
-RPC public et Envio auto-hébergé : aucun abonnement supplémentaire. `ALCHEMY_RPC_URL` permet une activation ultérieure, mais aucune candidature Alchemy n’est présentée comme intégrée actuellement. Les quêtes ne conditionnent pas la livraison du jeu.
+Use `bash ops/rollback-v2.sh COMMIT` for V2. The target release must already exist. The script rejects original V1 code or different immutable contract addresses, backs up data, builds the target, stops the relayer, switches `/opt/pongit/current` and restarts web/relayer. It preserves the journal and volumes. Contract transactions cannot be rolled back by changing application code.
+
+Keep the previous release and images. Never attach a replacement contract's journal to an old deployment. Additive migrations support compatible application rollback; an incompatible migration needs its own restore procedure. Indexer dependency/image updates can be applied separately with `docker compose up -d --no-deps indexer` after verifying the target configuration and preserved database.
+
+## Services and submissions
+
+The live site uses public Monad RPC and self-hosted Envio. `ALCHEMY_RPC_URL` supports a future service integration but no current Alchemy traffic is claimed. Bounties are secondary to the functional game. See [delivery evidence](V2_DELIVERY.md) and [V2 submissions](QUESTS_V2.md).

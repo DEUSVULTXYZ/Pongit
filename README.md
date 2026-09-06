@@ -1,12 +1,23 @@
 # PONGIT V2 — neon onchain arcade
 
-Jeu web 1v1 dont la physique, les scores, les résultats et l'ELO sont calculés en Solidity. L'interface Next.js prédit le rendu, Mera gère les passkeys, le relayer paie le gas et Envio reconstruit les historiques. Classique et Chaos disposent de classements distincts. Défis amicaux ou classés, profils facultatifs, carnet Mera chiffré, paris LMSR, coffre MON, tournois et administration sont inclus. **Local et Monad testnet uniquement.**
+**[Play PONGIT](https://pongit.xyz)** · [Delivery report](docs/V2_DELIVERY.md) · [Architecture](docs/V2.md) · [Local setup](docs/LOCAL.md)
 
-Site : **https://pongit.xyz**. Contrats déployés sur Monad Testnet (10143), hébergement VPS avec Docker et certificats Let’s Encrypt automatiques. Voir le bilan pour les validations et limites. Les quêtes restent facultatives et les candidatures ne sont pas validées par les organisateurs.
+A browser-based 1v1 arcade game whose physics, scores, results and ELO are computed in Solidity on **Monad Testnet (10143)**. The Next.js canvas predicts rendering, Mera provides passkey accounts, the relayer sponsors gas and Envio reconstructs match history. No browser wallet extension is required. All bets and prizes use test MON.
 
-## Démarrer et vérifier
+## Play, challenge and compete
 
-Prérequis : Node.js 24+, npm, Git, Foundry (`forge` et `anvil`), Docker Compose. L'indexer Envio s'exécute sous Linux dans Docker, y compris sur Windows. Les deux fichiers package-lock fixent les dépendances JavaScript ; `npm run bootstrap` installe le commit fixé de forge-std.
+- **Classic and Chaos**, with separate ranked queues and ELO. Friendly challenges leave both ratings unchanged.
+- **Direct challenges** from a profile, ladder, address or shareable link; signed consent from both players, invitation inbox and blocking.
+- **Chaos betting pressure**: accepted spectator bets can shrink the favourite's paddle for the next rally, with a visible intermission and a maximum 25% reduction.
+- **Optional public profiles** and a separate **private Mera notebook** for rivals, replay notes and preferences. The notebook uses its own passkey PRF namespace and AES-GCM encryption.
+- **Spectating, Envio replays, LMSR markets, claims, withdrawals, Classic tournaments and role-based administration**.
+- Michroma, precomputed neon artwork, keyboard/touch controls and skippable **VICTORY / DEFEAT** animations. Sound is off by default; reduced-motion preferences are respected.
+
+The site runs on a VPS with Docker Compose, private PostgreSQL and automatic Let's Encrypt certificates. V1 replays, claims, withdrawals and balances remain separately accessible from Archive.
+
+## Build and verify
+
+Requirements: Node.js 24+, npm, Git, Foundry (`forge` and `anvil`) and Docker Compose. Envio runs in Linux containers, including on Windows. Both npm lockfiles pin JavaScript dependencies; bootstrap installs a pinned forge-std commit.
 
 ```sh
 npm ci
@@ -20,24 +31,24 @@ npm run test:differential
 npm run test:differential:v2
 ```
 
-Pour lancer toute la pile locale : [guide local](docs/LOCAL.md). Pour le VPS Linux : [déploiement et exploitation](docs/DEPLOYMENT.md). Le site propose **Play**, **Live**, **Rivals**, **Ladder**, **Tournaments**, **Archive** et une console **Admin** selon les rôles onchain.
+See [local setup](docs/LOCAL.md) for the complete development stack and [operations](docs/DEPLOYMENT.md) for deployment, backups, restoration and rollback. GitHub CI is manually triggered.
 
-## Ce qui fait autorité
+## What determines the result
 
-- `contracts/src/v2/PhysicsV2.sol` : physique événementielle entière, miroir `shared/physics-v2.ts` en bigint ; premier à 7, terrain 1024 × 576.
-- `contracts/src/v2/GameV2.sol` : consentement des deux joueurs, commit/reveal, sessions EIP-712, horloge en blocs, annulation, saisons et ELO.
-- `contracts/src/Vault.sol` et `v2/MarketV2.sol` : retraits signés par le compte principal, modules définitivement scellés, LMSR PRBMath, réserves vérifiées après chaque achat, règlement et remboursement.
-- `contracts/src/v2/TournamentsV2.sol` : 2 à 32 joueurs, placement par ELO, élimination directe, inscriptions et prix en MON de test.
-- `relayer/src/main.ts` : simulation, quotas, budget, journal PostgreSQL, transactions signées persistées, matchmaking et diffusion WebSocket. Le relayer ne choisit pas les scores.
-- `web/lib/wallet.ts` : véritable SDK Mera ; les clés de jeu restent en mémoire et n'ont aucun droit sur les fonds.
-- `indexer/src/handlers.ts` : handlers Envio réels pour classements, replays et signaux de concentration.
+| Component | Responsibility |
+|---|---|
+| `contracts/src/v2/PhysicsV2.sol`, `shared/physics-v2.ts` | Integer event physics and matching bigint implementation; 1024 × 576 court, first to seven. |
+| `contracts/src/v2/GameV2.sol` | Signed consent, commit/reveal, EIP-712 sessions, block clock, frozen rules, separate ratings and results. |
+| `contracts/src/Vault.sol`, `contracts/src/v2/MarketV2.sol` | Owner-authorized finance, sealed modules, funded LMSR, reserve checks, settlement and refunds. |
+| `contracts/src/v2/TournamentsV2.sol` | ELO seeding, 2–32 player single-elimination brackets and test MON prizes. |
+| `relayer/src/main.ts` | Simulation, quotas, persistent signed transaction journal, matchmaking and WebSocket updates. |
+| `web/lib/wallet.ts`, `web/lib/notebook.ts` | Mera wallet/session lifecycle and independent private notebook encryption. |
+| `indexer/src/handlers.ts` | Envio handlers for both deployments, ladders, replays and concentration signals. |
 
-## Preuves et limites
+## Evidence and limits
 
-[Livraison V2](docs/V2_DELIVERY.md) · [architecture V2](docs/V2.md) · [candidatures V2](docs/QUESTS_V2.md) · [logos](docs/BRAND_V2.md).
+The [V2 delivery report](docs/V2_DELIVERY.md) records deployed addresses, **49 passing Solidity tests**, **11 passing TypeScript tests**, **20,000 differential physics comparisons**, HTTPS multiplayer flows, recovery, backups and actual Monad latency/cost measurements. [Bounty evidence](docs/QUESTS_V2.md) and [three logo directions](docs/BRAND_V2.md) are included.
 
-Les contrats V1 et leurs replays, réclamations et retraits sont conservés séparément. Le plafond quotidien du sponsor est désactivé à la demande du propriétaire ; les quotas, réservations de fonds et contrôles de solvabilité restent actifs.
+The repository is public at the owner's request. The daily sponsorship ceiling is disabled (`RELAYER_DAILY_BUDGET_MON=0`); balance reservations, gas-price limits, abuse quotas and solvency checks remain active. Credentials and deployment secrets are excluded from Git.
 
-Les résultats Anvil sont des preuves locales, jamais des mesures de performance Monad. Le script `npm run benchmark` exige un compte de test financé ; il mesure les latences p50/p95/p99 et les frais, avec une définition explicite de la mesure. `npm run match-cost` agrège les vrais reçus du relayer pour un match.
-
-La latence d'inclusion reste perceptible. Le rendu prédit n'est pas un résultat confirmé ; le verrouillage des paris réduit l'avantage de latence sans l'éliminer. Le code V2 n'utilise pas de proxy évolutif, ni de transport interchaînes, ni de fonds réels.
+Chain inclusion delay remains visible. Prediction does not make an unconfirmed input authoritative, and betting locks reduce latency advantage without eliminating it. Interlude has a documented transport boundary but is **not integrated**. Physical cross-device passkey recovery still needs a demonstration. This is a testnet release without an external security audit or a claim of bug-free operation.

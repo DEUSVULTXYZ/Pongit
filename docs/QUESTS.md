@@ -1,37 +1,37 @@
-> Priorité : jeu fonctionnel. Les quêtes sont facultatives ; retenir seulement les intégrations démontrées. Alchemy reste reporté en configuration gratuite.
+# PONGIT V1 bounty evidence
 
-# Dossier de candidature — PONGIT
+This is the historical V1 submission outline. See [V2 bounty evidence](QUESTS_V2.md) for the current notebook integration and demonstration requirements. Gameplay is the priority; claim only integrations supported by evidence.
 
-PONGIT est un jeu web où une passkey suffit pour jouer sans extension ni gas à payer. Les collisions, résultats, ELO, dettes des marchés et prix des tournois sont vérifiables dans les contrats.
+PONGIT offers browser play through a passkey without a wallet extension or player-paid gas. Collisions, results, ELO, market liabilities and tournament prizes can be verified in the contracts.
 
-Track principal conservé : **Consumer Products & Payments**, celui sélectionné dans la capture. L'angle est l'accès grand public et les paiements intégrés aux compétitions. L'adéquation précise dépend du règlement du portail ; cette sélection ne constitue pas une validation organisateur.
+Primary track: **Consumer Products & Payments**, as selected in the supplied screenshot. The angle is consumer access and payments integrated into competition. Final suitability depends on the portal rules; this is not organizer approval.
 
-| Quête visée | Dotation de la capture | Intégration livrée | Preuves et compléments |
+| Target bounty | Screenshot award | V1 integration | Evidence and remaining work |
 |---|---:|---|---|
-| Best Use of Envio | 1 000 USD | `indexer/src/handlers.ts`, GraphQL, classements, replays ABI, alertes de concentration. | Indexation Linux réelle, replay comparé aux logs RPC, reprise de checkpoint. Utiliser les adresses du manifeste et les reçus de démonstration du bilan. |
-| Best Projects using Alchemy | 1 000 USD en crédits | `ALCHEMY_RPC_URL` prioritaire dans le relayer, déploiement et benchmark ; simulation, envoi, lectures et reçus via viem. | Clé non fournie : **aucun trafic Alchemy attesté pour l'instant**. Ajouter hashes soumis via Alchemy et capture du dashboard. |
-| Best Mera-Powered UX on Monad | 2 500 USD | `web/lib/wallet.ts`, SDK Mera 0.2.0 et adaptateur viem : création/restauration PRF, session de jeu et opérations de fonds. | SDK réel utilisé sur le domaine HTTPS. Les tests automatiques emploient un authentificateur Chromium PRF virtuel. Ajouter cérémonie passkey physique sur le domaine HTTPS, récupération et transactions Monad sans extension. |
-| Best Community Team Project | 5 000 USD | Condition d'équipe, sans solution par le code. | Vérifier l'appartenance à une communauté partenaire éligible et fournir l'affiliation. |
+| Best Use of Envio | $1,000 | Envio handlers, GraphQL, ladders, ABI replays and concentration alerts. | Actual Linux indexing, replay compared with RPC logs and checkpoint recovery. Use deployment manifests and demo receipts. |
+| Best Projects using Alchemy | $1,000 in credits | Optional `ALCHEMY_RPC_URL` configuration for relay, deployment and benchmarking. | Deferred: no Alchemy traffic attested. Configuration support alone is not a completed integration. |
+| Best Mera-Powered UX on Monad | $2,500 | `web/lib/wallet.ts`, Mera 0.2.0 and viem: PRF account creation/recovery, game sessions and financial operations. | Actual SDK on HTTPS; automated tests use a virtual Chromium PRF authenticator. Add a physical-device ceremony and recovery demonstration. |
+| Best Community Team Project | $5,000 | Team eligibility requirement. | Verify eligible partner-community membership and provide affiliation. |
 
-Les montants viennent des captures. Le règlement complet, les échéances et critères de cumul restent à vérifier dans le portail connecté. Ne pas annoncer ces prix comme acquis.
+Awards are from the supplied screenshots. Complete rules, deadlines and prize-combination conditions must be checked in the connected portal. No award is claimed as earned.
 
-L'usage de Mera pour le wallet et les clés de jeu ne justifie pas à lui seul **Mera: One Passkey, Many Keys**, dont l'angle annoncé est un usage créatif hors wallet. Les autres quêtes ne sont pas revendiquées par cette V1.
+V1 wallet/session signatures alone did not qualify as a creative non-wallet use for **Mera: One Passkey, Many Keys**. V2 adds a separate encrypted notebook; see its specific cross-device demonstration requirements. Other bounties are not claimed by this V1 report.
 
-## Démonstration
+## Demonstration
 
-1. Créer puis récupérer une passkey sur le domaine final ; montrer l'absence d'extension.
-2. Deux appareils signent leurs délégations et jouent. Montrer sur l'explorer un input, le snapshot et le résultat calculé par le contrat.
-3. Un spectateur achète des parts en MON de test ; montrer le verrou avant impact, la mise confirmée puis le règlement et le retrait.
-4. Ouvrir le classement et le replay Envio ; comparer un snapshot indexé au log du contrat.
-5. Montrer un tournoi terminé, le paiement au vainqueur, les pauses.
+1. Create/recover a passkey on the final HTTPS domain and show extension-free access.
+2. Two devices authorize game sessions and play. Show an input, snapshot and contract-computed result in the explorer.
+3. A spectator buys test MON shares; show the pre-impact lock, confirmed bet, claim and withdrawal.
+4. Open the ladder and Envio replay, comparing an indexed snapshot with its contract log.
+5. Show a completed tournament, winner payout and administrative pause controls.
 
-À joindre : dépôt et commit, domaine, manifest `testnet.json`, versions SDK, tableau Envio, rapport benchmark Monad, coût d'un vrai match, vidéos et liens explorer. Les preuves Anvil dans `docs/evidence` restent des preuves locales.
+Attach repository/commit, domain, the appropriate deployment manifest, SDK versions, Envio data, Monad benchmark, actual match costs and demonstration videos/transaction links. Local Anvil evidence is not a Monad performance measurement.
 
-## Sources techniques
+## Technical sources
 
-- [Envio : réseaux HyperIndex](https://docs.envio.dev/docs/HyperIndex/supported-networks).
-- [Alchemy : API Monad](https://www.alchemy.com/docs/reference/monad-api-quickstart).
-- [Mera : passkeys et sessions](https://github.com/category-labs/mera).
-- [Monad : frais facturés sur la limite de gas](https://docs.monad.xyz/developer-essentials/gas-pricing).
+- [Envio supported HyperIndex networks](https://docs.envio.dev/docs/HyperIndex/supported-networks).
+- [Alchemy Monad API](https://www.alchemy.com/docs/reference/monad-api-quickstart).
+- [Mera passkeys and sessions](https://github.com/category-labs/mera).
+- [Monad gas pricing](https://docs.monad.xyz/developer-essentials/gas-pricing).
 
-Ces sources documentent les intégrations ; elles ne remplacent pas le règlement du concours.
+These sources document technology, not the competition rules.
