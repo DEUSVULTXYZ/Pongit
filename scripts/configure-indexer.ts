@@ -18,7 +18,7 @@ let config = await readFile("indexer/config.template.yaml", "utf8");
 config = config.slice(0, config.indexOf("\nchains:"));
 config += `\nchains:\n  - id: ${d.chainId}\n    start_block: ${d.legacy?.startBlock || d.startBlock}\n`;
 const rpc = process.env.INDEXER_RPC_URL || process.env.RPC_URL || (d.chainId === 31337 ? "http://host.docker.internal:8545" : "https://testnet-rpc.monad.xyz");
-config += `    rpc:\n      url: ${JSON.stringify(rpc)}\n      for: sync\n      initial_block_interval: 99\n      interval_ceiling: 99\n      polling_interval: 1500\n`;
+config += `    rpc:\n      url: ${JSON.stringify(rpc)}\n      for: sync\n      initial_block_interval: 99\n      interval_ceiling: 99\n      polling_interval: 1500\n      query_timeout_millis: 120000\n`;
 config += "    contracts:\n";
 for(const manifest of [d.legacy,d].filter(Boolean) as Deployment[]) {
   const suffix=manifest.version===2?"V2":"";

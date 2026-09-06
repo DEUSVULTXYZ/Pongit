@@ -1,11 +1,13 @@
 // Private, shared upstream budget for the relayer and Envio. Never publish this port.
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
+import { rpcScheduler } from "./rpc-scheduler";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
 const spacing = Math.max(50, Number(process.env.RPC_SPACING_MS || 60));
-let nextSlot = 0, nextHistorySlot=0, waiting = 0;
+const scheduler=rpcScheduler(spacing);
+let waiting = 0;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 async function request(method: string, params: unknown[]) {
@@ -20,10 +22,7 @@ async function request(method: string, params: unknown[]) {
     waiting++;
     try {
       for (let attempt = 0; attempt < 4; attempt++) {
-        if(method==="eth_getLogs") { const slot=Math.max(nextHistorySlot,Date.now());nextHistorySlot=slot+400;await delay(Math.max(0,slot-Date.now())); }
-        const slot = Math.max(nextSlot, Date.now());
-        nextSlot = slot + spacing;
-        await delay(Math.max(0, slot - Date.now()));
+        await scheduler.acquire(["eth_getLogs","eth_getBlockByNumber","eth_getBlockByHash","eth_getTransactionByHash"].includes(method));
         let response:Response;
         try { response = await fetch(attempt>0 && read && secondary!==upstream ? secondary : upstream, {
           method: "POST", headers: { "content-type": "application/json" },
@@ -51,7 +50,7 @@ async function request(method: string, params: unknown[]) {
 createServer(async (req, res) => {
   res.setHeader("content-type", "application/json");
   if (req.method === "GET" && req.url === "/health") {
-    res.end(JSON.stringify({ ok: true, waiting, requestsPerSecond: 1000 / spacing })); return;
+    res.end(JSON.stringify({ ok: true, waiting, queued:scheduler.pending(), requestsPerSecond: 1000 / spacing })); return;
   }
   let id: unknown = null;
   try {
@@ -65,4 +64,4 @@ createServer(async (req, res) => {
     const error = e as { code?: number; message?: string; data?: unknown };
     res.end(JSON.stringify({ jsonrpc: "2.0", id, error: { code: error.code || -32000, message: error.message || "RPC unavailable", data: error.data } }));
   }
-}).listen(8545, "0.0.0.0", () => console.log("Private RPC gateway listening; shared upstream request budget enabled"));
+}).listen(Number(process.env.RPC_PORT || 8545), "0.0.0.0", () => console.log("Private RPC gateway listening; shared upstream request budget enabled"));

@@ -30,6 +30,7 @@ const port = Number(process.env.RECOVERY_PORT || 4001);
 const base = `http://127.0.0.1:${port}`;
 let child: ChildProcess | undefined;
 const file = "artifacts/recovery-deployment.json";
+const v2File = "artifacts/recovery-deployment-v2.json";
 await mkdir("artifacts", { recursive: true });
 const env = {
   ...process.env,
@@ -87,6 +88,10 @@ try {
     );
     deploy.once("error", reject);
   });
+  const deployV2 = spawn(process.execPath, ["--import", "tsx", "scripts/deploy-v2.ts"], {
+    env: {...env, LEGACY_DEPLOYMENT_FILE:file, DEPLOYMENT_FILE:v2File}, stdio:"ignore", windowsHide:true,
+  });
+  await new Promise<void>((resolve,reject)=>deployV2.once("exit", code=>code===0?resolve():reject(new Error("V2 recovery deployment failed"))));
   await start();
   await chain.publicClient.request({
     method: "evm_setAutomine" as never,
@@ -111,6 +116,7 @@ try {
     (r) => r.status === "sent",
   );
   await stop();
+  env.DEPLOYMENT_FILE = v2File;
   await start();
   await chain.mine();
   const after = await until(
@@ -133,6 +139,14 @@ try {
     }),
     parseEther("0.02"),
   );
+  await chain.publicClient.request({method:"evm_setAutomine" as never,params:[true] as never});
+  const second = await fetch(base+"/faucet",{method:"POST",headers:{"content-type":"application/json"},body:json({player:player.address,expires,signature})}).then(r=>r.json());
+  assert(second.id,json(second));
+  const next = await until(()=>db.query("SELECT * FROM relay_jobs WHERE id=$1",[second.id]).then(r=>r.rows[0]),r=>r.status==="succeeded");
+  assert.equal(Number(next.nonce),Number(after.nonce)+1);
+  const v2 = JSON.parse(await readFile(v2File,"utf8"));
+  assert.equal(await chain.publicClient.readContract({address:v2.vault,abi:vaultAbi,functionName:"balances",args:[player.address]}),parseEther("0.02"));
+  assert.equal(await chain.publicClient.readContract({address:deployment.vault,abi:vaultAbi,functionName:"balances",args:[player.address]}),parseEther("0.02"));
   await writeFile(
     "artifacts/recovery.json",
     json({
@@ -143,7 +157,9 @@ try {
       checks: [
         "persistent signed transaction",
         "process killed before inclusion",
-        "same nonce and raw transaction after restart",
+        "same nonce and raw transaction after restart into V2",
+        "V1 pending job retained through manifest migration",
+        "next V2 transaction uses the following nonce and its own vault",
         "exactly one vault credit",
       ],
       completedAt: new Date().toISOString(),
