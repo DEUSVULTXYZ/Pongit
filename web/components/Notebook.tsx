@@ -5,7 +5,7 @@ import { decryptNotebook, encryptNotebook, unlockNotebook } from "../lib/noteboo
 import { appApi as requestApp } from "../lib/api";
 import type { Identity } from "../lib/wallet";
 
-export function Notebook({account,authenticate,identity,matchRef,atUs}:{account:string;authenticate:()=>Promise<void>;identity:()=>Identity|null;matchRef?:string;atUs?:string}) {
+export function Notebook({account,authenticate,identity,matchRef,atUs,applyPreferences}:{account:string;authenticate:()=>Promise<void>;identity:()=>Identity|null;matchRef?:string;atUs?:string;applyPreferences:(settings:{preferredMode:number;sound:boolean})=>void}) {
   const appApi=(path:string,method="GET",body?:unknown)=>requestApp(path,method,body,account);
   const key=useRef<CryptoKey|null>(null), generation=useRef(0), inFlight=useRef(false);
   const [data,setData]=useState<NotebookData|null>(null),[revision,setRevision]=useState(0),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
@@ -27,6 +27,7 @@ export function Notebook({account,authenticate,identity,matchRef,atUs}:{account:
       {data.notes.map(n=><div className="notebook-row" key={n.id}><span><small>{n.matchRef} · {Number(n.atUs)/1e6}s</small>{n.text}</span><button aria-label="Delete note" onClick={()=>setData({...data,notes:data.notes.filter(x=>x!==n)})}>×</button></div>)}
       <label>Preferred mode<select value={data.settings.preferredMode} onChange={e=>setData({...data,settings:{...data.settings,preferredMode:Number(e.target.value) as 0|1}})}><option value="0">Classic</option><option value="1">Chaos</option></select></label>
       <label><input type="checkbox" checked={data.settings.sound} onChange={e=>setData({...data,settings:{...data.settings,sound:e.target.checked}})}/> Prefer arcade sounds</label>
+      <button onClick={()=>void run(async()=>{applyPreferences(data.settings);setMessage("Preferences applied to this browser.");})}>Apply preferences</button>
       <p>Edits stay in memory until you save. If another device saves first, reload its copy before merging your changes.</p>
     </>}{message && <p role="status">{message}</p>}</section>;
 }

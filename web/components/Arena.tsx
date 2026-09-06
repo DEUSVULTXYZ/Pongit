@@ -75,6 +75,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     [busy, setBusy] = useState(false),
     [queued, setQueued] = useState(false),
     [direction, setDirection] = useState(0);
+  const [noteContext,setNoteContext]=useState<{ref:string;atUs:string}|null>(null);
   const [mode,setMode]=useState(0),[sound,setSound]=useState(false),[challengeTarget,setChallengeTarget]=useState("");
   const expectedRoom=useRef<{mode:number;ranked:boolean;opponent?:string;roomId?:string}|null>(null);
   const [fundingWarning, setFundingWarning] = useState("");
@@ -201,6 +202,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       ownerOpen.current = false;
     }
   }
+  useEffect(()=>setNoteContext(null),[selected,account]);
   async function authenticateApp() {
     if(!owner.current)throw new Error("Connect your passkey first");
     try {const current=await appApi("/auth/session");if(current.player===owner.current.account.address.toLowerCase())return;} catch {}
@@ -1024,7 +1026,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           <span>BLOCK {head ? head.toLocaleString() : "—"}</span>
         </div>
       </section>
-      <SocialHub key={account} account={account} config={config} visible={tab==="Rivals"} target={challengeTarget} authenticate={authenticateApp} identity={()=>owner.current} open={()=>setTab("Rivals")} enter={enterChallenge} matchRef={selected?`${config?.version===2?"v2":"v1"}:${selected}`:undefined} atUs={String(clock)}/>
+      <SocialHub key={account} account={account} config={config} visible={tab==="Rivals"} target={challengeTarget} authenticate={authenticateApp} identity={()=>owner.current} open={()=>setTab("Rivals")} enter={enterChallenge} matchRef={noteContext?.ref || (selected?`${config?.version===2?"v2":"v1"}:${selected}`:undefined)} atUs={noteContext?.atUs || String(clock)} applyPreferences={settings=>{if(queued || canControl)throw new Error("Finish the active match or search before applying preferences.");setMode(settings.preferredMode===1?1:0);setSound(settings.sound);}}/>
       <Outcome id={selected} match={match} account={account} rating={player?Number((match?.mode===1?player.chaosRating:player.rating)?.elo || 1000):null} sound={sound} replay={tab==="Archive"} rematch={()=>{setChallengeTarget(side===0?match.playerB:match.playerA);setTab("Rivals");}} watch={()=>void act(()=>loadReplay(selected!))} again={()=>{setSelected(null);setMatch(null);setState(null);setTournamentId("0");setTab("Play");}}/>
       {(["Play","Ladder"].includes(tab)) && <div className="mode-switch" role="group" aria-label="Game mode"><button disabled={queued || busy || canControl} aria-pressed={mode===0} onClick={()=>setMode(0)}>01 / Classic</button><button disabled={queued || busy || canControl || tournamentId!=="0"} aria-pressed={mode===1} onClick={()=>setMode(1)}>02 / Chaos</button><p>{mode===1?"Crowd pressure shrinks the favourite's paddle. Changes apply between rallies.":"Pure Pong. Separate ranked ladder. First to seven."}</p></div>}
       {fundingWarning && <p className="notice" role="status">Sponsorship: {fundingWarning}</p>}
@@ -1138,6 +1140,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 <button onClick={() => setReplayPlaying(!replayPlaying)}>
                   {replayPlaying ? "Pause" : "Play"} replay
                 </button>
+                <button disabled={!account} onClick={()=>{setReplayPlaying(false);setNoteContext({ref:`v${config?.version || 1}:${selected}`,atUs:String(clock)});setTab("Rivals");}}>Note this moment</button>
                 <input
                   aria-label="Replay position"
                   type="range"
