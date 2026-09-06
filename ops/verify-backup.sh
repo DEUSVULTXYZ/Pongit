@@ -14,14 +14,15 @@ FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema NO
 \gexec
 SQL
 }
-for database in pong_relayer pong_indexer; do
+for database in pong_relayer pong_indexer pong_indexer_v2 pong_indexer_v2_47dba35e; do
+  test -f "$backup/$database.dump" || continue
   scratch="${database}_restore_verify_$$"
-  docker compose exec -T postgres createdb -U pong "$scratch"
+  docker compose exec -T postgres createdb -U pong "$scratch" </dev/null
   docker compose exec -T postgres pg_restore -U pong -d "$scratch" --no-owner --exit-on-error < "$backup/$database.dump"
   expected=$(counts "$database")
   actual=$(counts "$scratch")
   test "$expected" = "$actual" || { echo "Count mismatch in $scratch; preserved for inspection"; exit 1; }
   printf 'PASS: %s restored into %s; all table counts identical.\n%s\n' "$database" "$scratch" "$actual"
   # Only the exact scratch database created above is removed; source databases remain untouched.
-  docker compose exec -T postgres dropdb -U pong "$scratch"
+  docker compose exec -T postgres dropdb -U pong "$scratch" </dev/null
 done

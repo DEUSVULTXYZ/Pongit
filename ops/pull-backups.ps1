@@ -19,7 +19,7 @@ if (!(Test-Path -LiteralPath (Join-Path $destination 'complete'))) {
     if ($line -notmatch '^([a-f0-9]{64})\s+(.+)$') { throw 'Invalid backup checksum manifest' }
     $expectedHash = $Matches[1]
     $fileName = [IO.Path]::GetFileName($Matches[2])
-    if ($fileName -notin @('pong_relayer.dump', 'pong_indexer.dump')) { throw 'Unexpected backup file' }
+    if ($fileName -notin @('pong_relayer.dump', 'pong_indexer.dump', 'pong_indexer_v2.dump', 'pong_indexer_v2_47dba35e.dump')) { throw 'Unexpected backup file' }
     if ((Get-FileHash -LiteralPath (Join-Path $staging $fileName)).Hash -ne $expectedHash) { throw 'Backup checksum mismatch' }
   }
   if (!(Test-Path -LiteralPath (Join-Path $staging 'complete'))) { throw 'Incomplete source backup' }

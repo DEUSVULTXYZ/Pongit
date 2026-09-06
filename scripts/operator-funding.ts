@@ -26,8 +26,9 @@ try {
   if((await pool.query("SELECT 1 FROM relay_jobs WHERE status IN ('queued','signed','sent') LIMIT 1")).rowCount)throw new Error("Drain all pending jobs before an operator transfer");
   const gasPrice=await client.getGasPrice(),cap=parseGwei(process.env.RELAYER_MAX_GAS_PRICE_GWEI || "200");if(gasPrice>cap)throw new Error("Gas price ceiling exceeded");
   const maxFeePerGas=gasPrice*2n>cap?cap:gasPrice*2n,gas=25000n,cost=gas*maxFeePerGas+value;
-  const budget=parseEther(process.env.RELAYER_DAILY_BUDGET_MON || "6"),{spent}=await readSponsorCosts(pool,new Date());
-  if(spent+cost>budget)throw new Error("Daily sponsorship ceiling exceeded");
+  const budget=parseEther(process.env.RELAYER_DAILY_BUDGET_MON || "0"),{spent}=await readSponsorCosts(pool,new Date());
+  if(budget<0n)throw new Error("Budget must be nonnegative");
+  if(budget>0n && spent+cost>budget)throw new Error("Daily sponsorship ceiling exceeded");
   const [nonce,balance]=await Promise.all([client.getTransactionCount({address:signer.address,blockTag:"pending"}),client.getBalance({address:signer.address})]);
   const reserved=(await pool.query("SELECT max(nonce) AS nonce FROM relay_jobs WHERE raw_tx IS NOT NULL")).rows[0].nonce;
   if(reserved!==null && nonce<=Number(reserved))throw new Error("Chain nonce has not caught up with the journal");

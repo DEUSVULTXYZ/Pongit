@@ -115,7 +115,8 @@ await pool.query("INSERT INTO deployment_manifests(version,fingerprint) VALUES($
 if ((await pool.query("SELECT fingerprint FROM deployment_manifests WHERE version=$1",[activeVersion])).rows[0].fingerprint!==fingerprint) throw new Error("Deployment version already names another manifest");
 // Historical rows predate explicit deployment tags. Their bytes and nonce stay unchanged.
 await pool.query("UPDATE relay_jobs SET payload=payload || jsonb_build_object('deployment',$1::text) WHERE NOT payload ? 'deployment'",[deployment.legacy?'v1':activeVersion]);
-const dailyBudget = parseEther(process.env.RELAYER_DAILY_BUDGET_MON || "1");
+const dailyBudget = parseEther(process.env.RELAYER_DAILY_BUDGET_MON || "0");
+if(dailyBudget<0n)throw new Error("Daily budget must be nonnegative; zero means unlimited");
 const gasPriceCap = parseGwei(process.env.RELAYER_MAX_GAS_PRICE_GWEI || "200");
 const minimumBalance = parseEther(
   process.env.RELAYER_MIN_BALANCE_MON || "0.01",
@@ -365,10 +366,10 @@ async function dispatch() {
     const cost = gas * maxFeePerGas + value;
     const { spent, commitments } = await readSponsorCosts(pool, new Date(sponsor.at));
     if (
-      spent + cost > dailyBudget ||
+      (dailyBudget > 0n && spent + cost > dailyBudget) ||
       balance < cost + minimumBalance + commitments
     ) {
-      fundingWarning = "Test MON sponsorship budget or balance exhausted. Funding or the next UTC budget window is required.";
+      fundingWarning = dailyBudget > 0n && spent + cost > dailyBudget ? "Daily sponsorship budget reached. Wait for its next UTC window." : "Test MON sponsor balance is too low. Fund the relayer to resume.";
       return;
     }
     fundingWarning = "";
