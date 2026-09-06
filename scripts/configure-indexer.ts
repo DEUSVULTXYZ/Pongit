@@ -22,7 +22,7 @@ config += `    rpc:\n      url: ${JSON.stringify(rpc)}\n      for: sync\n      i
 config += "    contracts:\n";
 for(const manifest of allDeployments(d).reverse()) {
   const suffix=(manifest.version||1)>=2?`V${manifest.version}`:"";
-  for(const [name,address] of [["Game",manifest.game],["Market",manifest.market],["Tournaments",manifest.tournaments]]) config+=`      - name: ${name}${suffix}\n        address: "${address}"\n`;
+  for(const [name,address] of [["Game",manifest.game],["Market",manifest.market],["Tournaments",manifest.tournaments]]) config+=`      - name: ${name}${suffix}\n        address: "${address}"\n        start_block: ${manifest.startBlock}\n`;
 }
 await writeFile("indexer/config.yaml", config);
 console.log("Indexer bound to deployment; run npm run codegen in indexer.");
