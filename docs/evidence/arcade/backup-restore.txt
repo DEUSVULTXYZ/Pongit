@@ -1,0 +1,203 @@
+Backup complete: 20260906T171212Z
+/opt/pongit/shared/backups/20260906T171212Z/pong_indexer.dump: OK
+/opt/pongit/shared/backups/20260906T171212Z/pong_indexer_superseded.dump: OK
+/opt/pongit/shared/backups/20260906T171212Z/pong_indexer_v2_47dba35e.dump: OK
+/opt/pongit/shared/backups/20260906T171212Z/pong_indexer_v2.dump: OK
+/opt/pongit/shared/backups/20260906T171212Z/pong_indexer_v3_7b54521d.dump: OK
+/opt/pongit/shared/backups/20260906T171212Z/pong_relayer.dump: OK
+PASS: pong_indexer restored into pong_indexer_restore_verify_97119; all table counts identical.
+hdb_catalog.hdb_action_log:0
+hdb_catalog.hdb_cron_event_invocation_logs:0
+hdb_catalog.hdb_cron_events:0
+hdb_catalog.hdb_metadata:1
+hdb_catalog.hdb_scheduled_event_invocation_logs:0
+hdb_catalog.hdb_scheduled_events:0
+hdb_catalog.hdb_schema_notifications:1
+hdb_catalog.hdb_version:1
+indexer.Alert:0
+indexer.Bet:7
+indexer.Frame:186
+indexer.Match:14
+indexer.Pair:14
+indexer.Pattern:1
+indexer.Player:24
+indexer.SeasonRating:24
+indexer.Tournament:3
+indexer.envio_addresses:3
+indexer.envio_chains:1
+indexer.envio_checkpoints:181
+indexer.envio_contracts:3
+indexer.envio_history_Alert:0
+indexer.envio_history_Bet:0
+indexer.envio_history_Frame:0
+indexer.envio_history_Match:0
+indexer.envio_history_Pair:0
+indexer.envio_history_Pattern:0
+indexer.envio_history_Player:0
+indexer.envio_history_SeasonRating:0
+indexer.envio_history_Tournament:0
+indexer.envio_info:1
+indexer.raw_events:0
+PASS: pong_indexer_superseded restored into pong_indexer_superseded_restore_verify_97119; all table counts identical.
+hdb_catalog.hdb_action_log:0
+hdb_catalog.hdb_cron_event_invocation_logs:0
+hdb_catalog.hdb_cron_events:0
+hdb_catalog.hdb_metadata:1
+hdb_catalog.hdb_scheduled_event_invocation_logs:0
+hdb_catalog.hdb_scheduled_events:0
+hdb_catalog.hdb_schema_notifications:0
+hdb_catalog.hdb_version:1
+indexer.Alert:0
+indexer.Bet:0
+indexer.Frame:0
+indexer.Match:0
+indexer.Pair:0
+indexer.Pattern:0
+indexer.Player:0
+indexer.SeasonRating:0
+indexer.Tournament:0
+indexer.envio_addresses:3
+indexer.envio_chains:1
+indexer.envio_checkpoints:0
+indexer.envio_contracts:3
+indexer.envio_history_Alert:0
+indexer.envio_history_Bet:0
+indexer.envio_history_Frame:0
+indexer.envio_history_Match:0
+indexer.envio_history_Pair:0
+indexer.envio_history_Pattern:0
+indexer.envio_history_Player:0
+indexer.envio_history_SeasonRating:0
+indexer.envio_history_Tournament:0
+indexer.envio_info:1
+indexer.raw_events:0
+PASS: pong_indexer_v2_47dba35e restored into pong_indexer_v2_47dba35e_restore_verify_97119; all table counts identical.
+hdb_catalog.hdb_action_log:0
+hdb_catalog.hdb_cron_event_invocation_logs:0
+hdb_catalog.hdb_cron_events:0
+hdb_catalog.hdb_metadata:1
+hdb_catalog.hdb_scheduled_event_invocation_logs:0
+hdb_catalog.hdb_scheduled_events:0
+hdb_catalog.hdb_schema_notifications:1
+hdb_catalog.hdb_version:1
+indexer.Alert:0
+indexer.Bet:13
+indexer.Frame:365
+indexer.Handicap:3
+indexer.Match:26
+indexer.Pair:25
+indexer.Pattern:4
+indexer.Player:38
+indexer.SeasonRating:38
+indexer.Tournament:5
+indexer.envio_addresses:6
+indexer.envio_chains:1
+indexer.envio_checkpoints:102
+indexer.envio_contracts:6
+indexer.envio_history_Alert:0
+indexer.envio_history_Bet:0
+indexer.envio_history_Frame:0
+indexer.envio_history_Handicap:0
+indexer.envio_history_Match:0
+indexer.envio_history_Pair:0
+indexer.envio_history_Pattern:0
+indexer.envio_history_Player:0
+indexer.envio_history_SeasonRating:0
+indexer.envio_history_Tournament:0
+indexer.envio_info:1
+indexer.raw_events:0
+PASS: pong_indexer_v2 restored into pong_indexer_v2_restore_verify_97119; all table counts identical.
+hdb_catalog.hdb_action_log:0
+hdb_catalog.hdb_cron_event_invocation_logs:0
+hdb_catalog.hdb_cron_events:0
+hdb_catalog.hdb_metadata:1
+hdb_catalog.hdb_scheduled_event_invocation_logs:0
+hdb_catalog.hdb_scheduled_events:0
+hdb_catalog.hdb_schema_notifications:1
+hdb_catalog.hdb_version:1
+indexer.Alert:0
+indexer.Bet:0
+indexer.Frame:13
+indexer.Match:2
+indexer.Pair:2
+indexer.Pattern:0
+indexer.Player:4
+indexer.SeasonRating:4
+indexer.Tournament:0
+indexer.envio_addresses:3
+indexer.envio_chains:1
+indexer.envio_checkpoints:248
+indexer.envio_contracts:3
+indexer.envio_history_Alert:0
+indexer.envio_history_Bet:0
+indexer.envio_history_Frame:0
+indexer.envio_history_Match:0
+indexer.envio_history_Pair:0
+indexer.envio_history_Pattern:0
+indexer.envio_history_Player:0
+indexer.envio_history_SeasonRating:0
+indexer.envio_history_Tournament:0
+indexer.envio_info:1
+indexer.raw_events:0
+PASS: pong_indexer_v3_7b54521d restored into pong_indexer_v3_7b54521d_restore_verify_97119; all table counts identical.
+hdb_catalog.hdb_action_log:0
+hdb_catalog.hdb_cron_event_invocation_logs:0
+hdb_catalog.hdb_cron_events:0
+hdb_catalog.hdb_metadata:1
+hdb_catalog.hdb_scheduled_event_invocation_logs:0
+hdb_catalog.hdb_scheduled_events:0
+hdb_catalog.hdb_schema_notifications:1
+hdb_catalog.hdb_version:1
+indexer.Alert:0
+indexer.Bet:17
+indexer.Frame:594
+indexer.Handicap:4
+indexer.Match:41
+indexer.Pair:38
+indexer.Pattern:5
+indexer.Player:52
+indexer.SeasonRating:52
+indexer.Tournament:7
+indexer.envio_addresses:9
+indexer.envio_chains:1
+indexer.envio_checkpoints:164
+indexer.envio_contracts:9
+indexer.envio_history_Alert:0
+indexer.envio_history_Bet:0
+indexer.envio_history_Frame:0
+indexer.envio_history_Handicap:0
+indexer.envio_history_Match:0
+indexer.envio_history_Pair:0
+indexer.envio_history_Pattern:0
+indexer.envio_history_Player:0
+indexer.envio_history_SeasonRating:0
+indexer.envio_history_Tournament:0
+indexer.envio_info:1
+indexer.raw_events:0
+PASS: pong_relayer restored into pong_relayer_restore_verify_97119; all table counts identical.
+public.app_nonces:0
+public.app_sessions:29
+public.challenges:12
+public.deployment_binding:1
+public.deployment_manifests:3
+public.faucets:16
+public.faucets_v2:9
+public.faucets_v3:9
+public.notebooks:5
+public.player_blocks:0
+public.profiles:5
+public.queue_players:0
+public.relay_jobs:742
+public.rooms:39
+ Container pongit-relayer-1  Stopping
+ Container pongit-indexer-1  Stopping
+ Container pongit-relayer-1  Stopped
+ Container pongit-indexer-1  Stopped
+ Container pongit-hasura-1  Stopping
+ Container pongit-hasura-1  Stopped
+ Container pongit-relayer-1  Starting
+ Container pongit-hasura-1  Starting
+ Container pongit-hasura-1  Started
+ Container pongit-indexer-1  Starting
+ Container pongit-relayer-1  Started
+ Container pongit-indexer-1  Started

@@ -1,7 +1,7 @@
 {
   "engine": "webkit",
   "version": "26.6",
-  "passedAt": "2026-09-06T15:53:37.856Z",
+  "passedAt": "2026-09-06T17:11:56.572Z",
   "checks": [
     "gesture activation",
     "single shared context",

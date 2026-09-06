@@ -1,0 +1,97 @@
+{
+  "checkedAt": "2026-09-06T17:26:20.316282+00:00",
+  "release": "d8d028520c4994c98de3903e19722300e25d1418",
+  "vpsBootIdChanged": true,
+  "services": [
+    {
+      "Service": "caddy",
+      "State": "running",
+      "Health": "",
+      "Ports": "0.0.0.0:80->80/tcp, [::]:80->80/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp, 443/udp, 2019/tcp"
+    },
+    {
+      "Service": "hasura",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": ""
+    },
+    {
+      "Service": "indexer",
+      "State": "running",
+      "Health": "",
+      "Ports": ""
+    },
+    {
+      "Service": "postgres",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "5432/tcp"
+    },
+    {
+      "Service": "relayer",
+      "State": "running",
+      "Health": "healthy",
+      "Ports": "4000/tcp"
+    },
+    {
+      "Service": "rpc",
+      "State": "running",
+      "Health": "",
+      "Ports": "4000/tcp"
+    },
+    {
+      "Service": "web",
+      "State": "running",
+      "Health": "",
+      "Ports": "3000/tcp"
+    }
+  ],
+  "checks": [
+    {
+      "jobs": 747,
+      "signedNonces": 719,
+      "distinctNonces": 719,
+      "duplicateNonces": 0,
+      "pending": 0
+    },
+    {
+      "deploymentManifests": 3
+    },
+    {
+      "legacyFrames": 365,
+      "legacyDigest": "7f60cf06bd1a78d9a63ef046987eabcc"
+    },
+    {
+      "indexedFrames": 594
+    },
+    {
+      "chain": 10143,
+      "backfillReady": true
+    },
+    {
+      "ok": true,
+      "head": "60247637",
+      "queueError": "",
+      "network": 10143
+    }
+  ],
+  "rollback": {
+    "from": "d8d028520c4994c98de3903e19722300e25d1418",
+    "to": "d22326ddc3c8b373e1c27d13e02cf62bd574fb4a",
+    "restored": "d8d028520c4994c98de3903e19722300e25d1418",
+    "olderV2RejectedWithoutMutation": true,
+    "httpsHealthyAtEachVersion": true,
+    "journalUnchanged": {
+      "jobs": 747,
+      "signedNonces": 719,
+      "distinctNonces": 719,
+      "duplicateNonces": 0,
+      "pending": 0
+    },
+    "legacyFramesUnchanged": {
+      "legacyFrames": 365,
+      "legacyDigest": "7f60cf06bd1a78d9a63ef046987eabcc"
+    },
+    "checkedAt": "2026-09-06T17:28:15.173314+00:00"
+  }
+}

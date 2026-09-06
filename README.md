@@ -49,7 +49,7 @@ See [local setup](docs/LOCAL.md) for the complete development stack and [operati
 
 ## Evidence and limits
 
-The [V2 delivery report](docs/V2_DELIVERY.md) records deployed addresses, **49 passing Solidity tests**, **11 passing TypeScript tests**, **20,000 differential physics comparisons**, HTTPS multiplayer flows, recovery, backups and actual Monad latency/cost measurements. [Bounty evidence](docs/QUESTS_V2.md) and [three logo directions](docs/BRAND_V2.md) are included.
+The [Arcade delivery report](docs/ARCADE.md) records V3 addresses, **64 passing Solidity tests**, **11 passing TypeScript tests**, **20,000 differential physics comparisons**, HTTPS multiplayer flows, recovery, backups and actual Monad latency/cost measurements. The [V2 delivery report](docs/V2_DELIVERY.md) remains available as a historical record. [Bounty evidence](docs/QUESTS_V2.md) and [three logo directions](docs/BRAND_V2.md) are included.
 
 The repository is public at the owner's request. The daily sponsorship ceiling is disabled (`RELAYER_DAILY_BUDGET_MON=0`); balance reservations, gas-price limits, abuse quotas and solvency checks remain active. Credentials and deployment secrets are excluded from Git.
 

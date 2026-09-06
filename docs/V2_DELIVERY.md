@@ -1,5 +1,7 @@
 # PONGIT V2 delivery — September 6, 2026
 
+Historical V2 delivery record. The current deployment is [PONGIT Arcade / GameV3](ARCADE.md); V1/V2 funds and replays remain accessible separately.
+
 Live site: **https://pongit.xyz**. Monad Testnet, chain **10143**. Repository: **[DEUSVULTXYZ/Pongit](https://github.com/DEUSVULTXYZ/Pongit)**, kept **public at the owner's request**. `/opt/pongit/current/RELEASE` identifies the application commit deployed on the VPS.
 
 ## Available functionality

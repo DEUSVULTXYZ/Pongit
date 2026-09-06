@@ -1,0 +1,11 @@
+{
+  "base": "https://pongit.xyz",
+  "readyAt": "2026-09-06T17:24:11.826Z",
+  "outageObservedMs": 40681,
+  "passkeyAssertionsBefore": 0,
+  "passkeyAssertionsAfterReload": 0,
+  "sessionRestoredAfterReboot": true,
+  "revocationAfterReboot": true,
+  "authenticator": "Chromium virtual PRF",
+  "checkedAt": "2026-09-06T17:25:12.692Z"
+}

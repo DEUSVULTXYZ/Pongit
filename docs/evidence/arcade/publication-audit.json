@@ -1,0 +1,19 @@
+{
+  "checkedAt": "2026-09-06T17:28:50.413186+00:00",
+  "historyHead": "d8d028520c4994c98de3903e19722300e25d1418",
+  "stagedTree": "f272fac07638187570e2c97bed13b1d20e363317",
+  "historyCommits": 20,
+  "objectsScanned": 453,
+  "trackedFiles": 258,
+  "knownOperatorSecretMatches": 0,
+  "gitleaksHistoryFindings": 0,
+  "gitleaksPublicationTreeFindings": 0,
+  "tool": "Gitleaks 8.30.1 plus exact operator-secret and credential-pattern scanning",
+  "scope": "All local refs and reflogs, commit/tag messages, historical blobs, index, current tracked files; known operator secrets and credential patterns. Matched values are never logged.",
+  "reviewedCandidates": "Configuration placeholders and the explicitly public Anvil local-development fixture; no operator key, PAT, SSH key, database credential or private notebook plaintext was found.",
+  "dependencyAudit": {
+    "application": 0,
+    "indexer": 0
+  },
+  "limit": "Automated and manual publication checks, not an independent security audit. Prior GitHub caches and external copies cannot be erased by rewriting repository references."
+}

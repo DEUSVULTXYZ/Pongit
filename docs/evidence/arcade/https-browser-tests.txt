@@ -1,0 +1,10 @@
+
+Running 3 tests using 1 worker
+
+(node:47596) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 tests\arcade.spec.ts:4:1 › Arcade passkey continuity, direct duel, F5, rematch, finance and revocation (1.2m)
+  ok 2 tests\mobile-performance.spec.ts:3:1 › mobile replay performance under CPU and network emulation (9.7s)
+  ok 3 tests\passkey.spec.ts:4:1 › Mera PRF: cancellation, financial signature, two players, spectator, recovery and replay (1.2m)
+
+  3 passed (2.6m)

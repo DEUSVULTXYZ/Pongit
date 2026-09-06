@@ -1,7 +1,7 @@
 {
   "engine": "firefox",
   "version": "155.0",
-  "passedAt": "2026-09-06T15:55:06.748Z",
+  "passedAt": "2026-09-06T17:11:50.288Z",
   "checks": [
     "gesture activation",
     "single shared context",

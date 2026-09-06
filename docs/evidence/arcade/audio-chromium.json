@@ -1,7 +1,7 @@
 {
   "engine": "chromium",
   "version": "152.0.7977.76",
-  "passedAt": "2026-09-06T15:43:20.219Z",
+  "passedAt": "2026-09-06T17:07:58.771Z",
   "checks": [
     "gesture activation",
     "single shared context",
