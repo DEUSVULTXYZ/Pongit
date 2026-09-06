@@ -1,0 +1,9 @@
+
+Running 2 tests using 1 worker
+
+  ok 1 tests\passkey.spec.ts:4:1 › Mera PRF: cancellation, financial signature, two players, spectator, recovery and replay (38.5s)
+  ok 2 tests\v2.spec.ts:3:1 › V2 Mera notebook, public profile, targeted friendly Chaos, handicap and arcade result (29.9s)
+
+  2 passed (1.2m)
+(node:13004) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)

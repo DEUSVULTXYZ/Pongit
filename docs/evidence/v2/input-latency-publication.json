@@ -1,0 +1,112 @@
+{
+  "base": "https://pongit.xyz",
+  "matchId": "11",
+  "samples": [
+    {
+      "job": "0xb01b6753ebb09837d5f10ca6b235c8f8ca0b15cc5322f04c75dd2ef429f62e55",
+      "browserRequestToReceiptMs": 765,
+      "queueMs": 220,
+      "broadcastMs": 180,
+      "confirmationMs": 350,
+      "totalMs": 750
+    },
+    {
+      "job": "0x292ffe0c345f54de17142db81624a42508e76f9fa0fbcdec46e5edb61914e197",
+      "browserRequestToReceiptMs": 796,
+      "queueMs": 363,
+      "broadcastMs": 116,
+      "confirmationMs": 301,
+      "totalMs": 780
+    },
+    {
+      "job": "0xd2277c730934eb505bc7543df3c9d4ab86eb64794d60db350831ca2aece77725",
+      "browserRequestToReceiptMs": 447,
+      "queueMs": 205,
+      "broadcastMs": 115,
+      "confirmationMs": 112,
+      "totalMs": 432
+    },
+    {
+      "job": "0x6d1c918e7be4e4286a1d74281e8d1bcaf56ebdf36edc383fd9b514c3b08eedb9",
+      "browserRequestToReceiptMs": 609,
+      "queueMs": 178,
+      "broadcastMs": 56,
+      "confirmationMs": 361,
+      "totalMs": 595
+    },
+    {
+      "job": "0x0fb2717063a0b0ea8295bd89e1f9cecfa9fffef92cb013c721f845d4ea38f381",
+      "browserRequestToReceiptMs": 768,
+      "queueMs": 283,
+      "broadcastMs": 178,
+      "confirmationMs": 293,
+      "totalMs": 754
+    },
+    {
+      "job": "0x9d310e5f3f6948abed8d0b930ce9c838d530585d9cbeceae28c9b646178a675d",
+      "browserRequestToReceiptMs": 855,
+      "queueMs": 222,
+      "broadcastMs": 177,
+      "confirmationMs": 428,
+      "totalMs": 827
+    },
+    {
+      "job": "0x7ffa82744cad6d5ea815f33fa401da0895f517084fdf675838a58ed47f47cec6",
+      "browserRequestToReceiptMs": 567,
+      "queueMs": 148,
+      "broadcastMs": 50,
+      "confirmationMs": 354,
+      "totalMs": 552
+    },
+    {
+      "job": "0x5b20d9a871693654cc1b60211a820bd318dac41984051c70a0435ab20d685118",
+      "browserRequestToReceiptMs": 921,
+      "queueMs": 496,
+      "broadcastMs": 58,
+      "confirmationMs": 351,
+      "totalMs": 905
+    },
+    {
+      "job": "0x9017b87a4ae3d4c055ff927a2d23cd202487f0ad12a0dcbd49e937d34e6896cf",
+      "browserRequestToReceiptMs": 754,
+      "queueMs": 187,
+      "broadcastMs": 110,
+      "confirmationMs": 442,
+      "totalMs": 739
+    },
+    {
+      "job": "0x1c41a7e2b1df32a38a33b216273ddfe77a12538ea8ba01226ba9df23d634dde1",
+      "browserRequestToReceiptMs": 441,
+      "queueMs": 141,
+      "broadcastMs": 41,
+      "confirmationMs": 245,
+      "totalMs": 427
+    },
+    {
+      "job": "0x1a7cec38b14ca798b523405266b9426910a2f397033420f91571bf25f1b80a7c",
+      "browserRequestToReceiptMs": 981,
+      "queueMs": 381,
+      "broadcastMs": 59,
+      "confirmationMs": 529,
+      "totalMs": 969
+    },
+    {
+      "job": "0xfe52eff11e4362193a7a7f0c5ab74839b3ea0bf80c363fb3d5accd4b4b6504e3",
+      "browserRequestToReceiptMs": 614,
+      "queueMs": 128,
+      "broadcastMs": 115,
+      "confirmationMs": 356,
+      "totalMs": 599
+    },
+    {
+      "job": "0xc9c87dc5a8a36d6245c890e85c7b0092bd4ab41caf06010e606d28090c93281e",
+      "browserRequestToReceiptMs": 1181,
+      "queueMs": 518,
+      "broadcastMs": 60,
+      "confirmationMs": 589,
+      "totalMs": 1167
+    }
+  ],
+  "definition": "POST submitInput request start to first received successful job WebSocket notification; not display prediction latency",
+  "measuredAt": "2026-09-06T14:51:33.017Z"
+}

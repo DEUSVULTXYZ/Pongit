@@ -41,6 +41,8 @@ V2 indexing starts at block **60194717**. Deployment, binding and sealing receip
 
 Validation matches may end through signed concession. These tests exercise flows and settlement, not human competitive play. Public demonstration transactions remain visible in match histories.
 
+The final publication build passed both HTTPS flows again after the dependency fixes: [Classic](evidence/v2/https-classic-publication.json), [Chaos/notebook](evidence/v2/https-chaos-publication.json) and [test log](evidence/v2/https-publication-tests.txt). The patched Envio indexer resumed its existing database and served the new replays.
+
 ## Measured latency and cost
 
 The first post-cutover measurement includes **128 actual transactions** during tests and concurrent play: [receipts and transition details](evidence/v2/production-transactions.json).
@@ -53,7 +55,7 @@ The first post-cutover measurement includes **128 actual transactions** during t
 
 Observed throughput was **0.264 transactions/s over 484.6 seconds**, including player waits and different operation types. This is not a maximum-capacity benchmark. Game-only transition fees were **0.3259035 MON** for V2:1 (22 transactions) and **0.1360633 MON** for V2:2 (8 transactions). These exclude distributed credits, liquidity, bets and direct calls by other accounts. Per-transition fees and failed transactions are recorded in the report.
 
-This baseline precedes the final value-transfer waiting-window correction. A sufficiently funded relayer no longer waits unnecessarily between credits and liquidity deposits, while reserve checks remain. A subsequent 14-input browser sample recorded p50 **746 ms** and p95/p99 **1,628 ms**; this small sample does not establish a network-wide improvement. Prediction does not remove inclusion delay.
+This baseline precedes the final value-transfer waiting-window correction. A sufficiently funded relayer no longer waits unnecessarily between credits and liquidity deposits, while reserve checks remain. The final [browser sample](evidence/v2/input-latency-publication.json) after dependency updates recorded 13 inputs: p50 **765 ms**, p95 **1,061 ms**, p99 **1,157 ms**. This small sample does not establish a network-wide improvement. Prediction does not remove inclusion delay.
 
 [Emulated mobile measurement](evidence/v2/mobile-performance.json): 390 × 844 touch viewport, 4× CPU slowdown, 4 Mbit/s network plus 40 ms latency. No overflow or JavaScript errors; observed LCP 776 ms, CLS 0.083 and p95 frame intervals 6.2 ms during three seconds of replay. These are Chromium measurements on the test computer, not a physical phone benchmark.
 

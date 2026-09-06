@@ -1,0 +1,43 @@
+{
+  "date": "2026-09-06",
+  "sourceCommit": "0b116cc04e385276d717739b56aebafd341ffc88",
+  "tools": {
+    "gitleaks": "8.30.1",
+    "additionalScan": "Known operator values, credential patterns, Git blobs/messages and tracked files"
+  },
+  "historyScope": "All fetched refs and full history; additional scan includes local reflogs",
+  "operatorSecretFindings": 0,
+  "gitleaksReviewedFindings": 0,
+  "initialGitleaksFindings": {
+    "count": 2,
+    "classification": "Public Anvil account-zero key in two local setup variables; exact fixture allowlisted"
+  },
+  "stagedTree": "70ae770ee385b8c71f735c5de211d38dd85af441",
+  "stagedTreeGitleaksFindings": 0,
+  "dependencyAudit": {
+    "root": 0,
+    "indexer": 0
+  },
+  "privateRoutes": "Denied; error-only responses for unauthenticated app APIs",
+  "browserBundleScan": {
+    "origin": "https://pongit.xyz",
+    "scriptsChecked": 10,
+    "bytesChecked": 1117779,
+    "findings": []
+  },
+  "limits": "No external security audit; scans do not prove absence of unknown vulnerabilities. Local drafts and private runtime artifacts are excluded.",
+  "historyCommitsScanned": 11,
+  "publicAuthorEmailMetadata": "Present in earlier public history; future commits use GitHub noreply.",
+  "finalHttpsTests": {
+    "passed": 2,
+    "classicSeconds": 38.5,
+    "chaosSeconds": 29.9,
+    "applicationCommit": "0b116cc04e385276d717739b56aebafd341ffc88"
+  },
+  "journalBeforeAfter": {
+    "signedTransactions": 395,
+    "distinctNonces": 395,
+    "hash": "4b344f509552f95a23a4a3b50979c72d"
+  },
+  "backup": "20260906T144911Z"
+}

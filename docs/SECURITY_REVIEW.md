@@ -11,6 +11,8 @@ The owner authorized keeping **DEUSVULTXYZ/Pongit public** and publishing V2. Th
 - Runtime `.env` files, private operator storage, database dumps, local browser traces and temporary deployment archives are excluded from publication. Docker contexts exclude private environment files and temporary artifacts. The Git remote contains no embedded credential.
 - Existing untracked planning drafts and the user's local quest draft were preserved outside the published tree. Repository documentation and current presentation are English; historical test outputs retain their original measurement data.
 
+Earlier public commits contain the author email configured when they were created. This is personal metadata, not an authentication secret. Existing published history is preserved; future commits use the repository owner's GitHub noreply address.
+
 Public contract addresses, transaction hashes, revealed match randomness and public test fixtures are expected to be visible. They are not operator signing credentials. Keys for real deployments must never use the public Anvil fixture.
 
 ## Dependency fixes
@@ -19,7 +21,7 @@ The initial audit identified an outdated `ws` dependency and vulnerable transiti
 
 Relevant advisories include [WebSocket memory disclosure](https://github.com/advisories/GHSA-58qx-3vcg-4xpx), [WebSocket memory exhaustion](https://github.com/advisories/GHSA-96hv-2xvq-fx4p) and [path-to-regexp denial of service](https://github.com/advisories/GHSA-37ch-88jc-xwx2).
 
-After updates, **npm audit reports zero known vulnerabilities** for both [application/relayer](evidence/v2/npm-audit-root.json) and [indexer](evidence/v2/npm-audit-indexer.json). This is the advisory database's result at the recorded time, not proof against undisclosed vulnerabilities. TypeScript tests/type checking and the Linux Envio code generation/build pass with the patched dependencies. Keep the overrides reviewed when upgrading Envio.
+After updates, **npm audit reports zero known vulnerabilities** for both [application/relayer](evidence/v2/npm-audit-root.json) and [indexer](evidence/v2/npm-audit-indexer.json). This is the advisory database's result at the recorded time, not proof against undisclosed vulnerabilities. TypeScript tests/type checking and the Linux Envio code generation/build pass with the patched dependencies. The patched images were deployed on HTTPS; two-player/spectator Classic and Chaos notebook/betting/replay flows passed again. Keep the overrides reviewed when upgrading Envio.
 
 ## Live access controls
 
