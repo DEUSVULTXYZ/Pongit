@@ -27,5 +27,13 @@
     "snapshots": 20,
     "reconstructedTransitions": 19,
     "finalStateMatches": true
+  },
+  "compatibleRollback": {
+    "rejectedV3": "32433e00ce6309b0c0d92dba11eaf0435733be72",
+    "from": "85b3aa260338cab3bd6f3f96c3bda255dd526284",
+    "to": "87eefddcf2b23e86a9c66101fbfc0a8754139219",
+    "returnedTo": "85b3aa260338cab3bd6f3f96c3bda255dd526284",
+    "healthRecoveredEachTime": true,
+    "sameImmutableBindings": true
   }
 }

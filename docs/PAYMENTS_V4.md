@@ -50,9 +50,15 @@ For four positive bet payouts, result-receipt-to-payment-receipt p50/p95/p99 wer
 
 All eight database dumps were restored into scratch databases with identical table counts. All eight application services restarted successfully. The signed transaction journal through nonce 966 was unchanged, 10 paid tasks totaling 0.033 MON remained unchanged, and there were no duplicate nonces. An open HTTPS browser recovered its arcade session after F5 without another passkey assertion and then revoked it successfully. This was a service restart, not another host reboot. Backups are copied to the protected operator workstation; its scheduled copy requires that workstation to be available. See [operation checks](evidence/payments/operations.json) and [browser recovery](evidence/payments/https-service-restart.json).
 
+The V4 rollback command rejected the archived V3 binary, switched from release `85b3aa2` to compatible release `87eefdd`, and returned to `85b3aa2` with healthy payments and unchanged immutable bindings. Future compatible rollbacks use `bash ops/rollback-v4.sh COMMIT`; do not restore a V3 binary after accepting V4 jobs.
+
 The final match replay was reconstructed from 20 chain snapshots and 19 physics transitions, matching Envio and the final contract state. [Replay evidence](evidence/payments/testnet-replay.json).
 
 ### Remaining practical limits
 
 The physical second-device passkey recovery test remains separate from Chromium's virtual PRF tests. Rejected native transfers are covered by contract tests; their reserved debts remain retryable. Old vault balances still require a signed withdrawal. Automatic delivery depends on funded sponsorship, RPC and Envio availability. No ordinary victory pays a MON prize.
 
+
+### Publication review
+
+Gitleaks and an additional audit of historical blobs, refs, reflogs, the index and tracked files found no operator secret or credential leak. Production dependencies reported zero known vulnerabilities at review time. This is a repository check, not an independent smart-contract audit. All published author and committer identities use DEUSVULTXYZ. GitHub CI remains manually triggered. [Audit scope](evidence/payments/publication-audit.json).

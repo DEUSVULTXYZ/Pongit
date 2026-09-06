@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-09-06T19:37:06.811066+00:00",
+  "head": "85b3aa260338cab3bd6f3f96c3bda255dd526284",
+  "commits": 32,
+  "scope": "All local refs and reflogs, commit/tag messages, historical blobs, index, current tracked files; known operator secrets and credential patterns. Matched values are never logged.",
+  "objectsScanned": 559,
+  "trackedFiles": 304,
+  "findings": [],
+  "gitleaksFindings": 0,
+  "productionDependencyVulnerabilities": 0,
+  "reviewedCredentialUrlCandidates": "Public local test fixtures and environment-variable templates, not deployed credentials",
+  "authorAndCommitter": "DEUSVULTXYZ <200296378+DEUSVULTXYZ@users.noreply.github.com>"
+}
