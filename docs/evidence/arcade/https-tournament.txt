@@ -1,0 +1,4 @@
+Tournament 1: round 1 settled.
+Tournament final 11 completed naturally: 7:6
+Tournament 1: round 2 settled.
+PASS: four-player tournament through relayer, three matches, two rounds, exact winner payout.

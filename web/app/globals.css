@@ -805,7 +805,7 @@ footer {
     font-size: 36px;
   }
   .arena-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   aside {
     display: grid;
@@ -852,7 +852,7 @@ footer {
     font-size: 13px;
   }
   .match-row {
-    grid-template-columns: 40px 1fr 50px 45px 10px;
+    grid-template-columns: 34px minmax(0, 1fr) 44px 72px 10px;
     font-size: 10px;
     gap: 4px;
   }
@@ -1031,3 +1031,9 @@ main {position:relative;isolation:isolate;}
 @keyframes mote-rise {0% {opacity:0;transform:translateY(0);}15%,70% {opacity:.3;}100% {opacity:0;transform:translateY(-115vh);}}
 @media(max-width:700px) {.arcade-grid {background-size:65px 65px;}.arcade-settings-toggle {font-size:8px;padding:9px;}.neon-mote:nth-child(n+9) {display:none;}.duel-notifications {right:16px;top:95px;}}
 @media(prefers-reduced-motion:reduce) {.arcade-background * {animation:none!important;}.neon-mote {display:none;}}
+
+@media(max-width:700px) { .match-row > span {min-width:0;overflow-wrap:anywhere;} .match-row > span:nth-child(4) {font-size:8px;letter-spacing:0;} }
+
+@media(max-width:380px) { .topbar {height:auto;min-height:110px;flex-wrap:wrap;gap:12px;padding:18px 0;} .top-right {width:100%;justify-content:flex-end;} .duel-notifications {top:150px;} }
+
+.game-panel, .arena-grid > aside {min-width:0;}

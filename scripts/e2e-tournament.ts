@@ -184,6 +184,13 @@ for (let round = 0; round < 2; round++) {
         }),
       (value) => value === BigInt(id),
     );
+    if(process.env.E2E_NATURAL_FINAL==="true" && round===1){
+      let result:any;
+      for(let attempt=0;attempt<180;attempt++){result=await api(`/matches/${id}`);if(result.match.status===3)break;await new Promise(r=>setTimeout(r,1000));}
+      assert.equal(result.match.status,3,"Final must finish naturally");assert(Math.max(result.match.state.scoreA,result.match.state.scoreB)===7);
+      console.log(`Tournament final ${id} completed naturally: ${result.match.state.scoreA}:${result.match.state.scoreB}`);
+      continue;
+    }
     const p = pair[0],
       info = await api("/player/" + p.address);
     const action = {
@@ -236,6 +243,7 @@ await writeFile(
     matchIds,
     winner: final.winner,
     prize: "0.01 MON",
+    naturalFinal:process.env.E2E_NATURAL_FINAL==="true",
     checks: [
       "four signatures",
       "bracket-constrained matchmaking",

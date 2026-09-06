@@ -1,0 +1,75 @@
+{
+  "base": "https://pongit.xyz",
+  "matchId": "8",
+  "addresses": [
+    "0x6C9Af6c552Aca5F595177a401390a11746605E71",
+    "0x2E5df6881f41128baADf97927B8e7285f73E0E49",
+    "0x62233dc6e4F3802F10bB193D448F2f15A9dc5F16"
+  ],
+  "snapshots": [
+    {
+      "head": "60242204",
+      "clock": "6900000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "0",
+        "vy": "0",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "4500000",
+        "scoreA": 1,
+        "scoreB": 0,
+        "seed": "0xb8774811c8f6bf43720bcca393c7c0529102835d66d1044c11085af34970c041",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": true,
+        "resumeAt": "7500000"
+      }
+    },
+    {
+      "head": "60242217",
+      "clock": "10800000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "-128000000",
+        "vy": "64000000",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "8100000",
+        "scoreA": 1,
+        "scoreB": 0,
+        "seed": "0xb8774811c8f6bf43720bcca393c7c0529102835d66d1044c11085af34970c041",
+        "finished": false,
+        "mode": 1,
+        "halfA": "36000000",
+        "halfB": "48000000",
+        "awaitingServe": false,
+        "resumeAt": "0"
+      }
+    }
+  ],
+  "passedAt": "2026-09-06T16:59:10.031Z",
+  "scenarios": [
+    "Mera PRF notebook different salt",
+    "encrypted save and recovery",
+    "no plaintext web storage",
+    "public nickname",
+    "targeted friendly Chaos consent",
+    "bet pressure shrinks to 72",
+    "confirmed victory and defeat",
+    "friendly ELO unchanged",
+    "winning claim and separate signed withdrawal",
+    "disconnect closes notebook",
+    "same-passkey recovery",
+    "mobile layout"
+  ],
+  "authenticator": "Chromium virtual CTAP2 PRF; real device synchronization still requires user demonstration"
+}

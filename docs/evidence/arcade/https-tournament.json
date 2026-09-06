@@ -1,0 +1,1 @@
+{"network":"Monad testnet","tournamentId":"1","matchIds":["9","10","11"],"winner":"0xc797a1BA05BBbe3F7A6Dd56Ab149A70ebd99e379","prize":"0.01 MON","naturalFinal":true,"checks":["four signatures","bracket-constrained matchmaking","automatic attachment","two distinct round advances","winner vault credit"],"completedAt":"2026-09-06T17:01:48.036Z"}
