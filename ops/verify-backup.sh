@@ -14,8 +14,9 @@ FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema NO
 \gexec
 SQL
 }
-for database in pong_relayer pong_indexer pong_indexer_v2 pong_indexer_v2_47dba35e; do
-  test -f "$backup/$database.dump" || continue
+for dump in "$backup"/*.dump; do
+  database=$(basename "$dump" .dump)
+  [[ "$database" =~ ^pong_(relayer|indexer(_[a-z0-9]+)*)$ ]] || { echo "Unexpected database name in backup"; exit 1; }
   scratch="${database}_restore_verify_$$"
   docker compose exec -T postgres createdb -U pong "$scratch" </dev/null
   docker compose exec -T postgres pg_restore -U pong -d "$scratch" --no-owner --exit-on-error < "$backup/$database.dump"

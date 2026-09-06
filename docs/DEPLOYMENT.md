@@ -12,7 +12,7 @@ Run `INDEXER_RPC_URL=http://rpc:8545 npm run indexer:configure`. The generator s
 
 Build the frontend for its final API/WS URLs and RP ID. Run `docker compose build` and `docker compose up -d`. The fixed Compose project name `pongit` preserves volumes across releases. Caddy obtains and renews Let's Encrypt certificates; ACME data is persistent. Public ports are 80/443 and SSH 3333. PostgreSQL, Hasura, RPC and relayer remain on the private Docker network.
 
-PostgreSQL retains the original `pong_relayer` journal and all generation-specific indexer databases. V2 uses `pong_indexer_v2_47dba35e`, owned by the restricted indexer role. Hasura never receives journal credentials. Earlier development databases and `*-superseded.json` manifests remain archived. Do not reuse a journal with another chain or signer. Register compatible deployment migrations through the versioned journal logic instead of erasing history.
+PostgreSQL retains the original `pong_relayer` journal and all generation-specific indexer databases. V3 uses `pong_indexer_v3_7b54521d`; the V2 database `pong_indexer_v2_47dba35e` is preserved. Both are owned by the restricted indexer role. Hasura never receives journal credentials. Earlier development databases and `*-superseded.json` manifests remain archived. Do not reuse a journal with another chain or signer. Register compatible deployment migrations through the versioned journal logic instead of erasing history.
 
 ## Accounts and funding
 

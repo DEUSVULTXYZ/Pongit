@@ -5,7 +5,7 @@ import { decryptNotebook, encryptNotebook, unlockNotebook } from "../lib/noteboo
 import { appApi as requestApp } from "../lib/api";
 import type { Identity } from "../lib/wallet";
 
-export function Notebook({account,authenticate,identity,matchRef,atUs,applyPreferences}:{account:string;authenticate:()=>Promise<void>;identity:()=>Identity|null;matchRef?:string;atUs?:string;applyPreferences:(settings:{preferredMode:number;sound:boolean})=>void}) {
+export function Notebook({disabled=false,account,authenticate,identity,matchRef,atUs,applyPreferences}:{disabled?:boolean;account:string;authenticate:()=>Promise<void>;identity:()=>Identity|null;matchRef?:string;atUs?:string;applyPreferences:(settings:{preferredMode:number;sound:boolean})=>void}) {
   const appApi=(path:string,method="GET",body?:unknown)=>requestApp(path,method,body,account);
   const key=useRef<CryptoKey|null>(null), generation=useRef(0), inFlight=useRef(false);
   const [data,setData]=useState<NotebookData|null>(null),[revision,setRevision]=useState(0),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
@@ -16,9 +16,9 @@ export function Notebook({account,authenticate,identity,matchRef,atUs,applyPrefe
   async function load(){const g=generation.current;await authenticate();if(g!==generation.current)return;const own=identity();if(!own || own.account.address.toLowerCase()!==account.toLowerCase())throw new Error("Connect the correct passkey first");const k=key.current || await unlockNotebook(own);if(g!==generation.current)return;const stored=await appApi("/notebook");const decrypted=stored.ciphertext ? await decryptNotebook(k,account,stored) : emptyNotebook();if(g!==generation.current)return;key.current=k;setData(decrypted);setRevision(stored.revision || 0);setMessage("Unlocked in memory. Lock or disconnect to close.");}
   async function save(){if(!data || !key.current)return;const g=generation.current,k=key.current;await authenticate();if(g!==generation.current)return;const encrypted=await encryptNotebook(k,account,data);if(g!==generation.current)return;const result=await appApi("/notebook","PUT",{...encrypted,revision});if(g!==generation.current)return;setRevision(result.revision);setMessage("Encrypted copy saved. Recover it with the same passkey on another device.");}
   return <section className="side-card notebook"><div className="card-title"><p className="eyebrow">PRIVATE NOTEBOOK / MERA</p><span>{data?"UNLOCKED":"ENCRYPTED"}</span></div><h2>Your private playbook.</h2><p>Rivals, replay notes and preferences. Only your passkey can decrypt them.</p>
-    {!data?<button disabled={!account || busy} onClick={()=>void run(load)}>Unlock notebook ↗</button>:<>
-      <div className="split"><button disabled={busy} onClick={()=>void run(save)}>Save encrypted</button><button onClick={lock}>Lock</button></div>
-      <button disabled={busy} onClick={()=>void run(load)}>Reload saved copy (discard local edits)</button>
+    {!data?<button disabled={disabled || !account || busy} onClick={()=>void run(load)}>Unlock notebook ↗</button>:<>
+      <div className="split"><button disabled={disabled || busy} onClick={()=>void run(save)}>Save encrypted</button><button onClick={lock}>Lock</button></div>
+      <button disabled={disabled || busy} onClick={()=>void run(load)}>Reload saved copy (discard local edits)</button>
       <h3>Favourite rivals</h3><label>Address<input value={rival} onChange={e=>setRival(e.target.value)} placeholder="0x…"/></label><label>Private nickname<input maxLength={40} value={nickname} onChange={e=>setNickname(e.target.value)}/></label>
       <button disabled={!/^0x[\da-fA-F]{40}$/.test(rival)} onClick={()=>{setData({...data,rivals:[...data.rivals.filter(r=>r.address.toLowerCase()!==rival.toLowerCase()),{address:rival,nickname,note:""}]});setRival("");setNickname("");}}>Add favourite</button>
       {data.rivals.map(r=><div className="notebook-row" key={r.address}><span>{r.nickname || r.address}<small>{r.address}</small></span><button aria-label={`Remove ${r.nickname || r.address}`} onClick={()=>setData({...data,rivals:data.rivals.filter(x=>x!==r)})}>×</button></div>)}

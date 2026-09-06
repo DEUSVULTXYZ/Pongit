@@ -27,6 +27,7 @@ test("Arcade passkey continuity, direct duel, F5, rematch, finance and revocatio
     const popupEvent=a.waitForEvent("popup");await a.evaluate(()=>window.open(location.href,"_blank"));const twin=await popupEvent;await expect(twin.locator(".notice")).toContainText("Another tab controls",{timeout:15000});await twin.close();
     await a.reload();await expect(a.locator(".status-line")).toContainText("Arcade session restored",{timeout:20000});await expect(a.locator(".match-bar")).toContainText("IN PLAY");
     await a.keyboard.down("s");await a.waitForTimeout(1100);await a.keyboard.up("s");expect(counts.slice(0,2)).toEqual(baseline.slice(0,2));
+    await contexts[0].setOffline(true);await a.waitForTimeout(1200);await contexts[0].setOffline(false);await expect(a.locator(".heading-meta")).toContainText("CONNECTED",{timeout:15000});expect(counts.slice(0,2)).toEqual(baseline.slice(0,2));
     await s.getByRole("button",{name:/^Live/}).click();await s.locator(`[data-match-id="${first.id}"]`).click();await expect(s.locator("canvas")).toBeVisible();
     await b.getByRole("button",{name:"Concede",exact:true}).click();await expect(a.locator(".outcome h2")).toHaveText("VICTORY",{timeout:20000});await expect(b.locator(".outcome h2")).toHaveText("DEFEAT");await expect(s.locator(".spectator-result")).toBeVisible();
     await a.getByRole("button",{name:"Rematch"}).click();await expect(b.locator(".duel-notifications")).toBeVisible({timeout:15000});await b.getByRole("button",{name:"Accept friendly"}).click();

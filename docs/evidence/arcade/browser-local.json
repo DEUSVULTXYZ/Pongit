@@ -1,13 +1,13 @@
 {
   "base": "http://localhost:3003",
   "addresses": [
-    "0x6e8ba38d316D03F78c96CBD2ab2CeEC9EE348456",
-    "0xc5a805Df3902D3B1cb7bBaf66a45a0834e72b7f0",
-    "0xA66e20503f9b364f7d1C494e1BF0Ad1EAf5d8d38"
+    "0x0Ab42E715D85950dF24dedE2404372B6609B0135",
+    "0xD81c47E1f198BbD60DdDD6e4E0Cf6AfA7320d69a",
+    "0xACfbB6eD6ABaD455c9E240e99F58ED04281D0C1B"
   ],
   "matches": [
-    "9",
-    "10"
+    "16",
+    "17"
   ],
   "passkeyAssertions": [
     2,
@@ -21,12 +21,12 @@
   ],
   "timings": [
     {
-      "queueMs": 78,
-      "broadcastMs": 23,
-      "confirmationMs": 242,
-      "totalMs": 343
+      "queueMs": 308,
+      "broadcastMs": 31,
+      "confirmationMs": 164,
+      "totalMs": 503
     }
   ],
-  "passedAt": "2026-09-06T15:55:12.732Z",
+  "passedAt": "2026-09-06T16:28:59.885Z",
   "authenticator": "Chromium virtual PRF; physical cross-device sync requires a separate demonstration"
 }

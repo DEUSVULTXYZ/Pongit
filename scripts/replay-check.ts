@@ -8,9 +8,10 @@ import {
   decodeAbiParameters,
   type Hex,
 } from "viem";
-import { gameAbi } from "../shared/abis";
+import { contractsFor } from "../shared/protocol";
 import { json, type Deployment } from "../shared/protocol";
-import { stateComponents, advance } from "../shared/physics";
+import { stateComponents as legacyComponents, advance as legacyAdvance } from "../shared/physics";
+import { stateComponents as v2Components, advance as v2Advance, resume } from "../shared/physics-v2";
 import { stateFromJson } from "../web/lib/api";
 const d: Deployment = JSON.parse(
   await readFile(
@@ -18,6 +19,9 @@ const d: Deployment = JSON.parse(
     "utf8",
   ),
 );
+const gameAbi=contractsFor(d).game;
+const stateComponents=(d.version||1)>=2?v2Components:legacyComponents;
+const advance=(d.version||1)>=2?v2Advance:legacyAdvance;
 const client = createPublicClient({
   transport: http(
     process.env.ALCHEMY_RPC_URL ||
@@ -28,7 +32,8 @@ const client = createPublicClient({
 assert.equal(await client.getChainId(), d.chainId);
 const id = BigInt(process.env.MATCH_ID || "3"),
   head = await client.getBlockNumber();
-const logs = [];
+const logs: any[] = [];
+const handicaps:any[]=[];
 for (let from = BigInt(d.startBlock); from <= head; from += 100n)
   logs.push(
     ...(await client.getLogs({
@@ -42,6 +47,7 @@ for (let from = BigInt(d.startBlock); from <= head; from += 100n)
     })),
   );
 assert(logs.length, "Match must have confirmed snapshots");
+if((d.version||1)>=2)for(let from=BigInt(d.startBlock);from<=head;from+=100n)handicaps.push(...await client.getLogs({address:d.game,event:parseAbiItem("event HandicapSet(uint256 indexed matchId, int256 halfA, int256 halfB, uint256 paidA, uint256 paidB, uint64 at)"),args:{matchId:id},fromBlock:from,toBlock:from+99n<head?from+99n:head}));
 const frames = [];
 let after = "0";
 for (;;) {
@@ -70,7 +76,9 @@ for (let i = 0; i < logs.length; i++) {
   );
   const state = stateFromJson(decoded);
   if (previous) {
-    const predicted = advance(previous, state.t, 64)[0];
+    const pressure=handicaps.find(h=>h.transactionHash===logs[i].transactionHash && h.args.at===state.t);
+    const predicted=previous.awaitingServe && !state.awaitingServe ? (()=>{assert(pressure,"Serve must have a confirmed handicap event");return resume(previous,state.t,pressure.args.paidA,pressure.args.paidB);})() : advance(previous,state.t,64)[0];
+    if(pressure){assert.equal(state.halfA,pressure.args.halfA);assert.equal(state.halfB,pressure.args.halfB);}
     for (const key of ["x", "y", "left", "right", "scoreA", "scoreB"] as const)
       assert.equal(
         predicted[key],
@@ -88,7 +96,7 @@ const m = await client.readContract({
   args: [id],
 });
 assert(m.status >= 3, "Use a completed match");
-assert.deepEqual(previous, m.state);
+for(const [key,value] of Object.entries(m.state))assert.equal((previous as any)[key],value,`Final state ${key}`);
 const hashes = [...new Set(logs.map((l) => l.transactionHash!))];
 const receipts = await Promise.all(
   hashes.map((hash) => client.getTransactionReceipt({ hash })),

@@ -2,7 +2,7 @@ import "dotenv/config";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { createPublicClient, http, parseTransaction, type Hex } from "viem";
 import pg from "pg";
-import { json, type Deployment } from "../shared/protocol";
+import { json, deploymentId, type Deployment } from "../shared/protocol";
 const d: Deployment = JSON.parse(
   await readFile(
     process.env.DEPLOYMENT_FILE || "deployments/local.json",
@@ -26,8 +26,8 @@ const db = new pg.Client({
 await db.connect();
 try {
   const result = await db.query(
-    "SELECT j.* FROM relay_jobs j WHERE j.receipt IS NOT NULL AND j.payload->>'contract'='game' AND (j.payload->'args'->>0=$1 OR j.payload->'args'->0->>'matchId'=$1 OR (j.payload->>'functionName'='playerAction' AND j.payload->'args'->>1=$1) OR j.id IN (SELECT job_id FROM rooms WHERE match_id=$1)) ORDER BY j.nonce",
-    [id],
+    "SELECT j.* FROM relay_jobs j WHERE j.receipt IS NOT NULL AND j.payload->>'deployment'=$2 AND j.payload->>'contract'='game' AND (j.payload->'args'->>0=$1 OR j.payload->'args'->0->>'matchId'=$1 OR (j.payload->>'functionName'='playerAction' AND j.payload->'args'->>1=$1) OR j.id IN (SELECT job_id FROM rooms WHERE match_id=$1)) ORDER BY j.nonce",
+    [id,deploymentId(d)],
   );
   if (!result.rows.length)
     throw new Error("No game receipts in the relayer journal");

@@ -26,6 +26,7 @@ test("HTTPS Mera administrator: grant, pauses, creation, cancellation, revoke", 
   async function confirmed(hash: Hex) { hashes.push(hash); expect((await client.waitForTransactionReceipt({hash, confirmations:5})).status).toBe("success"); }
   try {
     await p.goto(base + "/admin");
+    if(d.version===3)await p.getByRole("button",{name:"Enter muted"}).click();
     await p.getByRole("button",{name:/^Connect passkey/}).first().click();
     const response=p.waitForResponse(r=>/\/player\/0x[\da-f]+$/i.test(r.url()));
     await p.getByRole("button",{name:"Create a passkey"}).click();
@@ -39,8 +40,7 @@ test("HTTPS Mera administrator: grant, pauses, creation, cancellation, revoke", 
     }
     await confirmed(await operator.sendTransaction({to:address, value:parseEther("0.06")}));
     await p.reload();
-    await p.getByRole("button",{name:/^Connect passkey/}).first().click();
-    await p.getByRole("button",{name:"Use existing passkey"}).click();
+    if(d.version!==3){await p.getByRole("button",{name:/^Connect passkey/}).first().click();await p.getByRole("button",{name:"Use existing passkey"}).click();}
     await expect(p.getByRole("button",{name:"Pause game",exact:true})).toBeVisible();
     for (const target of ["game","market"] as const) {
       for(const paused of [true,false]) {

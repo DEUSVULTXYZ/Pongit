@@ -44,7 +44,7 @@ const chain = defineChain({
 const wallet = createWalletClient({ account, chain, transport: http(url) });
 const receipts:unknown[]=[];
 const fees={maxFeePerGas:parseGwei("200"),maxPriorityFeePerGas:0n};
-async function record(hash:Hex,name:string) {const receipt=await publicClient.waitForTransactionReceipt({hash});if(receipt.status!=="success")throw new Error(`${name} reverted: ${hash}`);receipts.push({name,hash,block:receipt.blockNumber.toString(),gasUsed:receipt.gasUsed.toString(),effectiveGasPrice:receipt.effectiveGasPrice.toString(),fee:(receipt.gasUsed*receipt.effectiveGasPrice).toString()});return receipt;}
+async function record(hash:Hex,name:string) {const receipt=await publicClient.waitForTransactionReceipt({hash});if(receipt.status!=="success")throw new Error(`${name} reverted: ${hash}`);const tx=await publicClient.getTransaction({hash});receipts.push({name,hash,block:receipt.blockNumber.toString(),gasUsed:receipt.gasUsed.toString(),effectiveGasPrice:receipt.effectiveGasPrice.toString(),gasLimit:tx.gas.toString(),fee:((chainId===10143?tx.gas:receipt.gasUsed)*receipt.effectiveGasPrice).toString()});return receipt;}
 async function deploy(name: string, args: readonly unknown[]) {
   const a = await artifact(name);
   const hash = await wallet.deployContract({

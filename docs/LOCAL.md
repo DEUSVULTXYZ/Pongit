@@ -91,3 +91,20 @@ npm run benchmark:local
 Browser tests can use Chrome installed on Windows; set `CHROME_PATH` or install Playwright Chromium elsewhere. Configure `PONG_TEST_URL` and `PONG_TEST_API` for browser tests on nondefault ports; script-based flows use `E2E_API_URL`. Replay checks accept `MATCH_ID` and the intended `DEPLOYMENT_FILE`. Recovery tests create an isolated chain/database and interrupt the relayer before inclusion; inspect their required environment before running them against a different local setup. Testnet write tests require explicit opt-in and funded test accounts.
 
 If Anvil is reset or contracts are redeployed, use a fresh journal and indexer checkpoint. Never attach an old checkpoint to a new chain that happens to reuse the same addresses. A compatible V1-to-V2 migration preserves the journal using the registered manifests; a chain reset does not.
+
+
+## Arcade (V3)
+
+With a fresh local V1/V2 deployment on the same running Anvil chain, preserve the V2 manifest and deploy the arcade registry and GameV3:
+
+```sh
+cp deployments/local.json deployments/local-v2.json
+LEGACY_DEPLOYMENT_FILE=deployments/local-v2.json DEPLOYMENT_FILE=deployments/local.json npx tsx scripts/deploy-v3.ts
+npm run indexer:configure
+```
+
+Use a fresh indexer database for the three-generation configuration. Preserve the relayer journal when migrating the same chain and signer. Use a separate funded local sponsor account if admin tests submit direct transactions. The V3 registry must be bound and the financial links sealed; the deploy script performs and verifies those steps.
+
+The arcade browser flow uses real Mera SDK calls with virtual Chromium PRF authenticators. Configure `PONG_TEST_URL` and `PONG_TEST_API` for your running stack, then run `npx playwright test arcade.spec.ts v2.spec.ts mobile-performance.spec.ts`. `tests/social.integration.ts` uses `E2E_API_URL`, `E2E_WEB_URL` and `SOCIAL_TEST_DATABASE_URL` for its isolated local database. It must never target a production journal.
+
+When building a local production image, set `NEXT_PUBLIC_WS_URL=ws://localhost:4000/ws` (including `/ws`) and the corresponding API/RP values. Firefox and WebKit audio tests require Playwright browser runtimes and a functioning audio backend; headless Linux Firefox may need a PulseAudio null sink. Browser emulation does not establish physical passkey synchronization or speaker quality.

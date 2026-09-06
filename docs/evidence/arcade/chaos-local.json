@@ -1,14 +1,134 @@
 {
   "base": "http://localhost:3003",
-  "matchId": "3",
+  "matchId": "18",
   "addresses": [
-    "0x0486dD6A1C94959860d20f930bdE8932017B1e44",
-    "0x68d7A034Be5eA7F1a93AD92356d16408c18C1cAb",
-    "0x3ea1369e0720c2C73994dDB392FE013858e3C3f5"
+    "0xB9d08239ffAbf2Cdd2629D7a90Dd2E7F0322fd74",
+    "0x01cBfA20E462A03d1070E443aC2A08bE418E5fF5",
+    "0x0ede7ef30F3c58b41Fe6cc99Cd506AB191783bCA"
   ],
   "snapshots": [
     {
-      "head": "1967",
+      "head": "11268",
+      "clock": "2100000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "128000000",
+        "vy": "64000000",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "0",
+        "scoreA": 0,
+        "scoreB": 0,
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": false,
+        "resumeAt": "0"
+      }
+    },
+    {
+      "head": "11268",
+      "clock": "2100000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "128000000",
+        "vy": "64000000",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "0",
+        "scoreA": 0,
+        "scoreB": 0,
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": false,
+        "resumeAt": "0"
+      }
+    },
+    {
+      "head": "11269",
+      "clock": "2400000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "128000000",
+        "vy": "64000000",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "0",
+        "scoreA": 0,
+        "scoreB": 0,
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": false,
+        "resumeAt": "0"
+      }
+    },
+    {
+      "head": "11271",
+      "clock": "3000000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "128000000",
+        "vy": "64000000",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "0",
+        "scoreA": 0,
+        "scoreB": 0,
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": false,
+        "resumeAt": "0"
+      }
+    },
+    {
+      "head": "11274",
+      "clock": "3900000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "128000000",
+        "vy": "64000000",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "0",
+        "scoreA": 0,
+        "scoreB": 0,
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": false,
+        "resumeAt": "0"
+      }
+    },
+    {
+      "head": "11278",
       "clock": "5100000",
       "state": {
         "x": "512000000",
@@ -22,7 +142,7 @@
         "t": "4200000",
         "scoreA": 1,
         "scoreB": 0,
-        "seed": "0x5cc3245cd754e24af29c96a3fc09f8d12b27f96b6ef07b224a4cab1631da9da5",
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
         "finished": false,
         "mode": 1,
         "halfA": "48000000",
@@ -32,55 +152,7 @@
       }
     },
     {
-      "head": "1968",
-      "clock": "5400000",
-      "state": {
-        "x": "512000000",
-        "y": "288000000",
-        "vx": "0",
-        "vy": "0",
-        "left": "288000000",
-        "right": "288000000",
-        "leftDir": 0,
-        "rightDir": 0,
-        "t": "4200000",
-        "scoreA": 1,
-        "scoreB": 0,
-        "seed": "0x5cc3245cd754e24af29c96a3fc09f8d12b27f96b6ef07b224a4cab1631da9da5",
-        "finished": false,
-        "mode": 1,
-        "halfA": "48000000",
-        "halfB": "48000000",
-        "awaitingServe": true,
-        "resumeAt": "7200000"
-      }
-    },
-    {
-      "head": "1968",
-      "clock": "5400000",
-      "state": {
-        "x": "512000000",
-        "y": "288000000",
-        "vx": "0",
-        "vy": "0",
-        "left": "288000000",
-        "right": "288000000",
-        "leftDir": 0,
-        "rightDir": 0,
-        "t": "4200000",
-        "scoreA": 1,
-        "scoreB": 0,
-        "seed": "0x5cc3245cd754e24af29c96a3fc09f8d12b27f96b6ef07b224a4cab1631da9da5",
-        "finished": false,
-        "mode": 1,
-        "halfA": "48000000",
-        "halfB": "48000000",
-        "awaitingServe": true,
-        "resumeAt": "7200000"
-      }
-    },
-    {
-      "head": "1970",
+      "head": "11281",
       "clock": "6000000",
       "state": {
         "x": "512000000",
@@ -94,7 +166,7 @@
         "t": "4200000",
         "scoreA": 1,
         "scoreB": 0,
-        "seed": "0x5cc3245cd754e24af29c96a3fc09f8d12b27f96b6ef07b224a4cab1631da9da5",
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
         "finished": false,
         "mode": 1,
         "halfA": "48000000",
@@ -104,7 +176,7 @@
       }
     },
     {
-      "head": "1973",
+      "head": "11284",
       "clock": "6900000",
       "state": {
         "x": "512000000",
@@ -118,7 +190,7 @@
         "t": "4200000",
         "scoreA": 1,
         "scoreB": 0,
-        "seed": "0x5cc3245cd754e24af29c96a3fc09f8d12b27f96b6ef07b224a4cab1631da9da5",
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
         "finished": false,
         "mode": 1,
         "halfA": "48000000",
@@ -128,13 +200,13 @@
       }
     },
     {
-      "head": "1977",
-      "clock": "8100000",
+      "head": "11287",
+      "clock": "7800000",
       "state": {
         "x": "512000000",
         "y": "288000000",
         "vx": "-128000000",
-        "vy": "64000000",
+        "vy": "-64000000",
         "left": "288000000",
         "right": "288000000",
         "leftDir": 0,
@@ -142,7 +214,7 @@
         "t": "7500000",
         "scoreA": 1,
         "scoreB": 0,
-        "seed": "0x5cc3245cd754e24af29c96a3fc09f8d12b27f96b6ef07b224a4cab1631da9da5",
+        "seed": "0x7f1a92753c65a29d17b4c4163d158943766dd86d11f6820c8671dbf03aa58e0e",
         "finished": false,
         "mode": 1,
         "halfA": "36000000",
@@ -152,7 +224,7 @@
       }
     }
   ],
-  "passedAt": "2026-09-06T15:41:57.235Z",
+  "passedAt": "2026-09-06T16:29:35.522Z",
   "scenarios": [
     "Mera PRF notebook different salt",
     "encrypted save and recovery",
@@ -162,6 +234,7 @@
     "bet pressure shrinks to 72",
     "confirmed victory and defeat",
     "friendly ELO unchanged",
+    "winning claim and separate signed withdrawal",
     "disconnect closes notebook",
     "same-passkey recovery",
     "mobile layout"

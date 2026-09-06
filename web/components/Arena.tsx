@@ -271,6 +271,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     setInputPending(false);
     session.current?.end();
     session.current = null;
+    setArcadeExpires(0);
     secret.current = null;
     sessionMatch.current = "";
     readyRoom.current = "";
@@ -339,6 +340,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
         if (!stop) {
           setItems(all.matches.sort((a:any,b:any)=>Number(b.id)-Number(a.id)));
           setHead((previous) => BigInt(all.head) > previous ? BigInt(all.head) : previous);
+        }
+        const selectedId=view.current.selected;
+        if(!stop && selectedId && view.current.tab!=="Archive") {
+          const selectedMatch=await monadTransport.readMatch(selectedId);
+          if(!stop)applyMatch({...selectedMatch,id:selectedId});
         }
       } catch {
         if (!stop)
@@ -1014,14 +1020,13 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     scoreB = state?.scoreB ?? 0;
   return (
     <main>
-      <ArcadeAmbience onSound={setSound}/>
       <header className="topbar">
         <a className="brand" href="/" aria-label="PONGIT home">
           <img className="brand-mark orbit-mark" src="/brand/opposing-orbits.webp" alt="" width="72" height="72"/>
           PONGIT
-          <span className="brand-sub">ONCHAIN ARCADE / 002</span>
+          <span className="brand-sub">ONCHAIN ARCADE / 003</span>
         </a>
-        <div className="top-right"><button className="sound-toggle" aria-pressed={sound} onClick={()=>{arcadeAudio.configure({enabled:!sound,entered:true});void arcadeAudio.activate();}}>Sound {sound?"on":"off"}</button>
+        <div className="top-right"><ArcadeAmbience onSound={setSound}/>
           <span className="network">
             <span className={connected ? "dot pulse" : "dot"} />
             {config?.chainId === 31337 ? "LOCAL CHAIN" : "MONAD TESTNET"}
@@ -1091,7 +1096,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
         </div>
       </section>
       {account && config?.version===3 && !arcadeExpires && <button className="primary" disabled={busy} onClick={()=>void act(()=>renewArcade())}>Renew arcade session</button>}
-      <SocialHub mode={mode} key={account} account={account} config={config} visible={tab==="Rivals"} target={challengeTarget} authenticate={authenticateApp} identity={()=>owner.current} open={()=>setTab("Rivals")} enter={enterChallenge} matchRef={noteContext?.ref || (selected?`v${config?.version || 1}:${selected}`:undefined)} atUs={noteContext?.atUs || String(clock)} applyPreferences={settings=>{if(queued || canControl)throw new Error("Finish the active match or search before applying preferences.");setMode(settings.preferredMode===1?1:0);arcadeAudio.configure({enabled:settings.sound,entered:true});}}/>
+      <SocialHub ready={!busy && (config?.version!==3 || arcadeExpires>Date.now()/1000)} mode={mode} key={account} account={account} config={config} visible={tab==="Rivals"} target={challengeTarget} authenticate={authenticateApp} identity={()=>owner.current} open={()=>setTab("Rivals")} enter={enterChallenge} matchRef={noteContext?.ref || (selected?`v${config?.version || 1}:${selected}`:undefined)} atUs={noteContext?.atUs || String(clock)} applyPreferences={settings=>{if(queued || canControl)throw new Error("Finish the active match or search before applying preferences.");setMode(settings.preferredMode===1?1:0);arcadeAudio.configure({enabled:settings.sound,entered:true});}}/>
       <Outcome id={selected} match={match} account={account} rating={player?Number((match?.mode===1?player.chaosRating:player.rating)?.elo || 1000):null} sound={sound} replay={tab==="Archive"} rematch={rematch} watch={()=>void act(()=>loadReplay(selected!))} again={()=>{setSelected(null);setMatch(null);setState(null);setTournamentId("0");setTab("Play");}}/>
       {(["Play","Ladder"].includes(tab)) && <div className="mode-switch" role="group" aria-label="Game mode"><button disabled={queued || busy || canControl} aria-pressed={mode===0} onClick={()=>setMode(0)}>01 / Classic</button><button disabled={queued || busy || canControl || tournamentId!=="0"} aria-pressed={mode===1} onClick={()=>setMode(1)}>02 / Chaos</button><p>{mode===1?"Crowd pressure shrinks the favourite's paddle. Changes apply between rallies.":"Pure Pong. Separate ranked ladder. First to seven."}</p></div>}
       {fundingWarning && <p className="notice" role="status">Sponsorship: {fundingWarning}</p>}
@@ -1476,7 +1481,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               {ladder.map((p, i) => (
                 <tr key={p.id}>
                   <td>{String(i + 1).padStart(2, "0")}</td>
-                  <td><button onClick={()=>{void act(()=>directChallenge(p.address));}}>{p.handle || short(p.address)} ↗</button></td>
+                  <td><span>{p.handle || short(p.address)}</span><button className="ladder-challenge" disabled={busy || p.address.toLowerCase()===account.toLowerCase()} onClick={()=>void act(()=>directChallenge(p.address))}>Challenge ↗</button></td>
                   <td>{p.elo}</td>
                   <td>{p.played}</td>
                   <td>{p.wins}</td>

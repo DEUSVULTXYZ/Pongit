@@ -67,7 +67,7 @@ const players = Array.from({ length: 4 }, () =>
   privateKeyToAccount(generatePrivateKey()),
 );
 
-assert.equal(config.version,2);
+assert([2,3].includes(config.version));
 const pair=players.slice(0,2),secrets=[generatePrivateKey(),generatePrivateKey()];
 const cookies=new Map<string,string>();
 async function social(p:typeof pair[number],path:string,body:unknown){const response=await fetch(base+path,{method:"POST",headers:{"content-type":"application/json","x-pongit-player":p.address,origin:process.env.E2E_WEB_URL || new URL(base).origin,cookie:cookies.get(p.address)||""},body:json(body)});const cookie=response.headers.get("set-cookie");if(cookie)cookies.set(p.address,cookie.split(";")[0]);const result=await response.json();assert(response.ok && !result.error,json(result));return result;}
