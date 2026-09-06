@@ -1,0 +1,11 @@
+Mode 0: 32/10000
+Mode 0: 2080/10000
+Mode 0: 4128/10000
+Mode 0: 6176/10000
+Mode 0: 8224/10000
+Mode 1: 32/10000
+Mode 1: 2080/10000
+Mode 1: 4128/10000
+Mode 1: 6176/10000
+Mode 1: 8224/10000
+PASS: both physics modes agree with Solidity.

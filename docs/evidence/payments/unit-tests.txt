@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: historical log chunks preserve filters, exact bounds and canonical ordering
+ok 1 - historical log chunks preserve filters, exact bounds and canonical ordering
+  ---
+  duration_ms: 9.0194
+  type: 'test'
+  ...
+# Subtest: historical reads reject oversized or failed ranges and leave small/block-hash requests alone
+ok 2 - historical reads reject oversized or failed ranges and leave small/block-hash requests alone
+  ---
+  duration_ms: 0.8841
+  type: 'test'
+  ...
+# Subtest: notebook recovers from the same PRF on another device, with independent nonces and no extractable key
+ok 3 - notebook recovers from the same PRF on another device, with independent nonces and no extractable key
+  ---
+  duration_ms: 11.6061
+  type: 'test'
+  ...
+# Subtest: late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
+ok 4 - late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
+  ---
+  duration_ms: 0.7841
+  type: 'test'
+  ...
+# Subtest: preview never invents paddle bounces or points while waiting for inclusion
+ok 5 - preview never invents paddle bounces or points while waiting for inclusion
+  ---
+  duration_ms: 1.0793
+  type: 'test'
+  ...
+# Subtest: key reversal moves from the current paddle rather than its old snapshot position
+ok 6 - key reversal moves from the current paddle rather than its old snapshot position
+  ---
+  duration_ms: 0.2079
+  type: 'test'
+  ...
+# Subtest: a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
+ok 7 - a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
+  ---
+  duration_ms: 0.742
+  type: 'test'
+  ...
+# Subtest: Mera PRF creation and recovery preserve identity; ending a session disables signing
+ok 8 - Mera PRF creation and recovery preserve identity; ending a session disables signing
+  ---
+  duration_ms: 95.3422
+  type: 'test'
+  ...
+# Subtest: Mera rejects a passkey provider without PRF
+ok 9 - Mera rejects a passkey provider without PRF
+  ---
+  duration_ms: 0.5084
+  type: 'test'
+  ...
+# Subtest: Indexed ABI snapshots round-trip through JSON without losing integer precision
+ok 10 - Indexed ABI snapshots round-trip through JSON without losing integer precision
+  ---
+  duration_ms: 1.6346
+  type: 'test'
+  ...
+# Subtest: funded Monad sponsorship skips quiet windows without dipping into the reserve
+ok 11 - funded Monad sponsorship skips quiet windows without dipping into the reserve
+  ---
+  duration_ms: 2.6968
+  type: 'test'
+  ...
+# Subtest: RPC failover only forwards reads; concurrent identical reads are coalesced
+ok 12 - RPC failover only forwards reads; concurrent identical reads are coalesced
+  ---
+  duration_ms: 3637.2025
+  type: 'test'
+  ...
+# Subtest: gameplay jumps ahead of backfill without starving history or bypassing the shared rate
+ok 13 - gameplay jumps ahead of backfill without starving history or bypassing the shared rate
+  ---
+  duration_ms: 217.6222
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4257.4952

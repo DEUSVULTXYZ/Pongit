@@ -1119,8 +1119,9 @@ const server = createServer(async (req, res) => {
       const cached=ladderCaches.get(mode);if(cached && cached.until>Date.now())return send(res,cached.value);
       const indexed:any[]=[];let after="";
       for(;;){const data=await graphql("query Players($after:String!){Player(where:{id:{_gt:$after}},order_by:{id:asc},limit:1000){id address deployment mode elo played wins season}}",{after});indexed.push(...data.Player);if(data.Player.length<1000)break;after=data.Player.at(-1).id;}
-      const addresses=[...new Set(indexed.filter(p=>(p.deployment===activeVersion && p.mode===mode) || mode===0 && p.deployment==="v1").map(p=>p.address))] as Address[];
-      // Read the current lazy season reset and V1 inheritance from the authoritative game.
+      const versions=new Set(allDeployments(deployment).map(deploymentId));
+      const addresses=[...new Set(indexed.filter(p=>versions.has(p.deployment) && p.mode===mode).map(p=>p.address))] as Address[];
+      // Read the current lazy season reset and all inherited rankings from the authoritative game.
       const players=[];
       for(let i=0;i<addresses.length;i+=30)players.push(...await Promise.all(addresses.slice(i,i+30).map(async address=>({id:`${activeVersion}:${mode}:${address}`,address,...await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[address,mode]})}))));
       const profiles=(await pool.query("SELECT player,handle,avatar FROM profiles")).rows;
