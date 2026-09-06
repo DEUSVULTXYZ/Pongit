@@ -18,6 +18,8 @@ Envio indexes all four deployments. Result and cancellation events create stable
 
 ## Migration and operation
 
+Historical indexing uses a separate private RPC gateway to the [Monad Foundation public endpoint](https://docs.monad.xyz/developer-essentials/testnet), paced at 12.5 requests/second below its documented 20-request limit. Gameplay and sponsored writes retain their own gateway. Neither gateway exposes a public port.
+
 The exact addresses, start blocks and successful deployment receipts are in [testnet-v4.json](../deployments/testnet-v4.json). The recursive manifest preserves V1–V3. Existing balances stay in their respective vaults: legacy claims credit that vault, followed by an owner-signed withdrawal. Mera addresses do not change. A new arcade authorization is explicitly required for the V4 game.
 
 Before switching, drain V3 matches and tournaments, back up all databases, keep V3 indexing intact, and finish the V4 Envio backfill in its separate database. Never erase the relayer journal. `ops/rollback-v4.sh COMMIT` accepts only a release with exactly the same V4 and legacy contract bindings; a V3 binary is not a compatible rollback after V4 has started.

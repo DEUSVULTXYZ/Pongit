@@ -34,13 +34,13 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
       await cdp.send("WebAuthn.enable");
       await cdp.send("WebAuthn.addVirtualAuthenticator",{options:{protocol:"ctap2",transport:"internal",hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
       await p.goto(base);
-      if(config.version===3)await p.getByRole("button",{name:"Enter muted"}).click();
+      if(config.version>=3)await p.getByRole("button",{name:"Enter muted"}).click();
       await p.getByRole("button",{name:/^Connect passkey/}).click();
       const response=p.waitForResponse(r=>/\/player\/0x[\da-f]+$/i.test(r.url()));
       await p.getByRole("button",{name:"Create a passkey"}).click();
       addresses.push((await response).url().split("/").at(-1)!);
       await expect(p.locator(".vault-strip")).toBeVisible();
-      if(config.version===3)await expect(p.locator(".status-line")).toContainText("Arcade session ready",{timeout:30000});
+      if(config.version>=3)await expect(p.locator(".status-line")).toContainText("Arcade session ready",{timeout:30000});
     }
     const [a,b,s]=pages;
     await a.getByRole("button",{name:"Open account details"}).click();
@@ -66,7 +66,8 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     await b.getByRole("button",{name:"Find an opponent"}).click();
     for(const p of [a,b]) await expect(p.locator(".match-bar")).toContainText("IN PLAY",{timeout:60000});
     await s.getByRole("button",{name:/^Live/}).click();
-    const matchId = (await (await s.request.get(apiBase + "/matches")).json()).matches.find((m:any)=>m.status===2 && [m.playerA,m.playerB].some((p:string)=>p.toLowerCase()===addresses[0].toLowerCase())).id;
+    const match = (await (await s.request.get(apiBase + "/matches")).json()).matches.find((m:any)=>m.status===2 && [m.playerA,m.playerB].some((p:string)=>p.toLowerCase()===addresses[0].toLowerCase()));
+    const matchId=match.id;
     await s.locator(`[data-match-id="${matchId}"]`).click();
     await expect(s.locator(".match-bar")).toContainText("SPECTATOR");
     await a.keyboard.down("s");
@@ -86,8 +87,8 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
       await a.waitForTimeout(300);
     }
     for (let attempt=0;attempt<6;attempt++) {
-      await expect(s.getByRole("button",{name:"Back 01"})).toBeEnabled({timeout:20000});
-      await s.getByRole("button",{name:"Back 01"}).click();
+      await expect(s.getByRole("button",{name:match.playerA.toLowerCase()===addresses[0].toLowerCase()?"Back 01":"Back 02"})).toBeEnabled({timeout:20000});
+      await s.getByRole("button",{name:match.playerA.toLowerCase()===addresses[0].toLowerCase()?"Back 01":"Back 02"}).click();
       await expect.poll(async()=> (await s.locator(".status-line").innerText()).includes("Bet confirmed") || await s.locator(".notice").count()>0,{timeout:20000}).toBe(true);
       if ((await s.locator(".status-line").innerText()).includes("Bet confirmed")) break;
       expect(await s.locator(".notice").innerText()).toMatch(/window|version|collision|stale|slippage/i);
@@ -96,7 +97,7 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     }
     await expect(s.locator(".status-line")).toContainText("Bet confirmed");
     await b.reload();
-    if(config.version===3){await expect(b.locator(".status-line")).toContainText("Arcade session restored",{timeout:25000});}else{
+    if(config.version>=3){await expect(b.locator(".status-line")).toContainText("Arcade session restored",{timeout:25000});}else{
     await b.getByRole("button",{name:/^Connect passkey/}).click();
     await b.getByRole("button",{name:/Continue as|Use existing passkey/}).click();
     await expect(b.locator(".vault-strip")).toContainText(addresses[1].slice(0,6));
@@ -118,8 +119,8 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     await b.getByRole("button",{name:"Concede",exact:true}).click();
     await expect(a.locator(".match-bar")).toContainText("FINAL",{timeout:30000});
     for(const p of [a,b]) {await expect(p.locator(".outcome")).toBeVisible();await p.getByRole("button",{name:"Close result",exact:true}).click();}
-    await s.getByRole("button",{name:"Claim payout / refund"}).click();
-    await expect(s.locator(".status-line")).toContainText("Settlement credited",{timeout:20000});
+    if(config.version===4)await expect(s.locator(".match-payment")).toContainText("Paid to your wallet",{timeout:30000});
+    else {await s.getByRole("button",{name:"Claim legacy payout / refund"}).click();await expect(s.locator(".match-payment")).toContainText("Credited to your legacy vault",{timeout:20000});}
     await s.getByText("Withdraw test MON",{exact:true}).click();
     await s.getByRole("button",{name:"Sign withdrawal"}).click();
     await expect(s.locator(".status-line")).toContainText("Withdrawal confirmed",{timeout:20000});
@@ -139,7 +140,7 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     await expect(b.getByRole("button",{name:"Move up",exact:true})).toBeDisabled();
     await b.getByRole("button",{name:"Connect passkey",exact:true}).click();
     await b.getByRole("button",{name:/Continue as|Use existing passkey/}).click();
-    if(config.version===3)await expect(b.locator(".status-line")).toContainText("Arcade session ready",{timeout:30000});
+    if(config.version>=3)await expect(b.locator(".status-line")).toContainText("Arcade session ready",{timeout:30000});
     await b.getByRole("button",{name:"Open account details"}).click();
     await expect(b.getByRole("textbox",{name:"Full account address"})).toHaveValue(addresses[1]);
     await expect(b.getByRole("button",{name:"Disconnect",exact:true})).toBeEnabled();

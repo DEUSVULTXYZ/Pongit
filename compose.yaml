@@ -60,6 +60,18 @@ services:
     tmpfs: [/tmp]
     security_opt: [no-new-privileges:true]
     logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+  rpc-indexer:
+    build: {context: ., target: relayer}
+    command: [node, --import, tsx, relayer/src/rpc-gateway.ts]
+    restart: unless-stopped
+    environment:
+      RPC_UPSTREAM: https://rpc-testnet.monadinfra.com
+      RPC_UPSTREAM_FALLBACK: https://rpc-testnet.monadinfra.com
+      RPC_SPACING_MS: 80
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
