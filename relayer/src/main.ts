@@ -682,7 +682,7 @@ const server = createServer(async (req, res) => {
         const native=await publicClient.readContract({address:deployment.market,abi:activeContracts.market,functionName:"payouts",args:[payoutKey(0,id,playerAddress)]}) as readonly unknown[];
         const row=(await pool.query("SELECT id,state,tx_hash FROM payout_tasks WHERE deployment=$1 AND module='market' AND source_id=$2 AND recipient=$3",[activeVersion,id,player.toLowerCase()])).rows[0];
         if(amount>0n)state=Number(native[2])===2?"paid":Number(native[2])===1?"delayed":row?.state||"pending";
-        payment=row?{id:row.id,txHash:row.tx_hash}:null;
+        payment=row?{id:row.id,txHash:row.tx_hash,retryable:Number(native[2])===1}:null;
       }
       return send(res,{paid:position[2],claimed:position[3],amount,state,payment,completed:result[3]>=3});
     }
