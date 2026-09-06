@@ -16,3 +16,10 @@ export async function readSponsorCosts(db: Pick<ClientBase, "query">, balanceObs
     FROM relay_jobs`, [balanceObservedAt]);
   return { spent: BigInt(result.rows[0].spent), commitments: BigInt(result.rows[0].commitments) };
 }
+
+// A funded sender that stays above Monad's 10 MON reserve need not wait for
+// a quiet block window. Reserve the chain's entire 30M gas allowance before
+// estimation, plus all commitments since the cached balance observation.
+export function needsMonadValueWindow(chainId:number,value:bigint,balance:bigint,commitments:bigint,gasPriceCap:bigint) {
+  return chainId===10143 && value>0n && balance < 10n**19n + value + commitments + 30_000_000n*gasPriceCap;
+}

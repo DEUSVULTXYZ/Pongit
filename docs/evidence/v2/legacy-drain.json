@@ -1,0 +1,82 @@
+{
+  "chainId": 10143,
+  "game": "0xb66d62f0eabc5f1f86faca76bebc8353c2fbe0dd",
+  "matches": [
+    {
+      "id": "1",
+      "status": 3
+    },
+    {
+      "id": "2",
+      "status": 3
+    },
+    {
+      "id": "3",
+      "status": 3
+    },
+    {
+      "id": "4",
+      "status": 3
+    },
+    {
+      "id": "5",
+      "status": 3
+    },
+    {
+      "id": "6",
+      "status": 3
+    },
+    {
+      "id": "7",
+      "status": 3
+    },
+    {
+      "id": "8",
+      "status": 3
+    },
+    {
+      "id": "9",
+      "status": 3
+    },
+    {
+      "id": "10",
+      "status": 3
+    },
+    {
+      "id": "11",
+      "status": 3
+    },
+    {
+      "id": "12",
+      "status": 3
+    },
+    {
+      "id": "13",
+      "status": 4
+    },
+    {
+      "id": "14",
+      "status": 3
+    }
+  ],
+  "tournaments": [
+    {
+      "id": "1",
+      "status": 3
+    },
+    {
+      "id": "2",
+      "status": 4
+    },
+    {
+      "id": "3",
+      "status": 4
+    }
+  ],
+  "paused": true,
+  "hashes": [
+    "0x90e27aa3a77835409657f0980220d12e390d00f00c6ec761ee2ee38cc7ccafac",
+    "0xe761219aae3c00852311d1877f08fa7eae59c5a4292916d7ba813bf594d2fc41"
+  ],
+  "checkedAt": "2026-09-06T13:48:44.298Z"
+}

@@ -1,0 +1,1 @@
+{"deployment":"v1","id":"14","player":"0x4e1764aBF396C06a858F695968809039EB8cfA61","claimWei":"1000000000000000","withdrawWei":"20487505204853744","checkedAt":"2026-09-06T13:54:10.164Z","checks":["old market claim through V2 relayer","legacy wallet domain nonce withdrawal","exact positive payout","legacy vault empty after withdrawal"]}

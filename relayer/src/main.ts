@@ -50,7 +50,7 @@ import { gameV2Abi, marketV2Abi, tournamentsV2Abi } from "../../shared/abis-v2";
 import { legacyRoutes } from "./legacy";
 import { initializeSocial, socialRoutes } from "./social";
 import { pool, initializeStore } from "./store";
-import { readSponsorCosts } from "./budget";
+import { readSponsorCosts, needsMonadValueWindow } from "./budget";
 
 const deployment: Deployment = JSON.parse(
   await readFile(
@@ -342,14 +342,15 @@ async function dispatch() {
     const payload = row.payload as RelayRequest & { value: string };
     const encoded = encodeRequest(payload, deployment);
     const value = BigInt(payload.value || "0");
-    // Below Monad's reserve threshold, value transfers need a quiet window.
-    if (value > 0n && deployment.chainId === 10143) {
+    const sponsor = readSponsor();
+    const [balance, nextNonce, gasPrice] = await sponsor.value;
+    const { spent, commitments } = await readSponsorCosts(pool, new Date(sponsor.at));
+    // Keep the quiet-window fallback for a sender near Monad's reserve floor.
+    if (needsMonadValueWindow(deployment.chainId,value,balance,commitments,gasPriceCap)) {
       const recent = await pool.query("SELECT max((receipt->>'blockNumber')::numeric) AS block FROM relay_jobs WHERE receipt IS NOT NULL");
       const block = recent.rows[0].block;
       if (unfinished.rowCount || (block && head <= BigInt(block) + 4n)) return;
     }
-    const sponsor = readSponsor();
-    const [balance, nextNonce, gasPrice] = await sponsor.value;
     if (gasPrice > gasPriceCap) {
       lastError = "Gas price above sponsor ceiling";
       return;
@@ -364,7 +365,6 @@ async function dispatch() {
     const maxFeePerGas =
       gasPrice * 2n > gasPriceCap ? gasPriceCap : gasPrice * 2n;
     const cost = gas * maxFeePerGas + value;
-    const { spent, commitments } = await readSponsorCosts(pool, new Date(sponsor.at));
     if (
       (dailyBudget > 0n && spent + cost > dailyBudget) ||
       balance < cost + minimumBalance + commitments

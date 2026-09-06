@@ -1,0 +1,3 @@
+PASS: V1 rollback refused before mutation; active V2 release unchanged.
+pongit-indexer-v2-stage-1
+pongit-hasura-v2-stage-1

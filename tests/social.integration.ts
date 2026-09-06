@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import pg from "pg";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { cancelQueueMessage } from "../shared/protocol";
 const base=process.env.E2E_API_URL || "http://localhost:4012",origin=process.env.E2E_WEB_URL || "http://localhost:3002";
@@ -32,5 +33,9 @@ assert.equal(room.mode,1);assert.equal(room.ranked,false);assert.equal(room.rule
 const expires=Math.floor(Date.now()/1000)+120,ticket=room.ticket_a;
 const signature=await a.account.signMessage({message:cancelQueueMessage(a.account.address,ticket,expires,config.chainId,config.game)});
 assert.equal((await a.call("/queue/cancel","POST",{player:a.account.address,ticket,expires,signature})).data.cancelled,true);
+const expired=(await a.call("/challenges","POST",{recipient:b.account.address,mode:0,ranked:true})).data;
+const database=process.env.SOCIAL_TEST_DATABASE_URL || "postgres://pong:pong-local-only@127.0.0.1:15432/pong_v2";assert(["127.0.0.1","localhost"].includes(new URL(database).hostname));
+const db=new pg.Client({connectionString:database});await db.connect();try{await db.query("UPDATE challenges SET expires=extract(epoch FROM now())-1 WHERE id=$1 AND creator=$2",[expired.id,a.account.address.toLowerCase()]);}finally{await db.end();}
+assert.equal((await b.call(`/challenges/${expired.id}`)).data.status,"expired");assert.equal((await b.call(`/challenges/${expired.id}/accept`,"POST",{})).status,400);
 await a.call("/auth/session","DELETE");assert.equal((await a.call("/notebook")).status,400);
 console.log("PASS: auth replay, unique profiles, private reads, notebook concurrency, addressed links, blocking, atomic open-link acceptance and signed cancellation.");

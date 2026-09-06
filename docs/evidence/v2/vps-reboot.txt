@@ -1,0 +1,12 @@
+boot_before=2bc0c598-3763-49ea-9888-dc8890ab45be
+boot_after=60234f48-9fbf-47d1-be00-a9ea0cabf8ca
+journal_before=356:356:cc61357b72b5c40f75aafe87cee8ff1b
+journal_after=356:356:cc61357b72b5c40f75aafe87cee8ff1b
+caddy running
+hasura running healthy
+indexer running
+postgres running healthy
+relayer running starting
+rpc running
+web running
+{"ok":true,"head":"60208372","queueError":"","network":10143}

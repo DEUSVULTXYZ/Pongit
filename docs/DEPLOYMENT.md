@@ -16,7 +16,7 @@ PostgreSQL conserve le journal `pong_relayer` et la base V1 `pong_indexer`. La V
 
 Monad Testnet 10143 uniquement. Le gas sponsorisé, les crédits de démonstration et la liquidité utilisent des MON de test obtenus gratuitement. Le relayer a un budget quotidien et une réserve minimale configurables. Le plafond quotidien a été supprimé à la demande du propriétaire le 6 septembre 2026 (`RELAYER_DAILY_BUDGET_MON=0`). Le prix du gas reste plafonné à 200 gwei. Une valeur quotidienne positive permet de réactiver cette limite facultative. Elle réserve le gas maximal et la valeur pour les transactions signées/en attente, puis compte les frais du reçu et la valeur effectivement transférée à leur confirmation. Les réservations encore ouvertes sont conservées après minuit UTC. Le rapport de coût utilise les frais réellement facturés.
 
-Pour un compte de moins de 10 MON, Monad impose un intervalle entre transactions dépensant de la valeur. Le relayer attend la sortie des transactions précédentes de cette fenêtre avant de créditer un joueur ou de déposer une liquidité. Une transaction déjà signée est toujours reprise avec les mêmes octets et le même nonce.
+Le relayer conserve une attente entre transferts de valeur lorsqu’il risque d’entamer la réserve Monad. Avec un solde suffisant, il évite cette attente en réservant 10 MON, tous les engagements en cours et une marge conservatrice de 30 millions de gas avant estimation. Référence : [sémantique de réserve Monad](https://github.com/category-labs/monad-revm#reserve-balance-precompile-0x1001). Une transaction déjà signée est toujours reprise avec les mêmes octets et le même nonce.
 
 Pour attribuer les rôles fonctionnels à une passkey, utiliser depuis un environnement opérateur privé :
 
