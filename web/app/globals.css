@@ -666,6 +666,9 @@ footer {
 .connect-modal {
   width: 440px;
   max-width: 100%;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: #0c0c0c;
   border: 1px solid #555;
   padding: 40px;
