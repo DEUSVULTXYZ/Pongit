@@ -50,7 +50,7 @@ import { type State, stateComponents, advance } from "../../shared/physics-v2";
 import { gameV2Abi as gameAbi, marketV2Abi as marketAbi, tournamentsV2Abi as tournamentsAbi } from "../../shared/abis-v2";
 import { Legacy } from "./Legacy";
 import { SocialHub } from "./SocialHub";
-import { createArcade, restoreArcade, clearArcade, revokeArcade, type ArcadeSession } from "../lib/arcade";
+import { createArcade, restoreArcade, clearArcade, revokeArcade, InvalidArcadeSession, ArcadeNetworkError, type ArcadeSession } from "../lib/arcade";
 import { Outcome } from "./Outcome";
 import { monadTransport } from "../lib/transport";
 import { acceptsSnapshot, type SnapshotCursor } from "../lib/presentation";
@@ -237,15 +237,19 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       const all=await api("/matches");const active=all.matches.find((m:any)=>[1,2].includes(m.status)&&[m.playerA,m.playerB].some((p:string)=>p.toLowerCase()===address.toLowerCase()));
       if(active){sessionMatch.current=active.id;setSelected(active.id);setTab("Play");}
       await refreshPlayer(address);setMessage("Welcome back. Arcade session restored in this tab.");
-    }).catch(e=>{if(generation===identityVersion.current)setError(e.message);}).finally(()=>setBusy(false));
-  },[config?.game]);
-  useEffect(()=>{if(!arcade.current)return;const check=()=>void arcade.current?.validate().catch(()=>{setArcadeExpires(0);setDirection(0);session.current=null;setMessage("Arcade session expired or revoked. Renew arcade session to play again.");});const timer=setInterval(check,15000);return()=>clearInterval(timer);},[account,arcadeExpires]);
+    }).catch(e=>{
+      if(generation!==identityVersion.current)return;
+      if(!(e instanceof ArcadeNetworkError)){const previous=e instanceof InvalidArcadeSession?rememberedAccount():null;if(previous){owner.current=accountStub(previous.address,previous.credential);setAccount(previous.address);setRecipient(previous.address);}setError(e.message);}
+      else {restoreAttempt.current="";setMessage("Session verification interrupted. Retrying when the service reconnects; your arcade key stays in this tab.");}
+    }).finally(()=>setBusy(false));
+  },[config]);
+  useEffect(()=>{if(!arcade.current)return;const check=()=>void arcade.current?.validate().catch(e=>{setDirection(0);if(e instanceof InvalidArcadeSession){setArcadeExpires(0);session.current=null;setMessage("Arcade session expired or revoked. Renew arcade session to play again.");}else setMessage("Connection interrupted. Your arcade session is preserved; reconnecting…");});const timer=setInterval(check,15000);return()=>clearInterval(timer);},[account,arcadeExpires]);
   async function authenticateApp() {
     if(!owner.current)throw new Error("Connect your passkey first");
     try {const current=await appApi("/auth/session");if(current.player===owner.current.account.address.toLowerCase())return;} catch {}
     const own=await gameplaySigner();const generation=identityVersion.current;
     const challenge=await appApi("/auth/challenge","POST",{player:owner.current.account.address});
-    const signature=await own.account.signMessage({message:challenge.message});closeOwner();
+    const signature=await own.account.signMessage({message:challenge.message});if(config?.version!==3)closeOwner();
     if(generation!==identityVersion.current)throw new Error("Account changed");
     await appApi("/auth/session","POST",{player:owner.current!.account.address,nonce:challenge.nonce,signature});
   }

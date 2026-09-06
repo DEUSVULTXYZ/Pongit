@@ -7,6 +7,8 @@ import { accountStub, type Identity } from "./wallet";
 const storageKey="pongit:arcade-session:v3";
 export type ArcadeSession={identity:Identity;player:Address;expires:number;game:Address;chainId:number;validate:()=>Promise<void>;end:()=>void};
 type Stored={player:Address;key:Hex;expires:number;game:Address;chainId:number;credential?:Identity["credential"];grant:Record<string,string>;ownerSignature:Hex;keySignature:Hex};
+export class InvalidArcadeSession extends Error {}
+export class ArcadeNetworkError extends Error {}
 let current:ArcadeSession|null=null;
 let releaseControl:(()=>void)|undefined;
 async function control(player:string,d:Deployment){
@@ -21,9 +23,9 @@ function install(data:Stored):ArcadeSession {
   const keyAccount=privateKeyToAccount(data.key);
   let alive=true;const lease=releaseControl;
   // Retain only a gameplay key. The remembered identity contains no wallet key.
-  const identity:Identity={account:{...keyAccount,signMessage:async args=>{if(!alive || Date.now()/1000>=data.expires)throw new Error("Renew arcade session");return keyAccount.signMessage(args);},signTypedData:async args=>{if(!alive || Date.now()/1000>=data.expires)throw new Error("Renew arcade session");return keyAccount.signTypedData(args);}},local:false,end:()=>{alive=false;}};
+  const identity:Identity={account:{...keyAccount,signMessage:async args=>{if(!alive || Date.now()/1000>=data.expires)throw new InvalidArcadeSession("Renew arcade session");return keyAccount.signMessage(args);},signTypedData:async args=>{if(!alive || Date.now()/1000>=data.expires)throw new InvalidArcadeSession("Renew arcade session");return keyAccount.signTypedData(args);}},local:false,end:()=>{alive=false;}};
   const result:ArcadeSession={identity,player:data.player,expires:data.expires,game:data.game,chainId:data.chainId,
-    validate:async()=>{if(!alive || Date.now()/1000>=data.expires)throw new Error("Renew arcade session");const state=await api(`/arcade/${data.player}`);if(state.key.toLowerCase()!==keyAccount.address.toLowerCase() || Number(state.expires)<=state.serverTime)throw new Error("Arcade session expired or revoked. Renew arcade session.");},
+    validate:async()=>{if(!alive || Date.now()/1000>=data.expires)throw new InvalidArcadeSession("Renew arcade session");const state=await api(`/arcade/${data.player}`).catch(()=>{throw new ArcadeNetworkError("Unable to verify the arcade session while disconnected");});if(state.key.toLowerCase()!==keyAccount.address.toLowerCase() || Number(state.expires)<=state.serverTime)throw new InvalidArcadeSession("Arcade session expired or revoked. Renew arcade session.");},
     end:()=>{alive=false;lease?.();if(releaseControl===lease)releaseControl=undefined;if(current===result)current=null;}
   };current=result;return result;
 }
@@ -49,7 +51,7 @@ export async function restoreArcade(d:Deployment):Promise<{session:ArcadeSession
   await control(data.player,d);
   const session=install(data);
   try {await session.validate();return {session,owner:accountStub(data.player,data.credential)};}
-  catch(e){session.end();sessionStorage.removeItem(storageKey);throw e;}
+  catch(e){session.end();if(e instanceof InvalidArcadeSession)sessionStorage.removeItem(storageKey);throw e;}
 }
 export function clearArcade(){current?.end();sessionStorage.removeItem(storageKey);sessionStorage.removeItem("pongit:pending-match");}
 export async function revokeArcade(d:Deployment,session:ArcadeSession) {
