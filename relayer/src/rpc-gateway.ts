@@ -1,6 +1,7 @@
 // Private, shared upstream budget for the relayer and Envio. Never publish this port.
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
+import {chunkedLogs} from "./log-ranges";
 import { rpcScheduler } from "./rpc-scheduler";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
@@ -11,6 +12,10 @@ let waiting = 0;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 async function request(method: string, params: unknown[]) {
+  if(method==="eth_getLogs" && process.env.RPC_CHUNK_LOGS==="true") {
+    const result=await chunkedLogs(params[0],p=>request(method,[p]) as Promise<any[]>,100,2000);
+    if(result!==null)return result;
+  }
   const key = JSON.stringify([method, params]);
   const cached = cache.get(key);
   if (cached && cached.expires > Date.now()) return cached.result;

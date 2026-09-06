@@ -67,7 +67,8 @@ services:
     environment:
       RPC_UPSTREAM: https://rpc-testnet.monadinfra.com
       RPC_UPSTREAM_FALLBACK: https://rpc-testnet.monadinfra.com
-      RPC_SPACING_MS: 80
+      RPC_SPACING_MS: 60
+      RPC_CHUNK_LOGS: "true"
     read_only: true
     tmpfs: [/tmp]
     security_opt: [no-new-privileges:true]

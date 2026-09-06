@@ -18,7 +18,7 @@ Envio indexes all four deployments. Result and cancellation events create stable
 
 ## Migration and operation
 
-Historical indexing uses a separate private RPC gateway to the [Monad Foundation public endpoint](https://docs.monad.xyz/developer-essentials/testnet), paced at 12.5 requests/second below its documented 20-request limit. Gameplay and sponsored writes retain their own gateway. Neither gateway exposes a public port.
+Historical indexing uses a separate private RPC gateway to the [Monad Foundation public endpoint](https://docs.monad.xyz/developer-essentials/testnet), paced at 16.7 requests/second below its documented 20-request limit. Gameplay and sponsored writes retain their own gateway. The indexing gateway splits ranges into provider-compatible 100-block requests, preserves filters, returns no partial response on failure, and orders the combined logs. Every subrequest uses its rate budget. This reduces repeated boundary-header reads during backfill. Neither gateway exposes a public port.
 
 The exact addresses, start blocks and successful deployment receipts are in [testnet-v4.json](../deployments/testnet-v4.json). The recursive manifest preserves V1–V3. Existing balances stay in their respective vaults: legacy claims credit that vault, followed by an owner-signed withdrawal. Mera addresses do not change. A new arcade authorization is explicitly required for the V4 game.
 
