@@ -859,7 +859,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       after = data.Frame.at(-1).version;
     }
     if (!result.length)
-      throw new Error("No indexed replay yet. Check Envio synchronization.");
+      throw new Error(m.match.status===4 && m.match.startBlock==="0"?"Match cancelled before play. No replay was recorded.":"No indexed replay yet. Check Envio synchronization.");
     setFrames(result);
     setFrameIndex(0);
     showFrame(result[0]);
