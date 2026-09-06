@@ -1,0 +1,90 @@
+# Private, disposable services on the VPS. Never attach the production network.
+name: pongit-neon-test
+services:
+  chain:
+    image: ghcr.io/foundry-rs/foundry:stable
+    entrypoint: [anvil]
+    command: [--host, 0.0.0.0, --chain-id, "31337", --block-time, "0.3"]
+    ports: ["127.0.0.1:8559:8545"]
+    mem_limit: 512m
+    cpus: 0.5
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD:?Private test password required}
+      POSTGRES_DB: relayer
+    volumes: [test-db:/var/lib/postgresql/data]
+    mem_limit: 192m
+    cpus: 0.3
+  relayer:
+    build: {context: .., target: relayer}
+    environment:
+      DATABASE_URL: postgres://test:${TEST_DB_PASSWORD}@postgres:5432/relayer
+      RELAYER_PRIVATE_KEY: ${TEST_RELAYER_KEY:?Isolated test key required}
+      RPC_URL: http://chain:8545
+      DEPLOYMENT_FILE: /app/deployments/sandbox-v4.json
+      ALLOWED_ORIGIN: http://localhost:3150
+      INDEXER_GRAPHQL_URL: http://hasura:8080/v1/graphql
+      HASURA_ADMIN_SECRET: ${TEST_HASURA_SECRET}
+      LOCAL_DEV: "true"
+      RELAYER_DAILY_BUDGET_MON: "0"
+      PORT: "4000"
+    volumes: [../deployments:/app/deployments:ro]
+    ports: ["127.0.0.1:4150:4000"]
+    mem_limit: 384m
+    cpus: 0.5
+  proxy:
+    image: caddy:2-alpine
+    volumes: [./test-Caddyfile:/etc/caddy/Caddyfile:ro]
+    ports: ["127.0.0.1:3150:3150"]
+    mem_limit: 96m
+    cpus: 0.2
+  runner:
+    build: {context: .., dockerfile: ops/test-runner.Dockerfile}
+    working_dir: /app
+    network_mode: service:proxy
+    volumes: [../:/app]
+    environment:
+      RPC_URL: http://chain:8545
+      PONG_TEST_RPC_URL: http://chain:8545
+      PONG_TEST_URL: http://localhost:3150
+      PONG_TEST_API: http://localhost:3150/api
+      TEST_RELAYER_KEY: ${TEST_RELAYER_KEY}
+    mem_limit: 1024m
+    cpus: 1.0
+    profiles: [runner]
+  web:
+    build:
+      context: ..
+      target: web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3150/api
+        NEXT_PUBLIC_WS_URL: ws://localhost:3150/ws
+        NEXT_PUBLIC_RP_ID: localhost
+    mem_limit: 256m
+    cpus: 0.5
+  hasura:
+    image: hasura/graphql-engine:v2.48.6
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://test:${TEST_DB_PASSWORD}@postgres:5432/indexer
+      HASURA_GRAPHQL_ADMIN_SECRET: ${TEST_HASURA_SECRET}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
+    ports: ["127.0.0.1:18550:8080"]
+    mem_limit: 256m
+    cpus: 0.3
+  indexer:
+    build: ../indexer
+    environment:
+      ENVIO_PG_HOST: postgres
+      ENVIO_PG_PORT: "5432"
+      ENVIO_PG_USER: test
+      ENVIO_PG_PASSWORD: ${TEST_DB_PASSWORD}
+      ENVIO_PG_DATABASE: indexer
+      ENVIO_PG_SCHEMA: indexer
+      HASURA_GRAPHQL_ENDPOINT: http://hasura:8080/v1/metadata
+      HASURA_GRAPHQL_ADMIN_SECRET: ${TEST_HASURA_SECRET}
+    mem_limit: 384m
+    cpus: 0.5
+volumes:
+  test-db:

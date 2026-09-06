@@ -10,6 +10,11 @@ type Match {
   tournamentId: String!
   status: Int!
   winner: String!
+  played: Boolean!
+  scoreA: Int!
+  scoreB: Int!
+  endedAt: String!
+  replayAvailability: String!
   block: BigInt!
 }
 type Frame {
@@ -117,4 +122,10 @@ type TournamentEntry {
   id: ID!
   tournamentId: String!
   recipient: String!
+}
+
+# One global list per address, across modes and deployments.
+type RecentReplays {
+  id: ID!
+  matches: [String!]!
 }

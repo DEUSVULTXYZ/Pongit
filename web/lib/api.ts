@@ -17,7 +17,7 @@ export async function api<T = any>(path: string, body?: unknown): Promise<T> {
   });
   if (response.status >= 500) throw new Error("Service reconnecting. Please retry in a moment.");
   const result = await response.json().catch(() => { throw new Error("Connection interrupted. Please retry."); });
-  if (!response.ok || result.error)
+  if (!response.ok || (result.error && !path.startsWith("/jobs/")))
     throw new Error(result.error || "Service unavailable");
   return result;
 }
@@ -28,7 +28,7 @@ export async function relay(request: RelayRequest) {
 const completedJobs = new Map<string, any>();
 const jobListeners = new Map<string, Set<(job: any) => void>>();
 export function notifyJob(job: any) {
-  if (!["succeeded", "failed"].includes(job.status)) return;
+  if (!["succeeded", "failed", "superseded"].includes(job.status)) return;
   completedJobs.set(job.id, job);
   if (completedJobs.size > 100) completedJobs.delete(completedJobs.keys().next().value!);
   for (const listener of jobListeners.get(job.id) || []) listener(job);
@@ -39,12 +39,12 @@ export async function waitJob(id: string) {
     let timer: ReturnType<typeof setTimeout>;
     const started = Date.now();
     const finish = (job: any) => {
-      if (done || !["succeeded", "failed"].includes(job.status)) return;
+      if (done || !["succeeded", "failed", "superseded"].includes(job.status)) return;
       done = true;
       clearTimeout(timer);
       jobListeners.get(id)?.delete(finish);
       if (!jobListeners.get(id)?.size) jobListeners.delete(id);
-      if (job.status === "succeeded") resolve(job);
+      if (job.status === "succeeded" || job.status === "superseded") resolve(job);
       else reject(new Error(job.error || "Transaction reverted"));
     };
     const listeners = jobListeners.get(id) || new Set();

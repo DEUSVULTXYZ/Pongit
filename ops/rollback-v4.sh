@@ -4,6 +4,9 @@ test "$#" -eq 1 && [[ "$1" =~ ^[a-f0-9]{40}$ ]] || { echo 'Usage: rollback-v4.sh
 target="/opt/pongit/releases/$1"
 test -f "$target/deployments/testnet.json"
 cd /opt/pongit/current
+if [[ -f ops/APP_PROTOCOL_VERSION ]] && ! [[ -f "$target/ops/APP_PROTOCOL_VERSION" && "$(cat "$target/ops/APP_PROTOCOL_VERSION")" == "$(cat ops/APP_PROTOCOL_VERSION)" ]]; then
+  echo "Rollback rejected: select a release supporting the current input and replay-retention APIs."; exit 1
+fi
 # Refuse a V1 binary or a different set of immutable contracts. Signed V4 jobs
 # cannot safely be handed to the V1/V2/V3 relayers.
 docker compose exec -T relayer node -e '

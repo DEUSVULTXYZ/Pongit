@@ -2,9 +2,14 @@
 import { useEffect, useRef, useState } from "react";
 import { emptyNotebook, type NotebookData } from "../../shared/social";
 import { decryptNotebook, encryptNotebook, unlockNotebook } from "../lib/notebook";
-import { appApi as requestApp } from "../lib/api";
+import { api, appApi as requestApp } from "../lib/api";
 import type { Identity } from "../lib/wallet";
 
+function ReplayStatus({reference}:{reference:string}){
+  const [status,setStatus]=useState("");
+  useEffect(()=>{let alive=true;if(/^v[1-4]:\d+$/.test(reference))void api(`/replay-status/${reference}`).then(r=>{if(alive)setStatus(r.replayAvailability);}).catch(()=>{});return()=>{alive=false;};},[reference]);
+  return status==="pruned"?<small>Replay retired · your private note is preserved.</small>:null;
+}
 export function Notebook({disabled=false,account,authenticate,identity,matchRef,atUs,applyPreferences}:{disabled?:boolean;account:string;authenticate:()=>Promise<void>;identity:()=>Identity|null;matchRef?:string;atUs?:string;applyPreferences:(settings:{preferredMode:number;sound:boolean})=>void}) {
   const appApi=(path:string,method="GET",body?:unknown)=>requestApp(path,method,body,account);
   const key=useRef<CryptoKey|null>(null), generation=useRef(0), inFlight=useRef(false);
@@ -24,7 +29,7 @@ export function Notebook({disabled=false,account,authenticate,identity,matchRef,
       {data.rivals.map(r=><div className="notebook-row" key={r.address}><span>{r.nickname || r.address}<small>{r.address}</small></span><button aria-label={`Remove ${r.nickname || r.address}`} onClick={()=>setData({...data,rivals:data.rivals.filter(x=>x!==r)})}>×</button></div>)}
       <h3>Replay notes</h3><p>{matchRef?`${matchRef} · ${Number(atUs || 0)/1e6}s`:"Open a match or replay to attach a note."}</p><textarea maxLength={2000} value={note} onChange={e=>setNote(e.target.value)} placeholder="Private observation…"/>
       <button disabled={!note.trim() || !matchRef} onClick={()=>{setData({...data,notes:[...data.notes,{id:crypto.randomUUID(),matchRef:matchRef!,atUs:atUs || "0",text:note}]});setNote("");}}>Add timestamped note</button>
-      {data.notes.map(n=><div className="notebook-row" key={n.id}><span><small>{n.matchRef} · {Number(n.atUs)/1e6}s</small>{n.text}</span><button aria-label="Delete note" onClick={()=>setData({...data,notes:data.notes.filter(x=>x!==n)})}>×</button></div>)}
+      {data.notes.map(n=><div className="notebook-row" key={n.id}><span><small>{n.matchRef} · {Number(n.atUs)/1e6}s</small><ReplayStatus reference={n.matchRef}/>{n.text}</span><button aria-label="Delete note" onClick={()=>setData({...data,notes:data.notes.filter(x=>x!==n)})}>×</button></div>)}
       <label>Preferred mode<select value={data.settings.preferredMode} onChange={e=>setData({...data,settings:{...data.settings,preferredMode:Number(e.target.value) as 0|1}})}><option value="0">Classic</option><option value="1">Chaos</option></select></label>
       <label><input type="checkbox" checked={data.settings.sound} onChange={e=>setData({...data,settings:{...data.settings,sound:e.target.checked}})}/> Prefer arcade sounds</label>
       <button onClick={()=>void run(async()=>{applyPreferences(data.settings);setMessage("Preferences applied to this browser.");})}>Apply preferences</button>

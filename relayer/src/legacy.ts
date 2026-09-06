@@ -24,11 +24,11 @@ export function legacyRoutes(d:{legacy?:Deployment;read:(address:Address,abi:Abi
     }
     if(path==="/legacy/history") {
       const before=url.searchParams.get("before") || "999999999999";if(!/^\d+$/.test(before))throw new Error("Invalid cursor");
-      d.send(res,await d.graphql('query LegacyHistory($before:numeric!,$deployment:String!){Match(where:{deployment:{_eq:$deployment},block:{_lt:$before}},order_by:{block:desc},limit:100){id rawId deployment playerA playerB tournamentId status winner block mode ranked rulesVersion}}',{before,deployment:requested}));return true;
+      d.send(res,await d.graphql('query LegacyHistory($before:numeric!,$deployment:String!){Match(where:{deployment:{_eq:$deployment},block:{_lt:$before}},order_by:{block:desc},limit:100){id rawId deployment playerA playerB tournamentId status winner block mode ranked rulesVersion played scoreA scoreB endedAt replayAvailability}}',{before,deployment:requested}));return true;
     }
     const match=/^\/legacy\/(matches|replay)\/(\d+)$/.exec(path);
     if(match){const id=match[2];if(match[1]==="matches"){const m=await d.read(legacy.game,gameAbi,"getMatch",[BigInt(id)]);d.send(res,{id:`${requested}:${id}`,match:m,clock:m.state.t});}
-      else {const after=url.searchParams.get("after") || "0";if(!/^\d+$/.test(after))throw new Error("Invalid cursor");d.send(res,await d.graphql('query LegacyReplay($id:String!,$after:numeric!){Frame(where:{matchId:{_eq:$id},version:{_gt:$after}},order_by:{version:asc},limit:1000){id matchId version state clock block nextAt nextKind}}',{id:`${requested}:${id}`,after}));}return true;}
+      else {const metadata=await d.graphql("query($id:String!){Match(where:{id:{_eq:$id}}){replayAvailability}}",{id:`${requested}:${id}`});if(metadata.Match[0]?.replayAvailability==="pruned"){d.send(res,{error:"Replay retired: only each player's three latest completed games are retained. Results and payments remain available.",replayAvailability:"pruned"},410);return true;}const after=url.searchParams.get("after") || "0";if(!/^\d+$/.test(after))throw new Error("Invalid cursor");d.send(res,await d.graphql('query LegacyReplay($id:String!,$after:numeric!){Frame(where:{matchId:{_eq:$id},version:{_gt:$after}},order_by:{version:asc},limit:1000){id matchId version state clock block nextAt nextKind}}',{id:`${requested}:${id}`,after}));}return true;}
     d.send(res,{error:"Legacy route not found"},404);return true;
   };
 }

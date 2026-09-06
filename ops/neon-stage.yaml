@@ -1,0 +1,29 @@
+# Shadow indexer migration. Existing production continues serving its old schema.
+services:
+  hasura-neon-stage:
+    image: hasura/graphql-engine:v2.48.6
+    restart: unless-stopped
+    mem_limit: 256m
+    cpus: 0.3
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://pong_indexer:${INDEXER_DB_PASSWORD}@postgres:5432/pong_indexer_neon
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
+    logging: {driver: json-file, options: {max-size: "5m", max-file: "2"}}
+  indexer-neon-stage:
+    image: pongit-indexer-neon
+    build: /opt/pongit/tests/neon-indexer
+    restart: unless-stopped
+    mem_limit: 384m
+    cpus: 0.5
+    environment:
+      ENVIO_API_TOKEN: ${ENVIO_API_TOKEN:-}
+      ENVIO_PG_HOST: postgres
+      ENVIO_PG_PORT: "5432"
+      ENVIO_PG_USER: pong_indexer
+      ENVIO_PG_PASSWORD: ${INDEXER_DB_PASSWORD}
+      ENVIO_PG_DATABASE: pong_indexer_neon
+      ENVIO_PG_SCHEMA: indexer
+      HASURA_GRAPHQL_ENDPOINT: http://hasura-neon-stage:8080/v1/metadata
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
+    logging: {driver: json-file, options: {max-size: "5m", max-file: "2"}}

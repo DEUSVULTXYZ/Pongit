@@ -1054,3 +1054,5 @@ main {position:relative;isolation:isolate;}
 .payment-row>div {display:grid;gap:6px;min-width:0;overflow-wrap:anywhere;}
 .payment-row span {color:var(--muted);}.payment-row a {color:var(--cyan);}
 @media(max-width:700px){.payment-row{flex-direction:column;}.payment-history{padding:16px;}.payment-row button{width:100%;}}
+.network-panel {margin:12px 20px;font-size:10px}.network-panel summary {cursor:pointer;padding:8px 0}.network-panel dl {display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.network-panel dt {color:var(--muted);font-size:9px}.network-panel dd {margin:8px 0}.network-panel p {line-height:1.8}
+.arcade-settings.side-card {max-height:calc(100dvh - 110px);overflow:auto;overscroll-behavior:contain}.arcade-settings .modal-close {position:sticky;top:0;align-self:flex-end;z-index:1;margin-bottom:-36px;flex:none;background:#100a1e}

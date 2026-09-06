@@ -1,3 +1,5 @@
+import { initializeInputs, createInputs, sharesInputEstimate } from "./inputs";
+import {trafficBudget} from "./traffic";
 import {transitionGas} from "./transition-gas";
 import { initializePayouts, createPayoutWorker, payoutKey } from "./payouts";
 import "dotenv/config";
@@ -99,6 +101,7 @@ const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as Hex);
 const wallet = createWalletClient({ account, chain, transport: http(rpc) });
 const signingLock = await initializeStore();
 await initializeSocial();
+await initializeInputs(pool);
 await initializePayouts(pool);
 await pool.query("CREATE TABLE IF NOT EXISTS faucets_v4 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
 await pool.query("CREATE TABLE IF NOT EXISTS faucets_v3 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
@@ -180,6 +183,23 @@ function readMatch(id: bigint, blockNumber?: bigint) {
     blockNumber,
   });
 }
+// Short-lived reads are shared by concurrent input requests; receipts and dispatch
+// never wait for the match polling loop or maintenance to finish.
+const inputReads=new Map<string,{at:number;value:Promise<any>}>();
+const grantReads=new Map<string,{block:bigint;value:Promise<boolean>}>();
+const inputs=createInputs({db:pool,deployment,version:activeVersion,head:()=>head,notify:broadcast,
+  read:async(id)=>{
+    const key=String(id),view=matchViews.get(key);
+    if(view && Date.now()-view.observedAt<900)return view.match;
+    let entry=inputReads.get(key);
+    if(!entry || Date.now()-entry.at>250){entry={at:Date.now(),value:readMatch(id)};inputReads.set(key,entry);if(inputReads.size>100)inputReads.delete(inputReads.keys().next().value!);}
+    return entry.value;
+  },valid:async(player,key)=>{
+    if(!deployment.arcade)return true;
+    const id=`${player}:${key}`;let entry=grantReads.get(id);
+    if(!entry || entry.block!==head){entry={block:head,value:publicClient.readContract({address:deployment.arcade,abi:arcadeSessionsAbi,functionName:"validInput",args:[player,key]})};grantReads.set(id,entry);if(grantReads.size>100)grantReads.delete(grantReads.keys().next().value!);}
+    return entry.value;
+  }});
 function jobView(row: any) {
   const duration = (a: any, b: any) => a && b ? Math.max(0, Math.round(new Date(b).getTime() - new Date(a).getTime())) : null;
   return { id: row.id, status: row.status, tx_hash: row.tx_hash, error: row.error,
@@ -214,6 +234,7 @@ async function enqueue(payload: RelayRequest, internal = false, value = 0n) {
     throw new Error("Call not sponsored");
   payload = { ...payload, deployment: payload.deployment || activeVersion };
   if (payload.deployment !== activeVersion && !(payload.contract === "vault" && payload.functionName === "withdraw" || payload.contract === "market" && payload.functionName === "claim" || payload.contract === "tournaments" && payload.functionName === "refund")) throw new Error("Legacy contracts accept claims, refunds and withdrawals only");
+  if(payload.functionName==="submitInput")return inputs.accept(payload);
   const encoded = encodeRequest(payload, deployment);
   const round =
     payload.contract === "tournaments" && payload.functionName === "advance"
@@ -278,7 +299,7 @@ function readSponsor() {
   }
   return sponsorState;
 }
-async function dispatch() {
+async function observeReceipts() {
   const unfinished = await pool.query(
     "SELECT * FROM relay_jobs WHERE status IN ('signed','sent') ORDER BY nonce LIMIT 8",
   );
@@ -337,21 +358,26 @@ async function dispatch() {
           if (!/already known|nonce too low/i.test(String(e))) throw e;
         }
         await pool.query(
-          "UPDATE relay_jobs SET status='sent',submitted_at=coalesce(submitted_at,now()),updated_at=now() WHERE id=$1",
+          "UPDATE relay_jobs SET status='sent',submitted_at=coalesce(submitted_at,now()),updated_at=now() WHERE id=$1 AND status IN ('signed','sent')",
           [row.id],
         );
       }
     }
   }));
+ }
+async function dispatch() {
+  const unfinished=await pool.query("SELECT id FROM relay_jobs WHERE status IN ('signed','sent') LIMIT 8");
   if (unfinished.rowCount! >= 8) return;
   const pending = await pool.query(
-    "SELECT * FROM relay_jobs WHERE status='queued' ORDER BY CASE WHEN payload->>'functionName'='submitInput' THEN 0 WHEN payload->>'functionName' IN ('claim','refund','retryPayout','advance') THEN 2 ELSE 1 END,created_at LIMIT 1",
+    `SELECT j.* FROM relay_jobs j WHERE j.status='queued' AND
+      (j.input_lane IS NULL OR NOT EXISTS(SELECT 1 FROM relay_jobs p WHERE p.input_lane=j.input_lane AND p.status IN ('signed','sent')))
+      ORDER BY CASE WHEN payload->>'functionName' IN ('submitInput','resolveEvent') THEN 0 WHEN payload->>'functionName' IN ('claim','refund','retryPayout','advance','open') THEN 2 ELSE 1 END,created_at LIMIT 1`,
   );
-  const row = pending.rows[0];
+  let row = pending.rows[0];
   if (!row) return;
   try {
-    const payload = row.payload as RelayRequest & { value: string };
-    const encoded = encodeRequest(payload, deployment);
+    let payload = row.payload as RelayRequest & { value: string };
+    let encoded = encodeRequest(payload, deployment);
     const value = BigInt(payload.value || "0");
     const sponsor = readSponsor();
     const [balance, nextNonce, gasPrice] = await sponsor.value;
@@ -391,7 +417,18 @@ async function dispatch() {
       nextNonce,
       reserved.rows[0].nonce === null ? 0 : Number(reserved.rows[0].nonce) + 1,
     );
-    const raw = await wallet.signTransaction({
+    const sign=async()=>{
+      // Do not make rapid changes starve signing while RPC estimates a command.
+      // Reuse only the catch-up estimate for the exact same input nonce, with
+      // the conservative direction-storage allowance in transitionGas.
+      const current=(await pool.query("SELECT status FROM relay_jobs WHERE id=$1",[row.id])).rows[0];
+      if(current?.status!=="queued"){
+        if(current?.status!=="superseded" || !row.input_lane)return null;
+        const latest=(await pool.query("SELECT * FROM relay_jobs WHERE input_lane=$1 AND status='queued' ORDER BY created_at DESC LIMIT 1",[row.input_lane])).rows[0];
+        if(!latest || !sharesInputEstimate(payload,latest.payload,head))return null;
+        row=latest;payload=latest.payload;encoded=encodeRequest(payload,deployment);
+      }
+      const raw = await wallet.signTransaction({
       to: encoded.address,
       data: encoded.data,
       value,
@@ -406,9 +443,13 @@ async function dispatch() {
       "UPDATE relay_jobs SET status='signed',raw_tx=$2,tx_hash=$3,nonce=$4,cost=$5,signed_at=now(),updated_at=now() WHERE id=$1",
       [row.id, raw, txHash, nonce, cost.toString()],
     );
+      return raw;
+    };
+    const raw=row.input_lane?await inputs.lock(row.input_lane,sign):await sign();
+    if(!raw)return;
     await publicClient.sendRawTransaction({ serializedTransaction: raw });
     await pool.query(
-      "UPDATE relay_jobs SET status='sent',submitted_at=now(),updated_at=now() WHERE id=$1",
+      "UPDATE relay_jobs SET status='sent',submitted_at=now(),updated_at=now() WHERE id=$1 AND status IN ('signed','sent')",
       [row.id],
     );
   } catch (error) {
@@ -473,6 +514,44 @@ async function refresh() {
     matchViews.set(rawId, frame);
     // Publish the coherent frame before provisioning markets or tournaments.
     broadcast({ type: "match", ...frame });
+    if(m.status===1 && head>m.createdBlock+200n){
+      try{await enqueue({contract:"game",functionName:"cancelUnstarted",args:[String(id)]},true);}catch{/* A concurrent reveal/cancellation is checked onchain. */}
+    }
+    if ((deployment.version || 1) >= 2 && m.status === 3 && !m.ratingFinalized) {
+      try { await enqueue({contract:"game",functionName:"finalizeRating",args:[String(id)]},true); } catch { lastError="Rating finalization pending"; }
+    }
+    const clock = frame.clock;
+    if (
+      m.status === 2 &&
+      next(m.state).at <= clock
+    ) {
+      const pending = await pool.query(
+        "SELECT id FROM relay_jobs WHERE status IN ('queued','signed','sent') AND payload->>'contract'='game' AND payload->>'deployment'=$2 AND (payload->'args'->>0=$1 OR payload->'args'->0->>'matchId'=$1)",
+        [id.toString(),activeVersion],
+      );
+      if (!pending.rowCount) {
+        // Keeper IDs include the current block so a previously completed resolution is not reused.
+        const payload = {
+          deployment: activeVersion,
+          contract: "game",
+          functionName: "resolveEvent",
+          args: [id.toString()],
+          value: "0",
+        };
+        const jobId = keccak256(toHex(`keeper:${activeVersion}:${id}:${head}`));
+        await pool.query(
+          "INSERT INTO relay_jobs(id,payload) VALUES($1,$2) ON CONFLICT DO NOTHING",
+          [jobId, json(payload)],
+        );
+      }
+    }
+  }
+  for (const [id, m] of matches)
+    if (m.status >= 3 && BigInt(id) + 20n < last) { matches.delete(id); matchViews.delete(id); }
+  broadcast({ type: "head", head, observedAt: lastObserved });
+}
+async function maintenance(){
+  for(const [rawId,m] of matches){const id=BigInt(rawId);
     if (
       (m.status === 1 || m.status === 2) &&
       !seededMarkets.has(id.toString())
@@ -544,45 +623,11 @@ async function refresh() {
         }
       }
     }
-    if(m.status===1 && head>m.createdBlock+200n){
-      try{await enqueue({contract:"game",functionName:"cancelUnstarted",args:[String(id)]},true);}catch{/* A concurrent reveal/cancellation is checked onchain. */}
-    }
-    if ((deployment.version || 1) >= 2 && m.status === 3 && !m.ratingFinalized) {
-      try { await enqueue({contract:"game",functionName:"finalizeRating",args:[String(id)]},true); } catch { lastError="Rating finalization pending"; }
-    }
-    const clock = frame.clock;
-    if (
-      m.status === 2 &&
-      next(m.state).at <= clock
-    ) {
-      const pending = await pool.query(
-        "SELECT id FROM relay_jobs WHERE status IN ('queued','signed','sent') AND payload->>'contract'='game' AND payload->>'deployment'=$2 AND (payload->'args'->>0=$1 OR payload->'args'->0->>'matchId'=$1)",
-        [id.toString(),activeVersion],
-      );
-      if (!pending.rowCount) {
-        // Keeper IDs include the current block so a previously completed resolution is not reused.
-        const payload = {
-          deployment: activeVersion,
-          contract: "game",
-          functionName: "resolveEvent",
-          args: [id.toString()],
-          value: "0",
-        };
-        const jobId = keccak256(toHex(`keeper:${activeVersion}:${id}:${head}`));
-        await pool.query(
-          "INSERT INTO relay_jobs(id,payload) VALUES($1,$2) ON CONFLICT DO NOTHING",
-          [jobId, json(payload)],
-        );
-      }
-    }
   }
-  for (const [id, m] of matches)
-    if (m.status >= 3 && BigInt(id) + 20n < last) { matches.delete(id); matchViews.delete(id); }
   await serializeMatchmaking(async()=>{
     const ready=await pool.query("SELECT * FROM rooms WHERE deployment=$1 AND expires>$2 AND join_a IS NOT NULL AND join_b IS NOT NULL AND job_id IS NULL LIMIT 4",[activeVersion,Math.floor(Date.now()/1000)]);
     for(const room of ready.rows) {try{await submitReadyRoom(room);}catch{/* The signed room expires if its consent is no longer valid. */}}
   });
-  broadcast({ type: "head", head, observedAt: lastObserved });
 }
 async function graphql(query: string, variables: unknown = {}) {
   if (!process.env.INDEXER_GRAPHQL_URL)
@@ -648,10 +693,11 @@ const server = createServer(async (req, res) => {
       process.env.TRUST_PROXY === "true"
         ? String(req.headers["x-real-ip"] || req.socket.remoteAddress)
         : req.socket.remoteAddress || "unknown";
-    const rate = rates.get(ip);
+    const budget=trafficBudget(req.method,path),rateKey=`${ip}:${budget.bucket}`;
+    const rate = rates.get(rateKey);
     if (!rate || rate.until < Date.now())
-      rates.set(ip, { count: 1, until: Date.now() + 60000 });
-    else if (++rate.count > 600) return send(res, { error: "Rate limit" }, 429);
+      rates.set(rateKey, { count: 1, until: Date.now() + 60000 });
+    else if (++rate.count > budget.limit) return send(res, { error: "Rate limit" }, 429);
     if (rates.size > 10000)
       for (const [key, r] of rates) if (r.until < Date.now()) rates.delete(key);
     if (await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;
@@ -872,6 +918,15 @@ const server = createServer(async (req, res) => {
       if(!deployment.arcade)throw new Error("Arcade sessions unavailable");const player=path.split("/")[2] as Address;
       const [nonce,session]=await Promise.all([publicClient.readContract({address:deployment.arcade,abi:arcadeSessionsAbi,functionName:"nonces",args:[player]}),publicClient.readContract({address:deployment.arcade,abi:arcadeSessionsAbi,functionName:"sessions",args:[player]})]);
       return send(res,{nonce,key:session[0],expires:session[1],serverTime:Math.floor(Date.now()/1000)});
+    }
+    if(req.method==="POST" && path==="/inputs") {
+      const r=await body(req);const request=relaySchema.parse(r.request);
+      if(request.contract!=="game" || request.functionName!=="submitInput")throw new Error("Gameplay input only");
+      if(!r.intent)throw new Error("Signed input sequence required");
+      return send(res,await inputs.accept(request,r.intent),202);
+    }
+    if(req.method==="GET" && /^\/inputs\/\d+\/0x[\da-fA-F]{40}$/.test(path)){
+      const [, ,id,player]=path.split("/");return send(res,await inputs.state(id,player));
     }
     if (req.method === "POST" && path === "/relay")
       return send(res, await enqueue(relaySchema.parse(await body(req))), 202);
@@ -1137,10 +1192,15 @@ const server = createServer(async (req, res) => {
       return send(
         res,
         await graphql(
-          "query History($before:numeric!,$deployment:String!){ Match(where:{deployment:{_eq:$deployment},block:{_lt:$before}},order_by:{block:desc},limit:100){id rawId deployment playerA playerB tournamentId status winner block mode ranked rulesVersion} }",
+          "query History($before:numeric!,$deployment:String!){ Match(where:{deployment:{_eq:$deployment},block:{_lt:$before}},order_by:{block:desc},limit:100){id rawId deployment playerA playerB tournamentId status winner block mode ranked rulesVersion played scoreA scoreB endedAt replayAvailability} }",
           { before, deployment:activeVersion },
         ),
       );
+    }
+    if(req.method==="GET" && /^\/replay-status\/v[1-4]:\d+$/.test(path)) {
+      const id=path.slice("/replay-status/".length);
+      const data=await graphql("query($id:String!){Match(where:{id:{_eq:$id}}){id replayAvailability scoreA scoreB status}}",{id});
+      return send(res,data.Match[0]||{id,replayAvailability:"indexing"});
     }
     if (req.method === "GET" && path === "/alerts")
       return send(
@@ -1152,6 +1212,10 @@ const server = createServer(async (req, res) => {
     if (req.method === "GET" && /^\/replay\/\d+$/.test(path)) {
       const url = new URL(req.url!, "http://localhost");
       const after = url.searchParams.get("after") || "0";
+      if(!/^\d+$/.test(after))throw new Error("Invalid replay cursor");
+      const ref=`${activeVersion}:${path.split("/")[2]}`;
+      const metadata=await graphql("query($id:String!){Match(where:{id:{_eq:$id}}){replayAvailability}}",{id:ref});
+      if(metadata.Match[0]?.replayAvailability==="pruned")return send(res,{error:"Replay retired: only each player's three latest completed games are retained. Results and payments remain available.",replayAvailability:"pruned"},410);
       return send(
         res,
         await graphql(
@@ -1225,6 +1289,10 @@ async function dispatchLoop() {
   }
 }
 void dispatchLoop();
+async function receiptLoop(){while(!stopping){try{await observeReceipts();}catch(error){lastError=safeError(error);}await new Promise(r=>setTimeout(r,100));}}
+void receiptLoop();
+async function maintenanceLoop(){while(!stopping){try{if(chainHealthy)await maintenance();}catch(error){lastError=safeError(error);}await new Promise(r=>setTimeout(r,1500));}}
+void maintenanceLoop();
 async function payoutLoop(){while(!stopping){try{if(chainHealthy)await payoutWorker.tick();}catch{console.error("Automatic payment worker will retry.");}await new Promise(r=>setTimeout(r,2000));}}
 if(deployment.version===4)void payoutLoop();
 for (const signal of ["SIGINT", "SIGTERM"] as const)

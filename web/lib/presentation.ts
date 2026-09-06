@@ -27,3 +27,22 @@ export function projectConfirmed(state: State | import("../../shared/physics").S
 export function previewPaddle(y: number, direction: number, elapsedMs: number, half=48) {
   return Math.max(half, Math.min(576-half, y + direction * 180 * Math.max(0, Math.min(elapsedMs, 50)) / 1000));
 }
+
+export type PendingInput = { nonce: bigint; direction: number; at: number };
+// Rebuild from an authoritative position every frame. Pending input timestamps
+// are local monotonic observations, never timestamps submitted to the contract.
+export function predictPaddle(base: number, confirmedDirection: number, half: number, from: bigint, target: bigint,
+  confirmedNonce: bigint, inputs: {nonce:bigint;direction:number;at:bigint}[]) {
+  let y=base,t=from,dir=confirmedDirection;
+  const travel=(until:bigint)=>{if(until>t)y=Math.max(half,Math.min(576-half,y+dir*180*Number(until-t)/1e6));t=until;};
+  const latest=new Map<bigint,typeof inputs[number]>();
+  for(const input of inputs)if(input.nonce>confirmedNonce)latest.set(input.nonce,input);
+  for(const input of [...latest.values()].sort((a,b)=>a.nonce<b.nonce?-1:1)) {
+    const at=input.at<t?t:input.at;if(at>target)break;travel(at);dir=input.direction;
+  }
+  travel(target<t?t:target);return y;
+}
+export function boundedClock(clock:bigint,ageMs:number,elapsedMs:number,limitMs=600){
+  const age=Math.max(0,ageMs)+Math.max(0,elapsedMs);
+  return {target:clock+BigInt(Math.floor(Math.min(age,limitMs)*1000)),stale:age>=limitMs,ageMs:age};
+}

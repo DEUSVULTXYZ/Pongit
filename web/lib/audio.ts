@@ -1,43 +1,63 @@
 export type ArcadeSound="button"|"invite"|"match"|"countdown"|"bounce"|"point"|"handicap"|"victory"|"defeat";
-export type AudioSettings={entered:boolean;enabled:boolean;music:number;effects:number;background:boolean};
-const defaults:AudioSettings={entered:false,enabled:false,music:.2,effects:.6,background:true};
+export type AudioSettings={entered:boolean;enabled:boolean;music:number;effects:number;background:boolean;intensity:"subtle"|"full"};
+const defaults:AudioSettings={entered:false,enabled:false,music:.2,effects:.6,background:true,intensity:"full"};
 const notes=(m:number)=>440*2**((m-69)/12);
-// Original 8-bar composition: a minor arpeggio over a descending arcade bass line.
-const bass=[45,45,41,41,48,48,43,43],melody=[0,7,12,7,15,12,7,3,0,7,10,7,14,10,7,3];
 class ArcadeAudio {
   settings={...defaults};context:AudioContext|null=null;
   private musicGain:GainNode|null=null;private effectsGain:GainNode|null=null;
-  private voices=new Set<OscillatorNode>();private timer:ReturnType<typeof setInterval>|null=null;
-  private beat=0;private nextBeat=0;private seen=new Map<string,number>();private lastEffect=0;
-  load(){try{const saved=JSON.parse(localStorage.getItem("pongit:arcade-audio")||"null");if(saved)this.settings={...defaults,entered:saved.entered===true,enabled:saved.enabled===true,music:this.volume(saved.music,.2),effects:this.volume(saved.effects,.6),background:saved.background!==false};}catch{}return this.settings;}
+  private meter:AnalyserNode|null=null;private voices=new Set<OscillatorNode>();
+  private music:AudioBufferSourceNode|null=null;private buffer:AudioBuffer|null=null;private loading:Promise<void>|null=null;
+  private musicError=false;private gameplay=false;private duckUntil=0;
+  private seen=new Map<string,number>();private lastBounce=0;
+  private signal(){if(typeof window!=="undefined")window.dispatchEvent(new Event("pongit:audio"));}
+  load(){try{const saved=JSON.parse(localStorage.getItem("pongit:arcade-audio")||"null");if(saved)this.settings={...defaults,entered:saved.entered===true,enabled:saved.enabled===true,music:this.volume(saved.music,.2),effects:this.volume(saved.effects,.6),background:saved.background!==false,intensity:saved.intensity==="subtle"?"subtle":"full"};}catch{}return this.settings;}
   private volume(value:unknown,fallback:number){return typeof value==="number"&&Number.isFinite(value)?Math.max(0,Math.min(1,value)):fallback;}
-  configure(patch:Partial<AudioSettings>){this.settings={...this.settings,...patch};this.settings.music=this.volume(this.settings.music,.2);this.settings.effects=this.volume(this.settings.effects,.6);localStorage.setItem("pongit:arcade-audio",JSON.stringify(this.settings));this.gains();if(!this.settings.enabled)this.stopVoices();window.dispatchEvent(new Event("pongit:audio"));}
-  async activate(){if(!this.settings.enabled || document.hidden)return;const AudioCtor=window.AudioContext || (window as any).webkitAudioContext;if(!AudioCtor)return;
-    if(!this.context){this.context=new AudioCtor();this.musicGain=this.context!.createGain();this.effectsGain=this.context!.createGain();this.musicGain.connect(this.context!.destination);this.effectsGain.connect(this.context!.destination);this.gains();}
-    try {await this.context!.resume();if(!this.timer){this.nextBeat=this.context!.currentTime+.06;this.timer=setInterval(()=>this.schedule(),40);}}catch{}
-  }
-  private gains(){if(!this.context)return;const t=this.context.currentTime;this.musicGain?.gain.setTargetAtTime(this.settings.enabled?this.settings.music:0,t,.025);this.effectsGain?.gain.setTargetAtTime(this.settings.enabled?this.settings.effects:0,t,.025);}
-  private tone(frequency:number,at:number,duration:number,gain:number,type:OscillatorType,bus:GainNode,slide?:number){if(!this.context || this.voices.size>=12)return;const osc=this.context.createOscillator(),env=this.context.createGain();osc.type=type;osc.frequency.setValueAtTime(frequency,at);if(slide)osc.frequency.exponentialRampToValueAtTime(slide,at+duration);env.gain.setValueAtTime(0,at);env.gain.linearRampToValueAtTime(gain,at+.006);env.gain.exponentialRampToValueAtTime(.0001,at+duration);osc.connect(env);env.connect(bus);this.voices.add(osc);osc.onended=()=>{this.voices.delete(osc);osc.disconnect();env.disconnect();};osc.start(at);osc.stop(at+duration+.02);}
-  private schedule(){const c=this.context;if(!c || document.hidden || !this.settings.enabled || c.state!=="running")return;
-    if(this.nextBeat<c.currentTime)this.nextBeat=c.currentTime+.05;
-    while(this.nextBeat<c.currentTime+.14){const step=this.beat++%128,root=bass[Math.floor(step/16)],at=this.nextBeat;this.nextBeat+=60/112/4;
-      if(this.settings.music<=0)continue;
-      this.tone(notes(root+24+melody[step%16]),at,.105,.032,"square",this.musicGain!);
-      if(step%4===0)this.tone(notes(root),at,.36,.095,"triangle",this.musicGain!);
-      if(step%8===0)this.tone(125,at,.13,.13,"sine",this.musicGain!,38);
-      if(step%8===4)this.tone(1700,at,.06,.026,"triangle",this.musicGain!,400);
+  configure(patch:Partial<AudioSettings>){this.settings={...this.settings,...patch};this.settings.music=this.volume(this.settings.music,.2);this.settings.effects=this.volume(this.settings.effects,.6);try{localStorage.setItem("pongit:arcade-audio",JSON.stringify(this.settings));}catch{}this.gains();if(!this.settings.enabled)this.stopVoices();this.signal();}
+  async activate(retry=false){
+    if(!this.settings.enabled || document.hidden)return;
+    const AudioCtor=window.AudioContext || (window as any).webkitAudioContext;if(!AudioCtor){this.musicError=true;this.signal();return;}
+    if(!this.context){
+      const c:AudioContext=new AudioCtor();this.context=c;this.musicGain=c.createGain();this.effectsGain=c.createGain();
+      const limiter=c.createDynamicsCompressor();limiter.threshold.value=-10;limiter.knee.value=10;limiter.ratio.value=4;limiter.attack.value=.003;limiter.release.value=.12;
+      this.musicGain.connect(limiter);this.effectsGain.connect(limiter);this.meter=c.createAnalyser();this.meter.fftSize=2048;limiter.connect(this.meter);this.meter.connect(c.destination);
+      c.onstatechange=()=>this.signal();this.gains();
     }
+    try{if(this.context!.state!=="running")await this.context!.resume();}catch{this.signal();return;}
+    if(retry)this.musicError=false;
+    if(!this.buffer && !this.loading && !this.musicError){this.loading=this.loadMusic().finally(()=>{this.loading=null;this.signal();});this.signal();}
+    this.startMusic();
+  }
+  private async loadMusic(){
+    for(const extension of ["ogg","mp3"]){
+      try{const response=await fetch(`/audio/neon-rush.${extension}`,{signal:AbortSignal.timeout(15000)});if(!response.ok)throw new Error("Music unavailable");this.buffer=await this.context!.decodeAudioData(await response.arrayBuffer());this.musicError=false;this.startMusic();return;}catch{/* Use the independently encoded fallback. */}
+    }
+    this.musicError=true;
+  }
+  private startMusic(){if(!this.buffer || this.music || !this.context || !this.musicGain)return;const source=this.context.createBufferSource();source.buffer=this.buffer;source.loop=true;source.loopStart=0;source.loopEnd=Math.min(this.buffer.duration,34.285714286);source.connect(this.musicGain);source.start();this.music=source;}
+  setGameplay(active:boolean){if(this.gameplay===active)return;this.gameplay=active;this.gains();}
+  private gains(){if(!this.context)return;const t=this.context.currentTime;
+    const duck=t<this.duckUntil?.16:this.gameplay?.48:1;
+    this.musicGain?.gain.cancelScheduledValues(t);this.musicGain?.gain.setTargetAtTime(this.settings.enabled?this.settings.music*duck:0,t,this.settings.enabled?.22:.012);
+    this.effectsGain?.gain.setTargetAtTime(this.settings.enabled?this.settings.effects:0,t,.02);
+  }
+  private tone(frequency:number,at:number,duration:number,gain:number,type:OscillatorType,slide?:number){
+    if(!this.context || !this.effectsGain || this.voices.size>=12)return;
+    const osc=this.context.createOscillator(),env=this.context.createGain();osc.type=type;osc.frequency.setValueAtTime(frequency,at);if(slide)osc.frequency.exponentialRampToValueAtTime(slide,at+duration);
+    env.gain.setValueAtTime(0,at);env.gain.linearRampToValueAtTime(gain,at+.003);env.gain.exponentialRampToValueAtTime(.0001,at+duration);osc.connect(env);env.connect(this.effectsGain);this.voices.add(osc);
+    osc.onended=()=>{this.voices.delete(osc);osc.disconnect();env.disconnect();};osc.start(at);osc.stop(at+duration+.02);
   }
   play(sound:ArcadeSound,key?:string){const c=this.context,now=performance.now();if(!c || !this.settings.enabled || document.hidden || c.state!=="running")return;
-    if(key){if(this.seen.has(key))return;this.seen.set(key,now);if(this.seen.size>300)this.seen.delete(this.seen.keys().next().value!);}
-    if(now-this.lastEffect<35 && sound==="bounce")return;this.lastEffect=now;
-    const sequences:Record<ArcadeSound,number[]>={button:[76],invite:[69,76,81],match:[57,64,69,81],countdown:[72],bounce:[88],point:[60,72],handicap:[69,65,60],victory:[72,76,79,84,88,91],defeat:[67,63,60,55,48]};
+    if(key){if(this.seen.has(key))return;this.seen.set(key,now);if(this.seen.size>512)this.seen.delete(this.seen.keys().next().value!);}
+    if(sound==="bounce"){if(now-this.lastBounce<45)return;this.lastBounce=now;this.tone(1047,c.currentTime,.075,.30,"triangle",740);this.tone(2100,c.currentTime,.028,.045,"square",1300);return;}
+    const sequences:Record<Exclude<ArcadeSound,"bounce">,number[]>={button:[76],invite:[69,76,81],match:[57,64,69,81],countdown:[72],point:[60,72,79],handicap:[69,65,60],victory:[72,76,79,84,88,91,96],defeat:[67,63,60,55,48,36]};
     const seq=sequences[sound],jingle=sound==="victory"||sound==="defeat",time=c.currentTime;
-    if(jingle){this.musicGain!.gain.cancelScheduledValues(time);this.musicGain!.gain.setTargetAtTime(this.settings.music*.18,time,.02);this.musicGain!.gain.setTargetAtTime(this.settings.music,time+1.5,.3);}
-    seq.forEach((note,i)=>this.tone(notes(note),time+i*(jingle?.14:.09),sound==="bounce"?.065:jingle?.24:.13,sound==="bounce"?.035:.065,jingle?"square":"triangle",this.effectsGain!));
+    if(jingle){this.duckUntil=time+2;this.gains();this.musicGain!.gain.setTargetAtTime(this.settings.enabled?this.settings.music*(this.gameplay?.48:1):0,time+2,.5);}
+    seq.forEach((note,i)=>{this.tone(notes(note),time+i*(jingle?.18:.085),sound==="button"?.04:jingle?.35:.17,sound==="button"?.13:jingle?.20:.28,jingle?"square":"triangle");if(jingle && i%2===0)this.tone(notes(note-12),time+i*.18,.4,.13,"triangle");});
   }
+  async test(){await this.activate(true);this.play("point");}
   private stopVoices(){for(const voice of this.voices){try{voice.stop();}catch{}}this.voices.clear();}
-  hidden(){if(this.timer)clearInterval(this.timer);this.timer=null;this.stopVoices();void this.context?.suspend();}
-  diagnostics(){return {state:this.context?.state||"uninitialized",voices:this.voices.size,settings:this.settings};}
+  hidden(){this.stopVoices();void this.context?.suspend();}
+  status(){if(!this.settings.enabled)return "muted";if(!this.context || this.context.state!=="running")return "suspended";if(this.musicError)return "loading failed";if(!this.buffer)return "loading";return "enabled";}
+  diagnostics(){const data=new Float32Array(2048);this.meter?.getFloatTimeDomainData(data);let sum=0,peak=0;for(const x of data){sum+=x*x;peak=Math.max(peak,Math.abs(x));}const rms=Math.sqrt(sum/data.length);return {state:this.context?.state||"uninitialized",status:this.status(),voices:this.voices.size,settings:this.settings,rms,peak,rmsDb:rms?20*Math.log10(rms):-120,musicDuration:this.buffer?.duration||0,musicLoop:this.music?.loop||false,gameplay:this.gameplay};}
 }
 export const arcadeAudio=new ArcadeAudio();

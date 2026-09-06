@@ -1,4 +1,6 @@
 "use client";
+import { InputController } from "../lib/input-controller";
+import { intentMessage, intentTypes } from "../../shared/input-transport";
 import {MatchPayment,PaymentHistory} from "./Payments";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -54,7 +56,7 @@ import { SocialHub } from "./SocialHub";
 import { createArcade, restoreArcade, clearArcade, revokeArcade, InvalidArcadeSession, ArcadeNetworkError, type ArcadeSession } from "../lib/arcade";
 import { Outcome } from "./Outcome";
 import { monadTransport } from "../lib/transport";
-import { acceptsSnapshot, type SnapshotCursor } from "../lib/presentation";
+import { acceptsSnapshot, type SnapshotCursor, type PendingInput } from "../lib/presentation";
 
 const tabs = ["Play", "Live", "Rivals", "Ladder", "Tournaments", "Archive"];
 const money = (value: unknown) =>
@@ -91,7 +93,12 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     [showConnect, setShowConnect] = useState(false);
   const [showAccount, setShowAccount] = useState(false), [copiedAddress, setCopiedAddress] = useState(false);
   const [inputPending, setInputPending] = useState(false), [waitingImpact, setWaitingImpact] = useState(false);
+  useEffect(()=>{arcadeAudio.setGameplay(match?.status===2 && !state?.awaitingServe && tab!=="Archive");return()=>arcadeAudio.setGameplay(false);},[match?.status,state?.awaitingServe,tab]);
   const [inputTiming, setInputTiming] = useState<any>(null);
+  const [inputRtt,setInputRtt]=useState<number|null>(null);
+  const [pendingInputs,setPendingInputs]=useState<PendingInput[]>([]);
+  const [showNetwork,setShowNetwork]=useState(false);
+  const [snapshotAge,setSnapshotAge]=useState(0),[paddleCorrection,setPaddleCorrection]=useState(0);
   const lastSnapshotSound=useRef(0);
   const snapshotCursor = useRef<SnapshotCursor | null>(null);
   const inputNonce = useRef({ key: "", nonce: 0n });
@@ -400,8 +407,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     snapshotCursor.current = incoming;
     const s = stateFromJson(data.match.state);
     if(lastState.current && data.match.status>=2 && Date.now()-(lastSnapshotSound.current||0)<1800){
-      if(s.scoreA!==lastState.current.scoreA || s.scoreB!==lastState.current.scoreB)arcadeAudio.play("point",`${id}:point:${s.scoreA}:${s.scoreB}`);
-      if(s.halfA!==lastState.current.halfA || s.halfB!==lastState.current.halfB)arcadeAudio.play("handicap",`${id}:size:${s.resumeAt}`);
+      if(s.scoreA!==lastState.current.scoreA || s.scoreB!==lastState.current.scoreB)arcadeAudio.play("point",`${view.current.config?.game}:${id}:point:${s.scoreA}:${s.scoreB}`);
+      if(s.halfA!==lastState.current.halfA || s.halfB!==lastState.current.halfB)arcadeAudio.play("handicap",`${view.current.config?.game}:${id}:size:${s.resumeAt}`);
     }
     lastSnapshotSound.current=Date.now();
     const playable =
@@ -578,7 +585,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             : 0,
       );
     const down = (e: KeyboardEvent) => {
-      if (document.querySelector('[role="dialog"]')) return;
+      if (document.querySelector('[role="dialog"],.arena-grid.tools-open,.arcade-settings')) return;
       if ((e.target as HTMLElement).matches("input,textarea,select")) return;
       if (["ArrowUp", "ArrowDown", "w", "s", "W", "S"].includes(e.key)) {
         e.preventDefault();
@@ -604,79 +611,32 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     };
   }, []);
   useEffect(() => {
-    const timer = setInterval(async () => {
-      const v = view.current;
-      if (
-        inputBusy.current ||
-        !v.config ||
-        ((v.config.version||1)>=3 && (!arcade.current || arcade.current.expires<=Date.now()/1000)) ||
-        !session.current ||
-        !v.match ||
-        v.match.status !== 2 ||
-        v.selected !== sessionMatch.current ||
-        v.direction === lastDirection.current
-      )
-        return;
-      const slot =
-        v.match.playerA.toLowerCase() === v.account.toLowerCase()
-          ? v.match.a
-          : v.match.b;
-      if (
-        slot.key.toLowerCase() !== session.current.account.address.toLowerCase()
-      )
-        return;
-      inputBusy.current = true;
-      setInputPending(true);
-      const generation = identityVersion.current;
-      const dir = v.direction;
-      const submittedAt = performance.now();
-      const nonceKey = `${v.selected}:${session.current.account.address}`;
-      try {
-        const knownNonce = inputNonce.current.key === nonceKey && inputNonce.current.nonce > BigInt(slot.nonce)
-          ? inputNonce.current.nonce : BigInt(slot.nonce);
-        const input = {
-          matchId: BigInt(v.selected!),
-          player: v.account as Address,
-          direction: dir,
-          nonce: knownNonce + 1n,
-          observedBlock: v.head,
-          validUntilBlock: v.head + 16n,
-        };
-        const signature = await session.current.account.signTypedData({
-          domain: domain("PONG", v.config.chainId, v.config.game),
-          types: inputTypes,
-          primaryType: "Input",
-          message: input,
-        });
-        const completed = await relay({
-          contract: "game",
-          functionName: "submitInput",
-          args: [input, signature],
-        });
-        if (generation !== identityVersion.current) return;
-        setInputLatency(Math.round(performance.now() - submittedAt));
-        setInputTiming(completed.timing || null);
-        inputNonce.current = { key: nonceKey, nonce: input.nonce };
-        lastDirection.current = dir;
-      } catch (e) {
-        if (generation === identityVersion.current) {
-          setError((e as Error).message);
-          // A failed command did not consume the game nonce. Refresh once for
-          // recovery, instead of making every successful command wait for RPC.
-          try {
-            const latest = await api(`/matches/${v.selected}?fresh=1`);
-            if (generation === identityVersion.current) {
-              inputNonce.current = { key: "", nonce: 0n };
-              applyMatch({ ...latest, id: v.selected });
-            }
-          } catch { /* The connection indicator exposes an unavailable service. */ }
-        }
-      } finally {
-        inputBusy.current = false;
-        if (generation === identityVersion.current) setInputPending(false);
-      }
-    }, 25);
-    return () => clearInterval(timer);
+    const controller=new InputController({
+      reset:()=>setPendingInputs([]),
+      state:()=>api(`/inputs/${view.current.selected}/${view.current.account}`),
+      post:body=>api("/inputs",body),wait:waitJob,
+      intent:(nonce,direction,at)=>setPendingInputs(old=>[...old.filter(i=>i.nonce!==nonce).slice(-15),{nonce,direction,at}]),pending:setInputPending,ack:setInputRtt,
+      confirmed:(job,ms)=>{setInputLatency(ms);setInputTiming(job.timing||null);},
+      error:message=>setError(message),
+    });
+    const tick=()=>{
+      const v=view.current,key=session.current?.account;
+      if(!v.config || !key || !v.match || v.match.status!==2 || v.selected!==sessionMatch.current ||
+        ((v.config.version||1)>=3 && (!arcade.current || arcade.current.expires<=Date.now()/1000))){controller.update(null);return;}
+      const slot=v.match.playerA.toLowerCase()===v.account.toLowerCase()?v.match.a:v.match.b;
+      if(slot.key.toLowerCase()!==key.address.toLowerCase()){controller.update(null);return;}
+      const config=v.config;
+      controller.update({key:`${identityVersion.current}:${config.game}:${v.selected}:${key.address}`,direction:v.direction,head:v.head,
+        sign:async(nonce,sequence,direction,head)=>{
+          const input={matchId:BigInt(v.selected!),player:v.account as Address,direction,nonce,observedBlock:head,validUntilBlock:head+16n};
+          const signature=await key.signTypedData({domain:domain("PONG",config.chainId,config.game),types:inputTypes,primaryType:"Input",message:input});
+          const intentSignature=await key.signTypedData({domain:domain("PONGIT Input Transport",config.chainId,config.game),types:intentTypes,primaryType:"InputIntent",message:intentMessage(input,sequence,config.chainId,config.game)});
+          lastDirection.current=direction;
+          return {request:{contract:"game",functionName:"submitInput",args:[input,signature]},intent:{sequence,signature:intentSignature}};
+        }});
+    };
+    const timer=setInterval(tick,16);
+    return ()=>{clearInterval(timer);controller.reset();};
   }, []);
   async function rematch() {
     if(!config || !selected) return;
@@ -919,6 +879,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   }
   async function loadReplay(id: string) {
     setReplayPlaying(false);
+    setFrames([]);setState(null);
     setSelected(id);
     setTab("Archive");
     setMessage("Loading confirmed events from Envio…");
@@ -1047,7 +1008,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             className={tab === t ? "active" : ""}
             key={t}
             onClick={() => {
-              setTab(t);
+              setDirection(0);setTab(t);
               setError("");
             }}
           >
@@ -1091,7 +1052,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                   : tab === "Rivals" ? "Choose your opponent." : tab === "Tournaments"
                     ? "Raise the stakes."
                     : tab === "Archive"
-                      ? "Nothing lost."
+                      ? "The last three."
                       : "Operator console."}
           </h1>
         </div>
@@ -1102,7 +1063,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       </section>
       {account && (config?.version||1)>=3 && !arcadeExpires && <button className="primary" disabled={busy} onClick={()=>void act(()=>renewArcade())}>Renew arcade session</button>}
       <SocialHub ready={!busy && ((config?.version||1)<3 || arcadeExpires>Date.now()/1000)} mode={mode} key={`social-${account}`} account={account} config={config} visible={tab==="Rivals"} target={challengeTarget} authenticate={authenticateApp} identity={()=>owner.current} open={()=>setTab("Rivals")} enter={enterChallenge} matchRef={noteContext?.ref || (selected?`v${config?.version || 1}:${selected}`:undefined)} atUs={noteContext?.atUs || String(clock)} applyPreferences={settings=>{if(queued || canControl)throw new Error("Finish the active match or search before applying preferences.");setMode(settings.preferredMode===1?1:0);arcadeAudio.configure({enabled:settings.sound,entered:true});}}/>
-      <Outcome id={selected} match={match} account={account} rating={player?Number((match?.mode===1?player.chaosRating:player.rating)?.elo || 1000):null} sound={sound} replay={tab==="Archive"} rematch={rematch} watch={()=>void act(()=>loadReplay(selected!))} again={()=>{setSelected(null);setMatch(null);setState(null);setTournamentId("0");setTab("Play");}}/>
+      <Outcome id={selected?`${config?.game}:${selected}`:null} match={match} account={account} rating={player?Number((match?.mode===1?player.chaosRating:player.rating)?.elo || 1000):null} sound={sound} replay={tab==="Archive"} rematch={rematch} watch={()=>void act(()=>loadReplay(selected!))} again={()=>{setSelected(null);setMatch(null);setState(null);setTournamentId("0");setTab("Play");}}/>
       {(["Play","Ladder"].includes(tab)) && <div className="mode-switch" role="group" aria-label="Game mode"><button disabled={queued || busy || canControl} aria-pressed={mode===0} onClick={()=>setMode(0)}>01 / Classic</button><button disabled={queued || busy || canControl || tournamentId!=="0"} aria-pressed={mode===1} onClick={()=>setMode(1)}>02 / Chaos</button><p>{mode===1?"Crowd pressure shrinks the favourite's paddle. Changes apply between rallies.":"Pure Pong. Separate ranked ladder. First to seven."}</p></div>}
       {fundingWarning && <p className="notice" role="status">Sponsorship: {fundingWarning}</p>}
       {!["Play", "Live", "Archive"].includes(tab) && <p className="status-line" role="status">{message}</p>}
@@ -1167,7 +1128,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 direction={direction}
                 side={tab === "Archive" ? -1 : side}
                 replay={tab === "Archive" || match?.status !== 2}
-                matchId={selected || ""}
+                matchId={`${config?.game}:${selected || ""}`}
+                pendingInputs={pendingInputs}
+                confirmedNonce={BigInt((side===0?match?.a:match?.b)?.nonce || 0)}
+                debug={showNetwork}
+                onNetwork={(age,correction)=>{setSnapshotAge(age);setPaddleCorrection(correction);}}
                 controllable={canControl && !showAccount && !showConnect}
                 pending={inputPending || direction !== lastDirection.current}
                 onStats={(f, p, waiting) => {
@@ -1196,6 +1161,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               <span>
                 {tab === "Archive"
                   ? "CONFIRMED REPLAY"
+                  : snapshotAge >= 600 && match?.status===2
+                    ? "SYNCING / PREVIEW PAUSED"
                   : waitingImpact
                     ? "AWAITING IMPACT CONFIRMATION"
                   : predicted
@@ -1274,8 +1241,12 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               {busy ? "Working… " : ""}
               {message}
             </div>
-            {canControl && <p className="input-hint">Your paddle responds immediately. The outline shows its confirmed path; collisions wait for the chain.</p>}
-            {inputLatency !== null && inputLatency > 1000 && canControl && <p className="input-hint">Chain confirmation is taking {(inputLatency / 1000).toFixed(1)} s. Anticipate your moves; the preview cannot remove inclusion delay.</p>}
+            <details className="network-panel" onToggle={e=>setShowNetwork(e.currentTarget.open)}><summary>Network details</summary>
+              <dl>{[["Server round trip",inputRtt],["Relayer queue",inputTiming?.queueMs],["Broadcast",inputTiming?.broadcastMs],["Chain + receipt",inputTiming?.confirmationMs],["Snapshot age",Math.round(snapshotAge)]].map(([label,value])=><div key={String(label)}><dt>{label}</dt><dd>{value==null?"—":`${value} ms`}</dd></div>)}<div><dt>Visual correction</dt><dd>{paddleCorrection.toFixed(1)} px</dd></div></dl>
+              <p>The outline is diagnostic. Preview freezes at its time limit; a receipt is required for collisions and points.</p>
+            </details>
+            {canControl && <p className="input-hint">Local controls are responsive. Collisions and points wait for chain confirmation.</p>}
+            {inputLatency !== null && inputLatency > 1000 && canControl && <p className="input-hint">Input confirmation is taking {(inputLatency / 1000).toFixed(1)} s. Anticipate your moves; the preview cannot remove inclusion delay.</p>}
           </section>
           <aside>
             <section className="side-card">
@@ -1413,6 +1384,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                   key={m.id}
                   className="match-row"
                   data-match-id={m.id}
+                  disabled={tab==="Archive" && ["pruned","not-played"].includes(m.replayAvailability)}
                   onClick={() =>
                     tab === "Archive"
                       ? void act(() => loadReplay(m.id))
@@ -1424,10 +1396,10 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                     {short(m.playerA)} <small>vs</small> {short(m.playerB)}
                   </span>
                   <strong>
-                    {m.state ? `${m.state.scoreA} : ${m.state.scoreB}` : "—"}
+                    {m.state ? `${m.state.scoreA} : ${m.state.scoreB}` : `${m.scoreA || 0} : ${m.scoreB || 0}`}
                   </strong>
                   <span>
-                    {["", "WAITING", "LIVE", "FINAL", "CANCELLED"][m.status]}
+                    {tab==="Archive" && m.replayAvailability==="pruned"?"REPLAY RETIRED":["", "WAITING", "LIVE", "FINAL", "CANCELLED"][m.status]}
                   </span>
                   <span>↗</span>
                 </button>
