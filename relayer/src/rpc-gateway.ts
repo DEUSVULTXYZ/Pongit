@@ -12,7 +12,7 @@ const historicalBatch=historyGate(4);
 let waiting = 0;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
-async function request(method: string, params: unknown[]) {
+async function request(method: string, params: unknown[]):Promise<unknown> {
   if(method==="eth_getLogs" && process.env.RPC_CHUNK_LOGS==="true") {
     const filter=params[0] as any;
     if(!filter?.blockHash && /^0x[\da-f]+$/i.test(filter?.fromBlock) && /^0x[\da-f]+$/i.test(filter?.toBlock) && BigInt(filter.toBlock)-BigInt(filter.fromBlock)>=100n)
