@@ -1,4 +1,4 @@
-import { advance, move, next, type State } from "../../shared/physics";
+import { advance, move, next, type State } from "../../shared/physics-v2";
 
 export type SnapshotCursor = { id: string; head: bigint; version: bigint; clock: bigint };
 export function acceptsSnapshot(previous: SnapshotCursor | null, incoming: SnapshotCursor) {
@@ -9,9 +9,9 @@ export function acceptsSnapshot(previous: SnapshotCursor | null, incoming: Snaps
 
 // Wall bounces are deterministic. Paddle impacts and points depend on commands
 // still awaiting inclusion: hold at that boundary until the contract resolves it.
-export function projectConfirmed(state: State, target: bigint): { state: State; waiting: boolean } {
-  let s = { ...state };
-  if (s.finished || target <= s.t) return { state: s, waiting: false };
+export function projectConfirmed(state: State | import("../../shared/physics").State, target: bigint): { state: State; waiting: boolean } {
+  let s: State = { mode:0,halfA:48000000n,halfB:48000000n,awaitingServe:false,resumeAt:0n,...state };
+  if (s.finished || s.awaitingServe || target <= s.t) return { state: s, waiting: false };
   for (let i = 0; i < 64; i++) {
     const event = next(s);
     if (event.at > target) return { state: move(s, target), waiting: false };
@@ -24,6 +24,6 @@ export function projectConfirmed(state: State, target: bigint): { state: State; 
   return { state: s, waiting: true };
 }
 
-export function previewPaddle(y: number, direction: number, elapsedMs: number) {
-  return Math.max(48, Math.min(528, y + direction * 180 * Math.max(0, Math.min(elapsedMs, 50)) / 1000));
+export function previewPaddle(y: number, direction: number, elapsedMs: number, half=48) {
+  return Math.max(half, Math.min(576-half, y + direction * 180 * Math.max(0, Math.min(elapsedMs, 50)) / 1000));
 }

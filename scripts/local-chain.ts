@@ -72,7 +72,7 @@ export async function localChain() {
 }
 export async function artifact(name: string) {
   const source =
-    name === "LMSR" ? "Market" : name === "PhysicsHarness" ? "Physics" : name;
+    name === "LMSRV2" ? "MarketV2" : name === "PhysicsV2Harness" ? "PhysicsV2" : name === "LMSR" ? "Market" : name === "PhysicsHarness" ? "Physics" : name;
   return JSON.parse(
     await readFile(`contracts/out/${source}.sol/${name}.json`, "utf8"),
   ) as { abi: readonly unknown[]; bytecode: { object: Hex } };

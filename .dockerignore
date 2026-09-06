@@ -13,3 +13,7 @@ data
 indexer/.envio
 deployments/local.json
 *.log
+
+tmp/
+backups/
+deployments/local-*.json

@@ -16,7 +16,7 @@ import {
 } from "viem";
 import { Court } from "./Court";
 import {
-  api,
+  api, appApi,
   API,
   WS,
   relay,
@@ -34,7 +34,7 @@ import {
 } from "../lib/wallet";
 import {
   domain,
-  joinTypes,
+  joinTypes, joinV2Types, queueV2Message,
   inputTypes,
   betTypes,
   actionTypes,
@@ -44,11 +44,15 @@ import {
   queueMessage,
   cancelQueueMessage,
 } from "../../shared/protocol";
-import { type State, stateComponents, advance } from "../../shared/physics";
-import { gameAbi, marketAbi, tournamentsAbi } from "../../shared/abis";
+import { type State, stateComponents, advance } from "../../shared/physics-v2";
+import { gameV2Abi as gameAbi, marketV2Abi as marketAbi, tournamentsV2Abi as tournamentsAbi } from "../../shared/abis-v2";
+import { Legacy } from "./Legacy";
+import { SocialHub } from "./SocialHub";
+import { Outcome } from "./Outcome";
+import { monadTransport } from "../lib/transport";
 import { acceptsSnapshot, type SnapshotCursor } from "../lib/presentation";
 
-const tabs = ["Play", "Live", "Ladder", "Tournaments", "Archive"];
+const tabs = ["Play", "Live", "Rivals", "Ladder", "Tournaments", "Archive"];
 const money = (value: unknown) =>
   Number(formatEther(BigInt(String(value || 0)))).toFixed(4);
 export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
@@ -71,6 +75,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     [busy, setBusy] = useState(false),
     [queued, setQueued] = useState(false),
     [direction, setDirection] = useState(0);
+  const [mode,setMode]=useState(0),[sound,setSound]=useState(false),[challengeTarget,setChallengeTarget]=useState("");
+  const expectedRoom=useRef<{mode:number;ranked:boolean;opponent?:string;roomId?:string}|null>(null);
   const [fundingWarning, setFundingWarning] = useState("");
   const [fps, setFps] = useState(0),
     [predicted, setPredicted] = useState(false),
@@ -114,7 +120,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     const previous = more ? archive : [];
     const before = previous.at(-1)?.block;
     const data = await api("/history" + (before ? `?before=${before}` : ""));
-    setArchive([...previous, ...data.Match]);
+    setArchive([...previous, ...data.Match.map((m:any)=>({...m,ref:m.id,id:m.rawId}))]);
     setMoreHistory(data.Match.length === 100);
   }
   useEffect(() => {
@@ -175,7 +181,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   useEffect(() => {
     if (account && match?.status >= 3)
       void refreshPlayer().catch((e) => setError(e.message));
-  }, [account, selected, match?.status]);
+  }, [account, selected, match?.status,match?.ratingFinalized]);
   async function signingOwner() {
     if (!owner.current) throw new Error("Connect your passkey first");
     if (!owner.current.local && !ownerOpen.current) {
@@ -195,12 +201,29 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       ownerOpen.current = false;
     }
   }
+  async function authenticateApp() {
+    if(!owner.current)throw new Error("Connect your passkey first");
+    try {const current=await appApi("/auth/session");if(current.player===owner.current.account.address.toLowerCase())return;} catch {}
+    const own=await signingOwner();const generation=identityVersion.current;
+    const challenge=await appApi("/auth/challenge","POST",{player:own.account.address});
+    const signature=await own.account.signMessage({message:challenge.message});closeOwner();
+    if(generation!==identityVersion.current)throw new Error("Account changed");
+    await appApi("/auth/session","POST",{player:own.account.address,nonce:challenge.nonce,signature});
+  }
+  function enterChallenge(c:any) {
+    expectedRoom.current={mode:c.mode,ranked:c.ranked,opponent:c.creator===account.toLowerCase()?c.recipient:c.creator,roomId:c.room_id};
+    queueTicket.current=c.ticket || (c.creator===account.toLowerCase()?c.ticket_a:c.ticket_b) || "";
+    setMode(c.mode);setTournamentId("0");setQueued(true);setTab("Play");
+    setMessage(`Accepted ${c.mode===1?"Chaos":"Classic"} ${c.ranked?"ranked":"friendly"} challenge. Approve the match with your passkey.`);
+  }
   async function login(kind: "create" | "restore" | "local" | "operator") {
     const identity =
       kind === "local" || kind === "operator"
         ? localIdentity(kind === "operator")
         : await connect(kind === "create");
+    await appApi("/auth/session","DELETE");
     identityVersion.current++;
+    expectedRoom.current=null;
     snapshotCursor.current = null;
     inputNonce.current = { key: "", nonce: 0n };
     setInputPending(false);
@@ -243,7 +266,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       await cancelQueue();
       if (queueTicket.current) throw new Error("Match creation is already submitted. Wait for the match before disconnecting.");
     }
+    await appApi("/auth/session","DELETE");
     identityVersion.current++;
+    expectedRoom.current=null;
     owner.current?.end();
     session.current?.end();
     owner.current = null; ownerOpen.current = false; session.current = null;
@@ -258,7 +283,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   }
   useEffect(() => {
     let stop = false;
-    let socket: WebSocket | undefined;
+    let closeTransport: (()=>void) | undefined;
     let reconnect: ReturnType<typeof setTimeout>;
     const load = async () => {
       try {
@@ -282,17 +307,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     void load();
     const open = () => {
       if (stop) return;
-      socket = new WebSocket(WS);
-      socket.onopen = () => {
-        setConnected(true);
-        void load();
-      };
-      socket.onclose = () => {
-        setConnected(false);
-        if (!stop) reconnect = setTimeout(open, 2000);
-      };
-      socket.onmessage = (e) => {
-        const data = JSON.parse(e.data);
+      closeTransport = monadTransport.subscribe((data) => {
         if (data.head) setHead((previous) => BigInt(data.head) > previous ? BigInt(data.head) : previous);
         if (data.type === "job") notifyJob(data);
         if (data.type === "match") {
@@ -308,7 +323,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           )
             applyMatch(data);
         }
-      };
+      }, (online)=>{setConnected(online);if(online)void load();else if(!stop)reconnect=setTimeout(open,2000);});
     };
     open();
     const poll = setInterval(() => {
@@ -318,7 +333,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       stop = true;
       clearInterval(poll);
       clearTimeout(reconnect);
-      socket?.close();
+      closeTransport?.();
       owner.current?.end();
       session.current?.end();
     };
@@ -331,7 +346,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     snapshotCursor.current = incoming;
     const s = stateFromJson(data.match.state);
     const playable =
-      Number(data.match.status) >= 2 && s.vx !== 0n && s.vy !== 0n;
+      Number(data.match.status) >= 2 && BigInt(data.match.startBlock)>0n;
     if (playable && lastState.current && s.t >= lastState.current.t) {
       const expected = advance(lastState.current, s.t)[0];
       setCorrection(
@@ -352,7 +367,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     snapshotCursor.current = null;
     lastState.current = null;
     if (selected && tab !== "Archive")
-      void api(`/matches/${selected}`)
+      void monadTransport.readMatch(selected)
         .then((data) => { if (!cancelled) applyMatch({ ...data, id: selected }); })
         .catch((e) => setError(e.message));
     return () => { cancelled = true; };
@@ -391,7 +406,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   }, [showConnect, showAccount]);
   useEffect(() => {
     if (tab === "Ladder")
-      void api("/leaderboard")
+      void api(`/leaderboard?mode=${mode}`)
         .then((d) => setLadder(d.Player))
         .catch((e) => setError(e.message));
     if (tab === "Tournaments")
@@ -402,7 +417,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       void api("/alerts")
         .then((d) => setAlerts(d.Alert))
         .catch((e) => setError(e.message));
-  }, [tab, player?.admin]);
+  }, [tab, player?.admin,mode]);
   useEffect(() => {
     if (!queued || !account || !config) return;
     let cancelled = false;
@@ -416,6 +431,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           if (!room.waiting) { queueTicket.current = ""; setQueued(false); setMessage("Search expired or opponent cancelled. You can search again."); }
           return;
         }
+        const agreed=expectedRoom.current;
+        if(config.version===2 && (!agreed || room.mode!==agreed.mode || room.ranked!==agreed.ranked || room.rules_version!==2 || room.deployment!=="v2" || agreed.roomId && agreed.roomId!==room.id || agreed.opponent && ![room.player_a,room.player_b].includes(agreed.opponent.toLowerCase()))) throw new Error("Room rules differ from your agreement. Cancel and create a fresh invitation.");
+        queueTicket.current=room.player_a===account.toLowerCase()?room.ticket_a:room.ticket_b;
         if (room.id !== readyRoom.current) {
           readyRoom.current = room.id;
           session.current?.end();
@@ -440,10 +458,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             sessionExpiry: BigInt(now + 3600),
             maxInputs: 12000,
             tournamentId: BigInt(room.tournament_id),
+            mode: room.mode || 0, ranked:room.ranked!==false, rulesVersion:2,
           };
           const signature = await own.account.signTypedData({
             domain: domain("PONG", config.chainId, config.game),
-            types: joinTypes,
+            types: config.version===2?joinV2Types:joinTypes,
             primaryType: "Join",
             message: join,
           });
@@ -603,12 +622,13 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     const own = await signingOwner();
     const expires = nowSeconds() + 300;
     const signature = await own.account.signMessage({
-      message: queueMessage(account, expires, tournamentId),
+      message: config?.version===2 ? queueV2Message(account,expires,tournamentId,mode,config) : queueMessage(account, expires, tournamentId),
     });
     readyRoom.current = "";
     revealSent.current = "";
     lastDirection.current = 0;
-    await api("/queue", { player: account, expires, signature, tournamentId });
+    expectedRoom.current={mode,ranked:true};
+    await api("/queue", { player: account, expires, signature, tournamentId,mode });
     queueTicket.current = keccak256(signature);
     setQueued(true);
     setMessage("Finding an opponent. Both players approve the same match.");
@@ -931,11 +951,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     <main>
       <header className="topbar">
         <a className="brand" href="/" aria-label="PONGIT home">
-          <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M8 8h6v30H8zm42 18h6v30h-6zM28 28h8v8h-8z"/><path d="M19 44 43 20" stroke="currentColor" strokeWidth="2" strokeDasharray="3 5"/></svg>
+          <img className="brand-mark orbit-mark" src="/brand/opposing-orbits.webp" alt="" width="72" height="72"/>
           PONGIT
-          <span className="brand-sub">ONCHAIN ARCADE / 001</span>
+          <span className="brand-sub">ONCHAIN ARCADE / 002</span>
         </a>
-        <div className="top-right">
+        <div className="top-right"><button className="sound-toggle" aria-pressed={sound} onClick={()=>setSound(!sound)}>Sound {sound?"on":"off"}</button>
           <span className="network">
             <span className={connected ? "dot pulse" : "dot"} />
             {config?.chainId === 31337 ? "LOCAL CHAIN" : "MONAD TESTNET"}
@@ -992,7 +1012,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 ? "Watch it happen."
                 : tab === "Ladder"
                   ? "The ladder."
-                  : tab === "Tournaments"
+                  : tab === "Rivals" ? "Choose your opponent." : tab === "Tournaments"
                     ? "Raise the stakes."
                     : tab === "Archive"
                       ? "Nothing lost."
@@ -1004,6 +1024,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           <span>BLOCK {head ? head.toLocaleString() : "—"}</span>
         </div>
       </section>
+      <SocialHub account={account} config={config} visible={tab==="Rivals"} target={challengeTarget} authenticate={authenticateApp} identity={()=>owner.current} open={()=>setTab("Rivals")} enter={enterChallenge} matchRef={selected?`${config?.version===2?"v2":"v1"}:${selected}`:undefined} atUs={String(clock)}/>
+      <Outcome id={selected} match={match} account={account} rating={player?Number((match?.mode===1?player.chaosRating:player.rating)?.elo || 1000):null} sound={sound} replay={tab==="Archive"} rematch={()=>{setChallengeTarget(side===0?match.playerB:match.playerA);setTab("Rivals");}} watch={()=>void act(()=>loadReplay(selected!))} again={()=>{setSelected(null);setMatch(null);setState(null);setTournamentId("0");setTab("Play");}}/>
+      {(["Play","Ladder"].includes(tab)) && <div className="mode-switch" role="group" aria-label="Game mode"><button disabled={queued || busy || canControl} aria-pressed={mode===0} onClick={()=>setMode(0)}>01 / Classic</button><button disabled={queued || busy || canControl || tournamentId!=="0"} aria-pressed={mode===1} onClick={()=>setMode(1)}>02 / Chaos</button><p>{mode===1?"Crowd pressure shrinks the favourite's paddle. Changes apply between rallies.":"Pure Pong. Separate ranked ladder. First to seven."}</p></div>}
       {fundingWarning && <p className="notice" role="status">Sponsorship: {fundingWarning}</p>}
       {!["Play", "Live", "Archive"].includes(tab) && <p className="status-line" role="status">{message}</p>}
       {error && (
@@ -1020,6 +1043,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             <div className="match-bar">
               <span>
                 ARENA {selected ? selected.padStart(3, "0") : "—"}{" "}
+                <small>{match?.mode===1?" CHAOS":" CLASSIC"} / {match?.ranked===false?"FRIENDLY":"RANKED"}</small>
                 <b>
                   {tab === "Archive"
                     ? "REPLAY"
@@ -1038,6 +1062,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                   : "SPECTATOR VIEW"}
               </span>
             </div>
+            {match?.mode===1 && state && <div className="chaos-rally"><span>CHAOS / {state.awaitingServe && !state.finished?"INTERMISSION":"RALLY"}</span><span>P01 {Number(state.halfA)*2/1e6} · P02 {Number(state.halfB)*2/1e6} / 96 HEIGHT</span></div>}
             <div className="scoreboard">
               <div>
                 <small>PLAYER 01</small>
@@ -1046,9 +1071,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 </strong>
               </div>
               <div className="score">
-                <span>{scoreA.toString().padStart(2, "0")}</span>
+                <span className="score-change" key={`a-${scoreA}`}>{scoreA.toString().padStart(2, "0")}</span>
                 <i>:</i>
-                <span>{scoreB.toString().padStart(2, "0")}</span>
+                <span className="score-change" key={`b-${scoreB}`}>{scoreB.toString().padStart(2, "0")}</span>
               </div>
               <div className="right">
                 <small>PLAYER 02</small>
@@ -1234,7 +1259,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               <dl>
                 <div>
                   <dt>YOUR RATING</dt>
-                  <dd>{player?.rating?.elo || "—"}</dd>
+                  <dd>{(mode===1?player?.chaosRating:player?.rating)?.elo || "—"}</dd>
                 </div>
                 <div>
                   <dt>GAS COST TO PLAY</dt>
@@ -1251,7 +1276,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 <p className="eyebrow">LIVE MARKET</p>
                 <span>{odds?.open ? "OPEN" : "LOCKED"}</span>
               </div>
-              <h2>Back your read.</h2>
+              <h2>Back your read.</h2>{match?.mode===1 && <p className="chaos-warning">CHAOS: supporting a player can shrink their paddle next rally. Above 0.002 MON total, a side with over 60% of paid bets loses up to 25% of its height.</p>}
               <p>
                 {side >= 0
                   ? "Players cannot bet on their own match."
@@ -1362,6 +1387,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           )}
         </section>
       )}
+      {tab === "Archive" && config?.legacy && <Legacy config={config} account={account} signer={signingOwner} closeSigner={closeOwner}/>}
       {tab === "Ladder" && (
         <section className="table-panel">
           <div className="section-title">
@@ -1382,7 +1408,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               {ladder.map((p, i) => (
                 <tr key={p.id}>
                   <td>{String(i + 1).padStart(2, "0")}</td>
-                  <td>{short(p.address)}</td>
+                  <td><button onClick={()=>{setChallengeTarget(p.address);setTab("Rivals");}}>{p.handle || short(p.address)} ↗</button></td>
                   <td>{p.elo}</td>
                   <td>{p.played}</td>
                   <td>{p.wins}</td>
@@ -1452,6 +1478,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                   <button
                     disabled={busy || queued || !account || t.status !== 2 || !t.bracket.some((p: string) => p.toLowerCase() === account.toLowerCase())}
                     onClick={() => {
+                      setMode(0);
                       setTournamentId(t.id);
                       setTab("Play");
                       setMessage(

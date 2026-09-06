@@ -20,6 +20,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run test:differential
+      - run: npm run test:differential:v2
       - name: Build Linux indexer
         run: |
           cp indexer/config.template.yaml indexer/config.yaml

@@ -30,22 +30,25 @@ import {
 import { monadTestnet } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 import {
-  gameAbi,
-  marketAbi,
+  gameAbi as legacyGameAbi,
+  marketAbi as legacyMarketAbi,
   vaultAbi,
-  tournamentsAbi,
+  tournamentsAbi as legacyTournamentsAbi,
 } from "../../shared/abis";
 import {
   json,
   encodeRequest,
   domain,
-  joinTypes,
+  joinTypes, joinV2Types, contractsFor, deploymentId, resolveDeployment, queueV2Message,
   queueMessage,
   cancelQueueMessage,
   type Deployment,
   type RelayRequest,
 } from "../../shared/protocol";
-import { next } from "../../shared/physics";
+import { next } from "../../shared/physics-v2";
+import { gameV2Abi, marketV2Abi, tournamentsV2Abi } from "../../shared/abis-v2";
+import { legacyRoutes } from "./legacy";
+import { initializeSocial, socialRoutes } from "./social";
 import { pool, initializeStore } from "./store";
 import { readSponsorCosts } from "./budget";
 
@@ -55,6 +58,11 @@ const deployment: Deployment = JSON.parse(
     "utf8",
   ),
 );
+const activeVersion = deploymentId(deployment);
+const activeContracts = contractsFor(deployment);
+const gameAbi = activeContracts.game as typeof gameV2Abi;
+const marketAbi = activeContracts.market as typeof marketV2Abi;
+const tournamentsAbi = activeContracts.tournaments as typeof tournamentsV2Abi;
 if (![10143, 31337].includes(deployment.chainId))
   throw new Error("Mainnet is disabled");
 if (!process.env.RELAYER_PRIVATE_KEY || !process.env.DATABASE_URL)
@@ -87,33 +95,26 @@ if ((await publicClient.getChainId()) !== deployment.chainId)
 const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as Hex);
 const wallet = createWalletClient({ account, chain, transport: http(rpc) });
 const signingLock = await initializeStore();
+await initializeSocial();
+await pool.query("CREATE TABLE IF NOT EXISTS faucets_v2 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
 signingLock.on("error", () => { console.error("Signing lock lost; stopping to prevent concurrent nonce allocation"); process.exit(1); });
 await pool.query(
   "CREATE TABLE IF NOT EXISTS deployment_binding (singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton), fingerprint text NOT NULL)",
 );
-const fingerprint = keccak256(
-  toHex(
-    json({
-      chainId: deployment.chainId,
-      game: deployment.game,
-      vault: deployment.vault,
-      market: deployment.market,
-      tournaments: deployment.tournaments,
-      signer: account.address,
-    }),
-  ),
-);
-await pool.query(
-  "INSERT INTO deployment_binding(singleton,fingerprint) VALUES(true,$1) ON CONFLICT DO NOTHING",
-  [fingerprint],
-);
-if (
-  (await pool.query("SELECT fingerprint FROM deployment_binding")).rows[0]
-    .fingerprint !== fingerprint
-)
-  throw new Error(
-    "This journal belongs to another deployment or signer. Use a new database; never rebind queued transactions.",
-  );
+function manifestFingerprint(d:Deployment) {
+  return keccak256(toHex(json({chainId:d.chainId,game:d.game,vault:d.vault,market:d.market,tournaments:d.tournaments,signer:account.address})));
+}
+const fingerprint = manifestFingerprint(deployment);
+const originalFingerprint = manifestFingerprint(deployment.legacy || deployment);
+await pool.query("INSERT INTO deployment_binding(singleton,fingerprint) VALUES(true,$1) ON CONFLICT DO NOTHING",[originalFingerprint]);
+const binding = (await pool.query("SELECT fingerprint FROM deployment_binding")).rows[0].fingerprint;
+if (binding !== originalFingerprint) throw new Error("Journal deployment or signer mismatch. Preserve the original manifest and signing identity.");
+// A V2 release adds a manifest; it never rebinds or deletes the original journal.
+await pool.query("CREATE TABLE IF NOT EXISTS deployment_manifests (version text PRIMARY KEY,fingerprint text NOT NULL)");
+await pool.query("INSERT INTO deployment_manifests(version,fingerprint) VALUES($1,$2) ON CONFLICT DO NOTHING",[activeVersion,fingerprint]);
+if ((await pool.query("SELECT fingerprint FROM deployment_manifests WHERE version=$1",[activeVersion])).rows[0].fingerprint!==fingerprint) throw new Error("Deployment version already names another manifest");
+// Historical rows predate explicit deployment tags. Their bytes and nonce stay unchanged.
+await pool.query("UPDATE relay_jobs SET payload=payload || jsonb_build_object('deployment',$1::text) WHERE NOT payload ? 'deployment'",[deployment.legacy?'v1':activeVersion]);
 const dailyBudget = parseEther(process.env.RELAYER_DAILY_BUDGET_MON || "1");
 const gasPriceCap = parseGwei(process.env.RELAYER_MAX_GAS_PRICE_GWEI || "200");
 const minimumBalance = parseEther(
@@ -134,6 +135,7 @@ const allowed: Record<string, string[]> = {
   tournaments: ["enter", "start", "attach", "advance", "cancel", "refund"],
 };
 const relaySchema = z.object({
+  deployment: z.enum(["v1","v2"]).optional(),
   contract: z.enum(["game", "market", "vault", "tournaments"]),
   functionName: z.string().max(40),
   args: z.array(z.unknown()).max(12),
@@ -151,7 +153,7 @@ function serializeMatchmaking<T>(operation: () => Promise<T>): Promise<T> {
   matchmakingTail = result.catch(() => {});
   return result;
 }
-let ladderCache: { until: number; value: unknown } | undefined;
+const ladderCaches=new Map<number,{until:number;value:unknown}>();
 let head = 0n,
   lastObserved = Date.now(),
   chainHealthy = true,
@@ -181,6 +183,7 @@ function send(res: ServerResponse, value: unknown, status = 200) {
   res.writeHead(status, {
     "content-type": "application/json",
     "cache-control": "no-store",
+    "access-control-allow-credentials": "true",
     "access-control-allow-origin": origin,
     vary: "Origin",
     "x-content-type-options": "nosniff",
@@ -198,6 +201,8 @@ async function body(req: IncomingMessage) {
 async function enqueue(payload: RelayRequest, internal = false, value = 0n) {
   if (!internal && !allowed[payload.contract]?.includes(payload.functionName))
     throw new Error("Call not sponsored");
+  payload = { ...payload, deployment: payload.deployment || activeVersion };
+  if (payload.deployment !== activeVersion && !(payload.contract === "vault" && payload.functionName === "withdraw" || payload.contract === "market" && payload.functionName === "claim" || payload.contract === "tournaments" && payload.functionName === "refund")) throw new Error("Legacy contracts accept claims, refunds and withdrawals only");
   const encoded = encodeRequest(payload, deployment);
   const round =
     payload.contract === "tournaments" && payload.functionName === "advance"
@@ -225,8 +230,8 @@ async function enqueue(payload: RelayRequest, internal = false, value = 0n) {
     )
       return existing.rows[0];
     const pending = await pool.query(
-      "SELECT id,status FROM relay_jobs WHERE payload->>'contract'='market' AND payload->>'functionName'='open' AND payload->'args'->>0=$1 AND status IN ('queued','signed','sent') LIMIT 1",
-      [String(payload.args[0])],
+      "SELECT id,status FROM relay_jobs WHERE payload->>'contract'='market' AND payload->>'functionName'='open' AND payload->'args'->>0=$1 AND payload->>'deployment'=$2 AND status IN ('queued','signed','sent') LIMIT 1",
+      [String(payload.args[0]),payload.deployment],
     );
     if (pending.rows[0]) return pending.rows[0];
     id = keccak256(toHex(`${id}:retry:${head}`));
@@ -288,7 +293,7 @@ async function dispatch() {
         for (const log of receipt.logs) {
           try {
             const decoded = decodeEventLog({
-              abi: gameAbi,
+              abi: contractsFor(resolveDeployment(row.payload.deployment, deployment)).game,
               data: log.data,
               topics: log.topics,
             });
@@ -418,11 +423,20 @@ function broadcast(value: unknown) {
     if (client.readyState === WebSocket.OPEN && client.bufferedAmount < 256000)
       client.send(message);
 }
+async function submitReadyRoom(room:any) {
+  try {
+    const job=await enqueue({contract:"game",functionName:"createMatch",args:[room.join_a.join,room.join_a.signature,room.join_b.join,room.join_b.signature]},true);
+    await pool.query("UPDATE rooms SET job_id=$2 WHERE id=$1 AND job_id IS NULL",[room.id,job.id]);
+  } catch(error) {
+    if(/rating pending/i.test(safeError(error))) return; // Keeper finalizes the preceding result first.
+    throw error;
+  }
+}
 async function refresh() {
   const latest = await publicClient.getBlockNumber({ cacheTime: 0 });
   if (latest === head) return;
   const observedAt = Date.now();
-  const existingIds = [...matches].filter(([, m]) => m.status < 3).map(([id]) => id);
+  const existingIds = [...matches].filter(([, m]) => m.status < 3 || (deployment.version === 2 && m.status === 3 && !m.ratingFinalized)).map(([id]) => id);
   const [last, activeBlock, states] = await Promise.all([
     publicClient.readContract({ address: deployment.game, abi: gameAbi, functionName: "nextId", blockNumber: latest }),
     publicClient.readContract({ address: deployment.game, abi: gameAbi, functionName: "activeBlock", blockNumber: latest }),
@@ -431,7 +445,7 @@ async function refresh() {
   head = latest; lastObserved = observedAt; chainHealthy = true;
   const preloaded = new Map(existingIds.map((id, i) => [id, states[i]]));
   const ids = new Set(
-    [...matches].filter(([, m]) => m.status < 3).map(([id]) => id),
+    [...matches].filter(([, m]) => m.status < 3 || (deployment.version === 2 && m.status === 3 && !m.ratingFinalized)).map(([id]) => id),
   );
   for (let id = last > 20n ? last - 20n : 1n; id < last; id++)
     if (!matches.has(String(id))) ids.add(String(id));
@@ -518,24 +532,28 @@ async function refresh() {
         }
       }
     }
+    if (deployment.version === 2 && m.status === 3 && !m.ratingFinalized) {
+      try { await enqueue({contract:"game",functionName:"finalizeRating",args:[String(id)]},true); } catch { lastError="Rating finalization pending"; }
+    }
     const clock = frame.clock;
     if (
       m.status === 2 &&
       next(m.state).at <= clock
     ) {
       const pending = await pool.query(
-        "SELECT id FROM relay_jobs WHERE status IN ('queued','signed','sent') AND payload->>'contract'='game' AND (payload->'args'->>0=$1 OR payload->'args'->0->>'matchId'=$1)",
-        [id.toString()],
+        "SELECT id FROM relay_jobs WHERE status IN ('queued','signed','sent') AND payload->>'contract'='game' AND payload->>'deployment'=$2 AND (payload->'args'->>0=$1 OR payload->'args'->0->>'matchId'=$1)",
+        [id.toString(),activeVersion],
       );
       if (!pending.rowCount) {
         // Keeper IDs include the current block so a previously completed resolution is not reused.
         const payload = {
+          deployment: activeVersion,
           contract: "game",
           functionName: "resolveEvent",
           args: [id.toString()],
           value: "0",
         };
-        const jobId = keccak256(toHex(`keeper:${id}:${head}`));
+        const jobId = keccak256(toHex(`keeper:${activeVersion}:${id}:${head}`));
         await pool.query(
           "INSERT INTO relay_jobs(id,payload) VALUES($1,$2) ON CONFLICT DO NOTHING",
           [jobId, json(payload)],
@@ -545,6 +563,10 @@ async function refresh() {
   }
   for (const [id, m] of matches)
     if (m.status >= 3 && BigInt(id) + 20n < last) { matches.delete(id); matchViews.delete(id); }
+  await serializeMatchmaking(async()=>{
+    const ready=await pool.query("SELECT * FROM rooms WHERE deployment=$1 AND expires>$2 AND join_a IS NOT NULL AND join_b IS NOT NULL AND job_id IS NULL LIMIT 4",[activeVersion,Math.floor(Date.now()/1000)]);
+    for(const room of ready.rows) {try{await submitReadyRoom(room);}catch{/* The signed room expires if its consent is no longer valid. */}}
+  });
   broadcast({ type: "head", head, observedAt: lastObserved });
 }
 async function graphql(query: string, variables: unknown = {}) {
@@ -564,14 +586,25 @@ async function graphql(query: string, variables: unknown = {}) {
     throw new Error("Envio indexer unavailable");
   return result.data;
 }
+async function assertAvailable(players:string[]) {
+  if ([...matches.values()].filter(m=>m.status===1 || m.status===2).length >= 4) throw new Error("All four arenas are occupied");
+  for(const player of players) { const pending=await pool.query("SELECT r.job_id FROM rooms r JOIN relay_jobs j ON j.id=r.job_id WHERE (r.player_a=$1 OR r.player_b=$1) AND j.status IN ('queued','signed','sent') LIMIT 1",[player.toLowerCase()]);if(pending.rowCount)throw new Error("A player already has a submitted match creation. Wait for its receipt."); }
+  if (deployment.version === 2) for (const player of players) {
+    const active = await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"activeMatchOf",args:[player as Address]});
+    if (active>0n) throw new Error("A player already has an active match");
+  }
+}
+const handleLegacy=legacyRoutes({legacy:deployment.legacy,read:(address,abi,functionName,args)=>publicClient.readContract({address,abi,functionName,args} as never),graphql,send});
+const handleSocial = socialRoutes({deployment,origin,readBody:body,send,serialize:serializeMatchmaking,assertAvailable});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)
       return send(res, { error: "Origin denied" }, 403);
     if (req.method === "OPTIONS") {
       res.writeHead(204, {
-        "access-control-allow-origin": origin,
-        "access-control-allow-methods": "GET,POST,OPTIONS",
+        "access-control-allow-credentials": "true",
+    "access-control-allow-origin": origin,
+        "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
         "access-control-allow-headers": "content-type",
       });
       res.end();
@@ -589,6 +622,7 @@ const server = createServer(async (req, res) => {
     else if (++rate.count > 600) return send(res, { error: "Rate limit" }, 429);
     if (rates.size > 10000)
       for (const [key, r] of rates) if (r.until < Date.now()) rates.delete(key);
+    if (await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;
     if (req.method === "GET" && path === "/health") {
       const ok = chainHealthy && Date.now() - lastObserved < 15000;
       return send(
@@ -628,6 +662,7 @@ const server = createServer(async (req, res) => {
         deployment.market,
         deployment.vault,
         deployment.tournaments,
+        ... (deployment.legacy ? [deployment.legacy.game,deployment.legacy.market,deployment.legacy.vault,deployment.legacy.tournaments] : []),
       ].map((a) => a.toLowerCase());
       if (
         ["eth_call", "eth_estimateGas"].includes(request.method) &&
@@ -685,7 +720,7 @@ const server = createServer(async (req, res) => {
         throw new Error("Invalid credit request");
       const player = r.player.toLowerCase();
       const existing = await pool.query(
-        "SELECT job_id FROM faucets WHERE player=$1",
+        `SELECT job_id FROM ${activeVersion === "v2" ? "faucets_v2" : "faucets"} WHERE player=$1`,
         [player],
       );
       if (existing.rows[0]) return send(res, { id: existing.rows[0].job_id });
@@ -695,7 +730,7 @@ const server = createServer(async (req, res) => {
         parseEther(process.env.FAUCET_CREDIT_MON || "0.02"),
       );
       await pool.query(
-        "INSERT INTO faucets(player,job_id) VALUES($1,$2) ON CONFLICT DO NOTHING",
+        `INSERT INTO ${activeVersion === "v2" ? "faucets_v2" : "faucets"}(player,job_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
         [player, job.id],
       );
       return send(res, job, 202);
@@ -777,12 +812,8 @@ const server = createServer(async (req, res) => {
       ]);
       return send(res, {
         rating,
-        balance,
-        gameNonce,
-        marketNonce,
-        vaultNonce,
-        tournamentNonce,
-        admin,
+        chaosRating: deployment.version === 2 ? await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[player,1]}) : rating,
+        balance, gameNonce, marketNonce, vaultNonce, tournamentNonce, admin,
       });
     }
     if (req.method === "POST" && path === "/relay")
@@ -795,6 +826,7 @@ const server = createServer(async (req, res) => {
           expires: z.number().int(),
           signature: z.string(),
           tournamentId: z.string().regex(/^\d+$/).default("0"),
+          mode: z.number().int().min(0).max(1).default(0),
         })
         .parse(await body(req));
       if (
@@ -802,11 +834,7 @@ const server = createServer(async (req, res) => {
         request.expires > Date.now() / 1000 + 305 ||
         !(await verifyMessage({
           address: request.player as Address,
-          message: queueMessage(
-            request.player,
-            request.expires,
-            request.tournamentId,
-          ),
+          message: deployment.version === 2 ? queueV2Message(request.player,request.expires,request.tournamentId,request.mode,deployment) : queueMessage(request.player,request.expires,request.tournamentId),
           signature: request.signature as Hex,
         }))
       )
@@ -817,6 +845,8 @@ const server = createServer(async (req, res) => {
       )
         throw new Error("All four arenas are occupied");
       const player = request.player.toLowerCase();
+      await assertAvailable([player]);
+      if(request.tournamentId!=="0" && request.mode!==0) throw new Error("Tournaments use Classic rules");
       if (
         [...matches.values()].some(
           (m) =>
@@ -855,34 +885,29 @@ const server = createServer(async (req, res) => {
             slot % 2 === 0 ? slot + 1 : slot - 1
           ].toLowerCase();
       }
-      const rating = await publicClient.readContract({
-        address: deployment.game,
-        abi: gameAbi,
-        functionName: "ratingOf",
-        args: [player as Address],
-      });
+      const rating = deployment.version === 2 ? await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[player as Address,request.mode]}) : await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingOf",args:[player as Address]});
       await pool.query(
-        "INSERT INTO queue_players(player,elo,expires,tournament_id,ticket) VALUES($1,$2,$3,$4,$5) ON CONFLICT(player) DO UPDATE SET elo=$2,expires=$3,tournament_id=$4,ticket=$5",
-        [player, rating.elo, request.expires, request.tournamentId, keccak256(request.signature as Hex)],
+        "INSERT INTO queue_players(player,elo,expires,tournament_id,ticket,mode,deployment) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(player) DO UPDATE SET elo=$2,expires=$3,tournament_id=$4,ticket=$5,mode=$6,deployment=$7",
+        [player, rating.elo, request.expires, request.tournamentId, keccak256(request.signature as Hex), request.mode, activeVersion],
       );
       const db = await pool.connect();
       try {
         await db.query("BEGIN");
         await db.query("SELECT pg_advisory_xact_lock(701338)");
         const opponent = await db.query(
-          "SELECT * FROM queue_players WHERE player<>$1 AND expires>$2 AND tournament_id=$3 AND ($5::text IS NULL OR player=$5) ORDER BY abs(elo-$4),expires LIMIT 1 FOR UPDATE",
+          "SELECT * FROM queue_players WHERE player<>$1 AND expires>$2 AND tournament_id=$3 AND mode=$6 AND deployment=$7 AND ($5::text IS NULL OR player=$5) ORDER BY abs(elo-$4),expires LIMIT 1 FOR UPDATE",
           [
             player,
             Math.floor(Date.now() / 1000),
             request.tournamentId,
             rating.elo,
-            requiredOpponent,
+            requiredOpponent, request.mode, activeVersion,
           ],
         );
         if (opponent.rows[0]) {
           const room = toHex(randomBytes(32));
           await db.query(
-            "INSERT INTO rooms(id,player_a,player_b,tournament_id,expires,ticket_a,ticket_b) VALUES($1,$2,$3,$4,$5,$6,$7)",
+            "INSERT INTO rooms(id,player_a,player_b,tournament_id,expires,ticket_a,ticket_b,mode,ranked,rules_version,deployment) VALUES($1,$2,$3,$4,$5,$6,$7,$8,true,$9,$10)",
             [
               room,
               player,
@@ -890,7 +915,7 @@ const server = createServer(async (req, res) => {
               request.tournamentId,
               Math.floor(Date.now() / 1000) + 180,
               keccak256(request.signature as Hex),
-              opponent.rows[0].ticket,
+              opponent.rows[0].ticket, request.mode, deployment.version || 1, activeVersion,
             ],
           );
           await db.query("DELETE FROM queue_players WHERE player IN ($1,$2)", [
@@ -961,7 +986,7 @@ const server = createServer(async (req, res) => {
         Record<string, unknown>;
       const recovered = await recoverTypedDataAddress({
         domain: domain("PONG", deployment.chainId, deployment.game),
-        types: joinTypes,
+        types: deployment.version === 2 ? joinV2Types : joinTypes,
         primaryType: "Join",
         message: join as never,
         signature: request.signature,
@@ -979,7 +1004,7 @@ const server = createServer(async (req, res) => {
         ![room.player_a, room.player_b].includes(player) ||
         String(join.opponent).toLowerCase() !==
           (player === room.player_a ? room.player_b : room.player_a) ||
-        String(join.tournamentId) !== room.tournament_id
+        String(join.tournamentId) !== room.tournament_id || room.deployment !== activeVersion || (deployment.version === 2 && (Number(join.mode)!==room.mode || join.ranked!==room.ranked || Number(join.rulesVersion)!==room.rules_version))
       )
         throw new Error("Wrong room");
       await pool.query(
@@ -989,25 +1014,7 @@ const server = createServer(async (req, res) => {
       const ready = (
         await pool.query("SELECT * FROM rooms WHERE id=$1", [room.id])
       ).rows[0];
-      if (ready.join_a && ready.join_b && !ready.job_id) {
-        const job = await enqueue(
-          {
-            contract: "game",
-            functionName: "createMatch",
-            args: [
-              ready.join_a.join,
-              ready.join_a.signature,
-              ready.join_b.join,
-              ready.join_b.signature,
-            ],
-          },
-          true,
-        );
-        await pool.query("UPDATE rooms SET job_id=$2 WHERE id=$1", [
-          room.id,
-          job.id,
-        ]);
-      }
+      if (ready.join_a && ready.join_b && !ready.job_id) await submitReadyRoom(ready);
       return send(res, { ready: true });
       });
     }
@@ -1045,39 +1052,18 @@ const server = createServer(async (req, res) => {
       return send(res, { amount, open: window[0], version: window[1], book, remainingUs: next(m.state).at - clock - lockout });
     }
     if (req.method === "GET" && path === "/leaderboard") {
-      if (ladderCache && ladderCache.until > Date.now())
-        return send(res, ladderCache.value);
-      const players: any[] = [];
-      let after = "";
-      for (;;) {
-        const data = await graphql(
-          "query Players($after:String!){ Player(where:{id:{_gt:$after}},order_by:{id:asc},limit:1000){id address elo played wins season} }",
-          { after },
-        );
-        players.push(...data.Player);
-        if (data.Player.length < 1000) break;
-        after = data.Player.at(-1).id;
-      }
-      // Lazy onchain season reset must also be reflected before a player's next match.
-      const season = await publicClient.readContract({
-        address: deployment.game,
-        abi: gameAbi,
-        functionName: "currentSeason",
-      });
-      const value = {
-        Player: players
-          .map((p) => {
-            if (BigInt(p.season) >= season) return p;
-            let elo = p.elo;
-            for (let i = 0n; i < 16n && BigInt(p.season) + i < season; i++)
-              elo = 1000 + Math.trunc((elo - 1000) / 2);
-            return { ...p, elo, played: 0, wins: 0, season };
-          })
-          .sort((a, b) => b.elo - a.elo || a.id.localeCompare(b.id))
-          .slice(0, 100),
-      };
-      ladderCache = { until: Date.now() + 5000, value };
-      return send(res, value);
+      const mode=Number(new URL(req.url!,"http://localhost").searchParams.get("mode") || 0);
+      if(![0,1].includes(mode))throw new Error("Unknown ranking mode");
+      const cached=ladderCaches.get(mode);if(cached && cached.until>Date.now())return send(res,cached.value);
+      const indexed:any[]=[];let after="";
+      for(;;){const data=await graphql("query Players($after:String!){Player(where:{id:{_gt:$after}},order_by:{id:asc},limit:1000){id address deployment mode elo played wins season}}",{after});indexed.push(...data.Player);if(data.Player.length<1000)break;after=data.Player.at(-1).id;}
+      const addresses=[...new Set(indexed.filter(p=>(p.deployment===activeVersion && p.mode===mode) || mode===0 && p.deployment==="v1").map(p=>p.address))] as Address[];
+      // Read the current lazy season reset and V1 inheritance from the authoritative game.
+      const players=[];
+      for(let i=0;i<addresses.length;i+=30)players.push(...await Promise.all(addresses.slice(i,i+30).map(async address=>({id:`${activeVersion}:${mode}:${address}`,address,...await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[address,mode]})}))));
+      const profiles=(await pool.query("SELECT player,handle,avatar FROM profiles")).rows;
+      const value={Player:players.map(p=>({...p,...profiles.find(x=>x.player===p.address.toLowerCase())})).sort((a,b)=>b.elo-a.elo || a.id.localeCompare(b.id)).slice(0,100)};
+      ladderCaches.set(mode,{until:Date.now()+10000,value});return send(res,value);
     }
     if (req.method === "GET" && path === "/history") {
       const before =
@@ -1087,8 +1073,8 @@ const server = createServer(async (req, res) => {
       return send(
         res,
         await graphql(
-          "query History($before:numeric!){ Match(where:{block:{_lt:$before}},order_by:{block:desc},limit:100){id playerA playerB tournamentId status winner block} }",
-          { before },
+          "query History($before:numeric!,$deployment:String!){ Match(where:{deployment:{_eq:$deployment},block:{_lt:$before}},order_by:{block:desc},limit:100){id rawId deployment playerA playerB tournamentId status winner block mode ranked rulesVersion} }",
+          { before, deployment:activeVersion },
         ),
       );
     }
@@ -1106,7 +1092,7 @@ const server = createServer(async (req, res) => {
         res,
         await graphql(
           "query Replay($id:String!,$after:numeric!){ Frame(where:{matchId:{_eq:$id},version:{_gt:$after}},order_by:{version:asc},limit:1000){id matchId version state clock block nextAt nextKind} }",
-          { id: path.split("/")[2], after },
+          { id: `${activeVersion}:${path.split("/")[2]}`, after },
         ),
       );
     }

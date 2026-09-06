@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": {"node": ">=24"},
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "next dev web --hostname 127.0.0.1",
-    "build": "npm run contracts:build && npm run abi && next build web",
+    "build": "npm run contracts:build && npm run abi && npm run abi:v2 && next build web",
     "start": "next start web --hostname 0.0.0.0",
     "relayer": "tsx relayer/src/main.ts",
     "contracts:build": "forge build --root contracts",
@@ -26,7 +28,9 @@
     "benchmark:local": "tsx scripts/benchmark-local.ts",
     "match-cost": "tsx scripts/match-cost.ts",
     "indexer:configure": "tsx scripts/configure-indexer.ts",
-    "bootstrap": "node scripts/bootstrap.mjs"
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "abi:v2": "tsx scripts/abi-v2.ts",
+    "test:differential:v2": "tsx scripts/differential-v2.ts"
   },
   "dependencies": {
     "@category-labs/mera": "0.2.0",

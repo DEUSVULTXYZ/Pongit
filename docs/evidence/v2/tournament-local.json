@@ -1,0 +1,1 @@
+{"network":"local Anvil","tournamentId":"1","matchIds":["3","4","5"],"winner":"0xb5D9848a551eEb037Fc9e638f17ae989d832A43b","prize":"0.01 MON","checks":["four signatures","bracket-constrained matchmaking","automatic attachment","two distinct round advances","winner vault credit"],"completedAt":"2026-09-06T12:50:57.809Z"}

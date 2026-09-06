@@ -113,6 +113,7 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     await touchCdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
     await b.getByRole("button",{name:"Concede",exact:true}).click();
     await expect(a.locator(".match-bar")).toContainText("FINAL",{timeout:30000});
+    for(const p of [a,b]) {await expect(p.locator(".outcome")).toBeVisible();await p.getByRole("button",{name:"Close result",exact:true}).click();}
     await s.getByRole("button",{name:"Claim payout / refund"}).click();
     await expect(s.locator(".status-line")).toContainText("Settlement credited",{timeout:20000});
     await s.getByText("Withdraw test MON",{exact:true}).click();

@@ -1,0 +1,15 @@
+{
+  "handicaps": [
+    {
+      "matchId": "v2:2",
+      "halfA": 36000000,
+      "halfB": 48000000,
+      "paidA": 3443407699269404,
+      "paidB": 0,
+      "clock": 7800000
+    }
+  ],
+  "frames": 4,
+  "match": "v2:2",
+  "verifiedAt": "2026-09-06T13:05:51.661Z"
+}

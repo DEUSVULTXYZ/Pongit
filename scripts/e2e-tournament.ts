@@ -14,7 +14,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { DEV_KEY } from "./local-chain";
 import {
   domain,
-  joinTypes,
+  joinTypes, joinV2Types, queueV2Message,
   enterTypes,
   actionTypes,
   queueMessage,
@@ -125,7 +125,7 @@ for (let round = 0; round < 2; round++) {
     for (const player of pair) {
       const expires = Math.floor(Date.now() / 1000) + 300;
       const signature = await player.signMessage({
-        message: queueMessage(player.address, expires, String(tid)),
+        message: config.version===2?queueV2Message(player.address,expires,String(tid),0,config):queueMessage(player.address, expires, String(tid)),
       });
       await api("/queue", {
         player: player.address,
@@ -156,11 +156,11 @@ for (let round = 0; round < 2; round++) {
         deadline: BigInt(now + 120),
         sessionExpiry: BigInt(now + 600),
         maxInputs: 1000,
-        tournamentId: tid,
+        tournamentId: tid, mode:0,ranked:true,rulesVersion:2,
       };
       const signature = await p.signTypedData({
         domain: domain("PONG", config.chainId, config.game),
-        types: joinTypes,
+        types: config.version===2?joinV2Types:joinTypes,
         primaryType: "Join",
         message: join,
       });

@@ -124,5 +124,5 @@ test("Indexed ABI snapshots round-trip through JSON without losing integer preci
     [{ type: "tuple", components: stateComponents }],
     encoded,
   );
-  assert.deepEqual(stateFromJson(JSON.parse(json(decoded))), state);
+  assert.deepEqual(stateFromJson(JSON.parse(json(decoded))), {mode:0,halfA:48000000n,halfB:48000000n,awaitingServe:false,resumeAt:0n,...state});
 });

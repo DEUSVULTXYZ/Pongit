@@ -18,6 +18,7 @@ WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1
 COPY --from=web-build --chown=node:node /app/web/.next/standalone ./
 COPY --from=web-build --chown=node:node /app/web/.next/static ./web/.next/static
+COPY --from=web-build --chown=node:node /app/web/public ./web/public
 USER node
 EXPOSE 3000
 CMD ["node","web/server.js"]

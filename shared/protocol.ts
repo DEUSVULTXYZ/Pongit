@@ -6,7 +6,10 @@ import {
   encodeFunctionData,
 } from "viem";
 import { gameAbi, marketAbi, vaultAbi, tournamentsAbi } from "./abis";
+import { gameV2Abi, marketV2Abi, tournamentsV2Abi } from "./abis-v2";
 export type Deployment = {
+  version?: 1 | 2;
+  legacy?: Deployment;
   chainId: number;
   game: Address;
   vault: Address;
@@ -23,6 +26,7 @@ export const contracts = {
 };
 export type ContractName = keyof typeof contracts;
 export type RelayRequest = {
+  deployment?: "v1" | "v2";
   contract: ContractName;
   functionName: string;
   args: unknown[];
@@ -48,6 +52,7 @@ export const joinTypes = {
     { name: "tournamentId", type: "uint256" },
   ],
 } as const;
+export const joinV2Types = { Join: [...joinTypes.Join, {name:"mode",type:"uint8"}, {name:"ranked",type:"bool"}, {name:"rulesVersion",type:"uint16"}] } as const;
 export const inputTypes = {
   Input: [
     { name: "matchId", type: "uint256" },
@@ -131,7 +136,8 @@ export function coerce(value: unknown, param: AbiParameter): unknown {
   return value;
 }
 export function encodeRequest(request: RelayRequest, deployment: Deployment) {
-  const abi: Abi = contracts[request.contract];
+  deployment = resolveDeployment(request.deployment, deployment);
+  const abi: Abi = contractsFor(deployment)[request.contract];
   const fn = abi.find(
     (e) => e.type === "function" && e.name === request.functionName,
   );
@@ -154,3 +160,16 @@ export const queueMessage = (
 
 export const cancelQueueMessage = (player: string, ticket: string, expires: number, chainId: number, game: string) =>
   `PONG cancel matchmaking\nPlayer: ${player.toLowerCase()}\nTicket: ${ticket}\nExpires: ${expires}\nChain: ${chainId}\nGame: ${game.toLowerCase()}`;
+
+export const deploymentId = (d:Deployment): "v1" | "v2" => d.version === 2 ? "v2" : "v1";
+export function resolveDeployment(id: "v1" | "v2" | undefined,d:Deployment):Deployment {
+  if (!id || id === deploymentId(d)) return d;
+  if (d.legacy && id === deploymentId(d.legacy)) return d.legacy;
+  throw new Error("Unknown contract deployment");
+}
+export function contractsFor(d:Deployment) {
+  return d.version === 2 ? {game:gameV2Abi,market:marketV2Abi,vault:vaultAbi,tournaments:tournamentsV2Abi} : contracts;
+}
+export function matchRef(d:Deployment,id:string|bigint) { return `${deploymentId(d)}:${id}`; }
+export const queueV2Message = (player:string,expires:number,tournamentId:string,mode:number,d:Deployment) =>
+  `${queueMessage(player,expires,tournamentId)}\nMode: ${mode}\nRanked: true\nRules: 2\nChain: ${d.chainId}\nGame: ${d.game.toLowerCase()}`;

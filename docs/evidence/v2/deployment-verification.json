@@ -1,0 +1,9 @@
+{
+  "chainId": 10143,
+  "gameBytes": 24313,
+  "codeHash": "0x8f837945487537655851282e248ff033de6249912abc57a0e95585fe8a0b0fdf",
+  "market": "0x8ab2502DDb70751C6C94155d9c71EEACF58ABD04",
+  "sealed": true,
+  "results": "0x47dBA35e83e6488BB558Bb8CdD95ec729d26770D",
+  "previous": "0xb66d62F0eAbC5F1f86FaCa76BeBC8353C2Fbe0dD"
+}

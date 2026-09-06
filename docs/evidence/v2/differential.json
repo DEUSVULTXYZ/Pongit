@@ -1,0 +1,17 @@
+{
+  "network": "isolated Anvil",
+  "seed": "0xc0ffee",
+  "report": [
+    {
+      "mode": 0,
+      "count": 10000,
+      "mismatches": 0
+    },
+    {
+      "mode": 1,
+      "count": 10000,
+      "mismatches": 0
+    }
+  ],
+  "completedAt": "2026-09-06T12:00:59.809Z"
+}

@@ -3,11 +3,12 @@ import {
   type Deployment,
   type RelayRequest,
 } from "../../shared/protocol";
-import type { State } from "../../shared/physics";
+import type { State } from "../../shared/physics-v2";
 export const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 export const WS = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000/ws";
 export async function api<T = any>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(API + path, {
+    credentials: "include",
     method: body === undefined ? "GET" : "POST",
     headers:
       body === undefined ? undefined : { "content-type": "application/json" },
@@ -68,6 +69,7 @@ export function stateFromJson(s: any): State {
         BigInt(s[k]),
       ]),
     ),
+    mode: Number(s.mode || 0), halfA:BigInt(s.halfA || 48000000), halfB:BigInt(s.halfB || 48000000), awaitingServe:!!s.awaitingServe, resumeAt:BigInt(s.resumeAt || 0),
     leftDir: Number(s.leftDir),
     rightDir: Number(s.rightDir),
     scoreA: Number(s.scoreA),
@@ -77,3 +79,10 @@ export function stateFromJson(s: any): State {
 export type Config = Deployment & { localDev: boolean; relayer: string; serverTimeMs: number };
 export const short = (address: string) =>
   address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "—";
+
+export async function appApi(path:string,method="GET",body?:unknown) {
+  const response=await fetch(API+path,{method,credentials:"include",headers:{"content-type":"application/json"},body:body===undefined?undefined:json(body),signal:AbortSignal.timeout(15000)});
+  const result=await response.json();
+  if(!response.ok || result.error)throw new Error(result.error || "Request failed. Please retry.");
+  return result;
+}

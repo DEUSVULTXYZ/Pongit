@@ -18,6 +18,23 @@ contracts:
       - event: Registered(uint256 indexed tournamentId, address indexed player)
       - event: BracketUpdated(uint256 indexed tournamentId, uint256 round, address[] bracket)
       - event: TournamentEnded(uint256 indexed tournamentId, address indexed winner, uint8 status, uint256 prize)
+  - name: GameV2
+    events:
+      - event: MatchCreated(uint256 indexed matchId, address indexed playerA, address indexed playerB, uint256 tournamentId, uint8 mode, bool ranked, uint16 rulesVersion)
+      - event: Snapshot(uint256 indexed matchId, uint64 version, bytes state, uint64 nextAt, uint8 nextKind, uint64 clock)
+      - event: MatchEnded(uint256 indexed matchId, address indexed winner, uint8 status)
+      - event: RatingUpdated(address indexed player, uint256 indexed season, uint8 indexed mode, uint32 elo, uint32 played, uint32 wins)
+      - event: HandicapSet(uint256 indexed matchId, int256 halfA, int256 halfB, uint256 paidA, uint256 paidB, uint64 at)
+  - name: MarketV2
+    events:
+      - event: BetPlaced(uint256 indexed matchId, address indexed player, uint8 side, uint256 shares, uint256 cost)
+      - event: Claimed(uint256 indexed matchId, address indexed player, uint256 amount, bool refunded)
+  - name: TournamentsV2
+    events:
+      - event: TournamentCreated(uint256 indexed tournamentId, uint64 closesAt, uint32 capacity, uint256 fee, uint256 prize)
+      - event: Registered(uint256 indexed tournamentId, address indexed player)
+      - event: BracketUpdated(uint256 indexed tournamentId, uint256 round, address[] bracket)
+      - event: TournamentEnded(uint256 indexed tournamentId, address indexed winner, uint8 status, uint256 prize)
 chains:
   - id: 10143
     start_block: 0

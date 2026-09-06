@@ -3,8 +3,9 @@ import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
+const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
 const spacing = Math.max(50, Number(process.env.RPC_SPACING_MS || 60));
-let nextSlot = 0, waiting = 0;
+let nextSlot = 0, nextHistorySlot=0, waiting = 0;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 async function request(method: string, params: unknown[]) {
@@ -19,14 +20,17 @@ async function request(method: string, params: unknown[]) {
     waiting++;
     try {
       for (let attempt = 0; attempt < 4; attempt++) {
+        if(method==="eth_getLogs") { const slot=Math.max(nextHistorySlot,Date.now());nextHistorySlot=slot+400;await delay(Math.max(0,slot-Date.now())); }
         const slot = Math.max(nextSlot, Date.now());
         nextSlot = slot + spacing;
         await delay(Math.max(0, slot - Date.now()));
-        const response = await fetch(upstream, {
+        let response:Response;
+        try { response = await fetch(attempt>0 && read && secondary!==upstream ? secondary : upstream, {
           method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
           signal: AbortSignal.timeout(15000),
-        });
+        }); } catch { if(attempt===3)throw new Error("RPC transport unavailable");await delay(250*(attempt+1));continue; }
+        if(response.status>=500) {await delay(250*(attempt+1));continue;}
         const result = await response.json() as { result?: unknown; error?: { code: number; message: string; data?: unknown } };
         if (response.status === 429 || /limited to|rate limit/i.test(result.error?.message || "")) {
           await delay(1000 * (attempt + 1));

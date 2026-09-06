@@ -20,3 +20,5 @@ deployments/local.json
 artifacts/
 backups/
 test-results/
+
+deployments/local-*.json

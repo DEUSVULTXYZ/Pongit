@@ -1,0 +1,69 @@
+Compiling 1 files with Solc 0.8.30
+Solc 0.8.30 finished in 22.63s
+Compiler run successful with warnings:
+Warning (2519): This declaration shadows an existing declaration.
+  --> test/PongV2.t.sol:46:32:
+   |
+46 |     function sign(uint256 key, bytes32 digest) internal returns (bytes memory) {
+   |                                ^^^^^^^^^^^^^^
+Note: The shadowed declaration is here:
+  --> test/PongV2.t.sol:51:5:
+   |
+51 |     function digest(string memory name, address target, bytes32 hash) internal view returns (bytes32) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/PongV2.t.sol:46:5:
+   |
+46 |     function sign(uint256 key, bytes32 digest) internal returns (bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 27 tests for test/PongV2.t.sol:PongV2Test
+[PASS] testBettingTrajectoryStaysValidUntilTheNextEvent() (gas: 99488)
+[PASS] testCancellationRefund() (gas: 431999)
+[PASS] testChaosPauseAndPressureApplyOnlyOnResume() (gas: 1433355)
+[PASS] testExpiredInputAndWrongDomain() (gas: 49088)
+[PASS] testFriendlyAndChaosRatingsAreIsolated() (gas: 1742688)
+[PASS] testFuzzLongStepSameAsEventSteps(uint32) (runs: 1000, μ: 106820, ~: 18189)
+[PASS] testFuzzPhysicsBoundsAndNoTunneling(uint64,int8,int8) (runs: 1000, μ: 77996, ~: 8892)
+[PASS] testHandicapThresholdsAndSymmetry() (gas: 1336)
+[PASS] testInputLimitIsFrozenAtCreation() (gas: 276458)
+[PASS] testInputNonceAndWrongKey() (gas: 162354)
+[PASS] testMarketBindingCannotChange() (gas: 13535)
+[PASS] testMarketBoundsAndPartialTreasuryReclaim() (gas: 483082)
+[PASS] testMarketLockoutAndStaleVersion() (gas: 218417)
+[PASS] testMarketSettlementAndParticipantBan() (gas: 547410)
+[PASS] testNoRevealCancellation() (gas: 599306)
+[PASS] testOutOfOrderAndExpiredSession() (gas: 58502)
+[PASS] testPauseFreezesClock() (gas: 74856)
+[PASS] testPendingRatingPreventsResultReordering() (gas: 614673)
+[PASS] testPublicKeeperCompletesAndRatingsOnlyOnce() (gas: 476158)
+[PASS] testRateLimit() (gas: 271075)
+[PASS] testRevokeAndScope() (gas: 83516)
+[PASS] testRulesConsentAndSingleActiveMatch() (gas: 360999)
+[PASS] testSessionCannotWithdraw() (gas: 61071)
+[PASS] testSessionCommandCap() (gas: 170594)
+[PASS] testSignatureCannotMoveDifferentMatch() (gas: 891688)
+[PASS] testTournamentFourSeedsAndTwoRounds() (gas: 3324737)
+[PASS] testTournamentWholeBracket() (gas: 1489864)
+Suite result: ok. 27 passed; 0 failed; 0 skipped; finished in 90.12ms (206.82ms CPU time)
+
+Ran 1 test for test/MarketV2Invariant.t.sol:MarketV2InvariantTest
+[PASS] invariantAllOutcomesAndRefundsCollateralized() (runs: 128, calls: 16384, reverts: 0)
+
+╭----------------+----------+-------+---------+----------╮
+| Contract       | Selector | Calls | Reverts | Discards |
++========================================================+
+| BuyerHandlerV2 | buy      | 16384 | 0       | 0        |
+╰----------------+----------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 6.53s (6.52s CPU time)
+
+╭-----------------------+--------+--------+---------╮
+| Test Suite            | Passed | Failed | Skipped |
++===================================================+
+| MarketV2InvariantTest | 1      | 0      | 0       |
+|-----------------------+--------+--------+---------|
+| PongV2Test            | 27     | 0      | 0       |
+╰-----------------------+--------+--------+---------╯

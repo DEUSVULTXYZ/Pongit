@@ -1,5 +1,10 @@
 type Match {
   id: ID!
+  deployment: String!
+  rawId: String!
+  mode: Int!
+  ranked: Boolean!
+  rulesVersion: Int!
   playerA: String!
   playerB: String!
   tournamentId: String!
@@ -19,6 +24,8 @@ type Frame {
 }
 type Player {
   id: ID!
+  deployment: String!
+  mode: Int!
   address: String!
   season: BigInt!
   elo: Int!
@@ -27,6 +34,8 @@ type Player {
 }
 type SeasonRating {
   id: ID!
+  deployment: String!
+  mode: Int!
   address: String!
   season: BigInt!
   elo: Int!
@@ -67,4 +76,15 @@ type Tournament {
   status: Int!
   winner: String!
   bracket: [String!]!
+}
+
+type Handicap {
+  id: ID!
+  matchId: String!
+  halfA: BigInt!
+  halfB: BigInt!
+  paidA: BigInt!
+  paidB: BigInt!
+  clock: BigInt!
+  block: BigInt!
 }

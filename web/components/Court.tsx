@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { move, SCALE, type State } from "../../shared/physics";
+import { move, SCALE, type State } from "../../shared/physics-v2";
 import { previewPaddle, projectConfirmed } from "../lib/presentation";
 type Props = {
   state: State | null;
@@ -100,23 +100,32 @@ export function Court({
         yA = Number(paddles.left) / Number(SCALE);
         yB = Number(paddles.right) / Number(SCALE);
       }
+      const halfA=Number(s?.halfA || 48000000n)/1e6, halfB=Number(s?.halfB || 48000000n)/1e6;
+      const half=p.side===0?halfA:halfB;
       const confirmedY = p.side === 0 ? yA : yB;
-      if (s && p.controllable && !p.replay && p.side >= 0) {
+      if (s && !s.awaitingServe && p.controllable && !p.replay && p.side >= 0) {
         // Integrate only time since the last rendered frame. Never apply a new
         // key direction retroactively from an old onchain snapshot.
-        visualY = previewPaddle(visualY ?? confirmedY, p.direction, dt);
+        visualY = previewPaddle(visualY ?? confirmedY, p.direction, dt, half);
         const confirmedDir = p.side === 0 ? s.leftDir : s.rightDir;
         if (!p.pending && confirmedDir === p.direction)
           visualY += (confirmedY - visualY) * (1 - Math.exp(-dt / 140));
         if (p.side === 0) yA = visualY; else yB = visualY;
         if (Math.abs(visualY - confirmedY) > 3) {
           ctx.strokeStyle = "#858585";
-          ctx.strokeRect(p.side === 0 ? 22 : 990, confirmedY - 48, 12, 96);
+          ctx.strokeRect(p.side === 0 ? 22 : 990, confirmedY - half, 12, 2*half);
         }
       } else visualY = null;
-      ctx.fillStyle = "#f4f4f4";
-      ctx.fillRect(22, yA - 48, 12, 96);
-      ctx.fillRect(990, yB - 48, 12, 96);
+      ctx.fillStyle = "#8df5ff";
+      ctx.fillRect(22, yA - halfA, 12, halfA*2);
+      ctx.fillStyle = "#c6a1ff";
+      ctx.fillRect(990, yB - halfB, 12, halfB*2);
+      if(s?.awaitingServe && !s.finished) {
+        const remaining=Math.max(0,Number(s.resumeAt-p.clock)/1e6);
+        ctx.fillStyle="#e5e1ff";ctx.textAlign="center";ctx.font=`30px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillText(remaining>0?remaining.toFixed(1):"SYNCING SERVE",512,230);
+        ctx.font=`12px ${getComputedStyle(document.body).fontFamily}`;ctx.fillText("CHAOS / NEXT RALLY",512,190);ctx.textAlign="left";
+      }
       if (s) {
         ctx.fillStyle = "#666";
         ctx.fillRect(

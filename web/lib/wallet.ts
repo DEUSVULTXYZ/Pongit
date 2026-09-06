@@ -2,7 +2,7 @@ import {
   createPasskeyWithPrfOutput,
   getPasskeyPrfOutput,
   createSecp256k1SigningSession,
-  type Secp256k1SigningSession,
+  type Secp256k1SigningSession, type PasskeyCredentialMetadata,
 } from "@category-labs/mera";
 import { toViemAccount } from "@category-labs/mera/viem";
 import { hexToBytes, type LocalAccount, type Hex } from "viem";
@@ -10,6 +10,7 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 const rpId = () => process.env.NEXT_PUBLIC_RP_ID || location.hostname;
 export type Identity = {
   account: LocalAccount;
+  credential?: PasskeyCredentialMetadata;
   end: () => void;
   local: boolean;
 };
@@ -31,6 +32,7 @@ export async function connect(create = false): Promise<Identity> {
       account: toViemAccount(session),
       end: () => session.end(),
       local: false,
+      credential: {credentialId:result.credentialId},
     };
   } catch (error) {
     if ((error as { code?: string }).code === "PRF_UNAVAILABLE")
