@@ -254,7 +254,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     await appApi("/auth/session","POST",{player:owner.current!.account.address,nonce:challenge.nonce,signature});
   }
   function enterChallenge(c:any) {
-    if(queued && expectedRoom.current?.roomId===c.room_id)return;
+    if(expectedRoom.current?.roomId===c.room_id)return;
     readyRoom.current="";revealSent.current="";
     expectedRoom.current={mode:c.mode,ranked:c.ranked,opponent:c.creator===account.toLowerCase()?c.recipient:c.creator,roomId:c.room_id};
     queueTicket.current=c.ticket || (c.creator===account.toLowerCase()?c.ticket_a:c.ticket_b) || "";

@@ -17,7 +17,11 @@ test("Arcade passkey continuity, direct duel, F5, rematch, finance and revocatio
     }
     const baseline=[...counts],[a,b,s]=pages;
     await a.getByRole("button",{name:"Rivals",exact:true}).click();await a.getByLabel("Opponent address",{exact:true}).fill(addresses[1]);await a.getByRole("button",{name:"Send challenge"}).click();
+    // Deliver the private notification before the Accept HTTP response: both
+    // paths must reuse one room secret and one signed consent.
+    await b.route("**/challenges/*/accept",async route=>{const response=await route.fetch();await b.waitForTimeout(1200);await route.fulfill({response});});
     await expect(b.locator(".duel-notifications")).toContainText("FRIENDLY",{timeout:15000});await b.getByRole("button",{name:"Accept friendly"}).click();
+    await b.unroute("**/challenges/*/accept");
     for(const p of [a,b])await expect(p.locator(".match-bar")).toContainText("IN PLAY",{timeout:45000});
     const matches=async()=> (await (await s.request.get(api+"/matches")).json()).matches;
     const first=(await matches()).find((m:any)=>m.status===2&&[m.playerA,m.playerB].some((x:string)=>x.toLowerCase()===addresses[0].toLowerCase()));expect(first).toBeTruthy();

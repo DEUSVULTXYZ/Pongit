@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import pg from "pg";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { cancelQueueMessage } from "../shared/protocol";
+import { cancelQueueMessage,domain,joinV2Types } from "../shared/protocol";
 const base=process.env.E2E_API_URL || "http://localhost:4012",origin=process.env.E2E_WEB_URL || "http://localhost:3002";
 const config=await fetch(base+"/config").then(r=>r.json());assert.equal(config.chainId,31337,"Social integration test uses isolated Anvil");assert([2,3].includes(config.version));
-function client(){const account=privateKeyToAccount(generatePrivateKey());let cookie="";return {account,async call(path:string,method="GET",body?:any,expected=account.address){const response=await fetch(base+path,{method,headers:{origin,"content-type":"application/json",cookie,"x-pongit-player":expected},body:body===undefined?undefined:JSON.stringify(body)});const set=response.headers.get("set-cookie");if(set)cookie=set.split(";")[0];return {status:response.status,data:await response.json()};}};}
+function client(){const account=privateKeyToAccount(generatePrivateKey());let cookie="";return {account,async call(path:string,method="GET",body?:any,expected=account.address){const response=await fetch(base+path,{method,headers:{origin,"content-type":"application/json",cookie,"x-pongit-player":expected},body:body===undefined?undefined:JSON.stringify(body,(_,v)=>typeof v==="bigint"?String(v):v)});const set=response.headers.get("set-cookie");if(set)cookie=set.split(";")[0];return {status:response.status,data:await response.json()};}};}
 const a=client(),b=client(),c=client();
 async function auth(actor:ReturnType<typeof client>){const n=(await actor.call("/auth/challenge","POST",{player:actor.account.address})).data;const request={player:actor.account.address,nonce:n.nonce,signature:await actor.account.signMessage({message:n.message})};assert.equal((await actor.call("/auth/session","POST",request)).status,200);assert.equal((await actor.call("/auth/session","POST",request)).status,400);}
 await Promise.all([a,b,c].map(auth));
@@ -31,6 +31,13 @@ const accepted=await Promise.all([b.call(`/challenges/${open.id}/accept`,"POST",
 assert.deepEqual(accepted.map(r=>r.status).sort(),[200,400]);
 const room=(await a.call(`/queue/${a.account.address}`)).data;
 assert.equal(room.mode,1);assert.equal(room.ranked,false);assert.equal(room.rules_version,2);
+const now=Math.floor(Date.now()/1000),join={player:a.account.address,opponent:room.player_a===a.account.address.toLowerCase()?room.player_b:room.player_a,roomId:room.id,commitment:generatePrivateKey(),sessionKey:a.account.address,nonce:0n,deadline:BigInt(now+120),sessionExpiry:BigInt(now+600),maxInputs:100,tournamentId:0n,mode:1,ranked:false,rulesVersion:2};
+const sign=(j:typeof join)=>a.account.signTypedData({domain:domain("PONG",config.chainId,config.game),types:joinV2Types,primaryType:"Join",message:j});
+const consent={join,signature:await sign(join)};
+assert.equal((await a.call("/ready","POST",consent)).status,200);
+const changed={...join,commitment:generatePrivateKey()};
+assert.equal((await a.call("/ready","POST",{join:changed,signature:await sign(changed)})).status,400);
+assert.equal((await a.call("/ready","POST",consent)).status,200);
 const expires=Math.floor(Date.now()/1000)+120,ticket=room.ticket_a;
 const signature=await a.account.signMessage({message:cancelQueueMessage(a.account.address,ticket,expires,config.chainId,config.game)});
 assert.equal((await a.call("/queue/cancel","POST",{player:a.account.address,ticket,expires,signature})).data.cancelled,true);
@@ -39,4 +46,4 @@ const database=process.env.SOCIAL_TEST_DATABASE_URL || "postgres://pong:pong-loc
 const db=new pg.Client({connectionString:database});await db.connect();try{await db.query("UPDATE challenges SET expires=extract(epoch FROM now())-1 WHERE id=$1 AND creator=$2",[expired.id,a.account.address.toLowerCase()]);}finally{await db.end();}
 assert.equal((await b.call(`/challenges/${expired.id}`)).data.status,"expired");assert.equal((await b.call(`/challenges/${expired.id}/accept`,"POST",{})).status,400);
 await a.call("/auth/session","DELETE");assert.equal((await a.call("/notebook")).status,400);
-console.log("PASS: auth replay, unique profiles, private reads, notebook concurrency, addressed links, blocking, atomic open-link acceptance and signed cancellation.");
+console.log("PASS: auth replay, immutable match consent, unique profiles, private reads, notebook concurrency, addressed links, blocking, atomic open-link acceptance and signed cancellation.");

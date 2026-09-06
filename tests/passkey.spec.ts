@@ -5,6 +5,7 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
   test.setTimeout(240000);
   const base=process.env.PONG_TEST_URL || "http://localhost:3000";
   const apiBase=process.env.PONG_TEST_API || (base.startsWith("http://localhost") ? "http://localhost:4000" : base+"/api");
+  const config=await fetch(apiBase+"/config").then(r=>r.json());
   const contexts=await Promise.all([0,1,2].map(()=>browser.newContext({viewport:{width:1440,height:1000}})));
   const pages=await Promise.all(contexts.map(c=>c.newPage()));
   const addresses:string[]=[];
@@ -33,11 +34,13 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
       await cdp.send("WebAuthn.enable");
       await cdp.send("WebAuthn.addVirtualAuthenticator",{options:{protocol:"ctap2",transport:"internal",hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
       await p.goto(base);
+      if(config.version===3)await p.getByRole("button",{name:"Enter muted"}).click();
       await p.getByRole("button",{name:/^Connect passkey/}).click();
       const response=p.waitForResponse(r=>/\/player\/0x[\da-f]+$/i.test(r.url()));
       await p.getByRole("button",{name:"Create a passkey"}).click();
       addresses.push((await response).url().split("/").at(-1)!);
       await expect(p.locator(".vault-strip")).toBeVisible();
+      if(config.version===3)await expect(p.locator(".status-line")).toContainText("Arcade session ready",{timeout:30000});
     }
     const [a,b,s]=pages;
     await a.getByRole("button",{name:"Open account details"}).click();
@@ -76,7 +79,7 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     await expect(a.locator("canvas")).toBeVisible();
     // Exercise direction changes while a command is in flight. A completed
     // command must not require another /matches RPC read before the next one.
-    for (const key of ["w","s","w","s","w","s"]) {
+    for (const key of ["w","s","w","s","w","s","w","s","w","s"]) {
       await a.keyboard.down(key);
       await a.waitForTimeout(900);
       await a.keyboard.up(key);
@@ -93,12 +96,13 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     }
     await expect(s.locator(".status-line")).toContainText("Bet confirmed");
     await b.reload();
+    if(config.version===3){await expect(b.locator(".status-line")).toContainText("Arcade session restored",{timeout:25000});}else{
     await b.getByRole("button",{name:/^Connect passkey/}).click();
-    await b.getByRole("button",{name:"Use existing passkey"}).click();
+    await b.getByRole("button",{name:/Continue as|Use existing passkey/}).click();
     await expect(b.locator(".vault-strip")).toContainText(addresses[1].slice(0,6));
     await b.locator(`[data-match-id="${matchId}"]`).click();
     await b.getByRole("button",{name:"Restore game session"}).click();
-    await expect(b.locator(".status-line")).toContainText("Game session restored",{timeout:20000});
+    await expect(b.locator(".status-line")).toContainText("Game session restored",{timeout:20000});}
     await b.setViewportSize({width:390,height:844});
     const beforeTouch=await (await b.request.get(apiBase+"/matches/"+matchId)).json();
     const bSlot=beforeTouch.match.playerA.toLowerCase()===addresses[1].toLowerCase()?"a":"b";
@@ -134,7 +138,8 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     await expect(b.locator(".vault-strip")).toHaveCount(0);
     await expect(b.getByRole("button",{name:"Move up",exact:true})).toBeDisabled();
     await b.getByRole("button",{name:"Connect passkey",exact:true}).click();
-    await b.getByRole("button",{name:"Use existing passkey"}).click();
+    await b.getByRole("button",{name:/Continue as|Use existing passkey/}).click();
+    if(config.version===3)await expect(b.locator(".status-line")).toContainText("Arcade session ready",{timeout:30000});
     await b.getByRole("button",{name:"Open account details"}).click();
     await expect(b.getByRole("textbox",{name:"Full account address"})).toHaveValue(addresses[1]);
     await expect(b.getByRole("button",{name:"Disconnect",exact:true})).toBeEnabled();

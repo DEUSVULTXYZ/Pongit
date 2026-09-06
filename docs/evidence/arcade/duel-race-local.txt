@@ -1,0 +1,9 @@
+
+Running 2 tests using 1 worker
+
+(node:72520) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 tests\arcade.spec.ts:4:1 › Arcade passkey continuity, direct duel, F5, rematch, finance and revocation (52.1s)
+  ok 2 tests\v2.spec.ts:3:1 › V2 Mera notebook, public profile, targeted friendly Chaos, handicap and arcade result (31.4s)
+
+  2 passed (1.4m)

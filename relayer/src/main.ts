@@ -539,6 +539,9 @@ async function refresh() {
         }
       }
     }
+    if(m.status===1 && head>m.createdBlock+200n){
+      try{await enqueue({contract:"game",functionName:"cancelUnstarted",args:[String(id)]},true);}catch{/* A concurrent reveal/cancellation is checked onchain. */}
+    }
     if ((deployment.version || 1) >= 2 && m.status === 3 && !m.ratingFinalized) {
       try { await enqueue({contract:"game",functionName:"finalizeRating",args:[String(id)]},true); } catch { lastError="Rating finalization pending"; }
     }
@@ -1030,6 +1033,11 @@ const server = createServer(async (req, res) => {
         String(join.tournamentId) !== room.tournament_id || room.deployment !== activeVersion || ((deployment.version || 1) >= 2 && (Number(join.mode)!==room.mode || join.ranked!==room.ranked || Number(join.rulesVersion)!==room.rules_version))
       )
         throw new Error("Wrong room");
+      const originalConsent=player===room.player_a?room.join_a:room.join_b;
+      if(originalConsent){
+        const original=encodeRequest({contract:"game",functionName:"createMatch",args:[originalConsent.join,originalConsent.signature,originalConsent.join,originalConsent.signature]},deployment);
+        if(original.data!==encoded.data)throw new Error("Match consent already recorded. Reuse the original consent or cancel an unsubmitted room.");
+      }
       await pool.query(
         `UPDATE rooms SET ${player === room.player_a ? "join_a" : "join_b"}=$2 WHERE id=$1 AND job_id IS NULL`,
         [room.id, json(request)],
