@@ -2,87 +2,93 @@ TAP version 13
 # Subtest: historical log chunks preserve filters, exact bounds and canonical ordering
 ok 1 - historical log chunks preserve filters, exact bounds and canonical ordering
   ---
-  duration_ms: 9.0194
+  duration_ms: 5.4987
   type: 'test'
   ...
 # Subtest: historical reads reject oversized or failed ranges and leave small/block-hash requests alone
 ok 2 - historical reads reject oversized or failed ranges and leave small/block-hash requests alone
   ---
-  duration_ms: 0.8841
+  duration_ms: 1.3102
+  type: 'test'
+  ...
+# Subtest: large historical batches have a global concurrency bound and release failed slots
+ok 3 - large historical batches have a global concurrency bound and release failed slots
+  ---
+  duration_ms: 107.7407
   type: 'test'
   ...
 # Subtest: notebook recovers from the same PRF on another device, with independent nonces and no extractable key
-ok 3 - notebook recovers from the same PRF on another device, with independent nonces and no extractable key
+ok 4 - notebook recovers from the same PRF on another device, with independent nonces and no extractable key
   ---
-  duration_ms: 11.6061
+  duration_ms: 12.1097
   type: 'test'
   ...
 # Subtest: late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
-ok 4 - late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
+ok 5 - late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
   ---
-  duration_ms: 0.7841
+  duration_ms: 0.519
   type: 'test'
   ...
 # Subtest: preview never invents paddle bounces or points while waiting for inclusion
-ok 5 - preview never invents paddle bounces or points while waiting for inclusion
+ok 6 - preview never invents paddle bounces or points while waiting for inclusion
   ---
-  duration_ms: 1.0793
+  duration_ms: 0.4648
   type: 'test'
   ...
 # Subtest: key reversal moves from the current paddle rather than its old snapshot position
-ok 6 - key reversal moves from the current paddle rather than its old snapshot position
+ok 7 - key reversal moves from the current paddle rather than its old snapshot position
   ---
-  duration_ms: 0.2079
+  duration_ms: 0.0817
   type: 'test'
   ...
 # Subtest: a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
-ok 7 - a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
+ok 8 - a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
   ---
-  duration_ms: 0.742
+  duration_ms: 0.4006
   type: 'test'
   ...
 # Subtest: Mera PRF creation and recovery preserve identity; ending a session disables signing
-ok 8 - Mera PRF creation and recovery preserve identity; ending a session disables signing
+ok 9 - Mera PRF creation and recovery preserve identity; ending a session disables signing
   ---
-  duration_ms: 95.3422
+  duration_ms: 106.691
   type: 'test'
   ...
 # Subtest: Mera rejects a passkey provider without PRF
-ok 9 - Mera rejects a passkey provider without PRF
+ok 10 - Mera rejects a passkey provider without PRF
   ---
-  duration_ms: 0.5084
+  duration_ms: 0.9702
   type: 'test'
   ...
 # Subtest: Indexed ABI snapshots round-trip through JSON without losing integer precision
-ok 10 - Indexed ABI snapshots round-trip through JSON without losing integer precision
+ok 11 - Indexed ABI snapshots round-trip through JSON without losing integer precision
   ---
-  duration_ms: 1.6346
+  duration_ms: 3.0871
   type: 'test'
   ...
 # Subtest: funded Monad sponsorship skips quiet windows without dipping into the reserve
-ok 11 - funded Monad sponsorship skips quiet windows without dipping into the reserve
+ok 12 - funded Monad sponsorship skips quiet windows without dipping into the reserve
   ---
-  duration_ms: 2.6968
+  duration_ms: 1.0917
   type: 'test'
   ...
 # Subtest: RPC failover only forwards reads; concurrent identical reads are coalesced
-ok 12 - RPC failover only forwards reads; concurrent identical reads are coalesced
+ok 13 - RPC failover only forwards reads; concurrent identical reads are coalesced
   ---
-  duration_ms: 3637.2025
+  duration_ms: 3684.3816
   type: 'test'
   ...
 # Subtest: gameplay jumps ahead of backfill without starving history or bypassing the shared rate
-ok 13 - gameplay jumps ahead of backfill without starving history or bypassing the shared rate
+ok 14 - gameplay jumps ahead of backfill without starving history or bypassing the shared rate
   ---
-  duration_ms: 217.6222
+  duration_ms: 207.2932
   type: 'test'
   ...
-1..13
-# tests 13
+1..14
+# tests 14
 # suites 0
-# pass 13
+# pass 14
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 4257.4952
+# duration_ms 4487.3893

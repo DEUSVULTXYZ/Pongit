@@ -1,3 +1,4 @@
+import {transitionGas} from "./transition-gas";
 import { initializePayouts, createPayoutWorker, payoutKey } from "./payouts";
 import "dotenv/config";
 import {
@@ -371,7 +372,7 @@ async function dispatch() {
       data: encoded.data,
       value,
     });
-    const gas = (estimated * 115n) / 100n + 1000n;
+    const gas = transitionGas(payload.functionName,estimated);
     const maxFeePerGas =
       gasPrice * 2n > gasPriceCap ? gasPriceCap : gasPrice * 2n;
     const cost = gas * maxFeePerGas + value;

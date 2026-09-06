@@ -76,10 +76,19 @@ const invitation=await social(pair[0],"/challenges",{recipient:pair[1].address,m
 const room=await until(()=>api("/queue/"+pair[0].address),r=>!!r.id);
 for(let i=0;i<2;i++){const p=pair[i],info=await api("/player/"+p.address),now=Math.floor(Date.now()/1000);const join={player:p.address,opponent:pair[1-i].address,roomId:room.id as Hex,commitment:keccak256(secrets[i]),sessionKey:p.address,nonce:BigInt(info.gameNonce),deadline:BigInt(now+120),sessionExpiry:BigInt(now+600),maxInputs:1000,tournamentId:0n,mode:1,ranked:true,rulesVersion:2};await api("/ready",{join,signature:await p.signTypedData({domain:domain("PONG",config.chainId,config.game),types:joinV2Types,primaryType:"Join",message:join})});}
 const ready=await until(()=>api("/queue/"+pair[0].address),r=>!!r.match_id),id=ready.match_id;
-for(let i=0;i<2;i++)await relay("game","reveal",[id,pair[i].address,secrets[i]]);
+if(process.env.E2E_REVEAL_RACE==="true"){
+ assert.equal(config.chainId,31337,"Reveal race requires isolated Anvil");
+ await client.request({method:"anvil_setIntervalMining" as never,params:[0] as never});await client.request({method:"evm_setAutomine" as never,params:[false] as never});
+ try {
+  const jobs=await Promise.all(pair.map((p,i)=>api("/relay",{contract:"game",functionName:"reveal",args:[id,p.address,secrets[i]]})));
+  for(const job of jobs)await until(()=>api("/jobs/"+job.id),j=>j.status==="sent");
+  await client.request({method:"anvil_mine" as never,params:[1] as never});
+  for(const job of jobs)assert.equal((await until(()=>api("/jobs/"+job.id),j=>["succeeded","failed"].includes(j.status))).status,"succeeded","Both reveals estimated before inclusion must succeed");
+ }finally{await client.request({method:"evm_setAutomine" as never,params:[true] as never});await client.request({method:"anvil_setIntervalMining" as never,params:[1] as never});}
+}else for(let i=0;i<2;i++)await relay("game","reveal",[id,pair[i].address,secrets[i]]);
 const info=await api("/player/"+pair[0].address),m={player:pair[0].address,matchId:BigInt(id),action:2,nonce:BigInt(info.gameNonce),deadline:BigInt(Math.floor(Date.now()/1000)+120)};
 await relay("game","playerAction",[m.player,id,m.action,m.nonce,m.deadline,await pair[0].signTypedData({domain:domain("PONG",config.chainId,config.game),types:actionTypes,primaryType:"GameAction",message:m})]);
 await until(()=>api("/matches/"+id),m=>m.match.ratingFinalized);
 const stats=await Promise.all(pair.map(p=>api("/player/"+p.address)));for(const s of stats){assert.equal(s.rating.elo,1000);assert.equal(s.rating.played,0);assert.equal(s.chaosRating.played,1);assert.notEqual(s.chaosRating.elo,1000);}
 assert(stats[0].chaosRating.elo<stats[1].chaosRating.elo);
-await writeFile("artifacts/ranked-chaos.json",json({base,matchId:id,players:pair.map(p=>p.address),ratings:stats.map(s=>({classic:s.rating,chaos:s.chaosRating})),checkedAt:new Date().toISOString(),checks:["targeted ranked Chaos invitation","signed rules agreement","Chaos ELO changes","Classic ELO unchanged"]}));console.log("PASS: ranked Chaos changes only the Chaos ladder.");
+await writeFile("artifacts/ranked-chaos.json",json({base,matchId:id,players:pair.map(p=>p.address),ratings:stats.map(s=>({classic:s.rating,chaos:s.chaosRating})),checkedAt:new Date().toISOString(),revealRace:process.env.E2E_REVEAL_RACE==="true",checks:["targeted ranked Chaos invitation","signed rules agreement","Chaos ELO changes","Classic ELO unchanged"]}));console.log("PASS: ranked Chaos changes only the Chaos ladder.");
