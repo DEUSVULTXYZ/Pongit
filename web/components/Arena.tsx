@@ -91,6 +91,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     [predicted, setPredicted] = useState(false),
     [correction, setCorrection] = useState(0),
     [showConnect, setShowConnect] = useState(false);
+  const [showTools,setShowTools]=useState(false);
+  useEffect(()=>setShowTools(false),[selected,match?.status]);
   const [showAccount, setShowAccount] = useState(false), [copiedAddress, setCopiedAddress] = useState(false);
   const [inputPending, setInputPending] = useState(false), [waitingImpact, setWaitingImpact] = useState(false);
   useEffect(()=>{arcadeAudio.setGameplay(match?.status===2 && !state?.awaitingServe && tab!=="Archive");return()=>arcadeAudio.setGameplay(false);},[match?.status,state?.awaitingServe,tab]);
@@ -985,12 +987,12 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   const scoreA = state?.scoreA ?? 0,
     scoreB = state?.scoreB ?? 0;
   return (
-    <main>
+    <main className={`neon-rush ${match?.status===2 && side>=0 && ["Play","Live"].includes(tab)?"in-game":""}`}>
       <header className="topbar">
         <a className="brand" href="/" aria-label="PONGIT home">
           <img className="brand-mark orbit-mark" src="/brand/opposing-orbits.webp" alt="" width="72" height="72"/>
-          PONGIT
-          <span className="brand-sub">ONCHAIN ARCADE / 003</span>
+          <span className="brand-word">PONGIT</span>
+          <span className="brand-sub">NEON RUSH / MONAD</span>
         </a>
         <div className="top-right"><ArcadeAmbience onSound={setSound}/>
           <span className="network">
@@ -1008,7 +1010,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             className={tab === t ? "active" : ""}
             key={t}
             onClick={() => {
-              setDirection(0);setTab(t);
+              setDirection(0);setShowTools(false);setTab(t);
               setError("");
             }}
           >
@@ -1044,7 +1046,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           </p>
           <h1>
             {tab === "Play"
-              ? "The arena."
+              ? "Enter the rush."
               : tab === "Live"
                 ? "Watch it happen."
                 : tab === "Ladder"
@@ -1076,7 +1078,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
         </div>
       )}
       {(tab === "Play" || tab === "Live" || tab === "Archive") && (
-        <div className="arena-grid">
+        <div className={`arena-grid ${showTools?"tools-open":""}`}>
           <section className="game-panel">
             <div className="match-bar">
               <span>
@@ -1095,6 +1097,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 </b>
               </span>
               <span>
+                {side>=0 && match?.status===2 && <button className="tools-toggle" aria-expanded={showTools} onClick={()=>{setDirection(0);setShowTools(!showTools);}}>Cabinet tools</button>}
                 {side >= 0
                   ? `YOU / ${side === 0 ? "LEFT" : "RIGHT"}`
                   : "SPECTATOR VIEW"}
@@ -1133,7 +1136,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 confirmedNonce={BigInt((side===0?match?.a:match?.b)?.nonce || 0)}
                 debug={showNetwork}
                 onNetwork={(age,correction)=>{setSnapshotAge(age);setPaddleCorrection(correction);}}
-                controllable={canControl && !showAccount && !showConnect}
+                controllable={canControl && !showAccount && !showConnect && !showTools}
                 pending={inputPending || direction !== lastDirection.current}
                 onStats={(f, p, waiting) => {
                   setFps(f);
@@ -1248,7 +1251,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             {canControl && <p className="input-hint">Local controls are responsive. Collisions and points wait for chain confirmation.</p>}
             {inputLatency !== null && inputLatency > 1000 && canControl && <p className="input-hint">Input confirmation is taking {(inputLatency / 1000).toFixed(1)} s. Anticipate your moves; the preview cannot remove inclusion delay.</p>}
           </section>
-          <aside>
+          <aside className="cabinet-tools">
+            <button className="tools-close" onClick={()=>setShowTools(false)}>Close cabinet tools ×</button>
             <section className="side-card">
               <p className="eyebrow">
                 {side >= 0 && match?.status === 2 ? "YOUR SESSION" : "NEXT UP"}

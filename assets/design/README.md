@@ -1,0 +1,5 @@
+# Neon Rush artwork
+
+The production environment is `neon-rush-environment.png`, generated with the built-in imagegen tool from the approved Neon Rush concept. Its optimized web version is `web/public/art/neon-rush.webp` (132 KB). The UI, typography, court and result animations are implemented separately in HTML, canvas and CSS.
+
+Prompt: Create a production background asset for the PONGIT Neon Rush retro arcade website, using the attached reference only for the surrounding environment's visual style. Landscape 1536×1024. Remove all website UI, frames, text, logos, buttons, scores, paddles and balls. Dark obsidian world with polished faceted crystalline shards concentrated along the extreme left and right margins, chrome reflections edged in violet and cyan, organized luminous ribbons converging toward a low central vanishing point, reflective midnight glass floor in the bottom quarter. A broad soft peach/pink synthwave semicircle at the top center. Center 65 percent almost black and quiet for the actual game. Cinematic precalculated 3D, sharp glass highlights, restrained particles, deep purple gradients. No typography, interface or figures.

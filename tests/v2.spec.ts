@@ -1,3 +1,4 @@
+import {openCabinet} from "./cabinet";
 import { test, expect } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 test("V2 Mera notebook, public profile, targeted friendly Chaos, handicap and arcade result",async({browser})=>{
@@ -37,7 +38,7 @@ test("V2 Mera notebook, public profile, targeted friendly Chaos, handicap and ar
     await expect(s.locator(".status-line")).toContainText("Bet confirmed");
     await expect.poll(async()=>{const m=await read();snapshots.push({head:m.head,clock:m.clock,state:m.match.state});return m.match.state.halfA;},{timeout:40000}).toBe("36000000");
     await expect(a.locator("canvas")).toBeVisible();await a.screenshot({path:"artifacts/v2-chaos.png",fullPage:true});
-    await b.getByRole("button",{name:"Concede",exact:true}).click();await expect(a.locator(".outcome h2")).toHaveText("VICTORY",{timeout:20000});await expect(b.locator(".outcome h2")).toHaveText("DEFEAT");await a.screenshot({path:"artifacts/v2-victory.png",fullPage:true});
+    await openCabinet(b);await b.getByRole("button",{name:"Concede",exact:true}).click();await expect(a.locator(".outcome h2")).toHaveText("VICTORY",{timeout:20000});await expect(b.locator(".outcome h2")).toHaveText("DEFEAT");await a.screenshot({path:"artifacts/v2-victory.png",fullPage:true});
     const beforeClaim=BigInt((await (await s.request.get(api+`/player/${addresses[2]}`)).json()).balance);
     if(config.version===4){await expect(s.locator(".match-payment")).toContainText("Paid to your wallet",{timeout:30000});expect(BigInt((await (await s.request.get(api+`/player/${addresses[2]}`)).json()).walletBalance)).toBe(6000000000000000n);}
     else {await s.getByRole("button",{name:"Claim legacy payout / refund"}).click();await expect.poll(async()=>BigInt((await (await s.request.get(api+`/player/${addresses[2]}`)).json()).balance),{timeout:20000}).toBe(beforeClaim+6000000000000000n);}

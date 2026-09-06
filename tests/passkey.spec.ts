@@ -1,3 +1,4 @@
+import {openCabinet} from "./cabinet";
 import {test,expect} from "@playwright/test";
 import {writeFile,mkdir} from "node:fs/promises";
 
@@ -16,8 +17,8 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
     for (let i=0;i<pages.length;i++) {
       const p=pages[i];
       p.on("response",async r=>{
-        if (!r.url().endsWith("/relay")) return;
-        try { const payload=r.request().postDataJSON(); if (payload.functionName!=="submitInput") return;
+        if (!r.url().endsWith("/relay") && !r.url().endsWith("/inputs")) return;
+        try { const envelope=r.request().postDataJSON();const payload=envelope.request||envelope; if (payload.functionName!=="submitInput") return;
           const job=await r.json(); relayStarts.set(job.id,r.request().timing().startTime);
         } catch { /* Responses interrupted by an intentional reconnect are not samples. */ }
       });
@@ -116,7 +117,7 @@ test("Mera PRF: cancellation, financial signature, two players, spectator, recov
       return Number(current.match[bSlot].nonce);
     },{timeout:15000}).toBeGreaterThan(touchNonce);
     await touchCdp.send("Input.dispatchTouchEvent",{type:"touchEnd",touchPoints:[]});
-    await b.getByRole("button",{name:"Concede",exact:true}).click();
+    await openCabinet(b);await b.getByRole("button",{name:"Concede",exact:true}).click();
     await expect(a.locator(".match-bar")).toContainText("FINAL",{timeout:30000});
     for(const p of [a,b]) {await expect(p.locator(".outcome")).toBeVisible();await p.getByRole("button",{name:"Close result",exact:true}).click();}
     if(config.version===4)await expect(s.locator(".match-payment")).toContainText("Paid to your wallet",{timeout:30000});
