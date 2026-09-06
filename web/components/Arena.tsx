@@ -14,6 +14,8 @@ import {
   type Hex,
   type Address,
 } from "viem";
+import { ArcadeAmbience } from "./ArcadeAmbience";
+import { arcadeAudio } from "../lib/audio";
 import { Court } from "./Court";
 import {
   api, appApi,
@@ -27,13 +29,13 @@ import {
   type Config,
 } from "../lib/api";
 import {
-  connect,
+  connect, rememberedAccount, forgetAccount, accountStub,
   localIdentity,
   gameSession,
   type Identity,
 } from "../lib/wallet";
 import {
-  domain,
+  domain, json, deploymentId, allDeployments,
   joinTypes, joinV2Types, queueV2Message,
   inputTypes,
   betTypes,
@@ -48,6 +50,7 @@ import { type State, stateComponents, advance } from "../../shared/physics-v2";
 import { gameV2Abi as gameAbi, marketV2Abi as marketAbi, tournamentsV2Abi as tournamentsAbi } from "../../shared/abis-v2";
 import { Legacy } from "./Legacy";
 import { SocialHub } from "./SocialHub";
+import { createArcade, restoreArcade, clearArcade, revokeArcade, type ArcadeSession } from "../lib/arcade";
 import { Outcome } from "./Outcome";
 import { monadTransport } from "../lib/transport";
 import { acceptsSnapshot, type SnapshotCursor } from "../lib/presentation";
@@ -77,6 +80,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     [direction, setDirection] = useState(0);
   const [noteContext,setNoteContext]=useState<{ref:string;atUs:string}|null>(null);
   const [mode,setMode]=useState(0),[sound,setSound]=useState(false),[challengeTarget,setChallengeTarget]=useState("");
+  const arcade=useRef<ArcadeSession|null>(null),restoreAttempt=useRef(""),pendingReady=useRef<any>(null);
+  const [arcadeExpires,setArcadeExpires]=useState(0),[remembered,setRemembered]=useState<ReturnType<typeof rememberedAccount>>(null);
   const expectedRoom=useRef<{mode:number;ranked:boolean;opponent?:string;roomId?:string}|null>(null);
   const [fundingWarning, setFundingWarning] = useState("");
   const [fps, setFps] = useState(0),
@@ -86,6 +91,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   const [showAccount, setShowAccount] = useState(false), [copiedAddress, setCopiedAddress] = useState(false);
   const [inputPending, setInputPending] = useState(false), [waitingImpact, setWaitingImpact] = useState(false);
   const [inputTiming, setInputTiming] = useState<any>(null);
+  const lastSnapshotSound=useRef(0);
   const snapshotCursor = useRef<SnapshotCursor | null>(null);
   const inputNonce = useRef({ key: "", nonce: 0n });
   const [ladder, setLadder] = useState<any[]>([]),
@@ -106,7 +112,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     [attachTid, setAttachTid] = useState(""),
     [attachSlot, setAttachSlot] = useState("0");
   const owner = useRef<Identity | null>(null),
-    session = useRef<ReturnType<typeof gameSession> | null>(null),
+    session = useRef<Pick<Identity,"account"|"end"> | null>(null),
     secret = useRef<Hex | null>(null),
     readyRoom = useRef(""),
     revealSent = useRef("");
@@ -186,7 +192,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   async function signingOwner() {
     if (!owner.current) throw new Error("Connect your passkey first");
     if (!owner.current.local && !ownerOpen.current) {
-      const restored = await connect();
+      const restored = await connect(false,false,owner.current.credential);
       if (restored.account.address.toLowerCase() !== account.toLowerCase()) {
         restored.end();
         throw new Error("Choose the passkey for the connected account.");
@@ -203,26 +209,60 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     }
   }
   useEffect(()=>setNoteContext(null),[selected,account]);
+  async function gameplaySigner() {
+    if(config?.version!==3)return signingOwner();
+    if(!arcade.current || arcade.current.player.toLowerCase()!==owner.current?.account.address.toLowerCase())throw new Error("Renew arcade session to keep playing.");
+    await arcade.current.validate();return arcade.current.identity;
+  }
+  async function renewArcade(identity=owner.current!) {
+    if(!config?.arcade)return;
+    const own=ownerOpen.current?identity:await signingOwner();
+    try {arcade.current=await createArcade(own,config);session.current=arcade.current.identity;setArcadeExpires(arcade.current.expires);setMessage("Arcade session ready · two hours of play in this tab.");}
+    finally {closeOwner();}
+    if(view.current.selected && view.current.match?.status===2 && [view.current.match.playerA,view.current.match.playerB].some((p:string)=>p.toLowerCase()===own.account.address.toLowerCase()))await restoreSession();
+  }
+  function persistMatch() {
+    if(config?.version===3)sessionStorage.setItem("pongit:pending-match",json({player:owner.current?.account.address,game:config.game,expected:expectedRoom.current,ticket:queueTicket.current,secret:secret.current,room:readyRoom.current,match:sessionMatch.current,reveal:revealSent.current,ready:pendingReady.current}));
+  }
+  useEffect(()=>{setRemembered(rememberedAccount());},[]);
+  useEffect(()=>{
+    if(!config?.arcade || restoreAttempt.current===config.game)return;restoreAttempt.current=config.game;
+    const generation=identityVersion.current;setBusy(true);
+    void restoreArcade(config).then(async restored=>{
+      if(generation!==identityVersion.current){restored?.session.end();return;}
+      if(!restored){const previous=rememberedAccount();if(previous){owner.current=accountStub(previous.address,previous.credential);setAccount(previous.address);setRecipient(previous.address);setMessage("Renew arcade session to continue playing.");await refreshPlayer(previous.address);}return;}owner.current=restored.owner;arcade.current=restored.session;session.current=restored.session.identity;ownerOpen.current=false;
+      const address=restored.owner.account.address;setAccount(address);setRecipient(address);setArcadeExpires(restored.session.expires);
+      const pending=JSON.parse(sessionStorage.getItem("pongit:pending-match")||"null");
+      if(pending?.player?.toLowerCase()===address.toLowerCase() && pending.game===config.game){expectedRoom.current=pending.expected;queueTicket.current=pending.ticket;secret.current=pending.secret;readyRoom.current=pending.room;sessionMatch.current=pending.match;revealSent.current=pending.reveal;pendingReady.current=pending.ready;if(pending.ticket)setQueued(true);}
+      const all=await api("/matches");const active=all.matches.find((m:any)=>[1,2].includes(m.status)&&[m.playerA,m.playerB].some((p:string)=>p.toLowerCase()===address.toLowerCase()));
+      if(active){sessionMatch.current=active.id;setSelected(active.id);setTab("Play");}
+      await refreshPlayer(address);setMessage("Welcome back. Arcade session restored in this tab.");
+    }).catch(e=>{if(generation===identityVersion.current)setError(e.message);}).finally(()=>setBusy(false));
+  },[config?.game]);
+  useEffect(()=>{if(!arcade.current)return;const check=()=>void arcade.current?.validate().catch(()=>{setArcadeExpires(0);setDirection(0);session.current=null;setMessage("Arcade session expired or revoked. Renew arcade session to play again.");});const timer=setInterval(check,15000);return()=>clearInterval(timer);},[account,arcadeExpires]);
   async function authenticateApp() {
     if(!owner.current)throw new Error("Connect your passkey first");
     try {const current=await appApi("/auth/session");if(current.player===owner.current.account.address.toLowerCase())return;} catch {}
-    const own=await signingOwner();const generation=identityVersion.current;
-    const challenge=await appApi("/auth/challenge","POST",{player:own.account.address});
+    const own=await gameplaySigner();const generation=identityVersion.current;
+    const challenge=await appApi("/auth/challenge","POST",{player:owner.current.account.address});
     const signature=await own.account.signMessage({message:challenge.message});closeOwner();
     if(generation!==identityVersion.current)throw new Error("Account changed");
-    await appApi("/auth/session","POST",{player:own.account.address,nonce:challenge.nonce,signature});
+    await appApi("/auth/session","POST",{player:owner.current!.account.address,nonce:challenge.nonce,signature});
   }
   function enterChallenge(c:any) {
+    if(queued && expectedRoom.current?.roomId===c.room_id)return;
+    readyRoom.current="";revealSent.current="";
     expectedRoom.current={mode:c.mode,ranked:c.ranked,opponent:c.creator===account.toLowerCase()?c.recipient:c.creator,roomId:c.room_id};
     queueTicket.current=c.ticket || (c.creator===account.toLowerCase()?c.ticket_a:c.ticket_b) || "";
+    persistMatch();
     setMode(c.mode);setTournamentId("0");setQueued(true);setTab("Play");
-    setMessage(`Accepted ${c.mode===1?"Chaos":"Classic"} ${c.ranked?"ranked":"friendly"} challenge. Approve the match with your passkey.`);
+    setMessage(`Accepted ${c.mode===1?"Chaos":"Classic"} ${c.ranked?"ranked":"friendly"} challenge. Starting your match.`);
   }
-  async function login(kind: "create" | "restore" | "local" | "operator") {
+  async function login(kind: "create" | "restore" | "another" | "local" | "operator") {
     const identity =
       kind === "local" || kind === "operator"
         ? localIdentity(kind === "operator")
-        : await connect(kind === "create");
+        : await connect(kind === "create",kind === "another");
     await appApi("/auth/session","DELETE");
     identityVersion.current++;
     expectedRoom.current=null;
@@ -257,6 +297,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
         ? "Local test account — Anvil only."
         : "Passkey connected. Ready to play.",
     );
+    setRemembered(rememberedAccount());
+    if(config?.version===3)await renewArcade(identity);
     await refreshPlayer(identity.account.address);
     const all = await api("/matches");
     const active = all.matches.find((m:any)=>m.status === 2 && [m.playerA,m.playerB].some((p:string)=>p.toLowerCase()===identity.account.address.toLowerCase()));
@@ -264,11 +306,10 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
 
   }
   async function disconnect() {
-    if (queued) {
-      await cancelQueue();
-      if (queueTicket.current) throw new Error("Match creation is already submitted. Wait for the match before disconnecting.");
-    }
-    await appApi("/auth/session","DELETE");
+    let revokePending=false;
+    try {if(queued)await cancelQueue();if(config && arcade.current)await revokeArcade(config,arcade.current);}catch{revokePending=!!arcade.current;}
+    try {await appApi("/auth/session","DELETE");}catch{}
+    clearArcade();arcade.current=null;setArcadeExpires(0);
     identityVersion.current++;
     expectedRoom.current=null;
     owner.current?.end();
@@ -281,7 +322,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     setInputTiming(null); setQueued(false); setRecipient(""); setTournamentId("0");
     setSelected(null); setMatch(null); setState(null); setFrames([]); setReplayPlaying(false);
     setShowAccount(false); setShowConnect(false); setTab("Play");
-    setMessage("Disconnected. Your passkey and funds are preserved. Any submitted transaction can still complete.");
+    setMessage(revokePending?"Disconnected locally. Onchain session revocation remains unconfirmed; its authorization expires within two hours. Reconnect to replace it.":"Disconnected. Session revocation confirmed. Your passkey and funds are preserved; submitted transactions may still complete.");
   }
   useEffect(() => {
     let stop = false;
@@ -347,6 +388,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     if (!acceptsSnapshot(snapshotCursor.current, incoming)) return;
     snapshotCursor.current = incoming;
     const s = stateFromJson(data.match.state);
+    if(lastState.current && data.match.status>=2 && Date.now()-(lastSnapshotSound.current||0)<1800){
+      if(s.scoreA!==lastState.current.scoreA || s.scoreB!==lastState.current.scoreB)arcadeAudio.play("point",`${id}:point:${s.scoreA}:${s.scoreB}`);
+      if(s.halfA!==lastState.current.halfA || s.halfB!==lastState.current.halfB)arcadeAudio.play("handicap",`${id}:size:${s.resumeAt}`);
+    }
+    lastSnapshotSound.current=Date.now();
     const playable =
       Number(data.match.status) >= 2 && BigInt(data.match.startBlock)>0n;
     if (playable && lastState.current && s.t >= lastState.current.t) {
@@ -434,15 +480,16 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           return;
         }
         const agreed=expectedRoom.current;
-        if(config.version===2 && (!agreed || room.mode!==agreed.mode || room.ranked!==agreed.ranked || room.rules_version!==2 || room.deployment!=="v2" || agreed.roomId && agreed.roomId!==room.id || agreed.opponent && ![room.player_a,room.player_b].includes(agreed.opponent.toLowerCase()))) throw new Error("Room rules differ from your agreement. Cancel and create a fresh invitation.");
+        if((config.version || 1)>=2 && (!agreed || room.mode!==agreed.mode || room.ranked!==agreed.ranked || room.rules_version!==2 || room.deployment!==deploymentId(config) || agreed.roomId && agreed.roomId!==room.id || agreed.opponent && ![room.player_a,room.player_b].includes(agreed.opponent.toLowerCase()))) throw new Error("Room rules differ from your agreement. Cancel and create a fresh invitation.");
         queueTicket.current=room.player_a===account.toLowerCase()?room.ticket_a:room.ticket_b;
         if (room.id !== readyRoom.current) {
           readyRoom.current = room.id;
-          session.current?.end();
-          session.current = gameSession();
+          if(config.version===3)session.current=arcade.current?.identity || null;
+          else {session.current?.end();session.current=gameSession();}
+          if(!session.current)throw new Error("Renew arcade session");
           secret.current = toHex(crypto.getRandomValues(new Uint8Array(32)));
           setBusy(true);
-          const own = await signingOwner();
+          const own = await gameplaySigner();
           const info = await api(`/player/${account}`);
           const opponent =
             room.player_a === account.toLowerCase()
@@ -457,21 +504,24 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             sessionKey: session.current.account.address,
             nonce: BigInt(info.gameNonce),
             deadline: BigInt(now + 150),
-            sessionExpiry: BigInt(now + 3600),
+            sessionExpiry: BigInt(config.version===3?arcade.current!.expires:now + 3600),
             maxInputs: 12000,
             tournamentId: BigInt(room.tournament_id),
             mode: room.mode || 0, ranked:room.ranked!==false, rulesVersion:2,
           };
           const signature = await own.account.signTypedData({
             domain: domain("PONG", config.chainId, config.game),
-            types: config.version===2?joinV2Types:joinTypes,
+            types: (config.version || 1)>=2?joinV2Types:joinTypes,
             primaryType: "Join",
             message: join,
           });
-          await api("/ready", { join, signature });
+          pendingReady.current={join,signature};persistMatch();
+          await api("/ready", pendingReady.current);
           closeOwner();
+          arcadeAudio.play("match",`match:${room.id}`);
           setMessage("Opponent found. Waiting for onchain confirmation.");
         }
+        if(room.id===readyRoom.current && pendingReady.current && !(room.player_a===account.toLowerCase()?room.join_a:room.join_b))await api("/ready",pendingReady.current);
         if (room.job_id) {
           const job = await api(`/jobs/${room.job_id}`);
           if (job.status === "failed")
@@ -487,7 +537,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             args: [room.match_id, account, secret.current],
           });
           setQueued(false);
-          queueTicket.current = "";
+          queueTicket.current = "";persistMatch();
           setMessage("Session active. W / S or ↑ / ↓ to move.");
           setTab("Play");
         }
@@ -548,6 +598,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       if (
         inputBusy.current ||
         !v.config ||
+        (v.config.version===3 && (!arcade.current || arcade.current.expires<=Date.now()/1000)) ||
         !session.current ||
         !v.match ||
         v.match.status !== 2 ||
@@ -616,15 +667,26 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     }, 25);
     return () => clearInterval(timer);
   }, []);
+  async function rematch() {
+    if(!config || !selected) return;
+    await gameplaySigner();await authenticateApp();
+    const c=await appApi("/challenges/rematch","POST",{matchRef:`${deploymentId(config)}:${selected}`},account);
+    if(c.creator!==account.toLowerCase() && c.status==="pending"){const accepted=await appApi(`/challenges/${c.id}/accept`,"POST",{},account);enterChallenge(accepted);}
+    setMessage(c.status==="accepted"?"Rematch accepted. Starting your match…":"Rematch sent to your opponent. Waiting for acceptance (60 seconds).");window.dispatchEvent(new Event("pongit:inbox"));
+  }
+  async function directChallenge(target:string) {
+    if(!account){setShowConnect(true);return;}await gameplaySigner();await authenticateApp();
+    await appApi("/challenges","POST",{recipient:target,mode,ranked:false},account);window.dispatchEvent(new Event("pongit:inbox"));setMessage("Challenge sent. Your opponent can accept directly from their notification.");
+  }
   async function joinQueue() {
     if (!account) {
       setShowConnect(true);
       return;
     }
-    const own = await signingOwner();
+    const own = await gameplaySigner();
     const expires = nowSeconds() + 300;
     const signature = await own.account.signMessage({
-      message: config?.version===2 ? queueV2Message(account,expires,tournamentId,mode,config) : queueMessage(account, expires, tournamentId),
+      message: (config?.version || 1)>=2 ? queueV2Message(account,expires,tournamentId,mode,config!) : queueMessage(account, expires, tournamentId),
     });
     readyRoom.current = "";
     revealSent.current = "";
@@ -632,12 +694,13 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     expectedRoom.current={mode,ranked:true};
     await api("/queue", { player: account, expires, signature, tournamentId,mode });
     queueTicket.current = keccak256(signature);
+    persistMatch();closeOwner();
     setQueued(true);
     setMessage("Finding an opponent. Both players approve the same match.");
   }
   async function cancelQueue() {
     if (!config || !queueTicket.current) return;
-    const own = await signingOwner();
+    const own = await gameplaySigner();
     const expires = nowSeconds()+120;
     const ticket = queueTicket.current;
     const signature = await own.account.signMessage({message:cancelQueueMessage(account,ticket,expires,config.chainId,config.game)});
@@ -652,23 +715,23 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     queueTicket.current = "";
     readyRoom.current = "";
     revealSent.current = "";
-    session.current?.end();
-    session.current = null;
+    if(config?.version!==3){session.current?.end();session.current = null;}
+    sessionMatch.current="";persistMatch();
     secret.current = null;
     setMessage("Search cancelled. Ready when you are.");
   }
   async function restoreSession() {
     if (!config || !selected) return;
-    const own = await signingOwner();
+    const own = await gameplaySigner();
     const info = await api(`/player/${account}`);
-    session.current?.end();
-    session.current = gameSession();
+    if(config.version===3)session.current=arcade.current!.identity;
+    else {session.current?.end();session.current=gameSession();}
     const now = nowSeconds();
     const m = {
       player: account as Address,
       matchId: BigInt(selected),
       sessionKey: session.current.account.address,
-      expiry: BigInt(now + 3600),
+      expiry: BigInt(config.version===3?arcade.current!.expires:now + 3600),
       maxInputs: 12000,
       nonce: BigInt(info.gameNonce),
       deadline: BigInt(now + 120),
@@ -700,7 +763,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   }
   async function playerAction(action: number) {
     if (!config || !selected) return;
-    const own = await signingOwner();
+    const own = await gameplaySigner();
     const info = await api(`/player/${account}`);
     const m = {
       player: account as Address,
@@ -721,8 +784,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       functionName: "playerAction",
       args: [account, selected, action, m.nonce, m.deadline, sig],
     });
-    session.current?.end();
-    session.current = null;
+    if(config?.version!==3){session.current?.end();session.current = null;}
+    sessionMatch.current="";persistMatch();
     setMessage(action === 1 ? "Session revoked." : "Match conceded.");
   }
   async function credits() {
@@ -951,13 +1014,14 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     scoreB = state?.scoreB ?? 0;
   return (
     <main>
+      <ArcadeAmbience onSound={setSound}/>
       <header className="topbar">
         <a className="brand" href="/" aria-label="PONGIT home">
           <img className="brand-mark orbit-mark" src="/brand/opposing-orbits.webp" alt="" width="72" height="72"/>
           PONGIT
           <span className="brand-sub">ONCHAIN ARCADE / 002</span>
         </a>
-        <div className="top-right"><button className="sound-toggle" aria-pressed={sound} onClick={()=>setSound(!sound)}>Sound {sound?"on":"off"}</button>
+        <div className="top-right"><button className="sound-toggle" aria-pressed={sound} onClick={()=>{arcadeAudio.configure({enabled:!sound,entered:true});void arcadeAudio.activate();}}>Sound {sound?"on":"off"}</button>
           <span className="network">
             <span className={connected ? "dot pulse" : "dot"} />
             {config?.chainId === 31337 ? "LOCAL CHAIN" : "MONAD TESTNET"}
@@ -1026,8 +1090,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           <span>BLOCK {head ? head.toLocaleString() : "—"}</span>
         </div>
       </section>
-      <SocialHub key={account} account={account} config={config} visible={tab==="Rivals"} target={challengeTarget} authenticate={authenticateApp} identity={()=>owner.current} open={()=>setTab("Rivals")} enter={enterChallenge} matchRef={noteContext?.ref || (selected?`${config?.version===2?"v2":"v1"}:${selected}`:undefined)} atUs={noteContext?.atUs || String(clock)} applyPreferences={settings=>{if(queued || canControl)throw new Error("Finish the active match or search before applying preferences.");setMode(settings.preferredMode===1?1:0);setSound(settings.sound);}}/>
-      <Outcome id={selected} match={match} account={account} rating={player?Number((match?.mode===1?player.chaosRating:player.rating)?.elo || 1000):null} sound={sound} replay={tab==="Archive"} rematch={()=>{setChallengeTarget(side===0?match.playerB:match.playerA);setTab("Rivals");}} watch={()=>void act(()=>loadReplay(selected!))} again={()=>{setSelected(null);setMatch(null);setState(null);setTournamentId("0");setTab("Play");}}/>
+      {account && config?.version===3 && !arcadeExpires && <button className="primary" disabled={busy} onClick={()=>void act(()=>renewArcade())}>Renew arcade session</button>}
+      <SocialHub mode={mode} key={account} account={account} config={config} visible={tab==="Rivals"} target={challengeTarget} authenticate={authenticateApp} identity={()=>owner.current} open={()=>setTab("Rivals")} enter={enterChallenge} matchRef={noteContext?.ref || (selected?`v${config?.version || 1}:${selected}`:undefined)} atUs={noteContext?.atUs || String(clock)} applyPreferences={settings=>{if(queued || canControl)throw new Error("Finish the active match or search before applying preferences.");setMode(settings.preferredMode===1?1:0);arcadeAudio.configure({enabled:settings.sound,entered:true});}}/>
+      <Outcome id={selected} match={match} account={account} rating={player?Number((match?.mode===1?player.chaosRating:player.rating)?.elo || 1000):null} sound={sound} replay={tab==="Archive"} rematch={rematch} watch={()=>void act(()=>loadReplay(selected!))} again={()=>{setSelected(null);setMatch(null);setState(null);setTournamentId("0");setTab("Play");}}/>
       {(["Play","Ladder"].includes(tab)) && <div className="mode-switch" role="group" aria-label="Game mode"><button disabled={queued || busy || canControl} aria-pressed={mode===0} onClick={()=>setMode(0)}>01 / Classic</button><button disabled={queued || busy || canControl || tournamentId!=="0"} aria-pressed={mode===1} onClick={()=>setMode(1)}>02 / Chaos</button><p>{mode===1?"Crowd pressure shrinks the favourite's paddle. Changes apply between rallies.":"Pure Pong. Separate ranked ladder. First to seven."}</p></div>}
       {fundingWarning && <p className="notice" role="status">Sponsorship: {fundingWarning}</p>}
       {!["Play", "Live", "Archive"].includes(tab) && <p className="status-line" role="status">{message}</p>}
@@ -1270,7 +1335,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 </div>
                 <div>
                   <dt>SESSION</dt>
-                  <dd>{session.current ? "MEMORY ONLY" : "NOT ACTIVE"}</dd>
+                  <dd>{config?.version===3 && arcadeExpires ? "ARCADE / THIS TAB" : session.current ? "MEMORY ONLY" : "NOT ACTIVE"}</dd>
                 </div>
               </dl>
             </section>
@@ -1390,7 +1455,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           )}
         </section>
       )}
-      {tab === "Archive" && config?.legacy && <Legacy config={config} account={account} signer={signingOwner} closeSigner={closeOwner}/>}
+      {tab === "Archive" && config?.legacy && allDeployments(config).slice(1).map(d=><Legacy key={d.game} legacy={d} config={config} account={account} signer={signingOwner} closeSigner={closeOwner}/>)}
       {tab === "Ladder" && (
         <section className="table-panel">
           <div className="section-title">
@@ -1411,7 +1476,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               {ladder.map((p, i) => (
                 <tr key={p.id}>
                   <td>{String(i + 1).padStart(2, "0")}</td>
-                  <td><button onClick={()=>{setChallengeTarget(p.address);setTab("Rivals");}}>{p.handle || short(p.address)} ↗</button></td>
+                  <td><button onClick={()=>{void act(()=>directChallenge(p.address));}}>{p.handle || short(p.address)} ↗</button></td>
                   <td>{p.elo}</td>
                   <td>{p.played}</td>
                   <td>{p.wins}</td>
@@ -1685,7 +1750,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             <button onClick={() => void navigator.clipboard.writeText(account).then(() => setCopiedAddress(true)).catch(() => setError("Copy unavailable. Select the full address above to copy it manually."))}>{copiedAddress ? "Address copied" : "Copy address"}</button>
             {config?.chainId === 10143 && <a className="account-explorer" href={`https://testnet.monadscan.com/address/${account}`} target="_blank" rel="noreferrer">View account on explorer ↗</a>}
             <p className="account-explanation">Disconnecting clears signing keys from this browser. Your passkey and funds stay available. It does not concede a match or cancel a transaction already submitted.</p>
-            {queued && <p className="account-explanation">Your match search must be cancelled before disconnecting. This can require your passkey.</p>}
+            {config?.version===3 && <><p>Arcade session {arcadeExpires?`until ${new Date(arcadeExpires*1000).toLocaleTimeString()}`:"expired"}. Gameplay only; funds require your passkey.</p><button disabled={busy} onClick={()=>void act(()=>renewArcade())}>Renew arcade session</button></>}
+            <button disabled={busy} onClick={()=>void act(async()=>{await disconnect();forgetAccount();setRemembered(null);})}>Forget this account</button>
             <button className="primary" disabled={busy} onClick={() => void act(disconnect)}>{queued ? "Cancel search and disconnect" : "Disconnect"}</button>
           </section>
         </div>
@@ -1723,8 +1789,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               disabled={busy || !config}
               onClick={() => void act(() => login("restore"))}
             >
-              Use existing passkey
+              {remembered?`Continue as ${short(remembered.address)}`:"Use existing passkey"}
             </button>
+            {remembered && <><button disabled={busy} onClick={()=>void act(()=>login("another"))}>Use another passkey</button><button onClick={()=>{forgetAccount();setRemembered(null);}}>Forget this account</button></>}
             <a
               href="https://mera.category.xyz/authenticator-support/"
               target="_blank"

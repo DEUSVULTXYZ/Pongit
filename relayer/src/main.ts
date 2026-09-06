@@ -18,7 +18,7 @@ import {
   parseGwei,
   keccak256,
   toHex,
-  verifyMessage,
+  verifyMessage, recoverMessageAddress,
   recoverTypedDataAddress,
   decodeEventLog,
   parseTransaction,
@@ -39,7 +39,7 @@ import {
   json,
   encodeRequest,
   domain,
-  joinTypes, joinV2Types, contractsFor, deploymentId, resolveDeployment, queueV2Message,
+  joinTypes, joinV2Types, allDeployments, contractsFor, deploymentId, resolveDeployment, queueV2Message,
   queueMessage,
   cancelQueueMessage,
   type Deployment,
@@ -47,8 +47,9 @@ import {
 } from "../../shared/protocol";
 import { next } from "../../shared/physics-v2";
 import { gameV2Abi, marketV2Abi, tournamentsV2Abi } from "../../shared/abis-v2";
+import { arcadeSessionsAbi } from "../../shared/abis-v3";
 import { legacyRoutes } from "./legacy";
-import { initializeSocial, socialRoutes } from "./social";
+import { initializeSocial, socialRoutes, authenticatedPlayer } from "./social";
 import { pool, initializeStore } from "./store";
 import { readSponsorCosts, needsMonadValueWindow } from "./budget";
 
@@ -96,6 +97,7 @@ const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as Hex);
 const wallet = createWalletClient({ account, chain, transport: http(rpc) });
 const signingLock = await initializeStore();
 await initializeSocial();
+await pool.query("CREATE TABLE IF NOT EXISTS faucets_v3 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
 await pool.query("CREATE TABLE IF NOT EXISTS faucets_v2 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
 signingLock.on("error", () => { console.error("Signing lock lost; stopping to prevent concurrent nonce allocation"); process.exit(1); });
 await pool.query(
@@ -105,14 +107,17 @@ function manifestFingerprint(d:Deployment) {
   return keccak256(toHex(json({chainId:d.chainId,game:d.game,vault:d.vault,market:d.market,tournaments:d.tournaments,signer:account.address})));
 }
 const fingerprint = manifestFingerprint(deployment);
-const originalFingerprint = manifestFingerprint(deployment.legacy || deployment);
+const originalFingerprint = manifestFingerprint(allDeployments(deployment).at(-1)!);
 await pool.query("INSERT INTO deployment_binding(singleton,fingerprint) VALUES(true,$1) ON CONFLICT DO NOTHING",[originalFingerprint]);
 const binding = (await pool.query("SELECT fingerprint FROM deployment_binding")).rows[0].fingerprint;
 if (binding !== originalFingerprint) throw new Error("Journal deployment or signer mismatch. Preserve the original manifest and signing identity.");
 // A V2 release adds a manifest; it never rebinds or deletes the original journal.
 await pool.query("CREATE TABLE IF NOT EXISTS deployment_manifests (version text PRIMARY KEY,fingerprint text NOT NULL)");
-await pool.query("INSERT INTO deployment_manifests(version,fingerprint) VALUES($1,$2) ON CONFLICT DO NOTHING",[activeVersion,fingerprint]);
-if ((await pool.query("SELECT fingerprint FROM deployment_manifests WHERE version=$1",[activeVersion])).rows[0].fingerprint!==fingerprint) throw new Error("Deployment version already names another manifest");
+for(const manifest of allDeployments(deployment)) {
+  const version=deploymentId(manifest),expected=manifestFingerprint(manifest);
+  await pool.query("INSERT INTO deployment_manifests(version,fingerprint) VALUES($1,$2) ON CONFLICT DO NOTHING",[version,expected]);
+  if((await pool.query("SELECT fingerprint FROM deployment_manifests WHERE version=$1",[version])).rows[0].fingerprint!==expected)throw new Error("Deployment version already names another manifest");
+}
 // Historical rows predate explicit deployment tags. Their bytes and nonce stay unchanged.
 await pool.query("UPDATE relay_jobs SET payload=payload || jsonb_build_object('deployment',$1::text) WHERE NOT payload ? 'deployment'",[deployment.legacy?'v1':activeVersion]);
 const dailyBudget = parseEther(process.env.RELAYER_DAILY_BUDGET_MON || "0");
@@ -123,6 +128,7 @@ const minimumBalance = parseEther(
 );
 const maxQueue = Number(process.env.RELAYER_QUEUE_LIMIT || 500);
 const allowed: Record<string, string[]> = {
+  arcade: ["register","revoke"],
   game: [
     "submitInput",
     "reveal",
@@ -136,8 +142,8 @@ const allowed: Record<string, string[]> = {
   tournaments: ["enter", "start", "attach", "advance", "cancel", "refund"],
 };
 const relaySchema = z.object({
-  deployment: z.enum(["v1","v2"]).optional(),
-  contract: z.enum(["game", "market", "vault", "tournaments"]),
+  deployment: z.enum(["v1","v2","v3"]).optional(),
+  contract: z.enum(["game", "market", "vault", "tournaments", "arcade"]),
   functionName: z.string().max(40),
   args: z.array(z.unknown()).max(12),
 });
@@ -437,7 +443,7 @@ async function refresh() {
   const latest = await publicClient.getBlockNumber({ cacheTime: 0 });
   if (latest === head) return;
   const observedAt = Date.now();
-  const existingIds = [...matches].filter(([, m]) => m.status < 3 || (deployment.version === 2 && m.status === 3 && !m.ratingFinalized)).map(([id]) => id);
+  const existingIds = [...matches].filter(([, m]) => m.status < 3 || ((deployment.version || 1) >= 2 && m.status === 3 && !m.ratingFinalized)).map(([id]) => id);
   const [last, activeBlock, states] = await Promise.all([
     publicClient.readContract({ address: deployment.game, abi: gameAbi, functionName: "nextId", blockNumber: latest }),
     publicClient.readContract({ address: deployment.game, abi: gameAbi, functionName: "activeBlock", blockNumber: latest }),
@@ -446,7 +452,7 @@ async function refresh() {
   head = latest; lastObserved = observedAt; chainHealthy = true;
   const preloaded = new Map(existingIds.map((id, i) => [id, states[i]]));
   const ids = new Set(
-    [...matches].filter(([, m]) => m.status < 3 || (deployment.version === 2 && m.status === 3 && !m.ratingFinalized)).map(([id]) => id),
+    [...matches].filter(([, m]) => m.status < 3 || ((deployment.version || 1) >= 2 && m.status === 3 && !m.ratingFinalized)).map(([id]) => id),
   );
   for (let id = last > 20n ? last - 20n : 1n; id < last; id++)
     if (!matches.has(String(id))) ids.add(String(id));
@@ -533,7 +539,7 @@ async function refresh() {
         }
       }
     }
-    if (deployment.version === 2 && m.status === 3 && !m.ratingFinalized) {
+    if ((deployment.version || 1) >= 2 && m.status === 3 && !m.ratingFinalized) {
       try { await enqueue({contract:"game",functionName:"finalizeRating",args:[String(id)]},true); } catch { lastError="Rating finalization pending"; }
     }
     const clock = frame.clock;
@@ -590,13 +596,29 @@ async function graphql(query: string, variables: unknown = {}) {
 async function assertAvailable(players:string[]) {
   if ([...matches.values()].filter(m=>m.status===1 || m.status===2).length >= 4) throw new Error("All four arenas are occupied");
   for(const player of players) { const pending=await pool.query("SELECT r.job_id FROM rooms r JOIN relay_jobs j ON j.id=r.job_id WHERE (r.player_a=$1 OR r.player_b=$1) AND j.status IN ('queued','signed','sent') LIMIT 1",[player.toLowerCase()]);if(pending.rowCount)throw new Error("A player already has a submitted match creation. Wait for its receipt."); }
-  if (deployment.version === 2) for (const player of players) {
+  if ((deployment.version || 1) >= 2) for (const player of players) {
     const active = await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"activeMatchOf",args:[player as Address]});
     if (active>0n) throw new Error("A player already has an active match");
   }
 }
 const handleLegacy=legacyRoutes({legacy:deployment.legacy,read:(address,abi,functionName,args)=>publicClient.readContract({address,abi,functionName,args} as never),graphql,send});
-const handleSocial = socialRoutes({deployment,origin,readBody:body,send,serialize:serializeMatchmaking,assertAvailable});
+async function isGameplaySigner(player:string,signer:string) {
+  if(player.toLowerCase()===signer.toLowerCase())return true;
+  return !!deployment.arcade && await publicClient.readContract({address:deployment.arcade,abi:arcadeSessionsAbi,functionName:"isSigner",args:[player as Address,signer as Address]});
+}
+async function verifyGameplayMessage(r:{address:Address;message:string;signature:Hex}) {
+  return isGameplaySigner(r.address,await recoverMessageAddress({message:r.message,signature:r.signature}));
+}
+const socialSockets=new Map<WebSocket,{req:IncomingMessage;player:string}>();
+async function notifySocial(players:string[]) {
+  for(const [socket,session] of socialSockets) if(players.includes(session.player) && socket.readyState===WebSocket.OPEN) {
+    try { if(await authenticatedPlayer(session.req)!==session.player)throw new Error("account"); socket.send(json({type:"inbox",player:session.player})); }
+    catch { socialSockets.delete(socket);socket.send(json({type:"social-expired"})); }
+  }
+}
+const handleSocial = socialRoutes({deployment,origin,readBody:body,send,serialize:serializeMatchmaking,assertAvailable,verifyGameplayMessage,isGameplaySigner,notify:notifySocial,
+  sourceMatch:async(ref:string)=>{const [version,id]=ref.split(":"); const d=resolveDeployment(version as any,deployment);if(!/^\d+$/.test(id))throw new Error("Invalid match reference"); const m=await publicClient.readContract({address:d.game,abi:contractsFor(d).game,functionName:"getMatch",args:[BigInt(id)]}) as any; if(m.status!==3)throw new Error("Finish this match before requesting a rematch"); return {playerA:m.playerA.toLowerCase(),playerB:m.playerB.toLowerCase(),mode:m.mode||0,ranked:m.ranked??true}; }
+});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)
@@ -658,13 +680,7 @@ const server = createServer(async (req, res) => {
         "eth_sendRawTransaction",
       ];
       if (!methods.includes(request.method)) return send(res, { jsonrpc: "2.0", id: request.id, error: { code: -32601, message: "RPC method not available" } });
-      const targets = [
-        deployment.game,
-        deployment.market,
-        deployment.vault,
-        deployment.tournaments,
-        ... (deployment.legacy ? [deployment.legacy.game,deployment.legacy.market,deployment.legacy.vault,deployment.legacy.tournaments] : []),
-      ].map((a) => a.toLowerCase());
+      const targets = allDeployments(deployment).flatMap(d=>[d.game,d.market,d.vault,d.tournaments,...(d.arcade?[d.arcade]:[])]).map(a=>a.toLowerCase());
       if (
         ["eth_call", "eth_estimateGas"].includes(request.method) &&
         !targets.includes(String(request.params?.[0]?.to).toLowerCase())
@@ -721,7 +737,7 @@ const server = createServer(async (req, res) => {
         throw new Error("Invalid credit request");
       const player = r.player.toLowerCase();
       const existing = await pool.query(
-        `SELECT job_id FROM ${activeVersion === "v2" ? "faucets_v2" : "faucets"} WHERE player=$1`,
+        `SELECT job_id FROM ${activeVersion === "v3" ? "faucets_v3" : activeVersion === "v2" ? "faucets_v2" : "faucets"} WHERE player=$1`,
         [player],
       );
       if (existing.rows[0]) return send(res, { id: existing.rows[0].job_id });
@@ -731,7 +747,7 @@ const server = createServer(async (req, res) => {
         parseEther(process.env.FAUCET_CREDIT_MON || "0.02"),
       );
       await pool.query(
-        `INSERT INTO ${activeVersion === "v2" ? "faucets_v2" : "faucets"}(player,job_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
+        `INSERT INTO ${activeVersion === "v3" ? "faucets_v3" : activeVersion === "v2" ? "faucets_v2" : "faucets"}(player,job_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
         [player, job.id],
       );
       return send(res, job, 202);
@@ -813,9 +829,14 @@ const server = createServer(async (req, res) => {
       ]);
       return send(res, {
         rating,
-        chaosRating: deployment.version === 2 ? await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[player,1]}) : rating,
+        chaosRating: (deployment.version || 1) >= 2 ? await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[player,1]}) : rating,
         balance, gameNonce, marketNonce, vaultNonce, tournamentNonce, admin,
       });
+    }
+    if(req.method === "GET" && /^\/arcade\/0x[\da-fA-F]{40}$/.test(path)) {
+      if(!deployment.arcade)throw new Error("Arcade sessions unavailable");const player=path.split("/")[2] as Address;
+      const [nonce,session]=await Promise.all([publicClient.readContract({address:deployment.arcade,abi:arcadeSessionsAbi,functionName:"nonces",args:[player]}),publicClient.readContract({address:deployment.arcade,abi:arcadeSessionsAbi,functionName:"sessions",args:[player]})]);
+      return send(res,{nonce,key:session[0],expires:session[1],serverTime:Math.floor(Date.now()/1000)});
     }
     if (req.method === "POST" && path === "/relay")
       return send(res, await enqueue(relaySchema.parse(await body(req))), 202);
@@ -833,9 +854,9 @@ const server = createServer(async (req, res) => {
       if (
         request.expires < Date.now() / 1000 ||
         request.expires > Date.now() / 1000 + 305 ||
-        !(await verifyMessage({
+        !(await verifyGameplayMessage({
           address: request.player as Address,
-          message: deployment.version === 2 ? queueV2Message(request.player,request.expires,request.tournamentId,request.mode,deployment) : queueMessage(request.player,request.expires,request.tournamentId),
+          message: (deployment.version || 1) >= 2 ? queueV2Message(request.player,request.expires,request.tournamentId,request.mode,deployment) : queueMessage(request.player,request.expires,request.tournamentId),
           signature: request.signature as Hex,
         }))
       )
@@ -886,7 +907,7 @@ const server = createServer(async (req, res) => {
             slot % 2 === 0 ? slot + 1 : slot - 1
           ].toLowerCase();
       }
-      const rating = deployment.version === 2 ? await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[player as Address,request.mode]}) : await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingOf",args:[player as Address]});
+      const rating = (deployment.version || 1) >= 2 ? await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingFor",args:[player as Address,request.mode]}) : await publicClient.readContract({address:deployment.game,abi:gameAbi,functionName:"ratingOf",args:[player as Address]});
       await pool.query(
         "INSERT INTO queue_players(player,elo,expires,tournament_id,ticket,mode,deployment) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(player) DO UPDATE SET elo=$2,expires=$3,tournament_id=$4,ticket=$5,mode=$6,deployment=$7",
         [player, rating.elo, request.expires, request.tournamentId, keccak256(request.signature as Hex), request.mode, activeVersion],
@@ -916,7 +937,7 @@ const server = createServer(async (req, res) => {
               request.tournamentId,
               Math.floor(Date.now() / 1000) + 180,
               keccak256(request.signature as Hex),
-              opponent.rows[0].ticket, request.mode, deployment.version || 1, activeVersion,
+              opponent.rows[0].ticket, request.mode, Math.min(deployment.version || 1,2), activeVersion,
             ],
           );
           await db.query("DELETE FROM queue_players WHERE player IN ($1,$2)", [
@@ -946,7 +967,7 @@ const server = createServer(async (req, res) => {
     if (req.method === "POST" && path === "/queue/cancel") {
       return await serializeMatchmaking(async () => {
         const r = z.object({player:z.string().regex(/^0x[\da-fA-F]{40}$/), ticket:z.string().regex(/^0x[\da-fA-F]{64}$/), expires:z.number().int(), signature:z.string()}).parse(await body(req));
-        if (r.expires < Date.now()/1000 || r.expires > Date.now()/1000+305 || !(await verifyMessage({address:r.player as Address, message:cancelQueueMessage(r.player,r.ticket,r.expires,deployment.chainId,deployment.game), signature:r.signature as Hex}))) throw new Error("Cancellation signature expired or invalid");
+        if (r.expires < Date.now()/1000 || r.expires > Date.now()/1000+305 || !(await verifyGameplayMessage({address:r.player as Address, message:cancelQueueMessage(r.player,r.ticket,r.expires,deployment.chainId,deployment.game), signature:r.signature as Hex}))) throw new Error("Cancellation signature expired or invalid");
         const player=r.player.toLowerCase();
         const db=await pool.connect();
         try {
@@ -959,8 +980,9 @@ const server = createServer(async (req, res) => {
             return send(res,{cancelled:false,reason:"submitted",jobId:room.job_id,matchId:room.match_id});
           }
           await db.query("DELETE FROM queue_players WHERE player=$1 AND ticket=$2",[player,r.ticket]);
-          if (room) await db.query("DELETE FROM rooms WHERE id=$1 AND job_id IS NULL",[room.id]);
+          if (room) {await db.query("DELETE FROM rooms WHERE id=$1 AND job_id IS NULL",[room.id]);await db.query("UPDATE challenges SET status='cancelled' WHERE room_id=$1 AND status='accepted'",[room.id]);}
           await db.query("COMMIT");
+          if(room)await notifySocial([room.player_a,room.player_b]);
           return send(res,{cancelled:true});
         } catch (e) {await db.query("ROLLBACK"); throw e;} finally {db.release();}
       });
@@ -987,12 +1009,12 @@ const server = createServer(async (req, res) => {
         Record<string, unknown>;
       const recovered = await recoverTypedDataAddress({
         domain: domain("PONG", deployment.chainId, deployment.game),
-        types: deployment.version === 2 ? joinV2Types : joinTypes,
+        types: (deployment.version || 1) >= 2 ? joinV2Types : joinTypes,
         primaryType: "Join",
         message: join as never,
         signature: request.signature,
       });
-      if (recovered.toLowerCase() !== String(join.player).toLowerCase())
+      if (!await isGameplaySigner(String(join.player), recovered))
         throw new Error("Invalid join signature");
       const row = await pool.query(
         "SELECT * FROM rooms WHERE id=$1 AND expires>$2",
@@ -1000,12 +1022,12 @@ const server = createServer(async (req, res) => {
       );
       const room = row.rows[0];
       if (!room) throw new Error("Room expired");
-      const player = recovered.toLowerCase();
+      const player = String(join.player).toLowerCase();
       if (
         ![room.player_a, room.player_b].includes(player) ||
         String(join.opponent).toLowerCase() !==
           (player === room.player_a ? room.player_b : room.player_a) ||
-        String(join.tournamentId) !== room.tournament_id || room.deployment !== activeVersion || (deployment.version === 2 && (Number(join.mode)!==room.mode || join.ranked!==room.ranked || Number(join.rulesVersion)!==room.rules_version))
+        String(join.tournamentId) !== room.tournament_id || room.deployment !== activeVersion || ((deployment.version || 1) >= 2 && (Number(join.mode)!==room.mode || join.ranked!==room.ranked || Number(join.rulesVersion)!==room.rules_version))
       )
         throw new Error("Wrong room");
       await pool.query(
@@ -1129,6 +1151,8 @@ ws.on("connection", (socket, req) => {
     return;
   }
   socket.send(json({ type: "head", head, observedAt: lastObserved }));
+  socket.on("message",async raw=>{try {const m=JSON.parse(raw.toString());if(m.type!=="subscribe-social")return;const player=await authenticatedPlayer(req);if(player!==String(m.player).toLowerCase())throw new Error("account");socialSockets.set(socket,{req,player});socket.send(json({type:"inbox",player}));} catch {socket.send(json({type:"social-expired"}));}});
+  socket.on("close",()=>socialSockets.delete(socket));
 });
 server.listen(Number(process.env.PORT || 4000), "0.0.0.0", () =>
   console.log(

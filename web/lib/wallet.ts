@@ -14,7 +14,16 @@ export type Identity = {
   end: () => void;
   local: boolean;
 };
-export async function connect(create = false): Promise<Identity> {
+const rememberedKey="pongit:remembered-passkey";
+export function rememberedAccount(): {address:Hex;credential:PasskeyCredentialMetadata;rpId:string}|null {
+  try {const saved=JSON.parse(localStorage.getItem(rememberedKey)||"null");return saved?.rpId===rpId() && /^0x[\da-fA-F]{40}$/.test(saved.address) && typeof saved.credential?.credentialId==="string"?saved:null;}catch{return null;}
+}
+export function forgetAccount(){localStorage.removeItem(rememberedKey);}
+export function accountStub(address:Hex,credential?:PasskeyCredentialMetadata):Identity {
+  const locked=async()=>{throw new Error("This operation requires your passkey.");};
+  return {account:{address,type:"local",signMessage:locked,signTypedData:locked,signTransaction:locked} as unknown as LocalAccount,credential,local:false,end:()=>{}};
+}
+export async function connect(create = false, another = false, credential?:PasskeyCredentialMetadata): Promise<Identity> {
   if (!window.isSecureContext || !window.PublicKeyCredential)
     throw new Error("Passkeys require HTTPS and a compatible browser.");
   try {
@@ -23,13 +32,15 @@ export async function connect(create = false): Promise<Identity> {
           rp: { id: rpId(), name: "PONGIT" },
           user: { name: "PONGIT player", displayName: "PONGIT player" },
         })
-      : await getPasskeyPrfOutput({ rpId: rpId() });
+      : await getPasskeyPrfOutput({ rpId: rpId(), credential:credential || (another?undefined:rememberedAccount()?.credential) });
     const session = createSecp256k1SigningSession({
       privateKey: result.prfOutput,
     });
     result.prfOutput.fill(0);
+    const account=toViemAccount(session);
+    localStorage.setItem(rememberedKey,JSON.stringify({address:account.address,credential:{credentialId:result.credentialId},rpId:rpId()}));
     return {
-      account: toViemAccount(session),
+      account,
       end: () => session.end(),
       local: false,
       credential: {credentialId:result.credentialId},

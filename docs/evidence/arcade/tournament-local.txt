@@ -1,0 +1,7 @@
+
+> pong-onchain@0.1.0 test:tournament
+> tsx scripts/e2e-tournament.ts
+
+Tournament 1: round 1 settled.
+Tournament 1: round 2 settled.
+PASS: four-player tournament through relayer, three matches, two rounds, exact winner payout.

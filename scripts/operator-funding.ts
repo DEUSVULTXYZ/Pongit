@@ -4,7 +4,7 @@ import {createPublicClient,createWalletClient,http,defineChain,parseEther,parseG
 import {privateKeyToAccount} from "viem/accounts";
 import {initializeStore,pool} from "../relayer/src/store";
 import {readSponsorCosts} from "../relayer/src/budget";
-import {json,type Deployment} from "../shared/protocol";
+import {json,allDeployments,deploymentId,type Deployment} from "../shared/protocol";
 
 // Run only from the authenticated operator shell while the relayer is stopped.
 // The same advisory lock, nonce journal and daily ceiling cover this transfer.
@@ -19,7 +19,7 @@ const client=createPublicClient({chain,transport:http(url),pollingInterval:300})
 if(await client.getChainId()!==d.chainId)throw new Error("RPC chain mismatch");
 const lock=await initializeStore();lock.on("error",()=>process.exit(1));
 try {
-  const original=d.legacy || d;
+  const original=allDeployments(d).at(-1)!;
   const fingerprint=keccak256(toHex(json({chainId:original.chainId,game:original.game,vault:original.vault,market:original.market,tournaments:original.tournaments,signer:signer.address})));
   const binding=await pool.query("SELECT fingerprint FROM deployment_binding");
   if(binding.rows[0]?.fingerprint!==fingerprint)throw new Error("Signing journal mismatch");
@@ -35,7 +35,7 @@ try {
   if(balance<cost+parseEther("0.01"))throw new Error("Insufficient sponsor reserve");
   const raw=await wallet.signTransaction({to:target as Address,value,nonce,gas,maxFeePerGas,maxPriorityFeePerGas:0n,type:"eip1559"});
   const hash=keccak256(raw),id=keccak256(toHex(`operator-funding:${hash}`));
-  await pool.query("INSERT INTO relay_jobs(id,payload,status,nonce,raw_tx,tx_hash,cost,signed_at) VALUES($1,$2,'signed',$3,$4,$5,$6,now())",[id,json({deployment:d.version===2?"v2":"v1",contract:"vault",functionName:"operatorFunding",args:[target],value:value.toString()}),nonce,raw,hash,cost.toString()]);
+  await pool.query("INSERT INTO relay_jobs(id,payload,status,nonce,raw_tx,tx_hash,cost,signed_at) VALUES($1,$2,'signed',$3,$4,$5,$6,now())",[id,json({deployment:deploymentId(d),contract:"vault",functionName:"operatorFunding",args:[target],value:value.toString()}),nonce,raw,hash,cost.toString()]);
   await client.sendRawTransaction({serializedTransaction:raw});
   await pool.query("UPDATE relay_jobs SET status='sent',submitted_at=now(),updated_at=now() WHERE id=$1",[id]);
   const receipt=await client.waitForTransactionReceipt({hash});

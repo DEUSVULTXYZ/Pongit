@@ -5,7 +5,9 @@ cd /opt/pongit/current
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 target=/opt/pongit/shared/backups/$stamp
 mkdir -p "$target"
-for database in pong_relayer pong_indexer pong_indexer_v2 pong_indexer_v2_47dba35e; do
+databases=$(docker compose exec -T postgres psql -U pong -d postgres -Atc "SELECT datname FROM pg_database WHERE datname='pong_relayer' OR datname ~ '^pong_indexer(_[a-z0-9_]+)?$' ORDER BY datname" </dev/null)
+for database in $databases; do
+  [[ "$database" =~ ^pong_[a-z0-9_]+$ ]] || exit 1
   if ! docker compose exec -T postgres psql -U pong -d postgres -Atc "SELECT 1 FROM pg_database WHERE datname='$database'" </dev/null | grep -qx 1; then continue; fi
   docker compose exec -T postgres pg_dump -U pong -d "$database" -Fc </dev/null > "$target/$database.dump"
   test -s "$target/$database.dump"

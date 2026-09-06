@@ -7,8 +7,11 @@ import {
 } from "viem";
 import { gameAbi, marketAbi, vaultAbi, tournamentsAbi } from "./abis";
 import { gameV2Abi, marketV2Abi, tournamentsV2Abi } from "./abis-v2";
+import { gameV3Abi, arcadeSessionsAbi, tournamentsV3Abi } from "./abis-v3";
+export type DeploymentId = "v1" | "v2" | "v3";
 export type Deployment = {
-  version?: 1 | 2;
+  version?: 1 | 2 | 3;
+  arcade?: Address;
   legacy?: Deployment;
   chainId: number;
   game: Address;
@@ -19,6 +22,7 @@ export type Deployment = {
   startBlock: string;
 };
 export const contracts = {
+  arcade: arcadeSessionsAbi,
   game: gameAbi,
   market: marketAbi,
   vault: vaultAbi,
@@ -26,7 +30,7 @@ export const contracts = {
 };
 export type ContractName = keyof typeof contracts;
 export type RelayRequest = {
-  deployment?: "v1" | "v2";
+  deployment?: DeploymentId;
   contract: ContractName;
   functionName: string;
   args: unknown[];
@@ -145,7 +149,7 @@ export function encodeRequest(request: RelayRequest, deployment: Deployment) {
     throw new Error("Invalid contract call");
   const args = fn.inputs.map((p, i) => coerce(request.args[i], p));
   return {
-    address: deployment[request.contract],
+    address: (() => { const address=deployment[request.contract]; if(!address) throw new Error("Contract unavailable in this deployment"); return address; })(),
     abi,
     args,
     data: encodeFunctionData({ abi, functionName: request.functionName, args }),
@@ -161,15 +165,17 @@ export const queueMessage = (
 export const cancelQueueMessage = (player: string, ticket: string, expires: number, chainId: number, game: string) =>
   `PONG cancel matchmaking\nPlayer: ${player.toLowerCase()}\nTicket: ${ticket}\nExpires: ${expires}\nChain: ${chainId}\nGame: ${game.toLowerCase()}`;
 
-export const deploymentId = (d:Deployment): "v1" | "v2" => d.version === 2 ? "v2" : "v1";
-export function resolveDeployment(id: "v1" | "v2" | undefined,d:Deployment):Deployment {
-  if (!id || id === deploymentId(d)) return d;
-  if (d.legacy && id === deploymentId(d.legacy)) return d.legacy;
-  throw new Error("Unknown contract deployment");
+export const deploymentId = (d:Deployment): DeploymentId => `v${d.version || 1}` as DeploymentId;
+export function allDeployments(d:Deployment):Deployment[] { return [d,...(d.legacy?allDeployments(d.legacy):[])]; }
+export function resolveDeployment(id: DeploymentId | undefined,d:Deployment):Deployment {
+  const result=allDeployments(d).find(x=>!id || deploymentId(x)===id);
+  if(!result)throw new Error("Unknown contract deployment");return result;
 }
 export function contractsFor(d:Deployment) {
-  return d.version === 2 ? {game:gameV2Abi,market:marketV2Abi,vault:vaultAbi,tournaments:tournamentsV2Abi} : contracts;
+  return d.version === 3 ? {arcade:arcadeSessionsAbi,game:gameV3Abi,market:marketV2Abi,vault:vaultAbi,tournaments:tournamentsV3Abi} : d.version === 2 ? {arcade:arcadeSessionsAbi,game:gameV2Abi,market:marketV2Abi,vault:vaultAbi,tournaments:tournamentsV2Abi} : contracts;
 }
+export const arcadeGrantTypes={ArcadeGrant:[{name:"player",type:"address"},{name:"key",type:"address"},{name:"game",type:"address"},{name:"expires",type:"uint64"},{name:"nonce",type:"uint256"}]} as const;
+export const arcadeRevokeTypes={ArcadeRevoke:[{name:"player",type:"address"},{name:"key",type:"address"},{name:"nonce",type:"uint256"},{name:"deadline",type:"uint64"}]} as const;
 export function matchRef(d:Deployment,id:string|bigint) { return `${deploymentId(d)}:${id}`; }
 export const queueV2Message = (player:string,expires:number,tournamentId:string,mode:number,d:Deployment) =>
   `${queueMessage(player,expires,tournamentId)}\nMode: ${mode}\nRanked: true\nRules: 2\nChain: ${d.chainId}\nGame: ${d.game.toLowerCase()}`;

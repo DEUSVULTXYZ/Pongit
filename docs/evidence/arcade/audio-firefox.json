@@ -1,0 +1,15 @@
+{
+  "engine": "firefox",
+  "version": "155.0",
+  "passedAt": "2026-09-06T15:55:06.748Z",
+  "checks": [
+    "gesture activation",
+    "single shared context",
+    "default and persistent volumes",
+    "mute",
+    "no repeat entrance",
+    "visibility event suspends and resumes",
+    "reduced motion"
+  ],
+  "visibility": "Synthetic visibilitychange exercises the lifecycle handler"
+}

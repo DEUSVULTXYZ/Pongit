@@ -1006,3 +1006,27 @@ h1 {text-shadow:0 0 50px #be96ff22;letter-spacing:-.04em;}
 .spectator-result {display:flex;align-items:center;justify-content:space-between;padding:12px 16px;}
 
 .chaos-rally {display:flex;justify-content:space-between;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line);font-size:10px;color:var(--violet);flex-wrap:wrap;}
+
+/* Arcade cabinet: composited layers only; the playfield remains opaque. */
+main {position:relative;isolation:isolate;}
+.arcade-background {position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;contain:strict;background:linear-gradient(180deg,#080512b0,#08061530);}
+.arcade-grid {position:absolute;left:-50%;width:200%;height:100%;top:58%;background-image:linear-gradient(#8df5ff20 1px,transparent 1px),linear-gradient(90deg,#b088ff25 1px,transparent 1px);background-size:80px 80px;transform:perspective(480px) rotateX(66deg);transform-origin:center top;animation:grid-drift 12s linear infinite;opacity:.6;}
+.arcade-horizon {position:absolute;top:59%;width:100%;height:1px;background:linear-gradient(90deg,transparent,#8df5ff70,#ab64ff70,transparent);box-shadow:0 0 50px 10px #6946db18;animation:horizon-breathe 6s ease-in-out infinite;}
+.arcade-orbit {position:absolute;width:60vw;height:60vw;min-width:550px;min-height:550px;border:1px solid #8df5ff16;border-radius:50%;top:-35vw;left:30%;animation:orbit-drift 25s ease-in-out infinite alternate;}
+.orbit-two {left:-30%;top:25%;border-color:#c18aff17;animation-delay:-10s;}
+.neon-mote {position:absolute;width:2px;height:20px;background:#8df5ff;left:calc(5% + var(--i)*8%);top:110%;opacity:0;animation:mote-rise calc(15s + var(--i)*1s) linear infinite;animation-delay:calc(var(--i)*-2s);}
+.neon-mote:nth-child(odd) {background:#bb81ff;height:4px;width:4px;}
+.arcade-background.paused * {animation-play-state:paused!important;}
+.arcade-background[data-effects=false] {display:none;}
+.game-panel {position:relative;border-color:#615381;box-shadow:-2px 0 0 #8df5ff20,2px 0 0 #c18aff20,0 0 35px #6040ab12;}
+.arcade-settings-toggle {position:fixed;bottom:18px;right:18px;z-index:60;font-size:10px;background:#110b20ed;}
+.arcade-settings {position:fixed;right:18px;bottom:72px;z-index:100;width:min(350px,calc(100vw - 36px));display:flex;flex-direction:column;gap:20px;box-shadow:0 15px 80px #000;}
+.arcade-settings label {display:grid;gap:12px;font-size:11px;}.arcade-settings input {width:100%;accent-color:var(--cyan);}.arcade-settings small {font-size:9px;line-height:1.8;color:var(--muted);}
+.arcade-entry {z-index:140;background:#05020dda;backdrop-filter:blur(8px);}.arcade-entry h2 {font-size:clamp(26px,5vw,48px);color:var(--cyan);text-shadow:3px 3px #632bb3;}.arcade-entry small {font-size:9px;color:var(--muted);}
+.duel-notifications {position:fixed;right:24px;top:110px;z-index:110;width:min(390px,calc(100vw - 32px));max-height:65vh;overflow:auto;display:grid;gap:12px;}.duel-notifications .invitation {background:#100b20f5;border-color:var(--cyan);box-shadow:0 10px 40px #0008;}
+@keyframes grid-drift {from {transform:perspective(480px) rotateX(66deg) translateY(-80px);}to {transform:perspective(480px) rotateX(66deg) translateY(0);}}
+@keyframes horizon-breathe {0%,100% {opacity:.25;}50% {opacity:.8;}}
+@keyframes orbit-drift {from {transform:translate3d(0,0,0) scale(.9);}to {transform:translate3d(5vw,4vh,0) scale(1.1);}}
+@keyframes mote-rise {0% {opacity:0;transform:translateY(0);}15%,70% {opacity:.3;}100% {opacity:0;transform:translateY(-115vh);}}
+@media(max-width:700px) {.arcade-grid {background-size:65px 65px;}.arcade-settings-toggle {bottom:10px;right:10px;font-size:8px;}.neon-mote:nth-child(n+9) {display:none;}.duel-notifications {right:16px;top:95px;}}
+@media(prefers-reduced-motion:reduce) {.arcade-background * {animation:none!important;}.neon-mote {display:none;}}

@@ -3,6 +3,7 @@ const zero = '0x0000000000000000000000000000000000000000';
 for(const {version,game,market,tournaments} of [
   {version:"v1",game:"Game",market:"Market",tournaments:"Tournaments"},
   {version:"v2",game:"GameV2",market:"MarketV2",tournaments:"TournamentsV2"},
+  {version:"v3",game:"GameV3",market:"MarketV3",tournaments:"TournamentsV3"},
 ] as const) {
 indexer.onEvent({ contract:game, event:'MatchCreated' },async({event,context})=>{
   const p=event.params;const id=`${version}:${p.matchId}`;
@@ -42,7 +43,7 @@ indexer.onEvent({contract:tournaments,event:'BracketUpdated'},async({event,conte
 indexer.onEvent({contract:tournaments,event:'TournamentEnded'},async({event,context})=>{const p=event.params;const t=await context.Tournament.get(`${version}:${p.tournamentId}`);if(t)context.Tournament.set({...t,status:Number(p.status),winner:p.winner,prize:p.prize});});
 
 }
-indexer.onEvent({contract:"GameV2",event:"HandicapSet"},async({event,context})=>{
+for(const [version,game] of [["v2","GameV2"],["v3","GameV3"]] as const) indexer.onEvent({contract:game,event:"HandicapSet"},async({event,context})=>{
  const p=event.params;
- context.Handicap.set({id:`v2:${p.matchId}:${event.block.number}:${event.logIndex}`,matchId:`v2:${p.matchId}`,halfA:p.halfA,halfB:p.halfB,paidA:p.paidA,paidB:p.paidB,clock:p.at,block:BigInt(event.block.number)});
+ context.Handicap.set({id:`${version}:${p.matchId}:${event.block.number}:${event.logIndex}`,matchId:`${version}:${p.matchId}`,halfA:p.halfA,halfB:p.halfB,paidA:p.paidA,paidB:p.paidB,clock:p.at,block:BigInt(event.block.number)});
 });

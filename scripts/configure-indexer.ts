@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { readFile, writeFile } from "node:fs/promises";
-import type { Deployment } from "../shared/protocol";
+import { allDeployments, type Deployment } from "../shared/protocol";
 const d: Deployment = JSON.parse(
   await readFile(
     process.env.DEPLOYMENT_FILE || "deployments/testnet.json",
@@ -16,12 +16,12 @@ if (
   throw new Error("A real local or testnet deployment is required");
 let config = await readFile("indexer/config.template.yaml", "utf8");
 config = config.slice(0, config.indexOf("\nchains:"));
-config += `\nchains:\n  - id: ${d.chainId}\n    start_block: ${d.legacy?.startBlock || d.startBlock}\n`;
+config += `\nchains:\n  - id: ${d.chainId}\n    start_block: ${allDeployments(d).at(-1)!.startBlock}\n`;
 const rpc = process.env.INDEXER_RPC_URL || process.env.RPC_URL || (d.chainId === 31337 ? "http://host.docker.internal:8545" : "https://testnet-rpc.monad.xyz");
 config += `    rpc:\n      url: ${JSON.stringify(rpc)}\n      for: sync\n      initial_block_interval: 99\n      interval_ceiling: 99\n      polling_interval: 1500\n      query_timeout_millis: 120000\n`;
 config += "    contracts:\n";
-for(const manifest of [d.legacy,d].filter(Boolean) as Deployment[]) {
-  const suffix=manifest.version===2?"V2":"";
+for(const manifest of allDeployments(d).reverse()) {
+  const suffix=(manifest.version||1)>=2?`V${manifest.version}`:"";
   for(const [name,address] of [["Game",manifest.game],["Market",manifest.market],["Tournaments",manifest.tournaments]]) config+=`      - name: ${name}${suffix}\n        address: "${address}"\n`;
 }
 await writeFile("indexer/config.yaml", config);

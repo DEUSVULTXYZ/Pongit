@@ -1,0 +1,176 @@
+
+> pong-onchain@0.1.0 test
+> forge test --root contracts && tsx --test tests/*.test.ts
+
+No files changed, compilation skipped
+
+Ran 15 tests for test/ArcadeV3.t.sol:ArcadeV3Test
+[PASS] testBothRatingsInherited() (gas: 24608)
+[PASS] testConsentCommitsOpponentModeAndRanked() (gas: 264115)
+[PASS] testDuplicateInputRejected() (gas: 980137)
+[PASS] testExpiredKeyCannotCreate() (gas: 264394)
+[PASS] testGameKeyCannotDelegateAnotherKey() (gas: 264132)
+[PASS] testGameKeyCannotWithdrawOwnerFunds() (gas: 232949)
+[PASS] testGameKeyCreatesPlaysAndConcedesMultipleMatches() (gas: 1738117)
+[PASS] testGrantReplayRejected() (gas: 103417)
+[PASS] testKeyPossessionPreventsPoisoning() (gas: 59022)
+[PASS] testMaximumTwoHours() (gas: 21739)
+[PASS] testOwnerRevokes() (gas: 184760)
+[PASS] testRegistryBindingSealed() (gas: 13532)
+[PASS] testRenewalInvalidatesOldKey() (gas: 239406)
+[PASS] testRevokedKeyCannotInputOrConcede() (gas: 909562)
+[PASS] testWrongChainGrantRejected() (gas: 49591)
+Suite result: ok. 15 passed; 0 failed; 0 skipped; finished in 130.59ms (82.67ms CPU time)
+
+Ran 27 tests for test/PongV2.t.sol:PongV2Test
+[PASS] testBettingTrajectoryStaysValidUntilTheNextEvent() (gas: 99488)
+[PASS] testCancellationRefund() (gas: 431999)
+[PASS] testChaosPauseAndPressureApplyOnlyOnResume() (gas: 1433355)
+[PASS] testExpiredInputAndWrongDomain() (gas: 49088)
+[PASS] testFriendlyAndChaosRatingsAreIsolated() (gas: 1742688)
+[PASS] testFuzzLongStepSameAsEventSteps(uint32) (runs: 1000, μ: 102045, ~: 18189)
+[PASS] testFuzzPhysicsBoundsAndNoTunneling(uint64,int8,int8) (runs: 1000, μ: 79965, ~: 8892)
+[PASS] testHandicapThresholdsAndSymmetry() (gas: 1336)
+[PASS] testInputLimitIsFrozenAtCreation() (gas: 276458)
+[PASS] testInputNonceAndWrongKey() (gas: 162354)
+[PASS] testMarketBindingCannotChange() (gas: 13535)
+[PASS] testMarketBoundsAndPartialTreasuryReclaim() (gas: 483082)
+[PASS] testMarketLockoutAndStaleVersion() (gas: 218417)
+[PASS] testMarketSettlementAndParticipantBan() (gas: 547410)
+[PASS] testNoRevealCancellation() (gas: 599306)
+[PASS] testOutOfOrderAndExpiredSession() (gas: 58502)
+[PASS] testPauseFreezesClock() (gas: 74856)
+[PASS] testPendingRatingPreventsResultReordering() (gas: 614673)
+[PASS] testPublicKeeperCompletesAndRatingsOnlyOnce() (gas: 476158)
+[PASS] testRateLimit() (gas: 271075)
+[PASS] testRevokeAndScope() (gas: 83516)
+[PASS] testRulesConsentAndSingleActiveMatch() (gas: 360999)
+[PASS] testSessionCannotWithdraw() (gas: 61071)
+[PASS] testSessionCommandCap() (gas: 170594)
+[PASS] testSignatureCannotMoveDifferentMatch() (gas: 891688)
+[PASS] testTournamentFourSeedsAndTwoRounds() (gas: 3324737)
+[PASS] testTournamentWholeBracket() (gas: 1489864)
+Suite result: ok. 27 passed; 0 failed; 0 skipped; finished in 130.63ms (277.97ms CPU time)
+
+Ran 20 tests for test/Pong.t.sol:PongTest
+[PASS] testBettingTrajectoryStaysValidUntilTheNextEvent() (gas: 87844)
+[PASS] testCancellationRefund() (gas: 395066)
+[PASS] testExpiredInputAndWrongDomain() (gas: 48031)
+[PASS] testFuzzLongStepSameAsEventSteps(uint32) (runs: 1000, μ: 93039, ~: 16285)
+[PASS] testFuzzPhysicsBoundsAndNoTunneling(uint64,int8,int8) (runs: 1000, μ: 72954, ~: 8128)
+[PASS] testInputNonceAndWrongKey() (gas: 147226)
+[PASS] testMarketBoundsAndPartialTreasuryReclaim() (gas: 526120)
+[PASS] testMarketLockoutAndStaleVersion() (gas: 206226)
+[PASS] testMarketSettlementAndParticipantBan() (gas: 583255)
+[PASS] testNoRevealCancellation() (gas: 317461)
+[PASS] testOutOfOrderAndExpiredSession() (gas: 57257)
+[PASS] testPauseFreezesClock() (gas: 74401)
+[PASS] testPublicKeeperCompletesAndRatingsOnlyOnce() (gas: 429966)
+[PASS] testRateLimit() (gas: 241363)
+[PASS] testRevokeAndScope() (gas: 81764)
+[PASS] testSessionCannotWithdraw() (gas: 61049)
+[PASS] testSessionCommandCap() (gas: 155765)
+[PASS] testSignatureCannotMoveDifferentMatch() (gas: 552383)
+[PASS] testTournamentFourSeedsAndTwoRounds() (gas: 3025461)
+[PASS] testTournamentWholeBracket() (gas: 1236867)
+Suite result: ok. 20 passed; 0 failed; 0 skipped; finished in 130.60ms (242.82ms CPU time)
+
+Ran 1 test for test/MarketInvariant.t.sol:MarketInvariantTest
+[PASS] invariantAllOutcomesAndRefundsCollateralized() (runs: 128, calls: 16384, reverts: 0)
+
+╭--------------+----------+-------+---------+----------╮
+| Contract     | Selector | Calls | Reverts | Discards |
++======================================================+
+| BuyerHandler | buy      | 16384 | 0       | 0        |
+╰--------------+----------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 7.93s (7.91s CPU time)
+
+Ran 1 test for test/MarketV2Invariant.t.sol:MarketV2InvariantTest
+[PASS] invariantAllOutcomesAndRefundsCollateralized() (runs: 128, calls: 16384, reverts: 0)
+
+╭----------------+----------+-------+---------+----------╮
+| Contract       | Selector | Calls | Reverts | Discards |
++========================================================+
+| BuyerHandlerV2 | buy      | 16384 | 0       | 0        |
+╰----------------+----------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 8.15s (8.14s CPU time)
+
+Ran 5 test suites in 8.16s (16.47s CPU time): 64 tests passed, 0 failed, 0 skipped (64 total tests)
+TAP version 13
+# Subtest: notebook recovers from the same PRF on another device, with independent nonces and no extractable key
+ok 1 - notebook recovers from the same PRF on another device, with independent nonces and no extractable key
+  ---
+  duration_ms: 13.8417
+  type: 'test'
+  ...
+# Subtest: late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
+ok 2 - late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
+  ---
+  duration_ms: 0.6086
+  type: 'test'
+  ...
+# Subtest: preview never invents paddle bounces or points while waiting for inclusion
+ok 3 - preview never invents paddle bounces or points while waiting for inclusion
+  ---
+  duration_ms: 0.4474
+  type: 'test'
+  ...
+# Subtest: key reversal moves from the current paddle rather than its old snapshot position
+ok 4 - key reversal moves from the current paddle rather than its old snapshot position
+  ---
+  duration_ms: 0.0952
+  type: 'test'
+  ...
+# Subtest: a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
+ok 5 - a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
+  ---
+  duration_ms: 0.4368
+  type: 'test'
+  ...
+# Subtest: Mera PRF creation and recovery preserve identity; ending a session disables signing
+ok 6 - Mera PRF creation and recovery preserve identity; ending a session disables signing
+  ---
+  duration_ms: 99.7966
+  type: 'test'
+  ...
+# Subtest: Mera rejects a passkey provider without PRF
+ok 7 - Mera rejects a passkey provider without PRF
+  ---
+  duration_ms: 0.7714
+  type: 'test'
+  ...
+# Subtest: Indexed ABI snapshots round-trip through JSON without losing integer precision
+ok 8 - Indexed ABI snapshots round-trip through JSON without losing integer precision
+  ---
+  duration_ms: 2.6731
+  type: 'test'
+  ...
+# Subtest: funded Monad sponsorship skips quiet windows without dipping into the reserve
+ok 9 - funded Monad sponsorship skips quiet windows without dipping into the reserve
+  ---
+  duration_ms: 1.4201
+  type: 'test'
+  ...
+# Subtest: RPC failover only forwards reads; concurrent identical reads are coalesced
+ok 10 - RPC failover only forwards reads; concurrent identical reads are coalesced
+  ---
+  duration_ms: 3579.4484
+  type: 'test'
+  ...
+# Subtest: gameplay jumps ahead of backfill without starving history or bypassing the shared rate
+ok 11 - gameplay jumps ahead of backfill without starving history or bypassing the shared rate
+  ---
+  duration_ms: 205.4451
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4130.3308

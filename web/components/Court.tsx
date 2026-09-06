@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { arcadeAudio } from "../lib/audio";
 import { move, SCALE, type State } from "../../shared/physics-v2";
 import { previewPaddle, projectConfirmed } from "../lib/presentation";
 type Props = {
@@ -50,6 +51,7 @@ export function Court({
   useEffect(() => {
     const el = canvas.current!;
     const ctx = el.getContext("2d")!;
+    let previousSound:{vx:bigint;vy:bigint;score:number;time:number}|null=null;
     let frame = 0,
       count = 0,
       last = performance.now();
@@ -57,7 +59,7 @@ export function Court({
     function draw(now: number) {
       const p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.controllable}`;
-      if (identity !== context) { context = identity; visualY = null; renderedClock = 0n; }
+      if (identity !== context) { previousSound=null; context = identity; visualY = null; renderedClock = 0n; }
       const dt = Math.max(0, Math.min(50, now - lastDraw));
       lastDraw = now;
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -126,6 +128,12 @@ export function Court({
         ctx.fillText(remaining>0?remaining.toFixed(1):"SYNCING SERVE",512,230);
         ctx.font=`12px ${getComputedStyle(document.body).fontFamily}`;ctx.fillText("CHAOS / NEXT RALLY",512,190);ctx.textAlign="left";
       }
+      if(s && !p.replay && !document.hidden){
+        const score=s.scoreA+s.scoreB;
+        if(previousSound && now-previousSound.time<100 && score===previousSound.score && (s.vx!==previousSound.vx || s.vy!==previousSound.vy))arcadeAudio.play("bounce");
+        if(s.awaitingServe){const count=Math.ceil(Math.max(0,Number(s.resumeAt-target)/1e6));if(count>0 && count<=3)arcadeAudio.play("countdown",`${p.matchId}:count:${s.resumeAt}:${count}`);}
+        previousSound={vx:s.vx,vy:s.vy,score,time:now};
+      } else previousSound=null;
       if (s) {
         ctx.fillStyle = "#666";
         ctx.fillRect(

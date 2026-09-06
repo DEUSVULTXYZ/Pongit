@@ -1,0 +1,16 @@
+{
+  "engine": "webkit",
+  "version": "26.6",
+  "passedAt": "2026-09-06T15:53:37.856Z",
+  "checks": [
+    "gesture activation",
+    "single shared context",
+    "default and persistent volumes",
+    "mute",
+    "no repeat entrance",
+    "visibility event suspends and resumes",
+    "reduced motion"
+  ],
+  "visibility": "Synthetic visibilitychange exercises the lifecycle handler",
+  "note": "Playwright WebKit on linux; physical Safari remains a separate device test"
+}

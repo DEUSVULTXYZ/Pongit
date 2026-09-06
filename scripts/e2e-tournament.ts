@@ -125,7 +125,7 @@ for (let round = 0; round < 2; round++) {
     for (const player of pair) {
       const expires = Math.floor(Date.now() / 1000) + 300;
       const signature = await player.signMessage({
-        message: config.version===2?queueV2Message(player.address,expires,String(tid),0,config):queueMessage(player.address, expires, String(tid)),
+        message: (config.version||1)>=2?queueV2Message(player.address,expires,String(tid),0,config):queueMessage(player.address, expires, String(tid)),
       });
       await api("/queue", {
         player: player.address,
@@ -160,7 +160,7 @@ for (let round = 0; round < 2; round++) {
       };
       const signature = await p.signTypedData({
         domain: domain("PONG", config.chainId, config.game),
-        types: config.version===2?joinV2Types:joinTypes,
+        types: (config.version||1)>=2?joinV2Types:joinTypes,
         primaryType: "Join",
         message: join,
       });
