@@ -86,7 +86,7 @@ services:
       ENVIO_PG_PORT: 5432
       ENVIO_PG_USER: pong_indexer
       ENVIO_PG_PASSWORD: ${INDEXER_DB_PASSWORD}
-      ENVIO_PG_DATABASE: ${INDEXER_DATABASE:-pong_indexer_v2}
+      ENVIO_PG_DATABASE: ${INDEXER_DATABASE:-pong_indexer_v2_47dba35e}
       ENVIO_PG_SCHEMA: indexer
       HASURA_GRAPHQL_ENDPOINT: http://hasura:8080/v1/metadata
       HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET:?Set HASURA_ADMIN_SECRET}
@@ -98,7 +98,7 @@ services:
     restart: unless-stopped
     logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
     environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://pong_indexer:${INDEXER_DB_PASSWORD}@postgres:5432/${INDEXER_DATABASE:-pong_indexer_v2}
+      HASURA_GRAPHQL_DATABASE_URL: postgres://pong_indexer:${INDEXER_DB_PASSWORD}@postgres:5432/${INDEXER_DATABASE:-pong_indexer_v2_47dba35e}
       HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET:?Set HASURA_ADMIN_SECRET}
       HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
       HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup,http-log,webhook-log,websocket-log

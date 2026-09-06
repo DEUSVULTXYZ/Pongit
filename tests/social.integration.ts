@@ -3,10 +3,11 @@ import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
 import { cancelQueueMessage } from "../shared/protocol";
 const base=process.env.E2E_API_URL || "http://localhost:4012",origin=process.env.E2E_WEB_URL || "http://localhost:3002";
 const config=await fetch(base+"/config").then(r=>r.json());assert.equal(config.chainId,31337,"Social integration test uses isolated Anvil");assert.equal(config.version,2);
-function client(){const account=privateKeyToAccount(generatePrivateKey());let cookie="";return {account,async call(path:string,method="GET",body?:any){const response=await fetch(base+path,{method,headers:{origin,"content-type":"application/json",cookie},body:body===undefined?undefined:JSON.stringify(body)});const set=response.headers.get("set-cookie");if(set)cookie=set.split(";")[0];return {status:response.status,data:await response.json()};}};}
+function client(){const account=privateKeyToAccount(generatePrivateKey());let cookie="";return {account,async call(path:string,method="GET",body?:any,expected=account.address){const response=await fetch(base+path,{method,headers:{origin,"content-type":"application/json",cookie,"x-pongit-player":expected},body:body===undefined?undefined:JSON.stringify(body)});const set=response.headers.get("set-cookie");if(set)cookie=set.split(";")[0];return {status:response.status,data:await response.json()};}};}
 const a=client(),b=client(),c=client();
 async function auth(actor:ReturnType<typeof client>){const n=(await actor.call("/auth/challenge","POST",{player:actor.account.address})).data;const request={player:actor.account.address,nonce:n.nonce,signature:await actor.account.signMessage({message:n.message})};assert.equal((await actor.call("/auth/session","POST",request)).status,200);assert.equal((await actor.call("/auth/session","POST",request)).status,400);}
 await Promise.all([a,b,c].map(auth));
+assert.equal((await a.call("/notebook","GET",undefined,b.account.address)).status,400);
 const handle="test_"+a.account.address.slice(2,12).toLowerCase();
 assert.equal((await a.call("/profiles","PUT",{handle,avatar:2})).status,200);
 assert.equal((await b.call("/profiles","PUT",{handle,avatar:3})).status,400);

@@ -2,18 +2,19 @@
 import { useEffect, useRef, useState } from "react";
 import { emptyNotebook, type NotebookData } from "../../shared/social";
 import { decryptNotebook, encryptNotebook, unlockNotebook } from "../lib/notebook";
-import { appApi } from "../lib/api";
+import { appApi as requestApp } from "../lib/api";
 import type { Identity } from "../lib/wallet";
 
 export function Notebook({account,authenticate,identity,matchRef,atUs}:{account:string;authenticate:()=>Promise<void>;identity:()=>Identity|null;matchRef?:string;atUs?:string}) {
+  const appApi=(path:string,method="GET",body?:unknown)=>requestApp(path,method,body,account);
   const key=useRef<CryptoKey|null>(null), generation=useRef(0), inFlight=useRef(false);
   const [data,setData]=useState<NotebookData|null>(null),[revision,setRevision]=useState(0),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
   const [rival,setRival]=useState(""),[nickname,setNickname]=useState(""),[note,setNote]=useState("");
   function lock(){generation.current++;key.current=null;setData(null);setRival("");setNickname("");setNote("");setRevision(0);setMessage("");}
   useEffect(()=>{lock();return ()=>{generation.current++;key.current=null;};},[account]);
   async function run(fn:()=>Promise<void>){if(inFlight.current)return;inFlight.current=true;setBusy(true);setMessage("");try{await fn();}catch(e){setMessage((e as Error).message);}finally{inFlight.current=false;setBusy(false);}}
-  async function load(){const g=generation.current;await authenticate();const own=identity();if(!own)throw new Error("Connect your passkey first");const k=key.current || await unlockNotebook(own);const stored=await appApi("/notebook");const decrypted=stored.ciphertext ? await decryptNotebook(k,account,stored) : emptyNotebook();if(g!==generation.current)return;key.current=k;setData(decrypted);setRevision(stored.revision || 0);setMessage("Unlocked in memory. Lock or disconnect to close.");}
-  async function save(){if(!data || !key.current)return;const g=generation.current;await authenticate();const encrypted=await encryptNotebook(key.current,account,data);const result=await appApi("/notebook","PUT",{...encrypted,revision});if(g!==generation.current)return;setRevision(result.revision);setMessage("Encrypted copy saved. Recover it with the same passkey on another device.");}
+  async function load(){const g=generation.current;await authenticate();if(g!==generation.current)return;const own=identity();if(!own || own.account.address.toLowerCase()!==account.toLowerCase())throw new Error("Connect the correct passkey first");const k=key.current || await unlockNotebook(own);if(g!==generation.current)return;const stored=await appApi("/notebook");const decrypted=stored.ciphertext ? await decryptNotebook(k,account,stored) : emptyNotebook();if(g!==generation.current)return;key.current=k;setData(decrypted);setRevision(stored.revision || 0);setMessage("Unlocked in memory. Lock or disconnect to close.");}
+  async function save(){if(!data || !key.current)return;const g=generation.current,k=key.current;await authenticate();if(g!==generation.current)return;const encrypted=await encryptNotebook(k,account,data);if(g!==generation.current)return;const result=await appApi("/notebook","PUT",{...encrypted,revision});if(g!==generation.current)return;setRevision(result.revision);setMessage("Encrypted copy saved. Recover it with the same passkey on another device.");}
   return <section className="side-card notebook"><div className="card-title"><p className="eyebrow">PRIVATE NOTEBOOK / MERA</p><span>{data?"UNLOCKED":"ENCRYPTED"}</span></div><h2>Your private playbook.</h2><p>Rivals, replay notes and preferences. Only your passkey can decrypt them.</p>
     {!data?<button disabled={!account || busy} onClick={()=>void run(load)}>Unlock notebook ↗</button>:<>
       <div className="split"><button disabled={busy} onClick={()=>void run(save)}>Save encrypted</button><button onClick={lock}>Lock</button></div>

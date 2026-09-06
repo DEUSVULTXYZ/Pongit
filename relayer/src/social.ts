@@ -94,6 +94,7 @@ export function socialRoutes(d: Dependencies) {
       d.send(res,rows.rows[0]||{player,handle:null,avatar:parseInt(player.slice(-4),16)%12});return true;
     }
     const player=await authenticatedPlayer(req);
+    if(String(req.headers["x-pongit-player"] || "").toLowerCase()!==player)throw new Error("The account changed in another tab. Unlock this account again before continuing.");
     limit(`user:${player}`,240);
     if(path==="/profiles" && req.method==="PUT") {
       const r=z.object({handle:z.string().toLowerCase().regex(/^[a-z][a-z0-9_]{2,19}$/),avatar:z.number().int().min(0).max(11)}).parse(await d.readBody(req));

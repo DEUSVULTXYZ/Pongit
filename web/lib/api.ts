@@ -80,8 +80,8 @@ export type Config = Deployment & { localDev: boolean; relayer: string; serverTi
 export const short = (address: string) =>
   address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "—";
 
-export async function appApi(path:string,method="GET",body?:unknown) {
-  const response=await fetch(API+path,{method,credentials:"include",headers:{"content-type":"application/json"},body:body===undefined?undefined:json(body),signal:AbortSignal.timeout(15000)});
+export async function appApi(path:string,method="GET",body?:unknown,player?:string) {
+  const response=await fetch(API+path,{method,credentials:"include",headers:{"content-type":"application/json",...(player?{"x-pongit-player":player}: {})},body:body===undefined?undefined:json(body),signal:AbortSignal.timeout(15000)});
   const result=await response.json();
   if(!response.ok || result.error)throw new Error(result.error || "Request failed. Please retry.");
   return result;

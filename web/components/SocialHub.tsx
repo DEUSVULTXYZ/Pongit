@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { appApi, short, type Config } from "../lib/api";
+import { appApi as requestApp, short, type Config } from "../lib/api";
 import { Notebook } from "./Notebook";
 import type { Identity } from "../lib/wallet";
 
@@ -9,6 +9,7 @@ export function Avatar({index=0}:{index?:number}) {
 }
 type Props={account:string;config:Config|null;visible:boolean;target:string;authenticate:()=>Promise<void>;identity:()=>Identity|null;open:()=>void;enter:(c:any)=>void;matchRef?:string;atUs?:string};
 export function SocialHub(p:Props) {
+  const appApi=(path:string,method="GET",body?:unknown)=>requestApp(path,method,body,p.account);
   const [authenticated,setAuthenticated]=useState(false),[profile,setProfile]=useState<any>(null),[people,setPeople]=useState<any[]>([]),[inbox,setInbox]=useState<any[]>([]),[blocked,setBlocked]=useState<string[]>([]);
   const [search,setSearch]=useState(""),[target,setTarget]=useState(""),[mode,setMode]=useState(0),[ranked,setRanked]=useState(false),[handle,setHandle]=useState(""),[avatar,setAvatar]=useState(0),[link,setLink]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[linked,setLinked]=useState<any>(null);
   const locked=useRef(false),generation=useRef(0);

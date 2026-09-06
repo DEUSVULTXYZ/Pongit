@@ -605,7 +605,7 @@ const server = createServer(async (req, res) => {
         "access-control-allow-credentials": "true",
     "access-control-allow-origin": origin,
         "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "access-control-allow-headers": "content-type",
+        "access-control-allow-headers": "content-type,x-pongit-player",
       });
       res.end();
       return;

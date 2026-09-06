@@ -12,9 +12,9 @@ docker compose exec -T relayer node -e '
  if(target.version!==2 || ["chainId","game","market","vault","tournaments"].some(k=>target[k]!==active[k]) || target.legacy?.game!==active.legacy?.game) process.exit(1);
 ' < "$target/deployments/testnet.json"
 bash ops/backup.sh </dev/null
+(cd "$target" && docker compose build web relayer </dev/null)
 docker compose stop relayer </dev/null
 ln -sfn "$target" /opt/pongit/current
 cd /opt/pongit/current
-docker compose build web relayer </dev/null
 docker compose up -d --no-deps web relayer </dev/null
 echo "V2 application restored to $1; contract deployments and persistent journal preserved."
