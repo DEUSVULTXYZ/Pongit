@@ -1,0 +1,178 @@
+{
+  "base": "https://pongit.xyz",
+  "game": "0x1ff69df68a3c4c370ce47d75c0bf002ae64d6e64",
+  "matchId": "3",
+  "addresses": [
+    "0xd53f24288CfAA0b912173209aeceA605454DB362",
+    "0x514b20A8e9887946809aAf72f0182d7D772eed50",
+    "0x8A975C03EA2f321383c884cC134ACBb2e30e982D",
+    "0xbc95162B2d9984074C3Ebd27195eaEc3fAd1Cde8",
+    "0x65Ea606E9aAB88660Fe50c65DE9Fe6Fc719d458b"
+  ],
+  "payments": [
+    {
+      "observedAt": "2026-09-06T19:18:47.652Z",
+      "address": "0x8A975C03EA2f321383c884cC134ACBb2e30e982D",
+      "winningWei": "3000000000000000",
+      "walletBefore": "0",
+      "walletAfter": "3000000000000000",
+      "vaultUnchanged": "18387919360904181",
+      "payment": {
+        "id": "v4:market:0:3:0x8a975c03ea2f321383c884cc134acbb2e30e982d",
+        "deployment": "v4",
+        "module": "market",
+        "kind": 0,
+        "sourceId": "3",
+        "recipient": "0x8a975c03ea2f321383c884cc134acbb2e30e982d",
+        "payoutId": "0x8e653515ce45e469d22a175c7837cc47ee6865d1aa28426afac13306e48090a7",
+        "state": "paid",
+        "amount": "3000000000000000",
+        "attempts": 1,
+        "txHash": "0x6dab8e62b1f6b9a623c18780a2fcce4117c1013d7dcf97c885b478d94d799e35",
+        "error": null,
+        "createdAt": "2026-09-06T19:18:56.789Z",
+        "updatedAt": "2026-09-06T19:19:01.923Z"
+      }
+    },
+    {
+      "observedAt": "2026-09-06T19:18:48.546Z",
+      "address": "0xbc95162B2d9984074C3Ebd27195eaEc3fAd1Cde8",
+      "winningWei": "5000000000000000",
+      "walletBefore": "0",
+      "walletAfter": "5000000000000000",
+      "vaultUnchanged": "16832545785197493",
+      "payment": {
+        "id": "v4:market:0:3:0xbc95162b2d9984074c3ebd27195eaec3fad1cde8",
+        "deployment": "v4",
+        "module": "market",
+        "kind": 0,
+        "sourceId": "3",
+        "recipient": "0xbc95162b2d9984074c3ebd27195eaec3fad1cde8",
+        "payoutId": "0x939e428bdd9abd4bbde19aa73a6164c5e5b9b2e12cf968ff9b92b5d6599f3928",
+        "state": "paid",
+        "amount": "5000000000000000",
+        "attempts": 1,
+        "txHash": null,
+        "error": null,
+        "createdAt": "2026-09-06T19:18:56.789Z",
+        "updatedAt": "2026-09-06T19:19:02.041Z"
+      }
+    },
+    {
+      "observedAt": "2026-09-06T19:18:49.750Z",
+      "address": "0x65Ea606E9aAB88660Fe50c65DE9Fe6Fc719d458b",
+      "winningWei": "0",
+      "walletBefore": "0",
+      "walletAfter": "0",
+      "vaultUnchanged": "18580854135468250",
+      "payment": {
+        "id": "v4:market:0:3:0x65ea606e9aab88660fe50c65de9fe6fc719d458b",
+        "deployment": "v4",
+        "module": "market",
+        "kind": 0,
+        "sourceId": "3",
+        "recipient": "0x65ea606e9aab88660fe50c65de9fe6fc719d458b",
+        "payoutId": "0xbf510d3062f6155fc87a60757809f10731247c82fcd1cc4f0cacfdb6dbdb87ce",
+        "state": "no_payout",
+        "amount": "0",
+        "attempts": 0,
+        "txHash": null,
+        "error": null,
+        "createdAt": "2026-09-06T19:18:56.789Z",
+        "updatedAt": "2026-09-06T19:18:56.998Z"
+      }
+    }
+  ],
+  "concurrentMatchId": "4",
+  "inputSamplesDuringSettlement": [
+    {
+      "job": "0x7c7b388d187a8fae50f709553568304cfa899302781c39062fad812419748d1a",
+      "start": 1788722319725.482,
+      "observedAt": 1788722320969,
+      "latencyMs": 1243.51806640625,
+      "queueMs": 640,
+      "broadcastMs": 232,
+      "confirmationMs": 354,
+      "totalMs": 1226
+    },
+    {
+      "job": "0x0a6d2586d31fece7874bd50532b2845847119be12d9adb3821ed6d3c750a9446",
+      "start": 1788722320974.698,
+      "observedAt": 1788722322201,
+      "latencyMs": 1226.302001953125,
+      "queueMs": 738,
+      "broadcastMs": 55,
+      "confirmationMs": 411,
+      "totalMs": 1204
+    },
+    {
+      "job": "0x3969d1801aa0b7e51d55da1409b16f022580eb1d75814e46bc79081157408e67",
+      "start": 1788722322201.0679,
+      "observedAt": 1788722322891,
+      "latencyMs": 689.93212890625,
+      "queueMs": 257,
+      "broadcastMs": 181,
+      "confirmationMs": 231,
+      "totalMs": 669
+    },
+    {
+      "job": "0xabd48c9a5eff56a85637a21e518a037cb80fca7adab148a23940f9b5f740d3cb",
+      "start": 1788722322899.435,
+      "observedAt": 1788722324681,
+      "latencyMs": 1781.56494140625,
+      "queueMs": 1352,
+      "broadcastMs": 185,
+      "confirmationMs": 224,
+      "totalMs": 1761
+    },
+    {
+      "job": "0x4685266d8c3a6fe5b670ae7eee61cbe52b1418b7b5ec6055f8c82ad460eebc8a",
+      "start": 1788722324697.011,
+      "observedAt": 1788722325527,
+      "latencyMs": 829.989013671875,
+      "queueMs": 364,
+      "broadcastMs": 116,
+      "confirmationMs": 319,
+      "totalMs": 799
+    },
+    {
+      "job": "0x6468ec75c669fb99da54e1fffba613fec30a99e4d87607cac9415c4234ad68c8",
+      "start": 1788722325524.4128,
+      "observedAt": 1788722326825,
+      "latencyMs": 1300.587158203125,
+      "queueMs": 794,
+      "broadcastMs": 51,
+      "confirmationMs": 384,
+      "totalMs": 1229
+    },
+    {
+      "job": "0x5721233ecac51c7d5f0b3f6738ea75054f40978cd2542a02a97723ff9139ac97",
+      "start": 1788722326799.789,
+      "observedAt": 1788722327694,
+      "latencyMs": 894.2109375,
+      "queueMs": 215,
+      "broadcastMs": 178,
+      "confirmationMs": 474,
+      "totalMs": 867
+    }
+  ],
+  "passkeyAssertionsBeforeResult": [
+    0,
+    0,
+    2,
+    2,
+    4
+  ],
+  "passkeyAssertionsAfterPayment": [
+    0,
+    0,
+    2,
+    2,
+    4
+  ],
+  "offlineBeneficiary": "0xbc95162B2d9984074C3Ebd27195eaEc3fAd1Cde8",
+  "offlineMethod": "Beneficiary navigated away from PONGIT before the result; the application and its in-memory wallet were unloaded",
+  "resultObservedAt": "2026-09-06T19:18:39.691Z",
+  "checkedAt": "2026-09-06T19:18:56.188Z",
+  "authenticator": "Chromium virtual PRF using the real Mera SDK; no physical cross-device synchronization claim"
+}

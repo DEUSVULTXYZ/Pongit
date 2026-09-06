@@ -8,11 +8,11 @@ Canonical site: https://pongit.xyz. The live deployment uses Ubuntu 24.04, Docke
 
 For a fresh V1 deployment use `npm run deploy`. For the V2 migration, use `npx tsx scripts/deploy-v2.ts` with `LEGACY_DEPLOYMENT_FILE` pointing to the V1 manifest and `DEPLOYMENT_FILE` pointing to a new V2 manifest. Retain all deployment/binding receipts. Do not rerun deployment for an application-only update. For Arcade/V3 use `scripts/deploy-v3.ts` with the V2 manifest as `LEGACY_DEPLOYMENT_FILE`. It binds ArcadeSessions to GameV3, seals the market and two vault modules, and embeds the complete V2/V1 manifest chain.
 
-Run `INDEXER_RPC_URL=http://rpc:8545 npm run indexer:configure`. The generator sets explicit RPC synchronization, 99-block batches and a 1.5-second poll interval. The Envio image includes root certificates and a 120-second RPC query timeout for backfill through the shared gateway.
+For V4 use `scripts/deploy-v4.ts` with the V3 manifest as `LEGACY_DEPLOYMENT_FILE`; see [automatic wallet payments](PAYMENTS_V4.md). The live V4 indexer uses a dedicated private gateway: `INDEXER_RPC_URL=http://rpc-indexer:8545 INDEXER_CHUNKED_RPC=true npm run indexer:configure`. This batches historical ranges with rate-limited, provider-compatible subrequests and contract-specific deployment blocks. For earlier deployments run `INDEXER_RPC_URL=http://rpc:8545 npm run indexer:configure`. The generator sets explicit RPC synchronization, 99-block batches and a 1.5-second poll interval. The Envio image includes root certificates and a 120-second RPC query timeout for backfill through the shared gateway.
 
 Build the frontend for its final API/WS URLs and RP ID. Run `docker compose build` and `docker compose up -d`. The fixed Compose project name `pongit` preserves volumes across releases. Caddy obtains and renews Let's Encrypt certificates; ACME data is persistent. Public ports are 80/443 and SSH 3333. PostgreSQL, Hasura, RPC and relayer remain on the private Docker network.
 
-PostgreSQL retains the original `pong_relayer` journal and all generation-specific indexer databases. V3 uses `pong_indexer_v3_7b54521d`; the V2 database `pong_indexer_v2_47dba35e` is preserved. Both are owned by the restricted indexer role. Hasura never receives journal credentials. Earlier development databases and `*-superseded.json` manifests remain archived. Do not reuse a journal with another chain or signer. Register compatible deployment migrations through the versioned journal logic instead of erasing history.
+PostgreSQL retains the original `pong_relayer` journal and all generation-specific indexer databases. V4 uses `pong_indexer_v4_1ff69df6_scoped`. Its superseded staging database is retained. Archived V3 uses `pong_indexer_v3_7b54521d`; the V2 database `pong_indexer_v2_47dba35e` is preserved. Both are owned by the restricted indexer role. Hasura never receives journal credentials. Earlier development databases and `*-superseded.json` manifests remain archived. Do not reuse a journal with another chain or signer. Register compatible deployment migrations through the versioned journal logic instead of erasing history.
 
 ## Accounts and funding
 
@@ -47,10 +47,10 @@ Check `docker compose ps`, service logs, `https://pongit.xyz/api/health`, a ladd
 
 ## Application rollback
 
-Use `bash ops/rollback-v3.sh COMMIT` for Arcade/V3 (`rollback-v2.sh` is retained for archived V2 operations). The target release must already exist. The script rejects older generation binaries or different immutable contract addresses, backs up data, builds the target, stops the relayer, switches `/opt/pongit/current` and restarts web/relayer. It preserves the journal and volumes. Contract transactions cannot be rolled back by changing application code.
+Use `bash ops/rollback-v4.sh COMMIT` for the current V4 application. Scripts for V2/V3 are retained for their archived operations. The target release must already exist. The script rejects older generation binaries or different immutable contract addresses, backs up data, builds the target, stops the relayer, switches `/opt/pongit/current` and restarts web/relayer. It preserves the journal and volumes. Contract transactions cannot be rolled back by changing application code.
 
 Keep the previous release and images. Never attach a replacement contract's journal to an old deployment. Additive migrations support compatible application rollback; an incompatible migration needs its own restore procedure. Indexer dependency/image updates can be applied separately with `docker compose up -d --no-deps indexer` after verifying the target configuration and preserved database.
 
 ## Services and submissions
 
-The live site uses public Monad RPC and self-hosted Envio. `ALCHEMY_RPC_URL` supports a future service integration but no current Alchemy traffic is claimed. Bounties are secondary to the functional game. See [delivery evidence](V2_DELIVERY.md) and [V2 submissions](QUESTS_V2.md).
+The live site uses public Monad RPC and self-hosted Envio. `ALCHEMY_RPC_URL` supports a future service integration but no current Alchemy traffic is claimed. Bounties are secondary to the functional game. See [V4 payment evidence](PAYMENTS_V4.md), [V2 delivery evidence](V2_DELIVERY.md) and [V2 submissions](QUESTS_V2.md).

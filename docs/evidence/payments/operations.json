@@ -1,0 +1,31 @@
+{
+  "network": 10143,
+  "preCutoverBackup": "20260906T191333Z",
+  "postTestBackup": "20260906T193350Z",
+  "databasesRestoredIntoScratch": 8,
+  "allTableCountsMatched": true,
+  "legacySnapshotsAtCutover": 633,
+  "signedJournalPreservedThroughNonce": 966,
+  "journalFingerprint": "c158644ff5ef669159502456edaee161",
+  "paidTasksBeforeAndAfter": 10,
+  "paidWeiBeforeAndAfter": "33000000000000000",
+  "duplicateNonces": 0,
+  "servicesRestarted": [
+    "web",
+    "relayer",
+    "indexer",
+    "hasura",
+    "postgres",
+    "rpc",
+    "rpc-indexer",
+    "caddy"
+  ],
+  "hostRebootedThisV4Validation": false,
+  "offsiteBackup": "Protected operator workstation; checksums verified after copying",
+  "replay": {
+    "matchRef": "v4:11",
+    "snapshots": 20,
+    "reconstructedTransitions": 19,
+    "finalStateMatches": true
+  }
+}

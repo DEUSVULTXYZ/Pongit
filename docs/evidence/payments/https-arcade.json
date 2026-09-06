@@ -1,0 +1,32 @@
+{
+  "base": "https://pongit.xyz",
+  "addresses": [
+    "0x083b44593EDC7b37495b11b966De2da8dECaf8B4",
+    "0x1C64535Ae943d3a58f3388bD3C510C32Fcd67FcD",
+    "0xB39E6d2Fc6f205fCeeA71920f6E2C72E79842F35"
+  ],
+  "matches": [
+    "6",
+    "7"
+  ],
+  "passkeyAssertions": [
+    2,
+    0,
+    0
+  ],
+  "baseline": [
+    0,
+    0,
+    0
+  ],
+  "timings": [
+    {
+      "queueMs": 437,
+      "broadcastMs": 116,
+      "confirmationMs": 238,
+      "totalMs": 791
+    }
+  ],
+  "passedAt": "2026-09-06T19:28:06.058Z",
+  "authenticator": "Chromium virtual PRF; physical cross-device sync requires a separate demonstration"
+}

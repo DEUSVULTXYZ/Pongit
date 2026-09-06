@@ -1,0 +1,171 @@
+{
+  "base": "https://pongit.xyz",
+  "matchId": "5",
+  "addresses": [
+    "0x3e266546f026a1608624c3c71d8C3348C10082FC",
+    "0x564d2a8bb326D41f4D576d158B860A53e1DbBefe",
+    "0x762ba10065f6aCe0842251De98785d1ecD116Bf3"
+  ],
+  "snapshots": [
+    {
+      "head": "60269874",
+      "clock": "6600000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "0",
+        "vy": "0",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "4800000",
+        "scoreA": 1,
+        "scoreB": 0,
+        "seed": "0x23f9bd785588dc4cba8fb1b8662b3c5cb262182b4e678a9cbf13ee300f232cbe",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": true,
+        "resumeAt": "7800000"
+      }
+    },
+    {
+      "head": "60269874",
+      "clock": "6600000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "0",
+        "vy": "0",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "4800000",
+        "scoreA": 1,
+        "scoreB": 0,
+        "seed": "0x23f9bd785588dc4cba8fb1b8662b3c5cb262182b4e678a9cbf13ee300f232cbe",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": true,
+        "resumeAt": "7800000"
+      }
+    },
+    {
+      "head": "60269875",
+      "clock": "6900000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "0",
+        "vy": "0",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "4800000",
+        "scoreA": 1,
+        "scoreB": 0,
+        "seed": "0x23f9bd785588dc4cba8fb1b8662b3c5cb262182b4e678a9cbf13ee300f232cbe",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": true,
+        "resumeAt": "7800000"
+      }
+    },
+    {
+      "head": "60269877",
+      "clock": "7500000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "0",
+        "vy": "0",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "4800000",
+        "scoreA": 1,
+        "scoreB": 0,
+        "seed": "0x23f9bd785588dc4cba8fb1b8662b3c5cb262182b4e678a9cbf13ee300f232cbe",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": true,
+        "resumeAt": "7800000"
+      }
+    },
+    {
+      "head": "60269880",
+      "clock": "8400000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "0",
+        "vy": "0",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "4800000",
+        "scoreA": 1,
+        "scoreB": 0,
+        "seed": "0x23f9bd785588dc4cba8fb1b8662b3c5cb262182b4e678a9cbf13ee300f232cbe",
+        "finished": false,
+        "mode": 1,
+        "halfA": "48000000",
+        "halfB": "48000000",
+        "awaitingServe": true,
+        "resumeAt": "7800000"
+      }
+    },
+    {
+      "head": "60269884",
+      "clock": "9600000",
+      "state": {
+        "x": "512000000",
+        "y": "288000000",
+        "vx": "-128000000",
+        "vy": "-64000000",
+        "left": "288000000",
+        "right": "288000000",
+        "leftDir": 0,
+        "rightDir": 0,
+        "t": "9000000",
+        "scoreA": 1,
+        "scoreB": 0,
+        "seed": "0x23f9bd785588dc4cba8fb1b8662b3c5cb262182b4e678a9cbf13ee300f232cbe",
+        "finished": false,
+        "mode": 1,
+        "halfA": "36000000",
+        "halfB": "48000000",
+        "awaitingServe": false,
+        "resumeAt": "0"
+      }
+    }
+  ],
+  "passedAt": "2026-09-06T19:19:50.384Z",
+  "scenarios": [
+    "Mera PRF notebook different salt",
+    "encrypted save and recovery",
+    "no plaintext web storage",
+    "public nickname",
+    "targeted friendly Chaos consent",
+    "bet pressure shrinks to 72",
+    "confirmed victory and defeat",
+    "friendly ELO unchanged",
+    "automatic native payout and separate signed vault withdrawal",
+    "disconnect closes notebook",
+    "same-passkey recovery",
+    "mobile layout"
+  ],
+  "authenticator": "Chromium virtual CTAP2 PRF; real device synchronization still requires user demonstration"
+}
