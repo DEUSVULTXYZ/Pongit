@@ -1,0 +1,28 @@
+{
+  "base": "https://pongit.xyz",
+  "matchId": "8",
+  "addresses": [
+    "0x4839947cEF835833a66A3AB2aa03e04b17a7607c",
+    "0x98A44CCC79FA8C85F1bf6FeD240610AE39C987CC",
+    "0x65b9ae5Ebf9eAf5c6ECD278642D6f0AF5e580851"
+  ],
+  "authenticator": "Chromium CTAP2 virtual authenticator with PRF; actual Mera SDK and contracts, no local test player",
+  "scenarios": [
+    "create",
+    "cancel queue",
+    "recover owner after financial signature while queued",
+    "match",
+    "spectate",
+    "input",
+    "bet",
+    "passkey recovery",
+    "session restore",
+    "concede",
+    "claim",
+    "withdraw",
+    "Envio replay",
+    "mobile",
+    "touch input confirmed onchain"
+  ],
+  "passedAt": "2026-09-06T03:27:05.806Z"
+}

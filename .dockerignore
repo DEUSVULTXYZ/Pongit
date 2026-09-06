@@ -1,0 +1,15 @@
+.git
+node_modules
+**/node_modules
+**/.next
+.env
+.env.*
+!.env.example
+contracts/cache
+contracts/out
+contracts/lib
+artifacts
+data
+indexer/.envio
+deployments/local.json
+*.log

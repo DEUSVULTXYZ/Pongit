@@ -1,0 +1,1 @@
+{"network" : "Monad testnet", "chainId" : 10143, "measuredAt" : "2026-09-06T03:21:32.281371+00:00", "measurement" : "Journal insertion to receipt observation; excludes HTTP preflight and browser signing. Successful jobs only.", "samples" : 101, "p50ms" : 1701.656, "p95ms" : 5069.793, "p99ms" : 11227.009}

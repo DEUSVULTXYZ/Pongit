@@ -1,0 +1,33 @@
+FROM node:24-bookworm-slim AS dependencies
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+FROM dependencies AS web-build
+COPY shared ./shared
+COPY web ./web
+COPY tsconfig.json ./
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WS_URL
+ARG NEXT_PUBLIC_RP_ID
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL NEXT_PUBLIC_RP_ID=$NEXT_PUBLIC_RP_ID NEXT_TELEMETRY_DISABLED=1
+RUN npx next build web
+
+FROM node:24-bookworm-slim AS web
+WORKDIR /app
+ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1
+COPY --from=web-build --chown=node:node /app/web/.next/standalone ./
+COPY --from=web-build --chown=node:node /app/web/.next/static ./web/.next/static
+USER node
+EXPOSE 3000
+CMD ["node","web/server.js"]
+
+FROM dependencies AS relayer
+WORKDIR /app
+COPY shared ./shared
+COPY relayer ./relayer
+COPY tsconfig.json ./
+ENV NODE_ENV=production
+USER node
+EXPOSE 4000
+CMD ["node","--import","tsx","relayer/src/main.ts"]

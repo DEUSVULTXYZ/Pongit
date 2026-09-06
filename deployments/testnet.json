@@ -1,0 +1,10 @@
+{
+  "chainId": 10143,
+  "game": "0xb66d62f0eabc5f1f86faca76bebc8353c2fbe0dd",
+  "vault": "0x49ba91379d2b52e219c7969d4fe9a647bf64d52d",
+  "lmsr": "0x98f39538f25e80cf2ec0a20fca3258f0db155915",
+  "market": "0x11ba82f64e872b360e6f876ec06725c44536ef17",
+  "tournaments": "0x3420ca36e834aab3d5b6415d867397a916cf25ea",
+  "startBlock": "60075959",
+  "deployedAt": "2026-09-06T02:59:48.097Z"
+}

@@ -1,0 +1,251 @@
+{
+  "measuredAt": "2026-09-05T22:52:52.925Z",
+  "chainId": 10143,
+  "sampleSize": 40,
+  "approximateBlockMs": 307.6923076923077,
+  "repeatedTimestamps": 27,
+  "clockDecision": "Virtual block clock; 300 milliseconds per block, immutable per match. Client timestamps never backdate inputs.",
+  "transactionBenchmark": "NOT MEASURED. Run scripts/benchmark.ts with a funded testnet account after contract deployment.",
+  "blocks": [
+    {
+      "number": "60027422",
+      "timestamp": "1788648782",
+      "gasLimit": "150000000",
+      "hash": "0x7e4c468120da06b5faba8eb499fb9549b76b3d9e1a6d1098e77437fd5bb0a881"
+    },
+    {
+      "number": "60027421",
+      "timestamp": "1788648781",
+      "gasLimit": "150000000",
+      "hash": "0xb85a81c75a4fb36e3fda1bcaddcee254ce19884b2eeeb6bc58bdb7a11acf2f73"
+    },
+    {
+      "number": "60027420",
+      "timestamp": "1788648781",
+      "gasLimit": "150000000",
+      "hash": "0xa134d1e9a9246d356aca46abb68edd1085e02ee071c4d125395b7e1ce9b5f3ab"
+    },
+    {
+      "number": "60027419",
+      "timestamp": "1788648781",
+      "gasLimit": "150000000",
+      "hash": "0xd17d6642e8dc04e6757aa7c80f5d317359509390e792bad801a41c482cb7c7eb"
+    },
+    {
+      "number": "60027418",
+      "timestamp": "1788648780",
+      "gasLimit": "150000000",
+      "hash": "0x818c2409262339371d17cec395f76e43535e3e130832e010bf01d3ee18035815"
+    },
+    {
+      "number": "60027417",
+      "timestamp": "1788648780",
+      "gasLimit": "150000000",
+      "hash": "0xf0d73bd2bb0a6d13bada3931e868247d46a88d39175c75acfaf6bb25a55caad4"
+    },
+    {
+      "number": "60027416",
+      "timestamp": "1788648780",
+      "gasLimit": "150000000",
+      "hash": "0x0700ddd2a4e73d989e1f5881c70dc50d777fb09d707be4b15a208d854a7b6b9e"
+    },
+    {
+      "number": "60027415",
+      "timestamp": "1788648780",
+      "gasLimit": "150000000",
+      "hash": "0x3d21da5cab9b6c12b4cf08356747fdf76119853f81340e54075b0333a944921e"
+    },
+    {
+      "number": "60027414",
+      "timestamp": "1788648779",
+      "gasLimit": "150000000",
+      "hash": "0xf87a35734d000e45dc9aa0adb4be4036f12dbb6cecfe49a8aee72a535786d3e7"
+    },
+    {
+      "number": "60027413",
+      "timestamp": "1788648779",
+      "gasLimit": "150000000",
+      "hash": "0xcbf23ed8fa8396ce4225e9d627d16d3201ec59e7c594ca3d7edfdbcc88065712"
+    },
+    {
+      "number": "60027412",
+      "timestamp": "1788648779",
+      "gasLimit": "150000000",
+      "hash": "0xab17c03ea8c8754afff6a6d3b496cfb4ce4f8144bf228564a1893d89882a3f4f"
+    },
+    {
+      "number": "60027411",
+      "timestamp": "1788648778",
+      "gasLimit": "150000000",
+      "hash": "0xf838d9913805d9b07b67fadb23a622887760541dc2c9f354c2920eb8ecf1f36f"
+    },
+    {
+      "number": "60027410",
+      "timestamp": "1788648778",
+      "gasLimit": "150000000",
+      "hash": "0x54c547479df6617f3d5e7be2f79f05f392653ea71c1f1320ee68c47665fd6e1a"
+    },
+    {
+      "number": "60027409",
+      "timestamp": "1788648778",
+      "gasLimit": "150000000",
+      "hash": "0x3439d543c521490a5c90889ed55dc682c65888e31b749675fd44438ddd5dcf20"
+    },
+    {
+      "number": "60027408",
+      "timestamp": "1788648777",
+      "gasLimit": "150000000",
+      "hash": "0x6d9ed6361205fe51f276103467b8bf5d7e4ace23d65c6a4fb6ee7d49672b5386"
+    },
+    {
+      "number": "60027407",
+      "timestamp": "1788648777",
+      "gasLimit": "150000000",
+      "hash": "0xa14b8bfc8b83c0c552b886215d0856c44143b5040d53f85cdfafe756b390df3f"
+    },
+    {
+      "number": "60027406",
+      "timestamp": "1788648777",
+      "gasLimit": "150000000",
+      "hash": "0x27a094013e27b17506a3d90b1d73c58af0e390d3e2da959d61603d866aa226e6"
+    },
+    {
+      "number": "60027405",
+      "timestamp": "1788648777",
+      "gasLimit": "150000000",
+      "hash": "0xdee6a8427e51471e7d3befcb9aa1ed309359b33684695b567e09ecb99f27bc40"
+    },
+    {
+      "number": "60027404",
+      "timestamp": "1788648776",
+      "gasLimit": "150000000",
+      "hash": "0xdcb4b8c3b5ed7493334595eb61ab9c0f87bebdcbfedbc038c614c334a33f12f9"
+    },
+    {
+      "number": "60027403",
+      "timestamp": "1788648776",
+      "gasLimit": "150000000",
+      "hash": "0xd0145347ba7372c2df97156df5358c27e01d1ead461eeb9122c4047d5415a0e9"
+    },
+    {
+      "number": "60027402",
+      "timestamp": "1788648776",
+      "gasLimit": "150000000",
+      "hash": "0x0a9ce83a555ae03c9bef00470a1915baca8b9b1a3cca7f86c464e32ac120a9bf"
+    },
+    {
+      "number": "60027401",
+      "timestamp": "1788648775",
+      "gasLimit": "150000000",
+      "hash": "0x622daab971a16f47f4770d9bc00d7cf806002089087b73f6141d899e611b54df"
+    },
+    {
+      "number": "60027400",
+      "timestamp": "1788648775",
+      "gasLimit": "150000000",
+      "hash": "0xd831675ce92cdd5dc72647f3d32bead6f0f1a1bbee653caac0021749b1f44885"
+    },
+    {
+      "number": "60027399",
+      "timestamp": "1788648775",
+      "gasLimit": "150000000",
+      "hash": "0x6b32b15b12f1037b77fcad18f857fabd89757982a86af8d9a85fc9156b491681"
+    },
+    {
+      "number": "60027398",
+      "timestamp": "1788648774",
+      "gasLimit": "150000000",
+      "hash": "0x1b5b2208a5c2bb89b71f8504027969b93d1083a0d676a061e23a1ca3f9fa3930"
+    },
+    {
+      "number": "60027397",
+      "timestamp": "1788648774",
+      "gasLimit": "150000000",
+      "hash": "0x20fc14db2919b61d2d9a0411048ab2a594efd44241baf61677913cb59f42f020"
+    },
+    {
+      "number": "60027396",
+      "timestamp": "1788648774",
+      "gasLimit": "150000000",
+      "hash": "0x28be6556a2b75ce7f5665d18e7d19c9a0bb1644355bd7a748dbc46c02762108a"
+    },
+    {
+      "number": "60027395",
+      "timestamp": "1788648773",
+      "gasLimit": "150000000",
+      "hash": "0xb733e5556bbdf5c29d0e27dd438f27300c5c5860807b90dcec214e1a8e34d88c"
+    },
+    {
+      "number": "60027394",
+      "timestamp": "1788648773",
+      "gasLimit": "150000000",
+      "hash": "0x66ed3a29298f8934b4f3de0a47a32d58a345dc6b216b8efcbfab699a6e0e33df"
+    },
+    {
+      "number": "60027393",
+      "timestamp": "1788648773",
+      "gasLimit": "150000000",
+      "hash": "0xf781c4d30623938a856f1f6813f4607f9ee0752c7ef0d1b20ffaf248a5cc6021"
+    },
+    {
+      "number": "60027392",
+      "timestamp": "1788648773",
+      "gasLimit": "150000000",
+      "hash": "0xf790290e893951f9ddcec6c78b66765810ef91c02454e86425128ece31067aa0"
+    },
+    {
+      "number": "60027391",
+      "timestamp": "1788648772",
+      "gasLimit": "150000000",
+      "hash": "0x87213559b638f36d1bbc42de68fa21f7e7f819a4407d1c4960661f23b075f8f2"
+    },
+    {
+      "number": "60027390",
+      "timestamp": "1788648772",
+      "gasLimit": "150000000",
+      "hash": "0x174dd4e32f9022242fb6e492ef5ba7c8fd8da7e37d4e719dce79d0346783d5e4"
+    },
+    {
+      "number": "60027389",
+      "timestamp": "1788648772",
+      "gasLimit": "150000000",
+      "hash": "0xde1a4a5be894384f5dcca7585fbf5143b0eaf96b68e807dad2f2f6ac99e73a50"
+    },
+    {
+      "number": "60027388",
+      "timestamp": "1788648771",
+      "gasLimit": "150000000",
+      "hash": "0x157b53b8c1f8b6a668a2a58222ea455b6485eaa4b0b784ae38e663a729bdcc0a"
+    },
+    {
+      "number": "60027387",
+      "timestamp": "1788648771",
+      "gasLimit": "150000000",
+      "hash": "0x843321e3666d0043ffb01a3e95d652b35c882fb502c86c0bec237c0cf255e231"
+    },
+    {
+      "number": "60027386",
+      "timestamp": "1788648771",
+      "gasLimit": "150000000",
+      "hash": "0x16d96f53329a1e6e477dccc89e8a226b09e953c8f5e396a221ad018745ff04cc"
+    },
+    {
+      "number": "60027385",
+      "timestamp": "1788648771",
+      "gasLimit": "150000000",
+      "hash": "0x566b190bfbdb3261e9ed7956f1fae3c119b966bc58bdaa0c7d18f8ec9b0ac76d"
+    },
+    {
+      "number": "60027384",
+      "timestamp": "1788648770",
+      "gasLimit": "150000000",
+      "hash": "0x50c54ebc20ea2392fbfba7785015ebe011b7cd98c833590c256ae3c0c9186d38"
+    },
+    {
+      "number": "60027383",
+      "timestamp": "1788648770",
+      "gasLimit": "150000000",
+      "hash": "0x2f4b2a0f79731043bee0193bbee4abb2cbdf29edd63c649761ac4c53b43560b3"
+    }
+  ]
+}

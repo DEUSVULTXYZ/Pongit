@@ -1,0 +1,17 @@
+{$PONG_DOMAIN} {
+    encode zstd gzip
+    handle_path /api/* {
+        reverse_proxy relayer:4000 {
+            header_up X-Real-IP {remote_host}
+        }
+    }
+    handle /ws {
+        reverse_proxy relayer:4000 {
+            header_up X-Real-IP {remote_host}
+        }
+    }
+    handle {
+        reverse_proxy web:3000
+    }
+    header Strict-Transport-Security "max-age=31536000"
+}

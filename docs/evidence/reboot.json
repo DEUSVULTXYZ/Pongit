@@ -1,0 +1,49 @@
+{
+  "indexedMatches": 8,
+  "services": [
+    {
+      "Service": "caddy",
+      "State": "running",
+      "Health": ""
+    },
+    {
+      "Service": "hasura",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "indexer",
+      "State": "running",
+      "Health": ""
+    },
+    {
+      "Service": "postgres",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "relayer",
+      "State": "running",
+      "Health": "healthy"
+    },
+    {
+      "Service": "rpc",
+      "State": "running",
+      "Health": ""
+    },
+    {
+      "Service": "web",
+      "State": "running",
+      "Health": ""
+    }
+  ],
+  "beforeBootId": "987d1deb-2f34-4a67-ada2-8529377a7166",
+  "httpsHealth": {
+    "ok": true,
+    "head": "60082031",
+    "queueError": "",
+    "network": 10143
+  },
+  "observedAt": "2026-09-06T03:30:46.1155337Z",
+  "afterBootId": "2bc0c598-3763-49ea-9888-dc8890ab45be"
+}

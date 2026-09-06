@@ -1,0 +1,70 @@
+type Match {
+  id: ID!
+  playerA: String!
+  playerB: String!
+  tournamentId: String!
+  status: Int!
+  winner: String!
+  block: BigInt!
+}
+type Frame {
+  id: ID!
+  matchId: String!
+  version: BigInt!
+  state: String!
+  clock: BigInt!
+  nextAt: BigInt!
+  nextKind: Int!
+  block: BigInt!
+}
+type Player {
+  id: ID!
+  address: String!
+  season: BigInt!
+  elo: Int!
+  played: Int!
+  wins: Int!
+}
+type SeasonRating {
+  id: ID!
+  address: String!
+  season: BigInt!
+  elo: Int!
+  played: Int!
+  wins: Int!
+}
+type Bet {
+  id: ID!
+  matchId: String!
+  player: String!
+  side: Int!
+  shares: BigInt!
+  cost: BigInt!
+}
+type Pair {
+  id: ID!
+  matches: Int!
+}
+type Pattern {
+  id: ID!
+  bettor: String!
+  opponent: String!
+  occurrences: Int!
+}
+type Alert {
+  id: ID!
+  kind: String!
+  detail: String!
+  block: BigInt!
+}
+type Tournament {
+  id: ID!
+  closesAt: BigInt!
+  capacity: Int!
+  fee: BigInt!
+  prize: BigInt!
+  round: BigInt!
+  status: Int!
+  winner: String!
+  bracket: [String!]!
+}

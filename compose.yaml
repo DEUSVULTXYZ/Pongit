@@ -1,0 +1,118 @@
+name: pongit
+services:
+  web:
+    build:
+      context: .
+      target: web
+      args:
+        NEXT_PUBLIC_API_URL: https://${PONG_DOMAIN}/api
+        NEXT_PUBLIC_WS_URL: wss://${PONG_DOMAIN}/ws
+        NEXT_PUBLIC_RP_ID: ${PONG_DOMAIN}
+    restart: unless-stopped
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    depends_on: [relayer]
+  relayer:
+    build: {context: ., target: relayer}
+    restart: unless-stopped
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+    environment:
+      DATABASE_URL: postgres://pong_relayer:${RELAYER_DB_PASSWORD}@postgres:5432/pong_relayer
+      RELAYER_PRIVATE_KEY: ${RELAYER_PRIVATE_KEY:?Set RELAYER_PRIVATE_KEY}
+      RPC_URL: http://rpc:8545
+      RPC_FALLBACK_URL: ${RPC_FALLBACK_URL:-}
+      ALCHEMY_RPC_URL: ${ALCHEMY_RPC_URL:-}
+      RELAYER_DAILY_BUDGET_MON: ${RELAYER_DAILY_BUDGET_MON:-1}
+      RELAYER_MAX_GAS_PRICE_GWEI: ${RELAYER_MAX_GAS_PRICE_GWEI:-200}
+      RELAYER_MIN_BALANCE_MON: ${RELAYER_MIN_BALANCE_MON:-0.01}
+      MARKET_LIQUIDITY_MON: ${MARKET_LIQUIDITY_MON:-0.01}
+      FAUCET_CREDIT_MON: ${FAUCET_CREDIT_MON:-0.02}
+      HASURA_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
+      LOCAL_DEV: "false"
+      DEPLOYMENT_FILE: /app/deployments/testnet.json
+      ALLOWED_ORIGIN: https://${PONG_DOMAIN}
+      INDEXER_GRAPHQL_URL: http://hasura:8080/v1/graphql
+      PORT: 4000
+      TRUST_PROXY: "true"
+    volumes: [./deployments:/app/deployments:ro]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      postgres: {condition: service_healthy}
+      rpc: {condition: service_started}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+  rpc:
+    build: {context: ., target: relayer}
+    command: [node, --import, tsx, relayer/src/rpc-gateway.ts]
+    restart: unless-stopped
+    environment:
+      RPC_UPSTREAM: ${RPC_URL:-https://rpc.ankr.com/monad_testnet}
+      RPC_SPACING_MS: ${RPC_SPACING_MS:-60}
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+    environment:
+      POSTGRES_USER: pong
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+      RELAYER_DB_PASSWORD: ${RELAYER_DB_PASSWORD:?Set RELAYER_DB_PASSWORD}
+      INDEXER_DB_PASSWORD: ${INDEXER_DB_PASSWORD:?Set INDEXER_DB_PASSWORD}
+    volumes: [postgres-data:/var/lib/postgresql/data,./ops/init-db.sh:/docker-entrypoint-initdb.d/10-pongit.sh:ro]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U pong -d postgres]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  indexer:
+    build: ./indexer
+    restart: unless-stopped
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+    environment:
+      ENVIO_API_TOKEN: ${ENVIO_API_TOKEN}
+      ENVIO_PG_HOST: postgres
+      ENVIO_PG_PORT: 5432
+      ENVIO_PG_USER: pong_indexer
+      ENVIO_PG_PASSWORD: ${INDEXER_DB_PASSWORD}
+      ENVIO_PG_DATABASE: pong_indexer
+      ENVIO_PG_SCHEMA: indexer
+      HASURA_GRAPHQL_ENDPOINT: http://hasura:8080/v1/metadata
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET:?Set HASURA_ADMIN_SECRET}
+    depends_on:
+      postgres: {condition: service_healthy}
+      hasura: {condition: service_started}
+  hasura:
+    image: hasura/graphql-engine:v2.48.6
+    restart: unless-stopped
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://pong_indexer:${INDEXER_DB_PASSWORD}@postgres:5432/pong_indexer
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_ADMIN_SECRET:?Set HASURA_ADMIN_SECRET}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup,http-log,webhook-log,websocket-log
+    depends_on:
+      postgres: {condition: service_healthy}
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+    ports: [80:80,443:443]
+    environment:
+      PONG_DOMAIN: ${PONG_DOMAIN:?Set PONG_DOMAIN}
+    volumes: [./ops/Caddyfile:/etc/caddy/Caddyfile:ro,caddy-data:/data,caddy-config:/config]
+    depends_on: [web,relayer]
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

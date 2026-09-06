@@ -1,0 +1,1635 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import {
+  decodeAbiParameters,
+  encodeFunctionData,
+  formatEther,
+  keccak256,
+  parseEther,
+  toHex,
+  createWalletClient,
+  createPublicClient,
+  defineChain,
+  http,
+  type Hex,
+  type Address,
+} from "viem";
+import { Court } from "./Court";
+import {
+  api,
+  API,
+  WS,
+  relay,
+  waitJob,
+  stateFromJson,
+  short,
+  type Config,
+} from "../lib/api";
+import {
+  connect,
+  localIdentity,
+  gameSession,
+  type Identity,
+} from "../lib/wallet";
+import {
+  domain,
+  joinTypes,
+  inputTypes,
+  betTypes,
+  actionTypes,
+  sessionTypes,
+  enterTypes,
+  withdrawTypes,
+  queueMessage,
+  cancelQueueMessage,
+} from "../../shared/protocol";
+import { type State, stateComponents, advance } from "../../shared/physics";
+import { gameAbi, marketAbi, tournamentsAbi } from "../../shared/abis";
+
+const tabs = ["Play", "Live", "Ladder", "Tournaments", "Archive"];
+const money = (value: unknown) =>
+  Number(formatEther(BigInt(String(value || 0)))).toFixed(4);
+export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
+  const [tab, setTab] = useState(initialTab),
+    [config, setConfig] = useState<Config | null>(null),
+    [account, setAccount] = useState(""),
+    [player, setPlayer] = useState<any>(null);
+  const [items, setItems] = useState<any[]>([]),
+    [selected, setSelected] = useState<string | null>(null),
+    [match, setMatch] = useState<any>(null),
+    [state, setState] = useState<State | null>(null);
+  const [head, setHead] = useState(0n),
+    [clock, setClock] = useState(0n),
+    [observedAt, setObservedAt] = useState(Date.now()),
+    [connected, setConnected] = useState(false);
+  const [message, setMessage] = useState(
+      "Connect a passkey to enter the arena.",
+    ),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [queued, setQueued] = useState(false),
+    [direction, setDirection] = useState(0);
+  const [fundingWarning, setFundingWarning] = useState("");
+  const [fps, setFps] = useState(0),
+    [predicted, setPredicted] = useState(false),
+    [correction, setCorrection] = useState(0),
+    [showConnect, setShowConnect] = useState(false);
+  const [ladder, setLadder] = useState<any[]>([]),
+    [tournaments, setTournaments] = useState<any[]>([]),
+    [alerts, setAlerts] = useState<any[]>([]);
+  const [shares, setShares] = useState("0.001"),
+    [odds, setOdds] = useState<any>(null),
+    [frames, setFrames] = useState<any[]>([]),
+    [frameIndex, setFrameIndex] = useState(0),
+    [replayPlaying, setReplayPlaying] = useState(false);
+  const [tournamentId, setTournamentId] = useState("0"),
+    [withdrawAmount, setWithdrawAmount] = useState("0.001"),
+    [recipient, setRecipient] = useState("");
+  const [capacity, setCapacity] = useState("8"),
+    [fee, setFee] = useState("0"),
+    [prize, setPrize] = useState("0.01"),
+    [minutes, setMinutes] = useState("30"),
+    [attachTid, setAttachTid] = useState(""),
+    [attachSlot, setAttachSlot] = useState("0");
+  const owner = useRef<Identity | null>(null),
+    session = useRef<ReturnType<typeof gameSession> | null>(null),
+    secret = useRef<Hex | null>(null),
+    readyRoom = useRef(""),
+    revealSent = useRef("");
+  const ownerOpen = useRef(false);
+  const clockOffset = useRef(0);
+  const nowSeconds = () => Math.floor((Date.now() + clockOffset.current) / 1000);
+  const operationBusy = useRef(false), identityVersion = useRef(0), queueTicket = useRef("");
+  const [inputLatency, setInputLatency] = useState<number | null>(null);
+  const [archive, setArchive] = useState<any[]>([]),
+    [moreHistory, setMoreHistory] = useState(false);
+  async function loadHistory(more = false) {
+    const previous = more ? archive : [];
+    const before = previous.at(-1)?.block;
+    const data = await api("/history" + (before ? `?before=${before}` : ""));
+    setArchive([...previous, ...data.Match]);
+    setMoreHistory(data.Match.length === 100);
+  }
+  useEffect(() => {
+    if (tab === "Archive") void loadHistory().catch((e) => setError(e.message));
+  }, [tab]);
+  const visibleItems =
+    tab === "Archive"
+      ? archive.map((m) => ({
+          ...m,
+          state: items.find((i) => i.id === m.id)?.state,
+        }))
+      : items;
+  const view = useRef({
+    config,
+    account,
+    selected,
+    match,
+    head,
+    tab,
+    direction,
+  });
+  view.current = { config, account, selected, match, head, tab, direction };
+  const lastState = useRef<State | null>(null),
+    lastDirection = useRef(0),
+    inputBusy = useRef(false),
+    sessionMatch = useRef("");
+  const side =
+    match && account
+      ? match.playerA.toLowerCase() === account.toLowerCase()
+        ? 0
+        : match.playerB.toLowerCase() === account.toLowerCase()
+          ? 1
+          : -1
+      : -1;
+  async function act(fn: () => Promise<void>) {
+    if (operationBusy.current) return;
+    operationBusy.current = true;
+    setError("");
+    setBusy(true);
+    try {
+      await fn();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      operationBusy.current = false;
+      setBusy(false);
+    }
+  }
+  async function refreshPlayer(address = account) {
+    if (address) {
+      const data = await api(`/player/${address}`);
+      if (owner.current?.account.address.toLowerCase() === address.toLowerCase()) setPlayer(data);
+    }
+  }
+  useEffect(() => {
+    if (account && match?.status >= 3)
+      void refreshPlayer().catch((e) => setError(e.message));
+  }, [account, selected, match?.status]);
+  async function signingOwner() {
+    if (!owner.current) throw new Error("Connect your passkey first");
+    if (!owner.current.local && !ownerOpen.current) {
+      const restored = await connect();
+      if (restored.account.address.toLowerCase() !== account.toLowerCase()) {
+        restored.end();
+        throw new Error("Choose the passkey for the connected account.");
+      }
+      owner.current = restored;
+      ownerOpen.current = true;
+    }
+    return owner.current;
+  }
+  function closeOwner() {
+    if (owner.current && !owner.current.local) {
+      owner.current.end();
+      ownerOpen.current = false;
+    }
+  }
+  async function login(kind: "create" | "restore" | "local" | "operator") {
+    const identity =
+      kind === "local" || kind === "operator"
+        ? localIdentity(kind === "operator")
+        : await connect(kind === "create");
+    identityVersion.current++;
+    session.current?.end();
+    session.current = null;
+    secret.current = null;
+    sessionMatch.current = "";
+    readyRoom.current = "";
+    revealSent.current = "";
+    queueTicket.current = "";
+    lastDirection.current = 0;
+    lastState.current = null;
+    setQueued(false);
+    setDirection(0);
+    setTournamentId("0");
+    setPlayer(null);
+    setSelected(null);
+    setMatch(null);
+    setState(null);
+    owner.current?.end();
+    owner.current = identity;
+    ownerOpen.current = true;
+    setAccount(identity.account.address);
+    setRecipient(identity.account.address);
+    setShowConnect(false);
+    setMessage(
+      identity.local
+        ? "Local test account — Anvil only."
+        : "Passkey connected. Ready to play.",
+    );
+    await refreshPlayer(identity.account.address);
+    const all = await api("/matches");
+    const active = all.matches.find((m:any)=>m.status === 2 && [m.playerA,m.playerB].some((p:string)=>p.toLowerCase()===identity.account.address.toLowerCase()));
+    if (active && owner.current === identity) { setSelected(active.id); setTab("Play"); }
+
+  }
+  useEffect(() => {
+    let stop = false;
+    let socket: WebSocket | undefined;
+    let reconnect: ReturnType<typeof setTimeout>;
+    const load = async () => {
+      try {
+        const c = await api<Config>("/config");
+        if (!stop) { clockOffset.current = c.serverTimeMs - Date.now(); setConfig(c); }
+        const all = await api("/matches");
+        const health = await api("/health");
+        if (!stop) setFundingWarning(health.queueError || "");
+        if (!stop) {
+          setItems(all.matches.sort((a:any,b:any)=>Number(b.id)-Number(a.id)));
+          setHead(BigInt(all.head));
+        }
+      } catch {
+        if (!stop)
+          setMessage(
+            "Connection interrupted. Reconnecting to the arena...",
+          );
+      }
+    };
+    void load();
+    const open = () => {
+      if (stop) return;
+      socket = new WebSocket(WS);
+      socket.onopen = () => {
+        setConnected(true);
+        void load();
+      };
+      socket.onclose = () => {
+        setConnected(false);
+        if (!stop) reconnect = setTimeout(open, 2000);
+      };
+      socket.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.head) setHead(BigInt(data.head));
+        if (data.type === "match") {
+          setItems((old) =>
+            [
+              { id: String(data.id), ...data.match },
+              ...old.filter((m) => m.id !== String(data.id)),
+            ].sort((a, b) => Number(b.id) - Number(a.id)),
+          );
+          if (
+            String(data.id) === view.current.selected &&
+            view.current.tab !== "Archive"
+          )
+            applyMatch(data);
+        }
+      };
+    };
+    open();
+    const poll = setInterval(() => {
+      void load();
+    }, 15000);
+    return () => {
+      stop = true;
+      clearInterval(poll);
+      clearTimeout(reconnect);
+      socket?.close();
+      owner.current?.end();
+      session.current?.end();
+    };
+  }, []);
+  function applyMatch(data: any) {
+    const s = stateFromJson(data.match.state);
+    const playable =
+      Number(data.match.status) >= 2 && s.vx !== 0n && s.vy !== 0n;
+    if (playable && lastState.current && s.t >= lastState.current.t) {
+      const expected = advance(lastState.current, s.t)[0];
+      setCorrection(
+        Math.max(
+          Math.abs(Number(expected.x - s.x)),
+          Math.abs(Number(expected.y - s.y)),
+        ) / 1e6,
+      );
+    }
+    lastState.current = playable ? s : null;
+    setMatch(data.match);
+    setState(playable ? s : null);
+    setClock(BigInt(data.clock));
+    setObservedAt(data.observedAt ? data.observedAt - clockOffset.current : Date.now());
+  }
+  useEffect(() => {
+    if (selected && tab !== "Archive")
+      void api(`/matches/${selected}`)
+        .then(applyMatch)
+        .catch((e) => setError(e.message));
+  }, [selected, tab]);
+  useEffect(() => {
+    if (!showConnect) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const modal = document.querySelector(".connect-modal")!;
+    const controls = () =>
+      Array.from(
+        modal.querySelectorAll<HTMLElement>(
+          "button:not(:disabled),a[href],input",
+        ),
+      );
+    controls()[0]?.focus();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowConnect(false);
+      if (e.key === "Tab") {
+        const list = controls();
+        const first = list[0],
+          last = list.at(-1);
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => {
+      document.removeEventListener("keydown", handler);
+      previous?.focus();
+    };
+  }, [showConnect]);
+  useEffect(() => {
+    if (tab === "Ladder")
+      void api("/leaderboard")
+        .then((d) => setLadder(d.Player))
+        .catch((e) => setError(e.message));
+    if (tab === "Tournaments")
+      void api("/tournaments")
+        .then((d) => setTournaments(d.tournaments))
+        .catch((e) => setError(e.message));
+    if (tab === "Admin" && player?.admin)
+      void api("/alerts")
+        .then((d) => setAlerts(d.Alert))
+        .catch((e) => setError(e.message));
+  }, [tab, player?.admin]);
+  useEffect(() => {
+    if (!queued || !account || !config) return;
+    let cancelled = false;
+    const tick = async () => {
+      if (operationBusy.current || cancelled) return;
+      operationBusy.current = true;
+      try {
+        const room = await api(`/queue/${account}`);
+        if (cancelled) return;
+        if (!room.id) {
+          if (!room.waiting) { queueTicket.current = ""; setQueued(false); setMessage("Search expired or opponent cancelled. You can search again."); }
+          return;
+        }
+        if (room.id !== readyRoom.current) {
+          readyRoom.current = room.id;
+          session.current?.end();
+          session.current = gameSession();
+          secret.current = toHex(crypto.getRandomValues(new Uint8Array(32)));
+          setBusy(true);
+          const own = await signingOwner();
+          const info = await api(`/player/${account}`);
+          const opponent =
+            room.player_a === account.toLowerCase()
+              ? room.player_b
+              : room.player_a;
+          const now = nowSeconds();
+          const join = {
+            player: account as Address,
+            opponent: opponent as Address,
+            roomId: room.id as Hex,
+            commitment: keccak256(secret.current),
+            sessionKey: session.current.account.address,
+            nonce: BigInt(info.gameNonce),
+            deadline: BigInt(now + 150),
+            sessionExpiry: BigInt(now + 3600),
+            maxInputs: 12000,
+            tournamentId: BigInt(room.tournament_id),
+          };
+          const signature = await own.account.signTypedData({
+            domain: domain("PONG", config.chainId, config.game),
+            types: joinTypes,
+            primaryType: "Join",
+            message: join,
+          });
+          await api("/ready", { join, signature });
+          closeOwner();
+          setMessage("Opponent found. Waiting for onchain confirmation.");
+        }
+        if (room.job_id) {
+          const job = await api(`/jobs/${room.job_id}`);
+          if (job.status === "failed")
+            throw new Error(job.error || "Match creation failed");
+        }
+        if (room.match_id && revealSent.current !== room.match_id) {
+          revealSent.current = room.match_id;
+          sessionMatch.current = room.match_id;
+          setSelected(room.match_id);
+          await relay({
+            contract: "game",
+            functionName: "reveal",
+            args: [room.match_id, account, secret.current],
+          });
+          setQueued(false);
+          queueTicket.current = "";
+          setMessage("Session active. W / S or ↑ / ↓ to move.");
+          setTab("Play");
+        }
+      } catch (e) {
+        setError((e as Error).message);
+        setQueued(false);
+      } finally {
+        operationBusy.current = false;
+        setBusy(false);
+      }
+    };
+    const timer = setInterval(() => void tick(), 1000);
+    void tick();
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [queued, account, config]);
+  useEffect(() => {
+    const keys = new Set<string>();
+    const update = () =>
+      setDirection(
+        keys.has("ArrowUp") || keys.has("w") || keys.has("W")
+          ? -1
+          : keys.has("ArrowDown") || keys.has("s") || keys.has("S")
+            ? 1
+            : 0,
+      );
+    const down = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).matches("input,textarea,select")) return;
+      if (["ArrowUp", "ArrowDown", "w", "s", "W", "S"].includes(e.key)) {
+        e.preventDefault();
+        keys.add(e.key);
+        update();
+      }
+    };
+    const up = (e: KeyboardEvent) => {
+      keys.delete(e.key);
+      update();
+    };
+    const blur = () => {
+      keys.clear();
+      setDirection(0);
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", blur);
+    };
+  }, []);
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      const v = view.current;
+      if (
+        inputBusy.current ||
+        !v.config ||
+        !session.current ||
+        !v.match ||
+        v.match.status !== 2 ||
+        v.selected !== sessionMatch.current ||
+        v.direction === lastDirection.current
+      )
+        return;
+      const slot =
+        v.match.playerA.toLowerCase() === v.account.toLowerCase()
+          ? v.match.a
+          : v.match.b;
+      if (
+        slot.key.toLowerCase() !== session.current.account.address.toLowerCase()
+      )
+        return;
+      inputBusy.current = true;
+      const generation = identityVersion.current;
+      const dir = v.direction;
+      const submittedAt = performance.now();
+      try {
+        const input = {
+          matchId: BigInt(v.selected!),
+          player: v.account as Address,
+          direction: dir,
+          nonce: BigInt(slot.nonce) + 1n,
+          observedBlock: v.head,
+          validUntilBlock: v.head + 16n,
+        };
+        const signature = await session.current.account.signTypedData({
+          domain: domain("PONG", v.config.chainId, v.config.game),
+          types: inputTypes,
+          primaryType: "Input",
+          message: input,
+        });
+        await relay({
+          contract: "game",
+          functionName: "submitInput",
+          args: [input, signature],
+        });
+        if (generation !== identityVersion.current) return;
+        setInputLatency(Math.round(performance.now() - submittedAt));
+        lastDirection.current = dir;
+        const latest = await api(`/matches/${v.selected}`);
+        if (generation === identityVersion.current && view.current.selected === v.selected) applyMatch(latest);
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        inputBusy.current = false;
+      }
+    }, 80);
+    return () => clearInterval(timer);
+  }, []);
+  async function joinQueue() {
+    if (!account) {
+      setShowConnect(true);
+      return;
+    }
+    const own = await signingOwner();
+    const expires = nowSeconds() + 300;
+    const signature = await own.account.signMessage({
+      message: queueMessage(account, expires, tournamentId),
+    });
+    readyRoom.current = "";
+    revealSent.current = "";
+    lastDirection.current = 0;
+    await api("/queue", { player: account, expires, signature, tournamentId });
+    queueTicket.current = keccak256(signature);
+    setQueued(true);
+    setMessage("Finding an opponent. Both players approve the same match.");
+  }
+  async function cancelQueue() {
+    if (!config || !queueTicket.current) return;
+    const own = await signingOwner();
+    const expires = Math.floor(Date.now()/1000)+120;
+    const ticket = queueTicket.current;
+    const signature = await own.account.signMessage({message:cancelQueueMessage(account,ticket,expires,config.chainId,config.game)});
+    closeOwner();
+    const result = await api("/queue/cancel",{player:account,ticket,expires,signature});
+    if (!result.cancelled) {
+      setQueued(true);
+      setMessage("Match creation already submitted. Wait for confirmation, then use Concede to leave.");
+      return;
+    }
+    setQueued(false);
+    queueTicket.current = "";
+    readyRoom.current = "";
+    revealSent.current = "";
+    session.current?.end();
+    session.current = null;
+    secret.current = null;
+    setMessage("Search cancelled. Ready when you are.");
+  }
+  async function restoreSession() {
+    if (!config || !selected) return;
+    const own = await signingOwner();
+    const info = await api(`/player/${account}`);
+    session.current?.end();
+    session.current = gameSession();
+    const now = nowSeconds();
+    const m = {
+      player: account as Address,
+      matchId: BigInt(selected),
+      sessionKey: session.current.account.address,
+      expiry: BigInt(now + 3600),
+      maxInputs: 12000,
+      nonce: BigInt(info.gameNonce),
+      deadline: BigInt(now + 120),
+    };
+    const signature = await own.account.signTypedData({
+      domain: domain("PONG", config.chainId, config.game),
+      types: sessionTypes,
+      primaryType: "Session",
+      message: m,
+    });
+    closeOwner();
+    await relay({
+      contract: "game",
+      functionName: "authorizeSession",
+      args: [
+        selected,
+        account,
+        m.sessionKey,
+        m.expiry,
+        m.maxInputs,
+        m.nonce,
+        m.deadline,
+        signature,
+      ],
+    });
+    sessionMatch.current = selected;
+    lastDirection.current = 0;
+    setMessage("Game session restored.");
+  }
+  async function playerAction(action: number) {
+    if (!config || !selected) return;
+    const own = await signingOwner();
+    const info = await api(`/player/${account}`);
+    const m = {
+      player: account as Address,
+      matchId: BigInt(selected),
+      action,
+      nonce: BigInt(info.gameNonce),
+      deadline: BigInt(nowSeconds() + 120),
+    };
+    const sig = await own.account.signTypedData({
+      domain: domain("PONG", config.chainId, config.game),
+      types: actionTypes,
+      primaryType: "GameAction",
+      message: m,
+    });
+    closeOwner();
+    await relay({
+      contract: "game",
+      functionName: "playerAction",
+      args: [account, selected, action, m.nonce, m.deadline, sig],
+    });
+    session.current?.end();
+    session.current = null;
+    setMessage(action === 1 ? "Session revoked." : "Match conceded.");
+  }
+  async function credits() {
+    const own = await signingOwner();
+    const expires = nowSeconds() + 300;
+    const signature = await own.account.signMessage({
+      message: `PONG test credits\nPlayer: ${account.toLowerCase()}\nExpires: ${expires}`,
+    });
+    closeOwner();
+    const job = await api("/faucet", { player: account, expires, signature });
+    await waitJob(job.id);
+    await refreshPlayer();
+    setMessage("Test MON credited to your vault.");
+  }
+  useEffect(() => {
+    if (!selected || !match || match.status !== 2 || side >= 0) {
+      setOdds(null);
+      return;
+    }
+    const load = () =>
+      api("/quote", {
+        matchId: selected,
+        side: 0,
+        shares: parseEther("0.00001").toString(),
+      })
+        .then(setOdds)
+        .catch(() => setOdds(null));
+    void load();
+    const t = setInterval(() => void load(), 2000);
+    return () => clearInterval(t);
+  }, [selected, match?.status, side]);
+  async function bet(betSide: number) {
+    if (!config || !selected) return;
+    if (!account) {
+      setShowConnect(true);
+      return;
+    }
+    const own = await signingOwner();
+    const info = await api(`/player/${account}`);
+    const quantity = parseEther(shares);
+    setMessage("Waiting for a fresh betting window...");
+    let quote;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      quote = await api("/quote", { matchId: selected, side: betSide, shares: quantity.toString() });
+      if (quote.open && BigInt(quote.remainingUs) >= 1400000n) break;
+      await new Promise(r => setTimeout(r, 400));
+    }
+    if (!quote?.open || BigInt(quote.remainingUs) < 1400000n) throw new Error("No safe betting window available. Try again during the next rally.");
+    const m = {
+      player: account as Address,
+      matchId: BigInt(selected),
+      side: betSide,
+      shares: quantity,
+      maxCost: (BigInt(quote.amount) * 101n) / 100n,
+      version: BigInt(quote.version),
+      nonce: BigInt(info.marketNonce),
+      deadline: BigInt(nowSeconds() + 20),
+    };
+    const sig = await own.account.signTypedData({
+      domain: domain("PONG Market", config.chainId, config.market),
+      types: betTypes,
+      primaryType: "Bet",
+      message: m,
+    });
+    closeOwner();
+    await relay({ contract: "market", functionName: "buy", args: [m, sig] });
+    await refreshPlayer();
+    setMessage("Bet confirmed onchain.");
+  }
+  async function withdraw() {
+    if (!config) return;
+    const own = await signingOwner();
+    const info = await api(`/player/${account}`);
+    const m = {
+      player: account as Address,
+      recipient: recipient as Address,
+      amount: parseEther(withdrawAmount),
+      nonce: BigInt(info.vaultNonce),
+      deadline: BigInt(nowSeconds() + 120),
+    };
+    const sig = await own.account.signTypedData({
+      domain: domain("PONG Vault", config.chainId, config.vault),
+      types: withdrawTypes,
+      primaryType: "Withdraw",
+      message: m,
+    });
+    closeOwner();
+    await relay({
+      contract: "vault",
+      functionName: "withdraw",
+      args: [account, recipient, m.amount, m.nonce, m.deadline, sig],
+    });
+    await refreshPlayer();
+    setMessage("Withdrawal confirmed.");
+  }
+  async function registerTournament(id: string) {
+    if (!config) return;
+    const own = await signingOwner();
+    const info = await api(`/player/${account}`);
+    const m = {
+      player: account as Address,
+      tournamentId: BigInt(id),
+      nonce: BigInt(info.tournamentNonce),
+      deadline: BigInt(nowSeconds() + 120),
+    };
+    const sig = await own.account.signTypedData({
+      domain: domain("PONG Tournaments", config.chainId, config.tournaments),
+      types: enterTypes,
+      primaryType: "Enter",
+      message: m,
+    });
+    closeOwner();
+    await relay({
+      contract: "tournaments",
+      functionName: "enter",
+      args: [id, account, m.nonce, m.deadline, sig],
+    });
+    setTournaments((await api("/tournaments")).tournaments);
+    await refreshPlayer();
+  }
+  async function loadReplay(id: string) {
+    setReplayPlaying(false);
+    setSelected(id);
+    setTab("Archive");
+    setMessage("Loading confirmed events from Envio…");
+    const m = await api(`/matches/${id}`);
+    setMatch(m.match);
+    let after = "0";
+    const result = [];
+    for (let page = 0; page < 100; page++) {
+      const data = await api(`/replay/${id}?after=${after}`);
+      result.push(...data.Frame);
+      if (data.Frame.length < 1000) break;
+      after = data.Frame.at(-1).version;
+    }
+    if (!result.length)
+      throw new Error("No indexed replay yet. Check Envio synchronization.");
+    setFrames(result);
+    setFrameIndex(0);
+    showFrame(result[0]);
+    setMessage(
+      `${result.length} confirmed snapshots. Replay follows the match clock.`,
+    );
+  }
+  function showFrame(frame: any) {
+    const [decoded] = decodeAbiParameters(
+      [{ type: "tuple", components: stateComponents }],
+      frame.state,
+    );
+    const s = stateFromJson(decoded);
+    setState(s);
+    setClock(s.t);
+    setObservedAt(Date.now());
+  }
+  useEffect(() => {
+    if (!replayPlaying || !frames.length || tab !== "Archive") return;
+    let index = frameIndex;
+    if (index >= frames.length - 1) {
+      index = 0;
+      showFrame(frames[0]);
+      setFrameIndex(0);
+    }
+    const initial = BigInt(frames[index].clock);
+    const started = performance.now();
+    const timer = setInterval(() => {
+      const target =
+        initial + BigInt(Math.floor((performance.now() - started) * 1000));
+      while (
+        index + 1 < frames.length &&
+        BigInt(frames[index + 1].clock) <= target
+      ) {
+        index++;
+        showFrame(frames[index]);
+        setFrameIndex(index);
+      }
+      setClock(target);
+      if (index === frames.length - 1) setReplayPlaying(false);
+    }, 16);
+    return () => clearInterval(timer);
+  }, [replayPlaying, frames, tab]);
+  async function adminCall(
+    target: "game" | "market" | "tournaments",
+    fn: string,
+    args: unknown[],
+    value = 0n,
+  ) {
+    if (!config || !player?.admin)
+      throw new Error("Onchain admin role required");
+    const own = await signingOwner();
+    const chain = defineChain({
+      id: config.chainId,
+      name: "PONG test network",
+      nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
+      rpcUrls: { default: { http: [API + "/rpc"] } },
+    });
+    const client = createWalletClient({
+      account: own.account,
+      chain,
+      transport: http(API + "/rpc"),
+    });
+    const abi =
+      target === "game"
+        ? gameAbi
+        : target === "market"
+          ? marketAbi
+          : tournamentsAbi;
+    const data = encodeFunctionData({
+      abi,
+      functionName: fn as never,
+      args: args as never,
+    });
+    const hash = await client.sendTransaction({
+      to: config[target],
+      data,
+      value,
+    });
+    closeOwner();
+    setMessage(`Admin transaction submitted: ${hash}`);
+    const reader = createPublicClient({ chain, transport: http(API + "/rpc"), pollingInterval: 500 });
+    const receipt = await reader.waitForTransactionReceipt({ hash, confirmations: config.chainId === 10143 ? 5 : 1 });
+    if (receipt.status !== "success") throw new Error("Admin transaction reverted. Refresh before retrying.");
+    setMessage(`Admin transaction confirmed: ${hash}`);
+
+  }
+  const scoreA = state?.scoreA ?? 0,
+    scoreB = state?.scoreB ?? 0;
+  return (
+    <main>
+      <header className="topbar">
+        <a className="brand" href="/" aria-label="PONGIT home">
+          <svg className="brand-mark" viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M8 8h6v30H8zm42 18h6v30h-6zM28 28h8v8h-8z"/><path d="M19 44 43 20" stroke="currentColor" strokeWidth="2" strokeDasharray="3 5"/></svg>
+          PONGIT
+          <span className="brand-sub">ONCHAIN ARCADE / 001</span>
+        </a>
+        <div className="top-right">
+          <span className="network">
+            <span className={connected ? "dot pulse" : "dot"} />
+            {config?.chainId === 31337 ? "LOCAL CHAIN" : "MONAD TESTNET"}
+          </span>
+          <button disabled={!config || busy || queued} onClick={() => setShowConnect(true)}>
+            {account ? short(account) : "Connect passkey"} <span>↗</span>
+          </button>
+        </div>
+      </header>
+      <nav aria-label="Main navigation">
+        {tabs.map((t) => (
+          <button
+            className={tab === t ? "active" : ""}
+            key={t}
+            onClick={() => {
+              setTab(t);
+              setError("");
+            }}
+          >
+            {t}
+            {t === "Live" && (
+              <small>
+                {items
+                  .filter((m) => m.status === 2)
+                  .length.toString()
+                  .padStart(2, "0")}
+              </small>
+            )}
+          </button>
+        ))}
+        {player?.admin && (
+          <button
+            className={tab === "Admin" ? "active" : ""}
+            onClick={() => setTab("Admin")}
+          >
+            Admin
+          </button>
+        )}
+        <span className="nav-note">EVERY POINT HAS A RECEIPT.</span>
+      </nav>
+      <section className="page-heading">
+        <div>
+          <p className="eyebrow">
+            {tab === "Archive"
+              ? "CHAIN MEMORY"
+              : tab === "Admin"
+                ? "CONTROL ROOM"
+                : "A GAME OF ANGLES. A RECORD OF EVERYTHING."}
+          </p>
+          <h1>
+            {tab === "Play"
+              ? "The arena."
+              : tab === "Live"
+                ? "Watch it happen."
+                : tab === "Ladder"
+                  ? "The ladder."
+                  : tab === "Tournaments"
+                    ? "Raise the stakes."
+                    : tab === "Archive"
+                      ? "Nothing lost."
+                      : "Operator console."}
+          </h1>
+        </div>
+        <div className="heading-meta">
+          <span>{connected ? "● CONNECTED" : "○ OFFLINE"}</span>
+          <span>BLOCK {head ? head.toLocaleString() : "—"}</span>
+        </div>
+      </section>
+      {fundingWarning && <p className="notice" role="status">Sponsorship: {fundingWarning}</p>}
+      {!["Play", "Live", "Archive"].includes(tab) && <p className="status-line" role="status">{message}</p>}
+      {error && (
+        <div className="notice error" role="alert">
+          {error}
+          <button aria-label="Dismiss error" onClick={() => setError("")}>
+            ×
+          </button>
+        </div>
+      )}
+      {(tab === "Play" || tab === "Live" || tab === "Archive") && (
+        <div className="arena-grid">
+          <section className="game-panel">
+            <div className="match-bar">
+              <span>
+                ARENA {selected ? selected.padStart(3, "0") : "—"}{" "}
+                <b>
+                  {tab === "Archive"
+                    ? "REPLAY"
+                    : match?.status === 2
+                      ? "IN PLAY"
+                      : match?.status === 3
+                        ? "FINAL"
+                        : match?.status === 4
+                          ? "CANCELLED"
+                          : "STANDBY"}
+                </b>
+              </span>
+              <span>
+                {side >= 0
+                  ? `YOU / ${side === 0 ? "LEFT" : "RIGHT"}`
+                  : "SPECTATOR VIEW"}
+              </span>
+            </div>
+            <div className="scoreboard">
+              <div>
+                <small>PLAYER 01</small>
+                <strong>
+                  {match ? short(match.playerA) : "Awaiting player"}
+                </strong>
+              </div>
+              <div className="score">
+                <span>{scoreA.toString().padStart(2, "0")}</span>
+                <i>:</i>
+                <span>{scoreB.toString().padStart(2, "0")}</span>
+              </div>
+              <div className="right">
+                <small>PLAYER 02</small>
+                <strong>
+                  {match ? short(match.playerB) : "Awaiting player"}
+                </strong>
+              </div>
+            </div>
+            <div className="court-wrap">
+              <Court
+                state={state}
+                clock={clock}
+                observedAt={observedAt}
+                direction={direction}
+                side={tab === "Archive" ? -1 : side}
+                replay={tab === "Archive"}
+                onStats={(f, p) => {
+                  setFps(f);
+                  setPredicted(p);
+                }}
+              />
+              {!state && (
+                <div className="court-empty">
+                  <p>
+                    TWO PADDLES.
+                    <br />
+                    ONE SHARED TRUTH.
+                  </p>
+                  <span>
+                    {config
+                      ? "Ready when you are."
+                      : "Waiting for the game service."}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="court-footer">
+              <span>FIRST TO 07</span>
+              <span>
+                {tab === "Archive"
+                  ? "CONFIRMED REPLAY"
+                  : predicted
+                    ? "EXTRAPOLATING"
+                    : "CONFIRMED STATE"}{" "}
+                {correction > 8
+                  ? `/ CORRECTION ${correction.toFixed(0)}px`
+                  : ""}
+              </span>
+              <span title="Input request to confirmed receipt, including queue and polling">
+                {inputLatency === null ? "" : inputLatency + " ms INPUT / "}
+                {fps || "—"} FPS
+              </span>
+            </div>
+            {tab === "Archive" && frames.length > 0 ? (
+              <div className="replay-controls">
+                <button onClick={() => setReplayPlaying(!replayPlaying)}>
+                  {replayPlaying ? "Pause" : "Play"} replay
+                </button>
+                <input
+                  aria-label="Replay position"
+                  type="range"
+                  min="0"
+                  max={frames.length - 1}
+                  value={frameIndex}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setFrameIndex(n);
+                    showFrame(frames[n]);
+                  }}
+                />
+                <span>
+                  {frameIndex + 1}/{frames.length}
+                </span>
+              </div>
+            ) : (
+              <div className="controls">
+                <div>
+                  <kbd>W</kbd>
+                  <kbd>S</kbd>
+                  <span>or</span>
+                  <kbd>↑</kbd>
+                  <kbd>↓</kbd>
+                  <span>move your paddle</span>
+                </div>
+                <div className="touch-controls">
+                  <button
+                    aria-label="Move up"
+                    onPointerDown={(e) => {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                      setDirection(-1);
+                    }}
+                    onPointerUp={() => setDirection(0)}
+                    onPointerCancel={() => setDirection(0)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    aria-label="Move down"
+                    onPointerDown={(e) => {
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                      setDirection(1);
+                    }}
+                    onPointerUp={() => setDirection(0)}
+                    onPointerCancel={() => setDirection(0)}
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="status-line" role="status">
+              {busy ? "Working… " : ""}
+              {message}
+            </div>
+          </section>
+          <aside>
+            <section className="side-card">
+              <p className="eyebrow">
+                {side >= 0 && match?.status === 2 ? "YOUR SESSION" : "NEXT UP"}
+              </p>
+              <h2>
+                {queued
+                  ? "Finding your match."
+                  : side >= 0 && match?.status === 2
+                    ? "You’re in."
+                    : "Take your side."}
+              </h2>
+              <p>
+                {side >= 0
+                  ? "Only paddle movements are delegated. Your funds require a separate signature."
+                  : "A passkey. An opponent. Seven points. Gas is on us."}
+              </p>
+              {side >= 0 && match?.status === 2 ? (
+                <>
+                  <button
+                    className="primary"
+                    disabled={busy}
+                    onClick={() => void act(restoreSession)}
+                  >
+                    Restore game session ↗
+                  </button>
+                  <div className="split">
+                    <button
+                      disabled={busy}
+                      onClick={() => void act(() => playerAction(1))}
+                    >
+                      Revoke
+                    </button>
+                    <button
+                      disabled={busy}
+                      onClick={() => void act(() => playerAction(2))}
+                    >
+                      Concede
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <button
+                  className="primary"
+                  disabled={busy || queued || !config}
+                  onClick={() => void act(joinQueue)}
+                >
+                  {queued
+                    ? "Searching…"
+                    : account
+                      ? "Find an opponent"
+                      : "Connect & play"}{" "}
+                  <span>↗</span>
+                </button>
+              )}
+              {queueTicket.current && <button disabled={busy} onClick={() => void act(cancelQueue)}>Cancel search</button>}
+              {tournamentId !== "0" && <button disabled={busy || queued} onClick={() => { setTournamentId("0"); setMessage("Open matchmaking selected."); }}>Return to open matchmaking</button>}
+              <dl>
+                <div>
+                  <dt>YOUR RATING</dt>
+                  <dd>{player?.rating?.elo || "—"}</dd>
+                </div>
+                <div>
+                  <dt>GAS COST TO PLAY</dt>
+                  <dd>0 MON</dd>
+                </div>
+                <div>
+                  <dt>SESSION</dt>
+                  <dd>{session.current ? "MEMORY ONLY" : "NOT ACTIVE"}</dd>
+                </div>
+              </dl>
+            </section>
+            <section className="side-card market-card">
+              <div className="card-title">
+                <p className="eyebrow">LIVE MARKET</p>
+                <span>{odds?.open ? "OPEN" : "LOCKED"}</span>
+              </div>
+              <h2>Back your read.</h2>
+              <p>
+                {side >= 0
+                  ? "Players cannot bet on their own match."
+                  : "Binary market on the match winner. Test MON only."}
+              </p>
+              <div className="probability">
+                <span>
+                  {odds
+                    ? `${Math.min(100, (Number(odds.amount) / 1e13) * 100).toFixed(1)}%`
+                    : "—"}
+                </span>
+                <small>PLAYER 01 / INDICATIVE</small>
+              </div>
+              <label>
+                Shares (1 winning share = 1 MON)
+                <input
+                  inputMode="decimal"
+                  value={shares}
+                  onChange={(e) => setShares(e.target.value)}
+                />
+              </label>
+              <div className="split">
+                <button
+                  disabled={busy || side >= 0 || !odds || match?.status !== 2}
+                  onClick={() => void act(() => bet(0))}
+                >
+                  Back 01 ↗
+                </button>
+                <button
+                  disabled={busy || side >= 0 || !odds || match?.status !== 2}
+                  onClick={() => void act(() => bet(1))}
+                >
+                  Back 02 ↗
+                </button>
+              </div>
+              {selected && match?.status >= 3 && (
+                <button
+                  disabled={busy || !account}
+                  onClick={() =>
+                    void act(async () => {
+                      await relay({
+                        contract: "market",
+                        functionName: "claim",
+                        args: [selected, account],
+                      });
+                      await refreshPlayer();
+                      setMessage("Settlement credited to your vault.");
+                    })
+                  }
+                >
+                  Claim payout / refund
+                </button>
+              )}
+              <small className="muted">
+                Bets pause near collisions. Confirmation required.
+              </small>
+            </section>
+          </aside>
+        </div>
+      )}
+      {(tab === "Play" || tab === "Live" || tab === "Archive") && (
+        <section className="match-list">
+          <div className="section-title">
+            <h2>{tab === "Archive" ? "Match archive" : "Around the arena"}</h2>
+            <span>
+              {visibleItems.length.toString().padStart(2, "0")} MATCHES
+            </span>
+          </div>
+          {visibleItems.length ? (
+            <div className="rows">
+              {visibleItems.map((m) => (
+                <button
+                  key={m.id}
+                  className="match-row"
+                  data-match-id={m.id}
+                  onClick={() =>
+                    tab === "Archive"
+                      ? void act(() => loadReplay(m.id))
+                      : (setSelected(m.id), setTab("Live"))
+                  }
+                >
+                  <span className="row-id">#{m.id.padStart(3, "0")}</span>
+                  <span>
+                    {short(m.playerA)} <small>vs</small> {short(m.playerB)}
+                  </span>
+                  <strong>
+                    {m.state ? `${m.state.scoreA} : ${m.state.scoreB}` : "—"}
+                  </strong>
+                  <span>
+                    {["", "WAITING", "LIVE", "FINAL", "CANCELLED"][m.status]}
+                  </span>
+                  <span>↗</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="empty">
+              No matches yet. The first point is yours to make.
+            </div>
+          )}
+          {tab === "Archive" && moreHistory && (
+            <button
+              disabled={busy}
+              onClick={() => void act(() => loadHistory(true))}
+            >
+              Load older matches
+            </button>
+          )}
+        </section>
+      )}
+      {tab === "Ladder" && (
+        <section className="table-panel">
+          <div className="section-title">
+            <h2>Season standings</h2>
+            <span>VERIFIED RESULTS / ENVIO</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>ELO</th>
+                <th>Played</th>
+                <th>Wins</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ladder.map((p, i) => (
+                <tr key={p.id}>
+                  <td>{String(i + 1).padStart(2, "0")}</td>
+                  <td>{short(p.address)}</td>
+                  <td>{p.elo}</td>
+                  <td>{p.played}</td>
+                  <td>{p.wins}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!ladder.length && (
+            <div className="empty">
+              Standings appear after the first indexed result.
+            </div>
+          )}
+        </section>
+      )}
+      {tab === "Tournaments" && (
+        <>
+          <div className="tournament-grid">
+            {tournaments.map((t) => (
+              <section className="side-card" key={t.id}>
+                <p className="eyebrow">TOURNAMENT #{t.id}</p>
+                <h2>{t.capacity}-player bracket</h2>
+                <p>
+                  {t.entrants.length}/{t.capacity} registered · Entry{" "}
+                  {money(t.fee)} MON
+                </p>
+                <h3>{money(t.prize)} MON</h3>
+                <p>
+                  {
+                    [
+                      "",
+                      "Registration",
+                      "Round " + (Number(t.round) + 1),
+                      "Complete",
+                      "Cancelled",
+                    ][t.status]
+                  }
+                </p>
+                <div className="bracket">
+                  {t.bracket.map((p: string, i: number) => (
+                    <span key={i}>{short(p)}</span>
+                  ))}
+                </div>
+                <div className="split">
+                  <button
+                    disabled={busy || !account || t.status !== 1}
+                    onClick={() => void act(() => registerTournament(t.id))}
+                  >
+                    Register
+                  </button>
+                  <button
+                    disabled={busy || t.status !== 1}
+                    onClick={() =>
+                      void act(async () => {
+                        await relay({
+                          contract: "tournaments",
+                          functionName: "start",
+                          args: [t.id],
+                        });
+                        setTournaments((await api("/tournaments")).tournaments);
+                      })
+                    }
+                  >
+                    Start bracket
+                  </button>
+                </div>
+                <div className="split">
+                  <button
+                    disabled={busy || queued || !account || t.status !== 2 || !t.bracket.some((p: string) => p.toLowerCase() === account.toLowerCase())}
+                    onClick={() => {
+                      setTournamentId(t.id);
+                      setTab("Play");
+                      setMessage(
+                        `Queue scope: tournament #${t.id}. Pair with your bracket opponent.`,
+                      );
+                    }}
+                  >
+                    Play round ↗
+                  </button>
+                  <button
+                    disabled={busy || t.status !== 2}
+                    onClick={() =>
+                      void act(async () => {
+                        await relay({
+                          contract: "tournaments",
+                          functionName: "advance",
+                          args: [t.id],
+                        });
+                        setTournaments((await api("/tournaments")).tournaments);
+                      })
+                    }
+                  >
+                    Resolve round
+                  </button>
+                </div>
+                <button
+                  disabled={busy}
+                  onClick={() =>
+                    void act(async () => {
+                      await relay({
+                        contract: "tournaments",
+                        functionName: t.status === 4 ? "refund" : "cancel",
+                        args: t.status === 4 ? [t.id, account] : [t.id],
+                      });
+                      setTournaments((await api("/tournaments")).tournaments);
+                    })
+                  }
+                >
+                  {t.status === 4 ? "Claim entry refund" : "Cancel if expired"}
+                </button>
+              </section>
+            ))}
+          </div>
+          {!tournaments.length && (
+            <div className="empty">No tournaments scheduled.</div>
+          )}
+          <p className="muted">
+            Round matches attach to the bracket automatically after creation.
+            Resolve a round once every match has finished.
+          </p>
+        </>
+      )}
+      {tab === "Admin" &&
+        (player?.admin ? (
+          <div className="admin-grid">
+            <section className="side-card">
+              <h2>Create tournament</h2>
+              <label>
+                Capacity
+                <select
+                  value={capacity}
+                  onChange={(e) => setCapacity(e.target.value)}
+                >
+                  {[2, 4, 8, 16, 32].map((n) => (
+                    <option key={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Registration minutes
+                <input
+                  value={minutes}
+                  onChange={(e) => setMinutes(e.target.value)}
+                />
+              </label>
+              <label>
+                Entry fee (MON)
+                <input value={fee} onChange={(e) => setFee(e.target.value)} />
+              </label>
+              <label>
+                Prize (MON)
+                <input
+                  value={prize}
+                  onChange={(e) => setPrize(e.target.value)}
+                />
+              </label>
+              <button
+                className="primary"
+                disabled={busy}
+                onClick={() =>
+                  void act(() =>
+                    adminCall(
+                      "tournaments",
+                      "create",
+                      [
+                        BigInt(
+                          nowSeconds() + Number(minutes) * 60,
+                        ),
+                        Number(capacity),
+                        parseEther(fee),
+                      ],
+                      parseEther(prize),
+                    ),
+                  )
+                }
+              >
+                Create onchain ↗
+              </button>
+              <small>
+                Admin transactions use the funded administrator account.
+              </small>
+            </section>
+            <section className="side-card">
+              <h2>Circuit breakers</h2>
+              {(["game", "market"] as const).map((target) => (
+                <div className="split" key={target}>
+                  <button
+                    disabled={busy}
+                    onClick={() =>
+                      void act(() => adminCall(target, "setPaused", [true]))
+                    }
+                  >
+                    Pause {target}
+                  </button>
+                  <button
+                    disabled={busy}
+                    onClick={() =>
+                      void act(() => adminCall(target, "setPaused", [false]))
+                    }
+                  >
+                    Resume {target}
+                  </button>
+                </div>
+              ))}
+              <h3>Integrity signals</h3>
+              {alerts.map((a) => (
+                <p key={a.id}>{a.detail}</p>
+              ))}
+              {!alerts.length && <p>No indexed alerts.</p>}
+            </section>
+          </div>
+        ) : (
+          <div className="empty">
+            Connect an account with the onchain ADMIN_ROLE to open this console.
+            <button onClick={() => setShowConnect(true)}>
+              Connect passkey
+            </button>
+          </div>
+        ))}
+      {account && (
+        <section className="vault-strip">
+          <div>
+            <p className="eyebrow">YOUR TEST VAULT</p>
+            <strong>{money(player?.balance)} MON</strong>
+            <button className="account-copy" onClick={() => void act(async () => { await navigator.clipboard.writeText(account); setMessage("Account address copied."); })} title={account}>{short(account)} · Copy</button>
+          </div>
+          <button disabled={busy} onClick={() => void act(credits)}>
+            Get test credits ↗
+          </button>
+          <details>
+            <summary>Withdraw test MON</summary>
+            <label>
+              Recipient
+              <input
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+              />
+            </label>
+            <label>
+              Amount
+              <input
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+              />
+            </label>
+            <button disabled={busy} onClick={() => void act(withdraw)}>
+              Sign withdrawal ↗
+            </button>
+          </details>
+        </section>
+      )}
+      <footer>
+        <span>PONGIT / BUILT ON MONAD</span>
+        <span>GAME STATE ONCHAIN · MERA ACCOUNTS · ENVIO REPLAYS</span>
+        <a
+          href="https://testnet.monadscan.com"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Explorer ↗
+        </a>
+      </footer>
+      {showConnect && (
+        <div className="modal-backdrop" onClick={() => setShowConnect(false)}>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="connect-title"
+            className="connect-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="modal-close"
+              aria-label="Close"
+              onClick={() => setShowConnect(false)}
+            >
+              ×
+            </button>
+            <p className="eyebrow">YOUR PASSKEY IS YOUR ACCOUNT</p>
+            <h2 id="connect-title">Step up to the line.</h2>
+            <p>
+              No extension. No seed phrase. Your passkey creates and recovers
+              your PONGIT account.
+            </p>
+            <button
+              className="primary"
+              disabled={busy || !config}
+              onClick={() => void act(() => login("create"))}
+            >
+              Create a passkey ↗
+            </button>
+            <button
+              disabled={busy || !config}
+              onClick={() => void act(() => login("restore"))}
+            >
+              Use existing passkey
+            </button>
+            <a
+              href="https://mera.category.xyz/authenticator-support/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Compatible browsers & passkey providers ↗
+            </a>
+            {config?.localDev && (
+              <div className="dev-options">
+                <small>LOCAL DEVELOPMENT ONLY — NOT MERA</small>
+                <button onClick={() => void act(() => login("local"))}>
+                  Local test player
+                </button>
+                <button onClick={() => void act(() => login("operator"))}>
+                  Local test operator
+                </button>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+    </main>
+  );
+}

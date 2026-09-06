@@ -1,0 +1,25 @@
+{
+  "base": "https://pongit.xyz",
+  "address": "0x771fD967cCf7c1D5bB68FA3Acb9d065a457E9c8d",
+  "tournamentId": "3",
+  "checks": [
+    "Mera role grant",
+    "game pause/resume",
+    "market pause/resume",
+    "Mera funded tournament creation",
+    "expired tournament cancellation",
+    "roles revoked in cleanup"
+  ],
+  "operatorTransactions": [
+    "0x6e265e4ace81738d6cc9c444c8b86f9d454106b2008dd0cb70fe47d0e0575dcf",
+    "0x52c69e3447a834112a84bf2328c38b47ce82e8b9f6f79881cdea1ad3eee18c71",
+    "0x385577309fe1a1ee7044dfa834f1d8111390c2ba5ddb76afd98b3de9001f0d65",
+    "0x28adfce776e3ddbd5f56f76e8c81c95ce7fe71ccaa86bc4c8a8c2acbc91f1e68",
+    "0xfbc1ac858e524b40f95f5b6e4093ef15aeb5f6ccb27d6058a0ebb3c16b3686a1",
+    "0xab893ce490cb047cc2c5b8b36f0d84c87386326b9d7aa160ab25184d224766bd",
+    "0xf5bb161ee0026a971e9d95a3afdd8448124abec8a7c884517b1b2b134f69c373",
+    "0x93d6b7df7edaba2ba12a50375e474c5e779eb2897f394c320ac2c843cd567b1c",
+    "0xbe001a2c156530543300cf1bcb17600d337830a48862416f17dd72d3554c02da"
+  ],
+  "passedAt": "2026-09-06T03:25:54.113Z"
+}

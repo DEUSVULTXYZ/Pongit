@@ -1,0 +1,61 @@
+Compiling 8 files with Solc 0.8.30
+Solc 0.8.30 finished in 13.26s
+Compiler run successful with warnings:
+Warning (2519): This declaration shadows an existing declaration.
+  --> test/Pong.t.sol:43:32:
+   |
+43 |     function sign(uint256 key, bytes32 digest) internal returns (bytes memory) {
+   |                                ^^^^^^^^^^^^^^
+Note: The shadowed declaration is here:
+  --> test/Pong.t.sol:48:5:
+   |
+48 |     function digest(string memory name, address target, bytes32 hash) internal view returns (bytes32) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/Pong.t.sol:43:5:
+   |
+43 |     function sign(uint256 key, bytes32 digest) internal returns (bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 19 tests for test/Pong.t.sol:PongTest
+[PASS] testCancellationRefund() (gas: 395629)
+[PASS] testExpiredInputAndWrongDomain() (gas: 47933)
+[PASS] testFuzzLongStepSameAsEventSteps(uint32) (runs: 1000, μ: 96692, ~: 16263)
+[PASS] testFuzzPhysicsBoundsAndNoTunneling(uint64,int8,int8) (runs: 1000, μ: 74797, ~: 8128)
+[PASS] testInputNonceAndWrongKey() (gas: 147160)
+[PASS] testMarketBoundsAndPartialTreasuryReclaim() (gas: 526710)
+[PASS] testMarketLockoutAndStaleVersion() (gas: 172837)
+[PASS] testMarketSettlementAndParticipantBan() (gas: 584076)
+[PASS] testNoRevealCancellation() (gas: 317439)
+[PASS] testOutOfOrderAndExpiredSession() (gas: 57213)
+[PASS] testPauseFreezesClock() (gas: 74401)
+[PASS] testPublicKeeperCompletesAndRatingsOnlyOnce() (gas: 429944)
+[PASS] testRateLimit() (gas: 241319)
+[PASS] testRevokeAndScope() (gas: 81698)
+[PASS] testSessionCannotWithdraw() (gas: 61049)
+[PASS] testSessionCommandCap() (gas: 155721)
+[PASS] testSignatureCannotMoveDifferentMatch() (gas: 552361)
+[PASS] testTournamentFourSeedsAndTwoRounds() (gas: 3025439)
+[PASS] testTournamentWholeBracket() (gas: 1236845)
+Suite result: ok. 19 passed; 0 failed; 0 skipped; finished in 76.09ms (157.78ms CPU time)
+
+Ran 1 test for test/MarketInvariant.t.sol:MarketInvariantTest
+[PASS] invariantAllOutcomesAndRefundsCollateralized() (runs: 128, calls: 16384, reverts: 0)
+
+╭--------------+----------+-------+---------+----------╮
+| Contract     | Selector | Calls | Reverts | Discards |
++======================================================+
+| BuyerHandler | buy      | 16384 | 0       | 0        |
+╰--------------+----------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 5.26s (5.25s CPU time)
+
+╭---------------------+--------+--------+---------╮
+| Test Suite          | Passed | Failed | Skipped |
++=================================================+
+| MarketInvariantTest | 1      | 0      | 0       |
+|---------------------+--------+--------+---------|
+| PongTest            | 19     | 0      | 0       |
+╰---------------------+--------+--------+---------╯

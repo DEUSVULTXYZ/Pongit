@@ -1,0 +1,30 @@
+name: pong
+description: Authoritative Pong events, replay, ratings and integrity signals
+handlers: src
+contracts:
+  - name: Game
+    events:
+      - event: MatchCreated(uint256 indexed matchId, address indexed playerA, address indexed playerB, uint256 tournamentId)
+      - event: Snapshot(uint256 indexed matchId, uint64 version, bytes state, uint64 nextAt, uint8 nextKind, uint64 clock)
+      - event: MatchEnded(uint256 indexed matchId, address indexed winner, uint8 status)
+      - event: RatingUpdated(address indexed player, uint256 indexed season, uint32 elo, uint32 played, uint32 wins)
+  - name: Market
+    events:
+      - event: BetPlaced(uint256 indexed matchId, address indexed player, uint8 side, uint256 shares, uint256 cost)
+      - event: Claimed(uint256 indexed matchId, address indexed player, uint256 amount, bool refunded)
+  - name: Tournaments
+    events:
+      - event: TournamentCreated(uint256 indexed tournamentId, uint64 closesAt, uint32 capacity, uint256 fee, uint256 prize)
+      - event: Registered(uint256 indexed tournamentId, address indexed player)
+      - event: BracketUpdated(uint256 indexed tournamentId, uint256 round, address[] bracket)
+      - event: TournamentEnded(uint256 indexed tournamentId, address indexed winner, uint8 status, uint256 prize)
+chains:
+  - id: 10143
+    start_block: 0
+    contracts:
+      - name: Game
+        address: "0x0000000000000000000000000000000000000000"
+      - name: Market
+        address: "0x0000000000000000000000000000000000000000"
+      - name: Tournaments
+        address: "0x0000000000000000000000000000000000000000"

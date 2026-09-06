@@ -1,0 +1,12 @@
+{
+  "chainId": 10143,
+  "game": "0x0917d9323aeb2f2d376aad5c4dcd390da5b1fa8e",
+  "vault": "0xf4f1e0bf684d29fc5be5ab53df1c50b287b6fa6c",
+  "lmsr": "0x4977a083eb039cb0ff362edc5d18b2e625211273",
+  "market": "0x4f1c853cf204f36f4edb098ad5d9f26320118a8d",
+  "tournaments": "0x57b8ea7d12eb97cedda5d0ebc68ae188400f6136",
+  "startBlock": "60071179",
+  "deployedAt": "2026-09-06T02:35:26.984Z",
+  "status": "Superseded test deployment; never use with the current journal or physics mirror",
+  "currentManifest": "testnet.json"
+}

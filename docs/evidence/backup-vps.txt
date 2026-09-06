@@ -1,0 +1,44 @@
+Backup complete: 20260906T032816Z
+/opt/pongit/shared/backups/20260906T032816Z/pong_indexer.dump: OK
+/opt/pongit/shared/backups/20260906T032816Z/pong_relayer.dump: OK
+PASS: pong_relayer restored into pong_relayer_restore_verify_87113; all table counts identical.
+public.deployment_binding:1
+public.faucets:10
+public.queue_players:0
+public.relay_jobs:138
+public.rooms:8
+PASS: pong_indexer restored into pong_indexer_restore_verify_87113; all table counts identical.
+hdb_catalog.hdb_action_log:0
+hdb_catalog.hdb_cron_event_invocation_logs:0
+hdb_catalog.hdb_cron_events:0
+hdb_catalog.hdb_metadata:1
+hdb_catalog.hdb_scheduled_event_invocation_logs:0
+hdb_catalog.hdb_scheduled_events:0
+hdb_catalog.hdb_schema_notifications:1
+hdb_catalog.hdb_version:1
+indexer.Alert:0
+indexer.Bet:3
+indexer.Frame:74
+indexer.Match:8
+indexer.Pair:8
+indexer.Pattern:0
+indexer.Player:14
+indexer.SeasonRating:14
+indexer.Tournament:3
+indexer.envio_addresses:3
+indexer.envio_chains:1
+indexer.envio_checkpoints:213
+indexer.envio_contracts:3
+indexer.envio_history_Alert:0
+indexer.envio_history_Bet:1
+indexer.envio_history_Frame:8
+indexer.envio_history_Match:2
+indexer.envio_history_Pair:0
+indexer.envio_history_Pattern:0
+indexer.envio_history_Player:2
+indexer.envio_history_SeasonRating:2
+indexer.envio_history_Tournament:0
+indexer.envio_info:1
+indexer.raw_events:0
+/opt/pongit/shared/backups/20260906T032816Z/pong_indexer.dump: OK
+/opt/pongit/shared/backups/20260906T032816Z/pong_relayer.dump: OK

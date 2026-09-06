@@ -1,0 +1,6 @@
+{
+  "name":"pong-indexer","version":"0.1.0","private":true,"type":"module",
+  "scripts":{"codegen":"envio codegen","start":"envio start","dev":"envio dev","typecheck":"tsc --noEmit"},
+  "dependencies":{"envio":"3.9.0"},
+  "devDependencies":{"typescript":"^5.9.3","@types/node":"^24.0.0"}
+}

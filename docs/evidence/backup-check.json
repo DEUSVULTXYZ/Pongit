@@ -1,0 +1,10 @@
+{
+  "file": "backups/pong_restore_1788652446192.dump",
+  "restoredDatabase": "pong_restore_1788652446192",
+  "relayJobsAndRooms": [
+    "75",
+    "3"
+  ],
+  "sourceLeftIntact": true,
+  "completedAt": "2026-09-05T23:54:08.640Z"
+}

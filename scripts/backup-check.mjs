@@ -1,0 +1,15 @@
+import {spawn,execFileSync} from 'node:child_process';
+import {createReadStream,createWriteStream} from 'node:fs';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {pipeline} from 'node:stream/promises';
+import assert from 'node:assert/strict';
+const container=process.env.LOCAL_POSTGRES_CONTAINER||'pong-postgres';
+if(!/^pong-[a-z0-9-]+$/.test(container))throw new Error('Only named PONG local development containers');
+const target=`pong_restore_${Date.now()}`;await mkdir('backups',{recursive:true});await mkdir('artifacts',{recursive:true});const file=`backups/${target}.dump`;
+const run=(args)=>execFileSync('docker',['exec',container,...args],{encoding:'utf8',windowsHide:true}).trim();
+const dump=spawn('docker',['exec',container,'pg_dump','-U','pong','-d','pong','-Fc'],{stdio:['ignore','pipe','inherit'],windowsHide:true});const dumped=new Promise((resolve,reject)=>dump.once('exit',code=>code===0?resolve():reject(new Error('dump failed'))));await pipeline(dump.stdout,createWriteStream(file,{mode:0o600}));await dumped;
+run(['createdb','-U','pong',target]);
+const restore=spawn('docker',['exec','-i',container,'pg_restore','-U','pong','-d',target,'--no-owner','--exit-on-error'],{stdio:['pipe','inherit','inherit'],windowsHide:true});const restored=new Promise((resolve,reject)=>restore.once('exit',code=>code===0?resolve():reject(new Error('restore failed'))));await pipeline(createReadStream(file),restore.stdin);await restored;
+const sql="SELECT count(*) FROM public.relay_jobs; SELECT count(*) FROM public.rooms;";
+const expected=run(['psql','-U','pong','-d','pong','-At','-c',sql]);const actual=run(['psql','-U','pong','-d',target,'-At','-c',sql]);assert.equal(actual,expected);
+await writeFile('artifacts/backup-check.json',JSON.stringify({file,restoredDatabase:target,relayJobsAndRooms:actual.split('\n'),sourceLeftIntact:true,completedAt:new Date().toISOString()},null,2));console.log(`PASS: binary dump restored into ${target}; relayer and room counts match. Source database unchanged.`);

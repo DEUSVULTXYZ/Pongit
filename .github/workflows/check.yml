@@ -1,0 +1,26 @@
+name: Verify PONGIT
+on: [workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
+      - run: npm ci
+      - run: npm run bootstrap
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:differential
+      - name: Build Linux indexer
+        run: |
+          cp indexer/config.template.yaml indexer/config.yaml
+          docker build -t pong-indexer:ci indexer
