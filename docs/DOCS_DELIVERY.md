@@ -1,4 +1,4 @@
-# PONGIT Docs delivery — September 7, 2026
+# PONGIT Docs delivery: September 7, 2026
 
 The English handbook is live at **https://pongit.xyz/docs**. The arcade header opens it in a separate tab on desktop and mobile. Its 24 articles cover the delivered game and technical interfaces, with a local search index, section links, a responsive chapter menu, a table of contents, source links and revision dates.
 

@@ -1,4 +1,4 @@
-# Automatic wallet payments — V4
+# Automatic wallet payments: V4
 
 V4 pays winning bets, tournament prizes and cancellation refunds directly to the fixed beneficiary's Mera wallet on Monad Testnet 10143. An ordinary match awards ELO only. Spending still requires an owner signature; receiving does not.
 
@@ -30,7 +30,7 @@ Daily sponsorship remains unlimited (`RELAYER_DAILY_BUDGET_MON=0`). A funded rel
 
 Local validation ([contract tests](evidence/payments/contracts.txt), [unit tests](evidence/payments/unit-tests.txt), [20,000 physics cases](evidence/payments/physics-20000.txt), [journal recovery](evidence/payments/journal-recovery.json), [payment recovery](evidence/payments/payment-recovery.json)): 77 Solidity tests (including randomized solvency, rejected recipients, reentrancy, double triggers and refunds); 14 TypeScript unit tests; 20,000 differential physics comparisons; V1→V2→V3→V4 journal crash recovery; full four-player tournament with automatic advancement and exact native prize; browser sessions, direct duels, F5 and revocation; two winning bettors plus a losing bettor, including a beneficiary who left the site before settlement. The real Mera SDK was exercised with Chromium virtual PRF authenticators. Physical-device passkey synchronization is a separate check.
 
-## HTTPS delivery — September 6, 2026
+## HTTPS delivery: September 6, 2026
 
 V4 is active on [pongit.xyz](https://pongit.xyz). The browser scenarios passed for passkeys, touch input, betting, signed withdrawals, replay, Chaos handicaps, the encrypted notebook, administration, direct duels, rematches, F5 and session revocation. The first arcade run exposed concurrent reveal gas estimation against the pre-start state; the relayer now reserves at least 350,000 gas for reveal, with both a controlled same-block regression and a successful HTTPS rerun. See the [browser receipts](evidence/payments/https-wallet-payments.json), [arcade rerun](evidence/payments/https-arcade.json) and [reveal regression](evidence/payments/reveal-race.json).
 

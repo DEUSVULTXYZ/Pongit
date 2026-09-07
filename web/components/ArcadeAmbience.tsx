@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { arcadeAudio, type AudioSettings } from "../lib/audio";
 import {Dialog} from "./Dialog";
 
-export function MusicCredit(){return <small className="music-credit">Music by <a href="https://whitebataudio.com" target="_blank" rel="noreferrer">Karl Casey @ White Bat Audio</a> — Last Stop</small>;}
+export function MusicCredit(){return <small className="music-credit">Music by <a href="https://whitebataudio.com" target="_blank" rel="noreferrer">Karl Casey @ White Bat Audio</a> · Last Stop</small>;}
 export function ArcadeAmbience({onSound}:{onSound:(enabled:boolean)=>void}) {
   const [settings,setSettings]=useState<AudioSettings|null>(null),[controls,setControls]=useState(false),[status,setStatus]=useState("muted"),[testStatus,setTestStatus]=useState("");
   useEffect(()=>{

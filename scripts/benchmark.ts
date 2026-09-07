@@ -165,7 +165,7 @@ try {
     .every((r, i) => r.seq === i + 1);
   const report = {
     network:
-      chainId === 10143 ? "Monad testnet" : "LOCAL ANVIL — not Monad evidence",
+      chainId === 10143 ? "Monad testnet" : "LOCAL ANVIL (not Monad evidence)",
     chainId,
     probe: address,
     count,

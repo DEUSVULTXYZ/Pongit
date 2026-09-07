@@ -1,4 +1,4 @@
-# PONGIT V2 delivery — September 6, 2026
+# PONGIT V2 delivery: September 6, 2026
 
 Historical V2 delivery record. The current deployment is [PONGIT Arcade / GameV3](ARCADE.md); V1/V2 funds and replays remain accessible separately.
 

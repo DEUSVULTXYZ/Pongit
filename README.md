@@ -1,4 +1,4 @@
-# PONGIT Arcade — onchain rivals, neon and chiptunes
+# PONGIT Arcade: onchain rivals, neon and chiptunes
 
 **[Play PONGIT](https://pongit.xyz)** · [Documentation](https://pongit.xyz/docs) · [Automatic wallet payments](docs/PAYMENTS_V4.md) · [Arcade release](docs/ARCADE.md) · [Architecture](docs/V2.md) · [Local setup](docs/LOCAL.md)
 
@@ -12,7 +12,7 @@ A browser-based 1v1 arcade game whose physics, scores, results and ELO are compu
 - **Chaos betting pressure**: accepted spectator bets can shrink the favourite's paddle for the next rally, with a visible intermission and a maximum 25% reduction.
 - **Optional public profiles** and a separate **private Mera notebook** for rivals, replay notes and preferences. The notebook uses its own passkey PRF namespace and AES-GCM encryption.
 - **Spectating, Envio replays, LMSR markets, automatic wallet payouts, signed withdrawals, Classic tournaments and role-based administration**.
-- Michroma, precomputed neon artwork, keyboard/touch controls and skippable **VICTORY / DEFEAT** animations. A compact cabinet home leads straight into play. Enter with **Last Stop** — Music by **Karl Casey @ White Bat Audio** — or muted. Music/effect volumes and static room appearance are remembered; reduced-motion preferences are respected.
+- Michroma, precomputed neon artwork, keyboard/touch controls and skippable **VICTORY / DEFEAT** animations. A compact cabinet home leads straight into play. Enter with **Last Stop** (music by **Karl Casey @ White Bat Audio**) or muted. Music/effect volumes and static room appearance are remembered; reduced-motion preferences are respected.
 
 The site runs on a VPS with Docker Compose, private PostgreSQL and automatic Let's Encrypt certificates. V1/V2/V3 replays, claims, withdrawals and balances remain separately accessible from Archive.
 

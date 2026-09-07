@@ -350,7 +350,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     setShowAccount(false);
     setMessage(
       identity.local
-        ? "Local test account — Anvil only."
+        ? "Local test account (Anvil only)."
         : "Passkey connected. Ready to play.",
     );
     setRemembered(rememberedAccount());
@@ -1067,7 +1067,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
         </div>
         <div className="heading-meta">
           <span>{connected ? "● CONNECTED" : "○ OFFLINE"}</span>
-          <span>BLOCK {head ? head.toLocaleString() : "—"}</span>
+          <span>BLOCK {head ? head.toLocaleString() : "N/A"}</span>
         </div>
       </section>}
 
@@ -1096,7 +1096,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             <PixelOrnament kind="star" className="pixel-bezel-right"/>
             <div className="match-bar">
               <span>
-                ARENA {selected ? selected.padStart(3, "0") : "—"}{" "}
+                ARENA {selected ? selected.padStart(3, "0") : "N/A"}{" "}
                 <small>{match?.mode===1?" CHAOS":" CLASSIC"} / {match?.ranked===false?"FRIENDLY":"RANKED"}</small>
                 <b>
                   {tab === "Archive"
@@ -1191,7 +1191,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               </span>
               <span title={inputTiming ? `Queue & preparation: ${inputTiming.queueMs} ms; broadcast: ${inputTiming.broadcastMs} ms; chain & receipt: ${inputTiming.confirmationMs} ms` : "Input request to confirmed receipt, including queue and network"}>
                 {inputLatency === null ? "" : inputLatency + " ms INPUT / "}
-                {fps || "—"} FPS
+                {fps || "N/A"} FPS
               </span>
             </div>
             {tab === "Archive" && frames.length > 0 ? (
@@ -1259,7 +1259,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               {message}
             </div>
             <details className="network-panel" onToggle={e=>setShowNetwork(e.currentTarget.open)}><summary>Network details</summary>
-              <dl>{[["Server round trip",inputRtt],["Relayer queue",inputTiming?.queueMs],["Broadcast",inputTiming?.broadcastMs],["Chain + receipt",inputTiming?.confirmationMs],["Snapshot age",Math.round(snapshotAge)]].map(([label,value])=><div key={String(label)}><dt>{label}</dt><dd>{value==null?"—":`${value} ms`}</dd></div>)}<div><dt>Visual correction</dt><dd>{paddleCorrection.toFixed(1)} px</dd></div></dl>
+              <dl>{[["Server round trip",inputRtt],["Relayer queue",inputTiming?.queueMs],["Broadcast",inputTiming?.broadcastMs],["Chain + receipt",inputTiming?.confirmationMs],["Snapshot age",Math.round(snapshotAge)]].map(([label,value])=><div key={String(label)}><dt>{label}</dt><dd>{value==null?"N/A":`${value} ms`}</dd></div>)}<div><dt>Visual correction</dt><dd>{paddleCorrection.toFixed(1)} px</dd></div></dl>
               <p>The outline is diagnostic. Preview freezes at its time limit; a receipt is required for collisions and points.</p>
             </details>
             {canControl && <p className="input-hint">Local controls are responsive. Collisions and points wait for chain confirmation.</p>}
@@ -1329,7 +1329,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               <dl>
                 <div>
                   <dt>YOUR RATING</dt>
-                  <dd>{(mode===1?player?.chaosRating:player?.rating)?.elo || "—"}</dd>
+                  <dd>{(mode===1?player?.chaosRating:player?.rating)?.elo || "N/A"}</dd>
                 </div>
                 <div>
                   <dt>GAS COST TO PLAY</dt>
@@ -1356,7 +1356,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                 <span>
                   {odds
                     ? `${Math.min(100, (Number(odds.amount) / 1e13) * 100).toFixed(1)}%`
-                    : "—"}
+                    : "N/A"}
                 </span>
                 <small>PLAYER 01 / INDICATIVE</small>
               </div>
@@ -1781,7 +1781,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             </a>
             {config?.localDev && (
               <div className="dev-options">
-                <small>LOCAL DEVELOPMENT ONLY — NOT MERA</small>
+                <small>LOCAL DEVELOPMENT ONLY (NOT MERA)</small>
                 <button onClick={() => void act(() => login("local"))}>
                   Local test player
                 </button>

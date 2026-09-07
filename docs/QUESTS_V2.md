@@ -4,10 +4,10 @@ Primary track: **Consumer Products & Payments**. Present passkey access, sponsor
 
 | Bounty | Delivered functionality and evidence | Status |
 |---|---|---|
-| Best Mera-Powered UX on Monad — $2,500 shown | Mera account creation/recovery, owner signatures and scoped game authorization. `web/lib/wallet.ts`; HTTPS flows in the delivery report. | Relevant technical integration; complete a real-device demonstration. |
-| Mera: One Passkey, Many Keys — $2,500 shown | Private rivals, nicknames, timestamped replay notes and preferences encrypted through a PRF namespace separate from the wallet. `web/lib/notebook.ts`, `web/components/Notebook.tsx`, `relayer/src/social.ts`. AES-GCM keys and plaintext stay in memory. | Non-wallet functionality delivered. Recovery with the same synchronized passkey on a second physical device still needs demonstration. |
-| Best Use of Envio — $1,000 shown | V1/V2 contract indexing, ladders, replays, Chaos pressure and review signals without automatic sanctions. `indexer/src/handlers.ts`, schema and explicit RPC configuration. | Real self-hosted integration; indexing recovery and replay evidence are included in the delivery report. |
-| Best Community Team Project — $5,000 shown | Team membership in an eligible partner community. | External eligibility condition; code does not prove affiliation. |
+| Best Mera-Powered UX on Monad: $2,500 shown | Mera account creation/recovery, owner signatures and scoped game authorization. `web/lib/wallet.ts`; HTTPS flows in the delivery report. | Relevant technical integration; complete a real-device demonstration. |
+| Mera: One Passkey, Many Keys: $2,500 shown | Private rivals, nicknames, timestamped replay notes and preferences encrypted through a PRF namespace separate from the wallet. `web/lib/notebook.ts`, `web/components/Notebook.tsx`, `relayer/src/social.ts`. AES-GCM keys and plaintext stay in memory. | Non-wallet functionality delivered. Recovery with the same synchronized passkey on a second physical device still needs demonstration. |
+| Best Use of Envio: $1,000 shown | V1/V2 contract indexing, ladders, replays, Chaos pressure and review signals without automatic sanctions. `indexer/src/handlers.ts`, schema and explicit RPC configuration. | Real self-hosted integration; indexing recovery and replay evidence are included in the delivery report. |
+| Best Community Team Project: $5,000 shown | Team membership in an eligible partner community. | External eligibility condition; code does not prove affiliation. |
 
 Amounts are from the supplied screenshots. No award or final eligibility is guaranteed. Alchemy and Interlude are not claimed as integrated: the live release uses public Monad RPC and only prepares a future Interlude transport boundary.
 

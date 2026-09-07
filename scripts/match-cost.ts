@@ -51,7 +51,7 @@ try {
     network:
       d.chainId === 10143
         ? "Monad testnet"
-        : "Local Anvil — not a Monad cost estimate",
+        : "Local Anvil (not a Monad cost estimate)",
     matchId: id,
     receipts: rows.length,
     chargedMatchWei: rows.reduce((s, r) => s + r.chargedWei, 0n),

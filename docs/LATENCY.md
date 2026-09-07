@@ -1,4 +1,4 @@
-# V1 input latency and rendering corrections — September 6, 2026
+# V1 input latency and rendering corrections: September 6, 2026
 
 This historical diagnosis covers V1. The fixes improved visual response and removed browser waits while keeping input application at Monad inclusion. Contract addresses did not change for this patch. Current V3 measurements are in the [Arcade delivery report](ARCADE.md#production-validation).
 

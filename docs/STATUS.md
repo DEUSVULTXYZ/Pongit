@@ -1,4 +1,4 @@
-# PONGIT V1 delivery record — September 6, 2026
+# PONGIT V1 delivery record: September 6, 2026
 
 This is the historical V1 validation record. **Arcade (V3) is now live**; use the [Arcade delivery report](ARCADE.md) for current addresses, features, tests and limits. V1 new gameplay and markets are paused, while archived replays, claims and withdrawals remain accessible.
 

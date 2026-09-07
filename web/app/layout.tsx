@@ -8,7 +8,7 @@ import "./neon-cabinet.css";
 import "./cabinet-controls.css";
 const michroma = localFont({ src: "./fonts/Michroma-Regular.ttf", weight: "400", display: "swap", variable: "--font-michroma" });
 export const metadata: Metadata = {
-  title: "PONGIT — Every point onchain",
+  title: "PONGIT | Every point onchain",
   description:
     "A fully onchain Pong arena on Monad testnet. Play, watch, and replay verifiable matches.",
 };

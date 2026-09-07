@@ -20,14 +20,14 @@ test("Home usernames persist, remain unique and identify rivals, arena and ladde
    await expect(p.getByRole("button",{name:"Cancel search",exact:true})).toHaveCount(0);
    await editor.getByLabel("Unique username").fill(handle.toUpperCase());await expect(editor.getByLabel("Unique username")).toHaveValue(handle);
    if(i===1){await expect(editor.getByRole("status").filter({hasText:"already taken"})).toBeVisible();await expect(editor.getByRole("button",{name:"Save public profile"})).toBeDisabled();await editor.getByLabel("Unique username").fill(other);}
-   await editor.getByRole("radio",{name:i===0?"Vector — Chrome soul":"Pulse — Neon rebel",exact:true}).click();await expect(editor.getByText("Username available.",{exact:true})).toBeVisible();
+   await editor.getByRole("radio",{name:i===0?"Vector: Chrome soul":"Pulse: Neon rebel",exact:true}).click();await expect(editor.getByText("Username available.",{exact:true})).toBeVisible();
    let saves=0;p.on("request",r=>{if(r.url().endsWith("/profiles")&&r.method()==="PUT")saves++;});
    await editor.getByRole("button",{name:"Save public profile"}).dblclick();await expect(editor).toContainText("Public profile saved.");expect(saves).toBe(1);
    if(i===0){
     await editor.evaluate(e=>e.scrollTop=0);await p.screenshot({path:"artifacts/player-tag-editor.png"});
     await p.setViewportSize({width:390,height:844});await editor.evaluate(e=>e.scrollTop=0);await p.screenshot({path:"artifacts/player-tag-editor-mobile.png"});
-    await editor.getByRole("radio",{name:"Solar — Golden hour",exact:true}).click();await expect(editor.locator(".character-preview img")).toHaveAttribute("src","/avatars/roster-v1/solar.webp");
-    await editor.getByRole("radio",{name:"Vector — Chrome soul",exact:true}).click();await editor.getByRole("button",{name:"Save public profile"}).click();
+    await editor.getByRole("radio",{name:"Solar: Golden hour",exact:true}).click();await expect(editor.locator(".character-preview img")).toHaveAttribute("src","/avatars/roster-v1/solar.webp");
+    await editor.getByRole("radio",{name:"Vector: Chrome soul",exact:true}).click();await editor.getByRole("button",{name:"Save public profile"}).click();
     await expect(editor).toContainText("Public profile saved.");expect(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
     await p.setViewportSize({width:1440,height:1000});
    }
@@ -62,7 +62,7 @@ test("Home usernames persist, remain unique and identify rivals, arena and ladde
   await expect.poll(async()=>{const d=await(await a.request.get(`${api}/leaderboard?mode=0`)).json();return d.Player.some((p:any)=>p.handle===handle);},{timeout:30000}).toBe(true);
   await a.reload();await activity(a,"Ladder");await expect(a.locator("table")).toContainText(handle);await expect(a.getByRole("row").filter({hasText:handle}).locator("img")).toHaveAttribute("src","/avatars/roster-v1/vector.webp");
   // Reopening the editor uses the same saved profile as Rivals, then updates the HUD's source.
-  await a.getByRole("button",{name:"Play",exact:true}).click();await a.getByRole("button",{name:"Edit your profile"}).click();const editor=a.getByRole("dialog",{name:"Your public profile"});await expect(editor.getByLabel("Unique username")).toHaveValue(handle);await expect(editor.getByRole("radio",{name:"Vector — Chrome soul",exact:true})).toHaveAttribute("aria-checked","true");
+  await a.getByRole("button",{name:"Play",exact:true}).click();await a.getByRole("button",{name:"Edit your profile"}).click();const editor=a.getByRole("dialog",{name:"Your public profile"});await expect(editor.getByLabel("Unique username")).toHaveValue(handle);await expect(editor.getByRole("radio",{name:"Vector: Chrome soul",exact:true})).toHaveAttribute("aria-checked","true");
   await editor.getByLabel("Unique username").fill(`${handle}x`);await editor.getByRole("button",{name:"Save public profile"}).click();await expect(editor).toContainText("Public profile saved.");await a.getByRole("button",{name:"Close profile"}).click();
   await activity(a,"Ladder");await expect(a.locator("table")).toContainText(`${handle}x`);
   expect(errors).toEqual([]);await writeFile("artifacts/player-tags-validation.json",JSON.stringify({base,at:new Date().toISOString(),addresses,handle,scenarios:["create from home and carry connection intent","cancel connection","lowercase normalization","duplicate click","database uniqueness and concurrent reservation","literal underscore and full address search","reload persistence","targeted ranked duel by username","named scoreboard","ranked leaderboard","immediate rename in leaderboard","static room","desktop and mobile overflow"],errors},null,2));

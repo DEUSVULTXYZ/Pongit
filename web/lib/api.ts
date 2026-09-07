@@ -78,7 +78,7 @@ export function stateFromJson(s: any): State {
 }
 export type Config = Deployment & { localDev: boolean; relayer: string; serverTimeMs: number };
 export const short = (address: string) =>
-  address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "—";
+  address ? `${address.slice(0, 6)}…${address.slice(-4)}` : "N/A";
 
 export async function appApi(path:string,method="GET",body?:unknown,player?:string) {
   const response=await fetch(API+path,{method,credentials:"include",headers:{"content-type":"application/json",...(player?{"x-pongit-player":player}: {})},body:body===undefined?undefined:json(body),signal:AbortSignal.timeout(15000)});

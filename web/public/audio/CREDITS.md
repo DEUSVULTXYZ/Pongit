@@ -1,6 +1,6 @@
-# Last Stop — music attribution
+# Last Stop: music attribution
 
-Music by Karl Casey @ White Bat Audio — Last Stop (Visitation).
+Music by Karl Casey @ White Bat Audio · Last Stop (Visitation).
 
 Artist: https://whitebataudio.com
 Usage terms: https://whitebataudio.com/pages/faq
