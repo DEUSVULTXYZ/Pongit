@@ -1,0 +1,247 @@
+/* Arcade controls: satin keycaps, recessed selectors and quiet navigation. */
+:root {
+  --control-face: linear-gradient(160deg, #233440, #14212c 70%);
+  --control-edge: #91bac52e;
+  --control-shadow: inset 0 1px #d1f3f312, 0 2px 0 #02090e, 0 4px 8px #0002;
+  --control-focus: #a3f5ed;
+}
+
+:is(.cabinet-ui, .cabinet-dialog, .outcome) button {
+  border-color: var(--control-edge);
+  border-radius: 10px;
+  background: var(--control-face);
+  box-shadow: var(--control-shadow);
+  color: #dce9ee;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 100ms ease;
+}
+:is(.cabinet-ui, .cabinet-dialog, .outcome) button:hover:not(:disabled) {
+  background: linear-gradient(160deg, #2b424e, #1b303b);
+  border-color: #9cdfdd70;
+  box-shadow: inset 0 1px #d1f3f31f, 0 2px 0 #02090e, 0 4px 14px #69e9e00a;
+}
+:is(.cabinet-ui, .cabinet-dialog, .outcome) button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 5px #0004, 0 1px 0 #02090e;
+}
+:is(.cabinet-ui, .cabinet-dialog, .outcome) :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--control-focus);
+  outline-offset: 3px;
+}
+:is(.cabinet-ui, .cabinet-dialog, .outcome) button:disabled {
+  opacity: .5;
+  filter: saturate(.45);
+  box-shadow: inset 0 1px #d1f3f308;
+}
+.cabinet-ui button.primary, .cabinet-dialog button.primary, .outcome .button-row button:first-child {
+  background: linear-gradient(135deg, #b1f6ea, #7fddd8 65%, #79ccd7);
+  border-color: #b8fff080;
+  color: #082d35;
+  box-shadow: inset 0 1px #eaffffab, 0 3px 0 #285764, 0 8px 20px #62eadb12;
+}
+.cabinet-ui button.primary:hover:not(:disabled), .cabinet-dialog button.primary:hover:not(:disabled), .outcome .button-row button:first-child:hover:not(:disabled) {
+  background: linear-gradient(135deg, #cbfff3, #99ebe0 65%, #8fdfe5);
+  border-color: #ddfff2;
+  box-shadow: inset 0 1px #fff, 0 3px 0 #285764, 0 8px 25px #62eadb26;
+}
+.cabinet-ui .play-now { border-radius: 12px; }
+.cabinet-ui .play-now>span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #08313a0c;
+  border: 1px solid #08313a21;
+  font: 23px/1 var(--cabinet-font);
+}
+
+/* Navigation and profile links should read as navigation, not rows of keycaps. */
+.cabinet-ui nav[aria-label="Main navigation"] button,
+.cabinet-ui nav[aria-label="Main navigation"] button:hover:not(:disabled) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+.cabinet-ui .header-docs { border-color: var(--control-edge); border-radius: 10px; background: #14242e; }
+.cabinet-ui .header-docs:hover { border-color: #9cdfdd70; text-decoration: none; background: #203640; }
+.cabinet-ui .home-shortcuts button, .cabinet-ui .home-player-tag {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.cabinet-ui .home-shortcuts button:hover:not(:disabled), .cabinet-ui .home-player-tag:hover:not(:disabled) {
+  background: #8bc7d00a;
+  border-color: transparent;
+  box-shadow: none;
+}
+.cabinet-ui .home-player-tag { border-radius: 0; border-bottom: 1px solid #34404c; }
+.cabinet-dialog .more-menu>button { box-shadow: none; background: #17242e; border-color: #d0e8f017; }
+.cabinet-dialog .more-menu>button:hover { border-color: #85dfe25c; }
+
+/* Mutually exclusive modes share a single recessed rail. */
+.cabinet-ui .control-segments {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px;
+  max-width: 100%;
+  border: 1px solid #a6d8e31c;
+  border-radius: 13px;
+  background: #050d14;
+  box-shadow: inset 0 2px 6px #0005, 0 1px #d6f6ff08;
+}
+.cabinet-ui .control-segments button {
+  flex: 1;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  box-shadow: none;
+  background: transparent;
+  color: #a4b8c5;
+  font: 500 14px/1.5 var(--cabinet-font);
+}
+.cabinet-ui .control-segments button::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4e6471;
+}
+.cabinet-ui .control-segments button:hover:not(:disabled) { background: #1a2933; border-color: transparent; }
+.cabinet-ui .control-segments button[aria-pressed="true"] {
+  border-color: #88e4df45;
+  background: linear-gradient(150deg, #23444d, #17303a);
+  color: #ccfff2;
+  box-shadow: inset 0 1px #bbfff012, 0 2px 4px #0005;
+}
+.cabinet-ui .control-segments button[aria-pressed="true"]::before { background: #9cffe9; box-shadow: 0 0 7px #6fffe166; }
+.cabinet-ui .control-segments button:last-child[aria-pressed="true"] { background: linear-gradient(150deg, #3b304b, #292239); border-color: #c6a2f04a; color: #eadcff; }
+.cabinet-ui .control-segments button:last-child[aria-pressed="true"]::before { background: #d1aaff; box-shadow: 0 0 7px #c296ff66; }
+.cabinet-ui .mode-switch { align-items: center; }
+
+/* Native controls retain keyboard/typeahead behavior and a mobile-native fallback. */
+:is(.cabinet-ui, .cabinet-dialog) :is(input:not([type="range"]):not([type="checkbox"]), textarea),
+.cabinet-ui .social-layout input:not([type="checkbox"]) {
+  background: #09131d;
+  border-color: #96b3c22e;
+  border-radius: 9px;
+  box-shadow: inset 0 1px 4px #0004;
+  padding: 12px 14px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+:is(.cabinet-ui, .cabinet-dialog) :is(input, textarea):focus { border-color: #7ce7da8f; }
+:is(.cabinet-ui, .cabinet-dialog) [aria-invalid="true"] { border-color: #e296af; }
+:is(.cabinet-ui, .cabinet-dialog) select, .cabinet-ui .social-layout select {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 11px 42px 11px 14px;
+  border: 1px solid #a2c5d238;
+  border-radius: 9px;
+  color: #e2eef3;
+  background: linear-gradient(45deg, transparent 50%, #8fc5d0 50%) right 19px center/5px 5px no-repeat,
+    linear-gradient(135deg, #8fc5d0 50%, transparent 50%) right 14px center/5px 5px no-repeat,
+    linear-gradient(145deg, #1b2a36, #121f2a);
+  box-shadow: inset 0 1px #c8f5ff0d, 0 2px 4px #0002;
+  font: 400 16px/1.5 var(--cabinet-font);
+  cursor: pointer;
+}
+:is(.cabinet-ui, .cabinet-dialog) select:hover:not(:disabled) { border-color: #94cdd16e; }
+:is(.cabinet-ui, .cabinet-dialog) select:disabled { opacity: .5; cursor: not-allowed; }
+:is(.cabinet-ui, .cabinet-dialog) select option { background: #12212c; color: #deebf1; }
+
+/* Progressive CSS picker; unchanged <select><option> markup needs no JS menu. */
+@supports (appearance: base-select) {
+  :is(.cabinet-ui, .cabinet-dialog) select, .cabinet-ui .social-layout select,
+  :is(.cabinet-ui, .cabinet-dialog) select::picker(select) { appearance: base-select; }
+  :is(.cabinet-ui, .cabinet-dialog) select, .cabinet-ui .social-layout select {
+    background: linear-gradient(145deg, #1b2a36, #121f2a);
+    padding-right: 16px;
+    align-items: center;
+    gap: 12px;
+  }
+  :is(.cabinet-ui, .cabinet-dialog) select::picker-icon {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid #9dcdd4;
+    border-bottom: 1.5px solid #9dcdd4;
+    transform: rotate(45deg);
+    transition: transform 150ms ease;
+  }
+  :is(.cabinet-ui, .cabinet-dialog) select:open { border-color: #8ce8d88c; box-shadow: 0 0 0 3px #70ecd10b; }
+  :is(.cabinet-ui, .cabinet-dialog) select:open::picker-icon { transform: rotate(225deg); }
+  :is(.cabinet-ui, .cabinet-dialog) select::picker(select) {
+    color: #deebf1;
+    background: #101c27;
+    border: 1px solid #567585;
+    border-radius: 12px;
+    padding: 5px;
+    margin-block: 7px;
+    max-height: min(340px, 60dvh);
+    box-shadow: 0 18px 40px #0009, inset 0 1px #cef8ff12;
+    font: 400 16px/1.5 var(--cabinet-font);
+    overscroll-behavior: contain;
+  }
+  :is(.cabinet-ui, .cabinet-dialog) select option {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    min-height: 44px;
+    padding: 11px 12px;
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+  }
+  :is(.cabinet-ui, .cabinet-dialog) select option:checked { background: #8ee4d912; color: #b8fced; }
+  :is(.cabinet-ui, .cabinet-dialog) select option:hover,
+  :is(.cabinet-ui, .cabinet-dialog) select option:focus { background: #263e49; outline: 0; }
+  :is(.cabinet-ui, .cabinet-dialog) select option::checkmark { order: 1; margin-left: auto; color: #9df8df; }
+}
+
+/* Audio sliders and binary switches are not text-field boxes. */
+:is(.cabinet-ui, .cabinet-dialog) input[type="range"] {
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  cursor: pointer;
+  accent-color: #92ebe1;
+}
+:is(.cabinet-ui, .cabinet-dialog) input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: #38515d; }
+:is(.cabinet-ui, .cabinet-dialog) input[type="range"]::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; margin-top: -7px; border: 3px solid #b7fff0; border-radius: 50%; background: #326371; box-shadow: 0 0 0 4px #80ffe414; }
+:is(.cabinet-ui, .cabinet-dialog) input[type="range"]::-moz-range-track { height: 4px; border-radius: 4px; background: #38515d; }
+:is(.cabinet-ui, .cabinet-dialog) input[type="range"]::-moz-range-thumb { width: 12px; height: 12px; border: 3px solid #b7fff0; border-radius: 50%; background: #326371; }
+:is(.cabinet-ui, .cabinet-dialog) label:has(>input[type="checkbox"]) { display: flex; align-items: center; gap: 12px; min-height: 44px; cursor: pointer; }
+:is(.cabinet-ui, .cabinet-dialog) input[type="checkbox"] { width: 22px; height: 22px; min-height: 22px; flex: none; padding: 0; accent-color: #92ebe1; cursor: pointer; }
+.cabinet-dialog .arcade-settings button[aria-pressed] { justify-content: space-between; gap: 20px; }
+.cabinet-dialog .arcade-settings button[aria-pressed]::after { content: ""; width: 32px; height: 18px; flex: none; border: 1px solid #57717d; border-radius: 12px; background: radial-gradient(circle at 8px center, #a0b7c0 0 5px, transparent 5.5px), #09131b; }
+.cabinet-dialog .arcade-settings button[aria-pressed="true"]::after { border-color: #8de2d766; background: radial-gradient(circle at 22px center, #b0ffeb 0 5px, transparent 5.5px), #24584f; }
+
+/* Portraits retain their artwork and selection behavior; only the card finish changes. */
+:is(.cabinet-ui, .cabinet-dialog) .portrait-grid button { border-radius: 10px; border-color: #8daac729; box-shadow: none; background: #0d1823; padding: 5px; }
+:is(.cabinet-ui, .cabinet-dialog) .portrait-grid button[aria-checked="true"] { border-color: var(--avatar-accent); background: #263243; box-shadow: inset 0 0 0 1px var(--avatar-accent); }
+:is(.cabinet-ui, .cabinet-dialog) .portrait-grid button:hover:not(:disabled) { background: #243340; border-color: var(--avatar-accent); }
+:is(.cabinet-ui, .cabinet-dialog) .portrait-grid .avatar-check { border-radius: 5px; box-shadow: 0 2px 5px #0005; }
+
+@media (max-width:480px) {
+  .cabinet-ui .control-segments button { padding: 8px 17px; }
+  .cabinet-ui .play-now { min-height: 54px; }
+  .cabinet-ui .play-now>span { width: 26px; height: 26px; font-size: 21px; }
+  .cabinet-ui .social-layout .split:has(select) { flex-direction: column; gap: 16px; }
+  .cabinet-ui .social-layout .split:has(select)>label { width: 100%; margin: 0; }
+}
+@media (prefers-reduced-motion:reduce) {
+  :is(.cabinet-ui, .cabinet-dialog, .outcome) button,
+  :is(.cabinet-ui, .cabinet-dialog) select::picker-icon { transition: none; }
+}

@@ -32,6 +32,8 @@ export function useDialog(ref:RefObject<HTMLElement|null>,active:boolean,close:(
     (el.querySelector<HTMLElement>("[data-autofocus]")||controls()[0]||el).focus({preventScroll:true});
     const key=(event:KeyboardEvent)=>{
       if(stack.at(-1)!==el)return;
+      // A native picker owns Escape until it closes; keep its parent dialog open.
+      if(event.key==="Escape" && CSS.supports("selector(select:open)") && el.querySelector("select:open"))return;
       if(event.key==="Escape"){event.preventDefault();event.stopImmediatePropagation();closeRef.current();}
       if(event.key==="Tab"){
         const list=controls(),first=list[0],last=list.at(-1);

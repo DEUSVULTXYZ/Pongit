@@ -5,6 +5,7 @@ import "./neon-rush.css";
 import "./cabinet.css";
 import "./cabinet-tokens.css";
 import "./neon-cabinet.css";
+import "./cabinet-controls.css";
 const michroma = localFont({ src: "./fonts/Michroma-Regular.ttf", weight: "400", display: "swap", variable: "--font-michroma" });
 export const metadata: Metadata = {
   title: "PONGIT — Every point onchain",

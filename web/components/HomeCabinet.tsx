@@ -11,7 +11,7 @@ export function HomeCabinet({mode,setMode,busy,active,play,challenge,watch,profi
      <div className="cabinet-pong" aria-hidden="true"><i/><b/><i/></div>
      <button className="primary play-now" disabled={busy} onClick={play}>{busy?"Please wait…":active?"Resume match":"Play now"}<span aria-hidden="true">↗</span></button>
      <p className="play-caption">{mode===1?"Chaos":"Classic"} · Ranked · Free to play</p>
-     <div className="cabinet-mode" role="group" aria-label="Game mode"><button aria-pressed={mode===0} disabled={busy||active} onClick={()=>setMode(0)}>Classic</button><button aria-pressed={mode===1} disabled={busy||active} onClick={()=>setMode(1)}>Chaos</button></div>
+     <div className="cabinet-mode control-segments" role="group" aria-label="Game mode"><button aria-pressed={mode===0} disabled={busy||active} onClick={()=>setMode(0)}>Classic</button><button aria-pressed={mode===1} disabled={busy||active} onClick={()=>setMode(1)}>Chaos</button></div>
      {mode===1 && <p className="mode-description">The crowd can shrink the favourite’s paddle.</p>}
    </div></div>
    <div className="cabinet-deck"><div aria-hidden="true" className="deck-joystick"><i/></div><span>FIRST TO SEVEN<br/><small>GAS IS ON US</small></span><div className="deck-buttons" aria-hidden="true"><i/><i/></div></div>
