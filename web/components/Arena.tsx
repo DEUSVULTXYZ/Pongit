@@ -17,6 +17,7 @@ import {
   type Hex,
   type Address,
 } from "viem";
+import {Avatar} from "./Avatar";
 import {ProfileEditor,usePublicProfile} from "./PublicProfile";
 import {HomeCabinet} from "./HomeCabinet";
 import {Dialog,CabinetTools} from "./Dialog";
@@ -1455,7 +1456,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               {ladder.map((p, i) => (
                 <tr key={p.id}>
                   <td>{String(i + 1).padStart(2, "0")}</td>
-                  <td><span title={p.address}>{p.handle || short(p.address)}</span><button className="ladder-challenge" disabled={busy || p.address.toLowerCase()===account.toLowerCase()} onClick={()=>void act(()=>directChallenge(p.address))}>Challenge ↗</button></td>
+                  <td><span className="ladder-player"><Avatar index={p.avatar ?? parseInt(p.address.slice(-4),16)%12}/><span title={p.address}>{p.handle || short(p.address)}</span></span><button className="ladder-challenge" disabled={busy || p.address.toLowerCase()===account.toLowerCase()} onClick={()=>void act(()=>directChallenge(p.address))}>Challenge ↗</button></td>
                   <td>{p.elo}</td>
                   <td>{p.played}</td>
                   <td>{p.wins}</td>

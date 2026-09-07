@@ -1,5 +1,6 @@
 "use client";
-import {Avatar,type PublicProfile} from "./PublicProfile";
+import type {PublicProfile} from "./PublicProfile";
+import {Avatar} from "./Avatar";
 export function HomeCabinet({mode,setMode,busy,active,play,challenge,watch,profile,editProfile}:{mode:number;setMode:(n:number)=>void;busy:boolean;active:boolean;play:()=>void;challenge:()=>void;watch:()=>void;profile:PublicProfile|null;editProfile:()=>void}){
  return <section className="home-cabinet" aria-label="PONGIT arcade cabinet">
    <div className="cabinet-marquee"><span className="marquee-star">✦</span><span>PONGIT</span><span className="marquee-star">✦</span><small>ONE MORE GAME.</small></div>

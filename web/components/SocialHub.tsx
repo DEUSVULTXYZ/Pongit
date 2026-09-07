@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { appApi as requestApp, WS, short, type Config } from "../lib/api";
 import { arcadeAudio } from "../lib/audio";
-import {Avatar,ProfileEditor} from "./PublicProfile";
+import {ProfileEditor} from "./PublicProfile";
+import {Avatar} from "./Avatar";
 import { Notebook } from "./Notebook";
 import type { Identity } from "../lib/wallet";
 
