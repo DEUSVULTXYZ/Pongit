@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description:
     "A fully onchain Pong arena on Monad testnet. Play, watch, and replay verifiable matches.",
   ...socialMetadata(
-    "PONGIT | Good rivals. Great nights.",
+    "PONGIT | Pong is back. All Onchain",
     "Your next rival is one click away. Play Classic or Chaos, challenge friends and watch live in the onchain arcade on Monad Testnet.",
     "/",
   ),

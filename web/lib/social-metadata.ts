@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 
 export const siteOrigin = "https://pongit.xyz";
 const image = {
-  url: `${siteOrigin}/social/pongit-neon-cabinet-v1.jpg`,
+  url: `${siteOrigin}/social/pongit-neon-cabinet-v2.jpg`,
   width: 1200,
   height: 630,
   type: "image/jpeg",
-  alt: "PONGIT neon arcade cabinet with the orbital logo, a Pong match and 16-bit ornaments. Good rivals. Great nights.",
+  alt: "PONGIT neon arcade cabinet with the orbital logo, a Pong match and 16-bit ornaments. Pong is back. All Onchain",
 };
 
 export function socialMetadata(

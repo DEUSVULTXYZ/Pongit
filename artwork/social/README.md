@@ -4,16 +4,23 @@ The share card follows the Neon Cabinet identity: the existing orbital logo,
 chrome lettering, anthracite arcade cabinet, cyan/violet lighting and 16-bit
 ornaments. It uses the same slogan as the home cabinet.
 
-- Source: `pongit-neon-cabinet-v1.png`, generated with the built-in imagegen tool.
+- Current source: `pongit-neon-cabinet-v2.png`, edited with the built-in imagegen tool.
 - References: `web/public/brand/avatar.webp` and `web/public/docs-assets/home.webp`.
-- Web asset: `web/public/social/pongit-neon-cabinet-v1.jpg`, 1200 × 630 pixels.
+- Web asset: `web/public/social/pongit-neon-cabinet-v2.jpg`, 1200 × 630 pixels.
 - Optimization: Sharp, cover resize to 1200 × 630, JPEG quality 90 with mozjpeg.
 - Metadata: `web/lib/social-metadata.ts`; public articles keep their own title and description.
 
 Use a new versioned filename when replacing the image so caches can distinguish it.
 The source is kept for future artwork revisions; only the compressed JPEG is served.
 
-## Generation prompt
+The current slogan is **Pong is back. All Onchain**. Version 1 is retained for
+older cached links and artwork history.
+
+## Current edit prompt
+
+Edit the supplied PONGIT social sharing card. Change ONLY the two-line slogan beneath the large PONGIT wordmark. Replace 'Good rivals.' with exactly 'Pong is back.' in the same white chrome-tinted futuristic font. Replace 'Great nights.' with exactly 'All Onchain' (capital A and O, no terminal period) in the same cyan font. Preserve all other content and composition: the exact orbital glass logo, both PONGIT wordmarks, the arcade cabinet and black Pong screen, cyan/violet paddles, ball, joystick and buttons, pixel star and planet ornaments, border, background, ONCHAIN ARCADE label, pongit.xyz URL, lighting, colors, framing, resolution and wide 1.905:1 aspect ratio. New text must be beautifully typeset, legible and centered within the existing left-hand slogan area. Do not redesign or add anything else.
+
+## Original generation prompt (version 1)
 
 Use case: ads-marketing. Create the finished premium social sharing preview / Open Graph image for PONGIT, a browser arcade Pong game. Wide landscape 1.905:1 aspect ratio, ideally 1200x630 or proportional higher resolution. This is a finished share card, not a website screenshot.
 References: image 1 is the existing PONGIT brand mark, two translucent cyan and violet opposing curved glass orbits around a bright pearl. Preserve this recognizable mark faithfully. Image 2 is the actual current UI: anthracite metal cabinet, dark glass, controlled cyan and violet neon, chrome italic futuristic Michroma-style PONGIT lettering, small crisp 16-bit pixel ornaments. Preserve that art direction.
