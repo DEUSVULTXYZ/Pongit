@@ -1,7 +1,7 @@
 import {test,expect} from "@playwright/test";
 import {activity} from "./cabinet";
 const base=process.env.PONG_TEST_URL||"http://localhost:3150";
-for(const viewport of [{width:360,height:640},{width:390,height:844},{width:768,height:1024},{width:1440,height:900},{width:844,height:390}])test(`Cabinet navigation, focus and static room ${viewport.width}x${viewport.height}`,async({browser})=>{
+for(const viewport of [{width:360,height:640},{width:390,height:844},{width:768,height:1024},{width:1440,height:900},{width:844,height:390},{width:720,height:450}])test(`Cabinet navigation, focus and static room ${viewport.width}x${viewport.height}`,async({browser})=>{
  const context=await browser.newContext({viewport}),page=await context.newPage();const errors:string[]=[];page.on("pageerror",e=>errors.push(e.message));
  try{
  await page.goto(base);const entry=page.getByRole("dialog",{name:"Enter PONGIT arcade"});await expect(entry).toBeVisible();await expect(page.locator("body")).toHaveCSS("position","fixed");

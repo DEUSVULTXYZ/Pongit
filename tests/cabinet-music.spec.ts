@@ -14,3 +14,13 @@ test("Last Stop streams in full, survives navigation, and loops naturally",async
  await writeFile("artifacts/cabinet-full-track.json",JSON.stringify({duration,samples,looped,measuredAt:new Date().toISOString(),note:"Uninterrupted real-time browser playback. Physical speaker listening is separate."},null,2));
  }finally{await p.close();}
 });
+
+test("A failed music request is visible and Test sound recovers it",async({page})=>{
+ await page.route("**/audio/last-stop.mp3",r=>r.fulfill({status:503,body:"Temporarily unavailable"}));
+ await page.goto(process.env.PONG_TEST_URL||"http://localhost:3150");
+ await page.getByRole("button",{name:"Enter arcade ♫",exact:true}).click();
+ await page.getByRole("button",{name:"Arcade settings",exact:true}).click();
+ await expect(page.getByRole("dialog",{name:"Arcade settings"})).toContainText("Audio loading failed",{timeout:20000});
+ await page.unroute("**/audio/last-stop.mp3");await page.getByRole("button",{name:"Test sound",exact:true}).click();
+ await expect(page.getByRole("dialog",{name:"Arcade settings"})).toContainText("Audio enabled",{timeout:20000});
+});

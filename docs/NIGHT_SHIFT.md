@@ -51,3 +51,9 @@ The former generic `/player/` handler intercepted the new recent-match route; it
 Before activation, preserve the running images as `pongit-web:cabinet-previous` and `pongit-relayer:cabinet-previous`, record the previous release directory, and run `ops/backup.sh`. The previous release for this rollout is `65397c42a26fc82b8f10e9f715fe9eb098819428`.
 
 To return to it, point `/opt/pongit/current` to `/opt/pongit/releases/65397c42a26fc82b8f10e9f715fe9eb098819428`, tag the saved images back to `pongit-web:latest` and `pongit-relayer:latest`, then run `docker compose up -d --no-deps web relayer` from that directory. Check `/api/health` and the public home. Do not restore or delete live database data: no schema/retention migration belongs to this release. Existing payment jobs and replay rights remain in their original stores.
+
+## Live verification
+
+The deployed application is commit `3e0562e64e529581e3e165ebbed9ea3865ba5543`. See [the verification record](NIGHT_SHIFT_VALIDATION.json) for browser versions, exact coverage and measurements. Google Chrome and Microsoft Edge both played the complete track and its natural loop on HTTPS, and recovered from a simulated failed media request. Chrome also passed the two-player/spectator session flow against Monad Testnet. The mobile replay measured 59.7 average FPS under the documented CPU/network emulation; this is not a physical-device guarantee.
+
+The tournament browser check now passes registration, starting the bracket, direct round matchmaking, replay, exact automatic winner payment and signed withdrawal from all three legacy vaults. Temporary VPS test services and their database volume were removed after evidence collection. All eight production services are running, and the saved rollback images remain available.

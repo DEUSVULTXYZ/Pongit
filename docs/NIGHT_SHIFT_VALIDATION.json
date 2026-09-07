@@ -1,0 +1,88 @@
+{
+  "applicationCommit": "3e0562e64e529581e3e165ebbed9ea3865ba5543",
+  "publicURL": "https://pongit.xyz",
+  "chainId": 10143,
+  "verifiedAt": "2026-09-07T00:38:45.227983+00:00",
+  "checks": {
+    "typescriptUnitsPassed": 22,
+    "contractsPassed": 77,
+    "differentialCases": {
+      "classic": 10000,
+      "chaos": 10000
+    },
+    "isolatedVPS": [
+      "initial passkey continues to a single search",
+      "cancelled connection drops play intent",
+      "renewal from Play now",
+      "direct duel, rematch, F5, reconnect and revocation",
+      "five responsive layouts, focus traps, scroll locks, reduced motion and static room",
+      "Chaos bet handicap, optional profile and encrypted notebook",
+      "exact automatic payouts to connected and offline wallets",
+      "three personal recent matches API and replay notes",
+      "tournament registration, direct round launch and winner payment",
+      "signed withdrawals from V1, V2 and V3 vaults"
+    ],
+    "publicChrome": {
+      "version": "152.0.7977.76",
+      "passed": [
+        "two players and spectator with real Mera SDK and virtual PRF",
+        "direct duel, rematch, F5, network interruption, revocation and renewal",
+        "mobile replay performance",
+        "music and effects output, volumes, mute, navigation, hidden tab",
+        "complete music track and natural loop",
+        "simulated music HTTP 503 and gesture-driven recovery",
+        "desktop reflow at 720x450 CSS px (equivalent space to 200% of 1440x900)"
+      ]
+    },
+    "publicEdge": {
+      "version": "152.0.4191.66",
+      "passed": [
+        "complete music track and natural loop",
+        "360x640, 390x844, 768x1024, 1440x900, 844x390",
+        "dialog focus, scrolling, Escape and static background",
+        "music and effects output, mute and hidden tab",
+        "simulated music HTTP 503 and gesture-driven recovery"
+      ]
+    }
+  },
+  "music": {
+    "title": "Last Stop",
+    "credit": "Music by Karl Casey @ White Bat Audio",
+    "chromeDurationSeconds": 214.588254,
+    "edgeDurationSeconds": 214.588254,
+    "chromeNaturalLoop": true,
+    "edgeNaturalLoop": true
+  },
+  "mobileEmulation": {
+    "emulation": "Chromium: 390x844, DPR 3, touch, CPU 4x slowdown; network 4 Mbps down / 1 Mbps up + 40ms latency. Not a physical phone.",
+    "averageFps": 59.66467784407187,
+    "frameGapMs": {
+      "p50": 16.59999999999991,
+      "p95": 17.09999999999991,
+      "p99": 17.100000000000364
+    },
+    "lcp": 788,
+    "cls": 0.00010498114788742738,
+    "resourceBytes": 558643
+  },
+  "publicationAudit": {
+    "secretsFound": 0,
+    "productionDependencyVulnerabilities": 0
+  },
+  "deployment": {
+    "previousCommit": "65397c42a26fc82b8f10e9f715fe9eb098819428",
+    "backupUTC": "20260907T002336Z",
+    "rollbackImages": [
+      "pongit-web:cabinet-previous",
+      "pongit-relayer:cabinet-previous"
+    ],
+    "healthyServices": 8,
+    "temporaryTestContainersAndVolumeRemoved": true
+  },
+  "limitations": [
+    "Audio was measured in the browser; physical speaker/headphone audibility was not verified.",
+    "Virtual WebAuthn is not a physical cross-device passkey recovery test.",
+    "Mobile and zoom reflow were emulated; performance on physical phones can differ.",
+    "No contract, financial-rule or replay-retention migration; Interlude remains inactive."
+  ]
+}
