@@ -4,21 +4,21 @@ The share card follows the Neon Cabinet identity: the existing orbital logo,
 chrome lettering, anthracite arcade cabinet, cyan/violet lighting and 16-bit
 ornaments. It uses the same slogan as the home cabinet.
 
-- Current source: `pongit-neon-cabinet-v2.png`, edited with the built-in imagegen tool.
+- Current source: `pongit-neon-cabinet-v3.png`, edited with the built-in imagegen tool.
 - References: `web/public/brand/avatar.webp` and `web/public/docs-assets/home.webp`.
-- Web asset: `web/public/social/pongit-neon-cabinet-v2.jpg`, 1200 × 630 pixels.
+- Web asset: `web/public/social/pongit-neon-cabinet-v3.jpg`, 1200 × 630 pixels.
 - Optimization: Sharp, cover resize to 1200 × 630, JPEG quality 90 with mozjpeg.
 - Metadata: `web/lib/social-metadata.ts`; public articles keep their own title and description.
 
 Use a new versioned filename when replacing the image so caches can distinguish it.
 The source is kept for future artwork revisions; only the compressed JPEG is served.
 
-The current slogan is **Pong is back. All Onchain**. Version 1 is retained for
-older cached links and artwork history.
+The current slogan is **Pong is back / Bring a rival**, on two lines without
+terminal punctuation. Earlier versions are retained for cached links and artwork history.
 
 ## Current edit prompt
 
-Edit the supplied PONGIT social sharing card. Change ONLY the two-line slogan beneath the large PONGIT wordmark. Replace 'Good rivals.' with exactly 'Pong is back.' in the same white chrome-tinted futuristic font. Replace 'Great nights.' with exactly 'All Onchain' (capital A and O, no terminal period) in the same cyan font. Preserve all other content and composition: the exact orbital glass logo, both PONGIT wordmarks, the arcade cabinet and black Pong screen, cyan/violet paddles, ball, joystick and buttons, pixel star and planet ornaments, border, background, ONCHAIN ARCADE label, pongit.xyz URL, lighting, colors, framing, resolution and wide 1.905:1 aspect ratio. New text must be beautifully typeset, legible and centered within the existing left-hand slogan area. Do not redesign or add anything else.
+Edit this PONGIT share card. Change ONLY the two slogan lines below the large PONGIT wordmark on the left. The first line must read exactly 'Pong is back' with NO period. The second line must read exactly 'Bring a rival' with NO period. Keep the first line white and the second line cyan, in the same futuristic typography and centered in the same slogan area. Preserve everything else exactly: the orbital cyan/violet glass logo, both PONGIT wordmarks, the neon arcade cabinet, black Pong screen and all of its game objects, controls, 16-bit stars, ringed planets and joystick ornament, frame, dark background, ONCHAIN ARCADE label and pongit.xyz. Same wide 1.905:1 composition, no redesign, no new elements. The only requested change is the slogan text.
 
 ## Original generation prompt (version 1)
 

@@ -7,7 +7,7 @@ export function HomeCabinet({mode,setMode,busy,active,play,challenge,watch,profi
    <div className="cabinet-marquee"><PixelOrnament kind="star" className="marquee-left"/><span>PONGIT</span><PixelOrnament kind="planet" className="marquee-right"/><small>ONE MORE GAME.</small></div>
    <div className="cabinet-bezel"><div className="cabinet-screen">
      <span className="cabinet-edition">PLAYER ONE / READY</span>
-     <h1>Pong is back.<br/><em>All Onchain</em></h1>
+     <h1>Pong is back<br/><em>Bring a rival</em></h1>
      <div className="cabinet-pong" aria-hidden="true"><i/><b/><i/></div>
      <button className="primary play-now" disabled={busy} onClick={play}>{busy?"Please wait…":active?"Resume match":"Play now"}<span aria-hidden="true">↗</span></button>
      <p className="play-caption">{mode===1?"Chaos":"Classic"} · Ranked · Free to play</p>
