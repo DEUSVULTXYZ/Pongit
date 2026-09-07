@@ -1,0 +1,47 @@
+{
+  "measuredAt": "2026-09-07T10:08:50.591Z",
+  "base": "https://pongit.xyz",
+  "note": "Home-page rendering, CPU emulation; static room kept enabled in both samples to isolate sprite cost. Live-court samples are reported separately.",
+  "results": [
+    {
+      "mobile": false,
+      "cpuSlowdown": 1,
+      "effects": false,
+      "sampleMs": 13000,
+      "frames": 780,
+      "fps": 60.00092309112447,
+      "p95": 17.100000000000364,
+      "p99": 17.200000000000273
+    },
+    {
+      "mobile": false,
+      "cpuSlowdown": 1,
+      "effects": true,
+      "sampleMs": 13000,
+      "frames": 778,
+      "fps": 59.847074570378005,
+      "p95": 17.099999999998545,
+      "p99": 17.299999999999272
+    },
+    {
+      "mobile": true,
+      "cpuSlowdown": 4,
+      "effects": false,
+      "sampleMs": 13000,
+      "frames": 779,
+      "fps": 59.920772277989315,
+      "p95": 17.09999999999991,
+      "p99": 17.200000000000728
+    },
+    {
+      "mobile": true,
+      "cpuSlowdown": 4,
+      "effects": true,
+      "sampleMs": 13000,
+      "frames": 779,
+      "fps": 59.84435857449048,
+      "p95": 17.099999999998545,
+      "p99": 17.299999999999272
+    }
+  ]
+}

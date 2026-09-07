@@ -67,4 +67,14 @@ Before activation, retain the running web image as `pongit-web:neon-cabinet-prev
 
 The dependency production audit reported zero known vulnerabilities. The publication scan covers local Git history and reflogs, tracked files and the index, searching both known operator secrets and credential patterns. The candidate database URLs were reviewed as environment-variable templates or documented local-only fixtures; no production secret was found.
 
-Public HTTPS checks and the final published revision will be recorded after activation. Physical mobile hardware, physical cross-device passkey recovery and listening through the user's actual speakers remain outside these automated checks.
+The web release `6ad6559ed049b808568f9f3770de42f4f469d399` was activated on HTTPS on 7 September 2026. The previous image is retained under the rollback tag above. All eight production services stayed running; the relayer, PostgreSQL and Hasura health checks remained healthy. The temporary `pongit-cabinet-test` containers, test volume, network and application images were removed after validation.
+
+Public verification passed **21 scenarios on Chrome 152.0.7977.76 and 19 on Edge 152.0.4191.66**. Coverage includes responsive navigation, focus and scrolling, all documentation routes/search, genuine 404 responses, static background, sprite behavior, measured music/effects, and a friendly game with a spectator on each browser. Chrome additionally tested mobile controls, F5, result actions and rendering performance. Audio output was measured in both browsers; no extra audio context appeared during navigation. See the [public validation record](evidence/neon-cabinet/public-validation.json).
+
+Public release captures: [desktop home](evidence/neon-cabinet/public-home.webp), [mobile home](evidence/neon-cabinet/public-mobile.webp), [live court](evidence/neon-cabinet/public-game.webp).
+
+A friendly match measured from local Chrome against public HTTPS produced 59.8 / 60.0 FPS on desktop and 59.7 / 60.0 FPS with mobile CPU emulation, with sprites off / on. Frame-time p95 was 17.0 ms on desktop and 17.1 ms on mobile emulation in both settings. See [public Chrome live samples](evidence/neon-cabinet/public-chrome-live-performance.json). These short samples concern rendering only; this release does not alter Monad transaction latency.
+
+Git publication is temporarily blocked: the saved GitHub credential permits repository reads but Git pushes return HTTP 403. The release commit is retained locally and on the VPS pending restored repository write access. No private runtime files were placed in Git as an authentication workaround.
+
+Physical mobile hardware, physical cross-device passkey recovery and listening through the user's actual speakers remain outside these automated checks.

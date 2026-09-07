@@ -1,0 +1,49 @@
+{
+  "base": "https://pongit.xyz",
+  "checkedAt": "2026-09-07T10:07:52.848Z",
+  "samples": [
+    {
+      "width": 1440,
+      "cpuSlowdown": 1,
+      "effects": false,
+      "frames": 389,
+      "sampleMs": 6500,
+      "fps": 59.84339184345339,
+      "p95": 17,
+      "p99": 17.200000000000728
+    },
+    {
+      "width": 1440,
+      "cpuSlowdown": 1,
+      "effects": true,
+      "frames": 390,
+      "sampleMs": 6500,
+      "fps": 59.99907693727786,
+      "p95": 17,
+      "p99": 17.19999999999709
+    },
+    {
+      "width": 390,
+      "cpuSlowdown": 4,
+      "effects": false,
+      "frames": 388,
+      "sampleMs": 6500,
+      "fps": 59.69414443521337,
+      "p95": 17.099999999998545,
+      "p99": 17.400000000001455
+    },
+    {
+      "width": 390,
+      "cpuSlowdown": 4,
+      "effects": true,
+      "frames": 390,
+      "sampleMs": 6500,
+      "fps": 59.998153902956865,
+      "p95": 17.099999999998545,
+      "p99": 17.200000000004366
+    }
+  ],
+  "errors": [],
+  "sessionPreserved": true,
+  "note": "Chromium desktop and a 390px viewport with CPU throttling, not a physical mobile device. Friendly game; no ranked or financial changes."
+}

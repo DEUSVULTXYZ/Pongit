@@ -1,0 +1,55 @@
+{
+  "checkedAt": "2026-09-07T10:11:34.113Z",
+  "deployedCommit": "6ad6559ed049b808568f9f3770de42f4f469d399",
+  "url": "https://pongit.xyz",
+  "browsers": {
+    "chrome": "152.0.7977.76",
+    "edge": "152.0.4191.66"
+  },
+  "passed": {
+    "chrome": 20,
+    "chromeAudio": 1,
+    "edge": 19
+  },
+  "viewports": [
+    "360x640",
+    "390x844",
+    "768x1024",
+    "1440x900",
+    "1440x1000",
+    "844x390",
+    "720x450"
+  ],
+  "audio": {
+    "chrome": {
+      "measuredAt": "2026-09-07T10:09:19.438Z",
+      "musicMaxRms": 0.018323388020210826,
+      "effectsMaxPeak": 0.25542566180229187,
+      "errors": []
+    },
+    "edge": {
+      "measuredAt": "2026-09-07T10:10:30.716Z",
+      "musicMaxRms": 0.017102355881528492,
+      "effectsMaxPeak": 0.21572020649909973,
+      "errors": []
+    }
+  },
+  "audit": {
+    "commits": 48,
+    "objects": 833,
+    "trackedFiles": 456,
+    "findings": [],
+    "reviewedCandidates": "Five unique credential URL patterns: environment placeholders and documented local-only database fixtures."
+  },
+  "productionDependencyVulnerabilities": 0,
+  "backup": "20260907T095131Z",
+  "rollbackImage": "pongit-web:neon-cabinet-previous",
+  "sandboxRemoved": true,
+  "gitPublication": "Blocked: saved HTTPS credential returns 403 on push; SSH access also unavailable.",
+  "limits": [
+    "Mobile viewport and CPU emulation, not physical hardware.",
+    "Virtual WebAuthn PRF authenticators, not physical cross-device recovery.",
+    "Audio waveform measured; actual user output device not heard.",
+    "Styling release; Monad transaction latency unchanged."
+  ]
+}
