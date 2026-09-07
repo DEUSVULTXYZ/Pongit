@@ -1,0 +1,24 @@
+## A private playbook
+
+Open **Rivals** and find **Your private playbook**. **Unlock notebook** uses the same passkey as your account but a separate Mera PRF namespace and encryption key. Public profile names and avatars are not stored in this notebook.
+
+The decrypted content and key stay in memory. The server stores only ciphertext and technical metadata such as a revision and encryption IV.
+
+## Keep rivals and replay notes
+
+- Add a favourite rival's full address and a private nickname. These names do not reserve public usernames or change another player's profile.
+- Open a match or replay, then use **Note this moment** to attach an observation to its versioned reference and timestamp.
+- Choose a preferred mode and sound preference. **Apply preferences** updates this browser; finish an active match or queue search first.
+- Remove individual rivals or notes with their delete controls.
+
+## Save, lock and recover
+
+Edits remain in memory until you select **Save encrypted**. Each save uses fresh encryption randomness. **Lock**, disconnecting or changing account closes the decrypted notebook.
+
+**Reload saved copy (discard local edits)** replaces your unsaved changes with the server's version. If another device saved first, PONGIT reports a revision conflict; preserve any edits you need before choosing to reload and merge manually.
+
+Recovering on another device requires the same PRF-capable passkey. A new passkey derives a different key and cannot decrypt the old notebook. Physical cross-device compatibility has not been established for every provider.
+
+## Retired replays and privacy limits
+
+Your notes remain even when a replay is retired; the note indicates that its replay is no longer retained. Public blockchain activity remains public. Encryption of stored notes does not protect decrypted content from a compromised browser or an extension capable of reading the page's live memory.

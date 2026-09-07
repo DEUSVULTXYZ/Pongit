@@ -1,0 +1,27 @@
+## Integer event physics
+
+The V4 deployment reuses GameV3 and PhysicsV2. Solidity and TypeScript share an event-driven model: positions and velocities have a **1,000,000** scale, time is in integer microseconds, division truncates toward zero and event times round up.
+
+The logical court is 1024 × 576, ball radius is 6, default paddle half-height is 48 and paddle speed is 180 logical units per second. The game ends at seven points. Chaos adds individual half-heights and a between-rally resume time.
+
+## The match clock
+
+Game time advances from active block numbers at **300,000 microseconds per block**. The game accounts for paused blocks; this is a virtual clock, not a promise that every wall-clock block takes exactly 300 ms.
+
+Player or relayer timestamps cannot rewrite past collisions. An input takes effect at inclusion, after due events are resolved. Catch-up is bounded and resumable; Chaos stops at an intermission before resuming with fresh handicap values.
+
+## Input pipeline
+
+The client sends a signed intent without waiting for the previous receipt. The relayer retains one submitted, unconfirmed input per player plus the latest eligible pending intention. Intermediate unsent intentions can be superseded; signed transaction bytes are immutable.
+
+The existing onchain Input nonce remains strictly sequential. A dependent command waits for its predecessor on the server. After failure or expiry, the client refreshes state and re-signs the latest intention rather than creating a nonce gap.
+
+## Preview and reconciliation
+
+The renderer reconstructs from a confirmed snapshot and relevant local intents, using a monotone browser clock. Prediction is bounded and corrections are smoothed. It stops extrapolating old snapshots indefinitely; **SYNCING / PREVIEW PAUSED** reports that limit. Contract collisions and scores remain authoritative.
+
+## Read the latency panel
+
+**Network details** separates server round-trip, relayer queue/preparation, broadcast, chain/receipt observation, snapshot age and visual correction. Those measurements are not interchangeable. Client and server clocks must not be subtracted without synchronization.
+
+Moving the web frontend alone does not remove relayer queuing or Monad inclusion delay. Historical benchmarks are workload-specific, not present-day service guarantees. The source and test records include 10,000 differential physics cases per mode; those checks are correctness evidence, not a latency guarantee.

@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "node:path";
+import createMDX from "@next/mdx";
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, ".."),
@@ -32,4 +33,4 @@ const nextConfig: NextConfig = {
     ];
   },
 };
-export default nextConfig;
+export default createMDX({options:{remarkPlugins:["remark-gfm"],rehypePlugins:["rehype-slug"]}})(nextConfig);

@@ -1024,7 +1024,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           <span className="brand-word">PONGIT</span>
           <span className="brand-sub">NEON RUSH / MONAD</span>
         </a>
-        <div className="top-right"><ArcadeAmbience onSound={setSound}/>
+        <div className="top-right"><a className="header-docs" href="/docs" target="_blank" rel="noopener noreferrer" onClick={()=>setDirection(0)}>Docs ↗</a><ArcadeAmbience onSound={setSound}/>
           <span className="network">
             <span className={connected ? "dot pulse" : "dot"} />
             {config?.chainId === 31337 ? "LOCAL CHAIN" : "MONAD TESTNET"}

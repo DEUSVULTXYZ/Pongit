@@ -1,0 +1,25 @@
+## Join a bracket
+
+Open **More → Tournaments**. Each card shows its capacity, registered players, entry cost, prize and current state. Current tournaments are **Classic ranked**, with single-elimination brackets of **2, 4, 8, 16 or 32** players.
+
+Select **Register** and approve the registration with your owner passkey. If an entry fee exists, it is debited from betting credit. Registration is an owner-authorized operation even for a free entry. A registered account cannot enter the same tournament twice.
+
+## Start and play each round
+
+**Start bracket** is available only when the contract's conditions are satisfied. A tournament must fill its advertised capacity; it can start when full, or after its closing time if still full. A partially filled bracket does not silently resize.
+
+Entrants are seeded by Classic ELO, with deterministic address ordering for equal ratings. In an active round, press **Play round**. Both opponents join that tournament pairing; generic matchmaking is not a substitute for the round button.
+
+The relayer attaches eligible matches and advances completed rounds automatically. Wait for the confirmed result and updated bracket before the next round. A cancelled match can be replaced under the tournament's contract rules.
+
+## Prizes and cancellation
+
+The winner receives the seeded prize plus accepted entry fees directly in their wallet through V4's payout accounting. They do not need to remain connected or sign to receive it.
+
+Cancellation is permitted after registration closes without a full bracket, or after an active round exceeds **12,000 blocks**. The confirmed cancellation enables automatic entry-fee refunds. The seeded contribution returns to the fixed treasury separately.
+
+A rejected wallet transfer becomes a reserved, retryable payment. [Payment states](/docs/betting/payments).
+
+## After a tournament game
+
+**Rematch** creates an independent challenge against the same opponent, with no new entry fee. It does not replay or modify a tournament bracket result.

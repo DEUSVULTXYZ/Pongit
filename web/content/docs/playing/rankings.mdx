@@ -1,0 +1,23 @@
+## Two ladders
+
+Open **More → Ladder** and choose Classic or Chaos. Each mode has a separate onchain ELO. New players start at **1000**. Existing ratings are inherited through the previous deployments rather than reset simply because the app was upgraded.
+
+Saved usernames and avatars appear beside rankings. The wallet address remains the verifiable identity behind each profile.
+
+## How a result changes ELO
+
+Ranked wins and losses use an expected score calculated from the two ratings. Beating a stronger opponent generally gains more than beating a weaker opponent. Friendly matches change neither rating.
+
+The first **ten recorded games in that rating's placement count** use a K factor of **64**; later results use **32**. Integer rounding applies and the rating has a floor of **100**. Do not expect the two players' displayed changes always to be identical: placement factors can differ.
+
+Repeated ranked meetings with the same opponent in the same mode and UTC day have decreasing impact. The change is divided by that pair's daily meeting count, capped at a divisor of eight.
+
+## Seasons and inherited ratings
+
+Seasons last **30 days** from the current game's genesis time. Ratings owned by the current deployment move halfway toward 1000 for each elapsed season, evaluated lazily when read. The contract caps catch-up at 16 steps per read calculation. Ratings not yet materialized in the current deployment are read from the previous game, so inheritance follows that previous contract's own season rules.
+
+## If a ranking is not updated yet
+
+A ranked result is finalized onchain before the players start another ranked result workflow. Envio and the leaderboard cache then reflect it. Wait for confirmation and refresh if the display is temporarily behind; changing your username does not reset your ELO.
+
+Use **Challenge** beside a player to invite them. [Challenge options](/docs/playing/challenges).

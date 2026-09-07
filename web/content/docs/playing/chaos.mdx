@@ -1,0 +1,28 @@
+## Crowd pressure, applied between rallies
+
+Chaos keeps the first-to-seven objective, but accepted betting costs influence paddle height. The player receiving more support can become harder to defend. Select **Chaos** on the home cabinet or in a challenge's **Match options**.
+
+The calculation uses the **MON actually paid** for accepted bets on each side. Seed liquidity supplied by the platform is excluded, and later payouts do not erase the accumulated pressure.
+
+| Condition | Paddle height |
+| --- | --- |
+| Total accepted costs below 0.002 MON | Both remain at 96 units |
+| A player's share is at most 60% | That player remains at 96 |
+| Share is 80% | Approximately 84 units |
+| Share reaches 100% | Minimum 72 units |
+
+Above 60%, the reduction increases linearly up to **25%**. Integer rounding is applied by the contract. Paddle speed does not change.
+
+## When the handicap changes
+
+After a nonfinal point, Chaos starts a **three-second intermission on the match clock**. Betting closes during the last two blocks of the intermission. At resume, the contract calculates the new heights and freezes them for the whole next rally.
+
+An already resolved collision is never recalculated with a new size. If the chain needs to catch up, simulation stops at the intermission before entering the next rally with its new parameters.
+
+<Callout title="Before you bet">More support can shrink the player you are backing. Review the Chaos warning and the cost before approving a bet. Concentration of shares is not the same as concentration of MON paid.</Callout>
+
+## Play and follow the changes
+
+The arena displays **INTERMISSION** or **RALLY**, along with the individual paddle heights. Without enough accepted bets, Chaos can look like Classic.
+
+Chaos has its own ranked queue and ELO. Friendly Chaos challenges change no ranking. Current tournaments remain Classic. [Betting guide](/docs/betting/how-it-works).

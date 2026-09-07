@@ -1,0 +1,25 @@
+## Your last three
+
+Open **More → Replays**. The personal list shows up to **three played and finished matches**, across Classic, Chaos and all four deployments. A cancellation before play starts does not consume a slot.
+
+Each replay is stored once. It remains retained while it belongs to either participant's most recent three eligible games. As a result, an older match may still be retained for your opponent even after it leaves your personal list.
+
+## Replay a match
+
+Choose an available replay, or use **Watch replay** after a result. **Play replay / Pause replay** controls playback; the timeline moves between recorded states. The replay is reconstructed from confirmed state, with the rules and Chaos handicap data belonging to that deployment.
+
+**Note this moment** pauses playback and opens the private notebook context for that versioned match and timestamp. Unlock your notebook, add your observation and use **Save encrypted** to persist it.
+
+![Replay controls and a confirmed court](/docs-assets/replay.webp)
+
+## Available, indexing or retired
+
+- **Available:** recorded frames can be loaded.
+- **Indexing:** the necessary indexed data has not arrived yet; retry after the indexer catches up.
+- **Retired:** replay frames were removed by retention. Refreshing will not recreate them automatically.
+
+A retired replay still has its result summary, score and financial rights. Your encrypted notes are preserved and indicate that the replay is retired. The blockchain still contains the original events; the application does not provide an unlimited replay reindexing service.
+
+## Older deployments
+
+Match references include the deployment, such as `v4:12` or `v2:12`. Those are different matches. Historical results and older vault rights remain separate. [Legacy balances](/docs/account/balances).

@@ -1,0 +1,31 @@
+## I cannot connect or renew
+
+Use **pongit.xyz** over HTTPS and a PRF-capable passkey provider. **Continue as…** recovers the remembered account; **Use another passkey** selects a different credential. Creating another passkey creates another identity, not a repair of the old one.
+
+If the arcade session expired, click **Reconnect** in the header or **Play now** to renew directly. Close duplicate controlling tabs if the page reports another tab owns the session. [Session guide](/docs/getting-started/passkeys).
+
+## My paddle feels delayed
+
+Check **Network details**. Server round-trip, queue/preparation, broadcast, confirmation and snapshot age measure different parts of the path. A responsive local paddle does not mean the command is already included onchain.
+
+**SYNCING / PREVIEW PAUSED** means prediction reached its bound. Wait for a fresh snapshot. Do not hold another movement key to compensate for a disconnected transport. On reconnect, the contract state remains authoritative. [Latency explanation](/docs/technical/physics).
+
+## A search or invitation seems stuck
+
+Read the waiting screen and inbox. A pending invitation can expire or be declined; a submitted match transaction cannot be falsely cancelled. Check whether either opponent already has a match or queue. Avoid repeated invitations while an existing one is being created.
+
+## I cannot hear anything
+
+Open **Arcade settings → Test sound**. Check mute, both volume sliders, browser activation, tab mute and the physical output device. If the music load failed, retry through a user gesture after the connection recovers. [Audio guide](/docs/account/settings).
+
+## A bet failed or payment is delayed
+
+Refresh the quote if it expired or the market locked. Check available betting credit and approve with the owner passkey. A failed quote does not imply a lost wallet transfer.
+
+For a due payment, inspect its history and receipt. Use **Retry payment** only when offered. A losing position correctly shows no payout. Older versions require their separate claim and withdrawal flow.
+
+## A replay or note is missing
+
+A retired replay is intentionally no longer retained; its result and payments survive. Notebook edits need **Save encrypted**. A revision conflict requires reviewing the saved copy before discarding local work.
+
+When reporting an issue, include the browser, time, versioned match reference, visible error and public transaction hash. Never include a passkey secret, wallet key, session key or decrypted private notebook.

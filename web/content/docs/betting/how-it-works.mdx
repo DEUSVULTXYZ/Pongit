@@ -1,0 +1,32 @@
+## Open the match market
+
+Watch a live match and connect your passkey to use its market. Choose which player to back and the number of shares. Purchases use the active **betting balance**, not an automatic debit from incoming wallet winnings.
+
+A winning share pays **1 MON per whole share**; fractional shares pay proportionally. The displayed potential payout is the gross payment if that side wins, not profit in addition to your purchase cost. Losing shares pay zero.
+
+## Review before signing
+
+The review shows the selected player, **Estimated cost**, **Maximum cost (+1%)** and **Payout if they win**. The signed maximum bounds the spend. Quotes are state-dependent and can become stale while your passkey prompt is open.
+
+Select **Confirm with passkey** only after reviewing the current details. If the market state changes beyond the permitted amount or closes, refresh the quote and review again. A gameplay key has no permission to approve a bet.
+
+![The spectator bet review: estimated cost, signed maximum and potential payout](/docs-assets/betting.webp)
+
+## Why prices move
+
+PONGIT uses a binary **LMSR** market maker. Buying shares changes the cost of subsequent purchases according to the outstanding shares and configured liquidity. The platform deposits real test-MON liquidity; the contract checks reserves against possible payouts. The current interface supports buying and settlement, not selling shares back before the result.
+
+## When bets are unavailable
+
+- A participant's account cannot bet on its own match.
+- The market must be funded, opened and unpaused, and the match must be in play.
+- Bets lock near unresolved or imminent collisions and close at the result.
+- Quotes bind the game state; an outdated version can be rejected.
+
+These restrictions reduce latency advantages, but do not guarantee their elimination or identify every related wallet.
+
+## Chaos changes the game
+
+<Callout title="Backing a player can make their next rally harder">Chaos counts accepted MON costs toward crowd pressure. Beyond the threshold, stronger support shrinks the favourite's paddle at the next rally. Read the warning before signing.</Callout>
+
+See [Chaos rules](/docs/playing/chaos) and [automatic payouts and refunds](/docs/betting/payments). All current betting is on Monad Testnet.

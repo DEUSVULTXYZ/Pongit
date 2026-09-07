@@ -1,0 +1,1079 @@
+{
+  "groups": [
+    "Getting started",
+    "Playing",
+    "Your account",
+    "Betting & payments",
+    "Help",
+    "Technical reference"
+  ],
+  "pages": [
+    {
+      "slug": "getting-started/welcome",
+      "title": "Welcome to PONGIT",
+      "description": "An arcade for good rivals, close matches and verifiable results.",
+      "group": "Getting started",
+      "updated": "2026-09-07",
+      "keywords": [
+        "overview",
+        "testnet",
+        "free"
+      ],
+      "headings": [
+        {
+          "id": "one-more-game",
+          "text": "One more game",
+          "level": 2
+        },
+        {
+          "id": "choose-your-night",
+          "text": "Choose your night",
+          "level": 2
+        },
+        {
+          "id": "your-place-in-the-arcade",
+          "text": "Your place in the arcade",
+          "level": 2
+        },
+        {
+          "id": "what-is-available-today",
+          "text": "What is available today",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "getting-started/first-match",
+      "title": "Your first match",
+      "description": "From Play now to your first seven points.",
+      "group": "Getting started",
+      "updated": "2026-09-07",
+      "keywords": [
+        "start",
+        "controls",
+        "connect",
+        "play"
+      ],
+      "headings": [
+        {
+          "id": "enter-the-arcade",
+          "text": "Enter the arcade",
+          "level": 2
+        },
+        {
+          "id": "move-your-paddle",
+          "text": "Move your paddle",
+          "level": 2
+        },
+        {
+          "id": "during-the-match",
+          "text": "During the match",
+          "level": 2
+        },
+        {
+          "id": "after-the-result",
+          "text": "After the result",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "getting-started/passkeys",
+      "title": "Passkeys & arcade sessions",
+      "description": "Keep your account, renew your session and understand what you sign.",
+      "group": "Getting started",
+      "updated": "2026-09-07",
+      "keywords": [
+        "login",
+        "connect",
+        "renew",
+        "reconnect",
+        "F5",
+        "disconnect"
+      ],
+      "headings": [
+        {
+          "id": "create-or-recover-your-account",
+          "text": "Create or recover your account",
+          "level": 2
+        },
+        {
+          "id": "your-two-hour-arcade-session",
+          "text": "Your two-hour arcade session",
+          "level": 2
+        },
+        {
+          "id": "renew-without-extra-navigation",
+          "text": "Renew without extra navigation",
+          "level": 2
+        },
+        {
+          "id": "disconnect-safely",
+          "text": "Disconnect safely",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "playing/classic",
+      "title": "Classic",
+      "description": "Two paddles. One ball. First to seven.",
+      "group": "Playing",
+      "updated": "2026-09-07",
+      "keywords": [
+        "rules",
+        "paddle",
+        "controls"
+      ],
+      "headings": [
+        {
+          "id": "the-rules",
+          "text": "The rules",
+          "level": 2
+        },
+        {
+          "id": "ranked-or-friendly",
+          "text": "Ranked or friendly",
+          "level": 2
+        },
+        {
+          "id": "what-spectators-change",
+          "text": "What spectators change",
+          "level": 2
+        },
+        {
+          "id": "confirmation-and-interruptions",
+          "text": "Confirmation and interruptions",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "playing/chaos",
+      "title": "Chaos",
+      "description": "Understand how betting pressure changes the next rally.",
+      "group": "Playing",
+      "updated": "2026-09-07",
+      "keywords": [
+        "handicap",
+        "96",
+        "72",
+        "shrink",
+        "bets"
+      ],
+      "headings": [
+        {
+          "id": "crowd-pressure-applied-between-rallies",
+          "text": "Crowd pressure, applied between rallies",
+          "level": 2
+        },
+        {
+          "id": "when-the-handicap-changes",
+          "text": "When the handicap changes",
+          "level": 2
+        },
+        {
+          "id": "play-and-follow-the-changes",
+          "text": "Play and follow the changes",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "playing/challenges",
+      "title": "Matchmaking, challenges & rematches",
+      "description": "Find an opponent or invite the rival you already know.",
+      "group": "Playing",
+      "updated": "2026-09-07",
+      "keywords": [
+        "duel",
+        "invite",
+        "cancel",
+        "friendly",
+        "ranked"
+      ],
+      "headings": [
+        {
+          "id": "find-an-opponent",
+          "text": "Find an opponent",
+          "level": 2
+        },
+        {
+          "id": "challenge-someone-directly",
+          "text": "Challenge someone directly",
+          "level": 2
+        },
+        {
+          "id": "rematch-and-links",
+          "text": "Rematch and links",
+          "level": 2
+        },
+        {
+          "id": "pending-busy-or-unavailable",
+          "text": "Pending, busy or unavailable",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "playing/rankings",
+      "title": "Rankings & seasons",
+      "description": "Separate Classic and Chaos ladders, with results recorded onchain.",
+      "group": "Playing",
+      "updated": "2026-09-07",
+      "keywords": [
+        "elo",
+        "leaderboard",
+        "placements",
+        "rating"
+      ],
+      "headings": [
+        {
+          "id": "two-ladders",
+          "text": "Two ladders",
+          "level": 2
+        },
+        {
+          "id": "how-a-result-changes-elo",
+          "text": "How a result changes ELO",
+          "level": 2
+        },
+        {
+          "id": "seasons-and-inherited-ratings",
+          "text": "Seasons and inherited ratings",
+          "level": 2
+        },
+        {
+          "id": "if-a-ranking-is-not-updated-yet",
+          "text": "If a ranking is not updated yet",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "playing/tournaments",
+      "title": "Tournaments",
+      "description": "Join a Classic bracket and play each round from the tournament screen.",
+      "group": "Playing",
+      "updated": "2026-09-07",
+      "keywords": [
+        "prize",
+        "entry",
+        "registration",
+        "round",
+        "bracket"
+      ],
+      "headings": [
+        {
+          "id": "join-a-bracket",
+          "text": "Join a bracket",
+          "level": 2
+        },
+        {
+          "id": "start-and-play-each-round",
+          "text": "Start and play each round",
+          "level": 2
+        },
+        {
+          "id": "prizes-and-cancellation",
+          "text": "Prizes and cancellation",
+          "level": 2
+        },
+        {
+          "id": "after-a-tournament-game",
+          "text": "After a tournament game",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "playing/spectating",
+      "title": "Watching live",
+      "description": "Follow the arena as a spectator without a wallet connection.",
+      "group": "Playing",
+      "updated": "2026-09-07",
+      "keywords": [
+        "live",
+        "watch",
+        "spectator"
+      ],
+      "headings": [
+        {
+          "id": "open-a-live-arena",
+          "text": "Open a live arena",
+          "level": 2
+        },
+        {
+          "id": "read-the-action",
+          "text": "Read the action",
+          "level": 2
+        },
+        {
+          "id": "support-a-player",
+          "text": "Support a player",
+          "level": 2
+        },
+        {
+          "id": "when-the-feed-pauses",
+          "text": "When the feed pauses",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "playing/replays",
+      "title": "Replays & match history",
+      "description": "Revisit your last three finished games and understand replay availability.",
+      "group": "Playing",
+      "updated": "2026-09-07",
+      "keywords": [
+        "archive",
+        "retention",
+        "history",
+        "notes"
+      ],
+      "headings": [
+        {
+          "id": "your-last-three",
+          "text": "Your last three",
+          "level": 2
+        },
+        {
+          "id": "replay-a-match",
+          "text": "Replay a match",
+          "level": 2
+        },
+        {
+          "id": "available-indexing-or-retired",
+          "text": "Available, indexing or retired",
+          "level": 2
+        },
+        {
+          "id": "older-deployments",
+          "text": "Older deployments",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "account/profile",
+      "title": "Usernames & avatars",
+      "description": "Choose a unique name and your character in the arcade.",
+      "group": "Your account",
+      "updated": "2026-09-07",
+      "keywords": [
+        "profile",
+        "save",
+        "username",
+        "avatar",
+        "character"
+      ],
+      "headings": [
+        {
+          "id": "put-your-name-on-the-cabinet",
+          "text": "Put your name on the cabinet",
+          "level": 2
+        },
+        {
+          "id": "pick-a-unique-username",
+          "text": "Pick a unique username",
+          "level": 2
+        },
+        {
+          "id": "choose-your-character",
+          "text": "Choose your character",
+          "level": 2
+        },
+        {
+          "id": "where-your-profile-appears",
+          "text": "Where your profile appears",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "account/notebook",
+      "title": "Private notebook",
+      "description": "Keep favourite rivals, private nicknames and timestamped replay notes.",
+      "group": "Your account",
+      "updated": "2026-09-07",
+      "keywords": [
+        "mera",
+        "encryption",
+        "notes",
+        "save",
+        "privacy"
+      ],
+      "headings": [
+        {
+          "id": "a-private-playbook",
+          "text": "A private playbook",
+          "level": 2
+        },
+        {
+          "id": "keep-rivals-and-replay-notes",
+          "text": "Keep rivals and replay notes",
+          "level": 2
+        },
+        {
+          "id": "save-lock-and-recover",
+          "text": "Save, lock and recover",
+          "level": 2
+        },
+        {
+          "id": "retired-replays-and-privacy-limits",
+          "text": "Retired replays and privacy limits",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "account/balances",
+      "title": "Wallet, betting credit & legacy balances",
+      "description": "Know where your test MON is held and how to withdraw it.",
+      "group": "Your account",
+      "updated": "2026-09-07",
+      "keywords": [
+        "funds",
+        "vault",
+        "withdraw",
+        "credits",
+        "legacy",
+        "faucet"
+      ],
+      "headings": [
+        {
+          "id": "two-balances-two-purposes",
+          "text": "Two balances, two purposes",
+          "level": 2
+        },
+        {
+          "id": "get-test-credits",
+          "text": "Get test credits",
+          "level": 2
+        },
+        {
+          "id": "withdraw-available-credit",
+          "text": "Withdraw available credit",
+          "level": 2
+        },
+        {
+          "id": "older-vaults-and-claims",
+          "text": "Older vaults and claims",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "account/settings",
+      "title": "Audio & accessibility",
+      "description": "Tune the music, test the effects and make the cabinet comfortable.",
+      "group": "Your account",
+      "updated": "2026-09-07",
+      "keywords": [
+        "sound",
+        "muted",
+        "music",
+        "Karl Casey",
+        "background",
+        "motion"
+      ],
+      "headings": [
+        {
+          "id": "music-for-the-night-shift",
+          "text": "Music for the night shift",
+          "level": 2
+        },
+        {
+          "id": "test-the-sound",
+          "text": "Test the sound",
+          "level": 2
+        },
+        {
+          "id": "room-and-motion",
+          "text": "Room and motion",
+          "level": 2
+        },
+        {
+          "id": "keyboard-and-touch",
+          "text": "Keyboard and touch",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "betting/how-it-works",
+      "title": "How betting works",
+      "description": "Review the cost, signed maximum and potential payout before supporting a player.",
+      "group": "Betting & payments",
+      "updated": "2026-09-07",
+      "keywords": [
+        "LMSR",
+        "shares",
+        "quote",
+        "market",
+        "bet"
+      ],
+      "headings": [
+        {
+          "id": "open-the-match-market",
+          "text": "Open the match market",
+          "level": 2
+        },
+        {
+          "id": "review-before-signing",
+          "text": "Review before signing",
+          "level": 2
+        },
+        {
+          "id": "why-prices-move",
+          "text": "Why prices move",
+          "level": 2
+        },
+        {
+          "id": "when-bets-are-unavailable",
+          "text": "When bets are unavailable",
+          "level": 2
+        },
+        {
+          "id": "chaos-changes-the-game",
+          "text": "Chaos changes the game",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "betting/payments",
+      "title": "Automatic payouts & refunds",
+      "description": "Winning bets, tournament prizes and refunds go to your wallet automatically.",
+      "group": "Betting & payments",
+      "updated": "2026-09-07",
+      "keywords": [
+        "claim",
+        "payment",
+        "delayed",
+        "retry",
+        "winnings",
+        "refund"
+      ],
+      "headings": [
+        {
+          "id": "paid-to-your-wallet",
+          "text": "Paid to your wallet",
+          "level": 2
+        },
+        {
+          "id": "follow-payment-states",
+          "text": "Follow payment states",
+          "level": 2
+        },
+        {
+          "id": "retries-and-refunds",
+          "text": "Retries and refunds",
+          "level": 2
+        },
+        {
+          "id": "what-does-not-pay-automatically",
+          "text": "What does not pay automatically",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "help/troubleshooting",
+      "title": "Troubleshooting",
+      "description": "Recover from connection, input, audio and payment problems.",
+      "group": "Help",
+      "updated": "2026-09-07",
+      "keywords": [
+        "error",
+        "lag",
+        "latency",
+        "stuck",
+        "failed",
+        "support"
+      ],
+      "headings": [
+        {
+          "id": "i-cannot-connect-or-renew",
+          "text": "I cannot connect or renew",
+          "level": 2
+        },
+        {
+          "id": "my-paddle-feels-delayed",
+          "text": "My paddle feels delayed",
+          "level": 2
+        },
+        {
+          "id": "a-search-or-invitation-seems-stuck",
+          "text": "A search or invitation seems stuck",
+          "level": 2
+        },
+        {
+          "id": "i-cannot-hear-anything",
+          "text": "I cannot hear anything",
+          "level": 2
+        },
+        {
+          "id": "a-bet-failed-or-payment-is-delayed",
+          "text": "A bet failed or payment is delayed",
+          "level": 2
+        },
+        {
+          "id": "a-replay-or-note-is-missing",
+          "text": "A replay or note is missing",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "help/faq",
+      "title": "FAQ & glossary",
+      "description": "Quick answers and the language used around the arcade.",
+      "group": "Help",
+      "updated": "2026-09-07",
+      "keywords": [
+        "questions",
+        "gas",
+        "MON",
+        "terms",
+        "free"
+      ],
+      "headings": [
+        {
+          "id": "quick-answers",
+          "text": "Quick answers",
+          "level": 2
+        },
+        {
+          "id": "is-playing-free",
+          "text": "Is playing free?",
+          "level": 3
+        },
+        {
+          "id": "do-i-get-mon-for-every-win",
+          "text": "Do I get MON for every win?",
+          "level": 3
+        },
+        {
+          "id": "do-i-need-a-wallet-extension",
+          "text": "Do I need a wallet extension?",
+          "level": 3
+        },
+        {
+          "id": "can-i-bet-on-myself-or-sell-a-position",
+          "text": "Can I bet on myself or sell a position?",
+          "level": 3
+        },
+        {
+          "id": "why-are-old-claim-buttons-different",
+          "text": "Why are old claim buttons different?",
+          "level": 3
+        },
+        {
+          "id": "is-interlude-live",
+          "text": "Is Interlude live?",
+          "level": 3
+        },
+        {
+          "id": "can-i-recover-every-replay",
+          "text": "Can I recover every replay?",
+          "level": 3
+        },
+        {
+          "id": "glossary",
+          "text": "Glossary",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "technical/architecture",
+      "title": "Architecture & integrations",
+      "description": "How the browser, relayer, Envio and Monad work together.",
+      "group": "Technical reference",
+      "updated": "2026-09-07",
+      "keywords": [
+        "Mera",
+        "Envio",
+        "Interlude",
+        "VPS",
+        "transport"
+      ],
+      "headings": [
+        {
+          "id": "one-authoritative-game",
+          "text": "One authoritative game",
+          "level": 2
+        },
+        {
+          "id": "responsibilities",
+          "text": "Responsibilities",
+          "level": 2
+        },
+        {
+          "id": "mera-and-envio",
+          "text": "Mera and Envio",
+          "level": 2
+        },
+        {
+          "id": "current-transport-and-integrations",
+          "text": "Current transport and integrations",
+          "level": 2
+        },
+        {
+          "id": "trust-and-limits",
+          "text": "Trust and limits",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "technical/physics",
+      "title": "Physics, prediction & latency",
+      "description": "The contract determines collisions; the browser makes the motion readable.",
+      "group": "Technical reference",
+      "updated": "2026-09-07",
+      "keywords": [
+        "block",
+        "clock",
+        "bigint",
+        "inputs",
+        "prediction",
+        "confirmation"
+      ],
+      "headings": [
+        {
+          "id": "integer-event-physics",
+          "text": "Integer event physics",
+          "level": 2
+        },
+        {
+          "id": "the-match-clock",
+          "text": "The match clock",
+          "level": 2
+        },
+        {
+          "id": "input-pipeline",
+          "text": "Input pipeline",
+          "level": 2
+        },
+        {
+          "id": "preview-and-reconciliation",
+          "text": "Preview and reconciliation",
+          "level": 2
+        },
+        {
+          "id": "read-the-latency-panel",
+          "text": "Read the latency panel",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "technical/contracts",
+      "title": "Contracts & deployments",
+      "description": "Public addresses and versioned references for V4 and its archives.",
+      "group": "Technical reference",
+      "updated": "2026-09-07",
+      "keywords": [
+        "addresses",
+        "V1",
+        "V2",
+        "V3",
+        "V4",
+        "explorer"
+      ],
+      "headings": [
+        {
+          "id": "active-deployment",
+          "text": "Active deployment",
+          "level": 2
+        },
+        {
+          "id": "bindings-and-upgrades",
+          "text": "Bindings and upgrades",
+          "level": 2
+        },
+        {
+          "id": "match-references",
+          "text": "Match references",
+          "level": 2
+        },
+        {
+          "id": "financial-compatibility",
+          "text": "Financial compatibility",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "technical/permissions",
+      "title": "Authentication & permissions",
+      "description": "Separate gameplay authorization, app access and owner-approved spending.",
+      "group": "Technical reference",
+      "updated": "2026-09-07",
+      "keywords": [
+        "EIP-712",
+        "nonce",
+        "security",
+        "signature",
+        "session"
+      ],
+      "headings": [
+        {
+          "id": "three-separate-permissions",
+          "text": "Three separate permissions",
+          "level": 2
+        },
+        {
+          "id": "arcade-grants-and-inputs",
+          "text": "Arcade grants and inputs",
+          "level": 2
+        },
+        {
+          "id": "application-authentication",
+          "text": "Application authentication",
+          "level": 2
+        },
+        {
+          "id": "private-notebook",
+          "text": "Private notebook",
+          "level": 2
+        },
+        {
+          "id": "receiving-money",
+          "text": "Receiving money",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "technical/api",
+      "title": "HTTP API & WebSocket reference",
+      "description": "Read application data and understand the authenticated transaction interfaces.",
+      "group": "Technical reference",
+      "updated": "2026-09-07",
+      "keywords": [
+        "API",
+        "HTTP",
+        "WebSocket",
+        "endpoints",
+        "integration"
+      ],
+      "headings": [
+        {
+          "id": "base-urls-and-conventions",
+          "text": "Base URLs and conventions",
+          "level": 2
+        },
+        {
+          "id": "public-reads",
+          "text": "Public reads",
+          "level": 2
+        },
+        {
+          "id": "quotes-and-fixed-recipient-retries",
+          "text": "Quotes and fixed-recipient retries",
+          "level": 2
+        },
+        {
+          "id": "authenticate-app-requests",
+          "text": "Authenticate app requests",
+          "level": 2
+        },
+        {
+          "id": "signed-gameplay-and-finance",
+          "text": "Signed gameplay and finance",
+          "level": 2
+        },
+        {
+          "id": "legacy-requests",
+          "text": "Legacy requests",
+          "level": 2
+        },
+        {
+          "id": "websocket-events",
+          "text": "WebSocket events",
+          "level": 2
+        },
+        {
+          "id": "errors-and-recovery",
+          "text": "Errors and recovery",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "technical/operations",
+      "title": "Administration & operations",
+      "description": "Operate the testnet service while preserving results and financial rights.",
+      "group": "Technical reference",
+      "updated": "2026-09-07",
+      "keywords": [
+        "admin",
+        "pause",
+        "backups",
+        "rollback",
+        "treasury"
+      ],
+      "headings": [
+        {
+          "id": "operator-console",
+          "text": "Operator console",
+          "level": 2
+        },
+        {
+          "id": "service-responsibilities",
+          "text": "Service responsibilities",
+          "level": 2
+        },
+        {
+          "id": "backup-and-deployment",
+          "text": "Backup and deployment",
+          "level": 2
+        },
+        {
+          "id": "recovery-and-rollback",
+          "text": "Recovery and rollback",
+          "level": 2
+        },
+        {
+          "id": "contract-level-limits",
+          "text": "Contract-level limits",
+          "level": 2
+        }
+      ]
+    }
+  ],
+  "contracts": [
+    {
+      "version": 4,
+      "chainId": 10143,
+      "startBlock": "60259930",
+      "addresses": [
+        {
+          "name": "Game",
+          "address": "0x1ff69df68a3c4c370ce47d75c0bf002ae64d6e64"
+        },
+        {
+          "name": "Arcade sessions",
+          "address": "0xec5d584188f7b4d3430f0c541cf8744e5e3db16f"
+        },
+        {
+          "name": "Vault",
+          "address": "0xf599b9c7c577a745f91920a9b8c1c505bc329437"
+        },
+        {
+          "name": "Market",
+          "address": "0xc4e238db1dd847d9c5eac7924532b69b491a5c55"
+        },
+        {
+          "name": "LMSR",
+          "address": "0x2a2e0abf17b0510f668aa1c03d7ea93333b98d8e"
+        },
+        {
+          "name": "Tournaments",
+          "address": "0x6a3081ea75c773810f8811cbf1a3e01c5ccf5da2"
+        },
+        {
+          "name": "ELO formula",
+          "address": "0xD529f96b35364Cf935d3bE1A4EBAcEFc09952e22"
+        }
+      ]
+    },
+    {
+      "version": 3,
+      "chainId": 10143,
+      "startBlock": "60228868",
+      "addresses": [
+        {
+          "name": "Game",
+          "address": "0x7b54521dfc6e8a4f310180fe2c232a4aab8582ad"
+        },
+        {
+          "name": "Arcade sessions",
+          "address": "0xcbc74334ba69e7066535c2706ac686055f1ff426"
+        },
+        {
+          "name": "Vault",
+          "address": "0x405da4f0284b51a8a2b55ae93fbd7be7914d2e3e"
+        },
+        {
+          "name": "Market",
+          "address": "0x61d0c59b376b482eb30b521bf696a54f33a4d567"
+        },
+        {
+          "name": "LMSR",
+          "address": "0x2a2e0abf17b0510f668aa1c03d7ea93333b98d8e"
+        },
+        {
+          "name": "Tournaments",
+          "address": "0x9ef9ee646786eabda1ea32b9b23f3c8b6dff0e01"
+        },
+        {
+          "name": "ELO formula",
+          "address": "0xa35A296f1F198E21CA0701507fc19Ffe04b0Eb27"
+        }
+      ]
+    },
+    {
+      "version": 2,
+      "chainId": 10143,
+      "startBlock": "60194717",
+      "addresses": [
+        {
+          "name": "Game",
+          "address": "0x47dba35e83e6488bb558bb8cdd95ec729d26770d"
+        },
+        {
+          "name": "Vault",
+          "address": "0x925bd397e02391557fd7e99028bea09f24bb5002"
+        },
+        {
+          "name": "Market",
+          "address": "0x8ab2502ddb70751c6c94155d9c71eeacf58abd04"
+        },
+        {
+          "name": "LMSR",
+          "address": "0x8f14047ec37e0b7214e160b1392130ef9589c2f3"
+        },
+        {
+          "name": "Tournaments",
+          "address": "0x11d61844e32352f4f7676915035ac20c015bbfd3"
+        },
+        {
+          "name": "ELO formula",
+          "address": "0x24638D226524dde3e773831042FBdaD70CB87de9"
+        }
+      ]
+    },
+    {
+      "version": 1,
+      "chainId": 10143,
+      "startBlock": "60075959",
+      "addresses": [
+        {
+          "name": "Game",
+          "address": "0xb66d62f0eabc5f1f86faca76bebc8353c2fbe0dd"
+        },
+        {
+          "name": "Vault",
+          "address": "0x49ba91379d2b52e219c7969d4fe9a647bf64d52d"
+        },
+        {
+          "name": "Market",
+          "address": "0x11ba82f64e872b360e6f876ec06725c44536ef17"
+        },
+        {
+          "name": "LMSR",
+          "address": "0x98f39538f25e80cf2ec0a20fca3258f0db155915"
+        },
+        {
+          "name": "Tournaments",
+          "address": "0x3420ca36e834aab3d5b6415d867397a916cf25ea"
+        }
+      ]
+    }
+  ]
+}

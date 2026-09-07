@@ -1,0 +1,29 @@
+## Operator console
+
+Use **More → Admin** when the connected account has the onchain admin role, or open [the administrator route](/admin). Merely viewing that route does not grant permission. Administration uses the owner passkey and a funded administrator account; it is not an arcade-key permission.
+
+The UI provides tournament creation, independent game/market pause and resume controls, and indexed integrity signals. Tournament creation requires its contract role and validates closing time, capacity, entry fee and funded prize. Signals are diagnostic and do not apply automatic sanctions.
+
+## Service responsibilities
+
+Production runs the web app, relayer, Envio, Hasura, PostgreSQL, Caddy and separate RPC gateways on the VPS. Caddy manages HTTPS. Internal services and database credentials are not public browser endpoints.
+
+Gameplay commands take priority over payment and historical work. Sponsorship's daily ceiling is disabled, while balance reservations, gas-price limits, abuse quotas and market solvency constraints remain enforced. Monitor relayer funding and **/api/health** alongside queue, receipt and payment-worker errors.
+
+## Backup and deployment
+
+Before a compatible release, record the active commit and images, create a private database/configuration backup and wait for active games to finish before restarting their services. Backups use seven-day retention with a protected offsite copy; that copy depends on the destination workstation being available.
+
+Service tests belong to a private, disposable VPS environment with separate chain, accounts, database and network. Never attach that environment to production financial state. Preserve the unique relayer nonce journal across application versions.
+
+## Recovery and rollback
+
+Recover already signed transactions from their persisted exact bytes and receipts. Do not delete the journal or reset the sender nonce to make a stuck queue disappear. Likewise, reconcile a restored database with the chain before allowing new writes.
+
+Use the repository's compatible V4 rollback procedure with an existing release. It verifies immutable contract bindings; an older V3-only binary is not a valid rollback after accepting V4 transactions. Application rollback does not reverse blockchain transactions.
+
+The [operations runbook](https://github.com/DEUSVULTXYZ/Pongit/blob/main/docs/DEPLOYMENT.md) contains the maintained commands. Secrets, backup contents and operator credentials are intentionally excluded from this public guide.
+
+## Contract-level limits
+
+Contracts are immutable and sealed. Replacing an immutable treasury requires redeployment. Financial debts reserved for rejected recipients cannot be reclaimed as treasury surplus. Keep all supported legacy withdrawals, claims and result references available during an upgrade. Interlude migration remains paused and requires a separate delivery and validation process.

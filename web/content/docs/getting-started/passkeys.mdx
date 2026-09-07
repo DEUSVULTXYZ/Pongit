@@ -1,0 +1,30 @@
+## Create or recover your account
+
+PONGIT uses Mera and a passkey provider that supports WebAuthn PRF. Use the HTTPS site at **pongit.xyz**. No wallet extension is required.
+
+- **Create a passkey** creates an account using a new credential.
+- **Continue as…** uses the remembered account and credential.
+- **Use another passkey** opens the provider's account selection.
+- **Forget this account** removes the browser's remembered hint. It does not delete the passkey or onchain funds.
+
+An unsupported provider produces a compatibility error. Use a PRF-compatible provider rather than repeatedly creating credentials. Recovering the same account requires the same passkey and working provider support; a username is not an account recovery method.
+
+## Your two-hour arcade session
+
+After connection, approve a limited gameplay authorization lasting up to two hours. It allows matchmaking, accepting challenges, match consent, paddle control and conceding your own match.
+
+The limited key and authorization are kept in **sessionStorage**, so F5 in the same tab can recover the session. The browser remembers the wallet address, credential identifier and domain separately. Wallet keys and decrypted notebook contents are not saved in those stores.
+
+Only one tab may control a game for a given account and deployment. Keep the controlling tab open. Closing it ends its local session storage.
+
+## Renew without extra navigation
+
+When the session expires, the header displays **Reconnect**. Clicking it renews the session directly. **Play now** also carries your intention through renewal into matchmaking. No passkey popup should appear automatically while you play.
+
+Spending still needs a separate owner passkey approval: bets, withdrawals, tournament registration and administration are not covered by the arcade grant.
+
+## Disconnect safely
+
+Open the account button and select **Disconnect**. PONGIT closes the notebook, clears local session material and requests onchain revocation. If the network is unavailable, the interface explicitly reports that revocation is not yet confirmed. Clearing the browser alone does not revoke an authorization already onchain; its expiry still applies.
+
+Physical cross-device passkey recovery depends on your provider. Automated browser tests do not establish that every physical device/provider combination works. [Permission details](/docs/technical/permissions).

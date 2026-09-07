@@ -1,0 +1,32 @@
+## One authoritative game
+
+PONGIT is a Next.js web application with Solidity contracts, a Node relayer and an Envio indexer. Production runs on a VPS behind Caddy HTTPS. PostgreSQL and internal services are private; the browser does not connect directly to the database.
+
+<ArchitectureDiagram />
+
+## Responsibilities
+
+| Component | Role |
+| --- | --- |
+| Browser | Passkey interaction, local input intent, bounded prediction, rendering and audio |
+| Game contract | Match consent, block clock, collision physics, points, results and ratings |
+| Relayer | Validate signed requests, persist jobs, submit transactions and track receipts |
+| Envio | Index all supported deployments for history, replay retention, rankings and payment discovery |
+| Vault and markets | Owner-approved spend, funded market accounting, settlement and native payouts |
+| Tournament contract | Registration, seeding, round attachments, results, prizes and refunds |
+
+## Mera and Envio
+
+[Mera](https://github.com/category-labs/mera) derives the wallet from PRF-capable passkeys. An independent namespace powers [the private notebook](/docs/account/notebook). The derived keys have different purposes; an arcade authorization never gains wallet spending rights.
+
+[Envio](https://docs.envio.dev/docs/HyperIndex/overview) provides indexed records rather than replacing the contracts' authority. Payment candidates are checked onchain before submission. Removing a retained replay does not remove settlement records.
+
+## Current transport and integrations
+
+The live transport is **Monad Testnet, chain 10143**, using public RPC services through application gateways. The site does not currently route transactions through Alchemy, and does not represent a sponsor integration as active just because it was considered.
+
+**Interlude remains paused and unavailable.** A transport boundary distinguishes live state from settled results, but no Interlude operator or SDK is active in this release. Migration would require compatible contracts, clock and expiry semantics, recovery tests and explicit validation of the operator's trust model. Financial settlement must not consume a stale delegated value as a final Monad result.
+
+## Trust and limits
+
+The browser may display a prediction that differs from later confirmation. The relayer can delay or fail to submit, and Envio can lag. Immutable contracts constrain accepted actions, but the service does not claim censorship-proof scheduling or an independent security audit. [Authentication boundaries](/docs/technical/permissions).

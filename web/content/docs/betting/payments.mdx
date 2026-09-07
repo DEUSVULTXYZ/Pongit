@@ -1,0 +1,28 @@
+## Paid to your wallet
+
+In V4, winning bets, tournament prizes and eligible cancellation refunds are paid directly to the fixed beneficiary's Mera wallet. You do not need to click Claim, approve another passkey request or remain connected to receive them.
+
+A contract does not wake up by itself. The relayer discovers confirmed outcomes through Envio, verifies them against the contracts and submits the payment transactions. The contract fixes the recipient and amount; the caller cannot redirect the payment.
+
+## Follow payment states
+
+Open **Wallet payments** in the account panel to see the amount, origin, state and transaction link. Your wallet balance is shown separately from available betting credit.
+
+| State | What to do |
+| --- | --- |
+| **Payment pending** | Wait for discovery, transaction submission and confirmation |
+| **Paid to your wallet** | Inspect the receipt and wallet balance; no claim is needed |
+| **Payment delayed** | Read the error and use **Retry payment** when offered |
+| **No payout for this bet** | The position lost or has no amount due; this is not a blocked claim |
+
+## Retries and refunds
+
+A rejected transfer leaves a reserved debt. Retries use that same beneficiary and debt, so they cannot pay twice. The relayer retries progressively, and a delayed receiver does not prevent another beneficiary's payment or the game's result.
+
+A confirmed cancelled match refunds accepted purchase costs under the market's rules. A confirmed cancelled tournament refunds entry fees; the seeded contribution is accounted for separately. A loss is not a cancellation and does not refund the losing bet.
+
+Funding, RPC or indexer outages can delay delivery. The payment history is the place to check the current result, not an assumed fixed delivery time.
+
+## What does not pay automatically
+
+Ordinary match wins award ELO when ranked, not MON prizes. V1–V3 claims still credit their old vaults and need a signed withdrawal. V4 wallet winnings are not automatically transferred into betting credit. [Balance guide](/docs/account/balances).

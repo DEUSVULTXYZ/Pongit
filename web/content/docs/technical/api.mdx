@@ -1,0 +1,104 @@
+## Base URLs and conventions
+
+HTTP base: `https://pongit.xyz/api`. WebSocket: `wss://pongit.xyz/ws`.
+
+This reference describes the delivered application interfaces, not an unrestricted RPC service. Examples are inert text: this documentation never executes a transaction. Large integer values are encoded as decimal strings; use bigint rather than JavaScript Number for wei, nonces and physics values. Mode `0` is Classic, `1` is Chaos.
+
+```js
+const response = await fetch('https://pongit.xyz/api/config');
+if (!response.ok) throw new Error('Configuration unavailable');
+const config = await response.json();
+console.log(config.version, config.chainId, config.game);
+```
+
+## Public reads
+
+| Method and path | Purpose / response |
+| --- | --- |
+| GET `/health` | `ok`, chain head, queue/funding error and payment worker status; 503 if unhealthy |
+| GET `/config` | Active deployment, recursive legacy manifests, relayer and observed server time |
+| GET `/matches` | Current match list in `matches` |
+| GET `/matches/:id` | Match, clock, chain head and snapshot observation time; `fresh=1` requests a fresh read |
+| GET `/player/:address` | Ratings, balances, active game and authorization/nonces needed by the app |
+| GET `/arcade/:address` | Current arcade authorization information |
+| GET `/leaderboard?mode=0` | `Player` rows with current ratings and public profile data |
+| GET `/profiles?search=neon` | Up to 30 public prefix matches; also accepts a full address |
+| GET `/profiles/:address` | Saved profile or the account's default avatar |
+| GET `/player/:address/recent-matches` | Up to three cross-deployment summaries in `Match` |
+| GET `/history?before=BLOCK` | Active deployment's result history, up to 100 rows |
+| GET `/replay/:id?after=VERSION` | Up to 1000 `Frame` records after the version cursor |
+| GET `/replay-status/v4:12` | Replay availability for a qualified reference |
+| GET `/tournaments` | Recent tournament data in `tournaments` |
+| GET `/positions/:id/:address` | Paid cost, due amount, position state and payment details |
+| GET `/payouts/:address?offset=0` | Paginated account payment history |
+| GET `/jobs/:id` | Sanitized transaction job state, receipt hash, error and timing |
+| GET `/inputs/:id/:address` | Latest input-lane state for a match/player |
+| GET `/alerts` | Indexed integrity signals, not automatic sanctions |
+
+## Quotes and fixed-recipient retries
+
+POST `/quote` accepts `matchId` as a decimal string, side `0` or `1`, and `shares` in base units. It returns `amount`, `open`, `version`, `book` and `remainingUs`. A quote is not a reservation or a transaction.
+
+```json
+{"matchId":"12","side":0,"shares":"1000000000000000"}
+```
+
+POST `/payouts/retry` accepts an existing payment task `id`. It cannot specify a replacement recipient or amount. Throttling and onchain debt checks still apply.
+
+## Authenticate app requests
+
+POST `/auth/challenge` with `player` returns `nonce`, `expires` and the exact `message` to sign. POST `/auth/session` with `player`, `nonce` and `signature` establishes the app cookie. GET `/auth/session` checks it; DELETE `/auth/session` closes it. Do not invent or reuse the challenge message.
+
+Private app calls use browser credentials, an allowed Origin and `x-pongit-player` matching the authenticated account. Cookie possession does not authorize an onchain spend.
+
+| Method and path | Body / purpose |
+| --- | --- |
+| PUT `/profiles` | `handle`, `avatar` integer 0–11; returns the saved public profile |
+| DELETE `/profiles` | Removes the authenticated public profile |
+| GET `/notebook` | `revision`, and saved `iv`/`ciphertext` if present |
+| PUT `/notebook` | Expected `revision`, base64url `iv` and `ciphertext`; returns new revision |
+| GET `/blocks` | Own blocked addresses |
+| POST or DELETE `/blocks` | `player` address to block or unblock |
+| GET `/challenges` | Own recent inbox, with expiry and room/transaction state |
+| POST `/challenges` | `recipient` address or null for an open link, `mode`, `ranked` |
+| POST `/challenges/rematch` | `matchRef`, such as `v4:12`; server verifies participation and derives opponent/rules |
+| GET `/challenges/:id` | A visible invitation; addressed links enforce their recipient |
+| POST `/challenges/:id/accept` | Accept and reserve the room atomically |
+| POST `/challenges/:id/decline` | Decline a pending invitation |
+| POST `/challenges/:id/cancel` | Cancel if eligible; a submitted job returns its actual state |
+
+## Signed gameplay and finance
+
+POST `/queue` accepts a signed player request including `player`, `expires`, `signature`, `tournamentId` and `mode`. GET `/queue/:address` retrieves that player's queue/room state. POST `/queue/cancel` uses a signed cancellation. POST `/ready` supplies the room ticket and bilateral match consent.
+
+POST `/inputs` accepts `{ request, intent }` and returns **202** after input-lane acceptance. `request` must target `game.submitInput`; the intent includes a signed client sequence. Lane states include `accepted`, `superseded`, `submitted`, `confirmed` and `failed`. Acceptance is not chain confirmation.
+
+POST `/relay` accepts `deployment`, `contract`, `functionName` and ABI-ordered `args`, returning a **202** job acknowledgement. Supported calls are allowlisted and simulated; arbitrary contract calls are not accepted. Journal jobs use `queued`, `signed`, `sent`, `succeeded`, `failed` and `superseded`. In particular, a confirmed successful receipt is exposed as `succeeded`, while the input lane calls that state `confirmed`. `GET /jobs/:id` returns `tx_hash` and `timing` with `queueMs`, `broadcastMs`, `confirmationMs` and `totalMs`; durations not yet observed are null.
+
+Owner signatures are required by financial contracts for purchases, withdrawals and registration. POST `/faucet` also verifies its signed test-credit request. Consult the actual [typed-data and ABI definitions](https://github.com/DEUSVULTXYZ/Pongit/blob/main/shared/protocol.ts) and [client signing flow](https://github.com/DEUSVULTXYZ/Pongit/blob/main/web/components/Arena.tsx); the cookie is not a substitute.
+
+POST `/rpc` exposes selected JSON-RPC methods. Contract reads/estimates are restricted to known deployments; raw transaction submission is reserved for onchain administrators, with target and chain checks.
+
+## Legacy requests
+
+GET `/legacy/player/:address`, `/legacy/claims/:address`, `/legacy/history`, `/legacy/matches/:id` and `/legacy/replay/:id` select an archive using `?deployment=v1`, `v2` or `v3`. Without that parameter, the handler defaults to V1. Replay/history cursors retain their meanings.
+
+Legacy signed withdrawals go through the supported relay with the correct deployment. Never sign using the active V4 domain for a V1 vault.
+
+## WebSocket events
+
+The socket enforces the allowed Origin. It sends an initial `head`, then public `head`, `match` and `job` updates. Treat it as a notification feed and re-read current state after reconnecting; it is not a durable replay log.
+
+An authenticated app client may send:
+
+```json
+{"type":"subscribe-social","player":"0x0000000000000000000000000000000000000001"}
+```
+
+The player must match the app cookie. `inbox` is sent only to the relevant subscribed account; reload its inbox through HTTP. `social-expired` means authentication or account binding is no longer valid. The illustrated address is a placeholder, not a credential.
+
+## Errors and recovery
+
+Read the returned `error` and HTTP status rather than assuming every failure is 401. The current server commonly returns **400** for validation/authentication failures, **404** for missing routes/jobs, **409** for notebook revision conflicts, **410** for retired replays, **429** for traffic limits and **503** for unhealthy service status. RPC errors follow JSON-RPC envelopes.
+
+Refresh expiring quotes and nonces after failure. Do not resend a different transaction for a job already signed or sent; recover its state and receipt first. No API route in this reference grants access to another player's private notebook.

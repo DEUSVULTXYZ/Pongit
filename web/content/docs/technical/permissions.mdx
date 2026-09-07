@@ -1,0 +1,29 @@
+## Three separate permissions
+
+| Authorization | What it permits | What it does not permit |
+| --- | --- | --- |
+| Owner passkey | Wallet-approved spend, withdrawal, registration and authorized administration | Bypassing contract roles or limits |
+| Arcade grant | Own match consent, control, restoration and concession | Betting, withdrawing or acting for another player |
+| App session | Own profile, invitations, blocks and encrypted notebook access | An arbitrary blockchain transfer |
+
+## Arcade grants and inputs
+
+The EIP-712 arcade grant is bound to the player, game key, chain, registry, game contract, expiry and revocation state. Both owner and game-key signatures prove the delegation and possession. The maximum session duration is two hours.
+
+Match joins bind the opponent, room, commitment, session, nonce, expiry, tournament, mode, ranking choice and rules version. The existing Input signature binds its match, player, direction, sequential nonce and block-validity window. A revoked or expired key fails validation; replaying a nonce does not create another valid command.
+
+Only the limited arcade material and recovery data are stored in sessionStorage. The remembered passkey hint in localStorage is not the wallet key. Owner-derived keys are opened for their operation and closed afterward.
+
+## Application authentication
+
+The server issues a single-use nonce and message bound to player, chain and game. A valid owner or active arcade signer exchanges the signed message for an HttpOnly, SameSite Strict cookie, Secure on production HTTPS. The current cookie lifetime is **two hours**; a session signed by an arcade key also depends on that key remaining valid.
+
+Private app routes check the cookie and the matching `x-pongit-player` header. State-changing app requests check the allowed Origin. This prevents a changed account in another tab from silently editing the previous account's profile.
+
+## Private notebook
+
+A separate PRF namespace, `pongit.xyz/notebook/v1`, feeds HKDF and a nonextractable AES-GCM key. Each save uses a fresh 96-bit IV, account-bound authenticated data and revision-based concurrency control. Keys and plaintext stay in memory; stored ciphertext is not a guarantee against a compromised live browser.
+
+## Receiving money
+
+Fixed-recipient payouts are permissionless to trigger or retry. No beneficiary signature is required because the caller cannot choose another recipient or change the debt. Spending permissions are unchanged. [API reference](/docs/technical/api).

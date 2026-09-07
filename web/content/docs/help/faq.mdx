@@ -1,0 +1,48 @@
+## Quick answers
+
+### Is playing free?
+
+Gameplay gas is sponsored while the relayer is funded. Bets and fee-bearing tournament entries use test credits. Disabling a daily sponsorship ceiling does not make funding unlimited.
+
+### Do I get MON for every win?
+
+No. Ordinary ranked games award ELO; friendly games award neither ELO changes nor a new MON prize. Winning bets and tournament prizes have their own accounting.
+
+### Do I need a wallet extension?
+
+No. PONGIT uses a Mera passkey account. The provider must support PRF. Your public username is not your wallet or recovery credential.
+
+### Can I bet on myself or sell a position?
+
+Participant accounts cannot bet on their own match. The current LMSR interface supports buying and settlement, not early resale.
+
+### Why are old claim buttons different?
+
+V4 pays due amounts directly to the wallet. V1–V3 credit their old vaults and still require a signed withdrawal. [Balances](/docs/account/balances).
+
+### Is Interlude live?
+
+No. The active transport is Monad. Interlude remains paused; no advertised low-latency target should be treated as a measured PONGIT result.
+
+### Can I recover every replay?
+
+The app retains the latest three eligible finished games per participant. Events remain onchain, but the site does not automatically rebuild retired replays.
+
+## Glossary
+
+| Term | Meaning in PONGIT |
+| --- | --- |
+| MON | The chain's native asset; this application currently uses test MON |
+| Gas | Transaction execution cost, paid by the sponsor for supported gameplay |
+| Passkey / PRF | Credential and deterministic key material used by Mera |
+| Arcade session | A limited, expiring gameplay authorization |
+| ELO | A rating based on ranked results and expected win probability |
+| Rally | Play between two points; Chaos sizes stay fixed for that rally |
+| Vault | Contract holding available betting credit |
+| Share | A position paying proportionally if its side wins |
+| LMSR | The binary market's cost function |
+| Relayer | Service submitting supported signed actions and maintenance transactions |
+| Envio | Indexer turning confirmed contract events into queryable records |
+| Snapshot | An observed game state used for display and reconstruction |
+| Versioned reference | Deployment plus match ID, such as `v4:12` |
+| Settled result | A confirmed authoritative outcome, not just a rendered preview |
