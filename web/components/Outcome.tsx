@@ -1,4 +1,6 @@
 "use client";
+import { IconButton } from "./IconButton";
+
 import { useEffect, useRef, useState } from "react";
 import { arcadeAudio } from "../lib/audio";
 import {createPortal} from "react-dom";
@@ -28,9 +30,9 @@ export function Outcome({id,match,account,rating,sound,replay,rematch,watch,agai
   useEffect(()=>{if(result && !animate && result.victory!==null)dialog.current?.querySelector<HTMLButtonElement>(".button-row button")?.focus({preventScroll:true});},[animate,result]);
   if(!currentResult || !result)return null;
   const delta=rating!==null && result.before!==null?rating-result.before:null;
-  if(result.victory===null)return <aside className="inbox-banner spectator-result" role="status">{short(match.winner)} wins · {match.state.scoreA} : {match.state.scoreB}<button aria-label="Dismiss winner" onClick={()=>setResult(null)}>×</button></aside>;
+  if(result.victory===null)return <aside className="inbox-banner spectator-result" role="status">{short(match.winner)} wins · {match.state.scoreA} : {match.state.scoreB}<IconButton aria-label="Dismiss winner" onClick={()=>setResult(null)}/></aside>;
   return createPortal(<section tabIndex={-1} ref={dialog} className={`outcome ${animate?"celebrate":""} ${result.victory===false?"defeat":"victory"}`} role="dialog" aria-modal="true" aria-label="Confirmed match result">
-    <button className="outcome-close" onClick={()=>setResult(null)} aria-label="Close result">×</button>
+    <IconButton className="outcome-close" onClick={()=>setResult(null)} aria-label="Close result"/>
     <div className="outcome-effects" aria-hidden="true">
       <div className="result-vortex"/><div className="result-ring ring-a"/><div className="result-ring ring-b"/><div className="result-scan"/>
       {animate && <div className="arcade-particles">{Array.from({length:32},(_,i)=><i key={i} style={{"--i":i} as React.CSSProperties}/>)}</div>}

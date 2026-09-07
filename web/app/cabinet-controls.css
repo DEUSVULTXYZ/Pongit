@@ -6,6 +6,66 @@
   --control-focus: #a3f5ed;
 }
 
+/* Icon keycaps have a symmetric box, independent of text-button padding or fonts. */
+:is(.cabinet-ui, .cabinet-dialog, .outcome, .docs-site) button.icon-button {
+  display: inline-grid;
+  place-items: center;
+  justify-content: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  gap: 0;
+  line-height: 1;
+  letter-spacing: 0;
+}
+.control-icon { display: block; width: 20px; height: 20px; flex: none; pointer-events: none; }
+.cabinet-ui .touch-controls .control-icon { width: 24px; height: 24px; }
+.cabinet-ui .controls kbd {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0;
+  line-height: 1;
+  letter-spacing: 0;
+}
+.cabinet-ui .controls kbd .control-icon { width: 16px; height: 16px; }
+
+/* Equal side columns keep scores and status centered even with unequal names. */
+.cabinet-ui .scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+}
+.cabinet-ui .scoreboard > div { min-width: 0; }
+.cabinet-ui .scoreboard > .right { align-items: flex-end; }
+.cabinet-ui .scoreboard :is(strong, small) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cabinet-ui .score { justify-content: center; letter-spacing: 0; }
+.cabinet-ui .court-footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  align-items: center;
+}
+.cabinet-ui .court-footer > span:last-child { text-align: right; }
+.cabinet-ui .court-footer > span:nth-child(2) { width: auto; order: initial; text-align: center; }
+
+/* Keep both result controls equally inset from the decorative frame. */
+.outcome { --result-inset: 25px; --result-control-gap: 12px; }
+.outcome-effects:after { inset: var(--result-inset); }
+.outcome .outcome-close { top: calc(var(--result-inset) + var(--result-control-gap)); right: calc(var(--result-inset) + var(--result-control-gap)); }
+.outcome .outcome-skip { top: calc(var(--result-inset) + var(--result-control-gap)); left: calc(var(--result-inset) + var(--result-control-gap)); }
+
+@media (max-width: 520px) {
+  .cabinet-ui .court-footer { grid-template-columns: 1fr 1fr; }
+  .cabinet-ui .court-footer > span:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+  .outcome { --result-inset: 9px; --result-control-gap: 12px; }
+}
+
 :is(.cabinet-ui, .cabinet-dialog, .outcome) button {
   border-color: var(--control-edge);
   border-radius: 10px;
