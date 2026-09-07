@@ -27,3 +27,11 @@ Final generation prompt:
 ## Rollback
 
 Restore the preceding web and relayer images together using the existing VPS release procedure. This release adds no tables and changes no stored data format. Saved profiles are compatible with the preceding release. Keep the new asset and application image together, so the background URL remains available.
+
+## Validation and screenshots
+
+Nine browser scenarios passed on the private VPS test environment, then three passed on public HTTPS (desktop, small mobile and the complete two-player username flow). TypeScript checking and all 22 unit tests passed. The dependency audit reported no production vulnerabilities; the history scan reported no secrets. See [the validation record](ARCADE_HALL_VALIDATION.json) for scope and limitations.
+
+![Static arcade room during a real testnet match](images/arcade-hall-game.png)
+
+![The profile editor opened directly from home](images/player-tag-editor.png)

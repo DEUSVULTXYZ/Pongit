@@ -33,5 +33,47 @@
     "high": 0,
     "critical": 0,
     "total": 0
-  }
+  },
+  "applicationCommit": "7dd5583aefe82438aec7301b74072c39e3fbd27c",
+  "publicHTTPS": {
+    "base": "https://pongit.xyz",
+    "at": "2026-09-07T06:48:40.832Z",
+    "addresses": [
+      "0xE0DCC0C5DC2f69e241Fcf1d4b6BEFCF6921D2d0E",
+      "0xBb70202E7f4a1aC4388477E4D8DdeFaF391ec43e"
+    ],
+    "handle": "neon_mtqvppoq",
+    "scenarios": [
+      "create from home and carry connection intent",
+      "cancel connection",
+      "lowercase normalization",
+      "duplicate click",
+      "database uniqueness and concurrent reservation",
+      "literal underscore and full address search",
+      "reload persistence",
+      "targeted ranked duel by username",
+      "named scoreboard",
+      "ranked leaderboard",
+      "immediate rename in leaderboard",
+      "static room",
+      "desktop and mobile overflow"
+    ],
+    "errors": [],
+    "browserTestsPassed": 3,
+    "testProfileCleanup": "Removed only the two profiles created by this run; onchain results remain."
+  },
+  "secretsAudit": {
+    "commitsScanned": 42,
+    "findings": 0
+  },
+  "backup": "20260907T064607Z",
+  "rollback": {
+    "release": "3e0562e64e529581e3e165ebbed9ea3865ba5543",
+    "webImage": "pongit-web:arcade-hall-previous",
+    "relayerImage": "pongit-relayer:arcade-hall-previous"
+  },
+  "limits": [
+    "Passkey tests use virtual Chromium CTAP2 PRF authenticators; physical cross-device synchronization was not re-tested.",
+    "No contracts, financial rules, audio assets or replay retention changed."
+  ]
 }
