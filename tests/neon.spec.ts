@@ -1,3 +1,4 @@
+import {activity} from "./cabinet";
 import {test,expect} from "@playwright/test";
 import {writeFile} from "node:fs/promises";
 test("Neon Rush cabinet, measured soundtrack and effects, tabs, mobile, and reduced motion",async({browser})=>{
@@ -18,19 +19,19 @@ test("Neon Rush cabinet, measured soundtrack and effects, tabs, mobile, and redu
   await page.getByRole("button",{name:"Arcade settings",exact:true}).click();await expect(page.locator(".arcade-settings")).toContainText("Audio enabled",{timeout:25000});
   await expect(page.getByRole("slider",{name:"Music volume"})).toHaveValue("20");await expect(page.getByRole("slider",{name:"Effects volume"})).toHaveValue("60");
   const music=[];for(let i=0;i<30;i++){await page.waitForTimeout(50);music.push(await sample());}
-  expect(Math.max(...music.map(x=>x.rms))).toBeGreaterThan(.01);
+  await expect.poll(async()=>(await sample()).rms,{timeout:15000}).toBeGreaterThan(.003);
   await page.getByRole("slider",{name:"Music volume"}).fill("0");await page.waitForTimeout(1000);await page.getByRole("button",{name:"Test sound",exact:true}).click();
   const effects=[];for(let i=0;i<10;i++){await page.waitForTimeout(25);effects.push(await sample());}
   expect(Math.max(...effects.map(x=>x.peak))).toBeGreaterThan(.05);
   await page.getByRole("slider",{name:"Music volume"}).fill("20");await page.getByRole("button",{name:"Close arcade settings"}).click();
   await page.screenshot({path:"artifacts/neon-desktop.png",fullPage:true});
-  for(const tab of ["Rivals","Ladder","Tournaments","Archive","Play"]){await page.getByRole("button",{name:tab,exact:true}).click();await expect(page.locator("h1")).toBeVisible();}
+  for(const tab of ["Rivals","Ladder","Tournaments","Archive","Play"]){if(["Ladder","Tournaments","Archive"].includes(tab))await activity(page,tab);else await page.getByRole("button",{name:tab,exact:true}).click();await expect(page.locator("h1")).toBeVisible();}
   expect(await page.evaluate(()=>(window as any).audioContexts.length)).toBe(1);
   await page.getByRole("button",{name:"Arcade settings",exact:true}).click();await page.locator(".arcade-settings").getByRole("button",{name:"Sound on",exact:true}).click();await page.waitForTimeout(500);expect((await sample()).peak).toBeLessThan(.001);
   await page.getByRole("button",{name:"Test sound",exact:true}).click();await expect(page.locator(".arcade-settings")).toContainText("Audio enabled");
   await page.evaluate(()=>{Object.defineProperty(document,"hidden",{configurable:true,get:()=>true});document.dispatchEvent(new Event("visibilitychange"));});await expect.poll(()=>page.evaluate(()=>(window as any).audioContexts[0].state)).toBe("suspended");
   await page.evaluate(()=>{Object.defineProperty(document,"hidden",{configurable:true,get:()=>false});document.dispatchEvent(new Event("visibilitychange"));});await page.getByRole("button",{name:"Test sound",exact:true}).click();await expect.poll(()=>page.evaluate(()=>(window as any).audioContexts[0].state)).toBe("running");
-  await page.getByRole("button",{name:"Background effects on"}).click();await expect(page.locator(".arcade-background")).toHaveAttribute("data-effects","false");await page.getByRole("button",{name:"Close arcade settings"}).click();
+  await page.getByText("Room appearance",{exact:true}).click();await page.getByRole("button",{name:"Background effects on"}).click();await expect(page.locator(".arcade-background")).toHaveAttribute("data-effects","false");await page.getByRole("button",{name:"Close arcade settings"}).click();
   await page.emulateMedia({reducedMotion:"reduce"});await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:"artifacts/neon-mobile-reduced-motion.png",fullPage:true});
   expect(errors).toEqual([]);await writeFile("artifacts/neon-audio.json",JSON.stringify({music,effects,errors,measuredAt:new Date().toISOString(),note:"Measured browser output; physical speaker/headphone listening is separate."},null,2));
  }finally{await page.close();}

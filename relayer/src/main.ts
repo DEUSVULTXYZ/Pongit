@@ -849,7 +849,7 @@ const server = createServer(async (req, res) => {
         row.rowCount ? 200 : 404,
       );
     }
-    if (req.method === "GET" && path.startsWith("/player/")) {
+    if (req.method === "GET" && /^\/player\/0x[\da-fA-F]{40}$/.test(path)) {
       const player = z
         .string()
         .regex(/^0x[\da-fA-F]{40}$/)
@@ -1172,6 +1172,14 @@ const server = createServer(async (req, res) => {
       const profiles=(await pool.query("SELECT player,handle,avatar FROM profiles")).rows;
       const value={Player:players.map(p=>({...p,...profiles.find(x=>x.player===p.address.toLowerCase())})).sort((a,b)=>b.elo-a.elo || a.id.localeCompare(b.id)).slice(0,100)};
       ladderCaches.set(mode,{until:Date.now()+10000,value});return send(res,value);
+    }
+    if(req.method==="GET" && /^\/player\/0x[\da-fA-F]{40}\/recent-matches$/.test(path)) {
+      const player=path.split("/")[2].toLowerCase();
+      const recent=await graphql("query($player:String!){RecentReplays(where:{id:{_eq:$player}}){matches}}",{player});
+      const ids=recent.RecentReplays[0]?.matches || [];
+      if(!ids.length)return send(res,{Match:[]});
+      const data=await graphql("query($ids:[String!]!){Match(where:{id:{_in:$ids}},order_by:[{endedAt:desc},{id:desc}],limit:3){id rawId deployment playerA playerB status mode ranked scoreA scoreB endedAt replayAvailability}}",{ids});
+      return send(res,data);
     }
     if (req.method === "GET" && path === "/history") {
       const before =

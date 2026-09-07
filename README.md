@@ -12,7 +12,7 @@ A browser-based 1v1 arcade game whose physics, scores, results and ELO are compu
 - **Chaos betting pressure**: accepted spectator bets can shrink the favourite's paddle for the next rally, with a visible intermission and a maximum 25% reduction.
 - **Optional public profiles** and a separate **private Mera notebook** for rivals, replay notes and preferences. The notebook uses its own passkey PRF namespace and AES-GCM encryption.
 - **Spectating, Envio replays, LMSR markets, automatic wallet payouts, signed withdrawals, Classic tournaments and role-based administration**.
-- Michroma, precomputed neon artwork, keyboard/touch controls and skippable **VICTORY / DEFEAT** animations. Enter with original chiptune music or muted. Music/effect volumes and background effects are remembered; reduced-motion preferences are respected.
+- Michroma, precomputed neon artwork, keyboard/touch controls and skippable **VICTORY / DEFEAT** animations. A compact cabinet home leads straight into play. Enter with **Last Stop** — Music by **Karl Casey @ White Bat Audio** — or muted. Music/effect volumes and static room appearance are remembered; reduced-motion preferences are respected.
 
 The site runs on a VPS with Docker Compose, private PostgreSQL and automatic Let's Encrypt certificates. V1/V2/V3 replays, claims, withdrawals and balances remain separately accessible from Archive.
 
@@ -55,3 +55,5 @@ The [Arcade delivery report](docs/ARCADE.md) records V3 addresses, **64 passing 
 The repository is public at the owner's request. The daily sponsorship ceiling is disabled (`RELAYER_DAILY_BUDGET_MON=0`); balance reservations, gas-price limits, abuse quotas and solvency checks remain active. Credentials and deployment secrets are excluded from Git.
 
 Chain inclusion delay remains visible. Prediction does not make an unconfirmed input authoritative, and betting locks reduce latency advantage without eliminating it. Interlude has a documented transport boundary but is **not integrated**. Physical cross-device passkey recovery still needs a demonstration. This is a testnet release without an external security audit or a claim of bug-free operation.
+
+See [Night Shift UX](docs/NIGHT_SHIFT.md) for the cabinet navigation, recent-match API and audio credits.

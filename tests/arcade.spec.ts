@@ -1,4 +1,4 @@
-import {openCabinet} from "./cabinet";
+import {openCabinet,openWallet,closeWallet} from "./cabinet";
 import { test, expect } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 
@@ -21,11 +21,11 @@ test("Arcade passkey continuity, direct duel, F5, rematch, finance and revocatio
     // Deliver the private notification before the Accept HTTP response: both
     // paths must reuse one room secret and one signed consent.
     await b.route("**/challenges/*/accept",async route=>{const response=await route.fetch();await b.waitForTimeout(1200);await route.fulfill({response});});
-    await expect(b.locator(".duel-notifications")).toContainText("FRIENDLY",{timeout:15000});await b.getByRole("button",{name:"Accept friendly"}).click();
+    await expect(b.locator(".duel-notifications")).toContainText("FRIENDLY",{timeout:15000});const acceptedResponse=b.waitForResponse(r=>r.url().endsWith("/accept")&&r.request().method()==="POST");await b.getByRole("button",{name:"Accept friendly"}).click();await acceptedResponse;
     await b.unroute("**/challenges/*/accept");
     for(const p of [a,b])await expect(p.locator(".match-bar")).toContainText("IN PLAY",{timeout:45000});
     await a.bringToFront();await a.screenshot({path:"artifacts/neon-ingame-desktop.png"});
-    await a.setViewportSize({width:1280,height:720});expect(await a.evaluate(()=>scrollY)).toBe(0);const courtBox=await a.locator("canvas").boundingBox();expect(courtBox!.y+courtBox!.height).toBeLessThanOrEqual(720);await a.screenshot({path:"artifacts/neon-ingame-720.png"});await a.setViewportSize({width:1440,height:1000});
+    await a.setViewportSize({width:1280,height:720});expect(await a.evaluate(()=>scrollY)).toBe(0);const courtBox=await a.locator("canvas").boundingBox();expect(courtBox!.y+courtBox!.height).toBeLessThanOrEqual(720);await expect(a.locator(".touch-controls")).toBeInViewport();await a.screenshot({path:"artifacts/neon-ingame-720.png"});await a.setViewportSize({width:1440,height:1000});
     const matches=async()=> (await (await s.request.get(api+"/matches")).json()).matches;
     const first=(await matches()).find((m:any)=>m.status===2&&[m.playerA,m.playerB].some((x:string)=>x.toLowerCase()===addresses[0].toLowerCase()));expect(first).toBeTruthy();
     a.on("response",async r=>{if(/\/jobs\//.test(r.url()))try{const j=await r.json();if(j.status==="succeeded"&&j.timing)timings.push(j.timing);}catch{}});
@@ -43,11 +43,11 @@ test("Arcade passkey continuity, direct duel, F5, rematch, finance and revocatio
     await a.setViewportSize({width:390,height:320});await a.bringToFront();const backgroundTop=await a.locator("body").evaluate(e=>e.style.top);
     await a.mouse.move(195,250);await a.mouse.wheel(0,700);await expect.poll(()=>a.locator(".outcome").evaluate(e=>e.scrollTop)).toBeGreaterThan(0);expect(await a.locator("body").evaluate(e=>e.style.top)).toBe(backgroundTop);expect(await a.evaluate(()=>scrollY)).toBe(0);
     await a.getByRole("button",{name:"Find another opponent",exact:true}).scrollIntoViewIfNeeded();await expect(a.getByRole("button",{name:"Find another opponent",exact:true})).toBeInViewport();await a.screenshot({path:"artifacts/result-scroll-mobile.png"});await a.setViewportSize({width:1440,height:1000});
-    await a.getByRole("button",{name:"Rematch"}).click();await expect(a.locator("body")).not.toHaveCSS("position","fixed");await expect(b.locator(".duel-notifications")).toBeVisible({timeout:15000});await b.getByRole("button",{name:"Accept friendly"}).click();
+    await a.getByRole("button",{name:"Rematch"}).click();await expect(a.locator("body")).not.toHaveCSS("position","fixed");await expect(b.locator(".duel-notifications")).toBeVisible({timeout:15000});await b.getByRole("button",{name:"Rematch"}).click();
     await expect.poll(async()=> (await matches()).filter((m:any)=>m.status===2&&[m.playerA,m.playerB].some((x:string)=>x.toLowerCase()===addresses[0].toLowerCase())).map((m:any)=>m.id),{timeout:40000}).toHaveLength(1);
     const second=(await matches()).find((m:any)=>m.status===2&&m.id!==first.id);expect(second.mode).toBe(first.mode);expect(second.ranked).toBe(first.ranked);expect(second.tournamentId).toBe("0");
     for(const p of [a,b])await expect(p.locator(".match-bar")).toContainText("IN PLAY");expect(counts.slice(0,2)).toEqual(baseline.slice(0,2));
-    await a.getByRole("button",{name:"Get test credits"}).click();await expect(a.locator(".status-line")).toContainText("credited",{timeout:20000});expect(counts[0]).toBe(baseline[0]+1);
+    await openWallet(a);await a.getByRole("button",{name:"Get test credits"}).click();await expect(a.locator(".account-feedback")).toContainText("credited",{timeout:20000});await closeWallet(a);expect(counts[0]).toBe(baseline[0]+1);
     await openCabinet(b);await b.getByRole("button",{name:"Concede",exact:true}).click();await expect(a.locator(".outcome h2")).toHaveText("VICTORY",{timeout:20000});await a.getByRole("button",{name:"Close result"}).click();
     await contexts[0].setOffline(true);await a.waitForTimeout(17000);expect(await a.evaluate(()=>sessionStorage.getItem("pongit:arcade-session:v3"))).not.toBeNull();await contexts[0].setOffline(false);await a.reload();await expect(a.locator(".status-line")).toContainText("Arcade session restored",{timeout:25000});expect(counts[0]).toBe(baseline[0]+1);
     await a.setViewportSize({width:1280,height:720});
@@ -60,7 +60,7 @@ test("Arcade passkey continuity, direct duel, F5, rematch, finance and revocatio
     const beforeRenew=counts[0];let grants=0;const countGrant=(r:any)=>{if(r.method()==="POST"&&r.url().endsWith("/relay")){const payload=r.postDataJSON();if(payload?.contract==="arcade"&&payload?.functionName==="register")grants++;}};a.on("request",countGrant);
     await renew.dblclick();await expect(a.locator(".status-line")).toContainText("Arcade session ready",{timeout:30000});expect(counts[0]).toBe(beforeRenew+1);expect(grants).toBe(1);a.off("request",countGrant);await expect(a.locator(".connect-modal")).toHaveCount(0);
     expect((await a.evaluate(()=>JSON.parse(sessionStorage.getItem("pongit:arcade-session:v3")!).player)).toLowerCase()).toBe(addresses[0].toLowerCase());
-    await a.getByRole("button",{name:"Arcade settings"}).click();await a.getByRole("slider",{name:"Music volume"}).fill("35");await a.getByRole("button",{name:"Background effects on"}).click();await expect(a.locator(".arcade-background")).toHaveAttribute("data-effects","false");await a.getByRole("button",{name:"Sound off",exact:true}).last().click();await a.getByRole("button",{name:"Close arcade settings"}).click();
+    await a.getByRole("button",{name:"Arcade settings"}).click();await a.getByRole("slider",{name:"Music volume"}).fill("35");await a.getByText("Room appearance",{exact:true}).click();await a.getByRole("button",{name:"Background effects on"}).click();await expect(a.locator(".arcade-background")).toHaveAttribute("data-effects","false");await a.getByRole("button",{name:"Sound off",exact:true}).last().click();await a.getByRole("button",{name:"Close arcade settings"}).click();
     await a.setViewportSize({width:390,height:844});expect(await a.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await a.screenshot({path:"artifacts/arcade-mobile.png",fullPage:true});
     expect(errors).toEqual([]);await writeFile("artifacts/arcade-browser.json",JSON.stringify({base,addresses,matches:[first.id,second.id],passkeyAssertions:counts,baseline,timings,passedAt:new Date().toISOString(),authenticator:"Chromium virtual PRF; physical cross-device sync requires a separate demonstration"},null,2));
   }catch(e){for(let i=0;i<3;i++){console.log("Arcade browser",i,await pages[i].locator(".notice,.status-line").allTextContents());await pages[i].screenshot({path:`artifacts/arcade-failure-${i}.png`,fullPage:true});}throw e;}finally{await Promise.all(contexts.map(c=>c.close()));}

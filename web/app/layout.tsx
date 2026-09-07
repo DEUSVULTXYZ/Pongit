@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import "./neon-rush.css";
+import "./cabinet.css";
 const michroma = localFont({ src: "./fonts/Michroma-Regular.ttf", weight: "400", display: "swap", variable: "--font-michroma" });
 export const metadata: Metadata = {
   title: "PONGIT — Every point onchain",

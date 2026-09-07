@@ -6,13 +6,13 @@ class ArcadeAudio {
   settings={...defaults};context:AudioContext|null=null;
   private musicGain:GainNode|null=null;private effectsGain:GainNode|null=null;
   private meter:AnalyserNode|null=null;private voices=new Set<OscillatorNode>();
-  private music:AudioBufferSourceNode|null=null;private buffer:AudioBuffer|null=null;private loading:Promise<void>|null=null;
+  private music:HTMLAudioElement|null=null;private musicSource:MediaElementAudioSourceNode|null=null;
   private musicError=false;private gameplay=false;private duckUntil=0;
   private seen=new Map<string,number>();private lastBounce=0;
   private signal(){if(typeof window!=="undefined")window.dispatchEvent(new Event("pongit:audio"));}
   load(){try{const saved=JSON.parse(localStorage.getItem("pongit:arcade-audio")||"null");if(saved)this.settings={...defaults,entered:saved.entered===true,enabled:saved.enabled===true,music:this.volume(saved.music,.2),effects:this.volume(saved.effects,.6),background:saved.background!==false,intensity:saved.intensity==="subtle"?"subtle":"full"};}catch{}return this.settings;}
   private volume(value:unknown,fallback:number){return typeof value==="number"&&Number.isFinite(value)?Math.max(0,Math.min(1,value)):fallback;}
-  configure(patch:Partial<AudioSettings>){this.settings={...this.settings,...patch};this.settings.music=this.volume(this.settings.music,.2);this.settings.effects=this.volume(this.settings.effects,.6);try{localStorage.setItem("pongit:arcade-audio",JSON.stringify(this.settings));}catch{}this.gains();if(!this.settings.enabled)this.stopVoices();this.signal();}
+  configure(patch:Partial<AudioSettings>){this.settings={...this.settings,...patch};this.settings.music=this.volume(this.settings.music,.2);this.settings.effects=this.volume(this.settings.effects,.6);try{localStorage.setItem("pongit:arcade-audio",JSON.stringify(this.settings));}catch{}this.gains();if(!this.settings.enabled){this.stopVoices();this.music?.pause();}this.signal();}
   async activate(retry=false){
     if(!this.settings.enabled || document.hidden)return;
     const AudioCtor=window.AudioContext || (window as any).webkitAudioContext;if(!AudioCtor){this.musicError=true;this.signal();return;}
@@ -23,17 +23,15 @@ class ArcadeAudio {
       c.onstatechange=()=>this.signal();this.gains();
     }
     try{if(this.context!.state!=="running")await this.context!.resume();}catch{this.signal();return;}
-    if(retry)this.musicError=false;
-    if(!this.buffer && !this.loading && !this.musicError){this.loading=this.loadMusic().finally(()=>{this.loading=null;this.signal();});this.signal();}
-    this.startMusic();
-  }
-  private async loadMusic(){
-    for(const extension of ["ogg","mp3"]){
-      try{const response=await fetch(`/audio/neon-rush.${extension}`,{signal:AbortSignal.timeout(15000)});if(!response.ok)throw new Error("Music unavailable");this.buffer=await this.context!.decodeAudioData(await response.arrayBuffer());this.musicError=false;this.startMusic();return;}catch{/* Use the independently encoded fallback. */}
+    if(!this.music){
+      const media=new Audio("/audio/last-stop.mp3");media.preload="metadata";media.loop=true;this.music=media;
+      this.musicSource=this.context!.createMediaElementSource(media);this.musicSource.connect(this.musicGain!);
+      for(const event of ["loadedmetadata","canplay","playing","pause","waiting"])media.addEventListener(event,()=>this.signal());
+      media.addEventListener("error",()=>{this.musicError=true;this.signal();});
     }
-    this.musicError=true;
+    if(retry && this.musicError){this.musicError=false;this.music.load();}
+    if(!this.musicError && this.music.paused){void this.music.play().then(()=>this.signal()).catch(error=>{if(error.name!=="NotAllowedError" && error.name!=="AbortError")this.musicError=true;this.signal();});}
   }
-  private startMusic(){if(!this.buffer || this.music || !this.context || !this.musicGain)return;const source=this.context.createBufferSource();source.buffer=this.buffer;source.loop=true;source.loopStart=0;source.loopEnd=Math.min(this.buffer.duration,34.285714286);source.connect(this.musicGain);source.start();this.music=source;}
   setGameplay(active:boolean){if(this.gameplay===active)return;this.gameplay=active;this.gains();}
   private gains(){if(!this.context)return;const t=this.context.currentTime;
     const duck=t<this.duckUntil?.16:this.gameplay?.48:1;
@@ -56,8 +54,8 @@ class ArcadeAudio {
   }
   async test(){await this.activate(true);this.play("point");}
   private stopVoices(){for(const voice of this.voices){try{voice.stop();}catch{}}this.voices.clear();}
-  hidden(){this.stopVoices();void this.context?.suspend();}
-  status(){if(!this.settings.enabled)return "muted";if(!this.context || this.context.state!=="running")return "suspended";if(this.musicError)return "loading failed";if(!this.buffer)return "loading";return "enabled";}
-  diagnostics(){const data=new Float32Array(2048);this.meter?.getFloatTimeDomainData(data);let sum=0,peak=0;for(const x of data){sum+=x*x;peak=Math.max(peak,Math.abs(x));}const rms=Math.sqrt(sum/data.length);return {state:this.context?.state||"uninitialized",status:this.status(),voices:this.voices.size,settings:this.settings,rms,peak,rmsDb:rms?20*Math.log10(rms):-120,musicDuration:this.buffer?.duration||0,musicLoop:this.music?.loop||false,gameplay:this.gameplay};}
+  hidden(){this.stopVoices();this.music?.pause();void this.context?.suspend();}
+  status(){if(!this.settings.enabled)return "muted";if(!this.context || this.context.state!=="running")return "suspended";if(this.musicError)return "loading failed";if(!this.music || this.music.readyState<2)return "loading";if(this.music.paused)return "suspended";return "enabled";}
+  diagnostics(){const data=new Float32Array(2048);this.meter?.getFloatTimeDomainData(data);let sum=0,peak=0;for(const x of data){sum+=x*x;peak=Math.max(peak,Math.abs(x));}const rms=Math.sqrt(sum/data.length);return {state:this.context?.state||"uninitialized",status:this.status(),voices:this.voices.size,settings:this.settings,rms,peak,rmsDb:rms?20*Math.log10(rms):-120,musicDuration:Number.isFinite(this.music?.duration)?this.music!.duration:0,musicLoop:this.music?.loop||false,gameplay:this.gameplay};}
 }
 export const arcadeAudio=new ArcadeAudio();

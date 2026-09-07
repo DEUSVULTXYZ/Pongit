@@ -9,12 +9,13 @@ import type { Identity } from "../lib/wallet";
 import type { State } from "../../shared/physics-v2";
 import { Court } from "./Court";
 
-export function Legacy({config,account,signer,closeSigner,legacy}:{legacy:Deployment;config:Config;account:string;signer:()=>Promise<Identity>;closeSigner:()=>void}) {
+export function Legacy({config,account,signer,closeSigner,legacy,requested}:{requested?:string;legacy:Deployment;config:Config;account:string;signer:()=>Promise<Identity>;closeSigner:()=>void}) {
   const [claims,setClaims]=useState<Record<string,string>>({}),[open,setOpen]=useState(false),[items,setItems]=useState<any[]>([]),[balance,setBalance]=useState<any>(null),[frames,setFrames]=useState<any[]>([]),[index,setIndex]=useState(0),[state,setState]=useState<State|null>(null),[id,setId]=useState(""),[message,setMessage]=useState(""),[busy,setBusy]=useState(false),[amount,setAmount]=useState("0.001");
   const version=deploymentId(legacy);
   const legacyApi=(path:string)=>api(path+(path.includes("?")?"&":"?")+`deployment=${version}`);
   useEffect(()=>{let cancelled=false;setBalance(null);setClaims({});if(open && account)void Promise.all([legacyApi(`/legacy/player/${account}`),legacyApi(`/legacy/claims/${account}`)]).then(([b,c])=>{if(!cancelled){setBalance(b);setClaims(c.claims);}}).catch(e=>{if(!cancelled)setMessage(e.message);});return()=>{cancelled=true;};},[account,open,legacy.game]);
   async function run(fn:()=>Promise<void>){if(busy)return;setBusy(true);setMessage("");try{await fn();}catch(e){setMessage((e as Error).message);}finally{setBusy(false);}}
+  useEffect(()=>{if(requested)void run(async()=>{await history();await replay(requested);});},[requested]);
   async function history(){setOpen(true);setItems((await legacyApi("/legacy/history")).Match);}
   function show(frame:any,i:number){const [s]=decodeAbiParameters([{type:"tuple",components:(legacy.version||1)>=2?stateV2Components:stateComponents}],frame.state);setState(stateFromJson(s));setIndex(i);}
   async function replay(rawId:string){const all:any[]=[];let after="0";for(let i=0;i<100;i++){const data=await legacyApi(`/legacy/replay/${rawId}?after=${after}`);all.push(...data.Frame);if(data.Frame.length<1000)break;after=data.Frame.at(-1).version;}if(!all.length){const result=await legacyApi(`/legacy/matches/${rawId}`);if(result.match.status===4 && result.match.startBlock==="0"){setState(null);setFrames([]);setMessage("Match cancelled before play. No replay was recorded.");return;}throw new Error("Legacy replay is still indexing");}setId(rawId);setFrames(all);show(all[0],0);}
