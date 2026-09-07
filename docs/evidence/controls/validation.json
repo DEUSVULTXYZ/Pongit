@@ -1,0 +1,64 @@
+{
+  "deployedCommit": "043acd20d7fed898287a8e2bf451e65135e1a75b",
+  "url": "https://pongit.xyz",
+  "checkedAt": "2026-09-07T10:31:05.493Z",
+  "outcomes": [
+    {
+      "browser": "chrome",
+      "width": 1440,
+      "nativePicker": true,
+      "modeKeyboard": true,
+      "selectKeyboard": true,
+      "escapePreservesDialog": true,
+      "savedPreferences": true,
+      "touchSlider": false,
+      "errors": []
+    },
+    {
+      "browser": "chrome",
+      "width": 360,
+      "nativePicker": true,
+      "modeKeyboard": true,
+      "selectKeyboard": true,
+      "escapePreservesDialog": true,
+      "savedPreferences": true,
+      "touchSlider": true,
+      "errors": []
+    },
+    {
+      "browser": "edge",
+      "width": 1440,
+      "nativePicker": true,
+      "modeKeyboard": true,
+      "selectKeyboard": true,
+      "escapePreservesDialog": true,
+      "savedPreferences": true,
+      "touchSlider": false,
+      "errors": []
+    },
+    {
+      "browser": "edge",
+      "width": 360,
+      "nativePicker": true,
+      "modeKeyboard": true,
+      "selectKeyboard": true,
+      "escapePreservesDialog": true,
+      "savedPreferences": true,
+      "touchSlider": true,
+      "errors": []
+    }
+  ],
+  "responsiveChecks": {
+    "chrome": 15,
+    "edge": 15
+  },
+  "typecheck": true,
+  "productionBuild": true,
+  "backup": "20260907T102459Z",
+  "rollbackImage": "pongit-web:controls-previous",
+  "gitPush": "403; write access still required",
+  "limits": [
+    "Responsive mobile viewport and touch emulation; physical devices not exercised.",
+    "Custom CSS picker verified on Chrome and Edge. Other browsers retain the native fallback; not exercised in this run."
+  ]
+}

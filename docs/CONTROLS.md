@@ -15,3 +15,13 @@ Before release: TypeScript checking passed. Chrome and Edge visual checks at 144
 Backup `20260907T102459Z` completed on the VPS and its private offsite copy was checksum-verified. Retain the current `6ad6559ed049b808568f9f3770de42f4f469d399` release and `pongit-web:controls-previous` image for rollback. Only the web container needs replacement; financial services remain running.
 
 GitHub publication remains pending repository write access. The local commits and deployed source are retained independently of GitHub.
+
+## Public verification
+
+Deployed revision: `043acd20d7fed898287a8e2bf451e65135e1a75b` on [pongit.xyz](https://pongit.xyz).
+
+All 30 responsive navigation/documentation scenarios passed (15 Chrome, 15 Edge). Four focused control checks also passed on public HTTPS, covering desktop/mobile mode selection, keyboard and pointer dropdowns, Escape within settings, touch sliders, preference persistence and reduced motion. TypeScript and the production build passed. The eight production services remain running, with the database, relayer and Hasura healthy.
+
+[Before](evidence/controls/before.webp) · [After, with keyboard focus visible](evidence/controls/after.webp) · [Dropdown](evidence/controls/picker.webp) · [Validation record](evidence/controls/validation.json).
+
+Physical devices and other browser engines were not exercised. The CSS picker is an enhancement; unsupported browsers retain the native selector.
