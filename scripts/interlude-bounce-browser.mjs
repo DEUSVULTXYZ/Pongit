@@ -30,9 +30,9 @@ try {
    // From x=840/184, impact is at 750 ms. The next resolved snapshot is
    // deliberately withheld until 1000 ms to expose the old impact barrier.
    const t=confirmed?BigInt(elapsed)*1000n:0n;
-   const x=confirmed?(direction>0n?984n*1000000n:40n*1000000n)-direction*192n*(t-750000n)
+   const x=confirmed?(direction>0n?984n*1000000n:40n*1000000n)-direction*211200000n*(t-750000n)/1000000n
      :(direction>0n?840n:184n)*1000000n;
-   const s={x,y:216000000n+96n*t,vx:(confirmed?-direction:direction)*192000000n,vy:96000000n,
+   const s={x,y:confirmed?288000000n+105600000n*(t-750000n)/1000000n:216000000n,vx:confirmed?-direction*211200000n:direction*192000000n,vy:confirmed?105600000n:96000000n,
     left:288000000n,right:288000000n,leftDir:0,rightDir:0,t,scoreA:0,scoreB:0,seed:zeroHash,
     finished:false,mode:0,halfA:48000000n,halfB:48000000n,awaitingServe:false,resumeAt:0n};
    const result=encodeFunctionResult({abi,functionName:'getSnapshot',result:[BigInt(scenario.id),confirmed?2n:1n,2n,

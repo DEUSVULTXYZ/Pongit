@@ -19,7 +19,7 @@ test("Interlude keeps the ball moving through both paddle contacts while legacy 
       const live=projectLive(s,target);
       assert.equal(live.waiting,false);
       assert.deepEqual(live.state,advance(s,target)[0]);
-      assert.equal(live.state.vx,-s.vx);
+      assert.equal(live.state.vx,-s.vx*110n/100n);
       if(previous)assert.notEqual(live.state.x,previous.state.x);
       previous=live;
     }
@@ -43,7 +43,7 @@ test("a missed paddle crosses its plane but never invents a score, serve or winn
 
 test("late direction corrections replace predicted collisions with the actual engine trajectory", () => {
   const s={...initial(zeroHash),x:976n*SCALE};
-  assert.equal(projectLive(s,100000n).state.vx,-s.vx);
+  assert.equal(projectLive(s,100000n).state.vx,-s.vx*110n/100n);
   const corrected={...s,right:48n*SCALE};
   assert.equal(projectLive(corrected,100000n).state.vx,s.vx);
   assert.equal(projectLive(corrected,100000n).state.scoreA,0);

@@ -7,7 +7,7 @@ import {createPortal} from "react-dom";
 import {useDialog} from "../lib/dialog";
 import { short } from "../lib/api";
 
-export function Outcome({id,match,account,rating,sound,replay,rematch,watch,again}:{id:string|null;match:any;account:string;rating:number|null;sound:boolean;replay:boolean;rematch:()=>Promise<void>;watch:()=>void;again:()=>void}) {
+export function Outcome({id,match,account,rating,sound,replay,rematch,watch,again,confirmation="monad",againLabel="Find another opponent",showResultKey=0}:{id:string|null;match:any;account:string;rating:number|null;sound:boolean;replay:boolean;rematch:()=>Promise<void>;watch?:()=>void;again:()=>void;confirmation?:"monad"|"engine";againLabel?:string;showResultKey?:number}) {
   const [rematchBusy,setRematchBusy]=useState(false),[rematchStatus,setRematchStatus]=useState("");
   const dialog=useRef<HTMLElement>(null);
   const seen=useRef<{id:string;status:number;account:string;rating:number|null}|null>(null);
@@ -25,6 +25,11 @@ export function Outcome({id,match,account,rating,sound,replay,rematch,watch,agai
     }
     seen.current={id,status:match.status,account,rating};
   },[id,match?.status,account,replay]);
+  useEffect(()=>{
+    if(!showResultKey || !id || !match || match.status!==3 || replay)return;
+    const participant=account && [match.playerA,match.playerB].some((a:string)=>a.toLowerCase()===account.toLowerCase());
+    setResult({id,account,victory:participant?match.winner.toLowerCase()===account.toLowerCase():null,before:null});setAnimate(false);
+  },[showResultKey]);
   useEffect(()=>{if(!animate)return;const t=setTimeout(()=>setAnimate(false),4000);return()=>clearTimeout(t);},[animate]);
   useDialog(dialog,currentResult && result!.victory!==null,()=>{if(animate)setAnimate(false);else setResult(null);});
   useEffect(()=>{if(result && !animate && result.victory!==null)dialog.current?.querySelector<HTMLButtonElement>(".button-row button")?.focus({preventScroll:true});},[animate,result]);
@@ -37,11 +42,11 @@ export function Outcome({id,match,account,rating,sound,replay,rematch,watch,agai
       <div className="result-vortex"/><div className="result-ring ring-a"/><div className="result-ring ring-b"/><div className="result-scan"/>
       {animate && <div className="arcade-particles">{Array.from({length:32},(_,i)=><i key={i} style={{"--i":i} as React.CSSProperties}/>)}</div>}
     </div>
-    <p className="eyebrow">RESULT CONFIRMED ON MONAD</p><h2 data-title={result.victory?"VICTORY":"DEFEAT"}>{result.victory?"VICTORY":"DEFEAT"}</h2>
+    <p className="eyebrow">{confirmation==="engine"?"RESULT CONFIRMED ON INTERLUDE":"RESULT CONFIRMED ON MONAD"}</p><h2 data-title={result.victory?"VICTORY":"DEFEAT"}>{result.victory?"VICTORY":"DEFEAT"}</h2>
     <p className="outcome-score">{match.state.scoreA} : {match.state.scoreB}</p><p>{short(match.winner)} wins</p>
     {result.victory!==null && <p>{match.ranked===false?"Friendly match · ELO unchanged":!match.ratingFinalized?"ELO settlement pending…":delta!==null?`${match.mode===1?"Chaos":"Classic"} ELO ${delta>=0?"+":""}${delta}`:"ELO updated"}</p>}
     {animate && <button className="outcome-skip" data-autofocus onClick={()=>setAnimate(false)}>Skip animation · Esc</button>}
     {rematchStatus && <p role="status">{rematchStatus}</p>}
-    <div className="button-row">{result.victory!==null && <button disabled={rematchBusy} onClick={()=>{setRematchBusy(true);setRematchStatus("");void rematch().then(()=>setResult(null)).catch(e=>setRematchStatus(e.message)).finally(()=>setRematchBusy(false));}}>{rematchBusy?"Sending rematch…":"Rematch ↗"}</button>}<button onClick={()=>{setResult(null);watch();}}>Watch replay</button><button onClick={()=>{setResult(null);again();}}>Find another opponent</button></div>
+    <div className="button-row">{result.victory!==null && <button disabled={rematchBusy} onClick={()=>{setRematchBusy(true);setRematchStatus("");void rematch().then(()=>setResult(null)).catch(e=>setRematchStatus(e.message)).finally(()=>setRematchBusy(false));}}>{rematchBusy?"Sending rematch…":"Rematch ↗"}</button>}{watch&&<button onClick={()=>{setResult(null);watch();}}>Watch replay</button>}<button onClick={()=>{setResult(null);again();}}>{againLabel}</button></div>
   </section>,document.body);
 }

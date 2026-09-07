@@ -11,7 +11,7 @@ import {PongInterludeInterludeSurface} from "./PongInterludeInterludeSurface.sol
 /// @notice One experimental Classic arena. No ELO, tokens or financial authority.
 contract PongInterlude is PongInterludeInterludeSurface {
     uint256 public constant TICK_US = 10_000;
-    uint256 public constant RULES_VERSION = 2;
+    uint256 public constant RULES_VERSION = 3;
     /// @custom:interlude global
     uint256 internal matchId;
     /// @custom:interlude global

@@ -6,6 +6,7 @@ import {Court} from "./Court";
 import {ArcadeAmbience,MusicCredit} from "./ArcadeAmbience";
 import {Dialog} from "./Dialog";
 import {IconButton} from "./IconButton";
+import {Outcome} from "./Outcome";
 import {connect,rememberedAccount,type Identity} from "../lib/wallet";
 import {arcadeAudio} from "../lib/audio";
 import {createLabClient,labManifest,labScope,labAccountKey,labSnapshot,labSide,labDelegation,LabLane,type LabClient,type LabSnapshot,type LabSession} from "../lib/interlude-lab";
@@ -26,6 +27,7 @@ export function InterludeLab(){
  const [notice,setNotice]=useState("Connecting to the Interlude engine…"),[error,setError]=useState(""),[direction,setDirection]=useState(0),[latency,setLatency]=useState(0),[fps,setFps]=useState(0);
  const [showConnect,setShowConnect]=useState(false),[target,setTarget]=useState(""),[inviteId,setInviteId]=useState<string|null>(null),[expires,setExpires]=useState<Date>();
  const [committed,setCommitted]=useState<LabSnapshot|null>(null),[matchedHash,setMatchedHash]=useState(false),[baseError,setBaseError]=useState(false);
+ const [showResultKey,setShowResultKey]=useState(0);
  const client=useRef<LabClient|null>(null),lane=useRef<LabLane|null>(null),session=useRef<LabSession|null>(null),state=useRef<LabSnapshot|null>(null),release=useRef<(()=>void)|null>(null);
  const alive=useRef(false),actionBusy=useRef(false),authBusy=useRef(false),identityVersion=useRef(0),accountRef=useRef<Address|undefined>(undefined),wanted=useRef(0),failed=useRef(false);
  const side=labSide(snapshot,account),playable=online&&sessionReady&&side>=0&&snapshot?.phase===2&&!busy&&!showConnect;
@@ -37,7 +39,15 @@ export function InterludeLab(){
   if(before && (s.id<before.id || s.id===before.id&&(s.revision<before.revision||s.head<before.head)))return;
   if(before && s.id===before.id && s.revision===before.revision && s.head===before.head && s.clock===before.clock)return;
   if(before?.id!==s.id)setMatchedHash(false);
+  if(before && s.id>before.id && s.phase===1 && s.target.toLowerCase()===accountRef.current?.toLowerCase()){
+   history.replaceState(null,"",`?match=${s.id}`);setInviteId(s.id.toString());
+  }
   state.current=s;setSnapshot(s);if(ms!==undefined)setLatency(Math.round(ms));
+  if(before?.id!==s.id || before?.phase!==s.phase){
+   if(s.phase===2)setNotice("Match in progress. First to seven wins.");
+   else if(s.phase===3)setNotice("Match complete. The result is confirmed by the Interlude engine.");
+   else if(s.phase===4)setNotice("Invitation cancelled. Create another when you are ready.");
+  }
   if(s.phase!==2){wanted.current=0;lane.current?.intent(0);setDirection(0);}
  };
  const fail=(reason:unknown)=>{
@@ -66,7 +76,7 @@ export function InterludeLab(){
    if(!done)guardTimer=setTimeout(guard,10000);
   };
   const poll=async()=>{
-   try{const s=await read();if(!done){acceptSnapshot(s);if(!session.current&&guardPassed)setNotice("One Classic friendly arena, powered by Interlude. Join or watch below.");}}
+   try{const s=await read();if(!done){acceptSnapshot(s);if(!session.current&&guardPassed&&s.phase<2)setNotice("One Classic friendly arena, powered by Interlude. Join or watch below.");}}
    catch{if(!done){setOnline(false);if(session.current)fail(null);}}
    if(!done)pollTimer=setTimeout(poll,document.hidden?2000:session.current?250:400);
   };
@@ -134,9 +144,19 @@ export function InterludeLab(){
  }
  async function action(name:string,args:readonly unknown[]=[]){
   if(actionBusy.current||!lane.current||!sessionReady)return;actionBusy.current=true;setBusy(true);setError("");setIntent(0);
-  try{const s=await lane.current.action(name,args);if(name==="createMatch"){history.replaceState(null,"",`?match=${s.id}`);setInviteId(s.id.toString());setNotice("Invitation open. Share this page with your rival.");}else setNotice("Action accepted by the engine. Monad receives the committed state separately.");}
+  try{const s=await lane.current.action(name,args);if(name==="createMatch"){history.replaceState(null,"",`?match=${s.id}`);setInviteId(s.id.toString());setNotice("Invitation open. Share this page with your rival.");}return s;}
   catch(e){if(!failed.current)setError((e as Error).message.split("\n")[0]);}
   finally{actionBusy.current=false;setBusy(false);}
+ }
+ async function rematch(){
+  const previous=snapshot;if(!previous||side<0)throw new Error("Reconnect your lab session to request a rematch.");
+  const rival=side===0?previous.b:previous.a,current=await read();
+  if(current.phase===1 && current.a.toLowerCase()===account?.toLowerCase() && current.target.toLowerCase()===rival.toLowerCase())return;
+  const result=current.phase===1 && current.a.toLowerCase()===rival.toLowerCase() && current.target.toLowerCase()===account?.toLowerCase()
+   ?await action("acceptMatch",[current.id]):await action("createMatch",[rival,toHex(crypto.getRandomValues(new Uint8Array(32)))]);
+  if(!result)throw new Error("Rematch was not created. Check the lab session or wait for the arena to be available.");
+  history.replaceState(null,"",`?match=${result.id}`);setInviteId(result.id.toString());
+  document.querySelector(".lab-panel")?.scrollIntoView({behavior:"instant",block:"center"});
  }
  async function disconnect(){
   identityVersion.current++;setIntent(0);
@@ -148,17 +168,18 @@ export function InterludeLab(){
  const canJoin=snapshot?.phase===1&&side<0&&!staleLink&&(snapshot.target===zeroAddress||snapshot.target.toLowerCase()===account?.toLowerCase());
  return <main className="cabinet-ui interlude-lab"><header className="lab-header"><a className="brand" href="/" target="_blank" rel="noreferrer"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="48" height="48" alt=""/><span className="brand-word">PONGIT</span></a><span className="lab-badge">INTERLUDE LAB</span><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a></header>
   <section className="lab-intro"><div><p className="eyebrow">CLASSIC · FRIENDLY · MONAD TESTNET</p><h1>Same rivals. Faster rallies.</h1><p>A dedicated Interlude engine runs this experimental arena. Results commit back to Monad.</p></div><a className="lab-main-link" href="/" target="_blank" rel="noreferrer">Main arcade, rankings & betting ↗</a></section>
-  <div className="lab-status" role="status"><span className={online?"dot":""}/>{online?"Engine online":"Engine unavailable"}{latency>0&&<span>{latency} ms last engine call</span>}<span>Classic friendly · Ball speed +50%</span></div>
+  <div className="lab-status" role="status"><span className={online?"dot":""}/>{online?"Engine online":"Engine unavailable"}{latency>0&&<span>{latency} ms last engine call</span>}<span>+10% speed per return · No cap · Resets each point</span></div>
   <section className="lab-account"><div>{account?<><strong>{short(account)}</strong><small title={account}>{account}</small>{sessionReady&&expires&&<small>Lab session until {expires.toLocaleTimeString()}</small>}</>:<p>Watch without connecting. Use your existing Mera passkey to play.</p>}</div><div className="lab-actions">{!sessionReady?<button className="primary" disabled={!online||connecting} onClick={()=>account?void recover():saved?void login():setShowConnect(true)}>{connecting?"Connecting…":account?"Reconnect lab session":saved?`Continue as ${short(saved)}`:"Connect passkey"}</button>:<button disabled={busy||connecting} onClick={()=>void disconnect()}>Disconnect lab</button>}{account&&!sessionReady&&<button disabled={connecting} onClick={()=>setShowConnect(true)}>Renew / change passkey</button>}</div></section>
   {error&&<p role="alert" className="lab-error">{error}</p>}<p className="lab-notice" role="status">{notice}</p>
   {staleLink&&<p role="status" className="lab-error">This invitation belongs to an older match. You are watching the current arena; it will not be accepted automatically.</p>}
   <section className="court-card lab-court"><div className="court-topline"><span>ARENA {snapshot?.id.toString()||"0"}</span><strong>{snapshot?.phase===2?"IN PLAY":snapshot?.phase===1?"WAITING FOR RIVAL":snapshot?.phase===3?"RESULT ON ENGINE":snapshot?.phase===4?"CANCELLED":"READY"}</strong><span>{side>=0?`YOU / ${side===0?"LEFT":"RIGHT"}`:"SPECTATOR"}</span></div><div className="scoreboard"><div className="player-label"><small>PLAYER 01</small><span>{snapshot&&snapshot.a!==zeroAddress?short(snapshot.a):"Ready?"}</span></div><div className="score"><span>{String(snapshot?.state.scoreA||0).padStart(2,"0")}</span><i>:</i><span>{String(snapshot?.state.scoreB||0).padStart(2,"0")}</span></div><div className="player-label right"><small>PLAYER 02</small><span>{snapshot&&snapshot.b!==zeroAddress?short(snapshot.b):"Bring a rival"}</span></div></div>
    <Court liveEngine state={snapshot?.state||null} clock={snapshot?.clock||0n} observedAt={snapshot?.observedAt||0} direction={direction} side={side} replay={snapshot?.phase!==2} matchId={`interlude:${labManifest.app}:${snapshot?.id||0}`} controllable={!!playable} pending={!!lane.current?.inputPending} confirmedNonce={side===0?snapshot?.nonceA:snapshot?.nonceB} onStats={(f)=>setFps(f)}/>
-   <div className="court-footer"><span>FIRST TO 07</span><span>LIVE ENGINE STATE</span><span>{fps} FPS</span></div>
+   <div className="court-footer"><span>FIRST TO 07</span><span>{snapshot?.phase===2?`RALLY SPEED ${(Math.abs(Number(snapshot.state.vx))/192000000).toFixed(2)}×`:snapshot?.phase===3?"MATCH COMPLETE":"LIVE ENGINE STATE"}</span><span>{fps} FPS</span></div>
    {snapshot?.phase===2&&side>=0&&<div className="controls"><span>W / S or ↑ / ↓ to move</span><div className="touch-controls">{([-1,1] as const).map(d=><IconButton key={d} icon={d===-1?"up":"down"} aria-label={d===-1?"Move up":"Move down"} disabled={!playable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);setIntent(d);}} onPointerUp={()=>setIntent(0)} onPointerCancel={()=>setIntent(0)} onLostPointerCapture={()=>setIntent(0)}/>)}</div></div>}
   </section>
   <section className="lab-panel"><h2>{snapshot?.phase===3?side<0?"Match complete":snapshot.winner.toLowerCase()===account?.toLowerCase()?"VICTORY":"DEFEAT":snapshot?.phase===1?"Your rival is up next.":snapshot?.phase===2?"Keep the rally alive.":"Bring a rival."}</h2>
    {snapshot?.phase===3&&<p>Winner: {short(snapshot.winner)}. No ELO or MON prize is awarded in the lab.</p>}
+   {snapshot?.phase===3&&side>=0&&<button onClick={()=>setShowResultKey(n=>n+1)}>View result</button>}
    {snapshot?.phase===1&&<p>{snapshot.target===zeroAddress?"Open invitation. The first other account to accept takes player two.":`Reserved for ${short(snapshot.target)}.`} Expires {new Date(Number(snapshot.deadline)*1000).toLocaleTimeString()}.</p>}
    <div className="lab-actions">{snapshot&&![1,2].includes(snapshot.phase)&&sessionReady&&<><label>Rival address (optional)<input value={target} placeholder="0x… or leave empty for an open invitation" onChange={e=>setTarget(e.target.value)} autoComplete="off"/></label><button className="primary" disabled={busy||!!target&&!isAddress(target)||target.toLowerCase()===account?.toLowerCase()} onClick={()=>void action("createMatch",[target||zeroAddress,toHex(crypto.getRandomValues(new Uint8Array(32)))])}>Create friendly match</button></>}
    {snapshot?.phase===1&&<><button onClick={()=>{void navigator.clipboard.writeText(`${location.origin}/labs/interlude?match=${snapshot.id}`).then(()=>setNotice("Invitation link copied."),()=>setError("Copy the page address to share this invitation."));}}>Copy invitation</button>{canJoin&&<button className="primary" disabled={!sessionReady||busy||!online} onClick={()=>void action("acceptMatch",[snapshot.id])}>Accept & play</button>}{(side===0||Date.now()/1000>Number(snapshot.deadline))&&<button disabled={!sessionReady||busy} onClick={()=>void action("cancelMatch",[snapshot.id])}>Cancel invitation</button>}</>}
@@ -166,6 +187,7 @@ export function InterludeLab(){
   </section>
   <section className="lab-panel lab-commit"><h2>Live here. Committed on Monad.</h2><p role="status">{baseError?"Monad read unavailable. Commitment has not been verified.":matchedHash?"Result hash matches the value committed on Monad.":snapshot&&snapshot.phase>=3?"Waiting for this result to be committed on Monad…":`Latest Monad snapshot: match ${committed?.id||0}, ${committed?.state.scoreA||0} : ${committed?.state.scoreB||0}.`}</p><p>An engine receipt is not a Monad transaction confirmation. Committed batches remain subject to Interlude's challenge window. This lab has no financial settlement.</p><details><summary>Deployment details</summary><p>Game: <a href={`https://testnet.monadscan.com/address/${labManifest.app}`} target="_blank" rel="noreferrer">{labManifest.app}</a></p><p>Engine: <a href={labManifest.node} target="_blank" rel="noreferrer">Dedicated Interlude node ↗</a></p><p>Session keys authorize game calls for 30 minutes. Wallet keys remain in memory and are closed after signing. Reloading this tab restores an unexpired lab grant. Do not share this tab with untrusted scripts.</p></details></section>
   <footer><MusicCredit/><a href="/" target="_blank" rel="noreferrer">Back to the main arcade ↗</a></footer>
+  <Outcome id={snapshot?`interlude:${labManifest.app}:${snapshot.id}`:null} match={snapshot?{status:snapshot.phase,playerA:snapshot.a,playerB:snapshot.b,winner:snapshot.winner,state:snapshot.state,ranked:false}:null} account={account||""} rating={null} sound={true} replay={false} confirmation="engine" showResultKey={showResultKey} rematch={rematch} againLabel="Create open invitation" again={()=>{void action("createMatch",[zeroAddress,toHex(crypto.getRandomValues(new Uint8Array(32)))]);document.querySelector(".lab-panel")?.scrollIntoView({behavior:"instant",block:"center"});}}/>
   {showConnect&&<Dialog label="Connect to Interlude lab" onClose={()=>{if(!connecting)setShowConnect(false);}}><IconButton className="modal-close" aria-label="Close lab connection" disabled={connecting} onClick={()=>setShowConnect(false)}/><p className="eyebrow">YOUR EXISTING PONGIT IDENTITY</p><h2>Join the fast lane.</h2><p>Approve a separate, scoped game session for this contract. No funds, bets or wallet permissions are included.</p><button className="primary" disabled={connecting||!online} onClick={()=>void login()}>{saved?`Continue as ${short(saved)}`:"Use a passkey"}</button><button disabled={connecting||!online} onClick={()=>void login(false,true)}>Use another passkey</button><button disabled={connecting||!online} onClick={()=>void login(true)}>Create a passkey</button>{error&&<p role="alert">{error}</p>}</Dialog>}
  </main>;
 }

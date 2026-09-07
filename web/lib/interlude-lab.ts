@@ -48,8 +48,10 @@ export class LabLane {
  async pump(allowTick:boolean){
   if(this.busy||this.stopped||this.actionPending)return;
   this.busy=true;
+  let activeMatch:bigint|undefined;
   try{
    let s=await this.read();const side=labSide(s,this.account);
+   activeMatch=s.id;
    this.onResult(s);
    if(this.stopped||side<0||s.phase!==2)return;
    // Drain a release/reversal immediately after its predecessor, without
@@ -63,7 +65,12 @@ export class LabLane {
      :await this.session.send("tick",[s.id]);
     s=await this.read();this.inputPending=false;this.onResult(s,result.latencyMs);
    }
-  }catch(e){this.stop();this.onError(e);}
+  }catch(e){
+   // The other player may finish the match while this final input/tick is
+   // in flight. Confirm that terminal state instead of breaking the session.
+   try{const latest=await this.read();if(activeMatch===latest.id && latest.phase>=3){this.desired=0;this.onResult(latest);return;}}catch{}
+   this.stop();this.onError(e);
+  }
   finally{this.inputPending=false;this.busy=false;}
  }
 }

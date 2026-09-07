@@ -29,3 +29,10 @@ test("Interlude actions wait for the single writer, suppress duplicate clicks an
 test("Interlude spectator and completed state never send an input or idle tick",async()=>{
  const f=fixture();f.set({phase:3});f.lane.intent(1);await f.lane.pump(true);f.set({phase:2,a:b});await f.lane.pump(true);assert.equal(f.sent.length,0);
 });
+test("a rival's seventh point does not invalidate the session when the last tick races it",async()=>{
+ const f=fixture();let release!:()=>void;f.hold(new Promise(r=>release=r));f.fail();
+ const pending=f.lane.pump(true);await new Promise(r=>setTimeout(r,0));
+ f.set({phase:3,winner:b,state:{...f.state().state,scoreB:7,finished:true}});release();await pending;
+ assert.equal(f.lane.stopped,false);assert.equal(f.errors(),0);assert.equal(f.sent.length,1);
+ assert.equal(f.lane.inputPending,false);assert.equal(f.lane.desired,0);
+});

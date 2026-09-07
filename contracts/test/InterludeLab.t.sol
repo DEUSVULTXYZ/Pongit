@@ -70,6 +70,10 @@ contract InterludeLabTest is Test {
         assertEq(phase,3); assertTrue(s.scoreA==7||s.scoreB==7);
         assertGe(s.left,48_000_000); assertLe(s.right,528_000_000);
         assertTrue(game.resultHashes(1)!=0);
+        bytes32 digest=game.resultHashes(1);
+        vm.roll(70100);vm.expectRevert(PongInterlude.InvalidMatch.selector);game.tick(1);
+        vm.prank(a);vm.expectRevert(PongInterlude.InvalidMatch.selector);game.input(1,1,2,70110);
+        assertEq(game.resultHashes(1),digest);
     }
     function testArenaBusyAndOwnOpponent() public {
         vm.prank(a); vm.expectRevert(PongInterlude.NotPlayer.selector); game.createMatch(a,bytes32(0));

@@ -26,6 +26,7 @@ async function init(i){
 async function createPlayer(page){await page.getByRole('button',{name:'Connect passkey',exact:true}).click();await page.getByRole('button',{name:'Create a passkey',exact:true}).click();await until(()=>page.getByRole('button',{name:'Disconnect lab',exact:true}).isVisible(),'Mera session');return page.locator('.lab-account small[title]').getAttribute('title');}
 async function start(a,b,bAddress){await a.getByLabel('Rival address (optional)').fill(bAddress);await a.getByRole('button',{name:'Create friendly match',exact:true}).dblclick();await until(async()=>(await snap())[2]===1n,'invitation');const id=(await snap())[0];await b.getByRole('button',{name:'Accept & play',exact:true}).click();await until(async()=>(await snap())[2]===2n,'accepted game');return id;}
 async function finish(a){if((await snap())[2]===2n){await a.getByRole('button',{name:'Concede',exact:true}).click();await until(async()=>(await snap())[2]===3n,'concede');}await until(()=>a.locator('.lab-commit').textContent().then(t=>t.includes('Result hash matches')),'Monad result hash',30000);}
+async function closeResults(...players){for(const p of players){const close=p.getByRole('button',{name:'Close result',exact:true});if(await close.isVisible())await close.click();}}
 try{
  const a=await init(0),b=await init(1),spectator=await init(2);
  const addresses=[await createPlayer(a),await createPlayer(b)];report.addresses=addresses;report.assertionsAfterConnect=[...assertions];
@@ -45,6 +46,7 @@ try{
  await until(()=>duplicate.locator('body').innerText().then(t=>t.includes('another tab')),'single controlling tab',10000);await duplicate.close();
  await finish(a);report.checks.push('Targeted Mera invitation, duplicate create click, two participants and spectator','Keyboard/touch release acknowledged by engine','F5 with no additional passkey ceremony','Duplicate-tab controller lock','Result hash committed on Monad');
  await a.screenshot({path:'artifacts/interlude/browser/desktop-result.png'});await b.screenshot({path:'artifacts/interlude/browser/mobile-result.png'});
+ await closeResults(a,b);
  const id2=await start(a,b,addresses[1]);report.secondMatch=id2.toString();assert.equal(id2,id+1n);
  await contexts[0].route(manifest.node+'/**',route=>route.abort());await a.keyboard.down('w');await wait(600);await a.keyboard.up('w');
  await until(()=>a.getByRole('button',{name:'Reconnect lab session',exact:true}).isVisible(),'paused after engine loss');
@@ -52,6 +54,40 @@ try{
  await a.getByRole('button',{name:'Reconnect lab session',exact:true}).click();await until(()=>a.getByRole('button',{name:'Disconnect lab',exact:true}).isVisible(),'session restored after uncertain call');
  await until(async()=>(await snap())[12].leftDir===0,'reconnect clears direction');assert.deepEqual(assertions,report.assertionsAfterConnect);
  await finish(a);report.checks.push('Second game keeps the same sessions','Engine connection interruption freezes writes','Reconnect refreshes the nonce without another passkey','Second result matches Monad');
+ await closeResults(a,b);
+ const natural=await start(a,b,addresses[1]);
+ await until(()=>a.locator('.court-topline').textContent().then(t=>t.includes('IN PLAY')),'natural match visible');
+ await a.keyboard.down('w');await b.keyboard.down('w');
+ await until(async()=>(await snap())[2]===3n,'natural seventh point',65000);
+ await a.keyboard.up('w');await b.keyboard.up('w');
+ const terminal=await snap();assert(terminal[12].scoreA===7||terminal[12].scoreB===7);assert(terminal[12].finished);
+ report.naturalResult={id:String(natural),score:[terminal[12].scoreA,terminal[12].scoreB],winner:terminal[6]};
+ for(const [index,p] of [a,b].entries()){
+  const dialog=p.getByRole('dialog',{name:'Confirmed match result'});await dialog.waitFor();
+  const expected=terminal[6].toLowerCase()===addresses[index].toLowerCase()?'VICTORY':'DEFEAT';
+  assert.equal(await dialog.locator('h2').textContent(),expected);
+  assert(await dialog.getByText('RESULT CONFIRMED ON INTERLUDE',{exact:true}).isVisible());
+  assert.equal(await dialog.getByRole('button',{name:'Watch replay',exact:true}).count(),0);
+  assert.equal(await p.evaluate(()=>getComputedStyle(document.body).position),'fixed');
+  // Check and dispatch atomically: a screenshot/automation round trip can
+  // cross the four-second boundary, where Escape legitimately closes instead.
+  await p.evaluate(()=>{if(document.querySelector('.outcome.celebrate'))document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));});
+  await until(()=>dialog.getByRole('button',{name:'Rematch ↗',exact:true}).evaluate(e=>e===document.activeElement),'result action focus');
+  await p.screenshot({path:`artifacts/interlude/browser/natural-result-${index}.png`});
+ }
+ await until(()=>spectator.locator('.spectator-result').isVisible(),'neutral spectator result');
+ assert.equal(await spectator.getByRole('dialog').count(),0);
+ await a.reload();await until(()=>a.getByRole('button',{name:'Disconnect lab',exact:true}).isVisible(),'terminal F5');
+ assert.equal(await a.getByRole('dialog').count(),0,'An old result must not celebrate after F5');
+ await a.getByRole('button',{name:'View result',exact:true}).click();await a.getByRole('dialog').waitFor();
+ assert.equal(await a.locator('.outcome.celebrate').count(),0,'Manual result reopening is static');
+ await closeResults(b);
+ await a.getByRole('button',{name:'Rematch ↗',exact:true}).dblclick();
+ await until(async()=>{const s=await snap();return s[0]===natural+1n&&s[2]===1n&&s[5].toLowerCase()===addresses[1].toLowerCase();},'direct rematch');
+ await b.getByRole('button',{name:'Accept & play',exact:true}).click();await until(async()=>(await snap())[2]===2n,'rematch accepted');
+ assert.deepEqual(assertions,report.assertionsAfterConnect);
+ await finish(a);await closeResults(a,b);
+ report.checks.push('Natural seventh point triggers VICTORY and DEFEAT on both players','Spectator sees a neutral winner','Result locks background, supports skipping and focuses actions','F5 does not replay celebration; View result reopens statically','Rematch targets the same rival, preserves sessions and deduplicates double clicks');
  await a.evaluate(()=>{for(const key of Object.keys(sessionStorage))if(key.startsWith('interlude.session.')){const value=JSON.parse(sessionStorage.getItem(key));value.grant.expiry='0';sessionStorage.setItem(key,JSON.stringify(value));}});
  await a.reload();await until(()=>a.getByRole('button',{name:'Reconnect lab session',exact:true}).isVisible(),'expired session');await a.getByRole('button',{name:'Reconnect lab session',exact:true}).click();
  await a.getByRole('dialog',{name:'Connect to Interlude lab'}).getByRole('button',{name:/Continue as/}).click();await until(()=>a.getByRole('button',{name:'Disconnect lab',exact:true}).isVisible(),'explicit passkey renewal');assert.equal(assertions[0],report.assertionsAfterConnect[0]+1);

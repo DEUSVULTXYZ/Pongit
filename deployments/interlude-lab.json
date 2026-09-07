@@ -1,9 +1,9 @@
 {
-  "app": "0xdf912629b75afa67d5b0de0fe0c30cc063070e84",
-  "node": "https://il-df912629b75afa67-production.up.railway.app",
+  "app": "0xbe51fea690699ad07e4eb5932c4d131689072999",
+  "node": "https://il-be51fea690699ad0-production.up.railway.app",
   "hub": "0xDf840A85DB56430970b32f0e3210cabB5CD1F270",
   "baseChainId": 10143,
   "tickUs": 10000,
-  "rulesVersion": 2,
-  "provisionedAt": "2026-09-07T20:58:31.569Z"
+  "rulesVersion": 3,
+  "provisionedAt": "2026-09-07T21:53:40.521Z"
 }

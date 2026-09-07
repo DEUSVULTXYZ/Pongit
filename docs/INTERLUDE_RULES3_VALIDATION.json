@@ -1,0 +1,226 @@
+{
+  "checkedAt": "2026-09-07T22:04:22.197398+00:00",
+  "app": "0xbe51fea690699ad07e4eb5932c4d131689072999",
+  "rulesVersion": 3,
+  "rule": {
+    "serveHorizontal": 192,
+    "serveVertical": 96,
+    "successfulReturnMultiplier": "1.10",
+    "gameplaySpeedCap": null,
+    "reset": "Each non-final point, before the next serve"
+  },
+  "solidity": {
+    "passed": 97,
+    "failed": 0
+  },
+  "typescript": {
+    "relevantPassed": 17,
+    "failed": 0,
+    "typecheck": "passed"
+  },
+  "differential": {
+    "cases": 10000,
+    "mismatches": 0,
+    "rulesVersion": 3,
+    "seed": "0xc0ffee",
+    "checkedAt": "2026-09-07T21:53:06.546Z"
+  },
+  "runtime": {
+    "hash": "0xf9c9aaf511164162f2259be15173196fddc0af9c6c5a62cbe2b432dcbf17690f",
+    "matchesCompiledArtifactOnEngineAndMonad": true,
+    "delegation": {
+      "validator": "0xB28E684815b095aB5Fb324214cfEa63d76F3d691",
+      "resolver": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "status": 1,
+      "spec": 1,
+      "epoch": "1",
+      "batchIndex": "0",
+      "baseBlock": "60585234",
+      "lastExecTimestamp": "1788818032",
+      "lastCommitAt": "1788818032",
+      "maxBatchInterval": "3600",
+      "expiresAt": "1788904432",
+      "maxDiffsPerCommit": 64
+    },
+    "blocksPerSecond": 99.51737159813425
+  },
+  "sdkProbe": {
+    "metrics": {
+      "samples": 200,
+      "p50": 27.368500000000495,
+      "p95": 33.9474999999984,
+      "p99": 38.637399999999616
+    },
+    "completed": [
+      {
+        "id": "1",
+        "resultHash": "0x93ed3f9c43b33d1d39c40b1373d32dde3790c82252bcd0fa7fe17f7f801c097a",
+        "liveObservedAt": "2026-09-07T21:58:05.244Z",
+        "committedHash": "0x93ed3f9c43b33d1d39c40b1373d32dde3790c82252bcd0fa7fe17f7f801c097a",
+        "committedObservedAt": "2026-09-07T21:58:07.361Z"
+      }
+    ],
+    "commitWaitMs": 2116.691300000006
+  },
+  "limitations": [
+    "SDK receipt timings are from this test connection, not every player location.",
+    "A Monad commitment does not prove the optimistic challenge window has closed.",
+    "Browser passkey checks use virtual PRF authenticators; physical devices are not covered."
+  ],
+  "browser": {
+    "checkedAt": "2026-09-07T22:05:11.755Z",
+    "checks": [
+      "Canvas owner movement measured on both players across four holds and reversals each",
+      "Targeted Mera invitation, duplicate create click, two participants and spectator",
+      "Keyboard/touch release acknowledged by engine",
+      "F5 with no additional passkey ceremony",
+      "Duplicate-tab controller lock",
+      "Result hash committed on Monad",
+      "Second game keeps the same sessions",
+      "Engine connection interruption freezes writes",
+      "Reconnect refreshes the nonce without another passkey",
+      "Second result matches Monad",
+      "Natural seventh point triggers VICTORY and DEFEAT on both players",
+      "Spectator sees a neutral winner",
+      "Result locks background, supports skipping and focuses actions",
+      "F5 does not replay celebration; View result reopens statically",
+      "Rematch targets the same rival, preserves sessions and deduplicates double clicks",
+      "Expiry requests explicit renewal",
+      "Disconnect removes the lab key"
+    ],
+    "viewports": [
+      {
+        "width": 360,
+        "height": 640
+      },
+      {
+        "width": 390,
+        "height": 844
+      },
+      {
+        "width": 768,
+        "height": 1024
+      },
+      {
+        "width": 1440,
+        "height": 1000
+      },
+      {
+        "width": 844,
+        "height": 390
+      }
+    ],
+    "naturalResult": {
+      "id": "7",
+      "score": [
+        4,
+        7
+      ],
+      "winner": "0x4Fe8FaF409bbD2212dF42C2AACda37125766282B"
+    },
+    "motion": {
+      "left": [
+        {
+          "direction": 1,
+          "frames": 12,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 68.51104316660485
+        },
+        {
+          "direction": -1,
+          "frames": 15,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 65.99999999999994
+        },
+        {
+          "direction": 1,
+          "frames": 14,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 100.95878215353963
+        },
+        {
+          "direction": -1,
+          "frames": 16,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 69.96599999999921
+        }
+      ],
+      "right": [
+        {
+          "direction": 1,
+          "frames": 20,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 94.13469172181198
+        },
+        {
+          "direction": -1,
+          "frames": 14,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 80.02799999999928
+        },
+        {
+          "direction": 1,
+          "frames": 19,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 89.28062683635062
+        },
+        {
+          "direction": -1,
+          "frames": 15,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 70.0140000000008
+        }
+      ]
+    },
+    "errors": [],
+    "authenticator": "Chromium virtual PRF using the real Mera SDK. Physical devices were not tested."
+  },
+  "bouncePreview": {
+    "checkedAt": "2026-09-07T22:05:31.248Z",
+    "cases": [
+      {
+        "width": 390,
+        "direction": -1,
+        "frames": 93,
+        "contactFrames": 5,
+        "maxFreezeMs": 0
+      },
+      {
+        "width": 390,
+        "direction": 1,
+        "frames": 96,
+        "contactFrames": 4,
+        "maxFreezeMs": 0
+      },
+      {
+        "width": 1440,
+        "direction": -1,
+        "frames": 67,
+        "contactFrames": 5,
+        "maxFreezeMs": 0
+      },
+      {
+        "width": 1440,
+        "direction": 1,
+        "frames": 97,
+        "contactFrames": 5,
+        "maxFreezeMs": 0
+      }
+    ],
+    "errors": []
+  },
+  "productionBuild": "passed",
+  "publicationScan": {
+    "checkedAt": "2026-09-07T22:04:44.100064+00:00",
+    "objectsScanned": 1012,
+    "findings": []
+  }
+}

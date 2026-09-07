@@ -1,4 +1,5 @@
 import { advance, move, next, type State } from "../../shared/physics-v2";
+import { advance as advanceInterlude } from "../../shared/physics-interlude";
 
 export type SnapshotCursor = { id: string; head: bigint; version: bigint; clock: bigint };
 export function acceptsSnapshot(previous: SnapshotCursor | null, incoming: SnapshotCursor) {
@@ -36,9 +37,9 @@ export function projectLive(state: State, target: bigint): { state: State; waiti
     if (event.kind >= 5) {
       return { state: move(s, event.at > s.t ? event.at - 1n : s.t), waiting: true };
     }
-    // Only walls and paddle planes reach the common collision routine. The
-    // stored velocity, including the rules-2 speed, is preserved on a bounce.
-    s = advance(s, event.at, 1)[0];
+    // Only walls and paddle planes reach the lab collision routine. Preview
+    // uses the same uncapped per-return acceleration as the engine.
+    s = advanceInterlude(s, event.at, 1)[0];
   }
   return { state: s, waiting: true };
 }

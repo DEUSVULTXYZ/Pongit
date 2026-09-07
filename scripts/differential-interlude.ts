@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { toHex, type Abi, type Hex } from "viem";
 import { localChain } from "./local-chain";
-import { initial, advance } from "../shared/physics-interlude";
+import { initial, advance, accelerate } from "../shared/physics-interlude";
 import { next } from "../shared/physics-v2";
 
 const chain = await localChain();
@@ -16,6 +16,8 @@ try {
     const cases = Array.from({length: Math.min(24,10000-i)}, (_,j) => {
       const entropy = toHex(BigInt(random()), {size:32});
       let s = initial(entropy);
+      // Exercise long rallies well beyond the former proposed 2x cap.
+      for(let hit=0,n=random()%41;hit<n;hit++)s=accelerate(s);
       s.leftDir = random()%3-1; s.rightDir = random()%3-1;
       [s] = advance(s,BigInt(random()%60000000));
       s.leftDir = random()%3-1; s.rightDir = random()%3-1;
@@ -29,9 +31,9 @@ try {
       assert.deepEqual(actual,advance(s,target,limit),`case ${i+j}`);
       if(i===0) assert.deepEqual(await chain.publicClient.readContract({address,abi:a.abi,functionName:"initial",args:[entropy]}),initial(entropy));
     }));
-    if(i%1200===0)console.log(`Interlude rules 2: ${Math.min(i+24,10000)}/10000`);
+    if(i%1200===0)console.log(`Interlude rules 3: ${Math.min(i+24,10000)}/10000`);
   }
   await mkdir("artifacts/interlude",{recursive:true});
-  await writeFile("artifacts/interlude/differential-rules2.json",JSON.stringify({cases:10000,mismatches:0,rulesVersion:2,seed:"0xc0ffee",checkedAt:new Date().toISOString()},null,2));
-  console.log("PASS: 10000 Interlude rules 2 differential cases.");
+  await writeFile("artifacts/interlude/differential-rules3.json",JSON.stringify({cases:10000,mismatches:0,rulesVersion:3,seed:"0xc0ffee",checkedAt:new Date().toISOString()},null,2));
+  console.log("PASS: 10000 Interlude rules 3 differential cases.");
 } finally {chain.close();}
