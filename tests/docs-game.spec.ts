@@ -16,9 +16,11 @@ test("Reading documentation preserves a live arcade session; spectator betting g
    await expect(p.locator(".status-line")).toContainText("Arcade session ready",{timeout:30000});
   }
   const [a,b,spectator]=pages;
-  await a.getByRole("button",{name:"Play now",exact:true}).click();await b.getByRole("button",{name:"Play now",exact:true}).click();
+  // Keep public smoke checks out of matchmaking and the ranked leaderboard.
+  await a.getByRole("button",{name:"Rivals",exact:true}).click();await a.getByLabel("Opponent address",{exact:true}).fill(addresses[1]);await a.getByRole("button",{name:/^Send challenge/}).click();
+  await b.getByRole("button",{name:"Accept friendly",exact:true}).click({timeout:20000});
   for(const p of [a,b])await expect(p.locator(".match-bar")).toContainText("IN PLAY",{timeout:45000});
-  const match=(await(await a.request.get(api+"/matches")).json()).matches.find((m:any)=>m.status===2&&[m.playerA,m.playerB].some((p:string)=>p.toLowerCase()===addresses[0].toLowerCase()));expect(match).toBeTruthy();
+  const match=(await(await a.request.get(api+"/matches")).json()).matches.find((m:any)=>m.status===2&&[m.playerA,m.playerB].some((p:string)=>p.toLowerCase()===addresses[0].toLowerCase()));expect(match).toBeTruthy();expect([match.playerA.toLowerCase(),match.playerB.toLowerCase()].sort()).toEqual(addresses.slice(0,2).map(a=>a.toLowerCase()).sort());
   const fingerprint=()=>a.evaluate(async()=>Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(sessionStorage.getItem("pongit:arcade-session:v3")||"")))).map(n=>n.toString(16).padStart(2,"0")).join(""));
   const before=await fingerprint(),ceremonies=[...assertions],next=contexts[0].waitForEvent("page");
   await a.locator("header").getByRole("link",{name:"Docs ↗",exact:true}).click();const docs=await next;await docs.waitForURL(base+"/docs");
