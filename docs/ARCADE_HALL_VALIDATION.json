@@ -1,0 +1,37 @@
+{
+  "base": "http://localhost:3150",
+  "at": "2026-09-07T06:44:56.231Z",
+  "addresses": [
+    "0x93f1B1EBD296313592fD206afE388C08B38a3155",
+    "0xc3959542A9D3539cC5eEd9398935af93fbc15754"
+  ],
+  "handle": "neon_mtqvku18",
+  "scenarios": [
+    "create from home and carry connection intent",
+    "cancel connection",
+    "lowercase normalization",
+    "duplicate click",
+    "database uniqueness and concurrent reservation",
+    "literal underscore and full address search",
+    "reload persistence",
+    "targeted ranked duel by username",
+    "named scoreboard",
+    "ranked leaderboard",
+    "immediate rename in leaderboard",
+    "static room",
+    "desktop and mobile overflow"
+  ],
+  "errors": [],
+  "validationEnvironment": "Private isolated VPS Anvil 31337, two Chromium CTAP2 PRF virtual authenticators",
+  "browserTestsPassed": 9,
+  "unitTestsPassed": 22,
+  "typecheck": "passed",
+  "dependencyAuditProduction": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "total": 0
+  }
+}

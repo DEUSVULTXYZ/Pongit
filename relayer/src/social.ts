@@ -46,6 +46,7 @@ export async function authenticatedPlayer(req: IncomingMessage) {
 type Dependencies = {
   deployment: Deployment;
   origin: string;
+  profileChanged?:()=>void;
   readBody: (req:IncomingMessage)=>Promise<any>;
   send: (res:ServerResponse, value:unknown, status?:number)=>void;
   serialize: <T>(operation:()=>Promise<T>)=>Promise<T>;
@@ -95,8 +96,8 @@ export function socialRoutes(d: Dependencies) {
       res.setHeader("Set-Cookie",cookie("",0));d.send(res,{disconnected:true});return true;
     }
     if(path==="/profiles" && req.method==="GET") {
-      const search=(url.searchParams.get("search")||"").slice(0,40).toLowerCase();
-      const rows=await pool.query("SELECT player,handle,avatar FROM profiles WHERE handle LIKE $1 OR player=$2 ORDER BY handle LIMIT 30",[search.replace(/[%_]/g,"")+"%",search]);
+      const search=(url.searchParams.get("search")||"").trim().slice(0,42).toLowerCase();
+      const rows=await pool.query("SELECT player,handle,avatar FROM profiles WHERE starts_with(handle,$1) OR player=$1 ORDER BY handle LIMIT 30",[search]);
       d.send(res,{profiles:rows.rows});return true;
     }
     if(/^\/profiles\/0x[\da-fA-F]{40}$/.test(path) && req.method==="GET") {
@@ -110,10 +111,10 @@ export function socialRoutes(d: Dependencies) {
     if(path==="/profiles" && req.method==="PUT") {
       const r=z.object({handle:z.string().toLowerCase().regex(/^[a-z][a-z0-9_]{2,19}$/),avatar:z.number().int().min(0).max(11)}).parse(await d.readBody(req));
       try {await pool.query("INSERT INTO profiles(player,handle,avatar) VALUES($1,$2,$3) ON CONFLICT(player) DO UPDATE SET handle=$2,avatar=$3,updated_at=now()",[player,r.handle,r.avatar]);}
-      catch(e){if((e as any).code==="23505")throw new Error("This nickname is already taken.");throw e;}
-      d.send(res,{player,...r});return true;
+      catch(e){if((e as any).code==="23505")throw new Error("This username is already taken.");throw e;}
+      d.profileChanged?.();d.send(res,{player,...r});return true;
     }
-    if(path==="/profiles" && req.method==="DELETE"){await pool.query("DELETE FROM profiles WHERE player=$1",[player]);d.send(res,{removed:true});return true;}
+    if(path==="/profiles" && req.method==="DELETE"){await pool.query("DELETE FROM profiles WHERE player=$1",[player]);d.profileChanged?.();d.send(res,{removed:true});return true;}
     if(path==="/notebook" && req.method==="GET") {
       const rows=await pool.query("SELECT revision,iv,ciphertext FROM notebooks WHERE player=$1",[player]);d.send(res,rows.rows[0]||{revision:0});return true;
     }

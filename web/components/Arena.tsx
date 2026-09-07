@@ -17,6 +17,7 @@ import {
   type Hex,
   type Address,
 } from "viem";
+import {ProfileEditor,usePublicProfile} from "./PublicProfile";
 import {HomeCabinet} from "./HomeCabinet";
 import {Dialog,CabinetTools} from "./Dialog";
 import { ArcadeAmbience, MusicCredit } from "./ArcadeAmbience";
@@ -72,6 +73,10 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     [selected, setSelected] = useState<string | null>(null),
     [match, setMatch] = useState<any>(null),
     [state, setState] = useState<State | null>(null);
+  const publicProfile=usePublicProfile(account),profileA=usePublicProfile(match?.playerA),profileB=usePublicProfile(match?.playerB);
+  const [showProfile,setShowProfile]=useState(false),[profileRevision,setProfileRevision]=useState(0);
+  const pendingProfile=useRef(false);
+  useEffect(()=>{const changed=()=>setProfileRevision(n=>n+1);window.addEventListener("pongit:profile",changed);return()=>window.removeEventListener("pongit:profile",changed);},[]);
   const [head, setHead] = useState(0n),
     [clock, setClock] = useState(0n),
     [observedAt, setObservedAt] = useState(Date.now()),
@@ -101,7 +106,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   const [legacyReplay,setLegacyReplay]=useState<{deployment:string;id:string}|null>(null);
   const [betPreview,setBetPreview]=useState<{side:number;quote:any;quantity:string;matchId:string;player:string;game:string}|null>(null);
   useEffect(()=>setBetPreview(null),[selected,account,config?.game]);
-  function closeConnect(){pendingLaunch.current=null;setShowConnect(false);}
+  function closeConnect(){pendingProfile.current=false;pendingLaunch.current=null;setShowConnect(false);}
   useEffect(()=>{if(!queued){setSearchStarted(0);return;}setSearchStarted(Date.now());},[queued]);
   useEffect(()=>{if(!searchStarted)return;const tick=()=>setSearchSeconds(Math.floor((Date.now()-searchStarted)/1000));tick();const timer=setInterval(tick,1000);return()=>clearInterval(timer);},[searchStarted]);
   useEffect(()=>{if(tab!=="Archive" || !account)return;let stop=false;setRecent([]);setRecentError("");void api(`/player/${account}/recent-matches`).then(d=>{if(!stop)setRecent(d.Match);}).catch(()=>{if(!stop)setRecentError("Your recent games could not load. Reopen Replays to retry.");});return()=>{stop=true;};},[tab,account]);
@@ -146,6 +151,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   const nowSeconds = () => Math.floor((Date.now() + clockOffset.current) / 1000);
   const needsArcadeRenewal = !!account && (config?.version || 1) >= 3 &&
     (!arcade.current || !arcadeExpires || arcadeExpires <= nowSeconds());
+  useEffect(()=>{if(pendingProfile.current&&account&&!busy&&!showConnect&&!needsArcadeRenewal){pendingProfile.current=false;setShowProfile(true);}},[account,busy,showConnect,needsArcadeRenewal]);
   const operationBusy = useRef(false), identityVersion = useRef(0), queueTicket = useRef("");
   const [inputLatency, setInputLatency] = useState<number | null>(null);
   const [archive, setArchive] = useState<any[]>([]),
@@ -252,6 +258,10 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
     finally {closeOwner();}
     if(view.current.selected && view.current.match?.status===2 && [view.current.match.playerA,view.current.match.playerB].some((p:string)=>p.toLowerCase()===own.account.address.toLowerCase()))await restoreSession();
   }
+  async function openProfile(){
+    if(!account||needsArcadeRenewal){pendingProfile.current=true;try{await connectFromButton();}catch(e){pendingProfile.current=false;throw e;}}
+    else setShowProfile(true);
+  }
   async function connectFromButton() {
     setDirection(0);setShowAccount(false);setShowConnect(false);
     if (owner.current && needsArcadeRenewal) await renewArcade();
@@ -350,6 +360,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
 
   }
   async function disconnect() {
+    pendingProfile.current=false;setShowProfile(false);
     pendingLaunch.current=null;setRematchInvite(null);setBetPreview(null);setRecent([]);setLegacyReplay(null);
     let revokePending=false;
     try {if(queued)await cancelQueue();if(config && arcade.current)await revokeArcade(config,arcade.current);}catch{revokePending=!!arcade.current;}
@@ -479,7 +490,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       void api("/alerts")
         .then((d) => setAlerts(d.Alert))
         .catch((e) => setError(e.message));
-  }, [tab, player?.admin,mode]);
+  }, [tab, player?.admin,mode,profileRevision]);
   useEffect(()=>{
     if(tab!=="Tournaments")return;
     let stopped=false,pending=false;
@@ -1068,7 +1079,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
           </button>
         </div>
       )}
-      {home && <HomeCabinet mode={mode} setMode={setMode} busy={busy||!config} active={!!player?.activeMatch && player.activeMatch!=="0"} play={()=>void act(()=>joinQueue(mode,"0"))} challenge={()=>changeTab("Rivals")} watch={()=>changeTab("Live")}/>}
+      {home && <HomeCabinet mode={mode} setMode={setMode} busy={busy||!config} active={!!player?.activeMatch && player.activeMatch!=="0"} play={()=>void act(()=>joinQueue(mode,"0"))} challenge={()=>changeTab("Rivals")} watch={()=>changeTab("Live")} profile={publicProfile} editProfile={()=>void act(openProfile)}/>}
+      {showProfile && account && <Dialog label="Your public profile" onClose={()=>setShowProfile(false)} className="profile-dialog"><button className="modal-close" aria-label="Close profile" onClick={()=>setShowProfile(false)}>×</button><p className="eyebrow">YOUR NAME ON THE CABINET</p><h2>Make a name.</h2><ProfileEditor key={account} account={account} ready={!busy} authenticate={async()=>{if(needsArcadeRenewal)await renewArcade();await authenticateApp();}}/></Dialog>}
       {lobby && <section className="waiting-cabinet"><p className="eyebrow">{rematchInvite?"ONE MORE ROUND?":"MATCHMAKING"}</p><h1>{rematchInvite?"Your rival is up next.":"Finding your player two."}</h1><div className="waiting-display">{rematchInvite?rematchInvite.status.toUpperCase():`${Math.floor(searchSeconds/60)}:${String(searchSeconds%60).padStart(2,"0")}`}</div><p>{rematchInvite?`Rematch invitation · expires ${new Date(Number(rematchInvite.expires)*1000).toLocaleTimeString()}`:`${mode===1?"Chaos":"Classic"} · ${tournamentId!=="0"?"Tournament":"Ranked"}`}</p><p className="status-line" role="status">{message}</p>{queueTicket.current && <button disabled={busy} onClick={()=>void act(cancelQueue)}>Cancel search</button>}{rematchInvite && <button disabled={busy} onClick={()=>void act(async()=>{if(rematchInvite.status==="pending")await appApi(`/challenges/${rematchInvite.id}/cancel`,"POST",{},account);setRematchInvite(null);})}>{rematchInvite.status==="pending"?"Cancel invitation":"Back to arcade"}</button>}</section>}
       {home && <p className="status-line home-status" role="status">{message}</p>}
       {showArena && (
@@ -1101,8 +1113,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             <div className="scoreboard">
               <div>
                 <small>PLAYER 01</small>
-                <strong>
-                  {match ? short(match.playerA) : "Awaiting player"}
+                <strong title={match?.playerA}>
+                  {match ? profileA?.handle || short(match.playerA) : "Awaiting player"}
                 </strong>
               </div>
               <div className="score">
@@ -1112,8 +1124,8 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               </div>
               <div className="right">
                 <small>PLAYER 02</small>
-                <strong>
-                  {match ? short(match.playerB) : "Awaiting player"}
+                <strong title={match?.playerB}>
+                  {match ? profileB?.handle || short(match.playerB) : "Awaiting player"}
                 </strong>
               </div>
             </div>
@@ -1443,7 +1455,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               {ladder.map((p, i) => (
                 <tr key={p.id}>
                   <td>{String(i + 1).padStart(2, "0")}</td>
-                  <td><span>{p.handle || short(p.address)}</span><button className="ladder-challenge" disabled={busy || p.address.toLowerCase()===account.toLowerCase()} onClick={()=>void act(()=>directChallenge(p.address))}>Challenge ↗</button></td>
+                  <td><span title={p.address}>{p.handle || short(p.address)}</span><button className="ladder-challenge" disabled={busy || p.address.toLowerCase()===account.toLowerCase()} onClick={()=>void act(()=>directChallenge(p.address))}>Challenge ↗</button></td>
                   <td>{p.elo}</td>
                   <td>{p.played}</td>
                   <td>{p.wins}</td>

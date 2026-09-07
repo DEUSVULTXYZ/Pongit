@@ -15,8 +15,8 @@ test("V2 Mera notebook, public profile, targeted friendly Chaos, handicap and ar
     if(await a.getByRole("button",{name:"Unlock invitations & profile"}).count())await a.getByRole("button",{name:"Unlock invitations & profile"}).click();
     await expect(a.getByRole("button",{name:"Unlock invitations & profile"})).toHaveCount(0);
     const handle="arcade_"+addresses[0].slice(2,10).toLowerCase();
-    await a.getByText("Your public profile",{exact:true}).click();await a.getByLabel("Unique nickname").fill(handle);await a.getByRole("button",{name:"Save public profile"}).click();
-    await expect(a.locator(".public-profile")).toContainText(handle);
+    await a.getByText("Your public profile",{exact:true}).click();await a.getByLabel("Unique username").fill(handle);await a.getByRole("button",{name:"Save public profile"}).click();
+    await expect(a.locator(".public-profile-form")).toContainText("Public profile saved.");
     await a.getByRole("button",{name:"Unlock notebook"}).click();await expect(a.locator(".notebook")).toContainText("Unlocked in memory",{timeout:15000});
     await a.locator(".notebook").getByLabel("Address",{exact:true}).fill(addresses[1]);await a.getByLabel("Private nickname").fill("encrypted-rival-only");await a.getByRole("button",{name:"Add favourite"}).click();await a.getByRole("button",{name:"Save encrypted",exact:true}).click();await expect(a.locator(".notebook")).toContainText("Encrypted copy saved");
     await a.getByLabel("Preferred mode").selectOption("1");await a.getByRole("button",{name:"Apply preferences",exact:true}).click();await expect(a.locator(".notebook")).toContainText("Preferences applied");

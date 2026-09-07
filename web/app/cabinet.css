@@ -8,7 +8,7 @@ main.neon-rush.cabinet-ui { max-width:1400px; padding:20px 36px 30px; }
 .cabinet-ui .brand-sub { display:none; }
 .cabinet-ui .top-right { gap:14px; }
 .cabinet-ui .network { font-size:9px; color:#a9abbc; }
-.cabinet-ui nav { height:52px; border:0; background:transparent; padding:0; gap:28px; overflow:visible; }
+.cabinet-ui nav { height:52px; border:0; background:#090912ba; padding:0; gap:28px; overflow:visible; }
 .cabinet-ui nav button { padding:8px 0; min-height:44px; font-size:12px; box-shadow:none; background:transparent; }
 .cabinet-ui nav button:last-child { margin-left:auto; gap:12px; }
 .cabinet-ui nav button small { margin-left:8px; color:var(--cyan); }
@@ -19,17 +19,12 @@ main.neon-rush.cabinet-ui { max-width:1400px; padding:20px 36px 30px; }
 .cabinet-ui button.primary,.cabinet-dialog button.primary { background:linear-gradient(#bdfcf1,#6ccbc6); border-color:#b6fff4; color:#0b2328; box-shadow:inset 0 1px white,0 4px 0 #245759,0 7px 24px #61e5de22; }
 .cabinet-ui button:disabled,.cabinet-dialog button:disabled { opacity:.45; }
 .cabinet-ui .arcade-settings-toggle { font-size:10px!important; }
-.arcade-background { background:radial-gradient(ellipse at 50% 36%,#26233b 0,#121222 38%,#060810 77%); }
-.arcade-room { position:absolute; inset:0; background:linear-gradient(90deg,#10091640,transparent 30%,transparent 70%,#07171c40); }
-.arcade-room:before { content:""; position:absolute; top:22%; left:7%; right:7%; height:2px; background:linear-gradient(90deg,#ca58967a,transparent 38%,transparent 62%,#79d9f17a); box-shadow:0 0 28px #a066cf66; transform:rotate(-6deg); }
-.room-cabinet { position:absolute; top:32%; width:210px; height:430px; background:linear-gradient(95deg,#161526,#080a12 45%,#1b1528); border:2px solid #493451; border-bottom:7px solid #06070d; box-shadow:inset 5px 0 #a5649755,12px 20px 50px #000b; clip-path:polygon(4% 0,89% 0,99% 14%,91% 44%,100% 53%,100% 100%,0 100%,0 52%,8% 42%); }
-.room-cabinet:before { content:""; position:absolute; inset:28px 16px auto; height:37px; background:linear-gradient(135deg,#441b43,#724662,#1b1931); border:2px solid #956386; box-shadow:0 0 22px #dc6bc940; }
-.room-cabinet:after { content:""; position:absolute; inset:96px 23px auto; height:150px; background:linear-gradient(135deg,#234e5770,#060b12 70%); border:12px solid #04060b; border-radius:14px; box-shadow:0 15px 0 -5px #564d63,0 18px 0 -4px #131423; }
-.cabinet-left { left:calc(50% - 710px); transform:perspective(750px) rotateY(23deg) rotate(-2deg); }
-.cabinet-right { right:calc(50% - 710px); top:27%; transform:perspective(750px) rotateY(-23deg) rotate(2deg); filter:hue-rotate(70deg); }
-.arcade-grid { top:81%; opacity:.13; background-size:100px 100px; }
-.arcade-horizon { top:82%; opacity:.17; }
-.arcade-background[data-intensity=subtle] .arcade-room { opacity:.3; }
+/* A single prerendered room: no canvas, animation, parallax or extra GPU layers. */
+.arcade-background { background:#080714; }
+.arcade-room { position:absolute; inset:0; background:url('/art/arcade-hall.webp') center center/cover no-repeat; opacity:.9; }
+.arcade-room:after { content:""; position:absolute; inset:0; background:linear-gradient(#06071420,#06071408 60%,#06071455); }
+.arcade-background[data-intensity=subtle] .arcade-room { opacity:.32; }
+@media(max-width:800px){.arcade-room{background-image:url('/art/arcade-hall-mobile.webp');background-position:22% center;opacity:.65}}
 .home-cabinet { width:min(590px,100%); margin:28px auto 0; position:relative; border:1px solid #73768a; border-radius:12px 12px 4px 4px; background:linear-gradient(90deg,#1b1c28,#090b13 3%,#080a11 97%,#3d3144); box-shadow:inset 4px 0 #8ae4de2e,inset -4px 0 #e186b826,0 28px 80px #0009; padding:8px 10px 0; }
 .cabinet-marquee { position:relative; display:flex; justify-content:center; align-items:center; gap:32px; flex-wrap:wrap; padding:14px 12px 28px; border:1px solid #8a749a; background:linear-gradient(110deg,#20243b,#403046 50%,#171e33); border-radius:5px 5px 1px 1px; color:#e9fdfa; font-size:34px; font-style:italic; letter-spacing:4px; text-shadow:2px 2px #525876,-1px -1px #fff,0 0 18px #96e4e24d; box-shadow:inset 0 0 20px #b6ffff10,0 2px #05060e; }
 .cabinet-marquee small { position:absolute; bottom:9px; font-size:8px; letter-spacing:4px; font-style:normal; color:#eab6d2; text-shadow:none; }
@@ -95,7 +90,31 @@ main.neon-rush.cabinet-ui { max-width:1400px; padding:20px 36px 30px; }
 /* Explicit primary hover keeps dark text on a light button in every input mode. */
 .cabinet-ui button.primary:hover:not(:disabled),.cabinet-dialog button.primary:hover:not(:disabled){background:linear-gradient(#e0fff8,#94e5d9);color:#092a2b;border-color:#d2fff2;box-shadow:inset 0 1px white,0 4px 0 #245759,0 8px 25px #61e5de30}
 .cabinet-ui nav button{border:0;box-shadow:none;border-radius:0}
-.room-cabinet{opacity:.62}.cabinet-right{filter:hue-rotate(220deg)}
+
 @media(min-width:801px) and (min-height:501px){.cabinet-ui.in-game .arena-grid{width:min(100%,calc((100dvh - 430px)*1.77778 + 42px))}}
 
 .cabinet-ui.in-game .match-bar{padding-top:6px;padding-bottom:6px}
+
+/* The player tag is secondary to Play now and never moves the play button. */
+.cabinet-ui .home-player-tag{display:flex;align-items:center;gap:12px;width:100%;padding:14px 12px;border:0;border-bottom:1px solid #62536855;border-radius:0;background:#101420;box-shadow:none;text-align:left}
+.home-player-tag .avatar{flex-shrink:0;width:36px;height:36px;color:#94eee2}
+.home-player-tag>span:nth-child(2){display:grid;gap:5px;min-width:0;flex:1}
+.home-player-tag small{font-size:8px;letter-spacing:1.5px;color:#adb5c9}
+.home-player-tag strong{font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.home-player-tag .profile-tag-action{font-size:10px;color:#a8e9e1;white-space:nowrap}
+.public-profile-form{display:grid;gap:12px;padding:20px 0;min-width:0}
+.public-profile-form .profile-preview{display:flex;align-items:center;gap:15px;padding:16px;background:#070d18;border:1px solid #394456;border-radius:7px}
+.profile-preview .avatar{width:50px;height:50px;flex-shrink:0;color:#a6eee3}
+.profile-preview>div{min-width:0;display:grid;gap:8px}.profile-preview strong{font-size:16px;overflow-wrap:anywhere}.profile-preview small{color:#aaafc3;font-size:11px}
+.public-profile-form p{margin:0;font-size:12px;line-height:1.8;color:#bfc3d4}.public-profile-form small{font-size:10px;line-height:1.8;color:#aeb4c8}
+.public-profile-form input{width:100%;min-height:48px;font-size:16px!important}
+.public-profile-form fieldset{min-width:0;border:0;padding:8px 0 0;margin:0}.public-profile-form legend{font-size:11px;padding:0 0 8px;color:#c8ccdc}
+.public-profile-form .avatar-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.public-profile-form .avatar-grid button{padding:4px;min-width:0;min-height:44px}.public-profile-form .avatar-grid svg{display:block;width:100%;height:32px}
+.public-profile-form .avatar-grid button[aria-pressed=true]{border-color:#98f5e7;box-shadow:0 0 0 1px #98f5e7;background:#18403d}
+.username-availability{font-size:10px;line-height:1.8;min-height:36px;color:#b6bdce}.username-availability.available{color:#a6e8bc}.username-availability.taken{color:#ffabc4}
+.public-profile-form .remove-profile{background:transparent;box-shadow:none;border-color:transparent;color:#b9b6ca;font-size:10px}
+.cabinet-dialog .profile-dialog{width:min(540px,100%)}
+.cabinet-ui .scoreboard>div:not(.score){min-width:0}.cabinet-ui .scoreboard strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px}
+.cabinet-ui.in-game .game-panel{border-color:#85718f;box-shadow:0 0 0 3px #070a12,0 0 0 5px #74517d,0 0 18px #df5bba35,-15px 0 60px #39cbe51c,15px 0 60px #f247ce24,0 24px 80px #000c}
+.cabinet-ui.in-game .match-bar{border-top:2px solid transparent;border-image:linear-gradient(90deg,#47c8df,#db8cee 45%,#f5b773) 1}
+@media(max-width:480px){.cabinet-ui .home-player-tag{padding:12px 7px;gap:8px}.home-player-tag strong{font-size:9px}.home-player-tag small{font-size:7px}.home-player-tag .profile-tag-action{font-size:8px}.home-player-tag .avatar{width:30px;height:30px}.profile-preview strong{font-size:14px}.public-profile-form .avatar-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.cabinet-ui .scoreboard strong{max-width:90px}}

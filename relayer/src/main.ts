@@ -658,7 +658,7 @@ async function notifySocial(players:string[]) {
     catch { socialSockets.delete(socket);socket.send(json({type:"social-expired"})); }
   }
 }
-const handleSocial = socialRoutes({deployment,origin,readBody:body,send,serialize:serializeMatchmaking,assertAvailable,verifyGameplayMessage,isGameplaySigner,notify:notifySocial,
+const handleSocial = socialRoutes({deployment,origin,profileChanged:()=>ladderCaches.clear(),readBody:body,send,serialize:serializeMatchmaking,assertAvailable,verifyGameplayMessage,isGameplaySigner,notify:notifySocial,
   sourceMatch:async(ref:string)=>{const [version,id]=ref.split(":"); const d=resolveDeployment(version as any,deployment);if(!/^\d+$/.test(id))throw new Error("Invalid match reference"); const m=await publicClient.readContract({address:d.game,abi:contractsFor(d).game,functionName:"getMatch",args:[BigInt(id)]}) as any; if(m.status!==3)throw new Error("Finish this match before requesting a rematch"); return {playerA:m.playerA.toLowerCase(),playerB:m.playerB.toLowerCase(),mode:m.mode||0,ranked:m.ranked??true}; }
 });
 const payoutWorker=createPayoutWorker({db:pool,deployment,client:publicClient,graphql,enqueue});
