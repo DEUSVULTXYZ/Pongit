@@ -1,0 +1,23 @@
+.interlude-lab { max-width: 1200px; margin: auto; padding: 20px; font-family: system-ui, sans-serif; }
+.interlude-lab h1 { font-size: clamp(24px, 3.5vw, 40px); }
+.interlude-lab h2 { font-size: clamp(20px, 2.5vw, 28px); }
+.interlude-lab p, .interlude-lab label { font-size: 16px; line-height: 1.6; }
+.lab-header { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+.lab-header .brand { margin-right:auto; }.lab-header .brand-word { font-size:28px; }
+.lab-badge { color:#acf2ee; letter-spacing:.1em; font-size:12px; }
+.lab-intro { display:flex; align-items:center; gap:24px; padding:32px 0 16px; }
+.lab-intro p { color:#b5c6ce; }.lab-main-link { min-width:160px; }
+.lab-status,.lab-account,.lab-actions { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.lab-status { color:#aaf0e9; padding:12px 0; font-size:14px; }
+.lab-account,.lab-panel { padding:24px; background:#101a22; border:1px solid #70899855; border-radius:12px; margin:16px 0; }
+.lab-account { justify-content:space-between; }.lab-account small { display:block; margin-top:4px; overflow-wrap:anywhere; font-size:13px; color:#acc1cd; }
+.lab-notice { color:#b3c7d1; }.lab-error { padding:16px; color:#ffe2be; border:1px solid #fba76255; background:#261e18; border-radius:8px; }
+.lab-actions label { flex:1; min-width:min(100%,250px); }.lab-actions input { width:100%; margin-top:8px; }
+.lab-court { padding:12px; background:#0c151df5; border:1px solid #829ba866; border-radius:12px; box-shadow:inset 0 1px #d5faff18,0 12px 36px #0005; }.lab-court canvas { width:100%; display:block; aspect-ratio:16/9; border:1px solid #617a8644; }
+.lab-court .court-topline { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.lab-court .score { font-family:var(--font-michroma),sans-serif; font-size:clamp(32px,5vw,64px); }
+.lab-court .controls { display:flex; align-items:center; justify-content:space-between; padding:12px 0; }
+.lab-court .touch-controls { display:flex; gap:8px; touch-action:none; }
+.lab-commit p { color:#b4c5d0; }.lab-commit details { overflow-wrap:anywhere; }.lab-commit a { color:#abf0e8; }
+.interlude-lab footer { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; padding:20px 0; }
+@media(max-width:600px){.interlude-lab{padding:12px}.lab-header{gap:12px}.lab-header .brand{width:auto}.lab-badge{order:4;width:100%}.lab-intro{display:block;padding-top:20px}.lab-account,.lab-panel{padding:16px}.lab-court{padding:6px}.lab-court .player-label{font-size:11px;min-width:0}.lab-account .lab-actions,.lab-actions button{width:100%}.lab-header .arcade-settings-toggle{margin-left:0}.lab-status{gap:10px}}

@@ -6,6 +6,7 @@ export const catalog:DocEntry[]=[
  entry("getting-started/first-match","Your first match","From Play now to your first seven points.",0,["start","controls","connect","play"]),
  entry("getting-started/passkeys","Passkeys & arcade sessions","Keep your account, renew your session and understand what you sign.",0,["login","connect","renew","reconnect","F5","disconnect"]),
  entry("playing/classic","Classic","Two paddles. One ball. First to seven.",1,["rules","paddle","controls"]),
+ entry("playing/interlude-lab","Interlude lab","Try the dedicated Classic friendly arena and distinguish live results from Monad commitments.",1,["Interlude","lab","engine","session","fast","friendly"]),
  entry("playing/chaos","Chaos","Understand how betting pressure changes the next rally.",1,["handicap","96","72","shrink","bets"]),
  entry("playing/challenges","Matchmaking, challenges & rematches","Find an opponent or invite the rival you already know.",1,["duel","invite","cancel","friendly","ranked"]),
  entry("playing/rankings","Rankings & seasons","Separate Classic and Chaos ladders, with results recorded onchain.",1,["elo","leaderboard","placements","rating"]),

@@ -5,7 +5,8 @@ import {searchDocs,type SearchEntry} from "../web/lib/docs-search";
 import docs from "../web/lib/docs.generated.json";
 test("documentation covers unique routes and finds phrases and recovery concepts",async()=>{
  const index=JSON.parse(await readFile(new URL("../web/public/search/docs-v1.json",import.meta.url),"utf8")) as SearchEntry[];
- assert.equal(docs.pages.length,24);assert.equal(new Set(docs.pages.map(p=>p.slug)).size,24);
+ assert.equal(docs.pages.length,25);assert.equal(new Set(docs.pages.map(p=>p.slug)).size,25);
+ assert.ok(docs.pages.some(p=>p.slug==="playing/interlude-lab"));
  for(const [query,path] of [["payout","betting/payments"],["Interlude","technical/architecture"],["username avatar","account/profile"],["renew","getting-started/passkeys"],["nonce","technical/permissions"]])assert.ok(searchDocs(index,query).some(r=>r.href.includes(path)),query);
  assert.deepEqual(searchDocs(index,"zzzxq-nothing-matches"),[]);assert.ok(searchDocs(index,"").length>0);
  assert.deepEqual(searchDocs(index,"<script>alert(1)</script>"),[]);

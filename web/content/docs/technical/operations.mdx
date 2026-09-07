@@ -26,4 +26,4 @@ The [operations runbook](https://github.com/DEUSVULTXYZ/Pongit/blob/main/docs/DE
 
 ## Contract-level limits
 
-Contracts are immutable and sealed. Replacing an immutable treasury requires redeployment. Financial debts reserved for rejected recipients cannot be reclaimed as treasury surplus. Keep all supported legacy withdrawals, claims and result references available during an upgrade. Interlude migration remains paused and requires a separate delivery and validation process.
+Contracts are immutable and sealed. Replacing an immutable treasury requires redeployment. Financial debts reserved for rejected recipients cannot be reclaimed as treasury surplus. Keep all supported legacy withdrawals, claims and result references available during an upgrade. The isolated Interlude lab uses its own deployment manifest and operator-hosted node. Do not route V4 jobs or financial settlement through that node. Its delegation lifetime and any operator restart need separate monitoring and validation.

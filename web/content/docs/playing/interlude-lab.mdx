@@ -1,0 +1,35 @@
+## Enter the lab
+
+Open **More**, then **Interlude lab**, or visit [the lab directly](https://pongit.xyz/labs/interlude). It opens separately from the main arcade. One shared arena supports Classic friendly matches and public spectators. The rules remain first to seven, with ordinary paddle heights and speed.
+
+The main arcade still provides ranked matchmaking, Chaos, tournaments, betting, payouts and indexed replays. Lab matches do not award ELO or MON and are not added to those rankings, markets or replay archives. The lab cannot access an existing betting vault.
+
+## Connect once, play again
+
+Choose **Connect passkey**, or **Continue as** for a remembered account. Use the same Mera passkey as the main arcade to retain your wallet address. A separate signature opens a 30-minute Interlude grant limited to the lab's game methods. The generated game key and signed grant stay in this tab's session storage. Wallet keys are closed after signing and are not stored there.
+
+F5 restores an unexpired grant without a new passkey ceremony. Only one tab may control the lab with a given account. **Reconnect lab session** reloads the grant and current state after an uncertain command. If the grant expired or was revoked, the connection dialog lets you authorize another grant. A recovery never silently resends an invitation or concession.
+
+**Disconnect lab** removes this tab's game key. It does not revoke every Interlude grant onchain: a copy of the grant remains valid until its expiry. It also does not disconnect the main arcade. Interlude's account-wide revocation changes the Hub epoch on Monad and requires a separate wallet transaction; the lab does not provide a sponsored revocation control.
+
+## Invite and play
+
+Enter an optional rival wallet address and choose **Create friendly match**. An empty address creates an open invitation. Choose **Copy invitation** and share the link. The recipient connects and chooses **Accept & play**. A targeted invitation only accepts its intended account; an open invitation reserves the first other account accepted by the contract.
+
+Invitations expire after ten minutes. **Cancel invitation** closes an unaccepted invitation. An old link never accepts a newer match automatically. If the arena is already occupied, watch it until the current game ends.
+
+Use **W / S**, the arrow keys or the on-screen movement buttons. A release or direction change replaces an unsent intention. Submitted commands remain serialized with sequential nonces. Opening a dialog or losing focus requests a stop; a network outage can prevent that request reaching the engine. **Concede** ends your current match. After the result, create another friendly invitation to play again.
+
+## Live and committed results
+
+The court displays the engine's current state with bounded local rendering. The lower panel independently reads the latest Monad snapshot. At the end, it compares the same match's terminal result hash on the engine and on Monad.
+
+An engine receipt is not a Monad transaction receipt. A matching committed hash means Monad contains that result, but Interlude's optimistic challenge window has not necessarily closed. No financial settlement uses a lab result.
+
+The initial dedicated-node probe on 7 September 2026 completed 200 direction changes with a median SDK call time of 29 ms, p95 of 35 ms and p99 of 44 ms from the test connection. It observed the final result hash on Monad about 2.1 seconds after the live result observation. These are samples from that run, not service guarantees or measurements from every player's location.
+
+## Outages and deployment
+
+If a command cannot be confirmed, the lab stops submitting and displays a recovery message. Wait for **Engine online**, inspect the current arena and choose **Reconnect lab session**. Expiry, revocation or a changed node clock can require operator intervention. No background request prompts a passkey during play.
+
+The lab contract is [0xbd9bc9fb0daaf25eb2b22761d06c8ecf823a1877 on Monad Testnet](https://testnet.monadscan.com/address/0xbd9bc9fb0daaf25eb2b22761d06c8ecf823a1877). Interlude operates the engine and owns the shipped contract. The base chain ID is 10143; this dedicated engine exposes chain ID 4242 and a measured 10 ms virtual block cadence. The deployment is immutable and isolated from V4 funds. See the [reviewed implementation and deployment record](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/interlude-lab/docs/INTERLUDE_LAB.md) and [Interlude's live/settled model](https://interludelayer.xyz/docs/read).

@@ -54,6 +54,6 @@ The [Arcade delivery report](docs/ARCADE.md) records V3 addresses, **64 passing 
 
 The repository is public at the owner's request. The daily sponsorship ceiling is disabled (`RELAYER_DAILY_BUDGET_MON=0`); balance reservations, gas-price limits, abuse quotas and solvency checks remain active. Credentials and deployment secrets are excluded from Git.
 
-Chain inclusion delay remains visible. Prediction does not make an unconfirmed input authoritative, and betting locks reduce latency advantage without eliminating it. Interlude has a documented transport boundary but is **not integrated**. Physical cross-device passkey recovery still needs a demonstration. This is a testnet release without an external security audit or a claim of bug-free operation.
+Chain inclusion delay remains visible. Prediction does not make an unconfirmed input authoritative, and betting locks reduce latency advantage without eliminating it. The separate [Interlude Classic lab](docs/INTERLUDE_LAB.md) uses a dedicated hosted engine and scoped Mera sessions; V4 ranked games and financial operations remain on Monad directly. Physical cross-device passkey recovery still needs a demonstration. This is a testnet release without an external security audit or a claim of bug-free operation.
 
 See [Night Shift UX](docs/NIGHT_SHIFT.md) for the cabinet navigation, recent-match API and audio credits.

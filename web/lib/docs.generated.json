@@ -149,6 +149,48 @@
       ]
     },
     {
+      "slug": "playing/interlude-lab",
+      "title": "Interlude lab",
+      "description": "Try the dedicated Classic friendly arena and distinguish live results from Monad commitments.",
+      "group": "Playing",
+      "updated": "2026-09-07",
+      "keywords": [
+        "Interlude",
+        "lab",
+        "engine",
+        "session",
+        "fast",
+        "friendly"
+      ],
+      "headings": [
+        {
+          "id": "enter-the-lab",
+          "text": "Enter the lab",
+          "level": 2
+        },
+        {
+          "id": "connect-once-play-again",
+          "text": "Connect once, play again",
+          "level": 2
+        },
+        {
+          "id": "invite-and-play",
+          "text": "Invite and play",
+          "level": 2
+        },
+        {
+          "id": "live-and-committed-results",
+          "text": "Live and committed results",
+          "level": 2
+        },
+        {
+          "id": "outages-and-deployment",
+          "text": "Outages and deployment",
+          "level": 2
+        }
+      ]
+    },
+    {
       "slug": "playing/chaos",
       "title": "Chaos",
       "description": "Understand how betting pressure changes the next rally.",

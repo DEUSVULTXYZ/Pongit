@@ -1,0 +1,68 @@
+{
+  "date": "2026-09-07",
+  "app": "0xbd9bc9fb0daaf25eb2b22761d06c8ecf823a1877",
+  "codeHash": "0x0fa71f95f6e8421538bf61dca702330be781b72a18f26dcf5aa4a24501d679f4",
+  "clock": {
+    "seconds": 10.053122,
+    "blocks": 1000,
+    "blocksPerSecond": 99.47158703535081
+  },
+  "engineMetrics": {
+    "samples": 200,
+    "p50": 29.181400000001304,
+    "p95": 35.14969999999994,
+    "p99": 43.743900000001304
+  },
+  "completed": [
+    {
+      "id": "1",
+      "resultHash": "0xe88cc9864391b110d1d54d08ab1d570721a5e67e1ed993251ce774064b4eb491",
+      "liveObservedAt": "2026-09-07T19:56:11.533Z",
+      "committedHash": "0xe88cc9864391b110d1d54d08ab1d570721a5e67e1ed993251ce774064b4eb491",
+      "committedObservedAt": "2026-09-07T19:56:13.645Z"
+    }
+  ],
+  "checks": [
+    "Targeted Mera invitation, duplicate create click, two participants and spectator",
+    "Keyboard/touch release acknowledged by engine",
+    "F5 with no additional passkey ceremony",
+    "Duplicate-tab controller lock",
+    "Result hash committed on Monad",
+    "Second game keeps the same sessions",
+    "Engine connection interruption freezes writes",
+    "Reconnect refreshes the nonce without another passkey",
+    "Second result matches Monad",
+    "Expiry requests explicit renewal",
+    "Disconnect removes the lab key"
+  ],
+  "viewports": [
+    {
+      "width": 360,
+      "height": 640
+    },
+    {
+      "width": 390,
+      "height": 844
+    },
+    {
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "width": 844,
+      "height": 390
+    }
+  ],
+  "browser": "Chromium virtual PRF using the real Mera SDK. Physical devices were not tested.",
+  "errors": [],
+  "limits": [
+    "Dedicated Classic friendly lab, no financial authority",
+    "200 sequential SDK direction samples from one network location, not a global latency guarantee",
+    "Committed result hashes are not challenge-final settlement",
+    "No physical passkey cross-device or non-Chromium verification"
+  ]
+}

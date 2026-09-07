@@ -4,9 +4,26 @@ Last checked: 7 September 2026, UTC.
 
 ## Status
 
-The contract preparation is implemented on `codex/interlude-lab`. The hosted
-deployment gate is blocked. No PONGIT Interlude app address or node URL has been
-returned, and `/labs/interlude` is not published. Production V4 has not changed.
+The hosted deployment gate is resolved. Interlude provisioned the PONGIT app on
+7 September at 19:51 UTC; its node became reachable at 19:55 UTC. The deployed
+runtime matches the compiled prototype. The dedicated engine passed the clock,
+CORS, scoped-session and 200-input gameplay probe, including a matching terminal
+result hash on Monad. The web lab at `/labs/interlude` passed the HTTPS-origin
+browser checks below. The V4 contracts and relayer remain unchanged.
+
+| Deployment | Value |
+| --- | --- |
+| Game | `0xbd9bc9fb0daaf25eb2b22761d06c8ecf823a1877` |
+| Node | `https://il-bd9bc9fb0daaf25e-production.up.railway.app` |
+| Hub | `0xDf840A85DB56430970b32f0e3210cabB5CD1F270` |
+| Base / engine chain | 10143 / 4242 |
+| Delegation block | 60560971 |
+| Delegation transaction | `0x3c274b1bceb8d893adf552011b19997412a5ec76b12f608c4a5140050eaf0632` |
+| Runtime hash | `0x0fa71f95f6e8421538bf61dca702330be781b72a18f26dcf5aa4a24501d679f4` |
+
+The immutable app is owned by Interlude, as specified by its hosted `ship`
+workflow. Its first delegation has a 24-hour lifetime. Do not re-run `ship`
+to restart a node; use the operator's lifecycle controls for this same app.
 
 The approved first experiment is a single Classic friendly arena, with two
 players and a spectator. It has no ELO, markets, tournament fees, vaults or
@@ -33,7 +50,7 @@ copies from CLI 0.1.3, with the upstream MIT license. The lockfile records packa
 integrity. Do not apply an upstream contract update without regenerating and
 checking the storage surface.
 
-## Deployment failure
+## Resolved deployment failure
 
 The official CLI failed with `request failed`. After checking recent Monad
 delegations and candidate creation addresses, one diagnostic retry used exactly
@@ -56,9 +73,14 @@ window. This does not establish that every possible operator account or
 background job is empty. Resolve the failed request with the operator before
 submitting more deployment requests; `ship` does not provide an idempotency key.
 
-The operator needs to restore `/apps` provisioning or identify an app/node that
-was created by this request. A funded Mera account or another Monad RPC URL does
-not resolve this control-service failure.
+On the user's next explicit retry, the package versions and repository HEAD had
+not changed, but the control service had recovered. After recovery checks and a
+fresh successful Monad deployment simulation, one request at
+`2026-09-07T19:51:20.078Z` returned HTTP 200 at `19:51:26.171Z`, with the app and
+node recorded above. No other deployment request was sent. The new node returned
+Railway's `Application not found` during provisioning, then answered
+`interlude_session` at `19:55:26.985Z`. This was a hosted service recovery, not a
+new SDK version or a change to the PONGIT contract.
 
 ## Contract and permissions
 
@@ -105,6 +127,15 @@ behavior require hosted validation.
 | TypeScript | `tsc --noEmit` passed |
 | Existing web production build | `next build web` passed |
 | Probe syntax | `node --check scripts/interlude-probe.mjs` passed |
+| Hosted bytecode, hub and CORS | Passed on the dedicated PONGIT node |
+| Hosted block cadence | 99.47 blocks/second in the 10-second sample |
+| Scoped SDK game | Two fundless players, 200 direction changes |
+| SDK call latency | p50 29.18 ms, p95 35.15 ms, p99 43.74 ms |
+| Monad observation | Terminal result hash matched about 2.1 seconds after live observation |
+| Input lane unit checks | Four passed: coalescing, nonce order, uncertainty, duplicate action and spectator isolation |
+| Browser integration | Two Mera virtual-PRF players and one spectator, two successive games, keyboard and touch |
+| Recovery | F5 without another ceremony, second-tab lock, engine disconnection, explicit recovery, expiry renewal and key deletion |
+| Responsive views | 360, 390, 768, 844 landscape and 1440 pixels; no horizontal overflow or page errors |
 | Dependency audit | Zero known vulnerabilities reported by `npm audit` |
 
 Physics comparisons ran in a temporary container on the VPS, with no external
@@ -112,15 +143,24 @@ network, a one-CPU limit and 512 MB memory limit. It did not attach to productio
 services. The container was automatically removed. The Classic/Chaos comparison
 does not validate a hosted Interlude clock or execution engine.
 
+Browser QA uses Chromium with a virtual PRF authenticator and the actual Mera
+and Interlude SDKs. It routes the candidate web image through the real HTTPS
+origin inside Playwright, on a private VPS test network. This is not a physical
+passkey synchronization test, a Safari/Firefox check or a promise of mobile FPS.
+The runner is resource-limited. The lab session checks the Hub's active status,
+delegation epoch and expiry periodically; a failed verification stops controls.
+Hub epoch revocation propagation into an already pinned engine remains an
+operator/protocol concern, rather than an immediate revocation guarantee.
+
 Evidence files are kept under the ignored `artifacts/interlude` directory. These
 include the HTTP diagnostic, preflight, contract results, dependency audit and
 physics comparison report. Test keys are synthetic fixtures or generated only
 in memory; no operator credentials are needed for these checks.
 
-## Resume after provisioning is restored
+## Reproduce and operate this deployment
 
-1. Resolve the previous `/apps` failure with Interlude before issuing another
-   `ship`. If an app already exists, obtain its address and node instead.
+1. Use the existing `deployments/interlude-lab.json`. The previous `/apps`
+   failure is resolved. Do not submit another `ship` for this instance.
 2. Rebuild, regenerate only if the source layout changed, and check the surface:
 
    ```sh
@@ -129,15 +169,14 @@ in memory; no operator credentials are needed for these checks.
    cd contracts
    export INTERLUDE_CONTRACTS="$PWD/vendor/interlude"
    ../node_modules/.bin/interlude check --contract PongInterlude
-   # Only after the unresolved deployment has been accounted for:
-   ../node_modules/.bin/interlude ship --contract PongInterlude --no-build
+   # A new ship creates another app; it is not a restart command.
    ```
 
    In PowerShell, set `$env:INTERLUDE_CONTRACTS` to the resolved
    `contracts/vendor/interlude` directory instead of using `export`.
 
-3. Record the actual successful response in `deployments/interlude-lab.json`.
-   This file has deliberately not been created with placeholder addresses:
+3. A future, deliberately separate deployment must record its real response in
+   a separate manifest, with these fields:
 
    ```json
    {
@@ -160,12 +199,26 @@ in memory; no operator credentials are needed for these checks.
    direction changes across as many completed matches as needed and checks
    terminal hashes against Monad. It writes separate execution latency and
    commit-observation evidence. It never requests a V4 key or transfers funds.
-7. If the hosted checks pass, implement `/labs/interlude` with Mera sessions,
-   keyboard/touch input, invitation links, a spectator view, reconnect recovery
-   and separate live/committed indicators. This page is still to be built.
+7. `/labs/interlude` uses Mera, keyboard/touch input, invitation links, a public
+   spectator view, reconnect recovery and separate live/committed indicators.
+   Its 30-minute SDK grant and key are separate from the V4 arcade session. One
+   Web Lock owns the SDK nonce lane per app/account. Unsent input coalesces;
+   uncertain writes freeze the lane until explicit recovery reads fresh state.
 8. Validate two browsers and a spectator on HTTPS, session restoration, expiry,
    engine interruptions and subsequent matches. Only then publish the lab link
    and deploy the web image after a production backup.
+
+The browser QA command is `node scripts/interlude-browser.mjs`. It creates
+fundless virtual-PRF Mera identities and must only run when this dedicated lab
+is empty. `PONG_LAB_STAGE_URL` can route the candidate web image behind the real
+HTTPS origin in Playwright; `LAB_ABI_FILE` selects its matching Foundry artifact.
+Run services and the browser in the isolated VPS test network, not on the
+production Docker network. Browser output belongs in ignored
+`artifacts/interlude/browser`; never export session storage or private keys.
+
+Rollback only the web image and release symlink to the saved previous release.
+Do not change V4 addresses, relayer queues, indexer state or any user's balances.
+The Interlude deployment remains onchain even if its web entry is removed.
 
 `readSettled` in the SDK reads the last value committed on Monad. A matching
 result hash is not proof that the challenge window has closed. Do not label it

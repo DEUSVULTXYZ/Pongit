@@ -35,6 +35,7 @@
     "test:differential:v2": "tsx scripts/differential-v2.ts",
     "test:interlude": "forge test --root contracts --match-contract InterludeLabTest",
     "interlude:probe": "node scripts/interlude-probe.mjs",
+    "abi:interlude": "tsx scripts/abi-interlude.ts",
     "abi:v3": "tsx scripts/abi-v3.ts",
     "abi:v4": "tsx scripts/abi-v4.ts"
   },
