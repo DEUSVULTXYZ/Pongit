@@ -1,0 +1,70 @@
+{
+  "checkedAt": "2026-09-07T21:26:41.378Z",
+  "scope": "Actual Chromium lab page with Playwright-only delayed RPC snapshot fixtures. No wallet or engine writes. This measures rendered contact pauses, not network latency.",
+  "fixture": "Impact at 750ms, resolved engine snapshot withheld until 1000ms, ordinary spectator polling. Both paddle sides at 390px and 1440px.",
+  "before": [
+    {
+      "width": 390,
+      "direction": -1,
+      "frames": 92,
+      "contactFrames": 36,
+      "maxFreezeMs": 546
+    },
+    {
+      "width": 390,
+      "direction": 1,
+      "frames": 95,
+      "contactFrames": 25,
+      "maxFreezeMs": 367
+    },
+    {
+      "width": 1440,
+      "direction": -1,
+      "frames": 65,
+      "contactFrames": 35,
+      "maxFreezeMs": 533
+    },
+    {
+      "width": 1440,
+      "direction": 1,
+      "frames": 97,
+      "contactFrames": 30,
+      "maxFreezeMs": 457
+    }
+  ],
+  "after": [
+    {
+      "width": 390,
+      "direction": -1,
+      "frames": 95,
+      "contactFrames": 5,
+      "maxFreezeMs": 0
+    },
+    {
+      "width": 390,
+      "direction": 1,
+      "frames": 96,
+      "contactFrames": 5,
+      "maxFreezeMs": 0
+    },
+    {
+      "width": 1440,
+      "direction": -1,
+      "frames": 79,
+      "contactFrames": 5,
+      "maxFreezeMs": 0
+    },
+    {
+      "width": 1440,
+      "direction": 1,
+      "frames": 97,
+      "contactFrames": 5,
+      "maxFreezeMs": 0
+    }
+  ],
+  "unitTests": 16,
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "contracts": "unchanged",
+  "sessions": "unchanged"
+}

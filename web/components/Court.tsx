@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { arcadeAudio } from "../lib/audio";
 import { move, SCALE, type State } from "../../shared/physics-v2";
-import { predictPaddle, boundedClock, projectConfirmed, type PendingInput } from "../lib/presentation";
+import { predictPaddle, boundedClock, projectConfirmed, projectLive, type PendingInput } from "../lib/presentation";
 import { LivePaddle, LiveClock } from "../lib/live-paddle";
 type Props = {
   state: State | null;
@@ -96,7 +96,8 @@ export function Court({
       const target=p.replay?p.clock:p.liveEngine?liveClock.sample(timing.target):timing.target;
       let waiting = false;
       if (s) {
-        const projected = p.replay ? { state: s, waiting: false } : projectConfirmed(s, target);
+        const projected = p.replay ? { state: s, waiting: false }
+          : p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
         s = projected.state;
         waiting = projected.waiting || timing.stale;
       }

@@ -24,6 +24,25 @@ export function projectConfirmed(state: State | import("../../shared/physics").S
   return { state: s, waiting: true };
 }
 
+// The low-latency lab can preview paddle collisions using the latest engine
+// trajectory. Do not stall a rally waiting for its next snapshot. A goal is
+// still a confirmation boundary: this function never awards points or serves.
+export function projectLive(state: State, target: bigint): { state: State; waiting: boolean } {
+  let s = { ...state };
+  if (s.finished || s.awaitingServe || target < s.t) return { state: s, waiting: false };
+  for (let i = 0; i < 64; i++) {
+    const event = next(s);
+    if (event.at > target) return { state: move(s, target), waiting: false };
+    if (event.kind >= 5) {
+      return { state: move(s, event.at > s.t ? event.at - 1n : s.t), waiting: true };
+    }
+    // Only walls and paddle planes reach the common collision routine. The
+    // stored velocity, including the rules-2 speed, is preserved on a bounce.
+    s = advance(s, event.at, 1)[0];
+  }
+  return { state: s, waiting: true };
+}
+
 export function previewPaddle(y: number, direction: number, elapsedMs: number, half=48) {
   return Math.max(half, Math.min(576-half, y + direction * 180 * Math.max(0, Math.min(elapsedMs, 50)) / 1000));
 }

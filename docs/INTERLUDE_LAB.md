@@ -48,6 +48,13 @@ rewind when two RPC responses arrive with different network delays. Duplicate
 snapshots do not refresh their observation age. Neither presentation helper
 changes contract collisions or results.
 
+Paddle contacts now use continuous lab collision preview instead of the main
+arcade's confirmation barrier. The renderer resolves walls and paddle planes
+from the latest engine trajectory, while goals remain a confirmation boundary.
+It never predicts a point, serve or winner. A later engine snapshot replaces an
+incorrect prediction, for example after a last-moment paddle direction change.
+The fixed rules-2 contract and existing session grants are unchanged.
+
 The single input writer drains the latest unsent release or reversal immediately
 after its predecessor, without waiting for the next 100 ms maintenance interval.
 Uncertain calls still freeze the lane rather than retrying signed transactions.
