@@ -1,0 +1,49 @@
+{
+  "applicationCommit": "1e994f24e9ce926b297a2484bbb93b4dc66a598c",
+  "publicURL": "https://pongit.xyz",
+  "verifiedAt": "2026-09-07T07:24:00Z",
+  "chainId": 10143,
+  "scope": "Illustrated character avatars and accessible profile selector; no contract or database migration",
+  "checks": {
+    "typecheck": "passed",
+    "typescriptUnitsPassed": 22,
+    "isolatedVPSBrowserTestsPassed": 5,
+    "publicHTTPSChromeTestsPassed": 5,
+    "publicHTTPSEdgeTestsPassed": 4,
+    "viewports": [360, 390, 768, 1440],
+    "avatarScenarios": [
+      "twelve distinct WebP portraits decode at 256 by 256 pixels",
+      "single selected radio and immediate large preview",
+      "arrow keys, Home, End, wrapping and roving keyboard focus",
+      "four-column desktop and three-column mobile roster",
+      "at least 44 by 44 pixel touch targets and no horizontal overflow",
+      "reduced motion and static background",
+      "mobile profile dialog scrolls to all portraits and save button",
+      "authenticated save, double click protection and F5 persistence",
+      "same saved avatar in home cabinet, public Rivals profile and leaderboard",
+      "unique usernames, concurrent name reservation and targeted ranked duel"
+    ],
+    "productionDependencyAudit": {"vulnerabilities": 0},
+    "stagedSecretsAudit": {"findings": 0},
+    "historySecretsAudit": {"commitsScanned": 44, "findings": 0},
+    "productionServicesRunning": 8,
+    "health": "ok"
+  },
+  "cleanup": {
+    "publicProfiles": "Removed exactly the two test profiles created by this validation; onchain results remain",
+    "vpsSandbox": "Removed the isolated test containers, network, database volume and locally built images; production preserved"
+  },
+  "backup": "20260907T072104Z",
+  "rollback": {
+    "release": "7dd5583aefe82438aec7301b74072c39e3fbd27c",
+    "webImage": "pongit-web:avatars-previous",
+    "relayerImage": "pongit-relayer:avatars-previous",
+    "procedure": "Run ops/rollback-v4.sh with the previous release SHA from the production release directory; no avatar data conversion is required"
+  },
+  "limits": [
+    "Passkey flows used Chromium virtual CTAP2 PRF authenticators, not a new physical cross-device recovery test",
+    "Safari was not tested in this release",
+    "Gameplay physics, financial rules and permissions were not modified; their full contract suites were not rerun for this visual change",
+    "Interlude remains paused at the user's request"
+  ]
+}

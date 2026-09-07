@@ -39,6 +39,8 @@ Final generation prompt:
 
 ## Validation
 
+The release passed five browser tests on the isolated VPS, five on public HTTPS in Chrome and four in Edge, plus typechecking and 22 TypeScript tests. See [validation evidence and rollback reference](AVATARS_VALIDATION.json).
+
 `tests/avatars.spec.ts` checks all twelve decoded images, one selected radio, live preview, keyboard navigation, 44 px minimum targets, layout at 360/390/768/1440 px, reduced motion and the static room. `tests/player-tags.spec.ts` verifies authenticated saving, reload persistence and profile usage through a duel and leaderboard.
 
 No gameplay, wallet permissions or financial rules change in this release. Interlude remains paused.
