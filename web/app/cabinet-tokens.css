@@ -1,0 +1,15 @@
+/* Shared appearance only. Neither docs nor ornaments depend on the game runtime. */
+:root {
+  --cabinet-room:#060a10;
+  --cabinet-panel:#10171e;
+  --cabinet-inset:#080d13;
+  --cabinet-text:#e7f0f2;
+  --cabinet-muted:#a9b7c3;
+  --cabinet-line:#34424e;
+  --cabinet-cyan:#85e2e8;
+  --cabinet-violet:#bc9fe8;
+  --cabinet-metal:linear-gradient(115deg,#242c33 0%,#111920 18%,#0d141b 76%,#242630 100%);
+  --cabinet-button:linear-gradient(#25313b,#151e27);
+  --cabinet-edge:inset 0 1px 0 #d4edf126,inset 1px 0 0 #82dbe418,inset -1px 0 0 #c59eee20,0 4px 0 #020508,0 10px 28px #0005;
+  --cabinet-font:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}

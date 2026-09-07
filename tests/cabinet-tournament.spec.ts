@@ -39,6 +39,7 @@ test("Cabinet tournament buttons start the correct round; all three legacy vault
     await expect(pages[0].locator(".outcome h2")).toHaveText("VICTORY",{timeout:20000});
     await expect.poll(()=>client.getBalance({address:addresses[0]}),{timeout:30000}).toBe(parseEther("0.001"));
     await pages[0].getByRole("button",{name:"Watch replay",exact:true}).click();await expect(pages[0].getByRole("slider",{name:"Replay position"})).toBeVisible({timeout:20000});
+    await pages[0].screenshot({path:"artifacts/neon-cabinet-replay.png",fullPage:true});
     await expect(pages[0].locator(".personal-replays .recent-game")).toHaveCount(1);
     const recent=await fetch(api+`/player/${addresses[0]}/recent-matches`).then(r=>r.json());expect(recent.Match[0].id).toBe(`${deploymentId(config)}:${match.id}`);
     await openWallet(pages[0]);await pages[0].getByText("Older balances",{exact:true}).click();

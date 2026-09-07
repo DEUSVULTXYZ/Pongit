@@ -115,8 +115,6 @@ main.neon-rush.cabinet-ui { max-width:1400px; padding:20px 36px 30px; }
 .public-profile-form .remove-profile{background:transparent;box-shadow:none;border-color:transparent;color:#b9b6ca;font-size:10px}
 .cabinet-dialog .profile-dialog{width:min(540px,100%)}
 .cabinet-ui .scoreboard>div:not(.score){min-width:0}.cabinet-ui .scoreboard strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px}
-.cabinet-ui.in-game .game-panel{border-color:#85718f;box-shadow:0 0 0 3px #070a12,0 0 0 5px #74517d,0 0 18px #df5bba35,-15px 0 60px #39cbe51c,15px 0 60px #f247ce24,0 24px 80px #000c}
-.cabinet-ui.in-game .match-bar{border-top:2px solid transparent;border-image:linear-gradient(90deg,#47c8df,#db8cee 45%,#f5b773) 1}
 @media(max-width:480px){.cabinet-ui .home-player-tag{padding:12px 7px;gap:8px}.home-player-tag strong{font-size:9px}.home-player-tag small{font-size:7px}.home-player-tag .profile-tag-action{font-size:8px}.home-player-tag .avatar{width:30px;height:30px}.profile-preview strong{font-size:14px}.public-profile-form .avatar-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.cabinet-ui .scoreboard strong{max-width:90px}}
 
 /* Player Select / original illustrated roster, with no animated artwork. */

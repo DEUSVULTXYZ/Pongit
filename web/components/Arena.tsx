@@ -22,6 +22,8 @@ import {ProfileEditor,usePublicProfile} from "./PublicProfile";
 import {HomeCabinet} from "./HomeCabinet";
 import {Dialog,CabinetTools} from "./Dialog";
 import { ArcadeAmbience, MusicCredit } from "./ArcadeAmbience";
+import {PixelOrnament} from "./PixelOrnament";
+import {PixelMotion} from "./PixelMotion";
 import { arcadeAudio } from "../lib/audio";
 import { Court } from "./Court";
 import {
@@ -1019,6 +1021,9 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
   return (
     <main className={`neon-rush cabinet-ui ${home?"at-home":""} ${match?.status===2 && side>=0 && ["Play","Live"].includes(tab)?"in-game":""}`}>
       <header className="topbar">
+        <PixelMotion/>
+        <PixelOrnament kind="cabinet" className="pixel-header-left"/>
+        <PixelOrnament kind="joystick" className="pixel-header-right"/>
         <a className="brand" href="/" aria-label="PONGIT home">
           <img className="brand-mark orbit-mark" src="/brand/opposing-orbits.webp" alt="" width="72" height="72"/>
           <span className="brand-word">PONGIT</span>
@@ -1082,11 +1087,13 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       )}
       {home && <HomeCabinet mode={mode} setMode={setMode} busy={busy||!config} active={!!player?.activeMatch && player.activeMatch!=="0"} play={()=>void act(()=>joinQueue(mode,"0"))} challenge={()=>changeTab("Rivals")} watch={()=>changeTab("Live")} profile={publicProfile} editProfile={()=>void act(openProfile)}/>}
       {showProfile && account && <Dialog label="Your public profile" onClose={()=>setShowProfile(false)} className="profile-dialog"><button className="modal-close" aria-label="Close profile" onClick={()=>setShowProfile(false)}>×</button><p className="eyebrow">YOUR NAME ON THE CABINET</p><h2>Make a name.</h2><ProfileEditor key={account} account={account} ready={!busy} authenticate={async()=>{if(needsArcadeRenewal)await renewArcade();await authenticateApp();}}/></Dialog>}
-      {lobby && <section className="waiting-cabinet"><p className="eyebrow">{rematchInvite?"ONE MORE ROUND?":"MATCHMAKING"}</p><h1>{rematchInvite?"Your rival is up next.":"Finding your player two."}</h1><div className="waiting-display">{rematchInvite?rematchInvite.status.toUpperCase():`${Math.floor(searchSeconds/60)}:${String(searchSeconds%60).padStart(2,"0")}`}</div><p>{rematchInvite?`Rematch invitation · expires ${new Date(Number(rematchInvite.expires)*1000).toLocaleTimeString()}`:`${mode===1?"Chaos":"Classic"} · ${tournamentId!=="0"?"Tournament":"Ranked"}`}</p><p className="status-line" role="status">{message}</p>{queueTicket.current && <button disabled={busy} onClick={()=>void act(cancelQueue)}>Cancel search</button>}{rematchInvite && <button disabled={busy} onClick={()=>void act(async()=>{if(rematchInvite.status==="pending")await appApi(`/challenges/${rematchInvite.id}/cancel`,"POST",{},account);setRematchInvite(null);})}>{rematchInvite.status==="pending"?"Cancel invitation":"Back to arcade"}</button>}</section>}
+      {lobby && <section className="waiting-cabinet"><PixelOrnament kind="planet"/><p className="eyebrow">{rematchInvite?"ONE MORE ROUND?":"MATCHMAKING"}</p><h1>{rematchInvite?"Your rival is up next.":"Finding your player two."}</h1><div className="waiting-display">{rematchInvite?rematchInvite.status.toUpperCase():`${Math.floor(searchSeconds/60)}:${String(searchSeconds%60).padStart(2,"0")}`}</div><p>{rematchInvite?`Rematch invitation · expires ${new Date(Number(rematchInvite.expires)*1000).toLocaleTimeString()}`:`${mode===1?"Chaos":"Classic"} · ${tournamentId!=="0"?"Tournament":"Ranked"}`}</p><p className="status-line" role="status">{message}</p>{queueTicket.current && <button disabled={busy} onClick={()=>void act(cancelQueue)}>Cancel search</button>}{rematchInvite && <button disabled={busy} onClick={()=>void act(async()=>{if(rematchInvite.status==="pending")await appApi(`/challenges/${rematchInvite.id}/cancel`,"POST",{},account);setRematchInvite(null);})}>{rematchInvite.status==="pending"?"Cancel invitation":"Back to arcade"}</button>}</section>}
       {home && <p className="status-line home-status" role="status">{message}</p>}
       {showArena && (
         <div className={`arena-grid ${showTools?"tools-open":""}`}>
           <section className="game-panel">
+            <PixelOrnament kind="planet" className="pixel-bezel-left"/>
+            <PixelOrnament kind="star" className="pixel-bezel-right"/>
             <div className="match-bar">
               <span>
                 ARENA {selected ? selected.padStart(3, "0") : "—"}{" "}
@@ -1421,7 +1428,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
               ))}
             </div>
           ) : (
-            <div className="empty">
+            <div className="empty"><PixelOrnament kind="star"/>
               No matches yet. The first point is yours to make.
             </div>
           )}
@@ -1465,7 +1472,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             </tbody>
           </table>
           {!ladder.length && (
-            <div className="empty">
+            <div className="empty"><PixelOrnament kind="star"/>
               Standings appear after the first indexed result.
             </div>
           )}
@@ -1568,7 +1575,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             ))}
           </div>
           {!tournaments.length && (
-            <div className="empty">No tournaments scheduled.</div>
+            <div className="empty"><PixelOrnament kind="star"/>No tournaments scheduled.</div>
           )}
           <p className="muted">
             Your next round appears when the bracket is ready. Results and prizes settle automatically.
@@ -1665,7 +1672,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             </section>
           </div>
         ) : (
-          <div className="empty">
+          <div className="empty"><PixelOrnament kind="star"/>
             Connect an account with the onchain ADMIN_ROLE to open this console.
             <button disabled={busy || !config} onClick={() => void act(connectFromButton)}>
               Connect passkey

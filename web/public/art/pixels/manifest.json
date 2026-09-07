@@ -1,0 +1,18 @@
+{
+  "frameSize": 96,
+  "frames": 8,
+  "cycleMs": 12000,
+  "activeMs": 1000,
+  "offsetsMs": [
+    0,
+    3000,
+    6000,
+    9000
+  ],
+  "sprites": [
+    "cabinet",
+    "joystick",
+    "planet",
+    "star"
+  ]
+}

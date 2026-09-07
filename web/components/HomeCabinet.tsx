@@ -1,9 +1,10 @@
 "use client";
 import type {PublicProfile} from "./PublicProfile";
 import {Avatar} from "./Avatar";
+import {PixelOrnament} from "./PixelOrnament";
 export function HomeCabinet({mode,setMode,busy,active,play,challenge,watch,profile,editProfile}:{mode:number;setMode:(n:number)=>void;busy:boolean;active:boolean;play:()=>void;challenge:()=>void;watch:()=>void;profile:PublicProfile|null;editProfile:()=>void}){
  return <section className="home-cabinet" aria-label="PONGIT arcade cabinet">
-   <div className="cabinet-marquee"><span className="marquee-star">✦</span><span>PONGIT</span><span className="marquee-star">✦</span><small>ONE MORE GAME.</small></div>
+   <div className="cabinet-marquee"><PixelOrnament kind="star" className="marquee-left"/><span>PONGIT</span><PixelOrnament kind="planet" className="marquee-right"/><small>ONE MORE GAME.</small></div>
    <div className="cabinet-bezel"><div className="cabinet-screen">
      <span className="cabinet-edition">PLAYER ONE / READY</span>
      <h1>Good rivals.<br/><em>Great nights.</em></h1>

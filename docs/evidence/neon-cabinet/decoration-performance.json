@@ -1,0 +1,47 @@
+{
+  "measuredAt": "2026-09-07T09:52:29.194Z",
+  "base": "http://localhost:3150",
+  "note": "Home-page rendering, CPU emulation; static room kept enabled in both samples to isolate sprite cost. Live-court samples are reported separately.",
+  "results": [
+    {
+      "mobile": false,
+      "cpuSlowdown": 1,
+      "effects": false,
+      "sampleMs": 13000,
+      "frames": 756,
+      "fps": 58.7593294037125,
+      "p95": 16.799999999999272,
+      "p99": 16.80000000000109
+    },
+    {
+      "mobile": false,
+      "cpuSlowdown": 1,
+      "effects": true,
+      "sampleMs": 13000,
+      "frames": 779,
+      "fps": 59.92584273120296,
+      "p95": 16.700000000000728,
+      "p99": 16.799999999999272
+    },
+    {
+      "mobile": true,
+      "cpuSlowdown": 4,
+      "effects": false,
+      "sampleMs": 13000,
+      "frames": 780,
+      "fps": 60.00276935858579,
+      "p95": 16.700000000000728,
+      "p99": 16.80000000000109
+    },
+    {
+      "mobile": true,
+      "cpuSlowdown": 4,
+      "effects": true,
+      "sampleMs": 13000,
+      "frames": 780,
+      "fps": 60.00261242143312,
+      "p95": 16.700000000000728,
+      "p99": 16.80000000000291
+    }
+  ]
+}
