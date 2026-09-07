@@ -1,0 +1,152 @@
+{
+  "rulesVersion": 2,
+  "app": "0xdf912629b75afa67d5b0de0fe0c30cc063070e84",
+  "codeHash": "0xf9cd65fa752a28a3fed8ff6de4816bd16790eefa8e7b64bcea20cf8d59114931",
+  "contractTests": 95,
+  "differential": {
+    "cases": 10000,
+    "mismatches": 0,
+    "rulesVersion": 2,
+    "seed": "0xc0ffee",
+    "checkedAt": "2026-09-07T20:57:56.268Z"
+  },
+  "sdk": {
+    "samples": 200,
+    "p50": 27.505700000001525,
+    "p95": 35.360099999999875,
+    "p99": 44.43609999999899
+  },
+  "completed": [
+    {
+      "id": "1",
+      "resultHash": "0x4d87d83fbca8ec878671a6242cca3950e6d51df0deabf3f53eb14c3981e63356",
+      "liveObservedAt": "2026-09-07T21:03:19.809Z",
+      "committedHash": "0x4d87d83fbca8ec878671a6242cca3950e6d51df0deabf3f53eb14c3981e63356",
+      "committedObservedAt": "2026-09-07T21:03:21.913Z"
+    }
+  ],
+  "browser": {
+    "app": "0xdf912629b75afa67d5b0de0fe0c30cc063070e84",
+    "startedAt": "2026-09-07T21:04:53.851Z",
+    "checks": [
+      "Canvas owner movement measured on both players across four holds and reversals each",
+      "Targeted Mera invitation, duplicate create click, two participants and spectator",
+      "Keyboard/touch release acknowledged by engine",
+      "F5 with no additional passkey ceremony",
+      "Duplicate-tab controller lock",
+      "Result hash committed on Monad",
+      "Second game keeps the same sessions",
+      "Engine connection interruption freezes writes",
+      "Reconnect refreshes the nonce without another passkey",
+      "Second result matches Monad",
+      "Expiry requests explicit renewal",
+      "Disconnect removes the lab key"
+    ],
+    "viewports": [
+      {
+        "width": 360,
+        "height": 640
+      },
+      {
+        "width": 390,
+        "height": 844
+      },
+      {
+        "width": 768,
+        "height": 1024
+      },
+      {
+        "width": 1440,
+        "height": 1000
+      },
+      {
+        "width": 844,
+        "height": 390
+      }
+    ],
+    "addresses": [
+      "0xaEe1cAEd45270a37B1a68B630f267322C2F0D017",
+      "0x1C8ADC9586af67a58293617ecA60E179908795b2"
+    ],
+    "assertionsAfterConnect": [
+      0,
+      0
+    ],
+    "firstMatch": "2",
+    "motion": {
+      "left": [
+        {
+          "direction": 1,
+          "frames": 20,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 90.05643267430378
+        },
+        {
+          "direction": -1,
+          "frames": 17,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 69.05281040430111
+        },
+        {
+          "direction": 1,
+          "frames": 18,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 78.99599999999987
+        },
+        {
+          "direction": -1,
+          "frames": 17,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 85.98000000000002
+        }
+      ],
+      "right": [
+        {
+          "direction": 1,
+          "frames": 20,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 96.92248642648048
+        },
+        {
+          "direction": -1,
+          "frames": 16,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 51.984000000000606
+        },
+        {
+          "direction": 1,
+          "frames": 21,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 83.00400000000087
+        },
+        {
+          "direction": -1,
+          "frames": 16,
+          "reverseFrames": 0,
+          "worstBackstep": 0,
+          "travel": 71.97599999999989
+        }
+      ]
+    },
+    "secondMatch": "3",
+    "checkedAt": "2026-09-07T21:05:58.788Z",
+    "assertions": [
+      1,
+      0
+    ],
+    "errors": [],
+    "authenticator": "Chromium virtual PRF using the real Mera SDK. Physical devices were not tested."
+  },
+  "limitations": [
+    "Chromium virtual PRF authenticator; no physical second-device test",
+    "Engine response is not challenge-final Monad settlement",
+    "Initial operator delegation expires after 24 hours; renewal is not automated"
+  ]
+}

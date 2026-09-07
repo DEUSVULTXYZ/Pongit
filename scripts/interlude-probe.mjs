@@ -16,7 +16,7 @@ const {app,node:url,hub:expectedHub}=manifest;
 assert(isAddress(app) && app!==zeroAddress && isAddress(expectedHub) && expectedHub!==zeroAddress,"Invalid app or hub.");
 assert.equal(manifest.baseChainId,10143);
 assert.equal(manifest.tickUs,10000);
-assert.equal(manifest.rulesVersion,1);
+assert.equal(manifest.rulesVersion,2);
 const endpoint=new URL(url);
 assert(endpoint.protocol==="https:" && !endpoint.username && !endpoint.password,"Use the public HTTPS app node returned by ship, without credentials.");
 assert.notEqual(endpoint.hostname,"rpc.interludelayer.xyz","The Room demonstration node does not serve PONGIT.");
@@ -44,7 +44,7 @@ assert.equal(runtime.toLowerCase(),("0x"+expected).toLowerCase(),"The base-chain
 assert.equal((await node.node.getCode({address:app})).toLowerCase(),runtime.toLowerCase(),"The engine serves different bytecode.");
 report.codeHash=keccak256(runtime);
 assert.equal(await node.read("TICK_US"),10000n);
-assert.equal(await node.read("RULES_VERSION"),1n);
+assert.equal(await node.read("RULES_VERSION"),2n);
 report.owner=await base.readContract({address:app,abi:parseAbi(["function owner() view returns (address)"]),functionName:"owner"});
 const hubArtifact=JSON.parse(await readFile("node_modules/@interludelayer-sdk/cli/artifacts/InterludeHub.sol/InterludeHub.json","utf8"));
 report.terms=await base.readContract({address:report.hub,abi:hubArtifact.abi,functionName:"termsOf",args:[status.validator]});

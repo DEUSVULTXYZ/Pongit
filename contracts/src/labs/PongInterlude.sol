@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
+import {PhysicsInterlude} from "./PhysicsInterlude.sol";
 import {Delegatable} from "../../vendor/interlude/Delegatable.sol";
 import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
@@ -10,7 +11,7 @@ import {PongInterludeInterludeSurface} from "./PongInterludeInterludeSurface.sol
 /// @notice One experimental Classic arena. No ELO, tokens or financial authority.
 contract PongInterlude is PongInterludeInterludeSurface {
     uint256 public constant TICK_US = 10_000;
-    uint256 public constant RULES_VERSION = 1;
+    uint256 public constant RULES_VERSION = 2;
     /// @custom:interlude global
     uint256 internal matchId;
     /// @custom:interlude global
@@ -89,7 +90,7 @@ contract PongInterlude is PongInterludeInterludeSurface {
         openedAt = block.timestamp; startBlock = 0; nonceA = 0; nonceB = 0;
         seed = keccak256(abi.encode(entropy, matchId, actor, address(this)));
         status = 1;
-        _save(PhysicsV2.initial(seed, 0));
+        _save(PhysicsInterlude.initial(seed));
         _publish();
     }
 
@@ -170,7 +171,7 @@ contract PongInterlude is PongInterludeInterludeSurface {
         uint256 target = (block.number - startBlock) * TICK_US;
         if (target > 30 minutes * 1_000_000) { status = 4; return true; }
         PhysicsV2.State memory s;
-        (s, complete) = PhysicsV2.advance(_state(), uint64(target), 128);
+        (s, complete) = PhysicsInterlude.advance(_state(), uint64(target), 128);
         _save(s);
         if (s.finished) { status = 3; winner = s.scoreA == 7 ? playerA : playerB; }
     }

@@ -1,6 +1,6 @@
 ## Enter the lab
 
-Open **More**, then **Interlude lab**, or visit [the lab directly](https://pongit.xyz/labs/interlude). It opens separately from the main arcade. One shared arena supports Classic friendly matches and public spectators. The rules remain first to seven, with ordinary paddle heights and speed.
+Open **More**, then **Interlude lab**, or visit [the lab directly](https://pongit.xyz/labs/interlude). It opens separately from the main arcade. One shared arena supports Classic friendly matches and public spectators. Rules 2 remain first to seven, with ordinary paddle heights and speed. The ball is 50% faster than the main arcade: 192 horizontal and 96 vertical logical units per second. This speed applies at every serve. Existing main-arcade rules are unchanged.
 
 The main arcade still provides ranked matchmaking, Chaos, tournaments, betting, payouts and indexed replays. Lab matches do not award ELO or MON and are not added to those rankings, markets or replay archives. The lab cannot access an existing betting vault.
 
@@ -8,7 +8,7 @@ The main arcade still provides ranked matchmaking, Chaos, tournaments, betting, 
 
 Choose **Connect passkey**, or **Continue as** for a remembered account. Use the same Mera passkey as the main arcade to retain your wallet address. A separate signature opens a 30-minute Interlude grant limited to the lab's game methods. The generated game key and signed grant stay in this tab's session storage. Wallet keys are closed after signing and are not stored there.
 
-F5 restores an unexpired grant without a new passkey ceremony. Only one tab may control the lab with a given account. **Reconnect lab session** reloads the grant and current state after an uncertain command. If the grant expired or was revoked, the connection dialog lets you authorize another grant. A recovery never silently resends an invitation or concession.
+The faster-ball deployment uses a new contract, so an old lab grant cannot authorize it. Connect explicitly once to approve the new scoped session. F5 restores an unexpired grant without a new passkey ceremony. Only one tab may control the lab with a given account. **Reconnect lab session** reloads the grant and current state after an uncertain command. If the grant expired or was revoked, the connection dialog lets you authorize another grant. A recovery never silently resends an invitation or concession.
 
 **Disconnect lab** removes this tab's game key. It does not revoke every Interlude grant onchain: a copy of the grant remains valid until its expiry. It also does not disconnect the main arcade. Interlude's account-wide revocation changes the Hub epoch on Monad and requires a separate wallet transaction; the lab does not provide a sponsored revocation control.
 
@@ -32,4 +32,4 @@ The initial dedicated-node probe on 7 September 2026 completed 200 direction cha
 
 If a command cannot be confirmed, the lab stops submitting and displays a recovery message. Wait for **Engine online**, inspect the current arena and choose **Reconnect lab session**. Expiry, revocation or a changed node clock can require operator intervention. No background request prompts a passkey during play.
 
-The lab contract is [0xbd9bc9fb0daaf25eb2b22761d06c8ecf823a1877 on Monad Testnet](https://testnet.monadscan.com/address/0xbd9bc9fb0daaf25eb2b22761d06c8ecf823a1877). Interlude operates the engine and owns the shipped contract. The base chain ID is 10143; this dedicated engine exposes chain ID 4242 and a measured 10 ms virtual block cadence. The deployment is immutable and isolated from V4 funds. See the [reviewed implementation and deployment record](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/interlude-lab/docs/INTERLUDE_LAB.md) and [Interlude's live/settled model](https://interludelayer.xyz/docs/read).
+The lab contract is [0xdf912629b75afa67d5b0de0fe0c30cc063070e84 on Monad Testnet](https://testnet.monadscan.com/address/0xdf912629b75afa67d5b0de0fe0c30cc063070e84). Interlude operates the engine and owns the shipped contract. The base chain ID is 10143; this dedicated engine exposes chain ID 4242 and a measured 10 ms virtual block cadence. The deployment is immutable and isolated from V4 funds. See the [reviewed implementation and deployment record](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/interlude-lab/docs/INTERLUDE_LAB.md) and [Interlude's live/settled model](https://interludelayer.xyz/docs/read).

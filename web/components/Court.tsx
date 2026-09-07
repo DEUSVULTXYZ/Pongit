@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { arcadeAudio } from "../lib/audio";
 import { move, SCALE, type State } from "../../shared/physics-v2";
 import { predictPaddle, boundedClock, projectConfirmed, type PendingInput } from "../lib/presentation";
+import { LivePaddle, LiveClock } from "../lib/live-paddle";
 type Props = {
   state: State | null;
   clock: bigint;
@@ -16,6 +17,7 @@ type Props = {
   pendingInputs?: PendingInput[];
   confirmedNonce?: bigint;
   debug?: boolean;
+  liveEngine?: boolean;
   onNetwork?:(age:number,correction:number)=>void;
   onStats: (fps: number, extrapolated: boolean, waiting: boolean) => void;
 };
@@ -29,7 +31,7 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, onNetwork = ()=>{},
+  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, liveEngine = false, onNetwork = ()=>{},
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
@@ -40,7 +42,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, onNetwork,
+    onStats, pendingInputs, confirmedNonce, debug, liveEngine, onNetwork,
   });
   current.current = {
     state,
@@ -50,7 +52,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, onNetwork,
+    onStats, pendingInputs, confirmedNonce, debug, liveEngine, onNetwork,
   };
   useEffect(() => {
     const el = canvas.current!;
@@ -62,10 +64,11 @@ export function Court({
       last = performance.now();
     let lastDraw = last, visualY: number | null = null, context = "";
     let anchor=last,anchorObserved=0,anchorAge=0,localDirection=0,localAt=last,correction=0;
+    const livePaddle = new LivePaddle(), liveClock = new LiveClock();
     function draw(now: number) {
       const p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.controllable}`;
-      if (identity !== context) { previousSound=null; context = identity; visualY = null; anchorObserved=0; localDirection=p.direction; localAt=now; }
+      if (identity !== context) { previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const dt = Math.max(0, Math.min(50, now - lastDraw));
       lastDraw = now;
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -90,7 +93,7 @@ export function Court({
       if(anchorObserved!==p.observedAt){anchorObserved=p.observedAt;anchor=now;anchorAge=Math.max(0,Date.now()-p.observedAt);}
       if(localDirection!==p.direction){localDirection=p.direction;localAt=now;}
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
-      const target=p.replay?p.clock:timing.target;
+      const target=p.replay?p.clock:p.liveEngine?liveClock.sample(timing.target):timing.target;
       let waiting = false;
       if (s) {
         const projected = p.replay ? { state: s, waiting: false } : projectConfirmed(s, target);
@@ -110,6 +113,12 @@ export function Court({
       const half=p.side===0?halfA:halfB;
       const confirmedY = p.side === 0 ? yA : yB;
       if (s && !s.awaitingServe && p.controllable && !p.replay && p.side >= 0) {
+        if (p.liveEngine) {
+          const owner = livePaddle.step(confirmedY, p.direction,
+            p.side === 0 ? p.state!.leftDir : p.state!.rightDir,
+            half, dt, timing.stale, p.pending);
+          visualY = owner.y; correction = owner.correction;
+        } else {
         const initialY=Number(p.side===0?p.state!.left:p.state!.right)/1e6;
         const confirmedDir=p.side===0?p.state!.leftDir:p.state!.rightDir;
         const intentions=p.pendingInputs.filter(i=>i.nonce>p.confirmedNonce).map(i=>({...i,at:p.clock+BigInt(Math.floor((i.at-anchor+anchorAge)*1000))}));
@@ -123,9 +132,10 @@ export function Court({
         correction=visualY===null?0:Math.abs(desired-visualY);
         visualY=visualY===null?desired:visualY+(desired-visualY)*(1-Math.exp(-dt/60));
         if(Math.abs(desired-visualY)>54)visualY=desired;
+        }
         if(p.side===0)yA=visualY;else yB=visualY;
         if(p.debug && Math.abs(visualY-confirmedY)>3){ctx.strokeStyle="#738497";ctx.strokeRect(p.side===0?22:990,confirmedY-half,12,2*half);}
-      } else visualY = null;
+      } else { visualY = null; livePaddle.reset(); }
       ctx.fillStyle = "#8df5ff";
       ctx.fillRect(22, yA - halfA, 12, halfA*2);
       ctx.fillStyle = "#c6a1ff";

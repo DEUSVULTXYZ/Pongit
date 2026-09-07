@@ -13,7 +13,8 @@ function fixture(){
 }
 test("Interlude sends the latest release after an in-flight direction, with sequential nonces",async()=>{
  const f=fixture();let release!:()=>void;f.hold(new Promise(r=>release=r));f.lane.intent(-1);const first=f.lane.pump(false);await new Promise(r=>setTimeout(r,0));
- f.lane.intent(1);f.lane.intent(0);await f.lane.pump(false);assert.equal(f.sent.length,1);release();await first;await f.lane.pump(false);
+ f.lane.intent(1);f.lane.intent(0);await f.lane.pump(false);assert.equal(f.sent.length,1);release();await first;
+ assert.equal(f.sent.length,2,"release drains without waiting for another timer pump");await f.lane.pump(false);
  assert.deepEqual(f.sent.map(x=>x.args[1]),[-1,0]);assert.deepEqual(f.sent.map(x=>x.args[2]),[1n,2n]);
 });
 test("Interlude freezes on uncertain submission without retrying or advancing a second input",async()=>{

@@ -3,6 +3,7 @@ import {chromium} from 'playwright';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {createPublicClient,http} from 'viem';
 import assert from 'node:assert/strict';
+import {installMotionProbe,measureMotion} from './interlude-motion.mjs';
 const manifest=JSON.parse(await readFile('deployments/interlude-lab.json','utf8'));
 const abi=JSON.parse(await readFile(process.env.LAB_ABI_FILE||'contracts/out/PongInterlude.sol/PongInterlude.json','utf8')).abi;
 const node=createPublicClient({transport:http(manifest.node,{retryCount:0,timeout:8000})});
@@ -16,6 +17,7 @@ const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(fn,label,timeout=30000){const start=Date.now();while(Date.now()-start<timeout){try{if(await fn())return;}catch{}await wait(150);}throw Error('Timed out: '+label);}
 async function init(i){
  const context=await browser.newContext({viewport:i===1?{width:390,height:844}:{width:1440,height:1000}});contexts.push(context);
+ await installMotionProbe(context);
  if(stage)await context.route(origin+'/**',async route=>{const u=new URL(route.request().url());if(u.pathname.startsWith('/api/')||u.pathname==='/ws')return route.continue();const response=await route.fetch({url:stage+u.pathname+u.search});await route.fulfill({response});});
  const page=await context.newPage();pages.push(page);page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(r.url().includes('/api/'))requests.push(r.url());});
  if(i<2){const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});cdp.on('WebAuthn.credentialAsserted',()=>assertions[i]++);}
@@ -30,6 +32,8 @@ try{
  assert.notEqual(addresses[0],addresses[1]);
  const id=await start(a,b,addresses[1]);report.firstMatch=id.toString();
  await until(()=>spectator.locator('.court-topline').textContent().then(t=>t.includes('IN PLAY')),'spectator live');
+ report.motion={left:await measureMotion(a,0),right:await measureMotion(b,1)};
+ report.checks.push('Canvas owner movement measured on both players across four holds and reversals each');
  for(let i=0;i<6;i++){await a.keyboard.down(i%2?'s':'w');await wait(80);await a.keyboard.up(i%2?'s':'w');await wait(100);}
  await until(async()=>{const s=await snap();return s[9]>0n&&s[12].leftDir===0;},'key release');
  const up=b.getByRole('button',{name:'Move up',exact:true});await up.scrollIntoViewIfNeeded();const box=await up.boundingBox(),touch=await contexts[1].newCDPSession(b);

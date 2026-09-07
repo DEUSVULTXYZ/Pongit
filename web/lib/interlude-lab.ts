@@ -28,6 +28,7 @@ export function labDelegation(client:LabClient){return readContract(client.base,
 export class LabLane {
  desired=0;
  busy=false;
+ inputPending=false;
  actionPending=false;
  stopped=false;
  constructor(private read:()=>Promise<LabSnapshot>,private session:LabSession,private account:string,
@@ -48,16 +49,21 @@ export class LabLane {
   if(this.busy||this.stopped||this.actionPending)return;
   this.busy=true;
   try{
-   const s=await this.read(),side=labSide(s,this.account);
+   let s=await this.read();const side=labSide(s,this.account);
    this.onResult(s);
    if(this.stopped||side<0||s.phase!==2)return;
-   const confirmed=side===0?s.state.leftDir:s.state.rightDir;
-   let result;
-   if(confirmed!==this.desired){
-    result=await this.session.send("input",[s.id,this.desired,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]);
-   }else if(allowTick){result=await this.session.send("tick",[s.id]);}
-   if(result)this.onResult(await this.read(),result.latencyMs);
+   // Drain a release/reversal immediately after its predecessor, without
+   // waiting for the 100 ms idle-tick interval. Never resend an uncertain call.
+   for(let n=0;n<4 && !this.stopped && !this.actionPending && s.phase===2;n++){
+    const changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
+    if(!changed && (!allowTick||n>0))break;
+    this.inputPending=changed;
+    const result=changed
+     ?await this.session.send("input",[s.id,this.desired,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n])
+     :await this.session.send("tick",[s.id]);
+    s=await this.read();this.inputPending=false;this.onResult(s,result.latencyMs);
+   }
   }catch(e){this.stop();this.onError(e);}
-  finally{this.busy=false;}
+  finally{this.inputPending=false;this.busy=false;}
  }
 }
