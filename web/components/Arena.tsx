@@ -1,4 +1,6 @@
 "use client";
+import { IconButton, ControlIcon } from "./IconButton";
+
 import { InputController } from "../lib/input-controller";
 import { intentMessage, intentTypes } from "../../shared/input-transport";
 import {MatchPayment,PaymentHistory} from "./Payments";
@@ -1041,7 +1043,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
         </div>
       </header>
       <nav aria-label="Main navigation"><button className={tab==="Play"?"active":""} aria-current={tab==="Play"?"page":undefined} onClick={()=>changeTab("Play")}>Play</button><button className={tab==="Live"?"active":""} onClick={()=>changeTab("Live")}>Live <small>{items.filter(m=>m.status===2).length}</small></button><button className={tab==="Rivals"?"active":""} onClick={()=>changeTab("Rivals")}>Rivals</button><button className={["Ladder","Tournaments","Archive","Admin"].includes(tab)?"active":""} aria-expanded={showMore} onClick={()=>setShowMore(true)}>More <span>⌄</span></button></nav>
-      {showMore && <Dialog label="More arcade activities" onClose={()=>setShowMore(false)} className="more-menu"><button className="modal-close" aria-label="Close menu" onClick={()=>setShowMore(false)}>×</button><p className="eyebrow">AROUND THE ARCADE</p><h2>Stay a little longer.</h2>{["Ladder","Tournaments","Archive",...(player?.admin?["Admin"]:[])].map(t=><button key={t} onClick={()=>changeTab(t)}>{t==="Archive"?"Replays":t}<span>↗</span></button>)}</Dialog>}
+      {showMore && <Dialog label="More arcade activities" onClose={()=>setShowMore(false)} className="more-menu"><IconButton className="modal-close" aria-label="Close menu" onClick={()=>setShowMore(false)}/><p className="eyebrow">AROUND THE ARCADE</p><h2>Stay a little longer.</h2>{["Ladder","Tournaments","Archive",...(player?.admin?["Admin"]:[])].map(t=><button key={t} onClick={()=>changeTab(t)}>{t==="Archive"?"Replays":t}<span>↗</span></button>)}</Dialog>}
       {!home && !lobby && <section className="page-heading">
         <div>
           <p className="eyebrow">
@@ -1080,13 +1082,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       {error && (
         <div className="notice error" role="alert">
           {error}
-          <button aria-label="Dismiss error" onClick={() => setError("")}>
-            ×
-          </button>
+          <IconButton aria-label="Dismiss error" onClick={() => setError("")}/>
         </div>
       )}
       {home && <HomeCabinet mode={mode} setMode={setMode} busy={busy||!config} active={!!player?.activeMatch && player.activeMatch!=="0"} play={()=>void act(()=>joinQueue(mode,"0"))} challenge={()=>changeTab("Rivals")} watch={()=>changeTab("Live")} profile={publicProfile} editProfile={()=>void act(openProfile)}/>}
-      {showProfile && account && <Dialog label="Your public profile" onClose={()=>setShowProfile(false)} className="profile-dialog"><button className="modal-close" aria-label="Close profile" onClick={()=>setShowProfile(false)}>×</button><p className="eyebrow">YOUR NAME ON THE CABINET</p><h2>Make a name.</h2><ProfileEditor key={account} account={account} ready={!busy} authenticate={async()=>{if(needsArcadeRenewal)await renewArcade();await authenticateApp();}}/></Dialog>}
+      {showProfile && account && <Dialog label="Your public profile" onClose={()=>setShowProfile(false)} className="profile-dialog"><IconButton className="modal-close" aria-label="Close profile" onClick={()=>setShowProfile(false)}/><p className="eyebrow">YOUR NAME ON THE CABINET</p><h2>Make a name.</h2><ProfileEditor key={account} account={account} ready={!busy} authenticate={async()=>{if(needsArcadeRenewal)await renewArcade();await authenticateApp();}}/></Dialog>}
       {lobby && <section className="waiting-cabinet"><PixelOrnament kind="planet"/><p className="eyebrow">{rematchInvite?"ONE MORE ROUND?":"MATCHMAKING"}</p><h1>{rematchInvite?"Your rival is up next.":"Finding your player two."}</h1><div className="waiting-display">{rematchInvite?rematchInvite.status.toUpperCase():`${Math.floor(searchSeconds/60)}:${String(searchSeconds%60).padStart(2,"0")}`}</div><p>{rematchInvite?`Rematch invitation · expires ${new Date(Number(rematchInvite.expires)*1000).toLocaleTimeString()}`:`${mode===1?"Chaos":"Classic"} · ${tournamentId!=="0"?"Tournament":"Ranked"}`}</p><p className="status-line" role="status">{message}</p>{queueTicket.current && <button disabled={busy} onClick={()=>void act(cancelQueue)}>Cancel search</button>}{rematchInvite && <button disabled={busy} onClick={()=>void act(async()=>{if(rematchInvite.status==="pending")await appApi(`/challenges/${rematchInvite.id}/cancel`,"POST",{},account);setRematchInvite(null);})}>{rematchInvite.status==="pending"?"Cancel invitation":"Back to arcade"}</button>}</section>}
       {home && <p className="status-line home-status" role="status">{message}</p>}
       {showArena && (
@@ -1222,12 +1222,13 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                   <kbd>W</kbd>
                   <kbd>S</kbd>
                   <span>or</span>
-                  <kbd>↑</kbd>
-                  <kbd>↓</kbd>
+                  <kbd aria-label="Up arrow"><ControlIcon name="up" /></kbd>
+                  <kbd aria-label="Down arrow"><ControlIcon name="down" /></kbd>
                   <span>move your paddle</span>
                 </div>
                 <div className="touch-controls">
                   <button
+                    className="icon-button"
                     aria-label="Move up"
                     disabled={!controlsEnabled.current}
                     onPointerDown={(e) => {
@@ -1237,9 +1238,10 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                     onPointerUp={() => setDirection(0)}
                     onPointerCancel={() => setDirection(0)}
                   >
-                    ↑
+                    <ControlIcon name="up" />
                   </button>
                   <button
+                    className="icon-button"
                     aria-label="Move down"
                     disabled={!controlsEnabled.current}
                     onPointerDown={(e) => {
@@ -1249,7 +1251,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
                     onPointerUp={() => setDirection(0)}
                     onPointerCancel={() => setDirection(0)}
                   >
-                    ↓
+                    <ControlIcon name="down" />
                   </button>
                 </div>
               </div>
@@ -1679,7 +1681,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
             </button>
           </div>
         ))}
-      {betPreview && <Dialog label="Review your bet" onClose={()=>{if(!busy)setBetPreview(null);}}><button className="modal-close" disabled={busy} aria-label="Close bet review" onClick={()=>setBetPreview(null)}>×</button><p className="eyebrow">TEST MON ONLY</p><h2>Back player {betPreview.side+1}.</h2><p>{short(betPreview.side===0?match?.playerA:match?.playerB)}</p><dl className="bet-review"><dt>Estimated cost</dt><dd>{money(betPreview.quote.amount)} MON</dd><dt>Maximum cost (+1%)</dt><dd>{formatEther(BigInt(betPreview.quote.amount)*101n/100n)} MON</dd><dt>Payout if they win</dt><dd>{betPreview.quantity} MON</dd></dl>{match?.mode===1 && <p className="chaos-warning">Supporting this player can shrink their paddle next rally.</p>}<p>Paid to your wallet automatically if this position wins. Your passkey approves the spend.</p>{error&&<p role="alert">{error}</p>}<button className="primary" disabled={busy} onClick={()=>void act(()=>bet(betPreview.side,true))}>{busy?"Confirming…":"Confirm with passkey"}</button></Dialog>}
+      {betPreview && <Dialog label="Review your bet" onClose={()=>{if(!busy)setBetPreview(null);}}><IconButton className="modal-close" disabled={busy} aria-label="Close bet review" onClick={()=>setBetPreview(null)}/><p className="eyebrow">TEST MON ONLY</p><h2>Back player {betPreview.side+1}.</h2><p>{short(betPreview.side===0?match?.playerA:match?.playerB)}</p><dl className="bet-review"><dt>Estimated cost</dt><dd>{money(betPreview.quote.amount)} MON</dd><dt>Maximum cost (+1%)</dt><dd>{formatEther(BigInt(betPreview.quote.amount)*101n/100n)} MON</dd><dt>Payout if they win</dt><dd>{betPreview.quantity} MON</dd></dl>{match?.mode===1 && <p className="chaos-warning">Supporting this player can shrink their paddle next rally.</p>}<p>Paid to your wallet automatically if this position wins. Your passkey approves the spend.</p>{error&&<p role="alert">{error}</p>}<button className="primary" disabled={busy} onClick={()=>void act(()=>bet(betPreview.side,true))}>{busy?"Confirming…":"Confirm with passkey"}</button></Dialog>}
       <footer>
         <span>PONGIT / BUILT ON MONAD</span>
         <MusicCredit/>
@@ -1693,7 +1695,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       </footer>
       {showAccount && account && (
         <Dialog label="Account details" onClose={()=>setShowAccount(false)} className="account-modal">
-            <button className="modal-close" aria-label="Close account details" onClick={() => setShowAccount(false)}>×</button>
+            <IconButton className="modal-close" aria-label="Close account details" onClick={() => setShowAccount(false)}/>
             <p className="eyebrow">YOUR PONGIT ACCOUNT</p>
             <h2 id="account-title">Account details</h2>
             <p>{config?.chainId === 31337 ? "Local test account" : "Mera passkey · Monad Testnet"}</p>
@@ -1744,13 +1746,11 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       )}
       {showConnect && (
         <Dialog label="Connect your passkey" onClose={closeConnect}>
-            <button
+            <IconButton
               className="modal-close"
               aria-label="Close"
               onClick={closeConnect}
-            >
-              ×
-            </button>
+            />
             {error && <p role="alert" className="notice error">{error}</p>}
             <p className="eyebrow">YOUR PASSKEY IS YOUR ACCOUNT</p>
             <h2 id="connect-title">Step up to the line.</h2>
