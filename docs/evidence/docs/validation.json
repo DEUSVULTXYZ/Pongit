@@ -1,0 +1,228 @@
+{
+  "checkedAt": "2026-09-07T08:40:21.113054+00:00",
+  "url": "https://pongit.xyz/docs",
+  "applicationCommit": "d0060d938a574c40d6396f46a6aaecea9fc32a0f",
+  "versions": {
+    "Chrome": "152.0.7977.76",
+    "Edge": "152.0.4191.66"
+  },
+  "articles": 24,
+  "headingAnchors": 111,
+  "searchEntries": 135,
+  "deployments": [
+    4,
+    3,
+    2,
+    1
+  ],
+  "viewports": [
+    "360x640",
+    "390x844",
+    "768x1024",
+    "1440x1000",
+    "844x390",
+    "720x450"
+  ],
+  "browserCases": {
+    "Chrome": [
+      {
+        "name": "Documentation reading and search at 360x640",
+        "status": "passed",
+        "durationMs": 2856
+      },
+      {
+        "name": "Documentation reading and search at 390x844",
+        "status": "passed",
+        "durationMs": 2388
+      },
+      {
+        "name": "Documentation reading and search at 768x1024",
+        "status": "passed",
+        "durationMs": 2395
+      },
+      {
+        "name": "Documentation reading and search at 1440x1000",
+        "status": "passed",
+        "durationMs": 2241
+      },
+      {
+        "name": "Documentation reading and search at 844x390",
+        "status": "passed",
+        "durationMs": 2593
+      },
+      {
+        "name": "Documentation reading and search at 720x450",
+        "status": "passed",
+        "durationMs": 2443
+      },
+      {
+        "name": "All documentation routes, fragments, assets, metadata and real 404 responses",
+        "status": "passed",
+        "durationMs": 7193
+      },
+      {
+        "name": "Header Docs link remains visible and does not push Play now off small screens",
+        "status": "passed",
+        "durationMs": 1277
+      },
+      {
+        "name": "Search recovers after its index cannot be loaded",
+        "status": "passed",
+        "durationMs": 1084
+      },
+      {
+        "name": "Reading documentation preserves a live arcade session; spectator betting guide capture",
+        "status": "passed",
+        "durationMs": 22006
+      }
+    ],
+    "Edge": [
+      {
+        "name": "Documentation reading and search at 360x640",
+        "status": "passed",
+        "durationMs": 3092
+      },
+      {
+        "name": "Documentation reading and search at 390x844",
+        "status": "passed",
+        "durationMs": 2463
+      },
+      {
+        "name": "Documentation reading and search at 768x1024",
+        "status": "passed",
+        "durationMs": 2484
+      },
+      {
+        "name": "Documentation reading and search at 1440x1000",
+        "status": "passed",
+        "durationMs": 2142
+      },
+      {
+        "name": "Documentation reading and search at 844x390",
+        "status": "passed",
+        "durationMs": 2034
+      },
+      {
+        "name": "Documentation reading and search at 720x450",
+        "status": "passed",
+        "durationMs": 2312
+      },
+      {
+        "name": "All documentation routes, fragments, assets, metadata and real 404 responses",
+        "status": "passed",
+        "durationMs": 6991
+      },
+      {
+        "name": "Header Docs link remains visible and does not push Play now off small screens",
+        "status": "passed",
+        "durationMs": 1255
+      },
+      {
+        "name": "Search recovers after its index cannot be loaded",
+        "status": "passed",
+        "durationMs": 1005
+      },
+      {
+        "name": "Reading documentation preserves a live arcade session; spectator betting guide capture",
+        "status": "passed",
+        "durationMs": 21682
+      }
+    ]
+  },
+  "liveGameChecks": [
+    {
+      "browser": "Chrome",
+      "reference": "v4:40",
+      "chainId": 10143,
+      "game": "0x1ff69df68a3c4c370ce47d75c0bf002ae64d6e64",
+      "status": 3,
+      "ranked": false,
+      "sessionPreserved": true,
+      "noPasskeyAfterDocs": true,
+      "docsStorageEmpty": true,
+      "spectatorBetReview": true,
+      "resultConfirmed": true,
+      "errors": []
+    },
+    {
+      "browser": "Edge",
+      "reference": "v4:41",
+      "chainId": 10143,
+      "game": "0x1ff69df68a3c4c370ce47d75c0bf002ae64d6e64",
+      "status": 3,
+      "ranked": false,
+      "sessionPreserved": true,
+      "noPasskeyAfterDocs": true,
+      "docsStorageEmpty": true,
+      "spectatorBetReview": true,
+      "resultConfirmed": true,
+      "errors": []
+    }
+  ],
+  "checks": {
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "typescriptTests": 23,
+    "privateVpsBrowserCases": 10,
+    "externalLinks": [
+      {
+        "url": "https://docs.envio.dev/docs/HyperIndex/overview",
+        "status": 200
+      },
+      {
+        "url": "https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/testnet.json",
+        "status": 200
+      },
+      {
+        "url": "https://github.com/DEUSVULTXYZ/Pongit/blob/main/docs/DEPLOYMENT.md",
+        "status": 200
+      },
+      {
+        "url": "https://github.com/DEUSVULTXYZ/Pongit/blob/main/shared/protocol.ts",
+        "status": 200
+      },
+      {
+        "url": "https://github.com/DEUSVULTXYZ/Pongit/blob/main/web/components/Arena.tsx",
+        "status": 200
+      },
+      {
+        "url": "https://github.com/category-labs/mera",
+        "status": 200
+      },
+      {
+        "url": "https://whitebataudio.com",
+        "status": 200
+      },
+      {
+        "url": "https://whitebataudio.com/pages/faq",
+        "status": 200
+      }
+    ],
+    "secretScan": "No findings in publication changes or full Git history",
+    "npmAuditVulnerabilities": 0,
+    "http404": "verified",
+    "businessRequestsOnDocs": 0,
+    "gamePrefetchOnDocs": 0,
+    "musicElementsOnDocs": 0,
+    "webSocketsOnDocs": 0
+  },
+  "operations": {
+    "backup": "20260907T083435Z",
+    "offsiteBackupTaskExitCode": 0,
+    "rollbackCommit": "9558069ee05a5d1cf3c821092f3899dca55b9d92",
+    "rollbackImageTags": [
+      "pongit-web:docs-initial",
+      "pongit-relayer:docs-initial"
+    ],
+    "privateTestServices": "removed after validation",
+    "contractChanges": false,
+    "databaseMigration": false
+  },
+  "limits": [
+    "Physical passkey providers and cross-device recovery were not retested by this documentation release.",
+    "Financial instructions were reviewed against source; this release exercised the bet review but did not repeat every financial settlement and tournament regression.",
+    "720x450 checks reflow equivalent to a 1440px desktop at 200%; this is not a physical browser zoom measurement.",
+    "Initial test selectors omitted decorative arrows in action names; the harness was corrected before the final successful integration runs.",
+    "Production rollback was prepared but not executed."
+  ]
+}
