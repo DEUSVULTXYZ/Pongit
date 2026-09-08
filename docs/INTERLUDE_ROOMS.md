@@ -82,4 +82,4 @@ The [machine-readable validation report](validation/interlude-rooms-2026-09-08.j
 
 The coordinator restart probe preserved the authenticated session and original idempotent room response. An uncertain maintenance receipt was recovered without allocating an additional job. A private database backup was restored into a separate test database.
 
-The candidate is not the public homepage. GitHub still rejects the configured publication credentials with 403. The Interlude operator currently advertises a 24-hour maximum delegation and has reached its eight-delegation limit; same-application renewal has not been demonstrated. Do not announce a public rooms launch before these gates are resolved.
+The candidate is not the public homepage. GitHub publishing access was restored later on 8 September and the candidate branch was successfully pushed. The remaining release gate is Interlude: the operator advertises a 24-hour maximum delegation and has reached its eight-delegation limit; same-application renewal has not been demonstrated. Do not announce a public rooms launch before that validation is complete.

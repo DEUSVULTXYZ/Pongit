@@ -4,6 +4,7 @@ import { arcadeAudio } from "../lib/audio";
 import { move, SCALE, type State } from "../../shared/physics-v2";
 import { predictPaddle, boundedClock, projectConfirmed, projectLive, type PendingInput } from "../lib/presentation";
 import { LivePaddle, LiveClock } from "../lib/live-paddle";
+import { createCourtSurface } from "../lib/court-art";
 type Props = {
   state: State | null;
   clock: bigint;
@@ -57,6 +58,7 @@ export function Court({
   useEffect(() => {
     const el = canvas.current!;
     const ctx = el.getContext("2d")!;
+    const surface = createCourtSurface();
     // Paint all bevels inside the existing rectangles: appearance never enlarges a hitbox.
     function prism(x: number, y: number, w: number, h: number, face: CanvasGradient | string, light: string, dark: string) {
       const b = Math.min(2, w / 5, h / 5);
@@ -95,16 +97,7 @@ export function Court({
         el.height = Math.round(height * dpr);
       }
       ctx.setTransform(el.width / 1024, 0, 0, el.height / 576, 0, 0);
-      ctx.fillStyle = "#050505";
-      ctx.fillRect(0, 0, 1024, 576);
-      ctx.strokeStyle = "#242424";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 12]);
-      ctx.beginPath();
-      ctx.moveTo(512, 0);
-      ctx.lineTo(512, 576);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.drawImage(surface, 0, 0);
       let s = p.state;
       if(anchorObserved!==p.observedAt){anchorObserved=p.observedAt;anchor=now;anchorAge=Math.max(0,Date.now()-p.observedAt);}
       if(localDirection!==p.direction){localDirection=p.direction;localAt=now;}
@@ -168,22 +161,17 @@ export function Court({
         previousSound={vx:s.vx,vy:s.vy,score,time:now};
       } else previousSound=null;
       if (s) {
-        ctx.fillStyle = "#666";
-        ctx.fillRect(
-          Number(s.x) / 1e6 - 6 - (Number(s.vx) / 1e6) * 0.02,
-          Number(s.y) / 1e6 - 6 - (Number(s.vy) / 1e6) * 0.02,
-          12,
-          12,
-        );
         prism(Number(s.x) / 1e6 - 6, Number(s.y) / 1e6 - 6, 12, 12, "#f3fcff", "#fff", "#9eafb9");
       } else {
         ctx.strokeStyle = "#777";
         ctx.strokeRect(506, 282, 12, 12);
       }
-      ctx.fillStyle = "#222";
+      if (p.debug) {
+      ctx.fillStyle = "#697a8f";
       ctx.font = `10px ${fontFamily}`;
       ctx.fillText("0,0", 12, 20);
       ctx.fillText("1024 × 576", 912, 560);
+      }
       count++;
       if (now - last > 1000) {
         p.onNetwork(timing.ageMs,correction);

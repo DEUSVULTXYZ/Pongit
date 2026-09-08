@@ -193,7 +193,7 @@ try {
   report.assertionsConnected = [...assertions];
   report.players = addresses;
   await a.locator(".rooms-account-toggle").click();
-  const username = "browserqa" + Date.now().toString().slice(-7);
+  const username = "NEON" + Date.now().toString().slice(-7);
   await a.getByLabel("Username", { exact: true }).fill(username);
   await wait(4500);
   assert.equal(
@@ -208,6 +208,12 @@ try {
   await a
     .getByRole("button", { name: "Close Your account", exact: true })
     .click();
+  await b.locator(".rooms-account-toggle").click();
+  await b.getByLabel("Username", {exact:true}).fill("GHOST"+Date.now().toString().slice(-7));
+  await b.getByRole("radio",{name:"Ghost: Night rider",exact:true}).click();
+  await b.getByRole("button",{name:"Save profile",exact:true}).click();
+  await until(()=>b.getByText("Profile saved",{exact:true}).isVisible(),"second player's portrait saved");
+  await b.getByRole("button",{name:"Close Your account",exact:true}).click();
   await a.getByRole("button", { name: /Create room/ }).click();
   await a
     .getByRole("dialog", { name: "Create room" })
@@ -245,6 +251,19 @@ try {
       Math.abs(shape.width / shape.height - 16 / 9) < 0.03,
       "Rectangular 16:9 court",
     );
+    const hud = await p.locator(".rooms-court .scoreboard").evaluate(el => {
+      const score = el.querySelector(".arena-score-module").getBoundingClientRect();
+      const labels = [...el.querySelectorAll(".player-label")].map(e=>e.getBoundingClientRect());
+      return {
+        points: [...el.querySelectorAll(".score > span")].map(e=>Number(e.textContent)),
+        lit: [...el.querySelectorAll(".arena-rounds")].map(e=>e.querySelectorAll('[data-won="true"]').length),
+        slots: [...el.querySelectorAll(".arena-rounds")].map(e=>e.children.length),
+        separate: labels[0].right <= score.left && score.right <= labels[1].left,
+      };
+    });
+    assert.deepEqual(hud.slots,[7,7],"Seven result segments per player");
+    assert.deepEqual(hud.lit,hud.points,"Segments use the same confirmed score as the digits");
+    assert(hud.separate,"Player identities and central score must not overlap");
   }
   await a.screenshot({path:out+"/game-desktop.png"});
   await b.screenshot({path:out+"/game-mobile.png"});

@@ -1021,17 +1021,21 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
             <section className="rooms-court court-card">
               <div className="scoreboard">
                 <div className="player-label">
+                  <Avatar index={lobby.profiles.find(p => p.player.toLowerCase() === snapshot.a.toLowerCase())?.avatar || 0}/>
                   <small>PLAYER 01</small>
                   <span>{name(snapshot.a)}</span>
+                  <div className="arena-rounds" aria-hidden="true">{Array.from({length:7},(_,i)=><b key={i} data-won={i<snapshot.state.scoreA}/>)}</div>
                 </div>
-                <div className="score">
+                <div className="arena-score-module"><small>FIRST TO SEVEN</small><div className="score">
                   <span>{String(snapshot.state.scoreA).padStart(2, "0")}</span>
                   <i>:</i>
                   <span>{String(snapshot.state.scoreB).padStart(2, "0")}</span>
-                </div>
+                </div></div>
                 <div className="player-label right">
+                  <Avatar index={lobby.profiles.find(p => p.player.toLowerCase() === snapshot.b.toLowerCase())?.avatar || 0}/>
                   <small>PLAYER 02</small>
                   <span>{name(snapshot.b)}</span>
+                  <div className="arena-rounds" aria-hidden="true">{Array.from({length:7},(_,i)=><b key={i} data-won={i<snapshot.state.scoreB}/>)}</div>
                 </div>
               </div>
               <div className="rooms-canvas">
@@ -1055,7 +1059,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               <div className="rooms-court-controls">
                 <span>
                   {side >= 0
-                    ? "FIRST TO 07"
+                    ? "W / S · ↑ / ↓"
                     : `YOUR TURN ${Math.max(
                         1,
                         room.members
