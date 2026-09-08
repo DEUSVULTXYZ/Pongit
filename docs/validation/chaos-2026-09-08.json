@@ -1,13 +1,13 @@
 {
-  "checkedAt": "2026-09-08T13:44:00Z",
+  "checkedAt": "2026-09-08T15:48:09.607217+00:00",
   "network": "Monad Testnet",
   "chainId": 10143,
-  "releaseStatus": "blocked_on_hosted_engine_recovery",
+  "releaseStatus": "blocked_on_epoch_3_hosted_recovery",
   "publicActivated": false,
   "app": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb",
   "validation": {
     "solidityTestsPassed": 160,
-    "typescriptTestsPassed": 50,
+    "typescriptTestsPassed": 53,
     "differentialPhysics": {
       "classicCases": 10000,
       "chaosCases": 10000,
@@ -188,7 +188,318 @@
       }
     },
     "dependencyVulnerabilities": 0,
-    "finalThreeBrowserChaosMatch": "not completed after hosted renewal"
+    "finalThreeBrowserChaosMatch": {
+      "startedAt": "2026-09-08T14:33:04.716Z",
+      "checks": [
+        "Chaos market quote refreshes under rate-limited RPC; unfunded spectator and participant cannot buy",
+        "Three actions visible at 360x640",
+        "Mera PRF account creation, saved profile and preserved edit focus",
+        "Private WebSocket notifications",
+        "Accept invitation starts first duel without second click",
+        "Spectator automatically sees game and must accept their next turn",
+        "16:9 court, no footer below game",
+        "Keyboard release reaches engine",
+        "F5 without another passkey ceremony",
+        "VICTORY / DEFEAT with locked background"
+      ],
+      "viewports": [
+        {
+          "viewport": {
+            "width": 360,
+            "height": 640
+          },
+          "boxes": [
+            {
+              "x": 12,
+              "y": 249.78125,
+              "width": 336,
+              "height": 98,
+              "bottom": 347.78125
+            },
+            {
+              "x": 12,
+              "y": 359.78125,
+              "width": 336,
+              "height": 98,
+              "bottom": 457.78125
+            },
+            {
+              "x": 12,
+              "y": 469.78125,
+              "width": 336,
+              "height": 98,
+              "bottom": 567.78125
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 390,
+            "height": 844
+          },
+          "boxes": [
+            {
+              "x": 12,
+              "y": 254.4375,
+              "width": 366,
+              "height": 98,
+              "bottom": 352.4375
+            },
+            {
+              "x": 12,
+              "y": 364.4375,
+              "width": 366,
+              "height": 98,
+              "bottom": 462.4375
+            },
+            {
+              "x": 12,
+              "y": 474.4375,
+              "width": 366,
+              "height": 98,
+              "bottom": 572.4375
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 768,
+            "height": 1024
+          },
+          "boxes": [
+            {
+              "x": 24,
+              "y": 260.375,
+              "width": 225.328125,
+              "height": 414,
+              "bottom": 674.375
+            },
+            {
+              "x": 271.328125,
+              "y": 260.375,
+              "width": 225.328125,
+              "height": 414,
+              "bottom": 674.375
+            },
+            {
+              "x": 518.65625,
+              "y": 258.22528076171875,
+              "width": 225.328125,
+              "height": 414,
+              "bottom": 672.2252807617188
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 1000
+          },
+          "boxes": [
+            {
+              "x": 180,
+              "y": 296.78125,
+              "width": 345.328125,
+              "height": 390,
+              "bottom": 686.78125
+            },
+            {
+              "x": 547.328125,
+              "y": 293.9580993652344,
+              "width": 345.328125,
+              "height": 390.0000305175781,
+              "bottom": 683.9581298828125
+            },
+            {
+              "x": 914.65625,
+              "y": 295.6044006347656,
+              "width": 345.34375,
+              "height": 389.9999694824219,
+              "bottom": 685.6043701171875
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 844,
+            "height": 390
+          },
+          "boxes": [
+            {
+              "x": 24,
+              "y": 169.28125,
+              "width": 257.328125,
+              "height": 156,
+              "bottom": 325.28125
+            },
+            {
+              "x": 293.328125,
+              "y": 169.0927734375,
+              "width": 257.328125,
+              "height": 156,
+              "bottom": 325.0927734375
+            },
+            {
+              "x": 562.65625,
+              "y": 169.28125,
+              "width": 257.34375,
+              "height": 156,
+              "bottom": 325.28125
+            }
+          ]
+        }
+      ],
+      "api": [
+        {
+          "player": 0,
+          "path": "/api/interlude/auth/challenge",
+          "status": 200
+        },
+        {
+          "player": 0,
+          "path": "/api/interlude/auth/session",
+          "status": 200
+        },
+        {
+          "player": 1,
+          "path": "/api/interlude/auth/challenge",
+          "status": 200
+        },
+        {
+          "player": 1,
+          "path": "/api/interlude/auth/session",
+          "status": 200
+        },
+        {
+          "player": 2,
+          "path": "/api/interlude/auth/challenge",
+          "status": 200
+        },
+        {
+          "player": 2,
+          "path": "/api/interlude/auth/session",
+          "status": 200
+        },
+        {
+          "player": 0,
+          "path": "/api/interlude/profile",
+          "status": 200
+        },
+        {
+          "player": 1,
+          "path": "/api/interlude/profile",
+          "status": 200
+        },
+        {
+          "player": 0,
+          "path": "/api/interlude/rooms",
+          "status": 200
+        },
+        {
+          "player": 1,
+          "path": "/api/interlude/auth/challenge",
+          "status": 200
+        },
+        {
+          "player": 1,
+          "path": "/api/interlude/auth/session",
+          "status": 200
+        },
+        {
+          "player": 1,
+          "path": "/api/interlude/rooms/join",
+          "status": 200
+        },
+        {
+          "player": 1,
+          "path": "/api/interlude/offers/accept",
+          "status": 200
+        },
+        {
+          "player": 0,
+          "path": "/api/interlude/offers/accept",
+          "status": 200
+        },
+        {
+          "player": 2,
+          "path": "/api/interlude/auth/challenge",
+          "status": 200
+        },
+        {
+          "player": 2,
+          "path": "/api/interlude/auth/session",
+          "status": 200
+        },
+        {
+          "player": 2,
+          "path": "/api/interlude/rooms/join",
+          "status": 200
+        },
+        {
+          "player": 0,
+          "path": "/api/interlude/auth/challenge",
+          "status": 200
+        },
+        {
+          "player": 0,
+          "path": "/api/interlude/auth/session",
+          "status": 200
+        },
+        {
+          "player": 2,
+          "path": "/api/interlude/offers/back",
+          "status": 200
+        }
+      ],
+      "network": [],
+      "assertionsConnected": [
+        0,
+        0,
+        0
+      ],
+      "players": [
+        "0xB09435cE2350bf96E6Ab7789a790519ab2FE2999",
+        "0xF16c2e3aD0232B58f08Ac8e9815351a2a70d0551",
+        "0x838628BCcC99681f64D10172c3FC1027083E4dfD"
+      ],
+      "match": "96206655926948613088704757374475339175968558912826357328078414260402754290486",
+      "finishedAt": "2026-09-08T14:34:53.977Z",
+      "errors": [],
+      "assertions": [
+        0,
+        0,
+        0
+      ]
+    },
+    "backupRestore": {
+      "checkedAt": "2026-09-08T15:14:15.169476+00:00",
+      "passed": true,
+      "tables": {
+        "il_lifecycle": 1,
+        "il_lifecycle_jobs": 4,
+        "il_engine_jobs": 47,
+        "test_finance_jobs": 19,
+        "il_results": 6,
+        "il_bettors": 3,
+        "il_payment_receipts": 3,
+        "rooms_finance_bindings": 1
+      },
+      "productionUnmodified": true,
+      "temporaryRestoreDatabaseRemoved": true
+    },
+    "financialBindingGuard": {
+      "checkedAt": "2026-09-08T14:59:34.422Z",
+      "passed": true,
+      "changedDestinationRejected": true,
+      "originalBindingPreserved": true,
+      "transactionsSubmitted": 0
+    },
+    "postEpoch3Browser": "not run: hosted node unreachable",
+    "secretScan": {
+      "stagedBytes": 247360,
+      "publishedRangeBytes": 1571135,
+      "findings": 0
+    }
   },
   "transactions": {
     "close": "0x1717b9adaffbd46fed41f781c9363a2679dd36955bdc3c7970391f4f4fdfb3a7",
@@ -196,14 +507,44 @@
     "renew": "0x4af678c588fe2463f5fd6144a84aa1d9df7aa93c974feff206fd4243e534e4c1",
     "payout008MON": "0xb6a08da743d23d4a09d6c62814d29134416531252f64f212e5aa7fea35f5aa89",
     "payout002MON": "0xf61e7f6995369ff8353d521891f3fa7321a015def1d52826b9894abae67f303a",
-    "losingPosition": "0x242c6872b90b506341a5b3b88c73caa32ee4536a3728f592949c756da960f01a"
+    "losingPosition": "0x242c6872b90b506341a5b3b88c73caa32ee4536a3728f592949c756da960f01a",
+    "secondRenewal": [
+      {
+        "id": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb:2:close",
+        "nonce": "88",
+        "hash": "0x7fb6ea1da768c194a6205e7d6ab579c7481858254729482b3ab7506427579d64",
+        "status": "confirmed"
+      },
+      {
+        "id": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb:2:release",
+        "nonce": "89",
+        "hash": "0xce5370c70bc90f514ae0736d823c9507e902c82929d2d9b7a7162e10ba3e31b6",
+        "status": "confirmed"
+      },
+      {
+        "id": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb:2:final:96206655926948613088704757374475339175968558912826357328078414260402754290486",
+        "nonce": "90",
+        "hash": "0xd181978d04186e4d3b96e069359c34861d1e951cb491b7dc9bfeb6b46ede5d99",
+        "status": "confirmed"
+      },
+      {
+        "id": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb:2:renew",
+        "nonce": "91",
+        "hash": "0x674a39b536aadc72c37bf794931d9054176b15fa09183bb8296509c1988abb3f",
+        "status": "confirmed"
+      }
+    ]
   },
   "hosting": {
-    "delegationEpoch": 2,
-    "onchainRenewal": "success",
+    "delegationEpoch": 3,
+    "onchainRenewal": "confirmed",
     "controlPlane": "live",
-    "healthHttpStatus": 502,
-    "railwayRequestId": "qlLpR_4_Qcyt0sBkjUJq2g"
+    "httpStatus": 502,
+    "lastHttpCheckAt": "2026-09-08T15:46:07Z",
+    "requestId": "UEYeCL0YTxKlt7A_WVMv1w",
+    "epoch2RecoveryAt": "2026-09-08T14:31:00Z",
+    "classicAdmissions": "restored after repeated hosted startup failure",
+    "ratingGateRequiredAgain": true
   },
   "limits": [
     "Testnet VPS attests paid pressure; it cannot pick a winner.",

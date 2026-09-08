@@ -2,17 +2,17 @@
 
 **[Play PONGIT](https://pongit.xyz)** · [Documentation](https://pongit.xyz/docs) · [Automatic wallet payments](docs/PAYMENTS_V4.md) · [Arcade release](docs/ARCADE.md) · [Architecture](docs/V2.md) · [Local setup](docs/LOCAL.md)
 
-**8 September release status:** the public homepage runs Classic rooms. Chaos with spectator betting is implemented and deployed as a private rules-4 candidate, but public activation is held because its hosted engine returns HTTP 502 after delegation renewal. Actual native-wallet payouts passed. [Chaos validation and activation requirements](docs/CHAOS_ROOMS.md). The separate V4 arcade retains its existing Chaos, markets, balances and tournaments.
+**8 September release status:** Classic rooms remain public. The rules-4 Chaos candidate passed real bets, pressure, native payouts and a three-browser game after hosted recovery. Its next onchain renewal succeeded, but the node returned HTTP 502 again on epoch 3. Chaos activation is gated; see the [recovery record](docs/CHAOS_ROOMS.md). V4 balances, markets and tournaments remain available separately.
 
-A browser-based 1v1 arcade game whose physics, scores, results and ELO are computed in Solidity on **Monad Testnet (10143)**. The Next.js canvas predicts rendering, Mera provides passkey accounts, the relayer sponsors gas and Envio reconstructs match history. No browser wallet extension is required. All bets and prizes use test MON.
+A browser-based 1v1 arcade game with Solidity-authoritative physics, scores, results and ELO. The main rooms use a hosted Interlude engine and publish state to **Monad Testnet (10143)**. Markets, vaults and payouts execute on Monad; the separate V4 arcade also runs its gameplay there. The Next.js canvas renders movement, Mera provides passkey accounts, the relayer sponsors gas and Envio reconstructs V1 to V4 history. No browser wallet extension is required. All bets and prizes use test MON.
 
 ## Play, challenge and compete
 
 - **Classic and Chaos**, with separate ranked queues and ELO. Friendly challenges leave both ratings unchanged.
-- **Two-hour arcade sessions** survive F5 in the same tab. Remembered passkeys keep gameplay flowing; finance still asks for the wallet passkey.
+- **Thirty-minute rooms sessions** survive F5 in the same tab; the V4 arcade retains its two-hour sessions. Remembered passkeys keep gameplay flowing; finance still asks for the wallet passkey.
 - **One-click rematches** and **direct challenges** from a profile, ladder, address or shareable link; signed consent from both players, invitation inbox and blocking.
 - **Chaos betting pressure**: accepted spectator bets can shrink the favourite's paddle for the next rally, with a visible intermission and a maximum 25% reduction.
-- **Optional public profiles** and a separate **private Mera notebook** for rivals, replay notes and preferences. The notebook uses its own passkey PRF namespace and AES-GCM encryption.
+- **Optional public profiles** and a separate **private Mera notebook** in the V4 arcade for rivals, replay notes and preferences. The notebook uses its own passkey PRF namespace and AES-GCM encryption.
 - **Spectating, Envio replays, LMSR markets, automatic wallet payouts, signed withdrawals, Classic tournaments and role-based administration**.
 - Michroma, precomputed neon artwork, keyboard/touch controls and skippable **VICTORY / DEFEAT** animations. A compact cabinet home leads straight into play. Enter with **Last Stop** (music by **Karl Casey @ White Bat Audio**) or muted. Music/effect volumes and static room appearance are remembered; reduced-motion preferences are respected.
 
@@ -56,6 +56,6 @@ The [Arcade delivery report](docs/ARCADE.md) records V3 addresses, **64 passing 
 
 The repository is public at the owner's request. The daily sponsorship ceiling is disabled (`RELAYER_DAILY_BUDGET_MON=0`); balance reservations, gas-price limits, abuse quotas and solvency checks remain active. Credentials and deployment secrets are excluded from Git.
 
-Chain inclusion delay remains visible. Prediction does not make an unconfirmed input authoritative, and betting locks reduce latency advantage without eliminating it. The separate [Interlude Classic lab](docs/INTERLUDE_LAB.md) uses a dedicated hosted engine and scoped Mera sessions; V4 ranked games and financial operations remain on Monad directly. Physical cross-device passkey recovery still needs a demonstration. This is a testnet release without an external security audit or a claim of bug-free operation.
+Prediction does not make an unconfirmed input authoritative, and betting locks reduce latency advantage without eliminating it. [Rooms](docs/CHAOS_ROOMS.md) use a hosted engine and scoped Mera sessions; financial operations and the preserved V4 arcade execute on Monad. Chaos intermissions include a 40-block betting window. Payout finalization waits for delegation closure and its challenge period; scheduled renewal temporarily pauses new games. The [earlier Classic lab](docs/INTERLUDE_LAB.md) remains documented separately. Physical cross-device passkey recovery still needs a demonstration. This is a testnet release without an external security audit or a claim of bug-free operation.
 
 See [Night Shift UX](docs/NIGHT_SHIFT.md) for the cabinet navigation, recent-match API and audio credits.

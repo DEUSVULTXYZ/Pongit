@@ -17,6 +17,7 @@ import { loadRoomsFinance } from "../../relayer/src/rooms-finance-config";
 export async function isolatedRoomsRelay(db: Pool) {
   assert.equal(process.env.ROOMS_PRIVATE_FINANCE_TEST, "true");
   const config = await loadRoomsFinance();
+  await config.bind(db);
   const key = process.env.ROOMS_TEST_RELAYER_KEY as Hex;
   assert(key, "A private-test relayer key is required");
   const account = privateKeyToAccount(key);

@@ -104,6 +104,7 @@ if ((await publicClient.getChainId()) !== deployment.chainId)
 const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as Hex);
 const wallet = createWalletClient({ account, chain, transport: http(rpc) });
 const signingLock = await initializeStore();
+await roomsFinanceConfig.bind(pool);
 await initializeSocial();
 await initializeInputs(pool);
 await initializePayouts(pool);

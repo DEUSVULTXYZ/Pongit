@@ -1,5 +1,13 @@
 import { readFile } from "node:fs/promises";
-import { encodeFunctionData, isAddress, type Abi, type Address } from "viem";
+import {
+  encodeFunctionData,
+  isAddress,
+  keccak256,
+  toHex,
+  type Abi,
+  type Address,
+} from "viem";
+import type { Pool } from "pg";
 import { marketV4Abi } from "../../shared/abis-v4";
 import { roomsVaultAbi } from "../../shared/abi-RoomsVault";
 import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
@@ -13,6 +21,44 @@ export type RoomsFinanceManifest = {
   startBlock: string;
   chainId: 10143;
 };
+export async function bindRoomsFinance(
+  db: Pick<Pool, "query">,
+  entries: RoomsFinanceManifest[],
+) {
+  await db.query(
+    "CREATE TABLE IF NOT EXISTS rooms_finance_bindings(app text PRIMARY KEY,fingerprint text NOT NULL)",
+  );
+  for (const m of entries) {
+    const app = m.app.toLowerCase();
+    const fingerprint = keccak256(
+      toHex(
+        JSON.stringify({
+          app,
+          chainId: m.chainId,
+          adapter: m.adapter.toLowerCase(),
+          market: m.market.toLowerCase(),
+          vault: m.vault.toLowerCase(),
+          pressureSigner: m.pressureSigner.toLowerCase(),
+          startBlock: BigInt(m.startBlock).toString(),
+        }),
+      ),
+    );
+    await db.query(
+      "INSERT INTO rooms_finance_bindings(app,fingerprint) VALUES($1,$2) ON CONFLICT DO NOTHING",
+      [app, fingerprint],
+    );
+    const row = (
+      await db.query(
+        "SELECT fingerprint FROM rooms_finance_bindings WHERE app=$1",
+        [app],
+      )
+    ).rows[0];
+    if (row?.fingerprint !== fingerprint)
+      throw new Error(
+        "Rooms finance bindings changed. Preserve the original manifest and pending journal.",
+      );
+  }
+}
 export async function loadRoomsFinance() {
   const file = process.env.ROOMS_FINANCE_MANIFEST;
   const entries: RoomsFinanceManifest[] = file
@@ -66,5 +112,10 @@ export async function loadRoomsFinance() {
       data: encodeFunctionData({ abi, functionName: r.functionName, args }),
     };
   };
-  return { entries, find, encode };
+  return {
+    entries,
+    find,
+    encode,
+    bind: (db: Pick<Pool, "query">) => bindRoomsFinance(db, entries),
+  };
 }
