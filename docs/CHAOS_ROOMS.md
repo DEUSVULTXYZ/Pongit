@@ -1,6 +1,6 @@
 # Chaos rooms on Monad Testnet
 
-**Release status, 8 September 2026: activation blocked by hosted recovery.** The rules-4 contract and financial instances below are deployed. Real betting, pressure, native payouts and the three-browser Chaos flow passed after the operator restored epoch 2 at 14:31 UTC. The next renewal succeeded onchain, but the hosted node returned HTTP 502 again on epoch 3. Classic production admissions were restored instead of leaving users blocked. The active public manifest remains rules 3.
+**Release status, 8 September 2026: activation blocked by hosted runtime failure.** The rules-4 contract and financial instances below are deployed. Real betting, pressure, native payouts and the three-browser Chaos flow passed on epoch 2. Epoch 3 recovered at 21:06 UTC and passed the rating-preservation gate, but its first friendly Classic browser duel encountered state-read errors, followed by HTTP 502. Classic admissions are restored and the public manifest remains rules 3. See the [latest incident and request IDs](INTERLUDE_RUNTIME_INCIDENT_2026-09-08.md).
 
 Rules 4 adds Classic and Chaos to ranked matchmaking, invitations and eight-member rooms. Invitations and shared rooms remain friendly. Classic inherits the previous rooms ratings; Chaos starts at 1000. V4 games, balances, markets and tournaments remain separate.
 
@@ -53,7 +53,7 @@ Preserve all accepted finance manifests, tables and journals across rollback. Ne
 
 Private VPS checks on 8 September include 10,000 differential physics cases per mode, 160 Solidity tests, pressure signatures, eight-member rotation, crossed invitations, two simultaneous games and admission of a waiting third. Three real Monad bets changed the favourite's height to 74.304 units at the next rally. After the actual one-hour challenge window, disconnected winning beneficiaries received exactly 0.008 and 0.002 MON; the losing position received zero. No beneficiary signed to receive. A virtual-passkey browser check separately credited and withdrew 0.02 MON, with fresh owner validation for each spend.
 
-After the hosted engine recovered, the private two-player/spectator browser flow passed: Chaos selection, invitations, automatic spectator entry, responsive controls, F5 session restoration, market restrictions and result dialogs. The three home actions fit at 360 by 640 pixels. A second renewal's onchain transactions passed, but its live-epoch and browser checks did not run because the node was unreachable. Public rollout remains gated. The [machine-readable evidence](validation/chaos-2026-09-08.json) records measurements and public transaction hashes without private credentials.
+After epoch 2 recovered, the private two-player/spectator browser flow passed: Chaos selection, invitations, automatic spectator entry, responsive controls, F5 session restoration, market restrictions and result dialogs. The three home actions fit at 360 by 640 pixels. Epoch 3 later passed the live-epoch and ELO gate, but its browser run failed during the first duel and the hosted endpoint returned 502. Public rollout remains gated. The [machine-readable evidence](validation/chaos-2026-09-08.json) records measurements and public transaction hashes without private credentials.
 
 ### Hosted recovery and rating-preserving cutover
 

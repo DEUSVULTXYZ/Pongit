@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-09-08T15:48:09.607217+00:00",
+  "checkedAt": "2026-09-08T21:19:04.814395+00:00",
   "network": "Monad Testnet",
   "chainId": 10143,
-  "releaseStatus": "blocked_on_epoch_3_hosted_recovery",
+  "releaseStatus": "blocked_on_epoch_3_runtime_failure",
   "publicActivated": false,
   "app": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb",
   "validation": {
@@ -494,11 +494,49 @@
       "originalBindingPreserved": true,
       "transactionsSubmitted": 0
     },
-    "postEpoch3Browser": "not run: hosted node unreachable",
+    "postEpoch3Browser": {
+      "passed": false,
+      "startedAt": "2026-09-08T21:08:52.664Z",
+      "failure": "State decoding failed after both participants entered their friendly Classic match, followed by hosted HTTP 502; spectator entry timed out.",
+      "matchId": "67321422880844307555796005074453358195302609607921649515001282279798502252190",
+      "financialWrites": false
+    },
     "secretScan": {
       "stagedBytes": 247360,
       "publishedRangeBytes": 1571135,
       "findings": 0
+    },
+    "epoch3ReadOnlyGate": {
+      "checkedAt": "2026-09-08T21:07:06.067Z",
+      "passed": true,
+      "app": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb",
+      "epoch": "3",
+      "baseBlock": "60796444",
+      "previousLastCommitAt": "1788875546",
+      "liveActive": 0,
+      "publishedActive": 0,
+      "pendingDiffs": 0,
+      "ratings": [
+        {
+          "player": "0x1925749fd3f407f5e3881743de2e4790ecb24c12",
+          "elo": 986,
+          "played": 2,
+          "wins": 1
+        },
+        {
+          "player": "0xceac895435bd00de6abb8e514f22af1cb614d428",
+          "elo": 1014,
+          "played": 2,
+          "wins": 1
+        }
+      ]
+    },
+    "rankingRecovery": {
+      "typescriptPassed": true,
+      "existingRoomTestsPassed": 4,
+      "postgresqlScenariosPassed": 5,
+      "fixtureWritesRolledBack": true,
+      "productionDeployed": false
     }
   },
   "transactions": {
@@ -540,11 +578,12 @@
     "onchainRenewal": "confirmed",
     "controlPlane": "live",
     "httpStatus": 502,
-    "lastHttpCheckAt": "2026-09-08T15:46:07Z",
-    "requestId": "UEYeCL0YTxKlt7A_WVMv1w",
+    "lastHttpCheckAt": "2026-09-08T21:17:19Z",
+    "requestId": "75CNyqXwRve6hBA3nTga3g",
     "epoch2RecoveryAt": "2026-09-08T14:31:00Z",
-    "classicAdmissions": "restored after repeated hosted startup failure",
-    "ratingGateRequiredAgain": true
+    "classicAdmissions": "restored; config online and admission true",
+    "ratingGateRequiredAgain": true,
+    "epoch3RecoveryAt": "2026-09-08T21:06:58Z"
   },
   "limits": [
     "Testnet VPS attests paid pressure; it cannot pick a winner.",

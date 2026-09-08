@@ -32,6 +32,7 @@ import { chaosOfferTypes } from "../../shared/rooms-chaos";
 import {createRoomsFinance} from "./rooms-finance";
 import {loadRoomsFinance} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
+import {roomsRankingCandidates} from "./rooms-ranking";
 import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
 import {
@@ -1042,19 +1043,15 @@ export async function createRoomsCoordinator(o: Options) {
         if (!publicLadder || publicLadderMode !== mode || Date.now() - publicLadderAt > 10000) {
           publicLadderAt = Date.now(); publicLadderMode=mode;
           publicLadder = (async () => {
-        const players = (
-          await db.query(
-            "SELECT a AS player FROM il_results WHERE app=ANY($1::text[]) AND verified AND ranked AND mode=$2 UNION SELECT b FROM il_results WHERE app=ANY($1::text[]) AND verified AND ranked AND mode=$2",
-            [[app,...(chaosEnabled && mode===0 && manifest.previousClassic ? [String(manifest.previousClassic).toLowerCase()] : [])],mode],
-          )
-        ).rows.map((x) => x.player);
+        const players = await roomsRankingCandidates(db,
+          [app,...(chaosEnabled && mode===0 && manifest.previousClassic ? [String(manifest.previousClassic).toLowerCase()] : [])],mode);
         const items = [];
         for (const player of players) {
           const [live,published] = await Promise.all([
             online ? readRating(player,mode).catch(()=>null) : Promise.resolve(null),
             readRating(player,mode,true)
           ]);
-          items.push({ player, live, published });
+          if ((live || published).played > 0) items.push({ player, live, published });
         }
         const profiles = await profileNames(players);
         return {
