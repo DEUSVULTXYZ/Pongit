@@ -39,5 +39,7 @@ contract RoomsReleaseTest is Test {
   Types.SessionGrant memory grant;grant.anyFunction=true;
   vm.expectRevert(Delegatable.PrivilegedSelector.selector);g.withSession(grant,bytes(""),abi.encodeCall(g.closeEngine,()));
   vm.expectRevert(Delegatable.PrivilegedSelector.selector);g.withSession(grant,bytes(""),abi.encodeCall(g.renewEngine,()));
+  vm.expectRevert(Delegatable.PrivilegedSelector.selector);g.withSession(grant,bytes(""),abi.encodeCall(g.syncDelegatedSlot,(bytes32(0),bytes32(uint256(1)))));
+  vm.expectRevert(Delegatable.OnlyHub.selector);g.syncDelegatedSlot(bytes32(0),bytes32(uint256(1)));
  }
 }

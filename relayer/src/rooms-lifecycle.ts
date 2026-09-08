@@ -14,6 +14,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
 import type { Pool, PoolClient } from "pg";
 import { roomsLifecycleHubAbi as hubAbi } from "../../shared/abi-rooms-lifecycle";
+import {readHubDelegation} from "../../shared/rooms-hub";
 import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
 import { requestHostedRenewal } from "./rooms-hosted-renewal";
 const appAbi = parseAbi([
@@ -177,12 +178,7 @@ export async function roomsLifecycle(o: {
         if (r.status !== "success")
           throw new Error("Operator transaction reverted; review required");
       }
-      const d = await o.base.readContract({
-        address: o.hub,
-        abi: hubAbi,
-        functionName: "delegationOf",
-        args: [o.app, zeroHash],
-      });
+      const d = await readHubDelegation(o.base, o.hub, o.app);
       if (d.epoch > 0n)
         await o.db.query("UPDATE il_lifecycle SET epoch=$2 WHERE app=$1", [
           o.app,

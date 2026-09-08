@@ -99,6 +99,8 @@ library Types {
     ///        entries and checks they fold to this root, so the list is on the chain rather
     ///        than served later from the node's disk. This is what makes the log the validator
     ///        posted the log it signed for.
+    /// @param stateRoot Merkle root of this batch's post-state (`hashOverlay`). Checked at
+    ///        commit, not merely recorded.
     struct Batch {
         address app;
         bytes32 partition;
@@ -109,9 +111,9 @@ library Types {
     }
 
     /// @notice One transaction of a batch, as the node executed it.
-    /// @dev The hash rather than the signed bytes, because that is all the hub needs to identify
-    ///      it and the bytes are self-authenticating: anyone handed them can check they hash to
-    ///      this. Keeping calldata small matters — a challenge submits the whole batch.
+    /// @dev The fold identity is the hash, not the signed bytes: `hashTxLog` and `txRoot` stay
+    ///      compact, and `BatchLog` does not re-emit giant blobs. The EIP-2718 bytes travel
+    ///      beside this as `commit`'s `raws` array, checked with `keccak256(raws[i]) == txHash`.
     /// @param txHash keccak256 of the EIP-2718 encoding, which is the transaction's own hash
     /// @param blockNumber the ephemeral block it ran in
     /// @param execTimestamp the clock it ran under, which is *not* the batch's. Blocks close
@@ -151,11 +153,9 @@ library Types {
     }
 
     /// @notice An open dispute, in full, so anybody can redo the work behind it.
-    /// @dev The hub cannot re-execute the EVM, so it cannot decide which of the two roots below
-    ///      is right — that is still a resolver's call. What it can do is refuse to let the
-    ///      question be vague. Both numbers are on record before anybody rules, so the
-    ///      resolver's answer is reproducible by anyone holding the batch's transactions, and a
-    ///      resolver that rules against the arithmetic is visibly doing so.
+    /// @dev The hub cannot re-execute the EVM. A fraud challenge first bisects the posted log
+    ///      down to one transaction; algebraic one-steps are checked on chain. A committee
+    ///      vote is only for the leaf where both traces are well-formed and still disagree.
     /// @param batchIndex the batch under dispute. Its transactions are fixed by
     ///        `batchTxRoot(app, partition, batchIndex)`, so what is being replayed is not in
     ///        question either.
@@ -172,6 +172,31 @@ library Types {
         uint256 bond;
         uint64 deadline;
         ChallengeKind kind;
+    }
+
+    /// @notice Interactive search for the first transaction the two traces disagree on.
+    /// @dev The hub cannot execute the EVM. What it *can* derive is: a midpoint, a one-step
+    ///      overlay transition, a timeout on the player whose clock is running. The committee
+    ///      only votes when both sides posted a well-formed one-step from the same prefix
+    ///      to different roots — a real execution disagreement, not a vague batch root.
+    enum BisectPhase {
+        None,
+        AwaitMid,
+        AwaitPick,
+        AwaitProve,
+        AwaitCounter,
+        Vote
+    }
+
+    struct BisectGame {
+        uint32 start;
+        uint32 end;
+        uint32 mid;
+        uint32 txCount;
+        BisectPhase phase;
+        bytes32 startRoot;
+        bytes32 endRoot;
+        bytes32 midRoot;
     }
 
     /// @notice A user's signed permission for a key it does not control to act as it.

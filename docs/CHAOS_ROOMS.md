@@ -1,6 +1,8 @@
 # Chaos rooms on Monad Testnet
 
-**Release status, 8 September 2026: activation blocked by hosted runtime failure.** The rules-4 contract and financial instances below are deployed. Real betting, pressure, native payouts and the three-browser Chaos flow passed on epoch 2. Epoch 3 recovered at 21:06 UTC and passed the rating-preservation gate, but its first friendly Classic browser duel encountered state-read errors, followed by HTTP 502. Classic admissions are restored and the public manifest remains rules 3. See the [latest incident and request IDs](INTERLUDE_RUNTIME_INCIDENT_2026-09-08.md).
+**Release status, 9 September 2026: activation blocked at hosted publication.** PONGIT clock recovery and session-read handling are corrected and the CLI is updated to 0.1.4. A new isolated candidate accepted 47 inputs before its first batch reverted. A separate one-slot counter reproduces the same publication failure without gameplay or betting. Public Classic and the financial bindings below remain unchanged. See the [recovery fixes, minimal reproduction and release gate](CHAOS_RECOVERY_2026-09-09.md).
+
+The contract and financial instances below belong to the earlier candidate. Their real betting, pressure, native payouts and three-browser Chaos flow passed on epoch 2. The new recovery app `0x526ef5822169ff21da4e5323d36426df0462dfcb` is **unreleased and has no financial bindings**. Never point its jobs at the earlier candidate's market or reinterpret an old sender journal for a new application.
 
 Rules 4 adds Classic and Chaos to ranked matchmaking, invitations and eight-member rooms. Invitations and shared rooms remain friendly. Classic inherits the previous rooms ratings; Chaos starts at 1000. V4 games, balances, markets and tournaments remain separate.
 

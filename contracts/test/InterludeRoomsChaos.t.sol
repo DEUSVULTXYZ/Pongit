@@ -259,6 +259,91 @@ contract InterludeRoomsChaosTest is Test {
         g.input(1, 0, 3, 139);
     }
 
+    function testSnapshotSurvivesReadHeadBeforeMatchStart() public {
+        start(1, a, b, false);
+        vm.roll(99);
+        (bool ok, bytes memory data) = address(g).staticcall(abi.encodeCall(g.getSnapshot, (1)));
+        assertTrue(ok, "a stale read must not return a Panic payload instead of a snapshot");
+        assertGt(data.length, 36);
+        (,,,,,,, uint256 head, uint256 clock,,,, PhysicsV2.State memory s) = g.getSnapshot(1);
+        assertEq(head, 99);
+        assertEq(clock, 0);
+        assertEq(s.t, 0);
+    }
+
+    function testReadClockNeverPrecedesProcessedState() public {
+        chaos(1, a, b, false);
+        vm.roll(120);
+        g.tick(1);
+        vm.roll(110);
+        (,,,,,,,, uint256 clock,,,, PhysicsV2.State memory s) = g.getSnapshot(1);
+        assertEq(clock, s.t);
+        assertEq(s.t, 200000);
+        // A reset execution clock resumes from processed state. It does not replay
+        // the rally, reset the nonce or wait for the old process height to catch up.
+        vm.prank(a);
+        g.input(1, 1, 1, 150);
+        assertEq(state(1).t, 200000);
+        assertEq(state(1).left, 288000000);
+        vm.roll(121);
+        vm.prank(a);
+        g.input(1, 0, 2, 150);
+        (,,,,,,,,, uint256 nonceA,,,) = g.getSnapshot(1);
+        assertEq(nonceA, 2);
+        assertEq(state(1).t, 310000);
+        assertEq(state(1).left, 307800000);
+    }
+
+    function testRepeatedEngineRestartsKeepClockRevisionAndScores() public {
+        start(1, a, b, false);
+        start(2, c, d, false);
+        vm.roll(150);
+        g.tick(1);
+        PhysicsV2.State memory before_ = state(1);
+        vm.roll(15);
+        vm.prank(a);
+        g.input(1, 0, 1, 100);
+        assertEq(state(1).t, before_.t);
+        assertEq(state(1).x, before_.x);
+        assertEq(state(1).scoreA, before_.scoreA);
+        ( ,uint256 revision,,,,,,,,,,,) = g.getSnapshot(1);
+        assertEq(revision, 4);
+        vm.roll(25);
+        g.tick(1);
+        assertEq(state(1).t, 600000);
+        vm.roll(1);
+        g.tick(1);
+        assertEq(state(1).t, 600000);
+        vm.roll(11);
+        g.tick(1);
+        assertEq(state(1).t, 700000);
+        assertEq(state(2).t, 0, "other arena is not advanced by clock recovery");
+        vm.prank(a);
+        vm.expectRevert(PongInterludeRoomsChaos.StaleInput.selector);
+        g.input(1, 0, 1, 100);
+        vm.prank(a);
+        g.concede(1);
+        assertEq(phase(1), 3);
+        assertEq(g.activeCount(), 1);
+    }
+
+    function testRestartDuringChaosPauseStillRequiresFreshPressure() public {
+        chaos(1, a, b, false);
+        PhysicsV2.State memory paused = pause(1);
+        vm.roll(1);
+        g.tick(1);
+        assertEq(state(1).t, paused.t);
+        assertEq(state(1).resumeAt, paused.resumeAt);
+        vm.roll(302);
+        g.tick(1);
+        assertTrue(state(1).awaitingServe);
+        checkpoint(1, paused, 2e15, 0);
+        g.tick(1);
+        assertFalse(state(1).awaitingServe);
+        assertEq(state(1).t, uint256(paused.t) + 3010000);
+        assertEq(state(1).halfA, 36e6);
+    }
+
     function testBothTerminalStatesFitCommitBudget() public {
         vm.record();
         start(1, a, b, true);

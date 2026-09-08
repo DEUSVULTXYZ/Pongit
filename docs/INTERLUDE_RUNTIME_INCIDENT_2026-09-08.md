@@ -1,5 +1,7 @@
 # Hosted recovery followed by failure during the first duel
 
+**Update:** the [subsequent recovery investigation](CHAOS_RECOVERY_2026-09-09.md) identifies and fixes the PONGIT clock regression. A new CLI 0.1.4 candidate then fails at batch publication after 47 accepted inputs. A separate one-slot counter reproduces the same commit relay revert without Pong or betting. The observations below remain the earlier incident record; the later report supersedes its unresolved clock hypothesis and current release status.
+
 All times are UTC on 8 September 2026. This supersedes the earlier report that both endpoints were continuously unreachable.
 
 ## Observations

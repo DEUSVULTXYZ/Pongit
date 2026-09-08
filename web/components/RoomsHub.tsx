@@ -44,6 +44,7 @@ import {
   type LabSnapshot,
 } from "../lib/interlude-lab";
 import type { LobbyRoom, LobbyOffer } from "../../shared/rooms";
+import {readEngineSnapshot} from "../../shared/engine-snapshot";
 type Profile = {
   player: string;
   handle?: string;
@@ -200,6 +201,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   const [preview, setPreview] = useState<any>(null),
     [entry, setEntry] = useState(roomId),
     [showResultKey, setShowResultKey] = useState(0);
+  const [syncError, setSyncError] = useState("");
   const client = useRef<RoomsClient | null>(null),
     session = useRef<RoomsSession | null>(null),
     lane = useRef<LabLane | null>(null),
@@ -222,9 +224,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       !!offer && [offer.a, offer.b].includes(account?.toLowerCase() || "");
   const active =
       snapshot?.phase === 2 && room?.offer?.id === snapshot.id.toString(),
-    canPlay = !!active && side >= 0 && ready && online && !busy && !panel;
+    canPlay = !!active && side >= 0 && ready && online && !busy && !panel && !syncError;
   const playable = useRef(false);
   playable.current = canPlay;
+  const onlineRef = useRef(online);
+  onlineRef.current = online;
   lobbyRef.current = lobby;
   const name = (p: string) =>
     lobby.profiles.find((x) => x.player === p.toLowerCase())?.handle ||
@@ -233,9 +237,12 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   const receive = (s: LabSnapshot, ms?: number) => {
     if (!alive.current || s.id.toString() !== matchRef.current) return;
     const old = snapshotRef.current;
-    if (old?.id === s.id && (s.revision < old.revision || s.head < old.head))
+    // A process restart may lower the block head without erasing accepted state.
+    // Revision remains the ordering authority across that recovery.
+    if (old?.id === s.id && (s.revision < old.revision || s.revision === old.revision && s.head < old.head))
       return;
     snapshotRef.current = s;
+    setSyncError("");
     setSnapshot(s);
     if (ms !== undefined) setLatency(Math.round(ms));
     if (s.phase !== 2) {
@@ -253,9 +260,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   };
   const read = async () =>
     labSnapshot(
-      (await client.current!.read("getSnapshot", [
-        BigInt(matchRef.current || "0"),
-      ])) as readonly unknown[],
+      await readEngineSnapshot(client.current!, BigInt(matchRef.current || "0")),
     );
   function move(d: number) {
     if (d !== 0 && !playable.current) return;
@@ -522,6 +527,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     lane.current?.stop();
     snapshotRef.current = null;
     setSnapshot(null);
+    setSyncError("");
     if (!id) return;
     let done = false,
       pollTimer: ReturnType<typeof setTimeout>;
@@ -532,13 +538,17 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         account,
         receive,
         failed,
+        () => {
+          setSyncError("Synchronizing game state. Your session is still connected.");
+          setDirection(0);
+        },
       );
     const poll = async () => {
       try {
         const s = await read();
         if (!done) receive(s);
       } catch {
-        if (!done) setOnline(false);
+        if (!done) setSyncError("Synchronizing game state. Your session is still connected.");
       }
       if (!done) pollTimer = setTimeout(poll, document.hidden ? 2000 : 250);
     };
@@ -547,7 +557,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       if (
         !done &&
         !document.hidden &&
-        online &&
+        onlineRef.current &&
         ready &&
         snapshotRef.current?.phase === 2 &&
         labSide(snapshotRef.current, account) >= 0
@@ -563,7 +573,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       clearInterval(pump);
       lane.current?.stop();
     };
-  }, [offer?.id, ready, account, online]);
+  }, [offer?.id, ready, account]);
   useEffect(() => {
     if (entry)
       void api(`/interlude/rooms/${entry}`)
@@ -849,6 +859,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           )}
         </div>
       )}
+      {syncError && <div className="rooms-notice" role="status">{syncError}</div>}
       {lobby.inbox.length > 0 && !entry && (
         <aside className="rooms-invitation" role="status">
           <Avatar

@@ -33,6 +33,7 @@ import {createRoomsFinance} from "./rooms-finance";
 import {loadRoomsFinance} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
 import {roomsRankingCandidates} from "./rooms-ranking";
+import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snapshot";
 import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
 import {
@@ -578,14 +579,14 @@ export async function createRoomsCoordinator(o: Options) {
         )
           continue;
         const id = r.offer.id;
-        let s: any = await client.read("getSnapshot", [BigInt(id)]);
+        let s: any = await readEngineSnapshot(client, BigInt(id));
         if (s[2] === 2n && s[8] - s[12].t > 500000n) {
           await publicTick(id);
-          s = await client.read("getSnapshot", [BigInt(id)]);
+          s = await readEngineSnapshot(client, BigInt(id));
         }
         if (s[2] === 1n && BigInt(Math.floor(Date.now() / 1000)) > s[11]) {
           await publicTick(id, true);
-          s = await client.read("getSnapshot", [BigInt(id)]);
+          s = await readEngineSnapshot(client, BigInt(id));
         }
         observed.set(id, s);
         if(finance && s[2]===2n && s[12].mode===1 && s[12].awaitingServe){
@@ -650,7 +651,7 @@ export async function createRoomsCoordinator(o: Options) {
             if (live[i] !== row.hash) {
               await restoreContestedMatch(
                 row.id,
-                await client.read("getSnapshot", [BigInt(row.id)]),
+                await readEngineSnapshot(client, BigInt(row.id)),
               );
               await db.query("DELETE FROM il_results WHERE app=$1 AND id=$2", [
                 app,
@@ -859,6 +860,7 @@ export async function createRoomsCoordinator(o: Options) {
       });
       await notify();
     } catch (e) {
+      if(e instanceof EngineSnapshotError) console.warn("Engine snapshot failed",json({app:e.app,matchId:e.matchId,returnData:e.returnData}));
       if(process.env.ROOMS_PRIVATE_FINANCE_TEST === "true") console.warn("Private coordinator check:",String((e as any).details || (e as any).cause?.details || (e as Error).message).split("\n")[0].slice(0,300));
       admissionHealthy = false;
       if (Date.now() - lastEngineSeen > 10000) online = false;
@@ -1389,7 +1391,7 @@ export async function createRoomsCoordinator(o: Options) {
               ![offer.a, offer.b].includes(p)
             )
               throw new Error("This duel is no longer available.");
-            const snap: any = await client.read("getSnapshot", [BigInt(offer.id)]);
+            const snap: any = await readEngineSnapshot(client, BigInt(offer.id));
             if (snap[2] === 2n || offer.status === "active")
               throw new Error("The match has started. Resume or concede.");
             if (path.endsWith("back")) {
@@ -1409,9 +1411,7 @@ export async function createRoomsCoordinator(o: Options) {
           }
           if (path === "/interlude/rooms/leave") {
             if (r.offer && [r.offer.a, r.offer.b].includes(p)) {
-              const snap: any = await client.read("getSnapshot", [
-                BigInt(r.offer.id),
-              ]);
+              const snap: any = await readEngineSnapshot(client, BigInt(r.offer.id));
               if (snap[2] === 2n)
                 throw new Error("Concede your active match before leaving.");
               if (snap[2] === 1n)

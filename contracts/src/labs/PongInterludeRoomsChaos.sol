@@ -249,14 +249,27 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
     }
 
     function _advance(uint256 id, bool mayResume) private returns (bool complete) {
-        uint256 start = uint64(_get(id, 2));
-        if (block.number < start) revert InvalidMatch();
-        uint256 target = (block.number - start) * TICK_US;
+        uint256 times = _get(id, 2);
+        uint256 start = uint64(times);
+        PhysicsV2.State memory s = _state(id);
+        uint256 target = uint64(times >> 192);
+        if (block.number >= start) target += (block.number - start) * TICK_US;
+        if (block.number < start || target < s.t) {
+            // A hosted process may restart its block counter while retaining the
+            // overlay. Resume from processed game time, never replay time or erase
+            // a result. The block context comes from execution, not player input.
+            // Packing the anchor into the existing clock/revision word consumes
+            // no additional publication slots. Retain the ticket expiry and revision.
+            require(block.number <= type(uint64).max, "engine block overflow");
+            times = (times & ((uint256(type(uint128).max)) << 64))
+                | uint64(block.number) | (uint256(s.t) << 192);
+            _set(id, 2, times);
+            target = s.t;
+        }
         if (target > 30 minutes * 1_000_000) {
             _finish(id, 4, address(0));
             return true;
         }
-        PhysicsV2.State memory s = _state(id);
         if (s.mode == 1 && s.awaitingServe) {
             // Only tick consults the transport. Releases and concession must remain
             // available even if a checkpoint implementation rejects its own data.
@@ -442,9 +455,10 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
     }
 
     function _publish(uint256 id) private {
+        require(uint64(_get(id, 2) >> 128) < type(uint64).max, "revision overflow");
         uint256 times = _get(id, 2) + (uint256(1) << 128);
         _set(id, 2, times);
-        emit Snapshot(id, times >> 128, _phase(id), abi.encode(_state(id)));
+        emit Snapshot(id, uint64(times >> 128), _phase(id), abi.encode(_state(id)));
     }
 
     function ratingChange(uint256 id)
@@ -495,16 +509,25 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         address a = address(uint160(m));
         address b = address(uint160(_get(id, 1)));
         uint256 w = (m >> 166) & 3;
+        // A recovering node can serve persisted storage with an older read head.
+        // Keep that state readable without inventing a later block number. The
+        // next write reanchors the game clock if the process reset its counter.
+        // Base-chain reads always expose published game time.
+        uint256 clock = s.t;
+        if (phase == 2 && isEphemeral() && block.number >= uint64(t)) {
+            uint256 elapsed = uint64(t >> 192) + (block.number - uint64(t)) * TICK_US;
+            if (elapsed > clock) clock = elapsed;
+        }
         return (
             id,
-            t >> 128,
+            uint64(t >> 128),
             phase,
             a,
             b,
             b,
             w == 1 ? a : w == 2 ? b : address(0),
             block.number,
-            phase == 2 && isEphemeral() ? (block.number - uint64(t)) * TICK_US : s.t,
+            clock,
             uint64(c >> 16),
             uint64(c >> 80),
             uint64(t >> 64),

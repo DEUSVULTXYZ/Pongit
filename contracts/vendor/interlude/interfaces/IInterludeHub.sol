@@ -45,6 +45,31 @@ interface IInterludeHub {
     event ChallengeResolved(
         address indexed app, bytes32 indexed partition, bytes32 claimedRoot, bool fraudConfirmed
     );
+    event ResolutionVoted(
+        address indexed app,
+        bytes32 indexed partition,
+        address indexed voter,
+        bytes32 claimedRoot,
+        bool fraudConfirmed,
+        uint8 votesFor,
+        uint8 threshold
+    );
+    event CommitteeSet(address indexed validator, address[] members, uint8 threshold);
+    event Bisected(
+        address indexed app,
+        bytes32 indexed partition,
+        uint32 start,
+        uint32 end,
+        uint32 mid,
+        bytes32 midRoot
+    );
+    event BisectionPicked(
+        address indexed app, bytes32 indexed partition, uint32 start, uint32 end, bool goLeft
+    );
+    event StepProven(address indexed app, bytes32 indexed partition, uint32 index, bytes32 endRoot);
+    event StepCountered(
+        address indexed app, bytes32 indexed partition, uint32 index, bytes32 counterRoot
+    );
     event ValidatorSlashed(address indexed validator, uint256 amount);
     event ChallengeTimedOut(address indexed app, bytes32 indexed partition);
     event StateUnwound(
@@ -72,10 +97,15 @@ interface IInterludeHub {
     // --- validators (bond once, publish terms once, serve many delegations) ---
     function register(Types.Terms calldata terms) external payable;
     function setTerms(Types.Terms calldata terms) external;
+    function setCommittee(address[] calldata members, uint8 threshold) external;
     function depositBond() external payable;
     function withdrawBond(uint256 amount) external;
     function bondOf(address validator) external view returns (uint256 bond, uint256 reserved);
     function termsOf(address validator) external view returns (Types.Terms memory);
+    function committeeOf(address validator)
+        external
+        view
+        returns (address[] memory members, uint8 threshold);
     function defaultValidator() external view returns (address);
 
     // --- called by the app ---
@@ -96,12 +126,15 @@ interface IInterludeHub {
     function resignDelegation(address app, bytes32 partition) external;
 
     // --- called by anyone ---
-    /// @param log the transactions `batch.txRoot` folds. Required: `hashTxLog(log)` must
-    ///        equal the root, so a validator cannot sign a root and withhold the list.
+    /// @param log the fold `batch.txRoot` commits to (hash, block, clock).
+    ///        Required: `hashTxLog(log)` must equal the root.
+    /// @param raws the EIP-2718 bytes each `log[i].txHash` is keccak of. Same length as
+    ///        `log`. Calldata is the publication; they are not re-emitted in `BatchLog`.
     function commit(
         Types.Batch calldata batch,
         Types.SlotDiff[] calldata diffs,
         Types.TxEntry[] calldata log,
+        bytes[] calldata raws,
         bytes calldata sig
     ) external;
 
@@ -112,17 +145,18 @@ interface IInterludeHub {
     function releaseStake(address app, bytes32 partition) external;
 
     /// @notice Dispute a batch by naming the state root replaying it actually produces.
-    /// @dev The claim cannot be checked by the hub, which never sees the transactions. It is
-    ///      required anyway: it makes the challenger say something falsifiable, and it is what
-    ///      the resolver must answer. `interlude-watcher` prints the value to pass here.
+    /// @dev The claim cannot be checked by the hub, which has the signed bytes from `commit`
+    ///      but cannot execute them. It is required anyway: it makes the challenger say
+    ///      something falsifiable, and it is what the resolver must answer.
+    ///      `interlude-watcher` prints the value to pass here.
     function challenge(address app, bytes32 partition, uint256 batchIndex, bytes32 claimedRoot)
         external
         payable;
 
     /// @param claimedRoot the claim being ruled on, which must be the one under dispute
     /// @param unwind diffs of each batch from the last commit back to the disputed one.
-    ///        Required when `fraudConfirmed` is true; empty otherwise. The hub checks each
-    ///        list against the diffs it applied, then writes `oldValue` back.
+    ///        Required when a fraud vote settles the dispute; empty on a vote that does
+    ///        not yet reach the threshold, and empty on dismiss.
     function resolveChallenge(
         address app,
         bytes32 partition,
@@ -130,6 +164,46 @@ interface IInterludeHub {
         bool fraudConfirmed,
         Types.SlotDiff[][] calldata unwind
     ) external;
+
+    function bisect(address app, bytes32 partition, bytes32 midRoot) external;
+    function pick(address app, bytes32 partition, bool goLeft) external;
+    function proveStep(
+        address app,
+        bytes32 partition,
+        Types.SlotDiff[] calldata prefix,
+        Types.SlotDiff[] calldata step
+    ) external;
+    function counterStep(
+        address app,
+        bytes32 partition,
+        Types.SlotDiff[] calldata prefix,
+        Types.SlotDiff[] calldata step
+    ) external;
+    function timeoutBisection(address app, bytes32 partition, Types.SlotDiff[][] calldata unwind)
+        external;
+    function bisectionOf(address app, bytes32 partition)
+        external
+        view
+        returns (Types.BisectGame memory);
+    function batchTxCount(address app, bytes32 partition, uint256 batchIndex)
+        external
+        view
+        returns (uint32);
+
+    function sessionCommittee(address app, bytes32 partition)
+        external
+        view
+        returns (address[] memory members, uint8 threshold);
+
+    function resolutionVote(address app, bytes32 partition, address voter)
+        external
+        view
+        returns (uint8);
+
+    function resolutionTally(address app, bytes32 partition)
+        external
+        view
+        returns (uint8 fraud, uint8 dismiss);
 
     function timeoutChallenge(address app, bytes32 partition) external;
 
@@ -146,11 +220,8 @@ interface IInterludeHub {
         external;
 
     /// @notice The window closed and nobody posted the log. Slash the validator and unwind.
-    function timeoutAvailability(
-        address app,
-        bytes32 partition,
-        Types.SlotDiff[][] calldata unwind
-    ) external;
+    function timeoutAvailability(address app, bytes32 partition, Types.SlotDiff[][] calldata unwind)
+        external;
 
     function withdrawPayout() external;
 
@@ -186,4 +257,14 @@ interface IInterludeHub {
 
     /// @notice The same fold `commit` stores. Empty is zero.
     function hashDiffs(Types.SlotDiff[] calldata diffs) external pure returns (bytes32);
+
+    /// @notice Merkle root of this batch's post-state. `commit` requires `batch.stateRoot`
+    ///         to equal this. Empty is zero.
+    function hashOverlay(Types.SlotDiff[] calldata diffs) external pure returns (bytes32);
+
+    /// @notice Last committed value for `slot` in this session's overlay, if the hub has one.
+    function overlayOf(address app, bytes32 partition, bytes32 slot)
+        external
+        view
+        returns (bytes32 value, bool present);
 }

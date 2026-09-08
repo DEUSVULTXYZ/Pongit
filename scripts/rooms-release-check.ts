@@ -35,18 +35,24 @@ const engine = createInterludeClient({
 });
 const expectedEpoch = BigInt(process.env.ROOMS_EXPECTED_EPOCH || "0");
 assert(expectedEpoch > 0n, "Set ROOMS_EXPECTED_EPOCH explicitly");
+const hubGetter = parseAbi(["function hub() view returns(address)"]);
+const [actualHub, previousHub] = await Promise.all([
+  base.readContract({address:m.app,abi:hubGetter,functionName:"hub"}),
+  base.readContract({address:m.previousClassic,abi:hubGetter,functionName:"hub"}),
+]);
+assert.equal(actualHub.toLowerCase(),m.hub.toLowerCase(),"Manifest hub differs from immutable application hub");
 const [status, current, previous] = await Promise.all([
   engine.status(),
   base.readContract({
     address: m.hub,
     abi: roomsLifecycleHubAbi,
-    functionName: "delegationOf",
+    functionName: "sessionOf",
     args: [m.app, zeroHash],
   }),
   base.readContract({
-    address: m.hub,
+    address: previousHub,
     abi: roomsLifecycleHubAbi,
-    functionName: "delegationOf",
+    functionName: "sessionOf",
     args: [m.previousClassic, zeroHash],
   }),
 ]);

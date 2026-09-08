@@ -255,6 +255,14 @@ abstract contract Delegatable is IDelegatableApp {
     }
 
     /// @inheritdoc IDelegatableApp
+    function syncDelegatedSlot(bytes32 slot, bytes32 value) external onlyHub {
+        if (DelegatedLayout.isReserved(slot)) revert ReservedSlot();
+        assembly {
+            sstore(slot, value)
+        }
+    }
+
+    /// @inheritdoc IDelegatableApp
     function onDelegationChanged(bytes32 partition, bool delegated) external onlyHub {
         DelegatedLayout.layout().locked[partition] = delegated;
     }
@@ -374,6 +382,7 @@ abstract contract Delegatable is IDelegatableApp {
         return selector == this.withSession.selector
             || selector == this.applyDelegatedDiffs.selector
             || selector == this.revertDelegatedDiffs.selector
+            || selector == this.syncDelegatedSlot.selector
             || selector == this.onDelegationChanged.selector
             || selector == this.delegateAll.selector || selector == this.delegateKey.selector
             || selector == this.delegateAllTo.selector || selector == this.delegateKeyTo.selector

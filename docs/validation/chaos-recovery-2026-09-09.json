@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "reviewedDate": "2026-09-09",
+  "timezone": "UTC",
+  "productionActivated": false,
+  "production": {
+    "game": "0xb3f9c323ffb8ec6a8cd7d06ae239bc3d7bebd59a",
+    "rulesVersion": 3,
+    "financialBindingsChanged": false
+  },
+  "tooling": {
+    "cli": "0.1.4",
+    "sdk": "0.1.1",
+    "nodeValidationMajor": 24
+  },
+  "candidate": {
+    "app": "0x526ef5822169ff21da4e5323d36426df0462dfcb",
+    "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+    "epoch": 1,
+    "basePin": 60869787,
+    "startedAt": "2026-09-08T21:51:43.389Z",
+    "finishedAt": "2026-09-08T21:51:49.318Z",
+    "passed": false,
+    "acceptedInputs": 47,
+    "targetInputs": 100,
+    "acceptedConsents": 4,
+    "financialTransactions": 0,
+    "pressureAttestations": 0,
+    "causes": [
+      {
+        "name": "InvalidInputRpcError",
+        "detail": "this session is over and the node is no longer accepting transactions: batch 1 could not be settled (commit relay failed: 502 Bad Gateway: {\"error\":\"execution reverted\"}); refusing further transactions so they are not promised a commit this node cannot make"
+      },
+      {
+        "name": "RpcRequestError",
+        "detail": "this session is over and the node is no longer accepting transactions: batch 1 could not be settled (commit relay failed: 502 Bad Gateway: {\"error\":\"execution reverted\"}); refusing further transactions so they are not promised a commit this node cannot make"
+      },
+      {
+        "detail": "this session is over and the node is no longer accepting transactions: batch 1 could not be settled (commit relay failed: 502 Bad Gateway: {\"error\":\"execution reverted\"}); refusing further transactions so they are not promised a commit this node cannot make"
+      }
+    ],
+    "afterRestart": {
+      "at": "2026-09-08T22:10:56.224Z",
+      "app": "0x526ef5822169ff21da4e5323d36426df0462dfcb",
+      "matches": [
+        {
+          "id": "2637564662478109669026766864810970038699075886075068261467484941464963211211",
+          "live": {
+            "phase": "0",
+            "revision": "0",
+            "head": "73323"
+          },
+          "published": {
+            "phase": "0",
+            "revision": "0"
+          }
+        },
+        {
+          "id": "107199619628101566719596702060128718601063056281494519789639841241130531844164",
+          "live": {
+            "phase": "0",
+            "revision": "0",
+            "head": "73338"
+          },
+          "published": {
+            "phase": "0",
+            "revision": "0"
+          }
+        }
+      ]
+    },
+    "runtimeBytes": 23833,
+    "runtimeLimit": 24576,
+    "maximumMeasuredPublicationDiffs": 49,
+    "publicationLimit": 64,
+    "financialBindings": []
+  },
+  "minimalProbe": {
+    "app": "0x6d5db79aef6f551319a867d881a019e017bd9263",
+    "node": "https://il-6d5db79aef6f5513-production.up.railway.app",
+    "startedAt": "2026-09-08T22:09:04.837Z",
+    "finishedAt": "2026-09-08T22:09:36.237Z",
+    "epoch": 1,
+    "basePin": 60871433,
+    "transaction": {
+      "hash": "0x35ce0648b36aaba4b5ddfb08e20e0c34f3db28004295ba8d32ff2c3be760d5be",
+      "latencyMs": 143.89621399999987
+    },
+    "liveValue": "1",
+    "publishedValue": "0",
+    "applicationCallbackSimulationPassed": true,
+    "callbackSimulationScope": "Monad eth_call from the actual hub to the application for one mapping diff. Not a complete signed hub commit.",
+    "health": {
+      "app": "0x6d5db79aef6f551319a867d881a019e017bd9263",
+      "base": {
+        "ageMs": 1931,
+        "ok": true
+      },
+      "chainId": 4242,
+      "commits": {
+        "denied": 0,
+        "err": 0,
+        "ok": 0
+      },
+      "committedBatches": 0,
+      "ephemeralBlock": 6349,
+      "epoch": 1,
+      "execTimestamp": 1788905374,
+      "halted": "batch 1 could not be settled (commit relay failed: 502 Bad Gateway: {\"error\":\"execution reverted\"}); refusing further transactions so they are not promised a commit this node cannot make",
+      "ok": false,
+      "pendingDiffs": 1,
+      "validator": "0xb28e684815b095ab5fb324214cfea63d76f3d691"
+    },
+    "passed": false,
+    "error": "Minimal counter was accepted live but was not published on Monad"
+  },
+  "validation": {
+    "solidity": {
+      "passed": 164,
+      "failed": 0
+    },
+    "typescript": {
+      "passed": 60,
+      "failed": 0,
+      "environment": "isolated VPS, Node 24"
+    },
+    "typecheck": "passed",
+    "nextProductionBuild": "passed against the existing public Classic manifest",
+    "physicsDifferential": "Earlier 10000 cases per mode are historical evidence; not rerun for this change.",
+    "newCandidateEndToEnd": "incomplete: game publication failed, minimal reproduction failed",
+    "productionDeployment": "not performed"
+  },
+  "rawEvidenceSha256": {
+    "recovery-smoke.json": "6e87bee8a252a118dde5b775236209bcb0e583061ef7377d40cc99ebb03bdff0",
+    "minimal-publication-smoke.json": "eb04b3a104dffabfc60d6bb0d76f68a6ab31f3de750b57ac07ac9ea41278a3a2",
+    "recovery-final-read.json": "3cfaec74c70a0b3c1b03e4433c5fcf1b06559e18e66e69b4cfd1e0b2fb95753c",
+    "recovery-final-contracts.txt": "72e1c67d0ba47d6f295160c557f06af8965fadf530158fe758f6b562544bd63e",
+    "recovery-vps-typescript.txt": "631e3cbd7f83b47f1ea0984775961fd34d6d590afb038003167ec35e2f46fab0"
+  },
+  "unresolved": "Exact EVM revert and commit payload unavailable. The failure reproduces without Pong physics, betting or the pressure bridge.",
+  "audits": {
+    "gitleaksVersion": "8.30.1",
+    "stagedTreeLeaks": 0,
+    "npmKnownVulnerabilities": 0,
+    "privateOffVpsBackup": "checksum verified",
+    "productionServicesChanged": false
+  }
+}
