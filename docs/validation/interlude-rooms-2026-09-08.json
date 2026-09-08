@@ -1,0 +1,108 @@
+{
+  "status": "release-candidate; public cutover blocked",
+  "date": "2026-09-08",
+  "app": "0xb3f9c323ffb8ec6a8cd7d06ae239bc3d7bebd59a",
+  "network": "Monad Testnet 10143 / Interlude 4242",
+  "contracts": {
+    "passed": 112,
+    "failed": 0,
+    "newRoomsTests": 15
+  },
+  "typescript": {
+    "passed": 40,
+    "failed": 0,
+    "typecheck": "passed"
+  },
+  "physics": {
+    "cases": 10000,
+    "mismatches": 0,
+    "rulesVersion": 3,
+    "seed": "0xc0ffee",
+    "checkedAt": "2026-09-07T23:38:28.889Z"
+  },
+  "integration": {
+    "checks": [
+      "Nine distinct signed sessions; nonce replay and cross-account cookie rejected",
+      "Contact isolation, add/remove, profile save",
+      "Idempotent creation, eight seats, full-room rejection, room/queue exclusivity",
+      "Both consents required, winner stays, loser to tail, host handover, refusal and rejoin",
+      "Crossed invitations resolve to one room",
+      "Targeted link reserved for recipient; one-sided acceptance expires without ELO and marks absent rival away",
+      "Two simultaneous isolated arenas, sequential commands, exact 1032/968 ELO, queued third admission"
+    ],
+    "latency": {
+      "count": 50,
+      "p50": 23.581449999997858,
+      "p95": 39.43566799999826,
+      "max": 40.57526399999915
+    },
+    "measurementOrigin": "isolated VPS, two concurrent arenas, SDK response only"
+  },
+  "browser": {
+    "engine": "Playwright Chromium",
+    "checks": [
+      "Three actions visible at 360x640",
+      "Mera PRF account creation, saved profile and preserved edit focus",
+      "Private WebSocket notifications",
+      "Accept invitation starts first duel without second click",
+      "Spectator automatically sees game and must accept their next turn",
+      "16:9 court, no footer below game",
+      "Keyboard release reaches engine",
+      "F5 without another passkey ceremony",
+      "VICTORY / DEFEAT with locked background"
+    ],
+    "viewports": [
+      {
+        "width": 360,
+        "height": 640
+      },
+      {
+        "width": 390,
+        "height": 844
+      },
+      {
+        "width": 768,
+        "height": 1024
+      },
+      {
+        "width": 1440,
+        "height": 1000
+      },
+      {
+        "width": 844,
+        "height": 390
+      }
+    ],
+    "pageErrors": [],
+    "networkErrors": [],
+    "passkeys": "virtual PRF authenticators; no physical device validation"
+  },
+  "recovery": {
+    "checks": [
+      "Authenticated cookie survives coordinator restart",
+      "Same operation UUID returns the original room after restart",
+      "Room participation restored without a new grant or duplicate creation",
+      "A previously observed engine receipt was marked uncertain while the coordinator was stopped",
+      "Recovery found the same receipt and did not allocate another maintenance transaction"
+    ],
+    "maintenanceJobsBefore": 2,
+    "maintenanceJobsAfter": 2,
+    "restoredDatabase": {
+      "operations": 39,
+      "results": 3,
+      "sessions": 18
+    }
+  },
+  "limitations": [
+    "Same-app delegation renewal and actual operator challenge/reversal remain unvalidated",
+    "GitHub publishing returns 403",
+    "No physical passkey devices or separate Firefox/Safari/Edge run",
+    "V4 contract regression tests pass; live financial signatures were not re-executed in this change"
+  ],
+  "security": {
+    "knownSecretOrHighConfidencePatternFindings": 0,
+    "historicalObjectsScanned": 1046,
+    "reviewedPatternMatches": "environment placeholders and documented local development fixtures",
+    "productionDependencyAdvisories": 0
+  }
+}

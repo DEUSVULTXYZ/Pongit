@@ -36,6 +36,8 @@
     "test:interlude": "forge test --root contracts --match-contract InterludeLabTest",
     "interlude:probe": "node scripts/interlude-probe.mjs",
     "abi:interlude": "tsx scripts/abi-interlude.ts",
+    "abi:rooms": "tsx scripts/abi-rooms.ts",
+    "test:rooms": "forge test --root contracts --match-contract InterludeRoomsTest && tsx --test tests/rooms.test.ts",
     "abi:v3": "tsx scripts/abi-v3.ts",
     "abi:v4": "tsx scripts/abi-v4.ts"
   },

@@ -5,9 +5,9 @@ import {searchDocs,type SearchEntry} from "../web/lib/docs-search";
 import docs from "../web/lib/docs.generated.json";
 test("documentation covers unique routes and finds phrases and recovery concepts",async()=>{
  const index=JSON.parse(await readFile(new URL("../web/public/search/docs-v1.json",import.meta.url),"utf8")) as SearchEntry[];
- assert.equal(docs.pages.length,25);assert.equal(new Set(docs.pages.map(p=>p.slug)).size,25);
- assert.ok(docs.pages.some(p=>p.slug==="playing/interlude-lab"));
- for(const [query,path] of [["payout","betting/payments"],["Interlude","technical/architecture"],["username avatar","account/profile"],["renew","getting-started/passkeys"],["nonce","technical/permissions"]])assert.ok(searchDocs(index,query).some(r=>r.href.includes(path)),query);
+ assert.ok(docs.pages.length>=26);assert.equal(new Set(docs.pages.map(p=>p.slug)).size,docs.pages.length);
+ assert.ok(docs.pages.some(p=>p.slug==="playing/interlude-lab"));assert.ok(docs.pages.some(p=>p.slug==="playing/rooms"));
+ for(const [query,path] of [["payout","betting/payments"],["Interlude","playing/rooms"],["username avatar","account/profile"],["renew","getting-started/passkeys"],["nonce","technical/permissions"]])assert.ok(searchDocs(index,query).some(r=>r.href.includes(path)),query);
  assert.deepEqual(searchDocs(index,"zzzxq-nothing-matches"),[]);assert.ok(searchDocs(index,"").length>0);
  assert.deepEqual(searchDocs(index,"<script>alert(1)</script>"),[]);
  for(const result of index){const [slug,hash]=result.href.slice(6).split("#"),page=docs.pages.find(p=>p.slug===slug);assert.ok(page);if(hash)assert.ok(page.headings.some(h=>h.id===hash));}

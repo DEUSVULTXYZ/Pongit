@@ -191,6 +191,48 @@
       ]
     },
     {
+      "slug": "playing/rooms",
+      "title": "Rooms & Interlude matchmaking",
+      "description": "Preview the three-choice arcade, private contacts and rotating shared cabinets.",
+      "group": "Playing",
+      "updated": "2026-09-08",
+      "keywords": [
+        "rooms",
+        "contacts",
+        "winner stays",
+        "Interlude",
+        "ranked",
+        "invite"
+      ],
+      "headings": [
+        {
+          "id": "three-ways-to-play",
+          "text": "Three ways to play",
+          "level": 2
+        },
+        {
+          "id": "accept-a-duel",
+          "text": "Accept a duel",
+          "level": 2
+        },
+        {
+          "id": "share-a-cabinet",
+          "text": "Share a cabinet",
+          "level": 2
+        },
+        {
+          "id": "contacts-and-recent-rivals",
+          "text": "Contacts and recent rivals",
+          "level": 2
+        },
+        {
+          "id": "rules-rankings-and-old-balances",
+          "text": "Rules, rankings and old balances",
+          "level": 2
+        }
+      ]
+    },
+    {
       "slug": "playing/chaos",
       "title": "Chaos",
       "description": "Understand how betting pressure changes the next rally.",

@@ -1,5 +1,6 @@
 import { initializeInputs, createInputs, sharesInputEstimate } from "./inputs";
 import {trafficBudget} from "./traffic";
+import {createRoomsCoordinator} from "./interlude-rooms";
 import {transitionGas} from "./transition-gas";
 import { initializePayouts, createPayoutWorker, payoutKey } from "./payouts";
 import "dotenv/config";
@@ -662,6 +663,7 @@ const handleSocial = socialRoutes({deployment,origin,profileChanged:()=>ladderCa
   sourceMatch:async(ref:string)=>{const [version,id]=ref.split(":"); const d=resolveDeployment(version as any,deployment);if(!/^\d+$/.test(id))throw new Error("Invalid match reference"); const m=await publicClient.readContract({address:d.game,abi:contractsFor(d).game,functionName:"getMatch",args:[BigInt(id)]}) as any; if(m.status!==3)throw new Error("Finish this match before requesting a rematch"); return {playerA:m.playerA.toLowerCase(),playerB:m.playerB.toLowerCase(),mode:m.mode||0,ranked:m.ranked??true}; }
 });
 const payoutWorker=createPayoutWorker({db:pool,deployment,client:publicClient,graphql,enqueue});
+const roomsCoordinator=await createRoomsCoordinator({db:pool,origin,body,send,graphql});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)
@@ -689,7 +691,7 @@ const server = createServer(async (req, res) => {
     else if (++rate.count > budget.limit) return send(res, { error: "Rate limit" }, 429);
     if (rates.size > 10000)
       for (const [key, r] of rates) if (r.until < Date.now()) rates.delete(key);
-    if (await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;
+    if (await roomsCoordinator?.route(req,res,path) || await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;
     if (req.method === "GET" && path === "/health") {
       const ok = chainHealthy && Date.now() - lastObserved < 15000;
       return send(
@@ -1253,7 +1255,7 @@ ws.on("connection", (socket, req) => {
     return;
   }
   socket.send(json({ type: "head", head, observedAt: lastObserved }));
-  socket.on("message",async raw=>{try {const m=JSON.parse(raw.toString());if(m.type!=="subscribe-social")return;const player=await authenticatedPlayer(req);if(player!==String(m.player).toLowerCase())throw new Error("account");socialSockets.set(socket,{req,player});socket.send(json({type:"inbox",player}));} catch {socket.send(json({type:"social-expired"}));}});
+  socket.on("message",async raw=>{try {const m=JSON.parse(raw.toString());if(m.type==="subscribe-rooms"){await roomsCoordinator?.subscribe(socket,req,String(m.player));return;}if(m.type!=="subscribe-social")return;const player=await authenticatedPlayer(req);if(player!==String(m.player).toLowerCase())throw new Error("account");socialSockets.set(socket,{req,player});socket.send(json({type:"inbox",player}));} catch {socket.send(json({type:"social-expired"}));}});
   socket.on("close",()=>socialSockets.delete(socket));
 });
 server.listen(Number(process.env.PORT || 4000), "0.0.0.0", () =>

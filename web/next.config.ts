@@ -3,6 +3,7 @@ import path from "node:path";
 import createMDX from "@next/mdx";
 import {readFileSync} from "node:fs";
 const interludeLab=JSON.parse(readFileSync(path.resolve("deployments/interlude-lab.json"),"utf8")) as {node:string};
+const interludeRooms=JSON.parse(readFileSync(path.resolve("deployments/interlude-rooms.json"),"utf8")) as {node:string};
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, ".."),
@@ -28,7 +29,7 @@ const nextConfig: NextConfig = {
               (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000") +
               " " +
               (process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000") +
-              " https://testnet-rpc.monad.xyz " + new URL(interludeLab.node).origin +
+              " https://testnet-rpc.monad.xyz " + new URL(interludeLab.node).origin + " " + new URL(interludeRooms.node).origin +
               "; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
           },
         ],

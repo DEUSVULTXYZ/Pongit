@@ -12,6 +12,8 @@ services:
     logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
     read_only: true
     tmpfs: [/tmp]
+    environment:
+      PONG_ROOMS_HOME: ${PONG_ROOMS_HOME:-false}
     security_opt: [no-new-privileges:true]
     depends_on: [relayer]
   relayer:
@@ -36,6 +38,8 @@ services:
       INDEXER_GRAPHQL_URL: http://hasura:8080/v1/graphql
       PORT: 4000
       TRUST_PROXY: "true"
+      INTERLUDE_COORDINATOR_KEY: ${INTERLUDE_COORDINATOR_KEY:-}
+      ROOMS_ADMISSION_ENABLED: ${ROOMS_ADMISSION_ENABLED:-false}
     volumes: [./deployments:/app/deployments:ro]
     read_only: true
     tmpfs: [/tmp]

@@ -4,50 +4,52 @@ import Page1 from "./getting-started/first-match.mdx";
 import Page2 from "./getting-started/passkeys.mdx";
 import Page3 from "./playing/classic.mdx";
 import Page4 from "./playing/interlude-lab.mdx";
-import Page5 from "./playing/chaos.mdx";
-import Page6 from "./playing/challenges.mdx";
-import Page7 from "./playing/rankings.mdx";
-import Page8 from "./playing/tournaments.mdx";
-import Page9 from "./playing/spectating.mdx";
-import Page10 from "./playing/replays.mdx";
-import Page11 from "./account/profile.mdx";
-import Page12 from "./account/notebook.mdx";
-import Page13 from "./account/balances.mdx";
-import Page14 from "./account/settings.mdx";
-import Page15 from "./betting/how-it-works.mdx";
-import Page16 from "./betting/payments.mdx";
-import Page17 from "./help/troubleshooting.mdx";
-import Page18 from "./help/faq.mdx";
-import Page19 from "./technical/architecture.mdx";
-import Page20 from "./technical/physics.mdx";
-import Page21 from "./technical/contracts.mdx";
-import Page22 from "./technical/permissions.mdx";
-import Page23 from "./technical/api.mdx";
-import Page24 from "./technical/operations.mdx";
+import Page5 from "./playing/rooms.mdx";
+import Page6 from "./playing/chaos.mdx";
+import Page7 from "./playing/challenges.mdx";
+import Page8 from "./playing/rankings.mdx";
+import Page9 from "./playing/tournaments.mdx";
+import Page10 from "./playing/spectating.mdx";
+import Page11 from "./playing/replays.mdx";
+import Page12 from "./account/profile.mdx";
+import Page13 from "./account/notebook.mdx";
+import Page14 from "./account/balances.mdx";
+import Page15 from "./account/settings.mdx";
+import Page16 from "./betting/how-it-works.mdx";
+import Page17 from "./betting/payments.mdx";
+import Page18 from "./help/troubleshooting.mdx";
+import Page19 from "./help/faq.mdx";
+import Page20 from "./technical/architecture.mdx";
+import Page21 from "./technical/physics.mdx";
+import Page22 from "./technical/contracts.mdx";
+import Page23 from "./technical/permissions.mdx";
+import Page24 from "./technical/api.mdx";
+import Page25 from "./technical/operations.mdx";
 export const articles:Record<string,typeof Page0>={
   "getting-started/welcome":Page0,
   "getting-started/first-match":Page1,
   "getting-started/passkeys":Page2,
   "playing/classic":Page3,
   "playing/interlude-lab":Page4,
-  "playing/chaos":Page5,
-  "playing/challenges":Page6,
-  "playing/rankings":Page7,
-  "playing/tournaments":Page8,
-  "playing/spectating":Page9,
-  "playing/replays":Page10,
-  "account/profile":Page11,
-  "account/notebook":Page12,
-  "account/balances":Page13,
-  "account/settings":Page14,
-  "betting/how-it-works":Page15,
-  "betting/payments":Page16,
-  "help/troubleshooting":Page17,
-  "help/faq":Page18,
-  "technical/architecture":Page19,
-  "technical/physics":Page20,
-  "technical/contracts":Page21,
-  "technical/permissions":Page22,
-  "technical/api":Page23,
-  "technical/operations":Page24,
+  "playing/rooms":Page5,
+  "playing/chaos":Page6,
+  "playing/challenges":Page7,
+  "playing/rankings":Page8,
+  "playing/tournaments":Page9,
+  "playing/spectating":Page10,
+  "playing/replays":Page11,
+  "account/profile":Page12,
+  "account/notebook":Page13,
+  "account/balances":Page14,
+  "account/settings":Page15,
+  "betting/how-it-works":Page16,
+  "betting/payments":Page17,
+  "help/troubleshooting":Page18,
+  "help/faq":Page19,
+  "technical/architecture":Page20,
+  "technical/physics":Page21,
+  "technical/contracts":Page22,
+  "technical/permissions":Page23,
+  "technical/api":Page24,
+  "technical/operations":Page25,
 };
