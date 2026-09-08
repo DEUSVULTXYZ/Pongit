@@ -57,6 +57,22 @@ export function Court({
   useEffect(() => {
     const el = canvas.current!;
     const ctx = el.getContext("2d")!;
+    // Paint all bevels inside the existing rectangles: appearance never enlarges a hitbox.
+    function prism(x: number, y: number, w: number, h: number, face: CanvasGradient | string, light: string, dark: string) {
+      const b = Math.min(2, w / 5, h / 5);
+      ctx.fillStyle = face;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = light;
+      ctx.fillRect(x, y, w, b);
+      ctx.fillRect(x, y, b, h);
+      ctx.fillStyle = dark;
+      ctx.fillRect(x + w - b, y + b, b, h - b);
+      ctx.fillRect(x + b, y + h - b, w - b, b);
+    }
+    const leftFace = ctx.createLinearGradient(22, 0, 34, 0);
+    leftFace.addColorStop(0, "#b9ffff"); leftFace.addColorStop(.4, "#8df5ff"); leftFace.addColorStop(1, "#4aa9c4");
+    const rightFace = ctx.createLinearGradient(990, 0, 1002, 0);
+    rightFace.addColorStop(0, "#e2c8ff"); rightFace.addColorStop(.4, "#c6a1ff"); rightFace.addColorStop(1, "#8763c0");
     const fontFamily=getComputedStyle(document.body).fontFamily;
     let previousSound:{vx:bigint;vy:bigint;score:number;time:number}|null=null;
     let frame = 0,
@@ -137,10 +153,8 @@ export function Court({
         if(p.side===0)yA=visualY;else yB=visualY;
         if(p.debug && Math.abs(visualY-confirmedY)>3){ctx.strokeStyle="#738497";ctx.strokeRect(p.side===0?22:990,confirmedY-half,12,2*half);}
       } else { visualY = null; livePaddle.reset(); }
-      ctx.fillStyle = "#8df5ff";
-      ctx.fillRect(22, yA - halfA, 12, halfA*2);
-      ctx.fillStyle = "#c6a1ff";
-      ctx.fillRect(990, yB - halfB, 12, halfB*2);
+      prism(22, yA - halfA, 12, halfA*2, leftFace, "#e0ffff", "#357787");
+      prism(990, yB - halfB, 12, halfB*2, rightFace, "#f3e8ff", "#67478b");
       if(s?.awaitingServe && !s.finished) {
         const remaining=Math.max(0,Number(s.resumeAt-p.clock)/1e6);
         ctx.fillStyle="#e5e1ff";ctx.textAlign="center";ctx.font=`30px ${fontFamily}`;
@@ -161,8 +175,7 @@ export function Court({
           12,
           12,
         );
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(Number(s.x) / 1e6 - 6, Number(s.y) / 1e6 - 6, 12, 12);
+        prism(Number(s.x) / 1e6 - 6, Number(s.y) / 1e6 - 6, 12, 12, "#f3fcff", "#fff", "#9eafb9");
       } else {
         ctx.strokeStyle = "#777";
         ctx.strokeRect(506, 282, 12, 12);

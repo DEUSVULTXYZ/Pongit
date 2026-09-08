@@ -9,6 +9,7 @@ import {
 } from "viem";
 import { monadTestnet } from "viem/chains";
 import { Court } from "./Court";
+import { CabinetModel } from "./CabinetModel";
 import { ArcadeAmbience, MusicCredit } from "./ArcadeAmbience";
 import { Avatar, AvatarPicker } from "./Avatar";
 import { Dialog } from "./Dialog";
@@ -886,36 +887,36 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           <h1>Bring a rival.</h1>
           <div className="rooms-choices">
             <button
-              className="rooms-choice"
+              className="rooms-choice rooms-choice-match"
               disabled={busy}
               onClick={() => void ensure(startQueue)}
             >
-              <span className="rooms-choice-icon">
-                <ChoiceIcon kind="match" />
+              <span className="rooms-choice-stage">
+                <CabinetModel kind="match" />
               </span>
               <strong>Matchmaking</strong>
               <span>Classic · Ranked</span>
               <i aria-hidden="true">↗</i>
             </button>
             <button
-              className="rooms-choice"
+              className="rooms-choice rooms-choice-invite"
               disabled={busy}
               onClick={() => void ensure(() => openContacts("contacts"))}
             >
-              <span className="rooms-choice-icon">
-                <ChoiceIcon kind="invite" />
+              <span className="rooms-choice-stage">
+                <CabinetModel kind="invite" />
               </span>
               <strong>Invite someone</strong>
               <span>Your next rival</span>
               <i aria-hidden="true">↗</i>
             </button>
             <button
-              className="rooms-choice"
+              className="rooms-choice rooms-choice-room"
               disabled={busy}
               onClick={() => void ensure(() => openContacts("create"))}
             >
-              <span className="rooms-choice-icon">
-                <ChoiceIcon kind="room" />
+              <span className="rooms-choice-stage">
+                <CabinetModel kind="room" />
               </span>
               <strong>Create room</strong>
               <span>8 friends · Winner stays</span>
