@@ -14,17 +14,18 @@ export function createCourtSurface() {
     ctx.fillStyle=light; ctx.fillRect(0,0,1024,576);
   }
   ctx.lineWidth=1;
-  ctx.strokeStyle="#7794bf12";
-  ctx.beginPath();ctx.arc(512,288,72,0,Math.PI*2);ctx.stroke();
-  ctx.strokeStyle="#94b6cb25";
-  ctx.setLineDash([3,13]);ctx.beginPath();ctx.moveTo(512,12);ctx.lineTo(512,564);ctx.stroke();ctx.setLineDash([]);
-  // Short corner registration marks and edge ticks stay away from the rally.
-  for(const [x,sign,color] of [[12,1,"#66efe744"],[1012,-1,"#f18cdc44"]] as const){
-    ctx.strokeStyle=color;ctx.beginPath();
-    for(const [y,dy] of [[12,1],[564,-1]]){ctx.moveTo(x+22*sign,y);ctx.lineTo(x,y);ctx.lineTo(x,y+14*dy);}
-    ctx.stroke();
-    ctx.strokeStyle="#6979922b";
-    for(let y=64;y<560;y+=32){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+4*sign,y);ctx.stroke();}
+  ctx.strokeStyle="#a4cde03d";
+  ctx.setLineDash([3,12]);ctx.beginPath();ctx.moveTo(512,12);ctx.lineTo(512,564);ctx.stroke();ctx.setLineDash([]);
+  // A quiet dot matrix and stepped corner inlays are baked once, outside motion.
+  ctx.fillStyle="#7795b508";
+  for(let y=24;y<560;y+=12) for(let x=40;x<990;x+=12) ctx.fillRect(x,y,1,1);
+  for(const [x,sign,color] of [[8,1,"#6debf47d"],[1016,-1,"#f18cdc7d"]] as const){
+    ctx.fillStyle=color;
+    for(const [y,dy] of [[8,1],[568,-1]]){
+      for(const [dx,py] of [[0,0],[6,0],[12,0],[0,6],[6,6],[0,12]]) {
+        ctx.fillRect(x+dx*sign-(sign<0?4:0),y+py*dy-(dy<0?4:0),4,4);
+      }
+    }
   }
   return surface;
 }

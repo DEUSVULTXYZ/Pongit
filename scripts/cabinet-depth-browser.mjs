@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 
 assert.equal(process.env.ROOMS_BROWSER_TEST, "isolated-vps");
 const origin = "https://pongit.xyz";
-const out = "artifacts/cabinet-depth";
+const out = "artifacts/pixel-palace";
 await mkdir(out, { recursive: true });
 const browser = await chromium.launch({headless:true,args:["--no-sandbox"]});
 const context = await browser.newContext();
@@ -40,7 +40,10 @@ try {
     if(viewport.width<768) assert(content.every(c=>c.title.x>=c.model.right+8 && c.subtitle.x>=c.model.right+8),"Cabinet model must not cover either label");
     else if(viewport.height>500) assert(content.every(c=>c.title.top>=c.model.bottom),"Desktop label below its screen");
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-    assert.equal(await page.locator(".cabinet-model[aria-hidden=true][focusable=false]").count(),3);
+    assert.equal(await page.locator(".palace-art[aria-hidden=true][alt='']").count(),3);
+    await page.waitForFunction(()=>[...document.querySelectorAll('.palace-art')].every(e=>e.complete && e.naturalWidth>0));
+    const keys=await page.locator('.palace-key').evaluateAll(es=>es.map(e=>{const a=e.getBoundingClientRect(),b=e.querySelector('svg').getBoundingClientRect();return {dx:Math.abs(a.x+a.width/2-b.x-b.width/2),dy:Math.abs(a.y+a.height/2-b.y-b.height/2)};}));
+    assert(keys.every(k=>k.dx<1 && k.dy<1),'All decorative key icons centered');
     assert.equal(await page.locator(".arcade-background").evaluate(e=>e.getAnimations({subtree:true}).length),0);
     await page.screenshot({path:`${out}/rooms-${viewport.width}.png`,fullPage:true});
     report.viewports.push({viewport,boxes});
@@ -56,7 +59,7 @@ try {
   await page.getByRole("dialog").waitFor();
   await page.keyboard.press("Escape");
   assert(await choice.evaluate(e=>e===document.activeElement));
-  report.checks.push("Three visible mobile choices, centered controls, decorative SVGs excluded from focus, static background, reduced motion and keyboard activation/focus return");
+  report.checks.push("Three visible mobile choices, centered icons, decorative images loaded and excluded from focus, static background, reduced motion and keyboard activation/focus return");
   for (const width of [360,1440]) {
     await page.setViewportSize({width,height:width===360?640:1000});
     await page.goto(origin + "/legacy");

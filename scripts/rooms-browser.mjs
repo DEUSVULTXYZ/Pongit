@@ -301,8 +301,9 @@ try {
     const r = (await state(c)).room;
     return r.offer.id !== off.id;
   }, "next pair proposed");
-  assert(
-    await c.getByRole("button", { name: "Accept", exact: true }).isVisible(),
+  // The coordinator result can precede the notification's React render.
+  await until(
+    () => c.getByRole("button", { name: "Accept", exact: true }).isVisible(),
     "A spectator must explicitly accept their next turn",
   );
   await c.getByRole("button", { name: "Back", exact: true }).click();

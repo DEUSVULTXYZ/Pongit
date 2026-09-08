@@ -61,7 +61,7 @@ export function Court({
     const surface = createCourtSurface();
     // Paint all bevels inside the existing rectangles: appearance never enlarges a hitbox.
     function prism(x: number, y: number, w: number, h: number, face: CanvasGradient | string, light: string, dark: string) {
-      const b = Math.min(2, w / 5, h / 5);
+      const b = Math.min(2.5, w / 5, h / 5);
       ctx.fillStyle = face;
       ctx.fillRect(x, y, w, h);
       ctx.fillStyle = light;
@@ -72,9 +72,9 @@ export function Court({
       ctx.fillRect(x + b, y + h - b, w - b, b);
     }
     const leftFace = ctx.createLinearGradient(22, 0, 34, 0);
-    leftFace.addColorStop(0, "#b9ffff"); leftFace.addColorStop(.4, "#8df5ff"); leftFace.addColorStop(1, "#4aa9c4");
+    leftFace.addColorStop(0, "#bbfaff"); leftFace.addColorStop(.35, "#5de9ff"); leftFace.addColorStop(1, "#269ed0");
     const rightFace = ctx.createLinearGradient(990, 0, 1002, 0);
-    rightFace.addColorStop(0, "#e2c8ff"); rightFace.addColorStop(.4, "#c6a1ff"); rightFace.addColorStop(1, "#8763c0");
+    rightFace.addColorStop(0, "#f2d5ff"); rightFace.addColorStop(.35, "#db9cfc"); rightFace.addColorStop(1, "#9753dc");
     const fontFamily=getComputedStyle(document.body).fontFamily;
     let previousSound:{vx:bigint;vy:bigint;score:number;time:number}|null=null;
     let frame = 0,

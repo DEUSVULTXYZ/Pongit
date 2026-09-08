@@ -9,7 +9,7 @@ import {
 } from "viem";
 import { monadTestnet } from "viem/chains";
 import { Court } from "./Court";
-import { CabinetModel } from "./CabinetModel";
+import { PixelPalaceArt } from "./PixelPalaceArt";
 import { ArcadeAmbience, MusicCredit } from "./ArcadeAmbience";
 import { Avatar, AvatarPicker } from "./Avatar";
 import { Dialog } from "./Dialog";
@@ -883,8 +883,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         </section>
       ) : !room && !lobby.queue ? (
         <section className="rooms-home">
-          <p className="eyebrow">PONG IS BACK</p>
-          <h1>Bring a rival.</h1>
+          <div className="palace-marquee">
+            <span className="palace-star" aria-hidden="true" />
+            <h1><span>Pong is back</span><span>Bring a rival</span></h1>
+            <span className="palace-star" aria-hidden="true" />
+          </div>
           <div className="rooms-choices">
             <button
               className="rooms-choice rooms-choice-match"
@@ -892,11 +895,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               onClick={() => void ensure(startQueue)}
             >
               <span className="rooms-choice-stage">
-                <CabinetModel kind="match" />
+                <PixelPalaceArt kind="match" />
               </span>
               <strong>Matchmaking</strong>
               <span>Classic · Ranked</span>
-              <i aria-hidden="true">↗</i>
+              <i className="palace-key" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 4 13 8-13 8Z" fill="currentColor" /></svg></i>
             </button>
             <button
               className="rooms-choice rooms-choice-invite"
@@ -904,11 +907,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               onClick={() => void ensure(() => openContacts("contacts"))}
             >
               <span className="rooms-choice-stage">
-                <CabinetModel kind="invite" />
+                <PixelPalaceArt kind="invite" />
               </span>
               <strong>Invite someone</strong>
               <span>Your next rival</span>
-              <i aria-hidden="true">↗</i>
+              <i className="palace-key" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m10 8 3-3a4 4 0 0 1 6 6l-3 3m-2 2-3 3a4 4 0 0 1-6-6l3-3m1 5 6-6" /></svg></i>
             </button>
             <button
               className="rooms-choice rooms-choice-room"
@@ -916,11 +919,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               onClick={() => void ensure(() => openContacts("create"))}
             >
               <span className="rooms-choice-stage">
-                <CabinetModel kind="room" />
+                <PixelPalaceArt kind="room" />
               </span>
               <strong>Create room</strong>
               <span>8 friends · Winner stays</span>
-              <i aria-hidden="true">↗</i>
+              <i className="palace-key" aria-hidden="true"><ChoiceIcon kind="room" /></i>
             </button>
           </div>
           <p className="rooms-caption">
