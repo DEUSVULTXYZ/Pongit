@@ -21,4 +21,4 @@ These checks use Chromium and virtual PRF authenticators. No physical-device, Ed
 
 ## Release boundary
 
-The preview uses isolated services on the VPS. The production release is unchanged. `pongit-web:pixel-palace-candidate` retains the compiled candidate, and `pongit-web:night-candidate` remains available for preview rollback. The Interlude same-application renewal gate in [the rooms runbook](../INTERLUDE_ROOMS.md) still applies before public rooms cutover. Repository publishing access has already been restored.
+This record describes the private candidate verification. It was subsequently promoted to the public testnet at the owner's request; see the [production record](pixel-palace-production-2026-09-08.md). Same-application Interlude renewal remains unverified, as documented in [the rooms runbook](../INTERLUDE_ROOMS.md).

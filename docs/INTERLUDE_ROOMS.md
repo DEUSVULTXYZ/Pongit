@@ -1,6 +1,6 @@
-# Interlude rooms release candidate
+# Interlude rooms operations
 
-This candidate is isolated from the V4 arcade and the previous single-arena lab. The public homepage must remain on its current deployment until the operator renewal and repository publishing gates below are satisfied.
+The public testnet homepage switched to Interlude rooms and Pixel Palace on 8 September 2026 at the project owner's explicit request. V4 remains separate at `/legacy`, and the previous single-arena lab retains its own deployment. Same-application operator renewal has not been demonstrated: public availability is limited by the current delegation, and admission closes if its validity cannot be verified.
 
 ## Deployment and trust boundaries
 
@@ -47,7 +47,7 @@ PostgreSQL stores lobby state under a transaction-level advisory lock. A unique 
 
 The maintenance journal stores raw signed transaction bytes before broadcast. Recovery checks the same transaction receipt or resubmits the identical bytes. It never allocates another nonce to an uncertain transaction. A local cancellation does not invalidate an already-issued ticket: the coordinator keeps observing it until it expires before replacing it.
 
-Result summaries are checked against the engine and separately against Monad. Published copies remain challengeable. The audit cycles over bounded historical batches. Invalidated results are removed from derived statistics; reappearing active matches restore participation from their engine snapshot. A delegation mismatch hides unverified derived results and closes admission. Actual operator challenge/reversal and renewal must be tested before public cutover; local contract tests do not prove those external procedures.
+Result summaries are checked against the engine and separately against Monad. Published copies remain challengeable. The audit cycles over bounded historical batches. Invalidated results are removed from derived statistics; reappearing active matches restore participation from their engine snapshot. A delegation mismatch hides unverified derived results and closes admission. Actual operator challenge/reversal and renewal remain outstanding external tests; local contract tests do not prove those procedures.
 
 No frame archive is added. V1 to V4 replay retention, financial claims, payments, vaults, tournament registrations and encrypted notebook data are unchanged. Server contacts are a different feature from the encrypted notebook.
 
@@ -58,7 +58,7 @@ No frame archive is added. V1 to V4 replay retention, financial claims, payments
 3. Back up the relayer database and the current release manifest privately. Keep the previous web and relayer images by explicit tags. Apply the additive coordinator tables without dropping old tables.
 4. Supply the rooms manifest and admission signer through the existing private deployment configuration. Keep `ROOMS_ADMISSION_ENABLED=false` and `PONG_ROOMS_HOME=false` initially.
 5. Validate two active games, a queued third, natural seventh-point completion, publication, renewal, reconnect and restart using a private service environment. Validate old financial paths independently.
-6. Open admission and enable the new homepage only after the gates pass. The previous arcade remains at `/legacy`; old match-bearing homepage URLs bypass the new lobby.
+6. Normally open admission and enable the new homepage after these checks. The owner explicitly requested the 8 September public testnet cutover while renewal remained unverified. This does not establish renewal support or continuous availability. The previous arcade remains at `/legacy`; old match-bearing homepage URLs bypass the new lobby.
 7. For rollback, close new admission first. Keep the rooms coordinator available for active rooms while returning the homepage to the prior UI. Retain all `il_*` tables and transaction journals. Do not restore an old database backup over newer game results or financial transactions.
 
 ## Test commands
@@ -82,4 +82,6 @@ The [machine-readable validation report](validation/interlude-rooms-2026-09-08.j
 
 The coordinator restart probe preserved the authenticated session and original idempotent room response. An uncertain maintenance receipt was recovered without allocating an additional job. A private database backup was restored into a separate test database.
 
-The candidate is not the public homepage. GitHub publishing access was restored later on 8 September and the candidate branch was successfully pushed. The remaining release gate is Interlude: the operator advertises a 24-hour maximum delegation and has reached its eight-delegation limit; same-application renewal has not been demonstrated. Do not announce a public rooms launch before that validation is complete.
+GitHub publishing access was restored on 8 September. Pixel Palace and rooms were subsequently promoted at the owner's request. At the preflight read, the hub reported an active epoch 1 delegation expiring on 8 September at 22:56:08 UTC, with 109 batches published and no pending diffs. This is a dated observation, not a promise of later availability. The public manifest retains `releaseReady: false` to identify the outstanding renewal validation; runtime `online` and `admission` fields describe actual current availability.
+
+The public HTTPS smoke test used three fresh virtual-PRF accounts and one friendly room: both participants accepted, a spectator joined, input release reached the engine, F5 reused the authorization, concession displayed VICTORY/DEFEAT, rotation proposed the next pair, and all test accounts explicitly left. No test profile or ranked result was created, and no financial transaction was submitted. The visual checks also passed at five desktop/mobile/landscape sizes. See [the production record](validation/pixel-palace-production-2026-09-08.md).
