@@ -9,7 +9,7 @@ import {
 import { gameAbi, marketAbi, vaultAbi, tournamentsAbi } from "./abis";
 import { gameV2Abi, marketV2Abi, tournamentsV2Abi } from "./abis-v2";
 import { gameV3Abi, arcadeSessionsAbi, tournamentsV3Abi } from "./abis-v3";
-export type DeploymentId = "v1" | "v2" | "v3" | "v4";
+export type DeploymentId = "v1" | "v2" | "v3" | "v4" | "rooms";
 export type Deployment = {
   version?: 1 | 2 | 3 | 4;
   arcade?: Address;
@@ -31,6 +31,8 @@ export const contracts = {
 };
 export type ContractName = keyof typeof contracts;
 export type RelayRequest = {
+  roomAction?: string;
+  roomApp?: Address;
   deployment?: DeploymentId;
   contract: ContractName;
   functionName: string;

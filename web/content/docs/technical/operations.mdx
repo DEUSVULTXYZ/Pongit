@@ -1,3 +1,5 @@
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
+
 ## Operator console
 
 Use **More → Admin** when the connected account has the onchain admin role, or open [the administrator route](/admin). Merely viewing that route does not grant permission. Administration uses the owner passkey and a funded administrator account; it is not an arcade-key permission.
@@ -27,3 +29,13 @@ The [operations runbook](https://github.com/DEUSVULTXYZ/Pongit/blob/main/docs/DE
 ## Contract-level limits
 
 Contracts are immutable and sealed. Replacing an immutable treasury requires redeployment. Financial debts reserved for rejected recipients cannot be reclaimed as treasury surplus. Keep all supported legacy withdrawals, claims and result references available during an upgrade. The isolated Interlude lab uses its own deployment manifest and operator-hosted node. Do not route V4 jobs or financial settlement through that node. Its delegation lifetime and any operator restart need separate monitoring and validation.
+
+## Rooms lifecycle and payments
+
+The rooms pressure and lifecycle keys are distinct from the financial relayer sender. Load their private read-only files through `ROOMS_PRESSURE_KEY_FILE` and `ROOMS_LIFECYCLE_KEY_FILE`; never put them in a manifest or client bundle. Enabling Chaos requires a sealed finance configuration and an enabled lifecycle worker.
+
+`il_engine_jobs` binds the engine sender nonce to app and delegation epoch. `relay_jobs` remains the unique financial journal and records exact finance app and round action. `il_lifecycle_jobs` records the operator's signed raw transactions before broadcast. Do not run another deployer command with that operator account while lifecycle processing owns its nonce.
+
+The lifecycle drains admission and active/publication work, closes the app, waits the hub's actual `stakeUnlockAt`, releases stake, freezes known final Chaos results and renews the same app. It admits players only after the node reports the renewed epoch. A challenge suspends automatic renewal. `ROOMS_LIFECYCLE_HOLD_RENEW=true` is a private operator hold after finalization for rehearsal or migration coordination. It does not shorten the challenge period.
+
+Keep rooms tables, accepted finance manifests and payment workers when rolling the UI back. Restoring a pre-rooms relayer binary would strand or misinterpret signed jobs. Do not delete pending transactions or reset nonces. Preserve V4 and earlier vault references, even after closing a rooms deployment. See the [Chaos operations record](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/interlude-rooms/docs/CHAOS_ROOMS.md).

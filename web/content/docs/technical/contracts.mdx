@@ -1,6 +1,12 @@
-## Active deployment
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
 
-PONGIT currently runs **V4 on Monad Testnet 10143**. V4 deploys new immutable GameV3, ArcadeSessions and Vault instances with MarketV4 and TournamentsV4. The implementation name GameV3 is not the same as the application's deployment generation.
+## Rooms deployment
+
+The homepage uses the immutable multi-room application on Monad Testnet 10143, with separate Classic and Chaos ratings. Rooms financial bindings are listed in the public rooms manifest table below.
+
+## Preserved V4 arcade
+
+V4 remains available separately. V4 deploys new immutable GameV3, ArcadeSessions and Vault instances with MarketV4 and TournamentsV4. The implementation name GameV3 is not the same as the application's deployment generation.
 
 The following tables are generated from the repository's public active manifest and its legacy chain. They expose only version, chain, start block and contract addresses. Follow each address to the testnet explorer.
 
@@ -13,6 +19,8 @@ Game, market, vault and tournament links are sealed before use. These contracts 
 The treasury is immutable where specified by the contract constructor. Replacing it requires a compatible new deployment, not an undocumented administrative edit to an existing match.
 
 ## Match references
+
+A rooms reference includes base chain, application address and full match identifier. A bare number or previous rooms URL must never silently resolve to another deployment.
 
 `v4:12` means match 12 in V4. It is different from `v3:12`. Envio and private replay notes use deployment-qualified references. Active numeric API routes are scoped by `/api/config`; legacy reads require the chosen deployment parameter.
 

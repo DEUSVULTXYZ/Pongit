@@ -1,4 +1,14 @@
-## Paid to your wallet
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
+
+## Rooms payouts wait for finality
+
+Chaos rooms use their own Monad market and vault. A live winner or published result is not yet sufficient for payment: the delegation must close, its **one-hour challenge period** must elapse without an unresolved challenge, and the hub must release it. The adapter then reads and freezes the actual terminal result. The VPS pressure attester cannot select that result.
+
+This can delay winnings until the current daily delegation closes plus the challenge period. Scheduled renewal pauses new games during that process. Receiving a payment requires neither a passkey ceremony nor an online recipient. Normal match wins award ELO only, never a new MON prize.
+
+Open your account, **Betting credit & wallet**, then **Your recent positions**. States include **Position open**, **Result awaiting finality**, **Payment pending**, **Paid to your wallet**, **Payment delayed** and **Losing position · No payout**. **Payment transaction** opens the receipt. **Retry payment** retries only a reserved debt to its fixed beneficiary. The worker attempts up to six automatic transfers before leaving further retries to the account. Funding and RPC outages can delay discovery or submission.
+
+## V4 payments remain separate
 
 In V4, winning bets, tournament prizes and eligible cancellation refunds are paid directly to the fixed beneficiary's Mera wallet. You do not need to click Claim, approve another passkey request or remain connected to receive them.
 

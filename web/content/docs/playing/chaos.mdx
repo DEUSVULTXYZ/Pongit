@@ -1,6 +1,8 @@
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
+
 ## Crowd pressure, applied between rallies
 
-Chaos keeps the first-to-seven objective, but accepted betting costs influence paddle height. The player receiving more support can become harder to defend. Select **Chaos** on the home cabinet or in a challenge's **Match options**.
+Chaos keeps the first-to-seven objective, but accepted betting costs influence paddle height. The player receiving more support can become harder to defend. Select **Chaos** above the three home cards before matchmaking, inviting a rival or creating a room. Room members inherit its mode. The V4 arcade retains its own Chaos controls.
 
 The calculation uses the **MON actually paid** for accepted bets on each side. Seed liquidity supplied by the platform is excluded, and later payouts do not erase the accumulated pressure.
 
@@ -15,7 +17,9 @@ Above 60%, the reduction increases linearly up to **25%**. Integer rounding is a
 
 ## When the handicap changes
 
-After a nonfinal point, Chaos starts a **three-second intermission on the match clock**. Betting closes during the last two blocks of the intermission. At resume, the contract calculates the new heights and freezes them for the whole next rally.
+After a nonfinal point, a Chaos room pauses. Once the exact pause is published on Monad, its market opens for **40 blocks**, approximately twelve seconds. The VPS freezes actual paid totals at the cutoff after two further confirmations and signs a checkpoint scoped to that match and rally. This is a provisional testnet trust assumption. The engine applies the resulting heights and freezes them for the next rally.
+
+Publication, passkey submission and confirmation can extend the pause beyond twelve seconds. A missing checkpoint keeps play paused; it never silently substitutes zero pressure. **Concede** remains available. The original V4 arena still uses its three-second match-clock intermission and two-block closing guard.
 
 An already resolved collision is never recalculated with a new size. If the chain needs to catch up, simulation stops at the intermission before entering the next rally with its new parameters.
 
@@ -23,6 +27,6 @@ An already resolved collision is never recalculated with a new size. If the chai
 
 ## Play and follow the changes
 
-The arena displays **INTERMISSION** or **RALLY**, along with the individual paddle heights. Without enough accepted bets, Chaos can look like Classic.
+The room shows the intermission countdown, then **Waiting for the betting checkpoint** when more time is needed. The two visible paddles use their individual confirmed heights. Without enough accepted bets, Chaos can look like Classic.
 
 Chaos has its own ranked queue and ELO. Friendly Chaos challenges change no ranking. Current tournaments remain Classic. [Betting guide](/docs/betting/how-it-works).

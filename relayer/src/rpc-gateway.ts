@@ -31,17 +31,23 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
       for (let attempt = 0; attempt < 4; attempt++) {
         await scheduler.acquire(["eth_getLogs","eth_getBlockByNumber","eth_getBlockByHash","eth_getTransactionByHash"].includes(method));
         let response:Response;
-        try { response = await fetch(attempt>0 && read && secondary!==upstream ? secondary : upstream, {
+        try { response = await fetch(attempt>0 && (read || method==='eth_sendRawTransaction') && secondary!==upstream ? secondary : upstream, {
           method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
           signal: AbortSignal.timeout(15000),
         }); } catch { if(attempt===3)throw new Error("RPC transport unavailable");await delay(250*(attempt+1));continue; }
         if(response.status>=500) {await delay(250*(attempt+1));continue;}
+        // Some providers return plain text for HTTP 429. Do not parse it as JSON.
+        if(response.status===429){await delay(1000*(attempt+1));continue;}
         const result = await response.json() as { result?: unknown; error?: { code: number; message: string; data?: unknown } };
-        if (response.status === 429 || /limited to|rate limit/i.test(result.error?.message || "")) {
+        if (/limited to|rate limit/i.test(result.error?.message || "")) {
           await delay(1000 * (attempt + 1));
           continue;
         }
+        // A node can cache an insufficient-balance rejection even after a top-up.
+        // Broadcasting the identical signed bytes elsewhere preserves its hash
+        // and nonce; this never creates a second transaction or changes a fee.
+        if(result.error && method==='eth_sendRawTransaction' && attempt===0 && secondary!==upstream && /insufficient balance|insufficient funds/i.test(result.error.message))continue;
         if (result.error) throw result.error;
         if (!response.ok || !("result" in result)) throw new Error("Upstream RPC unavailable");
         const ttl = method === "eth_chainId" ? 3600000 : method === "eth_gasPrice" ? 3000 : method === "eth_blockNumber" ? 150 : 0;

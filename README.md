@@ -2,6 +2,8 @@
 
 **[Play PONGIT](https://pongit.xyz)** · [Documentation](https://pongit.xyz/docs) · [Automatic wallet payments](docs/PAYMENTS_V4.md) · [Arcade release](docs/ARCADE.md) · [Architecture](docs/V2.md) · [Local setup](docs/LOCAL.md)
 
+**8 September release status:** the public homepage runs Classic rooms. Chaos with spectator betting is implemented and deployed as a private rules-4 candidate, but public activation is held because its hosted engine returns HTTP 502 after delegation renewal. Actual native-wallet payouts passed. [Chaos validation and activation requirements](docs/CHAOS_ROOMS.md). The separate V4 arcade retains its existing Chaos, markets, balances and tournaments.
+
 A browser-based 1v1 arcade game whose physics, scores, results and ELO are computed in Solidity on **Monad Testnet (10143)**. The Next.js canvas predicts rendering, Mera provides passkey accounts, the relayer sponsors gas and Envio reconstructs match history. No browser wallet extension is required. All bets and prizes use test MON.
 
 ## Play, challenge and compete

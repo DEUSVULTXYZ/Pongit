@@ -1,0 +1,215 @@
+{
+  "checkedAt": "2026-09-08T13:44:00Z",
+  "network": "Monad Testnet",
+  "chainId": 10143,
+  "releaseStatus": "blocked_on_hosted_engine_recovery",
+  "publicActivated": false,
+  "app": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb",
+  "validation": {
+    "solidityTestsPassed": 160,
+    "typescriptTestsPassed": 50,
+    "differentialPhysics": {
+      "classicCases": 10000,
+      "chaosCases": 10000,
+      "mismatches": 0
+    },
+    "roomsIntegration": {
+      "app": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb",
+      "startedAt": "2026-09-08T12:23:05.632Z",
+      "checks": [
+        "Nine distinct signed sessions; nonce replay and cross-account cookie rejected",
+        "Contact isolation, add/remove, profile save",
+        "Idempotent creation, eight seats, full-room rejection, room/queue exclusivity",
+        "Both consents required, winner stays, loser to tail, host handover, refusal and rejoin",
+        "Crossed invitations resolve to one room",
+        "Targeted link reserved for recipient; one-sided acceptance expires without ELO and marks absent rival away",
+        "Two simultaneous isolated arenas, sequential commands, exact 1032/968 ELO, queued third admission"
+      ],
+      "capacity": [
+        {
+          "status": "offer",
+          "offer": "115024502726476951996913031801581068076134995137982216176108261221001458521217"
+        },
+        {
+          "status": "offer",
+          "offer": "103468837455714620323170592371916842194905390617827031817241180896275784123816"
+        },
+        {
+          "status": "capacity"
+        }
+      ],
+      "inputLatencyMs": {
+        "count": 50,
+        "p50": 20.666402999995626,
+        "p95": 28.97315399999934,
+        "max": 46.107019000002765
+      },
+      "players": [
+        "0x6230ac780874d594cad05df5b42f5dbfd1b0d892",
+        "0x86b98aec44515dba6bb67f4cd726784de44999f5",
+        "0x686bb9a69d3c51001baf70444de8fa5a4a21566d",
+        "0xb0e3ebe2259c3d18c18f5e5fbaf5e03ca24a97d9",
+        "0x999b47c5c82934ecab1b8171ebf1642440d6f5b0",
+        "0x99ea117bc775a3f8add923a59c8d0440564d1560",
+        "0x21453f68be0225b409d7ab9c1720f10385193e5c",
+        "0x48649638bef498219c8c5c3010fee08f9a2bd054",
+        "0xba4b1647cac745fb875f99f4a23c7b98b4a29c53"
+      ],
+      "finishedAt": "2026-09-08T12:24:14.935Z"
+    },
+    "walletPayouts": {
+      "checkedAt": "2026-09-08T13:32:58.342Z",
+      "app": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb",
+      "id": "99606706245725058768317887070618250886575239815833415704593762636153783360745",
+      "recipients": [
+        {
+          "player": "0xe4d8d220315dca848e47e0138ce53b5a458f0e0f",
+          "expected": "8000000000000000",
+          "balance": "8000000000000000",
+          "position": [
+            "8000000000000000",
+            "0",
+            "5453767801646969",
+            true
+          ],
+          "payoutId": "0x1dcabd4114427a06ab85fc34cd8898ed17b6672972d0ab8d524ff4cfebd09f7c",
+          "payout": [
+            "0xE4D8d220315dCA848e47E0138cE53B5A458f0e0f",
+            "8000000000000000",
+            2,
+            1
+          ]
+        },
+        {
+          "player": "0x1631edcb6481de67cf5cabadae99c5fd23c442f8",
+          "expected": "2000000000000000",
+          "balance": "2000000000000000",
+          "position": [
+            "2000000000000000",
+            "0",
+            "1715136350778169",
+            true
+          ],
+          "payoutId": "0x530086b408b291882cee59e3f603dbe9d1dbe08844c909fd84530a68cbcfba81",
+          "payout": [
+            "0x1631EDcb6481DE67cF5CabAdaE99C5FD23C442F8",
+            "2000000000000000",
+            2,
+            1
+          ]
+        },
+        {
+          "player": "0x25a07db8c94938f4283f5f2ccf75603c4802d76e",
+          "expected": "0",
+          "balance": "0",
+          "position": [
+            "0",
+            "2000000000000000",
+            "284863649231833",
+            true
+          ],
+          "payoutId": "0x83271b209b5578615d0b051ed0b476e30e6353bdb694c5c676f00ffd1b3a70f2",
+          "payout": [
+            "0x25A07db8c94938F4283f5f2cCF75603C4802D76E",
+            "0",
+            2,
+            1
+          ]
+        }
+      ],
+      "delegation": {
+        "validator": "0x0000000000000000000000000000000000000000",
+        "resolver": "0x0000000000000000000000000000000000000000",
+        "status": 0,
+        "spec": 1,
+        "epoch": "1",
+        "batchIndex": "536",
+        "baseBlock": "60749741",
+        "lastExecTimestamp": "1788870248",
+        "lastCommitAt": "1788870248",
+        "maxBatchInterval": "3600",
+        "expiresAt": "1788954217",
+        "maxDiffsPerCommit": 64
+      },
+      "result": [
+        "0x6Dbc862bcEB38F1BB4B3ebA447Cd6064295020D6",
+        "0x0B5C7428aef4b495505a7Bd0529Bc51Fb9E5C1fb",
+        "0x6Dbc862bcEB38F1BB4B3ebA447Cd6064295020D6",
+        3,
+        "0xb5146988cc86c7a43b874a7fc740c45c4ec1795e1d33093f157a31e50ea039df"
+      ],
+      "passed": true
+    },
+    "browserWallet": {
+      "checks": [
+        "Ranking appears only in the header",
+        {
+          "width": 360,
+          "columns": 3,
+          "labelsBelowPortraits": true,
+          "checkContained": true,
+          "noOverflow": true
+        },
+        {
+          "width": 390,
+          "columns": 3,
+          "labelsBelowPortraits": true,
+          "checkContained": true,
+          "noOverflow": true
+        },
+        {
+          "width": 768,
+          "columns": 4,
+          "labelsBelowPortraits": true,
+          "checkContained": true,
+          "noOverflow": true
+        },
+        {
+          "width": 1440,
+          "columns": 4,
+          "labelsBelowPortraits": true,
+          "checkContained": true,
+          "noOverflow": true
+        },
+        "Profile and avatar saved through authenticated API and restored after F5",
+        "Rooms financial panel is readable on four viewports during renewal",
+        "Real credit and native wallet withdrawal each required a fresh owner passkey validation"
+      ],
+      "errors": [],
+      "createdProfile": {
+        "address": "0x9b437C9d07455B1477f19b66c9AFe3B111f73591",
+        "handle": "qa_avatar_mtsohz75",
+        "avatar": 5
+      },
+      "wallet": {
+        "address": "0x9b437C9d07455B1477f19b66c9AFe3B111f73591",
+        "balance": "20000000000000000",
+        "credit": "0"
+      }
+    },
+    "dependencyVulnerabilities": 0,
+    "finalThreeBrowserChaosMatch": "not completed after hosted renewal"
+  },
+  "transactions": {
+    "close": "0x1717b9adaffbd46fed41f781c9363a2679dd36955bdc3c7970391f4f4fdfb3a7",
+    "releaseStake": "0xec87f4d7824b89b21957591eb2f6fec727ce9a4ceddd1130940d5ece6d1ce50b",
+    "renew": "0x4af678c588fe2463f5fd6144a84aa1d9df7aa93c974feff206fd4243e534e4c1",
+    "payout008MON": "0xb6a08da743d23d4a09d6c62814d29134416531252f64f212e5aa7fea35f5aa89",
+    "payout002MON": "0xf61e7f6995369ff8353d521891f3fa7321a015def1d52826b9894abae67f303a",
+    "losingPosition": "0x242c6872b90b506341a5b3b88c73caa32ee4536a3728f592949c756da960f01a"
+  },
+  "hosting": {
+    "delegationEpoch": 2,
+    "onchainRenewal": "success",
+    "controlPlane": "live",
+    "healthHttpStatus": 502,
+    "railwayRequestId": "qlLpR_4_Qcyt0sBkjUJq2g"
+  },
+  "limits": [
+    "Testnet VPS attests paid pressure; it cannot pick a winner.",
+    "40-block betting windows, approximately 12 seconds plus publication and confirmations.",
+    "Payout finalization waits for delegation closure and the challenge period.",
+    "VPS-to-engine timing is not browser end-to-end latency.",
+    "Virtual passkeys do not prove recovery across physical devices."
+  ]
+}

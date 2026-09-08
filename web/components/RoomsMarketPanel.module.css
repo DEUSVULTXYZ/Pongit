@@ -1,0 +1,80 @@
+.panel {
+  display: grid;
+  gap: 18px;
+  color: #deedf1;
+  font:
+    16px/1.6 system-ui,
+    sans-serif;
+}
+.panel p {
+  margin: 0;
+  color: #acbdc7;
+  font: inherit;
+}
+.panel :global(.rooms-finance-balances) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.panel :global(.rooms-finance-balances) > div {
+  display: grid;
+  padding: 14px;
+  border: 1px solid #304655;
+  border-radius: 12px;
+  background: #101e27;
+}
+.panel :global(.rooms-finance-balances) span {
+  font-size: 14px;
+  color: #acbdc7;
+}
+.panel :global(.rooms-finance-balances) strong {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.panel label {
+  display: grid;
+  gap: 8px;
+}
+.panel input {
+  width: 100%;
+  min-height: 48px;
+  font-size: 16px;
+}
+.panel :global(.rooms-bet-quote) {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+.panel :global(.rooms-bet-quote) > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.panel dd {
+  margin: 0;
+  text-align: right;
+}
+.panel :global(.rooms-market-status) {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #a6eeef;
+  font-weight: 600;
+}
+.panel :global(.rooms-market-status) span {
+  font-size: 14px;
+  color: #acbdc7;
+}
+.panel :global(.rooms-finance-actions),
+.panel :global(.rooms-position) {
+  display: grid;
+  gap: 12px;
+}
+.panel button {
+  min-height: 44px;
+}
+@media (max-width: 400px) {
+  .panel :global(.rooms-finance-balances) {
+    grid-template-columns: 1fr;
+  }
+}

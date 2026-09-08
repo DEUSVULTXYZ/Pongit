@@ -10,6 +10,7 @@ import {
 import { monadTestnet } from "viem/chains";
 import { Court } from "./Court";
 import { PixelPalaceArt } from "./PixelPalaceArt";
+import { RoomsMarketPanel } from "./RoomsMarketPanel";
 import { EngineCredit } from "./EngineCredit";
 import { ArcadeAmbience, MusicCredit } from "./ArcadeAmbience";
 import { Avatar, AvatarPicker } from "./Avatar";
@@ -27,6 +28,7 @@ import { api, API, WS } from "../lib/api";
 import {
   createRoomsClient,
   roomsManifest,
+  roomsChaos,
   roomsScope,
   roomsAccountKey,
   authenticateRooms,
@@ -50,7 +52,7 @@ type Profile = {
 };
 type Lobby = {
   room?: LobbyRoom;
-  queue?: { at: number };
+  queue?: { at: number; mode?: 0 | 1 };
   inbox: any[];
   outbox: any[];
   profiles: Profile[];
@@ -139,6 +141,7 @@ async function tabLock(p: string) {
   });
 }
 export function RoomsHub({ roomId }: { roomId?: string }) {
+  const [mode,setMode] = useState<0|1>(0);
   const [account, setAccount] = useState<Address>(),
     [saved, setSaved] = useState<Address>(),
     [ready, setReady] = useState(false),
@@ -162,6 +165,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     | "tools"
     | "more"
     | "ladder"
+    | "market"
     | null
   >(null);
   const [busy, setBusy] = useState(false),
@@ -186,8 +190,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     if (panel !== "ladder") return;
     let cancelled = false;
     setRankLoading(true); setRankError(""); setLadder([]);
-    void (rankMode === "classic" ? api("/interlude/ladder") : api(`/leaderboard?mode=${rankMode === "chaos" ? 1 : 0}`))
-      .then(r => { if (!cancelled) setLadder(rankMode === "classic" ? r.items.map((p:any) => ({...p, elo:p.live.elo, played:p.live.played, wins:p.live.wins})) : r.Player.map((p:any) => ({...p, player:p.address}))); })
+    const currentRanking=rankMode === "classic" || roomsChaos && rankMode === "chaos";
+    void (currentRanking ? api(`/interlude/ladder?mode=${rankMode === "chaos" ? 1 : 0}`) : api(`/leaderboard?mode=${rankMode === "chaos" ? 1 : 0}`))
+      .then(r => { if (!cancelled) setLadder(currentRanking ? r.items.map((p:any) => ({...p, elo:(p.live || p.published).elo, played:(p.live || p.published).played, wins:(p.live || p.published).wins})) : r.Player.map((p:any) => ({...p, player:p.address}))); })
       .catch(e => { if (!cancelled) setRankError(e.message); })
       .finally(() => { if (!cancelled) setRankLoading(false); });
     return () => { cancelled = true; };
@@ -262,6 +267,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     const next = await roomsApi<Lobby>("/interlude/state");
     if (!alive.current) return;
     setLobby(next);
+    if(next.room || next.queue)setMode(next.room?.mode || next.queue?.mode || 0);
     setOnline(next.online);
     setAdmission(next.admission);
     const mine = next.profiles.find(
@@ -403,7 +409,8 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         if (!done) {
           setOnline(c.online);
           setAdmission(c.admission);
-          if (!c.online) setNotice("The game service is reconnecting. Please retry shortly.");
+          if(c.maintenance?.stage && c.maintenance.stage!=='playing')setNotice(c.maintenance.stage==='draining'?'Current matches are finishing before scheduled maintenance. New games will resume after renewal.':'The arcade is renewing its delegation. This includes a one-hour challenge period. Payments continue in the background.');
+          else if (!c.online) setNotice("The game service is reconnecting. Please retry shortly.");
           else setNotice("");
         }
       } catch (e) {
@@ -629,7 +636,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     };
   }, [search]);
   async function startQueue() {
-    await roomsAction("queue");
+    await roomsAction("queue", {mode});
     await refresh();
     setPanel(null);
   }
@@ -642,7 +649,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     setPanel(kind);
   }
   async function createRoom() {
-    const data = await roomsAction("rooms", { players: selected });
+    const data = await roomsAction("rooms", { players: selected, mode });
     setPanel(null);
     history.replaceState(null, "", `/rooms/${data.room}`);
     await refresh();
@@ -650,6 +657,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   async function invitePlayer(player: string) {
     const data = await roomsAction(room ? "rooms/invite" : "invitations", {
       player,
+      mode,
     });
     setPanel(null);
     if (data.room) history.replaceState(null, "", `/rooms/${data.room}`);
@@ -669,6 +677,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       a: o.a as Address,
       b: o.b as Address,
       ranked: o.ranked,
+      ...(roomsChaos ? {mode:o.mode || 0}:{}),
       expires: BigInt(o.expires),
       rules: BigInt(o.rules),
       entropy: o.entropy as Hex,
@@ -879,7 +888,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           <h1>{preview?.profiles?.[0]?.handle || "PONGIT room"}</h1>
           {preview && (
             <small>
-              {preview.count} / {preview.kind === "group" ? 8 : 2}
+              {preview.mode === 1 ? "Chaos" : "Classic"} · {preview.count} / {preview.kind === "group" ? 8 : 2}
             </small>
           )}
           <div className="rooms-button-row">
@@ -912,7 +921,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 <PixelPalaceArt kind="match" />
               </span>
               <strong>Matchmaking</strong>
-              <span>Classic · Ranked</span>
+              <span>{mode === 1 ? "Chaos" : "Classic"} · Ranked</span>
               <i className="palace-key" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 4 13 8-13 8Z" fill="currentColor" /></svg></i>
             </button>
             <button
@@ -940,6 +949,10 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               <i className="palace-key" aria-hidden="true"><ChoiceIcon kind="room" /></i>
             </button>
           </div>
+          {roomsChaos && <div className="control-segments rooms-mode-choice" role="group" aria-label="Game mode">
+            <button aria-pressed={mode===0} disabled={busy} onClick={()=>setMode(0)}>Classic</button>
+            <button aria-pressed={mode===1} disabled={busy} onClick={()=>setMode(1)}>Chaos</button>
+          </div>}
           <p className="rooms-caption">
             Free to play · Monad Testnet
           </p>
@@ -968,7 +981,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               "0",
             )}
           </p>
-          <span>Classic · Ranked</span>
+          <span>{lobby.queue.mode === 1 ? "Chaos" : "Classic"} · Ranked</span>
           <button
             disabled={busy}
             onClick={() =>
@@ -986,10 +999,10 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           <div className="rooms-room-bar">
             <span>
               {room.kind === "ranked"
-                ? "CLASSIC / RANKED"
+                ? `${room.mode === 1 ? "CHAOS" : "CLASSIC"} / RANKED`
                 : room.kind === "group"
-                  ? "ROOM / WINNER STAYS"
-                  : "FRIENDLY DUEL"}
+                  ? `${room.mode === 1 ? "CHAOS" : "CLASSIC"} / WINNER STAYS`
+                  : `${room.mode === 1 ? "CHAOS" : "CLASSIC"} / FRIENDLY`}
             </span>
             <div>
               <button
@@ -1001,6 +1014,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 Members {room.members.length}
               </button>
               <button onClick={() => openPanel("tools")}>Tools</button>
+              {roomsChaos && room.mode===1 && <button onClick={()=>openPanel("market")}>Market</button>}
             </div>
           </div>
           {canAccept ? (
@@ -1056,6 +1070,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 </div>
               </div>
               <div className="rooms-canvas">
+                {snapshot.state.awaitingServe && <div className="rooms-serve-status" role="status">{snapshot.clock<snapshot.state.resumeAt ? `Next rally in ${Math.ceil(Number(snapshot.state.resumeAt-snapshot.clock)/1e6)}s` : "Waiting for the betting checkpoint"}</div>}
                 <Court
                   liveEngine
                   state={snapshot.state}
@@ -1193,7 +1208,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 winner: snapshot.winner,
                 state: snapshot.state,
                 ranked: offer?.ranked,
-                mode: 0,
+                mode: offer?.mode || 0,
                 ratingFinalized: true,
               }
             : null
@@ -1279,14 +1294,16 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           >
             Forget this account
           </button>
-          <a href="/legacy">Wallet, payments & notebook ↗</a>
+          {roomsChaos && <button onClick={()=>openPanel("market")}>Betting credit & wallet</button>}
+          <a href="/legacy" target="_blank" rel="noreferrer">Previous balances & notebook ↗</a>
         </RoomsModal>
       )}
       {(panel === "contacts" || panel === "create") && (
         <RoomsModal
           {...modalProps}
           title={panel === "create" ? "Create room" : "Invite someone"}
-        >
+          >
+            <p>{mode === 1 ? "Chaos" : "Classic"} · Friendly</p>
           <label>
             Username or address
             <input
@@ -1477,6 +1494,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           <MusicCredit />
         </RoomsModal>
       )}
+      {panel === "market" && account && <RoomsModal {...modalProps} title="Betting & wallet"><RoomsMarketPanel player={account} matchId={room?.mode===1?offer?.id:undefined} onBusy={value=>{busyRef.current=value;setBusy(value);}}/></RoomsModal>}
       {panel === "more" && (
         <RoomsModal {...modalProps} title="Around the arcade">
           <button onClick={() => void ensure(() => openContacts("contacts"))}>
@@ -1497,8 +1515,8 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
             <button aria-pressed={rankMode === "chaos"} onClick={() => setRankMode("chaos")}>Chaos</button>
             <button aria-pressed={rankMode === "previous"} onClick={() => setRankMode("previous")}>Previous Classic</button>
           </div>
-          <p>{rankMode === "classic" ? "Current season · Starting ELO 1000" : "Original arena ratings"}</p>
-          {rankMode === "classic" && lobby.rating && <p className="rooms-own-elo">Your ELO <strong>{lobby.rating.live.elo}</strong></p>}
+          <p>{rankMode === "classic" ? (roomsChaos ? "Classic ratings carried forward" : "Current season · Starting ELO 1000") : rankMode === "chaos" && roomsChaos ? "Chaos season · Starting ELO 1000" : "Original arena ratings"}</p>
+          {!rankLoading && !rankError && ladder.some(p=>p.player.toLowerCase()===account?.toLowerCase()) && <p className="rooms-own-elo">Your ELO <strong>{ladder.find(p=>p.player.toLowerCase()===account?.toLowerCase())?.elo}</strong></p>}
           {rankError ? <p role="alert">{rankError} <button onClick={() => setRankReload(x => x + 1)}>Retry</button></p> : rankLoading ? <p role="status">Loading rankings…</p> : ladder.length ? (
             <div className="ranking-scroll">
             <table>
@@ -1516,7 +1534,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                   <tr key={p.player}>
                     <td>{i + 1}</td>
                     <td><span className="ranking-player"><Avatar index={p.avatar} /><span title={p.player}>{p.handle || short(p.player)}</span></span></td>
-                    <td><strong>{p.elo}</strong>{p.published && <small className="ranking-settled">Published: {p.published.elo}</small>}</td>
+                    <td><strong>{p.elo}</strong>{p.published && <small className="ranking-settled">{p.live?'Published: '+p.published.elo:'Published copy · Live unavailable'}</small>}</td>
                     <td>{p.wins}</td>
                   </tr>
                 ))}
@@ -1526,7 +1544,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           ) : (
             <p>No ranked results yet. Find your first rival.</p>
           )}
-          {rankMode === "classic" && <small>Published ratings are the latest onchain copy and remain subject to the challenge period.</small>}
+          {(rankMode === "classic" || roomsChaos && rankMode === "chaos") && <small>Published ratings are the latest onchain copy and remain subject to the challenge period.</small>}
         </RoomsModal>
       )}
       {!active && <footer className="rooms-powered"><EngineCredit /></footer>}

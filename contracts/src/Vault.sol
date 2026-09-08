@@ -26,7 +26,7 @@ contract Vault is EIP712, ReentrancyGuard {
     function registerModule(address module) external {
         require(
             msg.sender == administrator && !modulesSealed && module.code.length > 0 && !modules[module]
-                && moduleCount < 2,
+                && moduleCount < _moduleLimit(),
             "registration"
         );
         modules[module] = true;
@@ -34,9 +34,11 @@ contract Vault is EIP712, ReentrancyGuard {
     }
 
     function seal() external {
-        require(msg.sender == administrator && moduleCount == 2, "seal");
+        require(msg.sender == administrator && moduleCount == _moduleLimit(), "seal");
         modulesSealed = true;
     }
+
+    function _moduleLimit() internal pure virtual returns (uint256) { return 2; }
 
     function depositFor(address player) external payable {
         require(player != address(0), "player");

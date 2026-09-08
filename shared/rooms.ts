@@ -8,6 +8,7 @@ export type RoomMember = {
   seen: number;
 };
 export type MatchOffer = {
+  mode?: 0 | 1;
   id: bigint;
   room: Hex;
   a: Address;
@@ -61,6 +62,7 @@ export function nextPair(
   ).slice(0, 2);
 }
 export type LobbyOffer = {
+  mode?: 0 | 1;
   id: string;
   room: string;
   a: string;
@@ -74,6 +76,7 @@ export type LobbyOffer = {
   status: "offered" | "submitted" | "active" | "complete" | "cancelled";
 };
 export type LobbyRoom = {
+  mode?: 0 | 1;
   id: string;
   host: string;
   kind: RoomKind;

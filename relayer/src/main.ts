@@ -1,6 +1,7 @@
 import { initializeInputs, createInputs, sharesInputEstimate } from "./inputs";
 import {trafficBudget} from "./traffic";
 import {createRoomsCoordinator} from "./interlude-rooms";
+import {loadRoomsFinance} from "./rooms-finance-config";
 import {transitionGas} from "./transition-gas";
 import { initializePayouts, createPayoutWorker, payoutKey } from "./payouts";
 import "dotenv/config";
@@ -42,7 +43,7 @@ import {
 } from "../../shared/abis";
 import {
   json,
-  encodeRequest,
+  encodeRequest as encodeLegacyRequest,
   domain,
   joinTypes, joinV2Types, allDeployments, contractsFor, deploymentId, resolveDeployment, queueV2Message,
   queueMessage,
@@ -65,6 +66,8 @@ const deployment: Deployment = JSON.parse(
   ),
 );
 const activeVersion = deploymentId(deployment);
+const roomsFinanceConfig=await loadRoomsFinance();
+const encodeRequest=(r:RelayRequest,d:Deployment)=>r.deployment==="rooms"?roomsFinanceConfig.encode(r):encodeLegacyRequest(r,d);
 const activeContracts = contractsFor(deployment);
 const gameAbi = activeContracts.game as typeof gameV2Abi;
 const marketAbi = activeContracts.market as typeof marketV2Abi;
@@ -231,10 +234,11 @@ async function body(req: IncomingMessage) {
   return JSON.parse(value || "{}");
 }
 async function enqueue(payload: RelayRequest, internal = false, value = 0n) {
+  if(payload.deployment==="rooms" && (!internal || !payload.roomApp))throw new Error("Use the authenticated rooms finance API");
   if (!internal && !allowed[payload.contract]?.includes(payload.functionName))
     throw new Error("Call not sponsored");
   payload = { ...payload, deployment: payload.deployment || activeVersion };
-  if (payload.deployment !== activeVersion && !(payload.contract === "vault" && payload.functionName === "withdraw" || payload.contract === "market" && payload.functionName === "claim" || payload.contract === "tournaments" && payload.functionName === "refund")) throw new Error("Legacy contracts accept claims, refunds and withdrawals only");
+  if (payload.deployment !== activeVersion && payload.deployment !== "rooms" && !(payload.contract === "vault" && payload.functionName === "withdraw" || payload.contract === "market" && payload.functionName === "claim" || payload.contract === "tournaments" && payload.functionName === "refund")) throw new Error("Legacy contracts accept claims, refunds and withdrawals only");
   if(payload.functionName==="submitInput")return inputs.accept(payload);
   const encoded = encodeRequest(payload, deployment);
   const round =
@@ -260,12 +264,12 @@ async function enqueue(payload: RelayRequest, internal = false, value = 0n) {
     if (
       existing.rows[0].status !== "failed" ||
       !internal ||
-      !["open","claim","refund","retryPayout","advance"].includes(payload.functionName)
+      !["open","openRound","finalizeResult","claim","refund","retryPayout","advance"].includes(payload.functionName)
     )
       return existing.rows[0];
     const pending = await pool.query(
-      "SELECT id,status FROM relay_jobs WHERE payload->>'contract'=$1 AND payload->>'functionName'=$2 AND payload->'args'=$3::jsonb AND payload->>'deployment'=$4 AND status IN ('queued','signed','sent') LIMIT 1",
-      [payload.contract,payload.functionName,json(payload.args),payload.deployment],
+      "SELECT id,status FROM relay_jobs WHERE payload->>'contract'=$1 AND payload->>'functionName'=$2 AND payload->'args'=$3::jsonb AND payload->>'deployment'=$4 AND coalesce(payload->>'roomApp','')=$5 AND coalesce(payload->>'roomAction','')=$6 AND status IN ('queued','signed','sent') LIMIT 1",
+      [payload.contract,payload.functionName,json(payload.args),payload.deployment,payload.roomApp || "",payload.roomAction || ""],
     );
     if (pending.rows[0]) return pending.rows[0];
     id = keccak256(toHex(`${id}:retry:${head}`));
@@ -663,7 +667,7 @@ const handleSocial = socialRoutes({deployment,origin,profileChanged:()=>ladderCa
   sourceMatch:async(ref:string)=>{const [version,id]=ref.split(":"); const d=resolveDeployment(version as any,deployment);if(!/^\d+$/.test(id))throw new Error("Invalid match reference"); const m=await publicClient.readContract({address:d.game,abi:contractsFor(d).game,functionName:"getMatch",args:[BigInt(id)]}) as any; if(m.status!==3)throw new Error("Finish this match before requesting a rematch"); return {playerA:m.playerA.toLowerCase(),playerB:m.playerB.toLowerCase(),mode:m.mode||0,ranked:m.ranked??true}; }
 });
 const payoutWorker=createPayoutWorker({db:pool,deployment,client:publicClient,graphql,enqueue});
-const roomsCoordinator=await createRoomsCoordinator({db:pool,origin,body,send,graphql});
+const roomsCoordinator=await createRoomsCoordinator({db:pool,origin,body,send,graphql,financeConfig:roomsFinanceConfig,enqueue});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)

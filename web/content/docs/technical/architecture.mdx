@@ -1,6 +1,12 @@
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
+
 ## One authoritative game
 
 PONGIT is a Next.js web application with Solidity contracts, a Node relayer and an Envio indexer. Production runs on a VPS behind Caddy HTTPS. PostgreSQL and internal services are private; the browser does not connect directly to the database.
+
+The rooms path is browser → hosted Solidity engine → published Monad state. The financial path is browser owner signature → persistent relayer → Monad market/vault. These paths have different confirmation guarantees.
+
+The following diagram describes the preserved V4 arcade:
 
 <ArchitectureDiagram />
 
@@ -25,7 +31,11 @@ PONGIT is a Next.js web application with Solidity contracts, a Node relayer and 
 
 The live transport is **Monad Testnet, chain 10143**, using public RPC services through application gateways. The site does not currently route transactions through Alchemy, and does not represent a sponsor integration as active just because it was considered.
 
-The separate [Interlude lab](/docs/playing/interlude-lab) uses a dedicated, operator-hosted engine for a single Classic friendly arena. Mera signs a scoped Interlude SDK grant; game calls go directly to the engine, with result hashes committed to Monad. It is an experimental deployment, not a replacement for V4 matchmaking, ELO, Chaos, Envio replays or financial contracts. Financial settlement must not consume a stale delegated value as a final Monad result.
+The main [rooms arcade](/docs/playing/rooms) uses a multi-match Interlude engine. Mera signs a scoped SDK grant and game calls go directly to the hosted operator. Classic and Chaos results and ratings are computed in the Solidity application and published to Monad. The original single-arena lab and V4 are separate deployments.
+
+Chaos uses a testnet VPS attester to sign actual paid MON pressure at an exact between-rally cutoff. Its authority covers handicap input, not financial settlement. The Monad adapter accepts a terminal result only after hub status returns to None following closure and the challenge period. The rooms coordinator indexes its own market events and reconciles contracts; it does not claim the new rooms stream is already an Envio replay pipeline. Envio continues to index V1 to V4.
+
+Scheduled renewal drains games, closes the delegation, waits the one-hour challenge period, finalizes results and verifies the hosted node's new epoch. This creates a maintenance interval and delayed payouts. No browser prediction or VPS signature bypasses that wait.
 
 ## Trust and limits
 

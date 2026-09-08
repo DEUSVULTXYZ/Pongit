@@ -2,8 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
-import {PhysicsRoomsChaos} from "./PhysicsRoomsChaos.sol";
-import {PhysicsInterlude} from "./PhysicsInterlude.sol";
+import {RoomsRules} from "./RoomsRules.sol";
 import {EloFormulaV2} from "../v2/EloFormulaV2.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Delegatable} from "../../vendor/interlude/Delegatable.sol";
@@ -21,6 +20,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
     address public immutable coordinator;
     uint256 public immutable genesisTime;
     EloFormulaV2 public immutable eloFormula;
+    RoomsRules public immutable physicsRules;
     bytes32 private constant OFFER_TYPEHASH = keccak256(
         "MatchOffer(uint256 id,bytes32 room,address a,address b,uint8 mode,bool ranked,uint64 expires,uint256 rules,bytes32 entropy)"
     );
@@ -63,9 +63,9 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         bytes32 checkpoint;
     }
     /// @dev Must bind this deployment, match, rally and exact pause boundary. The source
-    /// must exclude late bets and platform liquidity and prove actual MON payment.
-    /// A stale source must return ready=false. Never implement this with a browser read
-    /// or an unrestricted coordinator signature. The transport remains an open dependency.
+    /// must exclude late bets and platform liquidity. A stale source returns ready=false.
+    /// The provisional testnet subclass uses a scoped VPS attestation, explicitly
+    /// authorized by the owner. This is a trust assumption, not a cross-chain proof.
     function _verifiedPressure(uint256 id, uint8 rally, uint64 resumeAt) internal view virtual returns (Pressure memory);
     event PressureRequired(uint256 indexed id, uint8 rally, uint64 resumeAt);
     event RallyResumed(
@@ -97,6 +97,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         coordinator = coordinator_;
         genesisTime = block.timestamp;
         eloFormula = new EloFormulaV2();
+        physicsRules = new RoomsRules();
         domain = keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
@@ -118,15 +119,15 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         return keccak256(abi.encode(address(this), ns, id, field));
     }
 
-    function _get(uint256 id, uint256 field) private view returns (uint256) {
+    function _get(uint256 id, uint256 field) internal view returns (uint256) {
         return words[_key(0, id, field)];
     }
 
-    function _set(uint256 id, uint256 field, uint256 value) private {
+    function _set(uint256 id, uint256 field, uint256 value) internal {
         words[_key(0, id, field)] = value;
     }
 
-    function _phase(uint256 id) private view returns (uint256) {
+    function _phase(uint256 id) internal view returns (uint256) {
         return (_get(id, 0) >> 161) & 7;
     }
 
@@ -177,12 +178,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
             words[_key(1, uint160(o.b), 0)] = o.id;
             words[_key(4, 0, 0)]++;
             _set(o.id, 0, meta);
-            _save(
-                o.id,
-                o.mode == 0
-                    ? PhysicsInterlude.initial(bytes32(_get(o.id, 3)))
-                    : PhysicsRoomsChaos.initial(bytes32(_get(o.id, 3)))
-            );
+            _save(o.id, physicsRules.initial(bytes32(_get(o.id, 3)), o.mode));
         } else if (phase != 1 || bytes32(_get(o.id, 10)) != digest) {
             revert InvalidMatch();
         }
@@ -277,20 +273,18 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
             _set(id, 14, p.paidA);
             _set(id, 15, p.paidB);
             // Start now: an unavailable checkpoint must never make us replay a hidden rally.
-            s = PhysicsRoomsChaos.resume(s, uint64(target), p.paidA, p.paidB);
+            s = physicsRules.resume(s, uint64(target), p.paidA, p.paidB);
             _save(id, s);
             emit RallyResumed(id, rally, p.paidA, p.paidB, s.halfA, s.halfB, p.checkpoint);
             return true;
         }
-        (s, complete) = s.mode == 0
-            ? PhysicsInterlude.advance(s, uint64(target), 128)
-            : PhysicsRoomsChaos.advance(s, uint64(target), 128);
+        (s, complete) = physicsRules.advance(s, uint64(target), 128);
         _save(id, s);
         if (s.awaitingServe) emit PressureRequired(id, s.scoreA + s.scoreB, s.resumeAt);
         if (s.finished) _finish(id, 3, s.scoreA == 7 ? address(uint160(_get(id, 0))) : address(uint160(_get(id, 1))));
     }
 
-    function _state(uint256 id) private view returns (PhysicsV2.State memory s) {
+    function _state(uint256 id) internal view returns (PhysicsV2.State memory s) {
         uint256 xy = _get(id, 4);
         uint256 p = _get(id, 7);
         uint256 c = _get(id, 8);
@@ -345,6 +339,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
     function ratingOf(address player, uint8 mode) public view returns (Rating memory r) {
         require(mode <= 1, "mode");
         uint256 packed = words[_key(2, uint160(player), mode)];
+        if (packed == 0) return _startingRating(player, mode);
         r = Rating(uint32(packed), uint32(packed >> 32), uint32(packed >> 64), uint32(packed >> 96));
         uint32 season = currentSeason();
         if (r.season == season) return r;
@@ -353,6 +348,10 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
             value = 1000 + (value - 1000) / 2;
         }
         return Rating(uint32(uint256(value)), 0, 0, season);
+    }
+
+    function _startingRating(address, uint8) internal view virtual returns (Rating memory) {
+        return Rating(1000, 0, 0, currentSeason());
     }
 
     function _rate(uint256 id, address a, address b, address winner) private {

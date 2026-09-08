@@ -12,6 +12,7 @@ import {
   keccak256,
   toFunctionSelector,
   zeroHash,
+  type Abi,
   type Address,
   type Hex,
 } from "viem";
@@ -25,7 +26,13 @@ import {
 } from "@interludelayer-sdk/sdk";
 import { monadTestnet } from "viem/chains";
 import { z } from "zod";
-import { roomsAbi } from "../../shared/abi-rooms";
+import { roomsAbi as classicRoomsAbi } from "../../shared/abi-rooms";
+import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
+import { chaosOfferTypes } from "../../shared/rooms-chaos";
+import {createRoomsFinance} from "./rooms-finance";
+import {loadRoomsFinance} from "./rooms-finance-config";
+import {roomsLifecycle} from "./rooms-lifecycle";
+import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
 import {
   roomAuthMessage,
@@ -57,10 +64,12 @@ type Invitation = {
 };
 type State = {
   rooms: Record<string, LobbyRoom>;
-  queue: { player: string; elo: number; at: number; seen: number }[];
+  queue: { player: string; mode?: 0 | 1; elo: number; at: number; seen: number }[];
   invites: Invitation[];
 };
 type Options = {
+  financeConfig?: Awaited<ReturnType<typeof loadRoomsFinance>>;
+  enqueue?: (r:RelayRequest,internal?:boolean,value?:bigint)=>Promise<any>;
   db: Pool;
   origin: string;
   body: (r: IncomingMessage) => Promise<any>;
@@ -76,6 +85,14 @@ export async function createRoomsCoordinator(o: Options) {
       "utf8",
     ),
   );
+  const chaosEnabled = manifest.rulesVersion === 4;
+  const roomsAbi: Abi = chaosEnabled ? roomsChaosAbi : classicRoomsAbi;
+  const modeOf = (v: unknown): 0 | 1 => {
+    const mode=z.union([z.literal(0),z.literal(1)]).parse(v ?? 0);
+    if(mode === 1 && (!chaosEnabled || process.env.ROOMS_CHAOS_ENABLED !== "true"))
+      throw new Error("Chaos is not open in this arena yet.");
+    return mode;
+  };
   const signer = privateKeyToAccount(
     process.env.INTERLUDE_COORDINATOR_KEY as Hex,
   );
@@ -98,6 +115,9 @@ export async function createRoomsCoordinator(o: Options) {
     transport: http(manifest.node, { retryCount: 0, timeout: 4000 }),
   });
   const db = o.db;
+  const finance = chaosEnabled && o.financeConfig?.entries.some(x=>x.app.toLowerCase()===app) && o.enqueue
+    ? await createRoomsFinance({db,base,manifest:o.financeConfig.find(app),enqueue:o.enqueue}) : null;
+  if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED === "true" && !finance)throw new Error("Chaos requires its funded financial bridge");
   await db.query(`
  CREATE TABLE IF NOT EXISTS il_lobby(app text PRIMARY KEY,document jsonb NOT NULL);
  CREATE TABLE IF NOT EXISTS il_occupancy(app text NOT NULL,player text NOT NULL,room text NOT NULL,PRIMARY KEY(app,player));
@@ -107,7 +127,11 @@ export async function createRoomsCoordinator(o: Options) {
  CREATE TABLE IF NOT EXISTS il_operations(app text NOT NULL,player text NOT NULL,id text NOT NULL,request_hash text NOT NULL,response jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,player,id));
  CREATE TABLE IF NOT EXISTS il_results(app text NOT NULL,id text NOT NULL,room text NOT NULL,a text NOT NULL,b text NOT NULL,winner text NOT NULL,phase integer NOT NULL,ranked boolean NOT NULL,score_a integer NOT NULL,score_b integer NOT NULL,hash text NOT NULL,published boolean NOT NULL DEFAULT false,ended_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id));
  CREATE TABLE IF NOT EXISTS il_engine_jobs(app text NOT NULL,id text NOT NULL,nonce bigint NOT NULL,raw text NOT NULL,hash text NOT NULL,status text NOT NULL,PRIMARY KEY(app,id),UNIQUE(app,nonce));
+ ALTER TABLE il_engine_jobs ADD COLUMN IF NOT EXISTS epoch bigint NOT NULL DEFAULT 0;
+ ALTER TABLE il_engine_jobs DROP CONSTRAINT IF EXISTS il_engine_jobs_app_nonce_key;
+ CREATE UNIQUE INDEX IF NOT EXISTS il_engine_jobs_epoch_nonce ON il_engine_jobs(app,epoch,nonce);
  CREATE TABLE IF NOT EXISTS il_offers(app text NOT NULL,id text NOT NULL,room text NOT NULL,offer jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id));
+ ALTER TABLE il_results ADD COLUMN IF NOT EXISTS mode integer NOT NULL DEFAULT 0;
  ALTER TABLE il_results ADD COLUMN IF NOT EXISTS verified boolean NOT NULL DEFAULT true;
  CREATE INDEX IF NOT EXISTS il_results_players ON il_results(a,b,ended_at);
  `);
@@ -115,7 +139,9 @@ export async function createRoomsCoordinator(o: Options) {
     app,
     { rooms: {}, queue: [], invites: [] },
   ]);
-  let publicLadder: Promise<any> | undefined, publicLadderAt = 0;
+  const lifecycle=chaosEnabled&&finance&&o.financeConfig ? await roomsLifecycle({db,base,app,hub:manifest.hub,nodeUrl:manifest.node,adapter:o.financeConfig.find(app).adapter,engineStatus:()=>client.status(),engineActive:async()=>BigInt(await client.read("activeCount",[]) as bigint)}) : null;
+  if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED==='true' && !lifecycle && process.env.ROOMS_PRIVATE_FINANCE_TEST!=='true')throw new Error('Chaos requires a configured delegation lifecycle before opening to players');
+  let publicLadder: Promise<any> | undefined, publicLadderAt = 0, publicLadderMode = -1;
   const sockets = new Map<
     WebSocket,
     { req: IncomingMessage; player: string }
@@ -133,6 +159,9 @@ export async function createRoomsCoordinator(o: Options) {
     auditOffset = 0;
   const epochs = new Map<string, { value: bigint; at: number }>();
   const ratings = new Map<string, { live: any; published: any }>();
+  const ratingKey = (p:string,mode=0)=>p+":"+mode;
+  const readRating = async(p:Address,mode=0,published=false):Promise<any> =>
+    published ? client.readSettled("ratingOf",chaosEnabled?[p,mode]:[p]) : client.read("ratingOf",chaosEnabled?[p,mode]:[p]);
   let legacyResults: any[] = [];
   const current = async () =>
     (await db.query("SELECT document FROM il_lobby WHERE app=$1", [app]))
@@ -247,12 +276,13 @@ export async function createRoomsCoordinator(o: Options) {
     if (occupant(s, p) || s.queue.some((q) => q.player === p))
       throw new Error("This player is already in a room or matchmaking.");
   }
-  function makeRoom(s: State, p: string, kind: RoomKind) {
+  function makeRoom(s: State, p: string, kind: RoomKind, mode:0|1=0) {
     const now = Date.now(),
       r: LobbyRoom = {
         id: hex(),
         host: p,
         kind,
+        mode,
         members: [
           { player: p, joined: now, position: 0, away: false, seen: now },
         ],
@@ -342,12 +372,13 @@ export async function createRoomsCoordinator(o: Options) {
           ...inbox.map((i) => i.creator),
         ]),
       ]),
-      rating: ratings.get(p),
+      rating: ratings.get(ratingKey(p,room?.mode || s.queue.find(q=>q.player===p)?.mode || 0)),
       online,
       admission:
         online &&
         admissionHealthy &&
-        process.env.ROOMS_ADMISSION_ENABLED === "true",
+        process.env.ROOMS_ADMISSION_ENABLED === "true" && (lifecycle?.available() ?? true),
+      maintenance:lifecycle?.status(),
       error: online ? "" : lastError,
     };
   }
@@ -367,7 +398,7 @@ export async function createRoomsCoordinator(o: Options) {
       }
     }
   }
-  async function publicTick(id: string, cancel = false) {
+  async function publicTick(id: string, cancel = false, pressureData?:Hex) {
     // Persist the exact signed bytes before send. A restart resubmits those bytes only.
     let job = (
       await db.query(
@@ -375,11 +406,12 @@ export async function createRoomsCoordinator(o: Options) {
         [app],
       )
     ).rows[0];
+    if(job && Number(job.epoch)!==lastEpoch)throw new Error("An engine transaction from another delegation needs recovery before sending");
     if (!job) {
       const nonce = await client.node.getTransactionCount({
         address: signer.address,
       });
-      const data = encodeFunctionData({
+      const data = pressureData || encodeFunctionData({
         abi: roomsAbi,
         functionName: cancel ? "cancelMatch" : "tick",
         args: [BigInt(id)],
@@ -395,10 +427,10 @@ export async function createRoomsCoordinator(o: Options) {
         maxFeePerGas: 0n,
         maxPriorityFeePerGas: 0n,
       });
-      job = { id: hex(), nonce, raw, hash: keccak256(raw) };
+      job = { id: hex(), nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
       await db.query(
-        "INSERT INTO il_engine_jobs VALUES($1,$2,$3,$4,$5,'pending')",
-        [app, job.id, nonce, raw, job.hash],
+        "INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch) VALUES($1,$2,$3,$4,$5,'pending',$6)",
+        [app, job.id, nonce, raw, job.hash,lastEpoch],
       );
     }
     let receipt = await client.node
@@ -416,10 +448,13 @@ export async function createRoomsCoordinator(o: Options) {
         if (!receipt) throw e;
       }
     }
+    const receiptStatus=String(receipt?.status);
+    const success=["success","0x1","1"].includes(receiptStatus);
     await db.query(
-      "UPDATE il_engine_jobs SET status='observed' WHERE app=$1 AND id=$2",
-      [app, job.id],
+      "UPDATE il_engine_jobs SET status=$3 WHERE app=$1 AND id=$2",
+      [app, job.id, success ? "observed" : "failed"],
     );
+    if(!success)throw new Error("Engine command reverted. The current game state will be checked before retrying.");
   }
   async function restoreContestedMatch(id: string, snap: any) {
     const saved = (
@@ -484,6 +519,11 @@ export async function createRoomsCoordinator(o: Options) {
   }
   async function maintenance() {
     if (cycle) return;
+    if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
+      online=false;admissionHealthy=false;lastCheck=Date.now();
+      lastError='The arcade is renewing its delegation. Payments continue in the background.';
+      return;
+    }
     cycle = true;
     try {
       const status = await client.status();
@@ -537,7 +577,7 @@ export async function createRoomsCoordinator(o: Options) {
         )
           continue;
         const id = r.offer.id;
-        let s = await client.read("getSnapshot", [BigInt(id)]);
+        let s: any = await client.read("getSnapshot", [BigInt(id)]);
         if (s[2] === 2n && s[8] - s[12].t > 500000n) {
           await publicTick(id);
           s = await client.read("getSnapshot", [BigInt(id)]);
@@ -547,6 +587,10 @@ export async function createRoomsCoordinator(o: Options) {
           s = await client.read("getSnapshot", [BigInt(id)]);
         }
         observed.set(id, s);
+        if(finance && s[2]===2n && s[12].mode===1 && s[12].awaitingServe){
+          try{await finance.pressure(id,s,data=>publicTick(id,false,data));}
+          catch(e){lastError="Chaos checkpoint pending: "+(e as Error).message;}
+        }
         if (s[2] >= 3n) {
           ratingAt = 0;
           const resultHash = await client.read("resultHashes", [BigInt(id)]);
@@ -555,7 +599,7 @@ export async function createRoomsCoordinator(o: Options) {
           ]);
           const ps = s[12];
           await db.query(
-            `INSERT INTO il_results(app,id,room,a,b,winner,phase,ranked,score_a,score_b,hash,published) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) ON CONFLICT(app,id) DO UPDATE SET winner=EXCLUDED.winner,phase=EXCLUDED.phase,score_a=EXCLUDED.score_a,score_b=EXCLUDED.score_b,hash=EXCLUDED.hash,published=EXCLUDED.published,verified=true`,
+            `INSERT INTO il_results(app,id,room,a,b,winner,phase,ranked,score_a,score_b,hash,published,mode) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) ON CONFLICT(app,id) DO UPDATE SET winner=EXCLUDED.winner,phase=EXCLUDED.phase,score_a=EXCLUDED.score_a,score_b=EXCLUDED.score_b,hash=EXCLUDED.hash,published=EXCLUDED.published,verified=true`,
             [
               app,
               id,
@@ -569,6 +613,7 @@ export async function createRoomsCoordinator(o: Options) {
               ps.scoreB,
               resultHash,
               resultHash === publishedHash,
+              ps.mode || 0,
             ],
           );
         }
@@ -630,24 +675,26 @@ export async function createRoomsCoordinator(o: Options) {
         ]),
       ];
       if (Date.now() - ratingAt > 15000) {
+        // Rankings are a cached display. A slow provider must not stall room
+        // rotation, consent expiry or the next rally's pressure checkpoint.
+        ratingAt = Date.now();
         for (let i = 0; i < rated.length; i += 2) {
           const ps = rated.slice(i, i + 2) as Address[];
-          const [live, published] = await Promise.all([
-            Promise.all(ps.map((p) => client.read("ratingOf", [p]))),
-            Promise.all(ps.map((p) => client.readSettled("ratingOf", [p]))),
-          ]);
-          ps.forEach((p, j) =>
-            ratings.set(p, { live: live[j], published: published[j] }),
-          );
+          await Promise.all(ps.map(async p=>{
+            const mode=occupant(before,p)?.mode || before.queue.find(q=>q.player===p)?.mode || 0;
+            try {
+              const [live,published]=await Promise.all([readRating(p,mode),readRating(p,mode,true)]);
+              ratings.set(ratingKey(p,mode),{live,published});
+            }catch{/* Keep the last display value; onchain ELO remains authoritative. */}
+          }));
         }
-        ratingAt = Date.now();
       }
       const nodeNow = await client.status();
       let reserved = nodeNow.pendingDiffs.length;
       // Existing unfinished offers reserve their worst-case creation and terminal writes.
       for (const r of Object.values(before.rooms))
         if (r.offer && !["complete", "cancelled"].includes(r.offer.status))
-          reserved += observed.get(r.offer.id)?.[2] === 0n ? 24 : 8;
+          reserved += observed.get(r.offer.id)?.[2] === 0n ? (chaosEnabled?30:24) : (chaosEnabled?12:8);
       await transact(async (s, c) => {
         const now = Date.now();
         s.queue = s.queue.filter((q) => now - q.seen < 30000);
@@ -721,10 +768,10 @@ export async function createRoomsCoordinator(o: Options) {
           let second;
           for (const other of s.queue)
             if (
-              other !== first &&
+              other !== first && (other.mode || 0) === (first.mode || 0) &&
               Math.abs(
-                (ratings.get(first.player)?.live.elo || 1000) -
-                  (ratings.get(other.player)?.live.elo || 1000),
+                (ratings.get(ratingKey(first.player, first.mode || 0))?.live.elo || 1000) -
+                  (ratings.get(ratingKey(other.player, other.mode || 0))?.live.elo || 1000),
               ) <= width &&
               !(await blocked(c, first.player, other.player))
             ) {
@@ -733,7 +780,7 @@ export async function createRoomsCoordinator(o: Options) {
             }
           if (!second) continue;
           s.queue = s.queue.filter((q) => q !== first && q !== second);
-          const r = makeRoom(s, first.player, "ranked");
+          const r = makeRoom(s, first.player, "ranked", first.mode || 0);
           r.members.push({
             player: second.player,
             joined: now,
@@ -767,9 +814,9 @@ export async function createRoomsCoordinator(o: Options) {
           if (
             !online ||
             !admissionHealthy ||
-            process.env.ROOMS_ADMISSION_ENABLED !== "true" ||
+            process.env.ROOMS_ADMISSION_ENABLED !== "true" || lifecycle && !lifecycle.available() ||
             active >= 2 ||
-            reserved + 24 > nodeNow.maxDiffsPerCommit
+            reserved + (chaosEnabled?30:24) > nodeNow.maxDiffsPerCommit
           ) {
             r.status = "capacity";
             continue;
@@ -779,21 +826,22 @@ export async function createRoomsCoordinator(o: Options) {
             room: r.id as Hex,
             a: pair[0].player as Address,
             b: pair[1].player as Address,
+            ...(chaosEnabled ? {mode:r.mode || 0}:{}),
             ranked: r.kind === "ranked",
             expires: BigInt(Math.floor(now / 1000) + 20),
-            rules: 3n,
+            rules: BigInt(manifest.rulesVersion),
             entropy: hex(),
           };
           const signature = await signer.signTypedData({
             domain: {
               name: "PONGIT Rooms",
-              version: "1",
+              version: chaosEnabled ? "2" : "1",
               chainId: 10143,
               verifyingContract: app,
             },
-            types: offerTypes,
+            types: chaosEnabled ? chaosOfferTypes : offerTypes,
             primaryType: "MatchOffer",
-            message: ticket,
+            message: ticket as any,
           });
           r.offer = {
             ...JSON.parse(json(ticket)),
@@ -804,12 +852,13 @@ export async function createRoomsCoordinator(o: Options) {
           r.status = "offer";
           r.activity = now;
           active++;
-          reserved += 24;
+          reserved += chaosEnabled?30:24;
         }
         return {};
       });
       await notify();
     } catch (e) {
+      if(process.env.ROOMS_PRIVATE_FINANCE_TEST === "true") console.warn("Private coordinator check:",String((e as any).details || (e as any).cause?.details || (e as Error).message).split("\n")[0].slice(0,300));
       admissionHealthy = false;
       if (Date.now() - lastEngineSeen > 10000) online = false;
       lastError = (e as Error).message
@@ -821,6 +870,7 @@ export async function createRoomsCoordinator(o: Options) {
     }
   }
   const timer = setInterval(() => void maintenance(), 2000);
+  const financeTimer = finance ? setInterval(()=>void finance.audit(),5000) : undefined;
   timer.unref();
   void maintenance();
   async function route(
@@ -840,7 +890,8 @@ export async function createRoomsCoordinator(o: Options) {
           admission:
             online &&
             admissionHealthy &&
-            process.env.ROOMS_ADMISSION_ENABLED === "true",
+            process.env.ROOMS_ADMISSION_ENABLED === "true" && (lifecycle?.available() ?? true),
+          maintenance:lifecycle?.status(),
           checkedAt: lastCheck,
           error: lastError,
         });
@@ -855,6 +906,7 @@ export async function createRoomsCoordinator(o: Options) {
         o.send(res, {
           id: room.id,
           kind: room.kind,
+          mode: room.mode || 0,
           host: room.host,
           count: room.members.length,
           profiles: await profileNames([room.host]),
@@ -985,25 +1037,29 @@ export async function createRoomsCoordinator(o: Options) {
         return true;
       }
       if (path === "/interlude/ladder" && req.method === "GET") {
-        if (!publicLadder || Date.now() - publicLadderAt > 10000) {
-          publicLadderAt = Date.now();
+        const mode=Number(new URL(req.url || "/",o.origin).searchParams.get("mode") || 0);
+        if(![0,1].includes(mode) || mode === 1 && !chaosEnabled)throw new Error("Ranking mode unavailable");
+        if (!publicLadder || publicLadderMode !== mode || Date.now() - publicLadderAt > 10000) {
+          publicLadderAt = Date.now(); publicLadderMode=mode;
           publicLadder = (async () => {
         const players = (
           await db.query(
-            "SELECT a AS player FROM il_results WHERE app=$1 AND verified AND ranked UNION SELECT b FROM il_results WHERE app=$1 AND verified AND ranked",
-            [app],
+            "SELECT a AS player FROM il_results WHERE app=ANY($1::text[]) AND verified AND ranked AND mode=$2 UNION SELECT b FROM il_results WHERE app=ANY($1::text[]) AND verified AND ranked AND mode=$2",
+            [[app,...(chaosEnabled && mode===0 && manifest.previousClassic ? [String(manifest.previousClassic).toLowerCase()] : [])],mode],
           )
         ).rows.map((x) => x.player);
         const items = [];
         for (const player of players) {
-          const live = await client.read("ratingOf", [player]),
-            published = await client.readSettled("ratingOf", [player]);
+          const [live,published] = await Promise.all([
+            online ? readRating(player,mode).catch(()=>null) : Promise.resolve(null),
+            readRating(player,mode,true)
+          ]);
           items.push({ player, live, published });
         }
         const profiles = await profileNames(players);
         return {
           items: items
-            .sort((a, b) => b.live.elo - a.live.elo)
+            .sort((a, b) => (b.live || b.published).elo - (a.live || a.published).elo)
             .map((x) => ({
               ...x,
               ...profiles.find((y) => y.player === x.player),
@@ -1015,6 +1071,12 @@ export async function createRoomsCoordinator(o: Options) {
         return true;
       }
       const p = await authenticate(req);
+      if(path.startsWith("/interlude/finance") || path.startsWith("/interlude/markets/")){
+        if(!finance)throw new Error("Rooms finance is not available in this deployment");
+        const result=await finance.route(path,req.method || "GET",p,req.method==="POST"?await o.body(req):{},new URL(req.url || "/",o.origin).searchParams);
+        if(result===undefined)throw new Error("Unknown finance action");
+        o.send(res,result,req.method==="POST"?202:200);return true;
+      }
       if (path === "/interlude/auth/session" && req.method === "DELETE") {
         const token = /(?:^|;\s*)pongit_rooms=([a-f0-9]{64})/.exec(
           req.headers.cookie || "",
@@ -1111,6 +1173,7 @@ export async function createRoomsCoordinator(o: Options) {
         o.send(res, {
           id: room.id,
           kind: room.kind,
+          mode: room.mode || 0,
           host: room.host,
           count: room.members.length,
           profiles: await profileNames([room.host]),
@@ -1164,17 +1227,19 @@ export async function createRoomsCoordinator(o: Options) {
             return {};
           }
           if (path === "/interlude/queue") {
+            const mode=modeOf(body.mode);
             if (s.queue.some((q) => q.player === p)) return {};
             available(s, p);
             if (
               !online ||
               !admissionHealthy ||
-              process.env.ROOMS_ADMISSION_ENABLED !== "true"
+              process.env.ROOMS_ADMISSION_ENABLED !== "true" || lifecycle && !lifecycle.available()
             )
               throw new Error("Matchmaking is not open yet.");
             s.queue.push({
               player: p,
-              elo: ratings.get(p)?.live.elo || 1000,
+              mode,
+              elo: ratings.get(ratingKey(p,mode))?.live.elo || 1000,
               at: Date.now(),
               seen: Date.now(),
             });
@@ -1192,6 +1257,7 @@ export async function createRoomsCoordinator(o: Options) {
             path === "/interlude/rooms" ||
             path === "/interlude/invitations"
           ) {
+            const mode=modeOf(body.mode);
             if (path === "/interlude/invitations") {
               const target = address.parse(body.player);
               const existing = s.invites.find(
@@ -1200,7 +1266,7 @@ export async function createRoomsCoordinator(o: Options) {
                   i.recipient === p &&
                   i.status === "pending" &&
                   i.expires > Date.now() &&
-                  s.rooms[i.room]?.kind === "duel",
+                  s.rooms[i.room]?.kind === "duel" && (s.rooms[i.room]?.mode || 0) === mode,
               );
               if (existing) {
                 available(s, p);
@@ -1223,13 +1289,14 @@ export async function createRoomsCoordinator(o: Options) {
             if (
               !online ||
               !admissionHealthy ||
-              process.env.ROOMS_ADMISSION_ENABLED !== "true"
+              process.env.ROOMS_ADMISSION_ENABLED !== "true" || lifecycle && !lifecycle.available()
             )
               throw new Error("Rooms are not open yet.");
             const r = makeRoom(
               s,
               p,
               path.endsWith("invitations") ? "duel" : "group",
+              mode,
             );
             const recipients = z
               .array(address)
@@ -1325,7 +1392,7 @@ export async function createRoomsCoordinator(o: Options) {
               ![offer.a, offer.b].includes(p)
             )
               throw new Error("This duel is no longer available.");
-            const snap = await client.read("getSnapshot", [BigInt(offer.id)]);
+            const snap: any = await client.read("getSnapshot", [BigInt(offer.id)]);
             if (snap[2] === 2n || offer.status === "active")
               throw new Error("The match has started. Resume or concede.");
             if (path.endsWith("back")) {
@@ -1345,7 +1412,7 @@ export async function createRoomsCoordinator(o: Options) {
           }
           if (path === "/interlude/rooms/leave") {
             if (r.offer && [r.offer.a, r.offer.b].includes(p)) {
-              const snap = await client.read("getSnapshot", [
+              const snap: any = await client.read("getSnapshot", [
                 BigInt(r.offer.id),
               ]);
               if (snap[2] === 2n)
@@ -1395,6 +1462,6 @@ export async function createRoomsCoordinator(o: Options) {
     route,
     subscribe,
     status: () => ({ online, lastError, lastCheck }),
-    stop: () => clearInterval(timer),
+    stop: () => {clearInterval(timer);if(financeTimer)clearInterval(financeTimer);lifecycle?.stop();},
   };
 }

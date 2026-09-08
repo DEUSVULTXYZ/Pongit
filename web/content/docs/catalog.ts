@@ -1,13 +1,14 @@
 export const groups = ["Getting started","Playing","Your account","Betting & payments","Help","Technical reference"] as const;
 export type DocEntry={slug:string;title:string;description:string;group:string;updated:string;keywords:string[]};
 const entry=(slug:string,title:string,description:string,group:number,keywords:string[]):DocEntry=>({slug,title,description,group:groups[group],updated:"2026-09-07",keywords});
+const reviewed=new Set(["getting-started/welcome","playing/rooms","playing/chaos","playing/rankings","account/balances","betting/how-it-works","betting/payments","technical/architecture","technical/contracts","technical/api","technical/operations"]);
 export const catalog:DocEntry[]=[
  entry("getting-started/welcome","Welcome to PONGIT","An arcade for good rivals, close matches and verifiable results.",0,["overview","testnet","free"]),
  entry("getting-started/first-match","Your first match","From Play now to your first seven points.",0,["start","controls","connect","play"]),
  entry("getting-started/passkeys","Passkeys & arcade sessions","Keep your account, renew your session and understand what you sign.",0,["login","connect","renew","reconnect","F5","disconnect"]),
  entry("playing/classic","Classic","Two paddles. One ball. First to seven.",1,["rules","paddle","controls"]),
  entry("playing/interlude-lab","Interlude lab","Try the dedicated Classic friendly arena and distinguish live results from Monad commitments.",1,["Interlude","lab","engine","session","fast","friendly"]),
- {...entry("playing/rooms","Rooms & Interlude matchmaking","Preview the three-choice arcade, private contacts and rotating shared cabinets.",1,["rooms","contacts","winner stays","Interlude","ranked","invite"]),updated:"2026-09-08"},
+ {...entry("playing/rooms","Rooms & matchmaking","Classic and Chaos, private contacts and rotating shared cabinets.",1,["rooms","contacts","winner stays","Interlude","ranked","invite"]),updated:"2026-09-08"},
  entry("playing/chaos","Chaos","Understand how betting pressure changes the next rally.",1,["handicap","96","72","shrink","bets"]),
  entry("playing/challenges","Matchmaking, challenges & rematches","Find an opponent or invite the rival you already know.",1,["duel","invite","cancel","friendly","ranked"]),
  entry("playing/rankings","Rankings & seasons","Separate Classic and Chaos ladders, with results recorded onchain.",1,["elo","leaderboard","placements","rating"]),
@@ -28,4 +29,4 @@ export const catalog:DocEntry[]=[
  entry("technical/permissions","Authentication & permissions","Separate gameplay authorization, app access and owner-approved spending.",5,["EIP-712","nonce","security","signature","session"]),
  entry("technical/api","HTTP API & WebSocket reference","Read application data and understand the authenticated transaction interfaces.",5,["API","HTTP","WebSocket","endpoints","integration"]),
  entry("technical/operations","Administration & operations","Operate the testnet service while preserving results and financial rights.",5,["admin","pause","backups","rollback","treasury"]),
-];
+].map(page=>reviewed.has(page.slug)?{...page,updated:"2026-09-08"}:page);

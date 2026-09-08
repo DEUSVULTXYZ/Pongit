@@ -1,3 +1,5 @@
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
+
 ## Base URLs and conventions
 
 HTTP base: `https://pongit.xyz/api`. WebSocket: `wss://pongit.xyz/ws`.
@@ -102,3 +104,19 @@ The player must match the app cookie. `inbox` is sent only to the relevant subsc
 Read the returned `error` and HTTP status rather than assuming every failure is 401. The current server commonly returns **400** for validation/authentication failures, **404** for missing routes/jobs, **409** for notebook revision conflicts, **410** for retired replays, **429** for traffic limits and **503** for unhealthy service status. RPC errors follow JSON-RPC envelopes.
 
 Refresh expiring quotes and nonces after failure. Do not resend a different transaction for a job already signed or sent; recover its state and receipt first. No API route in this reference grants access to another player's private notebook.
+
+## Rooms finance interfaces
+
+These paths are under `/api`, use the rooms HttpOnly cookie, allowed Origin and matching `x-pongit-player`. `/interlude/auth/challenge` and `/interlude/auth/session` authenticate possession of the scoped SDK session key and verify the owner grant, app, chain, epoch and expiry. This is not a spending authorization. The private socket subscription is `subscribe-rooms`; after `rooms-changed`, reload HTTP state. A `rooms-expired` notification requires reconnection.
+
+| Method and path | Purpose |
+| --- | --- |
+| GET `/interlude/config` | App, rules, capacity, runtime admission and maintenance stage |
+| GET `/interlude/finance` | Own rooms credit, wallet balance, vault/market nonces and recent positions |
+| GET `/interlude/markets/:id?side=0&shares=1000000000000000` | Quote, window version/cutoff, result, own position, payout and receipt |
+| POST `/interlude/finance/credit` | Owner-signed `expires` and `signature` for this app's one-time test credit |
+| POST `/interlude/finance/buy` | `{bet, signature}` using `Bet` typed data, the rooms market domain and fresh market nonce |
+| POST `/interlude/finance/withdraw` | `player`, `recipient`, `amount`, `nonce`, `deadline`, owner `signature` bound to the rooms vault |
+| POST `/interlude/finance/retry` | Match `id`; the server derives this account's fixed payout identifier |
+
+Financial mutations return the existing relayer job acknowledgement. `GET /jobs/:id` supplies the actual status and transaction hash. There is no public arbitrary `rooms` payload escape through `/relay`. All amounts and match ids are decimal strings; typed signatures bind chain 10143, exact contract and fresh sequential nonce. A quote is not a reservation. The game grant never signs a financial spend.

@@ -14,6 +14,14 @@ for database in $databases; do
 done
 cp .env "$target/runtime.env"
 cp deployments/testnet.json "$target/deployment.json"
+for manifest in interlude-rooms.json interlude-rooms-classic.json rooms-finance.json; do
+  if test -f "deployments/$manifest"; then cp "deployments/$manifest" "$target/$manifest"; fi
+done
+# Private operational keys must accompany the private database/config backup.
+# This directory is outside the checkout and is never included in a release.
+if test -d /opt/pongit/secrets/rooms; then
+  cp -a /opt/pongit/secrets/rooms "$target/rooms-secrets"
+fi
 cp RELEASE "$target/release.txt"
 sha256sum "$target"/*.dump > "$target/SHA256SUMS"
 touch "$target/complete"

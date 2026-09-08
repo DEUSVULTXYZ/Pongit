@@ -13,7 +13,7 @@
       "title": "Welcome to PONGIT",
       "description": "An arcade for good rivals, close matches and verifiable results.",
       "group": "Getting started",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "overview",
         "testnet",
@@ -21,23 +21,23 @@
       ],
       "headings": [
         {
-          "id": "one-more-game",
-          "text": "One more game",
+          "id": "pong-is-back-bring-a-rival",
+          "text": "Pong is back. Bring a rival.",
           "level": 2
         },
         {
-          "id": "choose-your-night",
-          "text": "Choose your night",
+          "id": "three-ways-to-play",
+          "text": "Three ways to play",
           "level": 2
         },
         {
-          "id": "your-place-in-the-arcade",
-          "text": "Your place in the arcade",
+          "id": "your-account-and-ranking",
+          "text": "Your account and ranking",
           "level": 2
         },
         {
-          "id": "what-is-available-today",
-          "text": "What is available today",
+          "id": "crowd-pressure-and-previous-arenas",
+          "text": "Crowd pressure and previous arenas",
           "level": 2
         }
       ]
@@ -192,8 +192,8 @@
     },
     {
       "slug": "playing/rooms",
-      "title": "Rooms & Interlude matchmaking",
-      "description": "Preview the three-choice arcade, private contacts and rotating shared cabinets.",
+      "title": "Rooms & matchmaking",
+      "description": "Classic and Chaos, private contacts and rotating shared cabinets.",
       "group": "Playing",
       "updated": "2026-09-08",
       "keywords": [
@@ -229,6 +229,11 @@
           "id": "rules-rankings-and-old-balances",
           "text": "Rules, rankings and old balances",
           "level": 2
+        },
+        {
+          "id": "betting-and-maintenance",
+          "text": "Betting and maintenance",
+          "level": 2
         }
       ]
     },
@@ -237,7 +242,7 @@
       "title": "Chaos",
       "description": "Understand how betting pressure changes the next rally.",
       "group": "Playing",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "handicap",
         "96",
@@ -304,7 +309,7 @@
       "title": "Rankings & seasons",
       "description": "Separate Classic and Chaos ladders, with results recorded onchain.",
       "group": "Playing",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "elo",
         "leaderboard",
@@ -516,7 +521,7 @@
       "title": "Wallet, betting credit & legacy balances",
       "description": "Know where your test MON is held and how to withdraw it.",
       "group": "Your account",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "funds",
         "vault",
@@ -526,6 +531,11 @@
         "faucet"
       ],
       "headings": [
+        {
+          "id": "rooms-credit-and-wallet",
+          "text": "Rooms credit and wallet",
+          "level": 2
+        },
         {
           "id": "two-balances-two-purposes",
           "text": "Two balances, two purposes",
@@ -590,7 +600,7 @@
       "title": "How betting works",
       "description": "Review the cost, signed maximum and potential payout before supporting a player.",
       "group": "Betting & payments",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "LMSR",
         "shares",
@@ -631,7 +641,7 @@
       "title": "Automatic payouts & refunds",
       "description": "Winning bets, tournament prizes and refunds go to your wallet automatically.",
       "group": "Betting & payments",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "claim",
         "payment",
@@ -642,8 +652,13 @@
       ],
       "headings": [
         {
-          "id": "paid-to-your-wallet",
-          "text": "Paid to your wallet",
+          "id": "rooms-payouts-wait-for-finality",
+          "text": "Rooms payouts wait for finality",
+          "level": 2
+        },
+        {
+          "id": "v4-payments-remain-separate",
+          "text": "V4 payments remain separate",
           "level": 2
         },
         {
@@ -776,7 +791,7 @@
       "title": "Architecture & integrations",
       "description": "How the browser, relayer, Envio and Monad work together.",
       "group": "Technical reference",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "Mera",
         "Envio",
@@ -859,7 +874,7 @@
       "title": "Contracts & deployments",
       "description": "Public addresses and versioned references for V4 and its archives.",
       "group": "Technical reference",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "addresses",
         "V1",
@@ -870,8 +885,13 @@
       ],
       "headings": [
         {
-          "id": "active-deployment",
-          "text": "Active deployment",
+          "id": "rooms-deployment",
+          "text": "Rooms deployment",
+          "level": 2
+        },
+        {
+          "id": "preserved-v4-arcade",
+          "text": "Preserved V4 arcade",
           "level": 2
         },
         {
@@ -937,7 +957,7 @@
       "title": "HTTP API & WebSocket reference",
       "description": "Read application data and understand the authenticated transaction interfaces.",
       "group": "Technical reference",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "API",
         "HTTP",
@@ -985,6 +1005,11 @@
           "id": "errors-and-recovery",
           "text": "Errors and recovery",
           "level": 2
+        },
+        {
+          "id": "rooms-finance-interfaces",
+          "text": "Rooms finance interfaces",
+          "level": 2
         }
       ]
     },
@@ -993,7 +1018,7 @@
       "title": "Administration & operations",
       "description": "Operate the testnet service while preserving results and financial rights.",
       "group": "Technical reference",
-      "updated": "2026-09-07",
+      "updated": "2026-09-08",
       "keywords": [
         "admin",
         "pause",
@@ -1025,6 +1050,11 @@
         {
           "id": "contract-level-limits",
           "text": "Contract-level limits",
+          "level": 2
+        },
+        {
+          "id": "rooms-lifecycle-and-payments",
+          "text": "Rooms lifecycle and payments",
           "level": 2
         }
       ]
@@ -1159,5 +1189,16 @@
         }
       ]
     }
-  ]
+  ],
+  "rooms": {
+    "chainId": 10143,
+    "rulesVersion": 3,
+    "startBlock": null,
+    "addresses": [
+      {
+        "name": "Rooms game",
+        "address": "0xb3f9c323ffb8ec6a8cd7d06ae239bc3d7bebd59a"
+      }
+    ]
+  }
 }

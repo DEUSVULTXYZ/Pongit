@@ -11,6 +11,7 @@ COPY scripts/docs-build.ts ./scripts/docs-build.ts
 COPY deployments/testnet.json ./deployments/testnet.json
 COPY deployments/interlude-lab.json ./deployments/interlude-lab.json
 COPY deployments/interlude-rooms.json ./deployments/interlude-rooms.json
+COPY deployments/rooms-finance.json ./deployments/rooms-finance.json
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_WS_URL
 ARG NEXT_PUBLIC_RP_ID

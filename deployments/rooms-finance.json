@@ -1,0 +1,11 @@
+[
+  {
+    "app": "0xbb6ba9901acde11da748a6abd1cef2188eef32eb",
+    "adapter": "0x57fc7be3556c0b2260e9125b53ee5f283431b62f",
+    "market": "0xe2c21ddb660b63c6d27110dc4fc0757f249b2a09",
+    "vault": "0x94f9e1439818ed25599cf500d07fb28dfe97fd84",
+    "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+    "startBlock": "60753496",
+    "chainId": 10143
+  }
+]

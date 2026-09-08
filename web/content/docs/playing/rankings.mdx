@@ -1,6 +1,8 @@
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
+
 ## Two ladders
 
-Open **More → Ladder** and choose Classic or Chaos. Each mode has a separate onchain ELO. New players start at **1000**. Existing ratings are inherited through the previous deployments rather than reset simply because the app was upgraded.
+Open **Ranking** directly in the header and choose Classic or Chaos. The previous V4 ladders are available separately. Each mode has a separate onchain ELO. New players start at **1000**. Classic inherits the previous rooms rating. The new rooms Chaos ladder starts at 1000; the V4 Chaos ranking remains separate.
 
 Saved usernames and avatars appear beside rankings. The wallet address remains the verifiable identity behind each profile.
 
@@ -18,6 +20,6 @@ Seasons last **30 days** from the current game's genesis time. Ratings owned by 
 
 ## If a ranking is not updated yet
 
-A ranked result is finalized onchain before the players start another ranked result workflow. Envio and the leaderboard cache then reflect it. Wait for confirmation and refresh if the display is temporarily behind; changing your username does not reset your ELO.
+The rooms contract applies a ranked result once on the engine. The leaderboard distinguishes live ELO from the published Monad copy, which remains subject to the delegation challenge process. The coordinator verifies and caches these views; V4 rankings continue through Envio. Wait for confirmation and refresh if the display is temporarily behind; changing your username does not reset your ELO.
 
 Use **Challenge** beside a player to invite them. [Challenge options](/docs/playing/challenges).

@@ -40,7 +40,13 @@ services:
       TRUST_PROXY: "true"
       INTERLUDE_COORDINATOR_KEY: ${INTERLUDE_COORDINATOR_KEY:-}
       ROOMS_ADMISSION_ENABLED: ${ROOMS_ADMISSION_ENABLED:-false}
-    volumes: [./deployments:/app/deployments:ro]
+      ROOMS_CHAOS_ENABLED: ${ROOMS_CHAOS_ENABLED:-false}
+      ROOMS_FINANCE_MANIFEST: ${ROOMS_FINANCE_MANIFEST:-}
+      ROOMS_PRESSURE_KEY_FILE: ${ROOMS_PRESSURE_KEY_FILE:-}
+      ROOMS_LIFECYCLE_KEY_FILE: ${ROOMS_LIFECYCLE_KEY_FILE:-}
+    volumes:
+      - ./deployments:/app/deployments:ro
+      - ${ROOMS_SECRET_DIRECTORY:-/opt/pongit/secrets/rooms}:/run/pongit-rooms:ro
     read_only: true
     tmpfs: [/tmp]
     security_opt: [no-new-privileges:true]

@@ -1,5 +1,6 @@
 import { advance, move, next, type State } from "../../shared/physics-v2";
 import { advance as advanceInterlude } from "../../shared/physics-interlude";
+import { advance as advanceRoomsChaos } from "../../shared/physics-rooms-chaos";
 
 export type SnapshotCursor = { id: string; head: bigint; version: bigint; clock: bigint };
 export function acceptsSnapshot(previous: SnapshotCursor | null, incoming: SnapshotCursor) {
@@ -39,7 +40,7 @@ export function projectLive(state: State, target: bigint): { state: State; waiti
     }
     // Only walls and paddle planes reach the lab collision routine. Preview
     // uses the same uncapped per-return acceleration as the engine.
-    s = advanceInterlude(s, event.at, 1)[0];
+    s = (s.mode === 1 ? advanceRoomsChaos : advanceInterlude)(s, event.at, 1)[0];
   }
   return { state: s, waiting: true };
 }

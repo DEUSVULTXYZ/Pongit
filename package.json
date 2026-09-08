@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev web --hostname 127.0.0.1",
-    "build": "npm run contracts:build && npm run abi && npm run abi:v2 && npm run abi:v3 && npm run abi:v4 && npm run docs:build && next build web",
+    "build": "npm run contracts:build && npm run abi && npm run abi:v2 && npm run abi:v3 && npm run abi:v4 && npm run abi:rooms:chaos && npm run docs:build && next build web",
     "docs:build": "tsx scripts/docs-build.ts",
     "docs:check": "tsx scripts/docs-build.ts --check",
     "start": "next start web --hostname 0.0.0.0",
@@ -37,6 +37,7 @@
     "interlude:probe": "node scripts/interlude-probe.mjs",
     "abi:interlude": "tsx scripts/abi-interlude.ts",
     "abi:rooms": "tsx scripts/abi-rooms.ts",
+    "abi:rooms:chaos": "tsx scripts/abi-rooms-chaos.ts",
     "test:rooms": "forge test --root contracts --match-contract InterludeRoomsTest && tsx --test tests/rooms.test.ts",
     "abi:v3": "tsx scripts/abi-v3.ts",
     "abi:v4": "tsx scripts/abi-v4.ts"

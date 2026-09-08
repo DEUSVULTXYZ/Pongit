@@ -1,16 +1,18 @@
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
+
 ## Open the match market
 
-Watch a live match and connect your passkey to use its market. Choose which player to back and the number of shares. Purchases use the active **betting balance**, not an automatic debit from incoming wallet winnings.
+Join a Chaos room as a spectator and open **Market** in the top bar. Connect your passkey to use the market. Classic rooms do not open betting markets; the V4 arcade retains its own markets. Choose which player to back and the number of shares. Purchases use the active **betting balance**, not an automatic debit from incoming wallet winnings.
 
 A winning share pays **1 MON per whole share**; fractional shares pay proportionally. The displayed potential payout is the gross payment if that side wins, not profit in addition to your purchase cost. Losing shares pay zero.
 
 ## Review before signing
 
-The review shows the selected player, **Estimated cost**, **Maximum cost (+1%)** and **Payout if they win**. The signed maximum bounds the spend. Quotes are state-dependent and can become stale while your passkey prompt is open.
+The review shows the selected player, **Estimated cost**, **Signed maximum** and **Payout if this player wins**. In rooms, the maximum adds a 3% tolerance and conservative rounding to the displayed quote. The V4 review retains its 1% tolerance. The signed maximum bounds the spend. Quotes are state-dependent and can become stale while your passkey prompt is open.
 
-Select **Confirm with passkey** only after reviewing the current details. If the market state changes beyond the permitted amount or closes, refresh the quote and review again. A gameplay key has no permission to approve a bet.
+Select **Confirm bet with passkey** only after reviewing the current details. If the market state changes beyond the permitted amount or closes, refresh the quote and review again. A gameplay key has no permission to approve a bet.
 
-![The spectator bet review: estimated cost, signed maximum and potential payout](/docs-assets/betting.webp)
+The account panel offers **Get test betting credit** and **Withdraw credit to wallet**, both with owner approval. Wallet winnings are not automatically deposited as betting credit.
 
 ## Why prices move
 
@@ -20,7 +22,7 @@ PONGIT uses a binary **LMSR** market maker. Buying shares changes the cost of su
 
 - A participant's account cannot bet on its own match.
 - The market must be funded, opened and unpaused, and the match must be in play.
-- Bets lock near unresolved or imminent collisions and close at the result.
+- In rooms, bets are accepted only during the 40-block window opened after a published Chaos point. No bet can enter a rally retroactively. The V4 market retains its collision guard.
 - Quotes bind the game state; an outdated version can be rejected.
 
 These restrictions reduce latency advantages, but do not guarantee their elimination or identify every related wallet.

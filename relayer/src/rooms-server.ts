@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import pg from "pg";
 import { createRoomsCoordinator } from "./interlude-rooms";
+import {isolatedRoomsRelay} from "../../tests/support/rooms-test-relay";
 const db = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 8 });
 await db.query(
   "CREATE TABLE IF NOT EXISTS profiles(player text PRIMARY KEY,handle text UNIQUE,avatar integer,updated_at timestamptz DEFAULT now());CREATE TABLE IF NOT EXISTS player_blocks(player text,blocked text,PRIMARY KEY(player,blocked));",
@@ -22,7 +23,10 @@ async function body(req: any) {
   }
   return JSON.parse(text || "{}");
 }
+const financial=process.env.ROOMS_PRIVATE_FINANCE_TEST==="true"?await isolatedRoomsRelay(db):null;
 const coordinator = await createRoomsCoordinator({
+  financeConfig:financial?.config,
+  enqueue:financial?.enqueue,
   db,
   origin,
   send,
@@ -36,6 +40,7 @@ const server = createServer(async (req, res) => {
       send(res, { error: "Origin denied" }, 403);
       return;
     }
+    if(financial && /^\/jobs\/0x[0-9a-f]{64}$/.test(url.pathname)){send(res,await financial.job(url.pathname.split('/')[2]) || {error:"Unknown job"});return;}
     if (await coordinator?.route(req, res, url.pathname)) return;
     if (url.pathname === "/profiles") {
       const search = (url.searchParams.get("search") || "")

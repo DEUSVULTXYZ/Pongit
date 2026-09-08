@@ -10,8 +10,10 @@ import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
 import manifest from "../../deployments/interlude-rooms.json";
 import { roomsAbi } from "../../shared/abi-rooms";
+import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { api, API } from "./api";
 export const roomsManifest = manifest;
+export const roomsChaos = Number(manifest.rulesVersion) === 4;
 export const roomsScope = [
   "acceptMatch",
   "input",
@@ -23,7 +25,7 @@ export const roomsAccountKey = `pongit:rooms:${manifest.app}:account`;
 export function createRoomsClient() {
   return createInterludeClient({
     app: manifest.app as Address,
-    abi: roomsAbi as Abi,
+    abi: (roomsChaos ? roomsChaosAbi : roomsAbi) as Abi,
     node: manifest.node,
     base: createPublicClient({
       chain: monadTestnet,

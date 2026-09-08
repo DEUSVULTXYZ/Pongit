@@ -1,27 +1,27 @@
-## One more game
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
 
-PONGIT is a head-to-head Pong arcade on Monad Testnet. Move your paddle, find a rival and race to seven points. The browser draws the action; smart contracts determine collisions, scores and the winner.
+## Pong is back. Bring a rival.
 
-<Callout title="Testnet arcade">PONGIT currently uses test MON on chain 10143. An ordinary match awards ranking points, not a MON prize. Playing is gas-sponsored while the platform has funding.</Callout>
+PONGIT is a head-to-head Pong arcade on Monad Testnet. Move your paddle, bring a rival and race to seven points. The browser draws the action; Solidity contracts determine collisions, scores, winners and ratings.
 
-## Choose your night
+<Callout title="Testnet arcade">All balances, bets and prizes use test MON, chain 10143. Ordinary ranked wins award ELO, not MON. Gameplay gas is sponsored while the platform has funding.</Callout>
 
-- **Play now** enters the ranked Classic queue by default. [Start your first match](/docs/getting-started/first-match).
-- **Chaos** adds crowd pressure: betting on the favourite can shrink that player's paddle in the next rally. [Read the rules](/docs/playing/chaos).
-- **Challenge a friend** lets you pick an opponent. Friendly games leave both rankings unchanged.
-- **Watch live** opens current matches. Spectators can follow the score without connecting a wallet.
-- **More** contains the leaderboard, tournaments and replays.
+## Three ways to play
 
-![The PONGIT home cabinet and Play now button](/docs-assets/home.webp)
+- **Matchmaking** finds a ranked opponent in your selected Classic or Chaos mode.
+- **Invite someone** sends a friendly duel to a contact, username or wallet address.
+- **Create room** opens a shared cabinet for up to eight people, with a shareable link and winner-stays rotation.
 
-## Your place in the arcade
+Choose **Classic** or **Chaos** above the cards. Both players accept the same duel before it starts. Connect once with a Mera passkey and reuse the scoped game session. [Rooms guide](/docs/playing/rooms).
 
-A [passkey](/docs/getting-started/passkeys) creates your Mera account without a browser extension. You can add a public username and character, keep a private encrypted notebook and return to the same account later.
+## Your account and ranking
 
-The active deployment is V4. Its winning bets and tournament prizes are paid directly to the beneficiary's wallet. Older balances stay in their original vaults and have a separate withdrawal flow.
+The account button lets you save a unique username and choose from twelve character portraits. **Ranking** is directly in the header, with separate Classic and Chaos ELO. Friendly rooms and invitations leave rankings unchanged. The account's **Betting credit & wallet** panel separates wallet funds, rooms credit and recent market positions.
 
-## What is available today
+## Crowd pressure and previous arenas
 
-Classic, Chaos, direct challenges, rankings, tournaments, live spectators, retained replays, public profiles, the private notebook and automatic V4 payments are available. A separate [Interlude lab](/docs/playing/interlude-lab) offers experimental Classic friendly matches on a dedicated engine. [See how the system works](/docs/technical/architecture).
+Chaos spectators can back a player between rallies. Stronger betting support can shrink that player's paddle for the next exchange. These testnet bets execute on Monad; a provisional VPS attester brings paid totals to the hosted game. [Chaos rules and limits](/docs/playing/chaos).
 
-The guides describe the delivered application. Where the network, indexer or sponsorship is delayed, the interface reports the operation's state rather than promising instant finality.
+Winning market payouts wait for the delegation's end and challenge period, then arrive automatically in the beneficiary's wallet. Live play is faster than financial finality. [Payments](/docs/betting/payments).
+
+**V4 arcade** keeps the previous tournaments, markets, payments, notebook, replays and balances available separately. Old vaults do not transfer automatically. The [technical guides](/docs/technical/architecture) distinguish each deployment rather than treating all historical functionality as one contract.

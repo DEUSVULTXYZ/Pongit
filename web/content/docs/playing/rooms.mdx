@@ -1,8 +1,10 @@
-<Callout title="Public testnet arcade">The homepage opens the Interlude multi-room arcade. Access depends on an active operator delegation; new admissions pause when it expires or cannot be verified. Same-application delegation renewal is still being validated. The V4 arcade remains available separately.</Callout>
+<Callout title="Chaos rooms release status">The public homepage currently runs Classic rooms. Rules-4 Chaos rooms are a tested candidate awaiting hosted-engine recovery after renewal; they are not enabled publicly. The Chaos-room instructions below describe that candidate. Existing V4 Chaos and financial features remain available separately.</Callout>
+
+<Callout title="Public testnet arcade">The homepage opens the Interlude multi-room arcade. Access depends on an active operator delegation; new admissions pause when it expires or cannot be verified. Scheduled renewal drains current games and includes an onchain challenge period before new games resume. The V4 arcade remains available separately.</Callout>
 
 ## Three ways to play
 
-**Matchmaking** finds a Classic ranked opponent. **Invite someone** opens contacts and username or wallet-address search for a friendly duel. **Create room** opens a shared cabinet with up to eight people, including the two current players. Connect once with your existing Mera passkey. The chosen action continues after connection or renewal. An unexpired Interlude session is restored after F5 in the same tab.
+**Matchmaking** finds a ranked opponent in the selected **Classic** or **Chaos** mode. The queues are separate. **Invite someone** opens contacts and username or wallet-address search for a friendly duel. **Create room** opens a shared cabinet with up to eight people, including the two current players. Connect once with your existing Mera passkey. The chosen action continues after connection or renewal. An unexpired Interlude session is restored after F5 in the same tab.
 
 Each deployment has its own game authorization. Your wallet address stays the same. A rooms grant lasts 30 minutes and can accept a match, move a paddle, advance its physics, cancel a pending match or concede. It cannot spend betting credit, withdraw MON or administer the contracts. The wallet key is closed after authorization. **Disconnect** removes this tab's game key; it does not revoke copies on other devices.
 
@@ -28,6 +30,12 @@ Save or remove a contact by username or address. This is a private, server-store
 
 Games remain first to seven. Each successful paddle return increases ball velocity by ten percent, without a gameplay speed cap; every point resets the next serve. Walls do not increase speed.
 
-Interlude ranked matchmaking starts a separate season at 1000 ELO. The contract applies placements, diminishing gains for repeated pairings and one rating update per result. Rooms and direct invitations are friendly and leave ELO unchanged. Live ELO and its published Monad copy are shown separately. Publication remains subject to Interlude's challenge process.
+Classic carries forward the previous rooms ELO. Chaos starts a separate rating at 1000. The header has one **Ranking** entry with a mode selector. The contract applies placements, diminishing gains for repeated pairings and one rating update per result. Rooms and direct invitations are friendly and leave ELO unchanged. Live ELO and its published Monad copy are shown separately. Publication remains subject to Interlude's challenge process.
 
-**V4 arcade** retains Chaos, tournaments, betting, payouts, notebook, old rankings and replays. Rooms do not award MON or provide betting markets. Existing vaults are not migrated, and old match links continue to refer to their original contracts. Rooms retain result summaries, not an unlimited recording of gameplay frames.
+Chaos rooms offer between-rally prediction markets to spectators through **Market**. They use a separate vault, and payouts wait for delegation finality. Ordinary wins never award a MON prize. **V4 arcade** retains its original Chaos, tournaments, markets, payouts, notebook, rankings and replays. Existing vaults are not migrated, and old match links continue to refer to their original contracts. Rooms retain result summaries, not an unlimited recording of gameplay frames.
+
+## Betting and maintenance
+
+The rooms account opens **Betting credit & wallet** for credits, signed withdrawals and recent positions. In Chaos, the testnet VPS bridge attests the MON actually paid at a fixed cutoff. Each window is 40 Monad blocks, approximately twelve seconds, plus publication and confirmation delays. The game waits at that boundary. [Chaos rules](/docs/playing/chaos).
+
+New games pause during scheduled delegation renewal. Payouts wait until the delegation closes and the one-hour challenge period has elapsed. They then go to the fixed wallet automatically, even if the recipient is disconnected. [Payment states](/docs/betting/payments).
