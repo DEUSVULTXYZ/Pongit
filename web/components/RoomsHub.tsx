@@ -1479,7 +1479,6 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       )}
       {panel === "more" && (
         <RoomsModal {...modalProps} title="Around the arcade">
-          <button onClick={() => openPanel("ladder")}>Ranking</button>
           <button onClick={() => void ensure(() => openContacts("contacts"))}>
             Contacts
           </button>

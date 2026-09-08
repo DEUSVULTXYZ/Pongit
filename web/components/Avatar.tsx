@@ -1,5 +1,6 @@
 "use client";
 import {useRef,type CSSProperties,type KeyboardEvent} from "react";
+import styles from "./AvatarPicker.module.css";
 
 // Stable IDs preserve every existing profile choice. Artwork is versioned by path.
 export const AVATARS = [
@@ -25,6 +26,7 @@ export function Avatar({index=0}:{index?:number}) {
 export function AvatarPicker({value,disabled,onChange}:{value:number;disabled:boolean;onChange:(index:number)=>void}) {
   const grid=useRef<HTMLDivElement>(null);
   function key(event:KeyboardEvent<HTMLButtonElement>,index:number) {
+    if(disabled)return;
     const columns=grid.current?getComputedStyle(grid.current).gridTemplateColumns.split(" ").length:4;
     const delta:Record<string,number>={ArrowRight:1,ArrowLeft:-1,ArrowDown:columns,ArrowUp:-columns};
     let next:number;
@@ -32,5 +34,16 @@ export function AvatarPicker({value,disabled,onChange}:{value:number;disabled:bo
     else if(event.key in delta)next=(index+delta[event.key]+AVATARS.length)%AVATARS.length;else return;
     event.preventDefault();onChange(next);const target=grid.current?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next];target?.focus({preventScroll:true});target?.scrollIntoView({block:"nearest",inline:"nearest",behavior:"instant"});
   }
-  return <fieldset className="avatar-roster" disabled={disabled}><legend>Choose your avatar</legend><p className="roster-caption">Twelve faces. Your place in the arcade.</p><div className="avatar-grid portrait-grid" ref={grid} role="radiogroup" aria-label="Arcade characters">{AVATARS.map((a,i)=><button key={a.slug} type="button" role="radio" aria-label={`${a.name}: ${a.detail}`} aria-checked={value===i} tabIndex={value===i?0:-1} data-avatar={i} style={{"--avatar-accent":a.accent} as CSSProperties} onKeyDown={e=>key(e,i)} onClick={()=>onChange(i)}><Avatar index={i}/><span className="avatar-name">{a.name}</span><span className="avatar-check" aria-hidden="true">✓</span></button>)}</div></fieldset>;
+  const selected=avatarAt(value);
+  return <fieldset className={styles.roster} data-testid="avatar-picker" disabled={disabled}>
+    <legend>Choose your avatar</legend>
+    <div className={styles.grid} ref={grid} role="radiogroup" aria-label="Arcade characters">
+      {AVATARS.map((a,i)=><button className={styles.option} key={a.slug} type="button" role="radio" aria-label={`${a.name}: ${a.detail}`} aria-checked={value===i} tabIndex={value===i?0:-1} data-avatar={i} style={{"--avatar-accent":a.accent} as CSSProperties} onKeyDown={e=>key(e,i)} onClick={()=>onChange(i)}>
+        <Avatar index={i}/>
+        <span className={styles.name}>{a.name}</span>
+        <span className={styles.check} data-avatar-check aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m4 8 3 3 5-6"/></svg></span>
+      </button>)}
+    </div>
+    <p className={styles.selection} aria-live="polite"><strong>{selected.name}</strong><span>{selected.detail}</span></p>
+  </fieldset>;
 }

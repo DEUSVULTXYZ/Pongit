@@ -1,0 +1,103 @@
+.roster {
+  min-inline-size: 0;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  color: #dfe9f1;
+}
+.roster > legend {
+  padding: 0;
+  margin-bottom: 14px;
+  font: 600 16px/1.4 var(--cabinet-font, system-ui, sans-serif);
+}
+.roster .grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.roster .grid .option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 44px;
+  margin: 0;
+  padding: 7px 7px 10px;
+  overflow: hidden;
+  border: 1px solid #354552;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #182632, #0a131d);
+  box-shadow: inset 0 1px #ffffff06, 0 3px 8px #0003;
+  transform: none;
+  text-transform: none;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+}
+.roster .grid .option :global(.portrait-avatar) {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  flex: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: 7px;
+  box-shadow: none;
+  opacity: 1;
+}
+.roster .option img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.roster .name {
+  display: block;
+  padding: 0 2px;
+  color: #dce7ef;
+  font: 600 14px/1.25 var(--cabinet-font, system-ui, sans-serif);
+  text-align: center;
+  letter-spacing: .1px;
+}
+.roster .grid .option:hover:not(:disabled) { border-color: var(--avatar-accent); background: #1b2a38; }
+.roster .grid .option[aria-checked="true"] {
+  border-color: var(--avatar-accent);
+  background: color-mix(in srgb, var(--avatar-accent) 13%, #11212d);
+  box-shadow: inset 0 0 0 1px var(--avatar-accent), 0 3px 14px #0004;
+}
+.roster .option[aria-checked="true"] .name { color: #fff; }
+.roster .grid .option:focus-visible { outline: 2px solid #ecffff; outline-offset: 3px; }
+.roster .grid .option:disabled { cursor: wait; opacity: .6; }
+.roster .check {
+  position: absolute;
+  inset: 11px 11px auto auto;
+  display: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #ffffff80;
+  border-radius: 50%;
+  background: var(--avatar-accent);
+  color: #07131e;
+  box-shadow: 0 2px 6px #0008;
+  pointer-events: none;
+}
+.roster .check svg { display: block; width: 15px; height: 15px; }
+.roster .option[aria-checked="true"] .check { display: grid; }
+.roster .selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  min-height: 24px;
+  margin: 14px 0 2px;
+  font: 400 14px/1.5 var(--cabinet-font, system-ui, sans-serif);
+  color: #9bafbf;
+}
+.roster .selection strong { color: #c7e6ed; font-weight: 600; }
+@media (max-width: 480px) {
+  .roster .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+  .roster .grid .option { gap: 8px; padding: 5px 5px 9px; border-radius: 10px; }
+  .roster .name { font-size: 13px; }
+  .roster .check { inset: 8px 8px auto auto; width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .roster .grid .option { transition: none; } }
