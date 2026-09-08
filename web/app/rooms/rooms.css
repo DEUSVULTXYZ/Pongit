@@ -695,11 +695,11 @@
 @media (max-width: 767px) and (min-height: 501px) {
   .rooms-header {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: auto auto auto minmax(0, 1fr);
     gap: 6px 8px;
   }
   .rooms-header .brand {
-    grid-column: 1/3;
+    grid-column: 1/4;
     grid-row: 1;
     min-width: 170px;
     justify-self: start;
@@ -708,7 +708,7 @@
     display: contents;
   }
   .rooms-header .arcade-settings-toggle {
-    grid-column: 3;
+    grid-column: 4;
     grid-row: 1;
     max-width: none;
     margin: 0;
@@ -719,13 +719,16 @@
     grid-row: 2;
     justify-self: start;
   }
-  .rooms-header-actions
-    > button:not(.arcade-settings-toggle):not(.rooms-account-toggle) {
+  .rooms-header .rooms-ranking-toggle {
     grid-column: 2;
     grid-row: 2;
   }
-  .rooms-header .rooms-account-toggle {
+  .rooms-header [aria-label="More arcade activities"] {
     grid-column: 3;
+    grid-row: 2;
+  }
+  .rooms-header .rooms-account-toggle {
+    grid-column: 4;
     grid-row: 2;
     max-width: 150px;
   }

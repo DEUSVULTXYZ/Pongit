@@ -115,6 +115,7 @@ export async function createRoomsCoordinator(o: Options) {
     app,
     { rooms: {}, queue: [], invites: [] },
   ]);
+  let publicLadder: Promise<any> | undefined, publicLadderAt = 0;
   const sockets = new Map<
     WebSocket,
     { req: IncomingMessage; player: string }
@@ -123,7 +124,7 @@ export async function createRoomsCoordinator(o: Options) {
     admissionHealthy = false,
     lastEngineSeen = 0,
     lastCheck = 0,
-    lastError = "Connecting to Interlude",
+    lastError = "Connecting to the game service",
     cycle = false,
     lastEpoch = -1,
     legacyAt = 0,
@@ -510,7 +511,7 @@ export async function createRoomsCoordinator(o: Options) {
           "UPDATE il_results SET verified=false,published=false WHERE app=$1",
           [app],
         );
-        throw new Error("Interlude delegation is unavailable. Please wait.");
+        throw new Error("The game service is unavailable. Please wait.");
       }
       if (lastEpoch !== -1 && lastEpoch !== status.epoch) ratings.clear();
       lastEpoch = status.epoch;
@@ -983,6 +984,36 @@ export async function createRoomsCoordinator(o: Options) {
         o.send(res, { player: r.player });
         return true;
       }
+      if (path === "/interlude/ladder" && req.method === "GET") {
+        if (!publicLadder || Date.now() - publicLadderAt > 10000) {
+          publicLadderAt = Date.now();
+          publicLadder = (async () => {
+        const players = (
+          await db.query(
+            "SELECT a AS player FROM il_results WHERE app=$1 AND verified AND ranked UNION SELECT b FROM il_results WHERE app=$1 AND verified AND ranked",
+            [app],
+          )
+        ).rows.map((x) => x.player);
+        const items = [];
+        for (const player of players) {
+          const live = await client.read("ratingOf", [player]),
+            published = await client.readSettled("ratingOf", [player]);
+          items.push({ player, live, published });
+        }
+        const profiles = await profileNames(players);
+        return {
+          items: items
+            .sort((a, b) => b.live.elo - a.live.elo)
+            .map((x) => ({
+              ...x,
+              ...profiles.find((y) => y.player === x.player),
+            })),
+        };
+          })().catch(error => { publicLadder = undefined; throw error; });
+        }
+        o.send(res, await publicLadder);
+        return true;
+      }
       const p = await authenticate(req);
       if (path === "/interlude/auth/session" && req.method === "DELETE") {
         const token = /(?:^|;\s*)pongit_rooms=([a-f0-9]{64})/.exec(
@@ -1072,30 +1103,6 @@ export async function createRoomsCoordinator(o: Options) {
         });
         return true;
       }
-      if (path === "/interlude/ladder" && req.method === "GET") {
-        const players = (
-          await db.query(
-            "SELECT a AS player FROM il_results WHERE app=$1 AND verified AND ranked UNION SELECT b FROM il_results WHERE app=$1 AND verified AND ranked",
-            [app],
-          )
-        ).rows.map((x) => x.player);
-        const items = [];
-        for (const player of players) {
-          const live = await client.read("ratingOf", [player]),
-            published = await client.readSettled("ratingOf", [player]);
-          items.push({ player, live, published });
-        }
-        const profiles = await profileNames(players);
-        o.send(res, {
-          items: items
-            .sort((a, b) => b.live.elo - a.live.elo)
-            .map((x) => ({
-              ...x,
-              ...profiles.find((y) => y.player === x.player),
-            })),
-        });
-        return true;
-      }
       if (path.startsWith("/interlude/rooms/") && req.method === "GET") {
         const room = (await current()).rooms[
           idSchema.parse(path.split("/")[3])
@@ -1164,7 +1171,7 @@ export async function createRoomsCoordinator(o: Options) {
               !admissionHealthy ||
               process.env.ROOMS_ADMISSION_ENABLED !== "true"
             )
-              throw new Error("Interlude matchmaking is not open yet.");
+              throw new Error("Matchmaking is not open yet.");
             s.queue.push({
               player: p,
               elo: ratings.get(p)?.live.elo || 1000,
@@ -1218,7 +1225,7 @@ export async function createRoomsCoordinator(o: Options) {
               !admissionHealthy ||
               process.env.ROOMS_ADMISSION_ENABLED !== "true"
             )
-              throw new Error("Interlude rooms are not open yet.");
+              throw new Error("Rooms are not open yet.");
             const r = makeRoom(
               s,
               p,

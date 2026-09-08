@@ -6,7 +6,7 @@ export default function LegacyPage() {
     <>
       <div className="legacy-banner">
         V4 arcade · Chaos, tournaments, betting and previous balances{" "}
-        <a href="/">Back to Interlude ↗</a>
+        <a href="/">Back to arcade ↗</a>
       </div>
       <Arena />
     </>

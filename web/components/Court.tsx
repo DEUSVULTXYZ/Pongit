@@ -5,6 +5,7 @@ import { move, SCALE, type State } from "../../shared/physics-v2";
 import { predictPaddle, boundedClock, projectConfirmed, projectLive, type PendingInput } from "../lib/presentation";
 import { LivePaddle, LiveClock } from "../lib/live-paddle";
 import { createCourtSurface } from "../lib/court-art";
+import { BallTrail } from "../lib/ball-trail";
 type Props = {
   state: State | null;
   clock: bigint;
@@ -59,6 +60,8 @@ export function Court({
     const el = canvas.current!;
     const ctx = el.getContext("2d")!;
     const surface = createCourtSurface();
+    const trail = new BallTrail();
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
     // Paint all bevels inside the existing rectangles: appearance never enlarges a hitbox.
     function prism(x: number, y: number, w: number, h: number, face: CanvasGradient | string, light: string, dark: string) {
       const b = Math.min(2.5, w / 5, h / 5);
@@ -86,7 +89,7 @@ export function Court({
     function draw(now: number) {
       const p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.controllable}`;
-      if (identity !== context) { previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
+      if (identity !== context) { trail.reset(); previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const dt = Math.max(0, Math.min(50, now - lastDraw));
       lastDraw = now;
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -146,6 +149,19 @@ export function Court({
         if(p.side===0)yA=visualY;else yB=visualY;
         if(p.debug && Math.abs(visualY-confirmedY)>3){ctx.strokeStyle="#738497";ctx.strokeRect(p.side===0?22:990,confirmedY-half,12,2*half);}
       } else { visualY = null; livePaddle.reset(); }
+      if (s) {
+        const points = trail.sample({ x: Number(s.x) / 1e6, y: Number(s.y) / 1e6,
+          at: now, clock: s.t, rally: `${p.matchId}:${s.scoreA}:${s.scoreB}` },
+          !reducedMotion.matches && !s.finished && !s.awaitingServe);
+        ctx.save();
+        for (const point of points) {
+          const size = 3 + 6 * point.strength;
+          ctx.globalAlpha = .42 * point.strength;
+          ctx.fillStyle = point.strength > .55 ? "#84efff" : "#b68aff";
+          ctx.fillRect(point.x - size / 2, point.y - size / 2, size, size);
+        }
+        ctx.restore();
+      } else trail.reset();
       prism(22, yA - halfA, 12, halfA*2, leftFace, "#e0ffff", "#357787");
       prism(990, yB - halfB, 12, halfB*2, rightFace, "#f3e8ff", "#67478b");
       if(s?.awaitingServe && !s.finished) {
@@ -185,7 +201,7 @@ export function Court({
       }
       frame = requestAnimationFrame(draw);
     }
-    const visibility=()=>{cancelAnimationFrame(frame);if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;frame=requestAnimationFrame(draw);}};
+    const visibility=()=>{cancelAnimationFrame(frame);trail.reset();if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;frame=requestAnimationFrame(draw);}};
     document.addEventListener("visibilitychange",visibility);
     if(!document.hidden)frame = requestAnimationFrame(draw);
     return () => {cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};

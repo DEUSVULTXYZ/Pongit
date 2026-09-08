@@ -10,6 +10,7 @@ import {
 import { monadTestnet } from "viem/chains";
 import { Court } from "./Court";
 import { PixelPalaceArt } from "./PixelPalaceArt";
+import { EngineCredit } from "./EngineCredit";
 import { ArcadeAmbience, MusicCredit } from "./ArcadeAmbience";
 import { Avatar, AvatarPicker } from "./Avatar";
 import { Dialog } from "./Dialog";
@@ -179,6 +180,18 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     [avatar, setAvatar] = useState(0),
     [ladder, setLadder] = useState<any[]>([]),
     [copyText, setCopyText] = useState("");
+  const [rankMode, setRankMode] = useState<"classic" | "chaos" | "previous">("classic");
+  const [rankLoading, setRankLoading] = useState(false), [rankError, setRankError] = useState(""), [rankReload, setRankReload] = useState(0);
+  useEffect(() => {
+    if (panel !== "ladder") return;
+    let cancelled = false;
+    setRankLoading(true); setRankError(""); setLadder([]);
+    void (rankMode === "classic" ? api("/interlude/ladder") : api(`/leaderboard?mode=${rankMode === "chaos" ? 1 : 0}`))
+      .then(r => { if (!cancelled) setLadder(rankMode === "classic" ? r.items.map((p:any) => ({...p, elo:p.live.elo, played:p.live.played, wins:p.live.wins})) : r.Player.map((p:any) => ({...p, player:p.address}))); })
+      .catch(e => { if (!cancelled) setRankError(e.message); })
+      .finally(() => { if (!cancelled) setRankLoading(false); });
+    return () => { cancelled = true; };
+  }, [panel, rankMode, rankReload]);
   const [preview, setPreview] = useState<any>(null),
     [entry, setEntry] = useState(roomId),
     [showResultKey, setShowResultKey] = useState(0);
@@ -390,7 +403,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         if (!done) {
           setOnline(c.online);
           setAdmission(c.admission);
-          if (!c.online) setNotice(c.error || "Interlude is reconnecting.");
+          if (!c.online) setNotice("The game service is reconnecting. Please retry shortly.");
           else setNotice("");
         }
       } catch (e) {
@@ -786,6 +799,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           <a href="/docs" target="_blank" rel="noreferrer">
             Docs ↗
           </a>
+          <button className="rooms-ranking-toggle" onClick={() => openPanel("ladder")}>Ranking</button>
           <button
             onClick={() => openPanel("more")}
             aria-label="More arcade activities"
@@ -927,7 +941,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
             </button>
           </div>
           <p className="rooms-caption">
-            Interlude · Monad Testnet · Free to play
+            Free to play · Monad Testnet
           </p>
           {ready &&
             !lobby.profiles.some(
@@ -1422,7 +1436,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
             <dd>{latency} ms</dd>
             <dt>Rendering</dt>
             <dd>{fps} FPS</dd>
-            <dt>Interlude</dt>
+            <dt>Game service</dt>
             <dd>{online ? "Online" : "Reconnecting"}</dd>
           </dl>
           <p>
@@ -1465,21 +1479,12 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       )}
       {panel === "more" && (
         <RoomsModal {...modalProps} title="Around the arcade">
-          <button
-            onClick={() =>
-              void ensure(async () => {
-                setLadder((await roomsApi("/interlude/ladder")).items);
-                setPanel("ladder");
-              })
-            }
-          >
-            Interlude rankings
-          </button>
+          <button onClick={() => openPanel("ladder")}>Ranking</button>
           <button onClick={() => void ensure(() => openContacts("contacts"))}>
             Contacts
           </button>
           <a href="/legacy">V4 arcade · Chaos, tournaments & betting ↗</a>
-          <a href="/labs/interlude">Previous Interlude lab ↗</a>
+          <a href="/labs/interlude">Previous practice arena ↗</a>
           <a href="/docs" target="_blank" rel="noreferrer">
             Documentation ↗
           </a>
@@ -1487,33 +1492,45 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         </RoomsModal>
       )}
       {panel === "ladder" && (
-        <RoomsModal {...modalProps} title="Interlude rankings">
-          <p>New season · Starting ELO 1000</p>
-          {ladder.length ? (
+        <RoomsModal {...modalProps} title="Ranking">
+          <div className="control-segments ranking-modes" role="group" aria-label="Ranking mode">
+            <button aria-pressed={rankMode === "classic"} onClick={() => setRankMode("classic")}>Classic</button>
+            <button aria-pressed={rankMode === "chaos"} onClick={() => setRankMode("chaos")}>Chaos</button>
+            <button aria-pressed={rankMode === "previous"} onClick={() => setRankMode("previous")}>Previous Classic</button>
+          </div>
+          <p>{rankMode === "classic" ? "Current season · Starting ELO 1000" : "Original arena ratings"}</p>
+          {rankMode === "classic" && lobby.rating && <p className="rooms-own-elo">Your ELO <strong>{lobby.rating.live.elo}</strong></p>}
+          {rankError ? <p role="alert">{rankError} <button onClick={() => setRankReload(x => x + 1)}>Retry</button></p> : rankLoading ? <p role="status">Loading rankings…</p> : ladder.length ? (
+            <div className="ranking-scroll">
             <table>
+              <caption className="sr-only">{rankMode} ELO rankings</caption>
               <thead>
                 <tr>
+                  <th scope="col">#</th>
                   <th>Player</th>
-                  <th>Live ELO</th>
-                  <th>Monad</th>
+                  <th>ELO</th>
+                  <th>Wins</th>
                 </tr>
               </thead>
               <tbody>
-                {ladder.map((p) => (
+                {ladder.map((p, i) => (
                   <tr key={p.player}>
-                    <td>{p.handle || short(p.player)}</td>
-                    <td>{p.live.elo}</td>
-                    <td>{p.published.elo}</td>
+                    <td>{i + 1}</td>
+                    <td><span className="ranking-player"><Avatar index={p.avatar} /><span title={p.player}>{p.handle || short(p.player)}</span></span></td>
+                    <td><strong>{p.elo}</strong>{p.published && <small className="ranking-settled">Published: {p.published.elo}</small>}</td>
+                    <td>{p.wins}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           ) : (
             <p>No ranked results yet. Find your first rival.</p>
           )}
-          <a href="/legacy">V4 rankings ↗</a>
+          {rankMode === "classic" && <small>Published ratings are the latest onchain copy and remain subject to the challenge period.</small>}
         </RoomsModal>
       )}
+      {!active && <footer className="rooms-powered"><EngineCredit /></footer>}
       {copyText && (
         <Dialog label="Copy manually" onClose={() => setCopyText("")}>
           <IconButton aria-label="Close copy" onClick={() => setCopyText("")} />
