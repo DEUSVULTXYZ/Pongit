@@ -108,7 +108,7 @@ try{
   await page.screenshot({path:`${out}/${failure}-result.png`});
   await page.getByRole("button",{name:"Close result",exact:true}).click();
   acceptNext=true;
-  await page.getByRole("button",{name:"Accept",exact:true}).click();
+  await page.getByRole("button",{name:/^(Accept|Retry acceptance)$/}).click();
   await page.locator(".rooms-court").waitFor({timeout:10000}).catch(async e=>{
     report.errors.push(await page.locator("body").innerText());
     await page.screenshot({path:`${out}/${failure}-next-match-failure.png`});throw e;
