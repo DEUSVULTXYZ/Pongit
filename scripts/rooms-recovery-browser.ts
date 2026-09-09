@@ -3,7 +3,7 @@
 import {chromium} from "@playwright/test";
 import assert from "node:assert/strict";
 import {mkdir,writeFile} from "node:fs/promises";
-import {encodeAbiParameters,encodeErrorResult,encodeFunctionResult,toFunctionSelector,zeroAddress,zeroHash,type Address,type Abi} from "viem";
+import {encodeAbiParameters,encodeErrorResult,encodeFunctionResult,decodeFunctionData,parseTransaction,toHex,toFunctionSelector,zeroAddress,zeroHash,type Address,type Abi} from "viem";
 import {generatePrivateKey,privateKeyToAccount} from "viem/accounts";
 import {encodeSession,storageKey} from "@interludelayer-sdk/sdk";
 import manifest from "../deployments/interlude-rooms.json";
@@ -30,10 +30,11 @@ try{
    localStorage.setItem("pongit:arcade-audio",JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:"off"}));
   },{stored,key:storageKey(app,10143,a),accountKey:`pongit:rooms:${app}:account`,a});
   let phase=2,revision=1n,reads=0,writes=0,failNext=false,throttleRead=false,limitedAt=0,recoveredAt=0;
+  let nextPhase=0,acceptNext=false,chainNonce=0n,nonceReads=0;
   const start=Date.now();
-  const fixture=()=>[1n,revision,BigInt(phase),a,b,b,phase===3?a:zeroAddress,BigInt(100+Math.floor((Date.now()-start)/10)),
+  const fixture=(id=1n)=>[id,revision,BigInt(id===1n?phase:nextPhase),a,b,b,id===1n&&phase===3?a:zeroAddress,BigInt(100+Math.floor((Date.now()-start)/10)),
    BigInt(Date.now()-start)*1000n,0n,0n,BigInt(Math.floor(Date.now()/1000)+20),
-   {...initial(zeroHash),scoreA:phase===3?7:6,scoreB:6,finished:phase===3,t:BigInt(Date.now()-start)*1000n}];
+   {...initial(zeroHash),scoreA:id===1n?(phase===3?7:6):0,scoreB:id===1n?6:0,finished:id===1n&&phase===3,t:BigInt(Date.now()-start)*1000n}];
   const room={id:zeroHash,host:a,kind:"ranked",mode:0,status:"playing",created:start,activity:start,
    members:[a,b].map((player,i)=>({player,joined:start+i,position:i,seen:Date.now(),away:false})),
    offer:{id:"1",room:zeroHash,a,b,mode:0,ranked:true,expires:String(Math.floor(Date.now()/1000)+20),rules:"4",entropy:zeroHash,signature:"0x",accepted:[a,b],status:"active"}};
@@ -52,24 +53,30 @@ try{
    const reply=(result:unknown)=>route.fulfill({json:{jsonrpc:"2.0",id:rpc.id,result}});
    if(u.origin===new URL(manifest.node).origin){
     if(rpc.method==="eth_chainId")return reply("0x1092");
-    if(rpc.method==="eth_getTransactionCount")return reply("0x0");
+    if(rpc.method==="eth_getTransactionCount"){nonceReads++;return reply(toHex(chainNonce));}
     if(rpc.method==="eth_call"){
      if(rpc.params[0].data.startsWith(toFunctionSelector("ratingChange(uint256)")))
       return reply(encodeFunctionResult({abi,functionName:"ratingChange",result:[1000,1000,1016,984]}));
      reads++;
      if(throttleRead){throttleRead=false;limitedAt=Date.now();return route.fulfill({status:429,headers:{"Retry-After":"10"},body:"Too many requests"});}
      if(limitedAt&&!recoveredAt)recoveredAt=Date.now();
-     return reply(encodeFunctionResult({abi,functionName:"getSnapshot",result:fixture()}));
+     const decoded=decodeFunctionData({abi,data:rpc.params[0].data});
+     return reply(encodeFunctionResult({abi,functionName:"getSnapshot",result:fixture(BigInt(decoded.args![0] as bigint))}));
     }
     if(rpc.method==="interlude_sendTransaction"){
      writes++;
+     assert.equal(BigInt(parseTransaction(rpc.params[0]).nonce!),chainNonce,"SDK transaction nonce must match the engine after recovery");
      if(failNext){
       failNext=false;throttleRead=true;
       setTimeout(()=>{phase=3;revision++;},500);
+      setTimeout(()=>{room.offer={...room.offer,id:"2",status:"offered",accepted:[],expires:String(Math.floor(Date.now()/1000)+20)};room.status="offer";},1500);
       if(failure==="uncertain")return route.abort("failed");
+      chainNonce++;
       return reply({status:"0x0",transactionHash:zeroHash,output:encodeErrorResult({abi,errorName:"InvalidMatch"})});
      }
      revision++;
+     chainNonce++;
+     if(acceptNext){acceptNext=false;nextPhase=2;room.offer.status="active";room.offer.accepted=[a,b];}
      return reply({status:"0x1",transactionHash:zeroHash,output:encodeAbiParameters([{type:"bytes"}],["0x"])});
     }
     throw Error("Unexpected mock engine method: "+rpc.method);
@@ -95,10 +102,16 @@ try{
   assert.equal(await page.getByText("The engine did not confirm this action.",{exact:false}).count(),0);
   assert(recoveredAt-limitedAt>=9500,"Retry-After must be honored before the next network read");
   await page.screenshot({path:`${out}/${failure}-result.png`});
-  report.scenarios.push({failure,reads,writes,idleWrites:writes-beforeWrites,cooldownMs:recoveredAt-limitedAt,finalScore:"7:6"});
+  await page.getByRole("button",{name:"Close result",exact:true}).click();
+  acceptNext=true;
+  await page.getByRole("button",{name:"Accept",exact:true}).click();
+  await page.locator(".rooms-court").waitFor();
+  await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled);
+  if(failure==="uncertain")assert(nonceReads>=2,"next acceptance restores the SDK nonce without another passkey");
+  report.scenarios.push({failure,reads,writes,idleWrites:writes-beforeWrites,cooldownMs:recoveredAt-limitedAt,finalScore:"7:6",nextMatch:true,nonceReads});
   await context.close();
  }
- report.checks.push("Offline coordinator does not freeze a healthy direct engine lane","Final-tick revert plus 429 recovers the result without reconnecting","Unknown submission stops writes but preserves result transition","Ten-second shared cooldown honored","Exact per-match ELO displayed after fresh read","Desktop and mobile result visible");
+ report.checks.push("Offline coordinator does not freeze a healthy direct engine lane","Final-tick revert plus 429 recovers the result without reconnecting","Unknown submission stops writes but preserves result transition","Room rotates to a new invitation before the previous result is recovered","Next match refreshes an uncertain SDK nonce without a passkey ceremony","Ten-second shared cooldown honored","Exact per-match ELO displayed after fresh read","Desktop and mobile result visible");
  assert.deepEqual(report.errors,[]);
 }finally{
  await writeFile(`${out}/report.json`,JSON.stringify(report,null,2));await browser.close();

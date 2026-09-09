@@ -204,6 +204,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     [showResultKey, setShowResultKey] = useState(0);
   const [syncError, setSyncError] = useState("");
   const [writeBlocked, setWriteBlocked] = useState(false), [sessionRevision, setSessionRevision] = useState(0);
+  const [resultView,setResultView]=useState<{snapshot:LabSnapshot;ranked:boolean;mode:number;account:string}|null>(null);
   const [resultRating, setResultRating] = useState<{id:string;delta:number}|null>(null);
   const refreshVersion = useRef(0);
   const client = useRef<RoomsClient | null>(null),
@@ -246,11 +247,14 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     snapshotRef.current = s;
     setSyncError("");
     setSnapshot(s);
+    if(s.phase>=2)setResultView({snapshot:s,ranked:offer?.ranked??false,mode:offer?.mode||0,account:accountRef.current||""});
     if (ms !== undefined) setLatency(Math.round(ms));
     if (s.phase !== 2) {
       lane.current?.intent(0);
       setDirection(0);
-      if(s.phase>=3){setWriteBlocked(false);setError("");}
+      // A terminal read proves the result, not whether an unknown SDK tx used
+      // its nonce. Keep writes blocked until restoreSession refreshes that nonce.
+      if(s.phase>=3)setError("");
     }
   };
   const failed = () => {
@@ -311,7 +315,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     }
   }
   async function ensure(fn: () => Promise<void>) {
-    if (ready) {
+    if (ready && !writeBlocked) {
       await run(fn);
       return;
     }
@@ -594,18 +598,39 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       lane.current?.stop();
     };
   }, [offer?.id, ready, account, sessionRevision]);
+  // Room rotation can precede a rate-limited browser's final read. Keep the
+  // old result observable independently from the next invitation's snapshot.
+  useEffect(()=>{
+    if(!room || resultView?.account!==account){setResultView(null);return;}
+    const previous=resultView;
+    if(!previous || previous.snapshot.phase!==2 || previous.snapshot.id.toString()===offer?.id)return;
+    let done=false,timer:ReturnType<typeof setTimeout>;
+    const recover=async()=>{
+      let retryMs=1000;
+      try{
+        const s=labSnapshot(await readEngineSnapshot(client.current!,previous.snapshot.id));
+        if(!done && s.phase>=3){
+          setResultView(v=>v?.snapshot.id===s.id?{...v,snapshot:s}:v);
+          setError("");return;
+        }
+      }catch(e){retryMs=Math.max(retryMs,engineReadRetryMs(e));}
+      if(!done)timer=setTimeout(recover,retryMs);
+    };
+    void recover();return()=>{done=true;clearTimeout(timer);};
+  },[offer?.id,room?.id,account,resultView?.snapshot.id,resultView?.snapshot.phase]);
   useEffect(()=>{
     setResultRating(null);
-    if(!roomsChaos || snapshot?.phase!==3 || !offer?.ranked || side<0)return;
-    const id=snapshot.id;let done=false,timer:ReturnType<typeof setTimeout>;
+    const finished=resultView?.snapshot,resultSide=labSide(finished||null,account);
+    if(!roomsChaos || finished?.phase!==3 || !resultView?.ranked || resultSide<0)return;
+    const id=finished.id;let done=false,timer:ReturnType<typeof setTimeout>;
     const load=async()=>{
       try{
         const r=await client.current!.read("ratingChange",[id]) as readonly number[];
-        if(!done)setResultRating({id:id.toString(),delta:Number(r[side+2])-Number(r[side])});
+        if(!done)setResultRating({id:id.toString(),delta:Number(r[resultSide+2])-Number(r[resultSide])});
       }catch(e){if(!done)timer=setTimeout(load,Math.max(2000,engineReadRetryMs(e)));}
     };
     void load();return()=>{done=true;clearTimeout(timer);};
-  },[snapshot?.id,snapshot?.phase,offer?.ranked,side]);
+  },[resultView?.snapshot.id,resultView?.snapshot.phase,resultView?.ranked,account]);
   useEffect(() => {
     if (entry)
       void api(`/interlude/rooms/${entry}`)
@@ -740,12 +765,13 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       offer?.status === "offered" &&
       isDuel &&
       ready &&
+      !writeBlocked &&
       !busy
     ) {
       autoAccept.current = false;
       void run(() => accept(offer));
     }
-  }, [offer?.id, ready, busy]);
+  }, [offer?.id, ready, busy,writeBlocked]);
   async function backOffer() {
     if (!offer) return;
     const s = await read();
@@ -1243,27 +1269,27 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       ) : null}
       <Outcome
         id={
-          snapshot
-            ? `interlude:10143:${roomsManifest.app}:${snapshot.id}`
+          resultView
+            ? `interlude:10143:${roomsManifest.app}:${resultView.snapshot.id}`
             : null
         }
         match={
-          snapshot
+          resultView
             ? {
-                status: snapshot.phase,
-                playerA: snapshot.a,
-                playerB: snapshot.b,
-                winner: snapshot.winner,
-                state: snapshot.state,
-                ranked: offer?.ranked,
-                mode: offer?.mode || 0,
-                ratingFinalized: !roomsChaos || resultRating?.id===snapshot.id.toString(),
+                status: resultView.snapshot.phase,
+                playerA: resultView.snapshot.a,
+                playerB: resultView.snapshot.b,
+                winner: resultView.snapshot.winner,
+                state: resultView.snapshot.state,
+                ranked: resultView.ranked,
+                mode: resultView.mode,
+                ratingFinalized: !roomsChaos || resultRating?.id===resultView.snapshot.id.toString(),
               }
             : null
         }
         account={account || ""}
         rating={lobby.rating?.live.elo ?? null}
-        ratingDelta={resultRating?.id===snapshot?.id.toString()?resultRating?.delta:undefined}
+        ratingDelta={resultRating?.id===resultView?.snapshot.id.toString()?resultRating?.delta:undefined}
         sound
         replay={false}
         confirmation="engine"
