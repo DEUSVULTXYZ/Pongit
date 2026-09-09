@@ -369,11 +369,15 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     let identity: Identity | undefined;
     try {
       lane.current?.stop();
-      release.current?.();
-      release.current = null;
       const previous = another ? undefined : account || saved;
+      // Reuse this tab's lock when restoring its own account. Releasing and
+      // immediately requesting an ifAvailable lock races the asynchronous
+      // release and falsely reports that another tab owns the same session.
+      if(create || another || !previous || accountRef.current!==previous){
+        release.current?.();release.current=null;
+      }
       if (previous && !create) {
-        release.current = await tabLock(previous);
+        release.current ||= await tabLock(previous);
         const restored = await client.current!.restoreSession(previous, {
           scope: roomsScope,
         });

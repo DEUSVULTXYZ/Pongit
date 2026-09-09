@@ -105,7 +105,10 @@ try{
   await page.getByRole("button",{name:"Close result",exact:true}).click();
   acceptNext=true;
   await page.getByRole("button",{name:"Accept",exact:true}).click();
-  await page.locator(".rooms-court").waitFor();
+  await page.locator(".rooms-court").waitFor({timeout:10000}).catch(async e=>{
+    report.errors.push(await page.locator("body").innerText());
+    await page.screenshot({path:`${out}/${failure}-next-match-failure.png`});throw e;
+  });
   await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled);
   if(failure==="uncertain")assert(nonceReads>=2,"next acceptance restores the SDK nonce without another passkey");
   report.scenarios.push({failure,reads,writes,idleWrites:writes-beforeWrites,cooldownMs:recoveredAt-limitedAt,finalScore:"7:6",nextMatch:true,nonceReads});
