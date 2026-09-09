@@ -36,6 +36,7 @@ import {roomsRankingCandidates} from "./rooms-ranking";
 import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snapshot";
 import {engineTransport} from "../../shared/engine-transport";
 import {engineReadRetryMs} from "../../shared/engine-read";
+import {confirmsRoomAcceptance, expireUnstartedRoomOffer} from "../../shared/rooms-acceptance";
 import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
 import {
@@ -710,6 +711,7 @@ export async function createRoomsCoordinator(o: Options) {
           if (r.offer) {
             const snap = observed.get(r.offer.id);
             if (snap?.[2] === 2n) {
+              r.offer.accepted = [r.offer.a, r.offer.b];
               r.offer.status = "active";
               r.status = "playing";
             }
@@ -738,20 +740,7 @@ export async function createRoomsCoordinator(o: Options) {
                 );
               } else r.winner = undefined;
             }
-            if (
-              r.offer.status === "offered" &&
-              Number(r.offer.expires) * 1000 + 3000 < now &&
-              (!snap || snap[2] === 0n)
-            ) {
-              for (const m of r.members)
-                if (
-                  [r.offer.a, r.offer.b].includes(m.player) &&
-                  !r.offer.accepted.includes(m.player)
-                )
-                  m.away = true;
-              r.offer.status = "cancelled";
-              r.status = "waiting";
-            }
+            expireUnstartedRoomOffer(r, snap?.[2], now);
           }
           if (
             (!r.members.length && now - r.activity > 1800000) ||
@@ -1400,6 +1389,26 @@ export async function createRoomsCoordinator(o: Options) {
             )
               throw new Error("This duel is no longer available.");
             const snap: any = await readEngineSnapshot(client, BigInt(offer.id));
+            if (path.endsWith("accept")) {
+              if (snap[2] === 2n) {
+                offer.accepted = [offer.a, offer.b];
+                return {offer, alreadyAccepted: true};
+              }
+              if (body.receiptHash) {
+                const hash = z.string().regex(/^0x[0-9a-fA-F]{64}$/).parse(body.receiptHash) as Hex;
+                const receipt = await client.node.getTransactionReceipt({hash});
+                if (!confirmsRoomAcceptance(receipt, roomsAbi, app, offer, p, hash))
+                  throw new Error("This receipt does not confirm your acceptance of this duel.");
+                if (snap[2] === 0n) throw new Error("Waiting for the accepted duel to become readable.");
+                if (!offer.accepted.includes(p)) offer.accepted.push(p);
+                return {offer, alreadyAccepted: true};
+              }
+              // Clear pre-update intents when the engine has no such match.
+              if (snap[2] === 0n) offer.accepted = [];
+              if (offer.status === "cancelled" || snap[2] >= 3n || Number(offer.expires) * 1000 <= Date.now())
+                throw new Error("Duel expired. Rejoin the queue for another opponent.");
+              return {offer, alreadyAccepted: offer.accepted.includes(p)};
+            }
             if (snap[2] === 2n || offer.status === "active")
               throw new Error("The match has started. Resume or concede.");
             if (path.endsWith("back")) {
@@ -1412,10 +1421,6 @@ export async function createRoomsCoordinator(o: Options) {
               r.status = "waiting";
               return {};
             }
-            if (Number(offer.expires) * 1000 <= Date.now())
-              throw new Error("Duel expired.");
-            if (!offer.accepted.includes(p)) offer.accepted.push(p);
-            return { offer };
           }
           if (path === "/interlude/rooms/leave") {
             if (r.offer && [r.offer.a, r.offer.b].includes(p)) {
@@ -1445,10 +1450,12 @@ export async function createRoomsCoordinator(o: Options) {
       return true;
     } catch (e) {
       const message = (e as Error).message.split("\n")[0];
+      const retryMs = engineReadRetryMs(e);
+      if (retryMs) res.setHeader("Retry-After", String(Math.ceil(retryMs / 1000)));
       o.send(
         res,
-        { error: message },
-        message.includes("Renew") || message.includes("revoked") ? 401 : 400,
+        { error: retryMs ? "The game node is busy. Waiting to synchronize." : message },
+        retryMs ? 429 : message.includes("Renew") || message.includes("revoked") ? 401 : 400,
       );
       return true;
     }

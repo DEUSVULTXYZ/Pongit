@@ -66,7 +66,11 @@ export async function roomsApi<T = any>(
   const result = await response.json().catch(() => {
     throw new Error("Connection interrupted. Please retry.");
   });
-  if (!response.ok) throw new Error(result.error || "Service unavailable");
+  if (!response.ok) {
+    const error = new Error(result.error || "Service unavailable");
+    Object.assign(error, {status: response.status, headers: response.headers});
+    throw error;
+  }
   return result;
 }
 export async function authenticateRooms(player: Address) {

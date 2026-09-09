@@ -65,6 +65,14 @@ type Lobby = {
 };
 const short = (p: string) => `${p.slice(0, 6)}…${p.slice(-4)}`;
 const quiet = () => {};
+const acceptanceKey = (p: string) => `pongit:rooms:${roomsManifest.app}:acceptance:${p.toLowerCase()}`;
+type PendingAcceptance = {account: string; id: string; hash: Hex};
+function savedAcceptance(p: string): PendingAcceptance | null {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(acceptanceKey(p)) || "null");
+    return v && v.account.toLowerCase() === p.toLowerCase() && /^\d+$/.test(v.id) && /^0x[0-9a-fA-F]{64}$/.test(v.hash) ? v : null;
+  } catch { return null; }
+}
 function RoomsModal({
   title,
   children,
@@ -177,6 +185,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     [latency, setLatency] = useState(0),
     [fps, setFps] = useState(0),
     [now, setNow] = useState(Date.now());
+  const [pendingAcceptance, setPendingAcceptance] = useState<PendingAcceptance | null>(null);
   const [contacts, setContacts] = useState<Profile[]>([]),
     [frequent, setFrequent] = useState<Profile[]>([]),
     [search, setSearch] = useState(""),
@@ -361,6 +370,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     setSaved(p);
     setError("");
     await refresh();
+    setPendingAcceptance(savedAcceptance(p));
   }
   async function login(create = false, another = false) {
     if (busyRef.current) return;
@@ -751,7 +761,12 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     await refresh();
   }
   async function accept(o: LobbyOffer) {
-    await roomsAction("offers/accept", { id: o.id });
+    const checked = await roomsAction("offers/accept", { id: o.id });
+    if (checked.alreadyAccepted) {
+      if (matchRef.current === o.id) receive(await read());
+      await refresh();
+      return;
+    }
     const t = {
       id: BigInt(o.id),
       room: o.room as Hex,
@@ -764,8 +779,17 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       entropy: o.entropy as Hex,
     };
     if (!session.current) throw new Error("Renew your arcade session.");
-    try {await session.current.send("acceptMatch", [t, o.signature]);}
-    catch(e){failed();throw e;}
+    try {
+      const receipt = await session.current.send("acceptMatch", [t, o.signature]);
+      const pending = {account: accountRef.current!, id: o.id, hash: receipt.hash};
+      sessionStorage.setItem(acceptanceKey(pending.account), JSON.stringify(pending));
+      setPendingAcceptance(pending);
+    } catch(e){
+      failed();
+      throw new Error(engineReadRetryMs(e)
+        ? "The game node is busy. Retry acceptance after synchronization."
+        : "Your acceptance was not confirmed. Retry acceptance to reconnect and read the duel.");
+    }
     // A successful send is already acknowledged. A later read outage must not
     // turn that accepted invitation into an error or another acceptance.
     if (matchRef.current === o.id) {
@@ -773,6 +797,35 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     }
     await refresh();
   }
+  // Retry only receipt reconciliation, never the signed acceptance. The hash
+  // survives F5 in this tab, including a lost HTTP acknowledgement.
+  useEffect(() => {
+    const pending = pendingAcceptance;
+    if (!pending || !ready || pending.account.toLowerCase() !== account?.toLowerCase()) return;
+    const clear = () => {
+      sessionStorage.removeItem(acceptanceKey(pending.account));
+      setPendingAcceptance(v => v?.hash === pending.hash ? null : v);
+    };
+    if (offer?.id !== pending.id || ["cancelled", "complete"].includes(offer.status)) { clear(); return; }
+    let done = false, timer: ReturnType<typeof setTimeout>, failures = 0;
+    const confirm = async () => {
+      try {
+        await roomsAction("offers/accept", {id: pending.id, receiptHash: pending.hash});
+        await refreshRef.current();
+        if (!done) { clear(); setError(""); setSyncError(""); }
+      } catch(e) {
+        if (!done) {
+          if ((e as {status?:number}).status === 401) {
+            lane.current?.stop(); setReady(false); setError("Renew your arcade session to synchronize the acceptance."); return;
+          }
+          setSyncError("Acceptance received. Synchronizing the duel.");
+          timer = setTimeout(confirm, Math.max(engineReadRetryMs(e), Math.min(10000, 1000 * 2 ** Math.min(failures++, 4))));
+        }
+      }
+    };
+    void confirm();
+    return () => { done = true; clearTimeout(timer); };
+  }, [pendingAcceptance, ready, account, offer?.id, offer?.status]);
   useEffect(() => {
     if (
       autoAccept.current &&
@@ -825,6 +878,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     release.current?.();
     release.current = null;
     sessionStorage.removeItem(roomsAccountKey);
+    setPendingAcceptance(null);
     await fetch(API + "/interlude/auth/session", {
       method: "DELETE",
       credentials: "include",
@@ -1120,13 +1174,13 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 <button
                   className="primary"
                   disabled={
-                    busy || offer!.accepted.includes(account!.toLowerCase())
+                    busy || pendingAcceptance?.id === offer!.id || offer!.accepted.includes(account!.toLowerCase())
                   }
                   onClick={() => void ensure(() => accept(offer!))}
                 >
-                  {offer!.accepted.includes(account!.toLowerCase())
+                  {pendingAcceptance?.id === offer!.id || offer!.accepted.includes(account!.toLowerCase())
                     ? "Waiting…"
-                    : "Accept"}
+                    : writeBlocked ? "Retry acceptance" : "Accept"}
                 </button>
                 <button disabled={busy} onClick={() => void run(backOffer)}>
                   Back

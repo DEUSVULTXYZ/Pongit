@@ -1007,6 +1007,11 @@
           "level": 2
         },
         {
+          "id": "rooms-acceptance-recovery",
+          "text": "Rooms acceptance recovery",
+          "level": 2
+        },
+        {
           "id": "rooms-finance-interfaces",
           "text": "Rooms finance interfaces",
           "level": 2

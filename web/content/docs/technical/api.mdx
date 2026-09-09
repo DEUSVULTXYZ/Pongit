@@ -105,6 +105,12 @@ Read the returned `error` and HTTP status rather than assuming every failure is 
 
 Refresh expiring quotes and nonces after failure. Do not resend a different transaction for a job already signed or sent; recover its state and receipt first. No API route in this reference grants access to another player's private notebook.
 
+## Rooms acceptance recovery
+
+`POST /interlude/offers/accept` with `{id, operation}` checks a duel before the SDK call. This HTTP response does not confirm engine consent. After a successful `acceptMatch` receipt, send `{id, receiptHash, operation}` to the same endpoint. The coordinator verifies the receipt's application, player and duel event before marking acceptance. `alreadyAccepted: true` means the client must observe the existing duel instead of sending another acceptance.
+
+The browser keeps a pending receipt hash in this tab's session storage so F5 can resume acknowledgement without another transaction. A failed or uncertain engine send stops automatic submission and offers **Retry acceptance**, which restores the SDK nonce and checks the duel first. An unstarted expired offer requires an explicit rejoin; it does not generate replacement tickets indefinitely. Upstream HTTP 429 responses retain `Retry-After` through the rooms API.
+
 ## Rooms finance interfaces
 
 These paths are under `/api`, use the rooms HttpOnly cookie, allowed Origin and matching `x-pongit-player`. `/interlude/auth/challenge` and `/interlude/auth/session` authenticate possession of the scoped SDK session key and verify the owner grant, app, chain, epoch and expiry. This is not a spending authorization. The private socket subscription is `subscribe-rooms`; after `rooms-changed`, reload HTTP state. A `rooms-expired` notification requires reconnection.
