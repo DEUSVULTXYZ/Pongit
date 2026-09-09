@@ -2,7 +2,7 @@
 
 **[Play PONGIT](https://pongit.xyz)** · [Documentation](https://pongit.xyz/docs) · [Automatic wallet payments](docs/PAYMENTS_V4.md) · [Arcade release](docs/ARCADE.md) · [Architecture](docs/V2.md) · [Local setup](docs/LOCAL.md)
 
-**8 September release status:** Classic rooms remain public. The rules-4 Chaos candidate passed real bets, pressure, native payouts and a three-browser game after hosted recovery. Its next onchain renewal succeeded, but the node returned HTTP 502 again on epoch 3. Chaos activation is gated; see the [recovery record](docs/CHAOS_ROOMS.md). V4 balances, markets and tournaments remain available separately.
+**9 September testnet preview:** Classic and Chaos rooms are enabled on the Fly.io deployment at the owner's request. The hosted RPC still returns HTTP 429 under sustained reads, which can pause gameplay. This is a public trial, not a completed multiplayer/load validation. New-app payout and renewal checks remain incomplete; published results still wait for delegation finality before payment. See the [release record](docs/CHAOS_FLY_PREVIEW.md). V4 balances, markets and tournaments remain available separately.
 
 A browser-based 1v1 arcade game with Solidity-authoritative physics, scores, results and ELO. The main rooms use a hosted Interlude engine and publish state to **Monad Testnet (10143)**. Markets, vaults and payouts execute on Monad; the separate V4 arcade also runs its gameplay there. The Next.js canvas renders movement, Mera provides passkey accounts, the relayer sponsors gas and Envio reconstructs V1 to V4 history. No browser wallet extension is required. All bets and prizes use test MON.
 

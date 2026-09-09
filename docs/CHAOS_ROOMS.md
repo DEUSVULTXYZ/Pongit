@@ -1,6 +1,6 @@
 # Chaos rooms on Monad Testnet
 
-**Release status, 9 September 2026: standby at the owner's request.** Publication now works on a fresh Fly.io candidate, including two terminal match results. HTTP 429 responses under repeated reads still need workload validation. No public cutover was made. See the [Fly rehearsal, new bindings and resumption requirements](INTERLUDE_FLY_STANDBY_2026-09-09.md). The earlier [publication failure investigation](CHAOS_RECOVERY_2026-09-09.md) remains historical evidence.
+**Release status, 9 September 2026: owner-authorized public testnet preview.** The owner requested the Fly deployment despite the confirmed HTTP 429 limitation. See the [current app, limitations and rollback procedure](CHAOS_FLY_PREVIEW.md). The [Fly rehearsal](INTERLUDE_FLY_STANDBY_2026-09-09.md) and earlier [publication failure investigation](CHAOS_RECOVERY_2026-09-09.md) remain historical evidence.
 
 The contract and financial instances below belong to the earlier candidate. Their real betting, pressure, native payouts and three-browser Chaos flow passed on epoch 2. The new recovery app `0x526ef5822169ff21da4e5323d36426df0462dfcb` is **unreleased and has no financial bindings**. Never point its jobs at the earlier candidate's market or reinterpret an old sender journal for a new application.
 
