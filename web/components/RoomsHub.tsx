@@ -806,7 +806,10 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       sessionStorage.removeItem(acceptanceKey(pending.account));
       setPendingAcceptance(v => v?.hash === pending.hash ? null : v);
     };
-    if (offer?.id !== pending.id || ["cancelled", "complete"].includes(offer.status)) { clear(); return; }
+    // On F5 the session may restore before the first lobby response. Absence
+    // of an offer during loading does not mean the accepted duel disappeared.
+    if (!offer) return;
+    if (offer.id !== pending.id || ["cancelled", "complete"].includes(offer.status)) { clear(); return; }
     let done = false, timer: ReturnType<typeof setTimeout>, failures = 0;
     const confirm = async () => {
       try {

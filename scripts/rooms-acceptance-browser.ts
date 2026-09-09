@@ -13,6 +13,7 @@ const origin="https://pongit.xyz",app=manifest.app as Address,abi=roomsChaosAbi 
 const a="0x1111111111111111111111111111111111111111",b="0x2222222222222222222222222222222222222222";
 const browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
 const report:any={scenarios:[],errors:[]};
+let lastPage: any;
 try {
  for(const failure of ["write429","ack429"]){
   const context=await browser.newContext({viewport:{width:failure==="write429"?1440:390,height:900}});
@@ -55,7 +56,7 @@ try {
     if(rpc.method==="eth_call")return reply(encodeFunctionResult({abi,functionName:"getSnapshot",result:[1n,BigInt(phase),BigInt(phase),a,b,b,b,100n,0n,0n,0n,BigInt(Math.floor(Date.now()/1000)+20),initial(zeroHash)]}));
     if(rpc.method==="interlude_sendTransaction"){
      sends++;assert.equal(BigInt(parseTransaction(rpc.params[0]).nonce!),nonce,"Retry must restore the SDK nonce");
-     if(failure==="write429"&&!writeFailed){writeFailed=true;return route.fulfill({status:429,headers:{"Retry-After":"1"},body:"Too many requests"});}
+     if(failure==="write429"&&!writeFailed){writeFailed=true;return route.fulfill({status:429,headers:{"Retry-After":"1","Access-Control-Allow-Origin":"*","Access-Control-Expose-Headers":"Retry-After"},body:"Too many requests"});}
      nonce++;if(phase===0){phase=1;accepts++;}
      return reply({status:"0x1",transactionHash:zeroHash,output:encodeAbiParameters([{type:"bytes"}],["0x"])});
     }
@@ -65,14 +66,14 @@ try {
    throw Error("Unexpected external host "+u.hostname);
   });
   await context.routeWebSocket("**/*",()=>{});
-  const page=await context.newPage();page.on("pageerror",e=>report.errors.push(e.message));
+  const page=await context.newPage();lastPage=page;page.on("pageerror",e=>report.errors.push(e.message));
   await page.goto(origin+"/rooms");await page.locator(".rooms-timer").waitFor();
   room={id:zeroHash,host:a,kind:"ranked",mode:0,status:"offer",created:at,activity:at,members:[a,b].map((player,position)=>({player,position,joined:at,seen:Date.now(),away:false})),offer:{id:"1",room:zeroHash,a,b,mode:0,ranked:true,expires:String(Math.floor(Date.now()/1000)+20),rules:"4",entropy:zeroHash,signature:"0x",accepted:[],status:"offered"}};
   await page.getByRole("button",{name:"Accept",exact:true}).click();
   if(failure==="write429"){
    const retry=page.getByRole("button",{name:"Retry acceptance",exact:true});await retry.waitFor();
    await page.waitForTimeout(1300);assert.equal(sends,1,"No automatic resubmission after a 429");
-   await retry.click();await page.getByRole("button",{name:"Waiting…",exact:true}).waitFor();
+   await retry.click();await page.getByRole("button",{name:"Waiting…",exact:true}).waitFor({timeout:8000});
    assert(nonceReads>=2);assert.equal(accepts,1);
   }else{
    await page.getByText("Acceptance received. Synchronizing the duel.",{exact:true}).waitFor();
@@ -82,7 +83,7 @@ try {
   }
   const until=Date.now()+8000;while(!room.offer.accepted.includes(a)&&Date.now()<until)await page.waitForTimeout(100);
   assert(room.offer.accepted.includes(a));
-  await page.waitForFunction(key=>!sessionStorage.getItem(key),`pongit:rooms:${app}:acceptance:${a}`);
+  await page.waitForFunction(key=>!sessionStorage.getItem(key),`pongit:rooms:${app}:acceptance:${a}`,{timeout:5000});
   const acceptanceSends=sends;
   assert.equal(acceptanceSends,failure==="write429"?2:1,"Accepted transactions are never resent");
   phase=2;room.status="playing";room.offer.status="active";room.offer.accepted=[a,b];
@@ -92,6 +93,7 @@ try {
   await context.close();
  }
 }finally{
+ if(report.scenarios.length<2 && lastPage && !lastPage.isClosed())report.page=await lastPage.locator("body").innerText();
  await mkdir("artifacts/rooms-acceptance-browser",{recursive:true});
  await writeFile("artifacts/rooms-acceptance-browser/report.json",JSON.stringify(report,null,2));await browser.close();
 }
