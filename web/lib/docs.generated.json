@@ -832,7 +832,7 @@
       "title": "Physics, prediction & latency",
       "description": "The contract determines collisions; the browser makes the motion readable.",
       "group": "Technical reference",
-      "updated": "2026-09-07",
+      "updated": "2026-09-09",
       "keywords": [
         "block",
         "clock",
@@ -865,6 +865,11 @@
         {
           "id": "read-the-latency-panel",
           "text": "Read the latency panel",
+          "level": 2
+        },
+        {
+          "id": "current-rooms-pushed-state-and-recovery",
+          "text": "Current rooms: pushed state and recovery",
           "level": 2
         }
       ]
@@ -957,7 +962,7 @@
       "title": "HTTP API & WebSocket reference",
       "description": "Read application data and understand the authenticated transaction interfaces.",
       "group": "Technical reference",
-      "updated": "2026-09-08",
+      "updated": "2026-09-09",
       "keywords": [
         "API",
         "HTTP",
@@ -1012,6 +1017,11 @@
           "level": 2
         },
         {
+          "id": "rooms-notifications-and-service-errors",
+          "text": "Rooms notifications and service errors",
+          "level": 2
+        },
+        {
           "id": "rooms-finance-interfaces",
           "text": "Rooms finance interfaces",
           "level": 2
@@ -1023,7 +1033,7 @@
       "title": "Administration & operations",
       "description": "Operate the testnet service while preserving results and financial rights.",
       "group": "Technical reference",
-      "updated": "2026-09-08",
+      "updated": "2026-09-09",
       "keywords": [
         "admin",
         "pause",
@@ -1060,6 +1070,11 @@
         {
           "id": "rooms-lifecycle-and-payments",
           "text": "Rooms lifecycle and payments",
+          "level": 2
+        },
+        {
+          "id": "state-transport-and-diagnostics",
+          "text": "State transport and diagnostics",
           "level": 2
         }
       ]

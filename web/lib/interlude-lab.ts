@@ -6,15 +6,15 @@ import manifest from "../../deployments/interlude-lab.json";
 import {interludeLabAbi,interludeHubReadAbi} from "../../shared/abi-interlude";
 import type {State} from "../../shared/physics-v2";
 import {engineReadRetryMs} from "../../shared/engine-read";
+import {engineState,type EngineState} from "../../shared/engine-stream";
 
 export const labManifest=manifest;
 export const labScope=["createMatch","acceptMatch","cancelMatch","input","tick","concede","expire"] as const;
 export const labAccountKey=`pongit:interlude:${manifest.app}:account`;
 export type LabSession=Session<Abi>;
-export type LabSnapshot={id:bigint;revision:bigint;phase:number;a:Address;b:Address;target:Address;winner:Address;head:bigint;clock:bigint;nonceA:bigint;nonceB:bigint;deadline:bigint;state:State;observedAt:number};
+export type LabSnapshot=EngineState;
 export function labSnapshot(value:readonly unknown[]):LabSnapshot {
- const [id,revision,phase,a,b,target,winner,head,clock,nonceA,nonceB,deadline,state]=value;
- return {id:id as bigint,revision:revision as bigint,phase:Number(phase),a:a as Address,b:b as Address,target:target as Address,winner:winner as Address,head:head as bigint,clock:clock as bigint,nonceA:nonceA as bigint,nonceB:nonceB as bigint,deadline:deadline as bigint,state:state as State,observedAt:Date.now()};
+ return engineState(value);
 }
 export function labSide(s:LabSnapshot|null,account?:string){return !s||!account?-1:s.a.toLowerCase()===account.toLowerCase()?0:s.b.toLowerCase()===account.toLowerCase()?1:-1;}
 export function createLabClient(){
@@ -52,13 +52,17 @@ export class LabLane {
  constructor(private read:(fresh?:boolean)=>Promise<LabSnapshot>,private session:LabSession,private account:string,
   private onResult:(s:LabSnapshot,latency?:number)=>void,private onError:(e:unknown)=>void,
   private onUnavailable:(e:unknown)=>void=()=>{},
-  private pacing:{readMs:number;tickMs:number;now?:()=>number}={readMs:0,tickMs:0}){}
+  private pacing:{readMs:number;tickMs:number;now?:()=>number}={readMs:0,tickMs:0},
+  private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void}){}
  private now(){return (this.pacing.now || Date.now)();}
  intent(direction:number){this.desired=direction;}
  stop(){this.stopped=true;this.desired=0;}
- private async observe(fresh=false){
+ ingest(s:LabSnapshot){
+  if(!this.latest || s.id!==this.latest.id || s.revision>=this.latest.revision){this.latest=s;this.lastObservation=s.observedAt;}
+ }
+ private async observe(fresh=false,accepted?:Promise<LabSnapshot>){
   try{
-   const s=await this.read(fresh),expected=this.expectedInput;
+   const s=await (accepted??this.read(fresh)),expected=this.expectedInput;
    if(expected && (s.id!==expected.id || s.phase<3 && (expected.side===0?s.nonceA:s.nonceB)<expected.nonce))
     throw new Error("The read has not caught up with the accepted input.");
    if(this.expectedTerminal!==undefined && (s.id!==this.expectedTerminal || s.phase<3))
@@ -81,11 +85,11 @@ export class LabLane {
   if(this.stopped){this.actionPending=false;throw new Error("Reconnect the lab session before sending another action.");}
   if(this.observationPending || this.now()<this.nextReadAt){this.actionPending=false;throw new StateReadUnavailable(undefined);}
   this.busy=true;
-  try{const r=await this.session.send(name,args);this.observationPending=true;
+  try{this.stream?.sending?.(true);const r=await this.session.send(name,args);this.observationPending=true;
    if((name==="concede"||name==="cancelMatch") && typeof args[0]==="bigint")this.expectedTerminal=args[0];
-   const s=await this.observe(true);this.onResult(s,r.latencyMs);return s;}
+   const s=await this.observe(true,this.stream?.receipt(r,name,args));this.onResult(s,r.latencyMs);return s;}
   catch(e){if(!(e instanceof StateReadUnavailable)){this.stop();this.onError(e);}throw e;}
-  finally{this.busy=false;this.actionPending=false;}
+  finally{this.stream?.sending?.(false);this.busy=false;this.actionPending=false;}
  }
  async pump(allowTick:boolean){
   if(this.busy||this.stopped||this.actionPending||this.now()<this.nextReadAt)return;
@@ -107,13 +111,13 @@ export class LabLane {
     const changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
     if(!changed && (!allowTick||n>0||this.now()-this.lastWrite<this.pacing.tickMs))break;
     this.inputPending=changed;
-    const result=changed
-     ?await this.session.send("input",[s.id,this.desired,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n])
-     :await this.session.send("tick",[s.id]);
+    const name=changed?"input":"tick",args=changed?[s.id,this.desired,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]:[s.id];
+    this.stream?.sending?.(true);
+    const result=await this.session.send(name,args);
     this.lastWrite=this.now();
     this.observationPending=true;
     if(changed)this.expectedInput={id:s.id,side,nonce:(side===0?s.nonceA:s.nonceB)+1n};
-    s=await this.observe(true);this.inputPending=false;this.onResult(s,result.latencyMs);
+    s=await this.observe(true,this.stream?.receipt(result,name,args));this.inputPending=false;this.onResult(s,result.latencyMs);
    }
   }catch(e){
    // A read failure never discards a valid grant or retries an accepted write.
@@ -128,6 +132,6 @@ export class LabLane {
    if(!engineReadRetryMs(e))try{const latest=await this.read(true);if(activeMatch===latest.id && latest.phase>=3){this.desired=0;this.onResult(latest);return;}}catch{}
    this.stop();this.onError(e);
   }
-  finally{this.inputPending=false;this.busy=false;}
+  finally{this.stream?.sending?.(false);this.inputPending=false;this.busy=false;}
  }
 }

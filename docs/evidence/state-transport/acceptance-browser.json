@@ -1,0 +1,30 @@
+{
+  "scenarios": [
+    {
+      "failure": "write429",
+      "idleReads": 3,
+      "preflights": 2,
+      "acks": 1,
+      "acceptanceSends": 2,
+      "nonceReads": 2,
+      "started": true
+    },
+    {
+      "failure": "ack429",
+      "idleReads": 3,
+      "preflights": 1,
+      "acks": 3,
+      "acceptanceSends": 1,
+      "nonceReads": 1,
+      "started": true
+    },
+    {
+      "failure": "expired429",
+      "idleReads": 3,
+      "expiredMessageCleared": true,
+      "terminalPollingStopped": true,
+      "acceptanceSends": 1
+    }
+  ],
+  "errors": []
+}

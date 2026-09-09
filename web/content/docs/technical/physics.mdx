@@ -1,5 +1,7 @@
 ## Integer event physics
 
+This section first describes the archived V4 arena. Current rooms use the engine transport described below; both keep contract state authoritative.
+
 The V4 deployment reuses GameV3 and PhysicsV2. Solidity and TypeScript share an event-driven model: positions and velocities have a **1,000,000** scale, time is in integer microseconds, division truncates toward zero and event times round up.
 
 The logical court is 1024 × 576, ball radius is 6, default paddle half-height is 48 and paddle speed is 180 logical units per second. The game ends at seven points. Chaos adds individual half-heights and a between-rally resume time.
@@ -25,3 +27,13 @@ The renderer reconstructs from a confirmed snapshot and relevant local intents, 
 **Network details** separates server round-trip, relayer queue/preparation, broadcast, chain/receipt observation, snapshot age and visual correction. Those measurements are not interchangeable. Client and server clocks must not be subtracted without synchronization.
 
 Moving the web frontend alone does not remove relayer queuing or Monad inclusion delay. Historical benchmarks are workload-specific, not present-day service guarantees. The source and test records include 10,000 differential physics cases per mode; those checks are correctness evidence, not a latency guarantee.
+
+## Current rooms: pushed state and recovery
+
+Rooms can receive the contract's `Snapshot` events over one applied-event WebSocket per tab. Successful SDK receipts update the same cache. The initial getter supplies participants, nonces and clock metadata; events do not invent missing fields. A gap, restart, changed delegation or missing terminal winner requires an authoritative read. A consistency check runs every ten seconds while events remain fresh.
+
+If the stream is unavailable, reads are serialized with a 500 ms active-game interval and a two-second waiting interval. Remote `Retry-After` takes precedence. A failed write is reconciled with its receipt, state and SDK nonce before another command can be signed. A missing reply does not prove failure.
+
+Player A drives idle ticks at most every 300 ms. Player B takes over after 900 ms without progression; the VPS is the last fallback after 1.5 seconds. Successful inputs already advance the game and suppress unnecessary ticks. The server's maintenance scheduler can make its fallback later than the threshold.
+
+The browser still bounds preview when state is stale. A stream reduces repeated reads and stale-state corrections; it does not turn a live engine result into an irreversible Monad settlement or guarantee a particular network latency.

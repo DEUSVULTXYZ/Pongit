@@ -47,6 +47,11 @@ import type { LobbyRoom, LobbyOffer } from "../../shared/rooms";
 import {readEngineSnapshot} from "../../shared/engine-snapshot";
 import {engineRead, engineReadRetryMs} from "../../shared/engine-read";
 import {roomSnapshotPollMs} from "../../shared/rooms-observation";
+import {EngineStream} from "../../shared/engine-stream";
+import {EngineFeed,TickPilot} from "../../shared/engine-feed";
+import {engineCooldownMs} from "../../shared/engine-transport";
+import {takeRpcSamples} from "../../shared/rpc-metrics";
+import {publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
 type Profile = {
   player: string;
   handle?: string;
@@ -153,6 +158,9 @@ async function tabLock(p: string) {
 }
 export function RoomsHub({ roomId }: { roomId?: string }) {
   const [mode,setMode] = useState<0|1>(0);
+  const [streamEnabled,setStreamEnabled]=useState(false);
+  const feedRef=useRef<EngineFeed|null>(null);
+  const refreshPending=useRef<Promise<void>|null>(null);
   const [account, setAccount] = useState<Address>(),
     [saved, setSaved] = useState<Address>(),
     [ready, setReady] = useState(false),
@@ -256,7 +264,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     const old = snapshotRef.current;
     // A process restart may lower the block head without erasing accepted state.
     // Revision remains the ordering authority across that recovery.
-    if (old?.id === s.id && (s.revision < old.revision || s.revision === old.revision && s.head < old.head))
+    if (!s.reset && old?.id === s.id && (s.revision < old.revision || s.revision === old.revision && s.head < old.head))
       return;
     snapshotRef.current = s;
     setSyncError("");
@@ -271,14 +279,14 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       if(s.phase>=3)setError("");
     }
   };
-  const failed = () => {
+  const failed = (error?:unknown) => {
     lane.current?.stop();
     // Stop uncertain writes, not the account or its result observer. Changing
     // ready here used to erase the 6:6 snapshot before the seventh point arrived.
     setWriteBlocked(true);
     setDirection(0);
     setError(
-      "The engine did not confirm this action. Reconnect to read the current match before continuing.",
+      publicationUnavailable(error)?new EnginePublicationUnavailable().message:"The engine did not confirm this action. Reconnect to read the current match before continuing.",
     );
   };
   const read = async () =>
@@ -291,7 +299,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     setDirection(d);
     if (lane.current && !lane.current.stopped) void lane.current.pump(false);
   }
-  async function refresh() {
+  async function loadLobby() {
     const version=++refreshVersion.current, owner=accountRef.current;
     const next = await roomsApi<Lobby>("/interlude/state");
     if (!alive.current || version!==refreshVersion.current || owner!==accountRef.current) return;
@@ -312,6 +320,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       if (location.pathname !== `/rooms/${next.room.id}`)
         history.replaceState(null, "", `/rooms/${next.room.id}`);
     }
+  }
+  function refresh(){
+    if(refreshPending.current)return refreshPending.current;
+    const task=loadLobby().finally(()=>{if(refreshPending.current===task)refreshPending.current=null;});
+    refreshPending.current=task;return task;
   }
   refreshRef.current = refresh;
   async function run(fn: () => Promise<void>) {
@@ -443,6 +456,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   useEffect(() => {
     alive.current = true;
     client.current = createRoomsClient();
+    feedRef.current=new EngineFeed(client.current,new EngineStream(roomsManifest.node,roomsManifest.app as Address,undefined,()=>engineCooldownMs(roomsManifest.node)));
     setSaved(rememberedAccount()?.address);
     let done = false,
       configTimer: ReturnType<typeof setTimeout>;
@@ -454,6 +468,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         if (!done) {
           setOnline(c.online);
           setAdmission(c.admission);
+          setStreamEnabled(c.stateTransport==="events");
           if(c.maintenance?.stage && c.maintenance.stage!=='playing')setNotice(c.maintenance.stage==='draining'?'Current matches are finishing before scheduled maintenance. New games will resume after renewal.':'The arcade is renewing its delegation. This includes a one-hour challenge period. Payments continue in the background.');
           else if (!c.online) setNotice("The game service is reconnecting. Please retry shortly.");
           else setNotice("");
@@ -514,6 +529,12 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       timer: ReturnType<typeof setTimeout>,
       socket: WebSocket | undefined,
       retry: ReturnType<typeof setTimeout>;
+    let revision:string|undefined;
+    let socketHealthy=false;
+    const heartbeat=setInterval(()=>{void roomsApi("/interlude/presence",{}).catch(()=>{});},10000);
+    const instance=crypto.randomUUID();
+    const diagnostics=setInterval(()=>{const samples=takeRpcSamples();if(samples.length)void roomsApi("/interlude/diagnostics",{samples,instance}).catch(()=>{});},10000);
+    void roomsApi("/interlude/presence",{}).catch(()=>{});
     const poll = async () => {
       try {
         await refreshRef.current();
@@ -526,7 +547,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           }
         }
       }
-      if (!done) timer = setTimeout(poll, document.hidden ? 10000 : 4000);
+      if (!done) timer = setTimeout(poll, socketHealthy ? 15000 : document.hidden ? 10000 : 4000);
     };
     const open = () => {
       socket = new WebSocket(WS);
@@ -540,8 +561,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       socket.onmessage = (e) => {
         try {
           const m = JSON.parse(e.data);
-          if (m.type === "rooms-changed")
-            void refreshRef.current().catch(() => {});
+          if(m.type==="rooms-changed"){socketHealthy=true;setNotice(value=>value==="The lobby is reconnecting. Your arcade session is still connected."?"":value);}
+          if (m.type === "rooms-changed" && (!m.revision||m.revision!==revision)){
+            revision=m.revision;void refreshRef.current().catch(() => {});
+          }
+          if(m.type==="rooms-unavailable")setNotice("The lobby is reconnecting. Your arcade session is still connected.");
           if (m.type === "rooms-expired") {
             setReady(false);
             lane.current?.stop();
@@ -549,6 +573,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         } catch {}
       };
       socket.onclose = () => {
+        socketHealthy=false;
         if (!done) retry = setTimeout(open, 3000);
       };
     };
@@ -558,6 +583,8 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       done = true;
       clearTimeout(timer);
       clearTimeout(retry);
+      clearInterval(heartbeat);
+      clearInterval(diagnostics);
       socket?.close();
     };
   }, [ready, account]);
@@ -570,21 +597,29 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     if (!id) return;
     let done = false,
       pollTimer: ReturnType<typeof setTimeout>;
-    const readSnapshot = engineRead(async () => labSnapshot(
+    const feed=streamEnabled?feedRef.current:null,pilot=new TickPilot();
+    const legacyRead = engineRead(async () => labSnapshot(
       await readEngineSnapshot(client.current!, BigInt(id)),
     ),250);
+    const readSnapshot=(fresh=false)=>feed?feed.read(BigInt(id),fresh):legacyRead(fresh);
+    const deliver=(s:LabSnapshot,ms?:number)=>{pilot.observe(s,Date.now(),ms!==undefined);receive(s,ms);};
+    const unwatch=feed?.watch(BigInt(id),s=>{if(!done){
+      if(s.reset){lane.current?.stop();setWriteBlocked(true);setDirection(0);setError("The game node restarted. Reconnect to synchronize your existing session before playing.");}
+      lane.current?.ingest(s);deliver(s);
+    }});
     if (session.current && account && !writeBlocked)
       lane.current = new LabLane(
         readSnapshot,
         session.current,
         account,
-        receive,
+        deliver,
         failed,
         (e) => {
           setSyncError(engineReadRetryMs(e) ? "The game node is limiting requests. Waiting to synchronize." : "Synchronizing game state. Your session is still connected.");
           setDirection(0);
         },
         {readMs:250,tickMs:300},
+        feed?{receipt:(result,name,args)=>feed.receipt(BigInt(id),result,name,args,account),sending:value=>pilot.sending(value)}:undefined,
       );
     const poll = async () => {
       let retryMs = 0;
@@ -596,13 +631,14 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           && snapshotRef.current?.phase === 2 && labSide(snapshotRef.current, account) >= 0;
         if (!controlled) {
           const s = await readSnapshot();
-          if (!done) receive(s);
+          if (!done) deliver(s);
         }
       } catch (e) {
         retryMs = engineReadRetryMs(e);
         if (!done) setSyncError("Synchronizing game state. Your session is still connected.");
       }
-      const delay = roomSnapshotPollMs(offer?.status, snapshotRef.current?.phase, document.hidden);
+      const legacyDelay = roomSnapshotPollMs(offer?.status, snapshotRef.current?.phase, document.hidden);
+      const delay=feed && legacyDelay!==null ? document.hidden?2000:snapshotRef.current?.phase===2?500:2000:legacyDelay;
       if (!done && (retryMs || delay !== null)) pollTimer = setTimeout(poll, Math.max(retryMs, delay ?? 2000));
     };
     void poll();
@@ -615,9 +651,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         labSide(snapshotRef.current, account) >= 0
       )
         void lane.current?.pump(
-          !snapshotRef.current.state.awaitingServe &&
-            (labSide(snapshotRef.current, account) === 0 ||
-              snapshotRef.current.clock - snapshotRef.current.state.t > 300000n),
+          pilot.due(labSide(snapshotRef.current,account),snapshotRef.current,Date.now()),
         );
     }, 100);
     return () => {
@@ -625,8 +659,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       clearTimeout(pollTimer);
       clearInterval(pump);
       lane.current?.stop();
+      unwatch?.();
     };
-  }, [offer?.id, offer?.status, ready, account, sessionRevision]);
+  }, [offer?.id, offer?.status, ready, account, sessionRevision, streamEnabled]);
   // Room rotation can precede a rate-limited browser's final read. Keep the
   // old result observable independently from the next invitation's snapshot.
   useEffect(()=>{

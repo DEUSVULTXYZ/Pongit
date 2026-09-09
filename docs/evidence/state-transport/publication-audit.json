@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-09T21:41:22.165081+00:00",
+  "scope": "All local refs and reflogs, commit/tag messages, historical blobs, index, current tracked files; known operator secrets and credential patterns. Matched values are never logged.",
+  "objectsScanned": 1364,
+  "trackedFiles": 662,
+  "findings": 0,
+  "reviewedCandidates": 51,
+  "candidateReview": "Only example, isolated-test and environment-variable connection strings; no deployed credential identified.",
+  "dependenciesChanged": false
+}

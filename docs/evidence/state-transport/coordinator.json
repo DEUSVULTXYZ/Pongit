@@ -1,0 +1,13 @@
+{
+  "at": "2026-09-09T21:41:13.274Z",
+  "checks": [
+    "20 duplicate-click queue/cancel cycles keep exactly one occupancy",
+    "Eight members fit, ninth member rejected",
+    "Slow acceptance RPC does not hold the global lobby lock",
+    "Temporary permission RPC failure preserves the session and rejects unverified actions",
+    "Real expiry still closes the subscription"
+  ],
+  "cycles": 20,
+  "independentPresenceMs": 20,
+  "passed": true
+}

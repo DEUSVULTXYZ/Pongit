@@ -13,6 +13,7 @@ import { roomsAbi } from "../../shared/abi-rooms";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { api, API } from "./api";
 import {engineTransport} from "../../shared/engine-transport";
+import {measuredFetch,recordRpc} from "../../shared/rpc-metrics";
 export const roomsManifest = manifest;
 export const roomsChaos = Number(manifest.rulesVersion) === 4;
 export const roomsScope = [
@@ -33,6 +34,7 @@ export function createRoomsClient() {
       transport: http("https://testnet-rpc.monad.xyz", {
         retryCount: 0,
         timeout: 8000,
+        fetchFn:measuredFetch("monad"),
       }),
     }),
     store: webStorageStore(sessionStorage),
@@ -48,6 +50,7 @@ export async function roomsApi<T = any>(
   body?: unknown,
 ): Promise<T> {
   const player = sessionStorage.getItem(roomsAccountKey);
+  const at=Date.now(),method=path.split("?")[0].replace(/0x[\da-f]+/gi,"item").replace(/[^\w]/g,".").slice(0,80);
   const response = await fetch(API + path, {
     credentials: "include",
     method: body === undefined ? "GET" : "POST",
@@ -63,12 +66,13 @@ export async function roomsApi<T = any>(
           ),
     signal: AbortSignal.timeout(15000),
   });
+  recordRpc({at,target:"pongit",method,status:response.status,ms:Date.now()-at,source:"network"});
   const result = await response.json().catch(() => {
     throw new Error("Connection interrupted. Please retry.");
   });
   if (!response.ok) {
     const error = new Error(result.error || "Service unavailable");
-    Object.assign(error, {status: response.status, headers: response.headers});
+    Object.assign(error, {status: response.status, headers: response.headers,code:result.code,source:result.source,retryAt:result.retryAt,requestId:result.requestId});
     throw error;
   }
   return result;

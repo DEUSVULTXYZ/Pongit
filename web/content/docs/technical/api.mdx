@@ -111,6 +111,18 @@ Refresh expiring quotes and nonces after failure. Do not resend a different tran
 
 The browser keeps a pending receipt hash in this tab's session storage so F5 can resume acknowledgement without another transaction. A failed or uncertain engine send stops automatic submission and offers **Retry acceptance**, which restores the SDK nonce and checks the duel first. An unstarted expired offer requires an explicit rejoin; it does not generate replacement tickets indefinitely. Upstream HTTP 429 responses retain `Retry-After` through the rooms API.
 
+## Rooms notifications and service errors
+
+`GET /interlude/config` includes `stateTransport` (`events` or `polling`). The event adapter subscribes to `interlude_subscribe("applied")` on the deployment's node. It filters the application and subscription id, decodes contract events and reconciles discontinuities through the existing snapshot getter. The SDK still signs every command directly to the engine.
+
+An authenticated `POST /interlude/presence` heartbeat runs every ten seconds. `rooms-changed` notifications carry an account-specific revision and are sent only when the visible lobby changes. The browser coalesces refreshes and retains fallback polling. `rooms-unavailable` means the authorization service could not be reached: retain the local key, but do not perform unverified actions. `rooms-expired` is reserved for a verified invalid, revoked or expired session.
+
+Rooms errors retain `error` and add `code`, `source`, optional `retryAt` (Unix milliseconds) and `requestId`. `ENGINE_RATE_LIMIT` identifies an upstream 429; `ENGINE_COOLDOWN` identifies an action prevented locally during backoff. `ACCOUNT_RATE_LIMIT` and `API_RATE_LIMIT` identify PONGIT's separate budgets. `SESSION_UNAVAILABLE` returns 503; `SESSION_REJECTED` returns 401.
+
+`ENGINE_PUBLICATION_UNAVAILABLE` is a separate 503: the node has stopped accepting transactions because it cannot publish them. Recreating a player passkey does not repair publication. The relayer retains the exact pending transaction and slows its recovery checks; it does not replace that transaction or reset the sender nonce.
+
+`POST /interlude/diagnostics` accepts an ephemeral browser `instance` UUID and up to 200 payload-free samples. These private operational counters have no public read endpoint and expire after seven days. They exclude command parameters, signatures, private keys, cookies and notebook content.
+
 ## Rooms finance interfaces
 
 These paths are under `/api`, use the rooms HttpOnly cookie, allowed Origin and matching `x-pongit-player`. `/interlude/auth/challenge` and `/interlude/auth/session` authenticate possession of the scoped SDK session key and verify the owner grant, app, chain, epoch and expiry. This is not a spending authorization. The private socket subscription is `subscribe-rooms`; after `rooms-changed`, reload HTTP state. A `rooms-expired` notification requires reconnection.

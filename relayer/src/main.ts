@@ -693,7 +693,10 @@ const server = createServer(async (req, res) => {
     const rate = rates.get(rateKey);
     if (!rate || rate.until < Date.now())
       rates.set(rateKey, { count: 1, until: Date.now() + 60000 });
-    else if (++rate.count > budget.limit) return send(res, { error: "Rate limit" }, 429);
+    else if (++rate.count > budget.limit) {
+      res.setHeader("Retry-After",String(Math.ceil((rate.until-Date.now())/1000)));
+      return send(res, { error: "Rate limit",code:"IP_RATE_LIMIT",source:"pongit_api",retryAt:rate.until,requestId:crypto.randomUUID() }, 429);
+    }
     if (rates.size > 10000)
       for (const [key, r] of rates) if (r.until < Date.now()) rates.delete(key);
     if (await roomsCoordinator?.route(req,res,path) || await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;

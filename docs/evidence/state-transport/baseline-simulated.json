@@ -1,0 +1,71 @@
+{
+  "at": "2026-09-09T21:03:49.937Z",
+  "runtime": "e77d13b",
+  "transport": "polling",
+  "network": "Isolated browser: RPC reads delayed 30 ms, sends 100 ms; no upstream requests or 429 injection",
+  "scenarios": [
+    {
+      "scenario": "Both paddles idle during an active rally",
+      "seconds": 12.001,
+      "players": [
+        {
+          "rpc": {
+            "eth_call": 45,
+            "interlude_sendTransaction": 24
+          },
+          "actions": {
+            "tick": 24
+          },
+          "vps": 4,
+          "player": "A",
+          "engineRps": 5.75
+        },
+        {
+          "rpc": {
+            "eth_call": 39,
+            "interlude_sendTransaction": 15
+          },
+          "actions": {
+            "tick": 15
+          },
+          "vps": 4,
+          "player": "B",
+          "engineRps": 4.5
+        }
+      ],
+      "totalEngineRps": 10.25
+    },
+    {
+      "scenario": "Both players change direction or release about 2.5 times/second",
+      "seconds": 41.755,
+      "players": [
+        {
+          "rpc": {
+            "eth_call": 101,
+            "interlude_sendTransaction": 100
+          },
+          "actions": {
+            "input": 100
+          },
+          "vps": 15,
+          "player": "A",
+          "engineRps": 4.81
+        },
+        {
+          "rpc": {
+            "interlude_sendTransaction": 100,
+            "eth_call": 101
+          },
+          "actions": {
+            "input": 100
+          },
+          "vps": 14,
+          "player": "B",
+          "engineRps": 4.81
+        }
+      ],
+      "totalEngineRps": 9.62
+    }
+  ],
+  "errors": []
+}

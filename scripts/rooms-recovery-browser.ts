@@ -30,11 +30,11 @@ try{
    localStorage.setItem("pongit:arcade-audio",JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:"off"}));
   },{stored,key:storageKey(app,10143,a),accountKey:`pongit:rooms:${app}:account`,a});
   let phase=2,revision=1n,reads=0,writes=0,failNext=false,throttleRead=false,limitedAt=0,recoveredAt=0;
-  let nextPhase=0,acceptNext=false,chainNonce=0n,nonceReads=0;
+  let nextPhase=0,acceptNext=false,chainNonce=0n,nonceReads=0,processed=0n;
   const start=Date.now();
   const fixture=(id=1n)=>[id,revision,BigInt(id===1n?phase:nextPhase),a,b,b,id===1n&&phase===3?a:zeroAddress,BigInt(100+Math.floor((Date.now()-start)/10)),
    BigInt(Date.now()-start)*1000n,0n,0n,BigInt(Math.floor(Date.now()/1000)+20),
-   {...initial(zeroHash),scoreA:id===1n?(phase===3?7:6):0,scoreB:id===1n?6:0,finished:id===1n&&phase===3,t:BigInt(Date.now()-start)*1000n}];
+   {...initial(zeroHash),scoreA:id===1n?(phase===3?7:6):0,scoreB:id===1n?6:0,finished:id===1n&&phase===3,t:processed}];
   const room={id:zeroHash,host:a,kind:"ranked",mode:0,status:"playing",created:start,activity:start,
    members:[a,b].map((player,i)=>({player,joined:start+i,position:i,seen:Date.now(),away:false})),
    offer:{id:"1",room:zeroHash,a,b,mode:0,ranked:true,expires:String(Math.floor(Date.now()/1000)+20),rules:"4",entropy:zeroHash,signature:"0x",accepted:[a,b],status:"active"}};
@@ -74,7 +74,7 @@ try{
       chainNonce++;
       return reply({status:"0x0",transactionHash:zeroHash,output:encodeErrorResult({abi,errorName:"InvalidMatch"})});
      }
-     revision++;
+     revision++;processed=BigInt(Date.now()-start)*1000n;
      chainNonce++;
      if(acceptNext){acceptNext=false;nextPhase=2;room.offer.status="active";room.offer.accepted=[a,b];}
      return reply({status:"0x1",transactionHash:zeroHash,output:encodeAbiParameters([{type:"bytes"}],["0x"])});

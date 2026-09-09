@@ -30,6 +30,7 @@ const nextConfig: NextConfig = {
               " " +
               (process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000") +
               " https://testnet-rpc.monad.xyz " + new URL(interludeLab.node).origin + " " + new URL(interludeRooms.node).origin +
+              " " + new URL(interludeRooms.node).origin.replace(/^http/,"ws") +
               "; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
           },
         ],

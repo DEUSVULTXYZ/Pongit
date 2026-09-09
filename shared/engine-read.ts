@@ -25,8 +25,9 @@ export function engineReadRetryMs(error: unknown): number {
     if (cause.status !== 429) continue;
     const value = cause.headers?.get?.("retry-after") ?? cause.headers?.["retry-after"];
     const seconds = Number(value);
-    return value && Number.isFinite(seconds) && seconds >= 0
-      ? Math.min(60000, Math.max(1000, seconds * 1000)) : 10000;
+    if(value && Number.isFinite(seconds) && seconds>=0)return Math.max(1000,seconds*1000);
+    const date=value?Date.parse(value):NaN;
+    return Number.isFinite(date)?Math.max(1000,date-Date.now()):10000;
   }
   return 0;
 }

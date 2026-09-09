@@ -39,3 +39,11 @@ The rooms pressure and lifecycle keys are distinct from the financial relayer se
 The lifecycle drains admission and active/publication work, closes the app, waits the hub's actual `stakeUnlockAt`, releases stake, freezes known final Chaos results and renews the same app. It admits players only after the node reports the renewed epoch. A challenge suspends automatic renewal. `ROOMS_LIFECYCLE_HOLD_RENEW=true` is a private operator hold after finalization for rehearsal or migration coordination. It does not shorten the challenge period.
 
 Keep rooms tables, accepted finance manifests and payment workers when rolling the UI back. Restoring a pre-rooms relayer binary would strand or misinterpret signed jobs. Do not delete pending transactions or reset nonces. Preserve V4 and earlier vault references, even after closing a rooms deployment. See the [Chaos operations record](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/interlude-rooms/docs/CHAOS_ROOMS.md).
+
+## State transport and diagnostics
+
+`ROOMS_STATE_STREAM_ENABLED=true` enables the applied-event adapter on the server and advertises it to new browser sessions. Set it to `false` and restart the relayer to return to serialized polling while retaining the lobby, receipt and session-recovery fixes. This changes no contract or financial rule. An open tab can refresh after the flag changes.
+
+The additive `il_presence`, `il_result_pending` and `il_rpc_diagnostics` tables separate heartbeats, durable result processing and private measurements from the lobby document. Never drop the pending-result table during rollback: retained results must be reconciled before removing their jobs. Diagnostics aggregate counts per second, distinguish network calls from locally blocked attempts and retain data for seven days. They are not an independent source of scores, grants or payouts.
+
+Profile engine traffic by method and component, not just the total HTTP count. PONGIT's own account/IP guards are separate from an upstream quota. A 429 alone does not establish that quota. Include UTC times, method, response id and measured traffic windows when reporting an upstream rejection.

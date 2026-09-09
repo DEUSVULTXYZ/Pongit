@@ -2,7 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Pool, PoolClient } from "pg";
-import type { WebSocket } from "ws";
+import { WebSocket } from "ws";
 import {
   createPublicClient,
   http,
@@ -37,6 +37,13 @@ import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snaps
 import {engineTransport} from "../../shared/engine-transport";
 import {engineReadRetryMs} from "../../shared/engine-read";
 import {confirmsRoomAcceptance, expireUnstartedRoomOffer} from "../../shared/rooms-acceptance";
+import {EngineStream,engineTuple} from "../../shared/engine-stream";
+import {EngineFeed} from "../../shared/engine-feed";
+import {engineCooldownMs} from "../../shared/engine-transport";
+import {SessionUnavailable,SessionRejected,serviceError,publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
+import {overlayPresence} from "./rooms-presence";
+import {recordRpc,measuredFetch} from "../../shared/rpc-metrics";
+import {createRpcDiagnostics} from "./rpc-diagnostics";
 import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
 import {
@@ -109,6 +116,7 @@ export async function createRoomsCoordinator(o: Options) {
       transport: http(process.env.RPC_URL || "https://testnet-rpc.monad.xyz", {
         retryCount: 0,
         timeout: 8000,
+        fetchFn:measuredFetch("monad"),
       }),
     });
   const client = createInterludeClient({
@@ -120,11 +128,17 @@ export async function createRoomsCoordinator(o: Options) {
     transport: engineTransport(manifest.node),
   });
   const db = o.db;
+  const streamEnabled=process.env.ROOMS_STATE_STREAM_ENABLED==="true";
+  const feed=new EngineFeed(client,new EngineStream(manifest.node,app,url=>new WebSocket(url) as any,()=>engineCooldownMs(manifest.node)));
+  const watched=new Map<string,()=>void>();
+  const pendingPressure=new Map<string,Promise<void>>();
   const finance = chaosEnabled && o.financeConfig?.entries.some(x=>x.app.toLowerCase()===app) && o.enqueue
     ? await createRoomsFinance({db,base,manifest:o.financeConfig.find(app),enqueue:o.enqueue}) : null;
   if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED === "true" && !finance)throw new Error("Chaos requires its funded financial bridge");
   await db.query(`
  CREATE TABLE IF NOT EXISTS il_lobby(app text PRIMARY KEY,document jsonb NOT NULL);
+ CREATE TABLE IF NOT EXISTS il_result_pending(app text NOT NULL,id text NOT NULL,room text NOT NULL,ranked boolean NOT NULL,PRIMARY KEY(app,id));
+ CREATE TABLE IF NOT EXISTS il_presence(app text NOT NULL,player text NOT NULL,seen bigint NOT NULL,PRIMARY KEY(app,player));
  CREATE TABLE IF NOT EXISTS il_occupancy(app text NOT NULL,player text NOT NULL,room text NOT NULL,PRIMARY KEY(app,player));
  CREATE TABLE IF NOT EXISTS il_contacts(player text NOT NULL,contact text NOT NULL,PRIMARY KEY(player,contact));
  CREATE TABLE IF NOT EXISTS il_nonces(nonce text PRIMARY KEY,player text NOT NULL,expires bigint NOT NULL,app text NOT NULL);
@@ -144,12 +158,13 @@ export async function createRoomsCoordinator(o: Options) {
     app,
     { rooms: {}, queue: [], invites: [] },
   ]);
+  const diagnostics=await createRpcDiagnostics(db,app);
   const lifecycle=chaosEnabled&&finance&&o.financeConfig ? await roomsLifecycle({db,base,app,hub:manifest.hub,nodeUrl:manifest.node,adapter:o.financeConfig.find(app).adapter,engineStatus:()=>client.status(),engineActive:async()=>BigInt(await client.read("activeCount",[]) as bigint)}) : null;
   if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED==='true' && !lifecycle && process.env.ROOMS_PRIVATE_FINANCE_TEST!=='true')throw new Error('Chaos requires a configured delegation lifecycle before opening to players');
   let publicLadder: Promise<any> | undefined, publicLadderAt = 0, publicLadderMode = -1;
   const sockets = new Map<
     WebSocket,
-    { req: IncomingMessage; player: string }
+    { req: IncomingMessage; player: string; revision?:string; unavailable?:boolean }
   >();
   let online = false,
     admissionHealthy = false,
@@ -163,14 +178,14 @@ export async function createRoomsCoordinator(o: Options) {
     ratingAt = 0,
     auditOffset = 0;
   const epochs = new Map<string, { value: bigint; at: number }>();
+  const epochChecks=new Map<string,Promise<bigint>>();
+  const accountRates=new Map<string,{count:number;until:number}>();
   const ratings = new Map<string, { live: any; published: any }>();
   const ratingKey = (p:string,mode=0)=>p+":"+mode;
   const readRating = async(p:Address,mode=0,published=false):Promise<any> =>
     published ? client.readSettled("ratingOf",chaosEnabled?[p,mode]:[p]) : client.read("ratingOf",chaosEnabled?[p,mode]:[p]);
   let legacyResults: any[] = [];
-  const current = async () =>
-    (await db.query("SELECT document FROM il_lobby WHERE app=$1", [app]))
-      .rows[0].document as State;
+  const current = async () => overlayPresence(db,app,(await db.query("SELECT document FROM il_lobby WHERE app=$1", [app])).rows[0].document as State);
   const occupant = (s: State, p: string) =>
     Object.values(s.rooms).find(
       (r) => r.status !== "closed" && r.members.some((m) => m.player === p),
@@ -181,28 +196,32 @@ export async function createRoomsCoordinator(o: Options) {
     const token = /(?:^|;\s*)pongit_rooms=([a-f0-9]{64})(?:;|$)/.exec(
       req.headers.cookie || "",
     )?.[1];
-    if (!token) throw new Error("Renew your arcade session to continue.");
+    if (!token) throw new SessionRejected("Renew your arcade session to continue.");
     const r = (
       await db.query(
         "SELECT * FROM il_sessions WHERE token=$1 AND app=$2 AND expires>$3",
         [hash(token), app, Math.floor(Date.now() / 1000)],
       )
     ).rows[0];
-    if (!r) throw new Error("Renew your arcade session to continue.");
+    if (!r) throw new SessionRejected("Renew your arcade session to continue.");
     if (
       (expected || req.headers["x-pongit-player"])?.toString().toLowerCase() !==
       r.player
     )
-      throw new Error(
+      throw new SessionRejected(
         "Renew your arcade session: account changed in another tab.",
       );
     let epoch = epochs.get(r.player);
     if (!epoch || Date.now() - epoch.at > 5000) {
-      epoch = { value: await client.epochOf(r.player), at: Date.now() };
+      try{
+        let pending=epochChecks.get(r.player);
+        if(!pending){pending=client.epochOf(r.player).finally(()=>epochChecks.delete(r.player));epochChecks.set(r.player,pending);}
+        epoch={value:await pending,at:Date.now()};
+      }catch{throw new SessionUnavailable();}
       epochs.set(r.player, epoch);
     }
     if (epoch.value !== BigInt(r.epoch))
-      throw new Error("Arcade session revoked. Reconnect.");
+      throw new SessionRejected("Arcade session revoked. Reconnect.");
     return r.player as string;
   }
   async function transact<T>(
@@ -212,7 +231,9 @@ export async function createRoomsCoordinator(o: Options) {
     const c = await db.connect();
     try {
       await c.query("BEGIN");
+      const lockAt=Date.now();
       await c.query("SELECT pg_advisory_xact_lock(701339)");
+      recordRpc({at:lockAt,target:"pongit",method:"lobby.lock",status:200,ms:Date.now()-lockAt,source:"cache"});
       if (operation) {
         const old = (
           await c.query(
@@ -232,7 +253,10 @@ export async function createRoomsCoordinator(o: Options) {
           app,
         ])
       ).rows[0].document as State;
+      await overlayPresence(c,app,state);
+      const previous=json(state);
       const result = await fn(state, c);
+      if(json(state)!==previous){
       await c.query("DELETE FROM il_occupancy WHERE app=$1", [app]);
       for (const room of Object.values(state.rooms))
         if (room.status !== "closed")
@@ -257,6 +281,7 @@ export async function createRoomsCoordinator(o: Options) {
         app,
         state,
       ]);
+      }
       if (operation)
         await c.query(
           "INSERT INTO il_operations(app,player,id,request_hash,response) VALUES($1,$2,$3,$4,$5)",
@@ -387,23 +412,35 @@ export async function createRoomsCoordinator(o: Options) {
       error: online ? "" : lastError,
     };
   }
+  let notifying=false;
   async function notify() {
-    for (const [socket, info] of sockets) {
+    if(notifying)return;notifying=true;
+    try{for (const [socket, info] of sockets) {
       if (socket.readyState !== 1) {
         sockets.delete(socket);
         continue;
       }
       try {
         await authenticate(info.req, info.player);
-        socket.send(json({ type: "rooms-changed" }));
-      } catch {
-        socket.send(json({ type: "rooms-expired" }));
-        socket.close(1008);
-        sockets.delete(socket);
+        const state=await view(info.player);
+        const revision=hash(JSON.stringify(state,(key,value)=>key==="seen"?undefined:value));
+        if(revision!==info.revision||info.unavailable){info.revision=revision;info.unavailable=false;socket.send(json({ type: "rooms-changed",revision }));}
+      } catch(e) {
+        if(e instanceof SessionRejected){
+          socket.send(json({ type: "rooms-expired",code:e.code }));
+          socket.close(1008);sockets.delete(socket);
+        }else {info.unavailable=true;socket.send(json({type:"rooms-unavailable",code:"SESSION_UNAVAILABLE",retryAt:Date.now()+5000}));}
       }
-    }
+    }}finally{notifying=false;}
   }
-  async function publicTick(id: string, cancel = false, pressureData?:Hex) {
+  let writer:Promise<unknown>=Promise.resolve();
+  const writes=new Map<string,Promise<void>>();
+  function publicTick(id:string,cancel=false,pressureData?:Hex){
+    const key=`${id}:${cancel}:${pressureData?hash(pressureData):"tick"}`,existing=writes.get(key);if(existing)return existing;
+    const operation=writer.catch(()=>{}).then(()=>sendPublicTick(id,cancel,pressureData)).finally(()=>writes.delete(key));
+    writes.set(key,operation);writer=operation;return operation;
+  }
+  async function sendPublicTick(id: string, cancel = false, pressureData?:Hex) {
     // Persist the exact signed bytes before send. A restart resubmits those bytes only.
     let job = (
       await db.query(
@@ -460,6 +497,7 @@ export async function createRoomsCoordinator(o: Options) {
       [app, job.id, success ? "observed" : "failed"],
     );
     if(!success)throw new Error("Engine command reverted. The current game state will be checked before retrying.");
+    if(streamEnabled && id!=="0")await feed.receipt(BigInt(id),{receipt},cancel?"cancelMatch":pressureData?"submitPressure":"tick",[BigInt(id)],signer.address);
   }
   async function restoreContestedMatch(id: string, snap: any) {
     const saved = (
@@ -522,82 +560,13 @@ export async function createRoomsCoordinator(o: Options) {
       r.activity = Date.now();
     });
   }
-  let maintenanceRetryAt = 0;
-  async function maintenance() {
-    if (cycle || Date.now() < maintenanceRetryAt) return;
-    if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
-      online=false;admissionHealthy=false;lastCheck=Date.now();
-      lastError='The arcade is renewing its delegation. Payments continue in the background.';
-      return;
-    }
-    cycle = true;
-    try {
-      const status = await client.status();
-      if (status.app.toLowerCase() !== app || status.chainId !== 4242) {
-        online = false;
-        throw new Error("Engine deployment mismatch.");
-      }
-      lastEngineSeen = Date.now();
-      const delegation = await base.readContract({
-        address: manifest.hub,
-        abi: interludeHubReadAbi,
-        functionName: "sessionOf",
-        args: [app, zeroHash],
-      });
-      if (
-        status.app.toLowerCase() !== app ||
-        status.chainId !== 4242 ||
-        delegation.status !== 1 ||
-        delegation.expiresAt <= BigInt(Math.floor(Date.now() / 1000) + 40) ||
-        BigInt(status.epoch) !== delegation.epoch
-      ) {
-        online = false;
-        ratings.clear();
-        await db.query(
-          "UPDATE il_results SET verified=false,published=false WHERE app=$1",
-          [app],
-        );
-        throw new Error("The game service is unavailable. Please wait.");
-      }
-      if (lastEpoch !== -1 && lastEpoch !== status.epoch) ratings.clear();
-      lastEpoch = status.epoch;
-      online = true;
-      admissionHealthy = true;
-      lastCheck = Date.now();
-      lastError = "";
-      const pendingJob = (
-        await db.query(
-          "SELECT id FROM il_engine_jobs WHERE app=$1 AND status='pending' LIMIT 1",
-          [app],
-        )
-      ).rows[0];
-      if (pendingJob) await publicTick("0");
-      const before = await current();
-      const observed = new Map<string, any>();
-      for (const r of Object.values(before.rooms)) {
-        if (
-          !r.offer ||
-          r.offer.status === "complete" ||
-          (r.offer.status === "cancelled" &&
-            Number(r.offer.expires) * 1000 + 30000 < Date.now())
-        )
-          continue;
-        const id = r.offer.id;
-        let s: any = await readEngineSnapshot(client, BigInt(id));
-        if (s[2] === 2n && s[8] - s[12].t > 500000n) {
-          await publicTick(id);
-          s = await readEngineSnapshot(client, BigInt(id));
-        }
-        if (s[2] === 1n && BigInt(Math.floor(Date.now() / 1000)) > s[11]) {
-          await publicTick(id, true);
-          s = await readEngineSnapshot(client, BigInt(id));
-        }
-        observed.set(id, s);
-        if(finance && s[2]===2n && s[12].mode===1 && s[12].awaitingServe){
-          try{await finance.pressure(id,s,data=>publicTick(id,false,data));}
-          catch(e){lastError="Chaos checkpoint pending: "+(e as Error).message;}
-        }
-        if (s[2] >= 3n) {
+  let historyBusy=false;
+  async function auditHistory(){
+    if(historyBusy)return;historyBusy=true;
+    try{const before=await current();
+      for(const r of (await db.query("SELECT * FROM il_result_pending WHERE app=$1 LIMIT 2",[app])).rows){
+        const id=r.id,s:any=await readEngineSnapshot(client,BigInt(id));
+          if (s[2] >= 3n) {
           ratingAt = 0;
           const resultHash = await client.read("resultHashes", [BigInt(id)]);
           const publishedHash = await client.readSettled("resultHashes", [
@@ -609,12 +578,12 @@ export async function createRoomsCoordinator(o: Options) {
             [
               app,
               id,
-              r.id,
+              r.room,
               s[3].toLowerCase(),
               s[4].toLowerCase(),
               s[6].toLowerCase(),
               Number(s[2]),
-              r.offer.ranked,
+              r.ranked,
               ps.scoreA,
               ps.scoreB,
               resultHash,
@@ -622,8 +591,10 @@ export async function createRoomsCoordinator(o: Options) {
               ps.mode || 0,
             ],
           );
-        }
+          await db.query("DELETE FROM il_result_pending WHERE app=$1 AND id=$2",[app,id]);
+          }
       }
+
       // Reconcile published copies, including results no longer shown by an active room.
       if (Date.now() - resultAuditAt > 15000) {
         let results = (
@@ -695,6 +666,98 @@ export async function createRoomsCoordinator(o: Options) {
           }));
         }
       }
+    }catch{recordRpc({at:Date.now(),target:"pongit",method:"history.retry",status:503,ms:0,source:"cache"});}
+    finally{historyBusy=false;}
+  }
+  let maintenanceRetryAt = 0;
+  async function maintenance() {
+    if (cycle || Date.now() < maintenanceRetryAt) return;
+    if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
+      online=false;admissionHealthy=false;lastCheck=Date.now();
+      lastError='The arcade is renewing its delegation. Payments continue in the background.';
+      return;
+    }
+    cycle = true;
+    try {
+      const status = await client.status();
+      if (status.app.toLowerCase() !== app || status.chainId !== 4242) {
+        online = false;
+        throw new Error("Engine deployment mismatch.");
+      }
+      lastEngineSeen = Date.now();
+      const delegation = await base.readContract({
+        address: manifest.hub,
+        abi: interludeHubReadAbi,
+        functionName: "sessionOf",
+        args: [app, zeroHash],
+      });
+      if (
+        status.app.toLowerCase() !== app ||
+        status.chainId !== 4242 ||
+        delegation.status !== 1 ||
+        delegation.expiresAt <= BigInt(Math.floor(Date.now() / 1000) + 40) ||
+        BigInt(status.epoch) !== delegation.epoch
+      ) {
+        online = false;
+        ratings.clear();
+        await db.query(
+          "UPDATE il_results SET verified=false,published=false WHERE app=$1",
+          [app],
+        );
+        throw new Error("The game service is unavailable. Please wait.");
+      }
+      if (lastEpoch !== -1 && lastEpoch !== status.epoch) ratings.clear();
+      if(lastEpoch!==status.epoch)feed.invalidate();
+      lastEpoch = status.epoch;
+      online = true;
+      admissionHealthy = true;
+      lastCheck = Date.now();
+      lastError = "";
+      const pendingJob = (
+        await db.query(
+          "SELECT id FROM il_engine_jobs WHERE app=$1 AND status='pending' LIMIT 1",
+          [app],
+        )
+      ).rows[0];
+      if (pendingJob) await publicTick("0");
+      const before = await current();
+      if(streamEnabled){
+        const ids=new Set(Object.values(before.rooms).filter(r=>r.offer&&!['complete','cancelled'].includes(r.offer.status)).map(r=>r.offer!.id));
+        for(const [id,stop] of watched)if(!ids.has(id)){stop();watched.delete(id);}
+        for(const id of ids)if(!watched.has(id))watched.set(id,feed.watch(BigInt(id),()=>{}));
+      }
+      const observed = new Map<string, any>();
+      for (const r of Object.values(before.rooms)) {
+        if (
+          !r.offer ||
+          r.offer.status === "complete" ||
+          (r.offer.status === "cancelled" &&
+            Number(r.offer.expires) * 1000 + 30000 < Date.now())
+        )
+          continue;
+        const id = r.offer.id;
+        let s: any = streamEnabled?engineTuple(await feed.read(BigInt(id))):await readEngineSnapshot(client, BigInt(id));
+        if (s[2] === 2n && (streamEnabled?feed.progressAge(BigInt(id))>1500:s[8] - s[12].t > 1500000n)) {
+          await publicTick(id);
+          s = await readEngineSnapshot(client, BigInt(id));
+        }
+        if (s[2] === 1n && BigInt(Math.floor(Date.now() / 1000)) > s[11]) {
+          await publicTick(id, true);
+          s = await readEngineSnapshot(client, BigInt(id));
+        }
+        observed.set(id, s);
+        if(finance && s[2]===2n && s[12].mode===1 && s[12].awaitingServe){
+          if(!pendingPressure.has(id)){
+            const work=finance.pressure(id,s,data=>publicTick(id,false,data)).catch(e=>{lastError="Chaos checkpoint pending: "+(e as Error).message;}).finally(()=>pendingPressure.delete(id));
+            pendingPressure.set(id,work);
+          }
+        }
+        if(s[2]>=3n){
+          ratingAt=0;
+          await db.query("INSERT INTO il_result_pending(app,id,room,ranked) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[app,id,r.id,r.offer.ranked]);
+        }
+      }
+      void auditHistory();
       const nodeNow = await client.status();
       let reserved = nodeNow.pendingDiffs.length;
       // Existing unfinished offers reserve their worst-case creation and terminal writes.
@@ -852,6 +915,12 @@ export async function createRoomsCoordinator(o: Options) {
       });
       await notify();
     } catch (e) {
+      if(publicationUnavailable(e)){
+        maintenanceRetryAt=Date.now()+30000;online=false;admissionHealthy=false;
+        lastError=new EnginePublicationUnavailable().message;
+        recordRpc({at:Date.now(),target:"interlude",method:"publication.unavailable",status:503,ms:0,source:"cache"});
+        void notify();return;
+      }
       const retryMs = engineReadRetryMs(e);
       if (retryMs) {
         maintenanceRetryAt = Date.now() + retryMs;
@@ -894,6 +963,7 @@ export async function createRoomsCoordinator(o: Options) {
           maintenance:lifecycle?.status(),
           checkedAt: lastCheck,
           error: lastError,
+          stateTransport:streamEnabled?"events":"polling",
         });
         return true;
       }
@@ -1067,6 +1137,12 @@ export async function createRoomsCoordinator(o: Options) {
         return true;
       }
       const p = await authenticate(req);
+      if(path==="/interlude/state"||path==="/interlude/presence"||path==="/interlude/diagnostics"){
+        const now=Date.now();let budget=accountRates.get(p);
+        if(!budget||budget.until<=now){budget={count:0,until:now+60000};accountRates.set(p,budget);}
+        if(++budget.count>600){res.setHeader("Retry-After",String(Math.ceil((budget.until-now)/1000)));o.send(res,{error:"Please wait before refreshing.",code:"ACCOUNT_RATE_LIMIT",source:"pongit_api",retryAt:budget.until,requestId:randomBytes(8).toString("hex")},429);return true;}
+        if(accountRates.size>10000)for(const [key,value]of accountRates)if(value.until<now)accountRates.delete(key);
+      }
       if(path.startsWith("/interlude/finance") || path.startsWith("/interlude/markets/")){
         if(!finance)throw new Error("Rooms finance is not available in this deployment");
         const result=await finance.route(path,req.method || "GET",p,req.method==="POST"?await o.body(req):{},new URL(req.url || "/",o.origin).searchParams);
@@ -1086,18 +1162,20 @@ export async function createRoomsCoordinator(o: Options) {
         return true;
       }
       if (path === "/interlude/state" && req.method === "GET") {
-        await transact(async (s) => {
-          const room = occupant(s, p);
-          if (room) {
-            const m = room.members.find((m) => m.player === p)!;
-            m.seen = Date.now();
-          }
-          const q = s.queue.find((q) => q.player === p);
-          if (q) q.seen = Date.now();
-          return {};
-        });
+        // Compatibility with tabs opened before the presence endpoint existed.
+        await db.query("INSERT INTO il_presence VALUES($1,$2,$3) ON CONFLICT(app,player) DO UPDATE SET seen=EXCLUDED.seen WHERE il_presence.seen<$4",[app,p,Date.now(),Date.now()-10000]);
         o.send(res, await view(p));
         return true;
+      }
+      if(path==="/interlude/presence" && req.method==="POST"){
+        await db.query("INSERT INTO il_presence VALUES($1,$2,$3) ON CONFLICT(app,player) DO UPDATE SET seen=EXCLUDED.seen WHERE il_presence.seen<$4",[app,p,Date.now(),Date.now()-5000]);
+        o.send(res,{ok:true});return true;
+      }
+      if(path==="/interlude/diagnostics" && req.method==="POST"){
+        const now=Date.now(),key="diagnostics:"+p;let budget=accountRates.get(key);
+        if(!budget||budget.until<=now){budget={count:0,until:now+60000};accountRates.set(key,budget);}
+        if(++budget.count>12){res.setHeader("Retry-After",String(Math.ceil((budget.until-now)/1000)));o.send(res,{error:"Diagnostics refresh limit reached.",code:"ACCOUNT_RATE_LIMIT",source:"pongit_api",retryAt:budget.until,requestId:randomBytes(8).toString("hex")},429);return true;}
+        const body=await o.body(req);await diagnostics.accept(body.samples,body.instance);o.send(res,{ok:true});return true;
       }
       if (path === "/interlude/contacts" && req.method === "GET") {
         const contacts = (
@@ -1180,6 +1258,25 @@ export async function createRoomsCoordinator(o: Options) {
       if (req.method !== "POST") throw new Error("Not found");
       const body = await o.body(req);
       const operation = z.string().uuid().parse(body.operation);
+      const prior=(await db.query("SELECT request_hash,response FROM il_operations WHERE app=$1 AND player=$2 AND id=$3",[app,p,operation])).rows[0];
+      if(prior){if(prior.request_hash!==hash(path+json(body)))throw new Error("Operation id already used for another action.");o.send(res,prior.response);return true;}
+      // External evidence is gathered before taking the lobby lock. Revalidate its
+      // immutable offer binding and freshness inside the transaction below.
+      let evidence:{room:string;id:string;signature:string;snapshot:any;receipt?:any;at:number}|undefined;
+      if(["/interlude/offers/accept","/interlude/offers/back","/interlude/rooms/leave"].includes(path)){
+        const currentRoom=occupant(await current(),p),offer=currentRoom?.offer;
+        if(offer && [offer.a,offer.b].includes(p)){
+          const snapshot=await readEngineSnapshot(client,BigInt(offer.id)),observedAt=Date.now();
+          let receipt;
+          if(path.endsWith("accept") && body.receiptHash){const h=z.string().regex(/^0x[0-9a-fA-F]{64}$/).parse(body.receiptHash) as Hex;receipt=await client.node.getTransactionReceipt({hash:h});}
+          evidence={room:currentRoom!.id,id:offer.id,signature:offer.signature,snapshot,receipt,at:observedAt};
+        }
+      }
+      const verifiedEvidence=(room:LobbyRoom)=>{
+        if(!evidence || evidence.room!==room.id || evidence.id!==room.offer?.id || evidence.signature!==room.offer.signature || Date.now()-evidence.at>2000)
+          throw new Error("The room changed during synchronization. Refresh and retry.");
+        return evidence;
+      };
       const data = await transact(
         async (s, c) => {
           if (path === "/interlude/profile") {
@@ -1388,7 +1485,7 @@ export async function createRoomsCoordinator(o: Options) {
               ![offer.a, offer.b].includes(p)
             )
               throw new Error("This duel is no longer available.");
-            const snap: any = await readEngineSnapshot(client, BigInt(offer.id));
+            const proof=verifiedEvidence(r),snap:any=proof.snapshot;
             if (path.endsWith("accept")) {
               if (snap[2] === 2n) {
                 offer.accepted = [offer.a, offer.b];
@@ -1396,7 +1493,7 @@ export async function createRoomsCoordinator(o: Options) {
               }
               if (body.receiptHash) {
                 const hash = z.string().regex(/^0x[0-9a-fA-F]{64}$/).parse(body.receiptHash) as Hex;
-                const receipt = await client.node.getTransactionReceipt({hash});
+                const receipt = proof.receipt;
                 if (!confirmsRoomAcceptance(receipt, roomsAbi, app, offer, p, hash))
                   throw new Error("This receipt does not confirm your acceptance of this duel.");
                 if (snap[2] === 0n) throw new Error("Waiting for the accepted duel to become readable.");
@@ -1424,7 +1521,7 @@ export async function createRoomsCoordinator(o: Options) {
           }
           if (path === "/interlude/rooms/leave") {
             if (r.offer && [r.offer.a, r.offer.b].includes(p)) {
-              const snap: any = await readEngineSnapshot(client, BigInt(r.offer.id));
+              const snap:any=verifiedEvidence(r).snapshot;
               if (snap[2] === 2n)
                 throw new Error("Concede your active match before leaving.");
               if (snap[2] === 1n)
@@ -1449,14 +1546,9 @@ export async function createRoomsCoordinator(o: Options) {
       void notify();
       return true;
     } catch (e) {
-      const message = (e as Error).message.split("\n")[0];
-      const retryMs = engineReadRetryMs(e);
-      if (retryMs) res.setHeader("Retry-After", String(Math.ceil(retryMs / 1000)));
-      o.send(
-        res,
-        { error: retryMs ? "The game node is busy. Waiting to synchronize." : message },
-        retryMs ? 429 : message.includes("Renew") || message.includes("revoked") ? 401 : 400,
-      );
+      const result=serviceError(e,randomBytes(8).toString("hex"));
+      if(result.retryMs)res.setHeader("Retry-After",String(Math.ceil(result.retryMs/1000)));
+      o.send(res,result.body,result.status);
       return true;
     }
   }
@@ -1474,6 +1566,6 @@ export async function createRoomsCoordinator(o: Options) {
     route,
     subscribe,
     status: () => ({ online, lastError, lastCheck }),
-    stop: () => {clearInterval(timer);if(financeTimer)clearInterval(financeTimer);lifecycle?.stop();},
+    stop: () => {clearInterval(timer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();diagnostics.stop();lifecycle?.stop();},
   };
 }
