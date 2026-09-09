@@ -2,6 +2,14 @@
 
 Status at 10:31 UTC, 9 September 2026: **standby; no production cutover**.
 
+## Retest at 13:39 UTC
+
+At the owner's request, the existing candidate was checked again without starting the private coordinator, gateway or database. The control plane reports `live`; the node is healthy at epoch 1, batch 39 with no pending diffs. Monad confirms the same batch and active delegation; both live and published active-match counts are zero. The previous state survives the pause.
+
+A sequential read test, with a 100 ms pause after each response, received **59 HTTP 200 responses, then HTTP 429** at `2026-09-09T13:39:20.919Z`, after approximately eight seconds. The response was `Too many requests from this caller. Try again later.`, with `Retry-After: 10` and Fly request ID `01M2369ZP36PWYEKJ1KYNG7F6F-ams`. Endpoint: `https://il-fd1693294fed7730.fly.dev`; method: `interlude_session`. This is an observed workload, not a verified provider quota. Two initial application reads preceded the sample; no gameplay or financial writes were submitted.
+
+After waiting longer than the requested cooldown, six reads at about one per second all returned HTTP 200 between 13:39:58 and 13:40:03 UTC. The service recovers, but the rate limitation is still reproducible without the PONGIT test coordinator running. Multiplayer and financial/lifecycle validation remain blocked by this gate. No new production release or persistent test service was started.
+
 The hosted control service now provisions `fly.dev` endpoints. The previous deployment records return `404: no node for this app`, even though some Railway endpoints still answer. Do not substitute the demo RPC or assume an old endpoint has moved.
 
 ## What passed
