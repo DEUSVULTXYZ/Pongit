@@ -89,6 +89,10 @@ try{
   await page.goto(origin+"/rooms");
   await page.locator(".rooms-court").waitFor();
   await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled);
+  const duplicate=await context.newPage();
+  await duplicate.goto(origin+"/rooms");
+  await duplicate.getByText("This account is already controlling PONGIT in another tab.",{exact:false}).waitFor();
+  await duplicate.close();
   const beforeReads=reads,beforeWrites=writes;
   await page.waitForTimeout(2200);
   assert(reads>beforeReads,"coordinator offline must not freeze direct engine observation");
@@ -114,7 +118,7 @@ try{
   report.scenarios.push({failure,reads,writes,idleWrites:writes-beforeWrites,cooldownMs:recoveredAt-limitedAt,finalScore:"7:6",nextMatch:true,nonceReads});
   await context.close();
  }
- report.checks.push("Offline coordinator does not freeze a healthy direct engine lane","Final-tick revert plus 429 recovers the result without reconnecting","Unknown submission stops writes but preserves result transition","Room rotates to a new invitation before the previous result is recovered","Next match refreshes an uncertain SDK nonce without a passkey ceremony","Ten-second shared cooldown honored","Exact per-match ELO displayed after fresh read","Desktop and mobile result visible");
+ report.checks.push("Offline coordinator does not freeze a healthy direct engine lane","Final-tick revert plus 429 recovers the result without reconnecting","Unknown submission stops writes but preserves result transition","Room rotates to a new invitation before the previous result is recovered","Next match refreshes an uncertain SDK nonce without a passkey ceremony","The current tab can restore its session; a second controlling tab is still rejected","Ten-second shared cooldown honored","Exact per-match ELO displayed after fresh read","Desktop and mobile result visible");
  assert.deepEqual(report.errors,[]);
 }finally{
  await writeFile(`${out}/report.json`,JSON.stringify(report,null,2));await browser.close();

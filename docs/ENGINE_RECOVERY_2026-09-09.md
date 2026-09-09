@@ -1,6 +1,6 @@
 # Engine throttling and result recovery
 
-Reviewed 9 September 2026. Runtime change: `918755d9c62d791cfd491522733461efa31cb6da`.
+Reviewed 9 September 2026. Final web runtime: `3c5448ac87bc1df7a888b1d6462d5828334d1f4f`. Relayer runtime: `918755d9c62d791cfd491522733461efa31cb6da`.
 
 ## Incident evidence
 
@@ -16,6 +16,9 @@ A bounded earlier probe on the same Fly endpoint received HTTP 429 after 59 succ
 - Share the node's HTTP 429 cooldown across SDK methods. Reject calls locally during that period, without queuing signed writes. Coordinator maintenance also honors this backoff and emits a bounded, nonsecret diagnostic.
 - Pace idle state reads at 250 ms and idle ticks at 300 ms. Reuse a recent observation; releases and reversals bypass idle pacing. In the deterministic one-second lane fixture, ten 100 ms timer opportunities produce four idle writes and eight reads. The previous unpaced lane produced ten writes and twenty reads under that fixture. This is a software request-count comparison, not an end-to-end latency benchmark or a guarantee against throttling.
 - Ignore stale lobby HTTP responses after a newer refresh or account change.
+- Observe an unfinished previous result independently when the room has already rotated to its next invitation. Starting another active match or leaving the room ends that recovery observer.
+- Keep the SDK writer blocked after an uncertain submission until a fresh session is restored. Accepting the next duel restores the existing grant and reloads the transaction nonce, without a new passkey ceremony.
+- Reuse the current tab's controller lock during that restoration. Releasing and immediately requesting the lock falsely reported that this same account was already playing in another tab. Real duplicate tabs remain excluded.
 - A successful invitation send remains acknowledged when its following read fails.
 - Display the per-match `ratingChange` from the engine rather than subtracting a cached leaderboard value and prematurely showing `ELO +0`.
 
@@ -23,7 +26,7 @@ A bounded earlier probe on the same Fly endpoint received HTTP 429 after 59 succ
 
 TypeScript checking and the production Next.js build passed. The focused suite passed 26 tests covering the lane, transport gate, snapshot decoding, presentation and room rules.
 
-`scripts/rooms-recovery-browser.ts` ran against the candidate web image in an isolated, internal VPS Docker network. All API, engine RPC and base-chain responses were mocked; no real grant or transaction was sent. Desktop and mobile scenarios covered a confirmed game revert and an unknown submission, followed by a read receiving HTTP 429. Both recovered the 7:6 result without reconnecting, preserved the result transition, and displayed the fixture's exact ELO +16. Observed cooldowns were 10,096 ms and 10,035 ms. No JavaScript page errors were recorded.
+`scripts/rooms-recovery-browser.ts` ran against the candidate web image in an isolated, internal VPS Docker network. All API, engine RPC and base-chain responses were mocked; no real grant or transaction was sent. Desktop and mobile scenarios covered a confirmed game revert and an unknown submission, followed by a read receiving HTTP 429. Both recovered the 7:6 result after room rotation, preserved the result transition, and displayed the fixture's exact ELO +16. Both started the next match successfully. The unknown-submission scenario reloaded the SDK nonce; every submitted transaction was checked against the mock engine's exact next nonce. The original tab restored successfully and a duplicate controlling tab was rejected. Observed cooldowns were 10,015 ms and 10,013 ms. No JavaScript page errors were recorded.
 
 These scenarios verify frontend recovery, not the hosted node's sustained multiplayer capacity. A complete live multi-arena load test and smooth play under the provider's current quota remain unproven. There are no contract, physics, financial permission, manifest, database or grant-version changes in this release.
 
