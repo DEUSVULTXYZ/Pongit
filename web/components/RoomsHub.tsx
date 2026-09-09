@@ -1344,6 +1344,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 await roomsAction("profile", { handle, avatar });
                 await refresh();
                 setNotice("Profile saved");
+                setPanel(null);
               });
             }}
           >
