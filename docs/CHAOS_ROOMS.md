@@ -1,6 +1,6 @@
 # Chaos rooms on Monad Testnet
 
-**Release status, 9 September 2026: activation blocked at hosted publication.** PONGIT clock recovery and session-read handling are corrected and the CLI is updated to 0.1.4. A new isolated candidate accepted 47 inputs before its first batch reverted. A separate one-slot counter reproduces the same publication failure without gameplay or betting. Public Classic and the financial bindings below remain unchanged. See the [recovery fixes, minimal reproduction and release gate](CHAOS_RECOVERY_2026-09-09.md).
+**Release status, 9 September 2026: standby at the owner's request.** Publication now works on a fresh Fly.io candidate, including two terminal match results. HTTP 429 responses under repeated reads still need workload validation. No public cutover was made. See the [Fly rehearsal, new bindings and resumption requirements](INTERLUDE_FLY_STANDBY_2026-09-09.md). The earlier [publication failure investigation](CHAOS_RECOVERY_2026-09-09.md) remains historical evidence.
 
 The contract and financial instances below belong to the earlier candidate. Their real betting, pressure, native payouts and three-browser Chaos flow passed on epoch 2. The new recovery app `0x526ef5822169ff21da4e5323d36426df0462dfcb` is **unreleased and has no financial bindings**. Never point its jobs at the earlier candidate's market or reinterpret an old sender journal for a new application.
 

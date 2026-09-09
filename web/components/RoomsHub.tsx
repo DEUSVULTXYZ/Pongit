@@ -45,6 +45,7 @@ import {
 } from "../lib/interlude-lab";
 import type { LobbyRoom, LobbyOffer } from "../../shared/rooms";
 import {readEngineSnapshot} from "../../shared/engine-snapshot";
+import {engineRead, engineReadRetryMs} from "../../shared/engine-read";
 type Profile = {
   player: string;
   handle?: string;
@@ -531,9 +532,12 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     if (!id) return;
     let done = false,
       pollTimer: ReturnType<typeof setTimeout>;
+    const readSnapshot = engineRead(async () => labSnapshot(
+      await readEngineSnapshot(client.current!, BigInt(id)),
+    ));
     if (session.current && account)
       lane.current = new LabLane(
-        read,
+        readSnapshot,
         session.current,
         account,
         receive,
@@ -544,13 +548,22 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         },
       );
     const poll = async () => {
+      let retryMs = 0;
       try {
-        const s = await read();
-        if (!done) receive(s);
-      } catch {
+        // The player's command lane already observes state. Keep polling for
+        // spectators, pending/result states and a stopped lane, without a second
+        // concurrent polling loop on every active player.
+        const controlled = ready && lane.current && !lane.current.stopped && !document.hidden
+          && snapshotRef.current?.phase === 2 && labSide(snapshotRef.current, account) >= 0;
+        if (!controlled) {
+          const s = await readSnapshot();
+          if (!done) receive(s);
+        }
+      } catch (e) {
+        retryMs = engineReadRetryMs(e);
         if (!done) setSyncError("Synchronizing game state. Your session is still connected.");
       }
-      if (!done) pollTimer = setTimeout(poll, document.hidden ? 2000 : 250);
+      if (!done) pollTimer = setTimeout(poll, Math.max(retryMs, document.hidden ? 2000 : 250));
     };
     void poll();
     const pump = setInterval(() => {
@@ -563,8 +576,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         labSide(snapshotRef.current, account) >= 0
       )
         void lane.current?.pump(
-          labSide(snapshotRef.current, account) === 0 ||
-            snapshotRef.current.clock - snapshotRef.current.state.t > 300000n,
+          !snapshotRef.current.state.awaitingServe &&
+            (labSide(snapshotRef.current, account) === 0 ||
+              snapshotRef.current.clock - snapshotRef.current.state.t > 300000n),
         );
     }, 100);
     return () => {

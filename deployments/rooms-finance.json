@@ -7,5 +7,14 @@
     "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
     "startBlock": "60753496",
     "chainId": 10143
+  },
+  {
+    "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+    "adapter": "0xef58b351362dd816fcc3c512f00b92b89bb2bb2b",
+    "market": "0x52f3058e02fc3d2dc585ee7d29aa877b8e28afb9",
+    "vault": "0xfa37752cff3bb9806bae84d5e028b20e951817e9",
+    "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+    "startBlock": "61018143",
+    "chainId": 10143
   }
 ]

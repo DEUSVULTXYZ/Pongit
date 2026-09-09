@@ -5,6 +5,7 @@ import {readContract} from "viem/actions";
 import manifest from "../../deployments/interlude-lab.json";
 import {interludeLabAbi,interludeHubReadAbi} from "../../shared/abi-interlude";
 import type {State} from "../../shared/physics-v2";
+import {engineReadRetryMs} from "../../shared/engine-read";
 
 export const labManifest=manifest;
 export const labScope=["createMatch","acceptMatch","cancelMatch","input","tick","concede","expire"] as const;
@@ -39,14 +40,14 @@ export class LabLane {
  private observationPending=false;
  private expectedInput?:{id:bigint;side:number;nonce:bigint};
  private expectedTerminal?:bigint;
- constructor(private read:()=>Promise<LabSnapshot>,private session:LabSession,private account:string,
+ constructor(private read:(fresh?:boolean)=>Promise<LabSnapshot>,private session:LabSession,private account:string,
   private onResult:(s:LabSnapshot,latency?:number)=>void,private onError:(e:unknown)=>void,
   private onUnavailable:(e:unknown)=>void=()=>{}){}
  intent(direction:number){this.desired=direction;}
  stop(){this.stopped=true;this.desired=0;}
- private async observe(){
+ private async observe(fresh=false){
   try{
-   const s=await this.read(),expected=this.expectedInput;
+   const s=await this.read(fresh),expected=this.expectedInput;
    if(expected && (s.id!==expected.id || s.phase<3 && (expected.side===0?s.nonceA:s.nonceB)<expected.nonce))
     throw new Error("The read has not caught up with the accepted input.");
    if(this.expectedTerminal!==undefined && (s.id!==this.expectedTerminal || s.phase<3))
@@ -54,7 +55,7 @@ export class LabLane {
    this.readFailures=0;this.nextReadAt=0;this.observationPending=false;this.expectedInput=undefined;this.expectedTerminal=undefined;
    return s;
   }catch(e){
-   this.nextReadAt=Date.now()+Math.min(2000,250*2**Math.min(this.readFailures++,3));
+   this.nextReadAt=Date.now()+Math.max(engineReadRetryMs(e),Math.min(2000,250*2**Math.min(this.readFailures++,3)));
    this.desired=0;
    this.onUnavailable(e);
    throw new StateReadUnavailable(e);
@@ -70,7 +71,7 @@ export class LabLane {
   this.busy=true;
   try{const r=await this.session.send(name,args);this.observationPending=true;
    if((name==="concede"||name==="cancelMatch") && typeof args[0]==="bigint")this.expectedTerminal=args[0];
-   const s=await this.observe();this.onResult(s,r.latencyMs);return s;}
+   const s=await this.observe(true);this.onResult(s,r.latencyMs);return s;}
   catch(e){if(!(e instanceof StateReadUnavailable)){this.stop();this.onError(e);}throw e;}
   finally{this.busy=false;this.actionPending=false;}
  }
@@ -94,7 +95,7 @@ export class LabLane {
      :await this.session.send("tick",[s.id]);
     this.observationPending=true;
     if(changed)this.expectedInput={id:s.id,side,nonce:(side===0?s.nonceA:s.nonceB)+1n};
-    s=await this.observe();this.inputPending=false;this.onResult(s,result.latencyMs);
+    s=await this.observe(true);this.inputPending=false;this.onResult(s,result.latencyMs);
    }
   }catch(e){
    // A read failure never discards a valid grant or retries an accepted write.

@@ -1,5 +1,7 @@
 # Chaos recovery and isolated publication failure
 
+**Subsequent update:** the [9 September Fly.io rehearsal](INTERLUDE_FLY_STANDBY_2026-09-09.md) successfully published the counter and two game results. The owner paused the rollout after a remaining HTTP 429 limit was reproduced. The failure record below describes 8 September, not the latest hosting outcome.
+
 Reviewed 9 September 2026. All timestamps below are UTC on 8 September.
 
 **Chaos is not activated in production.** PONGIT recovery fixes pass local and isolated VPS checks, but neither the updated game candidate nor a separate one-slot counter can publish its first batch through the hosted service. Production still points to the existing Classic deployment. No financial bindings or sender journals were replaced.
