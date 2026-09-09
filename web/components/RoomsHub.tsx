@@ -326,13 +326,22 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   }
   async function install(p: Address, next: RoomsSession) {
     // A single serialization point owns the SDK's transaction nonce for this tab.
+    let failedSend=false;
     const serial = new Proxy(next, {
       get(target, key) {
         if (key === "send")
           return (...args: any[]) => {
             const pending = sendTail.current
               .catch(() => {})
-              .then(() => (target.send as any)(...args));
+              .then(() => {
+                if(failedSend)throw new Error("Reconnect the arcade session before sending another action.");
+                return (target.send as any)(...args).catch((e:Error)=>{
+                  // A receipt-backed application revert consumes its nonce.
+                  // A transport/session failure needs a freshly restored SDK session.
+                  if(e.name!=="AppRevertError")failedSend=true;
+                  throw e;
+                });
+              });
             sendTail.current = pending;
             return pending;
           };
@@ -545,7 +554,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     const readSnapshot = engineRead(async () => labSnapshot(
       await readEngineSnapshot(client.current!, BigInt(id)),
     ),250);
-    if (session.current && account)
+    if (session.current && account && !writeBlocked)
       lane.current = new LabLane(
         readSnapshot,
         session.current,
