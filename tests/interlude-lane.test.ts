@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {LabLane,type LabSession,type LabSnapshot} from "../web/lib/interlude-lab";
 import {initial} from "../shared/physics-v2";
 import {zeroAddress,zeroHash} from "viem";
+import {AppRevertError} from "@interludelayer-sdk/sdk";
 const a="0x1111111111111111111111111111111111111111",b="0x2222222222222222222222222222222222222222";
 function fixture(){
  let s:LabSnapshot={id:1n,revision:1n,phase:2,a,b,target:zeroAddress,winner:zeroAddress,head:100n,clock:0n,nonceA:0n,nonceB:0n,deadline:10000n,state:initial(zeroHash),observedAt:0};
@@ -71,4 +72,30 @@ test("a rival's seventh point does not invalidate the session when the last tick
  f.set({phase:3,winner:b,state:{...f.state().state,scoreB:7,finished:true}});release();await pending;
  assert.equal(f.lane.stopped,false);assert.equal(f.errors(),0);assert.equal(f.sent.length,1);
  assert.equal(f.lane.inputPending,false);assert.equal(f.lane.desired,0);
+});
+
+test("a reverted final tick waits through a read outage and observes the seventh point without another write",async()=>{
+ const f=fixture();let now=1000,reads=0,send=0,terminal:LabSnapshot|undefined,errors=0;
+ const lane=new LabLane(async()=>{reads++;if(reads===2)throw new Error("late read");return f.state();},
+  {send:async()=>{send++;throw new AppRevertError("InvalidMatch",[],"0x");}} as unknown as LabSession,
+  a,s=>{if(s.phase===3)terminal=s;},()=>errors++,()=>{},{readMs:250,tickMs:300,now:()=>now});
+ await lane.pump(true);assert.equal(lane.stopped,false);assert.equal(errors,0);
+ now+=260;await lane.pump(true);assert.equal(send,1);assert.equal(lane.stopped,false);
+ f.set({phase:3,winner:b,state:{...f.state().state,scoreB:7,finished:true}});
+ now+=260;await lane.pump(true);
+ assert.equal(terminal?.phase,3);assert.equal(send,1);assert.equal(errors,0);
+});
+
+test("idle RPC traffic is paced while release and reversal bypass the idle cadence",async()=>{
+ const f=fixture();let now=1000,reads=0;
+ const session={send:async(name:string,args:readonly unknown[])=>{
+  f.sent.push({name,args});if(name==="input")f.set({nonceA:BigInt(args[2] as bigint),state:{...f.state().state,leftDir:Number(args[1])}});
+  return {latencyMs:20};
+ }} as unknown as LabSession;
+ const lane=new LabLane(async()=>{reads++;return f.state();},session,a,()=>{},()=>{},()=>{},{readMs:250,tickMs:300,now:()=>now});
+ for(let i=0;i<10;i++){await lane.pump(true);now+=100;}
+ assert.equal(f.sent.length,4);assert.equal(reads,8,"one observation and one post-write read per idle tick");
+ lane.intent(-1);await lane.pump(false);
+ lane.intent(0);await lane.pump(false);
+ assert.deepEqual(f.sent.slice(-2).map(x=>[x.args[1],x.args[2]]),[[-1,1n],[0,2n]]);
 });

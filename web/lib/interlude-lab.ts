@@ -28,6 +28,12 @@ export function labDelegation(client:LabClient){return readContract(client.base,
 class StateReadUnavailable extends Error {
  constructor(cause:unknown){super("Waiting for the game state. Your arcade session is still connected.",{cause});}
 }
+// These are confirmed EVM reverts, not transport failures. Reading again is
+// safe; the next intention uses the newly observed contract nonce.
+function recoverableGameRevert(error: unknown) {
+ const e=error as {errorName?:string;name?:string};
+ return e?.name === "AppRevertError" && ["InvalidMatch","StaleInput","CatchUpRequired"].includes(e.errorName || "");
+}
 /** One SDK nonce owner. Unsent directions coalesce; uncertain writes never retry here. */
 export class LabLane {
  desired=0;
@@ -40,9 +46,14 @@ export class LabLane {
  private observationPending=false;
  private expectedInput?:{id:bigint;side:number;nonce:bigint};
  private expectedTerminal?:bigint;
+ private latest?:LabSnapshot;
+ private lastObservation=0;
+ private lastWrite=0;
  constructor(private read:(fresh?:boolean)=>Promise<LabSnapshot>,private session:LabSession,private account:string,
   private onResult:(s:LabSnapshot,latency?:number)=>void,private onError:(e:unknown)=>void,
-  private onUnavailable:(e:unknown)=>void=()=>{}){}
+  private onUnavailable:(e:unknown)=>void=()=>{},
+  private pacing:{readMs:number;tickMs:number;now?:()=>number}={readMs:0,tickMs:0}){}
+ private now(){return (this.pacing.now || Date.now)();}
  intent(direction:number){this.desired=direction;}
  stop(){this.stopped=true;this.desired=0;}
  private async observe(fresh=false){
@@ -53,9 +64,10 @@ export class LabLane {
    if(this.expectedTerminal!==undefined && (s.id!==this.expectedTerminal || s.phase<3))
     throw new Error("The read has not caught up with the accepted result.");
    this.readFailures=0;this.nextReadAt=0;this.observationPending=false;this.expectedInput=undefined;this.expectedTerminal=undefined;
+   this.latest=s;this.lastObservation=this.now();
    return s;
   }catch(e){
-   this.nextReadAt=Date.now()+Math.max(engineReadRetryMs(e),Math.min(2000,250*2**Math.min(this.readFailures++,3)));
+   this.nextReadAt=this.now()+Math.max(engineReadRetryMs(e),Math.min(2000,250*2**Math.min(this.readFailures++,3)));
    this.desired=0;
    this.onUnavailable(e);
    throw new StateReadUnavailable(e);
@@ -63,11 +75,11 @@ export class LabLane {
  }
  async action(name:string,args:readonly unknown[]=[]){
   if(this.stopped||this.actionPending)throw new Error("Reconnect the lab session or wait for the current action.");
-  if(this.observationPending || Date.now()<this.nextReadAt)throw new StateReadUnavailable(undefined);
+  if(this.observationPending || this.now()<this.nextReadAt)throw new StateReadUnavailable(undefined);
   this.actionPending=true;
   while(this.busy&&!this.stopped)await new Promise(r=>setTimeout(r,20));
   if(this.stopped){this.actionPending=false;throw new Error("Reconnect the lab session before sending another action.");}
-  if(this.observationPending || Date.now()<this.nextReadAt){this.actionPending=false;throw new StateReadUnavailable(undefined);}
+  if(this.observationPending || this.now()<this.nextReadAt){this.actionPending=false;throw new StateReadUnavailable(undefined);}
   this.busy=true;
   try{const r=await this.session.send(name,args);this.observationPending=true;
    if((name==="concede"||name==="cancelMatch") && typeof args[0]==="bigint")this.expectedTerminal=args[0];
@@ -76,11 +88,16 @@ export class LabLane {
   finally{this.busy=false;this.actionPending=false;}
  }
  async pump(allowTick:boolean){
-  if(this.busy||this.stopped||this.actionPending||Date.now()<this.nextReadAt)return;
+  if(this.busy||this.stopped||this.actionPending||this.now()<this.nextReadAt)return;
+  const cached=this.latest, cachedSide=labSide(cached || null,this.account);
+  const recent=cached && this.now()-this.lastObservation<this.pacing.readMs && !this.observationPending;
+  const newIntent=cached && cachedSide>=0 && (cachedSide===0?cached.state.leftDir:cached.state.rightDir)!==this.desired;
+  // Keyboard changes bypass the idle observer cadence. Idle polling does not.
+  if(recent && !newIntent && (!allowTick || this.now()-this.lastWrite<this.pacing.tickMs))return;
   this.busy=true;
   let activeMatch:bigint|undefined;
   try{
-   let s=await this.observe();const side=labSide(s,this.account);
+   let s=recent?cached!:await this.observe();const side=labSide(s,this.account);
    activeMatch=s.id;
    this.onResult(s);
    if(this.stopped||side<0||s.phase!==2)return;
@@ -88,11 +105,12 @@ export class LabLane {
    // waiting for the 100 ms idle-tick interval. Never resend an uncertain call.
    for(let n=0;n<4 && !this.stopped && !this.actionPending && s.phase===2;n++){
     const changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
-    if(!changed && (!allowTick||n>0))break;
+    if(!changed && (!allowTick||n>0||this.now()-this.lastWrite<this.pacing.tickMs))break;
     this.inputPending=changed;
     const result=changed
      ?await this.session.send("input",[s.id,this.desired,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n])
      :await this.session.send("tick",[s.id]);
+    this.lastWrite=this.now();
     this.observationPending=true;
     if(changed)this.expectedInput={id:s.id,side,nonce:(side===0?s.nonceA:s.nonceB)+1n};
     s=await this.observe(true);this.inputPending=false;this.onResult(s,result.latencyMs);
@@ -101,9 +119,13 @@ export class LabLane {
    // A read failure never discards a valid grant or retries an accepted write.
    // The next pump only observes first, with backoff and a neutral input.
    if(e instanceof StateReadUnavailable)return;
+   if(recoverableGameRevert(e)){
+    this.latest=undefined;this.desired=0;this.nextReadAt=this.now()+250;
+    this.onUnavailable(e);return;
+   }
    // The other player may finish the match while this final input/tick is
    // in flight. Confirm that terminal state instead of breaking the session.
-   try{const latest=await this.read();if(activeMatch===latest.id && latest.phase>=3){this.desired=0;this.onResult(latest);return;}}catch{}
+   if(!engineReadRetryMs(e))try{const latest=await this.read(true);if(activeMatch===latest.id && latest.phase>=3){this.desired=0;this.onResult(latest);return;}}catch{}
    this.stop();this.onError(e);
   }
   finally{this.inputPending=false;this.busy=false;}

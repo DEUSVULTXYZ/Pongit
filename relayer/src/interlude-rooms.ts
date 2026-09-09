@@ -34,6 +34,8 @@ import {loadRoomsFinance} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
 import {roomsRankingCandidates} from "./rooms-ranking";
 import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snapshot";
+import {engineTransport} from "../../shared/engine-transport";
+import {engineReadRetryMs} from "../../shared/engine-read";
 import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
 import {
@@ -114,7 +116,7 @@ export async function createRoomsCoordinator(o: Options) {
     node: manifest.node,
     base,
     store: memoryStore(),
-    transport: http(manifest.node, { retryCount: 0, timeout: 4000 }),
+    transport: engineTransport(manifest.node),
   });
   const db = o.db;
   const finance = chaosEnabled && o.financeConfig?.entries.some(x=>x.app.toLowerCase()===app) && o.enqueue
@@ -519,8 +521,9 @@ export async function createRoomsCoordinator(o: Options) {
       r.activity = Date.now();
     });
   }
+  let maintenanceRetryAt = 0;
   async function maintenance() {
-    if (cycle) return;
+    if (cycle || Date.now() < maintenanceRetryAt) return;
     if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
       online=false;admissionHealthy=false;lastCheck=Date.now();
       lastError='The arcade is renewing its delegation. Payments continue in the background.';
@@ -860,6 +863,11 @@ export async function createRoomsCoordinator(o: Options) {
       });
       await notify();
     } catch (e) {
+      const retryMs = engineReadRetryMs(e);
+      if (retryMs) {
+        maintenanceRetryAt = Date.now() + retryMs;
+        console.warn("Rooms node rate limited", json({app, retryMs}));
+      }
       if(e instanceof EngineSnapshotError) console.warn("Engine snapshot failed",json({app:e.app,matchId:e.matchId,returnData:e.returnData}));
       if(process.env.ROOMS_PRIVATE_FINANCE_TEST === "true") console.warn("Private coordinator check:",String((e as any).details || (e as any).cause?.details || (e as Error).message).split("\n")[0].slice(0,300));
       admissionHealthy = false;

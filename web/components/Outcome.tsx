@@ -7,7 +7,7 @@ import {createPortal} from "react-dom";
 import {useDialog} from "../lib/dialog";
 import { short } from "../lib/api";
 
-export function Outcome({id,match,account,rating,sound,replay,rematch,watch,again,confirmation="monad",againLabel="Find another opponent",showResultKey=0}:{id:string|null;match:any;account:string;rating:number|null;sound:boolean;replay:boolean;rematch:()=>Promise<void>;watch?:()=>void;again:()=>void;confirmation?:"monad"|"engine";againLabel?:string;showResultKey?:number}) {
+export function Outcome({id,match,account,rating,ratingDelta,sound,replay,rematch,watch,again,confirmation="monad",againLabel="Find another opponent",showResultKey=0}:{id:string|null;match:any;account:string;rating:number|null;ratingDelta?:number;sound:boolean;replay:boolean;rematch:()=>Promise<void>;watch?:()=>void;again:()=>void;confirmation?:"monad"|"engine";againLabel?:string;showResultKey?:number}) {
   const [rematchBusy,setRematchBusy]=useState(false),[rematchStatus,setRematchStatus]=useState("");
   const dialog=useRef<HTMLElement>(null);
   const seen=useRef<{id:string;status:number;account:string;rating:number|null}|null>(null);
@@ -34,7 +34,7 @@ export function Outcome({id,match,account,rating,sound,replay,rematch,watch,agai
   useDialog(dialog,currentResult && result!.victory!==null,()=>{if(animate)setAnimate(false);else setResult(null);});
   useEffect(()=>{if(result && !animate && result.victory!==null)dialog.current?.querySelector<HTMLButtonElement>(".button-row button")?.focus({preventScroll:true});},[animate,result]);
   if(!currentResult || !result)return null;
-  const delta=rating!==null && result.before!==null?rating-result.before:null;
+  const delta=ratingDelta ?? (rating!==null && result.before!==null?rating-result.before:null);
   if(result.victory===null)return <aside className="inbox-banner spectator-result" role="status">{short(match.winner)} wins · {match.state.scoreA} : {match.state.scoreB}<IconButton aria-label="Dismiss winner" onClick={()=>setResult(null)}/></aside>;
   return createPortal(<section tabIndex={-1} ref={dialog} className={`outcome ${animate?"celebrate":""} ${result.victory===false?"defeat":"victory"}`} role="dialog" aria-modal="true" aria-label="Confirmed match result">
     <IconButton className="outcome-close" onClick={()=>setResult(null)} aria-label="Close result"/>

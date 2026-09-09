@@ -203,6 +203,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     [entry, setEntry] = useState(roomId),
     [showResultKey, setShowResultKey] = useState(0);
   const [syncError, setSyncError] = useState("");
+  const [writeBlocked, setWriteBlocked] = useState(false), [sessionRevision, setSessionRevision] = useState(0);
+  const [resultRating, setResultRating] = useState<{id:string;delta:number}|null>(null);
+  const refreshVersion = useRef(0);
   const client = useRef<RoomsClient | null>(null),
     session = useRef<RoomsSession | null>(null),
     lane = useRef<LabLane | null>(null),
@@ -225,11 +228,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       !!offer && [offer.a, offer.b].includes(account?.toLowerCase() || "");
   const active =
       snapshot?.phase === 2 && room?.offer?.id === snapshot.id.toString(),
-    canPlay = !!active && side >= 0 && ready && online && !busy && !panel && !syncError;
+    canPlay = !!active && side >= 0 && ready && !writeBlocked && !busy && !panel && !syncError;
   const playable = useRef(false);
   playable.current = canPlay;
-  const onlineRef = useRef(online);
-  onlineRef.current = online;
   lobbyRef.current = lobby;
   const name = (p: string) =>
     lobby.profiles.find((x) => x.player === p.toLowerCase())?.handle ||
@@ -249,11 +250,14 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     if (s.phase !== 2) {
       lane.current?.intent(0);
       setDirection(0);
+      if(s.phase>=3){setWriteBlocked(false);setError("");}
     }
   };
   const failed = () => {
     lane.current?.stop();
-    setReady(false);
+    // Stop uncertain writes, not the account or its result observer. Changing
+    // ready here used to erase the 6:6 snapshot before the seventh point arrived.
+    setWriteBlocked(true);
     setDirection(0);
     setError(
       "The engine did not confirm this action. Reconnect to read the current match before continuing.",
@@ -270,8 +274,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     if (lane.current && !lane.current.stopped) void lane.current.pump(false);
   }
   async function refresh() {
+    const version=++refreshVersion.current, owner=accountRef.current;
     const next = await roomsApi<Lobby>("/interlude/state");
-    if (!alive.current) return;
+    if (!alive.current || version!==refreshVersion.current || owner!==accountRef.current) return;
     setLobby(next);
     if(next.room || next.queue)setMode(next.room?.mode || next.queue?.mode || 0);
     setOnline(next.online);
@@ -337,6 +342,8 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     sessionStorage.setItem(roomsAccountKey, p);
     setAccount(p);
     setReady(true);
+    setWriteBlocked(false);
+    setSessionRevision(v=>v+1);
     setSaved(p);
     setError("");
     await refresh();
@@ -526,15 +533,14 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     const id = offer?.id;
     matchRef.current = id;
     lane.current?.stop();
-    snapshotRef.current = null;
-    setSnapshot(null);
+    if(snapshotRef.current?.id.toString()!==id){snapshotRef.current = null;setSnapshot(null);}
     setSyncError("");
     if (!id) return;
     let done = false,
       pollTimer: ReturnType<typeof setTimeout>;
     const readSnapshot = engineRead(async () => labSnapshot(
       await readEngineSnapshot(client.current!, BigInt(id)),
-    ));
+    ),250);
     if (session.current && account)
       lane.current = new LabLane(
         readSnapshot,
@@ -542,10 +548,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         account,
         receive,
         failed,
-        () => {
-          setSyncError("Synchronizing game state. Your session is still connected.");
+        (e) => {
+          setSyncError(engineReadRetryMs(e) ? "The game node is limiting requests. Waiting to synchronize." : "Synchronizing game state. Your session is still connected.");
           setDirection(0);
         },
+        {readMs:250,tickMs:300},
       );
     const poll = async () => {
       let retryMs = 0;
@@ -563,14 +570,13 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         retryMs = engineReadRetryMs(e);
         if (!done) setSyncError("Synchronizing game state. Your session is still connected.");
       }
-      if (!done) pollTimer = setTimeout(poll, Math.max(retryMs, document.hidden ? 2000 : 250));
+      if (!done) pollTimer = setTimeout(poll, Math.max(retryMs, document.hidden || snapshotRef.current?.phase!>=3 ? 2000 : 250));
     };
     void poll();
     const pump = setInterval(() => {
       if (
         !done &&
         !document.hidden &&
-        onlineRef.current &&
         ready &&
         snapshotRef.current?.phase === 2 &&
         labSide(snapshotRef.current, account) >= 0
@@ -587,7 +593,19 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       clearInterval(pump);
       lane.current?.stop();
     };
-  }, [offer?.id, ready, account]);
+  }, [offer?.id, ready, account, sessionRevision]);
+  useEffect(()=>{
+    setResultRating(null);
+    if(!roomsChaos || snapshot?.phase!==3 || !offer?.ranked || side<0)return;
+    const id=snapshot.id;let done=false,timer:ReturnType<typeof setTimeout>;
+    const load=async()=>{
+      try{
+        const r=await client.current!.read("ratingChange",[id]) as readonly number[];
+        if(!done)setResultRating({id:id.toString(),delta:Number(r[side+2])-Number(r[side])});
+      }catch(e){if(!done)timer=setTimeout(load,Math.max(2000,engineReadRetryMs(e)));}
+    };
+    void load();return()=>{done=true;clearTimeout(timer);};
+  },[snapshot?.id,snapshot?.phase,offer?.ranked,side]);
   useEffect(() => {
     if (entry)
       void api(`/interlude/rooms/${entry}`)
@@ -707,8 +725,13 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       entropy: o.entropy as Hex,
     };
     if (!session.current) throw new Error("Renew your arcade session.");
-    await session.current.send("acceptMatch", [t, o.signature]);
-    if (matchRef.current === o.id) receive(await read());
+    try {await session.current.send("acceptMatch", [t, o.signature]);}
+    catch(e){failed();throw e;}
+    // A successful send is already acknowledged. A later read outage must not
+    // turn that accepted invitation into an error or another acceptance.
+    if (matchRef.current === o.id) {
+      try{receive(await read());}catch{setSyncError("Invitation accepted. Synchronizing the match.");}
+    }
     await refresh();
   }
   useEffect(() => {
@@ -866,7 +889,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       {error && !panel && (
         <div className="rooms-error" role="alert">
           {error}
-          {!ready && account && (
+          {(!ready || writeBlocked) && account && (
             <button disabled={busy} onClick={() => void login()}>
               Reconnect
             </button>
@@ -1234,12 +1257,13 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 state: snapshot.state,
                 ranked: offer?.ranked,
                 mode: offer?.mode || 0,
-                ratingFinalized: true,
+                ratingFinalized: !roomsChaos || resultRating?.id===snapshot.id.toString(),
               }
             : null
         }
         account={account || ""}
         rating={lobby.rating?.live.elo ?? null}
+        ratingDelta={resultRating?.id===snapshot?.id.toString()?resultRating?.delta:undefined}
         sound
         replay={false}
         confirmation="engine"

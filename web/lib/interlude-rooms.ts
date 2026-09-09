@@ -12,6 +12,7 @@ import manifest from "../../deployments/interlude-rooms.json";
 import { roomsAbi } from "../../shared/abi-rooms";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { api, API } from "./api";
+import {engineTransport} from "../../shared/engine-transport";
 export const roomsManifest = manifest;
 export const roomsChaos = Number(manifest.rulesVersion) === 4;
 export const roomsScope = [
@@ -36,7 +37,7 @@ export function createRoomsClient() {
     }),
     store: webStorageStore(sessionStorage),
     expirySeconds: 1800,
-    transport: http(manifest.node, { retryCount: 0, timeout: 4000 }),
+    transport: engineTransport(manifest.node),
     fastPath: true,
   });
 }
