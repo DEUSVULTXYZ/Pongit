@@ -1,0 +1,180 @@
+{
+  "title": "Acceptance rate-limit diagnosis and idle observer fix",
+  "date": "2026-09-09",
+  "runtimeCommit": "e77d13bf36742b03917669a229359d5546a876fd",
+  "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+  "node": "https://il-fd1693294fed7730.fly.dev",
+  "diagnosis": [
+    "The old browser observed pending and cancelled phase-zero offers every 250 ms.",
+    "Two such observers reproduced HTTP 429. A shared transport cooldown then also rejected acceptance attempts.",
+    "The previous generic error remained visible after the offer expired, suggesting synchronization was still in progress."
+  ],
+  "networkBefore": {
+    "at": "2026-09-09T19:45:46.679Z",
+    "pattern": "Two reads every 250 ms, stop at first rate limit",
+    "requests": 50,
+    "first429AfterMs": 6040,
+    "retryAfterSeconds": 10,
+    "response": "Too many requests from this caller. Try again later.\n"
+  },
+  "networkAfter": {
+    "at": "2026-09-09T19:49:52.795Z",
+    "pattern": "Two reads every 2000 ms",
+    "requests": 40,
+    "durationMs": 38044,
+    "http429": 0
+  },
+  "changes": [
+    "Pending invitations use a two-second observer; lobby status changes trigger an immediate fresh read.",
+    "Confirmed terminal or cancelled empty matches stop polling. Unknown, pending or active engine state remains observable.",
+    "Rate-limited acceptance shows a countdown. Retry is disabled until Retry-After elapses.",
+    "Acceptance errors belong to their offer and disappear on cancellation or rotation.",
+    "Accepted transactions are reconciled from receipts and never automatically resent."
+  ],
+  "validation": {
+    "typecheck": true,
+    "productionBuild": true,
+    "focusedTests": 21,
+    "acceptanceBrowser": {
+      "scenarios": [
+        {
+          "failure": "write429",
+          "idleReads": 3,
+          "preflights": 2,
+          "acks": 1,
+          "acceptanceSends": 2,
+          "nonceReads": 2,
+          "started": true
+        },
+        {
+          "failure": "ack429",
+          "idleReads": 3,
+          "preflights": 1,
+          "acks": 3,
+          "acceptanceSends": 1,
+          "nonceReads": 2,
+          "started": true
+        },
+        {
+          "failure": "expired429",
+          "idleReads": 3,
+          "expiredMessageCleared": true,
+          "terminalPollingStopped": true,
+          "acceptanceSends": 1
+        }
+      ],
+      "errors": []
+    },
+    "resultRecoveryBrowser": {
+      "checks": [
+        "Offline coordinator does not freeze a healthy direct engine lane",
+        "Final-tick revert plus 429 recovers the result without reconnecting",
+        "Unknown submission stops writes but preserves result transition",
+        "Room rotates to a new invitation before the previous result is recovered",
+        "Next match refreshes an uncertain SDK nonce without a passkey ceremony",
+        "The current tab can restore its session; a second controlling tab is still rejected",
+        "Ten-second shared cooldown honored",
+        "Exact per-match ELO displayed after fresh read",
+        "Desktop and mobile result visible"
+      ],
+      "errors": [],
+      "scenarios": [
+        {
+          "failure": "revert",
+          "reads": 26,
+          "writes": 15,
+          "idleWrites": 8,
+          "cooldownMs": 10021,
+          "finalScore": "7:6",
+          "nextMatch": true,
+          "nonceReads": 1
+        },
+        {
+          "failure": "uncertain",
+          "reads": 25,
+          "writes": 13,
+          "idleWrites": 7,
+          "cooldownMs": 10019,
+          "finalScore": "7:6",
+          "nextMatch": true,
+          "nonceReads": 2
+        }
+      ]
+    },
+    "liveFriendlySdkSmoke": {
+      "at": "2026-09-09T19:44:59.891Z",
+      "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+      "checks": [
+        "Preflight does not mark consent",
+        "Actual receipt confirms the matching player",
+        "Duplicate acknowledgement is idempotent",
+        "Two consensual acceptances start a friendly match"
+      ],
+      "transactions": [
+        {
+          "action": "accept",
+          "hash": "0x9b5e0b339caf71d481c4112a2a390c6991892005a245c77a988adfbdce80fcec",
+          "latencyMs": 184.76090900000054
+        },
+        {
+          "action": "accept",
+          "hash": "0xbe1aea4924da5c5317a86c366bf5784c8102a5ffcb14eab00ddda1c20b65818c",
+          "latencyMs": 110.20249300000069
+        },
+        {
+          "action": "finish-friendly-test",
+          "hash": "0x25b3065fba0a1c2b8ed568ececcb56bb2905472c1ab5cc0f5269cd7b6552e7ae",
+          "latencyMs": 55.64782699999978
+        }
+      ],
+      "matchId": "76887387832518125425784318054166472770729477703529415607038310643213280613840",
+      "room": "0xedc7290175b5d1c633efe750c0113a8be8c4a73949de354b730951d69161c484",
+      "passed": true
+    },
+    "public": {
+      "at": "2026-09-09T19:55:59.623809+00:00",
+      "checks": [
+        {
+          "path": "/",
+          "status": 200,
+          "scriptsAvailable": 12,
+          "acceptanceCooldown": true
+        },
+        {
+          "path": "/docs/playing/chaos",
+          "status": 200
+        },
+        {
+          "path": "/legacy",
+          "status": 200
+        },
+        {
+          "path": "/api/interlude/config",
+          "status": 200,
+          "engineOnline": true
+        },
+        {
+          "path": "/api/health",
+          "status": 200
+        }
+      ],
+      "runtimeCommit": "e77d13bf36742b03917669a229359d5546a876fd",
+      "passed": true
+    }
+  },
+  "deployment": {
+    "at": "2026-09-09T19:55:47.775583+00:00",
+    "commit": "e77d13bf36742b03917669a229359d5546a876fd",
+    "prior": "f483119bada2111743144b54e5f6545dfe56b67b",
+    "webImage": "pongit-web:busy-e77d13b",
+    "relayerUnchanged": true,
+    "contractsAndFinanceUnchanged": true,
+    "backup": "20260909T195123Z"
+  },
+  "limitations": [
+    "The provider still enforces a quota. These samples do not establish its complete window or scope.",
+    "This patch reduces idle traffic; sustained multi-arena gameplay capacity is not established by these tests.",
+    "The live friendly test used disposable unfunded SDK identities, not a physical Mera authenticator.",
+    "Existing tabs need a reload to stop their old polling loops."
+  ]
+}
