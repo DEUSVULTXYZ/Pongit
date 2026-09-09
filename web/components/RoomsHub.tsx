@@ -46,6 +46,7 @@ import {
 import type { LobbyRoom, LobbyOffer } from "../../shared/rooms";
 import {readEngineSnapshot} from "../../shared/engine-snapshot";
 import {engineRead, engineReadRetryMs} from "../../shared/engine-read";
+import {roomSnapshotPollMs} from "../../shared/rooms-observation";
 type Profile = {
   player: string;
   handle?: string;
@@ -186,6 +187,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     [fps, setFps] = useState(0),
     [now, setNow] = useState(Date.now());
   const [pendingAcceptance, setPendingAcceptance] = useState<PendingAcceptance | null>(null);
+  const [acceptanceIssue, setAcceptanceIssue] = useState<{id:string; retryAt:number; message:string} | null>(null);
   const [contacts, setContacts] = useState<Profile[]>([]),
     [frequent, setFrequent] = useState<Profile[]>([]),
     [search, setSearch] = useState(""),
@@ -237,6 +239,8 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     side = labSide(snapshot, account),
     isDuel =
       !!offer && [offer.a, offer.b].includes(account?.toLowerCase() || "");
+  const acceptanceProblem = acceptanceIssue?.id === offer?.id && offer?.status === "offered" ? acceptanceIssue : null;
+  const acceptanceWait = acceptanceProblem ? Math.max(0, Math.ceil((acceptanceProblem.retryAt - now) / 1000)) : 0;
   const active =
       snapshot?.phase === 2 && room?.offer?.id === snapshot.id.toString(),
     canPlay = !!active && side >= 0 && ready && !writeBlocked && !busy && !panel && !syncError;
@@ -598,7 +602,8 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         retryMs = engineReadRetryMs(e);
         if (!done) setSyncError("Synchronizing game state. Your session is still connected.");
       }
-      if (!done) pollTimer = setTimeout(poll, Math.max(retryMs, document.hidden || snapshotRef.current?.phase!>=3 ? 2000 : 250));
+      const delay = roomSnapshotPollMs(offer?.status, snapshotRef.current?.phase, document.hidden);
+      if (!done && (retryMs || delay !== null)) pollTimer = setTimeout(poll, Math.max(retryMs, delay ?? 2000));
     };
     void poll();
     const pump = setInterval(() => {
@@ -621,7 +626,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       clearInterval(pump);
       lane.current?.stop();
     };
-  }, [offer?.id, ready, account, sessionRevision]);
+  }, [offer?.id, offer?.status, ready, account, sessionRevision]);
   // Room rotation can precede a rate-limited browser's final read. Keep the
   // old result observable independently from the next invitation's snapshot.
   useEffect(()=>{
@@ -761,34 +766,43 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     await refresh();
   }
   async function accept(o: LobbyOffer) {
-    const checked = await roomsAction("offers/accept", { id: o.id });
-    if (checked.alreadyAccepted) {
-      if (matchRef.current === o.id) receive(await read());
-      await refresh();
-      return;
-    }
-    const t = {
-      id: BigInt(o.id),
-      room: o.room as Hex,
-      a: o.a as Address,
-      b: o.b as Address,
-      ranked: o.ranked,
-      ...(roomsChaos ? {mode:o.mode || 0}:{}),
-      expires: BigInt(o.expires),
-      rules: BigInt(o.rules),
-      entropy: o.entropy as Hex,
-    };
-    if (!session.current) throw new Error("Renew your arcade session.");
+    if (acceptanceIssue?.id === o.id && Date.now() < acceptanceIssue.retryAt) return;
+    setAcceptanceIssue(null);
+    let sending = false;
     try {
+      const checked = await roomsAction("offers/accept", { id: o.id });
+      if (checked.alreadyAccepted) {
+        if (matchRef.current === o.id) receive(await read());
+        await refresh();
+        return;
+      }
+      const t = {
+        id: BigInt(o.id),
+        room: o.room as Hex,
+        a: o.a as Address,
+        b: o.b as Address,
+        ranked: o.ranked,
+        ...(roomsChaos ? {mode:o.mode || 0}:{}),
+        expires: BigInt(o.expires),
+        rules: BigInt(o.rules),
+        entropy: o.entropy as Hex,
+      };
+      if (!session.current) throw new Error("Renew your arcade session.");
+      sending = true;
       const receipt = await session.current.send("acceptMatch", [t, o.signature]);
       const pending = {account: accountRef.current!, id: o.id, hash: receipt.hash};
       sessionStorage.setItem(acceptanceKey(pending.account), JSON.stringify(pending));
       setPendingAcceptance(pending);
     } catch(e){
-      failed();
-      throw new Error(engineReadRetryMs(e)
-        ? "The game node is busy. Retry acceptance after synchronization."
-        : "Your acceptance was not confirmed. Retry acceptance to reconnect and read the duel.");
+      const delay = engineReadRetryMs(e);
+      if (sending) { failed(); setError(""); }
+      if (delay || sending) {
+        setAcceptanceIssue({id:o.id,retryAt:delay ? Date.now()+delay : 0,message:delay
+          ? "The game node limited this request. Your acceptance has not been confirmed."
+          : "Your acceptance was not confirmed. Retry acceptance to reconnect and read the duel."});
+        return;
+      }
+      throw e;
     }
     // A successful send is already acknowledged. A later read outage must not
     // turn that accepted invitation into an error or another acceptance.
@@ -1173,17 +1187,18 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 )}
                 s
               </small>
+              {acceptanceProblem && <p className="rooms-notice" role="status">{acceptanceProblem.message}{acceptanceWait > 0 ? ` Retry available in ${acceptanceWait}s.` : " You can retry now."}</p>}
               <div className="rooms-button-row">
                 <button
                   className="primary"
                   disabled={
-                    busy || pendingAcceptance?.id === offer!.id || offer!.accepted.includes(account!.toLowerCase())
+                    busy || acceptanceWait > 0 || Number(offer!.expires) * 1000 <= now || pendingAcceptance?.id === offer!.id || offer!.accepted.includes(account!.toLowerCase())
                   }
                   onClick={() => void ensure(() => accept(offer!))}
                 >
                   {pendingAcceptance?.id === offer!.id || offer!.accepted.includes(account!.toLowerCase())
                     ? "Waiting…"
-                    : writeBlocked ? "Retry acceptance" : "Accept"}
+                    : acceptanceWait > 0 ? `Retry in ${acceptanceWait}s` : writeBlocked || acceptanceProblem ? "Retry acceptance" : "Accept"}
                 </button>
                 <button disabled={busy} onClick={() => void run(backOffer)}>
                   Back

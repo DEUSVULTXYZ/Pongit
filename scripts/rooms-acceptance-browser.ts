@@ -15,7 +15,7 @@ const browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
 const report:any={scenarios:[],errors:[]};
 let lastPage: any;
 try {
- for(const failure of ["write429","ack429"]){
+ for(const failure of ["write429","ack429","expired429"]){
   const context=await browser.newContext({viewport:{width:failure==="write429"?1440:390,height:900}});
   const privateKey=generatePrivateKey(),signer=privateKeyToAccount(privateKey);
   const stored=encodeSession({app,baseChainId:10143,privateKey,signature:`0x${"11".repeat(65)}`,
@@ -25,7 +25,7 @@ try {
    sessionStorage.setItem(key,stored);sessionStorage.setItem(accountKey,a);
    localStorage.setItem("pongit:arcade-audio",JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:"off"}));
   },{stored,key:storageKey(app,10143,a),accountKey:`pongit:rooms:${app}:account`,a});
-  let room:any,phase=0,nonce=0n,sends=0,accepts=0,preflights=0,acks=0,nonceReads=0,writeFailed=false,releaseAck=false;
+  let room:any,phase=0,nonce=0n,sends=0,accepts=0,preflights=0,acks=0,nonceReads=0,reads=0,writeFailed=false,releaseAck=false;
   const at=Date.now();
   await context.route("**/*",async route=>{
    const u=new URL(route.request().url());
@@ -53,10 +53,10 @@ try {
    if(u.origin===new URL(manifest.node).origin){
     if(rpc.method==="eth_chainId")return reply("0x1092");
     if(rpc.method==="eth_getTransactionCount"){nonceReads++;return reply(toHex(nonce));}
-    if(rpc.method==="eth_call")return reply(encodeFunctionResult({abi,functionName:"getSnapshot",result:[1n,BigInt(phase),BigInt(phase),a,b,b,b,100n,0n,0n,0n,BigInt(Math.floor(Date.now()/1000)+20),initial(zeroHash)]}));
+    if(rpc.method==="eth_call"){reads++;return reply(encodeFunctionResult({abi,functionName:"getSnapshot",result:[1n,BigInt(phase),BigInt(phase),a,b,b,b,100n,0n,0n,0n,BigInt(Math.floor(Date.now()/1000)+20),initial(zeroHash)]}));}
     if(rpc.method==="interlude_sendTransaction"){
      sends++;assert.equal(BigInt(parseTransaction(rpc.params[0]).nonce!),nonce,"Retry must restore the SDK nonce");
-     if(failure==="write429"&&!writeFailed){writeFailed=true;return route.fulfill({status:429,headers:{"Retry-After":"1","Access-Control-Allow-Origin":"*","Access-Control-Expose-Headers":"Retry-After"},body:"Too many requests"});}
+     if(failure!=="ack429"&&!writeFailed){writeFailed=true;return route.fulfill({status:429,headers:{"Retry-After":failure==="expired429"?"10":"2","Access-Control-Allow-Origin":"*","Access-Control-Expose-Headers":"Retry-After"},body:"Too many requests"});}
      nonce++;if(phase===0){phase=1;accepts++;}
      return reply({status:"0x1",transactionHash:zeroHash,output:encodeAbiParameters([{type:"bytes"}],["0x"])});
     }
@@ -69,10 +69,24 @@ try {
   const page=await context.newPage();lastPage=page;page.on("pageerror",e=>report.errors.push(e.message));
   await page.goto(origin+"/rooms");await page.locator(".rooms-timer").waitFor();
   room={id:zeroHash,host:a,kind:"ranked",mode:0,status:"offer",created:at,activity:at,members:[a,b].map((player,position)=>({player,position,joined:at,seen:Date.now(),away:false})),offer:{id:"1",room:zeroHash,a,b,mode:0,ranked:true,expires:String(Math.floor(Date.now()/1000)+20),rules:"4",entropy:zeroHash,signature:"0x",accepted:[],status:"offered"}};
-  await page.getByRole("button",{name:"Accept",exact:true}).click();
+  const acceptButton=page.getByRole("button",{name:"Accept",exact:true});await acceptButton.waitFor();
+  const initialReads=reads;await page.waitForTimeout(6200);
+  const idleReads=reads-initialReads;assert(idleReads<=4,`Waiting for a duel made ${idleReads} reads in 6s`);
+  await acceptButton.click();
+  if(failure==="expired429"){
+   const cooling=page.getByRole("button",{name:/^Retry in \d+s$/});await cooling.waitFor();assert(await cooling.isDisabled());
+   room.offer.status="cancelled";room.status="waiting";room.members.forEach((m:any)=>m.away=true);
+   await page.getByRole("button",{name:"Rejoin queue",exact:true}).waitFor();
+   assert.equal(await page.getByText("The game node limited this request.",{exact:false}).count(),0,"An expired offer must not retain its acceptance error");
+   await page.waitForTimeout(11000);const terminalReads=reads;await page.waitForTimeout(4200);
+   assert.equal(reads,terminalReads,"Cancelled empty matches stop RPC polling");assert.equal(sends,1,"Expired acceptances are never resent");
+   report.scenarios.push({failure,idleReads,expiredMessageCleared:true,terminalPollingStopped:true,acceptanceSends:sends});
+   await context.close();continue;
+  }
   if(failure==="write429"){
+   const cooling=page.getByRole("button",{name:/^Retry in \d+s$/});await cooling.waitFor();assert(await cooling.isDisabled());
    const retry=page.getByRole("button",{name:"Retry acceptance",exact:true});await retry.waitFor();
-   await page.waitForTimeout(1300);assert.equal(sends,1,"No automatic resubmission after a 429");
+   assert.equal(sends,1,"No automatic resubmission after a 429");
    await retry.click();await page.getByRole("button",{name:"Waiting…",exact:true}).waitFor({timeout:8000});
    assert(nonceReads>=2);assert.equal(accepts,1);
   }else{
@@ -89,11 +103,11 @@ try {
   phase=2;room.status="playing";room.offer.status="active";room.offer.accepted=[a,b];
   await page.locator(".rooms-court").waitFor();
   assert.equal(accepts,1);assert.equal(report.errors.length,0);
-  report.scenarios.push({failure,preflights,acks,acceptanceSends,nonceReads,started:true});
+  report.scenarios.push({failure,idleReads,preflights,acks,acceptanceSends,nonceReads,started:true});
   await context.close();
  }
 }finally{
- if(report.scenarios.length<2 && lastPage && !lastPage.isClosed())report.page=await lastPage.locator("body").innerText();
+ if(report.scenarios.length<3 && lastPage && !lastPage.isClosed())report.page=await lastPage.locator("body").innerText();
  await mkdir("artifacts/rooms-acceptance-browser",{recursive:true});
  await writeFile("artifacts/rooms-acceptance-browser/report.json",JSON.stringify(report,null,2));await browser.close();
 }
