@@ -224,6 +224,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   const profileLoaded = useRef<string | undefined>(undefined);
   const room = lobby.room,
     offer = room?.offer,
+    queueSeconds = lobby.queue ? Math.max(0, Math.floor((now - lobby.queue.at) / 1000)) : 0,
     side = labSide(snapshot, account),
     isDuel =
       !!offer && [offer.a, offer.b].includes(account?.toLowerCase() || "");
@@ -1062,11 +1063,8 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           </span>
           <h1>Finding your rival</h1>
           <p className="rooms-timer">
-            {Math.floor((now - lobby.queue.at) / 60000)}:
-            {String(Math.floor((now - lobby.queue.at) / 1000) % 60).padStart(
-              2,
-              "0",
-            )}
+            {Math.floor(queueSeconds / 60)}:
+            {String(queueSeconds % 60).padStart(2, "0")}
           </p>
           <span>{lobby.queue.mode === 1 ? "Chaos" : "Classic"} · Ranked</span>
           <button
