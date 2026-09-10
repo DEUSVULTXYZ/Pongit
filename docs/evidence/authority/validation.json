@@ -1,0 +1,82 @@
+{
+  "candidate": "contract-authority",
+  "recordedAt": "2026-09-10T20:59:38.443398+00:00",
+  "baseCommit": "f7931f4e5ff5147c4e25ba7a7abbd442017582b8",
+  "environment": "Resource-limited temporary VPS containers. Private EVM only; no production writes.",
+  "productionChanged": false,
+  "contracts": {
+    "passed": 188,
+    "failed": 0,
+    "skipped": 0,
+    "suites": 17,
+    "candidateTests": 24,
+    "compiler": "0.8.30",
+    "optimizerRuns": 200,
+    "viaIR": true,
+    "evmVersion": "cancun"
+  },
+  "typescript": {
+    "candidateTestsPassed": 6,
+    "candidateTestsFailed": 0,
+    "repositoryTypecheck": "passed"
+  },
+  "physics": {
+    "classicCases": 10000,
+    "chaosCases": 10000,
+    "mismatches": 0,
+    "scope": "Reused Solidity rules compared with TypeScript on a private Anvil instance, not hosted Interlude or browser rendering."
+  },
+  "officialCli": {
+    "version": "0.1.4",
+    "surface": "AutonomousArena",
+    "check": "passed",
+    "registeredMappingSlot": 0,
+    "layoutFingerprint": "0x66743d908a494bc45ce70b5cddce77cdd196e1c02b00cc51e73e4e2984c5229d"
+  },
+  "storageDiffs": {
+    "twoFreshAdmissions": 76,
+    "twoTerminalResults": 41,
+    "method": "Deduplicated touched slots; compare values before and after the fixture, excluding unchanged writes. Not a hosted publication measurement."
+  },
+  "financialIntegration": [
+    "Real MarketV4 LMSR and sealed RoomsVault attached to AutonomousFinance",
+    "Actual paid-pressure checkpoint and Chaos resume",
+    "Permissionless winner wallet payment, losing position and duplicate claim rejection",
+    "Participant betting prohibition and exact cancelled-match refund"
+  ],
+  "notQualified": [
+    "Authenticated current Chaos proof transport",
+    "Hosted recovery and return cycle",
+    "Hosted publication budgeting and module tracing",
+    "Prompt engine revocation visibility",
+    "Legacy migration",
+    "UI and existing sponsor-journal integration",
+    "Two-browser acceptance and physical passkey recovery",
+    "Actual business-service and sponsor shutdown rehearsals"
+  ],
+  "hashAlgorithm": "SHA-256 over UTF-8 with CRLF normalized to LF",
+  "sources": {
+    "contracts/src/autonomous/AuthorityActions.sol": "aaa75edbd42907a913a4cf4d3102219c430ee6108e63d945f23e465c53fd0439",
+    "contracts/src/autonomous/AuthorityControl.sol": "52e1bf40c206ec15c10effcf6c5b1da82c309a73374586b2efa29032998cfd75",
+    "contracts/src/autonomous/AuthorityRating.sol": "6858c170b286b0aeaf5901841fa6098ba1a948450d665cc237e3bf2278499d0e",
+    "contracts/src/autonomous/AuthorityStore.sol": "cd43c6ebad0c65fda05aeeb7e0b83fe209eaccc16d0f9cb7d436dee258f65994",
+    "contracts/src/autonomous/AutonomousArena.sol": "3615b77020e1cfeed0b5441f54556b8f7d76bc9b3aeb0d7b31a26cea5c86235b",
+    "contracts/src/autonomous/AutonomousArenaInterludeSurface.sol": "aea8f19a97b0372b38e792d2626f6e1ca9614193a9b2b9e3c0323166071c3d3d",
+    "contracts/src/autonomous/AutonomousFinance.sol": "a295c44392b94b926839c3bec72e03b6d98e2105a14b116d86ebf3694a1d6873",
+    "contracts/src/autonomous/AutonomousGameBase.sol": "430085e261b5322ed5a3e9bc49c1c1a3cacf5fa49ee5e99fe33089c9c86cfc76",
+    "contracts/src/autonomous/BaseAuthorization.sol": "17476db19a83a0eedda073cf9f49d097b504750936982c80b7a16ac0e47738fc",
+    "contracts/src/autonomous/ChaosProof.sol": "d4865d3c6d514c01afced7dc04360d63899209ee4137615e07f3c8d0720bdfcf",
+    "contracts/src/autonomous/ContractLobby.sol": "c6f7e52742c17a111f7568eca74f8c7d35da965052c8aa082bb2bcbe312349a9",
+    "contracts/src/autonomous/OwnerWrites.sol": "0f4f52d243e8a3c460cd8a7f539fbd8386caf5b0801852fcd903750607a852e6",
+    "contracts/src/autonomous/PlayerIndex.sol": "63cd7833b1eb7f60c1ac13e84dabbe9a193049277a244430d74e2cbb664d83a3",
+    "contracts/src/autonomous/PrivateDataStore.sol": "dae82b1bb9b5928fc852ec1dfd4f3a1171277bde00e6f3281886e4ecdf6541e2",
+    "contracts/src/autonomous/ProfileRegistry.sol": "5e4a50267dcc90c73187d7ac459d392232708da8ad9d54efcb141e87b0f1f9e9",
+    "contracts/test/AuthorityData.t.sol": "294cc99358bd910a88531414fd42cd1cf76be3054b02c77db8d0540249d9e78c",
+    "contracts/test/Autonomous.t.sol": "8a3ad9c99690b3e7c04e6247b3fa2ca1958834d2fae7dd4d00711bd6cd65e9d2",
+    "relayer/src/authority-keeper.ts": "f43310818373b7f45b158da15b3028d4dae63ebf45f40aa9f54a8cc8af5e4e2a",
+    "scripts/authority-preflight.ts": "dfb6c4978fd60062c19d70efcf7885bd5658806e40ce01f8860d3464db6b5b17",
+    "shared/authority-client.ts": "66cae0a40f86a4bb2f65a618b4fb80551bc9ef39f0ee5434f437de3d4929a825",
+    "shared/authority-private.ts": "bab6f0bb44967ec26fd88d84408ef7dbf76a09118a0d88d473eb8bdd20337a20",
+    "tests/authority.test.ts": "e0489542a526906962f32a849baaf361bf19163aa0afcdf3eb204bdf6e15c88a"
+  }
+}
