@@ -16,19 +16,20 @@ assert.equal(new URL(process.env.TEST_DATABASE_URL!).hostname,"pongit-stream-db"
 const db=new Pool({connectionString:process.env.TEST_DATABASE_URL});
 const app="0x1111111111111111111111111111111111111111",hub="0x2222222222222222222222222222222222222222";
 let faultEpoch=false,slowSnapshot=false,receipts=new Map<string,any>();
+let expiredDelegation=false,sessionReads=0;
 const snapshots=new Map<string,readonly unknown[]>();
 const empty=(id:bigint)=>[id,0n,0n,zeroAddress,zeroAddress,zeroAddress,zeroAddress,100n,0n,0n,0n,0n,initial(zeroHash)] as any;
 const pause=(n:number)=>new Promise(r=>setTimeout(r,n));
 const readBody=async(req:any)=>{let s="";for await(const chunk of req)s+=chunk;return s?JSON.parse(s):{};};
 const rpc=createServer(async(req,res)=>{
  try{const body=await readBody(req),method=body.method;let result:unknown;
-  if(method==="interlude_session")result={app,chainId:4242,validator:zeroAddress,resolver:zeroAddress,epoch:1,baseBlock:1,committedBatches:0,maxDiffsPerCommit:64,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]};
+  if(method==="interlude_session"){sessionReads++;result={app,chainId:4242,validator:zeroAddress,resolver:zeroAddress,epoch:1,baseBlock:1,committedBatches:0,maxDiffsPerCommit:64,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]};}
   else if(method==="eth_getTransactionReceipt")result=receipts.get(body.params[0])??null;
   else if(method==="eth_getTransactionCount")result="0x0";
   else if(method==="eth_chainId")result="0x1092";
   else if(method==="eth_call"){
    const data=body.params[0].data as Hex;
-   if(data.startsWith(toFunctionSelector(interludeHubReadAbi[0])))result=encodeFunctionResult({abi:interludeHubReadAbi,functionName:"sessionOf",result:{validator:zeroAddress,resolver:zeroAddress,status:1,spec:0,epoch:1n,batchIndex:0n,baseBlock:1n,lastExecTimestamp:0n,lastCommitAt:0n,maxBatchInterval:10n,expiresAt:BigInt(Math.floor(Date.now()/1000)+86400),maxDiffsPerCommit:64}});
+   if(data.startsWith(toFunctionSelector(interludeHubReadAbi[0])))result=encodeFunctionResult({abi:interludeHubReadAbi,functionName:"sessionOf",result:{validator:zeroAddress,resolver:zeroAddress,status:1,spec:0,epoch:1n,batchIndex:0n,baseBlock:1n,lastExecTimestamp:0n,lastCommitAt:0n,maxBatchInterval:10n,expiresAt:BigInt(Math.floor(Date.now()/1000)+(expiredDelegation?-1:86400)),maxDiffsPerCommit:64}});
    else {let decoded:any;try{decoded=decodeFunctionData({abi,data});}catch{}
     if(decoded?.functionName==="getSnapshot"){if(slowSnapshot)await pause(1800);result=encodeFunctionResult({abi,functionName:"getSnapshot",result:(snapshots.get(String(decoded.args[0]))||empty(decoded.args[0])) as any});}
     else if(decoded?.functionName==="ratingOf")result=encodeFunctionResult({abi,functionName:"ratingOf",result:{elo:1000,played:0,wins:0,season:1}});
@@ -88,6 +89,17 @@ try{
  report.checks.push("Temporary permission RPC failure preserves the session and rejects unverified actions");
  await db.query("UPDATE il_sessions SET expires=0 WHERE player=$1",[players[0].address]);
  await until(async()=>messages.some(m=>m.type==="rooms-expired"));report.checks.push("Real expiry still closes the subscription");
+ expiredDelegation=true;
+ await until(async()=>(await api(players[1],"config")).errorCode==="ENGINE_DELEGATION_EXPIRED");
+ const unavailable=await api(players[1],"config");
+ assert.equal(unavailable.online,false);assert.equal(unavailable.admission,false);assert(unavailable.checkedAt>0);assert(unavailable.retryAt>Date.now());
+ const sessionsBefore=sessionReads;await pause(4500);
+ assert.equal(sessionReads,sessionsBefore,"Expired maintenance must respect its cooldown");
+ assert.equal((await api(players[1],"state")).status,200,"Engine expiry must not revoke player authentication");
+ expiredDelegation=false;
+ await until(async()=>coordinator.status().online,35000);
+ assert.equal((await api(players[1],"config")).error,"");
+ report.checks.push("Engine expiry is explicit, backs off reads, preserves player access and recovers after renewal");
  report.passed=true;
 }catch(e){report.error=String(e);report.coordinator=coordinator.status();throw e;}
 finally{socket?.close();coordinator.stop();wss.close();server.close();rpc.close();await pause(200);await db.end();await mkdir("artifacts/stream-coordinator",{recursive:true});await writeFile("artifacts/stream-coordinator/report.json",JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

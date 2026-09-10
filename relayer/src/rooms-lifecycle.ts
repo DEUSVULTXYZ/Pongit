@@ -17,6 +17,7 @@ import { roomsLifecycleHubAbi as hubAbi } from "../../shared/abi-rooms-lifecycle
 import {readHubDelegation} from "../../shared/rooms-hub";
 import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
 import { requestHostedRenewal } from "./rooms-hosted-renewal";
+import { roomsDrainBlocker } from "../../shared/rooms-availability";
 const appAbi = parseAbi([
   "function operator() view returns(address)",
   "function closeEngine()",
@@ -222,20 +223,18 @@ export async function roomsLifecycle(o: {
         if (Date.now() - new Date(row.changed_at).getTime() < 60000) return;
         // Admission has been stopped for longer than a consent ticket can live.
         const node = await o.engineStatus();
-        if (
-          (await o.engineActive()) !== 0n ||
-          node.pendingDiffs.length ||
-          BigInt(node.epoch) !== d.epoch
-        )
-          return;
+        error = roomsDrainBlocker(d.expiresAt <= now, await o.engineActive(), node.pendingDiffs.length, BigInt(node.epoch) === d.epoch);
+        if (error) return;
         if (
           (await o.base.readContract({
             address: o.app,
             abi: appAbi,
             functionName: "activeCount",
           })) !== 0n
-        )
+        ) {
+          error = "Waiting for published matches to finish before renewal";
           return;
+        }
         if (
           (
             await o.db.query(
@@ -243,8 +242,10 @@ export async function roomsLifecycle(o: {
               [o.app],
             )
           ).rowCount
-        )
+        ) {
+          error = "An engine transaction remains unconfirmed; reconcile its receipt and nonce before renewal";
           return;
+        }
         if (
           await submit(
             prefix + ":close",

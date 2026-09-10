@@ -41,6 +41,7 @@ import {EngineStream,engineTuple} from "../../shared/engine-stream";
 import {EngineFeed} from "../../shared/engine-feed";
 import {engineCooldownMs} from "../../shared/engine-transport";
 import {SessionUnavailable,SessionRejected,serviceError,publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
+import {assertRoomsEngineAvailable,RoomsEngineUnavailable} from "../../shared/rooms-availability";
 import {overlayPresence} from "./rooms-presence";
 import {recordRpc,measuredFetch} from "../../shared/rpc-metrics";
 import {createRpcDiagnostics} from "./rpc-diagnostics";
@@ -171,6 +172,7 @@ export async function createRoomsCoordinator(o: Options) {
     lastEngineSeen = 0,
     lastCheck = 0,
     lastError = "Connecting to the game service",
+    lastErrorCode = "ENGINE_CONNECTING",
     cycle = false,
     lastEpoch = -1,
     legacyAt = 0,
@@ -410,6 +412,7 @@ export async function createRoomsCoordinator(o: Options) {
         process.env.ROOMS_ADMISSION_ENABLED === "true" && (lifecycle?.available() ?? true),
       maintenance:lifecycle?.status(),
       error: online ? "" : lastError,
+      errorCode: online ? undefined : lastErrorCode,
     };
   }
   let notifying=false;
@@ -674,16 +677,14 @@ export async function createRoomsCoordinator(o: Options) {
     if (cycle || Date.now() < maintenanceRetryAt) return;
     if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
       online=false;admissionHealthy=false;lastCheck=Date.now();
+      lastErrorCode='ENGINE_RENEWING';
       lastError='The arcade is renewing its delegation. Payments continue in the background.';
       return;
     }
     cycle = true;
+    lastCheck = Date.now();
     try {
       const status = await client.status();
-      if (status.app.toLowerCase() !== app || status.chainId !== 4242) {
-        online = false;
-        throw new Error("Engine deployment mismatch.");
-      }
       lastEngineSeen = Date.now();
       const delegation = await base.readContract({
         address: manifest.hub,
@@ -691,21 +692,9 @@ export async function createRoomsCoordinator(o: Options) {
         functionName: "sessionOf",
         args: [app, zeroHash],
       });
-      if (
-        status.app.toLowerCase() !== app ||
-        status.chainId !== 4242 ||
-        delegation.status !== 1 ||
-        delegation.expiresAt <= BigInt(Math.floor(Date.now() / 1000) + 40) ||
-        BigInt(status.epoch) !== delegation.epoch
-      ) {
-        online = false;
-        ratings.clear();
-        await db.query(
-          "UPDATE il_results SET verified=false,published=false WHERE app=$1",
-          [app],
-        );
-        throw new Error("The game service is unavailable. Please wait.");
-      }
+      // Expiry alone does not invalidate historical results. Their existing
+      // audit still checks publication/contestation against Monad separately.
+      assertRoomsEngineAvailable(app,status,delegation,Math.floor(Date.now()/1000));
       if (lastEpoch !== -1 && lastEpoch !== status.epoch) ratings.clear();
       if(lastEpoch!==status.epoch)feed.invalidate();
       lastEpoch = status.epoch;
@@ -713,6 +702,7 @@ export async function createRoomsCoordinator(o: Options) {
       admissionHealthy = true;
       lastCheck = Date.now();
       lastError = "";
+      lastErrorCode = "";
       const pendingJob = (
         await db.query(
           "SELECT id FROM il_engine_jobs WHERE app=$1 AND status='pending' LIMIT 1",
@@ -915,13 +905,24 @@ export async function createRoomsCoordinator(o: Options) {
       });
       await notify();
     } catch (e) {
+      if(e instanceof RoomsEngineUnavailable){
+        maintenanceRetryAt=Date.now()+e.retryMs;online=false;admissionHealthy=false;
+        lastError=e.message;lastErrorCode=e.code;
+        if(!['ENGINE_DELEGATION_EXPIRED','ENGINE_DELEGATION_ENDING'].includes(e.code)){
+          ratings.clear();
+          await db.query("UPDATE il_results SET verified=false,published=false WHERE app=$1",[app]);
+        }
+        void notify();return;
+      }
       if(publicationUnavailable(e)){
         maintenanceRetryAt=Date.now()+30000;online=false;admissionHealthy=false;
         lastError=new EnginePublicationUnavailable().message;
+        lastErrorCode='ENGINE_PUBLICATION_UNAVAILABLE';
         recordRpc({at:Date.now(),target:"interlude",method:"publication.unavailable",status:503,ms:0,source:"cache"});
         void notify();return;
       }
       const retryMs = engineReadRetryMs(e);
+      lastErrorCode=retryMs?'ENGINE_RATE_LIMIT':'ENGINE_CHECK_FAILED';
       if (retryMs) {
         maintenanceRetryAt = Date.now() + retryMs;
         console.warn("Rooms node rate limited", json({app, retryMs}));
@@ -963,6 +964,8 @@ export async function createRoomsCoordinator(o: Options) {
           maintenance:lifecycle?.status(),
           checkedAt: lastCheck,
           error: lastError,
+          errorCode: lastErrorCode || undefined,
+          retryAt: maintenanceRetryAt > Date.now() ? maintenanceRetryAt : undefined,
           stateTransport:streamEnabled?"events":"polling",
         });
         return true;
