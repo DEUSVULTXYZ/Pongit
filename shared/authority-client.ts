@@ -191,7 +191,7 @@ export function logTransition(
   logger: (
     message: string,
     value: ReturnType<typeof transitionNotice>,
-  ) => void = console.info,
+  ) => void = t.next === 1 || t.next === 2 ? console.warn : console.info,
 ) {
   logger("PONGIT execution transition", transitionNotice(t));
 }

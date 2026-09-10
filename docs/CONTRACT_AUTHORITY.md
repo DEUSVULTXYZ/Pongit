@@ -2,6 +2,8 @@
 
 Status: preparation branch only. No production contract, environment variable, database, user session or deployment manifest is changed by this work. The current site keeps its existing coordinator and financial deployments.
 
+The requested deployment target is now the existing production testnet site, without a separate preproduction site. Interlude is the preferred engine; Monad is its protocol-gated fallback, not a temporary default. That authorization does not supply the missing Chaos proof transport or the unfinished client integration. The technical blockers below still prevent activation.
+
 The candidate moves admission decisions into contracts. It does **not** establish that the hosted Interlude operator can safely publish this larger state surface. `scripts/authority-preflight.ts --require-ready` deliberately fails while the qualification gates below remain open.
 
 ## Contracts and boundaries
@@ -76,6 +78,18 @@ Candidates initialize in Monad for isolated testing. An eventual production init
 
 Return is administrator-only, requires no active games/proposals, sealed finance and a supported proof verifier. The new delegation must be opened successfully; `confirmInterlude` checks its epoch and expiry. Node health/publication verification remains an operator qualification task, not a fact inferred from that last transaction alone. Admin and browser diagnostics can use `ExecutionChanged` and `shared/authority-client.ts::logTransition` without including grants, signatures or private data.
 
+### Recovery service and warnings
+
+`shared/authority-recovery.ts` defines the engine policy. A healthy delegation continues on Interlude. Rate limiting or a single failed request pauses admissions without changing engines. Non-rate-limit failure lasting at least fifteen seconds across three observations also needs the hub's publication-silence condition before requesting recovery. Delegation expiry or an already closed delegation can independently permit that request. A challenged delegation blocks completion. Monad admission begins only after the canonical controller reports `Monad` and the hub reports `None`.
+
+`shared/authority-recovery-source.ts` reads the actual controller and hub at one Monad block, validates the configured hub and rechecks the block hash. It rejects the engine chain as a source of fallback authority. This is an RPC adapter, not a cryptographic proof of Monad state inside Interlude; it does not resolve the Chaos proof gate.
+
+`relayer/src/authority-recovery.ts` provides a single-flight worker with a second observation before submission. Recovery operations are identified by chain, arena, execution generation, delegation epoch and action. The injected persistent nonce journal must record signed bytes before broadcasting. Submitted or uncertain operations are reconciled, never treated as missing because a response was lost. Confirmed failures require inspection. Sponsor unavailability leaves the operation waiting and never charges a player. The worker does not open a new Interlude delegation automatically.
+
+The `pongit.execution` diagnostic distinguishes `actual`, `requested` and `status`, with a UTC timestamp, generation, epoch, block/hash and transaction hash when available. Recovery, fallback, startup and blocked states use warning severity. Repeated identical observations are suppressed. Worker failures report a normalized stage without raw RPC exceptions, credentials, signatures or private content. `logTransition` also uses warning severity for confirmed transitions to Recovery or Monad.
+
+These modules remain unconnected to production. Deploying them alone would not enable fallback on the older immutable arena. Production still needs the new arena, finance proof qualification, generation-aware client routing and persistent sponsor integration.
+
 An engine retains a pinned view until protocol recovery. The simulated dual-chain tests are not evidence that a hosted node stopped accepting its old epoch. Test that behavior with the operator, including SDK revocation visibility, before activating automatic recovery. No browser may continue using a stale node after the base controller changes generation.
 
 ## Ranking and migration
@@ -107,6 +121,7 @@ Run on an isolated VPS runner using the repository's existing toolchain:
 ```sh
 forge test --root contracts
 node --import tsx --test tests/authority.test.ts
+node --import tsx --test tests/authority-recovery.test.ts
 npm run typecheck
 node --import tsx scripts/authority-preflight.ts
 node --import tsx scripts/differential-interlude.ts

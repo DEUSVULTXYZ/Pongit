@@ -1,0 +1,53 @@
+{
+  "candidate": "contract-authority",
+  "recordedAt": "2026-09-10T22:32:09.267Z",
+  "baseCandidateCommit": "dbc48380a284526a07015d5c409b0de3fb24161d",
+  "requestedDeploymentTarget": "Existing production testnet site; no separate preproduction site",
+  "preferredEngine": "Interlude",
+  "fallback": "Monad, after canonical hub recovery and contract transition",
+  "productionChanged": false,
+  "deployed": false,
+  "connectedToProductionClient": false,
+  "sourceRevision": "The commit containing this report; LF-normalized SHA-256 below",
+  "typescript": {
+    "newRecoveryTestsPassed": 18,
+    "combinedCandidateTestsPassed": 24,
+    "failed": 0,
+    "repositoryTypecheck": "passed",
+    "commands": [
+      "node --import tsx --test tests/authority.test.ts tests/authority-recovery.test.ts",
+      "npm run typecheck"
+    ],
+    "environment": "Local Node.js, controlled journal and RPC responses. No services, chain writes or production keys."
+  },
+  "scope": [
+    "Protocol timing and challenge guards",
+    "No fallback on isolated network errors or rate limiting",
+    "Persistent journal contract, concurrent trigger deduplication and restart reconciliation",
+    "Uncertain receipt, failed submission, missing sponsorship and generation changes",
+    "Monad RPC adapter pinned to one rechecked canonical block; wrong-chain/hub rejection",
+    "Warnings distinguish actual state from requested transition, suppress repeats and exclude raw exceptions"
+  ],
+  "notValidated": [
+    "Hosted Interlude recovery cycle",
+    "Production sponsor journal wiring",
+    "End-to-end candidate UI",
+    "Chaos verified proof transport"
+  ],
+  "priorContractAndPhysicsEvidence": "./validation.json",
+  "newContractChanges": false,
+  "dependencyChanges": false,
+  "secretAudit": {
+    "filesChecked": 7,
+    "findings": []
+  },
+  "sourceHashes": {
+    "shared/authority-client.ts": "d5dfdfc33673c1ad4613694fcd0f811e566413b28c7bf92205ebf2e07bc1edf5",
+    "shared/authority-recovery.ts": "3900ac23e57867ddb10aefa08bcc92023cbfd2d02ad42ca1cdd0de67b4951a3c",
+    "shared/authority-recovery-source.ts": "a65ff1198fff21bdf5de82d1edcaf73e0deab089170bfa5c73eeae20b10547a3",
+    "relayer/src/authority-recovery.ts": "0232e10c5bc80169ebee243b3eb3e659153b8ee68915183b8c3441c8bb112f9f",
+    "tests/authority-recovery.test.ts": "2687cad47fff0c61aad385e6d21cb308013bb447bdafd6049503520e45a33285",
+    "docs/CONTRACT_AUTHORITY.md": "ca118279e844395bfb7ba056e3493544ae86e3a89c2c374afa9e0d5837e307e9",
+    "docs/AUTHORITY_QUALIFICATION.md": "51e8b251f2fa0414af1b64f9b902110c3c9fccb76cbcb331867d9b3ffcb06908"
+  }
+}

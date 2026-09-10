@@ -2,6 +2,8 @@
 
 Status: HOLD. This document records candidate evidence, not approval to migrate.
 
+The owner subsequently authorized direct production testing and rejected a temporary Monad-only deployment. The target is Interlude first, protocol-gated Monad fallback and warning logs. There is no requirement to create a preproduction site. HOLD here denotes missing technical capability and integration, not missing deployment permission.
+
 Prepared on 2026-09-10 with Solidity 0.8.30, Cancun, via IR, optimizer 200. The arena's runtime is 24,524 bytes (52 bytes below EIP-170); adding code to it requires rechecking that limit. Prefer the fixed actions module for new application methods.
 
 ## Verified scope
@@ -13,6 +15,8 @@ The final contract run passed **188 tests across 17 suites**, including 24 candi
 New integration tests attach the real V4 LMSR market and sealed betting vault to the candidate Monad adapter. They check actual paid-pressure counters, rally resumption, a permissionless payment to the winner's wallet, a losing position, participant betting restrictions and an exact refund after game timeout. Amounts and recipients are enforced by contracts. These are isolated EVM transactions, not transfers on public Monad Testnet.
 
 The review also closed a ranked-room invitation bypass, corrected duplicate execution-transition notifications and made maintenance deduplication distinguish successive room rotations and payout attempts. Interrupted encrypted saves verify their complete upload identity before resuming, including when the successful commit response was lost.
+
+The subsequent recovery implementation passed **18 additional TypeScript tests** (24 candidate TypeScript tests in the combined run), plus the repository typecheck. They cover strict protocol time boundaries, 429 isolation, expiry, challenge windows, concurrent triggers, journal reuse after restart, uncertain submissions, unavailable sponsorship, changed generations, reorganizations, pinned-block RPC reads and privacy-preserving warning logs. These tests use controlled ports/RPC responses; they do not constitute a live hosted recovery cycle or prove that production changed. See [recovery validation](evidence/authority/recovery-validation.json).
 
 Measured in the candidate EVM fixture:
 
@@ -50,8 +54,8 @@ External reads in an engine are pinned to the delegation base block. A client `r
 - Run a real Interlude → Recovery → Monad → Returning → Interlude cycle, including missing publication, expiry, challenge, response loss and stale-epoch rejection. Fixture tests cover contract guards, not the operator's behavior.
 - Verify prompt engine visibility of session revocations against pinned external hub reads. Browser checks alone cannot substitute for contract enforcement.
 - Freeze and validate the legacy source, import full Classic/Chaos registries, reserve usernames and migrate private data with user passkeys. Preserve legacy daily-opponent restrictions at cutover.
-- Connect the candidate contract client and sponsor journal to the UI under a private preview flag. The candidate utility modules are not installed in the production interface.
-- Run two players and spectators, F5/recovery, profile/private-data migration, encrypted contacts, consent timing, onchain notifications, actual automatic payouts and sponsor outages in that preview. Test physical-device passkey recovery separately.
+- Connect the candidate contract client and sponsor journal to the UI with generation-aware execution routing. The candidate utility modules are not installed in the production interface.
+- Run two players and spectators, F5/recovery, profile/private-data migration, encrypted contacts, consent timing, onchain notifications, actual automatic payouts and sponsor outages on the authorized production testnet deployment once the technical activation prerequisites are met. Test physical-device passkey recovery separately.
 - Test business-service shutdown and sponsor shutdown as distinct isolated deployments. Pure contract and client-port tests do not establish end-to-end website availability without the VPS.
 
 ## Reproducible artifacts
