@@ -16,7 +16,7 @@ const allowedComponents=new Set(["Callout","ContractTable","ArchitectureDiagram"
 const seen=new Set<string>();
 for(const page of catalog){
  if(seen.has(page.slug)||!/^([a-z0-9-]+\/)[a-z0-9-]+$/.test(page.slug))throw Error(`Duplicate/invalid slug ${page.slug}`);seen.add(page.slug);
- const source=await readFile(path.join(content,page.slug+".mdx"),"utf8"),tree=parser.parse(source) as Node,slugger=new GithubSlugger();
+ const source=new TextDecoder('utf-8',{fatal:true}).decode(await readFile(path.join(content,page.slug+".mdx"))),tree=parser.parse(source) as Node,slugger=new GithubSlugger();
  const headings:{id:string;text:string;level:number}[]=[];let section={id:"",title:page.title,text:page.description};const sections=[section];
  function walk(node:Node){
   if(node.type==="mdxjsEsm"||node.type==="mdxFlowExpression"||node.type==="mdxTextExpression")throw Error(`${page.slug}: executable MDX expressions are not needed`);
