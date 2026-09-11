@@ -1,0 +1,42 @@
+{
+  "policy": "early-published-testnet",
+  "chainId": 10143,
+  "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+  "steps": [
+    {
+      "name": "RoomsEarlySettlement",
+      "hash": "0x6874c631ce65a6f954aadbb9d2ba18a34497cf94bc350ef1a42a9ea918827a94",
+      "block": "61707339",
+      "contract": "0x078b0f2ed14307c716832a9893b2d36ff47b8525",
+      "gasUsed": "1703587"
+    },
+    {
+      "name": "RoomsVault",
+      "hash": "0xa7849f0c3966583a87d4de7b88323e387c3fb3ca22dd52e11d330136df707c44",
+      "block": "61707342",
+      "contract": "0xfdc2913d14c5d1da75b363ea8424b53eac7009f2",
+      "gasUsed": "1143950"
+    },
+    {
+      "name": "MarketV4",
+      "hash": "0xd21ace6f0172d076af8c4e8fa34cc78e774994b91b95a4b9c1a0546a0c4028db",
+      "block": "61707345",
+      "contract": "0x7222069ede3829e69645bcc6fa5c6def9f4bfaa9",
+      "gasUsed": "2837370"
+    },
+    {
+      "name": "register-market",
+      "hash": "0x68359edfca4eeb179d41e71b4127ad78168cb334b0cbf778837b5ed24a00caa3",
+      "block": "61707348",
+      "contract": null,
+      "gasUsed": "107605"
+    },
+    {
+      "name": "seal-vault",
+      "hash": "0x793b38615e30d969c40b651ad722f88ba6c58bf8117ec1751a7041d9632b6d8f",
+      "block": "61707351",
+      "contract": null,
+      "gasUsed": "59788"
+    }
+  ]
+}

@@ -33,9 +33,9 @@ The live transport is **Monad Testnet, chain 10143**, using public RPC services 
 
 The main [rooms arcade](/docs/playing/rooms) uses a multi-match Interlude engine. Mera signs a scoped SDK grant and game calls go directly to the hosted operator. Classic and Chaos results and ratings are computed in the Solidity application and published to Monad. The original single-arena lab and V4 are separate deployments.
 
-Chaos uses a testnet VPS attester to sign actual paid MON pressure at an exact between-rally cutoff. Its authority covers handicap input, not financial settlement. The Monad adapter accepts a terminal result only after hub status returns to None following closure and the challenge period. The rooms coordinator indexes its own market events and reconciles contracts; it does not claim the new rooms stream is already an Envio replay pipeline. Envio continues to index V1 to V4.
+Chaos uses a testnet VPS attester to sign actual paid MON pressure at an exact between-rally cutoff. Its authority covers handicap input, not financial settlement. The new testnet settlement adapter captures the first published terminal result while its session is not challenged. It deliberately accepts correction risk; previous adapters still require hub status None after closure and the challenge period. The rooms coordinator indexes its own market events and reconciles contracts; it does not claim the new rooms stream is already an Envio replay pipeline. Envio continues to index V1 to V4.
 
-Scheduled renewal drains games, closes the delegation, waits the one-hour challenge period, finalizes results and verifies the hosted node's new epoch. This creates a maintenance interval and delayed payouts. No browser prediction or VPS signature bypasses that wait.
+Scheduled renewal drains games, closes the delegation, waits the one-hour challenge period, finalizes results and verifies the hosted node's new epoch. This creates a game maintenance interval. New early testnet market payments do not wait for this lifecycle; previous market payments still do. No browser prediction or VPS signature can choose their winner.
 
 ## Trust and limits
 

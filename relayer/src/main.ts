@@ -269,8 +269,8 @@ async function enqueue(payload: RelayRequest, internal = false, value = 0n) {
     )
       return existing.rows[0];
     const pending = await pool.query(
-      "SELECT id,status FROM relay_jobs WHERE payload->>'contract'=$1 AND payload->>'functionName'=$2 AND payload->'args'=$3::jsonb AND payload->>'deployment'=$4 AND coalesce(payload->>'roomApp','')=$5 AND coalesce(payload->>'roomAction','')=$6 AND status IN ('queued','signed','sent') LIMIT 1",
-      [payload.contract,payload.functionName,json(payload.args),payload.deployment,payload.roomApp || "",payload.roomAction || ""],
+      "SELECT id,status FROM relay_jobs WHERE payload->>'contract'=$1 AND payload->>'functionName'=$2 AND payload->'args'=$3::jsonb AND payload->>'deployment'=$4 AND coalesce(payload->>'roomApp','')=$5 AND coalesce(payload->>'roomAction','')=$6 AND coalesce(payload->>'roomFinance','')=$7 AND status IN ('queued','signed','sent') LIMIT 1",
+      [payload.contract,payload.functionName,json(payload.args),payload.deployment,payload.roomApp || "",payload.roomAction || "",payload.roomFinance || ""],
     );
     if (pending.rows[0]) return pending.rows[0];
     id = keccak256(toHex(`${id}:retry:${head}`));

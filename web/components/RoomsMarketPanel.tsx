@@ -30,6 +30,8 @@ export function RoomsMarketPanel({
     setTransaction(undefined);
   }, [initialMatchId, player]);
   const [account, setAccount] = useState<any>(),
+    [accounts, setAccounts] = useState<any[]>([]),
+    [selectedFinance, setSelectedFinance] = useState<string>(),
     [market, setMarket] = useState<any>(),
     [side, setSide] = useState<0 | 1>(0);
   const [shares, setShares] = useState("0.001"),
@@ -70,7 +72,12 @@ export function RoomsMarketPanel({
           )
         : null;
       if (mounted.current && sequence === readSequence.current) {
-        setAccount(a);
+        const available=[a,...(a.archives||[])];
+        const target=q ? q.manifest.financeId||"" : selectedFinance??a.manifest.financeId??"";
+        const selectedAccount=available.find(x=>(x.manifest.financeId||"")===target);
+        if(!selectedAccount)throw new Error("Betting account unavailable. Refresh before signing.");
+        setAccounts(available);
+        setAccount(selectedAccount);
         setMarket(
           q ? { ...q, quoteSide: side, quoteShares: String(quantity) } : null,
         );
@@ -104,7 +111,7 @@ export function RoomsMarketPanel({
       clearTimeout(first);
       clearInterval(t);
     };
-  }, [player, matchId, side, shares]);
+  }, [player, matchId, side, shares, selectedFinance]);
   async function perform(action: () => Promise<any>) {
     if (inFlight.current) return;
     inFlight.current = true;
@@ -178,7 +185,8 @@ export function RoomsMarketPanel({
       amount = quantity,
       selected = side;
     return sign(async (wallet) => {
-      const fresh = await roomsApi("/interlude/finance");
+      const financeId=market.manifest.financeId||"";
+      const fresh = await roomsApi(`/interlude/finance?financeId=${encodeURIComponent(financeId)}`);
       const bet = {
         player,
         matchId: BigInt(matchId),
@@ -190,16 +198,21 @@ export function RoomsMarketPanel({
         deadline: BigInt(Math.floor(Date.now() / 1000) + 90),
       };
       const signature = await wallet.signTypedData({
-        domain: domain("PONG Market", 10143, account.manifest.market),
+        domain: domain("PONG Market", 10143, fresh.manifest.market),
         types: betTypes,
         primaryType: "Bet",
         message: bet,
       });
-      return roomsApi("/interlude/finance/buy", { bet, signature });
+      return roomsApi("/interlude/finance/buy", { bet, signature, financeId });
     });
   }
   return (
     <section className={styles.panel}>
+      {accounts.length>1 && <label>Betting account
+        <select aria-label="Betting account" value={account?.manifest.financeId||""} disabled={busy} onChange={e=>{setSelectedFinance(e.target.value);setMatchId(undefined);setMarket(undefined);}}>
+          {accounts.map(a=><option key={a.manifest.market} value={a.manifest.financeId||""}>{a.manifest.settlement ? "Current · Early testnet payouts" : "Previous · Finalized payouts"} · {mon(a.balance)} MON</option>)}
+        </select>
+      </label>}
       <div className="rooms-finance-balances">
         <div>
           <span>Wallet balance</span>
@@ -317,8 +330,9 @@ export function RoomsMarketPanel({
             </>
           )}
           <p>
-            Wallet payouts wait until the game's delegation has ended and its
-            challenge period has expired. A live result is not yet payable.
+            {market.settlementPolicy==="early-published-testnet"
+              ? "Testnet payouts use the first Interlude result published on Monad, without waiting for the challenge period. Later disputes are logged; completed payments are not reversed."
+              : "These previous markets pay after delegation closure and the challenge period. Their balances remain separate."}
           </p>
           {paid > 0n && (
             <div className="rooms-position">
@@ -332,7 +346,7 @@ export function RoomsMarketPanel({
                   : market.result[3] >= 3
                     ? "Payment pending"
                     : market.terminal
-                      ? "Result awaiting finality"
+                      ? market.settlementPolicy==="early-published-testnet" ? "Waiting for result publication" : "Result awaiting finality"
                       : "Position open"}
               </strong>
               <span>Paid: {mon(paid)} MON</span>
@@ -379,6 +393,7 @@ export function RoomsMarketPanel({
                   return roomsApi("/interlude/finance/credit", {
                     expires,
                     signature,
+                    financeId:account.manifest.financeId||"",
                   });
                 }),
               )
@@ -391,14 +406,15 @@ export function RoomsMarketPanel({
             onClick={() =>
               void perform(() =>
                 sign(async (wallet) => {
-                  const fresh = await roomsApi("/interlude/finance"),
+                  const financeId=account.manifest.financeId||"";
+                  const fresh = await roomsApi(`/interlude/finance?financeId=${encodeURIComponent(financeId)}`),
                     amount = BigInt(fresh.balance),
                     nonce = BigInt(fresh.nonce),
                     deadline = BigInt(Math.floor(Date.now() / 1000) + 90);
                   if (amount === 0n)
                     throw new Error("No betting credit to withdraw.");
                   const signature = await wallet.signTypedData({
-                    domain: domain("PONG Vault", 10143, account.manifest.vault),
+                    domain: domain("PONG Vault", 10143, fresh.manifest.vault),
                     types: withdrawTypes,
                     primaryType: "Withdraw",
                     message: {
@@ -410,6 +426,7 @@ export function RoomsMarketPanel({
                     },
                   });
                   return roomsApi("/interlude/finance/withdraw", {
+                    financeId,
                     player,
                     recipient: player,
                     amount,

@@ -138,3 +138,10 @@ These paths are under `/api`, use the rooms HttpOnly cookie, allowed Origin and 
 | POST `/interlude/finance/retry` | Match `id`; the server derives this account's fixed payout identifier |
 
 Financial mutations return the existing relayer job acknowledgement. `GET /jobs/:id` supplies the actual status and transaction hash. There is no public arbitrary `rooms` payload escape through `/relay`. All amounts and match ids are decimal strings; typed signatures bind chain 10143, exact contract and fresh sequential nonce. A quote is not a reservation. The game grant never signs a financial spend.
+
+
+## Room finance generations
+
+Authenticated `GET /interlude/finance` returns the current financial manifest, balances, nonces, history and `archives` for previous generations. Use `?financeId=` for the original room account or `?financeId=early-v1` for the early testnet account. Responses from `GET /interlude/markets/:id` include the match's fixed financial manifest and `settlementPolicy`.
+
+Financial POST requests for `buy`, `withdraw` and `credit` include `financeId` for the intended account. A match cannot be reassigned to another market. EIP-712 spending signatures still target the selected market or vault address. A mismatched generation is rejected before enqueueing. Internal relayer jobs preserve `roomApp` and optional `roomFinance`; historical jobs without `roomFinance` keep their original destinations.

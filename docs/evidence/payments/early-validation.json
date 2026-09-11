@@ -1,0 +1,51 @@
+{
+  "checkedAt": "2026-09-11T20:24:22.357858+00:00",
+  "contracts": {
+    "passed": 204,
+    "failed": 0,
+    "scope": "Full local Forge suite excluding opt-in AuthorityHubForkTest; includes seven new early settlement tests and unchanged legacy finality/solvency tests"
+  },
+  "typescript": {
+    "passed": 118,
+    "failed": 0,
+    "runtime": "Node 24, isolated VPS container"
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "docs": {
+    "articles": 26,
+    "sections": 160,
+    "linksAndImages": 49
+  },
+  "persistence": {
+    "database": "isolated PostgreSQL on VPS",
+    "rpc": "deterministic fixtures",
+    "generationRouting": true,
+    "withoutLobbyResult": true,
+    "restartWithoutDoublePayment": true,
+    "challengeAndCorrection": true,
+    "correctionRpcOutageRecovery": true,
+    "orphanedEvidenceRetained": true
+  },
+  "browser": {
+    "engineAndApi": "mocked; no real signatures or transfers",
+    "widths": [
+      390,
+      1440
+    ],
+    "currentAndPreviousBalances": true,
+    "earlyAndLegacyPolicy": true,
+    "withdrawalAccessible": true,
+    "noHorizontalOverflow": true
+  },
+  "publicationAudit": {
+    "tokenAndPrivateKeyLiteralScan": "no matches in publication files",
+    "privateDeploymentJournal": "outside repository"
+  },
+  "limits": [
+    "No live hosted multiplayer payout was possible during this check: production delegation expired and an existing engine command remains unconfirmed.",
+    "Early settlement begins after publication on Monad, not merely a live engine receipt.",
+    "Existing room markets retain their immutable finality gate.",
+    "No ordinary victory bonus; only existing winning positions and refunds pay."
+  ]
+}

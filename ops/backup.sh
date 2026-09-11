@@ -22,6 +22,9 @@ done
 if test -d /opt/pongit/secrets/rooms; then
   cp -a /opt/pongit/secrets/rooms "$target/rooms-secrets"
 fi
+if test -f /opt/pongit/shared/early-payment-deployment/deployment.json; then
+  cp /opt/pongit/shared/early-payment-deployment/deployment.json "$target/early-payment-deployment.json"
+fi
 cp RELEASE "$target/release.txt"
 sha256sum "$target"/*.dump > "$target/SHA256SUMS"
 touch "$target/complete"

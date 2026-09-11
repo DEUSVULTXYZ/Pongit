@@ -29,7 +29,7 @@ import { z } from "zod";
 import { roomsAbi as classicRoomsAbi } from "../../shared/abi-rooms";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { chaosOfferTypes } from "../../shared/rooms-chaos";
-import {createRoomsFinance} from "./rooms-finance";
+import {createRoomsFinanceRouter} from "./rooms-finance-router";
 import {loadRoomsFinance} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
 import {roomsRankingCandidates} from "./rooms-ranking";
@@ -134,7 +134,7 @@ export async function createRoomsCoordinator(o: Options) {
   const watched=new Map<string,()=>void>();
   const pendingPressure=new Map<string,Promise<void>>();
   const finance = chaosEnabled && o.financeConfig?.entries.some(x=>x.app.toLowerCase()===app) && o.enqueue
-    ? await createRoomsFinance({db,base,manifest:o.financeConfig.find(app),enqueue:o.enqueue}) : null;
+    ? await createRoomsFinanceRouter({db,base,entries:o.financeConfig.entries.filter(x=>x.app.toLowerCase()===app),enqueue:o.enqueue}) : null;
   if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED === "true" && !finance)throw new Error("Chaos requires its funded financial bridge");
   await db.query(`
  CREATE TABLE IF NOT EXISTS il_lobby(app text PRIMARY KEY,document jsonb NOT NULL);
@@ -160,7 +160,7 @@ export async function createRoomsCoordinator(o: Options) {
     { rooms: {}, queue: [], invites: [] },
   ]);
   const diagnostics=await createRpcDiagnostics(db,app);
-  const lifecycle=chaosEnabled&&finance&&o.financeConfig ? await roomsLifecycle({db,base,app,hub:manifest.hub,nodeUrl:manifest.node,adapter:o.financeConfig.find(app).adapter,engineStatus:()=>client.status(),engineActive:async()=>BigInt(await client.read("activeCount",[]) as bigint)}) : null;
+  const lifecycle=chaosEnabled&&finance&&o.financeConfig ? await roomsLifecycle({db,base,app,hub:manifest.hub,nodeUrl:manifest.node,adapter:o.financeConfig.find(app).adapter,beforeRenew:finance.beforeRenew,engineStatus:()=>client.status(),engineActive:async()=>BigInt(await client.read("activeCount",[]) as bigint)}) : null;
   if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED==='true' && !lifecycle && process.env.ROOMS_PRIVATE_FINANCE_TEST!=='true')throw new Error('Chaos requires a configured delegation lifecycle before opening to players');
   let publicLadder: Promise<any> | undefined, publicLadderAt = 0, publicLadderMode = -1;
   const sockets = new Map<

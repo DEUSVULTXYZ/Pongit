@@ -11,7 +11,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import type { Pool } from "pg";
 import { z } from "zod";
-import { roomsMarketAdapterAbi as adapterAbi } from "../../shared/abi-RoomsMarketAdapter";
+import {createSettlementAudit} from "./rooms-settlement-audit";
 import { roomsVaultAbi as vaultAbi } from "../../shared/abi-RoomsVault";
 import { marketV4Abi as marketAbi } from "../../shared/abis-v4";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
@@ -23,7 +23,7 @@ import {
   roomsCreditMessage,
 } from "../../shared/rooms-pressure";
 import type { RelayRequest } from "../../shared/protocol";
-import type { RoomsFinanceManifest } from "./rooms-finance-config";
+import {financeScope,financeAdapterAbi,type RoomsFinanceManifest} from "./rooms-finance-config";
 const idSchema = z
   .string()
   .regex(/^[0-9]+$/)
@@ -41,6 +41,7 @@ export async function createRoomsFinance(o: {
   enqueue: Enqueue;
 }) {
   const { db, base, manifest: m } = o;
+  const adapterAbi = financeAdapterAbi(m) as typeof import("../../shared/abi-RoomsMarketAdapter").roomsMarketAdapterAbi;
   if (!process.env.ROOMS_PRESSURE_KEY_FILE)
     throw new Error("Pressure signer file required");
   const key = JSON.parse(
@@ -113,12 +114,13 @@ export async function createRoomsFinance(o: {
  CREATE TABLE IF NOT EXISTS il_credits(app text NOT NULL,player text NOT NULL,job_id text NOT NULL,PRIMARY KEY(app,player));
  CREATE TABLE IF NOT EXISTS il_payment_receipts(app text NOT NULL,payout_id text NOT NULL,status text NOT NULL,tx_hash text NOT NULL,PRIMARY KEY(app,payout_id));
  `);
-  const app = m.app.toLowerCase();
+  const app = financeScope(m);
   const hub = await base.readContract({
     address: m.adapter,
     abi: adapterAbi,
     functionName: "hub",
   });
+  const settlementAudit=m.settlement ? await createSettlementAudit(db,base,m,hub) : null;
   const enqueue = (
     contract: RelayRequest["contract"],
     functionName: string,
@@ -130,6 +132,7 @@ export async function createRoomsFinance(o: {
       {
         deployment: "rooms",
         roomApp: m.app,
+        ...(m.financeId ? {roomFinance:m.financeId} : {}),
         roomAction,
         contract,
         functionName,
@@ -367,7 +370,7 @@ export async function createRoomsFinance(o: {
       }
       const pending = (
         await db.query(
-          "SELECT DISTINCT b.id FROM il_bettors b JOIN il_results r ON r.app=b.app AND r.id=b.id WHERE b.app=$1 AND r.phase>=3 AND NOT b.settled ORDER BY b.id LIMIT 20",
+          "SELECT DISTINCT b.id FROM il_bettors b WHERE b.app=$1 AND NOT b.settled ORDER BY b.id LIMIT 20",
           [app],
         )
       ).rows;
@@ -381,15 +384,17 @@ export async function createRoomsFinance(o: {
             })
           ).status === 0
         : false;
+      const early = m.settlement === "early-published-testnet";
       for (const row of pending) {
         const id = BigInt(row.id),
           result = await readAdapter("result", [id]);
         if (result[3] < 3) {
-          if (canFinalize)
+          const publishedHash = early || canFinalize ? await base.readContract({address:m.app,abi:roomsChaosAbi,functionName:"resultHashes",args:[id]}) : zeroHash;
+          if (publishedHash !== zeroHash && (early || canFinalize))
             try {
               await enqueue("game", "finalizeResult", [row.id]);
             } catch {
-              /* The contract rechecks finality at inclusion. */
+              /* The adapter checks publication, epoch and challenges again at inclusion. */
             }
           continue;
         }
@@ -467,7 +472,7 @@ export async function createRoomsFinance(o: {
       : null;
     const terminal = (
       await db.query("SELECT phase FROM il_results WHERE app=$1 AND id=$2", [
-        app,
+        m.app.toLowerCase(),
         id,
       ])
     ).rows[0];
@@ -492,7 +497,19 @@ export async function createRoomsFinance(o: {
       terminal: terminal?.phase >= 3,
       head,
       bridgeError: lastError,
+      settlementPolicy: m.settlement || "finalized",
     };
+  }
+  async function beforeRenew(){
+    if(!m.settlement)return;
+    // Capture every new market result before its hub epoch can change, even if
+    // the lobby missed an end event. Transfers themselves can finish afterwards.
+    const rows=(await db.query("SELECT DISTINCT id FROM il_bettors WHERE app=$1",[app])).rows;
+    for(const {id} of rows){
+      if((await readAdapter("result",[BigInt(id)]))[3]>=3)continue;
+      await enqueue("game","finalizeResult",[id]);
+      throw new Error("Waiting for published betting results to be captured before renewal");
+    }
   }
   async function route(
     path: string,
@@ -519,8 +536,8 @@ export async function createRoomsFinance(o: {
       ]);
       const history = (
         await db.query(
-          "SELECT b.id,r.phase,r.ended_at FROM il_bettors b LEFT JOIN il_results r ON r.app=b.app AND r.id=b.id WHERE b.app=$1 AND b.player=$2 ORDER BY r.ended_at DESC NULLS FIRST LIMIT 20",
-          [app, player],
+          "SELECT b.id,r.phase,r.ended_at FROM il_bettors b LEFT JOIN il_results r ON r.app=$3 AND r.id=b.id WHERE b.app=$1 AND b.player=$2 ORDER BY r.ended_at DESC NULLS FIRST LIMIT 20",
+          [app, player,m.app.toLowerCase()],
         )
       ).rows;
       return {
@@ -621,5 +638,5 @@ export async function createRoomsFinance(o: {
     }
     return undefined;
   }
-  return { pressure, audit, route, status: () => lastError };
+  return { manifest:m, pressure, beforeRenew, audit:async()=>{await Promise.all([audit(),settlementAudit?.audit()]);}, route, hasBook:async(id:string)=>BigInt((await readMarket("books",[BigInt(id)]))[2])>0n, status: () => [lastError,settlementAudit?.status()].filter(Boolean).join("; ") };
 }

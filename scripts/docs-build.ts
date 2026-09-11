@@ -53,7 +53,7 @@ const contracts=[];for(let d=deployment;d;d=d.legacy){
 }
 const roomManifest=JSON.parse(await readFile(path.join(root,"deployments/interlude-rooms.json"),"utf8"));
 const financeManifests=JSON.parse(await readFile(path.join(root,"deployments/rooms-finance.json"),"utf8"));
-const roomFinance=financeManifests.find((m:any)=>m.app.toLowerCase()===roomManifest.app.toLowerCase());
+const roomFinance=financeManifests.filter((m:any)=>m.app.toLowerCase()===roomManifest.app.toLowerCase()).at(-1);
 const rooms={chainId:roomManifest.baseChainId,rulesVersion:roomManifest.rulesVersion,startBlock:roomFinance?.startBlock||null,
  addresses:[{name:"Rooms game",address:roomManifest.app},...(roomFinance?[{name:"Market window / result adapter",address:roomFinance.adapter},{name:"Rooms vault",address:roomFinance.vault},{name:"Rooms market",address:roomFinance.market}]:[])]};
 for(const a of rooms.addresses)if(!/^0x[\da-fA-F]{40}$/.test(a.address))throw Error("Invalid rooms contract address");

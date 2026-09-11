@@ -31,6 +31,7 @@ export const contracts = {
 };
 export type ContractName = keyof typeof contracts;
 export type RelayRequest = {
+  roomFinance?: string;
   roomAction?: string;
   roomApp?: Address;
   deployment?: DeploymentId;

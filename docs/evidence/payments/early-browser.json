@@ -1,0 +1,21 @@
+{
+  "viewports": [
+    {
+      "width": 390,
+      "currentAndPreviousAccounts": true,
+      "earlyPolicy": true,
+      "previousPolicy": true,
+      "withdrawalAccessible": true,
+      "noOverflow": true
+    },
+    {
+      "width": 1440,
+      "currentAndPreviousAccounts": true,
+      "earlyPolicy": true,
+      "previousPolicy": true,
+      "withdrawalAccessible": true,
+      "noOverflow": true
+    }
+  ],
+  "errors": []
+}

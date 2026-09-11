@@ -1,12 +1,18 @@
 <Callout title="Testnet preview">Classic and Chaos rooms are open for testing. The hosted RPC may rate-limit requests and pause gameplay. This deployment is still undergoing multiplayer, payout and renewal validation. V4 balances and financial features remain separate.</Callout>
 
-## Rooms payouts wait for finality
+## Early testnet room payouts
 
-Chaos rooms use their own Monad market and vault. A live winner or published result is not yet sufficient for payment: the delegation must close, its **one-hour challenge period** must elapse without an unresolved challenge, and the hub must release it. The adapter then reads and freezes the actual terminal result. The VPS pressure attester cannot select that result.
+New Chaos markets use the first terminal Interlude result **published on Monad**, without waiting for delegation closure or the challenge period. This is an explicit testnet policy: a later successful challenge can change the result after the wallet has already received test MON. It is not irreversible protocol finality or a promise of instant delivery.
 
-This can delay winnings until the current daily delegation closes plus the challenge period. Scheduled renewal pauses new games during that process. Receiving a payment requires neither a passkey ceremony nor an online recipient. Normal match wins award ELO only, never a new MON prize.
+The adapter reads the actual published participants, winner and result hash. Neither the VPS nor a caller supplies a winner. The first accepted result is fixed for that market; later disputes and corrections are recorded in a persistent operator audit, without reversing completed payments or paying a corrected winner again. A challenge already open at acceptance delays settlement until it is resolved.
 
-Open your account, **Betting credit & wallet**, then **Your recent positions**. States include **Position open**, **Result awaiting finality**, **Payment pending**, **Paid to your wallet**, **Payment delayed** and **Losing position Â· No payout**. **Payment transaction** opens the receipt. **Retry payment** retries only a reserved debt to its fixed beneficiary. The worker attempts up to six automatic transfers before leaving further retries to the account. Funding and RPC outages can delay discovery or submission.
+Receiving a payment needs neither a passkey ceremony nor an online recipient. Ordinary matches award ELO only, never a new MON prize. Game delegation renewal remains a separate lifecycle and can still pause new games; early payouts do not remove that limitation.
+
+Open your account, **Betting credit & wallet**, then **Your recent positions**. States include **Position open**, **Waiting for result publication**, **Payment pending**, **Paid to your wallet**, **Payment delayed** and **Losing position · No payout**. **Payment transaction** opens the receipt. **Retry payment** retries only a reserved debt to its fixed beneficiary. The worker attempts up to six automatic transfers before leaving further retries to the account. Funding and RPC outages can delay discovery or submission.
+
+## Previous room markets
+
+Existing markets remain bound to their original immutable adapter and vault. They still wait for delegation closure and the protocol challenge period. Choose **Betting account** to inspect current or previous betting credit and withdraw with a passkey. No balances or pending transactions are transferred to the new contracts. Each match keeps its original market.
 
 ## V4 payments remain separate
 

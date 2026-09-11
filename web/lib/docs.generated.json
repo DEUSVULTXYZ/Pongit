@@ -13,7 +13,7 @@
       "title": "Welcome to PONGIT",
       "description": "An arcade for good rivals, close matches and verifiable results.",
       "group": "Getting started",
-      "updated": "2026-09-08",
+      "updated": "2026-09-11",
       "keywords": [
         "overview",
         "testnet",
@@ -195,7 +195,7 @@
       "title": "Rooms & matchmaking",
       "description": "Classic and Chaos, private contacts and rotating shared cabinets.",
       "group": "Playing",
-      "updated": "2026-09-08",
+      "updated": "2026-09-11",
       "keywords": [
         "rooms",
         "contacts",
@@ -641,7 +641,7 @@
       "title": "Automatic payouts & refunds",
       "description": "Winning bets, tournament prizes and refunds go to your wallet automatically.",
       "group": "Betting & payments",
-      "updated": "2026-09-08",
+      "updated": "2026-09-11",
       "keywords": [
         "claim",
         "payment",
@@ -652,8 +652,13 @@
       ],
       "headings": [
         {
-          "id": "rooms-payouts-wait-for-finality",
-          "text": "Rooms payouts wait for finality",
+          "id": "early-testnet-room-payouts",
+          "text": "Early testnet room payouts",
+          "level": 2
+        },
+        {
+          "id": "previous-room-markets",
+          "text": "Previous room markets",
           "level": 2
         },
         {
@@ -791,7 +796,7 @@
       "title": "Architecture & integrations",
       "description": "How the browser, relayer, Envio and Monad work together.",
       "group": "Technical reference",
-      "updated": "2026-09-08",
+      "updated": "2026-09-11",
       "keywords": [
         "Mera",
         "Envio",
@@ -879,7 +884,7 @@
       "title": "Contracts & deployments",
       "description": "Public addresses and versioned references for V4 and its archives.",
       "group": "Technical reference",
-      "updated": "2026-09-08",
+      "updated": "2026-09-11",
       "keywords": [
         "addresses",
         "V1",
@@ -962,7 +967,7 @@
       "title": "HTTP API & WebSocket reference",
       "description": "Read application data and understand the authenticated transaction interfaces.",
       "group": "Technical reference",
-      "updated": "2026-09-09",
+      "updated": "2026-09-11",
       "keywords": [
         "API",
         "HTTP",
@@ -1025,6 +1030,11 @@
           "id": "rooms-finance-interfaces",
           "text": "Rooms finance interfaces",
           "level": 2
+        },
+        {
+          "id": "room-finance-generations",
+          "text": "Room finance generations",
+          "level": 2
         }
       ]
     },
@@ -1033,7 +1043,7 @@
       "title": "Administration & operations",
       "description": "Operate the testnet service while preserving results and financial rights.",
       "group": "Technical reference",
-      "updated": "2026-09-09",
+      "updated": "2026-09-11",
       "keywords": [
         "admin",
         "pause",
@@ -1075,6 +1085,11 @@
         {
           "id": "state-transport-and-diagnostics",
           "text": "State transport and diagnostics",
+          "level": 2
+        },
+        {
+          "id": "early-payment-audit",
+          "text": "Early payment audit",
           "level": 2
         }
       ]
@@ -1213,7 +1228,7 @@
   "rooms": {
     "chainId": 10143,
     "rulesVersion": 4,
-    "startBlock": "61018143",
+    "startBlock": "61707339",
     "addresses": [
       {
         "name": "Rooms game",
@@ -1221,15 +1236,15 @@
       },
       {
         "name": "Market window / result adapter",
-        "address": "0xef58b351362dd816fcc3c512f00b92b89bb2bb2b"
+        "address": "0x078b0f2ed14307c716832a9893b2d36ff47b8525"
       },
       {
         "name": "Rooms vault",
-        "address": "0xfa37752cff3bb9806bae84d5e028b20e951817e9"
+        "address": "0xfdc2913d14c5d1da75b363ea8424b53eac7009f2"
       },
       {
         "name": "Rooms market",
-        "address": "0x52f3058e02fc3d2dc585ee7d29aa877b8e28afb9"
+        "address": "0x7222069ede3829e69645bcc6fa5c6def9f4bfaa9"
       }
     ]
   }

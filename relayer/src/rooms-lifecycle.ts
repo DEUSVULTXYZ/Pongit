@@ -44,6 +44,7 @@ export async function roomsLifecycle(o: {
   nodeUrl: string;
   engineStatus: () => Promise<any>;
   engineActive: () => Promise<bigint>;
+  beforeRenew?: () => Promise<void>;
 }) {
   const file = process.env.ROOMS_LIFECYCLE_KEY_FILE;
   if (!file) return null;
@@ -311,6 +312,7 @@ export async function roomsLifecycle(o: {
         if (process.env.ROOMS_LIFECYCLE_HOLD_RENEW === "true") return;
         await transition("renewing");
       }
+      await o.beforeRenew?.();
       await submit(
         prefix + ":renew",
         o.app,

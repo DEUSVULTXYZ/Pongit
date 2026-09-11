@@ -16,5 +16,16 @@
     "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
     "startBlock": "61018143",
     "chainId": 10143
+  },
+  {
+    "financeId": "early-v1",
+    "settlement": "early-published-testnet",
+    "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+    "adapter": "0x078b0f2ed14307c716832a9893b2d36ff47b8525",
+    "market": "0x7222069ede3829e69645bcc6fa5c6def9f4bfaa9",
+    "vault": "0xfdc2913d14c5d1da75b363ea8424b53eac7009f2",
+    "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+    "startBlock": "61707339",
+    "chainId": 10143
   }
 ]

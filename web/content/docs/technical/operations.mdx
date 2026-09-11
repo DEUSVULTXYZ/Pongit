@@ -47,3 +47,10 @@ Keep rooms tables, accepted finance manifests and payment workers when rolling t
 The additive `il_presence`, `il_result_pending` and `il_rpc_diagnostics` tables separate heartbeats, durable result processing and private measurements from the lobby document. Never drop the pending-result table during rollback: retained results must be reconciled before removing their jobs. Diagnostics aggregate counts per second, distinguish network calls from locally blocked attempts and retain data for seven days. They are not an independent source of scores, grants or payouts.
 
 Profile engine traffic by method and component, not just the total HTTP count. PONGIT's own account/IP guards are separate from an upstream quota. A 429 alone does not establish that quota. Include UTC times, method, response id and measured traffic windows when reporting an upstream rejection.
+
+
+## Early payment audit
+
+New testnet markets accept the first published Interlude result without the challenge wait. The relayer persists acceptance metadata, hub challenges, availability disputes, resolutions, unwinds and result-hash corrections in PostgreSQL. Inspect `il_settlement_challenge_report` and `il_settlement_checks`; join market payment receipts to verify actual transfers. Console events use `rooms-settlement-audit` and `rooms-accepted-result-corrected`. A challenge is not necessarily proven fraud. The audit records canonical and orphaned observations and does not issue compensation.
+
+Each market and queued transaction keeps its financial generation. Before renewing the game's delegation, the worker captures unsettled new-market results so a new epoch cannot strand them. Existing financial contracts and withdrawal rights remain available separately. See the repository's `docs/EARLY_TESTNET_PAYMENTS.md` for deployment and rollback procedures.
