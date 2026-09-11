@@ -300,6 +300,51 @@ contract AuthorityArenaTest is Test {
         assertEq(ops.participation(vm.addr(3)), 0);
     }
 
+    function testReturningWinnerRejoinsAtEndAfterDeclining() public {
+        (uint256 room, uint256 id) = start(ALICE, BOB, 0, false);
+        this.baseCall(3, abi.encodeCall(ops.joinRoom, (room)));
+        this.baseCall(4, abi.encodeCall(ops.joinRoom, (room)));
+        this.baseCall(ALICE, abi.encodeCall(g.concede, (id)));
+        uint256 next = ops.propose(room);
+        this.baseCall(BOB, abi.encodeCall(ops.declineProposal, (next)));
+        this.baseCall(BOB, abi.encodeCall(ops.rejoinQueue, (room)));
+        Lobby.Proposal memory p = ops.getProposal(ops.propose(room));
+        assertEq(p.a, vm.addr(3), "returning winner must not jump queue");
+        assertEq(p.b, vm.addr(4));
+    }
+
+    function testWinnerWhoLeavesCannotRejoinAheadOfWaitingMembers() public {
+        (uint256 room, uint256 id) = start(ALICE, BOB, 0, false);
+        this.baseCall(3, abi.encodeCall(ops.joinRoom, (room)));
+        this.baseCall(4, abi.encodeCall(ops.joinRoom, (room)));
+        this.baseCall(ALICE, abi.encodeCall(g.concede, (id)));
+        this.baseCall(BOB, abi.encodeCall(ops.leaveRoom, ()));
+        this.baseCall(BOB, abi.encodeCall(ops.joinRoom, (room)));
+        Lobby.Proposal memory p = ops.getProposal(ops.propose(room));
+        assertEq(p.a, vm.addr(3));
+        assertEq(p.b, vm.addr(4));
+    }
+
+    function testInviteDoesNotSilentlyChangeSignedMode() public {
+        this.baseCall(ALICE, abi.encodeCall(ops.createRoom, (uint8(0))));
+        vm.expectRevert("invitation mode");
+        this.baseCall(ALICE, abi.encodeCall(ops.inviteSomeone, (vm.addr(BOB), uint8(1))));
+        assertEq(ops.participation(vm.addr(BOB)), 0);
+    }
+
+    function testBlockingBeforeSecondConsentPreventsMatchCreation() public {
+        this.baseCall(ALICE, abi.encodeCall(ops.queue, (uint8(0))));
+        this.baseCall(BOB, abi.encodeCall(ops.queue, (uint8(0))));
+        uint256 id = ops.getRoom(ops.matchmake(0, 32)).proposal;
+        this.baseCall(ALICE, abi.encodeCall(ops.acceptProposal, (id)));
+        this.baseCall(ALICE, abi.encodeCall(ops.blockPlayer, (vm.addr(BOB), true)));
+        vm.expectRevert("blocked");
+        this.baseCall(BOB, abi.encodeCall(ops.acceptProposal, (id)));
+        assertEq(g.activeCount(), 0);
+        this.baseCall(ALICE, abi.encodeCall(ops.declineProposal, (id)));
+        assertEq(ops.getProposal(id).status, 4);
+    }
+
     function testReturnLogsOnlyPendingThenConfirmedStates() public {
         vm.recordLogs();
         g.returnToInterlude();

@@ -75,8 +75,8 @@ export async function readAuthorityLeaderboard(
   const snapshot = await port.snapshot();
   const rows: Array<Rating & { player: Address }> = [];
   const seen = new Set<string>();
-  let total = 1n;
-  for (let offset = 0n; offset < total; offset += 100n) {
+  let total: bigint | undefined;
+  for (let offset = 0n; total === undefined || offset < total; offset += 100n) {
     signal?.throwIfAborted();
     const [players, count] = await port.page(
       mode,
@@ -84,8 +84,12 @@ export async function readAuthorityLeaderboard(
       100n,
       snapshot.revision,
     );
+    if (count < 0n || (total !== undefined && count !== total))
+      throw new Error("Leaderboard snapshot changed. Reload it.");
     total = count;
-    if (players.length === 0 && offset < total)
+    const remaining = total > offset ? total - offset : 0n;
+    const expected = Number(remaining > 100n ? 100n : remaining);
+    if (players.length !== expected)
       throw new Error("Leaderboard snapshot is discontinuous. Reload it.");
     // Bounded concurrency keeps a large board from flooding the RPC.
     for (let i = 0; i < players.length; i += 8) {

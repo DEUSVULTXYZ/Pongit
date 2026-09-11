@@ -2,6 +2,8 @@
 
 Status: candidate development. No replacement application has been deployed or activated. Production remains on its existing contracts and adapters. The owner's requested scope includes the contract-owned lobby, rooms, profiles, encrypted account data, rankings and the Interlude-first execution controller with protocol-gated Monad recovery. Recreating only the older coordinator game would not implement that request.
 
+Subsequent testing on the same day found a new admission blocker: `ValidatorAtCapacity()` with `maxDelegations = 16`. See the [expanded test audit and current operator message](AUTHORITY_TEST_AUDIT.md), including a direct read-only Monad simulation. The observations below document the earlier publication recovery and remain historical.
+
 ## Observed deployment
 
 Read-only observations on 2026-09-11:

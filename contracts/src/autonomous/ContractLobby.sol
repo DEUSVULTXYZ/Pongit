@@ -262,6 +262,7 @@ library ContractLobby {
         uint8 bit = actor == p.a ? 1 : 2;
         if (p.status == 2 && p.accepted & bit != 0) return false;
         require(p.status == 1 && block.timestamp <= p.expires && S.get(w, 13, p.room, 3) == id, "proposal expired");
+        require(!_blocked(w, p.a, p.b), "blocked");
         if (p.accepted & bit != 0) return false;
         p.accepted |= bit;
         S.set(w, 14, id, 3, uint256(p.expires) | (uint256(p.accepted) << 64) | (uint256(p.accepted == 3 ? 2 : 1) << 72));
@@ -275,6 +276,7 @@ library ContractLobby {
         Member memory m = member(w, r, i);
         m.away = true;
         _member(w, r, i, m);
+        if (address(uint160(S.get(w, 13, r, 4))) == p) S.set(w, 13, r, 4, 0);
     }
 
     function decline(mapping(bytes32 => uint256) storage w, address actor, uint256 id) public {
@@ -324,6 +326,7 @@ library ContractLobby {
             _release(w, id);
         }
         _member(w, r, i, Member(address(0), 0, 0, false));
+        if (address(uint160(S.get(w, 13, r, 4))) == actor) S.set(w, 13, r, 4, 0);
         _occupy(w, actor, 0);
         S.set(w, 13, r, 2, S.get(w, 13, r, 2) - 1);
         if (address(uint160(S.get(w, 13, r, 1))) == actor) {

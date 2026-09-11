@@ -219,6 +219,23 @@ test("grants bind generation and private transition diagnostics contain no signa
     "transactionHash",
   ]);
 });
+
+test("leaderboard rejects missing pages and totals changing inside one snapshot", async () => {
+  const players = Array.from({length: 105}, (_, i) => getAddress(toHex(BigInt(i + 1), {size: 20})));
+  for (const problem of ["short", "changed", "extra", "negative"] as const) {
+    await assert.rejects(readAuthorityLeaderboard({
+      snapshot: async () => ({revision: 10n, generation: 2n}),
+      page: async (_, offset) => {
+        if (problem === "short" && offset === 0n) return [players.slice(0, 99), 105n];
+        if (problem === "changed" && offset === 100n) return [[], 100n];
+        if (problem === "extra") return [players.slice(0, 3), 2n];
+        if (problem === "negative") return [[], -1n];
+        return [players.slice(Number(offset), Number(offset) + 100), 105n];
+      },
+      rating: async () => ({elo: 1000, played: 2, wins: 1, season: 1}),
+    }, 0), /snapshot/);
+  }
+});
 test("optional executor never chooses opponents, retries an uncertain send or charges a player", async () => {
   const targets = {
     chainId: 10143 as const,

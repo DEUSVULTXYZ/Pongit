@@ -1,0 +1,91 @@
+{
+  "recordedAt": "2026-09-11T16:02:24.198454+00:00",
+  "baseCommit": "da4858877c220de0e414a8fda6d739f769762185",
+  "productionChanged": false,
+  "publicTransactionsSent": 0,
+  "scope": "Candidate regressions, unit suites, private fork protocol tests and public documentation. Not full candidate multiplayer acceptance.",
+  "contracts": {
+    "passed": 197,
+    "failed": 0,
+    "skippedOptionalFork": 2,
+    "suites": 18
+  },
+  "typescript": {
+    "passed": 117,
+    "failed": 0
+  },
+  "browser": {
+    "passed": 9,
+    "failed": 0,
+    "browser": "Chrome",
+    "target": "https://pongit.xyz",
+    "scope": "Documentation, header, six viewport sizes, public routes and search recovery"
+  },
+  "typecheck": "passed",
+  "webBuild": "passed",
+  "docsCheck": "passed",
+  "physics": {
+    "classic": 10000,
+    "chaos": 10000,
+    "mismatches": 0,
+    "scope": "Private EVM differential harnesses"
+  },
+  "cliSurfaces": {
+    "checked": 4,
+    "changed": 0
+  },
+  "hub": {
+    "unmodifiedAdmission": "reverted: ValidatorAtCapacity()",
+    "forkProtocol": {
+      "passed": 2,
+      "failed": 0,
+      "setup": "Expired legacy slot released only in a private fork; public state unchanged",
+      "scope": "Real deployed hub bytecode, not hosted node execution"
+    }
+  },
+  "corrected": [
+    "Winner priority persisted after leaving/declining",
+    "Block status not rechecked at duel consent",
+    "Incomplete leaderboard snapshot accepted"
+  ],
+  "unqualified": [
+    "Fresh hosted admission at actual capacity",
+    "Contract-verifiable Chaos checkpoints",
+    "Full candidate browser/sponsor integration and migration",
+    "Hosted publication budget and Interlude/Monad roundtrip",
+    "Candidate multiplayer, physical passkey recovery and live payouts"
+  ],
+  "sourceHashFormat": "SHA-256, UTF-8 with CRLF normalized to LF",
+  "sources": {
+    "contracts/src/autonomous/AuthorityActions.sol": "0033492b1a339a0db26a76c0ef516d16523eedc90486077d875804939728acb8",
+    "contracts/src/autonomous/AuthorityControl.sol": "52e1bf40c206ec15c10effcf6c5b1da82c309a73374586b2efa29032998cfd75",
+    "contracts/src/autonomous/AuthorityLifecycle.sol": "9edfa29c5994054353295817fcb0b16cc8d50fbb85bbcab08680ebb978a9820a",
+    "contracts/src/autonomous/AuthorityRating.sol": "6858c170b286b0aeaf5901841fa6098ba1a948450d665cc237e3bf2278499d0e",
+    "contracts/src/autonomous/AuthorityStore.sol": "cd43c6ebad0c65fda05aeeb7e0b83fe209eaccc16d0f9cb7d436dee258f65994",
+    "contracts/src/autonomous/AutonomousArena.sol": "b79cc26a76b8d5e43482fb5a8a8fc4362046c1589f842e076a6f17e62206f6fe",
+    "contracts/src/autonomous/AutonomousArenaInterludeSurface.sol": "aea8f19a97b0372b38e792d2626f6e1ca9614193a9b2b9e3c0323166071c3d3d",
+    "contracts/src/autonomous/AutonomousFinance.sol": "a295c44392b94b926839c3bec72e03b6d98e2105a14b116d86ebf3694a1d6873",
+    "contracts/src/autonomous/AutonomousGameBase.sol": "430085e261b5322ed5a3e9bc49c1c1a3cacf5fa49ee5e99fe33089c9c86cfc76",
+    "contracts/src/autonomous/BaseAuthorization.sol": "17476db19a83a0eedda073cf9f49d097b504750936982c80b7a16ac0e47738fc",
+    "contracts/src/autonomous/ChaosProof.sol": "d4865d3c6d514c01afced7dc04360d63899209ee4137615e07f3c8d0720bdfcf",
+    "contracts/src/autonomous/ContractLobby.sol": "2761891b42b45e309f7a441b8248cfb1db0f60a37d00394b8a546b4daad52f47",
+    "contracts/src/autonomous/OwnerWrites.sol": "0f4f52d243e8a3c460cd8a7f539fbd8386caf5b0801852fcd903750607a852e6",
+    "contracts/src/autonomous/PlayerIndex.sol": "63cd7833b1eb7f60c1ac13e84dabbe9a193049277a244430d74e2cbb664d83a3",
+    "contracts/src/autonomous/PrivateDataStore.sol": "dae82b1bb9b5928fc852ec1dfd4f3a1171277bde00e6f3281886e4ecdf6541e2",
+    "contracts/src/autonomous/ProfileRegistry.sol": "5e4a50267dcc90c73187d7ac459d392232708da8ad9d54efcb141e87b0f1f9e9",
+    "contracts/test/AuthorityData.t.sol": "294cc99358bd910a88531414fd42cd1cf76be3054b02c77db8d0540249d9e78c",
+    "contracts/test/AuthorityHubFork.t.sol": "f2855a2986786276157fb1dec70970a144f8944acd5b7558cbabce9029c0ea43",
+    "contracts/test/Autonomous.t.sol": "ed9dcbd8d48caafe7c20c92dde1e887d8303c48ee5155ab98c332754a9e1b8b2",
+    "relayer/src/authority-keeper.ts": "20c12fa285f620129aad54615e6b4962d5ee0cc776a42e198c1550555730dd1d",
+    "relayer/src/authority-recovery.ts": "9c35da4bbbf273337f0b32e8daedba7e2482dc43a30c266d87c5a44d1dda7891",
+    "scripts/authority-hub-diagnostic.ts": "620e45800ec1d4af5b12f6e1bd11fde9809e9f739b1001f6f50a213accc64443",
+    "scripts/authority-preflight.ts": "c8b1ad51009bb99201e199cf073db261dc62648b11dbd7ec00ab9cc9421c7633",
+    "shared/authority-client.ts": "f12a7fbab1f96463bbef95f66be7b522f8f2504f32b8245546705227f67064e9",
+    "shared/authority-private.ts": "bab6f0bb44967ec26fd88d84408ef7dbf76a09118a0d88d473eb8bdd20337a20",
+    "shared/authority-recovery-source.ts": "ebdec809d5f01ce1fcbd0ff4d61e9332f12d9f9338ad752961b2915df4419039",
+    "shared/authority-recovery.ts": "c705aa5c4dbd760869944969f4bcff6601af56d5a7e14fdcc748b2f4d0f53f77",
+    "tests/authority-recovery.test.ts": "522057e8556442093d272c83e3e0701d25070e465bb8ae1a8c0d0d6fcd9513e1",
+    "tests/authority.test.ts": "f9e674fbef852428f5608902f62a0e8bce705bac32a00ee024b0b556469f1dd8",
+    "tests/docs.spec.ts": "05c3832ed04784b157d4aac196c3eba60a6bc1f4c032a993680a5e0bb0704b48"
+  }
+}

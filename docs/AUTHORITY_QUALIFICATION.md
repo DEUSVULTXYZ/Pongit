@@ -6,6 +6,10 @@ The owner subsequently authorized direct production testing and rejected a tempo
 
 Initial evidence was prepared on 2026-09-10 with Solidity 0.8.30, Cancun, via IR, optimizer 200. That revision's arena runtime was 24,524 bytes. The session-lifecycle revision below measures 24,501 bytes (75 bytes below EIP-170); adding code requires rechecking that limit. Prefer fixed modules for new application methods.
 
+## Expanded test audit, 2026-09-11
+
+The [expanded audit](AUTHORITY_TEST_AUDIT.md) fixed room winner-priority, blocked-consent and truncated-leaderboard defects. The current checks passed 197 Solidity tests, all 117 TypeScript tests, nine public HTTPS documentation paths, typechecking, the web build and 20,000 physics comparisons. Two additional tests passed against real deployed hub bytecode in a private fork after an explicitly simulated capacity release. The unchanged network rejects admission with `ValidatorAtCapacity()`; that failure remains a live qualification gate. These results do not represent a deployed candidate or full multiplayer acceptance. See the [source-hashed report](evidence/authority/test-audit.json).
+
 ## Session lifecycle revision, 2026-09-11
 
 The candidate now drains a shared delegation after a match result, waits for the other active match and pending proposals, seals engine writes, and closes only from published Monad state. Normal renewal waits for protocol finality, finalizes recorded financial outcomes, preserves rooms/ELO and advances the delegation epoch. This is not an independent per-match hosted deployment. See [reset scope and operator diagnostic](INTERLUDE_RESET.md).
