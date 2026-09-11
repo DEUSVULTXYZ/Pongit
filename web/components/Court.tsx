@@ -167,13 +167,13 @@ export function Court({
       if(s?.awaitingServe && !s.finished) {
         const remaining=Math.max(0,Number(s.resumeAt-p.clock)/1e6);
         ctx.fillStyle="#e5e1ff";ctx.textAlign="center";ctx.font=`30px ${fontFamily}`;
-        ctx.fillText(remaining>0?remaining.toFixed(1):"SYNCING SERVE",512,230);
+        ctx.fillText(p.liveEngine?"PREPARING RALLY":remaining>0?remaining.toFixed(1):"SYNCING SERVE",512,230);
         ctx.font=`12px ${fontFamily}`;ctx.fillText("CHAOS / NEXT RALLY",512,190);ctx.textAlign="left";
       }
       if(s && !p.replay && !document.hidden){
         const score=s.scoreA+s.scoreB;
         if(previousSound && now-previousSound.time<100 && score===previousSound.score && (s.vx!==previousSound.vx || s.vy!==previousSound.vy))arcadeAudio.play("bounce",`${p.matchId}:impact:${p.state?.t}:${s.vx}:${s.vy}`);
-        if(s.awaitingServe){const count=Math.ceil(Math.max(0,Number(s.resumeAt-target)/1e6));if(count>0 && count<=3)arcadeAudio.play("countdown",`${p.matchId}:count:${s.resumeAt}:${count}`);}
+        if(s.awaitingServe&&!p.liveEngine){const count=Math.ceil(Math.max(0,Number(s.resumeAt-target)/1e6));if(count>0 && count<=3)arcadeAudio.play("countdown",`${p.matchId}:count:${s.resumeAt}:${count}`);}
         previousSound={vx:s.vx,vy:s.vy,score,time:now};
       } else previousSound=null;
       if (s) {

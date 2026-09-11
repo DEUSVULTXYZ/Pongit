@@ -225,6 +225,21 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   const [syncError, setSyncError] = useState("");
   const [writeBlocked, setWriteBlocked] = useState(false), [sessionRevision, setSessionRevision] = useState(0);
   const [renewRequired,setRenewRequired]=useState(false);
+  const [roundStatus,setRoundStatus]=useState<{id:string;rally:number;phase:string;blocksLeft:string}|null>(null);
+  const pausedRally=snapshot?.state.awaitingServe?snapshot.state.scoreA+snapshot.state.scoreB:undefined;
+  useEffect(()=>{
+    setRoundStatus(null);
+    if(!ready||!snapshot||snapshot.phase!==2||snapshot.state.mode!==1||pausedRally===undefined)return;
+    const id=String(snapshot.id),rally=pausedRally;
+    let cancelled=false,timer:ReturnType<typeof setTimeout>;
+    const poll=async()=>{
+      try{
+        if(!document.hidden){const r=await roomsApi(`/interlude/markets/${id}?round=${rally}`);if(!cancelled&&r.app?.toLowerCase()===roomsManifest.app.toLowerCase()&&r.id===id&&r.rally===rally)setRoundStatus(r);}
+      }catch{if(!cancelled)setRoundStatus(null);}
+      if(!cancelled)timer=setTimeout(()=>void poll(),3000);
+    };
+    void poll();return()=>{cancelled=true;clearTimeout(timer);};
+  },[ready,snapshot?.id,snapshot?.phase,pausedRally]);
   const [resultView,setResultView]=useState<{snapshot:LabSnapshot;ranked:boolean;mode:number;account:string}|null>(null);
   const [resultRating, setResultRating] = useState<{id:string;delta:number}|null>(null);
   const refreshVersion = useRef(0);
@@ -1325,7 +1340,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 </div>
               </div>
               <div className="rooms-canvas">
-                {snapshot.state.awaitingServe && <div className="rooms-serve-status" role="status">{snapshot.clock<snapshot.state.resumeAt ? `Next rally in ${Math.ceil(Number(snapshot.state.resumeAt-snapshot.clock)/1e6)}s` : "Waiting for the betting checkpoint"}</div>}
+                {snapshot.state.awaitingServe && <div className="rooms-serve-status" role="status">{roundStatus?.id===String(snapshot.id)&&roundStatus.rally===pausedRally&&roundStatus.phase==='open'?`Betting open · ${roundStatus.blocksLeft} blocks left`:roundStatus?.id===String(snapshot.id)&&roundStatus.rally===pausedRally&&roundStatus.phase==='closing'?'Closing bets':'Preparing next rally'}</div>}
                 <Court
                   liveEngine
                   state={snapshot.state}

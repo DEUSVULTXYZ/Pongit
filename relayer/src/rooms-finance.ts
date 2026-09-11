@@ -16,6 +16,7 @@ import { roomsVaultAbi as vaultAbi } from "../../shared/abi-RoomsVault";
 import { marketV4Abi as marketAbi } from "../../shared/abis-v4";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { roomsLifecycleHubAbi } from "../../shared/abi-rooms-lifecycle";
+import {roomsRoundStatus} from '../../shared/rooms-round-status';
 import {
   pressureTypes,
   pressureDomain,
@@ -141,12 +142,13 @@ export async function createRoomsFinance(o: {
       true,
       value,
     );
-  const readAdapter = (name: string, args: unknown[]): Promise<any> =>
+  const readAdapter = (name: string, args: unknown[], blockNumber?: bigint): Promise<any> =>
     base.readContract({
       address: m.adapter,
       abi: adapterAbi,
       functionName: name,
       args,
+      blockNumber,
     } as any);
   const readMarket = (
     name: string,
@@ -551,6 +553,14 @@ export async function createRoomsFinance(o: {
     }
     const match = /^\/interlude\/markets\/([0-9]+)$/.exec(path);
     if (match && method === "GET") {
+      if(params.has('round')){
+        const id=idSchema.parse(match[1]),rally=z.coerce.number().int().min(0).max(12).parse(params.get('round'));
+        return display(`round:${id}:${rally}`,async()=>{
+          const head=await base.getBlockNumber({cacheTime:0});
+          const window=await readAdapter('bettingWindow',[BigInt(id),0],head);
+          return {app:m.app,id,rally,head,observedAt:Date.now(),...roomsRoundStatus(rally,window[1],window[0],head)};
+        });
+      }
       const side = z.coerce
         .number()
         .int()

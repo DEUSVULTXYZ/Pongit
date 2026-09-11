@@ -34,6 +34,10 @@ Backup `20260911T214454Z` was copied off the VPS and its database checksums veri
 
 ## Remaining implementation and qualification
 
+Chaos intermissions now expose their actual Monad phases: the 40-block betting window, two confirmation blocks, and checkpoint preparation. The frontend uses a cached window read at a pinned block rather than fetching prices and positions just to display the phase. It no longer plays a three-second countdown over this longer process. All 128 TypeScript tests and the type check passed.
+
+`scripts/provision-independent-rehearsal.ts` records each hosted creation before sending it, refuses ambiguous repeats, and first simulates admission against the real hub. `scripts/qualify-independent-arenas.ts` is a gated rehearsal for three fresh applications, including two concurrent games, publication, per-application closure and starting the third during the first application's challenge window. These scripts do not change production manifests and their presence is not evidence the hosted test passed. Raw test sessions remain in private files; operator transactions use the existing shared journal and nonce lock.
+
 The accepted target uses Interlude gameplay only, explicit capacity waiting, Monad financial settlement and the authorized signed testnet Chaos pressure bridge. It does not require a trustless Chaos proof for this testnet release or an automatic Monad gameplay fallback.
 
 Remaining gates include real closure/reopening of the current delegation, multiple hosted arenas and per-game closure, the shared Monad lobby and rating journal, cross-arena two-hour authorization, owner-claimed profile/private-data migration, actual Classic/Chaos multiplayer and payout verification, and comparative transport measurements. Existing authority candidate documents describe an older design and are not evidence these gates passed.
