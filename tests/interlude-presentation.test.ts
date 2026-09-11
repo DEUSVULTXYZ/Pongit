@@ -2,6 +2,16 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { LivePaddle, LiveClock } from "../web/lib/live-paddle";
 
+test('a temporary control outage blends the displayed paddle instead of resetting it',()=>{
+ const p=new LivePaddle();let y=288;
+ for(let i=0;i<10;i++)y=p.step(288,1,0,48,16,false,true).y;
+ assert.ok(y>310);
+ const paused=p.step(288,0,0,48,16,true,true).y;
+ assert.ok(Math.abs(paused-y)<=2.88);assert.ok(paused>310);
+ const resumed=p.step(290,1,0,48,16,false,true).y;
+ assert.ok(resumed>=paused);
+});
+
 test("held input never rolls backwards across jittered acknowledgements", () => {
   for (const direction of [-1, 1]) {
     const paddle = new LivePaddle();

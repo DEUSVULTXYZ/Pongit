@@ -18,6 +18,7 @@ import {readHubDelegation} from "../../shared/rooms-hub";
 import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
 import { requestHostedRenewal } from "./rooms-hosted-renewal";
 import { roomsDrainBlocker } from "../../shared/rooms-availability";
+import {assertRoomsEngineAvailable} from "../../shared/rooms-availability";
 const appAbi = parseAbi([
   "function operator() view returns(address)",
   "function closeEngine()",
@@ -45,6 +46,8 @@ export async function roomsLifecycle(o: {
   engineStatus: () => Promise<any>;
   engineActive: () => Promise<bigint>;
   beforeRenew?: () => Promise<void>;
+  beforeClose?: (epoch: bigint) => Promise<void>;
+  onReady?: (epoch: bigint) => void;
 }) {
   const file = process.env.ROOMS_LIFECYCLE_KEY_FILE;
   if (!file) return null;
@@ -69,6 +72,7 @@ export async function roomsLifecycle(o: {
     .query(`CREATE TABLE IF NOT EXISTS il_lifecycle(app text PRIMARY KEY,stage text NOT NULL,changed_at timestamptz NOT NULL DEFAULT now());
  ALTER TABLE il_lifecycle ADD COLUMN IF NOT EXISTS epoch bigint NOT NULL DEFAULT 0;
  ALTER TABLE il_lifecycle ADD COLUMN IF NOT EXISTS provision_epoch bigint NOT NULL DEFAULT 0;
+ ALTER TABLE il_lifecycle ADD COLUMN IF NOT EXISTS provisioning jsonb;
  CREATE TABLE IF NOT EXISTS il_lifecycle_jobs(id text PRIMARY KEY,app text NOT NULL,owner text NOT NULL,nonce bigint NOT NULL,raw text NOT NULL,hash text NOT NULL,status text NOT NULL,UNIQUE(owner,nonce));`);
   await o.db.query(
     "INSERT INTO il_lifecycle(app,stage) VALUES($1,'playing') ON CONFLICT DO NOTHING",
@@ -81,11 +85,13 @@ export async function roomsLifecycle(o: {
     error = "",
     healthy = false;
   const transition = async (s: Stage) => {
+    const previous=stage;
     await o.db.query(
       "UPDATE il_lifecycle SET stage=$2,changed_at=now() WHERE app=$1",
       [o.app, s],
     );
     stage = s;
+    console.info(JSON.stringify({event:'rooms-lifecycle-transition',app:o.app,previous,stage:s,at:new Date().toISOString()}));
   };
   async function submit(id: string, to: Address, data: Hex) {
     let job = (
@@ -191,6 +197,11 @@ export async function roomsLifecycle(o: {
       ).rows[0].epoch;
       const now = BigInt(Math.floor(Date.now() / 1000)),
         prefix = `${o.app}:${epoch}`;
+      if(d.status===0 && stage!=='playing'){
+        // The hub has released the whole epoch. Its raw bytes stay in the journal.
+        await o.db.query("UPDATE il_engine_jobs SET status='obsolete',resolution=COALESCE(resolution,'{}'::jsonb)||$3::jsonb,updated_at=now() WHERE app=$1 AND epoch=$2 AND status='quarantined'",
+          [o.app,epoch,JSON.stringify({closedEpoch:String(epoch),closedAt:new Date().toISOString(),kind:'epoch-closed'})]);
+      }
       healthy = false;
       error = "";
       if (d.status === 3) {
@@ -203,8 +214,12 @@ export async function roomsLifecycle(o: {
           // The hosted operator serves the same app and must pick up the new epoch.
           const node = await o.engineStatus().catch(() => null);
           if (node && BigInt(node.epoch) === d.epoch) {
+            assertRoomsEngineAvailable(o.app,node,d,Number(now));
+            await o.engineActive();
+            if(BigInt(node.committedBatches)!==d.batchIndex)throw new Error('Hosted publication differs from Monad; awaiting synchronization');
             await transition("playing");
             healthy = true;
+            o.onReady?.(d.epoch);
           } else {
             await requestHostedRenewal(o.db, o.app, d.epoch, o.nodeUrl);
             error = `Hosted engine has not confirmed epoch ${d.epoch}; awaiting operator startup`;
@@ -213,6 +228,7 @@ export async function roomsLifecycle(o: {
         }
         if (stage === "playing" && d.expiresAt > now + 3600n) {
           healthy = true;
+          o.onReady?.(d.epoch);
           return;
         }
         if (stage !== "draining") await transition("draining");
@@ -226,16 +242,12 @@ export async function roomsLifecycle(o: {
         const node = await o.engineStatus();
         error = roomsDrainBlocker(d.expiresAt <= now, await o.engineActive(), node.pendingDiffs.length, BigInt(node.epoch) === d.epoch);
         if (error) return;
-        if (
-          (await o.base.readContract({
-            address: o.app,
-            abi: appAbi,
-            functionName: "activeCount",
-          })) !== 0n
-        ) {
-          error = "Waiting for published matches to finish before renewal";
-          return;
-        }
+        await o.beforeClose?.(d.epoch);
+        // Fence first, then repeat both live and published drain checks.
+        const fencedNode=await o.engineStatus();
+        const fencedError=roomsDrainBlocker(d.expiresAt<=now,await o.engineActive(),fencedNode.pendingDiffs.length,BigInt(fencedNode.epoch)===d.epoch);
+        if(fencedError)throw new Error(fencedError);
+        if(await o.base.readContract({address:o.app,abi:appAbi,functionName:'activeCount'})!==0n)throw new Error('Published match changed during closure preparation');
         if (
           (
             await o.db.query(
@@ -336,7 +348,7 @@ export async function roomsLifecycle(o: {
   void cycle();
   return {
     available: () => stage === "playing" && healthy,
-    status: () => ({ stage, error }),
+    status: () => ({ stage, error, healthy }),
     stop: () => clearInterval(timer),
   };
 }

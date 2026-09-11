@@ -88,7 +88,7 @@ export function Court({
     const livePaddle = new LivePaddle(), liveClock = new LiveClock();
     function draw(now: number) {
       const p = current.current;
-      const identity = `${p.matchId}:${p.side}:${p.replay}:${p.controllable}`;
+      const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}`;
       if (identity !== context) { trail.reset(); previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const dt = Math.max(0, Math.min(50, now - lastDraw));
       lastDraw = now;
@@ -125,11 +125,11 @@ export function Court({
       const halfA=Number(s?.halfA || 48000000n)/1e6, halfB=Number(s?.halfB || 48000000n)/1e6;
       const half=p.side===0?halfA:halfB;
       const confirmedY = p.side === 0 ? yA : yB;
-      if (s && !s.awaitingServe && p.controllable && !p.replay && p.side >= 0) {
+      if (s && !s.awaitingServe && (p.controllable || p.liveEngine) && !p.replay && p.side >= 0) {
         if (p.liveEngine) {
-          const owner = livePaddle.step(confirmedY, p.direction,
+          const owner = livePaddle.step(confirmedY, p.controllable ? p.direction : 0,
             p.side === 0 ? p.state!.leftDir : p.state!.rightDir,
-            half, dt, timing.stale, p.pending);
+            half, dt, timing.stale || !p.controllable, p.pending);
           visualY = owner.y; correction = owner.correction;
         } else {
         const initialY=Number(p.side===0?p.state!.left:p.state!.right)/1e6;

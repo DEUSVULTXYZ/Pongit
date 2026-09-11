@@ -5,7 +5,7 @@ import {createHash,randomBytes} from "node:crypto";
 import {mkdir,writeFile} from "node:fs/promises";
 import {Pool} from "pg";
 import WebSocket,{WebSocketServer} from "ws";
-import {decodeFunctionData,encodeFunctionResult,encodeAbiParameters,zeroAddress,zeroHash,toFunctionSelector,type Hex} from "viem";
+import {decodeFunctionData,encodeFunctionData,encodeFunctionResult,encodeAbiParameters,keccak256,zeroAddress,zeroHash,toFunctionSelector,type Hex} from "viem";
 import {generatePrivateKey,privateKeyToAccount} from "viem/accounts";
 import {roomsChaosAbi as abi} from "../shared/abi-PongRoomsTestnet";
 import {interludeHubReadAbi} from "../shared/abi-interlude";
@@ -33,7 +33,7 @@ const rpc=createServer(async(req,res)=>{
    else {let decoded:any;try{decoded=decodeFunctionData({abi,data});}catch{}
     if(decoded?.functionName==="getSnapshot"){if(slowSnapshot)await pause(1800);result=encodeFunctionResult({abi,functionName:"getSnapshot",result:(snapshots.get(String(decoded.args[0]))||empty(decoded.args[0])) as any});}
     else if(decoded?.functionName==="ratingOf")result=encodeFunctionResult({abi,functionName:"ratingOf",result:{elo:1000,played:0,wins:0,season:1}});
-    else if(decoded?.functionName==="resultHashes")result=zeroHash;
+    else if(decoded?.functionName==="resultHashes")result=snapshots.get(String(decoded.args[0]))?.[2]===3n?`0x${'12'.repeat(32)}`:zeroHash;
     else if(decoded?.functionName==="hub")result=encodeAbiParameters([{type:"address"}],[hub]);
     else {if(faultEpoch)throw Error("Simulated permission provider outage");result=encodeAbiParameters([{type:"uint256"}],[0n]);}
    }
@@ -93,13 +93,26 @@ try{
  await until(async()=>(await api(players[1],"config")).errorCode==="ENGINE_DELEGATION_EXPIRED");
  const unavailable=await api(players[1],"config");
  assert.equal(unavailable.online,false);assert.equal(unavailable.admission,false);assert(unavailable.checkedAt>0);assert(unavailable.retryAt>Date.now());
- const sessionsBefore=sessionReads;await pause(4500);
- assert.equal(sessionReads,sessionsBefore,"Expired maintenance must respect its cooldown");
+ const saved=(await db.query("SELECT document FROM il_lobby WHERE app=$1",[app])).rows[0].document;
+ const terminalRoom=Object.values(saved.rooms).find((r:any)=>r.offer) as any;
+ assert(terminalRoom?.offer,'Regression fixture must have an offer');
+ const terminal=empty(BigInt(terminalRoom.offer.id));
+ terminal[2]=3n;terminal[3]=terminalRoom.offer.a;terminal[4]=terminalRoom.offer.b;terminal[6]=terminalRoom.offer.b;
+ terminal[12].scoreA=2;terminal[12].scoreB=7;terminal[12].finished=true;
+ snapshots.set(terminalRoom.offer.id,terminal);
+ const raw=await admission.signTransaction({type:'eip1559',chainId:4242,nonce:276,to:app,data:encodeFunctionData({abi,functionName:'tick',args:[BigInt(terminalRoom.offer.id)]}),gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+ await db.query("INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch) VALUES($1,'lost-terminal-tick',276,$2,$3,'pending',1)",[app,raw,keccak256(raw)]);
+ await until(async()=>!!(await db.query("SELECT 1 FROM il_results WHERE app=$1 AND id=$2 AND score_b=7 AND published=true",[app,terminalRoom.offer.id])).rowCount,16000);
+ const repaired=(await db.query("SELECT document FROM il_lobby WHERE app=$1",[app])).rows[0].document.rooms[terminalRoom.id];
+ assert.equal(repaired.offer.status,'complete');assert.equal(repaired.winner,terminalRoom.offer.b);
+ assert.equal((await db.query("SELECT status FROM il_engine_jobs WHERE id='lost-terminal-tick'")).rows[0].status,'pending');
+ report.checks.push('Expired delegation with missing receipt still repairs terminal rooms and published history without resending');
+ await db.query("UPDATE il_engine_jobs SET status='quarantined' WHERE id='lost-terminal-tick'");
  assert.equal((await api(players[1],"state")).status,200,"Engine expiry must not revoke player authentication");
  expiredDelegation=false;
  await until(async()=>coordinator.status().online,35000);
  assert.equal((await api(players[1],"config")).error,"");
- report.checks.push("Engine expiry is explicit, backs off reads, preserves player access and recovers after renewal");
+ report.checks.push("Engine expiry blocks admission, preserves recovery reads and player access, and recovers after renewal");
  report.passed=true;
 }catch(e){report.error=String(e);report.coordinator=coordinator.status();throw e;}
 finally{socket?.close();coordinator.stop();wss.close();server.close();rpc.close();await pause(200);await db.end();await mkdir("artifacts/stream-coordinator",{recursive:true});await writeFile("artifacts/stream-coordinator/report.json",JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

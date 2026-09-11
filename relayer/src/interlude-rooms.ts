@@ -32,6 +32,7 @@ import { chaosOfferTypes } from "../../shared/rooms-chaos";
 import {createRoomsFinanceRouter} from "./rooms-finance-router";
 import {loadRoomsFinance} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
+import {reconcileEngineJobs, quarantineTerminalTicks} from "./rooms-engine-recovery";
 import {roomsRankingCandidates} from "./rooms-ranking";
 import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snapshot";
 import {engineTransport} from "../../shared/engine-transport";
@@ -148,6 +149,11 @@ export async function createRoomsCoordinator(o: Options) {
  CREATE TABLE IF NOT EXISTS il_results(app text NOT NULL,id text NOT NULL,room text NOT NULL,a text NOT NULL,b text NOT NULL,winner text NOT NULL,phase integer NOT NULL,ranked boolean NOT NULL,score_a integer NOT NULL,score_b integer NOT NULL,hash text NOT NULL,published boolean NOT NULL DEFAULT false,ended_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id));
  CREATE TABLE IF NOT EXISTS il_engine_jobs(app text NOT NULL,id text NOT NULL,nonce bigint NOT NULL,raw text NOT NULL,hash text NOT NULL,status text NOT NULL,PRIMARY KEY(app,id),UNIQUE(app,nonce));
  ALTER TABLE il_engine_jobs ADD COLUMN IF NOT EXISTS epoch bigint NOT NULL DEFAULT 0;
+ ALTER TABLE il_engine_jobs ADD COLUMN IF NOT EXISTS signer text;
+ ALTER TABLE il_engine_jobs ADD COLUMN IF NOT EXISTS action text;
+ ALTER TABLE il_engine_jobs ADD COLUMN IF NOT EXISTS match_id text;
+ ALTER TABLE il_engine_jobs ADD COLUMN IF NOT EXISTS resolution jsonb;
+ ALTER TABLE il_engine_jobs ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
  ALTER TABLE il_engine_jobs DROP CONSTRAINT IF EXISTS il_engine_jobs_app_nonce_key;
  CREATE UNIQUE INDEX IF NOT EXISTS il_engine_jobs_epoch_nonce ON il_engine_jobs(app,epoch,nonce);
  CREATE TABLE IF NOT EXISTS il_offers(app text NOT NULL,id text NOT NULL,room text NOT NULL,offer jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id));
@@ -160,8 +166,7 @@ export async function createRoomsCoordinator(o: Options) {
     { rooms: {}, queue: [], invites: [] },
   ]);
   const diagnostics=await createRpcDiagnostics(db,app);
-  const lifecycle=chaosEnabled&&finance&&o.financeConfig ? await roomsLifecycle({db,base,app,hub:manifest.hub,nodeUrl:manifest.node,adapter:o.financeConfig.find(app).adapter,beforeRenew:finance.beforeRenew,engineStatus:()=>client.status(),engineActive:async()=>BigInt(await client.read("activeCount",[]) as bigint)}) : null;
-  if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED==='true' && !lifecycle && process.env.ROOMS_PRIVATE_FINANCE_TEST!=='true')throw new Error('Chaos requires a configured delegation lifecycle before opening to players');
+  let lifecycle: Awaited<ReturnType<typeof roomsLifecycle>> = null;
   let publicLadder: Promise<any> | undefined, publicLadderAt = 0, publicLadderMode = -1;
   const sockets = new Map<
     WebSocket,
@@ -437,6 +442,7 @@ export async function createRoomsCoordinator(o: Options) {
     }}finally{notifying=false;}
   }
   let writer:Promise<unknown>=Promise.resolve();
+  let closingEpoch: bigint | null = null;
   const writes=new Map<string,Promise<void>>();
   function publicTick(id:string,cancel=false,pressureData?:Hex){
     const key=`${id}:${cancel}:${pressureData?hash(pressureData):"tick"}`,existing=writes.get(key);if(existing)return existing;
@@ -444,6 +450,7 @@ export async function createRoomsCoordinator(o: Options) {
     writes.set(key,operation);writer=operation;return operation;
   }
   async function sendPublicTick(id: string, cancel = false, pressureData?:Hex) {
+    if (closingEpoch !== null) throw new Error("This arena is closing; no further commands will be submitted");
     // Persist the exact signed bytes before send. A restart resubmits those bytes only.
     let job = (
       await db.query(
@@ -474,8 +481,8 @@ export async function createRoomsCoordinator(o: Options) {
       });
       job = { id: hex(), nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
       await db.query(
-        "INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch) VALUES($1,$2,$3,$4,$5,'pending',$6)",
-        [app, job.id, nonce, raw, job.hash,lastEpoch],
+        "INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9)",
+        [app, job.id, nonce, raw, job.hash,lastEpoch,signer.address.toLowerCase(),pressureData?'submitPressure':cancel?'cancelMatch':'tick',id],
       );
     }
     let receipt = await client.node
@@ -675,12 +682,6 @@ export async function createRoomsCoordinator(o: Options) {
   let maintenanceRetryAt = 0;
   async function maintenance() {
     if (cycle || Date.now() < maintenanceRetryAt) return;
-    if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
-      online=false;admissionHealthy=false;lastCheck=Date.now();
-      lastErrorCode='ENGINE_RENEWING';
-      lastError='The arcade is renewing its delegation. Payments continue in the background.';
-      return;
-    }
     cycle = true;
     lastCheck = Date.now();
     try {
@@ -694,22 +695,33 @@ export async function createRoomsCoordinator(o: Options) {
       });
       // Expiry alone does not invalidate historical results. Their existing
       // audit still checks publication/contestation against Monad separately.
-      assertRoomsEngineAvailable(app,status,delegation,Math.floor(Date.now()/1000));
+      // Admission restrictions never gate recovery reads or terminal observation.
+      // A mismatched app cannot be used as a source of recovery evidence.
+      if(status.app.toLowerCase()!==app || status.chainId!==4242)throw new RoomsEngineUnavailable('ENGINE_APP_MISMATCH','The game node serves a different application.');
+      let writable = true;
+      try { assertRoomsEngineAvailable(app,status,delegation,Math.floor(Date.now()/1000)); }
+      catch(e) {
+        if(!(e instanceof RoomsEngineUnavailable))throw e;
+        writable=false;lastError=e.message;lastErrorCode=e.code;
+      }
+      if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
+        writable=false;lastErrorCode='ENGINE_RENEWING';
+        lastError='The arcade is recovering its game delegation. Payments continue in the background.';
+      }
       if (lastEpoch !== -1 && lastEpoch !== status.epoch) ratings.clear();
       if(lastEpoch!==status.epoch)feed.invalidate();
       lastEpoch = status.epoch;
-      online = true;
-      admissionHealthy = true;
+      online = writable;
+      admissionHealthy = writable;
       lastCheck = Date.now();
-      lastError = "";
-      lastErrorCode = "";
+      if(writable){lastError = "";lastErrorCode = "";}
       const pendingJob = (
         await db.query(
           "SELECT id FROM il_engine_jobs WHERE app=$1 AND status='pending' LIMIT 1",
           [app],
         )
       ).rows[0];
-      if (pendingJob) await publicTick("0");
+      if (pendingJob && writable) void publicTick("0").catch(()=>{});
       const before = await current();
       if(streamEnabled){
         const ids=new Set(Object.values(before.rooms).filter(r=>r.offer&&!['complete','cancelled'].includes(r.offer.status)).map(r=>r.offer!.id));
@@ -727,16 +739,14 @@ export async function createRoomsCoordinator(o: Options) {
           continue;
         const id = r.offer.id;
         let s: any = streamEnabled?engineTuple(await feed.read(BigInt(id))):await readEngineSnapshot(client, BigInt(id));
-        if (s[2] === 2n && (streamEnabled?feed.progressAge(BigInt(id))>1500:s[8] - s[12].t > 1500000n)) {
-          await publicTick(id);
-          s = await readEngineSnapshot(client, BigInt(id));
+        if (writable && s[2] === 2n && (streamEnabled?feed.progressAge(BigInt(id))>1500:s[8] - s[12].t > 1500000n)) {
+          void publicTick(id).catch(()=>{});
         }
-        if (s[2] === 1n && BigInt(Math.floor(Date.now() / 1000)) > s[11]) {
-          await publicTick(id, true);
-          s = await readEngineSnapshot(client, BigInt(id));
+        if (writable && s[2] === 1n && BigInt(Math.floor(Date.now() / 1000)) > s[11]) {
+          void publicTick(id, true).catch(()=>{});
         }
         observed.set(id, s);
-        if(finance && s[2]===2n && s[12].mode===1 && s[12].awaitingServe){
+        if(writable && finance && s[2]===2n && s[12].mode===1 && s[12].awaitingServe){
           if(!pendingPressure.has(id)){
             const work=finance.pressure(id,s,data=>publicTick(id,false,data)).catch(e=>{lastError="Chaos checkpoint pending: "+(e as Error).message;}).finally(()=>pendingPressure.delete(id));
             pendingPressure.set(id,work);
@@ -747,8 +757,7 @@ export async function createRoomsCoordinator(o: Options) {
           await db.query("INSERT INTO il_result_pending(app,id,room,ranked) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[app,id,r.id,r.offer.ranked]);
         }
       }
-      void auditHistory();
-      const nodeNow = await client.status();
+      const nodeNow = status;
       let reserved = nodeNow.pendingDiffs.length;
       // Existing unfinished offers reserve their worst-case creation and terminal writes.
       for (const r of Object.values(before.rooms))
@@ -806,7 +815,7 @@ export async function createRoomsCoordinator(o: Options) {
             delete s.rooms[r.id];
         }
         // Oldest player first, gradually widening the rating band. Blocks apply both ways.
-        for (const first of [...s.queue].sort((a, b) => a.at - b.at)) {
+        for (const first of (writable ? [...s.queue].sort((a, b) => a.at - b.at) : [])) {
           if (!s.queue.includes(first)) continue;
           const width = Math.min(
             600,
@@ -908,10 +917,7 @@ export async function createRoomsCoordinator(o: Options) {
       if(e instanceof RoomsEngineUnavailable){
         maintenanceRetryAt=Date.now()+e.retryMs;online=false;admissionHealthy=false;
         lastError=e.message;lastErrorCode=e.code;
-        if(!['ENGINE_DELEGATION_EXPIRED','ENGINE_DELEGATION_ENDING'].includes(e.code)){
-          ratings.clear();
-          await db.query("UPDATE il_results SET verified=false,published=false WHERE app=$1",[app]);
-        }
+        // Availability is not evidence that a previously observed result changed.
         void notify();return;
       }
       if(publicationUnavailable(e)){
@@ -939,6 +945,29 @@ export async function createRoomsCoordinator(o: Options) {
       cycle = false;
     }
   }
+  lifecycle=chaosEnabled&&finance&&o.financeConfig ? await roomsLifecycle({
+    db,base,app,hub:manifest.hub,nodeUrl:manifest.node,adapter:o.financeConfig.find(app).adapter,
+    beforeRenew:finance.beforeRenew,engineStatus:()=>client.status(),
+    engineActive:async()=>BigInt(await client.read("activeCount",[]) as bigint),
+    beforeClose:async(epoch)=>{
+      closingEpoch=epoch;
+      await writer.catch(()=>{});
+      await reconcileEngineJobs({db,app,receipt:hash=>client.node.getTransactionReceipt({hash})});
+      await quarantineTerminalTicks({db,app,abi:roomsAbi,signer:signer.address,epoch,
+        snapshot:(id,published)=>published?client.readSettled('getSnapshot',[id]):readEngineSnapshot(client,id),
+        resultHash:(id,published)=>published?client.readSettled('resultHashes',[id]):client.read('resultHashes',[id])});
+    },
+    onReady:epoch=>{if(closingEpoch!==epoch)closingEpoch=null;},
+  }) : null;
+  if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED==='true' && !lifecycle && process.env.ROOMS_PRIVATE_FINANCE_TEST!=='true')throw new Error('Chaos requires a configured delegation lifecycle before opening to players');
+  let reconciling=false;
+  const recoveryTimer=setInterval(()=>{
+    if(reconciling)return;reconciling=true;
+    void reconcileEngineJobs({db,app,receipt:hash=>client.node.getTransactionReceipt({hash})})
+      .catch(()=>{}).finally(()=>{reconciling=false;});
+  },5000);
+  const historyTimer=setInterval(()=>void auditHistory(),5000);
+  recoveryTimer.unref();historyTimer.unref();
   const timer = setInterval(() => void maintenance(), 2000);
   const financeTimer = finance ? setInterval(()=>void finance.audit(),5000) : undefined;
   timer.unref();
@@ -965,7 +994,7 @@ export async function createRoomsCoordinator(o: Options) {
           checkedAt: lastCheck,
           error: lastError,
           errorCode: lastErrorCode || undefined,
-          retryAt: maintenanceRetryAt > Date.now() ? maintenanceRetryAt : undefined,
+          retryAt: !online ? Math.max(maintenanceRetryAt,lastCheck+2000) : undefined,
           stateTransport:streamEnabled?"events":"polling",
         });
         return true;
@@ -1568,7 +1597,7 @@ export async function createRoomsCoordinator(o: Options) {
   return {
     route,
     subscribe,
-    status: () => ({ online, lastError, lastCheck }),
-    stop: () => {clearInterval(timer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();diagnostics.stop();lifecycle?.stop();},
+    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status() }),
+    stop: () => {clearInterval(timer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();diagnostics.stop();lifecycle?.stop();},
   };
 }

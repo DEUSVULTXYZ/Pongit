@@ -704,7 +704,7 @@ const server = createServer(async (req, res) => {
       const ok = chainHealthy && Date.now() - lastObserved < 15000;
       return send(
         res,
-        { ok, head, queueError: fundingWarning || lastError, network: deployment.chainId, payments:payoutWorker.status() },
+        { ok, liveness:true, game:roomsCoordinator?.status() ?? {online:ok}, head, queueError: fundingWarning || lastError, network: deployment.chainId, payments:payoutWorker.status() },
         ok ? 200 : 503,
       );
     }

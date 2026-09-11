@@ -1,72 +1,37 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { requestHostedRenewal } from "../relayer/src/rooms-hosted-renewal";
-const app = "0x0000000000000000000000000000000000000011",
-  url = "https://test-engine.example";
-function journal() {
-  let epoch = "0";
-  return {
-    query: async (_sql: string, args: any[]) => {
-      const old = epoch;
-      epoch = args[1];
-      return { rowCount: old !== epoch ? 1 : 0 };
-    },
-  } as any;
-}
-
-test("hosted renewal submits once per persisted epoch and then reads status", async () => {
-  const calls: { url: string; method: string; body: any }[] = [],
-    db = journal();
-  const transport = (async (u: any, o: any) => {
-    calls.push({ url: String(u), method: o.method, body: o.body });
-    return Response.json({ url });
-  }) as typeof fetch;
-  await requestHostedRenewal(db, app, 2n, url, transport);
-  await requestHostedRenewal(db, app, 2n, url, transport);
-  assert.deepEqual(
-    calls.map((c) => c.method),
-    ["POST", "GET"],
-  );
-  assert.deepEqual(JSON.parse(calls[0].body), { app });
-  assert(calls[1].url.endsWith("/" + app));
-  await requestHostedRenewal(db, app, 3n, url, transport);
-  assert.equal(calls[2].method, "POST");
+const app="0x0000000000000000000000000000000000000011",url="https://test-engine.example";
+function journal(){const row={provision_epoch:"0",provisioning:null as any};return {query:async(sql:string,args:any[])=>{
+  if(sql.startsWith("SELECT"))return {rows:[{...row}]};row.provision_epoch=args[1];row.provisioning=structuredClone(args[2]);return {rowCount:1};
+}} as any;}
+test("confirmed creation is looked up; only a new epoch creates again",async()=>{
+  const db=journal(),calls:string[]=[];
+  const transport=(async(_:any,o:any)=>{calls.push(o.method);return Response.json({url});}) as typeof fetch;
+  await requestHostedRenewal(db,app,2n,url,transport,1000);
+  await requestHostedRenewal(db,app,2n,url,transport,12000);
+  await requestHostedRenewal(db,app,3n,url,transport,23000);
+  assert.deepEqual(calls,["POST","GET","POST"]);
 });
-test("uncertain creation is recovered by lookup after restart, never blindly repeated", async () => {
-  const db = journal(),
-    calls: string[] = [];
-  await assert.rejects(
-    requestHostedRenewal(db, app, 2n, url, (async (_u: any, o: any) => {
-      calls.push(o.method);
-      throw new Error("connection lost");
-    }) as typeof fetch),
-    /connection lost/,
-  );
-  await requestHostedRenewal(db, app, 2n, url, (async (_u: any, o: any) => {
-    calls.push(o.method);
-    return Response.json({ url });
-  }) as typeof fetch);
-  assert.deepEqual(calls, ["POST", "GET"]);
+test("lost POST and repeated 404 escalates without duplicate creation",async()=>{
+  const db=journal(),calls:string[]=[];
+  const transport=(async(_:any,o:any)=>{calls.push(o.method);if(o.method==="POST")throw Error("lost");return Response.json({}, {status:404});}) as typeof fetch;
+  await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,1000),/response lost/);
+  await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,12000),/404/);
+  await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,302000),/inspection required/);
+  await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,400000),/ambiguous/);
+  assert.deepEqual(calls,["POST","GET","GET"]);
 });
-test("control-plane errors or a different URL never silently switch the application endpoint", async () => {
-  await assert.rejects(
-    requestHostedRenewal(journal(), app, 2n, url, (async () =>
-      Response.json({ url: "https://another.example" })) as typeof fetch),
-    /URL changed/,
-  );
-  await assert.rejects(
-    requestHostedRenewal(journal(), app, 2n, url, (async () =>
-      Response.json({ status: "starting" })) as typeof fetch),
-    /no URL/,
-  );
-  await assert.rejects(
-    requestHostedRenewal(
-      journal(),
-      app,
-      2n,
-      url,
-      (async () => new Response("", { status: 503 })) as typeof fetch,
-    ),
-    /503/,
-  );
+test("explicit non-creation retries with backoff; unqualified 503 does not",async()=>{
+  for(const [status,body,expected] of [[429,{created:false},"POST"],[503,{},"GET"]] as const){
+    const db=journal(),calls:string[]=[];
+    const transport=(async(_:any,o:any)=>{calls.push(o.method);return calls.length===1?Response.json(body,{status}):Response.json({url});}) as typeof fetch;
+    await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,1000));
+    await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,2000),/cooling down/);
+    await requestHostedRenewal(db,app,2n,url,transport,12000);
+    assert.deepEqual(calls,["POST",expected]);
+  }
+});
+test("different endpoint is never silently adopted",async()=>{
+  await assert.rejects(requestHostedRenewal(journal(),app,2n,url,(async()=>Response.json({url:"https://another.example"})) as typeof fetch),/URL changed/);
 });
