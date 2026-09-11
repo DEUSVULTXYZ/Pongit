@@ -80,7 +80,7 @@ export class EngineStream {
     const frame=appliedFrame(value.params?.result,this.app);if(frame){this.failures=0;recordRpc({at:Date.now(),target:"interlude",method:"stream.applied",status:200,ms:0,source:"websocket"});for(const fn of this.listeners)fn(frame);}
    });
    socket.addEventListener("error",()=>socket.close());
-   socket.addEventListener("close",()=>{if(socket!==this.socket)return;clearTimeout(this.handshake);this.setConnected(false);this.schedule();});
+   socket.addEventListener("close",e=>{if(socket!==this.socket)return;recordRpc({at:Date.now(),target:"interlude",method:`stream.closed.${Number.isInteger(e.code)?e.code:0}`,status:0,ms:0,source:"websocket"});clearTimeout(this.handshake);this.setConnected(false);this.schedule();});
   }catch{this.setConnected(false);this.schedule();}
  }
  private schedule(){if(!this.stopped)this.retry=setTimeout(()=>this.open(),Math.max(this.delay(),Math.min(15000,500*2**Math.min(this.failures++,5)))+Math.floor(Math.random()*200));}

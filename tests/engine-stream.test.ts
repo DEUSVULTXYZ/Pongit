@@ -89,3 +89,12 @@ test("a restart is reconciled only after a discontinuity and two consistent full
  await assert.rejects(feed.read(1n),/behind/);assert.equal(feed.peek(1n)?.revision,5n);
  feed.invalidate();const reset=await feed.read(1n);assert.equal(reset.revision,4n);assert.equal(reset.reset,true);assert.equal(reads,4);
 });
+
+test("replacing a recovered lane retains its arena stream and snapshot",async()=>{
+ let opened=0;const socket=new Socket(),stream=new EngineStream('https://node.invalid',app,()=>{opened++;return socket;});
+ const client={app:app as Address,abi,node:{request:async()=>encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(baseline()) as any})}};
+ const feed=new EngineFeed(client,stream),first=feed.watch(1n,()=>{});
+ await feed.read(1n);first();first();const second=feed.watch(1n,()=>{});
+ await Promise.resolve();assert.equal(opened,1);assert.equal(socket.readyState,1);assert.equal(feed.peek(1n)?.revision,5n);
+ second();await Promise.resolve();assert.equal(socket.readyState,3);assert.equal(feed.peek(1n),undefined);
+});

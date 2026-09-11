@@ -2,7 +2,8 @@
 // Persist each creation attempt before HTTP. Never repeat an ambiguous POST.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename} from 'node:fs/promises';
-import {createPublicClient,http,keccak256,zeroAddress,zeroHash,type Address} from 'viem';
+import {createPublicClient,http,keccak256,parseAbi,type Address} from 'viem';
+import {readHubDelegation} from '../shared/rooms-hub';
 import {monadTestnet} from 'viem/chains';
 assert.equal(process.env.PONG_ARENA_PROVISION,'qualification-only');
 const path=process.env.PONG_ARENA_PROVISION_JOURNAL!;
@@ -10,7 +11,7 @@ assert(path?.startsWith('/secrets/'));
 const index=Number(process.env.PONG_ARENA_INDEX);
 assert(Number.isInteger(index)&&index>=0&&index<3);
 const game=JSON.parse(await readFile('contracts/out/PongRoomsTestnet.sol/PongRoomsTestnetRelease.json','utf8'));
-const hubArtifact=JSON.parse(await readFile('node_modules/@interludelayer-sdk/cli/artifacts/InterludeHub.sol/InterludeHub.json','utf8'));
+const hubArtifact=JSON.parse(await readFile(process.env.PONG_HUB_ARTIFACT||'node_modules/@interludelayer-sdk/cli/artifacts/InterludeHub.sol/InterludeHub.json','utf8'));
 const hub:Address='0x3Ef8327F69e09cf721772F345e2A887eA22cD595';
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL||'https://testnet-rpc.monad.xyz',{retryCount:0,timeout:8000})});
 assert.equal(await base.getChainId(),10143);
@@ -28,8 +29,14 @@ if(record?.app){
  const validator=await base.readContract({address:hub,abi:hubArtifact.abi,functionName:'defaultValidator'}) as Address;
  const terms:any=await base.readContract({address:hub,abi:hubArtifact.abi,functionName:'termsOf',args:[validator]});
  record=state.arenas[index]={index,state:'waiting',codeHash,at:new Date().toISOString()};await save();
- // This is the real hub admission code. It neither reserves a slot nor proves hosting.
- await base.simulateContract({address:hub,abi:hubArtifact.abi,functionName:'openDelegation',args:[zeroHash,[zeroHash],[],zeroAddress,'0x00000000000000000000000000000000000000A1',0n],account:'0x00000000000000000000000000000000000000A1',value:terms.delegationFee});
+ // Use a released diagnostic contract: an EOA simulation fails the hub's
+ // application callback even when validator capacity is available.
+ const probe:Address='0xe4f978d978cbafe6682d0ac056d773fe2c950c94';
+ assert.equal((await readHubDelegation(base,hub,probe)).status,0,'Admission probe must be released');
+ const probeAbi=parseAbi(['function owner() view returns(address)','function delegateAll() payable']);
+ const owner=await base.readContract({address:probe,abi:probeAbi,functionName:'owner'});
+ try{await base.simulateContract({address:probe,abi:[...probeAbi,...hubArtifact.abi.filter((x:any)=>x.type==='error')],functionName:'delegateAll',account:owner,value:terms.delegationFee});}
+ catch(e){let cause:any=e,name='Undecoded admission revert';for(let n=0;cause&&n<8;n++,cause=cause.cause)if(cause.data?.errorName)name=cause.data.errorName;record.admissionError=name;await save();throw Error(name);}
  record.state='sending';record.requestedAt=new Date().toISOString();await save();
  try{
   const response=await fetch('https://control.interludelayer.xyz/apps',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'PongRoomsTestnetRelease',bytecode:game.bytecode.object,abi:game.abi.filter((x:any)=>x.type==='constructor'||x.type==='function'&&x.name==='delegateAll')}),signal:AbortSignal.timeout(120000)});

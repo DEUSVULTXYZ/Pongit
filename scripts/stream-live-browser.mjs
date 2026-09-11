@@ -6,15 +6,23 @@ import {createPublicClient,createWalletClient,http,decodeFunctionData,parseTrans
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {createInterludeClient,memoryStore,decodeSession,storageKey,delegatableAbi} from '@interludelayer-sdk/sdk';
-import {readFile,mkdir,writeFile,unlink} from 'node:fs/promises';
+import {readFile,mkdir,writeFile,rename} from 'node:fs/promises';
 import {roomsChaosAbi as abi} from '../shared/abi-PongRoomsTestnet.ts';
+import {RoomsCommandJournal} from '../web/lib/rooms-command-journal.ts';
+import {engineTransport} from '../shared/engine-transport.ts';
 assert.equal(process.env.STREAM_LIVE_TEST,'authorized-testnet');
 const manifest=JSON.parse(await readFile('deployments/interlude-rooms.json','utf8'));
 const origin='https://pongit.xyz',web=process.env.TEST_WEB_HOST,transport=process.env.STREAM_TEST||'events';
-const out=`artifacts/stream-live/${transport}`,privateFile='/tmp/pongit-stream-live-recovery.json';
+const out=`artifacts/stream-live/${transport}`,privateFile=process.env.STREAM_LIVE_RECOVERY;
+assert(privateFile?.startsWith('/secrets/'),'A persistent private recovery file is required');
+try{await readFile(privateFile);throw Error('Inspect the previous live test before creating new identities');}catch(e){if(e.code!=='ENOENT')throw e;}
 const stringify=v=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
 const base=createPublicClient({chain:monadTestnet,transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:8000})});
-const makeClient=store=>createInterludeClient({app:manifest.app,abi,node:manifest.node,base,store,transport:http(manifest.node,{retryCount:0,timeout:5000}),fastPath:true});
+const wire=new Map(),journal=new RoomsCommandJournal({getItem:k=>wire.get(k)||null,setItem:(k,v)=>wire.set(k,v)},manifest.app,abi);
+const makeClient=store=>createInterludeClient({app:manifest.app,abi,node:manifest.node,base,store,transport:engineTransport(manifest.node,{
+ async beforeSend(raw){await journal.beforeSend(raw);await saveRecovery();},
+ received(method,result){journal.received(method,result);void saveRecovery();}
+}),fastPath:true});
 const observer=makeClient(memoryStore()),players=[],rooms=[],pages=[],stats=[];
 const report={at:new Date().toISOString(),app:manifest.app,endpoint:manifest.node,transport,network:'Real browser-to-engine and public coordinator; disposable friendly rooms; no bets',transactions:[],errors:[],checks:[]};
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -26,7 +34,8 @@ async function api(p,path,body){
 }
 const action=(p,path,body={})=>api(p,path,{...body,operation:crypto.randomUUID()});
 async function until(fn,label,ms=45000){const start=Date.now();while(Date.now()-start<ms){const v=await fn();if(v)return v;await sleep(500);}throw Error('Timed out: '+label);}
-async function saveRecovery(){await writeFile(privateFile,stringify({players:players.map(p=>({address:p.address,stored:p.store.get(storageKey(manifest.app,10143,p.address)),cookie:p.cookie})),rooms}),{mode:0o600});}
+let saveTail=Promise.resolve();
+async function saveRecovery(){const bytes=stringify({players:players.map(p=>({address:p.address,stored:p.store.get(storageKey(manifest.app,10143,p.address)),cookie:p.cookie})),rooms,commands:Object.fromEntries(wire)});saveTail=saveTail.then(async()=>{await writeFile(privateFile+'.next',bytes,{mode:0o600});await rename(privateFile+'.next',privateFile);});return saveTail;}
 async function attach(p,index,room){
  const context=await browser.newContext({viewport:index%2?{width:390,height:844}:{width:1440,height:1000}});
  const stored=p.store.get(storageKey(manifest.app,10143,p.address));assert(stored);
@@ -48,7 +57,7 @@ async function attach(p,index,room){
  page.on('requestfinished',async req=>{if(req.url()!==manifest.node&&req.url()!==manifest.node+'/')return;try{
   const rpc=req.postDataJSON(),response=await req.response(),t=req.timing();let name,nonce;
   if(rpc.method==='interlude_sendTransaction'){const wrapped=decodeFunctionData({abi:delegatableAbi,data:parseTransaction(rpc.params[0]).data});const call=decodeFunctionData({abi,data:wrapped.args[2]});name=call.functionName;if(name==='input'){nonce=String(call.args[2]);row.nonces.push(nonce);}}
-  const headers=await response.allHeaders();row.calls.push({at:Date.now(),method:rpc.method,action:name,status:response.status(),ms:t.responseEnd-t.requestStart,requestId:headers['fly-request-id'],retryAfter:headers['retry-after']});
+  const headers=await response.allHeaders();row.calls.push({at:Date.now(),method:rpc.method,action:name,status:response.status(),ms:t.responseEnd-t.requestStart,requestId:headers['fly-request-id'],retryAfter:headers['retry-after'],...(response.status()>=400?{error:(await response.text()).replace(/0x[0-9a-f]{130,}/gi,'[hex omitted]').slice(0,300)}:{})});
  }catch{}});
  page.on('websocket',socket=>{if(!socket.url().startsWith(manifest.node.replace('https:','wss:')))return;row.sockets++;
   socket.on('framereceived',({payload})=>{try{const x=JSON.parse(String(payload)).params?.result;if(!x?.succeeded)return;row.events++;for(const l of x.logs||[])try{const e=decodeEventLog({abi,data:l.data,topics:l.topics});if(e.eventName==='Completed'&&String(e.args.id)===room.offer.id)row.complete=true;}catch{}}catch{}});
@@ -59,6 +68,7 @@ async function attach(p,index,room){
 }
 await mkdir(out,{recursive:true});
 try{
+ await observer.status();
  assert.equal(await observer.read('activeCount',[]),0n,'Only run when no existing game is active');
  for(let i=0;i<6;i++){
   const owner=privateKeyToAccount(generatePrivateKey()),store=memoryStore(),client=makeClient(store);
@@ -96,15 +106,23 @@ try{
   stats[i].frameMs=await pages[i].evaluate(()=>window.__frames||[]);
   const ns=stats[i].nonces.map(BigInt);for(let n=1;n<ns.length;n++)assert.equal(ns[n],ns[n-1]+1n,'Input nonce is sequential');
  }
- assert.equal(report.errors.length,0);report.checks.push('No browser exception or input nonce gap');report.passed=true;
+ assert.equal(report.errors.length,0);report.checks.push('No browser exception or input nonce gap');
+ report.inputTargetMet=stats.slice(0,4).every(s=>s.nonces.length>=100);
+ report.rateLimited=stats.some(s=>s.calls.some(c=>c.status===429));
+ report.passed=report.inputTargetMet&&!report.rateLimited;
+ if(!report.passed)report.error=report.rateLimited?'Real rate limit interrupted the load qualification':'The run did not reach 100 inputs per player';
 }catch(error){report.passed=false;report.error=String(error.shortMessage||error.message).split('Request body')[0].slice(0,700);}
 finally{
+ // Preserve browser-owned uncertain bytes before shutting down their contexts.
+ const key=`pongit:commands:${manifest.app.toLowerCase()}`;
+ for(const page of pages)try{const rows=JSON.parse(await page.evaluate(key=>sessionStorage.getItem(key)||'[]',key));const merged=new Map(JSON.parse(wire.get(key)||'[]').map(x=>[x.hash,x]));for(const row of rows)merged.set(row.hash,row);wire.set(key,JSON.stringify([...merged.values()]));}catch{}
+ await saveRecovery();
  await browser.close();await sleep(500);
- for(const r of rooms)if(r.offer)try{const s=await observer.read('getSnapshot',[BigInt(r.offer.id)]);if(s[2]===1n||s[2]===2n){const p=players.find(x=>x.address===r.offer.a.toLowerCase());const session=await p.client.restoreSession(p.address);const result=await session.send(s[2]===1n?'cancelMatch':'concede',[BigInt(r.offer.id)]);report.transactions.push({action:'finish-test',hash:result.hash});}}catch(e){report.cleanupError=String(e.shortMessage||e.message).split('Request body')[0].slice(0,300);}
+ for(const r of rooms)if(r.offer)try{const s=await observer.read('getSnapshot',[BigInt(r.offer.id)]);if(s[2]===1n||s[2]===2n){const p=players.find(x=>x.address===r.offer.a.toLowerCase());assert(!journal.pending(p.address),'Reconcile recorded test bytes before sending a new cleanup command');const session=await p.client.restoreSession(p.address);const result=await session.send(s[2]===1n?'cancelMatch':'concede',[BigInt(r.offer.id)]);report.transactions.push({action:'finish-test',hash:result.hash});}}catch(e){report.cleanupError=String(e.shortMessage||e.message).split('Request body')[0].slice(0,300);}
  for(const p of players)try{await action(p,'rooms/leave');}catch{}
  const percentile=(xs,p)=>{const s=xs.slice().sort((a,b)=>a-b);return s[Math.min(s.length-1,Math.floor(s.length*p))]??null;};
  report.browsers=stats.map(s=>({player:s.player,role:s.role,events:s.events,sockets:s.sockets,inputs:s.nonces.length,complete:s.complete,frames:{p50:percentile(s.frameMs||[],.5),p95:percentile(s.frameMs||[],.95),p99:percentile(s.frameMs||[],.99)},calls:s.calls}));
- await writeFile(out+'/report.json',JSON.stringify(report,null,2));if(!report.cleanupError)await unlink(privateFile).catch(()=>{});
+ await writeFile(out+'/report.json',JSON.stringify(report,null,2));await saveRecovery();
  console.log(JSON.stringify({...report,browsers:report.browsers.map(({calls,...s})=>({...s,calls:calls.length,readCount:calls.filter(c=>c.method==='eth_call').length,writeMs:{p50:percentile(calls.filter(c=>c.action).map(c=>c.ms),.5),p95:percentile(calls.filter(c=>c.action).map(c=>c.ms),.95),p99:percentile(calls.filter(c=>c.action).map(c=>c.ms),.99)}}))}));
  if(!report.passed)process.exitCode=1;
 }

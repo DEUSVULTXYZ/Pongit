@@ -15,7 +15,16 @@ export class EngineFeed {
  watch(id:bigint,fn:(s:EngineState)=>void){
   const entry=this.entry(id);entry.listeners.add(fn);this.users++;
   this.unwatch??=this.stream.subscribe(frame=>this.apply(frame),()=>{for(const e of this.entries.values())e.dirty=true;});
-  return ()=>{entry.listeners.delete(fn);if(!--this.users){this.unwatch?.();this.unwatch=undefined;}if(!entry.listeners.size)this.entries.delete(id);};
+  let active=true;
+  return ()=>{
+   if(!active)return;active=false;entry.listeners.delete(fn);this.users--;
+   // React replaces a command lane after nonce recovery. Keep the same arena
+   // subscription and snapshot if its replacement subscribes in this commit.
+   queueMicrotask(()=>{
+    if(!this.users){this.unwatch?.();this.unwatch=undefined;}
+    if(!entry.listeners.size&&this.entries.get(id)===entry)this.entries.delete(id);
+   });
+  };
  }
  peek(id:bigint){return this.entries.get(id)?.value;}
  progressAge(id:bigint){return this.now()-this.entry(id).progressAt;}
