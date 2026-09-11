@@ -19,12 +19,12 @@ Only one tab may control a game for a given account and deployment. Keep the con
 
 ## Renew without extra navigation
 
-When the session expires, the header displays **Reconnect**. Clicking it renews the session directly. **Play now** also carries your intention through renewal into matchmaking. No passkey popup should appear automatically while you play.
+When the rooms session expires, the header displays **Renew session**. Clicking it renews the session directly. Your matchmaking or invitation choice carries through renewal. A temporary game-node outage preserves the authorization and retries synchronization automatically, without opening a passkey prompt.
 
 Spending still needs a separate owner passkey approval: bets, withdrawals, tournament registration and administration are not covered by the arcade grant.
 
 ## Disconnect safely
 
-Open the account button and select **Disconnect**. PONGIT closes the notebook, clears local session material and requests onchain revocation. If the network is unavailable, the interface explicitly reports that revocation is not yet confirmed. Clearing the browser alone does not revoke an authorization already onchain; its expiry still applies.
+Open the account button and select **Disconnect**. In rooms, this removes this tab's game key and server authentication; it does not revoke copies of the authorization on other devices. Its original expiry still applies. The legacy V4 arcade has a separate onchain revocation flow and reports when that transaction remains unconfirmed. Closing an account also closes its decrypted private notebook. Clearing browser storage alone is never proof of onchain revocation.
 
 Physical cross-device passkey recovery depends on your provider. Automated browser tests do not establish that every physical device/provider combination works. [Permission details](/docs/technical/permissions).

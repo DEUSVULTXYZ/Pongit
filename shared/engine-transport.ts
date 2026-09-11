@@ -26,7 +26,11 @@ export function engineRequestGate(now = Date.now,remember?:(remaining:()=>number
   };
 }
 
-export function engineTransport(url: string): Transport {
+export type EngineTransportJournal = {
+  beforeSend:(raw:unknown)=>Promise<void>;
+  received:(method:string,result:any)=>void;
+};
+export function engineTransport(url: string,journal?:EngineTransportJournal): Transport {
   const gate = engineRequestGate(Date.now,remaining=>cooldowns.set(url,remaining));
   let publicationUntil=0;
   return options => {
@@ -34,7 +38,12 @@ export function engineTransport(url: string): Transport {
     return {...transport, request: async args => {
       const write=["interlude_sendTransaction","eth_sendRawTransaction"].includes(args.method);
       if(write&&Date.now()<publicationUntil){recordRpc({at:Date.now(),target:"interlude",method:"write.blocked",status:503,ms:0,source:"cooldown"});throw new EnginePublicationUnavailable();}
-      try{return await gate(()=>transport.request(args));}
+      try{return await gate(async()=>{
+        if(write)await journal?.beforeSend((args.params as any)?.[0]);
+        const result:any=await transport.request(args);
+        journal?.received(args.method,result);
+        return result;
+      });}
       catch(e){if(publicationUnavailable(e)){publicationUntil=Date.now()+30000;throw new EnginePublicationUnavailable(e);}throw e;}
     }};
   };

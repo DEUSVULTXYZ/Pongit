@@ -20,6 +20,16 @@ The isolated VPS PostgreSQL coordinator regression passed twenty duplicate-click
 
 At 2026-09-11 21:55:17 UTC, a fresh read of production confirmed that nonce 276 is a signed `tick` for a terminal game, with the same 2:7 score and result hash on Interlude and Monad. Both active count and unpublished diffs were zero. A read-only close simulation succeeded. This observation is not itself proof of a completed close or renewal.
 
+At 22:05 UTC the corrected relayer quarantined that exact terminal tick and closed epoch 1. Monad confirmed transaction `0x8536b031279b715ba0378caa020cff94ca1c9c814ca390d50f4fa48a90e339ae`. The hub's recorded release deadline is 2026-09-11 23:05:08 UTC. Closure is confirmed; renewal still requires release, financial preservation and hosted verification.
+
+The browser now journals scoped zero-value commands in sessionStorage before sending. An uncertain command prevents a different signed transaction; recovery checks the current hub epoch and receipt, then may resend only the original bytes. Local cooldown refusals occur before journal insertion. Successful recovery restores the SDK nonce and keeps the existing grant. New rooms grants last two hours; existing grants retain their signed expiry. No wallet or private-notebook key is added to this journal.
+
+127 TypeScript tests and type checking passed. Contract tests passed, followed by 10,000 Classic and 10,000 Chaos differential physics cases on an isolated VPS runner. The production-build browser regression recovered a 7:6 result through both a confirmed revert and an executed transaction with a lost response, including a ten-second 429 cooldown and room rotation. These injected failures are not measurements of the live provider.
+
+The same build also passed Chrome 152 and Edge 152 on Windows, with the exact frontend assets captured from the isolated VPS build and dynamic mocked RPC responses. A third scenario covers loss before execution and F5 restoration. All scenarios resumed a subsequent match without a new passkey; observed cooldowns were 10,006 to 10,022 ms. Reports are in `docs/validation/recovery-chrome.json` and `recovery-edge.json`. These checks cover 390 and 1440 px; the remaining viewport/load and real multi-arena qualification are separate gates.
+
+Only known PONGIT diagnostic delegations are retired by `scripts/retire-publication-probes.ts`. The two counter fixtures have no financial roles. The abandoned `0x526ef5822169ff21da4e5323d36426df0462dfcb` fixture never had a market and is guarded by zero published batch and zero active count checks. All retirement transactions share the existing operator nonce journal. Closing diagnostics does not make their validator slots available until the hub permits release.
+
 Backup `20260911T214454Z` was copied off the VPS and its database checksums verified. Removal of old PONGIT build caches reduced disk use from 81% to 76%; production images, rollback images and volumes were preserved.
 
 ## Remaining implementation and qualification

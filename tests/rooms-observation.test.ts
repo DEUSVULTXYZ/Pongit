@@ -12,7 +12,7 @@ test("invitations use a quiet observer and final states stop instead of consumin
 test("missing or unfinished engine state remains observable despite a lobby cancellation",()=>{
   assert.equal(roomSnapshotPollMs("cancelled",undefined,false),2000);
   assert.equal(roomSnapshotPollMs("cancelled",1,false),2000);
-  assert.equal(roomSnapshotPollMs("cancelled",2,false),250);
-  assert.equal(roomSnapshotPollMs("active",2,false),250);
+  assert.equal(roomSnapshotPollMs("cancelled",2,false),500);
+  assert.equal(roomSnapshotPollMs("active",2,false),500);
   assert.equal(roomSnapshotPollMs("active",2,true),2000);
 });

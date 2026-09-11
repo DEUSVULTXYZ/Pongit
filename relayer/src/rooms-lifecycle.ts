@@ -84,6 +84,7 @@ export async function roomsLifecycle(o: {
     working = false,
     error = "",
     healthy = false;
+  let sessionInfo={epoch:'0',expiresAt:0,releaseAt:0,batch:'0'},reportedError='';
   const transition = async (s: Stage) => {
     const previous=stage;
     await o.db.query(
@@ -187,6 +188,7 @@ export async function roomsLifecycle(o: {
           throw new Error("Operator transaction reverted; review required");
       }
       const d = await readHubDelegation(o.base, o.hub, o.app);
+      sessionInfo={epoch:String(d.epoch),expiresAt:Number(d.expiresAt)*1000,releaseAt:Number(d.stakeUnlockAt)*1000,batch:String(d.batchIndex)};
       if (d.epoch > 0n)
         await o.db.query("UPDATE il_lifecycle SET epoch=$2 WHERE app=$1", [
           o.app,
@@ -335,6 +337,7 @@ export async function roomsLifecycle(o: {
       healthy = false;
       error = (e as Error).message.split("\n")[0].slice(0, 180);
     } finally {
+      if(error!==reportedError){reportedError=error;console.warn(JSON.stringify({event:'rooms-lifecycle-diagnostic',app:o.app,stage,error,at:new Date().toISOString()}));}
       if (c) {
         if (locked)
           await c.query("SELECT pg_advisory_unlock(701340)").catch(() => {});
@@ -348,7 +351,7 @@ export async function roomsLifecycle(o: {
   void cycle();
   return {
     available: () => stage === "playing" && healthy,
-    status: () => ({ stage, error, healthy }),
+    status: () => ({ stage, error, healthy, ...sessionInfo }),
     stop: () => clearInterval(timer),
   };
 }

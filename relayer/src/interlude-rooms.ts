@@ -459,6 +459,7 @@ export async function createRoomsCoordinator(o: Options) {
       )
     ).rows[0];
     if(job && Number(job.epoch)!==lastEpoch)throw new Error("An engine transaction from another delegation needs recovery before sending");
+    if(!job && id==='0')return; // A concurrent receipt observer may have resolved it.
     if (!job) {
       const nonce = await client.node.getTransactionCount({
         address: signer.address,

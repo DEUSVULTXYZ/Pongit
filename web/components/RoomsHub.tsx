@@ -32,6 +32,7 @@ import {
   roomsScope,
   roomsAccountKey,
   authenticateRooms,
+  recoverRoomsCommands,
   roomsAction,
   roomsApi,
   type RoomsClient,
@@ -223,6 +224,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     [showResultKey, setShowResultKey] = useState(0);
   const [syncError, setSyncError] = useState("");
   const [writeBlocked, setWriteBlocked] = useState(false), [sessionRevision, setSessionRevision] = useState(0);
+  const [renewRequired,setRenewRequired]=useState(false);
   const [resultView,setResultView]=useState<{snapshot:LabSnapshot;ranked:boolean;mode:number;account:string}|null>(null);
   const [resultRating, setResultRating] = useState<{id:string;delta:number}|null>(null);
   const refreshVersion = useRef(0);
@@ -286,7 +288,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     setWriteBlocked(true);
     setDirection(0);
     setError(
-      publicationUnavailable(error)?new EnginePublicationUnavailable().message:"The engine did not confirm this action. Reconnect to read the current match before continuing.",
+      publicationUnavailable(error)?new EnginePublicationUnavailable().message:"Confirming the last game action. Your arcade session is saved; synchronization will resume automatically.",
     );
   };
   const read = async () =>
@@ -342,6 +344,16 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     }
   }
   async function ensure(fn: () => Promise<void>) {
+    if(account && !ready && !renewRequired){
+      intent.current=fn;
+      setSyncError('Restoring your saved arcade session. Your selection will continue automatically.');
+      return;
+    }
+    if (ready && writeBlocked) {
+      intent.current = fn;
+      setSyncError("Confirming the previous action. Your selection will continue automatically.");
+      return;
+    }
     if (ready && !writeBlocked) {
       await run(fn);
       return;
@@ -351,7 +363,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       await login();
     } else setPanel("connect");
   }
-  async function install(p: Address, next: RoomsSession) {
+  async function install(p: Address, next: RoomsSession, current = () => alive.current) {
+    await client.current!.status();
+    if (!current()) return;
     // A single serialization point owns the SDK's transaction nonce for this tab.
     let failedSend=false;
     const serial = new Proxy(next, {
@@ -361,7 +375,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
             const pending = sendTail.current
               .catch(() => {})
               .then(() => {
-                if(failedSend)throw new Error("Reconnect the arcade session before sending another action.");
+                if(failedSend)throw new Error("Waiting for the previous game command to synchronize.");
                 return (target.send as any)(...args).catch((e:Error)=>{
                   // A receipt-backed application revert consumes its nonce.
                   // A transport/session failure needs a freshly restored SDK session.
@@ -377,12 +391,14 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       },
     });
     await authenticateRooms(p);
+    if (!current()) return;
     session.current = serial;
     accountRef.current = p;
     sessionStorage.setItem(roomsAccountKey, p);
     setAccount(p);
     setReady(true);
-    setWriteBlocked(false);
+    setRenewRequired(false);
+    setWriteBlocked(!!client.current!.commandJournal.pending(p));
     setSessionRevision(v=>v+1);
     setSaved(p);
     setError("");
@@ -429,7 +445,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           transport: http(),
         }),
         scope: roomsScope,
-        expirySeconds: 1800,
+        expirySeconds: 7200,
         assertDigest: true,
       });
       await install(identity.account.address, next);
@@ -469,7 +485,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           setOnline(c.online);
           setAdmission(c.admission);
           setStreamEnabled(c.stateTransport==="events");
-          if(c.maintenance?.stage && c.maintenance.stage!=='playing')setNotice(c.maintenance.stage==='draining'?'Current matches are finishing before scheduled maintenance. New games will resume after renewal.':'The arcade is renewing its delegation. This includes a one-hour challenge period. Payments continue in the background.');
+          if(c.maintenance?.stage && c.maintenance.stage!=='playing') {
+            const m=c.maintenance;
+            const until=m.releaseAt>Date.now()?` The hub permits release at ${new Date(m.releaseAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}.`:'';
+            setNotice(m.stage==='draining'?'Finishing current matches and publishing their results before renewal.':m.stage==='challenge'?`The previous arena is closing.${until} Recovery continues automatically.`:m.stage==='starting'?'Checking the renewed game engine. Play resumes after verification.':'Recovering the game service. Your account remains saved.');
+          }
           else if (!c.online) setNotice("The game service is reconnecting. Please retry shortly.");
           else setNotice("");
         }
@@ -500,6 +520,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           }
           if (s) await install(previous, s);
           else {
+            setRenewRequired(true);
             release.current?.();
             release.current = null;
           }
@@ -523,6 +544,47 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       release.current?.();
     };
   }, []);
+  useEffect(()=>{
+    if(!account||ready||busy||renewRequired)return;
+    let cancelled=false,timer:ReturnType<typeof setTimeout>,attempt=0;
+    const restore=async()=>{
+      try{
+        release.current ||= await tabLock(account);
+        const restored=await client.current!.restoreSession(account,{scope:roomsScope});
+        if(cancelled)return;
+        if(!restored){setRenewRequired(true);setError('Your arcade session has expired or was revoked. Renew session to continue.');return;}
+        await install(account,restored,()=>!cancelled&&alive.current&&accountRef.current===account);
+        if(!cancelled && !client.current!.commandJournal.pending(account)){
+          const action=intent.current;intent.current=null;if(action)await run(action);
+        }
+      }catch(e){if(!cancelled){setError((e as Error).message.split('\n')[0]);timer=setTimeout(()=>void restore(),Math.max(engineCooldownMs(roomsManifest.node),Math.min(30000,2000*2**Math.min(attempt++,4))));}}
+    };
+    timer=setTimeout(()=>void restore(),Math.max(2000,engineCooldownMs(roomsManifest.node)));
+    return()=>{cancelled=true;clearTimeout(timer);};
+  },[account,ready,busy,renewRequired]);
+  useEffect(() => {
+    if(!ready||!account||!writeBlocked)return;
+    let cancelled=false,timer:ReturnType<typeof setTimeout>,attempt=0;
+    const recover=async()=>{
+      try{
+        const c=client.current!;
+        await recoverRoomsCommands(c,account);
+        const restored=await c.restoreSession(account,{scope:roomsScope});
+        if(cancelled)return;
+        if(!restored){setRenewRequired(true);setReady(false);setError('Your arcade session has expired or was revoked. Renew session to continue.');return;}
+        await install(account,restored,()=>!cancelled && alive.current && accountRef.current===account);
+        if(!cancelled){
+          setSyncError('');setError('');
+          const action=intent.current;intent.current=null;
+          if(action)await run(action);
+        }
+      }catch(e){
+        if(!cancelled)timer=setTimeout(()=>void recover(),Math.max((e as {retryMs?:number}).retryMs||0,engineCooldownMs(roomsManifest.node),Math.min(30000,2000*2**Math.min(attempt++,4))));
+      }
+    };
+    timer=setTimeout(()=>void recover(),Math.max(1000,engineCooldownMs(roomsManifest.node)));
+    return ()=>{cancelled=true;clearTimeout(timer);};
+  },[ready,account,writeBlocked]);
   useEffect(() => {
     if (!ready) return;
     let done = false,
@@ -600,11 +662,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     const feed=streamEnabled?feedRef.current:null,pilot=new TickPilot();
     const legacyRead = engineRead(async () => labSnapshot(
       await readEngineSnapshot(client.current!, BigInt(id)),
-    ),250);
+    ),500);
     const readSnapshot=(fresh=false)=>feed?feed.read(BigInt(id),fresh):legacyRead(fresh);
     const deliver=(s:LabSnapshot,ms?:number)=>{pilot.observe(s,Date.now(),ms!==undefined);receive(s,ms);};
     const unwatch=feed?.watch(BigInt(id),s=>{if(!done){
-      if(s.reset){lane.current?.stop();setWriteBlocked(true);setDirection(0);setError("The game node restarted. Reconnect to synchronize your existing session before playing.");}
+      if(s.reset){lane.current?.stop();setWriteBlocked(true);setDirection(0);setSyncError("The game node restarted. Synchronizing your saved session automatically.");}
       lane.current?.ingest(s);deliver(s);
     }});
     if (session.current && account && !writeBlocked)
@@ -618,7 +680,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           setSyncError(engineReadRetryMs(e) ? "The game node is limiting requests. Waiting to synchronize." : "Synchronizing game state. Your session is still connected.");
           setDirection(0);
         },
-        {readMs:250,tickMs:300},
+        {readMs:500,tickMs:300},
         feed?{receipt:(result,name,args)=>feed.receipt(BigInt(id),result,name,args,account),sending:value=>pilot.sending(value)}:undefined,
       );
     const poll = async () => {
@@ -938,6 +1000,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     }).catch(() => {});
     accountRef.current = undefined;
     setAccount(undefined);
+    setRenewRequired(false);
     setReady(false);
     setLobby({
       inbox: [],
@@ -1022,7 +1085,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               : busy
                 ? "Connecting…"
                 : account
-                  ? "Renew session"
+                  ? renewRequired ? "Renew session" : "Reconnecting…"
                   : "Connect"}
           </button>
         </div>
@@ -1035,7 +1098,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       {error && !panel && (
         <div className="rooms-error" role="alert">
           {error}
-          {(!ready || writeBlocked) && account && (
+          {!ready && account && (
             <button disabled={busy} onClick={() => void login()}>
               Reconnect
             </button>

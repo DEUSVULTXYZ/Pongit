@@ -14,6 +14,9 @@ import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { api, API } from "./api";
 import {engineTransport} from "../../shared/engine-transport";
 import {measuredFetch,recordRpc} from "../../shared/rpc-metrics";
+import {RoomsCommandJournal} from './rooms-command-journal';
+import {readHubDelegation} from '../../shared/rooms-hub';
+import {assertRoomsEngineAvailable} from '../../shared/rooms-availability';
 export const roomsManifest = manifest;
 export const roomsChaos = Number(manifest.rulesVersion) === 4;
 export const roomsScope = [
@@ -25,7 +28,8 @@ export const roomsScope = [
 ] as const;
 export const roomsAccountKey = `pongit:rooms:${manifest.app}:account`;
 export function createRoomsClient() {
-  return createInterludeClient({
+  const journal=new RoomsCommandJournal(sessionStorage,manifest.app as Address,(roomsChaos?roomsChaosAbi:roomsAbi) as Abi);
+  const client=createInterludeClient({
     app: manifest.app as Address,
     abi: (roomsChaos ? roomsChaosAbi : roomsAbi) as Abi,
     node: manifest.node,
@@ -38,13 +42,29 @@ export function createRoomsClient() {
       }),
     }),
     store: webStorageStore(sessionStorage),
-    expirySeconds: 1800,
-    transport: engineTransport(manifest.node),
+    expirySeconds: 7200,
+    transport: engineTransport(manifest.node,journal),
     fastPath: true,
   });
+  return Object.assign(client,{commandJournal:journal});
 }
 export type RoomsClient = ReturnType<typeof createRoomsClient>;
 export type RoomsSession = Session<Abi>;
+/** Reads first, then reuses only the same signed bytes if a response was lost. */
+export async function recoverRoomsCommands(client:RoomsClient,player:Address){
+  const [node,hub]=await Promise.all([client.status(),readHubDelegation(client.base,manifest.hub as Address,manifest.app as Address)]);
+  assertRoomsEngineAvailable(manifest.app,node,hub,Math.floor(Date.now()/1000));
+  client.commandJournal.retirePrevious(player,hub.epoch);
+  const pending=client.commandJournal.pending(player);
+  if(!pending)return;
+  if(pending.epoch!==String(hub.epoch))throw Error('The uncertain command belongs to another engine epoch');
+  let receipt=await client.node.getTransactionReceipt({hash:pending.hash}).catch(()=>null);
+  if(!receipt){
+    // Explicit recovery can resend these bytes, never synthesize a replacement.
+    receipt=await client.node.request({method:'interlude_sendTransaction',params:[pending.raw]} as any) as any;
+  }
+  if(!receipt || client.commandJournal.pending(player))throw Error('Waiting for confirmation of the existing game command');
+}
 export async function roomsApi<T = any>(
   path: string,
   body?: unknown,
