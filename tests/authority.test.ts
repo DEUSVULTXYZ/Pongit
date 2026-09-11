@@ -1,6 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getAddress, keccak256, toHex, type Address, type Hex } from "viem";
+import {
+  decodeFunctionData,
+  getAddress,
+  keccak256,
+  parseAbi,
+  toHex,
+  type Address,
+  type Hex,
+} from "viem";
 import {
   preparePrivateUpload,
   verifyPrivateChunk,
@@ -17,12 +25,24 @@ import {
   transitionNotice,
   authorityGrantHash,
   commandMessage,
+  engineCommand,
+  authorityCommandAbi,
 } from "../shared/authority-client";
 import {
   authorityExecutor,
   maintenanceCall,
   type AuthorityExecutorPort,
 } from "../relayer/src/authority-keeper";
+
+test("engine commands bind both execution generation and delegation epoch", () => {
+  const data = engineCommand(2n, 8n, "0x12345678");
+  const decoded = decodeFunctionData({ abi: authorityCommandAbi, data });
+  assert.deepEqual(decoded.args, [2n, 8n, "0x12345678"]);
+  assert.notEqual(data, engineCommand(2n, 9n, "0x12345678"));
+  assert.notEqual(data, engineCommand(3n, 8n, "0x12345678"));
+  assert.throws(() => engineCommand(2n, 0n, "0x12345678"));
+  assert.throws(() => engineCommand(0n, 8n, "0x12345678"));
+});
 
 test("ciphertext Merkle chunks roundtrip at limits, corruption cannot pass", () => {
   for (const size of [16, 4096, 4097, 16000, 65536]) {
@@ -231,6 +251,27 @@ test("optional executor never chooses opponents, retries an uncertain send or ch
   assert.equal(await execute(targets, task), "waiting_for_sponsor");
   assert.equal(writes, 1);
   assert.equal(maintenanceCall(targets, task).value, 0n);
+  const close = maintenanceCall(targets, {
+    kind: "closeCompletedSession",
+    epoch: 8n,
+  });
+  assert.equal(close.to, targets.game);
+  assert.equal(close.value, 0n);
+  assert.deepEqual(
+    decodeFunctionData({
+      abi: parseAbi(["function closeCompletedSession(uint256 expectedEpoch)"]),
+      data: close.data,
+    }).args,
+    [8n],
+  );
+  assert.notEqual(
+    close.requestId,
+    maintenanceCall(targets, { kind: "closeCompletedSession", epoch: 9n })
+      .requestId,
+  );
+  assert.throws(() =>
+    maintenanceCall(targets, { kind: "closeCompletedSession", epoch: 0n }),
+  );
   assert.notEqual(
     maintenanceCall(targets, task).requestId,
     maintenanceCall({ ...targets, generation: 2n }, task).requestId,

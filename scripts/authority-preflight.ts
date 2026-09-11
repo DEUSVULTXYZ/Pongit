@@ -4,6 +4,7 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 const names = [
   "AutonomousArena",
   "AuthorityActions",
+  "AuthorityLifecycle",
   "ContractLobby",
   "AuthorityRating",
   "BaseAuthorization",
@@ -38,6 +39,7 @@ const report = {
     size: contracts.every((c) => c.withinSizeLimits),
     chaosProof: false,
     hostedRoundtrip: false,
+    perMatchClosure: false,
     hostedPublicationBudget: false,
     legacyMigration: false,
     browserAcceptance: false,
@@ -45,6 +47,7 @@ const report = {
   blockers: [
     "The only shipped proof module rejects every Interlude checkpoint.",
     "No hosted Interlude -> Monad -> Interlude cycle has been qualified.",
+    "The shared-delegation closure candidate drains both game slots; independent per-match sessions and their hosted renewal remain unqualified.",
     "Publication accounting with two matches and lobby writes must fit the real node budget.",
     "Existing production accounts and encrypted payloads have not been migrated.",
     "The production client and sponsor remain on their current adapters.",
@@ -64,11 +67,12 @@ const abiType = (input: {
   input.type.startsWith("tuple")
     ? `(${input.components!.map((c) => abiType(c as typeof input)).join(",")})${input.type.slice(5)}`
     : input.type;
-for (const name of ["AutonomousArena", "AuthorityActions"]) {
+for (const name of ["AutonomousArena", "AuthorityActions", "AuthorityLifecycle"]) {
   const artifact = JSON.parse(
     await readFile(`contracts/out/${name}.sol/${name}.json`, "utf8"),
   );
   for (const item of artifact.abi) {
+    if (name === "AuthorityLifecycle" && item.type !== "event") continue;
     if (item.type === "constructor") continue;
     const key = `${item.type}:${item.name ?? ""}(${(item.inputs ?? []).map(abiType).join(",")})`;
     if (!seen.has(key)) {

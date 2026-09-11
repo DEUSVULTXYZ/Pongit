@@ -1,0 +1,125 @@
+{
+  "recordedAt": "2026-09-11T14:08:29.997705+00:00",
+  "baseCommit": "3fc32116eef95391bc5584169d262478cb5ea44d",
+  "scope": "Contract-authority shared-session completion candidate. Not a deployed migration or independent per-match hosted partition.",
+  "productionChanged": false,
+  "publicTransactionsSent": 0,
+  "environment": "Private EVM in resource-limited temporary containers on the existing VPS; no published test service ports.",
+  "contracts": {
+    "passed": 193,
+    "failed": 0,
+    "suites": 17,
+    "candidateTests": 29,
+    "compiler": "0.8.30",
+    "viaIR": true,
+    "optimizerRuns": 200,
+    "evmVersion": "cancun"
+  },
+  "typescript": {
+    "passed": 31,
+    "failed": 0,
+    "candidateTests": 28,
+    "existingAvailabilityTests": 3,
+    "typecheck": "passed"
+  },
+  "physics": {
+    "classic": 10000,
+    "chaos": 10000,
+    "mismatches": 0,
+    "scope": "Reused physics harnesses, not hosted gameplay or full dual-engine UI acceptance"
+  },
+  "cli": {
+    "version": "0.1.4",
+    "check": "passed",
+    "surfaces": 4,
+    "candidateLayout": "0x66743d908a494bc45ce70b5cddce77cdd196e1c02b00cc51e73e4e2984c5229d"
+  },
+  "storage": {
+    "twoAdmissions": 76,
+    "twoResults": 44,
+    "sealAdditionalSlots": 1,
+    "hostedQualification": false
+  },
+  "liveObservation": {
+    "at": "2026-09-11T13:53:02.602Z",
+    "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+    "node": "https://il-fd1693294fed7730.fly.dev",
+    "readOnly": true,
+    "samples": [
+      {
+        "path": "/health",
+        "at": "2026-09-11T13:53:02.713Z",
+        "http": 200,
+        "retryAfter": null,
+        "requestId": "01M28BX80JX4X80VK75697YHPD-cdg",
+        "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+        "epoch": 1,
+        "head": 76936,
+        "batch": 76,
+        "halted": null
+      },
+      {
+        "path": "interlude_session",
+        "at": "2026-09-11T13:53:02.720Z",
+        "http": 200,
+        "retryAfter": null,
+        "requestId": "01M28BX80YVS2Z4WT7XK83GA9A-cdg",
+        "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+        "epoch": 1,
+        "head": 76937,
+        "batch": 76,
+        "pending": 0
+      }
+    ],
+    "hub": {
+      "challengeWindow": 3600,
+      "maxDiffsPerCommit": 64,
+      "validator": "0xB28E684815b095aB5Fb324214cfEa63d76F3d691",
+      "status": 1,
+      "epoch": "1",
+      "batch": "76",
+      "lastCommitAt": "2026-09-11T13:40:33.000Z",
+      "expiresAt": "2026-09-10T10:10:00.000Z",
+      "stakeUnlockAt": "1970-01-01T00:00:00.000Z"
+    }
+  },
+  "remaining": [
+    "Contract-verifiable fresh Monad Chaos checkpoints",
+    "Independent per-match hosting or qualified successive shared sessions with current challenge window",
+    "Live publication budget with lobby and two games",
+    "Legacy game/journal recovery and migration",
+    "Production browser and sponsor-journal adapters",
+    "Hosted Interlude to Monad and back cycle"
+  ],
+  "hashAlgorithm": "SHA-256, UTF-8 with CRLF normalized to LF",
+  "sources": {
+    "contracts/src/autonomous/AuthorityActions.sol": "0033492b1a339a0db26a76c0ef516d16523eedc90486077d875804939728acb8",
+    "contracts/src/autonomous/AuthorityControl.sol": "52e1bf40c206ec15c10effcf6c5b1da82c309a73374586b2efa29032998cfd75",
+    "contracts/src/autonomous/AuthorityLifecycle.sol": "9edfa29c5994054353295817fcb0b16cc8d50fbb85bbcab08680ebb978a9820a",
+    "contracts/src/autonomous/AuthorityRating.sol": "6858c170b286b0aeaf5901841fa6098ba1a948450d665cc237e3bf2278499d0e",
+    "contracts/src/autonomous/AuthorityStore.sol": "cd43c6ebad0c65fda05aeeb7e0b83fe209eaccc16d0f9cb7d436dee258f65994",
+    "contracts/src/autonomous/AutonomousArena.sol": "b79cc26a76b8d5e43482fb5a8a8fc4362046c1589f842e076a6f17e62206f6fe",
+    "contracts/src/autonomous/AutonomousArenaInterludeSurface.sol": "aea8f19a97b0372b38e792d2626f6e1ca9614193a9b2b9e3c0323166071c3d3d",
+    "contracts/src/autonomous/AutonomousFinance.sol": "a295c44392b94b926839c3bec72e03b6d98e2105a14b116d86ebf3694a1d6873",
+    "contracts/src/autonomous/AutonomousGameBase.sol": "430085e261b5322ed5a3e9bc49c1c1a3cacf5fa49ee5e99fe33089c9c86cfc76",
+    "contracts/src/autonomous/BaseAuthorization.sol": "17476db19a83a0eedda073cf9f49d097b504750936982c80b7a16ac0e47738fc",
+    "contracts/src/autonomous/ChaosProof.sol": "d4865d3c6d514c01afced7dc04360d63899209ee4137615e07f3c8d0720bdfcf",
+    "contracts/src/autonomous/ContractLobby.sol": "c6f7e52742c17a111f7568eca74f8c7d35da965052c8aa082bb2bcbe312349a9",
+    "contracts/src/autonomous/OwnerWrites.sol": "0f4f52d243e8a3c460cd8a7f539fbd8386caf5b0801852fcd903750607a852e6",
+    "contracts/src/autonomous/PlayerIndex.sol": "63cd7833b1eb7f60c1ac13e84dabbe9a193049277a244430d74e2cbb664d83a3",
+    "contracts/src/autonomous/PrivateDataStore.sol": "dae82b1bb9b5928fc852ec1dfd4f3a1171277bde00e6f3281886e4ecdf6541e2",
+    "contracts/src/autonomous/ProfileRegistry.sol": "5e4a50267dcc90c73187d7ac459d392232708da8ad9d54efcb141e87b0f1f9e9",
+    "contracts/test/AuthorityData.t.sol": "294cc99358bd910a88531414fd42cd1cf76be3054b02c77db8d0540249d9e78c",
+    "contracts/test/Autonomous.t.sol": "f7a8e42114793eb452e830d6e5d30e9dad7e11b0d8afb2e83525681785684358",
+    "relayer/src/authority-keeper.ts": "20c12fa285f620129aad54615e6b4962d5ee0cc776a42e198c1550555730dd1d",
+    "relayer/src/authority-recovery.ts": "9c35da4bbbf273337f0b32e8daedba7e2482dc43a30c266d87c5a44d1dda7891",
+    "scripts/authority-preflight.ts": "c8b1ad51009bb99201e199cf073db261dc62648b11dbd7ec00ab9cc9421c7633",
+    "shared/authority-client.ts": "7a83605ea2dfbe76909cf0042092f138d063f6197aff29da1b2a677e79cdc9b7",
+    "shared/authority-private.ts": "bab6f0bb44967ec26fd88d84408ef7dbf76a09118a0d88d473eb8bdd20337a20",
+    "shared/authority-recovery-source.ts": "ebdec809d5f01ce1fcbd0ff4d61e9332f12d9f9338ad752961b2915df4419039",
+    "shared/authority-recovery.ts": "c705aa5c4dbd760869944969f4bcff6601af56d5a7e14fdcc748b2f4d0f53f77",
+    "tests/authority-recovery.test.ts": "522057e8556442093d272c83e3e0701d25070e465bb8ae1a8c0d0d6fcd9513e1",
+    "tests/authority.test.ts": "6294c635fdb8090a241525cacbd781d0493e86a8108267f24965d350a026c905",
+    "tests/rooms-availability.test.ts": "506927510d4255aa8de7d1391f3da5888811a1c26863c8bf7a8cde1fffbd6a9e"
+  }
+}

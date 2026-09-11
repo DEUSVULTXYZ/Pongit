@@ -4,6 +4,7 @@ import {Delegatable} from "../../vendor/interlude/Delegatable.sol";
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
 import {AuthorityControl as Control} from "./AuthorityControl.sol";
 import {AuthorityActions} from "./AuthorityActions.sol";
+import {AuthorityLifecycle} from "./AuthorityLifecycle.sol";
 import {AutonomousGameBase} from "./AutonomousGameBase.sol";
 import {ContractLobby as Lobby} from "./ContractLobby.sol";
 import {AuthorityStore as S} from "./AuthorityStore.sol";
@@ -22,6 +23,8 @@ interface IPreviousRating {
 
 /// Candidate only. Ship is gated on a qualified proof transport and a real full lifecycle rehearsal.
 contract AutonomousArena is AutonomousGameBase {
+    error EngineSessionSealed();
+    error CommandEpochMismatch();
     /// @custom:interlude global
     mapping(bytes32 => uint256) internal words;
 
@@ -102,6 +105,7 @@ contract AutonomousArena is AutonomousGameBase {
     function _assertExecution() internal view override {
         if (isEphemeral()) {
             if (block.chainid != 4242 || Control.state().execution != Control.Execution.Interlude) revert EngineOnly();
+            if (S.get(words, 101, generation(), 1) != 0) revert EngineSessionSealed();
         } else if (
             Control.state().execution != Control.Execution.Monad || Control.state().starting
                 || hub.statusOf(address(this), Types.GLOBAL) != Types.Status.None
@@ -128,19 +132,8 @@ contract AutonomousArena is AutonomousGameBase {
         return address(uint160(stored));
     }
 
-    function _allowed(bytes4 s) private pure returns (bool) {
-        return s == AuthorityActions.queue.selector || s == AuthorityActions.cancelQueue.selector
-            || s == AuthorityActions.queueHeartbeat.selector || s == AuthorityActions.createRoom.selector
-            || s == AuthorityActions.joinRoom.selector || s == AuthorityActions.leaveRoom.selector
-            || s == AuthorityActions.rejoinQueue.selector || s == AuthorityActions.acceptProposal.selector
-            || s == AuthorityActions.declineProposal.selector || s == AuthorityActions.inviteSomeone.selector
-            || s == AuthorityActions.inviteToRoom.selector || s == AuthorityActions.answerInvitation.selector
-            || s == AuthorityActions.rematch.selector || s == AuthorityActions.blockPlayer.selector
-            || s == this.input.selector || s == this.concede.selector;
-    }
-
     function _dispatch(address actor, bytes calldata data) private returns (bytes memory) {
-        require(data.length >= 4 && data.length <= 2048 && _allowed(bytes4(data[:4])), "game scope");
+        require(data.length >= 4 && data.length <= 2048 && actions.allowedCommand(bytes4(data[:4])), "game scope");
         bytes32 slot = ACTOR;
         uint256 prior;
         assembly { prior := tload(slot) }
@@ -153,8 +146,13 @@ contract AutonomousArena is AutonomousGameBase {
         return result;
     }
 
-    function command(uint256 expectedGeneration, bytes calldata data) external engine returns (bytes memory) {
+    function command(uint256 expectedGeneration, uint256 expectedEpoch, bytes calldata data)
+        external
+        engine
+        returns (bytes memory)
+    {
         require(isEphemeral() && expectedGeneration == generation(), "command generation");
+        if (hub.sessionOf(address(this), Types.GLOBAL).epoch != expectedEpoch) revert CommandEpochMismatch();
         return _dispatch(_actor(), data);
     }
 
@@ -211,11 +209,9 @@ contract AutonomousArena is AutonomousGameBase {
 
     function _finish(uint256 id, uint256 phase, address winner) internal override {
         super._finish(id, phase, winner);
-        Lobby.finish(words, id, winner);
-        if (phase == 3 && (_get(id, 0) & (1 << 160)) != 0) {
-            PlayerIndex.add(words, address(uint160(_get(id, 0))), matchMode(id));
-            PlayerIndex.add(words, address(uint160(_get(id, 1))), matchMode(id));
-        }
+        AuthorityLifecycle.finish(
+            words, id, phase, winner, isEphemeral() ? hub.sessionOf(address(this), Types.GLOBAL).epoch : 0
+        );
     }
 
     function _startingRating(address player, uint8 mode) internal view override returns (Rating memory) {

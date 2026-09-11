@@ -1,5 +1,6 @@
 import {
   encodeAbiParameters,
+  encodeFunctionData,
   keccak256,
   parseAbi,
   type Address,
@@ -9,12 +10,33 @@ import {
 export const authorityReadAbi = parseAbi([
   "function generation() view returns(uint256)",
   "function executionState() view returns(uint8)",
+  "function sessionClosure() view returns(uint256 drainingEpoch,uint256 sealedEpoch)",
   "function participation(address player) view returns(uint256)",
   "function queuedPlayer(address player) view returns(uint8 mode,uint64 since,uint64 expires)",
   "function rankedPlayers(uint8 mode,uint256 offset,uint256 limit) view returns(address[] players,uint256 total)",
   "function ratingOf(address player,uint8 mode) view returns((uint32 elo,uint32 played,uint32 wins,uint32 season))",
   "event ExecutionChanged(uint8 previous,uint8 next,uint256 generation,bytes32 reason,uint64 at)",
+  "event SessionDraining(uint256 indexed generation,uint256 indexed epoch,uint256 indexed lastMatch)",
+  "event SessionSealed(uint256 indexed generation,uint256 indexed epoch)",
 ]);
+export const authorityCommandAbi = parseAbi([
+  "function command(uint256 expectedGeneration,uint256 expectedEpoch,bytes data) returns(bytes)",
+]);
+/** Keep the user's grant, but bind every new call to the observed delegation.
+ * A signed command for a closed node must not run after its next renewal. */
+export function engineCommand(
+  generation: bigint,
+  delegationEpoch: bigint,
+  data: Hex,
+) {
+  if (generation <= 0n || delegationEpoch <= 0n)
+    throw new Error("Synchronize the game session first.");
+  return encodeFunctionData({
+    abi: authorityCommandAbi,
+    functionName: "command",
+    args: [generation, delegationEpoch, data],
+  });
+}
 export type MatchReference = {
   chainId: 10143;
   deployment: Address;

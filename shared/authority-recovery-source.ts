@@ -20,6 +20,8 @@ import {
 const controllerAbi = parseAbi([
   "function generation() view returns(uint256)",
   "function executionState() view returns(uint8)",
+  "function transitionReason() view returns(bytes32)",
+  "function sessionClosure() view returns(uint256 drainingEpoch,uint256 sealedEpoch)",
   "function hub() view returns(address)",
 ]);
 type BaseRpc = Pick<PublicClient, "getChainId" | "getBlock" | "request">;
@@ -50,35 +52,55 @@ export function authorityRecoverySource(options: {
         method: "eth_call",
         params: [{ to, data }, toHex(block.number)],
       });
-    const [generationData, executionData, hubData, delegationData] =
-      await Promise.all([
-        read(
-          app,
-          encodeFunctionData({
-            abi: controllerAbi,
-            functionName: "generation",
-          }),
-        ),
-        read(
-          app,
-          encodeFunctionData({
-            abi: controllerAbi,
-            functionName: "executionState",
-          }),
-        ),
-        read(
-          app,
-          encodeFunctionData({ abi: controllerAbi, functionName: "hub" }),
-        ),
-        read(
-          hub,
-          encodeFunctionData({
-            abi: roomsLifecycleHubAbi,
-            functionName: "delegationOf",
-            args: [app, zeroHash],
-          }),
-        ),
-      ]);
+    const [
+      generationData,
+      executionData,
+      hubData,
+      delegationData,
+      reasonData,
+      closureData,
+    ] = await Promise.all([
+      read(
+        app,
+        encodeFunctionData({
+          abi: controllerAbi,
+          functionName: "generation",
+        }),
+      ),
+      read(
+        app,
+        encodeFunctionData({
+          abi: controllerAbi,
+          functionName: "executionState",
+        }),
+      ),
+      read(
+        app,
+        encodeFunctionData({ abi: controllerAbi, functionName: "hub" }),
+      ),
+      read(
+        hub,
+        encodeFunctionData({
+          abi: roomsLifecycleHubAbi,
+          functionName: "delegationOf",
+          args: [app, zeroHash],
+        }),
+      ),
+      read(
+        app,
+        encodeFunctionData({
+          abi: controllerAbi,
+          functionName: "transitionReason",
+        }),
+      ),
+      read(
+        app,
+        encodeFunctionData({
+          abi: controllerAbi,
+          functionName: "sessionClosure",
+        }),
+      ),
+    ]);
     const actualHub = decodeFunctionResult({
       abi: controllerAbi,
       functionName: "hub",
@@ -109,6 +131,11 @@ export function authorityRecoverySource(options: {
     )
       throw new Error("Invalid controller or delegation state");
     const health = await options.health(block.timestamp);
+    const [drainingEpoch, sealedEpoch] = decodeFunctionResult({
+      abi: controllerAbi,
+      functionName: "sessionClosure",
+      data: closureData,
+    });
     if (!(await canonical(block.number, block.hash)))
       throw new Error("Recovery observation reorganized");
     const observation: ExecutionObservation = {
@@ -116,6 +143,12 @@ export function authorityRecoverySource(options: {
       app,
       generation,
       execution,
+      transitionReason: decodeFunctionResult({
+        abi: controllerAbi,
+        functionName: "transitionReason",
+        data: reasonData,
+      }),
+      closure: { drainingEpoch, sealedEpoch },
       block: block.number,
       blockHash: block.hash,
       timestamp: block.timestamp,

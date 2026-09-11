@@ -33,6 +33,13 @@ contract AuthorityHubFixture {
     mapping(address => uint256) public sessionEpochOf;
     uint256 public unlockAt;
     address public app;
+    uint256 public closes;
+    uint256 private epochCounter;
+    bool public clearReleasedEpoch;
+
+    function clearEpochOnRelease() external {
+        clearReleasedEpoch = true;
+    }
 
     function statusOf(address, bytes32) external view returns (Types.Status) {
         return session.status;
@@ -52,7 +59,7 @@ contract AuthorityHubFixture {
     {
         app = msg.sender;
         session.status = Types.Status.Active;
-        session.epoch++;
+        session.epoch = ++epochCounter;
         session.lastCommitAt = uint64(block.timestamp);
         session.maxBatchInterval = 60;
         session.expiresAt = uint64(block.timestamp + 86400);
@@ -65,9 +72,17 @@ contract AuthorityHubFixture {
         unlockAt = block.timestamp + 120;
     }
 
+    function closeDelegation(bytes32) external {
+        require(msg.sender == app && session.status == Types.Status.Active, "app close");
+        session.status = Types.Status.Exiting;
+        unlockAt = block.timestamp + 120;
+        closes++;
+    }
+
     function releaseStake(address, bytes32) external {
         require(session.status == Types.Status.Exiting && block.timestamp >= unlockAt, "challenge window");
         session.status = Types.Status.None;
+        if (clearReleasedEpoch) session.epoch = 0;
         IDelegatableApp(app).onDelegationChanged(Types.GLOBAL, false);
     }
 
@@ -157,9 +172,14 @@ contract AuthorityArenaTest is Test {
 
     function callAs(uint256 key, bytes memory data) private returns (bytes memory) {
         if (block.chainid == 10143) return this.baseCall(key, data);
+        return this.engineCall(key, data);
+    }
+
+    function engineCall(uint256 key, bytes memory data) external returns (bytes memory) {
         uint256 gen = g.generation();
+        uint256 epoch = h.sessionOf(address(g), Types.GLOBAL).epoch;
         vm.prank(vm.addr(key));
-        return g.command(gen, data);
+        return g.command(gen, epoch, data);
     }
 
     function start(uint256 a, uint256 b, uint8 mode, bool ranked) private returns (uint256 room, uint256 matchId) {
@@ -400,6 +420,154 @@ contract AuthorityArenaTest is Test {
         verifier.verify(b, hex"00");
     }
 
+    function testCompletionDrainsBothGamesThenFreezesAllEngineWrites() public {
+        g.returnToInterlude();
+        g.confirmInterlude(1);
+        vm.chainId(4242);
+        (, uint256 first) = start(ALICE, BOB, 0, true);
+        (, uint256 second) = start(3, 4, 1, true);
+        callAs(ALICE, abi.encodeCall(g.concede, (first)));
+        (uint256 draining, uint256 sealedEpoch) = ops.sessionClosure();
+        assertEq(draining, 1);
+        assertEq(sealedEpoch, 0);
+        assertEq(g.activeCount(), 1);
+        vm.expectRevert("session draining");
+        ops.matchmake(0, 32);
+        vm.expectRevert("session draining");
+        callAs(5, abi.encodeCall(ops.queue, (0)));
+        vm.expectRevert("drain matches first");
+        ops.sealCompletedSession(1);
+        // The existing match remains controllable while admissions are drained.
+        callAs(3, abi.encodeCall(g.input, (second, int8(1), uint256(1), block.number + 20)));
+        callAs(3, abi.encodeCall(g.concede, (second)));
+        ops.sealCompletedSession(1);
+        (, sealedEpoch) = ops.sessionClosure();
+        assertEq(sealedEpoch, 1);
+        vm.expectRevert(AutonomousArena.EngineSessionSealed.selector);
+        callAs(5, abi.encodeCall(ops.queue, (0)));
+        vm.expectRevert(AutonomousArena.EngineSessionSealed.selector);
+        g.importRating(vm.addr(5), 0);
+        vm.expectRevert("close state");
+        ops.closeCompletedSession(1);
+        vm.chainId(10143);
+        ops.closeCompletedSession(1);
+        assertEq(h.closes(), 1);
+        assertEq(uint8(g.executionState()), 3);
+        vm.expectRevert("close state");
+        ops.closeCompletedSession(1);
+    }
+
+    function testIncompleteProposalMustExpireBeforeSessionSeal() public {
+        g.returnToInterlude();
+        g.confirmInterlude(1);
+        vm.chainId(4242);
+        (, uint256 first) = start(ALICE, BOB, 0, false);
+        uint256 room = abi.decode(callAs(3, abi.encodeCall(ops.createRoom, (0))), (uint256));
+        callAs(4, abi.encodeCall(ops.joinRoom, (room)));
+        uint256 pending = ops.propose(room);
+        callAs(3, abi.encodeCall(ops.acceptProposal, (pending)));
+        callAs(ALICE, abi.encodeCall(g.concede, (first)));
+        vm.expectRevert("session draining");
+        callAs(4, abi.encodeCall(ops.acceptProposal, (pending)));
+        vm.expectRevert("drain matches first");
+        ops.sealCompletedSession(1);
+        vm.warp(block.timestamp + 21);
+        ops.expireProposal(pending);
+        ops.sealCompletedSession(1);
+        assertEq(g.activeCount(), 0);
+        assertEq(ops.getProposal(pending).status, 4);
+    }
+
+    function testUnpublishedOrWrongEpochSealCannotCloseDelegation() public {
+        g.returnToInterlude();
+        g.confirmInterlude(1);
+        vm.chainId(4242);
+        (, uint256 id) = start(ALICE, BOB, 0, false);
+        callAs(ALICE, abi.encodeCall(g.concede, (id)));
+        vm.chainId(10143);
+        // A terminal result without its final frozen-state marker is not enough.
+        vm.expectRevert("seal not published");
+        ops.closeCompletedSession(1);
+        vm.chainId(4242);
+        vm.expectRevert("engine epoch");
+        ops.sealCompletedSession(2);
+        ops.sealCompletedSession(1);
+        vm.chainId(10143);
+        vm.expectRevert("close epoch");
+        ops.closeCompletedSession(2);
+        assertEq(h.closes(), 0);
+    }
+
+    function testCleanRenewalWaitsChallengeKeepsRoomAndRejectsOldEngineCommands() public {
+        g.returnToInterlude();
+        g.confirmInterlude(1);
+        vm.chainId(4242);
+        (uint256 room, uint256 id) = start(ALICE, BOB, 0, true);
+        uint256 generation = g.generation();
+        callAs(ALICE, abi.encodeCall(g.concede, (id)));
+        uint256 elo = g.ratingOf(vm.addr(BOB), 0).elo;
+        ops.sealCompletedSession(1);
+        vm.chainId(10143);
+        ops.closeCompletedSession(1);
+        vm.prank(vm.addr(5));
+        vm.expectRevert("normal renewal pending");
+        g.beginRecovery();
+        vm.expectRevert("challenge window");
+        ops.renewCompletedSession(1);
+        h.challenge();
+        vm.warp(vm.getBlockTimestamp() + 121);
+        vm.expectRevert("closure not final");
+        ops.renewCompletedSession(1);
+        h.resolve();
+        vm.warp(vm.getBlockTimestamp() + 121);
+        vm.prank(vm.addr(5));
+        vm.expectRevert("renew state");
+        ops.renewCompletedSession(1);
+        ops.renewCompletedSession(1);
+        assertEq(uint8(g.executionState()), 3);
+        (,, address finalWinner, uint8 finalStatus) = finance.result(id);
+        assertEq(finalWinner, vm.addr(BOB));
+        assertEq(finalStatus, 3);
+        g.confirmInterlude(2);
+        assertEq(g.generation(), generation);
+        assertEq(ops.participation(vm.addr(ALICE)), room);
+        assertEq(ops.getRoom(room).winner, vm.addr(BOB));
+        assertEq(g.ratingOf(vm.addr(BOB), 0).elo, elo);
+        vm.chainId(4242);
+        vm.prank(vm.addr(5));
+        vm.expectRevert(AutonomousArena.CommandEpochMismatch.selector);
+        g.command(generation, 1, abi.encodeCall(ops.queue, (0)));
+        callAs(5, abi.encodeCall(ops.queue, (0)));
+        assertEq(ops.participation(vm.addr(5)), type(uint256).max);
+        uint256 next = ops.propose(room);
+        callAs(ALICE, abi.encodeCall(ops.acceptProposal, (next)));
+        callAs(BOB, abi.encodeCall(ops.acceptProposal, (next)));
+        assertEq(g.activeCount(), 1);
+    }
+
+    function testIndependentStakeReleaseDoesNotStrandNormalRenewal() public {
+        h.clearEpochOnRelease();
+        g.returnToInterlude();
+        g.confirmInterlude(1);
+        vm.chainId(4242);
+        (, uint256 id) = start(ALICE, BOB, 0, false);
+        callAs(ALICE, abi.encodeCall(g.concede, (id)));
+        ops.sealCompletedSession(1);
+        vm.chainId(10143);
+        ops.closeCompletedSession(1);
+        vm.warp(vm.getBlockTimestamp() + 121);
+        h.releaseStake(address(g), Types.GLOBAL);
+        assertEq(h.sessionOf(address(g), Types.GLOBAL).epoch, 0);
+        vm.expectRevert("recovered seal mismatch");
+        ops.renewCompletedSession(2);
+        ops.renewCompletedSession(1);
+        g.confirmInterlude(2);
+        assertEq(uint8(g.executionState()), 0);
+        (,, address winner, uint8 status) = finance.result(id);
+        assertEq(winner, vm.addr(BOB));
+        assertEq(status, 3);
+    }
+
     function countDifferences(uint256 snapshot, bytes32[] memory slots) private returns (uint256 count) {
         bytes32[] memory afterValues = new bytes32[](slots.length);
         for (uint256 i; i < slots.length; i++) {
@@ -459,7 +627,7 @@ contract AuthorityArenaTest is Test {
             Types.SessionGrant(vm.addr(ALICE), vm.addr(KEY), uint64(block.timestamp + 3600), 0, false, new bytes4[](1));
         session.selectors[0] = g.command.selector;
         bytes memory signature = sig(ALICE, g.sessionDigest(session));
-        bytes memory data = abi.encodeCall(g.command, (g.generation(), abi.encodeCall(ops.queue, (0))));
+        bytes memory data = abi.encodeCall(g.command, (g.generation(), uint256(1), abi.encodeCall(ops.queue, (0))));
         vm.prank(vm.addr(KEY));
         g.withSession(session, signature, data);
         assertEq(ops.participation(vm.addr(ALICE)), type(uint256).max);
@@ -470,7 +638,7 @@ contract AuthorityArenaTest is Test {
         vm.expectRevert();
         g.withSession(session, signature, data);
         h.bump(vm.addr(ALICE));
-        data = abi.encodeCall(g.command, (g.generation(), abi.encodeCall(ops.cancelQueue, ())));
+        data = abi.encodeCall(g.command, (g.generation(), uint256(1), abi.encodeCall(ops.cancelQueue, ())));
         vm.prank(vm.addr(KEY));
         vm.expectRevert();
         g.withSession(session, signature, data);

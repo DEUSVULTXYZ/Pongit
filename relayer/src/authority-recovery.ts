@@ -8,11 +8,7 @@ import {
 } from "../../shared/authority-recovery";
 
 export type RecoveryJournal =
-  | "missing"
-  | "submitted"
-  | "uncertain"
-  | "confirmed"
-  | "failed";
+  "missing" | "submitted" | "uncertain" | "confirmed" | "failed";
 export type RecoveryFault = {
   event: "pongit.execution.worker-unavailable";
   stage: "observation" | "journal" | "sponsor" | "submission";
@@ -30,7 +26,8 @@ export interface RecoveryPort {
   // signed bytes before sending; this module has no wallet and cannot pick one.
   enqueue(
     id: string,
-    action: "beginRecovery" | "finishRecovery",
+    action: "beginRecovery" | "finishRecovery" | "closeCompletedSession",
+    expectedEpoch: bigint,
   ): Promise<Hex | undefined>;
   log(
     level: "info" | "warn",
@@ -42,8 +39,7 @@ export interface RecoveryPort {
 export function recoveryWorker(port: RecoveryPort) {
   const report = executionReporter((level, data) => port.log(level, data));
   let working:
-    | Promise<{ decision?: RecoveryDecision; status: string }>
-    | undefined;
+    Promise<{ decision?: RecoveryDecision; status: string }> | undefined;
   let lastBlock = -1n;
   let stage: RecoveryFault["stage"] = "observation";
   let fault: RecoveryFault["stage"] | undefined;
@@ -87,7 +83,7 @@ export function recoveryWorker(port: RecoveryPort) {
     )
       return { decision, status: "observation_changed" };
     stage = "submission";
-    const hash = await port.enqueue(id, decision.action);
+    const hash = await port.enqueue(id, decision.action, fresh.hub.epoch);
     // This is only a requested transition. Wait for the next canonical controller
     // state before routing any game command to Monad.
     report(fresh, decideRecovery(fresh), hash, "requested");

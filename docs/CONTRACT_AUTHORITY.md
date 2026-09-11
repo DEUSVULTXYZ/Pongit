@@ -12,6 +12,7 @@ The candidate moves admission decisions into contracts. It does **not** establis
 | --- | --- |
 | `AutonomousArena` | Existing Classic/Chaos physics, scores, results, execution guard, scoped commands, immutable module addresses |
 | `AuthorityActions` | Fixed delegatecall module for lobby actions, query API, checkpoint verification and recovery orchestration |
+| `AuthorityLifecycle` | Fixed linked completion bookkeeping, shared-session drain marker and terminal match references |
 | `ContractLobby` | Global participation lock, deterministic bounded matching, eight-member rooms, proposals, invitations, rotation and expiration |
 | `AuthorityRating` | Existing ELO arithmetic, placement multiplier, daily repeated-opponent reduction |
 | `PlayerIndex` | Append-only unique player discovery per mode, paginated without PostgreSQL |
@@ -45,6 +46,8 @@ Historical references remain `10143:<deployment>:<matchId>`. New IDs include the
 ## Authorization and sponsoring
 
 Interlude commands use the existing SDK `withSession` grant with `command` as the sole allowed application selector. `command` additionally checks the execution generation and an internal allowlist. The existing per-player input sequence and block deadline still apply. The user's wallet derivation is unchanged.
+
+The candidate command now has the signature `command(uint256 expectedGeneration,uint256 expectedEpoch,bytes data)`. The second argument binds the actual delegation epoch, separately from the owner's session revocation epoch. A normally renewed delegation can reuse an unexpired owner grant, but a command signed for the previous delegation fails. Use `shared/authority-client.ts::engineCommand` and refresh the SDK's observed node epoch and nonce before sending. The old two-argument candidate encoding is obsolete; no production client uses either candidate ABI yet.
 
 Monad uses an additional EIP-712 authorization, not a relayed invocation of SDK `withSession`:
 
@@ -87,6 +90,20 @@ Return is administrator-only, requires no active games/proposals, sealed finance
 `relayer/src/authority-recovery.ts` provides a single-flight worker with a second observation before submission. Recovery operations are identified by chain, arena, execution generation, delegation epoch and action. The injected persistent nonce journal must record signed bytes before broadcasting. Submitted or uncertain operations are reconciled, never treated as missing because a response was lost. Confirmed failures require inspection. Sponsor unavailability leaves the operation waiting and never charges a player. The worker does not open a new Interlude delegation automatically.
 
 The `pongit.execution` diagnostic distinguishes `actual`, `requested` and `status`, with a UTC timestamp, generation, epoch, block/hash and transaction hash when available. Recovery, fallback, startup and blocked states use warning severity. Repeated identical observations are suppressed. Worker failures report a normalized stage without raw RPC exceptions, credentials, signatures or private content. `logTransition` also uses warning severity for confirmed transitions to Recovery or Monad.
+
+### Normal completion and undelegation
+
+The legacy service only drains near the delegation's daily expiry. The candidate now begins draining when the first engine match finishes. New admissions, acceptances and rematches pause; the other already active game can still receive inputs, finish or be conceded. Outstanding proposals may be declined or expire under their existing rules. Declining an invitation and cancelling an existing queue remain possible before sealing.
+
+After both game slots and proposals are clear, anyone can execute `sealCompletedSession(expectedEpoch)` on the engine. The delegated marker freezes application writes, including lobby maintenance and rating imports. `closeCompletedSession(expectedEpoch)` then runs on Monad and requires that exact marker in published storage, no active games and the matching active hub epoch. A terminal result without a published seal cannot close the session. The contract calls `hub.closeDelegation`; the frontend cannot manufacture a seal or close another epoch.
+
+The controller reports `Returning` with reason `MATCH_SESSION_CLOSED`. This normal closure is distinguished from a failure by the canonical recovery adapter: it does not automatically invalidate room generations or enter Monad. An arbitrary maintenance caller cannot convert that normal wait into disaster recovery. An administrator can explicitly request recovery if normal renewal must be abandoned. The candidate worker can schedule an epoch-bound `closeCompletedSession` through the existing journal port after observing a canonical published seal. It rechecks that observation and reconciles uncertain submissions. It never signs with a second nonce owner or automatically performs the administrator renewal.
+
+`renewCompletedSession(expectedEpoch)` is administrator-only. It waits for the hub to reach `None`, including stake release and any contestation. It requires the recovered seal still to match. Before opening another delegation, it finalizes the two recorded outcomes in the immutable finance adapter so that later payments no longer depend on contestable game reads. It clears the closure markers and opens a new epoch while retaining rooms, their winner/queue order and ELO. Hosted provisioning and `confirmInterlude` remain separate qualification steps.
+
+This is a **shared-session drain candidate**, not independent per-match delegation. The current hosted deployment combines two matches and the lobby in one global partition. Both its existing delegation and the default validator's current terms have a 3,600-second challenge window. Therefore this candidate cannot presently provide uninterrupted successive Interlude matches. Per-match partitioning/provisioning, or a qualified protocol renewal mechanism, is still required before activation. See [reset qualification and operator requirements](INTERLUDE_RESET.md).
+
+The lifecycle library adds terminal-result and seal writes to the same delegated surface. Re-measure the publication budget; prior measurements are not release evidence for this revision. Pure EVM tests simulate hub closure and challenge handling; they do not establish publication or recovery on the hosted node.
 
 These modules remain unconnected to production. Deploying them alone would not enable fallback on the older immutable arena. Production still needs the new arena, finance proof qualification, generation-aware client routing and persistent sponsor integration.
 

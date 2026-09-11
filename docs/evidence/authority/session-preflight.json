@@ -1,0 +1,90 @@
+{
+  "candidate": "contract-authority",
+  "productionActivation": false,
+  "checkedAt": "2026-09-11T14:03:22.244Z",
+  "contracts": [
+    {
+      "name": "AutonomousArena",
+      "runtimeBytes": 24501,
+      "initBytes": 34364,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "AuthorityActions",
+      "runtimeBytes": 24138,
+      "initBytes": 24164,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "AuthorityLifecycle",
+      "runtimeBytes": 1272,
+      "initBytes": 1304,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "ContractLobby",
+      "runtimeBytes": 15876,
+      "initBytes": 15908,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "AuthorityRating",
+      "runtimeBytes": 2066,
+      "initBytes": 2098,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "BaseAuthorization",
+      "runtimeBytes": 2659,
+      "initBytes": 2691,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "PlayerIndex",
+      "runtimeBytes": 1003,
+      "initBytes": 1036,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "AutonomousFinance",
+      "runtimeBytes": 6092,
+      "initBytes": 6339,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "ProfileRegistry",
+      "runtimeBytes": 4860,
+      "initBytes": 6023,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "PrivateDataStore",
+      "runtimeBytes": 5879,
+      "initBytes": 6974,
+      "withinSizeLimits": true
+    },
+    {
+      "name": "UnsupportedChaosProof",
+      "runtimeBytes": 292,
+      "initBytes": 318,
+      "withinSizeLimits": true
+    }
+  ],
+  "gates": {
+    "size": true,
+    "chaosProof": false,
+    "hostedRoundtrip": false,
+    "perMatchClosure": false,
+    "hostedPublicationBudget": false,
+    "legacyMigration": false,
+    "browserAcceptance": false
+  },
+  "blockers": [
+    "The only shipped proof module rejects every Interlude checkpoint.",
+    "No hosted Interlude -> Monad -> Interlude cycle has been qualified.",
+    "The shared-delegation closure candidate drains both game slots; independent per-match sessions and their hosted renewal remain unqualified.",
+    "Publication accounting with two matches and lobby writes must fit the real node budget.",
+    "Existing production accounts and encrypted payloads have not been migrated.",
+    "The production client and sponsor remain on their current adapters."
+  ]
+}

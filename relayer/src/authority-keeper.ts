@@ -14,6 +14,7 @@ const maintenanceAbi = parseAbi([
   "function expireRoom(uint256 room)",
   "function beginRecovery()",
   "function finishRecovery()",
+  "function closeCompletedSession(uint256 expectedEpoch)",
   "function openRound(uint256 id)",
   "function tick(uint256 id)",
   "function freezeCheckpoint(uint256 id,uint8 rally)",
@@ -26,6 +27,7 @@ export type Maintenance =
   | { kind: "propose" | "tick"; id: bigint; revision: bigint }
   | { kind: "expireProposal" | "expireRoom" | "finalizeResult"; id: bigint }
   | { kind: "beginRecovery" | "finishRecovery" }
+  | { kind: "closeCompletedSession"; epoch: bigint }
   | { kind: "freezeCheckpoint" | "openRound"; id: bigint; rally: number }
   | { kind: "claim"; id: bigint; beneficiary: Address }
   | { kind: "retryPayout"; id: Hex; attempt: bigint };
@@ -52,6 +54,15 @@ export function maintenanceCall(t: AuthorityTargets, task: Maintenance) {
       data = encodeFunctionData({
         abi: maintenanceAbi,
         functionName: task.kind,
+      });
+      break;
+    case "closeCompletedSession":
+      if (task.epoch <= 0n)
+        throw new Error("A published delegation epoch is required.");
+      data = encodeFunctionData({
+        abi: maintenanceAbi,
+        functionName: task.kind,
+        args: [task.epoch],
       });
       break;
     case "freezeCheckpoint":
@@ -120,11 +131,7 @@ export function maintenanceCall(t: AuthorityTargets, task: Maintenance) {
   return { to, data, value: 0n, requestId };
 }
 export type JournalState =
-  | "missing"
-  | "uncertain"
-  | "submitted"
-  | "confirmed"
-  | "failed";
+  "missing" | "uncertain" | "submitted" | "confirmed" | "failed";
 export interface AuthorityExecutorPort {
   // Uses the SAME persistent nonce journal as the existing sponsor. Never create a second signer.
   journal(id: Hex): Promise<JournalState>;

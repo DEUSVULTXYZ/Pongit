@@ -1,4 +1,14 @@
-import { isAddress, type Address, type Hex } from "viem";
+import {
+  isAddress,
+  keccak256,
+  stringToHex,
+  type Address,
+  type Hex,
+} from "viem";
+
+export const normalSessionClosureReason = keccak256(
+  stringToHex("MATCH_SESSION_CLOSED"),
+);
 
 export const preferredExecution = "Interlude" as const;
 export type ExecutionMode = "Interlude" | "Recovery" | "Monad" | "Returning";
@@ -11,6 +21,8 @@ export type ExecutionObservation = {
   blockHash: Hex;
   timestamp: bigint;
   execution: ExecutionMode;
+  transitionReason: Hex;
+  closure: { drainingEpoch: bigint; sealedEpoch: bigint };
   hub: {
     phase: HubPhase;
     epoch: bigint;
@@ -44,12 +56,15 @@ export type RecoveryReason =
   | "RECOVERY_READY"
   | "MONAD_FALLBACK_ACTIVE"
   | "ADMIN_RETURN_PENDING"
+  | "SESSION_DRAINING"
+  | "SESSION_SEALED"
+  | "SESSION_RENEWAL_PENDING"
   | "EXECUTION_STATE_INCONSISTENT";
 export type RecoveryDecision = {
   execution: ExecutionMode;
   admissions: boolean;
   reason: RecoveryReason;
-  action?: "beginRecovery" | "finishRecovery";
+  action?: "beginRecovery" | "finishRecovery" | "closeCompletedSession";
   retryAt?: bigint;
 };
 export type RecoveryStatus =
@@ -69,6 +84,13 @@ export function decideRecovery(o: ExecutionObservation): RecoveryDecision {
     o.generation < 1n ||
     o.block < 0n ||
     !/^0x[0-9a-f]{64}$/i.test(o.blockHash) ||
+    !/^0x[0-9a-f]{64}$/i.test(o.transitionReason) ||
+    typeof o.closure?.drainingEpoch !== "bigint" ||
+    o.closure.drainingEpoch < 0n ||
+    typeof o.closure?.sealedEpoch !== "bigint" ||
+    o.closure.sealedEpoch < 0n ||
+    (o.closure.sealedEpoch !== 0n &&
+      o.closure.sealedEpoch !== o.closure.drainingEpoch) ||
     o.timestamp < 0n ||
     o.timestamp > 8_640_000_000_000n ||
     !["Interlude", "Recovery", "Monad", "Returning"].includes(o.execution) ||
@@ -116,6 +138,27 @@ export function decideRecovery(o: ExecutionObservation): RecoveryDecision {
     }
     return result("EXECUTION_STATE_INCONSISTENT");
   }
+  // A planned close is not an outage. Keep the room generation intact while
+  // its administrator renews the delegation after financial finalization.
+  if (
+    o.execution === "Returning" &&
+    o.transitionReason === normalSessionClosureReason
+  ) {
+    return result(
+      "SESSION_RENEWAL_PENDING",
+      d.phase === "Exiting" && o.timestamp < d.stakeUnlockAt
+        ? { retryAt: d.stakeUnlockAt }
+        : {},
+    );
+  }
+  if (
+    o.execution === "Interlude" &&
+    d.phase === "Active" &&
+    o.closure.sealedEpoch === d.epoch &&
+    d.epoch !== 0n
+  ) {
+    return result("SESSION_SEALED", { action: "closeCompletedSession" });
+  }
   if (d.phase === "None" || d.phase === "Exiting")
     return result("DELEGATION_CLOSED", { action: "beginRecovery" });
   if (o.timestamp > d.expiresAt)
@@ -133,6 +176,13 @@ export function decideRecovery(o: ExecutionObservation): RecoveryDecision {
   if (sustained && silent)
     return result("PUBLICATION_STOPPED", { action: "beginRecovery" });
   if (o.execution === "Returning") return result("ADMIN_RETURN_PENDING");
+  if (o.closure.drainingEpoch !== 0n) {
+    if (o.closure.drainingEpoch !== d.epoch)
+      return result("EXECUTION_STATE_INCONSISTENT");
+    return result(
+      o.closure.sealedEpoch !== 0n ? "SESSION_SEALED" : "SESSION_DRAINING",
+    );
+  }
   if (o.health.kind === "healthy")
     return result("INTERLUDE_HEALTHY", { admissions: true });
   if (o.health.kind === "rate_limited") return result("INTERLUDE_RATE_LIMITED");
@@ -158,7 +208,9 @@ export function recoveryDiagnostic(
         ? "Recovery"
         : d.action === "finishRecovery"
           ? "Monad"
-          : undefined,
+          : d.action === "closeCompletedSession"
+            ? "Returning"
+            : undefined,
     reason: d.reason,
     admissions: d.admissions,
     status,

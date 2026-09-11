@@ -14,6 +14,7 @@ import {
 import {
   decideRecovery,
   executionReporter,
+  normalSessionClosureReason,
   type ExecutionObservation,
 } from "../shared/authority-recovery";
 import { authorityRecoverySource } from "../shared/authority-recovery-source";
@@ -38,6 +39,8 @@ function observation(): ExecutionObservation {
     blockHash: hash,
     timestamp: 1_000n,
     execution: "Interlude",
+    transitionReason: zeroHash,
+    closure: { drainingEpoch: 0n, sealedEpoch: 0n },
     hub: {
       phase: "Active",
       epoch: 5n,
@@ -401,6 +404,8 @@ test("browser transition diagnostics warn on fallback and deduplicate repeated o
 const controllerAbi = parseAbi([
   "function generation() view returns(uint256)",
   "function executionState() view returns(uint8)",
+  "function transitionReason() view returns(bytes32)",
+  "function sessionClosure() view returns(uint256 drainingEpoch,uint256 sealedEpoch)",
   "function hub() view returns(address)",
 ]);
 function rpcFixture() {
@@ -465,6 +470,18 @@ function rpcFixture() {
           functionName: "executionState",
           result: 0,
         });
+      if (call.functionName === "transitionReason")
+        return encodeFunctionResult({
+          abi: controllerAbi,
+          functionName: "transitionReason",
+          result: zeroHash,
+        });
+      if (call.functionName === "sessionClosure")
+        return encodeFunctionResult({
+          abi: controllerAbi,
+          functionName: "sessionClosure",
+          result: [0n, 0n],
+        });
       return encodeFunctionResult({
         abi: controllerAbi,
         functionName: "hub",
@@ -499,7 +516,69 @@ test("the real RPC adapter pins controller and hub calls to the same Monad block
     },
   });
   assert.deepEqual(await source.observe(), observation());
-  assert.deepEqual(r.pinned, ["0x64", "0x64", "0x64", "0x64"]);
+  assert.deepEqual(r.pinned, Array(6).fill("0x64"));
+});
+
+test("planned closure waits for normal renewal, never erases room generations through automatic recovery", () => {
+  const o = observation();
+  o.closure.drainingEpoch = o.hub.epoch;
+  assert.equal(decideRecovery(o).reason, "SESSION_DRAINING");
+  assert.equal(decideRecovery(o).admissions, false);
+  o.closure.sealedEpoch = o.hub.epoch;
+  assert.equal(decideRecovery(o).reason, "SESSION_SEALED");
+  assert.equal(decideRecovery(o).action, "closeCompletedSession");
+  o.execution = "Returning";
+  o.transitionReason = normalSessionClosureReason;
+  for (const phase of ["Exiting", "None"] as const) {
+    o.hub.phase = phase;
+    o.hub.stakeUnlockAt = 2000n;
+    const d = decideRecovery(o);
+    assert.equal(d.reason, "SESSION_RENEWAL_PENDING");
+    assert.equal(d.action, undefined);
+    assert.equal(d.admissions, false);
+  }
+  o.hub.phase = "Challenged";
+  assert.equal(decideRecovery(o).reason, "CHALLENGE_PENDING");
+});
+
+test("published session closure uses the same journal with an epoch-bound close call", async () => {
+  const o = observation();
+  o.closure = { drainingEpoch: 5n, sealedEpoch: 5n };
+  let state: RecoveryJournal = "missing";
+  const sent: Array<[string, string, bigint]> = [];
+  const port: RecoveryPort = {
+    observe: async () => o,
+    canonical: async () => true,
+    sponsorAvailable: async () => true,
+    journal: async () => state,
+    reconcile: async () => state,
+    enqueue: async (id, action, epoch) => {
+      sent.push([id, action, epoch]);
+      state = "uncertain";
+      return tx;
+    },
+    log: () => {},
+  };
+  const run = recoveryWorker(port);
+  await Promise.all([run(), run()]);
+  await run();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0][1], "closeCompletedSession");
+  assert.equal(sent[0][2], 5n);
+  assert(sent[0][0].endsWith(":5:closeCompletedSession"));
+  o.execution = "Returning";
+  o.transitionReason = normalSessionClosureReason;
+  o.hub.phase = "Exiting";
+  await run();
+  assert.equal(sent.length, 1);
+});
+
+test("a failed draining engine can still enter protocol-gated disaster recovery", () => {
+  const o = outage();
+  o.closure.drainingEpoch = o.hub.epoch;
+  assert.equal(decideRecovery(o).action, "beginRecovery");
+  o.closure.sealedEpoch = o.hub.epoch + 1n;
+  assert.throws(() => decideRecovery(o), /Invalid execution/);
 });
 
 test("the RPC adapter rejects engine RPCs, wrong hubs and a reorganized pinned block", async () => {

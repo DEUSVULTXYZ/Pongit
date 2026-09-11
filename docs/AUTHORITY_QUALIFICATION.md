@@ -4,7 +4,20 @@ Status: HOLD. This document records candidate evidence, not approval to migrate.
 
 The owner subsequently authorized direct production testing and rejected a temporary Monad-only deployment. The target is Interlude first, protocol-gated Monad fallback and warning logs. There is no requirement to create a preproduction site. HOLD here denotes missing technical capability and integration, not missing deployment permission.
 
-Prepared on 2026-09-10 with Solidity 0.8.30, Cancun, via IR, optimizer 200. The arena's runtime is 24,524 bytes (52 bytes below EIP-170); adding code to it requires rechecking that limit. Prefer the fixed actions module for new application methods.
+Initial evidence was prepared on 2026-09-10 with Solidity 0.8.30, Cancun, via IR, optimizer 200. That revision's arena runtime was 24,524 bytes. The session-lifecycle revision below measures 24,501 bytes (75 bytes below EIP-170); adding code requires rechecking that limit. Prefer fixed modules for new application methods.
+
+## Session lifecycle revision, 2026-09-11
+
+The candidate now drains a shared delegation after a match result, waits for the other active match and pending proposals, seals engine writes, and closes only from published Monad state. Normal renewal waits for protocol finality, finalizes recorded financial outcomes, preserves rooms/ELO and advances the delegation epoch. This is not an independent per-match hosted deployment. See [reset scope and operator diagnostic](INTERLUDE_RESET.md).
+
+- **193 Solidity tests passed across 17 suites**, including 29 candidate tests. The five new scenarios cover concurrent games during draining, outstanding proposals, missing/wrong-epoch seals, challenge delays, preserved rooms/ELO, rejected commands from an earlier delegation and an independently released stake whose hub tuple has been cleared.
+- **31 TypeScript tests passed**: 28 authority/recovery tests and three existing availability tests. The repository typecheck passed. The worker distinguishes a planned closure from a failure and deduplicates epoch-bound close transactions through its journal port.
+- The official CLI 0.1.4 checked all four generated surfaces without a layout change.
+- The existing physics harnesses were rerun: **10,000 Classic and 10,000 Chaos cases, zero mismatches**. These compare the reused Solidity physics with TypeScript in a private Anvil instance. They do not qualify the hosted engine or a complete browser path.
+- Current runtime sizes: arena **24,501 bytes**, actions **24,138 bytes**, lifecycle library **1,272 bytes**. The command allowlist is in the immutable actions module; lifecycle completion is linked code. No upgrade setter was added.
+- Storage fixture: **76** net slots for two admissions and **44** for both results, including the new drain marker and terminal references. Sealing adds another delegated marker. Intermediate publication and additional lobby activity still require hosted qualification against the actual 64-diff cap.
+
+Tests ran in temporary resource-limited containers on the migrated production VPS using a private EVM with no exposed ports. Production containers, contracts and data were not changed. No new public contract was deployed. Current evidence is in [session validation](evidence/authority/session-validation.json) and [session preflight](evidence/authority/session-preflight.json); earlier reports below remain historical evidence for their recorded source hashes.
 
 ## Verified scope
 
