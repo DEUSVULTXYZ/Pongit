@@ -24,7 +24,8 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.RO
 const report:{checks:string[];errors:string[];scenarios:any[]}={checks:[],errors:[],scenarios:[]};
 try{
  for(const failure of ["revert","uncertain","unsent"]){
-  const context=await browser.newContext({viewport:{width:failure==="revert"?1440:390,height:900}});
+  const viewport={width:Number(process.env.ROOMS_BROWSER_WIDTH)||(failure==="revert"?1440:390),height:Number(process.env.ROOMS_BROWSER_HEIGHT)||900};
+  const context=await browser.newContext({viewport});
   const privateKey=generatePrivateKey(),signer=privateKeyToAccount(privateKey);
   const scope=["acceptMatch","input","tick","cancelMatch","concede"];
   const stored=encodeSession({app,baseChainId:10143,privateKey,signature:`0x${"11".repeat(65)}`,
@@ -139,6 +140,7 @@ try{
   assert.equal(await result.locator("h2").textContent(),"VICTORY");
   assert.equal(await result.locator(".outcome-score").textContent(),"7 : 6");
   await page.getByText("Classic ELO +16",{exact:true}).waitFor();
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Result must not introduce horizontal page scrolling');
   assert.equal(await page.getByRole("button",{name:"Reconnect",exact:true}).count(),0);
   assert.equal(await page.getByText("The engine did not confirm this action.",{exact:false}).count(),0);
   assert(recoveredAt-limitedAt>=9500,"Retry-After must be honored before the next network read");
@@ -152,7 +154,7 @@ try{
   });
   await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled);
   if(failure==="uncertain")assert(nonceReads>=2,"next acceptance restores the SDK nonce without another passkey");
-  report.scenarios.push({failure,reads,writes,idleWrites:writes-beforeWrites,cooldownMs:recoveredAt-limitedAt,finalScore:"7:6",nextMatch:true,nonceReads});
+  report.scenarios.push({failure,viewport,reads,writes,idleWrites:writes-beforeWrites,cooldownMs:recoveredAt-limitedAt,finalScore:"7:6",nextMatch:true,nonceReads});
   await context.close();
  }
  report.checks.push("Offline coordinator does not freeze a healthy direct engine lane","Final-tick revert plus 429 recovers the result without reconnecting","Unknown submission stops writes but preserves result transition","Room rotates to a new invitation before the previous result is recovered","Next match refreshes an uncertain SDK nonce without a passkey ceremony","The current tab can restore its session; a second controlling tab is still rejected","Ten-second shared cooldown honored","Exact per-match ELO displayed after fresh read","Desktop and mobile result visible");

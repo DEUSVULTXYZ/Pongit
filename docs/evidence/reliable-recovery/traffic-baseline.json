@@ -1,0 +1,18 @@
+{
+  "scope": "Browser page requests plus instrumented production relayer. Test setup SDK requests are excluded. Not an endpoint quota measurement.",
+  "from": "2026-09-11T23:09:33+00:00",
+  "to": "2026-09-11T23:09:47+00:00",
+  "browserCalls": 78,
+  "vpsCalls": 21,
+  "max1s": 17,
+  "max10sAvg": 6.7,
+  "browser429": 8,
+  "vps429": 3,
+  "requestsByMethod": {
+    "interlude_session": 7,
+    "eth_call": 55,
+    "eth_chainId": 3,
+    "eth_getTransactionCount": 3,
+    "interlude_sendTransaction": 10
+  }
+}

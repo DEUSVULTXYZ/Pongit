@@ -99,7 +99,9 @@ try{
   const stream=new EngineStream(a.node,a.app,url=>new WebSocket(url,{origin:'https://pongit.xyz'}) as any);
   stops.push(stream.subscribe(()=>counts[i]++));
  }
- await start(0,0);await start(1,1);
+ // Close Chaos while Classic continues. This rehearsal has no financial
+ // adapter; it does not claim to qualify a paid Chaos checkpoint.
+ await start(0,1);await start(1,0);
  for(let n=0;n<4;n++)for(let i=0;i<2;i++)for(let side=0;side<2;side++){
   const s:any=await clients[i].read('getSnapshot',[BigInt(i+1)]);assert.equal(s[2],2n);
   await send(i,side,'input',[BigInt(i+1),n%2?1:-1,s[side?10:9]+1n,s[7]+150n]);
@@ -107,7 +109,7 @@ try{
  await send(0,0,'concede',[1n]);await published(0);await close(0);
  const before:any=await clients[1].read('getSnapshot',[2n]);assert.equal(before[2],2n);
  await send(1,0,'input',[2n,0,before[9]+1n,before[7]+150n]);
- const after:any=await clients[1].read('getSnapshot',[2n]);assert(after[1]>before[1]);
+ const after:any=await clients[1].read('getSnapshot',[2n]);assert(after[1]>before[1]);assert(after[12].t>before[12].t,'The other arena physics must still advance');
  assert.equal((await readHubDelegation(base,provision.hub,arenas[0].app)).status,2);
  report.checks.push('Closing arena 1 does not stop arena 2');
  await start(2,0);report.checks.push('Arena 3 starts during arena 1 challenge window');

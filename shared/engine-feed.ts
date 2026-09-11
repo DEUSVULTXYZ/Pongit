@@ -45,7 +45,12 @@ export class EngineFeed {
   const e=this.entry(id),now=this.now();
   // A consistency read is ten seconds apart while events advance the match.
   // A stale stream is not treated as a fresh clock merely because it is connected.
-  if(!force&&!e.dirty&&e.value&&now-e.fullAt<10000&&now-e.value.observedAt<(this.connected?600:500)){recordRpc({at:now,target:"interlude",method:"snapshot.cached",status:200,ms:0,source:"cache"});return e.value;}
+  // A paused rally has no physics heartbeat until its checkpoint arrives.
+  // Its silence is expected, not evidence of a stale live rally. Keep the
+  // ten-second consistency read while subscribed; a disconnect invalidates it.
+  const waiting=e.value&&(e.value.phase!==2||e.value.state.awaitingServe);
+  const freshness=this.connected?(waiting?10000:600):500;
+  if(!force&&!e.dirty&&e.value&&now-e.fullAt<10000&&now-e.value.observedAt<freshness){recordRpc({at:now,target:"interlude",method:"snapshot.cached",status:200,ms:0,source:"cache"});return e.value;}
   if(e.pending)return e.pending;
   e.pending=readEngineSnapshot(this.client,id).then(async v=>{
    let incoming=engineState(v,this.now());const current=e.value;

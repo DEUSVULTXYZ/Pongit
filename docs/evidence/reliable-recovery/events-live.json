@@ -1,0 +1,202 @@
+{
+  "at": "2026-09-11T23:37:09.147Z",
+  "endpoint": "https://il-fd1693294fed7730.fly.dev",
+  "transport": "events",
+  "scope": "Real browser-to-engine and public coordinator; disposable friendly rooms; no bets",
+  "measurementStartedAt": "2026-09-11T23:37:52.669Z",
+  "measurementEndedAt": "2026-09-11T23:38:06.052Z",
+  "checks": [
+    "Two simultaneous consensual friendly arenas: Classic and Chaos",
+    "Stopped input load after a real 429; no quota inferred",
+    "Same-tab F5 restores the scoped session",
+    "No browser exception or input nonce gap"
+  ],
+  "passed": false,
+  "inputTargetMet": false,
+  "rateLimited": true,
+  "error": "Real rate limit interrupted the load qualification",
+  "errors": [],
+  "transactions": [
+    {
+      "action": "accept",
+      "mode": 0,
+      "hash": "0x4b1689db829ac4b8b2c82d232e50c10aee21121d04bc9ead789c02d409a98621",
+      "ms": 480.79157700000087
+    },
+    {
+      "action": "accept",
+      "mode": 0,
+      "hash": "0x890cf879c428998971631d3b608663dc99f3c74ff4b95f4959289d4775f9965b",
+      "ms": 342.26590600000054
+    },
+    {
+      "action": "accept",
+      "mode": 1,
+      "hash": "0xafdfba8e7ac632a919dedebcb2e8a5258ac18274367ac76cb1f4023c7b67580f",
+      "ms": 391.6030699999992
+    },
+    {
+      "action": "accept",
+      "mode": 1,
+      "hash": "0x47c8168067e2a82f8cfca1ff131d36a568474b602788bc8bcd38dddf6f039ac4",
+      "ms": 382.0479840000007
+    },
+    {
+      "action": "finish-test",
+      "hash": "0xadf3df040d70b7df1d25c4e3fa3ee2a639b9bca6738efd2e6e9542322e734836"
+    }
+  ],
+  "browsers": [
+    {
+      "player": 0,
+      "role": "player",
+      "events": 30,
+      "sockets": 1,
+      "inputs": 0,
+      "complete": true,
+      "frames": {
+        "p50": 16.69999999999891,
+        "p95": 16.80000000000109,
+        "p99": 83.30000000000001
+      },
+      "calls": 38,
+      "reads": 7,
+      "rateLimits": 2
+    },
+    {
+      "player": 1,
+      "role": "player",
+      "events": 20,
+      "sockets": 3,
+      "inputs": 0,
+      "complete": true,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 16.800000000000182,
+        "p99": 100.09999999999991
+      },
+      "calls": 16,
+      "reads": 8,
+      "rateLimits": 3
+    },
+    {
+      "player": 2,
+      "role": "player",
+      "events": 1,
+      "sockets": 1,
+      "inputs": 2,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 33.30000000000018,
+        "p99": 99.89999999999782
+      },
+      "calls": 24,
+      "reads": 19,
+      "rateLimits": 3
+    },
+    {
+      "player": 3,
+      "role": "player",
+      "events": 15,
+      "sockets": 1,
+      "inputs": 2,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 33.29999999999973,
+        "p99": 99.90000000000146
+      },
+      "calls": 15,
+      "reads": 10,
+      "rateLimits": 2
+    },
+    {
+      "player": 4,
+      "role": "spectator",
+      "events": 8,
+      "sockets": 2,
+      "inputs": 0,
+      "complete": true,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 33.29999999999927,
+        "p99": 100
+      },
+      "calls": 5,
+      "reads": 4,
+      "rateLimits": 1
+    },
+    {
+      "player": 5,
+      "role": "spectator",
+      "events": 0,
+      "sockets": 0,
+      "inputs": 0,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 50,
+        "p99": 183.29999999999995
+      },
+      "calls": 9,
+      "reads": 8,
+      "rateLimits": 1
+    }
+  ],
+  "rateLimitExamples": [
+    {
+      "at": 1789169842417,
+      "method": "interlude_sendTransaction",
+      "action": "tick",
+      "status": 429,
+      "ms": 102.159,
+      "requestId": "01M29DAE349ZZKW67AG7PCQ3NP-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:37:22.417Z"
+    },
+    {
+      "at": 1789169859211,
+      "method": "interlude_sendTransaction",
+      "action": "tick",
+      "status": 429,
+      "ms": 100.241,
+      "requestId": "01M29DAYFX9RMEYHJ0VM9JSRAD-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:37:39.211Z"
+    },
+    {
+      "at": 1789169842007,
+      "method": "eth_call",
+      "status": 429,
+      "ms": 102.783,
+      "requestId": "01M29DADPEM257PRDP6WGDY20M-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:37:22.007Z"
+    },
+    {
+      "at": 1789169859804,
+      "method": "eth_chainId",
+      "status": 429,
+      "ms": 102.66499999999999,
+      "requestId": "01M29DAZ2P55AT30Z7ECTQVPHT-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:37:39.804Z"
+    },
+    {
+      "at": 1789169873835,
+      "method": "interlude_session",
+      "status": 429,
+      "ms": 103.949,
+      "requestId": "01M29DBCRZWS187AV1M5NNHW7Z-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:37:53.835Z"
+    }
+  ],
+  "qualification": "Not a comparable throughput benchmark: rate limiting was already observed during sequential page setup, before the input load. Input target not met. F5 and result recovery passed. No RPC-reduction percentage claimed."
+}

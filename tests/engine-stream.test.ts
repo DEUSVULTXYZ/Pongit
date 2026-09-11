@@ -98,3 +98,21 @@ test("replacing a recovered lane retains its arena stream and snapshot",async()=
  await Promise.resolve();assert.equal(opened,1);assert.equal(socket.readyState,1);assert.equal(feed.peek(1n)?.revision,5n);
  second();await Promise.resolve();assert.equal(socket.readyState,3);assert.equal(feed.peek(1n),undefined);
 });
+
+test("a subscribed Chaos pause waits for its event with a ten-second consistency read",async()=>{
+ let reads=0,now=1000,value={...baseline(),state:{...baseline().state,mode:1,awaitingServe:true,resumeAt:3000000n}};
+ const socket=new Socket(),stream=new EngineStream('https://node.invalid',app,()=>socket);
+ const client={app:app as Address,abi,node:{request:async()=>{reads++;return encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(value) as any});}}};
+ const feed=new EngineFeed(client,stream,()=>now),off=feed.watch(1n,()=>{});
+ socket.emit('open',{});socket.emit('message',{data:JSON.stringify({id:1,result:99})});
+ await feed.read(1n);
+ for(let i=0;i<19;i++){now+=500;await feed.read(1n);}
+ assert.equal(reads,1,'No repeated reads during the betting window');
+ now+=500;await feed.read(1n);assert.equal(reads,2);
+ feed.apply(frame(6n,400n,2,{...value.state,t:3100000n,awaitingServe:false}));
+ assert.equal(feed.peek(1n)?.state.awaitingServe,false,'A rally resume is delivered immediately');
+ now+=650;value={...value,revision:6n,head:400n,state:{...value.state,t:3100000n,awaitingServe:false}};
+ await feed.read(1n);assert.equal(reads,3,'An active rally still uses the short stale-state limit');
+ socket.close();await feed.read(1n);assert.equal(reads,4,'A lost stream forces reconciliation');
+ off();await Promise.resolve();
+});

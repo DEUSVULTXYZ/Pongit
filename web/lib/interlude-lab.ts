@@ -108,7 +108,15 @@ export class LabLane {
    // Drain a release/reversal immediately after its predecessor, without
    // waiting for the 100 ms idle-tick interval. Never resend an uncertain call.
    for(let n=0;n<4 && !this.stopped && !this.actionPending && s.phase===2;n++){
-    const changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
+    let changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
+    // A subscribed Chaos pause can remain cached for ten seconds, but input
+    // deadlines are only 150 engine blocks ahead. Refresh the head when a
+    // player actually moves, not on every idle read of that stationary pause.
+    if(this.stream && changed && this.now()-s.observedAt>=1000){
+     s=await this.observe(true);
+     if(this.stopped||s.phase!==2||labSide(s,this.account)!==side)break;
+     changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
+    }
     if(!changed && (!allowTick||n>0||this.now()-this.lastWrite<this.pacing.tickMs))break;
     this.inputPending=changed;
     const name=changed?"input":"tick",args=changed?[s.id,this.desired,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]:[s.id];

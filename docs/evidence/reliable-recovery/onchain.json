@@ -1,0 +1,198 @@
+{
+  "at": "2026-09-11T23:21:31.396Z",
+  "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+  "readOnly": true,
+  "delegation": {
+    "app": "0xfd1693294fED77304662f08e827b043B0Ba386A3",
+    "partition": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "validator": "0xB28E684815b095aB5Fb324214cfEa63d76F3d691",
+    "beneficiary": "0xB28E684815b095aB5Fb324214cfEa63d76F3d691",
+    "resolver": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "status": 1,
+    "statusBeforeChallenge": 0,
+    "maxBatchInterval": "3600",
+    "challengeWindow": "3600",
+    "resolutionWindow": "1800",
+    "lastCommitAt": "1789168397",
+    "stakeUnlockAt": "0",
+    "expiresAt": "1789254322",
+    "maxDiffsPerCommit": 64,
+    "timeoutPenaltyBps": 2000,
+    "resolveThreshold": 1,
+    "baseBlock": "61741106",
+    "spec": 1,
+    "lastExecTimestamp": "1789168394",
+    "stake": "100000000000000000",
+    "challengeBond": "500000000000000000",
+    "batchIndex": "10",
+    "epoch": "2",
+    "challenger": "0x0000000000000000000000000000000000000000",
+    "challengerBond": "0",
+    "challengeDeadline": "0",
+    "challengedBatch": "0",
+    "claimedRoot": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "challengeKind": 0
+  },
+  "engineJob": [
+    {
+      "id": "0x5b686e6bc7e7b6ee275e096d530f6c07ecbd23047ed2c6d980320aeb51ae1b00",
+      "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+      "epoch": "1",
+      "signer": "0x6e0ebc79d80a186a639843c4059f421d634c3d73",
+      "nonce": "276",
+      "hash": "0xa351abb2ef05c40751fce7d992ac8c0cba916b2504b83ecf250dff9e07b0f522",
+      "action": "tick",
+      "match_id": "97044716435500339685182068349366402799644637782312311989124023848435876887321",
+      "status": "obsolete",
+      "resolution": {
+        "at": "2026-09-11T22:05:07.495Z",
+        "kind": "epoch-closed",
+        "epoch": "1",
+        "score": [
+          2,
+          7
+        ],
+        "winner": "0xCEaC895435BD00De6Abb8E514F22Af1CB614D428",
+        "closedAt": "2026-09-11T23:05:20.951Z",
+        "resultHash": "0xbc2ca794c7d0ae4ba8b79b9d185c400fe7da16474f77d3f568f9baf7d855ef0c",
+        "closedEpoch": "1"
+      },
+      "updated_at": "2026-09-11T23:05:20.952Z"
+    }
+  ],
+  "lifecycle": [
+    {
+      "stage": "playing",
+      "epoch": "2",
+      "provisioning": {
+        "epoch": "2",
+        "state": "confirmed",
+        "status": 200,
+        "retryAt": 1789167945237,
+        "attempts": 1,
+        "attemptedAt": 1789167935237
+      }
+    }
+  ],
+  "lifecycleTransactions": [
+    {
+      "id": "0xfd1693294fed77304662f08e827b043b0ba386a3:1:renew",
+      "hash": "0x23fb8c648e057bdd9666dd34680661ebf55f952560acc7adeadb6e02a1671a47",
+      "status": "confirmed",
+      "nonce": "110"
+    },
+    {
+      "id": "0xfd1693294fed77304662f08e827b043b0ba386a3:1:release",
+      "hash": "0x8788680ba489d46c19b4f2c8aca12db9f6c11cb8ab8c87e60308e3acfc14d613",
+      "status": "confirmed",
+      "nonce": "109"
+    },
+    {
+      "id": "0xfd1693294fed77304662f08e827b043b0ba386a3:1:close",
+      "hash": "0x8536b031279b715ba0378caa020cff94ca1c9c814ca390d50f4fa48a90e339ae",
+      "status": "confirmed",
+      "nonce": "105"
+    }
+  ],
+  "results": [
+    {
+      "id": "113744999715053436726821997770467194065662218555100825858778603960214549917418",
+      "storedPhase": 3,
+      "mode": 1,
+      "publishedPhase": "3",
+      "score": [
+        1,
+        1
+      ],
+      "winner": "0x810b110a442ebd9064824308eb2EFa356DD50496",
+      "hash": "0x4e80e581f41948c98e4a93e694c852cde14092e46899aaf3864ef08bdb41b3f4"
+    },
+    {
+      "id": "3387654827233936046550854219967329284152781639721389789306325721380036272706",
+      "storedPhase": 3,
+      "mode": 0,
+      "publishedPhase": "3",
+      "score": [
+        7,
+        6
+      ],
+      "winner": "0xe5113b71124436918625312CCAFa43B39F0b170C",
+      "hash": "0x723644298c3ae231838951af0f3990d4c1f9fbf87d239cd66a703f00f2f1b81f"
+    },
+    {
+      "id": "24438622507179933022428643649918094244348235845890356109780942933527078867871",
+      "storedPhase": 3,
+      "mode": 1,
+      "publishedPhase": "3",
+      "score": [
+        1,
+        0
+      ],
+      "winner": "0x62B889F2228Be8BCc616b05F019E882Ad69e0c0C",
+      "hash": "0xdad9c7a7bcf53f7c597e6d758d9d75995154d285d3176411dae3e76c3e34b189"
+    },
+    {
+      "id": "8331558975329915037059891991280941639405139211176378628850914074043986115474",
+      "storedPhase": 3,
+      "mode": 0,
+      "publishedPhase": "3",
+      "score": [
+        4,
+        3
+      ],
+      "winner": "0xCaF31070cD2Cb3515fc46c5053f084026dB34766",
+      "hash": "0x351dd38dcc8f9ae5ec4649d2d3787c3a73e9486663a4c1e4c764896eb0a515b9"
+    },
+    {
+      "id": "97044716435500339685182068349366402799644637782312311989124023848435876887321",
+      "storedPhase": 3,
+      "mode": 0,
+      "publishedPhase": "3",
+      "score": [
+        2,
+        7
+      ],
+      "winner": "0xCEaC895435BD00De6Abb8E514F22Af1CB614D428",
+      "hash": "0xbc2ca794c7d0ae4ba8b79b9d185c400fe7da16474f77d3f568f9baf7d855ef0c"
+    },
+    {
+      "id": "77127610838742982219257041218977543607749792606382679676262534767140909997780",
+      "storedPhase": 3,
+      "mode": 0,
+      "publishedPhase": "3",
+      "score": [
+        0,
+        0
+      ],
+      "winner": "0x472C7a1A66cF980F28F292114737f908f28D77B0",
+      "hash": "0x69efca0472ab25a25e6f80a6f8b5c91c2036bdfb40c6ec44083b45bcd5333c80"
+    }
+  ],
+  "legacyPayment": {
+    "match": "49202557674759932004881244328558772013970213742625233691874681881482800284539",
+    "result": [
+      "0x1b1334cE59b01F19B2DAaA21036064C8fc517207",
+      "0xA4937a54a033cAdCe02e9DDff6Ea5173EBBA95ed",
+      "0x1b1334cE59b01F19B2DAaA21036064C8fc517207",
+      3,
+      "0x59e361d4fd5481ad5d61b489d4da0c4e4f1bcdf1edaf2799b294b9c5376f23c2"
+    ],
+    "payoutId": "0xd18f20558618e9d2ed272b77bdbe2eda9f088c638740312d1f32fa0b0efb3494",
+    "payout": [
+      "0xFaFABE81a76118f01a391D401C6B0B49311a7A19",
+      "8000000000000000",
+      2,
+      1
+    ],
+    "payment": {
+      "status": "PayoutPaid",
+      "tx_hash": "0xc52169d1bef6cc09ad71bca2c322de85569190fad1ed0babf08d63af9e353ac6"
+    },
+    "receipt": {
+      "status": "success",
+      "block": "61741105"
+    },
+    "transferConfirmed": true
+  },
+  "activeChallenges": 0
+}

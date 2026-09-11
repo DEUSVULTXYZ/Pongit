@@ -99,3 +99,17 @@ test("idle RPC traffic is paced while release and reversal bypass the idle caden
  lane.intent(0);await lane.pump(false);
  assert.deepEqual(f.sent.slice(-2).map(x=>[x.args[1],x.args[2]]),[[-1,1n],[0,2n]]);
 });
+
+test("a movement after a cached Chaos pause refreshes its deadline before signing",async()=>{
+ const f=fixture();let now=9000,freshReads=0;
+ f.set({observedAt:1000,state:{...f.state().state,mode:1,awaitingServe:true}});
+ const session={send:async(name:string,args:readonly unknown[])=>{
+  assert.equal(args[3],1150n,'Deadline uses the freshly read engine head');
+  f.sent.push({name,args});f.set({nonceA:1n,state:{...f.state().state,leftDir:1}});return {latencyMs:20};
+ }} as unknown as LabSession;
+ const lane=new LabLane(async fresh=>{
+  if(fresh){freshReads++;f.set({head:1000n,observedAt:now});}return f.state();
+ },session,a,()=>{},e=>{throw e;},()=>{},{readMs:500,tickMs:300,now:()=>now},{receipt:async()=>f.state()});
+ lane.ingest(f.state());lane.intent(1);await lane.pump(false);
+ assert.equal(freshReads,1);assert.equal(f.sent.length,1);assert.equal(lane.stopped,false);
+});

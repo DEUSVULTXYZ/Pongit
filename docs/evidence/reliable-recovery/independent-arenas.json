@@ -1,0 +1,290 @@
+{
+  "at": "2026-09-11T23:33:46.550Z",
+  "purpose": "hosted isolation qualification",
+  "productionMigrated": false,
+  "actions": [
+    {
+      "at": "2026-09-11T23:33:49.839Z",
+      "arena": 0,
+      "player": 0,
+      "name": "acceptMatch",
+      "state": "confirmed",
+      "hash": "0xc5fda96f0d42ca621a6df3b11de3a462b89973a09f9022131211812bfd710cbb",
+      "latencyMs": 648.8909720000001
+    },
+    {
+      "at": "2026-09-11T23:33:50.491Z",
+      "arena": 0,
+      "player": 1,
+      "name": "acceptMatch",
+      "state": "confirmed",
+      "hash": "0x86f0f789fc0499973c23928cf3044a130bd4f46faaac1f2891a58bd709b2183b",
+      "latencyMs": 225.52534000000014
+    },
+    {
+      "at": "2026-09-11T23:33:50.818Z",
+      "arena": 1,
+      "player": 0,
+      "name": "acceptMatch",
+      "state": "confirmed",
+      "hash": "0x5cdb386099ad802e764be0b9830ed937d3c61a4172828b3bbf18a25dfe62a133",
+      "latencyMs": 595.0177280000007
+    },
+    {
+      "at": "2026-09-11T23:33:51.415Z",
+      "arena": 1,
+      "player": 1,
+      "name": "acceptMatch",
+      "state": "confirmed",
+      "hash": "0xf96e2737ed5d853a16b91eae3408964f28be9501b3556c09048cfd064ec1c02a",
+      "latencyMs": 235.17852200000016
+    },
+    {
+      "at": "2026-09-11T23:33:51.853Z",
+      "arena": 0,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xceac5fcf904b0beca7412c753533aeaa9596cd1bc210fa5b8f7899e297b4f325",
+      "latencyMs": 104.83903499999997
+    },
+    {
+      "at": "2026-09-11T23:33:52.150Z",
+      "arena": 0,
+      "player": 1,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xb790e8cffc14bee3872b21d3af01d427024012f2f8aceff95aa703d7682c651c",
+      "latencyMs": 110.2432289999997
+    },
+    {
+      "at": "2026-09-11T23:33:52.365Z",
+      "arena": 1,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0x1434cb1129e9843658bc88b30d048f863da556c80aab5181db95ba93cf6b3709",
+      "latencyMs": 107.6484330000003
+    },
+    {
+      "at": "2026-09-11T23:33:52.575Z",
+      "arena": 1,
+      "player": 1,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xe66964ba2e039d23e15cc6078353f4ad880a59b0dac4e7cf3e5b780fffd42a20",
+      "latencyMs": 100.93905399999858
+    },
+    {
+      "at": "2026-09-11T23:33:52.777Z",
+      "arena": 0,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xa93ce0d2573336927281c702411678711bddcc539b5307a31c8d9180fa7d5d9b",
+      "latencyMs": 103.51462299999912
+    },
+    {
+      "at": "2026-09-11T23:33:52.984Z",
+      "arena": 0,
+      "player": 1,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xcec7c8f738cef4c23d6a48e8f9b86319f4a4b01ceeaef1de42442633ae7d1f29",
+      "latencyMs": 195.00163099999918
+    },
+    {
+      "at": "2026-09-11T23:33:53.281Z",
+      "arena": 1,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0x6761278f8f821af34bfafdedfe3bfe51e5e552676a9947361d8a8b46c1f9dc34",
+      "latencyMs": 107.72923399999854
+    },
+    {
+      "at": "2026-09-11T23:33:53.488Z",
+      "arena": 1,
+      "player": 1,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0x9e43076209a9fbe0612eb1e0b9b3c8dc6dd9089cf983cc94279b5a25ef8ec838",
+      "latencyMs": 108.69342099999994
+    },
+    {
+      "at": "2026-09-11T23:33:53.699Z",
+      "arena": 0,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xe9197db04f673630b9b9947b972522fb516d5f10381d95e7540458af9721f928",
+      "latencyMs": 108.60410899999988
+    },
+    {
+      "at": "2026-09-11T23:33:53.913Z",
+      "arena": 0,
+      "player": 1,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xddaf98c1d3c52c64f51b551ac170eb1ae390cf62599effcab7bc05e64d8c6809",
+      "latencyMs": 109.3464440000007
+    },
+    {
+      "at": "2026-09-11T23:33:54.124Z",
+      "arena": 1,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0x29afb499aed05f0c7babae7820932e126129d535741972b019e1d22807801f5f",
+      "latencyMs": 109.52873
+    },
+    {
+      "at": "2026-09-11T23:33:54.334Z",
+      "arena": 1,
+      "player": 1,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0x5f349f3bbce64b7d653bd405e75ff1c4ec055a84fc3fad70f76cf2761022abf7",
+      "latencyMs": 111.04211799999939
+    },
+    {
+      "at": "2026-09-11T23:33:54.542Z",
+      "arena": 0,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0x868d4ed669b6f6c24b7a415cba91e28c3ce87014f43d8220432d6476760a44fd",
+      "latencyMs": 105.30004100000042
+    },
+    {
+      "at": "2026-09-11T23:33:54.750Z",
+      "arena": 0,
+      "player": 1,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xfd18fd4e9619941e400de5f4e9bafde9302f052df53588a7d00feaddf2a9dfd6",
+      "latencyMs": 107.8302619999995
+    },
+    {
+      "at": "2026-09-11T23:33:54.959Z",
+      "arena": 1,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0x48f809d34293c1a1e1ad4f590a99af626a388caf0a83ec3963d5152c05b7c958",
+      "latencyMs": 108.16375000000153
+    },
+    {
+      "at": "2026-09-11T23:33:55.169Z",
+      "arena": 1,
+      "player": 1,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xa64b1efc089119cbf8f513ba2257352fd6df67084920bb49697503a30ddd6b46",
+      "latencyMs": 103.98083899999983
+    },
+    {
+      "at": "2026-09-11T23:33:55.275Z",
+      "arena": 0,
+      "player": 0,
+      "name": "concede",
+      "state": "confirmed",
+      "hash": "0x00616dd22277daeb15428c900fabb80de4cf9eeb3d992946ab1c902fb565b280",
+      "latencyMs": 131.51772400000118
+    },
+    {
+      "arena": 0,
+      "name": "closeEngine",
+      "hash": "0xa83b38f198bff8221d9be85f624e589b0cdbe4c1c1d422e1f3748176780d91cd",
+      "block": "61746811"
+    },
+    {
+      "at": "2026-09-11T23:34:06.050Z",
+      "arena": 1,
+      "player": 0,
+      "name": "input",
+      "state": "confirmed",
+      "hash": "0xb87b6177e22793e72ded7d0597da033dc8e231cd1cc48c2f164a3fa5b940e8f8",
+      "latencyMs": 113.01713599999857
+    },
+    {
+      "at": "2026-09-11T23:34:06.366Z",
+      "arena": 2,
+      "player": 0,
+      "name": "acceptMatch",
+      "state": "confirmed",
+      "hash": "0xfdd908742a07118bf47d540c142bfd523f31a611b0884a8c734c62e4b94a86da",
+      "latencyMs": 709.8671529999992
+    },
+    {
+      "at": "2026-09-11T23:34:07.079Z",
+      "arena": 2,
+      "player": 1,
+      "name": "acceptMatch",
+      "state": "confirmed",
+      "hash": "0xa213be2a6820be50f4326588d810a99cb55e6a5ac51536abbd640cc955bc3d4f",
+      "latencyMs": 223.45000699999946
+    },
+    {
+      "at": "2026-09-11T23:34:07.402Z",
+      "arena": 1,
+      "player": 0,
+      "name": "concede",
+      "state": "confirmed",
+      "hash": "0x5ee16d01ce1838b2909b59cf42835cec5f278f89a43b1ff55462215cd6f6bcb9",
+      "latencyMs": 132.8317960000022
+    },
+    {
+      "at": "2026-09-11T23:34:07.537Z",
+      "arena": 2,
+      "player": 0,
+      "name": "concede",
+      "state": "confirmed",
+      "hash": "0x742628f699f0cca7e05036a2ae4af97ac88f33ee6d25dd8fc9a5ee9d56a1754f",
+      "latencyMs": 134.08496899999955
+    },
+    {
+      "arena": 1,
+      "name": "closeEngine",
+      "hash": "0x72f424633b2647fefd83d8c1de4585d4e7de4e57644a1e552a9c9c461a9b139a",
+      "block": "61746853"
+    },
+    {
+      "arena": 2,
+      "name": "closeEngine",
+      "hash": "0x85bf48d6973300b64bb7aeda55a1f599ab5f2d965f90247e840f46dce306f69b",
+      "block": "61746857"
+    }
+  ],
+  "checks": [
+    "Arena 1 started in mode 1",
+    "Arena 2 started in mode 0",
+    "Arena 1 terminal hash published",
+    "Closing arena 1 does not stop arena 2",
+    "Arena 3 started in mode 0",
+    "Arena 3 starts during arena 1 challenge window",
+    "Arena 2 terminal hash published",
+    "Arena 3 terminal hash published"
+  ],
+  "arenas": [
+    {
+      "app": "0xc6afe5524ecad2e11a5082a2a5d850b8d8c9c773",
+      "node": "https://il-pongroomstestnetrelease-c6afe5524ecad2e1.fly.dev"
+    },
+    {
+      "app": "0xbbf6a28b7f527f98cf1628949a83efe4d7bbf006",
+      "node": "https://il-pongroomstestnetrelease-bbf6a28b7f527f98.fly.dev"
+    },
+    {
+      "app": "0xc93452a9d1da1db01e79d99f531a34104b76fe97",
+      "node": "https://il-pongroomstestnetrelease-c93452a9d1da1db0.fly.dev"
+    }
+  ],
+  "appliedFrames": [
+    11,
+    12,
+    3
+  ],
+  "passed": true,
+  "finishedAt": "2026-09-11T23:34:20.046Z"
+}

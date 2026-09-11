@@ -1,0 +1,58 @@
+{
+  "checks": [
+    "Offline coordinator does not freeze a healthy direct engine lane",
+    "Final-tick revert plus 429 recovers the result without reconnecting",
+    "Unknown submission stops writes but preserves result transition",
+    "Room rotates to a new invitation before the previous result is recovered",
+    "Next match refreshes an uncertain SDK nonce without a passkey ceremony",
+    "The current tab can restore its session; a second controlling tab is still rejected",
+    "Ten-second shared cooldown honored",
+    "Exact per-match ELO displayed after fresh read",
+    "Desktop and mobile result visible"
+  ],
+  "errors": [],
+  "scenarios": [
+    {
+      "failure": "revert",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "reads": 12,
+      "writes": 8,
+      "idleWrites": 8,
+      "cooldownMs": 10016,
+      "finalScore": "7:6",
+      "nextMatch": true,
+      "nonceReads": 1
+    },
+    {
+      "failure": "uncertain",
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "reads": 12,
+      "writes": 8,
+      "idleWrites": 8,
+      "cooldownMs": 10015,
+      "finalScore": "7:6",
+      "nextMatch": true,
+      "nonceReads": 2
+    },
+    {
+      "failure": "unsent",
+      "viewport": {
+        "width": 390,
+        "height": 900
+      },
+      "reads": 12,
+      "writes": 8,
+      "idleWrites": 8,
+      "cooldownMs": 10007,
+      "finalScore": "7:6",
+      "nextMatch": true,
+      "nonceReads": 2
+    }
+  ]
+}
