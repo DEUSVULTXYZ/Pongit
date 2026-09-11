@@ -45,9 +45,19 @@ export async function requestHostedRenewal(
     await save({...p!,state:now-p!.attemptedAt>=300000?"intervention":"uncertain",retryAt:now+10000});
     throw new Error("Hosted engine response has no URL; waiting for provisioning confirmation");
   }
+  if(body.app && String(body.app).toLowerCase()!==app.toLowerCase()){
+    await save({...p!,state:"intervention",retryAt:0});
+    throw new Error("Hosted lookup belongs to another application; operator inspection required");
+  }
   if(body.url.replace(/\/$/,"")!==expectedUrl.replace(/\/$/,"")){
     await save({...p!,state:"intervention",retryAt:0});
     throw new Error("Hosted node URL changed; update and verify the deployment manifest before admission");
+  }
+  // This function is called only while the engine itself still fails validation.
+  // A live control-plane record must not hide an old or unavailable engine forever.
+  if(now-p!.attemptedAt>=300000){
+    await save({...p!,state:"intervention",status:response.status,retryAt:0});
+    throw new Error("Hosted session exists but the new engine epoch is still unavailable; operator inspection required");
   }
   await save({...p!,state:"confirmed",status:response.status,retryAt:now+10000});
 }

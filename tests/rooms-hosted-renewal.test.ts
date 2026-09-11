@@ -35,3 +35,16 @@ test("explicit non-creation retries with backoff; unqualified 503 does not",asyn
 test("different endpoint is never silently adopted",async()=>{
   await assert.rejects(requestHostedRenewal(journal(),app,2n,url,(async()=>Response.json({url:"https://another.example"})) as typeof fetch),/URL changed/);
 });
+
+test("a live control record cannot hide an unavailable epoch indefinitely",async()=>{
+  const db=journal(),calls:string[]=[];
+  const transport=(async(_:any,o:any)=>{calls.push(o.method);return Response.json({app,url,status:'live'});}) as typeof fetch;
+  await requestHostedRenewal(db,app,2n,url,transport,1000);
+  await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,302000),/new engine epoch is still unavailable/);
+  await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,400000),/inspection|ambiguous/);
+  assert.deepEqual(calls,['POST','GET']);
+});
+
+test("an unrelated application in a lookup is rejected",async()=>{
+  await assert.rejects(requestHostedRenewal(journal(),app,2n,url,(async()=>Response.json({app:'0x22',url})) as typeof fetch),/another application/);
+});
