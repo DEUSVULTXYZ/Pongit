@@ -16,7 +16,7 @@ A targeted invitation is reserved for its recipient and expires after ten minute
 
 Every pairing requires both players' approval of the same signed ticket within twenty seconds. **Back**, or failing to respond, marks a player away. **Rejoin queue** places them at the end of the room queue. A submitted acceptance is checked on the engine before cancellation. The coordinator cannot invent a score or choose a winner.
 
-Once both players choose **Accept**, a shared **3, 2, 1** appears over the court before their engine acceptances are sent. The numbers expand and fade; reduced motion keeps them still. If confirmation takes longer, the court shows **Waiting for the game to start**, without hiding an already running rally. Reloading while waiting restores your readiness. The matchmaking timer measures elapsed waiting time using the server clock and a monotonic browser clock, so an incorrect computer clock cannot leave it at zero.
+Once both players choose **Accept**, a shared **3, 2, 1** appears over the court before their engine acceptances are sent. The numbers expand and fade; reduced motion keeps them still. If confirmation takes longer, the court shows **Waiting for the game to start**, without hiding an already running rally. Reloading while waiting restores your readiness. The matchmaking timer is a separate, local browser stopwatch. It starts at zero when this tab displays a new search, advances without server updates and restarts after a page reload. Neither the server's clock nor corrections to the computer's clock can change its duration.
 
 ## Share a cabinet
 

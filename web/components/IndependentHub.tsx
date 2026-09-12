@@ -57,7 +57,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
  const mine=room?.members.find((m:any)=>equal(m.player,player));
  const offerSide=offer&&player?(equal(offer.a,player)?0:equal(offer.b,player)?1:-1):-1;
  const canAccept=offer?.status===1&&offerSide>=0;
- const queueSeconds=useQueueElapsed(view.queue?`${player}:${view.queue[0]}:${view.queue[1]}`:undefined,Number(view.queue?.[1]??0)*1000,now);
+ const queueSeconds=useQueueElapsed(view.queue?`${player}:${view.queue[0]}:${view.queue[1]}`:undefined);
  const resultId=snapshot&&lastGame.current?arenaReference(lastGame.current.app,lastGame.current.binding.epoch,snapshot.id):null;
  const resultEntry=snapshot&&settled?.entry.first.id===snapshot.id?settled.entry:snapshot&&view.published?.first.id===snapshot.id?view.published:null;
  const ratingDelta=snapshot&&settled?.entry.first.id===snapshot.id&&side>=0?Number(settled.change[side+2])-Number(settled.change[side]):undefined;

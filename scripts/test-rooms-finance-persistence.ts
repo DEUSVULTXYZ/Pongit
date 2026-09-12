@@ -8,6 +8,7 @@ import {encodeEventTopics,encodeAbiParameters,zeroHash,type Address} from "viem"
 import {roomsSettlementAuditAbi} from "../shared/abi-rooms-settlement-audit";
 import {createRoomsFinanceRouter} from "../relayer/src/rooms-finance-router";
 import {financeScope,type RoomsFinanceManifest} from "../relayer/src/rooms-finance-config";
+import {initial} from '../shared/physics-v2';
 
 // Isolated PostgreSQL database on the VPS; RPC responses are deterministic fixtures.
 if(!process.env.FINANCE_TEST_DATABASE_URL)throw new Error("Isolated test database required");
@@ -23,6 +24,8 @@ const legacy:RoomsFinanceManifest={app:address(1),adapter:address(2),market:addr
 const early:RoomsFinanceManifest={...legacy,adapter:address(5),market:address(6),vault:address(7),financeId:"early-v1",settlement:"early-published-testnet"};
 const player=address(8),hub=address(9),scope=financeScope(early);
 let head=1012n,paid=false,captured=false,challenge=false,corrected=false,reorg=false,readFailure=false;
+const pause={...initial(zeroHash,1),awaitingServe:true,resumeAt:3000000n,scoreA:1};
+let publishedPause={...pause,awaitingServe:false},roundOpened=false,roundRace=false;
 const hash=(n:bigint)=>("0x"+n.toString(16).padStart(64,"0")) as `0x${string}`;
 const sent:any[]=[];
 const realNow=Date.now;let now=realNow();Date.now=()=>now;
@@ -30,7 +33,7 @@ const base:any={
  getBlockNumber:async()=>head,
  getBlock:async({blockNumber}:any)=>({hash:hash(blockNumber+(reorg?100000n:0n)),number:blockNumber}),
  getBalance:async()=>100n,
- readContract:async({address:target,functionName:f,args=[]}:any)=>{
+ readContract:async({address:target,functionName:f,args=[],blockNumber}:any)=>{
   const m=[legacy,early].find(x=>[x.adapter,x.market,x.vault].includes(target))||early;
   if(f==="pressureSigner")return signer.address;if(f==="results")return m.adapter;
   if(f==="modules"||f==="modulesSealed")return true;if(f==="moduleCount")return 1n;
@@ -38,6 +41,9 @@ const base:any={
   if(f==="books")return [0n,0n,(args[0]===1n&&m===legacy||args[0]===2n&&m===early)?1n:0n];
   if(f==="sessionOf")return {status:1,epoch:1n};
   if(f==="balances"||f==="nonces")return 0n;
+  if(f==='checkpointReady')return [false,0n];
+  if(f==='rounds')return [roundOpened?head+40n:0n,pause.resumeAt,1,zeroHash];
+  if(f==='getSnapshot'){assert.equal(blockNumber,head,'published snapshot is pinned to a Monad block');return [3n,1n,2n,,,,,,,,,,publishedPause];}
   if(f==="result")return [address(10),address(11),captured&&m===early?address(10):address(0),captured&&m===early?3:2];
   if(f==="resultHashes"){if(readFailure)throw new Error("Injected RPC outage");return corrected?hash(99n):hash(77n);}
   if(f==="positions")return [10n,0n,5n,paid];
@@ -54,11 +60,24 @@ const base:any={
    return logs;
  },
 };
-const enqueue=async(r:any)=>{sent.push(r);if(r.functionName==="finalizeResult")captured=true;if(r.functionName==="claim")paid=true;return {id:hash(BigInt(sent.length))};};
+const enqueue=async(r:any)=>{sent.push(r);if(r.functionName==='openRound'){if(roundRace)throw Object.assign(new Error('Changed at preflight'),{reason:'not a Chaos pause'});roundOpened=true;}if(r.functionName==="finalizeResult")captured=true;if(r.functionName==="claim")paid=true;return {id:hash(BigInt(sent.length))};};
 try{
  await db.query("CREATE TABLE il_results(app text,id text,phase int,mode int,ended_at timestamptz)");
  const make=()=>createRoomsFinanceRouter({db,base,entries:[legacy,early],enqueue});
  let router=await make();
+ const live=[3n,1n,2n,,,,,,,,,,pause];
+ let checkpoints=0;
+ await router.pressure('3',live,async()=>{checkpoints++;});
+ assert.equal(sent.length,0,'an unpublished live pause must not enqueue a market or round');
+ publishedPause={...pause,resumeAt:1n};
+ await router.pressure('3',live,async()=>{checkpoints++;});assert.equal(sent.length,0,'old published rally is not the live rally');
+ publishedPause={...pause};roundRace=true;
+ await router.pressure('3',live,async()=>{checkpoints++;});assert.equal(sent.at(-1).functionName,'openRound','a confirmed preflight race remains retryable');
+ roundRace=false;await router.pressure('3',live,async()=>{checkpoints++;});
+ assert(roundOpened);const opened=sent.filter(r=>r.functionName==='openRound').length;
+ await router.pressure('3',live,async()=>{checkpoints++;});assert.equal(sent.filter(r=>r.functionName==='openRound').length,opened);
+ assert.equal(checkpoints,0,'a window still open cannot authorize a handicap');
+ sent.length=0;
  const account:any=await router.route("/interlude/finance","GET",player,{},new URLSearchParams());
  assert.equal(account.manifest.market,early.market);assert.equal(account.archives[0].manifest.market,legacy.market);
  await router.route("/interlude/finance/buy","POST",player,{bet:{matchId:"1",player},signature:"0x"+"11".repeat(65)},new URLSearchParams());
@@ -82,5 +101,5 @@ try{
  assert.equal(sent.filter(r=>r.functionName==="claim").length,before);
  reorg=true;now+=11000;await router.audit();
  assert.ok(Number((await db.query("SELECT count(*) FROM il_settlement_events WHERE NOT canonical")).rows[0].count)>0);
- console.log(JSON.stringify({passed:true,routing:true,restart:true,payoutWithoutLobbyResult:true,challengeLogged:true,correctionAfterRpcFailure:true,noDoublePayment:true,orphanedEvidenceRetained:true}));
+ console.log(JSON.stringify({passed:true,unpublishedChaosPauseWaits:true,wrongRallyWaits:true,preflightRaceRecovers:true,noPrematureCheckpoint:true,routing:true,restart:true,payoutWithoutLobbyResult:true,challengeLogged:true,correctionAfterRpcFailure:true,noDoublePayment:true,orphanedEvidenceRetained:true}));
 }finally{Date.now=realNow;await db.end();await rm(dir,{recursive:true,force:true});}

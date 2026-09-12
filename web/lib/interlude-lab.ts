@@ -50,10 +50,11 @@ export class LabLane {
  private latest?:LabSnapshot;
  private lastObservation=0;
  private lastWrite=0;
+ private lastInputAt=-Infinity;
  constructor(private read:(fresh?:boolean)=>Promise<LabSnapshot>,private session:Pick<ArenaSender,'send'>,private account:string,
   private onResult:(s:LabSnapshot,latency?:number)=>void,private onError:(e:unknown)=>void,
   private onUnavailable:(e:unknown)=>void=()=>{},
-  private pacing:{readMs:number;tickMs:number;now?:()=>number}={readMs:0,tickMs:0},
+  private pacing:{readMs:number;tickMs:number;inputMs?:number;cooldownMs?:()=>number;now?:()=>number}={readMs:0,tickMs:0},
   private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void}){}
  private now(){return (this.pacing.now || Date.now)();}
  intent(direction:number){this.desired=direction;}
@@ -94,6 +95,10 @@ export class LabLane {
  }
  async pump(allowTick:boolean){
   if(this.busy||this.stopped||this.actionPending||this.now()<this.nextReadAt)return;
+  // Check before entering the SDK: it claims its next nonce before the HTTP
+  // transport runs. A known cooldown must not consume that local nonce.
+  const cooldown=this.pacing.cooldownMs?.()??0;
+  if(cooldown>0){this.nextReadAt=this.now()+cooldown;return;}
   const cached=this.latest, cachedSide=labSide(cached || null,this.account);
   const recent=cached && this.now()-this.lastObservation<this.pacing.readMs && !this.observationPending;
   const newIntent=cached && cachedSide>=0 && (cachedSide===0?cached.state.leftDir:cached.state.rightDir)!==this.desired;
@@ -119,9 +124,12 @@ export class LabLane {
      changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
     }
     if(!changed && (!allowTick||n>0||this.now()-this.lastWrite<this.pacing.tickMs))break;
+    if(changed && this.now()-this.lastInputAt<(this.pacing.inputMs??0))break;
+    if((this.pacing.cooldownMs?.()??0)>0)break;
     this.inputPending=changed;
     const name=changed?"input":"tick",args=changed?[s.id,this.desired,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]:[s.id];
     this.stream?.sending?.(true);
+    if(changed)this.lastInputAt=this.now();
     const result=await this.session.send(name,args);
     this.lastWrite=this.now();
     this.observationPending=true;

@@ -17,6 +17,7 @@ import { marketV4Abi as marketAbi } from "../../shared/abis-v4";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { roomsLifecycleHubAbi } from "../../shared/abi-rooms-lifecycle";
 import {roomsRoundStatus} from '../../shared/rooms-round-status';
+import {sameChaosPause,chaosWindowMoved} from '../../shared/chaos-publication';
 import {
   pressureTypes,
   pressureDomain,
@@ -204,7 +205,12 @@ export async function createRoomsFinance(o: {
     if (!ready[0]) {
       const round = await readAdapter("rounds", [matchId, rally]);
       if (round[0] === 0n) {
-        // openRound verifies a published pause on Monad; an unpublished pause cannot open bets.
+        // The live engine can be a publication ahead of Monad. Pin the complete
+        // published snapshot before requesting a Monad window, including its
+        // exact rally/serve identity. A key press only changes its revision.
+        const blockNumber=await base.getBlockNumber();
+        const published=await base.readContract({address:m.app,abi:roomsChaosAbi,functionName:'getSnapshot',args:[matchId],blockNumber});
+        if(!sameChaosPause(matchId,state,published))return;
         const book = await readMarket("books", [matchId]);
         if (book[2] === 0n)
           await enqueue(
@@ -213,13 +219,14 @@ export async function createRoomsFinance(o: {
             [id, parseEther("0.005")],
             parseEther("0.004"),
           );
-        await enqueue(
-          "game",
-          "openRound",
-          [id],
-          0n,
-          `round:${id}:${rally}:${state.resumeAt}`,
-        );
+        try{
+          await enqueue("game","openRound",[id],0n,`round:${id}:${rally}:${state.resumeAt}`);
+        }catch(e){
+          // The opponent may concede between the read and the relay preflight,
+          // or another keeper may open the same round. Reobserve; do not sign
+          // a replacement for a transaction with an uncertain receipt.
+          if(!chaosWindowMoved(e))throw e;
+        }
       }
       return;
     }

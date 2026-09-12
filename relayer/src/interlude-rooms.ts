@@ -760,7 +760,12 @@ export async function createRoomsCoordinator(o: Options) {
               // A paused rally does not need idle ticks. Resume only after its
               // checkpoint write is confirmed; an uncertain write stops here.
               await publicTick(id);
-            }).catch(e=>{lastError="Chaos checkpoint pending: "+(e as Error).message;}).finally(()=>pendingPressure.delete(id));
+            }).catch(e=>{
+              // A financial checkpoint is local to this rally. It must never
+              // overwrite the game node's availability or expose raw calldata.
+              recordRpc({at:Date.now(),target:"pongit",method:"chaos.checkpoint.retry",status:503,ms:0,source:"cache"});
+              console.warn("Chaos checkpoint retry",json({at:new Date().toISOString(),app,matchId:id,rally:s[12].scoreA+s[12].scoreB,reason:String((e as Error).message).split('\n')[0].replace(/https?:\/\/\S+/g,'[rpc]').slice(0,160)}));
+            }).finally(()=>pendingPressure.delete(id));
             pendingPressure.set(id,work);
           }
         }

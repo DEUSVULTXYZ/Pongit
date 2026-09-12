@@ -113,3 +113,33 @@ test("a movement after a cached Chaos pause refreshes its deadline before signin
  lane.ingest(f.state());lane.intent(1);await lane.pump(false);
  assert.equal(freshReads,1);assert.equal(f.sent.length,1);assert.equal(lane.stopped,false);
 });
+
+test('100 rapid reversals per player coalesce without nonce gaps in Classic and Chaos',async()=>{
+ for(const mode of [0,1] as const)for(const side of [0,1]){
+  const f=fixture();let now=1000,inFlight=0,maxInFlight=0;
+  f.set({state:{...f.state().state,mode}});
+  const sent:number[]=[];
+  const lane=new LabLane(async()=>f.state(),{send:async(name,args=[])=>{
+   maxInFlight=Math.max(maxInFlight,++inFlight);
+   assert.equal(name,'input');assert.equal(args[2],(side?f.state().nonceB:f.state().nonceA)+1n);
+   sent.push(Number(args[1]));await Promise.resolve();
+   f.set({[side?'nonceB':'nonceA']:BigInt(args[2] as bigint),state:{...f.state().state,[side?'rightDir':'leftDir']:Number(args[1])}});
+   inFlight--;return {latencyMs:20} as any;
+  }},side?b:a,()=>{},e=>{throw e;},()=>{},{readMs:500,tickMs:300,inputMs:50,now:()=>now});
+  for(let i=0;i<100;i++){lane.intent(i%2?1:-1);await lane.pump(false);now+=5;}
+  lane.intent(0);now+=50;await lane.pump(false);
+  assert(sent.length<=11);assert.equal(sent.at(-1),0);assert.equal(maxInFlight,1);assert(!lane.stopped);
+ }
+});
+
+test('known node cooldown does not enter the SDK or discard the last unsent intention',async()=>{
+ const f=fixture();let now=1000,until=2000,sends=0;
+ const lane=new LabLane(async()=>f.state(),{send:async(_name,args=[])=>{
+  sends++;assert.equal(args[1],0);assert.equal(args[2],1n);
+  f.set({nonceA:1n,state:{...f.state().state,leftDir:0}});return {latencyMs:20} as any;
+ }},a,()=>{},e=>{throw e;},()=>{},{readMs:500,tickMs:300,inputMs:50,cooldownMs:()=>Math.max(0,until-now),now:()=>now});
+ f.set({state:{...f.state().state,leftDir:-1}});
+ for(let i=0;i<100;i++){lane.intent(i%2?1:-1);await lane.pump(false);now+=5;}
+ lane.intent(0);assert.equal(sends,0);assert(!lane.stopped);
+ now=2001;await lane.pump(false);assert.equal(sends,1);assert(!lane.stopped);
+});

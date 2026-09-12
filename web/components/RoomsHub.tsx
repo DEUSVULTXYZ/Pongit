@@ -264,7 +264,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   const profileLoaded = useRef<string | undefined>(undefined);
   const room = lobby.room,
     offer = room?.offer,
-    queueSeconds = useQueueElapsed(lobby.queue?`${account}:${lobby.queue.mode}:${lobby.queue.at}`:undefined,lobby.queue?.at??0,now),
+    queueSeconds = useQueueElapsed(lobby.queue?`${account}:${lobby.queue.mode}:${lobby.queue.at}`:undefined),
     side = labSide(snapshot, account),
     isDuel =
       !!offer && [offer.a, offer.b].includes(account?.toLowerCase() || "");
@@ -699,7 +699,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           setSyncError(engineReadRetryMs(e) ? "The game node is limiting requests. Waiting to synchronize." : "Synchronizing game state. Your session is still connected.");
           setDirection(0);
         },
-        {readMs:500,tickMs:300},
+        {readMs:500,tickMs:300,inputMs:50,cooldownMs:()=>engineCooldownMs(roomsManifest.node)},
         feed?{receipt:(result,name,args)=>feed.receipt(BigInt(id),result,name,args,account),sending:value=>pilot.sending(value)}:undefined,
       );
     const poll = async () => {
@@ -734,7 +734,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         void lane.current?.pump(
           pilot.due(labSide(snapshotRef.current,account),snapshotRef.current,Date.now()),
         );
-    }, 100);
+    }, 20);
     return () => {
       done = true;
       clearTimeout(pollTimer);

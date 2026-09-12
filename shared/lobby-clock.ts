@@ -10,15 +10,12 @@ export class LobbyClock {
  now(){return this.anchor?this.anchor.epoch+Math.max(0,this.monotonic()-this.anchor.monotonic):this.wall();}
 }
 
-/** Remains live with older APIs too; a future server timestamp cannot freeze it. */
+/** Local duration only. Server timestamps identify the queue, never set its age. */
 export class QueueElapsed {
- private entry?:{key:string;at:number;elapsed:number};
- sample(key:string|undefined,since:number,serverNow:number,monotonic:number){
+ private entry?:{key:string;at:number};
+ sample(key:string|undefined,monotonic:number){
   if(!key){this.entry=undefined;return 0;}
-  const elapsed=Math.max(0,serverNow-since);
-  if(this.entry?.key!==key)this.entry={key,at:monotonic,elapsed};
-  const current=Math.max(this.entry.elapsed+Math.max(0,monotonic-this.entry.at),elapsed);
-  this.entry={key,at:monotonic,elapsed:current};
-  return Math.floor(current/1000);
+  if(this.entry?.key!==key)this.entry={key,at:monotonic};
+  return Math.floor(Math.max(0,monotonic-this.entry.at)/1000);
  }
 }

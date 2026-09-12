@@ -7,7 +7,9 @@ export function useLobbyClock(){
  useEffect(()=>{const t=setInterval(()=>setNow(clock.now()),250);return()=>clearInterval(t);},[clock]);
  return {now,clock};
 }
-export function useQueueElapsed(key:string|undefined,since:number,serverNow:number){
+export function useQueueElapsed(key:string|undefined){
  const elapsed=useRef(new QueueElapsed()).current;
- return elapsed.sample(key,since,serverNow,performance.now());
+ const [,refresh]=useState(0);
+ useEffect(()=>{if(!key)return;const t=setInterval(()=>refresh(n=>n+1),250);return()=>clearInterval(t);},[key]);
+ return elapsed.sample(key,performance.now());
 }
