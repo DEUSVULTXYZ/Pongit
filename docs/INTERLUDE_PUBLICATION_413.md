@@ -42,3 +42,5 @@ PONGIT does not hold the hosted node's `INTERLUDE_COMMIT_TOKEN`. We did not bypa
 Evidence: [Chaos RPC probe](evidence/independent/chaos-progress-probe.json), [browser counts and scope](evidence/independent/browser-load.json), [successful earlier isolation rehearsal](evidence/independent/v1-hosted-qualification.json).
 
 The hub's own closure and challenge rules remain authoritative. We have not substituted a cosmetic one-second timer for them. See the official [security and liveness reference](https://github.com/Veenoway/interlude-sdk/blob/main/docs/04-security.md).
+
+At 15:37 UTC both failed fixtures had been recovered through those real hub rules. All candidate epochs are released; incomplete games were cancelled without ELO, and the Chaos bettor was refunded exactly once. [Closure evidence](evidence/independent/v2-release.json) and [refund proof](evidence/independent/refund-proof.json). The old test nodes may consequently no longer be reachable: use the recorded UTC/application/epoch identifiers to retrieve the failed batch, rather than treating a now-closed endpoint as a fresh reproduction. The production application was not closed by this cleanup.

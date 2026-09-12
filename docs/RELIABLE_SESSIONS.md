@@ -113,6 +113,8 @@ Core recovery release: `97b923f3435e3f4a66c59864025c8453cb7b8906`. The web image
 
 Receipt-identity runtime commit: `ba5305072c47855fe87cd259491c2af1638c5ae1`. Backup `20260912T002713Z` was copied off the VPS and verified before this restart. Later documentation/evidence commits do not change those runtime images.
 
+At 15:24 UTC on 12 September, the compatible frontend was updated to `pongit-web:recovery8-8092800`, while the recovery7 relayer and current game/finance deployments were preserved. See the [current delivery record](INDEPENDENT_ARENAS.md#compatible-public-deployment) for the exact source commit, image digests, public Chrome/Edge checks and rollback. The independent-arena home remains disabled.
+
 Keep the previous web image and the corrected recovery relayer. New journal fields are additive. Do not roll back to a relayer that sends quarantined bytes or stops result observation on expiry. Stop admissions if lifecycle state is ambiguous. Never delete an uncertain transaction, reset a nonce or reinterpret an old financial manifest to unblock deployment.
 
 The stream transport remains a reversible deployment setting, `ROOMS_STATE_STREAM_ENABLED`. Disabling it retains journal, lifecycle, room recovery and presentation fixes. Preserve all application versions and their original financial endpoints when changing the transport.

@@ -1,0 +1,114 @@
+{
+  "at": "2026-09-12T15:24:21.201Z",
+  "scope": "Read-only HTTPS public home, navigation and docs; no passkey or transaction",
+  "checks": [
+    {
+      "home": {
+        "width": 360,
+        "height": 640
+      },
+      "choices": [
+        {
+          "x": 12,
+          "y": 249.78125,
+          "width": 336,
+          "height": 98
+        },
+        {
+          "x": 12,
+          "y": 359.78125,
+          "width": 336,
+          "height": 98
+        },
+        {
+          "x": 12,
+          "y": 469.78125,
+          "width": 336,
+          "height": 98
+        }
+      ]
+    },
+    {
+      "home": {
+        "width": 390,
+        "height": 844
+      },
+      "choices": [
+        {
+          "x": 12,
+          "y": 254.4375,
+          "width": 366,
+          "height": 98
+        },
+        {
+          "x": 12,
+          "y": 364.4375,
+          "width": 366,
+          "height": 98
+        },
+        {
+          "x": 12,
+          "y": 474.4375,
+          "width": 366,
+          "height": 98
+        }
+      ]
+    },
+    {
+      "home": {
+        "width": 768,
+        "height": 1024
+      },
+      "choices": [
+        {
+          "x": 24,
+          "y": 260.375,
+          "width": 225.328125,
+          "height": 390
+        },
+        {
+          "x": 271.328125,
+          "y": 260.375,
+          "width": 225.328125,
+          "height": 390
+        },
+        {
+          "x": 518.65625,
+          "y": 260.375,
+          "width": 225.328125,
+          "height": 390
+        }
+      ]
+    },
+    {
+      "home": {
+        "width": 1440,
+        "height": 1000
+      },
+      "choices": [
+        {
+          "x": 180,
+          "y": 296.78125,
+          "width": 345.328125,
+          "height": 390
+        },
+        {
+          "x": 547.328125,
+          "y": 296.78125,
+          "width": 345.328125,
+          "height": 390
+        },
+        {
+          "x": 914.65625,
+          "y": 296.78125,
+          "width": 345.34375,
+          "height": 390
+        }
+      ]
+    },
+    "Direct documentation loads without a passkey or arcade entry",
+    "Unknown documentation article returns HTTP 404"
+  ],
+  "errors": [],
+  "passed": true
+}

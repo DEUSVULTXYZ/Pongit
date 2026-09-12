@@ -1,0 +1,47 @@
+{
+  "at": "2026-09-12T15:37:12.215Z",
+  "scope": "Real testnet cancellation refunds to disconnected browser fixtures; read-only checks, no winning payout claimed",
+  "allEpochsReleased": true,
+  "unresolvedEngineCommands": 0,
+  "cancellations": [
+    {
+      "id": "340282366920938463463374607431768211460",
+      "mode": 0,
+      "ranked": true,
+      "ratingChange": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "winner": "0x0000000000000000000000000000000000000000"
+    },
+    {
+      "id": "340282366920938463463374607431768211503",
+      "mode": 1,
+      "ranked": false,
+      "ratingChange": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "winner": "0x0000000000000000000000000000000000000000"
+    }
+  ],
+  "proofs": [
+    {
+      "id": "340282366920938463463374607431768211503",
+      "player": "0xae8c61dc894830b277dc35240a79c86cfbc6d77d",
+      "payoutId": "0xbe16338c957f558bb6046c20cb24c6b8bddee08bc1926dc2c77258c2e012fc87",
+      "amount": "3443407699269404",
+      "transaction": "0x1598637ead37bb347a494ff7f905220ca3d5bad763e24c0c7ae44bb6ff37ad53",
+      "block": "61936869",
+      "balanceBefore": "0",
+      "balanceAfter": "3443407699269404",
+      "attempts": 1,
+      "duplicateClaimRejected": true,
+      "duplicateRetryRejected": true
+    }
+  ]
+}

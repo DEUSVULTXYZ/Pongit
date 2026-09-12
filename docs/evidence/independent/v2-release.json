@@ -1,0 +1,480 @@
+{
+  "at": "2026-09-12T15:37:06.542Z",
+  "lobby": "0xF2DaD62750AaB9EaB849182b325211145f663174",
+  "arenas": [
+    {
+      "app": "0x4ce249014a54A8260Fe0b8C5A6fde3E0c9c8FfB3",
+      "id": "340282366920938463463374607431768211458",
+      "epoch": "1",
+      "hubStatus": 0,
+      "lastCommitUTC": "2026-09-12T12:38:51.000Z",
+      "releaseUTC": null,
+      "entry": {
+        "first": {
+          "arena": "0x4ce249014a54A8260Fe0b8C5A6fde3E0c9c8FfB3",
+          "epoch": "1",
+          "id": "340282366920938463463374607431768211458",
+          "a": "0x07b305a7f4A35eb26099405a1C03Aef1E5121fA0",
+          "b": "0xE2117ebB5AC1C9069C702aE906e3b6d0dD9dDF5f",
+          "winner": "0x07b305a7f4A35eb26099405a1C03Aef1E5121fA0",
+          "mode": 0,
+          "ranked": true,
+          "status": 3,
+          "scoreA": 7,
+          "scoreB": 6,
+          "hash": "0x970576d292b44864ef9eb738135f473f7ad2e8a1a7a573cf822da8e0ea9431fb"
+        },
+        "latest": {
+          "arena": "0x4ce249014a54A8260Fe0b8C5A6fde3E0c9c8FfB3",
+          "epoch": "1",
+          "id": "340282366920938463463374607431768211458",
+          "a": "0x07b305a7f4A35eb26099405a1C03Aef1E5121fA0",
+          "b": "0xE2117ebB5AC1C9069C702aE906e3b6d0dD9dDF5f",
+          "winner": "0x07b305a7f4A35eb26099405a1C03Aef1E5121fA0",
+          "mode": 0,
+          "ranked": true,
+          "status": 3,
+          "scoreA": 7,
+          "scoreB": 6,
+          "hash": "0x970576d292b44864ef9eb738135f473f7ad2e8a1a7a573cf822da8e0ea9431fb"
+        },
+        "at": "1789216732",
+        "finality": true
+      },
+      "journal": [
+        {
+          "nonce": "0",
+          "hash": "0x6c76cc676523262a500f97c8d64665a3764ef36a78d047760dbd73789a918db8",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x6c76cc676523262a500f97c8d64665a3764ef36a78d047760dbd73789a918db8",
+            "blockHash": "0x0000000000000000000000000000000000000000000000000000000000006dc7",
+            "at": "2026-09-12T12:38:13.461Z"
+          }
+        },
+        {
+          "nonce": "1",
+          "hash": "0x5fafe3f88dc7a116a31e8020ef4a5c90b8ef13421bc6023489cf3090b6fa4452",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x5fafe3f88dc7a116a31e8020ef4a5c90b8ef13421bc6023489cf3090b6fa4452",
+            "blockHash": "0x0000000000000000000000000000000000000000000000000000000000006f5b",
+            "at": "2026-09-12T12:38:17.523Z"
+          }
+        },
+        {
+          "nonce": "2",
+          "hash": "0x1427c962f1e15fe5c37d625b67d98e1011aa93d8ca70174782bafd3520686eb2",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x1427c962f1e15fe5c37d625b67d98e1011aa93d8ca70174782bafd3520686eb2",
+            "blockHash": "0x00000000000000000000000000000000000000000000000000000000000070e0",
+            "at": "2026-09-12T12:38:21.438Z"
+          }
+        },
+        {
+          "nonce": "3",
+          "hash": "0x65abaab3521668877188c45eb93eb92a1374c90faeb236e90cec7336920f05e3",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x65abaab3521668877188c45eb93eb92a1374c90faeb236e90cec7336920f05e3",
+            "blockHash": "0x000000000000000000000000000000000000000000000000000000000000727b",
+            "at": "2026-09-12T12:38:25.561Z"
+          }
+        },
+        {
+          "nonce": "4",
+          "hash": "0x14fe592c7836640f1e4deaa4b11d7f0fb2bb9fe2044698a0ecd9f49c78fb8d72",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x14fe592c7836640f1e4deaa4b11d7f0fb2bb9fe2044698a0ecd9f49c78fb8d72",
+            "blockHash": "0x00000000000000000000000000000000000000000000000000000000000073fc",
+            "at": "2026-09-12T12:38:29.435Z"
+          }
+        },
+        {
+          "nonce": "5",
+          "hash": "0x3012f6a415aac5fc3914bf6ba2373fa108338a3e284ebbcbe39992c27dad47e4",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x3012f6a415aac5fc3914bf6ba2373fa108338a3e284ebbcbe39992c27dad47e4",
+            "blockHash": "0x000000000000000000000000000000000000000000000000000000000000758a",
+            "at": "2026-09-12T12:38:33.442Z"
+          }
+        },
+        {
+          "nonce": "6",
+          "hash": "0xe7692447ff592039674d74d3e4fa965b7c8833dd343fa299382ede6de85410b3",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0xe7692447ff592039674d74d3e4fa965b7c8833dd343fa299382ede6de85410b3",
+            "blockHash": "0x0000000000000000000000000000000000000000000000000000000000007718",
+            "at": "2026-09-12T12:38:37.437Z"
+          }
+        },
+        {
+          "nonce": "7",
+          "hash": "0x7efa2fca0b40d98c5ceeac3176f792b47e41e05a4d36a6b4ed0dcde1ffdfd127",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x7efa2fca0b40d98c5ceeac3176f792b47e41e05a4d36a6b4ed0dcde1ffdfd127",
+            "blockHash": "0x00000000000000000000000000000000000000000000000000000000000078a6",
+            "at": "2026-09-12T12:38:41.438Z"
+          }
+        },
+        {
+          "nonce": "8",
+          "hash": "0x20985951713c9c2d02ef81fa8abcac66642a11d395d255b4952d2bd87fa5c3ed",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x20985951713c9c2d02ef81fa8abcac66642a11d395d255b4952d2bd87fa5c3ed",
+            "blockHash": "0x0000000000000000000000000000000000000000000000000000000000007a33",
+            "at": "2026-09-12T12:38:45.422Z"
+          }
+        },
+        {
+          "nonce": "9",
+          "hash": "0x999953b2a5f44cf2221d207bfe9030218ccb0107c44748e85e2af4018cb50547",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211458",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x999953b2a5f44cf2221d207bfe9030218ccb0107c44748e85e2af4018cb50547",
+            "blockHash": "0x0000000000000000000000000000000000000000000000000000000000007bc3",
+            "at": "2026-09-12T12:38:49.501Z"
+          }
+        }
+      ]
+    },
+    {
+      "app": "0x39259f34e209Cf00D12E1576f9F9eD9CA75ca69A",
+      "id": "340282366920938463463374607431768211460",
+      "epoch": "1",
+      "hubStatus": 0,
+      "lastCommitUTC": "2026-09-12T12:46:33.000Z",
+      "releaseUTC": null,
+      "entry": {
+        "first": {
+          "arena": "0x39259f34e209Cf00D12E1576f9F9eD9CA75ca69A",
+          "epoch": "1",
+          "id": "340282366920938463463374607431768211460",
+          "a": "0x07b305a7f4A35eb26099405a1C03Aef1E5121fA0",
+          "b": "0xE2117ebB5AC1C9069C702aE906e3b6d0dD9dDF5f",
+          "winner": "0x0000000000000000000000000000000000000000",
+          "mode": 0,
+          "ranked": true,
+          "status": 4,
+          "scoreA": 1,
+          "scoreB": 0,
+          "hash": "0xc2dbf5134c95dbc72e07ce69a7cf6817f306b0c13776571f74a99ccefbb785e5"
+        },
+        "latest": {
+          "arena": "0x39259f34e209Cf00D12E1576f9F9eD9CA75ca69A",
+          "epoch": "1",
+          "id": "340282366920938463463374607431768211460",
+          "a": "0x07b305a7f4A35eb26099405a1C03Aef1E5121fA0",
+          "b": "0xE2117ebB5AC1C9069C702aE906e3b6d0dD9dDF5f",
+          "winner": "0x0000000000000000000000000000000000000000",
+          "mode": 0,
+          "ranked": true,
+          "status": 4,
+          "scoreA": 1,
+          "scoreB": 0,
+          "hash": "0xc2dbf5134c95dbc72e07ce69a7cf6817f306b0c13776571f74a99ccefbb785e5"
+        },
+        "at": "1789224696",
+        "finality": true
+      },
+      "journal": [
+        {
+          "nonce": "0",
+          "hash": "0x6fc9f3b0068c017c71145588b2dc4ae700189edc30839e6bbf4f2745507ef0e4",
+          "status": "obsolete",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211460",
+          "resolution": {
+            "kind": "epoch-closed",
+            "epoch": "1",
+            "at": "2026-09-12T14:51:34.687Z"
+          }
+        }
+      ]
+    },
+    {
+      "app": "0xf44c1Eb74247547214c1901d981dd5E59601994A",
+      "id": "340282366920938463463374607431768211503",
+      "epoch": "1",
+      "hubStatus": 0,
+      "lastCommitUTC": "2026-09-12T13:35:50.000Z",
+      "releaseUTC": null,
+      "entry": {
+        "first": {
+          "arena": "0xf44c1Eb74247547214c1901d981dd5E59601994A",
+          "epoch": "1",
+          "id": "340282366920938463463374607431768211503",
+          "a": "0x469A93ce46B42DDBEC4e4A1b927Ba5A77a10D20E",
+          "b": "0x09FA1993f3E7560C98BeAb284d89462700a3479B",
+          "winner": "0x0000000000000000000000000000000000000000",
+          "mode": 1,
+          "ranked": false,
+          "status": 4,
+          "scoreA": 1,
+          "scoreB": 0,
+          "hash": "0xd9557686dcdc2d98f5c553dc94023e5772aa277aa9e532b2afa15faec071baa6"
+        },
+        "latest": {
+          "arena": "0xf44c1Eb74247547214c1901d981dd5E59601994A",
+          "epoch": "1",
+          "id": "340282366920938463463374607431768211503",
+          "a": "0x469A93ce46B42DDBEC4e4A1b927Ba5A77a10D20E",
+          "b": "0x09FA1993f3E7560C98BeAb284d89462700a3479B",
+          "winner": "0x0000000000000000000000000000000000000000",
+          "mode": 1,
+          "ranked": false,
+          "status": 4,
+          "scoreA": 1,
+          "scoreB": 0,
+          "hash": "0xd9557686dcdc2d98f5c553dc94023e5772aa277aa9e532b2afa15faec071baa6"
+        },
+        "at": "1789227361",
+        "finality": true
+      },
+      "journal": [
+        {
+          "nonce": "0",
+          "hash": "0x4effce0531464551c5d4484490ccd5a2238d296fbb671a86c490380f5e3b47ab",
+          "status": "observed",
+          "action": "submitPressure",
+          "matchId": "340282366920938463463374607431768211503",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0x4effce0531464551c5d4484490ccd5a2238d296fbb671a86c490380f5e3b47ab",
+            "blockHash": "0x0000000000000000000000000000000000000000000000000000000000007a64",
+            "at": "2026-09-12T13:36:06.887Z"
+          }
+        },
+        {
+          "nonce": "1",
+          "hash": "0xa9e623f977ae5afeabf1d5e00d1642b3e24495cb8fee6932611b2a35e624779f",
+          "status": "observed",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211503",
+          "resolution": {
+            "kind": "receipt",
+            "hash": "0xa9e623f977ae5afeabf1d5e00d1642b3e24495cb8fee6932611b2a35e624779f",
+            "blockHash": "0x0000000000000000000000000000000000000000000000000000000000007a99",
+            "at": "2026-09-12T13:36:07.416Z"
+          }
+        },
+        {
+          "nonce": "2",
+          "hash": "0x76d797de1ec7000d8f19e940e48e90b17d8258303386231966e7414dd5e9001d",
+          "status": "obsolete",
+          "action": "tick",
+          "matchId": "340282366920938463463374607431768211503",
+          "resolution": {
+            "kind": "epoch-closed",
+            "epoch": "1",
+            "at": "2026-09-12T15:35:59.023Z"
+          }
+        }
+      ]
+    }
+  ],
+  "operations": [
+    {
+      "action": "openArena",
+      "target": "0xf2dad62750aab9eab849182b325211145f663174",
+      "status": "confirmed",
+      "hash": "0xd06786b3b0664d4bdb33c069a9bf14d405f4654441701afa91757de5aa1d0671",
+      "block": "61900847",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "closeArena",
+      "target": "0xf2dad62750aab9eab849182b325211145f663174",
+      "status": "confirmed",
+      "hash": "0x2115ccc47c11bae9b74dff851ee9dad44fc61efb17ff671659042a7ffa69a730",
+      "block": "61901980",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "openArena",
+      "target": "0xf2dad62750aab9eab849182b325211145f663174",
+      "status": "confirmed",
+      "hash": "0x70b8f6374378e10a0c7590e9c5a7be64f2b7c2c0179c2528d51229d7a7208a46",
+      "block": "61903325",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "openArena",
+      "target": "0xf2dad62750aab9eab849182b325211145f663174",
+      "status": "confirmed",
+      "hash": "0x9cf6ff798204e734f66b699724b8ad38db63cb6a88de084c2bf00bcf73ce25b2",
+      "block": "61912167",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "buy",
+      "target": "0xe00d060d3ee2345693bb293706d5de08c0df82b3",
+      "status": "confirmed",
+      "hash": "0x464fe3e51d187bc81c9909a29101f12a104dd30eef2af23b5a44325ee496097a",
+      "block": "61913221",
+      "receiptStatus": "success",
+      "events": [
+        {
+          "event": "BetPlaced",
+          "args": {
+            "matchId": "340282366920938463463374607431768211503",
+            "player": "0xae8c61Dc894830B277dC35240A79C86CFbC6D77d",
+            "side": 0,
+            "shares": "6000000000000000",
+            "cost": "3443407699269404"
+          }
+        }
+      ]
+    },
+    {
+      "action": "releaseStake",
+      "target": "0x3ef8327f69e09cf721772f345e2a887ea22cd595",
+      "status": "confirmed",
+      "hash": "0x24bb6951cee972fffff9d812177af5fcf604e7edb7fda66ef270ad1315cd62f2",
+      "block": "61913808",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "capture",
+      "target": "0xf2dad62750aab9eab849182b325211145f663174",
+      "status": "confirmed",
+      "hash": "0x0ca4273b3097686791eef39185495d29b5a8420485fa55fcd4744b4b0cb464d6",
+      "block": "61913825",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "forceClose",
+      "target": "0x3ef8327f69e09cf721772f345e2a887ea22cd595",
+      "status": "confirmed",
+      "hash": "0x982c84d4fb86c83f5bb5e02b23becd57790d3071dc3db787e11f46b7b0fad571",
+      "block": "61916272",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "forceClose",
+      "target": "0x3ef8327f69e09cf721772f345e2a887ea22cd595",
+      "status": "confirmed",
+      "hash": "0xe6737cc907c947ccc561f4971db64680d870551fc8e8f31a40d870dd40b609b7",
+      "block": "61925012",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "releaseStake",
+      "target": "0x3ef8327f69e09cf721772f345e2a887ea22cd595",
+      "status": "confirmed",
+      "hash": "0xd1c563db9953541736d9c5f3f518c9ff1d9d7d6dec1f606338bdf146f2bee002",
+      "block": "61928100",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "capture",
+      "target": "0xf2dad62750aab9eab849182b325211145f663174",
+      "status": "confirmed",
+      "hash": "0xbda7b169a85f915a683a760488f4825fbae1e6265888be6e1f194cfeb8c7b124",
+      "block": "61928117",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "releaseStake",
+      "target": "0x3ef8327f69e09cf721772f345e2a887ea22cd595",
+      "status": "confirmed",
+      "hash": "0xb2c7a6c1984c7e394bda41841c14bba47c61b9a5ea2a1907301cb30566836e95",
+      "block": "61936830",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "capture",
+      "target": "0xf2dad62750aab9eab849182b325211145f663174",
+      "status": "confirmed",
+      "hash": "0xb13abe3bebad7420780be543f7d31ae636b344f5727f06c2055f82ed22b8998f",
+      "block": "61936844",
+      "receiptStatus": "success",
+      "events": []
+    },
+    {
+      "action": "claim",
+      "target": "0xe00d060d3ee2345693bb293706d5de08c0df82b3",
+      "status": "confirmed",
+      "hash": "0x1598637ead37bb347a494ff7f905220ca3d5bad763e24c0c7ae44bb6ff37ad53",
+      "block": "61936869",
+      "receiptStatus": "success",
+      "events": [
+        {
+          "event": "PayoutPaid",
+          "args": {
+            "payoutId": "0xbe16338c957f558bb6046c20cb24c6b8bddee08bc1926dc2c77258c2e012fc87",
+            "recipient": "0xae8c61Dc894830B277dC35240A79C86CFbC6D77d",
+            "amount": "3443407699269404"
+          }
+        }
+      ]
+    }
+  ],
+  "payments": [
+    {
+      "id": "340282366920938463463374607431768211503",
+      "player": "0xae8c61dc894830b277dc35240a79c86cfbc6d77d",
+      "settled": true,
+      "position": [
+        "6000000000000000",
+        "0",
+        "3443407699269404",
+        true
+      ],
+      "payoutId": "0xbe16338c957f558bb6046c20cb24c6b8bddee08bc1926dc2c77258c2e012fc87",
+      "payout": [
+        "0xae8c61Dc894830B277dC35240A79C86CFbC6D77d",
+        "3443407699269404",
+        2,
+        1
+      ]
+    }
+  ]
+}
