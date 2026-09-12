@@ -1,1 +1,68 @@
-{"startedAt":"2026-09-12T00:20:25.863Z","app":"0xfd1693294fed77304662f08e827b043b0ba386a3","endpoint":"https://il-fd1693294fed7730.fly.dev","natural":true,"checks":["Paid MON beyond the threshold produces 96/72 paddle heights in the next rally","Natural seventh point produced a terminal engine result","A terminal engine result was published on Monad","Losing shares were settled once with zero payout"],"transactions":[{"action":"test-credit","job":"0x0fc2b5c55c699c81d798a7431e81154e2d17a5a36e4c25e7bdc3271f47c82a07","hash":"0x03ee884bc62eff285c3b2dfc9010934e460110e771647d662e0058413d4237ad"},{"action":"acceptMatch","hash":"0x51730acc7f321b9f1729b808a72068988fa03e5cff62bb95c82d7afcbfc9a27a","latencyMs":536.0140620000002},{"action":"acceptMatch","hash":"0xf17c986e353811a3acd38b6551d4986fc459b206c28d6c27224a0574689737ce","latencyMs":350.1549490000016},{"action":"input","hash":"0xfbf3c82e0b4e96d7361158fc6cd4ef326c836f9e69bddf0ff04d101dea406ae4","latencyMs":122.22261799999978},{"action":"bet","job":"0x3013fc1887b01b6775632f8a46c5ad8ba9fd229d038ec80b374c092241049f59","hash":"0x47e2adb533fdaac79e06277204d749557c3f9e94adc7bd90dd20b8ebc70c1568"},{"action":"payout","hash":"0xef490fca421d482f4597c92bc49489950d8416a3c82f66eb25c8b0d990fa97e4","block":"61756728"}],"passed":true,"finance":{"adapter":"0x078b0f2ed14307c716832a9893b2d36ff47b8525","market":"0x7222069ede3829e69645bcc6fa5c6def9f4bfaa9","vault":"0xfdc2913d14c5d1da75b363ea8424b53eac7009f2","financeId":"early-v1"},"matchId":"79195447916252156845066741881081270270418810730725625363809026018976970371437","paid":"3100572534796389","score":[7,2],"winner":"0xDa65b42b2EeD0DB5812498303eEE1d327422b8bF","expectedPayout":"0","payout":{"id":"0x21e6308330a2a1c6b96043022af17c01bbe13f8840357d96baf7b923248ebc7e","recipient":"0x7cdd3c451bb175b8fbc506870268dee44ccafe74","amount":"0","hubStatus":1,"epoch":"2"},"testCreditUsed":true,"finishedAt":"2026-09-12T00:24:03.491Z"}
+{
+  "startedAt": "2026-09-12T00:20:25.863Z",
+  "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+  "endpoint": "https://il-fd1693294fed7730.fly.dev",
+  "natural": true,
+  "checks": [
+    "Paid MON beyond the threshold produces 96/72 paddle heights in the next rally",
+    "Natural seventh point produced a terminal engine result",
+    "A terminal engine result was published on Monad",
+    "Losing shares were settled once with zero payout"
+  ],
+  "transactions": [
+    {
+      "action": "test-credit",
+      "job": "0x0fc2b5c55c699c81d798a7431e81154e2d17a5a36e4c25e7bdc3271f47c82a07",
+      "hash": "0x03ee884bc62eff285c3b2dfc9010934e460110e771647d662e0058413d4237ad"
+    },
+    {
+      "action": "acceptMatch",
+      "hash": "0x51730acc7f321b9f1729b808a72068988fa03e5cff62bb95c82d7afcbfc9a27a",
+      "latencyMs": 536.0140620000002
+    },
+    {
+      "action": "acceptMatch",
+      "hash": "0xf17c986e353811a3acd38b6551d4986fc459b206c28d6c27224a0574689737ce",
+      "latencyMs": 350.1549490000016
+    },
+    {
+      "action": "input",
+      "hash": "0xfbf3c82e0b4e96d7361158fc6cd4ef326c836f9e69bddf0ff04d101dea406ae4",
+      "latencyMs": 122.22261799999978
+    },
+    {
+      "action": "bet",
+      "job": "0x3013fc1887b01b6775632f8a46c5ad8ba9fd229d038ec80b374c092241049f59",
+      "hash": "0x47e2adb533fdaac79e06277204d749557c3f9e94adc7bd90dd20b8ebc70c1568"
+    },
+    {
+      "action": "payout",
+      "hash": "0xef490fca421d482f4597c92bc49489950d8416a3c82f66eb25c8b0d990fa97e4",
+      "block": "61756728"
+    }
+  ],
+  "passed": true,
+  "finance": {
+    "adapter": "0x078b0f2ed14307c716832a9893b2d36ff47b8525",
+    "market": "0x7222069ede3829e69645bcc6fa5c6def9f4bfaa9",
+    "vault": "0xfdc2913d14c5d1da75b363ea8424b53eac7009f2",
+    "financeId": "early-v1"
+  },
+  "matchId": "79195447916252156845066741881081270270418810730725625363809026018976970371437",
+  "paid": "3100572534796389",
+  "score": [
+    7,
+    2
+  ],
+  "winner": "0xDa65b42b2EeD0DB5812498303eEE1d327422b8bF",
+  "expectedPayout": "0",
+  "payout": {
+    "id": "0x21e6308330a2a1c6b96043022af17c01bbe13f8840357d96baf7b923248ebc7e",
+    "recipient": "0x7cdd3c451bb175b8fbc506870268dee44ccafe74",
+    "amount": "0",
+    "hubStatus": 1,
+    "epoch": "2"
+  },
+  "testCreditUsed": true,
+  "finishedAt": "2026-09-12T00:24:03.491Z"
+}

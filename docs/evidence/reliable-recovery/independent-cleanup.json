@@ -1,0 +1,26 @@
+{
+  "startedAt": "2026-09-11T23:42:30.539Z",
+  "purpose": "bounded fixture cleanup",
+  "arenas": [
+    {
+      "app": "0xc6afe5524ecad2e11a5082a2a5d850b8d8c9c773",
+      "state": "released",
+      "hash": "0x819a192f189a998585cedf51c507317f0c07d06776d36812d305211db063f517",
+      "block": "61758803"
+    },
+    {
+      "app": "0xbbf6a28b7f527f98cf1628949a83efe4d7bbf006",
+      "state": "released",
+      "hash": "0xc4e6a282aa5cf43a7d771c5b75c7b7ac442853dda5789eaed05280c1a0923aa9",
+      "block": "61758807"
+    },
+    {
+      "app": "0xc93452a9d1da1db01e79d99f531a34104b76fe97",
+      "state": "released",
+      "hash": "0x586e623a3694ce20b626a0d4c95d6afb695c686832f0875564489db592b01bcc",
+      "block": "61758812"
+    }
+  ],
+  "complete": true,
+  "finishedAt": "2026-09-12T00:34:30.880Z"
+}

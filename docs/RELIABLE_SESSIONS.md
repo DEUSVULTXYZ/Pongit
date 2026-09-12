@@ -51,6 +51,8 @@ Two games ran simultaneously. After Chaos was conceded, its terminal hash appear
 
 Fixtures are released by the bounded `release-independent-rehearsal.ts` cleanup, using the same operator nonce lock and journal. It only accepts the successful three-app rehearsal, rejects the production app, waits for the actual hub deadline, and stops for inspection on a challenge. No production or financial delegation is retired by that helper.
 
+All three fixtures were released on 12 September at 00:34 UTC after their actual challenge deadlines. Their release transactions are recorded in the [cleanup evidence](evidence/reliable-recovery/independent-cleanup.json). The temporary frontend and isolated fixture database were also removed; production databases and rollback images were preserved.
+
 ## Validation and limits
 
 | Validation | Result |
@@ -88,6 +90,8 @@ That first run used a concession. A second private paid Chaos game ran from 00:2
 
 Neither run demonstrates a later successful challenge. The contracts' correction and duplicate-payment regression tests remain distinct from the live payment evidence. These controlled API/SDK tests also do not replace the interrupted multi-browser load qualification.
 
+After the receipt-identity patch was deployed, the existing disposable two-hour grants admitted another Classic match without a new owner signature. The new relayer advanced its clock, eight inputs succeeded and its terminal result was published. The SDK reported 111 to 123 ms for those inputs from the VPS. This small sample is not a browser latency benchmark or a sustained-load result. [Post-deployment session check](evidence/reliable-recovery/session-smoke.json).
+
 ## Migration gates still open
 
 1. Common Monad lobby, deterministic arena allocation and participation locks, separated from all delegated physics state.
@@ -104,6 +108,8 @@ The old autonomous candidate still contains shared delegation and Monad fallback
 Private backups include databases, runtime configuration, operator journals and rehearsal recovery files. Backup `20260912T000222Z` was copied outside the VPS and checksums verified. Known unused PONGIT build images and caches were removed after inventory; disk use was 78% after the final recovery build and cleanup, with production, rollback images, volumes and unrelated projects preserved.
 
 Core recovery release: `97b923f3435e3f4a66c59864025c8453cb7b8906`. The web image is `pongit-web:recovery7` (`sha256:86d926611edce920caaa9285f40acdee2a5fae4fe6ecf38620159d5782ad1c30`). Its receipt-identity follow-up uses `pongit-relayer:recovery7` (`sha256:80f81b4ae62f0e357c84e5983c74a21ff647fd5d55c720c2394769dec22cb95c`), built from the pinned recovery6 image by replacing only the two reviewed relayer modules. The deployed source commit is recorded in `/opt/pongit/current/RELEASE`. Recovery6 is retained for rollback. Post-restart public health confirmed admissions open, epoch 2 healthy and payment workers available.
+
+Receipt-identity runtime commit: `ba5305072c47855fe87cd259491c2af1638c5ae1`. Backup `20260912T002713Z` was copied off the VPS and verified before this restart. Later documentation/evidence commits do not change those runtime images.
 
 Keep the previous web image and the corrected recovery relayer. New journal fields are additive. Do not roll back to a relayer that sends quarantined bytes or stops result observation on expiry. Stop admissions if lifecycle state is ambiguous. Never delete an uncertain transaction, reset a nonce or reinterpret an old financial manifest to unblock deployment.
 

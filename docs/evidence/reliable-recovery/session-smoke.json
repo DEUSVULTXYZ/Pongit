@@ -1,0 +1,68 @@
+{
+  "at": "2026-09-12T00:32:19.872Z",
+  "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+  "checks": [
+    "Existing grants admitted another Classic match without an owner signature",
+    "New relayer observed and advanced the game",
+    "Inputs and terminal publication succeeded after relayer restart"
+  ],
+  "transactions": [
+    {
+      "action": "acceptMatch",
+      "hash": "0xf7f81298f299ca92e9b71a9e6110baeff82d39c9f71883371ba36a8ba6c4fc01",
+      "ms": 481.60873300000003
+    },
+    {
+      "action": "acceptMatch",
+      "hash": "0xbf4a4e8ec6fe043c3e481156d590b8b7642e7034a77f262e79c788d412a6ccac",
+      "ms": 336.9202519999999
+    },
+    {
+      "action": "input",
+      "hash": "0x60cecebb1b290d1e163d8f6be0ee63bf1b1ae0ff25f3c17b3bf9e5fc13bc4785",
+      "ms": 111.21058000000085
+    },
+    {
+      "action": "input",
+      "hash": "0x31ba2796bab52b4f003c707a004bb90bde2e7d47e9f07fbf662f7ce99c5d67c5",
+      "ms": 117.127199999999
+    },
+    {
+      "action": "input",
+      "hash": "0xa343d8bff7a4d9b3688e8aaaf5866d7fb95240a362cd39c6603942eb15f1c4d9",
+      "ms": 116.79549299999962
+    },
+    {
+      "action": "input",
+      "hash": "0x5fd9fba83d45df8999f10ba3c69d8a7c481629c66187cbdc32b7cd7d3f91bd25",
+      "ms": 118.3135459999994
+    },
+    {
+      "action": "input",
+      "hash": "0xc523b0d151ab702e9bab07d7d2ebeb5e6eaada888e1ed9a06144414f15885dfd",
+      "ms": 113.04525900000044
+    },
+    {
+      "action": "input",
+      "hash": "0xeef9d8d357a51eccec85121c56f7e4cd7f1d49bc705f65e04a9a0083bbe130c6",
+      "ms": 118.74579400000039
+    },
+    {
+      "action": "input",
+      "hash": "0x9fb7ab4217fa953529d87b2fb2377b4220bd24d33c1243a3a54a68b2356e9b06",
+      "ms": 122.75366000000031
+    },
+    {
+      "action": "input",
+      "hash": "0x8f20a2c6ca86db76b2ad62e2c6b43c5117bfa820beeeffb19ba42b2795b59e25",
+      "ms": 117.91605700000036
+    },
+    {
+      "action": "concede",
+      "hash": "0x2160b72d7401ea7ad13034dde15106f2413b0658d69e0bfd8d2c4bbe34eadee9",
+      "ms": 138.80145599999923
+    }
+  ],
+  "passed": true,
+  "matchId": "30151109980221463926227961772197601318079713687930516515997407460378388663596"
+}
