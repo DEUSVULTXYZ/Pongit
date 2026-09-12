@@ -1,0 +1,30 @@
+{
+  "at": "2026-09-12T00:16:40.571Z",
+  "reconciled": true,
+  "passed": true,
+  "sourceRunPassed": false,
+  "sourceRunError": "RPC Request failed.",
+  "app": "0xfd1693294fed77304662f08e827b043b0ba386a3",
+  "matchId": "73054110083968245303339948625524058919848349777520181929097308189383964133778",
+  "finance": {
+    "adapter": "0x078b0f2ed14307c716832a9893b2d36ff47b8525",
+    "market": "0x7222069ede3829e69645bcc6fa5c6def9f4bfaa9",
+    "vault": "0xfdc2913d14c5d1da75b363ea8424b53eac7009f2",
+    "financeId": "early-v1"
+  },
+  "checks": [
+    "Paid MON beyond the threshold produces 96/72 paddle heights in the next rally",
+    "A terminal engine result was published on Monad",
+    "Exact native balance increase and PayoutPaid match 0.005 MON",
+    "Payment occurred during the active Interlude epoch before its challenge finality"
+  ],
+  "transaction": "0x641c3a3fd83a06bd9deccf578d6c40feaaa2c4773bd33f80bcbd93e1da0dc5a7",
+  "block": "61754726",
+  "recipient": "0xC79278057a64a90A22f5A08b3D952870e693e5eb",
+  "amount": "5000000000000000",
+  "payoutId": "0x3bc637e677e01746af310e926b853ab045dab2d401580e2ead525ec0511e6619",
+  "epoch": "2",
+  "publicationBatch": "24",
+  "resultCaptureBlock": "61754710",
+  "captureToPaymentSeconds": "5"
+}

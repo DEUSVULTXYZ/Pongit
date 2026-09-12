@@ -1,0 +1,24 @@
+// Read-only follow-up for the recorded test. It cannot create a payment or bet.
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {createPublicClient,http,decodeEventLog,parseEther,zeroHash} from 'viem';
+import {monadTestnet} from 'viem/chains';
+import {marketV4Abi} from '../shared/abis-v4.ts';
+import {roomsEarlySettlementAbi} from '../shared/abi-RoomsEarlySettlement.ts';
+import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle.ts';
+const m=JSON.parse(await readFile('deployments/interlude-rooms.json','utf8'));
+const r=JSON.parse(await readFile('artifacts/paid-chaos/report.json','utf8'));
+assert.equal(r.app,m.app);assert(r.checks.includes('A terminal engine result was published on Monad'));
+const tx=process.env.PAID_CHAOS_RECEIPT;assert(/^0x[0-9a-f]{64}$/.test(tx||''));
+const c=createPublicClient({chain:monadTestnet,transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:10000})});
+assert.equal(await c.getChainId(),10143);
+const receipt=await c.getTransactionReceipt({hash:tx});assert.equal(receipt.status,'success');assert.equal(receipt.to.toLowerCase(),r.finance.market.toLowerCase());
+const events=receipt.logs.filter(l=>l.address.toLowerCase()===r.finance.market.toLowerCase()).flatMap(l=>{try{return [decodeEventLog({abi:marketV4Abi,data:l.data,topics:l.topics})];}catch{return [];}});
+const paid=events.find(e=>e.eventName==='PayoutPaid');assert(paid);assert.equal(paid.args.amount,parseEther('.005'));
+const created=events.find(e=>e.eventName==='PayoutCreated'&&e.args.payoutId===paid.args.payoutId);assert(created);assert.equal(created.args.sourceId,BigInt(r.matchId));
+const before=await c.getBalance({address:paid.args.recipient,blockNumber:receipt.blockNumber-1n}),after=await c.getBalance({address:paid.args.recipient,blockNumber:receipt.blockNumber});assert.equal(after-before,paid.args.amount);
+const session=await c.readContract({address:m.hub,abi:roomsLifecycleHubAbi,functionName:'sessionOf',args:[m.app,zeroHash],blockNumber:receipt.blockNumber});assert.equal(session.status,1);
+const observation=await c.readContract({address:r.finance.adapter,abi:roomsEarlySettlementAbi,functionName:'observations',args:[BigInt(r.matchId)],blockNumber:receipt.blockNumber});assert.equal(observation[0],session.epoch);assert(observation[1]>0n);
+const at=await c.getBlock({blockNumber:receipt.blockNumber}),captured=await c.getBlock({blockNumber:observation[2]});
+const proof={at:new Date().toISOString(),reconciled:true,passed:true,sourceRunPassed:r.passed,sourceRunError:r.error,app:r.app,matchId:r.matchId,finance:r.finance,checks:[...r.checks,'Exact native balance increase and PayoutPaid match 0.005 MON','Payment occurred during the active Interlude epoch before its challenge finality'],transaction:tx,block:receipt.blockNumber,recipient:paid.args.recipient,amount:paid.args.amount,payoutId:paid.args.payoutId,epoch:session.epoch,publicationBatch:observation[1],resultCaptureBlock:observation[2],captureToPaymentSeconds:at.timestamp-captured.timestamp};
+await writeFile('artifacts/paid-chaos/reconciled.json',JSON.stringify(proof,(_,v)=>typeof v==='bigint'?String(v):v,2));console.log(JSON.stringify(proof,(_,v)=>typeof v==='bigint'?String(v):v));

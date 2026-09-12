@@ -32,7 +32,7 @@ import { chaosOfferTypes } from "../../shared/rooms-chaos";
 import {createRoomsFinanceRouter} from "./rooms-finance-router";
 import {loadRoomsFinance} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
-import {reconcileEngineJobs, quarantineTerminalTicks} from "./rooms-engine-recovery";
+import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome} from "./rooms-engine-recovery";
 import {roomsRankingCandidates} from "./rooms-ranking";
 import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snapshot";
 import {engineTransport} from "../../shared/engine-transport";
@@ -451,6 +451,9 @@ export async function createRoomsCoordinator(o: Options) {
   }
   async function sendPublicTick(id: string, cancel = false, pressureData?:Hex) {
     if (closingEpoch !== null) throw new Error("This arena is closing; no further commands will be submitted");
+    const requestedData=id==='0'?null:pressureData || encodeFunctionData({
+      abi:roomsAbi,functionName:cancel?'cancelMatch':'tick',args:[BigInt(id)],
+    });
     // Persist the exact signed bytes before send. A restart resubmits those bytes only.
     let job = (
       await db.query(
@@ -464,11 +467,7 @@ export async function createRoomsCoordinator(o: Options) {
       const nonce = await client.node.getTransactionCount({
         address: signer.address,
       });
-      const data = pressureData || encodeFunctionData({
-        abi: roomsAbi,
-        functionName: cancel ? "cancelMatch" : "tick",
-        args: [BigInt(id)],
-      });
+      const data = requestedData!;
       const raw = await signer.signTransaction({
         chainId: 4242,
         type: "eip1559",
@@ -480,12 +479,14 @@ export async function createRoomsCoordinator(o: Options) {
         maxFeePerGas: 0n,
         maxPriorityFeePerGas: 0n,
       });
-      job = { id: hex(), nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
+      job = { id: hex(), app, nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
       await db.query(
         "INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9)",
         [app, job.id, nonce, raw, job.hash,lastEpoch,signer.address.toLowerCase(),pressureData?'submitPressure':cancel?'cancelMatch':'tick',id],
       );
     }
+    const identity=await engineJobIdentity(job,roomsAbi,signer.address);
+    if(!['tick','cancelMatch','submitPressure'].includes(identity.action))throw new Error('Unexpected public command in the engine journal; review required');
     let receipt = await client.node
       .getTransactionReceipt({ hash: job.hash })
       .catch(() => null);
@@ -501,14 +502,18 @@ export async function createRoomsCoordinator(o: Options) {
         if (!receipt) throw e;
       }
     }
-    const receiptStatus=String(receipt?.status);
-    const success=["success","0x1","1"].includes(receiptStatus);
+    const outcome=engineReceiptOutcome(receipt,job.hash);
+    if(!outcome)throw new Error('Engine receipt has no execution outcome; the command remains uncertain');
     await db.query(
-      "UPDATE il_engine_jobs SET status=$3 WHERE app=$1 AND id=$2",
-      [app, job.id, success ? "observed" : "failed"],
+      "UPDATE il_engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2",
+      [app, job.id, outcome,{kind:'receipt',hash:job.hash,blockHash:receipt?.blockHash,status:String(receipt?.status),at:new Date().toISOString()}],
     );
-    if(!success)throw new Error("Engine command reverted. The current game state will be checked before retrying.");
-    if(streamEnabled && id!=="0")await feed.receipt(BigInt(id),{receipt},cancel?"cancelMatch":pressureData?"submitPressure":"tick",[BigInt(id)],signer.address);
+    if(outcome==='failed')throw new Error("Engine command reverted. The current game state will be checked before retrying.");
+    if(streamEnabled)await feed.receipt(BigInt(identity.matchId),{receipt},identity.action,identity.args||[],signer.address);
+    // A recovered tick for another match is not confirmation of this pressure
+    // request. Re-observe before chaining a resume or signing a new intention.
+    if(requestedData!==null&&identity.data.toLowerCase()!==requestedData.toLowerCase())
+      throw new Error('Previous engine command reconciled. The current action will be checked again.');
   }
   async function restoreContestedMatch(id: string, snap: any) {
     const saved = (

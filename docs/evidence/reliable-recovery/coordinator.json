@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-11T23:58:02.115Z",
+  "at": "2026-09-12T00:24:55.636Z",
   "checks": [
     "20 duplicate-click queue/cancel cycles keep exactly one occupancy",
     "Eight members fit, ninth member rejected",
@@ -11,6 +11,6 @@
     "Engine expiry blocks admission, preserves recovery reads and player access, and recovers after renewal"
   ],
   "cycles": 20,
-  "independentPresenceMs": 16,
+  "independentPresenceMs": 10,
   "passed": true
 }

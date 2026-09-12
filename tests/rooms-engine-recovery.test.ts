@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
 import {parseAbi,encodeFunctionData,keccak256,zeroHash} from 'viem';
-import {engineJobIdentity,quarantineTerminalTicks,reconcileEngineJobs} from '../relayer/src/rooms-engine-recovery';
+import {engineJobIdentity,engineReceiptOutcome,quarantineTerminalTicks,reconcileEngineJobs} from '../relayer/src/rooms-engine-recovery';
+import {roomsChaosAbi} from '../shared/abi-PongRoomsTestnet';
 const abi=parseAbi(['function tick(uint256 id)','function concede(uint256 id)']);
 const app='0x0000000000000000000000000000000000000011';
 const signer=privateKeyToAccount(generatePrivateKey());
@@ -25,10 +26,30 @@ test('missing receipt never resolves or rebroadcasts a pending command',async()=
 test('published terminal tick is quarantined with evidence, not marked failed',async()=>{
  const {db,job,updates}=await journal();
  const identity=await engineJobIdentity(job,abi,signer.address);
- assert.deepEqual(identity,{action:'tick',matchId:'12',signer:signer.address.toLowerCase()});
+ assert.equal(identity.action,'tick');assert.equal(identity.matchId,'12');assert.equal(identity.signer,signer.address.toLowerCase());
+ assert.deepEqual(identity.args,[12n]);
  await quarantineTerminalTicks({db,app,abi,signer:signer.address,epoch:1n,snapshot:async()=>snap,resultHash:async()=>resultHash});
  assert.match(updates[0].sql,/quarantined/);assert.equal(updates[0].args[5].resultHash,resultHash);
  assert.equal(updates.length,1);assert(!updates[0].sql.includes('raw='));
+});
+
+test('a recovered pressure receipt keeps its original match and full command identity',async()=>{
+ const pressure={matchId:42n,rally:1,resumeAt:3000000n,paidA:0n,paidB:3000000000000000n,sourceBlock:99n,checkpoint:zeroHash,expires:123456n};
+ const data=encodeFunctionData({abi:roomsChaosAbi,functionName:'submitPressure',args:[pressure,'0x1234']});
+ const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce:9,to:app,data,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+ const identity=await engineJobIdentity({app,id:'old',epoch:'1',nonce:'9',raw,hash:keccak256(raw),status:'pending'},roomsChaosAbi,signer.address);
+ assert.equal(identity.matchId,'42');assert.equal(identity.data,data);assert.equal(identity.action,'submitPressure');
+ assert.notEqual(identity.data,encodeFunctionData({abi:roomsChaosAbi,functionName:'tick',args:[43n]}));
+ assert.equal((identity.args![0] as any).resumeAt,3000000n);
+});
+
+test('unknown execution status stays uncertain on the direct send path too',()=>{
+ const hash=keccak256('0x1234');
+ assert.equal(engineReceiptOutcome(null,hash),null);
+ assert.equal(engineReceiptOutcome({transactionHash:hash,status:'pending'},hash),null);
+ assert.throws(()=>engineReceiptOutcome({transactionHash:zeroHash,status:'success'},hash));
+ assert.equal(engineReceiptOutcome({transactionHash:hash,status:'0x1'},hash),'observed');
+ assert.equal(engineReceiptOutcome({transactionHash:hash,status:'0x0'},hash),'failed');
 });
 test('unpublished or contested result, new epoch and non-tick all retain uncertainty',async()=>{
  for(const scenario of ['unpublished','different','active','epoch','action']){

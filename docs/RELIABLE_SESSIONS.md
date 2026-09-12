@@ -28,6 +28,7 @@ The real hub challenge window was respected. The one-hour delay was not replaced
 - Expiry stops admissions and game writes, but not receipt reconciliation, terminal observation, room repair or financial history auditing. Independent timers prevent historical or financial work from holding the Classic observer. A paused Chaos rally no longer sends idle VPS ticks; its resume tick is chained after the confirmed pressure submission.
 - Hosted provisioning records intent, uncertainty, confirmation and intervention. Only an explicit non-creation response permits a fresh creation request. A stale engine epoch does not become healthy merely because the control plane says `live`; persistent ambiguity escalates after five minutes.
 - The browser stores only scoped zero-value game command bytes with the limited arcade session. An uncertain submission blocks a different transaction, reconciles its receipt and epoch, and can resend only its original bytes. No wallet or notebook key is added to that journal.
+- Public command recovery validates the signed transaction identity and receipt hash. Resolving an older tick does not count as confirmation of a new pressure request or a different match. Receipt events are applied to the original match, and an unknown execution status remains pending.
 - New arcade grants last two hours. F5 and transient network failure reuse a valid grant. A real expiry remains distinct from an unavailable game service. Existing shorter grants keep their signed expiry.
 - Presentation identity no longer depends on command availability. A short outage preserves and blends the local paddle rather than resetting it to a stale confirmed position.
 - Recovered command lanes retain their existing arena stream. A subscribed Chaos pause does not trigger repeated reads just because physics awaits a checkpoint. The ten-second consistency check remains; disconnection invalidates the cache, and a resume event is delivered immediately. Before a movement after a long cached pause, the command lane refreshes the engine head so its short block deadline is still valid.
@@ -54,7 +55,7 @@ Fixtures are released by the bounded `release-independent-rehearsal.ts` cleanup,
 
 | Validation | Result |
 |---|---|
-| TypeScript | 133 tests passed; type check passed |
+| TypeScript | 135 tests passed; type check passed |
 | Contract regression | 204 tests passed across 18 suites; optional external fork suite excluded |
 | Physics | 10,000 Classic and 10,000 Chaos comparisons, zero mismatches |
 | PostgreSQL coordinator | Twenty duplicate-click cycles, room capacity, slow verification outside lobby lock, transient auth outage and expired terminal recovery passed |
@@ -75,20 +76,34 @@ The transport setting was enabled on the production VPS after real event deliver
 
 The final isolated PostgreSQL regression also verifies that a missing Chaos checkpoint keeps observations running without idle engine writes. [Coordinator report](evidence/reliable-recovery/coordinator.json).
 
+## Real paid Chaos round
+
+On 12 September at 00:13 UTC, two disposable players used a private friendly Chaos room and a third test account bought 0.005 winning shares. The actual cost was 0.003100572534796389 test MON. The published pause opened the existing betting window; the verified pressure submission and subsequent tick resumed the rally with heights of 96 and 72 units. A concession then produced a published terminal result.
+
+The bettor stopped using the application before the result. Its wallet received exactly 0.005 MON in transaction `0x641c3a3fd83a06bd9deccf578d6c40feaaa2c4773bd33f80bcbd93e1da0dc5a7`, block 61754726. The adapter captured the result at block 61754710, five seconds earlier. The hub was still Active in epoch 2 at the payment block. This confirms payment after publication without waiting for delegation closure or challenge finality.
+
+The first test process reached the verified handicap and publication checks but failed while querying RPC evidence. Its failed status is preserved in the [original run](evidence/reliable-recovery/paid-chaos-run.json). A separate read-only check verified the existing receipt, its payout ID and beneficiary, exact wallet balance change, and hub state at that block. It sent no new bet or payment. See the [reconciled payment proof](evidence/reliable-recovery/paid-chaos.json).
+
+That first run used a concession. A second private paid Chaos game ran from 00:20 to 00:24 UTC without conceding, finished naturally at **7:2**, published the seventh point and settled its losing bettor exactly once with zero payout. It passed all checks. The same paid-pressure handicap was verified during the game. [Complete-game evidence](evidence/reliable-recovery/paid-chaos-full.json).
+
+Neither run demonstrates a later successful challenge. The contracts' correction and duplicate-payment regression tests remain distinct from the live payment evidence. These controlled API/SDK tests also do not replace the interrupted multi-browser load qualification.
+
 ## Migration gates still open
 
 1. Common Monad lobby, deterministic arena allocation and participation locks, separated from all delegated physics state.
 2. Central ordered ELO/result journal with correction replay and player discovery; current rehearsal still uses local per-app ratings.
 3. Family-scoped two-hour root authorization, per-arena epoch binding and separate future-admission/active-control revocation, validated with the real SDK.
 4. Owner-claimed profile reservations and encrypted data migration. Existing candidate registries are not migrated by this release.
-5. Per-match financial result freezing before arena reuse, paid Chaos rounds, post-payment correction audits and independent retry paths.
+5. Per-match financial result freezing before independent-arena reuse and real post-payment correction qualification. The current app's full paid Chaos game, native payout and existing correction regression passed; they do not qualify a new financial deployment.
 6. Real sustained multiplayer load, quantitative before/after transport comparison and the full user journey on the new architecture.
 
 The old autonomous candidate still contains shared delegation and Monad fallback assumptions. It must not be activated unchanged. A successful capability rehearsal does not satisfy these gates. See [provider diagnostic](INTERLUDE_RATE_LIMIT_DIAGNOSTIC.md) for the remaining observed network failure.
 
 ## Operations and rollback
 
-Private backups include databases, runtime configuration, operator journals and rehearsal recovery files. Backup `20260911T235117Z` was copied outside the VPS and checksums verified. Known unused PONGIT build images and caches were removed after inventory; disk use was 76% before the final build, with production, rollback images, volumes and unrelated projects preserved.
+Private backups include databases, runtime configuration, operator journals and rehearsal recovery files. Backup `20260912T000222Z` was copied outside the VPS and checksums verified. Known unused PONGIT build images and caches were removed after inventory; disk use was 78% after the final recovery build and cleanup, with production, rollback images, volumes and unrelated projects preserved.
+
+Core recovery release: `97b923f3435e3f4a66c59864025c8453cb7b8906`. The web image is `pongit-web:recovery7` (`sha256:86d926611edce920caaa9285f40acdee2a5fae4fe6ecf38620159d5782ad1c30`). Its receipt-identity follow-up uses `pongit-relayer:recovery7` (`sha256:80f81b4ae62f0e357c84e5983c74a21ff647fd5d55c720c2394769dec22cb95c`), built from the pinned recovery6 image by replacing only the two reviewed relayer modules. The deployed source commit is recorded in `/opt/pongit/current/RELEASE`. Recovery6 is retained for rollback. Post-restart public health confirmed admissions open, epoch 2 healthy and payment workers available.
 
 Keep the previous web image and the corrected recovery relayer. New journal fields are additive. Do not roll back to a relayer that sends quarantined bytes or stops result observation on expiry. Stop admissions if lifecycle state is ambiguous. Never delete an uncertain transaction, reset a nonce or reinterpret an old financial manifest to unblock deployment.
 
