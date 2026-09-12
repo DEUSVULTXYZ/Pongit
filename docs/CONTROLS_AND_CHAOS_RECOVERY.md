@@ -47,3 +47,5 @@ Backup `20260912T202100Z` was copied off the VPS and its database dump checksums
 - Relayer: `pongit-relayer:controls-c4f9095`, `sha256:bf3d03d14428cd2eadd69da681c4f7de591b254ac7e0a7ea3eb53eaf2ca98dbc`.
 
 Rollback restores `/opt/pongit/current` to `/opt/pongit/releases/b8f72f9f08874311d60208e4b3c9f57401878e39`, then runs `docker compose up -d --no-build --no-deps relayer web` from that directory. Preserve the live databases, operation journal and financial manifests. The previous countdown images and older recovery8/recovery7 rollback images are retained.
+
+Deployed at **2026-09-12 20:27:40 UTC**. Public home and the updated rooms guide returned HTTP 200. Health reported game online, admissions open, healthy epoch 2 and no payment-worker error. Three transient 502 responses during web replacement were followed by successful checks. Post-deployment checks were read-only; no new real multiplayer or financial transaction was initiated for this patch. Temporary test containers and their private network were removed. Verified unused PONGIT build caches were cleaned while retaining production, rollback images, volumes and other projects; disk usage finished at 79%.
