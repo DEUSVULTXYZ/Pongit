@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "unpublishedChaosPauseWaits": true,
+  "wrongRallyWaits": true,
+  "preflightRaceRecovers": true,
+  "noPrematureCheckpoint": true,
+  "routing": true,
+  "restart": true,
+  "payoutWithoutLobbyResult": true,
+  "challengeLogged": true,
+  "correctionAfterRpcFailure": true,
+  "noDoublePayment": true,
+  "orphanedEvidenceRetained": true
+}

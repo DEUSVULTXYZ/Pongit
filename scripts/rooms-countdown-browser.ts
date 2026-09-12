@@ -63,7 +63,7 @@ try{
        assert.equal(wrapped.functionName,'withSession');const inner=decodeFunctionData({abi,data:(wrapped.args as any)[2]});
        const hash=keccak256(rpc.params[0]);if(receipts.has(hash))return reply(receipts.get(hash));
        const inject=injectNext && inner.functionName==='input';
-       if(inject){injectNext=false;injected=true;limitedAt=Date.now();if(!mode)return route.fulfill({status:429,headers:{'retry-after':'1'},body:'Injected request limit before execution'});}
+       if(inject){injectNext=false;injected=true;limitedAt=Date.now();if(!mode)return route.fulfill({status:429,headers:{'retry-after':'1','access-control-expose-headers':'Retry-After'},body:'Injected request limit before execution'});}
        assert.equal(tx.nonce,nonce,'SDK nonce must remain sequential after recovery');
        if(inner.functionName==='acceptMatch'){
         assert(serverNow()>=room.offer.launch.at,'No engine acceptance before the countdown ends');assert(!accepted.has(player),'No duplicate acceptance');accepted.add(player);sentAt.push(serverNow());sends++;
@@ -74,7 +74,7 @@ try{
        }
        nonce++;revision++;
        const receipt={status:'0x1',transactionHash:hash,output:encodeAbiParameters([{type:'bytes'}],['0x']),logs:[]};receipts.set(hash,receipt);
-       if(inject)return route.fulfill({status:429,headers:{'retry-after':'1'},body:'Injected lost reply after execution'});
+       if(inject)return route.fulfill({status:429,headers:{'retry-after':'1','access-control-expose-headers':'Retry-After'},body:'Injected lost reply after execution'});
        return reply(receipt);
       }
       throw Error('Unexpected engine method '+rpc.method);
@@ -128,6 +128,7 @@ try{
    assert(injected,'The input failure must actually occur');
    await pages[0].waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled,{},{timeout:15000});
    resumedAt=Date.now();
+   assert(resumedAt-limitedAt<4500,'A one-second Retry-After must not become the ten-second fallback');
    const count=inputNonces[0];await pages[0].keyboard.down('ArrowDown');await pages[0].waitForTimeout(200);await pages[0].keyboard.up('ArrowDown');await pages[0].waitForTimeout(400);
    assert(inputNonces[0]>count,'Controls resume automatically without a passkey or refresh');
    assert.equal(directions[0],0,'Release reaches the engine');
