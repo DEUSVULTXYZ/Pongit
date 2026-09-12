@@ -8,6 +8,8 @@ The Chaos keeper used a live engine pause to call `openRound` on Monad. That con
 
 The input lane already serialized writes and retained one latest intention, but rapid key events could drain several writes immediately. A known HTTP cooldown was checked in the transport, after the SDK had reserved a nonce. A locally refused write could therefore trigger an unnecessary session restoration.
 
+The browser regression also showed a one-second `Retry-After` becoming a ten-second wait: viem's HTTP error discarded the response headers and triggered our fallback. The transport now preserves the actual response header through its error cause.
+
 ## Changes
 
 - Before opening a betting window, read the Monad snapshot at one block and match its match ID, active phase, Chaos mode, seed, scores, pause flag and serve boundary. Ordinary input revisions do not invalidate a pause. Wait if the required pause is not published.

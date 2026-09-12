@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {engineRequestGate,engineTransport} from "../shared/engine-transport";
+import {engineRequestGate,engineTransport,engineCooldownMs} from "../shared/engine-transport";
 import {engineReadRetryMs} from "../shared/engine-read";
 
 test("HTTP 429 pauses all RPC methods and never queues or replays writes",async()=>{
@@ -29,5 +29,17 @@ test("a node publication halt blocks new writes but permits recovery reads",asyn
   await assert.rejects(t.request({method:"interlude_sendTransaction",params:["0x00"]}),(e:any)=>e.code==="ENGINE_PUBLICATION_UNAVAILABLE");
   await assert.rejects(t.request({method:"interlude_sendTransaction",params:["0x00"]}),(e:any)=>e.status===503);
   assert.equal(calls,1);assert.equal(await t.request({method:"eth_call",params:[]}),"0x1");assert.equal(calls,2);
+ }finally{globalThis.fetch=original;}
+});
+
+test('Retry-After survives the real viem HTTP transport rather than becoming ten seconds',async()=>{
+ const original=globalThis.fetch;let calls=0;
+ globalThis.fetch=async()=>{calls++;return new Response('Busy',{status:429,headers:{'retry-after':'1'}});};
+ try{
+  const url='https://retry-header.invalid',t=engineTransport(url)({} as any);
+  await assert.rejects(t.request({method:'eth_call',params:[]}),e=>engineReadRetryMs(e)===1000);
+  assert(engineCooldownMs(url)>0 && engineCooldownMs(url)<=1000);
+  await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x00']}));
+  assert.equal(calls,1,'the cooldown never sends a second request');
  }finally{globalThis.fetch=original;}
 });

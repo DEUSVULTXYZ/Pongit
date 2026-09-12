@@ -34,7 +34,21 @@ export function engineTransport(url: string,journal?:EngineTransportJournal): Tr
   const gate = engineRequestGate(Date.now,remaining=>cooldowns.set(url,remaining));
   let publicationUntil=0;
   return options => {
-    const transport = http(url, {retryCount: 0, timeout: 4000,fetchFn:measuredFetch("interlude")})(options);
+    const measured=measuredFetch("interlude");
+    const fetchFn:typeof fetch=async(input,init)=>{
+      const response=await measured(input,init);
+      if(response.status===429){
+        // viem's HTTP error does not retain response headers. Preserve the
+        // actual Retry-After in its cause instead of falling back to ten seconds.
+        const error=Object.assign(new Error("The game node is limiting requests. Waiting to synchronize."),{
+          status:429,code:"ENGINE_RATE_LIMIT",source:"interlude_rpc",headers:response.headers,
+        });
+        await response.body?.cancel().catch(()=>{});
+        throw error;
+      }
+      return response;
+    };
+    const transport = http(url, {retryCount: 0, timeout: 4000,fetchFn})(options);
     return {...transport, request: async args => {
       const write=["interlude_sendTransaction","eth_sendRawTransaction"].includes(args.method);
       if(write&&Date.now()<publicationUntil){recordRpc({at:Date.now(),target:"interlude",method:"write.blocked",status:503,ms:0,source:"cooldown"});throw new EnginePublicationUnavailable();}
