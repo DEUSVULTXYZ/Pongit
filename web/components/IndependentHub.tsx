@@ -195,7 +195,8 @@ export function IndependentHub({roomId}:{roomId?:string}){
   const release=()=>{keys.clear();move(0);};
   const key=(e:KeyboardEvent,on:boolean)=>{
    const k=e.key.toLowerCase();if(!up.has(k)&&!down.has(k))return;
-   if(!canPlay||(e.target as HTMLElement).closest('input,textarea,select,[contenteditable=true]'))return;
+   if(!on)keys.delete(k);
+   if(!canPlay||(e.target as HTMLElement).closest('input,textarea,select,[contenteditable=true]')){if(!on)move(0);return;}
    e.preventDefault();if(on)keys.add(k);else keys.delete(k);move([...keys].some(x=>up.has(x))?-1:[...keys].some(x=>down.has(x))?1:0);
   };
   const kd=(e:KeyboardEvent)=>key(e,true),ku=(e:KeyboardEvent)=>key(e,false);

@@ -70,7 +70,7 @@ try{
         room.offer.accepted=[...accepted];phase=accepted.size===2?2:1;if(phase===2){room.offer.status='active';room.status='playing';}
        }
        if(inner.functionName==='input'){
-        const args=inner.args as any;assert.equal(args[2],inputNonces[index]+1n);inputNonces[index]++;directions[index]=Number(args[1]);inputTimes.push(Date.now());if(injected&&!resumedAt)resumedAt=Date.now();
+        const args=inner.args as any;assert.equal(args[2],inputNonces[index]+1n);inputNonces[index]++;directions[index]=Number(args[1]);inputTimes.push(Date.now());
        }
        nonce++;revision++;
        const receipt={status:'0x1',transactionHash:hash,output:encodeAbiParameters([{type:'bytes'}],['0x']),logs:[]};receipts.set(hash,receipt);
@@ -116,8 +116,8 @@ try{
     await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled);
     await page.evaluate(async()=>{
      for(let i=0;i<100;i++){
-      const key=i%2?'ArrowUp':'ArrowDown';window.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true}));
-      await new Promise(r=>setTimeout(r,5));window.dispatchEvent(new KeyboardEvent('keyup',{key,bubbles:true}));
+      const key=i%2?'ArrowUp':'ArrowDown';document.body.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true}));
+      await new Promise(r=>setTimeout(r,5));document.body.dispatchEvent(new KeyboardEvent('keyup',{key,bubbles:true}));
      }
     });
     await page.waitForTimeout(300);
@@ -127,6 +127,7 @@ try{
    await pages[0].keyboard.down('ArrowUp');await pages[0].waitForTimeout(200);await pages[0].keyboard.up('ArrowUp');
    assert(injected,'The input failure must actually occur');
    await pages[0].waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled,{},{timeout:15000});
+   resumedAt=Date.now();
    const count=inputNonces[0];await pages[0].keyboard.down('ArrowDown');await pages[0].waitForTimeout(200);await pages[0].keyboard.up('ArrowDown');await pages[0].waitForTimeout(400);
    assert(inputNonces[0]>count,'Controls resume automatically without a passkey or refresh');
    assert.equal(directions[0],0,'Release reaches the engine');

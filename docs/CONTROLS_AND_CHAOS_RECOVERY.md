@@ -14,6 +14,7 @@ The input lane already serialized writes and retained one latest intention, but 
 - Reobserve explicit window-state preflight races. Keep unexpected failures in diagnostics, without replacing global game availability or exposing transaction calldata in the interface.
 - Space movement submissions by at least 50 ms, retaining only the latest unsent direction. A 20 ms local pump drains that intention without increasing the idle RPC cadence. This is client pacing, not a claim about Interlude's quota.
 - Check an existing node cooldown before invoking the SDK. No SDK nonce is reserved for a command held locally. Actual uncertain submissions continue through the persisted receipt-reconciliation path using the same signed bytes.
+- Always process key release during synchronization. Previously the keyboard handler ignored `keyup` while controls were disabled, leaving an old direction held in its key set after receipt recovery. This was reproduced by the browser regression before correction.
 - Use a separate `performance.now()` stopwatch for matchmaking, driven by its own browser interval. Server timestamps only distinguish queue entries. Reloading starts a fresh local stopwatch; it does not cancel the search. Shared match-start deadlines still use the shared clock.
 
 ## Recorded traffic

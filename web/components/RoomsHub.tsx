@@ -793,18 +793,22 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       move(0);
     };
     const key = (e: KeyboardEvent) => {
+      if (!["w", "s", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+      // Keyup must release the physical key even while a lost receipt disables
+      // controls. Otherwise that key masks every later direction after recovery.
+      if (e.type === "keyup") pressed.delete(e.key);
       if (
-        !["w", "s", "ArrowUp", "ArrowDown"].includes(e.key) ||
         !playable.current ||
         document.querySelector('[role="dialog"]') ||
         (e.target as HTMLElement).closest(
           'input,textarea,select,[contenteditable="true"]',
         )
-      )
+      ) {
+        if (e.type === "keyup") move(0);
         return;
+      }
       e.preventDefault();
       if (e.type === "keydown") pressed.add(e.key);
-      else pressed.delete(e.key);
       move(
         pressed.has("w") || pressed.has("ArrowUp")
           ? -1
