@@ -391,6 +391,10 @@ library ContractLobby {
         uint256 t = S.get(w, 12, S.get(w, 10, uint160(actor), 2), 1);
         return (mode, uint64(t), uint64(t >> 64));
     }
+    function queueProgress(mapping(bytes32=>uint256) storage w,uint8 mode) public view returns(uint256 head,uint256 tail,uint256 cursor,uint256 outer) {
+        require(mode<2,"mode");uint256 q=(S.generation(w)<<8)|mode;
+        return(S.get(w,11,q,0),S.get(w,11,q,1),S.get(w,11,q,2),S.get(w,11,q,3));
+    }
 
     function queueHeartbeat(mapping(bytes32 => uint256) storage w, address actor) public {
         require(occupancy(w, actor) == QUEUED, "not queued");
@@ -500,12 +504,25 @@ library ContractLobby {
         public
         returns (uint256 id)
     {
+        return _invite(w,actor,r,target,ttl,false);
+    }
+    /// Only the independent lobby uses this path: a received invitation does not
+    /// itself change participation. Acceptance atomically leaves an idle room/queue.
+    function inviteBound(mapping(bytes32 => uint256) storage w, address actor, uint256 r, address target, uint64 ttl)
+        public returns (uint256 id)
+    {
+        return _invite(w,actor,r,target,ttl,true);
+    }
+    function _invite(mapping(bytes32 => uint256) storage w, address actor, uint256 r, address target, uint64 ttl, bool bound)
+        private returns (uint256 id)
+    {
         _roomValid(w, r);
         _index(w, r, actor);
         // Ranked participants are selected by matchmaking, never by a room invite.
-        require(!room(w, r).ranked, "ranked room admission");
+        require(bound || !room(w, r).ranked, "ranked room admission");
         require(
-            target != address(0) && target != actor && !_blocked(w, actor, target) && occupancy(w, target) == 0,
+            target != address(0) && target != actor && !_blocked(w, actor, target)
+                && (bound ? S.get(w,1,uint160(target),0)==0 : occupancy(w, target)==0),
             "opponent unavailable"
         );
         require(ttl == 60 || ttl == 600, "invitation lifetime");
@@ -528,6 +545,16 @@ library ContractLobby {
         public
         returns (uint256 p)
     {
+        return _answerInvite(w,actor,id,yes,false);
+    }
+    function answerBoundInvite(mapping(bytes32 => uint256) storage w, address actor, uint256 id, bool yes)
+        public returns (uint256 p)
+    {
+        return _answerInvite(w,actor,id,yes,true);
+    }
+    function _answerInvite(mapping(bytes32 => uint256) storage w, address actor, uint256 id, bool yes, bool bound)
+        private returns (uint256 p)
+    {
         Invitation memory v = invitation(w, id);
         _roomValid(w, v.room);
         require(v.status == 1 && v.expires >= block.timestamp, "invitation expired");
@@ -535,6 +562,11 @@ library ContractLobby {
         S.set(w, 16, id, 3, uint256(v.expires) | (uint256(yes ? 2 : 3) << 64));
         emit InvitationChanged(id, v.sender, v.recipient, yes ? 2 : 3);
         if (yes) {
+            require(occupancy(w,v.sender)==v.room,"inviter left room");
+            if(bound && occupancy(w,actor)!=0) {
+                if(occupancy(w,actor)==QUEUED) cancelQueue(w,actor);
+                else leave(w,actor);
+            }
             require(occupancy(w, actor) == 0, "participation exists");
             _join(w, actor, v.room);
             // Joining a room is still possible while both arena slots are occupied.

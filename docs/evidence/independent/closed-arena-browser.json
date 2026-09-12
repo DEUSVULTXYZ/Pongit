@@ -1,0 +1,94 @@
+{
+  "at": "2026-09-12T14:55:42.557Z",
+  "browser": "chrome",
+  "checks": [
+    "Room restoration and repeated snapshots keep the recovery state visible without a root passkey request",
+    {
+      "viewport": {
+        "width": 360,
+        "height": 640
+      },
+      "canvas": {
+        "x": 24,
+        "y": 376.671875,
+        "width": 312,
+        "height": 175.5
+      },
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "canvas": {
+        "x": 24,
+        "y": 470.234375,
+        "width": 342,
+        "height": 192.375
+      },
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "canvas": {
+        "x": 48,
+        "y": 462.453125,
+        "width": 672,
+        "height": 378
+      },
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "canvas": {
+        "x": 270.390625,
+        "y": 380.1875,
+        "width": 899.203125,
+        "height": 505.796875
+      },
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "canvas": {
+        "x": 343.234375,
+        "y": 232.390625,
+        "width": 157.515625,
+        "height": 88.59375
+      },
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    "F5 preserves the current arena and limited session",
+    "Closed arena restores its published partial score with controls disabled and zero hosted-node requests",
+    "Docs opens separately without game RPC, and the arena remains open"
+  ],
+  "errors": [],
+  "scope": "Private VPS frontend, real Monad and hosted reads, saved limited session, no new root signature or match",
+  "configResponse": {
+    "status": 200,
+    "keys": [
+      "admission",
+      "arenas",
+      "manifest",
+      "sponsor"
+    ]
+  },
+  "visible": "PONGIT\nSound off ♫\nDocs ↗\nRanking\nMore\nqayf90ji0\n\nThis arena is recovering. Your arcade session is still saved.\n\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nPLAYER 01\nqayf90ji0\nPLAYER 02\nqayf95gx1\nFIRST TO SEVEN\n01\n:\n00\nRecovering this arena\nW / S · ↑ / ↓",
+  "passed": true,
+  "finishedAt": "2026-09-12T14:56:05.443Z"
+}

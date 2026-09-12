@@ -1,0 +1,124 @@
+{
+  "at": "2026-09-12T14:29:38.806Z",
+  "scope": "Instrumentation smoke only, during a blocked arena and unrelated recovery/private-data tests. Not a complete game or before/after performance comparison.",
+  "batches": 32,
+  "groups": [
+    {
+      "component": "vps",
+      "target": "interlude",
+      "method": "stream.connected",
+      "source": "websocket",
+      "status": 200,
+      "count": 2,
+      "maxMs": 0
+    },
+    {
+      "component": "vps",
+      "target": "interlude",
+      "method": "interlude_session",
+      "source": "network",
+      "status": 200,
+      "count": 83,
+      "maxMs": 352
+    },
+    {
+      "component": "vps",
+      "target": "interlude",
+      "method": "eth_call",
+      "source": "network",
+      "status": 200,
+      "count": 658,
+      "maxMs": 247
+    },
+    {
+      "component": "vps",
+      "target": "interlude",
+      "method": "eth_getTransactionReceipt",
+      "source": "network",
+      "status": 0,
+      "count": 165,
+      "maxMs": 4003
+    },
+    {
+      "component": "vps",
+      "target": "interlude",
+      "method": "snapshot.cached",
+      "source": "cache",
+      "status": 200,
+      "count": 326,
+      "maxMs": 0
+    },
+    {
+      "component": "browser",
+      "target": "pongit",
+      "method": "http",
+      "source": "network",
+      "status": 200,
+      "count": 39,
+      "maxMs": 477
+    },
+    {
+      "component": "browser",
+      "target": "monad",
+      "method": "eth_getBlockByNumber",
+      "source": "network",
+      "status": 200,
+      "count": 41,
+      "maxMs": 137
+    },
+    {
+      "component": "browser",
+      "target": "monad",
+      "method": "eth_call",
+      "source": "network",
+      "status": 200,
+      "count": 166,
+      "maxMs": 230
+    },
+    {
+      "component": "browser",
+      "target": "interlude",
+      "method": "stream.connected",
+      "source": "websocket",
+      "status": 200,
+      "count": 2,
+      "maxMs": 0
+    },
+    {
+      "component": "browser",
+      "target": "interlude",
+      "method": "interlude_session",
+      "source": "network",
+      "status": 200,
+      "count": 2,
+      "maxMs": 189
+    },
+    {
+      "component": "browser",
+      "target": "interlude",
+      "method": "eth_call",
+      "source": "network",
+      "status": 200,
+      "count": 63,
+      "maxMs": 243
+    },
+    {
+      "component": "browser",
+      "target": "interlude",
+      "method": "snapshot.cached",
+      "source": "cache",
+      "status": 200,
+      "count": 69,
+      "maxMs": 0
+    },
+    {
+      "component": "browser",
+      "target": "pongit",
+      "method": "http",
+      "source": "network",
+      "status": 202,
+      "count": 8,
+      "maxMs": 263
+    }
+  ]
+}

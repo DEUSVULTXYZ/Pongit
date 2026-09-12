@@ -1,0 +1,10 @@
+Interlude rules 3: 24/10000
+Interlude rules 3: 1224/10000
+Interlude rules 3: 2424/10000
+Interlude rules 3: 3624/10000
+Interlude rules 3: 4824/10000
+Interlude rules 3: 6024/10000
+Interlude rules 3: 7224/10000
+Interlude rules 3: 8424/10000
+Interlude rules 3: 9624/10000
+PASS: 10000 Interlude rules 3 differential cases.

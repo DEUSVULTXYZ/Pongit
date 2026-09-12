@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-12T13:42:59.263Z",
+  "app": "0xf44c1Eb74247547214c1901d981dd5E59601994A",
+  "epoch": "1",
+  "id": "340282366920938463463374607431768211503",
+  "engineScore": [
+    1,
+    1
+  ],
+  "publishedScore": [
+    1,
+    0
+  ],
+  "accepted": false,
+  "errors": [
+    "The game service has paused writes because publication failed. Your session is saved; retry after service recovery.",
+    "this session is over and the node is no longer accepting transactions: batch 2 could not be settled (commit relay failed: 413 Payload Too Large: {\"error\":\"body too large\"}); refusing further transactions so they are not promised a commit this node cannot make",
+    "this session is over and the node is no longer accepting transactions: batch 2 could not be settled (commit relay failed: 413 Payload Too Large: {\"error\":\"body too large\"}); refusing further transactions so they are not promised a commit this node cannot make",
+    "this session is over and the node is no longer accepting transactions: batch 2 could not be settled (commit relay failed: 413 Payload Too Large: {\"error\":\"body too large\"}); refusing further transactions so they are not promised a commit this node cannot make"
+  ]
+}

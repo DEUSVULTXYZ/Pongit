@@ -1,0 +1,20 @@
+// Read-only qualification of the exact EIP-1898 query used by Envio.
+import assert from 'node:assert/strict';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {createPublicClient,http,encodeFunctionData} from 'viem';
+import {publicIndependentManifest} from '../shared/independent';
+import {abi} from '../shared/abi-independent-PublishedRatings';
+import {decodePublishedEntry} from '../indexer/src/published-result';
+const m=publicIndependentManifest(JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8')));
+const base=createPublicClient({transport:http(process.env.RPC_URL,{retryCount:0,timeout:15000})});
+assert.equal(await base.getChainId(),10143);
+const block=await base.getBlock(),page=await base.readContract({address:m.ratings,abi,functionName:'resultPage',args:[0n,1n],blockNumber:block.number});
+assert(page[0].length,'A real published result is required');const id=page[0][0].first.id;
+const data=encodeFunctionData({abi,functionName:'entry',args:[id]});
+assert(data.startsWith('0xe2095c07'),'Indexer selector drift');
+const result=await base.request({method:'eth_call',params:[{to:m.ratings,data},{blockHash:block.hash,requireCanonical:true}]} as any);
+const decoded=decodePublishedEntry(result as string);assert.equal(decoded.first.id,String(id));
+assert.equal(decoded.latest.hash,page[0][0].latest.hash);
+await mkdir('artifacts/independent-candidate',{recursive:true});
+const report={at:new Date().toISOString(),passed:true,ledger:m.ratings,id:String(id),block:String(block.number),blockHash:block.hash,resultHash:decoded.latest.hash,query:'eth_call with canonical blockHash; exact Envio selector and decoder'};
+await writeFile('artifacts/independent-candidate/indexer-read.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));

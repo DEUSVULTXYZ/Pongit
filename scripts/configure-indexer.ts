@@ -25,5 +25,10 @@ for(const manifest of allDeployments(d).reverse()) {
   const suffix=(manifest.version||1)>=2?`V${manifest.version}`:"";
   for(const [name,address] of [["Game",manifest.game],["Market",manifest.market],["Tournaments",manifest.tournaments]]) config+=`      - name: ${name}${suffix}\n        address: "${address}"\n        start_block: ${manifest.startBlock}\n`;
 }
+try{
+ const independent=JSON.parse(await readFile('deployments/independent.json','utf8'));
+ if(independent.chainId!==d.chainId||!/^0x[\da-fA-F]{40}$/.test(independent.ratings)||!/^\d+$/.test(String(independent.startBlock)))throw Error('Independent indexer manifest requires a verified deployment block');
+ config+=`      - name: IndependentRatings\n        address: "${independent.ratings}"\n        start_block: ${independent.startBlock}\n`;
+}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 await writeFile("indexer/config.yaml", config);
 console.log("Indexer bound to deployment; run npm run codegen in indexer.");

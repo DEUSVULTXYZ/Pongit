@@ -6,6 +6,7 @@ import {AuthorityControl as Control} from "./AuthorityControl.sol";
 import {AuthorityActions} from "./AuthorityActions.sol";
 import {AuthorityLifecycle} from "./AuthorityLifecycle.sol";
 import {AutonomousGameBase} from "./AutonomousGameBase.sol";
+import {AutonomousArenaInterludeSurface} from "./AutonomousArenaInterludeSurface.sol";
 import {ContractLobby as Lobby} from "./ContractLobby.sol";
 import {AuthorityStore as S} from "./AuthorityStore.sol";
 import {PlayerIndex} from "./PlayerIndex.sol";
@@ -22,7 +23,7 @@ interface IPreviousRating {
 }
 
 /// Candidate only. Ship is gated on a qualified proof transport and a real full lifecycle rehearsal.
-contract AutonomousArena is AutonomousGameBase {
+contract AutonomousArena is AutonomousGameBase, AutonomousArenaInterludeSurface {
     error EngineSessionSealed();
     error CommandEpochMismatch();
     /// @custom:interlude global
@@ -67,6 +68,7 @@ contract AutonomousArena is AutonomousGameBase {
     constructor(IInterludeHub h, address admin, IChaosProof verifier, IPreviousRating oldGame, AuthorityActions module_)
         AutonomousGameBase(h, address(oldGame) == address(0) ? block.timestamp : oldGame.genesisTime())
     {
+        _registerInterludeSurface();
         require(block.chainid == 10143 && admin != address(0) && address(verifier).code.length > 0, "candidate config");
         require(address(module_).code.length > 0, "actions module");
         actions = module_;

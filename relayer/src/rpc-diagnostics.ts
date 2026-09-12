@@ -12,12 +12,12 @@ function aggregate(samples:RpcMetric[]){
  }
  return [...groups.values()];
 }
-export async function createRpcDiagnostics(db:Pool,app:string){
+export async function createRpcDiagnostics(db:Pool,app:string,collectVps=true){
  await db.query("CREATE TABLE IF NOT EXISTS il_rpc_diagnostics(id bigserial PRIMARY KEY,app text NOT NULL,component text NOT NULL,received_at timestamptz NOT NULL DEFAULT now(),data jsonb NOT NULL); CREATE INDEX IF NOT EXISTS il_rpc_diagnostics_time ON il_rpc_diagnostics(received_at)");
  let busy=false,lastPrune=0;
  const store=async(component:string,samples:RpcMetric[])=>{if(samples.length)await db.query("INSERT INTO il_rpc_diagnostics(app,component,data) VALUES($1,$2,$3)",[app,component,JSON.stringify(aggregate(samples))]);};
  const flush=async()=>{if(busy)return;busy=true;try{
-  await store("vps",takeRpcSamples(5000));
+  if(collectVps)await store("vps",takeRpcSamples(5000));
   if(Date.now()-lastPrune>3600000){await db.query("DELETE FROM il_rpc_diagnostics WHERE received_at<now()-interval '7 days'");await db.query("DELETE FROM il_presence WHERE seen<$1",[Date.now()-86400000]);lastPrune=Date.now();}
  }catch{/* Diagnostics must not stop a game. */}finally{busy=false;}};
  const timer=setInterval(()=>void flush(),60000);timer.unref();

@@ -609,12 +609,14 @@
     font-size: 12px;
   }
   .rooms-playing .rooms-notice {
-    position: absolute;
-    z-index: 5;
-    right: 12px;
-    top: 100px;
-    max-width: 80%;
+    position: static;
+    flex: none;
+    margin: 6px 0;
+    padding: 6px 10px;
+    max-height: 4em;
+    overflow: auto;
     font-size: 13px;
+    line-height: 1.35;
   }
   .rooms-playing .rooms-error {
     font-size: 13px;

@@ -1,0 +1,11 @@
+{
+  "at": "2026-09-12T14:26:48.790Z",
+  "checks": [
+    "Real owner-authorized encrypted notebook commit; private nickname absent from localStorage/sessionStorage",
+    "Lock and F5 clear plaintext; the same passkey decrypts the saved Monad backup",
+    "Disconnect clears the limited session and closes the private notebook"
+  ],
+  "scope": "One disposable virtual PRF credential on real Monad; no physical-device recovery claim",
+  "passed": true,
+  "finishedAt": "2026-09-12T14:27:13.297Z"
+}

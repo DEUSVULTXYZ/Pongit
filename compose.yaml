@@ -14,6 +14,7 @@ services:
     tmpfs: [/tmp]
     environment:
       PONG_ROOMS_HOME: ${PONG_ROOMS_HOME:-false}
+      PONG_INDEPENDENT_HOME: ${PONG_INDEPENDENT_HOME:-false}
     security_opt: [no-new-privileges:true]
     depends_on: [relayer]
   relayer:
@@ -45,6 +46,10 @@ services:
       ROOMS_FINANCE_MANIFEST: ${ROOMS_FINANCE_MANIFEST:-}
       ROOMS_PRESSURE_KEY_FILE: ${ROOMS_PRESSURE_KEY_FILE:-}
       ROOMS_LIFECYCLE_KEY_FILE: ${ROOMS_LIFECYCLE_KEY_FILE:-}
+      PONG_INDEPENDENT_MANIFEST: ${PONG_INDEPENDENT_MANIFEST:-}
+      PONG_INDEPENDENT_SNAPSHOT: ${PONG_INDEPENDENT_SNAPSHOT:-}
+      PONG_INDEPENDENT_ADMISSION: ${PONG_INDEPENDENT_ADMISSION:-false}
+      PONG_PROFILE_MIGRATION_FREEZE: ${PONG_PROFILE_MIGRATION_FREEZE:-false}
     volumes:
       - ./deployments:/app/deployments:ro
       - ${ROOMS_SECRET_DIRECTORY:-/opt/pongit/secrets/rooms}:/run/pongit-rooms:ro

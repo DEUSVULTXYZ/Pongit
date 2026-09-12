@@ -20,6 +20,7 @@ type Props = {
   confirmedNonce?: bigint;
   debug?: boolean;
   liveEngine?: boolean;
+  externalIntermission?: boolean;
   onNetwork?:(age:number,correction:number)=>void;
   onStats: (fps: number, extrapolated: boolean, waiting: boolean) => void;
 };
@@ -33,7 +34,7 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, liveEngine = false, onNetwork = ()=>{},
+  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, liveEngine = false, externalIntermission = false, onNetwork = ()=>{},
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
@@ -44,7 +45,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, liveEngine, onNetwork,
+    onStats, pendingInputs, confirmedNonce, debug, liveEngine, externalIntermission, onNetwork,
   });
   current.current = {
     state,
@@ -54,7 +55,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, liveEngine, onNetwork,
+    onStats, pendingInputs, confirmedNonce, debug, liveEngine, externalIntermission, onNetwork,
   };
   useEffect(() => {
     const el = canvas.current!;
@@ -164,7 +165,7 @@ export function Court({
       } else trail.reset();
       prism(22, yA - halfA, 12, halfA*2, leftFace, "#e0ffff", "#357787");
       prism(990, yB - halfB, 12, halfB*2, rightFace, "#f3e8ff", "#67478b");
-      if(s?.awaitingServe && !s.finished) {
+      if(s?.awaitingServe && !s.finished && !p.externalIntermission) {
         const remaining=Math.max(0,Number(s.resumeAt-p.clock)/1e6);
         ctx.fillStyle="#e5e1ff";ctx.textAlign="center";ctx.font=`30px ${fontFamily}`;
         ctx.fillText(p.liveEngine?"PREPARING RALLY":remaining>0?remaining.toFixed(1):"SYNCING SERVE",512,230);

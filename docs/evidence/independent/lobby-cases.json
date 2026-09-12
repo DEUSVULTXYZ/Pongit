@@ -1,0 +1,149 @@
+{
+  "at": "2026-09-12T13:16:32.094Z",
+  "lobby": "0xF2DaD62750AaB9EaB849182b325211145f663174",
+  "checks": [
+    {
+      "cycle": 1,
+      "mode": 0,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 2,
+      "mode": 1,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 3,
+      "mode": 0,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 4,
+      "mode": 1,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 5,
+      "mode": 0,
+      "kind": "expiry",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 6,
+      "mode": 1,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 7,
+      "mode": 0,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 8,
+      "mode": 1,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 9,
+      "mode": 0,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 10,
+      "mode": 1,
+      "kind": "expiry",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 11,
+      "mode": 0,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 12,
+      "mode": 1,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 13,
+      "mode": 0,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 14,
+      "mode": 1,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 15,
+      "mode": 0,
+      "kind": "expiry",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 16,
+      "mode": 1,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 17,
+      "mode": 0,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 18,
+      "mode": 1,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 19,
+      "mode": 0,
+      "kind": "decline",
+      "duplicateRequests": true,
+      "participationReleased": true
+    },
+    {
+      "cycle": 20,
+      "mode": 1,
+      "kind": "expiry",
+      "duplicateRequests": true,
+      "participationReleased": true
+    }
+  ],
+  "completed": 20,
+  "passed": true,
+  "finishedAt": "2026-09-12T13:25:13.946Z"
+}

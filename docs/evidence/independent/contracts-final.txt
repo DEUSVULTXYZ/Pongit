@@ -1,0 +1,325 @@
+Compiling 5 files with Solc 0.8.30
+Solc 0.8.30 finished in 31.00s
+Compiler run successful with warnings:
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/autonomous/AuthorityRating.sol:42:5:
+   |
+42 |     function _calculate(
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/Independent.t.sol:60:5:
+   |
+60 |     function _sig(uint256 key,bytes32 h) private view returns(bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 15 tests for test/ArcadeV3.t.sol:ArcadeV3Test
+[PASS] testBothRatingsInherited() (gas: 24608)
+[PASS] testConsentCommitsOpponentModeAndRanked() (gas: 264115)
+[PASS] testDuplicateInputRejected() (gas: 980137)
+[PASS] testExpiredKeyCannotCreate() (gas: 264394)
+[PASS] testGameKeyCannotDelegateAnotherKey() (gas: 264132)
+[PASS] testGameKeyCannotWithdrawOwnerFunds() (gas: 232949)
+[PASS] testGameKeyCreatesPlaysAndConcedesMultipleMatches() (gas: 1738117)
+[PASS] testGrantReplayRejected() (gas: 103417)
+[PASS] testKeyPossessionPreventsPoisoning() (gas: 59022)
+[PASS] testMaximumTwoHours() (gas: 21739)
+[PASS] testOwnerRevokes() (gas: 184760)
+[PASS] testRegistryBindingSealed() (gas: 13532)
+[PASS] testRenewalInvalidatesOldKey() (gas: 239406)
+[PASS] testRevokedKeyCannotInputOrConcede() (gas: 909562)
+[PASS] testWrongChainGrantRejected() (gas: 49591)
+Suite result: ok. 15 passed; 0 failed; 0 skipped; finished in 68.96ms (55.61ms CPU time)
+
+Ran 5 tests for test/AuthorityData.t.sol:AuthorityDataTest
+[PASS] testCorruptChunksExpiryAndPrivateNamespace() (gas: 189839)
+[PASS] testMaximumPayloadSixteenChunksAtomicCommit() (gas: 69437492)
+[PASS] testPartialUploadNeverReplacesHeadConcurrentSaveRejected() (gas: 496538)
+[PASS] testProfileRejectsSessionKeyAndReplay() (gas: 162176)
+[PASS] testReservationsUniqueCaseInsensitiveAndOwnerClaim() (gas: 360216)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 124.28ms (123.08ms CPU time)
+
+Ran 12 tests for test/PayoutsV4.t.sol:PayoutsV4Test
+[PASS] testCancellationRefundsExactPaidMONToWallet() (gas: 467483)
+[PASS] testCancelledTournamentRefundsEntrantEvenIfTreasuryRejects() (gas: 458227)
+[PASS] testDuplicateSettlementAndRetryCannotPayTwice() (gas: 362530)
+[PASS] testFuzzSettlementConservesReservedAndPendingFunds(uint64,uint64,bool,bool) (runs: 1000, μ: 678787, ~: 673228)
+[PASS] testLosingPositionClosesWithZeroPayment() (gas: 305994)
+[PASS] testLowGasCannotTurnAValidPaymentIntoADeferredDebt() (gas: 442190)
+[PASS] testRecipientCannotReenterSettlement() (gas: 425279)
+[PASS] testRejectedRecipientDoesNotBlockOtherBettorOrLoseDebt() (gas: 720287)
+[PASS] testTournamentFinalPaysWinnerWallet() (gas: 638639)
+[PASS] testUnknownPositionAndUnfinishedResultCannotSettle() (gas: 267081)
+[PASS] testWinningPayoutGoesToWalletWithoutSpendingSignature() (gas: 360721)
+[PASS] testWrongSpendingSignatureRejected() (gas: 58123)
+Suite result: ok. 12 passed; 0 failed; 0 skipped; finished in 1.55s (1.54s CPU time)
+
+Ran 1 test for test/MarketV4Invariant.t.sol:MarketV4InvariantTest
+[PASS] invariantAllOutcomesAndRefundsCollateralized() (runs: 128, calls: 16384, reverts: 0)
+
+╭----------------+----------+-------+---------+----------╮
+| Contract       | Selector | Calls | Reverts | Discards |
++========================================================+
+| BuyerHandlerV4 | buy      | 16384 | 0       | 0        |
+╰----------------+----------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 12.90s (12.89s CPU time)
+
+Ran 5 tests for test/PhysicsRoomsChaos.t.sol:PhysicsRoomsChaosTest
+[PASS] testEarlyResumeRejected() (gas: 994077)
+[PASS] testEveryReturnAcceleratesWithoutCap() (gas: 1722205)
+[PASS] testPauseStopsCatchupAndResumeResetsSpeed() (gas: 23703)
+[PASS] testSeventhPointFinishesWithoutAnotherServe() (gas: 12756)
+[PASS] testThresholdsAndFavoriteChange() (gas: 70230)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 10.70ms (9.87ms CPU time)
+
+Ran 20 tests for test/Pong.t.sol:PongTest
+[PASS] testBettingTrajectoryStaysValidUntilTheNextEvent() (gas: 87844)
+[PASS] testCancellationRefund() (gas: 395066)
+[PASS] testExpiredInputAndWrongDomain() (gas: 48031)
+[PASS] testFuzzLongStepSameAsEventSteps(uint32) (runs: 1000, μ: 78749, ~: 16285)
+[PASS] testFuzzPhysicsBoundsAndNoTunneling(uint64,int8,int8) (runs: 1000, μ: 66665, ~: 8128)
+[PASS] testInputNonceAndWrongKey() (gas: 147226)
+[PASS] testMarketBoundsAndPartialTreasuryReclaim() (gas: 526120)
+[PASS] testMarketLockoutAndStaleVersion() (gas: 206226)
+[PASS] testMarketSettlementAndParticipantBan() (gas: 583255)
+[PASS] testNoRevealCancellation() (gas: 317461)
+[PASS] testOutOfOrderAndExpiredSession() (gas: 57257)
+[PASS] testPauseFreezesClock() (gas: 74401)
+[PASS] testPublicKeeperCompletesAndRatingsOnlyOnce() (gas: 429966)
+[PASS] testRateLimit() (gas: 241363)
+[PASS] testRevokeAndScope() (gas: 81764)
+[PASS] testSessionCannotWithdraw() (gas: 61049)
+[PASS] testSessionCommandCap() (gas: 155765)
+[PASS] testSignatureCannotMoveDifferentMatch() (gas: 552383)
+[PASS] testTournamentFourSeedsAndTwoRounds() (gas: 3025461)
+[PASS] testTournamentWholeBracket() (gas: 1236867)
+Suite result: ok. 20 passed; 0 failed; 0 skipped; finished in 978.82ms (975.29ms CPU time)
+
+Ran 28 tests for test/Autonomous.t.sol:AuthorityArenaTest
+[PASS] testBlockingBeforeSecondConsentPreventsMatchCreation() (gas: 1148338)
+[PASS] testCleanRenewalWaitsChallengeKeepsRoomAndRejectsOldEngineCommands() (gas: 2940816)
+[PASS] testCompletionDrainsBothGamesThenFreezesAllEngineWrites() (gas: 3628082)
+[PASS] testEightMembersHostTransferWinnerStaysAndAway() (gas: 3072080)
+[PASS] testEloExactFriendlyUnchangedAndPagination() (gas: 3123151)
+[PASS] testFifoExpiredQueueAndThirdArenaWaits() (gas: 4100245)
+[PASS] testFuzzOrderedInputs(uint8) (runs: 1000, μ: 1841544, ~: 1729774)
+[PASS] testIncompleteProposalMustExpireBeforeSessionSeal() (gas: 2044449)
+[PASS] testIndependentStakeReleaseDoesNotStrandNormalRenewal() (gas: 1684149)
+[PASS] testInviteDoesNotSilentlyChangeSignedMode() (gas: 407323)
+[PASS] testMonadChaosCheckpointBoundToPauseAndImmutable() (gas: 2479423)
+[PASS] testProposalExpiryAndTargetedInvitationSingleAcceptance() (gas: 1091633)
+[PASS] testProtocolGatedRecoveryCancelsUnfinishedAndChangesGeneration() (gas: 1777091)
+[PASS] testRankedRoomCannotBypassMatchmakingWithAnInvitation() (gas: 1634812)
+[PASS] testRealMarketCheckpointAndPermissionlessWalletPayout() (gas: 20019566)
+[PASS] testRealMarketInterruptedMatchRefundAndParticipantRestriction() (gas: 19282209)
+[PASS] testRematchesCrossedProduceOnlyOneMatch() (gas: 2084640)
+[PASS] testReturnLogsOnlyPendingThenConfirmedStates() (gas: 272277)
+[PASS] testReturningWinnerRejoinsAtEndAfterDeclining() (gas: 2161347)
+[PASS] testRevokedExpiredAndCrossGenerationGrantsRejected() (gas: 156595)
+[PASS] testScopedSponsorshipRejectsReplayFundsAndWrongSignature() (gas: 354902)
+[PASS] testSdkGrantScopedCommandAndInternalBridgeBlocked() (gas: 515932)
+[PASS] testStorageBudgetTwoAdmissionsAndResults() (gas: 8261324)
+[PASS] testTwentyMatchmakingCyclesAcrossBothModes() (gas: 27512036)
+[PASS] testTwoConsentsCrossModeLockAndDuplicateAcceptance() (gas: 1683813)
+[PASS] testUnpublishedOrWrongEpochSealCannotCloseDelegation() (gas: 1491109)
+[PASS] testUnsupportedProofBlocksInterludeAndNoPrivilegedReplacement() (gas: 11793250)
+[PASS] testWinnerWhoLeavesCannotRejoinAheadOfWaitingMembers() (gas: 2076622)
+Suite result: ok. 28 passed; 0 failed; 0 skipped; finished in 13.80s (13.84s CPU time)
+
+Ran 18 tests for test/Independent.t.sol:IndependentTest
+[PASS] testActiveRevocationSeparateFromFutureAdmission() (gas: 1848523)
+[PASS] testCancelCapacityWaitDoesNotCancelDelegatedGame() (gas: 2785514)
+[PASS] testChaosAttestationBoundAndImmutable() (gas: 1768630)
+[PASS] testCrossedInvitationsProduceOneInvitationAndOneProposal() (gas: 1986138)
+[PASS] testDeployableContractSize() (gas: 10322)
+[PASS] testEightMembersTimeoutAndHostTransfer() (gas: 2043392)
+[PASS] testEngineAndCommandIsolation() (gas: 3248531)
+[PASS] testExpiredArenaRecoveryCancelsOnlyItsOwnMatch() (gas: 3583181)
+[PASS] testExpiredUnopenedAdmissionDoesNotTrapRoom() (gas: 1408436)
+[PASS] testFinalityBeforeReuseAndNoDoubleRating() (gas: 3788834)
+[PASS] testIndependentPublicationAndThirdMatchDuringChallenge() (gas: 5241233)
+[PASS] testInviteAcceptLeavesIdleQueueAndBindsBothConsents() (gas: 1291483)
+[PASS] testPayoutBeforeChallengeEndsAndAfterArenaReuse() (gas: 9290941)
+[PASS] testRematchKeepsOpponentAndRulesWithoutLeavingRoom() (gas: 3841281)
+[PASS] testRevokedInviteConsentCannotCreateMatchWithANewKey() (gas: 2102639)
+[PASS] testRootCanRenewActiveControlWithoutReplayingAnOldRevocation() (gas: 1834937)
+[PASS] testSessionScopeNonceAndRevocation() (gas: 350670)
+[PASS] testTwoAgreementsAndSingleParticipationAcrossModes() (gas: 1737736)
+Suite result: ok. 18 passed; 0 failed; 0 skipped; finished in 146.80ms (133.92ms CPU time)
+
+Ran 5 tests for test/Independent.t.sol:PublishedRatingsTest
+[PASS] testCorrectionReplaysDependenciesAndPreservesPaymentDecision() (gas: 1437648)
+[PASS] testFriendlyCanceledAndSeparateModes() (gas: 1482803)
+[PASS] testMigrationPreservesSameDayRepeatPenaltyThroughCorrection() (gas: 3728160)
+[PASS] testRepeatedOpponentReductionAndUniqueResult() (gas: 1036712)
+[PASS] testSecondCorrectionDuringRebuildAndConcurrentPublication() (gas: 1877389)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 4.06ms (2.93ms CPU time)
+
+Ran 15 tests for test/InterludeLab.t.sol:InterludeLabTest
+[PASS] testArenaBusyAndOwnOpponent() (gas: 406512)
+[PASS] testClockCannotRunBackwards() (gas: 397754)
+[PASS] testConcedeAndPersistentResult() (gas: 436175)
+[PASS] testGrantChecksActorExpiryAndEmptyScope() (gas: 374945)
+[PASS] testInputPermissionsNonceExpiryAndDirection() (gas: 480858)
+[PASS] testNaturalMatchAndPaddleBounds() (gas: 1126595)
+[PASS] testOnlyEngine() (gas: 13664)
+[PASS] testReleaseIsAppliedAfterElapsedMovement() (gas: 542004)
+[PASS] testSessionCannotChangeItsAccountOrKey() (gas: 41603)
+[PASS] testSessionCannotReachPrivilegedOrPayableOperations() (gas: 40074)
+[PASS] testSessionCannotReplayOnAnotherAppOrBaseChain() (gas: 4119842)
+[PASS] testSessionInputReplayIsRejectedAndActorIsTheGranter() (gas: 525112)
+[PASS] testSessionRejectsUnapprovedSelectorAndObservedRevocation() (gas: 40691)
+[PASS] testTargetedConsentAndDuplicateAccept() (gas: 403465)
+[PASS] testTimeoutAndCancellation() (gas: 388366)
+Suite result: ok. 15 passed; 0 failed; 0 skipped; finished in 11.74ms (10.29ms CPU time)
+
+Ran 15 tests for test/InterludeRooms.t.sol:InterludeRoomsTest
+[PASS] testBothTerminalStatesFitCommitBudget() (gas: 1658477)
+[PASS] testCannotPlayTwiceOrMoveOtherArena() (gas: 789445)
+[PASS] testExpiredTicketAndCancellationNoElo() (gas: 380686)
+[PASS] testFriendlyDoesNotModifyRatings() (gas: 432969)
+[PASS] testNaturalSevenEndsAndKeepsOtherMatch() (gas: 1631515)
+[PASS] testRankedEloExactAndSingleSettlement() (gas: 549285)
+[PASS] testRepeatOpponentHasDiminishingGain() (gas: 968804)
+[PASS] testSeasonSoftReset() (gas: 538207)
+[PASS] testStrictInputNoncesAndRelease() (gas: 560899)
+[PASS] testTicketBindsAllRulesAndParticipants() (gas: 53069)
+[PASS] testTicketCannotBeReplayedAfterEnd() (gas: 537370)
+[PASS] testTimeoutNoRatingAndEngineOnly() (gas: 423818)
+[PASS] testTwoAgreementsRequired() (gas: 448802)
+[PASS] testTwoIndependentArenasAndCapacity() (gas: 889491)
+[PASS] testWrongCoordinatorAndApplication() (gas: 4901791)
+Suite result: ok. 15 passed; 0 failed; 0 skipped; finished in 29.01ms (27.46ms CPU time)
+
+Ran 29 tests for test/InterludeRoomsChaos.t.sol:InterludeRoomsChaosTest
+[PASS] testBothTerminalStatesFitCommitBudget() (gas: 1794532)
+[PASS] testCannotPlayTwiceOrMoveOtherArena() (gas: 852143)
+[PASS] testChaosSevenFinishesOnceWithoutRequiringAnotherCheckpoint() (gas: 3175255)
+[PASS] testExpiredTicketAndCancellationNoElo() (gas: 414519)
+[PASS] testFriendlyDoesNotModifyRatings() (gas: 473929)
+[PASS] testIndependentChaosRatingAndOpponentHistory() (gas: 1578375)
+[PASS] testInvalidPressureCannotBlockReleaseOrConcession() (gas: 718583)
+[PASS] testMissingCheckpointWaitsWithoutBlockingClassicOrCommands() (gas: 1788627)
+[PASS] testMissingPressureStillAllowsConcessionAndTimeout() (gas: 1070058)
+[PASS] testModeIsSignedAndCannotChangeAfterFirstConsent() (gas: 438504)
+[PASS] testNaturalSevenEndsAndKeepsOtherMatch() (gas: 1675772)
+[PASS] testPressureCannotOverflowAndNeedsCheckpointIdentity() (gas: 655377)
+[PASS] testRankedEloExactAndSingleSettlement() (gas: 595565)
+[PASS] testReadClockNeverPrecedesProcessedState() (gas: 659658)
+[PASS] testRepeatOpponentHasDiminishingGain() (gas: 1055226)
+[PASS] testRepeatedEngineRestartsKeepClockRevisionAndScores() (gas: 1256020)
+[PASS] testRestartDuringChaosPauseStillRequiresFreshPressure() (gas: 785426)
+[PASS] testResultCommitmentNamesDeploymentModeAndRules() (gas: 585417)
+[PASS] testSeasonSoftReset() (gas: 583082)
+[PASS] testSizesFrozenWithinRallyAndCumulativePressureCannotDecrease() (gas: 1033166)
+[PASS] testSnapshotSurvivesReadHeadBeforeMatchStart() (gas: 457723)
+[PASS] testStrictInputNoncesAndRelease() (gas: 616939)
+[PASS] testTicketBindsAllRulesAndParticipants() (gas: 52513)
+[PASS] testTicketCannotBeReplayedAfterEnd() (gas: 580277)
+[PASS] testTimeoutNoRatingAndEngineOnly() (gas: 466248)
+[PASS] testTwoAgreementsRequired() (gas: 483889)
+[PASS] testTwoChaosResultsWithPressureFitGamePublicationBudget() (gas: 2930949)
+[PASS] testTwoIndependentArenasAndCapacity() (gas: 968627)
+[PASS] testWrongCoordinatorAndApplication() (gas: 6044027)
+Suite result: ok. 29 passed; 0 failed; 0 skipped; finished in 85.49ms (83.65ms CPU time)
+
+Ran 5 tests for test/PhysicsInterlude.t.sol:PhysicsInterludeTest
+[PASS] testEveryReturnAcceleratesWithoutCapAndWallsDoNot() (gas: 1758396)
+[PASS] testFasterServeAndEverySubsequentPoint() (gas: 448434)
+[PASS] testFuzzBoundedCatchUpMatchesOneShot(bytes32,uint32,int8) (runs: 1000, μ: 89241, ~: 27948)
+[PASS] testLegacySpeedRemainsUnchanged() (gas: 1563)
+[PASS] testMissDoesNotAccelerateAndNextPointResets() (gas: 41589)
+Suite result: ok. 5 passed; 0 failed; 0 skipped; finished in 1.53s (1.53s CPU time)
+
+Ran 7 tests for test/RoomsMarketAdapter.t.sol:RoomsMarketAdapterTest
+[PASS] testCancelledMatchRefundsActualCost() (gas: 534208)
+[PASS] testNoSecondSpendingModuleOrEngineFinancialCalls() (gas: 30216)
+[PASS] testPauseAndModeAndEngineAvailabilityRequired() (gas: 121056)
+[PASS] testPressureUsesPaidMONAndExcludesLiquidity() (gas: 541228)
+[PASS] testPublishedResultIsNotPayableBeforeChallengeRightsEnd() (gas: 602220)
+[PASS] testUnwindUsesCorrectedWinnerAndLosingPositionPaysNothing() (gas: 492940)
+[PASS] testWindowsCloseBeforeCheckpointAndCannotReopen() (gas: 385872)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 8.85ms (7.10ms CPU time)
+
+Ran 7 tests for test/RoomsPressureBridge.t.sol:RoomsPressureBridgeTest
+[PASS] testCheckpointCannotBeRevisedButExpiryCanBeRefreshed() (gas: 809783)
+[PASS] testExpiredOrLongLivedAttestationsRejected() (gas: 521521)
+[PASS] testOnlyTestnetAndEngineCallsAllowed() (gas: 2323555)
+[PASS] testPlayerAndAdmissionKeysCannotAttest() (gas: 573106)
+[PASS] testSignatureBindsAmountsMatchRallyCutoffAndApplication() (gas: 7132982)
+[PASS] testTwoChaosMatchesAndAttestationsFitPublicationBudget() (gas: 3223127)
+[PASS] testValidAttestationResumesAndCannotBeConsumedTwice() (gas: 747587)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 33.84ms (31.98ms CPU time)
+
+Ran 4 tests for test/RoomsRelease.t.sol:RoomsReleaseTest
+[PASS] testClassicIsCarriedAndChaosStartsIndependently() (gas: 19608)
+[PASS] testNoArcadeGrantCanReachLifecycleActions() (gas: 26182)
+[PASS] testOnlyBaseOperatorCanCloseOrRenew() (gas: 18803)
+[PASS] testRenewNeedsReleaseAndCannotSkipChallengeWindow() (gas: 40355)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 2.11ms (471.43µs CPU time)
+
+Ran 7 tests for test/RoomsEarlySettlement.t.sol:RoomsEarlySettlementTest
+[PASS] testCancelledRefundAndDeferredTransferReserve() (gas: 648489)
+[PASS] testCorrectionCannotPayAgainOrReopenBetting() (gas: 658781)
+[PASS] testKnownChallengeBlocksFirstAcceptance() (gas: 650225)
+[PASS] testLosingPositionPaysZeroAndNoFinancialPowersForEngine() (gas: 591479)
+[PASS] testPaysDuringActiveSessionWithoutWaitingForClosure() (gas: 642200)
+[PASS] testRejectsMissingPublicationAndChangedEpoch() (gas: 158721)
+[PASS] testReleasedSessionCanRecoverAnUnpaidPublishedResult() (gas: 614740)
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 11.54ms (9.72ms CPU time)
+
+Ran 27 tests for test/PongV2.t.sol:PongV2Test
+[PASS] testBettingTrajectoryStaysValidUntilTheNextEvent() (gas: 99488)
+[PASS] testCancellationRefund() (gas: 431999)
+[PASS] testChaosPauseAndPressureApplyOnlyOnResume() (gas: 1433355)
+[PASS] testExpiredInputAndWrongDomain() (gas: 49088)
+[PASS] testFriendlyAndChaosRatingsAreIsolated() (gas: 1742688)
+[PASS] testFuzzLongStepSameAsEventSteps(uint32) (runs: 1000, μ: 100051, ~: 18189)
+[PASS] testFuzzPhysicsBoundsAndNoTunneling(uint64,int8,int8) (runs: 1000, μ: 73793, ~: 8892)
+[PASS] testHandicapThresholdsAndSymmetry() (gas: 1336)
+[PASS] testInputLimitIsFrozenAtCreation() (gas: 276458)
+[PASS] testInputNonceAndWrongKey() (gas: 162354)
+[PASS] testMarketBindingCannotChange() (gas: 13535)
+[PASS] testMarketBoundsAndPartialTreasuryReclaim() (gas: 483082)
+[PASS] testMarketLockoutAndStaleVersion() (gas: 218417)
+[PASS] testMarketSettlementAndParticipantBan() (gas: 547410)
+[PASS] testNoRevealCancellation() (gas: 599306)
+[PASS] testOutOfOrderAndExpiredSession() (gas: 58502)
+[PASS] testPauseFreezesClock() (gas: 74856)
+[PASS] testPendingRatingPreventsResultReordering() (gas: 614673)
+[PASS] testPublicKeeperCompletesAndRatingsOnlyOnce() (gas: 476158)
+[PASS] testRateLimit() (gas: 271075)
+[PASS] testRevokeAndScope() (gas: 83516)
+[PASS] testRulesConsentAndSingleActiveMatch() (gas: 360999)
+[PASS] testSessionCannotWithdraw() (gas: 61071)
+[PASS] testSessionCommandCap() (gas: 170594)
+[PASS] testSignatureCannotMoveDifferentMatch() (gas: 891688)
+[PASS] testTournamentFourSeedsAndTwoRounds() (gas: 3324737)
+[PASS] testTournamentWholeBracket() (gas: 1489864)
+Suite result: ok. 27 passed; 0 failed; 0 skipped; finished in 728.25ms (1.10s CPU time)
+
+Ran 1 test for test/MarketInvariant.t.sol:MarketInvariantTest
+[PASS] invariantAllOutcomesAndRefundsCollateralized() (runs: 128, calls: 16384, reverts: 0)
+
+╭--------------+----------+-------+---------+----------╮
+| Contract     | Selector | Calls | Reverts | Discards |
++======================================================+
+| BuyerHandler | buy      | 16384 | 0       | 0        |
+╰--------------+----------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 11.88s (11.88s CPU time)
+
+Ran 1 test for test/MarketV2Invariant.t.sol:MarketV2InvariantTest
+[PASS] invariantAllOutcomesAndRefundsCollateralized() (runs: 128, calls: 16384, reverts: 0)
+
+╭----------------+----------+-------+---------+----------╮
+| Contract       | Selector | Calls | Reverts | Discards |
++========================================================+
+| BuyerHandlerV2 | buy      | 16384 | 0       | 0        |
+╰----------------+----------+-------+---------+----------╯
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 11.20s (11.20s CPU time)
+
+Ran 20 test suites in 37.36s (55.10s CPU time): 227 tests passed, 0 failed, 0 skipped (227 total tests)

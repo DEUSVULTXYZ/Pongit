@@ -8,12 +8,11 @@ import {EloFormulaV2} from "../v2/EloFormulaV2.sol";
 import {Delegatable} from "../../vendor/interlude/Delegatable.sol";
 import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
-import {AutonomousArenaInterludeSurface} from "./AutonomousArenaInterludeSurface.sol";
 
 /// @notice Candidate rules for Classic and Chaos rooms. Not a deployable application.
 /// A concrete subclass must implement authenticated, fresh market checkpoints.
 /// There is intentionally no admin setter for pressure and no monetary oracle here.
-abstract contract AutonomousGameBase is AutonomousArenaInterludeSurface {
+abstract contract AutonomousGameBase is Delegatable {
     uint256 public constant TICK_US = 10_000;
     uint256 public constant RULES_VERSION = 4;
     uint256 public constant CAPACITY = 2;
@@ -89,7 +88,6 @@ abstract contract AutonomousGameBase is AutonomousArenaInterludeSurface {
         genesisTime = seasonGenesis;
         eloFormula = new EloFormulaV2();
         physicsRules = new RoomsRules();
-        _registerInterludeSurface();
     }
     modifier engine() {
         _assertExecution();
@@ -298,7 +296,7 @@ abstract contract AutonomousGameBase is AutonomousArenaInterludeSurface {
         return uint32(1 + (block.timestamp - genesisTime) / 30 days);
     }
 
-    function ratingOf(address player, uint8 mode) public view returns (Rating memory r) {
+    function ratingOf(address player, uint8 mode) public view virtual returns (Rating memory r) {
         require(mode <= 1, "mode");
         uint256 packed = _words()[_key(2, uint160(player), mode)];
         if (packed == 0) return _startingRating(player, mode);
@@ -329,7 +327,7 @@ abstract contract AutonomousGameBase is AutonomousArenaInterludeSurface {
                 | ((winner == a ? uint256(1) : winner == b ? uint256(2) : 0) << 166)
         );
         _set(id, 8, (_get(id, 8) & ~uint256(15)) | 5);
-        if (phase == 3 && ranked) AuthorityRating.rate(_words(), id, a, b, winner, eloFormula);
+        if (phase == 3 && ranked) _rateResult(id, a, b, winner);
         if (activeMatchOf(a) == id) delete _words()[_key(1, uint160(a), 0)];
         if (activeMatchOf(b) == id) delete _words()[_key(1, uint160(b), 0)];
         _words()[_key(4, 0, 0)]--;
@@ -353,6 +351,11 @@ abstract contract AutonomousGameBase is AutonomousArenaInterludeSurface {
         );
         _set(id, 9, uint256(hash));
         emit Completed(id, bytes32(_get(id, 11)), a, b, winner, phase, matchMode(id), ranked, s.scoreA, s.scoreB, hash);
+    }
+
+    /// Shared-session candidates rate here; isolated arenas publish to the Monad ledger.
+    function _rateResult(uint256 id, address a, address b, address winner) internal virtual {
+        AuthorityRating.rate(_words(), id, a, b, winner, eloFormula);
     }
 
     function _publish(uint256 id) internal {

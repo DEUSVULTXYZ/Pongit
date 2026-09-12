@@ -1,0 +1,29 @@
+{
+  "chainId": 10143,
+  "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+  "family": "0x61e397f6282ce15d51e8f8e40b9747d542db540b",
+  "lobby": "0xf2dad62750aab9eab849182b325211145f663174",
+  "ratings": "0x88763ea3050dbf72884612ed18ef5c87c9fbe5ea",
+  "settlement": "0xd50924c5e00e73482c477a35d0f88d365a567e10",
+  "vault": "0xcfe5bb9322a0676f160d288b6e8dea0b9bb56156",
+  "market": "0xe00d060d3ee2345693bb293706d5de08c0df82b3",
+  "profiles": "0xe4fa0f2e0958a80081a03f3e351e603354c30cab",
+  "privateData": "0x77b9dfe0dfe1807c7212cc8e4a3e88ece91af73b",
+  "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+  "genesis": 1789215598,
+  "createdAt": "2026-09-12T12:19:58.979Z",
+  "arenas": [
+    {
+      "app": "0x4ce249014a54a8260fe0b8c5a6fde3e0c9c8ffb3",
+      "index": 0
+    },
+    {
+      "app": "0x39259f34e209cf00d12e1576f9f9ed9ca75ca69a",
+      "index": 1
+    },
+    {
+      "app": "0xf44c1eb74247547214c1901d981dd5e59601994a",
+      "index": 2
+    }
+  ]
+}

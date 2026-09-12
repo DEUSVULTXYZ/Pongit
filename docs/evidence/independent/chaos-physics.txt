@@ -1,0 +1,11 @@
+Chaos physics: 20/10000
+Chaos physics: 1020/10000
+Chaos physics: 2020/10000
+Chaos physics: 3020/10000
+Chaos physics: 4020/10000
+Chaos physics: 5020/10000
+Chaos physics: 6020/10000
+Chaos physics: 7020/10000
+Chaos physics: 8020/10000
+Chaos physics: 9020/10000
+PASS: 10000 Chaos physics cases, including pause/resume and paid-pressure inputs.

@@ -1,0 +1,9 @@
+{
+  "at": "2026-09-12T13:44:52.351Z",
+  "checks": [
+    "40 concurrent contexts enqueue one immutable operation",
+    "Uncertain submitted operation reused without simulation or replacement",
+    "Rejected signatures and RPC failures never enter the unsigned queue"
+  ],
+  "passed": true
+}

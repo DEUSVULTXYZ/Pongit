@@ -37,6 +37,8 @@ Chaos uses a testnet VPS attester to sign actual paid MON pressure at an exact b
 
 Scheduled renewal drains games, closes the delegation, waits the one-hour challenge period, finalizes results and verifies the hosted node's new epoch. This creates a game maintenance interval. New early testnet market payments do not wait for this lifecycle; previous market payments still do. No browser prediction or VPS signature can choose their winner.
 
+<Callout title="Independent arenas are still being qualified">A new candidate places rooms, matchmaking and the ranking journal on Monad, with a separate physics contract and delegation for each arena. Its real isolation rehearsal passed, but complete candidate games hit a hosted batch publication error. The public arcade has not migrated. See the [candidate implementation and evidence](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/contract-authority/docs/INDEPENDENT_ARENAS.md) for the remaining activation gates.</Callout>
+
 ## Trust and limits
 
 The browser may display a prediction that differs from later confirmation. The relayer can delay or fail to submit, and Envio can lag. Immutable contracts constrain accepted actions, but the service does not claim censorship-proof scheduling or an independent security audit. [Authentication boundaries](/docs/technical/permissions).

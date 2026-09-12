@@ -1,6 +1,8 @@
 import { initializeInputs, createInputs, sharesInputEstimate } from "./inputs";
 import {trafficBudget} from "./traffic";
 import {createRoomsCoordinator} from "./interlude-rooms";
+import {independentService} from "./independent-service";
+import {measuredFetch} from "../../shared/rpc-metrics";
 import {loadRoomsFinance} from "./rooms-finance-config";
 import {transitionGas} from "./transition-gas";
 import { initializePayouts, createPayoutWorker, payoutKey } from "./payouts";
@@ -92,9 +94,9 @@ const publicClient = createPublicClient({
   chain,
   batch: deployment.chainId === 10143 ? { multicall: { wait: 15, batchSize: 16384 } } : undefined,
   transport: fallback([
-    http(rpc),
+    http(rpc,{fetchFn:measuredFetch('monad')}),
     ...(process.env.RPC_FALLBACK_URL && process.env.RPC_FALLBACK_URL !== rpc
-      ? [http(process.env.RPC_FALLBACK_URL)]
+      ? [http(process.env.RPC_FALLBACK_URL,{fetchFn:measuredFetch('monad')})]
       : []),
   ]),
   pollingInterval: 300,
@@ -102,7 +104,7 @@ const publicClient = createPublicClient({
 if ((await publicClient.getChainId()) !== deployment.chainId)
   throw new Error("RPC chain does not match deployment");
 const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as Hex);
-const wallet = createWalletClient({ account, chain, transport: http(rpc) });
+const wallet = createWalletClient({ account, chain, transport: http(rpc,{fetchFn:measuredFetch('monad')}) });
 const signingLock = await initializeStore();
 await roomsFinanceConfig.bind(pool);
 await initializeSocial();
@@ -669,6 +671,7 @@ const handleSocial = socialRoutes({deployment,origin,profileChanged:()=>ladderCa
 });
 const payoutWorker=createPayoutWorker({db:pool,deployment,client:publicClient,graphql,enqueue});
 const roomsCoordinator=await createRoomsCoordinator({db:pool,origin,body,send,graphql,financeConfig:roomsFinanceConfig,enqueue});
+const independent=await independentService({db:pool,base:publicClient,body,send,graphql,collectRpc:!roomsCoordinator});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)
@@ -699,12 +702,12 @@ const server = createServer(async (req, res) => {
     }
     if (rates.size > 10000)
       for (const [key, r] of rates) if (r.until < Date.now()) rates.delete(key);
-    if (await roomsCoordinator?.route(req,res,path) || await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;
+    if (await independent?.route(req,res,path) || await roomsCoordinator?.route(req,res,path) || await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;
     if (req.method === "GET" && path === "/health") {
       const ok = chainHealthy && Date.now() - lastObserved < 15000;
       return send(
         res,
-        { ok, liveness:true, game:roomsCoordinator?.status() ?? {online:ok}, head, queueError: fundingWarning || lastError, network: deployment.chainId, payments:payoutWorker.status() },
+        { ok, liveness:true, game:independent?.status() ?? roomsCoordinator?.status() ?? {online:ok}, head, queueError: fundingWarning || lastError, network: deployment.chainId, payments:payoutWorker.status() },
         ok ? 200 : 503,
       );
     }

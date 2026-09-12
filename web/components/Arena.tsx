@@ -1,4 +1,5 @@
 "use client";
+import {IndependentAdmin} from './IndependentAdmin';
 import { IconButton, ControlIcon } from "./IconButton";
 
 import { InputController } from "../lib/input-controller";
@@ -1587,6 +1588,7 @@ export function Arena({ initialTab = "Play" }: { initialTab?: string }) {
       {tab === "Admin" &&
         (player?.admin ? (
           <div className="admin-grid">
+            <IndependentAdmin/>
             <section className="side-card">
               <h2>Create tournament</h2>
               <label>

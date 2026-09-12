@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { RoomsHub } from "../../../components/RoomsHub";
+import {IndependentHub} from "../../../components/IndependentHub";
+import {roomRoute} from '../../../../shared/room-route';
 import "../rooms.css";
 export const metadata = {
   title: "Join a PONGIT room",
@@ -10,7 +12,7 @@ export default async function RoomPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  if (!/^0x[0-9a-f]{64}$/.test(id)) notFound();
-  return <RoomsHub roomId={id} />;
+  const route=roomRoute((await params).id);
+  if(!route)notFound();
+  return route.kind==='independent'?<IndependentHub roomId={route.id}/>:<RoomsHub roomId={route.id}/>;
 }

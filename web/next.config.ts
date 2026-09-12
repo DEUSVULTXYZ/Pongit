@@ -1,9 +1,16 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 import createMDX from "@next/mdx";
-import {readFileSync} from "node:fs";
+import {readFileSync,existsSync} from "node:fs";
 const interludeLab=JSON.parse(readFileSync(path.resolve("deployments/interlude-lab.json"),"utf8")) as {node:string};
 const interludeRooms=JSON.parse(readFileSync(path.resolve("deployments/interlude-rooms.json"),"utf8")) as {node:string};
+const independentPath=path.resolve("deployments/independent.json");
+const independentOrigins=existsSync(independentPath)?JSON.parse(readFileSync(independentPath,"utf8")).arenas.flatMap((a:{app:string;node?:string})=>{
+ if(!/^0x[\da-fA-F]{40}$/.test(a.app))throw Error("Invalid arena in CSP manifest");
+ const node=a.node??`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`;
+ if(!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(node))throw Error("Unapproved arena in CSP manifest");
+ return [node,node.replace(/^http/,"ws")];
+}).join(" "):"";
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, ".."),
@@ -31,6 +38,7 @@ const nextConfig: NextConfig = {
               (process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000") +
               " https://testnet-rpc.monad.xyz " + new URL(interludeLab.node).origin + " " + new URL(interludeRooms.node).origin +
               " " + new URL(interludeRooms.node).origin.replace(/^http/,"ws") +
+              " " + independentOrigins +
               "; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
           },
         ],

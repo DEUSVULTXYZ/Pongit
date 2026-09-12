@@ -1342,6 +1342,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               <div className="rooms-canvas">
                 {snapshot.state.awaitingServe && <div className="rooms-serve-status" role="status">{roundStatus?.id===String(snapshot.id)&&roundStatus.rally===pausedRally&&roundStatus.phase==='open'?`Betting open · ${roundStatus.blocksLeft} blocks left`:roundStatus?.id===String(snapshot.id)&&roundStatus.rally===pausedRally&&roundStatus.phase==='closing'?'Closing bets':'Preparing next rally'}</div>}
                 <Court
+                  externalIntermission
                   liveEngine
                   state={snapshot.state}
                   clock={snapshot.clock}

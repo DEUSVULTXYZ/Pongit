@@ -1,4 +1,4 @@
-import {decodeFunctionResult, encodeFunctionData, zeroHash, type Address, type Hex, type PublicClient} from "viem";
+import {decodeFunctionResult, encodeFunctionData, toHex, zeroHash, type Address, type Hex, type PublicClient} from "viem";
 import {roomsLifecycleHubAbi} from "./abi-rooms-lifecycle";
 import {legacyRoomsLifecycleHubAbi} from "./abi-rooms-lifecycle-legacy";
 
@@ -10,8 +10,8 @@ export function decodeHubDelegation(data:Hex){
   if(words===28)return decodeFunctionResult({abi:legacyRoomsLifecycleHubAbi,functionName:"delegationOf",data});
   throw new Error("Unsupported delegation response. Do not proceed with lifecycle transactions.");
 }
-export async function readHubDelegation(base:Pick<PublicClient,"request">,hub:Address,app:Address){
+export async function readHubDelegation(base:Pick<PublicClient,"request">,hub:Address,app:Address,blockNumber?:bigint){
   const data=encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:"delegationOf",args:[app,zeroHash]});
-  const result=await base.request({method:"eth_call",params:[{to:hub,data},"latest"]});
+  const result=await base.request({method:"eth_call",params:[{to:hub,data},blockNumber===undefined?"latest":toHex(blockNumber)]});
   return decodeHubDelegation(result);
 }

@@ -108,6 +108,9 @@ export function socialRoutes(d: Dependencies) {
     const player=await authenticatedPlayer(req);
     if(String(req.headers["x-pongit-player"] || "").toLowerCase()!==player)throw new Error("The account changed in another tab. Unlock this account again before continuing.");
     limit(`user:${player}`,240);
+    if(path==="/profiles"&&["PUT","DELETE"].includes(req.method||'')&&process.env.PONG_PROFILE_MIGRATION_FREEZE==='true'){
+      d.send(res,{error:'Profiles are being migrated. Your saved username is reserved; retry shortly.',code:'PROFILE_MIGRATION'},503);return true;
+    }
     if(path==="/profiles" && req.method==="PUT") {
       const r=z.object({handle:z.string().toLowerCase().regex(/^[a-z][a-z0-9_]{2,19}$/),avatar:z.number().int().min(0).max(11)}).parse(await d.readBody(req));
       try {await pool.query("INSERT INTO profiles(player,handle,avatar) VALUES($1,$2,$3) ON CONFLICT(player) DO UPDATE SET handle=$2,avatar=$3,updated_at=now()",[player,r.handle,r.avatar]);}

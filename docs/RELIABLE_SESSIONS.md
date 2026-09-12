@@ -94,6 +94,8 @@ After the receipt-identity patch was deployed, the existing disposable two-hour 
 
 ## Migration gates still open
 
+**12 September follow-up:** the common lobby, central correction-aware ranking, family grants, profile/private adapters and per-match settlement have now been implemented in the [independent-arena candidate](INDEPENDENT_ARENAS.md). Its earlier three-application rehearsal passed with the same root family grants, but full v2 candidate games failed on a hosted batch-2 `413` publication error. The list below records the gates at the compatible release, not an assertion that no candidate code now exists. Production still runs the compatible deployment.
+
 1. Common Monad lobby, deterministic arena allocation and participation locks, separated from all delegated physics state.
 2. Central ordered ELO/result journal with correction replay and player discovery; current rehearsal still uses local per-app ratings.
 3. Family-scoped two-hour root authorization, per-arena epoch binding and separate future-admission/active-control revocation, validated with the real SDK.

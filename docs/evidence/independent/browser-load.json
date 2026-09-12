@@ -1,0 +1,442 @@
+{
+  "generatedAt": "2026-09-12T14:11:38.434Z",
+  "scope": "Browser HTTP RPC only on hosted Fly endpoints. Does not include VPS, WebSocket frames, Monad, or other users. Setup and failed recovery are included; these are not comparable throughput benchmarks.",
+  "runs": [
+    {
+      "mode": "classic",
+      "startedAt": "2026-09-12T12:45:03.501Z",
+      "finishedAt": "2026-09-12T12:49:53.216Z",
+      "passed": false,
+      "error": "Timed out: seventh point on both clients",
+      "checks": [
+        "Contract matchmaking, two consents and automatic hosted admission",
+        "F5 and direction input without a root passkey ceremony"
+      ],
+      "viewports": [
+        {
+          "size": {
+            "width": 360,
+            "height": 640
+          },
+          "rects": [
+            {
+              "x": 12,
+              "y": 253.78125,
+              "w": 336,
+              "h": 98,
+              "bottom": 351.78125
+            },
+            {
+              "x": 12,
+              "y": 363.78125,
+              "w": 336,
+              "h": 98,
+              "bottom": 461.78125
+            },
+            {
+              "x": 12,
+              "y": 473.78125,
+              "w": 336,
+              "h": 98,
+              "bottom": 571.78125
+            }
+          ]
+        },
+        {
+          "size": {
+            "width": 390,
+            "height": 844
+          },
+          "rects": [
+            {
+              "x": 12,
+              "y": 254.4375,
+              "w": 366,
+              "h": 98,
+              "bottom": 352.4375
+            },
+            {
+              "x": 12,
+              "y": 364.4375,
+              "w": 366,
+              "h": 98,
+              "bottom": 462.4375
+            },
+            {
+              "x": 12,
+              "y": 474.4375,
+              "w": 366,
+              "h": 98,
+              "bottom": 572.4375
+            }
+          ]
+        },
+        {
+          "size": {
+            "width": 768,
+            "height": 1024
+          },
+          "rects": [
+            {
+              "x": 24,
+              "y": 271.375,
+              "w": 225.328125,
+              "h": 414,
+              "bottom": 685.375
+            },
+            {
+              "x": 271.328125,
+              "y": 271.375,
+              "w": 225.328125,
+              "h": 414,
+              "bottom": 685.375
+            },
+            {
+              "x": 518.65625,
+              "y": 271.375,
+              "w": 225.328125,
+              "h": 414,
+              "bottom": 685.375
+            }
+          ]
+        },
+        {
+          "size": {
+            "width": 1440,
+            "height": 1000
+          },
+          "rects": [
+            {
+              "x": 180,
+              "y": 296.78125,
+              "w": 345.328125,
+              "h": 390,
+              "bottom": 686.78125
+            },
+            {
+              "x": 547.328125,
+              "y": 296.78125,
+              "w": 345.328125,
+              "h": 390,
+              "bottom": 686.78125
+            },
+            {
+              "x": 914.65625,
+              "y": 296.78125,
+              "w": 345.34375,
+              "h": 390,
+              "bottom": 686.78125
+            }
+          ]
+        },
+        {
+          "size": {
+            "width": 844,
+            "height": 390
+          },
+          "rects": [
+            {
+              "x": 24,
+              "y": 169.28125,
+              "w": 257.328125,
+              "h": 156,
+              "bottom": 325.28125
+            },
+            {
+              "x": 293.328125,
+              "y": 169.28125,
+              "w": 257.328125,
+              "h": 156,
+              "bottom": 325.28125
+            },
+            {
+              "x": 562.65625,
+              "y": 169.28125,
+              "w": 257.34375,
+              "h": 156,
+              "bottom": 325.28125
+            }
+          ]
+        }
+      ],
+      "requests": 665,
+      "firstRequestAt": "2026-09-12T12:46:24.619Z",
+      "lastRequestAt": "2026-09-12T12:49:53.211Z",
+      "peaks": {
+        "1s": {
+          "requests": 17,
+          "averageRequestsPerSecond": 17
+        },
+        "10s": {
+          "requests": 146,
+          "averageRequestsPerSecond": 14.6
+        },
+        "60s": {
+          "requests": 389,
+          "averageRequestsPerSecond": 6.483333333333333
+        }
+      },
+      "methods": {
+        "interlude_session": {
+          "requests": 107,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "eth_call": {
+          "requests": 117,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "eth_chainId": {
+          "requests": 3,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "eth_getTransactionCount": {
+          "requests": 2,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "interlude_sendTransaction": {
+          "requests": 332,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "eth_getTransactionReceipt": {
+          "requests": 104,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        }
+      },
+      "http429": 0,
+      "rpcErrors": [],
+      "maximumBrowserRequestBytes": null,
+      "passkeyAssertions": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "mode": "chaos",
+      "startedAt": "2026-09-12T13:29:12.033Z",
+      "finishedAt": "2026-09-12T13:46:25.546Z",
+      "passed": false,
+      "error": "Timed out: seventh point on both clients",
+      "checks": [
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Three members in a real Chaos room, dual consent and automatic spectator",
+        "Root-signed test MON bet accepted in a Chaos pause",
+        "F5 and direction input without a root passkey ceremony"
+      ],
+      "viewports": [
+        {
+          "size": {
+            "width": 360,
+            "height": 640
+          },
+          "rects": [
+            {
+              "x": 12,
+              "y": 249.78125,
+              "w": 336,
+              "h": 98,
+              "bottom": 347.78125
+            },
+            {
+              "x": 12,
+              "y": 359.78125,
+              "w": 336,
+              "h": 98,
+              "bottom": 457.78125
+            },
+            {
+              "x": 12,
+              "y": 469.78125,
+              "w": 336,
+              "h": 98,
+              "bottom": 567.78125
+            }
+          ]
+        },
+        {
+          "size": {
+            "width": 390,
+            "height": 844
+          },
+          "rects": [
+            {
+              "x": 12,
+              "y": 254.4375,
+              "w": 366,
+              "h": 98,
+              "bottom": 352.4375
+            },
+            {
+              "x": 12,
+              "y": 364.4375,
+              "w": 366,
+              "h": 98,
+              "bottom": 462.4375
+            },
+            {
+              "x": 12,
+              "y": 474.4375,
+              "w": 366,
+              "h": 98,
+              "bottom": 572.4375
+            }
+          ]
+        },
+        {
+          "size": {
+            "width": 768,
+            "height": 1024
+          },
+          "rects": [
+            {
+              "x": 24,
+              "y": 260.375,
+              "w": 225.328125,
+              "h": 414,
+              "bottom": 674.375
+            },
+            {
+              "x": 271.328125,
+              "y": 260.375,
+              "w": 225.328125,
+              "h": 414,
+              "bottom": 674.375
+            },
+            {
+              "x": 518.65625,
+              "y": 256.56353759765625,
+              "w": 225.328125,
+              "h": 414,
+              "bottom": 670.5635375976562
+            }
+          ]
+        },
+        {
+          "size": {
+            "width": 1440,
+            "height": 1000
+          },
+          "rects": [
+            {
+              "x": 180,
+              "y": 296.78125,
+              "w": 345.328125,
+              "h": 390,
+              "bottom": 686.78125
+            },
+            {
+              "x": 547.328125,
+              "y": 292.97027587890625,
+              "w": 345.328125,
+              "h": 390,
+              "bottom": 682.9702758789062
+            },
+            {
+              "x": 914.65625,
+              "y": 296.59222412109375,
+              "w": 345.34375,
+              "h": 390,
+              "bottom": 686.5922241210938
+            }
+          ]
+        },
+        {
+          "size": {
+            "width": 844,
+            "height": 390
+          },
+          "rects": [
+            {
+              "x": 24,
+              "y": 169.28125,
+              "w": 257.328125,
+              "h": 156,
+              "bottom": 325.28125
+            },
+            {
+              "x": 293.328125,
+              "y": 169.09255981445312,
+              "w": 257.328125,
+              "h": 156,
+              "bottom": 325.0925598144531
+            },
+            {
+              "x": 562.65625,
+              "y": 169.28125,
+              "w": 257.34375,
+              "h": 156,
+              "bottom": 325.28125
+            }
+          ]
+        }
+      ],
+      "requests": 1898,
+      "firstRequestAt": "2026-09-12T13:35:39.425Z",
+      "lastRequestAt": "2026-09-12T13:46:25.284Z",
+      "peaks": {
+        "1s": {
+          "requests": 17,
+          "averageRequestsPerSecond": 17
+        },
+        "10s": {
+          "requests": 136,
+          "averageRequestsPerSecond": 13.6
+        },
+        "60s": {
+          "requests": 423,
+          "averageRequestsPerSecond": 7.05
+        }
+      },
+      "methods": {
+        "interlude_session": {
+          "requests": 3,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "eth_call": {
+          "requests": 1596,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "eth_chainId": {
+          "requests": 2,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "eth_getTransactionCount": {
+          "requests": 2,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        },
+        "interlude_sendTransaction": {
+          "requests": 295,
+          "httpFailures": 0,
+          "rpcFailures": 0
+        }
+      },
+      "http429": 0,
+      "rpcErrors": [],
+      "maximumBrowserRequestBytes": 1776,
+      "passkeyAssertions": [
+        1,
+        1,
+        3,
+        0
+      ]
+    }
+  ],
+  "v1Latency": {
+    "scope": "VPS SDK latency, 17 controlled commands in the earlier isolated-session rehearsal. Not browser latency, sustained load, or a complete natural Chaos game.",
+    "samples": 17,
+    "p50": 115.18294199999946,
+    "p95": 826.5248370000045,
+    "p99": 826.5248370000045
+  }
+}

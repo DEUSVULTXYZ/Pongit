@@ -1,0 +1,141 @@
+{
+  "at": "2026-09-12T11:05:19.721Z",
+  "productionMigrated": false,
+  "lobby": "0x9e46e3f357d206f76fa56d73ef32360e9f13e4a1",
+  "checks": [
+    "First contract-selected Classic match hosted",
+    "Second independent Chaos match hosted",
+    "Closing Classic does not interrupt Chaos",
+    "Third match started during challenge using the same root arcade grants"
+  ],
+  "arenas": [
+    {
+      "app": "0x98847A4d5595CCC1c0f2313cc60A6Fb78A14AdCd",
+      "node": "https://il-98847a4d5595ccc1.fly.dev",
+      "epoch": "1",
+      "id": "340282366920938463463374607431768211458",
+      "appliedFrames": 7
+    },
+    {
+      "app": "0xC5585A594E81b029BFE6418e037C97680c8BaEbf",
+      "node": "https://il-c5585a594e81b029.fly.dev",
+      "epoch": "1",
+      "id": "340282366920938463463374607431768211460",
+      "appliedFrames": 8
+    },
+    {
+      "app": "0xc51DF35deDaA57BC13F7fFA47494C796275b3657",
+      "node": "https://il-c51df35dedaa57bc.fly.dev",
+      "epoch": "1",
+      "id": "340282366920938463463374607431768211462",
+      "appliedFrames": 2
+    }
+  ],
+  "rootGrantSignatures": 4,
+  "measurements": [
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 649.8026100000061,
+      "hash": "0xa6b287a3e2123245a74e47e84fd76ff6c62ebc88391cc179ac793f3370ad3b57"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 242.33848500000022,
+      "hash": "0x42384bfd35ea70e980ea986c076a6e1f88fa4786ef5c250d520bd74d6f3ad047"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 554.0997609999977,
+      "hash": "0x8fb9b2d28ac57e18fab213562a95d49a74f06ce1a08fc89b2526fd44ba72545c"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 248.83252000000357,
+      "hash": "0x7e05bc42987503f6d75fa7563f33399f9a705eae0bcddca5e3b74bc549e5ed96"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 115.18294199999946,
+      "hash": "0x0155a70ac7b932a1bdea8a0d6f21f9415622ec0ffc034fb0b81bde4763faa488"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 112.45012400000269,
+      "hash": "0xd3664c6f75877ba630dead82b72285e7efeabac683cf56e179a8ae962a49f60e"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 106.89199899999949,
+      "hash": "0x21cc0ed02f2e4ae794ff538b2b7976ee58caaf7a3c42a4a8ce3696013cbad4b0"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 107.59687800000393,
+      "hash": "0xd161805047fc71fc0df2d4eb290700234f547a66ecabc02ad7c41a7f56ce7eef"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 105.88903800000116,
+      "hash": "0xb48c64869ad00a159f1694b7901e6104c6e89a33612c77dce48dc71432c58cb3"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 111.98460099999647,
+      "hash": "0xba49421925b65bc560ff1603207cadff54fb1c566d21a04aa3ece9d77378533e"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 103.05475899999874,
+      "hash": "0xb3c04da8b9d091df0a05036d78f285556eab36b31402dd7daa7fea3122f89a08"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 107.65317299999879,
+      "hash": "0x196cea442446835d8c6f4ae4555bd87f7a4741479b878f1a9be42b9d8ef28681"
+    },
+    {
+      "arena": 0,
+      "method": "concede",
+      "ms": 177.70122300000367,
+      "hash": "0x78f0b4e503fbc2bb6f0e5ea7be51b7241d4dd92264746b3d520e1dc2c441d04b"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 108.1465210000024,
+      "hash": "0xccfe2c3ff6ff5a800cc0ef54f3dfcc7b2dfd00a7bf879a84db91e086911c66b9"
+    },
+    {
+      "arena": 2,
+      "method": "input",
+      "ms": 826.5248370000045,
+      "hash": "0xd31afa9ad0eb11ec127a80396dcd335880c946cbe58f906e6fab2da97804c3ab"
+    },
+    {
+      "arena": 1,
+      "method": "concede",
+      "ms": 195.52338900000905,
+      "hash": "0x413cf5c6bcdca68beab8342065bf5eb9b79c1f37c665e7efa782061f51dd6249"
+    },
+    {
+      "arena": 2,
+      "method": "concede",
+      "ms": 197.7747350000136,
+      "hash": "0x037370e618abbbde1a8f3f868b9cfad88f6565ff411f87f4e808445c1ff9602b"
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-09-12T11:07:12.022Z"
+}

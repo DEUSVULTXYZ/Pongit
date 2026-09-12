@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import {readFile} from 'node:fs/promises';
+import {Pool} from 'pg';
+import {createPublicClient,http} from 'viem';
+import {monadTestnet} from 'viem/chains';
+import {independentService} from '../relayer/src/independent-service';
+import {measuredFetch} from '../shared/rpc-metrics';
+assert.equal(process.env.PONG_INDEPENDENT_WRITE,'authorized-testnet');
+const manifest=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
+assert.equal(manifest.production,false,'This isolated runner must never target a production manifest');
+const db=new Pool({connectionString:process.env.DATABASE_URL});
+const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:16384}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:8000,fetchFn:measuredFetch('monad')})});
+const service=await independentService({db,base,body:async req=>{
+ let data='';for await(const chunk of req){data+=chunk;if(data.length>50000)throw Error('Request too large');}return JSON.parse(data);
+},send:(res,body,status=200)=>{res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(JSON.stringify(body,(_,v)=>typeof v==='bigint'?String(v):v));}});
+assert(service);
+const server=createServer((req,res)=>{const path=new URL(req.url!,'http://localhost').pathname.replace(/^\/api/,'');
+ void service.route(req,res,path).then(handled=>{if(!handled){res.writeHead(404);res.end();}}).catch(()=>{if(!res.headersSent)res.writeHead(503);res.end();});
+});
+server.listen(4012,'0.0.0.0',()=>console.log('Independent qualification service ready on private port 4012'));
+for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>{service.stop();server.close();void db.end().then(()=>process.exit());});

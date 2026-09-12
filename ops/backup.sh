@@ -14,7 +14,7 @@ for database in $databases; do
 done
 cp .env "$target/runtime.env"
 cp deployments/testnet.json "$target/deployment.json"
-for manifest in interlude-rooms.json interlude-rooms-classic.json rooms-finance.json; do
+for manifest in interlude-rooms.json interlude-rooms-classic.json rooms-finance.json independent.json; do
   if test -f "deployments/$manifest"; then cp "deployments/$manifest" "$target/$manifest"; fi
 done
 # Private operational keys must accompany the private database/config backup.

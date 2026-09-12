@@ -78,6 +78,13 @@ contracts:
       - event: PayoutCreated(bytes32 indexed payoutId, uint256 indexed sourceId, address indexed recipient, uint8 kind, uint256 amount)
       - event: PayoutPaid(bytes32 indexed payoutId, address indexed recipient, uint256 amount)
       - event: PayoutDeferred(bytes32 indexed payoutId, address indexed recipient, uint256 amount, uint32 attempts)
+
+  - name: IndependentRatings
+    events:
+      - event: ResultPublished(uint256 indexed id, address indexed arena, uint256 epoch, bytes32 hash, uint256 index)
+      - event: ResultCorrected(uint256 indexed id, bytes32 previousHash, bytes32 correctedHash, uint256 revision)
+      - event: ResultFinal(uint256 indexed id, bytes32 hash)
+
 chains:
   - id: 10143
     start_block: 0

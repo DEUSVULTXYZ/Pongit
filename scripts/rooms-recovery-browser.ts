@@ -23,7 +23,7 @@ await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.ROOMS_BROWSER_PATH,args:["--no-sandbox"]});
 const report:{checks:string[];errors:string[];scenarios:any[]}={checks:[],errors:[],scenarios:[]};
 try{
- for(const failure of ["revert","uncertain","unsent"]){
+ for(const failure of ["revert","uncertain","unsent","cancelled"]){
   const viewport={width:Number(process.env.ROOMS_BROWSER_WIDTH)||(failure==="revert"?1440:390),height:Number(process.env.ROOMS_BROWSER_HEIGHT)||900};
   const context=await browser.newContext({viewport});
   const privateKey=generatePrivateKey(),signer=privateKeyToAccount(privateKey);
@@ -41,7 +41,7 @@ try{
   const start=Date.now();
   const fixture=(id=1n)=>[id,revision,BigInt(id===1n?phase:nextPhase),a,b,b,id===1n&&phase===3?a:zeroAddress,BigInt(100+Math.floor((Date.now()-start)/10)),
    BigInt(Date.now()-start)*1000n,0n,0n,BigInt(Math.floor(Date.now()/1000)+20),
-   {...initial(zeroHash),scoreA:id===1n?(phase===3?7:6):0,scoreB:id===1n?6:0,finished:id===1n&&phase===3,t:processed}];
+   {...initial(zeroHash),scoreA:id===1n?(phase===3?7:6):0,scoreB:id===1n?6:0,finished:id===1n&&phase>=3,t:processed}];
   const room={id:zeroHash,host:a,kind:"ranked",mode:0,status:"playing",created:start,activity:start,
    members:[a,b].map((player,i)=>({player,joined:start+i,position:i,seen:Date.now(),away:false})),
    offer:{id:"1",room:zeroHash,a,b,mode:0,ranked:true,expires:String(Math.floor(Date.now()/1000)+20),rules:"4",entropy:zeroHash,signature:"0x",accepted:[a,b],status:"active"}};
@@ -87,7 +87,7 @@ try{
      assert.equal(BigInt(parseTransaction(rpc.params[0]).nonce!),chainNonce,"SDK transaction nonce must match the engine after recovery");
      if(failNext){
       failNext=false;throttleRead=true;
-      setTimeout(()=>{phase=3;revision++;},500);
+      setTimeout(()=>{phase=failure==='cancelled'?4:3;revision++;},500);
       setTimeout(()=>{room.offer={...room.offer,id:"2",status:"offered",accepted:[],expires:String(Math.floor(Date.now()/1000)+20)};room.status="offer";},1500);
       if(failure==='unsent')return route.abort('failed');
       chainNonce++;
@@ -135,11 +135,17 @@ try{
   await page.waitForTimeout(2200);
   assert(reads>beforeReads,"coordinator offline must not freeze direct engine observation");
   failNext=true;
-  const result=page.getByRole("dialog",{name:"Confirmed match result"});
+  const result=page.getByRole("dialog",{name:failure==='cancelled'?"Cancelled match result":"Confirmed match result"});
   await result.waitFor({timeout:22000});
-  assert.equal(await result.locator("h2").textContent(),"VICTORY");
-  assert.equal(await result.locator(".outcome-score").textContent(),"7 : 6");
-  await page.getByText("Classic ELO +16",{exact:true}).waitFor();
+  if(failure==='cancelled'){
+    assert.equal(await result.locator('h2').textContent(),'Match cancelled');
+    await result.getByText('No winner. ELO unchanged.',{exact:true}).waitFor();
+    assert.equal(await result.getByText('DEFEAT',{exact:true}).count(),0);
+  }else{
+    assert.equal(await result.locator("h2").textContent(),"VICTORY");
+    assert.equal(await result.locator(".outcome-score").textContent(),"7 : 6");
+    await page.getByText("Classic ELO +16",{exact:true}).waitFor();
+  }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Result must not introduce horizontal page scrolling');
   assert.equal(await page.getByRole("button",{name:"Reconnect",exact:true}).count(),0);
   assert.equal(await page.getByText("The engine did not confirm this action.",{exact:false}).count(),0);
@@ -154,10 +160,10 @@ try{
   });
   await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled);
   if(failure==="uncertain")assert(nonceReads>=2,"next acceptance restores the SDK nonce without another passkey");
-  report.scenarios.push({failure,viewport,reads,writes,idleWrites:writes-beforeWrites,cooldownMs:recoveredAt-limitedAt,finalScore:"7:6",nextMatch:true,nonceReads});
+  report.scenarios.push({failure,viewport,reads,writes,idleWrites:writes-beforeWrites,cooldownMs:recoveredAt-limitedAt,finalScore:failure==='cancelled'?'cancelled':'7:6',nextMatch:true,nonceReads});
   await context.close();
  }
- report.checks.push("Offline coordinator does not freeze a healthy direct engine lane","Final-tick revert plus 429 recovers the result without reconnecting","Unknown submission stops writes but preserves result transition","Room rotates to a new invitation before the previous result is recovered","Next match refreshes an uncertain SDK nonce without a passkey ceremony","The current tab can restore its session; a second controlling tab is still rejected","Ten-second shared cooldown honored","Exact per-match ELO displayed after fresh read","Desktop and mobile result visible");
+ report.checks.push("Offline coordinator does not freeze a healthy direct engine lane","Final-tick revert plus 429 recovers the result without reconnecting","Unknown submission stops writes but preserves result transition","Room rotates to a new invitation before the previous result is recovered","Next match refreshes an uncertain SDK nonce without a passkey ceremony","The current tab can restore its session; a second controlling tab is still rejected","Ten-second shared cooldown honored","Exact per-match ELO displayed after fresh read","Desktop and mobile result visible","Cancellation opens an accessible neutral result without a false winner or defeat");
  assert.deepEqual(report.errors,[]);
 }finally{
  await writeFile(`${out}/report.json`,JSON.stringify(report,null,2));await browser.close();
