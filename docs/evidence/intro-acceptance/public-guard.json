@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-12T21:57:22.318Z",
+  "scope": "Production API with unfunded fixture identities; no engine transaction",
+  "oldTabRejected": true,
+  "missingIntroRejected": true,
+  "passed": true
+}

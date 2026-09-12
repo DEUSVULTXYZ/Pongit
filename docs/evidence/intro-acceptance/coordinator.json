@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-12T21:49:42.236Z",
+  "checks": [
+    "20 duplicate-click queue/cancel cycles keep exactly one occupancy",
+    "Eight members fit, ninth member rejected",
+    "Two ready signals persist one shared three-second countdown without engine consent; early acceptance is refused",
+    "Slow acceptance RPC does not hold the global lobby lock",
+    "Missing Chaos checkpoint keeps observation alive without idle engine writes",
+    "Temporary permission RPC failure preserves the session and rejects unverified actions",
+    "Real expiry still closes the subscription",
+    "Expired delegation with missing receipt still repairs terminal rooms and published history without resending",
+    "Engine expiry blocks admission, preserves recovery reads and player access, and recovers after renewal"
+  ],
+  "cycles": 20,
+  "independentPresenceMs": 12,
+  "passed": true
+}

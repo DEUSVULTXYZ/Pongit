@@ -1,0 +1,41 @@
+{
+  "scope": "Simulated API and chain, real browser against production build",
+  "scenarios": [
+    {
+      "mode": 0,
+      "queueBefore": "0:01",
+      "queueAfter": "0:03",
+      "clockSkewMs": 28000,
+      "serverJumpMs": 600000,
+      "engineAcceptances": 2,
+      "startDelayMs": [
+        3283,
+        3410
+      ],
+      "f5Ready": true,
+      "reducedMotion": false,
+      "inputWrites": 39,
+      "injected429": true,
+      "recoveryMs": 1112
+    },
+    {
+      "mode": 1,
+      "queueBefore": "0:01",
+      "queueAfter": "0:03",
+      "clockSkewMs": 28000,
+      "serverJumpMs": 600000,
+      "engineAcceptances": 2,
+      "startDelayMs": [
+        3201,
+        3315
+      ],
+      "f5Ready": true,
+      "reducedMotion": true,
+      "inputWrites": 39,
+      "injected429": true,
+      "recoveryMs": 1141
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

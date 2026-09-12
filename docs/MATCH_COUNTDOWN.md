@@ -1,5 +1,7 @@
 # Matchmaking clock and match introduction
 
+Follow-up: the older-tab bypass described below was removed in the [acceptance correction](COUNTDOWN_ACCEPTANCE_FIX.md). The queue stopwatch also now uses browser monotonic time independently of the service clock, as described in [control recovery](CONTROLS_AND_CHAOS_RECOVERY.md).
+
 Deployed on 12 September 2026 at 19:40:46 UTC from `b8f72f9f08874311d60208e4b3c9f57401878e39`.
 
 ## Changes
