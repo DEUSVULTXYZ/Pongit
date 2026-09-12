@@ -96,8 +96,17 @@ const action = (
 ) => api(p, path, { ...data, operation });
 const state = (p: any) => api(p, "state");
 const snapshot = (id: string) => engine.read("getSnapshot", [BigInt(id)]);
+const preparedIntros=new Set<string>();
 async function accept(p: any, o: any) {
-  await action(p, "offers/accept", { id: o.id });
+  if(!preparedIntros.has(o.id)){
+    // Both fixture players acknowledge readiness; individual engine consents
+    // remain separate so the one-sided submission timeout is still exercised.
+    await action(players.find(p=>p.address===o.a),"offers/ready",{id:o.id});
+    const ready=await action(players.find(p=>p.address===o.b),"offers/ready",{id:o.id});
+    await new Promise(r=>setTimeout(r,Math.max(0,ready.offer.launch.at-Date.now())+50));
+    preparedIntros.add(o.id);
+  }
+  await action(p, "offers/accept", { id: o.id, countdown:true });
   const ticket = {
     id: BigInt(o.id),
     room: o.room,

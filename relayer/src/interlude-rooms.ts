@@ -1558,11 +1558,12 @@ export async function createRoomsCoordinator(o: Options) {
               if (snap[2] === 0n) offer.accepted = [];
               if (offer.status === "cancelled" || snap[2] >= 3n || Number(offer.expires) * 1000 <= Date.now())
                 throw new Error("Duel expired. Rejoin the queue for another opponent.");
-              // Older open tabs still send their first engine agreement directly.
-              // Treat that authenticated click as readiness for the updated peer;
-              // its delayed second agreement still keeps the engine from starting.
-              if(offer.launch&&body.countdown!==true&&!offer.launch.ready.includes(p))prepareRoomLaunch(offer,p,Date.now());
-              if(body.countdown===true)assertRoomLaunchReady(offer,Date.now());
+              // Old tabs bypassed readiness and started both engine agreements
+              // immediately. They must load the intro before sending any consent.
+              // Receipt reconciliation above remains compatible with an agreement
+              // that was already sent; this guard never invents a failed transaction.
+              if(body.countdown!==true)throw Error("Refresh PONGIT to load the match countdown, then accept the duel.");
+              assertRoomLaunchReady(offer,Date.now());
               return {offer, alreadyAccepted: offer.accepted.includes(p)};
             }
             if (snap[2] === 2n || offer.status === "active")

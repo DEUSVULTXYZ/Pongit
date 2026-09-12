@@ -910,9 +910,16 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   async function accept(o: LobbyOffer) {
     if (acceptanceIssue?.id === o.id && Date.now() < acceptanceIssue.retryAt) return;
     setAcceptanceIssue(null);
+    // A preflight retry can originate before the ready request completed.
+    // Re-enter readiness instead of skipping the intro on the retry button.
+    if(!o.launch?.at || !o.launch.ready.includes(o.a) || !o.launch.ready.includes(o.b)){
+      launchSent.current=null;
+      await prepareLaunch(o);
+      return;
+    }
     let sending = false;
     try {
-      const checked = await roomsAction("offers/accept", { id: o.id, countdown:!!o.launch });
+      const checked = await roomsAction("offers/accept", { id: o.id, countdown:true });
       if(checked.serverNow)lobbyClock.observe(checked.serverNow);
       if (checked.alreadyAccepted) {
         if (matchRef.current === o.id) receive(await read());

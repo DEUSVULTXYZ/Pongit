@@ -18,12 +18,14 @@ test('two UI readiness signals start one shared intro without inventing engine c
  assert.throws(()=>assertRoomLaunchReady(o,4999));assertRoomLaunchReady(o,5000);
  const restored=JSON.parse(JSON.stringify(o));assertRoomLaunchReady(restored,6000);assert.deepEqual(restored.accepted,[]);
 });
-test('countdown rejects outsiders and too-late starts; an old offer without intro remains compatible',()=>{
+test('countdown rejects outsiders, too-late starts and offers without a completed intro',()=>{
  const o={...structuredClone(offer),accepted:[]};
  assert.throws(()=>prepareRoomLaunch(o,app,1000));prepareRoomLaunch(o,a,17000);
  assert.throws(()=>prepareRoomLaunch(o,b,17000));
  assert.throws(()=>prepareRoomLaunch({...o,status:'cancelled'},b,1000));
- assertRoomLaunchReady({...o,launch:undefined},19000);
+ assert.throws(()=>assertRoomLaunchReady({...o,launch:undefined},19000));
+ for(const launch of [{ready:[a,a],at:1000},{ready:[a,app],at:1000},{ready:[a,b],at:NaN}])
+  assert.throws(()=>assertRoomLaunchReady({...o,launch},19000));
 });
 
 test("only a successful engine event for this player, duel and deployment confirms acceptance",()=>{

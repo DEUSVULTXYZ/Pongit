@@ -42,7 +42,7 @@ try{
        else if(u.pathname.endsWith('/auth/challenge'))data={nonce:'mock',message:'Private countdown fixture'};
        else if(u.pathname.endsWith('/state'))data={...(room?{room}:{queue:{at:queuedAt,mode}}),profiles:players.map((p,i)=>({player:p,handle:`Player${i+1}`})),inbox:[],outbox:[],online:true,admission:true};
        else if(u.pathname.endsWith('/offers/ready')){prepareRoomLaunch(room.offer,player,serverNow());data={offer:room.offer};}
-       else if(u.pathname.endsWith('/offers/accept')){if(!body.receiptHash)assertRoomLaunchReady(room.offer,serverNow());data={offer:room.offer,alreadyAccepted:accepted.has(player)};}
+       else if(u.pathname.endsWith('/offers/accept')){if(!body.receiptHash){assert.equal(body.countdown,true);assertRoomLaunchReady(room.offer,serverNow());}data={offer:room.offer,alreadyAccepted:accepted.has(player)};}
        else if(u.pathname.includes('/markets/'))data={app,id:'1',rally:1,phase:'preparing',blocksLeft:'0'};
        return route.fulfill({json:{...data,serverNow:serverNow()}});
       }

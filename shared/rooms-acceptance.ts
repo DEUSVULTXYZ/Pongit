@@ -15,7 +15,9 @@ export function prepareRoomLaunch(offer:LobbyOffer,player:string,now:number){
  return offer.launch;
 }
 export function assertRoomLaunchReady(offer:LobbyOffer,now:number){
- if(offer.launch&&(!offer.launch.at||offer.launch.ready.length!==2||now<offer.launch.at))throw Error("Waiting for the countdown before starting the duel.");
+ const launch=offer.launch;
+ if(!launch || !Number.isFinite(launch.at) || !launch.at || !launch.ready.includes(offer.a) || !launch.ready.includes(offer.b) || now<launch.at)
+  throw Error("Waiting for the countdown before starting the duel.");
 }
 
 /** A failed/preflight-only acceptance cannot automatically renew its ticket. */
