@@ -9,6 +9,8 @@ import {
 } from "viem";
 import { monadTestnet } from "viem/chains";
 import { Court } from "./Court";
+import {MatchCountdown,ChaosRallyStatus} from './MatchCountdown';
+import {useLobbyClock,useQueueElapsed} from '../lib/use-lobby-clock';
 import { PixelPalaceArt } from "./PixelPalaceArt";
 import { RoomsMarketPanel } from "./RoomsMarketPanel";
 import { EngineCredit } from "./EngineCredit";
@@ -60,6 +62,7 @@ type Profile = {
   count?: number;
 };
 type Lobby = {
+  serverNow?: number;
   room?: LobbyRoom;
   queue?: { at: number; mode?: 0 | 1 };
   inbox: any[];
@@ -193,8 +196,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     [notice, setNotice] = useState(""),
     [direction, setDirection] = useState(0),
     [latency, setLatency] = useState(0),
-    [fps, setFps] = useState(0),
-    [now, setNow] = useState(Date.now());
+    [fps, setFps] = useState(0);
+  const {now,clock:lobbyClock}=useLobbyClock();
+  const launchSent=useRef<string|null>(null);
   const [pendingAcceptance, setPendingAcceptance] = useState<PendingAcceptance | null>(null);
   const [acceptanceIssue, setAcceptanceIssue] = useState<{id:string; retryAt:number; message:string} | null>(null);
   const [contacts, setContacts] = useState<Profile[]>([]),
@@ -260,12 +264,13 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
   const profileLoaded = useRef<string | undefined>(undefined);
   const room = lobby.room,
     offer = room?.offer,
-    queueSeconds = lobby.queue ? Math.max(0, Math.floor((now - lobby.queue.at) / 1000)) : 0,
+    queueSeconds = useQueueElapsed(lobby.queue?`${account}:${lobby.queue.mode}:${lobby.queue.at}`:undefined,lobby.queue?.at??0,now),
     side = labSide(snapshot, account),
     isDuel =
       !!offer && [offer.a, offer.b].includes(account?.toLowerCase() || "");
   const acceptanceProblem = acceptanceIssue?.id === offer?.id && offer?.status === "offered" ? acceptanceIssue : null;
-  const acceptanceWait = acceptanceProblem ? Math.max(0, Math.ceil((acceptanceProblem.retryAt - now) / 1000)) : 0;
+  const acceptanceWait = acceptanceProblem ? Math.max(0, Math.ceil((acceptanceProblem.retryAt - Date.now()) / 1000)) : 0;
+  const launchPending=!!(isDuel&&offer?.status==='offered'&&offer.launch?.ready.includes(account!.toLowerCase())&&!acceptanceProblem&&snapshot?.phase!==2&&Number(offer.expires)*1000>now);
   const active =
       snapshot?.phase === 2 && room?.offer?.id === snapshot.id.toString(),
     canPlay = !!active && side >= 0 && ready && !writeBlocked && !busy && !panel && !syncError;
@@ -320,6 +325,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     const version=++refreshVersion.current, owner=accountRef.current;
     const next = await roomsApi<Lobby>("/interlude/state");
     if (!alive.current || version!==refreshVersion.current || owner!==accountRef.current) return;
+    if(next.serverNow)lobbyClock.observe(next.serverNow);
     setLobby(next);
     if(next.room || next.queue)setMode(next.room?.mode || next.queue?.mode || 0);
     setOnline(next.online);
@@ -549,12 +555,10 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         }
       })();
     }
-    const clock = setInterval(() => setNow(Date.now()), 500);
     return () => {
       done = true;
       alive.current = false;
       clearTimeout(configTimer);
-      clearInterval(clock);
       lane.current?.stop();
       release.current?.();
     };
@@ -877,12 +881,35 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     setEntry(undefined);
     await refresh();
   }
+  async function prepareLaunch(o:LobbyOffer){
+    const result=await roomsAction('offers/ready',{id:o.id});
+    if(result.serverNow)lobbyClock.observe(result.serverNow);
+    if(!result.offer)throw Error('Reload to update the game service before starting.');
+    setLobby(v=>v.room?.offer?.id===o.id?{...v,room:{...v.room,offer:result.offer}}:v);
+    await refresh();
+  }
+  useEffect(()=>{
+    if(!launchPending||!offer?.launch?.at||!ready||writeBlocked||pendingAcceptance?.id===offer.id||offer.accepted.includes(account!.toLowerCase())||launchSent.current===offer.id)return;
+    const id=offer.id;
+    const t=setTimeout(()=>{
+      if(busyRef.current||lobbyRef.current.room?.offer?.id!==id)return;
+      launchSent.current=id;
+      void run(()=>accept(lobbyRef.current.room!.offer!));
+    },Math.max(0,offer.launch.at-lobbyClock.now()));
+    return()=>clearTimeout(t);
+  },[launchPending,offer?.id,offer?.launch?.at,ready,writeBlocked,pendingAcceptance?.id,busy,account]);
+  useEffect(()=>{
+    if(!launchPending||offer?.launch?.at)return;
+    const t=setInterval(()=>void refreshRef.current().catch(()=>{}),1000);
+    return()=>clearInterval(t);
+  },[launchPending,offer?.launch?.at]);
   async function accept(o: LobbyOffer) {
     if (acceptanceIssue?.id === o.id && Date.now() < acceptanceIssue.retryAt) return;
     setAcceptanceIssue(null);
     let sending = false;
     try {
-      const checked = await roomsAction("offers/accept", { id: o.id });
+      const checked = await roomsAction("offers/accept", { id: o.id, countdown:!!o.launch });
+      if(checked.serverNow)lobbyClock.observe(checked.serverNow);
       if (checked.alreadyAccepted) {
         if (matchRef.current === o.id) receive(await read());
         await refresh();
@@ -914,7 +941,10 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           : "Your acceptance was not confirmed. Retry acceptance to reconnect and read the duel."});
         return;
       }
-      throw e;
+      // A preflight failure has not sent a signature. Keep a visible retry action
+      // instead of leaving a completed countdown on "Starting match" forever.
+      setAcceptanceIssue({id:o.id,retryAt:0,message:(e as Error).message.split('\n')[0]});
+      return;
     }
     // A successful send is already acknowledged. A later read outage must not
     // turn that accepted invitation into an error or another acceptance.
@@ -965,7 +995,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       !busy
     ) {
       autoAccept.current = false;
-      void run(() => accept(offer));
+      void run(() => prepareLaunch(offer));
     }
   }, [offer?.id, ready, busy,writeBlocked]);
   async function backOffer() {
@@ -1286,7 +1316,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               {roomsChaos && room.mode===1 && <button onClick={()=>openPanel("market")}>Market</button>}
             </div>
           </div>
-          {canAccept ? (
+          {launchPending ? <MatchCountdown id={`${roomsManifest.app}:${offer!.id}`} endsAt={offer!.launch?.at} now={now} players={[name(offer!.a),name(offer!.b)]} busy={busy} onBack={()=>void run(backOffer)}/> : canAccept ? (
             <section className="rooms-entry rooms-duel">
               <div className="rooms-versus">
                 <span>{name(offer!.a)}</span>
@@ -1307,7 +1337,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                   disabled={
                     busy || acceptanceWait > 0 || Number(offer!.expires) * 1000 <= now || pendingAcceptance?.id === offer!.id || offer!.accepted.includes(account!.toLowerCase())
                   }
-                  onClick={() => void ensure(() => accept(offer!))}
+                  onClick={() => void ensure(() => acceptanceProblem?accept(offer!):prepareLaunch(offer!))}
                 >
                   {pendingAcceptance?.id === offer!.id || offer!.accepted.includes(account!.toLowerCase())
                     ? "Waiting…"
@@ -1340,7 +1370,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                 </div>
               </div>
               <div className="rooms-canvas">
-                {snapshot.state.awaitingServe && <div className="rooms-serve-status" role="status">{roundStatus?.id===String(snapshot.id)&&roundStatus.rally===pausedRally&&roundStatus.phase==='open'?`Betting open · ${roundStatus.blocksLeft} blocks left`:roundStatus?.id===String(snapshot.id)&&roundStatus.rally===pausedRally&&roundStatus.phase==='closing'?'Closing bets':'Preparing next rally'}</div>}
+                {snapshot.state.awaitingServe && <ChaosRallyStatus phase={roundStatus?.id===String(snapshot.id)&&roundStatus.rally===pausedRally&&['open','closing'].includes(roundStatus.phase)?roundStatus.phase as 'open'|'closing':'preparing'} blocksLeft={Number(roundStatus?.blocksLeft||0)}/>}
                 <Court
                   externalIntermission
                   liveEngine

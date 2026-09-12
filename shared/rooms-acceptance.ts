@@ -1,6 +1,23 @@
 import {decodeEventLog, type Abi} from "viem";
 import type {LobbyOffer, LobbyRoom} from "./rooms";
 
+export const MATCH_INTRO_MS=3000;
+/** Persisted once per offer, separately from receipt-confirmed acceptances. */
+export function prepareRoomLaunch(offer:LobbyOffer,player:string,now:number){
+ if(![offer.a,offer.b].includes(player)||offer.status!=="offered"||Number(offer.expires)*1000<=now)throw Error("This duel is no longer available.");
+ const ready=[...new Set([...(offer.launch?.ready??[]),...offer.accepted,player])].filter(p=>p===offer.a||p===offer.b);
+ let at=offer.launch?.at;
+ if(ready.length===2&&!at){
+  if(Number(offer.expires)*1000<=now+MATCH_INTRO_MS+1000)throw Error("Not enough time to start this duel. Rejoin the queue.");
+  at=now+MATCH_INTRO_MS;
+ }
+ offer.launch={ready,...(at?{at}:{})};
+ return offer.launch;
+}
+export function assertRoomLaunchReady(offer:LobbyOffer,now:number){
+ if(offer.launch&&(!offer.launch.at||offer.launch.ready.length!==2||now<offer.launch.at))throw Error("Waiting for the countdown before starting the duel.");
+}
+
 /** A failed/preflight-only acceptance cannot automatically renew its ticket. */
 export function expireUnstartedRoomOffer(room: LobbyRoom, enginePhase: bigint | undefined, now: number) {
   const offer = room.offer;

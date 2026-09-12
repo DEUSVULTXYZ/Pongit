@@ -2,6 +2,7 @@
 import {useEffect,useMemo,useRef,useState,useCallback} from 'react';
 import {isAddress,zeroAddress,maxUint256,type Address} from 'viem';
 import {Court} from './Court';
+import {useLobbyClock,useQueueElapsed} from '../lib/use-lobby-clock';
 import {Avatar,AvatarPicker} from './Avatar';
 import {PixelPalaceArt} from './PixelPalaceArt';
 import {ArcadeAmbience,MusicCredit} from './ArcadeAmbience';
@@ -37,7 +38,8 @@ export function IndependentHub({roomId}:{roomId?:string}){
  const [view,setView]=useState<any>(empty),[snapshot,setSnapshot]=useState<LabSnapshot|null>(null),[mode,setMode]=useState<0|1>(0);
  const [panel,setPanel]=useState<Panel>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[sync,setSync]=useState('');
  const [lobbySync,setLobbySync]=useState('');
- const [now,setNow]=useState(Date.now()),[sound,setSound]=useState(false),[direction,setDirection]=useState(0),[fps,setFps]=useState(0),[controlled,setControlled]=useState(false);
+ const {now,clock:lobbyClock}=useLobbyClock();
+ const [sound,setSound]=useState(false),[direction,setDirection]=useState(0),[fps,setFps]=useState(0),[controlled,setControlled]=useState(false);
  const [handle,setHandle]=useState(''),[avatar,setAvatar]=useState(0),[target,setTarget]=useState(''),[ranking,setRanking]=useState<any>(),[showResult,setShowResult]=useState(0),[settled,setSettled]=useState<any>(null);
  const [frequent,setFrequent]=useState<any[]>([]),[replayId,setReplayId]=useState<bigint>();
  const pendingAction=useRef<((s:FamilySession)=>Promise<void>)|null>(null),working=useRef(false),refreshing=useRef(false);
@@ -55,7 +57,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
  const mine=room?.members.find((m:any)=>equal(m.player,player));
  const offerSide=offer&&player?(equal(offer.a,player)?0:equal(offer.b,player)?1:-1):-1;
  const canAccept=offer?.status===1&&offerSide>=0;
- const queueSeconds=view.queue?Math.max(0,Math.floor(now/1000-Number(view.queue[1]))):0;
+ const queueSeconds=useQueueElapsed(view.queue?`${player}:${view.queue[0]}:${view.queue[1]}`:undefined,Number(view.queue?.[1]??0)*1000,now);
  const resultId=snapshot&&lastGame.current?arenaReference(lastGame.current.app,lastGame.current.binding.epoch,snapshot.id):null;
  const resultEntry=snapshot&&settled?.entry.first.id===snapshot.id?settled.entry:snapshot&&view.published?.first.id===snapshot.id?view.published:null;
  const ratingDelta=snapshot&&settled?.entry.first.id===snapshot.id&&side>=0?Number(settled.change[side+2])-Number(settled.change[side]):undefined;
@@ -66,7 +68,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
    const s=current.current.family,requested=roomId?parseRoomReference(roomId,manifest.lobby):undefined;
    let last:undefined|{app:Address;id:bigint;epoch:bigint};
    try{const v=JSON.parse(sessionStorage.getItem(`pongit:last-arena:${manifest.lobby}:${s?.grant.player}`)||'null');if(v&&manifest.arenas.some(a=>equal(a.app,v.app)))last={app:v.app,id:BigInt(v.id),epoch:BigInt(v.epoch)};}catch{}
-   const next=await readIndependentLobby(base,manifest,s?.grant.player,requested,last);setView(next);setLobbySync('');
+   const next=await readIndependentLobby(base,manifest,s?.grant.player,requested,last);lobbyClock.observe(Number(next.now)*1000);setView(next);setLobbySync('');
    if(next.recoverySnapshot){
     lastGame.current={app:next.app,binding:next.binding};
     // Keep a previously displayed live position while closing. A fresh tab starts
@@ -83,7 +85,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
  useEffect(()=>{
   let alive=true,retry:ReturnType<typeof setTimeout>;
   const load=()=>void independentApi('config').then(c=>{if(!alive)return;const m=publicIndependentManifest(c.manifest);setManifest(m);setConfig(c);setFamily(loadFamily(m));setSaved(rememberedAccount()?.address as Address|undefined);setError('');}).catch(()=>{if(alive){setError('Game services are temporarily unavailable. Retrying automatically.');retry=setTimeout(load,5000);}});
-  load();const t=setInterval(()=>{setNow(Date.now());},1000);return()=>{alive=false;clearInterval(t);clearTimeout(retry);};
+  load();return()=>{alive=false;clearTimeout(retry);};
  },[]);
  useEffect(()=>{
   if(!manifest)return;let stopped=false;let timer:ReturnType<typeof setTimeout>;
@@ -218,7 +220,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
  const modalTitle=panel==='account'?'Your account':panel==='ranking'?'Ranking':panel==='invite'?'Invite someone':panel==='create'?'Create room':panel==='members'?'Room members':panel==='tools'?'Cabinet tools':panel==='connect'?'Connect to play':panel==='private'?'Private notebook':panel==='market'?'Wallet and betting':panel==='history'?'Match history':'More';
  const arenaHealth=config?.arenas.find((a:any)=>equal(a.app,lastGame.current?.app)&&String(a.epoch)===String(lastGame.current?.binding.epoch));
  const networkMessage=recoveringArena||active&&['publication-paused','recovering','closing','review'].includes(arenaHealth?.stage)?'This arena is recovering. Your arcade session is still saved.':sync||lobbySync;
- const pauseLabel=recoveringArena?'Recovering this arena':snapshot&&arenaHealth?.rally?.id===String(snapshot.id)&&arenaHealth.rally.rally===snapshot.state.scoreA+snapshot.state.scoreB&&arenaHealth.rally.resumeAt===String(snapshot.state.resumeAt)?arenaHealth.rally.label:'Preparing next rally';
+ const pauseLabel=recoveringArena?'Recovering this arena':snapshot&&arenaHealth?.rally?.id===String(snapshot.id)&&arenaHealth.rally.rally===snapshot.state.scoreA+snapshot.state.scoreB&&arenaHealth.rally.resumeAt===String(snapshot.state.resumeAt)?arenaHealth.rally.label:'Waiting for confirmed Chaos bets on Monad';
  return <main className={`cabinet-ui rooms-shell ${active?'rooms-playing':''}`}>
   <header className="rooms-header"><a className="brand" href="/" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" alt="" width="40" height="40"/><span className="brand-word">PONGIT</span></a><div className="rooms-header-actions">
    <ArcadeAmbience onSound={setSound}/><a className="rooms-button" href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><button onClick={()=>setPanel('ranking')}>Ranking</button><button onClick={()=>setPanel('more')}>More</button>

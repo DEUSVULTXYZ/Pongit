@@ -73,6 +73,8 @@ export type LobbyOffer = {
   entropy: string;
   signature: string;
   accepted: string[];
+  /** UI readiness is not an engine consent. Both signatures still create the match. */
+  launch?: {ready:string[];at?:number};
   status: "offered" | "submitted" | "active" | "complete" | "cancelled";
 };
 export type LobbyRoom = {

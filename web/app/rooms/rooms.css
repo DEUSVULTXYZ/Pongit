@@ -776,3 +776,16 @@
 .rooms-mode-choice button{flex:1;min-height:44px}
 .rooms-canvas{position:relative}
 .rooms-serve-status{position:absolute;z-index:2;left:50%;top:18px;transform:translateX(-50%);max-width:90%;border:1px solid #385361;border-radius:8px;padding:8px 14px;background:#101b24ed;color:#c9eff4;text-align:center;font:14px/1.4 system-ui,sans-serif;pointer-events:none}
+.rooms-serve-status strong,.rooms-serve-status small{display:block}
+.rooms-serve-status small{margin-top:5px;font-size:14px;color:#b8c6d4;max-width:36em}
+.rooms-intro-players{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:18px;align-items:center;padding:20px;text-align:center;font:16px/1.4 system-ui,sans-serif}
+.rooms-intro-players strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#a6f7fc}
+.rooms-intro-players strong:last-child{color:#ebafff}
+.rooms-intro .rooms-canvas{aspect-ratio:16/9;overflow:hidden}
+.match-countdown{position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;overflow:hidden;background:radial-gradient(ellipse at center,#16244290,transparent 70%);pointer-events:none}
+.match-countdown-label{position:absolute;top:16%;font-size:clamp(12px,2vw,18px);letter-spacing:.22em;color:#b8ebf4}
+.match-countdown-digit{display:block;font-size:clamp(80px,17vw,210px);line-height:1;font-weight:400;color:#c9fcff;text-shadow:0 0 24px #4be5ff66,4px 4px 0 #694bab;animation:match-countdown-pop 1s cubic-bezier(.16,.7,.35,1) both;will-change:transform,opacity}
+.match-countdown-wait{font:clamp(16px,2.5vw,26px)/1.5 system-ui,sans-serif;color:#d8e9f6;padding:22px;text-align:center}
+@keyframes match-countdown-pop{0%{opacity:1;transform:scale(.65)}65%{opacity:.8}100%{opacity:0;transform:scale(1.45)}}
+@media(prefers-reduced-motion:reduce){.match-countdown-digit{animation:none;will-change:auto;text-shadow:none}}
+@media(max-width:480px){.rooms-intro-players{gap:8px;padding:14px 8px}.rooms-intro .rooms-court-controls>span{max-width:65%;font-size:14px}.rooms-serve-status{top:8px;width:90%;padding:7px 10px}.rooms-serve-status small{font-size:12px}}

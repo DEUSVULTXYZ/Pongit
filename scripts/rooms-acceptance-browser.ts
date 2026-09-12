@@ -31,6 +31,10 @@ try {
    const u=new URL(route.request().url());
    if(u.origin===origin){
     if(u.pathname.startsWith("/api/")){
+     if(u.pathname.endsWith('/offers/ready')){
+      room.offer.launch={ready:[a,b],at:Date.now()+3000};
+      return route.fulfill({json:{offer:room.offer,serverNow:Date.now()}});
+     }
      if(u.pathname.endsWith("/offers/accept")){
       const body=route.request().postDataJSON();
       if(body.receiptHash){

@@ -76,6 +76,14 @@ try{
  await db.query("INSERT INTO il_sessions VALUES($1,$2,$2,$3,'0',$4)",[createHash("sha256").update(ninth.token).digest("hex"),ninth.address,Math.floor(Date.now()/1000)+7200,app]);
  assert.equal((await action(ninth,"rooms/join",{room})).status,400);report.checks.push("Eight members fit, ninth member rejected");
  let offer:any;await until(async()=>{offer=(await api(players[0],"state")).room.offer;return !!offer;});
+ const pa=players.find(p=>p.address===offer.a)!,pb=players.find(p=>p.address===offer.b)!;
+ const readyA=await action(pa,'offers/ready',{id:offer.id});assert.equal(readyA.status,200);assert.equal(readyA.offer.launch.at,undefined);assert.deepEqual(readyA.offer.accepted,[]);
+ assert.equal((await action(pa,'offers/accept',{id:offer.id,countdown:true})).status,400);
+ const readyB=await action(pb,'offers/ready',{id:offer.id});assert.equal(readyB.status,200);
+ assert(readyB.offer.launch.at-readyB.serverNow>=2900);assert.deepEqual(readyB.offer.accepted,[]);
+ assert.equal((await action(pb,'offers/ready',{id:offer.id})).offer.launch.at,readyB.offer.launch.at);
+ await pause(Math.max(0,readyB.offer.launch.at-Date.now())+30);
+ report.checks.push('Two ready signals persist one shared three-second countdown without engine consent; early acceptance is refused');
  slowSnapshot=true;const accepting=action(players[0],"offers/accept",{id:offer.id});await pause(100);
  const began=Date.now();assert.equal((await api(players[7],"presence",{})).status,200);assert.equal((await api(players[7],"state")).status,200);
  report.independentPresenceMs=Date.now()-began;assert(report.independentPresenceMs<800);assert.equal((await accepting).status,200);slowSnapshot=false;

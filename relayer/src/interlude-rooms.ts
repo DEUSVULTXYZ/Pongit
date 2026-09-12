@@ -37,7 +37,7 @@ import {roomsRankingCandidates} from "./rooms-ranking";
 import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snapshot";
 import {engineTransport} from "../../shared/engine-transport";
 import {engineReadRetryMs} from "../../shared/engine-read";
-import {confirmsRoomAcceptance, expireUnstartedRoomOffer} from "../../shared/rooms-acceptance";
+import {confirmsRoomAcceptance, expireUnstartedRoomOffer, prepareRoomLaunch, assertRoomLaunchReady} from "../../shared/rooms-acceptance";
 import {EngineStream,engineTuple} from "../../shared/engine-stream";
 import {EngineFeed} from "../../shared/engine-feed";
 import {engineCooldownMs} from "../../shared/engine-transport";
@@ -399,6 +399,7 @@ export async function createRoomsCoordinator(o: Options) {
     return {
       player: p,
       room,
+      serverNow: Date.now(),
       queue: s.queue.find((q) => q.player === p),
       inbox,
       outbox: own,
@@ -431,7 +432,7 @@ export async function createRoomsCoordinator(o: Options) {
       try {
         await authenticate(info.req, info.player);
         const state=await view(info.player);
-        const revision=hash(JSON.stringify(state,(key,value)=>key==="seen"?undefined:value));
+        const revision=hash(JSON.stringify(state,(key,value)=>key==="seen"||key==="serverNow"?undefined:value));
         if(revision!==info.revision||info.unavailable){info.revision=revision;info.unavailable=false;socket.send(json({ type: "rooms-changed",revision }));}
       } catch(e) {
         if(e instanceof SessionRejected){
@@ -1302,11 +1303,11 @@ export async function createRoomsCoordinator(o: Options) {
       const body = await o.body(req);
       const operation = z.string().uuid().parse(body.operation);
       const prior=(await db.query("SELECT request_hash,response FROM il_operations WHERE app=$1 AND player=$2 AND id=$3",[app,p,operation])).rows[0];
-      if(prior){if(prior.request_hash!==hash(path+json(body)))throw new Error("Operation id already used for another action.");o.send(res,prior.response);return true;}
+      if(prior){if(prior.request_hash!==hash(path+json(body)))throw new Error("Operation id already used for another action.");o.send(res,{...prior.response,serverNow:Date.now()});return true;}
       // External evidence is gathered before taking the lobby lock. Revalidate its
       // immutable offer binding and freshness inside the transaction below.
       let evidence:{room:string;id:string;signature:string;snapshot:any;receipt?:any;at:number}|undefined;
-      if(["/interlude/offers/accept","/interlude/offers/back","/interlude/rooms/leave"].includes(path)){
+      if(["/interlude/offers/ready","/interlude/offers/accept","/interlude/offers/back","/interlude/rooms/leave"].includes(path)){
         const currentRoom=occupant(await current(),p),offer=currentRoom?.offer;
         if(offer && [offer.a,offer.b].includes(p)){
           const snapshot=await readEngineSnapshot(client,BigInt(offer.id)),observedAt=Date.now();
@@ -1518,7 +1519,7 @@ export async function createRoomsCoordinator(o: Options) {
             return {};
           }
           if (
-            path === "/interlude/offers/accept" ||
+            path === "/interlude/offers/ready" || path === "/interlude/offers/accept" ||
             path === "/interlude/offers/back"
           ) {
             const offer = r.offer;
@@ -1529,6 +1530,11 @@ export async function createRoomsCoordinator(o: Options) {
             )
               throw new Error("This duel is no longer available.");
             const proof=verifiedEvidence(r),snap:any=proof.snapshot;
+            if(path.endsWith("ready")){
+              if(snap[2]>=2n)return {offer,alreadyAccepted:snap[2]===2n};
+              prepareRoomLaunch(offer,p,Date.now());
+              return {offer};
+            }
             if (path.endsWith("accept")) {
               if (snap[2] === 2n) {
                 offer.accepted = [offer.a, offer.b];
@@ -1547,6 +1553,11 @@ export async function createRoomsCoordinator(o: Options) {
               if (snap[2] === 0n) offer.accepted = [];
               if (offer.status === "cancelled" || snap[2] >= 3n || Number(offer.expires) * 1000 <= Date.now())
                 throw new Error("Duel expired. Rejoin the queue for another opponent.");
+              // Older open tabs still send their first engine agreement directly.
+              // Treat that authenticated click as readiness for the updated peer;
+              // its delayed second agreement still keeps the engine from starting.
+              if(offer.launch&&body.countdown!==true&&!offer.launch.ready.includes(p))prepareRoomLaunch(offer,p,Date.now());
+              if(body.countdown===true)assertRoomLaunchReady(offer,Date.now());
               return {offer, alreadyAccepted: offer.accepted.includes(p)};
             }
             if (snap[2] === 2n || offer.status === "active")
@@ -1585,7 +1596,7 @@ export async function createRoomsCoordinator(o: Options) {
         },
         { player: p, id: operation, request: path + json(body) },
       );
-      o.send(res, data);
+      o.send(res, {...data,serverNow:Date.now()});
       void notify();
       return true;
     } catch (e) {
