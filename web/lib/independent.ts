@@ -1,7 +1,8 @@
-import {createPublicClient,createWalletClient,http,encodeFunctionData,encodeAbiParameters,keccak256,isAddress,zeroAddress,type Address,type Hex,type Abi} from 'viem';
+import {createPublicClient,http,encodeFunctionData,encodeAbiParameters,keccak256,isAddress,zeroAddress,type Address,type Hex,type Abi} from 'viem';
 import {monadTestnet} from 'viem/chains';
 import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
 import {createInterludeClient,webStorageStore} from '@interludelayer-sdk/sdk';
+import {compactArenaSession} from '../../shared/compact-arena-session';
 import {API} from './api';
 import {connect,rememberedAccount,type Identity} from './wallet';
 import {RoomsCommandJournal} from './rooms-command-journal';
@@ -164,6 +165,9 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
  return {client,feed,journal,async session(s:FamilySession){
   const d=await readHubDelegation(client.base,m.hub,app);if(d.status!==1||Number(d.expiresAt)*1000<=Date.now())throw Error('This arena is recovering. Your arcade authorization is unchanged.');
   const node=await client.status();if(BigInt(node.epoch)!==d.epoch)throw Error('Waiting for the current arena epoch');
+  const binding:any=await client.read('boundMatch',[]);
+  if(BigInt(binding.epoch)!==d.epoch||BigInt(binding.id)===0n||![binding.a,binding.b].some(a=>a.toLowerCase()===s.grant.player.toLowerCase()))throw Error('Arena participant binding changed');
+  journal.bindDirect(s.grant.key,d.epoch,BigInt(binding.id),s.grant.expires);
   journal.retirePrevious(s.grant.key,d.epoch);
   const pending=journal.pending(s.grant.key);if(pending){
    if(pending.epoch!==String(d.epoch))throw Error('A previous arena command is still being reconciled');
@@ -172,6 +176,6 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
    if(journal.pending(s.grant.key))throw Error('Waiting for confirmation of the previous game command');
   }
   const expires=Number(s.grant.expires)-Math.floor(Date.now()/1000);if(expires<=0)throw Error('Renew arcade session');
-  return client.openSession({wallet:createWalletClient({account:privateKeyToAccount(s.key),chain:monadTestnet,transport:http()}),scope:['input','tick','concede'],expirySeconds:Math.min(7200,expires),assertDigest:true});
+  return compactArenaSession({node:client.node,abi:arenaAbi as Abi,app,key:s.key,match:BigInt(binding.id),expires:s.grant.expires});
  }};
 }

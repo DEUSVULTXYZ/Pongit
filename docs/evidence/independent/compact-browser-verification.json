@@ -1,0 +1,75 @@
+{
+  "at": "2026-09-12T18:52:35.201Z",
+  "matchRef": "10143:0xf44c1eb74247547214c1901d981dd5e59601994a:2:340282366920938463463374607431768211511",
+  "players": [
+    {
+      "address": "0x0884847594453155f7d461526fa516291A9eff2f",
+      "retainedCommands": 16,
+      "pending": 0,
+      "actions": [
+        "input"
+      ],
+      "rawByteSizes": [
+        238
+      ],
+      "nonces": [
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151,
+        152
+      ]
+    },
+    {
+      "address": "0xA3402d5A1bA3bb71Ad3b53cB95FACB8c4216f4E8",
+      "retainedCommands": 16,
+      "pending": 0,
+      "actions": [
+        "tick"
+      ],
+      "rawByteSizes": [
+        141
+      ],
+      "nonces": [
+        173,
+        174,
+        175,
+        176,
+        177,
+        178,
+        179,
+        180,
+        181,
+        182,
+        183,
+        184,
+        185,
+        186,
+        187,
+        188
+      ]
+    }
+  ],
+  "scope": "Real hosted game through Chromium at an HTTPS origin; virtual PRF authenticators",
+  "published": {
+    "batches": "4",
+    "score": [
+      7,
+      6
+    ],
+    "winner": "0xA3402d5A1bA3bb71Ad3b53cB95FACB8c4216f4E8",
+    "hubStatus": 2,
+    "releaseUTC": "2026-09-12T19:48:12.000Z"
+  }
+}

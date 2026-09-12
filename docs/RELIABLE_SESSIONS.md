@@ -4,6 +4,8 @@
 
 The compatible recovery release is deployed. The existing shared application is running again in epoch 2. A real three-application hosted rehearsal also passed, including publication and independent closure. The website has **not** migrated to a shared Monad lobby with per-match physics contracts. Those are different delivery gates.
 
+12 September evening: compact game commands remove the repeated child-session grant while preserving the independent arena's bound family key. Real full Classic and paid Chaos now publish six and eighteen batches, respectively, without the earlier 413. A third HTTPS-origin browser match also finishes while those arenas close. See [payload mitigation and remaining validation boundaries](INTERLUDE_PUBLICATION_413.md#compact-commands-12-september-evening).
+
 Production application: `0xfd1693294fed77304662f08e827b043b0ba386a3`, Monad Testnet 10143. Gameplay uses Interlude; no automatic Monad gameplay fallback was enabled. Existing financial manifests and Mera addresses are unchanged.
 
 ## Recovery completed

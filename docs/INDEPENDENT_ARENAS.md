@@ -35,6 +35,8 @@ The intermission UI distinguishes point publication, preparation of the betting 
 
 ## Real hosted qualification
 
+Evening update, 12 September: compact direct controls completed full Classic (0:7, six published batches) and paid Chaos (3:7, eighteen published batches) on the existing v2 candidate contracts. The repeated SDK child-grant envelope is removed only for independent arenas, whose bound family key remains enforced by the contract. A Chaos ABI phase comparison was also corrected. See [payload qualification and limitations](INTERLUDE_PUBLICATION_413.md#compact-commands-12-september-evening). This supersedes the full-game publication blocker observed earlier, without claiming that the entire production migration has happened.
+
 The first candidate rehearsal on 12 September at 11:05 to 11:07 UTC passed:
 
 1. Contract-selected Classic and Chaos matches ran in separate hosted applications.

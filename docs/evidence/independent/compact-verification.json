@@ -1,0 +1,233 @@
+{
+  "at": "2026-09-12T18:44:59.910Z",
+  "productionMigrated": false,
+  "matches": [
+    {
+      "app": "0x4ce249014a54A8260Fe0b8C5A6fde3E0c9c8FfB3",
+      "id": "340282366920938463463374607431768211505",
+      "epoch": "2",
+      "mode": 0,
+      "winner": "0x3FB3d8A4a8bCBe302DBFaB4fa8fCD7e0B47eC9ef",
+      "score": [
+        0,
+        7
+      ],
+      "hash": "0x7af359720f150c559f0b5b73f839dff9098d601f1da88a039b05cb764211d3c0",
+      "batches": "6",
+      "hubStatus": 2,
+      "lastPublicationUTC": "2026-09-12T18:27:11.000Z",
+      "releaseUTC": "2026-09-12T19:27:13.000Z"
+    },
+    {
+      "app": "0x39259f34e209Cf00D12E1576f9F9eD9CA75ca69A",
+      "id": "340282366920938463463374607431768211507",
+      "epoch": "2",
+      "mode": 1,
+      "winner": "0xF905Aa2A9eb11028a4AeD582e6057BAf8674d652",
+      "score": [
+        3,
+        7
+      ],
+      "hash": "0xfcf816be44b92df9dcaa6d05f02f8d74c3ebe16d1e18fa79057525fcb287d520",
+      "batches": "18",
+      "hubStatus": 2,
+      "lastPublicationUTC": "2026-09-12T18:37:40.000Z",
+      "releaseUTC": "2026-09-12T19:37:42.000Z"
+    }
+  ],
+  "payments": [
+    {
+      "id": "340282366920938463463374607431768211507",
+      "bettor": "0x477C72B15f6CDaDa3de89F2eE8A980ADA34581a3",
+      "payoutId": "0xc5543752b0f7301e8d5344e93d06182f72af77029d0dde411f54db7bd14e406a",
+      "payout": [
+        "0x477C72B15f6CDaDa3de89F2eE8A980ADA34581a3",
+        "6000000000000000",
+        2,
+        1
+      ],
+      "position": [
+        "0",
+        "6000000000000000",
+        "3443407699269404",
+        true
+      ]
+    }
+  ],
+  "operations": [
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-grant-0",
+      "hash": "0x8b280fc6a5d24111ae7eab10c6f1b1ea1f8029b6409c008a1678c97cb64cbbc6",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-grant-1",
+      "hash": "0xbe5496a83aa691f592cebf18e40a5a3c3292536f651a8247bca6bcca90a2af2f",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-grant-2",
+      "hash": "0x5aa707ac9e04b4db5aad606dea88719463dad2c293ba98f6852085206db20e1d",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-grant-3",
+      "hash": "0x012801e84604ad971f999a12b538db5634b592f26b37d751fb38ba6facbd0c3a",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-room-0",
+      "hash": "0x655bb2c96aac9c17cb83aad52d6e9526c00711b0d4d04431470fcfe7a4608350",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-join-0",
+      "hash": "0x2a183f4b47cb115e6499b025c5bca9efdcf5e9b0da44550d182126fcdcf290b3",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-propose-0",
+      "hash": "0xc534e22b5bbc45247251a6692aa882c58899c24625598a0b7bba9002230ac891",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-accept-0-a",
+      "hash": "0x148775414cfcd77b4ddb877f835dfb1117536236b7f1c366e2db74f04b054e5c",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-accept-0-b",
+      "hash": "0x703bb4a2ded413a1530a88a32da82f309aa6e1e482362428ed070db5f5502d8a",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-assign-0",
+      "hash": "0x04ff4bdc5949683ce4056224371566eec8b6bb922a17331a8421b7fcee9beff1",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-open-0",
+      "hash": "0xc9a26127b37f7618e80563b5640b5dfab498ae9dac93c7a27b00b04a6b799f7c",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-close-0",
+      "hash": "0xc927b4f482dbe40ce4396359a43cfbf2f4f514996e01331a2c5301e9d0e2878e",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-room-1",
+      "hash": "0xcbdc66661d0eae2317a61879327639e1d83cf3a17edbfa5e97ac1635fdbce209",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-join-1",
+      "hash": "0x354e6718acc40e46856e8efad3bc4794534934fdfb2ea40c9972f4b503d5f360",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-propose-1",
+      "hash": "0x6b23f8687a49dcfec16a06a64f9330273a0f373085a87da55b2d35cb54d405cb",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-accept-1-a",
+      "hash": "0xdbcc2fac0b781d6b268cfb445e1874e81a8ca36237b3092699b1ea26e9bcff97",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-accept-1-b",
+      "hash": "0x802f4697e2401ff9d472f533bbe03f92c11f7566a157199bdccd06863b739ef2",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-assign-1",
+      "hash": "0xa24fdf1670fcffd5300722810dd2de8b8a985e3c469bd07e22a70fc7a0ff42b0",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-open-1",
+      "hash": "0x443c1ce1b6c09c19fa119722914fb1f6b79a1e951f3d7721d919ffdf945ab616",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:fund-betting-credit",
+      "hash": "0x218599cddbea9eeac44785bc7763b76a38796d02b92fe63cf406299232d36722",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-open-af1f6a8a2266ccfb",
+      "hash": "0xd7b337180c25b0bc3e8bee4d061b21d47e699e7e86a490fb6e6b7d46ac8dabd0",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-1",
+      "hash": "0x25d2f850bed4ce36f468dd6e22aff830c7591242a19ffea5650500b6bae9d4f7",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:root-signed-bet",
+      "hash": "0x1674875c79c1b4a3ebdb02b8128da926d801062fd87370bdfd64db22faca9f53",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-2",
+      "hash": "0xeb5e36fd504a91d50ad6ae7f9ef966d0d1cec0017a1eb565214f72c0fb1ffd78",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-3",
+      "hash": "0xc741c42fb68f2fe17c6b0a6057b37902df29aacd89958598d76b7db538458265",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-4",
+      "hash": "0xf4e4f288f1a88ab94366afc756597fae8c6fa5dae9073b7979d72e84e8ffc8ef",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-5",
+      "hash": "0x9f73b31e6a25a5a4a4059d327f861cbf8464b2f93e5cce60813aa08198af6645",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-6",
+      "hash": "0x3970dcacfb67a39916c080205b6f15e4e4089033b64260188e17fb86f22fd72a",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-7",
+      "hash": "0x01389558a9f94df34de24947b6b3b03fd1a72514dc2a8dd4067b21d90304ebe2",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-8",
+      "hash": "0x5efbf9d62e0f317eaf5bdb1295dc57a043c6e54a666bcbae0f8ef09f31b7debb",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-openround-c7258eeeea164bc4-9",
+      "hash": "0xbe464250e0b30c0b9c5a0897fa302cc296a6134a11c88a5ed7abbd7732f52585",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact:20260912:qualify-close-1",
+      "hash": "0xcf83d0a4f53b188d8cd2242bcbe14f331a50543342466470c98151a3afa69cc8",
+      "status": "confirmed"
+    },
+    {
+      "id": "independent-qualification-v2-20260912:compact-finance:20260912:finance-claim-e839bfd12421c0ad",
+      "hash": "0xedd3322186fb64fb37f102f3787704e6b52cefae26c3588d9b763979c7b2cea1",
+      "status": "confirmed"
+    }
+  ],
+  "paymentProof": {
+    "hash": "0xedd3322186fb64fb37f102f3787704e6b52cefae26c3588d9b763979c7b2cea1",
+    "block": "61973702",
+    "before": "0",
+    "after": "6000000000000000",
+    "amount": "6000000000000000"
+  },
+  "financeCursor": "61971742",
+  "head": "61973901"
+}

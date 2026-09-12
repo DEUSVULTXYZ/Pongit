@@ -1,0 +1,30 @@
+{
+  "at": "2026-09-12T18:33:09.875Z",
+  "app": "0x39259f34e209Cf00D12E1576f9F9eD9CA75ca69A",
+  "id": "340282366920938463463374607431768211507",
+  "bettor": "0x477C72B15f6CDaDa3de89F2eE8A980ADA34581a3",
+  "signatures": 1,
+  "checkpoints": [],
+  "passed": true,
+  "deposit": "0x218599cddbea9eeac44785bc7763b76a38796d02b92fe63cf406299232d36722",
+  "balanceBefore": "0",
+  "bet": {
+    "hash": "0x1674875c79c1b4a3ebdb02b8128da926d801062fd87370bdfd64db22faca9f53",
+    "shares": "6000000000000000",
+    "paid": "3443407699269404",
+    "side": 1
+  },
+  "handicap": {
+    "halfA": "48000000",
+    "halfB": "36000000",
+    "rally": 1
+  },
+  "balanceAfter": "6000000000000000",
+  "payout": {
+    "id": "0xc5543752b0f7301e8d5344e93d06182f72af77029d0dde411f54db7bd14e406a",
+    "amount": "6000000000000000",
+    "attempts": 1,
+    "winner": "0xF905Aa2A9eb11028a4AeD582e6057BAf8674d652"
+  },
+  "finishedAt": "2026-09-12T18:44:03.656Z"
+}

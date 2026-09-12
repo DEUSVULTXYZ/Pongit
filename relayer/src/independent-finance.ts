@@ -28,7 +28,7 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
   const published=await r.arena(e.app,'getSnapshot',[s.id]);
   // openRound reads Monad. An earlier published pause is not the current engine
   // rally, even if the calldata is identical. Wait without repeated simulations.
-  if(published[2]!==2||!sameChaosPause(s.state,published[12]))return;
+  if(Number(published[2])!==2||!sameChaosPause(s.state,published[12]))return;
   const rally=s.state.scoreA+s.state.scoreB,resume=s.state.resumeAt;
   const book=await read(m.market,marketAbi,'books',[s.id]);
   if(!book[2]){await queue(m.market,marketAbi,'open',[s.id,parseEther('0.01')],parseEther('0.01'),2);return;}
@@ -62,7 +62,7 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
   if(s.phase!==2||s.state.mode!==1||!s.state.awaitingServe)return null;
   const identity={id:String(s.id),rally:s.state.scoreA+s.state.scoreB,resumeAt:String(s.state.resumeAt)};
   const published=await r.arena(app,'getSnapshot',[s.id]);
-  if(published[2]!==2||!sameChaosPause(s.state,published[12]))return {...identity,label:'Waiting for point publication'};
+  if(Number(published[2])!==2||!sameChaosPause(s.state,published[12]))return {...identity,label:'Waiting for point publication'};
   const round=await read(m.settlement,settlementAbi,'rounds',[s.id,s.state.scoreA+s.state.scoreB]);
   if(!round[0])return {...identity,label:'Preparing betting window'};
   const head=await base.getBlockNumber();

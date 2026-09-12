@@ -1,0 +1,6 @@
+{
+  "scope": "Staged publication diff only; known private operator and fixture values plus credential patterns",
+  "knownSecretsChecked": 23,
+  "knownMatches": 0,
+  "credentialPatternMatches": 0
+}

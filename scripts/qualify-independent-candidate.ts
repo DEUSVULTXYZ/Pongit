@@ -9,11 +9,14 @@ import {chainTools} from './independent-chain-tools';
 import {engineTransport} from '../shared/engine-transport';
 import {EngineStream} from '../shared/engine-stream';
 import WebSocket from 'ws';
+import {compactArenaSession} from '../shared/compact-arena-session';
+import {probeCompactMatch} from './compact-match-probe';
 
 const path=process.env.PONG_INDEPENDENT_MANIFEST!,secretPath=process.env.PONG_INDEPENDENT_TEST_KEYS!;
 assert(path?.startsWith('/secrets/')&&secretPath?.startsWith('/secrets/'));
 const m=JSON.parse(await readFile(path,'utf8'));assert.equal(m.production,false);assert.equal(m.status,'sealed');
-const t=await chainTools(m.prefix);
+const compact=process.env.PONG_COMPACT_PAYLOAD==='20260912';
+const t=await chainTools(m.prefix+(compact?':compact:20260912':''));
 const abi=(await t.artifact('IndependentArena')).abi,l=(await t.artifact('IndependentLobby')).abi,f=(await t.artifact('ArcadeFamily')).abi;
 const hubAbi=(await t.artifact('IInterludeHub')).abi;
 let state:any;
@@ -22,7 +25,7 @@ catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;state={lobby:m.
 let tail=Promise.resolve();const save=()=>{const data=JSON.stringify(state,(_,v)=>typeof v==='bigint'?String(v):v);tail=tail.then(async()=>{await writeFile(secretPath+'.next',data,{mode:0o600});await rename(secretPath+'.next',secretPath);});return tail;};
 const report:any={at:new Date().toISOString(),productionMigrated:false,lobby:m.lobby,checks:[],arenas:[],rootGrantSignatures:4,measurements:[]};
 await mkdir('artifacts/independent-candidate',{recursive:true});
-const flush=()=>writeFile('artifacts/independent-candidate/qualification.json',JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v,2));
+const flush=()=>writeFile(`artifacts/independent-candidate/${compact?'compact-payload':'qualification'}.json`,JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v,2));
 const roots=state.players.map((p:any)=>privateKeyToAccount(p.root));
 const keys=state.players.map((p:any)=>privateKeyToAccount(p.arcade));
 const wait=(ms:number)=>new Promise(r=>setTimeout(r,ms));
@@ -86,6 +89,7 @@ async function engine(index:number){
  assert(ready,`Hosted arena ${match.app} did not expose the prepared match and epoch`);
  const pair=[];
  for(const p of [match.a,match.b]){
+  if(compact){pair.push(compactArenaSession({node:client.node,abi,app:match.app,key:state.players[p].arcade,match:BigInt(match.id),expires:BigInt(state.issuedAt+7200)}));continue;}
   const session=await client.openSession({wallet:createWalletClient({account:keys[p],chain:monadTestnet,transport:http()}),scope:['input','tick','concede'],expirySeconds:Math.min(3600,state.issuedAt+7200-Math.floor(Date.now()/1000)),assertDigest:true});
   pair.push(session);const key=storageKey(match.app,10143,keys[p].address),value=store.get(key);
   const at=state.sessions.findIndex((x:any)=>x.key===key);const record={app:match.app,key,value};if(at<0)state.sessions.push(record);else state.sessions[at]=record;await save();
@@ -117,6 +121,19 @@ try{
   await t.submit(`qualify-grant-${i}`,op.data,m.family);
  }
  await makeMatch(0,0,1,0);await engine(0);report.checks.push('First contract-selected Classic match hosted');await flush();
+ if(compact){
+  // Independent real execution, never the production manifest. Keep all raw
+  // commands in the private journal; publish only byte counts and chain proofs.
+  report.compact=true;
+  for(const index of [0,1]){
+   if(index===1){await makeMatch(1,2,3,1);await engine(1);}
+   report.activeProbe=index;await flush();
+   await probeCompactMatch({client:clients[index],match:state.matches[index],send:(side,name,args)=>send(index,side,name,args),t,m,report,flush});
+   await published(index);await t.write(`qualify-close-${index}`,m.lobby,l,'closeArena',[BigInt(state.matches[index].id)]);
+   report.checks.push(`${index?'Chaos':'Classic'} compact natural result published and delegation closed`);await flush();
+  }
+  report.passed=true;
+ }else{
  await makeMatch(1,2,3,1);await engine(1);report.checks.push('Second independent Chaos match hosted');await flush();
  for(let n=0;n<3;n++)for(let index=0;index<2;index++)for(let side=0;side<2;side++){
   const s:any=await clients[index].read('getSnapshot',[BigInt(state.matches[index].id)]);
@@ -134,5 +151,6 @@ try{
  for(const index of [1,2]){await send(index,0,'concede',[BigInt(state.matches[index].id)]);await published(index);await t.write(`qualify-close-${index}`,m.lobby,l,'closeArena',[BigInt(state.matches[index].id)]);}
  assert(report.arenas.every((a:any)=>a.appliedFrames>0),'Applied notifications missing');
  report.passed=true;
+ }
 }catch(e){report.passed=false;report.error=String((e as any).shortMessage||(e as Error).message).split('Request Arguments')[0].replace(/0x[\da-f]{130,}/gi,'[hex omitted]').slice(0,700);process.exitCode=1;}
 finally{for(const stop of stops)stop();await tail;report.finishedAt=new Date().toISOString();await flush();await t.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}

@@ -93,6 +93,28 @@ contract IndependentTest is Test {
     function _finish(IndependentArena a,uint256 id,uint256 loser) private {
         _engine(a,loser,abi.encodeCall(a.concede,(id))); hub.publish(address(a)); lobby.capture(id);
     }
+    function testCompactDirectControlsKeepBindingNonceAndRevocation() public {
+        (,uint256 id)=_room(A,B,0); IndependentArena arena=_open(id);
+        vm.chainId(4242);
+        vm.expectRevert("unbound arcade key"); vm.prank(vm.addr(A)); arena.input(id,1,1,block.number+100);
+        vm.expectRevert("unbound arcade key"); vm.prank(vm.addr(C+1000)); arena.concede(id);
+        vm.prank(vm.addr(A+1000)); arena.input(id,1,1,block.number+100);
+        vm.expectRevert(AutonomousGameBase.StaleInput.selector); vm.prank(vm.addr(A+1000)); arena.input(id,-1,1,block.number+100);
+        vm.expectRevert(AutonomousGameBase.InvalidMatch.selector); vm.prank(vm.addr(A+1000)); arena.input(id+1,1,2,block.number+100);
+        uint64 deadline=uint64(block.timestamp+30);
+        arena.revokeActive(vm.addr(A),deadline,_sig(A,arena.revocationDigest(vm.addr(A),deadline)));
+        vm.expectRevert("active authorization revoked"); vm.prank(vm.addr(A+1000)); arena.input(id,0,2,block.number+100);
+        vm.prank(vm.addr(B+1000)); arena.concede(id);
+        vm.expectRevert(AutonomousGameBase.InvalidMatch.selector); vm.prank(vm.addr(B+1000)); arena.concede(id);
+        vm.chainId(10143);
+    }
+    function testCompactDirectKeyExpiresWithoutSdkWrapper() public {
+        (,uint256 id)=_room(A,B,1); IndependentArena arena=_open(id);
+        vm.warp(block.timestamp+7200); vm.chainId(4242);
+        vm.expectRevert("arcade session expired"); vm.prank(vm.addr(A+1000)); arena.input(id,1,1,block.number+100);
+        vm.expectRevert("arcade session expired"); vm.prank(vm.addr(B+1000)); arena.concede(id);
+        vm.chainId(10143);
+    }
     function testCancelCapacityWaitDoesNotCancelDelegatedGame() public {
         (uint256 r,uint256 id)=_room(A,B,0);
         vm.expectRevert("admission participant");_call(C,abi.encodeCall(lobby.cancelAdmission,(id)));

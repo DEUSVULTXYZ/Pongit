@@ -1,0 +1,1675 @@
+{
+  "at": "2026-09-12T18:25:36.071Z",
+  "productionMigrated": false,
+  "lobby": "0xf2dad62750aab9eab849182b325211145f663174",
+  "checks": [
+    "First contract-selected Classic match hosted",
+    "Classic compact natural result published and delegation closed",
+    "Chaos compact natural result published and delegation closed"
+  ],
+  "arenas": [
+    {
+      "app": "0x4ce249014a54A8260Fe0b8C5A6fde3E0c9c8FfB3",
+      "node": "https://il-4ce249014a54a826.fly.dev",
+      "epoch": "2",
+      "id": "340282366920938463463374607431768211505",
+      "appliedFrames": 128
+    },
+    {
+      "app": "0x39259f34e209Cf00D12E1576f9F9eD9CA75ca69A",
+      "node": "https://il-39259f34e209cf00.fly.dev",
+      "epoch": "2",
+      "id": "340282366920938463463374607431768211507",
+      "appliedFrames": 119
+    }
+  ],
+  "rootGrantSignatures": 4,
+  "measurements": [
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 325,
+      "hash": "0x5deb9ae60dc9e88d94d6becd9247d59e2e615e815eafb1b5f2e0bcca98b1712f"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 266,
+      "hash": "0x78cc4f56987134a37bd40e4892dc3ae111c5fab8ea484647653410797c30a0a8"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 334,
+      "hash": "0x42e1af07e34d252c11d5fa7fa6548d776e234aef05374de52e616f210d58ece7"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x0c147295848161800c47363d91ff2d6b771e04e5c918155419b467b8d73c9f2c"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 100,
+      "hash": "0xfea38cfa7c74b9b3438d9fdf132563946a45bfff4763bfbb3d36100bd6ac7f50"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 102,
+      "hash": "0xc3dfb98c43a89d407efc152b53159023038b5b019703ca77179d66c49066760a"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 105,
+      "hash": "0xa940f1515bc1d8e825943ad70fe25a4828e8ed58edb20ce180b321e15fac752c"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 121,
+      "hash": "0xd479611254f5c868400473a6df0d2ade7d11e23fe5369060abf3f5fe45863f95"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x34c53de6d4e05e6bdd2b694765facc8ca7eb4eb4f841642d495b249721e89b20"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x1baa874586130d8072b885dbad6e07843d2079e8a34d0d2d83fc32995d18506f"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 99,
+      "hash": "0x333ca1021f73cee4647d9e62b48793f9a71264428e896f710bf4ecdea3aa5514"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xd8c34daa25ae4d1c2b012dfe0fb0272571664d9f169f6c9520d9726f54a97b99"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0xc3ce25ca50508a98ca4185e474ee05a953748fac8a06bfe4c14da047a5d1e789"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x9a886cdb66a684e80c72072203c41d8905ad450c8972234df7d6d740f933c77c"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 111,
+      "hash": "0x8bebd6e5b0423f9fffe946ab03297bb03ef73c0dc8fe13a35bcb976eee80de63"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 109,
+      "hash": "0xe3c96d21657631e19dadcbe6e092752944c99d7fa7d13ab0f4b2787880c3e899"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 110,
+      "hash": "0x019312534b4a7086f106ef0b5b607ca62aa0eef1425f22cc0f119312532c3b0d"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 102,
+      "hash": "0x5cd4c70bda8c3c6178a915a6b476dc0f8cb9e8c39b81a2f6c392de6b269e5e4c"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 105,
+      "hash": "0x83a449740f5ddb1e26529880ab6166376ea5b70e7f251603fc1cdbef77bc6157"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 109,
+      "hash": "0xef27555959b69be56463800562a798672608ba85a8fdad393ba84d183d12d8ec"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0xdd0c1fdc80e76876867bc00f878be213dd673ac98bcc0eb3ea3d07462bb24355"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 99,
+      "hash": "0x9a1a89553def56a04a4c41628f4d688ab9f475ec383812568f13449e9a2b61bb"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0xd87910f6a87ecd07b21513ed7d1fb03494917bc20048f94b46f5bf6227e4ec39"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 100,
+      "hash": "0xdb9d15e44e6847275b9993fb837d9c32256811a61c4abe64bdfa0ef434f800a3"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 102,
+      "hash": "0xed087cce720745c910ef18b1023d62e36e741034c61330a4d621f37c02e461cf"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 100,
+      "hash": "0xd855ab843d8b322f889b3b2f479cd162475ce8a5ae02813d3f88a33d2db978ca"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x304cfa4354c177a9cf042521e04f42600acf19d3e746a0db9cb686f24dd9b425"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0xe489ce3e3c46c3daf1ea299a10eada6cde7d4d3fc0a3b7d46e32f59f74bd8f27"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0xa2ed544b77db5e1957edaea839b1c5f4ab6cb323c292ee3d848c068542cb9c8b"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 101,
+      "hash": "0x1aac5a7ac4fba38a30b31ec1470c174ed0d5fdc227f795cd3ebd8b7ddbbd9b8d"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 100,
+      "hash": "0x8a928854178a9a37ec8332d23134f16c09ea7a26e7c41f96c367cf735da6ef69"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x32c002a5ed42ae01d20bb36ac2c26674e51402f52b671c7212e705deb36c2f51"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x82d570304c22f0abf50a0b98ab9154f4014a979b8ca27442f197b9b9b12a5624"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xb4ef9e012fd74312f0318474fd9e5c19067455ecf7533764077221cdd6f9aed0"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 114,
+      "hash": "0xa7e7033ad15389eb9b79d6d8f60dfe85cc153005172e56cffc28dd2835896676"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 99,
+      "hash": "0x245d637dea66764b974c8ccf11ceefc2fc369ec45508c00e74917becefec7b25"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 109,
+      "hash": "0x5cc3cc5217a9881ad64e6a3de208085b323715cfd5182eae6051963437031f07"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 111,
+      "hash": "0xeb7380fb3ca90e8840e1b63c35df5d4a483b8297232e839a3fe0ac38c89fce7e"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 99,
+      "hash": "0xa60bb736c2ce156c6e61b5488953ff2c1b4940fd17cb3fcd2f3892a2498319f5"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0xd99a8ca24c378b25c1b455960de3a22dec15d5a4fa65845418856d710036cc23"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0xd866b4bbc0aaa80548bb7239e57ee6e53a5ff916105c097b4f59b29ef53e37db"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 110,
+      "hash": "0x0f3132797073ef3a6d2186cddc9f3a381632a0ad8b0cb0df34e2dc0f4093c4ba"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x2f00ab12207dfcbe2bd3430c3ba41cb7784f8add0fa3ad2b1a671e1d13779c9d"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 108,
+      "hash": "0xcd685e6a815c19762a35da777fb9a3dc33786796f80a38d1e778fd007928e12b"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 102,
+      "hash": "0x69bbb77dc6ae84d131e06dbe81606df983e8a164bf1cff84efb9df289137e61e"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0xd64618ac288b631b24001682d1671bf581d1b3cd5a2aa351a4ffbfcdadac9a48"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x78031678ee264481a496675b8b1dd272284b22d96ee59114965a2539aeffb6ea"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x32c86c751fc09d48625ec53f578c8b00967ce7e238612415cddcc2c2efaa4853"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x201d2ff5af10b19a27cc2260e77cb80aa5158ed7c2b2cef9c7b56e016f27fba7"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 109,
+      "hash": "0x28a112e55a8727da2846267004a21e4baf678bd78e6006f3acc50c3639407daf"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 108,
+      "hash": "0xef1335c7e0292e5955184c50789a3a48de8cd69550ec639f42aa3d0f1075447f"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 109,
+      "hash": "0x231f8fcb7ddecd79d5055293b38a38986b0dfaad9ad636f4d7d19c8277511e23"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0xc782a2e76c8d6d4535bb72ce513b7abd174bf22f8d95dcfec3475f85663f0d7a"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x011abaebf7dd27e0551cd53a71f8ed8ec42f952ad1133ef15398c1ee9d0dec39"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xa57bf35f82ab3f163807c8452beba37c18d440ef71823cad92b1e51324489975"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 100,
+      "hash": "0x932e86ea72b971ea8704963d50c145b22ae1db03f73ccd32ce14fd0808b9ce0a"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 113,
+      "hash": "0xc5a444540653a542d6e74a0867fc89f8171fe4598b927dd40f99842eaa020cab"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 100,
+      "hash": "0x24e2a47c76c6686ba08c25f9725287e02371995a8fe59a8d3ff847ac6d513196"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 108,
+      "hash": "0x2970b9a929a1b293e2c22ee874f8ae53c6e112d2957e82739535d7045cba253d"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0x7c10e9fd921224af88d5b12d4f7c08488c3660bd68ccb94ccd254c65ebd1d8c3"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0xcd9dafd53cb6740096750ff77a1db2bb4d80c234b40fda7f4e4db5ab0de4a9c3"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0xce7ca0cfa8b88b34e5e74f7a7d9b2d0964f40925abe6feeacc0b21c6f2bb7610"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x3bc6f81ad6de766a7e8cbf5281708573550175eaac0135085089783a5dee0353"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xe3a25e482325d087a53631e208aac5deb2e81c383f9af77bb2f4a11a26a0cff1"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x6c672d1bfe130e29e1adc9f4a81f488cf5a93a38cf530bcaee30d3c2f1ce7380"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0x54231356775a38f2724a0d8a0ef76ad3f5ba1d7fca73d4f74d35e3e8a2502dc5"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 102,
+      "hash": "0x01e88d90751435cb91e4f5df4103214f72ee811860fca676a739d400692ad389"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0x725ce629b3872e5f51de1602c49443267d6d23d26e4154793065a3cf72fdcc12"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x5ff59d67ae14533e070011a7a960cb825cca410fe631a1364215386da1f5295d"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 107,
+      "hash": "0x7c74e4306260b6d572f2772ead497e13080d71a0ba5a7e711144fade8e70f619"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 113,
+      "hash": "0xa416fdaa444192fa2327a58acfa02895f3e28b878e870297e326d4177de191ba"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0x84195f8cbbbe48b2b93d0f96670ad44c53f08ea8192a03c023f67da10bb7b6bd"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xa1fcd6dbdd65627edbb09ea9ce10291b314e44b91d4097ccf9eb903f7aea7a1f"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 105,
+      "hash": "0x254f8a3f334990eb7c19743487215c0afa0070ba4c9ef83dab622ecf25e32965"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0xc47724cb2b30659bba8aaabe5ea553eccf187f5d9b24d865915103c768f0d929"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x7eef1316c9437a479ef095f48f4be8d05fb3a022be3092bb1628c26959e4da6b"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 99,
+      "hash": "0xe9c2cdb0785b71b54a872b6444e28746eb0768a22f0492e3d82966c0f7cec14b"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x11d6757c10389ee94640f94a3d266ae3a82dbdfd63540a10f2340f2ec9966058"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0x4dea98d3dd65356dd06df9f8ed71f09395217c9fa325956a828844a15adfd6f6"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 100,
+      "hash": "0x107d70032c63dafaada799e3af9295574e11d0581c48d6ce28b853e95f5bc7cd"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 100,
+      "hash": "0x0c80478e60fd00daec81fc1507be4a1d435c951638a7850ffbf4bd100e1deb75"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0x31147508978116b89ab11c06aeeb5f959cc052d9f541227185bcdbc277b87eca"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xb140b2913587f5fcbabc51d91f75d32fb321586ad2a2a814b807e95cc77aeb89"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 99,
+      "hash": "0x8cddb026d10696f1562db4da0b6f5e41d503a84e499c37407d86808be656924e"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x0963948af2141418f4ddd80222bf7d61f03a1752b497a5bc65acf2cb17d2c715"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 100,
+      "hash": "0xca97d1c9809ad1fc6a097772ae92fb9a9083a5b1e7c03ba69afac23bae9e547b"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 105,
+      "hash": "0x21d377f9256e1cc2ea0c455cc61d7a75e48c66b77f486a59ccd966f3f3e2f614"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x18d19989b4d1fc65451eb6b6028391566ed152299e1bcf0664d0787f080f39d5"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 105,
+      "hash": "0x61ba1cad60fae63060cf10b34435852a58d7b207241606ec00434557ec5f1eb7"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0xad9b2976e891fa529d662e13d7410cb79c028ca513484801f305792db8ff915e"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x32a712cdb12cc38826a0a8afd6b504ed1953ddd571f55589bfaddc1c776b32e4"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x99d0467580c86c46706ce3d6e2ce12e099b93eef5d44e9372a0691fa91ea74a3"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 99,
+      "hash": "0x502af463abdff6ea27c32c52b905bd938a872fe006476177201bccee6dd95562"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xc8b10a358ba740dfb0d7b4f56fec3f6a48ef0d5fb434b036493ebc1b21f55bb4"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 99,
+      "hash": "0x629f3f1accefbdebced003d4cdeac88cd1d3084bc74806793a54d194d65880be"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xc0d2a74b40aa9017ddb2d48c1bc2ca2d04ca4a9d3916099fbc17792272dd6159"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 99,
+      "hash": "0x537da81324493c22a9cf4d54feea438a2972396382f26439ab2cc9924c38073d"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 100,
+      "hash": "0xe541b0eb674a3a08aa5fa576357e4334e868a220e4af4adf676a07c9832302b4"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0xe8426dc0517f62bf05d115c46955c87d0d9516f60feb8828d042b25223657230"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x881b608b944c8f51351bedee2e553c1a8009fa37d17d494ba096c16fce57f96b"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x08fdc813659f44ffd71ee8eecb0bac09185a92a377fdafc74ac361f8cd7a85ce"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0x7fb1bef6a7614407dcc8861d8d719f980e2ee853bb7d2fb7f46700712cc552ec"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xbb5578d894e8f6e2d727a5bb00c45d05ec3986f8b4edd86d22a45f4a6310a92f"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0x6f2be961c38be3fc5db52e0ea2daf44b57807821513716e85b32fe5faae0db35"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 110,
+      "hash": "0x76e395aa363adb6d2ede0bc6119955fba040385c4a9caee00cd4dad6c7334101"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x009dca488da5d1565075a62d48e335339f980e15b50cb93660dadcc12c8673ce"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x6e31a4ad3c198787cee4f8f3f85dd224853a3ff48bb811c15a4127514cee4eb0"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x425510d84c0f54cf3e034df7fee077749d59ccd556afda0db866437d8ef1d567"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x877a37de1d4cbcf022c0407d3ff6dc5795134ea7d306d969ea483c4541ba0a98"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xb5aa51b4040a3ee68460c6c839f5302cf9c5688d1c4ca55da47f4b590482df1a"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x599c8c2db5031704d00f8be3c71b48bb95b7e3a241caca7a627ac2813a313a56"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x7015fbb0717835d605de3f278993e3a3dffabac95beb76f01a7260f90a440194"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 102,
+      "hash": "0xa49198fd6d9c629a0b01597c9928b1cb7a38fdec4830ac780815da8339e8416c"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 101,
+      "hash": "0xdcca189ebbc315b130c75d960992dd8a49298d1a1e17db2ba1255a0b1f2d972d"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x9e6bfb60706d2929d4ad6ecccdc5b9e72f9e3c578d5336e342dbe80512c9fd4c"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xac316306ef1743ae30166d2a4455bf190fd8d14dd84e156d641baa4c05a08b49"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 109,
+      "hash": "0xcfb2ae1faa15baace56b7fd58260a5d67c977386d51043d62c1cc7700c442d48"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0x32c8519e757ee7d7d4f0147238a9595e7e76af79a3a4fc09949065d6d75d4f01"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xdcf2c64a9c305fd84b23b156c0a58b42cb70be0f36c49db3748dee7703a45806"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0xa273bceda3daebd15eef7012751b6a206b3eb0205384185194519c4fc59c3a7a"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x84896a152b561550164cb21beaf840476643c2c01ec855a9e892a7597dbc4538"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 114,
+      "hash": "0x079aa8643c1695aa631c37114cb5b77289d21519634bdab1308bd453acbbec0e"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xdab04a41bb0617e318ea01cd385e0b6b5f5a53e1a651df55a6fce45f30b04488"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 99,
+      "hash": "0xb7cad3448d4ce31591cb2b5f02ddc00886db130dc7f356c4cebcd7838d918a49"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x134d9cf0dcfc898c23fad5eb37da8dd495cee5fa0a22875d870f512c3bc8a327"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 101,
+      "hash": "0x7c596f9dda1dbc594bd30fd77bf2d69ccda4575eb0a79789ce6e4eb6b22eeff5"
+    },
+    {
+      "arena": 0,
+      "method": "input",
+      "ms": 102,
+      "hash": "0x4a970baaf4870662a1ba29a69658d4070d0060ba7171b03f0c12029031656696"
+    },
+    {
+      "arena": 0,
+      "method": "tick",
+      "ms": 171,
+      "hash": "0x934031a06fc9e1213615328f3a5a69879cddb783470d63846992a36822e994f8"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 231,
+      "hash": "0xa5debcfb8a8822a76426e39b6cfd4c98a1634c1dfe5d12d22ea4f8044ba57b6f"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 267,
+      "hash": "0x15237f95e23f698ab61168b1edba3e70f626e2b10c77f10e3f96970354e7e9d1"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 110,
+      "hash": "0x88cb015ef9dbf47103e1033e54524be5186a3ee2a92a06633e26dc44c2b02b71"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x8707a131e2491d23c7af1b389b85421619a76490fe7deab15aa03738e048e4e5"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 101,
+      "hash": "0xeeaddf48e7064370642391a88e00701f2d9072d830864ad901c80f63a18067f7"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xd4548a5770f47cdeb152f83d3e73bd2695a1954c9bab97c9583fa4446f1eaa25"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x7252f622f7db6b460896e53004b16b28b88ecac2ac7425ea975181e2044bbdc9"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x802f6db28e10e087d77442882d1ede08af2b4bf432ffc4f26fbfd66275932b67"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 113,
+      "hash": "0x07b4d99152f6daf15d4c17501358bff3fad1d75c9e06f282c477ebbd5430d829"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x96476b5c78624db9789a9637f49fce8909b78fba4c626b0068caf021d92d553a"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x4d6bba21da4e170f0a25aca12e7d81a970df55475bb04163a0922e8433ce13a3"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x0456fbcfa1ff0ddf8238835edc771ea859109795bb7cd172e220a9ad6531bf08"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 105,
+      "hash": "0x48a0a898a1358034a06f3c50958e39ad296e1044a5527d4e0ead11b7a3479281"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 109,
+      "hash": "0x3b79d03e31e18b41e8a48e7ee6e414a7536838852fa028a15ef837f2019a26c6"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x5aaa9645fa9a69baa745a35ee1bca0e4138262a3a46930a9caeba3486ae6e24c"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 105,
+      "hash": "0xa188414625fa0f4c16b169193e1e423b7ea46422988b9ca909996ede95ac7979"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 102,
+      "hash": "0xe547dc5433dde69ab0a465d8ef620b16b9a441cc6ceeda59cf34b8d0144a7251"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x56362c5a96cf9ef33a6d8111bea306e2c1b060d780376349f58bcc8c8ca90ce3"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 112,
+      "hash": "0x3cbcf81262cf976300dac93588577522e20bc531cce657d39dbdf3c5a8b2f37b"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x52b87f7230079c9f1e47814001176f8fd1dac106c928463835f92e4518bb584c"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 103,
+      "hash": "0x87b3d288fa3cf3983b071bed7f323962c5b98cc22dcf45acc6e2bad47544a765"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 107,
+      "hash": "0x5bb8d101e5094da127b68ebc6907b2a67c66cbd8c988a6bad4799bd50aa2f264"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 105,
+      "hash": "0x91845264c2d9376ff9ebd586394a136d6a8f026215c5492e393d2ab4f538756e"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 108,
+      "hash": "0x81d2d24e052de5560587cf2596f534fb80ba8c44f48a3f76075b9ad240e96285"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 115,
+      "hash": "0x3ff23ac7af176ca585f8526b6e35b623e6b583cbf4cf25add80deaa7137e1592"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 109,
+      "hash": "0x1abffa44fdf56ea0fe8a3bfb13eab46e03284326c850d73cd79366d80d89a8e2"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 108,
+      "hash": "0xf4a26bf90e13274b789d1a538b507fee72e5e31e16dc13ce42a36b9f909380b0"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 100,
+      "hash": "0x4dac4c06dc129df5ce32fe16f8c36b7d0a7532cad007f339edba70a26217a423"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x016086883f730bcd9c940daf38a4651b12d3a3cdcef88044018d2cb3a88a4a31"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 109,
+      "hash": "0x46f10781afb4e212d49dc9c33bb9f9a342fce627fdad23c0003fec82de892f81"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x4f1bdb24c83901a808cbc48ac170ebb42810f2fe549ea6ad497a0f212e69aa85"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xd3279e6bf5c5bdabe338a2f9b497f4f5f29a421e7aca7e472cf3c4e7f664271b"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xd700fe09aef344d17835e9981750df18e4e2b5d503836e017979414cf843daaf"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 101,
+      "hash": "0xbde4dc4750f775de8c7270f82277e06b04404e07a80f6b7d1fec0190c184fd2b"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x473fa89c03152e79cd30edc902420e8a8c01ceb42cf0db30db4b36bbe20419e5"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xcdbf375fc1ce8032ac38c10f3b1a184b0a019843a9a90cc410ac17db695bf621"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xee7720641ba7e04413e7391b3aceca6e523c79533f2711c0e01e7815fb673a6c"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0xf7a5b592b6257d5adee758592cafa445ece6e5f514ece04eae9f0cbc92f59a57"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0xff08ee443e133ade22511ae00baced3e82ca7c14f81b8ae59af963df43ed2f96"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x449a9928657d5d255736d40b8565c2eb04a438a27bcae4bc845c40ece77722cd"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x8013d871de355cd45542bca143e216399550b5718f7d547e7881ed919e3d7f7b"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x45578cd21a2f4b339a2d1de1edb1bc1552f7d6897a774523ac2b92a6a1affbff"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0xbffc5e6f4ae2e1141aadd31ce116e01cb6ddb2333bca14fc2a8571a78c726d77"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 108,
+      "hash": "0x91210b3ceecdcc69808e285c11a967536efaca8ebd57c270fd2491a0c2a6e942"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0xf13f996c2901a7e46c98eaea6ff58cd99421c6ae21d72835b71d8d63691dd3f7"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 101,
+      "hash": "0xb0d386bf06ae1344d887c8524698111aed28e95f3a7b85d13f0ceb88a73b4bc6"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xfb67f486f715a8fb2790444faf72a23a4bce6ac9ab8a9a6bf5232bc3281e801a"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 101,
+      "hash": "0x686b5514fcfef286ea9c7dc0083bf5fea53310b7dc7a0a74077cddd8328b8663"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x40db7e6d86ae27b8c72bd67e42fdf9e555b8bd99c9d9531f4044af7ca295c789"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 107,
+      "hash": "0xfc8f1f3513c81efb04403203748f7f58c0d6f84c247a7917538e8e7e5aa9bff5"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 107,
+      "hash": "0xdec219ff4e12f43e037a30289e1172ef1022dd2ead2249fcd419a551b3e3e1ea"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xc0b7f5aadf47bcf7ec7edece0d15977ffd777934834174d9b8d081cbda665ed0"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x0abaeec42d0ae1e21fa0cb9e7a259c1c8e63e044f7c851e74150407bad00bf8e"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 101,
+      "hash": "0x8b16431cf24ddb7869309ead23d0399f1e32dede7a6fd4584b4238d31f0c29d3"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xbe63afbb80bfa48381fa398b93883f9e72eb885ea166e2668801f47ace6170e8"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 108,
+      "hash": "0xf393bf026763d992d9390594286fc805c90f6ce56638958c571093f1b834e80f"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 101,
+      "hash": "0x0d752363793221eded41a509ee08d2063a47c1c6c9695e4c674374c024131a48"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 107,
+      "hash": "0xaddf6a30a7b039164c2dcc21a357a8d44d6aa5358b73c1d276bf91490766fc12"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x3f071b9dd3f75ef28bcd66fa71e079e617033a5e753004d182287db2e2d94cb6"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x9bcd285b5df53a3c91c193f3ebfacdad2d3d3c9217730c6cd1891389f0be0485"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x091b301a310ef469b49057b9689d44a4ebe1e11f5d6370c4ff69c9f99edd6af2"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 102,
+      "hash": "0x6e2ed2f68d5bbb427b2b8ffb690e019af18e7be43c8a051253815e4b7770e02b"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 105,
+      "hash": "0x0beb8e250a6bd98911d6a95aa86ac5efa3d67af60b419e1995b3ddaaea6bf00a"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 101,
+      "hash": "0xd3629da04f08c2b56d3f9e181d2323df0a0ac0fa43428dc2c9900c03e0013e14"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x3d8f7fa38a0484e2c0df60f6fe3cca151cb635cc179a19a60608f927eb33ee8e"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 106,
+      "hash": "0x27e711ba83f7d2158907ef12bc5948a498bf822d783fa827a58e3c65939fc421"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xcd899b7cc39d16e8854ce9b96588e809202b24f3aeb3ae1b542d776e6202ad54"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0xae478c9c5e1868dada1de835adc9fbbf2e088a8da81303bf14d2237b9d40d5b0"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0xb4a9606a29ae764fbe0633c1ae1912029b512fde05a364be89cf25fac36f253f"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x04451f1bd44614565dc2f25a32ef0576e9b63acb3d69eddd84f3f2fc8901b67e"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0xb99d8dd7ef4d7d1a470ea83043390ef0746c8c1aea54da418e4009aa8a793bc7"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x25112b49db344b9c1354bc6acdd557a3623605b7843071fcc90dc07fa4b7c619"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x2dc553bdeaec98f0302cd95e28098ba62f81e41d562433512539e43e015782a3"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 104,
+      "hash": "0x4986d4b18b81030ab2725ec934880b1068634aee65cfba00e7a45ed45667c660"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 107,
+      "hash": "0x15e3d0c40361cde499de9e6840c4e061355fc9970ac313f32c6c465933e986f1"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0xd81d821fbbbf4f5a70f0b3dddeb00a996661beda0caa523b9921e12f7895e291"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 101,
+      "hash": "0x06a78ad2c6d7325707e7fc930c49832748799b37579a6301d5ebffaca206a374"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 109,
+      "hash": "0x875e3caf44f373ca3490a6f81b351f1c6553b6d2c843ee026e6e1927a70bd2e1"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 107,
+      "hash": "0x36144aa62556b3a42c8fb13d5bcd32b250c4b6766c71e6293401d6c18ba7a1c5"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0xc8d4195e18a1f0244e487fb206e00e909991233a7088484e06ecd0a9c1fe6ce5"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 101,
+      "hash": "0x12ee9b5b395d31a478988c78b348bd80f901cc20695469807f522b9e0d10ac48"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 106,
+      "hash": "0x8a943d00137cadbc35a89fb8498decd7ce26508188af604a908fa7bac649e993"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x6728f1395ab526798d1d6d54b34665c4eb69c5be80c352937e0c0e02de2ccb60"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 103,
+      "hash": "0xb96b8069d41c55078df2000b9aad87f1f7f5ade4ad7aa1fd8df24e58b42f1ff9"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 103,
+      "hash": "0xf1d9759d64da1f2e7fb530e8432598cb9657d09ae25e0e76d63d3e34e0389384"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x11c89755547c1284df378f427864b1f38a5e9c7e771a9113911bc18df94a2d23"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 105,
+      "hash": "0x2b513eb354407e62df2aab5eaccd1f432e8da292b64412f60bb65c6c7af3d3f8"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 106,
+      "hash": "0xf67ee5cc48c1f636955a6bdb6aa95e0f0f93fde4af1bb4a676db3249b5bb8462"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 100,
+      "hash": "0x512b0df7e20067835be9c7896c3c165091fd94f50336be86176a1106fc88f9e4"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0x8251e45efad6dd7415695997feac249432ac009aeb427d1ffd07458375a7aece"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x690eade8d7acb4486d7892513cda6be1a3cb8a4fa5c7f0eebb42c1ce90f0493d"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 100,
+      "hash": "0x60d701a3e3630e80aa02a2649f0394872243b98e0b40c1c323c157a5f1378ef9"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 104,
+      "hash": "0x47d101ff37429a8aec96cb62ea0af2702b4b2d6ec08d8e12ff8f954b258f22f6"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 100,
+      "hash": "0xdea83159ddbc4d20e5c57fc484f637e8bf0f5c66b3513f108f8dc391aef2c0e9"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 100,
+      "hash": "0x06d3c2fdb491b1e16ef2b1798b9a853922429906820dbf30334c93b3e4ed9ca3"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 103,
+      "hash": "0xac6766fc484c77cdc090119f0f03c3a46d076308a077ebb592b44dbdb11acf27"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 102,
+      "hash": "0x38a3bcda8b06843a0b364fbfcb1b197a21357a9963da1d923ad5e574929339be"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 108,
+      "hash": "0x7f48a37ab292d97abfcbffd09afd79217c24c969759d29cb3995780d55983e21"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 107,
+      "hash": "0x743ef17b7557730c9db610396554bcd63b8cba86761e5589f06a536f7bcfb804"
+    },
+    {
+      "arena": 1,
+      "method": "input",
+      "ms": 107,
+      "hash": "0x0c79272534105336295a137cbffb79108aa9773c2617b7fe0ec906d5fedcfe40"
+    },
+    {
+      "arena": 1,
+      "method": "tick",
+      "ms": 192,
+      "hash": "0xab4233f34c72b249f52baf0d569b718369ce93606fc8e4c1e9ed4c9b863e84f7"
+    }
+  ],
+  "compact": true,
+  "activeProbe": 1,
+  "probes": [
+    {
+      "app": "0x4ce249014a54A8260Fe0b8C5A6fde3E0c9c8FfB3",
+      "id": "340282366920938463463374607431768211505",
+      "mode": 0,
+      "startedAt": "2026-09-12T18:26:12.215Z",
+      "batches": [
+        {
+          "index": 1,
+          "transactions": 20,
+          "rawBytes": 3867,
+          "withSession": 0,
+          "jsonBytes": 10821
+        },
+        {
+          "index": 2,
+          "transactions": 24,
+          "rawBytes": 5009,
+          "withSession": 0,
+          "jsonBytes": 13666
+        },
+        {
+          "index": 3,
+          "transactions": 23,
+          "rawBytes": 4481,
+          "withSession": 0,
+          "jsonBytes": 12475
+        },
+        {
+          "index": 4,
+          "transactions": 23,
+          "rawBytes": 4772,
+          "withSession": 0,
+          "jsonBytes": 13057
+        },
+        {
+          "index": 5,
+          "transactions": 24,
+          "rawBytes": 5106,
+          "withSession": 0,
+          "jsonBytes": 13860
+        }
+      ],
+      "scores": [
+        {
+          "at": "2026-09-12T18:26:12.528Z",
+          "score": "0:0"
+        },
+        {
+          "at": "2026-09-12T18:26:20.796Z",
+          "score": "0:1"
+        },
+        {
+          "at": "2026-09-12T18:26:32.446Z",
+          "score": "0:2"
+        },
+        {
+          "at": "2026-09-12T18:26:39.270Z",
+          "score": "0:3"
+        },
+        {
+          "at": "2026-09-12T18:26:41.998Z",
+          "score": "0:4"
+        },
+        {
+          "at": "2026-09-12T18:26:48.959Z",
+          "score": "0:5"
+        },
+        {
+          "at": "2026-09-12T18:27:00.728Z",
+          "score": "0:6"
+        },
+        {
+          "at": "2026-09-12T18:27:07.684Z",
+          "score": "0:7"
+        }
+      ],
+      "commands": [
+        36,
+        49
+      ],
+      "nodeBatches": 5,
+      "monadBatches": "5",
+      "finalScore": "0:7",
+      "finishedAt": "2026-09-12T18:27:07.805Z"
+    },
+    {
+      "app": "0x39259f34e209Cf00D12E1576f9F9eD9CA75ca69A",
+      "id": "340282366920938463463374607431768211507",
+      "mode": 1,
+      "startedAt": "2026-09-12T18:27:41.110Z",
+      "batches": [
+        {
+          "index": 1,
+          "transactions": 17,
+          "rawBytes": 3156,
+          "withSession": 0,
+          "jsonBytes": 8998
+        },
+        {
+          "index": 2,
+          "transactions": 16,
+          "rawBytes": 2948,
+          "withSession": 0,
+          "jsonBytes": 8480
+        },
+        {
+          "index": 3,
+          "transactions": 2,
+          "rawBytes": 699,
+          "withSession": 0,
+          "jsonBytes": 2078
+        },
+        {
+          "index": 4,
+          "transactions": 14,
+          "rawBytes": 2348,
+          "withSession": 0,
+          "jsonBytes": 7008
+        },
+        {
+          "index": 5,
+          "transactions": 4,
+          "rawBytes": 1173,
+          "withSession": 0,
+          "jsonBytes": 3298
+        },
+        {
+          "index": 6,
+          "transactions": 3,
+          "rawBytes": 517,
+          "withSession": 0,
+          "jsonBytes": 1850
+        },
+        {
+          "index": 7,
+          "transactions": 2,
+          "rawBytes": 699,
+          "withSession": 0,
+          "jsonBytes": 2078
+        },
+        {
+          "index": 8,
+          "transactions": 11,
+          "rawBytes": 1831,
+          "withSession": 0,
+          "jsonBytes": 5566
+        },
+        {
+          "index": 9,
+          "transactions": 7,
+          "rawBytes": 1690,
+          "withSession": 0,
+          "jsonBytes": 4740
+        },
+        {
+          "index": 10,
+          "transactions": 2,
+          "rawBytes": 377,
+          "withSession": 0,
+          "jsonBytes": 1435
+        },
+        {
+          "index": 11,
+          "transactions": 2,
+          "rawBytes": 699,
+          "withSession": 0,
+          "jsonBytes": 2079
+        },
+        {
+          "index": 12,
+          "transactions": 4,
+          "rawBytes": 754,
+          "withSession": 0,
+          "jsonBytes": 2461
+        },
+        {
+          "index": 13,
+          "transactions": 2,
+          "rawBytes": 699,
+          "withSession": 0,
+          "jsonBytes": 2079
+        },
+        {
+          "index": 14,
+          "transactions": 11,
+          "rawBytes": 1734,
+          "withSession": 0,
+          "jsonBytes": 5373
+        },
+        {
+          "index": 15,
+          "transactions": 5,
+          "rawBytes": 1313,
+          "withSession": 0,
+          "jsonBytes": 3715
+        },
+        {
+          "index": 16,
+          "transactions": 12,
+          "rawBytes": 1874,
+          "withSession": 0,
+          "jsonBytes": 5789
+        },
+        {
+          "index": 17,
+          "transactions": 2,
+          "rawBytes": 699,
+          "withSession": 0,
+          "jsonBytes": 2079
+        }
+      ],
+      "scores": [
+        {
+          "at": "2026-09-12T18:27:41.336Z",
+          "score": "0:0"
+        },
+        {
+          "at": "2026-09-12T18:27:49.710Z",
+          "score": "0:1"
+        },
+        {
+          "at": "2026-09-12T18:33:39.359Z",
+          "score": "1:1"
+        },
+        {
+          "at": "2026-09-12T18:34:08.438Z",
+          "score": "1:2"
+        },
+        {
+          "at": "2026-09-12T18:34:32.362Z",
+          "score": "1:3"
+        },
+        {
+          "at": "2026-09-12T18:35:06.490Z",
+          "score": "1:4"
+        },
+        {
+          "at": "2026-09-12T18:35:31.385Z",
+          "score": "1:5"
+        },
+        {
+          "at": "2026-09-12T18:36:03.316Z",
+          "score": "2:5"
+        },
+        {
+          "at": "2026-09-12T18:36:37.686Z",
+          "score": "3:5"
+        },
+        {
+          "at": "2026-09-12T18:37:07.244Z",
+          "score": "3:6"
+        },
+        {
+          "at": "2026-09-12T18:37:32.467Z",
+          "score": "3:7"
+        }
+      ],
+      "commands": [
+        18,
+        17
+      ],
+      "nodeBatches": 17,
+      "monadBatches": "17",
+      "finalScore": "3:7",
+      "finishedAt": "2026-09-12T18:37:32.692Z"
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-09-12T18:37:42.394Z"
+}

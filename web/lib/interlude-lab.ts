@@ -7,6 +7,7 @@ import {interludeLabAbi,interludeHubReadAbi} from "../../shared/abi-interlude";
 import type {State} from "../../shared/physics-v2";
 import {engineReadRetryMs} from "../../shared/engine-read";
 import {engineState,type EngineState} from "../../shared/engine-stream";
+import type {ArenaSender} from '../../shared/compact-arena-session';
 
 export const labManifest=manifest;
 export const labScope=["createMatch","acceptMatch","cancelMatch","input","tick","concede","expire"] as const;
@@ -49,7 +50,7 @@ export class LabLane {
  private latest?:LabSnapshot;
  private lastObservation=0;
  private lastWrite=0;
- constructor(private read:(fresh?:boolean)=>Promise<LabSnapshot>,private session:LabSession,private account:string,
+ constructor(private read:(fresh?:boolean)=>Promise<LabSnapshot>,private session:Pick<ArenaSender,'send'>,private account:string,
   private onResult:(s:LabSnapshot,latency?:number)=>void,private onError:(e:unknown)=>void,
   private onUnavailable:(e:unknown)=>void=()=>{},
   private pacing:{readMs:number;tickMs:number;now?:()=>number}={readMs:0,tickMs:0},

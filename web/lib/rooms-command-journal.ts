@@ -9,11 +9,17 @@ type Store=Pick<Storage,'getItem'|'setItem'>;
  * Wallet/private-data keys and financial transactions never enter this path. */
 export class RoomsCommandJournal implements EngineTransportJournal {
  private epoch?:string;
+ private direct?:{key:Address;epoch:string;match:string;expires:bigint};
  private key:string;
  constructor(private store:Store,private app:Address,private abi:Abi){this.key=`pongit:commands:${app.toLowerCase()}`;}
  private load():Job[]{return JSON.parse(this.store.getItem(this.key)||'[]');}
  private save(rows:Job[]){this.store.setItem(this.key,JSON.stringify(rows));}
  pending(player:Address){return this.load().find(x=>x.player.toLowerCase()===player.toLowerCase()&&x.state==='uncertain');}
+ /** Only call after verifying this independent arena's hub epoch and binding. */
+ bindDirect(key:Address,epoch:bigint,match:bigint,expires:bigint){
+  if(this.epoch!==String(epoch)||match<=0n)throw Error('Read the current arena before binding direct controls');
+  this.direct={key,epoch:String(epoch),match:String(match),expires};
+ }
  received(method:string,result:any){
   if(method==='interlude_session'){
    if(result?.app?.toLowerCase()!==this.app.toLowerCase()||result.chainId!==4242)throw Error('Unexpected game deployment');
@@ -29,19 +35,27 @@ export class RoomsCommandJournal implements EngineTransportJournal {
   if(typeof raw!=='string'||!raw.startsWith('0x02')||this.epoch===undefined)throw Error('Read the game epoch before sending');
   const tx=parseTransaction(raw as Hex);
   if(tx.chainId!==4242||tx.to?.toLowerCase()!==this.app.toLowerCase()||(tx.value??0n)!==0n)throw Error('Only scoped game commands can use this journal');
-  const wrapped=decodeFunctionData({abi:delegatableAbi,data:tx.data!});
-  if(wrapped.functionName!=='withSession')throw Error('Scoped game grant required');
-  const [grant,,data]=wrapped.args;
-  const inner=decodeFunctionData({abi:this.abi,data});
-  if(grant.anyFunction||!['input','tick','concede','acceptMatch','cancelMatch'].includes(inner.functionName))throw Error('Non-game permission refused');
   const signer=await recoverTransactionAddress({serializedTransaction:raw as `0x02${string}`});
-  if(signer.toLowerCase()!==grant.sessionKey.toLowerCase())throw Error('Game key mismatch');
-  const hash=keccak256(raw as Hex),rows=this.load(),pending=rows.find(x=>x.player.toLowerCase()===grant.granter.toLowerCase()&&x.state==='uncertain');
+  let wrapped;try{wrapped=decodeFunctionData({abi:delegatableAbi,data:tx.data!});}catch{}
+  let player:Address,inner;
+  if(wrapped?.functionName==='withSession'){
+   const [grant,,data]=wrapped.args;inner=decodeFunctionData({abi:this.abi,data});
+   if(grant.anyFunction||!['input','tick','concede','acceptMatch','cancelMatch'].includes(inner.functionName))throw Error('Non-game permission refused');
+   if(signer.toLowerCase()!==grant.sessionKey.toLowerCase())throw Error('Game key mismatch');
+   player=grant.granter;
+  }else{
+   const d=this.direct;inner=decodeFunctionData({abi:this.abi,data:tx.data!});
+   if(!d||d.epoch!==this.epoch||signer.toLowerCase()!==d.key.toLowerCase()||!['input','tick','concede'].includes(inner.functionName)||String(inner.args?.[0])!==d.match)throw Error('Scoped game grant required');
+   // An identical already-journaled call can still be reconciled after expiry.
+   if(BigInt(Math.floor(Date.now()/1000))>=d.expires&&!this.load().some(j=>j.hash===keccak256(raw as Hex)&&j.state==='uncertain'))throw Error('Arcade session expired');
+   player=d.key;
+  }
+  const hash=keccak256(raw as Hex),rows=this.load(),pending=rows.find(x=>x.player.toLowerCase()===player.toLowerCase()&&x.state==='uncertain');
   if(pending){if(pending.hash!==hash||pending.epoch!==this.epoch)throw Error('An uncertain game command must be reconciled before another signature is sent');return;}
   if(rows.some(x=>x.hash===hash))throw Error('This signed game command is already resolved');
   const match=inner.functionName==='acceptMatch'?String((inner.args?.[0] as any)?.id):String(inner.args?.[0]);
   const keep=rows.filter(x=>x.state==='uncertain').concat(rows.filter(x=>x.state!=='uncertain').slice(-15));
-  keep.push({hash,raw:raw as Hex,app:this.app,player:grant.granter,signer,epoch:this.epoch,nonce:tx.nonce!,action:inner.functionName,match,at:Date.now(),state:'uncertain'});
+  keep.push({hash,raw:raw as Hex,app:this.app,player,signer,epoch:this.epoch,nonce:tx.nonce!,action:inner.functionName,match,at:Date.now(),state:'uncertain'});
   this.save(keep);
  }
  /** A newer active hub epoch proves the prior delegation was released. */

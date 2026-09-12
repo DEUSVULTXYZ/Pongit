@@ -3,11 +3,14 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
-const saved=JSON.parse(await readFile('/secrets/independent-browser-v2-chaos-fresh1.json','utf8'));
+const savedPath=process.env.INDEPENDENT_RECOVERY_FILE||'/secrets/independent-browser-v2-chaos-fresh1.json';
+assert(/^\/secrets\/independent-browser-v2(-chaos)?(-[a-z0-9]{1,16})?\.json$/.test(savedPath));
+const saved=JSON.parse(await readFile(savedPath,'utf8'));
+const finished=saved.stage>=3;
 const edge=process.env.BROWSER_CHANNEL==='msedge',label=edge?'edge':'chrome';
 const browser=await chromium.launch({headless:true,...(edge?{channel:'msedge'}:{}),args:['--no-sandbox']});
 const report:any={at:new Date().toISOString(),browser:label,checks:[],errors:[],scope:'Private VPS frontend, real Monad and hosted reads, saved limited session, no new root signature or match'};
-const out='artifacts/independent-candidate/recovery-browser';await mkdir(out,{recursive:true});
+const out=process.env.INDEPENDENT_RECOVERY_FILE?'artifacts/independent-candidate/compact-recovery-browser':'artifacts/independent-candidate/recovery-browser';await mkdir(out,{recursive:true});
 try{
  const player=saved.players[0],context=await browser.newContext({viewport:{width:1440,height:1000},storageState:player.storage});
  let engineRequests=0;context.on('request',r=>{if(new URL(r.url()).hostname.endsWith('.fly.dev'))engineRequests++;});
@@ -27,29 +30,37 @@ try{
  const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message.slice(0,250)));
  page.on('requestfailed',request=>report.errors.push({url:request.url().split('?')[0],failure:request.failure()?.errorText}));
  page.on('console',message=>{if(message.type()==='error')report.errors.push({console:message.text().replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,500)});});
- await page.goto(saved.roomUrl);await page.locator('.rooms-canvas').waitFor({timeout:60000});
- await page.waitForFunction(()=>/recovering|publication recovery|Waiting for point publication/.test(document.body.innerText),{},{timeout:30000});
+ await page.goto(saved.roomUrl||'https://pongit.xyz');
+ const restored=()=>finished?page.getByRole('button',{name:'View result',exact:true}).waitFor({timeout:60000}):page.locator('.rooms-canvas').waitFor({timeout:60000});
+ await restored();
+ if(!finished)await page.waitForFunction(()=>/recovering|publication recovery|Waiting for point publication/.test(document.body.innerText),{},{timeout:30000});
  await page.waitForTimeout(12000);
  assert.equal(await page.evaluate(()=>(window as any).credentialRequests),0);
- report.checks.push('Room restoration and repeated snapshots keep the recovery state visible without a root passkey request');
+ report.checks.push(finished?'Published result restores without replaying a celebration or requesting the passkey':'Room restoration and repeated snapshots keep the recovery state visible without a root passkey request');
  report.visible=await page.locator('.rooms-shell').innerText();
  for(const size of [{width:360,height:640},{width:390,height:844},{width:768,height:1024},{width:1440,height:1000},{width:844,height:390}]){
   await page.setViewportSize(size);await page.waitForTimeout(100);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Horizontal overflow');
-  const box=await page.locator('canvas').first().boundingBox();assert(box&&box.width>100&&box.height>50);
+  const box=finished?null:await page.locator('canvas').first().boundingBox();if(!finished)assert(box&&box.width>100&&box.height>50);
+  if(finished){
+   await page.getByRole('button',{name:'View result',exact:true}).click();await page.getByRole('dialog',{name:'Confirmed match result'}).waitFor();
+   const skip=page.getByRole('button',{name:/Skip animation/});if(await skip.isVisible())await skip.click();
+   assert.equal(await page.locator('.outcome-score').textContent(),'7 : 6');
+   await page.getByRole('button',{name:'Close result',exact:true}).click();
+  }
   await page.getByRole('button',{name:'Tools',exact:true}).click();
   await page.getByRole('dialog',{name:'Cabinet tools'}).waitFor();await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('dialog').count(),0);assert(await page.getByRole('button',{name:'Tools',exact:true}).evaluate(e=>document.activeElement===e));
   await page.screenshot({path:`${out}/${label}-${size.width}.png`});
   report.checks.push({viewport:size,canvas:box,dialogEscape:true,focusRestored:true});
  }
- await page.reload();await page.locator('.rooms-canvas').waitFor({timeout:45000});
+ await page.reload();await restored();
  assert.equal(await page.evaluate(()=>(window as any).credentialRequests),0);
  report.checks.push('F5 preserves the current arena and limited session');
  if(process.env.PONG_EXPECT_CLOSED==='true'){
   assert.equal(engineRequests,0,'A closed delegation must restore through Monad, not the stopped node');
-  assert(await page.getByRole('button',{name:'Move up',exact:true}).isDisabled());
-  report.checks.push('Closed arena restores its published partial score with controls disabled and zero hosted-node requests');
+  const controls=page.getByRole('button',{name:'Move up',exact:true});assert(finished?await controls.count()===0:await controls.isDisabled());
+  report.checks.push(finished?'Closed terminal arena restores 7:6 with zero hosted-node requests and no active game controls':'Closed arena restores its published partial score with controls disabled and zero hosted-node requests');
  }
  const docsReady=context.waitForEvent('page');await page.getByRole('link',{name:'Docs ↗',exact:true}).click();const docs=await docsReady;let businessCalls=0;
  docs.on('request',req=>{if(/\.fly\.dev|\/api\/independent|testnet-rpc/.test(req.url()))businessCalls++;});

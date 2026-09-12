@@ -162,7 +162,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
    const before=scoreSeen.current,total=s.state.scoreA+s.state.scoreB;
    if(before?.id===s.id&&total===before.score+1&&Date.now()-before.at<3000)arcadeAudio.play('point',`${app}:${binding.epoch}:${s.id}:score:${total}`);
    scoreSeen.current={id:s.id,score:total,at:Date.now()};
-   if(s.phase>=3){play?.intent(0);setDirection(0);setControlled(false);arcadeAudio.setGameplay(false);void refresh();}
+   if(s.phase>=3){play?.intent(0);setDirection(0);setControlled(false);arcadeAudio.setGameplay(false);void refresh().catch(()=>{if(!stopped)setLobbySync('Synchronizing the lobby. Your session is still saved.');});}
   };
   const stop=instance.feed.watch(id,receive);
   const observe=async()=>{

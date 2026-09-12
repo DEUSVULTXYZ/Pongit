@@ -1,0 +1,69 @@
+{
+  "at": "2026-09-12T18:56:06.127Z",
+  "browser": "chrome",
+  "checks": [
+    "Published result restores without replaying a celebration or requesting the passkey",
+    {
+      "viewport": {
+        "width": 360,
+        "height": 640
+      },
+      "canvas": null,
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "canvas": null,
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "canvas": null,
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "canvas": null,
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    {
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "canvas": null,
+      "dialogEscape": true,
+      "focusRestored": true
+    },
+    "F5 preserves the current arena and limited session",
+    "Closed terminal arena restores 7:6 with zero hosted-node requests and no active game controls",
+    "Docs opens separately without game RPC, and the arena remains open"
+  ],
+  "errors": [],
+  "scope": "Private VPS frontend, real Monad and hosted reads, saved limited session, no new root signature or match",
+  "configResponse": {
+    "status": 200,
+    "keys": [
+      "admission",
+      "arenas",
+      "manifest",
+      "sponsor"
+    ]
+  },
+  "visible": "PONGIT\nSound off ♫\nDocs ↗\nRanking\nMore\nqayqkhjz0\nCLASSIC / RANKED\nCopy room link\nMembers 2\nTools\nPLAYER 01\nqayqkn971\nPLAYER 02\nqayqkhjz0\nFIRST TO SEVEN\n07\n:\n06\nW / S · ↑ / ↓\nView result\nMusic by Karl Casey @ White Bat Audio · Last Stop\nPowered by InterludeLayer\nPrevious arenas",
+  "passed": true,
+  "finishedAt": "2026-09-12T18:56:27.187Z"
+}
