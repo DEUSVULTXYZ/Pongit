@@ -16,7 +16,7 @@ assert.equal(new URL(process.env.TEST_DATABASE_URL!).hostname,"pongit-stream-db"
 const db=new Pool({connectionString:process.env.TEST_DATABASE_URL});
 const app="0x1111111111111111111111111111111111111111",hub="0x2222222222222222222222222222222222222222";
 let faultEpoch=false,slowSnapshot=false,receipts=new Map<string,any>();
-let expiredDelegation=false,sessionReads=0;
+let expiredDelegation=false,sessionReads=0,engineWrites=0;
 const snapshots=new Map<string,readonly unknown[]>();
 const empty=(id:bigint)=>[id,0n,0n,zeroAddress,zeroAddress,zeroAddress,zeroAddress,100n,0n,0n,0n,0n,initial(zeroHash)] as any;
 const pause=(n:number)=>new Promise(r=>setTimeout(r,n));
@@ -24,6 +24,7 @@ const readBody=async(req:any)=>{let s="";for await(const chunk of req)s+=chunk;r
 const rpc=createServer(async(req,res)=>{
  try{const body=await readBody(req),method=body.method;let result:unknown;
   if(method==="interlude_session"){sessionReads++;result={app,chainId:4242,validator:zeroAddress,resolver:zeroAddress,epoch:1,baseBlock:1,committedBatches:0,maxDiffsPerCommit:64,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]};}
+  else if(method==="interlude_sendTransaction"){engineWrites++;throw Error('No engine writes are expected in this observer regression');}
   else if(method==="eth_getTransactionReceipt")result=receipts.get(body.params[0])??null;
   else if(method==="eth_getTransactionCount")result="0x0";
   else if(method==="eth_chainId")result="0x1092";
@@ -79,6 +80,14 @@ try{
  const began=Date.now();assert.equal((await api(players[7],"presence",{})).status,200);assert.equal((await api(players[7],"state")).status,200);
  report.independentPresenceMs=Date.now()-began;assert(report.independentPresenceMs<800);assert.equal((await accepting).status,200);slowSnapshot=false;
  report.checks.push("Slow acceptance RPC does not hold the global lobby lock");
+ // A published Chaos pause does not progress while its financial checkpoint
+ // is unavailable. The observer must remain live without sending idle ticks.
+ const paused=empty(BigInt(offer.id));paused[2]=2n;paused[3]=offer.a;paused[4]=offer.b;paused[8]=9000000n;
+ paused[12]={...paused[12],mode:1,awaitingServe:true,resumeAt:3000000n};
+ snapshots.set(offer.id,paused);const readsBefore=sessionReads,writesBefore=engineWrites;
+ await pause(4500);assert(sessionReads>readsBefore);assert.equal(engineWrites,writesBefore);
+ snapshots.delete(offer.id);
+ report.checks.push('Missing Chaos checkpoint keeps observation alive without idle engine writes');
  const messages:any[]=[];socket=new WebSocket("ws://127.0.0.1:4005",{headers:{cookie:"pongit_rooms="+players[0].token}});
  socket.on("open",()=>socket!.send(JSON.stringify({player:players[0].address})));socket.on("message",raw=>messages.push(JSON.parse(String(raw))));
  await until(async()=>messages.some(m=>m.type==="rooms-changed"));faultEpoch=true;

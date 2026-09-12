@@ -1,0 +1,203 @@
+{
+  "at": "2026-09-11T23:55:08.721Z",
+  "endpoint": "https://il-fd1693294fed7730.fly.dev",
+  "transport": "events",
+  "scope": "Real browser-to-engine and public coordinator; disposable friendly rooms; no bets",
+  "backendEventsEnabled": true,
+  "parallelPageSetup": true,
+  "checks": [
+    "Two simultaneous consensual friendly arenas: Classic and Chaos",
+    "Stopped input load after a real 429; no quota inferred",
+    "Same-tab F5 restores the scoped session",
+    "No browser exception or input nonce gap"
+  ],
+  "passed": false,
+  "inputTargetMet": false,
+  "error": "Real rate limit interrupted the load qualification",
+  "errors": [],
+  "transactions": [
+    {
+      "action": "accept",
+      "mode": 0,
+      "hash": "0xba252d865773a386844db786295a0eb9771871b1f0d11bfff88363c0a05925d8",
+      "ms": 446.0011949999998
+    },
+    {
+      "action": "accept",
+      "mode": 0,
+      "hash": "0x83da892c720a0254b28cba7066413111809ff83f94b807cb1619d9141577be7f",
+      "ms": 343.0457040000001
+    },
+    {
+      "action": "accept",
+      "mode": 1,
+      "hash": "0x585ce6caf417378b17e6a30b635b767fb8a8f0adab099d437f2dc7e939e3509e",
+      "ms": 389.9611850000001
+    },
+    {
+      "action": "accept",
+      "mode": 1,
+      "hash": "0x9423fbc2ec86fa5e7357a3db40b4a96f0e9d1ce024d70f88d6a1ae62d24fb9bf",
+      "ms": 347.42579300000034
+    },
+    {
+      "action": "finish-test",
+      "hash": "0x4281a285f10454d6b7593715413288c0204549e406ea83ef5269247030e9b329"
+    },
+    {
+      "action": "finish-test",
+      "hash": "0x88f1750a12b6fa9e9e41519266a028d05cd3e15fe41f4432d3e4e0019c46a9ed"
+    }
+  ],
+  "browsers": [
+    {
+      "player": 0,
+      "role": "player",
+      "events": 10,
+      "sockets": 1,
+      "inputs": 0,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 33.399999999999864,
+        "p99": 66.60000000000002
+      },
+      "calls": 12,
+      "reads": 4,
+      "rateLimits": 1
+    },
+    {
+      "player": 1,
+      "role": "player",
+      "events": 1,
+      "sockets": 2,
+      "inputs": 1,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999932,
+        "p95": 66.70000000000005,
+        "p99": 83.40000000000009
+      },
+      "calls": 12,
+      "reads": 5,
+      "rateLimits": 1
+    },
+    {
+      "player": 2,
+      "role": "player",
+      "events": 8,
+      "sockets": 1,
+      "inputs": 2,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 33.30000000000109,
+        "p99": 83.40000000000009
+      },
+      "calls": 8,
+      "reads": 2,
+      "rateLimits": 1
+    },
+    {
+      "player": 3,
+      "role": "player",
+      "events": 10,
+      "sockets": 1,
+      "inputs": 2,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 33.30000000000018,
+        "p99": 66.60000000000036
+      },
+      "calls": 7,
+      "reads": 2,
+      "rateLimits": 0
+    },
+    {
+      "player": 4,
+      "role": "spectator",
+      "events": 10,
+      "sockets": 1,
+      "inputs": 0,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 33.30000000000291,
+        "p99": 83.30000000000018
+      },
+      "calls": 4,
+      "reads": 3,
+      "rateLimits": 1
+    },
+    {
+      "player": 5,
+      "role": "spectator",
+      "events": 8,
+      "sockets": 2,
+      "inputs": 0,
+      "complete": false,
+      "frames": {
+        "p50": 16.699999999999818,
+        "p95": 33.29999999999927,
+        "p99": 66.59999999999854
+      },
+      "calls": 4,
+      "reads": 3,
+      "rateLimits": 1
+    }
+  ],
+  "rateLimitExamples": [
+    {
+      "at": 1789170923313,
+      "method": "eth_chainId",
+      "status": 429,
+      "ms": 195.214,
+      "requestId": "01M29EBDHZRGX2ZSTXYJYP5294-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:55:23.313Z"
+    },
+    {
+      "at": 1789170923317,
+      "method": "eth_call",
+      "status": 429,
+      "ms": 112.54599999999999,
+      "requestId": "01M29EBDN13A9RM68B7SYA85EF-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:55:23.317Z"
+    },
+    {
+      "at": 1789170922784,
+      "method": "interlude_session",
+      "status": 429,
+      "ms": 102.98800000000001,
+      "requestId": "01M29EBD2N4S958DES5VXX3791-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:55:22.784Z"
+    },
+    {
+      "at": 1789170923310,
+      "method": "eth_call",
+      "status": 429,
+      "ms": 163.29,
+      "requestId": "01M29EBDK2ZXG2YFGXBS4J02N1-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:55:23.310Z"
+    },
+    {
+      "at": 1789170922909,
+      "method": "eth_call",
+      "status": 429,
+      "ms": 222.436,
+      "requestId": "01M29EBD5B4K8CQH721PP8B5N4-yyz",
+      "retryAfter": "10",
+      "error": "Too many requests from this caller. Try again later.\n",
+      "utc": "2026-09-11T23:55:22.909Z"
+    }
+  ],
+  "qualification": "Aborted under actual rate limiting. Not a comparable before/after load benchmark. No reduction percentage inferred."
+}

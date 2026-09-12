@@ -45,14 +45,14 @@ async function attach(p,index,room){
   window.__frames=[];let previous=performance.now();const frame=t=>{if(!document.hidden&&window.__frames.length<18000)window.__frames.push(t-previous);previous=t;requestAnimationFrame(frame);};requestAnimationFrame(frame);
  },{stored,key:storageKey(manifest.app,10143,p.address),accountKey:`pongit:rooms:${manifest.app}:account`,address:p.address});
  await context.addCookies([{name:'pongit_rooms',value:p.cookie.split('=')[1],url:origin,httpOnly:true,secure:true,sameSite:'Strict'}]);
- const row={player:index,role:index<4?'player':'spectator',calls:[],events:0,sockets:0,nonces:[],complete:false};stats.push(row);
+ const row={player:index,role:index<4?'player':'spectator',calls:[],events:0,sockets:0,nonces:[],complete:false};stats[index]=row;
  if(web)await context.route(origin+'/**',async route=>{
   const u=new URL(route.request().url());
   if(u.pathname==='/api/interlude/config'){const response=await route.fetch();const body=await response.json();return route.fulfill({response,json:{...body,stateTransport:transport}});}
   if(u.pathname.startsWith('/api/'))return route.continue();
   const response=await route.fetch({url:'http://'+web+':3000'+u.pathname+u.search});return route.fulfill({response});
  });
- const page=await context.newPage();pages.push(page);p.page=page;
+ const page=await context.newPage();pages[index]=page;p.page=page;
  page.on('pageerror',e=>report.errors.push(e.message.slice(0,300)));
  page.on('requestfinished',async req=>{if(req.url()!==manifest.node&&req.url()!==manifest.node+'/')return;try{
   const rpc=req.postDataJSON(),response=await req.response(),t=req.timing();let name,nonce;
@@ -89,7 +89,9 @@ try{
   await action(players[4+mode],'rooms/join',{room:id});
  }
  assert.equal(await observer.read('activeCount',[]),2n);report.checks.push('Two simultaneous consensual friendly arenas: Classic and Chaos');
- for(let i=0;i<6;i++)await attach(players[i],i,rooms[i<4?Math.floor(i/2):i-4]);
+ // Sequential page boot let the first match finish before the last spectator
+ // loaded. Preserve stable player indices while starting the views together.
+ await Promise.all(players.map((p,i)=>attach(p,i,rooms[i<4?Math.floor(i/2):i-4])));
  const began=Date.now();report.measurementStartedAt=new Date(began).toISOString();
  let cycle=0;
  while(Date.now()-began<65000 && stats.slice(0,4).some(s=>s.nonces.length<100&&!s.complete)){
@@ -99,7 +101,13 @@ try{
   if(stats.some(s=>s.calls.some(c=>c.status===429))){report.checks.push('Stopped input load after a real 429; no quota inferred');break;}
  }
  report.inputSeconds=(Date.now()-began)/1000;
- await pages[1].reload();await pages[1].locator('.rooms-court').waitFor({timeout:30000});report.checks.push('Same-tab F5 restores the scoped session');
+ await pages[1].reload();
+ // A completed room correctly returns to its lobby after F5. Session recovery
+ // does not require replaying the completed court or its celebration.
+ await pages[1].waitForFunction(()=>{
+  const button=document.querySelector('.rooms-account-toggle');
+  return button&&!/^(Connect|Connecting|Reconnecting|Renew session)/.test(button.textContent.trim());
+ },{},{timeout:30000});report.checks.push('Same-tab F5 restores the scoped session');
  await sleep(1500);
  report.measurementEndedAt=new Date().toISOString();
  for(let i=0;i<6;i++){

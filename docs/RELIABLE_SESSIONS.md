@@ -25,7 +25,7 @@ The real hub challenge window was respected. The one-hour delay was not replaced
 
 ## Compatible changes
 
-- Expiry stops admissions and game writes, but not receipt reconciliation, terminal observation, room repair or financial history auditing. Independent timers prevent historical or financial work from holding the Classic observer.
+- Expiry stops admissions and game writes, but not receipt reconciliation, terminal observation, room repair or financial history auditing. Independent timers prevent historical or financial work from holding the Classic observer. A paused Chaos rally no longer sends idle VPS ticks; its resume tick is chained after the confirmed pressure submission.
 - Hosted provisioning records intent, uncertainty, confirmation and intervention. Only an explicit non-creation response permits a fresh creation request. A stale engine epoch does not become healthy merely because the control plane says `live`; persistent ambiguity escalates after five minutes.
 - The browser stores only scoped zero-value game command bytes with the limited arcade session. An uncertain submission blocks a different transaction, reconciles its receipt and epoch, and can resend only its original bytes. No wallet or notebook key is added to that journal.
 - New arcade grants last two hours. F5 and transient network failure reuse a valid grant. A real expiry remains distinct from an unavailable game service. Existing shorter grants keep their signed expiry.
@@ -71,6 +71,10 @@ The earlier polling trace recorded 78 browser calls plus 21 instrumented VPS cal
 
 No 80% read-reduction or 40% total-call-reduction result is claimed: the aborted runs are not comparable. The first private polling harness incorrectly marked its short run successful; that value is not accepted as a qualification result. The corrected harness requires the full input target and no rate-limit interruption.
 
+The transport setting was enabled on the production VPS after real event delivery and recovery validation. A subsequent run with parallel page setup recorded 47 page RPC requests and five 429s; its full input target still did not pass. Both test matches were subsequently conceded with confirmed receipts. The different durations and setup prevent a quantitative comparison. [Post-deployment run](evidence/reliable-recovery/events-published.json).
+
+The final isolated PostgreSQL regression also verifies that a missing Chaos checkpoint keeps observations running without idle engine writes. [Coordinator report](evidence/reliable-recovery/coordinator.json).
+
 ## Migration gates still open
 
 1. Common Monad lobby, deterministic arena allocation and participation locks, separated from all delegated physics state.
@@ -84,7 +88,7 @@ The old autonomous candidate still contains shared delegation and Monad fallback
 
 ## Operations and rollback
 
-Private backups include databases, runtime configuration, operator journals and rehearsal recovery files. Backup `20260911T232618Z` was copied outside the VPS and checksums verified. Known unused PONGIT build images and caches were removed after inventory; disk use was 76% before the final build, with production, rollback images, volumes and unrelated projects preserved.
+Private backups include databases, runtime configuration, operator journals and rehearsal recovery files. Backup `20260911T235117Z` was copied outside the VPS and checksums verified. Known unused PONGIT build images and caches were removed after inventory; disk use was 76% before the final build, with production, rollback images, volumes and unrelated projects preserved.
 
 Keep the previous web image and the corrected recovery relayer. New journal fields are additive. Do not roll back to a relayer that sends quarantined bytes or stops result observation on expiry. Stop admissions if lifecycle state is ambiguous. Never delete an uncertain transaction, reset a nonce or reinterpret an old financial manifest to unblock deployment.
 

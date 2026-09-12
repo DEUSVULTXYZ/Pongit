@@ -740,7 +740,7 @@ export async function createRoomsCoordinator(o: Options) {
           continue;
         const id = r.offer.id;
         let s: any = streamEnabled?engineTuple(await feed.read(BigInt(id))):await readEngineSnapshot(client, BigInt(id));
-        if (writable && s[2] === 2n && (streamEnabled?feed.progressAge(BigInt(id))>1500:s[8] - s[12].t > 1500000n)) {
+        if (writable && s[2] === 2n && !s[12].awaitingServe && (streamEnabled?feed.progressAge(BigInt(id))>1500:s[8] - s[12].t > 1500000n)) {
           void publicTick(id).catch(()=>{});
         }
         if (writable && s[2] === 1n && BigInt(Math.floor(Date.now() / 1000)) > s[11]) {
@@ -749,7 +749,12 @@ export async function createRoomsCoordinator(o: Options) {
         observed.set(id, s);
         if(writable && finance && s[2]===2n && s[12].mode===1 && s[12].awaitingServe){
           if(!pendingPressure.has(id)){
-            const work=finance.pressure(id,s,data=>publicTick(id,false,data)).catch(e=>{lastError="Chaos checkpoint pending: "+(e as Error).message;}).finally(()=>pendingPressure.delete(id));
+            const work=finance.pressure(id,s,async data=>{
+              await publicTick(id,false,data);
+              // A paused rally does not need idle ticks. Resume only after its
+              // checkpoint write is confirmed; an uncertain write stops here.
+              await publicTick(id);
+            }).catch(e=>{lastError="Chaos checkpoint pending: "+(e as Error).message;}).finally(()=>pendingPressure.delete(id));
             pendingPressure.set(id,work);
           }
         }
