@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "report": [
+    {
+      "height": 64,
+      "differentChannels": 0,
+      "squareCornerAlpha": 255
+    },
+    {
+      "height": 96,
+      "differentChannels": 0,
+      "squareCornerAlpha": 255
+    },
+    {
+      "height": 120,
+      "differentChannels": 0,
+      "squareCornerAlpha": 255
+    }
+  ]
+}

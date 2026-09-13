@@ -2,6 +2,7 @@
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {resolve,relative,extname} from 'node:path';
 import {encodeAbiParameters,encodeFunctionResult,parseTransaction,decodeFunctionData,toHex,toFunctionSelector,zeroHash,zeroAddress,keccak256,type Abi,type Address} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {encodeSession,storageKey,delegatableAbi} from '@interludelayer-sdk/sdk';
@@ -13,24 +14,30 @@ import {roomsChaosAbi} from '../shared/abi-PongRoomsTestnet';
 import {roomsCompactAbi} from '../shared/abi-PongRoomsCompact';
 import {roomsEventsAbi} from '../shared/abi-PongChaosEvents';
 import {chaosBrowserPayload} from './chaos-browser-fixture';
+import {chaosEvent} from '../shared/chaos-events';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const compact=(manifest as typeof manifest & {compactControls?:boolean}).compactControls===true;
 const events=Number(manifest.rulesVersion)===6;
 const ui=process.env.ROOMS_BROWSER_UI||'http://countdown-web:3000';
 assert(['countdown-web','127.0.0.1'].includes(new URL(ui).hostname),'Only a private test build may serve the fixture');
+// A captured private build also permits local browsers without a local server
+// or exposing the VPS test port. HTML/static/public must come from that build.
+const capture=process.env.ROOMS_BROWSER_CAPTURE;
+const captureTypes:Record<string,string>={'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.ttf':'font/ttf','.woff2':'font/woff2','.mp3':'audio/mpeg'};
 const origin='https://pongit.xyz',app=manifest.app as Address,abi=(events?roomsEventsAbi:compact?roomsCompactAbi:roomsChaosAbi) as Abi;
 const players=['0x1111111111111111111111111111111111111111','0x2222222222222222222222222222222222222222'];
 let clockSkew=28000;
 const serverNow=()=>Date.now()+clockSkew;
 const browser=await chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{})});
+const motionEnabled=process.env.ROOMS_BROWSER_MOTION==='enabled';
 const report:any={scope:'Simulated API and chain, real browser against production build',scenarios:[],errors:[]};
 let debugPages:any[]=[];
 await mkdir('artifacts/rooms-countdown',{recursive:true});
 try{
  for(const mode of [0,1]){
   clockSkew=28000;
-  let room:any,phase=0,revision=0n,paused=false,sends=0,marketFinished=false,effect=21,secondEffect=13,closing=false;
+  let room:any,phase=0,revision=0n,paused=false,sends=0,marketFinished=false,effect=21,secondEffect=13,closing=false,eventClock=1200000n;
   const currentFinance=financialDeployments.at(-1)!;
   const financialAccount=(m:any)=>({manifest:m,balance:'20000000000000000',walletBalance:'6000000000000000',nonce:'0',marketNonce:'0',history:[]});
   const inputNonces=[0n,0n],directions=[0,0],inputTimes:number[]=[];
@@ -38,10 +45,10 @@ try{
   const accepted=new Set<string>(),sentAt:number[]=[],queuedAt=serverNow();
   const contexts:import('@playwright/test').BrowserContext[]=[],pages:import('@playwright/test').Page[]=[];debugPages=pages;
   for(const [index,player] of players.entries()){
-   const context=await browser.newContext({viewport:{width:index?390:1440,height:index?844:900},reducedMotion:mode?'reduce':'no-preference'});contexts.push(context);
+   const context=await browser.newContext({viewport:{width:index?390:1440,height:index?844:900},reducedMotion:mode&&!motionEnabled?'reduce':'no-preference'});contexts.push(context);
    const privateKey=generatePrivateKey(),signer=privateKeyToAccount(privateKey);
    const saved=encodeSession({app,baseChainId:10143,privateKey,signature:`0x${'11'.repeat(65)}`,grant:{granter:player as Address,sessionKey:signer.address,expiry:BigInt(Math.floor(serverNow()/1000)+1800),epoch:0n,anyFunction:false,selectors:['acceptMatch','input','tick','cancelMatch','concede'].map(name=>toFunctionSelector(abi.find(x=>x.type==='function'&&x.name===name) as any))}});
-   await context.addInitScript(({saved,key,accountKey,player})=>{sessionStorage.setItem(key,saved);sessionStorage.setItem(accountKey,player);localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));},{saved,key:storageKey(app,10143,player as Address),accountKey:`pongit:rooms:${app}:account`,player});
+   await context.addInitScript(({saved,key,accountKey,player,motionEnabled})=>{sessionStorage.setItem(key,saved);sessionStorage.setItem(accountKey,player);localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:motionEnabled,intensity:motionEnabled?'full':'off'}));},{saved,key:storageKey(app,10143,player as Address),accountKey:`pongit:rooms:${app}:account`,player,motionEnabled});
    let nonce=0,binding=0n;const receipts=new Map<string,any>();
    await context.route('**/*',async route=>{
     try{
@@ -58,6 +65,11 @@ try{
        else if(u.pathname.includes('/markets/'))data=u.searchParams.has('round')?{app,id:'1',rally:1,phase:'preparing',blocksLeft:'0'}:{manifest:currentFinance,window:[!marketFinished,'261'],head:'62160000',result:[zeroAddress,zeroAddress,zeroAddress,marketFinished?3:2],position:['0','1000000000000000','600000000000000',false],quote:'600000000000000',claimPreview:marketFinished?['0','0',true]:null,terminal:marketFinished,settlementPolicy:'early-published-testnet'};
        return route.fulfill({json:{...data,serverNow:serverNow()}});
       }
+      if(capture){
+       const root=resolve(capture),path=resolve(root,u.pathname==='/rooms'?'rooms.html':u.pathname===`/rooms/${zeroHash}`?'room.html':u.pathname.startsWith('/_next/static/')?'.next/'+u.pathname.slice('/_next/'.length):'public/'+u.pathname.slice(1));
+       assert(!relative(root,path).startsWith('..'),'Capture path must stay inside the private build');
+       return route.fulfill({body:await readFile(path),contentType:captureTypes[extname(path)]||'application/octet-stream'});
+      }
       return route.fulfill({response:await route.fetch({url:ui+u.pathname+u.search,maxRetries:2})});
      }
      const rpc=route.request().postDataJSON(),reply=(result:unknown)=>route.fulfill({json:{jsonrpc:'2.0',id:rpc.id,result}});
@@ -68,7 +80,7 @@ try{
       if(rpc.method==='eth_getTransactionCount')return reply(toHex(nonce));
       if(rpc.method==='eth_call'){
        if(compact&&rpc.params[0].data.startsWith(toFunctionSelector('controlBinding(address)')))return reply(encodeFunctionResult({abi,functionName:'controlBinding',result:binding}));
-       const state={...initial(zeroHash,mode as 0|1),t:events?1200000n:0n,leftDir:directions[0],rightDir:directions[1],...(phase===3?{scoreA:7,scoreB:5,finished:true}:{}),...(paused?{scoreA:1,awaitingServe:true,vx:0n,vy:0n,resumeAt:3000000n}:{})};
+       const state={...initial(zeroHash,mode as 0|1),t:events?eventClock:0n,leftDir:directions[0],rightDir:directions[1],...(phase===3?{scoreA:7,scoreB:5,finished:true}:{}),...(paused?{scoreA:1,awaitingServe:true,vx:0n,vy:0n,resumeAt:3000000n}:{})};
        const header=[1n,revision,BigInt(phase),players[0],players[1],zeroAddress,phase===3?players[0]:zeroAddress,100n+revision,state.t,...inputNonces,BigInt(room?.offer.expires||0),state];
        if(events&&rpc.params[0].data.startsWith(toFunctionSelector('chaosState(uint256)')))return reply(encodeFunctionResult({abi,functionName:'chaosState',result:chaosBrowserPayload(abi,header,mode&&phase===2?effect:0,mode&&phase===2?secondEffect:0)}));
        return reply(encodeFunctionResult({abi,functionName:'getSnapshot',result:header as any}));
@@ -123,7 +135,7 @@ try{
   await pages[1].getByRole('button',{name:'Accept',exact:true}).click();
   await pages[1].locator('.match-countdown-digit').filter({hasText:'3'}).waitFor();
   await pages[1].screenshot({path:`artifacts/rooms-countdown/${mode?'chaos':'classic'}-intro.png`});
-  if(mode)assert.equal(await pages[1].locator('.match-countdown-digit').evaluate(el=>getComputedStyle(el).animationName),'none');
+  if(mode&&!motionEnabled)assert.equal(await pages[1].locator('.match-countdown-digit').evaluate(el=>getComputedStyle(el).animationName),'none');
   else assert.equal(await pages[1].locator('.match-countdown-digit').evaluate(el=>getComputedStyle(el).animationName),'match-countdown-pop');
   for(const digit of ['2','1'])await pages[1].locator('.match-countdown-digit').filter({hasText:digit}).waitFor();
   for(const page of pages)await page.locator('.rooms-court:not(.rooms-intro)').waitFor({timeout:15000});
@@ -165,19 +177,34 @@ try{
    await pages[1].keyboard.press('Escape');assert.equal(await pages[1].getByText('Synchronizing Chaos bets',{exact:true}).count(),0);
   }else if(mode){paused=true;revision++;await pages[1].getByText('Synchronizing Chaos bets',{exact:true}).waitFor();}
   if(mode&&events){
-   for(const width of [360,390,768,1440]){
-    await pages[1].setViewportSize({width,height:width<500?800:1000});await pages[1].waitForTimeout(300);
-    await pages[1].getByText('MULTIBALL',{exact:true}).waitFor();await pages[1].getByText('PINBALL',{exact:true}).waitFor();
-    assert(await pages[1].evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-    await pages[1].screenshot({path:`artifacts/rooms-countdown/events-court-${width}.png`});
+   report.chaosLayout=[];
+   for(const viewport of [{width:360,height:640},{width:390,height:844},{width:768,height:1024},{width:1440,height:900},{width:844,height:390}]){
+    const page=pages[1];await page.setViewportSize(viewport);await page.waitForTimeout(300);
+    const geometry=()=>page.evaluate(()=>({scrollY,boxes:['.rooms-court','.scoreboard','[aria-label="Chaos effects"]','.rooms-canvas','.rooms-canvas canvas','.rooms-court-controls'].map(selector=>{
+     const r=document.querySelector(selector)!.getBoundingClientRect();return{selector,x:r.x,y:r.y,width:r.width,height:r.height};
+    })}));
+    let baseline:Awaited<ReturnType<typeof geometry>>|undefined;
+    // Empty, announcement, a long name, both slots, second slot alone, expiration.
+    for(const ids of [[0,0],[1,0],[1,0],[24,0],[21,13],[0,13],[0,0]]){
+     eventClock=ids[0]===1&&effect!==1?500000n:1200000n;
+     [effect,secondEffect]=ids;revision++;
+     const names=ids.filter(Boolean).map(id=>chaosEvent(id as any).name).join('|');
+     await page.waitForFunction(expected=>Array.from(document.querySelectorAll('[aria-label="Chaos effects"] strong')).map(el=>el.textContent).join('|')===expected,names);
+     if(effect===1)await page.waitForFunction(announcing=>!!document.querySelector('[aria-label="Chaos effects"] [data-announcing]')===announcing,eventClock<1000000n);
+     const actual=await geometry();baseline??=actual;
+     assert.deepEqual(actual,baseline,`Effect ${ids} must not move the court, score, controls or page at ${viewport.width}x${viewport.height}`);
+     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+     if(effect===21)await page.screenshot({path:`artifacts/rooms-countdown/events-court-${viewport.width}.png`});
+    }
+    report.chaosLayout.push({...viewport,transitions:7,shiftPx:0});
    }
    secondEffect=0;
-   for(effect=1;effect<=24;effect++){revision++;await pages[0].waitForTimeout(650);assert.equal(await pages[0].locator('[aria-label="Chaos effects"] strong').count(),1);}
+   for(effect=1;effect<=24;effect++){revision++;await pages[0].locator('[aria-label="Chaos effects"] strong').filter({hasText:chaosEvent(effect as any).name}).waitFor();assert.equal(await pages[0].locator('[aria-label="Chaos effects"] strong').count(),1);}
    phase=3;revision++;
    for(const [i,page] of pages.entries()){await page.getByText(i?'DEFEAT':'VICTORY',{exact:true}).waitFor();const skip=page.getByRole('button',{name:/Skip animation/});if(await skip.isVisible())await skip.click();assert(await page.getByRole('button',{name:'Rematch',exact:false}).isVisible());}
   }
   for(const page of pages)assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
-  report.scenarios.push({mode,queueBefore:before,queueAfter:after,clockSkewMs:28000,serverJumpMs:600000,engineAcceptances:sends,startDelayMs:sentAt.map(at=>at-(room.offer.launch.at-3000)),f5Ready:true,reducedMotion:!!mode,inputWrites:inputTimes.length,injected429:injected,recoveryMs:resumedAt?resumedAt-limitedAt:null});
+  report.scenarios.push({mode,queueBefore:before,queueAfter:after,clockSkewMs:28000,serverJumpMs:600000,engineAcceptances:sends,startDelayMs:sentAt.map(at=>at-(room.offer.launch.at-3000)),f5Ready:true,reducedMotion:!!mode&&!motionEnabled,inputWrites:inputTimes.length,injected429:injected,recoveryMs:resumedAt?resumedAt-limitedAt:null});
   closing=true;await Promise.all(contexts.map(c=>c.close()));
  }
  assert.equal(report.errors.length,0);report.passed=true;

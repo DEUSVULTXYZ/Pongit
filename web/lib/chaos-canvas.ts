@@ -1,6 +1,7 @@
 import {chaosEvent} from '../../shared/chaos-events';
 import {chaosGeometry as G,chaosPortals} from '../../shared/chaos-geometry';
 import {activeEffect,type EffectPair,type RuntimeEffect} from '../../shared/chaos-effects';
+import {courtSprites} from './court-sprites';
 
 export type ChaosCanvasFrame={
  effects:EffectPair;gameMs:number;effectsEnabled:boolean;reducedMotion:boolean;
@@ -65,11 +66,11 @@ export function drawChaosCourt(c:CanvasRenderingContext2D,f:ChaosCanvasFrame){
 /** Paint the actual solid segments first, then optional cosmetic overlays. */
 export function drawChaosPaddles(c:CanvasRenderingContext2D,f:ChaosCanvasFrame){
  c.save();
+ const sprites=courtSprites(c);
  for(let side=0;side<2;side++){
   const p=f.paddles[side],x=side===0?G.leftX:G.rightX,color=side===0?'#7ceeff':'#d6a0ff';
-  c.fillStyle=color;
-  if(p.split){c.fillRect(x,p.y-8-p.height/2,12,p.height/2);c.fillRect(x,p.y+8,12,p.height/2);c.save();c.strokeStyle=color;c.globalAlpha=.25;line(c,x+6,p.y-8,x+6,p.y+8);c.restore();}
-  else c.fillRect(x,p.y-p.height/2,12,p.height);
+  if(p.split){sprites.paddle(side,p.y-8-p.height/2,p.height/2);sprites.paddle(side,p.y+8,p.height/2);c.save();c.strokeStyle=color;c.globalAlpha=.25;line(c,x+6,p.y-8,x+6,p.y+8);c.restore();}
+  else sprites.paddle(side,p.y-p.height/2,p.height);
   for(const e of f.effects){
    if(!activeEffect(e,f.gameMs)||(e.target!==side&&e.id!==23))continue;
    const age=f.gameMs-e.startsAt,outer=p.height/2+(p.split?8:0),col=chaosEvent(e.id).color;
@@ -100,7 +101,7 @@ export function drawChaosBalls(c:CanvasRenderingContext2D,f:ChaosCanvasFrame){
    const angle=Math.atan2(b.vy,b.vx);c.save();c.translate(b.x,b.y);c.rotate(angle);c.fillStyle=b.power?'#ff9346':'#b891ff';c.globalAlpha=.65;
    c.beginPath();c.moveTo(-5,-4);c.lineTo(-19,-2);c.lineTo(-14,0);c.lineTo(-24,2);c.lineTo(-5,4);c.closePath();c.fill();c.restore();
   }
-  c.fillStyle=b.id===1?'#fff':'#e7deff';c.beginPath();c.arc(b.x,b.y,G.ballRadius,0,Math.PI*2);c.fill();c.strokeStyle=b.id===1?'#c2ffff':'#d1a4ff';c.lineWidth=1;ring(c,b.x,b.y,G.ballRadius-.5);
+  courtSprites(c).ball(b.x,b.y,b.id!==1);
  }
  if(animated(f))for(const hit of f.impacts||[]){const age=f.gameMs-hit.at;if(age<0||age>260)continue;c.save();c.fillStyle=hit.color;c.strokeStyle=hit.color;c.globalAlpha=(1-age/260)*.75;pixels(c,hit.x,hit.y,5+age*.08,0);if(hit.kind==='shield'||hit.kind==='brick')diamond(c,hit.x,hit.y,8+age*.05);c.restore();}
  c.restore();

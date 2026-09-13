@@ -11,6 +11,7 @@ import {chaosLegacy} from '../../shared/chaos-codec';
 import {chaosEvent} from '../../shared/chaos-events';
 import {projectChaos,eventCanvas,eventPaddles} from '../lib/chaos-presentation';
 import {drawChaosCourt,drawChaosPaddles,drawChaosBalls,type ChaosCanvasFrame} from '../lib/chaos-canvas';
+import {courtSprites} from '../lib/court-sprites';
 type Props = {
   state: State | null;
   chaos?:ChaosDecoded;
@@ -75,22 +76,7 @@ export function Court({
     let seenEffects=new Set<number>(),seenHits=new Set<string>();
     let impacts:NonNullable<ChaosCanvasFrame['impacts']>[number][]=[];
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-    // Paint all bevels inside the existing rectangles: appearance never enlarges a hitbox.
-    function prism(x: number, y: number, w: number, h: number, face: CanvasGradient | string, light: string, dark: string) {
-      const b = Math.min(2.5, w / 5, h / 5);
-      ctx.fillStyle = face;
-      ctx.fillRect(x, y, w, h);
-      ctx.fillStyle = light;
-      ctx.fillRect(x, y, w, b);
-      ctx.fillRect(x, y, b, h);
-      ctx.fillStyle = dark;
-      ctx.fillRect(x + w - b, y + b, b, h - b);
-      ctx.fillRect(x + b, y + h - b, w - b, b);
-    }
-    const leftFace = ctx.createLinearGradient(22, 0, 34, 0);
-    leftFace.addColorStop(0, "#bbfaff"); leftFace.addColorStop(.35, "#5de9ff"); leftFace.addColorStop(1, "#269ed0");
-    const rightFace = ctx.createLinearGradient(990, 0, 1002, 0);
-    rightFace.addColorStop(0, "#f2d5ff"); rightFace.addColorStop(.35, "#db9cfc"); rightFace.addColorStop(1, "#9753dc");
+    const sprites = courtSprites(ctx);
     const fontFamily=getComputedStyle(document.body).fontFamily;
     let previousSound:{vx:bigint;vy:bigint;score:number;time:number}|null=null;
     let frame = 0,
@@ -207,8 +193,8 @@ export function Court({
         }
         ctx.restore();
       } else trail.reset();
-      if(!cp){prism(22, yA - halfA, 12, halfA*2, leftFace, "#e0ffff", "#357787");
-      prism(990, yB - halfB, 12, halfB*2, rightFace, "#f3e8ff", "#67478b");}
+      if(!cp){sprites.paddle(0, yA - halfA, halfA*2);
+      sprites.paddle(1, yB - halfB, halfB*2);}
       if(s?.awaitingServe && !s.finished && !p.externalIntermission) {
         const remaining=Math.max(0,Number(s.resumeAt-p.clock)/1e6);
         ctx.fillStyle="#e5e1ff";ctx.textAlign="center";ctx.font=`30px ${fontFamily}`;
@@ -222,7 +208,7 @@ export function Court({
         previousSound={vx:s.vx,vy:s.vy,score,time:now};
       } else previousSound=null;
       if (s&&!cp) {
-        prism(Number(s.x) / 1e6 - 6, Number(s.y) / 1e6 - 6, 12, 12, "#f3fcff", "#fff", "#9eafb9");
+        sprites.ball(Number(s.x) / 1e6, Number(s.y) / 1e6);
       } else if(!s) {
         ctx.strokeStyle = "#777";
         ctx.strokeRect(506, 282, 12, 12);
