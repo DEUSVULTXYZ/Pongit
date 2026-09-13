@@ -47,6 +47,7 @@ import {assertRoomsEngineAvailable,RoomsEngineUnavailable} from "../../shared/ro
 import {overlayPresence} from "./rooms-presence";
 import {recordRpc,measuredFetch} from "../../shared/rpc-metrics";
 import {createRpcDiagnostics} from "./rpc-diagnostics";
+import {createRoomsPublicationHealth} from './rooms-publication-health';
 import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
 import {
@@ -169,6 +170,8 @@ export async function createRoomsCoordinator(o: Options) {
     { rooms: {}, queue: [], invites: [] },
   ]);
   const diagnostics=await createRpcDiagnostics(db,app);
+  const publicationHealth=await createRoomsPublicationHealth(db,app);
+  let lastPublishedBatch=0,publicationLog='';
   let lifecycle: Awaited<ReturnType<typeof roomsLifecycle>> = null;
   let publicLadder: Promise<any> | undefined, publicLadderAt = 0, publicLadderMode = -1;
   const sockets = new Map<
@@ -448,13 +451,24 @@ export async function createRoomsCoordinator(o: Options) {
   let writer:Promise<unknown>=Promise.resolve();
   let closingEpoch: bigint | null = null;
   const writes=new Map<string,Promise<void>>();
+  async function recordPublicationFailure(e:unknown){
+    if(!publicationUnavailable(e))return;
+    online=false;admissionHealthy=false;
+    lastError=new EnginePublicationUnavailable().message;lastErrorCode='ENGINE_PUBLICATION_UNAVAILABLE';
+    const incident=await publicationHealth.fail(e,lastEpoch,lastPublishedBatch);
+    const key=json(incident);
+    if(key!==publicationLog){publicationLog=key;console.warn(json({event:'rooms-publication-failed',app,...incident,at:new Date().toISOString()}));}
+    void notify();
+  }
   function publicTick(id:string,cancel=false,pressureData?:Hex){
     const key=`${id}:${cancel}:${pressureData?hash(pressureData):"tick"}`,existing=writes.get(key);if(existing)return existing;
-    const operation=writer.catch(()=>{}).then(()=>sendPublicTick(id,cancel,pressureData)).finally(()=>writes.delete(key));
+    const operation=writer.catch(()=>{}).then(()=>sendPublicTick(id,cancel,pressureData)).catch(async e=>{await recordPublicationFailure(e);throw e;}).finally(()=>writes.delete(key));
     writes.set(key,operation);writer=operation;return operation;
   }
   async function sendPublicTick(id: string, cancel = false, pressureData?:Hex) {
     if (closingEpoch !== null) throw new Error("This arena is closing; no further commands will be submitted");
+    // Recovery may only resend the existing immutable pending transaction.
+    if(publicationHealth.status()&&id!=='0')throw new EnginePublicationUnavailable();
     const requestedData=id==='0'?null:pressureData || encodeFunctionData({
       abi:roomsAbi,functionName:cancel?'cancelMatch':'tick',args:[BigInt(id)],
     });
@@ -714,6 +728,13 @@ export async function createRoomsCoordinator(o: Options) {
         if(!(e instanceof RoomsEngineUnavailable))throw e;
         writable=false;lastError=e.message;lastErrorCode=e.code;
       }
+      lastPublishedBatch=status.committedBatches;
+      if(writable&&await publicationHealth.observe(status,delegation)){
+        publicationLog='';console.info(json({event:'rooms-publication-recovered',app,epoch:status.epoch,batch:status.committedBatches,at:new Date().toISOString()}));
+      }
+      const publicationBlocked=!!publicationHealth.status();
+      const recoveryWritable=writable;
+      if(publicationBlocked){writable=false;lastErrorCode='ENGINE_PUBLICATION_UNAVAILABLE';lastError=new EnginePublicationUnavailable().message;}
       if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
         writable=false;lastErrorCode='ENGINE_RENEWING';
         lastError='The arcade is recovering its game delegation. Payments continue in the background.';
@@ -731,7 +752,7 @@ export async function createRoomsCoordinator(o: Options) {
           [app],
         )
       ).rows[0];
-      if (pendingJob && writable) void publicTick("0").catch(()=>{});
+      if (pendingJob && (writable || recoveryWritable && publicationHealth.claimRetry())) void publicTick("0").catch(()=>{});
       const before = await current();
       if(streamEnabled){
         const ids=new Set(Object.values(before.rooms).filter(r=>r.offer&&!['complete','cancelled'].includes(r.offer.status)).map(r=>r.offer!.id));
@@ -893,6 +914,7 @@ export async function createRoomsCoordinator(o: Options) {
             process.env.ROOMS_ADMISSION_ENABLED !== "true" || lifecycle && !lifecycle.available() ||
             active >= 2 ||
             reserved + creationBudget > nodeNow.maxDiffsPerCommit
+            || publicationHealth.status()
           ) {
             r.status = "capacity";
             continue;
@@ -941,6 +963,7 @@ export async function createRoomsCoordinator(o: Options) {
         void notify();return;
       }
       if(publicationUnavailable(e)){
+        await recordPublicationFailure(e);
         maintenanceRetryAt=Date.now()+30000;online=false;admissionHealthy=false;
         lastError=new EnginePublicationUnavailable().message;
         lastErrorCode='ENGINE_PUBLICATION_UNAVAILABLE';
@@ -1011,6 +1034,7 @@ export async function createRoomsCoordinator(o: Options) {
             admissionHealthy &&
             process.env.ROOMS_ADMISSION_ENABLED === "true" && (lifecycle?.available() ?? true),
           maintenance:lifecycle?.status(),
+          publication:publicationHealth.status(),
           checkedAt: lastCheck,
           error: lastError,
           errorCode: lastErrorCode || undefined,
@@ -1331,6 +1355,7 @@ export async function createRoomsCoordinator(o: Options) {
       };
       const data = await transact(
         async (s, c) => {
+          if(publicationHealth.status()&&['/interlude/queue','/interlude/rooms','/interlude/invitations','/interlude/offers/ready','/interlude/offers/accept'].includes(path))throw new EnginePublicationUnavailable();
           if (path === "/interlude/profile") {
             const profile = z
               .object({
@@ -1628,7 +1653,7 @@ export async function createRoomsCoordinator(o: Options) {
   return {
     route,
     subscribe,
-    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status() }),
+    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status() }),
     stop: () => {clearInterval(timer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();diagnostics.stop();lifecycle?.stop();},
   };
 }

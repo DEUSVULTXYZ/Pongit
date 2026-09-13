@@ -9,6 +9,17 @@ export function publicationUnavailable(error:unknown){
  for(let e=error as any,n=0;e&&n<8;e=e.cause,n++)if(e.code==="ENGINE_PUBLICATION_UNAVAILABLE" || /this session is over|node is no longer accepting transactions|commit relay failed/i.test(String(e.details||"")+" "+String(e.message||"")))return true;
  return false;
 }
+/** Allowlisted diagnostics only: never persist an RPC request, grant or token. */
+export function publicationFailureDetails(error:unknown){
+ let batch:string|undefined,relayStatus:number|undefined;
+ for(let e=error as any,n=0;e&&n<8;e=e.cause,n++){
+  const text=String(e.details||"")+" "+String(e.message||"");
+  batch??=text.match(/batch\s+(\d+)\s+could not be settled/i)?.[1];
+  const status=text.match(/commit relay failed:\s*(\d{3})\b/i)?.[1];
+  if(status&&!relayStatus)relayStatus=Number(status);
+ }
+ return {batch,relayStatus,reason:relayStatus===413?'payload_too_large':relayStatus===401||relayStatus===403?'relay_authentication':'publication_failed'};
+}
 export function serviceError(error:unknown,requestId:string){
  if(publicationUnavailable(error)){const e=new EnginePublicationUnavailable(error);return {status:503,retryMs:30000,body:{error:e.message,code:e.code,source:e.source,retryAt:e.retryAt,requestId}};}
  const e=error as any,retryMs=engineReadRetryMs(e);
