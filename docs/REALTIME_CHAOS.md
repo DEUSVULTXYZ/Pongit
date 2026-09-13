@@ -42,11 +42,11 @@ The HTTPS production test on September 13 at 10:06 UTC used two new friendly pla
 
 ## Production release
 
-The running web and relayer revision is `f902a2ec94e1b8e83cbc4f0e4c66dbdefb36c5df`, activated at 10:05:52 UTC on September 13. Configuration reports rules 5, game and admission available, with no game or payment-worker error in the recorded health check.
+The running game-service revision is `f902a2ec94e1b8e83cbc4f0e4c66dbdefb36c5df`, activated at 10:05:52 UTC on September 13. The web revision is `d0ae0b0d4e639c0c82ae102b91b640e5e274fcef`, which refreshed the documentation at 10:14:53 UTC without restarting the game service. Configuration reports rules 5, game and admission available, with no game or payment-worker error in the recorded health check.
 
 The first activation exposed a lifecycle lookup that assumed an unversioned financial adapter. Admissions were closed and the previous release was restored. The fix binds lifecycle management to the router's active manifest. A complete real coordinator startup now verifies this wiring, including all archived finance deployments, before activation. No new player game was admitted by the failed startup.
 
-The code and operator-secret comparison scanned 775 publishable text files without matching an actual production secret. The predeployment backup `20260913T093653Z` was copied off the VPS and its database checksums verified.
+The code and operator-secret comparison scanned the publishable text files without matching an actual production secret. The predeployment backup `20260913T093653Z` and postdeployment backup `20260913T100925Z` were copied off the VPS and their database checksums verified. Temporary test services were removed; disk use remained below 80%.
 
 ## Operations and rollback
 
@@ -56,6 +56,6 @@ Before activation: verify the offsite backup, disk below 80%, no active previous
 
 If gameplay needs rollback, first stop new admissions and let the current matches finish. Retain the new finance-capable relayer and all finance entries so new debts can still settle. Select the previous game manifest only after verifying its live delegation and ratings. Never point an old market at a new game or silently reuse a match reference. Keep the new contracts and logs for settlement and audit.
 
-Preserved previous images: `pongit-web:intro-9ea903c` and `pongit-relayer:intro-9ea903c`. The latter is suitable for a pre-admission startup rollback only; after new matches exist, keep the finance-capable relayer. Running images: `pongit-web:realtime-f902a2e` and `pongit-relayer:realtime-f902a2e`.
+Preserved previous images: `pongit-web:intro-9ea903c` and `pongit-relayer:intro-9ea903c`. The latter is suitable for a pre-admission startup rollback only; after new matches exist, keep the finance-capable relayer. Running images: `pongit-web:realtime-docs-d0ae0b0` and `pongit-relayer:realtime-f902a2e`.
 
 This release changes the betting timing, not the hosted delegation architecture. The production game still uses its existing shared session model. The signed pressure bridge is a testnet trust assumption, and result publication remains subject to Interlude's challenge mechanism.

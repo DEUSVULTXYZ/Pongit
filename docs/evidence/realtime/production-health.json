@@ -6,7 +6,7 @@
     "admission": true,
     "lastError": "",
     "lastErrorCode": "",
-    "lastCheck": 1789294089301,
+    "lastCheck": 1789294587389,
     "app": "0xd2fe1c8df2bdbe2666409fc20f25bcd2f2a40fb5",
     "epoch": 1,
     "maintenance": {
@@ -19,7 +19,7 @@
       "batch": "27"
     }
   },
-  "head": "62155551",
+  "head": "62157179",
   "queueError": "",
   "network": 10143,
   "payments": {
