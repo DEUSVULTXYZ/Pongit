@@ -32,7 +32,7 @@ try{
  else if(d.status===1&&String(d.epoch)===String(record.startedEpoch)&&(force||d.expiresAt-now<420n)){
   await db.query('INSERT INTO agent_arcade.control(app,admissions,reason) VALUES($1,false,$2) ON CONFLICT(app) DO UPDATE SET admissions=false,reason=$2,updated_at=now()',[m.app,'Delegation renewal']);
   const active=Number((await db.query("SELECT count(*) FROM agent_arcade.matches WHERE app=$1 AND status IN ('preparing','offered','active','publishing')",[m.app])).rows[0].count);
-  if(active){await event('draining',{active});}
+  if(active){await event(now>=d.expiresAt?'intervention-required':'draining',{active,...(now>=d.expiresAt?{reason:'Delegation expired with unfinished games. Reconcile published state before closing; do not discard uncertain commands.'}:{})});}
   else{
    const node=createPublicClient({transport:http(m.node,{retryCount:0,timeout:10000})});const status:any=await node.request({method:'interlude_session',params:[]} as any);
    assert.equal(String(status.epoch),String(d.epoch));assert.equal(status.app.toLowerCase(),m.app);assert.equal(status.chainId,4242);

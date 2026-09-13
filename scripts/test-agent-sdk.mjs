@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {mkdtemp} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+assert.equal(process.env.PONG_AGENT_PACKAGE_TEST,'isolated-vps');
+const directory=await mkdtemp(join(tmpdir(),'pongit-sdk-'));
+execFileSync('npm',['install','--ignore-scripts','--no-audit','--no-fund','/qualification/pongit-agent-sdk-0.1.0-candidate.1.tgz'],{cwd:directory,stdio:'inherit'});
+execFileSync(process.execPath,['--input-type=module','-e',`import {createAgentClient,AgentController,agentArcadeAbi} from '@pongit/agent-sdk';
+if(typeof createAgentClient!=='function'||typeof AgentController!=='function'||!agentArcadeAbi.length)process.exit(1);
+console.log('Clean SDK package import passed');`],{cwd:directory,stdio:'inherit'});

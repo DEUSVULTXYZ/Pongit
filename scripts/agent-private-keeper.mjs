@@ -8,7 +8,9 @@ const root='/opt/pongit/tests/agents-20260913',secret='/opt/pongit/secrets/agent
 await mkdir(metadata,{recursive:true,mode:0o700});
 for(const name of ['manifest.json','lifecycle.json','archive.json']){
  try{await readFile(metadata+'/'+name);}catch(e){if(e.code!=='ENOENT')throw e;await copyFile(secret+'/'+name,metadata+'/'+name);}
+ await chown(metadata+'/'+name,1000,1000);
 }
+await chown(metadata,1000,1000);
 const docker=(...args)=>execFileSync('docker',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const run=async(args)=>new Promise((resolve,reject)=>{
  const child=spawn('docker',args,{stdio:['ignore','pipe','pipe']});let out='';
