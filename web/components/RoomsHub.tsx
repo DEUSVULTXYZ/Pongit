@@ -35,6 +35,7 @@ import {
   roomsAccountKey,
   authenticateRooms,
   recoverRoomsCommands,
+  roomControls,
   roomsAction,
   roomsApi,
   type RoomsClient,
@@ -385,10 +386,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     } else setPanel("connect");
   }
   async function install(p: Address, next: RoomsSession, current = () => alive.current) {
-    await client.current!.status();
+    const engine=await client.current!.status();
     if (!current()) return;
     // A single serialization point owns the SDK's transaction nonce for this tab.
     let failedSend=false;
+    const compact=roomControls(client.current!,p,BigInt(engine.epoch));
     const serial = new Proxy(next, {
       get(target, key) {
         if (key === "send")
@@ -397,7 +399,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               .catch(() => {})
               .then(() => {
                 if(failedSend)throw new Error("Waiting for the previous game command to synchronize.");
-                return (target.send as any)(...args).catch((e:Error)=>{
+                return ((compact?.send??target.send.bind(target)) as any)(...args).catch((e:Error)=>{
                   // A receipt-backed application revert consumes its nonce.
                   // A transport/session failure needs a freshly restored SDK session.
                   if(e.name!=="AppRevertError")failedSend=true;
@@ -407,6 +409,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
             sendTail.current = pending;
             return pending;
           };
+        if(key==='revokeCompact')return compact?.revoke;
         const value = Reflect.get(target, key);
         return typeof value === "function" ? value.bind(target) : value;
       },
@@ -1043,6 +1046,8 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     move(0);
     if (lane.current && !lane.current.stopped) await lane.current.pump(false);
     lane.current?.stop();
+    let revocationPending=false;
+    try{await sendTail.current;await (session.current as RoomsSession & {revokeCompact?:()=>Promise<void>})?.revokeCompact?.();}catch{revocationPending=true;}
     session.current?.discard();
     session.current = null;
     release.current?.();
@@ -1068,7 +1073,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     });
     setPanel(null);
     setNotice(
-      "Session removed from this tab. Other copies remain valid until expiry.",
+      revocationPending?"Disconnected. Game-key revocation is still pending; the key expires automatically.":"Session removed from this tab.",
     );
   }
   const openPanel = (p: typeof panel) => {

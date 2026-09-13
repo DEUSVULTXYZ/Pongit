@@ -115,7 +115,7 @@ The browser keeps a pending receipt hash in this tab's session storage so F5 can
 
 ## Rooms notifications and service errors
 
-`GET /interlude/config` includes `stateTransport` (`events` or `polling`). The event adapter subscribes to `interlude_subscribe("applied")` on the deployment's node. It filters the application and subscription id, decodes contract events and reconciles discontinuities through the existing snapshot getter. The SDK still signs every command directly to the engine.
+`GET /interlude/config` includes `stateTransport` (`events` or `polling`). The event adapter subscribes to `interlude_subscribe("applied")` on the deployment's node. It filters the application and subscription id, decodes contract events and reconciles discontinuities through the existing snapshot getter. The limited game key signs every command directly to the engine. The current compact rooms contract caches the verified SDK grant instead of receiving it with every movement.
 
 An authenticated `POST /interlude/presence` heartbeat runs every ten seconds. `rooms-changed` notifications carry an account-specific revision and are sent only when the visible lobby changes. The browser coalesces refreshes and retains fallback polling. `rooms-unavailable` means the authorization service could not be reached: retain the local key, but do not perform unverified actions. `rooms-expired` is reserved for a verified invalid, revoked or expired session.
 

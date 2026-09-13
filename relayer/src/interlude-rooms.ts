@@ -29,6 +29,7 @@ import { z } from "zod";
 import { roomsAbi as classicRoomsAbi } from "../../shared/abi-rooms";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { roomsRealtimeAbi } from "../../shared/abi-PongRoomsRealtime";
+import { roomsCompactAbi } from "../../shared/abi-PongRoomsCompact";
 import { chaosOfferTypes } from "../../shared/rooms-chaos";
 import {createRoomsFinanceDirectory} from "./rooms-finance-directory";
 import {loadRoomsFinance} from "./rooms-finance-config";
@@ -102,9 +103,11 @@ export async function createRoomsCoordinator(o: Options) {
     ),
   );
   const realtime = manifest.rulesVersion === 5;
+  const previousRooms=[...new Set([manifest.previousRooms,...(manifest.previousRoomsHistory||[])].filter(Boolean).map((a:string)=>a.toLowerCase()))];
   const chaosEnabled = manifest.rulesVersion === 4 || realtime;
-  const roomsAbi: Abi = realtime ? roomsRealtimeAbi : chaosEnabled ? roomsChaosAbi : classicRoomsAbi;
-  const creationBudget=realtime?32:chaosEnabled?30:24,terminalBudget=realtime?14:chaosEnabled?12:8;
+  const roomsAbi: Abi = manifest.compactControls ? roomsCompactAbi : realtime ? roomsRealtimeAbi : chaosEnabled ? roomsChaosAbi : classicRoomsAbi;
+  // Each newly admitted pair can bind two additional arcade keys in this batch.
+  const creationBudget=manifest.compactControls?34:realtime?32:chaosEnabled?30:24,terminalBudget=realtime?14:chaosEnabled?12:8;
   const modeOf = (v: unknown): 0 | 1 => {
     const mode=z.union([z.literal(0),z.literal(1)]).parse(v ?? 0);
     if(mode === 1 && (!chaosEnabled || process.env.ROOMS_CHAOS_ENABLED !== "true"))
@@ -1189,7 +1192,7 @@ export async function createRoomsCoordinator(o: Options) {
           publicLadderAt = Date.now(); publicLadderMode=mode;
           publicLadder = (async () => {
         const players = await roomsRankingCandidates(db,
-          [app,...(manifest.previousRooms ? [String(manifest.previousRooms).toLowerCase()] : []),...(chaosEnabled && mode===0 && manifest.previousClassic ? [String(manifest.previousClassic).toLowerCase()] : [])],mode);
+          [app,...previousRooms,...(chaosEnabled && mode===0 && manifest.previousClassic ? [String(manifest.previousClassic).toLowerCase()] : [])],mode);
         const items = [];
         for (const player of players) {
           const [live,published] = await Promise.all([
@@ -1278,7 +1281,7 @@ export async function createRoomsCoordinator(o: Options) {
         const recent = (
           await db.query(
             "SELECT app || ':' || id AS id,a,b,extract(epoch from ended_at)::bigint AS ended FROM il_results WHERE app=ANY($1) AND verified AND phase=3 AND ended_at>now()-interval '30 days' AND (a=$2 OR b=$2)",
-            [[app,...(manifest.previousRooms ? [String(manifest.previousRooms).toLowerCase()] : [])], p],
+            [[app,...previousRooms], p],
           )
         ).rows;
         const counts = new Map<

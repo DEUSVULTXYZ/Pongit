@@ -10,9 +10,11 @@ import {initial} from '../shared/physics-v2';
 import manifest from '../deployments/interlude-rooms.json';
 import financialDeployments from '../deployments/rooms-finance.json';
 import {roomsChaosAbi} from '../shared/abi-PongRoomsTestnet';
+import {roomsCompactAbi} from '../shared/abi-PongRoomsCompact';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
-const origin='https://pongit.xyz',app=manifest.app as Address,abi=roomsChaosAbi as Abi;
+const compact=(manifest as typeof manifest & {compactControls?:boolean}).compactControls===true;
+const origin='https://pongit.xyz',app=manifest.app as Address,abi=(compact?roomsCompactAbi:roomsChaosAbi) as Abi;
 const players=['0x1111111111111111111111111111111111111111','0x2222222222222222222222222222222222222222'];
 let clockSkew=28000;
 const serverNow=()=>Date.now()+clockSkew;
@@ -34,7 +36,7 @@ try{
    const privateKey=generatePrivateKey(),signer=privateKeyToAccount(privateKey);
    const saved=encodeSession({app,baseChainId:10143,privateKey,signature:`0x${'11'.repeat(65)}`,grant:{granter:player as Address,sessionKey:signer.address,expiry:BigInt(Math.floor(serverNow()/1000)+1800),epoch:0n,anyFunction:false,selectors:['acceptMatch','input','tick','cancelMatch','concede'].map(name=>toFunctionSelector(abi.find(x=>x.type==='function'&&x.name===name) as any))}});
    await context.addInitScript(({saved,key,accountKey,player})=>{sessionStorage.setItem(key,saved);sessionStorage.setItem(accountKey,player);localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));},{saved,key:storageKey(app,10143,player as Address),accountKey:`pongit:rooms:${app}:account`,player});
-   let nonce=0;const receipts=new Map<string,any>();
+   let nonce=0,binding=0n;const receipts=new Map<string,any>();
    await context.route('**/*',async route=>{
     try{
      const u=new URL(route.request().url());
@@ -59,16 +61,19 @@ try{
       if(rpc.method==='eth_chainId')return reply('0x1092');
       if(rpc.method==='eth_getTransactionCount')return reply(toHex(nonce));
       if(rpc.method==='eth_call'){
+       if(compact&&rpc.params[0].data.startsWith(toFunctionSelector('controlBinding(address)')))return reply(encodeFunctionResult({abi,functionName:'controlBinding',result:binding}));
        const state={...initial(zeroHash,mode as 0|1),leftDir:directions[0],rightDir:directions[1],...(paused?{scoreA:1,awaitingServe:true,vx:0n,vy:0n,resumeAt:3000000n}:{})};
        return reply(encodeFunctionResult({abi,functionName:'getSnapshot',result:[1n,revision,BigInt(phase),players[0],players[1],zeroAddress,zeroAddress,100n+revision,0n,...inputNonces,BigInt(room?.offer.expires||0),state] as any}));
       }
       if(rpc.method==='interlude_sendTransaction'){
-       const tx=parseTransaction(rpc.params[0]),wrapped=decodeFunctionData({abi:delegatableAbi,data:tx.data!});
-       assert.equal(wrapped.functionName,'withSession');const inner=decodeFunctionData({abi,data:(wrapped.args as any)[2]});
+       const tx=parseTransaction(rpc.params[0]);
+       const inner=compact?decodeFunctionData({abi,data:tx.data!}):decodeFunctionData({abi,data:(decodeFunctionData({abi:delegatableAbi,data:tx.data!}).args as any)[2]});
        const hash=keccak256(rpc.params[0]);if(receipts.has(hash))return reply(receipts.get(hash));
        const inject=injectNext && inner.functionName==='input';
        if(inject){injectNext=false;injected=true;limitedAt=Date.now();if(!mode)return route.fulfill({status:429,headers:{'retry-after':'1','access-control-expose-headers':'Retry-After'},body:'Injected request limit before execution'});}
        assert.equal(tx.nonce,nonce,'SDK nonce must remain sequential after recovery');
+       if(inner.functionName==='registerControls')binding=BigInt(player)|(BigInt(Math.floor(serverNow()/1000)+1800)<<160n)|(1n<<224n);
+       if(inner.functionName==='revokeControls')binding=BigInt(player);
        if(inner.functionName==='acceptMatch'){
         assert(serverNow()>=room.offer.launch.at,'No engine acceptance before the countdown ends');assert(!accepted.has(player),'No duplicate acceptance');accepted.add(player);sentAt.push(serverNow());sends++;
         room.offer.accepted=[...accepted];phase=accepted.size===2?2:1;if(phase===2){room.offer.status='active';room.status='playing';}

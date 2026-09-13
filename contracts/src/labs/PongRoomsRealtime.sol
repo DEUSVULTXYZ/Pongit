@@ -6,11 +6,14 @@ import {PhysicsV2} from "../v2/PhysicsV2.sol";
 import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 import {DelegatedLayout} from "../../vendor/interlude/libraries/DelegatedLayout.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Session} from "../../vendor/interlude/libraries/Session.sol";
 
 /// @notice Testnet bridge queues confirmed gross stakes without pausing either mode.
 /// The bridge cannot choose scores, transfer funds or resize during a rally.
 contract PongRoomsRealtime is PongInterludeRoomsChaos {
+    error BaseOperatorOnly();
+    error ActivePublishedMatches();
+    error DelegationPending();
     address public immutable pressureSigner;
     address public immutable operator;
     address public immutable previousGame;
@@ -41,7 +44,7 @@ contract PongRoomsRealtime is PongInterludeRoomsChaos {
         if (_phase(p.matchId) != 2 || s.mode != 1 || p.seed != s.seed || p.epoch != _sessionEpoch()
             || p.rally > s.scoreA + s.scoreB || p.sourceBlock == 0 || p.checkpoint == bytes32(0)
             || p.expires <= block.timestamp || p.expires > block.timestamp + 30) revert InvalidPressure();
-        if (ECDSA.recover(pressureDigest(p), signature) != pressureSigner) revert InvalidPressure();
+        if (Session.recover(pressureDigest(p), signature) != pressureSigner) revert InvalidPressure();
         uint256 old = _get(p.matchId, 17);
         if (p.paidA < uint128(old) || p.paidB < uint128(old >> 128) || p.sourceBlock < _get(p.matchId, 16)) revert InvalidPressure();
         if (p.sourceBlock == _get(p.matchId, 16)) {
@@ -87,16 +90,16 @@ contract PongRoomsRealtime is PongInterludeRoomsChaos {
         r = PongInterludeRoomsChaos(previousGame).ratingOf(player, mode); r.season = currentSeason();
     }
     function closeEngine() external {
-        require(block.chainid == 10143 && msg.sender == operator, "base operator only");
-        require(activeCount() == 0, "active published matches"); hub.closeDelegation(Types.GLOBAL);
+        if (block.chainid != 10143 || msg.sender != operator) revert BaseOperatorOnly();
+        if (activeCount() != 0) revert ActivePublishedMatches(); hub.closeDelegation(Types.GLOBAL);
     }
     function renewEngine() external payable {
-        require(block.chainid == 10143 && msg.sender == operator, "base operator only");
-        require(hub.statusOf(address(this), Types.GLOBAL) == Types.Status.None, "delegation pending");
+        if (block.chainid != 10143 || msg.sender != operator) revert BaseOperatorOnly();
+        if (hub.statusOf(address(this), Types.GLOBAL) != Types.Status.None) revert DelegationPending();
         DelegatedLayout.Layout storage l = DelegatedLayout.layout();
         hub.openDelegation{value:msg.value}(Types.GLOBAL,l.globalSlots,l.globalMappingBases,address(0),l.owner,l.minStake);
     }
-    function _isSessionBlocked(bytes4 selector) internal view override returns (bool) {
+    function _isSessionBlocked(bytes4 selector) internal view virtual override returns (bool) {
         return selector == this.closeEngine.selector || selector == this.renewEngine.selector || selector == this.submitLivePressure.selector || super._isSessionBlocked(selector);
     }
 }

@@ -14,6 +14,14 @@ Match joins bind the opponent, room, commitment, session, nonce, expiry, tournam
 
 Only the limited arcade material and recovery data are stored in sessionStorage. The remembered passkey hint in localStorage is not the wallet key. Owner-derived keys are opened for their operation and closed afterward.
 
+### Compact room controls
+
+The current rooms deployment verifies the complete owner-signed SDK grant once through `registerControls`. It records the player, limited game key, expiry and engine epoch. Later movements use direct zero-value transactions from that game key, so the full grant is no longer repeated in every command. The approved scope remains match acceptance, input, ticking, cancellation and concession. It does not permit financial operations.
+
+Reloading the same tab checks the recorded binding and reuses it. Changing the engine epoch requires a new binding. Disconnect attempts `revokeControls` before removing the local key; a refused or offline attempt is shown as pending, and expiry still applies. Revocation leaves a tombstone, so the same grant cannot register that key again. Older deployments retain their existing authorization paths.
+
+The tab journals signed game bytes before sending. After a lost response, it reconciles the original hash before signing another command. An absent receipt is not proof of failure.
+
 ## Application authentication
 
 The server issues a single-use nonce and message bound to player, chain and game. A valid owner or active arcade signer exchanges the signed message for an HttpOnly, SameSite Strict cookie, Secure on production HTTPS. The current cookie lifetime is **two hours**; a session signed by an arcade key also depends on that key remaining valid.

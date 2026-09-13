@@ -1,4 +1,5 @@
-import {decodeFunctionData,keccak256,parseTransaction,recoverTransactionAddress,type Abi,type Address,type Hex} from 'viem';
+import {decodeAbiParameters,decodeFunctionData,keccak256,parseTransaction,recoverTransactionAddress,type Abi,type Address,type Hex} from 'viem';
+import {controlProofParameters} from '../../shared/compact-rooms-session';
 import {delegatableAbi} from '@interludelayer-sdk/sdk';
 import type {EngineTransportJournal} from '../../shared/engine-transport';
 
@@ -10,6 +11,7 @@ type Store=Pick<Storage,'getItem'|'setItem'>;
 export class RoomsCommandJournal implements EngineTransportJournal {
  private epoch?:string;
  private direct?:{key:Address;epoch:string;match:string;expires:bigint};
+ private roomControls?:{key:Address;player:Address;epoch:string;expires:bigint};
  private key:string;
  constructor(private store:Store,private app:Address,private abi:Abi){this.key=`pongit:commands:${app.toLowerCase()}`;}
  private load():Job[]{return JSON.parse(this.store.getItem(this.key)||'[]');}
@@ -19,6 +21,12 @@ export class RoomsCommandJournal implements EngineTransportJournal {
  bindDirect(key:Address,epoch:bigint,match:bigint,expires:bigint){
   if(this.epoch!==String(epoch)||match<=0n)throw Error('Read the current arena before binding direct controls');
   this.direct={key,epoch:String(epoch),match:String(match),expires};
+ }
+ /** The SDK grant was checked for this app/account; the contract verifies it
+  * again on registration. This is separate from independent-arena bindings. */
+ bindRoomControls(player:Address,key:Address,epoch:bigint,expires:bigint){
+  if(this.epoch!==String(epoch))throw Error('Read the current arena before binding direct controls');
+  this.roomControls={key,player,epoch:String(epoch),expires};
  }
  received(method:string,result:any){
   if(method==='interlude_session'){
@@ -44,16 +52,29 @@ export class RoomsCommandJournal implements EngineTransportJournal {
    if(signer.toLowerCase()!==grant.sessionKey.toLowerCase())throw Error('Game key mismatch');
    player=grant.granter;
   }else{
-   const d=this.direct;inner=decodeFunctionData({abi:this.abi,data:tx.data!});
+   inner=decodeFunctionData({abi:this.abi,data:tx.data!});
+   const r=this.roomControls;
+   if(r){
+    if(r.epoch!==this.epoch||signer.toLowerCase()!==r.key.toLowerCase()||!['registerControls','revokeControls','input','tick','concede','acceptMatch','cancelMatch'].includes(inner.functionName))throw Error('Scoped game grant required');
+    if(inner.functionName==='registerControls'){
+     const [g]=decodeAbiParameters(controlProofParameters,inner.args?.[0] as Hex);
+     if(g.granter.toLowerCase()!==r.player.toLowerCase()||g.sessionKey.toLowerCase()!==r.key.toLowerCase()||g.expiry!==r.expires||g.anyFunction||g.selectors.length!==5)throw Error('Game key mismatch');
+    }
+    if(inner.functionName==='revokeControls'&&String(inner.args?.[0]).toLowerCase()!==r.key.toLowerCase())throw Error('Only this arcade key can be revoked');
+    if(inner.functionName!=='revokeControls'&&BigInt(Math.floor(Date.now()/1000))>=r.expires&&!this.load().some(j=>j.hash===keccak256(raw as Hex)&&j.state==='uncertain'))throw Error('Arcade session expired');
+    player=r.player;
+   }else{
+   const d=this.direct;
    if(!d||d.epoch!==this.epoch||signer.toLowerCase()!==d.key.toLowerCase()||!['input','tick','concede'].includes(inner.functionName)||String(inner.args?.[0])!==d.match)throw Error('Scoped game grant required');
    // An identical already-journaled call can still be reconciled after expiry.
    if(BigInt(Math.floor(Date.now()/1000))>=d.expires&&!this.load().some(j=>j.hash===keccak256(raw as Hex)&&j.state==='uncertain'))throw Error('Arcade session expired');
    player=d.key;
+   }
   }
   const hash=keccak256(raw as Hex),rows=this.load(),pending=rows.find(x=>x.player.toLowerCase()===player.toLowerCase()&&x.state==='uncertain');
   if(pending){if(pending.hash!==hash||pending.epoch!==this.epoch)throw Error('An uncertain game command must be reconciled before another signature is sent');return;}
   if(rows.some(x=>x.hash===hash))throw Error('This signed game command is already resolved');
-  const match=inner.functionName==='acceptMatch'?String((inner.args?.[0] as any)?.id):String(inner.args?.[0]);
+  const match=inner.functionName==='acceptMatch'?String((inner.args?.[0] as any)?.id):['registerControls','revokeControls'].includes(inner.functionName)?'0':String(inner.args?.[0]);
   const keep=rows.filter(x=>x.state==='uncertain').concat(rows.filter(x=>x.state!=='uncertain').slice(-15));
   keep.push({hash,raw:raw as Hex,app:this.app,player,signer,epoch:this.epoch,nonce:tx.nonce!,action:inner.functionName,match,at:Date.now(),state:'uncertain'});
   this.save(keep);

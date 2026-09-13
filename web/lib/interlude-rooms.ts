@@ -11,6 +11,8 @@ import { monadTestnet } from "viem/chains";
 import manifest from "../../deployments/interlude-rooms.json";
 import { roomsAbi } from "../../shared/abi-rooms";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
+import { roomsCompactAbi } from "../../shared/abi-PongRoomsCompact";
+import {compactRoomsSession} from '../../shared/compact-rooms-session';
 import { api, API } from "./api";
 import {engineTransport} from "../../shared/engine-transport";
 import {measuredFetch,recordRpc} from "../../shared/rpc-metrics";
@@ -18,6 +20,8 @@ import {RoomsCommandJournal} from './rooms-command-journal';
 import {readHubDelegation} from '../../shared/rooms-hub';
 import {assertRoomsEngineAvailable} from '../../shared/rooms-availability';
 export const roomsManifest = manifest;
+export const roomsCompact = (manifest as typeof manifest & {compactControls?:boolean}).compactControls===true;
+const gameAbi:Abi=roomsCompact?roomsCompactAbi:roomsChaosAbi;
 export const roomsChaos = [4,5].includes(Number(manifest.rulesVersion));
 export const roomsScope = [
   "acceptMatch",
@@ -28,10 +32,10 @@ export const roomsScope = [
 ] as const;
 export const roomsAccountKey = `pongit:rooms:${manifest.app}:account`;
 export function createRoomsClient() {
-  const journal=new RoomsCommandJournal(sessionStorage,manifest.app as Address,(roomsChaos?roomsChaosAbi:roomsAbi) as Abi);
+  const journal=new RoomsCommandJournal(sessionStorage,manifest.app as Address,roomsChaos?gameAbi:roomsAbi);
   const client=createInterludeClient({
     app: manifest.app as Address,
-    abi: (roomsChaos ? roomsChaosAbi : roomsAbi) as Abi,
+    abi: roomsChaos ? gameAbi : roomsAbi,
     node: manifest.node,
     base: createPublicClient({
       chain: monadTestnet,
@@ -50,6 +54,17 @@ export function createRoomsClient() {
 }
 export type RoomsClient = ReturnType<typeof createRoomsClient>;
 export type RoomsSession = Session<Abi>;
+function storedControls(player:Address){
+ const stored=decodeSession(sessionStorage.getItem(storageKey(manifest.app as Address,10143,player)));
+ if(!stored||stored.app.toLowerCase()!==manifest.app.toLowerCase()||stored.baseChainId!==10143||stored.grant.granter.toLowerCase()!==player.toLowerCase())throw Error('Renew your arcade session to continue.');
+ return stored;
+}
+export function roomControls(client:RoomsClient,player:Address,epoch:bigint){
+ if(!roomsCompact)return;
+ const stored=storedControls(player);
+ client.commandJournal.bindRoomControls(player,stored.grant.sessionKey,epoch,stored.grant.expiry);
+ return compactRoomsSession({node:client.node,abi:gameAbi,app:manifest.app as Address,stored,epoch});
+}
 /** Reads first, then reuses only the same signed bytes if a response was lost. */
 export async function recoverRoomsCommands(client:RoomsClient,player:Address){
   const [node,hub]=await Promise.all([client.status(),readHubDelegation(client.base,manifest.hub as Address,manifest.app as Address)]);
@@ -58,6 +73,7 @@ export async function recoverRoomsCommands(client:RoomsClient,player:Address){
   const pending=client.commandJournal.pending(player);
   if(!pending)return;
   if(pending.epoch!==String(hub.epoch))throw Error('The uncertain command belongs to another engine epoch');
+  if(roomsCompact){const stored=storedControls(player);client.commandJournal.bindRoomControls(player,stored.grant.sessionKey,hub.epoch,stored.grant.expiry);}
   let receipt=await client.node.getTransactionReceipt({hash:pending.hash}).catch(()=>null);
   if(!receipt){
     // Explicit recovery can resend these bytes, never synthesize a replacement.

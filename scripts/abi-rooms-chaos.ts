@@ -5,6 +5,7 @@ const names = [
   ["RoomsEarlySettlement", "roomsEarlySettlementAbi"],
   ["RoomsVault", "roomsVaultAbi"],
   ["PongRoomsRealtime", "roomsRealtimeAbi"],
+  ["PongRoomsCompact", "roomsCompactAbi"],
   ["RoomsRealtimeSettlement", "roomsRealtimeSettlementAbi"],
   ["RealtimeMarket", "realtimeMarketAbi"],
 ] as const;

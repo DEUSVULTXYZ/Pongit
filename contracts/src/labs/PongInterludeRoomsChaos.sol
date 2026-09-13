@@ -4,7 +4,7 @@ pragma solidity ^0.8.30;
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
 import {RoomsRules} from "./RoomsRules.sol";
 import {EloFormulaV2} from "../v2/EloFormulaV2.sol";
-import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {Session} from "../../vendor/interlude/libraries/Session.sol";
 import {Delegatable} from "../../vendor/interlude/Delegatable.sol";
 import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
@@ -161,8 +161,8 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
                 || o.expires <= block.timestamp || o.expires > block.timestamp + 30
         ) revert InvalidTicket();
         bytes32 digest = ticketDigest(o);
-        if (ECDSA.recover(digest, signature) != coordinator) revert InvalidTicket();
-        address actor = _actor();
+        if (Session.recover(digest, signature) != coordinator) revert InvalidTicket();
+        address actor = _playerActor();
         if (actor != o.a && actor != o.b) revert NotPlayer();
         uint256 phase = _phase(o.id);
         uint256 meta = _get(o.id, 0);
@@ -242,11 +242,13 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
     }
 
     function _side(uint256 id) private view returns (bool) {
-        address actor = _actor();
+        address actor = _playerActor();
         if (actor == address(uint160(_get(id, 0)))) return true;
         if (actor != address(uint160(_get(id, 1)))) revert NotPlayer();
         return false;
     }
+
+    function _playerActor() internal view virtual returns (address) { return _actor(); }
 
     function _advance(uint256 id, bool mayResume) internal returns (bool complete) {
         uint256 times = _get(id, 2);

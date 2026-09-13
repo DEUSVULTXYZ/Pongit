@@ -951,6 +951,11 @@
           "level": 2
         },
         {
+          "id": "compact-room-controls",
+          "text": "Compact room controls",
+          "level": 3
+        },
+        {
           "id": "application-authentication",
           "text": "Application authentication",
           "level": 2
@@ -1233,23 +1238,23 @@
   "rooms": {
     "chainId": 10143,
     "rulesVersion": 5,
-    "startBlock": "62146134",
+    "startBlock": "62169198",
     "addresses": [
       {
         "name": "Rooms game",
-        "address": "0xd2fe1c8df2bdbe2666409fc20f25bcd2f2a40fb5"
+        "address": "0x695307022ac7add03117e8f3b59369d7ee7a4724"
       },
       {
         "name": "Market window / result adapter",
-        "address": "0xb0f8322317ff6d5fafa1f715377197e9264b1b6f"
+        "address": "0x4fe0ffb1a31b5264a996385acbf68dfb493800b0"
       },
       {
         "name": "Rooms vault",
-        "address": "0xa36b258ed6221aeb66ac9d115740efd4b7c273d5"
+        "address": "0xd533fe18d5687bebfb918c84adcffb1532052dc1"
       },
       {
         "name": "Rooms market",
-        "address": "0x1f1c673e40c9dd682a96842e9da53f6401b64e41"
+        "address": "0xb3ea20c94706e9c3fc939db032ca6631ad3a3177"
       }
     ]
   }
