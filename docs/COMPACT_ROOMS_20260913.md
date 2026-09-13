@@ -58,6 +58,19 @@ Earlier fixture failures were corrected before acceptance: the first run did not
 
 Physical cross-device passkey recovery and human audio listening were not retested for this transport-only change.
 
+## Production verification
+
+The new web and relayer were activated at 11:57 UTC with admissions initially disabled, then opened after a healthy app/epoch check. Release `f3657cb0e71489b8763e958e9f9e9ba1ad8791d1` uses application images built from `64943a71b3893a47880f6ac4bb3100ca6aefa78b`. Both `main` and `codex/contract-authority` were published without rewriting remote history.
+
+At 11:58 UTC, two real HTTPS browser players per mode accepted their friendly offers on `pongit.xyz`, observed 3, 2, 1, moved with 236 to 237-byte inputs, refreshed during play and reused exactly one registration per player. Both modes continued immediately after a natural point. The scenarios ended by explicit test-player concession, not by a fabricated seventh point. The earlier load tests above covered natural seventh-point finishes.
+
+Both HTTPS results were read back from Monad at 12:00 UTC, with batch 36 published, the service online, admissions open and no publication incident latched:
+
+- Classic: `88550698812206991011438836724570406613711066444225708476368028999963483560245`.
+- Chaos: `78613776374224252629870910668543495740465703924659510214912369909849754256295`.
+
+The pre-release backup `20260913T115230Z` includes databases, configuration and private operational state; the off-VPS database copies were checksum-verified. Previous production images remain available.
+
 ## Preservation and rollback
 
 The old game `0xd2fe1c8df2bdbe2666409fc20f25bcd2f2a40fb5` remains archived. Its interrupted user match still had live score 6:1 and published score 1:0 at the release check. No winner, refund, nonce replacement or cancellation was invented. The unresolved old transaction `0xdc3c70f8eb20da150b4db2e00ffdf6c72c19da0c571bbad71febdac6bfc68429` remains in its original journal. Old financial manifests, balances and rights are retained, with no automatic transfer.

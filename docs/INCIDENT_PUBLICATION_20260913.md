@@ -1,5 +1,7 @@
 # Publication incident, 13 September 2026
 
+Update at 12:00 UTC: the site now uses the [qualified compact rooms deployment](COMPACT_ROOMS_20260913.md), with grant verification cached before direct signed inputs. Its real Classic and Chaos games published successfully. The evidence below concerns the archived application; its rejected batch has not been declared recovered.
+
 The rules-5 production engine halted during a player match after 28 successful publications. This is a downstream publication HTTP 413, not evidence of an RPC request-rate limit. The previously successful full-game qualification does not cover this failure under subsequent player traffic.
 
 ## Evidence
