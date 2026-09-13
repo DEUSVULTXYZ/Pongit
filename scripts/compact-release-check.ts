@@ -29,5 +29,5 @@ try{
  assert.equal(view.archives.length,finances.entries.length-1);assert.equal(view.manifest.app,m.app);
  const balances=[];for(const f of finances.entries){const v=await directory.route('/interlude/finance','GET',account,{},new URLSearchParams({app:f.app,financeId:f.financeId||''}));assert.equal(v.manifest.market,f.market);balances.push({app:f.app,market:f.market,vault:f.vault,balance:v.balance});}
  const report={at:new Date().toISOString(),app:m.app,hubEpoch:String(d.epoch),hubBatches:String(d.batchIndex),runtimeBytes:(code.length-2)/2,ratingsChecked:players.length*2,balances,old:{app:old.app,id:String(id),phase:Number(live[2]),liveScore:[live[12].scoreA,live[12].scoreB],publishedScore:[published[12].scoreA,published[12].scoreB],publishedBatch:String(before.batchIndex),jobs},passed:true};
- await writeFile('artifacts/realtime/compact-release-check.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+ const text=JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v,2);await writeFile('artifacts/realtime/compact-release-check.json',text);console.log(text);
 }finally{await db.end();}

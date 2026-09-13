@@ -2,16 +2,20 @@
 // Only admission, observation and concession; no bet, credit or financial signature.
 import assert from 'node:assert/strict';
 import {chromium} from '@playwright/test';
-import {createPublicClient,createWalletClient,http} from 'viem';
+import {createPublicClient,createWalletClient,http,parseTransaction,decodeFunctionData} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {createInterludeClient,memoryStore,decodeSession,storageKey} from '@interludelayer-sdk/sdk';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {roomsChaosAbi as abi} from '../shared/abi-PongRoomsTestnet.ts';
+import {roomsCompactAbi} from '../shared/abi-PongRoomsCompact.ts';
 assert.equal(process.env.INTRO_LIVE_TEST,'authorized-testnet');
-const file='/secrets/intro-live.json';
+const fixtureName=process.env.INTRO_LIVE_FIXTURE||'intro-live';
+assert(/^[a-z0-9-]+$/.test(fixtureName));
+const file=`/secrets/${fixtureName}.json`;
 try{await readFile(file);throw Error('Previous fixture must be reconciled first');}catch(e){if(e.code!=='ENOENT')throw e;}
 const manifest=JSON.parse(await readFile('deployments/interlude-rooms.json','utf8'));
+const financialDeployments=JSON.parse(await readFile('deployments/rooms-finance.json','utf8'));
 const origin='https://pongit.xyz',base=createPublicClient({chain:monadTestnet,transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:10000})});
 const make=store=>createInterludeClient({app:manifest.app,abi,node:manifest.node,base,store,transport:http(manifest.node,{retryCount:0,timeout:12000}),fastPath:true});
 const observer=make(memoryStore()),players=[],contexts=[],pages=[];
@@ -38,6 +42,11 @@ try{
    await context.addCookies([{name:'pongit_rooms',value:p.cookie.split('=')[1],url:origin,httpOnly:true,secure:true,sameSite:'Strict'}]);
    if(process.env.TEST_WEB_HOST)await context.route(origin+'/**',async route=>{const u=new URL(route.request().url());if(u.pathname.startsWith('/api/'))return route.continue();return route.fulfill({response:await route.fetch({url:`http://${process.env.TEST_WEB_HOST}:3000${u.pathname}${u.search}`})});});
    p.page=await context.newPage();pages.push(p.page);p.page.on('pageerror',e=>report.errors.push(e.message));
+   p.commandSizes=[];
+   if(manifest.compactControls)context.on('request',request=>{
+    if(new URL(request.url()).origin!==new URL(manifest.node).origin)return;
+    try{const body=request.postDataJSON();if(body?.method!=='interlude_sendTransaction')return;const raw=body.params[0],tx=parseTransaction(raw);p.commandSizes.push({action:decodeFunctionData({abi:roomsCompactAbi,data:tx.data}).functionName,rawBytes:(raw.length-2)/2});}catch{}
+   });
   }
   const [a,b]=pair,room=(await action(a,'rooms',{mode,players:[b.address]})).room;
   a.room=b.room=room;await save();await action(b,'rooms/join',{room});
@@ -50,6 +59,20 @@ try{
   for(const values of digits)assert.deepEqual(values.map(x=>x.digit),['3','2','1']);
   const live=await observer.read('getSnapshot',[BigInt(offer.id)]);assert.equal(live[2],2n);
   report.scenarios.push({mode,match:offer.id,digits,phase:Number(live[2])});
+  if(manifest.compactControls){
+   await Promise.all(pair.map(async p=>{for(let i=0;i<20;i++){const key=i%2?'ArrowDown':'ArrowUp';await p.page.keyboard.down(key);await pause(100);await p.page.keyboard.up(key);}}));
+   await pause(800);
+   const stored=decodeSession(a.store.get(storageKey(manifest.app,10143,a.address))),key=stored.grant.sessionKey;
+   const node=createPublicClient({transport:http(manifest.node,{retryCount:0,timeout:10000})});
+   const binding=await node.readContract({address:manifest.app,abi:roomsCompactAbi,functionName:'controlBinding',args:[key]});
+   assert(binding>0n);await a.page.reload();await a.page.locator('.rooms-court:not(.rooms-intro)').waitFor({timeout:30000});
+   await a.page.keyboard.down('ArrowUp');await pause(200);await a.page.keyboard.up('ArrowUp');await pause(800);
+   assert.equal(await node.readContract({address:manifest.app,abi:roomsCompactAbi,functionName:'controlBinding',args:[key]}),binding);
+   assert(pair.every(p=>p.commandSizes.some(x=>x.action==='input')),'Both browsers must submit compact movements');
+   assert(pair.every(p=>p.commandSizes.filter(x=>x.action==='registerControls').length===1),'F5 must reuse the on-engine authorization');
+   report.scenarios.at(-1).compactCommands=pair.map(p=>({registrations:p.commandSizes.filter(x=>x.action==='registerControls').length,inputs:p.commandSizes.filter(x=>x.action==='input')}));
+   report.scenarios.at(-1).f5ReusedControls=true;
+  }
   if(process.env.INTRO_REALTIME_OBSERVE==='true'){
    assert.equal(manifest.rulesVersion,5);
    const point=await until(async()=>{const s=await observer.read('getSnapshot',[BigInt(offer.id)]);return s[2]===2n&&s[12].scoreA+s[12].scoreB>0?s:null;},'first natural point',30000);
@@ -59,7 +82,7 @@ try{
    for(const p of pair){assert.equal(await p.page.getByText('Preparing next rally',{exact:true}).count(),0);assert.equal(await p.page.getByText('Synchronizing Chaos bets',{exact:true}).count(),0);}
    report.scenarios.at(-1).continuousAfterPoint=true;
    if(mode){
-    const finances=await api(a,'finance');assert.equal(finances.manifest.betting,'realtime');assert.equal(finances.archives.length,3);
+    const finances=await api(a,'finance');assert.equal(finances.manifest.betting,'realtime');assert.equal(finances.archives.length,financialDeployments.length-1);
     report.scenarios.at(-1).legacyAccounts=finances.archives.map(x=>x.manifest.market);
    }
   }
@@ -75,6 +98,6 @@ finally{
  // second writer for an account with an uncertain browser transaction.
  for(const p of players.filter(p=>p.room))try{if(!p.page.isClosed()){await p.page.getByRole('button',{name:'Tools',exact:true}).click({timeout:3000});await p.page.getByRole('button',{name:'Concede',exact:true}).click({timeout:3000});await pause(1500);}await action(p,'rooms/leave');p.room=null;}catch{report.cleanupPending=true;}
  for(const p of players)if(p.page&&!p.page.isClosed())try{const journal=await p.page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage).filter(([k])=>k.startsWith('pongit:commands:'))));await writeFile(`/secrets/commands-${p.address}.json`,json(journal),{mode:0o600});}catch{}
- await save();await browser.close();await mkdir('artifacts/intro',{recursive:true});await writeFile('artifacts/intro/live.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+ await save();await browser.close();await mkdir('artifacts/intro',{recursive:true});await writeFile(`artifacts/intro/${fixtureName}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));
  if(!report.passed)process.exitCode=1;
 }
