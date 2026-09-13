@@ -89,6 +89,41 @@ test("a restart is reconciled only after a discontinuity and two consistent full
  await assert.rejects(feed.read(1n),/behind/);assert.equal(feed.peek(1n)?.revision,5n);
  feed.invalidate();const reset=await feed.read(1n);assert.equal(reset.revision,4n);assert.equal(reset.reset,true);assert.equal(reads,4);
 });
+test('a contiguous applied event overtaking HTTP keeps the newer frame without a false reset',async()=>{
+ let finish:(v:Hex)=>void=()=>{},reads=0;
+ const stream=new EngineStream('https://node.invalid',app,()=>new Socket());
+ const encoded=()=>encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(baseline()) as any});
+ const client={app:app as Address,abi,node:{request:async()=>++reads===1?encoded():new Promise<Hex>(resolve=>{finish=resolve;})}};
+ const feed=new EngineFeed(client,stream);await feed.read(1n);
+ const pending=feed.read(1n,true);feed.apply(frame());finish(encoded());
+ const result=await pending;assert.equal(result.revision,6n);assert.equal(result.reset,false);
+ assert.equal(feed.peek(1n)?.state.t,200000n);assert.equal(reads,2);
+});
+
+test('an adjacent receipt overtaking its predecessor is reordered without another RPC',async()=>{
+ let reads=0;const socket=new Socket(),stream=new EngineStream('https://node.invalid',app,()=>socket);
+ const client={app:app as Address,abi,node:{request:async()=>{reads++;return encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(baseline()) as any});}}};
+ const feed=new EngineFeed(client,stream),off=feed.watch(1n,()=>{});
+ socket.emit('open',{});socket.emit('message',{data:JSON.stringify({id:1,result:99})});
+ await feed.read(1n);const later=frame(7n,120n);
+ const pending=feed.receipt(1n,{receipt:{status:'0x1',transactionHash:later.hash,blockNumber:'0x78',logs:later.logs}},'input',[1n,1,1n,250n],a);
+ assert.equal(feed.peek(1n)?.revision,5n,'No missing state is invented');
+ feed.apply(frame(6n,110n));
+ const result=await pending;assert.equal(result.revision,7n);assert.equal(result.nonceA,1n);assert.equal(result.nonceB,0n);assert.equal(reads,1);
+ off();
+});
+
+test('missing or disconnected reordered events still require a complete read',async()=>{
+ for(const disconnect of [false,true]){
+  let reads=0;const socket=new Socket(),stream=new EngineStream('https://node.invalid',app,()=>socket);
+  const client={app:app as Address,abi,node:{request:async()=>{reads++;return encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(baseline()) as any});}}};
+  const feed=new EngineFeed(client,stream),off=feed.watch(1n,()=>{});
+  socket.emit('open',{});socket.emit('message',{data:JSON.stringify({id:1,result:99})});await feed.read(1n);
+  feed.apply(frame(7n,120n));
+  if(disconnect){feed.invalidate();feed.apply(frame(6n,110n));}
+  await feed.read(1n);assert(reads>=2,'A broken stream must not be marked clean by a late event');off();
+ }
+});
 
 test("replacing a recovered lane retains its arena stream and snapshot",async()=>{
  let opened=0;const socket=new Socket(),stream=new EngineStream('https://node.invalid',app,()=>{opened++;return socket;});

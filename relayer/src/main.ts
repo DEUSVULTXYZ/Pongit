@@ -1,3 +1,4 @@
+import {recordRoomsFinanceReceipt} from './rooms-finance-receipts';
 import { initializeInputs, createInputs, sharesInputEstimate } from "./inputs";
 import {trafficBudget} from "./traffic";
 import {createRoomsCoordinator} from "./interlude-rooms";
@@ -316,6 +317,9 @@ async function observeReceipts() {
       const receipt = await publicClient.getTransactionReceipt({
         hash: row.tx_hash,
       });
+      // Persist discovery before marking the journal complete. A crash retries
+      // this idempotent insertion, so current winnings never wait for backfill.
+      await recordRoomsFinanceReceipt(pool,roomsFinanceConfig.entries,receipt);
       const saved = await pool.query(
         "UPDATE relay_jobs SET status=$2, receipt=$3, error=$4, confirmed_at=now(), updated_at=now() WHERE id=$1 RETURNING *",
         [

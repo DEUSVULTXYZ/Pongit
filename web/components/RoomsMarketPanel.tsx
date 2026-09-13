@@ -270,6 +270,7 @@ export function RoomsMarketPanel({
             Supporting a player can shrink their paddle for the next rally. The
             testnet bridge on PONGIT's VPS attests paid bets.
           </p>
+          {account?.manifest.rulesVersion===6&&<p>Chaos events can change both players and the court. JACKPOT RALLY doubles a score point only; it never multiplies a bet or payout. <a href="/docs/playing/chaos" target="_blank" rel="noopener noreferrer">Read all 24 events</a></p>}
           {participant ? (
             <p>You cannot bet on your own match.</p>
           ) : (

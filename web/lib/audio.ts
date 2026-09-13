@@ -1,8 +1,10 @@
+import {chaosSoundPattern} from '../../shared/chaos-sounds';
+import type {ChaosEventId} from '../../shared/chaos-events';
 export type ArcadeSound="button"|"invite"|"match"|"countdown"|"bounce"|"point"|"handicap"|"victory"|"defeat";
 export type AudioSettings={entered:boolean;enabled:boolean;music:number;effects:number;background:boolean;intensity:"subtle"|"full"};
 const defaults:AudioSettings={entered:false,enabled:false,music:.2,effects:.6,background:true,intensity:"full"};
 const notes=(m:number)=>440*2**((m-69)/12);
-class ArcadeAudio {
+export class ArcadeAudio {
   settings={...defaults};context:AudioContext|null=null;
   private musicGain:GainNode|null=null;private effectsGain:GainNode|null=null;
   private meter:AnalyserNode|null=null;private voices=new Set<OscillatorNode>();
@@ -36,8 +38,13 @@ class ArcadeAudio {
   private gains(){if(!this.context)return;const t=this.context.currentTime;
     const duck=t<this.duckUntil?.16:this.gameplay?.48:1;
     this.musicGain?.gain.cancelScheduledValues(t);this.musicGain?.gain.setTargetAtTime(this.settings.enabled?this.settings.music*duck:0,t,this.settings.enabled?.22:.012);
+    // Preference or gameplay changes can cancel the pending restoration during
+    // a jingle. Always restore from the current settings at the same deadline.
+    if(t<this.duckUntil)this.musicGain?.gain.setTargetAtTime(this.settings.enabled?this.settings.music*(this.gameplay?.48:1):0,this.duckUntil,.5);
     this.effectsGain?.gain.setTargetAtTime(this.settings.enabled?this.settings.effects:0,t,.02);
   }
+  private duckFor(seconds:number){if(!this.context)return;this.duckUntil=Math.max(this.duckUntil,this.context.currentTime+seconds);this.gains();}
+  private remember(key:string,now:number){if(this.seen.has(key))return false;this.seen.set(key,now);if(this.seen.size>512)this.seen.delete(this.seen.keys().next().value!);return true;}
   private tone(frequency:number,at:number,duration:number,gain:number,type:OscillatorType,slide?:number){
     if(!this.context || !this.effectsGain || this.voices.size>=12)return;
     const osc=this.context.createOscillator(),env=this.context.createGain();osc.type=type;osc.frequency.setValueAtTime(frequency,at);if(slide)osc.frequency.exponentialRampToValueAtTime(slide,at+duration);
@@ -45,12 +52,21 @@ class ArcadeAudio {
     osc.onended=()=>{this.voices.delete(osc);osc.disconnect();env.disconnect();};osc.start(at);osc.stop(at+duration+.02);
   }
   play(sound:ArcadeSound,key?:string){const c=this.context,now=performance.now();if(!c || !this.settings.enabled || document.hidden || c.state!=="running")return;
-    if(key){if(this.seen.has(key))return;this.seen.set(key,now);if(this.seen.size>512)this.seen.delete(this.seen.keys().next().value!);}
+    if(key&&!this.remember(key,now))return;
     if(sound==="bounce"){if(now-this.lastBounce<45)return;this.lastBounce=now;this.tone(1047,c.currentTime,.075,.30,"triangle",740);this.tone(2100,c.currentTime,.028,.045,"square",1300);return;}
     const sequences:Record<Exclude<ArcadeSound,"bounce">,number[]>={button:[76],invite:[69,76,81],match:[57,64,69,81],countdown:[72],point:[60,72,79],handicap:[69,65,60],victory:[72,76,79,84,88,91,96],defeat:[67,63,60,55,48,36]};
     const seq=sequences[sound],jingle=sound==="victory"||sound==="defeat",time=c.currentTime;
-    if(jingle){this.duckUntil=time+2;this.gains();this.musicGain!.gain.setTargetAtTime(this.settings.enabled?this.settings.music*(this.gameplay?.48:1):0,time+2,.5);}
+    if(jingle)this.duckFor(2);
     seq.forEach((note,i)=>{this.tone(notes(note),time+i*(jingle?.18:.085),sound==="button"?.04:jingle?.35:.17,sound==="button"?.13:jingle?.20:.28,jingle?"square":"triangle");if(jingle && i%2===0)this.tone(notes(note-12),time+i*.18,.4,.13,"triangle");});
+  }
+  /** The caller supplies an identified, confirmed event, never a snapshot's
+   * velocity change. Historical events must be filtered by the transport. */
+  playChaos(id:ChaosEventId,kind:'announce'|'impact'|'consume',key:string){
+    const c=this.context;if(!key||!c||!this.settings.enabled||document.hidden||c.state!=="running")return;
+    if(!this.remember(`chaos:${kind}:${key}`,performance.now()))return;
+    const pattern=chaosSoundPattern(id,kind),time=c.currentTime;
+    if(kind==='announce')this.duckFor(Math.max(...pattern.map(x=>x.at+x.duration))+.12);
+    for(const tone of pattern)this.tone(notes(tone.note),time+tone.at,tone.duration,tone.gain,tone.wave,tone.slide===undefined?undefined:notes(tone.slide));
   }
   async test(){await this.activate(true);this.play("point");}
   private stopVoices(){for(const voice of this.voices){try{voice.stop();}catch{}}this.voices.clear();}

@@ -6,9 +6,11 @@ import { WebSocket } from "ws";
 import {
   createPublicClient,
   http,
+  parseAbi,
   recoverMessageAddress,
   recoverTypedDataAddress,
   encodeFunctionData,
+  decodeFunctionData,
   keccak256,
   toFunctionSelector,
   zeroHash,
@@ -17,6 +19,7 @@ import {
   type Hex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import {readContract} from 'viem/actions';
 import {
   createInterludeClient,
   memoryStore,
@@ -30,9 +33,11 @@ import { roomsAbi as classicRoomsAbi } from "../../shared/abi-rooms";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { roomsRealtimeAbi } from "../../shared/abi-PongRoomsRealtime";
 import { roomsCompactAbi } from "../../shared/abi-PongRoomsCompact";
+import { roomsEventsAbi } from "../../shared/abi-PongChaosEvents";
+import {ChaosBeaconPump,type BeaconRequestState} from '../../shared/chaos-beacon-pump';
 import { chaosOfferTypes } from "../../shared/rooms-chaos";
 import {createRoomsFinanceDirectory} from "./rooms-finance-directory";
-import {loadRoomsFinance} from "./rooms-finance-config";
+import {loadRoomsFinance,financeAdapterAbi} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
 import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome} from "./rooms-engine-recovery";
 import {roomsRankingCandidates} from "./rooms-ranking";
@@ -40,7 +45,7 @@ import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snaps
 import {engineTransport} from "../../shared/engine-transport";
 import {engineReadRetryMs} from "../../shared/engine-read";
 import {confirmsRoomAcceptance, expireUnstartedRoomOffer, prepareRoomLaunch, assertRoomLaunchReady} from "../../shared/rooms-acceptance";
-import {EngineStream,engineTuple} from "../../shared/engine-stream";
+import {EngineStream,engineTuple,engineState} from "../../shared/engine-stream";
 import {EngineFeed} from "../../shared/engine-feed";
 import {engineCooldownMs} from "../../shared/engine-transport";
 import {SessionUnavailable,SessionRejected,serviceError,publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
@@ -49,6 +54,7 @@ import {overlayPresence} from "./rooms-presence";
 import {recordRpc,measuredFetch} from "../../shared/rpc-metrics";
 import {createRpcDiagnostics} from "./rpc-diagnostics";
 import {createRoomsPublicationHealth} from './rooms-publication-health';
+import {roomsEventsHistory} from './rooms-events-history';
 import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
 import {
@@ -102,12 +108,13 @@ export async function createRoomsCoordinator(o: Options) {
       "utf8",
     ),
   );
-  const realtime = manifest.rulesVersion === 5;
+  const events = manifest.rulesVersion === 6;
+  const realtime = manifest.rulesVersion === 5 || events;
   const previousRooms=[...new Set([manifest.previousRooms,...(manifest.previousRoomsHistory||[])].filter(Boolean).map((a:string)=>a.toLowerCase()))];
   const chaosEnabled = manifest.rulesVersion === 4 || realtime;
-  const roomsAbi: Abi = manifest.compactControls ? roomsCompactAbi : realtime ? roomsRealtimeAbi : chaosEnabled ? roomsChaosAbi : classicRoomsAbi;
+  const roomsAbi: Abi = events ? roomsEventsAbi : manifest.compactControls ? roomsCompactAbi : realtime ? roomsRealtimeAbi : chaosEnabled ? roomsChaosAbi : classicRoomsAbi;
   // Each newly admitted pair can bind two additional arcade keys in this batch.
-  const creationBudget=manifest.compactControls?34:realtime?32:chaosEnabled?30:24,terminalBudget=realtime?14:chaosEnabled?12:8;
+  const creationBudget=events?38:manifest.compactControls?34:realtime?32:chaosEnabled?30:24,terminalBudget=events?18:realtime?14:chaosEnabled?12:8;
   const modeOf = (v: unknown): 0 | 1 => {
     const mode=z.union([z.literal(0),z.literal(1)]).parse(v ?? 0);
     if(mode === 1 && (!chaosEnabled || process.env.ROOMS_CHAOS_ENABLED !== "true"))
@@ -141,6 +148,8 @@ export async function createRoomsCoordinator(o: Options) {
   const feed=new EngineFeed(client,new EngineStream(manifest.node,app,url=>new WebSocket(url) as any,()=>engineCooldownMs(manifest.node)));
   const watched=new Map<string,()=>void>();
   const pendingPressure=new Map<string,Promise<void>>();
+  const beaconPump=new ChaosBeaconPump();
+  const beaconState=(s:any):BeaconRequestState=>({playing:s[2]===2n&&s[12].mode===1,request:s[13]?.request??0n,pending:s[13]?.pending??0n});
   const finance = chaosEnabled && o.financeConfig?.entries.some(x=>x.app.toLowerCase()===app) && o.enqueue
     ? await createRoomsFinanceDirectory({db,base,app,entries:o.financeConfig.entries,enqueue:o.enqueue}) : null;
   if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED === "true" && !finance)throw new Error("Chaos requires its funded financial bridge");
@@ -167,12 +176,41 @@ export async function createRoomsCoordinator(o: Options) {
  ALTER TABLE il_results ADD COLUMN IF NOT EXISTS mode integer NOT NULL DEFAULT 0;
  ALTER TABLE il_results ADD COLUMN IF NOT EXISTS verified boolean NOT NULL DEFAULT true;
  CREATE INDEX IF NOT EXISTS il_results_players ON il_results(a,b,ended_at);
+ CREATE TABLE IF NOT EXISTS il_archive_records(app text NOT NULL,id text NOT NULL,hash text NOT NULL,PRIMARY KEY(app,id));
  `);
   await db.query("INSERT INTO il_lobby VALUES($1,$2) ON CONFLICT DO NOTHING", [
     app,
     { rooms: {}, queue: [], invites: [] },
   ]);
   const diagnostics=await createRpcDiagnostics(db,app);
+  const replays=events?await roomsEventsHistory(db,app,o.graphql):null;
+  const replayEpochs=new Map<string,bigint>(),replayReads=new Map<string,Promise<void>>(),replayLatest=new Map<string,ReturnType<typeof engineState>>();
+  function recordReplay(s:ReturnType<typeof engineState>){
+    if(!replays||s.phase<2)return;
+    const key=`${lastEpoch}:${s.id}`,known=replayEpochs.get(key);
+    if(known){replays.record(known,s);return;}
+    replayLatest.set(key,s);if(replayReads.has(key))return;
+    const read=(async()=>{
+      // A result observed after renewal still belongs to its original epoch.
+      const epoch=BigInt(await client.read('gameEpoch',[s.id]) as bigint);
+      if(epoch<=0n)return;replayEpochs.set(key,epoch);const latest=replayLatest.get(key);if(latest)replays.record(epoch,latest);
+      while(replayEpochs.size>128)replayEpochs.delete(replayEpochs.keys().next().value!);
+    })().catch(()=>recordRpc({at:Date.now(),target:'pongit',method:'replay.epoch.retry',status:503,ms:0,source:'cache'})).finally(()=>{replayReads.delete(key);replayLatest.delete(key);});
+    replayReads.set(key,read);
+  }
+  let archiveWork:Promise<void>|undefined;
+  async function publishArchive(){
+    if(!events||!o.enqueue||archiveWork)return;
+    const financial=o.financeConfig?.entries.find(m=>m.app.toLowerCase()===app&&m.rulesVersion===6);if(!financial)return;
+    archiveWork=(async()=>{
+      const rows=(await db.query("SELECT r.id,r.hash FROM il_results r LEFT JOIN il_archive_records h ON h.app=r.app AND h.id=r.id WHERE r.app=$1 AND r.verified AND r.published AND (h.hash IS NULL OR h.hash<>r.hash) ORDER BY r.ended_at LIMIT 8",[app])).rows;
+      for(const row of rows){
+        const current=await base.readContract({address:financial.adapter,abi:financeAdapterAbi(financial),functionName:'recordedHash',args:[BigInt(row.id)]});
+        if(current!==row.hash)await o.enqueue!({deployment:'rooms',roomApp:app,roomFinance:financial.financeId,roomAction:`history:${row.id}:${row.hash}`,contract:'game',functionName:'recordMatch',args:[row.id]},true);
+        else await db.query('INSERT INTO il_archive_records VALUES($1,$2,$3) ON CONFLICT(app,id) DO UPDATE SET hash=$3',[app,row.id,row.hash]);
+      }
+    })().catch(()=>recordRpc({at:Date.now(),target:'pongit',method:'history.publication.retry',status:503,ms:0,source:'cache'})).finally(()=>archiveWork=undefined);
+  }
   const publicationHealth=await createRoomsPublicationHealth(db,app);
   let lastPublishedBatch=0,publicationLog='';
   let lifecycle: Awaited<ReturnType<typeof roomsLifecycle>> = null;
@@ -231,7 +269,7 @@ export async function createRoomsCoordinator(o: Options) {
     if (!epoch || Date.now() - epoch.at > 5000) {
       try{
         let pending=epochChecks.get(r.player);
-        if(!pending){pending=client.epochOf(r.player).finally(()=>epochChecks.delete(r.player));epochChecks.set(r.player,pending);}
+        if(!pending){pending=readContract(client.base,{address:manifest.hub as Address,abi:parseAbi(['function sessionEpochOf(address) view returns(uint256)']),functionName:'sessionEpochOf',args:[r.player as Address]}).finally(()=>epochChecks.delete(r.player));epochChecks.set(r.player,pending);}
         epoch={value:await pending,at:Date.now()};
       }catch{throw new SessionUnavailable();}
       epochs.set(r.player, epoch);
@@ -503,11 +541,11 @@ export async function createRoomsCoordinator(o: Options) {
       job = { id: hex(), app, nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
       await db.query(
         "INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9)",
-        [app, job.id, nonce, raw, job.hash,lastEpoch,signer.address.toLowerCase(),pressureData?(realtime?'submitLivePressure':'submitPressure'):cancel?'cancelMatch':'tick',id],
+        [app, job.id, nonce, raw, job.hash,lastEpoch,signer.address.toLowerCase(),decodeFunctionData({abi:roomsAbi,data}).functionName,id],
       );
     }
     const identity=await engineJobIdentity(job,roomsAbi,signer.address);
-    if(!['tick','cancelMatch','submitPressure','submitLivePressure'].includes(identity.action))throw new Error('Unexpected public command in the engine journal; review required');
+    if(!['tick','cancelMatch','submitPressure','submitLivePressure',...(events?['submitRandomness']:[])].includes(identity.action))throw new Error('Unexpected public command in the engine journal; review required');
     let receipt = await client.node
       .getTransactionReceipt({ hash: job.hash })
       .catch(() => null);
@@ -760,7 +798,7 @@ export async function createRoomsCoordinator(o: Options) {
       if(streamEnabled){
         const ids=new Set(Object.values(before.rooms).filter(r=>r.offer&&!['complete','cancelled'].includes(r.offer.status)).map(r=>r.offer!.id));
         for(const [id,stop] of watched)if(!ids.has(id)){stop();watched.delete(id);}
-        for(const id of ids)if(!watched.has(id))watched.set(id,feed.watch(BigInt(id),()=>{}));
+        for(const id of ids)if(!watched.has(id))watched.set(id,feed.watch(BigInt(id),recordReplay));
       }
       const observed = new Map<string, any>();
       for (const r of Object.values(before.rooms)) {
@@ -780,6 +818,16 @@ export async function createRoomsCoordinator(o: Options) {
           void publicTick(id, true).catch(()=>{});
         }
         observed.set(id, s);
+        recordReplay(engineState(s));
+        if(events&&writable&&s[13]){
+          // Beacon networking is independent from observation and betting.
+          // Sending still uses the single persisted engine writer.
+          void beaconPump.offer(`${app}:${lastEpoch}:${id}`,beaconState(s),async()=>
+            beaconState(await readEngineSnapshot(client,BigInt(id))),async(request,proof)=>{
+              if(!online||closingEpoch!==null)return;
+              await publicTick(id,false,encodeFunctionData({abi:roomsEventsAbi,functionName:'submitRandomness',args:[BigInt(id),request,proof]}));
+            }).catch(()=>recordRpc({at:Date.now(),target:'pongit',method:'chaos.beacon.retry',status:503,ms:0,source:'cache'}));
+        }
         if(writable && finance && s[2]===2n && s[12].mode===1 && (realtime || s[12].awaitingServe)){
           if(!pendingPressure.has(id)){
             const work=finance.pressure(id,s,async data=>{
@@ -1012,7 +1060,7 @@ export async function createRoomsCoordinator(o: Options) {
     void reconcileEngineJobs({db,app,receipt:hash=>client.node.getTransactionReceipt({hash})})
       .catch(()=>{}).finally(()=>{reconciling=false;});
   },5000);
-  const historyTimer=setInterval(()=>void auditHistory(),5000);
+  const historyTimer=setInterval(()=>{void auditHistory();void publishArchive();},5000);
   recoveryTimer.unref();historyTimer.unref();
   const timer = setInterval(() => void maintenance(), 2000);
   const financeTimer = finance ? setInterval(()=>void finance.audit(),5000) : undefined;
@@ -1157,7 +1205,7 @@ export async function createRoomsCoordinator(o: Options) {
         if (
           owner.toLowerCase() !== r.player ||
           sessionKey.toLowerCase() !== grant.sessionKey ||
-          (await client.epochOf(grant.granter)) !== grant.epoch
+          (await readContract(client.base,{address:manifest.hub as Address,abi:parseAbi(['function sessionEpochOf(address) view returns(uint256)']),functionName:'sessionEpochOf',args:[grant.granter]})) !== grant.epoch
         )
           throw new Error("Arcade grant could not be verified.");
         if (
@@ -1216,6 +1264,14 @@ export async function createRoomsCoordinator(o: Options) {
         return true;
       }
       const p = await authenticate(req);
+      if(replays&&req.method==='GET'&&path==='/interlude/recent-matches'){
+        o.send(res,await replays.recent(p));return true;
+      }
+      if(replays&&req.method==='GET'&&path==='/interlude/replay'){
+        const q=new URL(req.url||'/',o.origin).searchParams,arena=address.parse(q.get('app')) as Address;
+        const epoch=z.coerce.bigint().positive().parse(q.get('epoch')),id=z.coerce.bigint().positive().parse(q.get('id')),after=z.coerce.bigint().min(-1n).parse(q.get('after')??'-1');
+        o.send(res,await replays.replay(arena,epoch,id,after));return true;
+      }
       if(path==="/interlude/state"||path==="/interlude/presence"||path==="/interlude/diagnostics"){
         const now=Date.now();let budget=accountRates.get(p);
         if(!budget||budget.until<=now){budget={count:0,until:now+60000};accountRates.set(p,budget);}
@@ -1657,6 +1713,6 @@ export async function createRoomsCoordinator(o: Options) {
     route,
     subscribe,
     status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status() }),
-    stop: () => {clearInterval(timer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();diagnostics.stop();lifecycle?.stop();},
+    stop: () => {clearInterval(timer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();replays?.stop();diagnostics.stop();lifecycle?.stop();},
   };
 }

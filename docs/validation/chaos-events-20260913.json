@@ -1,0 +1,197 @@
+{
+  "date": "2026-09-13",
+  "chainId": 10143,
+  "app": "0x78d3341e3452d7ec1add9371de3008639eed8eb0",
+  "quantiles": "nearest rank, ceil(n*p)-1",
+  "scope": "Real VPS runner and hosted contracts with synthetic EOA owners; each run has Classic then Chaos, at least 100 changes per player and actual Monad bets. Times include send plus receipt/state reconciliation. Nodes differ between generations.",
+  "runs": [
+    {
+      "name": "baseline-compact-live-9",
+      "at": "2026-09-13T18:35:30.739Z",
+      "app": "0x695307022ac7add03117e8f3b59369d7ee7a4724",
+      "passed": true,
+      "samples": 424,
+      "ms": {
+        "50": 111,
+        "95": 123,
+        "99": 264
+      }
+    },
+    {
+      "name": "baseline-compact-live-7",
+      "at": "2026-09-13T19:40:59.531Z",
+      "app": "0x695307022ac7add03117e8f3b59369d7ee7a4724",
+      "passed": true,
+      "samples": 413,
+      "ms": {
+        "50": 108,
+        "95": 122,
+        "99": 253
+      }
+    },
+    {
+      "name": "events-live-9",
+      "at": "2026-09-13T19:16:43.376Z",
+      "app": "0x78d3341e3452d7ec1add9371de3008639eed8eb0",
+      "passed": false,
+      "samples": 422,
+      "ms": {
+        "50": 118,
+        "95": 208,
+        "99": 300
+      },
+      "error": "Timeout: automatic settlement",
+      "modes": [
+        {
+          "mode": 0,
+          "samples": 204,
+          "p95Ms": 208
+        },
+        {
+          "mode": 1,
+          "samples": 218,
+          "p95Ms": 209
+        }
+      ]
+    },
+    {
+      "name": "events-live-8",
+      "at": "2026-09-13T19:29:03.337Z",
+      "app": "0x78d3341e3452d7ec1add9371de3008639eed8eb0",
+      "passed": true,
+      "samples": 415,
+      "ms": {
+        "50": 117,
+        "95": 150,
+        "99": 233
+      },
+      "modes": [
+        {
+          "mode": 0,
+          "samples": 204,
+          "p95Ms": 173
+        },
+        {
+          "mode": 1,
+          "samples": 211,
+          "p95Ms": 150
+        }
+      ]
+    },
+    {
+      "name": "events-live-7",
+      "at": "2026-09-13T19:43:50.998Z",
+      "app": "0x78d3341e3452d7ec1add9371de3008639eed8eb0",
+      "passed": true,
+      "samples": 430,
+      "ms": {
+        "50": 120,
+        "95": 170,
+        "99": 259
+      },
+      "modes": [
+        {
+          "mode": 0,
+          "samples": 204,
+          "p95Ms": 211
+        },
+        {
+          "mode": 1,
+          "samples": 226,
+          "p95Ms": 133
+        }
+      ]
+    },
+    {
+      "name": "events-live-6",
+      "at": "2026-09-13T19:50:04.690Z",
+      "app": "0x78d3341e3452d7ec1add9371de3008639eed8eb0",
+      "passed": true,
+      "samples": 441,
+      "ms": {
+        "50": 118,
+        "95": 134,
+        "99": 208
+      },
+      "modes": [
+        {
+          "mode": 0,
+          "samples": 204,
+          "p95Ms": 131
+        },
+        {
+          "mode": 1,
+          "samples": 237,
+          "p95Ms": 137
+        }
+      ]
+    }
+  ],
+  "final": {
+    "p95ChangePercent": 9.84,
+    "contractTestsPassed": 344,
+    "optionalForkTestsSkipped": 2,
+    "typescriptTestsPassed": 202,
+    "chaosPhysicsCases": 10000,
+    "classicPhysicsCases": 10000,
+    "legacyChaosPhysicsCases": 10000,
+    "drawCases": 10000,
+    "modifierCases": 10000,
+    "effectPairs": 276,
+    "maxChangedSlots": 63,
+    "slotLimit": 64,
+    "runtimeBytes": 24236,
+    "verifiedDrawsFinalRun": 4,
+    "paymentMon": "0.006",
+    "paymentTransaction": "0x75ff3067bff31bc9288a977520d3b5a8e02cd8a41a9adccaca3a0c030998dc45"
+  },
+  "browser": {
+    "passed": true,
+    "scope": "Real private coordinator and hosted contracts through HTTPS-origin Chromium; synthetic EOA owners",
+    "matches": [
+      {
+        "id": "56663910951663044258625197461962775267451327538661730705889562098418318679189",
+        "mode": 0,
+        "score": [
+          6,
+          7
+        ],
+        "f5": true,
+        "directionCycles": 137,
+        "inputCommands": [
+          206,
+          211,
+          0
+        ]
+      },
+      {
+        "id": "20414504335507228550951563237939004803932398692346516764780318432480893568862",
+        "mode": 1,
+        "score": [
+          7,
+          6
+        ],
+        "f5": true,
+        "directionCycles": 77,
+        "inputCommands": [
+          101,
+          102,
+          0
+        ]
+      }
+    ],
+    "errors": []
+  },
+  "indexer": {
+    "freshFromBlock": 62260200,
+    "previousDatabaseRetained": true,
+    "financialJournalsPreserved": true
+  },
+  "limits": [
+    "Experimental unaudited BLS vendor, pinned and functionally verified.",
+    "Synthetic EOA owners do not establish physical passkey recovery.",
+    "No real mobile hardware benchmark or human audio listening.",
+    "Publication calldata size is not the provider internal HTTP payload size.",
+    "The existing multi-room delegation remains shared; this release does not implement the separate architecture of one delegation per match."
+  ]
+}

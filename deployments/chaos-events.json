@@ -1,0 +1,83 @@
+{
+  "game": {
+    "app": "0x78d3341e3452d7ec1add9371de3008639eed8eb0",
+    "node": "https://il-78d3341e3452d7ec.fly.dev",
+    "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+    "coordinator": "0x6e0EbC79d80a186A639843C4059f421D634C3d73",
+    "baseChainId": 10143,
+    "engineChainId": 4242,
+    "tickUs": 10000,
+    "rulesVersion": 6,
+    "capacity": 2,
+    "releaseReady": true,
+    "releaseStatus": "qualified-chaos-events",
+    "previousClassic": "0xb3f9c323ffb8ec6a8cd7d06ae239bc3d7bebd59a",
+    "previousRooms": "0x695307022ac7add03117e8f3b59369d7ee7a4724",
+    "compactControls": true,
+    "previousRoomsHistory": [
+      "0xd2fe1c8df2bdbe2666409fc20f25bcd2f2a40fb5",
+      "0xfd1693294fed77304662f08e827b043b0ba386a3"
+    ]
+  },
+  "finance": {
+    "financeId": "events-v1",
+    "rulesVersion": 6,
+    "settlement": "early-published-testnet",
+    "betting": "realtime",
+    "app": "0x78d3341e3452d7ec1add9371de3008639eed8eb0",
+    "adapter": "0xd7602b6ae87798e0f39ea25b97f75dcc5dd0822f",
+    "market": "0x1e7495756ef16d16ec9675080b6f147bf3424a3c",
+    "vault": "0xfb246085d94984f01a6fc7973ae29fcef7b85929",
+    "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+    "startBlock": "62251464",
+    "chainId": 10143
+  },
+  "modules": {
+    "ChaosEffects": "0xfec0f2da47604b01b02368c9d355dc4248778738",
+    "ChaosModifiers": "0x0e87021db9196bcba5d37dd3c80bcd5e38809629",
+    "ChaosRally": "0xa28023cc89a0c777966c3c718a549cd1972132ac",
+    "ChaosDynamics": "0x0e6fc64534125be6522455665f07cc0728b553c2",
+    "ChaosContacts": "0x5fee3cc4a91aeb6aab381b984cbd8009afe0e50b",
+    "ChaosPhysics": "0x87c5f1cd603ae17b19792cf91bb2b6ac10b1f9e4",
+    "ChaosCodec": "0x732ab383301451f275e2e6011a7deeb734f94e75",
+    "DrandEvmnet": "0x7f742cf17f4986f2f4275cb344b21522d9b2ce84",
+    "ChaosDrawRules": "0x8fc423faac3027eaeb22bdd21a7e8bca2e950028",
+    "ChaosEngine": "0x88290d71435949ec039e8b84147ee8dcd06b4cb8"
+  },
+  "flow": "0x254e3a940cf772b579115d35337f561b7844e221",
+  "transactions": [
+    {
+      "id": "chaos-events-production-20260913:seal-vault",
+      "hash": "0xde64c707ec6405191b4a7aabd9ca2117f047e257fd98cb6fe5fd5ef480b46f7c"
+    },
+    {
+      "id": "chaos-events-production-20260913:deploy-pongchaosevents",
+      "hash": "0x4cdaf765f0665c04f282749aa94fee51091fb55962511e1772f0fec4bc0e58f7"
+    },
+    {
+      "id": "chaos-events-production-20260913:deploy-chaoseventssettlement",
+      "hash": "0x8256fb9ed516823cb07c1c7687b0ce70fee22bfd1ae89f72c478fc18198a7b8b"
+    },
+    {
+      "id": "chaos-events-production-20260913:deploy-roomsvault",
+      "hash": "0xc8432b7a62a203b5e054fca9c7663d6e05ec91d9388b28006fe61c3c0c6ab059"
+    },
+    {
+      "id": "chaos-events-production-20260913:deploy-realtimemarket",
+      "hash": "0x15c601523205b9814234c595c1fdb7fd07e3a839cb5decc378e03ed5b7191c7f"
+    },
+    {
+      "id": "chaos-events-production-20260913:register-market",
+      "hash": "0xc6488791a934cc7abab0117ba0334552dea140d828b30b08713d2b7393a25e6d"
+    }
+  ],
+  "opening": {
+    "at": "2026-09-13T19:16:00.252Z",
+    "hash": "0xc8eda7d70c54e9421ba3270c7bff58291485e53c50b9453af285e12513ff97e6",
+    "epoch": 1,
+    "ratingsChecked": 20,
+    "baseBlock": "62263161"
+  },
+  "qualifiedAt": "2026-09-13",
+  "evidence": "docs/validation/chaos-events-20260913.json"
+}

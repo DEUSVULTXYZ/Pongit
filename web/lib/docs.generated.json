@@ -240,7 +240,7 @@
     {
       "slug": "playing/chaos",
       "title": "Chaos",
-      "description": "Understand how betting pressure changes the next rally.",
+      "description": "Betting pressure and the rules-6 arcade-event catalogue.",
       "group": "Playing",
       "updated": "2026-09-13",
       "keywords": [
@@ -248,7 +248,12 @@
         "96",
         "72",
         "shrink",
-        "bets"
+        "bets",
+        "events",
+        "multiball",
+        "jackpot",
+        "drand",
+        "mystery pickup"
       ],
       "headings": [
         {
@@ -264,6 +269,26 @@
         {
           "id": "play-and-follow-the-changes",
           "text": "Play and follow the changes",
+          "level": 2
+        },
+        {
+          "id": "rules-6-arcade-events",
+          "text": "Rules 6: arcade events",
+          "level": 2
+        },
+        {
+          "id": "combinations-and-scoring",
+          "text": "Combinations and scoring",
+          "level": 2
+        },
+        {
+          "id": "verified-draws-and-delayed-events",
+          "text": "Verified draws and delayed events",
+          "level": 2
+        },
+        {
+          "id": "effects-sound-and-replays",
+          "text": "Effects, sound and replays",
           "level": 2
         }
       ]
@@ -440,6 +465,11 @@
         {
           "id": "older-deployments",
           "text": "Older deployments",
+          "level": 2
+        },
+        {
+          "id": "event-based-chaos-rooms",
+          "text": "Event-based Chaos rooms",
           "level": 2
         }
       ]
@@ -881,6 +911,11 @@
           "id": "current-rooms-pushed-state-and-recovery",
           "text": "Current rooms: pushed state and recovery",
           "level": 2
+        },
+        {
+          "id": "rules-6-events-and-continuous-collisions",
+          "text": "Rules 6: events and continuous collisions",
+          "level": 2
         }
       ]
     },
@@ -1044,6 +1079,11 @@
         {
           "id": "room-finance-generations",
           "text": "Room finance generations",
+          "level": 2
+        },
+        {
+          "id": "candidate-rules-6-interfaces",
+          "text": "Candidate rules-6 interfaces",
           "level": 2
         }
       ]
@@ -1237,24 +1277,24 @@
   ],
   "rooms": {
     "chainId": 10143,
-    "rulesVersion": 5,
-    "startBlock": "62169198",
+    "rulesVersion": 6,
+    "startBlock": "62251464",
     "addresses": [
       {
         "name": "Rooms game",
-        "address": "0x695307022ac7add03117e8f3b59369d7ee7a4724"
+        "address": "0x78d3341e3452d7ec1add9371de3008639eed8eb0"
       },
       {
         "name": "Market window / result adapter",
-        "address": "0x4fe0ffb1a31b5264a996385acbf68dfb493800b0"
+        "address": "0xd7602b6ae87798e0f39ea25b97f75dcc5dd0822f"
       },
       {
         "name": "Rooms vault",
-        "address": "0xd533fe18d5687bebfb918c84adcffb1532052dc1"
+        "address": "0xfb246085d94984f01a6fc7973ae29fcef7b85929"
       },
       {
         "name": "Rooms market",
-        "address": "0xb3ea20c94706e9c3fc939db032ca6631ad3a3177"
+        "address": "0x1e7495756ef16d16ec9675080b6f147bf3424a3c"
       }
     ]
   }

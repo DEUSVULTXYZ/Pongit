@@ -12,6 +12,7 @@ import manifest from "../../deployments/interlude-rooms.json";
 import { roomsAbi } from "../../shared/abi-rooms";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { roomsCompactAbi } from "../../shared/abi-PongRoomsCompact";
+import { roomsEventsAbi } from "../../shared/abi-PongChaosEvents";
 import {compactRoomsSession} from '../../shared/compact-rooms-session';
 import { api, API } from "./api";
 import {engineTransport} from "../../shared/engine-transport";
@@ -21,8 +22,9 @@ import {readHubDelegation} from '../../shared/rooms-hub';
 import {assertRoomsEngineAvailable} from '../../shared/rooms-availability';
 export const roomsManifest = manifest;
 export const roomsCompact = (manifest as typeof manifest & {compactControls?:boolean}).compactControls===true;
-const gameAbi:Abi=roomsCompact?roomsCompactAbi:roomsChaosAbi;
-export const roomsChaos = [4,5].includes(Number(manifest.rulesVersion));
+const gameAbi:Abi=Number(manifest.rulesVersion)===6?roomsEventsAbi:roomsCompact?roomsCompactAbi:roomsChaosAbi;
+export const roomsChaos = [4,5,6].includes(Number(manifest.rulesVersion));
+export const roomsEvents = Number(manifest.rulesVersion)===6;
 export const roomsScope = [
   "acceptMatch",
   "input",

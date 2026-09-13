@@ -8,6 +8,8 @@ const names = [
   ["PongRoomsCompact", "roomsCompactAbi"],
   ["RoomsRealtimeSettlement", "roomsRealtimeSettlementAbi"],
   ["RealtimeMarket", "realtimeMarketAbi"],
+  ["PongChaosEvents", "roomsEventsAbi"],
+  ["ChaosEventsSettlement", "chaosEventsSettlementAbi"],
 ] as const;
 for (const [name, variable] of names) {
   const artifact = JSON.parse(

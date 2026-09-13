@@ -1,4 +1,5 @@
 import {decodeErrorResult, decodeFunctionResult, encodeFunctionData, type Abi, type Address, type Hex} from "viem";
+import {decodeChaosRead} from './chaos-codec';
 
 export class EngineSnapshotError extends Error {
   constructor(public readonly app: Address, public readonly matchId: bigint, public readonly returnData: Hex, reason: string) {
@@ -10,6 +11,7 @@ export class EngineSnapshotError extends Error {
 
 export function decodeEngineSnapshot(abi: Abi, app: Address, matchId: bigint, data: Hex): readonly unknown[] {
   try {
+    if(abi.some(x=>x.type==='function'&&x.name==='chaosState'))return decodeChaosRead(abi,decodeFunctionResult({abi,functionName:'chaosState',data}) as Hex);
     return decodeFunctionResult({abi, functionName: "getSnapshot", data}) as readonly unknown[];
   } catch {
     let reason = `invalid snapshot, ${(data.length - 2) / 2} bytes`;
@@ -26,7 +28,8 @@ export async function readEngineSnapshot(client: {
   app: Address; abi: Abi;
   node: {request: (args: {method: "eth_call"; params: [{to: Address; data: Hex}, "latest"]}) => Promise<Hex>};
 }, matchId: bigint): Promise<readonly unknown[]> {
-  const data = encodeFunctionData({abi: client.abi, functionName: "getSnapshot", args: [matchId]});
+  const fn=client.abi.some(x=>x.type==='function'&&x.name==='chaosState')?'chaosState':'getSnapshot';
+  const data = encodeFunctionData({abi: client.abi, functionName: fn, args: [matchId]});
   const result = await client.node.request({method: "eth_call", params: [{to: client.app, data}, "latest"]});
   return decodeEngineSnapshot(client.abi, client.app, matchId, result);
 }

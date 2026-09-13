@@ -85,6 +85,10 @@ contracts:
       - event: ResultCorrected(uint256 indexed id, bytes32 previousHash, bytes32 correctedHash, uint256 revision)
       - event: ResultFinal(uint256 indexed id, bytes32 hash)
 
+  - name: ChaosEventsArchive
+    events:
+      - event: MatchRecorded(uint256 indexed id, uint256 indexed epoch, address indexed app, bytes32 hash, address a, address b, address winner, uint8 status, uint8 mode, bool ranked, uint8 scoreA, uint8 scoreB, bool played, uint64 finishedAt)
+
 chains:
   - id: 10143
     start_block: 0

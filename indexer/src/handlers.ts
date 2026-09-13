@@ -1,5 +1,6 @@
 import { retainFinished, snapshotScores } from "./retention";
 import { indexer } from 'envio';
+import './chaos-events';
 const zero = '0x0000000000000000000000000000000000000000';
 for(const {version,game,market,tournaments} of [
   {version:"v1",game:"Game",market:"Market",tournaments:"Tournaments"},

@@ -11,7 +11,7 @@ import {LMSRV2} from "../src/v2/MarketV2.sol";
 
 // Standalone fixture shares helpers, not the legacy pause assertions.
 contract RealtimeMarketTest is RoomsSettlementFixture {
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
         vm.mockCall(GAME,abi.encodeWithSignature("RULES_VERSION()"),abi.encode(uint256(5)));
         adapter=new RoomsRealtimeSettlement(PongInterludeRoomsChaos(GAME));vault=new RoomsVault(address(this));

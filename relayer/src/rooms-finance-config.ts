@@ -13,8 +13,10 @@ import { roomsVaultAbi } from "../../shared/abi-RoomsVault";
 import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
 import { roomsEarlySettlementAbi } from "../../shared/abi-RoomsEarlySettlement";
 import { roomsRealtimeSettlementAbi } from "../../shared/abi-RoomsRealtimeSettlement";
+import { chaosEventsSettlementAbi } from "../../shared/abi-ChaosEventsSettlement";
 import { coerce, type RelayRequest } from "../../shared/protocol";
 export type RoomsFinanceManifest = {
+  rulesVersion?: 6;
   financeId?: string;
   settlement?: "early-published-testnet";
   betting?: "realtime";
@@ -27,7 +29,7 @@ export type RoomsFinanceManifest = {
   chainId: 10143;
 };
 export const financeScope = (m: RoomsFinanceManifest) => m.app.toLowerCase() + (m.financeId ? ":" + m.financeId : "");
-export const financeAdapterAbi = (m: RoomsFinanceManifest): Abi => m.betting === 'realtime' ? roomsRealtimeSettlementAbi : m.settlement === "early-published-testnet" ? roomsEarlySettlementAbi : roomsMarketAdapterAbi;
+export const financeAdapterAbi = (m: RoomsFinanceManifest): Abi => m.rulesVersion===6 ? chaosEventsSettlementAbi : m.betting === 'realtime' ? roomsRealtimeSettlementAbi : m.settlement === "early-published-testnet" ? roomsEarlySettlementAbi : roomsMarketAdapterAbi;
 export async function bindRoomsFinance(
   db: Pick<Pool, "query">,
   entries: RoomsFinanceManifest[],
@@ -43,6 +45,7 @@ export async function bindRoomsFinance(
           app,
           ...(m.financeId ? {financeId:m.financeId,settlement:m.settlement} : {}),
           ...(m.betting ? {betting:m.betting} : {}),
+          ...(m.rulesVersion ? {rulesVersion:m.rulesVersion} : {}),
           chainId: m.chainId,
           adapter: m.adapter.toLowerCase(),
           market: m.market.toLowerCase(),
@@ -80,6 +83,7 @@ export async function loadRoomsFinance() {
         isAddress(a),
       ) ||
       !/^\d+$/.test(m.startBlock) ||
+      (m.rulesVersion !== undefined && (m.rulesVersion !== 6 || m.betting !== 'realtime')) ||
       (m.financeId !== undefined && (!/^[a-z0-9-]{1,32}$/.test(m.financeId) || m.settlement !== "early-published-testnet")) ||
       (m.settlement !== undefined && !m.financeId) ||
       (m.betting !== undefined && (m.betting !== 'realtime' || !m.financeId || m.settlement !== 'early-published-testnet'))

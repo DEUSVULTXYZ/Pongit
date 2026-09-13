@@ -9,6 +9,9 @@ import {
 } from "viem";
 import { monadTestnet } from "viem/chains";
 import { Court } from "./Court";
+import {ChaosEffectsHud} from './ChaosEffectsHud';
+import {RoomsHistory} from './RoomsHistory';
+import {eventHud} from '../lib/chaos-presentation';
 import {MatchCountdown,ChaosRallyStatus} from './MatchCountdown';
 import {useLobbyClock,useQueueElapsed} from '../lib/use-lobby-clock';
 import { PixelPalaceArt } from "./PixelPalaceArt";
@@ -31,6 +34,7 @@ import {
   createRoomsClient,
   roomsManifest,
   roomsChaos,
+  roomsEvents,
   roomsScope,
   roomsAccountKey,
   authenticateRooms,
@@ -190,8 +194,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     | "more"
     | "ladder"
     | "market"
+    | "history"
     | null
   >(null);
+  const [historyId,setHistoryId]=useState<string>();
+  useEffect(()=>{if(!roomsEvents||!account)return;const ref=new URL(location.href).searchParams.get('history');if(ref&&/^10143:0x[\da-f]{40}:\d+:\d+$/.test(ref)){setHistoryId(ref);setPanel('history');const url=new URL(location.href);url.searchParams.delete('history');history.replaceState(null,'',url);}},[account]);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
@@ -1221,6 +1228,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               Back
             </a>
           </div>
+          {roomsEvents&&preview?.mode===1&&<details><summary>Chaos rules</summary><p>24 random events. Up to two effects at once, with a one-second warning. Effects end after a point. Jackpot makes a point worth two; payouts are unchanged.</p><a href="/docs/playing/chaos" target="_blank" rel="noreferrer">All events and rules ↗</a></details>}
         </section>
       ) : !room && !lobby.queue ? (
         <section className="rooms-home">
@@ -1272,7 +1280,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
             <button aria-pressed={mode===1} disabled={busy} onClick={()=>setMode(1)}>Chaos</button>
           </div>}
           <p className="rooms-caption">
-            Free to play · Monad Testnet
+            {roomsEvents&&mode===1?<a href="/docs/playing/chaos" target="_blank" rel="noreferrer">24 random events · Chaos rules ↗</a>:'Free to play · Monad Testnet'}
           </p>
           {ready &&
             !lobby.profiles.some(
@@ -1385,12 +1393,14 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
                   <div className="arena-rounds" aria-hidden="true">{Array.from({length:7},(_,i)=><b key={i} data-won={i<snapshot.state.scoreB}/>)}</div>
                 </div>
               </div>
+              {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.chaos.physics.t/1000n)} effectsEnabled={arcadeAudio.settings.background} players={[name(snapshot.a),name(snapshot.b)]}/>}
               <div className="rooms-canvas">
                 {snapshot.state.awaitingServe && <ChaosRallyStatus phase={roundStatus?.id===String(snapshot.id)&&roundStatus.rally===pausedRally&&['open','closing'].includes(roundStatus.phase)?roundStatus.phase as 'open'|'closing':'preparing'} blocksLeft={Number(roundStatus?.blocksLeft||0)}/>}
                 <Court
                   externalIntermission
                   liveEngine
                   state={snapshot.state}
+                  chaos={snapshot.chaos}
                   clock={snapshot.clock}
                   observedAt={snapshot.observedAt}
                   direction={direction}
@@ -1535,6 +1545,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         ratingDelta={resultRating?.id===resultView?.snapshot.id.toString()?resultRating?.delta:undefined}
         sound
         replay={false}
+        watch={roomsEvents?()=>{setHistoryId(String(resultView?.snapshot.id));openPanel('history');}:undefined}
         confirmation="engine"
         showResultKey={showResultKey}
         rematch={async () => {
@@ -1814,11 +1825,13 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
         </RoomsModal>
       )}
       {panel === "market" && account && <RoomsModal {...modalProps} title="Betting & wallet"><RoomsMarketPanel player={account} matchId={room?.mode===1?offer?.id:undefined} onBusy={value=>{busyRef.current=value;setBusy(value);}}/></RoomsModal>}
+      {panel === 'history' && account && <RoomsModal {...modalProps} title="Recent matches"><RoomsHistory matchId={historyId}/></RoomsModal>}
       {panel === "more" && (
         <RoomsModal {...modalProps} title="Around the arcade">
           <button onClick={() => void ensure(() => openContacts("contacts"))}>
             Contacts
           </button>
+          {roomsEvents&&account&&<button onClick={()=>{setHistoryId(undefined);openPanel('history');}}>Recent matches</button>}
           <a href="/legacy">V4 arcade · Chaos, tournaments & betting ↗</a>
           <a href="/labs/interlude">Previous practice arena ↗</a>
           <a href="/docs" target="_blank" rel="noreferrer">

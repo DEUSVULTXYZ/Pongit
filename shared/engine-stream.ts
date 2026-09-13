@@ -1,14 +1,15 @@
 import {decodeAbiParameters, decodeEventLog, type Abi, type Address, type Hex} from "viem";
 import type {State} from "./physics-v2";
 import {recordRpc} from "./rpc-metrics";
+import {unpackChaos,chaosLegacy,unpackChaosCollision,type ChaosDecoded} from './chaos-codec';
 
 export type EngineFrame = {app:Address;hash:Hex;head:bigint;logs:readonly {address:Address;topics:readonly Hex[];data:Hex}[]};
-export type EngineState = {id:bigint;revision:bigint;phase:number;a:Address;b:Address;target:Address;winner:Address;head:bigint;clock:bigint;nonceA:bigint;nonceB:bigint;deadline:bigint;state:State;observedAt:number;reset?:boolean};
+export type EngineState = {id:bigint;revision:bigint;phase:number;a:Address;b:Address;target:Address;winner:Address;head:bigint;clock:bigint;nonceA:bigint;nonceB:bigint;deadline:bigint;state:State;chaos?:ChaosDecoded;observedAt:number;reset?:boolean};
 export function engineState(v:readonly unknown[],now=Date.now()):EngineState {
  const [id,revision,phase,a,b,target,winner,head,clock,nonceA,nonceB,deadline,state]=v;
- return {id:id as bigint,revision:revision as bigint,phase:Number(phase),a:a as Address,b:b as Address,target:target as Address,winner:winner as Address,head:head as bigint,clock:clock as bigint,nonceA:nonceA as bigint,nonceB:nonceB as bigint,deadline:deadline as bigint,state:state as State,observedAt:now};
+ return {id:id as bigint,revision:revision as bigint,phase:Number(phase),a:a as Address,b:b as Address,target:target as Address,winner:winner as Address,head:head as bigint,clock:clock as bigint,nonceA:nonceA as bigint,nonceB:nonceB as bigint,deadline:deadline as bigint,state:state as State,...(v[13]?{chaos:v[13] as ChaosDecoded}:{}),observedAt:now};
 }
-export const engineTuple=(s:EngineState)=>[s.id,s.revision,BigInt(s.phase),s.a,s.b,s.target,s.winner,s.head,s.clock,s.nonceA,s.nonceB,s.deadline,s.state] as const;
+export const engineTuple=(s:EngineState)=>[s.id,s.revision,BigInt(s.phase),s.a,s.b,s.target,s.winner,s.head,s.clock,s.nonceA,s.nonceB,s.deadline,s.state,...(s.chaos?[s.chaos]:[])] as const;
 const hex=(v:unknown,n?:number):v is Hex=>typeof v==="string" && /^0x[\da-f]*$/i.test(v) && v.length%2===0 && (n===undefined||v.length===2+n*2);
 export function appliedFrame(value:any,app:Address):EngineFrame|null {
  if(!value || value.succeeded!==true || value.app?.toLowerCase()!==app.toLowerCase() || value.to?.toLowerCase()!==app.toLowerCase() || !hex(value.hash,32) || !Array.isArray(value.logs))return null;
@@ -23,24 +24,37 @@ export function receiptFrame(receipt:any,app:Address):EngineFrame|null {
 
 /** Events contain physics, not the complete getter. Preserve only known metadata;
  * a missing revision or clock reanchor requires a fresh authoritative read. */
-export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:EngineFrame,now=Date.now()):{state:EngineState;resync:boolean;changed:boolean} {
- let snapshot:any,completed:any;
+export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:EngineFrame,now=Date.now()):{state:EngineState;resync:boolean;changed:boolean;gap?:bigint} {
+ let snapshot:any,completed:any,request:bigint|undefined,pending:bigint|undefined;
+ const collisions:ReturnType<typeof unpackChaosCollision>[]=[];
  for(const log of frame.logs){if(log.address.toLowerCase()!==app.toLowerCase())continue;try{
   const e=decodeEventLog({abi,data:log.data,topics:[...log.topics] as any});const args=e.args as any;
   if(args.id!==previous.id)continue;
   if(e.eventName==="Snapshot")snapshot=args;
   if(e.eventName==="Completed")completed=args;
+  if(e.eventName==='EventRequested'){request=args.request;pending=0n;}
+  if(e.eventName==='RandomnessVerified')pending=args.draw;
+  if(e.eventName==='ChaosCollision')collisions.push(unpackChaosCollision(args.collision));
  }catch{}}
  if(!snapshot || snapshot.version<=previous.revision)return {state:previous,resync:false,changed:false};
- if(snapshot.version!==previous.revision+1n || frame.head<previous.head || previous.phase<2)
-  return {state:previous,resync:true,changed:false};
+ if(snapshot.version!==previous.revision+1n || frame.head<previous.head || previous.phase<2){
+  recordRpc({at:now,target:'interlude',method:frame.head<previous.head?'snapshot.reanchor':previous.phase<2?'snapshot.admission':'snapshot.gap',status:200,ms:0,source:'cache'});
+  return {state:previous,resync:true,changed:false,...(frame.head>=previous.head&&previous.phase>=2&&snapshot.version>previous.revision+1n?{gap:snapshot.version}:{} )};
+ }
  const getter=abi.find(x=>x.type==="function"&&x.name==="getSnapshot") as any;
  try{
-  const state=decodeAbiParameters([getter.outputs.at(-1)],snapshot.state)[0] as State;
+  let state:State,chaos=previous.chaos,nonceA=previous.nonceA,nonceB=previous.nonceB;
+  if(chaos){
+   const [version,control,words]=decodeAbiParameters([{type:'uint8'},{type:'uint256'},{type:'uint256[8]'}],snapshot.state);
+   if(version!==6)throw Error('Unknown Chaos snapshot');
+   const physics=unpackChaos(words,previous.state.seed,control);state=chaosLegacy(physics,Number(snapshot.status)>=3);
+   chaos={physics,request:request??chaos.request,pending:pending??chaos.pending,collisions};
+   nonceA=BigInt.asUintN(64,control>>16n);nonceB=BigInt.asUintN(64,control>>80n);
+  }else state=decodeAbiParameters([getter.outputs.at(-1)],snapshot.state)[0] as State;
   const phase=Number(snapshot.status);
   if(phase>=3&&!completed)return {state:previous,resync:true,changed:false};
   const elapsed=previous.clock+(frame.head-previous.head)*10000n;
-  return {state:{...previous,reset:false,revision:snapshot.version,phase,head:frame.head,clock:phase===2?(elapsed>state.t?elapsed:state.t):state.t,state,winner:completed?.winner??previous.winner,observedAt:now},resync:false,changed:true};
+  return {state:{...previous,reset:false,revision:snapshot.version,phase,head:frame.head,clock:phase===2?(elapsed>state.t?elapsed:state.t):state.t,state,...(chaos?{chaos}:{}),nonceA,nonceB,winner:completed?.winner??previous.winner,observedAt:now},resync:false,changed:true};
  }catch{return {state:previous,resync:true,changed:false};}
 }
 

@@ -17,7 +17,8 @@ import { marketV4Abi as marketAbi } from "../../shared/abis-v4";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
 import { roomsRealtimeAbi } from "../../shared/abi-PongRoomsRealtime";
 import { realtimeMarketAbi } from "../../shared/abi-RealtimeMarket";
-import { livePressureDomain,livePressureTypes,livePressureCheckpoint } from "../../shared/rooms-live-pressure";
+import { livePressureDomain,livePressureTypes,livePressureCheckpoint,eventsPressureDomain,eventsPressureTypes } from "../../shared/rooms-live-pressure";
+import { roomsEventsAbi } from "../../shared/abi-PongChaosEvents";
 import { roomsLifecycleHubAbi } from "../../shared/abi-rooms-lifecycle";
 import {roomsRoundStatus} from '../../shared/rooms-round-status';
 import {sameChaosPause,chaosWindowMoved} from '../../shared/chaos-publication';
@@ -56,6 +57,8 @@ export async function createRoomsFinance(o: {
   const signer = privateKeyToAccount(key.privateKey);
   if (signer.address.toLowerCase() !== m.pressureSigner.toLowerCase())
     throw new Error("Pressure signer mismatch");
+  if(m.rulesVersion===6&&await base.readContract({address:m.app,abi:roomsEventsAbi,functionName:'RULES_VERSION'})!==6n)
+    throw new Error('Chaos events finance must bind rules 6');
   const [
     actualSigner,
     resultSource,
@@ -222,9 +225,12 @@ export async function createRoomsFinance(o: {
       [app,id,String(epoch),String(sourceBlock),block.hash,String(paidA),String(paidB),checkpoint]);
     const stored=(await db.query('SELECT checkpoint FROM il_live_pressure WHERE app=$1 AND id=$2 AND epoch=$3 AND source_block=$4',[app,id,String(epoch),String(sourceBlock)])).rows[0];
     if(stored?.checkpoint!==checkpoint)throw new Error('Conflicting confirmed betting source');
-    const p={matchId,epoch,seed:s[12].seed as Hex,rally:s[12].scoreA+s[12].scoreB,paidA,paidB,sourceBlock,checkpoint,expires:BigInt(Math.floor(Date.now()/1000)+25)};
-    const signature=await signer.signTypedData({domain:livePressureDomain(m.app),types:livePressureTypes,primaryType:'LivePressure',message:p});
-    await send(encodeFunctionData({abi:roomsRealtimeAbi,functionName:'submitLivePressure',args:[p,signature]}));
+    const events=m.rulesVersion===6;
+    const rally=events?s[13]?.physics.score.rally:s[12].scoreA+s[12].scoreB;
+    if(!Number.isSafeInteger(rally)||rally<(events?1:0))throw Error('Verified rally counter unavailable');
+    const p={matchId,epoch,seed:s[12].seed as Hex,rally,paidA,paidB,sourceBlock,checkpoint,expires:BigInt(Math.floor(Date.now()/1000)+25)};
+    const signature=await signer.signTypedData({domain:events?eventsPressureDomain(m.app):livePressureDomain(m.app),types:events?eventsPressureTypes:livePressureTypes,primaryType:'LivePressure',message:p});
+    await send(encodeFunctionData({abi:events?roomsEventsAbi:roomsRealtimeAbi,functionName:'submitLivePressure',args:[p,signature]}));
     // An executed catch-up may not install this checkpoint. Read the actual queue.
     const applied=await readQueued();livePressureDelivered.set(id,{a:applied[0],b:applied[1],checkedAt:Date.now()});
     lastError='';
@@ -371,6 +377,20 @@ export async function createRoomsFinance(o: {
       ).rows[0];
       const from = cursor ? BigInt(cursor.block) + 1n : BigInt(m.startBlock),
         to = from + 499n < safe ? from + 499n : safe;
+      // Discover recent bettors independently of the historical scan. A newly
+      // started worker can be thousands of blocks behind; current published
+      // matches must not wait for that backlog before becoming payable.
+      try {
+      if(safe>=BigInt(m.startBlock)&&from+100n<safe){
+        const recentFrom=safe>99n&&safe-99n>BigInt(m.startBlock)?safe-99n:BigInt(m.startBlock);
+        const recent=await base.getContractEvents({address:m.market,abi:marketAbi,fromBlock:recentFrom,toBlock:safe});
+        for(const l of recent)if(l.eventName==='BetPlaced'&&l.args.player&&l.args.matchId!==undefined)
+          await db.query('INSERT INTO il_bettors(app,id,player) VALUES($1,$2,$3) ON CONFLICT DO NOTHING',[app,String(l.args.matchId),l.args.player.toLowerCase()]);
+      }
+      } catch {
+        console.error(JSON.stringify({at:new Date().toISOString(),code:'MARKET_RECENT_RETRY',app}));
+      }
+      try {
       if (from <= to) {
         // Public Monad RPCs cap eth_getLogs at 100 blocks. Keep the persisted
         // cursor atomic for the whole page while each read respects that cap.
@@ -420,6 +440,12 @@ export async function createRoomsFinance(o: {
         } finally {
           c.release();
         }
+      }
+      } catch {
+        // Preserve the historical cursor and retry it later. Known positions
+        // are still checked against their contracts below, without trusting an
+        // indexer or a caller-provided amount/destination.
+        console.error(JSON.stringify({at:new Date().toISOString(),code:'MARKET_HISTORY_RETRY',app,from:String(from),to:String(to)}));
       }
       const pending = (
         await db.query(

@@ -6,8 +6,14 @@ import { predictPaddle, boundedClock, projectConfirmed, projectLive, type Pendin
 import { LivePaddle, LiveClock } from "../lib/live-paddle";
 import { createCourtSurface } from "../lib/court-art";
 import { BallTrail } from "../lib/ball-trail";
+import type {ChaosDecoded} from '../../shared/chaos-codec';
+import {chaosLegacy} from '../../shared/chaos-codec';
+import {chaosEvent} from '../../shared/chaos-events';
+import {projectChaos,eventCanvas,eventPaddles} from '../lib/chaos-presentation';
+import {drawChaosCourt,drawChaosPaddles,drawChaosBalls,type ChaosCanvasFrame} from '../lib/chaos-canvas';
 type Props = {
   state: State | null;
+  chaos?:ChaosDecoded;
   clock: bigint;
   observedAt: number;
   direction: number;
@@ -26,6 +32,7 @@ type Props = {
 };
 export function Court({
   state,
+  chaos,
   clock,
   observedAt,
   direction,
@@ -39,6 +46,7 @@ export function Court({
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
     state,
+    chaos,
     clock,
     observedAt,
     direction,
@@ -49,6 +57,7 @@ export function Court({
   });
   current.current = {
     state,
+    chaos,
     clock,
     observedAt,
     direction,
@@ -62,6 +71,9 @@ export function Court({
     const ctx = el.getContext("2d")!;
     const surface = createCourtSurface();
     const trail = new BallTrail();
+    const chaosTrails=[new BallTrail(),new BallTrail()];
+    let seenEffects=new Set<number>(),seenHits=new Set<string>();
+    let impacts:NonNullable<ChaosCanvasFrame['impacts']>[number][]=[];
     const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
     // Paint all bevels inside the existing rectangles: appearance never enlarges a hitbox.
     function prism(x: number, y: number, w: number, h: number, face: CanvasGradient | string, light: string, dark: string) {
@@ -90,7 +102,7 @@ export function Court({
     function draw(now: number) {
       const p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}`;
-      if (identity !== context) { trail.reset(); previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
+      if (identity !== context) { trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const dt = Math.max(0, Math.min(50, now - lastDraw));
       lastDraw = now;
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -108,7 +120,9 @@ export function Court({
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
       const target=p.replay?p.clock:p.liveEngine?liveClock.sample(timing.target):timing.target;
       let waiting = false;
-      if (s) {
+      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:projectChaos(p.chaos.physics,target)):null;
+      if(cp){s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
+      else if (s) {
         const projected = p.replay ? { state: s, waiting: false }
           : p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
         s = projected.state;
@@ -116,21 +130,22 @@ export function Court({
       }
       let yA = s ? Number(s.left) / Number(SCALE) : 288,
         yB = s ? Number(s.right) / Number(SCALE) : 288;
-      if (p.state && !p.replay && target > p.state.t) {
+      if (p.state && !cp && !p.replay && target > p.state.t) {
         // Paddles keep moving along their confirmed directions even while the
         // ball waits at an unresolved impact; their bounds are independent.
         const paddles = move(p.state, target);
         yA = Number(paddles.left) / Number(SCALE);
         yB = Number(paddles.right) / Number(SCALE);
       }
-      const halfA=Number(s?.halfA || 48000000n)/1e6, halfB=Number(s?.halfB || 48000000n)/1e6;
+      const mod=cp?eventPaddles(cp.state):null;
+      const halfA=mod?Number(mod.heightA)/2e6+(mod.splitA?8:0):Number(s?.halfA || 48000000n)/1e6, halfB=mod?Number(mod.heightB)/2e6+(mod.splitB?8:0):Number(s?.halfB || 48000000n)/1e6;
       const half=p.side===0?halfA:halfB;
       const confirmedY = p.side === 0 ? yA : yB;
       if (s && !s.awaitingServe && (p.controllable || p.liveEngine) && !p.replay && p.side >= 0) {
         if (p.liveEngine) {
           const owner = livePaddle.step(confirmedY, p.controllable ? p.direction : 0,
             p.side === 0 ? p.state!.leftDir : p.state!.rightDir,
-            half, dt, timing.stale || !p.controllable, p.pending);
+            half, dt, timing.stale || !p.controllable, p.pending,mod?Number(p.side===0?mod.speedA:mod.speedB)/1e6:180);
           visualY = owner.y; correction = owner.correction;
         } else {
         const initialY=Number(p.side===0?p.state!.left:p.state!.right)/1e6;
@@ -150,7 +165,36 @@ export function Court({
         if(p.side===0)yA=visualY;else yB=visualY;
         if(p.debug && Math.abs(visualY-confirmedY)>3){ctx.strokeStyle="#738497";ctx.strokeRect(p.side===0?22:990,confirmedY-half,12,2*half);}
       } else { visualY = null; livePaddle.reset(); }
-      if (s) {
+      if(cp&&p.chaos){
+        const f=eventCanvas(cp.state,arcadeAudio.settings.background,reducedMotion.matches);
+        f.paddles[0].y=yA;f.paddles[1].y=yB;
+        const epoch=p.chaos.request>>64n&0xffffffffn;
+        if(!p.replay&&!document.hidden){
+          for(const e of p.chaos.physics.effects)if(e.id&&!seenEffects.has(e.serial)){
+            seenEffects.add(e.serial);
+            if(f.gameMs-e.startsAt<0&&f.gameMs>=e.startsAt-1000&&timing.ageMs<400)arcadeAudio.playChaos(chaosEvent(e.id).id,'announce',`${p.matchId}:${epoch}:effect:${e.serial}`);
+          }
+          for(const hit of [...p.chaos.collisions,...cp.collisions]){
+            const key=`${p.matchId}:${epoch}:${hit.rally}:${hit.sequence}:${hit.ball}`;
+            if(seenHits.has(key))continue;seenHits.add(key);
+            if(cp.state.t-hit.at>250000n||cp.state.t<hit.at||timing.ageMs>400)continue;
+            const kind=hit.kind<=2?'wall':hit.kind<=4?'paddle':hit.kind<=8?'shield':hit.kind===9?'bumper':hit.kind===14?'deflector':'brick';
+            const event=kind==='shield'?3:kind==='bumper'?13:kind==='deflector'?18:kind==='brick'?19:0;
+            if(event)arcadeAudio.playChaos(event,'impact',key);else arcadeAudio.play('bounce',key);
+            impacts.push({id:key,kind,x:Number(hit.x)/1e12,y:Number(hit.y)/1e12,at:Number(hit.at/1000n),color:event?'#ffc680':'#bdf7ff'});
+          }
+          while(seenHits.size>512)seenHits.delete(seenHits.values().next().value!);
+        }
+        impacts=impacts.filter(h=>f.gameMs-h.at<=260&&f.gameMs>=h.at).slice(-16);f.impacts=impacts;
+        drawChaosCourt(ctx,f);
+        for(const ball of f.balls){const original=cp.state.balls[ball.id-1];
+          const points=chaosTrails[ball.id-1].sample({x:ball.x,y:ball.y,at:now,clock:cp.state.t,rally:`${p.matchId}:${epoch}:${cp.state.score.rally}:${original.trailRevision}`},f.effectsEnabled&&!f.reducedMotion&&!p.state?.finished);
+          ctx.save();for(const point of points){const size=3+6*point.strength;ctx.globalAlpha=.42*point.strength;ctx.fillStyle=ball.id===1?'#84efff':'#d6a0ff';ctx.fillRect(point.x-size/2,point.y-size/2,size,size);}ctx.restore();
+        }
+        for(let i=0;i<2;i++)if(!cp.state.balls[i].alive)chaosTrails[i].reset();
+        drawChaosPaddles(ctx,f);drawChaosBalls(ctx,f);
+      }
+      if (s&&!cp) {
         const points = trail.sample({ x: Number(s.x) / 1e6, y: Number(s.y) / 1e6,
           at: now, clock: s.t, rally: `${p.matchId}:${s.scoreA}:${s.scoreB}` },
           !reducedMotion.matches && !s.finished && !s.awaitingServe);
@@ -163,23 +207,23 @@ export function Court({
         }
         ctx.restore();
       } else trail.reset();
-      prism(22, yA - halfA, 12, halfA*2, leftFace, "#e0ffff", "#357787");
-      prism(990, yB - halfB, 12, halfB*2, rightFace, "#f3e8ff", "#67478b");
+      if(!cp){prism(22, yA - halfA, 12, halfA*2, leftFace, "#e0ffff", "#357787");
+      prism(990, yB - halfB, 12, halfB*2, rightFace, "#f3e8ff", "#67478b");}
       if(s?.awaitingServe && !s.finished && !p.externalIntermission) {
         const remaining=Math.max(0,Number(s.resumeAt-p.clock)/1e6);
         ctx.fillStyle="#e5e1ff";ctx.textAlign="center";ctx.font=`30px ${fontFamily}`;
         ctx.fillText(p.liveEngine?"PREPARING RALLY":remaining>0?remaining.toFixed(1):"SYNCING SERVE",512,230);
         ctx.font=`12px ${fontFamily}`;ctx.fillText("CHAOS / NEXT RALLY",512,190);ctx.textAlign="left";
       }
-      if(s && !p.replay && !document.hidden){
+      if(s && !cp && !p.replay && !document.hidden){
         const score=s.scoreA+s.scoreB;
         if(previousSound && now-previousSound.time<100 && score===previousSound.score && (s.vx!==previousSound.vx || s.vy!==previousSound.vy))arcadeAudio.play("bounce",`${p.matchId}:impact:${p.state?.t}:${s.vx}:${s.vy}`);
         if(s.awaitingServe&&!p.liveEngine){const count=Math.ceil(Math.max(0,Number(s.resumeAt-target)/1e6));if(count>0 && count<=3)arcadeAudio.play("countdown",`${p.matchId}:count:${s.resumeAt}:${count}`);}
         previousSound={vx:s.vx,vy:s.vy,score,time:now};
       } else previousSound=null;
-      if (s) {
+      if (s&&!cp) {
         prism(Number(s.x) / 1e6 - 6, Number(s.y) / 1e6 - 6, 12, 12, "#f3fcff", "#fff", "#9eafb9");
-      } else {
+      } else if(!s) {
         ctx.strokeStyle = "#777";
         ctx.strokeRect(506, 282, 12, 12);
       }
@@ -202,7 +246,7 @@ export function Court({
       }
       frame = requestAnimationFrame(draw);
     }
-    const visibility=()=>{cancelAnimationFrame(frame);trail.reset();if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;frame=requestAnimationFrame(draw);}};
+    const visibility=()=>{cancelAnimationFrame(frame);trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
     document.addEventListener("visibilitychange",visibility);
     if(!document.hidden)frame = requestAnimationFrame(draw);
     return () => {cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};

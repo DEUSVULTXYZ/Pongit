@@ -1,36 +1,42 @@
 // HTTPS-origin browser validation; every chain/API response is simulated.
 import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {encodeAbiParameters,encodeFunctionResult,parseTransaction,decodeFunctionData,toHex,toFunctionSelector,zeroHash,zeroAddress,keccak256,type Abi,type Address} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {encodeSession,storageKey,delegatableAbi} from '@interludelayer-sdk/sdk';
 import {prepareRoomLaunch,assertRoomLaunchReady} from '../shared/rooms-acceptance';
 import {initial} from '../shared/physics-v2';
-import manifest from '../deployments/interlude-rooms.json';
-import financialDeployments from '../deployments/rooms-finance.json';
+const manifest=JSON.parse(await readFile(process.env.ROOMS_BROWSER_MANIFEST||'deployments/interlude-rooms.json','utf8')) as typeof import('../deployments/interlude-rooms.json');
+const financialDeployments=JSON.parse(await readFile(process.env.ROOMS_BROWSER_FINANCE||'deployments/rooms-finance.json','utf8')) as typeof import('../deployments/rooms-finance.json');
 import {roomsChaosAbi} from '../shared/abi-PongRoomsTestnet';
 import {roomsCompactAbi} from '../shared/abi-PongRoomsCompact';
+import {roomsEventsAbi} from '../shared/abi-PongChaosEvents';
+import {chaosBrowserPayload} from './chaos-browser-fixture';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const compact=(manifest as typeof manifest & {compactControls?:boolean}).compactControls===true;
-const origin='https://pongit.xyz',app=manifest.app as Address,abi=(compact?roomsCompactAbi:roomsChaosAbi) as Abi;
+const events=Number(manifest.rulesVersion)===6;
+const ui=process.env.ROOMS_BROWSER_UI||'http://countdown-web:3000';
+assert(['countdown-web','127.0.0.1'].includes(new URL(ui).hostname),'Only a private test build may serve the fixture');
+const origin='https://pongit.xyz',app=manifest.app as Address,abi=(events?roomsEventsAbi:compact?roomsCompactAbi:roomsChaosAbi) as Abi;
 const players=['0x1111111111111111111111111111111111111111','0x2222222222222222222222222222222222222222'];
 let clockSkew=28000;
 const serverNow=()=>Date.now()+clockSkew;
 const browser=await chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{})});
 const report:any={scope:'Simulated API and chain, real browser against production build',scenarios:[],errors:[]};
+let debugPages:any[]=[];
 await mkdir('artifacts/rooms-countdown',{recursive:true});
 try{
  for(const mode of [0,1]){
   clockSkew=28000;
-  let room:any,phase=0,revision=0n,paused=false,sends=0,marketFinished=false;
+  let room:any,phase=0,revision=0n,paused=false,sends=0,marketFinished=false,effect=21,secondEffect=13,closing=false;
   const currentFinance=financialDeployments.at(-1)!;
   const financialAccount=(m:any)=>({manifest:m,balance:'20000000000000000',walletBalance:'6000000000000000',nonce:'0',marketNonce:'0',history:[]});
   const inputNonces=[0n,0n],directions=[0,0],inputTimes:number[]=[];
   let injected=false,injectNext=false,limitedAt=0,resumedAt=0;
   const accepted=new Set<string>(),sentAt:number[]=[],queuedAt=serverNow();
-  const contexts=[],pages=[];
+  const contexts:import('@playwright/test').BrowserContext[]=[],pages:import('@playwright/test').Page[]=[];debugPages=pages;
   for(const [index,player] of players.entries()){
    const context=await browser.newContext({viewport:{width:index?390:1440,height:index?844:900},reducedMotion:mode?'reduce':'no-preference'});contexts.push(context);
    const privateKey=generatePrivateKey(),signer=privateKeyToAccount(privateKey);
@@ -52,7 +58,7 @@ try{
        else if(u.pathname.includes('/markets/'))data=u.searchParams.has('round')?{app,id:'1',rally:1,phase:'preparing',blocksLeft:'0'}:{manifest:currentFinance,window:[!marketFinished,'261'],head:'62160000',result:[zeroAddress,zeroAddress,zeroAddress,marketFinished?3:2],position:['0','1000000000000000','600000000000000',false],quote:'600000000000000',claimPreview:marketFinished?['0','0',true]:null,terminal:marketFinished,settlementPolicy:'early-published-testnet'};
        return route.fulfill({json:{...data,serverNow:serverNow()}});
       }
-      return route.fulfill({response:await route.fetch({url:'http://countdown-web:3000'+u.pathname+u.search})});
+      return route.fulfill({response:await route.fetch({url:ui+u.pathname+u.search,maxRetries:2})});
      }
      const rpc=route.request().postDataJSON(),reply=(result:unknown)=>route.fulfill({json:{jsonrpc:'2.0',id:rpc.id,result}});
      if(u.origin===new URL(manifest.node).origin){
@@ -62,8 +68,10 @@ try{
       if(rpc.method==='eth_getTransactionCount')return reply(toHex(nonce));
       if(rpc.method==='eth_call'){
        if(compact&&rpc.params[0].data.startsWith(toFunctionSelector('controlBinding(address)')))return reply(encodeFunctionResult({abi,functionName:'controlBinding',result:binding}));
-       const state={...initial(zeroHash,mode as 0|1),leftDir:directions[0],rightDir:directions[1],...(paused?{scoreA:1,awaitingServe:true,vx:0n,vy:0n,resumeAt:3000000n}:{})};
-       return reply(encodeFunctionResult({abi,functionName:'getSnapshot',result:[1n,revision,BigInt(phase),players[0],players[1],zeroAddress,zeroAddress,100n+revision,0n,...inputNonces,BigInt(room?.offer.expires||0),state] as any}));
+       const state={...initial(zeroHash,mode as 0|1),t:events?1200000n:0n,leftDir:directions[0],rightDir:directions[1],...(phase===3?{scoreA:7,scoreB:5,finished:true}:{}),...(paused?{scoreA:1,awaitingServe:true,vx:0n,vy:0n,resumeAt:3000000n}:{})};
+       const header=[1n,revision,BigInt(phase),players[0],players[1],zeroAddress,phase===3?players[0]:zeroAddress,100n+revision,state.t,...inputNonces,BigInt(room?.offer.expires||0),state];
+       if(events&&rpc.params[0].data.startsWith(toFunctionSelector('chaosState(uint256)')))return reply(encodeFunctionResult({abi,functionName:'chaosState',result:chaosBrowserPayload(abi,header,mode&&phase===2?effect:0,mode&&phase===2?secondEffect:0)}));
+       return reply(encodeFunctionResult({abi,functionName:'getSnapshot',result:header as any}));
       }
       if(rpc.method==='interlude_sendTransaction'){
        const tx=parseTransaction(rpc.params[0]);
@@ -98,7 +106,7 @@ try{
       return reply(encodeAbiParameters([{type:rpc.params?.[0]?.data===toFunctionSelector('hub()')?'address':'uint256'}],[rpc.params?.[0]?.data===toFunctionSelector('hub()')?manifest.hub as Address:0n]));
      }
      throw Error('Unexpected network destination '+u.hostname);
-    }catch(e){report.errors.push(String(e));await route.fulfill({status:500,json:{error:'Test fixture failed'}});}
+    }catch(e){if(closing)return;report.errors.push(String(e));await route.fulfill({status:500,json:{error:'Test fixture failed'}}).catch(()=>{});}
    });
    await context.routeWebSocket('**/*',()=>{});
    const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));pages.push(page);
@@ -142,7 +150,7 @@ try{
    assert(inputNonces[0]>count,'Controls resume automatically without a passkey or refresh');
    assert.equal(directions[0],0,'Release reaches the engine');
   }
-  if(mode&&manifest.rulesVersion===5){
+  if(mode&&[5,6].includes(Number(manifest.rulesVersion))){
    // Realtime windows encode epoch/rules, not a block deadline. The button must
    // remain available even though the chain head is much larger than version.
    await pages[1].getByRole('button',{name:'Market',exact:true}).click();
@@ -156,10 +164,23 @@ try{
    await pages[1].waitForTimeout(500);assert.equal(await pages[1].getByRole('button',{name:'Confirm bet with passkey',exact:true}).count(),0);
    await pages[1].keyboard.press('Escape');assert.equal(await pages[1].getByText('Synchronizing Chaos bets',{exact:true}).count(),0);
   }else if(mode){paused=true;revision++;await pages[1].getByText('Synchronizing Chaos bets',{exact:true}).waitFor();}
+  if(mode&&events){
+   for(const width of [360,390,768,1440]){
+    await pages[1].setViewportSize({width,height:width<500?800:1000});await pages[1].waitForTimeout(300);
+    await pages[1].getByText('MULTIBALL',{exact:true}).waitFor();await pages[1].getByText('PINBALL',{exact:true}).waitFor();
+    assert(await pages[1].evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+    await pages[1].screenshot({path:`artifacts/rooms-countdown/events-court-${width}.png`});
+   }
+   secondEffect=0;
+   for(effect=1;effect<=24;effect++){revision++;await pages[0].waitForTimeout(650);assert.equal(await pages[0].locator('[aria-label="Chaos effects"] strong').count(),1);}
+   phase=3;revision++;
+   for(const [i,page] of pages.entries()){await page.getByText(i?'DEFEAT':'VICTORY',{exact:true}).waitFor();const skip=page.getByRole('button',{name:/Skip animation/});if(await skip.isVisible())await skip.click();assert(await page.getByRole('button',{name:'Rematch',exact:false}).isVisible());}
+  }
   for(const page of pages)assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
   report.scenarios.push({mode,queueBefore:before,queueAfter:after,clockSkewMs:28000,serverJumpMs:600000,engineAcceptances:sends,startDelayMs:sentAt.map(at=>at-(room.offer.launch.at-3000)),f5Ready:true,reducedMotion:!!mode,inputWrites:inputTimes.length,injected429:injected,recoveryMs:resumedAt?resumedAt-limitedAt:null});
-  await Promise.all(contexts.map(c=>c.close()));
+  closing=true;await Promise.all(contexts.map(c=>c.close()));
  }
  assert.equal(report.errors.length,0);report.passed=true;
-}finally{await writeFile('artifacts/rooms-countdown/report.json',JSON.stringify(report,null,2));await browser.close();}
+}catch(e){report.failure=String(e);report.pages=[];for(const [i,p] of debugPages.entries())if(!p.isClosed()){report.pages.push((await p.locator('body').innerText()).slice(0,8000));await p.screenshot({path:`artifacts/rooms-countdown/failure-${i}.png`});}throw e;}
+finally{await writeFile('artifacts/rooms-countdown/report.json',JSON.stringify(report,null,2));await browser.close();}
 console.log(JSON.stringify(report));

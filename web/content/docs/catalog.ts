@@ -9,7 +9,7 @@ export const catalog:DocEntry[]=[
  entry("playing/classic","Classic","Two paddles. One ball. First to seven.",1,["rules","paddle","controls"]),
  entry("playing/interlude-lab","Interlude lab","Try the dedicated Classic friendly arena and distinguish live results from Monad commitments.",1,["Interlude","lab","engine","session","fast","friendly"]),
  {...entry("playing/rooms","Rooms & matchmaking","Classic and Chaos, private contacts and rotating shared cabinets.",1,["rooms","contacts","winner stays","Interlude","ranked","invite"]),updated:"2026-09-08"},
- entry("playing/chaos","Chaos","Understand how betting pressure changes the next rally.",1,["handicap","96","72","shrink","bets"]),
+ entry("playing/chaos","Chaos","Betting pressure and the rules-6 arcade-event catalogue.",1,["handicap","96","72","shrink","bets","events","multiball","jackpot","drand","mystery pickup"]),
  entry("playing/challenges","Matchmaking, challenges & rematches","Find an opponent or invite the rival you already know.",1,["duel","invite","cancel","friendly","ranked"]),
  entry("playing/rankings","Rankings & seasons","Separate Classic and Chaos ladders, with results recorded onchain.",1,["elo","leaderboard","placements","rating"]),
  entry("playing/tournaments","Tournaments","Join a Classic bracket and play each round from the tournament screen.",1,["prize","entry","registration","round","bracket"]),

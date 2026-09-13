@@ -150,4 +150,20 @@ For live-betting markets, `window[0]` indicates current availability and `window
 
 Authenticated `GET /interlude/finance` returns the current financial manifest, balances, nonces, history and `archives` for previous generations. Use `?financeId=` for the original room account or `?financeId=early-v1` for the early testnet account. Responses from `GET /interlude/markets/:id` include the match's fixed financial manifest and `settlementPolicy`.
 
+## Candidate rules-6 interfaces
+
+These additions activate only with the rules-6 manifest. Historical APIs and financial bindings keep their original meaning.
+
+| Interface | Data and authorization |
+| --- | --- |
+| GET `/interlude/recent-matches` | Rooms authentication; the account's three retained references from Envio, across generations, with score and replay availability. |
+| GET `/interlude/replay?app=0x…&epoch=1&id=1&after=-1` | Rooms authentication; at most 250 recorded snapshots strictly after the revision cursor. Includes both balls and effects. |
+| `chaosState(id)` | Public atomic engine read of the complete header, eight packed state words, committed draw and pending verified draw. |
+| `submitRandomness(id, request, signature)` | Permissionless engine submission of the exact committed drand round. The contract checks context and BLS proof; no owner spending approval. |
+| `recordMatch(id)` | Permissionless Monad call to the financial adapter. It reads the published result and emits `MatchRecorded` for discovery. No caller-supplied scores or payout mutation. |
+
+Replay responses distinguish `available`, `pruned`, `not-recorded` and `awaiting-publication`. Match references use `10143:app:epoch:id`. A missing or retired replay does not remove the result or any financial right. Big integers in snapshots are decimal strings, not executable code.
+
+The rules-6 pressure message uses a 32-bit **rally number**, separately from the score sum, and EIP-712 pressure domain version 2. Original rules-5 pressure signatures retain version 1. A financial manifest with `rulesVersion: 6` is checked against the actual immutable game and its sealed links before the worker starts.
+
 Financial POST requests for `buy`, `withdraw` and `credit` include `financeId` for the intended account. A match cannot be reassigned to another market. EIP-712 spending signatures still target the selected market or vault address. A mismatched generation is rejected before enqueueing. Internal relayer jobs preserve `roomApp` and optional `roomFinance`; historical jobs without `roomFinance` keep their original destinations.

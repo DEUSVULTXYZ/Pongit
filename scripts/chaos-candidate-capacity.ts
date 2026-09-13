@@ -1,0 +1,10 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {createPublicClient,http,encodeFunctionData} from 'viem';
+import {roomsEventsAbi as abi} from '../shared/abi-PongChaosEvents';
+const m=JSON.parse(await readFile('artifacts/drand/production-manifests.json','utf8')).game;
+const client=createPublicClient({transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000})});
+const operator=await client.readContract({address:m.app,abi,functionName:'operator'});
+const report:any={at:new Date().toISOString(),app:m.app,scope:'Read-only admission simulation'};
+const response=await fetch(process.env.RPC_URL!,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{from:operator,to:m.app,data:encodeFunctionData({abi,functionName:'renewEngine'})},'latest']})});
+const value=await response.json();report.available=response.ok&&!value.error;report.error=value.error;
+await writeFile('artifacts/drand/production-capacity.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));

@@ -305,7 +305,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         if (s.finished) _finish(id, 3, s.scoreA == 7 ? address(uint160(_get(id, 0))) : address(uint160(_get(id, 1))));
     }
 
-    function _state(uint256 id) internal view returns (PhysicsV2.State memory s) {
+    function _state(uint256 id) internal view virtual returns (PhysicsV2.State memory s) {
         uint256 xy = _get(id, 4);
         uint256 p = _get(id, 7);
         uint256 c = _get(id, 8);
@@ -330,7 +330,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         s.resumeAt = uint64(chaos >> 64);
     }
 
-    function _save(uint256 id, PhysicsV2.State memory s) internal {
+    function _save(uint256 id, PhysicsV2.State memory s) internal virtual {
         _set(
             id,
             13,
@@ -375,7 +375,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         return Rating(1000, 0, 0, currentSeason());
     }
 
-    function _rate(uint256 id, address a, address b, address winner) private {
+    function _rate(uint256 id, address a, address b, address winner) internal virtual {
         uint8 mode = matchMode(id);
         Rating memory ra = ratingOf(a, mode);
         Rating memory rb = ratingOf(b, mode);
@@ -465,7 +465,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
 
     function _resultHash(uint256, bytes32 hash) internal view virtual returns (bytes32) { return hash; }
 
-    function _publish(uint256 id) internal {
+    function _publish(uint256 id) internal virtual {
         require(uint64(_get(id, 2) >> 128) < type(uint64).max, "revision overflow");
         uint256 times = _get(id, 2) + (uint256(1) << 128);
         _set(id, 2, times);

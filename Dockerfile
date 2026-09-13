@@ -3,6 +3,16 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
+FROM dependencies AS relayer
+WORKDIR /app
+COPY shared ./shared
+COPY relayer ./relayer
+COPY tsconfig.json ./
+ENV NODE_ENV=production
+USER node
+EXPOSE 4000
+CMD ["node","--import","tsx","relayer/src/main.ts"]
+
 FROM dependencies AS web-build
 COPY shared ./shared
 COPY web ./web
@@ -24,13 +34,3 @@ COPY --from=web-build --chown=node:node /app/web/public ./web/public
 USER node
 EXPOSE 3000
 CMD ["node","web/server.js"]
-
-FROM dependencies AS relayer
-WORKDIR /app
-COPY shared ./shared
-COPY relayer ./relayer
-COPY tsconfig.json ./
-ENV NODE_ENV=production
-USER node
-EXPOSE 4000
-CMD ["node","--import","tsx","relayer/src/main.ts"]

@@ -5,14 +5,14 @@ export class LivePaddle {
   reset() { this.y = null; }
 
   step(confirmed: number, direction: number, confirmedDirection: number, half: number,
-    elapsedMs: number, stale: boolean, pending: boolean) {
+    elapsedMs: number, stale: boolean, pending: boolean, speed=180) {
     const clamp = (y: number) => Math.max(half, Math.min(576 - half, y));
     if (this.y === null) this.y = clamp(confirmed);
     const before = this.y;
     const dt = Math.max(0, Math.min(50, elapsedMs)) / 1000;
     // Input moves immediately from the last displayed position. A receipt must
     // not restart a held direction from an older engine position.
-    this.y = clamp(this.y + (stale ? 0 : direction * 180 * dt));
+    this.y = clamp(this.y + (stale ? 0 : direction * speed * dt));
     const error = confirmed - this.y;
     // Never reconcile against a direction whose successor is still in flight.
     // Small engine corrections blend more slowly than player movement, so a

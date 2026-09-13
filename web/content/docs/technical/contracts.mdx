@@ -1,8 +1,10 @@
-<Callout title="Testnet preview">Classic and Chaos rooms are open for testing. The hosted RPC may rate-limit requests and pause gameplay. This deployment is still undergoing multiplayer, payout and renewal validation. V4 balances and financial features remain separate.</Callout>
+<Callout title="Testnet preview">Classic and Chaos rooms use test MON. Live multiplayer, verified event draws and automatic payments have been exercised on the hosted engine and Monad. Hosted availability and rate limits still apply. V4 balances and financial features remain separate.</Callout>
 
 ## Rooms deployment
 
-The homepage uses the immutable rules-5 multi-room application on Monad Testnet 10143, with separate Classic and Chaos ratings inherited from the preceding rooms deployment. New Chaos markets use continuous betting and the `realtime-v1` settlement adapter, including late-bet refunds. The current financial bindings are listed in the public manifest table below. Original markets and their immutable financial bindings remain in `deployments/rooms-finance.json`.
+The homepage uses the immutable rules-6 multi-room application on Monad Testnet 10143, with separate Classic and Chaos ratings inherited from the published preceding deployment. Classic keeps its physics. Chaos adds 24 verified random events, with two simultaneous effects at most. New Chaos markets use continuous betting and the `events-v1` settlement adapter, including late-bet refunds.
+
+The [rooms manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/interlude-rooms.json) identifies the current engine. Its [deployment evidence](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/chaos-events.json) lists the stateless modules and deployment transactions. Original markets and their immutable financial bindings remain in the [financial manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/rooms-finance.json). The tables below list the preserved V1 to V4 contracts.
 
 ## Preserved V4 arcade
 
@@ -20,7 +22,7 @@ The treasury is immutable where specified by the contract constructor. Replacing
 
 ## Match references
 
-A rooms reference includes base chain, application address and full match identifier. A bare number or previous rooms URL must never silently resolve to another deployment.
+A rooms reference includes base chain, application address, delegation epoch and full match identifier. A bare number or previous rooms URL must never silently resolve to another deployment.
 
 `v4:12` means match 12 in V4. It is different from `v3:12`. Envio and private replay notes use deployment-qualified references. Active numeric API routes are scoped by `/api/config`; legacy reads require the chosen deployment parameter.
 

@@ -4,7 +4,7 @@ This section first describes the archived V4 arena. Current rooms use the engine
 
 The V4 deployment reuses GameV3 and PhysicsV2. Solidity and TypeScript share an event-driven model: positions and velocities have a **1,000,000** scale, time is in integer microseconds, division truncates toward zero and event times round up.
 
-The logical court is 1024 × 576, ball radius is 6, default paddle half-height is 48 and paddle speed is 180 logical units per second. The game ends at seven points. Chaos adds individual half-heights. Old deployments have an intermission; rules 5 immediately serves after each non-decisive point.
+The logical court is 1024 × 576, ball radius is 6, default paddle half-height is 48 and paddle speed is 180 logical units per second. The game ends at seven points. Chaos adds individual half-heights. Old deployments have an intermission; rules 5 and 6 immediately serve after each non-decisive point.
 
 ## The match clock
 
@@ -30,7 +30,7 @@ Moving the web frontend alone does not remove relayer queuing or Monad inclusion
 
 ## Current rooms: pushed state and recovery
 
-Current rules-5 rooms use **10,000 microseconds per engine block**, starting ball velocity 192/96 units per second and 10% acceleration on each successful paddle return. Speed resets after each point. Classic and Chaos serve immediately after nonfinal points; only Chaos uses queued authenticated paid totals to calculate the next paddle heights. An unavailable financial checkpoint preserves the existing pressure and does not stop game time.
+Current rooms use **10,000 microseconds per engine block**, starting ball velocity 192/96 units per second and 10% acceleration on each successful paddle return. Speed resets after each point. Classic and Chaos serve immediately after nonfinal points; only Chaos uses queued authenticated paid totals to calculate the next paddle heights. An unavailable financial checkpoint preserves the existing pressure and does not stop game time.
 
 Rooms can receive the contract's `Snapshot` events over one applied-event WebSocket per tab. Successful SDK receipts update the same cache. The initial getter supplies participants, nonces and clock metadata; events do not invent missing fields. A gap, restart, changed delegation or missing terminal winner requires an authoritative read. A consistency check runs every ten seconds while events remain fresh.
 
@@ -39,3 +39,15 @@ If the stream is unavailable, reads are serialized with a 500 ms active-game int
 Player A drives idle ticks at most every 300 ms. Player B takes over after 900 ms without progression; the VPS is the last fallback after 1.5 seconds. Successful inputs already advance the game and suppress unnecessary ticks. The server's maintenance scheduler can make its fallback later than the threshold.
 
 The browser still bounds preview when state is stale. A stream reduces repeated reads and stale-state corrections; it does not turn a live engine result into an irreversible Monad settlement or guarantee a particular network latency.
+
+## Rules 6: events and continuous collisions
+
+The [24-event Chaos catalogue](/docs/playing/chaos#rules-6-arcade-events) belongs to the new immutable generation. Archived rules-5 matches retain their original rules and financial bindings.
+
+Its Solidity kernel and TypeScript mirror use integer arithmetic. Positions use 10¹² units of precision and time is in microseconds. Forces are integrated on a fixed 10 ms grid, with continuous collision searches inside each interval. A bounded catch-up can continue in a later call without changing the result through a different call partition. A detected numerical impossibility explicitly cancels the match rather than selecting a winner.
+
+Eight packed words carry both balls, the two effects, paddle positions, actual rally number, scores and simulation metadata. The atomic `chaosState` read adds the current participants, input nonces, draw request and pending verified draw. Rules-6 `Snapshot` events contain the version, explicit control/nonces word and eight physics words. `ChaosCollision` identifies an actual physical collision; a speed change alone cannot produce a bounce sound.
+
+The renderer uses the same kernel for a bounded preview. It does not publish predicted goals or choose random events. Ball trails are separated by ball identity, epoch, rally and teleport revision. Replays retain the typed state for both balls and effects, subject to the shared retention policy.
+
+Future drand rounds are committed before revelation. A missing proof delays only the event. Gameplay commands do not carry a BLS proof; a dedicated permissionless transaction submits it once per draw. The server proof worker shares its signer's existing nonce journal with other public engine operations.
