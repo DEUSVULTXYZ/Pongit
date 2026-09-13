@@ -33,6 +33,7 @@ export async function createRoomsFinanceRouter(o:{db:Pool;base:PublicClient;entr
     return w;
   }
   return {
+    manifest:active.manifest,
     pressure:async(...args:Parameters<typeof active.pressure>)=>(await forMatch(args[0])).pressure(...args),
     audit:async()=>{for(const w of workers)await w.audit();},
     beforeRenew:async()=>{for(const w of workers)await w.beforeRenew();},

@@ -50,6 +50,19 @@ try{
   for(const values of digits)assert.deepEqual(values.map(x=>x.digit),['3','2','1']);
   const live=await observer.read('getSnapshot',[BigInt(offer.id)]);assert.equal(live[2],2n);
   report.scenarios.push({mode,match:offer.id,digits,phase:Number(live[2])});
+  if(process.env.INTRO_REALTIME_OBSERVE==='true'){
+   assert.equal(manifest.rulesVersion,5);
+   const point=await until(async()=>{const s=await observer.read('getSnapshot',[BigInt(offer.id)]);return s[2]===2n&&s[12].scoreA+s[12].scoreB>0?s:null;},'first natural point',30000);
+   assert.equal(point[12].awaitingServe,false);
+   const next=await until(async()=>{const s=await observer.read('getSnapshot',[BigInt(offer.id)]);return s[2]===2n&&s[12].t>point[12].t+500000n?s:null;},'immediate next rally',10000);
+   assert.equal(next[12].awaitingServe,false);
+   for(const p of pair){assert.equal(await p.page.getByText('Preparing next rally',{exact:true}).count(),0);assert.equal(await p.page.getByText('Synchronizing Chaos bets',{exact:true}).count(),0);}
+   report.scenarios.at(-1).continuousAfterPoint=true;
+   if(mode){
+    const finances=await api(a,'finance');assert.equal(finances.manifest.betting,'realtime');assert.equal(finances.archives.length,3);
+    report.scenarios.at(-1).legacyAccounts=finances.archives.map(x=>x.manifest.market);
+   }
+  }
   await a.page.getByRole('button',{name:'Tools',exact:true}).click();await a.page.getByRole('button',{name:'Concede',exact:true}).click();
   await until(async()=>(await observer.read('getSnapshot',[BigInt(offer.id)]))[2]===3n,'confirmed concession');
   for(const p of pair){await p.context.close();await action(p,'rooms/leave');p.room=null;await save();}

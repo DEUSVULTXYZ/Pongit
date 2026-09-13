@@ -31,6 +31,7 @@ try{
  }
  const finance=await loadRoomsFinance();
  const directory=await createRoomsFinanceDirectory({db,base,entries:finance.entries,app:m.app,enqueue:async()=>{throw Error('Read-only release check');}});
+ assert.equal(directory.manifest.adapter,finance.entries.at(-1)!.adapter,'Lifecycle must use the active versioned financial adapter');
  const account='0xa6128739a09C75932510543002c635F20f42Aee8';
  const view=await directory.route('/interlude/finance','GET',account,{},new URLSearchParams());
  assert(view);assert.equal(view.manifest.app.toLowerCase(),m.app);assert.equal(view.archives.length,finance.entries.length-1);

@@ -966,7 +966,7 @@ export async function createRoomsCoordinator(o: Options) {
     }
   }
   lifecycle=chaosEnabled&&finance&&o.financeConfig ? await roomsLifecycle({
-    db,base,app,hub:manifest.hub,nodeUrl:manifest.node,adapter:o.financeConfig.find(app).adapter,
+    db,base,app,hub:manifest.hub,nodeUrl:manifest.node,adapter:finance.manifest.adapter,
     beforeRenew:finance.beforeRenew,engineStatus:()=>client.status(),
     engineActive:async()=>BigInt(await client.read("activeCount",[]) as bigint),
     beforeClose:async(epoch)=>{
