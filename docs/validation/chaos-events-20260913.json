@@ -193,5 +193,48 @@
     "No real mobile hardware benchmark or human audio listening.",
     "Publication calldata size is not the provider internal HTTP payload size.",
     "The existing multi-room delegation remains shared; this release does not implement the separate architecture of one delegation per match."
-  ]
+  ],
+  "publicDeployment": {
+    "commit": "9a79046405bdb8fad8828e052e76bcb18699d129",
+    "at": "2026-09-13T20:01:12Z",
+    "site": "https://pongit.xyz",
+    "browser": {
+      "at": "2026-09-13T20:02:40.419Z",
+      "scope": "Public HTTPS production, real coordinator, hosted contracts and Monad; synthetic EOA owners",
+      "passed": true,
+      "matches": [
+        {
+          "id": "75711139751124007570565307016242403925447897855563637566482836389252522634407",
+          "mode": 0,
+          "score": [
+            7,
+            6
+          ],
+          "f5": true,
+          "directionCycles": 83,
+          "inputCommands": [
+            130,
+            123,
+            0
+          ]
+        },
+        {
+          "id": "39087343301653878301626046257482028811045074962643475303347702341043429803783",
+          "mode": 1,
+          "score": [
+            7,
+            6
+          ],
+          "f5": true,
+          "directionCycles": 84,
+          "inputCommands": [
+            118,
+            125,
+            0
+          ]
+        }
+      ],
+      "errors": []
+    }
+  }
 }

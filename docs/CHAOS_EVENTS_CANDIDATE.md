@@ -2,7 +2,8 @@
 
 Reviewed: 2026-09-13. Rules 6 passed the hosted gameplay, randomness, publication,
 payment and command-latency release gates. Public manifests identify the
-production-bound deployment; the final deployment procedure remains below.
+production deployment. Commit `9a79046405bdb8fad8828e052e76bcb18699d129`
+went live at 20:01:12 UTC.
 
 ## Implemented scope
 
@@ -179,6 +180,12 @@ Real Chromium on this same root also completed Classic 6–7 and Chaos 7–6 wit
 players and a spectator, F5 restoration, matching terminal scores and no page
 exceptions. That browser run preceded the final transport reordering fix; the
 fix was then exercised through the real 441-command SDK run and regression tests.
+
+After cutover, a further Chromium run used the actual public HTTPS site and API,
+without frontend, API or WebSocket replacement. Classic and Chaos both finished
+7–6 with two players and a spectator. F5 restored play, both result views matched
+published contract state and no page exceptions occurred. Exact match references
+and scope are in the validation record.
 
 ## Validation and scope
 

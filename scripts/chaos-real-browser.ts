@@ -11,12 +11,14 @@ import {createInterludeClient,memoryStore,storageKey} from '@interludelayer-sdk/
 import {roomsEventsAbi as abi} from '../shared/abi-PongChaosEvents';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
 const production=process.env.PONG_CHAOS_PRODUCTION_FIXTURE==='authorized-testnet-candidate';
+const publicSite=process.env.PONG_BROWSER_PUBLIC==='authorized-testnet-public';
+assert(!publicSite||production,'Public validation requires the qualified production deployment');
 const m=JSON.parse(await readFile(`artifacts/drand/${production?'production':'integration'}-manifests.json`,'utf8')).game;
 assert.equal(m.app,production?'0x78d3341e3452d7ec1add9371de3008639eed8eb0':'0x4ace43735d1e5b0aa9b2d54a76ea4ac99089bb91');
 const run=process.env.PONG_BROWSER_RUN||'1';assert(/^[1-9]$/.test(run));
 const file=`/secrets/chaos-events-browser-${run}.json`;try{await readFile(file);throw Error('Reconcile existing browser fixture');}catch(e){if((e as any).code!=='ENOENT')throw e;}
-const origin='https://pongit.xyz',apiHost='http://chaos-api:4013',out=`artifacts/drand/real-browser-${run}`,people:any[]=[],secret:any={people:[],commands:[],rooms:[]};
-const report:any={at:new Date().toISOString(),app:m.app,scope:'Real private coordinator and hosted contracts through HTTPS-origin Chromium; synthetic EOA owners',matches:[],errors:[],requests:[]};
+const origin='https://pongit.xyz',apiHost=publicSite?origin+'/api':'http://chaos-api:4013',out=`artifacts/drand/real-browser-${run}`,people:any[]=[],secret:any={people:[],commands:[],rooms:[]};
+const report:any={at:new Date().toISOString(),app:m.app,scope:publicSite?'Public HTTPS production, real coordinator, hosted contracts and Monad; synthetic EOA owners':'Real private coordinator and hosted contracts through HTTPS-origin Chromium; synthetic EOA owners',matches:[],errors:[],requests:[]};
 const encode=(v:any)=>JSON.stringify(v,(_,v)=>typeof v==='bigint'?String(v):v);let tail=Promise.resolve();
 const save=()=>{const bytes=encode(secret);tail=tail.then(async()=>{await writeFile(file+'.next',bytes,{mode:0o600});await rename(file+'.next',file);});return tail;};await save();
 const browser=await chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{})});await mkdir(out,{recursive:true});
@@ -27,7 +29,7 @@ async function api(p:any,path:string,body?:any){const res=await fetch(apiHost+'/
  const cookie=res.headers.get('set-cookie');if(cookie)p.cookie=cookie.split(';')[0];const data=await res.json();assert(res.ok,`${path}: ${String(data.error||res.status)}`);return data;}
 async function waitFor(fn:()=>Promise<any>,label:string,ms=45000){const end=Date.now()+ms;while(Date.now()<end){const x=await fn();if(x)return x;await sleep(500);}throw Error('Timeout: '+label);}
 try{
- await waitFor(async()=>{const h=await(await fetch(apiHost+'/health')).json();return h.online&&h.admission!==false;},'coordinator available');
+ await waitFor(async()=>{const h=await(await fetch(apiHost+(publicSite?'/interlude/config':'/health'))).json();return h.online&&h.admission!==false&&(!publicSite||h.app===m.app);},'coordinator available');
  assert.equal(await node.readContract({address:m.app,abi,functionName:'activeCount'}),0n);
  for(let i=0;i<6;i++){
   const key=generatePrivateKey(),owner=privateKeyToAccount(key),store=memoryStore(),client=createInterludeClient({app:m.app,abi,node:m.node,base,store,fastPath:true});
@@ -36,9 +38,9 @@ try{
   const context=await browser.newContext({viewport:i%3===1?{width:390,height:844}:{width:1440,height:1000},reducedMotion:i>=3?'reduce':'no-preference'});
   const p:any={address:owner.address.toLowerCase(),cookie:'',context,stored,calls:[],closing:false};people.push(p);secret.people.push({key,address:p.address,stored});await save();
   await context.addInitScript(({stored,key,account,address})=>{if(!sessionStorage.getItem(key))sessionStorage.setItem(key,stored);sessionStorage.setItem(account,address);localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));},{stored,key:storageKey(m.app,10143,owner.address),account:`pongit:rooms:${m.app}:account`,address:p.address});
-  await context.route(origin+'/**',async route=>{const u=new URL(route.request().url());try{await route.fulfill({response:await route.fetch({url:u.pathname.startsWith('/api/')?apiHost+u.pathname.slice(4)+u.search:'http://countdown-web:3000'+u.pathname+u.search,maxRetries:2})});}catch(e){if(!p.closing)throw e;}});
+  if(!publicSite)await context.route(origin+'/**',async route=>{const u=new URL(route.request().url());try{await route.fulfill({response:await route.fetch({url:u.pathname.startsWith('/api/')?apiHost+u.pathname.slice(4)+u.search:'http://countdown-web:3000'+u.pathname+u.search,maxRetries:2})});}catch(e){if(!p.closing)throw e;}});
   await context.route(m.node+'**',async route=>{const rpc=route.request().postDataJSON();if(rpc?.method==='interlude_sendTransaction'){const raw=rpc.params[0],tx=parseTransaction(raw as Hex),action=decodeFunctionData({abi,data:tx.data!}).functionName;secret.commands.push({player:p.address,raw,at:Date.now()});await save();p.calls.push({action,nonce:tx.nonce,bytes:(raw.length-2)/2});}await route.continue();});
-  await context.routeWebSocket('wss://pongit.xyz/ws',async route=>{
+  if(!publicSite)await context.routeWebSocket('wss://pongit.xyz/ws',async route=>{
    const cookies=(await context.cookies(origin)).map(c=>c.name+'='+c.value).join(';'),pending:any[]=[],server=new WebSocket('ws://chaos-api:4013/ws',{headers:{origin,cookie:cookies}});
    route.onMessage(data=>server.readyState===1?server.send(data):pending.push(data));server.on('open',()=>pending.splice(0).forEach(data=>server.send(data)));server.on('message',data=>route.send(data.toString()));server.on('error',()=>route.close());server.on('close',()=>route.close());route.onClose(()=>server.close());
   });
