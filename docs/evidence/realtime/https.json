@@ -1,0 +1,85 @@
+{
+  "at": "2026-09-13T10:06:31.084Z",
+  "scope": "Real HTTPS API and Interlude, two unfunded friendly players per mode; no financial actions",
+  "scenarios": [
+    {
+      "mode": 0,
+      "match": "752815104923520240824526321869844159157098707781604828293611854877373894437",
+      "digits": [
+        [
+          {
+            "digit": "3",
+            "at": 1789293999046
+          },
+          {
+            "digit": "2",
+            "at": 1789294000057
+          },
+          {
+            "digit": "1",
+            "at": 1789294001055
+          }
+        ],
+        [
+          {
+            "digit": "3",
+            "at": 1789293998957
+          },
+          {
+            "digit": "2",
+            "at": 1789293999957
+          },
+          {
+            "digit": "1",
+            "at": 1789294000957
+          }
+        ]
+      ],
+      "phase": 2,
+      "continuousAfterPoint": true
+    },
+    {
+      "mode": 1,
+      "match": "43147694682819580701179898394618688956242426250486918553965250139364947760038",
+      "digits": [
+        [
+          {
+            "digit": "3",
+            "at": 1789294012971
+          },
+          {
+            "digit": "2",
+            "at": 1789294014063
+          },
+          {
+            "digit": "1",
+            "at": 1789294015065
+          }
+        ],
+        [
+          {
+            "digit": "3",
+            "at": 1789294012956
+          },
+          {
+            "digit": "2",
+            "at": 1789294014113
+          },
+          {
+            "digit": "1",
+            "at": 1789294015113
+          }
+        ]
+      ],
+      "phase": 2,
+      "continuousAfterPoint": true,
+      "legacyAccounts": [
+        "0xe2c21ddb660b63c6d27110dc4fc0757f249b2a09",
+        "0x7222069ede3829e69645bcc6fa5c6def9f4bfaa9",
+        "0x52f3058e02fc3d2dc585ee7d29aa877b8e28afb9"
+      ]
+    }
+  ],
+  "errors": [],
+  "passed": true
+}

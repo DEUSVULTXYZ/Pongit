@@ -195,7 +195,7 @@
       "title": "Rooms & matchmaking",
       "description": "Classic and Chaos, private contacts and rotating shared cabinets.",
       "group": "Playing",
-      "updated": "2026-09-11",
+      "updated": "2026-09-13",
       "keywords": [
         "rooms",
         "contacts",
@@ -309,7 +309,7 @@
       "title": "Rankings & seasons",
       "description": "Separate Classic and Chaos ladders, with results recorded onchain.",
       "group": "Playing",
-      "updated": "2026-09-08",
+      "updated": "2026-09-13",
       "keywords": [
         "elo",
         "leaderboard",
@@ -801,7 +801,7 @@
       "title": "Architecture & integrations",
       "description": "How the browser, relayer, Envio and Monad work together.",
       "group": "Technical reference",
-      "updated": "2026-09-11",
+      "updated": "2026-09-13",
       "keywords": [
         "Mera",
         "Envio",
@@ -889,7 +889,7 @@
       "title": "Contracts & deployments",
       "description": "Public addresses and versioned references for V4 and its archives.",
       "group": "Technical reference",
-      "updated": "2026-09-11",
+      "updated": "2026-09-13",
       "keywords": [
         "addresses",
         "V1",

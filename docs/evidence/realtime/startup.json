@@ -1,0 +1,22 @@
+{
+  "at": "2026-09-13T10:04:05.432Z",
+  "status": {
+    "online": true,
+    "admission": true,
+    "lastError": "",
+    "lastErrorCode": "",
+    "lastCheck": 1789293845165,
+    "app": "0xd2fe1c8df2bdbe2666409fc20f25bcd2f2a40fb5",
+    "epoch": 1,
+    "maintenance": {
+      "stage": "playing",
+      "error": "",
+      "healthy": true,
+      "epoch": "1",
+      "expiresAt": 1789377480000,
+      "releaseAt": 0,
+      "batch": "24"
+    }
+  },
+  "passed": true
+}

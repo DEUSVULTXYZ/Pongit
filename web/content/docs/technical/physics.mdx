@@ -4,7 +4,7 @@ This section first describes the archived V4 arena. Current rooms use the engine
 
 The V4 deployment reuses GameV3 and PhysicsV2. Solidity and TypeScript share an event-driven model: positions and velocities have a **1,000,000** scale, time is in integer microseconds, division truncates toward zero and event times round up.
 
-The logical court is 1024 × 576, ball radius is 6, default paddle half-height is 48 and paddle speed is 180 logical units per second. The game ends at seven points. Chaos adds individual half-heights and a between-rally resume time.
+The logical court is 1024 × 576, ball radius is 6, default paddle half-height is 48 and paddle speed is 180 logical units per second. The game ends at seven points. Chaos adds individual half-heights. Old deployments have an intermission; rules 5 immediately serves after each non-decisive point.
 
 ## The match clock
 
