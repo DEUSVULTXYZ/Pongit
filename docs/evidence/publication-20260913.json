@@ -1,0 +1,180 @@
+{
+  "samples": [
+    {
+      "at": "2026-09-13T10:35:42.014129+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:35:45.195867+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:35:48.214463+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:35:51.230390+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:35:54.337301+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:35:57.356336+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:36:00.540633+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:36:03.559063+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:36:06.574980+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:36:09.677126+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:36:12.691434+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:36:15.703752+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:36:18.715052+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    },
+    {
+      "at": "2026-09-13T10:36:21.728158+00:00",
+      "online": false,
+      "admission": false,
+      "publication": {
+        "epoch": "1",
+        "batch": "29",
+        "reason": "payload_too_large",
+        "relayStatus": 413,
+        "failedAt": 1789295695244
+      }
+    }
+  ],
+  "liveness": true,
+  "payments": {
+    "enabled": true,
+    "discoveryError": "",
+    "workerError": ""
+  },
+  "gameStillBlocked": true,
+  "restartPreservesFailure": true
+}

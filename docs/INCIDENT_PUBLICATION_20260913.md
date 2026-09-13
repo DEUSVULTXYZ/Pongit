@@ -40,3 +40,11 @@ Please inspect the body limit of the publication relay and each intermediary for
 PONGIT does not possess the hosted publication relay's administrative token. The current deployed contract uses the SDK grant envelope for player writes; the [smaller direct-command qualification](INTERLUDE_PUBLICATION_413.md#compact-commands-12-september-evening) belongs to the separate independent-arena candidate and must not be described as active here. Reducing future command payloads would not recover this already rejected batch.
 
 The contracts, user sessions, journal, financial rights and current match are retained. No destructive redeployment or invented settlement is part of this incident fix. The full game remains blocked pending successful hosted publication recovery.
+
+## Deployment and verification
+
+Relayer commit `69f980622af4959f9db513cbbbb57f167209946e` was activated at **10:34:50 UTC**, image `pongit-relayer:publication-69f9806`. The existing web image and all deployed contracts were retained. TypeScript compilation and 17 focused recovery/transport tests passed; the same tests passed in a network-isolated VPS runner, and the production Docker build completed.
+
+A second relayer restart preserved the batch-29 incident. Fourteen HTTPS observations from **10:35:42 to 10:36:21 UTC** remained `online=false`, `admission=false`, with the original failure timestamp intact. Process liveness stayed true and payment discovery/worker errors stayed empty. [Verification record](evidence/publication-20260913.json).
+
+The pre-deployment backup `20260913T103047Z` was copied off-VPS and checksum-verified. Rollback may restore the previous relayer image `pongit-relayer:realtime-f902a2e`, preserving the database and its additive health table; doing so restores the misleading availability bug and does not repair the hosted batch. No database or nonce journal should be reset for rollback. Disk occupation after build was 79%.
