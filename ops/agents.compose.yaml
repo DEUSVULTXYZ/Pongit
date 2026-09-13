@@ -1,0 +1,111 @@
+# Optional overlay, activate only after dedicated hosted qualification:
+# docker compose -f compose.yaml -f ops/agents.compose.yaml --profile agents up -d
+services:
+  agent-db:
+    profiles: [agents]
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agents
+      POSTGRES_DB: agents
+      POSTGRES_PASSWORD: ${AGENT_DB_PASSWORD:?Set a separate agent database password}
+    volumes: [agent-data:/var/lib/postgresql/data]
+    cpus: 0.5
+    mem_limit: 384m
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U agents -d agents]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+  agent-service:
+    profiles: [agents]
+    build: {context: ., target: agents}
+    restart: unless-stopped
+    stop_grace_period: 60s
+    cpus: 1
+    mem_limit: 512m
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      PONG_AGENT_SERVICE: "1"
+      TRUST_PROXY: "true"
+      DATABASE_URL: postgres://agents:${AGENT_DB_PASSWORD}@agent-db:5432/agents
+      RPC_URL: ${RPC_URL:-https://testnet-rpc.monad.xyz}
+      GRAPHQL_URL: http://hasura:8080/v1/graphql
+      HASURA_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
+      PONG_AGENT_MANIFEST: /metadata/manifest.json
+      PONG_AGENT_KEYS: /run/pongit-agents/service.json
+      PONG_AGENT_DIAGNOSTICS: /diagnostics/agents
+      HOST: 0.0.0.0
+      PORT: 4100
+    volumes:
+      - ${AGENT_SECRET_DIRECTORY:?Set the qualified agent secret directory}/ops:/metadata:ro
+      - ${AGENT_SECRET_DIRECTORY}/service.json:/run/pongit-agents/service.json:ro
+      - agent-diagnostics:/diagnostics/agents
+    depends_on:
+      agent-db: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://localhost:4100/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+  agent-bots:
+    profiles: [agents]
+    build: {context: ., target: agents}
+    command: [node, scripts/agent-process.mjs, bots]
+    restart: unless-stopped
+    stop_grace_period: 60s
+    cpus: 1
+    mem_limit: 384m
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      PONG_AGENT_WORKER: dedicated-authorized
+      PONG_AGENT_API: http://agent-service:4100
+      PONG_AGENT_MANIFEST: /metadata/manifest.json
+      PONG_AGENT_KEYS: /run/pongit-agents/house.json
+      PONG_AGENT_STATE: /secrets/state
+      PONG_AGENT_DIAGNOSTICS: /diagnostics/agents
+      RPC_URL: ${RPC_URL:-https://testnet-rpc.monad.xyz}
+    volumes:
+      - ${AGENT_SECRET_DIRECTORY}/ops:/metadata:ro
+      - ${AGENT_SECRET_DIRECTORY}/house.json:/run/pongit-agents/house.json:ro
+      - agent-state:/secrets/state
+      - agent-diagnostics:/diagnostics/agents
+    depends_on:
+      agent-service: {condition: service_healthy}
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+  agent-operations:
+    profiles: [agents]
+    build: {context: ., target: agent-operations}
+    restart: unless-stopped
+    stop_grace_period: 60s
+    cpus: 0.5
+    mem_limit: 384m
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      PONG_AGENT_OPERATIONS: dedicated-authorized
+      PONG_INDEPENDENT_WRITE: authorized-testnet
+      ROOMS_LIFECYCLE_KEY_FILE: /ops/lifecycle.json
+      RPC_URL: ${RPC_URL:-https://testnet-rpc.monad.xyz}
+      DATABASE_URL: postgres://pong:${POSTGRES_PASSWORD}@postgres:5432/pong_relayer
+      AGENT_DATABASE_URL: postgres://agents:${AGENT_DB_PASSWORD}@agent-db:5432/agents
+    volumes:
+      - ${AGENT_SECRET_DIRECTORY}/ops:/secrets
+      - /opt/pongit/secrets/rooms/lifecycle.json:/ops/lifecycle.json:ro
+    depends_on:
+      agent-db: {condition: service_healthy}
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+volumes:
+  agent-data:
+  agent-state:
+  agent-diagnostics:

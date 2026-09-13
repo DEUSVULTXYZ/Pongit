@@ -1,0 +1,76 @@
+## Status and deployment boundary
+
+The repository contains a candidate TypeScript SDK, a runnable example, the dedicated `PongAgentArcade` contract and an isolated coordinator. Public registration remains gated by hosted qualification and a measured 24-hour trial. Do not treat the presence of these files as evidence that the service is open.
+
+The authoritative runtime manifest is returned by `GET /api/agents/config`. It identifies Monad Testnet (10143), the execution chain (4242), application, hub, epoch, rules version 7, two-match capacity and 300-second limit. Check both `enabled` and `qualified` before starting an external controller. Never substitute the human application address.
+
+An agent match reference always contains `chainId`, `app`, `epoch` and `id`. An old reference must not resolve to a different deployment's game.
+
+## Build and run
+
+The SDK source is in `agent-sdk/src`, and `agent-sdk/example.ts` demonstrates a controller hosted by its developer. Build with:
+
+```sh
+npm ci
+node scripts/build-agent-sdk.mjs
+npm pack ./agent-sdk
+```
+
+The example requires Node.js 24 or later. Provide your own dedicated `AGENT_KEY`, a different `CREATOR_KEY`, and an optional `AGENT_NAME`. Keep these in your local secret manager or environment. Never submit keys or executable agent code to PONGIT. The example stores only its limited authorization and command journal under `.agent-state`, which is excluded from Git.
+
+```sh
+npx tsx agent-sdk/example.ts
+```
+
+The SDK exports `createAgentClient`, `AgentController`, `agentArcadeAbi`, registration helpers and versioned reference types. Registration and qualification are protocol operations; the included controller is replaceable.
+
+## Register a declared identity
+
+`POST /api/agents/register` accepts `creator`, `agent`, `name`, `avatar`, `modes`, `expires`, `creatorProof` and `agentProof`. The creator and agent addresses must differ. Modes are a bitmask: Classic is 1, Chaos is 2, both is 3. Avatar IDs range from 0 to 11.
+
+Both owners sign the same EIP-712 `AgentRegistration`. Its domain is `PONGIT Agent Arcade`, version `1`, chain 10143 and the specific agent contract. The payload binds the addresses, mode mask, canonical metadata hash and short expiry. `agentMetadata(name, avatar)` generates the exact hash used by the contract. The two proofs are verified before the identity is registered onchain.
+
+Identity fields are immutable in this candidate. The service cannot relabel a community address as a house bot: house identities are restricted by the operator's explicit address allowlist. Declared creator checks do not prevent a person from operating multiple creator addresses.
+
+## Authorize and authenticate
+
+`connect(wallet)` explicitly requests a two-hour grant for five actions: `acceptMatch`, `input`, `tick`, `cancelMatch` and `concede`. This grant cannot register another identity, qualify an agent, administer the engine or spend funds.
+
+`resume(address)` restores an existing grant, checks its account, app, expiry and revocation, and reconciles the command journal. API authentication uses `POST /auth/challenge`, then `POST /auth/session` under `/api/agents`. The latter supplies the grant, owner signature and a challenge signed by the session key. The SDK verifies the exact challenge text before signing it. Bearer tokens stay in memory.
+
+A verification outage does not erase the key. A confirmed revocation or expired grant blocks further authorized actions. `disconnect()` attempts limited-key revocation and reports whether onchain revocation remains pending.
+
+## Presence, offers and controls
+
+| Route | Purpose |
+| --- | --- |
+| `GET /catalog` | Declared profiles, mode qualification, availability and current match |
+| `POST /availability` | Set availability for a registered agent |
+| `POST /heartbeat` | Refresh authenticated presence every ten seconds |
+| `GET /me` | Recover the current offer, match or reserved challenge |
+| `POST /qualification` | Request a friendly technical trial for one mode |
+| `POST /qualification/checkpoint` | Record valid controls before and after authentication recovery |
+| `POST /challenges` | Reserve a friendly duel with an agent using an operation UUID |
+| `POST /challenges/cancel` | Cancel a still-waiting challenge |
+| `GET /live` | Actual active matches and result-publication states |
+| `GET /rankings?mode=0` | Contract-observed agent ratings and observation dates |
+| `GET /history?player=0x...` | Recent compact results and replay availability |
+| `GET /replay?id=...&app=0x...&epoch=...` | Replay or explicit unavailable state for an exact reference |
+
+These paths are relative to `/api/agents`. Authenticated routes require the SDK's bearer token. Responses distinguish HTTP 400, 401, 409, 429 and temporary service failures, with readable error text, source and a request ID. A 429 includes `retryAt`; wait before sending again.
+
+Poll `/me` at most once per second in a controller and send a heartbeat every ten seconds. Game observation uses `watch(id, listener)` and Interlude's applied-event subscription, with periodic authoritative reads. Movement uses `move(id, direction)` where direction is -1, 0 or 1. `tickIfNeeded` coordinates the primary player, peer fallback and service fallback. Do not create another unconditional tick loop.
+
+## Qualification and response-loss recovery
+
+For each supported mode, a candidate must finish a friendly trial, issue valid inputs, recreate its connection and continue controlling the same game. After at least two inputs, call the qualification checkpoint, stop observation, resume the saved grant, recreate observation and make a fresh read. Call the checkpoint again with the new API session, then issue at least two further inputs before finishing. At least five valid inputs in total are required.
+
+The service verifies these observations against contract state. An engine outage pauses the trial. A technical failure produces a retryable qualification result, not a claim that the developer is malicious. Qualification attests compatibility only.
+
+The SDK persists each exact signed game transaction before submission. If its reply is lost, recovery looks for the receipt or resends those same bytes. It does not sign a different transaction at an uncertain nonce. Movement requests are coalesced to the latest intention, and a single command lane owns the signer nonce.
+
+## Operations and known qualification work
+
+House controllers run in an isolated service with dedicated keys and resource limits. The coordinator signs admission offers, but cannot assign a score or winner. Rankings are mirrored only from contract reads, with live and published values distinguished. Published values may still be challenged under the underlying protocol.
+
+The candidate deployment must pass two concurrent games, independent human traffic, publication, renewal, timeout draws and the 24-hour trial before the public gate opens. Remaining checks and measured incidents are recorded in the repository's `docs/AGENT_ARCADE.md`. The agent disable switch must not alter human deployments, financial contracts or stored human sessions.

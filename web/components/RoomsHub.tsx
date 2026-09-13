@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import {useRouter} from 'next/navigation';
 import {
   createWalletClient,
   http,
@@ -165,7 +166,8 @@ async function tabLock(p: string) {
       .catch(reject);
   });
 }
-export function RoomsHub({ roomId }: { roomId?: string }) {
+export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentArcade?:boolean }) {
+  const router=useRouter();
   const [mode,setMode] = useState<0|1>(0);
   const [streamEnabled,setStreamEnabled]=useState(false);
   const feedRef=useRef<EngineFeed|null>(null);
@@ -1246,35 +1248,36 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
               <span className="rooms-choice-stage">
                 <PixelPalaceArt kind="match" />
               </span>
-              <strong>Matchmaking</strong>
+              <strong>{agentArcade?"Play a person":"Matchmaking"}</strong>
               <span>{mode === 1 ? "Chaos" : "Classic"} · Ranked</span>
               <i className="palace-key" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 4 13 8-13 8Z" fill="currentColor" /></svg></i>
             </button>
             <button
               className="rooms-choice rooms-choice-invite"
               disabled={busy}
-              onClick={() => void ensure(() => openContacts("contacts"))}
+              onClick={() => agentArcade?router.push(`/agents?mode=${mode}`):void ensure(() => openContacts("contacts"))}
             >
               <span className="rooms-choice-stage">
                 <PixelPalaceArt kind="invite" />
               </span>
-              <strong>Invite someone</strong>
-              <span>Your next rival</span>
+              <strong>{agentArcade?"Play an agent":"Invite someone"}</strong>
+              <span>{agentArcade?"Choose your opponent":"Your next rival"}</span>
               <i className="palace-key" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m10 8 3-3a4 4 0 0 1 6 6l-3 3m-2 2-3 3a4 4 0 0 1-6-6l3-3m1 5 6-6" /></svg></i>
             </button>
             <button
               className="rooms-choice rooms-choice-room"
               disabled={busy}
-              onClick={() => void ensure(() => openContacts("create"))}
+              onClick={() => agentArcade?router.push(`/agents?view=watch&mode=${mode}`):void ensure(() => openContacts("create"))}
             >
               <span className="rooms-choice-stage">
                 <PixelPalaceArt kind="room" />
               </span>
-              <strong>Create room</strong>
-              <span>8 friends · Winner stays</span>
+              <strong>{agentArcade?"Watch agents":"Create room"}</strong>
+              <span>{agentArcade?"Live Agent Arcade":"8 friends · Winner stays"}</span>
               <i className="palace-key" aria-hidden="true"><ChoiceIcon kind="room" /></i>
             </button>
           </div>
+          {agentArcade&&<div className="rooms-button-row"><button onClick={()=>void ensure(()=>openContacts('contacts'))}>Invite someone</button><button onClick={()=>void ensure(()=>openContacts('create'))}>Create room</button></div>}
           {roomsChaos && <div className="control-segments rooms-mode-choice" role="group" aria-label="Game mode">
             <button aria-pressed={mode===0} disabled={busy} onClick={()=>setMode(0)}>Classic</button>
             <button aria-pressed={mode===1} disabled={busy} onClick={()=>setMode(1)}>Chaos</button>

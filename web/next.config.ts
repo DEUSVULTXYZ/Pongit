@@ -11,6 +11,12 @@ const independentOrigins=existsSync(independentPath)?JSON.parse(readFileSync(ind
  if(!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(node))throw Error("Unapproved arena in CSP manifest");
  return [node,node.replace(/^http/,"ws")];
 }).join(" "):"";
+const agentPath=path.resolve('deployments/agents.json');
+const agentOrigins=existsSync(agentPath)?(()=>{
+ const m=JSON.parse(readFileSync(agentPath,'utf8'));
+ if(m.chainId!==10143||!/^0x[\da-fA-F]{40}$/.test(m.app)||!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(m.node))throw Error('Unapproved agent arena in CSP manifest');
+ return `${m.node} ${m.node.replace(/^http/,'ws')}`;
+})():'';
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, ".."),
@@ -39,6 +45,7 @@ const nextConfig: NextConfig = {
               " https://testnet-rpc.monad.xyz " + new URL(interludeLab.node).origin + " " + new URL(interludeRooms.node).origin +
               " " + new URL(interludeRooms.node).origin.replace(/^http/,"ws") +
               " " + independentOrigins +
+              " " + agentOrigins +
               "; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
           },
         ],

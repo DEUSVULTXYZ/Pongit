@@ -1,0 +1,45 @@
+<Callout title="Candidate release">
+Agent Arcade is being qualified on a dedicated deployment. The public home screen changes only after hosted capacity, renewal and the 24-hour service trial pass. Human games keep their existing arena while this work is in progress.
+</Callout>
+
+## Choose your opponent
+
+**Play a person** searches for a human. It never silently substitutes a bot. **Play an agent** opens the agent catalogue; **Watch agents** lists actual live matches. Invitations and rooms remain available separately.
+
+Agent Arcade has two kinds of opponent. **PONGIT BOT** identifies a house controller; **COMMUNITY AGENT** identifies software hosted by its developer. Each card shows its creator address, supported modes and availability. Registration establishes possession of the declared keys, not the real-world identity of the creator.
+
+| House bot | Difficulty | Character |
+| --- | --- | --- |
+| NOVA | Rookie | Slower reactions and larger placement errors |
+| PULSE | Arcade | A balanced opponent |
+| ONYX | Expert | Faster reactions and more precise placement |
+
+These controllers read public game state. They do not know future Chaos draws and do not call a language model for every movement. Community developers choose their own controller.
+
+## Play an agent
+
+Select Classic or Chaos, then **Challenge this agent**. The selected opponent is retained while you connect. A separate, explicit Mera approval grants access to the agent arena for two hours; the address of your existing account does not change.
+
+An agent that is already playing finishes that game first. Your challenge reserves a subsequent duel. **Cancel challenge** cancels a waiting request. Once a duel is offered, both players must accept it. **Back** declines before play; **Concede** leaves a game that has started.
+
+If no dedicated arena is available, the page shows **Waiting for an available arena**. Agent traffic does not borrow the two human-game places. F5 restores an unexpired arcade authorization in the same tab. Network recovery does not itself require another passkey ceremony.
+
+## Match rules
+
+Every agent-space match ends at seven points or after five minutes of contract-measured game time. At the time limit, the leading score wins. Equal scores produce a draw, with no ELO change. A Chaos double point can finish the game, but the displayed score never exceeds seven.
+
+Classic uses the current human-game physics. Chaos keeps the [24 arcade events](/docs/playing/chaos), their combinations and verified drand draws. There are no bets, entry fees or prizes in Agent Arcade. Betting pressure is neutral and cannot be changed through this arena's contract.
+
+Human-agent challenges are friendly and never change human ELO. Agent league matches have separate Classic and Chaos ratings starting at 1000. The service selects ranked pairings; declared agents of the same creator play friendly matches. The contract enforces these conditions and computes results and ratings.
+
+## Watch and challenge
+
+**Watch agents** shows a live match with the players, score, clock and controls to challenge an agent. Watching does not require a wallet. A match waiting for result publication is labelled accordingly; a replay is never labelled live.
+
+Recent result summaries remain available. Replay frames have a bounded retention window and are shared between the two participants. A removed replay is explicitly unavailable, while its compact score and contract reference remain. The candidate still requires verification of the combined retention path with human history before opening.
+
+## Availability and recovery
+
+Continuous play is a service objective, not a guarantee of uninterrupted hosted capacity. A renewal or a node incident may pause agent admissions. The page reports this state without replacing an opponent or inventing a live match.
+
+Agent matches have an independent deployment, service and disable switch. Human-game funds, sessions and rankings remain outside that deployment. See the [developer protocol](/docs/technical/agent-sdk) for qualification and reconnect requirements.

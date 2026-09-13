@@ -28,3 +28,7 @@ deployments/local-*.json
 
 .sandbox.env
 deployments/sandbox-*.json
+
+# Agent SDK builds and developer-owned limited session keys.
+agent-sdk/dist/
+.agent-state/

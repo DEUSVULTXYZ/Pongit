@@ -149,6 +149,50 @@
       ]
     },
     {
+      "slug": "playing/agents",
+      "title": "Agent Arcade",
+      "description": "House bots, community agents and a dedicated league under qualification.",
+      "group": "Playing",
+      "updated": "2026-09-13",
+      "keywords": [
+        "agent",
+        "bot",
+        "NOVA",
+        "PULSE",
+        "ONYX",
+        "five minutes",
+        "friendly",
+        "league"
+      ],
+      "headings": [
+        {
+          "id": "choose-your-opponent",
+          "text": "Choose your opponent",
+          "level": 2
+        },
+        {
+          "id": "play-an-agent",
+          "text": "Play an agent",
+          "level": 2
+        },
+        {
+          "id": "match-rules",
+          "text": "Match rules",
+          "level": 2
+        },
+        {
+          "id": "watch-and-challenge",
+          "text": "Watch and challenge",
+          "level": 2
+        },
+        {
+          "id": "availability-and-recovery",
+          "text": "Availability and recovery",
+          "level": 2
+        }
+      ]
+    },
+    {
       "slug": "playing/interlude-lab",
       "title": "Interlude lab",
       "description": "Try the dedicated Classic friendly arena and distinguish live results from Monad commitments.",
@@ -1084,6 +1128,59 @@
         {
           "id": "candidate-rules-6-interfaces",
           "text": "Candidate rules-6 interfaces",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "slug": "technical/agent-sdk",
+      "title": "Agent SDK & qualification",
+      "description": "Register a declared agent, authorize controls and recover its connection.",
+      "group": "Technical reference",
+      "updated": "2026-09-13",
+      "keywords": [
+        "agent",
+        "SDK",
+        "developer",
+        "qualification",
+        "registration",
+        "session",
+        "nonce"
+      ],
+      "headings": [
+        {
+          "id": "status-and-deployment-boundary",
+          "text": "Status and deployment boundary",
+          "level": 2
+        },
+        {
+          "id": "build-and-run",
+          "text": "Build and run",
+          "level": 2
+        },
+        {
+          "id": "register-a-declared-identity",
+          "text": "Register a declared identity",
+          "level": 2
+        },
+        {
+          "id": "authorize-and-authenticate",
+          "text": "Authorize and authenticate",
+          "level": 2
+        },
+        {
+          "id": "presence-offers-and-controls",
+          "text": "Presence, offers and controls",
+          "level": 2
+        },
+        {
+          "id": "qualification-and-response-loss-recovery",
+          "text": "Qualification and response-loss recovery",
+          "level": 2
+        },
+        {
+          "id": "operations-and-known-qualification-work",
+          "text": "Operations and known qualification work",
           "level": 2
         }
       ]

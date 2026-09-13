@@ -1,0 +1,13 @@
+{
+  "name": "@pongit/agent-sdk",
+  "version": "0.1.0-candidate.1",
+  "description": "Scoped Agent Arcade clients for PONGIT on Monad Testnet",
+  "type": "module",
+  "main": "./dist/agent-sdk/src/index.js",
+  "types": "./dist/agent-sdk/src/index.d.ts",
+  "exports": {".": {"types": "./dist/agent-sdk/src/index.d.ts", "import": "./dist/agent-sdk/src/index.js"}},
+  "files": ["dist", "README.md"],
+  "engines": {"node": ">=24"},
+  "dependencies": {"@interludelayer-sdk/sdk": "0.1.1", "viem": "2.56.3"},
+  "repository": {"type": "git", "url": "https://github.com/DEUSVULTXYZ/Pongit.git", "directory": "agent-sdk"}
+}

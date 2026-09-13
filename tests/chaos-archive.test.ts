@@ -18,6 +18,16 @@ test('rules 6 shares three replay places with all four generations and keeps fin
  assert(c.RecentReplays.rows.get(a).matches.includes(`10143:${app}:1:1`));
  assert.equal(c.Match.rows.get('v2:1').replayAvailability,'pruned');assert.equal(c.Payout.rows.get('wallet-payment').amount,'7');
 });
+test('agents and human games share the same three replay places across modes and epochs',async()=>{
+ const c=fixture();await retainFinished(c,{id:'v4:19',playerA:a,playerB:b,played:true,status:3},'00000000000000000090');
+ await applyChaosArchive(c,event(1));await applyChaosArchive(c,event(2));
+ const agentEvent=event(3);agentEvent.params.app='0x2222222222222222222222222222222222222222';agentEvent.params.epoch=2;
+ await applyChaosArchive(c,agentEvent,7);
+ assert.equal(c.Match.rows.get('v4:19').replayAvailability,'pruned');
+ const ref=`10143:${agentEvent.params.app}:2:3`;
+ assert.equal(c.Match.rows.get(ref).rulesVersion,7);assert(c.RecentReplays.rows.get(a).matches.includes(ref));
+ assert.equal(c.RecentReplays.rows.get(a).matches.length,3);
+});
 test('correction, replayed archive notification and reorganization never double a retained place or restore deleted frames',async()=>{
  const c=fixture();for(let i=1;i<=5;i++)await applyChaosArchive(c,event(i));
  const old=`10143:${app}:1:1`;assert.equal(c.Match.rows.get(old).replayAvailability,'pruned');

@@ -15,6 +15,7 @@ services:
     environment:
       PONG_ROOMS_HOME: ${PONG_ROOMS_HOME:-false}
       PONG_INDEPENDENT_HOME: ${PONG_INDEPENDENT_HOME:-false}
+      PONG_AGENT_ARCADE_HOME: ${PONG_AGENT_ARCADE_HOME:-false}
     security_opt: [no-new-privileges:true]
     depends_on: [relayer]
   relayer:

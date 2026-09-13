@@ -155,13 +155,14 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         );
     }
 
-    function acceptMatch(Offer calldata o, bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL) {
+    function acceptMatch(Offer calldata o, bytes calldata signature) external virtual engine whenNotDelegated(Types.GLOBAL) {
         if (
             o.id == 0 || o.a == address(0) || o.b == address(0) || o.a == o.b || o.mode > 1 || o.rules != RULES_VERSION()
                 || o.expires <= block.timestamp || o.expires > block.timestamp + 30
         ) revert InvalidTicket();
         bytes32 digest = ticketDigest(o);
         if (Session.recover(digest, signature) != coordinator) revert InvalidTicket();
+        _validateOffer(o);
         address actor = _playerActor();
         if (actor != o.a && actor != o.b) revert NotPlayer();
         uint256 phase = _phase(o.id);
@@ -250,6 +251,11 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
 
     function _playerActor() internal view virtual returns (address) { return _actor(); }
 
+    /// A separate application can restrict admission without changing signed tickets.
+    function _validateOffer(Offer calldata) internal view virtual {}
+
+    function _limitTarget(uint256 target) internal pure virtual returns (uint256) { return target; }
+
     function _advance(uint256 id, bool mayResume) internal returns (bool complete) {
         uint256 times = _get(id, 2);
         uint256 start = uint64(times);
@@ -268,6 +274,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
             _set(id, 2, times);
             target = s.t;
         }
+        target = _limitTarget(target);
         if (target > 30 minutes * 1_000_000) {
             _finish(id, 4, address(0));
             return true;

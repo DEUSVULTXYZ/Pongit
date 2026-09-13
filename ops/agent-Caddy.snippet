@@ -1,0 +1,6 @@
+# Merge into the site block before /api/* only after agent-service is healthy.
+handle_path /api/agents/* {
+    reverse_proxy agent-service:4100 {
+        header_up X-Real-IP {remote_host}
+    }
+}

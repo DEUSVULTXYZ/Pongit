@@ -42,5 +42,10 @@ try{
   config+=`      - name: ChaosEventsArchive\n        address: "${m.adapter}"\n        start_block: ${start(m.startBlock)}\n`;
  }
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+try{
+ const agents=JSON.parse(await readFile('deployments/agents.json','utf8'));
+ if(agents.chainId!==d.chainId||!/^0x[\da-fA-F]{40}$/.test(agents.archive)||!/^\d+$/.test(String(agents.archiveStartBlock)))throw Error('Invalid agent archive manifest');
+ config+=`      - name: AgentArchive\n        address: "${agents.archive}"\n        start_block: ${start(agents.archiveStartBlock)}\n`;
+}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 await writeFile("indexer/config.yaml", config);
 console.log("Indexer bound to deployment; run npm run codegen in indexer.");

@@ -21,7 +21,7 @@ export function Outcome({id,match,account,rating,ratingDelta,sound,replay,rematc
     if(previous?.id===id && previous.account===account && previous.status===2 && match.status===3){
       const victory=participant?match.winner.toLowerCase()===account.toLowerCase():null;
       setResult({id,account,victory,before:previous.rating});setAnimate(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-      if(sound && participant)arcadeAudio.play(victory?"victory":"defeat",`result:${id}:${account}`);
+      if(sound && participant && !match.draw)arcadeAudio.play(victory?"victory":"defeat",`result:${id}:${account}`);
     }
     if(previous?.id===id && previous.account===account && previous.status===2 && match.status===4){
       setResult({id,account,victory:null,before:previous.rating,cancelled:true});setAnimate(false);
@@ -43,15 +43,16 @@ export function Outcome({id,match,account,rating,ratingDelta,sound,replay,rematc
     <h2>Match cancelled</h2><p>No winner. ELO unchanged.</p>
     <div className="button-row"><button onClick={()=>{setResult(null);again();}}>{againLabel}</button><button onClick={()=>setResult(null)}>Back</button></div>
   </section>,document.body);
-  if(result.victory===null)return <aside className="inbox-banner spectator-result" role="status">{short(match.winner)} wins · {match.state.scoreA} : {match.state.scoreB}<IconButton aria-label="Dismiss winner" onClick={()=>setResult(null)}/></aside>;
-  return createPortal(<section tabIndex={-1} ref={dialog} className={`outcome ${animate?"celebrate":""} ${result.victory===false?"defeat":"victory"}`} role="dialog" aria-modal="true" aria-label="Confirmed match result">
+  if(result.victory===null)return <aside className="inbox-banner spectator-result" role="status">{match.draw?'Draw':`${short(match.winner)} wins`} · {match.state.scoreA} : {match.state.scoreB}<IconButton aria-label="Dismiss winner" onClick={()=>setResult(null)}/></aside>;
+  const resultTitle=match.draw?'DRAW':result.victory?'VICTORY':'DEFEAT';
+  return createPortal(<section tabIndex={-1} ref={dialog} className={`outcome ${animate?"celebrate":""} ${!match.draw&&result.victory===false?"defeat":"victory"}`} role="dialog" aria-modal="true" aria-label="Confirmed match result">
     <IconButton className="outcome-close" onClick={()=>setResult(null)} aria-label="Close result"/>
     <div className="outcome-effects" aria-hidden="true">
       <div className="result-vortex"/><div className="result-ring ring-a"/><div className="result-ring ring-b"/><div className="result-scan"/>
       {animate && <div className="arcade-particles">{Array.from({length:32},(_,i)=><i key={i} style={{"--i":i} as React.CSSProperties}/>)}</div>}
     </div>
-    <p className="eyebrow">{confirmation==="engine"?"RESULT CONFIRMED ON INTERLUDE":"RESULT CONFIRMED ON MONAD"}</p><h2 data-title={result.victory?"VICTORY":"DEFEAT"}>{result.victory?"VICTORY":"DEFEAT"}</h2>
-    <p className="outcome-score">{match.state.scoreA} : {match.state.scoreB}</p><p>{short(match.winner)} wins</p>
+    <p className="eyebrow">{confirmation==="engine"?"RESULT CONFIRMED ON INTERLUDE":"RESULT CONFIRMED ON MONAD"}</p><h2 data-title={resultTitle}>{resultTitle}</h2>
+    <p className="outcome-score">{match.state.scoreA} : {match.state.scoreB}</p><p>{match.draw?'Time is up. ELO unchanged.':`${short(match.winner)} wins`}</p>
     {result.victory!==null && <p>{match.ranked===false?"Friendly match · ELO unchanged":!match.ratingFinalized?"ELO settlement pending…":delta!==null?`${match.mode===1?"Chaos":"Classic"} ELO ${delta>=0?"+":""}${delta}`:"ELO updated"}</p>}
     {animate && <button className="outcome-skip" data-autofocus onClick={()=>setAnimate(false)}>Skip animation · Esc</button>}
     {rematchStatus && <p role="status">{rematchStatus}</p>}

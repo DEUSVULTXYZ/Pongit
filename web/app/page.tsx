@@ -7,5 +7,5 @@ export default async function Page({searchParams}:{searchParams:Promise<Record<s
   const params=await searchParams;
   const oldLink=!!(params.challenge||params.match||params.deployment||params.replay);
   if(!oldLink&&process.env.PONG_INDEPENDENT_HOME==="true")return <IndependentHub/>;
-  return process.env.PONG_ROOMS_HOME==="true"&&!oldLink?<RoomsHub/>:<Arena/>;
+  return process.env.PONG_ROOMS_HOME==="true"&&!oldLink?<RoomsHub agentArcade={process.env.PONG_AGENT_ARCADE_HOME==='true'}/>:<Arena/>;
 }

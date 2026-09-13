@@ -6,3 +6,6 @@ import {applyChaosArchive} from './chaos-archive';
 indexer.onEvent({contract:'ChaosEventsArchive',event:'MatchRecorded'},async({event,context})=>{
  await applyChaosArchive(context,event);
 });
+indexer.onEvent({contract:'AgentArchive',event:'MatchRecorded'},async({event,context})=>{
+ await applyChaosArchive(context,event,7);
+});
