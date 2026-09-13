@@ -22,7 +22,7 @@ PONGIT uses a binary **LMSR** market maker. Buying shares changes the cost of su
 
 - A participant's account cannot bet on its own match.
 - The market must be funded, opened and unpaused, and the match must be in play.
-- In rooms, bets are accepted only during the 40-block window opened after a published Chaos point. No bet can enter a rally retroactively. The V4 market retains its collision guard.
+- In new rooms, bets stay open throughout the match after its initial publication. Confirmed paid totals affect paddle sizes only at a future point boundary. Bets included in or after the final game second are refunded. Previous rules-4 markets retain their 40-block windows; the V4 market retains its collision guard.
 - Quotes bind the game state; an outdated version can be rejected.
 
 These restrictions reduce latency advantages, but do not guarantee their elimination or identify every related wallet.

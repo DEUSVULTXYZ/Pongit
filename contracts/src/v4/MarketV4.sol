@@ -127,12 +127,15 @@ contract MarketV4 is AccessControl, Pausable, EIP712, NativePayouts {
         b.totalPaid += amount;
         paidBySide[bet.matchId][bet.side] += amount;
         p.paid += amount;
+        _afterBuy(bet, amount);
         require(b.reserve >= b.a && b.reserve >= b.b && b.reserve >= b.totalPaid, "collateral");
         vault.debit(bet.player, amount);
         emit BetPlaced(bet.matchId, bet.player, bet.side, bet.shares, amount);
     }
 
-    function claim(uint256 id, address player) external nonReentrant {
+    function _afterBuy(Bet calldata, uint256) internal virtual {}
+
+    function claim(uint256 id, address player) external virtual nonReentrant {
         Book storage b = books[id];
         Position storage p = positions[id][player];
         (address a,, address winner, uint8 status) = results.result(id);
@@ -147,7 +150,7 @@ contract MarketV4 is AccessControl, Pausable, EIP712, NativePayouts {
         emit Claimed(id, player, amount, status == 4);
     }
 
-    function reclaim(uint256 id) external onlyRole(TREASURY_ROLE) nonReentrant {
+    function reclaim(uint256 id) external virtual onlyRole(TREASURY_ROLE) nonReentrant {
         Book storage b = books[id];
         (address a,, address winner, uint8 status) = results.result(id);
         require(status == 3 || status == 4, "not settled");

@@ -8,6 +8,7 @@ import {encodeSession,storageKey,delegatableAbi} from '@interludelayer-sdk/sdk';
 import {prepareRoomLaunch,assertRoomLaunchReady} from '../shared/rooms-acceptance';
 import {initial} from '../shared/physics-v2';
 import manifest from '../deployments/interlude-rooms.json';
+import financialDeployments from '../deployments/rooms-finance.json';
 import {roomsChaosAbi} from '../shared/abi-PongRoomsTestnet';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
@@ -21,7 +22,9 @@ await mkdir('artifacts/rooms-countdown',{recursive:true});
 try{
  for(const mode of [0,1]){
   clockSkew=28000;
-  let room:any,phase=0,revision=0n,paused=false,sends=0;
+  let room:any,phase=0,revision=0n,paused=false,sends=0,marketFinished=false;
+  const currentFinance=financialDeployments.at(-1)!;
+  const financialAccount=(m:any)=>({manifest:m,balance:'20000000000000000',walletBalance:'6000000000000000',nonce:'0',marketNonce:'0',history:[]});
   const inputNonces=[0n,0n],directions=[0,0],inputTimes:number[]=[];
   let injected=false,injectNext=false,limitedAt=0,resumedAt=0;
   const accepted=new Set<string>(),sentAt:number[]=[],queuedAt=serverNow();
@@ -43,7 +46,8 @@ try{
        else if(u.pathname.endsWith('/state'))data={...(room?{room}:{queue:{at:queuedAt,mode}}),profiles:players.map((p,i)=>({player:p,handle:`Player${i+1}`})),inbox:[],outbox:[],online:true,admission:true};
        else if(u.pathname.endsWith('/offers/ready')){prepareRoomLaunch(room.offer,player,serverNow());data={offer:room.offer};}
        else if(u.pathname.endsWith('/offers/accept')){if(!body.receiptHash){assert.equal(body.countdown,true);assertRoomLaunchReady(room.offer,serverNow());}data={offer:room.offer,alreadyAccepted:accepted.has(player)};}
-       else if(u.pathname.includes('/markets/'))data={app,id:'1',rally:1,phase:'preparing',blocksLeft:'0'};
+       else if(u.pathname.endsWith('/finance'))data={...financialAccount(currentFinance),archives:financialDeployments.slice(0,-1).map(financialAccount)};
+       else if(u.pathname.includes('/markets/'))data=u.searchParams.has('round')?{app,id:'1',rally:1,phase:'preparing',blocksLeft:'0'}:{manifest:currentFinance,window:[!marketFinished,'261'],head:'62160000',result:[zeroAddress,zeroAddress,zeroAddress,marketFinished?3:2],position:['0','1000000000000000','600000000000000',false],quote:'600000000000000',claimPreview:marketFinished?['0','0',true]:null,terminal:marketFinished,settlementPolicy:'early-published-testnet'};
        return route.fulfill({json:{...data,serverNow:serverNow()}});
       }
       return route.fulfill({response:await route.fetch({url:'http://countdown-web:3000'+u.pathname+u.search})});
@@ -99,7 +103,7 @@ try{
   assert.equal(after.split(':')[0],'0','A ten-minute server correction must not change the local timer');
   clockSkew=28000;
   for(const page of pages){await page.reload();await page.locator('.rooms-timer').waitFor();}
-  room={id:zeroHash,host:players[0],kind:'ranked',mode,status:'offer',created:serverNow(),activity:serverNow(),members:players.map((player,position)=>({player,position,joined:serverNow(),seen:serverNow(),away:false})),offer:{id:'1',room:zeroHash,a:players[0],b:players[1],mode,ranked:true,expires:String(Math.floor(serverNow()/1000)+30),rules:'4',entropy:zeroHash,signature:'0x',accepted:[],status:'offered'}};
+  room={id:zeroHash,host:players[0],kind:'ranked',mode,status:'offer',created:serverNow(),activity:serverNow(),members:players.map((player,position)=>({player,position,joined:serverNow(),seen:serverNow(),away:false})),offer:{id:'1',room:zeroHash,a:players[0],b:players[1],mode,ranked:true,expires:String(Math.floor(serverNow()/1000)+30),rules:String(manifest.rulesVersion),entropy:zeroHash,signature:'0x',accepted:[],status:'offered'}};
   await pages[0].getByRole('button',{name:'Accept',exact:true}).click();await pages[0].getByText('Waiting for your rival',{exact:true}).waitFor();assert.equal(sends,0);
   // F5 preserves readiness; no signature is sent while the second player has not agreed.
   await pages[0].reload();await pages[0].getByText('Waiting for your rival',{exact:true}).waitFor();assert.equal(sends,0);
@@ -133,7 +137,20 @@ try{
    assert(inputNonces[0]>count,'Controls resume automatically without a passkey or refresh');
    assert.equal(directions[0],0,'Release reaches the engine');
   }
-  if(mode){paused=true;revision++;await pages[1].getByText('Synchronizing Chaos bets',{exact:true}).waitFor();}
+  if(mode&&manifest.rulesVersion===5){
+   // Realtime windows encode epoch/rules, not a block deadline. The button must
+   // remain available even though the chain head is much larger than version.
+   await pages[1].getByRole('button',{name:'Market',exact:true}).click();
+   await pages[1].getByText('Live throughout the match',{exact:true}).waitFor();
+   assert(await pages[1].getByRole('button',{name:'Confirm bet with passkey',exact:true}).isEnabled());
+   assert.equal(await pages[1].getByRole('combobox',{name:'Betting account'}).locator('option').count(),financialDeployments.length);
+   for(const width of [360,390,768,1440]){await pages[1].setViewportSize({width,height:900});assert(await pages[1].evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await pages[1].screenshot({path:`artifacts/rooms-countdown/realtime-market-${width}.png`});}
+   marketFinished=true;await pages[1].getByText('Losing position · No payout',{exact:true}).waitFor();
+   assert(await pages[1].getByRole('button',{name:'Confirm bet with passkey',exact:true}).isDisabled());
+   await pages[1].getByRole('combobox',{name:'Betting account'}).selectOption(financialDeployments[0].market);
+   await pages[1].waitForTimeout(500);assert.equal(await pages[1].getByRole('button',{name:'Confirm bet with passkey',exact:true}).count(),0);
+   await pages[1].keyboard.press('Escape');assert.equal(await pages[1].getByText('Synchronizing Chaos bets',{exact:true}).count(),0);
+  }else if(mode){paused=true;revision++;await pages[1].getByText('Synchronizing Chaos bets',{exact:true}).waitFor();}
   for(const page of pages)assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow');
   report.scenarios.push({mode,queueBefore:before,queueAfter:after,clockSkewMs:28000,serverJumpMs:600000,engineAcceptances:sends,startDelayMs:sentAt.map(at=>at-(room.offer.launch.at-3000)),f5Ready:true,reducedMotion:!!mode,inputWrites:inputTimes.length,injected429:injected,recoveryMs:resumedAt?resumedAt-limitedAt:null});
   await Promise.all(contexts.map(c=>c.close()));

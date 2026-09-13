@@ -13,7 +13,7 @@
       "title": "Welcome to PONGIT",
       "description": "An arcade for good rivals, close matches and verifiable results.",
       "group": "Getting started",
-      "updated": "2026-09-11",
+      "updated": "2026-09-13",
       "keywords": [
         "overview",
         "testnet",
@@ -242,7 +242,7 @@
       "title": "Chaos",
       "description": "Understand how betting pressure changes the next rally.",
       "group": "Playing",
-      "updated": "2026-09-08",
+      "updated": "2026-09-13",
       "keywords": [
         "handicap",
         "96",
@@ -600,7 +600,7 @@
       "title": "How betting works",
       "description": "Review the cost, signed maximum and potential payout before supporting a player.",
       "group": "Betting & payments",
-      "updated": "2026-09-08",
+      "updated": "2026-09-13",
       "keywords": [
         "LMSR",
         "shares",
@@ -641,7 +641,7 @@
       "title": "Automatic payouts & refunds",
       "description": "Winning bets, tournament prizes and refunds go to your wallet automatically.",
       "group": "Betting & payments",
-      "updated": "2026-09-11",
+      "updated": "2026-09-13",
       "keywords": [
         "claim",
         "payment",
@@ -659,6 +659,11 @@
         {
           "id": "previous-room-markets",
           "text": "Previous room markets",
+          "level": 2
+        },
+        {
+          "id": "late-bets-in-live-markets",
+          "text": "Late bets in live markets",
           "level": 2
         },
         {
@@ -837,7 +842,7 @@
       "title": "Physics, prediction & latency",
       "description": "The contract determines collisions; the browser makes the motion readable.",
       "group": "Technical reference",
-      "updated": "2026-09-09",
+      "updated": "2026-09-13",
       "keywords": [
         "block",
         "clock",
@@ -967,7 +972,7 @@
       "title": "HTTP API & WebSocket reference",
       "description": "Read application data and understand the authenticated transaction interfaces.",
       "group": "Technical reference",
-      "updated": "2026-09-11",
+      "updated": "2026-09-13",
       "keywords": [
         "API",
         "HTTP",
@@ -1227,24 +1232,24 @@
   ],
   "rooms": {
     "chainId": 10143,
-    "rulesVersion": 4,
-    "startBlock": "61707339",
+    "rulesVersion": 5,
+    "startBlock": "62146134",
     "addresses": [
       {
         "name": "Rooms game",
-        "address": "0xfd1693294fed77304662f08e827b043b0ba386a3"
+        "address": "0xd2fe1c8df2bdbe2666409fc20f25bcd2f2a40fb5"
       },
       {
         "name": "Market window / result adapter",
-        "address": "0x078b0f2ed14307c716832a9893b2d36ff47b8525"
+        "address": "0xb0f8322317ff6d5fafa1f715377197e9264b1b6f"
       },
       {
         "name": "Rooms vault",
-        "address": "0xfdc2913d14c5d1da75b363ea8424b53eac7009f2"
+        "address": "0xa36b258ed6221aeb66ac9d115740efd4b7c273d5"
       },
       {
         "name": "Rooms market",
-        "address": "0x7222069ede3829e69645bcc6fa5c6def9f4bfaa9"
+        "address": "0x1f1c673e40c9dd682a96842e9da53f6401b64e41"
       }
     ]
   }

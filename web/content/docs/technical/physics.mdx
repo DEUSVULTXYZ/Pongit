@@ -30,6 +30,8 @@ Moving the web frontend alone does not remove relayer queuing or Monad inclusion
 
 ## Current rooms: pushed state and recovery
 
+Current rules-5 rooms use **10,000 microseconds per engine block**, starting ball velocity 192/96 units per second and 10% acceleration on each successful paddle return. Speed resets after each point. Classic and Chaos serve immediately after nonfinal points; only Chaos uses queued authenticated paid totals to calculate the next paddle heights. An unavailable financial checkpoint preserves the existing pressure and does not stop game time.
+
 Rooms can receive the contract's `Snapshot` events over one applied-event WebSocket per tab. Successful SDK receipts update the same cache. The initial getter supplies participants, nonces and clock metadata; events do not invent missing fields. A gap, restart, changed delegation or missing terminal winner requires an authoritative read. A consistency check runs every ten seconds while events remain fresh.
 
 If the stream is unavailable, reads are serialized with a 500 ms active-game interval and a two-second waiting interval. Remote `Retry-After` takes precedence. A failed write is reconciled with its receipt, state and SDK nonce before another command can be signed. A missing reply does not prove failure.

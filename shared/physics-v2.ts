@@ -29,7 +29,7 @@ export type State = {
 };
 export type GameEvent = { at: bigint; kind: number };
 const abs = (n: bigint) => (n < 0n ? -n : n);
-const clamp = (y: bigint, half: bigint) =>
+export const clamp = (y: bigint, half: bigint) =>
   y < half
     ? half
     : y > HEIGHT - half
@@ -37,7 +37,7 @@ const clamp = (y: bigint, half: bigint) =>
       : y;
 const travel = (d: bigint, v: bigint) =>
   (abs(d) * SCALE + abs(v) - 1n) / abs(v);
-function serve(s: State): State {
+export function serve(s: State): State {
   const point = s.scoreA + s.scoreB;
   return {
     ...s,

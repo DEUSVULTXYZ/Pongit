@@ -28,8 +28,9 @@ import { monadTestnet } from "viem/chains";
 import { z } from "zod";
 import { roomsAbi as classicRoomsAbi } from "../../shared/abi-rooms";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
+import { roomsRealtimeAbi } from "../../shared/abi-PongRoomsRealtime";
 import { chaosOfferTypes } from "../../shared/rooms-chaos";
-import {createRoomsFinanceRouter} from "./rooms-finance-router";
+import {createRoomsFinanceDirectory} from "./rooms-finance-directory";
 import {loadRoomsFinance} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
 import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome} from "./rooms-engine-recovery";
@@ -99,8 +100,10 @@ export async function createRoomsCoordinator(o: Options) {
       "utf8",
     ),
   );
-  const chaosEnabled = manifest.rulesVersion === 4;
-  const roomsAbi: Abi = chaosEnabled ? roomsChaosAbi : classicRoomsAbi;
+  const realtime = manifest.rulesVersion === 5;
+  const chaosEnabled = manifest.rulesVersion === 4 || realtime;
+  const roomsAbi: Abi = realtime ? roomsRealtimeAbi : chaosEnabled ? roomsChaosAbi : classicRoomsAbi;
+  const creationBudget=realtime?32:chaosEnabled?30:24,terminalBudget=realtime?14:chaosEnabled?12:8;
   const modeOf = (v: unknown): 0 | 1 => {
     const mode=z.union([z.literal(0),z.literal(1)]).parse(v ?? 0);
     if(mode === 1 && (!chaosEnabled || process.env.ROOMS_CHAOS_ENABLED !== "true"))
@@ -135,7 +138,7 @@ export async function createRoomsCoordinator(o: Options) {
   const watched=new Map<string,()=>void>();
   const pendingPressure=new Map<string,Promise<void>>();
   const finance = chaosEnabled && o.financeConfig?.entries.some(x=>x.app.toLowerCase()===app) && o.enqueue
-    ? await createRoomsFinanceRouter({db,base,entries:o.financeConfig.entries.filter(x=>x.app.toLowerCase()===app),enqueue:o.enqueue}) : null;
+    ? await createRoomsFinanceDirectory({db,base,app,entries:o.financeConfig.entries,enqueue:o.enqueue}) : null;
   if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED === "true" && !finance)throw new Error("Chaos requires its funded financial bridge");
   await db.query(`
  CREATE TABLE IF NOT EXISTS il_lobby(app text PRIMARY KEY,document jsonb NOT NULL);
@@ -483,11 +486,11 @@ export async function createRoomsCoordinator(o: Options) {
       job = { id: hex(), app, nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
       await db.query(
         "INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9)",
-        [app, job.id, nonce, raw, job.hash,lastEpoch,signer.address.toLowerCase(),pressureData?'submitPressure':cancel?'cancelMatch':'tick',id],
+        [app, job.id, nonce, raw, job.hash,lastEpoch,signer.address.toLowerCase(),pressureData?(realtime?'submitLivePressure':'submitPressure'):cancel?'cancelMatch':'tick',id],
       );
     }
     const identity=await engineJobIdentity(job,roomsAbi,signer.address);
-    if(!['tick','cancelMatch','submitPressure'].includes(identity.action))throw new Error('Unexpected public command in the engine journal; review required');
+    if(!['tick','cancelMatch','submitPressure','submitLivePressure'].includes(identity.action))throw new Error('Unexpected public command in the engine journal; review required');
     let receipt = await client.node
       .getTransactionReceipt({ hash: job.hash })
       .catch(() => null);
@@ -753,14 +756,14 @@ export async function createRoomsCoordinator(o: Options) {
           void publicTick(id, true).catch(()=>{});
         }
         observed.set(id, s);
-        if(writable && finance && s[2]===2n && s[12].mode===1 && s[12].awaitingServe){
+        if(writable && finance && s[2]===2n && s[12].mode===1 && (realtime || s[12].awaitingServe)){
           if(!pendingPressure.has(id)){
             const work=finance.pressure(id,s,async data=>{
               await publicTick(id,false,data);
               // A paused rally does not need idle ticks. Resume only after its
               // checkpoint write is confirmed; an uncertain write stops here.
-              await publicTick(id);
-            }).catch(e=>{
+              if(!realtime)await publicTick(id);
+            },realtime?()=>client.read('queuedPressure',[BigInt(id)]):undefined).catch(e=>{
               // A financial checkpoint is local to this rally. It must never
               // overwrite the game node's availability or expose raw calldata.
               recordRpc({at:Date.now(),target:"pongit",method:"chaos.checkpoint.retry",status:503,ms:0,source:"cache"});
@@ -779,7 +782,7 @@ export async function createRoomsCoordinator(o: Options) {
       // Existing unfinished offers reserve their worst-case creation and terminal writes.
       for (const r of Object.values(before.rooms))
         if (r.offer && !["complete", "cancelled"].includes(r.offer.status))
-          reserved += observed.get(r.offer.id)?.[2] === 0n ? (chaosEnabled?30:24) : (chaosEnabled?12:8);
+          reserved += observed.get(r.offer.id)?.[2] === 0n ? creationBudget : terminalBudget;
       await transact(async (s, c) => {
         const now = Date.now();
         s.queue = s.queue.filter((q) => now - q.seen < 30000);
@@ -889,7 +892,7 @@ export async function createRoomsCoordinator(o: Options) {
             !admissionHealthy ||
             process.env.ROOMS_ADMISSION_ENABLED !== "true" || lifecycle && !lifecycle.available() ||
             active >= 2 ||
-            reserved + (chaosEnabled?30:24) > nodeNow.maxDiffsPerCommit
+            reserved + creationBudget > nodeNow.maxDiffsPerCommit
           ) {
             r.status = "capacity";
             continue;
@@ -925,7 +928,7 @@ export async function createRoomsCoordinator(o: Options) {
           r.status = "offer";
           r.activity = now;
           active++;
-          reserved += chaosEnabled?30:24;
+          reserved += creationBudget;
         }
         return {};
       });
@@ -1162,7 +1165,7 @@ export async function createRoomsCoordinator(o: Options) {
           publicLadderAt = Date.now(); publicLadderMode=mode;
           publicLadder = (async () => {
         const players = await roomsRankingCandidates(db,
-          [app,...(chaosEnabled && mode===0 && manifest.previousClassic ? [String(manifest.previousClassic).toLowerCase()] : [])],mode);
+          [app,...(manifest.previousRooms ? [String(manifest.previousRooms).toLowerCase()] : []),...(chaosEnabled && mode===0 && manifest.previousClassic ? [String(manifest.previousClassic).toLowerCase()] : [])],mode);
         const items = [];
         for (const player of players) {
           const [live,published] = await Promise.all([
@@ -1250,8 +1253,8 @@ export async function createRoomsCoordinator(o: Options) {
         }
         const recent = (
           await db.query(
-            "SELECT id,a,b,extract(epoch from ended_at)::bigint AS ended FROM il_results WHERE app=$1 AND verified AND phase=3 AND ended_at>now()-interval '30 days' AND (a=$2 OR b=$2)",
-            [app, p],
+            "SELECT app || ':' || id AS id,a,b,extract(epoch from ended_at)::bigint AS ended FROM il_results WHERE app=ANY($1) AND verified AND phase=3 AND ended_at>now()-interval '30 days' AND (a=$2 OR b=$2)",
+            [[app,...(manifest.previousRooms ? [String(manifest.previousRooms).toLowerCase()] : [])], p],
           )
         ).rows;
         const counts = new Map<

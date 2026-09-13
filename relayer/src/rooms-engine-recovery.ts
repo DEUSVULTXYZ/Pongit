@@ -12,7 +12,7 @@ export async function engineJobIdentity(job: EngineJob, abi: Abi, signer: Addres
     throw new Error("Engine journal identity mismatch; manual review required");
   const decoded = decodeFunctionData({ abi, data: tx.data! });
   const first=decoded.args?.[0];
-  const matchId=decoded.functionName==='submitPressure' ? (first as {matchId:bigint})?.matchId : first;
+  const matchId=['submitPressure','submitLivePressure'].includes(decoded.functionName) ? (first as {matchId:bigint})?.matchId : first;
   return { action: decoded.functionName, matchId: String(matchId), signer: signer.toLowerCase(), data:tx.data!, args:decoded.args };
 }
 

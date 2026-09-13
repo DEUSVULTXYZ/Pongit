@@ -27,5 +27,17 @@
     "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
     "startBlock": "61707339",
     "chainId": 10143
+  },
+  {
+    "financeId": "realtime-v1",
+    "settlement": "early-published-testnet",
+    "betting": "realtime",
+    "app": "0xd2fe1c8df2bdbe2666409fc20f25bcd2f2a40fb5",
+    "adapter": "0xb0f8322317ff6d5fafa1f715377197e9264b1b6f",
+    "market": "0x1f1c673e40c9dd682a96842e9da53f6401b64e41",
+    "vault": "0xa36b258ed6221aeb66ac9d115740efd4b7c273d5",
+    "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+    "startBlock": "62146134",
+    "chainId": 10143
   }
 ]

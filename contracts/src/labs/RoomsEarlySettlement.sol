@@ -16,7 +16,7 @@ contract RoomsEarlySettlement is RoomsMarketAdapter {
 
     constructor(PongInterludeRoomsChaos game_) RoomsMarketAdapter(game_) {}
 
-    function openRound(uint256 id) public override onlyBase {
+    function openRound(uint256 id) public virtual override onlyBase {
         require(finalResults[id].status == 0, "result already accepted");
         uint256 epoch = hub.sessionOf(address(game),Types.GLOBAL).epoch;
         require(epoch > 0 && (matchEpoch[id] == 0 || matchEpoch[id] == epoch), "match epoch changed");
@@ -24,7 +24,7 @@ contract RoomsEarlySettlement is RoomsMarketAdapter {
         matchEpoch[id] = epoch;
     }
 
-    function finalizeResult(uint256 id) external override onlyBase {
+    function finalizeResult(uint256 id) public virtual override onlyBase {
         require(finalResults[id].status == 0, "already final");
         Types.Session memory session = hub.sessionOf(address(game), Types.GLOBAL);
         require(session.status != Types.Status.Challenged, "settlement under review");
@@ -46,7 +46,7 @@ contract RoomsEarlySettlement is RoomsMarketAdapter {
         emit EarlyResultAccepted(id,epoch,session.batchIndex,hash,winner,uint8(phase));
     }
 
-    function bettingWindow(uint256 id, uint64) external view override returns (bool allowed, uint256 version) {
+    function bettingWindow(uint256 id, uint64) external view virtual override returns (bool allowed, uint256 version) {
         if (block.chainid != baseChainId || finalResults[id].status != 0) return (false,0);
         (uint256 phase,,,,PhysicsV2.State memory s) = _snapshot(id);
         uint8 rally = s.scoreA + s.scoreB;

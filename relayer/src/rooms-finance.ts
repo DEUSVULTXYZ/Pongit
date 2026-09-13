@@ -15,6 +15,9 @@ import {createSettlementAudit} from "./rooms-settlement-audit";
 import { roomsVaultAbi as vaultAbi } from "../../shared/abi-RoomsVault";
 import { marketV4Abi as marketAbi } from "../../shared/abis-v4";
 import { roomsChaosAbi } from "../../shared/abi-PongRoomsTestnet";
+import { roomsRealtimeAbi } from "../../shared/abi-PongRoomsRealtime";
+import { realtimeMarketAbi } from "../../shared/abi-RealtimeMarket";
+import { livePressureDomain,livePressureTypes,livePressureCheckpoint } from "../../shared/rooms-live-pressure";
 import { roomsLifecycleHubAbi } from "../../shared/abi-rooms-lifecycle";
 import {roomsRoundStatus} from '../../shared/rooms-round-status';
 import {sameChaosPause,chaosWindowMoved} from '../../shared/chaos-publication';
@@ -43,6 +46,7 @@ export async function createRoomsFinance(o: {
   enqueue: Enqueue;
 }) {
   const { db, base, manifest: m } = o;
+  const realtime=m.betting==='realtime';
   const adapterAbi = financeAdapterAbi(m) as typeof import("../../shared/abi-RoomsMarketAdapter").roomsMarketAdapterAbi;
   if (!process.env.ROOMS_PRESSURE_KEY_FILE)
     throw new Error("Pressure signer file required");
@@ -115,6 +119,7 @@ export async function createRoomsFinance(o: {
  CREATE TABLE IF NOT EXISTS il_market_cursor(app text PRIMARY KEY,block text NOT NULL);
  CREATE TABLE IF NOT EXISTS il_credits(app text NOT NULL,player text NOT NULL,job_id text NOT NULL,PRIMARY KEY(app,player));
  CREATE TABLE IF NOT EXISTS il_payment_receipts(app text NOT NULL,payout_id text NOT NULL,status text NOT NULL,tx_hash text NOT NULL,PRIMARY KEY(app,payout_id));
+ CREATE TABLE IF NOT EXISTS il_live_pressure(app text NOT NULL,id text NOT NULL,epoch text NOT NULL,source_block text NOT NULL,source_hash text NOT NULL,paid_a text NOT NULL,paid_b text NOT NULL,checkpoint text NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id,epoch,source_block));
  `);
   const app = financeScope(m);
   const hub = await base.readContract({
@@ -158,7 +163,7 @@ export async function createRoomsFinance(o: {
   ): Promise<any> =>
     base.readContract({
       address: m.market,
-      abi: marketAbi,
+      abi: realtime ? realtimeMarketAbi : marketAbi,
       functionName: name,
       args,
       blockNumber,
@@ -188,12 +193,51 @@ export async function createRoomsFinance(o: {
   let lastError = "",
     auditAt = 0,
     working = false;
+  const livePressureAt=new Map<string,number>();
+  const livePressureDelivered=new Map<string,{a:bigint;b:bigint;checkedAt:number}>();
+  async function continuousPressure(id:string,s:any,send:(data:Hex)=>Promise<void>,readQueued:()=>Promise<any>){
+    const now=Date.now();if(now-(livePressureAt.get(id)||0)<2000)return;
+    livePressureAt.set(id,now);
+    const matchId=BigInt(id),head=await base.getBlockNumber({cacheTime:0}),sourceBlock=head>2n?head-2n:0n;
+    const [book,epoch]=await Promise.all([readMarket('books',[matchId]),readAdapter('matchEpoch',[matchId])]);
+    if(book[2]===0n||epoch===0n){
+      const published=await base.readContract({address:m.app,abi:roomsRealtimeAbi,functionName:'getSnapshot',args:[matchId],blockNumber:sourceBlock});
+      if(published[2]!==2n||published[12].mode!==1||published[12].seed!==s[12].seed)return;
+      if(book[2]===0n)await enqueue('market','open',[id,parseEther('0.005')],parseEther('0.004'));
+      if(epoch===0n)await enqueue('game','openRound',[id],0n,`live-market:${id}`);
+      return;
+    }
+    const [block,paid]=await Promise.all([base.getBlock({blockNumber:sourceBlock}),readMarket('pressure',[matchId],sourceBlock)]);
+    if(!block.hash)throw new Error('Confirmed betting block unavailable');
+    const [paidA,paidB]=paid as [bigint,bigint];
+    const cached=livePressureDelivered.get(id);
+    if(cached&&now-cached.checkedAt<10000&&paidA===cached.a&&paidB===cached.b)return;
+    const queued=await readQueued();
+    if(paidA<queued[0]||paidB<queued[1])throw new Error('Betting source changed; retaining the last authenticated paddle sizes');
+    if(paidA===queued[0]&&paidB===queued[1]){livePressureDelivered.set(id,{a:paidA,b:paidB,checkedAt:now});return;}
+    if(sourceBlock<=queued[2])return;
+    const checkpoint=livePressureCheckpoint(m.app,m.market,matchId,epoch,s[12].seed,sourceBlock,block.hash,paidA,paidB);
+    if((await base.getBlock({blockNumber:sourceBlock})).hash!==block.hash)throw new Error('Betting source reorganized');
+    await db.query('INSERT INTO il_live_pressure(app,id,epoch,source_block,source_hash,paid_a,paid_b,checkpoint) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING',
+      [app,id,String(epoch),String(sourceBlock),block.hash,String(paidA),String(paidB),checkpoint]);
+    const stored=(await db.query('SELECT checkpoint FROM il_live_pressure WHERE app=$1 AND id=$2 AND epoch=$3 AND source_block=$4',[app,id,String(epoch),String(sourceBlock)])).rows[0];
+    if(stored?.checkpoint!==checkpoint)throw new Error('Conflicting confirmed betting source');
+    const p={matchId,epoch,seed:s[12].seed as Hex,rally:s[12].scoreA+s[12].scoreB,paidA,paidB,sourceBlock,checkpoint,expires:BigInt(Math.floor(Date.now()/1000)+25)};
+    const signature=await signer.signTypedData({domain:livePressureDomain(m.app),types:livePressureTypes,primaryType:'LivePressure',message:p});
+    await send(encodeFunctionData({abi:roomsRealtimeAbi,functionName:'submitLivePressure',args:[p,signature]}));
+    // An executed catch-up may not install this checkpoint. Read the actual queue.
+    const applied=await readQueued();livePressureDelivered.set(id,{a:applied[0],b:applied[1],checkedAt:Date.now()});
+    lastError='';
+  }
   async function pressure(
     id: string,
     s: any,
     send: (data: Hex) => Promise<void>,
+    readQueued?:()=>Promise<any>,
   ) {
-    if (Number(s[2]) !== 2 || s[12].mode !== 1 || !s[12].awaitingServe) return;
+    if (Number(s[2]) !== 2 || s[12].mode !== 1) return;
+    if(realtime){if(!readQueued)throw new Error('Realtime pressure observer required');return continuousPressure(id,s,send,readQueued);}
+    if(!s[12].awaitingServe)return;
     const state = s[12],
       matchId = BigInt(id),
       rally = state.scoreA + state.scoreB;
@@ -492,6 +536,7 @@ export async function createRoomsFinance(o: {
       )
     ).rows[0];
     const head = await base.getBlockNumber();
+    const claimPreview=realtime&&result[3]>=3 ? await readMarket('claimPreview',[matchId,player]) : null;
     return {
       manifest: m,
       book,
@@ -503,6 +548,7 @@ export async function createRoomsFinance(o: {
       payoutId,
       payout,
       payment,
+      claimPreview,
       terminal: terminal?.phase >= 3,
       head,
       bridgeError: lastError,
@@ -565,7 +611,7 @@ export async function createRoomsFinance(o: {
         return display(`round:${id}:${rally}`,async()=>{
           const head=await base.getBlockNumber({cacheTime:0});
           const window=await readAdapter('bettingWindow',[BigInt(id),0],head);
-          return {app:m.app,id,rally,head,observedAt:Date.now(),...roomsRoundStatus(rally,window[1],window[0],head)};
+          return {app:m.app,id,rally,head,observedAt:Date.now(),...(realtime?{stage:window[0]?'open':'closed',label:window[0]?'Betting live':'Bets closed',blocksLeft:0,realtime:true}:roomsRoundStatus(rally,window[1],window[0],head))};
         });
       }
       const side = z.coerce

@@ -144,6 +144,10 @@ Financial mutations return the existing relayer job acknowledgement. `GET /jobs/
 
 ## Room finance generations
 
+Financial GET requests accept `app` as well as `financeId`; financial POST requests include those fields in the body. They identify immutable deployments, not the currently selected room. Unknown applications and mismatched market bindings are rejected. Accounts expose earlier applications in `archives`, with separate balances and no automatic transfer. The active live-betting generation is `realtime-v1` with `manifest.betting: "realtime"`.
+
+For live-betting markets, `window[0]` indicates current availability and `window[1]` binds the epoch and rules. It is **not a block countdown**. `claimPreview` returns eligible winnings plus refunds, the refund component, and readiness. Old window encodings remain unchanged.
+
 Authenticated `GET /interlude/finance` returns the current financial manifest, balances, nonces, history and `archives` for previous generations. Use `?financeId=` for the original room account or `?financeId=early-v1` for the early testnet account. Responses from `GET /interlude/markets/:id` include the match's fixed financial manifest and `settlementPolicy`.
 
 Financial POST requests for `buy`, `withdraw` and `credit` include `financeId` for the intended account. A match cannot be reassigned to another market. EIP-712 spending signatures still target the selected market or vault address. A mismatched generation is rejected before enqueueing. Internal relayer jobs preserve `roomApp` and optional `roomFinance`; historical jobs without `roomFinance` keep their original destinations.

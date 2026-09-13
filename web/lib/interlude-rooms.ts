@@ -18,7 +18,7 @@ import {RoomsCommandJournal} from './rooms-command-journal';
 import {readHubDelegation} from '../../shared/rooms-hub';
 import {assertRoomsEngineAvailable} from '../../shared/rooms-availability';
 export const roomsManifest = manifest;
-export const roomsChaos = Number(manifest.rulesVersion) === 4;
+export const roomsChaos = [4,5].includes(Number(manifest.rulesVersion));
 export const roomsScope = [
   "acceptMatch",
   "input",

@@ -10,7 +10,7 @@ import {IInterludeHub} from "../vendor/interlude/interfaces/IInterludeHub.sol";
 import {MarketV4 as Market} from "../src/v4/MarketV4.sol";
 import {LMSRV2} from "../src/v2/MarketV2.sol";
 
-contract RoomsEarlySettlementTest is Test {
+abstract contract RoomsSettlementFixture is Test {
     address constant GAME = address(0x999);
     address constant HUB = address(0x888);
     address constant A = address(0xa);
@@ -21,7 +21,7 @@ contract RoomsEarlySettlementTest is Test {
     Market market;
     PhysicsV2.State s;
     receive() external payable {}
-    function setUp() public {
+    function setUp() public virtual {
         vm.chainId(10143); vm.roll(100); vm.warp(1000); vm.deal(address(this),10 ether);
         vm.etch(GAME,hex"00");
         vm.mockCall(GAME,abi.encodeWithSignature("hub()"),abi.encode(HUB));
@@ -51,10 +51,12 @@ contract RoomsEarlySettlementTest is Test {
         cost=market.quote(1,side,bet.shares);
         market.buy(bet,abi.encodePacked(r,ss,v));
     }
-    function session(Types.Status status,uint256 epoch,uint256 batch) internal {
+    function session(Types.Status status,uint256 epoch,uint256 batch) internal virtual {
         Types.Session memory x; x.status=status;x.epoch=epoch;x.batchIndex=batch;
         vm.mockCall(HUB,abi.encodeWithSelector(IInterludeHub.sessionOf.selector,GAME,Types.GLOBAL),abi.encode(x));hubStatus(status);
     }
+}
+contract RoomsEarlySettlementTest is RoomsSettlementFixture {
     function testPaysDuringActiveSessionWithoutWaitingForClosure() public {
         adapter.openRound(1);buy(0);snapshot(3,A);
         vm.prank(address(0xdead));adapter.finalizeResult(1);

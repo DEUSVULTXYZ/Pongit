@@ -26,6 +26,7 @@ export function RoomsMarketPanel({
     [transaction, setTransaction] = useState<string>();
   useEffect(() => {
     setMatchId(initialMatchId);
+    setSelectedFinance(undefined);
     setMarket(undefined);
     setTransaction(undefined);
   }, [initialMatchId, player]);
@@ -66,15 +67,16 @@ export function RoomsMarketPanel({
         a = await roomsApi("/interlude/finance");
         lastAccountRead.current = { player, at: Date.now(), value: a };
       }
+      const available=[a,...(a.archives||[])];
+      const targetAccount=available.find(x=>x.manifest.market===selectedFinance)||a;
       const q = matchId
         ? await roomsApi(
-            `/interlude/markets/${matchId}?side=${side}&shares=${quantity > 0n ? quantity : 1n}`,
+            `/interlude/markets/${matchId}?app=${targetAccount.manifest.app}&side=${side}&shares=${quantity > 0n ? quantity : 1n}`,
           )
         : null;
       if (mounted.current && sequence === readSequence.current) {
-        const available=[a,...(a.archives||[])];
-        const target=q ? q.manifest.financeId||"" : selectedFinance??a.manifest.financeId??"";
-        const selectedAccount=available.find(x=>(x.manifest.financeId||"")===target);
+        const target=q ? q.manifest.market : targetAccount.manifest.market;
+        const selectedAccount=available.find(x=>x.manifest.market===target);
         if(!selectedAccount)throw new Error("Betting account unavailable. Refresh before signing.");
         setAccounts(available);
         setAccount(selectedAccount);
@@ -162,10 +164,11 @@ export function RoomsMarketPanel({
     [market.result[0], market.result[1]].some(
       (p) => p.toLowerCase() === player.toLowerCase(),
     );
-  const blocksLeft = market
+  const realtime=market?.manifest.betting==='realtime';
+  const blocksLeft = market && !realtime
     ? (BigInt(market.window[1]) >> 8n) - BigInt(market.head)
     : 0n;
-  const open = !!market?.window[0] && blocksLeft > 0n,
+  const open = !!market?.window[0] && !market?.terminal && (realtime || blocksLeft > 0n),
     cost =
       market?.quote === null ||
       market?.quoteSide !== side ||
@@ -186,7 +189,7 @@ export function RoomsMarketPanel({
       selected = side;
     return sign(async (wallet) => {
       const financeId=market.manifest.financeId||"";
-      const fresh = await roomsApi(`/interlude/finance?financeId=${encodeURIComponent(financeId)}`);
+      const fresh = await roomsApi(`/interlude/finance?app=${market.manifest.app}&financeId=${encodeURIComponent(financeId)}`);
       const bet = {
         player,
         matchId: BigInt(matchId),
@@ -203,14 +206,14 @@ export function RoomsMarketPanel({
         primaryType: "Bet",
         message: bet,
       });
-      return roomsApi("/interlude/finance/buy", { bet, signature, financeId });
+      return roomsApi("/interlude/finance/buy", { bet, signature, financeId,app:market.manifest.app });
     });
   }
   return (
     <section className={styles.panel}>
       {accounts.length>1 && <label>Betting account
-        <select aria-label="Betting account" value={account?.manifest.financeId||""} disabled={busy} onChange={e=>{setSelectedFinance(e.target.value);setMatchId(undefined);setMarket(undefined);}}>
-          {accounts.map(a=><option key={a.manifest.market} value={a.manifest.financeId||""}>{a.manifest.settlement ? "Current · Early testnet payouts" : "Previous · Finalized payouts"} · {mon(a.balance)} MON</option>)}
+        <select aria-label="Betting account" value={account?.manifest.market||""} disabled={busy} onChange={e=>{setSelectedFinance(e.target.value);setMatchId(undefined);setMarket(undefined);}}>
+          {accounts.map(a=><option key={a.manifest.market} value={a.manifest.market}>{a.manifest.app.toLowerCase()===roomsManifest.app.toLowerCase() ? "Current" : "Previous"} · {a.manifest.betting==='realtime'?'Live betting':a.manifest.settlement?'Early payouts':'Finalized payouts'} · {a.manifest.market.slice(0,8)} · {mon(a.balance)} MON</option>)}
         </select>
       </label>}
       <div className="rooms-finance-balances">
@@ -253,16 +256,16 @@ export function RoomsMarketPanel({
             {open ? "Bets open" : "Bets closed"}
             <span>
               {open
-                ? `${blocksLeft} blocks left`
+                ? realtime ? 'Live throughout the match' : `${blocksLeft} blocks left`
                 : market.terminal
                   ? "Match finished"
-                  : "Between rallies"}
+                  : realtime ? 'Waiting for the market to open' : "Between rallies"}
             </span>
           </div>
           <p>
-            Each betting window lasts about 12 seconds. The next rally waits for
-            the confirmed betting cutoff.
+            {realtime ? 'Bet while the match is live. Confirmed bets update paddle sizes after the next point, once received by the game. The ball never waits for a bet.' : 'Each betting window lasts about 12 seconds. The next rally waits for the confirmed betting cutoff.'}
           </p>
+          {realtime&&<p>Bets confirmed in or after the final game second are refunded. A delayed publication never turns a late bet into a winning position.</p>}
           <p>
             Supporting a player can shrink their paddle for the next rally. The
             testnet bridge on PONGIT's VPS attests paid bets.
@@ -344,7 +347,7 @@ export function RoomsMarketPanel({
                       ? "Paid to your wallet"
                       : "Losing position · No payout"
                   : market.result[3] >= 3
-                    ? "Payment pending"
+                    ? market.claimPreview?.[2]&&BigInt(market.claimPreview[0])===0n ? "Losing position · No payout" : "Payment pending"
                     : market.terminal
                       ? market.settlementPolicy==="early-published-testnet" ? "Waiting for result publication" : "Result awaiting finality"
                       : "Position open"}
@@ -364,7 +367,7 @@ export function RoomsMarketPanel({
                   disabled={busy}
                   onClick={() =>
                     void perform(() =>
-                      roomsApi("/interlude/finance/retry", { id: matchId }),
+                      roomsApi("/interlude/finance/retry", { id: matchId,app:market.manifest.app,financeId:market.manifest.financeId||'' }),
                     )
                   }
                 >
@@ -386,7 +389,7 @@ export function RoomsMarketPanel({
                   const signature = await wallet.signMessage({
                     message: roomsCreditMessage(
                       player,
-                      roomsManifest.app,
+                      account.manifest.app,
                       expires,
                     ),
                   });
@@ -394,6 +397,7 @@ export function RoomsMarketPanel({
                     expires,
                     signature,
                     financeId:account.manifest.financeId||"",
+                    app:account.manifest.app,
                   });
                 }),
               )
@@ -407,7 +411,7 @@ export function RoomsMarketPanel({
               void perform(() =>
                 sign(async (wallet) => {
                   const financeId=account.manifest.financeId||"";
-                  const fresh = await roomsApi(`/interlude/finance?financeId=${encodeURIComponent(financeId)}`),
+                  const fresh = await roomsApi(`/interlude/finance?app=${account.manifest.app}&financeId=${encodeURIComponent(financeId)}`),
                     amount = BigInt(fresh.balance),
                     nonce = BigInt(fresh.nonce),
                     deadline = BigInt(Math.floor(Date.now() / 1000) + 90);
@@ -427,6 +431,7 @@ export function RoomsMarketPanel({
                   });
                   return roomsApi("/interlude/finance/withdraw", {
                     financeId,
+                    app:account.manifest.app,
                     player,
                     recipient: player,
                     amount,

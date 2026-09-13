@@ -12,10 +12,12 @@ import { marketV4Abi } from "../../shared/abis-v4";
 import { roomsVaultAbi } from "../../shared/abi-RoomsVault";
 import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
 import { roomsEarlySettlementAbi } from "../../shared/abi-RoomsEarlySettlement";
+import { roomsRealtimeSettlementAbi } from "../../shared/abi-RoomsRealtimeSettlement";
 import { coerce, type RelayRequest } from "../../shared/protocol";
 export type RoomsFinanceManifest = {
   financeId?: string;
   settlement?: "early-published-testnet";
+  betting?: "realtime";
   app: Address;
   adapter: Address;
   market: Address;
@@ -25,7 +27,7 @@ export type RoomsFinanceManifest = {
   chainId: 10143;
 };
 export const financeScope = (m: RoomsFinanceManifest) => m.app.toLowerCase() + (m.financeId ? ":" + m.financeId : "");
-export const financeAdapterAbi = (m: RoomsFinanceManifest): Abi => m.settlement === "early-published-testnet" ? roomsEarlySettlementAbi : roomsMarketAdapterAbi;
+export const financeAdapterAbi = (m: RoomsFinanceManifest): Abi => m.betting === 'realtime' ? roomsRealtimeSettlementAbi : m.settlement === "early-published-testnet" ? roomsEarlySettlementAbi : roomsMarketAdapterAbi;
 export async function bindRoomsFinance(
   db: Pick<Pool, "query">,
   entries: RoomsFinanceManifest[],
@@ -40,6 +42,7 @@ export async function bindRoomsFinance(
         JSON.stringify({
           app,
           ...(m.financeId ? {financeId:m.financeId,settlement:m.settlement} : {}),
+          ...(m.betting ? {betting:m.betting} : {}),
           chainId: m.chainId,
           adapter: m.adapter.toLowerCase(),
           market: m.market.toLowerCase(),
@@ -78,7 +81,8 @@ export async function loadRoomsFinance() {
       ) ||
       !/^\d+$/.test(m.startBlock) ||
       (m.financeId !== undefined && (!/^[a-z0-9-]{1,32}$/.test(m.financeId) || m.settlement !== "early-published-testnet")) ||
-      (m.settlement !== undefined && !m.financeId)
+      (m.settlement !== undefined && !m.financeId) ||
+      (m.betting !== undefined && (m.betting !== 'realtime' || !m.financeId || m.settlement !== 'early-published-testnet'))
     )
       throw new Error("Invalid rooms finance manifest");
   if (new Set(entries.map(financeScope)).size !== entries.length)

@@ -12,7 +12,13 @@ Open your account, **Betting credit & wallet**, then **Your recent positions**. 
 
 ## Previous room markets
 
-Existing markets remain bound to their original immutable adapter and vault. They still wait for delegation closure and the protocol challenge period. Choose **Betting account** to inspect current or previous betting credit and withdraw with a passkey. No balances or pending transactions are transferred to the new contracts. Each match keeps its original market.
+Existing markets remain bound to their original immutable adapter and vault. The original markets wait for delegation closure and the protocol challenge period; the later early-payout markets retain their first-publication policy. Choose **Betting account** to inspect current or previous betting credit and withdraw with a passkey. No balances or pending transactions are transferred to the new contracts. Each match keeps its original market.
+
+## Late bets in live markets
+
+Rules-5 games publish their execution end timestamp along with the result. The new market refunds actual purchase costs for bets included on Monad **in or after that final second**. The same-second boundary is deliberately conservative. This prevents a bet submitted after the winner is visible from becoming a winning payout during publication delay.
+
+Earlier winning shares are paid normally. A position containing earlier winning shares and later bets receives both its eligible winnings and the late-bet refund. An earlier losing position receives no winnings, but any late part is still refunded. These amounts remain reserved if a recipient refuses the transfer and can be retried without another passkey signature.
 
 ## V4 payments remain separate
 

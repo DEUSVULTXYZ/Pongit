@@ -15,7 +15,7 @@ import {PongInterludeRoomsChaosInterludeSurface} from "./PongInterludeRoomsChaos
 /// There is intentionally no admin setter for pressure and no monetary oracle here.
 abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSurface {
     uint256 public constant TICK_US = 10_000;
-    uint256 public constant RULES_VERSION = 4;
+    function RULES_VERSION() public pure virtual returns (uint256) { return 4; }
     uint256 public constant CAPACITY = 2;
     address public immutable coordinator;
     uint256 public immutable genesisTime;
@@ -157,7 +157,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
 
     function acceptMatch(Offer calldata o, bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL) {
         if (
-            o.id == 0 || o.a == address(0) || o.b == address(0) || o.a == o.b || o.mode > 1 || o.rules != RULES_VERSION
+            o.id == 0 || o.a == address(0) || o.b == address(0) || o.a == o.b || o.mode > 1 || o.rules != RULES_VERSION()
                 || o.expires <= block.timestamp || o.expires > block.timestamp + 30
         ) revert InvalidTicket();
         bytes32 digest = ticketDigest(o);
@@ -248,7 +248,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         return false;
     }
 
-    function _advance(uint256 id, bool mayResume) private returns (bool complete) {
+    function _advance(uint256 id, bool mayResume) internal returns (bool complete) {
         uint256 times = _get(id, 2);
         uint256 start = uint64(times);
         PhysicsV2.State memory s = _state(id);
@@ -270,6 +270,12 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
             _finish(id, 4, address(0));
             return true;
         }
+        return _advanceState(id, s, uint64(target), mayResume);
+    }
+
+    function _advanceState(uint256 id, PhysicsV2.State memory s, uint64 target, bool mayResume)
+        internal virtual returns (bool complete)
+    {
         if (s.mode == 1 && s.awaitingServe) {
             // Only tick consults the transport. Releases and concession must remain
             // available even if a checkpoint implementation rejects its own data.
@@ -322,7 +328,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         s.resumeAt = uint64(chaos >> 64);
     }
 
-    function _save(uint256 id, PhysicsV2.State memory s) private {
+    function _save(uint256 id, PhysicsV2.State memory s) internal {
         _set(
             id,
             13,
@@ -415,7 +421,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         emit RatingUpdated(id, p, matchMode(id), r.season, r.elo, r.played, r.wins);
     }
 
-    function _finish(uint256 id, uint256 phase, address winner) private {
+    function _finish(uint256 id, uint256 phase, address winner) internal virtual {
         uint256 meta = _get(id, 0);
         if (_phase(id) >= 3) revert InvalidMatch();
         address a = address(uint160(meta));
@@ -436,7 +442,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         bytes32 hash = keccak256(
             abi.encode(
                 address(this),
-                RULES_VERSION,
+                RULES_VERSION(),
                 id,
                 a,
                 b,
@@ -450,11 +456,14 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
                 _get(id, 12)
             )
         );
+        hash = _resultHash(id, hash);
         _set(id, 9, uint256(hash));
         emit Completed(id, bytes32(_get(id, 11)), a, b, winner, phase, matchMode(id), ranked, s.scoreA, s.scoreB, hash);
     }
 
-    function _publish(uint256 id) private {
+    function _resultHash(uint256, bytes32 hash) internal view virtual returns (bytes32) { return hash; }
+
+    function _publish(uint256 id) internal {
         require(uint64(_get(id, 2) >> 128) < type(uint64).max, "revision overflow");
         uint256 times = _get(id, 2) + (uint256(1) << 128);
         _set(id, 2, times);

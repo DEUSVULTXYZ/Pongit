@@ -17,16 +17,18 @@ Above 60%, the reduction increases linearly up to **25%**. Integer rounding is a
 
 ## When the handicap changes
 
-After a nonfinal point, a Chaos room pauses. Once the exact pause is published on Monad, its market opens for **40 blocks**, approximately twelve seconds. The VPS freezes actual paid totals at the cutoff after two further confirmations and signs a checkpoint scoped to that match and rally. This is a provisional testnet trust assumption. The engine applies the resulting heights and freezes them for the next rally.
+New rooms use rules 5. Once the initial participants are published on Monad and the market opens, spectators can bet throughout the live match. The VPS sends confirmed gross paid totals to the engine with an authenticated checkpoint tied to the application, delegation epoch, match, seed and Monad block. This remains a provisional testnet trust assumption.
 
-Publication, passkey submission and confirmation can extend the pause beyond twelve seconds. A missing checkpoint keeps play paused; it never silently substitutes zero pressure. **Concede** remains available. The original V4 arena still uses its three-second match-clock intermission and two-block closing guard.
+After each nonfinal point, the game serves immediately, using the latest checkpoint already received. A bet confirmed or delivered late affects a later point boundary. While its update is pending, the current paddle sizes remain in use. A delayed or missing bridge update never blocks the ball. Paddle positions carry over between points, subject to the new size fitting inside the court.
 
-An already resolved collision is never recalculated with a new size. If the chain needs to catch up, simulation stops at the intermission before entering the next rally with its new parameters.
+An already resolved collision is never recalculated with a new size. Before accepting new paid totals, the engine finishes any catch-up with its previously queued totals. The new checkpoint only affects future point boundaries. Previous rules-4 markets retain their 40-block windows; V4 retains its original intermission.
 
 <Callout title="Before you bet">More support can shrink the player you are backing. Review the Chaos warning and the cost before approving a bet. Concentration of shares is not the same as concentration of MON paid.</Callout>
 
 ## Play and follow the changes
 
-The room shows **Betting open** with the remaining Monad blocks, **Closing bets** while the cutoff gains its two confirmations, and **Synchronizing Chaos bets** during publication or checkpoint processing. The last state explains that confirmed Monad bets are needed before updating the paddles. These are distinct steps after every nonfinal point, not a three-second total countdown. The separate **3, 2, 1** introduction occurs only before the match starts. The two visible paddles use their individual confirmed heights. Without enough accepted bets, Chaos can look like Classic.
+The betting panel shows **Bets open** and **Live throughout the match**. There is no financial intermission or **Preparing next rally** overlay in new rooms. The separate **3, 2, 1** introduction occurs before the match starts. The two visible paddles use their individual confirmed heights. Without enough accepted bets, Chaos has the same timing and paddle sizes as Classic.
+
+Bets included on Monad in or after the final game second are refunded, even if the result is published later. Earlier winning positions remain payable. [Payouts and late-bet refunds](/docs/betting/payments).
 
 Chaos has its own ranked queue and ELO. Friendly Chaos challenges change no ranking. Current tournaments remain Classic. [Betting guide](/docs/betting/how-it-works).
