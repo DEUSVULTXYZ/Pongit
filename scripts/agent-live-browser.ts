@@ -4,9 +4,15 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 assert.equal(process.env.PONG_AGENT_LIVE_BROWSER,'isolated-vps');
-const manifest=JSON.parse(await readFile('/secrets/manifest.json','utf8'));
-assert.equal(manifest.app,'0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9');assert(Number(manifest.epoch)>=2);
 const origin='https://pongit.xyz',api='http://pongit-agent-service-20260913:4100',web='http://pongit-agent-ui-20260913:3000';
+let manifest:any;const admissionDeadline=Date.now()+1200000;
+while(Date.now()<admissionDeadline){
+ manifest=JSON.parse(await readFile('/secrets/manifest.json','utf8'));
+ assert.equal(manifest.app,'0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9');
+ try{const health=await fetch(api+'/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json());if(Number(manifest.epoch)>=2&&health.game.stage==='online'&&health.game.epoch===manifest.epoch)break;}catch{}
+ await new Promise(r=>setTimeout(r,10000));
+}
+assert(Number(manifest.epoch)>=2&&Date.now()<admissionDeadline,'The real renewed service must be available before browser qualification');
 const out='artifacts/agents/live-browser';await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const report:any={at:new Date().toISOString(),app:manifest.app,epoch:manifest.epoch,scope:'Private routed HTTPS browser origin, real hosted transactions and virtual Mera PRF credential; no physical-device recovery claim',checks:[],matches:[],rpc:[],faults:[],errors:[]};
@@ -14,6 +20,10 @@ let assertions=0,loseReply=false,rateLimit=false;const counts=new Map<string,num
 async function context(player=false){
  const c=await browser.newContext({viewport:{width:1440,height:1000}});
  await c.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
+ if(player)await c.addInitScript(()=>{
+  for(const method of ['create','get'] as const){const original=navigator.credentials[method].bind(navigator.credentials);
+   (navigator.credentials as any)[method]=(...args:any[])=>{const key=`qualification:passkey:${method}`;sessionStorage.setItem(key,String(Number(sessionStorage.getItem(key)||0)+1));return original(...args);};}
+ });
  await c.route(origin+'/**',async route=>{
   const u=new URL(route.request().url());
   if(u.pathname.startsWith('/api/agents/')){
@@ -51,7 +61,8 @@ try{
  const nova=page.locator('.agent-card').filter({has:page.getByRole('heading',{name:'NOVA',exact:true})});
  await nova.getByRole('button',{name:'Challenge this agent',exact:true}).click();await page.getByRole('button',{name:'Create a passkey',exact:true}).click();
  await page.waitForFunction(()=>!document.querySelector('[role=dialog]'),undefined,{timeout:60000});
- const initialAssertions=assertions;
+ const initialAssertions=assertions,ceremonies=()=>page.evaluate(()=>['create','get'].map(k=>Number(sessionStorage.getItem(`qualification:passkey:${k}`)||0)));
+ const initialCeremonies=await ceremonies();assert(initialCeremonies[0]>=1);report.passkeyCalls=initialCeremonies;
  const account=await page.evaluate(()=>Object.entries(sessionStorage).find(([k])=>k.startsWith('pongit:agents:')&&k.endsWith(':account'))?.[1]);assert(account);report.player=account;
  for(const mode of [0,1]){
   if(mode){await page.getByRole('button',{name:'Choose another agent',exact:true}).click();await page.getByRole('button',{name:'Chaos',exact:true}).click();await nova.getByRole('button',{name:'Challenge this agent',exact:true}).click();}
@@ -64,13 +75,13 @@ try{
    if(await page.getByRole('dialog',{name:'Confirmed match result'}).count())break;
    if(i===5&&!mode)loseReply=true;if(i===12&&!mode)rateLimit=true;
    await page.keyboard.down(i%2?'s':'w');await page.waitForTimeout(65);await page.keyboard.up(i%2?'s':'w');await page.waitForTimeout(30);
-   if(i===25){await page.reload();await page.waitForFunction(()=>{const b=document.querySelector('[aria-label="Move up"]') as HTMLButtonElement;return b&&!b.disabled;},undefined,{timeout:60000});assert.equal(assertions,initialAssertions,'F5 must reuse the grant');}
+   if(i===25){await page.reload();await page.waitForFunction(()=>{const b=document.querySelector('[aria-label="Move up"]') as HTMLButtonElement;return b&&!b.disabled;},undefined,{timeout:60000});assert.equal(assertions,initialAssertions,'F5 must reuse the grant');assert.deepEqual(await ceremonies(),initialCeremonies);}
   }
   await page.getByRole('dialog',{name:'Confirmed match result'}).waitFor({timeout:360000});
   await watch.locator('.spectator-result').waitFor({timeout:20000});
   const score=await page.locator('.outcome-score').innerText(),spectatorScore=await watch.locator('.spectator-result').innerText();
   const [a,b]=score.split(':').map(x=>Number(x.trim()));assert(a===7||b===7||await page.getByText('Time is up. ELO unchanged.',{exact:true}).count());
-  assert(spectatorScore.includes(`${a} : ${b}`));assert.equal(assertions,initialAssertions,'Changing mode must not ask for another passkey');
+  assert(spectatorScore.includes(`${a} : ${b}`));assert.equal(assertions,initialAssertions,'Changing mode must not ask for another passkey');assert.deepEqual(await ceremonies(),initialCeremonies);
   report.matches.push({mode,ref,score,matchingSpectator:true});await page.screenshot({path:`${out}/result-${mode}.png`});
  }
  report.checks.push('Classic and Chaos human-agent results match a live spectator','F5 and a second mode reuse the same limited Mera grant','Lost response and injected 429 recover without a new passkey');

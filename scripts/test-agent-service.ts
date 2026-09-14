@@ -43,7 +43,7 @@ try{
  await db.query("UPDATE agent_arcade.identities SET qualification='{\"0\":\"qualified\"}' WHERE app=$1",[m.app.toLowerCase()]);
  await db.query('INSERT INTO agent_arcade.presence(app,player,available) VALUES($1,$2,true)',[m.app.toLowerCase(),agent.address.toLowerCase()]);
  const operation=crypto.randomUUID(),request={agent:agent.address,mode:0,operation};
- const challenges=await Promise.all([api('/challenges',request),api('/challenges',request)]);assert(challenges.some(x=>x.status===200));
+ const challenges=await Promise.all([api('/challenges',request),api('/challenges',request)]);assert(challenges.every(x=>x.status===200));assert.equal(challenges[0].value.id,challenges[1].value.id);
  assert.equal((await db.query('SELECT count(*) FROM agent_arcade.challenges WHERE app=$1',[m.app.toLowerCase()])).rows[0].count,'1');
  const restored=await api('/challenges',request);assert.equal(restored.status,200);checks.push('duplicate challenge operation restores one reservation');
  await api('/challenges/cancel',{id:restored.value.id});assert.equal((await api('/me')).value.request.status,'cancelled');
@@ -53,6 +53,12 @@ try{
  assert.equal((await api('/qualification/checkpoint',{})).value.resumed,false);await login();nonce=3n;assert.equal((await api('/qualification/checkpoint',{})).value.resumed,true);
  const check=(await db.query('SELECT * FROM agent_arcade.qualification_checks WHERE match_id=$1',[String(id)])).rows[0];assert.notEqual(check.initial_token,check.resumed_token);checks.push('qualification requires an authenticated reconnect after valid controls');
  nonce=5n;replays.capture(frame());await replays.flush();phase=3;nonce=6n;replays.capture(frame());await replays.flush();
+ await db.query("UPDATE agent_arcade.challenges SET status='offered',match_id=$2 WHERE id=$1",[restored.value.id,String(id)]);
+ const nextRequest={...request,operation:crypto.randomUUID()},next=await Promise.all([api('/challenges',nextRequest),api('/challenges',nextRequest)]);
+ assert(next.every(r=>r.status===200));assert.equal(next[0].value.id,next[1].value.id);
+ assert.equal((await db.query('SELECT match_id::text FROM agent_arcade.occupancy WHERE app=$1 AND player=$2',[m.app.toLowerCase(),player.address.toLowerCase()])).rows[0].match_id,String(id));
+ assert.equal((await db.query('SELECT status FROM agent_arcade.challenges WHERE id=$1',[restored.value.id])).rows[0].status,'completing');
+ await api('/challenges/cancel',{id:next[0].value.id});checks.push('a terminal engine result allows one next reservation while publication retains old occupancy');
  await db.query("UPDATE agent_arcade.matches SET status='complete' WHERE id=$1",[String(id)]);await replays.finish(String(id));
  assert.equal((await replays.read(String(id))).frames.length,2);checks.push('verified replay packs once and retains a recent shared result');
  assert.equal((await api(`/replay?id=${id}&app=${m.app}&epoch=2`)).status,404);checks.push('wrong replay epoch cannot resolve a different match');
@@ -62,7 +68,7 @@ try{
  revoked=true;const revocationAuth=createAgentAuth(db,base,m,abi);await assert.rejects(()=>revocationAuth.require({headers:{authorization:`Bearer ${token}`}} as any),/revoked/);checks.push('confirmed revocation rejects further API access');
  console.log(JSON.stringify({at:new Date().toISOString(),scope:'isolated PostgreSQL and HTTP with explicitly mocked chain responses',checks,passed:checks.length}));
 }finally{
- await service.close();
+ await Promise.all([service.close(),service.close()]);
  // Only this test's random application. Never leave simulated results in the
  // database used by the separately pinned hosted candidate's qualification.
  const testApp=m.app.toLowerCase();assert.notEqual(testApp,'0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9');

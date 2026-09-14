@@ -32,6 +32,7 @@ export function AgentArcade({enabled,initialMode,initialView,initialAgent,initia
  const client=useRef<AgentClient|null>(null),release=useRef<(()=>void)|null>(null),intent=useRef<(()=>Promise<void>)|null>(null),busyRef=useRef(false),alive=useRef(true),operation=useRef<{key:string;id:string}|undefined>(undefined),control=useRef({allowed:false,id:0n});
  const autoWatch=useRef(initialView==='watch'&&!initialMatch);
  const resumedControl=useRef<string|undefined>(undefined);
+ const dismissedMatches=useRef(new Set<string>());
  const [resultKey,setResultKey]=useState(0);
  const lockOwner=useRef<string|undefined>(undefined);
  const accountKey=(m:AgentManifest)=>`pongit:agents:${m.app}:account`;
@@ -58,7 +59,7 @@ export function AgentArcade({enabled,initialMode,initialView,initialAgent,initia
   setRequest(result.request??null);
   // Keep a finished match visible while its result modal is open. The server
   // may already have released the player's occupancy for their next duel.
-  if(result.match)setMatch(result.match);
+  if(result.match&&!dismissedMatches.current.has(String(result.match.id)))setMatch(result.match);
  }
  useEffect(()=>{
   alive.current=true;if(!enabled)return;let cancelled=false;
@@ -130,7 +131,7 @@ export function AgentArcade({enabled,initialMode,initialView,initialAgent,initia
   await fn();
  });return;}intent.current=fn;setPanel('connect');}
  async function challenge(p:Address){
-  const key=`${p.toLowerCase()}:${mode}`;if(operation.current?.key!==key)operation.current={key,id:crypto.randomUUID()};const r=await api('/challenges',{agent:p,mode,operation:operation.current.id});setRequest(r);setMatch(null);setWatchId(undefined);setSnapshot(null);setNotice('Challenge reserved. Your agent will finish its current match first.');operation.current=undefined;
+  const key=`${p.toLowerCase()}:${mode}`;if(operation.current?.key!==key)operation.current={key,id:crypto.randomUUID()};const r=await api('/challenges',{agent:p,mode,operation:operation.current.id});if(id&&snapshot&&snapshot.phase>=3)dismissedMatches.current.add(String(id));setRequest(r);setMatch(null);setWatchId(undefined);setSnapshot(null);setNotice('Challenge reserved. Your agent will finish its current match first.');operation.current=undefined;
  }
  function select(p:AgentProfile){setSelected(p.agent);historyReplace({agent:p.agent,mode:String(mode)});void ensure(()=>challenge(p.agent));}
  function historyReplace(values:Record<string,string>){window.history.replaceState(null,'',`/agents?${new URLSearchParams(values)}`);}
@@ -171,6 +172,6 @@ export function AgentArcade({enabled,initialMode,initialView,initialAgent,initia
   {panel==='account'&&<Dialog label="Agent Arcade account" onClose={()=>setPanel(null)}><IconButton className="modal-close" aria-label="Close account" onClick={()=>setPanel(null)}/><h2>Your arcade session</h2><p>{account}</p><button onClick={()=>void navigator.clipboard.writeText(account!).then(()=>setNotice('Address copied')).catch(()=>setNotice('Copy failed'))}>Copy address</button><p>Human-agent challenges are friendly. Your human ELO and balances are unchanged.</p><button disabled={busy||!!playing} onClick={()=>void run(async()=>{const result=await client.current!.disconnect();if(config)sessionStorage.removeItem(accountKey(config));release.current?.();release.current=null;setAccount(undefined);setReady(false);setPanel(null);setNotice(result.revocationPending?'Disconnected. Onchain revocation remains pending.':'Disconnected from Agent Arcade');})}>Disconnect Agent Arcade</button></Dialog>}
   {panel==='rankings'&&<Dialog label="Agent ranking" onClose={()=>setPanel(null)}><IconButton className="modal-close" aria-label="Close ranking" onClick={()=>setPanel(null)}/><h2>{mode===1?'Chaos':'Classic'} agent ranking</h2><p>Live ratings and their published Monad copy. Publications may still be challenged.</p><table><thead><tr><th>Agent</th><th>Live ELO</th><th>Published</th></tr></thead><tbody>{ranking.map(r=><tr key={r.agent}><td>{r.name}</td><td>{r.live?.elo??'Unavailable'}</td><td>{r.published?.elo??'Unavailable'}</td></tr>)}</tbody></table>{!ranking.length&&<p>No qualified agents yet.</p>}</Dialog>}
   {panel==='history'&&<Dialog label="Recent agent matches" onClose={()=>{setPanel(null);setReplay(null);}}><IconButton className="modal-close" aria-label="Close history" onClick={()=>{setPanel(null);setReplay(null);}}/><h2>Recent matches</h2><ul className="agent-results-list">{history.map(h=><li key={h.id}><span>{name(h.a)} vs {name(h.b)}</span><strong>{h.result?.scoreA} : {h.result?.scoreB}</strong>{h.replayAvailable?<button onClick={()=>setReplay(h.ref)}>Watch replay</button>:<span>Summary retained</span>}</li>)}</ul>{replay&&<AgentReplay reference={replay}/>}</Dialog>}
-  <Outcome id={id&&config?agentMatchKey({...config,id:String(id),epoch:config.epoch}):null} match={outcome} account={account||''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" showResultKey={resultKey} rematch={async()=>{if(opponent)await ensure(()=>challenge(opponent.agent));}} watch={()=>void run(async()=>{const r=await api(`/history?player=${account||snapshot!.a}`);setHistory(r.matches);setReplay(null);setPanel('history');})} again={()=>{setMatch(null);setWatchId(undefined);setSnapshot(null);setRequest(null);historyReplace({mode:String(mode)});}} againLabel="Choose another agent"/>
+  <Outcome id={id&&config?agentMatchKey({...config,id:String(id),epoch:config.epoch}):null} match={outcome} account={account||''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" showResultKey={resultKey} rematch={async()=>{if(opponent)await ensure(()=>challenge(opponent.agent));}} watch={()=>void run(async()=>{const r=await api(`/history?player=${account||snapshot!.a}`);setHistory(r.matches);setReplay(null);setPanel('history');})} again={()=>{if(id)dismissedMatches.current.add(String(id));setMatch(null);setWatchId(undefined);setSnapshot(null);setRequest(null);historyReplace({mode:String(mode)});}} againLabel="Choose another agent"/>
  </main>;
 }

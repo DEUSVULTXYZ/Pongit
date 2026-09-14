@@ -170,7 +170,10 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
    for(const match of matches){if(match.status==='preparing')await offer(match);else await observe(match);}
    if(Date.now()-replayAt>60000){replayAt=Date.now();await replays.reconcile();}
    await admit();
-  }catch(e){await health('synchronizing',e);}finally{running=false;}
+  }catch(e){
+   const control=(await db.query('SELECT admissions,reason FROM agent_arcade.control WHERE app=$1',[app])).rows[0];
+   await health(control?.admissions===false&&control.reason==='Delegation renewal'?'renewing':'synchronizing',e);
+  }finally{running=false;}
  }
  function cycle(){if(stopped)return Promise.resolve();return activeCycle??=(runCycle().finally(()=>{activeCycle=undefined;}));}
  return {client,base,writer,feed,replays,health:publicHealth,cycle,async stop(){stopped=true;await activeCycle;await Promise.allSettled(proofs.values());await writer.drain();for(const fn of watches.values())fn();watches.clear();stream.stop();await replays.flush();},registrationOperation:()=>`register:${randomUUID()}`};

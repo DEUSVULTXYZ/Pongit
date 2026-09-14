@@ -137,8 +137,15 @@ export async function startAgentService(options:{db:Pool;manifest:AgentManifest;
     if(!target?.available)throw Error('This agent is currently unavailable');
     const existing=(await db.query('SELECT * FROM agent_arcade.challenges WHERE app=$1 AND player=$2 AND operation=$3',[app,player,r.operation])).rows[0];
     if(existing){send(res,existing);return;}
+    // Reserve the next duel as soon as the engine has ended this one. Its old
+    // occupancy still waits for publication, so no two matches can start.
+    const previous=await ownMatch(player);
+    if(previous){const ended=await coordinator.feed.read(BigInt(previous.id),true);
+     if(ended.phase>=3)await db.query("UPDATE agent_arcade.challenges SET status='completing' WHERE app=$1 AND player=$2 AND match_id=$3 AND status IN ('offered','active')",[app,player,previous.id]);}
     const id=randomUUID();try{await db.query('INSERT INTO agent_arcade.challenges(id,app,player,agent,mode,operation) VALUES($1,$2,$3,$4,$5,$6)',[id,app,player,r.agent,r.mode,r.operation]);}
-    catch(e){if((e as any).code==='23505')throw Object.assign(Error('You already have an Agent Arcade challenge'),{status:409});throw e;}
+    catch(e){if((e as any).code==='23505'){
+     const duplicate=(await db.query('SELECT * FROM agent_arcade.challenges WHERE app=$1 AND player=$2 AND operation=$3',[app,player,r.operation])).rows[0];
+     if(duplicate){send(res,duplicate);return;}throw Object.assign(Error('You already have an Agent Arcade challenge'),{status:409});}throw e;}
     send(res,{id,status:'waiting',agent:r.agent,mode:r.mode});return;
    }
    if(req.method==='POST'&&path==='/challenges/cancel'){
@@ -158,7 +165,8 @@ export async function startAgentService(options:{db:Pool;manifest:AgentManifest;
   void db.query('DELETE FROM agent_arcade.auth_nonces WHERE expires<$1;',[Math.floor(now/1000)]).catch(()=>{});
   void db.query('DELETE FROM agent_arcade.sessions WHERE expiry<$1',[Math.floor(now/1000)]).catch(()=>{});
  },60000);
- return {server,coordinator,async close(){clearInterval(timer);clearInterval(cleanup);await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));await coordinator.stop();await leader.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[`agent-service:${app}`]);leader.release();}};
+ let closing:Promise<void>|undefined;
+ return {server,coordinator,close(){return closing??=(async()=>{clearInterval(timer);clearInterval(cleanup);await new Promise<void>((resolve,reject)=>server.close(e=>e?reject(e):resolve()));await coordinator.stop();await leader.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[`agent-service:${app}`]);leader.release();})();}};
 }
 if(process.env.PONG_AGENT_SERVICE==='1'){
  const closeMetrics=process.env.PONG_AGENT_DIAGNOSTICS?await agentMetrics(process.env.PONG_AGENT_DIAGNOSTICS,'service'):async()=>{};
@@ -171,5 +179,5 @@ if(process.env.PONG_AGENT_SERVICE==='1'){
  }:undefined;
  if(manifest.enabled&&manifest.qualified&&!graphql)throw Error('Public Agent Arcade requires shared replay retention');
  const service=await startAgentService({db,manifest,key:secrets.coordinator,rpcUrl:process.env.RPC_URL!,port:Number(process.env.PORT||4100),host:process.env.HOST||'127.0.0.1',origin:'https://pongit.xyz',houseAddresses:secrets.bots.map((b:any)=>b.address),trustProxy:process.env.TRUST_PROXY==='true',graphql});
- process.on('SIGTERM',()=>void service.close().then(()=>db.end()).then(closeMetrics));
+ process.once('SIGTERM',()=>void service.close().then(()=>db.end()).then(closeMetrics));
 }

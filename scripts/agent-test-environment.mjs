@@ -13,6 +13,8 @@ const vars={POSTGRES_USER:'agents',POSTGRES_PASSWORD:password,POSTGRES_DB:'agent
  RPC_URL:process.env.RPC_URL,HOST:'0.0.0.0',PORT:'4100',PONG_AGENT_MANIFEST:'/secrets/manifest.json',PONG_AGENT_KEYS:'/secrets/service.json',
  PONG_AGENT_DIAGNOSTICS:'/diagnostics/agents',PONG_AGENT_SERVICE:'1'};
 assert(vars.RPC_URL&&new URL(vars.RPC_URL).protocol==='https:');
+try{vars.HASURA_ADMIN_SECRET=(await readFile(root+'/private/hasura-secret','utf8')).trim();vars.GRAPHQL_URL='http://pongit-agent-hasura-20260913:8080/v1/graphql';}
+catch(e){if(e.code!=='ENOENT')throw e;}
 await writeFile(root+'/private/service.env',Object.entries(vars).map(([k,v])=>`${k}=${v}`).join('\n')+'\n',{mode:0o600});
 await writeFile(root+'/private/ops.env',`AGENT_DATABASE_URL=${vars.DATABASE_URL}\n`,{mode:0o600});
 for(const path of [root+'/private',root+'/private/service.env',root+'/private/ops.env',root+'/private/db-password',root+'/diagnostics'])await chown(path,1000,1000);

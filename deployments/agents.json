@@ -7,7 +7,7 @@
   "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
   "node": "https://il-4cecc7fb9f199fbd.fly.dev",
   "coordinator": "0x1fb4A8ffBD66b2CCB0b33835E2Bf0C238Efe3671",
-  "epoch": "1",
+  "epoch": "2",
   "enabled": false,
   "qualified": false,
   "maxMatches": 2,

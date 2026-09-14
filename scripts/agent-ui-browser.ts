@@ -61,6 +61,7 @@ try{for(const width of [360,390,768,1440]){
  for(mode of [0,1] as const){phase=2;revision=1n;
   await page.goto(`${origin}/agents?match=1&app=${app}&epoch=1&view=watch&mode=${mode}`);
   await page.locator('canvas').waitFor();const before=await page.locator('canvas').boundingBox();assert(before&&before.height>100&&Math.abs(before.width/before.height-16/9)<.03);
+  const cabinet=await page.locator('.agent-court').boundingBox();assert(cabinet&&before.width>=cabinet.width-40,'The court must fill its cabinet instead of keeping its default canvas width');
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   if(mode){effect=23;revision++;await page.waitForTimeout(1000);const after=await page.locator('canvas').boundingBox();assert(after&&Math.abs(before.y-after.y)<1,'Chaos effects must not shift the court');}
   await page.screenshot({path:`artifacts/agents/browser/${channel}-${mode?'chaos':'classic'}-${width}.png`,fullPage:true});

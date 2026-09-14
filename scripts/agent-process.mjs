@@ -5,9 +5,9 @@ import {readFile} from 'node:fs/promises';
 import {spawn} from 'node:child_process';
 const role=process.argv[2];assert(['service','bots'].includes(role));
 const entry=role==='service'?'relayer/src/agents/server.ts':'scripts/agent-house-worker.ts';
-let child,stopping=false,fingerprint='',exitPromise=Promise.resolve();
-function start(){child=spawn(process.execPath,['--import','tsx',entry],{stdio:'inherit'});exitPromise=new Promise(resolve=>child.once('exit',resolve));}
-async function stop(){if(!child||child.exitCode!==null||child.signalCode!==null)return;child.kill('SIGTERM');const timer=setTimeout(()=>child?.kill('SIGKILL'),55000);await exitPromise;clearTimeout(timer);}
+let child,stopping=false,fingerprint='',exitPromise=Promise.resolve(),stoppingChild;
+function start(){stoppingChild=undefined;child=spawn(process.execPath,['--import','tsx',entry],{stdio:'inherit'});exitPromise=new Promise(resolve=>child.once('exit',resolve));}
+function stop(){return stoppingChild??=(async()=>{if(!child||child.exitCode!==null||child.signalCode!==null)return;const target=child;target.kill('SIGTERM');const timer=setTimeout(()=>target.kill('SIGKILL'),55000);await exitPromise;clearTimeout(timer);})();}
 process.on('SIGTERM',()=>{stopping=true;void stop();});process.on('SIGINT',()=>{stopping=true;void stop();});
 while(!stopping){
  try{

@@ -21,7 +21,9 @@ export async function agentMetrics(directory:string,role:string){
   const batch=groups;groups=new Map();const at=new Date(),day=at.toISOString().slice(0,10);
   const rows=[...batch].map(([key,g])=>{const ms=g.latencies.sort((a,b)=>a-b),p=(v:number)=>ms[Math.max(0,Math.ceil(ms.length*v)-1)]??0;
    const counts=[...g.seconds];const peak=(window:number)=>Math.max(0,...counts.map(([s])=>counts.reduce((n,[t,c])=>n+(t>s-window&&t<=s?c:0),0)));
-   return {at:at.toISOString(),role,key,count:g.count,errors:g.errors,requestBytes:g.bytes,maxRequestBytes:g.maxBytes,p50:p(.5),p95:p(.95),p99:p(.99),sampled:ms.length,peak1s:peak(1),peak10s:peak(10),peak60s:peak(60)};});
+   const bounds=[5,10,20,30,50,75,100,150,200,300,500,1000,2000,4000,8000,15000,30000];
+   const histogram=Array(bounds.length+1).fill(0);for(const value of ms){const at=bounds.findIndex(b=>value<=b);histogram[at<0?bounds.length:at]++;}
+   return {at:at.toISOString(),role,key,count:g.count,errors:g.errors,requestBytes:g.bytes,maxRequestBytes:g.maxBytes,p50:p(.5),p95:p(.95),p99:p(.99),sampled:ms.length,histogram:{upperBoundsMs:[...bounds,null],counts:histogram},peak1s:peak(1),peak10s:peak(10),peak60s:peak(60)};});
   if(rows.length)await appendFile(join(directory,`${day}-${role}.ndjson`),rows.map(x=>JSON.stringify(x)).join('\n')+'\n',{mode:0o600});
   const oldest=Date.now()-7*86400000;
   for(const name of await readdir(directory))if(/^\d{4}-\d{2}-\d{2}-[a-z]+\.ndjson$/.test(name)&&Date.parse(name.slice(0,10)+'T23:59:59Z')<oldest)await unlink(join(directory,name));
