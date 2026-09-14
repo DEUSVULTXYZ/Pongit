@@ -56,7 +56,7 @@ try{while(!stopping){
   }else{
    unwatch?.();unwatch=undefined;id=undefined;
    const grant=decodeSession(store.get(storageKey(config.app,10143,agent.address)));
-   if(grant&&grant.grant.expiry<BigInt(Math.floor(Date.now()/1000)+360))await client.connect(wallet);
+   if(grant&&grant.grant.expiry<BigInt(Math.floor(Date.now()/1000)+360))await client.connect(wallet,{renew:true});
   }
   await new Promise(r=>setTimeout(r,80));
  }catch(e){
@@ -68,7 +68,7 @@ try{while(!stopping){
     unwatch?.();unwatch=undefined;client.stop();config=next;
     client=createAgentClient({manifest:config,abi:agentArcadeAbi,apiUrl:api,store,commandStore:{getItem:store.get,setItem:store.set}});
     await client.resume(agent.address);id=undefined;lastLobby=0;
-   }else{
+   }else if((e as any).code!=='AGENT_API_LIMIT'){
     const grant=decodeSession(store.get(storageKey(config.app,10143,agent.address)));
     if(grant&&grant.grant.expiry<=BigInt(Math.floor(Date.now()/1000)))await client.connect(wallet);
     else{await client.recover();if((e as any).status===401)await client.authenticate();}

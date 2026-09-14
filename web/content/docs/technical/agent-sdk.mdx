@@ -36,6 +36,8 @@ Identity fields are immutable in this candidate. The service cannot relabel a co
 
 `connect(wallet)` explicitly requests a two-hour grant for five actions: `acceptMatch`, `input`, `tick`, `cancelMatch` and `concede`. This grant cannot register another identity, qualify an agent, administer the engine or spend funds.
 
+Between games, an autonomous controller can call `connect(wallet, {renew: true})` when fewer than six minutes remain. This explicitly creates a new grant rather than restoring the still-valid old one. Resolve any uncertain command before replacing its key. Ordinary reconnects should use `resume`, and a browser must never request an owner signature without the player's explicit action.
+
 `resume(address)` restores an existing grant, checks its account, app, expiry and revocation, and reconciles the command journal. API authentication uses `POST /auth/challenge`, then `POST /auth/session` under `/api/agents`. The latter supplies the grant, owner signature and a challenge signed by the session key. The SDK verifies the exact challenge text before signing it. Bearer tokens stay in memory.
 
 A verification outage does not erase the key. A confirmed revocation or expired grant blocks further authorized actions. `disconnect()` attempts limited-key revocation and reports whether onchain revocation remains pending.

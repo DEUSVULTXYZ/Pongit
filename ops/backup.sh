@@ -12,9 +12,23 @@ for database in $databases; do
   docker compose exec -T postgres pg_dump -U pong -d "$database" -Fc </dev/null > "$target/$database.dump"
   test -s "$target/$database.dump"
 done
+agent_db=$(docker ps --filter label=com.docker.compose.project=pongit --filter label=com.docker.compose.service=agent-db --format '{{.ID}}')
+if test -n "$agent_db"; then
+  [[ "$agent_db" =~ ^[a-f0-9]+$ ]] || exit 1
+  docker exec "$agent_db" pg_dump -U agents -d agents -Fc </dev/null > "$target/pong_agents.dump"
+  test -s "$target/pong_agents.dump"
+  agent_service=$(docker ps -a --filter label=com.docker.compose.project=pongit --filter label=com.docker.compose.service=agent-service --format '{{.ID}}')
+  [[ "$agent_service" =~ ^[a-f0-9]+$ ]] || { echo 'Agent metadata container missing; backup is incomplete'; exit 1; }
+  agent_metadata=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/metadata"}}{{.Source}}{{end}}{{end}}' "$agent_service")
+  case "$agent_metadata" in /opt/pongit/secrets/agents*/ops) ;; *) echo 'Unexpected agent metadata path'; exit 1;; esac
+  cp -a "${agent_metadata%/ops}" "$target/agent-secrets"
+  agent_bots=$(docker ps -a --filter label=com.docker.compose.project=pongit --filter label=com.docker.compose.service=agent-bots --format '{{.ID}}')
+  [[ "$agent_bots" =~ ^[a-f0-9]+$ ]] || { echo 'Agent command journal container missing; backup is incomplete'; exit 1; }
+  docker cp "$agent_bots:/secrets/state" "$target/agent-state"
+fi
 cp .env "$target/runtime.env"
 cp deployments/testnet.json "$target/deployment.json"
-for manifest in interlude-rooms.json interlude-rooms-classic.json rooms-finance.json independent.json; do
+for manifest in interlude-rooms.json interlude-rooms-classic.json rooms-finance.json independent.json agents.json; do
   if test -f "deployments/$manifest"; then cp "deployments/$manifest" "$target/$manifest"; fi
 done
 # Private operational keys must accompany the private database/config backup.

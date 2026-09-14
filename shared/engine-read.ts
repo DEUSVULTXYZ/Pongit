@@ -27,7 +27,9 @@ export function engineReadRetryMs(error: unknown): number {
     const seconds = Number(value);
     if(value && Number.isFinite(seconds) && seconds>=0)return Math.max(1000,seconds*1000);
     const date=value?Date.parse(value):NaN;
-    return Number.isFinite(date)?Math.max(1000,date-Date.now()):10000;
+    if(Number.isFinite(date))return Math.max(1000,date-Date.now());
+    const retryAt=Number(cause.retryAt);
+    return Number.isFinite(retryAt)&&retryAt>0?Math.max(1000,retryAt-Date.now()):10000;
   }
   return 0;
 }

@@ -38,7 +38,7 @@ while(!stopped){
    // Recreate file bind mounts after atomic metadata replacement.
    await copyFile(metadata+'/manifest.json',secret+'/manifest.json');
    await run(['run','--rm','--env-file','/opt/pongit/shared/runtime.env','-e','PONG_AGENT_TEST_ENV=isolated-vps','-v','/usr/bin/docker:/usr/local/bin/docker:ro','-v','/var/run/docker.sock:/var/run/docker.sock','-v','/opt/pongit:/opt/pongit','-w',root+'/release','pongit-agent-deps:20260913','node','scripts/agent-test-environment.mjs','--services']);
-   docker('run','-d','--name','pongit-agent-community-20260913','--network','pongit-agents-20260913','--user=1000:1000','--cpus=.5','--memory=384m','--cap-drop=ALL','--security-opt=no-new-privileges','-e','AGENT_PRIVATE_QUALIFICATION=isolated-vps','-v',root+'/release:/work:ro','-v',root+'/private/community-test:/secrets/community-test','-w','/work','pongit-agent-deps:20260913','node','/app/node_modules/tsx/dist/cli.mjs','scripts/agent-community-qualification.ts');
+   docker('run','-d','--name','pongit-agent-community-20260913','--network','pongit-agents-20260913','--user=1000:1000','--cpus=.5','--memory=384m','--cap-drop=ALL','--security-opt=no-new-privileges','-e','AGENT_PRIVATE_QUALIFICATION=isolated-vps','-e','PONG_AGENT_DIAGNOSTICS=/diagnostics/agents','-v',root+'/release:/work:ro','-v',root+'/private/community-test:/secrets/community-test','-v',root+'/diagnostics:/diagnostics','-w','/work','pongit-agent-deps:20260913','node','/app/node_modules/tsx/dist/cli.mjs','scripts/agent-community-qualification.ts');
   }
   if(next.renewalQualified&&Date.now()-lastArchive>60000){await step('scripts/agent-archive-step.ts','PONG_AGENT_ARCHIVE=dedicated-authorized');lastArchive=Date.now();}
   if(next.renewalQualified){

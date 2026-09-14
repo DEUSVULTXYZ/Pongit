@@ -60,7 +60,7 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
     if(currentId){unwatch?.();unwatch=undefined;currentId=undefined;controller.reset();}
     const stored=decodeSession(store.get(storageKey(m.app,10143,owner.address)));
     if(stored&&stored.grant.expiry<BigInt(Math.floor(now/1000)+360)){
-     await client.connect(wallet);lastHeartbeat=0;
+     await client.connect(wallet,{renew:true});lastHeartbeat=0;
     }
     await sleep(200);continue;
    }
@@ -83,7 +83,7 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
    if((e as any).status===401)connected=false;
    if(Date.now()-errorAt>10000){errorAt=Date.now();console.log(stringify({at:new Date().toISOString(),bot:bot.name,status:'synchronizing',error:String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160)}));}
    await sleep(Math.max(1000,engineReadRetryMs(e)));
-   if(connected){try{await client.recover();}catch(recovery){if(/expired|Renew arcade session/.test(String((recovery as Error).message)))connected=false;}}
+   if(connected&&(e as any).code!=='AGENT_API_LIMIT'){try{await client.recover();}catch(recovery){if(/expired|Renew arcade session/.test(String((recovery as Error).message)))connected=false;}}
   }
  }}finally{unwatch?.();client.stop();save();console.log(stringify({at:new Date().toISOString(),bot:bot.name,frames,rpc:takeRpcSamples(200).map(x=>({target:x.target,method:x.method,ms:x.ms,status:x.status,source:x.source}))}));}
 }));

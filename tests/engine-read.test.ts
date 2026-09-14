@@ -22,3 +22,9 @@ test("failed reads are not cached and HTTP 429 keeps the server cooldown",async(
   assert.equal(engineReadRetryMs({status:429}),10000);
   assert.equal(engineReadRetryMs({status:502}),0);
 });
+test('structured API limits preserve retryAt rather than repeating authentication every ten seconds',()=>{
+  const until=Date.now()+60000,delay=engineReadRetryMs({status:429,code:'AGENT_API_LIMIT',retryAt:until});
+  assert(delay>=59000&&delay<=60000);
+  assert.equal(engineReadRetryMs({status:429,retryAt:Date.now()-5000}),1000);
+  assert.equal(engineReadRetryMs({status:429,retryAt:'invalid'}),10000);
+});
