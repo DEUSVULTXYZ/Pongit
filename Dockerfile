@@ -13,18 +13,6 @@ USER node
 EXPOSE 4000
 CMD ["node","--import","tsx","relayer/src/main.ts"]
 
-FROM dependencies AS web-build
-COPY shared ./shared
-COPY web ./web
-COPY tsconfig.json ./
-COPY scripts/docs-build.ts ./scripts/docs-build.ts
-COPY deployments ./deployments
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_WS_URL
-ARG NEXT_PUBLIC_RP_ID
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL NEXT_PUBLIC_RP_ID=$NEXT_PUBLIC_RP_ID NEXT_TELEMETRY_DISABLED=1
-RUN npx tsx scripts/docs-build.ts && npx next build web
-
 FROM dependencies AS agents
 COPY shared ./shared
 COPY relayer/src/agents ./relayer/src/agents
@@ -41,6 +29,18 @@ FROM agents AS agent-operations
 COPY scripts/agent-lifecycle.ts scripts/agent-archive-step.ts scripts/independent-chain-tools.ts scripts/agent-ops.mjs ./scripts/
 COPY relayer/src/rooms-hosted-renewal.ts ./relayer/src/rooms-hosted-renewal.ts
 CMD ["node","scripts/agent-ops.mjs"]
+
+FROM dependencies AS web-build
+COPY shared ./shared
+COPY web ./web
+COPY tsconfig.json ./
+COPY scripts/docs-build.ts ./scripts/docs-build.ts
+COPY deployments ./deployments
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WS_URL
+ARG NEXT_PUBLIC_RP_ID
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL NEXT_PUBLIC_RP_ID=$NEXT_PUBLIC_RP_ID NEXT_TELEMETRY_DISABLED=1
+RUN npx tsx scripts/docs-build.ts && npx next build web
 
 FROM node:24-bookworm-slim AS web
 WORKDIR /app
