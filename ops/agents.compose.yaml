@@ -94,6 +94,7 @@ services:
     security_opt: [no-new-privileges:true]
     environment:
       PONG_AGENT_OPERATIONS: dedicated-authorized
+      PONG_AGENT_DIAGNOSTICS: /diagnostics/agents
       PONG_INDEPENDENT_WRITE: authorized-testnet
       ROOMS_LIFECYCLE_KEY_FILE: /ops/lifecycle.json
       RPC_URL: ${RPC_URL:-https://testnet-rpc.monad.xyz}
@@ -102,6 +103,7 @@ services:
     volumes:
       - ${AGENT_SECRET_DIRECTORY}/ops:/secrets
       - /opt/pongit/secrets/rooms/lifecycle.json:/ops/lifecycle.json:ro
+      - agent-diagnostics:/diagnostics/agents
     depends_on:
       agent-db: {condition: service_healthy}
     logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}

@@ -10,7 +10,7 @@ assert(!m.enabled&&!m.qualified,'The public opening follows the soak, not the re
 const directory='/diagnostics/agents',db=new Pool({connectionString:process.env.DATABASE_URL,max:2});await mkdir(directory,{recursive:true});
 const started=Date.now(),ends=started+86400000,api=process.env.PONG_AGENT_API!;let stopped=false;
 process.on('SIGTERM',()=>{stopped=true;});
-const sourcePaths=['relayer/src/agents/server.ts','relayer/src/agents/coordinator.ts','relayer/src/agents/metrics.ts','relayer/src/agents/replays.ts','shared/agent-client.ts','shared/engine-read.ts','scripts/agent-house-worker.ts','scripts/agent-community-qualification.ts','agent-sdk/example.ts','scripts/agent-process.mjs','scripts/agent-soak.ts'];
+const sourcePaths=['relayer/src/agents/server.ts','relayer/src/agents/coordinator.ts','relayer/src/agents/metrics.ts','relayer/src/agents/replays.ts','shared/agent-client.ts','shared/engine-read.ts','scripts/agent-house-worker.ts','scripts/agent-community-qualification.ts','agent-sdk/example.ts','scripts/agent-process.mjs','scripts/agent-soak.ts','scripts/agent-lifecycle.ts','scripts/agent-archive-step.ts','scripts/agent-operator-step.ts','scripts/independent-chain-tools.ts','scripts/agent-ops.mjs','scripts/agent-private-keeper.mjs'];
 const sourceHashes=Object.fromEntries(await Promise.all(sourcePaths.map(async path=>[path,createHash('sha256').update(await readFile(path)).digest('hex')])));
 const report:any={startedAt:new Date(started).toISOString(),endsAt:new Date(ends).toISOString(),app:m.app,epochAtStart:m.epoch,sourceHashes,scope:'Real dedicated hosted agent service alongside unchanged human production',samples:0,available:0,humanAvailable:0,maxSimultaneous:0,maxSampleGapMs:0,errors:[],complete:false};
 let previousSample=started;

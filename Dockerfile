@@ -26,7 +26,7 @@ EXPOSE 4100
 CMD ["node","scripts/agent-process.mjs","service"]
 
 FROM agents AS agent-operations
-COPY scripts/agent-lifecycle.ts scripts/agent-archive-step.ts scripts/independent-chain-tools.ts scripts/agent-ops.mjs ./scripts/
+COPY scripts/agent-lifecycle.ts scripts/agent-archive-step.ts scripts/independent-chain-tools.ts scripts/agent-ops.mjs scripts/agent-operator-step.ts ./scripts/
 COPY relayer/src/rooms-hosted-renewal.ts ./relayer/src/rooms-hosted-renewal.ts
 CMD ["node","scripts/agent-ops.mjs"]
 

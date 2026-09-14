@@ -6,7 +6,7 @@ assert.equal(process.env.PONG_AGENT_OPERATIONS,'dedicated-authorized');
 let stopping=false;const children=new Set();
 process.on('SIGTERM',()=>{stopping=true;for(const child of children)child.kill('SIGTERM');});
 async function run(script,extra){await new Promise(resolve=>{
- const child=spawn(process.execPath,['--import','tsx',script],{env:{...process.env,...extra},stdio:['ignore','pipe','pipe']});children.add(child);
+ const child=spawn(process.execPath,['--import','tsx','scripts/agent-operator-step.ts',script],{env:{...process.env,...extra},stdio:['ignore','pipe','pipe']});children.add(child);
  let output='';for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{output+=b.toString();if(output.length>30000)output=output.slice(-30000);});
  child.once('exit',code=>{children.delete(child);for(const line of output.split('\n'))if(line.startsWith('{')){try{console.log(JSON.stringify(JSON.parse(line)));}catch{}}
   if(code)console.error(JSON.stringify({at:new Date().toISOString(),service:'agent-ops',script,error:output.split('\n').filter(x=>/Error:|AssertionError/.test(x)).slice(-1).join('').replace(/0x[\da-fA-F]{64,}/g,'[omitted]').slice(0,220)||'Operation interrupted; the journal will be reconciled'}));resolve();});

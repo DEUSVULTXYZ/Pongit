@@ -17,11 +17,11 @@ const run=async(args)=>new Promise((resolve,reject)=>{
  for(const stream of [child.stdout,child.stderr])stream.on('data',b=>{out+=(b.toString());if(out.length>30000)out=out.slice(-30000);});
  child.on('error',reject);child.on('exit',code=>{const lines=out.split('\n').filter(x=>x.startsWith('{'));for(const line of lines)console.log(line);if(code)reject(Error(`Private agent step exited ${code}: ${out.split('\n').filter(x=>/Error:|AssertionError|reason:/.test(x)).map(x=>x.replace(/0x[\da-fA-F]{64,}/g,'[omitted]')).slice(-2).join(' ').slice(0,240)}`));else resolve();});
 });
-const common=['run','--rm','--network','pongit_default','--network','pongit-agents-20260913','--cpus=.5','--memory=512m',
+const common=['run','--rm','--user=1000:1000','--network','pongit_default','--network','pongit-agents-20260913','--cpus=.5','--memory=512m',
  '--env-file','/opt/pongit/shared/runtime.env','--env-file',root+'/private/ops.env','-e','PONG_INDEPENDENT_WRITE=authorized-testnet',
  '-e','ROOMS_LIFECYCLE_KEY_FILE=/ops/lifecycle.json','-v',secret+'/ops:/secrets','-v','/opt/pongit/secrets/rooms/lifecycle.json:/ops/lifecycle.json:ro',
- '-v',root+'/release:/work','-w','/work'];
-const step=(script,env)=>run([...common,'-e',env,'pongit-agent-deps:20260913','node','/app/node_modules/tsx/dist/cli.mjs',script]);
+ '-e','PONG_AGENT_DIAGNOSTICS=/diagnostics/agents','-v',root+'/diagnostics:/diagnostics','-v',root+'/release:/work','-w','/work'];
+const step=(script,env)=>run([...common,'-e',env,'pongit-agent-deps:20260913','node','/app/node_modules/tsx/dist/cli.mjs','scripts/agent-operator-step.ts',script]);
 let stopped=false;process.on('SIGTERM',()=>{stopped=true;});let lastArchive=0;
 while(!stopped){
  try{
