@@ -70,6 +70,13 @@ library HouseController {
             if (distance != 0 && (distance < 0) != (b.vx < 0)) continue;
             uint256 arrival = uint256(distance < 0 ? -distance : distance)
                 / uint256(b.vx < 0 ? -b.vx : b.vx);
+            // Classic velocities are an unbounded int256 with no speed cap, so a crafted or
+            // degenerate state could make this product overflow. A revert here would happen
+            // inside the advance and brick the match, which is far worse than declining to aim
+            // at a ball the policy cannot describe. The bound is orders of magnitude above any
+            // arrival the physics produces, so no reachable state is affected.
+            uint256 rise = uint256(b.vy < 0 ? -b.vy : b.vy);
+            if (rise != 0 && arrival > type(uint128).max / rise) continue;
             if (found && arrival >= soonest) continue;
             soonest = arrival;
             found = true;

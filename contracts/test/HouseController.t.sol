@@ -94,4 +94,19 @@ contract HouseControllerTest is Test {
         assertTrue(rookie != expert, "rookie should hedge where expert commits");
         assertTrue(rookie > expert, "hedging moves the aim toward the middle of the court");
     }
+
+    function testAbsurdVelocityIsDeclinedInsteadOfReverting() public pure {
+        // Classic velocity is an unbounded int256. A ball closing with a near-zero horizontal
+        // speed and an enormous vertical one must not revert the advance: the policy declines to
+        // aim at it and falls back to the middle, which a paddle already centred holds.
+        HouseController.Ball[] memory absurd = one(500 * P, 100 * P, -1, type(int128).max);
+        assertEq(HouseController.decide(absurd, 0, MID, 48 * P, tuning(2, 0, 6 * P), 0), int8(0));
+    }
+
+    function testADescribableBallIsStillPreferredOverAnAbsurdOne() public pure {
+        HouseController.Ball[] memory mixed = new HouseController.Ball[](2);
+        mixed[0] = HouseController.Ball(500 * P, 100 * P, -1, type(int128).max);
+        mixed[1] = HouseController.Ball(100 * P, 500 * P, -128_000_000, 0);
+        assertEq(HouseController.decide(mixed, 0, MID, 48 * P, tuning(2, 0, 6 * P), 0), int8(1));
+    }
 }

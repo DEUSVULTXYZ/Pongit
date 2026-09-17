@@ -175,3 +175,92 @@ Diagnostics aggregate only destination, method, status, timing and rate. They co
 The endurance diagnostics cover five roles: coordinator, house controllers, the separate SDK example, delegation maintenance and result archival. Short-lived operator steps flush their own metrics before exit, including Monad reads and sponsored transactions. These calls must be counted separately from Interlude game traffic; early reports that omitted the operator are incomplete. The operator retains its original transport, transaction journal and nonce lock.
 
 Permanent operations use the optional `ops/agents.compose.yaml` profile. Its private operator role handles lifecycle and archival separately with the existing Monad nonce journal. Role processes watch the metadata directory and restart only themselves after a verified epoch update; no Docker socket is mounted in production roles. Seed `ops/manifest.json`, `ops/lifecycle.json` and `ops/archive.json` with qualified metadata. Never put house keys in that directory. The archive worker revisits older results for corrections and never drops an unrecorded result merely because it is outside a recent-results window.
+
+## In-tournament learning
+
+House bots adapt within a tournament and start each new one at their published difficulty. The
+design below is what a three-way study converged on; the parts that matter are the ones that make
+it cheap and the ones that keep the ladder honest.
+
+**A tournament is one delegation epoch.** Field 31 is stamped exactly once per match at acceptance
+by `PongChaosEvents._save` and already surfaces as `gameEpoch(id)`. Reading it costs one SLOAD and
+no new argument. The reset is not a sweep: the epoch sits inside the key preimage, so a new epoch
+yields a key that has never been written, reads zero, and decodes as "play the label". Nothing to
+clear, nothing to migrate, nothing that can be half-done. `epoch == 0` means no learning at all, so
+a scoping bug fails toward the advertised difficulty and can never quietly make the arcade easier.
+
+**One word per rival pair, per mode, per tournament**, in namespace 5 so it cannot alias a match id
+or an agent index. It holds two 96-bit seat records of deltas from the tier constants, so the
+all-zero word decodes to exactly the published difficulty and a fresh tournament needs no
+initialisation write.
+
+**At most thirteen writes per match, one per point resolved.** Both seats live in the same word, so
+a point costs one write even though both learn from it. There is no per-tick write, no per-slice
+write, no aim-error write, no end-of-match write and no tournament-boundary write.
+
+**The attribution comes from the slice loop, not from storage.** When a slice returns a state whose
+score moved, the state at the start of that slice is still in memory, and so is the aim the
+conceding seat committed to. The bot asks the one question it can actually answer: was I beaten
+because I was late, or because I was wrong? Four integrators accumulate the answer, each needing
+six to eight consistent samples before it moves a parameter, so noise cancels and only systematic
+error survives.
+
+**The fairness law.** The two strength dials, decision interval and dead zone, are one-sided: a bot
+starts at its label and can only move to the soft side of it. Conceding recovers it toward the
+label and stops there; scoring on it eases it off. So scoring on a bot is the only thing that makes
+it harder, and it can never become harder than advertised. No existing rating is retroactively
+devalued by a bot that got better than the thing someone beat. The aim error, the strongest
+signature of a tier, is not learnable at all. Only the aim bias and the extrapolation gain are
+two-sided, because they correct a model error the label never intended to include rather than
+tuning a difficulty.
+
+**Learning is off on ranked matches.** ELO assumes stationary strength on both sides and an
+adapting bot is non-stationary by construction, with the provisional K of 64 landing exactly where
+adaptation is fastest. One bit of a read already being made. Ranked matches play the published
+label exactly, and the ladder measures a fixed, public opponent. Today this changes nothing, since
+all three house bots share one creator key and `ranked` requires two distinct creators, so no
+house-versus-house match has ever moved a rating word — but the day those keys are split, the
+conflict would arrive silently.
+
+### What has to be checked before any of this is written
+
+**The slice loop is root code and it does not currently fit.** Measured: a steering loop in
+`PongAgentArcade._advanceState` costs 384 bytes against the 324 available, so the contract lands at
+24,636 of 24,576. The learning mechanism itself costs zero root bytes because it lives inside the
+linked library; the loop does not. Either the library drives the advance, taking `physicsRules`,
+`chaosEngine` and `hub`, or headroom is bought back by moving view helpers out. Neither is measured.
+Note that `physicsRules` and `hub` are public immutables and so reachable from library code for
+free, while `chaosEngine` is internal and is not.
+
+**Whether repeated writes to one slot collapse to one diff is load-bearing and unverified.** The
+measured 42 execution transactions per 64-diff batch implies about 1.5 diffs per transaction, below
+the two slots every successful `input` must move, which is strong evidence the node records a net
+slot change rather than raw stores. If that is right, a slice loop is free in batch terms and the
+whole change works. If the validator counts stores instead, slicing multiplies batch production
+instead of removing it. Mode 0 is safe either way, because `physicsRules.advance` is external pure
+and can be looped in memory with a single save. Mode 1 cannot, because `ChaosGameFlow.advance`
+reads and writes `words` itself and is the human deployment's qualified library, which this arcade
+deliberately reuses. **Run one Chaos match with a slice loop and no learning, count committed
+batches against today's 16.5 per match, and stop if it has not fallen.**
+
+**The direction bits are read by more than the physics.** Field 8 carries the direction pairs, the
+score and both input nonces; it is consumed by the codec, passed into `ChaosEngine.advance`, emitted
+in the `Snapshot` event and decoded by the client. A direction that lives only in memory is silently
+discarded by the next transaction's read. It must be written once per transaction, change-guarded,
+at the end of the slice loop. Note also that `_finish` zeroes both direction fields, so attribution
+on the match-winning point must take its last direction from memory, not from a post-goal read.
+
+### Two things to say plainly before anyone watches this run
+
+Moving the policy inside `_advanceState` deletes snapshot staleness and clock extrapolation, so the
+bots get strictly better before a single thing is learned. **Every win rate and every qualification
+threshold calibrated against the off-chain bots is void.** The soak has to run with learning
+disabled first and then enabled, or the two effects cannot be separated.
+
+And the policy models two walls and nothing else. Curveball rotates the velocity, gravity well bends
+it, solar wind accelerates it, bank shot rescales the slope, and pinball, portals, ricochet,
+breakout, warp lane, last chance and mystery pickup all divert the ball. The TypeScript original is
+equally blind, so this is inherited rather than introduced, and the gain integrator recovers only
+the multiplicative part. The bots will visibly improve at what the policy can see and stay
+structurally blind to roughly half the Chaos catalogue. Raising that ceiling needs a richer policy,
+which needs bytes this deployment does not have.
