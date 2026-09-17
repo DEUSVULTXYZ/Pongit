@@ -26,6 +26,9 @@ contract AgentHarness is PongAgentArcade {
     function controlWord(uint256 id) external view returns(uint256){return _get(id,8);}
     function probe(uint256 id,uint64 target) external returns(uint64){return AgentSteer.steer(words,id,matchMode(id),target);}
     function gameTime(uint256 id) external view returns(uint64){return uint64(_get(id,7)>>128);}
+    function gameTime1(uint256 id) external view returns(uint64){return uint64(_get(id,27)>>112);}
+    function brain(uint256 id) external view returns(uint256){return AgentSteer.brainOf(words,id,matchMode(id));}
+    function setScore(uint256 id,uint8 a,uint8 b) external {uint256 c=_get(id,8);c=(c&~(uint256(15)<<4))|(uint256(a)<<4);c=(c&~(uint256(15)<<8))|(uint256(b)<<8);_set(id,8,c);}
     function meta(address a) external view returns(bytes32){return bytes32(_get(uint160(a),41));}
 }
 contract AgentArcadeTest is ChaosPhysicsTest {
@@ -80,6 +83,66 @@ contract AgentArcadeTest is ChaosPhysicsTest {
         uint256 got=game.controlWord(2);
         assertEq(got&3,before&3,"left seat untouched");
         assertEq((got>>2)&3,(before>>2)&3,"right seat untouched");
+    }
+    /// Chaos keeps its own packing and can run two balls, so it is decoded directly rather than
+    /// projected through codec.legacy, which collapses to one ball and would hide MULTIBALL.
+    function testChaosHouseSeatIsSteeredToo() public {
+        bytes32 NOVA=0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
+        registerHouse(C1,A,NOVA);register(C2,B);
+        start(3,1,false);
+        uint256 before=game.controlWord(3);
+        // NOVA re-decides every 280 ms. Its aim error is drawn per rally, so sweep a few of its
+        // boundaries rather than betting on one landing outside the dead zone.
+        bool steered;
+        for(uint64 k=4;k<12&&!steered;k++){
+            uint64 t=280_000*k;
+            game.nearEnd(3,0,0,t);
+            assertEq(game.gameTime1(3),t,"the chaos clock should sit on a NOVA boundary");
+            assertEq(game.probe(3,t+300_000),t+100_000,"the library should take one slice in chaos as well");
+            if(int8(uint8(game.controlWord(3)&3))-1!=0)steered=true;
+        }
+        assertTrue(steered,"the chaos house seat should have been given a direction");
+        assertEq((game.controlWord(3)>>2)&3,(before>>2)&3,"the chaos community seat must be left alone");
+    }
+    /// A bot that keeps conceding recovers toward its label; a bot that keeps scoring eases off.
+    /// The label is a ceiling: the trims never move to the hard side of it.
+    function testConcedingAndScoringMoveTheTrimsOnlyTowardTheSoftSide() public {
+        bytes32 NOVA=0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
+        registerHouse(C1,A,NOVA);register(C2,B);
+        start(4,0,false);
+        game.nearEnd(4,0,0,1_120_000);
+        game.probe(4,1_420_000);
+        assertEq(game.brain(4)&0xffff,0,"a fresh tournament starts at the published label");
+        // The community seat takes four points off the house seat, one probe at a time.
+        for(uint8 k=1;k<=4;k++){
+            game.setScore(4,0,k);
+            game.nearEnd(4,0,k,1_120_000+uint64(k)*280_000);
+            game.probe(4,1_120_000+uint64(k)*280_000+300_000);
+        }
+        uint256 after1=game.brain(4);
+        // The word also carries the match tag and the seen counters, so a non-zero word alone
+        // proves nothing. Assert the conceding seat's own integrators actually moved.
+        int8 late=int8(uint8(after1>>24));int8 blind=int8(uint8(after1>>32));
+        assertTrue(late!=0||blind!=0,"the conceding seat must have attributed its losses");
+        assertEq(uint256((after1>>224)&15),0,"its own score was nil");
+        assertEq(uint256((after1>>228)&15),4,"four conceded points were counted exactly once each");
+        // Strength trims are one-sided: they can only ever be at or above the label, never below.
+        assertLe(after1&31,6,"the reaction trim stays inside its band");
+        assertLe((after1>>5)&31,6,"the dead-zone trim stays inside its band");
+    }
+
+    /// A ranked match plays the published label exactly, because ELO assumes a stationary opponent.
+    function testRankedMatchesNeverLearn() public {
+        bytes32 NOVA=0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
+        registerHouse(C1,A,NOVA);register(C2,B);
+        qualify(A,0);qualify(B,0);
+        start(5,0,true);
+        for(uint8 k=1;k<=4;k++){
+            game.setScore(5,0,k);
+            game.nearEnd(5,0,k,1_120_000+uint64(k)*280_000);
+            game.probe(5,1_120_000+uint64(k)*280_000+300_000);
+        }
+        assertEq(game.brain(5),0,"a ranked match must leave the learned word untouched");
     }
     function qualify(uint256 agent,uint8 mode) private {vm.prank(vm.addr(AD));game.qualifyAgent(vm.addr(agent),mode,true,bytes32(uint256(1)));}
     function bind(uint256 key,address control) private {
