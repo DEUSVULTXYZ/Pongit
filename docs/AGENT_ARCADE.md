@@ -232,16 +232,34 @@ linked library; the loop does not. Either the library drives the advance, taking
 Note that `physicsRules` and `hub` are public immutables and so reachable from library code for
 free, while `chaosEngine` is internal and is not.
 
-**Whether repeated writes to one slot collapse to one diff is load-bearing and unverified.** The
-measured 42 execution transactions per 64-diff batch implies about 1.5 diffs per transaction, below
-the two slots every successful `input` must move, which is strong evidence the node records a net
-slot change rather than raw stores. If that is right, a slice loop is free in batch terms and the
-whole change works. If the validator counts stores instead, slicing multiplies batch production
-instead of removing it. Mode 0 is safe either way, because `physicsRules.advance` is external pure
-and can be looped in memory with a single save. Mode 1 cannot, because `ChaosGameFlow.advance`
-reads and writes `words` itself and is the human deployment's qualified library, which this arcade
-deliberately reuses. **Run one Chaos match with a slice loop and no learning, count committed
-batches against today's 16.5 per match, and stop if it has not fallen.**
+**Whether repeated writes to one slot collapse to one diff is settled, by measurement.** Three real
+`commit` transactions of this application were fetched from Monad and their calldata decoded
+(`0xdad4e3cf`, `0xbbff2731`, `0xd7975177`, blocks 62400019 to 62400085, batches 2490 to 2492):
+
+| batch | transactions | diff entries | distinct slots | repeated |
+|---|---|---|---|---|
+| 2490 | 46 | 8 | 8 | 0 |
+| 2491 | 39 | 8 | 8 | 0 |
+| 2492 | 46 | 8 | 8 | 0 |
+
+Forty-six transactions touching the same eight slots commit exactly eight `SlotDiff` entries, and a
+slot never appears twice. Writes are collapsed to a net change per slot per batch, so a slice loop
+is free in batch terms — whether it writes a slot twice or thirty times, inside one transaction or
+across forty. **Chaos can therefore slice and learn exactly like Classic**, and the repeated
+`store()` rounds that `ChaosGameFlow.advance` performs cost nothing extra.
+
+This also corrects an inference recorded earlier in this file. The figure of about 1.5 diffs per
+transaction was derived by assuming a batch seals at the 64-diff cap. It does not: these batches
+carry eight diffs against a cap of 64, and the real rate is **0.17 to 0.21 diffs per transaction**.
+Neither `maxDiffsPerCommit` at 64 nor `maxBatchInterval` at 3600 seconds is what closes them — the
+node seals on its own transaction or time boundary, at about 43 transactions per batch across
+seventeen sampled batches.
+
+**The consequence is that batch production tracks transaction count, not state churn.** Epoch 2's
+8,564 batches over roughly 364,000 execution transactions is 42.5 per batch, matching the samples.
+Staying under the 1,800-batch release ceiling therefore means staying under about 77,000
+transactions per epoch. On-chain house bots at a five-second tick put a 24-hour epoch near 31,000
+transactions, or roughly 730 batches — under the ceiling with room, and for the right reason.
 
 **The direction bits are read by more than the physics.** Field 8 carries the direction pairs, the
 score and both input nonces; it is consumed by the codec, passed into `ChaosEngine.advance`, emitted
