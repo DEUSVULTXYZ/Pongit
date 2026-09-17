@@ -10,7 +10,10 @@ import {agentArcadeAbi as abi} from '../shared/abi-PongAgentArcade';
 import {houseBots,type AgentManifest} from '../shared/agents';
 assert.equal(process.env.PONG_AGENT_DEPLOY,'authorized-dedicated-testnet');
 if(!process.env.DATABASE_URL)process.env.DATABASE_URL=`postgresql://pong:${encodeURIComponent(process.env.POSTGRES_PASSWORD!)}@postgres:5432/pong_relayer`;
-const prefix='agent-arcade-candidate-20260913',file=`/secrets/${prefix}.json`;
+// A redeployment needs its own prefix: the operation journal is keyed by it, and the previous
+// candidate's entries must stay readable rather than be reused or overwritten.
+const prefix=process.env.PONG_AGENT_DEPLOY_PREFIX??'agent-arcade-candidate-20260913',file=`/secrets/${prefix}.json`;
+assert(/^agent-arcade-candidate-\d{8}$/.test(prefix),'Keep the dated candidate prefix shape');
 let r:any;try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 if(!r){r={coordinator:generatePrivateKey(),creator:generatePrivateKey(),bots:houseBots.map(p=>{const key=generatePrivateKey();return {...p,key,address:privateKeyToAccount(key).address};}),createdAt:new Date().toISOString(),phase:'deploying'};await save();}
@@ -43,5 +46,5 @@ try{
  await mkdir('artifacts/agents',{recursive:true});await writeFile('artifacts/agents/candidate.json',JSON.stringify(manifest,null,2));
  await writeFile('/secrets/manifest.json',JSON.stringify(manifest,null,2),{mode:0o600});
  r.phase='hosted-candidate';await save();
- console.log(JSON.stringify({app:r.app,node:r.node,epoch:r.epoch,opened:r.openHash,engine,flow:qualified.flow,bytecodeHash:keccak256((await t.base.getCode({address:r.app}))!),publiclyEnabled:false}));
+ console.log(JSON.stringify({app:r.app,node:r.node,epoch:r.epoch,opened:r.openHash,engine,flow:qualified.flow,libraries:t.deployed,bytecodeHash:keccak256((await t.base.getCode({address:r.app}))!),publiclyEnabled:false}));
 }finally{await t.close();}
