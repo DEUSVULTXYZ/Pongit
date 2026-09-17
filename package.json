@@ -43,7 +43,8 @@
     "abi:v4": "tsx scripts/abi-v4.ts",
     "abi:independent": "tsx scripts/abi-independent.ts",
     "abi:agents": "tsx scripts/abi-agents.ts",
-    "test:agents": "forge test --root contracts --match-contract AgentArcadeTest && tsx --test tests/agents.test.ts"
+    "test:agents": "forge test --root contracts --match-contract AgentArcadeTest && tsx --test tests/agents.test.ts",
+    "test:differential:house": "tsx scripts/differential-house.ts"
   },
   "dependencies": {
     "@category-labs/mera": "0.2.0",
