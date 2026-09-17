@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {Pool} from 'pg';
 assert.equal(process.env.PONG_AGENT_INDEXER_VERIFY,'isolated-vps');
-const app='0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9';
+// Verifies whichever arcade is configured, never the human application.
+const app=(process.env.PONG_AGENT_APP??'0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9').toLowerCase();
+assert(/^0x[\da-f]{40}$/.test(app)&&app!=='0x78d3341e3452d7ec1add9371de3008639eed8eb0','Point the verification at a dedicated arcade');
 const database=new URL(process.env.DATABASE_URL!);assert.equal(database.hostname,'pongit-agent-db-20260913');
 const agents=new Pool({connectionString:String(database),max:2});database.pathname='/agent_indexer';
 const indexer=new Pool({connectionString:String(database),max:2});

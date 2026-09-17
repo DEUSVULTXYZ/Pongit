@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 import {ChaosPhysicsTest} from "./ChaosPhysics.t.sol";
 import {PongAgentArcade} from "../src/agents/PongAgentArcade.sol";
 import {AgentIdentity} from "../src/agents/AgentIdentity.sol";
-import {AgentSteer} from "../src/agents/HouseController.sol";
+import {AgentSteer} from "../src/agents/AgentSteer.sol";
 import {AgentResultArchive} from "../src/agents/AgentResultArchive.sol";
 import {ChaosCodec} from "../src/chaos/ChaosCodec.sol";
 import {ChaosEngine} from "../src/chaos/ChaosEngine.sol";

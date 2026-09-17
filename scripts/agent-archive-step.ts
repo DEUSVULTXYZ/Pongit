@@ -6,11 +6,17 @@ import {Pool} from 'pg';
 import {chainTools} from './independent-chain-tools';
 import {agentArchiveAbi as abi} from '../shared/abi-AgentResultArchive';
 import {agentArcadeAbi as gameAbi} from '../shared/abi-PongAgentArcade';
+import {validateAgentManifest} from '../shared/agents';
 assert.equal(process.env.PONG_AGENT_ARCHIVE,'dedicated-authorized');
 if(!process.env.DATABASE_URL)process.env.DATABASE_URL=`postgresql://pong:${encodeURIComponent(process.env.POSTGRES_PASSWORD!)}@postgres:5432/pong_relayer`;
 const m=JSON.parse(await readFile('/secrets/manifest.json','utf8'));
-assert.equal(m.app,'0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9');
-const t=await chainTools('agent-archive-20260913'),db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:2});
+// The guard is that this is never the human application, not that it is one frozen address:
+// a literal here silently became wrong the moment the arcade was redeployed.
+assert.notEqual(m.app.toLowerCase(),'0x78d3341e3452d7ec1add9371de3008639eed8eb0','The archive never binds to the human application');
+validateAgentManifest(m);
+const archivePrefix=process.env.PONG_AGENT_ARCHIVE_PREFIX??'agent-archive-20260913';
+assert(/^agent-archive-\d{8}$/.test(archivePrefix),'Keep the dated archive prefix shape');
+const t=await chainTools(archivePrefix),db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:2});
 try{
  let archive;try{const saved=JSON.parse(await readFile('/secrets/archive.json','utf8'));assert.equal(saved.app,m.app);assert.equal(saved.chainId,10143);archive=saved.archive;}catch(e){
   if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;

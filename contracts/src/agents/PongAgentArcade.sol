@@ -6,7 +6,7 @@ import {ChaosEngine} from "../chaos/ChaosEngine.sol";
 import {ChaosGameFlow} from "../chaos/ChaosGameFlow.sol";
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
 import {AgentIdentity} from "./AgentIdentity.sol";
-import {AgentSteer} from "./HouseController.sol";
+import {AgentSteer} from "./AgentSteer.sol";
 import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 

@@ -8,15 +8,22 @@ import {readHubDelegation} from '../shared/rooms-hub';
 import {agentArcadeAbi as abi} from '../shared/abi-PongAgentArcade';
 import {requestHostedRenewal} from '../relayer/src/rooms-hosted-renewal';
 import {initializeAgents} from '../relayer/src/agents/schema';
+import {validateAgentManifest} from '../shared/agents';
 assert(['qualify-cycle','maintenance'].includes(process.env.PONG_AGENT_LIFECYCLE!));
 if(!process.env.DATABASE_URL)process.env.DATABASE_URL=`postgresql://pong:${encodeURIComponent(process.env.POSTGRES_PASSWORD!)}@postgres:5432/pong_relayer`;
 const force=process.env.PONG_AGENT_LIFECYCLE==='qualify-cycle',manifestFile='/secrets/manifest.json',recordFile='/secrets/lifecycle.json';
-const m=JSON.parse(await readFile(manifestFile,'utf8'));assert.equal(m.app,'0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9');
+const m=JSON.parse(await readFile(manifestFile,'utf8'));
+// The guard is that this is never the human application, not that it is one frozen address:
+// a literal here silently became wrong the moment the arcade was redeployed.
+assert.notEqual(String(m.app).toLowerCase(),'0x78d3341e3452d7ec1add9371de3008639eed8eb0','The lifecycle never drives the human application');
+validateAgentManifest(m);
 if(force)assert(!m.enabled&&!m.qualified,'Forced qualification cannot close a public service');
 let record:any;try{record=JSON.parse(await readFile(recordFile,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;record={events:[]};}
 const save=async()=>{await writeFile(recordFile+'.next',JSON.stringify(record,null,2),{mode:0o600});await rename(recordFile+'.next',recordFile);};
 assert(process.env.AGENT_DATABASE_URL,'A separate agent database is required');
-const t=await chainTools('agent-arcade-lifecycle-20260913'),db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3});
+const lifecyclePrefix=process.env.PONG_AGENT_LIFECYCLE_PREFIX??'agent-arcade-lifecycle-20260913';
+assert(/^agent-arcade-lifecycle-\d{8}$/.test(lifecyclePrefix),'Keep the dated lifecycle prefix shape');
+const t=await chainTools(lifecyclePrefix),db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3});
 const event=async(stage:string,detail:Record<string,unknown>={})=>{
  if(record.stage!==stage){record.stage=stage;record.events.push({at:new Date().toISOString(),stage,...detail});await save();console.log(JSON.stringify({at:new Date().toISOString(),app:m.app,stage,...detail}));}
 };
