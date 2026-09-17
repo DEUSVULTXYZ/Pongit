@@ -3,6 +3,7 @@ pragma solidity ^0.8.30;
 import {ChaosPhysicsTest} from "./ChaosPhysics.t.sol";
 import {PongAgentArcade} from "../src/agents/PongAgentArcade.sol";
 import {AgentIdentity} from "../src/agents/AgentIdentity.sol";
+import {AgentSteer} from "../src/agents/HouseController.sol";
 import {AgentResultArchive} from "../src/agents/AgentResultArchive.sol";
 import {ChaosCodec} from "../src/chaos/ChaosCodec.sol";
 import {ChaosEngine} from "../src/chaos/ChaosEngine.sol";
@@ -22,6 +23,10 @@ contract AgentHarness is PongAgentArcade {
         else {T.State memory s=codec.unpack(_packed(id),bytes32(_get(id,3)),_get(id,8));s.score.a=a;s.score.b=b;s.t=time;s.nextForce=time;_store(id,codec.pack(s));}
     }
     function chaosFixture(uint256 id,T.State memory s) external {_store(id,codec.pack(s));}
+    function controlWord(uint256 id) external view returns(uint256){return _get(id,8);}
+    function probe(uint256 id,uint64 target) external returns(uint64){return AgentSteer.steer(words,id,matchMode(id),target);}
+    function gameTime(uint256 id) external view returns(uint64){return uint64(_get(id,7)>>128);}
+    function meta(address a) external view returns(bytes32){return bytes32(_get(uint160(a),41));}
 }
 contract AgentArcadeTest is ChaosPhysicsTest {
     uint256 constant AD=0xc0;uint256 constant A=0xa0;uint256 constant B=0xb0;uint256 constant C1=0xc1;uint256 constant C2=0xc2;
@@ -42,6 +47,39 @@ contract AgentArcadeTest is ChaosPhysicsTest {
     function register(uint256 creator,uint256 agent) private {
         AgentIdentity.Registration memory r=registration(creator,agent,3);bytes32 h=game.registrationDigest(r);
         game.registerAgent(r,sig(h,creator),sig(h,agent));
+    }
+    function registerHouse(uint256 creator,uint256 agent,bytes32 metadata) private {
+        AgentIdentity.Registration memory r=AgentIdentity.Registration(vm.addr(creator),vm.addr(agent),3,metadata,uint64(block.timestamp+300));
+        bytes32 h=game.registrationDigest(r);game.registerAgent(r,sig(h,creator),sig(h,agent));
+    }
+    /// A seat is steered by the contract only when its registration metadata is one of the three
+    /// house bots. A community agent keeps whatever direction its own worker submitted.
+    function testContractSteersAHouseSeatAndLeavesACommunitySeatAlone() public {
+        bytes32 NOVA=0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
+        registerHouse(C1,A,NOVA);register(C2,B);
+        start(1,0,false);
+        assertEq(game.meta(vm.addr(A)),NOVA,"the house seat must carry house metadata on chain");
+        game.nearEnd(1,0,0,1_120_000);
+        uint64 t=game.gameTime(1);
+        assertEq(t,1_120_000,"the clock should be on a NOVA reaction boundary");
+        uint256 before=game.controlWord(1);
+        uint64 next=game.probe(1,t+300_000);
+        assertEq(next,t+100_000,"the library should have taken one slice, not skipped to the target");
+        uint256 got=game.controlWord(1);
+        assertTrue(int8(uint8(got&3))-1!=0,"the house seat should have been given a direction");
+        assertEq((got>>2)&3,(before>>2)&3,"the community seat must be left alone");
+    }
+    /// Two community seats mean the steering path is inert: it must not touch the control word.
+    function testTwoCommunitySeatsAreNeverSteered() public {
+        register(C1,A);register(C2,B);start(2,0,false);
+        game.nearEnd(2,0,0,1_000_000);
+        vm.prank(KA);game.input(2,1,1,block.number+10);
+        uint256 before=game.controlWord(2);
+        vm.roll(block.number+30);
+        vm.prank(KA);game.tick(2);
+        uint256 got=game.controlWord(2);
+        assertEq(got&3,before&3,"left seat untouched");
+        assertEq((got>>2)&3,(before>>2)&3,"right seat untouched");
     }
     function qualify(uint256 agent,uint8 mode) private {vm.prank(vm.addr(AD));game.qualifyAgent(vm.addr(agent),mode,true,bytes32(uint256(1)));}
     function bind(uint256 key,address control) private {

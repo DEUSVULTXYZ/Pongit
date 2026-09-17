@@ -6,6 +6,7 @@ import {ChaosEngine} from "../chaos/ChaosEngine.sol";
 import {ChaosGameFlow} from "../chaos/ChaosGameFlow.sol";
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
 import {AgentIdentity} from "./AgentIdentity.sol";
+import {AgentSteer} from "./HouseController.sol";
 import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 
@@ -38,7 +39,9 @@ contract PongAgentArcade is PongChaosEvents {
     }
     function _limitTarget(uint256 target) internal pure override returns(uint256){return target>MATCH_DURATION_US?MATCH_DURATION_US:target;}
     function _advanceState(uint256 id,PhysicsV2.State memory legacy,uint64 target,bool mayResume) internal override returns(bool complete){
-        complete=super._advanceState(id,legacy,target,mayResume);
+        uint64 sub;
+        do{legacy=_state(id);sub=AgentSteer.steer(words,id,legacy.mode,target);complete=super._advanceState(id,legacy,sub,mayResume);}
+        while(!complete&&sub<target);
         // Bounded catch-up must reach the deadline before evaluating the score.
         // A late call cannot simulate beyond it or cancel a legitimate 5-minute result.
         if(_phase(id)==2){

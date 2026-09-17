@@ -128,3 +128,111 @@ contract HouseControllerHarness {
         return HouseController.decide(copy, side, position, half, tuning, aimError);
     }
 }
+
+/// @notice Linked entry point. Everything the arcade would otherwise pay root bytes for lives here.
+/// @dev `external` on purpose: an `internal` library is inlined into its caller, and the arcade has
+///      only tens of bytes to spare. Reached by DELEGATECALL, so `address(this)` is the arcade and
+///      the key derivation is byte-identical to the app's own `_key(0, id, field)`.
+library AgentSteer {
+    /// @dev One decision boundary. Finer than any tier's reaction, so every tier lands on it.
+    uint64 internal constant SLICE_US = 100_000;
+    /// @dev A long catch-up is replayed missed time, not live play. Steering it a slice at a time
+    ///      would cost thousands of external calls for no visible difference, so it advances whole.
+    uint64 internal constant MAX_CATCHUP_US = SLICE_US * 16;
+
+    // Registration metadata of the three house bots, from agentMetadata(name, avatar).
+    bytes32 internal constant NOVA = 0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
+    bytes32 internal constant PULSE = 0xe2fe7a5c52d5a1364cd893cde1191c36cd3e34c41ce55e0316950b9ba9be49df;
+    bytes32 internal constant ONYX = 0xab988c929327e00ef2ffef823a9578430c6237e0f21da503f90f62fd0b7d3a8f;
+
+    function _key(uint256 id, uint256 field) private view returns (bytes32) {
+        return keccak256(abi.encode(address(this), uint256(0), id, field));
+    }
+
+    /// @notice A seat is steered only when its registration metadata is one of the three house
+    ///         bots. A community agent is never touched, whatever else it looks like.
+    function _tier(mapping(bytes32 => uint256) storage w, uint256 seat)
+        private
+        view
+        returns (bool house, uint8 level)
+    {
+        bytes32 m = bytes32(w[_key(seat, 41)]);
+        if (m == NOVA) return (true, 0);
+        if (m == PULSE) return (true, 1);
+        if (m == ONYX) return (true, 2);
+        return (false, 0);
+    }
+
+    function _tuning(uint8 level) private pure returns (HouseController.Tuning memory) {
+        if (level == 0) {
+            return HouseController.Tuning(0, 280_000, 58 * HouseController.PICO, 17 * HouseController.PICO);
+        }
+        if (level == 1) {
+            return HouseController.Tuning(1, 160_000, 25 * HouseController.PICO, 10 * HouseController.PICO);
+        }
+        return HouseController.Tuning(2, 85_000, 8 * HouseController.PICO, 6 * HouseController.PICO);
+    }
+
+    /// @dev The original re-rolls its aim error once per rally from a private Math.random(). On
+    ///      chain that has to be derived, so it comes from the match seed, the rally and the side.
+    function _aimError(bytes32 seed, uint256 rally, uint8 side, int256 error) private pure returns (int256) {
+        uint256 span = uint256(error) * 2 + 1;
+        return int256(uint256(keccak256(abi.encode(seed, rally, side))) % span) - error;
+    }
+
+    /// @notice Decide for each house seat, write the control word once, and return the game time
+    ///         the caller should advance to next.
+    /// @return next the sub-target; equal to `target` when no further slicing is wanted
+    function steer(mapping(bytes32 => uint256) storage w, uint256 id, uint8 mode, uint64 target)
+        external
+        returns (uint64 next)
+    {
+        // Chaos packs its state through ChaosCodec rather than the legacy fields; decoding it here
+        // is the remaining piece. Until then Chaos advances exactly as it does today.
+        if (mode != 0) return target;
+
+        uint256 paddles = w[_key(id, 7)];
+        uint64 nowUs = uint64(paddles >> 128);
+        if (nowUs >= target || target - nowUs > MAX_CATCHUP_US) return target;
+
+        (bool houseA, uint8 levelA) = _tier(w, uint256(uint160(address(uint160(w[_key(id, 0)])))));
+        (bool houseB, uint8 levelB) = _tier(w, uint256(uint160(address(uint160(w[_key(id, 1)])))));
+        if (!houseA && !houseB) return target;
+
+        uint256 control = w[_key(id, 8)];
+        uint256 xy = w[_key(id, 4)];
+        uint256 half = w[_key(id, 13)];
+        bytes32 seed = bytes32(w[_key(id, 3)]);
+        uint256 rally = ((control >> 4) & 15) + ((control >> 8) & 15);
+
+        HouseController.Ball[] memory balls = new HouseController.Ball[](1);
+        balls[0] = HouseController.Ball(
+            int256(int128(uint128(xy))) * 1_000_000,
+            int256(int128(uint128(xy >> 128))) * 1_000_000,
+            int256(w[_key(id, 5)]),
+            int256(w[_key(id, 6)])
+        );
+
+        for (uint8 side; side < 2; side++) {
+            if (side == 0 ? !houseA : !houseB) continue;
+            HouseController.Tuning memory t = _tuning(side == 0 ? levelA : levelB);
+            // A tier only re-decides on its own reaction boundary; between boundaries it holds the
+            // direction already in the control word, which is what a reaction delay means.
+            if (nowUs % t.reactionUs >= SLICE_US) continue;
+            int8 dir = HouseController.decide(
+                balls,
+                side,
+                int256(uint256(uint64(paddles >> (side == 0 ? 0 : 64)))) * 1_000_000,
+                int256(uint256(uint32(half >> (side == 0 ? 0 : 32)))) * 1_000_000,
+                t,
+                _aimError(seed, rally, side, t.error)
+            );
+            uint256 shift = side == 0 ? 0 : 2;
+            control = (control & ~(uint256(3) << shift)) | (uint256(uint8(dir + 1)) << shift);
+        }
+
+        w[_key(id, 8)] = control;
+        next = nowUs + SLICE_US;
+        if (next > target) next = target;
+    }
+}
