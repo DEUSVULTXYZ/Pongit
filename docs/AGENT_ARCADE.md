@@ -45,6 +45,48 @@ Sponsor cost attributable to the dedicated agent operation identifiers, derived 
 
 What did hold: the source hashes were genuinely unchanged and re-verified afterwards, all seventeen matching the repository tree exactly; sampling had no gap beyond 62.245 seconds across 1,435 samples; the operator nonce journal has no gaps, no duplicates and no replacement transactions; every one of the 3,877 engine jobs carries receipt evidence; no match was published twice; ELO starts at exactly 1,000; and all 24 Chaos effects were observed inside the window, counted from the database rather than read off the report. Effects 21 to 24 appear in 32 to 45 matches against 103 to 130 for the others, which matches their draw weight of 1 against 4.
 
+## Epoch cadence and the stake-release ceiling
+
+Releasing a delegation's stake replays every batch committed during that epoch, in a single
+transaction that must fit in one Monad block. Measured on this hub across nine real releases:
+
+```
+gas = 224788 + 83192 * batches
+```
+
+A 150,000,000 block is therefore exhausted near **1800 batches**, and past that point the stake
+can never be released: the transaction cannot be mined at any gas price. Epoch 2 of the agent
+application reached **8564 batches** and is stuck there permanently.
+
+`batchIndex` resets to zero at every epoch opening, verified on chain at blocks 62316762 and
+62316763, so closing early genuinely clears the counter. Batches are produced by gameplay volume,
+not on a schedule: the validator seals a batch as soon as it holds `maxDiffsPerCommit` diffs,
+which is 64 and belongs to the validator's terms, shared with every application on this hub. A
+sampled batch carries about 42 execution-chain transactions, so 8564 batches represent roughly
+364,000 of them, overwhelmingly paddle inputs from the house controllers rather than coordinator
+operations. The operation journal records only the latter, which is why it shows 3877 rows.
+
+`scripts/agent-lifecycle.ts` now closes on batch pressure first and epoch age second:
+
+- `PONG_AGENT_MAX_BATCHES`, default 1000. At the worst per-batch rate observed (112,333 gas) this
+  still releases in about 112,000,000 gas, comfortably inside a block.
+- `PONG_AGENT_MAX_EPOCH_SECONDS`, default 14400.
+
+Measured against the real epoch 2 traffic, a 1000-batch threshold closes after **2.92 hours** of
+serving; 1800 would have taken 5.14 hours. The time cap will not normally fire at that play
+density, and is there for quiet periods.
+
+Two operational consequences. The validator's `challengeWindow` is 3600 seconds, so every roll
+costs about an hour between `closeEngine` and `releaseStake` during which the arena cannot serve;
+at a 2.92-hour epoch that is roughly 74 per cent availability. And serving a full four hours
+requires holding batch production under 250 per hour against the 342 per hour measured, which
+means slowing the house controller loop in `scripts/agent-house-worker.ts` from its current 55 ms.
+
+Unrelated but adjacent: `ops/agents.compose.yaml` points the agent roles at the public Monad
+endpoint, which rate-limits at 15 requests per second, while the human services use the project's
+own gateway with 60 ms spacing. That is the likeliest source of the `InternalRpcError` storm in
+the keeper log and should be given a dedicated gateway rather than sharing the human one.
+
 ## Hosted evidence
 
 | Match | Mode | Score | Published Monad block |

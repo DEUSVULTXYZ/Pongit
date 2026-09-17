@@ -99,6 +99,10 @@ services:
       PONG_AGENT_OPERATIONS: dedicated-authorized
       PONG_AGENT_DIAGNOSTICS: /diagnostics/agents
       PONG_INDEPENDENT_WRITE: authorized-testnet
+      # A stake release replays every batch of the epoch in one transaction that
+      # must fit in a single Monad block. Roll the epoch well before that wall.
+      PONG_AGENT_MAX_BATCHES: ${PONG_AGENT_MAX_BATCHES:-1000}
+      PONG_AGENT_MAX_EPOCH_SECONDS: ${PONG_AGENT_MAX_EPOCH_SECONDS:-14400}
       ROOMS_LIFECYCLE_KEY_FILE: /ops/lifecycle.json
       RPC_URL: ${RPC_URL:-https://testnet-rpc.monad.xyz}
       DATABASE_URL: postgres://pong:${POSTGRES_PASSWORD}@postgres:5432/pong_relayer
