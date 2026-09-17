@@ -8,13 +8,16 @@ import {createHash} from 'node:crypto';
 import {spawn,execFileSync} from 'node:child_process';
 import {Pool} from 'pg';
 assert.equal(process.env.PONG_AGENT_BACKUP_VERIFY,'isolated-vps');
-const root='/opt/pongit/tests/agents-20260913/private/backup-20260914',container='pongit-agent-db-20260913';
+// A re-runnable verification needs a writable root: the fixed one from the first
+// pass already exists, so a second run would abort on EEXIST or destroy evidence.
+const root=process.env.PONG_AGENT_BACKUP_ROOT??'/opt/pongit/tests/agents-20260913/private/backup-20260914',container='pongit-agent-db-20260913';
+assert(root.startsWith('/opt/pongit/tests/agents-')&&root.includes('/private/')&&!root.includes('..'),'Keep candidate backups inside the private test root');
 const connection=new URL(process.env.DATABASE_URL!);assert.equal(connection.hostname,container);assert.equal(connection.pathname,'/agents');
 const db=new Pool({connectionString:String(connection),max:2}),source=await db.connect();
 const scratch=`agents_restore_verify_${Date.now()}`;assert(/^agents_restore_verify_\d+$/.test(scratch));
 const run=(...args:string[])=>execFileSync('docker',['exec',container,...args],{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const counts=async(client:any)=>{const tables=(await client.query("SELECT table_schema,table_name FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema='agent_arcade' ORDER BY table_name")).rows;const result:Record<string,number>={};for(const t of tables){assert(/^[a-z_]+$/.test(t.table_name));result[t.table_name]=Number((await client.query(`SELECT count(*) AS n FROM agent_arcade."${t.table_name}"`)).rows[0].n);}return result;};
-await mkdir(root,{mode:0o700});
+await mkdir(root,{mode:0o700,recursive:true});
 try{
  await source.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
  const snapshot=(await source.query('SELECT pg_export_snapshot() AS id')).rows[0].id;const expected=await counts(source);

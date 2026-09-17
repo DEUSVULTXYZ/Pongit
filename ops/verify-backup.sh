@@ -5,7 +5,9 @@ backup=$(realpath "$1")
 case "$backup" in /opt/pongit/shared/backups/*) ;; *) echo 'Expected a PONGIT backup directory'; exit 1;; esac
 test -f "$backup/complete"
 cd /opt/pongit/current
-sha256sum -c "$backup/SHA256SUMS"
+# Run from the backup directory: current manifests use relative paths, while
+# older ones recorded absolute paths that resolve the same way from anywhere.
+( cd "$backup" && sha256sum -c SHA256SUMS )
 # For exact count comparison, stop the writers before taking the tested backup.
 counts() {
   "${database_exec[@]}" psql -U "$database_user" -d "$1" -At <<'SQL'

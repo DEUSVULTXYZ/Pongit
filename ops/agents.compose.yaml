@@ -25,6 +25,7 @@ services:
     stop_grace_period: 60s
     cpus: 1
     mem_limit: 512m
+    user: "1000:1000"
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
@@ -58,6 +59,7 @@ services:
     build: {context: ., target: agents}
     command: [node, scripts/agent-process.mjs, bots]
     restart: unless-stopped
+    user: "1000:1000"
     stop_grace_period: 60s
     cpus: 1
     mem_limit: 384m
@@ -85,6 +87,7 @@ services:
     profiles: [agents]
     build: {context: ., target: agent-operations}
     restart: unless-stopped
+    user: "1000:1000"
     stop_grace_period: 60s
     cpus: 0.5
     mem_limit: 384m

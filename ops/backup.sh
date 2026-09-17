@@ -21,6 +21,11 @@ if test -n "$agent_db"; then
   [[ "$agent_service" =~ ^[a-f0-9]+$ ]] || { echo 'Agent metadata container missing; backup is incomplete'; exit 1; }
   agent_metadata=$(docker inspect --format '{{range .Mounts}}{{if eq .Destination "/metadata"}}{{.Source}}{{end}}{{end}}' "$agent_service")
   case "$agent_metadata" in /opt/pongit/secrets/agents*/ops) ;; *) echo 'Unexpected agent metadata path'; exit 1;; esac
+  # One unreadable file here aborts the copy after the dumps are written but before
+  # the completion marker, so the backup silently never completes. Refuse early and
+  # name the file instead. Roles writing as root is what produces these.
+  unreadable=$(find "${agent_metadata%/ops}" ! -readable -print -quit)
+  test -z "$unreadable" || { echo "Agent secret not readable as $(id -un): $unreadable"; exit 1; }
   cp -a "${agent_metadata%/ops}" "$target/agent-secrets"
   agent_bots=$(docker ps -a --filter label=com.docker.compose.project=pongit --filter label=com.docker.compose.service=agent-bots --format '{{.ID}}')
   [[ "$agent_bots" =~ ^[a-f0-9]+$ ]] || { echo 'Agent command journal container missing; backup is incomplete'; exit 1; }
@@ -40,7 +45,11 @@ if test -f /opt/pongit/shared/early-payment-deployment/deployment.json; then
   cp /opt/pongit/shared/early-payment-deployment/deployment.json "$target/early-payment-deployment.json"
 fi
 cp RELEASE "$target/release.txt"
-sha256sum "$target"/*.dump > "$target/SHA256SUMS"
+# Checksums cover every file in the backup and are listed relative to the backup
+# directory, so the agent metadata and the bot command journal are verified after
+# transfer too, not just the database dumps.
+( cd "$target" && find . -type f ! -name SHA256SUMS ! -name SHA256SUMS.part ! -name complete -exec sha256sum {} + \
+  | sed 's|^\([a-f0-9]\{64\}\)  \./|\1  |' | LC_ALL=C sort -k2 > SHA256SUMS.part && mv SHA256SUMS.part SHA256SUMS )
 touch "$target/complete"
 find /opt/pongit/shared/backups -mindepth 1 -maxdepth 1 -type d -mtime +7 -exec rm -rf -- {} +
 printf 'Backup complete: %s\n' "$stamp"

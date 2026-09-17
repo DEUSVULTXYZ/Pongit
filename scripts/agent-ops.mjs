@@ -1,8 +1,12 @@
 // Private operator role. It shares the existing Monad nonce journal, never the
 // house-bot keys. Results and lifecycle are independent bounded processes.
 import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 assert.equal(process.env.PONG_AGENT_OPERATIONS,'dedicated-authorized');
+// The operator must never reach a house-bot key. Today that holds only because
+// house.json sits one level above the mounted ops directory, so assert it.
+assert(!existsSync('/secrets/house.json'),'House keys must never be mounted into the operator');
 let stopping=false;const children=new Set();
 process.on('SIGTERM',()=>{stopping=true;for(const child of children)child.kill('SIGTERM');});
 async function run(script,extra){await new Promise(resolve=>{
