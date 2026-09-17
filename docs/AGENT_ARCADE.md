@@ -45,6 +45,53 @@ Sponsor cost attributable to the dedicated agent operation identifiers, derived 
 
 What did hold: the source hashes were genuinely unchanged and re-verified afterwards, all seventeen matching the repository tree exactly; sampling had no gap beyond 62.245 seconds across 1,435 samples; the operator nonce journal has no gaps, no duplicates and no replacement transactions; every one of the 3,877 engine jobs carries receipt evidence; no match was published twice; ELO starts at exactly 1,000; and all 24 Chaos effects were observed inside the window, counted from the database rather than read off the report. Effects 21 to 24 appear in 32 to 45 matches against 103 to 130 for the others, which matches their draw weight of 1 against 4.
 
+## The house policy in the contract
+
+Rolling the epoch protects the stake but costs availability, because the challenge window is an
+hour whatever the epoch length. The cause is upstream: a match costs about 695 execution-chain
+transactions and 99 per cent of them are house-bot `input` calls. Each one runs `_advance` and
+writes the control word, and those writes are the diffs that become batches. Moving the policy
+into the contract removes them; only `tick` remains, and the tick cadence is ours to set.
+
+`contracts/src/agents/HouseController.sol` is the policy from `shared/agent-controller.ts`. Every
+function is pure and reads no storage, so the caller loops it against `PhysicsV2.advance` in
+memory and a whole tick still costs one storage write. The shared physics library is untouched:
+`advance` is `internal pure` over a memory state, so the arcade sets `leftDir` and `rightDir`
+between sub-advances rather than reaching inside a library the human application also uses.
+
+The library works in 1e12 throughout. The original divides everything into display units and
+works in floats, which hides that the modes are scaled differently: legacy positions are
+PhysicsV2's 1e6 units while Chaos packs positions in 1e12 and keeps velocities in 1e6. Scaling
+Chaos down would discard precision the original keeps, so legacy is scaled up instead, which is
+lossless. That also makes one formula exact for both modes: with a distance in 1e12 and a velocity
+in 1e6, the arrival time in microseconds is the plain quotient and the predicted height is
+`y + velocity * arrival`.
+
+The constants were checked against the contract rather than copied across. The reflect band of 564
+starting at 6 is `HEIGHT - 2 * RADIUS` offset by `RADIUS`; the planes 40 and 984 are `PLANE` and
+`WIDTH - PLANE`; 288 is half the height.
+
+`npm run test:differential:house` compares the two on states the physics can actually reach, built
+with `initial` and `advance` rather than random numbers. It alternates the modes, pins the aim
+error to zero on half the cases to isolate the geometry and uses a real error on the rest, and
+forces a second ball on a third of the Chaos cases because MULTIBALL carries a draw weight of 1
+and waiting for it would leave the soonest-arrival selection untested. It also counts what it
+discards, so the coverage cannot be read as better than it is.
+
+Over 10,000 generated cases: **9,700 comparable, 9,700 in agreement, none divergent**, across
+5,000 Chaos and 4,700 legacy cases, of which 1,247 carried two balls and 1,233 none at all. Only
+300 were discarded, all genuinely finished. The truncation gap between float and integer
+arithmetic, which this was built to measure, does not appear at these magnitudes.
+`contracts/test/HouseController.t.sol` adds eight boundary cases a random walk would rarely land
+on: a ball travelling away, zero horizontal velocity, the dead-zone boundary, the wall clamp and
+the Rookie hedge.
+
+Two things remain before this can ship. The production entry point has to be `external` for the
+library to be linked rather than inlined: with every function `internal` it compiles to 57 bytes
+and would be folded into a contract that has 207 bytes of headroom. And the arcade still has to
+identify which sides are house bots and decode their difficulty, which `AgentIdentity` can already
+answer from `creator` and `metadata` without a new storage slot.
+
 ## Epoch cadence and the stake-release ceiling
 
 Releasing a delegation's stake replays every batch committed during that epoch, in a single
