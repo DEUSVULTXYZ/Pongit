@@ -1,13 +1,13 @@
 # Agent Arcade candidate
 
-Status as of 2026-09-18, 14:10 UTC: the fourth deployment of the day, below, is the first in which
-external agents play as on-chain strategies (see *On-chain strategies*). It is in its forced
-qualification renewal in a private laboratory and is not qualified. Arcade n°3 remains live in its
-own laboratory for a house-only observation run across real renewals. No trial has qualified: the
-24-hour trial of September 14 did not, and the one started on n°3 cannot, because it froze inputs a
-renewal rewrites (see *Why the 24-hour trial did not qualify*). The human production feature gate
-remains unchanged, the public flag was never opened, and no bot process has been launched on a
-human arena.
+Status as of 2026-09-18, 15:20 UTC: the fourth deployment of the day, below, is the first in which
+external agents play as on-chain strategies (see *On-chain strategies*). Its private laboratory
+completed a real renewal, its first sample strategy qualified in Chaos by a real match, and its
+24-hour trial started at 15:12:57 UTC on release `e892c30`, due to end on September 19 at 15:12:57
+(up to two hours later if a renewal is in progress then). It is not qualified until that trial and
+the checks after it pass. Arcade n°3 was stopped at 15:10 after one full renewal under observation
+and is being retired. The human production feature gate remains unchanged, the public flag was never
+opened, and no bot process has been launched on a human arena.
 
 ## Contract candidate
 
@@ -223,6 +223,66 @@ costs about an hour between `closeEngine` and `releaseStake` during which the ar
 at a 2.92-hour epoch that is roughly 74 per cent availability. And serving a full four hours
 requires holding batch production under 250 per hour against the 342 per hour measured, which
 means slowing the house controller loop in `scripts/agent-house-worker.ts` from its current 55 ms.
+
+### What real-time play costs, and what it means for opening
+
+Every real-time client sends a transaction at least every sealing window, so it costs about one
+batch a second whatever it does. Measured on arcade n°3 on 2026-09-18: one hosted community agent
+playing a house bot, about **115 batches a minute**; the whole house league with its seats steered
+in the contract, **about 500 an hour** (556 and 508 in two 30-minute runs, and 235 in the 30
+minutes after the community agent stopped). The epoch that followed its qualification reached the
+1,000-batch roll in **50 minutes**, 765 of them in the first thirteen, while the community agent
+still played.
+
+A renewal is not free either. Arcade n°3's first roll under the new node: batch pressure at
+13:44:37 UTC, drained and closed at 13:49:36 (1,050 batches), stake released at 14:50:09,
+reopened at 14:51:25 and serving again at 14:53:57: **69 minutes** in which nothing plays.
+Nearly all of it is the hub's one-hour challenge window, which belongs to the validator's terms.
+
+What follows for a public opening:
+
+- **External agents are strategies** (see *On-chain strategies*): they cost nothing beyond the
+  match they play, so any number can register without moving the batch rate.
+- **A human challenge ("Play an agent") is real-time.** The human client sends inputs and ticks
+  like the community agent did; at the same rate, one epoch holds roughly nine minutes of human
+  play before it has to roll, and each roll takes the arcade offline for the time above. The web
+  client already extrapolates the court locally, so its 300 ms tick could be spaced out, but real-
+  time play stays near one batch a second. This is the open constraint for opening human
+  challenges, and it sits with Interlude: the September node sealed about every 10 s and would
+  have made the same play cost a tenth as much; a release whose cost did not grow with the batch
+  count would remove the ceiling altogether.
+- **The human production lifecycle has no batch guard.** `relayer/src/rooms-lifecycle.ts` renews
+  only near expiry. At about one batch a second, some twelve minutes of cumulative human play in
+  one epoch would put its stake past the release ceiling. It carries no traffic today (epoch 6,
+  zero batches) and is untouched by this work; a batch-pressure renewal for it is proposed as a
+  separate task.
+
+### Renewals as they actually ran on 2026-09-18
+
+The first renewals under the new node found three defects no test had reached, each in the path
+between one epoch and the next.
+
+- **The soak could not survive a renewal.** It froze the manifest and `lifecycle.json` by hash, and a
+  renewal rewrites both. It now freezes only what opens the gate (see *Why the 24-hour trial did not
+  qualify*). The run on arcade n°3 was kept as an observation instead: 13:05 to 15:10 UTC, 125
+  samples, one full renewal inside it, availability 0.44 (55 samples online, 70 draining or renewing),
+  two matches at once at its peak, no reverted engine job, Chaos effects 1 to 23 observed. Its
+  `sourceUnchanged: false` is real and explained: the keeper was patched nine minutes into the run
+  to switch the community agent off.
+- **The lifecycle closed under a match being admitted.** In laboratory n°4 admissions closed at
+  14:02:36.914, the service created a match 12 ms later from a flag it had read just before, the
+  lifecycle's count had already come back empty, and the epoch closed at 14:02:38. The house bots
+  then accepted and played on a node whose epoch had ended; all of it was lost with the epoch and
+  the match was cancelled at the reopening. The lifecycle now waits until admissions have been shut
+  for 60 s, longer than an offer lives, before trusting an empty count.
+- **A command lost with its epoch could never be sent again.** Those same bots had signed
+  `registerControls` and an acceptance after the close. In epoch 2 the engine handed back the same
+  nonces, the bots signed the same bytes, and the shared command journal refused them as already
+  resolved, forever: NOVA and PULSE could not accept a single offer, which cancelled two
+  qualification matches. Had the old command been committed, the engine would have moved past its
+  nonce, so identical bytes in a newer epoch prove it was lost; the refusal is now scoped to the
+  epoch. Both bots recovered on restart. The human rooms client uses the same journal and had the
+  same latent behaviour.
 
 ### The Chaos freeze of 2026-09-18, and the loop that caused it
 
