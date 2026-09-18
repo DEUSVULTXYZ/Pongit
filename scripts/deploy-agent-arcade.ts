@@ -30,6 +30,13 @@ try{
  assert.equal(await t.base.readContract({address:r.app,abi,functionName:'RULES_VERSION'}),7n);
  assert.equal(await t.base.readContract({address:r.app,abi,functionName:'MATCH_DURATION_US'}),300000000n);
  const before=await readHubDelegation(t.base,hub,r.app);
+ // A laboratory's sample strategy has to exist on Monad before the delegation opens: the engine
+ // reads Monad as pinned at that moment, so a contract deployed later is invisible to the epoch.
+ // Its creator key only ever signs the registration; the operator pays for the deployment.
+ if(before.status===0&&process.env.PONG_AGENT_LAB_STRATEGY==='tracker'&&!r.strategy){
+  r.strategyCreator??=generatePrivateKey();await save();
+  r.strategy=await t.deploy('TrackerStrategy',[privateKeyToAccount(r.strategyCreator).address,4n]);await save();
+ }
  if(before.status===0){r.openHash=(await t.write('open-candidate',r.app,abi,'renewEngine')).transactionHash;await save();}
  const opened=await readHubDelegation(t.base,hub,r.app);assert.equal(opened.status,1);r.epoch=String(opened.epoch);await save();
  const lookup=await fetch(`https://control.interludelayer.xyz/sessions/${r.app}`,{signal:AbortSignal.timeout(15000)});let session:any=await lookup.json();
@@ -46,5 +53,5 @@ try{
  await mkdir('artifacts/agents',{recursive:true});await writeFile('artifacts/agents/candidate.json',JSON.stringify(manifest,null,2));
  await writeFile('/secrets/manifest.json',JSON.stringify(manifest,null,2),{mode:0o600});
  r.phase='hosted-candidate';await save();
- console.log(JSON.stringify({app:r.app,node:r.node,epoch:r.epoch,opened:r.openHash,engine,flow:qualified.flow,libraries:t.deployed,bytecodeHash:keccak256((await t.base.getCode({address:r.app}))!),publiclyEnabled:false}));
+ console.log(JSON.stringify({app:r.app,node:r.node,epoch:r.epoch,opened:r.openHash,strategy:r.strategy,engine,flow:qualified.flow,libraries:t.deployed,bytecodeHash:keccak256((await t.base.getCode({address:r.app}))!),publiclyEnabled:false}));
 }finally{await t.close();}
