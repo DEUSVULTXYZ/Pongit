@@ -6,7 +6,34 @@ The authoritative runtime manifest is returned by `GET /api/agents/config`. It i
 
 An agent match reference always contains `chainId`, `app`, `epoch` and `id`. An old reference must not resolve to a different deployment's game.
 
-## Build and run
+## Two ways to build an agent
+
+An **on-chain strategy** is a contract on Monad Testnet implementing `IPongStrategy`. The arcade itself asks it for a direction on every 100 milliseconds of game time, so nothing of yours has to keep running and the strategy costs the arcade nothing beyond the match it plays. It is always accepted, and it is how most agents should be built.
+
+A **hosted real-time agent** is a process you run that holds a playing key and sends its own signed inputs. Every input and tick is a transaction of the execution chain, and an epoch can only hold about 1,400 hub batches before its stake can no longer be released, so a public arcade closes this kind by default. `GET /config` says which kinds are open in `registration.strategies` and `registration.realtimeAgents`.
+
+## Write an on-chain strategy
+
+Implement two functions. `decide(PongView v)` returns -1 to move up, 1 to move down or 0 to hold. `creator()` returns the creator address that will sign the registration.
+
+`PongView` is the game from your seat: `mode` (0 Classic, 1 Chaos), `side` (0 defends x = 40 px, 1 defends x = 984 px), game time `t` in microseconds, your paddle centre and half-height, the opponent's paddle centre, both scores, and the live balls: none between points, two under Chaos MULTIBALL. Positions are in pico-pixels (10¹² per pixel), velocities in micro-pixels per second (10⁶ per pixel per second). The table is 1024 by 576 pixels and y grows downwards.
+
+The arcade calls `decide` under STATICCALL with 50,000 gas and reads exactly 32 bytes of the answer. A revert, running out of gas, or any answer other than -1, 0 or 1 leaves the paddle doing what it was doing; it can never stop the match or touch the other seat. Because the call is static, a strategy has no memory between calls: it decides from the view, and from any contract state it chooses to read. That state is Monad as it was when the arcade's current epoch opened.
+
+The repository's `contracts/src/agents/examples/TrackerStrategy.sol` is a complete starting point. It predicts where the nearest incoming ball crosses its paddle line, folding the path off the walls, in 2,700 to 6,300 gas. Deploy and register it with:
+
+```sh
+forge build
+CREATOR_KEY=0x... DEPLOY=tracker WAIT=1 npx tsx agent-sdk/strategy.ts
+```
+
+To register your own contract instead, set `STRATEGY` to its address and leave out `DEPLOY`. `AGENT_NAME`, `AGENT_AVATAR` and `MODES` set its profile.
+
+Before anything is written, the service checks on Monad that the contract exists, that `creator()` names the signing creator, and that `decide` answers -1, 0 or 1 within the gas budget on sample positions from both sides and both modes. Each refusal names the problem. A contract deployed after the current epoch opened is refused with `AGENT_STRATEGY_NEXT_EPOCH`, because the arcade cannot see it yet; register it again after the next renewal. The check cannot see that a `decide` writes to storage, which works in a plain call but always holds under the arcade's STATICCALL; the qualification match catches it.
+
+A strategy is queued for qualification at once. For each mode it plays one friendly match against a house bot or another strategy, and qualifies if the match is played to the end and its paddle leaves the centre it starts on, which only its own answers can do. Signing the same registration again queues any mode that has to be retried. A qualified strategy is always available: it enters the league rotation and can be challenged, and it cannot go offline.
+
+## Build and run a hosted real-time agent
 
 The SDK source is in `agent-sdk/src`, and `agent-sdk/example.ts` demonstrates a controller hosted by its developer. Build with:
 
@@ -26,9 +53,9 @@ The SDK exports `createAgentClient`, `AgentController`, `agentArcadeAbi`, regist
 
 ## Register a declared identity
 
-`POST /api/agents/register` accepts `creator`, `agent`, `name`, `avatar`, `modes`, `expires`, `creatorProof` and `agentProof`. The creator and agent addresses must differ. Modes are a bitmask: Classic is 1, Chaos is 2, both is 3. Avatar IDs range from 0 to 11.
+`POST /api/agents/register` accepts `creator`, `agent`, `name`, `avatar`, `modes`, `expires`, `creatorProof` and `agentProof`. The creator and agent addresses must differ. Leaving out `agentProof` registers `agent` as an on-chain strategy: only the creator signs, and the contract vouches for itself through `creator()`. A registration with `agentProof` is refused with HTTP 403 `AGENT_REALTIME_CLOSED` where hosted real-time agents are closed. Modes are a bitmask: Classic is 1, Chaos is 2, both is 3. Avatar IDs range from 0 to 11.
 
-Both owners sign the same EIP-712 `AgentRegistration`. Its domain is `PONGIT Agent Arcade`, version `1`, chain 10143 and the specific agent contract. The payload binds the addresses, mode mask, canonical metadata hash and short expiry. `agentMetadata(name, avatar)` generates the exact hash used by the contract. The two proofs are verified before the identity is registered onchain.
+For a hosted agent, both owners sign the same EIP-712 `AgentRegistration`. Its domain is `PONGIT Agent Arcade`, version `1`, chain 10143 and the specific agent contract. The payload binds the addresses, mode mask, canonical metadata hash and short expiry. `agentMetadata(name, avatar)` generates the exact hash used by the contract. The two proofs are verified before the identity is registered onchain.
 
 Identity fields are immutable in this candidate. The service cannot relabel a community address as a house bot: house identities are restricted by the operator's explicit address allowlist. Declared creator checks do not prevent a person from operating multiple creator addresses.
 
@@ -59,7 +86,7 @@ A verification outage does not erase the key. A confirmed revocation or expired 
 | `GET /history?player=0x...` | Recent compact results and replay availability |
 | `GET /replay?id=...&app=0x...&epoch=...` | Replay or explicit unavailable state for an exact reference |
 
-These paths are relative to `/api/agents`. Authenticated routes require the SDK's bearer token. Responses distinguish HTTP 400, 401, 409, 429 and temporary service failures, with readable error text, source and a request ID. A 429 includes `retryAt`; wait before sending again.
+These paths are relative to `/api/agents`. Authenticated routes require the SDK's bearer token; a strategy has no session and needs none of them. Responses distinguish HTTP 400, 401, 403, 409, 429 and temporary service failures, with readable error text, a code, source and a request ID. Only a 429 or a temporary failure is worth retrying unchanged; a 429 includes `retryAt`, so wait until then.
 
 Poll `/me` at most once per second in a controller and send a heartbeat every ten seconds. Game observation uses `watch(id, listener)` and Interlude's applied-event subscription, with periodic authoritative reads. Movement uses `move(id, direction)` where direction is -1, 0 or 1. `tickIfNeeded` coordinates the primary player, peer fallback and service fallback. Do not create another unconditional tick loop.
 

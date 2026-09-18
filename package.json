@@ -45,6 +45,7 @@
     "abi:agents": "tsx scripts/abi-agents.ts",
     "test:agents": "forge test --root contracts --match-contract AgentArcadeTest && tsx --test tests/agents.test.ts",
     "test:differential:house": "tsx scripts/differential-house.ts",
+    "test:strategies": "tsx scripts/strategy-vetting-check.ts",
     "agent:modules": "tsx scripts/agent-qualified-modules.ts"
   },
   "dependencies": {

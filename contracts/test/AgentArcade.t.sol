@@ -16,6 +16,39 @@ import {IInterludeHub} from "../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../vendor/interlude/interfaces/Types.sol";
 import {ChaosState as T} from "../src/chaos/ChaosState.sol";
 
+import {IPongStrategy} from "../src/agents/IPongStrategy.sol";
+import {TrackerStrategy} from "../src/agents/examples/TrackerStrategy.sol";
+
+/// Strategies written to hurt the arcade. Each names its creator so it registers like any other.
+abstract contract NamedStrategy is IPongStrategy {
+    address public immutable override creator;
+    constructor(address c) {creator=c;}
+}
+contract RevertingStrategy is NamedStrategy {
+    constructor(address c) NamedStrategy(c) {}
+    function decide(PongView calldata) external pure override returns (int8) {revert("no");}
+}
+contract BurningStrategy is NamedStrategy {
+    constructor(address c) NamedStrategy(c) {}
+    function decide(PongView calldata) external pure override returns (int8) {uint256 x;while(true){x++;}return 0;}
+}
+contract FloodingStrategy is NamedStrategy {
+    constructor(address c) NamedStrategy(c) {}
+    function decide(PongView calldata) external pure override returns (int8) {assembly{return(0,20000)}}
+}
+contract OutOfRangeStrategy is NamedStrategy {
+    constructor(address c) NamedStrategy(c) {}
+    function decide(PongView calldata) external pure override returns (int8) {return 5;}
+}
+/// Same selector as IPongStrategy.decide, but not view: it tries to write. STATICCALL stops it.
+contract WritingStrategy {
+    address public immutable creator;
+    uint256 public calls;
+    constructor(address c) {creator=c;}
+    function decide(IPongStrategy.PongView calldata) external returns (int8) {calls++;return 1;}
+}
+contract NoCreatorContract {}
+
 contract AgentHarness is PongAgentArcade {
     constructor(IInterludeHub h,address admission,ChaosEngine module)PongAgentArcade(h,admission,msg.sender,module){}
     function nearEnd(uint256 id,uint8 a,uint8 b,uint64 time) external {
@@ -372,6 +405,100 @@ contract AgentArcadeTest is ChaosPhysicsTest {
         vm.roll(block.number+1);vm.prank(KA);game.tick(600);
         if(game.phaseOf(600)==2){vm.roll(block.number+100);vm.prank(KA);game.tick(600);}
         assertEq(game.phaseOf(600),3,"the seventh point must finish the match");
+    }
+    // --- on-chain strategies ---------------------------------------------------------------------
+    function registerStrategy(uint256 creatorKey,address strategy,bytes32 metadata) private {
+        AgentIdentity.Registration memory r=AgentIdentity.Registration(vm.addr(creatorKey),strategy,3,metadata,uint64(block.timestamp+300));
+        bytes32 h=game.registrationDigest(r);game.registerAgent(r,sig(h,creatorKey),"");
+    }
+    function seatsOffer(uint256 id,address a,address b,uint8 mode) private view returns(Rooms.Offer memory){
+        return Rooms.Offer(id,bytes32(id),a,b,mode,false,uint64(block.timestamp+20),7,bytes32(id));
+    }
+    function clockOf(uint256 id,uint8 mode) private view returns(uint64){return mode==0?game.gameTime(id):game.gameTime1(id);}
+    /// A strategy cannot sign, so it registers by naming its creator, whose signature is checked,
+    /// and it is marked as a strategy in its identity word.
+    function testAStrategyRegistersByNamingItsCreator() public {
+        TrackerStrategy s=new TrackerStrategy(vm.addr(C1),4);
+        registerStrategy(C1,address(s),keccak256("tracker"));
+        (address creator,,,)=game.agentIdentity(address(s));
+        assertEq(creator,vm.addr(C1));
+        assertTrue(game.rawWord(uint160(address(s)),40)&(uint256(1)<<176)!=0,"marked as a strategy");
+    }
+    /// Without an agent signature, only a contract that names the signing creator can register.
+    function testStrategyRegistrationRefusesWhatCannotVouchForItself() public {
+        TrackerStrategy other=new TrackerStrategy(vm.addr(C2),4);
+        AgentIdentity.Registration memory r=AgentIdentity.Registration(vm.addr(C1),address(other),3,keccak256("x"),uint64(block.timestamp+300));
+        bytes memory proof=sig(game.registrationDigest(r),C1);
+        vm.expectRevert(AgentIdentity.InvalidRegistration.selector);game.registerAgent(r,proof,"");
+        r.agent=vm.addr(A);proof=sig(game.registrationDigest(r),C1);
+        vm.expectRevert(AgentIdentity.InvalidRegistration.selector);game.registerAgent(r,proof,"");
+        r.agent=address(new NoCreatorContract());proof=sig(game.registrationDigest(r),C1);
+        vm.expectRevert(AgentIdentity.InvalidRegistration.selector);game.registerAgent(r,proof,"");
+    }
+    /// A strategy seat is taken by being in the signed offer: the house bot's acceptance starts it.
+    function testAHouseAcceptanceStartsAMatchAgainstAStrategy() public {
+        registerHouse(C1,A,ONYX_META);TrackerStrategy s=new TrackerStrategy(vm.addr(C2),4);registerStrategy(C2,address(s),keccak256("t"));
+        bind(A,KA);Rooms.Offer memory o=seatsOffer(1100,vm.addr(A),address(s),0);bytes memory signature=sig(game.ticketDigest(o),AD);
+        vm.prank(KA);game.acceptMatch(o,signature);
+        assertEq(game.phaseOf(1100),2,"both seats accepted once the house bot has");
+    }
+    /// Two strategies have no one to accept for them but the coordinator, and nobody else may.
+    function testOnlyTheCoordinatorStartsTwoStrategies() public {
+        TrackerStrategy s1=new TrackerStrategy(vm.addr(C1),4);TrackerStrategy s2=new TrackerStrategy(vm.addr(C2),4);
+        registerStrategy(C1,address(s1),keccak256("a"));registerStrategy(C2,address(s2),keccak256("b"));
+        Rooms.Offer memory o=seatsOffer(1101,address(s1),address(s2),1);bytes memory signature=sig(game.ticketDigest(o),AD);
+        bind(A,KA);vm.prank(KA);vm.expectRevert();game.acceptMatch(o,signature);
+        vm.prank(vm.addr(AD));game.acceptMatch(o,signature);
+        assertEq(game.phaseOf(1101),2);
+        vm.prank(vm.addr(AD));vm.expectRevert();game.acceptMatch(o,signature);
+    }
+    /// End to end: the strategy's paddle moves and it holds rallies against the expert house bot.
+    function testAStrategyPlaysTheExpertHouseBot() public {
+        registerHouse(C1,A,ONYX_META);TrackerStrategy s=new TrackerStrategy(vm.addr(C2),4);registerStrategy(C2,address(s),keccak256("t"));
+        bind(A,KA);Rooms.Offer memory o=seatsOffer(1102,vm.addr(A),address(s),0);bytes memory signature=sig(game.ticketDigest(o),AD);
+        vm.prank(KA);game.acceptMatch(o,signature);
+        uint256 bn=block.number;bool moved;
+        for(uint256 r;r<30&&game.phaseOf(1102)==2;r++){
+            bn+=100;vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(1102);
+            (,,PhysicsV2.State memory st)=snapshot(1102);if(st.right!=288e6)moved=true;
+        }
+        (,,PhysicsV2.State memory end)=snapshot(1102);
+        assertTrue(moved,"the strategy moves its paddle");
+        assertLe(uint256(end.scoreA)+end.scoreB,4,"a tracker holds most rallies");
+    }
+    /// A strategy that reverts, burns all its gas, floods return data, answers out of range or
+    /// tries to write can never stop a tick or move its paddle: its seat just holds.
+    function testHostileStrategiesNeverHurtTheMatch() public {
+        registerHouse(C1,A,ONYX_META);
+        address[5] memory hostile=[address(new RevertingStrategy(vm.addr(C2))),address(new BurningStrategy(vm.addr(C2))),
+            address(new FloodingStrategy(vm.addr(C2))),address(new OutOfRangeStrategy(vm.addr(C2))),address(new WritingStrategy(vm.addr(C2)))];
+        bind(A,KA);uint256 bn=block.number;
+        for(uint256 i;i<hostile.length;i++){
+            registerStrategy(C2,hostile[i],keccak256(abi.encode(i)));
+            for(uint8 mode;mode<2;mode++){
+                uint256 id=1200+i*2+mode;Rooms.Offer memory o=seatsOffer(id,vm.addr(A),hostile[i],mode);
+                bytes memory signature=sig(game.ticketDigest(o),AD);vm.prank(KA);game.acceptMatch(o,signature);
+                for(uint256 r;r<5&&game.phaseOf(id)==2;r++){
+                    uint64 before=clockOf(id,mode);
+                    bn+=100;vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(id);
+                    if(game.phaseOf(id)==2)assertGt(clockOf(id,mode),before,"the match keeps moving");
+                    assertEq((game.controlWord(id)>>2)&3,1,"the hostile seat holds still");
+                }
+                for(uint256 c;c<40&&game.phaseOf(id)==2;c++){uint64 was=clockOf(id,mode);vm.prank(KA);game.tick{gas:14_800_000}(id);if(clockOf(id,mode)==was)break;}
+                if(game.phaseOf(id)==2){vm.prank(KA);game.concede(id);}
+            }
+        }
+        assertEq(WritingStrategy(hostile[4]).calls(),0,"STATICCALL kept it from writing");
+    }
+    /// Two strategies can play Chaos, started by the coordinator, and the ticks fit a command.
+    function testTwoStrategiesPlayChaos() public {
+        TrackerStrategy s1=new TrackerStrategy(vm.addr(C1),4);TrackerStrategy s2=new TrackerStrategy(vm.addr(C2),4);
+        registerStrategy(C1,address(s1),keccak256("a"));registerStrategy(C2,address(s2),keccak256("b"));
+        Rooms.Offer memory o=seatsOffer(1300,address(s1),address(s2),1);bytes memory signature=sig(game.ticketDigest(o),AD);
+        vm.prank(vm.addr(AD));game.acceptMatch(o,signature);
+        uint256 bn=block.number;uint64 t0=game.gameTime1(1300);
+        for(uint256 r;r<10&&game.phaseOf(1300)==2;r++){bn+=100;vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(1300);}
+        assertGt(game.gameTime1(1300),t0+5_000_000,"ten one-second ticks move the clock");
     }
     function start(uint256 id,uint8 mode,bool ranked) private {
         bind(A,KA);bind(B,KB);Rooms.Offer memory o=offer(id,mode,ranked);bytes memory signature=sig(game.ticketDigest(o),AD);

@@ -49,7 +49,7 @@ The report at `soak-1789349439085.json` records `complete: true`, `errors: []` a
 - The environment entered an unrecovered outage at 2026-09-14T23:44:00.790Z and stayed in it until the final sample. The last 107 samples read `draining-for-renewal` and then `renewing`; the last 106.4 minutes produced no match, no on-chain job and no storage growth. The agent database is byte-identical to the report's closing figure days later.
 - Epoch 2 opened on 2026-09-13T23:49:34Z and expired 24 hours later, 1 hour 41 minutes before the soak's nominal end, so the run always needed a mid-trial renewal. The lifecycle drained and closed epoch 2 on schedule at block 62595260, then could not open epoch 3.
 - `https://il-4cecc7fb9f199fbd.fly.dev` has returned HTTP 503 since 2026-09-14T23:46:09Z. The human node answers normally through the same probes, so the fault is specific to the dedicated application. Nothing can be requalified until it is restored. Note that the node hostname is the first sixteen hex characters of the application address, not the whole address.
-- `complete` asserted only that the wall clock had run out without a SIGTERM, and `errors` recorded only exceptions thrown inside the sampling loop. The arcade reported its failure as sampled data, so 104 error samples, ten reverted transactions, one `Engine reset is not yet consistent` and one `Agent engine confirmed a rejected action` were all omitted. `scripts/agent-soak.ts` now records sampled failures and stage tallies, requires the arena to be online at the end, and hashes its gating inputs as well as its source. Replayed against the September 14 samples, the corrected logic reports `complete: false`.
+- `complete` asserted only that the wall clock had run out without a SIGTERM, and `errors` recorded only exceptions thrown inside the sampling loop. The arcade reported its failure as sampled data, so 104 error samples, ten reverted transactions, one `Engine reset is not yet consistent` and one `Agent engine confirmed a rejected action` were all omitted. `scripts/agent-soak.ts` now records sampled failures and stage tallies, requires the arena to be online at the end, and hashes its gating inputs as well as its source. Replayed against the September 14 samples, the corrected logic reports `complete: false`. A first version hashed the manifest and `lifecycle.json` whole, which a renewal rewrites on purpose (the epoch, the lifecycle's own record), so no soak could have passed across one; it now freezes only what opens the gate (application, hub, node, coordinator, both public flags, `renewalQualified`). A soak whose clock runs out during a renewal keeps sampling for at most two hours until that renewal completes; any other stage at the end gets no grace.
 - Concurrency never reached the configured capacity: `maxSimultaneous` was 1 against `maxMatches` 2. Of 1,435 samples, 1,258 had one active match and none had two. The league branch admits only when the arena is empty, reserving the second slot for a human, so a trial without human traffic cannot demonstrate two slots.
 - `/secrets/lifecycle.json`, which carries the `renewalQualified` precondition, was rewritten at 2026-09-14T23:47:18Z, during the run.
 
@@ -103,6 +103,69 @@ library to be linked rather than inlined: with every function `internal` it comp
 and would be folded into a contract that has 207 bytes of headroom. And the arcade still has to
 identify which sides are house bots and decode their difficulty, which `AgentIdentity` can already
 answer from `creator` and `metadata` without a new storage slot.
+
+## On-chain strategies
+
+A hosted real-time agent sends its own inputs and ticks. Measured on arcade n°3 on 2026-09-18, one
+community match cost about 115 hub batches a minute, against about 6 for the whole house league,
+and an epoch holds about 1,400 before its stake can no longer be released (see the next section).
+One such agent playing for twelve minutes spent most of an epoch. External agents therefore play
+the way the house bots already do: from the contract.
+
+**The model.** A creator deploys a contract implementing `IPongStrategy`
+(`contracts/src/agents/IPongStrategy.sol`) on Monad Testnet and registers it. On every 100 ms slice
+the arcade builds a `PongView` of the game from that seat and calls `decide(view)`, exactly where it
+steers a house seat. Nothing runs outside the chain, so a strategy costs nothing beyond the match
+it plays, and the batch rate of a match is the coordinator's, whoever plays it.
+
+**Registration without an agent signature.** A contract cannot sign. `AgentIdentity.register` takes
+an empty `agentProof` to mean a strategy: the creator's EIP-712 signature is still required, the
+address must hold code, and its `creator()` must return that creator, read with a 30,000-gas
+STATICCALL. The identity word is marked with bit 176. An address with code can never pass the
+agent-signature route, and an address without code can never pass this one.
+
+**Acceptance.** Nobody can accept for a contract. A strategy seat counts as accepted by the offer
+itself, so the other seat's acceptance starts the match. When both seats are strategies only the
+admission key (the coordinator) may accept; any other caller is refused, and a second acceptance
+is refused like any other.
+
+**The call.** `AgentSteer._ask` encodes the view, STATICCALLs with a fixed 50,000 gas, copies
+exactly 32 bytes of the answer and accepts only -1, 0 or 1. A revert, an exhausted budget, a flood of
+return data, an out-of-range answer or an attempt to write all leave the seat's direction where it
+was. Two hostile strategies cost at most 100,000 gas a slice, which a 30 M tick absorbs while still
+covering about 20 s of Classic or 10 s of Chaos. `PongAgentArcade` did not grow: all of this lives in
+the two linked libraries (`AgentSteer` 9,274 bytes, `AgentIdentity` 5,909, arcade 24,561 of 24,576).
+
+**Visibility.** The engine executes against Monad as pinned when its epoch opened. A strategy
+deployed after that block does not exist for it until the next renewal. The service rehearses the
+registration on the engine after checking Monad, and a named `InvalidRegistration` there is reported
+as `AGENT_STRATEGY_NEXT_EPOCH` with the pinned block, never as a fault of the strategy.
+
+**Service.** `relayer/src/agents/strategies.ts` vets a strategy on Monad before anything is written
+(code, `creator()`, and `decide` on four sample positions covering both sides, both modes, one, two
+and no balls, with the same 50,000-gas budget after the call's own intrinsic and calldata cost). A
+strategy needs no presence: admission treats it as always available. It is queued for both modes at
+registration and qualifies by completing a friendly match in which its paddle leaves the centre in at
+least three recorded frames, which only its own answers can do. The league now pairs whoever has
+waited longest against whoever has waited longest among other creators, so every qualified agent gets
+its turn however many register. House clients tick only against a real-time community agent.
+Registration of hosted real-time agents is closed once the arcade is public unless
+`PONG_AGENT_REALTIME=open`; `GET /config` reports both kinds under `registration`.
+
+**Evidence.** Forge: seven strategy tests (registration, three refusals, house acceptance, coordinator-
+only acceptance, end-to-end against ONYX, five hostile strategies in both modes, two strategies in
+Chaos), each shown to fail against a mutation of the rule it covers; 404 tests in all. TypeScript: the
+compiled `IPongStrategy` selectors match the service's ABI, vetting refuses each failure with its own
+message and never condemns a strategy on a network error, and only a named `InvalidRegistration` is
+blamed on the pinned epoch (two mutations caught). Real bytecode on a local anvil
+(`npm run test:strategies`): `TrackerStrategy` passes in 2,700 to 6,300 gas a decision, and the
+reverting, gas-burning, out-of-range and creator-less contracts are each refused for their own
+reason. PostgreSQL and HTTP on the laboratory database: five new checks, fifteen in all.
+
+**Known limits.** The vetting cannot see a `decide` that writes, which works in a plain call and
+always holds under STATICCALL; its qualification match fails instead. A strategy has no memory
+between calls. It may read other contracts, but only as they were when the epoch opened. Its
+creator can redeploy behind a proxy between epochs, which a hosted agent could always do.
 
 ## Epoch cadence and the stake-release ceiling
 

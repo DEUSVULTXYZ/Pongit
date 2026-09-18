@@ -27,18 +27,35 @@ library AgentIdentity {
             keccak256("AgentRegistration(address creator,address agent,uint8 modes,bytes32 metadata,uint64 expires)"),
             r.creator,r.agent,r.modes,r.metadata,r.expires))));
     }
+    /// Bit of an identity word marking an on-chain strategy: a contract the arcade asks for each
+    /// decision, rather than a key that sends its own inputs.
+    uint256 internal constant STRATEGY=uint256(1)<<176;
     function register(mapping(bytes32=>uint256) storage words,Registration calldata r,bytes calldata creatorProof,bytes calldata agentProof) public {
         if(r.creator==address(0)||r.agent==address(0)||r.creator==r.agent||r.modes==0||r.modes>3||r.metadata==bytes32(0)
             ||r.expires<=block.timestamp||r.expires>block.timestamp+10 minutes)revert InvalidRegistration();
         bytes32 k=key(uint160(r.agent),40);
         if(words[k]!=0)revert AlreadyRegistered();
         bytes32 hash=digest(r);
-        if(Session.recover(hash,creatorProof)!=r.creator||Session.recover(hash,agentProof)!=r.agent)revert InvalidRegistration();
-        words[k]=uint160(r.creator)|(uint256(r.modes)<<160);
+        if(Session.recover(hash,creatorProof)!=r.creator)revert InvalidRegistration();
+        // A strategy cannot sign. It proves its creator by naming it, and it has to exist where the
+        // arcade runs: a contract deployed on Monad after this epoch's base block does not, yet.
+        bool strategy=agentProof.length==0;
+        if(strategy?r.agent.code.length==0||creatorOf(r.agent)!=r.creator:Session.recover(hash,agentProof)!=r.agent)revert InvalidRegistration();
+        words[k]=uint160(r.creator)|(uint256(r.modes)<<160)|(strategy?STRATEGY:0);
         words[key(uint160(r.agent),41)]=uint256(r.metadata);
         uint256 count=words[key(0,42)];
         words[key(count,43)]=uint160(r.agent);words[key(0,42)]=count+1;
         emit AgentRegistered(r.agent,r.creator,r.modes,r.metadata);
+    }
+    /// The creator a strategy names, or zero. A fixed gas budget and a fixed-size read: a hostile
+    /// contract can neither exhaust the registration nor flood it with return data.
+    function creatorOf(address strategy) private view returns(address c){
+        bytes4 selector=bytes4(keccak256("creator()"));bool ok;uint256 size;uint256 out;
+        assembly{mstore(0,selector)ok:=staticcall(30000,strategy,0,4,0,32)size:=returndatasize()out:=mload(0)}
+        if(ok&&size>=32&&out<=type(uint160).max)c=address(uint160(out));
+    }
+    function isStrategy(mapping(bytes32=>uint256) storage words,address agent) internal view returns(bool){
+        return words[key(uint160(agent),40)]&STRATEGY!=0;
     }
     function qualify(mapping(bytes32=>uint256) storage words,address agent,uint8 mode,bool passed,bytes32 evidence) public {
         bytes32 k=key(uint160(agent),40);uint256 entry=words[k];
@@ -55,8 +72,12 @@ library AgentIdentity {
     }
     function namespace(uint256 ns,uint256 id) private view returns(bytes32){return keccak256(abi.encode(address(this),ns,id,uint256(0)));}
     function accept(mapping(bytes32=>uint256) storage words,Rooms.Offer calldata o,bytes calldata signature,bytes32 hash,address admission,address actor) external returns(bool fresh){
+        // A strategy seat is accepted by being in a signed offer: it has no key to accept with. The
+        // coordinator may submit the offer itself when a strategy is involved, which is the only
+        // way two strategies ever meet.
+        bool sa=isStrategy(words,o.a);bool sb=isStrategy(words,o.b);
         if(o.id==0||o.a==address(0)||o.b==address(0)||o.a==o.b||o.mode>1||o.rules!=7||o.expires<=block.timestamp||o.expires>block.timestamp+30
-            ||Session.recover(hash,signature)!=admission||actor!=o.a&&actor!=o.b)revert AgentAdmissionDenied();
+            ||Session.recover(hash,signature)!=admission||actor!=o.a&&actor!=o.b&&!(actor==admission&&(sa||sb)))revert AgentAdmissionDenied();
         validate(words,o.a,o.b,o.mode,o.ranked);
         uint256 meta=words[key(o.id,0)];uint256 phase=(meta>>161)&7;fresh=phase==0;
         if(fresh){
@@ -68,8 +89,8 @@ library AgentIdentity {
             words[key(o.id,10)]=uint256(hash);words[key(o.id,11)]=uint256(o.room);
             words[lockA]=o.id;words[lockB]=o.id;words[count]++;
         }else if(phase!=1||bytes32(words[key(o.id,10)])!=hash)revert AgentAdmissionDenied();
-        uint256 bit=actor==o.a?1:2;uint256 accepted=(meta>>164)&3;
-        if((accepted&bit)!=0)revert AgentAdmissionDenied();accepted|=bit;meta=(meta&~(uint256(3)<<164))|(accepted<<164);
+        uint256 add=(actor==o.a?1:0)|(actor==o.b?2:0)|(sa?1:0)|(sb?2:0);uint256 accepted=(meta>>164)&3;
+        if((add&~accepted)==0)revert AgentAdmissionDenied();accepted|=add;meta=(meta&~(uint256(3)<<164))|(accepted<<164);
         if(accepted==3){meta=(meta&~(uint256(7)<<161))|(2<<161);words[key(o.id,2)]|=uint64(block.number);}
         words[key(o.id,0)]=meta;emit MatchAccepted(o.id,o.room,actor,o.a,o.b,o.mode,o.ranked);
     }

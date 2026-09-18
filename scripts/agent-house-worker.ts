@@ -17,9 +17,16 @@ assert.equal(process.env.PONG_AGENT_WORKER,'dedicated-authorized');
 const m=JSON.parse(readFileSync(process.env.PONG_AGENT_MANIFEST!,'utf8')) as AgentManifest;
 const secrets=JSON.parse(readFileSync(process.env.PONG_AGENT_KEYS!,'utf8'));
 assert(secrets.bots.length===3&&m.app.toLowerCase()!=='0x78d3341e3452d7ec1add9371de3008639eed8eb0');
-// A house-versus-house match is ticked by the coordinator in bursts. Against anyone else,
-// TickPilot expects both clients to tick, so a steered house seat still does its share.
+// A match is ticked by the coordinator in bursts unless a real-time community agent plays in
+// it: then TickPilot expects both clients to tick, so a steered house seat does its share.
+// Against a house bot or an on-chain strategy nobody else sends anything, and every extra
+// tick would only spend a sealing window of its own.
 const houseSeats=new Set<string>(secrets.bots.map((b:any)=>String(b.address).toLowerCase()));
+// The service names each seat's kind; an older one did not, and then only house seats are known.
+const realtimeOpponent=(match:any,s:{a:string;b:string},side:0|1)=>{
+ const kind=side===0?match.kind_b:match.kind_a;
+ return kind?kind==='community':!houseSeats.has((side===0?s.b:s.a).toLowerCase());
+};
 const root=process.env.PONG_AGENT_STATE!;assert(root.startsWith('/secrets/'));mkdirSync(root,{recursive:true,mode:0o700});
 const apiUrl=process.env.PONG_AGENT_API!;assert(apiUrl);let stopping=false;
 const closeMetrics=process.env.PONG_AGENT_DIAGNOSTICS?await agentMetrics(process.env.PONG_AGENT_DIAGNOSTICS,'bots'):async()=>{};
@@ -37,7 +44,7 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
  const store={get:(k:string)=>record[k]??null,set:(k:string,v:string)=>{record[k]=v;save();},remove:(k:string)=>{delete record[k];save();}};
  const client=createAgentClient({manifest:m,abi,apiUrl,rpcUrl:process.env.RPC_URL,store,commandStore:{getItem:store.get,setItem:store.set}});
  const wallet=createWalletClient({account:owner,chain:monadTestnet,transport:http(process.env.RPC_URL)}),controller=new AgentController(index);
- let connected=false,registered=false,currentId:bigint|undefined,unwatch:(()=>void)|undefined,lastHeartbeat=0,lastLobby=0,match:any,reconnected=false,resumedAt=0n,errorAt=0,frames=0;
+ let own:Record<string,string>|null|undefined,connected=false,registered=false,currentId:bigint|undefined,unwatch:(()=>void)|undefined,lastHeartbeat=0,lastLobby=0,match:any,reconnected=false,resumedAt=0n,errorAt=0,frames=0;
  try{while(!stopping){
   try{
    if(!registered){
@@ -61,7 +68,7 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
    }
    const now=Date.now();
    if(now-lastHeartbeat>=10000){await client.api('/heartbeat',{});lastHeartbeat=now;}
-   if(now-lastLobby>=1000){match=(await client.api('/me')).match;lastLobby=now;}
+   if(now-lastLobby>=1000){const me=await client.api('/me');match=me.match;own=me.qualification;lastLobby=now;}
    if(!match){
     if(currentId){unwatch?.();unwatch=undefined;currentId=undefined;controller.reset();}
     const stored=decodeSession(store.get(storageKey(m.app,10143,owner.address)));
@@ -87,12 +94,14 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
     // inputs, and two after the reconnect (coordinator.qualification). One more of each for
     // margin, then the contract steers the seat like any other and the coordinator's burst
     // drives the match. Every input past that point is a sealing window of its own.
-    controlsNeeded=match.kind==='qualification'&&!(reconnected&&nonce>=6n&&nonce>=resumedAt+3n);
+    // Only when the trial is this bot's own: facing a strategy or agent that qualifies, a house bot
+    // that already has this mode plays like any league match, and its ticks come from the burst.
+    controlsNeeded=match.kind==='qualification'&&own?.[match.mode]!=='qualified'&&!(reconnected&&nonce>=6n&&nonce>=resumedAt+3n);
     if(!steered||controlsNeeded){
      const direction=controller.decide(snapshot,side,performance.now());await client.move(id,direction,false);await client.tickIfNeeded(id,performance.now());
-    }else if(!houseSeats.has((side===0?snapshot.b:snapshot.a).toLowerCase()))await client.tickIfNeeded(id,performance.now());
+    }else if(realtimeOpponent(match,snapshot,side))await client.tickIfNeeded(id,performance.now());
    }
-   await sleep(steered&&!controlsNeeded&&houseSeats.has((snapshot.a.toLowerCase()===owner.address.toLowerCase()?snapshot.b:snapshot.a).toLowerCase())?250:55);
+   await sleep(steered&&!controlsNeeded&&!realtimeOpponent(match,snapshot,side)?250:55);
   }catch(e){
    if((e as any).status===401)connected=false;
    if(Date.now()-errorAt>10000){errorAt=Date.now();console.log(stringify({at:new Date().toISOString(),bot:bot.name,status:'synchronizing',error:String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160)}));}

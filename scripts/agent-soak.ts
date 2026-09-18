@@ -12,9 +12,15 @@ const started=Date.now(),ends=started+86400000,api=process.env.PONG_AGENT_API!;l
 process.on('SIGTERM',()=>{stopped=true;});
 const sourcePaths=['relayer/src/agents/server.ts','relayer/src/agents/coordinator.ts','relayer/src/agents/metrics.ts','relayer/src/agents/replays.ts','shared/agent-client.ts','shared/engine-read.ts','scripts/agent-house-worker.ts','scripts/agent-community-qualification.ts','agent-sdk/example.ts','scripts/agent-process.mjs','scripts/agent-soak.ts','scripts/agent-lifecycle.ts','scripts/agent-archive-step.ts','scripts/agent-operator-step.ts','scripts/independent-chain-tools.ts','scripts/agent-ops.mjs','scripts/agent-private-keeper.mjs'];
 const sourceHashes=Object.fromEntries(await Promise.all(sourcePaths.map(async path=>[path,createHash('sha256').update(await readFile(path)).digest('hex')])));
-// The inputs that gate this soak must not move while it runs, so hash them too.
-const inputPaths=[manifestFile,'/secrets/lifecycle.json'];
-const inputHashes=Object.fromEntries(await Promise.all(inputPaths.map(async path=>[path,createHash('sha256').update(await readFile(path)).digest('hex')])));
+// What gates this soak must not move while it runs. Not the files whole: a renewal rewrites
+// both on purpose, the manifest's epoch and the lifecycle's own record, and a soak that
+// cannot span a renewal cannot show one works. Only what opens the gate is frozen.
+const gate=async()=>{
+ const [manifest,record]=(await Promise.all([readFile(manifestFile,'utf8'),readFile('/secrets/lifecycle.json','utf8')])).map(text=>JSON.parse(text));
+ return createHash('sha256').update(JSON.stringify({app:manifest.app,hub:manifest.hub,node:manifest.node,coordinator:manifest.coordinator,
+  enabled:manifest.enabled,qualified:manifest.qualified,renewalQualified:record.renewalQualified??null})).digest('hex');
+};
+const inputHashes={gate:await gate()};
 const report:any={startedAt:new Date(started).toISOString(),endsAt:new Date(ends).toISOString(),app:m.app,epochAtStart:m.epoch,sourceHashes,inputHashes,scope:'Real dedicated hosted agent service alongside unchanged human production',samples:0,available:0,humanAvailable:0,maxSimultaneous:0,maxSampleGapMs:0,errors:[],errorTally:{},stageTally:{},activeTally:{},unhealthySamples:0,longestUnhealthyRunMs:0,revertedJobs:0,complete:false};
 // A failing arcade still answers /health and reports the failure as sampled data,
 // so an exception-only error list stays empty while the environment is dead.
@@ -23,7 +29,14 @@ const note=(at:string,error:string)=>{const text=String(error).split('\n')[0].re
 let previousSample=started;
 const file=`${directory}/soak-${started}.json`,samples=`${directory}/soak-${started}.ndjson`;
 await writeFile(file,JSON.stringify(report,null,2),{mode:0o600});
-try{while(!stopped&&Date.now()<ends){
+// A renewal takes the arcade offline for over an hour by design (drain, close, the hub's
+// one-hour challenge window, release, reopen), and epochs roll every few hours, so the clock
+// can run out in the middle of one. Only then, and for at most two hours, the soak keeps
+// sampling until the renewal completes. A stuck one still ends it unhealthy, and any other
+// stage at the end, an error or a desynchronisation, gets no grace at all.
+const renewalStages=new Set(['draining-for-renewal','renewing','waiting-publication']),graceMs=7200000;
+const running=()=>Date.now()<ends||renewalStages.has(report.lastStage)&&Date.now()<ends+graceMs;
+try{while(!stopped&&running()){
  const at=Date.now();report.maxSampleGapMs=Math.max(report.maxSampleGapMs,at-previousSample);previousSample=at;const sample:any={at:new Date(at).toISOString()};
  try{
   const [agent,human,counts,storage,effects]=await Promise.all([
@@ -45,15 +58,15 @@ try{while(!stopped&&Date.now()<ends){
  }catch(e){sample.error=note(sample.at,String((e as Error).message));report.lastStage='error';report.stageTally.error=(report.stageTally.error||0)+1;report.unhealthySamples++;if(!unhealthySince)unhealthySince=at;report.longestUnhealthyRunMs=Math.max(report.longestUnhealthyRunMs,at-unhealthySince);}
  report.samples++;report.lastAt=sample.at;await appendFile(samples,JSON.stringify(sample)+'\n',{mode:0o600});
  await writeFile(file,JSON.stringify(report,null,2),{mode:0o600});
- await new Promise<void>(resolve=>{let timer:ReturnType<typeof setTimeout>;const stop=()=>{clearTimeout(timer);process.off('SIGTERM',stop);resolve();};timer=setTimeout(stop,Math.min(60000,Math.max(0,ends-Date.now())));process.once('SIGTERM',stop);});
+ await new Promise<void>(resolve=>{let timer:ReturnType<typeof setTimeout>;const stop=()=>{clearTimeout(timer);process.off('SIGTERM',stop);resolve();};timer=setTimeout(stop,Date.now()<ends?Math.min(60000,ends-Date.now()):60000);process.once('SIGTERM',stop);});
  }
  report.endedAt=new Date().toISOString();report.availability=report.samples?report.available/report.samples:0;report.humanAvailability=report.samples?report.humanAvailable/report.samples:0;
  report.sourceUnchanged=true;for(const [path,hash] of Object.entries(sourceHashes))if(createHash('sha256').update(await readFile(path)).digest('hex')!==hash)report.sourceUnchanged=false;
- report.inputsUnchanged=true;for(const [path,hash] of Object.entries(inputHashes))if(createHash('sha256').update(await readFile(path)).digest('hex')!==hash)report.inputsUnchanged=false;
+ report.inputsUnchanged=await gate()===inputHashes.gate;
  try{report.revertedJobs=Number((await db.query("SELECT count(*)::int AS count FROM agent_arcade.engine_jobs WHERE app=$1 AND state<>'confirmed' AND created_at>=to_timestamp($2/1000.0)",[m.app,started])).rows[0].count);}catch(e){note(new Date().toISOString(),String((e as Error).message));}
  // Burning twenty-four hours of wall clock proves nothing if the arena is dead at
  // the end; the previous test asked only whether the clock had run out.
- report.clockElapsed=!stopped&&Date.now()>=ends;report.endedHealthy=report.lastStage==='online';
+ report.clockElapsed=!stopped&&Date.now()>=ends;report.graceUsedMs=Math.max(0,Date.now()-ends);report.endedHealthy=report.lastStage==='online';
  report.complete=report.clockElapsed&&report.endedHealthy&&report.sourceUnchanged&&report.inputsUnchanged;
  report.qualification='Complete requires the full clock, an arena still online at the end, and unchanged source and gating inputs; review publication, renewal, RPC diagnostics, browser runs and sample gaps before opening. This report never opens the public flag automatically';
  await writeFile(file,JSON.stringify(report,null,2),{mode:0o600});console.log(JSON.stringify({file,complete:report.complete,samples:report.samples,availability:report.availability}));

@@ -3,8 +3,15 @@ export async function initializeAgents(db:Pool){await db.query(`
  CREATE SCHEMA IF NOT EXISTS agent_arcade;
  CREATE TABLE IF NOT EXISTS agent_arcade.identities (
   app text NOT NULL, agent text NOT NULL, creator text NOT NULL, name text NOT NULL, avatar smallint NOT NULL CHECK(avatar BETWEEN 0 AND 11),
-  kind text NOT NULL CHECK(kind IN ('pongit','community')), modes smallint NOT NULL CHECK(modes BETWEEN 1 AND 3),
+  kind text NOT NULL CHECK(kind IN ('pongit','community','strategy')), modes smallint NOT NULL CHECK(modes BETWEEN 1 AND 3),
   qualification jsonb NOT NULL DEFAULT '{}', registration jsonb, created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(app,agent));
+ -- A database created before on-chain strategies keeps the narrower check; widen it once.
+ DO $$BEGIN
+  IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname='identities_kind_check' AND pg_get_constraintdef(oid) LIKE '%strategy%') THEN
+   ALTER TABLE agent_arcade.identities DROP CONSTRAINT IF EXISTS identities_kind_check;
+   ALTER TABLE agent_arcade.identities ADD CONSTRAINT identities_kind_check CHECK(kind IN ('pongit','community','strategy'));
+  END IF;
+ END$$;
  CREATE TABLE IF NOT EXISTS agent_arcade.presence (
   app text NOT NULL, player text NOT NULL, available boolean NOT NULL DEFAULT false, seen timestamptz NOT NULL DEFAULT now(),
   connections int NOT NULL DEFAULT 0, PRIMARY KEY(app,player));

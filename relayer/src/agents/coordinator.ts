@@ -13,6 +13,7 @@ import {AgentEngineWriter} from './writer';
 import {measuredFetch} from '../../../shared/rpc-metrics';
 import {readHubDelegation} from '../../../shared/rooms-hub';
 import {AgentReplays} from './replays';
+import {leaguePair,STRATEGY_MOVED_FRAMES,STRATEGY_START} from './strategies';
 
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
 // With the house policy in the contract the house clients send no input, so this
@@ -70,6 +71,20 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
   for(const [address,nonce] of [[match.a,s.nonceA],[match.b,s.nonceB]] as const){
    const agent=(await db.query('SELECT * FROM agent_arcade.identities WHERE app=$1 AND agent=$2',[app,address])).rows[0];
    if(!agent||agent.qualification[match.mode]==='qualified')continue;
+   if(agent.kind==='strategy'){
+    // A strategy sends no inputs and holds no session, so there is nothing to reconnect. What it
+    // can prove is that the arcade asked it and it answered: its paddle left the centre it starts
+    // on, which nothing but its own answers can do, in a match played to the end.
+    const moved=Number((await db.query("SELECT count(*)::int AS n FROM agent_arcade.frames WHERE match_id=$1 AND frame->'state'->>$2<>$3",
+     [match.id,address===match.a?'left':'right',STRATEGY_START])).rows[0].n);
+    const passed=moved>=STRATEGY_MOVED_FRAMES;
+    if(passed){
+     const evidence=keccak256(toHex(json({app,id:match.id,epoch:match.epoch,result:await client.read('resultHashes',[BigInt(match.id)]),strategy:true,movedFrames:moved})));
+     await writer.send(`qualify:${match.id}:${address}:${match.mode}`,'qualifyAgent',[address,match.mode,true,evidence]);
+    }
+    await db.query('UPDATE agent_arcade.identities SET qualification=jsonb_set(qualification,ARRAY[$3],to_jsonb($4::text)) WHERE app=$1 AND agent=$2',[app,address,String(match.mode),passed?'qualified':'retry']);
+    continue;
+   }
    const check=(await db.query('SELECT * FROM agent_arcade.qualification_checks WHERE match_id=$1 AND player=$2',[match.id,address])).rows[0];
    const passed=nonce>=5n&&check?.resumed_token&&check.resumed_token!==check.initial_token&&nonce>=BigInt(check.resumed_nonce)+2n;
    if(passed){
@@ -85,6 +100,12 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
   if(s.phase===1&&s.deadline<BigInt(Math.floor(Date.now()/1000))){await writer.send(`cancel:${match.id}`,'cancelMatch',[BigInt(match.id)]);return;}
   if(s.phase===0){
    if(match.offer&&Number(match.offer.expires)<Math.floor(Date.now()/1000))await finish(match,{status:'cancelled'});
+   // Two strategies have nobody to accept for them. The contract lets the admission key do it,
+   // and only when both seats are strategies it would accept anyway; one acceptance starts it.
+   else if(match.offer&&match.kind_a==='strategy'&&match.kind_b==='strategy'){
+    const {signature,...ticket}=match.offer;for(const field of ['id','expires','rules'])ticket[field]=BigInt(ticket[field]);
+    await writer.send(`accept:${match.id}`,'acceptMatch',[ticket,signature]);feed.invalidate();
+   }
    return;
   }
   if(s.phase===2){
@@ -185,8 +206,9 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
    const count=Number((await c.query("SELECT count(*) FROM agent_arcade.matches WHERE app=$1 AND status IN ('preparing','offered','active','publishing')",[app])).rows[0].count);
    if(count>=2){await c.query('COMMIT');return;}
    await c.query("UPDATE agent_arcade.challenges SET status='expired' WHERE app=$1 AND status='waiting' AND expires_at<=now()",[app]);
-   const available=(await c.query(`SELECT i.*,p.connections FROM agent_arcade.identities i JOIN agent_arcade.presence p ON p.app=i.app AND p.player=i.agent
-     WHERE i.app=$1 AND p.available AND p.seen>now()-interval '30 seconds' AND NOT EXISTS(SELECT 1 FROM agent_arcade.occupancy o WHERE o.app=i.app AND o.player=i.agent)
+   // A strategy lives on Monad and cannot go offline, so it has no presence to keep fresh.
+   const available=(await c.query(`SELECT i.*,p.connections FROM agent_arcade.identities i LEFT JOIN agent_arcade.presence p ON p.app=i.app AND p.player=i.agent
+     WHERE i.app=$1 AND (i.kind='strategy' OR p.available AND p.seen>now()-interval '30 seconds') AND NOT EXISTS(SELECT 1 FROM agent_arcade.occupancy o WHERE o.app=i.app AND o.player=i.agent)
      ORDER BY i.created_at,i.agent`,[app])).rows;
    const requests=(await c.query("SELECT * FROM agent_arcade.challenges WHERE app=$1 AND status='waiting' ORDER BY created_at LIMIT 50 FOR UPDATE",[app])).rows;
    for(const request of requests){const agent=available.find(a=>a.agent===request.agent&&a.qualification[request.mode]==='qualified');
@@ -201,8 +223,8 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
      // Keep a second slot available for human challenges/qualification. A house
      // bot can share its creator with another, but that match remains friendly.
      if(count===0&&qualified.length>=2){
-      const recent=(await c.query('SELECT a,b FROM agent_arcade.matches WHERE app=$1 AND mode=$2 ORDER BY id DESC LIMIT 1',[app,mode])).rows[0];
-      const a=qualified.find(x=>x.agent!==recent?.a&&x.agent!==recent?.b)||qualified[0],b=qualified.find(x=>x.agent!==a.agent&&x.creator!==a.creator)||qualified.find(x=>x.agent!==a.agent)!;
+      const recent=(await c.query('SELECT a,b FROM agent_arcade.matches WHERE app=$1 AND mode=$2 ORDER BY id DESC LIMIT 200',[app,mode])).rows;
+      const [a,b]=leaguePair(qualified,recent)!;
       candidate={a:a.agent,b:b.agent,mode,ranked:a.creator!==b.creator,kind:'league'};break;
      }
     }
@@ -228,7 +250,9 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
   try{
    const session=await status();
    if(String(session.epoch)!==m.epoch)throw Error('Agent engine epoch changed; reconciliation required');
-   const matches=(await db.query("SELECT * FROM agent_arcade.matches WHERE app=$1 AND status IN ('preparing','offered','active','publishing') ORDER BY id",[app])).rows;
+   const matches=(await db.query(`SELECT m.*,ia.kind AS kind_a,ib.kind AS kind_b FROM agent_arcade.matches m
+     LEFT JOIN agent_arcade.identities ia ON ia.app=m.app AND ia.agent=m.a LEFT JOIN agent_arcade.identities ib ON ib.app=m.app AND ib.agent=m.b
+     WHERE m.app=$1 AND m.status IN ('preparing','offered','active','publishing') ORDER BY m.id`,[app])).rows;
    // One shared clock for every live match, so their ticks share sealing windows.
    const burst=Date.now()-burstAt>=TICK_AFTER_MS;if(burst)burstAt=Date.now();
    for(const match of matches){if(match.status==='preparing')await offer(match);else await observe(match,burst);}

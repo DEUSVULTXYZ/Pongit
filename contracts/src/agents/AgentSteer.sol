@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {HouseController} from "./HouseController.sol";
+import {IPongStrategy} from "./IPongStrategy.sol";
 
 /// @notice Linked entry point. Everything the arcade would otherwise pay root bytes for lives here.
 /// @dev `external` on purpose: an `internal` library is inlined into its caller, and the arcade has
@@ -23,6 +24,12 @@ library AgentSteer {
     ///      ball crosses the table in about 0.3 s, so a slice holds at most one hit and the ball
     ///      ends it no faster than 3,300 px/s. The human game is not affected.
     int256 internal constant MAX_SPEED = 3_000e6;
+    /// @dev Gas a strategy's decide() gets per slice. Enough for a ballistic prediction with wall
+    ///      reflections many times over; small enough that two strategy seats stay a minor part of a
+    ///      slice, since every tick's gas decides how many transactions, hence batches, a match costs.
+    uint256 internal constant STRATEGY_GAS = 50_000;
+    uint256 private constant STRATEGY_BIT = uint256(1) << 176;
+    uint256 private constant HOUSE_SEATS = 9;
 
     // Registration metadata of the three house bots, from agentMetadata(name, avatar).
     bytes32 internal constant NOVA = 0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
@@ -31,6 +38,82 @@ library AgentSteer {
 
     function _key(uint256 id, uint256 field) private view returns (bytes32) {
         return keccak256(abi.encode(address(this), uint256(0), id, field));
+    }
+
+    /// @dev An on-chain strategy is asked on every slice. Whatever it answers, or fails to, only
+    ///      this seat's direction bits can change.
+    function _strategyTurn(mapping(bytes32 => uint256) storage w, uint256 id, uint8 mode, uint8 side, uint256 control)
+        private
+        view
+        returns (uint256)
+    {
+        uint256 bits = side == 0 ? 0 : 2;
+        int8 held = int8(uint8((control >> bits) & 3)) - 1;
+        int8 chosen = _ask(address(uint160(w[_key(id, side)])), _view(w, id, mode, side), held);
+        return (control & ~(uint256(3) << bits)) | (uint256(uint8(chosen + 1)) << bits);
+    }
+
+    /// @dev Both seats in one word, to keep steer's stack shallow. Bit 0: seat A is a house bot,
+    ///      bits 1-2 its tier; bit 3: seat B is, bits 4-5 its tier; bit 6: seat A is an on-chain
+    ///      strategy; bit 7: seat B is. A house bot is never also treated as a strategy.
+    function _seats(mapping(bytes32 => uint256) storage w, uint256 id) private view returns (uint256 f) {
+        for (uint256 side; side < 2; side++) {
+            uint256 seat = uint256(uint160(w[_key(id, side)]));
+            (bool house, uint8 level) = _tier(w, seat);
+            if (house) f |= (1 | (uint256(level) << 1)) << (side * 3);
+            else if (w[_key(seat, 40)] & STRATEGY_BIT != 0) f |= uint256(1) << (6 + side);
+        }
+    }
+
+    /// @dev What a strategy sees from its seat, in the arcade's own units.
+    function _view(mapping(bytes32 => uint256) storage w, uint256 id, uint8 mode, uint8 side)
+        private
+        view
+        returns (IPongStrategy.PongView memory v)
+    {
+        Seat memory seat = mode == 0 ? _legacy(w, id, side) : _chaos(w, id, side);
+        v.mode = mode;
+        v.side = side;
+        v.t = seat.nowUs;
+        v.paddle = seat.position;
+        v.half = seat.half;
+        v.balls = new IPongStrategy.PongBall[](seat.balls.length);
+        for (uint256 i; i < seat.balls.length; i++) {
+            v.balls[i] = IPongStrategy.PongBall(seat.balls[i].x, seat.balls[i].y, seat.balls[i].vx, seat.balls[i].vy);
+        }
+        uint8 a;
+        uint8 b;
+        if (mode == 0) {
+            uint256 control = w[_key(id, 8)];
+            v.opponent = int256(uint256(uint64(w[_key(id, 7)] >> (side == 0 ? 64 : 0)))) * 1_000_000;
+            a = uint8((control >> 4) & 15);
+            b = uint8((control >> 8) & 15);
+        } else {
+            uint256 meta = w[_key(id, 28)];
+            v.opponent = int256(uint256(uint56(w[_key(id, 27)] >> (side == 0 ? 56 : 0))));
+            a = uint8(meta & 7);
+            b = uint8((meta >> 3) & 7);
+        }
+        (v.scoreSelf, v.scoreOther) = side == 0 ? (a, b) : (b, a);
+    }
+
+    /// @dev One bounded question. STATICCALL, a fixed gas budget, and a fixed 32-byte read, so a
+    ///      strategy can neither write, nor run the tick out of gas, nor flood it with return data.
+    function _ask(address strategy, IPongStrategy.PongView memory v, int8 held) private view returns (int8) {
+        bytes memory data = abi.encodeCall(IPongStrategy.decide, (v));
+        uint256 budget = STRATEGY_GAS;
+        bool ok;
+        uint256 size;
+        uint256 out;
+        assembly {
+            let buffer := mload(0x40)
+            ok := staticcall(budget, strategy, add(data, 32), mload(data), buffer, 32)
+            size := returndatasize()
+            out := mload(buffer)
+        }
+        if (!ok || size < 32) return held;
+        int256 d = int256(out);
+        return d == -1 || d == 0 || d == 1 ? int8(d) : held;
     }
 
     /// @dev Scales an over-fast ball back to MAX_SPEED, keeping its direction. Only velocity bits
@@ -331,9 +414,8 @@ library AgentSteer {
         if (mode == 1) _capSpeed(w, id);
         else _capLegacySpeed(w, id);
 
-        (bool houseA, uint8 levelA) = _tier(w, uint256(uint160(w[_key(id, 0)])));
-        (bool houseB, uint8 levelB) = _tier(w, uint256(uint160(w[_key(id, 1)])));
-        if (!houseA && !houseB) {
+        uint256 seats = _seats(w, id);
+        if (seats == 0) {
             // Nothing to steer. Chaos is still sliced: advanced whole, one second of effect 17 costs
             // more than a command carries, so the first catch-up after its players go quiet would
             // revert, and every later one with it. Sliced, it stops on the arcade's gas reserve and
@@ -345,12 +427,12 @@ library AgentSteer {
         }
 
         uint256 control = w[_key(id, 8)];
-        bytes32 seed = bytes32(w[_key(id, 3)]);
 
         // A ranked match plays the published label exactly, forever. ELO assumes stationary
         // strength on both sides, and an adapting opponent is not: a learner's rating would be
         // anchored to a version of itself that no longer exists, and its opponent's to it.
-        bytes32 brain = (w[_key(id, 0)] >> 160) & 1 == 1 ? bytes32(0) : _learnKey(w, id, mode);
+        // Only house seats learn; a match of strategies alone has nothing to attribute.
+        bytes32 brain = (w[_key(id, 0)] >> 160) & 1 == 1 || seats & HOUSE_SEATS == 0 ? bytes32(0) : _learnKey(w, id, mode);
         if (brain != bytes32(0)) {
             uint256 meta = mode == 0 ? control : w[_key(id, 28)];
             _learn(
@@ -365,9 +447,13 @@ library AgentSteer {
         uint256 brainWord = brain == bytes32(0) ? 0 : w[brain];
 
         for (uint8 side; side < 2; side++) {
-            if (side == 0 ? !houseA : !houseB) continue;
+            if (seats & (uint256(1) << (6 + side)) != 0) {
+                control = _strategyTurn(w, id, mode, side, control);
+                continue;
+            }
+            if (seats & (uint256(1) << (side * 3)) == 0) continue;
             Record memory r = _read(brainWord, side);
-            HouseController.Tuning memory t = _tuning(side == 0 ? levelA : levelB);
+            HouseController.Tuning memory t = _tuning(uint8((seats >> (side * 3 + 1)) & 3));
             // The trims only ever soften: a longer interval and a wider dead zone than the label,
             // never shorter or narrower. The label is a ceiling.
             t.reactionUs += uint32(r.dReact * 10_000);
@@ -382,7 +468,7 @@ library AgentSteer {
                 seat.position,
                 seat.half,
                 t,
-                _aimError(seed, seat.rally, side, t.error) + r.lead * HouseController.PICO
+                _aimError(bytes32(w[_key(id, 3)]), seat.rally, side, t.error) + r.lead * HouseController.PICO
             );
             uint256 shift = side == 0 ? 0 : 2;
             control = (control & ~(uint256(3) << shift)) | (uint256(uint8(dir + 1)) << shift);
