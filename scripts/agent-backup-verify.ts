@@ -8,9 +8,11 @@ import {createHash} from 'node:crypto';
 import {spawn,execFileSync} from 'node:child_process';
 import {Pool} from 'pg';
 assert.equal(process.env.PONG_AGENT_BACKUP_VERIFY,'isolated-vps');
-// A re-runnable verification needs a writable root: the fixed one from the first
-// pass already exists, so a second run would abort on EEXIST or destroy evidence.
-const root=process.env.PONG_AGENT_BACKUP_ROOT??'/opt/pongit/tests/agents-20260913/private/backup-20260914',container='pongit-agent-db-20260913';
+// A re-runnable verification needs its own root: a fixed one already exists after
+// the first pass, so a second run would abort on EEXIST or overwrite the evidence.
+// Set PONG_AGENT_BACKUP_ROOT for each further run of the same laboratory.
+const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert.match(stamp,/^20\d{6}$/,'The laboratory stamp is a date such as 20260918');
+const root=process.env.PONG_AGENT_BACKUP_ROOT??`/opt/pongit/tests/agents-${stamp}/private/backup-${stamp}`,container=`pongit-agent-db-${stamp}`;
 assert(root.startsWith('/opt/pongit/tests/agents-')&&root.includes('/private/')&&!root.includes('..'),'Keep candidate backups inside the private test root');
 const connection=new URL(process.env.DATABASE_URL!);assert.equal(connection.hostname,container);assert.equal(connection.pathname,'/agents');
 const db=new Pool({connectionString:String(connection),max:2}),source=await db.connect();
@@ -23,7 +25,7 @@ try{
  const snapshot=(await source.query('SELECT pg_export_snapshot() AS id')).rows[0].id;const expected=await counts(source);
  const dump=spawn('docker',['exec',container,'pg_dump','-U','agents','-d','agents','-Fc','--snapshot='+snapshot],{stdio:['ignore','pipe','inherit']});
  const dumped=new Promise(r=>dump.once('exit',r));await pipeline(dump.stdout!,createWriteStream(root+'/agents.dump',{mode:0o600}));assert.equal(await dumped,0);await source.query('COMMIT');
- await cp('/opt/pongit/secrets/agents-candidate-20260913',root+'/agent-secrets',{recursive:true});
+ await cp(`/opt/pongit/secrets/agents-candidate-${stamp}`,root+'/agent-secrets',{recursive:true});
  run('createdb','-U','agents',scratch);
  const restore=spawn('docker',['exec','-i',container,'pg_restore','-U','agents','-d',scratch,'--no-owner','--exit-on-error'],{stdio:['pipe','inherit','inherit']});
  const restored=new Promise(r=>restore.once('exit',r));await pipeline(createReadStream(root+'/agents.dump'),restore.stdin!);assert.equal(await restored,0);

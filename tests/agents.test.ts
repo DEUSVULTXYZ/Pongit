@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {zeroAddress,zeroHash} from 'viem';
 import {AgentController} from '../shared/agent-controller';
-import {agentMetadata,agentMatchKey,validateAgentManifest,houseBots,type AgentManifest} from '../shared/agents';
+import {readFile} from 'node:fs/promises';
+import {agentMetadata,agentMatchKey,validateAgentManifest,houseBots,houseSteerMetadata,steeredOnChain,type AgentManifest} from '../shared/agents';
+import {TICK_AFTER_MS,TICK_CEILING_MS,TICK_CYCLE_MS} from '../relayer/src/agents/coordinator';
 import {initial} from '../shared/physics-interlude';
 import type {EngineState} from '../shared/engine-stream';
 const app='0x1111111111111111111111111111111111111111';
@@ -29,4 +31,27 @@ test('agent manifests cannot substitute chains, financial arenas, duration or an
 test('registration metadata commits exact validated names and an existing avatar',()=>{
  assert.notEqual(agentMetadata('Agent One',0),agentMetadata('Agent One',1));assert.notEqual(agentMetadata('Agent One',0),agentMetadata('Agent Two',0));
  for(const [name,avatar] of [['',0],['<script>',0],['Agent',12],['Agent',-.5]] as const)assert.throws(()=>agentMetadata(name,avatar));
+});
+test('the client recognises exactly the seats the contract steers, and reads the tiers from its source',async()=>{
+ // If these drift apart the failure is silent and expensive: the worker keeps
+ // sending inputs the contract overwrites, and every one of them costs a batch.
+ const source=await readFile('contracts/src/agents/AgentSteer.sol','utf8');
+ const constants=['NOVA','PULSE','ONYX'].map(name=>{
+  const found=new RegExp(`constant ${name} = (0x[0-9a-f]{64});`).exec(source);
+  assert(found,`AgentSteer must declare ${name}`);return found[1];
+ });
+ assert.deepEqual(houseSteerMetadata.map(x=>x.toLowerCase()),constants);
+ for(const bot of houseBots)assert.equal(steeredOnChain(agentMetadata(bot.name,bot.avatar)),true);
+ assert.equal(steeredOnChain(agentMetadata('NOVA',1)),false);
+ assert.equal(steeredOnChain(agentMetadata('Community Agent',0)),false);
+});
+test('the tick fallback stays inside the catch-up window the contract can steer',async()=>{
+ // Above this the contract advances the whole gap unsteered and the paddles hold
+ // their last direction, which is invisible in a log and obvious on screen.
+ const source=await readFile('contracts/src/agents/AgentSteer.sol','utf8');
+ const slice=Number(/constant SLICE_US = ([0-9_]+);/.exec(source)![1].replace(/_/g,''));
+ const factor=Number(/constant MAX_CATCHUP_US = SLICE_US \* ([0-9]+);/.exec(source)![1]);
+ assert.equal(slice*factor/1000,TICK_CEILING_MS);
+ assert(TICK_AFTER_MS+TICK_CYCLE_MS<=TICK_CEILING_MS,'A tick gap must stay steerable');
+ assert(TICK_AFTER_MS>=200);
 });

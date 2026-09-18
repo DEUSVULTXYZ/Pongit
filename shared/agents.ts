@@ -21,6 +21,12 @@ export function agentMetadata(name:string,avatar:number):Hex {
  if(!/^[A-Za-z0-9][A-Za-z0-9 _.-]{1,31}$/.test(name)||!Number.isInteger(avatar)||avatar<0||avatar>11)throw Error('Invalid agent name or avatar');
  return keccak256(stringToHex(JSON.stringify({version:1,name,avatar})));
 }
+// The registration digests AgentSteer._tier recognises, in tier order. A seat whose
+// metadata is one of these is driven by the contract itself, so its client must not
+// send inputs: the write would be overwritten at the next advance and would still
+// cost a transaction, and transactions are what become hub batches.
+export const houseSteerMetadata=houseBots.map(b=>agentMetadata(b.name,b.avatar)) as readonly Hex[];
+export function steeredOnChain(metadata:Hex){return houseSteerMetadata.includes(metadata);}
 export function agentAuthMessage(player:string,nonce:string,expires:number,app:string){
  return `PONGIT Agent Arcade session\nPlayer: ${player.toLowerCase()}\nNonce: ${nonce}\nExpires: ${expires}\nChain: 10143\nGame: ${app.toLowerCase()}\nScope: agent availability, qualification and friendly challenges. No funds.`;
 }

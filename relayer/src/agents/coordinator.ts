@@ -15,6 +15,18 @@ import {readHubDelegation} from '../../../shared/rooms-hub';
 import {AgentReplays} from './replays';
 
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
+// With the house policy in the contract the house clients send no input, so this
+// fallback becomes the only thing advancing a house-versus-house match: it now sets
+// the transaction rate, and the transaction rate is what becomes hub batches.
+// The hard ceiling is AgentSteer.MAX_CATCHUP_US: 1.6 s of game time, and one
+// ephemeral block is 10 ms of game time, so 1.6 s of wall clock. A wider gap is
+// advanced with no steering at all — the paddles hold their last direction through
+// it. The cycle below fires every 500 ms, so the observed gap is the threshold plus
+// up to a cycle: 1100 ms is the largest threshold that still always steers, which
+// makes the old fixed 1500 too wide.
+export const TICK_CYCLE_MS=500,TICK_CEILING_MS=1600;
+export const TICK_AFTER_MS=Number(process.env.PONG_AGENT_TICK_MS??1000);
+if(!Number.isInteger(TICK_AFTER_MS)||TICK_AFTER_MS<200||TICK_AFTER_MS+TICK_CYCLE_MS>TICK_CEILING_MS)throw Error('Keep the agent tick between 200 ms and the contract catch-up ceiling');
 export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,rpcUrl:string,graphql?:(query:string,variables:unknown)=>Promise<any>){
  const app=m.app.toLowerCase(),signer=privateKeyToAccount(key);
  if(signer.address.toLowerCase()!==m.coordinator.toLowerCase())throw Error('Wrong Agent Arcade coordinator');
@@ -69,7 +81,7 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
     }).catch(e=>health('synchronizing',e)).then(()=>{}).finally(()=>proofs.delete(match.id));proofs.set(match.id,proof);
    }
    // Public maintenance is the final fallback. Both agent clients use TickPilot.
-   if(feed.progressAge(BigInt(match.id))>1500){await writer.send(`tick:${match.id}:${s.revision}`,'tick',[BigInt(match.id)]);feed.invalidate();}
+   if(feed.progressAge(BigInt(match.id))>TICK_AFTER_MS){await writer.send(`tick:${match.id}:${s.revision}`,'tick',[BigInt(match.id)]);feed.invalidate();}
    return;
   }
   if(s.phase>=3){

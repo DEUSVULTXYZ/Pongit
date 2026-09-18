@@ -4,11 +4,14 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 assert.equal(process.env.PONG_AGENT_LIVE_BROWSER,'isolated-vps');
-const origin='https://pongit.xyz',api='http://pongit-agent-service-20260913:4100',web='http://pongit-agent-ui-20260913:3000';
+const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert.match(stamp,/^20\d{6}$/,'The laboratory stamp is a date such as 20260918');
+const origin='https://pongit.xyz',api=process.env.PONG_AGENT_API??`http://pongit-agent-service-${stamp}:4100`,web=`http://pongit-agent-ui-${stamp}:3000`;
+// An override may only name another private laboratory service, never a public one.
+assert.match(api,/^http:\/\/pongit-agent-service-20[0-9]{6}:4100$/,'Point at a private laboratory service');
 let manifest:any;const admissionDeadline=Date.now()+1200000;
 while(Date.now()<admissionDeadline){
  manifest=JSON.parse(await readFile('/secrets/manifest.json','utf8'));
- assert.equal(manifest.app,'0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9');
+ assert(/^0x[\da-fA-F]{40}$/.test(manifest.app)&&manifest.app.toLowerCase()!=='0x78d3341e3452d7ec1add9371de3008639eed8eb0','Qualify a dedicated arcade, never the human application');
  try{const health=await fetch(api+'/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json());if(Number(manifest.epoch)>=2&&health.game.stage==='online'&&health.game.epoch===manifest.epoch)break;}catch{}
  await new Promise(r=>setTimeout(r,10000));
 }

@@ -7,7 +7,7 @@ import {monadTestnet} from 'viem/chains';
 import {decodeSession,storageKey} from '@interludelayer-sdk/sdk';
 import {createAgentClient} from '../shared/agent-client';
 import {AgentController} from '../shared/agent-controller';
-import {agentMetadata,agentRegistrationTypes,type AgentManifest} from '../shared/agents';
+import {agentMetadata,agentRegistrationTypes,steeredOnChain,type AgentManifest} from '../shared/agents';
 import {agentArcadeAbi as abi} from '../shared/abi-PongAgentArcade';
 import {engineReadRetryMs} from '../shared/engine-read';
 import {takeRpcSamples} from '../shared/rpc-metrics';
@@ -26,6 +26,9 @@ process.on('SIGTERM',()=>{stopping=true;});
 
 await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
  const owner=privateKeyToAccount(bot.key as Hex),creator=privateKeyToAccount(secrets.creator as Hex),file=`${root}/${index}.json`;
+ // Whether the arcade steers this seat itself is decided by its registration
+ // metadata alone, so the worker can know it without a single chain read.
+ const steered=steeredOnChain(agentMetadata(bot.name,bot.avatar));
  let record:Record<string,string>={};try{record=JSON.parse(readFileSync(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
  const save=()=>{writeFileSync(file+'.next',stringify(record),{mode:0o600});renameSync(file+'.next',file);};
  const store={get:(k:string)=>record[k]??null,set:(k:string,v:string)=>{record[k]=v;save();},remove:(k:string)=>{delete record[k];save();}};
@@ -76,9 +79,13 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
      unwatch=client.watch(id,()=>{frames++;});await client.read(id,true);
      await client.api('/qualification/checkpoint',{});reconnected=true;
     }
-    const direction=controller.decide(snapshot,side,performance.now());await client.move(id,direction);await client.tickIfNeeded(id,performance.now());
+    // A qualification match still needs real controls: its reconnect checkpoint is
+    // gated on a nonce of at least two, which only an input can raise.
+    if(!steered||match.kind==='qualification'){
+     const direction=controller.decide(snapshot,side,performance.now());await client.move(id,direction);await client.tickIfNeeded(id,performance.now());
+    }
    }
-   await sleep(55);
+   await sleep(steered&&match.kind!=='qualification'?250:55);
   }catch(e){
    if((e as any).status===401)connected=false;
    if(Date.now()-errorAt>10000){errorAt=Date.now();console.log(stringify({at:new Date().toISOString(),bot:bot.name,status:'synchronizing',error:String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160)}));}

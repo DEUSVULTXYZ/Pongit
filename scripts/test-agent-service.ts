@@ -13,7 +13,10 @@ import {agentArcadeAbi as abi} from '../shared/abi-PongAgentArcade';
 import {agentActions,agentAuthMessage,agentMetadata,agentRegistrationTypes,type AgentManifest} from '../shared/agents';
 import {initial} from '../shared/physics-interlude';
 assert.equal(process.env.PONG_AGENT_INTEGRATION_TEST,'isolated-vps');
-assert(new URL(process.env.DATABASE_URL!).hostname==='pongit-agent-db-20260913');
+assert.match(new URL(process.env.DATABASE_URL!).hostname,/^pongit-agent-db-20\d{6}$/,'Run against a dedicated agent database');
+// The hosted candidate that shares this database. Its rows must survive the cleanup.
+const liveCandidate=(process.env.PONG_AGENT_APP??'').toLowerCase();
+assert.match(liveCandidate,/^0x[0-9a-f]{40}$/,'Name the hosted candidate sharing this database in PONG_AGENT_APP');
 const db=new Pool({connectionString:process.env.DATABASE_URL,max:6});await initializeAgents(db);
 const key=generatePrivateKey(),creator=privateKeyToAccount(generatePrivateKey()),agent=privateKeyToAccount(generatePrivateKey()),player=privateKeyToAccount(generatePrivateKey()),sessionKey=privateKeyToAccount(generatePrivateKey());
 const m:AgentManifest={version:1,chainId:10143,engineChainId:4242,rulesVersion:7,app:privateKeyToAccount(key).address,hub:zeroAddress,coordinator:privateKeyToAccount(key).address,node:'https://not-a-real-agent-node.invalid',epoch:'1',maxMatches:2,durationSeconds:300,enabled:false,qualified:false};
@@ -71,7 +74,11 @@ try{
  await Promise.all([service.close(),service.close()]);
  // Only this test's random application. Never leave simulated results in the
  // database used by the separately pinned hosted candidate's qualification.
- const testApp=m.app.toLowerCase();assert.notEqual(testApp,'0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9');
+ // The address is freshly generated above, so this only has to exclude the two
+ // real applications that may share this database. The candidate is required at
+ // start-up, so this comparison can never silently be against an empty string.
+ const testApp=m.app.toLowerCase();assert.notEqual(testApp,'0x78d3341e3452d7ec1add9371de3008639eed8eb0');
+ assert.notEqual(testApp,liveCandidate);
  const cleanup=await db.connect();try{await cleanup.query('BEGIN');
   for(const table of ['frames','replays','qualification_checks'])await cleanup.query(`DELETE FROM agent_arcade.${table} WHERE match_id IN (SELECT id FROM agent_arcade.matches WHERE app=$1)`,[testApp]);
   for(const table of ['occupancy','challenges','sessions','auth_nonces','presence','identities','ratings','engine_jobs','health','control','lifecycle','matches'])await cleanup.query(`DELETE FROM agent_arcade.${table} WHERE app=$1`,[testApp]);

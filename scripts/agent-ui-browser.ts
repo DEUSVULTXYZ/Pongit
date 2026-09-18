@@ -9,7 +9,9 @@ import {houseBots} from '../shared/agents';
 import {initial} from '../shared/physics-v2';
 import {chaosBrowserPayload} from './chaos-browser-fixture';
 assert.equal(process.env.PONG_AGENT_UI_TEST,'captured-private-build');
-const root=resolve('artifacts/agents/ui'),origin='https://pongit.xyz',app='0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9';
+// Synthetic address: every response here is simulated. It must stay identical to
+// the one capture-agent-ui.mjs put in the captured query strings.
+const root=resolve('artifacts/agents/ui'),origin='https://pongit.xyz',app=`0x${'7'.repeat(40)}`;
 const profiles=houseBots.map((b,i)=>({agent:`0x${String(i+1).repeat(40)}`,creator:`0x${'4'.repeat(40)}`,name:b.name,avatar:b.avatar,kind:'pongit',modes:[0,1],qualification:{0:'qualified',1:'qualified'},available:true,createdAt:new Date().toISOString()}));
 const manifest={version:1,chainId:10143,engineChainId:4242,rulesVersion:7,app,hub:`0x${'5'.repeat(40)}`,coordinator:`0x${'6'.repeat(40)}`,node:'https://agents.invalid',epoch:'1',enabled:true,qualified:true,maxMatches:2,durationSeconds:300};
 const mime:Record<string,string>={'.html':'text/html','.js':'application/javascript','.css':'text/css','.json':'application/json','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.ttf':'font/ttf','.woff2':'font/woff2','.mp3':'audio/mpeg'};
