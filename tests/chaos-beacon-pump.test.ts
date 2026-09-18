@@ -29,3 +29,17 @@ test('failed retrieval respects retryAt without suspending any other arena',asyn
  await assert.rejects(pump.offer('b',state,async()=>state,async()=>{}));assert.equal(reads,2);
  now+=10001;await assert.rejects(pump.offer('a',state,async()=>state,async()=>{}));assert.equal(reads,3);
 });
+test('a proof is due exactly when drand has published the requested round and nothing is pending',()=>{
+ // Round r is published at genesis + (r - 1) * 3 s. A burst passes again only when
+ // this is true, so it never spends a sealing window on a round that is not out yet.
+ const round=100n,published=Number((1727521075n+(round-1n)*3n)*1000n);
+ const at=(ms:number)=>new ChaosBeaconPump({read:async()=>{throw Error('unused');}} as any,()=>ms);
+ const live={playing:true,request:round,pending:0n};
+ assert.equal(at(published-1000).due(live),false,'one second early');
+ assert.equal(at(published).due(live),true,'on the published second');
+ assert.equal(at(published).due({...live,pending:1n}),false,'a proof already pending');
+ assert.equal(at(published).due({...live,request:0n}),false,'no round requested');
+ assert.equal(at(published).due({...live,playing:false}),false,'match over');
+ // The request word carries the round in its low 64 bits and other data above.
+ assert.equal(at(published).due({...live,request:(7n<<64n)|round}),true,'high bits ignored');
+});

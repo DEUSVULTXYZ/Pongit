@@ -8,11 +8,16 @@ export class ChaosBeaconPump {
  private working=new Map<string,Promise<void>>();
  private retry=new Map<string,number>();
  constructor(private beacon:Pick<DrandBeaconTransport,'read'>=new DrandBeaconTransport(),private now=Date.now){}
+ /** Whether a proof can be sent now: a round is requested, none is pending, and
+  * drand has published that round. The one rule both offer and its callers use. */
+ due(state:BeaconRequestState):boolean{
+  const round=state.request&((1n<<64n)-1n);
+  return state.playing&&round!==0n&&!state.pending&&BigInt(Math.floor(this.now()/1000))>=1727521075n+(round-1n)*3n;
+ }
  offer(key:string,state:BeaconRequestState,read:()=>Promise<BeaconRequestState>,send:(request:bigint,proof:Hex)=>Promise<void>):Promise<void>{
   const existing=this.working.get(key);if(existing)return existing;
   const round=state.request&((1n<<64n)-1n);
-  if(!state.playing||!round||state.pending||this.now()<(this.retry.get(key)??0)||
-   BigInt(Math.floor(this.now()/1000))<1727521075n+(round-1n)*3n)return Promise.resolve();
+  if(!this.due(state)||this.now()<(this.retry.get(key)??0))return Promise.resolve();
   const job=this.run(key,state,round,read,send).finally(()=>this.working.delete(key));
   this.working.set(key,job);return job;
  }

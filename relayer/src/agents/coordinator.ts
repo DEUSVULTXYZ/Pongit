@@ -85,25 +85,33 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
   }
   if(s.phase===2){
    await db.query("UPDATE agent_arcade.matches SET status='active',updated_at=now() WHERE id=$1 AND status<>'active'",[match.id]);
-   if(s.chaos&&!proofs.has(match.id)){
-    const beaconState=(v:EngineState)=>({playing:v.phase===2,request:v.chaos?.request??0n,pending:v.chaos?.pending??0n});
-    const proof=beacon.offer(match.id,beaconState(s),async()=>beaconState(await state(match.id,true)),async(q,signature)=>{
+   // Only this process advances a match nobody else has touched lately: a house
+   // match, or any match whose players went quiet.
+   const ours=feed.progressAge(BigInt(match.id))>Math.min(TICK_AFTER_MS,3000);
+   const beaconState=(v:EngineState)=>({playing:v.phase===2,request:v.chaos?.request??0n,pending:v.chaos?.pending??0n});
+   const supply=(v:EngineState)=>{
+    if(!v.chaos||proofs.has(match.id))return proofs.get(match.id)??Promise.resolve();
+    const proof=beacon.offer(match.id,beaconState(v),async()=>beaconState(await state(match.id,true)),async(q,signature)=>{
      await writer.send(`beacon:${match.id}:${q}`,'submitRandomness',[BigInt(match.id),q,signature]);feed.invalidate();
-    }).catch(e=>health('synchronizing',e)).then(()=>{}).finally(()=>proofs.delete(match.id));proofs.set(match.id,proof);
-   }
-   // Public maintenance is the only driver of a house match, and the fallback for
-   // any other. A match someone else advanced recently is left to them.
-   if(burst&&feed.progressAge(BigInt(match.id))>Math.min(TICK_AFTER_MS,3000)){
-    let current=s;
-    for(let n=0;n<TICK_BURST_MAX&&current.phase===2;n++){
-     const before=processedTime(current);
-     await writer.send(`tick:${match.id}:${current.revision}`,'tick',[BigInt(match.id)]);feed.invalidate();
-     current=await state(match.id,true);
-     const after=processedTime(current);
-     // No progress means the match waits on something a tick cannot supply, such as
-     // a Chaos beacon; ticking again would only spend a sealing window.
-     if(after<=before||current.clock-after<=CAUGHT_UP_US)break;
-    }
+    }).catch(e=>health('synchronizing',e)).then(()=>{}).finally(()=>proofs.delete(match.id));proofs.set(match.id,proof);return proof;
+   };
+   // A match someone else drives needs its beacon at once, or it stalls under them.
+   // One only this process drives gets it inside the burst: a proof sent on its own
+   // spends a sealing window of its own, about fifteen of them per Chaos match.
+   if(!ours){supply(s);return;}
+   if(!burst)return;
+   let current=s;
+   for(let n=0;n<TICK_BURST_MAX&&current.phase===2;n++){
+    await supply(current);
+    const before=processedTime(current);
+    await writer.send(`tick:${match.id}:${current.revision}`,'tick',[BigInt(match.id)]);feed.invalidate();
+    current=await state(match.id,true);
+    const after=processedTime(current);
+    if(current.clock-after<=CAUGHT_UP_US)break;
+    // Stalled. Pass again only if the draw it waits on can be supplied right now;
+    // a round drand has not published yet, or anything a tick cannot give, would
+    // only spend another sealing window. The next burst picks it up.
+    if(after<=before&&!(current.chaos&&beacon.due(beaconState(current))))break;
    }
    return;
   }

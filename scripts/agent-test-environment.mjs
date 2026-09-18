@@ -22,6 +22,9 @@ const vars={POSTGRES_USER:'agents',POSTGRES_PASSWORD:password,POSTGRES_DB:'agent
  RPC_URL:process.env.RPC_URL,HOST:'0.0.0.0',PORT:'4100',PONG_AGENT_MANIFEST:'/secrets/manifest.json',PONG_AGENT_KEYS:'/secrets/service.json',
  PONG_AGENT_DIAGNOSTICS:'/diagnostics/agents',PONG_AGENT_SERVICE:'1'};
 assert(vars.RPC_URL&&new URL(vars.RPC_URL).protocol==='https:');
+// The tick cadence sets how many hub batches a house match costs, so a measurement
+// run must be able to choose it without a code change.
+if(process.env.PONG_AGENT_TICK_MS){assert(/^[0-9]{3,5}$/.test(process.env.PONG_AGENT_TICK_MS));vars.PONG_AGENT_TICK_MS=process.env.PONG_AGENT_TICK_MS;}
 try{vars.HASURA_ADMIN_SECRET=(await readFile(root+'/private/hasura-secret','utf8')).trim();vars.GRAPHQL_URL=`http://pongit-agent-hasura-${stamp}:8080/v1/graphql`;}
 catch(e){if(e.code!=='ENOENT')throw e;}
 await writeFile(root+'/private/service.env',Object.entries(vars).map(([k,v])=>`${k}=${v}`).join('\n')+'\n',{mode:0o600});
