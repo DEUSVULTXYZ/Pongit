@@ -41,9 +41,11 @@ contract PongAgentArcade is PongChaosEvents {
     function _advanceState(uint256 id,PhysicsV2.State memory legacy,uint64 target,bool mayResume) internal override returns(bool complete){
         // Slice to the target while each slice lands, the match is live, and a worst-case slice plus
         // the finish still fit: a Chaos slice at the speed cap measured up to about 3.6 M with its
-        // call overhead, and a second _finish would revert the tick.
+        // call overhead, and a second _finish would revert the tick. The state is read after steer:
+        // Classic advances the directions it is handed and saves them back, so a read taken before
+        // steer wrote its decision would advance the old directions and erase the new ones.
         uint64 sub;
-        do{legacy=_state(id);sub=AgentSteer.steer(words,id,legacy.mode,target);complete=super._advanceState(id,legacy,sub,mayResume);}
+        do{sub=AgentSteer.steer(words,id,legacy.mode,target);legacy=_state(id);complete=super._advanceState(id,legacy,sub,mayResume);}
         while(complete&&sub<target&&_phase(id)==2&&gasleft()>6_000_000);
         // Bounded catch-up must reach the deadline before evaluating the score.
         // A late call cannot simulate beyond it or cancel a legitimate 5-minute result.

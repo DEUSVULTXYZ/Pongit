@@ -13,9 +13,10 @@ library AgentSteer {
     ///      through it and let one Chaos call cost more than a command may spend. The arcade stops
     ///      slicing on its gas reserve instead, and the next tick resumes where this one stopped.
     uint64 internal constant SLICE_US = 100_000;
-    /// @dev Arcade rule, Chaos only: a ball never starts a slice faster than 3,000 px/s, in the 1e6
-    ///      units Chaos stores velocities in. Chaos multiplies speed by 1.1 at every paddle hit with
-    ///      no ceiling short of a 2^72 representation guard. People miss long before it matters. Two
+    /// @dev Arcade rule, both modes: a ball never starts a slice faster than 3,000 px/s, in the 1e6
+    ///      units both store velocities in. Chaos multiplies speed by 1.1 at every paddle hit with
+    ///      no ceiling short of a 2^72 representation guard, and the arcade's Classic rules speed up
+    ///      the same way with none at all. People miss long before it matters. Two
     ///      near-perfect policies on a rally that comes back to where the paddles already are do
     ///      not, and past about 25,000 px/s one slice holds more collisions than a command can pay
     ///      for; the same slice then replays on every retry and the match freezes. At this cap a
@@ -49,6 +50,21 @@ library AgentSteer {
             vy = vy * MAX_SPEED / speed;
             w[k] = (b & ~((uint256(1) << 160) - 1)) | uint256(uint80(int80(vx))) | (uint256(uint80(int80(vy))) << 80);
         }
+    }
+
+    /// @dev The same rule for Classic, whose velocity keeps a full signed word each in fields 5
+    ///      and 6. In Classic a long rally only crawls rather than freezes, since 128 events bound
+    ///      a call, but one rule for both modes is what makes the arcade's play predictable.
+    function _capLegacySpeed(mapping(bytes32 => uint256) storage w, uint256 id) private {
+        bytes32 kx = _key(id, 5);
+        bytes32 ky = _key(id, 6);
+        int256 vx = int256(w[kx]);
+        int256 vy = int256(w[ky]);
+        uint256 sq = uint256(vx * vx + vy * vy);
+        if (sq <= uint256(MAX_SPEED * MAX_SPEED)) return;
+        int256 speed = int256(_sqrt(sq)) + 1;
+        w[kx] = uint256(vx * MAX_SPEED / speed);
+        w[ky] = uint256(vy * MAX_SPEED / speed);
     }
 
     function _sqrt(uint256 x) private pure returns (uint256 r) {
@@ -313,6 +329,7 @@ library AgentSteer {
         if (mode == 0) nowUs = uint64(w[_key(id, 7)] >> 128);
         if (nowUs >= target) return target;
         if (mode == 1) _capSpeed(w, id);
+        else _capLegacySpeed(w, id);
 
         (bool houseA, uint8 levelA) = _tier(w, uint256(uint160(w[_key(id, 0)])));
         (bool houseB, uint8 levelB) = _tier(w, uint256(uint160(w[_key(id, 1)])));

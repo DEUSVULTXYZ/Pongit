@@ -31,6 +31,7 @@ contract AgentHarness is PongAgentArcade {
     function setScore(uint256 id,uint8 a,uint8 b) external {uint256 c=_get(id,8);c=(c&~(uint256(15)<<4))|(uint256(a)<<4);c=(c&~(uint256(15)<<8))|(uint256(b)<<8);_set(id,8,c);}
     function meta(address a) external view returns(bytes32){return bytes32(_get(uint160(a),41));}
     function phaseOf(uint256 id) external view returns(uint256){return _phase(id);}
+    function setLegacyBall(uint256 id,int256 x,int256 y,int256 vx,int256 vy,uint64 t) external {PhysicsV2.State memory s=_state(id);s.x=x;s.y=y;s.vx=vx;s.vy=vy;s.t=t;_save(id,s);}
     function rawWord(uint256 id,uint256 field) external view returns(uint256){return _get(id,field);}
     function speedOf(uint256 id,uint256 i) external view returns(uint256){
         uint256 b=_get(id,22+i*2);int256 vx=int80(uint80(b));int256 vy=int80(uint80(b>>80));
@@ -318,6 +319,49 @@ contract AgentArcadeTest is ChaosPhysicsTest {
         assertEq(game.rawWord(800,24),slow,"a ball under the cap is left exactly as it was");
         // And a second pass finds nothing left to do.
         game.probe(800,1_300_000);assertEq(game.rawWord(800,22),w);
+    }
+    bytes32 constant PULSE_META=0xe2fe7a5c52d5a1364cd893cde1191c36cd3e34c41ce55e0316950b9ba9be49df;
+    /// End to end, not just the decision: a steered house seat must actually move its paddle and
+    /// hold rallies. Every earlier test stopped right after steer wrote a direction, and in Classic
+    /// the loop read the state before that write, advanced the old directions and saved them back
+    /// over the new ones: the paddles never moved, and a match went 7-6 in 35 s of play.
+    function testSteeredClassicPaddlesMoveAndHoldRallies() public {
+        registerHouse(C1,A,ONYX_META);registerHouse(C2,B,PULSE_META);start(900,0,false);
+        uint256 bn=block.number;bool moved;
+        for(uint256 r;r<30&&game.phaseOf(900)==2;r++){
+            bn+=100;vm.roll(bn);vm.prank(KA);game.tick(900);
+            (,,PhysicsV2.State memory st)=snapshot(900);
+            if(st.left!=288e6||st.right!=288e6)moved=true;
+        }
+        (,,PhysicsV2.State memory end)=snapshot(900);
+        assertTrue(moved,"the steered paddles must move");
+        assertEq(end.t,30_000_000,"thirty seconds of play");
+        assertLe(uint256(end.scoreA)+end.scoreB,3,"an expert and an arcade bot must hold most of their rallies");
+    }
+    /// The same for Chaos, whose engine reads the control word from storage rather than from the
+    /// state handed to it: its paddles must move under steering too.
+    function testSteeredChaosPaddlesMove() public {
+        registerHouse(C1,A,ONYX_META);registerHouse(C2,B,PULSE_META);start(901,1,false);
+        uint256 start27=game.rawWord(901,27);uint256 bn=block.number;bool moved;
+        for(uint256 r;r<20&&game.phaseOf(901)==2;r++){
+            bn+=100;vm.roll(bn);vm.prank(KA);game.tick(901);
+            uint256 p=game.rawWord(901,27);
+            if(uint56(p)!=uint56(start27)||uint56(p>>56)!=uint56(start27>>56))moved=true;
+        }
+        assertTrue(moved,"the steered chaos paddles must move");
+    }
+    /// Classic gets the same speed cap, along the same line, and a ball under it is left alone.
+    function testTheClassicSpeedCapKeepsDirection() public {
+        register(C1,A);register(C2,B);start(902,0,false);
+        game.setLegacyBall(902,512e6,288e6,6_000e6,-8_000e6,2_000_000);
+        game.probe(902,2_100_000);
+        int256 vx=int256(game.rawWord(902,5));int256 vy=int256(game.rawWord(902,6));
+        // Integer scaling truncates each component by at most one unit of 1e-6 px/s.
+        assertLe(vx*4+vy*3<0?uint256(-(vx*4+vy*3)):uint256(vx*4+vy*3),7,"the direction must be kept");
+        uint256 sq=uint256(vx*vx+vy*vy);assertLe(sq,uint256(3_000e6)*3_000e6);assertGe(sq,uint256(2_999e6)*2_999e6);
+        game.setLegacyBall(902,512e6,288e6,300e6,-200e6,2_000_000);
+        game.probe(902,2_100_000);
+        assertEq(int256(game.rawWord(902,5)),300e6);assertEq(int256(game.rawWord(902,6)),-200e6);
     }
     /// A point that ends the match inside a multi-slice catch-up ends it cleanly. Slicing on past
     /// it would call _finish a second time, which reverts, so the deciding tick could never land.

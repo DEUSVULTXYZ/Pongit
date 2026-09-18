@@ -1,9 +1,9 @@
-// Retire a superseded agent arcade whose delegation cannot be closed the usual way.
-// A delegation's stake is reserved from the validator's own bond, so a session left
-// open, or closed but never released, keeps Interlude's funds and one of its slots
-// for as long as it stays that way. This closes it through the hub's liveness escape
-// once that escape is legitimately open, then releases the stake. Re-runnable: every
-// write goes through the shared operator journal under a fixed name.
+// Retire a superseded agent arcade and release its stake. A delegation's stake is
+// reserved from the validator's own bond, so a session left open, or closed but never
+// released, keeps Interlude's funds and one of its slots for as long as it stays that
+// way. A healthy predecessor closes itself with closeEngine once it counts no game; a
+// frozen one is closed through the hub's liveness escape once that is legitimately
+// open. Re-runnable: every write goes through the shared operator journal by name.
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createPublicClient,encodeFunctionData,http,parseAbi,zeroHash,type Address} from 'viem';
@@ -11,7 +11,10 @@ import {chainTools} from './independent-chain-tools';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {agentArcadeAbi as abi} from '../shared/abi-PongAgentArcade';
 
-assert.equal(process.env.PONG_AGENT_RETIRE_STUCK,'verified-unrecoverable');
+// verified-unrecoverable: the frozen case, closed through the hub's escape.
+// superseded: a healthy predecessor with no game left, closed by its own closeEngine.
+const mode=process.env.PONG_AGENT_RETIRE_STUCK;
+assert(mode==='verified-unrecoverable'||mode==='superseded','Say which kind of retirement this is');
 if(!process.env.DATABASE_URL)process.env.DATABASE_URL=`postgresql://pong:${encodeURIComponent(process.env.POSTGRES_PASSWORD!)}@postgres:5432/pong_relayer`;
 const stamp=process.env.PONG_AGENT_LAB_STAMP!;assert.match(stamp,/^20\d{6}(-[2-9])?$/,'Name the retired laboratory');
 const record=JSON.parse(await readFile(`/secrets/agent-arcade-candidate-${stamp}.json`,'utf8'));
@@ -28,12 +31,21 @@ try{
  // Measured over nine real releases: gas = 224788 + 83192 * batches, in one block.
  const releaseGas=224788n+83192n*d.batchIndex;report.releaseGasEstimate=String(releaseGas);
  assert(releaseGas<140_000_000n,'The stake could not be released afterwards: do not close what cannot be released');
+ if(d.status===1&&mode==='superseded'){
+  // The ordinary route: the app closes itself once it counts no game, on Monad and on its node.
+  const node=createPublicClient({transport:http(record.node,{retryCount:0,timeout:10000})});
+  const [live,published]=await Promise.all([node.readContract({address:app,abi,functionName:'activeCount'}),t.base.readContract({address:app,abi,functionName:'activeCount'})]) as [bigint,bigint];
+  report.liveGames=String(live);report.publishedGames=String(published);
+  if(live!==0n||published!==0n){report.waiting='Games still running or not yet published';console.log(JSON.stringify(report));process.exit(0);}
+  report.closeHash=(await t.write('close',app,abi,'closeEngine')).transactionHash;
+  d=await readHubDelegation(t.base,hub,app);
+ }
  if(d.status===1){
   // Show the ordinary route is really shut: the app refuses to close while it still
   // counts a game, and that game cannot move any more.
   let closeBlocked=false;
   try{await t.base.call({account:t.account.address,to:app,data:encodeFunctionData({abi,functionName:'closeEngine'})});}catch{closeBlocked=true;}
-  assert(closeBlocked,'closeEngine would succeed: use the ordinary lifecycle instead');
+  assert(closeBlocked,'closeEngine would succeed: retire it as superseded instead');
   const node=createPublicClient({transport:http(record.node,{retryCount:0,timeout:10000})});
   const live=await node.readContract({address:app,abi,functionName:'activeCount'}) as bigint;
   report.liveGames=String(live);assert(live>0n,'Nothing is stuck on the node');
