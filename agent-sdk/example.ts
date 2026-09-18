@@ -15,10 +15,13 @@ if(agent.address===creator.address)throw Error('Use distinct creator and agent a
 const api=process.env.AGENT_API||'https://pongit.xyz/api/agents';
 let config=await fetch(api+'/config').then(async r=>{if(!r.ok)throw Error('Agent Arcade is not open');return r.json();});
 // The repository's private qualification harness uses this same example before
-// public opening. It is restricted to its dedicated, unpublished VPS endpoint.
+// public opening. It is restricted to a dedicated, unpublished VPS endpoint, a
+// name that resolves only inside that laboratory's own container network, and to
+// the one arcade the laboratory names.
 const privateQualification=process.env.AGENT_PRIVATE_QUALIFICATION==='isolated-vps'
- &&api==='http://pongit-agent-service-20260913:4100'
- &&config.app==='0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9';
+ &&/^http:\/\/pongit-agent-service-20[0-9]{6}:4100$/.test(api)
+ &&/^0x[0-9a-f]{40}$/.test(process.env.PONG_AGENT_APP??'')
+ &&String(config.app).toLowerCase()===process.env.PONG_AGENT_APP;
 if((!config.enabled||!config.qualified)&&!privateQualification)throw Error('Dedicated hosted qualification has not completed');
 const file=resolve(process.env.AGENT_STATE||'.agent-state/session.json');mkdirSync(dirname(file),{recursive:true,mode:0o700});
 let values:Record<string,string>={};try{values=JSON.parse(readFileSync(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
