@@ -29,9 +29,20 @@ const kinds=async()=>{
  const rows=(await db.query("SELECT split_part(operation,':',1) AS kind,count(*)::int AS n FROM agent_arcade.engine_jobs WHERE app=$1 GROUP BY 1",[app])).rows;
  return Object.fromEntries(rows.map(r=>[r.kind,r.n]));
 };
+// Completed matches by kind and mode as well as by status: a qualification match
+// keeps real controls by design, so a window that mixes them with league play
+// would blend the old cost into the new one.
+// Player inputs never reach engine_jobs: that journal is the coordinator's own, and
+// each player signs its inputs with its own session. The chain counts them anyway,
+// as each seat's nonce, which the coordinator copies into the published result.
+// That is the only honest place to read whether house clients really went quiet.
 const byStatus=async()=>{
- const rows=(await db.query('SELECT status,count(*)::int AS n FROM agent_arcade.matches WHERE app=$1 GROUP BY 1',[app])).rows;
- return Object.fromEntries(rows.map(r=>[r.status,r.n]));
+ const rows=(await db.query(`SELECT status,kind,mode,count(*)::int AS n,
+   coalesce(sum(coalesce((result->>'nonceA')::numeric,0)+coalesce((result->>'nonceB')::numeric,0)),0)::bigint AS inputs
+   FROM agent_arcade.matches WHERE app=$1 GROUP BY 1,2,3`,[app])).rows;
+ const out:Record<string,number>={};
+ for(const r of rows){out[r.status]=(out[r.status]??0)+r.n;out[`${r.status}:${r.kind}:${r.mode}`]=r.n;out[`inputs:${r.status}:${r.kind}:${r.mode}`]=Number(r.inputs);}
+ return out;
 };
 async function sample():Promise<Sample>{
  const at=new Date().toISOString();
@@ -64,24 +75,39 @@ const first=samples[0],last=samples[samples.length-1];
 const spanMs=Date.parse(last.at)-Date.parse(first.at);
 const delta=(pick:(s:Sample)=>number)=>pick(last)-pick(first);
 const completed=delta(s=>s.matches.complete??0);
+const completedByKind=Object.fromEntries([...new Set(samples.flatMap(s=>Object.keys(s.matches)))].filter(k=>k.startsWith('complete:'))
+ .map(k=>[k.slice('complete:'.length),(last.matches[k]??0)-(first.matches[k]??0)]).filter(([,n])=>n!==0));
+const qualificationInWindow=Object.entries(completedByKind).filter(([k])=>k.startsWith('qualification:')).reduce((a,[,n])=>a+Number(n),0);
 const batches=delta(s=>s.batchIndex);
 const operations=Object.fromEntries([...new Set(samples.flatMap(s=>Object.keys(s.operations)))]
  .map(kind=>[kind,(last.operations[kind]??0)-(first.operations[kind]??0)]));
-const transactions=Object.values(operations).reduce((a,b)=>a+b,0);
+// Named for what it is: engine_jobs holds coordinator transactions only.
+const coordinatorTransactions=Object.values(operations).reduce((a:number,b)=>a+Number(b),0);
+const inputsByKind=Object.fromEntries([...new Set(samples.flatMap(s=>Object.keys(s.matches)))].filter(k=>k.startsWith('inputs:complete:'))
+ .map(k=>[k.slice('inputs:complete:'.length),(last.matches[k]??0)-(first.matches[k]??0)]).filter(([,n])=>n!==0));
+const playerInputs=Object.values(inputsByKind).reduce((a:number,b)=>a+Number(b),0);
+const leagueInputs=Object.entries(inputsByKind).filter(([k])=>k.startsWith('league:')).reduce((a,[,n])=>a+Number(n),0);
+// Each completed match also carries two acceptances signed by its players.
+const transactions=coordinatorTransactions+playerInputs+2*completed;
 // A rate computed across an epoch roll is meaningless: batchIndex restarts at zero.
 const sameEpoch=samples.every(s=>s.epoch===first.epoch);
 const unhealthy=samples.filter(s=>!s.healthy).length;
 const report={
  at:new Date().toISOString(),label,app,epoch:first.epoch,scope:'Hub batch growth against real completed matches on the dedicated arcade',
  windowSeconds:Math.round(spanMs/1000),samples:samples.length,unhealthySamples:unhealthy,sameEpoch,
- batches,completedMatches:completed,transactions,operations,
+ batches,completedMatches:completed,completedByKind,qualificationInWindow,
+ coordinatorTransactions,coordinatorOperations:operations,playerInputs,inputsByKind,transactions,
+ // Read from on-chain nonces. With both league seats steered by the contract, zero.
+ leagueInputs,
  batchesPerMatch:completed>0?Number((batches/completed).toFixed(3)):null,
  batchesPerHour:spanMs>0?Number((batches/(spanMs/3600000)).toFixed(2)):null,
  transactionsPerMatch:completed>0?Number((transactions/completed).toFixed(1)):null,
  transactionsPerBatch:batches>0?Number((transactions/batches).toFixed(1)):null,
  // Epoch 2 of the previous arcade: 8564 batches for 522 completed matches in 24 h.
  previous:{batches:8564,completedMatches:522,batchesPerMatch:16.406,batchesPerHour:356.8},
- trustworthy:unhealthy===0&&sameEpoch&&completed>=5&&samples.length>=5,
+ trustworthy:unhealthy===0&&sameEpoch&&completed>=5&&samples.length>=5&&qualificationInWindow===0,
+ // Estimated from counts, not observed per transaction: kept apart from the measured fields.
+ estimated:['transactions'],
  first,last,
 };
 await mkdir('artifacts/agents',{recursive:true});
