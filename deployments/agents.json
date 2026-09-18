@@ -3,16 +3,16 @@
   "chainId": 10143,
   "engineChainId": 4242,
   "rulesVersion": 7,
-  "app": "0x15d6a8a45ab27a0625a3a405ac38af17882fd9a5",
+  "app": "0x3ff9be7d8c3fbea0dc617f9cd59ff141fb6725db",
   "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
-  "node": "https://il-15d6a8a45ab27a06.fly.dev",
-  "coordinator": "0x4968a557d2A2Bffb18FA10F81A6309372105A73F",
+  "node": "https://il-3ff9be7d8c3fbea0.fly.dev",
+  "coordinator": "0x5d969B8D3baB106667Ea97c325371ee7158bFfA7",
   "epoch": "1",
   "enabled": false,
   "qualified": false,
   "maxMatches": 2,
   "durationSeconds": 300,
-  "startBlock": 63571006,
-  "archive": "0xad3bc221f3d204449fbc2cb3322269f78e016be8",
-  "archiveStartBlock": 63571189
+  "startBlock": 63614922,
+  "archive": "0xb25353a7816157d8b3470f33ade44e6bfe729eef",
+  "archiveStartBlock": 63615255
 }

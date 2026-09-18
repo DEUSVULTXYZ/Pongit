@@ -1,25 +1,30 @@
 # Agent Arcade candidate
 
-Status as of 2026-09-18: the arcade has been redeployed twice. The first redeployment
-(`0x86763ba9…`) froze a Chaos match within its first hour and was retired through the hub's
-liveness escape; the second, below, carries the fixes described under *The Chaos freeze of
-2026-09-18* and is being measured in a private laboratory. It is not qualified: the 24-hour trial of
-September 14 did not qualify, and no trial has run on this deployment yet. The human production
-feature gate remains unchanged, the public flag was never opened, and no bot process has been
-launched on a human arena.
+Status as of 2026-09-18, 14:10 UTC: the fourth deployment of the day, below, is the first in which
+external agents play as on-chain strategies (see *On-chain strategies*). It is in its forced
+qualification renewal in a private laboratory and is not qualified. Arcade n°3 remains live in its
+own laboratory for a house-only observation run across real renewals. No trial has qualified: the
+24-hour trial of September 14 did not, and the one started on n°3 cannot, because it froze inputs a
+renewal rewrites (see *Why the 24-hour trial did not qualify*). The human production feature gate
+remains unchanged, the public flag was never opened, and no bot process has been launched on a
+human arena.
 
 ## Contract candidate
 
 - Monad Testnet: 10143; execution chain: 4242; rules: 7.
-- Application: `0x6d39d4a2df1698a06fa63bb3559b78bffed339db`, block 63565475.
-- Deployment transaction: `0xf0322bee1eb59206b38efa96334e71411dae0f5a69acdb27c51edde2157fb727`.
-- AgentSteer library: `0xffbf8f7cfb5515c9f912055199a8ba15a67ffd1b`. AgentIdentity library:
-  `0x06eeffb05f9dfde577b9aa4dc73536cfeb252f51`. Deployed runtimes match the build of `767eca2`
-  byte for byte outside constructor immutables.
-- Result archive: `0xa3ff02eca572db337e51b8fd1e22456957320ce8`, block 63565697.
-- Hosted node `https://il-6d39d4a2df1698a0.fly.dev`, epoch 1.
-- Retired: `0x4cecc7fb…` (September, stake unreleasable at 8564 batches) and `0x86763ba9…`
-  (force-closed at block 63565878 with 156 batches, release due one challenge window later).
+- Application: `0x3ff9be7d8c3fbea0dc617f9cd59ff141fb6725db`, block 63614922, built from `21ab606`.
+- AgentSteer library: `0xe666f816104486b647d6c7050a57e8ec56fe5ae8`. AgentIdentity library:
+  `0xfb73942b959e1ec4688ef1b1d2550d0eb3705e47`, linked to the qualified ChaosGameFlow
+  `0x254e3a940cf772b579115d35337f561b7844e221`. Deployed runtimes match the local build byte for
+  byte outside library self-addresses, link references and constructor immutables.
+- Laboratory sample strategy: `TrackerStrategy` at `0xcf34dff2703f624d3d058b28f07b969c53f90670`,
+  block 63614925, three blocks before the delegation opened at block 63614928, so epoch 1 sees it.
+- Result archive: `0xb25353a7816157d8b3470f33ade44e6bfe729eef`, block 63615255.
+- Hosted node `https://il-3ff9be7d8c3fbea0.fly.dev`.
+- Earlier deployments of 2026-09-18: n°1 `0x86763ba9…` (Chaos freeze; force-closed, stake released
+  at block 63577714), n°2 `0x6d39d4a2…` (Classic paddles never moved; stake released at block
+  63585059), n°3 `0x15d6a8a45ab27a0625a3a405ac38af17882fd9a5` (live, house-only observation run).
+  The September arcade `0x4cecc7fb…` keeps its stake: 8,564 batches cannot be released in one block.
 - Separate coordinator key, house addresses and business database. Private key files are excluded from the repository.
 - Reuses immutable physical modules; no market or vault is deployed. Financial pressure submissions always revert.
 
