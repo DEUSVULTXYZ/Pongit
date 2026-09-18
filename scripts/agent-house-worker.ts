@@ -37,7 +37,7 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
  const store={get:(k:string)=>record[k]??null,set:(k:string,v:string)=>{record[k]=v;save();},remove:(k:string)=>{delete record[k];save();}};
  const client=createAgentClient({manifest:m,abi,apiUrl,rpcUrl:process.env.RPC_URL,store,commandStore:{getItem:store.get,setItem:store.set}});
  const wallet=createWalletClient({account:owner,chain:monadTestnet,transport:http(process.env.RPC_URL)}),controller=new AgentController(index);
- let connected=false,registered=false,currentId:bigint|undefined,unwatch:(()=>void)|undefined,lastHeartbeat=0,lastLobby=0,match:any,reconnected=false,errorAt=0,frames=0;
+ let connected=false,registered=false,currentId:bigint|undefined,unwatch:(()=>void)|undefined,lastHeartbeat=0,lastLobby=0,match:any,reconnected=false,resumedAt=0n,errorAt=0,frames=0;
  try{while(!stopping){
   try{
    if(!registered){
@@ -71,24 +71,28 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
     await sleep(200);continue;
    }
    const id=BigInt(match.id);
-   if(currentId!==id){unwatch?.();currentId=id;unwatch=client.watch(id,()=>{frames++;});controller.reset();reconnected=false;}
+   if(currentId!==id){unwatch?.();currentId=id;unwatch=client.watch(id,()=>{frames++;});controller.reset();reconnected=false;resumedAt=0n;}
    if(match.offer&&['offered','preparing'].includes(match.status))await client.accept(match.offer);
    const snapshot=await client.read(id);const side=snapshot.a.toLowerCase()===owner.address.toLowerCase()?0:1;
+   let controlsNeeded=false;
    if(snapshot.phase===2){
     const nonce=side===0?snapshot.nonceA:snapshot.nonceB;
     if(match.kind==='qualification'&&!reconnected&&nonce>=2n){
      await client.api('/qualification/checkpoint',{});
      unwatch?.();unwatch=undefined;await client.resume(owner.address);
      unwatch=client.watch(id,()=>{frames++;});await client.read(id,true);
-     await client.api('/qualification/checkpoint',{});reconnected=true;
+     await client.api('/qualification/checkpoint',{});reconnected=true;resumedAt=nonce;
     }
-    // A qualification match still needs real controls: its reconnect checkpoint is
-    // gated on a nonce of at least two, which only an input can raise.
-    if(!steered||match.kind==='qualification'){
+    // A qualification match needs real controls, but only enough to pass: at least five
+    // inputs, and two after the reconnect (coordinator.qualification). One more of each for
+    // margin, then the contract steers the seat like any other and the coordinator's burst
+    // drives the match. Every input past that point is a sealing window of its own.
+    controlsNeeded=match.kind==='qualification'&&!(reconnected&&nonce>=6n&&nonce>=resumedAt+3n);
+    if(!steered||controlsNeeded){
      const direction=controller.decide(snapshot,side,performance.now());await client.move(id,direction);await client.tickIfNeeded(id,performance.now());
     }else if(!houseSeats.has((side===0?snapshot.b:snapshot.a).toLowerCase()))await client.tickIfNeeded(id,performance.now());
    }
-   await sleep(steered&&match.kind!=='qualification'&&houseSeats.has((snapshot.a.toLowerCase()===owner.address.toLowerCase()?snapshot.b:snapshot.a).toLowerCase())?250:55);
+   await sleep(steered&&!controlsNeeded&&houseSeats.has((snapshot.a.toLowerCase()===owner.address.toLowerCase()?snapshot.b:snapshot.a).toLowerCase())?250:55);
   }catch(e){
    if((e as any).status===401)connected=false;
    if(Date.now()-errorAt>10000){errorAt=Date.now();console.log(stringify({at:new Date().toISOString(),bot:bot.name,status:'synchronizing',error:String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160)}));}
