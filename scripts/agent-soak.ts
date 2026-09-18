@@ -1,6 +1,6 @@
 // Run only after two-slot publication and a complete renewal cycle are verified.
 import assert from 'node:assert/strict';
-import {readFile,writeFile,appendFile,mkdir} from 'node:fs/promises';
+import {readFile,writeFile,appendFile,mkdir,readdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {Pool} from 'pg';
 assert.equal(process.env.PONG_AGENT_SOAK,'dedicated-24h');
@@ -10,7 +10,17 @@ assert(!m.enabled&&!m.qualified,'The public opening follows the soak, not the re
 const directory='/diagnostics/agents',db=new Pool({connectionString:process.env.DATABASE_URL,max:2});await mkdir(directory,{recursive:true});
 const started=Date.now(),ends=started+86400000,api=process.env.PONG_AGENT_API!;let stopped=false;
 process.on('SIGTERM',()=>{stopped=true;});
-const sourcePaths=['relayer/src/agents/server.ts','relayer/src/agents/coordinator.ts','relayer/src/agents/metrics.ts','relayer/src/agents/replays.ts','shared/agent-client.ts','shared/engine-read.ts','scripts/agent-house-worker.ts','scripts/agent-community-qualification.ts','agent-sdk/example.ts','scripts/agent-process.mjs','scripts/agent-soak.ts','scripts/agent-lifecycle.ts','scripts/agent-archive-step.ts','scripts/agent-operator-step.ts','scripts/independent-chain-tools.ts','scripts/agent-ops.mjs','scripts/agent-private-keeper.mjs'];
+const entryPoints=['relayer/src/agents/server.ts','relayer/src/agents/coordinator.ts','relayer/src/agents/metrics.ts','relayer/src/agents/replays.ts','shared/agent-client.ts','shared/engine-read.ts','scripts/agent-house-worker.ts','scripts/agent-community-qualification.ts','agent-sdk/example.ts','scripts/agent-process.mjs','scripts/agent-soak.ts','scripts/agent-lifecycle.ts','scripts/agent-archive-step.ts','scripts/agent-operator-step.ts','scripts/independent-chain-tools.ts','scripts/agent-ops.mjs','scripts/agent-private-keeper.mjs'];
+// Everything the running roles execute, not only their entry points: the service's own modules
+// (strategy vetting, the writer, the schema), every shared module they import, the SDK the
+// laboratory strategies register with, and the agent contracts' sources for the record.
+async function tree(dir:string):Promise<string[]>{
+ const found:string[]=[];
+ for(const entry of await readdir(dir,{withFileTypes:true})){const path=`${dir}/${entry.name}`;
+  if(entry.isDirectory())found.push(...await tree(path));else if(/\.(ts|mjs|sol)$/.test(entry.name))found.push(path);}
+ return found;
+}
+const sourcePaths=[...new Set([...entryPoints,'agent-sdk/strategy.ts',...(await Promise.all(['relayer/src/agents','shared','agent-sdk/src','contracts/src/agents'].map(tree))).flat()])].sort();
 const sourceHashes=Object.fromEntries(await Promise.all(sourcePaths.map(async path=>[path,createHash('sha256').update(await readFile(path)).digest('hex')])));
 // What gates this soak must not move while it runs. Not the files whole: a renewal rewrites
 // both on purpose, the manifest's epoch and the lifecycle's own record, and a soak that
