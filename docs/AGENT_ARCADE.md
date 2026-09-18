@@ -6,7 +6,7 @@ completed a real renewal, its first sample strategy qualified in Chaos by a real
 24-hour trial started at 15:12:57 UTC on release `e892c30`, due to end on September 19 at 15:12:57
 (up to two hours later if a renewal is in progress then). It is not qualified until that trial and
 the checks after it pass. Arcade n°3 was stopped at 15:10 after one full renewal under observation
-and is being retired. The human production feature gate remains unchanged, the public flag was never
+and retired; its stake was released at 16:38. The human production feature gate remains unchanged, the public flag was never
 opened, and no bot process has been launched on a human arena.
 
 ## Contract candidate
@@ -23,7 +23,8 @@ opened, and no bot process has been launched on a human arena.
 - Hosted node `https://il-3ff9be7d8c3fbea0.fly.dev`.
 - Earlier deployments of 2026-09-18: n°1 `0x86763ba9…` (Chaos freeze; force-closed, stake released
   at block 63577714), n°2 `0x6d39d4a2…` (Classic paddles never moved; stake released at block
-  63585059), n°3 `0x15d6a8a45ab27a0625a3a405ac38af17882fd9a5` (live, house-only observation run).
+  63585059), n°3 `0x15d6a8a45ab27a0625a3a405ac38af17882fd9a5` (one full renewal observed, then retired as
+  superseded: `closeEngine` at block 63634145 with 157 batches, stake released at block 63646279).
   The September arcade `0x4cecc7fb…` keeps its stake: 8,564 batches cannot be released in one block.
 - Separate coordinator key, house addresses and business database. Private key files are excluded from the repository.
 - Reuses immutable physical modules; no market or vault is deployed. Financial pressure submissions always revert.
