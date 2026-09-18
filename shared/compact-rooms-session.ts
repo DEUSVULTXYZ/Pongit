@@ -7,14 +7,16 @@ export const compactRoomActions=['acceptMatch','input','tick','cancelMatch','con
 export const controlProofParameters=[{type:'tuple',components:[{name:'granter',type:'address'},{name:'sessionKey',type:'address'},{name:'expiry',type:'uint64'},{name:'epoch',type:'uint64'},{name:'anyFunction',type:'bool'},{name:'selectors',type:'bytes4[]'}]},{type:'bytes'}] as const;
 /** Only PongRoomsCompact verifies and caches this SDK grant. Other applications
  * must continue to use withSession. One signer owns setup and game nonces alike. */
-export function compactRoomsSession(options:{node:PublicClient;abi:Abi;app:Address;stored:StoredSession;epoch:bigint;now?:()=>number}):ArenaSender & {revoke:()=>Promise<void>} {
+// gas: per-command gas limit, 15 M unless the caller says otherwise. The agent client raises
+// its ticks to the hosted node's 30 M cap so one tick can catch a sliced match up.
+export function compactRoomsSession(options:{node:PublicClient;abi:Abi;app:Address;stored:StoredSession;epoch:bigint;now?:()=>number;gas?:(name:string)=>bigint}):ArenaSender & {revoke:()=>Promise<void>} {
  const {node,abi,app,stored,epoch}=options,{grant,signature}=stored,signer=privateKeyToAccount(stored.privateKey),now=options.now??Date.now;
  if(stored.app.toLowerCase()!==app.toLowerCase()||stored.baseChainId!==10143||signer.address.toLowerCase()!==grant.sessionKey.toLowerCase()||grant.anyFunction)throw Error('Invalid compact game authorization');
  let nonce:number|undefined,busy=false,uncertain=false,registered=false;
  async function rawSend(name:string,args:readonly unknown[]){
   nonce??=await node.getTransactionCount({address:signer.address});
   const data=encodeFunctionData({abi,functionName:name,args}),started=now();
-  const raw=await signer.signTransaction({type:'eip1559',chainId:4242,to:app,nonce,data,value:0n,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+  const raw=await signer.signTransaction({type:'eip1559',chainId:4242,to:app,nonce,data,value:0n,gas:options.gas?.(name)??15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
   const hash=keccak256(raw);uncertain=true;
   // The caller's transport persists these exact bytes before sending. Never
   // replace this nonce when the response may have been lost after execution.

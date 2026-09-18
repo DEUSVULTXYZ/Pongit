@@ -24,7 +24,8 @@ export function createAgentClient(options:AgentClientOptions){
   store:options.store,expirySeconds:7200,transport:engineTransport(m.node,journal),fastPath:true});
  const stream=new EngineStream(m.node,m.app,options.socket),feed=new EngineFeed(client,stream),pilot=new TickPilot();
  let player:Address|undefined,controls:ReturnType<typeof compactRoomsSession>|undefined,token:string|undefined;
- let movement:{id:bigint;dir:-1|0|1}|undefined,moving:Promise<void>|undefined;
+ // cancelled counts stop/disconnect/renew, so a catch-up in flight never revives an intent they cleared.
+ let movement:{id:bigint;dir:-1|0|1;retry:boolean}|undefined,moving:Promise<void>|undefined,cancelled=0;
  let lane:Promise<unknown>=Promise.resolve(),recovering:Promise<bigint>|undefined;
  const serial=<T>(fn:()=>Promise<T>)=>{const result=lane.then(fn,fn);lane=result.catch(()=>{});return result;};
  async function api<T=any>(path:string,body?:unknown):Promise<T>{
@@ -52,7 +53,7 @@ export function createAgentClient(options:AgentClientOptions){
    if(!receipt)await client.node.request({method:'interlude_sendTransaction',params:[pending.raw]} as any);
    if(journal.pending(player))throw Error('Waiting for the existing command receipt');
   }
-  controls=compactRoomsSession({node:client.node,abi:options.abi,app:m.app,stored:s,epoch:hub.epoch});
+  controls=compactRoomsSession({node:client.node,abi:options.abi,app:m.app,stored:s,epoch:hub.epoch,gas:name=>name==='tick'?30_000_000n:15_000_000n});
   feed.invalidate();return hub.epoch;
  }
  function recover(){return recovering??=(serial(recoverNow).finally(()=>{recovering=undefined;}));}
@@ -84,7 +85,7 @@ export function createAgentClient(options:AgentClientOptions){
   get player(){return player;},
   async connect(wallet:OpenSessionOptions['wallet'],options:{renew?:boolean}={}){
    if(options.renew){
-    movement=undefined;await moving;await lane;
+    cancelled++;movement=undefined;await moving;await lane;
     const owner=typeof wallet.account==='string'?wallet.account:wallet.account?.address;
     if(owner&&journal.pending(owner)){if(player?.toLowerCase()===owner.toLowerCase())await recover();if(journal.pending(owner))throw Error('Resolve the current command before renewing the session');}
    }
@@ -105,23 +106,29 @@ export function createAgentClient(options:AgentClientOptions){
    const {signature,...ticket}=offer;for(const field of ['id','expires','rules'])ticket[field]=BigInt(ticket[field]);
    await send('acceptMatch',[ticket,signature as Hex]);return feed.read(ticket.id,true);
   },
-  move(id:bigint,dir:-1|0|1){
-   movement={id,dir};if(moving)return moving;
-   moving=(async()=>{while(movement){const intent:{id:bigint;dir:-1|0|1}=movement;movement=undefined;const s=await feed.read(intent.id);
+  // retry: after catching the clock up, send the same intent again. A controller that decides
+  // afresh on every pass should pass false, or it re-sends a direction chosen before the catch-up.
+  move(id:bigint,dir:-1|0|1,retry=true){
+   movement={id,dir,retry};if(moving)return moving;
+   moving=(async()=>{while(movement){const intent:{id:bigint;dir:-1|0|1;retry:boolean}=movement,generation=cancelled;movement=undefined;const s=await feed.read(intent.id);
     if(s.phase!==2||!player)continue;const side=s.a.toLowerCase()===player.toLowerCase()?0:s.b.toLowerCase()===player.toLowerCase()?1:-1;
     if(side<0)throw Error('This account is not playing');
     const confirmed=side===0?s.state.leftDir:s.state.rightDir;if(confirmed===intent.dir)continue;
     try{await send('input',[intent.id,intent.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]);}
     catch(e){
      // The arcade advances in gas-bounded slices, so an input arriving after a long gap can find
-     // the clock still behind and revert CatchUpRequired. Waiting only widens the gap. Catch up
-     // with one tick and try the same intent again; a tick that moves nothing leaves only waiting.
+     // the clock still behind and revert CatchUpRequired. Waiting only widens the gap, and an
+     // input re-sent while the gap exceeds one command only reverts again. Close the gap with
+     // ticks alone, a few at most, and give up only if they cannot move it.
      if((e as {errorName?:string}).errorName!=='CatchUpRequired')throw e;
-     const clock=(v:EngineState)=>v.chaos?.physics.t??v.state.t;
-     const before=clock(await feed.read(intent.id,true));
-     await send('tick',[intent.id]);
-     if(clock(await feed.read(intent.id,true))<=before)throw e;
-     movement??=intent;
+     const processed=(v:EngineState)=>v.chaos?.physics.t??v.state.t;
+     let v=await feed.read(intent.id,true);
+     for(let n=0;n<4&&v.phase===2&&v.clock-processed(v)>200_000n;n++){
+      const before=processed(v);await send('tick',[intent.id]);v=await feed.read(intent.id,true);
+      if(processed(v)<=before)break;
+     }
+     if(v.phase===2&&v.clock-processed(v)>200_000n)throw e;
+     if(intent.retry&&generation===cancelled)movement??=intent;
     }
    }})().finally(()=>{moving=undefined;});return moving;
   },
@@ -131,12 +138,12 @@ export function createAgentClient(options:AgentClientOptions){
    if(!moving&&pilot.due(side,s,monotonicMs)){pilot.sending(true);try{await send('tick',[id]);pilot.observe(await feed.read(id),monotonicMs,true);}finally{pilot.sending(false);}}
   },
   async disconnect(){
-   movement=undefined;await moving?.catch(()=>{});let revocationPending=false;
+   cancelled++;movement=undefined;await moving?.catch(()=>{});let revocationPending=false;
    try{await serial(()=>controls?.revoke()??Promise.resolve());}catch{revocationPending=true;}
    try{await api('/disconnect',{});}catch{}
    if(player)options.store.remove(storageKey(m.app,10143,player));controls=undefined;player=undefined;token=undefined;stream.stop();return {revocationPending};
   },
-  stop(){movement=undefined;stream.stop();},
+  stop(){cancelled++;movement=undefined;stream.stop();},
  };
 }
 export type AgentClient=ReturnType<typeof createAgentClient>;

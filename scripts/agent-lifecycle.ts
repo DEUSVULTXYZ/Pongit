@@ -60,6 +60,10 @@ try{
   if(now<d.stakeUnlockAt)await event('challenge-window',{releaseAt:new Date(Number(d.stakeUnlockAt)*1000).toISOString()});
   else{const tx=await t.write(`release-${d.epoch}`,m.hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[m.app,zeroHash]);await event('released',{tx:tx.transactionHash});}
  }else if(d.status===0){
+  // A retired arcade must stay closed: scripts/retire-stuck-agent-arcade.ts leaves this tombstone
+  // before its first write, precisely so a keeper still running here cannot reopen it.
+  let tomb:any;try{tomb=JSON.parse(await readFile('/secrets/retired.json','utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+  assert.notEqual(String(tomb?.app??'').toLowerCase(),String(m.app).toLowerCase(),'This arcade was retired; it is not reopened');
   const tx=await t.write(`open-after-${d.epoch}`,m.app,abi,'renewEngine');await event('reopened',{tx:tx.transactionHash});
  }else if(d.status===1&&String(d.epoch)!==String(record.startedEpoch)){
   const node=createPublicClient({transport:http(m.node,{retryCount:0,timeout:10000})});let valid=false;

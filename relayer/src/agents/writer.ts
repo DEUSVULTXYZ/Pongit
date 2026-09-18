@@ -27,19 +27,22 @@ export class AgentEngineWriter {
  // each command cost two public-RPC round trips per transaction, longer than the node's
  // sealing interval, so every command of a burst sealed in a window of its own.
  private hub?:{at:number;value:Awaited<ReturnType<typeof readHubDelegation>>};
- private async delegation(){
-  if(!this.hub||Date.now()-this.hub.at>DELEGATION_CACHE_MS)this.hub={at:Date.now(),value:await readHubDelegation(this.base,this.manifest.hub,this.manifest.app)};
+ // While the arcade drains for renewal the cache is bypassed: the lifecycle closes right after
+ // its last count, and a command prepared on a cached "active" after that would land in a closed
+ // epoch, where its result can never be committed.
+ private async delegation(fresh=false){
+  if(fresh||!this.hub||Date.now()-this.hub.at>DELEGATION_CACHE_MS)this.hub={at:Date.now(),value:await readHubDelegation(this.base,this.manifest.hub,this.manifest.app)};
   return this.hub.value;
  }
  async drain(){await this.queue;}
  send(operation:string,name:string,args:readonly unknown[]=[]){
   const result=this.queue.then(()=>this.write(operation,name,args));this.queue=result.catch(()=>{});return result;
  }
- private async resolve(job:any){
+ private async resolve(job:any,fresh=false){
   const m=this.manifest;
   if(keccak256(job.raw)!==job.hash)throw Error('Agent operation journal checksum mismatch');
   const tx=parseTransaction(job.raw);if(tx.chainId!==4242||tx.to?.toLowerCase()!==m.app.toLowerCase()||(tx.value??0n)!==0n)throw Error('Invalid agent operation journal');
-  const hub=await this.delegation();
+  const hub=await this.delegation(fresh);
   if(String(hub.epoch)!==String(job.epoch)||hub.status!==1)throw Error('Agent operation awaits its original engine epoch');
   let receipt:any=await this.node.getTransactionReceipt({hash:job.hash as Hex}).catch(()=>null);
   if(!receipt){
@@ -75,6 +78,7 @@ export class AgentEngineWriter {
    locked=(await connection.query('SELECT pg_try_advisory_lock(hashtextextended($1,0)) AS ok',[`agent-writer:${app}:${signer}`])).rows[0].ok;
    if(!locked)throw Error('Agent writer is already active');
    const data=encodeFunctionData({abi:this.abi,functionName:name,args});
+   const draining=(await this.db.query('SELECT admissions FROM agent_arcade.control WHERE app=$1',[app])).rows[0]?.admissions===false;
    let job=(await this.db.query('SELECT * FROM agent_arcade.engine_jobs WHERE app=$1 AND operation=$2',[app,operation])).rows[0];
    if(job){
     if(parseTransaction(job.raw).data!==data||job.signer!==signer)throw Error('An operation cannot change its command');
@@ -82,8 +86,8 @@ export class AgentEngineWriter {
     if(job.state==='confirmed')return {transactionHash:job.hash,blockNumber:BigInt(job.evidence.block),status:job.evidence.status};
    }else{
     const pending=(await this.db.query("SELECT * FROM agent_arcade.engine_jobs WHERE app=$1 AND signer=$2 AND state IN ('prepared','uncertain') ORDER BY nonce LIMIT 1",[app,signer])).rows[0];
-    if(pending)await this.resolve(pending);
-    const status=await this.delegation();
+    if(pending)await this.resolve(pending,draining);
+    const status=await this.delegation(draining);
     if(status.status!==1||String(status.epoch)!==m.epoch||status.expiresAt<=BigInt(Math.floor(Date.now()/1000)))throw Error('Agent engine is recovering');
     const nonce=await this.node.getTransactionCount({address:this.signer.address,blockTag:'pending'});
     if(nonce!==await this.node.getTransactionCount({address:this.signer.address,blockTag:'latest'}))throw Error('Agent writer has an unresolved nonce');
@@ -91,7 +95,7 @@ export class AgentEngineWriter {
     job={app,operation,signer,epoch:m.epoch,nonce,raw,hash:keccak256(raw)};
     await this.db.query('INSERT INTO agent_arcade.engine_jobs(app,operation,signer,epoch,nonce,raw,hash) VALUES($1,$2,$3,$4,$5,$6,$7)',[app,operation,signer,m.epoch,nonce,raw,job.hash]);
    }
-   return await this.resolve(job);
+   return await this.resolve(job,draining);
   }finally{if(locked)await connection.query('SELECT pg_advisory_unlock(hashtextextended($1,0))',[`agent-writer:${app}:${signer}`]);connection.release();}
  }
 }

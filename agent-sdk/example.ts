@@ -54,7 +54,8 @@ try{while(!stopping){
      await client.api('/qualification/checkpoint',{});unwatch?.();await client.resume(agent.address);unwatch=client.watch(id!,()=>{});
      await client.read(id!,true);await client.api('/qualification/checkpoint',{});reconnected=true;
     }
-    await client.move(id!,controller.decide(s,side,performance.now()));await client.tickIfNeeded(id!,performance.now());
+    // false: this loop decides afresh each pass, so a catch-up must not re-send a stale direction.
+    await client.move(id!,controller.decide(s,side,performance.now()),false);await client.tickIfNeeded(id!,performance.now());
    }
   }else{
    unwatch?.();unwatch=undefined;id=undefined;

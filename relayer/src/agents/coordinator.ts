@@ -49,6 +49,8 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
  const writer=new AgentEngineWriter(db,client.node,base,m,abi,signer),beacon=new ChaosBeaconPump();
  const replays=new AgentReplays(db,graphql);
  const watches=new Map<string,()=>void>(),proofs=new Map<string,Promise<void>>();
+ // When this process last read back progress it caused itself, per match.
+ const ownAt=new Map<string,number>();
  const terminalRatings=new Set<string>();let replayAt=0,burstAt=0;
  let running=false,stopped=false,activeCycle:Promise<void>|undefined,stage='starting',lastError:string|undefined,lastProgress=Date.now(),admissionAt=0,healthAt=0;
  let delegation:Awaited<ReturnType<typeof readHubDelegation>>|undefined,delegationAt=0;
@@ -88,8 +90,11 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
   if(s.phase===2){
    await db.query("UPDATE agent_arcade.matches SET status='active',updated_at=now() WHERE id=$1 AND status<>'active'",[match.id]);
    // Only this process advances a match nobody else has touched lately: a house
-   // match, or any match whose players went quiet.
-   const ours=feed.progressAge(BigInt(match.id))>Math.min(TICK_AFTER_MS,3000);
+   // match, or any match whose players went quiet. Progress it caused itself, read
+   // back after its own burst, is not someone else driving: counting it as such sent
+   // beacons outside the burst and skipped the next burst at short cadences.
+   const age=feed.progressAge(BigInt(match.id));
+   const ours=age>Math.min(TICK_AFTER_MS,3000)||Date.now()-age<=(ownAt.get(match.id)??-1);
    const beaconState=(v:EngineState)=>({playing:v.phase===2,request:v.chaos?.request??0n,pending:v.chaos?.pending??0n});
    const supply=(v:EngineState)=>{
     if(!v.chaos||proofs.has(match.id))return proofs.get(match.id)??Promise.resolve();
@@ -104,16 +109,28 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
    if(!burst)return;
    let current=s;
    for(let n=0;n<TICK_BURST_MAX&&current.phase===2;n++){
-    await supply(current);
+    // A proof advances the match before it stores its draw, so it can end the match;
+    // read back after it, or the tick below would revert on a finished match and the
+    // revert would abort the whole cycle. A stalled drand must not hold up the tick
+    // or the cycle either: wait long enough for a healthy fetch and send, no longer.
+    const proving=proofs.has(match.id)||(!!current.chaos&&beacon.due(beaconState(current)));
+    await Promise.race([supply(current),new Promise<void>(r=>setTimeout(r,2000))]);
+    if(proving){current=await state(match.id,true);if(current.phase!==2)break;}
     const before=processedTime(current);
-    await writer.send(`tick:${match.id}:${current.revision}`,'tick',[BigInt(match.id)]);feed.invalidate();
-    current=await state(match.id,true);
+    try{await writer.send(`tick:${match.id}:${current.revision}`,'tick',[BigInt(match.id)]);}
+    catch(e){
+     // Anyone else's transaction can still end the match between the read and the tick.
+     if((e as {code?:string}).code!=='AGENT_ACTION_REVERTED')throw e;
+     current=await state(match.id,true);if(current.phase===2)throw e;break;
+    }
+    feed.invalidate();
+    try{current=await state(match.id,true);}finally{ownAt.set(match.id,Date.now());}
     const after=processedTime(current);
     if(current.clock-after<=CAUGHT_UP_US)break;
     // Stalled. Pass again only if the draw it waits on can be supplied right now;
     // a round drand has not published yet, or anything a tick cannot give, would
     // only spend another sealing window. The next burst picks it up.
-    if(after<=before&&!(current.chaos&&beacon.due(beaconState(current))))break;
+    if(after<=before&&(proofs.has(match.id)||!(current.chaos&&beacon.due(beaconState(current)))))break;
    }
    return;
   }
@@ -146,7 +163,7 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
    await c.query('DELETE FROM agent_arcade.occupancy WHERE app=$1 AND match_id=$2',[app,match.id]);
    await c.query('UPDATE agent_arcade.challenges SET status=$3 WHERE app=$1 AND match_id=$2',[app,match.id,data.status]);await c.query('COMMIT');
   }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
-  watches.get(match.id)?.();watches.delete(match.id);lastProgress=Date.now();
+  watches.get(match.id)?.();watches.delete(match.id);ownAt.delete(match.id);lastProgress=Date.now();
   terminalRatings.delete(match.id);await replays.finish(match.id);
  }
  async function admit(){

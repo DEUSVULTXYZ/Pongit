@@ -35,6 +35,9 @@ export async function chainTools(prefix:string){
     assert.equal(nonce,await base.getTransactionCount({address:account.address,blockTag:'latest'}),'Operator nonce is in use');
     await base.call({account:account.address,...(to?{to}:{}),data,value});
     const request=await wallet.prepareTransactionRequest({...(to?{to}:{}),data,value,nonce});request.gas=request.gas*12n/10n;
+    // A transaction above the block gas limit can never be mined. Journaled as pending it
+    // would hold this shared operator nonce for good, and production's lifecycle with it.
+    assert(request.gas<=(await base.getBlock()).gasLimit,'Gas limit exceeds the block gas limit');
     const raw=await wallet.signTransaction(request),hash=keccak256(raw);
     const app=to??getContractAddress({from:account.address,nonce:BigInt(nonce)});
     await db.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",

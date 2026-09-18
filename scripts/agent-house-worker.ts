@@ -89,7 +89,7 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
     // drives the match. Every input past that point is a sealing window of its own.
     controlsNeeded=match.kind==='qualification'&&!(reconnected&&nonce>=6n&&nonce>=resumedAt+3n);
     if(!steered||controlsNeeded){
-     const direction=controller.decide(snapshot,side,performance.now());await client.move(id,direction);await client.tickIfNeeded(id,performance.now());
+     const direction=controller.decide(snapshot,side,performance.now());await client.move(id,direction,false);await client.tickIfNeeded(id,performance.now());
     }else if(!houseSeats.has((side===0?snapshot.b:snapshot.a).toLowerCase()))await client.tickIfNeeded(id,performance.now());
    }
    await sleep(steered&&!controlsNeeded&&houseSeats.has((snapshot.a.toLowerCase()===owner.address.toLowerCase()?snapshot.b:snapshot.a).toLowerCase())?250:55);
