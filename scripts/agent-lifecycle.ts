@@ -45,9 +45,16 @@ try{
   else await event('verifying-renewed-publication',{epoch:m.epoch});
  }
  else if(d.status===1&&String(d.epoch)===String(record.startedEpoch)&&(force||pressure)){
-  await db.query('INSERT INTO agent_arcade.control(app,admissions,reason) VALUES($1,false,$2) ON CONFLICT(app) DO UPDATE SET admissions=false,reason=$2,updated_at=now()',[m.app,'Delegation renewal']);
+  // The timestamp moves only when admissions actually close, so it says how long they have been shut.
+  await db.query("INSERT INTO agent_arcade.control(app,admissions,reason) VALUES($1,false,$2) ON CONFLICT(app) DO UPDATE SET admissions=false,reason=$2,updated_at=CASE WHEN agent_arcade.control.admissions THEN now() ELSE agent_arcade.control.updated_at END",[m.app,'Delegation renewal']);
+  const shut=Number((await db.query('SELECT extract(epoch FROM now()-updated_at)::int AS age FROM agent_arcade.control WHERE app=$1',[m.app])).rows[0].age);
   const active=Number((await db.query("SELECT count(*) FROM agent_arcade.matches WHERE app=$1 AND status IN ('preparing','offered','active','publishing')",[m.app])).rows[0].count);
-  if(active){await event(now>=d.expiresAt?'intervention-required':'draining',{active,closing:pressure,batches:String(d.batchIndex),...(now>=d.expiresAt?{reason:'Delegation expired with unfinished games. Reconcile published state before closing; do not discard uncertain commands.'}:{})});}
+  // The service admits under its own lock after reading the flag, so a match it had already
+  // decided on can appear just after admissions close: on 2026-09-18 one appeared 12 ms after,
+  // and a close 1.1 s later left it accepted on a node whose epoch had ended. Wait longer than an
+  // offer lives (25 s) before trusting an empty count.
+  if(!active&&shut<60){await event('draining',{active,closing:pressure,batches:String(d.batchIndex),admissionsClosedSeconds:shut});}
+  else if(active){await event(now>=d.expiresAt?'intervention-required':'draining',{active,closing:pressure,batches:String(d.batchIndex),...(now>=d.expiresAt?{reason:'Delegation expired with unfinished games. Reconcile published state before closing; do not discard uncertain commands.'}:{})});}
   else{
    const node=createPublicClient({transport:http(m.node,{retryCount:0,timeout:10000})});const status:any=await node.request({method:'interlude_session',params:[]} as any);
    assert.equal(String(status.epoch),String(d.epoch));assert.equal(status.app.toLowerCase(),m.app);assert.equal(status.chainId,4242);
