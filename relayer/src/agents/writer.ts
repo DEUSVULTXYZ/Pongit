@@ -6,6 +6,18 @@ import type {AgentManifest} from '../../../shared/agents';
 
 /** One durable owner of this app's operator nonce. Lost replies never authorize
  * a different transaction at that nonce. The lock does not hold a SQL transaction. */
+// Gas for a coordinator command on the execution chain, where gas costs nothing but a
+// transaction is what becomes a hub batch: the node seals whatever is pending every
+// half second or so, and one send here takes longer than that, so every transaction
+// of a burst lands in a window of its own. A tick therefore catches a match up in one
+// transaction when it can. The hosted node caps a transaction at 30 M gas, measured by
+// the refusal it returns above that (estimates are not capped, sends are); a Chaos
+// catch-up of more than 30 s fit in one 24.2 M tick. The contract still stops each
+// advance on its own gas reserve, so this only sets how far one tick may go. A beacon
+// also advances the match it lands on.
+export const ENGINE_GAS={catchUp:30_000_000n,other:15_000_000n} as const;
+export function engineGas(name:string){return name==='tick'||name==='submitRandomness'?ENGINE_GAS.catchUp:ENGINE_GAS.other;}
+
 export class AgentEngineWriter {
  private queue:Promise<unknown>=Promise.resolve();
  constructor(private db:Pool,private node:PublicClient,private base:PublicClient,private manifest:AgentManifest,private abi:Abi,private signer:PrivateKeyAccount){}
@@ -22,7 +34,22 @@ export class AgentEngineWriter {
   let receipt:any=await this.node.getTransactionReceipt({hash:job.hash as Hex}).catch(()=>null);
   if(!receipt){
    await this.db.query("UPDATE agent_arcade.engine_jobs SET state='uncertain' WHERE app=$1 AND operation=$2",[m.app.toLowerCase(),job.operation]);
-   receipt=await this.node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);
+   try{receipt=await this.node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);}
+   catch(e){
+    // A transaction the node refuses before executing it never ran, and its nonce is still
+    // free. Replaying the same bytes can never succeed, and every later command of this
+    // signer would wait behind it for good. Only that exact case is retired, and only when
+    // the chain confirms the nonce unused; a lost response, or anything else, stays uncertain.
+    const text=[e,(e as any)?.cause].map(x=>`${(x as any)?.details??''} ${(x as any)?.message??''}`).join(' ');
+    if(/rejected before execution/.test(text)){
+     const next=await this.node.getTransactionCount({address:this.signer.address,blockTag:'latest'});
+     if(next===Number(job.nonce)){
+      await this.db.query("DELETE FROM agent_arcade.engine_jobs WHERE app=$1 AND operation=$2 AND hash=$3 AND state='uncertain'",[m.app.toLowerCase(),job.operation,job.hash]);
+      console.log(JSON.stringify({at:new Date().toISOString(),service:'agent-writer',event:'rejected-before-execution',operation:job.operation,nonce:String(job.nonce),reason:text.replace(/0x[0-9a-f]{64,}/gi,'[omitted]').trim().slice(0,200)}));
+     }
+    }
+    throw e;
+   }
   }
   if(receipt?.transactionHash?.toLowerCase()!==job.hash.toLowerCase()||!['0x1','0x0','success','reverted'].includes(String(receipt.status)))throw Error('Agent operation receipt is missing');
   const success=['0x1','success'].includes(String(receipt.status));
@@ -50,7 +77,7 @@ export class AgentEngineWriter {
     if(status.status!==1||String(status.epoch)!==m.epoch||status.expiresAt<=BigInt(Math.floor(Date.now()/1000)))throw Error('Agent engine is recovering');
     const nonce=await this.node.getTransactionCount({address:this.signer.address,blockTag:'pending'});
     if(nonce!==await this.node.getTransactionCount({address:this.signer.address,blockTag:'latest'}))throw Error('Agent writer has an unresolved nonce');
-    const raw=await this.signer.signTransaction({chainId:4242,type:'eip1559',to:m.app,data,nonce,value:0n,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+    const raw=await this.signer.signTransaction({chainId:4242,type:'eip1559',to:m.app,data,nonce,value:0n,gas:engineGas(name),maxFeePerGas:0n,maxPriorityFeePerGas:0n});
     job={app,operation,signer,epoch:m.epoch,nonce,raw,hash:keccak256(raw)};
     await this.db.query('INSERT INTO agent_arcade.engine_jobs(app,operation,signer,epoch,nonce,raw,hash) VALUES($1,$2,$3,$4,$5,$6,$7)',[app,operation,signer,m.epoch,nonce,raw,job.hash]);
    }

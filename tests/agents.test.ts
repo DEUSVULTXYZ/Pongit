@@ -5,6 +5,7 @@ import {AgentController} from '../shared/agent-controller';
 import {readFile} from 'node:fs/promises';
 import {agentMetadata,agentMatchKey,validateAgentManifest,houseBots,houseSteerMetadata,steeredOnChain,type AgentManifest} from '../shared/agents';
 import {TICK_AFTER_MS,TICK_CYCLE_MS,TICK_BURST_MAX,CAUGHT_UP_US} from '../relayer/src/agents/coordinator';
+import {ENGINE_GAS,engineGas} from '../relayer/src/agents/writer';
 import {initial} from '../shared/physics-interlude';
 import type {EngineState} from '../shared/engine-stream';
 const app='0x1111111111111111111111111111111111111111';
@@ -58,4 +59,12 @@ test('a catch-up is always sliced and bounded on gas, never advanced whole and u
  assert(TICK_AFTER_MS>=200&&TICK_AFTER_MS<=60000&&TICK_CYCLE_MS===500);
  // A burst must be able to outlast the heaviest Chaos stretch between two cycles.
  assert(TICK_BURST_MAX>=4&&CAUGHT_UP_US>0n);
+});
+test('only commands that catch a match up get the large gas budget',()=>{
+ // One tick per burst instead of a dozen: on a node that seals every half second each
+ // transaction is a batch. Player-facing and registry commands keep a command's 15 M.
+ for(const name of ['tick','submitRandomness'])assert.equal(engineGas(name),ENGINE_GAS.catchUp);
+ for(const name of ['registerAgent','qualifyAgent','cancelMatch','acceptMatch','input','concede'])assert.equal(engineGas(name),ENGINE_GAS.other);
+ // The hosted node refuses a transaction above 30 M before executing it.
+ assert(ENGINE_GAS.catchUp===30_000_000n&&ENGINE_GAS.other===15_000_000n);
 });
