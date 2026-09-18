@@ -8,6 +8,11 @@ const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert(/^20\d{6}(-[2-9]
 const image=process.env.PONG_AGENT_LAB_IMAGE??'pongit-agent-deps:20260913';assert(/^pongit-agent-deps:20\d{6}$/.test(image));
 const root=`/opt/pongit/tests/agents-${stamp}`,secret=`/opt/pongit/secrets/agents-candidate-${stamp}`,metadata=secret+'/ops';
 const network=`pongit-agents-${stamp}`,HUMAN_APP='0x78d3341e3452d7ec1add9371de3008639eed8eb0';
+// The hosted SDK agent plays in real time: an input at every change of direction and a tick
+// every 300 ms. Measured on 2026-09-18, one of its matches costs about 115 hub batches a minute
+// against 6 for the house league, enough to spend a 1000-batch epoch in minutes. A run can
+// leave it out, and says so, until the arcade has a way to carry external agents' traffic.
+const community=(process.env.PONG_AGENT_LAB_COMMUNITY??'on')!=='off';
 // Every dated identifier comes from the same stamp. The operator journal and the
 // nonce ledger these name are shared with human production: two laboratories under
 // one prefix would interleave their operations in it.
@@ -67,12 +72,12 @@ while(!stopped){
    // Recreate file bind mounts after atomic metadata replacement.
    await copyFile(metadata+'/manifest.json',secret+'/manifest.json');
    await run(['run','--rm','--env-file','/opt/pongit/shared/runtime.env','-e','PONG_AGENT_TEST_ENV=isolated-vps',...stamped,'-v','/usr/bin/docker:/usr/local/bin/docker:ro','-v','/var/run/docker.sock:/var/run/docker.sock','-v','/opt/pongit:/opt/pongit','-w',root+'/release',image,'node','scripts/agent-test-environment.mjs','--services']);
-   await mkdir(root+'/private/community-test',{recursive:true,mode:0o700});await own(root+'/private/community-test');
+   if(community){await mkdir(root+'/private/community-test',{recursive:true,mode:0o700});await own(root+'/private/community-test');
    // It can start while admissions are still closed, and a trial must not lose it silently.
-   docker('run','-d','--name',`pongit-agent-community-${stamp}`,'--restart=on-failure:20','--network',network,'--user=1000:1000','--cpus=.5','--memory=384m','--cap-drop=ALL','--security-opt=no-new-privileges','-e','AGENT_PRIVATE_QUALIFICATION=isolated-vps',...stamped,'-e','PONG_AGENT_DIAGNOSTICS=/diagnostics/agents','-v',root+'/release:/work:ro','-v',root+'/private/community-test:/secrets/community-test','-v',root+'/diagnostics:/diagnostics','-w','/work',image,'node','/app/node_modules/tsx/dist/cli.mjs','scripts/agent-community-qualification.ts');
+   docker('run','-d','--name',`pongit-agent-community-${stamp}`,'--restart=on-failure:20','--network',network,'--user=1000:1000','--cpus=.5','--memory=384m','--cap-drop=ALL','--security-opt=no-new-privileges','-e','AGENT_PRIVATE_QUALIFICATION=isolated-vps',...stamped,'-e','PONG_AGENT_DIAGNOSTICS=/diagnostics/agents','-v',root+'/release:/work:ro','-v',root+'/private/community-test:/secrets/community-test','-v',root+'/diagnostics:/diagnostics','-w','/work',image,'node','/app/node_modules/tsx/dist/cli.mjs','scripts/agent-community-qualification.ts');}
   }
   // The community agent is the only external-style client in the trial: say so when it is down.
-  try{const c=JSON.parse(docker('inspect',`pongit-agent-community-${stamp}`))[0].State;if(!c.Running)console.error(JSON.stringify({at:new Date().toISOString(),service:'agent-private-keeper',error:`Community agent not running (exit ${c.ExitCode}, restarts ${c.RestartCount??'?'})`}));}catch{}
+  if(community)try{const c=JSON.parse(docker('inspect',`pongit-agent-community-${stamp}`))[0].State;if(!c.Running)console.error(JSON.stringify({at:new Date().toISOString(),service:'agent-private-keeper',error:`Community agent not running (exit ${c.ExitCode}, restarts ${c.RestartCount??'?'})`}));}catch{}
   if(next.renewalQualified&&Date.now()-lastArchive>60000){await step('scripts/agent-archive-step.ts','PONG_AGENT_ARCHIVE=dedicated-authorized');lastArchive=Date.now();}
   if(next.renewalQualified){
    const name=`pongit-agent-soak-${stamp}`;let exists=true;try{docker('inspect',name);}catch{exists=false;}
