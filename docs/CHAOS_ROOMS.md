@@ -37,6 +37,8 @@ A published result remains contestable while its delegation is Active, Exiting o
 
 The lifecycle worker stops admissions an hour before expiry, drains games and publications, waits at least 60 seconds for consent tickets and closes the delegation. It waits the onchain challenge window (currently **one hour**), releases stake, finalizes known Chaos results, renews the same app and checks the hosted node's epoch. A challenge suspends renewal. Operator transactions have a dedicated persistent nonce journal; do not use that sender concurrently elsewhere.
 
+It also stops admissions once the epoch has committed `ROOMS_LIFECYCLE_MAX_BATCHES` batches (600 by default, at most 1000), then drains and closes the same way. Releasing the stake replays every batch of the epoch in one Monad transaction, so an epoch past roughly 1,100 to 1,500 batches can never be released or renewed (see *Epoch cadence and the stake-release ceiling* in `docs/AGENT_ARCADE.md`). A hosted node sealing every 0.3 to 1 s turns real-time play into about two batches a second, so the default allows roughly five minutes of play per epoch, and each roll then costs the one-hour challenge window. If lock 701340 or the shared operator nonce is busy when the limit is reached, admissions pause anyway and the close waits for the journal.
+
 Payouts can wait until the daily delegation closes plus the challenge period. Renewal pauses new games for at least that period. Payment workers operate independently from game commands. Permissionless claims always pay the fixed beneficiary. Rejected transfers retain reserved debts and do not block others. Six automatic attempts precede manual retry. Wallet gains are not automatically redeposited as credit.
 
 ## Journals and rollback

@@ -35,6 +35,36 @@ type Stage =
   | "renewing"
   | "starting";
 
+// Releasing the stake replays every batch of the epoch in one Monad transaction.
+// Measured on this hub: gas = 224788 + 83192 * batches, 112,333 per batch at worst,
+// signed at 1.2x the estimate against a 150,000,000 block: past about 1,100 batches
+// the stake may never be released. Real-time play seals about two batches a second,
+// and matches still running when the threshold trips keep sealing while they drain
+// (the longest human match so far, 238 s, is about 460 batches at that rate).
+export const ROOMS_DEFAULT_MAX_BATCHES = 600n;
+export const ROOMS_MAX_BATCHES_LIMIT = 1000n;
+
+export function roomsLifecycleMaxBatches(raw = process.env.ROOMS_LIFECYCLE_MAX_BATCHES) {
+  const value = raw?.trim();
+  if (!value) return ROOMS_DEFAULT_MAX_BATCHES;
+  if (!/^[1-9]\d*$/.test(value))
+    throw new Error("ROOMS_LIFECYCLE_MAX_BATCHES must be a positive integer");
+  if (BigInt(value) > ROOMS_MAX_BATCHES_LIMIT)
+    throw new Error(`ROOMS_LIFECYCLE_MAX_BATCHES above ${ROOMS_MAX_BATCHES_LIMIT} leaves no room to drain below the release ceiling`);
+  return BigInt(value);
+}
+
+/** Why the serving epoch has to close now, or "" while it can keep admitting. */
+export function roomsRenewalPressure(
+  d: { batchIndex: bigint; expiresAt: bigint },
+  now: bigint,
+  maxBatches: bigint,
+): "" | "batches" | "expiry" {
+  if (d.batchIndex >= maxBatches) return "batches";
+  if (d.expiresAt <= now + 3600n) return "expiry";
+  return "";
+}
+
 /** One operator nonce owner. Enable only after the release's renewal rehearsal.
  * Existing player accounts and game-session scopes acquire no new permissions.
  */
@@ -56,6 +86,7 @@ export async function roomsLifecycle(o: {
 }) {
   const file = process.env.ROOMS_LIFECYCLE_KEY_FILE;
   if (!file) return null;
+  const maxBatches = roomsLifecycleMaxBatches();
   const key = JSON.parse(await readFile(file, "utf8")),
     account = privateKeyToAccount(key.privateKey);
   if (
@@ -89,16 +120,16 @@ export async function roomsLifecycle(o: {
     working = false,
     error = "",
     healthy = false;
-  let sessionInfo={epoch:'0',expiresAt:0,releaseAt:0,batch:'0'},reportedError='',reportedDeferred='';
+  let sessionInfo={epoch:'0',expiresAt:0,releaseAt:0,batch:'0',batchLimit:String(maxBatches),closing:''},reportedError='',reportedDeferred='';
   const finalization=new FinalizationMemory();
-  const transition = async (s: Stage) => {
+  const transition = async (s: Stage, detail: Record<string, string> = {}) => {
     const previous=stage;
     await o.db.query(
       "UPDATE il_lifecycle SET stage=$2,changed_at=now() WHERE app=$1",
       [o.app, s],
     );
     stage = s;
-    console.info(JSON.stringify({event:'rooms-lifecycle-transition',app:o.app,previous,stage:s,at:new Date().toISOString()}));
+    console.info(JSON.stringify({event:'rooms-lifecycle-transition',app:o.app,previous,stage:s,...detail,at:new Date().toISOString()}));
   };
   async function submit(id: string, to: Address, data: Hex) {
     let job = (
@@ -160,6 +191,14 @@ export async function roomsLifecycle(o: {
       throw new Error("Operator transaction reverted");
     return true;
   }
+  // Closing waits for lock 701340 and for the shared operator nonce; play must not,
+  // or a stalled journal would keep admitting past the release ceiling.
+  async function pauseOnBatchPressure() {
+    const d = await readHubDelegation(o.base, o.hub, o.app);
+    if (d.status !== 1 || d.batchIndex < maxBatches) return;
+    healthy = false;
+    error = `Epoch ${d.epoch} holds ${d.batchIndex} batches (limit ${maxBatches}); admissions paused until the operator journal is free to drain`;
+  }
   async function cycle() {
     if (working) return;
     working = true;
@@ -169,7 +208,10 @@ export async function roomsLifecycle(o: {
       c = await o.db.connect();
       locked = (await c.query("SELECT pg_try_advisory_lock(701340) AS ok"))
         .rows[0].ok;
-      if (!locked) return;
+      if (!locked) {
+        await pauseOnBatchPressure();
+        return;
+      }
       const pending = (
         await o.db.query(
           "SELECT * FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending' ORDER BY nonce LIMIT 1",
@@ -184,6 +226,7 @@ export async function roomsLifecycle(o: {
           await o.base.sendRawTransaction({
             serializedTransaction: pending.raw,
           });
+          await pauseOnBatchPressure();
           return;
         }
         await o.db.query("UPDATE il_lifecycle_jobs SET status=$2 WHERE id=$1", [
@@ -194,7 +237,7 @@ export async function roomsLifecycle(o: {
           throw new Error("Operator transaction reverted; review required");
       }
       const d = await readHubDelegation(o.base, o.hub, o.app);
-      sessionInfo={epoch:String(d.epoch),expiresAt:Number(d.expiresAt)*1000,releaseAt:Number(d.stakeUnlockAt)*1000,batch:String(d.batchIndex)};
+      sessionInfo={epoch:String(d.epoch),expiresAt:Number(d.expiresAt)*1000,releaseAt:Number(d.stakeUnlockAt)*1000,batch:String(d.batchIndex),batchLimit:String(maxBatches),closing:''};
       if (d.epoch > 0n)
         await o.db.query("UPDATE il_lifecycle SET epoch=$2 WHERE app=$1", [
           o.app,
@@ -237,12 +280,16 @@ export async function roomsLifecycle(o: {
           }
           return;
         }
-        if (stage === "playing" && d.expiresAt > now + 3600n) {
+        // Batch pressure enters the same drain as expiry: admissions stop here, and
+        // the close below still waits, fences and rechecks exactly as before.
+        const closing = roomsRenewalPressure(d, now, maxBatches);
+        sessionInfo.closing = closing;
+        if (stage === "playing" && !closing) {
           healthy = true;
           o.onReady?.(d.epoch);
           return;
         }
-        if (stage !== "draining") await transition("draining");
+        if (stage !== "draining") await transition("draining", {closing, batches: String(d.batchIndex), batchLimit: String(maxBatches)});
         const row = (
           await o.db.query("SELECT changed_at FROM il_lifecycle WHERE app=$1", [
             o.app,
@@ -373,12 +420,16 @@ export async function roomsLifecycle(o: {
       working = false;
     }
   }
-  const timer = setInterval(() => void cycle(), 10000);
+  let inflight: Promise<void> = Promise.resolve();
+  const step = () => (working ? inflight : (inflight = cycle()));
+  const timer = setInterval(() => void step(), 10000);
   timer.unref();
-  void cycle();
+  void step();
   return {
     available: () => stage === "playing" && healthy,
     status: () => ({ stage, error, healthy, ...sessionInfo }),
     stop: () => clearInterval(timer),
+    /** One lifecycle step, or the one already running. */
+    cycle: step,
   };
 }
