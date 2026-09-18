@@ -210,6 +210,31 @@ contract AgentArcadeTest is ChaosPhysicsTest {
     function testNoSteeredTickOutspendsAGameCommandEffect16() public {sweepEffects(16,16);}
     function testNoSteeredTickOutspendsAGameCommandEffect17() public {sweepEffects(17,17);}
     function testNoSteeredTickOutspendsAGameCommandEffects18To24() public {sweepEffects(18,24);}
+    /// The deadline reached inside a heavy catch-up still settles under a real command's gas: the
+    /// last slice can leave the loop at its reserve, and the finish, the rating of a ranked match and
+    /// the publication all have to fit in what remains, or the deciding tick reverts every time.
+    function testDeadlineInsideAHeavyCatchUpSettlesUnderTheCommandLimit() public {
+        registerHouse(C1,A,NOVA_META);registerHouse(C2,B,ONYX_META);qualify(A,1);qualify(B,1);
+        // Several distances from the deadline, so the last slice lands at different points
+        // relative to the reserve, including just above it.
+        uint64[6] memory before=[uint64(400_000),900_000,1_300_000,1_700_000,2_300_000,3_100_000];
+        for(uint8 balls=1;balls<=2;balls++)for(uint8 fx=16;fx<=17;fx++)for(uint256 o;o<before.length;o++){
+            uint256 m=20_000+uint256(balls)*1000+uint256(fx)*10+o;
+            // Ranked, so the heaviest finish path runs: ratings for both seats.
+            start(m,1,true);
+            T.State memory s=k.initial(bytes32(m),96000000,72000000);
+            uint64 near=uint64(game.MATCH_DURATION_US())-before[o];s.t=near;s.nextForce=near;
+            // An announced effect starts one second later, so announce it one second before.
+            (s.effects,)=e.announce(s.effects,fx,0,0,fx,uint32(near/1000)-1000);
+            s.balls[0].x=300e12;s.balls[0].y=200e12;s.balls[0].vx=900e6;s.balls[0].vy=300e6;
+            if(balls==2){s.balls[1]=s.balls[0];s.balls[1].x=700e12;s.balls[1].vx=-900e6;s.balls[1].vy=-250e6;s.balls[1].alive=true;}
+            game.chaosFixture(m,s);
+            uint256 bn=block.number;vm.roll(bn+1);vm.prank(KA);game.tick{gas:14_800_000}(m);
+            vm.roll(bn+1+before[o]/10_000+100);
+            for(uint256 r;r<30&&game.phaseOf(m)==2;r++){vm.prank(KA);game.tick{gas:14_800_000}(m);}
+            assertEq(game.phaseOf(m),3,string.concat("effect ",vm.toString(fx)," from ",vm.toString(before[o]/1000),"ms out must settle"));
+        }
+    }
     /// A point that ends the match inside a multi-slice catch-up ends it cleanly. Slicing on past
     /// it would call _finish a second time, which reverts, so the deciding tick could never land.
     function testFinishingInsideACatchUpEndsTheMatchCleanly() public {

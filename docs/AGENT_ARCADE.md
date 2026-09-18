@@ -106,12 +106,27 @@ can never be released: the transaction cannot be mined at any gas price. Epoch 2
 application reached **8564 batches** and is stuck there permanently.
 
 `batchIndex` resets to zero at every epoch opening, verified on chain at blocks 62316762 and
-62316763, so closing early genuinely clears the counter. Batches are produced by gameplay volume,
-not on a schedule: the validator seals a batch as soon as it holds `maxDiffsPerCommit` diffs,
-which is 64 and belongs to the validator's terms, shared with every application on this hub. A
-sampled batch carries about 42 execution-chain transactions, so 8564 batches represent roughly
-364,000 of them, overwhelmingly paddle inputs from the house controllers rather than coordinator
-operations. The operation journal records only the latter, which is why it shows 3877 rows.
+62316763, so closing early genuinely clears the counter.
+
+**What seals a batch — corrected by measurement on 2026-09-18.** An earlier version of this page
+said the validator seals a batch once it holds `maxDiffsPerCommit` (64) diffs. That is wrong for
+the node now serving the arcade. Reading every batch back through `interlude_getBatch`: the first
+156 batches carried **320 transactions, 2.05 per batch**, 1 to 6 each, and consecutive batches
+began every **0.3 to 1 s** during play. The node seals whatever is pending, about as fast as Monad
+settles it. So once there is at least one transaction per sealing window, the batch count follows
+*active time*, not the transaction count: one tick a second for one match is about 1.5 batches a
+second, which reaches the 1800-batch wall in roughly twenty minutes of continuous play.
+
+The previous node sealed about every 10 s under the same kind of traffic (sampled batches of about
+42 transactions), which is why epoch 2 lasted 24 hours before hitting its 8564. Nothing we send
+selects the cadence: creating a hosted node posts only `{app}`, and neither the control plane nor
+`interlude_session` reports an interval. It is Interlude's to set and it has changed; the arcade has
+to be correct under either.
+
+The consequence is that **transactions have to arrive in bursts**, not in a steady stream. The
+coordinator ticks every live match on one shared clock, back to back until each is caught up, and
+supplies any Chaos beacon inside that same burst for matches only it drives (see *Burst settlement*
+below). The house clients' own inputs are gone for league play, since the contract steers those seats.
 
 `scripts/agent-lifecycle.ts` now closes on batch pressure first and epoch age second:
 
@@ -128,6 +143,58 @@ costs about an hour between `closeEngine` and `releaseStake` during which the ar
 at a 2.92-hour epoch that is roughly 74 per cent availability. And serving a full four hours
 requires holding batch production under 250 per hour against the 342 per hour measured, which
 means slowing the house controller loop in `scripts/agent-house-worker.ts` from its current 55 ms.
+
+### The Chaos freeze of 2026-09-18, and the loop that caused it
+
+The first hour on the redeployed arcade froze a Chaos qualification match for good. Two defects in
+the steering loop of `PongAgentArcade._advanceState` combined:
+
+1. **The loop condition was inverted.** `while(!complete&&sub<target)` stopped after the first
+   100 ms slice that landed, so a tick advanced 100 ms of game time whatever the gap (measured:
+   one tick, one slice), and it kept calling the engine with a fresh step budget whenever a slice
+   did *not* land. A house match fell behind the block clock, and past 1.6 s of lag `AgentSteer`
+   handed the whole gap back to be advanced unsteered, in one call.
+2. **Nothing bounded a tick's gas.** Chaos effect 17 costs about **16 M gas per second of play**
+   (2.0 M per 100 ms) with no steering at all; effect 16 about 7.3 M; every other effect 1 to
+   1.8 M. A game command carries 15 M. On the live node a tick reverted at 14.1 M, the processed
+   clock stopped while the block-derived target kept growing, and every later tick needed more:
+   an estimate at 100 M still reverts. The arcade caps its clock at the five-minute deadline, so
+   such a match never reaches the 30-minute cancellation either.
+
+The loop now slices while each slice lands, the match is still live, and more than 4 M gas
+remains, and reports an incomplete advance when it stops short; the next tick resumes where it
+stopped. The phase check is load-bearing: `_finish` reverts on a finished match, so slicing past a
+deciding point would make the deciding tick revert. `AgentSteer` no longer returns a long gap whole,
+so every catch-up is steered. The registry getters merged into one `agentAt(index)` returning the
+agent and the count, which paid for the loop: **24,562 bytes of 24,576**.
+
+`contracts/test/AgentArcade.t.sol` pins it against the real 15 M limit: one tick covers a whole
+one-second gap while steering; each of the 24 Chaos effects, with one and two balls, at 0.5, 1 and
+3 s gaps, fits and progresses, and a lagging match then catches up and can be conceded; a point that
+ends the match inside a catch-up ends it cleanly. Run against the old loop, the effect-17 and
+catch-up tests fail, as they must.
+
+The human game shares the Chaos flow and survives effect 17 only because its clients tick every
+300 ms. Whether a lapse in its ticking can freeze a human match is being checked separately and
+read-only; nothing here changes the human contract.
+
+### Burst settlement
+
+Because the node seals whatever is pending every fraction of a second, the coordinator no longer
+ticks a match whenever its progress is 1.5 s old. On one shared clock (`PONG_AGENT_TICK_MS`,
+default 10 s) it takes every match nobody else has advanced for three seconds and, back to back:
+supplies a due Chaos beacon, ticks, reads the state back, and repeats until the processed clock is
+within one second of the block clock, a tick makes no progress, or twelve passes. A stall on a draw
+whose drand round is not out yet ends the burst instead of spending ticks on it; the draw then waits
+at most one period and the next burst replays the whole gap, so no lag accumulates. A match a
+community agent is driving still gets its beacon at once.
+
+Retiring the frozen deployment: its `closeEngine` refuses while it counts a live game, and that game
+cannot move. `scripts/retire-stuck-agent-arcade.ts` proves both, then closes it through the hub's
+liveness escape `forceClose` once that is legitimately open (an hour without a commit, or past the
+session's maximum duration) and releases the stake, which is reserved from the validator's own bond.
+It refuses to close anything whose stake could not be released afterwards, and anything still named
+current in `deployments/agents.json`.
 
 Unrelated but adjacent: `ops/agents.compose.yaml` points the agent roles at the public Monad
 endpoint, which rate-limits at 15 requests per second, while the human services use the project's
