@@ -138,8 +138,10 @@ const result=await patiently(async()=>{
 console.log(JSON.stringify({strategy:agent,kind:result.kind,qualification:result.qualification}));
 // A strategy qualifies by playing one friendly match per mode in which its paddle moves. There is
 // nothing to keep running: the arcade asks your contract directly, whether or not this follows it.
+// 'retry' may be queued again by signing again; 'failed' has used its retries (the coordinator
+// allows a few per mode) and waits for a later registration. Both mean this run is decided.
 const verdict=(q:unknown)=>{const states=Object.values(q??{}) as string[];
- if(!states.length||!states.every(s=>s==='qualified'||s==='retry'))return undefined;return states.every(s=>s==='qualified')?0:3;};
+ if(!states.length||!states.every(s=>s==='qualified'||s==='retry'||s==='failed'))return undefined;return states.every(s=>s==='qualified')?0:3;};
 if(process.env.WAIT==='1'){
  const hours=Number(process.env.WAIT_HOURS)||6,until=Date.now()+hours*3600_000;
  let decided=verdict(result.qualification),missing=0;

@@ -85,6 +85,8 @@ try{
   // A signature from anyone else is refused, and a creator re-signing requeues only a retry.
   const forged={...sr,expires:expires+1n,name:'Tracker',avatar:4,creatorProof:await agent.signTypedData({...typed,message:{...sr,expires:expires+1n}})};
   const refused=await api('/register',forged);assert.equal(refused.status,403);assert.equal(refused.value.code,'AGENT_REGISTRATION_SIGNATURE');
+  // A proof of the right shape that is no signature at all (r and s zero) is the caller's error.
+  const blank=await api('/register',{...forged,creatorProof:'0x'+'00'.repeat(64)+'1b'});assert.equal(blank.status,403);assert.equal(blank.value.code,'AGENT_REGISTRATION_SIGNATURE');
   await db.query(`UPDATE agent_arcade.identities SET qualification='{"0":"retry","1":"qualified"}' WHERE app=$1 AND agent=$2`,[m.app.toLowerCase(),strategy]);
   const again=await api('/register',await signed({...sr,expires:expires+2n}));assert.equal(again.status,200);assert.deepEqual(again.value.qualification,{0:'queued',1:'qualified'});
   assert.equal(written.length,2);checks.push('only the creator signs a strategy, and signing again requeues only a mode to retry');

@@ -1,6 +1,7 @@
 # Agent Arcade candidate
 
-Status as of 2026-09-18, 20:00 UTC: the fourth deployment of the day, below, is the first in which
+Status as last observed on 2026-09-18 at 17:49:43 UTC (later renewals inside the trial are expected
+every few hours and are not listed here): the fourth deployment of the day, below, is the first in which
 external agents play as on-chain strategies (see *On-chain strategies*). Its private laboratory
 completed a real renewal, its first sample strategy qualified in Chaos by a real match, and its
 24-hour trial has been running since 15:12:57 UTC on release `e892c30`, due to end on September 19
@@ -155,9 +156,10 @@ address must hold code, and its `creator()` must return that creator, read with 
 STATICCALL. The identity word is marked with bit 176. An address without code can never pass this
 route. The converse does not hold: the agent-signature route checks only the signature, never that
 the address has no code. An EIP-7702 delegated account has both a private key and code (its
-delegation designator, which runs the delegate's `creator()` and `decide()`), so it can pass either
-route, and registered as a strategy it keeps a key the arcade accepts on its seat (see *Known
-limits*).
+delegation designator, which runs the delegate's `creator()` and `decide()`), so the contract would
+accept it on either route. The service refuses it as a strategy (its code starts with the
+`0xef0100` designator), so through the service it can only be a key agent, where those are open
+(see *Known limits*).
 
 **Acceptance.** Nobody can accept for a contract. A strategy seat counts as accepted by the offer
 itself, so the other seat's acceptance starts the match. When both seats are strategies only the
@@ -169,7 +171,7 @@ exactly 32 bytes of the answer and accepts only -1, 0 or 1. A revert, an exhaust
 return data, an out-of-range answer or an attempt to write all leave the seat's direction where it
 was. Two hostile strategies cost more than their two budgets, because building and encoding the
 view, the calls themselves and the reads around them are paid too: about 125,000 gas a slice (one
-steered Chaos slice costs 137,015 with two strategies burning their whole budget and 11,472 with two
+steering one Chaos slice costs 137,015 with two strategies burning their whole budget and 11,472 with two
 key agents). A 30 M tick absorbs that, but after a 30 s lag it then covers about 14.5 s of Classic
 and 4.9 s of Chaos (24.2 M and 24.3 M gas used). The same tick covers the whole 30 s of Classic and
 6.1 s of Chaos with two `TrackerStrategy` seats, and 6.5 s of Chaos with two key agents: Chaos is
@@ -210,7 +212,8 @@ a match, since the coordinator signs every offer: the service's checks are the g
 
 A strategy needs no presence: admission treats it as always available. It is queued for both modes
 at registration and qualifies by completing a friendly match in which its paddle leaves the centre
-in at least three recorded frames, which, with house metadata refused, only its own answers can do.
+in at least three recorded frames. With house metadata and EIP-7702 accounts refused, only its own
+answers can move that paddle.
 The league now pairs whoever has waited longest against whoever has waited longest among other
 creators, so every qualified agent gets its turn however many register. House clients tick only
 against a real-time community agent. Registration of hosted real-time agents is closed once the
@@ -257,13 +260,14 @@ always holds under STATICCALL; its qualification match fails instead. A strategy
 between calls. It may read other contracts, but only as they were when the epoch opened. Its
 creator can redeploy behind a proxy between epochs, which a hosted agent could always do.
 
-An EIP-7702 delegated account can register as a strategy and keep its private key. The arcade
-identifies a seat by its address, so that key is accepted on the seat like any player's: it can send
-`input`, `concede` and `cancelMatch` and grant sessions. Its owner could have `decide` decline to
-answer when the arcade asks, which holds the seat, and steer it in real time instead: a strategy seat
-acting as a key seat, admitted without presence and accepted by the offer, at the real-time cost
-strategies exist to avoid. Nothing in the arcade tells such an account from a plain contract today.
-Whether the engine honours a delegation designator in its pinned Monad state has not been tested.
+An EIP-7702 delegated account holds a private key and code. The contract cannot tell it from a
+plain contract, and the arcade identifies a seat by its address, so if such an account were admitted
+as a strategy its key would be accepted on the seat like any player's (`input`, `concede`,
+`cancelMatch`, sessions): a strategy seat acting as a key seat, admitted without presence, at the
+real-time cost strategies exist to avoid. The service therefore refuses a strategy whose code is a
+delegation designator, and since only agents in its database are ever offered a match, that closes
+the path. The contract-level check waits for the next redeployment. Whether the engine honours a
+delegation designator in its pinned Monad state has not been tested.
 
 `PongView.half` is not the paddle's real half-height in Chaos while a size effect is active. The
 arcade derives it from the side's betting weight alone (72 to 96 px, so 36 to 48 px), while the
@@ -347,8 +351,8 @@ Nearly all of it is the hub's one-hour challenge window, which belongs to the va
 What follows for a public opening:
 
 - **External agents are strategies** (see *On-chain strategies*): they cost nothing beyond the
-  match they play, so any number can register without moving the batch rate. The one exception, an
-  EIP-7702 account that keeps its key, is under that section's *Known limits*.
+  match they play, so any number can register without moving the batch rate. The service refuses
+  EIP-7702 accounts as strategies, which would otherwise act as key seats (see *Known limits*).
 - **A human challenge ("Play an agent") is real-time.** The human client sends inputs and ticks
   like the community agent did. At the measured one batch a second, the 1,000-batch roll comes
   after about seventeen minutes of human play in an epoch (1,000 batches at 60 a minute), sooner

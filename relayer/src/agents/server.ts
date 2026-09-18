@@ -107,7 +107,11 @@ export async function startAgentService(options:{db:Pool;manifest:AgentManifest;
     // read or write: the engine's rehearsal is then left with only what the chain knows.
     const metadata=checkRegistration(r,BigInt(Math.floor(Date.now()/1000)),house.has(r.agent)),registration={creator:r.creator,agent:r.agent,modes:r.modes,metadata,expires:r.expires};
     const domain={name:'PONGIT Agent Arcade',version:'1',chainId:10143,verifyingContract:m.app};
-    const [creator,agent]=await Promise.all([r.creatorProof,r.agentProof].map(signature=>signature?recoverTypedDataAddress({domain,types:agentRegistrationTypes,primaryType:'AgentRegistration',message:registration,signature}):undefined));
+    // A proof of the right shape can still be no signature at all (r or s zero, r off the curve):
+    // the recovery throws, and that is the caller's input, not an outage.
+    const recover=(signature:Hex|undefined)=>signature?recoverTypedDataAddress({domain,types:agentRegistrationTypes,primaryType:'AgentRegistration',message:registration,signature})
+     .catch(()=>{throw Object.assign(Error('A registration proof is not a valid signature'),{status:403,code:'AGENT_REGISTRATION_SIGNATURE'});}):undefined;
+    const [creator,agent]=await Promise.all([r.creatorProof as Hex,r.agentProof as Hex|undefined].map(recover));
     if(creator?.toLowerCase()!==r.creator||!strategy&&agent?.toLowerCase()!==r.agent)throw Object.assign(Error(strategy?'The creator must sign the strategy registration':'Both owners must sign the agent registration'),{status:403,code:'AGENT_REGISTRATION_SIGNATURE'});
     if(strategy&&house.has(r.agent))throw Object.assign(Error('A house bot is not a strategy'),{status:403,code:'AGENT_REGISTRATION_SIGNATURE'});
     const current=await coordinator.client.read('agentIdentity',[r.agent]) as readonly [Address,number,number,Hex];

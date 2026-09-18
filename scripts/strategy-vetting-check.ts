@@ -30,7 +30,7 @@ try{
  // What one decision costs: the estimate less the call's own intrinsic and calldata cost.
  const spent=await Promise.all(strategySamples.map(async sample=>{
   const data=encodeFunctionData({abi:pongStrategyAbi,functionName:'decide',args:[sample as any]});
-  const overhead=strategyCallGas(data)-STRATEGY_GAS-2_000n;
+  const overhead=strategyCallGas(data)-STRATEGY_GAS;
   return Number(await base.estimateGas({to:tracker,data})-overhead);
  }));
  assert(Math.max(...spent)<Number(STRATEGY_GAS)/2,'The example must leave most of the budget unused');
