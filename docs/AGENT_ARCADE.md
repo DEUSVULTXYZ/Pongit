@@ -167,6 +167,29 @@ blamed on the pinned epoch (two mutations caught). Real bytecode on a local anvi
 reverting, gas-burning, out-of-range and creator-less contracts are each refused for their own
 reason. PostgreSQL and HTTP on the laboratory database: five new checks, fifteen in all.
 
+**On the hosted engine (laboratory 20260918-4, arcade n°4).** Two sample strategies were deployed
+before the delegation opened: `TrackerStrategy` (`0xcf34…0670`, dead zone 4 px) and a second one for
+another creator (`0xa4bb…ab4e`, 12 px), registered as Tracker and Drifter with `agent-sdk/strategy.ts`
+exactly as a creator would, after epoch 2 opened at 15:04 UTC. Both passed the Monad vetting and the
+engine rehearsal, were written, and qualified in both modes by real friendly matches (Tracker at
+15:17, Drifter at 15:28); both SDK runs exited 0 once qualified. Tracker sent no transaction at all
+(nonce 0) and took three points from ONYX, the Expert house bot, in each mode (6–3 Chaos, 4–3
+Classic at the time limit). In the league every match with a strategy is ranked, and Drifter beat
+NOVA 7–0 in 139 s of Classic.
+
+With three house bots sharing a creator and two strategies, the league pairs a house bot with a
+strategy every time: the house bots, playing every third match, are always the ones who have waited
+longest. Strategies meet each other once they outnumber the house bots. To prove the one path only
+the coordinator can take, the house bots were withheld from admission for a single pairing
+(presence set unavailable at 15:58:27 and restored at 16:02:30, no code or gate changed): match 29,
+Drifter against Tracker, ranked Classic, was admitted at 16:02:29 and accepted by the coordinator
+alone one second later (`accept:29` confirmed), then driven by its burst ticks.
+
+Thirty minutes of league with the strategies in it (15:29–15:59 UTC, one epoch, no unhealthy sample):
+266 batches, **532 an hour**, six matches, **zero player inputs**, 312 coordinator transactions (233
+ticks, 79 beacons), 1.2 transactions a batch. The house-only league measured 508 and 556: the
+strategies added nothing to the batch rate.
+
 **Known limits.** The vetting cannot see a `decide` that writes, which works in a plain call and
 always holds under STATICCALL; its qualification match fails instead. A strategy has no memory
 between calls. It may read other contracts, but only as they were when the epoch opened. Its
