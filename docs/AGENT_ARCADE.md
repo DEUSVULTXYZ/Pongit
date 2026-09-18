@@ -31,12 +31,34 @@ opened, and no bot process has been launched on a human arena.
 
 ## Qualification gates
 
-- Agent-specific contract tests pass, including the 24 effects, all 276 pairs, five-minute leader/draw handling, the seventh point, creator restrictions and human ELO isolation.
-- Full contract regression: 368 passed, zero failed, two real-hub fork tests skipped because no fork configuration was supplied. Additional agent isolation tests are tracked separately.
-- TypeScript regression: 208 passed, zero failed. Differential physics: 10,000 Classic cases and 10,000 current Chaos-event cases matched exactly; the older realtime Chaos mirror also passed 10,000 comparisons.
+State on 2026-09-18 for the current candidate, arcade n°4 at `e892c30`:
+
+- Full contract regression: 404 passed, zero failed, two real-hub fork tests skipped because no fork
+  configuration was supplied. The dedicated agent suites (`AgentArcadeTest`, `HouseController`) pass
+  60 tests, including the 24 effects, all 276 pairs, five-minute leader/draw handling, the seventh
+  point, creator restrictions, human ELO isolation, catch-up under load, the speed cap, steered seats
+  and seven on-chain strategy tests. Every contract fix of the day has a negative control: the old
+  code fails its new test, and six mutations of the strategy rules are each caught.
+- TypeScript regression: 217 passed, zero failed. The house policy differential matches 9,700 of
+  9,700 comparable cases across both modes; physics differentials as below.
+- Real PostgreSQL/HTTP integration on the laboratory database: 15 scenarios, including strategy
+  registration, the pinned-epoch refusal, creator-only signing and requeue, real-time registration
+  closed, seat kinds, duplicate operations, compact-key revocation and reconnect checkpoints.
+- Real strategy bytecode on a local anvil (`npm run test:strategies`): the example passes in 2,700 to
+  6,300 gas a decision; reverting, gas-burning, out-of-range and creator-less contracts are refused.
+- On the hosted engine: a forced renewal and a batch-pressure renewal inside the trial, both clean;
+  two strategies qualified in both modes; a coordinator-only strategy duel published; 532 batches an
+  hour with zero player inputs. See *On-chain strategies* and *Renewals as they actually ran*.
+- `npm audit`: zero vulnerabilities in the root project (production and all) and in `indexer`. Secret
+  scan of every line added on the branch against `origin/main`: only the three public house metadata
+  hashes and four documented transaction hashes, no key material. Gitleaks itself has not been run:
+  it is installed neither locally nor on the VPS.
+- Still to pass: the 24-hour trial started 15:12:57 UTC, then its review and the public smoke tests.
+
+Evidence from the September deployment (`0x4cecc7fb…`), kept for the record:
+
 - Chrome and Edge: catalogue, connection dialog, live canvas and spectator result checked at 360, 390, 768 and 1440 pixels against a captured private production build with simulated APIs. These are not hosted multiplayer proofs.
-- Ten real PostgreSQL/HTTP integration scenarios passed with explicitly mocked contract reads, including duplicate operations, compact-key revocation, authenticated reconnect checkpoints and reserving the next duel after an engine result but before its publication.
-- Dedicated contract suite: 24 tests passed. Next.js production build and Envio generation/type checking passed.
+- Next.js production build and Envio generation/type checking passed.
 - Hosted admission initially returned `ValidatorAtCapacity()`. After releasing the verified idle predecessor, the dedicated node accepted epoch 1. The candidate is not publicly enabled.
 - A verified drained predecessor was closed to release its unused validator allocation after the actual hub deadline. The human active application was not closed.
 - Five complete hosted games were published on Monad: matches 3 and 5 in Classic, 4, 6 and 7 in Chaos. Matches 4/5 overlapped, as did 6/7. NOVA, PULSE, ONYX and the separately hosted SDK example passed both mode qualifications.
