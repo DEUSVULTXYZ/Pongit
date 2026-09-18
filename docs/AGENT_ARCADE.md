@@ -161,8 +161,8 @@ the steering loop of `PongAgentArcade._advanceState` combined:
    an estimate at 100 M still reverts. The arcade caps its clock at the five-minute deadline, so
    such a match never reaches the 30-minute cancellation either.
 
-The loop now slices while each slice lands, the match is still live, and more than 4 M gas
-remains, and reports an incomplete advance when it stops short; the next tick resumes where it
+The loop now slices while each slice lands, the match is still live, and more than the gas reserve
+remains (4 M at first, 6 M after review, see below), and reports an incomplete advance when it stops short; the next tick resumes where it
 stopped. The phase check is load-bearing: `_finish` reverts on a finished match, so slicing past a
 deciding point would make the deciding tick revert. `AgentSteer` no longer returns a long gap whole,
 so every catch-up is steered. The registry getters merged into one `agentAt(index)` returning the
@@ -173,6 +173,36 @@ one-second gap while steering; each of the 24 Chaos effects, with one and two ba
 3 s gaps, fits and progresses, and a lagging match then catches up and can be conceded; a point that
 ends the match inside a catch-up ends it cleanly. Run against the old loop, the effect-17 and
 catch-up tests fail, as they must.
+
+An adversarial review of that fix, with its own Forge measurements, found three more ways to the
+same freeze, all now closed:
+
+- **Matches with no house seat were not sliced.** `steer` handed their whole gap back, so two
+  community agents who went quiet during effect 17 froze exactly like before; the coordinator's
+  fallback arrives three seconds late by design. Chaos matches are now sliced whoever plays, without
+  touching the control word, so community seats are never steered. The physics is
+  partition-invariant, so the result is what one call would have given. A community Classic match is
+  still one call: a paddle hit keeps its speed there and 128 events bound the call.
+- **The reserve was not a bound.** Chaos multiplies a ball's speed by 1.1 at every paddle hit with no
+  ceiling short of a 2^72 representation guard. People miss long before that matters. Two
+  near-perfect house bots on a rally that comes back to where the paddles already are do not, and
+  past about 25,000 px/s one 100 ms slice holds more collisions than a command can pay for; the same
+  slice replays on every retry. **Arcade rule: in Chaos a ball never starts a slice faster than
+  3,000 px/s.** `AgentSteer` rescales it before every slice, keeping its direction and every other
+  bit of the ball. At that speed a ball crosses the table in about 0.3 s, so a slice holds at most
+  one hit. The reserve is now 6 M, which covers the heaviest slice measured at the cap with its call
+  overhead, plus the finish. The human game has no such cap and is not affected.
+- **A client never ticked after `CatchUpRequired`.** An input that finds the clock behind now sends
+  one tick and retries the same intent, in `shared/agent-client.ts`, so both the SDK example and the
+  house worker get it. And since a steered house seat no longer sends inputs, it still ticks when its
+  opponent is not a house bot: `TickPilot` assumes both clients tick.
+
+Tests added for each, all against a real command's gas: a flat rally already at 1,000, 8,000, 25,000
+and 60,000 px/s, alone and with multiball and a gravity well; two quiet community seats through
+effects 16 and 17 with one and two balls; the cap keeping direction and every other bit. Run against
+the code before the fix, the escalated rally and the community freeze both revert, as they must. Two
+fixtures had been testing less than they claimed: assigning one memory struct to another copies the
+reference, so every "two-ball" case had been one ball twice. They now copy it.
 
 The human game shares the Chaos flow and survives effect 17 only because its clients tick every
 300 ms. Whether a lapse in its ticking can freeze a human match is being checked separately and

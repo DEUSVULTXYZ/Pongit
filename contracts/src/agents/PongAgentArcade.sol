@@ -39,11 +39,12 @@ contract PongAgentArcade is PongChaosEvents {
     }
     function _limitTarget(uint256 target) internal pure override returns(uint256){return target>MATCH_DURATION_US?MATCH_DURATION_US:target;}
     function _advanceState(uint256 id,PhysicsV2.State memory legacy,uint64 target,bool mayResume) internal override returns(bool complete){
-        // Slice to the target while each slice lands, the match is live, and a worst-case slice
-        // still fits: one Chaos slice can cost 2 M gas, and a second _finish would revert the tick.
+        // Slice to the target while each slice lands, the match is live, and a worst-case slice plus
+        // the finish still fit: a Chaos slice at the speed cap measured up to about 3.6 M with its
+        // call overhead, and a second _finish would revert the tick.
         uint64 sub;
         do{legacy=_state(id);sub=AgentSteer.steer(words,id,legacy.mode,target);complete=super._advanceState(id,legacy,sub,mayResume);}
-        while(complete&&sub<target&&_phase(id)==2&&gasleft()>4_000_000);
+        while(complete&&sub<target&&_phase(id)==2&&gasleft()>6_000_000);
         // Bounded catch-up must reach the deadline before evaluating the score.
         // A late call cannot simulate beyond it or cancel a legitimate 5-minute result.
         if(_phase(id)==2){

@@ -107,11 +107,22 @@ export function createAgentClient(options:AgentClientOptions){
   },
   move(id:bigint,dir:-1|0|1){
    movement={id,dir};if(moving)return moving;
-   moving=(async()=>{while(movement){const intent=movement;movement=undefined;const s=await feed.read(intent.id);
+   moving=(async()=>{while(movement){const intent:{id:bigint;dir:-1|0|1}=movement;movement=undefined;const s=await feed.read(intent.id);
     if(s.phase!==2||!player)continue;const side=s.a.toLowerCase()===player.toLowerCase()?0:s.b.toLowerCase()===player.toLowerCase()?1:-1;
     if(side<0)throw Error('This account is not playing');
     const confirmed=side===0?s.state.leftDir:s.state.rightDir;if(confirmed===intent.dir)continue;
-    await send('input',[intent.id,intent.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]);
+    try{await send('input',[intent.id,intent.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]);}
+    catch(e){
+     // The arcade advances in gas-bounded slices, so an input arriving after a long gap can find
+     // the clock still behind and revert CatchUpRequired. Waiting only widens the gap. Catch up
+     // with one tick and try the same intent again; a tick that moves nothing leaves only waiting.
+     if((e as {errorName?:string}).errorName!=='CatchUpRequired')throw e;
+     const clock=(v:EngineState)=>v.chaos?.physics.t??v.state.t;
+     const before=clock(await feed.read(intent.id,true));
+     await send('tick',[intent.id]);
+     if(clock(await feed.read(intent.id,true))<=before)throw e;
+     movement??=intent;
+    }
    }})().finally(()=>{moving=undefined;});return moving;
   },
   async tickIfNeeded(id:bigint,monotonicMs:number){

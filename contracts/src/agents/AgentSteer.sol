@@ -13,6 +13,15 @@ library AgentSteer {
     ///      through it and let one Chaos call cost more than a command may spend. The arcade stops
     ///      slicing on its gas reserve instead, and the next tick resumes where this one stopped.
     uint64 internal constant SLICE_US = 100_000;
+    /// @dev Arcade rule, Chaos only: a ball never starts a slice faster than 3,000 px/s, in the 1e6
+    ///      units Chaos stores velocities in. Chaos multiplies speed by 1.1 at every paddle hit with
+    ///      no ceiling short of a 2^72 representation guard. People miss long before it matters. Two
+    ///      near-perfect policies on a rally that comes back to where the paddles already are do
+    ///      not, and past about 25,000 px/s one slice holds more collisions than a command can pay
+    ///      for; the same slice then replays on every retry and the match freezes. At this cap a
+    ///      ball crosses the table in about 0.3 s, so a slice holds at most one hit and the ball
+    ///      ends it no faster than 3,300 px/s. The human game is not affected.
+    int256 internal constant MAX_SPEED = 3_000e6;
 
     // Registration metadata of the three house bots, from agentMetadata(name, avatar).
     bytes32 internal constant NOVA = 0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
@@ -21,6 +30,35 @@ library AgentSteer {
 
     function _key(uint256 id, uint256 field) private view returns (bytes32) {
         return keccak256(abi.encode(address(this), uint256(0), id, field));
+    }
+
+    /// @dev Scales an over-fast ball back to MAX_SPEED, keeping its direction. Only velocity bits
+    ///      0-159 of the ball's second word change; gravity use and trail revision are kept.
+    function _capSpeed(mapping(bytes32 => uint256) storage w, uint256 id) private {
+        for (uint256 i; i < 2; i++) {
+            if (w[_key(id, 21 + i * 2)] & (uint256(1) << 195) == 0) continue;
+            bytes32 k = _key(id, 22 + i * 2);
+            uint256 b = w[k];
+            int256 vx = int256(int80(uint80(b)));
+            int256 vy = int256(int80(uint80(b >> 80)));
+            uint256 sq = uint256(vx * vx + vy * vy);
+            if (sq <= uint256(MAX_SPEED * MAX_SPEED)) continue;
+            // One above the floor square root, so the scaled speed never lands above the cap.
+            int256 speed = int256(_sqrt(sq)) + 1;
+            vx = vx * MAX_SPEED / speed;
+            vy = vy * MAX_SPEED / speed;
+            w[k] = (b & ~((uint256(1) << 160) - 1)) | uint256(uint80(int80(vx))) | (uint256(uint80(int80(vy))) << 80);
+        }
+    }
+
+    function _sqrt(uint256 x) private pure returns (uint256 r) {
+        if (x == 0) return 0;
+        r = x;
+        uint256 y = x / 2 + 1;
+        while (y < r) {
+            r = y;
+            y = (x / y + y) / 2;
+        }
     }
 
     /// @notice A seat is steered only when its registration metadata is one of the three house
@@ -274,10 +312,20 @@ library AgentSteer {
         uint64 nowUs = uint64(w[_key(id, mode == 0 ? 7 : 27)] >> 112);
         if (mode == 0) nowUs = uint64(w[_key(id, 7)] >> 128);
         if (nowUs >= target) return target;
+        if (mode == 1) _capSpeed(w, id);
 
         (bool houseA, uint8 levelA) = _tier(w, uint256(uint160(w[_key(id, 0)])));
         (bool houseB, uint8 levelB) = _tier(w, uint256(uint160(w[_key(id, 1)])));
-        if (!houseA && !houseB) return target;
+        if (!houseA && !houseB) {
+            // Nothing to steer. Chaos is still sliced: advanced whole, one second of effect 17 costs
+            // more than a command carries, so the first catch-up after its players go quiet would
+            // revert, and every later one with it. Sliced, it stops on the arcade's gas reserve and
+            // resumes. The physics is partition-invariant, so the result is what one call would give.
+            // Classic needs none of this: a paddle hit keeps the speed and 128 events bound a call.
+            if (mode == 0) return target;
+            next = nowUs + SLICE_US;
+            return next > target ? target : next;
+        }
 
         uint256 control = w[_key(id, 8)];
         bytes32 seed = bytes32(w[_key(id, 3)]);

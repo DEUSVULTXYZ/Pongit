@@ -17,6 +17,9 @@ assert.equal(process.env.PONG_AGENT_WORKER,'dedicated-authorized');
 const m=JSON.parse(readFileSync(process.env.PONG_AGENT_MANIFEST!,'utf8')) as AgentManifest;
 const secrets=JSON.parse(readFileSync(process.env.PONG_AGENT_KEYS!,'utf8'));
 assert(secrets.bots.length===3&&m.app.toLowerCase()!=='0x78d3341e3452d7ec1add9371de3008639eed8eb0');
+// A house-versus-house match is ticked by the coordinator in bursts. Against anyone else,
+// TickPilot expects both clients to tick, so a steered house seat still does its share.
+const houseSeats=new Set<string>(secrets.bots.map((b:any)=>String(b.address).toLowerCase()));
 const root=process.env.PONG_AGENT_STATE!;assert(root.startsWith('/secrets/'));mkdirSync(root,{recursive:true,mode:0o700});
 const apiUrl=process.env.PONG_AGENT_API!;assert(apiUrl);let stopping=false;
 const closeMetrics=process.env.PONG_AGENT_DIAGNOSTICS?await agentMetrics(process.env.PONG_AGENT_DIAGNOSTICS,'bots'):async()=>{};
@@ -83,9 +86,9 @@ await Promise.all(secrets.bots.map(async(bot:any,index:0|1|2)=>{
     // gated on a nonce of at least two, which only an input can raise.
     if(!steered||match.kind==='qualification'){
      const direction=controller.decide(snapshot,side,performance.now());await client.move(id,direction);await client.tickIfNeeded(id,performance.now());
-    }
+    }else if(!houseSeats.has((side===0?snapshot.b:snapshot.a).toLowerCase()))await client.tickIfNeeded(id,performance.now());
    }
-   await sleep(steered&&match.kind!=='qualification'?250:55);
+   await sleep(steered&&match.kind!=='qualification'&&houseSeats.has((snapshot.a.toLowerCase()===owner.address.toLowerCase()?snapshot.b:snapshot.a).toLowerCase())?250:55);
   }catch(e){
    if((e as any).status===401)connected=false;
    if(Date.now()-errorAt>10000){errorAt=Date.now();console.log(stringify({at:new Date().toISOString(),bot:bot.name,status:'synchronizing',error:String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160)}));}

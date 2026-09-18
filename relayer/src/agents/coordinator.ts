@@ -18,9 +18,11 @@ const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x)
 // With the house policy in the contract the house clients send no input, so this
 // fallback becomes the only thing advancing a house-versus-house match: it now sets
 // the transaction rate, and the transaction rate is what becomes hub batches.
-// Any gap is safe for the contract: it steers a catch-up slice by slice and stops on
-// a gas reserve, and the next tick resumes where it stopped. The cadence therefore
-// trades only spectator smoothness against hub batches, and is set here. The cycle
+// Any gap is safe for the contract: every Chaos match, and every house match, is
+// advanced in 100 ms slices that stop on a gas reserve, with the ball speed capped so
+// no single slice can outgrow it; a community Classic match is one call bounded by 128
+// events. The next tick resumes where one stopped. The cadence therefore trades only
+// spectator smoothness against hub batches, and is set here. The cycle
 // below runs every 500 ms, so the observed gap is the threshold plus up to a cycle.
 //
 // Measured on the hosted node on 2026-09-18: it seals a batch every 0.3 to 1 s

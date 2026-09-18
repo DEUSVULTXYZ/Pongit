@@ -31,6 +31,11 @@ contract AgentHarness is PongAgentArcade {
     function setScore(uint256 id,uint8 a,uint8 b) external {uint256 c=_get(id,8);c=(c&~(uint256(15)<<4))|(uint256(a)<<4);c=(c&~(uint256(15)<<8))|(uint256(b)<<8);_set(id,8,c);}
     function meta(address a) external view returns(bytes32){return bytes32(_get(uint160(a),41));}
     function phaseOf(uint256 id) external view returns(uint256){return _phase(id);}
+    function rawWord(uint256 id,uint256 field) external view returns(uint256){return _get(id,field);}
+    function speedOf(uint256 id,uint256 i) external view returns(uint256){
+        uint256 b=_get(id,22+i*2);int256 vx=int80(uint80(b));int256 vy=int80(uint80(b>>80));
+        uint256 sq=uint256(vx*vx+vy*vy);uint256 r=sq;uint256 x=sq/2+1;while(x<r){r=x;x=(sq/x+x)/2;}return r;
+    }
     function goalBound(uint256 id,uint8 a,uint8 b,uint64 time) external {
         PhysicsV2.State memory s=_state(id);s.scoreA=a;s.scoreB=b;s.t=time;s.x=60e6;s.y=20e6;s.vx=-900e6;s.vy=5e6;_save(id,s);
     }
@@ -191,7 +196,7 @@ contract AgentArcadeTest is ChaosPhysicsTest {
             T.State memory s=k.initial(bytes32(m),96000000,72000000);
             (s.effects,)=e.announce(s.effects,fx,0,0,fx,0);s.t=1000000;s.nextForce=1000000;
             s.balls[0].x=300e12;s.balls[0].y=200e12;s.balls[0].vx=900e6;s.balls[0].vy=300e6;
-            if(balls==2){s.balls[1]=s.balls[0];s.balls[1].x=700e12;s.balls[1].vx=-900e6;s.balls[1].vy=-250e6;s.balls[1].alive=true;}
+            if(balls==2){s.balls[1]=copyBall(s.balls[0]);s.balls[1].x=700e12;s.balls[1].vx=-900e6;s.balls[1].vy=-250e6;s.balls[1].alive=true;}
             game.chaosFixture(m,s);
             bn+=1;vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(m);
             for(uint256 r;r<3&&game.phaseOf(m)==2;r++){
@@ -227,13 +232,92 @@ contract AgentArcadeTest is ChaosPhysicsTest {
             // An announced effect starts one second later, so announce it one second before.
             (s.effects,)=e.announce(s.effects,fx,0,0,fx,uint32(near/1000)-1000);
             s.balls[0].x=300e12;s.balls[0].y=200e12;s.balls[0].vx=900e6;s.balls[0].vy=300e6;
-            if(balls==2){s.balls[1]=s.balls[0];s.balls[1].x=700e12;s.balls[1].vx=-900e6;s.balls[1].vy=-250e6;s.balls[1].alive=true;}
+            if(balls==2){s.balls[1]=copyBall(s.balls[0]);s.balls[1].x=700e12;s.balls[1].vx=-900e6;s.balls[1].vy=-250e6;s.balls[1].alive=true;}
             game.chaosFixture(m,s);
             uint256 bn=block.number;vm.roll(bn+1);vm.prank(KA);game.tick{gas:14_800_000}(m);
             vm.roll(bn+1+before[o]/10_000+100);
             for(uint256 r;r<30&&game.phaseOf(m)==2;r++){vm.prank(KA);game.tick{gas:14_800_000}(m);}
             assertEq(game.phaseOf(m),3,string.concat("effect ",vm.toString(fx)," from ",vm.toString(before[o]/1000),"ms out must settle"));
         }
+    }
+    /// A deep copy: assigning one memory struct to another only copies the reference, so
+    /// `s.balls[1]=s.balls[0]` followed by edits to balls[1] silently moved balls[0] too.
+    function copyBall(T.Ball memory a) private pure returns(T.Ball memory){return abi.decode(abi.encode(a),(T.Ball));}
+    /// Chaos multiplies a ball's speed by 1.1 at every paddle hit, with no ceiling short of a 2^72
+    /// representation guard. People miss long before that; two near-perfect house bots on a slope
+    /// where the ball returns to the same height every round trip do not, and reached 25,000 px/s
+    /// in review. There, one 100 ms slice holds more collisions than a command can pay for, and the
+    /// same slice replays on every retry. Whatever speed a rally has reached, a tick must fit.
+    function testAnEscalatedRallyNeverOutspendsACommand() public {
+        registerHouse(C1,A,ONYX_META);registerHouse(C2,B,NOVA_META);
+        uint64[4] memory speeds=[uint64(1_000),8_000,25_000,60_000];uint256 bn=block.number;
+        for(uint8 wellAndSplit;wellAndSplit<2;wellAndSplit++)for(uint256 i;i<speeds.length;i++){
+            uint256 m=40_000+uint256(wellAndSplit)*10+i;start(m,1,false);
+            T.State memory s=k.initial(bytes32(m),96000000,72000000);s.t=1000000;s.nextForce=1000000;
+            if(wellAndSplit==1){(s.effects,)=e.announce(s.effects,21,0,0,21,0);(s.effects,)=e.announce(s.effects,16,1,0,16,0);}
+            int256 v=int256(uint256(speeds[i]))*1e6;
+            // Flat through the middle, where both paddles already sit: the simplest resonance, the
+            // ball comes back to the same height every crossing and nobody has to move to return it.
+            s.balls[0].x=400e12;s.balls[0].y=288e12;s.balls[0].vx=v;s.balls[0].vy=0;
+            if(wellAndSplit==1){s.balls[1]=copyBall(s.balls[0]);s.balls[1].x=620e12;s.balls[1].vx=-v;s.balls[1].alive=true;}
+            game.chaosFixture(m,s);
+            bn+=1;vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(m);
+            for(uint256 r;r<4&&game.phaseOf(m)==2;r++){
+                uint64 before=game.gameTime1(m);
+                bn+=100;vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(m);
+                if(game.phaseOf(m)==2)assertGt(game.gameTime1(m),before,string.concat(vm.toString(speeds[i])," px/s must progress"));
+            }
+            for(uint256 c;c<40&&game.phaseOf(m)==2;c++){uint64 was=game.gameTime1(m);vm.prank(KA);game.tick{gas:14_800_000}(m);if(game.gameTime1(m)==was)break;}
+            if(game.phaseOf(m)==2){vm.prank(KB);game.concede(m);}
+        }
+    }
+    /// Two community seats and nobody ticking: the coordinator's fallback then arrives seconds late.
+    /// Advanced in one call, effect 17 over that gap outspends a command and freezes the match for
+    /// good. Sliced, every tick fits and progresses, and the match can still be conceded.
+    function testCommunityChaosCannotFreezeWhenItsPlayersGoQuiet() public {
+        register(C1,A);register(C2,B);uint256 bn=block.number;
+        for(uint8 balls=1;balls<=2;balls++)for(uint8 fx=16;fx<=17;fx++){
+            uint256 m=30_000+uint256(balls)*100+fx;start(m,1,false);
+            T.State memory s=k.initial(bytes32(m),96000000,72000000);
+            (s.effects,)=e.announce(s.effects,fx,0,0,fx,0);s.t=1000000;s.nextForce=1000000;
+            s.balls[0].x=300e12;s.balls[0].y=200e12;s.balls[0].vx=900e6;s.balls[0].vy=300e6;
+            if(balls==2){s.balls[1]=copyBall(s.balls[0]);s.balls[1].x=700e12;s.balls[1].vx=-900e6;s.balls[1].vy=-250e6;s.balls[1].alive=true;}
+            game.chaosFixture(m,s);
+            uint256 control=game.controlWord(m);
+            bn+=1;vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(m);
+            bn+=300;vm.roll(bn);
+            // Each tick either moves the clock or finds it already caught up with the chain.
+            for(uint256 r;r<8&&game.phaseOf(m)==2&&game.gameTime1(m)<4_000_000;r++){
+                uint64 before=game.gameTime1(m);vm.prank(KA);game.tick{gas:14_800_000}(m);
+                if(game.phaseOf(m)==2)assertGt(game.gameTime1(m),before,string.concat("effect ",vm.toString(fx)," must progress"));
+            }
+            if(game.phaseOf(m)==2)assertEq(game.gameTime1(m),4_000_000,"the whole three-second gap is caught up");
+            assertEq(game.controlWord(m)&15,control&15,"community seats are sliced, never steered");
+            for(uint256 c;c<40&&game.phaseOf(m)==2;c++){uint64 was=game.gameTime1(m);vm.prank(KA);game.tick{gas:14_800_000}(m);if(game.gameTime1(m)==was)break;}
+            if(game.phaseOf(m)==2){vm.prank(KB);game.concede(m);}
+        }
+    }
+    /// The cap rescales an over-fast ball to the limit along the same line, and touches nothing else
+    /// in its words: position, gravity use, trail revision and a ball under the cap stay exactly as
+    /// they were. Checked on the library alone, so the engine's own bookkeeping cannot blur it.
+    function testTheSpeedCapKeepsDirectionAndEverythingElse() public {
+        register(C1,A);register(C2,B);start(800,1,false);
+        T.State memory s=k.initial(bytes32(uint256(800)),96000000,72000000);s.t=1000000;s.nextForce=1000000;
+        s.balls[0].x=512e12;s.balls[0].y=288e12;s.balls[0].vx=9_000e6;s.balls[0].vy=-4_500e6;
+        s.balls[0].gravityUsed=77;s.balls[0].trailRevision=5;
+        s.balls[1]=copyBall(s.balls[0]);s.balls[1].x=300e12;s.balls[1].vx=-1_200e6;s.balls[1].vy=500e6;s.balls[1].alive=true;
+        game.chaosFixture(800,s);
+        uint256 fast=game.rawWord(800,22);uint256 slow=game.rawWord(800,24);uint256 position=game.rawWord(800,21);
+        game.probe(800,1_300_000);
+        uint256 w=game.rawWord(800,22);
+        int256 vx=int80(uint80(w));int256 vy=int80(uint80(w>>80));
+        assertEq(vx,-2*vy,"the direction must be kept");
+        assertLe(game.speedOf(800,0),3_000e6);assertGe(game.speedOf(800,0),2_999e6);
+        assertEq(w>>160,fast>>160,"gravity use and trail revision must survive");
+        assertEq(game.rawWord(800,21),position,"the position word is untouched");
+        assertEq(game.rawWord(800,24),slow,"a ball under the cap is left exactly as it was");
+        // And a second pass finds nothing left to do.
+        game.probe(800,1_300_000);assertEq(game.rawWord(800,22),w);
     }
     /// A point that ends the match inside a multi-slice catch-up ends it cleanly. Slicing on past
     /// it would call _finish a second time, which reverts, so the deciding tick could never land.
