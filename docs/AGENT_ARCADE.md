@@ -231,6 +231,52 @@ whose drand round is not out yet ends the burst instead of spending ticks on it;
 at most one period and the next burst replays the whole gap, so no lag accumulates. A match a
 community agent is driving still gets its beacon at once.
 
+### The steered Classic seats never moved
+
+The first league games on the second redeployment were implausible: ONYX beat PULSE 7-6 in 35 s of
+play, a point every 2.7 s, where the same pairing played by the off-chain bots averaged 14.7 s a
+point over 258 matches. Reproduced in Forge exactly: both paddles sat at 288 from the first tick to
+the last. The loop read the match state *before* `steer` wrote its decision; Classic advances the
+directions it is handed and saves the state back, control word included, so every slice advanced the
+old directions and then erased the new ones. No house seat had ever moved in Classic since the policy
+went on chain; only qualification inputs moved a Classic paddle. Chaos was unaffected, because its
+engine reads the control word from storage. The state is now read after `steer`, and a steered
+ONYX-PULSE Classic match holds its rallies. Every earlier steering test had stopped right after `steer`
+wrote a direction; two new tests check that the decision survives an advance, in both modes.
+
+Watching real rallies also showed that the arcade's Classic rules speed up by 1.1 per hit with no
+ceiling (192 to 970 px/s within 41 s), so the 3,000 px/s cap covers both modes.
+
+### What the hosted node accepts, and what that does to batches
+
+- **A transaction is capped at 30,000,000 gas.** The node refuses anything above it before execution
+  ("transaction gas limit is greater than the cap"); estimates are not capped, so an estimate is no
+  guide. Ticks and beacons, the commands that catch a match up, now carry 30 M; everything else keeps
+  a player command's 15 M. A lagging Chaos match caught up at 24.2 M a tick, the contract stopping each
+  advance on its 6 M reserve.
+- **A command refused before execution used to block its signer for good.** The writer kept it as
+  uncertain and replayed the same bytes forever. It now retires exactly that case, when the node says
+  it rejected the transaction before execution and the chain confirms the nonce unused.
+- **Qualification inputs stop at the rule.** A qualification match needs at least five inputs, two of
+  them after the reconnect. The house worker used to send them for the whole match, which cost 285
+  batches in two minutes; it now stops one past each threshold and lets the contract steer.
+
+Measured on the current deployment over thirty minutes of league play only (31 samples, none
+unhealthy, one epoch, no qualification in the window), at a 10 s burst cadence:
+
+| | value |
+|---|---|
+| batches | 278, **556 an hour** |
+| league matches completed | 5 (3 Classic, 2 Chaos), 55.6 batches each |
+| coordinator transactions | 300: 228 ticks, 72 beacons, **1.1 per batch** |
+| player inputs | 0, read from the seats' nonces |
+
+At that rate a 1000-batch epoch lasts about 1 h 50 of play. For comparison, the second redeployment
+with 15 M ticks made about 1,370 an hour, and the previous arcade's off-chain bots would make several
+thousand on this node. A Chaos burst is a beacon and one to four ticks sent about 0.75 s apart, each in
+a sealing window of its own; a Chaos match costs about one transaction per four seconds of play
+whatever the burst cadence, so the cadence is not the lever for Chaos. Send latency is.
+
 Retiring the frozen deployment: its `closeEngine` refuses while it counts a live game, and that game
 cannot move. `scripts/retire-stuck-agent-arcade.ts` proves both, then closes it through the hub's
 liveness escape `forceClose` once that is legitimately open (an hour without a commit, or past the
