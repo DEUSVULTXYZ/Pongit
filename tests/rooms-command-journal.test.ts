@@ -41,3 +41,18 @@ test('journal refuses financial calls and wrong deployment or chain',async()=>{
  await assert.rejects(journal.beforeSend(raw));assert.equal(journal.pending(player),undefined);
  }
 });
+test('a command lost with its epoch can be sent again in the next, and only there',async()=>{
+ const {journal,store,raw,player}=await fixture();await journal.beforeSend(raw);
+ journal.received('eth_getTransactionReceipt',{transactionHash:keccak256(raw),status:'0x1'});assert.equal(journal.pending(player),undefined);
+ // Same epoch: executed means resolved, and the bytes are never sent twice.
+ await assert.rejects(journal.beforeSend(raw),/already resolved/);
+ // The epoch closed before committing it; the engine gives the same nonce back and the client
+ // signs the same bytes. They are journaled again, as this epoch's, and resolve by their receipt.
+ const next=new RoomsCommandJournal(store,app,abi);next.received('interlude_session',{app,chainId:4242,epoch:2});
+ await next.beforeSend(raw);
+ assert.equal(next.pending(player)?.epoch,'2');
+ next.received('eth_getTransactionReceipt',{transactionHash:keccak256(raw),status:'0x1'});
+ assert.equal(next.pending(player),undefined);
+ await assert.rejects(next.beforeSend(raw),/already resolved/);
+ assert.equal(JSON.parse(store.getItem()!).filter((x:any)=>x.hash===keccak256(raw)).length,1);
+});

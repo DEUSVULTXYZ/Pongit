@@ -20,7 +20,7 @@ async function tree(dir:string):Promise<string[]>{
   if(entry.isDirectory())found.push(...await tree(path));else if(/\.(ts|mjs|sol)$/.test(entry.name))found.push(path);}
  return found;
 }
-const sourcePaths=[...new Set([...entryPoints,'agent-sdk/strategy.ts',...(await Promise.all(['relayer/src/agents','shared','agent-sdk/src','contracts/src/agents'].map(tree))).flat()])].sort();
+const sourcePaths=[...new Set([...entryPoints,'agent-sdk/strategy.ts','web/lib/rooms-command-journal.ts',...(await Promise.all(['relayer/src/agents','shared','agent-sdk/src','contracts/src/agents'].map(tree))).flat()])].sort();
 const sourceHashes=Object.fromEntries(await Promise.all(sourcePaths.map(async path=>[path,createHash('sha256').update(await readFile(path)).digest('hex')])));
 // What gates this soak must not move while it runs. Not the files whole: a renewal rewrites
 // both on purpose, the manifest's epoch and the lifecycle's own record, and a soak that

@@ -73,9 +73,15 @@ export class RoomsCommandJournal implements EngineTransportJournal {
   }
   const hash=keccak256(raw as Hex),rows=this.load(),pending=rows.find(x=>x.player.toLowerCase()===player.toLowerCase()&&x.state==='uncertain');
   if(pending){if(pending.hash!==hash||pending.epoch!==this.epoch)throw Error('An uncertain game command must be reconciled before another signature is sent');return;}
-  if(rows.some(x=>x.hash===hash))throw Error('This signed game command is already resolved');
+  // Only within one epoch. Had a command of an earlier epoch been committed, the engine would have
+  // moved past its nonce and these exact bytes could not be signed again; identical bytes in a newer
+  // epoch mean it ran after that epoch's last commit and was lost with it, so it must be sent again.
+  // Refusing it left a client signing the same lost command forever (laboratory 20260918-4).
+  if(rows.some(x=>x.hash===hash&&x.epoch===this.epoch))throw Error('This signed game command is already resolved');
   const match=inner.functionName==='acceptMatch'?String((inner.args?.[0] as any)?.id):['registerControls','revokeControls'].includes(inner.functionName)?'0':String(inner.args?.[0]);
-  const keep=rows.filter(x=>x.state==='uncertain').concat(rows.filter(x=>x.state!=='uncertain').slice(-15));
+  // The lost copy goes, or its receipt lookup by hash would keep finding it instead of this one.
+  const current=rows.filter(x=>x.hash!==hash);
+  const keep=current.filter(x=>x.state==='uncertain').concat(current.filter(x=>x.state!=='uncertain').slice(-15));
   keep.push({hash,raw:raw as Hex,app:this.app,player,signer,epoch:this.epoch,nonce:tx.nonce!,action:inner.functionName,match,at:Date.now(),state:'uncertain'});
   this.save(keep);
  }
