@@ -1,13 +1,15 @@
 # Agent Arcade candidate
 
-Status as of 2026-09-18, 15:20 UTC: the fourth deployment of the day, below, is the first in which
+Status as of 2026-09-18, 20:00 UTC: the fourth deployment of the day, below, is the first in which
 external agents play as on-chain strategies (see *On-chain strategies*). Its private laboratory
 completed a real renewal, its first sample strategy qualified in Chaos by a real match, and its
-24-hour trial started at 15:12:57 UTC on release `e892c30`, due to end on September 19 at 15:12:57
-(up to two hours later if a renewal is in progress then). It is not qualified until that trial and
-the checks after it pass. Arcade n°3 was stopped at 15:10 after one full renewal under observation
-and retired; its stake was released at 16:38. The human production feature gate remains unchanged, the public flag was never
-opened, and no bot process has been launched on a human arena.
+24-hour trial has been running since 15:12:57 UTC on release `e892c30`, due to end on September 19
+at 15:12:57 (up to two hours later if a renewal is in progress then). One renewal has completed
+inside the trial: batch pressure closed admissions at 16:39:05 and the arcade served again at
+17:49:43 (see *Renewals as they actually ran*). It is not qualified until that trial and the checks
+after it pass. Arcade n°3 was stopped at 15:10 after one full renewal under observation and retired;
+its stake was released at 16:38. The human production feature gate remains unchanged, the public
+flag was never opened, and no bot process has been launched on a human arena.
 
 ## Contract candidate
 
@@ -135,22 +137,27 @@ answer from `creator` and `metadata` without a new storage slot.
 ## On-chain strategies
 
 A hosted real-time agent sends its own inputs and ticks. Measured on arcade n°3 on 2026-09-18, one
-community match cost about 115 hub batches a minute, against about 6 for the whole house league,
-and an epoch holds about 1,400 before its stake can no longer be released (see the next section).
-One such agent playing for twelve minutes spent most of an epoch. External agents therefore play
-the way the house bots already do: from the contract.
+community match cost about 115 hub batches a minute, roughly fourteen times the whole house league's
+8 or so (about 500 an hour), and an epoch holds about 1,400 before its stake can no longer be
+released (see the next section). At that rate one such agent playing for twelve minutes spent most
+of an epoch. External agents therefore play the way the house bots already do: from the contract.
 
 **The model.** A creator deploys a contract implementing `IPongStrategy`
 (`contracts/src/agents/IPongStrategy.sol`) on Monad Testnet and registers it. On every 100 ms slice
 the arcade builds a `PongView` of the game from that seat and calls `decide(view)`, exactly where it
 steers a house seat. Nothing runs outside the chain, so a strategy costs nothing beyond the match
-it plays, and the batch rate of a match is the coordinator's, whoever plays it.
+it plays, and the batch rate of a match is the coordinator's, whoever plays it (one exception, an
+account that is both a key and a contract, is under *Known limits*).
 
 **Registration without an agent signature.** A contract cannot sign. `AgentIdentity.register` takes
 an empty `agentProof` to mean a strategy: the creator's EIP-712 signature is still required, the
 address must hold code, and its `creator()` must return that creator, read with a 30,000-gas
-STATICCALL. The identity word is marked with bit 176. An address with code can never pass the
-agent-signature route, and an address without code can never pass this one.
+STATICCALL. The identity word is marked with bit 176. An address without code can never pass this
+route. The converse does not hold: the agent-signature route checks only the signature, never that
+the address has no code. An EIP-7702 delegated account has both a private key and code (its
+delegation designator, which runs the delegate's `creator()` and `decide()`), so it can pass either
+route, and registered as a strategy it keeps a key the arcade accepts on its seat (see *Known
+limits*).
 
 **Acceptance.** Nobody can accept for a contract. A strategy seat counts as accepted by the offer
 itself, so the other seat's acceptance starts the match. When both seats are strategies only the
@@ -160,35 +167,67 @@ is refused like any other.
 **The call.** `AgentSteer._ask` encodes the view, STATICCALLs with a fixed 50,000 gas, copies
 exactly 32 bytes of the answer and accepts only -1, 0 or 1. A revert, an exhausted budget, a flood of
 return data, an out-of-range answer or an attempt to write all leave the seat's direction where it
-was. Two hostile strategies cost at most 100,000 gas a slice, which a 30 M tick absorbs while still
-covering about 20 s of Classic or 10 s of Chaos. `PongAgentArcade` did not grow: all of this lives in
-the two linked libraries (`AgentSteer` 9,274 bytes, `AgentIdentity` 5,909, arcade 24,561 of 24,576).
+was. Two hostile strategies cost more than their two budgets, because building and encoding the
+view, the calls themselves and the reads around them are paid too: about 125,000 gas a slice (one
+steered Chaos slice costs 137,015 with two strategies burning their whole budget and 11,472 with two
+key agents). A 30 M tick absorbs that, but after a 30 s lag it then covers about 14.5 s of Classic
+and 4.9 s of Chaos (24.2 M and 24.3 M gas used). The same tick covers the whole 30 s of Classic and
+6.1 s of Chaos with two `TrackerStrategy` seats, and 6.5 s of Chaos with two key agents: Chaos is
+bound by its own physics whoever plays. These replace an earlier estimate of at most 100,000 a
+slice, 20 s of Classic and 10 s of Chaos. They come from a Forge run of the suite's
+`BurningStrategy` and `TrackerStrategy` on the contract source of the deployed build (`21ab606`), and
+agree with an independent review's. `PongAgentArcade` did not grow: all of this lives in the two
+linked libraries (`AgentSteer` 9,274 bytes, `AgentIdentity` 5,909, arcade 24,561 of 24,576).
 
 **Visibility.** The engine executes against Monad as pinned when its epoch opened. A strategy
 deployed after that block does not exist for it until the next renewal. The service rehearses the
-registration on the engine after checking Monad, and a named `InvalidRegistration` there is reported
-as `AGENT_STRATEGY_NEXT_EPOCH` with the pinned block, never as a fault of the strategy.
+registration on the engine after checking Monad. `InvalidRegistration` is not specific to that case:
+the contract raises it too for an expiry more than ten minutes ahead, or a `creator()` that needs
+more than its 30,000 gas. The service makes those checks itself, so `AGENT_STRATEGY_NEXT_EPOCH`, with
+the pinned block, is reported only when the engine refuses a registration that passed every other
+check, and never as a fault of the strategy. Nothing is recorded then: the creator registers the
+same address again after the renewal, since a contract deployed after that renewal would be just as
+invisible to the new epoch.
 
 **Service.** `relayer/src/agents/strategies.ts` vets a strategy on Monad before anything is written
 (code, `creator()`, and `decide` on four sample positions covering both sides, both modes, one, two
-and no balls, with the same 50,000-gas budget after the call's own intrinsic and calldata cost). A
-strategy needs no presence: admission treats it as always available. It is queued for both modes at
-registration and qualifies by completing a friendly match in which its paddle leaves the centre in at
-least three recorded frames, which only its own answers can do. The league now pairs whoever has
-waited longest against whoever has waited longest among other creators, so every qualified agent gets
-its turn however many register. House clients tick only against a real-time community agent.
-Registration of hosted real-time agents is closed once the arcade is public unless
-`PONG_AGENT_REALTIME=open`; `GET /config` reports both kinds under `registration`.
+and no balls). Each `decide` call is given exactly the arcade's budget: its gas limit is the call's
+own intrinsic and calldata cost plus 50,000, so `decide` runs on the 50,000 gas the arcade's
+STATICCALL gives it. A first version added 2,000 on top, which let a `decide` needing up to 52,000
+pass here and then run out of gas in the arcade, where its seat just holds. A failure of the RPC
+provider rather than of the contract, a rate limit or an internal JSON-RPC error as much as no
+answer at all, is reported as the service being unavailable, never as a refusal of the strategy;
+the first version recognised only transport failures and told the creator of a sound contract that
+`creator()` did not name them or that `decide` had reverted.
+
+The service also refuses a name and avatar that give a house bot's registration metadata (NOVA,
+PULSE, ONYX). `AgentSteer` recognises a house seat by that metadata before it looks at the strategy
+bit, so a strategy registered under a house bot's name and avatar would be steered by the house
+policy at that bot's tier and its `decide` never called: it would qualify, and climb the ranking,
+with no logic of its own. The arcade's `registerAgent` accepts any caller, so such a registration can
+still be written on the engine directly, but only agents in the service's database are ever offered
+a match, since the coordinator signs every offer: the service's checks are the gate.
+
+A strategy needs no presence: admission treats it as always available. It is queued for both modes
+at registration and qualifies by completing a friendly match in which its paddle leaves the centre
+in at least three recorded frames, which, with house metadata refused, only its own answers can do.
+The league now pairs whoever has waited longest against whoever has waited longest among other
+creators, so every qualified agent gets its turn however many register. House clients tick only
+against a real-time community agent. Registration of hosted real-time agents is closed once the
+arcade is public unless `PONG_AGENT_REALTIME=open`; `GET /config` reports both kinds under
+`registration`.
 
 **Evidence.** Forge: seven strategy tests (registration, three refusals, house acceptance, coordinator-
 only acceptance, end-to-end against ONYX, five hostile strategies in both modes, two strategies in
 Chaos), each shown to fail against a mutation of the rule it covers; 404 tests in all. TypeScript: the
 compiled `IPongStrategy` selectors match the service's ABI, vetting refuses each failure with its own
-message and never condemns a strategy on a network error, and only a named `InvalidRegistration` is
-blamed on the pinned epoch (two mutations caught). Real bytecode on a local anvil
-(`npm run test:strategies`): `TrackerStrategy` passes in 2,700 to 6,300 gas a decision, and the
-reverting, gas-burning, out-of-range and creator-less contracts are each refused for their own
-reason. PostgreSQL and HTTP on the laboratory database: five new checks, fifteen in all.
+message and never condemns a strategy when Monad does not answer, and only a named
+`InvalidRegistration` is blamed on the pinned epoch (two mutations caught). Those tests covered a
+transport failure only; the provider errors and the other causes of `InvalidRegistration` above were
+found by review. Real bytecode on a local anvil (`npm run test:strategies`): `TrackerStrategy`
+passes in 2,700 to 6,300 gas a decision, and the reverting, gas-burning, out-of-range and
+creator-less contracts are each refused for their own reason. PostgreSQL and HTTP on the laboratory
+database: five new checks, fifteen in all.
 
 **On the hosted engine (laboratory 20260918-4, arcade n°4).** Two sample strategies were deployed
 before the delegation opened: `TrackerStrategy` (`0xcf34…0670`, dead zone 4 px) and a second one for
@@ -217,6 +256,22 @@ strategies added nothing to the batch rate.
 always holds under STATICCALL; its qualification match fails instead. A strategy has no memory
 between calls. It may read other contracts, but only as they were when the epoch opened. Its
 creator can redeploy behind a proxy between epochs, which a hosted agent could always do.
+
+An EIP-7702 delegated account can register as a strategy and keep its private key. The arcade
+identifies a seat by its address, so that key is accepted on the seat like any player's: it can send
+`input`, `concede` and `cancelMatch` and grant sessions. Its owner could have `decide` decline to
+answer when the arcade asks, which holds the seat, and steer it in real time instead: a strategy seat
+acting as a key seat, admitted without presence and accepted by the offer, at the real-time cost
+strategies exist to avoid. Nothing in the arcade tells such an account from a plain contract today.
+Whether the engine honours a delegation designator in its pinned Monad state has not been tested.
+
+`PongView.half` is not the paddle's real half-height in Chaos while a size effect is active. The
+arcade derives it from the side's betting weight alone (72 to 96 px, so 36 to 48 px), while the
+physics sizes the paddle through `ChaosModifiers`: effects 1 and 23 scale it by 5/4, 7 and 9 by 4/5,
+bounded to 64 to 120 px; effect 11 splits it around a 16 px gap and effect 12 swaps the two sides'
+sizes. Under effect 1 a 96 px paddle is really 120 px, a half of 60 px against the 48 the view
+reports; under effect 7 or 9 it is 38.4 px. The house policy uses the same approximation. The view
+is built in the deployed `AgentSteer`, so this is fixed at the next redeployment, not before.
 
 ## Epoch cadence and the stake-release ceiling
 
@@ -272,13 +327,17 @@ means slowing the house controller loop in `scripts/agent-house-worker.ts` from 
 
 ### What real-time play costs, and what it means for opening
 
-Every real-time client sends a transaction at least every sealing window, so it costs about one
-batch a second whatever it does. Measured on arcade n°3 on 2026-09-18: one hosted community agent
-playing a house bot, about **115 batches a minute**; the whole house league with its seats steered
-in the contract, **about 500 an hour** (556 and 508 in two 30-minute runs, and 235 in the 30
-minutes after the community agent stopped). The epoch that followed its qualification reached the
-1,000-batch roll in **50 minutes**, 765 of them in the first thirteen, while the community agent
-still played.
+Every real-time client sends a transaction at least every sealing window, so it costs at least
+about one batch a second of play whatever it does. Measured on arcade n°3 on 2026-09-18: one hosted
+community agent playing a house bot, about **115 batches a minute**, nearly two a second; the whole
+house league with its seats steered in the contract, **about 500 an hour**, some 8 a minute (556 and
+508 an hour in two 30-minute runs, and 235 batches in the 30 minutes after the community agent
+stopped). The one agent cost roughly fourteen times the whole league. The epoch that followed its
+qualification reached the 1,000-batch roll in **50 minutes**, 765 of them in the first thirteen,
+while the community agent still played.
+
+A human costs about the floor: two production games on 2026-09-18, Classic for 63 s of play and
+Chaos for 43 s, made 107 batches between them, **about one batch a second**, some 60 a minute.
 
 A renewal is not free either. Arcade n°3's first roll under the new node: batch pressure at
 13:44:37 UTC, drained and closed at 13:49:36 (1,050 batches), stake released at 14:50:09,
@@ -288,20 +347,23 @@ Nearly all of it is the hub's one-hour challenge window, which belongs to the va
 What follows for a public opening:
 
 - **External agents are strategies** (see *On-chain strategies*): they cost nothing beyond the
-  match they play, so any number can register without moving the batch rate.
+  match they play, so any number can register without moving the batch rate. The one exception, an
+  EIP-7702 account that keeps its key, is under that section's *Known limits*.
 - **A human challenge ("Play an agent") is real-time.** The human client sends inputs and ticks
-  like the community agent did; at the same rate, one epoch holds roughly nine minutes of human
-  play before it has to roll, and each roll takes the arcade offline for the time above. The web
-  client already extrapolates the court locally, so its 300 ms tick could be spaced out, but real-
-  time play stays near one batch a second. This is the open constraint for opening human
+  like the community agent did. At the measured one batch a second, the 1,000-batch roll comes
+  after about seventeen minutes of human play in an epoch (1,000 batches at 60 a minute), sooner
+  with league matches running beside it, and each roll takes the arcade offline for the time above.
+  The web client already extrapolates the court locally, so its 300 ms tick could be spaced out, but
+  real-time play stays near one batch a second. This is the open constraint for opening human
   challenges, and it sits with Interlude: the September node sealed about every 10 s and would
   have made the same play cost a tenth as much; a release whose cost did not grow with the batch
   count would remove the ceiling altogether.
 - **The human production lifecycle has no batch guard.** `relayer/src/rooms-lifecycle.ts` renews
-  only near expiry. At about one batch a second, some twelve minutes of cumulative human play in
-  one epoch would put its stake past the release ceiling. It carries no traffic today (epoch 6,
-  zero batches) and is untouched by this work; a batch-pressure renewal for it is proposed as a
-  separate task.
+  only near expiry. At the measured one batch a second, about 60 a minute, some 23 minutes of
+  cumulative human play in one epoch would put its stake past the release ceiling of about 1,400
+  batches (1,400 / 60 ≈ 23); the twelve minutes an earlier version gave here hold only at the hosted
+  agent's 115 a minute. It is untouched by this work; a batch-pressure renewal for it is proposed as
+  a separate task.
 
 ### Renewals as they actually ran on 2026-09-18
 
