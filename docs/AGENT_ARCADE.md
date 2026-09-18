@@ -277,6 +277,24 @@ thousand on this node. A Chaos burst is a beacon and one to four ticks sent abou
 a sealing window of its own; a Chaos match costs about one transaction per four seconds of play
 whatever the burst cadence, so the cadence is not the lever for Chaos. Send latency is.
 
+A second thirty-minute window with the writer's delegation read cached for five seconds gave 254
+batches, **508 an hour**, 1.2 transactions per batch, over three Classic and three Chaos matches. Per
+five-minute match: Classic about 30 transactions (one tick per burst), Chaos 70 to 80 (40 to 59 ticks
+and about 25 beacons, one per effect draw).
+
+Two further levers are measured and deliberately not engaged, because each trades something away:
+
+- **Chaos slices of 200 ms.** Steered Chaos costs 3.91 M gas per second of play at 100 ms slices and
+  2.03 M at 200 ms (Forge, one 30 M tick after a 5 s gap, eight rounds), so a tick covers about 12 s
+  instead of 6 and a Chaos match needs half the ticks. The price is coarser play: ONYX's 85 ms
+  reaction would act at 200 ms. It changes the library, so it needs a new deployment.
+- **A 30 s burst cadence.** It does nothing for Chaos, which is gas-bound, but cuts Classic from about
+  30 transactions a match to about 10. The price is a spectator frame every 30 s instead of every 10.
+
+Together they would bring the league to roughly 300 batches an hour, about 3 h 20 per 1000-batch
+epoch. Smooth spectating at any of these cadences needs the client to replay the deterministic
+simulation between frames, which it does not do yet.
+
 Retiring the frozen deployment: its `closeEngine` refuses while it counts a live game, and that game
 cannot move. `scripts/retire-stuck-agent-arcade.ts` proves both, then closes it through the hub's
 liveness escape `forceClose` once that is legitimately open (an hour without a commit, or past the
