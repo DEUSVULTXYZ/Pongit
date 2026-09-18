@@ -16,20 +16,26 @@ A **hosted real-time agent** is a process you run that holds a playing key and s
 
 Implement two functions. `decide(PongView v)` returns -1 to move up, 1 to move down or 0 to hold. `creator()` returns the creator address that will sign the registration.
 
-`PongView` is the game from your seat: `mode` (0 Classic, 1 Chaos), `side` (0 defends x = 40 px, 1 defends x = 984 px), game time `t` in microseconds, your paddle centre and half-height, the opponent's paddle centre, both scores, and the live balls: none between points, two under Chaos MULTIBALL. Positions are in pico-pixels (10¹² per pixel), velocities in micro-pixels per second (10⁶ per pixel per second). The table is 1024 by 576 pixels and y grows downwards.
+`PongView` is the game from your seat: `mode` (0 Classic, 1 Chaos), `side` (0 defends x = 40 px, 1 defends x = 984 px), game time `t` in microseconds, your paddle centre and base half-height, the opponent's paddle centre, both scores, and the live balls: none between points, two under Chaos MULTIBALL. Positions are in pico-pixels (10¹² per pixel), velocities in micro-pixels per second (10⁶ per pixel per second). The table is 1024 by 576 pixels and y grows downwards.
+
+Under Chaos, `half` is the size your betting weight sets and does not follow the paddle-size effects. MEGA PADDLE and BOSS ROUND make the real paddle a quarter taller, POCKET PADDLE and GLASS CANNON a fifth shorter (always between 64 and 120 pixels high), SIZE SWAP exchanges the two sides' base sizes, and SPLIT PADDLE opens a 16-pixel gap at the centre that cannot return the ball while reaching 8 pixels further out. Keep a margin rather than aim with the paddle's edge. Reporting the effective size is a change to the arcade contract, deferred to its next redeployment.
 
 The arcade calls `decide` under STATICCALL with 50,000 gas and reads exactly 32 bytes of the answer. A revert, running out of gas, or any answer other than -1, 0 or 1 leaves the paddle doing what it was doing; it can never stop the match or touch the other seat. Because the call is static, a strategy has no memory between calls: it decides from the view, and from any contract state it chooses to read. That state is Monad as it was when the arcade's current epoch opened.
 
-The repository's `contracts/src/agents/examples/TrackerStrategy.sol` is a complete starting point. It predicts where the nearest incoming ball crosses its paddle line, folding the path off the walls, in 2,700 to 6,300 gas. Deploy and register it with:
+The repository's `contracts/src/agents/examples/TrackerStrategy.sol` is a complete starting point. It predicts where the nearest incoming ball crosses its paddle line, folding the path off the walls, in 2,700 to 6,300 gas. Deploy and register it from the repository root with:
 
 ```sh
-forge build
+forge build --root contracts
 CREATOR_KEY=0x... DEPLOY=tracker WAIT=1 npx tsx agent-sdk/strategy.ts
 ```
 
-To register your own contract instead, set `STRATEGY` to its address and leave out `DEPLOY`. `AGENT_NAME`, `AGENT_AVATAR` and `MODES` set its profile.
+The Foundry configuration lives in `contracts/foundry.toml`, so `--root contracts` is required: a bare `forge build` at the root neither resolves its imports nor writes `contracts/out`, where the script reads the compiled tracker. `npm run contracts:build` runs the same command.
 
-Before anything is written, the service checks on Monad that the contract exists, that `creator()` names the signing creator, and that `decide` answers -1, 0 or 1 within the gas budget on sample positions from both sides and both modes. Each refusal names the problem. A contract deployed after the current epoch opened is refused with `AGENT_STRATEGY_NEXT_EPOCH`, because the arcade cannot see it yet; register it again after the next renewal. The check cannot see that a `decide` writes to storage, which works in a plain call but always holds under the arcade's STATICCALL; the qualification match catches it.
+The tracker is deployed once. Its address is recorded in `.agent-state/strategies.json`, a private file outside Git that `STRATEGY_STATE` can move, and every later run registers that same contract instead of deploying another. To register your own contract instead, set `STRATEGY` to its address and leave out `DEPLOY`. `AGENT_NAME`, `AGENT_AVATAR` and `MODES` set its profile.
+
+Before anything is written, the service checks on Monad that the contract exists, that `creator()` names the signing creator, and that `decide` answers -1, 0 or 1 within the gas budget on sample positions from both sides and both modes. Each refusal names the problem. A contract deployed after the current epoch opened is refused with `AGENT_STRATEGY_NEXT_EPOCH`, because the arcade cannot see it yet. Nothing is recorded and the strategy does not become playable by itself: send the same registration again after the next renewal. The script exits with code 2 in that case, and running the same command once the arcade has renewed registers the tracker it already deployed. The check cannot see that a `decide` writes to storage, which works in a plain call but always holds under the arcade's STATICCALL; the qualification match catches it.
+
+The script waits through a renewal, a rate limit or a service restart and tries again for up to an hour. With `WAIT=1` it follows qualification for at most six hours (`WAIT_HOURS`) and stops if the strategy leaves the catalog or the service moves to a new arcade. It exits with 0 once registered (with `WAIT=1`, once every mode qualified), 1 on an error it prints, 2 when it has to be run again after the next renewal, 3 when a mode failed qualification, which the same command queues again, and 4 when `WAIT` stopped following the strategy.
 
 A strategy is queued for qualification at once. For each mode it plays one friendly match against a house bot or another strategy, and qualifies if the match is played to the end and its paddle leaves the centre it starts on, which only its own answers can do. Signing the same registration again queues any mode that has to be retried. A qualified strategy is always available: it enters the league rotation and can be challenged, and it cannot go offline.
 

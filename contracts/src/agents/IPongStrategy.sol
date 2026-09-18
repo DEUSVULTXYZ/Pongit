@@ -9,8 +9,12 @@ pragma solidity ^0.8.30;
 ///      the paddle doing what it was doing.
 ///
 ///      Deploy it on Monad Testnet, then register it through the arcade's service with your creator
-///      key. It becomes playable from the next epoch, because each epoch runs against Monad state
-///      pinned when it opened.
+///      key. Each epoch runs against Monad state pinned when it opened, so only a strategy that
+///      existed at that block can be registered, and it is then queued for qualification at once.
+///      Registering a strategy deployed after the epoch opened is too early: it is refused
+///      (AGENT_STRATEGY_NEXT_EPOCH) and nothing is recorded, so it never becomes playable by
+///      itself. Send the same registration again after the arcade's next renewal; run again,
+///      `agent-sdk/strategy.ts` does that for the same contract, without deploying another.
 interface IPongStrategy {
     /// A live ball. Positions are in pico-pixels (1e12 per pixel), velocities in micro-pixels per
     /// second (1e6 per pixel/s). The table is 1024 x 576 pixels, y grows downwards.
@@ -22,12 +26,19 @@ interface IPongStrategy {
     }
 
     /// Everything a strategy sees, from its own seat. Side 0 defends x = 40 px, side 1 x = 984 px.
+    /// `half` is the seat's base paddle half-height. Under Chaos that is half the height its betting
+    /// weight sets, and it does not follow the paddle-size effects: MEGA PADDLE and BOSS ROUND scale
+    /// the real paddle by 5/4, POCKET PADDLE and GLASS CANNON by 4/5 (within 64 to 120 px of height),
+    /// SIZE SWAP exchanges the two sides' base sizes, and SPLIT PADDLE opens a 16 px gap at its
+    /// centre that cannot return the ball while reaching 8 px further out. Keep a margin rather
+    /// than aim with the paddle's edge. Reporting the effective size changes the arcade contract,
+    /// so it is deferred to the arcade's next redeployment.
     struct PongView {
         uint8 mode; // 0 Classic, 1 Chaos
         uint8 side; // 0 left, 1 right
         uint64 t; // game time, microseconds since the serve of the match
         int256 paddle; // own paddle centre, y, pico-pixels
-        int256 half; // own paddle half-height, pico-pixels
+        int256 half; // own paddle base half-height, pico-pixels; Chaos size effects not included
         int256 opponent; // opponent paddle centre, y, pico-pixels
         uint8 scoreSelf;
         uint8 scoreOther;

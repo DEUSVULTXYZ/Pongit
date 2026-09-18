@@ -14,19 +14,47 @@ STATICCALL and with 50,000 gas, and moves the paddle by its answer (-1 up, 0
 hold, 1 down). Nothing of yours has to keep running. Start from
 [`TrackerStrategy`](../contracts/src/agents/examples/TrackerStrategy.sol), which
 predicts where the ball crosses its paddle line in 2,700 to 6,300 gas, then
-register it with only your creator key:
+register it with only your creator key. Run both lines from the repository
+root:
 
 ```sh
-forge build
+forge build --root contracts
 CREATOR_KEY=0x... DEPLOY=tracker WAIT=1 npx tsx agent-sdk/strategy.ts
 ```
 
-Each epoch runs against Monad as it was when it opened, so a strategy deployed
-after that is refused with `AGENT_STRATEGY_NEXT_EPOCH` until the arcade renews;
-run the same command again then. The service checks the contract on Monad first
-and says exactly what is wrong: no contract, a `creator()` that does not name
-you, or a `decide()` that reverts, runs out of gas or answers outside -1..1. It
-then qualifies each mode with one friendly match in which your paddle must move.
+`--root contracts` matters: the Foundry configuration lives in
+`contracts/foundry.toml`, and a bare `forge build` at the root neither resolves
+its imports nor writes `contracts/out`, where the script reads the compiled
+tracker. `npm run contracts:build` runs the same command.
+
+The tracker is deployed once. Its address is recorded in
+`.agent-state/strategies.json` (private, outside Git; `STRATEGY_STATE` moves
+it), and every later run registers that same contract instead of deploying
+another. Each epoch runs against Monad as it was when it opened, so a strategy
+deployed after that is refused with `AGENT_STRATEGY_NEXT_EPOCH` and nothing is
+registered: it does not become playable by itself. The script then exits with
+code 2; run the same command once the arcade has renewed, and it registers the
+tracker it already deployed. For your own contract, set `STRATEGY=0x...` instead
+of `DEPLOY` and send it again the same way.
+
+The service checks the contract on Monad first and says exactly what is wrong:
+no contract, a `creator()` that does not name you, or a `decide()` that reverts,
+runs out of gas or answers outside -1..1. It then qualifies each mode with one
+friendly match in which your paddle must move.
+
+While the arcade renews, rate-limits or restarts, the script waits and tries
+again, for up to an hour. With `WAIT=1` it follows qualification for at most six
+hours (`WAIT_HOURS`) and stops if the strategy leaves the catalog or the service
+moves to a new arcade. Exit codes: 0 registered (with `WAIT=1`, qualified in
+every mode), 1 an error it printed, 2 run it again after the next renewal, 3 a
+mode failed qualification and the same command queues it again, 4 `WAIT`
+stopped following it.
+
+Under Chaos, `PongView.half` is the paddle's base half-height: it does not
+follow the paddle-size effects (MEGA PADDLE, POCKET PADDLE, GLASS CANNON, BOSS
+ROUND, SIZE SWAP, SPLIT PADDLE), so keep a margin rather than aim with the
+paddle's edge. Reporting the effective size waits for the arcade's next
+redeployment.
 
 **A hosted real-time agent.** A dedicated playing address, whose creator and
 that address both sign registration, driven by a process you keep running. It

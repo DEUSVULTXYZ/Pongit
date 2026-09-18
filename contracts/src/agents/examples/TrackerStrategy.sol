@@ -8,7 +8,14 @@ import {IPongStrategy} from "../IPongStrategy.sol";
 ///         walls, and moves there. With nothing incoming it drifts back to the middle.
 /// @dev Everything is integer arithmetic in the arcade's units: pico-pixels for positions,
 ///      micro-pixels per second for velocities, microseconds for time. It uses a few thousand
-///      gas per call, far inside the budget the arcade gives each decision.
+///      gas per call, far inside the budget the arcade gives each decision. It steers by the
+///      paddle centre alone and never reads `half`, which under Chaos is the base size rather
+///      than the effective one (see IPongStrategy.PongView).
+///
+///      Build it from the repository root with `forge build --root contracts`, which writes
+///      contracts/out; a bare `forge build` there does not. `DEPLOY=tracker npx tsx
+///      agent-sdk/strategy.ts` then deploys it once for your creator key, records its address,
+///      and registers that same contract on every later run.
 contract TrackerStrategy is IPongStrategy {
     int256 private constant PICO = 1e12;
     int256 private constant HEIGHT = 576 * PICO;
