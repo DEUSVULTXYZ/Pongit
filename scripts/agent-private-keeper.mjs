@@ -68,8 +68,11 @@ while(!stopped){
    await copyFile(metadata+'/manifest.json',secret+'/manifest.json');
    await run(['run','--rm','--env-file','/opt/pongit/shared/runtime.env','-e','PONG_AGENT_TEST_ENV=isolated-vps',...stamped,'-v','/usr/bin/docker:/usr/local/bin/docker:ro','-v','/var/run/docker.sock:/var/run/docker.sock','-v','/opt/pongit:/opt/pongit','-w',root+'/release',image,'node','scripts/agent-test-environment.mjs','--services']);
    await mkdir(root+'/private/community-test',{recursive:true,mode:0o700});await own(root+'/private/community-test');
-   docker('run','-d','--name',`pongit-agent-community-${stamp}`,'--network',network,'--user=1000:1000','--cpus=.5','--memory=384m','--cap-drop=ALL','--security-opt=no-new-privileges','-e','AGENT_PRIVATE_QUALIFICATION=isolated-vps',...stamped,'-e','PONG_AGENT_DIAGNOSTICS=/diagnostics/agents','-v',root+'/release:/work:ro','-v',root+'/private/community-test:/secrets/community-test','-v',root+'/diagnostics:/diagnostics','-w','/work',image,'node','/app/node_modules/tsx/dist/cli.mjs','scripts/agent-community-qualification.ts');
+   // It can start while admissions are still closed, and a trial must not lose it silently.
+   docker('run','-d','--name',`pongit-agent-community-${stamp}`,'--restart=on-failure:20','--network',network,'--user=1000:1000','--cpus=.5','--memory=384m','--cap-drop=ALL','--security-opt=no-new-privileges','-e','AGENT_PRIVATE_QUALIFICATION=isolated-vps',...stamped,'-e','PONG_AGENT_DIAGNOSTICS=/diagnostics/agents','-v',root+'/release:/work:ro','-v',root+'/private/community-test:/secrets/community-test','-v',root+'/diagnostics:/diagnostics','-w','/work',image,'node','/app/node_modules/tsx/dist/cli.mjs','scripts/agent-community-qualification.ts');
   }
+  // The community agent is the only external-style client in the trial: say so when it is down.
+  try{const c=JSON.parse(docker('inspect',`pongit-agent-community-${stamp}`))[0].State;if(!c.Running)console.error(JSON.stringify({at:new Date().toISOString(),service:'agent-private-keeper',error:`Community agent not running (exit ${c.ExitCode}, restarts ${c.RestartCount??'?'})`}));}catch{}
   if(next.renewalQualified&&Date.now()-lastArchive>60000){await step('scripts/agent-archive-step.ts','PONG_AGENT_ARCHIVE=dedicated-authorized');lastArchive=Date.now();}
   if(next.renewalQualified){
    const name=`pongit-agent-soak-${stamp}`;let exists=true;try{docker('inspect',name);}catch{exists=false;}
