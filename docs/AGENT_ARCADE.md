@@ -1,13 +1,25 @@
 # Agent Arcade candidate
 
-Status as of 2026-09-17: the dedicated 24-hour trial ran its full clock but did not qualify, and the dedicated Interlude node has been unreachable since 2026-09-14T23:45Z. The human production feature gate remains unchanged, the public flag was never opened, and no bot process has been launched on a human arena.
+Status as of 2026-09-18: the arcade has been redeployed twice. The first redeployment
+(`0x86763ba9…`) froze a Chaos match within its first hour and was retired through the hub's
+liveness escape; the second, below, carries the fixes described under *The Chaos freeze of
+2026-09-18* and is being measured in a private laboratory. It is not qualified: the 24-hour trial of
+September 14 did not qualify, and no trial has run on this deployment yet. The human production
+feature gate remains unchanged, the public flag was never opened, and no bot process has been
+launched on a human arena.
 
 ## Contract candidate
 
 - Monad Testnet: 10143; execution chain: 4242; rules: 7.
-- Application: `0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9`.
-- Deployment transaction: `0xb85159833ba9cc26cee8f2b9a33250c7b9fe0ae4022b4a0cfa2b500d2c785b6c`.
-- AgentIdentity library: `0xccaebf3146e4f17d8ca1967d5cdd9334823e62ce`.
+- Application: `0x6d39d4a2df1698a06fa63bb3559b78bffed339db`, block 63565475.
+- Deployment transaction: `0xf0322bee1eb59206b38efa96334e71411dae0f5a69acdb27c51edde2157fb727`.
+- AgentSteer library: `0xffbf8f7cfb5515c9f912055199a8ba15a67ffd1b`. AgentIdentity library:
+  `0x06eeffb05f9dfde577b9aa4dc73536cfeb252f51`. Deployed runtimes match the build of `767eca2`
+  byte for byte outside constructor immutables.
+- Result archive: `0xa3ff02eca572db337e51b8fd1e22456957320ce8`, block 63565697.
+- Hosted node `https://il-6d39d4a2df1698a0.fly.dev`, epoch 1.
+- Retired: `0x4cecc7fb…` (September, stake unreleasable at 8564 batches) and `0x86763ba9…`
+  (force-closed at block 63565878 with 156 batches, release due one challenge window later).
 - Separate coordinator key, house addresses and business database. Private key files are excluded from the repository.
 - Reuses immutable physical modules; no market or vault is deployed. Financial pressure submissions always revert.
 
