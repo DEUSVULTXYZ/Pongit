@@ -2,6 +2,7 @@ import {decodeErrorResult,encodeAbiParameters,encodeFunctionData,keccak256,type 
 import {privateKeyToAccount} from 'viem/accounts';
 import type {StoredSession} from '@interludelayer-sdk/sdk';
 import type {ArenaSender} from './compact-arena-session';
+import {engineCommandTransaction} from './engine-gas';
 
 export const compactRoomActions=['acceptMatch','input','tick','cancelMatch','concede'] as const;
 export const controlProofParameters=[{type:'tuple',components:[{name:'granter',type:'address'},{name:'sessionKey',type:'address'},{name:'expiry',type:'uint64'},{name:'epoch',type:'uint64'},{name:'anyFunction',type:'bool'},{name:'selectors',type:'bytes4[]'}]},{type:'bytes'}] as const;
@@ -14,7 +15,13 @@ export function compactRoomsSession(options:{node:PublicClient;abi:Abi;app:Addre
  async function rawSend(name:string,args:readonly unknown[]){
   nonce??=await node.getTransactionCount({address:signer.address});
   const data=encodeFunctionData({abi,functionName:name,args}),started=now();
-  const raw=await signer.signTransaction({type:'eip1559',chainId:4242,to:app,nonce,data,value:0n,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+  // Every control, not only tick, input and concede, is signed with
+  // ENGINE_COMMAND_GAS (30,000,000, the node's maximum; see engine-gas.ts). Those
+  // three advance the Chaos clock and need the headroom. acceptMatch, cancelMatch
+  // and the grant writes never simulate, but gas is free here and the limit is
+  // only a ceiling, so one limit costs them nothing and leaves no command behind
+  // if a future rule makes it advance.
+  const raw=await signer.signTransaction(engineCommandTransaction(app,nonce,data));
   const hash=keccak256(raw);uncertain=true;
   // The caller's transport persists these exact bytes before sending. Never
   // replace this nonce when the response may have been lost after execution.

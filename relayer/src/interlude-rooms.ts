@@ -48,6 +48,8 @@ import {confirmsRoomAcceptance, expireUnstartedRoomOffer, prepareRoomLaunch, ass
 import {EngineStream,engineTuple,engineState} from "../../shared/engine-stream";
 import {EngineFeed} from "../../shared/engine-feed";
 import {engineCooldownMs} from "../../shared/engine-transport";
+import {engineCommandTransaction} from "../../shared/engine-gas";
+import {CHAOS_GUARD_INTERVAL_MS,CHAOS_GUARD_WRITABLE_MS,chaosGuardBackoffMs,chaosGuardDue,matchCommandInFlight,publicCommandKey} from "./chaos-tick-guard";
 import {SessionUnavailable,SessionRejected,serviceError,publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
 import {assertRoomsEngineAvailable,RoomsEngineUnavailable} from "../../shared/rooms-availability";
 import {overlayPresence} from "./rooms-presence";
@@ -502,7 +504,7 @@ export async function createRoomsCoordinator(o: Options) {
     void notify();
   }
   function publicTick(id:string,cancel=false,pressureData?:Hex){
-    const key=`${id}:${cancel}:${pressureData?hash(pressureData):"tick"}`,existing=writes.get(key);if(existing)return existing;
+    const key=publicCommandKey(id,cancel,pressureData?hash(pressureData):undefined),existing=writes.get(key);if(existing)return existing;
     const operation=writer.catch(()=>{}).then(()=>sendPublicTick(id,cancel,pressureData)).catch(async e=>{await recordPublicationFailure(e);throw e;}).finally(()=>writes.delete(key));
     writes.set(key,operation);writer=operation;return operation;
   }
@@ -522,22 +524,19 @@ export async function createRoomsCoordinator(o: Options) {
     ).rows[0];
     if(job && Number(job.epoch)!==lastEpoch)throw new Error("An engine transaction from another delegation needs recovery before sending");
     if(!job && id==='0')return; // A concurrent receipt observer may have resolved it.
+    let fresh = false;
     if (!job) {
+      fresh = true;
       const nonce = await client.node.getTransactionCount({
         address: signer.address,
       });
       const data = requestedData!;
-      const raw = await signer.signTransaction({
-        chainId: 4242,
-        type: "eip1559",
-        nonce,
-        to: app,
-        data,
-        value: 0n,
-        gas: 15000000n,
-        maxFeePerGas: 0n,
-        maxPriorityFeePerGas: 0n,
-      });
+      // tick, cancelMatch, submitPressure, submitLivePressure and submitRandomness
+      // all sign ENGINE_COMMAND_GAS: 30,000,000, the node's accepted maximum. tick,
+      // submitLivePressure and submitRandomness advance the Chaos clock first, and a
+      // grid state costs about 2 M gas per 100 ms of gap (see shared/engine-gas.ts).
+      // The others never simulate; gas is free and the limit is only a ceiling.
+      const raw = await signer.signTransaction(engineCommandTransaction(app, nonce, data));
       job = { id: hex(), app, nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
       await db.query(
         "INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9)",
@@ -546,7 +545,11 @@ export async function createRoomsCoordinator(o: Options) {
     }
     const identity=await engineJobIdentity(job,roomsAbi,signer.address);
     if(!['tick','cancelMatch','submitPressure','submitLivePressure',...(events?['submitRandomness']:[])].includes(identity.action))throw new Error('Unexpected public command in the engine journal; review required');
-    let receipt = await client.node
+    // Bytes signed in this call have never been sent, so they cannot have a
+    // receipt yet: skip that read. It saves one node round trip on every new
+    // command, which the Chaos guard's timing budget counts. A pending entry
+    // recovered from the journal is still checked before it is resent.
+    let receipt = fresh ? null : await client.node
       .getTransactionReceipt({ hash: job.hash })
       .catch(() => null);
     if (!receipt) {
@@ -745,6 +748,9 @@ export async function createRoomsCoordinator(o: Options) {
     finally{historyBusy=false;}
   }
   let maintenanceRetryAt = 0;
+  // Time of the last maintenance verdict that commands may be sent. The Chaos
+  // guard never decides writability itself; it only follows this verdict.
+  let guardWritableAt = 0;
   async function maintenance() {
     if (cycle || Date.now() < maintenanceRetryAt) return;
     cycle = true;
@@ -785,6 +791,7 @@ export async function createRoomsCoordinator(o: Options) {
       lastEpoch = status.epoch;
       online = writable;
       admissionHealthy = writable;
+      guardWritableAt = writable ? Date.now() : 0;
       lastCheck = Date.now();
       if(writable){lastError = "";lastErrorCode = "";}
       const pendingJob = (
@@ -1008,14 +1015,14 @@ export async function createRoomsCoordinator(o: Options) {
       await notify();
     } catch (e) {
       if(e instanceof RoomsEngineUnavailable){
-        maintenanceRetryAt=Date.now()+e.retryMs;online=false;admissionHealthy=false;
+        maintenanceRetryAt=Date.now()+e.retryMs;online=false;admissionHealthy=false;guardWritableAt=0;
         lastError=e.message;lastErrorCode=e.code;
         // Availability is not evidence that a previously observed result changed.
         void notify();return;
       }
       if(publicationUnavailable(e)){
         await recordPublicationFailure(e);
-        maintenanceRetryAt=Date.now()+30000;online=false;admissionHealthy=false;
+        maintenanceRetryAt=Date.now()+30000;online=false;admissionHealthy=false;guardWritableAt=0;
         lastError=new EnginePublicationUnavailable().message;
         lastErrorCode='ENGINE_PUBLICATION_UNAVAILABLE';
         recordRpc({at:Date.now(),target:"interlude",method:"publication.unavailable",status:503,ms:0,source:"cache"});
@@ -1065,6 +1072,41 @@ export async function createRoomsCoordinator(o: Options) {
   const timer = setInterval(() => void maintenance(), 2000);
   const financeTimer = finance ? setInterval(()=>void finance.audit(),5000) : undefined;
   timer.unref();
+  // Interim Chaos guard (see chaos-tick-guard.ts). In memory only: it reads the
+  // applied-event feed the maintenance loop already watches and sends nothing
+  // unless a live rules-6 Chaos match has made no observed progress for
+  // CHAOS_GUARD_STALE_MS. It shares publicTick with the maintenance loop, so the
+  // same tick coalesces, and it never queues behind another command of the match.
+  const guardBlocked = new Map<string, number>();
+  function chaosGuard() {
+    const now = Date.now();
+    const engine = {
+      now,
+      enabled: events && streamEnabled,
+      streamConnected: feed.connected,
+      writable: guardWritableAt > 0 && now - guardWritableAt <= CHAOS_GUARD_WRITABLE_MS && now >= maintenanceRetryAt
+        && closingEpoch === null && !publicationHealth.status(),
+      cooldownMs: engineCooldownMs(manifest.node),
+    };
+    for (const [id, until] of guardBlocked) if (until <= now || !watched.has(id)) guardBlocked.delete(id);
+    for (const id of watched.keys()) {
+      const s = feed.peek(BigInt(id));
+      if (!s) continue;
+      const due = chaosGuardDue(engine, {
+        phase: s.phase, mode: s.state.mode, awaitingServe: s.state.awaitingServe,
+        progressAgeMs: feed.progressAge(BigInt(id)),
+        inFlight: matchCommandInFlight(writes.keys(), id),
+        blockedUntil: guardBlocked.get(id) ?? 0,
+      });
+      if (!due) continue;
+      void publicTick(id).catch(e => {
+        const backoff = chaosGuardBackoffMs(e);
+        if (backoff > 0) guardBlocked.set(id, Date.now() + backoff);
+      });
+    }
+  }
+  const guardTimer = events && streamEnabled ? setInterval(chaosGuard, CHAOS_GUARD_INTERVAL_MS) : undefined;
+  guardTimer?.unref();
   void maintenance();
   async function route(
     req: IncomingMessage,
@@ -1713,6 +1755,6 @@ export async function createRoomsCoordinator(o: Options) {
     route,
     subscribe,
     status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status() }),
-    stop: () => {clearInterval(timer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();replays?.stop();diagnostics.stop();lifecycle?.stop();},
+    stop: () => {clearInterval(timer);if(guardTimer)clearInterval(guardTimer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();replays?.stop();diagnostics.stop();lifecycle?.stop();},
   };
 }
