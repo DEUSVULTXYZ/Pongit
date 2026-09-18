@@ -15,12 +15,22 @@ import type {AgentManifest} from '../../../shared/agents';
 // catch-up of more than 30 s fit in one 24.2 M tick. The contract still stops each
 // advance on its own gas reserve, so this only sets how far one tick may go. A beacon
 // also advances the match it lands on.
+export const DELEGATION_CACHE_MS=5000;
 export const ENGINE_GAS={catchUp:30_000_000n,other:15_000_000n} as const;
 export function engineGas(name:string){return name==='tick'||name==='submitRandomness'?ENGINE_GAS.catchUp:ENGINE_GAS.other;}
 
 export class AgentEngineWriter {
  private queue:Promise<unknown>=Promise.resolve();
  constructor(private db:Pool,private node:PublicClient,private base:PublicClient,private manifest:AgentManifest,private abi:Abi,private signer:PrivateKeyAccount){}
+ // The delegation changes only at an epoch boundary, which the lifecycle reaches after every
+ // game has drained, and closes on pressure long before expiry. Re-reading it from Monad for
+ // each command cost two public-RPC round trips per transaction, longer than the node's
+ // sealing interval, so every command of a burst sealed in a window of its own.
+ private hub?:{at:number;value:Awaited<ReturnType<typeof readHubDelegation>>};
+ private async delegation(){
+  if(!this.hub||Date.now()-this.hub.at>DELEGATION_CACHE_MS)this.hub={at:Date.now(),value:await readHubDelegation(this.base,this.manifest.hub,this.manifest.app)};
+  return this.hub.value;
+ }
  async drain(){await this.queue;}
  send(operation:string,name:string,args:readonly unknown[]=[]){
   const result=this.queue.then(()=>this.write(operation,name,args));this.queue=result.catch(()=>{});return result;
@@ -29,7 +39,7 @@ export class AgentEngineWriter {
   const m=this.manifest;
   if(keccak256(job.raw)!==job.hash)throw Error('Agent operation journal checksum mismatch');
   const tx=parseTransaction(job.raw);if(tx.chainId!==4242||tx.to?.toLowerCase()!==m.app.toLowerCase()||(tx.value??0n)!==0n)throw Error('Invalid agent operation journal');
-  const hub=await readHubDelegation(this.base,m.hub,m.app);
+  const hub=await this.delegation();
   if(String(hub.epoch)!==String(job.epoch)||hub.status!==1)throw Error('Agent operation awaits its original engine epoch');
   let receipt:any=await this.node.getTransactionReceipt({hash:job.hash as Hex}).catch(()=>null);
   if(!receipt){
@@ -73,7 +83,7 @@ export class AgentEngineWriter {
    }else{
     const pending=(await this.db.query("SELECT * FROM agent_arcade.engine_jobs WHERE app=$1 AND signer=$2 AND state IN ('prepared','uncertain') ORDER BY nonce LIMIT 1",[app,signer])).rows[0];
     if(pending)await this.resolve(pending);
-    const status=await readHubDelegation(this.base,m.hub,m.app);
+    const status=await this.delegation();
     if(status.status!==1||String(status.epoch)!==m.epoch||status.expiresAt<=BigInt(Math.floor(Date.now()/1000)))throw Error('Agent engine is recovering');
     const nonce=await this.node.getTransactionCount({address:this.signer.address,blockTag:'pending'});
     if(nonce!==await this.node.getTransactionCount({address:this.signer.address,blockTag:'latest'}))throw Error('Agent writer has an unresolved nonce');
