@@ -22,7 +22,7 @@ let record:any;try{record=JSON.parse(await readFile(recordFile,'utf8'));}catch(e
 const save=async()=>{await writeFile(recordFile+'.next',JSON.stringify(record,null,2),{mode:0o600});await rename(recordFile+'.next',recordFile);};
 assert(process.env.AGENT_DATABASE_URL,'A separate agent database is required');
 const lifecyclePrefix=process.env.PONG_AGENT_LIFECYCLE_PREFIX??'agent-arcade-lifecycle-20260913';
-assert(/^agent-arcade-lifecycle-\d{8}$/.test(lifecyclePrefix),'Keep the dated lifecycle prefix shape');
+assert(/^agent-arcade-lifecycle-\d{8}(-[2-9])?$/.test(lifecyclePrefix),'Keep the dated lifecycle prefix shape');
 const t=await chainTools(lifecyclePrefix),db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3});
 const event=async(stage:string,detail:Record<string,unknown>={})=>{
  if(record.stage!==stage){record.stage=stage;record.events.push({at:new Date().toISOString(),stage,...detail});await save();console.log(JSON.stringify({at:new Date().toISOString(),app:m.app,stage,...detail}));}

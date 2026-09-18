@@ -4,7 +4,7 @@ import {zeroAddress,zeroHash} from 'viem';
 import {AgentController} from '../shared/agent-controller';
 import {readFile} from 'node:fs/promises';
 import {agentMetadata,agentMatchKey,validateAgentManifest,houseBots,houseSteerMetadata,steeredOnChain,type AgentManifest} from '../shared/agents';
-import {TICK_AFTER_MS,TICK_CEILING_MS,TICK_CYCLE_MS} from '../relayer/src/agents/coordinator';
+import {TICK_AFTER_MS,TICK_CYCLE_MS,TICK_BURST_MAX,CAUGHT_UP_US} from '../relayer/src/agents/coordinator';
 import {initial} from '../shared/physics-interlude';
 import type {EngineState} from '../shared/engine-stream';
 const app='0x1111111111111111111111111111111111111111';
@@ -45,13 +45,17 @@ test('the client recognises exactly the seats the contract steers, and reads the
  assert.equal(steeredOnChain(agentMetadata('NOVA',1)),false);
  assert.equal(steeredOnChain(agentMetadata('Community Agent',0)),false);
 });
-test('the tick fallback stays inside the catch-up window the contract can steer',async()=>{
- // Above this the contract advances the whole gap unsteered and the paddles hold
- // their last direction, which is invisible in a log and obvious on screen.
- const source=await readFile('contracts/src/agents/AgentSteer.sol','utf8');
- const slice=Number(/constant SLICE_US = ([0-9_]+);/.exec(source)![1].replace(/_/g,''));
- const factor=Number(/constant MAX_CATCHUP_US = SLICE_US \* ([0-9]+);/.exec(source)![1]);
- assert.equal(slice*factor/1000,TICK_CEILING_MS);
- assert(TICK_AFTER_MS+TICK_CYCLE_MS<=TICK_CEILING_MS,'A tick gap must stay steerable');
- assert(TICK_AFTER_MS>=200);
+test('a catch-up is always sliced and bounded on gas, never advanced whole and unsteered',async()=>{
+ // The contract once advanced any gap over 1.6 s in one unsteered call. One such call
+ // during Chaos effect 17 costs more than a game command carries, so the tick reverted,
+ // the gap grew, and the match froze for good. The escape must not come back, and the
+ // arcade loop must stop on its gas reserve so the next tick resumes.
+ const steer=await readFile('contracts/src/agents/AgentSteer.sol','utf8');
+ assert.doesNotMatch(steer,/MAX_CATCHUP/);
+ assert.match(steer,/if \(nowUs >= target\) return target;/);
+ const arcade=await readFile('contracts/src/agents/PongAgentArcade.sol','utf8');
+ assert.match(arcade,/while\(complete&&sub<target&&_phase\(id\)==2&&gasleft\(\)>[0-9_]+\);/);
+ assert(TICK_AFTER_MS>=200&&TICK_AFTER_MS<=60000&&TICK_CYCLE_MS===500);
+ // A burst must be able to outlast the heaviest Chaos stretch between two cycles.
+ assert(TICK_BURST_MAX>=4&&CAUGHT_UP_US>0n);
 });

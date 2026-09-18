@@ -11,10 +11,10 @@ let keys:any;try{keys=JSON.parse(await readFile(dir+'/keys.json','utf8'));}catch
  keys={agent:generatePrivateKey(),creator:generatePrivateKey()};await writeFile(dir+'/keys.json',JSON.stringify(keys),{mode:0o600});
 }
 process.env.AGENT_KEY=keys.agent;process.env.CREATOR_KEY=keys.creator;
-const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert.match(stamp,/^20\d{6}$/,'The laboratory stamp is a date such as 20260918');
+const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert.match(stamp,/^20\d{6}(-[2-9])?$/,'The laboratory stamp is a date such as 20260918');
 process.env.AGENT_API=process.env.PONG_AGENT_API??`http://pongit-agent-service-${stamp}:4100`;process.env.AGENT_NAME='SDK Qualification';
 // An override may only name another private laboratory service, never a public one.
-assert.match(process.env.AGENT_API,/^http:\/\/pongit-agent-service-20[0-9]{6}:4100$/,'Point at a private laboratory service');
+assert.match(process.env.AGENT_API,/^http:\/\/pongit-agent-service-20[0-9]{6}(-[2-9])?:4100$/,'Point at a private laboratory service');
 process.env.AGENT_STATE=dir+'/session.json';
 console.log(JSON.stringify({at:new Date().toISOString(),agent:privateKeyToAccount(keys.agent).address,creator:privateKeyToAccount(keys.creator).address,scope:'Shipped SDK example, dedicated private qualification'}));
 const closeMetrics=process.env.PONG_AGENT_DIAGNOSTICS?await agentMetrics(process.env.PONG_AGENT_DIAGNOSTICS,'community'):async()=>{};

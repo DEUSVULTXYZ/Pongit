@@ -6,7 +6,7 @@ import {randomBytes} from 'node:crypto';
 assert.equal(process.env.PONG_AGENT_TEST_ENV,'isolated-vps');
 // One laboratory per arcade deployment. A frozen stamp would have a redeployment
 // quietly reuse the previous laboratory's database, secrets and containers.
-const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert(/^20\d{6}$/.test(stamp),'The laboratory stamp is a date such as 20260918');
+const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert(/^20\d{6}(-[2-9])?$/.test(stamp),'The laboratory stamp is a date such as 20260918');
 const root=`/opt/pongit/tests/agents-${stamp}`,secret=`/opt/pongit/secrets/agents-candidate-${stamp}`;
 const network=`pongit-agents-${stamp}`,database=`pongit-agent-db-${stamp}`;
 // The dependency image is the Node and node_modules base. It is rebuilt only when
@@ -33,7 +33,7 @@ try{docker('network','inspect',network);}catch{docker('network','create',network
 try{docker('container','inspect',database);}catch{docker('run','-d','--name',database,'--network',network,'--cpus=.5','--memory=384m','--restart=no',
  '--env-file',root+'/private/service.env','-v',database+':/var/lib/postgresql/data','postgres:17-alpine');}
 if(process.argv.includes('--services')){
- const deployPrefix=process.env.PONG_AGENT_DEPLOY_PREFIX??`agent-arcade-candidate-${stamp}`;assert(/^agent-arcade-candidate-[0-9]{8}$/.test(deployPrefix));
+ const deployPrefix=process.env.PONG_AGENT_DEPLOY_PREFIX??`agent-arcade-candidate-${stamp}`;assert(/^agent-arcade-candidate-[0-9]{8}(-[2-9])?$/.test(deployPrefix));
  const r=JSON.parse(await readFile(`${secret}/${deployPrefix}.json`,'utf8'));
  const m=JSON.parse(await readFile(secret+'/manifest.json','utf8'));assert.equal(m.app.toLowerCase(),r.app.toLowerCase());assert.notEqual(m.app.toLowerCase(),'0x78d3341e3452d7ec1add9371de3008639eed8eb0');
  await writeFile(secret+'/service.json',JSON.stringify({coordinator:r.coordinator,bots:r.bots.map(b=>({address:b.address}))}),{mode:0o600});

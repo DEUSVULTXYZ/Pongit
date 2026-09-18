@@ -7,7 +7,7 @@ assert.equal(process.env.PONG_AGENT_INDEXER_VERIFY,'isolated-vps');
 // address comes from the manifest so a redeployment carries it automatically.
 const app=(process.env.PONG_AGENT_APP??(process.env.PONG_AGENT_MANIFEST?JSON.parse(await readFile(process.env.PONG_AGENT_MANIFEST,'utf8')).app:'')).toLowerCase();
 assert(/^0x[\da-f]{40}$/.test(app)&&app!=='0x78d3341e3452d7ec1add9371de3008639eed8eb0','Point the verification at a dedicated arcade');
-const database=new URL(process.env.DATABASE_URL!);assert.match(database.hostname,/^pongit-agent-db-20\d{6}$/,'Verify a dedicated agent database');
+const database=new URL(process.env.DATABASE_URL!);assert.match(database.hostname,/^pongit-agent-db-20\d{6}(-[2-9])?$/,'Verify a dedicated agent database');
 const agents=new Pool({connectionString:String(database),max:2});database.pathname='/agent_indexer';
 const indexer=new Pool({connectionString:String(database),max:2});
 const ref=(r:any)=>`10143:${r.app}:${r.epoch}:${r.id}`;

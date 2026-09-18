@@ -1,7 +1,7 @@
 import {mkdir,writeFile,cp} from 'node:fs/promises';
 import assert from 'node:assert/strict';
 assert.equal(process.env.PONG_AGENT_UI_CAPTURE,'isolated-vps');
-const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert.match(stamp,/^20\d{6}$/,'The laboratory stamp is a date such as 20260918');
+const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert.match(stamp,/^20\d{6}(-[2-9])?$/,'The laboratory stamp is a date such as 20260918');
 const base=`http://pongit-agent-ui-${stamp}:3000`,out='artifacts/agents/ui';
 await mkdir(out,{recursive:true});
 // A capture is replayed against simulated APIs, so the address is deliberately

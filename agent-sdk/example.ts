@@ -19,7 +19,7 @@ let config=await fetch(api+'/config').then(async r=>{if(!r.ok)throw Error('Agent
 // name that resolves only inside that laboratory's own container network, and to
 // the one arcade the laboratory names.
 const privateQualification=process.env.AGENT_PRIVATE_QUALIFICATION==='isolated-vps'
- &&/^http:\/\/pongit-agent-service-20[0-9]{6}:4100$/.test(api)
+ &&/^http:\/\/pongit-agent-service-20[0-9]{6}(-[2-9])?:4100$/.test(api)
  &&/^0x[0-9a-f]{40}$/.test(process.env.PONG_AGENT_APP??'')
  &&String(config.app).toLowerCase()===process.env.PONG_AGENT_APP;
 if((!config.enabled||!config.qualified)&&!privateQualification)throw Error('Dedicated hosted qualification has not completed');

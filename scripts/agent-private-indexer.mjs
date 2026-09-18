@@ -5,7 +5,7 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {randomBytes} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 assert.equal(process.env.PONG_AGENT_INDEXER,'isolated-backfill');
-const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert(/^20\d{6}$/.test(stamp),'The laboratory stamp is a date such as 20260918');
+const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert(/^20\d{6}(-[2-9])?$/.test(stamp),'The laboratory stamp is a date such as 20260918');
 const root=`/opt/pongit/tests/agents-${stamp}`,release=root+'/release',privateDir=root+'/private';
 const docker=(...args)=>execFileSync('docker',args,{encoding:'utf8',stdio:['ignore','pipe','pipe']}).trim();
 const db=`pongit-agent-db-${stamp}`,database='agent_indexer',hasura=`pongit-agent-hasura-${stamp}`,indexer=`pongit-agent-indexer-${stamp}`;

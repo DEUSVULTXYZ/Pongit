@@ -11,7 +11,7 @@ assert.equal(process.env.PONG_AGENT_BACKUP_VERIFY,'isolated-vps');
 // A re-runnable verification needs its own root: a fixed one already exists after
 // the first pass, so a second run would abort on EEXIST or overwrite the evidence.
 // Set PONG_AGENT_BACKUP_ROOT for each further run of the same laboratory.
-const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert.match(stamp,/^20\d{6}$/,'The laboratory stamp is a date such as 20260918');
+const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert.match(stamp,/^20\d{6}(-[2-9])?$/,'The laboratory stamp is a date such as 20260918');
 const root=process.env.PONG_AGENT_BACKUP_ROOT??`/opt/pongit/tests/agents-${stamp}/private/backup-${stamp}`,container=`pongit-agent-db-${stamp}`;
 assert(root.startsWith('/opt/pongit/tests/agents-')&&root.includes('/private/')&&!root.includes('..'),'Keep candidate backups inside the private test root');
 const connection=new URL(process.env.DATABASE_URL!);assert.equal(connection.hostname,container);assert.equal(connection.pathname,'/agents');

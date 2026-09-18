@@ -29,8 +29,8 @@ contract PongAgentArcade is PongChaosEvents {
         uint256 value=_get(uint160(agent),40);
         return(address(uint160(value)),uint8(value>>160),uint8(value>>168),bytes32(_get(uint160(agent),41)));
     }
-    function agentCount() external view returns(uint256){return _get(0,42);}
-    function agentAt(uint256 index) external view returns(address){if(index>=_get(0,42))revert AgentAdmissionDenied();return address(uint160(_get(index,43)));}
+    /// The on-chain registry stays enumerable in one entry point: the agent at `index`, zero past the end, and the count.
+    function agentAt(uint256 index) external view returns(address agent,uint256 count){count=_get(0,42);if(index<count)agent=address(uint160(_get(index,43)));}
     function acceptance(uint256 id) external view returns(uint8){return uint8(_get(id,0)>>164&3);}
     function acceptMatch(Offer calldata o,bytes calldata signature) external override engine whenNotDelegated(Types.GLOBAL){
         bool fresh=AgentIdentity.accept(words,o,signature,ticketDigest(o),coordinator,_playerActor());
@@ -39,12 +39,16 @@ contract PongAgentArcade is PongChaosEvents {
     }
     function _limitTarget(uint256 target) internal pure override returns(uint256){return target>MATCH_DURATION_US?MATCH_DURATION_US:target;}
     function _advanceState(uint256 id,PhysicsV2.State memory legacy,uint64 target,bool mayResume) internal override returns(bool complete){
+        // Slice to the target while each slice lands, the match is live, and a worst-case slice
+        // still fits: one Chaos slice can cost 2 M gas, and a second _finish would revert the tick.
         uint64 sub;
         do{legacy=_state(id);sub=AgentSteer.steer(words,id,legacy.mode,target);complete=super._advanceState(id,legacy,sub,mayResume);}
-        while(!complete&&sub<target);
+        while(complete&&sub<target&&_phase(id)==2&&gasleft()>4_000_000);
         // Bounded catch-up must reach the deadline before evaluating the score.
         // A late call cannot simulate beyond it or cancel a legitimate 5-minute result.
         if(_phase(id)==2){
+            // Stopped on the reserve short of the target: the next tick resumes from here.
+            if(sub<target)complete=false;
             uint256 elapsed=legacy.mode==0?_get(id,7)>>128:uint64(_get(id,27)>>112);
             if(elapsed>=MATCH_DURATION_US){
             uint256 scores=_get(id,legacy.mode==0?8:28);

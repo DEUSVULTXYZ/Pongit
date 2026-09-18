@@ -30,6 +30,10 @@ contract AgentHarness is PongAgentArcade {
     function brain(uint256 id) external view returns(uint256){return AgentSteer.brainOf(words,id,matchMode(id));}
     function setScore(uint256 id,uint8 a,uint8 b) external {uint256 c=_get(id,8);c=(c&~(uint256(15)<<4))|(uint256(a)<<4);c=(c&~(uint256(15)<<8))|(uint256(b)<<8);_set(id,8,c);}
     function meta(address a) external view returns(bytes32){return bytes32(_get(uint160(a),41));}
+    function phaseOf(uint256 id) external view returns(uint256){return _phase(id);}
+    function goalBound(uint256 id,uint8 a,uint8 b,uint64 time) external {
+        PhysicsV2.State memory s=_state(id);s.scoreA=a;s.scoreB=b;s.t=time;s.x=60e6;s.y=20e6;s.vx=-900e6;s.vy=5e6;_save(id,s);
+    }
 }
 contract AgentArcadeTest is ChaosPhysicsTest {
     uint256 constant AD=0xc0;uint256 constant A=0xa0;uint256 constant B=0xb0;uint256 constant C1=0xc1;uint256 constant C2=0xc2;
@@ -153,6 +157,69 @@ contract AgentArcadeTest is ChaosPhysicsTest {
     function offer(uint256 id,uint8 mode,bool ranked) private view returns(Rooms.Offer memory){
         return Rooms.Offer(id,bytes32(id),vm.addr(A),vm.addr(B),mode,ranked,uint64(block.timestamp+20),7,bytes32(id));
     }
+    bytes32 constant NOVA_META=0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
+    bytes32 constant ONYX_META=0xab988c929327e00ef2ffef823a9578430c6237e0f21da503f90f62fd0b7d3a8f;
+    /// One tick catches the clock up to the chain, a slice at a time. It used to stop after the
+    /// first slice that landed, so a house match advanced 100 ms per tick whatever the gap, fell
+    /// behind the block clock, and was then advanced whole and unsteered.
+    function testOneTickCatchesUpTheWholeGapWhileSteering() public {
+        registerHouse(C1,A,NOVA_META);registerHouse(C2,B,ONYX_META);
+        for(uint8 mode;mode<2;mode++){
+            uint256 id=500+mode;start(id,mode,false);
+            game.nearEnd(id,0,0,2_000_000);
+            // Track the block by hand: under via-IR a second block.number read can be served
+            // from the first, which silently makes the second roll one block short.
+            uint256 bn=block.number;
+            vm.roll(bn+1);vm.prank(KA);game.tick(id);
+            uint64 t0=mode==0?game.gameTime(id):game.gameTime1(id);
+            vm.roll(bn+101);vm.prank(KA);game.tick(id);
+            uint64 t1=mode==0?game.gameTime(id):game.gameTime1(id);
+            assertEq(t1-t0,1_000_000,string.concat("mode ",vm.toString(mode),": one tick must cover the whole one-second gap"));
+            vm.prank(KB);game.concede(id);
+        }
+    }
+    /// A game command carries 15 M gas. Effect 17 alone costs about 16 M per second of play, so a
+    /// catch-up that is not cut on gas reverts, the gap grows, and every later tick reverts too:
+    /// the match freezes for good, because the arcade caps its clock at the five-minute deadline
+    /// and so never reaches the 30-minute cancellation. Every effect, one and two balls, and gaps
+    /// well past the coordinator's cadence must fit, must progress, and must then catch up.
+    function sweepEffects(uint8 from,uint8 to) private {
+        registerHouse(C1,A,NOVA_META);registerHouse(C2,B,ONYX_META);
+        uint64[3] memory gaps=[uint64(50),100,300];uint256 bn=block.number;
+        for(uint8 balls=1;balls<=2;balls++)for(uint8 fx=from;fx<=to;fx++)for(uint256 g;g<gaps.length;g++){
+            uint256 m=10_000+uint256(balls)*1000+uint256(fx)*10+g;start(m,1,false);
+            T.State memory s=k.initial(bytes32(m),96000000,72000000);
+            (s.effects,)=e.announce(s.effects,fx,0,0,fx,0);s.t=1000000;s.nextForce=1000000;
+            s.balls[0].x=300e12;s.balls[0].y=200e12;s.balls[0].vx=900e6;s.balls[0].vy=300e6;
+            if(balls==2){s.balls[1]=s.balls[0];s.balls[1].x=700e12;s.balls[1].vx=-900e6;s.balls[1].vy=-250e6;s.balls[1].alive=true;}
+            game.chaosFixture(m,s);
+            bn+=1;vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(m);
+            for(uint256 r;r<3&&game.phaseOf(m)==2;r++){
+                uint64 before=game.gameTime1(m);
+                bn+=gaps[g];vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(m);
+                if(game.phaseOf(m)==2)assertGt(game.gameTime1(m),before,string.concat("effect ",vm.toString(fx)," must progress"));
+            }
+            // A lagging match recovers: at a fixed target, repeated ticks close the gap, after
+            // which conceding (which needs a caught-up clock) goes through.
+            for(uint256 c;c<40&&game.phaseOf(m)==2;c++){uint64 was=game.gameTime1(m);vm.prank(KA);game.tick{gas:14_800_000}(m);if(game.gameTime1(m)==was)break;}
+            if(game.phaseOf(m)==2){vm.prank(KB);game.concede(m);}
+        }
+    }
+    function testNoSteeredTickOutspendsAGameCommandEffects1To8() public {sweepEffects(1,8);}
+    function testNoSteeredTickOutspendsAGameCommandEffects9To15() public {sweepEffects(9,15);}
+    function testNoSteeredTickOutspendsAGameCommandEffect16() public {sweepEffects(16,16);}
+    function testNoSteeredTickOutspendsAGameCommandEffect17() public {sweepEffects(17,17);}
+    function testNoSteeredTickOutspendsAGameCommandEffects18To24() public {sweepEffects(18,24);}
+    /// A point that ends the match inside a multi-slice catch-up ends it cleanly. Slicing on past
+    /// it would call _finish a second time, which reverts, so the deciding tick could never land.
+    function testFinishingInsideACatchUpEndsTheMatchCleanly() public {
+        registerHouse(C1,A,NOVA_META);registerHouse(C2,B,ONYX_META);
+        start(600,0,false);
+        game.goalBound(600,0,6,2_000_000);
+        vm.roll(block.number+1);vm.prank(KA);game.tick(600);
+        if(game.phaseOf(600)==2){vm.roll(block.number+100);vm.prank(KA);game.tick(600);}
+        assertEq(game.phaseOf(600),3,"the seventh point must finish the match");
+    }
     function start(uint256 id,uint8 mode,bool ranked) private {
         bind(A,KA);bind(B,KB);Rooms.Offer memory o=offer(id,mode,ranked);bytes memory signature=sig(game.ticketDigest(o),AD);
         vm.prank(KA);game.acceptMatch(o,signature);vm.prank(KB);game.acceptMatch(o,signature);
@@ -171,9 +238,9 @@ contract AgentArcadeTest is ChaosPhysicsTest {
     function testRegistrationRequiresBothOwnersAndIsImmutable() public {
         AgentIdentity.Registration memory r=registration(C1,A,3);bytes32 h=game.registrationDigest(r);
         vm.expectRevert();game.registerAgent(r,sig(h,C2),sig(h,A));vm.expectRevert();game.registerAgent(r,sig(h,C1),sig(h,B));
-        register(C1,A);assertEq(game.agentCount(),1);assertEq(game.agentAt(0),vm.addr(A));
+        register(C1,A);(address first,uint256 count)=game.agentAt(0);assertEq(count,1);assertEq(first,vm.addr(A));
         (address creator,uint8 modes,uint8 passed,)=game.agentIdentity(vm.addr(A));assertEq(creator,vm.addr(C1));assertEq(modes,3);assertEq(passed,0);
-        vm.expectRevert();game.registerAgent(r,sig(h,C1),sig(h,A));vm.expectRevert();game.agentAt(1);
+        vm.expectRevert();game.registerAgent(r,sig(h,C1),sig(h,A));(address past,)=game.agentAt(1);assertEq(past,address(0),"past the end is zero, not a revert");
     }
     function testWrongAppExpiryAndModeRegistrationRejected() public {
         AgentIdentity.Registration memory r=registration(C1,A,3);bytes32 h=game.registrationDigest(r);r.modes=1;
@@ -214,7 +281,7 @@ contract AgentArcadeTest is ChaosPhysicsTest {
         AgentIdentity.Registration memory r=registration(C1,A,3);bytes32 h=game.registrationDigest(r);
         vm.chainId(10143);AgentHarness other=new AgentHarness(IInterludeHub(HUB),vm.addr(AD),module);vm.chainId(4242);
         vm.expectRevert();other.registerAgent(r,sig(h,C1),sig(h,A));
-        bytes32 own=other.registrationDigest(r);other.registerAgent(r,sig(own,C1),sig(own,A));assertEq(game.agentCount(),0);assertEq(other.agentCount(),1);
+        bytes32 own=other.registrationDigest(r);other.registerAgent(r,sig(own,C1),sig(own,A));(,uint256 mine)=game.agentAt(0);(,uint256 theirs)=other.agentAt(0);assertEq(mine,0);assertEq(theirs,1);
     }
     function testTwoModesAreIsolatedAndThirdWaitsForAFreeSlot() public {
         register(C1,A);start(1,0,false);

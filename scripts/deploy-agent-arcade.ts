@@ -13,7 +13,7 @@ if(!process.env.DATABASE_URL)process.env.DATABASE_URL=`postgresql://pong:${encod
 // A redeployment needs its own prefix: the operation journal is keyed by it, and the previous
 // candidate's entries must stay readable rather than be reused or overwritten.
 const prefix=process.env.PONG_AGENT_DEPLOY_PREFIX??'agent-arcade-candidate-20260913',file=`/secrets/${prefix}.json`;
-assert(/^agent-arcade-candidate-\d{8}$/.test(prefix),'Keep the dated candidate prefix shape');
+assert(/^agent-arcade-candidate-\d{8}(-[2-9])?$/.test(prefix),'Keep the dated candidate prefix shape');
 let r:any;try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 if(!r){r={coordinator:generatePrivateKey(),creator:generatePrivateKey(),bots:houseBots.map(p=>{const key=generatePrivateKey();return {...p,key,address:privateKeyToAccount(key).address};}),createdAt:new Date().toISOString(),phase:'deploying'};await save();}

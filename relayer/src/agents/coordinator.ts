@@ -18,15 +18,26 @@ const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x)
 // With the house policy in the contract the house clients send no input, so this
 // fallback becomes the only thing advancing a house-versus-house match: it now sets
 // the transaction rate, and the transaction rate is what becomes hub batches.
-// The hard ceiling is AgentSteer.MAX_CATCHUP_US: 1.6 s of game time, and one
-// ephemeral block is 10 ms of game time, so 1.6 s of wall clock. A wider gap is
-// advanced with no steering at all — the paddles hold their last direction through
-// it. The cycle below fires every 500 ms, so the observed gap is the threshold plus
-// up to a cycle: 1100 ms is the largest threshold that still always steers, which
-// makes the old fixed 1500 too wide.
-export const TICK_CYCLE_MS=500,TICK_CEILING_MS=1600;
-export const TICK_AFTER_MS=Number(process.env.PONG_AGENT_TICK_MS??1000);
-if(!Number.isInteger(TICK_AFTER_MS)||TICK_AFTER_MS<200||TICK_AFTER_MS+TICK_CYCLE_MS>TICK_CEILING_MS)throw Error('Keep the agent tick between 200 ms and the contract catch-up ceiling');
+// Any gap is safe for the contract: it steers a catch-up slice by slice and stops on
+// a gas reserve, and the next tick resumes where it stopped. The cadence therefore
+// trades only spectator smoothness against hub batches, and is set here. The cycle
+// below runs every 500 ms, so the observed gap is the threshold plus up to a cycle.
+//
+// Measured on the hosted node on 2026-09-18: it seals a batch every 0.3 to 1 s
+// whenever anything is pending, so 156 batches carried only 320 transactions. Past
+// one transaction per sealing window the batch count follows active time, not the
+// transaction count. Ticks therefore go out in bursts on one shared clock: every
+// live match is caught up back to back, so a burst lands in one or two windows
+// however many matches and ticks it holds.
+export const TICK_CYCLE_MS=500;
+export const TICK_AFTER_MS=Number(process.env.PONG_AGENT_TICK_MS??10000);
+if(!Number.isInteger(TICK_AFTER_MS)||TICK_AFTER_MS<200||TICK_AFTER_MS>60000)throw Error('Keep the agent tick between 200 ms and 60 s');
+// A tick stops on the contract's gas reserve, so a heavy Chaos stretch takes several.
+export const TICK_BURST_MAX=12;
+// Left behind by a read that follows the tick, not by the tick itself.
+export const CAUGHT_UP_US=1_000_000n;
+// The game time a snapshot has processed. Chaos keeps its own clock.
+export const processedTime=(s:EngineState)=>s.chaos?.physics.t??s.state.t;
 export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,rpcUrl:string,graphql?:(query:string,variables:unknown)=>Promise<any>){
  const app=m.app.toLowerCase(),signer=privateKeyToAccount(key);
  if(signer.address.toLowerCase()!==m.coordinator.toLowerCase())throw Error('Wrong Agent Arcade coordinator');
@@ -36,7 +47,7 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
  const writer=new AgentEngineWriter(db,client.node,base,m,abi,signer),beacon=new ChaosBeaconPump();
  const replays=new AgentReplays(db,graphql);
  const watches=new Map<string,()=>void>(),proofs=new Map<string,Promise<void>>();
- const terminalRatings=new Set<string>();let replayAt=0;
+ const terminalRatings=new Set<string>();let replayAt=0,burstAt=0;
  let running=false,stopped=false,activeCycle:Promise<void>|undefined,stage='starting',lastError:string|undefined,lastProgress=Date.now(),admissionAt=0,healthAt=0;
  let delegation:Awaited<ReturnType<typeof readHubDelegation>>|undefined,delegationAt=0;
  let engineStatus:Awaited<ReturnType<typeof client.status>>|undefined,engineStatusAt=0;
@@ -64,7 +75,7 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
    await db.query('UPDATE agent_arcade.identities SET qualification=jsonb_set(qualification,ARRAY[$3],to_jsonb($4::text)) WHERE app=$1 AND agent=$2',[app,address,String(match.mode),passed?'qualified':'retry']);
   }
  }
- async function observe(match:any){
+ async function observe(match:any,burst:boolean){
   if(!watches.has(match.id))watches.set(match.id,feed.watch(BigInt(match.id),s=>{lastProgress=Date.now();replays.capture(s);}));
   const s=await state(match.id);
   if(s.phase===1&&s.deadline<BigInt(Math.floor(Date.now()/1000))){await writer.send(`cancel:${match.id}`,'cancelMatch',[BigInt(match.id)]);return;}
@@ -80,8 +91,20 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
      await writer.send(`beacon:${match.id}:${q}`,'submitRandomness',[BigInt(match.id),q,signature]);feed.invalidate();
     }).catch(e=>health('synchronizing',e)).then(()=>{}).finally(()=>proofs.delete(match.id));proofs.set(match.id,proof);
    }
-   // Public maintenance is the final fallback. Both agent clients use TickPilot.
-   if(feed.progressAge(BigInt(match.id))>TICK_AFTER_MS){await writer.send(`tick:${match.id}:${s.revision}`,'tick',[BigInt(match.id)]);feed.invalidate();}
+   // Public maintenance is the only driver of a house match, and the fallback for
+   // any other. A match someone else advanced recently is left to them.
+   if(burst&&feed.progressAge(BigInt(match.id))>Math.min(TICK_AFTER_MS,3000)){
+    let current=s;
+    for(let n=0;n<TICK_BURST_MAX&&current.phase===2;n++){
+     const before=processedTime(current);
+     await writer.send(`tick:${match.id}:${current.revision}`,'tick',[BigInt(match.id)]);feed.invalidate();
+     current=await state(match.id,true);
+     const after=processedTime(current);
+     // No progress means the match waits on something a tick cannot supply, such as
+     // a Chaos beacon; ticking again would only spend a sealing window.
+     if(after<=before||current.clock-after<=CAUGHT_UP_US)break;
+    }
+   }
    return;
   }
   if(s.phase>=3){
@@ -179,7 +202,9 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
    const session=await status();
    if(String(session.epoch)!==m.epoch)throw Error('Agent engine epoch changed; reconciliation required');
    const matches=(await db.query("SELECT * FROM agent_arcade.matches WHERE app=$1 AND status IN ('preparing','offered','active','publishing') ORDER BY id",[app])).rows;
-   for(const match of matches){if(match.status==='preparing')await offer(match);else await observe(match);}
+   // One shared clock for every live match, so their ticks share sealing windows.
+   const burst=Date.now()-burstAt>=TICK_AFTER_MS;if(burst)burstAt=Date.now();
+   for(const match of matches){if(match.status==='preparing')await offer(match);else await observe(match,burst);}
    if(Date.now()-replayAt>60000){replayAt=Date.now();await replays.reconcile();}
    await admit();
   }catch(e){

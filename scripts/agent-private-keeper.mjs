@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFile,mkdir,copyFile,chown} from 'node:fs/promises';
 import {spawn,execFileSync} from 'node:child_process';
 assert.equal(process.env.PONG_AGENT_KEEPER,'isolated-qualification');
-const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert(/^20\d{6}$/.test(stamp),'The laboratory stamp is a date such as 20260918');
+const stamp=process.env.PONG_AGENT_LAB_STAMP??'20260913';assert(/^20\d{6}(-[2-9])?$/.test(stamp),'The laboratory stamp is a date such as 20260918');
 const image=process.env.PONG_AGENT_LAB_IMAGE??'pongit-agent-deps:20260913';assert(/^pongit-agent-deps:20\d{6}$/.test(image));
 const root=`/opt/pongit/tests/agents-${stamp}`,secret=`/opt/pongit/secrets/agents-candidate-${stamp}`,metadata=secret+'/ops';
 const network=`pongit-agents-${stamp}`,HUMAN_APP='0x78d3341e3452d7ec1add9371de3008639eed8eb0';
@@ -14,7 +14,7 @@ const network=`pongit-agents-${stamp}`,HUMAN_APP='0x78d3341e3452d7ec1add9371de30
 const deployPrefix=process.env.PONG_AGENT_DEPLOY_PREFIX??`agent-arcade-candidate-${stamp}`;
 const lifecyclePrefix=process.env.PONG_AGENT_LIFECYCLE_PREFIX??`agent-arcade-lifecycle-${stamp}`;
 const archivePrefix=process.env.PONG_AGENT_ARCHIVE_PREFIX??`agent-archive-${stamp}`;
-assert(/^agent-arcade-candidate-\d{8}$/.test(deployPrefix)&&/^agent-arcade-lifecycle-\d{8}$/.test(lifecyclePrefix)&&/^agent-archive-\d{8}$/.test(archivePrefix),'Keep the dated prefix shapes');
+assert(/^agent-arcade-candidate-\d{8}(-[2-9])?$/.test(deployPrefix)&&/^agent-arcade-lifecycle-\d{8}(-[2-9])?$/.test(lifecyclePrefix)&&/^agent-archive-\d{8}(-[2-9])?$/.test(archivePrefix),'Keep the dated prefix shapes');
 // The candidate address is whatever this laboratory deployed. Freezing it here
 // made the guard false the moment the arcade was redeployed, which is the one
 // moment it has to hold.

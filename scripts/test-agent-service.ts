@@ -13,7 +13,7 @@ import {agentArcadeAbi as abi} from '../shared/abi-PongAgentArcade';
 import {agentActions,agentAuthMessage,agentMetadata,agentRegistrationTypes,type AgentManifest} from '../shared/agents';
 import {initial} from '../shared/physics-interlude';
 assert.equal(process.env.PONG_AGENT_INTEGRATION_TEST,'isolated-vps');
-assert.match(new URL(process.env.DATABASE_URL!).hostname,/^pongit-agent-db-20\d{6}$/,'Run against a dedicated agent database');
+assert.match(new URL(process.env.DATABASE_URL!).hostname,/^pongit-agent-db-20\d{6}(-[2-9])?$/,'Run against a dedicated agent database');
 // The hosted candidate that shares this database. Its rows must survive the cleanup.
 const liveCandidate=(process.env.PONG_AGENT_APP??'').toLowerCase();
 assert.match(liveCandidate,/^0x[0-9a-f]{40}$/,'Name the hosted candidate sharing this database in PONG_AGENT_APP');

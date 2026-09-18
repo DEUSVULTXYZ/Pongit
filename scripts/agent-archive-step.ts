@@ -15,7 +15,7 @@ const m=JSON.parse(await readFile('/secrets/manifest.json','utf8'));
 assert.notEqual(m.app.toLowerCase(),'0x78d3341e3452d7ec1add9371de3008639eed8eb0','The archive never binds to the human application');
 validateAgentManifest(m);
 const archivePrefix=process.env.PONG_AGENT_ARCHIVE_PREFIX??'agent-archive-20260913';
-assert(/^agent-archive-\d{8}$/.test(archivePrefix),'Keep the dated archive prefix shape');
+assert(/^agent-archive-\d{8}(-[2-9])?$/.test(archivePrefix),'Keep the dated archive prefix shape');
 const t=await chainTools(archivePrefix),db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:2});
 try{
  let archive;try{const saved=JSON.parse(await readFile('/secrets/archive.json','utf8'));assert.equal(saved.app,m.app);assert.equal(saved.chainId,10143);archive=saved.archive;}catch(e){

@@ -5,7 +5,7 @@ import {readHubDelegation} from '../shared/rooms-hub';
 import {agentArcadeAbi as abi} from '../shared/abi-PongAgentArcade';
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000})});
 const prefix=process.env.PONG_AGENT_DEPLOY_PREFIX??'agent-arcade-candidate-20260913';
-if(!/^agent-arcade-candidate-[0-9]{8}$/.test(prefix))throw Error('Keep the dated candidate prefix shape');
+if(!/^agent-arcade-candidate-[0-9]{8}(-[2-9])?$/.test(prefix))throw Error('Keep the dated candidate prefix shape');
 const candidate=JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8'));
 const hub='0x3Ef8327F69e09cf721772F345e2A887eA22cD595' as Address;
 const hubAbi=JSON.parse(await readFile('node_modules/@interludelayer-sdk/cli/artifacts/InterludeHub.sol/InterludeHub.json','utf8')).abi;

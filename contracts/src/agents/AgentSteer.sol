@@ -9,10 +9,10 @@ import {HouseController} from "./HouseController.sol";
 ///      the key derivation is byte-identical to the app's own `_key(0, id, field)`.
 library AgentSteer {
     /// @dev One decision boundary. Finer than any tier's reaction, so every tier lands on it.
+    ///      A catch-up of any length is sliced too: advancing it whole left the paddles unsteered
+    ///      through it and let one Chaos call cost more than a command may spend. The arcade stops
+    ///      slicing on its gas reserve instead, and the next tick resumes where this one stopped.
     uint64 internal constant SLICE_US = 100_000;
-    /// @dev A long catch-up is replayed missed time, not live play. Steering it a slice at a time
-    ///      would cost thousands of external calls for no visible difference, so it advances whole.
-    uint64 internal constant MAX_CATCHUP_US = SLICE_US * 16;
 
     // Registration metadata of the three house bots, from agentMetadata(name, avatar).
     bytes32 internal constant NOVA = 0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
@@ -273,7 +273,7 @@ library AgentSteer {
     {
         uint64 nowUs = uint64(w[_key(id, mode == 0 ? 7 : 27)] >> 112);
         if (mode == 0) nowUs = uint64(w[_key(id, 7)] >> 128);
-        if (nowUs >= target || target - nowUs > MAX_CATCHUP_US) return target;
+        if (nowUs >= target) return target;
 
         (bool houseA, uint8 levelA) = _tier(w, uint256(uint160(w[_key(id, 0)])));
         (bool houseB, uint8 levelB) = _tier(w, uint256(uint160(w[_key(id, 1)])));
