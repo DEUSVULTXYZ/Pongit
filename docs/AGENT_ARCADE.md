@@ -308,6 +308,15 @@ between one epoch and the next.
   epoch. Both bots recovered on restart. The human rooms client uses the same journal and had the
   same latent behaviour.
 
+The first batch-pressure renewal inside the trial on n°4 ran with all three fixes in place. At
+16:39:05 UTC, at 1,001 batches, admissions closed 0.9 s after the service had admitted match 36: the
+same race as in the morning. This time the lifecycle counted the match, waited for it to finish
+(16:44:23) and closed only at 16:45:17 with 1,064 batches, after more than 60 s with admissions shut;
+the last engine command was at 16:44:21, so nothing ran after the close. The stake was released at
+17:46, epoch 3 opened at 17:47, and the arcade served again at 17:49:43, about 70 minutes after
+admissions closed. The house bots came back with no journal refusal, the trial kept sampling, and the
+league resumed with the strategies.
+
 ### The Chaos freeze of 2026-09-18, and the loop that caused it
 
 The first hour on the redeployed arcade froze a Chaos qualification match for good. Two defects in
