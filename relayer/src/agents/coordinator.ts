@@ -104,7 +104,9 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
    // and only when both seats are strategies it would accept anyway; one acceptance starts it.
    else if(match.offer&&match.kind_a==='strategy'&&match.kind_b==='strategy'){
     const {signature,...ticket}=match.offer;for(const field of ['id','expires','rules'])ticket[field]=BigInt(ticket[field]);
-    await writer.send(`accept:${match.id}`,'acceptMatch',[ticket,signature]);feed.invalidate();
+    // Refused only if the offer lapsed meanwhile, and a lapsed offer is cancelled above on the next
+    // pass; letting the refusal escape would abort the cycle for every other match.
+    await writer.send(`accept:${match.id}`,'acceptMatch',[ticket,signature]).catch(e=>{if((e as {code?:string}).code!=='AGENT_ACTION_REVERTED')throw e;});feed.invalidate();
    }
    return;
   }
