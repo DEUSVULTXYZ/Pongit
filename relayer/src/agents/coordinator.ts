@@ -1,6 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import type {Pool} from 'pg';
-import {createPublicClient,http,toHex,keccak256,zeroAddress,type Abi,type Address,type Hex} from 'viem';
+import {createPublicClient,decodeFunctionData,http,parseTransaction,toHex,keccak256,zeroAddress,type Abi,type Address,type Hex} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {createInterludeClient,memoryStore} from '@interludelayer-sdk/sdk';
@@ -13,7 +13,7 @@ import {AgentEngineWriter} from './writer';
 import {measuredFetch} from '../../../shared/rpc-metrics';
 import {readHubDelegation} from '../../../shared/rooms-hub';
 import {AgentReplays} from './replays';
-import {leaguePair,STRATEGY_MOVED_FRAMES,STRATEGY_START} from './strategies';
+import {lastMatches,leaguePair,strategyAttempts,strategyEvidence,strategyVerdict,STRATEGY_START} from './strategies';
 
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
 // With the house policy in the contract the house clients send no input, so this
@@ -75,14 +75,17 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
     // A strategy sends no inputs and holds no session, so there is nothing to reconnect. What it
     // can prove is that the arcade asked it and it answered: its paddle left the centre it starts
     // on, which nothing but its own answers can do, in a match played to the end.
-    const moved=Number((await db.query("SELECT count(*)::int AS n FROM agent_arcade.frames WHERE match_id=$1 AND frame->'state'->>$2<>$3",
-     [match.id,address===match.a?'left':'right',STRATEGY_START])).rows[0].n);
-    const passed=moved>=STRATEGY_MOVED_FRAMES;
-    if(passed){
-     const evidence=keccak256(toHex(json({app,id:match.id,epoch:match.epoch,result:await client.read('resultHashes',[BigInt(match.id)]),strategy:true,movedFrames:moved})));
-     await writer.send(`qualify:${match.id}:${address}:${match.mode}`,'qualifyAgent',[address,match.mode,true,evidence]);
-    }
-    await db.query('UPDATE agent_arcade.identities SET qualification=jsonb_set(qualification,ARRAY[$3],to_jsonb($4::text)) WHERE app=$1 AND agent=$2',[app,address,String(match.mode),passed?'qualified':'retry']);
+    const operation=`qualify:${match.id}:${address}:${match.mode}`;
+    const job=(await db.query('SELECT raw FROM agent_arcade.engine_jobs WHERE app=$1 AND operation=$2',[app,operation])).rows[0];
+    const verdict=await strategyVerdict(address,match.mode,{
+     journaled:job?decodeFunctionData({abi,data:parseTransaction(job.raw).data!}).args:undefined,
+     // Frames are written behind the feed; count them once the queue has drained.
+     moved:async()=>{await replays.flush();return Number((await db.query("SELECT count(*)::int AS n FROM agent_arcade.frames WHERE match_id=$1 AND frame->'state'->>$2<>$3",
+      [match.id,address===match.a?'left':'right',STRATEGY_START])).rows[0].n);},
+     evidence:async()=>strategyEvidence({app,id:match.id,epoch:match.epoch},await client.read('resultHashes',[BigInt(match.id)])),
+     send:args=>writer.send(operation,'qualifyAgent',args),
+     attempts:async()=>(await strategyAttempts(db,app,address,match.mode)).length});
+    await db.query('UPDATE agent_arcade.identities SET qualification=jsonb_set(qualification,ARRAY[$3],to_jsonb($4::text)) WHERE app=$1 AND agent=$2',[app,address,String(match.mode),verdict]);
     continue;
    }
    const check=(await db.query('SELECT * FROM agent_arcade.qualification_checks WHERE match_id=$1 AND player=$2',[match.id,address])).rows[0];
@@ -225,8 +228,7 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
      // Keep a second slot available for human challenges/qualification. A house
      // bot can share its creator with another, but that match remains friendly.
      if(count===0&&qualified.length>=2){
-      const recent=(await c.query('SELECT a,b FROM agent_arcade.matches WHERE app=$1 AND mode=$2 ORDER BY id DESC LIMIT 200',[app,mode])).rows;
-      const [a,b]=leaguePair(qualified,recent)!;
+      const [a,b]=leaguePair(qualified,await lastMatches(c,app,mode,qualified.map(a=>a.agent)))!;
       candidate={a:a.agent,b:b.agent,mode,ranked:a.creator!==b.creator,kind:'league'};break;
      }
     }

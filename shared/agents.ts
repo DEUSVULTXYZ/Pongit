@@ -4,7 +4,9 @@ export type AgentMode=0|1;
 // pongit: a house bot. community: a real-time agent its creator hosts, sending signed inputs.
 // strategy: a contract on Monad the arcade itself asks for a direction on every slice.
 export type AgentKind='pongit'|'community'|'strategy';
-export type AgentQualification='registered'|'queued'|'testing'|'paused'|'retry'|'qualified';
+// failed: a strategy that used its retries; only its creator registering it again, after the
+// cool-down, queues it once more (relayer/src/agents/strategies.ts, strategyRequeue).
+export type AgentQualification='registered'|'queued'|'testing'|'paused'|'retry'|'failed'|'qualified';
 export type AgentMatchRef={chainId:10143;app:Address;epoch:string;id:string};
 export type AgentProfile={agent:Address;creator:Address;name:string;avatar:number;kind:AgentKind;modes:AgentMode[];
  qualification:Partial<Record<AgentMode,AgentQualification>>;available:boolean;playing?:AgentMatchRef;createdAt:string};
@@ -38,6 +40,10 @@ export const pongStrategyAbi=parseAbi([
 ]);
 // Gas the arcade gives one decide() call (AgentSteer.STRATEGY_GAS).
 export const STRATEGY_GAS=50_000n;
+// Gas the arcade gives creator() when it registers a strategy (AgentIdentity.creatorOf).
+export const CREATOR_GAS=30_000n;
+// AgentIdentity.register refuses an expiry more than this many seconds after its block.
+export const REGISTRATION_WINDOW=600n;
 const PICO=1_000_000_000_000n,MICRO=1_000_000n;
 // Positions a strategy must answer before it is registered: both sides, both modes, one and
 // two balls, and the gap between points when no ball is live. Units are the arcade's own.

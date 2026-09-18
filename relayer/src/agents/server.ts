@@ -6,18 +6,19 @@ import {Pool} from 'pg';
 import {recoverTypedDataAddress,type Address,type Hex} from 'viem';
 import {z} from 'zod';
 import {agentArcadeAbi as abi} from '../../../shared/abi-PongAgentArcade';
-import {agentMetadata,agentRegistrationTypes,validateAgentManifest,type AgentManifest,type AgentProfile} from '../../../shared/agents';
+import {agentRegistrationTypes,validateAgentManifest,type AgentManifest,type AgentProfile} from '../../../shared/agents';
 import {initializeAgents} from './schema';
 import {createAgentCoordinator} from './coordinator';
 import {createAgentAuth} from './auth';
 import {agentMetrics} from './metrics';
-import {vetStrategy,engineSeesStrategy} from './strategies';
+import {checkRegistration,engineSeesStrategy,strategyAttempts,strategyRequeue,STRATEGY_RETRIES,vetStrategy} from './strategies';
 
 const address=z.string().regex(/^0x[\da-fA-F]{40}$/).transform(s=>s.toLowerCase() as Address);
 const uuid=z.string().uuid(),proof=z.string().regex(/^0x[\da-fA-F]{130}$/);
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
 const send=(res:ServerResponse,value:unknown,status=200)=>{res.writeHead(status,{'content-type':'application/json','cache-control':'no-store'});res.end(json(value));};
-async function body(req:IncomingMessage){let size=0;const parts:Buffer[]=[];for await(const part of req){size+=part.length;if(size>32768)throw Object.assign(Error('Request too large'),{status:413});parts.push(part);}return JSON.parse(Buffer.concat(parts).toString()||'{}');}
+async function body(req:IncomingMessage){let size=0;const parts:Buffer[]=[];for await(const part of req){size+=part.length;if(size>32768)throw Object.assign(Error('Request too large'),{status:413});parts.push(part);}
+ try{return JSON.parse(Buffer.concat(parts).toString()||'{}');}catch{throw Object.assign(Error('The request body is not JSON'),{status:400,code:'AGENT_REQUEST_INVALID'});}}
 // realtimeAgents: whether a creator may register a hosted real-time agent. Each one sends its own
 // inputs and ticks, measured at about 115 hub batches a minute while it plays, against 6 for the
 // whole house league; an epoch holds about 1,400 before its stake can no longer be released.
@@ -98,34 +99,55 @@ export async function startAgentService(options:{db:Pool;manifest:AgentManifest;
     rate(`register:${ip}`,6);
     // No agentProof: an on-chain strategy. A contract cannot sign, so it vouches for itself by
     // naming its creator, whose signature is the only one required.
-    const r=z.object({creator:address,agent:address,name:z.string(),avatar:z.number().int(),modes:z.number().int().min(1).max(3),expires:z.coerce.bigint(),creatorProof:proof,agentProof:proof.optional()}).parse(await body(req));
+    const r=z.object({creator:address,agent:address,name:z.string(),avatar:z.number().int(),modes:z.number().int().min(1).max(3),expires:z.coerce.bigint().min(0n).max((1n<<64n)-1n),
+     creatorProof:proof.transform(s=>s as Hex),agentProof:proof.transform(s=>s as Hex).optional()}).parse(await body(req));
     const strategy=r.agentProof===undefined;
     if(!strategy&&!realtimeAgents&&!house.has(r.agent))throw Object.assign(Error('Hosted real-time agents are closed here. Publish an on-chain strategy instead'),{status:403,code:'AGENT_REALTIME_CLOSED'});
-    const metadata=agentMetadata(r.name,r.avatar),registration={creator:r.creator,agent:r.agent,modes:r.modes,metadata,expires:r.expires};
-    if(r.expires<=BigInt(Math.floor(Date.now()/1000)))throw Object.assign(Error('This registration has expired; sign a fresh one'),{status:400,code:'AGENT_REGISTRATION_EXPIRED'});
+    // Everything the contract would refuse that the request itself shows, as a 400, before any
+    // read or write: the engine's rehearsal is then left with only what the chain knows.
+    const metadata=checkRegistration(r,BigInt(Math.floor(Date.now()/1000)),house.has(r.agent)),registration={creator:r.creator,agent:r.agent,modes:r.modes,metadata,expires:r.expires};
     const domain={name:'PONGIT Agent Arcade',version:'1',chainId:10143,verifyingContract:m.app};
-    const [creator,agent]=await Promise.all([r.creatorProof,r.agentProof].map(signature=>signature?recoverTypedDataAddress({domain,types:agentRegistrationTypes,primaryType:'AgentRegistration',message:registration,signature:signature as Hex}):undefined));
-    if(creator?.toLowerCase()!==r.creator||r.agent===r.creator||!strategy&&agent?.toLowerCase()!==r.agent)throw Object.assign(Error(strategy?'The creator must sign the strategy registration':'Both owners must sign the agent registration'),{status:403,code:'AGENT_REGISTRATION_SIGNATURE'});
+    const [creator,agent]=await Promise.all([r.creatorProof,r.agentProof].map(signature=>signature?recoverTypedDataAddress({domain,types:agentRegistrationTypes,primaryType:'AgentRegistration',message:registration,signature}):undefined));
+    if(creator?.toLowerCase()!==r.creator||!strategy&&agent?.toLowerCase()!==r.agent)throw Object.assign(Error(strategy?'The creator must sign the strategy registration':'Both owners must sign the agent registration'),{status:403,code:'AGENT_REGISTRATION_SIGNATURE'});
     if(strategy&&house.has(r.agent))throw Object.assign(Error('A house bot is not a strategy'),{status:403,code:'AGENT_REGISTRATION_SIGNATURE'});
     const current=await coordinator.client.read('agentIdentity',[r.agent]) as readonly [Address,number,number,Hex];
     const fresh=BigInt(current[0])===0n,agentProof=r.agentProof??'0x';
     if(fresh){
      if(strategy){
       await vetStrategy(coordinator.base,r.agent,r.creator);
-      await engineSeesStrategy(()=>coordinator.client.node.simulateContract({address:m.app,abi,functionName:'registerAgent',args:[registration,r.creatorProof as Hex,agentProof as Hex],account:m.coordinator}),
-       BigInt((await coordinator.client.status()).baseBlock));
+      await engineSeesStrategy(()=>coordinator.client.node.simulateContract({address:m.app,abi,functionName:'registerAgent',args:[registration,r.creatorProof,agentProof],account:m.coordinator}),
+       {baseBlock:BigInt((await coordinator.client.status()).baseBlock),expires:r.expires,clock:async()=>(await coordinator.client.node.getBlock()).timestamp});
      }
-     await coordinator.writer.send(`register:${r.agent}:${r.expires}`,'registerAgent',[registration,r.creatorProof,agentProof]);
+     // A refusal the engine confirmed is final for this signature: its operation is spent, a fresh one's is not.
+     await coordinator.writer.send(`register:${r.agent}:${r.expires}`,'registerAgent',[registration,r.creatorProof,agentProof]).catch(e=>{
+      if((e as {code?:string}).code==='AGENT_ACTION_REVERTED')throw Object.assign(Error('The arcade refused this registration; sign a fresh one'),{status:409,code:'AGENT_REGISTRATION_REFUSED'});throw e;});
     }
-    else if(current[0].toLowerCase()!==r.creator||current[1]!==r.modes||current[3]!==metadata)throw Object.assign(Error('This agent identity is already registered'),{status:409,code:'AGENT_ALREADY_REGISTERED'});
+    else{
+     if(current[0].toLowerCase()!==r.creator||current[1]!==r.modes||current[3]!==metadata)throw Object.assign(Error('This agent identity is already registered'),{status:409,code:'AGENT_ALREADY_REGISTERED'});
+     // Anyone can register on the engine directly, and agentIdentity does not say whether it
+     // filed a strategy or a key. Only a vetted contract naming its creator is filed as a
+     // strategy here: a key has no code, and one delegating to code (EIP-7702) is refused by name.
+     if(strategy)await vetStrategy(coordinator.base,r.agent,r.creator);
+    }
     // A strategy has no session to ask for its own qualification, so it is queued at once; its
-    // creator signing the same registration again queues any mode that has to be retried.
-    const modes=[0,1].filter(mode=>r.modes&(1<<mode));
+    // creator signing the same registration again queues any mode that has to be retried, as
+    // often as strategyRequeue allows.
+    const modes=[0,1].filter(mode=>r.modes&(1<<mode)),kind=house.has(r.agent)?'pongit':strategy?'strategy':'community';
     await db.query(`INSERT INTO agent_arcade.identities(app,agent,creator,name,avatar,kind,modes,qualification) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(app,agent) DO NOTHING`,
-     [app,r.agent,r.creator,r.name,r.avatar,house.has(r.agent)?'pongit':strategy?'strategy':'community',r.modes,Object.fromEntries(modes.map(mode=>[mode,strategy?'queued':'registered']))]);
-    if(strategy)for(const mode of modes)await db.query(`UPDATE agent_arcade.identities SET qualification=jsonb_set(qualification,ARRAY[$3],to_jsonb('queued'::text))
-      WHERE app=$1 AND agent=$2 AND kind='strategy' AND qualification->>$3 IN ('registered','retry')`,[app,r.agent,String(mode)]);
+     [app,r.agent,r.creator,r.name,r.avatar,kind,r.modes,Object.fromEntries(modes.map(mode=>[mode,strategy?'queued':'registered']))]);
+    let held:number|undefined;
+    if(strategy)for(const mode of modes){
+     const before=(await db.query("SELECT qualification->>$3 AS state FROM agent_arcade.identities WHERE app=$1 AND agent=$2 AND kind='strategy'",[app,r.agent,String(mode)])).rows[0];
+     if(!before)break;
+     const verdict=strategyRequeue(before.state,await strategyAttempts(db,app,r.agent,mode)),next=verdict.queue?'queued':verdict.retryAt!==undefined?'failed':undefined;
+     // Set only over the state just read, so two registrations at once act on it once.
+     if(next)await db.query(`UPDATE agent_arcade.identities SET qualification=jsonb_set(qualification,ARRAY[$3],to_jsonb($5::text)) WHERE app=$1 AND agent=$2 AND kind='strategy' AND qualification->>$3=$4`,
+      [app,r.agent,String(mode),before.state,next]);
+     if(verdict.retryAt!==undefined)held=Math.min(held??Infinity,verdict.retryAt);
+    }
     const row=(await db.query('SELECT kind,qualification FROM agent_arcade.identities WHERE app=$1 AND agent=$2',[app,r.agent])).rows[0];
+    if(held!==undefined&&!modes.some(mode=>['queued','testing'].includes(row.qualification[mode])))
+     throw Object.assign(Error(`This strategy has used its ${STRATEGY_RETRIES} retries; register it again after ${new Date(held*1000).toISOString()}`),{status:429,code:'AGENT_STRATEGY_COOLDOWN',retryAt:Math.ceil(held*1000)});
     send(res,{agent:r.agent,kind:row.kind,qualification:row.qualification});return;
    }
    const session=await auth.require(req),player=session.player;rate(`account:${player}`,300);
@@ -149,8 +171,9 @@ export async function startAgentService(options:{db:Pool;manifest:AgentManifest;
    if(req.method==='POST'&&path==='/heartbeat'){await db.query('UPDATE agent_arcade.presence SET seen=now() WHERE app=$1 AND player=$2',[app,player]);send(res,{ok:true});return;}
    if(req.method==='POST'&&path==='/qualification'){
     const {mode}=z.object({mode:z.number().int().min(0).max(1)}).parse(await body(req));
+    // A strategy is queued only by its creator's registration, which bounds its retries.
     const updated=await db.query(`UPDATE agent_arcade.identities SET qualification=jsonb_set(qualification,ARRAY[$3],to_jsonb('queued'::text))
-      WHERE app=$1 AND agent=$2 AND (modes & $4)>0 AND COALESCE(qualification->>$3,'')<>'qualified' RETURNING agent`,[app,player,String(mode),1<<mode]);
+      WHERE app=$1 AND agent=$2 AND kind<>'strategy' AND (modes & $4)>0 AND COALESCE(qualification->>$3,'')<>'qualified' RETURNING agent`,[app,player,String(mode),1<<mode]);
     send(res,{mode,status:updated.rowCount?'queued':'unchanged'});return;
    }
    if(req.method==='POST'&&path==='/qualification/checkpoint'){
@@ -190,8 +213,10 @@ export async function startAgentService(options:{db:Pool;manifest:AgentManifest;
     await db.query('DELETE FROM agent_arcade.sessions WHERE token_hash=$1',[session.tokenHash]);await db.query('UPDATE agent_arcade.presence SET available=false WHERE app=$1 AND player=$2',[app,player]);send(res,{ok:true});return;
    }
    send(res,{error:'Agent Arcade route not found'},404);
-  }catch(e){const error=e as any;const status=error instanceof z.ZodError?400:error.status??(String(error.code)==='23505'?409:503);
-   send(res,{error:status===400?'Check the submitted fields':String(error.shortMessage||error.message||'Agent Arcade unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240),code:error.code??'AGENT_SERVICE_UNAVAILABLE',source:'agent_arcade',retryAt:error.retryAt,requestId},status);}
+  }catch(e){const error=e as any,fields=error instanceof z.ZodError;const status=fields?400:error.status??(String(error.code)==='23505'?409:503);
+   // A request that can never succeed must not read as an outage: 503 is for the service alone.
+   send(res,{error:fields?`Check the submitted fields: ${[...new Set(error.issues.map((x:any)=>x.path.join('.')||'request'))].join(', ')}`:String(error.shortMessage||error.message||'Agent Arcade unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240),
+    code:error.code??(status===400?'AGENT_REQUEST_INVALID':status===503?'AGENT_SERVICE_UNAVAILABLE':'AGENT_REQUEST_REFUSED'),source:'agent_arcade',retryAt:error.retryAt,requestId},status);}
  });
  await new Promise<void>(resolve=>server.listen(options.port,options.host??'127.0.0.1',resolve));
  const timer=setInterval(()=>void coordinator.cycle(),500),cleanup=setInterval(()=>{

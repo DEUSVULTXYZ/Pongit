@@ -23,27 +23,36 @@ const m:AgentManifest={version:1,chainId:10143,engineChainId:4242,rulesVersion:7
 let revoked=false,unavailable=false,nonce=0n,phase=2,id=0n;
 // Registrations the mocked engine holds, per agent, and what the mocked engine and Monad say
 // about one on-chain strategy: its creator, and whether this epoch's pinned state contains it.
+// `delegated` is an account that delegates its code to that strategy (EIP-7702): the same answers,
+// behind a delegation designator, from an address that still holds a key.
 const registrations=new Map<string,any>(),written:{name:string;args:any[]}[]=[];
 const strategy='0x5eed5eed5eed5eed5eed5eed5eed5eed5eed5eed',strategyCreator=privateKeyToAccount(generatePrivateKey());let pinnedBeforeStrategy=false;
+const delegated=privateKeyToAccount(generatePrivateKey()),playsLikeStrategy=new Set([strategy,delegated.address.toLowerCase()]);
 const base=createPublicClient({transport:custom({request:async({method,params}:any)=>{
  if(unavailable)throw Error('Simulated RPC outage');
  const to=String(method==='eth_getCode'?params[0]:params?.[0]?.to).toLowerCase();
- if(to===strategy){
-  if(method==='eth_getCode')return '0x6080';
+ if(playsLikeStrategy.has(to)){
+  if(method==='eth_getCode')return to===strategy?'0x6080':`0xef0100${strategy.slice(2)}`;
   // creator() has no arguments; decide() always carries a view. Answer "hold" to every position.
   return params[0].data.length===10?encodeAbiParameters([{type:'address'}],[strategyCreator.address]):encodeAbiParameters([{type:'int8'}],[0]);
  }
+ // Every other address is a key: no code.
+ if(method==='eth_getCode')return '0x';
  return encodeAbiParameters([{type:'uint256'}],[revoked?1n:0n]);
 }})});
 const frame=()=>({id,revision:nonce+1n,phase,a:player.address,b:agent.address,target:agent.address,winner:zeroAddress,head:100n,clock:0n,nonceA:nonce,nonceB:2n,deadline:0n,observedAt:Date.now(),state:{...initial(zeroHash),t:nonce*1000000n}});
 const replays=new AgentReplays(db),coordinator:any={base,feed:{read:async()=>frame()},
  client:{read:async(_name:string,[agent]:[string])=>{const r=registrations.get(agent.toLowerCase());return r?[r.creator,r.modes,0,r.metadata]:[zeroAddress,0,0,zeroHash];},
   status:async()=>({baseBlock:63602747}),
-  node:{simulateContract:async()=>{if(pinnedBeforeStrategy)throw new ContractFunctionRevertedError({abi:abi as any,functionName:'registerAgent',data:encodeErrorResult({abi:abi as any,errorName:'InvalidRegistration'})});}}},
+  node:{getBlock:async()=>({timestamp:BigInt(Math.floor(Date.now()/1000))}),simulateContract:async()=>{if(pinnedBeforeStrategy)throw new ContractFunctionRevertedError({abi:abi as any,functionName:'registerAgent',data:encodeErrorResult({abi:abi as any,errorName:'InvalidRegistration'})});}}},
  writer:{send:async(_op:string,name:string,args:any[])=>{assert.equal(name,'registerAgent');written.push({name,args});registrations.set(String(args[0].agent).toLowerCase(),args[0]);}},replays,health:()=>({stage:'online'}),cycle:async()=>{},stop:async()=>{}};
-const auth=createAgentAuth(db,base,m,abi),service=await startAgentService({db,manifest:m,key,rpcUrl:'http://unused.invalid',port:0,origin:'https://pongit.xyz',dependencies:{coordinator,auth}});
+const auth=createAgentAuth(db,base,m,abi),service=await startAgentService({db,manifest:m,key,rpcUrl:'http://unused.invalid',port:0,origin:'https://pongit.xyz',trustProxy:true,dependencies:{coordinator,auth}});
 const url=`http://127.0.0.1:${(service.server.address() as any).port}`;let token='';
 const api=async(path:string,body?:unknown,override?:string)=>{const r=await fetch(url+path,{method:body===undefined?'GET':'POST',headers:{'content-type':'application/json',authorization:`Bearer ${override??token}`},body:body===undefined?undefined:JSON.stringify(body,(_,x)=>typeof x==='bigint'?String(x):x)});return {status:r.status,value:await r.json()};};
+// Registration is limited to six a minute per address; the checks that go past it each arrive
+// from an address of their own (TEST-NET-2, through the proxy header this service trusts).
+let visitor=0;const from=()=>({'x-real-ip':`198.51.100.${++visitor}`});
+const submit=async(body:unknown)=>{const r=await fetch(url+'/register',{method:'POST',headers:{'content-type':'application/json',...from()},body:JSON.stringify(body,(_,x)=>typeof x==='bigint'?String(x):x)});return {status:r.status,value:await r.json()};};
 const grant={granter:player.address,sessionKey:sessionKey.address,expiry:BigInt(Math.floor(Date.now()/1000)+7100),epoch:0n,anyFunction:false,
  selectors:abi.filter(x=>x.type==='function'&&(agentActions as readonly string[]).includes(x.name)).map(x=>toFunctionSelector(x as any))};
 async function login(){const challenge=(await api('/auth/challenge',{player:player.address})).value;
@@ -79,6 +88,63 @@ try{
   await db.query(`UPDATE agent_arcade.identities SET qualification='{"0":"retry","1":"qualified"}' WHERE app=$1 AND agent=$2`,[m.app.toLowerCase(),strategy]);
   const again=await api('/register',await signed({...sr,expires:expires+2n}));assert.equal(again.status,200);assert.deepEqual(again.value.qualification,{0:'queued',1:'qualified'});
   assert.equal(written.length,2);checks.push('only the creator signs a strategy, and signing again requeues only a mode to retry');
+  // A request that can never succeed is a 400 with its reason, never a 503, and reads and writes
+  // nothing. An over-long expiry is named as such, even when the epoch could not see the contract.
+  const before=written.length,now=BigInt(Math.floor(Date.now()/1000));pinnedBeforeStrategy=true;
+  for(const [label,request,code] of [
+   ['a one-letter name',{...await signed({...sr,metadata:agentMetadata('Tracker',4)}),name:'X'},'AGENT_NAME_INVALID'],
+   ['avatar 12',{...await signed(sr),avatar:12},'AGENT_NAME_INVALID'],
+   ['an expiry an hour ahead',await signed({...sr,expires:now+3600n}),'AGENT_REGISTRATION_WINDOW'],
+   ['an expiry past uint64',{...await signed(sr),expires:String(1n<<64n)},'AGENT_REQUEST_INVALID'],
+   ['no creator proof',{...await signed(sr),creatorProof:undefined},'AGENT_REQUEST_INVALID'],
+  ] as const){const refused=await submit(request);assert.equal(refused.status,400,label);assert.equal(refused.value.code,code,label);}
+  const garbled=await fetch(url+'/register',{method:'POST',headers:{'content-type':'application/json',...from()},body:'{not json'});
+  assert.equal(garbled.status,400);assert.equal((await garbled.json()).code,'AGENT_REQUEST_INVALID');
+  pinnedBeforeStrategy=false;assert.equal(written.length,before);
+  checks.push('permanent input errors are a 400 with a code, and an over-long expiry is never blamed on the epoch');
+  // A house bot's name and avatar would have the arcade steer the seat with the house policy.
+  for(const bot of [{name:'ONYX',avatar:8},{name:'NOVA',avatar:0}]){
+   const message={...sr,agent:privateKeyToAccount(generatePrivateKey()).address.toLowerCase() as Address,metadata:agentMetadata(bot.name,bot.avatar)};
+   const reserved=await submit({...message,...bot,creatorProof:await strategyCreator.signTypedData({...typed,message})});
+   assert.equal(reserved.status,400);assert.equal(reserved.value.code,'AGENT_NAME_RESERVED');
+  }
+  assert.equal(written.length,before);checks.push('a house bot name and avatar are refused to anyone else');
+ }
+ {
+  // Anyone can register straight on the engine. A strategy-shaped request for such an identity is
+  // vetted like a fresh one, so a key agent cannot be filed as a strategy and skip the real-time
+  // gate; a key-shaped one for it is filed as the key it is.
+  const direct=privateKeyToAccount(generatePrivateKey()),message={creator:strategyCreator.address,agent:direct.address,modes:3,metadata:agentMetadata('Direct Key',1),expires:BigInt(Math.floor(Date.now()/1000)+300)};
+  registrations.set(direct.address.toLowerCase(),message);const before=written.length;
+  const creatorProof=await strategyCreator.signTypedData({...typed,message});
+  const posed=await submit({...message,name:'Direct Key',avatar:1,creatorProof});
+  assert.equal(posed.status,409);assert.equal(posed.value.code,'AGENT_STRATEGY_INVALID');assert.match(posed.value.error,/No contract/);
+  assert.equal((await db.query('SELECT count(*) FROM agent_arcade.identities WHERE app=$1 AND agent=$2',[m.app.toLowerCase(),direct.address.toLowerCase()])).rows[0].count,'0');
+  const keyed=await submit({...message,name:'Direct Key',avatar:1,creatorProof,agentProof:await direct.signTypedData({...typed,message})});
+  assert.equal(keyed.status,200);assert.equal(keyed.value.kind,'community');assert.deepEqual(keyed.value.qualification,{0:'registered',1:'registered'});
+  // An account delegating to a strategy's code answers like one, but holds a key.
+  const through={...message,agent:delegated.address,metadata:agentMetadata('Borrowed',2)};registrations.set(delegated.address.toLowerCase(),through);
+  const borrowed=await submit({...through,name:'Borrowed',avatar:2,creatorProof:await strategyCreator.signTypedData({...typed,message:through})});
+  assert.equal(borrowed.status,409);assert.match(borrowed.value.error,/EIP-7702/);
+  assert.equal(written.length,before);checks.push('an identity registered on the engine directly is filed as a strategy only once vetted as one');
+ }
+ {
+  // A strategy that keeps failing gets its first qualification match and three retries in any
+  // cool-down; after that its creator is told when it may try again, and it is not queued.
+  const sr={creator:strategyCreator.address,agent:strategy as Address,modes:3,metadata:agentMetadata('Tracker',4)};
+  const again=async()=>{const message={...sr,expires:BigInt(Math.floor(Date.now()/1000)+300)};
+   return submit({...message,name:'Tracker',avatar:4,creatorProof:await strategyCreator.signTypedData({...typed,message})});};
+  const opponent=privateKeyToAccount(generatePrivateKey()).address.toLowerCase(),played:string[]=[];
+  for(let n=0;n<4;n++)played.push((await db.query(`INSERT INTO agent_arcade.matches(app,epoch,kind,mode,a,b,ranked,status,result) VALUES($1,1,'qualification',0,$2,$3,false,'complete','{"phase":3}') RETURNING id`,
+   [m.app.toLowerCase(),strategy,opponent])).rows[0].id);
+  await db.query(`UPDATE agent_arcade.identities SET qualification='{"0":"retry","1":"qualified"}' WHERE app=$1 AND agent=$2`,[m.app.toLowerCase(),strategy]);
+  const held=await again();assert.equal(held.status,429);assert.equal(held.value.code,'AGENT_STRATEGY_COOLDOWN');
+  assert(held.value.retryAt>Date.now()+23*3600_000&&held.value.retryAt<=Date.now()+24*3600_000+1000);
+  assert.equal((await db.query('SELECT qualification FROM agent_arcade.identities WHERE app=$1 AND agent=$2',[m.app.toLowerCase(),strategy])).rows[0].qualification[0],'failed');
+  // Once the oldest attempt has aged out of the cool-down, its creator may queue it again.
+  await db.query("UPDATE agent_arcade.matches SET created_at=now()-interval '25 hours' WHERE id=$1",[played[0]]);
+  const retried=await again();assert.equal(retried.status,200);assert.deepEqual(retried.value.qualification,{0:'queued',1:'qualified'});
+  checks.push('a failing strategy is held after three retries until the cool-down lets it try again');
  }
  {
   // A service with hosted real-time agents closed, as a public arcade is by default: it says so
