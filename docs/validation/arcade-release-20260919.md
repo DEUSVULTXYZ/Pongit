@@ -88,3 +88,15 @@ Chrome and Edge each passed **20 captured-build checks**, at 360, 390, 768 and 1
 
 Public human admissions, Agent Arcade and tournaments remain closed. Remaining gates include human challenge/session/sponsor integration, the human participation lock, indexer/replay integration, rules-9 financial validation, complete hosted tournaments, maximum-duration release, actual independent capacity, and a new unchanged 24-hour trial. No new trial has started.
 
+## Signed sponsorship and family reuse
+
+The candidate adds canonical zero-value sponsor routes and tab-local exact-intent recovery, sharing the existing operator journal rather than introducing another nonce owner. The new family helper retains its limited key across F5 and arena rotation. Only confirmed expiry, revocation or replacement requires fresh explicit owner consent; temporary RPC failure never discards the key. Root passkey material is not persisted.
+
+The full TypeScript run now passes **412 tests**, including 9 new sponsor/family tests. A subsequent targeted 11-test run covers lost replies, corrupt replies, 429, simultaneous clicks, foreign targets, administrative/financial rejection, grant expiry and another-device replacement. The TypeScript check and SDK bundle/declarations pass. A separate read-only temporary VPS container passed the HTTP envelope cases: body limits, signature envelope, closed-gate recovery, idempotency and error redaction. Its contract/writer responses are synthetic and it mounted no operator secrets or production database.
+
+This is not a completed human challenge path: the Mera UI, compact arena controls, global human participation, owner-signed active-arena renewal and real cross-arena session reuse still require integration and validation. Community availability currently has no relayed setter in the immutable candidate catalogue; it requires the creator's direct transaction. No sponsor process or new admission flag was activated on production.
+
+The SDK package was rebuilt with these exports and clean-installed again in an isolated VPS container. Its new archive SHA-1 is `088899a84379d936e2bec8003308daa5cbace23a`; the earlier hash above identifies the earlier candidate, not this artifact.
+
+The complete production backup at **20260919T175836Z** was copied off the VPS. The older production script hashes only database dumps, so an additional read-only inventory verified **all 67 files**, including configuration and key files, against the off-VPS copy. The full manifest is retained privately beside it. At **18:13:39 UTC**, the operator still held **0.097424572 MON**, with no receipt for the preserved nonce-1566 deployment transaction. The funding request remains outstanding; this is a deployment prerequisite in addition to the integration and real-qualification gates above.
+

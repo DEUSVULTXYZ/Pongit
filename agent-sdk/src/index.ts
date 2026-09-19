@@ -6,3 +6,5 @@ export type {EngineState} from '../../shared/engine-stream';
 export {preparePoolRegistration,preparePoolChallenge,poolRegistrationTypes,poolChallengeTypes,type PreparedPoolCall} from '../../shared/agent-pool-client';
 export {validateAgentPoolManifest,pooledHouseBots,scheduledTournament,type AgentPoolManifest,type TournamentView} from '../../shared/agent-pool';
 export {createPoolObserver} from '../../shared/agent-pool-observer';
+export {createPoolSponsor,poolOperationId,PoolSponsorPending,type PoolSignedCall,type PoolSessionStorage} from '../../shared/agent-pool-sponsor';
+export {preparePoolFamily,observePoolFamily,loadPoolFamily,type PoolFamilySession} from '../../shared/agent-pool-family';

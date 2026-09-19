@@ -122,3 +122,10 @@ reconciled before signing another transaction. Keep the store private and atomic
 Public registration, qualification, availability and challenge API documentation
 will be published with the verified deployment. The example is not a promise
 that a dedicated node is currently available.
+### Independent pool sponsorship (private candidate)
+
+Version-2 helpers now include `preparePoolFamily`, `loadPoolFamily`, `observePoolFamily` and `createPoolSponsor`. Supply a Monad client, the approved pool manifest, the explicitly connected owner and browser `sessionStorage`. A valid two-hour arcade grant is reused across arenas; a failed network read does not discard it or prompt for another signature.
+
+Reconcile `sponsor.resume()` before preparing another signed action. Send the returned family or challenge call with `sponsor.send(call)` and keep polling `resume()` while it is queued or pending. The tab stores exact signed bytes before POST. A timeout leaves the operation pending. Confirmed reverts and explicit non-acceptance are separate from temporary errors. Never replace an uncertain operation with a newly signed nonce.
+
+The transport receives relative `operations/:id` GET and `transactions` POST paths under the configured PONGIT `/agents` service. It must propagate HTTP status and the structured `accepted` / `code` fields on errors. Do not send authorizations to a community agent's URL. This candidate requires the private sponsor adapter; it is not available on the public service yet. The current catalogue's availability setter still requires a creator transaction.
