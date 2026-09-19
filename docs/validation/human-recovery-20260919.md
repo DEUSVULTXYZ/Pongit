@@ -47,7 +47,15 @@ The isolated application `0x75de1559bedad84755199295a305dd0b8309bf02` uses `http
 - New finance contracts are isolated: adapter `0xd4018f4fb4fba337d0a12a356432e244187a9707`, market `0xc4c5c39c97cd7db4a39838050c8af77308bc0641`, vault `0xc6d1d5d9811b10ad7e34268d38da4cdb7ebb0182`.
 - Post-close production backup `20260919T123820Z`: all 86 files checksum-verified off VPS.
 
-Browser, lifecycle renewal, full indexer integration and the batch-reserve gate remain open. Human admissions stay closed. Private evidence: `artifacts/recovery-20260919/hosted-two-chaos.json`, `hosted-two-chaos-attempt-1.json`, `live-classic-chaos-finance.json` and `physics-differential-3a611a9.json`. Raw sessions and commands remain outside Git.
+Real browser qualification now passes on Chrome 153.0.8010.52 and Edge 153.0.4234.48:
+
+- Chrome: Classic 7:6 and Chaos 7:6. Edge: Classic 5:7 and Chaos 6:7. Both used two players and a spectator, desktop/mobile, F5 in each match, matching published results and no JavaScript exception.
+- Mera registration through virtual WebAuthn PRF authenticators passed on Chrome. Classic ended 7:4 and Chaos 7:2 after a deliberately lost response **following real execution**, and a 429 **before execution**, in each mode. Recovery and F5 caused no additional passkey assertion. This does not replace physical-device validation.
+- The private indexer build/codegen/typecheck passes under Linux/Node 24. It reached live indexing and stored the browser match archives with rulesVersion 8. Replay UI after closure remains to be checked.
+- The creation calldata of all twelve candidate modules/root/linked-library deployments exactly matches the compiled candidate and its journal, including linked addresses and constructor arguments. Runtime hashes are recorded in `candidate-bytecode.json`.
+- A guarded rehearsal using the real `roomsLifecycle` is running privately. It reached 654 batches, drained, closed at 13:20:03 UTC and entered the real challenge window ending **14:20:03 UTC**. It may release and renew only this fixture; it refuses foreign pending operator jobs and foreign transaction targets. Successful renewal still requires a new epoch-2 match and publication.
+
+Lifecycle renewal, replay UI after closure and the batch-reserve gate remain open. Human admissions stay closed. Private evidence: `artifacts/recovery-20260919/hosted-two-chaos.json`, `hosted-two-chaos-attempt-1.json`, `live-classic-chaos-finance.json` and `physics-differential-3a611a9.json`. Raw sessions and commands remain outside Git.
 
 ## Exact candidates and review
 
