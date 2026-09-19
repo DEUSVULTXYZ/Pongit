@@ -71,6 +71,7 @@ function makeWorld(){
     if(sql.startsWith("SELECT epoch FROM il_lifecycle"))return {rows:[{epoch:w.epoch}]};
     if(sql.startsWith("SELECT changed_at FROM il_lifecycle"))return {rows:[{changed_at:w.changedAt}]};
     if(sql.startsWith("SELECT 1 FROM il_engine_jobs"))return {rows:[],rowCount:w.engineJobPending?1:0};
+    if(sql.startsWith("UPDATE il_engine_jobs SET status='obsolete'"))return {rows:[],rowCount:0};
     if(sql.startsWith("SELECT * FROM il_lifecycle_jobs WHERE id=$1"))return {rows:w.jobs.has(args[0])?[{...w.jobs.get(args[0])}]:[]};
     if(sql.startsWith("SELECT * FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending'"))
       return {rows:[...w.jobs.values()].filter(j=>j.owner===args[0]&&j.status==="pending").sort((a,b)=>a.nonce-b.nonce).map(j=>({...j}))};
@@ -103,6 +104,7 @@ function makeWorld(){
     db:db as any,base:base as any,app,hub,adapter,nodeUrl:"https://node.test",
     engineStatus:async()=>({app,chainId:4242,epoch:w.nodeEpoch,committedBatches:w.delegation.batchIndex,pendingDiffs:Array(w.pendingDiffs).fill("0x")}),
     engineActive:async()=>w.live,
+    publishedResult:{finalStatus:async()=>0,published:async()=>{throw Error('Unexpected result read in lifecycle fixture');}},
     beforeClose:async e=>{w.closes.push(e);w.onClose?.();},
   });
   return {state:w,start};
@@ -113,11 +115,39 @@ async function started(){
   return lifecycle;
 }
 beforeEach(()=>{
-  world=makeWorld();rpcCalls.length=0;delete process.env.ROOMS_LIFECYCLE_MAX_BATCHES;
+  world=makeWorld();rpcCalls.length=0;delete process.env.ROOMS_LIFECYCLE_MAX_BATCHES;delete process.env.ROOMS_LIFECYCLE_HOLD_WRITES;
   mock.method(console,"info",(line:string)=>world.state.events.push(JSON.parse(line)));
   mock.method(console,"warn",()=>{});
 });
 afterEach(()=>mock.restoreAll());
+
+test('supervised recovery holds closure, release, finalization and renewal while still observing the hub',async()=>{
+ process.env.ROOMS_LIFECYCLE_HOLD_WRITES='true';
+ const w=world.state;w.stage='draining';w.delegation.batchIndex=700n;
+ const lifecycle=await started();
+ try{
+  for(const status of [1,2,0,3]){
+   w.delegation.status=status;await lifecycle.cycle();
+   assert.equal(lifecycle.available(),false);assert.equal(lifecycle.status().operatorHold,true);
+   assert.equal(lifecycle.status().epoch,'6');assert.match(lifecycle.status().error,/Operator approval required/);
+   assert.equal(w.closes.length,0);assert.equal(w.sent.length,0);assert.equal(w.jobs.size,0);
+  }
+ }finally{lifecycle.stop();}
+});
+
+test('supervised recovery preserves an uncertain operator transaction without rebroadcast or nonce replacement',async()=>{
+ process.env.ROOMS_LIFECYCLE_HOLD_WRITES='true';
+ const w=world.state;
+ w.jobs.set('already-signed',{id:'already-signed',app,owner:operator.address.toLowerCase(),nonce:1258,raw:'0x02',hash:zeroHash,status:'pending'});
+ const lifecycle=await started();
+ try{
+  assert.equal(w.sent.length,0);assert.equal(w.jobs.size,1);assert.equal(w.jobs.get('already-signed')!.status,'pending');
+  assert.match(lifecycle.status().error,/without rebroadcast/);
+  assert.equal(lifecycle.status().epoch,'6','the uncertain receipt does not hide hub observations');
+  w.receipts.set(zeroHash,'success');await lifecycle.cycle();
+  assert.equal(w.jobs.get('already-signed')!.status,'confirmed');assert.equal(w.sent.length,0);
+ }finally{lifecycle.stop();}
+});
 
 test("below the threshold a far-from-expiry epoch keeps serving",async()=>{
   const w=world.state;w.delegation.batchIndex=599n;

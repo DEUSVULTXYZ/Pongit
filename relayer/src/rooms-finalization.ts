@@ -3,6 +3,7 @@ import {roomsEventsAbi} from '../../shared/abi-PongChaosEvents';
 import {roomsRealtimeAbi} from '../../shared/abi-PongRoomsRealtime';
 import {roomsChaosAbi} from '../../shared/abi-PongRoomsTestnet';
 import type {RoomsFinanceManifest} from './rooms-finance-config';
+import {isChaosEventsRules} from '../../shared/chaos-rules';
 
 /** What the market adapter's finalizeResult(id) checks, read from Monad.
  *
@@ -134,13 +135,13 @@ const gameReads=parseAbi([
 ]);
 /** The game ABI whose getSnapshot this finance deployment's adapter decodes. */
 export function financeGameAbi(m:Pick<RoomsFinanceManifest,'rulesVersion'|'betting'>):Abi{
- return m.rulesVersion===6?roomsEventsAbi:m.betting==='realtime'?roomsRealtimeAbi:roomsChaosAbi;
+ return isChaosEventsRules(m.rulesVersion)?roomsEventsAbi:m.betting==='realtime'?roomsRealtimeAbi:roomsChaosAbi;
 }
 /** Monad reads for nextFinalization, at the latest block. */
 export function publishedResultReader(base:PublicClient,m:Pick<RoomsFinanceManifest,'app'|'adapter'|'rulesVersion'|'betting'|'settlement'>){
  // ChaosEventsSettlement (rules 6) and RoomsRealtimeSettlement (rules 5) both
  // check the game's finishedAt; both are realtime betting.
- const timed=m.rulesVersion===6||m.betting==='realtime',early=m.settlement==='early-published-testnet',gameAbi=financeGameAbi(m);
+ const timed=isChaosEventsRules(m.rulesVersion)||m.betting==='realtime',early=m.settlement==='early-published-testnet',gameAbi=financeGameAbi(m);
  return {
   finalStatus:async(id:string)=>Number((await base.readContract({address:m.adapter,abi:adapterReads,functionName:'finalResults',args:[BigInt(id)]}))[3]),
   published:async(id:string):Promise<PublishedResult>=>{

@@ -126,6 +126,7 @@ test('the reader asks Monad exactly what the rules-6 adapter checks, at the late
   return encodeFunctionResult({abi:reads,functionName:'matchEpoch',result:6n});
  }})});
  assert.equal(financeGameAbi(m),roomsEventsAbi);
+ assert.equal(financeGameAbi({...m,rulesVersion:8}),roomsEventsAbi,'corrected rules 8 uses the same events ABI');
  const r=publishedResultReader(base as any,m);
  assert.equal(await r.finalStatus(stuck),0);
  const view=await r.published(stuck);

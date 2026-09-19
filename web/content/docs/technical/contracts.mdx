@@ -2,7 +2,7 @@
 
 ## Rooms deployment
 
-The homepage uses the immutable rules-6 multi-room application on Monad Testnet 10143, with separate Classic and Chaos ratings inherited from the published preceding deployment. Classic keeps its physics. Chaos adds 24 verified random events, with two simultaneous effects at most. New Chaos markets use continuous betting and the `events-v1` settlement adapter, including late-bet refunds.
+The active manifest identifies the immutable multi-room application on Monad Testnet 10143, with separate Classic and Chaos ratings inherited from the published preceding deployment. Classic keeps its physics. Chaos adds 24 verified random events, with two simultaneous effects at most. Rules-6 markets use continuous betting and the `events-v1` settlement adapter, including late-bet refunds. The rules-8 candidate requires a new game, adapter, sealed vault and market; existing addresses retain their withdrawals. Human admissions remain closed during recovery and qualification. Rules 8 is not live until its new manifest and qualification are published.
 
 The [rooms manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/interlude-rooms.json) identifies the current engine. Its [deployment evidence](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/chaos-events.json) lists the stateless modules and deployment transactions. Original markets and their immutable financial bindings remain in the [financial manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/rooms-finance.json). The tables below list the preserved V1 to V4 contracts.
 

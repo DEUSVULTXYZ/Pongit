@@ -223,6 +223,11 @@ export async function roomsLifecycle(o: {
           .getTransactionReceipt({ hash: pending.hash })
           .catch(() => null);
         if (!r) {
+          if(process.env.ROOMS_LIFECYCLE_HOLD_WRITES==='true'){
+            const observed=await readHubDelegation(o.base,o.hub,o.app);
+            sessionInfo={epoch:String(observed.epoch),expiresAt:Number(observed.expiresAt)*1000,releaseAt:Number(observed.stakeUnlockAt)*1000,batch:String(observed.batchIndex),batchLimit:String(maxBatches),closing:''};
+            healthy=false;error='Operator approval required: pending lifecycle transaction preserved without rebroadcast';return;
+          }
           await o.base.sendRawTransaction({
             serializedTransaction: pending.raw,
           });
@@ -258,6 +263,9 @@ export async function roomsLifecycle(o: {
       }
       healthy = false;
       error = "";
+      if(process.env.ROOMS_LIFECYCLE_HOLD_WRITES==='true'){
+        error='Operator approval required: lifecycle writes and hosted renewal are held; observation remains active';return;
+      }
       if (d.status === 3) {
         error = "Delegation challenged; automatic renewal is suspended";
         return;
@@ -426,8 +434,8 @@ export async function roomsLifecycle(o: {
   timer.unref();
   void step();
   return {
-    available: () => stage === "playing" && healthy,
-    status: () => ({ stage, error, healthy, ...sessionInfo }),
+    available: () => process.env.ROOMS_LIFECYCLE_HOLD_WRITES!=='true' && stage === "playing" && healthy,
+    status: () => ({ stage, error, healthy, ...sessionInfo,operatorHold:process.env.ROOMS_LIFECYCLE_HOLD_WRITES==='true' }),
     stop: () => clearInterval(timer),
     /** One lifecycle step, or the one already running. */
     cycle: step,

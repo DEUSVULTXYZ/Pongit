@@ -30,7 +30,7 @@ else{process.env.INTERLUDE_COORDINATOR_KEY=rootRecord.keys[4];process.env.ROOMS_
 const run=process.env.PONG_REALTIME_RUN||'1';assert(/^[1-9]$/.test(run));
 const file=`/secrets/${prefix}-live-${run}.json`;try{await readFile(file);throw Error('Reconcile the previous live fixture first');}catch(e){if((e as any).code!=='ENOENT')throw e;}
 const manifests=JSON.parse(await readFile(`artifacts/drand/${production?'production':'integration'}-manifests.json`,'utf8')),m=manifests.game,finance=manifests.finance;
-assert.equal(m.app,rootRecord.app);
+assert.equal(m.app,rootRecord.app);assert([6,8].includes(m.rulesVersion),'Only versioned human Chaos fixtures');
 await writeFile('artifacts/drand/test-finance.json',JSON.stringify([finance]));process.env.ROOMS_FINANCE_MANIFEST='artifacts/drand/test-finance.json';
 const t=await chainTools(prefix+'-live-'+run),config=await loadRoomsFinance(),base=t.base;
 const admission=privateKeyToAccount(process.env.INTERLUDE_COORDINATOR_KEY as Hex);assert.equal(admission.address.toLowerCase(),m.coordinator.toLowerCase());
@@ -78,7 +78,7 @@ try{
  for(const mode of [0,1]){
   const id=BigInt('202609131000')+BigInt(run)*10n+BigInt(mode),pair=players.slice(mode*2,mode*2+2);
   secrets.active={id:String(id),mode};await save();
-  const offer={id,room:toHex(id,{size:32}),a:pair[0].owner.address,b:pair[1].owner.address,mode,ranked:false,expires:BigInt(Math.floor(Date.now()/1000)+25),rules:6n,entropy:keccak256(toHex('events qualification '+id))};
+  const offer={id,room:toHex(id,{size:32}),a:pair[0].owner.address,b:pair[1].owner.address,mode,ranked:false,expires:BigInt(Math.floor(Date.now()/1000)+25),rules:BigInt(m.rulesVersion),entropy:keccak256(toHex('events qualification '+id))};
   const signature=await admission.sign({hash:await observer.read('ticketDigest',[offer]) as Hex});
   for(const p of pair)await p.session.send('acceptMatch',[offer,signature]);
   unwatch.push(feed.watch(id,()=>{}));await feed.read(id,true);
