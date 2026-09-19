@@ -32,6 +32,8 @@ library ChaosGameFlow {
     function store(mapping(bytes32=>uint256) storage w,uint256 id,uint256[8] memory p) private {for(uint256 i;i<8;i++)if(get(w,id,21+i)!=p[i])set(w,id,21+i,p[i]);}
     function publish(mapping(bytes32=>uint256) storage w,uint256 id) external {
         uint256 times=get(w,id,2);require(uint64(times>>128)<type(uint64).max,"revision overflow");times+=uint256(1)<<128;set(w,id,2,times);
+        // The leading byte is the packed-state format (ChaosCodec), 6 under rules 6, 7 and 8
+        // alike; clients reject any other. RULES_VERSION tells the rules apart.
         emit Snapshot(id,uint64(times>>128),get(w,id,0)>>161&7,abi.encode(uint8(6),get(w,id,8),packed(w,id)));
     }
     function snapshot(mapping(bytes32=>uint256) storage w,uint256 id) external view returns(bytes memory){
@@ -130,7 +132,7 @@ library ChaosGameFlow {
         }while(complete&&t<target&&gasleft()>ADVANCE_RESERVE);
         complete=complete&&t==target;
     }
-    /// One slice: the rules-6 advance, unchanged.
+    /// One slice: the advance of the first rules-6 release, unchanged.
     function slice(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
         private returns(bool complete,uint8 outcome,uint8 winner)
     {

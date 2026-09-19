@@ -21,11 +21,12 @@ import {RoomsCommandJournal,resendJournaled} from './rooms-command-journal';
 import {EngineHalted} from '../../shared/engine-halt';
 import {readHubDelegation} from '../../shared/rooms-hub';
 import {assertRoomsEngineAvailable} from '../../shared/rooms-availability';
+import {isChaosEventsRules} from '../../shared/chaos-rules';
 export const roomsManifest = manifest;
 export const roomsCompact = (manifest as typeof manifest & {compactControls?:boolean}).compactControls===true;
-const gameAbi:Abi=Number(manifest.rulesVersion)===6?roomsEventsAbi:roomsCompact?roomsCompactAbi:roomsChaosAbi;
-export const roomsChaos = [4,5,6].includes(Number(manifest.rulesVersion));
-export const roomsEvents = Number(manifest.rulesVersion)===6;
+export const roomsEvents = isChaosEventsRules(Number(manifest.rulesVersion));
+const gameAbi:Abi=roomsEvents?roomsEventsAbi:roomsCompact?roomsCompactAbi:roomsChaosAbi;
+export const roomsChaos = [4,5].includes(Number(manifest.rulesVersion))||roomsEvents;
 export const roomsScope = [
   "acceptMatch",
   "input",

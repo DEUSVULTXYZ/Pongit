@@ -11,7 +11,7 @@ import {Types} from "../vendor/interlude/interfaces/Types.sol";
 contract ChaosEventsSettlementTest is RealtimeMarketTest {
     function setUp() public override {
         super.setUp();
-        vm.mockCall(GAME,abi.encodeWithSignature("RULES_VERSION()"),abi.encode(uint256(6)));
+        vm.mockCall(GAME,abi.encodeWithSignature("RULES_VERSION()"),abi.encode(uint256(8)));
         adapter=new ChaosEventsSettlement(PongInterludeRoomsChaos(GAME));vault=new RoomsVault(address(this));
         market=new RealtimeMarket(address(this),payable(address(this)),adapter,new LMSRV2(),vault);
         vault.registerModule(address(market));vault.seal();vault.depositFor{value:1 ether}(vm.addr(BETTOR));
@@ -26,13 +26,16 @@ contract ChaosEventsSettlementTest is RealtimeMarketTest {
         assertEq(vm.addr(BETTOR).balance,.005 ether);
     }
     function testRallyCounterIsNotAScoreSumOrBettingVersion() public {
-        (,uint256 beforeVersion)=adapter.bettingWindow(1,0);assertEq(beforeVersion,(1<<8)|6);
+        (,uint256 beforeVersion)=adapter.bettingWindow(1,0);assertEq(beforeVersion,(1<<8)|8);
         s.scoreA=6;s.scoreB=6;snapshot(2,address(0));
         (bool open,uint256 version)=adapter.bettingWindow(1,0);assertTrue(open);assertEq(version,beforeVersion);
     }
     function testCandidateCannotBindHistoricalGame() public {
-        vm.mockCall(GAME,abi.encodeWithSignature("RULES_VERSION()"),abi.encode(uint256(5)));
-        vm.expectRevert("events rules required");new ChaosEventsSettlement(PongInterludeRoomsChaos(GAME));
+        // Rules 5 (realtime), 6 (the first Chaos events kernel) and 7 (the Agent Arcade).
+        for(uint256 rules=5;rules<=7;rules++){
+            vm.mockCall(GAME,abi.encodeWithSignature("RULES_VERSION()"),abi.encode(rules));
+            vm.expectRevert("events rules required");new ChaosEventsSettlement(PongInterludeRoomsChaos(GAME));
+        }
     }
     function testArchiveReadsResultAndEpochWithoutChangingAnyPayment() public {
         vm.mockCall(GAME,abi.encodeWithSignature("gameEpoch(uint256)",1),abi.encode(uint256(1)));

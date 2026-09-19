@@ -32,6 +32,7 @@ import type { RelayRequest } from "../../shared/protocol";
 import {financeScope,financeAdapterAbi,type RoomsFinanceManifest} from "./rooms-finance-config";
 import {deferredKey,FinalizationMemory,nextFinalization,publishedResultReader} from "./rooms-finalization";
 import {livePressureEpochUsable} from "./rooms-command-epoch";
+import {isChaosEventsRules} from "../../shared/chaos-rules";
 const idSchema = z
   .string()
   .regex(/^[0-9]+$/)
@@ -59,8 +60,8 @@ export async function createRoomsFinance(o: {
   const signer = privateKeyToAccount(key.privateKey);
   if (signer.address.toLowerCase() !== m.pressureSigner.toLowerCase())
     throw new Error("Pressure signer mismatch");
-  if(m.rulesVersion===6&&await base.readContract({address:m.app,abi:roomsEventsAbi,functionName:'RULES_VERSION'})!==6n)
-    throw new Error('Chaos events finance must bind rules 6');
+  if(isChaosEventsRules(m.rulesVersion)&&await base.readContract({address:m.app,abi:roomsEventsAbi,functionName:'RULES_VERSION'})!==BigInt(m.rulesVersion))
+    throw new Error(`Chaos events finance must bind rules ${m.rulesVersion}`);
   const [
     actualSigner,
     resultSource,
@@ -242,7 +243,7 @@ export async function createRoomsFinance(o: {
       [app,id,String(epoch),String(sourceBlock),block.hash,String(paidA),String(paidB),checkpoint]);
     const stored=(await db.query('SELECT checkpoint FROM il_live_pressure WHERE app=$1 AND id=$2 AND epoch=$3 AND source_block=$4',[app,id,String(epoch),String(sourceBlock)])).rows[0];
     if(stored?.checkpoint!==checkpoint)throw new Error('Conflicting confirmed betting source');
-    const events=m.rulesVersion===6;
+    const events=isChaosEventsRules(m.rulesVersion);
     const rally=events?s[13]?.physics.score.rally:s[12].scoreA+s[12].scoreB;
     if(!Number.isSafeInteger(rally)||rally<(events?1:0))throw Error('Verified rally counter unavailable');
     const p={matchId,epoch,seed:s[12].seed as Hex,rally,paidA,paidB,sourceBlock,checkpoint,expires:BigInt(Math.floor(Date.now()/1000)+25)};

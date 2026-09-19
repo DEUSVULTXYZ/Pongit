@@ -145,7 +145,10 @@ function sweep(s:ChaosPhysicsState,planes:ChaosPlanes,hit:ChaosCandidate,log:Cha
    log.push({sequence:s.collisionSequence,rally:s.score.rally,ball:i+1,kind,obstacle:0,at:s.t,x:s.balls[i].x,y:s.balls[i].y});}
  }
 }
-export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget=128,stopAtPoint=false):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]{
+/** The rules-8 kernel by default. `everyContact=false` reproduces the rules-6 kernel deployed on
+ * 13 September 2026 (still linked by the Agent Arcade), which resolved only the tie-break winner
+ * of a microsecond: shared/chaos-rules.ts chooses by an application's RULES_VERSION. */
+export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget=128,stopAtPoint=false,everyContact=true):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]{
  if(target<source.t||!Number.isInteger(budget)||budget<0||budget>512)throw Error('Numeric range');
  const cancel=(reason:number):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]=>{const s=structuredClone(source);s.cancelled=true;s.cancelReason=reason;s.effects=emptyEffects();s.balls=[emptyBall(),emptyBall()];s.activeMask=0;return[s,true,[]];};
  if(target>1800000000n)return cancel(2);
@@ -163,7 +166,7 @@ export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget
     const dt=boundary-s.t;move(s,boundary);
     // Rules 8, as ChaosPhysics: contacts due in the boundary's own microsecond that the
     // ceiling carried strictly past their plane are resolved now; exact landings wait.
-    if(dt===hit.dt){
+    if(everyContact&&dt===hit.dt){
      let goalsMask=0,crossed=false;
      for(let i=0;i<2;i++){const b=s.balls[i];if(b.alive&&goals[i]===dt){goalsMask|=beneficiaries[i];crossed||=b.vx<0n?b.x< -6n*P:b.x>1030n*P;}}
      if(crossed){point(s,goalsMask);if(s.score.finished||stopAtPoint)break;continue;}
@@ -178,7 +181,7 @@ export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget
     point(s,goalsMask);if(s.score.finished||stopAtPoint)break;
    }else{
     if(collideEffect(s,hit)){s.collisionSequence++;if(s.collisionSequence>0xffffffff)throw Error('Numeric range');log.push({sequence:s.collisionSequence,rally:s.score.rally,ball:hit.ball+1,kind:hit.kind,obstacle:hit.obstacle,at:s.t,x:s.balls[hit.ball].x,y:s.balls[hit.ball].y});}
-    if(hit.dt!==0n)sweep(s,planes,hit,log);
+    if(everyContact&&hit.dt!==0n)sweep(s,planes,hit,log);
     if(log.length>=CHAOS_LOG_STOP)break;
    }
   }

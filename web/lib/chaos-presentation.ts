@@ -1,6 +1,8 @@
 import {advanceChaosEvents,type ChaosPhysicsState} from '../../shared/physics-chaos-events';
 import {chaosPaddles,type ModifierEffect} from '../../shared/chaos-modifiers';
 import {chaosEvent,type ChaosEffectState} from '../../shared/chaos-events';
+import {chaosResolvesEveryContact} from '../../shared/chaos-rules';
+import manifest from '../../deployments/interlude-rooms.json';
 import type {ChaosCanvasFrame} from './chaos-canvas';
 export function eventPaddles(s:ChaosPhysicsState){
  const effect=(i:0|1):ModifierEffect=>({...s.effects[i],startsAt:BigInt(s.effects[i].startsAt),expiresAt:BigInt(s.effects[i].expiresAt),consumed:false});
@@ -12,9 +14,9 @@ export function eventHud(s:ChaosPhysicsState):ChaosEffectState[]{return s.effect
 }]:[]);}
 /** The contract mirror predicts positions only. It never displays an unconfirmed
  * point, starts a new rally or chooses an event. Work per frame is bounded. */
-export function projectChaos(source:ChaosPhysicsState,target:bigint){
+export function projectChaos(source:ChaosPhysicsState,target:bigint,everyContact=chaosResolvesEveryContact(Number(manifest.rulesVersion))){
  const limit=source.t+600000n,bounded=target<source.t?source.t:target>limit?limit:target;
- const [state,complete,collisions]=advanceChaosEvents(source,bounded,96,true);
+ const [state,complete,collisions]=advanceChaosEvents(source,bounded,96,true,everyContact);
  const goal=state.score.rally!==source.score.rally||state.score.finished!==source.score.finished;
  if(goal)for(const b of state.balls)b.alive=false;
  return {state,collisions,waiting:!complete||target>limit||goal||state.cancelled&&!source.cancelled};

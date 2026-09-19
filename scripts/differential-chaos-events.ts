@@ -10,8 +10,10 @@ assert.equal(process.env.PONG_CHAOS_PHYSICS_TEST,'isolated-vps');
 // other or with a force tick or an effect boundary: the rules-8 correction.
 const count=Number(process.env.PONG_CHAOS_PHYSICS_CASES??10000);assert(Number.isInteger(count)&&count>=0&&count<=100000);
 const ties=Number(process.env.PONG_CHAOS_TIE_CASES??10000);assert(Number.isInteger(ties)&&ties>=0&&ties<=100000&&count+ties>0);
+// The mirror's rules-6 mode against the kernel deployed on 13 September 2026 (test/legacy copy).
+const legacy=Number(process.env.PONG_CHAOS_LEGACY_CASES??4000);assert(Number.isInteger(legacy)&&legacy>=0&&legacy<=100000);
 const chain=await localChain(),started=Date.now();
-type Case={s:ChaosPhysicsState;target:bigint;budget:number;stop:boolean;family:string;at?:bigint};
+type Case={s:ChaosPhysicsState;target:bigint;budget:number;stop:boolean;family:string;at?:bigint;rules6?:boolean};
 try{
  const artifacts=new Map<string,any>(),addresses=new Map<string,Address>();
  for(const [name,args] of [['ChaosEffects',[]],['ChaosModifiers',[]],['ChaosRally',[]],['ChaosDynamics',['ChaosEffects','ChaosModifiers']],['ChaosContacts',['ChaosDynamics']],['ChaosPhysics',['ChaosEffects','ChaosRally','ChaosDynamics','ChaosContacts']]] as const){
@@ -22,6 +24,9 @@ try{
  const pick=<X>(xs:readonly X[])=>xs[random()%xs.length];
  const budget=()=>[1,2,16,64,128,256,256,256][random()%8];
  const a=artifacts.get('ChaosPhysics'),address=addresses.get('ChaosPhysics')!;
+ const old=JSON.parse(await readFile('contracts/out/ChaosPhysicsRules6.sol/ChaosPhysicsRules6.json','utf8'));
+ const oldAddress=(await chain.publicClient.waitForTransactionReceipt({hash:await chain.wallet.deployContract({abi:old.abi,bytecode:old.bytecode.object,
+  args:['ChaosEffects','ChaosRally','ChaosDynamics','ChaosContacts'].map(x=>addresses.get(x)!)})})).contractAddress!;
  function randomCase():Case{
   let s=initialChaosEvents(toHex(BigInt(random()),{size:32}),72000000+random()%24000001,72000000+random()%24000001);
   const first=random()%24+1,second=random()%24+1;
@@ -120,13 +125,14 @@ try{
   Object.assign(s.balls[1],{x:40n*P+150_000_000n*D-1n-BigInt(random()%1000),y:570n*P-100_000_000n*D+1n+BigInt(random()%1000),vx:-150_000_000n,vy:100_000_000n,powerN:1,powerD:1,curveSteps:0});
   return {s,target:s.t+D+BigInt(random()%50000),budget:pick([16,64,128,256]),stop:random()%2===0,family:'capacity',at:s.t+D};
  }
- const cases=[...Array.from({length:count},randomCase),...Array.from({length:ties},(_,n)=>tieCase(n))];
+ const cases=[...Array.from({length:count},randomCase),...Array.from({length:ties},(_,n)=>tieCase(n)),
+  ...Array.from({length:legacy},(_,n)=>{const c=n%2?tieCase(n>>1):randomCase();return {...c,family:'rules6:'+c.family,rules6:true};})];
  const coverage:Record<string,{cases:number;shared:number;atInstant:number;points:number;cancelled:number}>={};
  for(let batch=0;batch<cases.length;batch+=10){
   const slice=cases.slice(batch,batch+10);
   await Promise.all(slice.map(async(c,j)=>{
-   const expected=advanceChaosEvents(c.s,c.target,c.budget,c.stop);
-   const actual=await chain.publicClient.readContract({address,abi:a.abi,functionName:c.stop?'advanceUntilPoint':'advance',args:[c.s,c.target,c.budget]});
+   const expected=advanceChaosEvents(c.s,c.target,c.budget,c.stop,!c.rules6);
+   const actual=await chain.publicClient.readContract({address:c.rules6?oldAddress:address,abi:a.abi,functionName:c.stop?'advanceUntilPoint':'advance',args:[c.s,c.target,c.budget]});
    try{assert.deepEqual(actual,expected,`Chaos ${c.family} case ${batch+j}`);}catch(e){await mkdir('artifacts/drand',{recursive:true});await writeFile('artifacts/drand/physics-mismatch.json',JSON.stringify({index:batch+j,...c,expected,actual},(_,v)=>typeof v==='bigint'?v.toString():v,2));throw e;}
    const log=expected[2] as ChaosPhysicsCollision[],r=coverage[c.family]??={cases:0,shared:0,atInstant:0,points:0,cancelled:0};
    r.cases++;if(log.some((x,i)=>log.some((y,k)=>k!==i&&y.at===x.at)))r.shared++;
@@ -135,8 +141,8 @@ try{
   }));
   if(batch%1000===0)console.log(`Chaos event physics: ${batch+slice.length}/${cases.length}`);
  }
- const report={scope:'Rules-8 Chaos kernel (ChaosPhysics) against its TypeScript mirror, random play plus same-microsecond contacts',
-  cases:cases.length,randomCases:count,simultaneousCases:ties,mismatches:0,coverage,
+ const report={scope:'Rules-8 Chaos kernel (ChaosPhysics) against its TypeScript mirror, random play plus same-microsecond contacts; the mirror in rules-6 mode against the deployed rules-6 kernel',
+  cases:cases.length,randomCases:count,simultaneousCases:ties,rules6Cases:legacy,mismatches:0,coverage,
   legend:{shared:'the returned log holds two collisions in one microsecond',atInstant:'a collision was logged in the constructed microsecond',points:'a point or result was scored'},
   ms:Date.now()-started,at:new Date().toISOString()};
  await mkdir('artifacts/drand',{recursive:true});await writeFile('artifacts/drand/physics-differential.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));

@@ -6,6 +6,7 @@ import { roomsApi, roomsManifest } from "../lib/interlude-rooms";
 import { waitJob } from "../lib/api";
 import { betTypes, withdrawTypes, domain } from "../../shared/protocol";
 import { roomsCreditMessage } from "../../shared/rooms-pressure";
+import { isChaosEventsRules } from "../../shared/chaos-rules";
 import styles from "./RoomsMarketPanel.module.css";
 const mon = (v: string | bigint | undefined) =>
   v === undefined
@@ -270,7 +271,7 @@ export function RoomsMarketPanel({
             Supporting a player can shrink their paddle for the next rally. The
             testnet bridge on PONGIT's VPS attests paid bets.
           </p>
-          {account?.manifest.rulesVersion===6&&<p>Chaos events can change both players and the court. JACKPOT RALLY doubles a score point only; it never multiplies a bet or payout. <a href="/docs/playing/chaos" target="_blank" rel="noopener noreferrer">Read all 24 events</a></p>}
+          {isChaosEventsRules(account?.manifest.rulesVersion)&&<p>Chaos events can change both players and the court. JACKPOT RALLY doubles a score point only; it never multiplies a bet or payout. <a href="/docs/playing/chaos" target="_blank" rel="noopener noreferrer">Read all 24 events</a></p>}
           {participant ? (
             <p>You cannot bet on your own match.</p>
           ) : (

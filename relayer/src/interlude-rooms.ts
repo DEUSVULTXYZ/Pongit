@@ -65,6 +65,7 @@ import {createRoomsPublicationHealth} from './rooms-publication-health';
 import {roomsEventsHistory} from './rooms-events-history';
 import type {RelayRequest} from "../../shared/protocol";
 import { interludeHubReadAbi } from "../../shared/abi-interlude";
+import { isChaosEventsRules } from "../../shared/chaos-rules";
 import {
   roomAuthMessage,
   offerTypes,
@@ -116,7 +117,7 @@ export async function createRoomsCoordinator(o: Options) {
       "utf8",
     ),
   );
-  const events = manifest.rulesVersion === 6;
+  const events = isChaosEventsRules(manifest.rulesVersion);
   const realtime = manifest.rulesVersion === 5 || events;
   const previousRooms=[...new Set([manifest.previousRooms,...(manifest.previousRoomsHistory||[])].filter(Boolean).map((a:string)=>a.toLowerCase()))];
   const chaosEnabled = manifest.rulesVersion === 4 || realtime;
@@ -213,7 +214,7 @@ export async function createRoomsCoordinator(o: Options) {
   let archiveWork:Promise<void>|undefined;
   async function publishArchive(){
     if(!events||!o.enqueue||archiveWork)return;
-    const financial=o.financeConfig?.entries.find(m=>m.app.toLowerCase()===app&&m.rulesVersion===6);if(!financial)return;
+    const financial=o.financeConfig?.entries.find(m=>m.app.toLowerCase()===app&&m.rulesVersion===manifest.rulesVersion);if(!financial)return;
     archiveWork=(async()=>{
       const rows=(await db.query("SELECT r.id,r.hash FROM il_results r LEFT JOIN il_archive_records h ON h.app=r.app AND h.id=r.id WHERE r.app=$1 AND r.verified AND r.published AND (h.hash IS NULL OR h.hash<>r.hash) ORDER BY r.ended_at LIMIT 8",[app])).rows;
       for(const row of rows){

@@ -10,8 +10,11 @@ import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 import {DelegatedLayout} from "../../vendor/interlude/libraries/DelegatedLayout.sol";
 
-/// Candidate rules 6. Stateless immutable modules keep both publication state
-/// and the root runtime bounded. Existing instances are never upgraded in place.
+/// Rules 8: the Chaos events game of rules 6 on the corrected kernel, which resolves
+/// every contact of a microsecond (docs/validation/chaos-corrected.md). Offers, the
+/// finance binding and result hashes carry the number; 7 is the Agent Arcade's.
+/// Stateless immutable modules keep both publication state and the root runtime
+/// bounded. Existing instances are never upgraded in place.
 contract PongChaosEvents is Rooms {
     ChaosEngine internal immutable chaosEngine;ChaosCodec internal immutable codec;
     RoomsControlVerifier private immutable controlVerifier;
@@ -33,7 +36,7 @@ contract PongChaosEvents is Rooms {
         pressureDomain=keccak256(abi.encode(keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
             keccak256("PONGIT Realtime Pressure"),keccak256("2"),block.chainid,address(this)));
     }
-    function RULES_VERSION() public pure override returns(uint256){return 6;}
+    function RULES_VERSION() public pure override returns(uint256){return 8;}
     function controlBinding(address key) public view returns(uint256){return _get(uint160(key),20);}
     function registerControls(bytes calldata proof) external engine whenNotDelegated(Types.GLOBAL){
         ChaosGameFlow.registerControls(words,controlVerifier,proof);

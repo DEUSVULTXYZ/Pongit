@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { readFile, writeFile } from "node:fs/promises";
 import { allDeployments, type Deployment } from "../shared/protocol";
+import { isChaosEventsRules } from "../shared/chaos-rules";
 const d: Deployment = JSON.parse(
   await readFile(
     process.env.DEPLOYMENT_FILE || "deployments/testnet.json",
@@ -37,7 +38,7 @@ try{
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 try{
  const finance=JSON.parse(await readFile('deployments/rooms-finance.json','utf8'));
- for(const m of finance.filter((m:any)=>m.rulesVersion===6)){
+ for(const m of finance.filter((m:any)=>isChaosEventsRules(m.rulesVersion))){
   if(m.chainId!==d.chainId||!/^0x[\da-fA-F]{40}$/.test(m.adapter)||!/^\d+$/.test(m.startBlock))throw Error('Invalid events archive manifest');
   config+=`      - name: ChaosEventsArchive\n        address: "${m.adapter}"\n        start_block: ${start(m.startBlock)}\n`;
  }
