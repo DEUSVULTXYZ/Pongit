@@ -110,8 +110,29 @@ library ChaosGameFlow {
         if(!applied)return false;store(w,id,state);emit ChaosAnnounced(id,uint32(q>>96),draw,t);
         request(w,engine,hub,id,uint32(q>>96)+1,uint16(draw>>48),t);return true;
     }
+    /// A command advances in SLICE_US slices while a worst-case slice, a ranked result
+    /// and its publication still fit in ADVANCE_RESERVE. The kernel is call-partition
+    /// invariant, so where a command stops never changes play: it reports incomplete,
+    /// and the next command resumes from the processed clock. Unsliced, a command had
+    /// to simulate the whole gap since the last success in one call; a force grid (wind,
+    /// the well, a curve) made a gap above ~0.73 s cost more than 15M gas, and since a
+    /// revert processes nothing, every later command needed more: the match froze.
+    uint64 internal constant SLICE_US=100_000;
+    uint256 internal constant ADVANCE_RESERVE=5_000_000;
     function advance(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
         external returns(bool complete,uint8 outcome,uint8 winner)
+    {
+        uint64 t=uint64(get(w,id,27)>>112);
+        do{
+            (complete,outcome,winner)=slice(w,engine,hub,id,target>t+SLICE_US?t+SLICE_US:target);
+            if(outcome!=0)return(true,outcome,winner);
+            t=uint64(get(w,id,27)>>112);
+        }while(complete&&t<target&&gasleft()>ADVANCE_RESERVE);
+        complete=complete&&t==target;
+    }
+    /// One slice: the rules-6 advance, unchanged.
+    function slice(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
+        private returns(bool complete,uint8 outcome,uint8 winner)
     {
         if(get(w,id,29)==0)request(w,engine,hub,id,1,10000,uint64(get(w,id,27)>>112));
         for(uint8 attempt;attempt<3;attempt++){
