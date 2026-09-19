@@ -78,7 +78,7 @@ export async function recoverRoomsCommands(client:RoomsClient,player:Address,o:{
   assertRoomsEngineAvailable(manifest.app,node,hub,Math.floor(Date.now()/1000));
   client.commandJournal.retirePrevious(player,hub.epoch);
   const pending=client.commandJournal.pending(player);
-  if(!pending)return;
+  if(!pending){client.commandJournal.assertGasAllowed();return;}
   if(pending.epoch!==String(hub.epoch))throw Error('The uncertain command belongs to another engine epoch');
   if(roomsCompact){const stored=storedControls(player);client.commandJournal.bindRoomControls(player,stored.grant.sessionKey,hub.epoch,stored.grant.expiry);}
   let receipt=await client.node.getTransactionReceipt({hash:pending.hash}).catch(()=>null);

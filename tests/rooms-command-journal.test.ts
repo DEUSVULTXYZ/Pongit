@@ -82,7 +82,7 @@ test('a refused command is retired only when the node confirms its nonce unused;
  assert.equal(journal.retireRefused(pending.hash,6,'refused'),false,'the count moved: it may have run');
  assert.equal(journal.retireRefused(pending.hash,4,'refused'),false);
  assert.equal(journal.pending(player)?.hash,pending.hash);
- assert.equal(journal.retireRefused(pending.hash,5,'transaction gas limit is greater than the cap'),true);
+ assert.equal(journal.retireRefused(pending.hash,5,'this session is over and the node is no longer accepting transactions'),true);
  assert.equal(journal.pending(player),undefined);
  assert.equal(journal.retireRefused(pending.hash,5,'again'),false,'only an uncertain entry');
  // viem signs deterministically: the same control, key, nonce and gas are these
@@ -101,6 +101,22 @@ test('a refused command at a lower gas limit takes the freed nonce too',async()=
  assert.equal(journal.retireRefused(keccak256(raw),5,'transaction gas limit is greater than the cap'),true);
  const lower=await key.signTransaction({type:'eip1559',chainId:4242,to:app,nonce:5,data,gas:500000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
  await journal.beforeSend(lower);assert.equal(journal.pending(player)?.hash,keccak256(lower));
+});
+test('local gas cap survives successful config polls, F5 and a node epoch claim until hub verification or a lower gas limit',async()=>{
+ const {journal,store,raw,player}=await fixture();await journal.beforeSend(raw);
+ await assert.rejects(resendJournaled(journal,journal.pending(player)!,{send:async()=>{throw capRefusal;},latestNonce:async()=>5}),isEngineGasCapped);
+ for(let attempt=0;attempt<3;attempt++){
+  const reloaded=new RoomsCommandJournal(store,app,abi);
+  reloaded.received('interlude_session',{app,chainId:4242,epoch:2});
+  assert.equal(reloaded.pending(player),undefined);
+  assert.throws(()=>reloaded.assertGasAllowed(),isEngineGasCapped);
+  await assert.rejects(reloaded.beforeSend(raw),isEngineGasCapped,'no identical submission after retirement');
+ }
+ const renewed=new RoomsCommandJournal(store,app,abi);
+ renewed.received('interlude_session',{app,chainId:4242,epoch:2});
+ renewed.retirePrevious(player,1n);assert.throws(()=>renewed.assertGasAllowed(),isEngineGasCapped);
+ renewed.retirePrevious(player,2n);renewed.assertGasAllowed();
+ await renewed.beforeSend(raw);assert.equal(renewed.pending(player)?.epoch,'2');
 });
 test('recovery resend: a gas-cap or halt refusal with the nonce confirmed unused retires and stops the tab',async()=>{
  {
