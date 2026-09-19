@@ -46,6 +46,7 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
   let state:State,chaos=previous.chaos,nonceA=previous.nonceA,nonceB=previous.nonceB;
   if(chaos){
    const [version,control,words]=decodeAbiParameters([{type:'uint8'},{type:'uint256'},{type:'uint256[8]'}],snapshot.state);
+   // The packed-state format (ChaosCodec), 6 under rules 6, 7 and 8 alike; not RULES_VERSION.
    if(version!==6)throw Error('Unknown Chaos snapshot');
    const physics=unpackChaos(words,previous.state.seed,control);state=chaosLegacy(physics,Number(snapshot.status)>=3);
    chaos={physics,request:request??chaos.request,pending:pending??chaos.pending,collisions};

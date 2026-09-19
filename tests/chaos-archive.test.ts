@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {applyChaosArchive} from '../indexer/src/chaos-archive';
+import {applyChaosArchive,chaosArchiveRules} from '../indexer/src/chaos-archive';
 import {retainFinished} from '../indexer/src/retention';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {chaosLegacy} from '../shared/chaos-codec';
@@ -11,6 +11,18 @@ const app='0x1111111111111111111111111111111111111111',a='alice',b='bob';
 function fixture(){const c:any={};for(const name of ['Match','Frame','Handicap','RecentReplays','Alert','Payout']){
  const rows=new Map<string,any>();c[name]={rows,get:async(id:string)=>rows.get(id),set:(v:any)=>rows.set(v.id,structuredClone(v)),deleteUnsafe:(id:string)=>rows.delete(id),getWhere:async(q:any)=>[...rows.values()].filter(row=>Object.entries(q).every(([key,v])=>row[key]===(v as any)._eq))};}return c;}
 const event=(id:number,status=3,winner=a)=>({params:{app,id,epoch:1,a,b,winner,status,mode:id%2,ranked:true,scoreA:7,scoreB:5,played:true},block:{number:100+id,hash:`block-${id}-${status}-${winner}`},logIndex:1});
+
+test('immutable archive bindings preserve historical rules 6 and index corrected rules 8 separately',async()=>{
+ const old='0x2222222222222222222222222222222222222222',next='0x3333333333333333333333333333333333333333';
+ const bindings={[old]:{app,rulesVersion:6 as const},[next]:{app,rulesVersion:8 as const}};
+ for(const [address,version] of [[old,6],[next,8]] as const){
+  const e={...event(version),srcAddress:address};const c=fixture();
+  await applyChaosArchive(c,e,chaosArchiveRules(bindings,e));
+  assert.equal(c.Match.rows.get(`10143:${app}:1:${version}`).rulesVersion,version);
+ }
+ assert.throws(()=>chaosArchiveRules(bindings,{srcAddress:app,params:{app}}),/Unknown/);
+ assert.throws(()=>chaosArchiveRules(bindings,{srcAddress:next,params:{app:old}}),/Unknown/);
+});
 test('rules 6 shares three replay places with all four generations and keeps financial entities',async()=>{
  const c=fixture();for(let i=1;i<=4;i++)await retainFinished(c,{id:`v${i}:1`,playerA:a,playerB:b,played:true,status:3},String(i).padStart(20,'0'));
  c.Payout.set({id:'wallet-payment',amount:'7'});await applyChaosArchive(c,event(1));

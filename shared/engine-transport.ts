@@ -4,6 +4,13 @@ import {measuredFetch,recordRpc} from "./rpc-metrics";
 import {EnginePublicationUnavailable,publicationUnavailable} from "./service-error";
 const cooldowns=new Map<string,()=>number>();
 export const engineCooldownMs=(url:string)=>Math.max(0,cooldowns.get(url)?.()??0);
+type EngineGate=<T>(send:()=>Promise<T>)=>Promise<T>;
+const gates=new Map<string,EngineGate>();
+/** The node's shared request gate, for requests outside the JSON-RPC transport
+ * (the relayer's /health read): refused locally while a Retry-After runs, and a
+ * 429 it sees extends the same cooldown for every method. Before any transport
+ * for the node exists, requests pass through ungated. */
+export const engineGate=(url:string):EngineGate=>send=>(gates.get(url)??(next=>next()))(send);
 
 /** One cooldown for all methods on a node, including SDK reads and writes.
  * Reject locally while throttled. Never queue or replay a signed transaction. */
@@ -32,6 +39,7 @@ export type EngineTransportJournal = {
 };
 export function engineTransport(url: string,journal?:EngineTransportJournal): Transport {
   const gate = engineRequestGate(Date.now,remaining=>cooldowns.set(url,remaining));
+  gates.set(url,gate);
   let publicationUntil=0;
   return options => {
     const measured=measuredFetch("interlude");

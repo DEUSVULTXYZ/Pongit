@@ -1,7 +1,15 @@
 import {retainFinished} from './retention';
 
 /** Handler body isolated from the running indexer for correction tests. */
-export async function applyChaosArchive(context:any,event:any,rulesVersion=6){
+export type ChaosArchiveDeployment={app:string;rulesVersion:6|8};
+/** Immutable archive emitters bind a game and its physics version. Unknown or
+ * mismatched emitters must stop indexing instead of labelling rules 8 as 6. */
+export function chaosArchiveRules(deployments:Record<string,ChaosArchiveDeployment>,event:{srcAddress:string;params:{app:string}}):6|8{
+ const binding=deployments[event.srcAddress.toLowerCase()];
+ if(!binding||binding.app.toLowerCase()!==event.params.app.toLowerCase()||![6,8].includes(binding.rulesVersion))throw Error('Unknown Chaos archive deployment');
+ return binding.rulesVersion;
+}
+export async function applyChaosArchive(context:any,event:any,rulesVersion:6|7|8=6){
  const p=event.params,id=`10143:${p.app.toLowerCase()}:${p.epoch}:${p.id}`,previous=await context.Match.get(id);
  const endedAt=previous?.endedAt||`${String(event.block.number).padStart(20,'0')}:${String(event.logIndex).padStart(10,'0')}`;
  const value={id,deployment:`10143:${p.app.toLowerCase()}`,rawId:String(p.id),mode:Number(p.mode),ranked:p.ranked,rulesVersion,

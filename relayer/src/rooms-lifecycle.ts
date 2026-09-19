@@ -19,6 +19,8 @@ import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
 import { requestHostedRenewal } from "./rooms-hosted-renewal";
 import { roomsDrainBlocker } from "../../shared/rooms-availability";
 import {assertRoomsEngineAvailable} from "../../shared/rooms-availability";
+import {retireClosedEpochJobs} from "./rooms-engine-recovery";
+import {deferredKey,FinalizationMemory,nextFinalization,type PublishedResultReader} from "./rooms-finalization";
 const appAbi = parseAbi([
   "function operator() view returns(address)",
   "function closeEngine()",
@@ -33,6 +35,36 @@ type Stage =
   | "renewing"
   | "starting";
 
+// Releasing the stake replays every batch of the epoch in one Monad transaction.
+// Measured on this hub: gas = 224788 + 83192 * batches, 112,333 per batch at worst,
+// signed at 1.2x the estimate against a 150,000,000 block: past about 1,100 batches
+// the stake may never be released. Real-time play seals about two batches a second,
+// and matches still running when the threshold trips keep sealing while they drain
+// (the longest human match so far, 238 s, is about 460 batches at that rate).
+export const ROOMS_DEFAULT_MAX_BATCHES = 600n;
+export const ROOMS_MAX_BATCHES_LIMIT = 1000n;
+
+export function roomsLifecycleMaxBatches(raw = process.env.ROOMS_LIFECYCLE_MAX_BATCHES) {
+  const value = raw?.trim();
+  if (!value) return ROOMS_DEFAULT_MAX_BATCHES;
+  if (!/^[1-9]\d*$/.test(value))
+    throw new Error("ROOMS_LIFECYCLE_MAX_BATCHES must be a positive integer");
+  if (BigInt(value) > ROOMS_MAX_BATCHES_LIMIT)
+    throw new Error(`ROOMS_LIFECYCLE_MAX_BATCHES above ${ROOMS_MAX_BATCHES_LIMIT} leaves no room to drain below the release ceiling`);
+  return BigInt(value);
+}
+
+/** Why the serving epoch has to close now, or "" while it can keep admitting. */
+export function roomsRenewalPressure(
+  d: { batchIndex: bigint; expiresAt: bigint },
+  now: bigint,
+  maxBatches: bigint,
+): "" | "batches" | "expiry" {
+  if (d.batchIndex >= maxBatches) return "batches";
+  if (d.expiresAt <= now + 3600n) return "expiry";
+  return "";
+}
+
 /** One operator nonce owner. Enable only after the release's renewal rehearsal.
  * Existing player accounts and game-session scopes acquire no new permissions.
  */
@@ -45,12 +77,16 @@ export async function roomsLifecycle(o: {
   nodeUrl: string;
   engineStatus: () => Promise<any>;
   engineActive: () => Promise<bigint>;
-  beforeRenew?: () => Promise<void>;
+  /** The closed epoch whose results are being captured. */
+  beforeRenew?: (epoch: bigint) => Promise<void>;
   beforeClose?: (epoch: bigint) => Promise<void>;
   onReady?: (epoch: bigint) => void;
+  /** Monad reads that decide whether the adapter can finalize a result now. */
+  publishedResult: PublishedResultReader;
 }) {
   const file = process.env.ROOMS_LIFECYCLE_KEY_FILE;
   if (!file) return null;
+  const maxBatches = roomsLifecycleMaxBatches();
   const key = JSON.parse(await readFile(file, "utf8")),
     account = privateKeyToAccount(key.privateKey);
   if (
@@ -84,15 +120,16 @@ export async function roomsLifecycle(o: {
     working = false,
     error = "",
     healthy = false;
-  let sessionInfo={epoch:'0',expiresAt:0,releaseAt:0,batch:'0'},reportedError='';
-  const transition = async (s: Stage) => {
+  let sessionInfo={epoch:'0',expiresAt:0,releaseAt:0,batch:'0',batchLimit:String(maxBatches),closing:''},reportedError='',reportedDeferred='';
+  const finalization=new FinalizationMemory();
+  const transition = async (s: Stage, detail: Record<string, string> = {}) => {
     const previous=stage;
     await o.db.query(
       "UPDATE il_lifecycle SET stage=$2,changed_at=now() WHERE app=$1",
       [o.app, s],
     );
     stage = s;
-    console.info(JSON.stringify({event:'rooms-lifecycle-transition',app:o.app,previous,stage:s,at:new Date().toISOString()}));
+    console.info(JSON.stringify({event:'rooms-lifecycle-transition',app:o.app,previous,stage:s,...detail,at:new Date().toISOString()}));
   };
   async function submit(id: string, to: Address, data: Hex) {
     let job = (
@@ -154,6 +191,14 @@ export async function roomsLifecycle(o: {
       throw new Error("Operator transaction reverted");
     return true;
   }
+  // Closing waits for lock 701340 and for the shared operator nonce; play must not,
+  // or a stalled journal would keep admitting past the release ceiling.
+  async function pauseOnBatchPressure() {
+    const d = await readHubDelegation(o.base, o.hub, o.app);
+    if (d.status !== 1 || d.batchIndex < maxBatches) return;
+    healthy = false;
+    error = `Epoch ${d.epoch} holds ${d.batchIndex} batches (limit ${maxBatches}); admissions paused until the operator journal is free to drain`;
+  }
   async function cycle() {
     if (working) return;
     working = true;
@@ -163,7 +208,10 @@ export async function roomsLifecycle(o: {
       c = await o.db.connect();
       locked = (await c.query("SELECT pg_try_advisory_lock(701340) AS ok"))
         .rows[0].ok;
-      if (!locked) return;
+      if (!locked) {
+        await pauseOnBatchPressure();
+        return;
+      }
       const pending = (
         await o.db.query(
           "SELECT * FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending' ORDER BY nonce LIMIT 1",
@@ -175,9 +223,15 @@ export async function roomsLifecycle(o: {
           .getTransactionReceipt({ hash: pending.hash })
           .catch(() => null);
         if (!r) {
+          if(process.env.ROOMS_LIFECYCLE_HOLD_WRITES==='true'){
+            const observed=await readHubDelegation(o.base,o.hub,o.app);
+            sessionInfo={epoch:String(observed.epoch),expiresAt:Number(observed.expiresAt)*1000,releaseAt:Number(observed.stakeUnlockAt)*1000,batch:String(observed.batchIndex),batchLimit:String(maxBatches),closing:''};
+            healthy=false;error='Operator approval required: pending lifecycle transaction preserved without rebroadcast';return;
+          }
           await o.base.sendRawTransaction({
             serializedTransaction: pending.raw,
           });
+          await pauseOnBatchPressure();
           return;
         }
         await o.db.query("UPDATE il_lifecycle_jobs SET status=$2 WHERE id=$1", [
@@ -188,7 +242,7 @@ export async function roomsLifecycle(o: {
           throw new Error("Operator transaction reverted; review required");
       }
       const d = await readHubDelegation(o.base, o.hub, o.app);
-      sessionInfo={epoch:String(d.epoch),expiresAt:Number(d.expiresAt)*1000,releaseAt:Number(d.stakeUnlockAt)*1000,batch:String(d.batchIndex)};
+      sessionInfo={epoch:String(d.epoch),expiresAt:Number(d.expiresAt)*1000,releaseAt:Number(d.stakeUnlockAt)*1000,batch:String(d.batchIndex),batchLimit:String(maxBatches),closing:''};
       if (d.epoch > 0n)
         await o.db.query("UPDATE il_lifecycle SET epoch=$2 WHERE app=$1", [
           o.app,
@@ -201,11 +255,17 @@ export async function roomsLifecycle(o: {
         prefix = `${o.app}:${epoch}`;
       if(d.status===0 && stage!=='playing'){
         // The hub has released the whole epoch. Its raw bytes stay in the journal.
-        await o.db.query("UPDATE il_engine_jobs SET status='obsolete',resolution=COALESCE(resolution,'{}'::jsonb)||$3::jsonb,updated_at=now() WHERE app=$1 AND epoch=$2 AND status='quarantined'",
-          [o.app,epoch,JSON.stringify({closedEpoch:String(epoch),closedAt:new Date().toISOString(),kind:'epoch-closed'})]);
+        // This includes commands still pending: after a forceClose of a halted
+        // node nobody could confirm or refuse them, and none of them can be
+        // published any more. Left pending, the first one would stop every
+        // relayer command of the next epoch ("from another delegation").
+        await retireClosedEpochJobs({db:o.db,app:o.app,closedThrough:BigInt(epoch),kind:'epoch-closed'});
       }
       healthy = false;
       error = "";
+      if(process.env.ROOMS_LIFECYCLE_HOLD_WRITES==='true'){
+        error='Operator approval required: lifecycle writes and hosted renewal are held; observation remains active';return;
+      }
       if (d.status === 3) {
         error = "Delegation challenged; automatic renewal is suspended";
         return;
@@ -228,12 +288,16 @@ export async function roomsLifecycle(o: {
           }
           return;
         }
-        if (stage === "playing" && d.expiresAt > now + 3600n) {
+        // Batch pressure enters the same drain as expiry: admissions stop here, and
+        // the close below still waits, fences and rechecks exactly as before.
+        const closing = roomsRenewalPressure(d, now, maxBatches);
+        sessionInfo.closing = closing;
+        if (stage === "playing" && !closing) {
           healthy = true;
           o.onReady?.(d.epoch);
           return;
         }
-        if (stage !== "draining") await transition("draining");
+        if (stage !== "draining") await transition("draining", {closing, batches: String(d.batchIndex), batchLimit: String(maxBatches)});
         const row = (
           await o.db.query("SELECT changed_at FROM il_lifecycle WHERE app=$1", [
             o.app,
@@ -301,32 +365,50 @@ export async function roomsLifecycle(o: {
             [o.app],
           )
         ).rows;
-        for (const { id } of results) {
-          const f = await o.base.readContract({
-            address: o.adapter,
-            abi: roomsMarketAdapterAbi,
-            functionName: "finalResults",
-            args: [BigInt(id)],
-          });
-          if (f[3] === 0) {
-            await submit(
-              prefix + ":final:" + id,
-              o.adapter,
-              encodeFunctionData({
-                abi: roomsMarketAdapterAbi,
-                functionName: "finalizeResult",
-                args: [BigInt(id)],
-              }),
-            );
-            return;
-          }
+        // il_results records what the node showed. A match the node ended but
+        // Monad still publishes as live (the halted epoch's last, unsettled batch)
+        // cannot be finalized in this epoch, and it can only end in the next one,
+        // which starts from Monad's published state. Submitting it here would fail
+        // its simulation forever and hold the renewal it needs, so it is deferred
+        // and finalized by a later pass once its result is published.
+        // Finalized and unmarketed results are remembered for good, unpublished
+        // ones for this epoch's pass, so they are not read again every 10 s
+        // (rooms-finalization.ts). A failed read skips only its own result.
+        const {next,deferred,failed}=await nextFinalization(results.map(r=>String(r.id)),o.publishedResult,finalization,String(epoch));
+        const key=deferredKey(deferred);
+        if(key!==reportedDeferred){
+          reportedDeferred=key;
+          if(key)console.warn(JSON.stringify({event:'rooms-lifecycle-finalization-deferred',app:o.app,epoch:String(epoch),results:deferred,at:new Date().toISOString()}));
+        }
+        if(next?.verdict==='wait'){
+          error=`Result ${next.id} is published with a finish time ahead of Monad; finalizing it shortly`;
+          return;
+        }
+        if(next){
+          await submit(
+            prefix + ":final:" + next.id,
+            o.adapter,
+            encodeFunctionData({
+              abi: roomsMarketAdapterAbi,
+              functionName: "finalizeResult",
+              args: [BigInt(next.id)],
+            }),
+          );
+          return;
+        }
+        // Nothing to submit now, but some results could not be read: retry them
+        // before renewing. Each is deferred as 'unreadable' after
+        // FINALIZATION_READ_ATTEMPTS failing passes, so none holds renewal forever.
+        if(failed.length){
+          error=`Could not read ${failed.length} result(s) from Monad (${failed[0].error}); retrying before renewal`;
+          return;
         }
         // The operator may hold a drained rehearsal here while inspecting payouts
         // or allowing the previous deployment to finish its last live matches.
         if (process.env.ROOMS_LIFECYCLE_HOLD_RENEW === "true") return;
         await transition("renewing");
       }
-      await o.beforeRenew?.();
+      await o.beforeRenew?.(BigInt(epoch));
       await submit(
         prefix + ":renew",
         o.app,
@@ -346,12 +428,16 @@ export async function roomsLifecycle(o: {
       working = false;
     }
   }
-  const timer = setInterval(() => void cycle(), 10000);
+  let inflight: Promise<void> = Promise.resolve();
+  const step = () => (working ? inflight : (inflight = cycle()));
+  const timer = setInterval(() => void step(), 10000);
   timer.unref();
-  void cycle();
+  void step();
   return {
-    available: () => stage === "playing" && healthy,
-    status: () => ({ stage, error, healthy, ...sessionInfo }),
+    available: () => process.env.ROOMS_LIFECYCLE_HOLD_WRITES!=='true' && stage === "playing" && healthy,
+    status: () => ({ stage, error, healthy, ...sessionInfo,operatorHold:process.env.ROOMS_LIFECYCLE_HOLD_WRITES==='true' }),
     stop: () => clearInterval(timer),
+    /** One lifecycle step, or the one already running. */
+    cycle: step,
   };
 }

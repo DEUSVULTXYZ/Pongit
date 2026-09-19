@@ -7,6 +7,9 @@ import {ChaosDynamics as D} from "./ChaosDynamics.sol";
 
 /// @notice Stable collision search for both balls. A pair of simultaneous goal
 /// times is returned separately so one ball cannot score before the other is read.
+/// Rules 8: each ball's wall, paddle and shield plane times are returned too, so
+/// the kernel can resolve every one of them that falls in the microsecond a move
+/// ends in, not only the tie-break winner.
 contract ChaosContacts {
     D public immutable dynamics;
     int256 private constant P=1e12;
@@ -16,21 +19,25 @@ contract ChaosContacts {
     {
         if(dt<best.dt||dt==best.dt&&(kind<best.kind||kind==best.kind&&ball<best.ball))return T.Candidate(dt,kind,ball,slot,obstacle,nx,ny);return best;
     }
-    function next(T.State memory s) external view returns(T.Candidate memory best,uint64[2] memory goals,uint8[2] memory beneficiaries){
+    /// `planes` holds, per ball, [0] its wall contact (kind 1 or 2), [1] its paddle
+    /// contact (3 or 4) and [2] its shield contact (7 or 8), offered below under
+    /// exactly these predicates; G.NEVER where the ball does not approach it.
+    function next(T.State memory s) external view returns(T.Candidate memory best,uint64[2] memory goals,uint8[2] memory beneficiaries,uint64[3][2] memory planes){
         best.dt=G.NEVER;best.kind=type(uint8).max;goals=[G.NEVER,G.NEVER];
-        for(uint8 ball;ball<2;ball++)if(s.balls[ball].alive){
+        for(uint8 ball;ball<2;ball++){
+            planes[ball]=[G.NEVER,G.NEVER,G.NEVER];if(!s.balls[ball].alive)continue;
             T.Ball memory b=s.balls[ball];(int256 vx,int256 vy)=dynamics.velocity(s,ball);
             if(vx!=0){goals[ball]=G.plane(b.x,vx,vx<0?-6*P:1030*P);beneficiaries[ball]=vx<0?2:1;
                 best=offer(best,goals[ball],vx<0?5:6,ball,0,0,0,0);
-                if(vx<0&&b.x>=40*P)best=offer(best,G.plane(b.x,vx,40*P),3,ball,0,0,1,0);
-                if(vx>0&&b.x<=984*P)best=offer(best,G.plane(b.x,vx,984*P),4,ball,0,0,-1,0);
+                if(vx<0&&b.x>=40*P){planes[ball][1]=G.plane(b.x,vx,40*P);best=offer(best,planes[ball][1],3,ball,0,0,1,0);}
+                if(vx>0&&b.x<=984*P){planes[ball][1]=G.plane(b.x,vx,984*P);best=offer(best,planes[ball][1],4,ball,0,0,-1,0);}
             }
-            if(vy!=0)best=offer(best,G.plane(b.y,vy,vy<0?6*P:570*P),vy<0?1:2,ball,0,0,0,vy<0?int256(1):int256(-1));
+            if(vy!=0){planes[ball][0]=G.plane(b.y,vy,vy<0?6*P:570*P);best=offer(best,planes[ball][0],vy<0?1:2,ball,0,0,0,vy<0?int256(1):int256(-1));}
             for(uint8 slot;slot<2;slot++){
                 E.Effect memory e=s.effects[slot];if(e.id==0||s.t/1000<e.startsAt||s.t/1000>=e.expiresAt)continue;
                 if(e.id==3){
-                    if(e.target==0&&vx<0&&b.x>=16*P)best=offer(best,G.plane(b.x,vx,16*P),7,ball,slot,0,1,0);
-                    if(e.target==1&&vx>0&&b.x<=1008*P)best=offer(best,G.plane(b.x,vx,1008*P),8,ball,slot,0,-1,0);
+                    if(e.target==0&&vx<0&&b.x>=16*P){planes[ball][2]=G.plane(b.x,vx,16*P);best=offer(best,planes[ball][2],7,ball,slot,0,1,0);}
+                    if(e.target==1&&vx>0&&b.x<=1008*P){planes[ball][2]=G.plane(b.x,vx,1008*P);best=offer(best,planes[ball][2],8,ball,slot,0,-1,0);}
                 }else if(e.id==13&&b.ghost&1==0){
                     G.Hit memory h=G.circle(b.x-512*P,b.y-288*P,vx,vy,34*P,false);best=offer(best,h.dt,9,ball,slot,0,h.nx,h.ny);
                 }else if(e.id==14){

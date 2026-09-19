@@ -9,16 +9,27 @@ import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {createInterludeClient,memoryStore,storageKey} from '@interludelayer-sdk/sdk';
 import {roomsEventsAbi as abi} from '../shared/abi-PongChaosEvents';
+import {chaosQualificationRecord,verifyQualificationApp} from './chaos-qualification-record';
+import {chainTools} from './independent-chain-tools';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
 const production=process.env.PONG_CHAOS_PRODUCTION_FIXTURE==='authorized-testnet-candidate';
 const publicSite=process.env.PONG_BROWSER_PUBLIC==='authorized-testnet-public';
+const mera=process.env.PONG_BROWSER_AUTH==='virtual-mera';
+const injectFaults=process.env.PONG_BROWSER_FAULTS==='response-loss-and-429';
+assert(!publicSite||!injectFaults,'Fault injection is restricted to the private fixture');
 assert(!publicSite||production,'Public validation requires the qualified production deployment');
 const m=JSON.parse(await readFile(`artifacts/drand/${production?'production':'integration'}-manifests.json`,'utf8')).game;
-assert.equal(m.app,production?'0x78d3341e3452d7ec1add9371de3008639eed8eb0':'0x4ace43735d1e5b0aa9b2d54a76ea4ac99089bb91');
+let fixturePrefix='chaos-events-production-20260913';
+if(production)assert.equal(m.app,'0x78d3341e3452d7ec1add9371de3008639eed8eb0');
+else{
+ const {prefix,record}=await chaosQualificationRecord();fixturePrefix=prefix;assert.equal(m.app,record.app);
+ const t=await chainTools(prefix);try{await verifyQualificationApp(t,prefix,m.app);}finally{await t.close();}
+}
 const run=process.env.PONG_BROWSER_RUN||'1';assert(/^[1-9]$/.test(run));
-const file=`/secrets/chaos-events-browser-${run}.json`;try{await readFile(file);throw Error('Reconcile existing browser fixture');}catch(e){if((e as any).code!=='ENOENT')throw e;}
+const file=`/secrets/${fixturePrefix}-browser-${run}.json`;try{await readFile(file);throw Error('Reconcile existing browser fixture');}catch(e){if((e as any).code!=='ENOENT')throw e;}
 const origin='https://pongit.xyz',apiHost=publicSite?origin+'/api':'http://chaos-api:4013',out=`artifacts/drand/real-browser-${run}`,people:any[]=[],secret:any={people:[],commands:[],rooms:[]};
 const report:any={at:new Date().toISOString(),app:m.app,scope:publicSite?'Public HTTPS production, real coordinator, hosted contracts and Monad; synthetic EOA owners':'Real private coordinator and hosted contracts through HTTPS-origin Chromium; synthetic EOA owners',matches:[],errors:[],requests:[]};
+report.auth=mera?'Mera with virtual WebAuthn PRF authenticators, not physical devices':'Synthetic EOA owners';report.faults=[];
 const encode=(v:any)=>JSON.stringify(v,(_,v)=>typeof v==='bigint'?String(v):v);let tail=Promise.resolve();
 const save=()=>{const bytes=encode(secret);tail=tail.then(async()=>{await writeFile(file+'.next',bytes,{mode:0o600});await rename(file+'.next',file);});return tail;};await save();
 const browser=await chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{})});await mkdir(out,{recursive:true});
@@ -33,22 +44,35 @@ try{
  assert.equal(await node.readContract({address:m.app,abi,functionName:'activeCount'}),0n);
  for(let i=0;i<6;i++){
   const key=generatePrivateKey(),owner=privateKeyToAccount(key),store=memoryStore(),client=createInterludeClient({app:m.app,abi,node:m.node,base,store,fastPath:true});
-  await client.openSession({wallet:createWalletClient({account:owner,chain:monadTestnet,transport:http()}),scope:['acceptMatch','input','tick','cancelMatch','concede'],expirySeconds:1800,assertDigest:true});
-  const stored=store.get(storageKey(m.app,10143,owner.address));assert(stored);
+  if(!mera)await client.openSession({wallet:createWalletClient({account:owner,chain:monadTestnet,transport:http()}),scope:['acceptMatch','input','tick','cancelMatch','concede'],expirySeconds:1800,assertDigest:true});
+  const stored=store.get(storageKey(m.app,10143,owner.address));assert(mera||stored);
   const context=await browser.newContext({viewport:i%3===1?{width:390,height:844}:{width:1440,height:1000},reducedMotion:i>=3?'reduce':'no-preference'});
   const p:any={address:owner.address.toLowerCase(),cookie:'',context,stored,calls:[],closing:false};people.push(p);secret.people.push({key,address:p.address,stored});await save();
-  await context.addInitScript(({stored,key,account,address})=>{if(!sessionStorage.getItem(key))sessionStorage.setItem(key,stored);sessionStorage.setItem(account,address);localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));},{stored,key:storageKey(m.app,10143,owner.address),account:`pongit:rooms:${m.app}:account`,address:p.address});
+  await context.addInitScript(({stored,key,account,address})=>{if(stored){if(!sessionStorage.getItem(key))sessionStorage.setItem(key,stored);sessionStorage.setItem(account,address);}localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));},{stored,key:storageKey(m.app,10143,owner.address),account:`pongit:rooms:${m.app}:account`,address:p.address});
   if(!publicSite)await context.route(origin+'/**',async route=>{const u=new URL(route.request().url());try{await route.fulfill({response:await route.fetch({url:u.pathname.startsWith('/api/')?apiHost+u.pathname.slice(4)+u.search:'http://countdown-web:3000'+u.pathname+u.search,maxRetries:2})});}catch(e){if(!p.closing)throw e;}});
-  await context.route(m.node+'**',async route=>{const rpc=route.request().postDataJSON();if(rpc?.method==='interlude_sendTransaction'){const raw=rpc.params[0],tx=parseTransaction(raw as Hex),action=decodeFunctionData({abi,data:tx.data!}).functionName;secret.commands.push({player:p.address,raw,at:Date.now()});await save();p.calls.push({action,nonce:tx.nonce,bytes:(raw.length-2)/2});}await route.continue();});
+  await context.route(m.node+'**',async route=>{const rpc=route.request().postDataJSON();if(rpc?.method==='interlude_sendTransaction'){const raw=rpc.params[0],tx=parseTransaction(raw as Hex),action=decodeFunctionData({abi,data:tx.data!}).functionName;secret.commands.push({player:p.address,raw,at:Date.now()});await save();p.calls.push({action,nonce:tx.nonce,bytes:(raw.length-2)/2});
+   if(injectFaults&&i%3===0&&action==='input'){
+    p.inputs=(p.inputs||0)+1;
+    if(p.inputs===10){const response=await route.fetch();const body=await response.json();assert(response.ok()&&!body.error,'The lost response must follow real execution');report.faults.push({player:i,kind:'response-lost-after-execution',nonce:tx.nonce});await route.abort('failed');return;}
+    if(p.inputs===20){report.faults.push({player:i,kind:'429-before-execution',nonce:tx.nonce});await route.fulfill({status:429,headers:{'retry-after':'1','content-type':'application/json'},body:JSON.stringify({error:{code:-32005,message:'Injected private qualification throttle'}})});return;}
+   }
+  }await route.continue();});
   if(!publicSite)await context.routeWebSocket('wss://pongit.xyz/ws',async route=>{
    const cookies=(await context.cookies(origin)).map(c=>c.name+'='+c.value).join(';'),pending:any[]=[],server=new WebSocket('ws://chaos-api:4013/ws',{headers:{origin,cookie:cookies}});
    route.onMessage(data=>server.readyState===1?server.send(data):pending.push(data));server.on('open',()=>pending.splice(0).forEach(data=>server.send(data)));server.on('message',data=>route.send(data.toString()));server.on('error',()=>route.close());server.on('close',()=>route.close());route.onClose(()=>server.close());
   });
   p.page=await context.newPage();p.page.on('pageerror',(e:Error)=>report.errors.push(e.message));
+  if(mera){const cdp=await context.newCDPSession(p.page);await cdp.send('WebAuthn.enable');await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});p.assertions=0;cdp.on('WebAuthn.credentialAsserted',()=>p.assertions++);}
   p.page.on('requestfinished',async(req:any)=>{if(!req.url().startsWith(m.node))return;try{const rpc=req.postDataJSON(),r=await req.response(),timing=req.timing();report.requests.push({player:i,method:rpc.method,status:r.status(),ms:timing.responseEnd-timing.requestStart});}catch{}});
  }
  for(const mode of [0,1]){
   const group=people.slice(mode*3,mode*3+3);await Promise.all(group.map(p=>p.page.goto(origin+'/rooms')));
+  if(mera)for(const [offset,p] of group.entries()){
+   await p.page.getByRole('button',{name:'Connect',exact:true}).click();await p.page.getByRole('button',{name:'Create a passkey',exact:true}).click();
+   await p.page.getByRole('dialog',{name:'Your account'}).waitFor({timeout:60000});p.address=(await p.page.locator('.rooms-address').textContent()).trim().toLowerCase();assert(/^0x[\da-f]{40}$/.test(p.address));
+   secret.people[mode*3+offset].address=p.address;secret.people[mode*3+offset].session=await p.page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage)));await save();p.connectedAssertions=p.assertions;
+   await p.page.getByRole('button',{name:'Close Your account',exact:true}).click();
+  }
   for(const p of group){await p.page.waitForFunction(()=>{const b=document.querySelector('.rooms-account-toggle');return b&&!/Connect|Renew|Restoring/i.test(b.textContent||'');},{},{timeout:40000});p.cookie=(await p.context.cookies(origin)).map((c:any)=>c.name+'='+c.value).join(';');}
   const roomId=(await api(group[0],'rooms',{mode,players:group.slice(1).map(p=>p.address)})).room;secret.rooms.push(roomId);await save();
   await api(group[1],'rooms/join',{room:roomId});await api(group[2],'rooms/join',{room:roomId});
@@ -68,7 +92,9 @@ try{
   assert.equal(await group[2].page.getByText('VICTORY',{exact:true}).count(),0);assert.equal(await group[2].page.getByText('DEFEAT',{exact:true}).count(),0);
   await waitFor(async()=>{const s=await base.readContract({address:m.app,abi,functionName:'getSnapshot',args:[id]});return s[2]===3n&&s[6]===live[6];},'real publication',120000);
   for(const [i,p] of group.entries()){await p.page.screenshot({path:`${out}/${mode}-${i}.png`});secret.people[mode*3+i].session=await p.page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage)));await save();}
-  report.matches.push({id:String(id),mode,score:[live[12].scoreA,live[12].scoreB],f5:reloaded,reversals,commands:group.map(p=>p.calls)});
+  if(mera)for(const p of group)assert.equal(p.assertions,p.connectedAssertions,'F5/recovery must not request another passkey');
+  if(injectFaults)assert.equal(report.faults.filter((x:any)=>x.player===mode*3).length,2,'Both failures exercised during this mode');
+  report.matches.push({id:String(id),mode,score:[live[12].scoreA,live[12].scoreB],f5:reloaded,reversals,commands:group.map(p=>p.calls),passkeyAssertions:mera?group.map(p=>({connected:p.connectedAssertions,final:p.assertions})):undefined});
   for(const p of group){p.closing=true;await p.context.close();}
  }
  assert.equal(report.errors.length,0);report.passed=true;

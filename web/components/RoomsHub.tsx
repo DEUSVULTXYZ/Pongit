@@ -61,6 +61,8 @@ import {EngineFeed,TickPilot} from "../../shared/engine-feed";
 import {engineCooldownMs} from "../../shared/engine-transport";
 import {takeRpcSamples} from "../../shared/rpc-metrics";
 import {publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
+import {ENGINE_GAS_CAP_CODE,ENGINE_GAS_CAP_MESSAGE,ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,EngineGasCapped,EngineHalted,gasCapRefusal,haltRefusal,isEngineGasCapped,isEngineHalted} from "../../shared/engine-halt";
+import {setEngineCommandGas} from "../../shared/engine-gas";
 type Profile = {
   player: string;
   handle?: string;
@@ -77,6 +79,7 @@ type Lobby = {
   online: boolean;
   admission: boolean;
   error: string;
+  errorCode?: string;
   rating?: { live: any; published: any };
 };
 const short = (p: string) => `${p.slice(0, 6)}…${p.slice(-4)}`;
@@ -285,6 +288,12 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
       snapshot?.phase === 2 && room?.offer?.id === snapshot.id.toString(),
     canPlay = !!active && side >= 0 && ready && !writeBlocked && !busy && !panel && !syncError;
   const playable = useRef(false);
+  // The relayer reports ENGINE_HALTED when the game node stopped accepting
+  // transactions. Recovery then never resends to it (recoverRoomsCommands).
+  const halted = useRef(false);
+  // The relayer reports ENGINE_GAS_CAP when the node refuses the configured
+  // command gas. Nothing is signed until it serves a limit the node accepts.
+  const gasCapped = useRef(false);
   playable.current = canPlay;
   lobbyRef.current = lobby;
   const name = (p: string) =>
@@ -318,7 +327,7 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
     setWriteBlocked(true);
     setDirection(0);
     setError(
-      publicationUnavailable(error)?new EnginePublicationUnavailable().message:"Confirming the last game action. Your arcade session is saved; synchronization will resume automatically.",
+      haltRefusal(error)||halted.current?ENGINE_HALTED_MESSAGE:gasCapRefusal(error)||gasCapped.current?ENGINE_GAS_CAP_MESSAGE:publicationUnavailable(error)?new EnginePublicationUnavailable().message:"Confirming the last game action. Your arcade session is saved; synchronization will resume automatically.",
     );
   };
   const read = async () =>
@@ -339,6 +348,8 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
     setLobby(next);
     if(next.room || next.queue)setMode(next.room?.mode || next.queue?.mode || 0);
     setOnline(next.online);
+    halted.current = next.errorCode === ENGINE_HALTED_CODE;
+    gasCapped.current = next.errorCode === ENGINE_GAS_CAP_CODE;
     setAdmission(next.admission);
     const mine = next.profiles.find(
       (p) => p.player === accountRef.current?.toLowerCase(),
@@ -431,7 +442,7 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
     setAccount(p);
     setReady(true);
     setRenewRequired(false);
-    setWriteBlocked(!!client.current!.commandJournal.pending(p));
+    setWriteBlocked(!!client.current!.commandJournal.pending(p)||client.current!.commandJournal.gasCapBlocked());
     setSessionRevision(v=>v+1);
     setSaved(p);
     setError("");
@@ -518,7 +529,17 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
           setOnline(c.online);
           setAdmission(c.admission);
           setStreamEnabled(c.stateTransport==="events");
-          if(c.maintenance?.stage && c.maintenance.stage!=='playing') {
+          halted.current = c.errorCode === ENGINE_HALTED_CODE;
+          gasCapped.current = c.errorCode === ENGINE_GAS_CAP_CODE;
+          // The limit this tab signs its next control with: 30,000,000 unless the
+          // operator set a lower ROOMS_ENGINE_COMMAND_GAS. An invalid or missing
+          // value keeps the current one (shared/engine-gas.ts).
+          setEngineCommandGas(c.commandGas);
+          // A halted node explains the pause better than a lifecycle stage that
+          // cannot progress until the operator recovers it.
+          if(halted.current) setNotice(c.error || ENGINE_HALTED_MESSAGE);
+          else if(gasCapped.current) setNotice(c.error || ENGINE_GAS_CAP_MESSAGE);
+          else if(c.maintenance?.stage && c.maintenance.stage!=='playing') {
             const m=c.maintenance;
             const until=m.releaseAt>Date.now()?` The hub permits release at ${new Date(m.releaseAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}.`:'';
             setNotice(m.stage==='draining'?'Finishing current matches and publishing their results before renewal.':m.stage==='challenge'?`The previous arena is closing.${until} Recovery continues automatically.`:m.stage==='starting'?'Checking the renewed game engine. Play resumes after verification.':'Recovering the game service. Your account remains saved.');
@@ -599,7 +620,11 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
     const recover=async()=>{
       try{
         const c=client.current!;
-        await recoverRoomsCommands(c,account);
+        await recoverRoomsCommands(c,account,{halted:halted.current});
+        // Writes stay blocked while the node is halted or refuses the command gas:
+        // a new signature would only be refused. Re-check every 30 s (retryMs).
+        if(halted.current)throw new EngineHalted();
+        if(gasCapped.current)throw new EngineGasCapped();
         const restored=await c.restoreSession(account,{scope:roomsScope});
         if(cancelled)return;
         if(!restored){setRenewRequired(true);setReady(false);setError('Your arcade session has expired or was revoked. Renew session to continue.');return;}
@@ -610,6 +635,8 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
           if(action)await run(action);
         }
       }catch(e){
+        if(!cancelled && (isEngineHalted(e) || haltRefusal(e)))setError(ENGINE_HALTED_MESSAGE);
+        else if(!cancelled && (isEngineGasCapped(e) || gasCapRefusal(e)))setError(ENGINE_GAS_CAP_MESSAGE);
         if(!cancelled)timer=setTimeout(()=>void recover(),Math.max((e as {retryMs?:number}).retryMs||0,engineCooldownMs(roomsManifest.node),Math.min(30000,2000*2**Math.min(attempt++,4))));
       }
     };

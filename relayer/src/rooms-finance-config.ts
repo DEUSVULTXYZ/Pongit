@@ -15,8 +15,9 @@ import { roomsEarlySettlementAbi } from "../../shared/abi-RoomsEarlySettlement";
 import { roomsRealtimeSettlementAbi } from "../../shared/abi-RoomsRealtimeSettlement";
 import { chaosEventsSettlementAbi } from "../../shared/abi-ChaosEventsSettlement";
 import { coerce, type RelayRequest } from "../../shared/protocol";
+import { isChaosEventsRules, type ChaosEventsRules } from "../../shared/chaos-rules";
 export type RoomsFinanceManifest = {
-  rulesVersion?: 6;
+  rulesVersion?: ChaosEventsRules;
   financeId?: string;
   settlement?: "early-published-testnet";
   betting?: "realtime";
@@ -29,7 +30,7 @@ export type RoomsFinanceManifest = {
   chainId: 10143;
 };
 export const financeScope = (m: RoomsFinanceManifest) => m.app.toLowerCase() + (m.financeId ? ":" + m.financeId : "");
-export const financeAdapterAbi = (m: RoomsFinanceManifest): Abi => m.rulesVersion===6 ? chaosEventsSettlementAbi : m.betting === 'realtime' ? roomsRealtimeSettlementAbi : m.settlement === "early-published-testnet" ? roomsEarlySettlementAbi : roomsMarketAdapterAbi;
+export const financeAdapterAbi = (m: RoomsFinanceManifest): Abi => isChaosEventsRules(m.rulesVersion) ? chaosEventsSettlementAbi : m.betting === 'realtime' ? roomsRealtimeSettlementAbi : m.settlement === "early-published-testnet" ? roomsEarlySettlementAbi : roomsMarketAdapterAbi;
 export async function bindRoomsFinance(
   db: Pick<Pool, "query">,
   entries: RoomsFinanceManifest[],
@@ -83,7 +84,7 @@ export async function loadRoomsFinance() {
         isAddress(a),
       ) ||
       !/^\d+$/.test(m.startBlock) ||
-      (m.rulesVersion !== undefined && (m.rulesVersion !== 6 || m.betting !== 'realtime')) ||
+      (m.rulesVersion !== undefined && (!isChaosEventsRules(m.rulesVersion) || m.betting !== 'realtime')) ||
       (m.financeId !== undefined && (!/^[a-z0-9-]{1,32}$/.test(m.financeId) || m.settlement !== "early-published-testnet")) ||
       (m.settlement !== undefined && !m.financeId) ||
       (m.betting !== undefined && (m.betting !== 'realtime' || !m.financeId || m.settlement !== 'early-published-testnet'))

@@ -13,18 +13,38 @@ import {PhysicsV2} from "../v2/PhysicsV2.sol";
 contract ChaosEngine {
     ChaosCodec public immutable codec;ChaosPhysics public immutable physics;
     DrandEvmnet public immutable beacon;D public immutable draws;E public immutable effects;
-    constructor(ChaosCodec c,ChaosPhysics p,DrandEvmnet b,D d){codec=c;physics=p;beacon=b;draws=d;effects=p.effects();}
+    /// One advance makes at most CALLS kernel calls, each logging at most the kernel's
+    /// LOG_CAPACITY collisions (rules 8: 13, a full microsecond after 7).
+    uint256 private constant CALLS=4;uint256 private constant COLLISIONS=CALLS*13;
+    constructor(ChaosCodec c,ChaosPhysics p,DrandEvmnet b,D d){
+        require(p.LOG_CAPACITY()*CALLS<=COLLISIONS,"collision buffer");codec=c;physics=p;beacon=b;draws=d;effects=p.effects();
+    }
     struct Progress {uint256[8] words;bool complete;uint8 outcome;uint32 appliedRally;uint256[] collisions;}
     function initial(bytes32 seed) external view returns(uint256[8] memory){return codec.pack(physics.initial(seed,96000000,96000000));}
     function advance(uint256[8] calldata words,bytes32 seed,uint256 control,uint64 target,uint128 paidA,uint128 paidB)
         external view returns(Progress memory p)
     {
+        return _advance(words,seed,control,target,paidA,paidB,CALLS,128);
+    }
+    /// Bounded fallback when a dense slice exhausts its caller-supplied gas cap.
+    /// The exact same packing, collision and point rules apply to one kernel step.
+    function advanceStep(uint256[8] calldata words,bytes32 seed,uint256 control,uint64 target,uint128 paidA,uint128 paidB)
+        external view returns(Progress memory p)
+    {
+        return _advance(words,seed,control,target,paidA,paidB,1,1);
+    }
+    function _advance(uint256[8] calldata words,bytes32 seed,uint256 control,uint64 target,uint128 paidA,uint128 paidB,uint256 calls,uint16 budget)
+        private view returns(Progress memory p)
+    {
         T.State memory s=codec.unpack(words,seed,control);
         if(s.leftDir!=0)s.lastLeft=s.leftDir;if(s.rightDir!=0)s.lastRight=s.rightDir;
-        p.collisions=new uint256[](32);uint256 length;
-        for(uint256 step;step<4;step++){
+        p.collisions=new uint256[](COLLISIONS);uint256 length;
+        for(uint256 step;step<calls;step++){
+            // Preserve progress instead of spending the remainder on another kernel
+            // invocation. The caller also caps this entire stateless operation.
+            if(step!=0&&gasleft()<3_000_000)break;
             uint32 rally=s.score.rally;T.Collision[] memory hits;uint64 previous=s.t;
-            (s,p.complete,hits)=physics.advanceUntilPoint(s,target,128);
+            (s,p.complete,hits)=physics.advanceUntilPoint(s,target,budget);
             for(uint256 i;i<hits.length;i++){
                 T.Collision memory h=hits[i];
                 p.collisions[length++]=h.sequence|(uint256(h.rally)<<32)|(uint256(h.ball)<<64)|(uint256(h.kind)<<72)

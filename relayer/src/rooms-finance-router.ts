@@ -36,7 +36,7 @@ export async function createRoomsFinanceRouter(o:{db:Pool;base:PublicClient;entr
     manifest:active.manifest,
     pressure:async(...args:Parameters<typeof active.pressure>)=>(await forMatch(args[0])).pressure(...args),
     audit:async()=>{for(const w of workers)await w.audit();},
-    beforeRenew:async()=>{for(const w of workers)await w.beforeRenew();},
+    beforeRenew:async(epoch?:bigint)=>{for(const w of workers)await w.beforeRenew(epoch);},
     status:()=>workers.map(w=>w.status()).filter(Boolean).join("; "),
     route:async(path:string,method:string,player:string,body:any,params:URLSearchParams)=>{
       const match=/^\/interlude\/markets\/([0-9]+)$/.exec(path);

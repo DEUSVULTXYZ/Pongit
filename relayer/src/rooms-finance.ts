@@ -30,6 +30,9 @@ import {
 } from "../../shared/rooms-pressure";
 import type { RelayRequest } from "../../shared/protocol";
 import {financeScope,financeAdapterAbi,type RoomsFinanceManifest} from "./rooms-finance-config";
+import {deferredKey,FinalizationMemory,nextFinalization,publishedResultReader} from "./rooms-finalization";
+import {livePressureEpochUsable} from "./rooms-command-epoch";
+import {isChaosEventsRules} from "../../shared/chaos-rules";
 const idSchema = z
   .string()
   .regex(/^[0-9]+$/)
@@ -57,8 +60,8 @@ export async function createRoomsFinance(o: {
   const signer = privateKeyToAccount(key.privateKey);
   if (signer.address.toLowerCase() !== m.pressureSigner.toLowerCase())
     throw new Error("Pressure signer mismatch");
-  if(m.rulesVersion===6&&await base.readContract({address:m.app,abi:roomsEventsAbi,functionName:'RULES_VERSION'})!==6n)
-    throw new Error('Chaos events finance must bind rules 6');
+  if(isChaosEventsRules(m.rulesVersion)&&await base.readContract({address:m.app,abi:roomsEventsAbi,functionName:'RULES_VERSION'})!==BigInt(m.rulesVersion))
+    throw new Error(`Chaos events finance must bind rules ${m.rulesVersion}`);
   const [
     actualSigner,
     resultSource,
@@ -198,11 +201,26 @@ export async function createRoomsFinance(o: {
     working = false;
   const livePressureAt=new Map<string,number>();
   const livePressureDelivered=new Map<string,{a:bigint;b:bigint;checkedAt:number}>();
-  async function continuousPressure(id:string,s:any,send:(data:Hex)=>Promise<void>,readQueued:()=>Promise<any>){
+  // Matches whose market round belongs to an earlier epoch, by the engine epoch
+  // in which that was read. matchEpoch never changes once set.
+  const livePressureStale=new Map<string,bigint>();
+  async function continuousPressure(id:string,s:any,send:(data:Hex)=>Promise<void>,readQueued:()=>Promise<any>,engineEpoch?:bigint){
     const now=Date.now();if(now-(livePressureAt.get(id)||0)<2000)return;
+    if(engineEpoch!==undefined&&livePressureStale.get(id)===engineEpoch)return;
     livePressureAt.set(id,now);
     const matchId=BigInt(id),head=await base.getBlockNumber({cacheTime:0}),sourceBlock=head>2n?head-2n:0n;
     const [book,epoch]=await Promise.all([readMarket('books',[matchId]),readAdapter('matchEpoch',[matchId])]);
+    if(engineEpoch!==undefined&&!livePressureEpochUsable(epoch,engineEpoch)){
+      // A match resumed in a later epoch from Monad's published state keeps its
+      // round's epoch, which is the one LivePressure.epoch must carry, and
+      // checkPressure accepts only the current epoch. Nothing is signed: the
+      // command could only be rejected, and each attempt would hold the single
+      // writer ahead of the Chaos guard's tick. Its paddles stay as they are.
+      livePressureStale.set(id,engineEpoch);
+      while(livePressureStale.size>128)livePressureStale.delete(livePressureStale.keys().next().value!);
+      console.warn(JSON.stringify({event:'rooms-chaos-pressure-suspended',app,matchId:id,matchEpoch:String(epoch),engineEpoch:String(engineEpoch),at:new Date().toISOString()}));
+      return;
+    }
     if(book[2]===0n||epoch===0n){
       const published=await base.readContract({address:m.app,abi:roomsRealtimeAbi,functionName:'getSnapshot',args:[matchId],blockNumber:sourceBlock});
       if(published[2]!==2n||published[12].mode!==1||published[12].seed!==s[12].seed)return;
@@ -225,7 +243,7 @@ export async function createRoomsFinance(o: {
       [app,id,String(epoch),String(sourceBlock),block.hash,String(paidA),String(paidB),checkpoint]);
     const stored=(await db.query('SELECT checkpoint FROM il_live_pressure WHERE app=$1 AND id=$2 AND epoch=$3 AND source_block=$4',[app,id,String(epoch),String(sourceBlock)])).rows[0];
     if(stored?.checkpoint!==checkpoint)throw new Error('Conflicting confirmed betting source');
-    const events=m.rulesVersion===6;
+    const events=isChaosEventsRules(m.rulesVersion);
     const rally=events?s[13]?.physics.score.rally:s[12].scoreA+s[12].scoreB;
     if(!Number.isSafeInteger(rally)||rally<(events?1:0))throw Error('Verified rally counter unavailable');
     const p={matchId,epoch,seed:s[12].seed as Hex,rally,paidA,paidB,sourceBlock,checkpoint,expires:BigInt(Math.floor(Date.now()/1000)+25)};
@@ -240,9 +258,11 @@ export async function createRoomsFinance(o: {
     s: any,
     send: (data: Hex) => Promise<void>,
     readQueued?:()=>Promise<any>,
+    /** The epoch the game node serves; live pressure of another epoch is never signed. */
+    engineEpoch?:bigint,
   ) {
     if (Number(s[2]) !== 2 || s[12].mode !== 1) return;
-    if(realtime){if(!readQueued)throw new Error('Realtime pressure observer required');return continuousPressure(id,s,send,readQueued);}
+    if(realtime){if(!readQueued)throw new Error('Realtime pressure observer required');return continuousPressure(id,s,send,readQueued,engineEpoch);}
     if(!s[12].awaitingServe)return;
     const state = s[12],
       matchId = BigInt(id),
@@ -581,16 +601,29 @@ export async function createRoomsFinance(o: {
       settlementPolicy: m.settlement || "finalized",
     };
   }
-  async function beforeRenew(){
+  const publishedResults=publishedResultReader(base,m);
+  const captured=new FinalizationMemory();
+  let deferredLog='';
+  async function beforeRenew(epoch?:bigint){
     if(!m.settlement)return;
     // Capture every new market result before its hub epoch can change, even if
     // the lobby missed an end event. Transfers themselves can finish afterwards.
-    const rows=(await db.query("SELECT DISTINCT id FROM il_bettors WHERE app=$1",[app])).rows;
-    for(const {id} of rows){
-      if((await readAdapter("result",[BigInt(id)]))[3]>=3)continue;
-      await enqueue("game","finalizeResult",[id]);
-      throw new Error("Waiting for published betting results to be captured before renewal");
+    // A match Monad still publishes as live cannot be captured in this epoch: it
+    // resumes on the next epoch's node and can only end there. Waiting for it
+    // would hold the renewal forever, so it is deferred to a later pass (its
+    // bettors are paid once its result is published and finalized).
+    const rows=(await db.query("SELECT DISTINCT id FROM il_bettors WHERE app=$1 ORDER BY id",[app])).rows;
+    // Captured and unmarketed results are not read again; unpublished ones are
+    // not read again for this epoch. One failed read skips only its own result.
+    const {next,deferred,failed}=await nextFinalization(rows.map(r=>String(r.id)),publishedResults,captured,String(epoch??''));
+    const key=deferredKey(deferred);
+    if(key!==deferredLog){deferredLog=key;if(key)console.warn(JSON.stringify({event:'rooms-finance-capture-deferred',app,results:deferred,at:new Date().toISOString()}));}
+    if(!next){
+      if(failed.length)throw new Error(`Could not read ${failed.length} betting result(s) from Monad; retrying before renewal`);
+      return;
     }
+    if(next.verdict==='ready')await enqueue("game","finalizeResult",[next.id]);
+    throw new Error("Waiting for published betting results to be captured before renewal");
   }
   async function route(
     path: string,

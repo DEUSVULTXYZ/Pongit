@@ -10,8 +10,11 @@ import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 import {DelegatedLayout} from "../../vendor/interlude/libraries/DelegatedLayout.sol";
 
-/// Candidate rules 6. Stateless immutable modules keep both publication state
-/// and the root runtime bounded. Existing instances are never upgraded in place.
+/// Rules 8: the Chaos events game of rules 6 on the corrected kernel, which resolves
+/// every contact of a microsecond (docs/validation/chaos-corrected.md). Offers, the
+/// finance binding and result hashes carry the number; 7 is the Agent Arcade's.
+/// Stateless immutable modules keep both publication state and the root runtime
+/// bounded. Existing instances are never upgraded in place.
 contract PongChaosEvents is Rooms {
     ChaosEngine internal immutable chaosEngine;ChaosCodec internal immutable codec;
     RoomsControlVerifier private immutable controlVerifier;
@@ -33,7 +36,7 @@ contract PongChaosEvents is Rooms {
         pressureDomain=keccak256(abi.encode(keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
             keccak256("PONGIT Realtime Pressure"),keccak256("2"),block.chainid,address(this)));
     }
-    function RULES_VERSION() public pure virtual override returns(uint256){return 6;}
+    function RULES_VERSION() public pure virtual override returns(uint256){return 8;}
     function controlBinding(address key) public view returns(uint256){return _get(uint160(key),20);}
     function registerControls(bytes calldata proof) external engine whenNotDelegated(Types.GLOBAL){
         ChaosGameFlow.registerControls(words,controlVerifier,proof);
@@ -67,14 +70,14 @@ contract PongChaosEvents is Rooms {
         // No pending draw existed, so advancing cannot consume/change its request.
         _set(id,30,draw);emit RandomnessVerified(id,uint32(expectedRequest>>96),uint64(expectedRequest),random,draw);_publish(id);
     }
-    function _advanceState(uint256 id,PhysicsV2.State memory legacy,uint64 target,bool) internal virtual override returns(bool complete){
+    function _advanceState(uint256 id,PhysicsV2.State memory legacy,uint64 target,bool) internal override returns(bool complete){
         if(legacy.mode==0){(legacy,complete)=physicsRules.advance(legacy,target,128);super._save(id,legacy);
             if(legacy.finished)_finish(id,3,legacy.scoreA==7?address(uint160(_get(id,0))):address(uint160(_get(id,1))));return complete;}
         uint8 outcome;uint8 winner;(complete,outcome,winner)=ChaosGameFlow.advance(words,chaosEngine,hub,id,target);
         if(outcome!=0)_finish(id,outcome,winner==0?address(0):address(uint160(_get(id,winner==1?0:1))));
     }
-    function pressureDigest(ChaosGameFlow.LivePressure calldata p) public view virtual returns(bytes32){return ChaosGameFlow.pressureDigest(pressureDomain,p);}
-    function submitLivePressure(ChaosGameFlow.LivePressure calldata p,bytes calldata signature) external virtual engine whenNotDelegated(Types.GLOBAL){
+    function pressureDigest(ChaosGameFlow.LivePressure calldata p) public view returns(bytes32){return ChaosGameFlow.pressureDigest(pressureDomain,p);}
+    function submitLivePressure(ChaosGameFlow.LivePressure calldata p,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){
         if(ChaosGameFlow.checkPressure(words,hub,pressureDomain,pressureSigner,p,signature))return;
         uint256 paid=p.paidA|(uint256(p.paidB)<<128);
         if(!_advance(p.matchId,false)||_phase(p.matchId)!=2){_publish(p.matchId);return;}
@@ -84,7 +87,7 @@ contract PongChaosEvents is Rooms {
     function queuedPressure(uint256 id) external view returns(uint256,uint256,uint64,bytes32){uint256 p=_get(id,17);return(uint128(p),uint128(p>>128),uint64(_get(id,16)),bytes32(_get(id,18)));}
     function _verifiedPressure(uint256,uint8,uint64) internal pure override returns(Pressure memory p){return p;}
     function _finish(uint256 id,uint256 phase,address winner) internal override {ChaosGameFlow.finish(words,id,phase,winner);super._finish(id,phase,winner);}
-    function _rate(uint256 id,address a,address b,address winner) internal virtual override {ChaosGameFlow.rate(words,eloFormula,id,a,b,winner);}
+    function _rate(uint256 id,address a,address b,address winner) internal override {ChaosGameFlow.rate(words,eloFormula,id,a,b,winner);}
     function _resultHash(uint256 id,bytes32 hash) internal view override returns(bytes32){return keccak256(abi.encode(hash,_get(id,19)));}
     function finishedAt(uint256 id) external view returns(uint64){return uint64(_get(id,19));}
     function gameEpoch(uint256 id) external view returns(uint256){return _get(id,31);}
@@ -100,7 +103,7 @@ contract PongChaosEvents is Rooms {
         if(block.chainid!=10143||msg.sender!=operator)revert OperatorOnly();if(hub.statusOf(address(this),Types.GLOBAL)!=Types.Status.None)revert DelegationPending();
         DelegatedLayout.Layout storage l=DelegatedLayout.layout();hub.openDelegation{value:msg.value}(Types.GLOBAL,l.globalSlots,l.globalMappingBases,address(0),l.owner,l.minStake);
     }
-    function _isSessionBlocked(bytes4 selector) internal view virtual override returns(bool){
+    function _isSessionBlocked(bytes4 selector) internal view override returns(bool){
         return selector==this.registerControls.selector||selector==this.closeEngine.selector||selector==this.renewEngine.selector
             ||selector==this.submitLivePressure.selector||selector==this.submitRandomness.selector||super._isSessionBlocked(selector);
     }

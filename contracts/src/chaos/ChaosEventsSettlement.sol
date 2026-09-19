@@ -5,14 +5,16 @@ import {PongInterludeRoomsChaos} from "../labs/PongInterludeRoomsChaos.sol";
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 
-/// Rules-6 binding of the existing testnet early-payment policy. Betting stays
+/// Rules-8 binding of the existing testnet early-payment policy. Betting stays
 /// on Monad, and the published finish timestamp excludes late stakes. Jackpot
 /// changes score points only; no payout multiplier is introduced here.
 contract ChaosEventsSettlement is RoomsEarlySettlement {
+    /// A rules-6 game is bound by its own, already deployed, settlement.
+    uint256 public constant RULES=8;
     mapping(uint256=>uint64) public bettingCutoff;
     mapping(uint256=>bytes32) public recordedHash;
     event MatchRecorded(uint256 indexed id,uint256 indexed epoch,address indexed app,bytes32 hash,address a,address b,address winner,uint8 status,uint8 mode,bool ranked,uint8 scoreA,uint8 scoreB,bool played,uint64 finishedAt);
-    constructor(PongInterludeRoomsChaos g)RoomsEarlySettlement(g){require(g.RULES_VERSION()==6,"events rules required");}
+    constructor(PongInterludeRoomsChaos g)RoomsEarlySettlement(g){require(g.RULES_VERSION()==RULES,"events rules required");}
     function openRound(uint256 id) public override onlyBase {
         require(finalResults[id].status==0,"result already accepted");
         (uint256 phase,,,,PhysicsV2.State memory s)=_snapshot(id);require(phase==2&&s.mode==1,"no live Chaos match");
@@ -23,7 +25,7 @@ contract ChaosEventsSettlement is RoomsEarlySettlement {
     function bettingWindow(uint256 id,uint64) external view override returns(bool allowed,uint256 version){
         if(block.chainid!=baseChainId||finalResults[id].status!=0)return(false,0);
         (uint256 phase,,,,PhysicsV2.State memory s)=_snapshot(id);Types.Session memory session=hub.sessionOf(address(game),Types.GLOBAL);
-        version=(matchEpoch[id]<<8)|6;
+        version=(matchEpoch[id]<<8)|RULES;
         allowed=phase==2&&s.mode==1&&matchEpoch[id]>0&&session.epoch==matchEpoch[id]&&session.status==Types.Status.Active&&session.expiresAt>block.timestamp;
     }
     function finalizeResult(uint256 id) public override onlyBase {
