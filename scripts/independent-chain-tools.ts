@@ -6,15 +6,15 @@ import {createPublicClient,createWalletClient,http,keccak256,parseTransaction,en
 import {privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 
-export async function chainTools(prefix:string){
+export async function chainTools(prefix:string,fetchFn?:typeof fetch){
  assert.equal(process.env.PONG_INDEPENDENT_WRITE,'authorized-testnet');
  assert(/^[a-z0-9:-]+$/.test(prefix));
  const secret=JSON.parse(await readFile(process.env.ROOMS_LIFECYCLE_KEY_FILE!,'utf8'));
  const account=privateKeyToAccount(secret.privateKey as Hex);
  assert.equal(account.address.toLowerCase(),'0x369158ac444278541322643e46e0d5b45ac21c4c');
- const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000}),pollingInterval:1000});
+ const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn}),pollingInterval:1000});
  assert.equal(await base.getChainId(),10143);
- const wallet=createWalletClient({account,chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000})});
+ const wallet=createWalletClient({account,chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn})});
  const db=new Pool({connectionString:process.env.DATABASE_URL});
  const wait=(ms:number)=>new Promise(r=>setTimeout(r,ms));
  async function submit(name:string,data:Hex,to?:Address,value=0n){

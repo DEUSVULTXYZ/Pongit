@@ -1,0 +1,56 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {zeroAddress,zeroHash,type Address} from 'viem';
+import {expiredChallenge,historicalRepairWork,qualificationWork,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
+const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
+
+test('bounded qualification scans eventually reach agents beyond the first 256 and wrap after catalogue changes',async()=>{
+ let cursor=0n,inspected=0,found=false;
+ const read:PoolRead=async(_a,_abi,fn,args=[])=>{
+  if(fn==='count')return 513n as any;
+  if(fn==='at'){inspected++;return address(Number(args[0])+100) as any;}
+  if(fn==='identity')return{available:true,modes:3,qualified:args[0]===address(612)?1:3} as any;
+  if(fn==='retryAt')return 0n as any;
+  if(fn==='qualificationEligible')return true as any;throw Error(fn);
+ };
+ for(let n=0;n<33;n++){const before=inspected,r=await qualificationWork(read,m,cursor,1000n);cursor=r.next;assert(inspected-before<=16);if(r.needed){found=true;break;}}
+ assert(found);assert.equal(cursor,0n);
+ const r=await qualificationWork(read,m,1026n,1000n);assert.equal(r.needed,false);assert.equal(r.next,16n);
+});
+
+test('qualification inspection respects retry times and propagates unavailable reads',async()=>{
+ const read:any=async(_a:any,_abi:any,fn:string)=>({count:1n,at:address(100),identity:{available:true,modes:1,qualified:0},retryAt:1200n}[fn]);
+ assert.equal((await qualificationWork(read,m,0n,1100n)).needed,false);
+ await assert.rejects(qualificationWork((async()=>{throw Error('RPC unavailable');}) as PoolRead,m,0n,1300n),/RPC unavailable/);
+});
+
+test('only waiting challenges with a verifiably different or expired grant can be cleared',async()=>{
+ const grant='0x'+'1'.repeat(64);let status=2,changed=false;
+ const read:PoolRead=async(_a,_abi,fn)=>{
+  if(fn==='count')return 1n as any;
+  if(fn==='requests')return[address(20),address(21),0,status,1n,grant] as any;
+  if(fn==='grantOf')return{key:changed?zeroAddress:address(22)} as any;
+  if(fn==='grantDigest')return grant as any;throw Error(fn);
+ };
+ changed=true;assert.equal((await expiredChallenge(read,m,1n)).expired,null);
+ status=1;changed=false;assert.equal((await expiredChallenge(read,m,1n)).expired,null);
+ changed=true;assert.equal((await expiredChallenge(read,m,1n)).expired,1n);
+ await assert.rejects(expiredChallenge((async()=>{throw Error('lost response');}) as PoolRead,m,1n),/lost response/);
+});
+
+test('historical repairs wait for existing participation and can later schedule their original bracket',async()=>{
+ const hash='0x'+'1'.repeat(64),t={status:4,agents:Array.from({length:8},(_,i)=>address(100+i)),controllers:Array(8).fill(hash),mode:0};
+ let busy=true,changed=false;
+ const read:PoolRead=async(_a,_abi,fn,args=[])=>{
+  if(fn==='eligible')return !(busy&&args[0]===t.agents[3]) as any;
+  if(fn==='identity')return{codeHash:changed?zeroHash:hash} as any;
+  if(fn==='nextFixture')return[4,t.agents[0],t.agents[1],false] as any;
+  if(fn==='playing')return(busy?hash:zeroHash) as any;throw Error(fn);
+ };
+ assert.equal(await historicalRepairWork(read,m,1n,t,1n,true),null);
+ busy=false;changed=true;assert.equal(await historicalRepairWork(read,m,1n,t,1n,true),null);
+ changed=false;assert.equal((await historicalRepairWork(read,m,1n,t,1n,true))?.method,'resumeRepair');
+ t.status=2;assert.deepEqual(await historicalRepairWork(read,m,1n,t,1n,true),{to:m.pool,method:'admitTournament',args:[1n]});
+ assert.equal(await historicalRepairWork(read,m,1n,t,1n,false),null);assert.equal(await historicalRepairWork(read,m,1n,t,0n,true),null);
+});

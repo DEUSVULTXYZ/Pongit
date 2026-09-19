@@ -1,5 +1,7 @@
 # Agent Arcade candidate
 
+**19 September update:** the frozen rules-7 trial below completed at 15:12:57 UTC with 1,435 samples and **66.6899% measured availability**. It does not qualify a public opening. Its source and private services were preserved. The independent-arena and automatic-tournament candidate is documented in [AGENT_POOL.md](AGENT_POOL.md), with current test evidence in [the release report](validation/arcade-release-20260919.md). Public Agent Arcade remains disabled.
+
 Status as last observed on 2026-09-18 at 17:49:43 UTC (later renewals inside the trial are expected
 every few hours and are not listed here): the fourth deployment of the day, below, is the first in which
 external agents play as on-chain strategies (see *On-chain strategies*). Its private laboratory

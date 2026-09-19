@@ -1,0 +1,64 @@
+import {zeroAddress,zeroHash,type Abi,type Address} from 'viem';
+import {agentCatalogAbi as catalogAbi} from '../../../shared/abi-AgentCatalog';
+import {agentQualificationsAbi as qualificationAbi} from '../../../shared/abi-AgentQualifications';
+import {agentChallengesAbi as challengeAbi} from '../../../shared/abi-AgentChallenges';
+import {abi as familyAbi} from '../../../shared/abi-independent-ArcadeFamily';
+import {agentTournamentsAbi as bookAbi} from '../../../shared/abi-AgentTournaments';
+import {agentArenaPoolAbi as poolAbi} from '../../../shared/abi-AgentArenaPool';
+
+export type PoolRead=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<T>;
+type Common={catalog:Address;qualifications:Address;challenges:Address;family:Address;tournaments:Address;pool:Address};
+
+/** Resumable inspection of the entire catalogue, without a first-256 cutoff.
+ * This never chooses the trial participants; the contract cursor does that. */
+export async function qualificationWork(read:PoolRead,m:Common,cursor:bigint,now:bigint,budget=16){
+ if(!Number.isInteger(budget)||budget<1||budget>32)throw Error('Qualification inspection budget');
+ const count=await read<bigint>(m.catalog,catalogAbi,'count');if(!count)return{needed:false,next:0n};
+ let at=cursor%count;
+ for(let n=0;n<budget&&BigInt(n)<count;n++){
+  const agent=await read<Address>(m.catalog,catalogAbi,'at',[at]);at=(at+1n)%count;
+  const identity=await read(m.catalog,catalogAbi,'identity',[agent]);
+  for(const mode of [0,1])if(identity.available&&(identity.modes&(1<<mode))&&!(identity.qualified&(1<<mode))){
+   if(await read<bigint>(m.qualifications,qualificationAbi,'retryAt',[agent,mode])>now)continue;
+   if(await read<boolean>(m.catalog,catalogAbi,'qualificationEligible',[agent,mode]))return{needed:true,next:at};
+  }
+ }
+ return{needed:false,next:at};
+}
+
+/** A revoked/expired waiting grant frees the queue, never an active match.
+ * Revalidate on-chain in expire(); an RPC error must not be treated as expiry. */
+export async function expiredChallenge(read:PoolRead,m:Common,cursor:bigint,budget=8){
+ if(!Number.isInteger(budget)||budget<1||budget>32)throw Error('Challenge inspection budget');
+ const count=await read<bigint>(m.challenges,challengeAbi,'count');if(!count)return{expired:null,next:1n};
+ let at=cursor>=1n&&cursor<=count?cursor:1n;
+ for(let n=0;n<budget&&BigInt(n)<count;n++){
+  const id=at;at=at===count?1n:at+1n;
+  const request=await read(m.challenges,challengeAbi,'requests',[id]);
+  // Solidity's public mapping getter returns the tuple in ABI order.
+  const [player,,,status,,expected]=request;
+  if(status!==1)continue;
+  const grant=await read(m.family,familyAbi,'grantOf',[player]);
+  if(grant.key===zeroAddress||await read(m.family,familyAbi,'grantDigest',[grant])!==expected)return{expired:id,next:at};
+ }
+ return{expired:null,next:at};
+}
+
+export async function historicalRepairWork(read:PoolRead,m:Common,id:bigint,t:any,idle:bigint,laneFree:boolean){
+ if(!idle||!laneFree)return null;
+ if(t.status===4){
+  // A newer tournament/challenge owns its locks until it finishes. Frozen
+  // controllers also cannot silently be replaced while repairing history.
+  for(let i=0;i<8;i++){
+   if(!await read<boolean>(m.catalog,catalogAbi,'eligible',[t.agents[i],t.mode]))return null;
+   if((await read(m.catalog,catalogAbi,'identity',[t.agents[i]])).codeHash!==t.controllers[i])return null;
+  }
+  return{to:m.tournaments,method:'resumeRepair',args:[id]};
+ }
+ if(t.status===2){
+  const [index,a,b]=await read(m.tournaments,bookAbi,'nextFixture',[id]);
+  if(index!==255&&await read(m.pool,poolAbi,'playing',[a])===zeroHash&&await read(m.pool,poolAbi,'playing',[b])===zeroHash)
+   return{to:m.pool,method:'admitTournament',args:[id]};
+ }
+ return null;
+}

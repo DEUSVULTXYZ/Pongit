@@ -17,6 +17,15 @@ const agentOrigins=existsSync(agentPath)?(()=>{
  if(m.chainId!==10143||!/^0x[\da-fA-F]{40}$/.test(m.app)||!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(m.node))throw Error('Unapproved agent arena in CSP manifest');
  return `${m.node} ${m.node.replace(/^http/,'ws')}`;
 })():'';
+const poolPath=path.resolve('deployments/agent-pool.json');
+const poolOrigins=existsSync(poolPath)?(()=>{
+ const m=JSON.parse(readFileSync(poolPath,'utf8'));
+ if(m.version!==2||m.chainId!==10143||m.rulesVersion!==10||!Array.isArray(m.arenas)||m.arenas.length<3||m.arenas.length>32)throw Error('Invalid pool CSP manifest');
+ return m.arenas.flatMap((a:{app:string;node:string})=>{
+  if(!/^0x[\da-fA-F]{40}$/.test(a.app)||!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(a.node))throw Error('Unapproved pool arena in CSP manifest');
+  return[a.node,a.node.replace(/^http/,'ws')];
+ }).join(' ');
+})():'';
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, ".."),
@@ -46,6 +55,7 @@ const nextConfig: NextConfig = {
               " " + new URL(interludeRooms.node).origin.replace(/^http/,"ws") +
               " " + independentOrigins +
               " " + agentOrigins +
+              " " + poolOrigins +
               "; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
           },
         ],

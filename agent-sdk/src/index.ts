@@ -3,3 +3,6 @@ export {AgentController} from '../../shared/agent-controller';
 export {houseBots,agentActions,agentMetadata,agentRegistrationTypes,agentMatchKey,pongStrategyAbi,strategySamples,STRATEGY_GAS,type AgentProfile,type AgentManifest,type AgentMode,type AgentMatchRef,type AgentKind} from '../../shared/agents';
 export {agentArcadeAbi} from '../../shared/abi-PongAgentArcade';
 export type {EngineState} from '../../shared/engine-stream';
+export {preparePoolRegistration,preparePoolChallenge,poolRegistrationTypes,poolChallengeTypes,type PreparedPoolCall} from '../../shared/agent-pool-client';
+export {validateAgentPoolManifest,pooledHouseBots,scheduledTournament,type AgentPoolManifest,type TournamentView} from '../../shared/agent-pool';
+export {createPoolObserver} from '../../shared/agent-pool-observer';

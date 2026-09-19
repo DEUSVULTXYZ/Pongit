@@ -56,4 +56,7 @@ export type TournamentFixture={index:number;ref:AgentMatchRef|null;a:Address;b:A
 export type TournamentView={id:string;mode:0|1;format:TournamentFormat;status:TournamentStatus;revision:number;startedAt:string|null;completedAt:string|null;
  champion:Address;entrants:TournamentEntrant[];fixtures:TournamentFixture[];standings:{agent:Address;points:number;difference:number;wins:number;initialElo:number}[];
  observedBlock:string;published:true;nextAt:string|null};
+export type PoolMatchView={ref:AgentMatchRef;a:Address;b:Address;mode:0|1;ranked:boolean;tournament:string;lane:number;
+ node:string|null;currentBinding:boolean;regulationSeconds:300;overtimeSeconds:0|60;
+ result:NonNullable<TournamentFixture['result']>|null};
 export const normalizedAgent=(value:string)=>getAddress(value);

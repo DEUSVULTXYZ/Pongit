@@ -37,7 +37,7 @@ The first isolated deployment of `1d11fb8` was refused by EIP-170 (`CreateContra
 
 ## Independent-pool candidate
 
-The candidate now contains the shared Monad catalogue, participation locks, challenge queue, published ratings and tournament contracts, plus independent physics arenas. No admission relies only on a database count. A closed arena remains unavailable until publication, challenge resolution, release and renewal are verified. Construction, private admissions and public qualification are separate gates. None has been deployed or qualified on the hosted service yet.
+The candidate now contains the shared Monad catalogue, participation locks, challenge queue, published ratings and tournament contracts, plus independent physics arenas. No admission relies only on a database count. A closed arena remains unavailable until publication, challenge resolution, release and renewal are verified. Construction, private admissions and public qualification are separate gates. The initial common contracts have been deployed privately (see the funding checkpoint below); no pooled physical arena or hosted delegation is qualified yet.
 
 The common contracts freeze tournament entrants and strategy hashes, derive scheduling and tie-breaks deterministically, and validate complete published references before progressing. Local tests cover the four tournament formats, corrections, draw rules, two lanes and epoch reuse. Eight official identities are pinned by registry; display names confer no rights. The eight policies have distinct reaction/placement behavior. VIPER currently aims off-centre without changing the physical bounce rule.
 
@@ -47,7 +47,7 @@ Remaining implementation gates include qualification scheduling, version-2 SDK/s
 
 The hub terms read at 2026-09-19 15:23:39 UTC reported maxDelegations 32, a one-hour challenge period, 64 changed words per batch and a 150 M block gas limit. Reserved bond is not a count of available sessions. Pool sizing and worst-case publication/release costs remain unqualified; no public capacity is claimed.
 
-No public manifest has been switched and no deployment result is claimed by this document.
+No public manifest has been switched. Private deployment progress is explicitly separated from qualification below.
 
 ## Automatic strategy qualification and shared capacity
 
@@ -60,4 +60,31 @@ The official hub creation bytecode was tested separately, then the same capacity
 At 16:20:50 UTC the hub still reported a 3,600-second challenge period and a 150 M block gas limit. At least three old, expired PONGIT test delegations remain active in the inventoried addresses; they have not been closed blindly. Reserved stake does not establish the number of available slots. The final arena count and service availability must be qualified against actual admissions and observed full-game/closure durations.
 
 The example strategy compiled without CBOR metadata and passed the runtime opcode verifier (two tests in the separate `strategies` Foundry profile). Version-2 read-only API, signed-intent SDK helpers and a disabled tournament UI are in progress. They are not a public launch. The web build passed with webpack; local Turbopack refused the workspace's external `node_modules` symlink, which is a build-environment limitation, not a passing Turbopack check.
+
+## Private deployment and funding checkpoint
+
+The private deployment at `8b4698d` installed the physical modules, catalogue, pool, shared ratings, tournaments, challenge and qualification contracts, and sealed the eight official identities. It has not deployed the three physical arenas or opened any delegation. The catalogue starts unqualified; no successful trial is invented during setup.
+
+| Candidate | Address |
+| --- | --- |
+| Catalogue | `0xf44577f10a5fe3fd7f76fbca0e95a5fb3454b67c` |
+| Pool | `0x10103f05e2dd7bf671cd4b239b534962bf0c0f47` |
+| Tournaments | `0xfc45b2aebf4c1d8f086144eb3c208bdfe27a7fa2` |
+| Published ratings | `0x7b50ecddf3d544dae9c025a358136a6178d816ce` |
+| Challenges | `0xb0d69b867c013216b8a77f56e354b56e2fe6a8f4` |
+| Qualifications | `0x1b0c9d605ce1014280f5b78fea2bcf7815651448` |
+
+The next transaction was refused for insufficient balance. At 17:21 UTC, the operator held **0.097424572 test MON**. Pending nonce **1566**, hash `0x0731f0d594249cbee790013e0ae31f57a91a5692cd145d3a9017e5adaad0c389`, remains journaled under its exact original operation. Absence of a receipt is not treated as failure and the nonce has not been replaced. The user was asked to fund the deployment account. The partial private deployment record was copied off the VPS and its hash verified. It contains a private engine key and is not a public artifact.
+
+## Read interface and recovery verification
+
+The latest full TypeScript suite passed **403 tests**. All **81 targeted agent contract tests** passed after sealing the qualification authority. The production webpack build, TypeScript check, SDK bundle/declarations and clean package installation/import passed. The SDK archive SHA-1 is `89aed0b0d8021d8240c237fad91f85505c8127f5`; this is a private candidate package, not an npm publication.
+
+A disposable PostgreSQL instance on the VPS passed fault injection for concurrent hosted creation, atomic lifecycle state/evidence writes, response loss after execution, restart recovery, database nonce uniqueness and old-epoch retirement. These tests used an injected engine transport, not Interlude. The temporary database was stopped after the test and production databases were unchanged.
+
+The version-2 API reconstructs block-pinned catalogue, fixtures, standings, ratings and complete match references. Spectators validate app, epoch, execution chain, rules and participants. Historical matches return their original published result and no replacement node. No spectator key or game transaction is created.
+
+Chrome and Edge each passed **20 captured-build checks**, at 360, 390, 768 and 1440 px plus 844 × 390 landscape. They cover elimination/championship layouts, focus after selection, Classic/Chaos pixel courts, a complete 16:9 court inside the viewport, effect changes without shifting the court, and a transition to the published result. Reduced motion was enabled at 390 px. Two defects found during inspection were fixed: a repeated tournament selection leaving loading active, and a court clipped below the viewport. These browser tests use synthetic API/engine responses; they do not validate passkeys, real matches, physical authenticators, touch input or zoom.
+
+Public human admissions, Agent Arcade and tournaments remain closed. Remaining gates include human challenge/session/sponsor integration, the human participation lock, indexer/replay integration, rules-9 financial validation, complete hosted tournaments, maximum-duration release, actual independent capacity, and a new unchanged 24-hour trial. No new trial has started.
 

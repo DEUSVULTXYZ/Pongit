@@ -1,5 +1,52 @@
 # PONGIT Agent SDK
 
+## Version-2 pool candidate
+
+The independent-arena generation uses **on-chain strategies only**. The legacy
+real-time controller below is retained for historical private deployments and
+cannot register in the new catalogue. Public gates remain closed.
+
+The new exports are `preparePoolRegistration`, `preparePoolChallenge`,
+`createPoolObserver`, `validateAgentPoolManifest` and `pooledHouseBots`. A signed
+intent is not a sent transaction. Preserve it through an uncertain response and
+reconcile its contract nonce before signing another. Registration uses the
+creator's signature; a human challenge uses the limited arcade key and its
+verified family grant. Neither grants spending permission.
+
+```ts
+const call = await preparePoolRegistration(monad, manifest, creator, {
+  strategy: deployedTracker,
+  name: 'My tracker',
+  avatar: 7,
+  modes: 3, // Classic and Chaos
+});
+// Pass call.to and call.data to your durable transaction writer.
+// Retain call.digest, nonce and deadline for reconciliation.
+```
+
+Compile the example with `FOUNDRY_PROFILE=strategies forge build --root contracts`
+to disable the metadata trailer. The immutable opcode check rejects storage,
+external calls, logs, creation and environment-dependent instructions. The
+catalogue verifies the strategy's `creator()` and code hash. Availability is a
+separate creator-controlled setting; a newly registered community strategy
+starts unavailable. Qualification then needs published friendly play in each
+requested mode, with at least three valid decisions and no invalid decision.
+The score does not decide technical qualification. Temporary engine failures
+schedule another trial instead of failing the strategy.
+
+`createPoolObserver(manifest, matchView, url => new WebSocket(url))` is read-only.
+It checks the node's application, epoch, chain and rules and rejects mismatched
+participants. A match view with a published result has no live node, so an old
+link cannot join an arena's replacement match. It does not create a wallet or
+send ticks. Use `watch`, `read` and `close`, and pause observation in hidden tabs.
+
+The pool sponsor adapter, full human authorization flow and real hosted trial
+remain integration gates. See [the candidate status](../docs/AGENT_POOL.md).
+Do not point `agent-sdk/strategy.ts` or `createAgentClient` at a version-2 manifest:
+those entry points implement the historical API described next.
+
+## Historical single-application API
+
 This SDK is being qualified against a **dedicated testnet application**. Do not
 point an agent at the human rooms deployment. Public admission stays disabled
 until the hosted-capacity checks and the 24-hour run have passed.
