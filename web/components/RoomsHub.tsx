@@ -62,7 +62,7 @@ import {engineCooldownMs} from "../../shared/engine-transport";
 import {takeRpcSamples} from "../../shared/rpc-metrics";
 import {publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
 import {ENGINE_GAS_CAP_CODE,ENGINE_GAS_CAP_MESSAGE,ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,EngineGasCapped,EngineHalted,gasCapRefusal,haltRefusal,isEngineGasCapped,isEngineHalted} from "../../shared/engine-halt";
-import {setEngineCommandGas} from "../../shared/engine-gas";
+import {adoptServedEngineCommandGas} from "../../shared/engine-gas";
 type Profile = {
   player: string;
   handle?: string;
@@ -532,9 +532,10 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
           halted.current = c.errorCode === ENGINE_HALTED_CODE;
           gasCapped.current = c.errorCode === ENGINE_GAS_CAP_CODE;
           // The limit this tab signs its next control with: 30,000,000 unless the
-          // operator set a lower ROOMS_ENGINE_COMMAND_GAS. An invalid or missing
-          // value keeps the current one (shared/engine-gas.ts).
-          setEngineCommandGas(c.commandGas);
+          // operator set a lower ROOMS_ENGINE_COMMAND_GAS. An invalid value keeps
+          // the current one; a relayer serving none is the release's, and the tab
+          // signs its 15,000,000 (shared/engine-gas.ts).
+          adoptServedEngineCommandGas(c);
           // A halted node explains the pause better than a lifecycle stage that
           // cannot progress until the operator recovers it.
           if(halted.current) setNotice(c.error || ENGINE_HALTED_MESSAGE);

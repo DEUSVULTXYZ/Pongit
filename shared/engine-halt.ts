@@ -14,7 +14,8 @@ export const ENGINE_HALTED_CODE='ENGINE_HALTED';
  * from their last published state. */
 export const ENGINE_HALTED_MESSAGE='The game service has stopped accepting moves after a publication failure. Your arcade session is saved. Matches whose results were not yet published resume from their last published state once the operator recovers the service.';
 /** The node refuses commands signed with the configured gas limit
- * ("transaction gas limit is greater than the cap"). Every command would be
+ * ("transaction gas limit is greater than the cap", in any of the wordings of
+ * GAS_CAP_REFUSAL below). Every command would be
  * refused the same way, so the arena is unavailable until the operator lowers
  * the limit (ROOMS_ENGINE_COMMAND_GAS, shared/engine-gas.ts) or the next epoch. */
 export const ENGINE_GAS_CAP_CODE='ENGINE_GAS_CAP';
@@ -114,10 +115,23 @@ function nodeText(error:unknown){
  * The generic "rejected before execution" prefix is not enough on its own: a
  * duplicate resend answered that way while the original is still in flight also
  * sees the nonce unused, and retiring those bytes would free a nonce they may
- * still take. "commit relay failed" alone describes a batch, not this command. */
-const GAS_CAP_REFUSAL=/gas limit is greater than the cap/i;
+ * still take. "commit relay failed" alone describes a batch, not this command.
+ *
+ * Nobody has recorded the human node's own gas-cap text yet, so every wording a
+ * node of this kind may use is accepted:
+ * - "transaction gas limit is greater than the cap", as the agent arcade's node
+ *   answered its coordinator (docs/AGENT_ARCADE.md, codex/contract-authority);
+ * - revm's EIP-7825 text, numbers inside the phrase: "transaction gas limit
+ *   (30000000) is greater than the cap (16777216)";
+ * - go-ethereum's EIP-7825 text: "transaction gas limit too high (cap: ..., tx: ...)";
+ * - a pool's limit on one transaction or on the block: "exceeds block gas limit",
+ *   "exceeds block's gas limit", "exceeds maximum transaction gas limit".
+ * Each is a property of the signed gas limit: those bytes can never run on this
+ * node, and a lower limit is the remedy. A full block ("gas limit reached") is
+ * none of them and never matches. */
+const GAS_CAP_REFUSAL=/gas limit(?:\s*\(\s*\d+\s*\))?\s+is\s+(?:greater|higher)\s+than\s+(?:the\s+)?cap|transaction gas limit too high|exceeds\s+(?:the\s+)?(?:block(?:'s)?|maximum\s+transaction)\s+gas\s+limit/i;
 const HALT_REFUSAL=/this session is over|no longer accepting transactions/i;
-const LOGGED_REFUSAL=/rejected before execution|gas limit is greater than the cap|this session is over|no longer accepting transactions/i;
+const LOGGED_REFUSAL=new RegExp(['rejected before execution',GAS_CAP_REFUSAL.source,HALT_REFUSAL.source].join('|'),'i');
 export const gasCapRefusal=(error:unknown)=>GAS_CAP_REFUSAL.test(nodeText(error));
 export const haltRefusal=(error:unknown)=>HALT_REFUSAL.test(nodeText(error));
 export const retirableRefusal=(error:unknown)=>{const text=nodeText(error);return GAS_CAP_REFUSAL.test(text)||HALT_REFUSAL.test(text);};
@@ -127,3 +141,7 @@ export function refusalReason(error:unknown){
  if(!match)return '';
  return boundedReason(text.slice(Math.max(0,match.index-40)));
 }
+/** Whatever the node and its wrappers said, bounded, for the operator's log of a
+ * send that was neither confirmed nor retired: the literal text is what tells a
+ * refusal this code does not recognise from a lost response. */
+export const nodeRefusalText=(error:unknown)=>boundedReason(nodeText(error));

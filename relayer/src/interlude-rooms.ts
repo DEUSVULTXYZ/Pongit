@@ -42,8 +42,8 @@ import {loadRoomsFinance,financeAdapterAbi} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
 import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome, retireRefusedEngineJob, retireClosedEpochJobs, publicCommandResult, ENGINE_REFUSALS_SCHEMA} from "./rooms-engine-recovery";
 import {publishedResultReader} from "./rooms-finalization";
-import {EngineGasCapMonitor,EngineHaltMonitor,roomsWriteVerdict,type EngineHaltChange} from "./rooms-engine-halt";
-import {ENGINE_GAS_CAP_CODE,ENGINE_GAS_CAP_MESSAGE,ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,ENGINE_HEALTH_INTERVAL_MS,EngineGasCapped,EngineHalted,healthApplies,readEngineHealth,refusalReason} from "../../shared/engine-halt";
+import {ENGINE_GAS_CAP_SCHEMA,EngineGasAcceptance,EngineGasCapMonitor,EngineHaltMonitor,clearGasCap,loadGasCap,roomsWriteVerdict,saveGasCap,type EngineHaltChange} from "./rooms-engine-halt";
+import {ENGINE_GAS_CAP_CODE,ENGINE_GAS_CAP_MESSAGE,ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,ENGINE_HEALTH_INTERVAL_MS,EngineGasCapped,EngineHalted,healthApplies,nodeRefusalText,readEngineHealth,refusalReason} from "../../shared/engine-halt";
 import {OrphanMatches,maintenanceTargets,reconcileContestedResult,type LobbyRestore,type LobbyState} from "./rooms-restore";
 import {assertCommandEpoch,beaconRequestCurrent,beaconRequestEpoch} from "./rooms-command-epoch";
 import {roomsRankingCandidates} from "./rooms-ranking";
@@ -185,6 +185,7 @@ export async function createRoomsCoordinator(o: Options) {
  ALTER TABLE il_engine_jobs DROP CONSTRAINT IF EXISTS il_engine_jobs_app_nonce_key;
  CREATE UNIQUE INDEX IF NOT EXISTS il_engine_jobs_epoch_nonce ON il_engine_jobs(app,epoch,nonce);
  ${ENGINE_REFUSALS_SCHEMA};
+ ${ENGINE_GAS_CAP_SCHEMA};
  CREATE TABLE IF NOT EXISTS il_offers(app text NOT NULL,id text NOT NULL,room text NOT NULL,offer jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id));
  ALTER TABLE il_results ADD COLUMN IF NOT EXISTS mode integer NOT NULL DEFAULT 0;
  ALTER TABLE il_results ADD COLUMN IF NOT EXISTS verified boolean NOT NULL DEFAULT true;
@@ -530,17 +531,31 @@ export async function createRoomsCoordinator(o: Options) {
   // A node that refuses the configured command gas refuses every command signed
   // with it. The arena is then unavailable, not online with each move retired.
   const gasCap=new EngineGasCapMonitor();
+  // The operator's early proof that this node accepts commandGas: the first
+  // command of each epoch that executed at it (rooms-engine-command-gas-accepted).
+  const gasAccepted=new EngineGasAcceptance();
+  const GAS_CAP_ACTION='set ROOMS_ENGINE_COMMAND_GAS=15000000 in the runtime environment and recreate the relayer container (docker compose up -d --no-deps relayer; a plain restart keeps the old environment); browsers follow its config';
+  function gasCapMarked(restored:boolean){
+    online=false;admissionHealthy=false;guardWritableAt=0;
+    lastError=ENGINE_GAS_CAP_MESSAGE;lastErrorCode=ENGINE_GAS_CAP_CODE;
+    console.error(json({event:'rooms-engine-gas-cap',app,...gasCap.state,restored,action:GAS_CAP_ACTION,at:new Date().toISOString()}));
+    void notify();
+  }
   function gasCapRefused(error:unknown,raw:Hex){
     // A journaled command signed above the current limit (before a restart with a
     // lower ROOMS_ENGINE_COMMAND_GAS) says nothing about the current limit.
     if((parseTransaction(raw).gas??commandGas)>commandGas)return;
     if(!gasCap.refused(error,lastEpoch,commandGas))return;
-    online=false;admissionHealthy=false;guardWritableAt=0;
-    lastError=ENGINE_GAS_CAP_MESSAGE;lastErrorCode=ENGINE_GAS_CAP_CODE;
-    console.error(json({event:'rooms-engine-gas-cap',app,...gasCap.state,
-      action:'set ROOMS_ENGINE_COMMAND_GAS=15000000 and restart the relayer; browsers follow its config',at:new Date().toISOString()}));
-    void notify();
+    // Kept across a restart at the same limit and epoch (il_engine_gas_cap).
+    void saveGasCap(db,app,gasCap.state!).catch(()=>{});
+    gasCapMarked(false);
   }
+  // The epoch whose persisted gas-cap mark was already looked up.
+  let gasCapLoadedEpoch=-1;
+  // A send neither confirmed nor retired, logged with the node's literal text at
+  // most every 30 s (with the count of the others): it is how an operator sees a
+  // refusal this code does not recognise.
+  let unconfirmedLoggedAt=0,unconfirmedSuppressed=0;
   async function recordPublicationFailure(e:unknown){
     if(!publicationUnavailable(e))return;
     online=false;admissionHealthy=false;
@@ -634,12 +649,28 @@ export async function createRoomsCoordinator(o: Options) {
           if(await retireRefusedEngineJob({db,app,job,error:e,
             latestNonce:()=>client.node.getTransactionCount({address:signer.address,blockTag:'latest'})}))
             console.warn(json({event:'rooms-engine-command-refused',app,epoch:String(job.epoch),nonce:String(job.nonce),action:identity.action,matchId:identity.matchId,reason:refusalReason(e),at:new Date().toISOString()}));
+          else if(Date.now()-unconfirmedLoggedAt>=30000){
+            // Still pending: only these bytes will ever be resent.
+            console.warn(json({event:'rooms-engine-command-unconfirmed',app,epoch:String(job.epoch),nonce:String(job.nonce),action:identity.action,matchId:identity.matchId,
+              gas:String(parseTransaction(job.raw).gas??''),reason:nodeRefusalText(e),suppressed:unconfirmedSuppressed,at:new Date().toISOString()}));
+            unconfirmedLoggedAt=Date.now();unconfirmedSuppressed=0;
+          }else unconfirmedSuppressed++;
           throw e;
         }
       }
     }
     const outcome=engineReceiptOutcome(receipt,job.hash);
     if(!outcome)throw new Error('Engine receipt has no execution outcome; the command remains uncertain');
+    // A receipt, reverted or not, means the node ran these bytes: it accepts
+    // their gas limit. The first one per epoch is the operator's proof, and it
+    // lifts a gas-cap mark at or below that limit.
+    const executedGas=parseTransaction(job.raw).gas??0n;
+    if(gasAccepted.record(Number(job.epoch),executedGas,identity.action,outcome))
+      console.info(json({event:'rooms-engine-command-gas-accepted',app,epoch:String(job.epoch),gas:String(executedGas),commandGas:String(commandGas),action:identity.action,outcome,at:new Date().toISOString()}));
+    if(gasCap.accepted(Number(job.epoch),executedGas)){
+      void clearGasCap(db,app,Number(job.epoch),executedGas).catch(()=>{});
+      console.info(json({event:'rooms-engine-gas-cap-cleared',app,epoch:String(job.epoch),gas:String(executedGas),at:new Date().toISOString()}));
+    }
     await db.query(
       "UPDATE il_engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2",
       [app, job.id, outcome,{kind:'receipt',hash:job.hash,blockHash:receipt?.blockHash,status:String(receipt?.status),at:new Date().toISOString()}],
@@ -756,10 +787,12 @@ export async function createRoomsCoordinator(o: Options) {
         // within one audit, not after the rotation has reached it among every older
         // result. A match that cannot be restored keeps its row and is ticked by id.
         // Normally the set is empty or a few seconds old.
+        // A row the node reported absent (no such match) is never published and
+        // would hold one of these places for good; the rotation still covers it.
         const unpublished = (
           await db.query(
-            "SELECT id,hash,room,ranked FROM il_results WHERE app=$1 AND NOT published ORDER BY ended_at LIMIT 4",
-            [app],
+            "SELECT id,hash,room,ranked FROM il_results WHERE app=$1 AND NOT published AND NOT (id = ANY($2::text[])) ORDER BY ended_at LIMIT 4",
+            [app, [...absentReported]],
           )
         ).rows;
         results = [...unpublished, ...results.filter((r) => !unpublished.some((u) => u.id === r.id))];
@@ -835,6 +868,12 @@ export async function createRoomsCoordinator(o: Options) {
       lastEngineSeen = Date.now();
       haltChanged(halt.observe(undefined, status.epoch));
       if(gasCap.observe(status.epoch))console.info(json({event:'rooms-engine-gas-cap-cleared',app,epoch:status.epoch,at:new Date().toISOString()}));
+      if(gasCapLoadedEpoch!==status.epoch){
+        // A mark recorded before this process started, for this epoch and limit.
+        const persisted=await loadGasCap(db,app,status.epoch,commandGas);
+        gasCapLoadedEpoch=status.epoch;
+        if(persisted&&gasCap.restore(persisted))gasCapMarked(true);
+      }
       const delegation = await base.readContract({
         address: manifest.hub,
         abi: interludeHubReadAbi,
@@ -1916,7 +1955,7 @@ export async function createRoomsCoordinator(o: Options) {
   return {
     route,
     subscribe,
-    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status(),halt:halt.state,gasCap:gasCap.state,commandGas:commandGas.toString(),
+    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status(),halt:halt.state,gasCap:gasCap.state,commandGas:commandGas.toString(),gasAccepted:gasAccepted.state,
       // Match ids only: a room id is an invitation link and this status is public.
       orphans:orphans.entries().map(o=>({matchId:o.id,reason:o.reason,since:o.since})) }),
     stop: () => {clearInterval(timer);clearInterval(healthTimer);if(guardTimer)clearInterval(guardTimer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();replays?.stop();diagnostics.stop();lifecycle?.stop();},

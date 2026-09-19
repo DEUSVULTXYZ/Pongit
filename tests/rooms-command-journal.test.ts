@@ -126,6 +126,13 @@ test('recovery resend: a gas-cap or halt refusal with the nonce confirmed unused
   assert.equal(journal.pending(player),undefined,'no longer blocks the player; the tab waits for a limit the node accepts');
  }
  {
+  // The numbered revm wording is the same refusal.
+  const {journal,raw,player}=await fixture();await journal.beforeSend(raw);
+  const numbered={name:'RpcRequestError',message:'RPC Request failed.',details:'transaction rejected before execution: transaction gas limit (30000000) is greater than the cap (16777216)',code:-32000};
+  await assert.rejects(resendJournaled(journal,journal.pending(player)!,{send:async()=>{throw numbered;},latestNonce:async()=>5}),isEngineGasCapped);
+  assert.equal(journal.pending(player),undefined,'retired, never resent forever');
+ }
+ {
   const {journal,raw,player}=await fixture();await journal.beforeSend(raw);
   await assert.rejects(resendJournaled(journal,journal.pending(player)!,{send:async()=>{throw haltRefusal;},latestNonce:async()=>5}),isEngineHalted);
   assert.equal(journal.pending(player),undefined,'retired, and the tab shows the halt instead of signing again');

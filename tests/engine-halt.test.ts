@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
  ENGINE_GAS_CAP_CODE,ENGINE_GAS_CAP_MESSAGE,ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,ENGINE_HEALTH_INTERVAL_MS,ENGINE_HEALTH_TIMEOUT_MS,EngineGasCapped,EngineHalted,
- engineHealth,gasCapRefusal,haltRefusal,healthApplies,isEngineGasCapped,isEngineHalted,readEngineHealth,refusalReason,retirableRefusal,
+ engineHealth,gasCapRefusal,haltRefusal,healthApplies,isEngineGasCapped,isEngineHalted,nodeRefusalText,readEngineHealth,refusalReason,retirableRefusal,
 } from '../shared/engine-halt';
-import {EngineGasCapMonitor,EngineHaltMonitor,roomsWriteVerdict,type EngineGasCapState,type EngineHaltState} from '../relayer/src/rooms-engine-halt';
+import {ENGINE_GAS_CAP_SCHEMA,EngineGasAcceptance,EngineGasCapMonitor,EngineHaltMonitor,clearGasCap,loadGasCap,roomsWriteVerdict,saveGasCap,type EngineGasCapState,type EngineHaltState} from '../relayer/src/rooms-engine-halt';
 import {engineCooldownMs,engineGate,engineTransport} from '../shared/engine-transport';
 import {measuredFetch,rpcSamples} from '../shared/rpc-metrics';
 // A getter read, so an assertion on one read does not narrow the next.
@@ -199,4 +199,69 @@ test('the maintenance verdict: a gas-cap refusal closes the arena (online and ad
  assert.equal(roomsWriteVerdict({publicationBlocked:true,gasCapped:true,halted:false,lifecycleStage:'playing'}).code,ENGINE_GAS_CAP_CODE,'more precise than a publication failure');
  assert.equal(roomsWriteVerdict({publicationBlocked:false,gasCapped:true,halted:true,lifecycleStage:'playing'}).code,ENGINE_HALTED_CODE,'a halted node refuses every command, whatever its gas');
  assert.equal(roomsWriteVerdict({publicationBlocked:false,gasCapped:true,halted:false,lifecycleStage:'renewing'}).code,'ENGINE_RENEWING');
+});
+
+test('gas-cap wording: the numbered revm text, go-ethereum\'s and a pool\'s limit all count; a full block does not',()=>{
+ // revm's EIP-7825 error puts the numbers inside the phrase. The first matcher
+ // missed this: the relayer would have resent the refused bytes forever.
+ for(const details of [
+  'transaction rejected before execution: transaction gas limit (30000000) is greater than the cap (16777216)',
+  'transaction gas limit (30000000) is greater than the cap (16777216)',
+  'transaction gas limit is greater than the cap',
+  'Transaction gas limit ( 30000000 ) is higher than the cap',
+  'transaction gas limit too high (cap: 16777216, tx: 30000000)',
+  "transaction's gas limit 30000000 exceeds block's gas limit 20000000",
+  'exceeds block gas limit',
+  'transaction gas limit 30000000 exceeds maximum transaction gas limit 16777216',
+ ]){
+  const error={name:'RpcRequestError',message:'RPC Request failed.',details,code:-32000};
+  assert.equal(gasCapRefusal(error),true,details);assert.equal(retirableRefusal(error),true,details);
+  assert.equal(gasCapRefusal({shortMessage:'x',cause:{cause:{details}}}),true,`${details}, nested`);
+  assert.notEqual(refusalReason(error),'',`${details} is logged`);
+ }
+ for(const details of ['gas limit reached','block gas limit reached','intrinsic gas too low','out of gas','insufficient funds for gas * price + value','transaction rejected before execution: nonce too low','max fee per gas less than block base fee'])
+  assert.equal(gasCapRefusal({details}),false,details);
+ const m=new EngineGasCapMonitor(()=>1);
+ assert.equal(m.refused({details:'transaction gas limit (30000000) is greater than the cap (16777216)'},7,30_000_000n),true);
+ assert.match(capState(m)!.reason,/gas limit \(30000000\) is greater than the cap \(16777216\)/);
+});
+
+test('an unrecognised refusal is logged with the node\'s own words, bounded',()=>{
+ const text=nodeRefusalText({name:'RpcRequestError',message:`RPC Request failed.\n\nURL: https://il-78d3341e3452d7ec.fly.dev\nRequest body: {"params":["0x${'ab'.repeat(200)}"]}`,details:'transaction rejected before execution: something new',code:-32000});
+ assert.match(text,/^transaction rejected before execution: something new/);
+ assert(!text.includes('https://')&&!text.includes('abab')&&text.length<=240);
+ assert.equal(nodeRefusalText(undefined),'');
+});
+
+test('gas-cap monitor: a mark survives a restart at the same epoch and limit; an executed command at that limit lifts it',async()=>{
+ const m=new EngineGasCapMonitor(()=>9);
+ const saved={gas:'30000000',epoch:7,since:5,reason:'transaction gas limit is greater than the cap'};
+ assert.equal(m.restore(saved),true);assert.deepEqual(capState(m),saved);
+ assert.equal(m.restore({...saved,since:6}),false,'restored once');
+ assert.equal(m.accepted(6,30_000_000n),false,'another epoch says nothing');
+ assert.equal(m.accepted(7,15_000_000n),false,'a smaller command says nothing about 30 M');
+ assert.equal(m.accepted(7,30_000_000n),true);assert.equal(capState(m),null);
+ // The table: keyed by app, epoch and limit.
+ const rows:any[]=[];const sql:string[]=[];
+ const db={query:async(q:string,args:any[])=>{sql.push(q);
+  if(q.startsWith('INSERT')){rows.push({app:args[0],epoch:args[1],gas:args[2],reason:args[3],since:args[4]});return {rows:[]};}
+  if(q.startsWith('SELECT'))return {rows:rows.filter(r=>r.app===args[0]&&r.epoch===args[1]&&r.gas===args[2]).map(r=>({reason:r.reason,since:String(r.since)}))};
+  if(q.startsWith('DELETE')){for(let i=rows.length-1;i>=0;i--)if(rows[i].app===args[0]&&rows[i].epoch===args[1]&&BigInt(rows[i].gas)<=BigInt(args[2]))rows.splice(i,1);return {rows:[]};}
+  throw new Error(q);}};
+ assert.match(ENGINE_GAS_CAP_SCHEMA,/PRIMARY KEY\(app,epoch,gas\)/);
+ await saveGasCap(db,app,saved);
+ assert.deepEqual(await loadGasCap(db,app,7,30_000_000n),saved);
+ assert.equal(await loadGasCap(db,app,7,15_000_000n),null,'a relayer recreated with 15 M decides again');
+ assert.equal(await loadGasCap(db,app,8,30_000_000n),null,'so does the next epoch');
+ await clearGasCap(db,app,7,30_000_000n);
+ assert.equal(await loadGasCap(db,app,7,30_000_000n),null);
+ assert(sql.every(q=>!/\$\d+\s*\|\|/.test(q)),'parameters only');
+});
+
+test('gas acceptance: the first executed command per epoch and limit is the operator\'s proof',()=>{
+ let now=1;const g=new EngineGasAcceptance(()=>now);
+ assert.equal(g.record(7,30_000_000n,'tick','observed'),true);
+ assert.deepEqual(g.state,{epoch:7,gas:'30000000',action:'tick',outcome:'observed',at:1});
+ now=2;assert.equal(g.record(7,30_000_000n,'tick','failed'),false,'logged once');
+ assert.equal(g.record(8,30_000_000n,'tick','failed'),true,'and again in the next epoch');
 });

@@ -78,4 +78,49 @@ export class EngineGasCapMonitor {
   if(!this.current||this.current.epoch===epoch)return false;
   this.current=null;return true;
  }
+ /** A mark recorded before a restart (il_engine_gas_cap) for this very epoch and
+  * limit. True when it newly marks the node. */
+ restore(state:NonNullable<EngineGasCapState>):boolean{
+  if(this.current)return false;
+  this.current={...state};return true;
+ }
+ /** A command signed at `gas` executed in `epoch` (it has a receipt, reverted or
+  * not): the node accepts that limit. True when this clears the mark. */
+ accepted(epoch:number,gas:bigint):boolean{
+  if(!this.current||this.current.epoch!==epoch||BigInt(this.current.gas)>gas)return false;
+  this.current=null;return true;
+ }
+}
+
+/** The gas-cap mark survives a restart of the relayer with the same limit: a
+ * container recreated for another reason, or a crash, must not reopen an arena
+ * whose node refuses every command at that limit (and with no live match, the
+ * relayer would send nothing that could find out again). Keyed by epoch and
+ * limit: a new epoch, or a different ROOMS_ENGINE_COMMAND_GAS, decides again. A
+ * command that later executes at that limit deletes the row. */
+export const ENGINE_GAS_CAP_SCHEMA="CREATE TABLE IF NOT EXISTS il_engine_gas_cap(app text NOT NULL,epoch bigint NOT NULL,gas text NOT NULL,reason text NOT NULL,since timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,epoch,gas))";
+type Query={query:(sql:string,args:unknown[])=>Promise<{rows:any[]}>};
+export async function saveGasCap(db:Query,app:string,state:NonNullable<EngineGasCapState>){
+ await db.query("INSERT INTO il_engine_gas_cap(app,epoch,gas,reason,since) VALUES($1,$2,$3,$4,to_timestamp($5::double precision/1000)) ON CONFLICT DO NOTHING",[app,state.epoch,state.gas,state.reason,state.since]);
+}
+export async function loadGasCap(db:Query,app:string,epoch:number,gas:bigint):Promise<EngineGasCapState>{
+ const row=(await db.query("SELECT reason,(extract(epoch FROM since)*1000)::bigint AS since FROM il_engine_gas_cap WHERE app=$1 AND epoch=$2 AND gas=$3",[app,epoch,String(gas)])).rows[0];
+ return row?{gas:String(gas),epoch,since:Number(row.since),reason:String(row.reason)}:null;
+}
+export async function clearGasCap(db:Query,app:string,epoch:number,gas:bigint){
+ await db.query("DELETE FROM il_engine_gas_cap WHERE app=$1 AND epoch=$2 AND gas::numeric<=$3::numeric",[app,epoch,String(gas)]);
+}
+
+/** The first command each epoch that executed at the configured limit, for the
+ * operator: it is the proof that this node accepts the limit (a receipt means
+ * the node ran it; a refusal before execution leaves none). */
+export class EngineGasAcceptance {
+ private current:{epoch:number;gas:string;action:string;outcome:string;at:number}|null=null;
+ constructor(private now=Date.now){}
+ get state(){return this.current;}
+ /** True the first time a command at `gas` executes in `epoch`. */
+ record(epoch:number,gas:bigint,action:string,outcome:string):boolean{
+  if(this.current&&this.current.epoch===epoch&&this.current.gas===String(gas))return false;
+  this.current={epoch,gas:String(gas),action,outcome,at:this.now()};return true;
+ }
 }

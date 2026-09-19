@@ -86,6 +86,13 @@ test('a gas-cap or halt refusal is retired only when the node also confirms its 
  }
  const {db,job}=await journal();
  assert.equal(await retireRefusedEngineJob({db,app,job,error:capRefusal,latestNonce:async()=>276n}),true,'a bigint count');
+ // revm's own wording carries the numbers inside the phrase. Missed, the refused
+ // 30 M bytes would stay pending and be resent ahead of every relayer command.
+ for(const details of ['transaction rejected before execution: transaction gas limit (30000000) is greater than the cap (16777216)','transaction gas limit too high (cap: 16777216, tx: 30000000)']){
+  const numbered=await journal();
+  assert.equal(await retireRefusedEngineJob({db:numbered.db,app,job:numbered.job,error:{name:'RpcRequestError',message:'RPC Request failed.',details,code:-32000},latestNonce:async()=>276}),true,details);
+  assert.match(numbered.updates[0].args[4],/gas limit/);
+ }
 });
 test('a refused command whose nonce moved, or could not be read, a generic refusal or any other failure stays pending',async()=>{
  const cases:[string,unknown,()=>Promise<number>][]=[

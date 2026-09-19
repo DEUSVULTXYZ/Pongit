@@ -398,14 +398,20 @@ export async function roomsLifecycle(o: {
         }
         // Nothing to submit now, but some results could not be read: retry them
         // before renewing. Each is deferred as 'unreadable' after
-        // FINALIZATION_READ_ATTEMPTS failing passes, so none holds renewal forever.
+        // FINALIZATION_READ_ATTEMPTS passes in which Monad answered other reads but
+        // not its own, so none holds renewal forever; while Monad answers nothing
+        // at all, the renewal waits.
         if(failed.length){
           error=`Could not read ${failed.length} result(s) from Monad (${failed[0].error}); retrying before renewal`;
           return;
         }
         // The operator may hold a drained rehearsal here while inspecting payouts
-        // or allowing the previous deployment to finish its last live matches.
-        if (process.env.ROOMS_LIFECYCLE_HOLD_RENEW === "true") return;
+        // or allowing the previous deployment to finish its last live matches,
+        // or a recovery before its renewal is approved (compose.yaml passes it).
+        if (process.env.ROOMS_LIFECYCLE_HOLD_RENEW === "true") {
+          error = "Renewal held by the operator (ROOMS_LIFECYCLE_HOLD_RENEW=true); set it to false and recreate the relayer to renew";
+          return;
+        }
         await transition("renewing");
       }
       await o.beforeRenew?.(BigInt(epoch));

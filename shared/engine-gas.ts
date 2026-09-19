@@ -10,11 +10,16 @@ import type {Address,Hex} from 'viem';
  * raised. The human arcade's node runs the same software, but nobody has observed
  * it accept a 30 M command yet. If it refuses one, the relayer retires the
  * command, reports ENGINE_GAS_CAP and closes the arena (shared/engine-halt.ts);
- * the operator then sets ROOMS_ENGINE_COMMAND_GAS=15000000 and restarts the
- * relayer. No rebuild: the relayer serves the value in /api/interlude/config, and
- * an open tab signs its next control with it. Gas is free on this chain
- * (maxFeePerGas 0) and the limit is a ceiling, not a charge: a command that needs
- * 200,000 gas uses 200,000.
+ * the operator then sets ROOMS_ENGINE_COMMAND_GAS=15000000 in the runtime
+ * environment and recreates the relayer container with
+ * `docker compose up -d --no-deps relayer` (a plain `docker compose restart`
+ * keeps the container's old environment and would sign at 30 M again). No
+ * rebuild: the relayer serves the value in /api/interlude/config, and an open
+ * tab signs its next control with it. A relayer that serves no limit at all is
+ * the release's, which signs 15 M; a tab then signs 15 M too
+ * (adoptServedEngineCommandGas). Gas is free on this chain (maxFeePerGas 0) and
+ * the limit is a ceiling, not a charge: a command that needs 200,000 gas uses
+ * 200,000.
  *
  * Why the ceiling matters: a Chaos advance simulates, in one call, the whole gap
  * since the last successful advancing command. During a force-grid state (wind,
@@ -62,6 +67,21 @@ export function setEngineCommandGas(value:unknown){
  const gas=parseEngineCommandGas(value);
  if(gas===undefined)return false;
  configured=gas;return true;
+}
+/** Adopt the limit of a /interlude/config response.
+ * - It serves `commandGas`: that limit, when valid; an invalid one keeps the
+ *   current limit.
+ * - It serves none: the relayer predates the setting (the release, 853f174, which
+ *   signs its own commands at 15,000,000 and recognises no gas-cap refusal). The
+ *   tab signs ENGINE_COMMAND_GAS_FALLBACK too, as the release's browser did, so a
+ *   new web in front of an old relayer (web deployed first, or the relayer rolled
+ *   back alone) never signs 30 M commands nobody would detect a refusal of.
+ * True when the limit was set. */
+export function adoptServedEngineCommandGas(config:unknown){
+ if(!config||typeof config!=='object')return false;
+ const value=(config as {commandGas?:unknown}).commandGas;
+ if(value===undefined||value===null){configured=ENGINE_COMMAND_GAS_FALLBACK;return true;}
+ return setEngineCommandGas(value);
 }
 
 /** Largest gap, in ms of engine time, that one tick absorbs under
