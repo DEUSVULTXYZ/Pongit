@@ -62,6 +62,12 @@ try{
    route.onMessage(data=>server.readyState===1?server.send(data):pending.push(data));server.on('open',()=>pending.splice(0).forEach(data=>server.send(data)));server.on('message',data=>route.send(data.toString()));server.on('error',()=>route.close());server.on('close',()=>route.close());route.onClose(()=>server.close());
   });
   p.page=await context.newPage();p.page.on('pageerror',(e:Error)=>report.errors.push(e.message));
+  // Payload-free diagnostics distinguish a browser/CORS failure from an engine
+  // execution failure. Do not record bodies, cookies, query strings or grants.
+  p.page.on('requestfailed',(req:any)=>{
+   const u=new URL(req.url());(report.transportFailures??=[]).push({player:i,origin:u.origin,
+    path:u.pathname.replace(/0x[\da-f]{64,}/gi,'[omitted]'),method:req.method(),error:req.failure()?.errorText});
+  });
   if(mera){const cdp=await context.newCDPSession(p.page);await cdp.send('WebAuthn.enable');await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});p.assertions=0;cdp.on('WebAuthn.credentialAsserted',()=>p.assertions++);}
   p.page.on('requestfinished',async(req:any)=>{if(!req.url().startsWith(m.node))return;try{const rpc=req.postDataJSON(),r=await req.response(),timing=req.timing();report.requests.push({player:i,method:rpc.method,status:r.status(),ms:timing.responseEnd-timing.requestStart});}catch{}});
  }

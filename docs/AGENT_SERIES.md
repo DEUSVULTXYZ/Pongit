@@ -34,3 +34,11 @@ Compact observations record actual revealed effects and reset signals, without f
 - Complete tournaments, correction and restart tests, followed by a new unchanged 24-hour trial and browser checks.
 
 The disposable hub tests are not evidence of hosted admission capacity. The 100-command synthetic human trial on the earlier pool is not physical Mera authentication evidence and does not qualify this new arena. Public switches stay closed until all applicable delivery gates pass.
+
+## Hosted checkpoint, 19 September 2026
+
+Candidate `8a9d26b` was deployed privately. Pool `0xd1cc910fea9b3b705cef6982281701d3c7d5aaa8` owns the rules-11 arenas `0xd7c72a69c01b9ca62f10ba05a2614cd1af3e0eeb` and `0xbe12acef62ca94de2c711678f314f2daf5159d73`. Public admissions remain disabled.
+
+The first arena opened epoch 1 at transaction `0xea217761af97134b9e80922cff29ea469b05e08bed31fe12dbdc848d1a588ad6`, block 64000780. Its first five-minute Classic qualification completed and was captured at `0xa21a94a0becebb9adb059a4aa96d1d59c960aa046c7c7cfe4107faa1351f9281`. The engine then started match 2 in the same epoch while preserving match 1. This proves a real consecutive-match transition; it does not yet prove end-of-series release, rotation capacity, Chaos series, or continuous availability.
+
+`scripts/agent-series-evidence.ts` collects paced, block-pinned public state and compares per-match publications with their captures. It checks arena bytecode and complete references, excludes deployment keys, and reports pending capture separately from a result mismatch. Reports remain explicitly partial until the other gates pass.

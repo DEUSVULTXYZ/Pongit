@@ -153,6 +153,16 @@ After explicit approval and a five-file hash-verified off-VPS backup, two empty 
 
 A new read-only estimate of the older `0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9` epoch-2 release, at block 63993847 / 21:50:21 UTC, still failed for insufficient gas after 8,564 batches. No new transaction was signed for that application.
 
+## Capacity cleanup and rules-9 hosted results, 22:36 UTC
+
+Both empty predecessors were subsequently released. `0xfd1693294fed77304662f08e827b043b0ba386a3` reached hub status None through `0x4445bbfbc102ca0d92ffab89e42f16c7041f3f3336504f062d3e9cb3e2672006`, block 63999590. `0x065b3d60457eb7c32216d8f64b90f756d51fcfc4` reached None through `0x83827d01886a5cc18ee3f4a223241750240b41105b4869abbcadf3122e92673c`, block 63999618. The shared operator nonce journal was retained. No active historical game was discarded.
+
+The previously capacity-blocked human rules-9 candidate `0x0f0438f757b20047de662d6b553f8d37e56348fb` then opened successfully, transaction `0x7e9c8012babfb766094e5e25bbda518cb28a62839ad13ec0f0bd0dfcdaf27d99`, block 64000406. Hosted epoch 1 executed two simultaneous Chaos games to 7–6 and published both results. The trial recorded 50 commands, 43 publications, a maximum publication calldata size of 4,068 bytes and a maximum observed command gas use of 4,433,792. These are observed cases, not worst-case bounds.
+
+A second real trial completed Classic 7–4 with 102 confirmed changes per player, then Chaos 4–7 with 119 and 102 changes. It verified four randomness proofs, realtime bets reaching the pressure worker without a checkpoint pause, and a 0.006 test-MON automatic payout to a synthetic beneficiary without a recipient signature. Its separate contracts are settlement `0x59118327c9d5a3098274b6370f6256a225a3f672`, market `0xe66de12d30a2dc69030120c97ae6f803f22ae332`, and vault `0x1cc5b7d586f93d657a1970fd68351bb50a841535`. Production finance was untouched. This trial uses synthetic EOA owners; browser and physical-device validation remain separate gates.
+
+The bounded-series candidate also admitted its first hosted arena and advanced from a published five-minute Classic match to another match in the same epoch. See `AGENT_SERIES.md`. Public human, Agent Arcade and tournament switches remain closed; no new final 24-hour trial has started.
+
 The [bounded-series candidate](../AGENT_SERIES.md) adds contract-authorized fixture groups, independent game references, per-game capture, stale-transition guards, tournament memory continuity and bounded cancellation of unstarted games. The latest full Forge run passed **536 tests**, with **five environment-dependent tests skipped** and zero failures. The TypeScript suite passed **434 tests** and type checking passed. A disposable VPS PostgreSQL database passed reset coalescing, cumulative restart diagnostics, idempotency, stale-read rejection and seven-day retention. It was removed after the test. Its first harness attempt lacked writable `/tmp`; providing a tmpfs fixed the harness without changing production.
 
 The series contracts and services have not yet passed hosted execution, publication or release. The current single-match pool remains frozen on its existing runtime. No final 24-hour trial or public reopening is implied by this checkpoint.
