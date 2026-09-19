@@ -103,9 +103,28 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,expires:control.expires,gas:POOL_PLAYER_GAS,now});
   feed.invalidate();return verify(await feed.read(id,true));
  }
+ async function authorizeControls(){
+  if(!sender||journal.pending(session.grant.key)){await recoverNow();return;}
+  if(stopped)throw Error('Arena controls have stopped');
+  if(now()<controlsUntil)return;
+  try{
+   // The immutable binding and runtime were checked during recovery. Repeating
+   // that entire handshake every three seconds stalls input and discards the
+   // sender's known nonce. Only the mutable hub fence needs this cadence; the
+   // contract still checks active permission/expiry on every signed command.
+   const block=await options.base.getBlock(),hub=await readHubDelegation(options.base,m.hub,arena!.app,block.number);
+   if((await options.base.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arena publication changed during authorization');
+   if(hub.epoch>epoch){journal.retirePrevious(session.grant.key,hub.epoch);throw Error('The prior arena epoch is closed. Read its published result.');}
+   if(hub.epoch===epoch&&hub.status===0){journal.retireClosed(session.grant.key,epoch);throw Error('The arena epoch is closed. Read its published result.');}
+   if(hub.epoch!==epoch||hub.status!==1||hub.expiresAt<=block.timestamp)throw Error('This arena is recovering; your arcade key is saved');
+   await identify();
+   if(stopped)throw Error('Arena controls have stopped');
+   controlsUntil=now()+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
+  }catch(error){sender=undefined;throw error;}
+ }
  async function sendNow(name:'input'|'concede',args:readonly unknown[]){
   if(stopped)throw Error('Arena controls have stopped');
-  if(!sender||now()>=controlsUntil||journal.pending(session.grant.key))await recoverNow();
+  await authorizeControls();
   if(stopped)throw Error('Arena controls have stopped');
   try{const result=await sender!.send(name,args);return verify(await feed.receipt(id,result,name,args,player));}
   catch(error){sender=undefined;throw error;}
@@ -115,7 +134,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   moving=(async()=>{while(intention&&!stopped){
    const latest=intention;
    try{await serial(async()=>{
-    if(!sender||now()>=controlsUntil||journal.pending(session.grant.key))await recoverNow();
+    await authorizeControls();
    const s=verify(await feed.read(id));if(s.phase!==2){intention=undefined;return;}
     if(stopped)throw Error('Arena controls have stopped');
     // Coalesce again after awaited recovery; never dispatch an obsolete intent.

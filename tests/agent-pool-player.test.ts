@@ -19,6 +19,7 @@ function fixture(){
  Object.assign(hub,{epoch:1n,status:1,expiresAt:BigInt(at+3600),resolveThreshold:2});
  const state:any={id:4n,phase:2,a:match.a,b:match.b,nonceA:0n,nonceB:0n,head:10n,state:{leftDir:0,rightDir:0}};
  let nodeEpoch=1,nonce=0,lost=false,receiptVisible=false,hold:(()=>Promise<void>)|undefined,nodeCalls=0,reorg=false,failBase=false;
+ let clock=Date.now(),bindings=0,nonceReads=0;
  let overrideKey:Address=zeroAddress,overrideMeta=0n,overrideRevision=0n;const sent:Hex[]=[],receipts=new Map<Hex,any>();
  const binding={id:4n,epoch:1n,a:match.a,b:match.b,controlA:{key:account.address,expires:session.grant.expires,codeHash:zeroHash},controlB:{key:addr(21),expires:session.grant.expires,codeHash:zeroHash}};
  const base:any={getChainId:async()=>10143,getBlock:async(opts?:any)=>{if(failBase)throw Error('RPC timeout');if(hold)await hold();return{number:100n,timestamp:BigInt(at),hash:opts&&reorg?toHex(1n,{size:32}):zeroHash};},getCode:async()=>'0x6000',request:async()=>encodeFunctionResult({abi:hubAbi,functionName:'delegationOf',result:hub})};
@@ -30,14 +31,14 @@ function fixture(){
    if(r.slot===slot)return toHex([BigInt(overrideKey),overrideMeta,overrideRevision][i],{size:32});
   }throw Error('Unexpected permission slot');
  },getBlock:async()=>({number:10n,timestamp:BigInt(at),hash:zeroHash}),readContract:async(r:any)=>{
-  if(r.functionName==='RULES_VERSION')return 10n;if(r.functionName==='boundMatch')return binding;
+  if(r.functionName==='RULES_VERSION')return 10n;if(r.functionName==='boundMatch'){bindings++;return binding;}
   if(r.functionName==='authorizationRevision')return overrideRevision;
   const domain={name:'PONGIT Pooled Arena',version:'1',chainId:10143,verifyingContract:addr(9)};
   if(r.functionName==='renewalDigest')return hashTypedData({domain,types:poolRenewTypes,primaryType:'RenewArena',message:r.args[0]});
   if(r.functionName==='revocationDigest')return hashTypedData({domain,types:poolRevokeTypes,primaryType:'RevokeArena',message:{player:r.args[0],epoch:1n,matchId:4n,revision:overrideRevision,deadline:r.args[1]}});
   throw Error(r.functionName);
  },
- getTransactionCount:async()=>nonce,getTransactionReceipt:async(r:any)=>{if(receiptVisible&&receipts.has(r.hash))return receipts.get(r.hash);throw Error('Receipt unavailable');},
+ getTransactionCount:async()=>{nonceReads++;return nonce;},getTransactionReceipt:async(r:any)=>{if(receiptVisible&&receipts.has(r.hash))return receipts.get(r.hash);throw Error('Receipt unavailable');},
  request:async(r:any)=>{
   nodeCalls++;if(r.method==='interlude_session')return{app:addr(9),epoch:nodeEpoch,chainId:4242};
   assert.equal(r.method,'interlude_sendTransaction');const raw=r.params[0] as Hex;await player.journal.beforeSend(raw);sent.push(raw);
@@ -51,9 +52,10 @@ function fixture(){
   if(lost)throw Error('Lost response');const result=receipts.get(hash);player.journal.received(r.method,result);return result;
  }};
  const feed:any={read:async()=>state,receipt:async()=>state,invalidate(){},watch:()=>()=>{}};
- const create=()=>player=createPoolPlayer(m,match,session,{base,storage,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
+ const create=()=>player=createPoolPlayer(m,match,session,{base,storage,now:()=>clock,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
  return{m,match,session,owner,player,create,hub,state,sent,storage,binding,base,node,feed,
   lost:(v:boolean)=>lost=v,visible:(v:boolean)=>receiptVisible=v,epoch:(v:number)=>nodeEpoch=v,calls:()=>nodeCalls,hold:(v?:()=>Promise<void>)=>hold=v,
+  advance:(ms:number)=>{clock+=ms;},bindings:()=>bindings,nonceReads:()=>nonceReads,
   reorg:(v:boolean)=>reorg=v,failBase:(v:boolean)=>failBase=v,override:(key:Address,meta:bigint,revision=1n)=>{overrideKey=key;overrideMeta=meta;overrideRevision=revision;}};
 }
 
@@ -116,4 +118,24 @@ test('closing the client during slow authorization prevents the queued input fro
  const f=fixture();let release!:()=>void;const gate=new Promise<void>(r=>release=r);f.hold(()=>gate);
  const moving=f.player.move(1);await Promise.resolve();f.player.close();release();
  await assert.rejects(moving,/stopped/);assert.equal(f.sent.length,0);
+});
+
+test('periodic hub fences preserve the verified binding and sequential sender, but a closing epoch blocks writes',async()=>{
+ const f=fixture();await f.player.move(1);
+ const bindings=f.bindings(),nonceReads=f.nonceReads();
+ for(let i=0;i<4;i++){f.advance(3100);await f.player.move(i%2===0?-1:1);}
+ assert.equal(f.bindings(),bindings);assert.equal(f.nonceReads(),nonceReads);
+ assert.deepEqual(f.sent.map(raw=>parseTransaction(raw).nonce),[0,1,2,3,4]);
+ f.advance(3100);f.hub.status=2;await assert.rejects(f.player.move(-1),/recovering/);
+ assert.equal(f.sent.length,5);f.player.close();
+});
+
+test('a failed or reorganized light fence never sends the waiting movement',async()=>{
+ for(const problem of ['failure','reorg']){
+  const f=fixture();await f.player.move(1);f.advance(3100);
+  if(problem==='failure')f.failBase(true);else f.reorg(true);
+  await assert.rejects(f.player.move(-1));assert.equal(f.sent.length,1);
+  f.failBase(false);f.reorg(false);await f.player.move(-1);
+  assert.equal(f.bindings(),2);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
+ }
 });

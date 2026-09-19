@@ -94,6 +94,12 @@ try{
    globalThis.fetch=originalFetch;await wait(1500);await player.recover();assert(!player.journal.pending(session.grant.key));
    state.rateDone=true;save();check('injected-429-recovery-exact-command',{hash:pending.hash,nonce:pending.nonce});
   }
+  if(run>=3&&!state.permissionDone){
+   const previous=JSON.parse(readFileSync('/diagnostics/pool-human-check-2.json','utf8'));
+   assert.equal(previous.player.toLowerCase(),owner.address.toLowerCase());
+   assert(previous.checks.some((c:any)=>c.name==='owner-renewal-restores-same-limited-key'));
+   check('permission-tested-in-separate-preserved-run',{run:2});state.permissionDone=true;save();
+  }
   if(!state.permissionDone){
    await player.revoke(owner);await assert.rejects(player.move(1),/revoked/);check('owner-revocation-enforced');
    await player.renew(owner);await player.recover();await player.move(-1);await player.move(0);
@@ -107,7 +113,19 @@ try{
    const wanted=tracker.decide(before,0,performance.now());
    const dir=before.state.leftDir===0?(wanted===0?(state.moves%2===0?1:-1):wanted):0;
    const at=performance.now();await player.move(dir);
-   const after=await player.read();assert(after.nonceA>before.nonceA,'The new direction was not accepted');
+   let after=await player.read();
+   if(after.nonceA<=before.nonceA)after=await player.read(true);
+   if(after.nonceA<=before.nonceA){
+    const detail={before:{nonce:String(before.nonceA),phase:before.phase,dir:before.state.leftDir,score:[before.state.scoreA,before.state.scoreB]},
+     after:{nonce:String(after.nonceA),phase:after.phase,dir:after.state.leftDir,score:[after.state.scoreA,after.state.scoreB]},wanted:dir};
+    if(after.phase!==2){check('match-ended-during-direction-test',detail);throw Error('Published gameplay ended before 100 direction changes; this run is partial');}
+    // A serve resets directions. Recovery can therefore make a pending stop a
+    // no-op; count neither this stop nor a coalesced intent as a sent command.
+    if(after.state.leftDir===dir&&(after.state.scoreA!==before.state.scoreA||after.state.scoreB!==before.state.scoreB)){
+     check('point-reset-made-intent-redundant',detail);continue;
+    }
+    check('unconfirmed-direction',detail);throw Error('The new direction was not accepted');
+   }
    latencies.push(performance.now()-at);state.moves++;save();
   }
   await player.move(0);latencies.sort((a,b)=>a-b);check('confirmed-direction-changes',{count:state.moves,p50:latencies[Math.floor(latencies.length*.5)]??null,p95:latencies[Math.floor(latencies.length*.95)]??null});

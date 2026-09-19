@@ -80,3 +80,9 @@ Still required before public opening:
 7. Refresh and verify off-VPS backups, publish audited source, then open each space independently only after its gates pass.
 
 No public reopening is implied by a successful compile, local tests, elapsed time or a running container.
+
+### Follow-up evidence (19 September 20:43 UTC)
+
+Release, renewal, commands and publication in epoch 2 have now passed on two isolated arenas; the third arena also released. Old epoch-1 links retained their final results. The ordinary five-minute Chaos release consumed 1,066,828 gas (0.108816456 test MON). This narrows gate 1 above to maximum-duration/overtime and worst-case publication costs rather than claiming it is complete.
+
+Real synthetic challenge checks passed stored-journal response-loss recovery, an injected 429, active owner revocation and renewal, and reuse of the family key across two arenas. Both direction-count trials ended before their 100-command target; their partial reports remain preserved. The client now keeps its verified immutable binding and sender across periodic hub fences, avoiding repeated full handshakes. A new hosted trial must measure this change before deployment.

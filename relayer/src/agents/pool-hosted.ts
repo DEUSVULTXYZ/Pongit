@@ -36,7 +36,7 @@ export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expect
   const row=(await c.query('SELECT provision_epoch,provisioning FROM agent_pool.lifecycle WHERE app=$1',[app.toLowerCase()])).rows[0];
   let p:Provision|null=String(row.provision_epoch)===String(epoch)?row.provisioning:null;const now=Date.now();
   if(p?.state==='intervention')throw Error('Hosted arena creation needs inspection before another POST');
-  if(p&&p.retryAt>now)throw Error('Hosted arena provisioning is cooling down');
+  if(p&&p.retryAt>now)throw Object.assign(Error('Hosted arena provisioning is cooling down'),{code:'AGENT_HOSTED_COOLDOWN',retryAt:p.retryAt});
   const create=!p||p.state==='rejected';
   if(create){p={state:'sending',at:now,attempts:(p?.attempts??0)+1,retryAt:0};await save(c,app,epoch,p);}
   if(!p)throw Error('Hosted provisioning intent missing');

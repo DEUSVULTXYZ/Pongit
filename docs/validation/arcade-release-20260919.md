@@ -130,3 +130,17 @@ The real private human challenge was registered at `0x8eb2e96444ee8cbff86b33731a
 
 Human qualification tools now distinguish rules 8 and 9 in fixture IDs, deployment receipts, manifests, saved signed offers and isolated database names. The existing frozen rules-8 evidence is preserved. Eleven targeted client/version-boundary tests and a further TypeScript check pass; these tooling changes do not claim a rules-9 hosted test has run.
 
+
+## First releases and reused arenas, 19 September 20:43 UTC
+
+The 279-batch Classic arena was actually released at 20:30:41 UTC, transaction `0x9b03c1cac89c282b9039915cd450fb0a8408523ff9a71708623488959378ef7e`, using 956,907 gas and 0.097604514 test MON. The 400-batch, five-minute Chaos arena was released at 20:37:01 UTC, transaction `0x61b567f731c4bf7edef125d726b0ad8bcf78653ac20a5ccb4848f73a96fd5594`, using 1,066,828 gas and 0.108816456 test MON. These are release fees only, not total game costs. Arena 3 was released at 20:43:29 UTC, transaction `0x26a4bb070f268d9b5faaa45b8ab46f7a94486988aa1e8775e85e8b46819bdd88`.
+
+The first two arenas then admitted new challenges, renewed to epoch 2, executed commands, published 0–7 results and closed again. A pinned-block reader verified that their epoch-1 links retained the original final results and returned no replacement node. A five-minute ordinary Chaos release is therefore proven; six-minute knockout overtime, heavy-input worst-case publication, continuous capacity and a final 24-hour trial are still unqualified.
+
+The synthetic human runs were partial (59 and 28 confirmed direction changes): both games reached 0–7 before the target of 100. Run 1 passed lost response after execution, exact receipt recovery with the stored journal, and an injected pre-execution HTTP 429. Run 2 passed owner revocation and renewal of the same limited key on a different arena. Neither is a physical Mera/browser authentication test. Reports are preserved separately. The harness now distinguishes a terminal result or serve reset from an unaccepted command.
+
+A client inefficiency was corrected: the three-second hub fence no longer rebuilds the entire sender and repeats immutable binding/bytecode/permission reads. Initial or uncertain-state recovery still performs the complete checks; each signed command still enforces its active permission in the contract. Tests cover sequential nonces, closing epochs, failed and reorganized light checks. This updated client requires another real command trial.
+
+A later history collector again exceeded the public Monad RPC's advertised 15 requests/s response despite Multicall. The read-only collector now paces its own requests to at most 2.5/s; the complete history/fee collection then passed. This does not establish an Interlude limit and does not claim that all service traffic has been measured.
+
+The full TypeScript suite after the light-fence/cooldown changes passed **427 tests**, and TypeScript checking passed. The live keeper and engine remain on their frozen `fe44ef0` source; only a separately launched human-check client will use the new version initially.

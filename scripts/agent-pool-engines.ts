@@ -76,10 +76,10 @@ async function arenaLoop(app:Address){
     }
    }else if(s.phase>=3){await health('awaiting-publication',{epoch:String(binding.epoch),id:String(binding.id),node:url,phase:s.phase,score:[s.state.scoreA,s.state.scoreB],winner:s.winner});pause=1000;}
   }catch(error){
-   const e=error as {shortMessage?:string;message?:string;code?:string};
+   const e=error as {shortMessage?:string;message?:string;code?:string;retryAt?:number};
    await health('synchronizing',{epoch:String(binding?.epoch??0),id:String(binding?.id??0),code:e.code,
     error:(e.shortMessage??e.message??'Arena unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220)});
-   pause=Math.max(1000,engineCooldownMs(url));
+   pause=Math.max(1000,engineCooldownMs(url),Number.isFinite(e.retryAt)?e.retryAt!-Date.now():0);
   }
   if(!stopping)await delay(Math.min(pause,30000));
  }}finally{engine?.close();await proofTask;}
