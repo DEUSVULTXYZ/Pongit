@@ -27,6 +27,8 @@ The private runner has one transport, event feed and nonce journal per arena. Th
 
 Controller commands currently use a **14.8 M gas allowance**, matching the local bounded-progress tests. A delayed randomness fetch runs independently of ticks. Each arena can recover without waiting behind another arena's node request.
 
+Run persistent services and every one-off writer with **`--user 1000:1000`**. Private journals are mode 0600 and replaced atomically. A root-run helper can otherwise replace a keeper-owned file with a root-owned one and stop later maintenance. The scripts now refuse the wrong UID. Permission repair does not authorize deleting a nonce journal or making it world-readable.
+
 `scripts/agent-pool-step.ts` is a private qualification operator, not an approved public keeper. It performs a bounded Monad operation through the existing `il_lifecycle_jobs` operator journal and advisory lock. It preserves an uncertain operation before doing another. Publication capture, close and release happen independently of physics. Public admissions and capacity evidence cannot be enabled by this script. Qualification scanning, historical repair scheduling and full service restart tests still need final integration validation.
 
 Hosted creation is journaled before POST, under a PostgreSQL advisory lock. An ambiguous reply is followed by lookup, not another POST. Only an explicit non-creating refusal permits retry. A returned URL must still pass application, epoch, chain and rules checks at the actual node. A five-minute unresolved creation or stale-node identity becomes an explicit intervention state. State and evidence are committed atomically; old epoch evidence is retained separately.

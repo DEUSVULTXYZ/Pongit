@@ -10,10 +10,12 @@ import {readHubDelegation} from '../shared/rooms-hub';
 import {DrandBeaconTransport} from '../shared/drand-beacon';
 import {readEngineSnapshot} from '../shared/engine-snapshot';
 import {engineState} from '../shared/engine-stream';
+import {qualificationRules} from './chaos-qualification-record';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
 const mode=process.argv[2];assert(['provision','exercise'].includes(mode));
 const prefix=process.env.PONG_CHAOS_QUALIFY_ID;assert(prefix,'Set a new isolated qualification ID');
 assert(/^chaos-events-[a-z0-9-]{1,60}$/.test(prefix));
+const rulesVersion=qualificationRules(prefix);
 const path=`/secrets/${prefix}.json`;
 let r:any;try{r=JSON.parse(await readFile(path,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(path+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(path+'.next',path);};
@@ -38,6 +40,7 @@ try{
   const nextApp=await t.deploy('PongChaosEvents',[hub,keys[4].address,keys[5].address,t.account.address,zeroAddress,r.modules.ChaosEngine],instance);
   if(r.app&&r.app!==nextApp){assert(!r.node,'An active qualification must be closed before replacement');assert.equal((await readHubDelegation(t.base,hub,r.app)).status,0);r.supersededApps=[...(r.supersededApps||[]),r.app];}
   r.app=nextApp;report.app=nextApp;await save();
+  assert.equal(await t.base.readContract({address:nextApp,abi:artifact.abi,functionName:'RULES_VERSION'}),BigInt(rulesVersion));
   const before=await readHubDelegation(t.base,hub,r.app);
   if(before.status===0)await t.write('open-candidate',r.app,artifact.abi,'renewEngine');
   const opened=await readHubDelegation(t.base,hub,r.app);assert.equal(opened.status,1);assert.equal(opened.epoch,1n);r.epoch='1';await save();
@@ -51,7 +54,7 @@ try{
   report={...report,app:r.app,node:r.node,modules:r.modules,rootRuntimeBytes:(artifact.deployedBytecode.object.length-2)/2,epoch:r.epoch,passed:true};
  }else{
   assert(r.app&&r.node);const node=createPublicClient({transport:http(r.node,{retryCount:0,timeout:12000})});
-  assert.equal(await node.getChainId(),4242);assert.equal(await node.readContract({address:r.app,abi:artifact.abi,functionName:'RULES_VERSION'}),9n);
+  assert.equal(await node.getChainId(),4242);assert.equal(await node.readContract({address:r.app,abi:artifact.abi,functionName:'RULES_VERSION'}),BigInt(rulesVersion));
   const baseStart=r.baseStart??String(await t.base.getBlockNumber());r.baseStart=baseStart;await save();
   const read=async(id:bigint)=>engineState(await readEngineSnapshot({app:r.app,abi:artifact.abi,node:node as any},id));
   async function send(op:string,index:number,name:string,args:readonly unknown[]=[]){
@@ -94,12 +97,12 @@ try{
    const id=BigInt(j+1);let s=await read(id);
    if(s.phase===0){
     const now=(await node.getBlock()).timestamp;
-    const offer={id,room:toHex(id,{size:32}),a:keys[j*2].address,b:keys[j*2+1].address,mode:1,ranked:j===0,expires:now+25n,rules:9n,entropy:keccak256(toHex(`chaos-qualification-${j}`))};
+    const offer={id,room:toHex(id,{size:32}),a:keys[j*2].address,b:keys[j*2+1].address,mode:1,ranked:j===0,expires:now+25n,rules:BigInt(rulesVersion),entropy:keccak256(toHex(`chaos-qualification-${j}`))};
     const hash=await node.readContract({address:r.app,abi:artifact.abi,functionName:'ticketDigest',args:[offer]}) as Hex;
     const signature=await keys[4].sign({hash});
-    r.offers[j]={offer:{...offer,id:String(id),expires:String(offer.expires),rules:'8'},signature};await save();
+    r.offers[j]={offer:{...offer,id:String(id),expires:String(offer.expires),rules:String(rulesVersion)},signature};await save();
    }
-   const saved=r.offers[j];assert(saved);const offer={...saved.offer,id,expires:BigInt(saved.offer.expires),rules:9n};
+   const saved=r.offers[j];assert(saved);assert.equal(Number(saved.offer.rules),rulesVersion);const offer={...saved.offer,id,expires:BigInt(saved.offer.expires),rules:BigInt(rulesVersion)};
    await send(`accept-${j}-a`,7+j*2,'acceptMatch',[offer,saved.signature]);await send(`accept-${j}-b`,8+j*2,'acceptMatch',[offer,saved.signature]);
   }
   // A restarted trial keeps every previous transaction, including confirmed reverts.

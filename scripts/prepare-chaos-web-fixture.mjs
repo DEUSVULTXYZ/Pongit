@@ -6,8 +6,8 @@ const p='deployments/interlude-rooms.json',m=JSON.parse(await readFile(p,'utf8')
 const real=process.env.CHAOS_WEB_FIXTURE==='private-real-testnet'?JSON.parse(await readFile('artifacts/drand/integration-manifests.json','utf8')):null;
 if(real){
  assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
- assert(/^chaos-events-rules8-[a-z0-9-]{1,48}$/.test(process.env.PONG_CHAOS_QUALIFY_ID||''));
- assert.equal(real.game.rulesVersion,8);assert.equal(real.game.releaseReady,false);
+ const version=/^chaos-events-rules(8|9)-[a-z0-9-]{1,48}$/.exec(process.env.PONG_CHAOS_QUALIFY_ID||'');assert(version);
+ assert.equal(real.game.rulesVersion,Number(version[1]));assert.equal(real.game.releaseReady,false);
  assert.notEqual(real.game.app.toLowerCase(),'0x78d3341e3452d7ec1add9371de3008639eed8eb0');
  const record=JSON.parse(await readFile(`/secrets/${process.env.PONG_CHAOS_QUALIFY_ID}.json`,'utf8'));
  assert.equal(real.game.app,record.app);

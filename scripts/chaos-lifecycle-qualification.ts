@@ -6,7 +6,7 @@ import {Pool} from 'pg';
 import {parseTransaction,decodeFunctionData,parseAbi,zeroHash,type PublicClient} from 'viem';
 import {createInterludeClient,memoryStore} from '@interludelayer-sdk/sdk';
 import {chainTools} from './independent-chain-tools';
-import {chaosQualificationRecord,verifyQualificationApp} from './chaos-qualification-record';
+import {chaosQualificationRecord,verifyQualificationApp,qualificationRules} from './chaos-qualification-record';
 import {roomsLifecycle} from '../relayer/src/rooms-lifecycle';
 import {publishedResultReader} from '../relayer/src/rooms-finalization';
 import {readHubDelegation} from '../shared/rooms-hub';
@@ -17,14 +17,15 @@ assert.equal(process.env.PONG_CHAOS_LIFECYCLE,'qualified-private-cycle');
 const {prefix,record:r}=await chaosQualificationRecord();
 const m=JSON.parse(await readFile('artifacts/drand/integration-manifests.json','utf8'));
 assert.equal(m.game.app,r.app);
-assert.equal(m.finance.app,r.app);assert.equal(m.game.rulesVersion,8);assert.equal(m.finance.rulesVersion,8);
+const rules=qualificationRules(prefix);
+assert.equal(m.finance.app,r.app);assert.equal(m.game.rulesVersion,rules);assert.equal(m.finance.rulesVersion,rules);
 assert.notEqual((await(await fetch('https://pongit.xyz/api/interlude/config')).json()).app?.toLowerCase(),r.app.toLowerCase());
 for(const path of ['chaos-hosted.json','real-browser-1/report.json','real-browser-2/report.json','real-browser-3/report.json']){
  const proof=JSON.parse(await readFile('artifacts/drand/'+path,'utf8'));assert(proof.passed&&proof.app===r.app,`Missing gate ${path}`);
 }
 const t=await chainTools(prefix+'-lifecycle');
 const fixture=new Pool({connectionString:process.env.PONG_CHAOS_DATABASE_URL});
-assert.equal((await fixture.query('SELECT current_database() AS name')).rows[0].name,'pong_rules8_qualification');
+assert.equal((await fixture.query('SELECT current_database() AS name')).rows[0].name,`pong_rules${rules}_qualification`);
 let report:any={at:new Date().toISOString(),app:r.app,source:'roomsLifecycle',states:[],renewalReady:false};
 try{const prior=JSON.parse(await readFile('artifacts/drand/lifecycle-qualification.json','utf8'));assert.equal(prior.app,r.app);report={...prior,resumedAt:new Date().toISOString()};delete report.error;}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 report.renewalReady=false;delete report.finishedAt;

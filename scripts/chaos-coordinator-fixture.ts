@@ -8,7 +8,7 @@ import {keccak256,toHex} from 'viem';
 import {chainTools} from './independent-chain-tools';
 import {loadRoomsFinance} from '../relayer/src/rooms-finance-config';
 import {createRoomsCoordinator} from '../relayer/src/interlude-rooms';
-import {chaosQualificationRecord,verifyQualificationApp} from './chaos-qualification-record';
+import {chaosQualificationRecord,verifyQualificationApp,qualificationRules} from './chaos-qualification-record';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
 const production=process.env.PONG_CHAOS_PRODUCTION_FIXTURE==='authorized-testnet-candidate';
 const historyOnly=process.env.PONG_CHAOS_HISTORY_ONLY==='true';
@@ -18,7 +18,8 @@ const prefix=fixture?.prefix??'chaos-events-production-20260913',r=fixture?.reco
 const m=JSON.parse(await readFile(`artifacts/drand/${production?'production':'integration'}-manifests.json`,'utf8'));
 if(production)assert.equal(r.app,'0x78d3341e3452d7ec1add9371de3008639eed8eb0');assert.equal(m.game.app,r.app);
 const databaseUrl=production?process.env.TEST_DATABASE_URL!:process.env.PONG_CHAOS_DATABASE_URL!;
-assert.equal(new URL(databaseUrl).hostname,production?'pongit-chaos-history':'pongit-rules8-db');
+const rules=production?6:qualificationRules(prefix);
+assert.equal(new URL(databaseUrl).hostname,production?'pongit-chaos-history':`pongit-rules${rules}-db`);
 const t=await chainTools(prefix+'-coordinator');
 if(!production)await verifyQualificationApp(t,prefix,r.app);
 // The test coordinator cannot renew/close the engine. Its normal lifecycle is
@@ -30,7 +31,7 @@ process.env.ROOMS_CHAOS_ENABLED='true';process.env.ROOMS_ADMISSION_ENABLED=histo
 await writeFile('artifacts/drand/test-game.json',JSON.stringify(m.game));await writeFile('artifacts/drand/test-finance.json',JSON.stringify([m.finance]));
 process.env.INTERLUDE_ROOMS_MANIFEST='artifacts/drand/test-game.json';process.env.ROOMS_FINANCE_MANIFEST='artifacts/drand/test-finance.json';
 const config=await loadRoomsFinance(),db=new Pool({connectionString:databaseUrl});
-if(!production)assert.equal((await db.query('SELECT current_database() AS name')).rows[0].name,'pong_rules8_qualification');
+if(!production)assert.equal((await db.query('SELECT current_database() AS name')).rows[0].name,`pong_rules${rules}_qualification`);
 await db.query(`CREATE TABLE IF NOT EXISTS profiles(player text PRIMARY KEY,handle text UNIQUE NOT NULL,avatar integer NOT NULL,updated_at timestamptz NOT NULL DEFAULT now());CREATE TABLE IF NOT EXISTS player_blocks(player text NOT NULL,blocked text NOT NULL,PRIMARY KEY(player,blocked));`);
 const origin='https://pongit.xyz',send=(res:any,v:any,status=200)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(v,(_,v)=>typeof v==='bigint'?String(v):v));};
 const service=await createRoomsCoordinator({db,origin,financeConfig:config,body:async req=>{let data='';for await(const chunk of req){data+=chunk;if(data.length>131072)throw Error('Request too large');}return JSON.parse(data||'{}');},send,

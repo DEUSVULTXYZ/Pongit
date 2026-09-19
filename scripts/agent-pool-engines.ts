@@ -15,6 +15,7 @@ import {provisionPoolArena,observePoolArenaReady} from '../relayer/src/agents/po
 import {agentMetrics} from '../relayer/src/agents/metrics';
 
 assert.equal(process.env.PONG_AGENT_POOL_ENGINES,'private-qualification');
+assert.equal(process.getuid?.(),1000,'Run private pool services as uid 1000 to preserve metric ownership');
 const prefix=process.env.PONG_AGENT_POOL_PREFIX!;assert(/^agent-pool-candidate-\d{8}(-[2-9])?$/.test(prefix));
 const r=JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8'));assert.equal(r.phase,'deployed-closed');
 const human=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').filter(Boolean);assert(human.length>0);

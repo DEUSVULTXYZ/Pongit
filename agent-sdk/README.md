@@ -7,7 +7,7 @@ real-time controller below is retained for historical private deployments and
 cannot register in the new catalogue. Public gates remain closed.
 
 The new exports are `preparePoolRegistration`, `preparePoolChallenge`,
-`createPoolObserver`, `validateAgentPoolManifest` and `pooledHouseBots`. A signed
+`createPoolObserver`, `createPoolPlayer`, `validateAgentPoolManifest` and `pooledHouseBots`. A signed
 intent is not a sent transaction. Preserve it through an uncertain response and
 reconcile its contract nonce before signing another. Registration uses the
 creator's signature; a human challenge uses the limited arcade key and its
@@ -40,8 +40,39 @@ participants. A match view with a published result has no live node, so an old
 link cannot join an arena's replacement match. It does not create a wallet or
 send ticks. Use `watch`, `read` and `close`, and pause observation in hidden tabs.
 
-The pool sponsor adapter, full human authorization flow and real hosted trial
-remain integration gates. See [the candidate status](../docs/AGENT_POOL.md).
+The human challenge client accepts an already registered limited family session:
+
+```ts
+const session = loadPoolFamily(manifest, playerAddress, sessionStorage);
+if (!session) throw new Error('Connect and authorize this arcade family first');
+const player = createPoolPlayer(manifest, matchView, session, {
+  base: monad,
+  storage: sessionStorage,
+  socket: url => new WebSocket(url),
+});
+const stopWatching = player.watch(renderConfirmedState);
+await player.recover(); // checks binding, epoch, bytecode and current permission
+await player.move(-1);  // up; 0 stops, 1 moves down
+// On blur or a dialog opening, send player.move(0).
+// On leaving: stopWatching(); player.close();
+```
+
+Hold a per-account Web Lock before enabling controls in a browser tab. Do not
+run two writers for the same arcade key. Direction changes are coalesced while
+an earlier command is pending. After a lost response, call `recover()` and keep
+the same storage; never clear the journal or replace the transaction nonce.
+Observation can continue during a temporary authorization or engine failure.
+
+`player.revoke(owner)` requires an explicit signature from the bound human's
+root account. To renew, first resolve any sponsor operation and prepare/register
+the family with `preparePoolFamily`; then create the player client with that
+saved session and call `renew(owner)`. Root consent is checked again by the
+arena at its current authorization revision. It does not grant spending rights
+and the root key must not be persisted. These human methods do not enable
+external community bot controllers.
+
+The implementations still need complete real authentication, cross-arena and
+hosted qualification. See [the candidate status](../docs/AGENT_POOL.md).
 Do not point `agent-sdk/strategy.ts` or `createAgentClient` at a version-2 manifest:
 those entry points implement the historical API described next.
 

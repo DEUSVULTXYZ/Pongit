@@ -16,6 +16,7 @@ import {agentMetrics} from '../relayer/src/agents/metrics';
 import {measuredFetch} from '../shared/rpc-metrics';
 
 assert.equal(process.env.PONG_AGENT_POOL_MAINTENANCE,'authorized-private-testnet');
+assert.equal(process.getuid?.(),1000,'Run private pool writers as uid 1000; atomic replacement must preserve journal ownership');
 const prefix=process.env.PONG_AGENT_POOL_PREFIX!;assert(/^agent-pool-candidate-\d{8}(-[2-9])?$/.test(prefix));
 const file=`/secrets/${prefix}.json`,recordFile=`/secrets/${prefix}-maintenance.json`;
 const r=JSON.parse(await readFile(file,'utf8')),m=r.common;assert.equal(r.phase,'deployed-closed');

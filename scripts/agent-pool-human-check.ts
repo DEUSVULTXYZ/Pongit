@@ -17,6 +17,7 @@ import {agentMetrics} from '../relayer/src/agents/metrics';
 import {measuredFetch} from '../shared/rpc-metrics';
 
 assert.equal(process.env.PONG_POOL_HUMAN_CHECK,'authorized-private-testnet');
+assert.equal(process.getuid?.(),1000,'Run the private harness as uid 1000 to preserve journal and metric ownership');
 const prefix=process.env.PONG_AGENT_POOL_PREFIX!;assert(/^agent-pool-candidate-\d{8}(-[2-9])?$/.test(prefix));
 const deployment=JSON.parse(readFileSync(`/secrets/${prefix}.json`,'utf8'));
 const file=`/secrets/${prefix}-human-check.json`,reportFile='/diagnostics/pool-human-check.json';

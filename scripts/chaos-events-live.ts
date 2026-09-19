@@ -22,7 +22,7 @@ import {realtimeMarketAbi as marketAbi} from '../shared/abi-RealtimeMarket';
 import {roomsVaultAbi as vaultAbi} from '../shared/abi-RoomsVault';
 import {betTypes,domain} from '../shared/protocol';
 import {engineReceiptOutcome} from '../relayer/src/rooms-engine-recovery';
-import {chaosQualificationRecord,verifyQualificationApp} from './chaos-qualification-record';
+import {chaosQualificationRecord,verifyQualificationApp,qualificationRules} from './chaos-qualification-record';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
 const prefix=process.env.PONG_CHAOS_QUALIFY_ID!;assert(/^chaos-events-[a-z0-9-]{1,60}$/.test(prefix));
 const rootRecord=JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8'));
@@ -34,7 +34,7 @@ else{process.env.INTERLUDE_COORDINATOR_KEY=rootRecord.keys[4];process.env.ROOMS_
 const run=process.env.PONG_REALTIME_RUN||'1';assert(/^[1-9]$/.test(run));
 const file=`/secrets/${prefix}-live-${run}.json`;try{await readFile(file);throw Error('Reconcile the previous live fixture first');}catch(e){if((e as any).code!=='ENOENT')throw e;}
 const manifests=JSON.parse(await readFile(`artifacts/drand/${production?'production':'integration'}-manifests.json`,'utf8')),m=manifests.game,finance=manifests.finance;
-assert.equal(m.app,rootRecord.app);assert([6,8].includes(m.rulesVersion),'Only versioned human Chaos fixtures');
+assert.equal(m.app,rootRecord.app);assert.equal(m.rulesVersion,production?6:qualificationRules(prefix),'Use the exact versioned human fixture');
 await writeFile('artifacts/drand/test-finance.json',JSON.stringify([finance]));process.env.ROOMS_FINANCE_MANIFEST='artifacts/drand/test-finance.json';
 const t=await chainTools(prefix+'-live-'+run),config=await loadRoomsFinance(),base=t.base;
 if(!production)await verifyQualificationApp(t,prefix,m.app);
@@ -42,7 +42,7 @@ if(!production)await verifyQualificationApp(t,prefix,m.app);
 // independent database and cannot be consumed by human-production workers.
 assert(production||process.env.PONG_CHAOS_DATABASE_URL,'An isolated fixture database is required');
 const fixtureDb=production?t.db:new Pool({connectionString:process.env.PONG_CHAOS_DATABASE_URL});
-if(!production)assert.equal((await fixtureDb.query('SELECT current_database() AS name')).rows[0].name,'pong_rules8_qualification');
+if(!production)assert.equal((await fixtureDb.query('SELECT current_database() AS name')).rows[0].name,`pong_rules${qualificationRules(prefix)}_qualification`);
 const admission=privateKeyToAccount(process.env.INTERLUDE_COORDINATOR_KEY as Hex);assert.equal(admission.address.toLowerCase(),m.coordinator.toLowerCase());
 const journals:Record<string,string>={};
 const make=(store=memoryStore(),tag='observer')=>{
