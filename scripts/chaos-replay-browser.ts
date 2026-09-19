@@ -4,11 +4,14 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 import {decodeSession,encodeSession,storageKey,sessionGrantTypedData} from '@interludelayer-sdk/sdk';
 import {privateKeyToAccount} from 'viem/accounts';
+import {chaosQualificationRecord} from './chaos-qualification-record';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
-const secret=JSON.parse(await readFile('/secrets/chaos-events-browser-1.json','utf8'));
+const {prefix,record}=await chaosQualificationRecord();
+const secret=JSON.parse(await readFile(`/secrets/${prefix}-browser-1.json`,'utf8'));
 const prior=JSON.parse(await readFile('artifacts/drand/real-browser-1/report.json','utf8'));
-assert(prior.passed);const origin='https://pongit.xyz',report:any={at:new Date().toISOString(),scope:'Actual indexed match records and cached frames after engine closure',matches:[],errors:[]};
-const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+assert(prior.passed);assert.equal(prior.app,record.app);
+const origin='https://pongit.xyz',report:any={at:new Date().toISOString(),app:record.app,scope:'Actual indexed match records and cached frames after engine closure',matches:[],errors:[]};
+const browser=await chromium.launch({headless:true,args:['--no-sandbox'],...(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{})});
 try{for(const mode of [0,1]){
  const person=secret.people[mode*3],match=prior.matches[mode];
  // Same fixture owner, freshly signed limited grant. No node write is needed

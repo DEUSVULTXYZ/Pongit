@@ -51,11 +51,13 @@ Real browser qualification now passes on Chrome 153.0.8010.52 and Edge 153.0.423
 
 - Chrome: Classic 7:6 and Chaos 7:6. Edge: Classic 5:7 and Chaos 6:7. Both used two players and a spectator, desktop/mobile, F5 in each match, matching published results and no JavaScript exception.
 - Mera registration through virtual WebAuthn PRF authenticators passed on Chrome. Classic ended 7:4 and Chaos 7:2 after a deliberately lost response **following real execution**, and a 429 **before execution**, in each mode. Recovery and F5 caused no additional passkey assertion. This does not replace physical-device validation.
-- The private indexer build/codegen/typecheck passes under Linux/Node 24. It reached live indexing and stored the browser match archives with rulesVersion 8. Replay UI after closure remains to be checked.
+- The private indexer build/codegen/typecheck passes under Linux/Node 24. It reached live indexing and stored the browser match archives with rulesVersion 8.
 - The creation calldata of all twelve candidate modules/root/linked-library deployments exactly matches the compiled candidate and its journal, including linked addresses and constructor arguments. Runtime hashes are recorded in `candidate-bytecode.json`.
 - A guarded rehearsal using the real `roomsLifecycle` is running privately. It reached 654 batches, drained, closed at 13:20:03 UTC and entered the real challenge window ending **14:20:03 UTC**. It may release and renew only this fixture; it refuses foreign pending operator jobs and foreign transaction targets. Successful renewal still requires a new epoch-2 match and publication.
 
-Lifecycle renewal, replay UI after closure and the batch-reserve gate remain open. Human admissions stay closed. Private evidence: `artifacts/recovery-20260919/hosted-two-chaos.json`, `hosted-two-chaos-attempt-1.json`, `live-classic-chaos-finance.json` and `physics-differential-3a611a9.json`. Raw sessions and commands remain outside Git.
+At 13:32 UTC, the real indexed history and replay UI also passed after the fixture engine closed. Classic and Chaos each retained their published 7–6 result, with 124 and 119 cached snapshots respectively. Playback, seeking to the final score, authentication for history and a visible 16:9 court passed at 1440 and 390 px, without JavaScript errors. The private coordinator had admissions disabled and rejected archive/financial submissions during this check. It was stopped afterward. This uses a freshly signed limited EOA grant for read-only history; it does not prove a physical passkey renewal.
+
+Lifecycle renewal and the batch-reserve gate remain open. Human admissions stay closed. Private evidence: `artifacts/recovery-20260919/hosted-two-chaos.json`, `hosted-two-chaos-attempt-1.json`, `live-classic-chaos-finance.json`, `replay-browser.json` and `physics-differential-3a611a9.json`. Raw sessions and commands remain outside Git.
 
 ## Exact candidates and review
 

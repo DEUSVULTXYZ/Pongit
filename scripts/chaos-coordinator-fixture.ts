@@ -11,6 +11,8 @@ import {createRoomsCoordinator} from '../relayer/src/interlude-rooms';
 import {chaosQualificationRecord,verifyQualificationApp} from './chaos-qualification-record';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
 const production=process.env.PONG_CHAOS_PRODUCTION_FIXTURE==='authorized-testnet-candidate';
+const historyOnly=process.env.PONG_CHAOS_HISTORY_ONLY==='true';
+assert(!historyOnly||!production,'History-only rehearsal is restricted to the private fixture');
 const fixture=production?null:await chaosQualificationRecord();
 const prefix=fixture?.prefix??'chaos-events-production-20260913',r=fixture?.record??JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8'));
 const m=JSON.parse(await readFile(`artifacts/drand/${production?'production':'integration'}-manifests.json`,'utf8'));
@@ -24,7 +26,7 @@ if(!production)await verifyQualificationApp(t,prefix,r.app);
 delete process.env.ROOMS_LIFECYCLE_KEY_FILE;
 if(production){assert(process.env.INTERLUDE_COORDINATOR_KEY);process.env.ROOMS_PRESSURE_KEY_FILE='/secrets/pressure.json';}
 else{process.env.INTERLUDE_COORDINATOR_KEY=r.keys[4];process.env.ROOMS_PRESSURE_KEY_FILE=`/secrets/${prefix}-pressure.json`;}
-process.env.ROOMS_CHAOS_ENABLED='true';process.env.ROOMS_ADMISSION_ENABLED='true';process.env.ROOMS_STATE_STREAM_ENABLED='true';process.env.ROOMS_PRIVATE_FINANCE_TEST='true';
+process.env.ROOMS_CHAOS_ENABLED='true';process.env.ROOMS_ADMISSION_ENABLED=historyOnly?'false':'true';process.env.ROOMS_STATE_STREAM_ENABLED='true';process.env.ROOMS_PRIVATE_FINANCE_TEST='true';
 await writeFile('artifacts/drand/test-game.json',JSON.stringify(m.game));await writeFile('artifacts/drand/test-finance.json',JSON.stringify([m.finance]));
 process.env.INTERLUDE_ROOMS_MANIFEST='artifacts/drand/test-game.json';process.env.ROOMS_FINANCE_MANIFEST='artifacts/drand/test-finance.json';
 const config=await loadRoomsFinance(),db=new Pool({connectionString:databaseUrl});
@@ -33,7 +35,7 @@ await db.query(`CREATE TABLE IF NOT EXISTS profiles(player text PRIMARY KEY,hand
 const origin='https://pongit.xyz',send=(res:any,v:any,status=200)=>{res.writeHead(status,{'content-type':'application/json'});res.end(JSON.stringify(v,(_,v)=>typeof v==='bigint'?String(v):v));};
 const service=await createRoomsCoordinator({db,origin,financeConfig:config,body:async req=>{let data='';for await(const chunk of req){data+=chunk;if(data.length>131072)throw Error('Request too large');}return JSON.parse(data||'{}');},send,
  graphql:async(q,v)=>{if(!process.env.TEST_GRAPHQL_URL)return {Match:[],RecentReplays:[]};const response=await fetch(process.env.TEST_GRAPHQL_URL,{method:'POST',headers:{'content-type':'application/json',...(process.env.TEST_HASURA_SECRET?{'x-hasura-admin-secret':process.env.TEST_HASURA_SECRET}:{})},body:JSON.stringify({query:q,variables:v})});const result=await response.json();if(result.errors)throw Error('Fixture indexer query failed');return result.data;},
- enqueue:async(request,_internal,value=0n)=>{const e=config.encode(request),op='finance-'+keccak256(toHex(JSON.stringify({to:e.address,data:e.data,value},(_,v)=>typeof v==='bigint'?String(v):v))).slice(2,26);const receipt=await t.submit(op,e.data,e.address,value);return{id:op,hash:receipt.transactionHash};}});
+ enqueue:async(request,_internal,value=0n)=>{assert(!historyOnly,'History-only fixture cannot submit financial or archive transactions');const e=config.encode(request),op='finance-'+keccak256(toHex(JSON.stringify({to:e.address,data:e.data,value},(_,v)=>typeof v==='bigint'?String(v):v))).slice(2,26);const receipt=await t.submit(op,e.data,e.address,value);return{id:op,hash:receipt.transactionHash};}});
 assert(service);
 // Earlier history-only fixtures used a reduced table in this disposable DB.
 // Restore its missing coordinator fields before exercising archive publication.
