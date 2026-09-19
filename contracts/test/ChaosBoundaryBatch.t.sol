@@ -5,6 +5,11 @@ import {ChaosState as T} from "../src/chaos/ChaosState.sol";
 import {ChaosEffects as E} from "../src/chaos/ChaosEffects.sol";
 
 contract ChaosBoundaryBatchTest is SimultaneousBase {
+    function testAllKernelModulesFitEip170() public view {
+        assertLe(address(k).code.length,24576);assertLe(address(k.impacts()).code.length,24576);
+        assertLe(address(c).code.length,24576);assertLe(address(d).code.length,24576);
+        assertLe(address(e).code.length,24576);assertLe(address(r).code.length,24576);assertLe(address(m).code.length,24576);
+    }
     function testRetiredMultiballCannotConsumePower() public view {
         T.State memory s=single();
         s.effects[0]=E.Effect(21,2,0,1,0,1200,0);s.effects[1]=E.Effect(4,0,1,2,0,9000,0);

@@ -141,7 +141,7 @@ try{
   }));
   if(batch%1000===0)console.log(`Chaos event physics: ${batch+slice.length}/${cases.length}`);
  }
- const report={scope:'Rules-8 Chaos kernel (ChaosPhysics) against its TypeScript mirror, random play plus same-microsecond contacts; the mirror in rules-6 mode against the deployed rules-6 kernel',
+ const report={scope:'Current Chaos kernel (human rules 9, agent rules 10) against its TypeScript mirror, random play plus same-microsecond contacts; the mirror in rules-6 mode against the deployed rules-6 kernel',
   cases:cases.length,randomCases:count,simultaneousCases:ties,rules6Cases:legacy,mismatches:0,coverage,
   legend:{shared:'the returned log holds two collisions in one microsecond',atInstant:'a collision was logged in the constructed microsecond',points:'a point or result was scored'},
   ms:Date.now()-started,at:new Date().toISOString()};

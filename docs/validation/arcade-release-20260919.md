@@ -29,6 +29,8 @@ On 19 September, after these changes:
 
 These are local tests, not evidence of hosted capacity, production availability or the final 24-hour trial. Hosted differential physics, independent arena rotation, tournament reconstruction, maximum-duration publication/release, browser validation and a new final trial remain release gates.
 
+The first isolated deployment of `1d11fb8` was refused by EIP-170 (`CreateContractSizeLimit`): the timeline and complete impact resolver together exceeded 24,576 bytes. They are now separate immutable stateless modules: `ChaosPhysics` 12,350 bytes, `ChaosImpact` 11,033 bytes. A regression checks every kernel module's runtime size. The 94 targeted gas and physics tests passed after this split, without raising the per-command gas allowance. The failed VPS run is retained as `pongit-arcade-physics-1d11fb8`.
+
 ## Pending architecture
 
 The approved next step is a pool of independent physics arenas, with the identities, participation locks, tournaments and ratings outside those delegations on Monad. No admission may rely only on a database count. A closed arena remains unavailable until publication, challenge resolution, release and renewal are verified.
