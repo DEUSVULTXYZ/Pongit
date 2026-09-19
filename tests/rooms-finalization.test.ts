@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createPublicClient,custom,decodeFunctionData,encodeFunctionResult,parseAbi,zeroHash,type Hex} from 'viem';
-import {finalizationVerdict,nextFinalization,publishedResultReader,financeGameAbi,type PublishedResult} from '../relayer/src/rooms-finalization';
+import {FINALIZATION_READ_ATTEMPTS,FinalizationMemory,finalizationVerdict,nextFinalization,publishedResultReader,financeGameAbi,type PublishedResult} from '../relayer/src/rooms-finalization';
 import {roomsEventsAbi} from '../shared/abi-PongChaosEvents';
 
 const hash=`0x${'12'.repeat(32)}` as Hex;
@@ -42,11 +42,64 @@ test('the finalizing pass defers an unpublished result instead of deadlocking th
  assert.deepEqual((await nextFinalization(['11',stuck,'12'],o)).next,{id:stuck,verdict:'ready'});
 });
 
-test('a result waiting on seconds of clock skew holds the pass; a read failure is never a deferral',async()=>{
+test('a result waiting on seconds of clock skew holds the pass',async()=>{
  const wait=await nextFinalization(['1','2'],{finalStatus:async()=>0,published:async id=>id==='1'?published({finishedAt:1_789_000_200n}):published()});
  assert.deepEqual(wait.next,{id:'1',verdict:'wait'});
- await assert.rejects(nextFinalization(['1'],{finalStatus:async()=>0,published:async()=>{throw new Error('HTTP request failed');}}),/HTTP request failed/);
- await assert.rejects(nextFinalization(['1'],{finalStatus:async()=>{throw new Error('timeout');},published:async()=>published()}),/timeout/);
+});
+
+test('one failed read skips only its own result: the pass goes on, and the failure is reported, not deferred',async()=>{
+ const o={finalStatus:async(id:string)=>{if(id==='1')throw new Error('timeout at https://testnet-rpc.monad.xyz/');return 0;},
+  published:async(id:string)=>{if(id==='2')throw new Error('HTTP request failed');return published();}};
+ const pass=await nextFinalization(['1','2','3'],o);
+ assert.deepEqual(pass.next,{id:'3',verdict:'ready'},'a later result is still finalized');
+ assert.deepEqual(pass.failed.map(f=>f.id),['1','2']);assert.deepEqual(pass.deferred,[]);
+ assert(!pass.failed[0].error.includes('https://'),'no RPC URL in the lifecycle diagnostic');
+ const none=await nextFinalization(['1','2'],o);
+ assert.equal(none.next,undefined);assert.equal(none.failed.length,2,'the caller retries before renewing');
+});
+
+test('a result Monad cannot answer for stops holding the renewal after FINALIZATION_READ_ATTEMPTS passes',async()=>{
+ const memory=new FinalizationMemory();let reads=0;
+ const o={finalStatus:async()=>{reads++;throw new Error('timeout');},published:async()=>published()};
+ for(let i=1;i<FINALIZATION_READ_ATTEMPTS;i++){
+  const pass=await nextFinalization(['1'],o,memory,'6');
+  assert.deepEqual(pass.failed.map(f=>f.id),['1'],`pass ${i} retries`);
+ }
+ const last=await nextFinalization(['1'],o,memory,'6');
+ assert.deepEqual(last.failed,[]);assert.deepEqual(last.deferred,[{id:'1',verdict:'unreadable'}],'deferred: renewal proceeds');
+ const before=reads;
+ assert.deepEqual((await nextFinalization(['1'],o,memory,'6')).deferred,[{id:'1',verdict:'unreadable'}]);
+ assert.equal(reads,before,'not read again in this epoch');
+ await nextFinalization(['1'],o,memory,'7');assert.equal(reads,before+1,'a later epoch\'s pass tries it again');
+ // A read that succeeds clears the count.
+ const healed=new FinalizationMemory();let fail=true;
+ const flaky={finalStatus:async()=>{if(fail)throw new Error('timeout');return 0;},published:async()=>published()};
+ await nextFinalization(['1'],flaky,healed,'6');fail=false;
+ assert.deepEqual((await nextFinalization(['1'],flaky,healed,'6')).next,{id:'1',verdict:'ready'});
+});
+
+test('finalized and unmarketed results are never read again; unpublished ones not again in the same epoch',async()=>{
+ const memory=new FinalizationMemory();const reads:string[]=[];
+ const results:Record<string,{final:number;published:PublishedResult}>={
+  final:{final:3,published:published()},
+  offer:{final:0,published:published({phase:4,matchEpoch:0n})},// an expired offer: no round was ever opened
+  [stuck]:{final:0,published:published({phase:2,resultHash:zeroHash,finishedAt:0n})},
+ };
+ const o={finalStatus:async(id:string)=>{reads.push(`final:${id}`);return results[id].final;},published:async(id:string)=>{reads.push(`published:${id}`);return results[id].published;}};
+ const ids=['final','offer',stuck];
+ const first=await nextFinalization(ids,o,memory,'6');
+ assert.equal(first.next,undefined);
+ assert.deepEqual(first.deferred,[{id:'offer',verdict:'unmarketed'},{id:stuck,verdict:'unpublished'}]);
+ assert.equal(reads.length,5);
+ reads.length=0;
+ const second=await nextFinalization(ids,o,memory,'6');
+ assert.deepEqual(reads,[],'the lifecycle\'s 10 s cycle reads nothing more for them');
+ assert.deepEqual(second.deferred,[{id:stuck,verdict:'unpublished'}],'the unpublished one is still reported');
+ // The next epoch's finalizing pass reads the unpublished one again, and only it.
+ results[stuck].published=published({phase:3,matchEpoch:6n});
+ const later=await nextFinalization(ids,o,memory,'7');
+ assert.deepEqual(reads,[`final:${stuck}`,`published:${stuck}`]);
+ assert.deepEqual(later.next,{id:stuck,verdict:'ready'});
 });
 
 test('the reader asks Monad exactly what the rules-6 adapter checks, at the latest block',async()=>{

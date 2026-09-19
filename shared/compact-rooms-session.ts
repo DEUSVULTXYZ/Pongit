@@ -2,26 +2,27 @@ import {decodeErrorResult,encodeAbiParameters,encodeFunctionData,keccak256,type 
 import {privateKeyToAccount} from 'viem/accounts';
 import type {StoredSession} from '@interludelayer-sdk/sdk';
 import type {ArenaSender} from './compact-arena-session';
-import {engineCommandTransaction} from './engine-gas';
+import {engineCommandGas,engineCommandTransaction} from './engine-gas';
 
 export const compactRoomActions=['acceptMatch','input','tick','cancelMatch','concede'] as const;
 export const controlProofParameters=[{type:'tuple',components:[{name:'granter',type:'address'},{name:'sessionKey',type:'address'},{name:'expiry',type:'uint64'},{name:'epoch',type:'uint64'},{name:'anyFunction',type:'bool'},{name:'selectors',type:'bytes4[]'}]},{type:'bytes'}] as const;
 /** Only PongRoomsCompact verifies and caches this SDK grant. Other applications
  * must continue to use withSession. One signer owns setup and game nonces alike. */
-export function compactRoomsSession(options:{node:PublicClient;abi:Abi;app:Address;stored:StoredSession;epoch:bigint;now?:()=>number}):ArenaSender & {revoke:()=>Promise<void>} {
- const {node,abi,app,stored,epoch}=options,{grant,signature}=stored,signer=privateKeyToAccount(stored.privateKey),now=options.now??Date.now;
+export function compactRoomsSession(options:{node:PublicClient;abi:Abi;app:Address;stored:StoredSession;epoch:bigint;now?:()=>number;gas?:()=>bigint}):ArenaSender & {revoke:()=>Promise<void>} {
+ const {node,abi,app,stored,epoch}=options,{grant,signature}=stored,signer=privateKeyToAccount(stored.privateKey),now=options.now??Date.now,gas=options.gas??engineCommandGas;
  if(stored.app.toLowerCase()!==app.toLowerCase()||stored.baseChainId!==10143||signer.address.toLowerCase()!==grant.sessionKey.toLowerCase()||grant.anyFunction)throw Error('Invalid compact game authorization');
  let nonce:number|undefined,busy=false,uncertain=false,registered=false;
  async function rawSend(name:string,args:readonly unknown[]){
   nonce??=await node.getTransactionCount({address:signer.address});
   const data=encodeFunctionData({abi,functionName:name,args}),started=now();
-  // Every control, not only tick, input and concede, is signed with
-  // ENGINE_COMMAND_GAS (30,000,000, the node's maximum; see engine-gas.ts). Those
+  // Every control, not only tick, input and concede, is signed with the command
+  // gas limit (30,000,000 by default, the node's maximum; the relayer's config may
+  // serve a lower one, read here at each signature: see engine-gas.ts). Those
   // three advance the Chaos clock and need the headroom. acceptMatch, cancelMatch
   // and the grant writes never simulate, but gas is free here and the limit is
   // only a ceiling, so one limit costs them nothing and leaves no command behind
   // if a future rule makes it advance.
-  const raw=await signer.signTransaction(engineCommandTransaction(app,nonce,data));
+  const raw=await signer.signTransaction(engineCommandTransaction(app,nonce,data,gas()));
   const hash=keccak256(raw);uncertain=true;
   // The caller's transport persists these exact bytes before sending. Never
   // replace this nonce when the response may have been lost after execution.

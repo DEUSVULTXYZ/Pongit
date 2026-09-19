@@ -20,7 +20,7 @@ import { requestHostedRenewal } from "./rooms-hosted-renewal";
 import { roomsDrainBlocker } from "../../shared/rooms-availability";
 import {assertRoomsEngineAvailable} from "../../shared/rooms-availability";
 import {retireClosedEpochJobs} from "./rooms-engine-recovery";
-import {deferredKey,nextFinalization,type PublishedResultReader} from "./rooms-finalization";
+import {deferredKey,FinalizationMemory,nextFinalization,type PublishedResultReader} from "./rooms-finalization";
 const appAbi = parseAbi([
   "function operator() view returns(address)",
   "function closeEngine()",
@@ -47,7 +47,8 @@ export async function roomsLifecycle(o: {
   nodeUrl: string;
   engineStatus: () => Promise<any>;
   engineActive: () => Promise<bigint>;
-  beforeRenew?: () => Promise<void>;
+  /** The closed epoch whose results are being captured. */
+  beforeRenew?: (epoch: bigint) => Promise<void>;
   beforeClose?: (epoch: bigint) => Promise<void>;
   onReady?: (epoch: bigint) => void;
   /** Monad reads that decide whether the adapter can finalize a result now. */
@@ -89,6 +90,7 @@ export async function roomsLifecycle(o: {
     error = "",
     healthy = false;
   let sessionInfo={epoch:'0',expiresAt:0,releaseAt:0,batch:'0'},reportedError='',reportedDeferred='';
+  const finalization=new FinalizationMemory();
   const transition = async (s: Stage) => {
     const previous=stage;
     await o.db.query(
@@ -314,7 +316,10 @@ export async function roomsLifecycle(o: {
         // which starts from Monad's published state. Submitting it here would fail
         // its simulation forever and hold the renewal it needs, so it is deferred
         // and finalized by a later pass once its result is published.
-        const {next,deferred}=await nextFinalization(results.map(r=>String(r.id)),o.publishedResult);
+        // Finalized and unmarketed results are remembered for good, unpublished
+        // ones for this epoch's pass, so they are not read again every 10 s
+        // (rooms-finalization.ts). A failed read skips only its own result.
+        const {next,deferred,failed}=await nextFinalization(results.map(r=>String(r.id)),o.publishedResult,finalization,String(epoch));
         const key=deferredKey(deferred);
         if(key!==reportedDeferred){
           reportedDeferred=key;
@@ -336,12 +341,19 @@ export async function roomsLifecycle(o: {
           );
           return;
         }
+        // Nothing to submit now, but some results could not be read: retry them
+        // before renewing. Each is deferred as 'unreadable' after
+        // FINALIZATION_READ_ATTEMPTS failing passes, so none holds renewal forever.
+        if(failed.length){
+          error=`Could not read ${failed.length} result(s) from Monad (${failed[0].error}); retrying before renewal`;
+          return;
+        }
         // The operator may hold a drained rehearsal here while inspecting payouts
         // or allowing the previous deployment to finish its last live matches.
         if (process.env.ROOMS_LIFECYCLE_HOLD_RENEW === "true") return;
         await transition("renewing");
       }
-      await o.beforeRenew?.();
+      await o.beforeRenew?.(BigInt(epoch));
       await submit(
         prefix + ":renew",
         o.app,

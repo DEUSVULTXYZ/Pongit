@@ -70,7 +70,7 @@ abstract contract HumanChaosGasBase is Test {
     }
 
     function sig(bytes32 hash,uint256 key) internal pure returns(bytes memory){(uint8 v,bytes32 r,bytes32 s)=vm.sign(key,hash);return abi.encodePacked(r,s,v);}
-    function bind(uint256 key,address control) private {
+    function bind(uint256 key,address control) internal {
         Types.SessionGrant memory grant=Types.SessionGrant(vm.addr(key),control,uint64(block.timestamp+7200),0,false,new bytes4[](5));
         grant.selectors[0]=game.acceptMatch.selector;grant.selectors[1]=game.input.selector;grant.selectors[2]=game.tick.selector;
         grant.selectors[3]=game.cancelMatch.selector;grant.selectors[4]=game.concede.selector;
@@ -378,6 +378,82 @@ contract HumanChaosInterimGasTest is HumanChaosGasBase {
         assertEq(gameTime(),T0,"nothing was processed");
         vm.roll(blockAt(2300));vm.cool(address(game));vm.expectRevert();game.tick{gas:INTERIM_BUDGET}(ID);
         assertEq(gameTime(),T0,"still frozen");assertEq(phase(),2);
+    }
+}
+
+/// The recovery's epoch change: epoch 7's node resumes the match from the state Monad published in
+/// epoch 6, with the Chaos beacon request and the market round that epoch filed. Here epoch 1 plays
+/// epoch 6 and epoch 2 plays epoch 7 (the hub mock's session epoch).
+contract HumanChaosRenewedEpochTest is HumanChaosGasBase {
+    function deploy() internal override returns(PongChaosEvents){
+        return new HumanChaosFreezeHarness(IInterludeHub(HUB),vm.addr(AD),vm.addr(BR),module);
+    }
+    function renew(uint256 epoch) internal {
+        Types.Session memory s;s.epoch=epoch;s.status=Types.Status.Active;
+        vm.mockCall(HUB,abi.encodeWithSelector(IInterludeHub.sessionOf.selector,address(game),Types.GLOBAL),abi.encode(s));
+    }
+    function beacon() internal view returns(uint256 request,uint256 draw){
+        (,,request,draw)=abi.decode(game.chaosState(ID),(ChaosGameFlow.Header,uint256[8],uint256,uint256));
+    }
+
+    /// A request still pending (no proven draw) when the epoch closed: verifyRandomness requires the
+    /// request's epoch to be the hub's current one, and advance files a new request only while field
+    /// 29 is empty (announce refiles one after applying a proven draw). So submitRandomness always
+    /// reverts, before any proof is checked, and the match gets no new Chaos draw for the rest of its
+    /// life in the new epoch. It keeps playing; effects already announced still expire.
+    function testAPendingRequestOfTheClosedEpochNeverDrawsAgain() public {
+        (uint256 q,uint256 draw)=beacon();
+        assertEq(uint32(q>>64),1,"filed in the closing epoch");assertEq(draw,0,"not proven");
+        renew(2);
+        vm.expectRevert(ChaosGameFlow.InvalidBeaconRequest.selector);
+        game.submitRandomness(ID,q,new bytes(64));
+        uint64 before=gameTime();
+        // 15 s of play in 300 ms ticks, past the request's due time (10 s after it was filed).
+        uint256 b=startBlock+1;// the block of setUp's tick; via-IR may reuse a block.number read across vm.roll
+        for(uint256 i;i<50&&phase()==2;i++){b+=30;vm.roll(b);game.tick(ID);}
+        assertGt(gameTime(),before,"the match keeps playing");
+        assertEq(phase(),2);assertGt(gameTime(),uint64(uint32(q>>128))*1000,"past the request's due time");
+        (uint256 after_,uint256 drawAfter)=beacon();
+        assertEq(after_,q,"no new request in the new epoch");assertEq(drawAfter,0);
+        vm.expectRevert(ChaosGameFlow.InvalidBeaconRequest.selector);
+        game.submitRandomness(ID,q,new bytes(64));
+    }
+
+    /// Live pressure signed with the market round's epoch (the adapter's matchEpoch, fixed in the
+    /// closing epoch) is rejected in the next one before any simulation; only the current epoch is
+    /// accepted. The relayer therefore never signs it there (relayer/src/rooms-command-epoch.ts).
+    function testLivePressureOfTheClosedEpochIsRejected() public {
+        renew(2);
+        ChaosGameFlow.LivePressure memory p=ChaosGameFlow.LivePressure(ID,1,seed,1,.003 ether,.001 ether,123,bytes32(ID),uint64(block.timestamp+20));
+        bytes memory signature=sig(game.pressureDigest(p),BR);
+        vm.expectRevert(ChaosGameFlow.InvalidPressure.selector);
+        game.submitLivePressure(p,signature);
+        p.epoch=2;signature=sig(game.pressureDigest(p),BR);
+        vm.roll(startBlock+2);game.submitLivePressure(p,signature);
+        (uint256 paidA,uint256 paidB,,)=game.queuedPressure(ID);
+        assertEq(paidA,.003 ether);assertEq(paidB,.001 ether);
+    }
+
+    /// The other case: the draw was proven before the epoch closed, and only its announcement was
+    /// due later. It is announced on schedule in the new epoch, and the request filed after it
+    /// carries the new epoch, so draws continue. Pinned drand evmnet vector of ChaosGame.t.sol.
+    function testAProvenDrawIsAnnouncedAndTheNextRequestCarriesTheNewEpoch() public {
+        uint64 round=20594892;uint64 published=1727521075+(round-1)*3;
+        // Literal engine blocks: via-IR may reuse one block.number read across vm.roll.
+        vm.roll(1000);vm.warp(published-9);vm.chainId(10143);
+        game=deploy();renew(1);vm.chainId(4242);
+        bind(A,KA);bind(B,KB);
+        Rooms.Offer memory o=Rooms.Offer(ID,bytes32(ID),vm.addr(A),vm.addr(B),1,false,uint64(block.timestamp+20),6,bytes32(ID));
+        bytes memory signature=sig(game.ticketDigest(o),AD);vm.prank(KA);game.acceptMatch(o,signature);vm.prank(KB);game.acceptMatch(o,signature);
+        game.tick(ID);(uint256 q,)=beacon();assertEq(uint64(q),round);assertEq(uint32(q>>64),1);
+        vm.warp(published);vm.roll(1900);
+        game.submitRandomness(ID,q,hex"1a8eb35e5dbdfe0e1aa1bda789444774adde84b2d5402468b29bb945ea190c6d105b63491744552e8fe5710764baaed371784f1593ce279c56c60b9268f50f90");
+        (,uint256 draw)=beacon();assertGt(draw,0,"proven in the closing epoch");
+        renew(2);
+        vm.roll(2000);game.tick(ID);
+        (uint256 next,uint256 pending)=beacon();
+        assertEq(uint32(next>>96),2,"the next draw is requested");assertEq(uint32(next>>64),2,"for the new epoch");
+        assertEq(pending,0);assertEq(live().effects[0].id,uint8(draw),"the proven draw was announced");
     }
 }
 

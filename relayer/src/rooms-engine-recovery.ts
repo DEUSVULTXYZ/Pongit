@@ -1,6 +1,6 @@
 import { decodeFunctionData, keccak256, parseTransaction, recoverTransactionAddress, zeroHash, type Abi, type Address, type Hex } from "viem";
 import type { Pool } from "pg";
-import { refusedBeforeExecution, refusalReason } from "../../shared/engine-halt";
+import { retirableRefusal, refusalReason } from "../../shared/engine-halt";
 
 export type EngineJob = { id: string; app: string; epoch: string; nonce: string; raw: Hex; hash: Hex; status: string };
 
@@ -11,12 +11,16 @@ export type EngineJob = { id: string; app: string; epoch: string; nonce: string;
 export const ENGINE_REFUSALS_SCHEMA = "CREATE TABLE IF NOT EXISTS il_engine_refusals(app text NOT NULL,id text NOT NULL,epoch bigint NOT NULL,nonce bigint NOT NULL,hash text NOT NULL,raw text NOT NULL,action text,match_id text,signer text,reason text NOT NULL,latest_nonce bigint NOT NULL,refused_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id))";
 
 /** The agent arcade's rule (relayer/src/agents/writer.ts, commit 8a9f17b) for the
- * rooms journal. A pending command is retired only when BOTH hold:
- * - the node's own error says it refused the transaction before execution (the
- *   gas cap, "rejected before execution", or a halted node's "this session is
- *   over and the node is no longer accepting transactions");
+ * rooms journal, narrowed to the two refusals that can never be followed by an
+ * execution of the same bytes. A pending command is retired only when BOTH hold:
+ * - the node's own error is the gas cap ("transaction gas limit is greater than
+ *   the cap": these bytes can never run on this node) or a halted node's "this
+ *   session is over and the node is no longer accepting transactions";
  * - the node's latest transaction count for the signer equals the command's nonce,
  *   so the command did not run.
+ * The generic "rejected before execution" prefix alone never retires: a duplicate
+ * resend can be answered that way while the original is still in flight, when the
+ * count still equals the nonce, and the original may execute afterwards.
  * Anything else stays pending exactly as before: a lost response, a timeout, a
  * local cooldown or publication gate (they carry no node refusal), a count that
  * moved, or a count that could not be read. The same bytes are then resent, never
@@ -29,7 +33,7 @@ export async function retireRefusedEngineJob(o: {
   db: Pick<Pool, "query">; app: Address; job: EngineJob; error: unknown;
   latestNonce: () => Promise<number | bigint>;
 }) {
-  if (!refusedBeforeExecution(o.error)) return false;
+  if (!retirableRefusal(o.error)) return false;
   let latest: bigint;
   try { latest = BigInt(await o.latestNonce()); } catch { return false; }
   if (latest !== BigInt(o.job.nonce)) return false;

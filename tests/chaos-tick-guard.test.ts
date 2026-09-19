@@ -13,7 +13,7 @@ const id=`0x${'ab'.repeat(32)}`,other=`0x${'cd'.repeat(32)}`;
 const engine=(over:Partial<ChaosGuardEngine>={}):ChaosGuardEngine=>({now:10_000,enabled:true,streamConnected:true,writable:true,cooldownMs:0,...over});
 const live=(over:Partial<ChaosGuardMatch>={}):ChaosGuardMatch=>({phase:2,mode:1,awaitingServe:false,progressAgeMs:CHAOS_GUARD_STALE_MS,inFlight:false,blockedUntil:0,lastRevertAt:0,...over});
 
-test('every game-node command is signed with exactly 30,000,000 gas, the node maximum, at no fee',async()=>{
+test('every game-node command is signed with 30,000,000 gas by default, the node maximum, at no fee',async()=>{
  assert.equal(ENGINE_COMMAND_GAS,30_000_000n);
  const app='0x0000000000000000000000000000000000000011',tx=engineCommandTransaction(app,7,'0x12345678');
  assert.deepEqual(tx,{type:'eip1559',chainId:4242,to:app,nonce:7,data:'0x12345678',value:0n,gas:30_000_000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});

@@ -9,10 +9,20 @@
  * 20:11 UTC and the relayer kept reporting online:true for the whole halt. */
 
 export const ENGINE_HALTED_CODE='ENGINE_HALTED';
-export const ENGINE_HALTED_MESSAGE='The game service has stopped accepting moves after a publication failure. Your arcade session and finished results are saved; play resumes after the operator recovers the service.';
-/** The health read runs beside interlude_session in the relayer's 2 s maintenance
- * loop. A slow answer is treated as unknown, never as a halt. */
+/** Never claims that finished results are saved: a batch the node could not
+ * settle is lost with its epoch, and the matches it ended resume in the next one
+ * from their last published state. */
+export const ENGINE_HALTED_MESSAGE='The game service has stopped accepting moves after a publication failure. Your arcade session is saved. Matches whose results were not yet published resume from their last published state once the operator recovers the service.';
+/** The node refuses commands signed with the configured gas limit
+ * ("transaction gas limit is greater than the cap"). Every command would be
+ * refused the same way, so the arena is unavailable until the operator lowers
+ * the limit (ROOMS_ENGINE_COMMAND_GAS, shared/engine-gas.ts) or the next epoch. */
+export const ENGINE_GAS_CAP_CODE='ENGINE_GAS_CAP';
+export const ENGINE_GAS_CAP_MESSAGE='The game service is refusing moves at the current command size. Play is paused until the operator adjusts it. Your arcade session is saved.';
+/** The relayer reads /health on its own schedule, never inside the 2 s maintenance
+ * loop, and each read has this timeout. A slow answer is unknown, never a halt. */
 export const ENGINE_HEALTH_TIMEOUT_MS=2500;
+export const ENGINE_HEALTH_INTERVAL_MS=5000;
 
 /** Local verdict that the node is halted. It never carries a node refusal of its
  * own, so it can never retire a journaled command. */
@@ -20,31 +30,68 @@ export class EngineHalted extends Error {
  code=ENGINE_HALTED_CODE;source='interlude_rpc';status=503;retryMs=30000;retryAt=Date.now()+30000;
  constructor(){super(ENGINE_HALTED_MESSAGE);}
 }
+/** Local verdict that the node refuses the configured command gas. Like
+ * EngineHalted, it carries no node refusal and never retires a journaled command. */
+export class EngineGasCapped extends Error {
+ code=ENGINE_GAS_CAP_CODE;source='interlude_rpc';status=503;retryMs=30000;retryAt=Date.now()+30000;
+ constructor(){super(ENGINE_GAS_CAP_MESSAGE);}
+}
 /** By code, not instanceof: web/ and the root package may load this module twice. */
 export const isEngineHalted=(error:unknown)=>(error as {code?:unknown})?.code===ENGINE_HALTED_CODE;
+export const isEngineGasCapped=(error:unknown)=>(error as {code?:unknown})?.code===ENGINE_GAS_CAP_CODE;
 
-export type EngineHealth={halted:string|null};
+/** A /health report. `app` and `epoch` are the node session's own, when it says so. */
+export type EngineHealth={halted:string|null;app?:string;epoch?:number};
 const MAX_REASON=240;
 /** Node text for logs and operator status: no URL, raw transaction or long hex. */
 export function boundedReason(text:string){
  return text.replace(/https?:\/\/\S+/g,'[node]').replace(/0x[0-9a-fA-F]{64,}/g,'[hex omitted]').replace(/\s+/g,' ').trim().slice(0,MAX_REASON);
 }
+function healthSession(body:object){
+ const {app,epoch}=body as {app?:unknown;epoch?:unknown};
+ const session:{app?:string;epoch?:number}={};
+ if(typeof app==='string'&&/^0x[0-9a-fA-F]{40}$/.test(app))session.app=app.toLowerCase();
+ const n=typeof epoch==='number'?epoch:typeof epoch==='string'&&/^\d{1,15}$/.test(epoch)?Number(epoch):NaN;
+ if(Number.isSafeInteger(n)&&n>=0)session.epoch=n;
+ return session;
+}
 /** A /health body. undefined when it is not a report this code understands. */
 export function engineHealth(body:unknown):EngineHealth|undefined{
  if(!body||typeof body!=='object'||!('halted' in body))return undefined;
- const value=(body as {halted:unknown}).halted;
- if(value===null||value===false||value===undefined||value==='')return {halted:null};
- if(value===true)return {halted:'halted'};
- if(typeof value==='string')return {halted:boundedReason(value)||'halted'};
- if(typeof value==='object')return {halted:boundedReason(JSON.stringify(value))||'halted'};
+ const value=(body as {halted:unknown}).halted,session=healthSession(body);
+ if(value===null||value===false||value===undefined||value==='')return {halted:null,...session};
+ if(value===true)return {halted:'halted',...session};
+ if(typeof value==='string')return {halted:boundedReason(value)||'halted',...session};
+ if(typeof value==='object')return {halted:boundedReason(JSON.stringify(value))||'halted',...session};
  return undefined;
 }
+/** A report about another application or another epoch says nothing about the
+ * session the relayer serves: a renewed node answering at the same URL, or a
+ * previous session's report arriving late. A report that does not name them is
+ * taken as the session's own (older node builds). */
+export function healthApplies(report:EngineHealth,session:{app:string;epoch:number}){
+ if(report.app!==undefined&&report.app!==session.app.toLowerCase())return false;
+ if(report.epoch!==undefined&&report.epoch!==session.epoch)return false;
+ return true;
+}
+type Gate=<T>(send:()=>Promise<T>)=>Promise<T>;
 /** Never throws. A failed, slow, rate-limited or unreadable health read is unknown:
- * it neither marks the node halted nor clears an earlier halt. */
-export async function readEngineHealth(node:string,o:{fetch?:typeof fetch;timeoutMs?:number}={}):Promise<EngineHealth|undefined>{
+ * it neither marks the node halted nor clears an earlier halt.
+ *
+ * `gate` is the node's shared request gate (shared/engine-transport.ts): while
+ * its Retry-After runs the read is refused locally, and a 429 from /health
+ * extends the same cooldown for every other request. */
+export async function readEngineHealth(node:string,o:{fetch?:typeof fetch;timeoutMs?:number;gate?:Gate}={}):Promise<EngineHealth|undefined>{
+ const gate:Gate=o.gate??(send=>send());
  try{
-  const response=await (o.fetch??fetch)(`${node.replace(/\/+$/,'')}/health`,{signal:AbortSignal.timeout(o.timeoutMs??ENGINE_HEALTH_TIMEOUT_MS)});
-  return engineHealth(await response.json());
+  return await gate(async()=>{
+   const response=await (o.fetch??fetch)(`${node.replace(/\/+$/,'')}/health`,{signal:AbortSignal.timeout(o.timeoutMs??ENGINE_HEALTH_TIMEOUT_MS)});
+   if(response.status===429){
+    await response.body?.cancel().catch(()=>{});
+    throw Object.assign(new Error('The game node is limiting requests.'),{status:429,code:'ENGINE_RATE_LIMIT',source:'interlude_rpc',headers:response.headers});
+   }
+   return engineHealth(await response.json());
+  });
  }catch{return undefined;}
 }
 
@@ -59,18 +106,24 @@ function nodeText(error:unknown){
  }
  return parts.join(' ');
 }
-/** Refusals the node returns without executing the transaction: the gas cap, the
- * generic "rejected before execution", and a halted node. A refusal alone never
- * proves the nonce is free; callers also require the node's latest transaction
- * count to equal the command's nonce. "commit relay failed" alone is not listed:
- * it describes a batch, not this transaction. */
-const REFUSED_BEFORE_EXECUTION=/rejected before execution|gas limit is greater than the cap|this session is over|no longer accepting transactions/i;
+/** Only two refusals retire a journaled command, and only with the nonce check
+ * (the node's latest count for the signer equals the command's nonce):
+ * - the gas cap: a property of the signed bytes, which can never execute on
+ *   this node, however often they are sent;
+ * - a halted node: it never executes anything again.
+ * The generic "rejected before execution" prefix is not enough on its own: a
+ * duplicate resend answered that way while the original is still in flight also
+ * sees the nonce unused, and retiring those bytes would free a nonce they may
+ * still take. "commit relay failed" alone describes a batch, not this command. */
+const GAS_CAP_REFUSAL=/gas limit is greater than the cap/i;
 const HALT_REFUSAL=/this session is over|no longer accepting transactions/i;
-export const refusedBeforeExecution=(error:unknown)=>REFUSED_BEFORE_EXECUTION.test(nodeText(error));
+const LOGGED_REFUSAL=/rejected before execution|gas limit is greater than the cap|this session is over|no longer accepting transactions/i;
+export const gasCapRefusal=(error:unknown)=>GAS_CAP_REFUSAL.test(nodeText(error));
 export const haltRefusal=(error:unknown)=>HALT_REFUSAL.test(nodeText(error));
+export const retirableRefusal=(error:unknown)=>{const text=nodeText(error);return GAS_CAP_REFUSAL.test(text)||HALT_REFUSAL.test(text);};
 /** The refusal sentence only, for logs. */
 export function refusalReason(error:unknown){
- const text=nodeText(error),match=REFUSED_BEFORE_EXECUTION.exec(text);
+ const text=nodeText(error),match=LOGGED_REFUSAL.exec(text);
  if(!match)return '';
  return boundedReason(text.slice(Math.max(0,match.index-40)));
 }

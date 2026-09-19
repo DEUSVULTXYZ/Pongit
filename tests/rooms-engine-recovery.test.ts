@@ -73,7 +73,7 @@ test('receipt resolves execution only when its hash and status are known',async(
 // A command the node refuses before executing it (the agent arcade's rule, 8a9f17b).
 const capRefusal={name:'RpcRequestError',message:'RPC Request failed.',details:'transaction rejected before execution: transaction gas limit is greater than the cap',code:-32000};
 const haltRefusal={name:'RpcRequestError',message:'RPC Request failed.',details:'this session is over and the node is no longer accepting transactions: batch 191 could not be settled (commit relay failed: 502 Bad Gateway)',code:-32000};
-test('a refused command is retired only when the node also confirms its nonce unused',async()=>{
+test('a gas-cap or halt refusal is retired only when the node also confirms its nonce unused',async()=>{
  for(const error of [capRefusal,haltRefusal,new EnginePublicationUnavailable(haltRefusal)]){
   const {db,job,updates}=await journal();
   assert.equal(await retireRefusedEngineJob({db,app,job,error,latestNonce:async()=>276}),true);
@@ -87,7 +87,7 @@ test('a refused command is retired only when the node also confirms its nonce un
  const {db,job}=await journal();
  assert.equal(await retireRefusedEngineJob({db,app,job,error:capRefusal,latestNonce:async()=>276n}),true,'a bigint count');
 });
-test('a refused command whose nonce moved, or could not be read, or any other failure stays pending',async()=>{
+test('a refused command whose nonce moved, or could not be read, a generic refusal or any other failure stays pending',async()=>{
  const cases:[string,unknown,()=>Promise<number>][]=[
   ['the count moved: it ran',capRefusal,async()=>277],
   ['the count is behind',capRefusal,async()=>275],
@@ -97,6 +97,10 @@ test('a refused command whose nonce moved, or could not be read, or any other fa
   ['the local 30 s publication gate: the bytes never left',new EnginePublicationUnavailable(),async()=>276],
   ['a rate limit',Object.assign(new Error('The game node is limiting requests.'),{status:429}),async()=>276],
   ['nonce too low',{details:'nonce too low'},async()=>276],
+  // A duplicate resend answered this way while the original is still in flight
+  // sees the count at the nonce too; the original may still execute.
+  ['the generic prefix alone',{details:'transaction rejected before execution'},async()=>276],
+  ['the generic prefix with another reason',{details:'transaction rejected before execution: already known'},async()=>276],
  ];
  for(const [name,error,latestNonce] of cases){
   const {db,job,updates}=await journal();

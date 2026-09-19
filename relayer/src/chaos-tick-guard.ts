@@ -21,8 +21,9 @@
  * is frozen: every later tick needs more gas than the last (long gaps need about
  * 100 M). The guard then stays silent for that match, whoever's tick reverted,
  * until progress is observed or one of its ticks succeeds again (a node restart
- * that re-anchors the clock). The maintenance loop's own retries still reach the
- * contract's 30-minute cancel.
+ * that re-anchors the clock). So does the maintenance loop (maintenanceTickDue):
+ * it sends one tick when the contract's 30-minute cancel is due, which cancels
+ * before simulating anything, instead of a 29 M-gas revert every 2 s.
  */
 
 /** No I/O per check (the feed is already in memory), so a short interval only
@@ -111,4 +112,64 @@ export function chaosGuardBackoffMs(error:unknown):number{
  if(/Previous engine command reconciled/.test(message))return 0;
  if(/Engine command reverted/.test(message))return 0;
  return CHAOS_GUARD_RETRY_BACKOFF_MS;
+}
+
+/** PongInterludeRoomsChaos._advance cancels a live match, before simulating
+ * anything, once its target exceeds 30 minutes of game time: `target > 30 minutes
+ * * 1_000_000` in microseconds, where target = anchor time + (block.number - start
+ * block) * TICK_US. getSnapshot computes its `clock` with that same formula at the
+ * node's latest block, so a snapshot clock above this is a due cancel: the next
+ * command executes at the same block or a later one. */
+export const CHAOS_CANCEL_AFTER_US=1_800_000_000n;
+/** A frozen match whose snapshot gap (clock minus processed time) is this small
+ * can be ticked again at either gas limit: the node restarted and re-anchors the
+ * clock on the next command, which then simulates nothing. A frozen match's gap
+ * otherwise only grows. Below the 540 ms worst-state tolerance at 15,000,000. */
+export const FROZEN_REANCHOR_GAP_US=500_000n;
+/** A frozen match's single tick (the due cancel, or a re-anchor) is not repeated
+ * sooner than this if the send itself failed. */
+export const FROZEN_TICK_SPACING_MS=10_000;
+
+export type MaintenanceMatch={
+ phase:number;
+ awaitingServe:boolean;
+ /** The maintenance loop's own staleness rule (1.5 s without progress). */
+ stale:boolean;
+ /** Snapshot clock and processed game time, microseconds. */
+ clockUs:bigint;
+ tUs:bigint;
+ progressAgeMs:number;
+ lastRevertAt:number;
+ /** Last tick this rule sent while the match was frozen; 0 when none. */
+ lastFrozenTickAt:number;
+};
+/** The maintenance loop's tick for a live match. Pure.
+ * - Not frozen: its usual tick after 1.5 s without progress, as before.
+ * - Frozen (a relayer tick reverted and nothing moved it since): no tick at all,
+ *   except one when the contract's 30-minute cancel is due ('cancel', no
+ *   simulation, cannot run out of gas) or when a node restart made the gap small
+ *   enough to re-anchor ('reanchor'), each at most every FROZEN_TICK_SPACING_MS.
+ *   Before, the loop sent a 29 M-gas revert every 2 s for the whole 30 minutes:
+ *   double the node's load, and each one held the single writer while another
+ *   match's guard tick waited behind it. */
+export function maintenanceTickDue(now:number,m:MaintenanceMatch):'tick'|'cancel'|'reanchor'|undefined{
+ if(m.phase!==2)return undefined;
+ if(!chaosMatchFrozen(now,m))return !m.awaitingServe&&m.stale?'tick':undefined;
+ if(m.lastFrozenTickAt>0&&now-m.lastFrozenTickAt<FROZEN_TICK_SPACING_MS)return undefined;
+ if(m.clockUs>CHAOS_CANCEL_AFTER_US)return 'cancel';
+ if(!m.awaitingServe&&m.clockUs-m.tUs<=FROZEN_REANCHOR_GAP_US)return 'reanchor';
+ return undefined;
+}
+
+/** Progress ages for the maintenance loop when the applied-event stream is off:
+ * the time since the match's processed time or phase last changed, as observed by
+ * the loop's own reads. With the stream, EngineFeed.progressAge serves. */
+export class MatchProgress {
+ private seen=new Map<string,{t:bigint;phase:number;at:number}>();
+ age(id:string,t:bigint,phase:number,now:number){
+  const last=this.seen.get(id);
+  if(!last||last.t!==t||last.phase!==phase){this.seen.set(id,{t,phase,at:now});return 0;}
+  return now-last.at;
+ }
+ retain(live:(id:string)=>boolean){for(const id of this.seen.keys())if(!live(id))this.seen.delete(id);}
 }

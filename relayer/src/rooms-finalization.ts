@@ -47,21 +47,81 @@ export function finalizationVerdict(r:PublishedResult):FinalizationVerdict{
  return 'ready';
 }
 
-export type Deferred={id:string;verdict:'unpublished'|'unmarketed'};
+export type Deferred={id:string;verdict:'unpublished'|'unmarketed'|'unreadable'};
+export type FinalizationFailure={id:string;error:string};
+/** Consecutive passes whose reads of one result failed before that result stops
+ * holding the renewal. At the lifecycle's 10 s cycle, about one minute. */
+export const FINALIZATION_READ_ATTEMPTS=6;
+
+/** What earlier passes learnt, so a result is not read again every cycle forever.
+ * - Finalized (finalResults status non-zero) and unmarketed (published terminal,
+ *   matchEpoch 0) are permanent: an adapter never un-finalizes, and a round can
+ *   only be opened, setting matchEpoch, while the match is live. Such a result is
+ *   never read again by this process.
+ * - Unpublished is permanent within one scope (the lifecycle passes its epoch):
+ *   nothing is published between the hub's release and the next epoch's first
+ *   batch. It is read again in a later scope.
+ * - Read failures are counted per result and scope; after
+ *   FINALIZATION_READ_ATTEMPTS consecutive failing passes the result is deferred
+ *   as 'unreadable', and a later scope tries it again. */
+export class FinalizationMemory {
+ private settled=new Set<string>();
+ private unpublished=new Map<string,string>();
+ private failures=new Map<string,{scope:string;count:number}>();
+ known(id:string,scope:string):'settled'|'unpublished'|'unreadable'|undefined{
+  if(this.settled.has(id))return 'settled';
+  if(this.unpublished.get(id)===scope)return 'unpublished';
+  const f=this.failures.get(id);
+  if(f&&f.scope===scope&&f.count>=FINALIZATION_READ_ATTEMPTS)return 'unreadable';
+  return undefined;
+ }
+ settle(id:string){this.settled.add(id);this.unpublished.delete(id);this.failures.delete(id);}
+ defer(id:string,scope:string){this.unpublished.set(id,scope);this.failures.delete(id);}
+ /** The consecutive failure count of this result in this scope, this one included. */
+ failed(id:string,scope:string){
+  const last=this.failures.get(id),count=last?.scope===scope?last.count+1:1;
+  this.failures.set(id,{scope,count});return count;
+ }
+ succeeded(id:string){this.failures.delete(id);}
+}
+
+const failureText=(e:unknown)=>String((e as Error)?.message??e).split('\n')[0].replace(/https?:\S+/g,'[rpc]').slice(0,160);
+
 /** One finalizing pass over terminal results, in order. Finalized results are
  * passed over; results finalizeResult cannot accept yet are deferred, never
  * submitted, so an unpublished result cannot hold the renewal that is the only
  * way for it to end. The first result that can be finalized now (or will be in
- * seconds) is returned. Read failures propagate: an RPC error never defers. */
-export async function nextFinalization(ids:readonly string[],o:{finalStatus:(id:string)=>Promise<number>;published:(id:string)=>Promise<PublishedResult>}){
- const deferred:Deferred[]=[];
+ * seconds) is returned.
+ *
+ * A read failure is never a deferral by itself, and it never ends the pass: the
+ * pass goes on to the next result, so one failing read cannot keep every later
+ * result from being finalized. It is reported in `failed`, and the caller
+ * retries before renewing. After FINALIZATION_READ_ATTEMPTS failing passes in a
+ * row the result is deferred as 'unreadable' instead, so one result Monad cannot
+ * answer for does not hold the renewal forever (its bettors are then paid by a
+ * later epoch's pass). */
+export async function nextFinalization(ids:readonly string[],o:{finalStatus:(id:string)=>Promise<number>;published:(id:string)=>Promise<PublishedResult>},
+ memory:FinalizationMemory=new FinalizationMemory(),scope=''){
+ const deferred:Deferred[]=[],failed:FinalizationFailure[]=[];
  for(const id of ids){
-  if(await o.finalStatus(id)!==0)continue;
-  const verdict=finalizationVerdict(await o.published(id));
-  if(verdict==='unpublished'||verdict==='unmarketed'){deferred.push({id,verdict});continue;}
-  return {next:{id,verdict},deferred};
+  const known=memory.known(id,scope);
+  if(known==='settled')continue;
+  if(known){deferred.push({id,verdict:known});continue;}
+  let verdict:FinalizationVerdict;
+  try{
+   if(await o.finalStatus(id)!==0){memory.settle(id);continue;}
+   verdict=finalizationVerdict(await o.published(id));
+   memory.succeeded(id);
+  }catch(e){
+   if(memory.failed(id,scope)>=FINALIZATION_READ_ATTEMPTS)deferred.push({id,verdict:'unreadable'});
+   else failed.push({id,error:failureText(e)});
+   continue;
+  }
+  if(verdict==='unmarketed'){memory.settle(id);deferred.push({id,verdict});continue;}
+  if(verdict==='unpublished'){memory.defer(id,scope);deferred.push({id,verdict});continue;}
+  return {next:{id,verdict},deferred,failed};
  }
- return {next:undefined,deferred};
+ return {next:undefined,deferred,failed};
 }
 
 const adapterReads=parseAbi([

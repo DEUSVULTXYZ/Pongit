@@ -12,6 +12,7 @@ import {
   encodeFunctionData,
   decodeFunctionData,
   keccak256,
+  parseTransaction,
   toFunctionSelector,
   zeroHash,
   type Abi,
@@ -41,8 +42,10 @@ import {loadRoomsFinance,financeAdapterAbi} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
 import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome, retireRefusedEngineJob, retireClosedEpochJobs, publicCommandResult, ENGINE_REFUSALS_SCHEMA} from "./rooms-engine-recovery";
 import {publishedResultReader} from "./rooms-finalization";
-import {EngineHaltMonitor,roomsWriteVerdict,type EngineHaltChange} from "./rooms-engine-halt";
-import {ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,EngineHalted,readEngineHealth,refusalReason} from "../../shared/engine-halt";
+import {EngineGasCapMonitor,EngineHaltMonitor,roomsWriteVerdict,type EngineHaltChange} from "./rooms-engine-halt";
+import {ENGINE_GAS_CAP_CODE,ENGINE_GAS_CAP_MESSAGE,ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,ENGINE_HEALTH_INTERVAL_MS,EngineGasCapped,EngineHalted,healthApplies,readEngineHealth,refusalReason} from "../../shared/engine-halt";
+import {OrphanMatches,maintenanceTargets,reconcileContestedResult,type LobbyRestore,type LobbyState} from "./rooms-restore";
+import {assertCommandEpoch,beaconRequestCurrent,beaconRequestEpoch} from "./rooms-command-epoch";
 import {roomsRankingCandidates} from "./rooms-ranking";
 import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snapshot";
 import {engineTransport} from "../../shared/engine-transport";
@@ -50,9 +53,9 @@ import {engineReadRetryMs} from "../../shared/engine-read";
 import {confirmsRoomAcceptance, expireUnstartedRoomOffer, prepareRoomLaunch, assertRoomLaunchReady} from "../../shared/rooms-acceptance";
 import {EngineStream,engineTuple,engineState} from "../../shared/engine-stream";
 import {EngineFeed} from "../../shared/engine-feed";
-import {engineCooldownMs} from "../../shared/engine-transport";
-import {engineCommandTransaction} from "../../shared/engine-gas";
-import {CHAOS_GUARD_INTERVAL_MS,CHAOS_GUARD_WRITABLE_MS,ChaosTickOutcomes,chaosGuardBackoffMs,chaosGuardDue,matchCommandInFlight,publicCommandKey} from "./chaos-tick-guard";
+import {engineCooldownMs,engineGate} from "../../shared/engine-transport";
+import {engineCommandGasFromEnv,engineCommandTransaction} from "../../shared/engine-gas";
+import {CHAOS_GUARD_INTERVAL_MS,CHAOS_GUARD_WRITABLE_MS,ChaosTickOutcomes,MatchProgress,chaosGuardBackoffMs,chaosGuardDue,maintenanceTickDue,matchCommandInFlight,publicCommandKey} from "./chaos-tick-guard";
 import {SessionUnavailable,SessionRejected,serviceError,publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
 import {assertRoomsEngineAvailable,RoomsEngineUnavailable} from "../../shared/rooms-availability";
 import {overlayPresence} from "./rooms-presence";
@@ -129,6 +132,9 @@ export async function createRoomsCoordinator(o: Options) {
   const signer = privateKeyToAccount(
     process.env.INTERLUDE_COORDINATOR_KEY as Hex,
   );
+  // Every relayer command's gas limit, served to browsers by /interlude/config:
+  // 30,000,000 unless ROOMS_ENGINE_COMMAND_GAS sets a lower one (engine-gas.ts).
+  const commandGas = engineCommandGasFromEnv(process.env);
   if (signer.address.toLowerCase() !== manifest.coordinator.toLowerCase())
     throw new Error("Rooms admission signer mismatch");
   const app = manifest.app.toLowerCase() as Address,
@@ -501,8 +507,15 @@ export async function createRoomsCoordinator(o: Options) {
   // A halted node keeps serving reads and interlude_session, which has no halt
   // field; only /health and a refused send reveal it (shared/engine-halt.ts).
   const halt=new EngineHaltMonitor();
-  // Latest tick outcome per match from every relayer path, for the Chaos guard.
+  // Latest tick outcome per match from every relayer path, for the Chaos guard
+  // and the maintenance loop's frozen-match rule.
   const tickOutcomes=new ChaosTickOutcomes();
+  // The maintenance loop's single tick per frozen match (due cancel or re-anchor),
+  // and progress ages when the applied-event stream is off.
+  const frozenTicks=new Map<string,number>();
+  const progress=new MatchProgress();
+  // Matches whose pending beacon request belongs to an earlier epoch, logged once.
+  const drawsSuspended=new Set<string>();
   let guardWritableAt = 0;
   function haltChanged(change:EngineHaltChange){
     if(change==='halted'){
@@ -512,6 +525,20 @@ export async function createRoomsCoordinator(o: Options) {
       void notify();
     }
     if(change==='recovered')console.info(json({event:'rooms-engine-halt-cleared',app,epoch:lastEpoch,at:new Date().toISOString()}));
+  }
+  // A node that refuses the configured command gas refuses every command signed
+  // with it. The arena is then unavailable, not online with each move retired.
+  const gasCap=new EngineGasCapMonitor();
+  function gasCapRefused(error:unknown,raw:Hex){
+    // A journaled command signed above the current limit (before a restart with a
+    // lower ROOMS_ENGINE_COMMAND_GAS) says nothing about the current limit.
+    if((parseTransaction(raw).gas??commandGas)>commandGas)return;
+    if(!gasCap.refused(error,lastEpoch,commandGas))return;
+    online=false;admissionHealthy=false;guardWritableAt=0;
+    lastError=ENGINE_GAS_CAP_MESSAGE;lastErrorCode=ENGINE_GAS_CAP_CODE;
+    console.error(json({event:'rooms-engine-gas-cap',app,...gasCap.state,
+      action:'set ROOMS_ENGINE_COMMAND_GAS=15000000 and restart the relayer; browsers follow its config',at:new Date().toISOString()}));
+    void notify();
   }
   async function recordPublicationFailure(e:unknown){
     if(!publicationUnavailable(e))return;
@@ -525,6 +552,10 @@ export async function createRoomsCoordinator(o: Options) {
     void notify();
   }
   function publicTick(id:string,cancel=false,pressureData?:Hex){
+    // A beacon proof or live pressure bound to another epoch is refused before
+    // it is queued: it is never signed and never counts as in flight for the
+    // Chaos guard (rooms-command-epoch.ts).
+    if(pressureData){try{assertCommandEpoch(roomsAbi,pressureData,BigInt(lastEpoch));}catch(e){return Promise.reject(e);}}
     const key=publicCommandKey(id,cancel,pressureData?hash(pressureData):undefined),existing=writes.get(key);if(existing)return existing;
     const operation=writer.catch(()=>{}).then(()=>sendPublicTick(id,cancel,pressureData)).catch(async e=>{await recordPublicationFailure(e);throw e;}).finally(()=>writes.delete(key));
     writes.set(key,operation);writer=operation;return operation;
@@ -532,8 +563,10 @@ export async function createRoomsCoordinator(o: Options) {
   async function sendPublicTick(id: string, cancel = false, pressureData?:Hex) {
     if (closingEpoch !== null) throw new Error("This arena is closing; no further commands will be submitted");
     // Recovery may only resend the existing immutable pending transaction.
-    // Nothing new is signed for a halted node: it would only be refused.
+    // Nothing new is signed for a halted node, or at a gas limit the node
+    // refuses: it would only be refused.
     if(halt.state&&id!=='0')throw new EngineHalted();
+    if(gasCap.state&&id!=='0')throw new EngineGasCapped();
     if(publicationHealth.status()&&id!=='0')throw new EnginePublicationUnavailable();
     const requestedData=id==='0'?null:pressureData || encodeFunctionData({
       abi:roomsAbi,functionName:cancel?'cancelMatch':'tick',args:[BigInt(id)],
@@ -550,16 +583,19 @@ export async function createRoomsCoordinator(o: Options) {
     let fresh = false;
     if (!job) {
       fresh = true;
+      const data = requestedData!;
+      // The epoch may have changed while this command waited for the writer.
+      assertCommandEpoch(roomsAbi, data, BigInt(lastEpoch));
       const nonce = await client.node.getTransactionCount({
         address: signer.address,
       });
-      const data = requestedData!;
       // tick, cancelMatch, submitPressure, submitLivePressure and submitRandomness
-      // all sign ENGINE_COMMAND_GAS: 30,000,000, the hosted node's cap. tick,
-      // submitLivePressure and submitRandomness advance the Chaos clock first, and a
-      // grid state costs 2.5 to 3 M gas per 100 ms of gap (see shared/engine-gas.ts).
-      // The others never simulate; gas is free and the limit is only a ceiling.
-      const raw = await signer.signTransaction(engineCommandTransaction(app, nonce, data));
+      // all sign commandGas: 30,000,000 by default, the hosted node's cap, or the
+      // operator's lower ROOMS_ENGINE_COMMAND_GAS. tick, submitLivePressure and
+      // submitRandomness advance the Chaos clock first, and a grid state costs 2.5
+      // to 3 M gas per 100 ms of gap (see shared/engine-gas.ts). The others never
+      // simulate; gas is free and the limit is only a ceiling.
+      const raw = await signer.signTransaction(engineCommandTransaction(app, nonce, data, commandGas));
       job = { id: hex(), app, nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
       await db.query(
         "INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9)",
@@ -588,9 +624,12 @@ export async function createRoomsCoordinator(o: Options) {
           // "this session is over and the node is no longer accepting
           // transactions": the node is halted, whatever interlude_session says.
           haltChanged(halt.refused(e,lastEpoch));
-          // A refusal before execution never ran. Retire it only when the node
-          // also confirms its nonce unused (rooms-engine-recovery.ts); otherwise
-          // it stays pending and only these bytes are ever resent.
+          // "transaction gas limit is greater than the cap": every command signed
+          // at this limit would be refused, so the arena becomes unavailable.
+          gasCapRefused(e,job.raw);
+          // A gas-cap or halt refusal never ran and never will. Retire it only when
+          // the node also confirms its nonce unused (rooms-engine-recovery.ts);
+          // otherwise it stays pending and only these bytes are ever resent.
           if(await retireRefusedEngineJob({db,app,job,error:e,
             latestNonce:()=>client.node.getTransactionCount({address:signer.address,blockTag:'latest'})}))
             console.warn(json({event:'rooms-engine-command-refused',app,epoch:String(job.epoch),nonce:String(job.nonce),action:identity.action,matchId:identity.matchId,reason:refusalReason(e),at:new Date().toISOString()}));
@@ -618,66 +657,41 @@ export async function createRoomsCoordinator(o: Options) {
     if(result==='reconciled')
       throw new Error('Previous engine command reconciled. The current action will be checked again.');
   }
-  async function restoreContestedMatch(id: string, snap: any) {
-    const saved = (
-      await db.query("SELECT * FROM il_offers WHERE app=$1 AND id=$2", [
-        app,
-        id,
-      ])
-    ).rows[0];
-    if (!saved) return;
-    await transact(async (s) => {
-      const r = s.rooms[saved.room];
-      if (!r) return;
-      r.winner = undefined;
-      if (snap[2] === 1n || snap[2] === 2n) {
-        const players = [snap[3].toLowerCase(), snap[4].toLowerCase()];
-        if (r.members.filter((m) => !players.includes(m.player)).length + 2 > 8)
-          throw new Error(
-            "Room recovery needs operator review before admission resumes.",
-          );
-        // The contract owns participation. Roll back derived room occupancy to it.
-        for (const other of Object.values(s.rooms))
-          if (other.id !== r.id) {
-            other.members = other.members.filter(
-              (m) => !players.includes(m.player),
-            );
-            if (
-              other.offer &&
-              players.some((p) => [other.offer!.a, other.offer!.b].includes(p))
-            ) {
-              other.offer.status = "cancelled";
-              other.status = "waiting";
-            }
-            if (!other.members.some((m) => m.player === other.host))
-              other.host =
-                [...other.members].sort((a, b) => a.joined - b.joined)[0]
-                  ?.player || "";
-          }
-        s.queue = s.queue.filter((q) => !players.includes(q.player));
-        for (const p of players) {
-          const member = r.members.find((m) => m.player === p);
-          if (member) member.away = false;
-          else
-            r.members.push({
-              player: p,
-              joined: Date.now(),
-              position: r.members.length,
-              seen: 0,
-              away: false,
-            });
-        }
-        r.offer = {
-          ...saved.offer,
-          status: snap[2] === 2n ? "active" : "submitted",
-        };
-        r.status = snap[2] === 2n ? "playing" : "offer";
-      } else if (r.offer?.id === id) {
-        r.offer.status = "cancelled";
-        r.status = "waiting";
-      }
-      r.activity = Date.now();
+  // Live matches the audit could not put back into a lobby room. The maintenance
+  // loop watches and ticks them by id until they end (rooms-restore.ts).
+  const orphans=new OrphanMatches();
+  const absentReported=new Set<string>();
+  /** One il_results row whose hash differs from the live node's: the match was
+   * resumed (a halted epoch's unsettled end is lost at forceClose, and the next
+   * epoch's node starts from Monad's published state), or it ended differently.
+   * The row is deleted only once the match is back in a lobby room, recreated from
+   * its signed offer in il_offers if the room is gone. Otherwise the row stays,
+   * the operator is alerted and the match is still ticked by id to its end, so
+   * the lifecycle can drain and renew. */
+  async function restoreContestedMatch(row:{id:string;room:string;ranked:boolean}){
+    const outcome=await reconcileContestedResult({
+      row,
+      live:async()=>{const snap:any=await readEngineSnapshot(client,BigInt(row.id));return {phase:snap[2] as bigint,a:String(snap[3]),b:String(snap[4])};},
+      savedOffer:async()=>{const saved=(await db.query("SELECT room,offer FROM il_offers WHERE app=$1 AND id=$2",[app,row.id])).rows[0];return saved?{room:String(saved.room),offer:saved.offer}:undefined;},
+      lobby:fn=>transact<LobbyRestore>(async s=>fn(s as LobbyState)),
+      recordEnd:async()=>{await db.query("INSERT INTO il_result_pending(app,id,room,ranked) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[app,row.id,row.room,row.ranked]);},
+      deleteRow:async()=>{await db.query("DELETE FROM il_results WHERE app=$1 AND id=$2",[app,row.id]);},
+      orphan:reason=>{
+        if(orphans.add(row,reason))
+          console.error(json({event:'rooms-match-orphaned',app,matchId:row.id,room:row.room,reason,
+            action:'operator review: the match stays active until it ends; the relayer ticks it by id and keeps its result row',at:new Date().toISOString()}));
+      },
+      restored:kind=>{
+        orphans.delete(row.id);
+        console.warn(json({event:kind==='recreated'?'rooms-match-room-recreated':'rooms-match-restored',app,matchId:row.id,room:row.room,at:new Date().toISOString()}));
+      },
+      now:Date.now,
     });
+    if(outcome==='absent'&&!absentReported.has(row.id)){
+      absentReported.add(row.id);
+      console.error(json({event:'rooms-result-unknown-to-node',app,matchId:row.id,room:row.room,action:'operator review: the node shows no such match; the recorded row is kept',at:new Date().toISOString()}));
+    }
+    return outcome;
   }
   let historyBusy=false;
   async function auditHistory(){
@@ -718,7 +732,7 @@ export async function createRoomsCoordinator(o: Options) {
       if (Date.now() - resultAuditAt > 15000) {
         let results = (
           await db.query(
-            "SELECT id,hash FROM il_results WHERE app=$1 ORDER BY ended_at DESC LIMIT 2 OFFSET $2",
+            "SELECT id,hash,room,ranked FROM il_results WHERE app=$1 ORDER BY ended_at DESC LIMIT 2 OFFSET $2",
             [app, auditOffset],
           )
         ).rows;
@@ -726,7 +740,7 @@ export async function createRoomsCoordinator(o: Options) {
           auditOffset = 0;
           results = (
             await db.query(
-              "SELECT id,hash FROM il_results WHERE app=$1 ORDER BY ended_at DESC LIMIT 2",
+              "SELECT id,hash,room,ranked FROM il_results WHERE app=$1 ORDER BY ended_at DESC LIMIT 2",
               [app],
             )
           ).rows;
@@ -737,12 +751,13 @@ export async function createRoomsCoordinator(o: Options) {
         // halted epoch's last batch (the phase-4 cancel of 2026-09-18) is lost at
         // the forceClose, and the next epoch's node resumes that match from
         // Monad's published state. Its live hash then differs, so the match is
-        // restored to its room and the stale row deleted within one audit, not
-        // after the rotation has reached it among every older result. Normally the
-        // set is empty or a few seconds old.
+        // restored to its room (recreated if it is gone) and the stale row deleted
+        // within one audit, not after the rotation has reached it among every older
+        // result. A match that cannot be restored keeps its row and is ticked by id.
+        // Normally the set is empty or a few seconds old.
         const unpublished = (
           await db.query(
-            "SELECT id,hash FROM il_results WHERE app=$1 AND NOT published ORDER BY ended_at LIMIT 4",
+            "SELECT id,hash,room,ranked FROM il_results WHERE app=$1 AND NOT published ORDER BY ended_at LIMIT 4",
             [app],
           )
         ).rows;
@@ -758,16 +773,16 @@ export async function createRoomsCoordinator(o: Options) {
           for (let i = 0; i < results.length; i++) {
             const row = results[i];
             if (live[i] !== row.hash) {
-              await restoreContestedMatch(
-                row.id,
-                await readEngineSnapshot(client, BigInt(row.id)),
-              );
-              await db.query("DELETE FROM il_results WHERE app=$1 AND id=$2", [
-                app,
-                row.id,
-              ]);
-              ratings.clear();
-              ratingAt = 0;
+              // One row's failure never stops the others' audit.
+              try {
+                const outcome = await restoreContestedMatch({id:String(row.id),room:String(row.room),ranked:!!row.ranked});
+                if (outcome === "restored" || outcome === "terminal") {
+                  ratings.clear();
+                  ratingAt = 0;
+                }
+              } catch {
+                recordRpc({at:Date.now(),target:"pongit",method:"history.restore.retry",status:503,ms:0,source:"cache"});
+              }
             } else
               await db.query(
                 "UPDATE il_results SET published=$3,verified=true WHERE app=$1 AND id=$2",
@@ -812,13 +827,13 @@ export async function createRoomsCoordinator(o: Options) {
     cycle = true;
     lastCheck = Date.now();
     try {
-      // /health beside the session read, with its own short timeout. A failed
-      // health read is unknown: it neither halts nor clears (EngineHaltMonitor).
-      // It is skipped while the node's Retry-After runs, like every other request.
-      const [status, health] = await Promise.all([client.status(),
-        engineCooldownMs(manifest.node) > 0 ? Promise.resolve(undefined) : readEngineHealth(manifest.node)]);
+      // /health runs on its own slower schedule (healthCheck below), never in
+      // this loop. Here only a new session epoch drops an earlier epoch's halt and
+      // gas-cap marks; the new session's health and sends decide again.
+      const status = await client.status();
       lastEngineSeen = Date.now();
-      haltChanged(halt.observe(health, status.epoch));
+      haltChanged(halt.observe(undefined, status.epoch));
+      if(gasCap.observe(status.epoch))console.info(json({event:'rooms-engine-gas-cap-cleared',app,epoch:status.epoch,at:new Date().toISOString()}));
       const delegation = await base.readContract({
         address: manifest.hub,
         abi: interludeHubReadAbi,
@@ -843,13 +858,14 @@ export async function createRoomsCoordinator(o: Options) {
         publicationLog='';console.info(json({event:'rooms-publication-recovered',app,epoch:status.epoch,batch:status.committedBatches,at:new Date().toISOString()}));
       }
       const recoveryWritable=hubVerified;
-      // A halted node refuses every send, whatever its session reports. No new
+      // A halted node refuses every send, whatever its session reports, and a node
+      // that refused the command gas refuses every command at that limit. No new
       // match, tick, cancel, beacon or checkpoint is attempted; the players see
-      // ENGINE_HALTED instead of a live arena whose moves are refused.
-      const verdict=roomsWriteVerdict({unavailable,publicationBlocked:!!publicationHealth.status(),halted:!!halt.state,lifecycleStage:lifecycle?.status().stage});
+      // ENGINE_HALTED or ENGINE_GAS_CAP instead of a live arena whose moves are refused.
+      const verdict=roomsWriteVerdict({unavailable,publicationBlocked:!!publicationHealth.status(),gasCapped:!!gasCap.state,halted:!!halt.state,lifecycleStage:lifecycle?.status().stage});
       const writable=verdict.writable;
       if (lastEpoch !== -1 && lastEpoch !== status.epoch) ratings.clear();
-      if(lastEpoch!==status.epoch){feed.invalidate();tickOutcomes.clear();}
+      if(lastEpoch!==status.epoch){feed.invalidate();tickOutcomes.clear();frozenTicks.clear();}
       lastEpoch = status.epoch;
       online = writable;
       admissionHealthy = writable;
@@ -874,23 +890,34 @@ export async function createRoomsCoordinator(o: Options) {
       }
       if (pendingJob && (writable || recoveryWritable && publicationHealth.claimRetry())) void publicTick("0").catch(()=>{});
       const before = await current();
+      const orphanList=orphans.entries();
       if(streamEnabled){
         const ids=new Set(Object.values(before.rooms).filter(r=>r.offer&&!['complete','cancelled'].includes(r.offer.status)).map(r=>r.offer!.id));
+        // A live match no room holds is still watched, so the guard keeps it moving.
+        for(const o of orphanList)ids.add(o.id);
         for(const [id,stop] of watched)if(!ids.has(id)){stop();watched.delete(id);}
         for(const id of ids)if(!watched.has(id))watched.set(id,feed.watch(BigInt(id),recordReplay));
       }
       const observed = new Map<string, any>();
-      for (const r of Object.values(before.rooms)) {
-        if (
-          !r.offer ||
-          r.offer.status === "complete" ||
-          (r.offer.status === "cancelled" &&
-            Number(r.offer.expires) * 1000 + 30000 < Date.now())
-        )
-          continue;
-        const id = r.offer.id;
+      for (const target of maintenanceTargets(Object.values(before.rooms), orphanList, Date.now())) {
+        const {id,room:r} = target;
         let s: any = streamEnabled?engineTuple(await feed.read(BigInt(id))):await readEngineSnapshot(client, BigInt(id));
-        if (writable && s[2] === 2n && !s[12].awaitingServe && (streamEnabled?feed.progressAge(BigInt(id))>1500:s[8] - s[12].t > 1500000n)) {
+        const now=Date.now();
+        // A frozen match (a relayer tick reverted, nothing moved it since) gets no
+        // maintenance tick, only one when its 30-minute cancel is due or a node
+        // restart lets the clock re-anchor (chaos-tick-guard.ts).
+        const progressAgeMs=streamEnabled?feed.progressAge(BigInt(id)):progress.age(id,BigInt(s[12].t),Number(s[2]),now);
+        const tick=maintenanceTickDue(now,{
+          phase:Number(s[2]),awaitingServe:!!s[12].awaitingServe,
+          stale:streamEnabled?progressAgeMs>1500:s[8]-s[12].t>1500000n,
+          clockUs:BigInt(s[8]),tUs:BigInt(s[12].t),progressAgeMs,
+          lastRevertAt:tickOutcomes.lastRevertAt(id),lastFrozenTickAt:frozenTicks.get(id)??0,
+        });
+        if (writable && tick) {
+          if(tick!=='tick'){
+            frozenTicks.set(id,now);
+            console.warn(json({event:tick==='cancel'?'rooms-frozen-match-cancel-due':'rooms-frozen-match-reanchor',app,matchId:id,clockUs:String(s[8]),tUs:String(s[12].t),at:new Date().toISOString()}));
+          }
           void publicTick(id).catch(()=>{});
         }
         if (writable && s[2] === 1n && BigInt(Math.floor(Date.now() / 1000)) > s[11]) {
@@ -898,7 +925,19 @@ export async function createRoomsCoordinator(o: Options) {
         }
         observed.set(id, s);
         recordReplay(engineState(s));
-        if(events&&writable&&s[13]){
+        const request=BigInt(s[13]?.request??0n);
+        if(events&&writable&&r&&s[13]&&!beaconRequestCurrent(request,BigInt(lastEpoch))){
+          // A request filed in an earlier epoch can never be proven in this one
+          // (verifyRandomness requires the current epoch), and the contract files a
+          // new request only after announcing a proven draw. While it is pending,
+          // this match gets no new Chaos draw; nothing is fetched or sent for it.
+          const key=`${lastEpoch}:${id}`;
+          if(!drawsSuspended.has(key)){
+            drawsSuspended.add(key);while(drawsSuspended.size>128)drawsSuspended.delete(drawsSuspended.values().next().value!);
+            console.warn(json({event:'rooms-chaos-draws-suspended',app,matchId:id,requestEpoch:String(beaconRequestEpoch(request)),epoch:lastEpoch,at:new Date().toISOString()}));
+          }
+        }
+        else if(events&&writable&&r&&s[13]){
           // Beacon networking is independent from observation and betting.
           // Sending still uses the single persisted engine writer.
           void beaconPump.offer(`${app}:${lastEpoch}:${id}`,beaconState(s),async()=>
@@ -907,14 +946,14 @@ export async function createRoomsCoordinator(o: Options) {
               await publicTick(id,false,encodeFunctionData({abi:roomsEventsAbi,functionName:'submitRandomness',args:[BigInt(id),request,proof]}));
             }).catch(()=>recordRpc({at:Date.now(),target:'pongit',method:'chaos.beacon.retry',status:503,ms:0,source:'cache'}));
         }
-        if(writable && finance && s[2]===2n && s[12].mode===1 && (realtime || s[12].awaitingServe)){
+        if(writable && r && finance && s[2]===2n && s[12].mode===1 && (realtime || s[12].awaitingServe)){
           if(!pendingPressure.has(id)){
             const work=finance.pressure(id,s,async data=>{
               await publicTick(id,false,data);
               // A paused rally does not need idle ticks. Resume only after its
               // checkpoint write is confirmed; an uncertain write stops here.
               if(!realtime)await publicTick(id);
-            },realtime?()=>client.read('queuedPressure',[BigInt(id)]):undefined).catch(e=>{
+            },realtime?()=>client.read('queuedPressure',[BigInt(id)]):undefined,BigInt(lastEpoch)).catch(e=>{
               // A financial checkpoint is local to this rally. It must never
               // overwrite the game node's availability or expose raw calldata.
               recordRpc({at:Date.now(),target:"pongit",method:"chaos.checkpoint.retry",status:503,ms:0,source:"cache"});
@@ -925,15 +964,27 @@ export async function createRoomsCoordinator(o: Options) {
         }
         if(s[2]>=3n){
           ratingAt=0;
-          await db.query("INSERT INTO il_result_pending(app,id,room,ranked) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[app,id,r.id,r.offer.ranked]);
+          if(r)await db.query("INSERT INTO il_result_pending(app,id,room,ranked) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[app,id,r.id,r.offer!.ranked]);
+          else{
+            // An orphan's end is recorded against its row's room: auditHistory
+            // then updates the stale row in place.
+            await db.query("INSERT INTO il_result_pending(app,id,room,ranked) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",[app,id,target.orphan.room,target.orphan.ranked]);
+            orphans.delete(id);
+            console.warn(json({event:'rooms-orphan-match-ended',app,matchId:id,phase:Number(s[2]),at:new Date().toISOString()}));
+          }
         }
       }
+      if(!streamEnabled){progress.retain(id=>observed.has(id));tickOutcomes.retain(id=>observed.has(id));}
+      for(const id of frozenTicks.keys())if(!observed.has(id))frozenTicks.delete(id);
       const nodeNow = status;
       let reserved = nodeNow.pendingDiffs.length;
       // Existing unfinished offers reserve their worst-case creation and terminal writes.
       for (const r of Object.values(before.rooms))
         if (r.offer && !["complete", "cancelled"].includes(r.offer.status))
           reserved += observed.get(r.offer.id)?.[2] === 0n ? creationBudget : terminalBudget;
+      // A live orphan still has its terminal writes to publish.
+      for (const o of orphanList)
+        if (!Object.values(before.rooms).some(r=>r.offer?.id===o.id) && [1n,2n].includes(observed.get(o.id)?.[2])) reserved += terminalBudget;
       // Read only when a room is (within a minute) old enough to be deleted in this pass.
       const heldRooms = Object.values(before.rooms).some(r=>Date.now()-r.activity>86400000-60000)
         ? new Set<string>((await db.query("SELECT DISTINCT room FROM il_results WHERE app=$1 AND NOT published",[app])).rows.map(r=>String(r.room)))
@@ -1167,7 +1218,7 @@ export async function createRoomsCoordinator(o: Options) {
       enabled: events && streamEnabled,
       streamConnected: feed.connected,
       writable: guardWritableAt > 0 && now - guardWritableAt <= CHAOS_GUARD_WRITABLE_MS && now >= maintenanceRetryAt
-        && closingEpoch === null && !publicationHealth.status() && !halt.state,
+        && closingEpoch === null && !publicationHealth.status() && !halt.state && !gasCap.state,
       cooldownMs: engineCooldownMs(manifest.node),
     };
     for (const [id, until] of guardBlocked) if (until <= now || !watched.has(id)) guardBlocked.delete(id);
@@ -1193,6 +1244,28 @@ export async function createRoomsCoordinator(o: Options) {
   }
   const guardTimer = events && streamEnabled ? setInterval(chaosGuard, CHAOS_GUARD_INTERVAL_MS) : undefined;
   guardTimer?.unref();
+  // /health on its own schedule, every ENGINE_HEALTH_INTERVAL_MS, so a slow
+  // answer never delays the maintenance loop (and the ticks it sends). It goes
+  // through the node's shared request gate (refused locally during a Retry-After;
+  // a 429 extends that cooldown for every request) and the RPC metrics as
+  // "health". A report naming another app or epoch than the session's is ignored.
+  let healthBusy = false;
+  async function healthCheck() {
+    if (healthBusy || lastEpoch === -1) return;
+    healthBusy = true;
+    try {
+      const epoch = lastEpoch;
+      const report = await readEngineHealth(manifest.node, {gate: engineGate(manifest.node), fetch: measuredFetch("interlude", "health")});
+      if (!report || epoch !== lastEpoch) return;
+      if (!healthApplies(report, {app, epoch})) {
+        recordRpc({at:Date.now(),target:"interlude",method:"health.mismatch",status:200,ms:0,source:"cache"});
+        return;
+      }
+      haltChanged(halt.observe(report, epoch));
+    } finally { healthBusy = false; }
+  }
+  const healthTimer = setInterval(() => void healthCheck(), ENGINE_HEALTH_INTERVAL_MS);
+  healthTimer.unref();
   void maintenance();
   async function route(
     req: IncomingMessage,
@@ -1219,6 +1292,8 @@ export async function createRoomsCoordinator(o: Options) {
           errorCode: lastErrorCode || undefined,
           retryAt: !online ? Math.max(maintenanceRetryAt,lastCheck+2000) : undefined,
           stateTransport:streamEnabled?"events":"polling",
+          // The gas limit an open tab signs its next control with (engine-gas.ts).
+          commandGas:commandGas.toString(),
         });
         return true;
       }
@@ -1840,7 +1915,9 @@ export async function createRoomsCoordinator(o: Options) {
   return {
     route,
     subscribe,
-    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status(),halt:halt.state }),
-    stop: () => {clearInterval(timer);if(guardTimer)clearInterval(guardTimer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();replays?.stop();diagnostics.stop();lifecycle?.stop();},
+    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status(),halt:halt.state,gasCap:gasCap.state,commandGas:commandGas.toString(),
+      // Match ids only: a room id is an invitation link and this status is public.
+      orphans:orphans.entries().map(o=>({matchId:o.id,reason:o.reason,since:o.since})) }),
+    stop: () => {clearInterval(timer);clearInterval(healthTimer);if(guardTimer)clearInterval(guardTimer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();replays?.stop();diagnostics.stop();lifecycle?.stop();},
   };
 }

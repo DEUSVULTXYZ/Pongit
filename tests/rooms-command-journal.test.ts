@@ -3,7 +3,7 @@ import {encodeFunctionData,parseAbi,keccak256,toFunctionSelector} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {delegatableAbi} from '@interludelayer-sdk/sdk';
 import {RoomsCommandJournal,resendJournaled} from '../web/lib/rooms-command-journal';
-import {isEngineHalted} from '../shared/engine-halt';
+import {isEngineGasCapped,isEngineHalted} from '../shared/engine-halt';
 import {EnginePublicationUnavailable} from '../shared/service-error';
 const app='0x0000000000000000000000000000000000000011';
 const abi=parseAbi(['function input(uint256,int8,uint256,uint256)','function withdraw(uint256)']);
@@ -43,11 +43,40 @@ test('journal refuses financial calls and wrong deployment or chain',async()=>{
  await assert.rejects(journal.beforeSend(raw));assert.equal(journal.pending(player),undefined);
  }
 });
+// Ported from codex/contract-authority e892c30.
+test('a command lost with its epoch can be sent again in the next, and only there',async()=>{
+ const {journal,store,raw,player}=await fixture();await journal.beforeSend(raw);
+ journal.received('eth_getTransactionReceipt',{transactionHash:keccak256(raw),status:'0x1'});assert.equal(journal.pending(player),undefined);
+ // Same epoch: executed means resolved, and the bytes are never sent twice.
+ await assert.rejects(journal.beforeSend(raw),/already resolved/);
+ // The epoch closed before committing it; the engine gives the same nonce back and the client
+ // signs the same bytes. They are journaled again, as this epoch's, and resolve by their receipt.
+ const next=new RoomsCommandJournal(store,app,abi);next.received('interlude_session',{app,chainId:4242,epoch:2});
+ await next.beforeSend(raw);
+ assert.equal(next.pending(player)?.epoch,'2');
+ next.received('eth_getTransactionReceipt',{transactionHash:keccak256(raw),status:'0x1'});
+ assert.equal(next.pending(player),undefined);
+ await assert.rejects(next.beforeSend(raw),/already resolved/);
+ assert.equal(JSON.parse(store.getItem()!).filter((x:any)=>x.hash===keccak256(raw)).length,1);
+});
+test('the 2026-09-18 recovery: a registerControls lost with epoch 6 is signed byte-identical in epoch 7 and sent',async()=>{
+ // A delegated call stands in for registerControls here: what matters is that
+ // the key, the nonce the node hands back and the calldata are all the same.
+ const {journal,store,raw,player}=await fixture();journal.received('interlude_session',{app,chainId:4242,epoch:6});
+ await journal.beforeSend(raw);journal.received('interlude_sendTransaction',{transactionHash:keccak256(raw),status:'0x1'});
+ // forceClose loses the batch; the renewed node's count for this key is 5 again.
+ const renewed=new RoomsCommandJournal(store,app,abi);renewed.received('interlude_session',{app,chainId:4242,epoch:7});
+ renewed.retirePrevious(player,7n);
+ await renewed.beforeSend(raw);
+ assert.equal(renewed.pending(player)?.hash,keccak256(raw),'journaled as epoch 7\'s, never blocked as resolved');
+ assert.equal(renewed.pending(player)?.epoch,'7');
+});
 
-// Refused before execution: the agent arcade's rule on the browser side.
+// Retired before execution: the agent arcade's rule on the browser side, for
+// the gas cap and a halted node only.
 const capRefusal={name:'RpcRequestError',message:'RPC Request failed.',details:'transaction rejected before execution: transaction gas limit is greater than the cap',code:-32000};
 const haltRefusal=new EnginePublicationUnavailable({name:'RpcRequestError',message:'RPC Request failed.',details:'this session is over and the node is no longer accepting transactions: batch 191 could not be settled',code:-32000});
-test('a refused command is retired only when the node confirms its nonce unused; the next command may then take that nonce',async()=>{
+test('a refused command is retired only when the node confirms its nonce unused; the same control is then sent again at that nonce',async()=>{
  const {journal,raw,key,player,data}=await fixture();await journal.beforeSend(raw);
  const pending=journal.pending(player)!;
  assert.equal(journal.retireRefused(pending.hash,6,'refused'),false,'the count moved: it may have run');
@@ -55,26 +84,50 @@ test('a refused command is retired only when the node confirms its nonce unused;
  assert.equal(journal.pending(player)?.hash,pending.hash);
  assert.equal(journal.retireRefused(pending.hash,5,'transaction gas limit is greater than the cap'),true);
  assert.equal(journal.pending(player),undefined);
- await assert.rejects(journal.beforeSend(raw),/already resolved/,'the refused bytes are never sent again');
  assert.equal(journal.retireRefused(pending.hash,5,'again'),false,'only an uncertain entry');
- const next=await key.signTransaction({type:'eip1559',chainId:4242,to:app,nonce:5,data,gas:2000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
- await journal.beforeSend(next);assert.equal(journal.pending(player)?.nonce,5,'new bytes at the freed nonce');
+ // viem signs deterministically: the same control, key, nonce and gas are these
+ // very bytes. The earlier version of this test signed them with another gas
+ // limit, which hid that such bytes were refused as "already resolved" forever.
+ const same=await key.signTransaction({type:'eip1559',chainId:4242,to:app,nonce:5,data,gas:1000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+ assert.equal(same,raw);
+ await journal.beforeSend(same);
+ assert.equal(journal.pending(player)?.hash,keccak256(raw),'the refused bytes never ran: they may be sent again');
+ journal.received('interlude_sendTransaction',{transactionHash:keccak256(raw),status:'0x1'});
+ assert.equal(journal.pending(player),undefined,'and their receipt resolves the new entry');
+ await assert.rejects(journal.beforeSend(raw),/already resolved/,'once executed, never again');
 });
-test('recovery resend: a refusal with the nonce confirmed unused retires, and a halted node surfaces as EngineHalted',async()=>{
+test('a refused command at a lower gas limit takes the freed nonce too',async()=>{
+ const {journal,raw,key,player,data}=await fixture();await journal.beforeSend(raw);
+ assert.equal(journal.retireRefused(keccak256(raw),5,'transaction gas limit is greater than the cap'),true);
+ const lower=await key.signTransaction({type:'eip1559',chainId:4242,to:app,nonce:5,data,gas:500000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+ await journal.beforeSend(lower);assert.equal(journal.pending(player)?.hash,keccak256(lower));
+});
+test('recovery resend: a gas-cap or halt refusal with the nonce confirmed unused retires and stops the tab',async()=>{
  {
   const {journal,raw,player}=await fixture();await journal.beforeSend(raw);const sent:string[]=[];
-  const r=await resendJournaled(journal,journal.pending(player)!,{send:async x=>{sent.push(x);throw capRefusal;},latestNonce:async()=>5});
-  assert.deepEqual(r,{kind:'refused'});assert.deepEqual(sent,[raw],'only the journaled bytes are sent');
-  assert.equal(journal.pending(player),undefined,'no longer blocks the player');
+  await assert.rejects(resendJournaled(journal,journal.pending(player)!,{send:async x=>{sent.push(x);throw capRefusal;},latestNonce:async()=>5}),isEngineGasCapped);
+  assert.deepEqual(sent,[raw],'only the journaled bytes are sent');
+  assert.equal(journal.pending(player),undefined,'no longer blocks the player; the tab waits for a limit the node accepts');
  }
  {
   const {journal,raw,player}=await fixture();await journal.beforeSend(raw);
   await assert.rejects(resendJournaled(journal,journal.pending(player)!,{send:async()=>{throw haltRefusal;},latestNonce:async()=>5}),isEngineHalted);
   assert.equal(journal.pending(player),undefined,'retired, and the tab shows the halt instead of signing again');
  }
+ {
+  // The bytes were signed at 1,000,000 before the relayer's config served a
+  // lower limit: the next control is signed at that limit at once.
+  const {journal,raw,player}=await fixture();await journal.beforeSend(raw);
+  assert.deepEqual(await resendJournaled(journal,journal.pending(player)!,{send:async()=>{throw capRefusal;},latestNonce:async()=>5,commandGas:()=>500_000n}),{kind:'refused'});
+  assert.equal(journal.pending(player),undefined);
+  // At the same limit the tab waits instead of signing what the node refuses.
+  const again=await fixture();await again.journal.beforeSend(again.raw);
+  await assert.rejects(resendJournaled(again.journal,again.journal.pending(again.player)!,{send:async()=>{throw capRefusal;},latestNonce:async()=>5,commandGas:()=>1_000_000n}),isEngineGasCapped);
+ }
 });
-test('recovery resend: a lost response, a moved or unreadable nonce, or a local gate keep the command uncertain',async()=>{
+test('recovery resend: a generic refusal, a lost response, a moved or unreadable nonce, or a local gate keep the command uncertain',async()=>{
  const cases:[string,unknown,()=>Promise<number>][]=[
+  ['generic "rejected before execution": the original may still be in flight',{name:'RpcRequestError',message:'RPC Request failed.',details:'transaction rejected before execution',code:-32000},async()=>5],
   ['lost response',new TypeError('fetch failed'),async()=>5],
   ['timeout',{name:'TimeoutError',message:'The operation was aborted due to timeout'},async()=>5],
   ['count moved',capRefusal,async()=>6],
