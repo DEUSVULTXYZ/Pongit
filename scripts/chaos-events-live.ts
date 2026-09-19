@@ -22,10 +22,13 @@ import {realtimeMarketAbi as marketAbi} from '../shared/abi-RealtimeMarket';
 import {roomsVaultAbi as vaultAbi} from '../shared/abi-RoomsVault';
 import {betTypes,domain} from '../shared/protocol';
 import {engineReceiptOutcome} from '../relayer/src/rooms-engine-recovery';
+import {chaosQualificationRecord,verifyQualificationApp} from './chaos-qualification-record';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
 const prefix=process.env.PONG_CHAOS_QUALIFY_ID!;assert(/^chaos-events-[a-z0-9-]{1,60}$/.test(prefix));
 const rootRecord=JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8'));
 const production=prefix==='chaos-events-production-20260913';
+if(production)assert.equal(process.env.PONG_CHAOS_PRODUCTION_FIXTURE,'authorized-testnet-candidate');
+else await chaosQualificationRecord();
 if(production){assert.equal(rootRecord.app,'0x78d3341e3452d7ec1add9371de3008639eed8eb0');assert(process.env.INTERLUDE_COORDINATOR_KEY);process.env.ROOMS_PRESSURE_KEY_FILE='/secrets/pressure.json';}
 else{process.env.INTERLUDE_COORDINATOR_KEY=rootRecord.keys[4];process.env.ROOMS_PRESSURE_KEY_FILE=`/secrets/${prefix}-pressure.json`;}
 const run=process.env.PONG_REALTIME_RUN||'1';assert(/^[1-9]$/.test(run));
@@ -34,6 +37,7 @@ const manifests=JSON.parse(await readFile(`artifacts/drand/${production?'product
 assert.equal(m.app,rootRecord.app);assert([6,8].includes(m.rulesVersion),'Only versioned human Chaos fixtures');
 await writeFile('artifacts/drand/test-finance.json',JSON.stringify([finance]));process.env.ROOMS_FINANCE_MANIFEST='artifacts/drand/test-finance.json';
 const t=await chainTools(prefix+'-live-'+run),config=await loadRoomsFinance(),base=t.base;
+if(!production)await verifyQualificationApp(t,prefix,m.app);
 // The operator nonce journal stays shared. Gameplay/financial test rows have an
 // independent database and cannot be consumed by human-production workers.
 assert(production||process.env.PONG_CHAOS_DATABASE_URL,'An isolated fixture database is required');
@@ -146,8 +150,12 @@ try{
   assert.equal(published[6],final[6]);
   if(mode){assert(bought&&pressureDelivered,'Live bet reached the next point');
    await until(async()=>{await worker.audit();const p=await base.readContract({address:finance.market,abi:marketAbi,functionName:'positions',args:[id,bettor.address]});return p[3];},'automatic settlement',60000);
-   const payoutId=await base.readContract({address:finance.market,abi:marketAbi,functionName:'payoutId',args:[0,id,bettor.address]});
-   report.payments.push({payoutId,payout:await base.readContract({address:finance.market,abi:marketAbi,functionName:'payouts',args:[payoutId]}),wallet:await base.getBalance({address:bettor.address})});
+  const payoutId=await base.readContract({address:finance.market,abi:marketAbi,functionName:'payoutId',args:[0,id,bettor.address]});
+   const payout=await until(async()=>{await worker.audit();const p=await base.readContract({address:finance.market,abi:marketAbi,functionName:'payouts',args:[payoutId]});return p[2]===2?p:null;},'automatic payout completed',60000);
+   const wallet=await base.getBalance({address:bettor.address});
+   assert.equal(payout[0].toLowerCase(),bettor.address.toLowerCase());assert.equal(payout[1],parseEther('.006'));
+   assert.equal(wallet,payout[1],'Disposable recipient receives its entire test payout');
+   report.payments.push({payoutId,payout,wallet});
   }
   report.matches.push({mode,id,score:[final[12].scoreA,final[12].scoreB],frames,bought,pressureDelivered,changes:pair.map((p:any)=>p.changes)});
   assert(pair.every((p:any)=>p.changes>=100),'100 actual direction changes per player');
