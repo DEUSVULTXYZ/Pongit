@@ -1,6 +1,8 @@
 import {createHash} from 'node:crypto';
 import {encodeAbiParameters,keccak256,zeroAddress,zeroHash,type Abi,type Address,type PublicClient} from 'viem';
 import {agentArenaPoolAbi as poolAbi} from '../../../shared/abi-AgentArenaPool';
+import {agentSeriesPoolAbi as seriesPoolAbi} from '../../../shared/abi-AgentSeriesPool';
+import {seriesAgentArenaAbi as seriesArenaAbi} from '../../../shared/abi-SeriesAgentArena';
 import {agentCatalogAbi as catalogAbi} from '../../../shared/abi-AgentCatalog';
 import {agentTournamentsAbi as tournamentAbi} from '../../../shared/abi-AgentTournaments';
 import {agentPublishedRatingsAbi as ratingsAbi} from '../../../shared/abi-AgentPublishedRatings';
@@ -120,10 +122,16 @@ export class AgentPoolReader {
  async live(){
   const m=this.manifest;
   return this.snapshot(async read=>{
-   const lanes=await Promise.all([0,1].map(i=>read<string>(m.pool,poolAbi,'laneMatch',[BigInt(i)])));
+   const series=m.version===3;
+   const lanes=series?await Promise.all(['activeSeries','qualificationSeries'].map(fn=>read<string>(m.pool,seriesPoolAbi,fn)))
+    :await Promise.all([0,1].map(i=>read<string>(m.pool,poolAbi,'laneMatch',[BigInt(i)])));
    const bindings=await Promise.all(m.arenas.map(async arena=>({arena,b:await read(arena.app,arenaAbi,'boundMatch')})));
+   const captured=new Set(series?(await Promise.all(bindings.filter(x=>x.b.id).map(async({b})=>{
+    const record=await read(m.pool,seriesPoolAbi,'record',[b.id]);return record.captured?String(b.id):'';
+   }))).filter(Boolean):[]);
    return {items:bindings.flatMap(({arena,b})=>{
-    if(!b.id)return[];const r={chainId:10143n,arena:arena.app,epoch:b.epoch,id:b.id},key=refKey(r),lane=lanes.indexOf(key);
+    if(!b.id||captured.has(String(b.id)))return[];const r={chainId:10143n,arena:arena.app,epoch:b.epoch,id:b.id},key=refKey(r),
+     lane=lanes.findIndex(value=>value.toLowerCase()===(series?arena.app:key).toLowerCase());
     return lane<0?[]:[{ref:refView(r),node:arena.node,a:b.a,b:b.b,mode:b.mode,ranked:b.ranked,tournament:String(b.tournament),
      lane:lane===0?'tournament':b.controlA.codeHash!==zeroHash?'qualification':'challenge',source:'published-admission',liveConfirmed:false}];
    })};
@@ -144,7 +152,7 @@ export class AgentPoolReader {
     for(const {arena,b} of bindings){
      const r={chainId:10143n,arena:arena.app,epoch:b.epoch,id:b.id};
      if(b.id&&refKey(r)===playing&&b.a.toLowerCase()===player.toLowerCase()&&b.b.toLowerCase()===agent.toLowerCase()
-      &&await read<bigint>(m.pool,poolAbi,'challengeOf',[playing])===id){ref=refView(r);break;}
+      &&await read<bigint>(m.pool,m.version===3?seriesPoolAbi:poolAbi,'challengeOf',[m.version===3?b.id:playing])===id){ref=refView(r);break;}
     }
     if(!ref)throw Error('The active challenge has no matching arena reference');
    }
@@ -157,15 +165,18 @@ export class AgentPoolReader {
    ||BigInt(ref.epoch)<1n||BigInt(ref.id)<1n||BigInt(ref.epoch)>=2n**256n||BigInt(ref.id)>=2n**256n)throw poolNotFound();
   const wanted:Ref={chainId:10143n,arena:arena.app,epoch:BigInt(ref.epoch),id:BigInt(ref.id)};
   return this.snapshot(async(read):Promise<PoolMatchView>=>{
-   const record=await read(m.pool,poolAbi,'record',[wanted]);
+   const series=m.version===3;
+   const record=await read(m.pool,series?seriesPoolAbi:poolAbi,'record',[series?wanted.id:wanted]);
    if(record.ref.arena.toLowerCase()!==arena.app.toLowerCase()||record.ref.id!==wanted.id||record.ref.epoch!==wanted.epoch||record.ref.chainId!==10143n)throw poolNotFound();
    const binding=await read(arena.app,arenaAbi,'boundMatch');const current=binding.id===wanted.id&&binding.epoch===wanted.epoch;
+   const own=series?await read(arena.app,seriesArenaAbi,'bindingFor',[wanted.id]):binding;
+   if(series&&(own.id!==wanted.id||own.epoch!==wanted.epoch))throw poolNotFound();
    const r=record.captured?await read(m.pool,poolAbi,'result',[wanted]):null;
-   if(!current&&!r)throw Error('An archived arena reference has no verified result yet');
+   if(!series&&!current&&!r)throw Error('An archived arena reference has no verified result yet');
    // An old link always reads its immutable pool record. It never follows the
    // node into the replacement match when this physical arena is reused.
    return{ref:{chainId:10143,app:arena.app,epoch:String(wanted.epoch),id:String(wanted.id)},a:record.a,b:record.b,
-    mode:r?.mode??binding.mode,ranked:record.ranked,tournament:String(record.tournament),lane:record.lane,
+    mode:r?.mode??own.mode,ranked:record.ranked,tournament:String(record.tournament),lane:series?(record.tournament===0n?1:0):record.lane,
     node:current&&!r?arena.node:null,currentBinding:current,regulationSeconds:300,
     overtimeSeconds:record.tournament!==0n&&!(await read(m.tournaments,tournamentAbi,'tournament',[record.tournament])).league?60:0,
     result:r?{hash:r.hash,winner:r.winner,status:r.status,scoreA:r.scoreA,scoreB:r.scoreB,elapsedUs:String(r.elapsedUs),finality:r.finality}:null};

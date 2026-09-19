@@ -13,19 +13,20 @@ export const pooledHouseBots=[
 ] as const;
 export type PoolArena={app:Address;node:string;runtimeHash:Hex};
 export type AgentPoolManifest={
- version:2;chainId:10143;engineChainId:4242;rulesVersion:10;hub:Address;pool:Address;catalog:Address;
+ version:2|3;chainId:10143;engineChainId:4242;rulesVersion:10|11;hub:Address;pool:Address;catalog:Address;
  tournaments:Address;ratings:Address;challenges:Address;qualifications:Address;family:Address;arenas:PoolArena[];
  enabled:boolean;tournamentsEnabled:boolean;verifiedCapacity:0|2;qualificationEvidence:Hex|null;
  durationSeconds:300;overtimeSeconds:60;intervalSeconds:60;maxMatches:2;
 };
 export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly string[]=[]):AgentPoolManifest {
- if(m.version!==2||m.chainId!==10143||m.engineChainId!==4242||m.rulesVersion!==10
+ if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11)||m.chainId!==10143||m.engineChainId!==4242
   ||m.durationSeconds!==300||m.overtimeSeconds!==60||m.intervalSeconds!==60||m.maxMatches!==2)throw Error('Unsupported Agent Arcade pool rules');
  if(typeof m.enabled!=='boolean'||typeof m.tournamentsEnabled!=='boolean')throw Error('Explicit boolean admission gates required');
  const contracts=[m.hub,m.pool,m.catalog,m.tournaments,m.ratings,m.challenges,m.qualifications,m.family];
  if(contracts.some(x=>!isAddress(x)||BigInt(x)===0n))throw Error('Invalid common contract address');
  if(new Set(contracts.map(x=>x.toLowerCase())).size!==contracts.length)throw Error('Common contracts must be distinct');
- if(!Array.isArray(m.arenas)||m.arenas.length<3||m.arenas.length>32)throw Error('Independent arena pool requires 3 to 32 configured arenas');
+ const minimum=m.version===3?2:3,maximum=m.version===3?16:32;
+ if(!Array.isArray(m.arenas)||m.arenas.length<minimum||m.arenas.length>maximum)throw Error(`Independent arena pool requires ${minimum} to ${maximum} configured arenas`);
  const forbidden=new Set([...humanApps,...contracts].map(x=>x.toLowerCase())),seen=new Set<string>();
  for(const a of m.arenas){
   if(!isAddress(a.app)||BigInt(a.app)===0n||forbidden.has(a.app.toLowerCase())||seen.has(a.app.toLowerCase()))throw Error('Arena is duplicated or belongs to another space');
@@ -39,7 +40,7 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
  if(m.qualificationEvidence!==null&&!/^0x[\da-f]{64}$/i.test(m.qualificationEvidence))throw Error('Invalid qualification reference');
  // Deployment journals may contain operator state next to these fields. Never
  // serialize unknown fields or nested arena properties to a browser.
- return {version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
+ return {version:m.version,chainId:10143,engineChainId:4242,rulesVersion:m.rulesVersion,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
   ratings:m.ratings,challenges:m.challenges,qualifications:m.qualifications,family:m.family,arenas:m.arenas.map(a=>({app:a.app,node:a.node,runtimeHash:a.runtimeHash})),
   enabled:m.enabled,tournamentsEnabled:m.tournamentsEnabled,verifiedCapacity:m.verifiedCapacity,qualificationEvidence:m.qualificationEvidence,
   durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};

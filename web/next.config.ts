@@ -20,7 +20,8 @@ const agentOrigins=existsSync(agentPath)?(()=>{
 const poolPath=path.resolve('deployments/agent-pool.json');
 const poolOrigins=existsSync(poolPath)?(()=>{
  const m=JSON.parse(readFileSync(poolPath,'utf8'));
- if(m.version!==2||m.chainId!==10143||m.rulesVersion!==10||!Array.isArray(m.arenas)||m.arenas.length<3||m.arenas.length>32)throw Error('Invalid pool CSP manifest');
+ if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11)||m.chainId!==10143||!Array.isArray(m.arenas)
+  ||m.arenas.length<(m.version===3?2:3)||m.arenas.length>(m.version===3?16:32))throw Error('Invalid pool CSP manifest');
  return m.arenas.flatMap((a:{app:string;node:string})=>{
   if(!/^0x[\da-fA-F]{40}$/.test(a.app)||!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(a.node))throw Error('Unapproved pool arena in CSP manifest');
   return[a.node,a.node.replace(/^http/,'ws')];

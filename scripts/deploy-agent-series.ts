@@ -31,9 +31,12 @@ try{
  const tournaments=await deploy('AgentTournaments',[catalog,pool,t.account.address]);
  const ratings=await deploy('AgentPublishedRatings',[pool,t.account.address,BigInt(r.genesis)]);
  const qualifications=await deploy('AgentQualifications',[catalog,pool]);
+ const family=await deploy('ArcadeFamily');
+ const challenges=await deploy('AgentChallenges',[family,catalog,pool,t.account.address]);
  const write=async(op:string,contract:string,at:Address,fn:string,args:readonly unknown[]=[])=>t.write(op,at,(await t.artifact(contract)).abi,fn,args);
  await write('configure-catalog','AgentCatalog',catalog,'configure',[tournaments,pool]);
  await write('bind-qualifications','AgentSeriesPool',pool,'bindQualifications',[qualifications]);
+ await write('bind-challenges','AgentSeriesPool',pool,'bindChallenges',[challenges]);
  await write('configure-pool','AgentSeriesPool',pool,'configure',[tournaments,ratings]);
  await write('empty-agent-season','AgentPublishedRatings',ratings,'sealMigration',[keccak256(toHex(`${prefix}:new-agent-season:1000`))]);
  r.bots=[];
@@ -54,8 +57,11 @@ try{
  const poolAbi=(await t.artifact('AgentSeriesPool')).abi;
  assert.equal(await t.base.readContract({address:pool,abi:poolAbi,functionName:'admissions'}),false);
  assert.equal(await t.base.readContract({address:pool,abi:poolAbi,functionName:'publicAdmissions'}),false);
- r.common={hub,pool,catalog,tournaments,ratings,qualifications};r.phase='deployed-closed';await save();
- const evidence={at:new Date().toISOString(),prefix,rulesVersion:11,common:r.common,arenas:r.arenas,bots:r.bots,modules:{...t.deployed,...r.modules},
+ r.common={hub,pool,catalog,tournaments,ratings,qualifications,family,challenges};r.phase='deployed-closed';await save();
+ const deployment=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',[prefix+':deploy-agentseriespool'])).rows[0];
+ assert.equal(deployment.status,'confirmed');const receipt=await t.base.getTransactionReceipt({hash:deployment.hash});assert.equal(receipt.status,'success');
+ const indexBinding={chainId:10143,rulesVersion:11,pool,startBlock:String(receipt.blockNumber),arenas:r.arenas.map((a:any)=>a.app)};
+ const evidence={at:new Date().toISOString(),prefix,rulesVersion:11,common:r.common,arenas:r.arenas,bots:r.bots,modules:{...t.deployed,...r.modules},indexBinding,
   delegationOpened:false,publiclyEnabled:false,qualified:false,maximumEngineBlocks:String(maximumEngineBlocks),
   transactions:(await t.db.query('SELECT id,hash,status FROM il_lifecycle_jobs WHERE id LIKE $1 ORDER BY nonce',[prefix+':%'])).rows};
  await mkdir('artifacts/agents',{recursive:true});await writeFile(`artifacts/agents/${prefix}.json`,JSON.stringify(evidence,null,2));console.log(JSON.stringify(evidence));

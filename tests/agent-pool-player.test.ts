@@ -8,10 +8,11 @@ import type {AgentPoolManifest,PoolMatchView} from '../shared/agent-pool';
 import type {PoolFamilySession} from '../shared/agent-pool-family';
 import {poolRenewTypes,poolRevokeTypes} from '../shared/agent-pool-active';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
-function fixture(){
+function fixture(rules:10|11=10){
  const key=generatePrivateKey(),account=privateKeyToAccount(key),owner=privateKeyToAccount(generatePrivateKey()),at=Math.floor(Date.now()/1000);
  const session:PoolFamilySession={key,signature:`0x${'11'.repeat(65)}`,grant:{player:owner.address,key:account.address,issuedAt:BigInt(at),expires:BigInt(at+7200),revision:0n}};
  const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(7),family:addr(8),arenas:[9,10,11].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:keccak256('0x6000')})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
+ if(rules===11){m.version=3;m.rulesVersion=11;}
  const match:PoolMatchView={ref:{chainId:10143,app:addr(9),epoch:'1',id:'4'},a:owner.address,b:addr(21),mode:0,ranked:false,tournament:'0',lane:1,node:m.arenas[0].node,currentBinding:true,regulationSeconds:300,overtimeSeconds:0,result:null};
  const memory=new Map<string,string>(),storage={getItem:(k:string)=>memory.get(k)??null,setItem:(k:string,v:string)=>{memory.set(k,v);},removeItem:(k:string)=>{memory.delete(k);}};
  const fields=hubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
@@ -31,7 +32,7 @@ function fixture(){
    if(r.slot===slot)return toHex([BigInt(overrideKey),overrideMeta,overrideRevision][i],{size:32});
   }throw Error('Unexpected permission slot');
  },getBlock:async()=>({number:10n,timestamp:BigInt(at),hash:zeroHash}),readContract:async(r:any)=>{
-  if(r.functionName==='RULES_VERSION')return 10n;if(r.functionName==='boundMatch'){bindings++;return binding;}
+  if(r.functionName==='RULES_VERSION')return BigInt(rules);if(r.functionName==='boundMatch'){bindings++;return binding;}
   if(r.functionName==='authorizationRevision')return overrideRevision;
   const domain={name:'PONGIT Pooled Arena',version:'1',chainId:10143,verifyingContract:addr(9)};
   if(r.functionName==='renewalDigest')return hashTypedData({domain,types:poolRenewTypes,primaryType:'RenewArena',message:r.args[0]});
@@ -64,6 +65,12 @@ test('a burst during recovery keeps only the latest movement and signs compact s
  const first=f.player.move(1);await Promise.resolve();const second=f.player.move(-1),stop=f.player.move(0),last=f.player.move(-1);release();
  await Promise.all([first,second,stop,last]);assert.equal(f.sent.length,1);assert.equal(f.state.state.leftDir,-1);
  await f.player.move(0);assert.equal(f.sent.length,2);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
+});
+test('series human controls preserve their exact uncertain command across F5 and reject a mismatched rules manifest',async()=>{
+ const f=fixture(11);f.lost(true);await assert.rejects(f.player.move(1),/Lost response/);const raw=f.sent[0];f.player.close();
+ f.lost(false);f.visible(true);const resumed=f.create();await resumed.move(-1);
+ assert.equal(f.sent.length,2);assert.equal(parseTransaction(f.sent[1]).nonce,1);assert.notEqual(raw,f.sent[1]);resumed.close();
+ f.m.version=2;f.m.rulesVersion=10;const wrong=f.create();await assert.rejects(wrong.move(1),/Unexpected arena rules/);assert.equal(f.sent.length,2);wrong.close();
 });
 test('F5 reconciles the exact lost command receipt before sending a new intent, without a root key',async()=>{
  const f=fixture();f.lost(true);await assert.rejects(f.player.move(1),/Lost response/);const raw=f.sent[0];

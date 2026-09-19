@@ -54,7 +54,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   const status:any=await node.request({method:'interlude_session',params:[]} as any);journal.received('interlude_session',status);
   if(String(status.app).toLowerCase()!==arena!.app.toLowerCase()||Number(status.chainId)!==4242)throw Error('Unexpected arena engine identity');
   if(BigInt(status.epoch)!==epoch)throw Error('This match has moved to its published result. Open its original result reference.');
-  if(await node.readContract({address:arena!.app,abi,functionName:'RULES_VERSION'})!==10n)throw Error('Unexpected arena rules');
+  if(await node.readContract({address:arena!.app,abi,functionName:'RULES_VERSION'})!==BigInt(m.rulesVersion))throw Error('Unexpected arena rules');
   verifiedAt=now();
  }
  async function recoverNow(){

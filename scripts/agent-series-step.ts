@@ -10,7 +10,8 @@ import {seriesAgentArenaAbi as arenaAbi} from '../shared/abi-SeriesAgentArena';
 import {agentTournamentsAbi as bookAbi} from '../shared/abi-AgentTournaments';
 import {agentPublishedRatingsAbi as ratingsAbi} from '../shared/abi-AgentPublishedRatings';
 import {agentCatalogAbi as catalogAbi} from '../shared/abi-AgentCatalog';
-import {qualificationWork,historicalRepairWork} from '../relayer/src/agents/pool-maintenance';
+import {agentChallengesAbi as challengeAbi} from '../shared/abi-AgentChallenges';
+import {qualificationWork,historicalRepairWork,expiredChallenge} from '../relayer/src/agents/pool-maintenance';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {measuredFetch} from '../shared/rpc-metrics';
 assert.equal(process.env.PONG_AGENT_SERIES_MAINTENANCE,'authorized-private-testnet');assert.equal(process.getuid?.(),1000);
@@ -21,9 +22,9 @@ const protectedApps=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').f
 assert(r.arenas.length===2&&!r.arenas.some((a:any)=>protectedApps.includes(a.app.toLowerCase())));
 const metrics=await agentMetrics('/diagnostics/series','lifecycle'),t=await chainTools(prefix+'-maintenance',measuredFetch('monad'));
 const guard=await t.db.connect();let locked=false;
-let state:{sequence:number;retryAt?:number;qualificationCursor?:bigint;history?:{id:bigint;index:number};intent?:{sequence:number;to:Address;method:string;args:any[]}}={sequence:0};
+let state:{sequence:number;retryAt?:number;qualificationCursor?:bigint;challengeCursor?:bigint;history?:{id:bigint;index:number};intent?:{sequence:number;to:Address;method:string;args:any[]}}={sequence:0};
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(state,(_,v)=>typeof v==='bigint'?{bigint:String(v)}:v),{mode:0o600});await rename(file+'.next',file);};
-const abiFor=(at:Address):Abi=>at===m.pool?poolAbi:at===m.tournaments?bookAbi:at===m.ratings?ratingsAbi:catalogAbi;
+const abiFor=(at:Address):Abi=>at===m.pool?poolAbi:at===m.tournaments?bookAbi:at===m.ratings?ratingsAbi:at===m.challenges?challengeAbi:catalogAbi;
 async function act(to:Address,method:string,args:any[]=[]){
  state.intent={sequence:state.sequence,to,method,args};await save();let receipt;
  try{receipt=await t.write(`step-${state.sequence}`,to,abiFor(to),method,args);}
@@ -41,13 +42,23 @@ async function step(){
  const read=<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>t.base.readContract({address,abi,functionName,args,blockNumber:block.number}) as Promise<T>;
  const admissions=await read<boolean>(m.pool,poolAbi,'admissions');
  if(!admissions&&process.env.PONG_AGENT_SERIES_START==='1'){await act(m.pool,'setAdmissions',[true]);return;}
+ if(m.challenges&&process.env.PONG_AGENT_SERIES_CHALLENGES==='1'&&!await read<boolean>(m.challenges,challengeAbi,'admissions')){
+  await act(m.challenges,'setAdmissions',[true]);return;
+ }
  for(const a of r.arenas){
   const app=a.app as Address,ids=await read<bigint>(app,arenaAbi,'seriesSize')===0n?[]:await read<readonly bigint[]>(m.pool,poolAbi,'assignedIds',[app]);
   if(ids.length===0)continue;
   const d=await readHubDelegation(t.base,m.hub,app,block.number),epoch=await read<bigint>(m.pool,poolAbi,'arenaEpoch',[app]);
   const first=await read(m.pool,poolAbi,'record',[ids[0]]);
   if(d.status===2&&block.timestamp>=d.stakeUnlockAt){await act(m.pool,'releaseArena',[app]);return;}
-  if(d.status===0&&epoch<first.ref.epoch){if(admissions){await act(m.pool,'openArena',[app]);return;}continue;}
+  if(d.status===0&&epoch<first.ref.epoch){
+   if(first.captured)continue;
+   if(m.challenges){
+    const challenge=await read<bigint>(m.pool,poolAbi,'challengeOf',[ids[0]]);
+    if(challenge&&!await read<boolean>(m.challenges,challengeAbi,'authorized',[challenge])){await act(m.pool,'cancelUnopened',[app]);return;}
+   }
+   if(admissions){await act(m.pool,'openArena',[app]);return;}continue;
+  }
   if(d.status!==1)continue;
   for(const id of ids){
    const entry=await read(m.pool,poolAbi,'record',[id]),[published]=await read(app,arenaAbi,'resultFor',[id]);
@@ -60,6 +71,10 @@ async function step(){
   if(block.timestamp>=d.expiresAt){await act(m.pool,'recoverExpired',[app]);return;}
  }
  if(await read<bigint>(m.ratings,ratingsAbi,'buildGeneration')){await act(m.ratings,'rebuild',[32n]);return;}
+ if(m.challenges){
+  const expired=await expiredChallenge(read,m,state.challengeCursor??1n);state.challengeCursor=expired.next;await save();
+  if(expired.expired!==null){await act(m.challenges,'expire',[expired.expired]);return;}
+ }
  let available=false;for(const a of r.arenas)if(await read<boolean>(m.pool,poolAbi,'available',[a.app])){available=true;break;}
  const laneFree=await read<Address>(m.pool,poolAbi,'activeSeries')===zeroAddress;
  const count=await read<bigint>(m.tournaments,bookAbi,'count');
@@ -98,6 +113,7 @@ async function step(){
   }
  }
  if(await read<Address>(m.pool,poolAbi,'qualificationSeries')===zeroAddress){
+  if(m.challenges&&!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart')){await act(m.pool,'admitChallenge');return;}
   const work=await qualificationWork(read,m,state.qualificationCursor??0n,block.timestamp);state.qualificationCursor=work.next;await save();
   if(work.needed){await act(m.pool,'admitQualifications');return;}
  }

@@ -19,13 +19,14 @@ import {AgentController} from '../shared/agent-controller';
 
 assert.equal(process.env.PONG_POOL_HUMAN_CHECK,'authorized-private-testnet');
 assert.equal(process.getuid?.(),1000,'Run the private harness as uid 1000 to preserve journal and metric ownership');
-const prefix=process.env.PONG_AGENT_POOL_PREFIX!;assert(/^agent-pool-candidate-\d{8}(-[2-9])?$/.test(prefix));
+const prefix=process.env.PONG_AGENT_POOL_PREFIX!;assert(/^agent-(pool|series)-candidate-\d{8}(-[2-9])?$/.test(prefix));
+const series=prefix.startsWith('agent-series-'),mode=Number(process.env.PONG_POOL_HUMAN_MODE??0);assert(mode===0||mode===1);
 const run=Number(process.env.PONG_POOL_HUMAN_RUN??1),target=Number(process.env.PONG_POOL_HUMAN_TARGET??100);
 assert(Number.isInteger(run)&&run>=1&&run<=9);assert(Number.isInteger(target)&&target>=1&&target<=1000);
 const suffix=run===1?'':`-${run}`;
 const deployment=JSON.parse(readFileSync(`/secrets/${prefix}.json`,'utf8'));
 const file=`/secrets/${prefix}-human-check${suffix}.json`,reportFile=`/diagnostics/pool-human-check${suffix}.json`;
-const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,...deployment.common,
+const m:AgentPoolManifest={version:series?3:2,chainId:10143,engineChainId:4242,rulesVersion:series?11:10,...deployment.common,
  arenas:deployment.arenas.map((a:any)=>({app:a.app,runtimeHash:a.runtimeHash,node:`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`})),
  enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 const protectedApps=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(protectedApps.length);
@@ -52,7 +53,7 @@ try{
   if(!state.challengeDone){
    if(!state.challengeCall){
     const catalogue=(await reader.catalog(0n,32)).value,agent=catalogue.items.find(a=>a.official&&a.name==='NOVA');assert(agent);
-    const session=loadPoolFamily(m,owner.address,storage)!;const p=await preparePoolChallenge(base,m,privateKeyToAccount(session.key),owner.address,{agent:agent.agent,mode:0});
+    const session=loadPoolFamily(m,owner.address,storage)!;const p=await preparePoolChallenge(base,m,privateKeyToAccount(session.key),owner.address,{agent:agent.agent,mode});
     state.challengeCall={to:p.to,data:p.data};save();
    }
    const tx=await writer.submit('challenge',state.challengeCall.data,state.challengeCall.to);

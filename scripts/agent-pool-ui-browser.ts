@@ -11,10 +11,11 @@ import {initial} from '../shared/physics-v2';
 import {chaosBrowserPayload} from './chaos-browser-fixture';
 assert.equal(process.env.PONG_POOL_UI_TEST,'isolated-fixture');
 const origin='http://127.0.0.1:4189',channel=process.env.BROWSER_CHANNEL??'chrome';
+const series=process.env.PONG_POOL_UI_RULES==='11';assert(!process.env.PONG_POOL_UI_RULES||['10','11'].includes(process.env.PONG_POOL_UI_RULES));
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const node=JSON.parse(await readFile('deployments/agents.json','utf8')).node;
 const people=pooledHouseBots.map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90),difficulty:b.difficulty,modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false}));
-const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),challenges:address(6),qualifications:address(7),family:address(8),
+const m:AgentPoolManifest={version:series?3:2,chainId:10143,engineChainId:4242,rulesVersion:series?11:10,hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),challenges:address(6),qualifications:address(7),family:address(8),
  arenas:[9,10,11].map(n=>({app:address(n),node,runtimeHash:zeroHash})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:`0x${'b'.repeat(64)}`,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 const ref={chainId:10143 as const,app:address(9),epoch:'1',id:'1'};
 const observation={block:'50',hash:zeroHash,timestamp:String(Math.floor(Date.now()/1000)),revision:'fixture'};
@@ -62,7 +63,7 @@ try{
      if(rpc.method==='interlude_session')return reply({app:ref.app,chainId:4242,epoch:1,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]});
      if(rpc.method==='eth_call'){
       const call=decodeFunctionData({abi,data:rpc.params[0].data});
-      if(call.functionName==='RULES_VERSION')return reply(encodeFunctionResult({abi,functionName:'RULES_VERSION',result:10n}));
+      if(call.functionName==='RULES_VERSION')return reply(encodeFunctionResult({abi,functionName:'RULES_VERSION',result:BigInt(m.rulesVersion)}));
       assert.equal(call.functionName,'chaosState');
       const state={...initial(zeroHash,mode),t:3000000n,scoreA:3,scoreB:2};
       const header=[1n,revision,2n,people[0].agent,people[1].agent,zeroAddress,zeroAddress,100n+revision,state.t,0n,0n,0n,state];

@@ -36,3 +36,12 @@ test('archived match returns its own result and no live node after the arena is 
  await assert.rejects(reader.match({...match.ref,app:zeroAddress}),/not found/);
  captured=false;await assert.rejects(reader.match(match.ref),/no verified result/);
 });
+test('series spectator validates rules 11 and stays bound to its original game ID',async()=>{
+ const manifest={...m,version:3 as const,rulesVersion:11 as const};let id=4n;
+ const runtime:any={node:{request:async()=>({app:addr(9),epoch:1,chainId:4242}),readContract:async()=>11n},
+  feed:{read:async()=>({id,a:match.a,b:match.b}),watch:()=>()=>{},invalidate(){}}};
+ const socket=()=>{throw Error('No fixture WebSocket');};
+ await assert.rejects(createPoolObserver(m,match,socket,runtime),/Unsupported agent arena rules/);
+ const observer=await createPoolObserver(manifest,match,socket,runtime);assert.equal((await observer.read()).id,4n);
+ id=5n;await assert.rejects(observer.read(),/another match/);observer.close();
+});

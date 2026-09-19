@@ -71,3 +71,34 @@ test('slow reads stay single-flight beyond the TTL and cannot evict another pend
  assert.throws(()=>cache.get('y',async()=>2),/busy/);resolve(1);assert.equal(await second,1);
  assert.equal(await cache.get('y',async()=>2),2);
 });
+test('series readers preserve prior results and never watch a future reserved fixture',async()=>{
+ const m={...manifest,version:3 as const,rulesVersion:11 as const};
+ const arena=m.arenas[0].app,owner=addr(90),agent=addr(91);
+ let wanted=1n;
+ const client={getBlock:async()=>({number:50n,hash:zeroHash,timestamp:1000n}),readContract:async(r:any)=>{
+  assert.equal(r.blockNumber,50n);
+  if(r.functionName==='record'){assert.equal(r.args[0],wanted);return{ref:{chainId:10143n,arena,epoch:1n,id:wanted},a:owner,b:agent,tournament:0n,ranked:false,captured:wanted===1n};}
+  if(r.functionName==='boundMatch')return{id:2n,epoch:1n,mode:1};
+  if(r.functionName==='bindingFor'){assert.equal(r.args[0],wanted);return{id:wanted,epoch:1n,mode:0};}
+  if(r.functionName==='result')return{hash:zeroHash,winner:owner,status:3,scoreA:7,scoreB:2,mode:0,elapsedUs:1n,finality:false};
+  throw Error(r.functionName);
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,m);
+ const old=(await reader.match({chainId:10143,app:arena,epoch:'1',id:'1'})).value;
+ assert.equal(old.node,null);assert.equal(old.result?.scoreA,7);assert.equal(old.currentBinding,false);assert.equal(old.mode,0);
+ wanted=3n;const future=(await reader.match({chainId:10143,app:arena,epoch:'1',id:'3'})).value;
+ assert.equal(future.node,null);assert.equal(future.result,null);assert.equal(future.mode,0);assert.equal(future.currentBinding,false);
+ await assert.rejects(reader.match({chainId:10143,app:arena,epoch:'2',id:'3'}),/not found/);
+});
+test('series live discovery excludes captured results while the engine advances its next fixture',async()=>{
+ const m={...manifest,version:3 as const,rulesVersion:11 as const};let captured=false;
+ const app=m.arenas[0].app;
+ const client={getBlock:async()=>({number:50n,hash:zeroHash,timestamp:1000n}),readContract:async(r:any)=>{
+  if(r.functionName==='activeSeries')return app;if(r.functionName==='qualificationSeries')return zeroAddress;
+  if(r.functionName==='boundMatch')return r.address===app?{id:1n,epoch:1n,a:addr(90),b:addr(91),mode:0,ranked:false,tournament:1n}:{id:0n};
+  if(r.functionName==='record')return{captured};throw Error(r.functionName);
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,m);const live=(await reader.live()).value.items;
+ assert.equal(live.length,1);assert.equal(live[0].lane,'tournament');assert.equal(live[0].liveConfirmed,false);
+ captured=true;assert.equal((await reader.live()).value.items.length,0);
+});

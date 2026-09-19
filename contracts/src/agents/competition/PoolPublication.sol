@@ -12,6 +12,12 @@ import {Types} from "../../../vendor/interlude/interfaces/Types.sol";
 /// mutable authority or administrator. Keeping this outside its dispatcher also
 /// leaves the pool deployable under EIP-170.
 library PoolPublication {
+    event SeriesResultRecorded(uint256 indexed id,uint256 indexed epoch,address indexed app,bytes32 hash,address a,address b,address winner,
+        uint8 status,uint8 mode,bool ranked,uint8 scoreA,uint8 scoreB,uint64 elapsedUs,uint64 tournament,bool finality);
+    function archive(T.Result memory r,bool ranked,uint64 tournament) external {
+        emit SeriesResultRecorded(r.ref.id,r.ref.epoch,r.ref.arena,r.hash,r.a,r.b,r.winner,r.status,r.mode,ranked,
+            r.scoreA,r.scoreB,r.elapsedUs,tournament,r.finality);
+    }
     function controller(AgentCatalog catalog,address agent,uint64 tournament,bytes32 frozen,uint256 learned) external view returns(A.Controller memory c){
         AgentCatalog.Identity memory identity=catalog.identity(agent);
         require(identity.codeHash==frozen&&(identity.house==0?agent:catalog.houseController()).codehash==frozen,"frozen controller");

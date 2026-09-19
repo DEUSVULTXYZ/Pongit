@@ -20,3 +20,12 @@ test('the displayed automatic cycle exactly matches the contract schedule',()=>{
  {mode:0,format:'elimination'},{mode:1,format:'elimination'},{mode:0,format:'championship'},{mode:1,format:'championship'},{mode:0,format:'elimination'}]);
  assert.throws(()=>scheduledTournament(0n));assert.equal(pooledHouseBots.length,8);assert.equal(new Set(pooledHouseBots.map(x=>x.avatar)).size,8);
 });
+test('series manifests retain their version, require both common lanes and cannot bypass capacity review',()=>{
+ const m={...manifest(),version:3 as const,rulesVersion:11 as const,arenas:manifest().arenas.slice(0,2)};
+ assert.equal(validateAgentPoolManifest(m).rulesVersion,11);assert.equal(validateAgentPoolManifest(m).version,3);
+ assert.throws(()=>validateAgentPoolManifest({...m,rulesVersion:10}),/Unsupported/);
+ assert.throws(()=>validateAgentPoolManifest({...m,version:2}),/Unsupported/);
+ assert.throws(()=>validateAgentPoolManifest({...m,enabled:true}),/qualification/);
+ assert.throws(()=>validateAgentPoolManifest({...m,challenges:addr(0)}),/Invalid common/);
+ assert.throws(()=>validateAgentPoolManifest({...m,arenas:[m.arenas[0]]}),/2 to 16/);
+});

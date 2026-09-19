@@ -21,7 +21,7 @@ export async function createPoolObserver(manifest:AgentPoolManifest,match:PoolMa
   const session:any=await node.request({method:'interlude_session',params:[]} as any);
   if(String(session.app).toLowerCase()!==arena.app.toLowerCase()||BigInt(session.epoch)!==BigInt(match.ref.epoch)||session.chainId!==4242)
    throw Error('This arena has changed epoch. Reading its published result.');
-  if(await node.readContract({address:arena.app,abi,functionName:'RULES_VERSION'})!==10n)throw Error('Unsupported agent arena rules');
+  if(await node.readContract({address:arena.app,abi,functionName:'RULES_VERSION'})!==BigInt(m.rulesVersion))throw Error('Unsupported agent arena rules');
   checkedAt=Date.now();
  };
  const verify=(s:EngineState)=>{

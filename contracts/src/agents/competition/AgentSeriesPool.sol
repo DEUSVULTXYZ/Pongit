@@ -4,6 +4,8 @@ import {AgentCatalog} from "./AgentCatalog.sol";
 import {AgentTournaments} from "./AgentTournaments.sol";
 import {AgentPublishedRatings} from "./AgentPublishedRatings.sol";
 import {AgentQualifications} from "./AgentQualifications.sol";
+import {AgentChallenges} from "./AgentChallenges.sol";
+import {ArcadeFamily} from "../../independent/ArcadeFamily.sol";
 import {SeriesAgentArena} from "./SeriesAgentArena.sol";
 import {AgentArenaTypes as A} from "./AgentArenaTypes.sol";
 import {CompetitionTypes as T,ICompetitionAuthority} from "./CompetitionTypes.sol";
@@ -13,24 +15,28 @@ import {Types} from "../../../vendor/interlude/interfaces/Types.sol";
 
 /// Candidate tournament authority for preauthorized series. No score setter,
 /// admission signature or future base-chain read is trusted by the engine.
-/// Qualifications occupy a separate lane. Human challenges still require an
-/// integrated lane before this authority is eligible for public deployment.
+/// The spare lane admits one challenge or qualification at a time so a future
+/// qualification cannot reserve a place ahead of a newly waiting human.
 contract AgentSeriesPool is ICompetitionAuthority {
     struct Record {T.Ref ref;address a;address b;uint64 tournament;uint8 fixture;bool ranked;bool captured;}
     AgentCatalog public immutable catalog;IInterludeHub public immutable hub;address public immutable owner;
     AgentTournaments public tournaments;AgentPublishedRatings public ratings;AgentQualifications public qualifications;
+    AgentChallenges public challenges;
     SeriesAgentArena[] private arenas;mapping(address=>bool) public registered;
     mapping(address=>uint256) public arenaEpoch;mapping(address=>uint256[]) private assigned;
     mapping(uint256=>Record) private records;mapping(uint256=>T.Result) private results;
     mapping(address=>uint256) public remaining;mapping(address=>bytes32) public playing;
     mapping(uint64=>mapping(address=>uint256)) public learned;
     mapping(uint256=>bool) public qualificationOf;
+    mapping(uint256=>uint256) public challengeOf;
     uint256 public nonce;address public activeSeries;address public qualificationSeries;bool public setupSealed;bool public admissions;
     bool public publicAdmissions;bytes32 public capacityEvidence;uint256 private guard;
     event SeriesAssigned(address indexed arena,uint256 epoch,uint64 tournament,uint256 first,uint8 count);
     event ResultCaptured(bytes32 indexed ref,bytes32 hash,bool finality);
     event ArenaClosing(address indexed arena,uint256 epoch);
     event ArenaReleased(address indexed arena,uint256 epoch);
+    event SeriesResultRecorded(uint256 indexed id,uint256 indexed epoch,address indexed app,bytes32 hash,address a,address b,address winner,
+        uint8 status,uint8 mode,bool ranked,uint8 scoreA,uint8 scoreB,uint64 elapsedUs,uint64 tournament,bool finality);
     constructor(AgentCatalog c,IInterludeHub h,address admin){
         require(block.chainid==10143&&address(c).code.length>0&&address(h).code.length>0&&admin!=address(0),"Monad series roles");
         catalog=c;hub=h;owner=admin;
@@ -51,8 +57,14 @@ contract AgentSeriesPool is ICompetitionAuthority {
         require(msg.sender==owner&&!setupSealed&&address(qualifications)==address(0)&&queue.pool()==address(this)&&address(queue.catalog())==address(catalog),"qualification setup");
         qualifications=queue;catalog.bindQualifications(address(queue));
     }
+    function bindChallenges(AgentChallenges queue) external base {
+        require(msg.sender==owner&&!setupSealed&&address(challenges)==address(0)
+            &&queue.pool()==address(this)&&address(queue.catalog())==address(catalog),"challenge setup");
+        challenges=queue;
+    }
     function seal() external base {
-        require(msg.sender==owner&&!setupSealed&&arenas.length>=2&&address(tournaments)!=address(0)&&address(qualifications)!=address(0)&&ratings.migrationSealed()&&catalog.setupSealed(),"incomplete setup");setupSealed=true;
+        require(msg.sender==owner&&!setupSealed&&arenas.length>=2&&address(tournaments)!=address(0)&&address(qualifications)!=address(0)
+            &&address(challenges)!=address(0)&&ratings.migrationSealed()&&catalog.setupSealed(),"incomplete setup");setupSealed=true;
     }
     function setAdmissions(bool value) external base {require(msg.sender==owner&&(!value||setupSealed),"operator/setup");admissions=value;}
     function qualifyCapacity(bytes32 evidence) external base {require(msg.sender==owner&&setupSealed&&evidence!=0,"operator/evidence");capacityEvidence=evidence;}
@@ -100,9 +112,12 @@ contract AgentSeriesPool is ICompetitionAuthority {
     }
     function admitQualifications() external base locked returns(address chosen){
         require((msg.sender==owner||publicAdmissions)&&admissions&&qualificationSeries==address(0),"qualification lane waiting");
+        require(challenges.qualificationsMayStart(),"challenge priority");
         for(uint256 i;i<arenas.length;i++)if(available(address(arenas[i]))){chosen=address(arenas[i]);break;}
         if(chosen==address(0))return chosen;
-        uint8 budget=uint8(SeriesAgentArena(chosen).maximumEngineBlocks()/36_000);if(budget>4)budget=4;
+        // Future Monad challenges are invisible to an already opened engine.
+        // Reserving a second qualification now would silently defeat priority.
+        uint8 budget=1;
         A.Binding[] memory bindings=new A.Binding[](budget);uint8 count;uint256 epoch=arenaEpoch[chosen]+1;delete assigned[chosen];
         for(;count<budget;count++){
             (address a,address b,uint8 mode)=qualifications.takeNext();if(a==address(0))break;
@@ -118,17 +133,45 @@ contract AgentSeriesPool is ICompetitionAuthority {
         SeriesAgentArena(chosen).prepareSeries(bindings);remaining[chosen]=count;qualificationSeries=chosen;
         emit SeriesAssigned(chosen,epoch,0,assigned[chosen][0],count);
     }
+    function admitChallenge() external base locked returns(address chosen){
+        require((msg.sender==owner||publicAdmissions)&&admissions&&qualificationSeries==address(0),"challenge lane waiting");
+        for(uint256 i;i<arenas.length;i++)if(available(address(arenas[i]))){chosen=address(arenas[i]);break;}
+        if(chosen==address(0))return chosen;
+        (uint256 requestId,AgentChallenges.Request memory request,ArcadeFamily.Grant memory grant)=challenges.takeNext();
+        if(requestId==0)return address(0);
+        require(playing[request.player]==0&&playing[request.agent]==0,"challenge participation");
+        uint256 id=++nonce;uint256 epoch=arenaEpoch[chosen]+1;
+        T.Ref memory ref=T.Ref(10143,chosen,epoch,id);bytes32 key=T.key(ref);
+        catalog.reserve(request.agent,request.mode,key);
+        A.Binding[] memory bindings=new A.Binding[](1);
+        bindings[0]=A.Binding(id,epoch,uint64(block.number),0,request.player,request.agent,request.mode,false,false,
+            A.Controller(0,0,0,grant.key,grant.expires),PoolPublication.controller(catalog,request.agent,0,catalog.identity(request.agent).codeHash,0));
+        SeriesAgentArena(chosen).prepareSeries(bindings);
+        delete assigned[chosen];assigned[chosen].push(id);
+        records[id]=Record(ref,request.player,request.agent,0,0,false,false);challengeOf[id]=requestId;
+        playing[request.player]=key;playing[request.agent]=key;remaining[chosen]=1;qualificationSeries=chosen;
+        emit SeriesAssigned(chosen,epoch,0,id,1);
+    }
     function openArena(address app) external payable base locked {
         require(registered[app]&&assigned[app].length>0&&admissions,"prepared arena");
         T.Ref memory ref=records[assigned[app][0]].ref;require(ref.epoch==arenaEpoch[app]+1,"already opened");
+        require(!records[ref.id].captured,"admission already cancelled");
+        require(challengeOf[ref.id]==0||challenges.authorized(challengeOf[ref.id]),"challenge authorization changed");
         SeriesAgentArena(app).openEngine{value:msg.value}();Types.Session memory s=hub.sessionOf(app,0);
         require(s.status==Types.Status.Active&&s.epoch==ref.epoch,"opened identity");arenaEpoch[app]=s.epoch;
     }
-    function capture(uint256 id) external base locked {_capture(id);}
-    function _capture(uint256 id) private {
+    function capture(uint256 id) external base locked {_capture(id,false);}
+    function cancelUnopened(address app) external base locked {
+        require(registered[app]&&assigned[app].length>0,"prepared arena");
+        uint256[] storage ids=assigned[app];Record storage first=records[ids[0]];
+        require(hub.statusOf(app,0)==Types.Status.None&&arenaEpoch[app]<first.ref.epoch&&!first.captured,"session already opened/cancelled");
+        require(msg.sender==owner||challengeOf[ids[0]]!=0&&!challenges.authorized(challengeOf[ids[0]]),"admission still valid");
+        for(uint256 i;i<ids.length;i++)_capture(ids[i],true);
+    }
+    function _capture(uint256 id,bool unopened) private {
         Record storage entry=records[id];require(entry.ref.id==id&&id!=0,"unknown series game");if(results[id].finality)return;
         T.Ref memory ref=entry.ref;Types.Session memory s=hub.sessionOf(ref.arena,0);
-        require(s.status!=Types.Status.Challenged&&arenaEpoch[ref.arena]==ref.epoch,"review/unopened");
+        require(s.status!=Types.Status.Challenged&&(unopened?arenaEpoch[ref.arena]+1==ref.epoch:arenaEpoch[ref.arena]==ref.epoch),"review/unopened");
         bool finality=s.status==Types.Status.None;
         if(!finality)require(s.epoch==ref.epoch&&s.batchIndex>0,"publication pending");
         SeriesAgentArena arena=SeriesAgentArena(ref.arena);
@@ -139,10 +182,16 @@ contract AgentSeriesPool is ICompetitionAuthority {
         if(!entry.captured){
             entry.captured=true;remaining[ref.arena]--;
             if(qualificationOf[id]){bytes32 key=T.key(ref);catalog.release(r.a,key);catalog.release(r.b,key);delete playing[r.a];delete playing[r.b];}
+            if(challengeOf[id]!=0){
+                bytes32 key=T.key(ref);catalog.release(r.b,key);challenges.completed(challengeOf[id]);
+                if(playing[r.a]==key)delete playing[r.a];if(playing[r.b]==key)delete playing[r.b];
+            }
         }
         if(qualificationOf[id])qualifications.complete(r,brainA,brainB);
         learned[entry.tournament][r.a]=brainA;learned[entry.tournament][r.b]=brainB;
+        bool changed=results[id].hash!=r.hash||results[id].finality!=r.finality;
         results[id]=r;emit ResultCaptured(T.key(ref),r.hash,r.finality);
+        if(changed)PoolPublication.archive(r,entry.ranked,entry.tournament);
         if(remaining[ref.arena]==0){
             if(activeSeries==ref.arena)activeSeries=address(0);
             if(qualificationSeries==ref.arena)qualificationSeries=address(0);
@@ -161,7 +210,7 @@ contract AgentSeriesPool is ICompetitionAuthority {
     }
     function releaseArena(address app) external base locked {
         require(registered[app]&&hub.statusOf(app,0)==Types.Status.Exiting,"closing series only");
-        hub.releaseStake(app,0);uint256[] storage ids=assigned[app];for(uint256 i;i<ids.length;i++)_capture(ids[i]);
+        hub.releaseStake(app,0);uint256[] storage ids=assigned[app];for(uint256 i;i<ids.length;i++)_capture(ids[i],false);
         emit ArenaReleased(app,arenaEpoch[app]);
     }
 }

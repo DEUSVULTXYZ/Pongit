@@ -32,6 +32,7 @@ else await chaosQualificationRecord();
 if(production){assert.equal(rootRecord.app,'0x78d3341e3452d7ec1add9371de3008639eed8eb0');assert(process.env.INTERLUDE_COORDINATOR_KEY);process.env.ROOMS_PRESSURE_KEY_FILE='/secrets/pressure.json';}
 else{process.env.INTERLUDE_COORDINATOR_KEY=rootRecord.keys[4];process.env.ROOMS_PRESSURE_KEY_FILE=`/secrets/${prefix}-pressure.json`;}
 const run=process.env.PONG_REALTIME_RUN||'1';assert(/^[1-9]$/.test(run));
+const epochText=process.env.PONG_REALTIME_EPOCH??'1';assert(/^[1-9]\d{0,9}$/.test(epochText));const epoch=BigInt(epochText);
 const file=`/secrets/${prefix}-live-${run}.json`;try{await readFile(file);throw Error('Reconcile the previous live fixture first');}catch(e){if((e as any).code!=='ENOENT')throw e;}
 const manifests=JSON.parse(await readFile(`artifacts/drand/${production?'production':'integration'}-manifests.json`,'utf8')),m=manifests.game,finance=manifests.finance;
 assert.equal(m.app,rootRecord.app);assert.equal(m.rulesVersion,production?6:qualificationRules(prefix),'Use the exact versioned human fixture');
@@ -50,7 +51,7 @@ const make=(store=memoryStore(),tag='observer')=>{
  const transport=engineTransport(m.node,tag==='observer'?undefined:{beforeSend:async(raw)=>{await journal.beforeSend(raw);secrets.journals=journals;await save();const tx=parseTransaction(raw as Hex);(report.sizes??=[]).push({action:decodeFunctionData({abi,data:tx.data!}).functionName,rawBytes:((raw as string).length-2)/2});},received:(method,result)=>journal.received(method,result)});
  return Object.assign(createInterludeClient({app:m.app,abi,node:m.node,base,store,transport,fastPath:true}),{journal});
 };
-const observer=make(),players:any[]=[],secrets:any={players:[]},report:any={at:new Date().toISOString(),app:m.app,scope:'Real testnet contracts, SDK sessions and actual pressure worker; synthetic EOA owners, no physical passkey test',matches:[],payments:[]};
+const observer=make(),players:any[]=[],secrets:any={players:[],epoch:String(epoch)},report:any={at:new Date().toISOString(),app:m.app,epoch:String(epoch),scope:'Real testnet contracts, SDK sessions and actual pressure worker; synthetic EOA owners, no physical passkey test',matches:[],payments:[]};
 const stream=new EngineStream(m.node,m.app),feed=new EngineFeed(observer,stream),unwatch:(()=>void)[]=[];
 const snapshot=async(id:bigint)=>engineTuple(await feed.read(id));
 const json=(v:any)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2),sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
@@ -68,19 +69,19 @@ async function sendPublic(data:Hex,id:bigint){
  const nonce=await observer.node.getTransactionCount({address:admission.address});
  const raw=await admission.signTransaction({to:m.app,chainId:4242,type:'eip1559',nonce,data,value:0n,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
  const hash=keccak256(raw),op=crypto.randomUUID();
- await fixtureDb.query("INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',1,$6,$7,$8)",[m.app,op,nonce,raw,hash,admission.address.toLowerCase(),decodeFunctionData({abi,data}).functionName,String(id)]);
+ await fixtureDb.query("INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9)",[m.app,op,nonce,raw,hash,String(epoch),admission.address.toLowerCase(),decodeFunctionData({abi,data}).functionName,String(id)]);
  const receipt:any=await sendFast(observer.node,m.node,raw);assert(receipt,'Missing pressure receipt');
  const outcome=engineReceiptOutcome(receipt,hash);assert(outcome);
  await fixtureDb.query("UPDATE il_engine_jobs SET status=$4,resolution=$3 WHERE app=$1 AND id=$2",[m.app,op,{kind:'receipt',hash,blockHash:receipt.blockHash,status:receipt.status},outcome]);assert.equal(outcome,'observed');
 }
 try{
- const status=await observer.status();assert.equal(status.epoch,1);assert.equal(await observer.read('activeCount'),0n);
+ const status=await observer.status();assert.equal(BigInt(status.epoch),epoch);assert.equal(await observer.read('activeCount'),0n);
  for(let i=0;i<5;i++){
   const key=generatePrivateKey(),owner=privateKeyToAccount(key),store=memoryStore(),client=make(store,String(i));
   await client.openSession({wallet:createWalletClient({account:owner,chain:monadTestnet,transport:http()}),scope:['acceptMatch','input','tick','cancelMatch','concede'],expirySeconds:1800,assertDigest:true});
   const saved=store.get(storageKey(m.app,10143,owner.address)),stored=decodeSession(saved)!;await client.status();
-  client.journal.bindRoomControls(owner.address,stored.grant.sessionKey,1n,stored.grant.expiry);
-  const session=compactRoomsSession({node:client.node,abi,app:m.app,stored,epoch:1n});
+  client.journal.bindRoomControls(owner.address,stored.grant.sessionKey,epoch,stored.grant.expiry);
+  const session=compactRoomsSession({node:client.node,abi,app:m.app,stored,epoch});
   players.push({owner,client,session,seq:0n,dir:0,changes:0,stored});secrets.players.push({key,stored:saved});await save();
  }
  const bettor=players[4].owner;
@@ -137,7 +138,7 @@ try{
     const direction=p.changes<100?(p.changes%2?1:-1):position<target-8000000n?1:position>target+8000000n?-1:0;
     if(direction!==p.dir){const latest:any=await snapshot(id);if(latest[2]!==2n)return;
      const at=Date.now(),args=[id,direction,latest[j===0?9:10]+1n,latest[7]+150n],result=await p.session.send('input',args),receivedAt=Date.now();await feed.receipt(id,result,'input',args,p.owner.address);p.dir=direction;p.changes++;(report.inputSamples??=[]).push({mode,ms:Date.now()-at,sendMs:receivedAt-at,receiptMs:Date.now()-receivedAt});
-     if(p.changes===50){p.session=compactRoomsSession({node:p.client.node,abi,app:m.app,stored:p.stored,epoch:1n});report.restores=(report.restores??0)+1;}
+     if(p.changes===50){p.session=compactRoomsSession({node:p.client.node,abi,app:m.app,stored:p.stored,epoch});report.restores=(report.restores??0)+1;}
     }
    }));
    if(points>lastScore)lastScore=points;

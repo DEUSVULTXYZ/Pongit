@@ -23,7 +23,7 @@ try{
  await writeFile(`/secrets/${prefix}-pressure.json`,JSON.stringify({privateKey:record.keys[5]}),{mode:0o600});
  const job=(await t.db.query('SELECT hash FROM il_lifecycle_jobs WHERE id=$1',[prefix+'-finance:deploy-chaoseventssettlement'])).rows[0];
  const block=(await t.base.getTransactionReceipt({hash:job.hash})).blockNumber;
- const game={app:record.app,node:record.node,hub:'0x3Ef8327F69e09cf721772F345e2A887eA22cD595',coordinator:coordinator.address,pressureSigner:pressure.address,rulesVersion,compactControls:true,capacity:2,chainId:10143,previousRooms:zeroAddress,releaseReady:false};
+ const game={app:record.app,node:record.node,hub:'0x3Ef8327F69e09cf721772F345e2A887eA22cD595',coordinator:coordinator.address,pressureSigner:pressure.address,rulesVersion,compactControls:true,capacity:2,chainId:10143,baseChainId:10143,engineChainId:4242,tickUs:10000,previousRooms:zeroAddress,releaseReady:false};
  const finance={financeId:`events-rules${rulesVersion}`,rulesVersion,settlement:'early-published-testnet',betting:'realtime',app:record.app,adapter,market,vault,pressureSigner:pressure.address,startBlock:String(block),chainId:10143};
  await writeFile('artifacts/drand/integration-manifests.json',JSON.stringify({game,finance},null,2));
  console.log(JSON.stringify({game,finance}));

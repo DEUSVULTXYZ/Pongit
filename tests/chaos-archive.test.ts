@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {applyChaosArchive,chaosArchiveRules} from '../indexer/src/chaos-archive';
+import {applyChaosArchive,applySeriesArchive,chaosArchiveRules} from '../indexer/src/chaos-archive';
 import {retainFinished} from '../indexer/src/retention';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {chaosLegacy} from '../shared/chaos-codec';
@@ -11,6 +11,25 @@ const app='0x1111111111111111111111111111111111111111',a='alice',b='bob';
 function fixture(){const c:any={};for(const name of ['Match','Frame','Handicap','RecentReplays','Alert','Payout']){
  const rows=new Map<string,any>();c[name]={rows,get:async(id:string)=>rows.get(id),set:(v:any)=>rows.set(v.id,structuredClone(v)),deleteUnsafe:(id:string)=>rows.delete(id),getWhere:async(q:any)=>[...rows.values()].filter(row=>Object.entries(q).every(([key,v])=>row[key]===(v as any)._eq))};}return c;}
 const event=(id:number,status=3,winner=a)=>({params:{app,id,epoch:1,a,b,winner,status,mode:id%2,ranked:true,scoreA:7,scoreB:5,played:true},block:{number:100+id,hash:`block-${id}-${status}-${winner}`},logIndex:1});
+
+test('series captures index distinct arenas, epochs and tournament references without an archive writer',async()=>{
+ const pool='0x2222222222222222222222222222222222222222',other='0x3333333333333333333333333333333333333333';
+ const bindings={[pool]:{apps:[app,other],rulesVersion:11 as const}},c=fixture();
+ const capture=(id:number,arena=app,epoch=1,status=3)=>({...event(id,status),srcAddress:pool,
+  params:{...event(id,status).params,app:arena,epoch,tournament:7n,elapsedUs:0n,finality:false}});
+ for(const e of [capture(1),capture(2),capture(1,other),capture(3,app,2)])await applySeriesArchive(c,e,bindings);
+ assert.equal(c.Match.rows.size,4);assert.equal(c.Match.rows.get(`10143:${app}:1:1`).replayAvailability,'pruned');
+ const latest=`10143:${app}:2:3`,record=c.Match.rows.get(latest);
+ assert.equal(record.rulesVersion,11);assert.equal(record.tournamentId,'7');assert.equal(record.played,true,'a concession after start is a played match');
+ const finalized=capture(3,app,2);finalized.params.finality=true;await applySeriesArchive(c,finalized,bindings);
+ assert.equal(c.RecentReplays.rows.get(a).matches.length,3);assert.equal(c.Alert.rows.size,0);assert.equal(c.Match.rows.get(latest).endedAt,record.endedAt);
+ const cancelled=capture(4,app,2,4);await applySeriesArchive(c,cancelled,bindings);
+ assert.equal(c.Match.rows.get(`10143:${app}:2:4`).replayAvailability,'not-played');assert.equal(c.RecentReplays.rows.get(a).matches.length,3);
+ await assert.rejects(applySeriesArchive(c,capture(5,pool),bindings),/Unknown/);
+ await assert.rejects(applySeriesArchive(c,{...capture(5),srcAddress:other},bindings),/Unknown/);
+ const changed=capture(3,app,2);changed.params.scoreB=4;changed.block.hash='series-correction';
+ await applySeriesArchive(c,changed,bindings);assert.equal(c.Alert.rows.size,1);
+});
 
 test('immutable archive bindings preserve historical rules 6 and index corrected rules 8 separately',async()=>{
  const old='0x2222222222222222222222222222222222222222',next='0x3333333333333333333333333333333333333333';

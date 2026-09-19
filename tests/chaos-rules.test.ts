@@ -12,9 +12,9 @@ import {announceEffect} from '../shared/chaos-effects';
 const address=(n:string)=>('0x'+n.padStart(40,'0')) as `0x${string}`;
 
 test('human rules retain 6 and 8 history and add 9; agent rules are separate',()=>{
- assert.deepEqual([5,6,7,8,9,10,'8'].map(isChaosEventsRules),[false,true,false,true,true,false,false]);
+ assert.deepEqual([5,6,7,8,9,10,11,'8'].map(isChaosEventsRules),[false,true,false,true,true,false,false,false]);
  assert.deepEqual([6,7,8].map(chaosResolvesEveryContact),[false,false,true]);
- assert.deepEqual([6,7,8,9,10].map(chaosContactResolution),[false,false,true,'complete','complete']);
+ assert.deepEqual([6,7,8,9,10,11].map(chaosContactResolution),[false,false,true,'complete','complete','complete']);
 });
 
 test('finance bindings accept historical and current human kernels but never agent kernels',async()=>{
@@ -27,7 +27,7 @@ test('finance bindings accept historical and current human kernels but never age
    await writeFile(process.env.ROOMS_FINANCE_MANIFEST,JSON.stringify([events(rules)]));await loadRoomsFinance();
    assert.equal(financeAdapterAbi(events(rules)),chaosEventsSettlementAbi);
   }
-  for(const rules of [5,7,10]){
+  for(const rules of [5,7,10,11]){
    await writeFile(process.env.ROOMS_FINANCE_MANIFEST,JSON.stringify([events(rules)]));
    await assert.rejects(loadRoomsFinance(),/Invalid rooms finance manifest/);
   }

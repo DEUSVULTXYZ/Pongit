@@ -1,19 +1,27 @@
 import {retainFinished} from './retention';
 
 /** Handler body isolated from the running indexer for correction tests. */
-export type ChaosArchiveDeployment={app:string;rulesVersion:6|7|8|9|10};
+export type ChaosArchiveDeployment={app:string;rulesVersion:6|7|8|9|10}|{apps:readonly string[];rulesVersion:11};
 /** Immutable archive emitters bind a game and its physics version. Unknown or
  * mismatched emitters must stop indexing instead of labelling rules 8 as 6. */
-export function chaosArchiveRules(deployments:Record<string,ChaosArchiveDeployment>,event:{srcAddress:string;params:{app:string}}):6|7|8|9|10{
+export function chaosArchiveRules(deployments:Record<string,ChaosArchiveDeployment>,event:{srcAddress:string;params:{app:string}}):6|7|8|9|10|11{
  const binding=deployments[event.srcAddress.toLowerCase()];
- if(!binding||binding.app.toLowerCase()!==event.params.app.toLowerCase()||![6,7,8,9,10].includes(binding.rulesVersion))throw Error('Unknown Chaos archive deployment');
+ const app=event.params.app.toLowerCase();
+ if(!binding||!('apps' in binding?binding.rulesVersion===11&&binding.apps.some(a=>a.toLowerCase()===app)
+   :binding.app.toLowerCase()===app&&[6,7,8,9,10].includes(binding.rulesVersion)))throw Error('Unknown Chaos archive deployment');
  return binding.rulesVersion;
 }
-export async function applyChaosArchive(context:any,event:any,rulesVersion:6|7|8|9|10=6){
+export async function applySeriesArchive(context:any,event:any,deployments:Record<string,ChaosArchiveDeployment>){
+ const version=chaosArchiveRules(deployments,event);
+ if(version!==11)throw Error('Unexpected series archive rules');
+ await applyChaosArchive(context,{...event,params:{...event.params,
+  played:BigInt(event.params.elapsedUs)>0n||Number(event.params.status)===3}},version);
+}
+export async function applyChaosArchive(context:any,event:any,rulesVersion:6|7|8|9|10|11=6){
  const p=event.params,id=`10143:${p.app.toLowerCase()}:${p.epoch}:${p.id}`,previous=await context.Match.get(id);
  const endedAt=previous?.endedAt||`${String(event.block.number).padStart(20,'0')}:${String(event.logIndex).padStart(10,'0')}`;
  const value={id,deployment:`10143:${p.app.toLowerCase()}`,rawId:String(p.id),mode:Number(p.mode),ranked:p.ranked,rulesVersion,
-  playerA:p.a.toLowerCase(),playerB:p.b.toLowerCase(),tournamentId:'0',status:Number(p.status),winner:p.winner.toLowerCase(),
+  playerA:p.a.toLowerCase(),playerB:p.b.toLowerCase(),tournamentId:String(p.tournament??0),status:Number(p.status),winner:p.winner.toLowerCase(),
   played:p.played,scoreA:Number(p.scoreA),scoreB:Number(p.scoreB),endedAt,replayAvailability:previous?.replayAvailability||'recording',block:BigInt(event.block.number)};
  const terminal=value.status>=3;
  if(!previous&&terminal)await retainFinished(context,value,endedAt);else context.Match.set(value);
