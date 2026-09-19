@@ -58,24 +58,64 @@ test('one failed read skips only its own result: the pass goes on, and the failu
  assert.equal(none.next,undefined);assert.equal(none.failed.length,2,'the caller retries before renewing');
 });
 
-test('a result Monad cannot answer for stops holding the renewal after FINALIZATION_READ_ATTEMPTS passes',async()=>{
+test('a result Monad cannot answer for, while it answers the others, stops holding the renewal after FINALIZATION_READ_ATTEMPTS passes',async()=>{
  const memory=new FinalizationMemory();let reads=0;
- const o={finalStatus:async()=>{reads++;throw new Error('timeout');},published:async()=>published()};
+ // Result 1's reads fail; result 2 is read fine (already final), so Monad answers.
+ // From the second pass on, 2 is remembered as final and not read again: the
+ // reader's probe (a block number) is then what shows that Monad answers.
+ let probes=0;
+ const o={finalStatus:async(id:string)=>{if(id==='1'){reads++;throw new Error('timeout');}return 3;},published:async()=>published(),probe:async()=>{probes++;return 1n;}};
  for(let i=1;i<FINALIZATION_READ_ATTEMPTS;i++){
-  const pass=await nextFinalization(['1'],o,memory,'6');
+  const pass=await nextFinalization(['1','2'],o,memory,'6');
   assert.deepEqual(pass.failed.map(f=>f.id),['1'],`pass ${i} retries`);
  }
- const last=await nextFinalization(['1'],o,memory,'6');
+ const last=await nextFinalization(['1','2'],o,memory,'6');
  assert.deepEqual(last.failed,[]);assert.deepEqual(last.deferred,[{id:'1',verdict:'unreadable'}],'deferred: renewal proceeds');
+ assert.equal(probes,FINALIZATION_READ_ATTEMPTS-1,'the first pass read 2 successfully and needed no probe');
  const before=reads;
- assert.deepEqual((await nextFinalization(['1'],o,memory,'6')).deferred,[{id:'1',verdict:'unreadable'}]);
+ assert.deepEqual((await nextFinalization(['1','2'],o,memory,'6')).deferred,[{id:'1',verdict:'unreadable'}]);
  assert.equal(reads,before,'not read again in this epoch');
- await nextFinalization(['1'],o,memory,'7');assert.equal(reads,before+1,'a later epoch\'s pass tries it again');
+ await nextFinalization(['1','2'],o,memory,'7');assert.equal(reads,before+1,'a later epoch\'s pass tries it again');
  // A read that succeeds clears the count.
  const healed=new FinalizationMemory();let fail=true;
- const flaky={finalStatus:async()=>{if(fail)throw new Error('timeout');return 0;},published:async()=>published()};
+ const flaky={finalStatus:async()=>{if(fail)throw new Error('timeout');return 0;},published:async()=>published(),probe:async()=>1n};
  await nextFinalization(['1'],flaky,healed,'6');fail=false;
  assert.deepEqual((await nextFinalization(['1'],flaky,healed,'6')).next,{id:'1',verdict:'ready'});
+});
+
+test('while Monad answers nothing, no result is deferred: the renewal waits and ready results are still finalized in this epoch',async()=>{
+ const memory=new FinalizationMemory();let down=true,probes=0;
+ const results:Record<string,PublishedResult>={a:published(),b:published()};
+ const o={finalStatus:async()=>{if(down)throw new Error('HTTP request failed. Status: 429');return 0;},
+  published:async(id:string)=>results[id],probe:async()=>{probes++;if(down)throw new Error('HTTP request failed. Status: 429');return 1n;}};
+ // Ten minutes of a total outage (or a run of 429s): every pass only retries.
+ for(let i=0;i<60;i++){
+  const pass=await nextFinalization(['a','b'],o,memory,'6');
+  assert.equal(pass.next,undefined);assert.deepEqual(pass.deferred,[],`pass ${i}: nothing is deferred`);
+  assert.deepEqual(pass.failed.map(f=>f.id),['a','b'],'both are retried before renewing');
+ }
+ assert.equal(probes,60,'one reachability probe per pass that read nothing');
+ // Monad answers again: both are finalized in this epoch, none waits for the next.
+ down=false;
+ assert.deepEqual((await nextFinalization(['a','b'],o,memory,'6')).next,{id:'a',verdict:'ready'});
+ // A pass whose probe answers while every result read fails counts towards deferral.
+ const partial=new FinalizationMemory();
+ const broken={finalStatus:async()=>{throw new Error('execution reverted');},published:async()=>published(),probe:async()=>1n};
+ for(let i=1;i<FINALIZATION_READ_ATTEMPTS;i++)assert.deepEqual((await nextFinalization(['x'],broken,partial,'6')).failed.map(f=>f.id),['x']);
+ assert.deepEqual((await nextFinalization(['x'],broken,partial,'6')).deferred,[{id:'x',verdict:'unreadable'}]);
+ // Without a probe, a pass that read nothing successfully never counts.
+ const blind=new FinalizationMemory();
+ for(let i=0;i<FINALIZATION_READ_ATTEMPTS*2;i++)assert.deepEqual((await nextFinalization(['x'],{finalStatus:broken.finalStatus,published:broken.published},blind,'6')).deferred,[]);
+});
+
+test('outage passes neither count nor reset: only passes in which Monad answered count, in a row',async()=>{
+ const memory=new FinalizationMemory();let down=false;
+ const o={finalStatus:async(id:string)=>{if(down||id==='1')throw new Error('timeout');return 3;},published:async()=>published(),probe:async()=>{if(down)throw new Error('down');return 1n;}};
+ for(let i=1;i<FINALIZATION_READ_ATTEMPTS;i++)await nextFinalization(['1','2'],o,memory,'6');
+ down=true;
+ for(let i=0;i<10;i++)assert.deepEqual((await nextFinalization(['1','2'],o,memory,'6')).deferred,[]);
+ down=false;
+ assert.deepEqual((await nextFinalization(['1','2'],o,memory,'6')).deferred,[{id:'1',verdict:'unreadable'}],'the sixth answered pass defers it');
 });
 
 test('finalized and unmarketed results are never read again; unpublished ones not again in the same epoch',async()=>{

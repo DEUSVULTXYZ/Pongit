@@ -50,8 +50,10 @@ export function finalizationVerdict(r:PublishedResult):FinalizationVerdict{
 
 export type Deferred={id:string;verdict:'unpublished'|'unmarketed'|'unreadable'};
 export type FinalizationFailure={id:string;error:string};
-/** Consecutive passes whose reads of one result failed before that result stops
- * holding the renewal. At the lifecycle's 10 s cycle, about one minute. */
+/** Consecutive passes in which Monad answered but one result's reads failed,
+ * before that result stops holding the renewal. At the lifecycle's 10 s cycle,
+ * about one minute of such passes. Passes in which Monad answered nothing (an
+ * outage, a run of 429s) are not counted: the renewal waits them out. */
 export const FINALIZATION_READ_ATTEMPTS=6;
 
 /** What earlier passes learnt, so a result is not read again every cycle forever.
@@ -62,26 +64,31 @@ export const FINALIZATION_READ_ATTEMPTS=6;
  * - Unpublished is permanent within one scope (the lifecycle passes its epoch):
  *   nothing is published between the hub's release and the next epoch's first
  *   batch. It is read again in a later scope.
- * - Read failures are counted per result and scope; after
- *   FINALIZATION_READ_ATTEMPTS consecutive failing passes the result is deferred
- *   as 'unreadable', and a later scope tries it again. */
+ * - Read failures are counted per result and scope, only in passes in which
+ *   Monad answered other reads; after FINALIZATION_READ_ATTEMPTS such passes in
+ *   a row the result is deferred as 'unreadable' for the scope, and a later scope
+ *   tries it again. */
 export class FinalizationMemory {
  private settled=new Set<string>();
  private unpublished=new Map<string,string>();
+ private unreadable=new Map<string,string>();
  private failures=new Map<string,{scope:string;count:number}>();
  known(id:string,scope:string):'settled'|'unpublished'|'unreadable'|undefined{
   if(this.settled.has(id))return 'settled';
   if(this.unpublished.get(id)===scope)return 'unpublished';
-  const f=this.failures.get(id);
-  if(f&&f.scope===scope&&f.count>=FINALIZATION_READ_ATTEMPTS)return 'unreadable';
+  if(this.unreadable.get(id)===scope)return 'unreadable';
   return undefined;
  }
- settle(id:string){this.settled.add(id);this.unpublished.delete(id);this.failures.delete(id);}
+ settle(id:string){this.settled.add(id);this.unpublished.delete(id);this.unreadable.delete(id);this.failures.delete(id);}
  defer(id:string,scope:string){this.unpublished.set(id,scope);this.failures.delete(id);}
- /** The consecutive failure count of this result in this scope, this one included. */
+ /** One more pass in which Monad answered but this result's reads failed. True
+  * when that makes FINALIZATION_READ_ATTEMPTS in a row: it is then deferred as
+  * 'unreadable' for this scope. */
  failed(id:string,scope:string){
   const last=this.failures.get(id),count=last?.scope===scope?last.count+1:1;
-  this.failures.set(id,{scope,count});return count;
+  this.failures.set(id,{scope,count});
+  if(count<FINALIZATION_READ_ATTEMPTS)return false;
+  this.unreadable.set(id,scope);this.failures.delete(id);return true;
  }
  succeeded(id:string){this.failures.delete(id);}
 }
@@ -97,32 +104,49 @@ const failureText=(e:unknown)=>String((e as Error)?.message??e).split('\n')[0].r
  * A read failure is never a deferral by itself, and it never ends the pass: the
  * pass goes on to the next result, so one failing read cannot keep every later
  * result from being finalized. It is reported in `failed`, and the caller
- * retries before renewing. After FINALIZATION_READ_ATTEMPTS failing passes in a
- * row the result is deferred as 'unreadable' instead, so one result Monad cannot
+ * retries before renewing.
+ *
+ * Only a failure Monad is not to blame for counts towards deferral: at the end of
+ * the pass, if any read succeeded (or, when none was made, the reader's `probe`
+ * answers), each failing result's count goes up; after FINALIZATION_READ_ATTEMPTS
+ * such passes in a row it is deferred as 'unreadable', so one result Monad cannot
  * answer for does not hold the renewal forever (its bettors are then paid by a
- * later epoch's pass). */
-export async function nextFinalization(ids:readonly string[],o:{finalStatus:(id:string)=>Promise<number>;published:(id:string)=>Promise<PublishedResult>},
+ * later epoch's pass). A pass in which Monad answered nothing counts for no
+ * result: during an outage or a run of 429s the renewal waits, and every result
+ * that becomes ready is still finalized in this epoch. */
+export async function nextFinalization(ids:readonly string[],o:{finalStatus:(id:string)=>Promise<number>;published:(id:string)=>Promise<PublishedResult>;probe?:()=>Promise<unknown>},
  memory:FinalizationMemory=new FinalizationMemory(),scope=''){
  const deferred:Deferred[]=[],failed:FinalizationFailure[]=[];
+ let answered=false;
+ const settle=async(next?:{id:string;verdict:FinalizationVerdict})=>{
+  if(failed.length&&!answered&&o.probe)answered=await o.probe().then(()=>true,()=>false);
+  if(!answered)return {next,deferred,failed};
+  const still:FinalizationFailure[]=[];
+  for(const f of failed){
+   if(memory.failed(f.id,scope))deferred.push({id:f.id,verdict:'unreadable'});
+   else still.push(f);
+  }
+  return {next,deferred,failed:still};
+ };
  for(const id of ids){
   const known=memory.known(id,scope);
   if(known==='settled')continue;
   if(known){deferred.push({id,verdict:known});continue;}
   let verdict:FinalizationVerdict;
   try{
-   if(await o.finalStatus(id)!==0){memory.settle(id);continue;}
+   const status=await o.finalStatus(id);answered=true;
+   if(status!==0){memory.settle(id);continue;}
    verdict=finalizationVerdict(await o.published(id));
    memory.succeeded(id);
   }catch(e){
-   if(memory.failed(id,scope)>=FINALIZATION_READ_ATTEMPTS)deferred.push({id,verdict:'unreadable'});
-   else failed.push({id,error:failureText(e)});
+   failed.push({id,error:failureText(e)});
    continue;
   }
   if(verdict==='unmarketed'){memory.settle(id);deferred.push({id,verdict});continue;}
   if(verdict==='unpublished'){memory.defer(id,scope);deferred.push({id,verdict});continue;}
-  return {next:{id,verdict},deferred,failed};
+  return settle({id,verdict});
  }
- return {next:undefined,deferred,failed};
+ return settle();
 }
 
 const adapterReads=parseAbi([
@@ -143,6 +167,8 @@ export function publishedResultReader(base:PublicClient,m:Pick<RoomsFinanceManif
  // check the game's finishedAt; both are realtime betting.
  const timed=isChaosEventsRules(m.rulesVersion)||m.betting==='realtime',early=m.settlement==='early-published-testnet',gameAbi=financeGameAbi(m);
  return {
+  /** Whether Monad answers at all, when a pass made no successful read. */
+  probe:()=>base.getBlockNumber({cacheTime:0}),
   finalStatus:async(id:string)=>Number((await base.readContract({address:m.adapter,abi:adapterReads,functionName:'finalResults',args:[BigInt(id)]}))[3]),
   published:async(id:string):Promise<PublishedResult>=>{
    const n=BigInt(id);
