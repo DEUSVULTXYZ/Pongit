@@ -21,7 +21,27 @@ The owner separately approved closing the blocked epoch. `scripts/recover-human-
 - Hub `stakeUnlockAt`: **2026-09-19 13:09:14 UTC** (15:09:14 Europe/Paris).
 - This closes the epoch using its published state, including the unfinished 4:6 match. The unpublished cancellation is not recovered by closure.
 - Post-deployment/pre-close backup `20260919T120515Z`: all **86 files** checksum-verified off VPS, now also including both compose files.
-- Public configuration still has `admission:false`, `online:false`, `operatorHold:true` and the actual release deadline. No release or renewal has been approved or sent.
+- At that checkpoint, public configuration still had `admission:false`, `online:false`, `operatorHold:true` and the actual release deadline. Release and renewal were not included in the force-close approval.
+
+## Approved release and renewal, 13:44–13:54 UTC
+
+The owner then explicitly approved both release and renewal. The fresh `20260919T134017Z` backup was checksum-verified off VPS (86 files). No deployment, admission opening or lifecycle-hold removal accompanied these operations.
+
+| Operation | Monad transaction | Block | Gas used |
+| --- | --- | --- | --- |
+| Release epoch 6 | `0x58ae30155e5dbbf0cc0508a838e0a7c8adb7ccaba6368b1c2a6bf7360734fc21` | 63,897,612 | 1,905,163 |
+| Capture a previously published financial result | `0xde2a960b70efa49e555fb2a4981b785163c41e776a5e3b2ebad9ce7035bdb9d4` | 63,899,115 | 481,605 |
+| Renew into epoch 7 | `0xe19e91d9c4a32ba8c6520fbdeca9cb782f164a2ac4913383ba1b96c9682cb971` | 63,899,125 | 291,658 |
+
+`scripts/renew-human-epoch.ts` checked the published results before renewal: one required capture, seven were already captured, four had no market, and the known 4:6 match was still unfinished. The adapter derived the captured result from Monad; no caller supplied a winner, amount or recipient. All transactions used the shared operator journal and lock 701340. The script keeps an uncertain capture in its existing journal and reconciles it before renewal, even if the result already appears captured.
+
+Independent review of the exact script closed findings about finance-scoped discovery, provisioning serialization, capture reconciliation and snapshot validation. Nine isolated mocked safety scenarios and TypeScript passed before execution. The real hosted node then passed 20 consecutive samples with the right application, epoch, publication, participants and recovered match. Production remains at `7d35926`, with `operatorHold:true` and `admission:false`.
+
+At **13:54:15 UTC**, the recovered match had finished **5:7**, phase 3, revision 297, on both the node and Monad, with the same nonzero result hash. `il_results` reports verified and published; `activeCount` is zero. Eight epoch-7 ticks were observed. Their journaled transaction gas limit is **30,000,000**, proving that the renewed human node accepted that limit. The old match has no recorded bettors. Its epoch-6 randomness and pressure submissions were correctly skipped during recovery; this is recovery of the legacy match, not evidence that its old immutable Chaos rules are repaired.
+
+Public configuration now reports `online:true`, no current engine error, epoch 7 and six published batches. The result is published, not asserted irreversible. Admissions stay closed until the durable candidate and remaining gates pass. Private evidence: `artifacts/recovery-20260919/human-renewal.json`.
+
+Post-renewal backup `20260919T135505Z` was also copied off VPS and all 86 files passed their checksums. It contains the new journal; an older dump must not be restored over these transactions.
 
 ## Rules-8 additional validation and review
 
