@@ -127,6 +127,76 @@ contract ChaosGameFlowGasTest is Test {
         }
     }
 
+    /// Play without a force grid: the jackpot with one ball, and fast Multiball among bricks,
+    /// portals, the bumper and the deflector, whose contacts are the busiest plain play.
+    function plain(uint8 kind) internal view returns(T.State memory s){
+        s=rally();
+        if(kind==0)return announced(s,22);
+        s.balls[0].vx=1500e6;s.balls[0].vy=700e6;
+        s=announced(announced(s,21),[19,14,13,18][kind-1]);
+    }
+    function plainLabel(uint8 kind) internal pure returns(string memory){
+        return ["jackpot, one ball","two fast balls, bricks","two fast balls, portals","two fast balls, bumper","two fast balls, deflector"][kind];
+    }
+    /// It advances in 1 s slices: a normal cadence costs what one unsliced call cost, and a
+    /// long stall catches up several seconds per command.
+    function testPlainPlayAdvancesInSecondSlices() public {
+        uint256[5] memory gaps=[uint256(300),1000,3000,10_000,60_000];
+        for(uint8 kind;kind<5;kind++){
+            place(plain(kind));
+            for(uint256 i;i<gaps.length;i++){
+                uint256 snap=vm.snapshotState();
+                uint256 used=tickAt(gaps[i],COMMAND_GAS);uint64 done=gameTime()-T0;
+                emit log_named_uint(string.concat(plainLabel(kind),", gap ms ",vm.toString(gaps[i]),", processed ms"),done/1000);
+                emit log_named_uint("    gas",used);
+                assertEq(phase(),2);assertLe(done,gaps[i]*1000);
+                if(gaps[i]<=3000)assertEq(done,gaps[i]*1000,"processed in full");else assertGe(done,3_000_000);
+                vm.revertToState(snap);
+            }
+        }
+    }
+    /// An announced wind keeps 100 ms slices before it starts: nothing may begin a force grid
+    /// inside a 1 s slice. The same second costs several slices instead of one.
+    function testAnnouncedGridEffectKeepsTenthSecondSlices() public {
+        place(plain(0));uint256 snap=vm.snapshotState();uint256 plainGas=tickAt(1000,COMMAND_GAS);vm.revertToState(snap);
+        T.State memory s=rally();(s.effects,)=e.announce(s.effects,17,0,0,17,uint32(T0/1000)+1000);place(s);
+        assertEq(live().effects[0].startsAt,uint32(T0/1000)+2000,"wind starts 2 s later");
+        uint256 announcedGas=tickAt(1000,COMMAND_GAS);assertEq(gameTime(),T0+1_000_000);
+        emit log_named_uint("1 s of plain play, gas",plainGas);
+        emit log_named_uint("1 s of plain play before an announced wind, gas",announcedGas);
+        assertGt(announcedGas,plainGas*3,"ten slices, not one");
+    }
+    /// The costliest 1 s plain slice against the reserve.
+    function testCostliestPlainSliceFitsTheReserve() public {
+        uint256 worst;
+        for(uint8 kind;kind<5;kind++){
+            place(plain(kind));uint256 snap=vm.snapshotState();
+            uint256 used=tickAt(1000,COMMAND_GAS);
+            emit log_named_uint(string.concat("one 1 s command, ",plainLabel(kind),", gas"),used);
+            if(used>worst)worst=used;
+            vm.revertToState(snap);
+        }
+        emit log_named_uint("costliest 1 s plain command",worst);
+        assertLt(worst,ChaosGameFlow.ADVANCE_RESERVE);
+    }
+    /// Where commands stop never changes plain play either: 1 s slices, a stop on the reserve
+    /// and one unbounded command all reach the unsliced flow's eight words.
+    function testSlicedPlainPlayMatchesOneUnslicedAdvance() public {
+        T.State memory s=plain(1);place(s);
+        uint64 end=T0+30_000_000;
+        uint256[8] memory whole=codec.pack(d.prepare(s));bool complete;
+        for(uint256 i;i<16&&!complete;i++){ChaosEngine.Progress memory p=module.advance(whole,seed,5,end,0,0);whole=p.words;complete=p.complete||p.outcome!=0;}
+        assertTrue(complete);assertGt(codec.unpack(whole,seed,5).score.rally,live().score.rally,"the window includes a point");
+        uint256 snap=vm.snapshotState();
+        tickAt(30_000,UNBOUNDED);uint256[8] memory one=words();
+        vm.revertToState(snap);
+        uint256 ticks;
+        while(gameTime()<end&&phase()==2){tickAt(30_000,COMMAND_GAS);ticks++;require(ticks<100,"no catch-up");}
+        emit log_named_uint("bounded commands for 30 s of plain play",ticks);
+        uint256[8] memory sliced=words();
+        for(uint256 i;i<8;i++){assertEq(sliced[i],whole[i],"unsliced flow");assertEq(one[i],whole[i],"one unbounded command");}
+    }
+
     /// Where commands stop never changes play: bounded commands reach the same eight words,
     /// bit for bit, as the unsliced rules-6 flow (the engine called to the target until
     /// complete) and as one unbounded command. The window covers wind, a goal, a serve and

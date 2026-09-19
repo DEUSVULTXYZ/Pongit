@@ -112,25 +112,37 @@ library ChaosGameFlow {
         if(!applied)return false;store(w,id,state);emit ChaosAnnounced(id,uint32(q>>96),draw,t);
         request(w,engine,hub,id,uint32(q>>96)+1,uint16(draw>>48),t);return true;
     }
-    /// A command advances in SLICE_US slices while a worst-case slice, a ranked result
-    /// and its publication still fit in ADVANCE_RESERVE. The kernel is call-partition
-    /// invariant, so where a command stops never changes play: it reports incomplete,
-    /// and the next command resumes from the processed clock. Unsliced, a command had
-    /// to simulate the whole gap since the last success in one call; a force grid (wind,
-    /// the well, a curve) made a gap above ~0.73 s cost more than 15M gas, and since a
-    /// revert processes nothing, every later command needed more: the match froze.
+    /// A command advances in slices while a worst-case slice, a ranked result and its
+    /// publication still fit in ADVANCE_RESERVE. The kernel is call-partition invariant,
+    /// so where a command stops never changes play: it reports incomplete, and the next
+    /// command resumes from the processed clock. Unsliced, a command had to simulate the
+    /// whole gap since the last success in one call; a force grid (wind, the well, a curve
+    /// shot) made a gap above ~0.73 s cost more than 15M gas, and since a revert processes
+    /// nothing, every later command needed more: the match froze.
     uint64 internal constant SLICE_US=100_000;
+    /// Without wind (17), the well (16) or a curve shot (5) in a slot and without a curving
+    /// ball, a force grid cannot start within the next second but in its last millisecond:
+    /// a drawn effect starts on the millisecond one second after its announcement, and a
+    /// mystery reward is always effect 1-4. Such play advances in 1 s slices, which keeps
+    /// the fixed cost of each slice (~0.3M gas) to a fraction of the play itself.
+    uint64 internal constant PLAIN_SLICE_US=1_000_000;
     uint256 internal constant ADVANCE_RESERVE=5_000_000;
     function advance(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
         external returns(bool complete,uint8 outcome,uint8 winner)
     {
         uint64 t=uint64(get(w,id,27)>>112);
         do{
-            (complete,outcome,winner)=slice(w,engine,hub,id,target>t+SLICE_US?t+SLICE_US:target);
+            uint64 end=t+span(w,id);
+            (complete,outcome,winner)=slice(w,engine,hub,id,target>end?end:target);
             if(outcome!=0)return(true,outcome,winner);
             t=uint64(get(w,id,27)>>112);
         }while(complete&&t<target&&gasleft()>ADVANCE_RESERVE);
         complete=complete&&t==target;
+    }
+    function span(mapping(bytes32=>uint256) storage w,uint256 id) private view returns(uint64){
+        for(uint256 i;i<2;i++){uint8 e=uint8(get(w,id,25+i));if(e==5||e==16||e==17)return SLICE_US;}
+        for(uint256 i;i<2;i++){uint256 b=get(w,id,21+2*i);if(b&(uint256(1)<<195)!=0&&uint16(b>>144)!=0)return SLICE_US;}
+        return PLAIN_SLICE_US;
     }
     /// One slice: the advance of the first rules-6 release, unchanged.
     function slice(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
