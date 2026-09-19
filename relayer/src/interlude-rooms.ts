@@ -39,7 +39,7 @@ import { chaosOfferTypes } from "../../shared/rooms-chaos";
 import {createRoomsFinanceDirectory} from "./rooms-finance-directory";
 import {loadRoomsFinance,financeAdapterAbi} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
-import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome, retireRefusedEngineJob, retireClosedEpochJobs, ENGINE_REFUSALS_SCHEMA} from "./rooms-engine-recovery";
+import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome, retireRefusedEngineJob, retireClosedEpochJobs, publicCommandResult, ENGINE_REFUSALS_SCHEMA} from "./rooms-engine-recovery";
 import {publishedResultReader} from "./rooms-finalization";
 import {EngineHaltMonitor,roomsWriteVerdict,type EngineHaltChange} from "./rooms-engine-halt";
 import {ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,EngineHalted,readEngineHealth,refusalReason} from "../../shared/engine-halt";
@@ -52,7 +52,7 @@ import {EngineStream,engineTuple,engineState} from "../../shared/engine-stream";
 import {EngineFeed} from "../../shared/engine-feed";
 import {engineCooldownMs} from "../../shared/engine-transport";
 import {engineCommandTransaction} from "../../shared/engine-gas";
-import {CHAOS_GUARD_INTERVAL_MS,CHAOS_GUARD_WRITABLE_MS,chaosGuardBackoffMs,chaosGuardDue,matchCommandInFlight,publicCommandKey} from "./chaos-tick-guard";
+import {CHAOS_GUARD_INTERVAL_MS,CHAOS_GUARD_WRITABLE_MS,ChaosTickOutcomes,chaosGuardBackoffMs,chaosGuardDue,matchCommandInFlight,publicCommandKey} from "./chaos-tick-guard";
 import {SessionUnavailable,SessionRejected,serviceError,publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
 import {assertRoomsEngineAvailable,RoomsEngineUnavailable} from "../../shared/rooms-availability";
 import {overlayPresence} from "./rooms-presence";
@@ -501,6 +501,8 @@ export async function createRoomsCoordinator(o: Options) {
   // A halted node keeps serving reads and interlude_session, which has no halt
   // field; only /health and a refused send reveal it (shared/engine-halt.ts).
   const halt=new EngineHaltMonitor();
+  // Latest tick outcome per match from every relayer path, for the Chaos guard.
+  const tickOutcomes=new ChaosTickOutcomes();
   let guardWritableAt = 0;
   function haltChanged(change:EngineHaltChange){
     if(change==='halted'){
@@ -553,9 +555,9 @@ export async function createRoomsCoordinator(o: Options) {
       });
       const data = requestedData!;
       // tick, cancelMatch, submitPressure, submitLivePressure and submitRandomness
-      // all sign ENGINE_COMMAND_GAS: 30,000,000, the node's accepted maximum. tick,
+      // all sign ENGINE_COMMAND_GAS: 30,000,000, the hosted node's cap. tick,
       // submitLivePressure and submitRandomness advance the Chaos clock first, and a
-      // grid state costs about 2 M gas per 100 ms of gap (see shared/engine-gas.ts).
+      // grid state costs 2.5 to 3 M gas per 100 ms of gap (see shared/engine-gas.ts).
       // The others never simulate; gas is free and the limit is only a ceiling.
       const raw = await signer.signTransaction(engineCommandTransaction(app, nonce, data));
       job = { id: hex(), app, nonce, raw, hash: keccak256(raw), epoch:lastEpoch };
@@ -602,11 +604,18 @@ export async function createRoomsCoordinator(o: Options) {
       "UPDATE il_engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2",
       [app, job.id, outcome,{kind:'receipt',hash:job.hash,blockHash:receipt?.blockHash,status:String(receipt?.status),at:new Date().toISOString()}],
     );
-    if(outcome==='failed')throw new Error("Engine command reverted. The current game state will be checked before retrying.");
-    if(streamEnabled)await feed.receipt(BigInt(identity.matchId),{receipt},identity.action,identity.args||[],signer.address);
+    // Keyed by the match of the command that executed, which may be a recovered
+    // entry of another match, never by the command that asked for the send.
+    tickOutcomes.record(identity.matchId,identity.action,outcome,Date.now());
+    // A recovered entry of another command, reverted or not, is not this
+    // command's outcome: its caller re-observes. Only its own revert is reported
+    // as one (the Chaos guard used to back off the wrong match here).
+    const result=publicCommandResult(outcome,requestedData,identity.data);
+    if(result==='reverted')throw new Error("Engine command reverted. The current game state will be checked before retrying.");
+    if(outcome==='observed'&&streamEnabled)await feed.receipt(BigInt(identity.matchId),{receipt},identity.action,identity.args||[],signer.address);
     // A recovered tick for another match is not confirmation of this pressure
     // request. Re-observe before chaining a resume or signing a new intention.
-    if(requestedData!==null&&identity.data.toLowerCase()!==requestedData.toLowerCase())
+    if(result==='reconciled')
       throw new Error('Previous engine command reconciled. The current action will be checked again.');
   }
   async function restoreContestedMatch(id: string, snap: any) {
@@ -838,7 +847,7 @@ export async function createRoomsCoordinator(o: Options) {
       const verdict=roomsWriteVerdict({unavailable,publicationBlocked:!!publicationHealth.status(),halted:!!halt.state,lifecycleStage:lifecycle?.status().stage});
       const writable=verdict.writable;
       if (lastEpoch !== -1 && lastEpoch !== status.epoch) ratings.clear();
-      if(lastEpoch!==status.epoch)feed.invalidate();
+      if(lastEpoch!==status.epoch){feed.invalidate();tickOutcomes.clear();}
       lastEpoch = status.epoch;
       online = writable;
       admissionHealthy = writable;
@@ -1160,6 +1169,7 @@ export async function createRoomsCoordinator(o: Options) {
       cooldownMs: engineCooldownMs(manifest.node),
     };
     for (const [id, until] of guardBlocked) if (until <= now || !watched.has(id)) guardBlocked.delete(id);
+    tickOutcomes.retain(id => watched.has(id));
     for (const id of watched.keys()) {
       const s = feed.peek(BigInt(id));
       if (!s) continue;
@@ -1168,6 +1178,9 @@ export async function createRoomsCoordinator(o: Options) {
         progressAgeMs: feed.progressAge(BigInt(id)),
         inFlight: matchCommandInFlight(writes.keys(), id),
         blockedUntil: guardBlocked.get(id) ?? 0,
+        // Any relayer tick of this match that reverted since its last progress:
+        // the match is frozen and the guard stays silent until it moves again.
+        lastRevertAt: tickOutcomes.lastRevertAt(id),
       });
       if (!due) continue;
       void publicTick(id).catch(e => {

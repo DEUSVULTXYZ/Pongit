@@ -56,6 +56,14 @@ export async function retireClosedEpochJobs(o: {
   return r.rowCount ?? 0;
 }
 
+/** How one resolved journal entry answers the command that resolved it. An
+ * entry of ANOTHER command (another match, or another action) recovered in its
+ * place is never this command's revert or success: the caller re-observes. */
+export function publicCommandResult(outcome: "observed" | "failed", requested: Hex | null, executed: Hex): "ok" | "reverted" | "reconciled" {
+  if (requested !== null && requested.toLowerCase() !== executed.toLowerCase()) return "reconciled";
+  return outcome === "failed" ? "reverted" : "ok";
+}
+
 /** Decode the immutable journal, never trust operator-entered action metadata. */
 export async function engineJobIdentity(job: EngineJob, abi: Abi, signer: Address) {
   const tx = parseTransaction(job.raw);

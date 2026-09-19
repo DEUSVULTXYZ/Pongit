@@ -326,6 +326,45 @@ contract HumanChaosInterimGasTest is HumanChaosGasBase {
         assertGe(limit,1300);assertLt(limit,1400);
     }
 
+    /// The most expensive grid state measured so far: both balls inside the gravity well (effect
+    /// 16 with effect 21's second ball, which spawns on the first ball's position). Each ball in
+    /// the well is kicked at every grid step, so this costs more per 100 ms than two balls in the
+    /// wind. It sets the worst-case tolerance the relayer guard's timing budget is checked against
+    /// (CHAOS_GAP_TOLERANCE_MS.twoBallWell in shared/engine-gas.ts).
+    function testTwoBallsInTheWellUnderInterimGas() public {
+        T.State memory s=announced(announced(rally(),16),21);s.balls[0].x=400e12;place(s);
+        T.State memory l=live();
+        assertTrue(l.balls[1].alive,"multiball spawned a second ball");
+        assertEq(l.balls[1].x,l.balls[0].x,"on the first ball's position, inside the well");
+        sweep("two balls in the well",400,1200);
+        uint256 before=largestGap(EXACT_BUDGET);uint256 limit=largestGap(INTERIM_BUDGET);
+        emit log_named_uint("two balls in the well, largest gap ms at 15M - intrinsic",before);
+        emit log_named_uint("two balls in the well, largest gap ms at 30M - intrinsic",limit);
+        assertEq(before,540,"release tolerance, below the two-ball wind's 610 ms");
+        assertEq(limit,1030,"interim tolerance, below the two-ball wind's 1,140 ms");
+        (bool ok,)=probe(1100,INTERIM_BUDGET);assertFalse(ok,"1.1 s with both balls in the well freezes");
+    }
+
+    /// The resume risk of the 2026-09-18 recovery: the next epoch's node starts from Monad's
+    /// published state, where the frozen match is still live in its grid state. A node whose block
+    /// counter starts below the published anchor re-anchors on the first command, which then
+    /// simulates nothing. From there the cadence decides: the relayer guard's (about 0.84 s at a
+    /// normal round trip) fits; the release's maintenance loop (1.5 s without progress, checked
+    /// every 2 s) freezes the match again.
+    function testResumedGridMatchNeedsTheGuardCadence() public {
+        withEffect(17);
+        vm.roll(blockAt(1500));vm.cool(address(game));vm.expectRevert();game.tick{gas:INTERIM_BUDGET}(ID);
+        assertEq(gameTime(),T0,"frozen");
+        uint256 fresh=startBlock-50;// the next epoch's node, below the published anchor
+        vm.roll(fresh);vm.cool(address(game));game.tick{gas:INTERIM_BUDGET}(ID);
+        assertEq(gameTime(),T0,"re-anchored at the published clock; nothing simulated");
+        vm.roll(fresh+84);vm.cool(address(game));game.tick{gas:INTERIM_BUDGET}(ID);
+        assertEq(gameTime(),T0+840_000,"a guard tick 840 ms later fits");
+        vm.roll(fresh+84+200);vm.cool(address(game));vm.expectRevert();game.tick{gas:INTERIM_BUDGET}(ID);
+        assertEq(gameTime(),T0+840_000,"a 2 s maintenance-loop gap freezes it again");
+        assertEq(phase(),2);
+    }
+
     /// Past the new tolerance nothing has changed: one revert still freezes the match, and each
     /// retry now executes about twice as much on the shared node as it did at 15M.
     function testFreezeBeyondTheInterimTolerance() public {
