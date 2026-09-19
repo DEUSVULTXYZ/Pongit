@@ -22,7 +22,7 @@ import {Types} from "../vendor/interlude/interfaces/Types.sol";
 // more force-grid time than its gas can pay for. Copied from the investigation branch without its
 // sliced-library candidate: that candidate overrides a hook the deployed class does not mark virtual,
 // and it is the complete fix, which needs a new app. The interim at 30,000,000 gas is measured by
-// HumanChaosInterimGasTest below and recorded in docs/validation/human-chaos-interim-2026-09-18.md.
+// HumanChaosInterimGasTest below and recorded in docs/validation/human-chaos-incident-2026-09-18.md.
 
 interface IChaosFixture {function fixture(uint256 id,T.State memory s) external;}
 
