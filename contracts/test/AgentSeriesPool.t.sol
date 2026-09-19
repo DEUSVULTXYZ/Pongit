@@ -188,4 +188,23 @@ contract AgentSeriesPoolTest is SeriesAgentArenaTest {
         assertTrue(pool.assignedIds(next)[0]>ids[ids.length-1]);vm.roll(block.number+1);pool.openArena(next);
         vm.expectRevert("session already opened/cancelled");pool.cancelUnopened(next);
     }
+    function testCancelledFutureLeagueGamesCannotEraseCompletedControllerLearning() public {
+        // Reach the actual scheduled championship through both preceding cups.
+        for(uint8 cup;cup<2;cup++){
+            uint64 earlier=begin();
+            while(book.tournament(earlier).status!=AgentTournaments.Status.Complete){
+                (address app,uint256[] memory ids)=openGroup(earlier);finishGroup(app,ids);releaseClosed();
+            }
+        }
+        uint64 league=begin();assertTrue(book.tournament(league).league);
+        (address app,uint256[] memory ids)=openGroup(league);
+        address repeated=pool.record(ids[0]).a;assertEq(pool.record(ids[1]).a,repeated);
+        uint256 memoryWord=uint256(123)<<100;
+        vm.chainId(4242);SeriesHarness(app).counters(ids[0],memoryWord,0);SeriesHarness(app).terminal(ids[0],repeated);
+        vm.roll(block.number+84_001);
+        SeriesAgentArena(app).drainSeries(ids[0]);SeriesAgentArena(app).drainSeries(ids[0]);
+        vm.chainId(10143);hub.publish(app);for(uint256 i;i<ids.length;i++)pool.capture(ids[i]);
+        assertEq(pool.learned(league,repeated),memoryWord);
+        assertEq(pool.result(pool.record(ids[1]).ref).status,4);
+    }
 }

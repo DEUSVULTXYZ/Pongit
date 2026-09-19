@@ -30,6 +30,8 @@ Compact observations record actual revealed effects and reset signals, without f
 
 The next common pool emits `SeriesResultRecorded` on Monad for each changed verified capture and finality update. This contains the full arena/epoch/match reference and tournament ID. It needs no separate archive signer or result-submission transaction. Envio accepts only the pinned pool and its explicit arena list from `deployments/agent-series-index.json`, preserving historical rules and the shared three-replay policy. A canceled unstarted fixture consumes no replay place; duplicate capture does not create another archive record. Frame recording and the final live indexer rollout still need qualification. The frozen `8a9d26b` pool does not emit this new event.
 
+Only a completed match updates tournament controller memory. An unstarted canceled league fixture carries memory from before its series; copying it back would erase learning from a completed earlier fixture involving the same bot. A regression test follows the real tournament schedule to a championship and verifies that a budget drain preserves that earlier learning. This follow-up changes the immutable common pool: the `8d5e54b` base-only deployment is not the final candidate and must not be opened as such.
+
 ## Qualification still required
 
 - Real multi-match execution and publication on hosted Interlude, including both modes, event proofs and maximum-duration/overtime releases.

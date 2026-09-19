@@ -188,7 +188,9 @@ contract AgentSeriesPool is ICompetitionAuthority {
             }
         }
         if(qualificationOf[id])qualifications.complete(r,brainA,brainB);
-        learned[entry.tournament][r.a]=brainA;learned[entry.tournament][r.b]=brainB;
+        // An unstarted fixture carries only its pre-series controller memory.
+        // Cancelling it must not roll back learning from an earlier real game.
+        if(r.status==3){learned[entry.tournament][r.a]=brainA;learned[entry.tournament][r.b]=brainB;}
         bool changed=results[id].hash!=r.hash||results[id].finality!=r.finality;
         results[id]=r;emit ResultCaptured(T.key(ref),r.hash,r.finality);
         if(changed)PoolPublication.archive(r,entry.ranked,entry.tournament);
