@@ -9,6 +9,7 @@ import {PhysicsV2} from "../v2/PhysicsV2.sol";
 import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 import {DelegatedLayout} from "../../vendor/interlude/libraries/DelegatedLayout.sol";
+import {PendingControls as Pending} from "./PendingControls.sol";
 
 /// Rules 9: complete contact batches and deterministic draw boundaries on top
 /// of rules 8's bounded recovery. Offers, financial bindings and result hashes
@@ -28,6 +29,7 @@ contract PongChaosEvents is Rooms {
     event ChaosAnnounced(uint256 indexed id,uint32 indexed index,uint256 draw,uint64 gameTime);
     event ChaosCollision(uint256 indexed id,uint256 collision);
     event ChaosPressureApplied(uint256 indexed id,uint32 rally,uint128 paidA,uint128 paidB,bytes32 checkpoint);
+    event ControlQueued(uint256 indexed id,uint8 indexed side,uint256 sequence,uint8 action,uint64 gameTime);
     constructor(IInterludeHub h,address admission,address bridge,address ops,address previous,ChaosEngine module)
         Rooms(h,admission)
     {
@@ -38,14 +40,14 @@ contract PongChaosEvents is Rooms {
     }
     function RULES_VERSION() public pure virtual override returns(uint256){return 9;}
     function controlBinding(address key) public view returns(uint256){return _get(uint160(key),20);}
-    function registerControls(bytes calldata proof) external engine whenNotDelegated(Types.GLOBAL){
+    function registerControls(bytes calldata proof) external virtual engine whenNotDelegated(Types.GLOBAL){
         ChaosGameFlow.registerControls(words,controlVerifier,proof);
     }
-    function revokeControls(address key) external engine whenNotDelegated(Types.GLOBAL){
+    function revokeControls(address key) external virtual engine whenNotDelegated(Types.GLOBAL){
         uint256 binding=controlBinding(key);if(binding==0||msg.sender!=key&&_actor()!=address(uint160(binding)))revert InvalidControls();
         _set(uint160(key),20,uint160(binding));emit ControlsBound(key,uint160(binding));
     }
-    function _playerActor() internal view override returns(address){
+    function _playerActor() internal view virtual override returns(address){
         if(msg.sender==address(this))return super._playerActor();uint256 binding=controlBinding(msg.sender);
         return binding==0?super._playerActor():controlVerifier.actor(binding);
     }
@@ -60,6 +62,29 @@ contract PongChaosEvents is Rooms {
         // The base calls this hook exactly once for a new Chaos proposal.
         _store(id,chaosEngine.initial(s.seed));_set(id,8,5);
     }
+    function pendingControls(uint256 id) external view returns(uint256){return _get(id,0)>>176;}
+    function input(uint256 id,int8 direction,uint256 sequence,uint256 deadlineBlock) external override engine whenNotDelegated(Types.GLOBAL){
+        if(_phase(id)!=2)revert InvalidMatch();uint8 side=_side(id)?0:1;
+        Pending.validate(words,id,side,direction,sequence,deadlineBlock);
+        uint256 target=_clockTarget(id);require(target<=type(uint64).max,"game clock range");
+        bool complete=_advance(id,false);
+        // The accepted sequence is consumed even when this call merely saves a
+        // catch-up slice. A retry cannot execute the same command a second time.
+        Pending.record(words,id,side,uint8(direction+2),sequence,uint64(target));
+        if(complete&&_phase(id)==2)_applyPending(id,_state(id).t);
+        _publish(id);
+    }
+    function concede(uint256 id) external override engine whenNotDelegated(Types.GLOBAL){
+        if(_phase(id)!=2)revert InvalidMatch();uint8 side=_side(id)?0:1;
+        // Repeated concession is idempotent while catch-up is still in progress.
+        uint256 target=_clockTarget(id);require(target<=type(uint64).max,"game clock range");
+        Pending.record(words,id,side,4,0,uint64(target>1_800_000_000?1_800_000_000:target));
+        _advance(id,false);_publish(id);
+    }
+    function _applyPending(uint256 id,uint64 at) private {
+        uint8 concession=Pending.consume(words,id,at);
+        if(concession!=0&&_phase(id)==2)_finish(id,3,address(uint160(_get(id,concession==1?1:0))));
+    }
     function chaosState(uint256 id) external view returns(bytes memory){return ChaosGameFlow.snapshot(words,id);}
     function submitRandomness(uint256 id,uint256 expectedRequest,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){
         // Verify before storing. Permissionless transport cannot select the round,
@@ -73,6 +98,17 @@ contract PongChaosEvents is Rooms {
         _set(id,30,draw);emit RandomnessVerified(id,uint32(expectedRequest>>96),uint64(expectedRequest),random,draw);_publish(id);
     }
     function _advanceState(uint256 id,PhysicsV2.State memory legacy,uint64 target,bool) internal virtual override returns(bool complete){
+        for(uint8 pass;pass<3;pass++){
+            if(_phase(id)!=2)return true;legacy=_state(id);
+            uint64 end=Pending.next(words,id,legacy.t,target);
+            complete=_advancePhysics(id,legacy,end);if(_phase(id)!=2)return true;
+            legacy=_state(id);if(!complete)return false;
+            _applyPending(id,legacy.t);if(_phase(id)!=2||end>=target)return true;
+            if(gasleft()<7_000_000)return false;
+        }
+        return false;
+    }
+    function _advancePhysics(uint256 id,PhysicsV2.State memory legacy,uint64 target) private returns(bool complete){
         if(legacy.mode==0){(legacy,complete)=physicsRules.advance(legacy,target,128);super._save(id,legacy);
             if(legacy.finished)_finish(id,3,legacy.scoreA==7?address(uint160(_get(id,0))):address(uint160(_get(id,1))));return complete;}
         uint8 outcome;uint8 winner;(complete,outcome,winner)=ChaosGameFlow.advance(words,chaosEngine,hub,id,target);
@@ -100,8 +136,8 @@ contract PongChaosEvents is Rooms {
     function _startingRating(address player,uint8 mode) internal view override returns(Rating memory r){
         if(previousGame==address(0))return super._startingRating(player,mode);r=Rooms(previousGame).ratingOf(player,mode);r.season=currentSeason();
     }
-    function closeEngine() external {if(block.chainid!=10143||msg.sender!=operator)revert OperatorOnly();if(activeCount()!=0)revert ArenaBusy();hub.closeDelegation(Types.GLOBAL);}
-    function renewEngine() external payable {
+    function closeEngine() external virtual {if(block.chainid!=10143||msg.sender!=operator)revert OperatorOnly();if(activeCount()!=0)revert ArenaBusy();hub.closeDelegation(Types.GLOBAL);}
+    function renewEngine() external payable virtual {
         if(block.chainid!=10143||msg.sender!=operator)revert OperatorOnly();if(hub.statusOf(address(this),Types.GLOBAL)!=Types.Status.None)revert DelegationPending();
         DelegatedLayout.Layout storage l=DelegatedLayout.layout();hub.openDelegation{value:msg.value}(Types.GLOBAL,l.globalSlots,l.globalMappingBases,address(0),l.owner,l.minStake);
     }

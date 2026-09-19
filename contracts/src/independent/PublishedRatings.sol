@@ -103,7 +103,7 @@ contract PublishedRatings is ILobbyRatings {
         emit ResultPublished(r.id,r.arena,r.epoch,r.hash,entries.length-1);
         if (finality) emit ResultFinal(r.id,r.hash);
     }
-    function _terminal(T.Result calldata r) private pure {
+    function _terminal(T.Result calldata r) internal pure virtual {
         require(r.mode < 2 && r.a != address(0) && r.b != address(0) && r.a != r.b, "participants");
         require((r.status == 3 && (r.winner == r.a || r.winner == r.b)) || (r.status == 4 && r.winner == address(0)), "terminal result");
     }
@@ -134,7 +134,7 @@ contract PublishedRatings is ILobbyRatings {
     function _positive(int256 n) private pure returns (uint32) { return uint32(uint256(n < 100 ? int256(100) : n)); }
     function _apply(uint256 gen, uint256 i) private {
         Entry storage e = entries[i]; T.Result memory r = e.latest;
-        if (!r.ranked || r.status != 3) return;
+        if (!r.ranked || r.status != 3 || r.winner == address(0)) return;
         Rating memory a = _at(gen,r.a,r.mode,e.at); Rating memory b = _at(gen,r.b,r.mode,e.at);
         uint128 before = uint128(a.elo) | (uint128(b.elo)<<32);
         bytes32 pair = keccak256(abi.encode(r.a < r.b ? r.a:r.b,r.a < r.b ? r.b:r.a,uint256(e.at)/1 days,r.mode));

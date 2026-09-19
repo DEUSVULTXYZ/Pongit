@@ -127,6 +127,27 @@ contract ChaosGameFlowGasTest is Test {
         roll(blockAt(gapMs));vm.cool(address(game));
         uint256 before=gasleft();game.tick{gas:gas}(ID);used=before-gasleft();
     }
+    function testCatchUpRetainsLatestInputWithoutRetroactiveMovementOrNonceReuse() public {
+        place(grid(3));roll(blockAt(3000));
+        vm.prank(KA);game.input{gas:COMMAND_GAS}(ID,1,1,engineBlock+100);
+        uint64 first=gameTime();assertGt(first,T0);assertLt(first,T0+3_000_000);
+        (ChaosGameFlow.Header memory h,)=header();assertEq(h.nonceA,1);assertEq(h.state.leftDir,0);assertGt(game.pendingControls(ID),0);
+        vm.prank(KA);game.input{gas:COMMAND_GAS}(ID,-1,2,engineBlock+100);assertGt(gameTime(),first);
+        for(uint8 i;i<40&&gameTime()<T0+3_000_000;i++)game.tick{gas:COMMAND_GAS}(ID);
+        (h,)=header();assertEq(gameTime(),T0+3_000_000);assertEq(h.nonceA,2);assertEq(h.state.leftDir,-1);
+        assertEq(h.state.left,288e6,"neither superseded direction was backdated");assertEq(game.pendingControls(ID),0);
+        vm.expectRevert(Rooms.StaleInput.selector);vm.prank(KA);game.input(ID,1,2,engineBlock+100);
+        roll(engineBlock+1);game.tick{gas:COMMAND_GAS}(ID);(h,)=header();assertLt(h.state.left,288e6);
+    }
+    function testConcessionSurvivesIncompleteCatchUpAndRetry() public {
+        place(grid(3));roll(blockAt(3000));vm.prank(KA);game.concede{gas:COMMAND_GAS}(ID);
+        uint64 first=gameTime();assertGt(first,T0);assertEq(phase(),2);assertGt(game.pendingControls(ID),0);
+        vm.expectRevert("pending concession");vm.prank(KA);game.input(ID,1,1,engineBlock+100);
+        vm.prank(KA);game.concede{gas:COMMAND_GAS}(ID);assertGt(gameTime(),first);
+        for(uint8 i;i<40&&phase()==2;i++)game.tick{gas:COMMAND_GAS}(ID);
+        (ChaosGameFlow.Header memory h,)=header();assertEq(h.phase,3);assertEq(h.winner,vm.addr(B));assertEq(gameTime(),T0+3_000_000);
+        assertEq(game.ratingOf(vm.addr(B),1).wins,1);
+    }
 
     /// The freeze: rules 6 reverted any grid gap above ~0.73 s at 14.8M (0.60 s with two balls
     /// in the wind), and every later command needed more. Now no gap reverts: a command processes
@@ -346,17 +367,17 @@ contract ChaosGameFlowGasTest is Test {
         for(uint256 k;k<stalls.length;k++){
             uint256 snap=vm.snapshotState();
             place(grid(0));
-            uint256 gap=stalls[k];uint256 ticks;
+            uint256 gap=stalls[k];uint256 ticks;uint256 sequence;
             while(true){
                 tickAt(gap,COMMAND_GAS);ticks++;
                 if(gameTime()==T0+gap*1000||phase()!=2)break;
-                // An input needs the clock caught up; it reverts, recoverably, meanwhile.
-                if(ticks==1){vm.cool(address(game));vm.prank(KB);vm.expectRevert(Rooms.CatchUpRequired.selector);game.input{gas:COMMAND_GAS}(ID,1,1,engineBlock+10);}
+                // Input saves progress and remembers its arrival time while catch-up continues.
+                if(ticks==1){vm.cool(address(game));vm.prank(KB);game.input{gas:COMMAND_GAS}(ID,1,++sequence,engineBlock+10);}
                 gap+=450;require(ticks<200,"no catch-up");
             }
             emit log_named_uint(string.concat("stall ms ",vm.toString(stalls[k]),": commands to catch up"),ticks);
             emit log_named_uint("    engine ms behind before catching up",gap);
-            roll(engineBlock+1);vm.prank(KB);game.input{gas:COMMAND_GAS}(ID,1,1,engineBlock+10);
+            roll(engineBlock+1);vm.prank(KB);game.input{gas:COMMAND_GAS}(ID,1,++sequence,engineBlock+10);
             vm.revertToState(snap);
         }
     }

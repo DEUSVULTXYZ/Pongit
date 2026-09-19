@@ -36,7 +36,7 @@ library AgentSteer {
     bytes32 internal constant PULSE = 0xe2fe7a5c52d5a1364cd893cde1191c36cd3e34c41ce55e0316950b9ba9be49df;
     bytes32 internal constant ONYX = 0xab988c929327e00ef2ffef823a9578430c6237e0f21da503f90f62fd0b7d3a8f;
 
-    function _key(uint256 id, uint256 field) private view returns (bytes32) {
+    function _key(uint256 id, uint256 field) internal view returns (bytes32) {
         return keccak256(abi.encode(address(this), uint256(0), id, field));
     }
 
@@ -67,7 +67,7 @@ library AgentSteer {
 
     /// @dev What a strategy sees from its seat, in the arcade's own units.
     function _view(mapping(bytes32 => uint256) storage w, uint256 id, uint8 mode, uint8 side)
-        private
+        internal
         view
         returns (IPongStrategy.PongView memory v)
     {
@@ -99,7 +99,7 @@ library AgentSteer {
 
     /// @dev One bounded question. STATICCALL, a fixed gas budget, and a fixed 32-byte read, so a
     ///      strategy can neither write, nor run the tick out of gas, nor flood it with return data.
-    function _ask(address strategy, IPongStrategy.PongView memory v, int8 held) private view returns (int8) {
+    function _ask(address strategy, IPongStrategy.PongView memory v, int8 held) internal view returns (int8) {
         bytes memory data = abi.encodeCall(IPongStrategy.decide, (v));
         uint256 budget = STRATEGY_GAS;
         bool ok;
@@ -118,7 +118,7 @@ library AgentSteer {
 
     /// @dev Scales an over-fast ball back to MAX_SPEED, keeping its direction. Only velocity bits
     ///      0-159 of the ball's second word change; gravity use and trail revision are kept.
-    function _capSpeed(mapping(bytes32 => uint256) storage w, uint256 id) private {
+    function _capSpeed(mapping(bytes32 => uint256) storage w, uint256 id) internal {
         for (uint256 i; i < 2; i++) {
             if (w[_key(id, 21 + i * 2)] & (uint256(1) << 195) == 0) continue;
             bytes32 k = _key(id, 22 + i * 2);
@@ -138,7 +138,7 @@ library AgentSteer {
     /// @dev The same rule for Classic, whose velocity keeps a full signed word each in fields 5
     ///      and 6. In Classic a long rally only crawls rather than freezes, since 128 events bound
     ///      a call, but one rule for both modes is what makes the arcade's play predictable.
-    function _capLegacySpeed(mapping(bytes32 => uint256) storage w, uint256 id) private {
+    function _capLegacySpeed(mapping(bytes32 => uint256) storage w, uint256 id) internal {
         bytes32 kx = _key(id, 5);
         bytes32 ky = _key(id, 6);
         int256 vx = int256(w[kx]);
@@ -203,7 +203,7 @@ library AgentSteer {
     }
 
     function _legacy(mapping(bytes32 => uint256) storage w, uint256 id, uint8 side)
-        private
+        internal
         view
         returns (Seat memory s)
     {
@@ -227,7 +227,7 @@ library AgentSteer {
     ///      policy needs is cheaper and safer than projecting through codec.legacy, which collapses
     ///      to a single ball and would make the bot blind to MULTIBALL.
     function _chaos(mapping(bytes32 => uint256) storage w, uint256 id, uint8 side)
-        private
+        internal
         view
         returns (Seat memory s)
     {

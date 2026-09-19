@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
+import {RoomsState} from "./RoomsState.sol";
 import {RoomsRules} from "./RoomsRules.sol";
 import {EloFormulaV2} from "../v2/EloFormulaV2.sol";
 import {Session} from "../../vendor/interlude/libraries/Session.sol";
@@ -197,7 +198,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         _publish(o.id);
     }
 
-    function cancelMatch(uint256 id) external engine whenNotDelegated(Types.GLOBAL) {
+    function cancelMatch(uint256 id) external virtual engine whenNotDelegated(Types.GLOBAL) {
         if (_phase(id) != 1) revert InvalidMatch();
         if (block.timestamp <= uint64(_get(id, 2) >> 64)) _side(id);
         _finish(id, 4, address(0));
@@ -206,6 +207,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
 
     function input(uint256 id, int8 direction, uint256 sequence, uint256 deadlineBlock)
         external
+        virtual
         engine
         whenNotDelegated(Types.GLOBAL)
     {
@@ -234,7 +236,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         _publish(id);
     }
 
-    function concede(uint256 id) external engine whenNotDelegated(Types.GLOBAL) {
+    function concede(uint256 id) external virtual engine whenNotDelegated(Types.GLOBAL) {
         if (_phase(id) != 2) revert InvalidMatch();
         bool left = _side(id);
         if (!_advance(id, false)) revert CatchUpRequired();
@@ -242,7 +244,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         _publish(id);
     }
 
-    function _side(uint256 id) private view returns (bool) {
+    function _side(uint256 id) internal view returns (bool) {
         address actor = _playerActor();
         if (actor == address(uint160(_get(id, 0)))) return true;
         if (actor != address(uint160(_get(id, 1)))) revert NotPlayer();
@@ -254,13 +256,13 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
     /// A separate application can restrict admission without changing signed tickets.
     function _validateOffer(Offer calldata) internal view virtual {}
 
-    function _limitTarget(uint256 target) internal pure virtual returns (uint256) { return target; }
+    function _limitTarget(uint256 target) internal view virtual returns (uint256) { return target; }
 
-    function _advance(uint256 id, bool mayResume) internal returns (bool complete) {
+    function _clockTarget(uint256 id) internal returns (uint256 target) {
         uint256 times = _get(id, 2);
         uint256 start = uint64(times);
         PhysicsV2.State memory s = _state(id);
-        uint256 target = uint64(times >> 192);
+        target = uint64(times >> 192);
         if (block.number >= start) target += (block.number - start) * TICK_US;
         if (block.number < start || target < s.t) {
             // A hosted process may restart its block counter while retaining the
@@ -274,12 +276,16 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
             _set(id, 2, times);
             target = s.t;
         }
-        target = _limitTarget(target);
+        return _limitTarget(target);
+    }
+
+    function _advance(uint256 id, bool mayResume) internal returns (bool complete) {
+        uint256 target = _clockTarget(id);
         if (target > 30 minutes * 1_000_000) {
             _finish(id, 4, address(0));
             return true;
         }
-        return _advanceState(id, s, uint64(target), mayResume);
+        return _advanceState(id, _state(id), uint64(target), mayResume);
     }
 
     function _advanceState(uint256 id, PhysicsV2.State memory s, uint64 target, bool mayResume)
@@ -312,59 +318,14 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
         if (s.finished) _finish(id, 3, s.scoreA == 7 ? address(uint160(_get(id, 0))) : address(uint160(_get(id, 1))));
     }
 
-    function _state(uint256 id) internal view virtual returns (PhysicsV2.State memory s) {
-        uint256 xy = _get(id, 4);
-        uint256 p = _get(id, 7);
-        uint256 c = _get(id, 8);
-        uint256 chaos = _get(id, 13);
-        s.x = int128(uint128(xy));
-        s.y = int128(uint128(xy >> 128));
-        s.vx = int256(_get(id, 5));
-        s.vy = int256(_get(id, 6));
-        s.left = int256(uint256(uint64(p)));
-        s.right = int256(uint256(uint64(p >> 64)));
-        s.leftDir = int8(uint8(c & 3)) - 1;
-        s.rightDir = int8(uint8((c >> 2) & 3)) - 1;
-        s.t = uint64(p >> 128);
-        s.scoreA = uint8((c >> 4) & 15);
-        s.scoreB = uint8((c >> 8) & 15);
-        s.seed = bytes32(_get(id, 3));
-        s.finished = _phase(id) >= 3;
-        s.mode = matchMode(id);
-        s.halfA = int256(uint256(uint32(chaos)));
-        s.halfB = int256(uint256(uint32(chaos >> 32)));
-        s.awaitingServe = ((chaos >> 128) & 1) == 1;
-        s.resumeAt = uint64(chaos >> 64);
-    }
-
-    function _save(uint256 id, PhysicsV2.State memory s) internal virtual {
-        _set(
-            id,
-            13,
-            uint32(uint256(s.halfA)) | (uint256(uint32(uint256(s.halfB))) << 32) | (uint256(s.resumeAt) << 64)
-                | (s.awaitingServe ? uint256(1) << 128 : 0)
-        );
-        // Positions stay within the court; velocity retains all 256 bits (no speed cap).
-        require(
-            s.x >= type(int128).min && s.x <= type(int128).max && s.y >= type(int128).min && s.y <= type(int128).max
-        );
-        _set(id, 4, uint128(int128(s.x)) | (uint256(uint128(int128(s.y))) << 128));
-        _set(id, 5, uint256(s.vx));
-        _set(id, 6, uint256(s.vy));
-        _set(id, 7, uint64(uint256(s.left)) | (uint256(uint64(uint256(s.right))) << 64) | (uint256(s.t) << 128));
-        _set(
-            id,
-            8,
-            (_get(id, 8) & ~uint256(65535)) | uint8(s.leftDir + 1) | (uint256(uint8(s.rightDir + 1)) << 2)
-                | (uint256(s.scoreA) << 4) | (uint256(s.scoreB) << 8)
-        );
-    }
+    function _state(uint256 id) internal view virtual returns(PhysicsV2.State memory){return RoomsState.state(words,id);}
+    function _save(uint256 id,PhysicsV2.State memory state_) internal virtual {RoomsState.save(words,id,state_);}
 
     function currentSeason() public view returns (uint32) {
         return uint32(1 + (block.timestamp - genesisTime) / 30 days);
     }
 
-    function ratingOf(address player, uint8 mode) public view returns (Rating memory r) {
+    function ratingOf(address player, uint8 mode) public view virtual returns (Rating memory r) {
         require(mode <= 1, "mode");
         uint256 packed = words[_key(2, uint160(player), mode)];
         if (packed == 0) return _startingRating(player, mode);
@@ -472,12 +433,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
 
     function _resultHash(uint256, bytes32 hash) internal view virtual returns (bytes32) { return hash; }
 
-    function _publish(uint256 id) internal virtual {
-        require(uint64(_get(id, 2) >> 128) < type(uint64).max, "revision overflow");
-        uint256 times = _get(id, 2) + (uint256(1) << 128);
-        _set(id, 2, times);
-        emit Snapshot(id, uint64(times >> 128), _phase(id), abi.encode(_state(id)));
-    }
+    function _publish(uint256 id) internal virtual {RoomsState.publish(words,id,_state(id));}
 
     function ratingChange(uint256 id)
         external
@@ -519,37 +475,7 @@ abstract contract PongInterludeRoomsChaos is PongInterludeRoomsChaosInterludeSur
             PhysicsV2.State memory
         )
     {
-        uint256 m = _get(id, 0);
-        uint256 t = _get(id, 2);
-        uint256 c = _get(id, 8);
-        uint256 phase = _phase(id);
-        PhysicsV2.State memory s = _state(id);
-        address a = address(uint160(m));
-        address b = address(uint160(_get(id, 1)));
-        uint256 w = (m >> 166) & 3;
-        // A recovering node can serve persisted storage with an older read head.
-        // Keep that state readable without inventing a later block number. The
-        // next write reanchors the game clock if the process reset its counter.
-        // Base-chain reads always expose published game time.
-        uint256 clock = s.t;
-        if (phase == 2 && isEphemeral() && block.number >= uint64(t)) {
-            uint256 elapsed = uint64(t >> 192) + (block.number - uint64(t)) * TICK_US;
-            if (elapsed > clock) clock = elapsed;
-        }
-        return (
-            id,
-            uint64(t >> 128),
-            phase,
-            a,
-            b,
-            b,
-            w == 1 ? a : w == 2 ? b : address(0),
-            block.number,
-            clock,
-            uint64(c >> 16),
-            uint64(c >> 80),
-            uint64(t >> 64),
-            s
-        );
+        bytes memory encoded=RoomsState.snapshot(words,id,isEphemeral(),_state(id));
+        assembly("memory-safe"){return(add(encoded,32),mload(encoded))}
     }
 }
