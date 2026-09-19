@@ -19,6 +19,7 @@ contract CompetitionAuthorityMock is ICompetitionAuthority {
     function put(T.Result calldata value) external {results[T.key(value.ref)]=value;}
     function bind(AgentTournaments book,uint64 id,uint8 index,T.Ref calldata ref) external {book.bind(id,index,ref);}
     function unlock(AgentCatalog registry,address agent,bytes32 token) external {registry.release(agent,token);}
+    function qualify(AgentCatalog registry,address agent,uint8 mode) external {registry.qualify(agent,mode,true,bytes32(uint256(9)));}
 }
 contract StrategyCodeHarness {function verify(address strategy) external view returns(bytes32){return StrategyCode.verify(strategy);}}
 
@@ -28,6 +29,7 @@ contract AgentTournamentsTest is Test {
     function setUp() public {
         vm.chainId(10143);vm.warp(clock);catalog=new AgentCatalog(address(this),address(this),address(new HousePolicies()));source=new CompetitionAuthorityMock();
         book=new AgentTournaments(catalog,source,address(this));catalog.configure(address(book),address(source));
+        vm.prank(address(source));catalog.bindQualifications(address(source));
         for(uint8 i;i<8;i++){
             address bot=address(uint160(0x1000+i));catalog.addHouse(bot,bytes32(uint256(i+1)),i);
             catalog.qualify(bot,0,true,bytes32(uint256(1)));catalog.qualify(bot,1,true,bytes32(uint256(1)));
@@ -49,7 +51,7 @@ contract AgentTournamentsTest is Test {
         address creator=vm.addr(key);code(agent,creator);
         AgentCatalog.Registration memory r=AgentCatalog.Registration(agent,creator,bytes32(uint256(uint160(agent))),3,uint64(clock+300),0);
         (uint8 v,bytes32 rr,bytes32 s)=vm.sign(key,catalog.digest(r));catalog.register(r,abi.encodePacked(rr,s,v));
-        catalog.qualify(agent,0,true,bytes32(uint256(9)));catalog.qualify(agent,1,true,bytes32(uint256(9)));
+        source.qualify(catalog,agent,0);source.qualify(catalog,agent,1);
         vm.prank(creator);catalog.setAvailable(agent,true);
     }
     function testFourFormatsCompleteWithContractScheduleAndOneMinuteGap() public {

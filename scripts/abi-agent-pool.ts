@@ -1,5 +1,5 @@
 import {readFile,writeFile} from 'node:fs/promises';
-const names=['AgentCatalog','AgentArenaPool','AgentTournaments','AgentChallenges','AgentPublishedRatings','PooledAgentArena','HousePolicies'] as const;
+const names=['AgentCatalog','AgentArenaPool','AgentTournaments','AgentChallenges','AgentQualifications','AgentPublishedRatings','PooledAgentArena','HousePolicies'] as const;
 for(const name of names){
  const artifact=JSON.parse(await readFile(`contracts/out/${name}.sol/${name}.json`,'utf8'));
  const abi=[...artifact.abi],errors=new Set(abi.filter((item:any)=>item.type==='error').map((item:any)=>item.name));

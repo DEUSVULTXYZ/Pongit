@@ -49,3 +49,15 @@ The hub terms read at 2026-09-19 15:23:39 UTC reported maxDelegations 32, a one-
 
 No public manifest has been switched and no deployment result is claimed by this document.
 
+## Automatic strategy qualification and shared capacity
+
+The catalogue now seals eight identities without pretending they are already qualified. A separate contract selects per-mode friendly trials. It reads published controller decision counters, requires valid responses without invalid ones, and never requires winning. An engine cancellation schedules a retry. Corrections restore the prior qualification and cannot overwrite a newer trial's evidence. After catalogue sealing the operator can revoke qualification but cannot award it in place of that published trial.
+
+The updated full contract run passed **509 tests, with 5 explicitly skipped environment-dependent checks**. The full TypeScript run passed **383 tests**. A further 81 targeted agent tests passed after restricting the operator's qualification authority. These remain local evidence. The immutable pool's dispatch code was split into `PoolPublication` and checked against EIP-170 rather than raising the limit.
+
+The official hub creation bytecode was tested separately, then the same capacity behavior was reproduced on a read-only fork of the **deployed hub at block 63928276**, code hash `0x9380248d1c5debacf028290ca54271acd79f68eedfd91dbc9e605ec19937d8da`. An Exiting delegation still consumes a validator slot until release. No transaction was sent by this fork test. The validator advertises **32 total slots**, shared across its users. This is not a dedicated allocation to PONGIT.
+
+At 16:20:50 UTC the hub still reported a 3,600-second challenge period and a 150 M block gas limit. At least three old, expired PONGIT test delegations remain active in the inventoried addresses; they have not been closed blindly. Reserved stake does not establish the number of available slots. The final arena count and service availability must be qualified against actual admissions and observed full-game/closure durations.
+
+The example strategy compiled without CBOR metadata and passed the runtime opcode verifier (two tests in the separate `strategies` Foundry profile). Version-2 read-only API, signed-intent SDK helpers and a disabled tournament UI are in progress. They are not a public launch. The web build passed with webpack; local Turbopack refused the workspace's external `node_modules` symlink, which is a build-environment limitation, not a passing Turbopack check.
+

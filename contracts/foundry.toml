@@ -15,3 +15,11 @@ runs = 1000
 [profile.default.invariant]
 runs = 128
 depth = 128
+
+# Community strategies are pure, immutable runtimes. No metadata suffix is
+# exempted from the on-chain opcode verifier, so build them without CBOR.
+[profile.strategies]
+out = "out-strategies"
+cache_path = "cache-strategies"
+bytecode_hash = "none"
+cbor_metadata = false

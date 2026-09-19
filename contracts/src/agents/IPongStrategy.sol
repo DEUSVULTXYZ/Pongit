@@ -11,10 +11,13 @@ pragma solidity ^0.8.30;
 ///      Deploy it on Monad Testnet, then register it through the arcade's service with your creator
 ///      key. Each epoch runs against Monad state pinned when it opened, so only a strategy that
 ///      existed at that block can be registered, and it is then queued for qualification at once.
-///      Registering a strategy deployed after the epoch opened is too early: it is refused
+///      On the legacy service, registering after the epoch opened is too early: it is refused
 ///      (AGENT_STRATEGY_NEXT_EPOCH) and nothing is recorded, so it never becomes playable by
 ///      itself. Send the same registration again after the arcade's next renewal; run again,
 ///      `agent-sdk/strategy.ts` does that for the same contract, without deploying another.
+///      The independent pool registers strategies on Monad before opening their arena.
+///      Its StrategyCode check disallows storage, external calls and block-dependent inputs.
+///      Build its immutable example with FOUNDRY_PROFILE=strategies, without CBOR metadata.
 interface IPongStrategy {
     /// A live ball. Positions are in pico-pixels (1e12 per pixel), velocities in micro-pixels per
     /// second (1e6 per pixel/s). The table is 1024 x 576 pixels, y grows downwards.
@@ -32,7 +35,9 @@ interface IPongStrategy {
     /// SIZE SWAP exchanges the two sides' base sizes, and SPLIT PADDLE opens a 16 px gap at its
     /// centre that cannot return the ball while reaching 8 px further out. Keep a margin rather
     /// than aim with the paddle's edge. Reporting the effective size changes the arcade contract,
-    /// so it is deferred to the arcade's next redeployment.
+    /// so historical single-application deployments retain that behavior. Pooled rules 10
+    /// report effective half-height including size effects. SPLIT PADDLE's central gap
+    /// still has no collision. The ABI remains identical across these versions.
     struct PongView {
         uint8 mode; // 0 Classic, 1 Chaos
         uint8 side; // 0 left, 1 right

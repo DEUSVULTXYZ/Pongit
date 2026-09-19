@@ -19,6 +19,9 @@ contract AgentChallenges is EIP712 {
     mapping(uint256=>Request) public requests;
     mapping(address=>uint256) public pending;
     mapping(bytes32=>uint256) public nonces;
+    uint256 private scanRevision;
+    uint256 private scannedCount;
+    uint256 private scanCount;
     bytes32 private constant COMMAND=keccak256("AgentChallenge(bytes32 grant,uint8 action,address agent,uint8 mode,uint256 id,uint256 nonce,uint64 deadline)");
     event ChallengeChanged(uint256 indexed id,address indexed player,address indexed agent,uint8 status);
     constructor(ArcadeFamily f,AgentCatalog c,address p,address admin) EIP712("PONGIT Agent Challenges","1"){
@@ -56,15 +59,21 @@ contract AgentChallenges is EIP712 {
     }
     function takeNext() external returns(uint256 id,Request memory request,ArcadeFamily.Grant memory grant){
         require(block.chainid==10143&&msg.sender==pool,"pool only");
+        if(scanRevision!=catalog.revision()||scanCount!=count){scanRevision=catalog.revision();scanCount=count;scannedCount=0;}
         if(count==0)return(0,request,grant);
         // Cursor is resumable: a long list of busy tournament participants must
         // not permanently hide a playable challenge further down the queue.
         for(uint256 scanned;scanned<32&&scanned<count;scanned++){
             id=cursor;cursor=cursor==count?1:cursor+1;Request storage r=requests[id];
+            if(scannedCount<count)scannedCount++;
             if(r.status!=1||!_valid(r)||!catalog.eligible(r.agent,r.mode))continue;
+            scannedCount=0;
             r.status=2;emit ChallengeChanged(id,r.player,r.agent,2);return(id,r,family.grantOf(r.player));
         }
         return(0,request,grant);
+    }
+    function qualificationsMayStart() external view returns(bool){
+        return count==0||scanRevision==catalog.revision()&&scanCount==count&&scannedCount>=count;
     }
     function completed(uint256 id) external {
         require(block.chainid==10143&&msg.sender==pool&&requests[id].status==2,"active challenge/pool only");

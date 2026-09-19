@@ -4,6 +4,8 @@ web/.next/
 web/next-env.d.ts
 contracts/out/
 contracts/cache/
+contracts/out-strategies/
+contracts/cache-strategies/
 contracts/lib/
 contracts/broadcast/
 indexer/generated/

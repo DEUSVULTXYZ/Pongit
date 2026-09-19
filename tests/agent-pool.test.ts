@@ -2,7 +2,7 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import {validateAgentPoolManifest,pooledHouseBots,scheduledTournament,type AgentPoolManifest} from '../shared/agent-pool';
 import {type Address} from 'viem';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
-function manifest():AgentPoolManifest{return{version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),family:addr(7),
+function manifest():AgentPoolManifest{return{version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};}
 test('public pool is gated by evidence and remains separate from human apps',()=>{
  const m=manifest();validateAgentPoolManifest(m);assert.throws(()=>validateAgentPoolManifest({...m,enabled:true}),/qualification/);
@@ -11,6 +11,9 @@ test('public pool is gated by evidence and remains separate from human apps',()=
  assert.throws(()=>validateAgentPoolManifest({...m,tournamentsEnabled:true}),/closed/);
  assert.throws(()=>validateAgentPoolManifest({...m,arenas:m.arenas.map(a=>({...a,node:'https://user:secret@example.org'}))}),/credential/);
  validateAgentPoolManifest({...m,enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:`0x${'b'.repeat(64)}`});
+ const contaminated={...m,operatorKey:'private fixture',arenas:m.arenas.map(a=>({...a,rawTransaction:'private fixture'}))};
+ const safe=validateAgentPoolManifest(contaminated);assert.equal(JSON.stringify(safe).includes('private fixture'),false);
+ assert.throws(()=>validateAgentPoolManifest({...m,enabled:'false'} as unknown as AgentPoolManifest),/boolean/);
 });
 test('the displayed automatic cycle exactly matches the contract schedule',()=>{
  assert.deepEqual([1n,2n,3n,4n,5n].map(scheduledTournament),[

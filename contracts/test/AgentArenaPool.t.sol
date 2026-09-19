@@ -6,6 +6,7 @@ import {AgentCatalog} from "../src/agents/competition/AgentCatalog.sol";
 import {AgentTournaments} from "../src/agents/competition/AgentTournaments.sol";
 import {AgentPublishedRatings} from "../src/agents/competition/AgentPublishedRatings.sol";
 import {AgentChallenges} from "../src/agents/competition/AgentChallenges.sol";
+import {AgentQualifications} from "../src/agents/competition/AgentQualifications.sol";
 import {AgentArenaPool} from "../src/agents/competition/AgentArenaPool.sol";
 import {AgentArenaTypes as A,IAgentArena} from "../src/agents/competition/AgentArenaTypes.sol";
 import {CompetitionTypes as T,ICompetitionAuthority} from "../src/agents/competition/CompetitionTypes.sol";
@@ -54,6 +55,7 @@ contract AgentArenaPoolTest is Test {
         book=new AgentTournaments(catalog,ICompetitionAuthority(address(pool)),address(this));ratings=new AgentPublishedRatings(address(pool),address(this),block.timestamp);
         ratings.sealMigration(keccak256("new empty agent season"));pool.configure(book,ratings);
         queue=new AgentChallenges(family,catalog,address(pool),address(this));pool.bindChallenges(queue);catalog.configure(address(book),address(pool));
+        pool.bindQualifications(new AgentQualifications(catalog,address(pool)));
         ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,new ChaosModifiers());
         ChaosPhysics physics=new ChaosPhysics(effects,new ChaosRally(),dynamics,new ChaosContacts(dynamics));
         kernel=new ChaosEngine(new ChaosCodec(),physics,new DrandEvmnet(),new ChaosDrawRules());
@@ -77,7 +79,10 @@ contract AgentArenaPoolTest is Test {
     function community() private {
         address creator=vm.addr(789);address agent=address(0x2000);vm.etch(agent,abi.encodePacked(hex"73",creator,hex"60005260206000f3"));
         AgentCatalog.Registration memory r=AgentCatalog.Registration(agent,creator,bytes32(uint256(999)),3,uint64(block.timestamp+120),0);
-        catalog.register(r,sig(789,catalog.digest(r)));catalog.qualify(agent,0,true,bytes32(uint256(1)));catalog.qualify(agent,1,true,bytes32(uint256(1)));
+        catalog.register(r,sig(789,catalog.digest(r)));
+        // Fixture registration is not a real qualification claim.
+        vm.prank(address(pool.qualifications()));catalog.qualify(agent,0,true,bytes32(uint256(1)));
+        vm.prank(address(pool.qualifications()));catalog.qualify(agent,1,true,bytes32(uint256(1)));
         vm.prank(creator);catalog.setAvailable(agent,true);
     }
     function tournament() private returns(uint64 id){id=book.begin();book.select(id,32);}
@@ -165,6 +170,7 @@ contract AgentArenaPoolTest is Test {
         uint64 id=tournament();assertEq(pool.capacityEvidence(),0);assertFalse(pool.publicAdmissions());
         vm.expectRevert("private qualification");vm.prank(address(0x999));pool.admitTournament(id);
         vm.expectRevert("qualification required");pool.setPublicAdmissions(true);
+        vm.expectRevert("published qualification required");catalog.qualify(address(0x1000),0,true,bytes32(uint256(123)));
     }
     function testUnopenedFailureCanBeCancelledWithoutInventingAnEpochOrConsumingNonce() public {
         uint64 id=tournament();T.Ref memory ref=pool.admitTournament(id);pool.cancelUnopened(ref);
@@ -172,5 +178,34 @@ contract AgentArenaPoolTest is Test {
         book.synchronize(id,0);book.retryCancelled(id,0);T.Ref memory next=pool.admitTournament(id);
         assertEq(next.epoch,1);assertEq(next.arena,ref.arena);assertTrue(next.id!=ref.id);open(next);
         vm.expectRevert("session already opened");pool.cancelUnopened(next);
+    }
+    function runPolicies(T.Ref memory ref) private {
+        vm.chainId(4242);vm.roll(block.number+100);
+        for(uint8 i;i<3;i++)PooledAgentArena(ref.arena).tick{gas:14_800_000}(ref.id);
+        vm.chainId(10143);
+    }
+    function testHouseQualifiesFromPublishedValidDecisionsRegardlessOfWinner() public {
+        catalog.qualify(address(0x1000),0,false,bytes32(uint256(2)));
+        T.Ref memory ref=pool.admitQualification();A.Binding memory b=PooledAgentArena(ref.arena).boundMatch();assertEq(b.a,address(0x1000));
+        assertFalse(b.ranked);assertEq(pool.laneMatch(1),T.key(ref));open(ref);runPolicies(ref);
+        finish(ref,b.b);assertEq(catalog.identity(b.a).qualified,3);assertEq(catalog.participation(b.a),0);assertEq(catalog.participation(b.b),0);
+        assertEq(ratings.ratingOf(b.a,0).played,0,"qualification is friendly");
+    }
+    function testInvalidControllerFallsBackSafelyButDoesNotQualify() public {
+        community();catalog.qualify(address(0x2000),0,false,bytes32(uint256(2)));
+        T.Ref memory ref=pool.admitQualification();A.Binding memory b=PooledAgentArena(ref.arena).boundMatch();assertEq(b.a,address(0x2000));
+        open(ref);runPolicies(ref);finish(ref,b.b);assertEq(catalog.identity(b.a).qualified,2);
+        assertEq(pool.qualifications().retryAt(b.a,0),block.timestamp+15 minutes);
+        (,,uint256 brainB)=PooledAgentArena(ref.arena).publishedResult();assertGe(uint32(brainB>>192),3);assertEq(uint32(brainB>>224),0);
+    }
+    function testQualificationCannotOvertakeWaitingHumanAndCancellationIsRetry() public {
+        catalog.qualify(address(0x1001),0,false,bytes32(uint256(2)));challenge(address(0x1000),0);
+        vm.expectRevert("challenge priority/qualification waiting");pool.admitQualification();
+        T.Ref memory human=pool.admitChallenge();pool.cancelUnopened(human);
+        // Complete a priority scan after the queue/availability changed.
+        assertEq(pool.admitChallenge().id,0);T.Ref memory trial=pool.admitQualification();
+        assertTrue(trial.id!=0);A.Binding memory b=PooledAgentArena(trial.arena).boundMatch();pool.cancelUnopened(trial);
+        assertEq(catalog.identity(b.a).qualified,2);assertEq(catalog.identity(b.b).qualified,3);
+        assertEq(pool.qualifications().retryAt(b.a,0),block.timestamp+60);assertEq(catalog.participation(b.a),0);
     }
 }

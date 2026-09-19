@@ -25,11 +25,13 @@ contract AgentCatalog is EIP712 {
     bytes32 public immutable houseCodeHash;
     address public competition;
     address public arenaPool;
+    address public qualificationQueue;
     bool public setupSealed;
     uint256 public revision;
     mapping(address=>uint256) public nonces;
     mapping(address=>Identity) private identities;
     mapping(address=>bytes32) public participation;
+    mapping(address=>mapping(uint8=>bytes32)) public qualificationEvidence;
     mapping(address=>address) private reservingController;
     address[8] public house;
     address[] private strategies;
@@ -57,8 +59,11 @@ contract AgentCatalog is EIP712 {
     }
     function seal() external base {
         require(msg.sender==owner&&!setupSealed&&competition!=address(0),"setup only");
-        for(uint8 i;i<8;i++)require(house[i]!=address(0)&&identities[house[i]].qualified==3,"eight qualified house bots required");
+        for(uint8 i;i<8;i++)require(house[i]!=address(0),"eight house identities required");
         setupSealed=true;
+    }
+    function bindQualifications(address queue) external base {
+        require(msg.sender==arenaPool&&qualificationQueue==address(0)&&queue.code.length>0,"pool qualification binding");qualificationQueue=queue;
     }
     function digest(Registration calldata r) public view returns(bytes32){
         return _hashTypedDataV4(keccak256(abi.encode(REGISTER,r.strategy,r.creator,r.metadata,r.modes,r.deadline,r.nonce)));
@@ -79,9 +84,10 @@ contract AgentCatalog is EIP712 {
     }
     function qualify(address strategy,uint8 mode,bool passed,bytes32 evidence) external base {
         Identity storage p=identities[strategy];
-        require(msg.sender==qualifier&&mode<2&&p.creator!=address(0)&&p.modes&(1<<mode)!=0&&evidence!=0,"qualification");
+        require((msg.sender==qualifier||msg.sender==qualificationQueue)&&mode<2&&p.creator!=address(0)&&p.modes&(1<<mode)!=0&&evidence!=0,"qualification");
+        require(!passed||!setupSealed||msg.sender==qualificationQueue,"published qualification required");
         require((p.house==0?strategy:houseController).codehash==p.codeHash,"controller changed");
-        p.qualified=passed?p.qualified|uint8(1<<mode):p.qualified&~uint8(1<<mode);revision++;
+        p.qualified=passed?p.qualified|uint8(1<<mode):p.qualified&~uint8(1<<mode);qualificationEvidence[strategy][mode]=evidence;revision++;
         emit Qualified(strategy,mode,passed,evidence);
     }
     function setAvailable(address strategy,bool value) external base {
@@ -97,6 +103,15 @@ contract AgentCatalog is EIP712 {
     }
     function reserve(address strategy,uint8 mode,bytes32 token) external base controller {
         require(setupSealed&&token!=0&&eligible(strategy,mode),"agent unavailable");
+        participation[strategy]=token;reservingController[strategy]=msg.sender;revision++;emit Reserved(strategy,token);
+    }
+    function qualificationEligible(address strategy,uint8 mode) public view returns(bool){
+        Identity storage p=identities[strategy];
+        return mode<2&&p.creator!=address(0)&&p.available&&p.modes&(1<<mode)!=0&&participation[strategy]==0
+            &&(p.house==0?strategy:houseController).codehash==p.codeHash;
+    }
+    function reserveQualification(address strategy,uint8 mode,bytes32 token) external base {
+        require(msg.sender==arenaPool&&setupSealed&&token!=0&&qualificationEligible(strategy,mode),"qualification participation");
         participation[strategy]=token;reservingController[strategy]=msg.sender;revision++;emit Reserved(strategy,token);
     }
     function release(address strategy,bytes32 token) external base controller {
