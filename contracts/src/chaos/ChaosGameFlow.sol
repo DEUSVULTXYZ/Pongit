@@ -112,8 +112,9 @@ library ChaosGameFlow {
         if(!applied)return false;store(w,id,state);emit ChaosAnnounced(id,uint32(q>>96),draw,t);
         request(w,engine,hub,id,uint32(q>>96)+1,uint16(draw>>48),t);return true;
     }
-    /// A command advances in slices while a worst-case slice, a ranked result and its
-    /// publication still fit in ADVANCE_RESERVE. The kernel is call-partition invariant,
+    /// A command advances in gas-capped slices while the normal attempt, a one-step
+    /// fallback, a ranked result and its publication still fit. Time alone cannot bound
+    /// a slice's cost: uncapped ball speed can produce many contacts. The kernel is call-partition invariant,
     /// so where a command stops never changes play: it reports incomplete, and the next
     /// command resumes from the processed clock. Unsliced, a command had to simulate the
     /// whole gap since the last success in one call; a force grid (wind, the well, a curve
@@ -126,7 +127,9 @@ library ChaosGameFlow {
     /// mystery reward is always effect 1-4. Such play advances in 1 s slices, which keeps
     /// the fixed cost of each slice (~0.3M gas) to a fraction of the play itself.
     uint64 internal constant PLAIN_SLICE_US=1_000_000;
-    uint256 internal constant ADVANCE_RESERVE=5_000_000;
+    uint256 internal constant ENGINE_GAS=4_000_000;
+    uint256 internal constant STEP_GAS=1_500_000;
+    uint256 internal constant ADVANCE_RESERVE=7_000_000;
     function advance(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
         external returns(bool complete,uint8 outcome,uint8 winner)
     {
@@ -144,24 +147,33 @@ library ChaosGameFlow {
         for(uint256 i;i<2;i++){uint256 b=get(w,id,21+2*i);if(b&(uint256(1)<<195)!=0&&uint16(b>>144)!=0)return SLICE_US;}
         return PLAIN_SLICE_US;
     }
-    /// One slice: the advance of the first rules-6 release, unchanged.
+    /// A failed stateless calculation never discards previously stored progress.
     function slice(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
         private returns(bool complete,uint8 outcome,uint8 winner)
     {
         if(get(w,id,29)==0)request(w,engine,hub,id,1,10000,uint64(get(w,id,27)>>112));
         for(uint8 attempt;attempt<3;attempt++){
+            if(gasleft()<=ADVANCE_RESERVE)return(false,0,0);
             uint64 t=uint64(get(w,id,27)>>112);announce(w,engine,hub,id,t);
             uint64 stop=target;uint256 q=get(w,id,29);
             if(get(w,id,30)!=0){uint64 due=uint64(uint32(q>>128))*1000;
                 if(due>t&&due<stop)stop=due;else if(due<=t)stop=engine.wakeAt(packed(w,id),stop);}
             uint256 paid=get(w,id,17);
-            ChaosEngine.Progress memory p=engine.advance(packed(w,id),bytes32(get(w,id,3)),get(w,id,8),stop,uint128(paid),uint128(paid>>128));
+            ChaosEngine.Progress memory p;bool fallbackStep;
+            uint256[8] memory state=packed(w,id);bytes32 seed=bytes32(get(w,id,3));uint256 control=get(w,id,8);
+            try engine.advance{gas:ENGINE_GAS}(state,seed,control,stop,uint128(paid),uint128(paid>>128)) returns(ChaosEngine.Progress memory progressed){p=progressed;}
+            catch(bytes memory reason){
+                // Propagate explicit faults. Empty revert includes out-of-gas; retry
+                // exactly one bounded step, never a new outcome or a truncated clock.
+                if(reason.length!=0){assembly("memory-safe"){revert(add(reason,32),mload(reason))}}
+                p=engine.advanceStep{gas:STEP_GAS}(state,seed,control,stop,uint128(paid),uint128(paid>>128));fallbackStep=true;
+            }
             store(w,id,p.words);for(uint256 i;i<p.collisions.length;i++)emit ChaosCollision(id,p.collisions[i]);
             if(p.appliedRally!=0){set(w,id,14,uint128(paid));set(w,id,15,uint128(paid>>128));
                 emit ChaosPressureApplied(id,p.appliedRally,uint128(paid),uint128(paid>>128),bytes32(get(w,id,18)));}
             if(p.outcome!=0)return(true,p.outcome,uint8(p.words[7]>>39&3));
             uint64 next=uint64(p.words[6]>>112);announce(w,engine,hub,id,next);
-            if(p.complete&&next==target)return(true,0,0);if(next==t)return(false,0,0);
+            if(p.complete&&next==target)return(true,0,0);if(next==t||fallbackStep)return(false,0,0);
         }
     }
 }

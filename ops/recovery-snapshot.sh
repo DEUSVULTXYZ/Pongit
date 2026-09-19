@@ -16,6 +16,8 @@ for database in $databases; do
 done
 cp -L .env "$target/runtime.env"
 cp RELEASE "$target/release.txt"
+cp compose.yaml "$target/compose.yaml"
+if test -f compose.override.yaml; then cp compose.override.yaml "$target/compose.override.yaml"; fi
 cp -a deployments "$target/deployments"
 cp -a /opt/pongit/secrets/rooms "$target/rooms-secrets"
 if test -d /opt/pongit/shared/early-payment-deployment; then

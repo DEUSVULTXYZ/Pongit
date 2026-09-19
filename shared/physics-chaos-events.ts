@@ -106,12 +106,14 @@ export function initialChaosEvents(seed:Hex,bettingA=96000000,bettingB=96000000)
   leftDir:0,rightDir:0,lastLeft:0,lastRight:0,t:0n,nextForce:0n,activeMask:0,collisionSequence:0,bettingA,bettingB,seed,cancelled:false,cancelReason:0,stalled:0};serve(s);return s;
 }
 function sign(x:bigint){return x<0n?-1n:x>0n?1n:0n;}
-function collideEffect(s:ChaosPhysicsState,h:ChaosCandidate){
+function collideEffect(s:ChaosPhysicsState,h:ChaosCandidate,reclamp=true){
  const b=s.balls[h.ball],k=h.kind;let physical=false;
  if(k<=2||k===7||k===8||k===9||k===14||k>=15&&k<=17){b.powerN=1;b.powerD=1;physical=true;}
  if(k===1||k===2){b.y=k===1?6n*P:570n*P;b.vy=-b.vy;if(has(s,20)){const speed=vectorSpeed(b.vx,b.vy);[b.vx,b.vy]=normalize(b.vx,b.vy*5n/4n,speed);}}
  else if(k===3||k===4){
-  const side=k===3?0:1,ps=paddles(s),height=side===0?ps.heightA:ps.heightB,split=side===0?ps.splitA:ps.splitB,centre=side===0?s.left:s.right,solid=height*1000000n,delta=b.y-centre;
+  const side=k===3?0:1,ps=paddles(s),height=side===0?ps.heightA:ps.heightB,split=side===0?ps.splitA:ps.splitB;
+  const priorCentre=side===0?s.left:s.right,centre=reclamp?clamp(priorCentre,outer(height,split)):priorCentre,solid=height*1000000n,delta=b.y-centre;
+  if(reclamp){if(side===0)s.left=centre;else s.right=centre;}
   const touches=split?(delta+6n*P>=-8n*P-solid/2n&&delta-6n*P<=-8n*P)||(delta+6n*P>=8n*P&&delta-6n*P<=8n*P+solid/2n):abs(delta)<=solid/2n+6n*P;
   if(touches){b.powerN=1;b.powerD=1;physical=true;b.vx=-b.vx*11n/10n;b.vy=b.vy*11n/10n;b.lastHitter=side;
    const [effects,shot]=effectPaddleHit(s.effects,side,side===0?s.lastLeft:s.lastRight,b.vy,abs(delta)<=solid/8n,Number(s.t/1000n));s.effects=effects;
@@ -180,7 +182,7 @@ export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget
    if(goalsMask!==0){
     point(s,goalsMask);if(s.score.finished||stopAtPoint)break;
    }else{
-    if(collideEffect(s,hit)){s.collisionSequence++;if(s.collisionSequence>0xffffffff)throw Error('Numeric range');log.push({sequence:s.collisionSequence,rally:s.score.rally,ball:hit.ball+1,kind:hit.kind,obstacle:hit.obstacle,at:s.t,x:s.balls[hit.ball].x,y:s.balls[hit.ball].y});}
+    if(collideEffect(s,hit,everyContact)){s.collisionSequence++;if(s.collisionSequence>0xffffffff)throw Error('Numeric range');log.push({sequence:s.collisionSequence,rally:s.score.rally,ball:hit.ball+1,kind:hit.kind,obstacle:hit.obstacle,at:s.t,x:s.balls[hit.ball].x,y:s.balls[hit.ball].y});}
     if(everyContact&&hit.dt!==0n)sweep(s,planes,hit,log);
     if(log.length>=CHAOS_LOG_STOP)break;
    }

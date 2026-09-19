@@ -154,7 +154,12 @@ contract ChaosPhysics {
             if(dynamics.has(s,20)){uint256 speed=G.speed(b.vx,b.vy);(b.vx,b.vy)=G.normalize(b.vx,b.vy*5/4,speed);}
         }else if(k==3||k==4){
             uint8 side=k==3?0:1;M.Paddles memory ps=dynamics.paddles(s);uint256 height=side==0?ps.heightA:ps.heightB;bool split=side==0?ps.splitA:ps.splitB;
-            int256 centre=side==0?s.left:s.right;int256 solid=int256(height)*1000000;int256 delta=b.y-centre;
+            // At an effect boundary move() used the previous size. Re-clamp the
+            // centre for the current hitbox before resolving an overshot plane.
+            // Do not prepare unrelated effects here: multiball/forces keep their order.
+            int256 centre=dynamics.clamp(side==0?s.left:s.right,dynamics.outer(height,split));
+            if(side==0)s.left=centre;else s.right=centre;
+            int256 solid=int256(height)*1000000;int256 delta=b.y-centre;
             bool touches=split?(delta+6*P>=-8*P-solid/2&&delta-6*P<=-8*P)||(delta+6*P>=8*P&&delta-6*P<=8*P+solid/2):G.abs(delta)<=uint256(solid/2+6*P);
             if(touches){
                 b.powerN=1;b.powerD=1;physical=true;

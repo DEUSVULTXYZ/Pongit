@@ -59,6 +59,30 @@ abstract contract SimultaneousBase is Test {
 }
 
 contract ChaosSimultaneousContactsTest is SimultaneousBase {
+    function testPaddleBoundaryReclampAtBothEdgesAndSides() public view {
+        uint8[6] memory ids=[uint8(1),7,9,11,12,23];
+        for(uint8 n;n<6;n++)for(uint8 side;side<2;side++)for(uint8 bottom;bottom<2;bottom++)for(uint8 crossed;crossed<2;crossed++){
+            uint8 id=ids[n];bool expires=id==7||id==9;
+            int256 oldHalf=expires?384*P/10:id==12?int256(36*P):int256(48*P);
+            int256 newHalf=id==1||id==23?int256(60*P):id==11?int256(56*P):int256(48*P);
+            T.State memory s=single();s.left=bottom==1?576*P-oldHalf:oldHalf;s.right=s.left;
+            if(id==12){if(side==0)s.bettingA=72000000;else s.bettingB=72000000;}
+            s.effects[0]=E.Effect(id,id>=12?2:side,0,1,expires?0:1200,expires?1200:12000,0);
+            int256 y=bottom==1?576*P-newHalf*2:newHalf*2;
+            int256 reach=232e6*int256(200000)-int256(uint256(crossed))*1000;
+            place(s,0,side==0?40*P+reach:984*P-reach,y,side==0?int256(-232e6):int256(232e6),0);
+            (T.State memory next,,T.Collision[] memory log)=k.advance(s,T0+300_000,128);
+            assertEq(kinds(log,T0+200_000),bit(1,3+side));
+            assertEq(next.score.a,1);assertEq(next.score.b,0);
+            assertEq(side==0?next.left:next.right,bottom==1?576*P-newHalf:newHalf);
+            assertGt(side==0?next.balls[0].vx:-next.balls[0].vx,0);
+            (T.State memory first,,T.Collision[] memory beforeLog)=k.advance(s,T0+199_999,128);
+            assertEq(beforeLog.length,0);
+            (T.State memory split,,T.Collision[] memory afterLog)=k.advance(first,T0+300_000,128);
+            assertTrue(same(split,afterLog,next,log),"split before boundary preserves state and contacts");
+        }
+    }
+
     function testReplayBothBallsAreReturnedByThePaddleThatCoversThem() public view {
         T.State memory s=replay();
         for(uint8 i;i<2;i++){

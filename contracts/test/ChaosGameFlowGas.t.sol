@@ -29,6 +29,26 @@ contract ChaosGasHarness is PongChaosEvents {
     function fixture(uint256 id,T.State memory s) external {_store(id,codec.pack(s));}
 }
 
+/// Burn the complete capped call, then run the real one-step path. This exercises
+/// EIP-150 and the remaining storage/result reserve, unlike a cheap mocked revert.
+contract ExhaustingChaosEngine {
+    address private immutable implementation;
+    constructor(address implementation_){implementation=implementation_;}
+    function advance(uint256[8] calldata,bytes32,uint256,uint64,uint128,uint128) external pure {
+        assembly("memory-safe"){invalid()}
+    }
+    fallback() external {
+        address target=implementation;
+        assembly("memory-safe"){
+            calldatacopy(0,0,calldatasize())
+            let ok:=delegatecall(gas(),target,0,calldatasize(),0,0)
+            returndatacopy(0,0,returndatasize())
+            if iszero(ok){revert(0,returndatasize())}
+            return(0,returndatasize())
+        }
+    }
+}
+
 /// Every game command is signed with 15,000,000 gas in release 853f174; 14,800,000 is what is
 /// left for execution after intrinsic gas, rounded down. The target advances 10 ms per engine block.
 contract ChaosGameFlowGasTest is Test {
@@ -138,6 +158,58 @@ contract ChaosGameFlowGasTest is Test {
     function plainLabel(uint8 kind) internal pure returns(string memory){
         return ["jackpot, one ball","two fast balls, bricks","two fast balls, portals","two fast balls, bumper","two fast balls, deflector"][kind];
     }
+    /// A plain slice is not cheap merely because it spans at most one second.
+    /// Fast vertical multiball repeatedly hits the walls without scoring.
+    function testDenseMultiballKeepsProgressUnderCommandGas() public {
+        int256[4] memory speeds=[int256(10_000e6),25_000e6,100_000e6,1_000_000e6];
+        for(uint256 i;i<speeds.length;i++){
+            uint256 saved=vm.snapshotState();
+            T.State memory s=rally();s.balls[0].x=500e12;s.balls[0].y=288e12;
+            s.balls[0].vy=speeds[i];s=announced(s,21);place(s);
+            uint256 used=tickAt(1000,COMMAND_GAS);uint64 first=gameTime();
+            emit log_named_uint("dense multiball velocity",uint256(speeds[i]));
+            emit log_named_uint("bounded command gas",used);
+            assertGt(first,T0,"dense contacts still progress");assertLe(first,T0+1_000_000);
+            assertEq(phase(),2,"no arbitrary cancellation or point");
+            if(first<T0+1_000_000){tickAt(1000,COMMAND_GAS);assertGt(gameTime(),first,"next command resumes");}
+            vm.revertToState(saved);
+        }
+    }
+    function testExhaustedNormalCallKeepsOneStepAndRankedFinish() public {
+        T.State memory s=grid(3);s.score.a=6;s.score.b=6;
+        s.balls[0].x=1030e12-192e6*5000;s.balls[0].y=150e12;s.balls[0].vy=0;place(s);
+        ChaosEngine real=new ChaosEngine(codec,module.physics(),module.beacon(),module.draws());
+        vm.etch(address(module),address(new ExhaustingChaosEngine(address(real))).code);
+        uint256 used=tickAt(1000,COMMAND_GAS);
+        assertEq(phase(),3);assertEq(game.ratingOf(vm.addr(A),1).played,1);
+        assertNotEq(game.resultHashes(ID),bytes32(0));
+        emit log_named_uint("full normal cap spent plus fallback ranked finish",used);
+        assertLt(used,ChaosGameFlow.ADVANCE_RESERVE);
+    }
+    function testFallbackPersistsAZeroTimeContact() public {
+        T.State memory s=rally();s.balls[0].y=6e12;s.balls[0].vy=-96e6;place(s);
+        ChaosEngine real=new ChaosEngine(codec,module.physics(),module.beacon(),module.draws());
+        vm.etch(address(module),address(new ExhaustingChaosEngine(address(real))).code);
+        tickAt(1000,COMMAND_GAS);
+        assertEq(gameTime(),T0,"contact at the current microsecond");
+        assertGt(live().balls[0].vy,0,"the reflected velocity is persisted");
+        assertEq(live().collisionSequence,s.collisionSequence+1);
+        tickAt(1000,COMMAND_GAS);assertGt(gameTime(),T0,"no repeat of the zero-time contact");
+    }
+    function testExplicitEngineFaultIsNotHiddenByFallback() public {
+        place(rally());bytes memory reason=abi.encodeWithSignature("Error(string)","fixture explicit fault");
+        vm.mockCallRevert(address(module),abi.encodeWithSelector(module.advance.selector),reason);
+        roll(blockAt(1000));vm.expectRevert(reason);game.tick{gas:COMMAND_GAS}(ID);
+    }
+    function testOneStepFitsGasCapForEveryEffectPair() public view {
+        for(uint8 first=1;first<=24;first++)for(uint8 second=first+1;second<=24;second++){
+            T.State memory s=announced(announced(rally(),first),second);
+            s.balls[0].curveSteps=150;s.balls[0].curveSign=1;
+            s.balls[0].vx=25_000e6;s.balls[0].vy=10_000e6;s=d.prepare(s);
+            ChaosEngine.Progress memory p=module.advanceStep{gas:ChaosGameFlow.STEP_GAS}(codec.pack(s),seed,5,T0+100_000,0,0);
+            assertTrue(uint64(p.words[6]>>112)>T0||p.outcome!=0,"one bounded step makes progress");
+        }
+    }
     /// It advances in 1 s slices: a normal cadence costs what one unsliced call cost, and a
     /// long stall catches up several seconds per command.
     function testPlainPlayAdvancesInSecondSlices() public {
@@ -232,7 +304,11 @@ contract ChaosGameFlowGasTest is Test {
         s.balls[0].x=1030e12-int256(192e6*offset*1000);s.balls[0].y=150e12;s.balls[0].vy=0;place(s);
         tickAt(3000,COMMAND_GAS);
         assertTrue(phase()==3||gameTime()<T0+offset*1000,"finished, or stopped before the point");
-        if(phase()==2){tickAt(3000,COMMAND_GAS);assertEq(phase(),3);}
+        for(uint8 tries;tries<3&&phase()==2;tries++){
+            uint64 before=gameTime();tickAt(3000,COMMAND_GAS);
+            assertTrue(phase()==3||gameTime()>before,"every resumed command makes progress");
+        }
+        assertEq(phase(),3);
         assertEq(game.ratingOf(vm.addr(A),1).played,1,"rated once");
         assertNotEq(game.resultHashes(ID),bytes32(0),"result published");
         vm.revertToState(snap);

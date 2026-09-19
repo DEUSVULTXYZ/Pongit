@@ -26,6 +26,27 @@ function replay(){
 }
 const at=(log:ChaosPhysicsCollision[],t:bigint)=>log.filter(c=>c.at===t).map(c=>`${c.ball}:${c.kind}`).sort();
 
+for(const id of [1,7,9,11,12,23])for(const side of [0,1])for(const bottom of [false,true])for(const overshoot of [0n,1000n]){
+ test(`boundary paddle reclamp: effect ${id}, side ${side}, bottom ${bottom}, overshoot ${overshoot}`,()=>{
+  const s=single(),expires=id===7||id===9,oldHalf=expires?384n*P/10n:id===12?36n*P:48n*P;
+  const newHalf=id===1||id===23?60n*P:id===11?56n*P:48n*P;
+  s.left=s.right=bottom?576n*P-oldHalf:oldHalf;
+  if(id===12){if(side===0)s.bettingA=72000000;else s.bettingB=72000000;}
+  s.effects[0]={id,target:id>=12?2:side,remaining:0,serial:1,startsAt:expires?0:1200,expiresAt:expires?1200:12000,variant:0};
+  const y=bottom?576n*P-newHalf*2n:newHalf*2n,reach=232_000_000n*200000n-overshoot;
+  place(s,0,side===0?40n*P+reach:984n*P-reach,y,side===0?-232_000_000n:232_000_000n,0n);
+  const [next,,log]=advanceChaosEvents(s,T0+300_000n,128);
+  assert.deepEqual(at(log,T0+200_000n),[`1:${3+side}`]);
+  assert.equal(next.score.a,1);assert.equal(next.score.b,0);
+  assert.equal(side===0?next.left:next.right,bottom?576n*P-newHalf:newHalf);
+  assert(side===0?next.balls[0].vx>0n:next.balls[0].vx<0n);
+  const [first,,before]=advanceChaosEvents(s,T0+199_999n,128);
+  const [split,,after]=advanceChaosEvents(first,T0+300_000n,128);
+  assert.deepEqual(split,next,'splitting before the boundary keeps the physical state');
+  assert.deepEqual([...before,...after],log);
+ });
+}
+
 test('replay of 2026-09-18: both balls are returned by the paddle that covers them',()=>{
  const s=replay();
  for(const b of s.balls)assert(abs(b.y+VY*CROSS-s.left)<=54n*P);
