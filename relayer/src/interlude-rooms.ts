@@ -40,6 +40,7 @@ import {createRoomsFinanceDirectory} from "./rooms-finance-directory";
 import {loadRoomsFinance,financeAdapterAbi} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
 import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome, retireRefusedEngineJob, retireClosedEpochJobs, ENGINE_REFUSALS_SCHEMA} from "./rooms-engine-recovery";
+import {publishedResultReader} from "./rooms-finalization";
 import {EngineHaltMonitor,roomsWriteVerdict,type EngineHaltChange} from "./rooms-engine-halt";
 import {ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,EngineHalted,readEngineHealth,refusalReason} from "../../shared/engine-halt";
 import {roomsRankingCandidates} from "./rooms-ranking";
@@ -722,6 +723,21 @@ export async function createRoomsCoordinator(o: Options) {
           ).rows;
         }
         auditOffset += results.length;
+        // Unpublished rows first, every audit. Such a row records what the node
+        // showed before Monad did, and it may never be published as recorded: a
+        // halted epoch's last batch (the phase-4 cancel of 2026-09-18) is lost at
+        // the forceClose, and the next epoch's node resumes that match from
+        // Monad's published state. Its live hash then differs, so the match is
+        // restored to its room and the stale row deleted within one audit, not
+        // after the rotation has reached it among every older result. Normally the
+        // set is empty or a few seconds old.
+        const unpublished = (
+          await db.query(
+            "SELECT id,hash FROM il_results WHERE app=$1 AND NOT published ORDER BY ended_at LIMIT 4",
+            [app],
+          )
+        ).rows;
+        results = [...unpublished, ...results.filter((r) => !unpublished.some((u) => u.id === r.id))];
         const ids = results.map((r) => BigInt(r.id));
         if (ids.length) {
           const [live, published] = await Promise.all([
@@ -907,6 +923,10 @@ export async function createRoomsCoordinator(o: Options) {
       for (const r of Object.values(before.rooms))
         if (r.offer && !["complete", "cancelled"].includes(r.offer.status))
           reserved += observed.get(r.offer.id)?.[2] === 0n ? creationBudget : terminalBudget;
+      // Read only when a room is (within a minute) old enough to be deleted in this pass.
+      const heldRooms = Object.values(before.rooms).some(r=>Date.now()-r.activity>86400000-60000)
+        ? new Set<string>((await db.query("SELECT DISTINCT room FROM il_results WHERE app=$1 AND NOT published",[app])).rows.map(r=>String(r.room)))
+        : new Set<string>();
       await transact(async (s, c) => {
         const now = Date.now();
         s.queue = s.queue.filter((q) => now - q.seen < 30000);
@@ -955,7 +975,12 @@ export async function createRoomsCoordinator(o: Options) {
             r.status = "closed";
             r.members = [];
           }
-          if (r.status === "closed" && now - r.activity > 86400000)
+          // A room whose recorded result is not published yet is never deleted: if
+          // that result is lost with a halted epoch, the next epoch resumes the
+          // match and the audit restores it into this room (restoreContestedMatch
+          // needs the room). Without a room nothing would tick it, and the next
+          // renewal would wait on its active match forever.
+          if (r.status === "closed" && now - r.activity > 86400000 && !heldRooms.has(r.id))
             delete s.rooms[r.id];
         }
         // Oldest player first, gradually widening the rating band. Blocks apply both ways.
@@ -1104,6 +1129,7 @@ export async function createRoomsCoordinator(o: Options) {
         resultHash:(id,published)=>published?client.readSettled('resultHashes',[id]):client.read('resultHashes',[id])});
     },
     onReady:epoch=>{if(closingEpoch!==epoch)closingEpoch=null;},
+    publishedResult:publishedResultReader(base,finance.manifest),
   }) : null;
   if(chaosEnabled && process.env.ROOMS_CHAOS_ENABLED==='true' && !lifecycle && process.env.ROOMS_PRIVATE_FINANCE_TEST!=='true')throw new Error('Chaos requires a configured delegation lifecycle before opening to players');
   let reconciling=false;

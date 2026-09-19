@@ -20,6 +20,7 @@ import { requestHostedRenewal } from "./rooms-hosted-renewal";
 import { roomsDrainBlocker } from "../../shared/rooms-availability";
 import {assertRoomsEngineAvailable} from "../../shared/rooms-availability";
 import {retireClosedEpochJobs} from "./rooms-engine-recovery";
+import {deferredKey,nextFinalization,type PublishedResultReader} from "./rooms-finalization";
 const appAbi = parseAbi([
   "function operator() view returns(address)",
   "function closeEngine()",
@@ -49,6 +50,8 @@ export async function roomsLifecycle(o: {
   beforeRenew?: () => Promise<void>;
   beforeClose?: (epoch: bigint) => Promise<void>;
   onReady?: (epoch: bigint) => void;
+  /** Monad reads that decide whether the adapter can finalize a result now. */
+  publishedResult: PublishedResultReader;
 }) {
   const file = process.env.ROOMS_LIFECYCLE_KEY_FILE;
   if (!file) return null;
@@ -85,7 +88,7 @@ export async function roomsLifecycle(o: {
     working = false,
     error = "",
     healthy = false;
-  let sessionInfo={epoch:'0',expiresAt:0,releaseAt:0,batch:'0'},reportedError='';
+  let sessionInfo={epoch:'0',expiresAt:0,releaseAt:0,batch:'0'},reportedError='',reportedDeferred='';
   const transition = async (s: Stage) => {
     const previous=stage;
     await o.db.query(
@@ -305,25 +308,33 @@ export async function roomsLifecycle(o: {
             [o.app],
           )
         ).rows;
-        for (const { id } of results) {
-          const f = await o.base.readContract({
-            address: o.adapter,
-            abi: roomsMarketAdapterAbi,
-            functionName: "finalResults",
-            args: [BigInt(id)],
-          });
-          if (f[3] === 0) {
-            await submit(
-              prefix + ":final:" + id,
-              o.adapter,
-              encodeFunctionData({
-                abi: roomsMarketAdapterAbi,
-                functionName: "finalizeResult",
-                args: [BigInt(id)],
-              }),
-            );
-            return;
-          }
+        // il_results records what the node showed. A match the node ended but
+        // Monad still publishes as live (the halted epoch's last, unsettled batch)
+        // cannot be finalized in this epoch, and it can only end in the next one,
+        // which starts from Monad's published state. Submitting it here would fail
+        // its simulation forever and hold the renewal it needs, so it is deferred
+        // and finalized by a later pass once its result is published.
+        const {next,deferred}=await nextFinalization(results.map(r=>String(r.id)),o.publishedResult);
+        const key=deferredKey(deferred);
+        if(key!==reportedDeferred){
+          reportedDeferred=key;
+          if(key)console.warn(JSON.stringify({event:'rooms-lifecycle-finalization-deferred',app:o.app,epoch:String(epoch),results:deferred,at:new Date().toISOString()}));
+        }
+        if(next?.verdict==='wait'){
+          error=`Result ${next.id} is published with a finish time ahead of Monad; finalizing it shortly`;
+          return;
+        }
+        if(next){
+          await submit(
+            prefix + ":final:" + next.id,
+            o.adapter,
+            encodeFunctionData({
+              abi: roomsMarketAdapterAbi,
+              functionName: "finalizeResult",
+              args: [BigInt(next.id)],
+            }),
+          );
+          return;
         }
         // The operator may hold a drained rehearsal here while inspecting payouts
         // or allowing the previous deployment to finish its last live matches.

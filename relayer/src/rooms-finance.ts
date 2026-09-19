@@ -30,6 +30,7 @@ import {
 } from "../../shared/rooms-pressure";
 import type { RelayRequest } from "../../shared/protocol";
 import {financeScope,financeAdapterAbi,type RoomsFinanceManifest} from "./rooms-finance-config";
+import {deferredKey,nextFinalization,publishedResultReader} from "./rooms-finalization";
 const idSchema = z
   .string()
   .regex(/^[0-9]+$/)
@@ -581,16 +582,23 @@ export async function createRoomsFinance(o: {
       settlementPolicy: m.settlement || "finalized",
     };
   }
+  const publishedResults=publishedResultReader(base,m);
+  let deferredLog='';
   async function beforeRenew(){
     if(!m.settlement)return;
     // Capture every new market result before its hub epoch can change, even if
     // the lobby missed an end event. Transfers themselves can finish afterwards.
-    const rows=(await db.query("SELECT DISTINCT id FROM il_bettors WHERE app=$1",[app])).rows;
-    for(const {id} of rows){
-      if((await readAdapter("result",[BigInt(id)]))[3]>=3)continue;
-      await enqueue("game","finalizeResult",[id]);
-      throw new Error("Waiting for published betting results to be captured before renewal");
-    }
+    // A match Monad still publishes as live cannot be captured in this epoch: it
+    // resumes on the next epoch's node and can only end there. Waiting for it
+    // would hold the renewal forever, so it is deferred to a later pass (its
+    // bettors are paid once its result is published and finalized).
+    const rows=(await db.query("SELECT DISTINCT id FROM il_bettors WHERE app=$1 ORDER BY id",[app])).rows;
+    const {next,deferred}=await nextFinalization(rows.map(r=>String(r.id)),publishedResults);
+    const key=deferredKey(deferred);
+    if(key!==deferredLog){deferredLog=key;if(key)console.warn(JSON.stringify({event:'rooms-finance-capture-deferred',app,results:deferred,at:new Date().toISOString()}));}
+    if(!next)return;
+    if(next.verdict==='ready')await enqueue("game","finalizeResult",[next.id]);
+    throw new Error("Waiting for published betting results to be captured before renewal");
   }
   async function route(
     path: string,
