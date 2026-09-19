@@ -14,6 +14,7 @@ export class RoomsCommandJournal implements EngineTransportJournal {
  private epoch?:string;
  private direct?:{key:Address;epoch:string;match:string;expires:bigint};
  private roomControls?:{key:Address;player:Address;epoch:string;expires:bigint};
+ private permission?:{key:Address;epoch:string;match:string;data:Hex};
  private key:string;
  constructor(private store:Store,private app:Address,private abi:Abi){this.key=`pongit:commands:${app.toLowerCase()}`;}
  private load():Job[]{return JSON.parse(this.store.getItem(this.key)||'[]');}
@@ -36,6 +37,12 @@ export class RoomsCommandJournal implements EngineTransportJournal {
  bindDirect(key:Address,epoch:bigint,match:bigint,expires:bigint){
   if(this.epoch!==String(epoch)||match<=0n)throw Error('Read the current arena before binding direct controls');
   this.direct={key,epoch:String(epoch),match:String(match),expires};
+ }
+ /** Exact owner-signed arena permission, prepared after binding verification.
+  * Does not widen the movement key's scope or permit any financial selector. */
+ bindPermission(key:Address,epoch:bigint,match:bigint,data:Hex){
+  if(this.epoch!==String(epoch)||match<=0n||!['renewActive','revokeActive'].includes(decodeFunctionData({abi:this.abi,data}).functionName))throw Error('Read the current arena before authorizing this permission');
+  this.permission={key,epoch:String(epoch),match:String(match),data};
  }
  /** The SDK grant was checked for this app/account; the contract verifies it
   * again on registration. This is separate from independent-arena bindings. */
@@ -60,7 +67,7 @@ export class RoomsCommandJournal implements EngineTransportJournal {
   if(tx.chainId!==4242||tx.to?.toLowerCase()!==this.app.toLowerCase()||(tx.value??0n)!==0n)throw Error('Only scoped game commands can use this journal');
   const signer=await recoverTransactionAddress({serializedTransaction:raw as `0x02${string}`});
   let wrapped;try{wrapped=decodeFunctionData({abi:delegatableAbi,data:tx.data!});}catch{}
-  let player:Address,inner;
+  let player:Address,inner,permissionMatch:string|undefined;
   if(wrapped?.functionName==='withSession'){
    const [grant,,data]=wrapped.args;inner=decodeFunctionData({abi:this.abi,data});
    if(grant.anyFunction||!['input','tick','concede','acceptMatch','cancelMatch'].includes(inner.functionName))throw Error('Non-game permission refused');
@@ -68,8 +75,11 @@ export class RoomsCommandJournal implements EngineTransportJournal {
    player=grant.granter;
   }else{
    inner=decodeFunctionData({abi:this.abi,data:tx.data!});
-   const r=this.roomControls;
-   if(r){
+   const p=this.permission,r=this.roomControls;
+   if(p&&['renewActive','revokeActive'].includes(inner.functionName)){
+    if(p.epoch!==this.epoch||signer.toLowerCase()!==p.key.toLowerCase()||tx.data!==p.data)throw Error('Exact owner-signed permission required');
+    player=p.key;permissionMatch=p.match;
+   }else if(r){
     if(r.epoch!==this.epoch||signer.toLowerCase()!==r.key.toLowerCase()||!['registerControls','revokeControls','input','tick','concede','acceptMatch','cancelMatch'].includes(inner.functionName))throw Error('Scoped game grant required');
     if(inner.functionName==='registerControls'){
      const [g]=decodeAbiParameters(controlProofParameters,inner.args?.[0] as Hex);
@@ -97,7 +107,7 @@ export class RoomsCommandJournal implements EngineTransportJournal {
   // bytes the node refused before execution (retireRefused): they never ran, and viem signs
   // deterministically, so the same control at the freed nonce is these very bytes.
   if(rows.some(x=>x.hash===hash&&x.epoch===this.epoch&&x.state!=='refused'))throw Error('This signed game command is already resolved');
-  const match=inner.functionName==='acceptMatch'?String((inner.args?.[0] as any)?.id):['registerControls','revokeControls'].includes(inner.functionName)?'0':String(inner.args?.[0]);
+  const match=permissionMatch??(inner.functionName==='acceptMatch'?String((inner.args?.[0] as any)?.id):['registerControls','revokeControls'].includes(inner.functionName)?'0':String(inner.args?.[0]));
   // The earlier copy goes, or its receipt lookup by hash would keep finding it instead of this one.
   const current=rows.filter(x=>x.hash!==hash);
   const keep=current.filter(x=>x.state==='uncertain').concat(current.filter(x=>x.state!=='uncertain').slice(-15));
@@ -111,6 +121,15 @@ export class RoomsCommandJournal implements EngineTransportJournal {
   // A session response alone is not enough: only the caller's verified active
   // hub epoch allows retrying the old limit against a renewed node.
   for(const job of rows)if(job.state==='refused'&&BigInt(job.epoch)<verifiedEpoch)job.gasCapCleared=true;
+  this.save(rows);
+ }
+ /** Caller verified status=None for this epoch in a stable Monad hub block.
+  * Expiry, Exiting and a missing node response are not closure evidence. */
+ retireClosed(player:Address,verifiedEpoch:bigint){
+  const rows=this.load();
+  for(const job of rows)if(job.player.toLowerCase()===player.toLowerCase()&&job.state==='uncertain'&&BigInt(job.epoch)<=verifiedEpoch){
+   job.state='obsolete';job.reason='Verified hub epoch closure';
+  }
   this.save(rows);
  }
  /** The node refused these exact bytes before execution AND reports their

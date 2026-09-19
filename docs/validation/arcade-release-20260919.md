@@ -37,7 +37,7 @@ The first isolated deployment of `1d11fb8` was refused by EIP-170 (`CreateContra
 
 ## Independent-pool candidate
 
-The candidate now contains the shared Monad catalogue, participation locks, challenge queue, published ratings and tournament contracts, plus independent physics arenas. No admission relies only on a database count. A closed arena remains unavailable until publication, challenge resolution, release and renewal are verified. Construction, private admissions and public qualification are separate gates. The initial common contracts have been deployed privately (see the funding checkpoint below); no pooled physical arena or hosted delegation is qualified yet.
+The candidate now contains the shared Monad catalogue, participation locks, challenge queue, published ratings and tournament contracts, plus independent physics arenas. No admission relies only on a database count. A closed arena remains unavailable until publication, challenge resolution, release and renewal are verified. Construction, private admissions and public qualification are separate gates. The initial common contracts and three private arenas have been deployed; see the subsequent funded-deployment evidence below.
 
 The common contracts freeze tournament entrants and strategy hashes, derive scheduling and tie-breaks deterministically, and validate complete published references before progressing. Local tests cover the four tournament formats, corrections, draw rules, two lanes and epoch reuse. Eight official identities are pinned by registry; display names confer no rights. The eight policies have distinct reaction/placement behavior. VIPER currently aims off-centre without changing the physical bounce rule.
 
@@ -63,7 +63,7 @@ The example strategy compiled without CBOR metadata and passed the runtime opcod
 
 ## Private deployment and funding checkpoint
 
-The private deployment at `8b4698d` installed the physical modules, catalogue, pool, shared ratings, tournaments, challenge and qualification contracts, and sealed the eight official identities. It has not deployed the three physical arenas or opened any delegation. The catalogue starts unqualified; no successful trial is invented during setup.
+The first private deployment attempt at `8b4698d` installed the physical modules, catalogue, pool, shared ratings, tournaments, challenge and qualification contracts, and sealed the eight official identities. Funding interrupted it before the three arenas. The subsequent completion is recorded below. The catalogue starts unqualified; no successful trial is invented during setup.
 
 | Candidate | Address |
 | --- | --- |
@@ -98,5 +98,29 @@ This is not a completed human challenge path: the Mera UI, compact arena control
 
 The SDK package was rebuilt with these exports and clean-installed again in an isolated VPS container. Its new archive SHA-1 is `088899a84379d936e2bec8003308daa5cbace23a`; the earlier hash above identifies the earlier candidate, not this artifact.
 
-The complete production backup at **20260919T175836Z** was copied off the VPS. The older production script hashes only database dumps, so an additional read-only inventory verified **all 67 files**, including configuration and key files, against the off-VPS copy. The full manifest is retained privately beside it. At **18:13:39 UTC**, the operator still held **0.097424572 MON**, with no receipt for the preserved nonce-1566 deployment transaction. The funding request remains outstanding; this is a deployment prerequisite in addition to the integration and real-qualification gates above.
+The complete production backup at **20260919T175836Z** was copied off the VPS. The older production script hashes only database dumps, so an additional read-only inventory verified **all 67 files**, including configuration and key files, against the off-VPS copy. The full manifest is retained privately beside it. At **18:13:39 UTC**, the operator still held **0.097424572 MON**, with no receipt for the preserved nonce-1566 deployment transaction. This funding checkpoint was resolved by the transfer below.
+
+## Funded deployment and first real publications
+
+At **2026-09-19 19:20:39 UTC**, the funded operator held **1000.097424572 MON**. The exact nonce-1566 operation was resumed without replacement, confirmed at hash `0x0731f0d594249cbee790013e0ae31f57a91a5692cd145d3a9017e5adaad0c389`, and the isolated deployment exited successfully. The completed private record was copied off VPS with a matching checksum. No production switch was enabled.
+
+Three independent arenas were installed:
+
+| Arena | Contract | First published result | Batches |
+| --- | --- | --- | --- |
+| 1 | `0xa4f127f53edbaa63f379f0fdec478e50d8fe5dea` | Classic 1–7, 211.498564 s | 279 |
+| 2 | `0xda168611985fef4622d12734c4df254425006638` | Chaos 2–4, 300 s | 400 |
+| 3 | `0x2edec92e1bab165751192248e6e2a25b4f70e1bc` | Classic 4–3, 300 s | 397 |
+
+The record at **20:03:57 UTC, block 63972922**, verified bytecode hashes, bindings and published results. All three sessions were closing and their results were still contestable. The first release becomes eligible at **20:30:30 UTC**; a timestamp becoming eligible is not proof of a successful release. Later arenas played while earlier ones were closing. The common family is `0xab3104c44c9b9f2368ab147c564427aa1f387c4a`.
+
+The keeper and physics service use frozen source `fe44ef0` in a separate private environment. There were no pending or reverted engine jobs in the post-match sample. The human production and old private trial were not changed. No final 24-hour trial has started.
+
+A public Monad RPC catalogue check returned a **15 requests/s** limit for an unbatched read burst. Grouping compatible reads through Multicall made the repeated check pass. This was a Monad RPC response, not evidence about Interlude's quota. The browser base reader and private sponsor now use the same batching policy.
+
+## Human challenge client candidate
+
+The new client/UI implements remembered Mera account selection, scoped two-hour family reuse, queued challenge restoration after F5, exact arena controls, lost-response reconciliation, owner-signed active renewal/revocation and a result/rematch path. The SDK exposes `createPoolPlayer`. These implementations do not themselves qualify the real authentication path or cross-space participation.
+
+The updated full TypeScript run passed **423 tests**. TypeScript checking and SDK bundle/declaration generation passed. Tests include in-flight direction coalescing, preserved uncertain nonces, exact resend, old-epoch closure, active permission overrides and closing a client during slow recovery. The captured-build browser cases and real human-check harness must be rerun on the frozen version; the latter deliberately uses a synthetic owner and must not be reported as a Mera device test.
 

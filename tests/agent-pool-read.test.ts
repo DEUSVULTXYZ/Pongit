@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {zeroHash,type Address,type PublicClient} from 'viem';
+import {zeroHash,zeroAddress,type Address,type PublicClient} from 'viem';
 import {AgentPoolReader} from '../relayer/src/agents/pool-read';
 import {PoolReadCache,poolRoutes} from '../relayer/src/agents/pool-api';
 import type {AgentPoolManifest} from '../shared/agent-pool';
@@ -31,6 +31,22 @@ test('a local enabled flag cannot bypass a missing or different on-chain qualifi
  proof=evidence;assert.equal((await reader.config()).value.enabled,false);
  gate=true;assert.equal((await reader.config()).value.enabled,true);
  const disabled=new AgentPoolReader(client,{...manifest,enabled:false,tournamentsEnabled:false});assert.equal((await disabled.config()).value.enabled,false);
+});
+test('restored challenge binds its owner, agent and assigned arena at one block',async()=>{
+ const {encodeAbiParameters,keccak256}=await import('viem');
+ const owner=addr(90),agent=addr(91),arena=manifest.arenas[1].app;
+ const playing=keccak256(encodeAbiParameters([{type:'uint256'},{type:'address'},{type:'uint256'},{type:'uint256'}],[10143n,arena,2n,10n]));
+ let pending=4n,status=1,other=false;
+ const client={getBlock:async()=>({number:50n,hash:'0xa'}),readContract:async(r:any)=>{
+  assert.equal(r.blockNumber,50n);
+  if(r.functionName==='pending')return pending;if(r.functionName==='requests')return[other?addr(92):owner,agent,1,status,1000n,zeroHash];
+  if(r.functionName==='playing')return playing;if(r.functionName==='challengeOf')return 4n;
+  if(r.functionName==='boundMatch')return r.address===arena?{id:10n,epoch:2n,a:owner,b:agent}:{id:0n,epoch:0n,a:zeroAddress,b:zeroAddress};
+  throw Error(r.functionName);
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,manifest);assert.equal((await reader.challenge(owner)).value.request?.ref,null);
+ status=2;assert.deepEqual((await reader.challenge(owner)).value.request?.ref,{chainId:10143,app:arena,epoch:'2',id:'10'});
+ other=true;await assert.rejects(reader.challenge(owner),/participation changed/);pending=0n;assert.equal((await reader.challenge(owner)).value.request,null);
 });
 test('read cache coalesces concurrent spectators, retries failures and expires independently of traffic',async()=>{
  let now=0,calls=0;const cache=new PoolReadCache(()=>now,10,2);

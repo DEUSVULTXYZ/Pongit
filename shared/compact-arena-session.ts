@@ -6,7 +6,7 @@ export type ArenaSender={send:(name:string,args?:readonly unknown[])=>Promise<{r
  * Its actor check enforces that binding, expiry and engine-local revocation. Signing
  * the direct call avoids repeating a second SDK grant inside every transaction.
  * This is NOT a generic replacement for withSession on arbitrary applications. */
-export function compactArenaSession(options:{node:PublicClient;abi:Abi;app:Address;key:Hex;match:bigint;expires:bigint;now?:()=>number}):ArenaSender{
+export function compactArenaSession(options:{node:PublicClient;abi:Abi;app:Address;key:Hex;match:bigint;expires:bigint;now?:()=>number;gas?:bigint}):ArenaSender{
  const {node,abi,app,match,expires}=options,signer=privateKeyToAccount(options.key),now=options.now??Date.now;
  let nonce:number|undefined,busy=false,uncertain=false;
  return {async send(name,args=[]){
@@ -17,7 +17,7 @@ export function compactArenaSession(options:{node:PublicClient;abi:Abi;app:Addre
   try{
    nonce??=await node.getTransactionCount({address:signer.address});
    const data=encodeFunctionData({abi,functionName:name,args});
-   const raw=await signer.signTransaction({type:'eip1559',chainId:4242,to:app,nonce,data,value:0n,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+   const raw=await signer.signTransaction({type:'eip1559',chainId:4242,to:app,nonce,data,value:0n,gas:options.gas??15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
    const hash=keccak256(raw);
    // The transport journals before the network call. Any missing/mismatched
    // receipt requires external reconciliation; never sign a nonce replacement.

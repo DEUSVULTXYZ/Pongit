@@ -33,6 +33,9 @@ export function poolRoutes(reader:AgentPoolReader,cache=new PoolReadCache()){
   if(path==='/config')return cache.get('config',()=>reader.config());
   if(path==='/catalog')return cache.get(`catalog:${offset}:${limit}`,()=>reader.catalog(offset,limit));
   if(path==='/live')return cache.get('live',()=>reader.live());
+  const challenge=/^\/challenges\/(0x[\da-fA-F]{40})$/.exec(path);
+  if(challenge){if(!isAddress(challenge[1]))throw poolNotFound();
+   return cache.get(`challenge:${challenge[1].toLowerCase()}`,()=>reader.challenge(challenge[1] as Address));}
   const match=/^\/matches\/(0x[\da-fA-F]{40})\/(\d{1,78})\/(\d{1,78})$/.exec(path);
   if(match){
    if(!isAddress(match[1]))throw poolNotFound();

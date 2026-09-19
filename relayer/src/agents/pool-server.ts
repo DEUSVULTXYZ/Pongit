@@ -45,7 +45,7 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
    }
    if(req.method!=='GET'){res.setHeader('Allow','GET');send({error:'This endpoint serves published contract views',code:'AGENT_METHOD_NOT_ALLOWED'},405);return;}
    const section=url.pathname.replace(/^\/agents\//,'/').split('/')[1];
-   if(['config','catalog','live','matches','tournaments','rankings','healthz'].includes(section))metric=`agents.${section}`;
+   if(['config','catalog','live','matches','challenges','tournaments','rankings','healthz'].includes(section))metric=`agents.${section}`;
    if(url.pathname==='/healthz'){send({process:'alive',writes:!!options.sponsor});return;}
    if(options.public){const config=await routes(new URL('http://localhost/config'));if(!('enabled' in config.value)||!config.value.enabled){send({error:'Agent Arcade is not open',code:'AGENT_CLOSED'},503);return;}}
    const view=await routes(url);res.setHeader('ETag',`"${view.revision}"`);

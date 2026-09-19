@@ -1,10 +1,15 @@
 'use client';
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
-import {zeroAddress} from 'viem';
+import {useRouter} from 'next/navigation';
+import {zeroAddress,type Address} from 'viem';
+import {privateKeyToAccount} from 'viem/accounts';
 import type {AgentMatchRef} from '../../shared/agents';
 import type {AgentPoolManifest,PoolMatchView} from '../../shared/agent-pool';
 import {createPoolObserver} from '../../shared/agent-pool-observer';
+import {createPoolPlayer} from '../../shared/agent-pool-player';
+import {loadPoolFamily,preparePoolFamily} from '../../shared/agent-pool-family';
+import {preparePoolChallenge} from '../../shared/agent-pool-client';
 import type {EngineState} from '../../shared/engine-stream';
 import {engineReadRetryMs} from '../../shared/engine-read';
 import {API,short} from '../lib/api';
@@ -12,19 +17,31 @@ import {eventHud} from '../lib/chaos-presentation';
 import {Court} from './Court';
 import {Avatar} from './Avatar';
 import {ChaosEffectsHud} from './ChaosEffectsHud';
+import {poolBase,poolBrowserSponsor,finishPoolSponsor} from '../lib/agent-pool';
+import {connect,rememberedAccount} from '../lib/wallet';
+import {arcadeAudio} from '../lib/audio';
+import {ArcadeAmbience} from './ArcadeAmbience';
+import {Outcome} from './Outcome';
+import {Dialog} from './Dialog';
+import {IconButton} from './IconButton';
 
 type Identity={agent:string;name:string;avatar:number};
 const quiet=()=>{};
 export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:AgentMatchRef}){
  const [view,setView]=useState<PoolMatchView|null>(null),[snapshot,setSnapshot]=useState<EngineState|null>(null),[people,setPeople]=useState<Identity[]>([]);
  const [error,setError]=useState(''),[connection,setConnection]=useState('Connecting'),[retry,setRetry]=useState(0),[copied,setCopied]=useState('');
+ const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState('');
+ const playerClient=useRef<ReturnType<typeof createPoolPlayer>|null>(null),manifest=useRef<AgentPoolManifest|null>(null),lastRef=useRef(''),commandVersion=useRef(0),actionBusy=useRef(false),router=useRouter();
+ const side=view&&account?view.a.toLowerCase()===account.toLowerCase()?0:view.b.toLowerCase()===account.toLowerCase()?1:-1:-1;
+ const controllable=ready&&side>=0&&snapshot?.phase===2&&!view?.result&&!tools;
+ const control=useRef(false);control.current=controllable;
  const refKey=`${reference.app}:${reference.epoch}:${reference.id}`;
  const name=(address:string)=>people.find(p=>p.agent.toLowerCase()===address.toLowerCase())?.name??short(address);
  const avatar=(address:string)=>people.find(p=>p.agent.toLowerCase()===address.toLowerCase())?.avatar??9;
  useEffect(()=>{
-  if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>,observer:Awaited<ReturnType<typeof createPoolObserver>>|undefined;
-  setView(null);setSnapshot(null);setError('');setConnection('Connecting');
-  let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,wasHidden=false;
+  if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>,observer:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>|undefined,release:(()=>void)|undefined;
+  if(lastRef.current!==refKey){lastRef.current=refKey;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
+  let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,wasHidden=false;
   const controller=new AbortController();
   const get=async<T,>(path:string):Promise<T>=>{
    const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(10000)])});
@@ -34,8 +51,9 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   const poll=async()=>{
    let delay=500;
    try{
-    if(document.hidden){observer?.close();observer=undefined;wasHidden=true;delay=2000;return;}
+    if(document.hidden){wasHidden=true;delay=2000;return;}
     if(!config){config=await get<AgentPoolManifest>('/config');if(!config.enabled)throw Error('Agent Arcade qualification is still in progress');
+     manifest.current=config;const saved=rememberedAccount();if(saved)setAccount(saved.address);
      const catalog=await get<{items:Identity[]}>('/catalog?limit=32');if(cancelled)return;setPeople(catalog.items);}
     if(performance.now()>=nextPublished||wasHidden){
      current=await get<PoolMatchView>(`/matches/${reference.app}/${reference.epoch}/${reference.id}`);if(cancelled)return;
@@ -43,28 +61,83 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      setView(current);nextPublished=performance.now()+5000;
     }
     if(!current)return;
-    if(current.result){observer?.close();observer=undefined;setConnection(current.result.finality?'Final result':'Published, still contestable');setError('');delay=10000;return;}
-    if(!current.node){observer?.close();observer=undefined;setConnection('Waiting for the published result');delay=2000;return;}
+    if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection(current.result.finality?'Final result':'Published, still contestable');setError('');delay=10000;return;}
+    if(!current.node){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection('Waiting for the published result');delay=2000;return;}
     if(!observer){
-     const created=await createPoolObserver(config,current,u=>new WebSocket(u));
+     const remembered=rememberedAccount(),saved=remembered?loadPoolFamily(config,remembered.address,sessionStorage):null;
+     const participant=saved&&[current.a,current.b].some(a=>a.toLowerCase()===saved.grant.player.toLowerCase());
+     let created:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>;
+     if(participant){
+      if(!release){
+       if(!navigator.locks)throw Error('Use a browser with arcade session protection');
+       release=await new Promise<()=>void>((resolve,reject)=>{void navigator.locks.request(`pongit:agent-pool:${config!.pool}:${saved.grant.player}`,{ifAvailable:true},async token=>{
+        if(!token){reject(Error('This account is already controlling an arena in another tab'));return;}await new Promise<void>(done=>resolve(done));
+       }).catch(reject);});
+      }
+      if(cancelled){release?.();return;}
+      const controlled=createPoolPlayer(config,current,saved,{base:poolBase(),storage:sessionStorage,socket:u=>new WebSocket(u)});created=controlled;playerClient.current=controlled;
+     }else created=await createPoolObserver(config,current,u=>new WebSocket(u));
      if(cancelled){created.close();return;}observer=created;observer.watch(publish);
+    }
+    if(playerClient.current&&(wasHidden||performance.now()>=nextRecovery)){
+     nextRecovery=performance.now()+10000;
+     try{await playerClient.current.recover();if(cancelled)return;setReady(true);setControlError('');}
+     catch(e){if(cancelled)return;setReady(false);setControlError((e as Error).message);nextRecovery=performance.now()+Math.max(3000,engineReadRetryMs(e));}
     }
     const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);setError('');
    }catch(e){if(cancelled)return;setError((e as Error).message);setConnection('Synchronizing');delay=Math.max(2000,engineReadRetryMs(e));}
    finally{if(!cancelled)timer=setTimeout(poll,Math.min(30000,delay));}
   };
-  void poll();return()=>{cancelled=true;controller.abort();clearTimeout(timer);observer?.close();};
+  void poll();return()=>{cancelled=true;controller.abort();clearTimeout(timer);observer?.close();playerClient.current=null;release?.();};
  },[enabled,refKey,retry]);
+ async function move(dir:-1|0|1){
+  const client=playerClient.current;if(!client||!control.current&&dir!==0)return;const version=++commandVersion.current;setDirection(dir);setPending(true);
+  try{await client.move(dir);setControlError('');}catch(e){setControlError((e as Error).message);setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
+ }
+ useEffect(()=>{
+  const keys=new Set<string>();const key=(e:KeyboardEvent)=>{if(!control.current||!['ArrowUp','ArrowDown','KeyW','KeyS'].includes(e.code)||(e.target as HTMLElement)?.closest('input,textarea,select,[contenteditable=true],[role=dialog]'))return;
+   e.preventDefault();if(e.type==='keydown')keys.add(e.code);else keys.delete(e.code);const up=keys.has('ArrowUp')||keys.has('KeyW'),down=keys.has('ArrowDown')||keys.has('KeyS');void move(up===down?0:up?-1:1);};
+  const stop=()=>{keys.clear();void move(0);};const visibility=()=>{if(document.hidden)stop();};
+  window.addEventListener('keydown',key);window.addEventListener('keyup',key);window.addEventListener('blur',stop);document.addEventListener('visibilitychange',visibility);
+  return()=>{window.removeEventListener('keydown',key);window.removeEventListener('keyup',key);window.removeEventListener('blur',stop);document.removeEventListener('visibilitychange',visibility);};
+ },[]);
+ useEffect(()=>{arcadeAudio.setGameplay(snapshot?.phase===2&&!view?.result);return()=>arcadeAudio.setGameplay(false);},[snapshot?.phase,!!view?.result]);
+ async function action(fn:()=>Promise<void>){if(actionBusy.current)return;actionBusy.current=true;setBusy(true);try{await fn();setControlError('');}catch(e){setControlError((e as Error).message);}finally{actionBusy.current=false;setBusy(false);}}
+ async function renew(){await action(async()=>{
+  const m=manifest.current;if(!m||!view||!account)throw Error('Read this arena before renewing');
+  const identity=await connect();try{
+   if(identity.account.address.toLowerCase()!==account.toLowerCase())throw Error('Use the passkey for this player');
+   const sponsor=poolBrowserSponsor(m,account);await finishPoolSponsor(sponsor);const prepared=await preparePoolFamily(poolBase(),m,identity.account,sessionStorage);
+   if(prepared.call)await finishPoolSponsor(sponsor,prepared.call);
+   // The observation loop owns the sole node connection. Stop it before the
+   // temporary owner operation; the following retry restores normal watching.
+   playerClient.current?.close();playerClient.current=null;setReady(false);
+   const candidate=createPoolPlayer(m,view,prepared.session,{base:poolBase(),storage:sessionStorage,socket:u=>new WebSocket(u)});
+   try{await candidate.renew(identity.account);}finally{candidate.close();setRetry(n=>n+1);}setTools(false);
+  }finally{identity.end();}
+ });}
+ async function revoke(){await action(async()=>{
+  const client=playerClient.current;if(!client||!account)throw Error('Read this arena before revoking');
+  const identity=await connect();try{
+   if(identity.account.address.toLowerCase()!==account.toLowerCase())throw Error('Use the passkey for this player');
+   await client.revoke(identity.account);setReady(false);setTools(false);setRetry(n=>n+1);
+  }finally{identity.end();}
+ });}
+ async function rematch(){const m=manifest.current;if(!m||!view||!account)throw Error('Your arcade session is unavailable');const s=loadPoolFamily(m,account,sessionStorage);if(!s)throw Error('Renew your arcade session');
+  const sponsor=poolBrowserSponsor(m,account);await finishPoolSponsor(sponsor);const agent=side===0?view.b:view.a;
+  await finishPoolSponsor(sponsor,await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),account,{agent,mode:view.mode}));router.push(`/agents?mode=${view.mode}`);
+ }
  const result=view?.result,engineDone=!!snapshot&&snapshot.phase>=3,scoreA=result?.scoreA??snapshot?.state.scoreA??0,scoreB=result?.scoreB??snapshot?.state.scoreB??0;
  const elapsed=Number(snapshot?.state.t??0n)/1_000_000,overtime=!!view?.overtimeSeconds&&elapsed>=300;
  const seconds=Math.max(0,Math.ceil((overtime?360:300)-elapsed));
  const player=(address:string)=><div className="agent-score-name"><Avatar index={avatar(address)}/><span>{name(address)}</span></div>;
  return <main className={`rooms-shell agents-shell pool-match-shell ${snapshot?.phase===2&&!result?'rooms-playing':''}`}>
   <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
-   <div className="rooms-header-actions"><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link></div></header>
+   <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link>{side>=0&&<button onClick={()=>{void move(0);setTools(true);}}>Tools</button>}</div></header>
   {!enabled?<section className="agent-empty"><h1>Qualification in progress</h1><p>Independent agent arenas are not open yet.</p></section>:<>
    <div className="pool-match-toolbar"><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {connection}</span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button><span role="status">{copied}</span></div>
    {error&&<div className="pool-match-error" role="alert"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
+   {controlError&&!tools&&<div className="pool-match-error" role="status"><p>{controlError}</p><button onClick={()=>{void move(0);setTools(true);}}>Session tools</button></div>}
    {!view&&!error&&<p role="status">Reading the match reference…</p>}
    {view&&<section className="agent-court" aria-label="Agent arena">
     <div className="agent-scoreboard"><div>{player(view.a)}</div><div className="agent-score"><b>{String(scoreA).padStart(2,'0')}</b><small>:</small><b>{String(scoreB).padStart(2,'0')}</b></div><div>{player(view.b)}</div></div>
@@ -75,9 +148,14 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      <div className="agent-clock">{engineDone?'Waiting for publication':`${overtime?'Sudden death':'Time remaining'} ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}</div>
      {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
      <div className="pool-canvas-slot"><Court state={snapshot.state} chaos={snapshot.chaos} rulesVersion={10} clock={snapshot.clock>BigInt(view.overtimeSeconds?360_000_000:300_000_000)?BigInt(view.overtimeSeconds?360_000_000:300_000_000):snapshot.clock}
-      observedAt={snapshot.observedAt} direction={0} side={-1} replay={false} matchId={refKey} controllable={false} pending={false} liveEngine onStats={quiet}/></div>
+      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine onStats={quiet}/></div>
+     {side>=0&&<div className="agent-controls"><small>W / S · ↑ / ↓</small><div>{([-1,1] as const).map(dir=><button key={dir} aria-label={dir===-1?'Move up':'Move down'} disabled={!controllable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void move(dir);}} onPointerUp={()=>void move(0)} onPointerCancel={()=>void move(0)} onLostPointerCapture={()=>void move(0)}>{dir===-1?'↑':'↓'}</button>)}</div></div>}
     </>:<div className="agent-empty"><p>Waiting for this arena to become ready.</p></div>}
    </section>}
   </>}
+  {tools&&<Dialog label="Arena tools" onClose={()=>setTools(false)}><IconButton aria-label="Close arena tools" onClick={()=>setTools(false)}/><h2>Arena tools</h2>{controlError&&<p role="alert">{controlError}</p>}
+   <button disabled={busy} onClick={()=>void renew()}>Renew arcade session</button><button disabled={busy||!playerClient.current} onClick={()=>void revoke()}>Revoke this arena session</button><button disabled={busy||!playerClient.current} onClick={()=>void action(async()=>{await playerClient.current!.concede();setTools(false);})}>Concede match</button></Dialog>}
+  <Outcome id={refKey} match={snapshot?{playerA:snapshot.a,playerB:snapshot.b,winner:result?.winner??snapshot.winner,status:result?.status??snapshot.phase,state:{...snapshot.state,scoreA,scoreB},ranked:false,mode:view?.mode??0,draw:(result?.status??snapshot.phase)===3&&(result?.winner??snapshot.winner)===zeroAddress}:null}
+   account={account??''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" rematch={rematch} again={()=>router.push('/agents')} againLabel="Choose another agent"/>
  </main>;
 }

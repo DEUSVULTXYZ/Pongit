@@ -14,7 +14,7 @@ import {agentMetrics} from '../relayer/src/agents/metrics';
 
 assert.equal(process.env.PONG_AGENT_POOL_SPONSOR,'isolated-qualification');
 const humanApps=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(humanApps.length);
-const client=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{timeout:10000,retryCount:0,fetchFn:measuredFetch('monad')})});
+const client=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:15,batchSize:8192}},transport:http(process.env.RPC_URL,{timeout:10000,retryCount:0,fetchFn:measuredFetch('monad')})});
 assert.equal(await client.getChainId(),10143);
 const reader=new AgentPoolReader(client,JSON.parse(await readFile(process.env.PONG_AGENT_POOL_MANIFEST!,'utf8')),humanApps);
 assert(!reader.manifest.enabled,'Private sponsorship must not open public admissions');

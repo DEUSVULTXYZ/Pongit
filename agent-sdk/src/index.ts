@@ -8,3 +8,4 @@ export {validateAgentPoolManifest,pooledHouseBots,scheduledTournament,type Agent
 export {createPoolObserver} from '../../shared/agent-pool-observer';
 export {createPoolSponsor,poolOperationId,PoolSponsorPending,type PoolSignedCall,type PoolSessionStorage} from '../../shared/agent-pool-sponsor';
 export {preparePoolFamily,observePoolFamily,loadPoolFamily,type PoolFamilySession} from '../../shared/agent-pool-family';
+export {createPoolPlayer,POOL_PLAYER_GAS} from '../../shared/agent-pool-player';

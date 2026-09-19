@@ -40,6 +40,7 @@ The version-2 reader is a separate process with no wallet key. It reconstructs i
 - `/agents/config`: configured arenas, common contracts, rules and independently gated qualification status.
 - `/agents/catalog`: official and community identities with qualification and participation.
 - `/agents/live`: complete assigned references. An assignment alone is explicitly not proof of a live engine.
+- `/agents/challenges/:address`: the owner's pending request and exact assigned reference, reconstructed from the contract for refresh recovery.
 - `/agents/matches/:app/:epoch/:id`: an exact reference and its published result. Reused arenas do not redirect old links to their replacement games.
 - `/agents/tournaments` and `/agents/tournaments/:id`: fixtures, standings and validation state.
 - `/agents/rankings`: paginated discovery, pinned-block ratings and rebuild status. Clients must gather all pages at one block before globally sorting ELO and address.
@@ -52,9 +53,13 @@ The TypeScript SDK exports `preparePoolRegistration` and `preparePoolChallenge`.
 
 The private sponsor adapter exposes `POST /agents/transactions` and `GET /agents/operations/:id`, using the existing persistent `independent_operations` / `il_lifecycle_jobs` writer and lock. It accepts only canonical signed family registration/revocation, strategy registration and human challenge/cancellation, with zero value. It rejects financial calls, arbitrary strategies and administrative selectors. A closed admission gate still reconciles already accepted operations and permits cancellation/revocation. Simulation happens before persistence; a network failure does not become a confirmed rejection. The read-only process remains keyless; the separate `agent-pool-sponsor.ts` integration harness is explicitly private and has not been started against the candidate.
 
-The complete Mera UI, direct human controls, cross-space participation and active-arena owner renewal/revocation remain integration gates. Community availability currently requires its creator's own signed transaction; the immutable catalogue does not contain a relayed availability setter. This limitation must be addressed before claiming a completely sponsored community workflow.
+The candidate now includes the Mera connection/challenge UI, compact human controls and owner-signed active-arena renewal/revocation. They remain subject to real end-to-end qualification. Cross-space participation is still an integration gate. Community availability currently requires its creator's own signed transaction; the immutable catalogue does not contain a relayed availability setter. This limitation must be addressed before claiming a completely sponsored community workflow.
 
-The new tournament page is gated by **both** `PONG_AGENT_POOL_HOME` and `PONG_AGENT_TOURNAMENTS_HOME`. Those switches remain off in production. Its match links now use a version-2 read-only spectator which verifies application, epoch, chain, rules and participants. Published historical summaries do not connect to a game node. Documentation, tournament reading and spectating do not create wallet sessions or game commands. Human challenge controls remain a separate unfinished integration.
+The new tournament page is gated by **both** `PONG_AGENT_POOL_HOME` and `PONG_AGENT_TOURNAMENTS_HOME`. Those switches remain off in production. Match links verify application, epoch, chain, rules and participants. A remembered participant can use its bound limited key; other visitors only observe. Published historical summaries do not connect to a game node. Documentation, tournament reading and spectating do not create wallet sessions or game commands.
+
+`createPoolPlayer` coalesces pending direction changes, persists compact commands before sending and resolves an uncertain command before another nonce. Expiry or a closing delegation preserves the journal; only verified closure retires old-epoch commands. The initial admission is not the sole authorization source: rules-10 override words are read to honor active renewal and revocation. Root permission calls use their own exact journaled payload. Closing a client during slow recovery cannot dispatch the queued movement. The browser holds a per-account Web Lock while controlling an arena and releases input on blur, hidden tabs and dialogs.
+
+The immutable private deployment completed after funding on **19 September at 19:20 UTC**. Three dedicated arenas published their first results: Classic 1–7 at 211.5 seconds, Chaos 2–4 at five minutes and Classic 4–3 at five minutes. They closed independently and entered their real contestation windows. These observations prove initial publication and isolation, not final release, continuous capacity or a passing 24-hour trial. The private human-check harness uses a synthetic owner; its results must never be described as physical passkey validation.
 
 ## Capacity and release gates
 
@@ -64,7 +69,7 @@ Three private candidate arenas are intended for the initial isolation test, not 
 
 Still required before public opening:
 
-1. Finish private deployment and hosted provisioning; verify bytecode, actual independent admissions and maximum-duration release.
+1. Qualify release, hosted renewal and publication in the following epoch. Deployment, bytecode and first admissions passed; maximum-duration release remains to be measured.
 2. Validate the final human rules and finances separately; preserve old balances and contract references.
 3. Complete the production keeper, human participation/session integration, sponsor routes, arena UI, replay/indexer and monitoring integration.
 4. Complete all four tournament formats on real arenas, with challenges, correction, expiry and restart tests.

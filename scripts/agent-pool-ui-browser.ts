@@ -13,7 +13,7 @@ assert.equal(process.env.PONG_POOL_UI_TEST,'isolated-fixture');
 const origin='http://127.0.0.1:4189',channel=process.env.BROWSER_CHANNEL??'chrome';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const node=JSON.parse(await readFile('deployments/agents.json','utf8')).node;
-const people=pooledHouseBots.map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90)}));
+const people=pooledHouseBots.map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90),difficulty:b.difficulty,modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false}));
 const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),challenges:address(6),qualifications:address(7),family:address(8),
  arenas:[9,10,11].map(n=>({app:address(n),node,runtimeHash:zeroHash})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:`0x${'b'.repeat(64)}`,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 const ref={chainId:10143 as const,app:address(9),epoch:'1',id:'1'};
@@ -38,7 +38,7 @@ try{
      if(request.headers().rsc==='1')return route.fulfill({status:404,body:''});
      const pathname=decodeURIComponent(url.pathname);
      let root:string,file:string;
-     if(pathname==='/agents/tournaments'||pathname.startsWith('/agents/arenas/')){root=resolve('artifacts/qualification/20260919/pool-ui');file=resolve(root,pathname==='/agents/tournaments'?'tournaments.html':'arena.html');}
+     if(pathname==='/agents'||pathname==='/agents/tournaments'||pathname.startsWith('/agents/arenas/')){root=resolve('artifacts/qualification/20260919/pool-ui');file=resolve(root,pathname==='/agents'?'catalog.html':pathname==='/agents/tournaments'?'tournaments.html':'arena.html');}
      else if(pathname.startsWith('/_next/static/')){root=resolve('web/.next/static');file=resolve(root,pathname.slice('/_next/static/'.length));}
      else if(pathname==='/icon.svg'||pathname==='/icon.png'){root=resolve('web/app');file=resolve(root,pathname.slice(1));}
      else{root=resolve('web/public');file=resolve(root,pathname.slice(1));}
@@ -49,6 +49,7 @@ try{
      let data:any;
      if(url.pathname==='/agents/config')data=m;
      else if(url.pathname==='/agents/catalog')data={items:people,total:'8',offset:'0',next:null};
+     else if(url.pathname==='/agents/live')data={items:[{ref,a:people[0].agent,b:people[1].agent,mode:0,lane:'tournament'}]};
      else if(url.pathname==='/agents/tournaments')data={items:[tournament('1',league,mode)],total:'1',offset:'0',next:null,nextAt:'0'};
      else if(url.pathname==='/agents/tournaments/1')data=tournament('1',league,mode);
      else if(url.pathname.startsWith('/agents/matches/'))data={ref,a:people[0].agent,b:people[1].agent,mode,ranked:false,tournament:'1',lane:0,node:published?null:node,currentBinding:!published,regulationSeconds:300,overtimeSeconds:league?0:60,
@@ -74,6 +75,16 @@ try{
   });
   await context.routeWebSocket('**/*',route=>{route.onMessage(raw=>{const r=JSON.parse(String(raw));route.send(JSON.stringify({jsonrpc:'2.0',id:r.id,result:'fixture-applied'}));});});
   const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>report.errors.push(e.message));
+  await page.goto(origin+'/agents');await page.getByRole('heading',{name:'Agent Arcade',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Challenge NOVA',exact:true}).waitFor();assert.equal(await page.locator('.agent-card').count(),8);
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'catalogue page overflow');
+  const docs=await page.getByRole('link',{name:'Docs ↗',exact:true}).boundingBox(),back=await page.getByRole('link',{name:'Back to arcade',exact:true}).boundingBox();
+  assert(docs&&back&&(docs.x+docs.width<=back.x||back.x+back.width<=docs.x||docs.y+docs.height<=back.y||back.y+back.height<=docs.y),'Header links overlap');
+  await page.getByRole('button',{name:'Challenge NOVA',exact:true}).click();await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
+  await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);assert.equal(await page.locator(':focus').textContent(),'Challenge NOVA');
+  await page.getByRole('button',{name:'Chaos',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Chaos',exact:true}).getAttribute('aria-pressed'),'true');
+  await page.screenshot({path:`artifacts/qualification/20260919/pool-ui/${channel}-catalogue-${width}.png`,fullPage:true});
+  report.checks.push({width,height,catalogue:true,eightBots:true,connectIntent:true,escape:true,focusRestored:true});
   for(league of [false,true]){
    mode=league?1:0;await page.goto(origin+'/agents/tournaments?id=1');await page.getByRole('heading',{name:'Tournament #1',exact:true}).waitFor();
    assert.equal(await page.locator('.tournament-fixture').count(),league?28:7);

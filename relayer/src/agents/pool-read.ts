@@ -5,6 +5,8 @@ import {agentCatalogAbi as catalogAbi} from '../../../shared/abi-AgentCatalog';
 import {agentTournamentsAbi as tournamentAbi} from '../../../shared/abi-AgentTournaments';
 import {agentPublishedRatingsAbi as ratingsAbi} from '../../../shared/abi-AgentPublishedRatings';
 import {pooledAgentArenaAbi as arenaAbi} from '../../../shared/abi-PooledAgentArena';
+import {agentChallengesAbi as challengeAbi} from '../../../shared/abi-AgentChallenges';
+import type {PoolChallengeView} from '../../../shared/agent-pool';
 import {pooledHouseBots,tournamentStatuses,validateAgentPoolManifest,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../../../shared/agent-pool';
 import type {AgentMatchRef} from '../../../shared/agents';
 
@@ -126,6 +128,28 @@ export class AgentPoolReader {
      lane:lane===0?'tournament':b.controlA.codeHash!==zeroHash?'qualification':'challenge',source:'published-admission',liveConfirmed:false}];
    })};
  });
+ }
+ async challenge(player:Address){
+  const m=this.manifest;
+  return this.snapshot(async(read):Promise<{request:PoolChallengeView|null}>=>{
+   const id=await read<bigint>(m.challenges,challengeAbi,'pending',[player]);if(!id)return{request:null};
+   const request=await read(m.challenges,challengeAbi,'requests',[id]);
+   // Public mapping getter returns a tuple, unlike the struct-returning methods.
+   const [owner,agent,mode,status,at]=request;
+   if(owner.toLowerCase()!==player.toLowerCase()||![1,2].includes(status))throw Error('Challenge participation changed');
+   let ref:AgentMatchRef|null=null;
+   if(status===2){
+    const playing=await read<string>(m.pool,poolAbi,'playing',[player]);
+    const bindings=await Promise.all(m.arenas.map(async arena=>({arena,b:await read(arena.app,arenaAbi,'boundMatch')})));
+    for(const {arena,b} of bindings){
+     const r={chainId:10143n,arena:arena.app,epoch:b.epoch,id:b.id};
+     if(b.id&&refKey(r)===playing&&b.a.toLowerCase()===player.toLowerCase()&&b.b.toLowerCase()===agent.toLowerCase()
+      &&await read<bigint>(m.pool,poolAbi,'challengeOf',[playing])===id){ref=refView(r);break;}
+    }
+    if(!ref)throw Error('The active challenge has no matching arena reference');
+   }
+   return{request:{id:String(id),player:owner,agent,mode,status,at:String(at),ref}};
+  });
  }
  async match(ref:AgentMatchRef){
   const m=this.manifest,arena=m.arenas.find(a=>a.app.toLowerCase()===ref.app.toLowerCase());
