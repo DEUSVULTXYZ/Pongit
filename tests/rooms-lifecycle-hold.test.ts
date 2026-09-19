@@ -122,8 +122,8 @@ test('supervised recovery preserves an uncertain operator transaction without re
  try{
   assert.equal(w.sent.length,0);assert.equal(w.jobs.size,1);assert.equal(w.jobs.get('already-signed')!.status,'pending');
   assert.match(lifecycle.status().error,/without rebroadcast/);
+  assert.equal(lifecycle.status().epoch,'6','the uncertain receipt does not hide hub observations');
   w.receipts.set(zeroHash,'success');await lifecycle.cycle();
   assert.equal(w.jobs.get('already-signed')!.status,'confirmed');assert.equal(w.sent.length,0);
  }finally{lifecycle.stop();}
 });
-

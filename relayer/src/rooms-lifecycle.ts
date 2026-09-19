@@ -182,6 +182,8 @@ export async function roomsLifecycle(o: {
           .catch(() => null);
         if (!r) {
           if(process.env.ROOMS_LIFECYCLE_HOLD_WRITES==='true'){
+            const observed=await readHubDelegation(o.base,o.hub,o.app);
+            sessionInfo={epoch:String(observed.epoch),expiresAt:Number(observed.expiresAt)*1000,releaseAt:Number(observed.stakeUnlockAt)*1000,batch:String(observed.batchIndex)};
             healthy=false;error='Operator approval required: pending lifecycle transaction preserved without rebroadcast';return;
           }
           await o.base.sendRawTransaction({
