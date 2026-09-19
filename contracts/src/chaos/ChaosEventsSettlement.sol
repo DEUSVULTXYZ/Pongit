@@ -10,7 +10,7 @@ import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 /// changes score points only; no payout multiplier is introduced here.
 contract ChaosEventsSettlement is RoomsEarlySettlement {
     /// A rules-6 game is bound by its own, already deployed, settlement.
-    uint256 public constant RULES=8;
+    uint256 public constant RULES=9;
     mapping(uint256=>uint64) public bettingCutoff;
     mapping(uint256=>bytes32) public recordedHash;
     event MatchRecorded(uint256 indexed id,uint256 indexed epoch,address indexed app,bytes32 hash,address a,address b,address winner,uint8 status,uint8 mode,bool ranked,uint8 scoreA,uint8 scoreB,bool played,uint64 finishedAt);

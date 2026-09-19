@@ -76,7 +76,7 @@ library AgentIdentity {
         // coordinator may submit the offer itself when a strategy is involved, which is the only
         // way two strategies ever meet.
         bool sa=isStrategy(words,o.a);bool sb=isStrategy(words,o.b);
-        if(o.id==0||o.a==address(0)||o.b==address(0)||o.a==o.b||o.mode>1||o.rules!=7||o.expires<=block.timestamp||o.expires>block.timestamp+30
+        if(o.id==0||o.a==address(0)||o.b==address(0)||o.a==o.b||o.mode>1||o.rules!=10||o.expires<=block.timestamp||o.expires>block.timestamp+30
             ||Session.recover(hash,signature)!=admission||actor!=o.a&&actor!=o.b&&!(actor==admission&&(sa||sb)))revert AgentAdmissionDenied();
         validate(words,o.a,o.b,o.mode,o.ranked);
         uint256 meta=words[key(o.id,0)];uint256 phase=(meta>>161)&7;fresh=phase==0;

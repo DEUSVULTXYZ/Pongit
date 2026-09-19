@@ -245,7 +245,7 @@ export function createAgentCoordinator(db:Pool,m:AgentManifest,abi:Abi,key:Hex,r
  async function offer(match:any){
   // Prepared identity is durable before signing. A restart resumes the same id.
   const ticket={id:BigInt(match.id),room:toHex(BigInt(match.id),{size:32}),a:match.a as Address,b:match.b as Address,mode:match.mode,ranked:match.ranked,
-   expires:BigInt(Math.floor(Date.now()/1000)+25),rules:7n,entropy:keccak256(toHex(`${app}:${m.epoch}:${match.id}`))};
+   expires:BigInt(Math.floor(Date.now()/1000)+25),rules:BigInt(m.rulesVersion),entropy:keccak256(toHex(`${app}:${m.epoch}:${match.id}`))};
   const signature=await signer.sign({hash:await client.read('ticketDigest',[ticket]) as Hex});
   await db.query("UPDATE agent_arcade.matches SET offer=$2,status='offered',updated_at=now() WHERE id=$1 AND status='preparing'",[match.id,json({...ticket,signature})]);
  }

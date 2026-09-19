@@ -18,7 +18,7 @@ contract PongAgentArcade is PongChaosEvents {
     constructor(IInterludeHub h,address admission,address ops,ChaosEngine module)
         PongChaosEvents(h,admission,address(1),ops,address(0),module) {}
 
-    function RULES_VERSION() public pure override returns(uint256){return 7;}
+    function RULES_VERSION() public pure override returns(uint256){return 10;}
     function registrationDigest(AgentIdentity.Registration calldata r) external view returns(bytes32){return AgentIdentity.digest(r);}
     function registerAgent(AgentIdentity.Registration calldata r,bytes calldata creatorProof,bytes calldata agentProof)
         external engine whenNotDelegated(Types.GLOBAL) {AgentIdentity.register(words,r,creatorProof,agentProof);}

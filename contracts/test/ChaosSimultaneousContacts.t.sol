@@ -275,7 +275,7 @@ contract ChaosSimultaneousContactsTest is SimultaneousBase {
         place(s,1,40*P+150e6*int256(uint256(at))-5,570*P-100e6*int256(uint256(at))+7,-150e6,100e6);
     }
     function testLogCapacityHoldsAFullMicrosecondAfterSevenCollisions() public view {
-        assertEq(k.LOG_STOP(),8);assertEq(k.LOG_CAPACITY(),13);
+        assertEq(k.LOG_STOP(),8);assertEq(k.LOG_CAPACITY(),31);
         (T.State memory s,uint64 at)=capacityCase();
         (T.State memory next,,T.Collision[] memory log)=k.advance(s,T0+at+100_000,128);
         assertEq(log.length,11,"7 bounces, then both walls and both paddles in one microsecond");

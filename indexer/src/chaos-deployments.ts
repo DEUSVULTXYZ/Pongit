@@ -3,5 +3,9 @@ export const chaosArchiveDeployments = {
   "0xd7602b6ae87798e0f39ea25b97f75dcc5dd0822f": {
     "app": "0x78d3341e3452d7ec1add9371de3008639eed8eb0",
     "rulesVersion": 6
+  },
+  "0xb25353a7816157d8b3470f33ade44e6bfe729eef": {
+    "app": "0x3ff9be7d8c3fbea0dc617f9cd59ff141fb6725db",
+    "rulesVersion": 7
   }
 } as const;

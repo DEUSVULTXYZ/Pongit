@@ -14,8 +14,8 @@ contract ChaosEngine {
     ChaosCodec public immutable codec;ChaosPhysics public immutable physics;
     DrandEvmnet public immutable beacon;D public immutable draws;E public immutable effects;
     /// One advance makes at most CALLS kernel calls, each logging at most the kernel's
-    /// LOG_CAPACITY collisions (rules 8: 13, a full microsecond after 7).
-    uint256 private constant CALLS=4;uint256 private constant COLLISIONS=CALLS*13;
+    /// LOG_CAPACITY collisions (31, a complete contact batch after at most 7).
+    uint256 private constant CALLS=4;uint256 private constant COLLISIONS=CALLS*31;
     constructor(ChaosCodec c,ChaosPhysics p,DrandEvmnet b,D d){
         require(p.LOG_CAPACITY()*CALLS<=COLLISIONS,"collision buffer");codec=c;physics=p;beacon=b;draws=d;effects=p.effects();
     }

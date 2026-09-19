@@ -10,7 +10,7 @@ export type AgentQualification='registered'|'queued'|'testing'|'paused'|'retry'|
 export type AgentMatchRef={chainId:10143;app:Address;epoch:string;id:string};
 export type AgentProfile={agent:Address;creator:Address;name:string;avatar:number;kind:AgentKind;modes:AgentMode[];
  qualification:Partial<Record<AgentMode,AgentQualification>>;available:boolean;playing?:AgentMatchRef;createdAt:string};
-export type AgentManifest={version:1;chainId:10143;engineChainId:4242;rulesVersion:7;app:Address;hub:Address;node:string;coordinator:Address;epoch:string;enabled:boolean;qualified:boolean;maxMatches:2;durationSeconds:300};
+export type AgentManifest={version:1;chainId:10143;engineChainId:4242;rulesVersion:7|10;app:Address;hub:Address;node:string;coordinator:Address;epoch:string;enabled:boolean;qualified:boolean;maxMatches:2;durationSeconds:300};
 export const agentActions=['acceptMatch','input','tick','cancelMatch','concede'] as const;
 export const houseBots=[
  {name:'NOVA',difficulty:'Rookie',avatar:0,reactionMs:280,error:58,deadZone:17},
@@ -58,7 +58,7 @@ export function agentAuthMessage(player:string,nonce:string,expires:number,app:s
  return `PONGIT Agent Arcade session\nPlayer: ${player.toLowerCase()}\nNonce: ${nonce}\nExpires: ${expires}\nChain: 10143\nGame: ${app.toLowerCase()}\nScope: agent availability, qualification and friendly challenges. No funds.`;
 }
 export function validateAgentManifest(m:AgentManifest):AgentManifest {
- if(m.version!==1||m.chainId!==10143||m.engineChainId!==4242||m.rulesVersion!==7||m.durationSeconds!==300||m.maxMatches!==2
+ if(m.version!==1||m.chainId!==10143||m.engineChainId!==4242||![7,10].includes(m.rulesVersion)||m.durationSeconds!==300||m.maxMatches!==2
   ||![m.app,m.hub,m.coordinator].every(a=>isAddress(a))||!/^[1-9]\d*$/.test(m.epoch)||new URL(m.node).protocol!=='https:')throw Error('Unsupported Agent Arcade deployment');
  return m;
 }

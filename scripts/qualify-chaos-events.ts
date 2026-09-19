@@ -51,7 +51,7 @@ try{
   report={...report,app:r.app,node:r.node,modules:r.modules,rootRuntimeBytes:(artifact.deployedBytecode.object.length-2)/2,epoch:r.epoch,passed:true};
  }else{
   assert(r.app&&r.node);const node=createPublicClient({transport:http(r.node,{retryCount:0,timeout:12000})});
-  assert.equal(await node.getChainId(),4242);assert.equal(await node.readContract({address:r.app,abi:artifact.abi,functionName:'RULES_VERSION'}),8n);
+  assert.equal(await node.getChainId(),4242);assert.equal(await node.readContract({address:r.app,abi:artifact.abi,functionName:'RULES_VERSION'}),9n);
   const baseStart=r.baseStart??String(await t.base.getBlockNumber());r.baseStart=baseStart;await save();
   const read=async(id:bigint)=>engineState(await readEngineSnapshot({app:r.app,abi:artifact.abi,node:node as any},id));
   async function send(op:string,index:number,name:string,args:readonly unknown[]=[]){
@@ -94,12 +94,12 @@ try{
    const id=BigInt(j+1);let s=await read(id);
    if(s.phase===0){
     const now=(await node.getBlock()).timestamp;
-    const offer={id,room:toHex(id,{size:32}),a:keys[j*2].address,b:keys[j*2+1].address,mode:1,ranked:j===0,expires:now+25n,rules:8n,entropy:keccak256(toHex(`chaos-qualification-${j}`))};
+    const offer={id,room:toHex(id,{size:32}),a:keys[j*2].address,b:keys[j*2+1].address,mode:1,ranked:j===0,expires:now+25n,rules:9n,entropy:keccak256(toHex(`chaos-qualification-${j}`))};
     const hash=await node.readContract({address:r.app,abi:artifact.abi,functionName:'ticketDigest',args:[offer]}) as Hex;
     const signature=await keys[4].sign({hash});
     r.offers[j]={offer:{...offer,id:String(id),expires:String(offer.expires),rules:'8'},signature};await save();
    }
-   const saved=r.offers[j];assert(saved);const offer={...saved.offer,id,expires:BigInt(saved.offer.expires),rules:8n};
+   const saved=r.offers[j];assert(saved);const offer={...saved.offer,id,expires:BigInt(saved.offer.expires),rules:9n};
    await send(`accept-${j}-a`,7+j*2,'acceptMatch',[offer,saved.signature]);await send(`accept-${j}-b`,8+j*2,'acceptMatch',[offer,saved.signature]);
   }
   // A restarted trial keeps every previous transaction, including confirmed reverts.

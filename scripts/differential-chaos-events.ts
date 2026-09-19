@@ -131,7 +131,7 @@ try{
  for(let batch=0;batch<cases.length;batch+=10){
   const slice=cases.slice(batch,batch+10);
   await Promise.all(slice.map(async(c,j)=>{
-   const expected=advanceChaosEvents(c.s,c.target,c.budget,c.stop,!c.rules6);
+   const expected=advanceChaosEvents(c.s,c.target,c.budget,c.stop,c.rules6?false:'complete');
    const actual=await chain.publicClient.readContract({address:c.rules6?oldAddress:address,abi:a.abi,functionName:c.stop?'advanceUntilPoint':'advance',args:[c.s,c.target,c.budget]});
    try{assert.deepEqual(actual,expected,`Chaos ${c.family} case ${batch+j}`);}catch(e){await mkdir('artifacts/drand',{recursive:true});await writeFile('artifacts/drand/physics-mismatch.json',JSON.stringify({index:batch+j,...c,expected,actual},(_,v)=>typeof v==='bigint'?v.toString():v,2));throw e;}
    const log=expected[2] as ChaosPhysicsCollision[],r=coverage[c.family]??={cases:0,shared:0,atInstant:0,points:0,cancelled:0};

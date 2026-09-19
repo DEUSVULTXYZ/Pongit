@@ -43,7 +43,7 @@ export function createAgentClient(options:AgentClientOptions){
   const [node,hub]=await Promise.all([client.status(),readHubDelegation(client.base,m.hub,m.app)]);
   assertRoomsEngineAvailable(m.app,node,hub,Math.floor(Date.now()/1000));
   if(String(hub.epoch)!==m.epoch)throw Object.assign(Error('The agent arena renewed. Reload its configuration and reuse the saved grant.'),{code:'AGENT_EPOCH_CHANGED',status:503});
-  if(await client.read('RULES_VERSION')!==7n||await client.read('MATCH_DURATION_US')!==300000000n)throw Error('This contract does not implement Agent Arcade rules');
+  if(await client.read('RULES_VERSION')!==BigInt(m.rulesVersion)||await client.read('MATCH_DURATION_US')!==300000000n)throw Error('This contract does not implement Agent Arcade rules');
   journal.retirePrevious(player,hub.epoch);
   const s=saved();journal.bindRoomControls(player,s.grant.sessionKey,hub.epoch,s.grant.expiry);
   const pending=journal.pending(player);

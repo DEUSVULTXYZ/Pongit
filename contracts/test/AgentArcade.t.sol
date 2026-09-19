@@ -194,7 +194,7 @@ contract AgentArcadeTest is ChaosPhysicsTest {
         bytes memory signature=sig(game.sessionDigest(grant),key);vm.prank(control);game.registerControls(abi.encode(grant,signature));
     }
     function offer(uint256 id,uint8 mode,bool ranked) private view returns(Rooms.Offer memory){
-        return Rooms.Offer(id,bytes32(id),vm.addr(A),vm.addr(B),mode,ranked,uint64(block.timestamp+20),7,bytes32(id));
+        return Rooms.Offer(id,bytes32(id),vm.addr(A),vm.addr(B),mode,ranked,uint64(block.timestamp+20),10,bytes32(id));
     }
     bytes32 constant NOVA_META=0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770;
     bytes32 constant ONYX_META=0xab988c929327e00ef2ffef823a9578430c6237e0f21da503f90f62fd0b7d3a8f;
@@ -236,6 +236,7 @@ contract AgentArcadeTest is ChaosPhysicsTest {
             for(uint256 r;r<3&&game.phaseOf(m)==2;r++){
                 uint64 before=game.gameTime1(m);
                 bn+=gaps[g];vm.roll(bn);vm.prank(KA);game.tick{gas:14_800_000}(m);
+                assertGt(gasleft(),16_000_000,"test runner must still fund a full command");
                 if(game.phaseOf(m)==2)assertGt(game.gameTime1(m),before,string.concat("effect ",vm.toString(fx)," must progress"));
             }
             // A lagging match recovers: at a fixed target, repeated ticks close the gap, after
@@ -244,7 +245,10 @@ contract AgentArcadeTest is ChaosPhysicsTest {
             if(game.phaseOf(m)==2){vm.prank(KB);game.concede(m);}
         }
     }
-    function testNoSteeredTickOutspendsAGameCommandEffects1To8() public {sweepEffects(1,8);}
+    // Separate sweeps keep the test harness below Foundry's total test gas limit.
+    // Each actual game call still receives exactly 14.8 M, including catch-up.
+    function testNoSteeredTickOutspendsAGameCommandEffects1To4() public {sweepEffects(1,4);}
+    function testNoSteeredTickOutspendsAGameCommandEffects5To8() public {sweepEffects(5,8);}
     function testNoSteeredTickOutspendsAGameCommandEffects9To15() public {sweepEffects(9,15);}
     function testNoSteeredTickOutspendsAGameCommandEffect16() public {sweepEffects(16,16);}
     function testNoSteeredTickOutspendsAGameCommandEffect17() public {sweepEffects(17,17);}
@@ -412,7 +416,7 @@ contract AgentArcadeTest is ChaosPhysicsTest {
         bytes32 h=game.registrationDigest(r);game.registerAgent(r,sig(h,creatorKey),"");
     }
     function seatsOffer(uint256 id,address a,address b,uint8 mode) private view returns(Rooms.Offer memory){
-        return Rooms.Offer(id,bytes32(id),a,b,mode,false,uint64(block.timestamp+20),7,bytes32(id));
+        return Rooms.Offer(id,bytes32(id),a,b,mode,false,uint64(block.timestamp+20),10,bytes32(id));
     }
     function clockOf(uint256 id,uint8 mode) private view returns(uint64){return mode==0?game.gameTime(id):game.gameTime1(id);}
     /// A strategy cannot sign, so it registers by naming its creator, whose signature is checked,
@@ -567,11 +571,11 @@ contract AgentArcadeTest is ChaosPhysicsTest {
         register(C1,A);start(1,0,false);
         uint256 c=0xe1;uint256 d=0xe2;address kc=address(0xaaaa);address kd=address(0xbbbb);
         register(C1,c);bind(c,kc);bind(d,kd);
-        Rooms.Offer memory o=Rooms.Offer(2,bytes32(uint256(2)),vm.addr(c),vm.addr(d),1,false,uint64(block.timestamp+20),7,bytes32(uint256(2)));
+        Rooms.Offer memory o=Rooms.Offer(2,bytes32(uint256(2)),vm.addr(c),vm.addr(d),1,false,uint64(block.timestamp+20),10,bytes32(uint256(2)));
         bytes memory proof=sig(game.ticketDigest(o),AD);vm.prank(kc);game.acceptMatch(o,proof);vm.prank(kd);game.acceptMatch(o,proof);
         assertEq(game.activeCount(),2);vm.prank(KA);vm.expectRevert();game.input(2,1,1,uint64(block.number+100));
         uint256 third=0xe3;register(C2,third);bind(third,address(0xcccc));
-        o=Rooms.Offer(3,bytes32(uint256(3)),vm.addr(third),vm.addr(0xe4),0,false,uint64(block.timestamp+20),7,bytes32(uint256(3)));
+        o=Rooms.Offer(3,bytes32(uint256(3)),vm.addr(third),vm.addr(0xe4),0,false,uint64(block.timestamp+20),10,bytes32(uint256(3)));
         proof=sig(game.ticketDigest(o),AD);vm.prank(address(0xcccc));vm.expectRevert();game.acceptMatch(o,proof);
         vm.prank(KB);game.concede(1);assertEq(game.activeCount(),1);
         (uint256 phase,,)=snapshot(2);assertEq(phase,2);

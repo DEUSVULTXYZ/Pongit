@@ -104,7 +104,7 @@ function makeWorld(){
     db:db as any,base:base as any,app,hub,adapter,nodeUrl:"https://node.test",
     engineStatus:async()=>({app,chainId:4242,epoch:w.nodeEpoch,committedBatches:w.delegation.batchIndex,pendingDiffs:Array(w.pendingDiffs).fill("0x")}),
     engineActive:async()=>w.live,
-    publishedResult:{finalStatus:async()=>0,published:async()=>{throw Error('Unexpected result read in lifecycle fixture');}},
+    publishedResult:{probe:async()=>1n,finalStatus:async()=>0,published:async()=>{throw Error('Unexpected result read in lifecycle fixture');}},
     beforeClose:async e=>{w.closes.push(e);w.onClose?.();},
   });
   return {state:w,start};

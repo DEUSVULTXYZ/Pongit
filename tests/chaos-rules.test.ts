@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import {mkdtemp,writeFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {isChaosEventsRules,chaosResolvesEveryContact} from '../shared/chaos-rules';
+import {isChaosEventsRules,chaosResolvesEveryContact,chaosContactResolution} from '../shared/chaos-rules';
 import {loadRoomsFinance,financeAdapterAbi,type RoomsFinanceManifest} from '../relayer/src/rooms-finance-config';
 import {chaosEventsSettlementAbi} from '../shared/abi-ChaosEventsSettlement';
 import {initialChaosEvents,advanceChaosEvents,CHAOS_P as P,type ChaosPhysicsState} from '../shared/physics-chaos-events';
@@ -11,22 +11,23 @@ import {announceEffect} from '../shared/chaos-effects';
 
 const address=(n:string)=>('0x'+n.padStart(40,'0')) as `0x${string}`;
 
-test('the human Chaos events rules are 6 and the corrected 8; 7 is the Agent Arcade',()=>{
- assert.deepEqual([5,6,7,8,9,'8'].map(isChaosEventsRules),[false,true,false,true,false,false]);
+test('human rules retain 6 and 8 history and add 9; agent rules are separate',()=>{
+ assert.deepEqual([5,6,7,8,9,10,'8'].map(isChaosEventsRules),[false,true,false,true,true,false,false]);
  assert.deepEqual([6,7,8].map(chaosResolvesEveryContact),[false,false,true]);
+ assert.deepEqual([6,7,8,9,10].map(chaosContactResolution),[false,false,true,'complete','complete']);
 });
 
-test('a rules-8 finance binding loads like rules 6; any other number is refused',async()=>{
+test('finance bindings accept historical and current human kernels but never agent kernels',async()=>{
  const dir=await mkdtemp(join(tmpdir(),'pongit-chaos-rules-')),old=process.env.ROOMS_FINANCE_MANIFEST;
  const events=(rulesVersion:number):RoomsFinanceManifest=>({app:address('a'),adapter:address('b'),market:address('c'),vault:address('d'),pressureSigner:address('e'),
   startBlock:'1',chainId:10143,financeId:'events-v2',settlement:'early-published-testnet',betting:'realtime',rulesVersion:rulesVersion as 8});
  try{
   process.env.ROOMS_FINANCE_MANIFEST=join(dir,'finance.json');
-  for(const rules of [6,8]){
+  for(const rules of [6,8,9]){
    await writeFile(process.env.ROOMS_FINANCE_MANIFEST,JSON.stringify([events(rules)]));await loadRoomsFinance();
    assert.equal(financeAdapterAbi(events(rules)),chaosEventsSettlementAbi);
   }
-  for(const rules of [5,7]){
+  for(const rules of [5,7,10]){
    await writeFile(process.env.ROOMS_FINANCE_MANIFEST,JSON.stringify([events(rules)]));
    await assert.rejects(loadRoomsFinance(),/Invalid rooms finance manifest/);
   }

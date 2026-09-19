@@ -122,7 +122,7 @@ test('controls: nothing else due in the microsecond',()=>{
 });
 
 test('a full microsecond after seven collisions fits the log: 7 + 4 = 11',()=>{
- assert.equal(CHAOS_LOG_STOP,8);assert.equal(CHAOS_LOG_CAPACITY,13);
+ assert.equal(CHAOS_LOG_STOP,8);assert.equal(CHAOS_LOG_CAPACITY,31);
  const s=multiball();s.left=528n*P;const v=5_003_000_000n,time=ceil(294n*P,v)+7n*ceil(564n*P,v);
  place(s,0,40n*P+200_000_000n*time-3n,300n*P,-200_000_000n,-v);
  place(s,1,40n*P+150_000_000n*time-5n,570n*P-100_000_000n*time+7n,-150_000_000n,100_000_000n);

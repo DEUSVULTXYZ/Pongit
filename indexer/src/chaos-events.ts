@@ -8,5 +8,5 @@ indexer.onEvent({contract:'ChaosEventsArchive',event:'MatchRecorded'},async({eve
  await applyChaosArchive(context,event,chaosArchiveRules(chaosArchiveDeployments,event));
 });
 indexer.onEvent({contract:'AgentArchive',event:'MatchRecorded'},async({event,context})=>{
- await applyChaosArchive(context,event,7);
+ await applyChaosArchive(context,event,chaosArchiveRules(chaosArchiveDeployments,event));
 });

@@ -10,7 +10,7 @@ contract AgentResultArchive {
     uint256 public immutable baseChainId;
     mapping(uint256=>bytes32) public recordedHash;
     event MatchRecorded(uint256 indexed id,uint256 indexed epoch,address indexed app,bytes32 hash,address a,address b,address winner,uint8 status,uint8 mode,bool ranked,uint8 scoreA,uint8 scoreB,bool played,uint64 finishedAt);
-    constructor(PongAgentArcade g){require(block.chainid==10143&&g.RULES_VERSION()==7,"agent testnet rules required");game=g;baseChainId=block.chainid;}
+    constructor(PongAgentArcade g){require(block.chainid==10143&&g.RULES_VERSION()==10,"agent testnet rules required");game=g;baseChainId=block.chainid;}
     function recordMatch(uint256 id) external {
         require(block.chainid==baseChainId,"published Monad state only");
         (,,uint256 phase,address a,address b,,address winner,,,,,,PhysicsV2.State memory s)=game.getSnapshot(id);

@@ -12,9 +12,11 @@ import {chaosEvent} from '../../shared/chaos-events';
 import {projectChaos,eventCanvas,eventPaddles} from '../lib/chaos-presentation';
 import {drawChaosCourt,drawChaosPaddles,drawChaosBalls,type ChaosCanvasFrame} from '../lib/chaos-canvas';
 import {courtSprites} from '../lib/court-sprites';
+import {chaosContactResolution} from '../../shared/chaos-rules';
 type Props = {
   state: State | null;
   chaos?:ChaosDecoded;
+  rulesVersion?:number;
   clock: bigint;
   observedAt: number;
   direction: number;
@@ -34,6 +36,7 @@ type Props = {
 export function Court({
   state,
   chaos,
+  rulesVersion,
   clock,
   observedAt,
   direction,
@@ -48,6 +51,7 @@ export function Court({
   const current = useRef({
     state,
     chaos,
+    rulesVersion,
     clock,
     observedAt,
     direction,
@@ -59,6 +63,7 @@ export function Court({
   current.current = {
     state,
     chaos,
+    rulesVersion,
     clock,
     observedAt,
     direction,
@@ -106,7 +111,7 @@ export function Court({
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
       const target=p.replay?p.clock:p.liveEngine?liveClock.sample(timing.target):timing.target;
       let waiting = false;
-      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:projectChaos(p.chaos.physics,target)):null;
+      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
       if(cp){s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
       else if (s) {
         const projected = p.replay ? { state: s, waiting: false }

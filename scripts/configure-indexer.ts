@@ -36,12 +36,12 @@ try{
  if(independent.chainId!==d.chainId||!/^0x[\da-fA-F]{40}$/.test(independent.ratings)||!/^\d+$/.test(String(independent.startBlock)))throw Error('Independent indexer manifest requires a verified deployment block');
  config+=`      - name: IndependentRatings\n        address: "${independent.ratings}"\n        start_block: ${start(independent.startBlock)}\n`;
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
-const chaosBindings:Record<string,{app:string;rulesVersion:6|8}>={};
+const chaosBindings:Record<string,{app:string;rulesVersion:6|7|8|9|10}>={};
 try{
  const finance=JSON.parse(await readFile('deployments/rooms-finance.json','utf8'));
  for(const m of finance.filter((m:any)=>isChaosEventsRules(m.rulesVersion))){
   if(m.chainId!==d.chainId||!/^0x[\da-fA-F]{40}$/.test(m.adapter)||!/^0x[\da-fA-F]{40}$/.test(m.app)||!/^\d+$/.test(m.startBlock))throw Error('Invalid events archive manifest');
-  const address=m.adapter.toLowerCase(),binding={app:m.app.toLowerCase(),rulesVersion:m.rulesVersion as 6|8};
+  const address=m.adapter.toLowerCase(),binding={app:m.app.toLowerCase(),rulesVersion:m.rulesVersion as 6|7|8|9|10};
   if(chaosBindings[address]&&JSON.stringify(chaosBindings[address])!==JSON.stringify(binding))throw Error('Conflicting Chaos archive binding');
   chaosBindings[address]=binding;
   config+=`      - name: ChaosEventsArchive\n        address: "${m.adapter}"\n        start_block: ${start(m.startBlock)}\n`;
@@ -50,6 +50,10 @@ try{
 try{
  const agents=JSON.parse(await readFile('deployments/agents.json','utf8'));
  if(agents.chainId!==d.chainId||!/^0x[\da-fA-F]{40}$/.test(agents.archive)||!/^\d+$/.test(String(agents.archiveStartBlock)))throw Error('Invalid agent archive manifest');
+ if(![7,10].includes(agents.rulesVersion)||!/^0x[\da-fA-F]{40}$/.test(agents.app))throw Error('Invalid agent archive rules binding');
+ const address=agents.archive.toLowerCase(),binding={app:agents.app.toLowerCase(),rulesVersion:agents.rulesVersion as 7|10};
+ if(chaosBindings[address]&&JSON.stringify(chaosBindings[address])!==JSON.stringify(binding))throw Error('Conflicting agent archive binding');
+ chaosBindings[address]=binding;
  config+=`      - name: AgentArchive\n        address: "${agents.archive}"\n        start_block: ${start(agents.archiveStartBlock)}\n`;
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 await writeFile("indexer/config.yaml", config);

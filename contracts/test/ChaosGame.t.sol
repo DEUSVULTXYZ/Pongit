@@ -34,18 +34,18 @@ contract ChaosGameTest is ChaosPhysicsTest {
         bytes memory signature=sig(game.sessionDigest(grant),key);vm.prank(control);game.registerControls(abi.encode(grant,signature));
     }
     function start(uint256 id,uint8 mode,bool ranked,uint256 a,uint256 b,address ka,address kb) private {
-        bind(a,ka);bind(b,kb);Rooms.Offer memory o=Rooms.Offer(id,bytes32(id),vm.addr(a),vm.addr(b),mode,ranked,uint64(block.timestamp+20),8,bytes32(id));
+        bind(a,ka);bind(b,kb);Rooms.Offer memory o=Rooms.Offer(id,bytes32(id),vm.addr(a),vm.addr(b),mode,ranked,uint64(block.timestamp+20),9,bytes32(id));
         bytes memory signature=sig(game.ticketDigest(o),AD);vm.prank(ka);game.acceptMatch(o,signature);vm.prank(kb);game.acceptMatch(o,signature);
     }
     function raw(uint256 id) private view returns(uint256[8] memory w,uint256 q,uint256 draw,bytes32 seed){
         ChaosGameFlow.Header memory h;(h,w,q,draw)=abi.decode(game.chaosState(id),(ChaosGameFlow.Header,uint256[8],uint256,uint256));return(w,q,draw,h.state.seed);
     }
     function state(uint256 id) private view returns(T.State memory s){(uint256[8] memory w,,,bytes32 seed)=raw(id);return codec.unpack(w,seed,5);}
-    /// Rules 8: a ticket signed for the first Chaos events kernel (6) or for the Agent Arcade (7)
+    /// Rules 9: a ticket signed for a historical human or agent kernel
     /// cannot open a match on the corrected kernel. The result hash binds RULES_VERSION too.
-    function testOnlyRulesEightTicketsOpenAMatch() public {
-        assertEq(game.RULES_VERSION(),8);bind(A,KA);bind(B,KB);
-        for(uint256 rules=6;rules<=7;rules++){
+    function testOnlyRulesNineTicketsOpenAMatch() public {
+        assertEq(game.RULES_VERSION(),9);bind(A,KA);bind(B,KB);
+        for(uint256 rules=6;rules<=8;rules++){
             Rooms.Offer memory o=Rooms.Offer(9,bytes32(uint256(9)),vm.addr(A),vm.addr(B),1,false,uint64(block.timestamp+20),rules,bytes32(uint256(9)));
             bytes memory signature=sig(game.ticketDigest(o),AD);
             vm.prank(KA);vm.expectRevert(Rooms.InvalidTicket.selector);game.acceptMatch(o,signature);

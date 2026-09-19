@@ -13,8 +13,8 @@ export type ChaosPhysicsCollision={sequence:number;rally:number;ball:number;kind
 export type ChaosCandidate={dt:bigint;kind:number;ball:number;slot:number;obstacle:number;nx:bigint;ny:bigint};
 /** Per ball: [wall (kind 1|2), paddle (3|4), shield (7|8)] contact times, NEVER when not approached. */
 export type ChaosPlanes=[[bigint,bigint,bigint],[bigint,bigint,bigint]];
-/** Rules 8, as ChaosPhysics: a call stops once 8 collisions are logged; one microsecond adds at most 6. */
-export const CHAOS_LOG_STOP=8,CHAOS_LOG_CAPACITY=13;
+/** Current ChaosPhysics: stop after 8 collisions; the final batch holds at most 24 contacts. */
+export const CHAOS_LOG_STOP=8,CHAOS_LOG_CAPACITY=31;
 const emptyBall=():ChaosBall=>({x:0n,y:0n,vx:0n,vy:0n,powerN:0,powerD:0,curveSteps:0,curveSign:0,lastHitter:0,ghost:0,portalLock:false,warp:false,gravity:false,gravityUsed:0n,trailRevision:0,alive:false});
 function has(s:ChaosPhysicsState,id:number){return s.effects.some(e=>e.id===id&&activeEffect(e,Number(s.t/1000n)));}
 function variant(s:ChaosPhysicsState,id:number){return s.effects.find(e=>e.id===id)?.variant||0;}
@@ -74,27 +74,31 @@ function deflector(x:bigint,y:bigint,vx:bigint,vy:bigint,variant:number){
  for(let tip=0;tip<2;tip++){const end=circleHit(u+(tip===0?length:-length),v,vu,vv,radius);if(end.dt<h.dt)h=end;}
  return {...h,nx:h.nx-sign*h.ny,ny:sign*h.nx+h.ny};
 }
-export function nextContact(s:ChaosPhysicsState):[ChaosCandidate,[bigint,bigint],[number,number],ChaosPlanes]{
+export function nextContact(s:ChaosPhysicsState,tied?:ChaosCandidate[]):[ChaosCandidate,[bigint,bigint],[number,number],ChaosPlanes]{
+ const take=(best:ChaosCandidate,dt:bigint,kind:number,ball:number,slot=0,obstacle=0,nx=0n,ny=0n)=>{
+  if(tied&&dt!==NEVER&&dt<=best.dt){if(dt<best.dt)tied.length=0;tied.push({dt,kind,ball,slot,obstacle,nx,ny});}
+  return offer(best,dt,kind,ball,slot,obstacle,nx,ny);
+ };
  let best:ChaosCandidate={dt:NEVER,kind:255,ball:0,slot:0,obstacle:0,nx:0n,ny:0n};const goals:[bigint,bigint]=[NEVER,NEVER],beneficiaries:[number,number]=[0,0];
  const planes:ChaosPlanes=[[NEVER,NEVER,NEVER],[NEVER,NEVER,NEVER]];
  for(let ball=0;ball<2;ball++)if(s.balls[ball].alive){const b=s.balls[ball],[vx,vy]=velocity(s,ball),plane=planes[ball];
-  if(vx!==0n){goals[ball]=planeTime(b.x,vx,vx<0n?-6n*P:1030n*P);beneficiaries[ball]=vx<0n?2:1;best=offer(best,goals[ball],vx<0n?5:6,ball);
-   if(vx<0n&&b.x>=40n*P){plane[1]=planeTime(b.x,vx,40n*P);best=offer(best,plane[1],3,ball,0,0,1n,0n);}
-   if(vx>0n&&b.x<=984n*P){plane[1]=planeTime(b.x,vx,984n*P);best=offer(best,plane[1],4,ball,0,0,-1n,0n);}}
-  if(vy!==0n){plane[0]=planeTime(b.y,vy,vy<0n?6n*P:570n*P);best=offer(best,plane[0],vy<0n?1:2,ball,0,0,0n,vy<0n?1n:-1n);}
+  if(vx!==0n){goals[ball]=planeTime(b.x,vx,vx<0n?-6n*P:1030n*P);beneficiaries[ball]=vx<0n?2:1;best=take(best,goals[ball],vx<0n?5:6,ball);
+   if(vx<0n&&b.x>=40n*P){plane[1]=planeTime(b.x,vx,40n*P);best=take(best,plane[1],3,ball,0,0,1n,0n);}
+   if(vx>0n&&b.x<=984n*P){plane[1]=planeTime(b.x,vx,984n*P);best=take(best,plane[1],4,ball,0,0,-1n,0n);}}
+  if(vy!==0n){plane[0]=planeTime(b.y,vy,vy<0n?6n*P:570n*P);best=take(best,plane[0],vy<0n?1:2,ball,0,0,0n,vy<0n?1n:-1n);}
   for(let slot=0;slot<2;slot++){const e=s.effects[slot];if(!activeEffect(e,Number(s.t/1000n)))continue;
-   if(e.id===3){if(e.target===0&&vx<0n&&b.x>=16n*P){plane[2]=planeTime(b.x,vx,16n*P);best=offer(best,plane[2],7,ball,slot,0,1n,0n);}if(e.target===1&&vx>0n&&b.x<=1008n*P){plane[2]=planeTime(b.x,vx,1008n*P);best=offer(best,plane[2],8,ball,slot,0,-1n,0n);}}
-   else if(e.id===13&&(b.ghost&1)===0){const h=circleHit(b.x-512n*P,b.y-288n*P,vx,vy,34n*P);best=offer(best,h.dt,9,ball,slot,0,h.nx,h.ny);}
+   if(e.id===3){if(e.target===0&&vx<0n&&b.x>=16n*P){plane[2]=planeTime(b.x,vx,16n*P);best=take(best,plane[2],7,ball,slot,0,1n,0n);}if(e.target===1&&vx>0n&&b.x<=1008n*P){plane[2]=planeTime(b.x,vx,1008n*P);best=take(best,plane[2],8,ball,slot,0,-1n,0n);}}
+   else if(e.id===13&&(b.ghost&1)===0){const h=circleHit(b.x-512n*P,b.y-288n*P,vx,vy,34n*P);best=take(best,h.dt,9,ball,slot,0,h.nx,h.ny);}
    else if(e.id===14){for(let i=0;i<2;i++){const [x,y]=portal(e.variant,i),leaving=(b.portalLock||(b.ghost&(1<<(i+1)))!==0)&&inside(b.x,b.y,x,y,24n*P);
-    if(!b.portalLock&&(b.ghost&(1<<(i+1)))===0||leaving){const h=circleHit(b.x-x,b.y-y,vx,vy,24n*P,leaving);best=offer(best,h.dt,leaving?19:10+i,ball,slot,i,h.nx,h.ny);}}}
-   else if(e.id===15){let dt=NEVER;if(b.warp&&vx!==0n)dt=planeTime(b.x,vx,vx>0n?544n*P:480n*P);else if(vx>0n&&b.x<480n*P)dt=planeTime(b.x,vx,480n*P);else if(vx<0n&&b.x>544n*P)dt=planeTime(b.x,vx,544n*P);best=offer(best,dt,12,ball,slot);}
-   else if(e.id===16){const h=circleHit(b.x-512n*P,b.y-288n*P,vx,vy,160n*P,b.gravity);best=offer(best,h.dt,13,ball,slot,0,h.nx,h.ny);}
-   else if(e.id===18&&(b.ghost&8)===0){const h=deflector(b.x,b.y,vx,vy,e.variant);best=offer(best,h.dt,14,ball,slot,0,h.nx,h.ny);}
-   else if(e.id===19){for(let i=0;i<3;i++)if((e.remaining&(1<<i))!==0&&(b.ghost&(1<<(i+4)))===0){const h=rectHit(b.x-512n*P,b.y-brickY(i),vx,vy,34n*P,14n*P);best=offer(best,h.dt,15+i,ball,slot,i,h.nx,h.ny);}}
-   else if(e.id===24&&b.lastHitter<=1&&(b.ghost&128)===0){const h=circleHit(b.x-512n*P,b.y-120n*P,vx,vy,22n*P);best=offer(best,h.dt,18,ball,slot,0,h.nx,h.ny);}
+    if(!b.portalLock&&(b.ghost&(1<<(i+1)))===0||leaving){const h=circleHit(b.x-x,b.y-y,vx,vy,24n*P,leaving);best=take(best,h.dt,leaving?19:10+i,ball,slot,i,h.nx,h.ny);}}}
+   else if(e.id===15){let dt=NEVER;if(b.warp&&vx!==0n)dt=planeTime(b.x,vx,vx>0n?544n*P:480n*P);else if(vx>0n&&b.x<480n*P)dt=planeTime(b.x,vx,480n*P);else if(vx<0n&&b.x>544n*P)dt=planeTime(b.x,vx,544n*P);best=take(best,dt,12,ball,slot);}
+   else if(e.id===16){const h=circleHit(b.x-512n*P,b.y-288n*P,vx,vy,160n*P,b.gravity);best=take(best,h.dt,13,ball,slot,0,h.nx,h.ny);}
+   else if(e.id===18&&(b.ghost&8)===0){const h=deflector(b.x,b.y,vx,vy,e.variant);best=take(best,h.dt,14,ball,slot,0,h.nx,h.ny);}
+   else if(e.id===19){for(let i=0;i<3;i++)if((e.remaining&(1<<i))!==0&&(b.ghost&(1<<(i+4)))===0){const h=rectHit(b.x-512n*P,b.y-brickY(i),vx,vy,34n*P,14n*P);best=take(best,h.dt,15+i,ball,slot,i,h.nx,h.ny);}}
+   else if(e.id===24&&b.lastHitter<=1&&(b.ghost&128)===0){const h=circleHit(b.x-512n*P,b.y-120n*P,vx,vy,22n*P);best=take(best,h.dt,18,ball,slot,0,h.nx,h.ny);}
   }
  }
- return[best,goals,beneficiaries,planes];
+ tied?.sort((a,b)=>a.kind-b.kind||a.ball-b.ball);return[best,goals,beneficiaries,planes];
 }
 function serve(s:ChaosPhysicsState){
  s.balls=[emptyBall(),emptyBall()];s.effects=emptyEffects();s.activeMask=0;
@@ -147,25 +151,54 @@ function sweep(s:ChaosPhysicsState,planes:ChaosPlanes,hit:ChaosCandidate,log:Cha
    log.push({sequence:s.collisionSequence,rally:s.score.rally,ball:i+1,kind,obstacle:0,at:s.t,x:s.balls[i].x,y:s.balls[i].y});}
  }
 }
+function resolveBatch(s:ChaosPhysicsState,tied:ChaosCandidate[],searched:EffectPair,boundary:boolean,log:ChaosPhysicsCollision[]){
+ const before=structuredClone(s.effects);let paddleMask=0,teleported=0;
+ for(const h of tied){const k=h.kind,b=s.balls[h.ball];
+  if(!b.alive||(teleported&(1<<h.ball))!==0||k===5||k===6)continue;
+  if(k===1&&!(b.vy<0n&&b.y<=6n*P)||k===2&&!(b.vy>0n&&b.y>=570n*P)||k===3&&!(b.vx<0n&&b.x<=40n*P)||k===4&&!(b.vx>0n&&b.x>=984n*P))continue;
+  if(k>=7){const e=s.effects[h.slot];
+   if(!e.id||e.id!==searched[h.slot].id||e.serial!==searched[h.slot].serial||!activeEffect(e,Number(s.t/1000n)))continue;
+   if(k===7&&!(b.vx<0n&&b.x<=16n*P&&shielded(s,0))||k===8&&!(b.vx>0n&&b.x>=1008n*P&&shielded(s,1)))continue;
+   if(k===9&&(b.ghost&1)!==0||k===14&&(b.ghost&8)!==0||k>=15&&k<=17&&((b.ghost&(1<<(h.obstacle+4)))!==0||(e.remaining&(1<<h.obstacle))===0))continue;
+   if((k===9||k===14||k>=15&&k<=17)&&b.vx*h.nx+b.vy*h.ny>=0n)continue;
+   if((k===10||k===11)&&(b.portalLock||(b.ghost&(1<<(h.obstacle+1)))!==0))continue;
+   if(k===18&&(b.lastHitter>1||(b.ghost&128)!==0))continue;
+   if(boundary&&(k===12||k===13||k===19))continue;
+  }
+  const physical=collideEffect(s,h);
+  if(k===10||k===11)teleported|=1<<h.ball;
+  if(physical){if(k===3||k===4)paddleMask|=1<<(k-3);s.collisionSequence++;
+   if(s.collisionSequence>0xffffffff)throw Error('Numeric range');
+   log.push({sequence:s.collisionSequence,rally:s.score.rally,ball:h.ball+1,kind:k,obstacle:h.obstacle,at:s.t,x:s.balls[h.ball].x,y:s.balls[h.ball].y});}
+ }
+ if(paddleMask===3)for(let i=0;i<2;i++)if(before[i].id===10&&s.effects[i].id===10&&before[i].serial===s.effects[i].serial)s.effects[i].target=before[i].target;
+}
+export type ChaosContactResolution=boolean|'complete';
 /** The rules-8 kernel by default. `everyContact=false` reproduces the rules-6 kernel deployed on
  * 13 September 2026 (still linked by the Agent Arcade), which resolved only the tie-break winner
  * of a microsecond: shared/chaos-rules.ts chooses by an application's RULES_VERSION. */
-export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget=128,stopAtPoint=false,everyContact=true):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]{
+export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget=128,stopAtPoint=false,everyContact:ChaosContactResolution='complete'):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]{
  if(target<source.t||!Number.isInteger(budget)||budget<0||budget>512)throw Error('Numeric range');
  const cancel=(reason:number):[ChaosPhysicsState,boolean,ChaosPhysicsCollision[]]=>{const s=structuredClone(source);s.cancelled=true;s.cancelReason=reason;s.effects=emptyEffects();s.balls=[emptyBall(),emptyBall()];s.activeMask=0;return[s,true,[]];};
  if(target>1800000000n)return cancel(2);
  try{
-  const s=structuredClone(source),log:ChaosPhysicsCollision[]=[];
+  const s=structuredClone(source),log:ChaosPhysicsCollision[]=[];const all=everyContact==='complete';
   for(let step=0;step<budget;step++){
    if(s.cancelled||s.score.finished)break;
    prepare(s);const grid=needsGrid(s);
    if(grid){if(s.nextForce<s.t)s.nextForce=(s.t+9999n)/STEP*STEP;if(s.nextForce===s.t)force(s);}else s.nextForce=(s.t/STEP+1n)*STEP;
-   const [hit,goals,beneficiaries,planes]=nextContact(s);let boundary=grid?s.nextForce:NEVER;
+   const tied:ChaosCandidate[]=[];const searched=structuredClone(s.effects);
+   const [hit,goals,beneficiaries,planes]=nextContact(s,all?tied:undefined);let boundary=grid?s.nextForce:NEVER;
    for(const e of s.effects){if(!e.id)continue;let at=BigInt(e.startsAt)*1000n;if(at>s.t&&at<boundary)boundary=at;at=BigInt(e.expiresAt)*1000n;if(at>s.t&&at<boundary)boundary=at;}
    if(boundary<s.t)throw Error('Numeric range');const remaining=target-s.t;
    if(hit.dt>remaining&&boundary>target){move(s,target);break;}
    if(boundary<=target&&(hit.dt===NEVER||boundary-s.t<=hit.dt)){
     const dt=boundary-s.t;move(s,boundary);
+    if(all){prepare(s);if(dt===hit.dt){
+     let mask=0;for(let i=0;i<2;i++)if(s.balls[i].alive&&goals[i]===dt)mask|=beneficiaries[i];
+     if(mask){point(s,mask);if(s.score.finished||stopAtPoint)break;continue;}
+     resolveBatch(s,tied,searched,true,log);if(log.length>=CHAOS_LOG_STOP)break;
+    }continue;}
     // Rules 8, as ChaosPhysics: contacts due in the boundary's own microsecond that the
     // ceiling carried strictly past their plane are resolved now; exact landings wait.
     if(everyContact&&dt===hit.dt){
@@ -182,8 +215,9 @@ export function advanceChaosEvents(source:ChaosPhysicsState,target:bigint,budget
    if(goalsMask!==0){
     point(s,goalsMask);if(s.score.finished||stopAtPoint)break;
    }else{
-    if(collideEffect(s,hit,everyContact)){s.collisionSequence++;if(s.collisionSequence>0xffffffff)throw Error('Numeric range');log.push({sequence:s.collisionSequence,rally:s.score.rally,ball:hit.ball+1,kind:hit.kind,obstacle:hit.obstacle,at:s.t,x:s.balls[hit.ball].x,y:s.balls[hit.ball].y});}
-    if(everyContact&&hit.dt!==0n)sweep(s,planes,hit,log);
+    if(all)resolveBatch(s,tied,searched,false,log);
+    else if(collideEffect(s,hit,!!everyContact)){s.collisionSequence++;if(s.collisionSequence>0xffffffff)throw Error('Numeric range');log.push({sequence:s.collisionSequence,rally:s.score.rally,ball:hit.ball+1,kind:hit.kind,obstacle:hit.obstacle,at:s.t,x:s.balls[hit.ball].x,y:s.balls[hit.ball].y});}
+    if(everyContact&&!all&&hit.dt!==0n)sweep(s,planes,hit,log);
     if(log.length>=CHAOS_LOG_STOP)break;
    }
   }

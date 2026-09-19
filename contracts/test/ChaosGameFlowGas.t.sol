@@ -27,6 +27,7 @@ contract ChaosGasHarness is PongChaosEvents {
     constructor(IInterludeHub h,address admission,address bridge,ChaosEngine module)
         PongChaosEvents(h,admission,bridge,msg.sender,address(0),module){}
     function fixture(uint256 id,T.State memory s) external {_store(id,codec.pack(s));}
+    function drawFixture(uint256 id,uint256 requestWord,uint256 draw) external {_set(id,29,requestWord);_set(id,30,draw);}
 }
 
 /// Burn the complete capped call, then run the real one-step path. This exercises

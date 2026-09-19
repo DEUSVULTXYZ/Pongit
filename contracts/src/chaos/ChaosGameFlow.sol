@@ -32,7 +32,7 @@ library ChaosGameFlow {
     function store(mapping(bytes32=>uint256) storage w,uint256 id,uint256[8] memory p) private {for(uint256 i;i<8;i++)if(get(w,id,21+i)!=p[i])set(w,id,21+i,p[i]);}
     function publish(mapping(bytes32=>uint256) storage w,uint256 id) external {
         uint256 times=get(w,id,2);require(uint64(times>>128)<type(uint64).max,"revision overflow");times+=uint256(1)<<128;set(w,id,2,times);
-        // The leading byte is the packed-state format (ChaosCodec), 6 under rules 6, 7 and 8
+        // The leading byte is the packed-state format (ChaosCodec), 6 under rules 6 through 10
         // alike; clients reject any other. RULES_VERSION tells the rules apart.
         emit Snapshot(id,uint64(times>>128),get(w,id,0)>>161&7,abi.encode(uint8(6),get(w,id,8),packed(w,id)));
     }
@@ -107,7 +107,11 @@ library ChaosGameFlow {
     }
     function announce(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 t) private returns(bool){
         uint256 q=get(w,id,29);uint256 draw=get(w,id,30);
-        if(draw==0||t<uint64(uint32(q>>128))*1000)return false;
+        uint64 due=uint64(uint32(q>>128))*1000;
+        // A blocked draw retries only on the absolute 100 ms game-time grid.
+        // Command endpoints, gas exhaustion and charge consumption are not
+        // announcement boundaries.
+        if(draw==0||t<due||(t!=due&&t%SLICE_US!=0))return false;
         (uint256[8] memory state,bool applied)=engine.announce(packed(w,id),bytes32(get(w,id,3)),get(w,id,8),draw,uint32(q>>96));
         if(!applied)return false;store(w,id,state);emit ChaosAnnounced(id,uint32(q>>96),draw,t);
         request(w,engine,hub,id,uint32(q>>96)+1,uint16(draw>>48),t);return true;
@@ -135,7 +139,7 @@ library ChaosGameFlow {
     {
         uint64 t=uint64(get(w,id,27)>>112);
         do{
-            uint64 end=t+span(w,id);
+            uint64 width=span(w,id);uint64 end=(t/width+1)*width;
             (complete,outcome,winner)=slice(w,engine,hub,id,target>end?end:target);
             if(outcome!=0)return(true,outcome,winner);
             t=uint64(get(w,id,27)>>112);
@@ -157,7 +161,8 @@ library ChaosGameFlow {
             uint64 t=uint64(get(w,id,27)>>112);announce(w,engine,hub,id,t);
             uint64 stop=target;uint256 q=get(w,id,29);
             if(get(w,id,30)!=0){uint64 due=uint64(uint32(q>>128))*1000;
-                if(due>t&&due<stop)stop=due;else if(due<=t)stop=engine.wakeAt(packed(w,id),stop);}
+                if(due>t&&due<stop)stop=due;
+                else if(due<=t){uint64 retry=(t/SLICE_US+1)*SLICE_US;if(retry<stop)stop=retry;}}
             uint256 paid=get(w,id,17);
             ChaosEngine.Progress memory p;bool fallbackStep;
             uint256[8] memory state=packed(w,id);bytes32 seed=bytes32(get(w,id,3));uint256 control=get(w,id,8);
