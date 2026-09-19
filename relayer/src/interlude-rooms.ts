@@ -814,7 +814,9 @@ export async function createRoomsCoordinator(o: Options) {
     try {
       // /health beside the session read, with its own short timeout. A failed
       // health read is unknown: it neither halts nor clears (EngineHaltMonitor).
-      const [status, health] = await Promise.all([client.status(), readEngineHealth(manifest.node)]);
+      // It is skipped while the node's Retry-After runs, like every other request.
+      const [status, health] = await Promise.all([client.status(),
+        engineCooldownMs(manifest.node) > 0 ? Promise.resolve(undefined) : readEngineHealth(manifest.node)]);
       lastEngineSeen = Date.now();
       haltChanged(halt.observe(health, status.epoch));
       const delegation = await base.readContract({
