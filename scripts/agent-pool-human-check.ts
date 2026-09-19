@@ -15,30 +15,35 @@ import {AgentPoolReader,poolJson} from '../relayer/src/agents/pool-read';
 import type {AgentPoolManifest} from '../shared/agent-pool';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {measuredFetch} from '../shared/rpc-metrics';
+import {AgentController} from '../shared/agent-controller';
 
 assert.equal(process.env.PONG_POOL_HUMAN_CHECK,'authorized-private-testnet');
 assert.equal(process.getuid?.(),1000,'Run the private harness as uid 1000 to preserve journal and metric ownership');
 const prefix=process.env.PONG_AGENT_POOL_PREFIX!;assert(/^agent-pool-candidate-\d{8}(-[2-9])?$/.test(prefix));
+const run=Number(process.env.PONG_POOL_HUMAN_RUN??1),target=Number(process.env.PONG_POOL_HUMAN_TARGET??100);
+assert(Number.isInteger(run)&&run>=1&&run<=9);assert(Number.isInteger(target)&&target>=1&&target<=1000);
+const suffix=run===1?'':`-${run}`;
 const deployment=JSON.parse(readFileSync(`/secrets/${prefix}.json`,'utf8'));
-const file=`/secrets/${prefix}-human-check.json`,reportFile='/diagnostics/pool-human-check.json';
+const file=`/secrets/${prefix}-human-check${suffix}.json`,reportFile=`/diagnostics/pool-human-check${suffix}.json`;
 const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,...deployment.common,
  arenas:deployment.arenas.map((a:any)=>({app:a.app,runtimeHash:a.runtimeHash,node:`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`})),
  enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 const protectedApps=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(protectedApps.length);
 const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:15,batchSize:8192}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
 const reader=new AgentPoolReader(base,m,protectedApps),metric=await agentMetrics('/diagnostics/pool','human-check');
-let state:any=existsSync(file)?JSON.parse(readFileSync(file,'utf8')):{owner:generatePrivateKey(),storage:{},checks:[],moves:0,startedAt:new Date().toISOString()};
+const prior=run>1?JSON.parse(readFileSync(`/secrets/${prefix}-human-check.json`,'utf8')):null;
+let state:any=existsSync(file)?JSON.parse(readFileSync(file,'utf8')):{owner:prior?.owner??generatePrivateKey(),storage:prior?.storage??{},checks:[],moves:0,startedAt:new Date().toISOString()};
 const save=()=>{writeFileSync(file+'.next',JSON.stringify(state),{mode:0o600});renameSync(file+'.next',file);};save();
 const storage={getItem:(k:string)=>state.storage[k]??null,setItem:(k:string,v:string)=>{state.storage[k]=v;save();},removeItem:(k:string)=>{delete state.storage[k];save();}};
 const owner=privateKeyToAccount(state.owner as Hex),wait=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 const check=(name:string,extra:Record<string,unknown>={})=>{state.checks.push({at:new Date().toISOString(),name,...extra});save();};
 const report=()=>writeFileSync(reportFile,poolJson({at:new Date().toISOString(),scope:'Private real Interlude; synthetic owner, not a Mera authenticator',
- source:process.env.PONG_SOURCE_COMMIT,player:owner.address,pool:m.pool,ref:state.ref??null,startedAt:state.startedAt,completedAt:state.completedAt??null,moves:state.moves,checks:state.checks})+'\n');
+ source:process.env.PONG_SOURCE_COMMIT,run,target,player:owner.address,pool:m.pool,ref:state.ref??null,startedAt:state.startedAt,completedAt:state.completedAt??null,moves:state.moves,checks:state.checks})+'\n');
 let player:ReturnType<typeof createPoolPlayer>|undefined,writer:Awaited<ReturnType<typeof chainTools>>|undefined;
 const originalFetch=globalThis.fetch;
 try{
  if(process.env.PONG_POOL_HUMAN_PHASE==='prepare'){
-  writer=await chainTools(prefix+'-human-check',measuredFetch('monad'));
+  writer=await chainTools(prefix+'-human-check'+suffix,measuredFetch('monad'));
   if(!state.familyDone){
    if(!state.familyCall){const p=await preparePoolFamily(base,m,owner,storage);state.familyCall=p.call;save();}
    if(state.familyCall)await writer.submit('family',state.familyCall.data,state.familyCall.to);
@@ -64,7 +69,7 @@ try{
   player=create();player.watch(()=>{});
   while(Date.now()<end){try{if((await player.recover()).phase===2)break;}catch{}await wait(1500);}
   assert.equal((await player.read(true)).phase,2);check('admitted-on-dedicated-arena');
-  if(!state.lossDone){
+  if(run===1&&!state.lossDone){
    let dropped=false;globalThis.fetch=async(input,init)=>{
     const reply=await originalFetch(input,init);let method='';try{method=JSON.parse(String(init?.body)).method;}catch{}
     if(!dropped&&String(input).startsWith(view!.node!)&&method==='interlude_sendTransaction'){
@@ -77,7 +82,7 @@ try{
    globalThis.fetch=originalFetch;player.close();player=create();player.watch(()=>{});await player.recover();
    assert(!player.journal.pending(session.grant.key));state.lossDone=true;save();check('response-loss-and-F5-exact-receipt');
   }
-  if(!state.rateDone){
+  if(run===1&&!state.rateDone){
    let rejected=false;globalThis.fetch=async(input,init)=>{
     let method='';try{method=JSON.parse(String(init?.body)).method;}catch{}
     if(!rejected&&String(input).startsWith(view!.node!)&&method==='interlude_sendTransaction'){
@@ -89,19 +94,23 @@ try{
    globalThis.fetch=originalFetch;await wait(1500);await player.recover();assert(!player.journal.pending(session.grant.key));
    state.rateDone=true;save();check('injected-429-recovery-exact-command',{hash:pending.hash,nonce:pending.nonce});
   }
-  const latencies:number[]=[];
-  while(state.moves<100){
-   const before=await player.read();assert.equal(before.phase,2,'Match ended before the 100-direction test completed');
-   const dir=before.state.leftDir===1?-1:1,at=performance.now();await player.move(dir);
-   const after=await player.read();assert(after.nonceA>before.nonceA,'The new direction was not accepted');
-   latencies.push(performance.now()-at);state.moves++;save();await wait(100);
-  }
-  await player.move(0);latencies.sort((a,b)=>a-b);check('100-direction-intents',{p50:latencies[Math.floor(latencies.length*.5)]??null,p95:latencies[Math.floor(latencies.length*.95)]??null});
   if(!state.permissionDone){
    await player.revoke(owner);await assert.rejects(player.move(1),/revoked/);check('owner-revocation-enforced');
    await player.renew(owner);await player.recover();await player.move(-1);await player.move(0);
    state.permissionDone=true;save();check('owner-renewal-restores-same-limited-key');
   }
+  const latencies:number[]=[],tracker=new AgentController(2);
+  while(state.moves<target){
+   const before=await player.read();assert.equal(before.phase,2,'Match ended before the direction test completed');
+   // Track public ball movement rather than blindly missing seven serves. This
+   // synthetic human seat is a test driver, not a community controller feature.
+   const wanted=tracker.decide(before,0,performance.now());
+   const dir=before.state.leftDir===0?(wanted===0?(state.moves%2===0?1:-1):wanted):0;
+   const at=performance.now();await player.move(dir);
+   const after=await player.read();assert(after.nonceA>before.nonceA,'The new direction was not accepted');
+   latencies.push(performance.now()-at);state.moves++;save();
+  }
+  await player.move(0);latencies.sort((a,b)=>a-b);check('confirmed-direction-changes',{count:state.moves,p50:latencies[Math.floor(latencies.length*.5)]??null,p95:latencies[Math.floor(latencies.length*.95)]??null});
   await player.concede();check('concession-confirmed-on-engine');player.close();player=undefined;
   while(Date.now()<end){const published=(await reader.match(view.ref)).value;if(published.result){
    assert.equal(published.result.status,3);assert.equal(published.result.winner.toLowerCase(),view.b.toLowerCase());assert.notEqual(published.result.hash,zeroHash);
