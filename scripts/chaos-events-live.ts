@@ -2,6 +2,7 @@ import {recordRoomsFinanceReceipt} from '../relayer/src/rooms-finance-receipts';
 // Real Monad and hosted Interlude, disposable accounts. Private grants never enter reports.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename} from 'node:fs/promises';
+import {Pool} from 'pg';
 import {createPublicClient,createWalletClient,http,decodeFunctionData,parseTransaction,encodeFunctionData,keccak256,parseEther,toHex,type Hex} from 'viem';
 import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
@@ -33,6 +34,11 @@ const manifests=JSON.parse(await readFile(`artifacts/drand/${production?'product
 assert.equal(m.app,rootRecord.app);assert([6,8].includes(m.rulesVersion),'Only versioned human Chaos fixtures');
 await writeFile('artifacts/drand/test-finance.json',JSON.stringify([finance]));process.env.ROOMS_FINANCE_MANIFEST='artifacts/drand/test-finance.json';
 const t=await chainTools(prefix+'-live-'+run),config=await loadRoomsFinance(),base=t.base;
+// The operator nonce journal stays shared. Gameplay/financial test rows have an
+// independent database and cannot be consumed by human-production workers.
+assert(production||process.env.PONG_CHAOS_DATABASE_URL,'An isolated fixture database is required');
+const fixtureDb=production?t.db:new Pool({connectionString:process.env.PONG_CHAOS_DATABASE_URL});
+if(!production)assert.equal((await fixtureDb.query('SELECT current_database() AS name')).rows[0].name,'pong_rules8_qualification');
 const admission=privateKeyToAccount(process.env.INTERLUDE_COORDINATOR_KEY as Hex);assert.equal(admission.address.toLowerCase(),m.coordinator.toLowerCase());
 const journals:Record<string,string>={};
 const make=(store=memoryStore(),tag='observer')=>{
@@ -47,21 +53,21 @@ const json=(v:any)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2),s
 let saving=Promise.resolve();
 const save=()=>{const data=json(secrets);saving=saving.then(async()=>{await writeFile(file+'.next',data,{mode:0o600});await rename(file+'.next',file);});return saving;};
 const until=async(fn:()=>Promise<any>,label:string,timeout=60000)=>{const start=Date.now();while(Date.now()-start<timeout){const v=await fn();if(v)return v;await sleep(500);}throw Error('Timeout: '+label);};
-const worker=await createRoomsFinance({db:t.db,base,manifest:finance,enqueue:async(r,_internal,value=0n)=>{
+const worker=await createRoomsFinance({db:fixtureDb,base,manifest:finance,enqueue:async(r,_internal,value=0n)=>{
  const encoded=config.encode(r),name='finance-'+keccak256(toHex(json({to:encoded.address,data:encoded.data,value}))).slice(2,26);
  const receipt=await t.submit(name,encoded.data,encoded.address,value);return {id:name,hash:receipt.transactionHash};
 }});
 let publicWriter=Promise.resolve();
 function publicSend(data:Hex,id:bigint){const result=publicWriter.then(()=>sendPublic(data,id));publicWriter=result;return result;}
 async function sendPublic(data:Hex,id:bigint){
- const pending=(await t.db.query("SELECT * FROM il_engine_jobs WHERE app=$1 AND status='pending' ORDER BY nonce LIMIT 1",[m.app])).rows[0];assert(!pending,'Reconcile the earlier engine command');
+ const pending=(await fixtureDb.query("SELECT * FROM il_engine_jobs WHERE app=$1 AND status='pending' ORDER BY nonce LIMIT 1",[m.app])).rows[0];assert(!pending,'Reconcile the earlier engine command');
  const nonce=await observer.node.getTransactionCount({address:admission.address});
  const raw=await admission.signTransaction({to:m.app,chainId:4242,type:'eip1559',nonce,data,value:0n,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
  const hash=keccak256(raw),op=crypto.randomUUID();
- await t.db.query("INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',1,$6,$7,$8)",[m.app,op,nonce,raw,hash,admission.address.toLowerCase(),decodeFunctionData({abi,data}).functionName,String(id)]);
+ await fixtureDb.query("INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id) VALUES($1,$2,$3,$4,$5,'pending',1,$6,$7,$8)",[m.app,op,nonce,raw,hash,admission.address.toLowerCase(),decodeFunctionData({abi,data}).functionName,String(id)]);
  const receipt:any=await sendFast(observer.node,m.node,raw);assert(receipt,'Missing pressure receipt');
  const outcome=engineReceiptOutcome(receipt,hash);assert(outcome);
- await t.db.query("UPDATE il_engine_jobs SET status=$4,resolution=$3 WHERE app=$1 AND id=$2",[m.app,op,{kind:'receipt',hash,blockHash:receipt.blockHash,status:receipt.status},outcome]);assert.equal(outcome,'observed');
+ await fixtureDb.query("UPDATE il_engine_jobs SET status=$4,resolution=$3 WHERE app=$1 AND id=$2",[m.app,op,{kind:'receipt',hash,blockHash:receipt.blockHash,status:receipt.status},outcome]);assert.equal(outcome,'observed');
 }
 try{
  const status=await observer.status();assert.equal(status.epoch,1);assert.equal(await observer.read('activeCount'),0n);
@@ -104,7 +110,7 @@ try{
     if(window[0]){
      const bet={player:bettor.address,matchId:id,side:0,shares:parseEther('.006'),maxCost:parseEther('.01'),version:window[1],nonce:await base.readContract({address:finance.market,abi:marketAbi,functionName:'nonces',args:[bettor.address]}),deadline:BigInt(Math.floor(Date.now()/1000)+90)};
      const sig=await bettor.signTypedData({domain:domain('PONG Market',10143,finance.market),types:betTypes,primaryType:'Bet',message:bet});
-     await recordRoomsFinanceReceipt(t.db,[finance],await t.write('buy-live-chaos',finance.market,marketAbi,'buy',[bet,sig]));bought=true;
+     await recordRoomsFinanceReceipt(fixtureDb,[finance],await t.write('buy-live-chaos',finance.market,marketAbi,'buy',[bet,sig]));bought=true;
     }
    }
    if(mode&&state.halfA===36000000n)pressureDelivered=true;
@@ -112,7 +118,7 @@ try{
     const window:any=await base.readContract({address:finance.adapter,abi:config.encode({deployment:'rooms',roomApp:m.app,roomFinance:finance.financeId,contract:'game',functionName:'openRound',args:[String(id)]}).abi,functionName:'bettingWindow',args:[id,0]});
     const bet={player:bettor.address,matchId:id,side:1,shares:parseEther('.006'),maxCost:parseEther('.01'),version:window[1],nonce:await base.readContract({address:finance.market,abi:marketAbi,functionName:'nonces',args:[bettor.address]}),deadline:BigInt(Math.floor(Date.now()/1000)+90)};
     const sig=await bettor.signTypedData({domain:domain('PONG Market',10143,finance.market),types:betTypes,primaryType:'Bet',message:bet});
-    await recordRoomsFinanceReceipt(t.db,[finance],await t.write('buy-live-other-side',finance.market,marketAbi,'buy',[bet,sig]));stoppedBridgeAt=Date.now();
+    await recordRoomsFinanceReceipt(fixtureDb,[finance],await t.write('buy-live-other-side',finance.market,marketAbi,'buy',[bet,sig]));stoppedBridgeAt=Date.now();
    }
    // Keep the game alive while its first market publication and bet arrive;
    // afterwards move both paddles away to prove continuous natural points.
@@ -150,4 +156,4 @@ try{
  }
  report.passed=true;
 }catch(e){report.passed=false;report.error=String((e as any).shortMessage||(e as Error).message).split('\n')[0];}
-finally{unwatch.forEach(stop=>stop());stream.stop();report.rpc=takeRpcSamples(12000);await save();await writeFile(`artifacts/drand/events-live-${run}.json`,json(report));console.log(json({passed:report.passed,error:report.error,matches:report.matches.map((m:any)=>({mode:m.mode,score:m.score,frames:m.frames.length,changes:m.changes})),proofs:report.proofs,payments:report.payments}));await t.close();if(!report.passed)process.exitCode=1;}
+finally{unwatch.forEach(stop=>stop());stream.stop();report.rpc=takeRpcSamples(12000);await save();await writeFile(`artifacts/drand/events-live-${run}.json`,json(report));console.log(json({passed:report.passed,error:report.error,matches:report.matches.map((m:any)=>({mode:m.mode,score:m.score,frames:m.frames.length,changes:m.changes})),proofs:report.proofs,payments:report.payments}));if(!production)await fixtureDb.end();await t.close();if(!report.passed)process.exitCode=1;}

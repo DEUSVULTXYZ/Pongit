@@ -9,14 +9,21 @@ import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {createInterludeClient,memoryStore,storageKey} from '@interludelayer-sdk/sdk';
 import {roomsEventsAbi as abi} from '../shared/abi-PongChaosEvents';
+import {chaosQualificationRecord,verifyQualificationApp} from './chaos-qualification-record';
+import {chainTools} from './independent-chain-tools';
 assert.equal(process.env.PONG_CHAOS_QUALIFY,'isolated-hosted-testnet');
 const production=process.env.PONG_CHAOS_PRODUCTION_FIXTURE==='authorized-testnet-candidate';
 const publicSite=process.env.PONG_BROWSER_PUBLIC==='authorized-testnet-public';
 assert(!publicSite||production,'Public validation requires the qualified production deployment');
 const m=JSON.parse(await readFile(`artifacts/drand/${production?'production':'integration'}-manifests.json`,'utf8')).game;
-assert.equal(m.app,production?'0x78d3341e3452d7ec1add9371de3008639eed8eb0':'0x4ace43735d1e5b0aa9b2d54a76ea4ac99089bb91');
+let fixturePrefix='chaos-events-production-20260913';
+if(production)assert.equal(m.app,'0x78d3341e3452d7ec1add9371de3008639eed8eb0');
+else{
+ const {prefix,record}=await chaosQualificationRecord();fixturePrefix=prefix;assert.equal(m.app,record.app);
+ const t=await chainTools(prefix);try{await verifyQualificationApp(t,prefix,m.app);}finally{await t.close();}
+}
 const run=process.env.PONG_BROWSER_RUN||'1';assert(/^[1-9]$/.test(run));
-const file=`/secrets/chaos-events-browser-${run}.json`;try{await readFile(file);throw Error('Reconcile existing browser fixture');}catch(e){if((e as any).code!=='ENOENT')throw e;}
+const file=`/secrets/${fixturePrefix}-browser-${run}.json`;try{await readFile(file);throw Error('Reconcile existing browser fixture');}catch(e){if((e as any).code!=='ENOENT')throw e;}
 const origin='https://pongit.xyz',apiHost=publicSite?origin+'/api':'http://chaos-api:4013',out=`artifacts/drand/real-browser-${run}`,people:any[]=[],secret:any={people:[],commands:[],rooms:[]};
 const report:any={at:new Date().toISOString(),app:m.app,scope:publicSite?'Public HTTPS production, real coordinator, hosted contracts and Monad; synthetic EOA owners':'Real private coordinator and hosted contracts through HTTPS-origin Chromium; synthetic EOA owners',matches:[],errors:[],requests:[]};
 const encode=(v:any)=>JSON.stringify(v,(_,v)=>typeof v==='bigint'?String(v):v);let tail=Promise.resolve();

@@ -1,5 +1,6 @@
 // Isolated rules-8 qualification on the hosted node and Monad Testnet.
-// It never edits a production manifest, database row or player balance.
+// It never edits a production manifest, gameplay row or player balance. Operator
+// transactions still use the one shared nonce journal, isolated by this fixture ID.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {createPublicClient,http,encodeFunctionData,encodeAbiParameters,keccak256,toHex,toFunctionSelector,zeroAddress,zeroHash,parseAbiItem,type Address,type Hex} from 'viem';
@@ -56,7 +57,7 @@ try{
   async function send(op:string,index:number,name:string,args:readonly unknown[]=[]){
    let tx=r.transactions[op];const signer=keys[index];
    if(!tx){
-    const unresolved=Object.values(r.transactions).filter((x:any)=>x.address===signer.address&&x.state!=='confirmed');assert.equal(unresolved.length,0,'Reconcile this signer before another command');
+    const unresolved=Object.values(r.transactions).filter((x:any)=>x.address===signer.address&&!['confirmed','reverted'].includes(x.state));assert.equal(unresolved.length,0,'Reconcile this signer before another command');
     const nonce=await node.getTransactionCount({address:signer.address,blockTag:'pending'});
     assert.equal(nonce,await node.getTransactionCount({address:signer.address,blockTag:'latest'}));
     const data=encodeFunctionData({abi:artifact.abi,functionName:name,args});
@@ -64,6 +65,7 @@ try{
     tx=r.transactions[op]={raw,hash:keccak256(raw),address:signer.address,nonce,name,state:'prepared'};await save();
    }
    if(tx.state==='confirmed')return;
+   assert.notEqual(tx.state,'reverted','A confirmed revert stays immutable; reconcile game state before choosing a new action');
    const at=performance.now();let receipt:any=await node.getTransactionReceipt({hash:tx.hash}).catch(()=>null);
    if(!receipt){tx.state='sending';await save();try{receipt=await node.request({method:'interlude_sendTransaction',params:[tx.raw]} as any);}
     catch(e){tx.state='uncertain';tx.error=safe(e);await save();throw e;}}
@@ -100,14 +102,22 @@ try{
    const saved=r.offers[j];assert(saved);const offer={...saved.offer,id,expires:BigInt(saved.offer.expires),rules:8n};
    await send(`accept-${j}-a`,7+j*2,'acceptMatch',[offer,saved.signature]);await send(`accept-${j}-b`,8+j*2,'acceptMatch',[offer,saved.signature]);
   }
-  const beacon=new DrandBeaconTransport();const end=Date.now()+180000;let count=0;
+  // A restarted trial keeps every previous transaction, including confirmed reverts.
+  // Do not reuse an old tick identity for a new execution or silently skip old nonces.
+  const previousTicks=Object.keys(r.transactions).map(x=>/^tick-\d+-(\d+)$/.exec(x)).filter(Boolean).map(x=>Number(x![1]));
+  const beacon=new DrandBeaconTransport();const end=Date.now()+180000;let count=previousTicks.length?Math.max(...previousTicks)+1:0;
   while(Date.now()<end){
    let running=0;
    for(let j=0;j<2;j++){
     const id=BigInt(j+1),s=await read(id);assert(s.chaos);report[`match${id}`]={phase:s.phase,score:[s.state.scoreA,s.state.scoreB],time:s.state.t,revision:s.revision,request:s.chaos.request};
     if(s.phase>=3)continue;running++;
     if(s.chaos.request!==0n&&s.chaos.pending===0n){const q=s.chaos.request,round=BigInt.asUintN(64,q),available=1727521075n+(round-1n)*3n;
-     if(BigInt(Math.floor(Date.now()/1000))>=available){const proof=await beacon.read(round);await send(`proof-${id}-${round}`,6,'submitRandomness',[id,q,proof.signature]);}
+     if(BigInt(Math.floor(Date.now()/1000))>=available){
+      const proof=await beacon.read(round);await send(`proof-${id}-${round}`,6,'submitRandomness',[id,q,proof.signature]);
+      // submitRandomness itself advances physics and can score the seventh point.
+      // A tick based on the pre-proof snapshot would now revert InvalidMatch.
+      if((await read(id)).phase>=3)continue;
+     }
     }
     await send(`tick-${id}-${count}`,6,'tick',[id]);
    }

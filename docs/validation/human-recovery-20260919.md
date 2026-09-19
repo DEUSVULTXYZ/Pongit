@@ -34,7 +34,20 @@ Independent review found two additional defects before hosted deployment: paddle
 - A dense-Multiball regression reverted before the patch at 14.8M command gas. Four vertical speeds from 10,000 to 1,000,000 units/s now progress in successive commands; the measured command cost is about 5.45M gas. This exercises admitted states, not a claim those speeds were reached in a real match.
 - A test engine deliberately exhausts the full 4M attempt. The real single-step fallback still stores a ranked seventh point, result and ELO; total measured command cost is about 4.65M gas. All 276 effect pairs pass a one-step call under the 1.5M cap. Zero-time contacts and explicit error propagation are tested separately.
 
-After these fixes, 336 TypeScript tests and the TypeScript check pass. The complete Solidity suite is rerun; hosted qualification remains outstanding. The earlier 54,000 differential result belongs to `07c9753`; the changed kernel requires a new differential run. No rules-8 candidate is deployed or qualified on the hosted node yet.
+Candidate `3a611a9` passes 336 TypeScript tests, the TypeScript check and 385 Solidity tests (two skipped). Independent review of this exact commit reports no additional actionable findings. A fresh 24,000-case events-kernel differential passes with zero mismatches after the correction; the unchanged V2/rooms comparisons above remain applicable.
+
+## Private hosted rules-8 qualification (in progress)
+
+The isolated application `0x75de1559bedad84755199295a305dd0b8309bf02` uses `https://il-75de1559bedad847.fly.dev`. It has its own capacity; neither its manifest nor its contracts are selected by production. Business test rows use a separate PostgreSQL database. Operator transactions retain the existing shared nonce journal and lock.
+
+- Two concurrent Chaos matches reached 7:6 and published matching scores/winners on Monad. The report records 50 confirmed commands, five verified proofs and 43 publications with calldata from 1,348 to 5,188 bytes.
+- The first exercise report is preserved: its harness incorrectly ticked a match after a randomness submission had scored the seventh point. That confirmed revert was recorded, the harness now re-reads phase after a proof, and continuation used new operation identities without replacing nonces. This was not a publication halt.
+- Separate Classic and Chaos matches both reached 7:4, with 102/102 and 152/102 actual direction changes. Across 458 input samples, SDK round-trip latency was p50 120 ms, p95 142 ms and p99 208 ms. This is not a browser-to-visible-frame measure.
+- Chaos exercised actual test-MON bets, signed pressure delivery, five verified proofs and automatic settlement. A disposable recipient received 0.006 MON without signing its payout. Four SDK session restorations passed. These synthetic EOA-owned sessions do not establish physical passkey recovery.
+- New finance contracts are isolated: adapter `0xd4018f4fb4fba337d0a12a356432e244187a9707`, market `0xc4c5c39c97cd7db4a39838050c8af77308bc0641`, vault `0xc6d1d5d9811b10ad7e34268d38da4cdb7ebb0182`.
+- Post-close production backup `20260919T123820Z`: all 86 files checksum-verified off VPS.
+
+Browser, lifecycle renewal, full indexer integration and the batch-reserve gate remain open. Human admissions stay closed. Private evidence: `artifacts/recovery-20260919/hosted-two-chaos.json`, `hosted-two-chaos-attempt-1.json`, `live-classic-chaos-finance.json` and `physics-differential-3a611a9.json`. Raw sessions and commands remain outside Git.
 
 ## Exact candidates and review
 
