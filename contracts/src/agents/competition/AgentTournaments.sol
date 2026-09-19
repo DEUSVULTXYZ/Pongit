@@ -98,6 +98,31 @@ contract AgentTournaments {
             return(i,a,b,catalog.identity(a).creator!=catalog.identity(b).creator);
         }return(255,address(0),address(0),false);
     }
+    /// Known independent fixtures may be reserved together before delegation.
+    /// A knockout dependency with no published result stops the range.
+    function seriesRange(uint64 id,uint8 limit) external view returns(uint8 first,uint8 count_){
+        require(limit>0&&limit<=4,"series fixture budget");(first,,,)=nextFixture(id);if(first==255)return(first,0);
+        Tournament storage t=tournaments[id];uint8 end=t.league?28:7;
+        while(count_<limit&&first+count_<end){
+            uint8 at=first+count_;Fixture storage f=fixtures[id][at];if(f.bound||f.resolved)break;
+            (address a,address b)=_pair(id,at);if(a==address(0)||b==address(0))break;count_++;
+        }
+    }
+    function plannedPair(uint64 id,uint8 index) external view returns(address,address){return _pair(id,index);}
+    function bindSeries(uint64 id,T.Ref[] calldata refs) external base locked {
+        require(msg.sender==address(authority)&&refs.length>0&&refs.length<=4,"series authority/budget");
+        (uint8 first,,,)=nextFixture(id);require(first!=255,"fixture order");
+        for(uint8 n;n<refs.length;n++){
+            uint8 index=first+n;require(index<(tournaments[id].league?28:7),"series fixture range");
+            (address a,address b)=_pair(id,index);Fixture storage f=fixtures[id][index];
+            require(a!=address(0)&&b!=address(0)&&!f.bound&&!f.resolved,"unpublished dependency/bound fixture");
+            T.Ref calldata ref=refs[n];require(ref.chainId==10143&&ref.arena==refs[0].arena&&ref.arena!=address(0)
+                &&ref.epoch==refs[0].epoch&&ref.epoch!=0&&ref.id!=0,"series reference");
+            bytes32 key=T.key(ref);require(!usedMatch[key],"match reused");usedMatch[key]=true;
+            f.ref=ref;f.a=a;f.b=b;f.bound=true;f.attempt++;attempts[id][index].push(ref);
+            emit FixtureBound(id,index,key,f.attempt,a,b);
+        }
+    }
     /// Only the immutable pool binds a genuinely admitted arena. It must snapshot
     /// these controller hashes and the knockout overtime flag before delegation.
     function bind(uint64 id,uint8 index,T.Ref calldata ref) external base locked {

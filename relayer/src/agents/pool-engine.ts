@@ -4,6 +4,7 @@ import {createPublicClient,encodeFunctionData,keccak256,type Address,type Hex,ty
 import {privateKeyToAccount} from 'viem/accounts';
 import WebSocket from 'ws';
 import {pooledAgentArenaAbi as abi} from '../../../shared/abi-PooledAgentArena';
+import {seriesAgentArenaAbi} from '../../../shared/abi-SeriesAgentArena';
 import {engineTransport,engineCooldownMs} from '../../../shared/engine-transport';
 import {EngineFeed} from '../../../shared/engine-feed';
 import {EngineStream,type EngineState} from '../../../shared/engine-stream';
@@ -31,14 +32,17 @@ export async function initializePoolOperations(db:Pool){await db.query(`
  * permissionless maintenance only; it cannot impersonate a human or spend funds.
  * No pending entry is deleted, including a refusal proven safe to retire. */
 export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Address,url:string,key:Hex,
- ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed}){
+ ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean}){
+ const arenaAbi=runtime?.series?seriesAgentArenaAbi:abi;
  const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
  const stream=new EngineStream(url,app,u=>new WebSocket(u,{origin:'https://pongit.xyz'}) as any,()=>engineCooldownMs(url));
- const feed=runtime?.feed??new EngineFeed({app,abi,node},stream),unwatch=feed.watch(ref.id,s=>onSnapshot?.(s));
+ const feed=runtime?.feed??new EngineFeed({app,abi:arenaAbi,node},stream),unwatch=feed.watch(ref.id,s=>onSnapshot?.(s));
  const lower=app.toLowerCase();let busy=false,fenceUntil=0;
  async function fence(){
   if(Date.now()<fenceUntil)return;
   const block=await base.getBlock(),d=await readHubDelegation(base,hub,app,block.number);
+  if((await base.getBlock({blockNumber:block.number})).hash!==block.hash)
+   throw Error('Arena publication changed during lifecycle verification');
   // This is proof of epoch closure, not an inference from an unavailable node.
   if(d.status===0||d.epoch>ref.epoch){
    await db.query("UPDATE agent_pool.engine_jobs SET status='obsolete',resolution=$3,updated_at=now() WHERE app=$1 AND epoch<=$2 AND status='pending'",
@@ -50,9 +54,10 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   fenceUntil=Date.now()+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
  }
  async function resolution(job:any){
-  const identity=await engineJobIdentity({...job,nonce:String(job.nonce)},abi,signer.address);
-  if(!['start','tick','submitRandomness'].includes(identity.action))throw Error('Unexpected permissionless pool operation');
-  if(identity.action!=='start'&&identity.matchId!==String(ref.id))throw Error('Command belongs to another match');
+  const identity=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
+  const allowed=runtime?.series?['start','tick','submitRandomness','advanceSeries','drainSeries']:['start','tick','submitRandomness'];
+  if(!allowed.includes(identity.action))throw Error('Unexpected permissionless pool operation');
+  if(!runtime?.series&&identity.action!=='start'&&identity.matchId!==String(ref.id))throw Error('Command belongs to another match');
   let receipt:any=await node.getTransactionReceipt({hash:job.hash}).catch(()=>null);
   if(!receipt){
    try{receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);}
@@ -73,18 +78,23 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   if(outcome==='failed'){feed.invalidate();throw Object.assign(Error('Arena action reverted; state must be refreshed'),{code:'POOL_ACTION_REVERTED'});}
   return {identity,receipt};
  }
- async function send(operation:string,name:'start'|'tick'|'submitRandomness',args:readonly unknown[]=[]){
+ async function send(operation:string,name:'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries',args:readonly unknown[]=[]){
   if(!/^[a-z0-9:._-]{1,160}$/i.test(operation))throw Error('Invalid operation identity');
+  if((name==='advanceSeries'||name==='drainSeries')&&!runtime?.series)throw Error('Series transport is not enabled');
+  if(runtime?.series){
+   if(name!=='start'&&args[0]!==ref.id)throw Error('Command belongs to another match');
+   operation=`match:${ref.id}:${operation}`;
+  }
   if(busy)throw Error('This arena is reconciling a command');busy=true;
   let c:PoolClient|undefined,locked=false;
   try{
    c=await db.connect();
    locked=(await c.query('SELECT pg_try_advisory_lock(hashtextextended($1,701349)) AS ok',[lower])).rows[0].ok;
    if(!locked)throw Error('This arena already has a writer');await fence();
-   const data=encodeFunctionData({abi,functionName:name,args:args as any});
+   const data=encodeFunctionData({abi:arenaAbi,functionName:name,args:args as any});
    let job=(await db.query('SELECT * FROM agent_pool.engine_jobs WHERE app=$1 AND epoch=$2 AND operation=$3',[lower,String(ref.epoch),operation])).rows[0];
    if(job){
-    const prior=await engineJobIdentity({...job,nonce:String(job.nonce)},abi,signer.address);
+    const prior=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
     if(prior.data!==data)throw Error('An operation cannot change its signed command');
     if(job.status==='observed')return feed.read(ref.id);
     if(job.status!=='pending')throw Error(`Arena operation is ${job.status}; refresh its state`);
@@ -93,7 +103,11 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
     if(pending){
      if(BigInt(pending.epoch)!==ref.epoch)throw Error('Previous epoch command requires verified closure');
      const resolved=await resolution(pending);feed.invalidate();
-     await feed.receipt(ref.id,{receipt:resolved.receipt},resolved.identity.action,resolved.identity.args??[],signer.address);
+     // A prior match's receipt resolves its own nonce only. Never project its
+     // state onto the next match, even when both share the same engine epoch.
+     if((resolved.identity.action==='start'&&(!runtime?.series||pending.operation.startsWith(`match:${ref.id}:`)))||resolved.identity.matchId===String(ref.id))
+      await feed.receipt(ref.id,{receipt:resolved.receipt},resolved.identity.action,resolved.identity.args??[],signer.address);
+     else await feed.read(ref.id,true);
      throw Object.assign(Error('Previous command reconciled; refresh before another action'),{code:'POOL_RECONCILED'});
     }
     const nonce=await node.getTransactionCount({address:signer.address,blockTag:'pending'});

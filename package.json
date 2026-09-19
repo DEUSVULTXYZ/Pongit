@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev web --hostname 127.0.0.1",
-    "build": "npm run contracts:build && npm run abi && npm run abi:v2 && npm run abi:v3 && npm run abi:v4 && npm run abi:rooms:chaos && npm run abi:independent && npm run abi:agents && npm run abi:agent-pool && npm run docs:build && next build web",
+    "build": "npm run contracts:build && npm run abi && npm run abi:v2 && npm run abi:v3 && npm run abi:v4 && npm run abi:rooms:chaos && npm run abi:independent && npm run abi:agents && npm run abi:agent-pool && npm run abi:agent-series && npm run docs:build && next build web",
     "docs:build": "tsx scripts/docs-build.ts",
     "docs:check": "tsx scripts/docs-build.ts --check",
     "start": "next start web --hostname 0.0.0.0",
@@ -44,6 +44,7 @@
     "abi:independent": "tsx scripts/abi-independent.ts",
     "abi:agents": "tsx scripts/abi-agents.ts",
     "abi:agent-pool": "tsx scripts/abi-agent-pool.ts",
+    "abi:agent-series": "tsx scripts/abi-agent-series.ts",
     "test:agents": "forge test --root contracts --match-contract AgentArcadeTest && tsx --test tests/agents.test.ts",
     "test:differential:house": "tsx scripts/differential-house.ts",
     "test:strategies": "tsx scripts/strategy-vetting-check.ts",

@@ -144,3 +144,15 @@ A client inefficiency was corrected: the three-second hub fence no longer rebuil
 A later history collector again exceeded the public Monad RPC's advertised 15 requests/s response despite Multicall. The read-only collector now paces its own requests to at most 2.5/s; the complete history/fee collection then passed. This does not establish an Interlude limit and does not claim that all service traffic has been measured.
 
 The full TypeScript suite after the light-fence/cooldown changes passed **427 tests**, and TypeScript checking passed. The live keeper and engine remain on their frozen `fe44ef0` source; only a separately launched human-check client will use the new version initially.
+
+## Capacity optimization and series candidate, 19 September 22:04 UTC
+
+The third real synthetic human trial completed **100 confirmed direction changes**, median **111.59 ms**, p95 **399.74 ms**, followed by a concession and published 0–1 result. Reference: arena `0xa4f127f53edbaa63f379f0fdec478e50d8fe5dea`, epoch 3, match 7; publication `0x0f818c993882b09479d3869598552ec7f5e74646b77ae84f66b6e898a6eb2213`. This is real SDK/engine evidence, not physical Mera authentication or visual browser validation.
+
+After explicit approval and a five-file hash-verified off-VPS backup, two empty expired predecessors were force-closed. Their epoch/batch counts, active matches, unresolved commands and current production identity were checked first. `0xfd1693294fed77304662f08e827b043b0ba386a3` epoch 3 closed at transaction `0xdec596868fa0939aee6ed4c614ca1ab36fc3352be67f42a3c5cf67ae6358b4f5`; release is eligible at 22:18:50 UTC. `0x065b3d60457eb7c32216d8f64b90f756d51fcfc4` epoch 1 closed at `0xff1770f662c590e04c7f56dc7be5d433eed9d075ee0abea26f2102199b7ea6b7`; release is eligible at 22:19:00 UTC. These deadlines are not release confirmations. Another old application with an active match was left intact.
+
+A new read-only estimate of the older `0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9` epoch-2 release, at block 63993847 / 21:50:21 UTC, still failed for insufficient gas after 8,564 batches. No new transaction was signed for that application.
+
+The [bounded-series candidate](../AGENT_SERIES.md) adds contract-authorized fixture groups, independent game references, per-game capture, stale-transition guards, tournament memory continuity and bounded cancellation of unstarted games. The latest full Forge run passed **536 tests**, with **five environment-dependent tests skipped** and zero failures. The TypeScript suite passed **434 tests** and type checking passed. A disposable VPS PostgreSQL database passed reset coalescing, cumulative restart diagnostics, idempotency, stale-read rejection and seven-day retention. It was removed after the test. Its first harness attempt lacked writable `/tmp`; providing a tmpfs fixed the harness without changing production.
+
+The series contracts and services have not yet passed hosted execution, publication or release. The current single-match pool remains frozen on its existing runtime. No final 24-hour trial or public reopening is implied by this checkpoint.

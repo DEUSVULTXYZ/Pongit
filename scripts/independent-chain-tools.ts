@@ -37,7 +37,7 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch){
     const request=await wallet.prepareTransactionRequest({...(to?{to}:{}),data,value,nonce});request.gas=request.gas*12n/10n;
     // A transaction above the block gas limit can never be mined. Journaled as pending it
     // would hold this shared operator nonce for good, and production's lifecycle with it.
-    assert(request.gas<=(await base.getBlock()).gasLimit,'Gas limit exceeds the block gas limit');
+    assert(request.gas<=30_000_000n&&request.gas<=(await base.getBlock()).gasLimit,'Gas limit exceeds the Monad transaction/block limit');
     const raw=await wallet.signTransaction(request),hash=keccak256(raw);
     const app=to??getContractAddress({from:account.address,nonce:BigInt(nonce)});
     await db.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",
@@ -57,7 +57,11 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch){
  async function deploy(name:string,args:readonly unknown[]=[],instance=name):Promise<Address>{
   if(deployed[instance])return deployed[instance];
   const a=await artifact(name); let code=a.bytecode.object as string;
-  assert((a.deployedBytecode.object.length-2)/2<=24576,`${name} exceeds EIP-170`);
+  // Monad supports 128 KiB runtimes. Only the explicit series candidate may
+  // exceed the older Ethereum budget, and still stays below 32 KiB. Hosted
+  // Interlude execution must be qualified separately after base deployment.
+  const maxRuntime=name==='SeriesAgentArena'?32768:24576;
+  assert((a.deployedBytecode.object.length-2)/2<=maxRuntime,`${name} exceeds its reviewed runtime budget`);
   for(const libs of Object.values(a.bytecode.linkReferences??{}) as any[]){
    for(const [lib,refs] of Object.entries(libs) as Array<[string,Array<{start:number,length:number}>]>){
     const address=await deploy(lib);

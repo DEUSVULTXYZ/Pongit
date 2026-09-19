@@ -7,7 +7,7 @@ import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 
 const app='0x0000000000000000000000000000000000000011';
 function fixture(){
- const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false;
+ const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false;
  let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'='ok';
  const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash});
  const node:any={getTransactionCount:async()=>nonce,getTransactionReceipt:async({hash}:{hash:Hex})=>receipts.get(hash)??null,request:async(r:any)=>{
@@ -21,7 +21,7 @@ function fixture(){
   if(behavior==='lost-after-execution')throw Error('response lost');return receipts.get(keccak256(raw));
  }};
  const fields=roomsLifecycleHubAbi[0].outputs[0].components;
- const base:any={getBlock:async()=>({number:50n,hash:zeroHash,timestamp:1000n}),request:async()=>{
+ const base:any={getBlock:async(options?:any)=>({number:50n,hash:options&&reorg?keccak256('0x01'):zeroHash,timestamp:1000n}),request:async()=>{
   const d:any=Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n]));
   Object.assign(d,{status,epoch,expiresAt:10000n});return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d});
  }};
@@ -31,9 +31,10 @@ function fixture(){
   if(sql.includes("SET status='obsolete'")){for(const j of jobs)if(BigInt(j.epoch)<=BigInt(a[1])&&j.status==='pending'){j.status='obsolete';j.resolution=a[2];}return{rowCount:1};}
   const j=jobs.find(j=>j.id===a[1]);assert(j);j.status=sql.includes("SET status='refused'")?'refused':a[2];j.resolution=sql.includes("SET status='refused'")?a[2]:a[3];return{rowCount:1};
  }};
- const feed:any={watch:()=>()=>{},read:async()=>({id:1n,phase:2}),receipt:async()=>({id:1n,phase:2}),invalidate(){}};
- const key=generatePrivateKey();const make=()=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id:1n},undefined,{node,feed});
- return{make,jobs,sent,receipts,behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
+ const receiptIds:bigint[]=[],readIds:bigint[]=[];
+ const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2};},receipt:async(id:bigint)=>{receiptIds.push(id);return{id,phase:2};},invalidate(){}};
+ const key=generatePrivateKey();const make=(id=1n,series=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series});
+ return{make,jobs,sent,receipts,receiptIds,readIds,reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
 test('lost executed response reconciles exact receipt without another command or nonce',async()=>{
  const f=fixture(),e=f.make();f.behavior('lost-after-execution');await assert.rejects(e.send('first','tick',[1n]),/lost/);
@@ -62,4 +63,39 @@ test('a verified closed epoch retires uncertainty without resending into the nex
 test('a database interruption releases the local writer guard and changed operation data is refused',async()=>{
  const f=fixture(),e=f.make();f.dbError(true);await assert.rejects(e.send('first','tick',[1n]),/database/);
  f.dbError(false);await e.send('first','tick',[1n]);await assert.rejects(e.send('first','start'),/cannot change/);e.close();
+});
+
+test('reorganized closure evidence preserves the exact uncertain command and sends nothing',async()=>{
+ const f=fixture();let e=f.make();f.behavior('lost-before-execution');await assert.rejects(e.send('first','tick',[1n]));e.close();
+ const raw=f.jobs[0].raw;f.status(0);f.reorg(true);e=f.make();
+ await assert.rejects(e.send('late','tick',[1n]),/publication changed/);
+ assert.equal(f.jobs[0].status,'pending');assert.equal(f.jobs[0].raw,raw);assert.equal(f.sent.length,1);
+ f.reorg(false);await assert.rejects(e.send('late','tick',[1n]),/lifecycle/);
+ assert.equal(f.jobs[0].status,'obsolete');assert.equal(f.sent.length,1);e.close();
+});
+
+test('series reconciles an executed previous-match command without importing its snapshot',async()=>{
+ for(const action of ['tick','start','advanceSeries'] as const){
+  const f=fixture();let e=f.make(1n,true);f.behavior('lost-after-execution');
+  await assert.rejects(e.send('same-label',action,action==='start'?[]:[1n]),/lost/);e.close();
+  const raw=f.jobs[0].raw;e=f.make(2n,true);f.behavior('ok');
+  await assert.rejects(e.send('same-label','tick',[2n]),{code:'POOL_RECONCILED'});
+  assert.equal(f.sent.length,1);assert.equal(f.jobs[0].raw,raw);assert.deepEqual(f.receiptIds,[]);assert.deepEqual(f.readIds,[2n]);
+  await e.send('same-label','tick',[2n]);assert.equal(f.jobs.length,2);assert.equal(f.jobs[1].nonce,'1');
+  assert.equal(f.jobs[0].operation,'match:1:same-label');assert.equal(f.jobs[1].operation,'match:2:same-label');e.close();
+ }
+});
+
+test('series replays only the exact uncertain prior bytes before any next-match action',async()=>{
+ const f=fixture();let e=f.make(1n,true);f.behavior('lost-before-execution');
+ await assert.rejects(e.send('advance','advanceSeries',[1n]));e.close();
+ e=f.make(2n,true);f.behavior('ok');await assert.rejects(e.send('tick','tick',[2n]),{code:'POOL_RECONCILED'});
+ assert.equal(f.sent.length,2);assert.equal(f.sent[0],f.sent[1]);assert.equal(f.jobs.length,1);assert.deepEqual(f.receiptIds,[]);e.close();
+});
+
+test('series methods stay opt-in and cannot sign an action targeting another current match',async()=>{
+ const f=fixture();let e=f.make();await assert.rejects(e.send('advance','advanceSeries',[1n]),/not enabled/);e.close();
+ e=f.make(2n,true);await assert.rejects(e.send('wrong','advanceSeries',[1n]),/another match/);
+ await assert.rejects(e.send('wrong','tick',[1n]),/another match/);assert.equal(f.sent.length,0);
+ await e.send('drain','drainSeries',[2n]);assert.equal(f.jobs.length,1);e.close();
 });

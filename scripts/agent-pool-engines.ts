@@ -13,6 +13,7 @@ import {engineCooldownMs} from '../shared/engine-transport';
 import {createPoolEngine,initializePoolOperations} from '../relayer/src/agents/pool-engine';
 import {provisionPoolArena,observePoolArenaReady} from '../relayer/src/agents/pool-hosted';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {initializePoolObservations,PoolObservations} from '../relayer/src/agents/pool-observations';
 
 assert.equal(process.env.PONG_AGENT_POOL_ENGINES,'private-qualification');
 assert.equal(process.getuid?.(),1000,'Run private pool services as uid 1000 to preserve metric ownership');
@@ -22,11 +23,13 @@ const human=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').filter(Bo
 for(const a of r.arenas)assert(!human.includes(a.app.toLowerCase()));
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:8000,fetchFn:measuredFetch('monad')})});
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:6}),metrics=await agentMetrics('/diagnostics/pool','controllers');
-await initializePoolOperations(db);let stopping=false;process.once('SIGTERM',()=>{stopping=true;});process.once('SIGINT',()=>{stopping=true;});
+await initializePoolOperations(db);await initializePoolObservations(db);let stopping=false;process.once('SIGTERM',()=>{stopping=true;});process.once('SIGINT',()=>{stopping=true;});
 const delay=(n:number)=>new Promise(resolve=>setTimeout(resolve,n));
 async function arenaLoop(app:Address){
  let engine:ReturnType<typeof createPoolEngine>|undefined,nextBase=0,binding:any,delegation:any,stage='',url='',lastTick=0,healthAt=0;
  let proofTask:Promise<void>|undefined;
+ let observation:PoolObservations|undefined;
+ const flushObservation=async()=>{try{await observation?.flush();}catch{console.error(JSON.stringify({at:new Date().toISOString(),app,event:'observation-incomplete'}));}observation=undefined;};
  const beacon=new ChaosBeaconPump();
  const health=async(value:string,detail:Record<string,unknown>={})=>{
   if(stage===value&&Date.now()-healthAt<10000)return;healthAt=Date.now();
@@ -39,10 +42,10 @@ async function arenaLoop(app:Address){
    if(Date.now()>=nextBase){
     const block=await base.getBlock();const next=await base.readContract({address:app,abi,functionName:'boundMatch',blockNumber:block.number});
     delegation=await readHubDelegation(base,r.common.hub,app,block.number);
-    if(binding?.id!==next.id||binding?.epoch!==next.epoch){engine?.close();engine=undefined;binding=next;lastTick=0;}
+    if(binding?.id!==next.id||binding?.epoch!==next.epoch){engine?.close();engine=undefined;await flushObservation();binding=next;lastTick=0;}
     nextBase=Date.now()+5000;
     if(delegation.status!==1||delegation.epoch!==binding.epoch||delegation.expiresAt<=block.timestamp){
-     engine?.close();engine=undefined;await health(delegation.status===2?'challenge-window':delegation.status===0?'awaiting-admission':'recovering',
+     engine?.close();engine=undefined;await flushObservation();await health(delegation.status===2?'challenge-window':delegation.status===0?'awaiting-admission':'recovering',
       {epoch:String(delegation.epoch),releaseAt:String(delegation.stakeUnlockAt),batches:String(delegation.batchIndex)});pause=3000;await delay(pause);continue;
     }
    }
@@ -50,12 +53,13 @@ async function arenaLoop(app:Address){
    if(!engine){
     await health('provisioning',{epoch:String(binding.epoch),id:String(binding.id)});
     url=await provisionPoolArena(db,app,binding.epoch,url||undefined);
-    const candidate=createPoolEngine(db,base,r.common.hub,app,url,r.engineKey,{epoch:binding.epoch,id:binding.id});
+    let ready=false;const observations=new PoolObservations(db,app,{epoch:binding.epoch,id:binding.id});
+    const candidate=createPoolEngine(db,base,r.common.hub,app,url,r.engineKey,{epoch:binding.epoch,id:binding.id},s=>{if(ready)observations.observe(s);});
     try{
      const session:any=await candidate.node.request({method:'interlude_session',params:[]} as any);
      assert.equal(String(session.app).toLowerCase(),app.toLowerCase());assert.equal(BigInt(session.epoch),binding.epoch);assert.equal(session.chainId,4242);
      assert.equal(await candidate.node.readContract({address:app,abi,functionName:'RULES_VERSION'}),10n);
-     await observePoolArenaReady(db,app,binding.epoch,true);engine=candidate;
+     await observePoolArenaReady(db,app,binding.epoch,true);ready=true;observation=observations;engine=candidate;
     }catch(error){candidate.close();await observePoolArenaReady(db,app,binding.epoch,false);throw error;}
    }
    let s=await engine.read();
@@ -82,6 +86,6 @@ async function arenaLoop(app:Address){
    pause=Math.max(1000,engineCooldownMs(url),Number.isFinite(e.retryAt)?e.retryAt!-Date.now():0);
   }
   if(!stopping)await delay(Math.min(pause,30000));
- }}finally{engine?.close();await proofTask;}
+ }}finally{engine?.close();await proofTask;await flushObservation();}
 }
 try{await Promise.all(r.arenas.map((a:{app:Address})=>arenaLoop(a.app)));}finally{await metrics();await db.end();}
