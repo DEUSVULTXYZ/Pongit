@@ -1,7 +1,60 @@
 import { decodeFunctionData, keccak256, parseTransaction, recoverTransactionAddress, zeroHash, type Abi, type Address, type Hex } from "viem";
 import type { Pool } from "pg";
+import { refusedBeforeExecution, refusalReason } from "../../shared/engine-halt";
 
 export type EngineJob = { id: string; app: string; epoch: string; nonce: string; raw: Hex; hash: Hex; status: string };
+
+/** Commands the node refused before executing them. Their row leaves
+ * il_engine_jobs, whose unique (app,epoch,nonce) index must admit the next
+ * command at the same nonce; the exact bytes, the node's reason and the nonce
+ * evidence stay here for review. */
+export const ENGINE_REFUSALS_SCHEMA = "CREATE TABLE IF NOT EXISTS il_engine_refusals(app text NOT NULL,id text NOT NULL,epoch bigint NOT NULL,nonce bigint NOT NULL,hash text NOT NULL,raw text NOT NULL,action text,match_id text,signer text,reason text NOT NULL,latest_nonce bigint NOT NULL,refused_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id))";
+
+/** The agent arcade's rule (relayer/src/agents/writer.ts, commit 8a9f17b) for the
+ * rooms journal. A pending command is retired only when BOTH hold:
+ * - the node's own error says it refused the transaction before execution (the
+ *   gas cap, "rejected before execution", or a halted node's "this session is
+ *   over and the node is no longer accepting transactions");
+ * - the node's latest transaction count for the signer equals the command's nonce,
+ *   so the command did not run.
+ * Anything else stays pending exactly as before: a lost response, a timeout, a
+ * local cooldown or publication gate (they carry no node refusal), a count that
+ * moved, or a count that could not be read. The same bytes are then resent, never
+ * replaced. A retired command's nonce is free; the next command signs it anew.
+ *
+ * A node halted for good cannot always answer the count. Its pending command then
+ * stays pending until the hub has released the epoch, when retireClosedEpochJobs
+ * makes it obsolete; the closing path after a forceClose never waits on it. */
+export async function retireRefusedEngineJob(o: {
+  db: Pick<Pool, "query">; app: Address; job: EngineJob; error: unknown;
+  latestNonce: () => Promise<number | bigint>;
+}) {
+  if (!refusedBeforeExecution(o.error)) return false;
+  let latest: bigint;
+  try { latest = BigInt(await o.latestNonce()); } catch { return false; }
+  if (latest !== BigInt(o.job.nonce)) return false;
+  const r = await o.db.query(
+    `WITH gone AS (DELETE FROM il_engine_jobs WHERE app=$1 AND id=$2 AND hash=$3 AND nonce=$4 AND status='pending' RETURNING *)
+     INSERT INTO il_engine_refusals(app,id,epoch,nonce,hash,raw,action,match_id,signer,reason,latest_nonce)
+     SELECT app,id,epoch,nonce,hash,raw,action,match_id,signer,$5,$6 FROM gone`,
+    [o.app, o.job.id, o.job.hash, String(o.job.nonce), refusalReason(o.error) || "refused before execution", String(latest)]);
+  return (r.rowCount ?? 0) > 0;
+}
+
+/** Once the hub has closed an epoch, none of its commands can be published any
+ * more, and resending one on the next epoch's node (same chain id, same signer)
+ * could replay it at a colliding nonce. Pending and quarantined commands of that
+ * epoch and every earlier one become obsolete; their bytes stay in the journal.
+ * Evidence accepted: the hub released the epoch (lifecycle, status None), or the
+ * hub and the node both serve a later active epoch (maintenance). */
+export async function retireClosedEpochJobs(o: {
+  db: Pick<Pool, "query">; app: Address; closedThrough: bigint; kind: "epoch-closed" | "epoch-superseded";
+}) {
+  const r = await o.db.query(
+    "UPDATE il_engine_jobs SET status='obsolete',resolution=COALESCE(resolution,'{}'::jsonb)||jsonb_build_object('previousStatus',status)||$3::jsonb,updated_at=now() WHERE app=$1 AND epoch<=$2 AND status IN ('pending','quarantined')",
+    [o.app, String(o.closedThrough), JSON.stringify({ kind: o.kind, closedEpoch: String(o.closedThrough), closedAt: new Date().toISOString() })]);
+  return r.rowCount ?? 0;
+}
 
 /** Decode the immutable journal, never trust operator-entered action metadata. */
 export async function engineJobIdentity(job: EngineJob, abi: Abi, signer: Address) {

@@ -2,8 +2,9 @@ import {decodeAbiParameters,decodeFunctionData,keccak256,parseTransaction,recove
 import {controlProofParameters} from '../../shared/compact-rooms-session';
 import {delegatableAbi} from '@interludelayer-sdk/sdk';
 import type {EngineTransportJournal} from '../../shared/engine-transport';
+import {EngineHalted,haltRefusal,refusalReason,refusedBeforeExecution} from '../../shared/engine-halt';
 
-type Job={hash:Hex;raw:Hex;app:Address;player:Address;signer:Address;epoch:string;nonce:number;action:string;match:string;at:number;state:'uncertain'|'confirmed'|'reverted'|'obsolete'};
+type Job={hash:Hex;raw:Hex;app:Address;player:Address;signer:Address;epoch:string;nonce:number;action:string;match:string;at:number;state:'uncertain'|'confirmed'|'reverted'|'obsolete'|'refused';reason?:string};
 type Store=Pick<Storage,'getItem'|'setItem'>;
 
 /** Only raw, zero-value, scoped gameplay calls are journaled in this tab.
@@ -84,5 +85,38 @@ export class RoomsCommandJournal implements EngineTransportJournal {
   const rows=this.load();
   for(const job of rows)if(job.player.toLowerCase()===player.toLowerCase()&&job.state==='uncertain'&&BigInt(job.epoch)<verifiedEpoch)job.state='obsolete';
   this.save(rows);
+ }
+ /** The node refused these exact bytes before execution AND reports their
+  * signer's latest transaction count equal to their nonce: they never ran and
+  * never will. Only then is the uncertain entry retired, so the next command may
+  * be signed at that nonce. The bytes stay recorded, and beforeSend refuses to
+  * send them again. Returns whether the entry was retired. */
+ retireRefused(hash:Hex,latestNonce:number,reason:string){
+  const rows=this.load(),job=rows.find(x=>x.hash.toLowerCase()===hash.toLowerCase());
+  if(!job||job.state!=='uncertain'||job.nonce!==latestNonce)return false;
+  job.state='refused';job.reason=reason.slice(0,240);this.save(rows);return true;
+ }
+}
+
+/** Recovery resend of one uncertain entry, the agent arcade's rule on the
+ * browser side. Only the journaled bytes are ever sent. When the node refuses
+ * them before execution (gas cap, "rejected before execution", halted node) and
+ * its latest count for their signer equals their nonce, the entry is retired
+ * and 'refused' is returned: its nonce is free and the next command signs it
+ * anew, never at a nonce that is still uncertain. A refusal from a halted node
+ * then surfaces as EngineHalted, so the tab stops and shows the halt instead of
+ * signing again. A lost response, a timeout, a local cooldown or publication
+ * gate, a count that moved or that could not be read: the entry stays
+ * uncertain and the error propagates, exactly as before. */
+export async function resendJournaled(journal:Pick<RoomsCommandJournal,'retireRefused'>,pending:{hash:Hex;raw:Hex;nonce:number},o:{
+ send:(raw:Hex)=>Promise<unknown>;latestNonce:()=>Promise<number>;
+}):Promise<{kind:'sent';receipt:unknown}|{kind:'refused'}>{
+ try{return {kind:'sent',receipt:await o.send(pending.raw)};}
+ catch(error){
+  if(!refusedBeforeExecution(error))throw error;
+  let latest:number;try{latest=Number(await o.latestNonce());}catch{throw error;}
+  if(!journal.retireRefused(pending.hash,latest,refusalReason(error)))throw error;
+  if(haltRefusal(error))throw new EngineHalted();
+  return {kind:'refused'};
  }
 }

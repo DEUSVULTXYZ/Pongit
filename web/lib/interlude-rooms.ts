@@ -17,7 +17,8 @@ import {compactRoomsSession} from '../../shared/compact-rooms-session';
 import { api, API } from "./api";
 import {engineTransport} from "../../shared/engine-transport";
 import {measuredFetch,recordRpc} from "../../shared/rpc-metrics";
-import {RoomsCommandJournal} from './rooms-command-journal';
+import {RoomsCommandJournal,resendJournaled} from './rooms-command-journal';
+import {EngineHalted} from '../../shared/engine-halt';
 import {readHubDelegation} from '../../shared/rooms-hub';
 import {assertRoomsEngineAvailable} from '../../shared/rooms-availability';
 export const roomsManifest = manifest;
@@ -67,8 +68,11 @@ export function roomControls(client:RoomsClient,player:Address,epoch:bigint){
  client.commandJournal.bindRoomControls(player,stored.grant.sessionKey,epoch,stored.grant.expiry);
  return compactRoomsSession({node:client.node,abi:gameAbi,app:manifest.app as Address,stored,epoch});
 }
-/** Reads first, then reuses only the same signed bytes if a response was lost. */
-export async function recoverRoomsCommands(client:RoomsClient,player:Address){
+/** Reads first, then reuses only the same signed bytes if a response was lost.
+ * `halted`: the relayer reports ENGINE_HALTED. Nothing is resent to a halted node;
+ * the entry stays uncertain until the node answers again or a newer epoch
+ * retires it. */
+export async function recoverRoomsCommands(client:RoomsClient,player:Address,o:{halted?:boolean}={}){
   const [node,hub]=await Promise.all([client.status(),readHubDelegation(client.base,manifest.hub as Address,manifest.app as Address)]);
   assertRoomsEngineAvailable(manifest.app,node,hub,Math.floor(Date.now()/1000));
   client.commandJournal.retirePrevious(player,hub.epoch);
@@ -78,8 +82,16 @@ export async function recoverRoomsCommands(client:RoomsClient,player:Address){
   if(roomsCompact){const stored=storedControls(player);client.commandJournal.bindRoomControls(player,stored.grant.sessionKey,hub.epoch,stored.grant.expiry);}
   let receipt=await client.node.getTransactionReceipt({hash:pending.hash}).catch(()=>null);
   if(!receipt){
+    if(o.halted)throw new EngineHalted();
     // Explicit recovery can resend these bytes, never synthesize a replacement.
-    receipt=await client.node.request({method:'interlude_sendTransaction',params:[pending.raw]} as any) as any;
+    // A refusal before execution with the nonce confirmed unused retires them.
+    const sent=await resendJournaled(client.commandJournal,pending,{
+      send:raw=>client.node.request({method:'interlude_sendTransaction',params:[raw]} as any),
+      latestNonce:()=>client.node.getTransactionCount({address:pending.signer,blockTag:'latest'}),
+    });
+    // Retired: the nonce is free and a fresh session signs the next command.
+    if(sent.kind==='refused')return;
+    receipt=sent.receipt as any;
   }
   if(!receipt || client.commandJournal.pending(player))throw Error('Waiting for confirmation of the existing game command');
 }

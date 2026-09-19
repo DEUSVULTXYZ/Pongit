@@ -19,6 +19,7 @@ import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
 import { requestHostedRenewal } from "./rooms-hosted-renewal";
 import { roomsDrainBlocker } from "../../shared/rooms-availability";
 import {assertRoomsEngineAvailable} from "../../shared/rooms-availability";
+import {retireClosedEpochJobs} from "./rooms-engine-recovery";
 const appAbi = parseAbi([
   "function operator() view returns(address)",
   "function closeEngine()",
@@ -201,8 +202,11 @@ export async function roomsLifecycle(o: {
         prefix = `${o.app}:${epoch}`;
       if(d.status===0 && stage!=='playing'){
         // The hub has released the whole epoch. Its raw bytes stay in the journal.
-        await o.db.query("UPDATE il_engine_jobs SET status='obsolete',resolution=COALESCE(resolution,'{}'::jsonb)||$3::jsonb,updated_at=now() WHERE app=$1 AND epoch=$2 AND status='quarantined'",
-          [o.app,epoch,JSON.stringify({closedEpoch:String(epoch),closedAt:new Date().toISOString(),kind:'epoch-closed'})]);
+        // This includes commands still pending: after a forceClose of a halted
+        // node nobody could confirm or refuse them, and none of them can be
+        // published any more. Left pending, the first one would stop every
+        // relayer command of the next epoch ("from another delegation").
+        await retireClosedEpochJobs({db:o.db,app:o.app,closedThrough:BigInt(epoch),kind:'epoch-closed'});
       }
       healthy = false;
       error = "";

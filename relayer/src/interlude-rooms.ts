@@ -39,7 +39,9 @@ import { chaosOfferTypes } from "../../shared/rooms-chaos";
 import {createRoomsFinanceDirectory} from "./rooms-finance-directory";
 import {loadRoomsFinance,financeAdapterAbi} from "./rooms-finance-config";
 import {roomsLifecycle} from "./rooms-lifecycle";
-import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome} from "./rooms-engine-recovery";
+import {reconcileEngineJobs, quarantineTerminalTicks, engineJobIdentity, engineReceiptOutcome, retireRefusedEngineJob, retireClosedEpochJobs, ENGINE_REFUSALS_SCHEMA} from "./rooms-engine-recovery";
+import {EngineHaltMonitor,roomsWriteVerdict,type EngineHaltChange} from "./rooms-engine-halt";
+import {ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,EngineHalted,readEngineHealth,refusalReason} from "../../shared/engine-halt";
 import {roomsRankingCandidates} from "./rooms-ranking";
 import {readEngineSnapshot, EngineSnapshotError} from "../../shared/engine-snapshot";
 import {engineTransport} from "../../shared/engine-transport";
@@ -174,6 +176,7 @@ export async function createRoomsCoordinator(o: Options) {
  ALTER TABLE il_engine_jobs ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
  ALTER TABLE il_engine_jobs DROP CONSTRAINT IF EXISTS il_engine_jobs_app_nonce_key;
  CREATE UNIQUE INDEX IF NOT EXISTS il_engine_jobs_epoch_nonce ON il_engine_jobs(app,epoch,nonce);
+ ${ENGINE_REFUSALS_SCHEMA};
  CREATE TABLE IF NOT EXISTS il_offers(app text NOT NULL,id text NOT NULL,room text NOT NULL,offer jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(app,id));
  ALTER TABLE il_results ADD COLUMN IF NOT EXISTS mode integer NOT NULL DEFAULT 0;
  ALTER TABLE il_results ADD COLUMN IF NOT EXISTS verified boolean NOT NULL DEFAULT true;
@@ -494,10 +497,25 @@ export async function createRoomsCoordinator(o: Options) {
   let writer:Promise<unknown>=Promise.resolve();
   let closingEpoch: bigint | null = null;
   const writes=new Map<string,Promise<void>>();
+  // A halted node keeps serving reads and interlude_session, which has no halt
+  // field; only /health and a refused send reveal it (shared/engine-halt.ts).
+  const halt=new EngineHaltMonitor();
+  let guardWritableAt = 0;
+  function haltChanged(change:EngineHaltChange){
+    if(change==='halted'){
+      online=false;admissionHealthy=false;guardWritableAt=0;
+      lastError=ENGINE_HALTED_MESSAGE;lastErrorCode=ENGINE_HALTED_CODE;
+      console.warn(json({event:'rooms-engine-halted',app,epoch:lastEpoch,...halt.state,at:new Date().toISOString()}));
+      void notify();
+    }
+    if(change==='recovered')console.info(json({event:'rooms-engine-halt-cleared',app,epoch:lastEpoch,at:new Date().toISOString()}));
+  }
   async function recordPublicationFailure(e:unknown){
     if(!publicationUnavailable(e))return;
     online=false;admissionHealthy=false;
     lastError=new EnginePublicationUnavailable().message;lastErrorCode='ENGINE_PUBLICATION_UNAVAILABLE';
+    // A halt is the more precise cause of the same refusal.
+    if(halt.state){lastError=ENGINE_HALTED_MESSAGE;lastErrorCode=ENGINE_HALTED_CODE;}
     const incident=await publicationHealth.fail(e,lastEpoch,lastPublishedBatch);
     const key=json(incident);
     if(key!==publicationLog){publicationLog=key;console.warn(json({event:'rooms-publication-failed',app,...incident,at:new Date().toISOString()}));}
@@ -511,6 +529,8 @@ export async function createRoomsCoordinator(o: Options) {
   async function sendPublicTick(id: string, cancel = false, pressureData?:Hex) {
     if (closingEpoch !== null) throw new Error("This arena is closing; no further commands will be submitted");
     // Recovery may only resend the existing immutable pending transaction.
+    // Nothing new is signed for a halted node: it would only be refused.
+    if(halt.state&&id!=='0')throw new EngineHalted();
     if(publicationHealth.status()&&id!=='0')throw new EnginePublicationUnavailable();
     const requestedData=id==='0'?null:pressureData || encodeFunctionData({
       abi:roomsAbi,functionName:cancel?'cancelMatch':'tick',args:[BigInt(id)],
@@ -561,7 +581,18 @@ export async function createRoomsCoordinator(o: Options) {
         receipt = await client.node
           .getTransactionReceipt({ hash: job.hash })
           .catch(() => null);
-        if (!receipt) throw e;
+        if (!receipt) {
+          // "this session is over and the node is no longer accepting
+          // transactions": the node is halted, whatever interlude_session says.
+          haltChanged(halt.refused(e,lastEpoch));
+          // A refusal before execution never ran. Retire it only when the node
+          // also confirms its nonce unused (rooms-engine-recovery.ts); otherwise
+          // it stays pending and only these bytes are ever resent.
+          if(await retireRefusedEngineJob({db,app,job,error:e,
+            latestNonce:()=>client.node.getTransactionCount({address:signer.address,blockTag:'latest'})}))
+            console.warn(json({event:'rooms-engine-command-refused',app,epoch:String(job.epoch),nonce:String(job.nonce),action:identity.action,matchId:identity.matchId,reason:refusalReason(e),at:new Date().toISOString()}));
+          throw e;
+        }
       }
     }
     const outcome=engineReceiptOutcome(receipt,job.hash);
@@ -748,16 +779,19 @@ export async function createRoomsCoordinator(o: Options) {
     finally{historyBusy=false;}
   }
   let maintenanceRetryAt = 0;
-  // Time of the last maintenance verdict that commands may be sent. The Chaos
-  // guard never decides writability itself; it only follows this verdict.
-  let guardWritableAt = 0;
+  // guardWritableAt (declared with the writer) is the time of the last
+  // maintenance verdict that commands may be sent. The Chaos guard never decides
+  // writability itself; it only follows this verdict.
   async function maintenance() {
     if (cycle || Date.now() < maintenanceRetryAt) return;
     cycle = true;
     lastCheck = Date.now();
     try {
-      const status = await client.status();
+      // /health beside the session read, with its own short timeout. A failed
+      // health read is unknown: it neither halts nor clears (EngineHaltMonitor).
+      const [status, health] = await Promise.all([client.status(), readEngineHealth(manifest.node)]);
       lastEngineSeen = Date.now();
+      haltChanged(halt.observe(health, status.epoch));
       const delegation = await base.readContract({
         address: manifest.hub,
         abi: interludeHubReadAbi,
@@ -769,23 +803,24 @@ export async function createRoomsCoordinator(o: Options) {
       // Admission restrictions never gate recovery reads or terminal observation.
       // A mismatched app cannot be used as a source of recovery evidence.
       if(status.app.toLowerCase()!==app || status.chainId!==4242)throw new RoomsEngineUnavailable('ENGINE_APP_MISMATCH','The game node serves a different application.');
-      let writable = true;
+      let unavailable:{code:string;message:string}|undefined;
       try { assertRoomsEngineAvailable(app,status,delegation,Math.floor(Date.now()/1000)); }
       catch(e) {
         if(!(e instanceof RoomsEngineUnavailable))throw e;
-        writable=false;lastError=e.message;lastErrorCode=e.code;
+        unavailable={code:e.code,message:e.message};
       }
+      // The node serves the hub's active, unexpired epoch.
+      const hubVerified=!unavailable;
       lastPublishedBatch=status.committedBatches;
-      if(writable&&await publicationHealth.observe(status,delegation)){
+      if(hubVerified&&await publicationHealth.observe(status,delegation)){
         publicationLog='';console.info(json({event:'rooms-publication-recovered',app,epoch:status.epoch,batch:status.committedBatches,at:new Date().toISOString()}));
       }
-      const publicationBlocked=!!publicationHealth.status();
-      const recoveryWritable=writable;
-      if(publicationBlocked){writable=false;lastErrorCode='ENGINE_PUBLICATION_UNAVAILABLE';lastError=new EnginePublicationUnavailable().message;}
-      if(lifecycle && !['playing','draining'].includes(lifecycle.status().stage)){
-        writable=false;lastErrorCode='ENGINE_RENEWING';
-        lastError='The arcade is recovering its game delegation. Payments continue in the background.';
-      }
+      const recoveryWritable=hubVerified;
+      // A halted node refuses every send, whatever its session reports. No new
+      // match, tick, cancel, beacon or checkpoint is attempted; the players see
+      // ENGINE_HALTED instead of a live arena whose moves are refused.
+      const verdict=roomsWriteVerdict({unavailable,publicationBlocked:!!publicationHealth.status(),halted:!!halt.state,lifecycleStage:lifecycle?.status().stage});
+      const writable=verdict.writable;
       if (lastEpoch !== -1 && lastEpoch !== status.epoch) ratings.clear();
       if(lastEpoch!==status.epoch)feed.invalidate();
       lastEpoch = status.epoch;
@@ -793,13 +828,23 @@ export async function createRoomsCoordinator(o: Options) {
       admissionHealthy = writable;
       guardWritableAt = writable ? Date.now() : 0;
       lastCheck = Date.now();
-      if(writable){lastError = "";lastErrorCode = "";}
-      const pendingJob = (
+      lastError = verdict.message;lastErrorCode = verdict.code;
+      let pendingJob = (
         await db.query(
-          "SELECT id FROM il_engine_jobs WHERE app=$1 AND status='pending' LIMIT 1",
+          "SELECT id,epoch FROM il_engine_jobs WHERE app=$1 AND status='pending' ORDER BY epoch,nonce LIMIT 1",
           [app],
         )
       ).rows[0];
+      if(pendingJob && hubVerified && BigInt(pendingJob.epoch) < BigInt(delegation.epoch)){
+        // The hub and the node serve a later active epoch, so the earlier one was
+        // closed and released: its commands can never be published, and one left
+        // pending would stop every command of this epoch ("from another
+        // delegation"). The lifecycle does the same at release; this also covers
+        // a renewal made outside it.
+        const retired=await retireClosedEpochJobs({db,app,closedThrough:BigInt(delegation.epoch)-1n,kind:'epoch-superseded'});
+        console.warn(json({event:'rooms-engine-jobs-superseded',app,epoch:String(delegation.epoch),retired,at:new Date().toISOString()}));
+        pendingJob=(await db.query("SELECT id,epoch FROM il_engine_jobs WHERE app=$1 AND status='pending' ORDER BY epoch,nonce LIMIT 1",[app])).rows[0];
+      }
       if (pendingJob && (writable || recoveryWritable && publicationHealth.claimRetry())) void publicTick("0").catch(()=>{});
       const before = await current();
       if(streamEnabled){
@@ -1085,7 +1130,7 @@ export async function createRoomsCoordinator(o: Options) {
       enabled: events && streamEnabled,
       streamConnected: feed.connected,
       writable: guardWritableAt > 0 && now - guardWritableAt <= CHAOS_GUARD_WRITABLE_MS && now >= maintenanceRetryAt
-        && closingEpoch === null && !publicationHealth.status(),
+        && closingEpoch === null && !publicationHealth.status() && !halt.state,
       cooldownMs: engineCooldownMs(manifest.node),
     };
     for (const [id, until] of guardBlocked) if (until <= now || !watched.has(id)) guardBlocked.delete(id);
@@ -1754,7 +1799,7 @@ export async function createRoomsCoordinator(o: Options) {
   return {
     route,
     subscribe,
-    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status() }),
+    status: () => ({ online, admission:online&&admissionHealthy&&(lifecycle?.available()??true), lastError, lastErrorCode, lastCheck, app, epoch:lastEpoch, maintenance:lifecycle?.status(),publication:publicationHealth.status(),halt:halt.state }),
     stop: () => {clearInterval(timer);if(guardTimer)clearInterval(guardTimer);clearInterval(recoveryTimer);clearInterval(historyTimer);if(financeTimer)clearInterval(financeTimer);for(const stop of watched.values())stop();replays?.stop();diagnostics.stop();lifecycle?.stop();},
   };
 }

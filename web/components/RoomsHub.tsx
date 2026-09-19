@@ -60,6 +60,7 @@ import {EngineFeed,TickPilot} from "../../shared/engine-feed";
 import {engineCooldownMs} from "../../shared/engine-transport";
 import {takeRpcSamples} from "../../shared/rpc-metrics";
 import {publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
+import {ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,EngineHalted,haltRefusal,isEngineHalted} from "../../shared/engine-halt";
 type Profile = {
   player: string;
   handle?: string;
@@ -76,6 +77,7 @@ type Lobby = {
   online: boolean;
   admission: boolean;
   error: string;
+  errorCode?: string;
   rating?: { live: any; published: any };
 };
 const short = (p: string) => `${p.slice(0, 6)}…${p.slice(-4)}`;
@@ -283,6 +285,9 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
       snapshot?.phase === 2 && room?.offer?.id === snapshot.id.toString(),
     canPlay = !!active && side >= 0 && ready && !writeBlocked && !busy && !panel && !syncError;
   const playable = useRef(false);
+  // The relayer reports ENGINE_HALTED when the game node stopped accepting
+  // transactions. Recovery then never resends to it (recoverRoomsCommands).
+  const halted = useRef(false);
   playable.current = canPlay;
   lobbyRef.current = lobby;
   const name = (p: string) =>
@@ -316,7 +321,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     setWriteBlocked(true);
     setDirection(0);
     setError(
-      publicationUnavailable(error)?new EnginePublicationUnavailable().message:"Confirming the last game action. Your arcade session is saved; synchronization will resume automatically.",
+      haltRefusal(error)||halted.current?ENGINE_HALTED_MESSAGE:publicationUnavailable(error)?new EnginePublicationUnavailable().message:"Confirming the last game action. Your arcade session is saved; synchronization will resume automatically.",
     );
   };
   const read = async () =>
@@ -337,6 +342,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     setLobby(next);
     if(next.room || next.queue)setMode(next.room?.mode || next.queue?.mode || 0);
     setOnline(next.online);
+    halted.current = next.errorCode === ENGINE_HALTED_CODE;
     setAdmission(next.admission);
     const mine = next.profiles.find(
       (p) => p.player === accountRef.current?.toLowerCase(),
@@ -516,7 +522,11 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           setOnline(c.online);
           setAdmission(c.admission);
           setStreamEnabled(c.stateTransport==="events");
-          if(c.maintenance?.stage && c.maintenance.stage!=='playing') {
+          halted.current = c.errorCode === ENGINE_HALTED_CODE;
+          // A halted node explains the pause better than a lifecycle stage that
+          // cannot progress until the operator recovers it.
+          if(halted.current) setNotice(c.error || ENGINE_HALTED_MESSAGE);
+          else if(c.maintenance?.stage && c.maintenance.stage!=='playing') {
             const m=c.maintenance;
             const until=m.releaseAt>Date.now()?` The hub permits release at ${new Date(m.releaseAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}.`:'';
             setNotice(m.stage==='draining'?'Finishing current matches and publishing their results before renewal.':m.stage==='challenge'?`The previous arena is closing.${until} Recovery continues automatically.`:m.stage==='starting'?'Checking the renewed game engine. Play resumes after verification.':'Recovering the game service. Your account remains saved.');
@@ -597,7 +607,10 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     const recover=async()=>{
       try{
         const c=client.current!;
-        await recoverRoomsCommands(c,account);
+        await recoverRoomsCommands(c,account,{halted:halted.current});
+        // Writes stay blocked while the node is halted: a new signature would only
+        // be refused. Re-check every 30 s (EngineHalted.retryMs).
+        if(halted.current)throw new EngineHalted();
         const restored=await c.restoreSession(account,{scope:roomsScope});
         if(cancelled)return;
         if(!restored){setRenewRequired(true);setReady(false);setError('Your arcade session has expired or was revoked. Renew session to continue.');return;}
@@ -608,6 +621,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
           if(action)await run(action);
         }
       }catch(e){
+        if(!cancelled && (isEngineHalted(e) || haltRefusal(e)))setError(ENGINE_HALTED_MESSAGE);
         if(!cancelled)timer=setTimeout(()=>void recover(),Math.max((e as {retryMs?:number}).retryMs||0,engineCooldownMs(roomsManifest.node),Math.min(30000,2000*2**Math.min(attempt++,4))));
       }
     };
