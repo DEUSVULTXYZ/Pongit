@@ -440,7 +440,7 @@ export function RoomsHub({ roomId }: { roomId?: string }) {
     setAccount(p);
     setReady(true);
     setRenewRequired(false);
-    setWriteBlocked(!!client.current!.commandJournal.pending(p));
+    setWriteBlocked(!!client.current!.commandJournal.pending(p)||client.current!.commandJournal.gasCapBlocked());
     setSessionRevision(v=>v+1);
     setSaved(p);
     setError("");

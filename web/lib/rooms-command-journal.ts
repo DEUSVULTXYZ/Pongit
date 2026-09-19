@@ -5,7 +5,7 @@ import type {EngineTransportJournal} from '../../shared/engine-transport';
 import {EngineGasCapped,EngineHalted,gasCapRefusal,haltRefusal,refusalReason,retirableRefusal} from '../../shared/engine-halt';
 import {engineCommandGas} from '../../shared/engine-gas';
 
-type Job={hash:Hex;raw:Hex;app:Address;player:Address;signer:Address;epoch:string;nonce:number;action:string;match:string;at:number;state:'uncertain'|'confirmed'|'reverted'|'obsolete'|'refused';reason?:string};
+type Job={hash:Hex;raw:Hex;app:Address;player:Address;signer:Address;epoch:string;nonce:number;action:string;match:string;at:number;state:'uncertain'|'confirmed'|'reverted'|'obsolete'|'refused';reason?:string;gasCapCleared?:boolean};
 type Store=Pick<Storage,'getItem'|'setItem'>;
 
 /** Only raw, zero-value, scoped gameplay calls are journaled in this tab.
@@ -19,6 +19,19 @@ export class RoomsCommandJournal implements EngineTransportJournal {
  private load():Job[]{return JSON.parse(this.store.getItem(this.key)||'[]');}
  private save(rows:Job[]){this.store.setItem(this.key,JSON.stringify(rows));}
  pending(player:Address){return this.load().find(x=>x.player.toLowerCase()===player.toLowerCase()&&x.state==='uncertain');}
+ /** Keep a local refusal across config polls and F5. A healthy relayer has not
+  * necessarily sent anything and cannot clear this tab's observed node limit. */
+ gasCapBlocked(gas=engineCommandGas()){
+  return this.load().some(j=>j.state==='refused'&&!j.gasCapCleared&&gasCapRefusal(new Error(j.reason))&&(parseTransaction(j.raw).gas??0n)<=gas);
+ }
+ assertGasAllowed(gas=engineCommandGas()){
+  if(this.gasCapBlocked(gas))throw new EngineGasCapped();
+  // A lower configured/signed limit is a deliberate operator recovery. Preserve
+  // the refusal as evidence while removing its gate on subsequent commands.
+  const rows=this.load();let changed=false;
+  for(const j of rows)if(j.state==='refused'&&!j.gasCapCleared&&gasCapRefusal(new Error(j.reason))&&gas<(parseTransaction(j.raw).gas??0n)){j.gasCapCleared=true;changed=true;}
+  if(changed)this.save(rows);
+ }
  /** Only call after verifying this independent arena's hub epoch and binding. */
  bindDirect(key:Address,epoch:bigint,match:bigint,expires:bigint){
   if(this.epoch!==String(epoch)||match<=0n)throw Error('Read the current arena before binding direct controls');
@@ -73,8 +86,10 @@ export class RoomsCommandJournal implements EngineTransportJournal {
    player=d.key;
    }
   }
-  const hash=keccak256(raw as Hex),rows=this.load(),pending=rows.find(x=>x.player.toLowerCase()===player.toLowerCase()&&x.state==='uncertain');
+  const hash=keccak256(raw as Hex);let rows=this.load();const pending=rows.find(x=>x.player.toLowerCase()===player.toLowerCase()&&x.state==='uncertain');
   if(pending){if(pending.hash!==hash||pending.epoch!==this.epoch)throw Error('An uncertain game command must be reconciled before another signature is sent');return;}
+  this.assertGasAllowed(tx.gas??0n);
+  rows=this.load();
   // Only within one epoch. Had a command of an earlier epoch been committed, the engine would have
   // moved past its nonce and these exact bytes could not be signed again; identical bytes in a newer
   // epoch mean it ran after that epoch's last commit and was lost with it, so it must be sent again.
@@ -93,6 +108,9 @@ export class RoomsCommandJournal implements EngineTransportJournal {
  retirePrevious(player:Address,verifiedEpoch:bigint){
   const rows=this.load();
   for(const job of rows)if(job.player.toLowerCase()===player.toLowerCase()&&job.state==='uncertain'&&BigInt(job.epoch)<verifiedEpoch)job.state='obsolete';
+  // A session response alone is not enough: only the caller's verified active
+  // hub epoch allows retrying the old limit against a renewed node.
+  for(const job of rows)if(job.state==='refused'&&BigInt(job.epoch)<verifiedEpoch)job.gasCapCleared=true;
   this.save(rows);
  }
  /** The node refused these exact bytes before execution AND reports their
