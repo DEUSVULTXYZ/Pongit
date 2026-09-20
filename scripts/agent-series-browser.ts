@@ -14,7 +14,7 @@ assert.equal(process.env.PONG_SERIES_BROWSER,'isolated-vps');
 const prefix=process.env.PONG_AGENT_SERIES_PREFIX!;assert(/^agent-series-candidate-\d{8}-[3-9]$/.test(prefix));
 const manifest=validateAgentPoolManifest(JSON.parse(await readFile('/manifest/manifest.json','utf8')));
 assert.equal(manifest.enabled,false);assert.equal(manifest.rulesVersion,11);
-const origin='https://pongit.xyz',api='http://pongit-series3-sponsor:4102',web='http://pongit-series3-web:3000';
+const origin='https://pongit.xyz',api='http://pongit-series3-reader-replays:4101',sponsor='http://pongit-series3-sponsor:4102',web='http://pongit-series3-web:3000';
 const nodes=new Set(manifest.arenas.map(a=>new URL(a.node).origin));
 const run=Number(process.env.PONG_SERIES_BROWSER_RUN??1);assert(Number.isSafeInteger(run)&&run>=1&&run<=99);
 const suffix=run===1?'':`-${run}`;
@@ -50,7 +50,12 @@ async function context(player=false){
   if(u.origin==='http://localhost:4000'||u.origin===origin&&u.pathname.startsWith('/api/')){
    const path=u.origin===origin?u.pathname.slice(4):u.pathname;
    assert(path.startsWith('/agents/'),'Never send browser writes to human services');
-   const response=await route.fetch({url:api+path+u.search,timeout:45000});
+   // Match the production Caddy routing. Only transaction submission and its
+   // operation journal use the sponsor; published views use the read service.
+   const destination=path==='/agents/transactions'||path.startsWith('/agents/operations/')?sponsor:api;
+   const start=performance.now(),response=await route.fetch({url:destination+path+u.search,timeout:45000});
+   report.rpc.push({at:new Date().toISOString(),player,target:destination===sponsor?'pongit_sponsor':'pongit_read',
+    method:request.method(),path,ms:performance.now()-start,status:response.status(),requestId:response.headers()['x-request-id']});
    if(path==='/agents/config'){
     const value=await response.json();assert.equal(value.pool,manifest.pool);assert.equal(value.enabled,false);
     return route.fulfill({response,json:{...value,enabled:true,verifiedCapacity:2,qualificationEvidence:`0x${'f'.repeat(64)}`}});
@@ -197,8 +202,10 @@ try{
   const up=page.getByRole('button',{name:'Move up',exact:true});await up.waitFor({timeout:120000});await until(()=>up.isEnabled(),'Controllable arena');
   // Check F5 before fault injection. A short genuine loss can end a match while
   // a fault is being reconciled; absent terminal controls are not a 45s locator.
-  await savePrivate();await page.reload();await page.bringToFront();
+  report.navigation??=[];const navigation={round,mode,beforeReload:new Date().toISOString(),loadMs:0,controlsMs:0};report.navigation.push(navigation);
+  await savePrivate();const reloading=performance.now();await page.reload();navigation.loadMs=performance.now()-reloading;await page.bringToFront();
   await until(()=>up.isEnabled({timeout:1000}).catch(()=>false),'F5 session reuse');
+  navigation.controlsMs=performance.now()-reloading;
   assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);await checkpoint();
   // A spectator's complete authorization/read setup may outlast a novice's
   // genuine match. Exercise player controls immediately while it loads; it

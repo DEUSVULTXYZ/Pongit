@@ -41,6 +41,19 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const refKey=`${reference.app}:${reference.epoch}:${reference.id}`;
  const name=(address:string)=>people.find(p=>p.agent.toLowerCase()===address.toLowerCase())?.name??short(address);
  const avatar=(address:string)=>people.find(p=>p.agent.toLowerCase()===address.toLowerCase())?.avatar??9;
+ // Names and portraits must not gate authorization, F5 recovery or observation.
+ // A slow catalogue leaves address labels in place while the arena connects.
+ useEffect(()=>{
+  if(!enabled)return;const abort=new AbortController();let cancelled=false,timer:ReturnType<typeof setTimeout>;
+  const load=async()=>{
+   try{
+    const response=await fetch(`${API}/agents/catalog?limit=32`,{signal:AbortSignal.any([abort.signal,AbortSignal.timeout(10000)])});
+    if(!response.ok)throw Error('Catalogue unavailable');const catalog:{items:Identity[]}=await response.json();
+    if(!cancelled)setPeople(catalog.items);
+   }catch{if(!cancelled)timer=setTimeout(load,30000);}
+  };
+  void load();return()=>{cancelled=true;abort.abort();clearTimeout(timer);};
+ },[enabled,refKey]);
  useEffect(()=>{
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>,observer:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>|undefined,release:(()=>void)|undefined;
   if(lastRef.current!==refKey){lastRef.current=refKey;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
@@ -51,17 +64,23 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    if(!response.ok)throw Error(response.status===404?'This match reference does not exist.':'Agent Arcade is synchronizing. Please retry shortly.');return response.json();
   };
   const publish=(s:EngineState)=>{if(!cancelled){setSnapshot(s);setConnection(s.phase>=3?'Result on engine, publication pending':'Live engine state');}};
+  const matchPath=`/matches/${reference.app}/${reference.epoch}/${reference.id}`;
+  const acceptView=(value:PoolMatchView)=>{
+   if(value.ref.app.toLowerCase()!==reference.app.toLowerCase()||value.ref.epoch!==reference.epoch||value.ref.id!==reference.id)throw Error('Match reference changed unexpectedly');
+   current=value;setView(value);nextPublished=performance.now()+5000;
+  };
   const poll=async()=>{
    let delay=500;
    try{
     if(document.hidden){wasHidden=true;delay=2000;return;}
-    if(!config){config=await get<AgentPoolManifest>('/config');if(!config.enabled)throw Error('Agent Arcade qualification is still in progress');
-     manifest.current=config;const saved=rememberedAccount();if(saved)setAccount(saved.address);
-     const catalog=await get<{items:Identity[]}>('/catalog?limit=32');if(cancelled)return;setPeople(catalog.items);}
+    if(!config){
+     const [loaded,value]=await Promise.all([get<AgentPoolManifest>('/config'),get<PoolMatchView>(matchPath)]);if(cancelled)return;
+     if(!loaded.enabled)throw Error('Agent Arcade qualification is still in progress');
+     acceptView(value);config=loaded;manifest.current=config;
+     const saved=rememberedAccount();if(saved)setAccount(saved.address);
+    }
     if(performance.now()>=nextPublished||wasHidden){
-     current=await get<PoolMatchView>(`/matches/${reference.app}/${reference.epoch}/${reference.id}`);if(cancelled)return;
-     if(current.ref.app.toLowerCase()!==reference.app.toLowerCase()||current.ref.epoch!==reference.epoch||current.ref.id!==reference.id)throw Error('Match reference changed unexpectedly');
-     setView(current);nextPublished=performance.now()+5000;
+     const value=await get<PoolMatchView>(matchPath);if(cancelled)return;acceptView(value);
     }
     if(!current)return;
     if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setControlError('');setConnection(current.result.finality?'Final result':'Published, still contestable');setError('');delay=10000;return;}

@@ -2,6 +2,30 @@
 
 Status: private implementation and qualification only. Human production, Agent Arcade and public tournament admissions remain closed. The previous one-match pool and its evidence are preserved. This candidate does not establish continuous capacity or a passing 24-hour trial.
 
+## Browser reload diagnosis, 20 September 10:00 UTC
+
+Browser run 12 remains failed: its 36.7-second Classic challenge ended 0-7 before
+controls returned after F5. It sent no movement and exercised neither injected
+fault. Its original PRF context is closed. This is separate from run 11's actual
+two-hour original-PRF renewal proof.
+
+A read-only replay of navigation to that published match isolated the delay.
+The fixture routed configuration, catalogue and match reads to the sponsor,
+whose internal RPC path made each read take 8-10 seconds. The sequential page
+bootstrap took 31.1 / 31.8 seconds although document loads took under one second.
+Routing those reads to the dedicated reader, exactly as `ops/agent-pool.caddy`
+specifies, reduced result display to 1.9 / 0.9 seconds on the same existing build.
+These are historical-page observations, not live F5 or latency qualification.
+
+The browser fixture now separates reader and sponsor routes and records API and
+reload timings without request bodies. The arena UI also loads configuration
+and match reference together, with optional profile labels outside its control
+recovery path. A browser regression holds the catalogue response while requiring
+the real built UI to show its synthetic live court. Type checking and 24 focused
+authorization, recovery and reader tests pass; the new build and hosted browser
+run are still required. Reports `series-browser-12.json` and
+`navigation-check-{1,2}.json` are preserved in private diagnostics.
+
 ## Cumulative coverage, 20 September 09:02 UTC
 
 The read-only `agent-series-coverage.ts` audit matched 18 observed completed

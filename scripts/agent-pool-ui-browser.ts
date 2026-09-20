@@ -33,6 +33,7 @@ try{
  for(const [width,height] of [[360,640],[390,844],[768,900],[1440,1000],[844,390]]){
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
   let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0;
+  let releaseCatalog:(()=>void)|undefined,catalogGate:Promise<void>|undefined;
   await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
   await context.addInitScript({content:"Object.defineProperty(navigator.credentials,'get',{value:function(){window.fixtureRefusedPasskey=true;return Promise.reject(new Error('Qualification cancelled passkey request'));}});"});
   await context.route('**/*',async route=>{
@@ -53,7 +54,7 @@ try{
      if(url.pathname.startsWith('/api/'))url.pathname=url.pathname.slice(4);
      let data:any;
      if(url.pathname==='/agents/config')data=m;
-     else if(url.pathname==='/agents/catalog'){catalogReads++;data={items:people,total:'8',offset:'0',next:null};}
+     else if(url.pathname==='/agents/catalog'){catalogReads++;if(catalogGate)await catalogGate;data={items:people,total:'8',offset:'0',next:null};}
      else if(url.pathname==='/agents/live')data={items:[{ref,a:people[0].agent,b:people[1].agent,mode:0,lane:'tournament'}]};
      else if(url.pathname==='/agents/tournaments')data={items:[tournament('1',league,mode)],total:'1',offset:'0',next:null,nextAt:'0'};
      else if(url.pathname==='/agents/tournaments/1')data=tournament('1',league,mode);
@@ -121,7 +122,13 @@ try{
   }
   for(mode of [0,1] as const){
    published=false;effect=21;revision=1n;
-   await page.goto(`${origin}/agents/arenas/${ref.app}/1/1`);await page.locator('canvas').waitFor();
+   if(width===360&&mode===0)catalogGate=new Promise<void>(resolve=>{releaseCatalog=resolve;});
+   await page.goto(`${origin}/agents/arenas/${ref.app}/1/1`);await page.locator('canvas').waitFor({timeout:5000});
+   if(catalogGate){
+    assert(await page.getByText('Live engine state',{exact:false}).isVisible(),'A stalled catalogue must not block observation');
+    releaseCatalog!();catalogGate=undefined;await page.getByText('NOVA',{exact:true}).waitFor();
+    report.checks.push({width,arenaConnectsBeforeCatalog:true});
+   }
    const before=await page.locator('canvas').boundingBox();assert(before&&Math.abs(before.width/before.height-16/9)<.03);
    assert(before.height>80&&before.y+before.height<=height,'The complete court must fit the viewport');
    if(mode){effect=23;revision++;await page.waitForTimeout(1100);const after=await page.locator('canvas').boundingBox();assert(after&&Math.abs(before.y-after.y)<1,'Effect shifted the court');}
