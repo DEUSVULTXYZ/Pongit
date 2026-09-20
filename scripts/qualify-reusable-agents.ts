@@ -2,7 +2,7 @@
 // a human arena. This is not the final 24-hour service/capacity qualification.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
-import {createPublicClient,encodeFunctionData,decodeFunctionData,encodeAbiParameters,decodeAbiParameters,getAbiItem,keccak256,parseTransaction,type Address,type Abi} from 'viem';
+import {createPublicClient,encodeFunctionData,decodeFunctionData,decodeEventLog,encodeAbiParameters,decodeAbiParameters,getAbiItem,keccak256,parseTransaction,type Address,type Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {chainTools} from './independent-chain-tools';
 import {retryOperatorContention} from '../shared/operator-contention';
@@ -89,6 +89,12 @@ async function send(operation:string,method:string,args:readonly unknown[]){
     const results=reusableResults(abi,app,15,frame);
     state.receipted??=[];
     for(const result of results)if(!state.receipted.some((r:any)=>r.transactionHash===result.transactionHash&&r.leaf===result.leaf))state.receipted.push(result);
+    state.verifiedRandomness??=[];
+    for(const log of frame.logs){if(log.address.toLowerCase()!==app.toLowerCase())continue;let event:any;
+     try{event=decodeEventLog({abi,topics:[...log.topics] as any,data:log.data});}catch{continue;}
+     if(event.eventName==='RandomnessVerified'&&!state.verifiedRandomness.some((r:any)=>r.hash===job.hash))
+      state.verifiedRandomness.push({id:String(event.args.id),index:Number(event.args.index),hash:job.hash});
+    }
    }
    job.state=confirmed?'confirmed':'reverted';await save();
    assert.equal(job.state,'confirmed','Confirmed engine revert');return;
@@ -145,7 +151,8 @@ async function play(serial:number){
  const ref={...match.ref,chainId:10143n,epoch:BigInt(match.ref.epoch),id:BigInt(match.ref.id)},id=ref.id,epoch=ref.epoch;
  const row=match.report??{id:String(id),epoch:String(epoch),startedAt:new Date().toISOString(),proofs:0,ticks:0};match.report=row;report.matches.push(row);
  row.ticks=state.jobs.filter((j:any)=>j.state==='confirmed'&&j.operation.startsWith(`tick-${id}-`)).length;
- row.proofs=state.jobs.filter((j:any)=>j.state==='confirmed'&&j.operation.startsWith(`proof-${id}-`)).length;
+ row.proofSubmissions=state.jobs.filter((j:any)=>j.state==='confirmed'&&j.operation.startsWith(`proof-${id}-`)).length;
+ row.proofs=(state.verifiedRandomness??[]).filter((p:any)=>p.id===String(id)).length;
  if(state.jobs.some((j:any)=>j.operation===`admit-${id}`&&j.state==='confirmed'))match.admitted=true;
  const [ticket,binding]=await read(common.pool,poolAbi,'ticketOf',[ref]) as [ReusableTicket,ReusableAgentBinding];row.mode=binding.mode;
  if(!match.admitted){
@@ -177,7 +184,12 @@ async function play(serial:number){
    row.effectsObserved=[...new Set([...(row.effectsObserved??[]),...words.slice(4,6).map(w=>Number(w&255n)).filter(id=>id>0)])].sort((a:any,b:any)=>a-b);
    const round=request&((1n<<64n)-1n);
    if(round&&!pending&&BigInt(Math.floor(Date.now()/1000))>=1727521075n+(round-1n)*3n){
-    const proof=await beacon.read(round);await send(`proof-${id}-${request}`,'submitRandomness',[epoch,id,request,proof.signature]);row.proofs++;
+    // A proof call can only advance bounded physics and leave the same draw
+    // pending. The next confirmed revision is a NEW intention; replaying the
+    // old operation would only return its prior receipt without applying it.
+    const proof=await beacon.read(round);await send(`proof-${id}-${request}-${s.revision}`,'submitRandomness',[epoch,id,request,proof.signature]);
+    row.proofSubmissions=state.jobs.filter((j:any)=>j.state==='confirmed'&&j.operation.startsWith(`proof-${id}-`)).length;
+    row.proofs=(state.verifiedRandomness??[]).filter((p:any)=>p.id===String(id)).length;
     s=await node.readContract({address:app,abi,functionName:'getSnapshot',args:[id]});if(s.phase>=3n)break;
    }
   }
@@ -196,6 +208,7 @@ async function play(serial:number){
  assert.equal(await read(common.pool,poolAbi,'playing',[binding.a]),'0x'+'00'.repeat(32));
  row.score=[result.match_.scoreA,result.match_.scoreB];row.elapsedUs=String(result.match_.elapsedUs);row.resultHash=result.match_.hash;
  row.publishedCount=count;row.publishedRoot=root;row.finishedAt=new Date().toISOString();row.passed=true;match.captured=true;await save();await flush();
+ if(binding.mode===1)assert(row.proofs>0&&row.effectsObserved?.length>0,'Chaos needs an actually verified proof and active effect, not just successful proof calls');
 }
 try{
  await save();assert.equal(await read(common.pool,poolAbi,'publicAdmissions'),false);
