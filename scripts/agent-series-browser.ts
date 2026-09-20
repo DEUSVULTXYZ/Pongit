@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename} from 'node:fs/promises';
 import {chromium,type BrowserContext,type Page} from '@playwright/test';
-import {createPublicClient,http,parseTransaction,decodeFunctionData} from 'viem';
+import {createPublicClient,http,parseTransaction,decodeFunctionData,decodeErrorResult} from 'viem';
 import {seriesAgentArenaAbi} from '../shared/abi-SeriesAgentArena';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {validateAgentPoolManifest,type PoolMatchView} from '../shared/agent-pool';
@@ -61,10 +61,14 @@ async function context(player=false){
    const body=request.postDataJSON(),method=String(body?.method??'http');
    if(player&&throttle&&method==='interlude_sendTransaction'){
     throttle=false;report.faults.push({at:new Date().toISOString(),kind:'Injected 429 before send'});
-    return route.fulfill({status:429,headers:{'Retry-After':'1'},json:{error:'Private qualification throttle'}});
+    return route.fulfill({status:429,headers:{'Retry-After':'1','Access-Control-Allow-Origin':origin},json:{error:'Private qualification throttle'}});
    }
    const start=performance.now(),response=await route.fetch({timeout:20000});
-   report.rpc.push({at:new Date().toISOString(),player,method,status:response.status(),ms:performance.now()-start,bytes:Buffer.byteLength(request.postData()??'')});
+   const sample:any={at:new Date().toISOString(),player,target:'interlude',method,status:response.status(),ms:performance.now()-start,bytes:Buffer.byteLength(request.postData()??'')};report.rpc.push(sample);
+   if(method==='interlude_sendTransaction'){
+    const value=await response.json();sample.receiptStatus=value.result?.status;sample.rpcError=value.error?.code;
+    if(value.result?.output)try{sample.revert=decodeErrorResult({abi:seriesAgentArenaAbi,data:value.result.output}).errorName;}catch{}
+   }
    if(player&&loseReply&&method==='interlude_sendTransaction'){
     const data=await response.json();assert(response.ok()&&!data.error,'Withhold only an executed transaction response');
     loseReply=false;report.faults.push({at:new Date().toISOString(),kind:'Reply lost after execution'});return route.abort('failed');
@@ -79,7 +83,10 @@ async function context(player=false){
    return route.fulfill({response});
   }
   assert.equal(request.method(),'POST','Unexpected external browser request');assert.equal(u.origin,'https://testnet-rpc.monad.xyz');
-  return route.continue();
+  const start=performance.now(),response=await route.fetch({timeout:12000});
+  let value:any;try{value=await response.json();}catch{}
+  report.rpc.push({at:new Date().toISOString(),player,target:'monad',method:request.postDataJSON()?.method,status:response.status(),ms:performance.now()-start,rpcError:value?.error?.code,limited:/limited|rate limit/i.test(String(value?.error?.message??''))});
+  return route.fulfill({response});
   }catch(e){
    report.errors.push(`Route ${request.method()} ${u.origin}${u.pathname}: ${(e as Error).message.split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]')}`);
    await route.abort('failed').catch(()=>{});
@@ -119,7 +126,7 @@ try{
  });
  await page.addInitScript({content:`(function(){
   function observe(){new MutationObserver(function(){
-   for(const element of document.querySelectorAll('[role="alert"]'))
+   for(const element of document.querySelectorAll('[role="alert"],.pool-match-error[role="status"]'))
     void window.recordQualificationAlert(element.textContent||'');
   }).observe(document.body,{subtree:true,childList:true,characterData:true});}
   if(document.body)observe();else document.addEventListener('DOMContentLoaded',observe,{once:true});
@@ -130,6 +137,7 @@ try{
  cdp.on('WebAuthn.credentialAsserted',()=>assertions++);
  let initialAssertions=0;
  for(const [round,mode] of (retainedRenewal?[0,1,0]:[0,1]).entries()){
+  try{
   let expiring:{key:string;player:string;expires:string}|undefined;
   if(round===2){
    expiring=await page.evaluate(family=>{
@@ -192,8 +200,9 @@ try{
    if(!await up.count())break;
    // A deliberately lost reply or 429 can briefly disable controls. Wait for
    // reconciliation instead of silently skipping the rest of the test.
-   if(!await up.isEnabled({timeout:1000}).catch(()=>false))await until(async()=>!await up.count()||await up.isEnabled({timeout:1000}).catch(()=>false),'Automatic control recovery',30000);
+   if(!await up.isEnabled({timeout:1000}).catch(()=>false))await until(async()=>!await up.count()||await up.isEnabled({timeout:1000}).catch(()=>false)||!!await page!.getByText('Waiting for publication',{exact:true}).count(),'Automatic control recovery',30000);
    if(!await up.count())break;
+   if(await page.getByText('Waiting for publication',{exact:true}).count())break;
    // Exercise faults early: a novice who misses every serve can lose in under
    // forty seconds. A later unused injection must never count as passing.
    if(round===0&&i===0)loseReply=true;if(round===0&&i===1)throttle=true;
@@ -212,7 +221,19 @@ try{
   for(const p of [page,watch])assert.deepEqual((await p.locator('.agent-score b').allTextContents()).map(Number),expected);
   await savePrivate();assert.equal(assertions,initialAssertions,'Family reuse requested a new ceremony');
   report.matches.push({ref,mode,result:result.result,scoreMatched:true,authAssertions:assertions});
+  }catch(e){
+   const message=(e as Error).message.split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
+   report.roundFailures??=[];report.roundFailures.push({round,mode,error:message,at:new Date().toISOString()});
+   await savePrivate();await checkpoint();
+   if(!retainedRenewal)throw e;
+   // Keep the ORIGINAL live PRF authenticator for its independent expiry gate.
+   // A failed game stays failed. Never count subsequent renewal as fixing it,
+   // and never issue another challenge while that game's outcome is unknown.
+   const ref=report.current?.ref;
+   if(ref&&round<2)await until(async()=>{const r=await fetch(`${api}/agents/matches/${ref.app}/${ref.epoch}/${ref.id}`);return r.ok&&!!(await r.json()).result;},'Resolve failed browser round before another challenge',600000);
+  }
  }
+ assert(!report.roundFailures?.length,'One or more gameplay rounds failed; independent renewal evidence does not make this run pass');
  assert(!loseReply&&!throttle,'Both labelled faults must actually be exercised');
  for(const kind of ['Reply lost after execution','Injected 429 before send'])
   assert.equal(report.faults.filter((f:{kind:string})=>f.kind===kind).length,1,`Required fault was not exercised: ${kind}`);
