@@ -2,7 +2,7 @@
 // production slots. All keys and exact signed command journals remain private.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
-import {createPublicClient,encodeFunctionData,encodeAbiParameters,decodeAbiParameters,getAbiItem,keccak256,parseTransaction,type Address,type Hex,type Abi} from 'viem';
+import {createPublicClient,encodeFunctionData,decodeFunctionData,decodeEventLog,encodeAbiParameters,decodeAbiParameters,getAbiItem,keccak256,parseTransaction,type Address,type Hex,type Abi} from 'viem';
 import {generatePrivateKey,privateKeyToAccount,type PrivateKeyAccount} from 'viem/accounts';
 import {chainTools} from './independent-chain-tools';
 import {engineTransport} from '../shared/engine-transport';
@@ -18,6 +18,7 @@ import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerifier';
 import {rpcSamples} from '../shared/rpc-metrics';
 import {retryOperatorContention} from '../shared/operator-contention';
+import {receiptFrame} from '../shared/engine-stream';
 
 assert.equal(process.env.PONG_REUSABLE_QUALIFICATION,'isolated-vps');
 const manifestPath=process.env.PONG_INDEPENDENT_MANIFEST!,signerPath=process.env.PONG_ADMISSION_KEY_FILE!;
@@ -60,6 +61,15 @@ async function send(operation:string,name:string,args:readonly unknown[],signer:
  if(!receipt)receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);
  assert.equal(receipt?.transactionHash?.toLowerCase(),job.hash.toLowerCase(),'Missing/mismatched receipt');
  assert(['0x0','0x1','success','reverted'].includes(String(receipt.status)),'Uncertain receipt');
+ if(['0x1','success'].includes(String(receipt.status))){
+  const frame=receiptFrame(receipt,app);assert(frame,'Exact receipt logs required');
+  state.verifiedRandomness??=[];
+  for(const log of frame.logs){if(log.address.toLowerCase()!==app.toLowerCase())continue;let event:any;
+   try{event=decodeEventLog({abi:arenaAbi,topics:[...log.topics] as any,data:log.data});}catch{continue;}
+   if(event.eventName==='RandomnessVerified'&&!state.verifiedRandomness.some((r:any)=>r.hash===job.hash))
+    state.verifiedRandomness.push({id:String(event.args.id),index:Number(event.args.index),hash:job.hash});
+  }
+ }
  job.state=['0x1','success'].includes(String(receipt.status))?'confirmed':'reverted';job.block=String(receipt.blockNumber);await save();
  assert.equal(job.state,'confirmed',`Confirmed engine revert (${name})`);return job.hash;
 }
@@ -106,7 +116,8 @@ async function play(mode:0|1){
  // evidence, even if the final Monad capture was waiting for another writer.
  const confirmed=(prefix:string)=>state.jobs.filter((job:any)=>job.state==='confirmed'&&job.operation.startsWith(prefix)).length;
  const row:any=match.report??{id,epoch,mode,startedAt:new Date().toISOString()};
- row.inputs=confirmed(`input-${id}-`);row.proofs=confirmed(`proof-${id}-`);
+ row.inputs=confirmed(`input-${id}-`);row.proofSubmissions=confirmed(`proof-${id}-`);
+ row.proofs=(state.verifiedRandomness??[]).filter((x:any)=>x.id===String(id)).length;
  if(state.jobs.some((job:any)=>job.operation===`concede-${id}`&&job.state==='confirmed'))row.conceded=true;
  match.report=row;report.matches.push(row);await save();await flush();
  const [ticket,binding]=await read(m.lobby,lobbyAbi,'ticketOf',[id]) as [ReusableTicket,ReusableBinding];
@@ -138,10 +149,15 @@ async function play(mode:0|1){
   snapshot=await node.readContract({address:app,abi:arenaAbi,functionName:'getSnapshot',args:[id]});
   if(mode&&snapshot.phase===2n){
    const raw=await node.readContract({address:app,abi:arenaAbi,functionName:'chaosState',args:[id]});
-   const [,,request,pending]=decodeAbiParameters([getAbiItem({abi:arenaAbi,name:'getSnapshot'}).outputs[0],{type:'uint256[8]'},{type:'uint256'},{type:'uint256'}],raw);
+   const [header,words,request,pending]=decodeAbiParameters([getAbiItem({abi:arenaAbi,name:'getSnapshot'}).outputs[0],{type:'uint256[8]'},{type:'uint256'},{type:'uint256'}],raw);
+   row.effectsObserved=[...new Set([...(row.effectsObserved??[]),...words.slice(4,6).map(w=>Number(w&255n)).filter(effect=>effect>0)])].sort((a:any,b:any)=>a-b);
    const round=request&((1n<<64n)-1n);
    if(round&&!pending&&BigInt(Math.floor(Date.now()/1000))>=1727521075n+(round-1n)*3n){
-    const proof=await beacon.read(round);await send(`proof-${id}-${request}`,'submitRandomness',[epoch,id,request,proof.signature],admission);row.proofs++;
+    // A successful catch-up transaction may leave this draw pending. Only a
+    // new confirmed revision can create a new attempt; its receipt must reveal
+    // RandomnessVerified before it counts as an accepted proof.
+    const proof=await beacon.read(round);await send(`proof-${id}-${request}-${header.revision}`,'submitRandomness',[epoch,id,request,proof.signature],admission);
+    row.proofSubmissions=confirmed(`proof-${id}-`);row.proofs=(state.verifiedRandomness??[]).filter((x:any)=>x.id===String(id)).length;
    }
   }
   await save();await flush();await wait(200);
@@ -149,7 +165,7 @@ async function play(mode:0|1){
  snapshot=await node.readContract({address:app,abi:arenaAbi,functionName:'getSnapshot',args:[id]});
  if(snapshot.phase===2n){await send(`concede-${id}`,'concede',[epoch,id],keys[p+1]);row.conceded=true;}
  const complete=await node.readContract({address:app,abi:arenaAbi,functionName:'publishedResult'});assert.equal(complete.match_.id,id);assert.equal(complete.match_.status,3);
- if(mode)assert(row.proofs>0,'Hosted drand proof required');
+ if(mode)assert(row.proofs>0&&row.effectsObserved?.length>0,'An actually verified drand proof and active effect are required');
  const canonical=encodeAbiParameters(resultParameters,[complete]),hash=keccak256(canonical);
  const leaf=publishedResultLeaf({chainId:10143n,arena:app,epoch},id,reusableAdmissionDigest(ticket),hash);
  const [actualEpoch,count,root]=await node.readContract({address:app,abi:arenaAbi,functionName:'resultCommitment'});assert.equal(actualEpoch,epoch);assert.equal(count,Number(ticket.sequence));
@@ -173,6 +189,13 @@ try{
   hub=await readHubDelegation(t.base,m.hub,app);assert.equal(hub.status,1);state.epoch=String(hub.epoch);await save();
  }
  assert.equal(hub.epoch,BigInt(state.epoch));report.epoch=state.epoch;await provision();
+ for(const pending of state.jobs.filter((j:any)=>j.state==='uncertain')){
+  const tx=parseTransaction(pending.raw);assert.equal(tx.to?.toLowerCase(),app.toLowerCase());assert.equal(tx.chainId,4242);assert.equal(pending.epoch,state.epoch);
+  const signer=[admission,...keys].find(s=>s.address===pending.signer);assert(signer,'Original signer required');
+  const decoded=decodeFunctionData({abi:arenaAbi,data:tx.data!});
+  assert(['admit','confirmReady','start','input','submitRandomness','concede'].includes(decoded.functionName));
+  await send(pending.operation,decoded.functionName,decoded.args??[],signer);
+ }
  // New identities are registered AFTER the engine's base snapshot, proving
  // that transport, rather than accidentally preloaded grants, admits them.
  state.issuedAt??=String((await t.base.getBlock()).timestamp);await save();

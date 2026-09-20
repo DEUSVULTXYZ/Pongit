@@ -1,5 +1,22 @@
 # Reusable arenas and testnet admission transport
 
+## Human fixture evidence correction, 20 September 18:55 UTC
+
+The reusable human smoke fixture now counts `RandomnessVerified` receipts,
+separately from proof submissions, and requires an observed active effect. A
+proof that only advances catch-up can be submitted again at a new confirmed
+revision, while uncertain commands are reconciled with their exact original
+bytes before new commands. Earlier reports are preserved. This short fixture
+still ends by concession when necessary; it is not a full natural-match,
+browser, financial or continuity qualification.
+
+The canonical `1367f8f` rebuild matches all 132 Solidity sources byte for byte
+and passes the same 27 tests. An earlier build used six files with equivalent
+CRLF line endings; neither its artifacts nor its metadata are substituted for
+this canonical deployment. The private human deployment uses a new operation
+prefix and independently verified off-VPS key/configuration backups. It does
+not change production admission flags.
+
 ## Linked human admission size correction, 20 September 18:35 UTC
 
 The next private human deployment stopped before creating any arena because
