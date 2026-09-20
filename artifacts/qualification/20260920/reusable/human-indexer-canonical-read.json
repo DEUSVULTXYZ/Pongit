@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-20T21:58:32.826Z",
+  "passed": true,
+  "ledger": "0xc5a6468aB50FAAcd1C4C27b977d5A2ae977dc7Dd",
+  "id": "340282366920938463463374607431768211464",
+  "block": "64277994",
+  "blockHash": "0xe0e8ca7a0c3d87eb26fccddf20f55b48b3dab08228ba8484eb74540c8a8629d3",
+  "resultHash": "0xa994d2103ecc7789af7a13c8f1d74527b85f056898dabf43ec7923ee2266789d",
+  "query": "eth_call with canonical blockHash; exact Envio selector and decoder"
+}
