@@ -1,5 +1,52 @@
 # Reusable arenas and testnet admission transport
 
+## First tournament finality, 20 September 22:30 UTC
+
+The existing keeper released arena
+`0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b`, epoch 1, at 22:26 UTC.
+Transaction `0x1b840eecf2e1951ca3c00a899fb0da2879c7f99fb329b59f7e562e67a40ef431`
+succeeded after 1,230 batches and used 1,264,090 charged gas (0.12893718 test
+MON). The keeper then refreshed all seven archived results with finality.
+No competing lifecycle writer or new delegation was started.
+
+The read-only verifier checks the canonical release receipt and its target,
+the sealed seven-result root, each original tournament fixture and result hash,
+and closed public/book admissions at one pinned Monad block. It passed at block
+64284203. Both other agent arenas remained delegated. These observations do
+not establish two simultaneous games, provider readiness or continuous rotation.
+The proof and public keeper action hashes are in
+`artifacts/qualification/20260920/reusable/tournament-first-classic-release.json`
+and `tournament-first-classic-finality-actions.json` in that directory.
+
+The runtime database, complete shared operator journal, deployment, maintenance
+state and evidence were backed up off the VPS with nine matching SHA-256 hashes.
+The operator journal had no pending rows and the keeper had no outstanding
+intent. Its sequence remained 31 during the backup.
+
+At 22:31 UTC the shared publisher held 68.906122920494194802 test MON. The
+requested additional funding had not arrived. No further games were admitted;
+public production remains closed and the final unchanged 24-hour trial has not
+started. Shared-account spending outside the measured PONGIT publication window
+must not be attributed to PONGIT.
+
+## Private shared indexer restart, 20 September 22:25 UTC
+
+The installed Envio 3.9.0 compares persisted configuration and contract mappings
+before resuming. Adding the rules-14 ledger changes that mapping. Its internal
+checkpoint must not be edited to bypass this guard.
+
+The previous private backfill was stopped and retained with its database. Its
+configuration, checkpoint and dump were copied off the VPS and verified by
+SHA-256. The validated rules-14 source now runs against a separate private
+database and Hasura instance, retaining the original 62260200 history floor
+and all five previous deployment bindings. No production data was reset.
+
+The first startup lacked the Hasura endpoint and could not initialize normally;
+that stopped container is retained. The corrected startup uses the separate
+Hasura endpoint and is progressing from the original floor. This is still an
+incomplete backfill, not passing replay qualification. Public GraphQL and the
+production indexer have not been switched.
+
 ## Versioned human indexing, 20 September 21:56 UTC
 
 The independent-result handler previously hardcoded rules 4, including for a

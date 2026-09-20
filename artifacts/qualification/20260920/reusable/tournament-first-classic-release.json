@@ -1,0 +1,71 @@
+{
+  "at": "2026-09-20T22:30:02.547Z",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+  "epoch": "1",
+  "passed": true,
+  "scope": "Canonical release, sealed root and seven final results. Other delegated arenas are observed on Monad only; this is not simultaneous gameplay, hosted readiness or uninterrupted renewal proof.",
+  "block": "64284203",
+  "blockHash": "0x015bb89d861eaa4b3872f8c2da4d7ee78666b4966686bf303e3078a24f01a5dc",
+  "release": {
+    "hash": "0x1b840eecf2e1951ca3c00a899fb0da2879c7f99fb329b59f7e562e67a40ef431",
+    "block": "64283516",
+    "gasUsed": "1264090",
+    "chargedFeeWei": "128937180000000000"
+  },
+  "delegationStatus": 0,
+  "root": "0x1202369e44b9f773c47c8d008d98b92c1aabdaeb77a7592f908b6769abaf4de1",
+  "resultCount": 7,
+  "results": [
+    {
+      "id": "16",
+      "hash": "0x40cd2e484b8dec7817d14d0f5bf88fe1a854edd2af93ce6258c1cd7b505bc856",
+      "finality": true
+    },
+    {
+      "id": "17",
+      "hash": "0xbfbde547306c85357617ae47ce99edda71830d781da5a78bf956b17fecf0a7d6",
+      "finality": true
+    },
+    {
+      "id": "18",
+      "hash": "0x0cf18fe6462679dfda081a2ae9ee7b0879ff50a1625657e46c2decd2c145d63d",
+      "finality": true
+    },
+    {
+      "id": "19",
+      "hash": "0x4a915b5e758277c6d2713b75ba2c924bdddda2dade3900c351f7e11770016010",
+      "finality": true
+    },
+    {
+      "id": "20",
+      "hash": "0x90fb709f17d06d8b7fe9f11bdb440be00239dbcb5e46b1be39fe9854ade2319d",
+      "finality": true
+    },
+    {
+      "id": "21",
+      "hash": "0xe9ff0398fb1310d2bd18fbef93b16642861f83d2266d7e0225b65cd1e29d72e4",
+      "finality": true
+    },
+    {
+      "id": "22",
+      "hash": "0x830aec1083a2507ad3bbed41d0ca4efed5cc2e1e7681c1ba66ebc7376277cd29",
+      "finality": true
+    }
+  ],
+  "otherDelegations": [
+    {
+      "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+      "status": 1,
+      "epoch": "2",
+      "expiresAt": "1790021971"
+    },
+    {
+      "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+      "status": 1,
+      "epoch": "1",
+      "expiresAt": "1790021974"
+    }
+  ],
+  "finishedAt": "2026-09-20T22:30:11.600Z"
+}

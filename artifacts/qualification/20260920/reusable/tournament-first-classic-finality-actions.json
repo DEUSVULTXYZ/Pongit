@@ -1,0 +1,50 @@
+[
+  {
+    "at": "2026-09-20T22:26:33.041Z",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "action": "releaseArena",
+    "hash": "0x1b840eecf2e1951ca3c00a899fb0da2879c7f99fb329b59f7e562e67a40ef431"
+  },
+  {
+    "at": "2026-09-20T22:27:11.094Z",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "action": "captureProof",
+    "hash": "0x04baf7ba39b0c537d772c06244fd332d2262ba55e1d8c5ecf0c647a633a22e20"
+  },
+  {
+    "at": "2026-09-20T22:27:25.545Z",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "action": "captureProof",
+    "hash": "0x7975e288ad227f26425be6a7c1da2d1763016486c21494d4eb6212c0038548e5"
+  },
+  {
+    "at": "2026-09-20T22:27:40.305Z",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "action": "captureProof",
+    "hash": "0xdf2d1d516b2ac963c16e30c14e35b31b614117ba513cffd72936c31bb791f3a4"
+  },
+  {
+    "at": "2026-09-20T22:27:54.336Z",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "action": "captureProof",
+    "hash": "0x1ddecc10e6109706cbaa945ce7551d732c0dcede01cc40350ccc9744684c045a"
+  },
+  {
+    "at": "2026-09-20T22:28:08.140Z",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "action": "captureProof",
+    "hash": "0x060087f6adaf921cd14b37138c82899d23fe5ff3231aeec44200e20180aa638f"
+  },
+  {
+    "at": "2026-09-20T22:28:22.124Z",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "action": "captureProof",
+    "hash": "0xd8fcad6d78c2fa155f449b698a7edeefd73ac652873b4ade0a3f763a486811d3"
+  },
+  {
+    "at": "2026-09-20T22:28:35.930Z",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "action": "captureProof",
+    "hash": "0xe3ae31b29776a0960dff7e5720b9888c21c2ef287cf6ef3edca9e053dbb958e1"
+  }
+]
