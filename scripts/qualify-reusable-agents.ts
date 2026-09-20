@@ -139,7 +139,14 @@ async function expiredAdmission(){
 }
 async function play(serial:number){
  let match=state.matches[serial];
- if(match?.captured){report.matches.push(match.report);return;}
+ if(match?.captured){
+  const previous=structuredClone(match.report);
+  if(previous.mode===1&&previous.proofSubmissions===undefined){
+   previous.legacyProofCallCounter=previous.proofs;delete previous.proofs;previous.passed=false;
+   previous.limitation='Earlier driver reused a cached proof receipt; this match does not qualify Chaos effects';
+  }
+  report.matches.push(previous);return;
+ }
  if(!match){
   await write(`qualify-${serial}`,common.pool,poolAbi,'admitQualification');
   const key=await read(common.pool,poolAbi,'laneMatch',[1n]);assert(BigInt(key)>0n,'Qualification must select a compatible pair');
@@ -242,6 +249,7 @@ try{
  const first=decodeAbiParameters(parameters,state.results[0].canonical)[0];
  await write('recapture-first-after-reuse',common.pool,poolAbi,'captureProof',[first.match_.ref,first,index.proof(0,{count:index.count,root:index.root})]);
  assert(!state.jobs.some((j:any)=>j.state==='uncertain'));await write('close-after-qualification',common.pool,poolAbi,'closeReusableArena',[app]);
- const hub=await readHubDelegation(tools.base,common.hub,app);assert.equal(hub.status,2);report.releaseAt=String(hub.stakeUnlockAt);report.batches=String(hub.batchIndex);report.passed=true;
+ const hub=await readHubDelegation(tools.base,common.hub,app);assert.equal(hub.status,2);report.releaseAt=String(hub.stakeUnlockAt);report.batches=String(hub.batchIndex);
+ report.passed=report.matches.every((match:any)=>match.passed);if(!report.passed){report.error='Earlier failed match remains unqualified; later matches do not erase it';process.exitCode=1;}
 }catch(e){report.error=clean(e);process.exitCode=1;}
 finally{report.finishedAt=new Date().toISOString();await save();await flush();await metrics();await tools.close();console.log(stringify({passed:report.passed,error:report.error,matches:report.matches.length,app}));}
