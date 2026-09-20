@@ -15,12 +15,14 @@ import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {initial} from '../shared/physics-v2';
 import {chaosBrowserPayload} from './chaos-browser-fixture';
 assert.equal(process.env.PONG_INDEPENDENT_UI_TEST,'isolated-vps');
-const origin='https://pongit.xyz',web='http://independent-events-web:3000',channel=process.env.BROWSER_CHANNEL??'chrome';
+const origin='https://pongit.xyz',web=process.env.PONG_INDEPENDENT_UI_WEB??'http://independent-events-web:3000',channel=process.env.BROWSER_CHANNEL??'chrome';
+assert(['http://independent-events-web:3000','http://independent-web:3000'].includes(web));
+const rulesVersion=Number(process.env.PONG_INDEPENDENT_UI_RULES??13);assert([12,13].includes(rulesVersion));
 const address=(n:number)=>toHex(n,{size:20}) as Address;
 const node=JSON.parse(await readFile('deployments/interlude-rooms.json','utf8')).node;
-const m=publicIndependentManifest({rulesVersion:12,chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(n=>({app:address(n),node})),genesis:1700000000,createdAt:'2026-09-20T00:00:00Z'});
+const m=publicIndependentManifest({rulesVersion,chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(n=>({app:address(n),node})),genesis:1700000000,createdAt:'2026-09-20T00:00:00Z'});
 const rules=independentRules(m),app=m.arenas[0].app,players=[address(20),address(21)];
-const report:any={at:new Date().toISOString(),channel,source:'3a4c3ec',scope:'Actual isolated VPS build; synthetic chain/API, no real credentials or hosted gameplay',checks:[],errors:[],passed:false};
+const report:any={at:new Date().toISOString(),channel,rulesVersion,scope:'Actual isolated VPS build; synthetic chain/API, no real credentials or hosted gameplay',checks:[],errors:[],passed:false};
 const run=process.env.PONG_INDEPENDENT_UI_RUN??'2';assert(/^[a-z0-9-]{1,30}$/.test(run));
 const out=`/diagnostics/independent-ui/${run}`;await mkdir(out,{recursive:true});
 try{await readFile(`${out}/${channel}.json`);throw Error('Preserve the previous report');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
@@ -34,6 +36,7 @@ try{
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
   const key=generatePrivateKey(),grant={player:players[0],key:privateKeyToAccount(key).address,issuedAt:BigInt(Math.floor(Date.now()/1000)),expires:BigInt(Math.floor(Date.now()/1000)+7200),revision:0n};
   let phase=1,revision=1n,launch=0,nonce=0,inputNonce=0n,direction=0,effect=0,terminal=false,roomVisible=false;
+  let readyMask=rulesVersion===13?2:3,readyCommands=0,nonceReads=0;
   const receipts=new Map<string,any>(),inputs:number[]=[];
   const binding={id:1n,epoch:1n,room:1n,a:players[0],b:players[1],mode,ranked:false,keyA:grant.key,keyB:address(22),expiresA:grant.expires,expiresB:grant.expires,preparedBlock:90n};
   await context.addInitScript(({family,key})=>{sessionStorage.setItem(key,JSON.stringify(family));localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:true,intensity:'full'}));},{family:json({grant,key,signature:`0x${'11'.repeat(65)}`}),key:`pongit:family:${m.family.toLowerCase()}`});
@@ -56,15 +59,16 @@ try{
    if(v.method==='eth_getBlockByNumber')result=block();
    else if(v.method==='eth_blockNumber')result='0x64';
    else if(v.method==='eth_chainId')result=isNode?'0x1092':'0x279f';
-   else if(v.method==='eth_getTransactionCount')result=toHex(nonce);
+   else if(v.method==='eth_getTransactionCount'){nonceReads++;result=toHex(nonce);}
    else if(v.method==='eth_getTransactionReceipt')result=receipts.get(v.params[0])??null;
    else if(v.method==='interlude_session')result={app,chainId:4242,epoch:1,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]};
    else if(v.method==='eth_call'&&!isNode)result=readBase(v.params[0].to,v.params[0].data);
    else if(v.method==='eth_call'){
     const call=decodeFunctionData({abi:rules.arena,data:v.params[0].data});
     if(call.functionName==='boundMatch')result=encodeFunctionResult({abi:rules.arena,functionName:'boundMatch',result:binding});
-    else if(call.functionName==='launchAt'){launch||=Date.now()+3000;result=encodeFunctionResult({abi:rules.arena,functionName:'launchAt',result:BigInt(Math.ceil(launch/1000))});}
-    else if(call.functionName==='RULES_VERSION')result=encodeFunctionResult({abi:rules.arena,functionName:'RULES_VERSION',result:12n});
+    else if(call.functionName==='launchAt'){if(readyMask===3)launch||=Date.now()+3000;result=encodeFunctionResult({abi:rules.arena,functionName:'launchAt',result:BigInt(Math.ceil(launch/1000))});}
+    else if(call.functionName==='readiness')result=encodeFunctionResult({abi:rules.arena,functionName:'readiness',result:[readyMask,grant.issuedAt+30n]} as any);
+    else if(call.functionName==='RULES_VERSION')result=encodeFunctionResult({abi:rules.arena,functionName:'RULES_VERSION',result:BigInt(rulesVersion)});
     else{
      assert.equal(call.functionName,'chaosState');if(phase===1&&launch&&Date.now()>=Math.ceil(launch/1000)*1000){phase=2;revision++;}
      const state={...initial(zeroHash,mode),leftDir:direction,t:phase===1?0n:3000000n,scoreA:terminal?7:0,scoreB:terminal?6:0,finished:terminal};
@@ -73,9 +77,12 @@ try{
     }
    }else if(v.method==='interlude_sendTransaction'){
     const tx=parseTransaction(v.params[0]),hash=keccak256(v.params[0]);if(receipts.has(hash))return {jsonrpc:'2.0',id:v.id,result:receipts.get(hash)};
-    assert.equal(tx.nonce,nonce);const c=decodeFunctionData({abi:rules.arena,data:tx.data!});assert.equal(phase,2,'No movement before contract phase2');
-    if(c.functionName==='input'){inputNonce++;assert.equal(c.args![2],inputNonce);direction=Number(c.args![1]);inputs.push(direction);}
-    else assert.equal(c.functionName,'tick');nonce++;revision++;result={status:'0x1',transactionHash:hash,blockHash:zeroHash,logs:[]};receipts.set(hash,result);
+    assert.equal(tx.nonce,nonce);const c=decodeFunctionData({abi:rules.arena,data:tx.data!});
+    if(c.functionName==='confirmReady'){assert.equal(phase,1);assert.equal(readyMask,2);readyMask=3;readyCommands++;}
+    else{assert.equal(phase,2,'No movement before contract phase2');
+     if(c.functionName==='input'){inputNonce++;assert.equal(c.args![2],inputNonce);direction=Number(c.args![1]);inputs.push(direction);}
+     else assert.equal(c.functionName,'tick');}
+    nonce++;revision++;result={status:'0x1',transactionHash:hash,blockHash:zeroHash,logs:[]};receipts.set(hash,result);
    }else throw Error(`Unexpected method ${v.method}`);
    return {jsonrpc:'2.0',id:v.id,result};
   };
@@ -110,12 +117,13 @@ try{
   await page.waitForFunction(()=>{const b=document.querySelector('button[aria-label="Move up"]') as HTMLButtonElement;return b&&!b.disabled;});
   const canvas=page.locator('canvas').first(),before=await canvas.boundingBox();assert(before&&before.height>70&&Math.abs(before.width/before.height-16/9)<.04);
   await page.keyboard.down('ArrowUp');await page.waitForTimeout(700);await page.keyboard.up('ArrowUp');await page.waitForTimeout(700);assert(inputs.includes(-1)&&inputs.includes(0));
+  if(rulesVersion===13){assert.equal(readyCommands,1,'One loading acknowledgement per player');assert(nonceReads>=2,'Refresh the EVM nonce between readiness and movement');}
   if(mode){effect=21;revision++;await page.getByText('MULTIBALL',{exact:true}).waitFor();effect=13;revision++;await page.getByText('PINBALL',{exact:true}).waitFor();const after=await canvas.boundingBox();assert(after&&Math.abs(after.y-before.y)<1&&Math.abs(after.height-before.height)<1,'Effects shifted the court');}
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Page overflow');
   await page.screenshot({path:`${out}/${channel}-${mode}-${width}.png`,fullPage:true});
   terminal=true;revision++;await page.getByRole('dialog').waitFor();await page.getByText('VICTORY',{exact:true}).waitFor();
   assert(await page.evaluate(()=>getComputedStyle(document.body).overflow==='hidden'),'Result must lock background');
-  report.checks.push({width,height,mode,countdown:[...digits],inputRelease:true,aspect:before.width/before.height,effectsStable:!!mode,result:true});
+  report.checks.push({width,height,mode,countdown:[...digits],readyCommands,nonceReads,inputRelease:true,aspect:before.width/before.height,effectsStable:!!mode,result:true});
   await context.close();
  }
  assert.equal(report.errors.length,0,JSON.stringify(report.errors.slice(0,8)));report.passed=true;
