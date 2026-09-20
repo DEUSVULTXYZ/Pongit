@@ -30,6 +30,19 @@ COPY scripts/agent-lifecycle.ts scripts/agent-archive-step.ts scripts/independen
 COPY relayer/src/rooms-hosted-renewal.ts ./relayer/src/rooms-hosted-renewal.ts
 CMD ["node","scripts/agent-ops.mjs"]
 
+# Reviewed multi-arena services, isolated from the archived single-app worker.
+# Runtime keys/configuration are mounted per role, never copied into this image.
+FROM dependencies AS agent-pool
+COPY shared ./shared
+COPY relayer ./relayer
+COPY web/lib/rooms-command-journal.ts ./web/lib/rooms-command-journal.ts
+COPY scripts/agent-series-engines.ts scripts/agent-series-step.ts scripts/agent-series-process.mjs scripts/independent-chain-tools.ts ./scripts/
+COPY tsconfig.json ./
+RUN mkdir -p /state /diagnostics/series && chown -R node:node /state /diagnostics
+ENV NODE_ENV=production
+USER node
+CMD ["node","scripts/agent-series-process.mjs","reader"]
+
 FROM dependencies AS web-build
 COPY shared ./shared
 COPY web ./web

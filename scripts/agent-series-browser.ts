@@ -103,6 +103,7 @@ try{
  for(const p of [page,watch]){p.setDefaultTimeout(45000);p.on('pageerror',e=>report.errors.push(e.message));}
  cdp=await human.newCDPSession(page);await cdp.send('WebAuthn.enable');
  ({authenticatorId}=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}}));
+ for(const credential of restored?.credentials?.credentials??[])await cdp.send('WebAuthn.addCredential',{authenticatorId,credential});
  cdp.on('WebAuthn.credentialAsserted',()=>assertions++);
  let initialAssertions=0;
  for(const mode of [0,1]){
@@ -110,7 +111,22 @@ try{
   else{
    await page.goto(`${origin}/agents?mode=${mode}`);const nova=page.getByRole('button',{name:'Challenge NOVA',exact:true});await nova.waitFor();await nova.click();
    if(mode===0&&!restored){await page.getByRole('button',{name:'Create account',exact:true}).click();await until(async()=>!await page!.getByRole('dialog',{name:'Connect to challenge an agent'}).count(),'Mera ceremony');initialAssertions=assertions;await savePrivate();report.checks.push('Real Mera PRF family and sponsored challenge');}
-   else if(mode===0)report.checks.push('Reused the saved virtual-Mera family for a new sponsored challenge');
+   else if(mode===0){
+    const entry=Object.entries(restored.session as Record<string,string>).find(([key])=>key.startsWith(`pongit:agent-family:${manifest.family.toLowerCase()}:`));
+    assert(entry,'Missing original scoped family');const saved=JSON.parse(entry[1]);
+    const block=await base.getBlock();
+    if(BigInt(saved.grant.expires)<=block.timestamp){
+     assert.equal(process.env.PONG_SERIES_BROWSER_RENEW_EXPIRED,'1','The real two-hour authorization expired; explicitly qualify renewal');
+     assert(restored.credentials?.credentials?.length,'Original virtual credential must be preserved');
+     await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
+     await page.getByRole('button',{name:'Connect & play',exact:true}).click();
+     await until(async()=>!await page!.getByRole('dialog',{name:'Connect to challenge an agent'}).count(),'Expired family renewal');
+     const renewed:{player:string;expires:string}=await page.evaluate(key=>JSON.parse(sessionStorage.getItem(key)!).grant,entry[0]);
+     assert.equal(renewed.player.toLowerCase(),saved.grant.player.toLowerCase(),'Renewal changed the Mera account');
+     assert(BigInt(renewed.expires)>block.timestamp&&assertions>0,'A real owner ceremony must renew the expired authorization');
+     initialAssertions=assertions;await savePrivate();report.checks.push('Expired two-hour family renewed with the original virtual passkey and same account');
+    }else report.checks.push('Reused the saved virtual-Mera family for a new sponsored challenge');
+   }
   }
   await checkpoint();
   await page.waitForURL(/\/agents\/arenas\/0x[\da-fA-F]{40}\/\d+\/\d+/,{timeout:660000});await savePrivate();

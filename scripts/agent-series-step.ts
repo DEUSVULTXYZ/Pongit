@@ -14,12 +14,8 @@ import {agentChallengesAbi as challengeAbi} from '../shared/abi-AgentChallenges'
 import {qualificationWork,historicalRepairWork,expiredChallenge} from '../relayer/src/agents/pool-maintenance';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {measuredFetch} from '../shared/rpc-metrics';
-assert.equal(process.env.PONG_AGENT_SERIES_MAINTENANCE,'authorized-private-testnet');assert.equal(process.getuid?.(),1000);
-const prefix=process.env.PONG_AGENT_SERIES_PREFIX!;assert(/^agent-series-candidate-\d{8}(-[2-9])?$/.test(prefix));
-const file=`/secrets/${prefix}-maintenance.json`,r=JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8')),m=r.common;
-assert.equal(r.phase,'deployed-closed');
-const protectedApps=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').filter(Boolean);assert(protectedApps.length>0);
-assert(r.arenas.length===2&&!r.arenas.some((a:any)=>protectedApps.includes(a.app.toLowerCase())));
+import {loadSeriesRuntime} from '../relayer/src/agents/series-runtime';
+const {record:r,prefix,stateFile:file}=await loadSeriesRuntime('keeper'),m=r.common;
 const metrics=await agentMetrics('/diagnostics/series','lifecycle'),t=await chainTools(prefix+'-maintenance',measuredFetch('monad'));
 const guard=await t.db.connect();let locked=false;
 let state:{sequence:number;retryAt?:number;qualificationCursor?:bigint;challengeCursor?:bigint;history?:{id:bigint;index:number};intent?:{sequence:number;to:Address;method:string;args:any[]}}={sequence:0};
@@ -41,8 +37,11 @@ async function step(){
  const block=await t.base.getBlock();
  const read=<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>t.base.readContract({address,abi,functionName,args,blockNumber:block.number}) as Promise<T>;
  const admissions=await read<boolean>(m.pool,poolAbi,'admissions');
- if(!admissions&&process.env.PONG_AGENT_SERIES_START==='1'){await act(m.pool,'setAdmissions',[true]);return;}
- if(m.challenges&&process.env.PONG_AGENT_SERIES_CHALLENGES==='1'&&!await read<boolean>(m.challenges,challengeAbi,'admissions')){
+ const privateSetup=process.env.PONG_AGENT_SERIES_RUNTIME!=='reviewed-release';
+ // Production admission switches are explicit administrative transactions.
+ // Recovery must never reopen a space that its administrator just closed.
+ if(privateSetup&&!admissions&&process.env.PONG_AGENT_SERIES_START==='1'){await act(m.pool,'setAdmissions',[true]);return;}
+ if(privateSetup&&m.challenges&&process.env.PONG_AGENT_SERIES_CHALLENGES==='1'&&!await read<boolean>(m.challenges,challengeAbi,'admissions')){
   await act(m.challenges,'setAdmissions',[true]);return;
  }
  for(const a of r.arenas){
@@ -96,7 +95,7 @@ async function step(){
  }
  if(!admissions||!available)return;
  const bookOpen=await read<boolean>(m.tournaments,bookAbi,'admissions');
- if(process.env.PONG_AGENT_SERIES_TOURNAMENTS==='1'){
+ if(privateSetup&&process.env.PONG_AGENT_SERIES_TOURNAMENTS==='1'){
   let allQualified=true;for(const b of r.bots)if((await read(m.catalog,catalogAbi,'identity',[b.agent])).qualified!==3)allQualified=false;
   if(allQualified&&!bookOpen){await act(m.tournaments,'setAdmissions',[true]);return;}
  }

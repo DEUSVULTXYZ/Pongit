@@ -1,0 +1,14 @@
+# Optional snippet for the reviewed pool rollout. Import inside the site block
+# BEFORE the existing /api/* handler. No public port on either pool service.
+handle /api/agents/transactions {
+    uri strip_prefix /api
+    reverse_proxy agent-pool-sponsor:4102
+}
+handle /api/agents/operations/* {
+    uri strip_prefix /api
+    reverse_proxy agent-pool-sponsor:4102
+}
+handle /api/agents/* {
+    uri strip_prefix /api
+    reverse_proxy agent-pool-reader:4101
+}

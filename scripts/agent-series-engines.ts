@@ -1,6 +1,5 @@
 // Private opt-in series runner. Never touches the existing one-match trial.
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
 import {Pool} from 'pg';
 import {createPublicClient,http,type Address} from 'viem';
 import {monadTestnet} from 'viem/chains';
@@ -17,11 +16,8 @@ import {initializePoolObservations,PoolObservations} from '../relayer/src/agents
 import {PoolProofLane} from '../relayer/src/agents/pool-proof-lane';
 import {PoolReplays,initializePoolReplays,poolReplayRetention} from '../relayer/src/agents/pool-replays';
 import {AgentPoolReader} from '../relayer/src/agents/pool-read';
-assert.equal(process.env.PONG_AGENT_SERIES_ENGINES,'private-qualification');assert.equal(process.getuid?.(),1000);
-const prefix=process.env.PONG_AGENT_SERIES_PREFIX!;assert(/^agent-series-candidate-\d{8}(-[2-9])?$/.test(prefix));
-const r=JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8'));assert.equal(r.phase,'deployed-closed');
-const protectedApps=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').filter(Boolean);assert(protectedApps.length>0);
-for(const a of r.arenas)assert(!protectedApps.includes(a.app.toLowerCase()));
+import {loadSeriesRuntime} from '../relayer/src/agents/series-runtime';
+const {record:r,protectedApps}=await loadSeriesRuntime('engines');
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:8000,fetchFn:measuredFetch('monad')})});
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:6}),metrics=await agentMetrics('/diagnostics/series','controllers');
 await initializePoolOperations(db);await initializePoolObservations(db);await initializePoolReplays(db);let stopping=false;
