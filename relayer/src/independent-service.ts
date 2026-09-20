@@ -28,7 +28,7 @@ import {maintenanceContext} from '../../shared/independent-recovery';
 import {publicationUnavailable,serviceError} from '../../shared/service-error';
 import {createRpcDiagnostics} from './rpc-diagnostics';
 
-type Options={db:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
+type Options={db:Pool;operatorDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
 export async function independentService(o:Options){
  const path=process.env.PONG_INDEPENDENT_MANIFEST;if(!path)return null;
  const m=publicIndependentManifest(JSON.parse(await readFile(path,'utf8'))),{db,base}=o;
@@ -54,7 +54,7 @@ export async function independentService(o:Options){
   if(value.toLowerCase()!==expected.toLowerCase())throw Error('Independent financial linkage mismatch');
  }
  if(!await base.readContract({address:m.vault,abi:vaultAbi,functionName:'modulesSealed'})||!await base.readContract({address:m.vault,abi:vaultAbi,functionName:'modules',args:[m.market]})||!await r.profiles('migrationSealed'))throw Error('Independent migration is not sealed');
- const writer=await independentWriter(db,base);
+ const writer=await independentWriter(db,base,o.operatorDb??db);
  await db.query(`CREATE TABLE IF NOT EXISTS independent_events(lobby text NOT NULL,block_number bigint NOT NULL,block_hash text NOT NULL,tx_hash text NOT NULL,log_index integer NOT NULL,event text NOT NULL,args jsonb NOT NULL,PRIMARY KEY(lobby,tx_hash,log_index));
  CREATE TABLE IF NOT EXISTS independent_cursor(lobby text PRIMARY KEY,block_number bigint NOT NULL);
  CREATE TABLE IF NOT EXISTS independent_rooms(lobby text NOT NULL,id text NOT NULL,PRIMARY KEY(lobby,id));

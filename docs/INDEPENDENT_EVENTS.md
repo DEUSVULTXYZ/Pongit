@@ -96,3 +96,23 @@ candidate budget in the deployment tool. The common lobby executes on Monad;
 the arena still requires hosted qualification. Other contracts keep their
 existing 24 KiB tool limit. These measurements do not establish release-gas or
 provider-capacity limits.
+
+The full source regression passed 556 Solidity tests (six environment-dependent
+hub checks skipped) and 480 TypeScript tests. The production Next build passed.
+Chrome and Edge each passed ten actual-build UI cases covering both modes at
+360, 390, 768, 1440 and 844 px: all three countdown digits, disabled early
+controls, movement and release, fixed Chaos indicators, 16:9 court, and the
+result dialog's background lock. These cases mock the chain and API; they are
+layout/client checks, not hosted multiplayer or passkey qualification.
+
+The private service now keeps business data in its own database while using
+the existing operator database for `il_lifecycle_jobs` and advisory lock 701340.
+It must not start an independent nonce allocator with the same operator key.
+Six real PostgreSQL checks passed, including forty concurrent submissions,
+cross-database recovery after journal creation, and refusal to resend another
+queue's pending transaction. No transactions were sent by that database fixture.
+The dispatcher also checks the chain gas limit before signing.
+
+A read-only preflight at block 64085546 found no pending operator transaction,
+the expected testnet pressure signer, and a successful admission simulation.
+This is not an arena reservation or evidence of three real hosted admissions.
