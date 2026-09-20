@@ -160,7 +160,7 @@ contract IndependentLobby is EIP712, ILobbyRatings {
             "admission authorization changed");
         a.openEngine{value:msg.value}(); emit ArenaOpened(id,address(a),a.boundMatch().epoch);
     }
-    function capture(uint256 id) public {
+    function capture(uint256 id) public virtual {
         IndependentArena a = IndependentArena(arenaOf[id]); require(address(a) != address(0) && a.boundMatch().id == id, "match reference");
         Types.Session memory session = hub.sessionOf(address(a),Types.GLOBAL);
         require(session.status != Types.Status.Challenged, "result under review");
