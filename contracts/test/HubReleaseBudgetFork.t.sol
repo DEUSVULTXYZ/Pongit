@@ -51,7 +51,9 @@ contract HubReleaseBudgetForkTest is Test {
         txCount=vm.envOr("PONG_HUB_RELEASE_TXS",uint256(1));
         rawBytes=vm.envOr("PONG_HUB_RELEASE_RAW_BYTES",uint256(32));
         slotGroups=distinct?batches:vm.envOr("PONG_HUB_RELEASE_SLOT_GROUPS",uint256(1));
-        require(batches>0&&batches<=16000&&width<=64&&txCount>0&&txCount<=64&&rawBytes>=32&&rawBytes<=1024,"bounded diagnostic");
+        // Reusable admission currently reaches 1,233 raw bytes. Include that
+        // path instead of bounding diagnostics below the largest real command.
+        require(batches>0&&batches<=16000&&width<=64&&txCount>0&&txCount<=64&&rawBytes>=32&&rawBytes<=4096,"bounded diagnostic");
         require(slotGroups>0&&slotGroups<=batches,"bounded overlay groups");
         // Setup gas is not part of the release measurement. The release itself
         // has a real 30 M call allowance, before refunds, with all slots cold.
