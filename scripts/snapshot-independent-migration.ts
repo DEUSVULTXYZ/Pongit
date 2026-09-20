@@ -7,8 +7,9 @@ import {roomsChaosAbi as abi} from '../shared/abi-PongRoomsTestnet';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {decodeHubDelegation} from '../shared/rooms-hub';
 import {roomsRankingCandidates} from '../relayer/src/rooms-ranking';
+import {baseReadTransport} from '../shared/base-read-transport';
 const source=JSON.parse(await readFile('deployments/interlude-rooms.json','utf8'));
-const base=createPublicClient({transport:http(process.env.RPC_URL,{timeout:15000,retryCount:0})});
+const base=createPublicClient({batch:{multicall:{wait:15,batchSize:16384}},transport:baseReadTransport(process.env.RPC_URL!)});
 assert.equal(await base.getChainId(),10143);const block=await base.getBlock();
 const call=(name:string,args:readonly unknown[]=[]):Promise<any>=>base.readContract({address:source.app,abi,functionName:name,args,blockNumber:block.number} as any);
 const delegation=decodeHubDelegation(await base.request({method:'eth_call',params:[{to:source.hub,data:encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[source.app,zeroHash]})},`0x${block.number.toString(16)}`]}));
@@ -25,8 +26,12 @@ const handles=new Set<string>(),accounts=new Set<string>();
 for(const p of profiles){assert(/^0x[\da-f]{40}$/i.test(p.player));assert(/^[a-z][a-z0-9_]{2,19}$/i.test(p.handle));assert(Number.isInteger(p.avatar)&&p.avatar>=0&&p.avatar<12);assert(!handles.has(p.handle.toLowerCase())&&!accounts.has(p.player.toLowerCase()));handles.add(p.handle.toLowerCase());accounts.add(p.player.toLowerCase());}
 const ratings=[];for(let mode=0;mode<2;mode++)for(const player of players[mode]){const rating=await call('ratingOf',[player,mode]);ratings.push({player,mode,...rating});}
 // Verify the storage layout before reading the private mapping's public slots.
-const artifact=JSON.parse(await readFile('contracts/out/PongRoomsTestnet.sol/PongRoomsTestnetRelease.json','utf8'));
-const layout=JSON.parse(await readFile('artifacts/independent-candidate/source-storage-layout.json','utf8'));
+// The active human source is Chaos rules 6, not the older Rooms release. Require
+// its independently reproduced historical artifact; never infer a mapping from
+// the candidate's newer physics build or bypass the on-chain runtime comparison.
+assert(process.env.PONG_MIGRATION_SOURCE_ARTIFACT,'Supply the reproduced historical source artifact');
+const artifact=JSON.parse(await readFile(process.env.PONG_MIGRATION_SOURCE_ARTIFACT,'utf8'));
+const layout=artifact.storageLayout;assert(layout?.storage,'The source artifact must include its own storageLayout');
 const words=layout.storage.find((s:any)=>s.label==='words');assert(words&&words.type.startsWith('t_mapping'));
 const code=await base.getBytecode({address:source.app,blockNumber:block.number});assert(code);
 const mask=(text:string)=>{for(const refs of Object.values(artifact.deployedBytecode.immutableReferences||{}) as any[])for(const r of refs)text=text.slice(0,2+r.start*2)+'0'.repeat(r.length*2)+text.slice(2+(r.start+r.length)*2);return text.toLowerCase();};
