@@ -8,6 +8,7 @@ import {chainTools} from './independent-chain-tools';
 import {retryOperatorContention} from '../shared/operator-contention';
 import {engineTransport,engineCooldownMs} from '../shared/engine-transport';
 import {readHubDelegation} from '../shared/rooms-hub';
+import {pinnedEngineCodeHash} from '../shared/engine-base-code';
 import {DrandBeaconTransport} from '../shared/drand-beacon';
 import {PublishedResultIndex,publishedResultLeaf} from '../shared/published-result-tree';
 import {reusableAdmissionDigest,type ReusableTicket} from '../shared/reusable-admission';
@@ -24,11 +25,13 @@ assert.equal(m.rulesVersion,15);assert.equal(m.phase,'deployed-closed');
 const protectedApps=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').filter(Boolean);assert(protectedApps.length);
 const app=m.arenas[0].app as Address;assert(!protectedApps.includes(app.toLowerCase()));
 const bridge=privateKeyToAccount(m.admissionKey),signer=privateKeyToAccount(m.engineKey);
-const tools=await chainTools(m.prefix+':reuse-live');
+const run=process.env.PONG_AGENT_QUALIFICATION_RUN??'';assert(/^(?:|[a-z0-9-]{1,30})$/.test(run));
+const suffix=run?'-'+run:'';
+const tools=await chainTools(m.prefix+':reuse-live'+suffix);
 const write=(...args:Parameters<typeof tools.write>)=>retryOperatorContention(()=>tools.write(...args));
 const read=(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[],blockNumber?:bigint)=>tools.base.readContract({address,abi,functionName,args,blockNumber} as any) as Promise<any>;
 const stringify=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2);
-const file='/secrets/qualification.json',out='artifacts/reusable-candidate/agents-hosted.json';
+const file='/secrets/qualification'+suffix+'.json',out='artifacts/reusable-candidate/agents-hosted'+suffix+'.json';
 let state:any;try{state=JSON.parse(await readFile(file,'utf8'));assert.equal(state.app,app);assert.equal(state.pool,common.pool);}
 catch(e){if((e as any).code!=='ENOENT')throw e;state={app,pool:common.pool,jobs:[],matches:[],results:[],createdAt:new Date().toISOString()};}
 let saveTail=Promise.resolve();const save=()=>{const text=stringify(state);saveTail=saveTail.then(async()=>{await writeFile(file+'.next',text,{mode:0o600});await rename(file+'.next',file);});return saveTail;};
@@ -106,7 +109,10 @@ async function play(serial:number){
  if(!match.admitted){
   const block=await tools.base.getBlock(),hub=await readHubDelegation(tools.base,common.hub,app,block.number);
   const [engineEpoch,count]=await node.readContract({address:app,abi,functionName:'resultCommitment'});
-  const code=async(c:typeof binding.controlA,player:Address)=>c.codeHash==='0x'+'00'.repeat(32)?c.codeHash:keccak256((await node.getCode({address:c.house?m.modules.HousePolicies:player}))??'0x');
+  const session:any=await node.request({method:'interlude_session',params:[]} as any);
+  const code=async(c:typeof binding.controlA,player:Address)=>c.codeHash==='0x'+'00'.repeat(32)?c.codeHash:pinnedEngineCodeHash({
+   address:c.house?m.modules.HousePolicies:player,hubBaseBlock:hub.baseBlock,engineBaseBlock:session.baseBlock,hubEpoch:hub.epoch,engineEpoch:session.epoch,
+   getCode:args=>tools.base.getCode(args)});
   assert.equal(await read(common.pool,poolAbi,'arenaMatch',[app],block.number),match.key);
   validateReusableAgentAdmission(ticket,binding,{chainId:10143,authority:common.pool,arena:app,reservedMatch:id,
    issuedDigest:await read(common.pool,poolAbi,'issuedTicket',[app,epoch,ticket.sequence],block.number),sourceHash:(await tools.base.getBlock({blockNumber:ticket.sourceBlock})).hash!,
@@ -153,9 +159,10 @@ try{
  await save();assert.equal(await read(common.pool,poolAbi,'publicAdmissions'),false);
  if(!state.epoch){
   const hub=await readHubDelegation(tools.base,common.hub,app);
-  if(!state.opening){assert.equal(hub.status,0);const validator=await read(common.hub,hubAbi,'defaultValidator'),terms=await read(common.hub,hubAbi,'termsOf',[validator]);state.opening={fee:String(terms.delegationFee)};await save();}
-  await write('open-epoch1',common.pool,poolAbi,'openReusableArena',[app],BigInt(state.opening.fee));
-  const opened=await readHubDelegation(tools.base,common.hub,app);assert.equal(opened.status,1);state.epoch=String(opened.epoch);await save();
+  if(!state.opening){assert.equal(hub.status,0);const validator=await read(common.hub,hubAbi,'defaultValidator'),terms=await read(common.hub,hubAbi,'termsOf',[validator]);state.opening={fee:String(terms.delegationFee),epoch:String(hub.epoch+1n)};await save();}
+  const intended=state.opening.epoch??'1';
+  await write('open-epoch'+intended,common.pool,poolAbi,'openReusableArena',[app],BigInt(state.opening.fee));
+  const opened=await readHubDelegation(tools.base,common.hub,app);assert.equal(opened.status,1);assert.equal(String(opened.epoch),intended);state.epoch=String(opened.epoch);await save();
  }
  await provision();
  // A restart resumes exact journaled bytes before deriving a new tick/proof.

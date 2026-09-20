@@ -32,13 +32,17 @@ export function chaosLegacy(s:ChaosPhysicsState,finished=s.score.finished||s.can
   leftDir:s.leftDir,rightDir:s.rightDir,t:s.t,scoreA:s.score.a,scoreB:s.score.b,seed:s.seed,finished,mode:1,
   halfA:BigInt(s.bettingA)/2n,halfB:BigInt(s.bettingB)/2n,awaitingServe:false,resumeAt:0n};
 }
-export function decodeChaosRead(abi:Abi,value:Hex):readonly unknown[]{
+export function snapshotHeaderFields(abi:Abi){
  const getter=abi.find(x=>x.type==='function'&&x.name==='getSnapshot');if(!getter||getter.type!=='function')throw Error('Missing snapshot ABI');
  const output=getter.outputs[0];
  // Reusable arenas return a named Header struct; historical arenas return
  // thirteen separate values. Both encode the same thirteen static fields.
  const fields=getter.outputs.length===1&&output.type==='tuple'&&'components' in output?output.components:getter.outputs;
  if(fields.length!==13)throw Error('Unsupported snapshot header');
+ return fields;
+}
+export function decodeChaosRead(abi:Abi,value:Hex):readonly unknown[]{
+ const fields=snapshotHeaderFields(abi);
  // The library returns the complete old getter tuple plus the new packed words
  // atomically. All historical fields retain their order and meaning.
  const [header,words,request,pending]=decodeAbiParameters([

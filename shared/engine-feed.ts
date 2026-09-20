@@ -116,8 +116,10 @@ export class EngineFeed {
   if(!frame||e.dirty||!e.value)await this.read(id,!e.gap);
   // Only the caller's successful, matching receipt proves this input sequence.
   // The event alone intentionally never guesses the other player's nonce.
-  if(frame && e.value && !e.dirty && name==="input" && args[0]===id && e.value.phase===2){
-   const nonce=BigInt(args[2] as bigint),side=account.toLowerCase()===e.value.a.toLowerCase()?"nonceA":account.toLowerCase()===e.value.b.toLowerCase()?"nonceB":null;
+  const input=this.client.abi.find(x=>x.type==='function'&&x.name==='input');
+  const offset=input?.type==='function'&&input.inputs[0]?.name==='epoch'?1:0;
+  if(frame && e.value && !e.dirty && name==="input" && args[offset]===id && e.value.phase===2){
+   const nonce=BigInt(args[offset+2] as bigint),side=account.toLowerCase()===e.value.a.toLowerCase()?"nonceA":account.toLowerCase()===e.value.b.toLowerCase()?"nonceB":null;
    if(side)this.publish(e,{...e.value,[side]:e.value[side]>nonce?e.value[side]:nonce});
   }
   return e.value!;

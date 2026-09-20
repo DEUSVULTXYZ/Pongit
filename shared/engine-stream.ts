@@ -1,7 +1,7 @@
 import {decodeAbiParameters, decodeEventLog, type Abi, type Address, type Hex} from "viem";
 import type {State} from "./physics-v2";
 import {recordRpc} from "./rpc-metrics";
-import {unpackChaos,chaosLegacy,unpackChaosCollision,type ChaosDecoded} from './chaos-codec';
+import {unpackChaos,chaosLegacy,unpackChaosCollision,snapshotHeaderFields,type ChaosDecoded} from './chaos-codec';
 
 export type EngineFrame = {app:Address;hash:Hex;head:bigint;logs:readonly {address:Address;topics:readonly Hex[];data:Hex}[]};
 export type EngineState = {id:bigint;revision:bigint;phase:number;a:Address;b:Address;target:Address;winner:Address;head:bigint;clock:bigint;nonceA:bigint;nonceB:bigint;deadline:bigint;state:State;chaos?:ChaosDecoded;observedAt:number;reset?:boolean};
@@ -41,7 +41,6 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
   recordRpc({at:now,target:'interlude',method:frame.head<previous.head?'snapshot.reanchor':previous.phase<2?'snapshot.admission':'snapshot.gap',status:200,ms:0,source:'cache'});
   return {state:previous,resync:true,changed:false,...(frame.head>=previous.head&&previous.phase>=2&&snapshot.version>previous.revision+1n?{gap:snapshot.version}:{} )};
  }
- const getter=abi.find(x=>x.type==="function"&&x.name==="getSnapshot") as any;
  try{
   let state:State,chaos=previous.chaos,nonceA=previous.nonceA,nonceB=previous.nonceB;
   if(chaos){
@@ -51,11 +50,21 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
    const physics=unpackChaos(words,previous.state.seed,control);state=chaosLegacy(physics,Number(snapshot.status)>=3);
    chaos={physics,request:request??chaos.request,pending:pending??chaos.pending,collisions};
    nonceA=BigInt.asUintN(64,control>>16n);nonceB=BigInt.asUintN(64,control>>80n);
-  }else state=decodeAbiParameters([getter.outputs.at(-1)],snapshot.state)[0] as State;
+  }else state=decodeAbiParameters([snapshotHeaderFields(abi)[12]],snapshot.state)[0] as State;
   const phase=Number(snapshot.status);
   if(phase>=3&&!completed)return {state:previous,resync:true,changed:false};
+  let winner=completed?.winner??previous.winner;
+  if(phase>=3&&completed?.result){
+   const r=completed.result.match_,ref=r?.ref??r;
+   if(!r||ref.id!==previous.id||ref.arena?.toLowerCase()!==app.toLowerCase()
+    ||r.a.toLowerCase()!==previous.a.toLowerCase()||r.b.toLowerCase()!==previous.b.toLowerCase()
+    ||Number(r.status)!==phase||r.scoreA!==state.scoreA||r.scoreB!==state.scoreB
+    ||![previous.a.toLowerCase(),previous.b.toLowerCase(),'0x0000000000000000000000000000000000000000'].includes(r.winner.toLowerCase()))
+     return {state:previous,resync:true,changed:false};
+   winner=r.winner;
+  }
   const elapsed=previous.clock+(frame.head-previous.head)*10000n;
-  return {state:{...previous,reset:false,revision:snapshot.version,phase,head:frame.head,clock:phase===2?(elapsed>state.t?elapsed:state.t):state.t,state,...(chaos?{chaos}:{}),nonceA,nonceB,winner:completed?.winner??previous.winner,observedAt:now},resync:false,changed:true};
+  return {state:{...previous,reset:false,revision:snapshot.version,phase,head:frame.head,clock:phase===2?(elapsed>state.t?elapsed:state.t):state.t,state,...(chaos?{chaos}:{}),nonceA,nonceB,winner,observedAt:now},resync:false,changed:true};
  }catch{return {state:previous,resync:true,changed:false};}
 }
 

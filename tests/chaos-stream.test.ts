@@ -4,6 +4,8 @@ import {encodeAbiParameters,encodeEventTopics,zeroAddress,zeroHash,type Hex,type
 import {roomsEventsAbi as abi} from '../shared/abi-PongChaosEvents';
 import {engineState,mergeEngineFrame,type EngineFrame} from '../shared/engine-stream';
 import {decodeChaosRead,unpackChaos,chaosLegacy} from '../shared/chaos-codec';
+import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
+import {abi as reusableHumanAbi} from '../shared/abi-independent-ReusableEventsArena';
 
 const app='0x1111111111111111111111111111111111111111',a='0x2222222222222222222222222222222222222222',b='0x3333333333333333333333333333333333333333';
 const words=[512000000000000n|(288000000000000n<<56n)|(1n<<112n)|(1n<<128n)|(2n<<168n)|(1n<<195n),192000000n|(96000000n<<80n),
@@ -17,6 +19,13 @@ function log(name:string,args:Record<string,unknown>){
 }
 const frame=(logs:EngineFrame['logs']):EngineFrame=>({app,hash:zeroHash,head:110n,logs});
 const snapshot=(version=6n)=>log('Snapshot',{id:1n,version,status:2n,state:encodeAbiParameters([{type:'uint8'},{type:'uint256'},{type:'uint256[8]'}],[6,6n|(8n<<16n)|(9n<<80n),words])});
+
+test('both reusable ABIs retain linked Chaos snapshots, random draws and collision identities',()=>{
+ for(const current of [reusableAgentArenaAbi,reusableHumanAbi]){
+  const next=mergeEngineFrame(current,app,previous(),frame([log('RandomnessVerified',{id:1n,index:1,round:10n,randomness:zeroHash,draw:22n}),log('ChaosCollision',{id:1n,collision:1n|(1n<<32n)|(1n<<72n)}),snapshot()]));
+  assert.equal(next.resync,false);assert.equal(next.state.nonceA,8n);assert.equal(next.state.nonceB,9n);assert.equal(next.state.chaos?.pending,22n);assert.equal(next.state.chaos?.collisions[0].sequence,1);
+ }
+});
 test('atomic read and push preserve second-ball state, real rally, explicit nonces and draw state',()=>{
  const getter=abi.find(x=>x.type==='function'&&x.name==='getSnapshot')! as any;
  const read=encodeAbiParameters([{type:'tuple',components:getter.outputs.map((x:any,i:number)=>({...x,name:`f${i}`}))},{type:'uint256[8]'},{type:'uint256'},{type:'uint256'}],[header,words,10n,0n]);

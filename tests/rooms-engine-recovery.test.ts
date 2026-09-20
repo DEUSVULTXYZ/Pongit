@@ -17,6 +17,14 @@ async function journal(action='tick'){
 }
 const snap:any=[];snap[2]=3n;snap[6]=app;snap[12]={scoreA:2,scoreB:7};
 const resultHash=`0x${'12'.repeat(32)}`;
+
+test('reusable journal binds logical match and rejects a mismatched execution epoch',async()=>{
+ const bound=parseAbi(['function tick(uint256 epoch,uint256 id)']);
+ const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce:10,to:app,data:encodeFunctionData({abi:bound,functionName:'tick',args:[7n,99n]}),gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+ const job={app,id:'reusable',epoch:'7',nonce:'10',raw,hash:keccak256(raw),status:'pending'};
+ assert.equal((await engineJobIdentity(job,bound,signer.address)).matchId,'99');
+ await assert.rejects(engineJobIdentity({...job,epoch:'8'},bound,signer.address),/epoch differs/);
+});
 test('missing receipt never resolves or rebroadcasts a pending command',async()=>{
  const {db,updates}=await journal();
  await reconcileEngineJobs({db,app,receipt:async()=>null});

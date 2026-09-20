@@ -203,3 +203,36 @@ for a provider configuration change was made.
    and off-VPS backup gates before any public activation.
 
 There is no automatic Monad gameplay fallback and no automatic public activation.
+
+### Actual renewal and agent transport, 20 September 14:32 UTC
+
+The human candidate released epoch 1 at 14:07:54 UTC using 1,057,504 gas,
+sealed its published roots and opened epoch 2 on the same arena. Two more
+Classic/Chaos games admitted newly registered players, published their results,
+and preserved both old results as final after reuse. These were concession
+games, not natural finishes, browser qualification or a full financial test.
+Epoch 2 closed after 70 batches and is eligible for release at 15:10:45 UTC.
+
+The private rules-15 agent pool is deployed at
+`0x468bb26495b48ce39ee240336eb95a107e03722c`. Its first arena,
+`0xc063d5e9f4d503e56085d80f3cb5b683d0933b23`, was actually admitted by the
+hub. The other two registered arenas are not yet qualified capacity. The
+candidate passed 86 isolated Solidity tests and seven generated layout checks.
+
+The first hosted agent trial failed before sending an admission. Its guard
+used the engine's external `eth_getCode`, which returned empty bytes for the
+HousePolicies contract. A canonical Monad read at the hub and engine's identical
+base block 64187644 returns the expected 4,535-byte code. The correction reads
+that exact pinned block and checks both session identities; the arena still
+verifies the code hash internally. It never substitutes latest code.
+
+That ticket expired during diagnosis. Its cancellation must follow real
+closure, release and a final proof of absence. The failure and original nonce
+journal remain intact. Retry uses a separate qualification-run identity, so
+old confirmed operator receipts cannot stand in for new admissions.
+
+Reusable event ABIs now include events emitted by linked libraries. Snapshot
+decoding handles the named Header, completion validates the nested result, and
+input receipts/journal recovery distinguish the epoch from the logical match ID.
+The full TypeScript suite passes 533 tests, including these regressions. This
+does not establish hosted agent gameplay, tournaments or the final 24-hour gate.
