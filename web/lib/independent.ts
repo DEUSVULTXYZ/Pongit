@@ -16,6 +16,7 @@ import {abi as familyAbi} from '../../shared/abi-independent-ArcadeFamily';
 import {independentRules} from '../../shared/independent-rules';
 import {abi as profileAbi} from '../../shared/abi-independent-ProfileRegistry';
 import {browserBase} from './base-read';
+import {lobbyCommandContext} from '../../shared/independent-command';
 
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
 export const independentBase=()=>browserBase;
@@ -112,10 +113,7 @@ export async function renewIndependentControl(m:IndependentManifest,identity:Ide
 export async function lobbyCommand(m:IndependentManifest,s:FamilySession,name:string,args:readonly unknown[]=[],onProgress?:(op:ChainOperation)=>void){
  const lobbyAbi=independentRules(m).lobby;
  await resumeSponsored(m,onProgress);
- if(!await validateFamily(m,s))throw Error('Renew arcade session');
- const base=independentBase(),r=independentReader(base,m),hash=await r.family('grantDigest',[s.grant]) as Hex;
- const nonce=await r.lobby('commandNonces',[hash]),block=await base.getBlock();
- const deadline=block.timestamp+120n<s.grant.expires?block.timestamp+120n:s.grant.expires;
+ const {hash,nonce,deadline}=await lobbyCommandContext(independentBase(),m,s.grant);
  const data=encodeFunctionData({abi:lobbyAbi as Abi,functionName:name,args});
  const signature=await privateKeyToAccount(s.key).signTypedData({domain:{name:'PONGIT Independent Lobby',version:'1',chainId:10143,verifyingContract:m.lobby},types:lobbyCommandTypes,primaryType:'LobbyCommand',message:{grantHash:hash,dataHash:keccak256(data),nonce,deadline}});
  return sponsorCall(m,m.lobby,encodeFunctionData({abi:lobbyAbi,functionName:'relay',args:[s.grant.player,data,nonce,deadline,signature]}),onProgress);

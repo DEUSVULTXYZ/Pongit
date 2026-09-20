@@ -16,6 +16,8 @@ import {engineTransport} from '../shared/engine-transport';
 import {compactArenaSession} from '../shared/compact-arena-session';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {betTypes,domain} from '../shared/protocol';
+import {lobbyCommandContext,familyGrantHash} from '../shared/independent-command';
+import {lobbyCommandTypes} from '../shared/independent';
 
 assert.equal(process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION,'isolated-vps');
 const raw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
@@ -48,9 +50,10 @@ async function submit(name:string,to:Address,data:Hex){
  const done=await operation(id);report.operations.push({name,id,hash:done.hash});await flush();return done;
 }
 async function command(player:number,name:string,method:string,args:readonly unknown[]=[]){
- const grant=await r.family('grantOf',[owners[player].address]),hash=await r.family('grantDigest',[grant]);
- const data=encodeFunctionData({abi:rules.lobby as Abi,functionName:method,args}),nonce=await r.lobby('commandNonces',[hash]),deadline=(await base.getBlock()).timestamp+120n;
- const digest=await r.lobby('commandDigest',[hash,data,nonce,deadline]),signature=await keys[player].sign({hash:digest});
+ const grant=await r.family('grantOf',[owners[player].address]);
+ const {hash,nonce,deadline}=await lobbyCommandContext(base,m,grant);
+ const data=encodeFunctionData({abi:rules.lobby as Abi,functionName:method,args});
+ const signature=await keys[player].signTypedData({domain:{name:'PONGIT Independent Lobby',version:'1',chainId:10143,verifyingContract:m.lobby},types:lobbyCommandTypes,primaryType:'LobbyCommand',message:{grantHash:hash,dataHash:keccak256(data),nonce,deadline}});
  return submit(name,m.lobby,encodeFunctionData({abi:rules.lobby,functionName:'relay',args:[owners[player].address,data,nonce,deadline,signature]}));
 }
 async function prepare(mode:0|1){
@@ -58,7 +61,9 @@ async function prepare(mode:0|1){
  await command(a,`room-${mode}`,'createRoom',[mode]);const room=await r.lobby('occupancy',[owners[a].address]);
  await command(b,`join-${mode}`,'joinRoom',[room]);
  const proposal=await until(async()=>{const v=await r.lobby('room',[room]);return v.proposal||null;},'contract room proposal');
- await command(a,`accept-${mode}-a`,'acceptProposal',[proposal]);await command(b,`accept-${mode}-b`,'acceptProposal',[proposal]);
+ // Separate participant keys may consent concurrently, as the two browsers do.
+ // Waiting for A's mined receipt before B even starts consumes the offer window.
+ await Promise.all([command(a,`accept-${mode}-a`,'acceptProposal',[proposal]),command(b,`accept-${mode}-b`,'acceptProposal',[proposal])]);
  const app=await until(async()=>{const v=await r.lobby('arenaOf',[proposal]);return /^0x0{40}$/i.test(v)?null:v;},'contract arena assignment');
  const arena=m.arenas.find(x=>x.app.toLowerCase()===app.toLowerCase());assert(arena);
  const binding=await until(async()=>{const v=await r.arena(app,'boundMatch');return v.epoch&&v.id===proposal?v:null;},'real delegation admission',180000);
@@ -159,7 +164,8 @@ try{
  const issued=(await base.getBlock()).timestamp;privateState.expires=String(issued+7200n);await save();
  for(let i=0;i<4;i++){
   const grant={player:owners[i].address,key:keys[i].address,issuedAt:issued,expires:issued+7200n,revision:0n};
-  const signature=await owners[i].sign({hash:await r.family('grantDigest',[grant])});
+  const localHash=familyGrantHash(m,grant);assert.equal(localHash,await r.family('grantDigest',[grant]),'Local grant hash differs from deployed contract');
+  const signature=await owners[i].sign({hash:localHash});
   await submit(`register-${i}`,m.family,encodeFunctionData({abi:familyAbi,functionName:'register',args:[grant,signature]}));
  }
  for(const mode of [0,1] as const){const match=await prepare(mode);const task=play(match);task.catch(()=>{});tasks.push(task);}
