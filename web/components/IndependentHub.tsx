@@ -24,6 +24,7 @@ import {TickPilot} from '../../shared/engine-feed';
 import {engineReadRetryMs} from '../../shared/engine-read';
 import {publicationUnavailable} from '../../shared/service-error';
 import {ArenaRecovery,maintainQueuePresence} from '../../shared/independent-recovery';
+import {poolUserError} from '../../shared/agent-pool-error';
 import {reportIndependentDiagnostics} from '../lib/independent';
 import {readIndependentLobby,readIndependentRanking,independentReader} from '../../shared/independent-read';
 import {publicIndependentManifest,arenaReference,parseRoomReference,roomReference,type IndependentManifest} from '../../shared/independent';
@@ -96,13 +97,13 @@ export function IndependentHub({roomId}:{roomId?:string}){
  },[]);
  useEffect(()=>{
   if(!manifest)return;let stopped=false;let timer:ReturnType<typeof setTimeout>;
-  const poll=async()=>{try{await refresh();}catch(e){if(!stopped)setLobbySync('Synchronizing the lobby. Your session is still saved.');}finally{if(!stopped)timer=setTimeout(poll,3000);}};
+  const poll=async()=>{let delay=3000;try{await refresh();if(current.current.view.binding?.epoch)delay=10000;}catch(e){delay=Math.max(3000,engineReadRetryMs(e));if(!stopped)setLobbySync('Synchronizing the lobby. Your session is still saved.');}finally{if(!stopped)timer=setTimeout(poll,delay);}};
   void poll();const t=setInterval(()=>{void independentApi('config').then(setConfig).catch(()=>{});},10000);
   return()=>{stopped=true;clearTimeout(timer);clearInterval(t);};
  },[manifest,refresh]);
  useEffect(()=>{
   if(!manifest||!family)return;
-  void resumeSponsored(manifest).then(refresh).catch(e=>setNotice(e.message));
+  void resumeSponsored(manifest).then(refresh).catch(e=>setNotice(poolUserError(e)));
  },[manifest,family?.grant.key,refresh]);
  useEffect(()=>{
   if(!manifest||!family)return;let sending=false;const instance=crypto.randomUUID();
@@ -111,7 +112,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
  },[manifest,family?.grant.key]);
  async function run(fn:()=>Promise<void>){
   if(working.current)return;working.current=true;setBusy(true);setError('');
-  try{await fn();}catch(e){setError((e as Error).message);}finally{working.current=false;setBusy(false);}
+  try{await fn();}catch(e){setError(poolUserError(e));}finally{working.current=false;setBusy(false);}
  }
  const progress=(op:{status:string})=>setNotice(op.status==='queued'?'Waiting for sponsorship':op.status==='pending'?'Waiting for Monad confirmation':'');
  async function act(s:FamilySession,method:string,args:readonly unknown[]=[]){if(!manifest)return;await lobbyCommand(manifest,s,method,args,progress);await refresh();}

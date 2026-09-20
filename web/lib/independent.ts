@@ -1,5 +1,4 @@
-import {createPublicClient,http,encodeFunctionData,encodeAbiParameters,keccak256,isAddress,zeroAddress,type Address,type Hex,type Abi} from 'viem';
-import {monadTestnet} from 'viem/chains';
+import {encodeFunctionData,encodeAbiParameters,keccak256,isAddress,zeroAddress,type Address,type Hex,type Abi} from 'viem';
 import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
 import {createInterludeClient,webStorageStore} from '@interludelayer-sdk/sdk';
 import {compactArenaSession} from '../../shared/compact-arena-session';
@@ -16,9 +15,10 @@ import {familyGrantTypes,lobbyCommandTypes,ownerWriteTypes,independentDiagnostic
 import {abi as familyAbi} from '../../shared/abi-independent-ArcadeFamily';
 import {independentRules} from '../../shared/independent-rules';
 import {abi as profileAbi} from '../../shared/abi-independent-ProfileRegistry';
+import {browserBase} from './base-read';
 
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
-export const independentBase=()=>createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:16384}},transport:http('https://testnet-rpc.monad.xyz',{timeout:8000,retryCount:0,fetchFn:measuredFetch('monad')})});
+export const independentBase=()=>browserBase;
 export async function independentApi<T=any>(path:string,body?:unknown):Promise<T>{
  const response=await measuredFetch('pongit')(API+'/independent/'+path,{method:body===undefined?'GET':'POST',headers:{'content-type':'application/json'},...(body===undefined?{}:{body:json(body)}),signal:AbortSignal.timeout(15000)});
  const result=await response.json();if(!response.ok)throw Object.assign(Error(result.error||'Game services are temporarily unavailable'),result,{status:response.status});return result;

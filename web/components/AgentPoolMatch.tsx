@@ -103,7 +103,9 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   try{await client.move(dir);setControlError('');}catch(e){recoveryVersion.current++;setControlError(poolUserError(e));setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
  }
  useEffect(()=>{
-  const keys=new Set<string>();const key=(e:KeyboardEvent)=>{if(!control.current||!['ArrowUp','ArrowDown','KeyW','KeyS'].includes(e.code)||(e.target as HTMLElement)?.closest('input,textarea,select,[contenteditable=true],[role=dialog]'))return;
+  const keys=new Set<string>();const key=(e:KeyboardEvent)=>{if(!['ArrowUp','ArrowDown','KeyW','KeyS'].includes(e.code))return;
+   if(e.type==='keyup')keys.delete(e.code);
+   if(!control.current||(e.target as HTMLElement)?.closest('input,textarea,select,[contenteditable=true],[role=dialog]')){if(e.type==='keyup'){keys.clear();void move(0);}return;}
    e.preventDefault();if(e.type==='keydown')keys.add(e.code);else keys.delete(e.code);const up=keys.has('ArrowUp')||keys.has('KeyW'),down=keys.has('ArrowDown')||keys.has('KeyS');void move(up===down?0:up?-1:1);};
   const stop=()=>{keys.clear();void move(0);};const visibility=()=>{if(document.hidden)stop();};
   window.addEventListener('keydown',key);window.addEventListener('keyup',key);window.addEventListener('blur',stop);document.addEventListener('visibilitychange',visibility);

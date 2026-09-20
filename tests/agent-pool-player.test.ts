@@ -163,3 +163,17 @@ test('periodic UI synchronization reconciles a lost receipt before a new nonce',
  assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
  assert.equal(f.sent.length,2);assert.equal(f.sent[0],raw);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
 });
+
+test('recovery waits for the current intent and exposes its second failure instead of falsely enabling controls',async()=>{
+ const f=fixture(11);f.lost(true);await assert.rejects(f.player.move(1),/Lost response/);
+ f.visible(true);f.lost(false);
+ // The response-less input was executed. A release is still the user's latest
+ // intention, but its first submission is refused by a temporary transport limit.
+ const original=f.node.request;let rejectInput=true;
+ f.node.request=async(r:any)=>{if(rejectInput&&r.method==='interlude_sendTransaction')throw Object.assign(Error('Busy'),{status:429});return original(r);};
+ await assert.rejects(f.player.move(0),/Busy/);
+ await assert.rejects(f.player.recover(),/Busy/,'Background intent failures must reach the recovery caller');
+ rejectInput=false;await f.player.recover();assert.equal(f.state.state.leftDir,0);
+ assert.deepEqual(f.sent.map(raw=>parseTransaction(raw).nonce),[0,1]);
+ assert.equal(f.player.journal.pending(f.session.grant.key),undefined);f.player.close();
+});

@@ -176,7 +176,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   player,journal,
   async read(force=false){await identify(force);return verify(await feed.read(id,force));},
   watch(listener:(s:EngineState)=>void){const stop=feed.watch(id,s=>{try{if(!stopped&&verifiedAt&&now()-verifiedAt<10000)listener(verify(s));}catch{feed.invalidate();}});listeners.add(stop);return()=>{stop();listeners.delete(stop);};},
-  async recover(){const s=await serial(recoverNow);if(intention&&!moving)void pump().catch(()=>{});return s;},
+  async recover(){const s=await serial(recoverNow);if(intention)await pump();return s;},
   async synchronize(){return serial(async()=>{
    // Periodic observation must not rebuild the signer or discard its confirmed
    // nonce. A missing sender/pending command still takes the full recovery path.

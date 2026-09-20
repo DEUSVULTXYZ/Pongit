@@ -1,11 +1,11 @@
-import {createPublicClient,http,type Address} from 'viem';
-import {monadTestnet} from 'viem/chains';
+import {type Address} from 'viem';
 import {API} from './api';
 import {measuredFetch} from '../../shared/rpc-metrics';
 import {createPoolSponsor,type PoolSignedCall} from '../../shared/agent-pool-sponsor';
 import type {AgentPoolManifest} from '../../shared/agent-pool';
+import {browserBase} from './base-read';
 
-const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:15,batchSize:8192}},transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:8000,fetchFn:measuredFetch('monad')})});
+const base=browserBase;
 export const poolBase=()=>base;
 export async function poolApi<T>(path:string,body?:unknown,signal?:AbortSignal):Promise<T>{
  const response=await measuredFetch('pongit')(`${API}/agents/${path}`,{method:body===undefined?'GET':'POST',

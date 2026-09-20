@@ -3,6 +3,7 @@ import {publicationUnavailable} from './service-error';
 
 /** Public UI copy only. viem errors can embed signed transactions and grants. */
 export function poolUserError(error:unknown):string {
+ if((error as {code?:string}|null)?.code==='BASE_READ_RATE_LIMIT')return 'Monad reads are temporarily limited. Your arcade session is saved; retry synchronization.';
  if(publicationUnavailable(error))return 'This arena is waiting for publication recovery. Your arcade session is saved.';
  if(engineReadRetryMs(error))return 'This arena is busy. Waiting to synchronize; your arcade session is saved.';
  const e=error as {message?:unknown;shortMessage?:unknown}|null;
