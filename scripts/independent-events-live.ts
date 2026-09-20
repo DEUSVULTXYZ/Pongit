@@ -7,7 +7,7 @@ import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import WebSocket from 'ws';
 import {publicIndependentManifest,independentCreditMessage,type FamilyGrant} from '../shared/independent';
-import {independentRules} from '../shared/independent-rules';
+import {independentRules,independentControlArgs} from '../shared/independent-rules';
 import {independentReader} from '../shared/independent-read';
 import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
 import {EngineFeed} from '../shared/engine-feed';
@@ -24,7 +24,7 @@ import {measuredFetch,rpcSamples} from '../shared/rpc-metrics';
 
 assert.equal(process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION,'isolated-vps');
 const raw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
-assert.equal(raw.production,false);assert([12,13].includes(raw.rulesVersion));assert.equal(raw.status,'sealed');
+assert.equal(raw.production,false);assert([12,13,14].includes(raw.rulesVersion));assert.equal(raw.status,'sealed');
 const m=publicIndependentManifest(raw),rules=independentRules(m),base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:12000,fetchFn:measuredFetch('monad')})}),r=independentReader(base,m);
 const run=process.env.PONG_EVENTS_RUN??'1';assert(/^[1-9][0-9]?$/.test(run));
 const secret=`/secrets/events-live-${run}.json`,out=`artifacts/independent-candidate/events-live-${run}.json`;
@@ -76,7 +76,7 @@ async function prepare(mode:0|1){
  await Promise.all([command(a,`accept-${mode}-a`,'acceptProposal',[proposal]),command(b,`accept-${mode}-b`,'acceptProposal',[proposal])]);
  const app=await until(async()=>{const v=await r.lobby('arenaOf',[proposal]);return /^0x0{40}$/i.test(v)?null:v;},'contract arena assignment');
  const arena=m.arenas.find(x=>x.app.toLowerCase()===app.toLowerCase());assert(arena);
- const binding=await until(async()=>{const v=await r.arena(app,'boundMatch');return v.epoch&&v.id===proposal?v:null;},'real delegation admission',180000);
+ const binding=await until(async()=>{const v=m.rulesVersion===14?(await r.lobby('ticketOf',[proposal]))[1]:await r.arena(app,'boundMatch');return v.epoch&&v.id===proposal?v:null;},'real delegation admission',180000);
  const record={app,epoch:String(binding.epoch),id:String(proposal),a,b,mode};privateState.matches.push(record);await save();
  return {...record,id:proposal,epoch:binding.epoch,node:arena.node!,binding};
 }
@@ -87,12 +87,19 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
  const feed=new EngineFeed({node:observer,app,abi:rules.arena},stream);stops.push(feed.watch(id,()=>row.frames++),()=>stream.stop());
  const synchronized=<T>(first:()=>Promise<T>,fresh:()=>Promise<T>)=>fixtureSnapshot(first,fresh,(reason,attempt)=>{row.synchronizations??=[];row.synchronizations.push({at:new Date().toISOString(),reason,attempt});});
  const read=(force=false)=>synchronized(()=>feed.read(id,force),()=>feed.read(id,true));
- const observed=(receipt:any,name:string,args:readonly unknown[],player:number)=>synchronized(()=>feed.receipt(id,receipt,name,args,owners[player].address),()=>feed.read(id,true));
+ const wireArgs=(args:readonly unknown[])=>independentControlArgs(rules.version,epoch,args);
+ const observed=(receipt:any,name:string,args:readonly unknown[],player:number)=>synchronized(()=>feed.receipt(id,receipt,name,wireArgs(args),owners[player].address),()=>feed.read(id,true));
  const provisioningAt=Date.now();
  await until(async()=>{try{const s:any=await observer.request({method:'interlude_session',params:[]} as any);return String(s.epoch)===String(epoch)&&s.app.toLowerCase()===app.toLowerCase();}catch{return false;}},'hosted engine identity',720000);
  row.provisioningMs=Date.now()-provisioningAt;await flush();
  assert.equal(await observer.readContract({address:app,abi:rules.arena,functionName:'RULES_VERSION'}),BigInt(m.rulesVersion!));
  const d=await readHubDelegation(base,m.hub,app);assert.equal(d.epoch,epoch);assert.equal(d.status,1);
+ if(rules.version===14)await until(async()=>{
+  try{
+   const loaded=await observer.readContract({address:app,abi:rules.arena,functionName:'currentAdmission'}),s=await read(true);
+   return loaded[0]===epoch&&loaded[1]===id&&s.id===id&&s.phase===1;
+  }catch{return false;}
+ },'issued ticket loaded into the reusable engine');
  const players=[match.a,match.b].map(index=>{
   const transport=engineTransport(match.node,{
    async beforeSend(raw){
@@ -104,9 +111,10 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
    received(method,result){if(!['interlude_sendTransaction','eth_getTransactionReceipt'].includes(method))return;const j=privateState.jobs.find((j:any)=>j.hash===result?.transactionHash);
     if(j&&['0x1','0x0','success','reverted'].includes(String(result.status))){j.state=['0x1','success'].includes(String(result.status))?'confirmed':'reverted';void save();}}
   });
-  const node=createPublicClient({transport});return {index,node,session:compactArenaSession({node,abi:rules.arena,app,key:privateState.players[index].arcade,match:id,expires:BigInt(privateState.expires)}),direction:0};
+  const node=createPublicClient({transport}),sender=compactArenaSession({node,abi:rules.arena,app,key:privateState.players[index].arcade,match:id,expires:BigInt(privateState.expires),...(rules.version===14?{epoch}:{})});
+  return {index,node,session:{send:(name:string,args:readonly unknown[])=>sender.send(name,wireArgs(args))},direction:0};
  });
- if(m.rulesVersion===13){
+ if(m.rulesVersion===13||m.rulesVersion===14){
   for(const p of players){const receipt=await p.session.send('confirmReady',[id]);await observed(receipt,'confirmReady',[id],p.index);}
   row.readinessConfirmed=true;
  }
@@ -170,7 +178,17 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
  }
  if(money)await money;if(moneyError)throw moneyError;
  assert(row.finalScore&&Math.max(...row.finalScore)===7,'Natural seventh point not reached');assert(row.changes.every((n:number)=>n>=100),'100 confirmed direction changes required per player');
- const published=await until(async()=>{const v=await r.arena(app,'publishedResult');return v.status===3?v:null;},'result publication');
+ const published=await until(async()=>{
+  // A reusable slot may already contain another match. The common ledger
+  // retains the exact canonical result after its published proof is captured.
+  if(rules.version===14){
+   if(!await r.ratings('indexOf',[id]))return null;
+   const v=(await r.ratings('entry',[id])).latest;
+   assert.equal(v.id,id);assert.equal(v.epoch,epoch);assert.equal(v.arena.toLowerCase(),app.toLowerCase());
+   return v.status===3?v:null;
+  }
+  const v=await r.arena(app,'publishedResult');return v.status===3?v:null;
+ },'result publication');
  assert.equal(published.winner.toLowerCase(),row.winner.toLowerCase());assert.deepEqual([published.scoreA,published.scoreB],row.finalScore);
  await until(async()=>await r.ratings('indexOf',[id]),'common contract capture');
  if(mode){

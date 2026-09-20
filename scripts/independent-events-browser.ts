@@ -13,7 +13,7 @@ const run=process.env.INDEPENDENT_TEST_RUN||'';assert(!run||/^[a-z0-9]{1,16}$/.t
 const suffix=run?'-'+run:'';
 const origin='https://pongit.xyz',out=`artifacts/independent-candidate/browser${chaos?'-chaos':''}${suffix}`,secret=`/secrets/independent-browser-v2${chaos?'-chaos':''}${suffix}.json`;
 const manifest=publicIndependentManifest(JSON.parse(await readFile('deployments/independent.json','utf8')));
-assert([12,13].includes(manifest.rulesVersion!));const rules=independentRules(manifest);
+assert([12,13,14].includes(manifest.rulesVersion!));const rules=independentRules(manifest);
 const nodes=new Set(manifest.arenas.map(a=>new URL(a.node!).origin));
 let saved:any={lobby:manifest.lobby,players:[],stage:0};
 try{await readFile(secret);throw Error('Preserve and reconcile the previous browser run. Never import its PRF credential.');}catch(e){if((e as any).code!=='ENOENT')throw e;}
@@ -76,7 +76,7 @@ async function init(i:number){
   const row:any={player:i,at:Date.now(),method,status:response.status(),requestBytes:Buffer.byteLength(request.postData()||'')};report.network.push(row);
   if(method==='interlude_sendTransaction'){try{const tx=parseTransaction(request.postDataJSON().params[0]);row.nonce=tx.nonce;row.action=decodeFunctionData({abi:rules.arena,data:tx.data!}).functionName;}catch{}}
   if(method==='eth_getTransactionCount'){try{row.count=(await response.json()).result;}catch{}}
-  try{const body=await response.json();if(['0x1','success'].includes(String(body.result?.status))&&method==='interlude_sendTransaction'){const tx=parseTransaction(request.postDataJSON().params[0]);const call=decodeFunctionData({abi:rules.arena,data:tx.data!});if(call.functionName==='input')report.inputs[i].push({direction:Number(call.args![1]),at:Date.now(),hash:body.result.transactionHash});}if(body.error)row.rpcError={code:body.error.code,message:String(body.error.message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,350)};}catch{}
+  try{const body=await response.json();if(['0x1','success'].includes(String(body.result?.status))&&method==='interlude_sendTransaction'){const tx=parseTransaction(request.postDataJSON().params[0]);const call=decodeFunctionData({abi:rules.arena,data:tx.data!});if(call.functionName==='input')report.inputs[i].push({direction:Number(call.args![rules.version===14?2:1]),at:Date.now(),hash:body.result.transactionHash});}if(body.error)row.rpcError={code:body.error.code,message:String(body.error.message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,350)};}catch{}
  });
  await page.goto(origin);const muted=page.getByRole('button',{name:'Enter muted',exact:true});if(await muted.isVisible())await muted.click();
  await page.locator('.rooms-header').waitFor();

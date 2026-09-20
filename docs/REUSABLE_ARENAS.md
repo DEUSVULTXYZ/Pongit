@@ -1,6 +1,30 @@
 # Reusable arenas and testnet admission transport
 
-## Human fixture evidence correction, 20 September 18:55 UTC
+## Corrected human deployment and hosted smoke, 20 September 19:03 UTC
+
+The canonical `1367f8f` candidate deployed successfully. Its common lobby is
+`0x4ac828012cd2be48ab669a55db5a85cac81b4bcf`, with first arena
+`0x3a0c55bef5682d531d8b56538b7212ee1933ff6c` and realtime market
+`0xca1efcd053c4bfb0687236b75c83787b0d750e7e`. Two additional arenas are
+registered but are not yet proof of capacity. Public production is unchanged.
+
+The actual hosted smoke passed at 18:56:37 UTC: 36 Classic and 32 Chaos movement
+receipts, two accepted drand proofs, active effects 2 and 20, two published and
+captured results, and a historical proof after same-epoch reuse. Both matches
+ended by explicit concession; the reported scores are 3-4 and 5-4. There were
+82 confirmed engine operations and no uncertain operations at shutdown.
+Closing epoch 1 succeeded after 61 batches. Its real hub release time is
+19:56:36 UTC. The release/root-sealing worker is waiting for that deadline;
+renewal has not yet passed. Private state and deployment backups were copied
+off VPS and SHA-256 verified before that worker started.
+
+The full service and browser fixtures now recognize rules 14, bind controls and
+receipts to the real epoch, wait for the issued ticket to load, and retrieve an
+old result from the common contract after its physical slot is reused. Type
+checking and 16 targeted transport/decoder tests pass. The adapted full browser
+and financial scenarios have not yet run on this candidate.
+
+## Human fixture evidence correction, 20 September 18:52 UTC
 
 The reusable human smoke fixture now counts `RandomnessVerified` receipts,
 separately from proof submissions, and requires an observed active effect. A
