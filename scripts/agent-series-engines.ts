@@ -14,6 +14,7 @@ import {createPoolEngine,initializePoolOperations} from '../relayer/src/agents/p
 import {provisionPoolArena,observePoolArenaReady} from '../relayer/src/agents/pool-hosted';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {initializePoolObservations,PoolObservations} from '../relayer/src/agents/pool-observations';
+import {PoolProofLane} from '../relayer/src/agents/pool-proof-lane';
 assert.equal(process.env.PONG_AGENT_SERIES_ENGINES,'private-qualification');assert.equal(process.getuid?.(),1000);
 const prefix=process.env.PONG_AGENT_SERIES_PREFIX!;assert(/^agent-series-candidate-\d{8}(-[2-9])?$/.test(prefix));
 const r=JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8'));assert.equal(r.phase,'deployed-closed');
@@ -28,6 +29,7 @@ async function arenaLoop(app:Address){
  let engine:ReturnType<typeof createPoolEngine>|undefined,binding:any,delegation:any,url='',nextBase=0,lastTick=0,stage='',healthAt=0;
  let proofTask:Promise<void>|undefined,observation:PoolObservations|undefined;
  const beacon=new ChaosBeaconPump();
+ const proofLane=new PoolProofLane();
  const flush=async()=>{try{await observation?.flush();}catch{console.error(JSON.stringify({app,event:'observation-incomplete'}));}observation=undefined;};
  const health=async(value:string,detail:Record<string,unknown>={})=>{
   if(stage===value&&Date.now()-healthAt<10000)return;healthAt=Date.now();
@@ -69,10 +71,11 @@ async function arenaLoop(app:Address){
      const actor=engine,id=actor.ref.id,epoch=actor.ref.epoch;
      const state=(v:typeof s)=>({playing:v.phase===2,request:v.chaos?.request??0n,pending:v.chaos?.pending??0n});
      proofTask=beacon.offer(`${app}:${epoch}:${id}`,state(s),async()=>state(await actor.read()),async(request,proof)=>{
-      const current=await actor.read();await actor.send(`proof:${request}:${current.revision}`,'submitRandomness',[id,request,proof]);lastTick=Date.now();
-     }).catch(()=>console.log(JSON.stringify({at:new Date().toISOString(),app,id:String(id),event:'randomness-retry'}))).finally(()=>{proofTask=undefined;});
+      await proofLane.submit(actor,id,request,proof);lastTick=Date.now();
+     }).catch(error=>{const e=error as {code?:string;shortMessage?:string;message?:string};console.log(JSON.stringify({at:new Date().toISOString(),app,id:String(id),event:'randomness-retry',
+      code:e.code,error:(e.shortMessage??e.message??'Proof transport unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220)}));}).finally(()=>{proofTask=undefined;});
     }
-    if(!engine.busy()&&Date.now()-lastTick>=300){await engine.send(`tick:${s.revision}:${s.head}:${Math.floor(Date.now()/300)}`,'tick',[binding.id]);lastTick=Date.now();}
+    if(!proofLane.blocksTick()&&!engine.busy()&&Date.now()-lastTick>=300){await engine.send(`tick:${s.revision}:${s.head}:${Math.floor(Date.now()/300)}`,'tick',[binding.id]);lastTick=Date.now();}
    }else if(s.phase>=3){
     await health('awaiting-publication',{epoch:String(binding.epoch),id:String(binding.id),phase:s.phase,score:[s.state.scoreA,s.state.scoreB]});pause=1500;
     if(!proofTask&&!engine.busy()){
