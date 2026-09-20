@@ -13,7 +13,7 @@ const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 const safe=(e:unknown)=>String((e as Error)?.message??'Registration failed').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,180);
 async function main(){
  const api=new URL(process.env.AGENT_API??'https://pongit.xyz/api/agents');
- const privateRun=process.env.AGENT_PRIVATE_QUALIFICATION==='isolated-vps'&&/^pongit-series[3-9]-sponsor$/.test(api.hostname)&&api.port==='4102'&&api.pathname==='/agents';
+ const privateRun=process.env.AGENT_PRIVATE_QUALIFICATION==='isolated-vps'&&/^pongit-(?:series[3-9]|reusable-agents[1-9]\d?)-sponsor$/.test(api.hostname)&&api.port==='4102'&&api.pathname==='/agents';
  if(api.username||api.password||api.search||api.hash||api.protocol!=='https:'&&!privateRun)throw Error('Use a credential-free HTTPS PONGIT API');
  const call=async(path:string,body?:PoolSignedCall)=>{
   const r=await fetch(api.href.replace(/\/$/,'')+'/'+path,{method:body?'POST':'GET',...(body?{headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000)});
