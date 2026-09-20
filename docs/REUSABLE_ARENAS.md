@@ -1,5 +1,29 @@
 # Reusable arenas and testnet admission transport
 
+## Human second release and remaining tournament trials
+
+The human rules-14 arena released epoch 2 at 21:34 UTC on 20 September.
+Transaction `0xf3fb1191a851bf7f4e0fc9aa7cb983f071103ef12e876e0c921178529da46aa7`
+used 1,085,437 gas. The unchanged result root was sealed and both historical
+results were recaptured as final. Epoch 3 was not opened. The report, private
+journal, deployment and database dump have verified off-VPS copies. The safe
+release report is in `artifacts/qualification/20260920/reusable`.
+
+The bounded tournament driver now supports the four approved formats by their
+original contract IDs. Tournament 1 retains its original operation prefix and
+report; IDs 2 through 4 require `PONG_REUSABLE_AGENT_TOURNAMENT_TEST` set to
+`private-selected-tournament` and `PONG_REUSABLE_TOURNAMENT_ID`. It never creates
+a public gate or publication budget. An interrupted trial recovers already
+captured fixtures from the book and exact journaled admission, retains its
+original deadline, and reports success only after closing its private book.
+Parallel challenges require the explicit `qualified-challenge` setting and a
+qualified, unlocked agent; the driver never closes an occupied second arena.
+These additional actual tournaments have not run yet.
+
+The source passed 591 TypeScript tests before this driver-only extension and
+type checking afterwards. Those checks do not replace hosted gameplay,
+financial, browser or final 24-hour qualification.
+
 ## First complete tournament, 20 September 21:28 UTC
 
 The private Classic elimination tournament passed at 21:23:05 UTC. All seven
