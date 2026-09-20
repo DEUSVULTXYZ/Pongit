@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {encodeAbiParameters,encodeEventTopics,keccak256,zeroHash,type Abi,type Address,type Hex} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {abi as humanAbi} from '../shared/abi-independent-ReusableEventsArena';
-import {reusableResults} from '../shared/reusable-results';
+import {reusableResults,reusableSlotResult} from '../shared/reusable-results';
+import {resultFixture} from './fixtures/reusable-result';
 import {publishedResultLeaf,PublishedResultIndex,verifyPublishedResult} from '../shared/published-result-tree';
 const app='0x1111111111111111111111111111111111111111',a='0x2222222222222222222222222222222222222222',b='0x3333333333333333333333333333333333333333';
 function log(abi:Abi,name:string,args:any){const e=abi.find(x=>x.type==='event'&&x.name===name) as any;return{address:app as Address,topics:encodeEventTopics({abi,eventName:name,args} as any) as Hex[],data:encodeAbiParameters(e.inputs.filter((x:any)=>!x.indexed),e.inputs.filter((x:any)=>!x.indexed).map((x:any)=>args[x.name]))};}
@@ -27,4 +28,10 @@ for(const [rules,abi] of [[14,humanAbi],[15,reusableAgentArenaAbi]] as const)tes
  assert.throws(()=>reusableResults(abi,app,rules,{...frame,logs:[...logs,logs[1]]}),/Repeated/);
  assert.throws(()=>reusableResults(abi,app,rules===14?15:14,frame),/mismatched/);
  assert.throws(()=>index.proof(0,{root:zeroHash,count:1}),/differs/,'An emitted root cannot stand in for the authoritative Monad root');
+});
+test('reconnect can retain the current terminal slot without inventing a receipt',()=>{
+ const f=resultFixture(),slot=reusableSlotResult(f.abi,f.ref,15,91n,f.ticketHash,1n,f.result,[f.ref.epoch,1,f.root]);
+ assert.equal(slot.canonical,f.canonical);assert.equal(slot.leaf,f.leaf);assert(!('transactionHash' in slot));
+ for(const [id,epoch,count,status] of [[92n,2n,1,3],[91n,3n,1,3],[91n,2n,2,3],[91n,2n,1,2]] as const)
+  assert.throws(()=>reusableSlotResult(f.abi,f.ref,15,id,f.ticketHash,1n,{...f.result,match_:{...f.result.match_,status}},[epoch,count,f.root]),/differs/);
 });

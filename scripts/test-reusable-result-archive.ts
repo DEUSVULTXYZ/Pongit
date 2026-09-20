@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {Pool} from 'pg';
 import {encodeAbiParameters,keccak256,zeroHash,type Hex} from 'viem';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
-import {reusableResults} from '../shared/reusable-results';
+import {reusableResults,reusableSlotResult} from '../shared/reusable-results';
 import {resultFixture} from '../tests/fixtures/reusable-result';
 
 assert.equal(process.env.PONG_RESULT_ARCHIVE_DB_TEST,'isolated-disposable');
@@ -52,5 +52,15 @@ try{
  assert.equal((await archive.proof(one,{root,count:2},one.matchId)).siblings[0],two.leaf);
  assert.equal((await archive.proof(one,{root,count:2},two.matchId)).siblings[0],one.leaf);
  cases.push('later results do not replace older published proofs; both remain provable after reuse');
+ const disconnected=resultFixture(15,r.arena,94n,r.epoch+2n);
+ const slot=reusableSlotResult(disconnected.abi,disconnected.ref,15,94n,disconnected.ticketHash,1n,disconnected.result,[disconnected.ref.epoch,1,disconnected.root]);
+ await Promise.all([archive.storeSlot(slot),archive.storeSlot(slot)]);
+ assert.equal((await archive.proof(slot,{count:1,root:slot.root},slot.matchId)).canonical,slot.canonical);
+ assert.equal((await db.query('SELECT count(*) FROM il_reusable_results WHERE epoch=$1',[String(slot.epoch)])).rows[0].count,'0');
+ await archive.store(reusableResults(disconnected.abi,r.arena,15,disconnected.frame));
+ assert.equal((await archive.proof(slot,{count:1,root:slot.root},slot.matchId)).canonical,slot.canonical);
+ await db.query('UPDATE il_reusable_slot_results SET canonical=$1 WHERE epoch=$2',['0x00',String(slot.epoch)]);
+ await assert.rejects(archive.proof(slot,{count:1,root:slot.root},slot.matchId),/no longer matches/);
+ cases.push('disconnected terminal slot retained without fake receipt; receipt deduplicated and storage corruption rejected');
  console.log(JSON.stringify({at:new Date().toISOString(),kind:'isolated-postgresql-result-archive',passed:true,cases,hostedInterlude:false,productionChanged:false}));
 }finally{await db.end();}

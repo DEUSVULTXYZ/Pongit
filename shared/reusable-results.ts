@@ -5,6 +5,23 @@ import {publishedResultLeaf,type ResultEpoch} from './published-result-tree';
 export type ReusableResultCandidate=ResultEpoch&{
  rules:14|15;matchId:bigint;index:number;ticketHash:Hex;resultHash:Hex;leaf:Hex;root:Hex;canonical:Hex;transactionHash:Hex;
 };
+export type ReusableSlotResult=Omit<ReusableResultCandidate,'transactionHash'>;
+
+/** Reconnect recovery of the still-retained terminal slot. This is explicitly
+ * a state observation, not an invented transaction receipt. Publication must
+ * still authenticate the full ordered prefix before it can release a player. */
+export function reusableSlotResult(abi:Abi,ref:ResultEpoch,rules:14|15,id:bigint,ticketHash:Hex,sequence:bigint,
+ result:any,commitment:readonly [bigint,number,Hex]):ReusableSlotResult{
+ const [epoch,count,root]=commitment,match=result?.match_,actual=match?.ref??match;
+ const output=abi.find(x=>x.type==='function'&&x.name==='publishedResult');
+ if(!output||output.type!=='function'||output.outputs.length!==1||!match||!actual
+  ||actual.id!==id||actual.epoch!==ref.epoch||actual.arena?.toLowerCase()!==ref.arena.toLowerCase()
+  ||rules===15&&actual.chainId!==ref.chainId||epoch!==ref.epoch||result.rules!==BigInt(rules)
+  ||!Number.isInteger(count)||count<1||count>65536||BigInt(count)!==sequence||![3,4].includes(match.status))
+   throw Error('Terminal slot differs from its admission or result commitment');
+ const canonical=encodeAbiParameters(output.outputs,[result]),resultHash=keccak256(canonical);
+ return{...ref,rules,matchId:id,index:count-1,ticketHash,resultHash,root,canonical,leaf:publishedResultLeaf(ref,id,ticketHash,resultHash)};
+}
 
 /** Preserve complete results before the physical slot is reused. These are
  * untrusted publication candidates, not settled results. A consumer must match

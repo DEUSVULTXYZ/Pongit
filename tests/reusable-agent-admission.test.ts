@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {toHex,zeroAddress,zeroHash,type Address} from 'viem';
 import {reusableAdmissionDigest,type ReusableTicket} from '../shared/reusable-admission';
-import {reusableAgentBindingHash,validateReusableAgentAdmission,type ReusableAgentBinding} from '../shared/reusable-agent-admission';
+import {reusableAgentBindingHash,validateReusableAgentAdmission,validateReusableAgentCancellation,type ReusableAgentBinding} from '../shared/reusable-agent-admission';
 const at=(n:number)=>toHex(n,{size:20}) as Address,code=toHex(123,{size:32});
 const b:ReusableAgentBinding={id:99n,epoch:7n,preparedBlock:4n,tournament:0n,a:at(1),b:at(2),mode:1,ranked:false,overtime:false,
  controlA:{codeHash:zeroHash,memoryWord:0n,house:0,key:at(3),expires:7201n},controlB:{codeHash:code,memoryWord:0n,house:3,key:zeroAddress,expires:0n}};
@@ -11,6 +11,14 @@ const e={chainId:10143,authority:at(5),arena:at(6),issuedDigest:reusableAdmissio
 test('the admission matches the Solidity controller tuple golden vector',()=>{
  assert.equal(reusableAgentBindingHash(b),'0x71b7de9ac1baef9814b0571a0bb27d45e75a721b025ed4cdcbdf979a6c1ec3d3');
  assert.equal(reusableAdmissionDigest(t),'0x7347109fa74117c5134200e8c8749b12999e8b513c555d1980922778883ad1c4');
+});
+test('only a genuinely expired original ticket permits cancellation, even without pinned strategy code',()=>{
+ const expired={...e,now:7210n,engineCodeHashB:zeroHash};
+ assert.equal(validateReusableAgentCancellation(t,b,expired).domain.chainId,10143);
+ assert.throws(()=>validateReusableAgentAdmission(t,b,expired));
+ for(const changed of [{now:220n},{hubStatus:2},{engineEpoch:8n},{engineCount:1},{sourceHash:zeroHash},{issuedDigest:zeroHash},{hubExpires:7210n}])
+  assert.throws(()=>validateReusableAgentCancellation(t,b,{...expired,...changed}));
+ assert.throws(()=>validateReusableAgentCancellation(t,{...b,ranked:true},expired));
 });
 test('the agent bridge binds the full controller, match and current publication epoch',()=>{
  assert.equal(validateReusableAgentAdmission(t,b,e).domain.chainId,10143);

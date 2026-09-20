@@ -17,9 +17,9 @@ assert.equal(process.env.PONG_AGENT_POOL_SPONSOR, 'reviewed-release');
 assert.equal(process.getuid?.(), 1000);
 const humans = (process.env.PONG_HUMAN_APPS ?? '').split(',').filter(Boolean); assert(humans.length);
 const manifest = validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json', 'utf8')), humans);
-assert(manifest.version === 3 && manifest.verifiedCapacity === 2 && manifest.qualificationEvidence && BigInt(manifest.qualificationEvidence) !== 0n);
+assert([3,4].includes(manifest.version) && manifest.verifiedCapacity === 2 && manifest.qualificationEvidence && BigInt(manifest.qualificationEvidence) !== 0n);
 assert.equal(manifest.qualificationEvidence.toLowerCase(), process.env.PONG_AGENT_POOL_RELEASE_EVIDENCE?.toLowerCase());
-const metrics = await agentMetrics('/diagnostics/series', 'sponsor');
+const metrics = await agentMetrics(manifest.version===4?'/diagnostics/reusable':'/diagnostics/series', 'sponsor');
 const base = createPublicClient({chain: monadTestnet, batch: {multicall: {wait: 15, batchSize: 8192}},
   transport: http(process.env.RPC_URL, {timeout: 10000, retryCount: 0, fetchFn: measuredFetch('monad')})});
 assert.equal(await base.getChainId(), 10143);

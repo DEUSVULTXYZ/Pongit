@@ -40,7 +40,7 @@ export class PoolReplays {
   // After a crash, an unobserved interval cannot be called a complete replay.
   await this.db.query("UPDATE agent_pool.replays SET incomplete=true WHERE availability='recording' AND last_revision IS NOT NULL");
  }
- capture(ref:AgentMatchRef,rules:10|11,s:EngineState){
+ capture(ref:AgentMatchRef,rules:10|11|15,s:EngineState){
   const key=poolReplayKey(ref);if(s.id!==BigInt(ref.id)||s.phase<2||s.phase>4)return;
   const prior=this.last.get(key),score=`${s.state.scoreA}:${s.state.scoreB}`;
   if(!s.reset&&prior&&(s.revision<=prior.revision||s.phase===prior.phase&&score===prior.score&&s.state.t-prior.time<100000n))return;

@@ -1,5 +1,56 @@
 # Reusable arenas and testnet admission transport
 
+## Hosted cancellation and service adapters, 20 September 15:50 UTC
+
+The replacement private pool is `0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5`.
+Its first arena, `0xf868bdb4669f4de471555ccadc3bac5589a3fcaa`, opened a real
+epoch after the previous failed candidate was released. The other registered
+arenas are not yet evidence of hosted capacity.
+
+At 15:37:32 UTC the new arena successfully completed the deliberately expired
+ticket test: cancellation, actual Monad publication, pool capture, unchanged
+qualification and freed participation, with its engine session still active.
+Capture transaction: `0x55eb3385835dd2e9cb9bee01bf73a76cdf924cbae5f68429ff559e0425970869`.
+The next match entered that same epoch. No provider configuration changed.
+
+The first Chaos game ended naturally 1-7 but **does not qualify Chaos events**.
+Its test driver reused a cached proof operation while physics catch-up required
+a new revision. The earlier counter counted loop visits, not accepted random
+draws. The original report is retained with a failed verdict. The corrected
+driver binds retries to the confirmed revision and counts `RandomnessVerified`
+receipts separately from submissions. The subsequent actual Chaos game has
+already activated effect 11; its overall run remains pending and cannot erase
+the earlier failure. A separate Classic match reached the contractual five-minute
+limit at 4-3 and was published and captured.
+
+The reusable service source now separates the engine controller and Monad keeper.
+It retains the original operator journal, archives compact results before
+acknowledging terminal receipts, and can recover a disconnected terminal slot
+without inventing a transaction hash. A slot observation still needs the exact
+issued ticket and canonical published Merkle prefix before settlement. Six real
+disposable PostgreSQL scenarios passed, including snapshot recovery, deduplication
+with a later receipt, competing histories and corrupt-storage rejection.
+
+The keeper continues result recovery without a publication-budget file. New
+admissions require reviewed worst-case evidence in `/metadata/reusable-budget.json`,
+including runtime hashes, batch/whole-match reserves and staggered service age.
+It aims to maintain three actually admitted arenas, retires an idle one early
+while two others remain, and never treats a configured address as available
+capacity. Missing evidence and failed provider admission remain explicit gates.
+These new persistent services have **not yet been activated or hosted-qualified**.
+
+Run `scripts/agent-reusable-process.mjs` with a fixed role `keeper`, `engines`,
+`reader` or `sponsor`. Reviewed release metadata belongs in
+`/metadata/reusable.json` and `/metadata/manifest.json`; only the engine role loads
+the limited engine and admission keys. The keeper and sponsor use the existing
+operator journal. Original prefixes and pending jobs must survive a restart.
+Never run this writer beside the private qualification driver on the same arena.
+
+Public production remains closed at `7d35926`. The human reusable financial
+migration, all eight bots, all effects, full tournaments, two active agent lanes,
+reserve/release qualification, current browser build and unchanged 24-hour trial
+are still required. This is implementation progress, not a completed release.
+
 ## Recovery and adapters, 20 September 15:14 UTC
 
 The latest candidate can publish a cancellation for an **expired, never-admitted
