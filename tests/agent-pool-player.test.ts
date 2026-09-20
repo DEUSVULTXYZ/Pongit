@@ -146,3 +146,20 @@ test('a failed or reorganized light fence never sends the waiting movement',asyn
   assert.equal(f.bindings(),2);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
  }
 });
+
+test('periodic UI synchronization preserves signer nonce while checking mutable revocation',async()=>{
+ const f=fixture(11);await f.player.move(1);
+ const bindings=f.bindings(),nonces=f.nonceReads();
+ for(let i=0;i<3;i++){f.advance(10000);await f.player.synchronize();await f.player.move(i%2===0?-1:1);}
+ assert.equal(f.bindings(),bindings);assert.equal(f.nonceReads(),nonces);
+ assert.deepEqual(f.sent.map(raw=>parseTransaction(raw).nonce),[0,1,2,3]);
+ f.override(zeroAddress,1n<<64n);await assert.rejects(f.player.synchronize(),/revoked/);
+ await assert.rejects(f.player.move(0),/revoked/);assert.equal(f.sent.length,4);f.player.close();
+});
+
+test('periodic UI synchronization reconciles a lost receipt before a new nonce',async()=>{
+ const f=fixture(11);f.lost(true);await assert.rejects(f.player.move(1));
+ const raw=f.sent[0];f.visible(true);f.lost(false);await f.player.synchronize();await f.player.move(-1);
+ assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
+ assert.equal(f.sent.length,2);assert.equal(f.sent[0],raw);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
+});

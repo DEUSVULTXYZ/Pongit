@@ -34,6 +34,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const [error,setError]=useState(''),[connection,setConnection]=useState('Connecting'),[retry,setRetry]=useState(0),[copied,setCopied]=useState(''),[replay,setReplay]=useState(false);
  const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState('');
  const playerClient=useRef<ReturnType<typeof createPoolPlayer>|null>(null),manifest=useRef<AgentPoolManifest|null>(null),lastRef=useRef(''),commandVersion=useRef(0),actionBusy=useRef(false),router=useRouter();
+ const recoveryVersion=useRef(0);
  const side=view&&account?view.a.toLowerCase()===account.toLowerCase()?0:view.b.toLowerCase()===account.toLowerCase()?1:-1:-1;
  const controllable=ready&&side>=0&&snapshot?.phase===2&&!view?.result&&!tools;
  const control=useRef(false);control.current=controllable;
@@ -43,7 +44,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  useEffect(()=>{
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>,observer:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>|undefined,release:(()=>void)|undefined;
   if(lastRef.current!==refKey){lastRef.current=refKey;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
-  let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,wasHidden=false;
+  let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,retryRecoveryAt=0,recoveredVersion=-1,wasHidden=false;
   const controller=new AbortController();
   const get=async<T,>(path:string):Promise<T>=>{
    const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(10000)])});
@@ -81,10 +82,15 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      }else created=await createPoolObserver(config,current,u=>new WebSocket(u));
      if(cancelled){created.close();return;}observer=created;observer.watch(publish);
     }
-    if(playerClient.current&&(wasHidden||performance.now()>=nextRecovery)){
+    if(playerClient.current&&performance.now()>=retryRecoveryAt&&(wasHidden||performance.now()>=nextRecovery||recoveredVersion!==recoveryVersion.current)){
      nextRecovery=performance.now()+10000;
-     try{await playerClient.current.recover();if(cancelled)return;setReady(true);setControlError('');}
-     catch(e){if(cancelled)return;setReady(false);setControlError(poolUserError(e));nextRecovery=performance.now()+Math.max(3000,engineReadRetryMs(e));}
+     const version=recoveryVersion.current;
+     try{
+      if(recoveredVersion!==version)await playerClient.current.recover();else await playerClient.current.synchronize();
+      if(cancelled)return;recoveredVersion=version;retryRecoveryAt=0;
+      if(recoveryVersion.current===version){setReady(true);setControlError('');}
+     }
+     catch(e){if(cancelled)return;setReady(false);setControlError(poolUserError(e));retryRecoveryAt=performance.now()+Math.max(1000,engineReadRetryMs(e));nextRecovery=retryRecoveryAt;}
     }
     const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);setError('');
    }catch(e){if(cancelled)return;setError(poolUserError(e));setConnection('Synchronizing');delay=Math.max(2000,engineReadRetryMs(e));}
@@ -94,7 +100,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  },[enabled,refKey,retry]);
  async function move(dir:-1|0|1){
   const client=playerClient.current;if(!client||!control.current&&dir!==0)return;const version=++commandVersion.current;setDirection(dir);setPending(true);
-  try{await client.move(dir);setControlError('');}catch(e){setControlError(poolUserError(e));setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
+  try{await client.move(dir);setControlError('');}catch(e){recoveryVersion.current++;setControlError(poolUserError(e));setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
  }
  useEffect(()=>{
   const keys=new Set<string>();const key=(e:KeyboardEvent)=>{if(!control.current||!['ArrowUp','ArrowDown','KeyW','KeyS'].includes(e.code)||(e.target as HTMLElement)?.closest('input,textarea,select,[contenteditable=true],[role=dialog]'))return;

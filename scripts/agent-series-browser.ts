@@ -61,7 +61,7 @@ async function context(player=false){
     return route.fulfill({status:429,headers:{'Retry-After':'1'},json:{error:'Private qualification throttle'}});
    }
    const start=performance.now(),response=await route.fetch({timeout:20000});
-   report.rpc.push({player,method,status:response.status(),ms:performance.now()-start,bytes:Buffer.byteLength(request.postData()??'')});
+   report.rpc.push({at:new Date().toISOString(),player,method,status:response.status(),ms:performance.now()-start,bytes:Buffer.byteLength(request.postData()??'')});
    if(player&&loseReply&&method==='interlude_sendTransaction'){
     const data=await response.json();assert(response.ok()&&!data.error,'Withhold only an executed transaction response');
     loseReply=false;report.faults.push({at:new Date().toISOString(),kind:'Reply lost after execution'});return route.abort('failed');
@@ -119,16 +119,19 @@ try{
   assert(manifest.arenas.some(a=>a.app.toLowerCase()===ref.app.toLowerCase()));
   report.current={ref,mode,url};await checkpoint();
   const up=page.getByRole('button',{name:'Move up',exact:true});await up.waitFor({timeout:120000});await until(()=>up.isEnabled(),'Controllable arena');
-  await watch.goto(url);await watch.locator('canvas').waitFor();
+  await watch.goto(url);await watch.locator('canvas').waitFor();await page.bringToFront();
+  assert.equal(await page.evaluate(()=>document.hidden),false,'The controlled browser must be in the foreground');
   for(let i=0;i<60;i++){
    if(!await up.count())break;
    // A deliberately lost reply or 429 can briefly disable controls. Wait for
    // reconciliation instead of silently skipping the rest of the test.
    if(!await up.isEnabled())await until(async()=>!await up.count()||await up.isEnabled(),'Automatic control recovery',30000);
    if(!await up.count())break;
-   if(mode===0&&i===5)loseReply=true;if(mode===0&&i===12)throttle=true;
+   // Exercise faults early: a novice who misses every serve can lose in under
+   // forty seconds. A later unused injection must never count as passing.
+   if(mode===0&&i===0)loseReply=true;if(mode===0&&i===1)throttle=true;
    await page.keyboard.down(i%2?'s':'w');await sleep(100);await page.keyboard.up(i%2?'s':'w');await sleep(100);
-   if(i===4){await savePrivate();await page.reload();await until(()=>up.isEnabled(),'F5 session reuse');assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);}
+   if(i===2){await savePrivate();await page.reload();await page.bringToFront();await until(()=>up.isEnabled(),'F5 session reuse');assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);}
   }
   if(await up.count()&&await up.isEnabled()){
    await page.getByRole('button',{name:'Tools',exact:true}).click();await page.getByRole('button',{name:'Concede match',exact:true}).click();

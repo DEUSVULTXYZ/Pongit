@@ -111,3 +111,32 @@ This is not a completed hosted community qualification or npm registry publicati
 The immutable pool and arenas are still the `0574742` deployment. Neither this
 documentation update nor the browser fixes establish reserve capacity, complete
 tournaments or a final 24-hour service trial. All public admission gates stay closed.
+
+## Browser and availability corrections, 20 September 03:10 UTC
+
+The corrected replay build `8cae1ab` passed the real-recording check on Chrome
+and Edge at 360 and 1440 px. The test now measures the visible 16:9 court and its
+mobile screenshot has been inspected. Playback, seeking, published 0-7 score,
+focus restoration and zero engine calls passed. The earlier zero-height-court
+report is retained as a functional-only result.
+
+The next live browser run reused the original virtual Mera family on epoch 4,
+Classic match 7, including F5 and an intentionally lost executed response. Both
+player and spectator reached the published 0-7 result. The game ended before its
+later 429 injection, so this is **not** a complete fault-recovery pass. The Chaos
+portion is still pending at this checkpoint. No physical authenticator was used.
+
+The source now separates routine mutable-permission checks from full recovery,
+retaining the established signer and nonce during healthy observation. A failed
+movement requests reconciliation on the next observation rather than waiting
+for the ten-second periodic check; actual server cooldowns still apply. Tests
+cover revocation and lost-response recovery with consecutive nonces. This change
+requires a new private web build and real browser rerun before deployment.
+
+The new `agent-series-soak.ts` monitors the actual pool, its published API,
+controller freshness and physical progress. It records reusable contracts
+separately from progressing games, counts intervals without samples as unknown,
+and fails its continuity checks when all arenas stop during renewal. Its source
+inputs cover every executing backend role. A short diagnostic run cannot pass
+the 24-hour gate, and this monitor never authorizes public opening. Full traffic,
+costs, published results, all effects and real capacity remain separate evidence.

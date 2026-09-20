@@ -177,6 +177,19 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   async read(force=false){await identify(force);return verify(await feed.read(id,force));},
   watch(listener:(s:EngineState)=>void){const stop=feed.watch(id,s=>{try{if(!stopped&&verifiedAt&&now()-verifiedAt<10000)listener(verify(s));}catch{feed.invalidate();}});listeners.add(stop);return()=>{stop();listeners.delete(stop);};},
   async recover(){const s=await serial(recoverNow);if(intention&&!moving)void pump().catch(()=>{});return s;},
+  async synchronize(){return serial(async()=>{
+   // Periodic observation must not rebuild the signer or discard its confirmed
+   // nonce. A missing sender/pending command still takes the full recovery path.
+   await authorizeControls();
+   try{
+    const side=match.a.toLowerCase()===player.toLowerCase()?0:1;
+    const control=await readPoolPermission(node,arena.app,id,side,{key:session.grant.key,expires:session.grant.expires});
+    if(control.revoked)throw Error('This arena authorization was revoked by its owner');
+    if(control.key.toLowerCase()!==session.grant.key.toLowerCase()||control.expires!==session.grant.expires)
+     throw Error('The current arena needs its own confirmed owner authorization');
+    return verify(await feed.read(id));
+   }catch(error){sender=undefined;throw error;}
+  });},
   move(dir:-1|0|1){if(![-1,0,1].includes(dir)||stopped)return Promise.reject(Error('Invalid or stopped arena control'));intention={dir};return pump();},
   concede(){intention=undefined;return serial(()=>sendNow('concede',[id]));},
   renew:(owner:Pick<LocalAccount,'address'|'signTypedData'>)=>permission(owner,'renew'),
