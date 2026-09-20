@@ -2,7 +2,9 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import createMDX from "@next/mdx";
 import {readFileSync,existsSync} from "node:fs";
-import {agentPoolCspOrigins} from '../shared/agent-pool-csp';
+import {createRequire} from 'node:module';
+// Next's compiled config module does not retain a relative parent filename.
+const {agentPoolCspOrigins}=createRequire(path.resolve('web/next.config.ts'))('../shared/agent-pool-csp.ts') as typeof import('../shared/agent-pool-csp');
 const interludeLab=JSON.parse(readFileSync(path.resolve("deployments/interlude-lab.json"),"utf8")) as {node:string};
 const interludeRooms=JSON.parse(readFileSync(path.resolve("deployments/interlude-rooms.json"),"utf8")) as {node:string};
 const independentPath=path.resolve("deployments/independent.json");
