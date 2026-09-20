@@ -108,6 +108,25 @@ test('indexer entry decoder matches the exact Solidity ABI and rejects truncated
  assert.equal(decoded.first.id,String(abiDecoded.first.id));assert.equal(decoded.latest.scoreB,6);assert.equal(decoded.latest.mode,1);assert.equal(decoded.finality,false);
  assert.throws(()=>decodePublishedEntry(encoded.slice(0,-2)));assert.throws(()=>decodePublishedEntry('0x'));
 });
+
+test('reusable admission is discovered from its ticket without borrowing the preceding physical slot',async()=>{
+ const m=publicIndependentManifest({...input,rulesVersion:14,resultVerifier:address(40),admissionSigner:address(41)});
+ const player=address(20),binding={id:14n,epoch:2n,a:player,b:address(21)};
+ const fields=roomsLifecycleHubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
+ for(const status of [1,2,0]){
+  const d:any=Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n]));
+  Object.assign(d,{app:address(11),status,epoch:2n});
+  const base:any={getBlock:async()=>({number:100n,timestamp:200n}),request:async()=>encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d}),
+   readContract:async(c:any)=>{
+    assert.equal(c.blockNumber,100n);
+    const values:any={occupancy:8n,activeMatchOf:14n,grantOf:{key:address(30)},room:{id:8n,proposal:14n,members:[]},invitationPage:[[],0n],
+     proposal:{id:14n,status:2},arenaOf:address(11),ticketOf:[{matchId:14n},binding],boundMatch:{...binding,id:13n},profileOf:{handle:'player',avatar:0}};
+    assert(c.functionName in values,'No snapshot from the prior match may be read');return values[c.functionName];
+   }};
+  const view=await readIndependentLobby(base,m,player);
+  assert.equal(view.binding.id,14n);assert.equal(view.binding.epoch,2n);assert.equal(view.app,address(11));assert.equal(view.recoverySnapshot,null);
+ }
+});
 test('room and match references never resolve across deployments or epochs',()=>{
  assert.equal(parseRoomReference(input.lobby+':12',input.lobby),12n);
  for(const value of [input.family+':12',input.lobby+':0',input.lobby+':12:4','12'])assert.throws(()=>parseRoomReference(value,input.lobby));

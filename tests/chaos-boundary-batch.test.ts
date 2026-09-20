@@ -11,6 +11,10 @@ test('a multiball retired on the contact boundary cannot spend the player charge
  place(s,0,512n*P,100_000_000n);place(s,1,40n*P+232_000_000n*200_000n-1000n,-232_000_000n);
  const [next,,log]=advanceChaosEvents(s,1_200_000n,128,false,chaosContactResolution(11));
  assert.equal(next.balls[1].alive,false);assert.equal(next.effects[1].id,4);assert(!log.some(x=>x.ball===2));
+ for(const version of [14,15]){
+  const [reusable,,events]=advanceChaosEvents(s,1_200_000n,128,false,chaosContactResolution(version));
+  assert.deepEqual(reusable,next,`rules ${version} must use the deployed collision kernel`);assert.deepEqual(events,log);
+ }
  const [old]=advanceChaosEvents(s,1_200_000n,128,false,true);assert.equal(old.effects[1].id,0,'negative control: the previous candidate spent the charge');
 });
 test('Hot Potato opposite simultaneous contacts preserve either prior holder',()=>{

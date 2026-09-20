@@ -12,7 +12,8 @@ import {engineJobIdentity,engineReceiptOutcome,reconcileEngineJobs} from './room
 import {assertCommandEpoch} from './rooms-command-epoch';
 
 /** Each application/epoch has its own journal and writer. Nothing queues behind another arena. */
-export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12|13;node?:PublicClient;feed?:EngineFeed}){
+export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12|13|14;node?:PublicClient;feed?:EngineFeed}){
+ if(runtime?.rulesVersion===14)throw Error('Reusable human commands require their dedicated archive and admission worker');
  const rules=independentRules({rulesVersion:runtime?.rulesVersion}),abi=rules.arena;
  const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
  const client={app,abi:abi as Abi,node};

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeAbiParameters,zeroAddress,zeroHash,type Address} from 'viem';
-import {independentRules} from '../shared/independent-rules';
+import {independentRules,independentControlArgs} from '../shared/independent-rules';
 import {publicIndependentManifest} from '../shared/independent';
 import {independentReader} from '../shared/independent-read';
 import {initial} from '../shared/physics-v2';
@@ -14,8 +14,19 @@ test('historical manifests keep their ABI while unknown versions fail closed',()
  assert.equal(r.permissionDomain,'PONGIT Pooled Arena');assert(r.arena.some(x=>x.type==='function'&&x.name==='submitRandomness'));
  assert(!r.settlement.some(x=>x.type==='function'&&String(x.name)==='checkpointReady'));
  assert(!JSON.stringify(current).includes('excluded'));
- for(const version of [0,9,11,'12',14])assert.throws(()=>publicIndependentManifest({...raw,rulesVersion:version}));
+ for(const version of [0,9,11,'12',15])assert.throws(()=>publicIndependentManifest({...raw,rulesVersion:version}));
  assert.equal(independentRules({}).permissionDomain,'PONGIT Arena Revocation');
+});
+test('reusable human rules require public authority references and explicit epoch-bound controls',()=>{
+ assert.throws(()=>publicIndependentManifest({...raw,rulesVersion:14}));
+ const m=publicIndependentManifest({...raw,rulesVersion:14,resultVerifier:address(30),admissionSigner:address(31),admissionKey:'excluded'});
+ const r=independentRules(m);assert.equal(r.permissionDomain,'PONGIT Reusable Arena');
+ assert(!JSON.stringify(m).includes('excluded'));
+ const input=r.arena.find(x=>x.type==='function'&&x.name==='input')!;assert.equal(input.type,'function');
+ if(input.type==='function')assert.deepEqual(input.inputs.slice(0,2).map(x=>x.name),['epoch','id']);
+ assert.deepEqual(independentControlArgs(14,7n,[99n,1,2n,1000n]),[7n,99n,1,2n,1000n]);
+ assert.deepEqual(independentControlArgs(13,7n,[99n,1,2n,1000n]),[99n,1,2n,1000n]);
+ assert.throws(()=>independentControlArgs(14,0n,[99n]));assert.throws(()=>independentControlArgs(14,7n,[]));
 });
 test('readiness is explicit to rules13 without changing historical countdown permissions',()=>{
  const legacy=independentRules(publicIndependentManifest({...raw,rulesVersion:12}));

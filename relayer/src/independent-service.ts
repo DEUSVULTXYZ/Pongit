@@ -32,6 +32,9 @@ type Options={db:Pool;operatorDb?:Pool;base:PublicClient;body:(r:IncomingMessage
 export async function independentService(o:Options){
  const path=process.env.PONG_INDEPENDENT_MANIFEST;if(!path)return null;
  const m=publicIndependentManifest(JSON.parse(await readFile(path,'utf8'))),{db,base}=o;
+ // The reusable lifecycle has a distinct proof/admission worker. Until that
+ // worker is wired, never run the one-match close/capture loop on rules 14.
+ if(m.rulesVersion===14)throw Error('Reusable human service adapter is not yet qualified');
  // Explicit private qualification opt-in, never enabled by merely replacing a
  // production manifest. Public rollout still requires hosted/browser evidence.
  if((m.rulesVersion===12||m.rulesVersion===13)&&process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION!=='isolated-vps')throw Error('Event arena service qualification is not complete');

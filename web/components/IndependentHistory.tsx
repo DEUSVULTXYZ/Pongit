@@ -6,7 +6,7 @@ import {Court} from './Court';
 import type {EngineState} from '../../shared/engine-stream';
 import {restoreEngineFrame} from '../../shared/engine-frame-json';
 const short=(p:string)=>p.slice(0,6)+'…'+p.slice(-4);
-export function IndependentHistory({player,matchId,rulesVersion=4}:{player:Address;matchId?:bigint;rulesVersion?:4|12|13}){
+export function IndependentHistory({player,matchId,rulesVersion=4}:{player:Address;matchId?:bigint;rulesVersion?:4|12|13|14}){
  const request=useRef(0);
  const [rows,setRows]=useState<any[]>([]),[frames,setFrames]=useState<EngineState[]>([]),[index,setIndex]=useState(0),[playing,setPlaying]=useState(false),[message,setMessage]=useState('Loading match history'),[selected,setSelected]=useState<string>();
  async function load(id:string){

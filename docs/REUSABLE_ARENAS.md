@@ -339,3 +339,52 @@ decoding handles the named Header, completion validates the nested result, and
 input receipts/journal recovery distinguish the epoch from the logical match ID.
 The full TypeScript suite passes 533 tests, including these regressions. This
 does not establish hosted agent gameplay, tournaments or the final 24-hour gate.
+
+### Actual reuse and publication interruption, 20 September 16:16 UTC
+
+The corrected private agent pool is
+`0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5`, with arena
+`0xf868bdb4669f4de471555ccadc3bac5589a3fcaa` actually open in epoch 1.
+Two other registered arenas have not been admitted and are not counted as capacity.
+An expired, never-executed ticket was cancelled, published and captured without
+closing the epoch. Subsequent natural five-minute Classic (4-3) and Chaos (2-4)
+matches reused that same arena and published successfully. Chaos accepted 19
+verified randomness proofs and activated ten distinct effects. The original
+fixture's earlier Chaos proof-cache failure remains a failure.
+
+The next Classic match finished in the engine, but its result did not publish
+within 180 seconds. The resumed qualification is therefore FAILED, not complete.
+At 16:11 UTC the hub and node both reported 1,030 committed batches. Monad held
+four results and the engine held five, with 15 pending changed slots. No locally
+uncertain or reverted command was present in the qualifier journal.
+
+The last successful commit, at Monad block 64206338, is
+`0xe4aba90fe8e206b7d18e367033119e14918722e1ce21c631f02344792ca74975`.
+It contained 1,956 calldata bytes, six diffs and one 175-byte engine transaction.
+Its publisher was `0xB28E684815b095aB5Fb324214cfEa63d76F3d691`. The receipt
+charged 8,000,000 gas at 102 gwei (0.816 test MON), with a 182.4 gwei fee ceiling
+(1.4592 test MON maximum). The publisher's later balance was 0.706122920494194802
+test MON and its confirmed/pending nonces were both 65991. This is evidence of
+insufficient funding for an equivalent next publication, not proof that every
+prior interruption had the same cause. No funds have been transferred to it.
+The documented manual commit endpoint requires its operator token; the single
+unauthenticated request was rejected and was not retried.
+
+The human arena `0x60cb8c03a2f4f0900b72788680df24e994a2ea30` successfully
+released epoch 2 at block 64207079, using 1,057,504 gas. Its roots were sealed
+and recovered; epoch 3 was not opened. A separate read-only fork test using the
+actual hub runtime released 1,200 batches over 86 reused slots within 1,451,957
+gas before refunds. This supports the bounded-storage design, but is not hosted
+capacity, publication continuity or maximum-duration qualification.
+
+### Browser compatibility for reusable rules
+
+Rules 14 selects the reusable human ABIs and signature domain, obtains the
+logical match from the Monad ticket, and sends the actual epoch with compact
+controls. Receipt decoding uses the same arguments. A previous physical slot
+must not supply a recovery score for a newly assigned ticket. Rules 14 and 15
+also select the complete Chaos collision kernel; historical rules retain their
+own algorithms. The full TypeScript suite passes 548 tests. The legacy service
+explicitly rejects rules 14 until its dedicated admission/archive worker is
+wired and qualified. These changes do not activate public admissions or claim
+a passing browser or financial trial for the reusable candidate.

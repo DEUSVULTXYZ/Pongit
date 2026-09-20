@@ -14,7 +14,7 @@ const address=(n:string)=>('0x'+n.padStart(40,'0')) as `0x${string}`;
 test('human rules retain 6 and 8 history and add 9; agent rules are separate',()=>{
  assert.deepEqual([5,6,7,8,9,10,11,'8'].map(isChaosEventsRules),[false,true,false,true,true,false,false,false]);
  assert.deepEqual([6,7,8].map(chaosResolvesEveryContact),[false,false,true]);
- assert.deepEqual([6,7,8,9,10,11].map(chaosContactResolution),[false,false,true,'complete','complete','complete']);
+ assert.deepEqual([6,7,8,9,10,11,12,13,14,15,'15',16].map(chaosContactResolution),[false,false,true,'complete','complete','complete','complete','complete','complete','complete',false,false]);
 });
 
 test('finance bindings accept historical and current human kernels but never agent kernels',async()=>{

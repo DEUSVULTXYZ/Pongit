@@ -13,7 +13,7 @@ import {measuredFetch,takeRpcSamples} from '../../shared/rpc-metrics';
 import {independentReader} from '../../shared/independent-read';
 import {familyGrantTypes,lobbyCommandTypes,ownerWriteTypes,independentDiagnosticsMessage,type FamilyGrant,type IndependentManifest,type ChainOperation} from '../../shared/independent';
 import {abi as familyAbi} from '../../shared/abi-independent-ArcadeFamily';
-import {independentRules} from '../../shared/independent-rules';
+import {independentRules,independentControlArgs} from '../../shared/independent-rules';
 import {abi as profileAbi} from '../../shared/abi-independent-ProfileRegistry';
 import {browserBase} from './base-read';
 import {lobbyCommandContext} from '../../shared/independent-command';
@@ -145,7 +145,8 @@ export async function disconnectFamily(m:IndependentManifest,s:FamilySession,act
    if(active){
     const engine=createIndependentArena(m,active.app),rev=await engine.client.read('authorizationRevision',[player]) as bigint;
     const signature=await identity.account.signTypedData({domain:{name:rules.permissionDomain,version:'1',chainId:10143,verifyingContract:active.app},types:{RevokeArena:[{name:'player',type:'address'},{name:'epoch',type:'uint256'},{name:'matchId',type:'uint256'},{name:'revision',type:'uint256'},{name:'deadline',type:'uint64'}]},primaryType:'RevokeArena',message:{player,epoch:active.binding.epoch,matchId:active.binding.id,revision:rev,deadline}});
-    await independentApi('arena-command',{app:active.app,data:encodeFunctionData({abi:arenaAbi,functionName:'revokeActive',args:[player,deadline,signature]})});
+    const args=rules.version===14?[BigInt(active.binding.epoch),BigInt(active.binding.id),player,deadline,signature]:[player,deadline,signature];
+    await independentApi('arena-command',{app:active.app,data:encodeFunctionData({abi:arenaAbi as Abi,functionName:'revokeActive',args})});
    }
   }catch{activeError=true;}
   try{await sponsorCall(m,m.family,encodeFunctionData({abi:familyAbi,functionName:'revoke',args:[player,nonce,deadline,signature]}));}
@@ -166,6 +167,7 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
  return {client,feed,journal,async session(s:FamilySession){
   const d=await readHubDelegation(client.base,m.hub,app);if(d.status!==1||Number(d.expiresAt)*1000<=Date.now())throw Error('This arena is recovering. Your arcade authorization is unchanged.');
   const node=await client.status();if(BigInt(node.epoch)!==d.epoch)throw Error('Waiting for the current arena epoch');
+  if(m.rulesVersion===14&&BigInt((node as any).baseBlock??-1)!==d.baseBlock)throw Error('Waiting for the current arena base state');
   const binding:any=await client.read('boundMatch',[]);
   if(BigInt(binding.epoch)!==d.epoch||BigInt(binding.id)===0n||![binding.a,binding.b].some(a=>a.toLowerCase()===s.grant.player.toLowerCase()))throw Error('Arena participant binding changed');
   journal.bindDirect(s.grant.key,d.epoch,BigInt(binding.id),s.grant.expires);
@@ -177,6 +179,7 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
    if(journal.pending(s.grant.key))throw Error('Waiting for confirmation of the previous game command');
   }
   const expires=Number(s.grant.expires)-Math.floor(Date.now()/1000);if(expires<=0)throw Error('Renew arcade session');
-  return compactArenaSession({node:client.node,abi:arenaAbi as Abi,app,key:s.key,match:BigInt(binding.id),expires:s.grant.expires});
+  const compact=compactArenaSession({node:client.node,abi:arenaAbi as Abi,app,key:s.key,match:BigInt(binding.id),expires:s.grant.expires,...(m.rulesVersion===14?{epoch:d.epoch}:{})});
+  return {send:(name:string,args:readonly unknown[]=[])=>compact.send(name,independentControlArgs(m.rulesVersion??4,d.epoch,args))};
  }};
 }
