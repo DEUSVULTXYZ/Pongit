@@ -18,6 +18,22 @@ const nodes=new Set(manifest.arenas.map(a=>new URL(a.node!).origin));
 let saved:any={lobby:manifest.lobby,players:[],stage:0};
 try{await readFile(secret);throw Error('Preserve and reconcile the previous browser run. Never import its PRF credential.');}catch(e){if((e as any).code!=='ENOENT')throw e;}
 await mkdir(out,{recursive:true});
+const capacityWait=Number(process.env.PONG_BROWSER_ARENA_WAIT_MS??0);
+assert(Number.isSafeInteger(capacityWait)&&capacityWait>=0&&capacityWait<=4200000);
+if(capacityWait){
+ const began=Date.now(),deadline=began+capacityWait;let available=false;
+ while(Date.now()<deadline){
+  try{
+   const response=await fetch('http://independent-events-service:4012/independent/config',{signal:AbortSignal.timeout(6000)});
+   assert(response.ok);const config=await response.json() as any;
+   assert.equal(config.manifest.lobby.toLowerCase(),manifest.lobby.toLowerCase());
+   available=config.arenas.some((a:any)=>a.stage==='available');
+  }catch{available=false;}
+  await writeFile(out+'/capacity-wait.json',JSON.stringify({beganAt:new Date(began).toISOString(),observedAt:new Date().toISOString(),available,lobby:manifest.lobby}));
+  if(available)break;await new Promise(resolve=>setTimeout(resolve,5000));
+ }
+ assert(available,'No verified released arena before browser qualification deadline');
+}
 const browser=await chromium.launch({headless:true,args:['--no-sandbox'],channel:process.env.BROWSER_CHANNEL??'chrome'});
 const pages:Page[]=[],contexts:BrowserContext[]=[],devices:any[]=[],counts=[0,0,0,0];
 const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:manifest.rulesVersion,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
