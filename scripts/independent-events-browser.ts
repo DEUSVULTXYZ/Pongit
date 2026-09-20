@@ -94,9 +94,10 @@ try{
   }
   await b.goto(saved.roomUrl);await b.getByRole('button',{name:'Accept',exact:true}).click();
   await until(()=>b.getByRole('button',{name:'Members 2',exact:true}).isVisible(),'rival joined');
-  await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();
-  await until(()=>spectator.getByRole('button',{name:'Members 3',exact:true}).isVisible(),'spectator joined');
-  await Promise.all([a,b].map(p=>p.getByRole('button',{name:'Accept',exact:true}).click()));await persist();
+  await Promise.all([
+   ...[a,b].map(p=>p.getByRole('button',{name:'Accept',exact:true}).click()),
+   (async()=>{await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();await until(()=>spectator.getByRole('button',{name:'Members 3',exact:true}).isVisible(),'spectator joined');})(),
+  ]);await persist();
   await Promise.all([a,b,spectator].map(p=>p.locator('.rooms-canvas canvas').waitFor({timeout:720000})));
   saved.stage=2;await persist();report.checks.push('Three members in a real Chaos room, dual consent and automatic spectator');
  }
