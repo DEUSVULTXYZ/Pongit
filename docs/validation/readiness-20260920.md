@@ -4,6 +4,27 @@ Public production remains `7d35926`, with human, Agent Arcade and tournament
 admissions closed. This checkpoint does not authorize reopening. No unchanged
 final 24-hour trial has begun.
 
+## Follow-up at 13:05 UTC
+
+The corrected Edge fixture `browser-chaos-ready5` passed against the actual
+private rules-13 deployment and unchanged web `359523f`. Three original virtual
+Mera PRF accounts joined a Chaos room; both players and the spectator saw 3/2/1.
+The spectator made a root-signed live test-MON bet. F5 restored the same player
+authorization. The two players sent 68 and 70 confirmed movement/release inputs,
+and the game ended naturally 7-4. All five layout widths passed. This is not
+physical-authenticator testing, 100 direction changes per player, rules-14
+qualification or evidence of continuous capacity. The failed run 4 is retained.
+
+The first hosted reusable rules-14 fixture admitted four new identities after
+the engine opened, then ran Classic and Chaos sequentially in arena
+`0x60cb8c03a2f4f0900b72788680df24e994a2ea30`, epoch 1. Classic's result was
+published and captured. Chaos accepted two actual drand proofs and finished by
+concession, but the driver stopped at its Monad capture because another writer
+temporarily owned the operator journal. The original report remains failed.
+The next driver waits only for explicit pre-submission journal contention and
+reconstructs confirmed inputs/proofs on restart. It never changes an uncertain
+operation's ID, nonce or signed bytes. No production gate was changed.
+
 ## Follow-up at 11:00 UTC
 
 Private human web `359523f` started at 10:50 UTC; public production is unchanged.

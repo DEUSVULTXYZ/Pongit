@@ -16,13 +16,18 @@ import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
 import {abi as ratingsAbi} from '../shared/abi-independent-PublishedRatings';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {rpcSamples} from '../shared/rpc-metrics';
+import {retryOperatorContention} from '../shared/operator-contention';
 
 assert.equal(process.env.PONG_REUSABLE_QUALIFICATION,'isolated-vps');
 const manifestPath=process.env.PONG_INDEPENDENT_MANIFEST!,signerPath=process.env.PONG_ADMISSION_KEY_FILE!;
 assert(manifestPath.startsWith('/secrets/')&&signerPath.startsWith('/secrets/'));
 const m=JSON.parse(await readFile(manifestPath,'utf8'));assert.equal(m.production,false);assert.equal(m.rulesVersion,14);assert.equal(m.status,'sealed');
 const admission=privateKeyToAccount(JSON.parse(await readFile(signerPath,'utf8')).privateKey);assert.equal(admission.address.toLowerCase(),m.admissionSigner.toLowerCase());
-const t=await chainTools(m.prefix+':reuse-live');
+const operator=await chainTools(m.prefix+':reuse-live');
+const t={...operator,
+ write:(...args:Parameters<typeof operator.write>)=>retryOperatorContention(()=>operator.write(...args)),
+ submit:(...args:Parameters<typeof operator.submit>)=>retryOperatorContention(()=>operator.submit(...args)),
+};
 const path='/secrets/reuse-live.json',out='artifacts/reusable-candidate/hosted.json';
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2);
 let state:any;try{state=JSON.parse(await readFile(path,'utf8'));assert.equal(state.lobby,m.lobby);}catch(e){if((e as any).code!=='ENOENT')throw e;state={lobby:m.lobby,app:m.arenas[0].app,createdAt:new Date().toISOString(),players:Array.from({length:4},()=>({root:generatePrivateKey(),arcade:generatePrivateKey()})),operations:{},jobs:[],matches:[],results:[]};}
@@ -95,7 +100,13 @@ async function play(mode:0|1){
  const id=BigInt(match.id),epoch=BigInt(state.epoch);
  await Promise.all([command(p,`accept-${mode}-a`,'acceptProposal',[id]),command(p+1,`accept-${mode}-b`,'acceptProposal',[id])]);
  await t.write(`assign-${mode}`,m.lobby,lobbyAbi,'assignNext');assert.equal((await read(m.lobby,lobbyAbi,'arenaOf',[id])).toLowerCase(),app.toLowerCase());
- const row:any={id,epoch,mode,inputs:0,proofs:0,startedAt:new Date().toISOString()};report.matches.push(row);await flush();
+ // A restart after execution must retain actual confirmed commands and proof
+ // evidence, even if the final Monad capture was waiting for another writer.
+ const confirmed=(prefix:string)=>state.jobs.filter((job:any)=>job.state==='confirmed'&&job.operation.startsWith(prefix)).length;
+ const row:any=match.report??{id,epoch,mode,startedAt:new Date().toISOString()};
+ row.inputs=confirmed(`input-${id}-`);row.proofs=confirmed(`proof-${id}-`);
+ if(state.jobs.some((job:any)=>job.operation===`concede-${id}`&&job.state==='confirmed'))row.conceded=true;
+ match.report=row;report.matches.push(row);await save();await flush();
  const [ticket,binding]=await read(m.lobby,lobbyAbi,'ticketOf',[id]) as [ReusableTicket,ReusableBinding];
  if(!match.admitted){
   const block=await t.base.getBlock(),hub=await readHubDelegation(t.base,m.hub,app,block.number);
@@ -131,7 +142,7 @@ async function play(mode:0|1){
     const proof=await beacon.read(round);await send(`proof-${id}-${request}`,'submitRandomness',[epoch,id,request,proof.signature],admission);row.proofs++;
    }
   }
-  await flush();await wait(200);
+  await save();await flush();await wait(200);
  }
  snapshot=await node.readContract({address:app,abi:arenaAbi,functionName:'getSnapshot',args:[id]});
  if(snapshot.phase===2n){await send(`concede-${id}`,'concede',[epoch,id],keys[p+1]);row.conceded=true;}
