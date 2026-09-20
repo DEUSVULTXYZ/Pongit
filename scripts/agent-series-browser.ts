@@ -121,10 +121,14 @@ try{
   const up=page.getByRole('button',{name:'Move up',exact:true});await up.waitFor({timeout:120000});await until(()=>up.isEnabled(),'Controllable arena');
   await watch.goto(url);await watch.locator('canvas').waitFor();
   for(let i=0;i<60;i++){
-   if(!await up.count()||!await up.isEnabled())break;
+   if(!await up.count())break;
+   // A deliberately lost reply or 429 can briefly disable controls. Wait for
+   // reconciliation instead of silently skipping the rest of the test.
+   if(!await up.isEnabled())await until(async()=>!await up.count()||await up.isEnabled(),'Automatic control recovery',30000);
+   if(!await up.count())break;
    if(mode===0&&i===5)loseReply=true;if(mode===0&&i===12)throttle=true;
    await page.keyboard.down(i%2?'s':'w');await sleep(100);await page.keyboard.up(i%2?'s':'w');await sleep(100);
-   if(i===25){await savePrivate();await page.reload();await until(()=>up.isEnabled(),'F5 session reuse');assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);}
+   if(i===4){await savePrivate();await page.reload();await until(()=>up.isEnabled(),'F5 session reuse');assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);}
   }
   if(await up.count()&&await up.isEnabled()){
    await page.getByRole('button',{name:'Tools',exact:true}).click();await page.getByRole('button',{name:'Concede match',exact:true}).click();
@@ -137,7 +141,9 @@ try{
   await savePrivate();assert.equal(assertions,initialAssertions,'Family reuse requested a new ceremony');
   report.matches.push({ref,mode,result:result.result,scoreMatched:true,authAssertions:assertions});
  }
- assert(!loseReply&&!throttle,'Both labelled faults must actually be exercised');assert.equal(report.errors.length,0);report.passed=true;
+ assert(!loseReply&&!throttle,'Both labelled faults must actually be exercised');
+ for(const mode of [0,1])assert(report.checks.includes(`Mode ${mode}: F5 reused scoped key`),'A complete browser pass requires F5 in both modes');
+ assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=(e as Error).message.split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);process.exitCode=1;}
 finally{
  clearInterval(progress);while(progressBusy)await sleep(50);
