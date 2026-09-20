@@ -17,6 +17,10 @@ import {reusableAgentArenaAbi as abi} from '../shared/abi-ReusableAgentArena';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 import {agentCatalogAbi as catalogAbi} from '../shared/abi-AgentCatalog';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
+import {measuredFetch} from '../shared/rpc-metrics';
+import {agentMetrics} from '../relayer/src/agents/metrics';
+import {receiptFrame} from '../shared/engine-stream';
+import {reusableResults} from '../shared/reusable-results';
 
 assert.equal(process.env.PONG_REUSABLE_AGENT_QUALIFICATION,'isolated-vps');
 assert.equal(process.getuid?.(),1000);
@@ -27,7 +31,8 @@ const app=m.arenas[0].app as Address;assert(!protectedApps.includes(app.toLowerC
 const bridge=privateKeyToAccount(m.admissionKey),signer=privateKeyToAccount(m.engineKey);
 const run=process.env.PONG_AGENT_QUALIFICATION_RUN??'';assert(/^(?:|[a-z0-9-]{1,30})$/.test(run));
 const suffix=run?'-'+run:'';
-const tools=await chainTools(m.prefix+':reuse-live'+suffix);
+const metrics=await agentMetrics('/diagnostics/reusable','qualification');
+const tools=await chainTools(m.prefix+':reuse-live'+suffix,measuredFetch('monad'));
 const write=(...args:Parameters<typeof tools.write>)=>retryOperatorContention(()=>tools.write(...args));
 const read=(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[],blockNumber?:bigint)=>tools.base.readContract({address,abi,functionName,args,blockNumber} as any) as Promise<any>;
 const stringify=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2);
@@ -78,7 +83,14 @@ async function send(operation:string,method:string,args:readonly unknown[]){
    if(!receipt)receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);
    assert.equal(receipt?.transactionHash?.toLowerCase(),job.hash.toLowerCase(),'Missing exact receipt');
    assert(['0x0','0x1','success','reverted'].includes(String(receipt.status)),'Unknown receipt');
-   job.state=['0x1','success'].includes(String(receipt.status))?'confirmed':'reverted';await save();
+   const confirmed=['0x1','success'].includes(String(receipt.status));
+   if(confirmed){
+    const frame=receiptFrame(receipt,app);assert(frame,'Exact receipt logs required');
+    const results=reusableResults(abi,app,15,frame);
+    state.receipted??=[];
+    for(const result of results)if(!state.receipted.some((r:any)=>r.transactionHash===result.transactionHash&&r.leaf===result.leaf))state.receipted.push(result);
+   }
+   job.state=confirmed?'confirmed':'reverted';await save();
    assert.equal(job.state,'confirmed','Confirmed engine revert');return;
   }catch(e){
    if(job.state==='reverted'||Date.now()>=untilAt)throw e;
@@ -89,6 +101,36 @@ async function send(operation:string,method:string,args:readonly unknown[]){
 }
 const parameters=getAbiItem({abi,name:'publishedResult'}).outputs,index=new PublishedResultIndex();
 for(const r of state.results)index.append(r.index,r.leaf,r.root);
+async function expiredAdmission(){
+ if(state.expiryTest?.captured){report.expiredAdmission=state.expiryTest.report;return;}
+ if(!state.expiryTest){
+  await write('expiry-qualification',common.pool,poolAbi,'admitQualification');
+  const entry=await read(common.pool,poolAbi,'laneRecord',[1]);
+  assert.equal(entry.ref.arena.toLowerCase(),app.toLowerCase());assert.equal(entry.ref.epoch,BigInt(state.epoch));
+  state.expiryTest={id:String(entry.ref.id),startedAt:new Date().toISOString()};await save();
+ }
+ const id=BigInt(state.expiryTest.id),epoch=BigInt(state.epoch),ref={chainId:10143n,arena:app,epoch,id};
+ const [ticket,binding]=await read(common.pool,poolAbi,'ticketOf',[ref]) as [ReusableTicket,ReusableAgentBinding];
+ const before=await Promise.all([binding.a,binding.b].map(a=>read(common.catalog,catalogAbi,'identity',[a])));
+ await until(async()=>(await node.getBlock()).timestamp>ticket.expires,'actual admission expiry',150000);
+ await send('cancel-expired-'+id,'cancelAdmission',[ticket,binding,await bridge.sign({hash:reusableAdmissionDigest(ticket)})]);
+ const result=await node.readContract({address:app,abi,functionName:'publishedResult'});
+ assert.equal(result.match_.ref.id,id);assert.equal(result.match_.status,4);assert.equal(result.match_.scoreA+result.match_.scoreB,0);
+ const canonical=encodeAbiParameters(parameters,[result]);
+ const leaf=publishedResultLeaf({chainId:10143n,arena:app,epoch},id,reusableAdmissionDigest(ticket),keccak256(canonical));
+ const [actualEpoch,count,root]=await node.readContract({address:app,abi,functionName:'resultCommitment'});assert.equal(actualEpoch,epoch);
+ if(!state.results.some((r:any)=>r.id===String(id))){index.append(count-1,leaf,root);state.results.push({id:String(id),index:count-1,leaf,root,canonical});await save();}
+ await until(async()=>{const [e,n,r]=await read(app,abi,'resultCommitment');return e===epoch&&n===count&&r===root;},'published cancellation',180000);
+ await write('capture-expired-'+id,common.pool,poolAbi,'captureProof',[ref,result,index.proof(count-1,{count,root})]);
+ assert((await read(common.pool,poolAbi,'record',[ref])).captured);
+ assert.equal((await readHubDelegation(tools.base,common.hub,app)).status,1,'Cancellation must not close the arena');
+ for(let i=0;i<2;i++){
+  const owner=[binding.a,binding.b][i];assert.equal(await read(common.pool,poolAbi,'playing',[owner]),'0x'+'00'.repeat(32));
+  assert.equal((await read(common.catalog,catalogAbi,'identity',[owner])).qualified,before[i].qualified,'Cancellation cannot qualify a bot');
+ }
+ state.expiryTest.captured=true;state.expiryTest.report={passed:true,id:String(id),epoch:String(epoch),publishedCount:count,root,
+  startedAt:state.expiryTest.startedAt,finishedAt:new Date().toISOString()};report.expiredAdmission=state.expiryTest.report;await save();await flush();
+}
 async function play(serial:number){
  let match=state.matches[serial];
  if(match?.captured){report.matches.push(match.report);return;}
@@ -170,10 +212,11 @@ try{
  for(const pending of state.jobs.filter((j:any)=>j.state==='uncertain')){
   const tx=parseTransaction(pending.raw);assert.equal(tx.to?.toLowerCase(),app.toLowerCase());assert.equal(tx.chainId,4242);
   const decoded=decodeFunctionData({abi,data:tx.data!});
-  assert(['admit','start','tick','submitRandomness'].includes(decoded.functionName));
+  assert(['admit','cancelAdmission','start','tick','submitRandomness'].includes(decoded.functionName));
   await send(pending.operation,decoded.functionName,decoded.args??[]);
  }
  await write('private-admissions',common.pool,poolAbi,'setAdmissions',[true]);
+ if(process.env.PONG_AGENT_TEST_EXPIRED_ADMISSION==='1')await expiredAdmission();
  for(let serial=0;serial<16;serial++){
   const identities=await Promise.all(m.bots.map((b:any)=>read(common.catalog,catalogAbi,'identity',[b.agent])));
   if(identities.every((i:any)=>i.qualified===3))break;
@@ -187,4 +230,4 @@ try{
  assert(!state.jobs.some((j:any)=>j.state==='uncertain'));await write('close-after-qualification',common.pool,poolAbi,'closeReusableArena',[app]);
  const hub=await readHubDelegation(tools.base,common.hub,app);assert.equal(hub.status,2);report.releaseAt=String(hub.stakeUnlockAt);report.batches=String(hub.batchIndex);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;}
-finally{report.finishedAt=new Date().toISOString();await save();await flush();await tools.close();console.log(stringify({passed:report.passed,error:report.error,matches:report.matches.length,app}));}
+finally{report.finishedAt=new Date().toISOString();await save();await flush();await metrics();await tools.close();console.log(stringify({passed:report.passed,error:report.error,matches:report.matches.length,app}));}
