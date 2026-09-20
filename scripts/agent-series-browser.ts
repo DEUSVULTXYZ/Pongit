@@ -3,7 +3,8 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename} from 'node:fs/promises';
 import {chromium,type BrowserContext,type Page} from '@playwright/test';
-import {createPublicClient,http} from 'viem';
+import {createPublicClient,http,parseTransaction,decodeFunctionData} from 'viem';
+import {seriesAgentArenaAbi} from '../shared/abi-SeriesAgentArena';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {validateAgentPoolManifest,type PoolMatchView} from '../shared/agent-pool';
 import type {AgentMatchRef} from '../shared/agents';
@@ -67,6 +68,13 @@ async function context(player=false){
    if(player&&loseReply&&method==='interlude_sendTransaction'){
     const data=await response.json();assert(response.ok()&&!data.error,'Withhold only an executed transaction response');
     loseReply=false;report.faults.push({at:new Date().toISOString(),kind:'Reply lost after execution'});return route.abort('failed');
+   }
+   if(player&&method==='interlude_sendTransaction'&&report.faults.length===2){
+    const payload=await response.json(),receipt=payload.result;
+    if(response.ok()&&!payload.error&&['0x1','success'].includes(String(receipt?.status))){
+     const tx=parseTransaction(body.params[0]),call=decodeFunctionData({abi:seriesAgentArenaAbi,data:tx.data!});
+     if(call.functionName==='input')report.controlReceiptAfterFaults={at:new Date().toISOString(),app:tx.to,nonce:tx.nonce,hash:receipt.transactionHash};
+    }
    }
    return route.fulfill({response});
   }
@@ -173,21 +181,28 @@ try{
   assert(manifest.arenas.some(a=>a.app.toLowerCase()===ref.app.toLowerCase()));
   report.current={ref,mode,url};await checkpoint();
   const up=page.getByRole('button',{name:'Move up',exact:true});await up.waitFor({timeout:120000});await until(()=>up.isEnabled(),'Controllable arena');
+  // Check F5 before fault injection. A short genuine loss can end a match while
+  // a fault is being reconciled; absent terminal controls are not a 45s locator.
+  await savePrivate();await page.reload();await page.bringToFront();
+  await until(()=>up.isEnabled({timeout:1000}).catch(()=>false),'F5 session reuse');
+  assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);await checkpoint();
   await watch.goto(url);await watch.locator('canvas').waitFor();await page.bringToFront();
   assert.equal(await page.evaluate(()=>document.hidden),false,'The controlled browser must be in the foreground');
   for(let i=0;i<60;i++){
    if(!await up.count())break;
    // A deliberately lost reply or 429 can briefly disable controls. Wait for
    // reconciliation instead of silently skipping the rest of the test.
-   if(!await up.isEnabled())await until(async()=>!await up.count()||await up.isEnabled(),'Automatic control recovery',30000);
+   if(!await up.isEnabled({timeout:1000}).catch(()=>false))await until(async()=>!await up.count()||await up.isEnabled({timeout:1000}).catch(()=>false),'Automatic control recovery',30000);
    if(!await up.count())break;
    // Exercise faults early: a novice who misses every serve can lose in under
    // forty seconds. A later unused injection must never count as passing.
    if(round===0&&i===0)loseReply=true;if(round===0&&i===1)throttle=true;
    await page.keyboard.down(i%2?'s':'w');await sleep(100);await page.keyboard.up(i%2?'s':'w');await sleep(100);
-   if(i===2){await savePrivate();await page.reload();await page.bringToFront();await until(()=>up.isEnabled(),'F5 session reuse');assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);}
+   if(round===0&&report.faults.length===2&&await up.isEnabled({timeout:1000}).catch(()=>false)){
+    report.controlRecoveredAfterFaults={at:new Date().toISOString(),ref,authAssertions:assertions};
+   }
   }
-  if(await up.count()&&await up.isEnabled()){
+  if(await up.count()&&await up.isEnabled({timeout:1000}).catch(()=>false)){
    await page.getByRole('button',{name:'Tools',exact:true}).click();await page.getByRole('button',{name:'Concede match',exact:true}).click();
   }
   await until(async()=>{const r=await fetch(`${api}/agents/matches/${ref.app}/${ref.epoch}/${ref.id}`);const v=await r.json();return r.ok&&!!v.result;},'Published result',390000);
@@ -202,6 +217,8 @@ try{
  for(const kind of ['Reply lost after execution','Injected 429 before send'])
   assert.equal(report.faults.filter((f:{kind:string})=>f.kind===kind).length,1,`Required fault was not exercised: ${kind}`);
  for(const mode of [0,1])assert(report.checks.includes(`Mode ${mode}: F5 reused scoped key`),'A complete browser pass requires F5 in both modes');
+ assert(report.controlRecoveredAfterFaults,'The actual two injected faults must be followed by controllable play');
+ assert(report.controlReceiptAfterFaults,'A successful input receipt after both faults is required');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=(e as Error).message.split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);process.exitCode=1;}
 finally{
