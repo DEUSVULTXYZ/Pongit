@@ -20,27 +20,39 @@ library ReusableAgentBinding {
         if(player==address(uint160(S.get(w,0))))return S.get(w,64)==0;
         return player==address(uint160(S.get(w,1)))&&S.get(w,65)==0;
     }
-    function controller(A.Controller memory c,address player,HousePolicies policies,uint64 issuedAt) private view {
+    function controller(A.Controller memory c,address player,HousePolicies policies,uint64 issuedAt,uint256 at,bool cancelling) private view {
         require(c.house<=8,"controller identity");
         if(c.codeHash==0){
-            require(c.house==0&&c.memoryWord==0&&c.key!=address(0)&&c.expires>block.timestamp&&c.expires<=issuedAt+2 hours,"human permission");
+            require(c.house==0&&c.memoryWord==0&&c.key!=address(0)&&c.expires>at&&c.expires<=issuedAt+2 hours,"human permission");
         }else{
             require(c.key==address(0)&&c.expires==0&&c.memoryWord>>192==0,"strategy has no external controls");
             // The immutable strategy must already exist in the engine's pinned
             // base state. New code waits for an arena opened after deployment.
-            require((c.house==0?player:address(policies)).codehash==c.codeHash,"strategy not in engine base state");
+            // An expired ticket can be cancelled even if its strategy was not
+            // present at the pinned block. Cancellation never calls that code.
+            if(!cancelling)require((c.house==0?player:address(policies)).codehash==c.codeHash,"strategy not in engine base state");
         }
     }
     function admit(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,A.Binding calldata b,bytes calldata signature,
         address signer,address authority,HousePolicies policies) external returns(bytes32 hash){
+        return bind(w,ticket,b,signature,signer,authority,policies,false);
+    }
+    function cancelExpired(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,A.Binding calldata b,bytes calldata signature,
+        address signer,address authority,HousePolicies policies) external returns(bytes32 hash){
+        require(block.timestamp>=ticket.expires,"admission still valid");
+        return bind(w,ticket,b,signature,signer,authority,policies,true);
+    }
+    function bind(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,A.Binding calldata b,bytes calldata signature,
+        address signer,address authority,HousePolicies policies,bool cancelling) private returns(bytes32 hash){
         (uint256 epoch,uint32 count,)=S.commitment(w);uint256 phase=S.get(w,0)>>161&7;
         require(count<65_536&&(phase==0||phase>=3)&&S.get(w,38)==count,"slot busy/full");
-        hash=Admission.verify(ticket,signature,signer,authority,address(this),epoch,uint256(count)+1,RULES,block.timestamp);
+        uint256 at=cancelling?ticket.issuedAt:block.timestamp;
+        hash=Admission.verify(ticket,signature,signer,authority,address(this),epoch,uint256(count)+1,RULES,at);
         require(keccak256(abi.encode(b))==ticket.bindingHash&&b.id==ticket.matchId&&b.epoch==epoch&&b.preparedBlock==ticket.sourceBlock
             &&b.a!=address(0)&&b.b!=address(0)&&b.a!=b.b&&b.mode<2,"agent admission binding");
         require(b.controlA.codeHash!=0||b.controlB.codeHash!=0,"agent required");
         require(b.controlA.key==address(0)||b.controlA.key!=b.controlB.key,"distinct keys");
-        controller(b.controlA,b.a,policies,ticket.issuedAt);controller(b.controlB,b.b,policies,ticket.issuedAt);
+        controller(b.controlA,b.a,policies,ticket.issuedAt,at,cancelling);controller(b.controlB,b.b,policies,ticket.issuedAt,at,cancelling);
         S.clear(w);
         S.set(w,0,uint160(b.a)|(b.ranked?1<<160:0)|(1<<161)|(uint256(b.mode)<<168));S.set(w,1,uint160(b.b));
         S.set(w,3,uint256(keccak256(abi.encode(hash,b.id,epoch))));S.set(w,31,epoch);

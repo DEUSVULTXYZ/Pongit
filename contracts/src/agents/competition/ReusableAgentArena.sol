@@ -101,6 +101,9 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
         Game.initialize(words,classic,kernel);emit AdmissionBound(ticket.epoch,ticket.matchId,ticket.sequence,hash,binding);
     }
     function confirmReady(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.ready(words,kernel,Auth.actor(words,msg.sender));}
+    function cancelAdmission(Admission.Ticket calldata ticket,T.Binding calldata binding,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){
+        Game.cancelAdmission(words,ticket,binding,signature,admissionSigner,lobby,policies,classic,kernel);
+    }
     function start(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.start(words,kernel);}
     function cancelUnready(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){
         require(Game.phase(words)==1&&S.get(words,61)!=3&&block.timestamp>S.get(words,62),"loading not expired");
@@ -131,7 +134,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
         // Compact commands are authenticated by their bound direct signer. The
         // generic session wrapper must not turn the contract itself into a signer.
         return selector==this.openEngine.selector||selector==this.closeEngine.selector||selector==this.cancelRecovered.selector
-            ||selector==this.admit.selector||selector==this.input.selector||selector==this.confirmReady.selector
+            ||selector==this.admit.selector||selector==this.cancelAdmission.selector||selector==this.input.selector||selector==this.confirmReady.selector
             ||selector==this.concede.selector||selector==this.revokeActive.selector||selector==this.renewActive.selector
             ||super._isSessionBlocked(selector);
     }

@@ -109,6 +109,9 @@ contract ReusableAgentPool is ICompetitionAuthority {
     function setPublicAdmissions(bool value) external base {require(msg.sender==owner&&(!value||capacityEvidence!=0),"qualification required");publicAdmissions=value;}
     function arenaPage() external view returns(ReusableAgentArena[] memory){return arenas;}
     function record(T.Ref calldata ref) external view returns(Record memory){return records[T.key(ref)];}
+    /// Discovery comes from the Monad assignment, even before its admission is
+    /// published back from the engine. No indexer or stale physical slot needed.
+    function laneRecord(uint8 lane) external view returns(Record memory){require(lane<2,"lane bounds");return records[laneMatch[lane]];}
     function result(T.Ref calldata ref) external view returns(T.Result memory){
         bytes32 key=T.key(ref);require(records[key].captured,"unpublished result");return captured[key];
     }

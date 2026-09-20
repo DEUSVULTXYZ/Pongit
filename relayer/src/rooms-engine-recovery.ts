@@ -79,9 +79,11 @@ export async function engineJobIdentity(job: EngineJob, abi: Abi, signer: Addres
   const fn=abi.find(x=>x.type==='function'&&x.name===decoded.functionName);
   const first=decoded.args?.[0];
   const offset=fn?.type==='function'&&fn.inputs[0]?.name==='epoch'?1:0;
-  const matchId=['submitPressure','submitLivePressure','renewActive','admit'].includes(decoded.functionName)
+  const ticketBound=['admit','cancelAdmission'].includes(decoded.functionName);
+  const matchId=['submitPressure','submitLivePressure','renewActive','admit','cancelAdmission'].includes(decoded.functionName)
     ? (first as {matchId:bigint})?.matchId : decoded.args?.[offset];
   if(offset&&first!==BigInt(job.epoch))throw new Error('Engine command epoch differs from its journal');
+  if(ticketBound&&(first as {epoch:bigint})?.epoch!==BigInt(job.epoch))throw new Error('Engine ticket epoch differs from its journal');
   return { action: decoded.functionName, matchId: String(matchId), signer: signer.toLowerCase(), data:tx.data!, args:decoded.args };
 }
 

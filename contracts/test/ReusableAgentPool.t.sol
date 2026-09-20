@@ -103,6 +103,9 @@ contract ReusableAgentPoolTest is Test {
     }
     function testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() public {
         challenge(address(0x1000),1);T.Ref memory ref=pool.admitChallenge();(Admission.Ticket memory t,A.Binding memory b)=pool.ticketOf(ref);
+        assertEq(pool.laneRecord(1).ref.id,ref.id);assertEq(pool.laneRecord(1).a,b.a);
+        assertEq(ReusableAgentArena(ref.arena).boundMatch().id,0);
+        vm.expectRevert("lane bounds");pool.laneRecord(2);
         assertEq(t.bindingHash,keccak256(abi.encode(b)));assertEq(b.controlA.key,vm.addr(KEY));assertFalse(b.ranked);admit(ref);
         vm.chainId(4242);vm.prank(vm.addr(KEY));ReusableAgentArena(ref.arena).input(ref.epoch,ref.id,1,1,vm.getBlockNumber()+100);
         vm.prank(vm.addr(KEY));ReusableAgentArena(ref.arena).concede(ref.epoch,ref.id);Game.Result memory r=ReusableAgentArena(ref.arena).publishedResult();vm.chainId(10143);
@@ -131,6 +134,26 @@ contract ReusableAgentPoolTest is Test {
         pool.closeReusableArena(first.arena);sourceBlock();T.Ref memory next=pool.admitTournament(tournament);admit(next);
         assertTrue(next.arena!=first.arena);assertEq(uint8(hub.statusOf(first.arena,0)),uint8(Types.Status.Exiting));
         assertEq(uint8(hub.statusOf(next.arena,0)),uint8(Types.Status.Active));assertEq(pool.releasedArenaCount(),1);
+    }
+    function testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() public {
+        challenge(address(0x1000),1);T.Ref memory ref=pool.admitChallenge();
+        (Admission.Ticket memory t,A.Binding memory b)=pool.ticketOf(ref);bytes memory signed=sig(BRIDGE,Admission.digest(t));
+        ReusableAgentArena arena=ReusableAgentArena(ref.arena);vm.chainId(4242);
+        vm.expectRevert("admission still valid");arena.cancelAdmission(t,b,signed);
+        vm.warp(vm.getBlockTimestamp()+7201);vm.expectRevert(Admission.InvalidAdmission.selector);arena.admit(t,b,signed);
+        A.Binding memory changed=b;changed.id++;vm.expectRevert("agent admission binding");arena.cancelAdmission(t,changed,signed);changed.id--;
+        vm.expectRevert(Admission.InvalidBridgeSignature.selector);arena.cancelAdmission(t,b,sig(999,Admission.digest(t)));
+        // Missing external code must not strand an unplayed ticket. The
+        // cancellation path never calls a strategy or awards a score.
+        vm.etch(address(policies),hex"");
+        arena.cancelAdmission(t,b,signed);Game.Result memory result=arena.publishedResult();
+        assertEq(result.match_.status,4);assertEq(result.match_.elapsedUs,0);assertEq(result.match_.winner,address(0));
+        vm.expectRevert(Admission.InvalidAdmission.selector);arena.cancelAdmission(t,b,signed);
+        vm.chainId(10143);hub.publish(ref.arena);pool.captureProof(ref,result,firstProof());
+        assertTrue(pool.record(ref).captured);assertEq(pool.playing(b.a),bytes32(0));assertEq(pool.playing(b.b),bytes32(0));
+        assertEq(queue.pending(b.a),0);assertEq(uint8(hub.statusOf(ref.arena,0)),uint8(Types.Status.Active));
+        assertEq(pool.releasedArenaCount(),3);
+        assertEq(ratings.ratingOf(b.a,1).elo,1000);
     }
     function testDisputedRootCannotReleaseParticipationOrCreateRating() public {
         uint64 tournament=begin();T.Ref memory ref=pool.admitTournament(tournament);admit(ref);Game.Result memory r=finish(ref,book.fixture(tournament,0).a);

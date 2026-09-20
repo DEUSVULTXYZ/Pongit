@@ -10,7 +10,7 @@ import {pooledHouseBots} from '../shared/agent-pool';
 
 assert.equal(process.env.PONG_REUSABLE_AGENT_DEPLOY,'authorized-private-testnet');
 assert.equal(process.getuid?.(),1000);
-const prefix=process.env.PONG_REUSABLE_AGENT_PREFIX!;assert(/^reusable-agents-\d{8}$/.test(prefix));
+const prefix=process.env.PONG_REUSABLE_AGENT_PREFIX!;assert(/^reusable-agents-\d{8}(?:-[1-9]\d?)?$/.test(prefix));
 const file='/secrets/deployment.json',hub='0x3Ef8327F69e09cf721772F345e2A887eA22cD595' as Address,arenaCount=3;
 const humans=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').filter(Boolean);assert(humans.length>0);
 let r:any;try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}

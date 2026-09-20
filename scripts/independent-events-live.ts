@@ -185,6 +185,9 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
 const tasks:Promise<unknown>[]=[];
 try{
  await save();assert.equal((await request('/config')).manifest.lobby.toLowerCase(),m.lobby.toLowerCase());
+ // The private service and shared Monad gateway live on separate networks.
+ // Diagnose a missing RPC route before spending an hour waiting for capacity.
+ assert.equal(await base.getChainId(),10143);await base.getBlock();
  // A cooling arena is not free capacity. Wait before registering the temporary
  // two-hour families; do not spend their validity on the previous hub window.
  await until(async()=>{const c=await request('/config');return c.arenas.filter((a:any)=>a.stage==='available').length>=2;},'two actually released arenas',4200000);

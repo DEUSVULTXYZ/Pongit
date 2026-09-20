@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 import {ReusableArenaStorage as S} from "../../independent/ReusableArenaStorage.sol";
 import {ReusableAgentBinding as Binding} from "./ReusableAgentBinding.sol";
+import {ReusableAdmission as Admission} from "../../independent/ReusableAdmission.sol";
 import {AgentArenaTypes as A} from "./AgentArenaTypes.sol";
 import {HousePolicies} from "./HousePolicies.sol";
 import {PoolSteer} from "./PoolSteer.sol";
@@ -36,12 +37,17 @@ library ReusableAgentGame {
         if(S.get(w,0)>>168&1==0)return RoomsState.state(w,SLOT);
         return kernel.codec().legacy(packed(w),bytes32(S.get(w,3)),S.get(w,8),phase(w)>=3);
     }
-    function initialize(mapping(bytes32=>uint256) storage w,RoomsRules classic,ChaosEngine kernel) external {
+    function initialize(mapping(bytes32=>uint256) storage w,RoomsRules classic,ChaosEngine kernel) public {
         require(phase(w)==1,"fresh admission");
         if(S.get(w,0)>>168&1==0)RoomsState.save(w,SLOT,classic.initial(bytes32(S.get(w,3)),0));
         else {uint256[8] memory p=kernel.initial(bytes32(S.get(w,3)));for(uint256 i;i<8;i++)S.set(w,21+i,p[i]);S.set(w,8,5);}
         S.set(w,62,block.timestamp+30);
         publish(w,kernel);
+    }
+    function cancelAdmission(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,A.Binding calldata binding,
+        bytes calldata signature,address signer,address authority,HousePolicies policies,RoomsRules classic,ChaosEngine kernel) external {
+        Binding.cancelExpired(w,ticket,binding,signature,signer,authority,policies);
+        initialize(w,classic,kernel);finish(w,kernel,4,address(0));publish(w,kernel);
     }
     function publish(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public {
         uint256 times=S.get(w,2);require(uint64(times>>128)<type(uint64).max,"revision overflow");

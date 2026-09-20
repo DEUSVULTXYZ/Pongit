@@ -102,3 +102,32 @@ test('series live discovery excludes captured results while the engine advances 
  assert.equal(live.length,1);assert.equal(live[0].lane,'tournament');assert.equal(live[0].liveConfirmed,false);
  captured=true;assert.equal((await reader.live()).value.items.length,0);
 });
+
+test('reusable discovery reads the Monad ticket before engine admission and preserves historical links',async()=>{
+ const m={...manifest,version:4 as const,rulesVersion:15 as const},app=m.arenas[0].app,a=addr(90),b=addr(91);
+ const ref={chainId:10143n,arena:app,epoch:2n,id:91n};let current=false,captured=false;
+ const {encodeAbiParameters,keccak256}=await import('viem');
+ const key=keccak256(encodeAbiParameters([{type:'uint256'},{type:'address'},{type:'uint256'},{type:'uint256'}],[10143n,app,2n,91n]));
+ const record=()=>({ref,a,b,ranked:false,tournament:0n,lane:1,captured});
+ const client={getBlock:async()=>({number:50n,hash:zeroHash,timestamp:1000n}),readContract:async(r:any)=>{
+  assert.equal(r.blockNumber,50n);
+  assert(r.abi.some((x:any)=>x.type==='function'&&x.name===r.functionName),'Real ABI must support the method');
+  if(r.functionName==='laneRecord')return r.args[0]===1?record():{ref:{id:0n}};
+  if(r.functionName==='ticketOf')return[{},{id:91n,epoch:2n,a,b,mode:1,controlA:{codeHash:zeroHash}}];
+  if(r.functionName==='pending'||r.functionName==='challengeOf')return 4n;
+  if(r.functionName==='requests')return[a,b,1,2,1000n,zeroHash];
+  if(r.functionName==='playing')return key;
+  if(r.functionName==='record')return record();
+  if(r.functionName==='boundMatch')return{id:current?91n:90n,epoch:2n,mode:0};
+  if(r.functionName==='result')return{hash:zeroHash,winner:a,status:3,scoreA:7,scoreB:4,mode:1,elapsedUs:100n,finality:false};
+  throw Error(r.functionName);
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,m),reference={chainId:10143 as const,app,epoch:'2',id:'91'};
+ assert.equal((await reader.live()).value.items[0].ref.id,'91');assert.equal((await reader.live()).value.items[0].liveConfirmed,false);
+ assert.deepEqual((await reader.challenge(a)).value.request?.ref,reference);
+ let view=(await reader.match(reference)).value;assert.equal(view.node,null);assert.equal(view.mode,1);assert.equal(view.result,null);
+ current=true;view=(await reader.match(reference)).value;assert.equal(view.node,m.arenas[0].node);
+ current=false;captured=true;view=(await reader.match(reference)).value;assert.equal(view.node,null);assert.equal(view.result?.scoreA,7);assert.equal(view.mode,1);
+ assert.equal((await reader.live()).value.items.length,0);
+ await assert.rejects(reader.match({...reference,epoch:'3'}),/not found/);
+});

@@ -1,5 +1,57 @@
 # Reusable arenas and testnet admission transport
 
+## Recovery and adapters, 20 September 15:14 UTC
+
+The latest candidate can publish a cancellation for an **expired, never-admitted
+ticket** while keeping the engine session open. It verifies the original signed
+ticket, authority, binding, actual epoch and next admission sequence. It requires
+real expiry and an empty or terminal physical slot. It cannot cancel a loaded or
+playing match, revive expired permission for gameplay, or award points. Missing
+external strategy code does not prevent cancellation: that path never calls a
+strategy. Monad still requires the exact issued ticket and published result proof
+before releasing participation. Previously deployed immutable candidates do not
+gain this new method.
+
+The result archive stores complete compact canonical results, without frames,
+keys or player authorizations. A successful engine receipt is not acknowledged by
+the reusable operator transport until its terminal records are durably stored.
+After an archive failure, the exact nonce and bytes remain pending for receipt
+reconciliation. Competing histories remain separate. Proofs require the exact
+published prefix; a conflicting prefix needs explicit canonical selection, and
+neither an emitted root nor elapsed time becomes settlement evidence.
+
+The version-4 agent reader discovers assignments from the common Monad contract,
+including tickets whose engine admission is not yet published. Old references keep
+their original epoch and result after slot reuse. Player commands bind both epoch
+and logical match ID; renewal/revocation use the reusable arena domain and fixed
+permission slots. Human readiness waits for the painted court, then displays the
+actual contract countdown. These adapters are candidates, not public activation.
+
+Validation: 78 isolated Solidity tests passed across 11 suites, followed by 10
+pool tests after adding contract-based assignment discovery. The full TypeScript
+suite passes 542 tests. Five real disposable PostgreSQL scenarios pass: concurrent
+idempotent storage, corrupt input rejection, retained competing histories, atomic
+rollback/retry, and historical proofs after later results. They use synthetic
+contract logs and are not hosted publication evidence.
+
+The SDK layout check passes all seven generated surfaces without changing any
+delegated slot. Final runtimes after cancellation and assignment discovery are
+24,360 bytes for the agent arena and 31,395 bytes for its Monad-only pool, under
+their respective 24 KiB and explicitly reviewed 32 KiB guards. The narrow arena
+margin is tracked; no additional root logic may silently exceed that guard.
+
+Separately, the existing private human rules-13 deployment completed the real
+simultaneous test at 14:48:43 UTC: Classic 6-7, Chaos 7-5, 54.26 seconds of overlap,
+134/133 and 131/139 direction changes, real Chaos bets/pressure and an automatic
+0.006 test-MON wallet payout. Both results were published and captured. This is
+evidence for that earlier deployment, not a substitute for qualifying the new
+reusable contracts. The preceding live-10 run failed before sending transactions
+because its fixture lacked the RPC Docker network; its report is preserved.
+
+The first reusable agent candidate still awaits its actual hub release at
+15:34:37 UTC before resolving its expired ticket by the old final-absence path.
+Public admission remains closed. No final unchanged 24-hour trial has started.
+
 ## Agent candidate and actual human renewal, 20 September 14:12 UTC
 
 The private human arena was actually released on Monad, consuming 1,057,504

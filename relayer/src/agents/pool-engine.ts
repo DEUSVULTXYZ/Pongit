@@ -5,9 +5,11 @@ import {privateKeyToAccount} from 'viem/accounts';
 import WebSocket from 'ws';
 import {pooledAgentArenaAbi as abi} from '../../../shared/abi-PooledAgentArena';
 import {seriesAgentArenaAbi} from '../../../shared/abi-SeriesAgentArena';
+import {reusableAgentArenaAbi} from '../../../shared/abi-ReusableAgentArena';
 import {engineTransport,engineCooldownMs} from '../../../shared/engine-transport';
 import {EngineFeed} from '../../../shared/engine-feed';
-import {EngineStream,type EngineState} from '../../../shared/engine-stream';
+import {EngineStream,receiptFrame,type EngineState} from '../../../shared/engine-stream';
+import {reusableResults,type ReusableResultCandidate} from '../../../shared/reusable-results';
 import {readHubDelegation} from '../../../shared/rooms-hub';
 import {engineJobIdentity,engineReceiptOutcome} from '../rooms-engine-recovery';
 import {retirableRefusal,refusalReason} from '../../../shared/engine-halt';
@@ -32,8 +34,10 @@ export async function initializePoolOperations(db:Pool){await db.query(`
  * permissionless maintenance only; it cannot impersonate a human or spend funds.
  * No pending entry is deleted, including a refusal proven safe to retire. */
 export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Address,url:string,key:Hex,
- ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean}){
- const arenaAbi=runtime?.series?seriesAgentArenaAbi:abi;
+ ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;archive?:(results:ReusableResultCandidate[])=>Promise<void>}){
+ if(runtime?.series&&runtime?.reusable)throw Error('Choose one arena generation');
+ if(runtime?.reusable&&!runtime.archive)throw Error('Reusable results require a durable archive');
+ const arenaAbi=runtime?.reusable?reusableAgentArenaAbi:runtime?.series?seriesAgentArenaAbi:abi;
  const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
  const stream=new EngineStream(url,app,u=>new WebSocket(u,{origin:'https://pongit.xyz'}) as any,()=>engineCooldownMs(url));
  const feed=runtime?.feed??new EngineFeed({app,abi:arenaAbi,node},stream),unwatch=feed.watch(ref.id,s=>onSnapshot?.(s));
@@ -51,13 +55,14 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   if(d.status!==1||d.epoch!==ref.epoch||d.expiresAt<=block.timestamp)throw Error('This arena is awaiting its own lifecycle recovery');
   const engine:any=await node.request({method:'interlude_session',params:[]} as any);
   if(String(engine.app).toLowerCase()!==lower||BigInt(engine.epoch)!==ref.epoch||engine.chainId!==4242)throw Error('Hosted arena epoch is not ready');
+  if(runtime?.reusable&&BigInt(engine.baseBlock??-1)!==d.baseBlock)throw Error('Hosted arena base block is not ready');
   fenceUntil=Date.now()+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
  }
  async function resolution(job:any){
   const identity=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
-  const allowed=runtime?.series?['start','tick','submitRandomness','advanceSeries','drainSeries']:['start','tick','submitRandomness'];
+  const allowed=runtime?.reusable?['admit','cancelAdmission','start','tick','submitRandomness','cancelUnready']:runtime?.series?['start','tick','submitRandomness','advanceSeries','drainSeries']:['start','tick','submitRandomness'];
   if(!allowed.includes(identity.action))throw Error('Unexpected permissionless pool operation');
-  if(!runtime?.series&&identity.action!=='start'&&identity.matchId!==String(ref.id))throw Error('Command belongs to another match');
+  if(!runtime?.series&&!runtime?.reusable&&identity.action!=='start'&&identity.matchId!==String(ref.id))throw Error('Command belongs to another match');
   let receipt:any=await node.getTransactionReceipt({hash:job.hash}).catch(()=>null);
   if(!receipt){
    try{receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);}
@@ -73,14 +78,29 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    }
   }
   const outcome=engineReceiptOutcome(receipt,job.hash);if(!outcome)throw Error('Arena command is awaiting its exact receipt');
+  if(outcome==='observed'&&runtime?.reusable){
+   const frame=receiptFrame(receipt,app);if(!frame)throw Error('Reusable receipt logs are incomplete');
+   const results=reusableResults(arenaAbi,app,15,frame);
+   // Store complete public result bytes before acknowledging the operation.
+   // On archive failure the exact command remains pending and is read again;
+   // another admission must never erase the only result body we observed.
+   if(results.length)await runtime.archive!(results);
+  }
   await db.query('UPDATE agent_pool.engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2',
    [lower,job.id,outcome,{kind:'receipt',hash:job.hash,blockHash:receipt.blockHash,block:String(receipt.blockNumber),status:receipt.status}]);
   if(outcome==='failed'){feed.invalidate();throw Object.assign(Error('Arena action reverted; state must be refreshed'),{code:'POOL_ACTION_REVERTED'});}
   return {identity,receipt};
  }
- async function send(operation:string,name:'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries',args:readonly unknown[]=[]){
+ async function send(operation:string,name:'admit'|'cancelAdmission'|'cancelUnready'|'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries',args:readonly unknown[]=[]){
   if(!/^[a-z0-9:._-]{1,160}$/i.test(operation))throw Error('Invalid operation identity');
   if((name==='advanceSeries'||name==='drainSeries')&&!runtime?.series)throw Error('Series transport is not enabled');
+  if((name==='admit'||name==='cancelAdmission'||name==='cancelUnready')&&!runtime?.reusable)throw Error('Reusable transport is not enabled');
+  if(runtime?.reusable){
+   const first=args[0] as {epoch?:bigint;matchId?:bigint};
+   const intendedEpoch=(name==='admit'||name==='cancelAdmission')?first?.epoch:args[0],intendedMatch=(name==='admit'||name==='cancelAdmission')?first?.matchId:args[1];
+   if(intendedEpoch!==ref.epoch||intendedMatch!==ref.id)throw Error('Command belongs to another match or epoch');
+   operation=`match:${ref.id}:${operation}`;
+  }
   if(runtime?.series){
    if(name!=='start'&&args[0]!==ref.id)throw Error('Command belongs to another match');
    operation=`match:${ref.id}:${operation}`;
@@ -105,7 +125,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
      const resolved=await resolution(pending);feed.invalidate();
      // A prior match's receipt resolves its own nonce only. Never project its
      // state onto the next match, even when both share the same engine epoch.
-     if((resolved.identity.action==='start'&&(!runtime?.series||pending.operation.startsWith(`match:${ref.id}:`)))||resolved.identity.matchId===String(ref.id))
+     if((resolved.identity.action==='start'&&!runtime?.reusable&&(!runtime?.series||pending.operation.startsWith(`match:${ref.id}:`)))||resolved.identity.matchId===String(ref.id))
       await feed.receipt(ref.id,{receipt:resolved.receipt},resolved.identity.action,resolved.identity.args??[],signer.address);
      else await feed.read(ref.id,true);
      throw Object.assign(Error('Previous command reconciled; refresh before another action'),{code:'POOL_RECONCILED'});

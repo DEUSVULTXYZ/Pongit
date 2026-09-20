@@ -40,16 +40,25 @@ library ReusableArenaStorage {
     }
     function admit(mapping(bytes32=>uint256) storage w,Admission.Ticket memory t,T.Binding memory b,
         bytes memory signature,address bridge,address authority,uint256 rules) internal returns(bytes32 ticketHash)
+    { return bind(w,t,b,signature,bridge,authority,rules,false); }
+    /// Cancellation verifies the original issued ticket at its issuance time,
+    /// but is only callable after its real expiry. No play is authorized by it.
+    function cancelExpired(mapping(bytes32=>uint256) storage w,Admission.Ticket memory t,T.Binding memory b,
+        bytes memory signature,address bridge,address authority,uint256 rules) internal returns(bytes32 ticketHash)
+    { require(block.timestamp>=t.expires,"admission still valid");return bind(w,t,b,signature,bridge,authority,rules,true); }
+    function bind(mapping(bytes32=>uint256) storage w,Admission.Ticket memory t,T.Binding memory b,
+        bytes memory signature,address bridge,address authority,uint256 rules,bool cancelling) private returns(bytes32 ticketHash)
     {
         (uint256 epoch,uint32 count,)=commitment(w);
         uint256 phase=get(w,0)>>161&7;
         require(count<65_536 && (phase==0 || phase==3 || phase==4),"slot busy/full");
         require(get(w,38)==count,"previous result not committed");
-        ticketHash=Admission.verify(t,signature,bridge,authority,address(this),epoch,uint256(count)+1,rules,block.timestamp);
+        uint256 at=cancelling?t.issuedAt:block.timestamp;
+        ticketHash=Admission.verify(t,signature,bridge,authority,address(this),epoch,uint256(count)+1,rules,at);
         require(keccak256(abi.encode(b))==t.bindingHash && b.id==t.matchId && b.epoch==epoch
             && b.preparedBlock==t.sourceBlock && b.a!=address(0) && b.b!=address(0) && b.a!=b.b
             && b.keyA!=address(0) && b.keyB!=address(0) && b.keyA!=b.keyB && b.mode<2
-            && b.expiresA>block.timestamp && b.expiresB>block.timestamp
+            && b.expiresA>at && b.expiresB>at
             && b.expiresA<=t.issuedAt+2 hours && b.expiresB<=t.issuedAt+2 hours,"participant binding");
         clear(w);
         set(w,0,uint160(b.a)|(b.ranked?1<<160:0)|(1<<161)|(uint256(b.mode)<<168));

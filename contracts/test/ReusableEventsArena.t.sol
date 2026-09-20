@@ -84,6 +84,30 @@ contract ReusableEventsArenaTest is Test, IReusableAdmissionAuthority {
         assertEq(arena.publishedResult().match_.status,4);assertEq(arena.publishedResult().match_.winner,address(0));admit(43,2,1);
         assertEq(arena.getSnapshot(43).id,43);
     }
+    function testExpiredUnadmittedTicketPublishesCancellationWithoutClosingEpoch() public {
+        (Admission.Ticket memory t,T.Binding memory b)=ticket(42,1,1);bytes memory sig=sign(BRIDGE,Admission.digest(t));
+        issuedTicket[address(arena)][1][1]=Admission.digest(t);
+        vm.expectRevert("admission still valid");arena.cancelAdmission(t,b,sig);
+        // Even an expired player key cannot strand a never-started reservation.
+        vm.warp(vm.getBlockTimestamp()+7201);
+        vm.expectRevert(Admission.InvalidAdmission.selector);arena.admit(t,b,sig);
+        arena.cancelAdmission(t,b,sig);Game.Result memory r=arena.publishedResult();
+        assertEq(r.match_.status,4);assertEq(r.match_.winner,address(0));assertEq(r.match_.scoreA,0);assertEq(r.match_.scoreB,0);assertEq(r.elapsedUs,0);
+        (uint256 epoch,uint32 count,bytes32 root)=arena.resultCommitment();assertEq(epoch,1);assertEq(count,1);
+        vm.expectRevert(Admission.InvalidAdmission.selector);arena.cancelAdmission(t,b,sig);
+        vm.chainId(10143);hub.publish(address(arena));assertFalse(verifier.verify(t,keccak256(abi.encode(r)),0,firstProof()));
+        vm.chainId(4242);admit(43,2,0);assertEq(arena.getSnapshot(43).phase,1);
+        assertEq(uint256(hub.statusOf(address(arena),0)),uint256(Types.Status.Active));assertTrue(root!=0);
+    }
+    function testExpiredTicketCannotCancelAnAdmittedMatchOrAlterItsBinding() public {
+        (Admission.Ticket memory t,T.Binding memory b)=ticket(42,1,0);bytes memory sig=sign(BRIDGE,Admission.digest(t));
+        arena.admit(t,b,sig);vm.warp(vm.getBlockTimestamp()+91);
+        vm.expectRevert("slot busy/full");arena.cancelAdmission(t,b,sig);
+        arena.cancelUnready(1,42);
+        (t,b)=ticket(43,2,0);sig=sign(BRIDGE,Admission.digest(t));arena.admit(t,b,sig);start(43);
+        vm.warp(vm.getBlockTimestamp()+91);vm.expectRevert("slot busy/full");arena.cancelAdmission(t,b,sig);
+        assertEq(arena.getSnapshot(43).phase,2);
+    }
     function testOldOwnerAuthorizationCannotReviveAfterSlotReuse() public {
         admit(42,1,1);start(42);
         Auth.Renewal memory r=Auth.Renewal(vm.addr(101),vm.addr(5001),1,42,0,uint64(vm.getBlockTimestamp()+7100),uint64(vm.getBlockTimestamp()+100));

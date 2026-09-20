@@ -4,14 +4,16 @@ import {encodeFunctionResult,keccak256,parseTransaction,zeroAddress,zeroHash,typ
 import {generatePrivateKey} from 'viem/accounts';
 import {createPoolEngine,POOL_COMMAND_GAS} from '../relayer/src/agents/pool-engine';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
+import {resultFixture} from './fixtures/reusable-result';
 
 const app='0x0000000000000000000000000000000000000011';
 function fixture(){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false;
  let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'='ok';
- const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash});
+ let logs:any[]=[],archiveError=false;const archived:any[]=[];
+ const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
  const node:any={getTransactionCount:async()=>nonce,getTransactionReceipt:async({hash}:{hash:Hex})=>receipts.get(hash)??null,request:async(r:any)=>{
-  if(r.method==='interlude_session')return{app,epoch:String(epoch),chainId:4242};
+  if(r.method==='interlude_session')return{app,epoch:String(epoch),chainId:4242,baseBlock:20};
   assert.equal(r.method,'interlude_sendTransaction');const raw=r.params[0];sent.push(raw);
   if(behavior==='429')throw Object.assign(Error('busy'),{status:429});
   if(behavior==='generic')throw Error('transaction rejected before execution: duplicate request');
@@ -23,7 +25,7 @@ function fixture(){
  const fields=roomsLifecycleHubAbi[0].outputs[0].components;
  const base:any={getBlock:async(options?:any)=>({number:50n,hash:options&&reorg?keccak256('0x01'):zeroHash,timestamp:1000n}),request:async()=>{
   const d:any=Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n]));
-  Object.assign(d,{status,epoch,expiresAt:10000n});return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d});
+  Object.assign(d,{status,epoch,expiresAt:10000n,baseBlock:20n});return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d});
  }};
  const db:any={connect:async()=>{if(connectError)throw Error('database unavailable');return{query:async()=>({rows:[{ok:true}]}),release(){}};},query:async(sql:string,a:any[])=>{
   if(sql.startsWith('SELECT'))return{rows:jobs.filter(j=>sql.includes('operation=$3')?j.epoch===a[1]&&j.operation===a[2]:j.status==='pending').slice(0,1)};
@@ -33,8 +35,8 @@ function fixture(){
  }};
  const receiptIds:bigint[]=[],readIds:bigint[]=[];
  const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2};},receipt:async(id:bigint)=>{receiptIds.push(id);return{id,phase:2};},invalidate(){}};
- const key=generatePrivateKey();const make=(id=1n,series=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series});
- return{make,jobs,sent,receipts,receiptIds,readIds,reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
+ const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
+ return{make,jobs,sent,receipts,receiptIds,readIds,archived,logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
 test('lost executed response reconciles exact receipt without another command or nonce',async()=>{
  const f=fixture(),e=f.make();f.behavior('lost-after-execution');await assert.rejects(e.send('first','tick',[1n]),/lost/);
@@ -98,4 +100,41 @@ test('series methods stay opt-in and cannot sign an action targeting another cur
  e=f.make(2n,true);await assert.rejects(e.send('wrong','advanceSeries',[1n]),/another match/);
  await assert.rejects(e.send('wrong','tick',[1n]),/another match/);assert.equal(f.sent.length,0);
  await e.send('drain','drainSeries',[2n]);assert.equal(f.jobs.length,1);e.close();
+});
+
+test('reusable matches preserve exact pending bytes and never import a previous start receipt',async()=>{
+ for(const action of ['start','tick','cancelUnready'] as const){
+  const f=fixture();let e=f.make(91n,false,true);f.behavior('lost-after-execution');
+  await assert.rejects(e.send('same',action,[1n,91n]),/lost/);e.close();
+  const raw=f.jobs[0].raw;e=f.make(92n,false,true);f.behavior('ok');
+  await assert.rejects(e.send('same','tick',[1n,92n]),{code:'POOL_RECONCILED'});
+  assert.equal(f.sent.length,1);assert.equal(f.jobs[0].raw,raw);assert.deepEqual(f.receiptIds,[]);assert.deepEqual(f.readIds,[92n]);
+  await e.send('same','tick',[1n,92n]);assert.equal(f.jobs[1].nonce,'1');
+  assert.equal(f.jobs[0].operation,'match:91:same');assert.equal(f.jobs[1].operation,'match:92:same');e.close();
+ }
+});
+
+test('reusable binding rejects another epoch, match or incompatible series mode before signing',async()=>{
+ const f=fixture(),e=f.make(91n,false,true);
+ await assert.rejects(e.send('bad','tick',[2n,91n]),/another match or epoch/);
+ await assert.rejects(e.send('bad','start',[1n,92n]),/another match or epoch/);
+ await assert.rejects(e.send('bad','admit',[{epoch:1n,matchId:92n}]),/another match or epoch/);
+ await assert.rejects(e.send('bad','advanceSeries',[91n]),/not enabled/);
+ assert.throws(()=>f.make(91n,true,true),/one arena generation/);assert.equal(f.sent.length,0);e.close();
+});
+
+test('result archive failure retains the completed command and recovers exact receipt before slot reuse',async()=>{
+ const f=fixture(),result=resultFixture(15,app,91n,1n);let e=f.make(91n,false,true);
+ f.logs(result.logs);f.archiveError(true);await assert.rejects(e.send('finish','tick',[1n,91n]),/archive unavailable/);e.close();
+ assert.equal(f.jobs[0].status,'pending');assert.equal(f.sent.length,1);assert.equal(f.archived.length,0);
+ f.archiveError(false);e=f.make(92n,false,true);
+ await assert.rejects(e.send('start','start',[1n,92n]),{code:'POOL_RECONCILED'});
+ assert.equal(f.jobs.length,1);assert.equal(f.sent.length,1);assert.equal(f.jobs[0].status,'observed');
+ assert.equal(f.archived[0].matchId,91n);assert.equal(f.archived[0].canonical,result.canonical);assert.deepEqual(f.receiptIds,[]);e.close();
+});
+
+test('a missing terminal commitment cannot acknowledge its command',async()=>{
+ const f=fixture(),result=resultFixture(15,app,91n,1n),e=f.make(91n,false,true);
+ f.logs(result.logs.slice(1));await assert.rejects(e.send('finish','tick',[1n,91n]),/missing its commitment/);
+ assert.equal(f.jobs[0].status,'pending');assert.equal(f.archived.length,0);e.close();
 });

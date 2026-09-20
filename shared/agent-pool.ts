@@ -13,13 +13,13 @@ export const pooledHouseBots=[
 ] as const;
 export type PoolArena={app:Address;node:string;runtimeHash:Hex};
 export type AgentPoolManifest={
- version:2|3;chainId:10143;engineChainId:4242;rulesVersion:10|11;hub:Address;pool:Address;catalog:Address;
+ version:2|3|4;chainId:10143;engineChainId:4242;rulesVersion:10|11|15;hub:Address;pool:Address;catalog:Address;
  tournaments:Address;ratings:Address;challenges:Address;qualifications:Address;family:Address;arenas:PoolArena[];
  enabled:boolean;tournamentsEnabled:boolean;verifiedCapacity:0|2;qualificationEvidence:Hex|null;
  durationSeconds:300;overtimeSeconds:60;intervalSeconds:60;maxMatches:2;
 };
 export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly string[]=[]):AgentPoolManifest {
- if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11)||m.chainId!==10143||m.engineChainId!==4242
+ if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11||m.version===4&&m.rulesVersion===15)||m.chainId!==10143||m.engineChainId!==4242
   ||m.durationSeconds!==300||m.overtimeSeconds!==60||m.intervalSeconds!==60||m.maxMatches!==2)throw Error('Unsupported Agent Arcade pool rules');
  if(typeof m.enabled!=='boolean'||typeof m.tournamentsEnabled!=='boolean')throw Error('Explicit boolean admission gates required');
  const contracts=[m.hub,m.pool,m.catalog,m.tournaments,m.ratings,m.challenges,m.qualifications,m.family];

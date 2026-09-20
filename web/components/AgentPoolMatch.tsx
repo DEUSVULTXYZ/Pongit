@@ -26,6 +26,7 @@ import {Outcome} from './Outcome';
 import {Dialog} from './Dialog';
 import {IconButton} from './IconButton';
 import {AgentReplay} from './AgentReplay';
+import {ArenaCountdown} from './MatchCountdown';
 
 type Identity={agent:string;name:string;avatar:number};
 const quiet=()=>{};
@@ -35,6 +36,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState('');
  const playerClient=useRef<ReturnType<typeof createPoolPlayer>|null>(null),manifest=useRef<AgentPoolManifest|null>(null),lastRef=useRef(''),commandVersion=useRef(0),actionBusy=useRef(false),router=useRouter();
  const recoveryVersion=useRef(0);
+ const [countdown,setCountdown]=useState<{id:string;deadline:number;clock:number;observedAt:number}>();
  const side=view&&account?view.a.toLowerCase()===account.toLowerCase()?0:view.b.toLowerCase()===account.toLowerCase()?1:-1:-1;
  const controllable=ready&&side>=0&&snapshot?.phase===2&&!view?.result&&!tools;
  const control=useRef(false);control.current=controllable;
@@ -84,7 +86,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     }
     if(!current)return;
     if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setControlError('');setConnection(current.result.finality?'Final result':'Published, still contestable');setError('');delay=10000;return;}
-    if(!current.node){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection('Waiting for the published result');delay=2000;return;}
+    if(!current.node){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection('Waiting for arena synchronization');delay=2000;return;}
     if(!observer){
      const remembered=rememberedAccount(),saved=remembered?loadPoolFamily(config,remembered.address,sessionStorage):null;
      const participant=saved&&[current.a,current.b].some(a=>a.toLowerCase()===saved.grant.player.toLowerCase());
@@ -112,6 +114,17 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      catch(e){if(cancelled)return;setReady(false);setControlError(poolUserError(e));retryRecoveryAt=performance.now()+Math.max(1000,engineReadRetryMs(e));nextRecovery=retryRecoveryAt;}
     }
     const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);setError('');
+    if(config.version===4&&state.phase===1){
+     // The human seat acknowledges an actually painted court. A hidden tab
+     // cannot start a countdown it has never shown to its player.
+     const controlled=playerClient.current;
+     if(controlled&&recoveredVersion===recoveryVersion.current){
+      await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+      if(cancelled||document.hidden||playerClient.current!==controlled)return;
+      publish(await controlled.ready());
+     }
+     const launch=await observer.launch();if(!cancelled&&launch)setCountdown({id:refKey,...launch});
+    }
    }catch(e){if(cancelled)return;setError(poolUserError(e));setConnection('Synchronizing');delay=Math.max(2000,engineReadRetryMs(e));}
    finally{if(!cancelled)timer=setTimeout(poll,Math.min(30000,delay));}
   };
@@ -178,7 +191,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      <div className="agent-clock">{engineDone?'Waiting for publication':`${overtime?'Sudden death':'Time remaining'} ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}</div>
      {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
      <div className="pool-canvas-slot"><Court state={snapshot.state} chaos={snapshot.chaos} rulesVersion={manifest.current?.rulesVersion??10} clock={snapshot.clock>BigInt(view.overtimeSeconds?360_000_000:300_000_000)?BigInt(view.overtimeSeconds?360_000_000:300_000_000):snapshot.clock}
-      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine onStats={quiet}/></div>
+      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine onStats={quiet}/>{manifest.current?.version===4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
      {side>=0&&<div className="agent-controls"><small>W / S · ↑ / ↓</small><div>{([-1,1] as const).map(dir=><button key={dir} aria-label={dir===-1?'Move up':'Move down'} disabled={!controllable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void move(dir);}} onPointerUp={()=>void move(0)} onPointerCancel={()=>void move(0)} onLostPointerCapture={()=>void move(0)}>{dir===-1?'↑':'↓'}</button>)}</div></div>}
     </>:<div className="agent-empty"><p>Waiting for this arena to become ready.</p></div>}
    </section>}

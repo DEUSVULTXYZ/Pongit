@@ -29,3 +29,10 @@ test('series manifests retain their version, require both common lanes and canno
  assert.throws(()=>validateAgentPoolManifest({...m,challenges:addr(0)}),/Invalid common/);
  assert.throws(()=>validateAgentPoolManifest({...m,arenas:[m.arenas[0]]}),/2 to 16/);
 });
+test('reusable manifests keep a separate generation and cannot call registered arenas verified capacity',()=>{
+ const m={...manifest(),version:4 as const,rulesVersion:15 as const,enabled:false,tournamentsEnabled:false,verifiedCapacity:0 as const,qualificationEvidence:null};
+ assert.equal(validateAgentPoolManifest(m).version,4);
+ assert.throws(()=>validateAgentPoolManifest({...m,enabled:true}),/reviewed capacity/);
+ assert.throws(()=>validateAgentPoolManifest({...m,version:3}),/Unsupported/);
+ assert.throws(()=>validateAgentPoolManifest({...m,arenas:m.arenas.slice(0,2)}),/3 to 32/);
+});

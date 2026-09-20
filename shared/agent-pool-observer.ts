@@ -2,7 +2,8 @@ import {createPublicClient,type PublicClient} from 'viem';
 import {EngineFeed} from './engine-feed';
 import {EngineStream,type EngineState} from './engine-stream';
 import {engineTransport,engineCooldownMs} from './engine-transport';
-import {pooledAgentArenaAbi as abi} from './abi-PooledAgentArena';
+import {agentPoolArenaAbi} from './agent-pool-abi';
+import {readArenaLaunch} from './arena-launch';
 import {validateAgentPoolManifest,type AgentPoolManifest,type PoolMatchView} from './agent-pool';
 
 /** Read-only spectator, bound to one complete reference. No wallet, session key,
@@ -10,6 +11,7 @@ import {validateAgentPoolManifest,type AgentPoolManifest,type PoolMatchView} fro
 export async function createPoolObserver(manifest:AgentPoolManifest,match:PoolMatchView,
  socket:(url:string)=>any,runtime?:{node:PublicClient;feed:EngineFeed}){
  const m=validateAgentPoolManifest(manifest),arena=m.arenas.find(a=>a.app.toLowerCase()===match.ref.app.toLowerCase());
+ const abi=agentPoolArenaAbi(m);
  if(!arena||!match.node||match.node!==arena.node||!match.currentBinding||match.result
   ||match.ref.chainId!==10143||!/^\d{1,78}$/.test(match.ref.id)||!/^\d{1,78}$/.test(match.ref.epoch)
   ||BigInt(match.ref.id)<1n||BigInt(match.ref.epoch)<1n||BigInt(match.ref.id)>=2n**256n||BigInt(match.ref.epoch)>=2n**256n)throw Error('This reference is available as a published summary only');
@@ -30,6 +32,7 @@ export async function createPoolObserver(manifest:AgentPoolManifest,match:PoolMa
  };
  await validate(true);const watchers=new Set<()=>void>();
  return{
+  async launch(){await validate();return m.version===4?readArenaLaunch(node,arena.app,BigInt(match.ref.id)):undefined;},
   async read(force=false){await validate(force);return verify(await feed.read(BigInt(match.ref.id),force));},
   watch(listener:(s:EngineState)=>void){
    const stop=feed.watch(BigInt(match.ref.id),s=>{try{if(!stopped&&Date.now()-checkedAt<10000)listener(verify(s));}catch{feed.invalidate();}});

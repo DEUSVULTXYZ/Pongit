@@ -7,7 +7,8 @@ import {readHubDelegation} from './rooms-hub';
 import {compactArenaSession,type ArenaSender} from './compact-arena-session';
 import {terminalAfterRevert} from './terminal-command';
 import {RoomsCommandJournal,resendJournaled} from '../web/lib/rooms-command-journal';
-import {pooledAgentArenaAbi as abi} from './abi-PooledAgentArena';
+import {agentPoolArenaAbi} from './agent-pool-abi';
+import {readArenaLaunch} from './arena-launch';
 import {validateAgentPoolManifest,type AgentPoolManifest,type PoolMatchView} from './agent-pool';
 import type {PoolFamilySession} from './agent-pool-family';
 import type {PoolSessionStorage} from './agent-pool-sponsor';
@@ -22,6 +23,7 @@ export const POOL_PLAYER_GAS=14_800_000n;
 export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,session:PoolFamilySession,
  options:{base:PublicClient;storage:PoolSessionStorage;socket:(url:string)=>any;now?:()=>number},runtime?:{node:PublicClient;feed:EngineFeed}){
  const m=validateAgentPoolManifest(manifest),arena=m.arenas.find(a=>a.app.toLowerCase()===match.ref.app.toLowerCase()),player=session.grant.player;
+ const abi=agentPoolArenaAbi(m),reusable=m.version===4;
  if(!arena||match.node!==arena.node||!match.currentBinding||match.result||match.ref.chainId!==10143
   ||!/^\d{1,78}$/.test(match.ref.id)||!/^\d{1,78}$/.test(match.ref.epoch)||BigInt(match.ref.id)<1n||BigInt(match.ref.epoch)<1n
   ||BigInt(match.ref.id)>=2n**256n||BigInt(match.ref.epoch)>=2n**256n||![match.a,match.b].some(a=>a.toLowerCase()===player.toLowerCase())
@@ -78,10 +80,10 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   const code=await options.base.getCode({address:arena!.app,blockNumber:block.number});
   if(!code||keccak256(code)!==arena!.runtimeHash)throw Error('Arena bytecode differs from the approved deployment');
   if((await options.base.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arena publication changed during authorization');
-  const control=await readPoolPermission(node,arena!.app,id,side,initial);
+  const control=await readPoolPermission(node,arena!.app,id,side,initial,reusable);
   if(control.key.toLowerCase()!==session.grant.key.toLowerCase()||control.expires!==session.grant.expires)
    throw Error('The current arena needs its own confirmed owner authorization');
-  journal.bindDirect(session.grant.key,epoch,id,control.expires);journal.retirePrevious(session.grant.key,epoch);
+  journal.bindDirect(session.grant.key,epoch,id,control.expires,reusable);journal.retirePrevious(session.grant.key,epoch);
   const pending=journal.pending(session.grant.key);
   if(pending){
    if(BigInt(pending.epoch)!==epoch)throw Error('A command from another epoch is awaiting closure');
@@ -101,7 +103,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   // Fence against the hub again shortly. UI health changes must not reset the
   // renderer, session key, last intent or authoritative positions.
   controlsUntil=now()+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
-  sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,expires:control.expires,gas:POOL_PLAYER_GAS,now});
+  sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,...(reusable?{epoch}:{}),expires:control.expires,gas:POOL_PLAYER_GAS,now});
   feed.invalidate();return verify(await feed.read(id,true));
  }
  async function authorizeControls(){
@@ -123,11 +125,12 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    controlsUntil=now()+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
   }catch(error){sender=undefined;throw error;}
  }
- async function sendNow(name:'input'|'concede',args:readonly unknown[]){
+ async function sendNow(name:'input'|'concede'|'confirmReady',args:readonly unknown[]){
   if(stopped)throw Error('Arena controls have stopped');
   await authorizeControls();
   if(stopped)throw Error('Arena controls have stopped');
-  try{const result=await sender!.send(name,args);return verify(await feed.receipt(id,result,name,args,player));}
+  const boundArgs=reusable?[epoch,...args]:args;
+  try{const result=await sender!.send(name,boundArgs);return verify(await feed.receipt(id,result,name,boundArgs,player));}
   catch(error){
    const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));
    if(terminal){intention=undefined;return terminal;}
@@ -164,7 +167,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    const savedPermission=permissionPending();
    if(savedPermission){await reconcilePermission();if(savedPermission.action!==`${kind}Active`)throw Error('The previous permission was resolved. Retry the selected action.');return;}
    if(journal.pending(session.grant.key))throw Error('Resolve the existing game command before changing its permission');
-   const data=await preparePoolActive(node,arena!.app,{epoch,id},owner,kind==='revoke'?{kind}:{kind,key:session.grant.key,expires:session.grant.expires});
+   const data=await preparePoolActive(node,arena!.app,{epoch,id},owner,kind==='revoke'?{kind}:{kind,key:session.grant.key,expires:session.grant.expires},reusable);
    journal.bindPermission(session.grant.key,epoch,id,data);
    const nonce=await node.getTransactionCount({address:session.grant.key,blockTag:'latest'});
    if(nonce!==await node.getTransactionCount({address:session.grant.key,blockTag:'pending'}))throw Error('An arena command is still in flight');
@@ -179,6 +182,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  }
  return{
   player,journal,
+  async launch(){await identify();return reusable?readArenaLaunch(node,arena.app,id):undefined;},
   async read(force=false){await identify(force);return verify(await feed.read(id,force));},
   watch(listener:(s:EngineState)=>void){const stop=feed.watch(id,s=>{try{if(!stopped&&verifiedAt&&now()-verifiedAt<10000)listener(verify(s));}catch{feed.invalidate();}});listeners.add(stop);return()=>{stop();listeners.delete(stop);};},
   async recover(){const s=await serial(recoverNow);if(intention)await pump();return s;},
@@ -188,7 +192,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    await authorizeControls();
    try{
     const side=match.a.toLowerCase()===player.toLowerCase()?0:1;
-    const control=await readPoolPermission(node,arena.app,id,side,{key:session.grant.key,expires:session.grant.expires});
+    const control=await readPoolPermission(node,arena.app,id,side,{key:session.grant.key,expires:session.grant.expires},reusable);
     if(control.revoked)throw Error('This arena authorization was revoked by its owner');
     if(control.key.toLowerCase()!==session.grant.key.toLowerCase()||control.expires!==session.grant.expires)
      throw Error('The current arena needs its own confirmed owner authorization');
@@ -196,6 +200,14 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    }catch(error){sender=undefined;throw error;}
   });},
   move(dir:-1|0|1){if(![-1,0,1].includes(dir)||stopped)return Promise.reject(Error('Invalid or stopped arena control'));intention={dir};return pump();},
+  ready(){return serial(async()=>{
+   if(!reusable)return verify(await feed.read(id));
+   await authorizeControls();const state=verify(await feed.read(id,true));
+   if(state.phase!==1)return state;
+   const [mask]=await node.readContract({address:arena.app,abi,functionName:'readiness',args:[id]});
+   const side=state.a.toLowerCase()===player.toLowerCase()?0:1;
+   return mask&(1<<side)?state:sendNow('confirmReady',[id]);
+  });},
   concede(){intention=undefined;return serial(()=>sendNow('concede',[id]));},
   renew:(owner:Pick<LocalAccount,'address'|'signTypedData'>)=>permission(owner,'renew'),
   revoke:(owner:Pick<LocalAccount,'address'|'signTypedData'>)=>permission(owner,'revoke'),
