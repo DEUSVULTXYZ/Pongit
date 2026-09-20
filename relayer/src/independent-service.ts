@@ -157,15 +157,21 @@ export async function independentService(o:Options){
    // Classic engine into an unavailable one or delay its physics observer.
    h.online=true;h.lastProgressAt=Date.now()-e.feed.progressAge(b.id);await stage(i,live.phase>=3?'publishing':e.publicationFailure()?'publication-paused':live.phase===1?'countdown':'playing',e.publicationFailure()?'ENGINE_PUBLICATION_UNAVAILABLE':'');
   }catch(e){
-   await stage(i,'starting','ENGINE_SYNCHRONIZING');
+   const prior=(await db.query('SELECT provisioning FROM il_lifecycle WHERE app=$1',[a.app])).rows[0]?.provisioning;
+   const needsInspection=prior?.epoch===String(d.epoch)&&prior.state==='intervention';
+   await stage(i,needsInspection?'intervention':'starting',needsInspection?'HOSTED_ENGINE_UNAVAILABLE':'ENGINE_SYNCHRONIZING');
    // A known engine outage is not a request to create a second hosted session.
    if(validated[i].epoch===d.epoch)throw e;
    await db.query("INSERT INTO il_lifecycle(app,stage,epoch) VALUES($1,'starting',$2) ON CONFLICT(app) DO NOTHING",[a.app,String(d.epoch)]);
-   const provision=(await db.query('SELECT provisioning FROM il_lifecycle WHERE app=$1',[a.app])).rows[0]?.provisioning;
-   // DNS provisioning can lag the control-plane acknowledgement. Keep checking
-   // that known engine; another creation cannot repair network reachability.
-   if(provision?.epoch===String(d.epoch)&&provision.state==='confirmed')throw e;
-   await requestHostedRenewal(db,a.app,d.epoch,a.node!);
+   // A creation acknowledgement is not reachability. The persisted state
+   // makes subsequent requests GET lookups, never a duplicate POST; after
+   // five minutes an unreachable existing engine needs explicit diagnosis.
+   try{await requestHostedRenewal(db,a.app,d.epoch,a.node!);}
+   catch(error){
+    const provision=(await db.query('SELECT provisioning FROM il_lifecycle WHERE app=$1',[a.app])).rows[0]?.provisioning;
+    if(provision?.epoch===String(d.epoch)&&provision.state==='intervention')await stage(i,'intervention','HOSTED_ENGINE_UNAVAILABLE');
+    throw error;
+   }
   }
  }
  async function progressArena(i:number){
