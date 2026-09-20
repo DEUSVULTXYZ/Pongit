@@ -207,8 +207,9 @@ async function play(serial:number){
  assert((await read(common.pool,poolAbi,'record',[ref])).captured);
  assert.equal(await read(common.pool,poolAbi,'playing',[binding.a]),'0x'+'00'.repeat(32));
  row.score=[result.match_.scoreA,result.match_.scoreB];row.elapsedUs=String(result.match_.elapsedUs);row.resultHash=result.match_.hash;
- row.publishedCount=count;row.publishedRoot=root;row.finishedAt=new Date().toISOString();row.passed=true;match.captured=true;await save();await flush();
- if(binding.mode===1)assert(row.proofs>0&&row.effectsObserved?.length>0,'Chaos needs an actually verified proof and active effect, not just successful proof calls');
+ row.publishedCount=count;row.publishedRoot=root;row.finishedAt=new Date().toISOString();row.passed=binding.mode!==1||row.proofs>0&&row.effectsObserved?.length>0;
+ match.captured=true;await save();await flush();
+ assert(row.passed,'Chaos needs an actually verified proof and active effect, not just successful proof calls');
 }
 try{
  await save();assert.equal(await read(common.pool,poolAbi,'publicAdmissions'),false);
