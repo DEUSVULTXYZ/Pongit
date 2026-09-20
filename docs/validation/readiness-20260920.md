@@ -254,3 +254,18 @@ bridge admission rejection and payment after slot reuse. These are not hosted
 qualification. The existing full TypeScript suite passed 517 tests before the
 new explicit-epoch command/journal extension; that extension requires its own
 subsequent run. Public admissions remain closed and no final soak has started.
+
+## 13:45 UTC: simultaneous admission regression
+
+Real live-9 remains FAILED. Classic reached 7-4 with 171/173 confirmed controls;
+Chaos was not assigned until after that result and the fixture timed out. The
+service reused the confirmed `assignNext` operation because its context contained
+only the two proposal IDs. Assigning the first proposal leaves both IDs unchanged,
+so subsequent calls returned the first receipt instead of enqueueing the second.
+
+The compatible correction adds each proposal's current arena assignment to the
+operation identity. A pending operation still deduplicates by exact calldata;
+only confirmation plus changed contract state permits the next assignment. A
+real isolated PostgreSQL regression exercises pending, confirmation, second
+assignment and repeated observation. Public gates stay closed. The actual
+simultaneous Classic/Chaos test must pass after the private service correction.

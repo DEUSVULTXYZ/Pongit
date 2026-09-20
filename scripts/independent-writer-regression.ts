@@ -4,6 +4,7 @@ import {randomBytes} from 'node:crypto';
 import {writeFile} from 'node:fs/promises';
 import {Pool} from 'pg';
 import {independentWriter} from '../relayer/src/independent-writer';
+import {maintenanceContext} from '../shared/independent-recovery';
 assert.equal(process.env.INDEPENDENT_WRITER_TEST,'isolated-vps');
 const schema='independent_test_'+randomBytes(6).toString('hex');assert(/^independent_test_[a-f0-9]{12}$/.test(schema));
 const admin=new Pool({connectionString:process.env.DATABASE_URL});await admin.query(`CREATE SCHEMA ${schema}`);
@@ -53,5 +54,20 @@ try{
  assert.equal((await writer.get(routine.id))?.status,'queued');assert.equal((await writer.get(consent.id))?.status,'queued');
  assert.equal(Number((await journal.query('SELECT count(*) FROM il_lifecycle_jobs')).rows[0].count),2);
  report.checks.push('Urgent consent runs before older unsigned maintenance; a read failure preserves both without allocating a nonce');
+ simulationError=undefined;
+ const vacant='0x0000000000000000000000000000000000000000',arena='0x0000000000000000000000000000000000000040';
+ const waiting=[{id:71n,arena:vacant},{id:72n,arena:vacant}];
+ const firstAssignment=await writer.enqueue(target,'0x12345683',0n,0,maintenanceContext('assignment',waiting));
+ // The same two slots remain occupied while the first match plays. A lost
+ // response still keeps the first operation; confirmation permits the second.
+ await db.query("UPDATE independent_operations SET status='pending',hash=$2 WHERE id=$1",[firstAssignment.id,hash]);
+ waiting[0].arena=arena;
+ const pendingAssignment=await writer.enqueue(target,'0x12345683',0n,0,maintenanceContext('assignment',waiting));
+ assert.equal(pendingAssignment.id,firstAssignment.id);
+ await db.query("UPDATE independent_operations SET status='confirmed' WHERE id=$1",[firstAssignment.id]);
+ const secondAssignment=await writer.enqueue(target,'0x12345683',0n,0,maintenanceContext('assignment',waiting));
+ assert.notEqual(secondAssignment.id,firstAssignment.id);assert.equal(secondAssignment.status,'queued');
+ assert.equal((await writer.enqueue(target,'0x12345683',0n,0,maintenanceContext('assignment',waiting))).id,secondAssignment.id);
+ report.checks.push('Two occupied proposal slots admit independently after first confirmation; uncertain assignment never gets a duplicate');
  report.passed=true;
 }finally{writer?.stop();await Promise.all([db.end(),journal.end()]);await admin.query(`DROP SCHEMA ${schema} CASCADE`);await admin.query(`DROP SCHEMA ${journalSchema} CASCADE`);await admin.end();await writeFile('artifacts/independent-candidate/writer-regression-separated.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

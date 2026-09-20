@@ -87,7 +87,13 @@ export async function independentService(o:Options){
  }
  const queue=async(at:Address,abi:Abi,name:string,args:readonly unknown[]=[],value=0n,priority=1)=>{
   let context='';
-  if(name==='assignNext')context=String(await r.lobby('slot',[0n]))+':'+String(await r.lobby('slot',[1n]));
+  if(name==='assignNext'){
+   const slots=await Promise.all([0n,1n].map(i=>r.lobby('slot',[i])));
+   // Assigning the first of two accepted proposals does not change either
+   // slot. Include their actual assignments so its confirmed operation cannot
+   // suppress the second admission until the first match finishes.
+   context=maintenanceContext('assignment',await Promise.all(slots.map(async id=>({id,arena:id?await r.lobby('arenaOf',[id]):zeroAddress}))));
+  }
   if(name==='propose')context=maintenanceContext('room',await r.lobby('room',args));
   if(name==='openRound'){
    const app=await r.lobby('arenaOf',args),b=await r.arena(app,'boundMatch');

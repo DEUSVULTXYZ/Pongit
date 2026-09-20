@@ -22,7 +22,7 @@ export function sameChaosPause(live:{scoreA:number;scoreB:number;resumeAt:bigint
 }
 
 /** Repeated permissionless calls must identify the state they intend to advance. */
-export function maintenanceContext(kind:'round'|'room',state:unknown){
+export function maintenanceContext(kind:'round'|'room'|'assignment',state:unknown){
  return kind+':'+JSON.stringify(state,(_,v)=>typeof v==='bigint'?String(v):v);
 }
 
