@@ -15,14 +15,14 @@ import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 
 /// Monad owns admission, participation and arena allocation. Keepers only trigger rules.
 contract IndependentLobby is EIP712, ILobbyRatings {
-    mapping(bytes32 => uint256) private words;
+    mapping(bytes32 => uint256) internal words;
     ArcadeFamily public immutable family;
     IInterludeHub public immutable hub;
     address public immutable setupOwner;
     address public immutable pressureSigner;
     PublishedRatings public ratings;
     bool public setupSealed;
-    IndependentArena[] private arenas;
+    IndependentArena[] internal arenas;
     mapping(address => bool) public registeredArena;
     mapping(uint256 => address) public arenaOf;
     mapping(bytes32 => uint256) public commandNonces;
@@ -45,7 +45,7 @@ contract IndependentLobby is EIP712, ILobbyRatings {
         ratings = r;
     }
     /// Registration is setupSealed before public admission. The deployment audit pins bytecode.
-    function addArena(IndependentArena a) external {
+    function addArena(IndependentArena a) external virtual {
         require(msg.sender == setupOwner && !setupSealed && arenas.length < 16 && !registeredArena[address(a)], "setup only");
         require(a.lobby() == address(this) && a.owner() == address(this) && address(a.hub()) == address(hub)
             && a.pressureSigner() == pressureSigner && !a.isEphemeral(), "arena configuration");
@@ -132,7 +132,7 @@ contract IndependentLobby is EIP712, ILobbyRatings {
         return ratings.indexOf(b.id) != 0 && ratings.entry(b.id).finality;
     }
     /// Deterministic oldest accepted proposal and first genuinely released arena.
-    function assignNext() external returns (address chosen) {
+    function assignNext() external virtual returns (address chosen) {
         require(setupSealed, "setup"); uint256 id;
         for (uint256 i; i < 2; i++) {
             uint256 candidate = L.slot(words,i);
@@ -152,7 +152,7 @@ contract IndependentLobby is EIP712, ILobbyRatings {
         IndependentArena(chosen).prepare(T.Binding(id,p.room,p.a,p.b,a.key,b.key,a.expires,b.expires,r.mode,r.ranked,0,0));
         arenaOf[id] = chosen; emit ArenaAssigned(id,chosen,p.room);
     }
-    function openArena(uint256 id) external payable {
+    function openArena(uint256 id) external payable virtual {
         IndependentArena a = IndependentArena(arenaOf[id]); require(address(a) != address(0), "unassigned");
         T.Binding memory b = a.boundMatch(); require(b.id == id && b.epoch == 0 && L.proposal(words,id).status == 2, "stale assignment");
         ArcadeFamily.Grant memory ga = family.grantOf(b.a); ArcadeFamily.Grant memory gb = family.grantOf(b.b);
@@ -173,19 +173,19 @@ contract IndependentLobby is EIP712, ILobbyRatings {
             _releaseParticipation(id,r.winner); emit MatchReleased(id,address(a),r.hash);
         } else ratings.reconcile(r,finality);
     }
-    function _releaseParticipation(uint256 id, address winner) private {
+    function _releaseParticipation(uint256 id, address winner) internal {
         L.Proposal memory p = L.proposal(words,id);
         if (S.get(words,1,uint160(p.a),0) == id) S.set(words,1,uint160(p.a),0,0);
         if (S.get(words,1,uint160(p.b),0) == id) S.set(words,1,uint160(p.b),0,0);
         L.finish(words,id,winner);
     }
-    function closeArena(uint256 id) external {
+    function closeArena(uint256 id) external virtual {
         capture(id); IndependentArena a = IndependentArena(arenaOf[id]);
         require(hub.statusOf(address(a),Types.GLOBAL) == Types.Status.Active, "not active");
         a.closeEngine(); emit ArenaClosing(id,address(a),a.boundMatch().epoch);
     }
     /// Expiration stops commands, not recovery. Only this arena enters closure.
-    function recoverExpired(uint256 id) external {
+    function recoverExpired(uint256 id) external virtual {
         IndependentArena a=IndependentArena(arenaOf[id]);
         require(address(a)!=address(0) && a.boundMatch().id==id,"match reference");
         Types.Session memory s=hub.sessionOf(address(a),Types.GLOBAL);
@@ -207,7 +207,7 @@ contract IndependentLobby is EIP712, ILobbyRatings {
         require(p.status == 2 && (invalid || block.timestamp > uint256(p.expires)+180), "admission still pending");
         _cancelUnopened(id);
     }
-    function _cancelUnopened(uint256 id) private {
+    function _cancelUnopened(uint256 id) internal virtual {
         address at = arenaOf[id];
         if (at != address(0)) {
             IndependentArena a = IndependentArena(at); T.Binding memory b = a.boundMatch();

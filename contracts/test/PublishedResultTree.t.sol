@@ -4,6 +4,18 @@ import {Test} from "forge-std/Test.sol";
 import {PublishedResultTree as Tree} from "../src/agents/competition/PublishedResultTree.sol";
 
 contract PublishedResultTreeTest is Test {
+    // Shared fixed vector with tests/published-result-tree.test.ts. It catches
+    // ABI/domain/order drift between the proof producer and Solidity consumer.
+    function testCrossLanguageGoldenVector() public pure {
+        address arena=0x1111111111111111111111111111111111111111;
+        bytes32 a=Tree.resultLeaf(10143,arena,7,1,keccak256(abi.encode(bytes32(uint256(123)),bytes32(uint256(1)))));
+        bytes32 b=Tree.resultLeaf(10143,arena,7,2,keccak256(abi.encode(bytes32(uint256(123)),bytes32(uint256(2)))));
+        assertEq(a,0x4539959cb7342a6c4fc0cdcce1bb7000479e97c00df3e093eec4e79753798013);
+        assertEq(b,0xe494af79a9c93028ff6b1ae7e6ebc176f9a9756bc1d3f38a23a241d8611554e7);
+        bytes32[16] memory frontier;(,uint8 changed,bytes32 branch)=Tree.append(frontier,0,a);frontier[changed]=branch;
+        (bytes32 root,,)=Tree.append(frontier,1,b);
+        assertEq(root,0x5615732222ead24391252c04d4851b3464d5257999892fd4d69ab9ed15cbf25b);
+    }
     function leaf(uint256 id) internal pure returns(bytes32){return Tree.resultLeaf(10143,address(0xbeef),7,id,keccak256(abi.encode(id)));}
 
     // Independent full-array construction, deliberately not the frontier

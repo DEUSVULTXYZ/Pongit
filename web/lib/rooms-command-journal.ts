@@ -12,7 +12,7 @@ type Store=Pick<Storage,'getItem'|'setItem'>;
  * Wallet/private-data keys and financial transactions never enter this path. */
 export class RoomsCommandJournal implements EngineTransportJournal {
  private epoch?:string;
- private direct?:{key:Address;epoch:string;match:string;expires:bigint};
+ private direct?:{key:Address;epoch:string;match:string;expires:bigint;epochInCalldata:boolean};
  private roomControls?:{key:Address;player:Address;epoch:string;expires:bigint};
  private permission?:{key:Address;epoch:string;match:string;data:Hex};
  private key:string;
@@ -34,9 +34,9 @@ export class RoomsCommandJournal implements EngineTransportJournal {
   if(changed)this.save(rows);
  }
  /** Only call after verifying this independent arena's hub epoch and binding. */
- bindDirect(key:Address,epoch:bigint,match:bigint,expires:bigint){
+ bindDirect(key:Address,epoch:bigint,match:bigint,expires:bigint,epochInCalldata=false){
   if(this.epoch!==String(epoch)||match<=0n)throw Error('Read the current arena before binding direct controls');
-  this.direct={key,epoch:String(epoch),match:String(match),expires};
+  this.direct={key,epoch:String(epoch),match:String(match),expires,epochInCalldata};
  }
  /** Exact owner-signed arena permission, prepared after binding verification.
   * Does not widen the movement key's scope or permit any financial selector. */
@@ -90,10 +90,12 @@ export class RoomsCommandJournal implements EngineTransportJournal {
     player=r.player;
    }else{
    const d=this.direct;
-   if(!d||d.epoch!==this.epoch||signer.toLowerCase()!==d.key.toLowerCase()||!['input','tick','concede','confirmReady'].includes(inner.functionName)||String(inner.args?.[0])!==d.match)throw Error('Scoped game grant required');
+   const exactReference=d?.epochInCalldata?String(inner.args?.[0])===d.epoch&&String(inner.args?.[1])===d.match:String(inner.args?.[0])===d?.match;
+   if(!d||d.epoch!==this.epoch||signer.toLowerCase()!==d.key.toLowerCase()||!['input','tick','concede','confirmReady'].includes(inner.functionName)||!exactReference)throw Error('Scoped game grant required');
    // An identical already-journaled call can still be reconciled after expiry.
    if(BigInt(Math.floor(Date.now()/1000))>=d.expires&&!this.load().some(j=>j.hash===keccak256(raw as Hex)&&j.state==='uncertain'))throw Error('Arcade session expired');
    player=d.key;
+   permissionMatch=d.match;
    }
   }
   const hash=keccak256(raw as Hex);let rows=this.load();const pending=rows.find(x=>x.player.toLowerCase()===player.toLowerCase()&&x.state==='uncertain');

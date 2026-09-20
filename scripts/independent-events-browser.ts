@@ -41,7 +41,15 @@ const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 let reporting=false,driving=true;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
 async function until(fn:()=>Promise<any>,label:string,ms=60000){const end=Date.now()+ms;while(Date.now()<end){if(await fn().catch(()=>false))return;await sleep(250);}throw Error('Timed out: '+label);}
 async function persist(){
- for(let i=0;i<pages.length;i++)saved.players[i]={...(saved.players[i]||{}),credentials:(await devices[i].cdp.send('WebAuthn.getCredentials',{authenticatorId:devices[i].id})).credentials,storage:await contexts[i].storageState(),session:await pages[i].evaluate(()=>Object.fromEntries(Object.entries(sessionStorage)))};
+ for(let i=0;i<pages.length;i++){
+  // The spectator deliberately leaves the origin during payout. Preserve its
+  // last origin snapshot; opaque about:blank storage is neither readable nor
+  // evidence that its previous arcade session disappeared.
+  const session=new URL(pages[i].url()).origin===origin
+   ?await pages[i].evaluate(()=>Object.fromEntries(Object.entries(sessionStorage)))
+   :saved.players[i]?.session;
+  saved.players[i]={...(saved.players[i]||{}),credentials:(await devices[i].cdp.send('WebAuthn.getCredentials',{authenticatorId:devices[i].id})).credentials,storage:await contexts[i].storageState(),session};
+ }
  await writeFile(secret+'.next',JSON.stringify(saved),{mode:0o600});await rename(secret+'.next',secret);
 }
 async function init(i:number){
@@ -174,7 +182,7 @@ try{
   report.checks.push('Root-signed test MON bet accepted during a live Chaos rally');
   await spectator.getByRole('button',{name:'Close Wallet and betting',exact:true}).click();
   // The beneficiary browser is disconnected while the relayer settles the payout.
-  before[2]=counts[2];await spectator.goto('about:blank');
+  before[2]=counts[2];await persist();await spectator.goto('about:blank');
  }})();
  await Promise.all([movement,financial]);
  assert(report.inputs[0].length>1&&report.inputs[1].length>1,'Both browsers must have real accepted movement receipts');

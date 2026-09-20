@@ -60,7 +60,7 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch){
   // Monad supports 128 KiB runtimes. These explicit candidate contracts
   // have a stricter 32 KiB budget; all other artifacts retain 24 KiB. The
   // common pool stays on Monad. Hosted arena execution is qualified separately.
-  const maxRuntime=['SeriesAgentArena','AgentSeriesPool','IndependentEventsArena','IndependentEventsLobby','ReadyIndependentEventsArena','ReadyIndependentEventsLobby'].includes(name)?32768:24576;
+  const maxRuntime=['SeriesAgentArena','AgentSeriesPool','IndependentEventsArena','IndependentEventsLobby','ReadyIndependentEventsArena','ReadyIndependentEventsLobby','ReusableEventsLobby'].includes(name)?32768:24576;
   assert((a.deployedBytecode.object.length-2)/2<=maxRuntime,`${name} exceeds its reviewed runtime budget`);
   for(const libs of Object.values(a.bytecode.linkReferences??{}) as any[]){
    for(const [lib,refs] of Object.entries(libs) as Array<[string,Array<{start:number,length:number}>]>){

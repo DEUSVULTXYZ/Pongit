@@ -145,7 +145,7 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
    const current=await read();if(current.phase!==2)return;
    const v=current.state,position=side?v.right:v.left;
    let target=50000000n;
-   if(Date.now()-firstPlaying<50000||mode&&!bought){
+   if(Date.now()-firstPlaying<50000||mode&&!bought||report.matches.length<2||report.matches.some((x:any)=>!x.playingAt)){
     const plane=side?984000000n:40000000n,dt=v.vx===0n?0n:(plane-v.x)*1000000n/v.vx;
     let y=v.y+(dt>0n?v.vy*dt/1000000n:0n)-6000000n;const period=1128000000n;y=((y%period)+period)%period;target=6000000n+(y>564000000n?period-y:y);
    }
@@ -197,11 +197,11 @@ try{
   await submit(`register-${i}`,m.family,encodeFunctionData({abi:familyAbi,functionName:'register',args:[grant,signature]}));
   grants[i]=grant;
  }
- // Prepare both admissions before acknowledging either arena. Starting the
- // first game during the second's Monad/provisioning wait did not reliably
- // exercise simultaneous play, despite using Promise.all on the final tasks.
- const prepared=await Promise.all(([0,1] as const).map(mode=>prepare(mode)));
- for(const match of prepared){const task=play(match).catch(async e=>{const row=report.matches.find((x:any)=>x.app===match.app&&x.id===match.id);if(row){row.error=String(e?.shortMessage||e?.message||'Hosted fixture failed').split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,300);await flush();}throw e;});task.catch(()=>{});tasks.push(task);}
+ // Acknowledge each arena as soon as it is hosted. Waiting for both admissions
+ // before either ready message can consume the first arena's 30-second loading
+ // window. Continue tracking the ball until the other arena is actually playing;
+ // two delegated contracts alone are not simultaneous gameplay evidence.
+ for(const mode of [0,1] as const){const task=(async()=>play(await prepare(mode)))().catch(async e=>{const row=report.matches.find((x:any)=>x.mode===mode);if(row){row.error=String(e?.shortMessage||e?.message||'Hosted fixture failed').split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,300);await flush();}throw e;});task.catch(()=>{});tasks.push(task);}
  await Promise.all(tasks);
  const began=report.matches.map((x:any)=>Date.parse(x.playingAt)),ended=report.matches.map((x:any)=>Date.parse(x.scores.at(-1).at));
  report.simultaneousPlayMs=Math.min(...ended)-Math.max(...began);

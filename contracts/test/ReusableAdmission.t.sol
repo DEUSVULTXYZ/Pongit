@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 import {Test} from "forge-std/Test.sol";
 import {ReusableAdmission as A} from "../src/independent/ReusableAdmission.sol";
+import {IndependentTypes as T} from "../src/independent/IndependentTypes.sol";
 
 contract AdmissionHarness {
     address public immutable bridge;
@@ -13,6 +14,13 @@ contract AdmissionHarness {
     }
 }
 contract ReusableAdmissionTest is Test {
+    function testTypedDataCrossLanguageGoldenVector() public pure {
+        T.Binding memory b=T.Binding(99,12,address(1),address(2),address(3),address(4),7201,7201,1,true,4,7);
+        bytes32 bindingHash=keccak256(abi.encode(b));
+        assertEq(bindingHash,0x5eab5bd06874a7d3f419747fd046325b8f15382dfe4a5a756e3020bda172cfca);
+        A.Ticket memory t=A.Ticket(address(5),address(6),7,1,99,bindingHash,100,220,4,bytes32(uint256(5)),14);
+        assertEq(A.digest(t),0xd3b24c45c87c148bf92a7990263752e3aa7d52e1a984c4fa9af4ba033b26cb5c);
+    }
     AdmissionHarness gate;
     function setUp() public { vm.warp(1_800_000_000); gate = new AdmissionHarness(vm.addr(812)); }
     function ticket() internal view returns(A.Ticket memory) {

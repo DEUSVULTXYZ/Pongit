@@ -7,6 +7,26 @@ import {compactArenaSession} from '../shared/compact-arena-session';
 import {RoomsCommandJournal} from '../web/lib/rooms-command-journal';
 const app='0x0000000000000000000000000000000000000011';
 const abi=parseAbi(['function input(uint256,int8,uint256,uint256)','function tick(uint256)','function concede(uint256)','function withdraw(uint256)','error StaleInput()']);
+test('reusable arena commands and durable journal bind both epoch and logical match',async()=>{
+ const key=generatePrivateKey(),account=privateKeyToAccount(key),sent:Hex[]=[];
+ const reusableAbi=parseAbi(['function input(uint256 epoch,uint256 id,int8 direction,uint256 sequence,uint256 deadline)','function tick(uint256 epoch,uint256 id)','function confirmReady(uint256 epoch,uint256 id)','function concede(uint256 epoch,uint256 id)']);
+ let stored:string|null=null;const store={getItem:()=>stored,setItem:(_key:string,v:string)=>{stored=v;}};
+ const journal=new RoomsCommandJournal(store,app,reusableAbi);
+ journal.received('interlude_session',{app,chainId:4242,epoch:7});journal.bindDirect(account.address,7n,91n,9000000000n,true);
+ const node:any={getTransactionCount:async()=>5,request:async({params}:any)=>{await journal.beforeSend(params[0]);sent.push(params[0]);throw Error('lost reusable response');}};
+ const sender=compactArenaSession({node,abi:reusableAbi,app,key,epoch:7n,match:91n,expires:9000000000n});
+ await assert.rejects(sender.send('input',[6n,91n,1,1n,200n]),/only permits/);
+ await assert.rejects(sender.send('tick',[7n,90n]),/only permits/);
+ for(const [epoch,id] of [[6n,91n],[7n,90n]]){
+  const raw=await account.signTransaction({type:'eip1559',chainId:4242,to:app,nonce:5,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n,data:encodeFunctionData({abi:reusableAbi,functionName:'tick',args:[epoch,id]})});
+  await assert.rejects(journal.beforeSend(raw),/Scoped game grant/);
+ }
+ await assert.rejects(sender.send('input',[7n,91n,1,1n,200n]),/lost reusable/);
+ const pending=journal.pending(account.address)!;assert.equal(pending.epoch,'7');assert.equal(pending.match,'91');assert.equal(pending.raw,sent[0]);
+ await assert.rejects(sender.send('tick',[7n,91n]),/Reconcile/);assert.equal(sent.length,1);
+ const restored=new RoomsCommandJournal(store,app,reusableAbi);restored.received('interlude_session',{app,chainId:4242,epoch:7});restored.bindDirect(account.address,7n,91n,9000000000n,true);
+ await restored.beforeSend(pending.raw);restored.received('eth_getTransactionReceipt',{transactionHash:pending.hash,status:'0x1'});assert.equal(restored.pending(account.address),undefined);
+});
 async function fixture(handler?:(raw:Hex)=>any){
  const key=generatePrivateKey(),account=privateKeyToAccount(key),sent:Hex[]=[];
  let stored:string|null=null,reads=0;

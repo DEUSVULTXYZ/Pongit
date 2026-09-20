@@ -1,6 +1,6 @@
 # Reusable arenas and testnet admission transport
 
-Status: candidate foundations, **not enabled or hosted-qualified**. Public human,
+Status: integrated rules-14 contract candidate, **not enabled or hosted-qualified**. Public human,
 agent and tournament admission gates remain closed. No final 24-hour trial has
 started. The existing private tests continue on their immutable deployments.
 
@@ -12,7 +12,7 @@ This is a trust assumption for live admission, not a cryptographic state proof.
 
 ## Bounded storage and preserved results
 
-`ReusableArenaStorage` is a candidate library, not a playable arena. It uses one
+`ReusableArenaStorage` backs the candidate `ReusableEventsArena`. It uses one
 fixed physics slot, clears its previous state before reuse, and keeps logical
 match IDs, epochs, ticket sequences and participant bindings distinct. It never
 creates a storage key from a new player's address or a new logical match ID.
@@ -71,21 +71,73 @@ and an out-of-bounds test mutation) are preserved in the private diagnostics.
 They were corrected before the passing run. No production application references
 any of these new libraries yet.
 
+## Integrated human candidate, 12:30 UTC
+
+The human authority now reuses the existing deterministic Monad lobby, both
+consents and participation locks. It records each complete ticket before the
+bridge signs it. The immutable physics adapter uses the existing Classic and
+24-effect Chaos engine on one physical slot, with logical IDs in snapshots,
+randomness verification, pressure checkpoints and results. Both players must
+acknowledge readiness before the three-second launch countdown.
+
+`ReusableEventsLobby.captureProof` releases participation from a result proved
+against the actual published commitment and exact issued ticket. Ordered ratings
+retain corrections; the first payment result and cutoff remain frozen.
+`ReusableEventsSettlement` requires the exact published admission for live bets.
+A newer match in the slot cannot change an older match's beneficiary or market.
+
+After release, an unfinished slot is marked cancelled without appending to the
+final root: another reader may already have sealed that root. The Monad authority
+uses absence from the final published prefix to record a technical cancellation
+and refund. A missing RPC response or expired ticket alone cannot release a
+participation lock. Renewal requires the previous root to be sealed first.
+
+The integrated offline suite passed **40 tests**: 8 arena, 4 lobby, 8 settlement
+(including inherited lobby tests) and 20 historical independent-arena regressions.
+Sixty-four short matches alternating actual Classic/Chaos physics touched 42
+distinct keys across the run, at most 36 distinct keys in any one short match.
+These matches end by concession and do not cover the worst event/storage case.
+This is not hosted publication, a maximum-duration qualification or proof of
+capacity. The earlier storage-only numbers above describe a different harness.
+
+The root and linked game fit the 24 KiB deployment guard. The Monad-only lobby
+uses the existing explicitly allowlisted 32 KiB budget, checked in tests and the
+deployer. Generator output identifies the single annotated mapping at slot zero;
+the compiler layout check passed for all six generated surfaces, including the
+new arena (commitment `8d1ff0a14e02dad8fd74e6d621b05b7cc93c6ca5c3e78ad386e68af083201626`).
+
+The broader isolated run passed 100 tests, including the unchanged Chaos gas and
+announcement regressions and the published-root golden vector. The subsequent
+typed-admission cross-language vector passed with its four existing cases. The
+complete TypeScript suite then passed 520 tests. These counts still describe
+local execution on the isolated VPS, not hosted acceptance or a release verdict.
+
+Final measured runtimes are 22,622 bytes (arena), 23,132 (linked game), 29,438
+(Monad lobby), 5,668 (settlement) and 4,586 (result verifier). Explicit epoch
+commands add a fixed argument, not a repeated wallet authorization.
+
+The TypeScript proof index verifies ordered log prefixes, produces historical
+proofs only against the exact published root/count, and rewinds only to a
+verified canonical prefix. Full result records must still be archived and
+replayed after a reorganization. Compact browser commands and their existing
+durable journal can opt into explicit epoch plus logical-match binding; old
+contracts retain their original encoding.
+
 ## Remaining implementation and qualification
 
-1. Connect authoritative Monad lobby/agent admission to issued tickets, keeping
-   both consents, deterministic assignment and global participation locks.
-2. Build the immutable reusable physics adapter with every external command,
-   random draw, pressure checkpoint, snapshot and result bound to the logical
-   match, actual epoch and correct limited session. Do not leak physical slot IDs
-   into public references or permit stale commands after slot reuse.
-3. Implement proof reconstruction, reorganization recovery, canonical result
-   decoding, historical settlement and rating corrections from the published root.
-4. Enforce release/root archival/new-epoch ordering and a measured admission
-   reserve for completion. A bounded storage footprint alone does not prove
-   publication capacity or continuous availability.
-5. Qualify real sequential matches, concurrent human/agent capacity, all financial
-   paths, publication, closure and renewal on the hosted service before opening.
-   Preserve the existing final 24-hour, browser, tournament and backup gates.
+1. Finish auditing and qualifying the complete adapter, generator layout,
+   canonical result archive, bridge signer and proof consumers on hosted
+   Interlude. Deployments remain isolated candidates, with public flags off.
+2. Adapt the separate agent authority, five-minute rules, strategy controllers
+   and tournaments to reusable arenas. This candidate does not silently change
+   human game duration or run bots in human slots.
+3. Measure worst-case publication size/changed slots and release costs. The
+   current 31-minute admission time reserve covers the existing 30-minute human
+   safety cancellation plus a margin; it is not measured publication headroom.
+4. Qualify real sequential games, concurrent human/agent capacity, all financial
+   paths, publication, closure and renewal. A bounded storage footprint alone
+   does not prove continuous availability or remove the hub's real expiry.
+5. Preserve the final unchanged 24-hour, browser, tournament, verified migration
+   and off-VPS backup gates before any public activation.
 
 There is no automatic Monad gameplay fallback and no automatic public activation.

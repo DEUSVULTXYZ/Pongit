@@ -208,3 +208,28 @@ the existing browser run stays on its frozen build.
 The full TypeScript suite passed 513 tests and type checking passed. The separate
 reusable admission/result/storage candidate passed 16 Solidity tests offline;
 see `../REUSABLE_ARENAS.md` for the explicit remaining integration and hosted gates.
+
+## 12:30 UTC: browser outcomes and reusable candidate
+
+The original `series-browser-14` passed with a fresh virtual Mera PRF, F5 using
+the same scoped key, a lost write response, an injected pre-send 429 and subsequent
+confirmed movement. Classic ended naturally 0-7; Chaos was conceded at 0-4.
+No physical authenticator or natural Chaos seventh point is claimed from it.
+F5 page loads took 1081/1082 ms and usable controls 3974/3872 ms. The report records
+aborted session reads and temporary timeout messages despite no final errors.
+
+Human Edge `browser-chaos-ready4` remains FAILED. Its actual game reached 7-6,
+with 72 accepted input receipts, countdown 3/2/1 on three pages, a live root-signed
+bet and F5 without a second root ceremony. The final fixture attempted to read
+sessionStorage on a deliberately disconnected spectator's `about:blank` page.
+The driver now preserves the last origin snapshot; the original failure is kept
+and a passing rerun is still required. The two-arena live-8 fixture remains
+separate and must not compete with a new browser match for its required capacity.
+
+Reusable rules-14 contracts now integrate fixed-slot physical play, authoritative
+Monad tickets, published Merkle results and immutable first-payment settlement.
+Forty isolated Solidity integration/regression tests passed, including false
+bridge admission rejection and payment after slot reuse. These are not hosted
+qualification. The existing full TypeScript suite passed 517 tests before the
+new explicit-epoch command/journal extension; that extension requires its own
+subsequent run. Public admissions remain closed and no final soak has started.

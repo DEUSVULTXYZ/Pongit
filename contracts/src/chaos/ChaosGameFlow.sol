@@ -100,12 +100,12 @@ library ChaosGameFlow {
             if(old!=(uint256(p.paidA)|(uint256(p.paidB)<<128))||bytes32(get(w,p.matchId,18))!=p.checkpoint)revert InvalidPressure();return true;
         }
     }
-    function request(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint32 index,uint32 delayMs,uint64 t) private {
+    function request(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint256 logicalId,uint32 index,uint32 delayMs,uint64 t) private {
         uint256 q=engine.request(uint64(hub.sessionOf(address(this),Types.GLOBAL).epoch),index,uint32(t/1000)+delayMs,
             engine.excluded(packed(w,id),bytes32(get(w,id,3)),get(w,id,8)),delayMs);
-        set(w,id,29,q);set(w,id,30,0);emit EventRequested(id,q);
+        set(w,id,29,q);set(w,id,30,0);emit EventRequested(logicalId,q);
     }
-    function announce(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 t) private returns(bool){
+    function announce(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint256 logicalId,uint64 t) private returns(bool){
         uint256 q=get(w,id,29);uint256 draw=get(w,id,30);
         uint64 due=uint64(uint32(q>>128))*1000;
         // A blocked draw retries only on the absolute 100 ms game-time grid.
@@ -113,8 +113,8 @@ library ChaosGameFlow {
         // announcement boundaries.
         if(draw==0||t<due||(t!=due&&t%SLICE_US!=0))return false;
         (uint256[8] memory state,bool applied)=engine.announce(packed(w,id),bytes32(get(w,id,3)),get(w,id,8),draw,uint32(q>>96));
-        if(!applied)return false;store(w,id,state);emit ChaosAnnounced(id,uint32(q>>96),draw,t);
-        request(w,engine,hub,id,uint32(q>>96)+1,uint16(draw>>48),t);return true;
+        if(!applied)return false;store(w,id,state);emit ChaosAnnounced(logicalId,uint32(q>>96),draw,t);
+        request(w,engine,hub,id,logicalId,uint32(q>>96)+1,uint16(draw>>48),t);return true;
     }
     /// A command advances in gas-capped slices while the normal attempt, a one-step
     /// fallback, a ranked result and its publication still fit. Time alone cannot bound
@@ -137,10 +137,17 @@ library ChaosGameFlow {
     function advance(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
         external returns(bool complete,uint8 outcome,uint8 winner)
     {
+        return advanceAt(w,engine,hub,id,id,target);
+    }
+    /// Same physics for a bounded physical slot. Only the public event identity
+    /// differs; no match ID is inferred from an untrusted caller or storage key.
+    function advanceAt(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint256 logicalId,uint64 target)
+        public returns(bool complete,uint8 outcome,uint8 winner)
+    {
         uint64 t=uint64(get(w,id,27)>>112);
         do{
             uint64 width=span(w,id);uint64 end=(t/width+1)*width;
-            (complete,outcome,winner)=slice(w,engine,hub,id,target>end?end:target);
+            (complete,outcome,winner)=slice(w,engine,hub,id,logicalId,target>end?end:target);
             if(outcome!=0)return(true,outcome,winner);
             t=uint64(get(w,id,27)>>112);
         }while(complete&&t<target&&gasleft()>ADVANCE_RESERVE);
@@ -152,13 +159,13 @@ library ChaosGameFlow {
         return PLAIN_SLICE_US;
     }
     /// A failed stateless calculation never discards previously stored progress.
-    function slice(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint64 target)
+    function slice(mapping(bytes32=>uint256) storage w,ChaosEngine engine,IInterludeHub hub,uint256 id,uint256 logicalId,uint64 target)
         private returns(bool complete,uint8 outcome,uint8 winner)
     {
-        if(get(w,id,29)==0)request(w,engine,hub,id,1,10000,uint64(get(w,id,27)>>112));
+        if(get(w,id,29)==0)request(w,engine,hub,id,logicalId,1,10000,uint64(get(w,id,27)>>112));
         for(uint8 attempt;attempt<3;attempt++){
             if(gasleft()<=ADVANCE_RESERVE)return(false,0,0);
-            uint64 t=uint64(get(w,id,27)>>112);announce(w,engine,hub,id,t);
+            uint64 t=uint64(get(w,id,27)>>112);announce(w,engine,hub,id,logicalId,t);
             uint64 stop=target;uint256 q=get(w,id,29);
             if(get(w,id,30)!=0){uint64 due=uint64(uint32(q>>128))*1000;
                 if(due>t&&due<stop)stop=due;
@@ -173,11 +180,11 @@ library ChaosGameFlow {
                 if(reason.length!=0){assembly("memory-safe"){revert(add(reason,32),mload(reason))}}
                 p=engine.advanceStep{gas:STEP_GAS}(state,seed,control,stop,uint128(paid),uint128(paid>>128));fallbackStep=true;
             }
-            store(w,id,p.words);for(uint256 i;i<p.collisions.length;i++)emit ChaosCollision(id,p.collisions[i]);
+            store(w,id,p.words);for(uint256 i;i<p.collisions.length;i++)emit ChaosCollision(logicalId,p.collisions[i]);
             if(p.appliedRally!=0){set(w,id,14,uint128(paid));set(w,id,15,uint128(paid>>128));
-                emit ChaosPressureApplied(id,p.appliedRally,uint128(paid),uint128(paid>>128),bytes32(get(w,id,18)));}
+                emit ChaosPressureApplied(logicalId,p.appliedRally,uint128(paid),uint128(paid>>128),bytes32(get(w,id,18)));}
             if(p.outcome!=0)return(true,p.outcome,uint8(p.words[7]>>39&3));
-            uint64 next=uint64(p.words[6]>>112);announce(w,engine,hub,id,next);
+            uint64 next=uint64(p.words[6]>>112);announce(w,engine,hub,id,logicalId,next);
             if(p.complete&&next==target)return(true,0,0);if(next==t||fallbackStep)return(false,0,0);
         }
     }

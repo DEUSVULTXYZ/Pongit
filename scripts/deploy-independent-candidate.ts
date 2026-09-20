@@ -1,14 +1,17 @@
 // Deploy a testnet qualification candidate. Does not change production configuration.
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,rename,readFile} from 'node:fs/promises';
-import {keccak256,toHex,type Address} from 'viem';
+import {isAddress,keccak256,toHex,type Address} from 'viem';
 import {chainTools} from './independent-chain-tools';
 import {readHubDelegation} from '../shared/rooms-hub';
 const prefix=process.env.PONG_INDEPENDENT_PREFIX!;
 assert(prefix?.startsWith('independent-qualification-'));
 const out=process.env.PONG_INDEPENDENT_MANIFEST!;assert(out?.startsWith('/secrets/'));
-const rulesVersion=Number(process.env.PONG_INDEPENDENT_RULES??4);assert([4,12,13].includes(rulesVersion),'Explicit supported rules');
+const rulesVersion=Number(process.env.PONG_INDEPENDENT_RULES??4);assert([4,12,13,14].includes(rulesVersion),'Explicit supported rules');
 const events=rulesVersion>=12;
+const reusable=rulesVersion===14;
+const admissionSigner=process.env.PONG_ADMISSION_BRIDGE as Address|undefined;
+if(reusable)assert(admissionSigner&&isAddress(admissionSigner)&&!/^0x0{40}$/i.test(admissionSigner),'Explicit limited testnet admission bridge address');
 const arenaCount=Number(process.env.PONG_INDEPENDENT_ARENAS??3);assert(Number.isInteger(arenaCount)&&arenaCount>=3&&arenaCount<=16);
 const t=await chainTools(prefix);
 const hub:Address='0x3Ef8327F69e09cf721772F345e2A887eA22cD595';
@@ -24,16 +27,21 @@ if(snapshot){
 }
 let manifest:any;
 try{manifest=JSON.parse(await readFile(out,'utf8'));assert.equal(manifest.prefix,prefix);assert.equal(manifest.rulesVersion??4,rulesVersion,'Never replace a journalled deployment with different rules');assert.equal(manifest.arenaCount??3,arenaCount,'Arena count changed during deployment');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
-manifest??={prefix,purpose:snapshot?'independent migration candidate':'independent contract qualification',production:false,chainId:10143,rulesVersion,arenaCount,hub,pressureSigner,createdAt:new Date().toISOString(),genesis:Number(snapshot?.genesis??Math.floor(Date.now()/1000)),startBlock:String(await t.base.getBlockNumber()),migrationHash,arenas:[]};
+manifest??={prefix,purpose:snapshot?'independent migration candidate':'independent contract qualification',production:false,chainId:10143,rulesVersion,arenaCount,hub,pressureSigner,...(reusable?{admissionSigner}:{}),createdAt:new Date().toISOString(),genesis:Number(snapshot?.genesis??Math.floor(Date.now()/1000)),startBlock:String(await t.base.getBlockNumber()),migrationHash,arenas:[]};
+if(reusable)assert.equal(manifest.admissionSigner.toLowerCase(),admissionSigner!.toLowerCase(),'Admission signer changed during deployment');
 assert(!manifest.migrationHash||manifest.migrationHash===migrationHash,'Migration source changed during deployment');
 const save=async()=>{await writeFile(out+'.next',JSON.stringify(manifest,null,2),{mode:0o600});await rename(out+'.next',out);};
 try{
  await save();
  manifest.family=await t.deploy('ArcadeFamily');await save();
- const lobbyName=rulesVersion===13?'ReadyIndependentEventsLobby':events?'IndependentEventsLobby':'IndependentLobby';
- manifest.lobby=await t.deploy(lobbyName,[manifest.family,hub,t.account.address,pressureSigner]);await save();
+ const lobbyName=reusable?'ReusableEventsLobby':rulesVersion===13?'ReadyIndependentEventsLobby':events?'IndependentEventsLobby':'IndependentLobby';
+ manifest.lobby=await t.deploy(lobbyName,[manifest.family,hub,t.account.address,...(reusable?[admissionSigner]:[]),pressureSigner]);await save();
  manifest.ratings=await t.deploy('PublishedRatings',[manifest.lobby,t.account.address,BigInt(manifest.genesis)]);await save();
  const l=await t.artifact(lobbyName),r=await t.artifact('PublishedRatings');
+ if(reusable){
+  manifest.resultVerifier=await t.deploy('PublishedResultVerifier',[manifest.lobby,hub]);await save();
+  await t.write('bind-result-verifier',manifest.lobby,l.abi,'bindVerifier',[manifest.resultVerifier]);
+ }
  await t.write('bind-ratings',manifest.lobby,l.abi,'bindRatings',[manifest.ratings]);
  if(snapshot){
   for(let mode=0;mode<2;mode++){const rows=snapshot.ratings.filter((v:any)=>v.mode===mode);for(let i=0;i<rows.length;i+=100){const chunk=rows.slice(i,i+100);await t.write(`seed-mode-${mode}-${i}`,manifest.ratings,r.abi,'seed',[chunk.map((v:any)=>v.player),mode,chunk.map((v:any)=>({elo:Number(v.elo),played:Number(v.played),wins:Number(v.wins),season:Number(v.season)}))]);}}
@@ -49,13 +57,13 @@ try{
    assert(!manifest.modules[name]||manifest.modules[name]===deployed,'Pinned module changed');manifest.modules[name]=deployed;await save();}
  }
  for(let i=0;i<arenaCount;i++){
-  const app=await t.deploy(rulesVersion===13?'ReadyIndependentEventsArena':events?'IndependentEventsArena':'IndependentArena',[hub,manifest.lobby,pressureSigner,...(events?[manifest.modules.ChaosEngine]:[])],`arena-${i}`);
+  const app=await t.deploy(reusable?'ReusableEventsArena':rulesVersion===13?'ReadyIndependentEventsArena':events?'IndependentEventsArena':'IndependentArena',[hub,manifest.lobby,...(reusable?[admissionSigner]:[]),pressureSigner,...(events?[manifest.modules.ChaosEngine]:[]),...(reusable?[manifest.resultVerifier]:[])],`arena-${i}`);
   manifest.arenas[i]??={app,index:i};assert.equal(manifest.arenas[i].app,app);await save();
   await t.write(`register-arena-${i}`,manifest.lobby,l.abi,'addArena',[app]);
  }
- // The realtime settlement requires a sealed, immutable rules-12 arena list.
+ // Realtime settlement requires a sealed immutable list for its exact rules.
  if(events)await t.write('seal-lobby',manifest.lobby,l.abi,'seal');
- manifest.settlement=await t.deploy(events?'IndependentEventsSettlement':'IndependentSettlement',[manifest.lobby]);await save();
+ manifest.settlement=await t.deploy(reusable?'ReusableEventsSettlement':events?'IndependentEventsSettlement':'IndependentSettlement',[manifest.lobby]);await save();
  manifest.vault=await t.deploy('RoomsVault',[t.account.address]);await save();
  manifest.lmsr=await t.deploy('LMSRV2');await save();
  manifest.market=await t.deploy(events?'RealtimeMarket':'MarketV4',[t.account.address,t.account.address,manifest.settlement,manifest.lmsr,manifest.vault]);await save();
