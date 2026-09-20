@@ -57,14 +57,14 @@ try{
  chaosBindings[address]=binding;
  config+=`      - name: AgentArchive\n        address: "${agents.archive}"\n        start_block: ${start(agents.archiveStartBlock)}\n`;
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
-try{
- const series=JSON.parse(await readFile('deployments/agent-series-index.json','utf8'));
+for(const [file,rules] of [['agent-series-index.json',11],['agent-reusable-index.json',15]] as const)try{
+ const series=JSON.parse(await readFile('deployments/'+file,'utf8'));
  const address=(value:unknown):value is string=>typeof value==='string'&&/^0x[\da-fA-F]{40}$/.test(value)&&!/^0x0{40}$/.test(value);
- if(series.chainId!==d.chainId||series.rulesVersion!==11||!address(series.pool)||!/^\d+$/.test(String(series.startBlock))
-  ||!Array.isArray(series.arenas)||series.arenas.length<2||series.arenas.length>16||!series.arenas.every(address)
+ if(series.chainId!==d.chainId||series.rulesVersion!==rules||!address(series.pool)||!/^\d+$/.test(String(series.startBlock))
+  ||!Array.isArray(series.arenas)||series.arenas.length<(rules===15?3:2)||series.arenas.length>16||!series.arenas.every(address)
   ||new Set(series.arenas.map((a:string)=>a.toLowerCase())).size!==series.arenas.length)throw Error('Invalid series archive manifest');
  const emitter=series.pool.toLowerCase();if(chaosBindings[emitter])throw Error('Conflicting series archive emitter');
- chaosBindings[emitter]={apps:series.arenas.map((a:string)=>a.toLowerCase()),rulesVersion:11};
+ chaosBindings[emitter]={apps:series.arenas.map((a:string)=>a.toLowerCase()),rulesVersion:rules};
  config+=`      - name: AgentSeriesArchive\n        address: "${series.pool}"\n        start_block: ${start(series.startBlock)}\n`;
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 await writeFile("indexer/config.yaml", config);

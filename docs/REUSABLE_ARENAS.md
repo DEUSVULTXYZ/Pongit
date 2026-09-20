@@ -1,5 +1,32 @@
 # Reusable arenas and testnet admission transport
 
+## Publication bounds and replay indexing, 20 September 21:07 UTC
+
+The longer read-only fork completed 16,000 batches over 86 reused storage
+slots (43 changes per batch). Hub release used 1,451,957 gas before refunds.
+A separate 300-batch trial with four 2,048-byte transactions per batch produced
+the same release cost. Both used the actual deployed hub runtime. Earlier
+timeouts and setup failures remain preserved. These results establish the
+tested release bound, not hosted publication capacity or continuous rotation.
+No production admission budget has been inferred from these checks alone.
+
+Rules-15 result captures now have an explicit immutable pool/arena binding in
+the Envio configuration. Historical rules-11 results keep their original rules
+and share the same three-replay retention policy. Unknown emitters and foreign
+arenas are rejected. Eleven archive/retention tests, root type checking, and
+actual Envio code generation and type checking passed.
+
+A new isolated indexer started at 21:06 UTC, retaining the existing human
+history boundary (Monad block 62,260,200) and the previous series archive.
+It uses a new database and has no public ports. Production databases and
+indexers are unchanged. Backfill and real replay retrieval are still pending;
+recorded frames alone do not justify bypassing the shared retention index.
+
+The first hosted Classic elimination tournament has four published results
+and its fifth match is running. Its verdict is still pending. Public human,
+agent and tournament admissions remain closed, and the final unchanged
+24-hour qualification has not started.
+
 ## Real renewal and dedicated capacity, 20 September 20:41 UTC
 
 All three dedicated agent arenas are now actually hosted and ready: `f868...`

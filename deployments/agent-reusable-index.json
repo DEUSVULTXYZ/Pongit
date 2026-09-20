@@ -1,0 +1,12 @@
+{
+  "chainId": 10143,
+  "rulesVersion": 15,
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "startBlock": 64199244,
+  "deploymentTransaction": "0xa84929c48026a7a4666105c7c0ce484dddd1d3e25f5baf9134f969025dd37020",
+  "arenas": [
+    "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+    "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+    "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b"
+  ]
+}

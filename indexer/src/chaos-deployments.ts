@@ -7,5 +7,13 @@ export const chaosArchiveDeployments = {
   "0xb25353a7816157d8b3470f33ade44e6bfe729eef": {
     "app": "0x3ff9be7d8c3fbea0dc617f9cd59ff141fb6725db",
     "rulesVersion": 7
+  },
+  "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5": {
+    "apps": [
+      "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+      "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+      "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b"
+    ],
+    "rulesVersion": 15
   }
 } as const;
