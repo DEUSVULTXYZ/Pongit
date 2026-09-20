@@ -32,8 +32,9 @@ const browser=await chromium.launch({channel,headless:true});
 try{
  for(const [width,height] of [[360,640],[390,844],[768,900],[1440,1000],[844,390]]){
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
-  let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0;
+  let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0;
   await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
+  await context.addInitScript(()=>Object.defineProperty(navigator.credentials,'get',{value:async()=>{throw Error('Qualification cancelled passkey request');}}));
   await context.route('**/*',async route=>{
    const request=route.request(),url=new URL(request.url());
    try{
@@ -51,7 +52,7 @@ try{
     if(url.origin==='http://localhost:4000'){
      let data:any;
      if(url.pathname==='/agents/config')data=m;
-     else if(url.pathname==='/agents/catalog')data={items:people,total:'8',offset:'0',next:null};
+     else if(url.pathname==='/agents/catalog'){catalogReads++;data={items:people,total:'8',offset:'0',next:null};}
      else if(url.pathname==='/agents/live')data={items:[{ref,a:people[0].agent,b:people[1].agent,mode:0,lane:'tournament'}]};
      else if(url.pathname==='/agents/tournaments')data={items:[tournament('1',league,mode)],total:'1',offset:'0',next:null,nextAt:'0'};
      else if(url.pathname==='/agents/tournaments/1')data=tournament('1',league,mode);
@@ -94,6 +95,16 @@ try{
   const docs=await page.getByRole('link',{name:'Docs ↗',exact:true}).boundingBox(),back=await page.getByRole('link',{name:'Back to arcade',exact:true}).boundingBox();
   assert(docs&&back&&(docs.x+docs.width<=back.x||back.x+back.width<=docs.x||docs.y+docs.height<=back.y||back.y+back.height<=docs.y),'Header links overlap');
   await page.getByRole('button',{name:'Challenge NOVA',exact:true}).click();await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
+  if(width===360){
+   await page.getByRole('button',{name:'Connect & play',exact:true}).click();
+   const actionError=page.getByRole('dialog').getByRole('alert');await actionError.waitFor();
+   assert.match(await actionError.innerText(),/Qualification cancelled passkey request/);
+   const before=catalogReads,end=Date.now()+15000;
+   while(catalogReads===before&&Date.now()<end)await new Promise(r=>setTimeout(r,100));
+   assert(catalogReads>before,'A real background catalogue refresh must occur');
+   assert.match(await actionError.innerText(),/Qualification cancelled passkey request/,'Catalogue refresh erased the action error');
+   report.checks.push({width,actionErrorSurvivesCatalogRefresh:true,authentication:'Explicit refusal fixture only'});
+  }
   await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);assert.equal(await page.locator(':focus').textContent(),'Challenge NOVA');
   await page.getByRole('button',{name:'Chaos',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Chaos',exact:true}).getAttribute('aria-pressed'),'true');
   await page.screenshot({path:`artifacts/qualification/20260919/pool-ui/${channel}-catalogue-${width}.png`,fullPage:true});

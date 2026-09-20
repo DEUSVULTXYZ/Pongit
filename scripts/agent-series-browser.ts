@@ -21,10 +21,12 @@ const privatePath=`/secrets/${prefix}-browser${suffix}.json`,reportPath=`/diagno
 const resumePath=process.env.PONG_SERIES_BROWSER_RESUME;
 assert(!resumePath||run>1&&/^\/agents\/arenas\/0x[\da-f]{40}\/\d+\/\d+$/i.test(resumePath));
 const reuse=process.env.PONG_SERIES_BROWSER_REUSE==='1';assert(!reuse||run>1);
+const retainedRenewal=process.env.PONG_SERIES_BROWSER_RETAIN_FOR_RENEWAL==='1';
+assert(!retainedRenewal||!reuse&&!resumePath,'A real expiry check retains its newly created PRF authenticator, never a CDP-imported credential');
 const restored=resumePath||reuse?JSON.parse(await readFile(`/secrets/${prefix}-browser.json`,'utf8')):undefined;
 try{await readFile(privatePath);throw Error('Preserve and reconcile the existing browser run first');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 await writeFile(privatePath,JSON.stringify({createdAt:new Date().toISOString()}),{mode:0o600});
-const report:any={at:new Date().toISOString(),pool:manifest.pool,rules:11,scope:'Private VPS HTTPS-origin browser, actual contracts and sponsorship; virtual Mera PRF, UI opening gate overridden only for this browser',checks:[],matches:[],faults:[],rpc:[],errors:[],passed:false};
+const report:any={at:new Date().toISOString(),pool:manifest.pool,rules:11,scope:'Private VPS HTTPS-origin browser, actual contracts and sponsorship; virtual Mera PRF, UI opening gate overridden only for this browser',checks:[],matches:[],faults:[],rpc:[],errors:[],alerts:[],passed:false};
 if(resumePath)report.recoveryOf={run:1,path:resumePath};
 const checkpoint=async()=>writeFile(reportPath,JSON.stringify(report,null,2));
 const base=createPublicClient({transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000})});
@@ -101,17 +103,53 @@ try{
  }
  human=await context(true);const spectator=await context();page=await human.newPage();const watch=await spectator.newPage();
  for(const p of [page,watch]){p.setDefaultTimeout(45000);p.on('pageerror',e=>report.errors.push(e.message));}
+ // Retain short public UI failures even if a background refresh replaces them.
+ // Never collect console arguments, credentials, grants or RPC payloads.
+ await page.exposeFunction('recordQualificationAlert',(value:string)=>{
+  const message=String(value).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
+  if(message&&!report.alerts.some((a:{message:string})=>a.message===message))report.alerts.push({at:new Date().toISOString(),message});
+ });
+ await page.addInitScript(()=>{
+  const observe=()=>new MutationObserver(()=>{
+   for(const element of document.querySelectorAll('[role="alert"]'))
+    void (window as unknown as {recordQualificationAlert:(text:string)=>Promise<void>}).recordQualificationAlert(element.textContent??'');
+  }).observe(document.body,{subtree:true,childList:true,characterData:true});
+  if(document.body)observe();else document.addEventListener('DOMContentLoaded',observe,{once:true});
+ });
  cdp=await human.newCDPSession(page);await cdp.send('WebAuthn.enable');
  ({authenticatorId}=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}}));
  for(const credential of restored?.credentials?.credentials??[])await cdp.send('WebAuthn.addCredential',{authenticatorId,credential});
  cdp.on('WebAuthn.credentialAsserted',()=>assertions++);
  let initialAssertions=0;
- for(const mode of [0,1]){
+ for(const [round,mode] of (retainedRenewal?[0,1,0]:[0,1]).entries()){
+  let expiring:{key:string;player:string;expires:string}|undefined;
+  if(round===2){
+   expiring=await page.evaluate(family=>{
+    const key=Object.keys(sessionStorage).find(k=>k.startsWith(`pongit:agent-family:${family.toLowerCase()}:`));
+    if(!key)throw Error('Missing original family');const {grant}=JSON.parse(sessionStorage.getItem(key)!);
+    return {key,player:grant.player,expires:grant.expires};
+   },manifest.family);
+   report.renewal={waiting:true,expires:expiring.expires,account:expiring.player,authenticator:'Retained original live PRF authenticator'};await checkpoint();
+   const end=Date.now()+7_300_000;
+   while((await base.getBlock()).timestamp<=BigInt(expiring.expires)){
+    assert(Date.now()<end,'Real family expiry did not arrive');await sleep(15000);
+   }
+  }
   if(mode===0&&resumePath){await page.goto(origin+resumePath);report.checks.push('Recovered saved virtual-Mera family without a new ceremony');}
   else{
    await page.goto(`${origin}/agents?mode=${mode}`);const nova=page.getByRole('button',{name:'Challenge NOVA',exact:true});await nova.waitFor();await nova.click();
-   if(mode===0&&!restored){await page.getByRole('button',{name:'Create account',exact:true}).click();await until(async()=>!await page!.getByRole('dialog',{name:'Connect to challenge an agent'}).count(),'Mera ceremony');initialAssertions=assertions;await savePrivate();report.checks.push('Real Mera PRF family and sponsored challenge');}
-   else if(mode===0){
+   if(round===0&&!restored){await page.getByRole('button',{name:'Create account',exact:true}).click();await until(async()=>!await page!.getByRole('dialog',{name:'Connect to challenge an agent'}).count(),'Mera ceremony');initialAssertions=assertions;await savePrivate();report.checks.push('Real Mera PRF family and sponsored challenge');}
+   else if(round===2&&expiring){
+    await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
+    await page.getByRole('button',{name:'Connect & play',exact:true}).click();
+    await until(async()=>!await page!.getByRole('dialog',{name:'Connect to challenge an agent'}).count(),'Retained PRF family renewal');
+    const renewed:{player:string;expires:string}=await page.evaluate(key=>JSON.parse(sessionStorage.getItem(key)!).grant,expiring.key);
+    assert.equal(renewed.player.toLowerCase(),expiring.player.toLowerCase());
+    assert(BigInt(renewed.expires)>BigInt(expiring.expires)&&assertions>initialAssertions,'Real expiry requires the original owner ceremony');
+    initialAssertions=assertions;report.renewal={...report.renewal,waiting:false,renewedAt:new Date().toISOString(),sameAccount:true};
+    await savePrivate();report.checks.push('Actual two-hour expiry renewed with the retained original PRF authenticator');
+   }
+   else if(round===0){
     const entry=Object.entries(restored.session as Record<string,string>).find(([key])=>key.startsWith(`pongit:agent-family:${manifest.family.toLowerCase()}:`));
     assert(entry,'Missing original scoped family');const saved=JSON.parse(entry[1]);
     const block=await base.getBlock();
@@ -145,7 +183,7 @@ try{
    if(!await up.count())break;
    // Exercise faults early: a novice who misses every serve can lose in under
    // forty seconds. A later unused injection must never count as passing.
-   if(mode===0&&i===0)loseReply=true;if(mode===0&&i===1)throttle=true;
+   if(round===0&&i===0)loseReply=true;if(round===0&&i===1)throttle=true;
    await page.keyboard.down(i%2?'s':'w');await sleep(100);await page.keyboard.up(i%2?'s':'w');await sleep(100);
    if(i===2){await savePrivate();await page.reload();await page.bringToFront();await until(()=>up.isEnabled(),'F5 session reuse');assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);}
   }

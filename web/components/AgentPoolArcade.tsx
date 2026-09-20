@@ -27,6 +27,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const router=useRouter(),[config,setConfig]=useState<AgentPoolManifest|null>(null),[people,setPeople]=useState<Person[]>([]),[live,setLive]=useState<Live[]>([]);
  const [mode,setMode]=useState(initialMode),[view,setView]=useState(initialView),[account,setAccount]=useState<Address>(),[request,setRequest]=useState<PoolChallengeView|null>(null);
  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[connectOpen,setConnectOpen]=useState(false),[selected,setSelected]=useState(initialAgent??''),[retry,setRetry]=useState(0),[offset,setOffset]=useState('0'),[next,setNext]=useState<string|null>(null);
+ const [catalogError,setCatalogError]=useState(''),[queueError,setQueueError]=useState('');
+ const visibleError=(!connectOpen&&error)||queueError||catalogError;
  const session=useRef<PoolFamilySession|null>(null),locked=useRef(false),intent=useRef<Address|null>(null),alive=useRef(false);
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
@@ -38,8 +40,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     if(document.hidden)return;
     const [raw,catalog,games]=await Promise.all([poolApi<AgentPoolManifest>('config',undefined,abort.signal),poolApi<{items:Person[];next:string|null}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal),poolApi<{items:Live[]}>('live',undefined,abort.signal)]);
     const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade qualification is still in progress');
-    if(stopped)return;setConfig(m);setPeople(catalog.items);setNext(catalog.next);setLive(games.items);setError('');
-   }catch(e){if(!stopped){setError(poolUserError(e));delay=Math.max(10000,engineReadRetryMs(e));}}
+    if(stopped)return;setConfig(m);setPeople(catalog.items);setNext(catalog.next);setLive(games.items);setCatalogError('');
+   }catch(e){if(!stopped){setCatalogError(poolUserError(e));delay=Math.max(10000,engineReadRetryMs(e));}}
    finally{if(!stopped)timer=setTimeout(refresh,delay);}
   };void refresh();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[enabled,retry,offset]);
@@ -47,8 +49,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   if(!config||!account)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController();
   const poll=async()=>{let delay=2000;try{
    if(document.hidden)return;const result=await poolApi<{request:PoolChallengeView|null}>(`challenges/${account}`,undefined,abort.signal);
-   if(stopped)return;setRequest(result.request);if(!result.request)delay=10000;if(result.request?.ref){router.push(matchHref(result.request.ref));return;}
-  }catch(e){if(!stopped)setError(poolUserError(e));delay=Math.max(5000,engineReadRetryMs(e));}finally{if(!stopped)timer=setTimeout(poll,delay);}};
+   if(stopped)return;setRequest(result.request);setQueueError('');if(!result.request)delay=10000;if(result.request?.ref){router.push(matchHref(result.request.ref));return;}
+  }catch(e){if(!stopped)setQueueError(poolUserError(e));delay=Math.max(5000,engineReadRetryMs(e));}finally{if(!stopped)timer=setTimeout(poll,delay);}};
   void poll();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[config?.pool,account,retry,router]);
  async function run(fn:()=>Promise<void>){if(locked.current)return;locked.current=true;setBusy(true);setError('');try{await fn();}catch(e){if(alive.current)setError(poolUserError(e));}finally{locked.current=false;if(alive.current)setBusy(false);}}
@@ -88,7 +90,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>The independent arenas are being tested before opening.</p></section>:<>
    <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button>{tournaments&&<Link href="/agents/tournaments">Tournaments</Link>}</nav>
    <div className="agent-toolbar" role="group" aria-label="Game mode">{([0,1] as const).map(n=><button key={n} aria-pressed={mode===n} onClick={()=>setMode(n)} disabled={busy||!!request}>{n===0?'Classic':'Chaos'}</button>)}</div>
-   {error&&<div className="tournament-error" role="alert"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
+   {visibleError&&<div className="tournament-error" role="alert"><p>{visibleError}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
    {busy&&<p role="status">Confirming your action…</p>}
    {request&&<section className="agent-wait" aria-live="polite"><h2>{request.ref?'Your arena is ready':'Waiting for an available arena'}</h2><p>{person(request.agent)?.name??short(request.agent)} · {request.mode===0?'Classic':'Chaos'} · Friendly</p>
     {request.ref?<Link className="rooms-button" href={matchHref(request.ref)}>Enter arena</Link>:<button disabled={busy||request.status!==1} onClick={()=>void cancel()}>Cancel challenge</button>}</section>}

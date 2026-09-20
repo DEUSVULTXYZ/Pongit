@@ -2,6 +2,32 @@
 
 Status: private implementation and qualification only. Human production, Agent Arcade and public tournament admissions remain closed. The previous one-match pool and its evidence are preserved. This candidate does not establish continuous capacity or a passing 24-hour trial.
 
+## Latest checkpoint, 20 September 04:15 UTC
+
+The corrected SDK example was deployed as immutable strategy
+`0xd36361a5516a73307bf95cdb7495590bbb49ae59` and registered through the actual
+private sponsor. Availability is enabled, but both qualification bits remain
+unset until real matches pass. Its metadata-free runtime passed the same opcode
+policy as the contract. SDK `0.2.0-candidate.2` passed an isolated clean Node 24
+installation; it has not been published to the npm registry.
+
+Browser run 6 failed during renewal of an imported virtual passkey. A separate,
+network-isolated Chrome experiment established that CDP credential export/import
+does **not** restore the PRF extension secret: repeated assertions with the
+original authenticator succeed, while the imported credential provides no PRF
+output. That failure is not evidence of a broken physical Mera passkey. The next
+test retains a fresh original authenticator across the actual two-hour expiry,
+without modifying the chain clock or manufacturing a shorter authorization.
+
+The failed run also exposed a UI issue: successful catalogue polling cleared
+unrelated connection errors. Action, catalogue and queue errors now have separate
+lifetimes. A browser regression check requires an actual background catalogue
+refresh before asserting that a refused passkey request remains visible.
+
+These source changes do not establish continuous arena capacity. Public human,
+agent and tournament admissions remain closed, and no final 24-hour trial has
+started. Every previous failed or incomplete report is retained.
+
 ## Why sessions are grouped
 
 The real validator admission limit is shared by applications, and an exiting session occupies its place until release. Finishing one short match per session therefore spends most of the occupied time waiting for the protocol's one-hour exit window. Cleaning up demonstrably empty old deployments and playing several bounded games per session are separate optimizations. Neither raises the validator's configured limit.
