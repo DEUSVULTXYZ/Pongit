@@ -8,6 +8,8 @@ import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {decodeHubDelegation} from '../shared/rooms-hub';
 import {roomsRankingCandidates} from '../relayer/src/rooms-ranking';
 import {baseReadTransport} from '../shared/base-read-transport';
+import {verifyHistoricalRuntime} from '../shared/historical-runtime';
+import {basename,dirname,resolve} from 'node:path';
 const source=JSON.parse(await readFile('deployments/interlude-rooms.json','utf8'));
 const base=createPublicClient({batch:{multicall:{wait:15,batchSize:16384}},transport:baseReadTransport(process.env.RPC_URL!)});
 assert.equal(await base.getChainId(),10143);const block=await base.getBlock();
@@ -33,10 +35,10 @@ assert(process.env.PONG_MIGRATION_SOURCE_ARTIFACT,'Supply the reproduced histori
 const artifact=JSON.parse(await readFile(process.env.PONG_MIGRATION_SOURCE_ARTIFACT,'utf8'));
 const layout=artifact.storageLayout;assert(layout?.storage,'The source artifact must include its own storageLayout');
 const words=layout.storage.find((s:any)=>s.label==='words');assert(words&&words.type.startsWith('t_mapping'));
-const code=await base.getBytecode({address:source.app,blockNumber:block.number});assert(code);
-const mask=(text:string)=>{for(const refs of Object.values(artifact.deployedBytecode.immutableReferences||{}) as any[])for(const r of refs)text=text.slice(0,2+r.start*2)+'0'.repeat(r.length*2)+text.slice(2+(r.start+r.length)*2);return text.toLowerCase();};
-const runtime=(text:string)=>{const bytes=Number.parseInt(text.slice(-4),16);assert(bytes>0&&bytes<500&&text.length>(bytes+2)*2,'Missing Solidity metadata trailer');return mask(text).slice(0,-(bytes+2)*2);};
-assert(runtime(code)===runtime(artifact.deployedBytecode.object),'Source runtime differs from the audited storage layout. Export rejected; verify the deployed build before migration.');
+const {code,verified}=await verifyHistoricalRuntime(source.app,artifact,address=>base.getBytecode({address,blockNumber:block.number}),async(sourceFile,name)=>{
+ assert(/^[a-zA-Z0-9_]+$/.test(name));const out=resolve(dirname(process.env.PONG_MIGRATION_SOURCE_ARTIFACT!),'..');
+ return JSON.parse(await readFile(resolve(out,basename(sourceFile),name+'.json'),'utf8'));
+});
 const pairSeeds=[],seen=new Set<string>(),day=block.timestamp/86400n;
 for(const p of pairs){assert(/^0x[\da-f]{40}$/i.test(p.a)&&/^0x[\da-f]{40}$/i.test(p.b)&&[0,1].includes(p.mode));
  const [a,b]=[p.a,p.b].sort() as Address[];
@@ -48,7 +50,7 @@ for(const p of pairs){assert(/^0x[\da-f]{40}$/i.test(p.a)&&/^0x[\da-f]{40}$/i.te
 const active=await call('activeCount'),genesis=await call('genesisTime');
 assert.equal((await base.getBlock({blockNumber:block.number})).hash,block.hash,'Source block reorganized');
 const profileFreeze=process.env.PONG_PROFILE_MIGRATION_FREEZE==='true';
-const report={version:1,chainId:10143,source:source.app,hub:source.hub,sourceBlock:String(block.number),sourceHash:block.hash,sourceCodeHash:keccak256(code),genesis:String(genesis),epoch:String(delegation.epoch),ready:delegation.status===0&&active===0n&&profileFreeze,profileFreeze,active:String(active),delegationStatus:delegation.status,profiles,ratings,pairSeeds,createdAt:new Date().toISOString()};
+const report={version:1,chainId:10143,source:source.app,hub:source.hub,sourceBlock:String(block.number),sourceHash:block.hash,sourceCodeHash:keccak256(code),verifiedRuntimes:verified,genesis:String(genesis),epoch:String(delegation.epoch),ready:delegation.status===0&&active===0n&&profileFreeze,profileFreeze,active:String(active),delegationStatus:delegation.status,profiles,ratings,pairSeeds,createdAt:new Date().toISOString()};
 const text=JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v,2);
 await mkdir('artifacts/independent-migration',{recursive:true});await writeFile('artifacts/independent-migration/snapshot.json',text+'\n');
 console.log(JSON.stringify({ready:report.ready,source:source.app,block:report.sourceBlock,profiles:profiles.length,ratings:ratings.length,pairs:pairSeeds.length,evidence:keccak256(new TextEncoder().encode(text+'\n'))}));
