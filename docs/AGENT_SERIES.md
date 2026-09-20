@@ -2,6 +2,28 @@
 
 Status: private implementation and qualification only. Human production, Agent Arcade and public tournament admissions remain closed. The previous one-match pool and its evidence are preserved. This candidate does not establish continuous capacity or a passing 24-hour trial.
 
+## Browser result, 20 September 10:52 UTC
+
+The complete `series-browser-13` report **failed** on five twenty-second
+`route.fetch` timeouts. Its two gameplay rounds separately completed: Classic
+0-7 naturally and Chaos 0-6 by concession, with matching player/spectator
+published scores. F5 restored controls in 3,995 / 4,104 ms without a new owner
+assertion. The lost executed reply and pre-send 429 were both injected, followed
+by a confirmed movement. These observations do not turn the failed report into
+a pass or establish a natural Chaos seven-point finish.
+
+The fixture had proxied every engine read with a twenty-second timeout, even
+when the application's four-second request had already been aborted. The next
+fixture lets browser reads reach the actual node directly so native cancellation
+is preserved, records failed requests with method, arena and timestamp, and
+proxies only writes needed for the two explicit fault injections. Route failures
+and JavaScript errors still fail the run. The original failed report remains.
+
+Candidate `359523f` shares engine cooldowns across transports and prioritizes
+current headers in the Monad gateway. Its 508 TypeScript tests and type checking
+pass. The private human web now runs this build; the agent web and running gateway
+have not yet switched. No public production service or admission was changed.
+
 ## Private browser checkpoint, 20 September 10:35 UTC
 
 Build `9d6212e` passed 27 checks each in Chrome and Edge at five viewports,

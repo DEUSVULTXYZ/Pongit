@@ -38,7 +38,7 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox'],channel
 const pages:Page[]=[],contexts:BrowserContext[]=[],devices:any[]=[],counts=[0,0,0,0];
 const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:manifest.rulesVersion,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
-let reporting=false;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
+let reporting=false,driving=true;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
 async function until(fn:()=>Promise<any>,label:string,ms=60000){const end=Date.now()+ms;while(Date.now()<end){if(await fn().catch(()=>false))return;await sleep(250);}throw Error('Timed out: '+label);}
 async function persist(){
  for(let i=0;i<pages.length;i++)saved.players[i]={...(saved.players[i]||{}),credentials:(await devices[i].cdp.send('WebAuthn.getCredentials',{authenticatorId:devices[i].id})).credentials,storage:await contexts[i].storageState(),session:await pages[i].evaluate(()=>Object.fromEntries(Object.entries(sessionStorage)))};
@@ -46,7 +46,7 @@ async function persist(){
 }
 async function init(i:number){
  const context=await browser.newContext({viewport:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']});contexts.push(context);
- await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
+ await context.addInitScript(()=>{if(location.origin==='https://pongit.xyz')localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));});
  await context.exposeBinding('recordCountdown',(_source,digit:string)=>{if(/^[123]$/.test(digit)&&!report.countdown[i].includes(digit))report.countdown[i].push(digit);});
  await context.addInitScript({content:"addEventListener('DOMContentLoaded',function(){new MutationObserver(function(){var digit=document.querySelector('.match-countdown-digit')?.textContent?.trim();if(digit)window.recordCountdown(digit);}).observe(document.documentElement,{subtree:true,childList:true,characterData:true});});"});
  await context.route(origin+'/**',async route=>{
@@ -149,7 +149,21 @@ try{
  await until(()=>a.getByRole('button',{name:'Move up',exact:true}).isEnabled(),'restored engine control',90000);
  await a.getByRole('button',{name:'Tools',exact:true}).click();
  const ref=await a.locator('.rooms-dialog .rooms-address').textContent();assert(ref?.startsWith('10143:'));saved.matchRef=ref;await a.getByRole('button',{name:'Close Cabinet tools',exact:true}).click();
- if(chaos){
+ // Players keep controlling the real match while the spectator funds and signs
+ // a bet. Serializing that financial ceremony before the first movement left
+ // both paddles idle until the game ended and did not exercise live gameplay.
+ const movement=(async()=>{
+  await Promise.all([a,b].map(p=>p.getByRole('button',{name:'Move up',exact:true}).waitFor()));
+  const end=Date.now()+(chaos?600000:180000);
+  for(let i=0;driving&&Date.now()<end;i++){
+   if(await a.getByRole('dialog',{name:'Confirmed match result'}).isVisible()||await b.getByRole('dialog',{name:'Confirmed match result'}).isVisible())break;
+   const key=i%2?'s':'w';
+   await Promise.all([a,b].map(async p=>{if(await p.getByRole('button',{name:'Move up',exact:true}).isEnabled({timeout:300}).catch(()=>false))await p.keyboard.down(key);}));
+   await sleep(120);await Promise.all([a,b].map(p=>p.keyboard.up(key)));await sleep(70);
+  }
+ })();
+ void movement.catch(()=>{});
+ const financial=(async()=>{if(chaos){
   await spectator.getByRole('button',{name:'Betting',exact:true}).click();
   await spectator.getByRole('button',{name:'Get test betting credit',exact:true}).click();
   await until(async()=>!(await spectator.getByRole('button',{name:'Get test betting credit',exact:true}).isDisabled()),'sponsored betting credit',90000);
@@ -161,14 +175,8 @@ try{
   await spectator.getByRole('button',{name:'Close Wallet and betting',exact:true}).click();
   // The beneficiary browser is disconnected while the relayer settles the payout.
   before[2]=counts[2];await spectator.goto('about:blank');
- }
- await Promise.all([a,b].map(p=>p.getByRole('button',{name:'Move up',exact:true}).waitFor()));
- for(let i=0;i<100;i++){
-  if(await a.getByRole('dialog',{name:'Confirmed match result'}).isVisible()||await b.getByRole('dialog',{name:'Confirmed match result'}).isVisible())break;
-  const key=i%2?'s':'w';
-  await Promise.all([a,b].map(async p=>{if(await p.getByRole('button',{name:'Move up',exact:true}).isEnabled({timeout:300}).catch(()=>false))await p.keyboard.down(key);}));
-  await sleep(120);await Promise.all([a,b].map(p=>p.keyboard.up(key)));await sleep(70);
- }
+ }})();
+ await Promise.all([movement,financial]);
  assert(report.inputs[0].length>1&&report.inputs[1].length>1,'Both browsers must have real accepted movement receipts');
  assert.deepEqual(counts,before,'Gameplay unexpectedly requested a passkey');report.checks.push('F5 and direction input without a root passkey ceremony');
  await a.screenshot({path:`${out}/classic.png`});
@@ -180,4 +188,4 @@ try{
 }catch(e){report.passed=false;report.error=String((e as Error).message).replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,650);process.exitCode=1;
  for(let i=0;i<pages.length;i++){await pages[i].screenshot({path:`${out}/failure-${i}.png`}).catch(()=>{});report.checks.push({page:i,visible:(await pages[i].locator('body').innerText().catch(()=>'' )).slice(0,1600)});}
  await persist().catch(()=>{});
-}finally{clearInterval(progress);report.finishedAt=new Date().toISOString();report.passkeyAssertions=counts;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}
+}finally{driving=false;clearInterval(progress);report.finishedAt=new Date().toISOString();report.passkeyAssertions=counts;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}

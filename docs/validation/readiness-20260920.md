@@ -4,6 +4,24 @@ Public production remains `7d35926`, with human, Agent Arcade and tournament
 admissions closed. This checkpoint does not authorize reopening. No unchanged
 final 24-hour trial has begun.
 
+## Follow-up at 11:00 UTC
+
+Private human web `359523f` started at 10:50 UTC; public production is unchanged.
+Its Edge Chaos fixture `browser-chaos-ready3` failed at 10:55 UTC. It did verify
+three real room members, both consents, all three countdown digits on players
+and spectator, and a root-signed live test-MON bet. It recorded **zero movement
+receipts**: the driver waited for the spectator's funding and signature before
+controlling either paddle, and the real game finished 7-6 in the meantime.
+This is not a gameplay pass. The driver's injected audio preference also threw
+on its deliberate `about:blank` disconnect, where storage is unavailable.
+
+The next fixture drives both players concurrently with the spectator's financial
+actions and limits its preference injection to the actual site origin. The
+original failed report, receipts and screenshots are preserved. Live SDK run 7
+waits for two actually released arenas and must not compete with a new browser
+for either reservation. It adds bounded read-only timeout recovery and payload-free
+RPC timing; no signed command is retried on an uncertain response.
+
 ## Follow-up at 10:35 UTC
 
 Private human web `42c7cf0` and sponsor `e6174aa` are running. The simultaneous

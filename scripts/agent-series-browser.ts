@@ -27,7 +27,7 @@ assert(!retainedRenewal||!reuse&&!resumePath,'A real expiry check retains its ne
 const restored=resumePath||reuse?JSON.parse(await readFile(`/secrets/${prefix}-browser.json`,'utf8')):undefined;
 try{await readFile(privatePath);throw Error('Preserve and reconcile the existing browser run first');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 await writeFile(privatePath,JSON.stringify({createdAt:new Date().toISOString()}),{mode:0o600});
-const report:any={at:new Date().toISOString(),pool:manifest.pool,rules:11,scope:'Private VPS HTTPS-origin browser, actual contracts and sponsorship; virtual Mera PRF, UI opening gate overridden only for this browser',checks:[],matches:[],faults:[],rpc:[],errors:[],alerts:[],passed:false};
+const report:any={at:new Date().toISOString(),pool:manifest.pool,rules:11,scope:'Private VPS HTTPS-origin browser, actual contracts and sponsorship; virtual Mera PRF, UI opening gate overridden only for this browser',checks:[],matches:[],faults:[],rpc:[],networkFailures:[],routeFailures:[],errors:[],alerts:[],passed:false};
 if(resumePath)report.recoveryOf={run:1,path:resumePath};
 const checkpoint=async()=>writeFile(reportPath,JSON.stringify(report,null,2));
 const base=createPublicClient({transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000})});
@@ -42,7 +42,25 @@ const progress=setInterval(()=>{if(progressBusy||!page||page.isClosed())return;p
 async function context(player=false){
  const c=await browser.newContext({viewport:{width:1440,height:1000},...(player&&restored?{storageState:restored.storage}:{})});
  if(player&&restored)await c.addInitScript(values=>{for(const [k,v] of Object.entries(values))if(sessionStorage.getItem(k)===null)sessionStorage.setItem(k,String(v));},restored.session);
- await c.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
+ await c.addInitScript(()=>{if(location.origin==='https://pongit.xyz')localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));});
+ // Observe native reads instead of proxying them through route.fetch. The
+ // application's AbortSignal must terminate the actual browser request; a
+ // twenty-second proxy request previously survived the client's four-second
+ // timeout and kept loading the node after reload/session closure.
+ c.on('response',async response=>{
+  const request=response.request();if(!nodes.has(new URL(request.url()).origin))return;
+  let method:string;try{method=String(request.postDataJSON()?.method);}catch{return;}
+  if(method==='interlude_sendTransaction')return;
+  const timing=request.timing();report.rpc.push({at:new Date().toISOString(),player,target:'interlude',method,
+   status:response.status(),ms:Math.max(0,timing.responseStart-timing.requestStart),native:true,
+   bytes:Buffer.byteLength(request.postData()??'')});
+ });
+ c.on('requestfailed',request=>{
+  if(!nodes.has(new URL(request.url()).origin))return;
+  let method:string;try{method=String(request.postDataJSON()?.method);}catch{return;}
+  report.networkFailures.push({at:new Date().toISOString(),player,node:new URL(request.url()).origin,
+   method,error:request.failure()?.errorText,ref:report.current?.ref,phase:report.waitingForArena?'admission':'match'});
+ });
  await c.route('**/*',async route=>{
   const request=route.request(),u=new URL(request.url());
   try{
@@ -64,6 +82,7 @@ async function context(player=false){
   }
   if(nodes.has(u.origin)){
    const body=request.postDataJSON(),method=String(body?.method??'http');
+   if(method!=='interlude_sendTransaction')return route.continue();
    if(player&&throttle&&method==='interlude_sendTransaction'){
     throttle=false;report.faults.push({at:new Date().toISOString(),kind:'Injected 429 before send'});
     return route.fulfill({status:429,headers:{'Retry-After':'1','Access-Control-Allow-Origin':origin},json:{error:'Private qualification throttle'}});
@@ -93,6 +112,9 @@ async function context(player=false){
   report.rpc.push({at:new Date().toISOString(),player,target:'monad',method:request.postDataJSON()?.method,status:response.status(),ms:performance.now()-start,rpcError:value?.error?.code,limited:/limited|rate limit/i.test(String(value?.error?.message??''))});
   return route.fulfill({response});
   }catch(e){
+   let method:string|undefined;try{method=request.postDataJSON()?.method;}catch{}
+   report.routeFailures.push({at:new Date().toISOString(),player,node:u.origin,method,ref:report.current?.ref,
+    error:(e as Error).message.split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240)});
    report.errors.push(`Route ${request.method()} ${u.origin}${u.pathname}: ${(e as Error).message.split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]')}`);
    await route.abort('failed').catch(()=>{});
   }
@@ -262,6 +284,7 @@ try{
 }catch(e){report.error=(e as Error).message.split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);process.exitCode=1;}
 finally{
  clearInterval(progress);while(progressBusy)await sleep(50);
+ report.finishedAt=new Date().toISOString();
  await savePrivate().catch(()=>{report.privateSnapshotFailed=true;});
  if(!report.passed&&page&&!page.isClosed()){
   report.page={url:page.url(),text:(await page.locator('body').innerText()).replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,5000)};
