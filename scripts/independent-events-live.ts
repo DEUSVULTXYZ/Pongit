@@ -75,7 +75,9 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
  const {app,id,epoch,mode}=match,row:any={app,id,epoch,mode,changes:[0,0],scores:[],effects:[],inputs:[],frames:0,countdown:[],startedAt:new Date().toISOString()};report.matches.push(row);await flush();
  const observer=createPublicClient({transport:engineTransport(match.node),pollingInterval:1000}),stream=new EngineStream(match.node,app,url=>new WebSocket(url,{origin:'https://pongit.xyz'}) as any);
  const feed=new EngineFeed({node:observer,app,abi:rules.arena},stream);stops.push(feed.watch(id,()=>row.frames++),()=>stream.stop());
- await until(async()=>{try{const s:any=await observer.request({method:'interlude_session',params:[]} as any);return String(s.epoch)===String(epoch)&&s.app.toLowerCase()===app.toLowerCase();}catch{return false;}},'hosted engine identity',240000);
+ const provisioningAt=Date.now();
+ await until(async()=>{try{const s:any=await observer.request({method:'interlude_session',params:[]} as any);return String(s.epoch)===String(epoch)&&s.app.toLowerCase()===app.toLowerCase();}catch{return false;}},'hosted engine identity',720000);
+ row.provisioningMs=Date.now()-provisioningAt;await flush();
  assert.equal(await observer.readContract({address:app,abi:rules.arena,functionName:'RULES_VERSION'}),BigInt(m.rulesVersion!));
  const d=await readHubDelegation(base,m.hub,app);assert.equal(d.epoch,epoch);assert.equal(d.status,1);
  const players=[match.a,match.b].map(index=>{
@@ -161,6 +163,10 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
 const tasks:Promise<unknown>[]=[];
 try{
  await save();assert.equal((await request('/config')).manifest.lobby.toLowerCase(),m.lobby.toLowerCase());
+ // A cooling arena is not free capacity. Wait before registering the temporary
+ // two-hour families; do not spend their validity on the previous hub window.
+ await until(async()=>{const c=await request('/config');return c.arenas.filter((a:any)=>a.stage==='available').length>=2;},'two actually released arenas',4200000);
+ report.capacityObservedAt=new Date().toISOString();await flush();
  const issued=(await base.getBlock()).timestamp;privateState.expires=String(issued+7200n);await save();
  for(let i=0;i<4;i++){
   const grant={player:owners[i].address,key:keys[i].address,issuedAt:issued,expires:issued+7200n,revision:0n};

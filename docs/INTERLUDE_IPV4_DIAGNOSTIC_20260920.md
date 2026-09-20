@@ -1,8 +1,9 @@
 # Hosted arena reachability, 20 September 2026
 
-The new private PONGIT arena cannot yet be reached from our IPv4-only VPS.
-This is separate from the application fixes and is not evidence that gameplay
-or publication inside the new node has passed.
+The new private PONGIT arenas initially could not be reached from our IPv4-only
+VPS. Their A records subsequently appeared without a VPS networking change.
+This is a historical provisioning diagnostic, **not an outstanding request to
+change the VPS or allocate IPv4**. It does not establish a gameplay pass.
 
 Observed at **08:02:55 UTC**:
 
@@ -28,11 +29,18 @@ the A/AAAA distinction. A diagnostic TLS request through another known Fly
 IPv4 edge failed; no resolver, hosts file, routing or certificate validation
 was changed as a workaround.
 
-Requested action: allocate/enable shared IPv4 for the two hosted applications,
-verify their public A records and HTTPS JSON-RPC reachability, and ensure
-provisioning does not report a usable endpoint before that path works.
-Alternatively, the VPS needs its provider-assigned IPv6 configuration; this
-does not by itself make the direct endpoint reachable to IPv4-only players.
+At **08:10:20 UTC**, public DNS returned A records `66.241.125.66` and
+`66.241.124.18`, respectively. The private observer had reached each engine and
+started its readiness allowance before then. The four-minute live driver had
+already failed its identity wait, so neither player acknowledged readiness.
+The resulting 0-0 cancellations were verified on Monad at **08:12:23 UTC**:
+status 4, zero winner, two published batches each, captured by the result ledger.
+Both delegations were closing under the actual one-hour hub deadline. They are
+not successful played matches, and the failed report remains failed.
+
+Follow-up: measure hosted provisioning latency and allow a bounded longer
+qualification wait. Verify readiness cancellation and later recovery, rather
+than interpreting a control-plane `live` response as player reachability.
 
 PONGIT keeps public admissions closed. It retains the existing provisioning
 journal and performs GET lookups after an acknowledged creation, never repeated
