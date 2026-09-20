@@ -42,7 +42,9 @@ try{
   await context.addInitScript(({family,key})=>{sessionStorage.setItem(key,JSON.stringify(family));localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:true,intensity:'full'}));},{family:json({grant,key,signature:`0x${'11'.repeat(65)}`}),key:`pongit:family:${m.family.toLowerCase()}`});
   const readBase=(to:string,data:`0x${string}`):`0x${string}`=>{
    if(to.toLowerCase()===monadTestnet.contracts.multicall3.address.toLowerCase()){
-    const call=decodeFunctionData({abi:multicall3Abi,data});assert.equal(call.functionName,'aggregate3');
+    const call=decodeFunctionData({abi:multicall3Abi,data});
+    if(call.functionName==='getCurrentBlockTimestamp')return encodeFunctionResult({abi:multicall3Abi,functionName:'getCurrentBlockTimestamp',result:BigInt(Math.floor(Date.now()/1000))});
+    assert.equal(call.functionName,'aggregate3');
     const calls=call.args![0] as readonly {target:Address;callData:`0x${string}`}[];
     return encodeFunctionResult({abi:multicall3Abi,functionName:'aggregate3',result:calls.map(c=>({success:true,returnData:readBase(c.target,c.callData)}))});
    }

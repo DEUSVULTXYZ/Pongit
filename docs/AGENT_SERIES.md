@@ -192,3 +192,9 @@ Original agent browser 11 renewed the retained original virtual PRF account
 after its actual two-hour expiry at 09:17:05 UTC on 20 September. This passes
 that specific expiry/identity gate only. Its earlier Chaos wait failure and
 empty fault coverage remain failures; the following real match is pending.
+
+Run 11 subsequently timed out waiting for its post-renewal arena. Its challenge
+was later admitted as epoch 10 / match 19 on b29, published 0-7, and closed at
+09:30 UTC without browser control. The original failure is preserved. Fresh
+run 12 uses the earlier fault injections and records up to the real protocol
+exit-window wait; it is not a continuation of run 11's authenticator.

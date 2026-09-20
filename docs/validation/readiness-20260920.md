@@ -107,3 +107,23 @@ wait and later completed without browser control. Run 11 therefore remains
 failed despite its separately successful original-PRF renewal. Future browser
 fixtures record the actual arena wait and allow the protocol exit window to
 complete. A longer fixture timeout does not qualify continuous service.
+
+The read-only hosted benchmark passed at 09:35 UTC using an existing disposable
+family. Three paired preparations measured 4,633 / 4,263 / 3,839 ms on the prior
+path and 726 / 420 / 119 ms with the pinned multicall. Every new deadline was
+independently checked against that exact block's timestamp. The new path sent
+one `eth_blockNumber` and one `eth_call`. These three observations are not p95
+latency, a load test, or proof of complete acceptance latency.
+
+The full TypeScript suite passed 504 tests after these changes; the focused
+snapshot/authorization/fee suite passed 24. The separate real PostgreSQL sponsor
+fixture passed seven checks, including forty concurrent requests, nonce-journal
+recovery and unsigned-consent priority. No RPC write was sent by those database
+tests. Production remains closed. The private human service runs `e6174aa`;
+the compact command helper is awaiting the new `42c7cf0` web build and the next
+hosted fixture. Existing successful `a788eb5` browser evidence is not relabeled.
+
+Fresh fixtures launched at 09:35 UTC: human `events-live-6` waits for two actual
+released arenas before registering any families; agent `series-browser-12`
+uses a fresh original virtual PRF and the earlier fault-injection sequence.
+Neither a queued fixture nor its waiting time is a successful qualification.
