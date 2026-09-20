@@ -104,7 +104,14 @@ try{
    if(mode&&s[13]&&!beaconTask){const state=(x:any)=>({playing:x[2]===2n,request:x[13]?.request??0n,pending:x[13]?.pending??0n});
     beaconTask=beacon.offer(String(id),state(s),async()=>state(engineTuple(await feed.read(id,true))),async(q,sig)=>{
      await publicSend(encodeFunctionData({abi,functionName:'submitRandomness',args:[id,q,sig]}),id);report.proofs=(report.proofs||0)+1;
-    }).catch(e=>{financialError=e;}).finally(()=>beaconTask=undefined);
+    }).catch(e=>{
+     // A delayed beacon is not a failed financial operation. Keep playing and
+     // let the pump retry the same committed round. Submission/reconciliation
+     // errors remain fatal to this strict harness and retain their journals.
+     if(e?.code==='BEACON_UNAVAILABLE'||e?.code==='DRAND_RATE_LIMIT'){
+      (report.beaconRetries??=[]).push({at:new Date().toISOString(),code:e.code,retryAt:e.retryAt});
+     }else financialError=e;
+    }).finally(()=>beaconTask=undefined);
    }
    const points=state.scoreA+state.scoreB;
    if(mode&&!stoppedBridgeAt&&!financialTask){
