@@ -1,0 +1,121 @@
+# Reviewed rules-15 reusable pool only. No public gate or contract is created.
+# Do not combine with legacy or series roles sharing a key/database.
+x-pool: &pool
+  profiles: [agent-reusable]
+  image: ${AGENT_REUSABLE_IMAGE:?Pin the audited agent-reusable image}
+  restart: unless-stopped
+  user: "1000:1000"
+  read_only: true
+  tmpfs: [/tmp:size=64m]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  stop_grace_period: 60s
+  cpus: 0.5
+  mem_limit: 512m
+  networks: [default, agent-reusable]
+  logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+
+x-environment: &environment
+  PONG_REUSABLE_AGENT_RUNTIME: reviewed-release
+  PONG_REUSABLE_AGENT_PREFIX: ${AGENT_POOL_JOURNAL_PREFIX:?Keep the original candidate journal prefix}
+  PONG_AGENT_POOL_RELEASE_EVIDENCE: ${AGENT_POOL_RELEASE_EVIDENCE:?Set the reviewed evidence hash}
+  PONG_HUMAN_APPS: ${PONG_HUMAN_APPS:?List every protected human deployment}
+  RPC_URL: ${RPC_URL:-http://rpc:8545}
+  AGENT_DATABASE_URL: postgres://agent_pool:${AGENT_POOL_DB_PASSWORD}@agent-reusable-db:5432/agent_pool
+
+services:
+  agent-reusable-db:
+    profiles: [agent-reusable]
+    image: postgres:17-alpine
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 384m
+    networks: [agent-reusable]
+    environment:
+      POSTGRES_USER: agent_pool
+      POSTGRES_DB: agent_pool
+      POSTGRES_PASSWORD: ${AGENT_POOL_DB_PASSWORD:?Set a dedicated pool database password}
+    volumes: [agent-reusable-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U agent_pool -d agent_pool]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+
+  agent-reusable-reader:
+    <<: *pool
+    command: [node, scripts/agent-reusable-process.mjs, reader]
+    environment:
+      <<: *environment
+      PONG_AGENT_POOL_READER: "1"
+      PONG_AGENT_POOL_PUBLIC: "1"
+      PONG_AGENT_POOL_MANIFEST: /metadata/manifest.json
+      PONG_AGENT_POOL_TRUSTED_PROXIES: ${AGENT_POOL_TRUSTED_PROXIES:?Set only the immediate proxy addresses}
+      GRAPHQL_URL: http://hasura:8080/v1/graphql
+      HASURA_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
+      HOST: 0.0.0.0
+      PORT: 4101
+    volumes:
+      - ${AGENT_POOL_METADATA_DIRECTORY:?Mount sanitized pool metadata}:/metadata:ro
+      - agent-reusable-diagnostics:/diagnostics
+    depends_on:
+      agent-reusable-db: {condition: service_healthy}
+
+  agent-reusable-engines:
+    <<: *pool
+    cpus: 1
+    command: [node, scripts/agent-reusable-process.mjs, engines]
+    environment:
+      <<: *environment
+      PONG_REUSABLE_AGENT_ENGINES: reviewed-release
+      GRAPHQL_URL: http://hasura:8080/v1/graphql
+      HASURA_ADMIN_SECRET: ${HASURA_ADMIN_SECRET}
+    volumes:
+      - ${AGENT_POOL_METADATA_DIRECTORY}:/metadata:ro
+      - ${AGENT_POOL_ENGINE_KEY_FILE:?Mount the transport key only into engines}:/run/pongit-agent-pool/engine.json:ro
+      - ${AGENT_POOL_ADMISSION_KEY_FILE:?Mount the separate admission attestor only into engines}:/run/pongit-agent-pool/admission.json:ro
+      - agent-reusable-diagnostics:/diagnostics
+    depends_on:
+      agent-reusable-db: {condition: service_healthy}
+
+  agent-reusable-keeper:
+    <<: *pool
+    command: [node, scripts/agent-reusable-process.mjs, keeper]
+    environment:
+      <<: *environment
+      PONG_REUSABLE_AGENT_MAINTENANCE: reviewed-release
+      PONG_INDEPENDENT_WRITE: authorized-testnet
+      DATABASE_URL: ${AGENT_POOL_OPERATOR_DATABASE_URL:?Use the existing operator nonce journal}
+      ROOMS_LIFECYCLE_KEY_FILE: /run/pongit-rooms/lifecycle.json
+    volumes:
+      - ${AGENT_POOL_METADATA_DIRECTORY}:/metadata:ro
+      - ${AGENT_POOL_STATE_DIRECTORY:?Copy the original maintenance journal here}:/state
+      - /opt/pongit/secrets/rooms/lifecycle.json:/run/pongit-rooms/lifecycle.json:ro
+      - agent-reusable-diagnostics:/diagnostics
+    depends_on:
+      agent-reusable-db: {condition: service_healthy}
+
+  agent-reusable-sponsor:
+    <<: *pool
+    command: [node, scripts/agent-reusable-process.mjs, sponsor]
+    environment:
+      <<: *environment
+      PONG_AGENT_POOL_SPONSOR: reviewed-release
+      PONG_INDEPENDENT_WRITE: authorized-testnet
+      DATABASE_URL: ${AGENT_POOL_OPERATOR_DATABASE_URL}
+      ROOMS_LIFECYCLE_KEY_FILE: /run/pongit-rooms/lifecycle.json
+      PONG_AGENT_POOL_TRUSTED_PROXIES: ${AGENT_POOL_TRUSTED_PROXIES:?Set only the immediate proxy addresses}
+      HOST: 0.0.0.0
+    volumes:
+      - ${AGENT_POOL_METADATA_DIRECTORY}:/metadata:ro
+      - /opt/pongit/secrets/rooms/lifecycle.json:/run/pongit-rooms/lifecycle.json:ro
+      - agent-reusable-diagnostics:/diagnostics
+    depends_on:
+      agent-reusable-db: {condition: service_healthy}
+
+networks:
+  agent-reusable:
+volumes:
+  agent-reusable-data:
+  agent-reusable-diagnostics:

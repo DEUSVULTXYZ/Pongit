@@ -1,5 +1,26 @@
 # Agent pool release operations
 
+## Reusable rules-15 packaging
+
+The reusable generation has a separate `agent-reusable` Docker target and
+`ops/agent-reusable.compose.yaml` profile. It must replace, not run beside, a
+series or qualification writer for the same arenas. The API reader already
+understands the reusable ticket and historical result formats; its tests cover
+an assignment before engine admission and an old result after slot reuse.
+
+The sanitized metadata directory contains `manifest.json`, `reusable.json` and
+the reviewed `reusable-budget.json`. Only engine controllers receive the limited
+engine and admission-attestor files. Keeper and sponsor keep the original shared
+operator journal. The reader has no signing keys. Copy the frozen private archive
+and exact retired command journal, verify the restored database, and preserve the
+original maintenance prefix/state before starting a replacement writer.
+
+This packaging creates no contracts and enables no on-chain public switches.
+Public startup still requires reviewed capacity evidence. A missing publication
+budget holds new admissions but leaves recovery running. The private qualifier,
+partial reports and publication failures remain separate from the final unchanged
+24-hour trial. Neither this Compose profile nor a successful build qualifies it.
+
 This is the rules-11 series deployment path. It is distinct from the archived
 single-app `ops/agents.compose.yaml`. These files prepare production packaging;
 they do not establish qualification or authorize opening the public switches.

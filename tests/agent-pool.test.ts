@@ -1,6 +1,7 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {validateAgentPoolManifest,pooledHouseBots,scheduledTournament,type AgentPoolManifest} from '../shared/agent-pool';
 import {type Address} from 'viem';
+import {agentPoolCspOrigins} from '../shared/agent-pool-csp';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 function manifest():AgentPoolManifest{return{version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};}
@@ -35,4 +36,17 @@ test('reusable manifests keep a separate generation and cannot call registered a
  assert.throws(()=>validateAgentPoolManifest({...m,enabled:true}),/reviewed capacity/);
  assert.throws(()=>validateAgentPoolManifest({...m,version:3}),/Unsupported/);
  assert.throws(()=>validateAgentPoolManifest({...m,arenas:m.arenas.slice(0,2)}),/3 to 32/);
+});
+
+test('the browser policy accepts reusable arenas without widening origins or admission gates',()=>{
+ const m={...manifest(),version:4 as const,rulesVersion:15 as const,
+  arenas:manifest().arenas.map(a=>({...a,node:`https://il-${a.app.slice(2,18)}.fly.dev`}))};
+ const origins=agentPoolCspOrigins(m).split(' ');
+ assert.deepEqual(origins,m.arenas.flatMap(a=>[a.node,a.node.replace('https:','wss:')]));
+ assert.equal(m.enabled,false);assert.equal(m.verifiedCapacity,0);
+ for(const node of ["https://il-123.fly.dev; connect-src *",'https://il-123.fly.dev.evil.test','https://user:password@il-123.fly.dev','http://il-123.fly.dev'])
+  assert.throws(()=>agentPoolCspOrigins({...m,arenas:m.arenas.map(a=>({...a,node}))}));
+ assert.throws(()=>agentPoolCspOrigins({...m,rulesVersion:11}));
+ assert.throws(()=>agentPoolCspOrigins({...m,enabled:true}));
+ for(const [version,rulesVersion] of [[2,10],[3,11]])assert(agentPoolCspOrigins({...m,version,rulesVersion}).includes('wss://'));
 });

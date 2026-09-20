@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 import createMDX from "@next/mdx";
 import {readFileSync,existsSync} from "node:fs";
+import {agentPoolCspOrigins} from '../shared/agent-pool-csp';
 const interludeLab=JSON.parse(readFileSync(path.resolve("deployments/interlude-lab.json"),"utf8")) as {node:string};
 const interludeRooms=JSON.parse(readFileSync(path.resolve("deployments/interlude-rooms.json"),"utf8")) as {node:string};
 const independentPath=path.resolve("deployments/independent.json");
@@ -20,15 +21,7 @@ const agentOrigins=existsSync(agentPath)?(()=>{
 const poolPath=path.resolve('deployments/agent-pool.json');
 if(process.env.PONG_REQUIRE_AGENT_POOL_MANIFEST==='true'&&!existsSync(poolPath))
  throw Error('Agent Arcade build requires deployments/agent-pool.json for its network security policy');
-const poolOrigins=existsSync(poolPath)?(()=>{
- const m=JSON.parse(readFileSync(poolPath,'utf8'));
- if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11)||m.chainId!==10143||!Array.isArray(m.arenas)
-  ||m.arenas.length<(m.version===3?2:3)||m.arenas.length>(m.version===3?16:32))throw Error('Invalid pool CSP manifest');
- return m.arenas.flatMap((a:{app:string;node:string})=>{
-  if(!/^0x[\da-fA-F]{40}$/.test(a.app)||!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(a.node))throw Error('Unapproved pool arena in CSP manifest');
-  return[a.node,a.node.replace(/^http/,'ws')];
- }).join(' ');
-})():'';
+const poolOrigins=existsSync(poolPath)?agentPoolCspOrigins(JSON.parse(readFileSync(poolPath,'utf8'))):'';
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(import.meta.dirname, ".."),

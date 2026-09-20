@@ -43,6 +43,13 @@ ENV NODE_ENV=production
 USER node
 CMD ["node","scripts/agent-series-process.mjs","reader"]
 
+# Reusable rules-15 roles retain the shared operator journal and keep admission
+# and gameplay keys in their respective runtime mounts, never this image.
+FROM agent-pool AS agent-reusable
+COPY scripts/agent-reusable-engines.ts scripts/agent-reusable-step.ts scripts/agent-reusable-process.mjs ./scripts/
+RUN mkdir -p /diagnostics/reusable && chown node:node /diagnostics/reusable
+CMD ["node","scripts/agent-reusable-process.mjs","reader"]
+
 FROM dependencies AS web-build
 COPY shared ./shared
 COPY web ./web
