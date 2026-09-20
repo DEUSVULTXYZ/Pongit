@@ -112,9 +112,14 @@ try{
    const rejoin=p.getByRole('button',{name:'Rejoin queue',exact:true});if(await rejoin.isVisible())await rejoin.click();
   }));
   await Promise.all([a,b].map(p=>until(async()=>await p.getByRole('button',{name:'Accept',exact:true}).isVisible()||await p.locator('.rooms-canvas canvas').isVisible(),'offer or resumed game',120000)));
-  await persist();
-  await a.getByRole('button',{name:'Copy room link',exact:true}).click();saved.roomUrl=await a.evaluate(()=>navigator.clipboard.readText());assert(saved.roomUrl.startsWith(origin+'/rooms/'));await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();await until(()=>spectator.getByRole('button',{name:'Members 2',exact:true}).isVisible(),'spectator observes without occupying a ranked room');
-  await Promise.all([a,b].map(async p=>{const accept=p.getByRole('button',{name:'Accept',exact:true});if(await accept.isVisible())await accept.click();}));
+  await a.getByRole('button',{name:'Copy room link',exact:true}).click();saved.roomUrl=await a.evaluate(()=>navigator.clipboard.readText());assert(saved.roomUrl.startsWith(origin+'/rooms/'));
+  // Players answer their twenty-second proposal immediately. Opening the third
+  // browser is independent setup, not a prerequisite for either player's consent.
+  // Do not consume the acceptance window waiting for spectator RPC reads.
+  await Promise.all([
+   ...[a,b].map(async p=>{const accept=p.getByRole('button',{name:'Accept',exact:true});if(await accept.isVisible())await accept.click();}),
+   (async()=>{await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();await until(()=>spectator.getByRole('button',{name:'Members 2',exact:true}).isVisible(),'spectator observes without occupying a ranked room');})(),
+  ]);await persist();
   await Promise.all([a,b,spectator].map(p=>p.locator('.rooms-canvas canvas').waitFor({timeout:720000})));
   saved.stage=2;await persist();report.checks.push('Contract matchmaking, two consents and automatic hosted admission');
  }
