@@ -18,10 +18,17 @@ contract AgentQualifications {
     constructor(AgentCatalog c,address p){require(address(c).code.length>0&&p!=address(0),"qualification roles");catalog=c;pool=p;}
     modifier onlyPool(){require(block.chainid==10143&&msg.sender==pool,"Monad pool only");_;}
     function takeNext() external onlyPool returns(address a,address b,uint8 mode){
+        return _takeNext(type(uint256).max);
+    }
+    function takeNextKnown(uint256 baseBlock) external onlyPool returns(address a,address b,uint8 mode){
+        return _takeNext(baseBlock);
+    }
+    function _takeNext(uint256 baseBlock) private returns(address a,address b,uint8 mode){
         uint256 n=catalog.count()*2;if(n==0)return(a,b,mode);
         for(uint256 i;i<32&&i<n;i++){
             uint256 position=cursor%n;cursor=(position+1)%n;a=catalog.at(position/2);mode=uint8(position%2);
             if(catalog.identity(a).qualified&(1<<mode)!=0||retryAt[a][mode]>block.timestamp||!catalog.qualificationEligible(a,mode))continue;
+            if(catalog.identity(a).house==0&&catalog.registeredBlock(a)>baseBlock)continue;
             for(uint8 j;j<8;j++){
                 b=catalog.house((j+2)%8);
                 if(b!=a&&catalog.qualificationEligible(b,mode))return(a,b,mode);

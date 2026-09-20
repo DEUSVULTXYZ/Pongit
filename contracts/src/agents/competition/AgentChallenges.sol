@@ -58,6 +58,14 @@ contract AgentChallenges is EIP712 {
         r.status=3;delete pending[r.player];emit ChallengeChanged(id,r.player,r.agent,3);
     }
     function takeNext() external returns(uint256 id,Request memory request,ArcadeFamily.Grant memory grant){
+        return _takeNext(type(uint256).max);
+    }
+    /// Reusable engines can only execute community code present at baseBlock.
+    /// A newer strategy remains queued; scanning continues for playable users.
+    function takeNextKnown(uint256 baseBlock) external returns(uint256 id,Request memory request,ArcadeFamily.Grant memory grant){
+        return _takeNext(baseBlock);
+    }
+    function _takeNext(uint256 baseBlock) private returns(uint256 id,Request memory request,ArcadeFamily.Grant memory grant){
         require(block.chainid==10143&&msg.sender==pool,"pool only");
         if(scanRevision!=catalog.revision()||scanCount!=count){scanRevision=catalog.revision();scanCount=count;scannedCount=0;}
         if(count==0)return(0,request,grant);
@@ -67,6 +75,7 @@ contract AgentChallenges is EIP712 {
             id=cursor;cursor=cursor==count?1:cursor+1;Request storage r=requests[id];
             if(scannedCount<count)scannedCount++;
             if(r.status!=1||!_valid(r)||!catalog.eligible(r.agent,r.mode))continue;
+            if(catalog.identity(r.agent).house==0&&catalog.registeredBlock(r.agent)>baseBlock)continue;
             scannedCount=0;
             r.status=2;emit ChallengeChanged(id,r.player,r.agent,2);return(id,r,family.grantOf(r.player));
         }

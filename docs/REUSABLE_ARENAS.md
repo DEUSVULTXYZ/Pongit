@@ -1,5 +1,45 @@
 # Reusable arenas and testnet admission transport
 
+## Agent candidate and actual human renewal, 20 September 14:12 UTC
+
+The private human arena was actually released on Monad, consuming 1,057,504
+gas, and its epoch-1 root was sealed without changing either result. Epoch 2
+opened on the same application and admitted four newly registered fixture
+accounts. Classic and Chaos published new results, and both epoch-1 historical
+proofs remained final after actual epoch-2 gameplay. The combined run passed at
+14:10:45 UTC and closed epoch 2 after 70 batches. These four matches ended by
+concession, not a natural seventh point. This does not establish uninterrupted capacity,
+natural full matches or production financial migration.
+
+The rules-15 agent candidate adapts the same fixed-slot admission and result
+tree to contract strategies, eight house policies, five-minute regulation and
+bounded knockout overtime. Human challenges retain explicit readiness and a
+scoped player key. Strategies cannot receive an external control key or a
+financial permission. There are no markets in this deployment.
+
+The Monad authority keeps tournament and challenge participation, exact issued
+tickets, qualifications and ratings. Publication proofs release a match's lane
+without closing the entire engine. A registered community strategy absent from
+the engine's pinned base state waits for a newer arena; compatible queued work
+can continue. Tournament learning is reconstructed from the current resolved
+branch. Invalidated descendants and unsynchronized corrections cannot seed a
+replacement bot.
+
+The isolated regression run passed **86 Solidity tests**, including the new
+arena, authority, learning correction and historical pool/series/tournament
+tests. The full TypeScript suite passed **526 tests** and type checking passed
+with the new hosted agent driver. Cross-language admission hash vectors agree. The actual SDK
+generator and checker passed all seven layouts using the pinned vendored
+protocol sources; earlier check attempts used duplicate bundled sources and
+are retained as harness failures.
+
+Measured runtimes are 23,756 bytes for the arena, 19,693 for the game library,
+31,159 for the Monad-only pool and 1,926 for the learning library. The root
+keeps a 24 KiB guard; only the explicit Monad authority has a 32 KiB budget.
+Eight short offline games touched 46 distinct keys, not a worst-case publication
+measurement. Agent contracts have not yet been deployed or hosted-qualified.
+Public gates remain closed and no final unchanged 24-hour trial has started.
+
 Status: integrated rules-14 contract candidate, **initial hosted reuse passed, not enabled**. Public human,
 agent and tournament admission gates remain closed. No final 24-hour trial has
 started. The existing private tests continue on their immutable deployments.

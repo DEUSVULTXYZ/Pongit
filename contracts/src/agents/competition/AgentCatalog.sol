@@ -30,6 +30,7 @@ contract AgentCatalog is EIP712 {
     uint256 public revision;
     mapping(address=>uint256) public nonces;
     mapping(address=>Identity) private identities;
+    mapping(address=>uint256) public registeredBlock;
     mapping(address=>bytes32) public participation;
     mapping(address=>mapping(uint8=>bytes32)) public qualificationEvidence;
     mapping(address=>address) private reservingController;
@@ -54,6 +55,7 @@ contract AgentCatalog is EIP712 {
         require(msg.sender==owner&&!setupSealed&&style<8&&house[style]==address(0),"house setup only");
         require(strategy!=address(0)&&strategy.code.length==0&&metadata!=0&&identities[strategy].creator==address(0),"house identity");
         identities[strategy]=Identity(owner,houseCodeHash,metadata,0,3,0,style+1,true);
+        registeredBlock[strategy]=block.number;
         house[style]=strategy;strategies.push(strategy);revision++;
         emit Registered(strategy,owner,houseCodeHash,metadata,3,style+1);
     }
@@ -80,6 +82,7 @@ contract AgentCatalog is EIP712 {
         assembly("memory-safe"){let p:=mload(0x40) mstore(p,selector) ok:=staticcall(30000,strategy,p,4,p,32) size:=returndatasize() result:=mload(p)}
         require(ok&&size==32&&result==uint160(creator),"strategy creator");
         identities[strategy]=Identity(creator,codeHash,metadata,0,modes,0,official,official!=0);
+        registeredBlock[strategy]=block.number;
         strategies.push(strategy);revision++;emit Registered(strategy,creator,codeHash,metadata,modes,official);
     }
     function qualify(address strategy,uint8 mode,bool passed,bytes32 evidence) external base {

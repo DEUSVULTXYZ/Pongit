@@ -35,7 +35,7 @@ library ReusableArenaStorage {
         for(uint256 i;i<16;i++)if(w[key(6,0,3+i)]!=0)delete w[key(6,0,3+i)];
         clear(w);
     }
-    function clear(mapping(bytes32=>uint256) storage w) private {
+    function clear(mapping(bytes32=>uint256) storage w) internal {
         for(uint256 i;i<FIELD_COUNT;i++)if(get(w,i)!=0)set(w,i,0);
     }
     function admit(mapping(bytes32=>uint256) storage w,Admission.Ticket memory t,T.Binding memory b,

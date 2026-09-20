@@ -45,6 +45,7 @@
     "abi:agents": "tsx scripts/abi-agents.ts",
     "abi:agent-pool": "tsx scripts/abi-agent-pool.ts",
     "abi:agent-series": "tsx scripts/abi-agent-series.ts",
+    "abi:agent-reusable": "tsx scripts/abi-agent-reusable.ts",
     "test:agents": "forge test --root contracts --match-contract AgentArcadeTest && tsx --test tests/agents.test.ts",
     "test:differential:house": "tsx scripts/differential-house.ts",
     "test:strategies": "tsx scripts/strategy-vetting-check.ts",
