@@ -173,3 +173,38 @@ Fresh fixtures launched at 09:35 UTC: human `events-live-6` waits for two actual
 released arenas before registering any families; agent `series-browser-12`
 uses a fresh original virtual PRF and the earlier fault-injection sequence.
 Neither a queued fixture nor its waiting time is a successful qualification.
+
+## 11:44 UTC: hosted movement, final-point race and payment evidence
+
+`events-live-7` remains **failed**, preserving the original outcome. Its Classic
+game finished naturally at 7-6 after 133/129 confirmed direction changes. Its
+Chaos game recorded 130/131 confirmed changes, four real effects (14,19,5,17),
+both bets and transported pressure, then failed on a tick racing the last point.
+
+A separate read-only follow-up verified the actual Monad publications and their
+rating-ledger captures. Classic hash:
+`0x1376b5ad4f09be8989e108f2558c3dd9fda3fa58e0e0c2ec12a43345cca462dc`.
+Chaos finished 5-7, hash:
+`0x5e04ec8be7810fec7d08cab5a5e25f24f1cf6c0fe8fae4c02e2ec419a3dc2626`.
+The rejected Chaos tick has a confirmed reverted receipt at nonce 182,
+`0x07f8f9b474d0d5853081596615cd97f50d5c3f742a90035735039080d0195672`.
+Neither participant journal has an unresolved command. The automatic payout is
+completed: 0.006 test MON, matching the beneficiary's balance. Initial/current
+published ledger entries match for both games.
+
+Measured send-to-receipt p95 values were 116.8/135.7 ms for Classic and
+176.9/178.7 ms for Chaos. These are actual synthetic-controller samples, not
+browser render latency, simultaneous-play proof or a final soak measurement.
+The games were prepared serially and did not establish overlapping live play.
+
+The candidate now reconciles only a confirmed `InvalidMatch` revert with a
+cleared journal and a fresh terminal read of the same match. Missing responses,
+other reverts and unresolved commands still fail. The next fixture prepares both
+games before readiness, records actual playing intervals and requires overlap.
+Its report writes are serialized and atomic. The original failed report is not
+rewritten. The corresponding agent player correction awaits a new private build;
+the existing browser run stays on its frozen build.
+
+The full TypeScript suite passed 513 tests and type checking passed. The separate
+reusable admission/result/storage candidate passed 16 Solidity tests offline;
+see `../REUSABLE_ARENAS.md` for the explicit remaining integration and hosted gates.

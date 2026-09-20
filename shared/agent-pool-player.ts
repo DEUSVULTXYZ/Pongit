@@ -5,6 +5,7 @@ import {EngineStream,type EngineState} from './engine-stream';
 import {engineTransport,engineCooldownMs} from './engine-transport';
 import {readHubDelegation} from './rooms-hub';
 import {compactArenaSession,type ArenaSender} from './compact-arena-session';
+import {terminalAfterRevert} from './terminal-command';
 import {RoomsCommandJournal,resendJournaled} from '../web/lib/rooms-command-journal';
 import {pooledAgentArenaAbi as abi} from './abi-PooledAgentArena';
 import {validateAgentPoolManifest,type AgentPoolManifest,type PoolMatchView} from './agent-pool';
@@ -127,7 +128,11 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   await authorizeControls();
   if(stopped)throw Error('Arena controls have stopped');
   try{const result=await sender!.send(name,args);return verify(await feed.receipt(id,result,name,args,player));}
-  catch(error){sender=undefined;throw error;}
+  catch(error){
+   const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));
+   if(terminal){intention=undefined;return terminal;}
+   sender=undefined;throw error;
+  }
  }
  function pump(){
   if(moving)return moving;

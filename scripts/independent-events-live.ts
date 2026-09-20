@@ -19,6 +19,7 @@ import {betTypes,domain} from '../shared/protocol';
 import {lobbyCommandContext,familyGrantHash} from '../shared/independent-command';
 import {lobbyCommandTypes} from '../shared/independent';
 import {fixtureSnapshot} from './fixture-snapshot';
+import {terminalAfterRevert} from '../shared/terminal-command';
 import {measuredFetch,rpcSamples} from '../shared/rpc-metrics';
 
 assert.equal(process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION,'isolated-vps');
@@ -33,7 +34,8 @@ const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,
 const privateState:any={lobby:m.lobby,createdAt:new Date().toISOString(),players:Array.from({length:5},()=>({owner:generatePrivateKey(),arcade:generatePrivateKey()})),operations:{},jobs:[],matches:[]};
 const report:any={at:new Date().toISOString(),rules:m.rulesVersion,lobby:m.lobby,scope:'Actual private service, Monad and hosted Interlude; synthetic owners, no physical passkey claim',matches:[],checks:[],operations:[],passed:false};
 let tail=Promise.resolve();const save=()=>{const text=json(privateState);tail=tail.then(async()=>{await writeFile(secret+'.next',text,{mode:0o600});await rename(secret+'.next',secret);});return tail;};
-await mkdir('artifacts/independent-candidate',{recursive:true});const flush=()=>{report.rpc=rpcSamples();return writeFile(out,json(report));};
+await mkdir('artifacts/independent-candidate',{recursive:true});let reportTail=Promise.resolve();
+const flush=()=>{report.rpc=rpcSamples();const text=json(report);reportTail=reportTail.then(async()=>{await writeFile(out+'.next',text);await rename(out+'.next',out);});return reportTail;};
 const owners=privateState.players.map((p:any)=>privateKeyToAccount(p.owner)),keys=privateState.players.map((p:any)=>privateKeyToAccount(p.arcade));
 const grants:FamilyGrant[]=[];
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -135,7 +137,7 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
    await sleep(250);continue;
   }
   if(s.phase>=3){assert.equal(s.phase,3,'Technical cancellation is not a passing match');row.finalScore=[s.state.scoreA,s.state.scoreB];row.winner=s.winner;break;}
-  if(!firstPlaying)firstPlaying=Date.now();
+  if(!firstPlaying){firstPlaying=Date.now();row.playingAt=new Date(firstPlaying).toISOString();await flush();}
   assert.equal(s.state.awaitingServe,false,'Realtime Chaos paused for betting');
   if(mode&&!money)money=bet().catch(e=>{moneyError=e;});
   for(const e of s.chaos?.physics.effects??[])if(e.id&&!row.effects.includes(e.id))row.effects.push(e.id);
@@ -151,10 +153,19 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
    if(direction===p.direction)return;
    const args=[id,direction,(side?current.nonceB:current.nonceA)+1n,current.head+150n],at=performance.now();
    try{const receipt=await p.session.send('input',args);row.inputs.push({side,ms:performance.now()-at,hash:receipt.hash});row.changes[side]++;p.direction=direction;lastTick=Date.now();await observed(receipt,'input',args,p.index);}
-   catch(e){const fresh=await read(true);if((e as any).name==='AppRevertError'&&fresh.phase===3)return;throw e;}
+   catch(e){
+    const terminal=await terminalAfterRevert(e,id,()=>privateState.jobs.some((j:any)=>j.app===app&&j.signer===keys[p.index].address&&j.state==='uncertain'),()=>read(true));
+    if(terminal){row.terminalRaces??=[];row.terminalRaces.push({action:'input',side,at:new Date().toISOString(),phase:terminal.phase});return;}throw e;
+   }
   }));
   const fresh=await read();
-  if(fresh.phase===2&&Date.now()-lastTick>=300){const receipt=await players[0].session.send('tick',[id]);await observed(receipt,'tick',[id],match.a);lastTick=Date.now();}
+  if(fresh.phase===2&&Date.now()-lastTick>=300){
+   try{const receipt=await players[0].session.send('tick',[id]);await observed(receipt,'tick',[id],match.a);lastTick=Date.now();}
+   catch(e){
+    const terminal=await terminalAfterRevert(e,id,()=>privateState.jobs.some((j:any)=>j.app===app&&j.signer===keys[match.a].address&&j.state==='uncertain'),()=>read(true));
+    if(!terminal)throw e;row.terminalRaces??=[];row.terminalRaces.push({action:'tick',at:new Date().toISOString(),phase:terminal.phase});
+   }
+  }
   await sleep(row.changes.some((n:number)=>n<100)?40:150);
  }
  if(money)await money;if(moneyError)throw moneyError;
@@ -186,7 +197,15 @@ try{
   await submit(`register-${i}`,m.family,encodeFunctionData({abi:familyAbi,functionName:'register',args:[grant,signature]}));
   grants[i]=grant;
  }
- for(const mode of [0,1] as const){const match=await prepare(mode);const task=play(match).catch(async e=>{const row=report.matches.find((x:any)=>x.app===match.app&&x.id===match.id);if(row){row.error=String(e?.shortMessage||e?.message||'Hosted fixture failed').split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,300);await flush();}throw e;});task.catch(()=>{});tasks.push(task);}
- await Promise.all(tasks);report.checks.push('Two independently admitted real Classic/Chaos matches, natural results, contract capture and realtime payout');report.passed=true;
+ // Prepare both admissions before acknowledging either arena. Starting the
+ // first game during the second's Monad/provisioning wait did not reliably
+ // exercise simultaneous play, despite using Promise.all on the final tasks.
+ const prepared=await Promise.all(([0,1] as const).map(mode=>prepare(mode)));
+ for(const match of prepared){const task=play(match).catch(async e=>{const row=report.matches.find((x:any)=>x.app===match.app&&x.id===match.id);if(row){row.error=String(e?.shortMessage||e?.message||'Hosted fixture failed').split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,300);await flush();}throw e;});task.catch(()=>{});tasks.push(task);}
+ await Promise.all(tasks);
+ const began=report.matches.map((x:any)=>Date.parse(x.playingAt)),ended=report.matches.map((x:any)=>Date.parse(x.scores.at(-1).at));
+ report.simultaneousPlayMs=Math.min(...ended)-Math.max(...began);
+ assert(report.simultaneousPlayMs>=1000,'Two prepared arenas are not proof of simultaneous gameplay');
+ report.checks.push('Two independently admitted real Classic/Chaos matches, overlapping play, natural results, contract capture and realtime payout');report.passed=true;
 }catch(e){report.error=String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,500);process.exitCode=1;await Promise.allSettled(tasks);}
 finally{stops.forEach(fn=>fn());report.finishedAt=new Date().toISOString();await save();await flush();console.log(json({passed:report.passed,error:report.error,matches:report.matches.map((x:any)=>({app:x.app,id:x.id,mode:x.mode,score:x.finalScore,changes:x.changes,passed:x.passed}))}));}

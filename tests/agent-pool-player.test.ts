@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {decodeFunctionData,encodeAbiParameters,encodeFunctionResult,hashTypedData,keccak256,parseTransaction,toHex,zeroAddress,zeroHash,type Address,type Hex} from 'viem';
+import {decodeFunctionData,encodeAbiParameters,encodeFunctionResult,encodeErrorResult,hashTypedData,keccak256,parseTransaction,toHex,zeroAddress,zeroHash,type Address,type Hex} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {createPoolPlayer,POOL_PLAYER_GAS} from '../shared/agent-pool-player';
 import {pooledAgentArenaAbi as abi} from '../shared/abi-PooledAgentArena';
@@ -20,7 +20,7 @@ function fixture(rules:10|11=10){
  Object.assign(hub,{epoch:1n,status:1,expiresAt:BigInt(at+3600),resolveThreshold:2});
  const state:any={id:4n,phase:2,a:match.a,b:match.b,nonceA:0n,nonceB:0n,head:10n,state:{leftDir:0,rightDir:0}};
  let nodeEpoch=1,nonce=0,lost=false,receiptVisible=false,hold:(()=>Promise<void>)|undefined,nodeCalls=0,reorg=false,failBase=false;
- let clock=Date.now(),bindings=0,nonceReads=0;
+ let clock=Date.now(),bindings=0,nonceReads=0,rejectName:'InvalidMatch'|'StaleInput'|undefined,rejectPhase=2;
  let overrideKey:Address=zeroAddress,overrideMeta=0n,overrideRevision=0n;const sent:Hex[]=[],receipts=new Map<Hex,any>();
  const binding={id:4n,epoch:1n,a:match.a,b:match.b,controlA:{key:account.address,expires:session.grant.expires,codeHash:zeroHash},controlB:{key:addr(21),expires:session.grant.expires,codeHash:zeroHash}};
  const base:any={getChainId:async()=>10143,getBlock:async(opts?:any)=>{if(failBase)throw Error('RPC timeout');if(hold)await hold();return{number:100n,timestamp:BigInt(at),hash:opts&&reorg?toHex(1n,{size:32}):zeroHash};},getCode:async()=>'0x6000',request:async()=>encodeFunctionResult({abi:hubAbi,functionName:'delegationOf',result:hub})};
@@ -45,10 +45,11 @@ function fixture(rules:10|11=10){
   assert.equal(r.method,'interlude_sendTransaction');const raw=r.params[0] as Hex;await player.journal.beforeSend(raw);sent.push(raw);
   const tx=parseTransaction(raw),hash=keccak256(raw);if(!receipts.has(hash)){
    assert.equal(tx.nonce,nonce++);assert.equal(tx.gas,POOL_PLAYER_GAS);
-   const call=decodeFunctionData({abi,data:tx.data!});if(call.functionName==='input'){state.nonceA=call.args[2];state.state.leftDir=call.args[1];}else if(call.functionName==='concede')state.phase=3;
+   const call=decodeFunctionData({abi,data:tx.data!});if(rejectName){state.phase=rejectPhase;}
+   else if(call.functionName==='input'){state.nonceA=call.args[2];state.state.leftDir=call.args[1];}else if(call.functionName==='concede')state.phase=3;
    else if(call.functionName==='renewActive'){assert.equal(call.args[0].revision,overrideRevision);overrideKey=call.args[0].key;overrideMeta=call.args[0].expires;overrideRevision++;}
    else if(call.functionName==='revokeActive'){overrideMeta|=1n<<64n;overrideRevision++;}
-   receipts.set(hash,{transactionHash:hash,status:'0x1',logs:[]});
+   receipts.set(hash,{transactionHash:hash,status:rejectName?'0x0':'0x1',logs:[],...(rejectName?{output:encodeErrorResult({abi,errorName:rejectName})}:{})});rejectName=undefined;
   }
   if(lost)throw Error('Lost response');const result=receipts.get(hash);player.journal.received(r.method,result);return result;
  }};
@@ -57,6 +58,7 @@ function fixture(rules:10|11=10){
  return{m,match,session,owner,player,create,hub,state,sent,storage,binding,base,node,feed,
   lost:(v:boolean)=>lost=v,visible:(v:boolean)=>receiptVisible=v,epoch:(v:number)=>nodeEpoch=v,calls:()=>nodeCalls,hold:(v?:()=>Promise<void>)=>hold=v,
   advance:(ms:number)=>{clock+=ms;},bindings:()=>bindings,nonceReads:()=>nonceReads,
+  reject:(name:'InvalidMatch'|'StaleInput',phase:number)=>{rejectName=name;rejectPhase=phase;},
   reorg:(v:boolean)=>reorg=v,failBase:(v:boolean)=>failBase=v,override:(key:Address,meta:bigint,revision=1n)=>{overrideKey=key;overrideMeta=meta;overrideRevision=revision;}};
 }
 
@@ -65,6 +67,18 @@ test('a burst during recovery keeps only the latest movement and signs compact s
  const first=f.player.move(1);await Promise.resolve();const second=f.player.move(-1),stop=f.player.move(0),last=f.player.move(-1);release();
  await Promise.all([first,second,stop,last]);assert.equal(f.sent.length,1);assert.equal(f.state.state.leftDir,-1);
  await f.player.move(0);assert.equal(f.sent.length,2);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
+});
+
+test('a confirmed input racing the last point preserves its consumed nonce and exposes the terminal state',async()=>{
+ const f=fixture(11);f.reject('InvalidMatch',3);await f.player.move(1);
+ assert.equal(f.sent.length,1);assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
+ assert.equal((await f.player.read()).phase,3);await f.player.move(-1);assert.equal(f.sent.length,1);f.player.close();
+});
+test('an invalid live match or unrelated terminal revert still fails',async()=>{
+ for(const [name,phase] of [['InvalidMatch',2],['StaleInput',3]] as const){
+  const f=fixture(11);f.reject(name,phase);await assert.rejects(f.player.move(1),new RegExp(name));
+  assert.equal(f.sent.length,1);f.player.close();
+ }
 });
 test('series human controls preserve their exact uncertain command across F5 and reject a mismatched rules manifest',async()=>{
  const f=fixture(11);f.lost(true);await assert.rejects(f.player.move(1),/Lost response/);const raw=f.sent[0];f.player.close();
