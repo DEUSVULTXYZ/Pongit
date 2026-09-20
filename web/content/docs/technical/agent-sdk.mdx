@@ -1,47 +1,119 @@
 ## Status and deployment boundary
 
-The repository contains a candidate TypeScript SDK, a runnable example, the dedicated `PongAgentArcade` contract and an isolated coordinator. Public registration remains gated by hosted qualification and a measured 24-hour trial. Do not treat the presence of these files as evidence that the service is open.
+The current candidate uses independent arenas. Manifest version 3 selects rules 11 and bounded consecutive games; version 2 describes the earlier rules-10 pool. Public admissions remain closed pending complete qualification. The historical single-application API and examples must not be pointed at a pool deployment.
 
-The authoritative runtime manifest is returned by `GET /api/agents/config`. It identifies Monad Testnet (10143), the execution chain (4242), application, hub, epoch, rules version 7, two-match capacity and 300-second limit. Check both `enabled` and `qualified` before starting an external controller. Never substitute the human application address.
+Read `GET /api/agents/config` and call `validateAgentPoolManifest`. The manifest pins Monad Testnet (10143), execution chain 4242, the hub, common contracts, approved arenas and runtime hashes. Public admission requires `enabled`, verified capacity and reviewed qualification evidence. Deployed addresses do not prove available capacity.
 
-An agent match reference always contains `chainId`, `app`, `epoch` and `id`. An old reference must not resolve to a different deployment's game.
-
-## Two ways to build an agent
-
-An **on-chain strategy** is a contract on Monad Testnet implementing `IPongStrategy`. The arcade itself asks it for a direction on every 100 milliseconds of game time, so nothing of yours has to keep running and the strategy costs the arcade nothing beyond the match it plays. It is always accepted, and it is how most agents should be built.
-
-A **hosted real-time agent** is a process you run that holds a playing key and sends its own signed inputs. Every input and tick is a transaction of the execution chain, and an epoch can only hold about 1,400 hub batches before its stake can no longer be released, so a public arcade closes this kind by default. `GET /config` says which kinds are open in `registration.strategies` and `registration.realtimeAgents`.
+Every match reference contains `chainId`, `app`, `epoch` and `id`. A published old match has no live node attached, so an old URL cannot join a later game after renewal.
 
 ## Write an on-chain strategy
 
-Implement two functions. `decide(PongView v)` returns -1 to move up, 1 to move down or 0 to hold. `creator()` returns the creator address that will sign the registration.
+Community agents implement `IPongStrategy`; externally hosted controllers remain disabled. The arcade calls `decide(PongView)` every 100 milliseconds of game time under a 50,000-gas `STATICCALL`. Return -1 for up, 0 to hold or 1 for down. A revert, excessive gas or another value retains the previous direction and counts as an invalid decision. It cannot stop the other seat.
 
-`PongView` is the game from your seat: `mode` (0 Classic, 1 Chaos), `side` (0 defends x = 40 px, 1 defends x = 984 px), game time `t` in microseconds, your paddle centre and base half-height, the opponent's paddle centre, both scores, and the live balls: none between points, two under Chaos MULTIBALL. Positions are in pico-pixels (10¹² per pixel), velocities in micro-pixels per second (10⁶ per pixel per second). The table is 1024 by 576 pixels and y grows downwards.
+The view identifies mode, side, game time, paddle centres, effective half-height, scores and live balls. Positions use 10¹² units per pixel, velocities 10⁶ units per pixel per second, and time microseconds. The court is 1024 by 576 pixels, with y increasing downwards. Pooled rules 10 and 11 include size effects in the reported half-height; SPLIT PADDLE still has a non-colliding central gap. Historical single-application rules report base height instead.
 
-Under Chaos, `half` is the size your betting weight sets and does not follow the paddle-size effects. MEGA PADDLE and BOSS ROUND make the real paddle a quarter taller, POCKET PADDLE and GLASS CANNON a fifth shorter (always between 64 and 120 pixels high), SIZE SWAP exchanges the two sides' base sizes, and SPLIT PADDLE opens a 16-pixel gap at the centre that cannot return the ball while reaching 8 pixels further out. Keep a margin rather than aim with the paddle's edge. Reporting the effective size is a change to the arcade contract, deferred to its next redeployment.
-
-The arcade calls `decide` under STATICCALL with 50,000 gas and reads exactly 32 bytes of the answer. A revert, running out of gas, or any answer other than -1, 0 or 1 leaves the paddle doing what it was doing; it can never stop the match or touch the other seat. Because the call is static, a strategy has no memory between calls: it decides from the view, and from any contract state it chooses to read. That state is Monad as it was when the arcade's current epoch opened.
-
-The repository's `contracts/src/agents/examples/TrackerStrategy.sol` is a complete starting point. It predicts where the nearest incoming ball crosses its paddle line, folding the path off the walls, in 2,700 to 6,300 gas. Deploy and register it from the repository root with:
+The immutable opcode check rejects storage access, external calls, block-dependent inputs, logs and contract creation. Proxies and mutable external dependencies cannot preserve a frozen tournament version. The complete runtime is scanned, including appended metadata. Compile the example without that trailer:
 
 ```sh
-forge build --root contracts
-CREATOR_KEY=0x... DEPLOY=tracker WAIT=1 npx tsx agent-sdk/strategy.ts
+FOUNDRY_PROFILE=strategies forge build --root contracts
 ```
 
-The Foundry configuration lives in `contracts/foundry.toml`, so `--root contracts` is required: a bare `forge build` at the root neither resolves its imports nor writes `contracts/out`, where the script reads the compiled tracker. `npm run contracts:build` runs the same command.
+`contracts/src/agents/examples/TrackerStrategy.sol` is the starting example. Deploy it once on Monad Testnet with the intended immutable creator. Deployment requires creator-paid test gas. Keep the address and transaction reference instead of deploying another identity after a lost response.
 
-The tracker is deployed once. Its address is recorded in `.agent-state/strategies.json`, a private file outside Git that `STRATEGY_STATE` can move, and every later run registers that same contract instead of deploying another. To register your own contract instead, set `STRATEGY` to its address and leave out `DEPLOY`. `AGENT_NAME`, `AGENT_AVATAR` and `MODES` set its profile.
+## Register a declared identity
 
-Before anything is written, the service checks on Monad that the contract exists, that `creator()` names the signing creator, and that `decide` answers -1, 0 or 1 within the gas budget on sample positions from both sides and both modes. Each refusal names the problem. A contract deployed after the current epoch opened is refused with `AGENT_STRATEGY_NEXT_EPOCH`, because the arcade cannot see it yet. Nothing is recorded and the strategy does not become playable by itself: send the same registration again after the next renewal. The script exits with code 2 in that case, and running the same command once the arcade has renewed registers the tracker it already deployed. The check cannot see that a `decide` writes to storage, which works in a plain call but always holds under the arcade's STATICCALL; the qualification match catches it.
+`AgentCatalog` verifies code, creator ownership and code hash. The SDK prepares a creator-signed registration; preparation does not send a transaction:
 
-The script waits through a renewal, a rate limit or a service restart and tries again for up to an hour. With `WAIT=1` it follows qualification for at most six hours (`WAIT_HOURS`) and stops if the strategy leaves the catalog or the service moves to a new arcade. It exits with 0 once registered (with `WAIT=1`, once every mode qualified), 1 on an error it prints, 2 when it has to be run again after the next renewal, 3 when a mode failed qualification, which the same command queues again, and 4 when `WAIT` stopped following the strategy.
+```ts
+const call = await preparePoolRegistration(monad, manifest, creator, {
+  strategy: deployedStrategy,
+  name: 'My tracker',
+  avatar: 7,
+  modes: 3, // 1 Classic, 2 Chaos, 3 both
+});
+await sponsor.send(call);
+```
 
-A strategy is queued for qualification at once. For each mode it plays one friendly match against a house bot or another strategy, and qualifies if the match is played to the end and its paddle leaves the centre it starts on, which only its own answers can do. Signing the same registration again queues any mode that has to be retried. A qualified strategy is always available: it enters the league rotation and can be challenged, and it cannot go offline.
+The EIP-712 domain is `PONGIT Agent Catalog`, version `1`, chain 10143, at the manifest's catalogue. The message binds strategy, creator, metadata, modes, expiry and nonce. The helper checks the on-chain digest before requesting a signature. Official bot status comes from registry identities, never a submitted name.
 
-## Build and run a hosted real-time agent
+A new community strategy starts unavailable. Its creator calls `setAvailable(strategy, true)` directly on Monad before qualification can select it. This action requires creator-paid test gas; it is separate from free sponsored play and is not an entry fee.
 
-The SDK source is in `agent-sdk/src`, and `agent-sdk/example.ts` demonstrates a controller hosted by its developer. Build with:
+The current example is `agent-sdk/pool-strategy.ts`, also packaged as `pongit-register-strategy`. Supply an already deployed `STRATEGY` and a dedicated `CREATOR_KEY` through your private environment. It reuses an existing matching identity and refuses a closed public gate before signing. `AGENT_AVAILABILITY=on` explicitly requests the creator-paid availability transaction; `off` disables future selection without interrupting a reserved match.
+
+The example records the exact signed transaction before sending, resolves its receipt on retry, and stops if a nonce was consumed without that receipt. Keep its private `.agent-state` directory and use only one writer per creator. It stores no private key and prints no signed payload. Community metadata is a commitment: the current reader displays a strategy address, not a name reconstructed from a hash.
+
+## Technical qualification
+
+Friendly qualification is selected separately for each requested mode. A completed, published trial requires at least three valid decisions and no invalid decision. Winning is unnecessary. Cancellation or a temporary engine failure schedules another trial instead of declaring incompatibility.
+
+Qualification and participation locks live on Monad. A newly deployed strategy waits for a suitable arena whose pinned base block includes it. Registration cannot rewrite an already running engine's external state. After setup is sealed, the service cannot manually award a passing qualification.
+
+## Authorize and authenticate
+
+Human challenges use a limited two-hour `ArcadeFamily`. `preparePoolFamily` requests the owner's explicit signature; `loadPoolFamily` restores the authorization. The root key is not persisted. The arcade key, grant and pending command journal stay in `sessionStorage`.
+
+`preparePoolChallenge` binds grant, action, agent, mode, challenge ID, nonce and expiry to `PONGIT Agent Challenges`. This key authorizes admission and gameplay, not spending, strategy registration or administration. Approved successive arenas reuse the family. Final real cross-arena browser checks and physical-device verification must be distinguished.
+
+Revocation of future admissions is distinct from revocation inside an active arena. A network failure does not prove revocation and must not erase an uncertain transaction. Explicit renewal reconciles sponsorship first, registers the family if needed, then authorizes it against the current arena revision.
+
+## Sponsorship and uncertain responses
+
+`createPoolSponsor` journals the exact signed call before sending it. The operation ID commits to target and calldata. `POST /api/agents/transactions` accepts canonical, signed, zero-value calls from a narrow allowlist: family registration/revocation, catalogue registration and challenge commands. Strategy execution, arena control, availability administration and financial calls are outside that endpoint.
+
+`GET /api/agents/operations/:id` returns `queued`, `pending`, `confirmed` or `failed`. A lost reply, timeout, 429 or missing receipt preserves the call. Resume before signing another. A 404 resubmits the same intent, not a new nonce. An exact receipt or supported explicit non-acceptance resolves the journal.
+
+Signatures and signed calldata must never appear in public diagnostics. Show an actionable status and diagnostic reference. The pending journal remains private even though the eventual chain transaction is public.
+
+## Observe and control
+
+`createPoolObserver` verifies arena, epoch, rules, participants and binding. It consumes engine events with bounded fallback reads, creates no wallet and sends no ticks.
+
+A human participant uses `createPoolPlayer` with a saved family and a single writer lock:
+
+```ts
+const session = loadPoolFamily(manifest, playerAddress, sessionStorage);
+if (!session) throw new Error('Authorize this arcade family first');
+const player = createPoolPlayer(manifest, matchView, session, {
+  base: monad,
+  storage: sessionStorage,
+  socket: url => new WebSocket(url),
+});
+const stop = player.watch(renderConfirmedState);
+await player.recover();
+await player.move(-1);
+// On blur or opening a dialog: await player.move(0).
+// On leaving: stop(); player.close();
+```
+
+Hold a per-account Web Lock before enabling browser controls. Direction changes coalesce while a command is pending. After response loss, reconcile the exact transaction without deleting the journal. A receipt from an earlier match cannot become a snapshot of a new match.
+
+## Read interfaces
+
+The site prefixes these routes with `/api/agents`; private services use `/agents`. Read responses include an observation block, hash, timestamp and revision. ETags avoid re-downloading unchanged responses. RPC failure never becomes a cached empty catalogue.
+
+| Method and route | Purpose |
+| --- | --- |
+| `GET /config` | Versioned contracts, arenas and opening gates |
+| `GET /catalog?offset=0&limit=16` | Identities, qualification and participation |
+| `GET /live` | Actual current matches |
+| `GET /matches/:app/:epoch/:id` | Full reference and published result |
+| `GET /challenges/:player` | Waiting or assigned challenge |
+| `GET /tournaments?offset=0&limit=16` | Tournament history |
+| `GET /tournaments/:id` | Entrants, fixtures, standings, attempts and corrections |
+| `GET /rankings?mode=0&offset=0&limit=16` | Published ELO; optional `block` pins pagination |
+| `GET /replay?app=...&epoch=...&id=...` | Recorded snapshots or explicit availability |
+
+Pages contain at most 32 records. Invalid references return 404; invalid pagination returns 400. Busy reads return recoverable errors. Replay availability distinguishes `available`, `partial`, `indexing`, `pruned`, `corrected` and `unavailable`.
+
+## Sessions, publication and release
+
+A bounded series reserves participants before delegation. Each game is published and captured separately before the next authorized fixture starts. An operator signature cannot invent a new admission after the pinned base block. Closing a series stops that arena; continuity requires another ready arena during the actual exit delay.
+
+There is no verified universal limit of 1,400 batches. Tests of the deployed hub code found release gas depends on distinct overlay keys in the tested path: 8,564 commits to the same 64 keys used the same release gas as one commit, while sufficiently many distinct keys exceeded a 30-million-gas call budget. This does not qualify every application or fix an older stuck delegation. Real worst-case publication, release and reserve capacity still require qualification.
+
+Contracts own results, ratings and tournament progression. Initial publication remains contestable. Corrections retain old attempts and repair dependent standings or branches, without silently duplicating ELO.
+
+## Build the SDK and historical compatibility
 
 ```sh
 npm ci
@@ -49,63 +121,6 @@ node scripts/build-agent-sdk.mjs
 npm pack ./agent-sdk
 ```
 
-The example requires Node.js 24 or later. Provide your own dedicated `AGENT_KEY`, a different `CREATOR_KEY`, and an optional `AGENT_NAME`. Keep these in your local secret manager or environment. Never submit keys or executable agent code to PONGIT. The example stores only its limited authorization and command journal under `.agent-state`, which is excluded from Git.
+The package includes pool registration, sponsorship, observation, family and player helpers. Historical `createAgentClient`, `agent-sdk/example.ts` and `agent-sdk/strategy.ts` target the earlier single-application protocol. They are retained for old deployments and are not the rules-11 registration workflow.
 
-```sh
-npx tsx agent-sdk/example.ts
-```
-
-The SDK exports `createAgentClient`, `AgentController`, `agentArcadeAbi`, registration helpers and versioned reference types. Registration and qualification are protocol operations; the included controller is replaceable.
-
-## Register a declared identity
-
-`POST /api/agents/register` accepts `creator`, `agent`, `name`, `avatar`, `modes`, `expires`, `creatorProof` and `agentProof`. The creator and agent addresses must differ. Leaving out `agentProof` registers `agent` as an on-chain strategy: only the creator signs, and the contract vouches for itself through `creator()`. A registration with `agentProof` is refused with HTTP 403 `AGENT_REALTIME_CLOSED` where hosted real-time agents are closed. Modes are a bitmask: Classic is 1, Chaos is 2, both is 3. Avatar IDs range from 0 to 11.
-
-For a hosted agent, both owners sign the same EIP-712 `AgentRegistration`. Its domain is `PONGIT Agent Arcade`, version `1`, chain 10143 and the specific agent contract. The payload binds the addresses, mode mask, canonical metadata hash and short expiry. `agentMetadata(name, avatar)` generates the exact hash used by the contract. The two proofs are verified before the identity is registered onchain.
-
-Identity fields are immutable in this candidate. The service cannot relabel a community address as a house bot: house identities are restricted by the operator's explicit address allowlist. Declared creator checks do not prevent a person from operating multiple creator addresses.
-
-## Authorize and authenticate
-
-`connect(wallet)` explicitly requests a two-hour grant for five actions: `acceptMatch`, `input`, `tick`, `cancelMatch` and `concede`. This grant cannot register another identity, qualify an agent, administer the engine or spend funds.
-
-Between games, an autonomous controller can call `connect(wallet, {renew: true})` when fewer than six minutes remain. This explicitly creates a new grant rather than restoring the still-valid old one. Resolve any uncertain command before replacing its key. Ordinary reconnects should use `resume`, and a browser must never request an owner signature without the player's explicit action.
-
-`resume(address)` restores an existing grant, checks its account, app, expiry and revocation, and reconciles the command journal. API authentication uses `POST /auth/challenge`, then `POST /auth/session` under `/api/agents`. The latter supplies the grant, owner signature and a challenge signed by the session key. The SDK verifies the exact challenge text before signing it. Bearer tokens stay in memory.
-
-A verification outage does not erase the key. A confirmed revocation or expired grant blocks further authorized actions. `disconnect()` attempts limited-key revocation and reports whether onchain revocation remains pending.
-
-## Presence, offers and controls
-
-| Route | Purpose |
-| --- | --- |
-| `GET /catalog` | Declared profiles, mode qualification, availability and current match |
-| `POST /availability` | Set availability for a registered agent |
-| `POST /heartbeat` | Refresh authenticated presence every ten seconds |
-| `GET /me` | Recover the current offer, match or reserved challenge |
-| `POST /qualification` | Request a friendly technical trial for one mode |
-| `POST /qualification/checkpoint` | Record valid controls before and after authentication recovery |
-| `POST /challenges` | Reserve a friendly duel with an agent using an operation UUID |
-| `POST /challenges/cancel` | Cancel a still-waiting challenge |
-| `GET /live` | Actual active matches and result-publication states |
-| `GET /rankings?mode=0` | Contract-observed agent ratings and observation dates |
-| `GET /history?player=0x...` | Recent compact results and replay availability |
-| `GET /replay?id=...&app=0x...&epoch=...` | Replay or explicit unavailable state for an exact reference |
-
-These paths are relative to `/api/agents`. Authenticated routes require the SDK's bearer token; a strategy has no session and needs none of them. Responses distinguish HTTP 400, 401, 403, 409, 429 and temporary service failures, with readable error text, a code, source and a request ID. Only a 429 or a temporary failure is worth retrying unchanged; a 429 includes `retryAt`, so wait until then.
-
-Poll `/me` at most once per second in a controller and send a heartbeat every ten seconds. Game observation uses `watch(id, listener)` and Interlude's applied-event subscription, with periodic authoritative reads. Movement uses `move(id, direction)` where direction is -1, 0 or 1. `tickIfNeeded` coordinates the primary player, peer fallback and service fallback. Do not create another unconditional tick loop.
-
-## Qualification and response-loss recovery
-
-For each supported mode, a candidate must finish a friendly trial, issue valid inputs, recreate its connection and continue controlling the same game. After at least two inputs, call the qualification checkpoint, stop observation, resume the saved grant, recreate observation and make a fresh read. Call the checkpoint again with the new API session, then issue at least two further inputs before finishing. At least five valid inputs in total are required.
-
-The service verifies these observations against contract state. An engine outage pauses the trial. A technical failure produces a retryable qualification result, not a claim that the developer is malicious. Qualification attests compatibility only.
-
-The SDK persists each exact signed game transaction before submission. If its reply is lost, recovery looks for the receipt or resends those same bytes. It does not sign a different transaction at an uncertain nonce. Movement requests are coalesced to the latest intention, and a single command lane owns the signer nonce.
-
-## Operations and known qualification work
-
-House controllers run in an isolated service with dedicated keys and resource limits. The coordinator signs admission offers, but cannot assign a score or winner. Rankings are mirrored only from contract reads, with live and published values distinguished. Published values may still be challenged under the underlying protocol.
-
-The candidate deployment must pass two concurrent games, independent human traffic, publication, renewal, timeout draws and the 24-hour trial before the public gate opens. Remaining checks and measured incidents are recorded in the repository's `docs/AGENT_ARCADE.md`. The agent disable switch must not alter human deployments, financial contracts or stored human sessions.
+The [player guide](/docs/playing/agents) describes tournament rules and the public qualification boundary. A simulated test, incomplete run or running container is not a final 24-hour service result.

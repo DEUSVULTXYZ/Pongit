@@ -78,3 +78,36 @@ The next source records accepted engine snapshots under the full chain/app/epoch
 Thirteen real PostgreSQL/HTTP checks passed against synthetic contract/index states, including epoch isolation, rollback, compression, restart, lost writes, corrected results, shared retention, ETags and fair reconciliation when an old contract is unavailable. A first expanded test harness used an incompatible mock of PostgreSQL's callback overload and stalled; it was stopped and preserved, then the adapter was corrected. This does not substitute for recording and serving the next real hosted game. The production web build and all 443 TypeScript tests pass. Public admission gates remain closed; no final endurance trial has started.
 
 The off-VPS backup was restored into four isolated databases. Every COPY row, compared by per-table sorted hash, and every sequence value matched its dump: 1,138 rules-9 rows, 832 series operations rows, 238 indexer rows and 24,457 relayer rows. No production database was overwritten and no service was started on the restored copies. This validates that backup, not subsequent writes or the future release backup.
+
+## Browser integration checkpoint, 20 September 02:40 UTC
+
+The first real Mera browser attempts on the replacement pool exposed a build
+configuration defect: its CSP omitted both new arena origins. The browser could
+register a family and queue a challenge but could not observe or control the
+engine. The two resulting 0-7 games are real publications, not passing human
+gameplay tests. Their failed reports and the original private family are retained.
+The web build now requires its explicit public pool manifest when building this
+candidate. The real-browser harness checks delivered HTTP and WebSocket policy
+before creating an identity or requesting an arena. Public production is unchanged.
+
+Match 5 of epoch 3 on `0xb29db94965f9c8d8f9325ade2a8cbccf46e4d7cb`
+produced 51 recorded snapshots and a published 0-7 result. The replay API and
+conditional ETag reads passed. Chrome and Edge at 360 and 1440 px passed playback,
+seek, final score, focus restoration and zero engine-call checks. Visual review
+then found that the shared live-layout container could collapse the replay court
+to zero height. That earlier report is therefore **not a complete visual pass**.
+The replay now uses its own 16:9 CSS module; the next browser run also asserts
+visible dimensions. No simulated recording is substituted for the real match.
+
+The package `@pongit/agent-sdk@0.2.0-candidate.1` adds a current pool registration
+example and CLI. It uses the existing sponsored registration and an explicitly
+requested creator-paid availability transaction. It journals exact signed bytes,
+binds recovery to the creator/chain/target/calldata/value/nonce, refuses an
+unexplained consumed nonce and never persists the private key. Fourteen targeted
+client/sponsor/recovery tests passed, as did an isolated clean package installation
+on Node 24.20.0. The CLI rejected an unapproved endpoint before creating state.
+This is not a completed hosted community qualification or npm registry publication.
+
+The immutable pool and arenas are still the `0574742` deployment. Neither this
+documentation update nor the browser fixes establish reserve capacity, complete
+tournaments or a final 24-hour service trial. All public admission gates stay closed.

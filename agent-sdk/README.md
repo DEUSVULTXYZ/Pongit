@@ -1,10 +1,11 @@
 # PONGIT Agent SDK
 
-## Version-2 pool candidate
+## Independent pool candidate (versions 2 and 3)
 
 The independent-arena generation uses **on-chain strategies only**. The legacy
 real-time controller below is retained for historical private deployments and
-cannot register in the new catalogue. Public gates remain closed.
+cannot register in the new catalogue. Version 2 uses rules 10; version 3 uses
+rules 11 and bounded consecutive fixtures. Public gates remain closed.
 
 The new exports are `preparePoolRegistration`, `preparePoolChallenge`,
 `createPoolObserver`, `createPoolPlayer`, `validateAgentPoolManifest` and `pooledHouseBots`. A signed
@@ -29,10 +30,30 @@ to disable the metadata trailer. The immutable opcode check rejects storage,
 external calls, logs, creation and environment-dependent instructions. The
 catalogue verifies the strategy's `creator()` and code hash. Availability is a
 separate creator-controlled setting; a newly registered community strategy
-starts unavailable. Qualification then needs published friendly play in each
+starts unavailable. In the current immutable candidate the creator calls
+`AgentCatalog.setAvailable(strategy, true)` directly on Monad with test gas.
+That action is not sponsored by the signed-call endpoint. Qualification then needs published friendly play in each
 requested mode, with at least three valid decisions and no invalid decision.
 The score does not decide technical qualification. Temporary engine failures
 schedule another trial instead of failing the strategy.
+
+The current repository example is `agent-sdk/pool-strategy.ts`, with an already
+deployed immutable `STRATEGY` and dedicated `CREATOR_KEY` supplied through the
+developer's private environment. Run `npx tsx agent-sdk/pool-strategy.ts` from the
+repository root, or `npx pongit-register-strategy` after installing the package.
+It refuses a closed public gate before requesting a signature.
+Set `AGENT_AVAILABILITY=on` only when you intend the creator-paid testnet
+availability transaction; `off` withdraws future availability without aborting a
+reserved match. Registration itself goes through the sponsored signed-call API.
+
+The example stores pending signed intents and exact availability transactions
+in `.agent-state`, never the private key. Keep that private journal on retry.
+An uncertain transaction is not replaced at the same nonce. Use only one process
+and one journal directory per dedicated creator, including across pools; a stale
+lock after a crash must be inspected before removal. There is no private-key or
+raw-signature output. The on-chain metadata is a commitment; the current reader
+labels a community entry by its address instead of claiming to recover a name
+from its hash.
 
 `createPoolObserver(manifest, matchView, url => new WebSocket(url))` is read-only.
 It checks the node's application, epoch, chain and rules and rejects mismatched
@@ -71,9 +92,10 @@ arena at its current authorization revision. It does not grant spending rights
 and the root key must not be persisted. These human methods do not enable
 external community bot controllers.
 
-The implementations still need complete real authentication, cross-arena and
-hosted qualification. See [the candidate status](../docs/AGENT_POOL.md).
-Do not point `agent-sdk/strategy.ts` or `createAgentClient` at a version-2 manifest:
+Hosted synthetic human challenges, response-loss reconciliation and scoped
+renewal have passed targeted trials. Complete real browser, reserve-capacity,
+tournament and unchanged 24-hour gates remain. See [the series candidate status](../docs/AGENT_SERIES.md).
+Do not point `agent-sdk/strategy.ts` or `createAgentClient` at a pool manifest:
 those entry points implement the historical API described next.
 
 ## Historical single-application API

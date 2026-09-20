@@ -1,45 +1,66 @@
-<Callout title="Candidate release">
-Agent Arcade is being qualified on a dedicated deployment. The public home screen changes only after hosted capacity, renewal and the 24-hour service trial pass. Human games keep their existing arena while this work is in progress.
+<Callout title="Private candidate, public admissions closed">
+Eight controllers and automatic tournament contracts exist, but complete hosted tournaments, continuous reserve capacity and a final unchanged 24-hour trial have not passed. The features described below do not mean that the public service is open.
 </Callout>
 
 ## Choose your opponent
 
-**Play a person** searches for a human. It never silently substitutes a bot. **Play an agent** opens the agent catalogue; **Watch agents** lists actual live matches. Invitations and rooms remain available separately.
+**Play a person** keeps human matchmaking separate. A bot never silently replaces a person. **Play an agent** opens the catalogue; **Watch agents** opens live matches. Invitations and rooms remain separate choices.
 
-Agent Arcade has three kinds of opponent. **PONGIT BOT** identifies a house controller; **ON-CHAIN STRATEGY** identifies a contract its developer published on Monad, which the arcade asks for every move and which is therefore always available; **COMMUNITY AGENT** identifies software hosted by its developer. Each card shows its creator address, supported modes and availability. Registration establishes possession of the declared keys, not the real-world identity of the creator.
+**PONGIT BOT** is an official identity verified by the contract registry. A similar username or avatar does not confer that status. **ON-CHAIN STRATEGY** is a community developer's registered contract. Its creator, modes, qualification and availability are public. Externally hosted community controllers are disabled in this release.
 
-| House bot | Difficulty | Character |
+| House bot | Style | Behaviour |
 | --- | --- | --- |
 | NOVA | Rookie | Slower reactions and larger placement errors |
-| PULSE | Arcade | A balanced opponent |
-| ONYX | Expert | Faster reactions and more precise placement |
+| PULSE | Arcade | Balanced reactions and accuracy |
+| ONYX | Expert | Faster, more precise positioning |
+| VECTOR | Wall reader | Anticipates reflected trajectories |
+| DRIFT | Mobile defender | Repositions more actively |
+| ECHO | Adaptive | Uses recently observed trajectories |
+| GLITCH | Unpredictable aim | Deterministic variations in placement |
+| VIPER | Edge chaser | Seeks off-centre returns |
 
-These controllers read public game state. They do not know future Chaos draws and do not call a language model for every movement. Community developers choose their own controller.
+Controllers use public game state and cannot read future Chaos draws. They do not call a language model for each movement. Tournament learning follows the tournament rather than resetting whenever an arena renews its delegation.
 
 ## Play an agent
 
-Select Classic or Chaos, then **Challenge this agent**. The selected opponent is retained while you connect. A separate, explicit Mera approval grants access to the agent arena for two hours; the address of your existing account does not change.
+Choose **Classic** or **Chaos**, then an agent's challenge button, such as **Challenge NOVA**. Connection preserves this choice. The first approval authorizes the agent arena family for two hours without changing your Mera address or granting spending permissions.
 
-An agent that is already playing finishes that game first. Your challenge reserves a subsequent duel. **Cancel challenge** cancels a waiting request. Once a duel is offered, both players must accept it. **Back** declines before play; **Concede** leaves a game that has started.
+Submitting a challenge expresses your agreement to that friendly match. The strategy supplies the other participant; there is no second two-human acceptance screen. A busy agent finishes its current participation first. A tournament participant becomes available after leaving that tournament. **Cancel challenge** removes a waiting request. **Concede match**, in **Tools**, ends a started game.
 
-If no dedicated arena is available, the page shows **Waiting for an available arena**. Agent traffic does not borrow the two human-game places. F5 restores an unexpired arcade authorization in the same tab. Network recovery does not itself require another passkey ceremony.
+If no suitable arena is ready, the request waits. Agent traffic never borrows a human arena. F5 in the same tab restores an unexpired limited session and reconciles pending commands. A connection failure alone should not require another passkey ceremony.
 
 ## Match rules
 
-Every agent-space match ends at seven points or after five minutes of contract-measured game time. At the time limit, the leading score wins. Equal scores produce a draw, with no ELO change. A Chaos double point can finish the game, but the displayed score never exceeds seven.
+A game ends at seven points or after five minutes of contract-measured time. The higher score wins at the time limit. Equal scores produce a draw, except for the elimination tie-break below. A Chaos double point can finish a game, with the displayed score capped at seven.
 
-Classic uses the current human-game physics. Chaos keeps the [24 arcade events](/docs/playing/chaos), their combinations and verified drand draws. There are no bets, entry fees or prizes in Agent Arcade. Betting pressure is neutral and cannot be changed through this arena's contract.
+Classic retains human-game physics. Chaos includes the [24 arcade events](/docs/playing/chaos), verified randomness and pixel rendering. There are no bets, entry fees or prizes in Agent Arcade. Financial handicap pressure is neutral and cannot be changed through these contracts.
 
-Human-agent challenges are friendly and never change human ELO. Agent league matches have separate Classic and Chaos ratings starting at 1000. The service selects ranked pairings; declared agents of the same creator play friendly matches. The contract enforces these conditions and computes results and ratings.
+Human challenges are friendly and never change human ELO. Agents have separate Classic and Chaos ratings starting at 1000. Matches between declared agents of the same creator do not change ELO, but their results count in the tournament. A draw or administrative advancement never becomes a fabricated win.
 
-## Watch and challenge
+## Automatic tournaments
 
-**Watch agents** shows a live match with the players, score, clock and controls to challenge an agent. Watching does not require a wallet. A match waiting for result publication is labelled accordingly; a replay is never labelled live.
+**Tournaments** shows the bracket or standings, current match, upcoming fixtures and previous results. The order is elimination Classic, elimination Chaos, championship Classic, championship Chaos, with a one-minute interval after completion.
 
-Recent result summaries remain available. Replay frames have a bounded retention window and are shared between the two participants. A removed replay is explicitly unavailable, while its compact score and contract reference remain. The candidate still requires verification of the combined retention path with human history before opening.
+Each tournament selects eight available, qualified participants. Those who waited longest since their previous tournament have priority; addresses break ties. Official bots fill available places. Contracts lock participants across both modes and freeze strategy versions. A challenge cannot interrupt a fixture or take an agent out of its tournament.
+
+**Elimination** has quarter-finals, semi-finals and a final. A tie after five minutes enters sudden death for at most one minute. If neither player scores, the higher initial ELO advances; equal ELO uses address order. This is labelled administrative advancement and gives no ELO.
+
+**Championship** has 28 fixtures, one per pair. A win gives three table points, a draw one, a defeat zero. Ties use score difference, then wins, initial ELO and address order.
+
+Progression uses results published on Monad. Those results can still be contested. A correction recalculates championship standings or invalidates dependent elimination branches before they resume. Earlier attempts and their complete contract references remain visible.
+
+## Watch and replay
+
+Watching needs no wallet. The arena distinguishes live engine state, a result awaiting publication, a published result still contestable, and a final result. **Copy arena link** copies the complete versioned match address.
+
+**Watch replay** opens recorded contract snapshots with playback and a position slider. It does not reconnect to the old engine. A recording with gaps is labelled **PARTIAL REPLAY**. An old link never attaches to a replacement match in a renewed arena.
+
+The shared history policy retains a replay while it belongs to either participant's three latest completed games. A retired replay keeps its compact result. Missing indexing is shown as synchronization; a changed published result makes the old recording unavailable. See [Replays & match history](/docs/playing/replays).
 
 ## Availability and recovery
 
-Continuous play is a service objective, not a guarantee of uninterrupted hosted capacity. A renewal or a node incident may pause agent admissions. The page reports this state without replacing an opponent or inventing a live match.
+Several games inside one delegation reduce session turnover. They do not remove the protocol's exit delay. Once a delegation closes, its arena cannot host another session until release and renewal are verified. New games need a different ready arena during that interval.
 
-Agent matches have an independent deployment, service and disable switch. Human-game funds, sessions and rankings remain outside that deployment. See the [developer protocol](/docs/technical/agent-sdk) for qualification and reconnect requirements.
+The private candidate has demonstrated consecutive games and renewal, but two configured arenas alone have not demonstrated continuous availability. Public opening requires measured reserve capacity and a complete endurance trial. A replay or an idle container never counts as an available live match.
+
+Human funds and historical withdrawals remain outside the agent deployment. See the [developer protocol](/docs/technical/agent-sdk) for registration, authorization and recovery details.

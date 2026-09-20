@@ -151,18 +151,24 @@
     {
       "slug": "playing/agents",
       "title": "Agent Arcade",
-      "description": "House bots, on-chain strategies, community agents and a dedicated league under qualification.",
+      "description": "Eight bots, on-chain strategies and automatic tournaments under private qualification.",
       "group": "Playing",
-      "updated": "2026-09-18",
+      "updated": "2026-09-20",
       "keywords": [
         "agent",
         "bot",
         "NOVA",
         "PULSE",
         "ONYX",
+        "VECTOR",
+        "DRIFT",
+        "ECHO",
+        "GLITCH",
+        "VIPER",
+        "tournaments",
         "five minutes",
         "friendly",
-        "league",
+        "championship",
         "strategy"
       ],
       "headings": [
@@ -182,8 +188,13 @@
           "level": 2
         },
         {
-          "id": "watch-and-challenge",
-          "text": "Watch and challenge",
+          "id": "automatic-tournaments",
+          "text": "Automatic tournaments",
+          "level": 2
+        },
+        {
+          "id": "watch-and-replay",
+          "text": "Watch and replay",
           "level": 2
         },
         {
@@ -1136,9 +1147,9 @@
     {
       "slug": "technical/agent-sdk",
       "title": "Agent SDK & qualification",
-      "description": "Publish an on-chain strategy, or register a hosted agent, authorize controls and recover its connection.",
+      "description": "Register immutable strategies, follow versioned arenas and recover scoped human controls.",
       "group": "Technical reference",
-      "updated": "2026-09-18",
+      "updated": "2026-09-20",
       "keywords": [
         "agent",
         "SDK",
@@ -1149,7 +1160,10 @@
         "nonce",
         "strategy",
         "IPongStrategy",
-        "decide"
+        "decide",
+        "pool",
+        "series",
+        "sponsor"
       ],
       "headings": [
         {
@@ -1158,18 +1172,8 @@
           "level": 2
         },
         {
-          "id": "two-ways-to-build-an-agent",
-          "text": "Two ways to build an agent",
-          "level": 2
-        },
-        {
           "id": "write-an-on-chain-strategy",
           "text": "Write an on-chain strategy",
-          "level": 2
-        },
-        {
-          "id": "build-and-run-a-hosted-real-time-agent",
-          "text": "Build and run a hosted real-time agent",
           "level": 2
         },
         {
@@ -1178,23 +1182,38 @@
           "level": 2
         },
         {
+          "id": "technical-qualification",
+          "text": "Technical qualification",
+          "level": 2
+        },
+        {
           "id": "authorize-and-authenticate",
           "text": "Authorize and authenticate",
           "level": 2
         },
         {
-          "id": "presence-offers-and-controls",
-          "text": "Presence, offers and controls",
+          "id": "sponsorship-and-uncertain-responses",
+          "text": "Sponsorship and uncertain responses",
           "level": 2
         },
         {
-          "id": "qualification-and-response-loss-recovery",
-          "text": "Qualification and response-loss recovery",
+          "id": "observe-and-control",
+          "text": "Observe and control",
           "level": 2
         },
         {
-          "id": "operations-and-known-qualification-work",
-          "text": "Operations and known qualification work",
+          "id": "read-interfaces",
+          "text": "Read interfaces",
+          "level": 2
+        },
+        {
+          "id": "sessions-publication-and-release",
+          "text": "Sessions, publication and release",
+          "level": 2
+        },
+        {
+          "id": "build-the-sdk-and-historical-compatibility",
+          "text": "Build the SDK and historical compatibility",
           "level": 2
         }
       ]
