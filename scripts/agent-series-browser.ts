@@ -5,16 +5,22 @@ import {readFile,writeFile,rename} from 'node:fs/promises';
 import {chromium,type BrowserContext,type Page} from '@playwright/test';
 import {createPublicClient,http,parseTransaction,decodeFunctionData,decodeErrorResult} from 'viem';
 import {seriesAgentArenaAbi} from '../shared/abi-SeriesAgentArena';
+import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
+import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {validateAgentPoolManifest,type PoolMatchView} from '../shared/agent-pool';
 import type {AgentMatchRef} from '../shared/agents';
 import type {Address} from 'viem';
 
 assert.equal(process.env.PONG_SERIES_BROWSER,'isolated-vps');
-const prefix=process.env.PONG_AGENT_SERIES_PREFIX!;assert(/^agent-series-candidate-\d{8}-[3-9]$/.test(prefix));
+const prefix=process.env.PONG_AGENT_SERIES_PREFIX!;assert(/^(?:agent-series-candidate-\d{8}-[3-9]|reusable-agents-\d{8}-[1-9]\d?)$/.test(prefix));
 const manifest=validateAgentPoolManifest(JSON.parse(await readFile('/manifest/manifest.json','utf8')));
-assert.equal(manifest.enabled,false);assert.equal(manifest.rulesVersion,11);
-const origin='https://pongit.xyz',api='http://pongit-series3-reader-replays:4101',sponsor='http://pongit-series3-sponsor:4102',web='http://pongit-series3-web:3000';
+const reusable=prefix.startsWith('reusable-agents-');
+assert.equal(manifest.enabled,false);assert.equal(manifest.rulesVersion,reusable?15:11);
+const arenaAbi=reusable?reusableAgentArenaAbi:seriesAgentArenaAbi;
+const origin='https://pongit.xyz',api=reusable?'http://pongit-reusable-agents2-reader-replays:4101':'http://pongit-series3-reader-replays:4101',
+ sponsor=reusable?'http://pongit-reusable-agents2-sponsor:4102':'http://pongit-series3-sponsor:4102',
+ web=reusable?'http://pongit-reusable-agents2-web:3000':'http://pongit-series3-web:3000';
 const nodes=new Set(manifest.arenas.map(a=>new URL(a.node).origin));
 const run=Number(process.env.PONG_SERIES_BROWSER_RUN??1);assert(Number.isSafeInteger(run)&&run>=1&&run<=99);
 const suffix=run===1?'':`-${run}`;
@@ -27,7 +33,7 @@ assert(!retainedRenewal||!reuse&&!resumePath,'A real expiry check retains its ne
 const restored=resumePath||reuse?JSON.parse(await readFile(`/secrets/${prefix}-browser.json`,'utf8')):undefined;
 try{await readFile(privatePath);throw Error('Preserve and reconcile the existing browser run first');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 await writeFile(privatePath,JSON.stringify({createdAt:new Date().toISOString()}),{mode:0o600});
-const report:any={at:new Date().toISOString(),pool:manifest.pool,rules:11,scope:'Private VPS HTTPS-origin browser, actual contracts and sponsorship; virtual Mera PRF, UI opening gate overridden only for this browser',checks:[],matches:[],faults:[],rpc:[],networkFailures:[],routeFailures:[],errors:[],alerts:[],passed:false};
+const report:any={at:new Date().toISOString(),pool:manifest.pool,rules:manifest.rulesVersion,scope:'Private VPS HTTPS-origin browser, actual contracts and sponsorship; virtual Mera PRF, UI opening gate overridden only for this browser',checks:[],matches:[],faults:[],rpc:[],networkFailures:[],routeFailures:[],errors:[],alerts:[],passed:false};
 if(resumePath)report.recoveryOf={run:1,path:resumePath};
 const checkpoint=async()=>writeFile(reportPath,JSON.stringify(report,null,2));
 const base=createPublicClient({transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000})});
@@ -91,7 +97,7 @@ async function context(player=false){
    const sample:any={at:new Date().toISOString(),player,target:'interlude',method,status:response.status(),ms:performance.now()-start,bytes:Buffer.byteLength(request.postData()??'')};report.rpc.push(sample);
    if(method==='interlude_sendTransaction'){
     const value=await response.json();sample.receiptStatus=value.result?.status;sample.rpcError=value.error?.code;
-    if(value.result?.output)try{sample.revert=decodeErrorResult({abi:seriesAgentArenaAbi,data:value.result.output}).errorName;}catch{}
+    if(value.result?.output)try{sample.revert=decodeErrorResult({abi:arenaAbi,data:value.result.output}).errorName;}catch{}
    }
    if(player&&loseReply&&method==='interlude_sendTransaction'){
     const data=await response.json();assert(response.ok()&&!data.error,'Withhold only an executed transaction response');
@@ -100,7 +106,7 @@ async function context(player=false){
    if(player&&method==='interlude_sendTransaction'&&report.faults.length===2){
     const payload=await response.json(),receipt=payload.result;
     if(response.ok()&&!payload.error&&['0x1','success'].includes(String(receipt?.status))){
-     const tx=parseTransaction(body.params[0]),call=decodeFunctionData({abi:seriesAgentArenaAbi,data:tx.data!});
+     const tx=parseTransaction(body.params[0]),call=decodeFunctionData({abi:arenaAbi,data:tx.data!});
      if(call.functionName==='input')report.controlReceiptAfterFaults={at:new Date().toISOString(),app:tx.to,nonce:tx.nonce,hash:receipt.transactionHash};
     }
    }
@@ -140,7 +146,8 @@ try{
  const waitEnd=Date.now()+5400000;
  while(!resumePath){
   const b=await base.getBlock();let near=false;
-  for(const a of manifest.arenas){const d=await readHubDelegation(base,manifest.hub,a.app,b.number);if(d.status===0||d.status===2&&d.stakeUnlockAt<=b.timestamp+90n)near=true;}
+  if(reusable)near=(await base.readContract({address:manifest.pool,abi:reusableAgentPoolAbi,functionName:'releasedArenaCount',blockNumber:b.number}))>0n;
+  else for(const a of manifest.arenas){const d=await readHubDelegation(base,manifest.hub,a.app,b.number);if(d.status===0||d.status===2&&d.stakeUnlockAt<=b.timestamp+90n)near=true;}
   if(near)break;assert(Date.now()<waitEnd,'No real arena admission became available');await sleep(15000);
  }
  human=await context(true);const spectator=await context();page=await human.newPage();const watch=await spectator.newPage();

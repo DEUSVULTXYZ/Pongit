@@ -36,8 +36,14 @@ test('empty new epochs do not prove games after renewal', () => {
   Object.assign(next.arenas[0], {stage: 'playing', matchId: '4', healthMatchId: '4', progressAt: next.at});
   recordPoolSample(state, next); assert.deepEqual(state.epochs.a, ['2', '3']);
 });
+test('healthy reserve cannot conceal a stalled assigned game', () => {
+  const s = sample(); s.arenas[0].progressAt = at - 11000;
+  s.arenas.push({...sample().arenas[0], app: 'b', stage: 'available', matchId: null, healthMatchId: null, admissionReady: true, available: true});
+  const v = poolAvailability(s); assert.equal(v.ready, 1); assert.equal(v.unavailable, true);
+  assert(v.reasons.includes('assigned-game-not-progressing'));
+});
 test('an unused contract is potential reserve, not a confirmed second game', () => {
-  const s = sample(); s.arenas.push({...s.arenas[0], app: 'b', hubStatus: 0, available: true});
+  const s = sample(); s.arenas.push({...s.arenas[0], app: 'b', hubStatus: 0, available: true, stage: 'awaiting-delegation', matchId: null});
   const v = poolAvailability(s); assert.equal(v.progressing, 1); assert.equal(v.reusable, 1);
   assert.equal(v.unavailable, false);
 });

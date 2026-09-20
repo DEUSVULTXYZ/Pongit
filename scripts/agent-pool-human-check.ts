@@ -19,14 +19,15 @@ import {AgentController} from '../shared/agent-controller';
 
 assert.equal(process.env.PONG_POOL_HUMAN_CHECK,'authorized-private-testnet');
 assert.equal(process.getuid?.(),1000,'Run the private harness as uid 1000 to preserve journal and metric ownership');
-const prefix=process.env.PONG_AGENT_POOL_PREFIX!;assert(/^agent-(pool|series)-candidate-\d{8}(-[2-9])?$/.test(prefix));
-const series=prefix.startsWith('agent-series-'),mode=Number(process.env.PONG_POOL_HUMAN_MODE??0);assert(mode===0||mode===1);
+const prefix=process.env.PONG_AGENT_POOL_PREFIX!;assert(/^(?:agent-(?:pool|series)-candidate-\d{8}(-[2-9])?|reusable-agents-\d{8}-[1-9]\d?)$/.test(prefix));
+const reusable=prefix.startsWith('reusable-agents-'),series=prefix.startsWith('agent-series-'),mode=Number(process.env.PONG_POOL_HUMAN_MODE??0);assert(mode===0||mode===1);
 const run=Number(process.env.PONG_POOL_HUMAN_RUN??1),target=Number(process.env.PONG_POOL_HUMAN_TARGET??100);
 assert(Number.isInteger(run)&&run>=1&&run<=9);assert(Number.isInteger(target)&&target>=1&&target<=1000);
 const suffix=run===1?'':`-${run}`;
-const deployment=JSON.parse(readFileSync(`/secrets/${prefix}.json`,'utf8'));
+const deployment=JSON.parse(readFileSync(reusable?'/secrets/deployment.json':`/secrets/${prefix}.json`,'utf8'));
+if(reusable){assert.equal(deployment.prefix,prefix);assert.equal(deployment.rulesVersion,15);}
 const file=`/secrets/${prefix}-human-check${suffix}.json`,reportFile=`/diagnostics/pool-human-check${suffix}.json`;
-const m:AgentPoolManifest={version:series?3:2,chainId:10143,engineChainId:4242,rulesVersion:series?11:10,...deployment.common,
+const m:AgentPoolManifest={version:reusable?4:series?3:2,chainId:10143,engineChainId:4242,rulesVersion:reusable?15:series?11:10,...deployment.common,
  arenas:deployment.arenas.map((a:any)=>({app:a.app,runtimeHash:a.runtimeHash,node:`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`})),
  enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 const protectedApps=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(protectedApps.length);
@@ -68,7 +69,9 @@ try{
   const session=loadPoolFamily(m,owner.address,storage)!;
   const create=()=>createPoolPlayer(m,view!,session,{base,storage,socket:u=>new WebSocket(u)});
   player=create();player.watch(()=>{});
-  while(Date.now()<end){try{if((await player.recover()).phase===2)break;}catch{}await wait(1500);}
+  while(Date.now()<end){try{const snapshot=await player.recover();if(snapshot.phase===2)break;
+    if(reusable&&snapshot.phase===1){await player.ready();if(!state.readyDone){state.readyDone=true;check('epoch-bound-readiness-confirmed');}}
+   }catch{}await wait(1500);}
   assert.equal((await player.read(true)).phase,2);check('admitted-on-dedicated-arena');
   if(run===1&&!state.lossDone){
    let dropped=false;globalThis.fetch=async(input,init)=>{

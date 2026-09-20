@@ -58,6 +58,8 @@ export function poolAvailability(sample: PoolSample): PoolAvailability {
     // accepted a new delegation. Keep it separate from actually progressing.
     if (arena.hubStatus === 0 && arena.available) view.reusable++;
     if (progressing(sample, arena)) view.progressing++;
+    if (arena.matchId && arena.stage === 'playing' && !progressing(sample, arena))
+      view.reasons.push('assigned-game-not-progressing');
     if (hostedFresh(sample, arena) && arena.stage === 'available' && !arena.matchId && arena.available
       && arena.admissionReady === true && arena.pendingCommandAgeMs === 0) view.ready++;
   }
