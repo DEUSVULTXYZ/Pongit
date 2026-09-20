@@ -15,6 +15,7 @@ import {abi as lobbyAbi} from '../shared/abi-independent-ReusableEventsLobby';
 import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
 import {abi as ratingsAbi} from '../shared/abi-independent-PublishedRatings';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
+import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerifier';
 import {rpcSamples} from '../shared/rpc-metrics';
 import {retryOperatorContention} from '../shared/operator-contention';
 
@@ -22,13 +23,14 @@ assert.equal(process.env.PONG_REUSABLE_QUALIFICATION,'isolated-vps');
 const manifestPath=process.env.PONG_INDEPENDENT_MANIFEST!,signerPath=process.env.PONG_ADMISSION_KEY_FILE!;
 assert(manifestPath.startsWith('/secrets/')&&signerPath.startsWith('/secrets/'));
 const m=JSON.parse(await readFile(manifestPath,'utf8'));assert.equal(m.production,false);assert.equal(m.rulesVersion,14);assert.equal(m.status,'sealed');
+const run=process.env.PONG_REUSABLE_RUN??'initial';assert(['initial','renew2'].includes(run));
 const admission=privateKeyToAccount(JSON.parse(await readFile(signerPath,'utf8')).privateKey);assert.equal(admission.address.toLowerCase(),m.admissionSigner.toLowerCase());
-const operator=await chainTools(m.prefix+':reuse-live');
+const operator=await chainTools(m.prefix+':reuse-live'+(run==='initial'?'':':'+run));
 const t={...operator,
  write:(...args:Parameters<typeof operator.write>)=>retryOperatorContention(()=>operator.write(...args)),
  submit:(...args:Parameters<typeof operator.submit>)=>retryOperatorContention(()=>operator.submit(...args)),
 };
-const path='/secrets/reuse-live.json',out='artifacts/reusable-candidate/hosted.json';
+const path='/secrets/reuse-live'+(run==='initial'?'':'-'+run)+'.json',out='artifacts/reusable-candidate/hosted'+(run==='initial'?'':'-'+run)+'.json';
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2);
 let state:any;try{state=JSON.parse(await readFile(path,'utf8'));assert.equal(state.lobby,m.lobby);}catch(e){if((e as any).code!=='ENOENT')throw e;state={lobby:m.lobby,app:m.arenas[0].app,createdAt:new Date().toISOString(),players:Array.from({length:4},()=>({root:generatePrivateKey(),arcade:generatePrivateKey()})),operations:{},jobs:[],matches:[],results:[]};}
 let tail=Promise.resolve();const save=()=>{const text=json(state);tail=tail.then(async()=>{await writeFile(path+'.next',text,{mode:0o600});await rename(path+'.next',path);});return tail;};
@@ -185,6 +187,17 @@ try{
  const first=decodeAbiParameters(resultParameters,state.results[0].canonical)[0];
  await t.write('recapture-first-after-reuse',m.lobby,lobbyAbi,'captureProof',[first.match_.id,first,resultIndex.proof(0,{count:2,root:resultIndex.root})]);
  assert(!state.jobs.some((x:any)=>x.state==='uncertain'));report.checks.push('Two real published results with new post-opening players, unchanged arena and epoch; historical proof after reuse');
+ if(run==='renew2'){
+  assert.equal(state.epoch,'2','Actual new hub epoch required');
+  const old=JSON.parse(await readFile('/secrets/reuse-live.json','utf8')),history=new PublishedResultIndex();
+  assert.equal(old.app,app);assert.equal(old.epoch,'1');
+  for(const entry of old.results)history.append(entry.index,entry.leaf,entry.root);
+  for(const entry of old.results){
+   const [ticket]=await read(m.lobby,lobbyAbi,'ticketOf',[BigInt(entry.id)]);
+   assert.equal(await read(m.resultVerifier,verifierAbi,'verify',[ticket,keccak256(entry.canonical),entry.index,history.proof(entry.index,{count:history.count,root:history.root})]),true);
+  }
+  report.checks.push('Both epoch1 historical results remain verifiable as final after actual epoch2 gameplay and publication');
+ }
  await t.write('close-after-reusable-qualification',m.lobby,lobbyAbi,'closeReusableArena',[app]);
  hub=await readHubDelegation(t.base,m.hub,app);assert.equal(hub.status,2);report.releaseAt=String(hub.stakeUnlockAt);report.batches=String(hub.batchIndex);report.passed=true;
 }catch(e){report.error=String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{90,}/gi,'[omitted]').slice(0,400);process.exitCode=1;}

@@ -1,6 +1,6 @@
 # Reusable arenas and testnet admission transport
 
-Status: integrated rules-14 contract candidate, **not enabled or hosted-qualified**. Public human,
+Status: integrated rules-14 contract candidate, **initial hosted reuse passed, not enabled**. Public human,
 agent and tournament admission gates remain closed. No final 24-hour trial has
 started. The existing private tests continue on their immutable deployments.
 
@@ -124,6 +124,28 @@ durable journal can opt into explicit epoch plus logical-match binding; old
 contracts retain their original encoding.
 
 ## Remaining implementation and qualification
+
+### Actual first reuse, 20 September 13:07 UTC
+
+The isolated candidate at `0x60cb8c03a2f4f0900b72788680df24e994a2ea30`
+opened epoch 1 and then registered four new synthetic accounts on Monad.
+The bridge admitted them in two successive games in that same session.
+Classic accepted 36 movement commands and ended by concession at 3-4.
+Chaos accepted 28 commands and two actual drand proofs, and ended by
+concession at 3-3. Both complete result records were published and captured
+by the Monad authority. The first result was proved again against the second
+published root after physical-slot reuse.
+
+Closure succeeded after 55 batches. The actual hub unlock time is
+20 September 14:07:36 UTC. Release, a new epoch, payment flows, worst-case
+publication and uninterrupted capacity remain separate gates. These short
+concession matches do not establish natural finishes or production readiness.
+The first driver report remains failed on temporary operator-journal contention;
+the resumed report uses the original signed-command journal and deployments.
+Private state was hash-verified off the VPS before renewal qualification.
+
+The public configuration and all admission switches are unchanged. No request
+for a provider configuration change was made.
 
 1. Finish auditing and qualifying the complete adapter, generator layout,
    canonical result archive, bridge signer and proof consumers on hosted
