@@ -4,12 +4,13 @@ import {formatEther,parseEther,encodeFunctionData,type Address,type Hex} from 'v
 import type {IndependentManifest,ChainOperation} from '../../shared/independent';
 import {independentCreditMessage} from '../../shared/independent';
 import {betTypes,withdrawTypes,domain} from '../../shared/protocol';
-import {abi as marketAbi} from '../../shared/abi-independent-MarketV4';
+import {independentRules} from '../../shared/independent-rules';
 import {abi as vaultAbi} from '../../shared/abi-independent-RoomsVault';
 import {independentBase,independentApi,withOwner,sponsorCall,resumeSponsored} from '../lib/independent';
 import styles from './RoomsMarketPanel.module.css';
 const mon=(v:bigint|string|undefined)=>v===undefined?'…':Number(formatEther(BigInt(v))).toLocaleString('en',{maximumFractionDigits:6});
 export function IndependentMarket({manifest:m,player,id,onBusy}:{manifest:IndependentManifest;player:Address;id?:bigint;onBusy:(value:boolean)=>void}){
+ const rules=independentRules(m),marketAbi=rules.market;
  const [market,setMarket]=useState<any>(),[balances,setBalances]=useState<{wallet:bigint;credit:bigint}>(),[side,setSide]=useState<0|1>(0),[shares,setShares]=useState('0.001'),[withdraw,setWithdraw]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[tx,setTx]=useState<Hex>();
  const working=useRef(false),reading=useRef(false),generation=useRef(0);
  const [payments,setPayments]=useState<any[]>([]);
@@ -26,10 +27,10 @@ export function IndependentMarket({manifest:m,player,id,onBusy}:{manifest:Indepe
  const participant=market&&[market.result[0],market.result[1]].some((a:string)=>a.toLowerCase()===player.toLowerCase());
  const cost=BigInt(market?.quote||0),cap=cost+cost/100n+1n,quoteFresh=market?.quantity===quantity&&market?.side===side;
  const paid=BigInt(market?.position?.[2]||0),terminal=Number(market?.result?.[3])>=3;
- const payoutAmount=market&&terminal?(Number(market.result[3])===4?paid:market.result[2].toLowerCase()===market.result[0].toLowerCase()?BigInt(market.position[0]):BigInt(market.position[1])):0n;
+ const payoutAmount=Number(market?.payout?.[2])>0?BigInt(market.payout[1]):rules.events?BigInt(market?.claimPreview?.[0]??0):market&&terminal?(Number(market.result[3])===4?paid:market.result[2].toLowerCase()===market.result[0].toLowerCase()?BigInt(market.position[0]):BigInt(market.position[1])):0n;
  return <section className={styles.panel}><div className="rooms-finance-balances"><div><span>Wallet balance</span><strong>{mon(balances?.wallet)} MON</strong></div><div><span>Available for betting</span><strong>{mon(balances?.credit)} MON</strong></div></div><p>Test MON only. Winnings are paid to your wallet and are not automatically put back into betting credit.</p>
   <button disabled={busy} onClick={()=>void perform(()=>withOwner(player,async identity=>{const expires=Number((await base.getBlock()).timestamp)+120;const signature=await identity.account.signMessage({message:independentCreditMessage(player,m.vault,expires)});return independentApi('credit',{player,expires,signature});}))}>Get test betting credit</button>
-  {id&&market&&<>{participant?<p>You cannot bet on your own match.</p>:!terminal?<><div className="control-segments"><button aria-pressed={side===0} disabled={busy} onClick={()=>setSide(0)}>Player 01</button><button aria-pressed={side===1} disabled={busy} onClick={()=>setSide(1)}>Player 02</button></div><label>Shares (1 winning share = 1 MON)<input inputMode="decimal" value={shares} onChange={e=>setShares(e.target.value)}/></label><dl><div><dt>Estimated cost</dt><dd>{quoteFresh?mon(cost):'…'} MON</dd></div><div><dt>Maximum signed cost</dt><dd>{quoteFresh?mon(cap):'…'} MON</dd></div><div><dt>Potential payout</dt><dd>{mon(quantity)} MON</dd></div></dl><p>Supporting a player can shrink their paddle in the next rally. Bets are accepted only during Betting open.</p>
+  {id&&market&&<>{participant?<p>You cannot bet on your own match.</p>:!terminal?<><div className="control-segments"><button aria-pressed={side===0} disabled={busy} onClick={()=>setSide(0)}>Player 01</button><button aria-pressed={side===1} disabled={busy} onClick={()=>setSide(1)}>Player 02</button></div><label>Shares (1 winning share = 1 MON)<input inputMode="decimal" value={shares} onChange={e=>setShares(e.target.value)}/></label><dl><div><dt>Estimated cost</dt><dd>{quoteFresh?mon(cost):'…'} MON</dd></div><div><dt>Maximum signed cost</dt><dd>{quoteFresh?mon(cap):'…'} MON</dd></div><div><dt>Potential payout</dt><dd>{mon(quantity)} MON</dd></div></dl><p>Supporting a player can shrink their paddle in the next rally. {rules.events?'Bets stay open during play. Late updates apply at the next point without pausing the ball.':'Bets are accepted only during Betting open.'}</p>
    <button className="primary" disabled={busy||!quoteFresh||!market.window[0]||!cost||quantity<=0n||cap>(balances?.credit??0n)} onClick={()=>void perform(()=>withOwner(player,async identity=>{
     const nonce=await base.readContract({address:m.market,abi:marketAbi,functionName:'nonces',args:[player]}),deadline=(await base.getBlock()).timestamp+90n;
     const bet={player,matchId:id,side,shares:quantity,maxCost:cap,version:BigInt(market.window[1]),nonce,deadline};

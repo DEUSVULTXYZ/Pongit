@@ -1,23 +1,28 @@
 import {maxUint256,zeroAddress,type Abi,type Address,type PublicClient} from 'viem';
-import {abi as lobbyAbi} from './abi-independent-IndependentLobby';
 import {abi as familyAbi} from './abi-independent-ArcadeFamily';
-import {abi as arenaAbi} from './abi-independent-IndependentArena';
 import {abi as ratingsAbi} from './abi-independent-PublishedRatings';
 import {abi as profilesAbi} from './abi-independent-ProfileRegistry';
 import type {IndependentManifest} from './independent';
 import {engineState} from './engine-stream';
 import {readHubDelegation} from './rooms-hub';
+import {independentRules} from './independent-rules';
+import {decodeChaosRead} from './chaos-codec';
 
 export function independentReader(base:PublicClient,m:IndependentManifest,blockNumber?:bigint){
+ const rules=independentRules(m);
  const call=(address:Address,abi:Abi,name:string,args:readonly unknown[]=[]):Promise<any>=>base.readContract({address,abi,functionName:name,args,blockNumber} as any);
  return {
-  lobby:(name:string,args:readonly unknown[]=[])=>call(m.lobby,lobbyAbi,name,args),
+  lobby:(name:string,args:readonly unknown[]=[])=>call(m.lobby,rules.lobby,name,args),
   family:(name:string,args:readonly unknown[]=[])=>call(m.family,familyAbi,name,args),
   ratings:(name:string,args:readonly unknown[]=[])=>call(m.ratings,ratingsAbi,name,args),
   profiles:(name:string,args:readonly unknown[]=[])=>call(m.profiles,profilesAbi,name,args),
   arena:(app:Address,name:string,args:readonly unknown[]=[])=>{
    if(!m.arenas.some(a=>a.app.toLowerCase()===app.toLowerCase()))throw Error('Unknown arena deployment');
-   return call(app,arenaAbi,name,args);
+   return call(app,rules.arena,name,args);
+  },
+  snapshot:async(app:Address,id:bigint)=>{
+   if(!m.arenas.some(a=>a.app.toLowerCase()===app.toLowerCase()))throw Error('Unknown arena deployment');
+   return rules.events?decodeChaosRead(rules.arena,await call(app,rules.arena,'chaosState',[id])):call(app,rules.arena,'getSnapshot',[id]);
   },
  };
 }
@@ -41,7 +46,7 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
  const delegation=visibleMatch?.epoch?await readHubDelegation(base,m.hub,app,block.number):null;
  // A closing node may already be offline. Reconnect through the canonical base
  // snapshot without pretending a partial score is a result or enabling inputs.
- const recoverySnapshot=delegation&&delegation.status!==1?engineState(await r.arena(app,'getSnapshot',[visibleMatch.id])):null;
+ const recoverySnapshot=delegation&&delegation.status!==1?engineState(await r.snapshot(app,visibleMatch.id)):null;
  if(recoverySnapshot&&recoverySnapshot.id!==visibleMatch.id)throw Error('Recovery snapshot belongs to another match');
  const addresses=[...new Set([player,...(room?.members??[]).map((x:any)=>x.player),...invitations.flatMap(i=>[i.sender,i.recipient])].filter(Boolean))] as Address[];
  const profiles=Object.fromEntries(await Promise.all(addresses.map(async a=>[a.toLowerCase(),await r.profiles('profileOf',[a])])));
@@ -51,7 +56,7 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
  if(published&&lastMatch&&published.first.id===lastMatch.id&&published.first.arena.toLowerCase()===lastMatch.app.toLowerCase()&&published.first.epoch===lastMatch.epoch){
   const b=await r.arena(lastMatch.app,'boundMatch');
   if(b.id===lastMatch.id&&b.epoch===lastMatch.epoch){
-   const s=engineState(await r.arena(lastMatch.app,'getSnapshot',[lastMatch.id]));
+   const s=engineState(await r.snapshot(lastMatch.app,lastMatch.id));
    if(s.id===lastMatch.id&&s.phase>=3&&s.winner===published.latest.winner&&s.state.scoreA===published.latest.scoreA&&s.state.scoreB===published.latest.scoreB)publishedSnapshot=s;
   }
  }

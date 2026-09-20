@@ -51,8 +51,13 @@ contract IndependentEventsArena is PongChaosEvents {
         PoolAdmission.open(words,controls,hub,lobby);admission.epoch=controls.epoch;openedEpoch=controls.epoch;
     }
     function start() external engine whenNotDelegated(Types.GLOBAL){
-        require(admission.epoch!=0,"unopened arena");_publish(PoolAdmission.start(words,controls));
+        require(admission.epoch!=0&&_phase(admission.id)==1,"unopened or started arena");
+        uint256 at=_get(admission.id,60);
+        if(at==0){_set(admission.id,60,block.timestamp+3);_publish(admission.id);return;}
+        require(block.timestamp>=at,"countdown pending");
+        _publish(PoolAdmission.start(words,controls));
     }
+    function launchAt(uint256 id) external view returns(uint64){return uint64(_get(id,60));}
     function closeEngine() external override {PoolAdmission.close(words,controls,hub,lobby);}
     function cancelRecovered() external {
         if(block.chainid!=10143||msg.sender!=lobby)revert LobbyActionOnly();

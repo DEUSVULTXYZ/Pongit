@@ -14,8 +14,7 @@ import {measuredFetch,takeRpcSamples} from '../../shared/rpc-metrics';
 import {independentReader} from '../../shared/independent-read';
 import {familyGrantTypes,lobbyCommandTypes,ownerWriteTypes,independentDiagnosticsMessage,type FamilyGrant,type IndependentManifest,type ChainOperation} from '../../shared/independent';
 import {abi as familyAbi} from '../../shared/abi-independent-ArcadeFamily';
-import {abi as lobbyAbi} from '../../shared/abi-independent-IndependentLobby';
-import {abi as arenaAbi} from '../../shared/abi-independent-IndependentArena';
+import {independentRules} from '../../shared/independent-rules';
 import {abi as profileAbi} from '../../shared/abi-independent-ProfileRegistry';
 
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
@@ -85,6 +84,7 @@ export async function openFamily(m:IndependentManifest,identity:Identity,onProgr
 }
 /** Root consent renews the current arena too; no extra passkey ceremony between matches. */
 export async function renewIndependentControl(m:IndependentManifest,identity:Identity,s:FamilySession){
+ const rules=independentRules(m),arenaAbi=rules.arena;
  const r=independentReader(independentBase(),m),player=identity.account.address;
  if(player.toLowerCase()!==s.grant.player.toLowerCase())throw Error('Account changed during renewal');
  const id=await r.lobby('activeMatchOf',[player]);if(!id)return;
@@ -104,12 +104,13 @@ export async function renewIndependentControl(m:IndependentManifest,identity:Ide
  const revision=await engine.client.read('authorizationRevision',[player]) as bigint,clock=(await engine.client.node.getBlock()).timestamp;
  const deadline=clock+120n<s.grant.expires?clock+120n:s.grant.expires;
  const renewal={player,key:s.grant.key,epoch:b.epoch,matchId:b.id,revision,expires:s.grant.expires,deadline};
- const signature=await identity.account.signTypedData({domain:{name:'PONGIT Arena Revocation',version:'1',chainId:10143,verifyingContract:app},types:{RenewArena:[{name:'player',type:'address'},{name:'key',type:'address'},{name:'epoch',type:'uint256'},{name:'matchId',type:'uint256'},{name:'revision',type:'uint256'},{name:'expires',type:'uint64'},{name:'deadline',type:'uint64'}]},primaryType:'RenewArena',message:renewal});
+ const signature=await identity.account.signTypedData({domain:{name:rules.permissionDomain,version:'1',chainId:10143,verifyingContract:app},types:{RenewArena:[{name:'player',type:'address'},{name:'key',type:'address'},{name:'epoch',type:'uint256'},{name:'matchId',type:'uint256'},{name:'revision',type:'uint256'},{name:'expires',type:'uint64'},{name:'deadline',type:'uint64'}]},primaryType:'RenewArena',message:renewal});
  const data=encodeFunctionData({abi:arenaAbi,functionName:'renewActive',args:[renewal,signature]});
  sessionStorage.setItem(storage,json({epoch:String(b.epoch),key:s.grant.key,data}));
  await independentApi('arena-command',{app,data});sessionStorage.removeItem(storage);
 }
 export async function lobbyCommand(m:IndependentManifest,s:FamilySession,name:string,args:readonly unknown[]=[],onProgress?:(op:ChainOperation)=>void){
+ const lobbyAbi=independentRules(m).lobby;
  await resumeSponsored(m,onProgress);
  if(!await validateFamily(m,s))throw Error('Renew arcade session');
  const base=independentBase(),r=independentReader(base,m),hash=await r.family('grantDigest',[s.grant]) as Hex;
@@ -134,6 +135,7 @@ export async function saveIndependentProfile(m:IndependentManifest,player:Addres
  });
 }
 export async function disconnectFamily(m:IndependentManifest,s:FamilySession,active?:{app:Address;binding:any}){
+ const rules=independentRules(m),arenaAbi=rules.arena;
  await resumeSponsored(m);
  return withOwner(s.grant.player,async identity=>{
   const base=independentBase(),r=independentReader(base,m),player=s.grant.player,nonce=await r.family('writeNonces',[player]),revision=await r.family('revisions',[player]),deadline=(await base.getBlock()).timestamp+120n;
@@ -144,7 +146,7 @@ export async function disconnectFamily(m:IndependentManifest,s:FamilySession,act
   try{
    if(active){
     const engine=createIndependentArena(m,active.app),rev=await engine.client.read('authorizationRevision',[player]) as bigint;
-    const signature=await identity.account.signTypedData({domain:{name:'PONGIT Arena Revocation',version:'1',chainId:10143,verifyingContract:active.app},types:{RevokeArena:[{name:'player',type:'address'},{name:'epoch',type:'uint256'},{name:'matchId',type:'uint256'},{name:'revision',type:'uint256'},{name:'deadline',type:'uint64'}]},primaryType:'RevokeArena',message:{player,epoch:active.binding.epoch,matchId:active.binding.id,revision:rev,deadline}});
+    const signature=await identity.account.signTypedData({domain:{name:rules.permissionDomain,version:'1',chainId:10143,verifyingContract:active.app},types:{RevokeArena:[{name:'player',type:'address'},{name:'epoch',type:'uint256'},{name:'matchId',type:'uint256'},{name:'revision',type:'uint256'},{name:'deadline',type:'uint64'}]},primaryType:'RevokeArena',message:{player,epoch:active.binding.epoch,matchId:active.binding.id,revision:rev,deadline}});
     await independentApi('arena-command',{app:active.app,data:encodeFunctionData({abi:arenaAbi,functionName:'revokeActive',args:[player,deadline,signature]})});
    }
   }catch{activeError=true;}
@@ -158,6 +160,7 @@ export async function disconnectFamily(m:IndependentManifest,s:FamilySession,act
  });
 }
 export function createIndependentArena(m:IndependentManifest,app:Address){
+ const arenaAbi=independentRules(m).arena;
  const entry=m.arenas.find(a=>a.app.toLowerCase()===app.toLowerCase());if(!entry?.node)throw Error('Unknown arena');
  const journal=new RoomsCommandJournal(sessionStorage,app,arenaAbi as Abi);
  const client=createInterludeClient({app,abi:arenaAbi as Abi,node:entry.node,base:independentBase(),store:webStorageStore(sessionStorage),expirySeconds:7200,transport:engineTransport(entry.node,journal),fastPath:true});

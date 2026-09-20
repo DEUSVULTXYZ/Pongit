@@ -7,6 +7,9 @@ import {readHubDelegation} from '../shared/rooms-hub';
 const prefix=process.env.PONG_INDEPENDENT_PREFIX!;
 assert(prefix?.startsWith('independent-qualification-'));
 const out=process.env.PONG_INDEPENDENT_MANIFEST!;assert(out?.startsWith('/secrets/'));
+const rulesVersion=Number(process.env.PONG_INDEPENDENT_RULES??4);assert(rulesVersion===4||rulesVersion===12,'Explicit supported rules');
+const events=rulesVersion===12;
+const arenaCount=Number(process.env.PONG_INDEPENDENT_ARENAS??3);assert(Number.isInteger(arenaCount)&&arenaCount>=3&&arenaCount<=16);
 const t=await chainTools(prefix);
 const hub:Address='0x3Ef8327F69e09cf721772F345e2A887eA22cD595';
 const pressureSigner:Address='0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659';
@@ -20,31 +23,42 @@ if(snapshot){
  const d=await readHubDelegation(t.base,snapshot.hub,snapshot.source);assert.equal(d.status,0,'Source must remain released');assert.equal(String(d.epoch),snapshot.epoch,'Source epoch changed');
 }
 let manifest:any;
-try{manifest=JSON.parse(await readFile(out,'utf8'));assert.equal(manifest.prefix,prefix);}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
-manifest??={prefix,purpose:snapshot?'independent migration candidate':'independent contract qualification',production:false,chainId:10143,hub,pressureSigner,createdAt:new Date().toISOString(),genesis:Number(snapshot?.genesis??Math.floor(Date.now()/1000)),startBlock:String(await t.base.getBlockNumber()),migrationHash,arenas:[]};
+try{manifest=JSON.parse(await readFile(out,'utf8'));assert.equal(manifest.prefix,prefix);assert.equal(manifest.rulesVersion??4,rulesVersion,'Never replace a journalled deployment with different rules');assert.equal(manifest.arenaCount??3,arenaCount,'Arena count changed during deployment');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+manifest??={prefix,purpose:snapshot?'independent migration candidate':'independent contract qualification',production:false,chainId:10143,rulesVersion,arenaCount,hub,pressureSigner,createdAt:new Date().toISOString(),genesis:Number(snapshot?.genesis??Math.floor(Date.now()/1000)),startBlock:String(await t.base.getBlockNumber()),migrationHash,arenas:[]};
 assert(!manifest.migrationHash||manifest.migrationHash===migrationHash,'Migration source changed during deployment');
 const save=async()=>{await writeFile(out+'.next',JSON.stringify(manifest,null,2),{mode:0o600});await rename(out+'.next',out);};
 try{
  await save();
  manifest.family=await t.deploy('ArcadeFamily');await save();
- manifest.lobby=await t.deploy('IndependentLobby',[manifest.family,hub,t.account.address,pressureSigner]);await save();
+ const lobbyName=events?'IndependentEventsLobby':'IndependentLobby';
+ manifest.lobby=await t.deploy(lobbyName,[manifest.family,hub,t.account.address,pressureSigner]);await save();
  manifest.ratings=await t.deploy('PublishedRatings',[manifest.lobby,t.account.address,BigInt(manifest.genesis)]);await save();
- const l=await t.artifact('IndependentLobby'),r=await t.artifact('PublishedRatings');
+ const l=await t.artifact(lobbyName),r=await t.artifact('PublishedRatings');
  await t.write('bind-ratings',manifest.lobby,l.abi,'bindRatings',[manifest.ratings]);
  if(snapshot){
   for(let mode=0;mode<2;mode++){const rows=snapshot.ratings.filter((v:any)=>v.mode===mode);for(let i=0;i<rows.length;i+=100){const chunk=rows.slice(i,i+100);await t.write(`seed-mode-${mode}-${i}`,manifest.ratings,r.abi,'seed',[chunk.map((v:any)=>v.player),mode,chunk.map((v:any)=>({elo:Number(v.elo),played:Number(v.played),wins:Number(v.wins),season:Number(v.season)}))]);}}
   for(let i=0;i<snapshot.pairSeeds.length;i+=100){const chunk=snapshot.pairSeeds.slice(i,i+100);await t.write(`seed-repeat-${i}`,manifest.ratings,r.abi,'seedPairCounts',[chunk.map((v:any)=>v.pair),chunk.map((v:any)=>v.count)]);}
  }
  await t.write('seal-verified-migration',manifest.ratings,r.abi,'sealMigration',[migrationHash]);
- for(let i=0;i<3;i++){
-  const app=await t.deploy('IndependentArena',[hub,manifest.lobby,pressureSigner],`arena-${i}`);
+ if(events){
+  const moduleArgs=[['ChaosEffects',[]],['ChaosModifiers',[]],['ChaosRally',[]],['ChaosDynamics',['ChaosEffects','ChaosModifiers']],
+   ['ChaosContacts',['ChaosDynamics']],['ChaosPhysics',['ChaosEffects','ChaosRally','ChaosDynamics','ChaosContacts']],
+   ['ChaosCodec',[]],['DrandEvmnet',[]],['ChaosDrawRules',[]],['ChaosEngine',['ChaosCodec','ChaosPhysics','DrandEvmnet','ChaosDrawRules']]] as const;
+  manifest.modules??={};
+  for(const [name,deps] of moduleArgs){const deployed=await t.deploy(name,deps.map(d=>manifest.modules[d]));
+   assert(!manifest.modules[name]||manifest.modules[name]===deployed,'Pinned module changed');manifest.modules[name]=deployed;await save();}
+ }
+ for(let i=0;i<arenaCount;i++){
+  const app=await t.deploy(events?'IndependentEventsArena':'IndependentArena',[hub,manifest.lobby,pressureSigner,...(events?[manifest.modules.ChaosEngine]:[])],`arena-${i}`);
   manifest.arenas[i]??={app,index:i};assert.equal(manifest.arenas[i].app,app);await save();
   await t.write(`register-arena-${i}`,manifest.lobby,l.abi,'addArena',[app]);
  }
- manifest.settlement=await t.deploy('IndependentSettlement',[manifest.lobby]);await save();
+ // The realtime settlement requires a sealed, immutable rules-12 arena list.
+ if(events)await t.write('seal-lobby',manifest.lobby,l.abi,'seal');
+ manifest.settlement=await t.deploy(events?'IndependentEventsSettlement':'IndependentSettlement',[manifest.lobby]);await save();
  manifest.vault=await t.deploy('RoomsVault',[t.account.address]);await save();
  manifest.lmsr=await t.deploy('LMSRV2');await save();
- manifest.market=await t.deploy('MarketV4',[t.account.address,t.account.address,manifest.settlement,manifest.lmsr,manifest.vault]);await save();
+ manifest.market=await t.deploy(events?'RealtimeMarket':'MarketV4',[t.account.address,t.account.address,manifest.settlement,manifest.lmsr,manifest.vault]);await save();
  const vault=await t.artifact('RoomsVault');
  await t.write('register-market',manifest.vault,vault.abi,'registerModule',[manifest.market]);
  await t.write('seal-vault',manifest.vault,vault.abi,'seal');

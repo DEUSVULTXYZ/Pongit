@@ -9,6 +9,19 @@ function CountdownDigit({digit,offset}:{digit:number;offset:number}){
  const [delay]=useState(()=>`-${offset}ms`);
  return <span className="match-countdown-digit" style={{animationDelay:delay}}>{digit}</span>;
 }
+/** Contract-owned arena deadline, extrapolated only for the displayed digits.
+ * Reaching zero never enables controls; the confirmed playing phase does. */
+export function ArenaCountdown({id,deadline,clock,observedAt}:{id:string;deadline?:number;clock?:number;observedAt?:number}){
+ const [at,setAt]=useState(()=>performance.now());
+ useEffect(()=>{const timer=setInterval(()=>setAt(performance.now()),100);return()=>clearInterval(timer);},[]);
+ const remaining=deadline&&clock&&observedAt!==undefined?Math.max(0,deadline-clock-Math.max(0,at-observedAt)):0;
+ const digit=Math.min(3,Math.ceil(remaining/1000));
+ useEffect(()=>{if(digit)arcadeAudio.play('countdown',`${id}:intro:${digit}`);},[id,digit]);
+ return <div className="match-countdown" role="status" aria-live="polite" aria-atomic="true">
+  <span className="match-countdown-label">{digit?'GET READY':'STARTING MATCH'}</span>
+  {digit>0?<CountdownDigit key={digit} digit={digit} offset={(1000-remaining%1000)%1000}/>:<span className="match-countdown-wait">Waiting for the game to start</span>}
+ </div>;
+}
 /** Pre-admission scene: the engine has not received both acceptance signatures. */
 export function MatchCountdown({id,endsAt,now,players,onBack,busy}:{id:string;endsAt?:number;now:number;players:[string,string];onBack:()=>void;busy:boolean}){
  const remaining=endsAt?Math.max(0,endsAt-now):0;

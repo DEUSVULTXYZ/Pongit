@@ -25,6 +25,12 @@ its expected epoch is separately checked against the actual hub opening. A
 cancelled preparation does not consume an epoch. The last opened epoch survives
 a hub that clears its released session tuple.
 
+The first engine `start()` call arms a three-second deadline in word 60. A
+second call can start physics only after that deadline; repeated calls cannot
+extend or skip it. The UI reads this deadline and the engine clock, then displays
+the digits using monotonic browser time. Controls remain off until phase 2 is
+observed, even if the displayed countdown has reached zero.
+
 Initial Solidity integration tests exercise the actual common lobby and grants
 with a lifecycle fixture: simultaneous Classic/Chaos, closure isolation, a third
 admission during the first arena's challenge window, cancellation before opening,
@@ -46,12 +52,24 @@ reuse, the cutoff failure rollback, challenge refusal and correction without a
 second payment. This is not a hosted financial or publication proof. The older
 `IndependentSettlement` remains unchanged for its historical deployment.
 
-Before this candidate can be deployed or opened, complete and audit:
+The rules-12 manifest, ABI, packed snapshots, player signature domain, compact
+controls, pixel Chaos renderer and replay restoration now have versioned adapters.
+The service has separate start, drand and realtime-pressure workers, sharing one
+writer per arena. A ready proof reserves the next command; fetching a delayed
+proof does not stop ticks. Old-epoch proofs are discarded before submission.
+Confirmed owner renewals are deduplicated using the actual `observed` journal
+status. A lost response retains its signed bytes and nonce until reconciled.
 
-- The rules-12 manifest, ABI, snapshot decoder, compact player authorization and
-  service start/proof/pressure adapters, including three-second UI countdown.
-- Service/deployment wiring for the new realtime settlement, market and vault,
-  then actual hosted stakes, pressure and payouts. Do not deploy the old
+These adapters are **not yet hosted qualification evidence**. Rules 12 is rejected
+by the service unless `PONG_INDEPENDENT_EVENTS_QUALIFICATION=isolated-vps` is
+explicitly set in the temporary private environment. No production manifest or
+admission flag is changed by this work.
+
+Before this candidate can be opened, complete and audit:
+
+- Actual-build browser checks and hosted qualification of those adapters.
+- Deployment of the new realtime settlement, market and vault, then actual
+  hosted stakes, pressure and payouts. Do not deploy the old
   `IndependentSettlement` alongside this candidate.
 - Verified human ELO/profile migration and the existing financial history.
 - Hosted admission, publication, closure, release gas, renewal, real two-player
@@ -59,15 +77,20 @@ Before this candidate can be deployed or opened, complete and audit:
 
 No old contract, ledger or withdrawal address is changed by this source addition.
 
-Validation on 20 September 2026: 37 Solidity tests passed across the new arena,
-the existing independent lobby and the realtime market. This includes twelve
+Validation on 20 September 2026: 38 Solidity tests passed across the new arena,
+the existing independent lobby and the realtime market. This includes thirteen
 new candidate cases. The first seven-case run contained a fixture assertion
 that confused room membership with the active-match lock; it is preserved as a
 failed report. The corrected case verifies that the match lock clears, friends
 remain in their room, and each can leave normally after renewing an expired
 family grant.
 
-The compiled runtimes are 25,329 bytes for the arena, 24,750 for the common lobby,
+Thirty targeted TypeScript tests pass, including response-loss reconciliation,
+stale bindings, countdown scheduling, proof priority, confirmed betting sources
+and the preserved legacy ABI. These use simulated services and are not a substitute
+for the live multiplayer and renewal tests.
+
+The compiled runtimes are 25,679 bytes for the arena, 24,750 for the common lobby,
 and 5,438 for the settlement. The arena and common lobby have an explicit 32 KiB
 candidate budget in the deployment tool. The common lobby executes on Monad;
 the arena still requires hosted qualification. Other contracts keep their

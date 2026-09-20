@@ -5,15 +5,13 @@ import type {Pool} from 'pg';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {publicIndependentManifest,independentCreditMessage,independentDiagnosticsMessage} from '../../shared/independent';
 import {independentReader} from '../../shared/independent-read';
-import {abi as lobbyAbi} from '../../shared/abi-independent-IndependentLobby';
 import {abi as familyAbi} from '../../shared/abi-independent-ArcadeFamily';
-import {abi as arenaAbi} from '../../shared/abi-independent-IndependentArena';
 import {abi as ratingAbi} from '../../shared/abi-independent-PublishedRatings';
 import {abi as profileAbi} from '../../shared/abi-independent-ProfileRegistry';
 import {abi as privateAbi} from '../../shared/abi-independent-PrivateDataStore';
-import {abi as marketAbi} from '../../shared/abi-independent-MarketV4';
 import {abi as vaultAbi} from '../../shared/abi-independent-RoomsVault';
-import {abi as settlementAbi} from '../../shared/abi-independent-IndependentSettlement';
+import {independentRules} from '../../shared/independent-rules';
+import {independentEventsLoop} from './independent-events-loop';
 import {roomsLifecycleHubAbi as hubAbi} from '../../shared/abi-rooms-lifecycle';
 import {abi as interludeHubReadAbi} from '../../shared/abi-independent-IInterludeHub';
 import {readHubDelegation} from '../../shared/rooms-hub';
@@ -34,6 +32,10 @@ type Options={db:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;s
 export async function independentService(o:Options){
  const path=process.env.PONG_INDEPENDENT_MANIFEST;if(!path)return null;
  const m=publicIndependentManifest(JSON.parse(await readFile(path,'utf8'))),{db,base}=o;
+ // Explicit private qualification opt-in, never enabled by merely replacing a
+ // production manifest. Public rollout still requires hosted/browser evidence.
+ if(m.rulesVersion===12&&process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION!=='isolated-vps')throw Error('Rules 12 service qualification is not complete');
+ const rules=independentRules(m),{arena:arenaAbi,lobby:lobbyAbi,market:marketAbi,settlement:settlementAbi}=rules;
  await independentSchema(db);
  const r=independentReader(base,m);
  const profileHints=new Map<string,{handle:string;avatar:number}>();
@@ -46,6 +48,7 @@ export async function independentService(o:Options){
  const actual=await r.lobby('arenaPage');
  if(!await r.lobby('setupSealed')||actual.length!==m.arenas.length||actual.some((a:Address,i:number)=>a.toLowerCase()!==m.arenas[i].app.toLowerCase()))throw Error('Independent deployment is not sealed as declared');
  for(const [read,name,expected] of [[r.lobby,'family',m.family],[r.lobby,'ratings',m.ratings],[r.lobby,'hub',m.hub]] as const){if((await read(name)).toLowerCase()!==expected.toLowerCase())throw Error('Independent linkage mismatch');}
+ if(rules.events)for(const a of m.arenas)if(Number(await r.arena(a.app,'RULES_VERSION'))!==rules.version)throw Error('Independent arena rules mismatch');
  for(const [address,abi,name,expected] of [[m.market,marketAbi,'results',m.settlement],[m.market,marketAbi,'vault',m.vault],[m.settlement,settlementAbi,'lobby',m.lobby],[m.settlement,settlementAbi,'ledger',m.ratings]] as const){
   const value=await base.readContract({address,abi,functionName:name} as any) as string;
   if(value.toLowerCase()!==expected.toLowerCase())throw Error('Independent financial linkage mismatch');
@@ -59,7 +62,9 @@ export async function independentService(o:Options){
  CREATE TABLE IF NOT EXISTS independent_incidents(lobby text NOT NULL,arena text NOT NULL,stage text NOT NULL,code text,changed_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(lobby,arena));`);
  const history=await independentHistory(db,base,m,o.graphql);
  const diagnostics=await createRpcDiagnostics(db,m.lobby,o.collectRpc!==false),diagnosticAt=new Map<string,number>();
- const engines=m.arenas.map(a=>independentEngine(db,base,a.app,a.node!,pressure.privateKey,history.record));
+ const engines=m.arenas.map(a=>independentEngine(db,base,a.app,a.node!,pressure.privateKey,history.record,{rulesVersion:m.rulesVersion}));
+ const eventLoops=engines.map(e=>rules.events?independentEventsLoop({...e,launchAt:async id=>BigInt(await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchAt',args:[id]} as any) as bigint),progressAge:id=>e.feed.progressAge(id)}):null);
+ const financialEngines=engines.map((e,i)=>({...e,busy:()=>e.busy()||!!eventLoops[i]?.blocksWrite()}));
  if(engines.some(e=>e.signer.address.toLowerCase()!==m.pressureSigner.toLowerCase()))throw Error('Independent bridge identity mismatch');
  const health=m.arenas.map(a=>({app:a.app,node:a.node,epoch:'0',id:'0',stage:'observing',online:false,expiresAt:0,releaseAt:0,lastProgressAt:0,code:'',rally:null as Awaited<ReturnType<Awaited<ReturnType<typeof independentFinance>>['rallyStatus']>>}));
  const validated=m.arenas.map(()=>({epoch:0n,checked:0}));
@@ -82,8 +87,9 @@ export async function independentService(o:Options){
   if(name==='assignNext')context=String(await r.lobby('slot',[0n]))+':'+String(await r.lobby('slot',[1n]));
   if(name==='propose')context=maintenanceContext('room',await r.lobby('room',args));
   if(name==='openRound'){
-   const app=await r.lobby('arenaOf',args),b=await r.arena(app,'boundMatch'),s=(await r.arena(app,'getSnapshot',args))[12];
-   context=maintenanceContext('round',[app,b.epoch,b.id,s.scoreA+s.scoreB,s.resumeAt]);
+   const app=await r.lobby('arenaOf',args),b=await r.arena(app,'boundMatch');
+   if(rules.events)context=`${app}:${b.epoch}:${b.id}`;
+   else{const s=(await r.snapshot(app,b.id))[12];context=maintenanceContext('round',[app,b.epoch,b.id,s.scoreA+s.scoreB,s.resumeAt]);}
   }
   if(name==='matchmake')context=String(await r.lobby('queueProgress',[args[0]]))+':'+Math.floor(Date.now()/15000);
   if(name==='capture')context=JSON.stringify(await r.arena(await r.lobby('arenaOf',args),'publishedResult'),(_,v)=>typeof v==='bigint'?String(v):v)+':'+(await readHubDelegation(base,m.hub,await r.lobby('arenaOf',args))).status;
@@ -146,7 +152,7 @@ export async function independentService(o:Options){
    const live=await e.read();if(live.id!==b.id)throw Error('Hosted match mismatch');
    // Financial reads have their own worker. They must not turn a readable
    // Classic engine into an unavailable one or delay its physics observer.
-   h.online=true;h.lastProgressAt=Date.now()-e.feed.progressAge(b.id);await stage(i,live.phase>=3?'publishing':e.publicationFailure()?'publication-paused':'playing',e.publicationFailure()?'ENGINE_PUBLICATION_UNAVAILABLE':'');
+   h.online=true;h.lastProgressAt=Date.now()-e.feed.progressAge(b.id);await stage(i,live.phase>=3?'publishing':e.publicationFailure()?'publication-paused':live.phase===1?'countdown':'playing',e.publicationFailure()?'ENGINE_PUBLICATION_UNAVAILABLE':'');
   }catch(e){
    await stage(i,'starting','ENGINE_SYNCHRONIZING');
    // A known engine outage is not a request to create a second hosted session.
@@ -160,7 +166,8 @@ export async function independentService(o:Options){
   }
  }
  async function progressArena(i:number){
-  const h=health[i],e=engines[i];if(!h.online||!['playing','publication-paused'].includes(h.stage)||Date.now()>=h.expiresAt||e.publicationFailure()&&Date.now()-e.publicationFailure()<30000)return;
+  const h=health[i],e=engines[i];if(!h.online||!['countdown','playing','publication-paused'].includes(h.stage)||Date.now()>=h.expiresAt||e.publicationFailure()&&Date.now()-e.publicationFailure()<30000)return;
+  if(eventLoops[i]){await eventLoops[i]!.progress();return;}
   const s=await e.read();
   if(s.phase===2&&!s.state.awaitingServe&&e.feed.progressAge(s.id)>=1500)await e.send('tick',[s.id]);
  }
@@ -297,14 +304,17 @@ export async function independentService(o:Options){
   }
  }
  const timer=setInterval(()=>{
-  for(let i=0;i<engines.length;i++){run(`arena:${i}`,()=>observeArena(i),health[i].stage==='available'?10000:3000);run(`progress:${i}`,()=>progressArena(i));}
+  for(let i=0;i<engines.length;i++){run(`arena:${i}`,()=>observeArena(i),health[i].stage==='available'?10000:3000);run(`progress:${i}`,()=>progressArena(i),rules.events?250:2000);}
   for(let i=0;i<engines.length;i++)if(health[i].online&&['playing','publication-paused'].includes(health[i].stage)){
    run(`rally:${i}`,async()=>{health[i].rally=await finance.rallyStatus(engines[i].app,await engines[i].read());},3000);
-   if(health[i].stage==='playing')run(`chaos:${i}`,()=>finance.checkpoint(engines[i]));
+   if(health[i].stage==='playing'){
+    if(eventLoops[i])run(`beacon:${i}`,()=>eventLoops[i]!.supply(error=>run(`proof-error:${i}`,async()=>{throw error;})),500);
+    if(!eventLoops[i]?.blocksWrite()&&!engines[i].busy())run(`chaos:${i}`,()=>finance.checkpoint(financialEngines[i]));
+   }
   }
   run('index',index,6000);run('history',history.observe,6000);run('admission',admission,4000);
   run('payments',finance.payments,6000);
   run('ranking',async()=>{if(await r.ratings('buildGeneration'))await queue(m.ratings,ratingAbi,'rebuild',[32n],0n,2);},10000);
- },2000);timer.unref();
- return {route,manifest:m,engines,writer,queue,status:()=>({online:health.some(h=>h.online||h.stage==='available'),admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:writer.status()}),stop:()=>{stopped=true;clearInterval(timer);writer.stop();history.stop();diagnostics.stop();engines.forEach(e=>e.stop());}};
+ },rules.events?250:2000);timer.unref();
+ return {route,manifest:m,engines,writer,queue,status:()=>({online:health.some(h=>h.online||h.stage==='available'),admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:writer.status()}),stop:()=>{stopped=true;clearInterval(timer);writer.stop();history.stop();diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());}};
 }

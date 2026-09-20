@@ -2,6 +2,9 @@
 import {useEffect,useMemo,useRef,useState,useCallback} from 'react';
 import {isAddress,zeroAddress,maxUint256,type Address} from 'viem';
 import {Court} from './Court';
+import {ArenaCountdown} from './MatchCountdown';
+import {ChaosEffectsHud} from './ChaosEffectsHud';
+import {eventHud} from '../lib/chaos-presentation';
 import {useLobbyClock,useQueueElapsed} from '../lib/use-lobby-clock';
 import {Avatar,AvatarPicker} from './Avatar';
 import {PixelPalaceArt} from './PixelPalaceArt';
@@ -38,6 +41,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
  const [view,setView]=useState<any>(empty),[snapshot,setSnapshot]=useState<LabSnapshot|null>(null),[mode,setMode]=useState<0|1>(0);
  const [panel,setPanel]=useState<Panel>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[sync,setSync]=useState('');
  const [lobbySync,setLobbySync]=useState('');
+ const [countdown,setCountdown]=useState<{id:string;deadline:number;clock:number;observedAt:number}>();
  const {now,clock:lobbyClock}=useLobbyClock();
  const [sound,setSound]=useState(false),[direction,setDirection]=useState(0),[fps,setFps]=useState(0),[controlled,setControlled]=useState(false);
  const [handle,setHandle]=useState(''),[avatar,setAvatar]=useState(0),[target,setTarget]=useState(''),[ranking,setRanking]=useState<any>(),[showResult,setShowResult]=useState(0),[settled,setSettled]=useState<any>(null);
@@ -153,6 +157,17 @@ export function IndependentHub({roomId}:{roomId?:string}){
  // rotation cannot erase the seventh point or prevent the result dialog from opening.
  const bound=view.binding;
  useEffect(()=>{
+  if(manifest?.rulesVersion!==12||snapshot?.phase!==1||!arena.current||!bound?.epoch)return;
+  const instance=arena.current,id=snapshot.id,key=arenaReference(instance.client.app,bound.epoch,id);
+  let stopped=false,timer:ReturnType<typeof setTimeout>;
+  const read=async()=>{let armed=false;try{
+   const [launch,block]=await Promise.all([instance.client.read('launchAt',[id]),instance.client.node.getBlock()]);
+   if(!stopped&&BigInt(launch as bigint)>0n){armed=true;setCountdown({id:key,deadline:Number(launch)*1000,clock:Number(block.timestamp)*1000,observedAt:performance.now()});}
+  }catch{/* The ordinary engine observer reports outages and keeps controls off. */}
+  finally{if(!stopped&&!armed)timer=setTimeout(read,500);}};
+  void read();return()=>{stopped=true;clearTimeout(timer);};
+ },[manifest?.rulesVersion,snapshot?.phase,snapshot?.id,bound?.epoch]);
+ useEffect(()=>{
   if(!manifest||!bound?.epoch||!view.app||recoveringArena)return;
   const binding=bound,app=view.app as Address;
   bindingRef.current=binding;lastGame.current={app,binding};
@@ -162,7 +177,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
   const id=BigInt(binding.id),receive=(s:LabSnapshot,latency?:number)=>{
    if(stopped)return;setSnapshot(s);pilot.observe(s,performance.now());play?.ingest(s);setSync(recovery.observed(s.phase>=3,latency!==undefined));
    const before=scoreSeen.current,total=s.state.scoreA+s.state.scoreB;
-   if(before?.id===s.id&&total===before.score+1&&Date.now()-before.at<3000)arcadeAudio.play('point',`${app}:${binding.epoch}:${s.id}:score:${total}`);
+   if(before?.id===s.id&&total>before.score&&total<=before.score+2&&Date.now()-before.at<3000)arcadeAudio.play('point',`${app}:${binding.epoch}:${s.id}:score:${total}`);
    scoreSeen.current={id:s.id,score:total,at:Date.now()};
    if(s.phase>=3){play?.intent(0);setDirection(0);setControlled(false);arcadeAudio.setGameplay(false);void refresh().catch(()=>{if(!stopped)setLobbySync('Synchronizing the lobby. Your session is still saved.');});}
   };
@@ -237,7 +252,8 @@ export function IndependentHub({roomId}:{roomId?:string}){
   :room?<><div className="rooms-room-bar"><span>{room.mode?'CHAOS':'CLASSIC'} / {room.ranked?'RANKED':'WINNER STAYS'}</span><div><button onClick={()=>void copy(`${location.origin}/rooms/${roomReference(manifest!.lobby,room.id)}`)}>Copy room link</button><button onClick={()=>setPanel('members')}>Members {room.members.length}</button>{room.mode===1&&<button onClick={()=>setPanel('market')}>Betting</button>}<button onClick={()=>setPanel('tools')}>Tools</button></div></div>
    {canAccept?<section className="rooms-entry rooms-duel"><div className="rooms-versus"><span>{name(offer.a)}</span><b>VS</b><span>{name(offer.b)}</span></div><small>{Math.max(0,Math.ceil(Number(offer.expires)-now/1000))}s</small><div className="rooms-button-row"><button className="primary" disabled={busy||!!(offer.accepted&(1<<offerSide))||Number(offer.expires)*1000<now} onClick={()=>void ensure(s=>act(s,'acceptProposal',[offer.id]))}>{offer.accepted&(1<<offerSide)?'Waiting…':'Accept'}</button><button disabled={busy} onClick={()=>void ensure(s=>act(s,'declineProposal',[offer.id]))}>Back</button></div></section>
    :snapshot&&(!offer||offer.id===snapshot.id)?<section className="rooms-court court-card"><div className="scoreboard">{[snapshot.a,snapshot.b].map((p,i)=><div className={`player-label ${i?'right':''}`} style={i?{gridColumn:3}:undefined} key={p}><Avatar index={profile(p)?.avatar}/><small>PLAYER 0{i+1}</small><span>{name(p)}</span><div className="arena-rounds" aria-hidden="true">{Array.from({length:7},(_,n)=><b key={n} data-won={n<(i?snapshot.state.scoreB:snapshot.state.scoreA)}/>)}</div></div>)}<div className="arena-score-module" style={{gridColumn:2,gridRow:1}}><small>FIRST TO SEVEN</small><div className="score"><span>{String(snapshot.state.scoreA).padStart(2,'0')}</span><i>:</i><span>{String(snapshot.state.scoreB).padStart(2,'0')}</span></div></div></div>
-    <div className="rooms-canvas">{snapshot.state.awaitingServe&&<div className="rooms-serve-status" role="status">{pauseLabel}</div>}<Court liveEngine externalIntermission state={snapshot.state} clock={snapshot.clock} observedAt={snapshot.observedAt} direction={direction} side={side} replay={!active||recoveringArena} matchId={resultId!} controllable={canPlay} pending={!!lane.current?.inputPending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} onStats={setFps}/></div>
+    {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.chaos.physics.t/1000n)} effectsEnabled={arcadeAudio.settings.background} players={[name(snapshot.a),name(snapshot.b)]}/>}
+    <div className="rooms-canvas">{snapshot.state.awaitingServe&&<div className="rooms-serve-status" role="status">{pauseLabel}</div>}<Court liveEngine externalIntermission chaos={snapshot.chaos} rulesVersion={manifest?.rulesVersion} state={snapshot.state} clock={snapshot.clock} observedAt={snapshot.observedAt} direction={direction} side={side} replay={!active||recoveringArena} matchId={resultId!} controllable={canPlay} pending={!!lane.current?.inputPending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} onStats={setFps}/>{manifest?.rulesVersion===12&&snapshot.phase===1&&<ArenaCountdown id={resultId!} deadline={countdown?.id===resultId?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
     <div className="rooms-court-controls"><span>{side>=0?'W / S · ↑ / ↓':`YOUR TURN ${Math.max(1,room.members.filter((m:any)=>!m.away).sort((a:any,b:any)=>Number(a.position-b.position)).findIndex((m:any)=>equal(m.player,player))+1)}`}</span>{active&&side>=0?<div className="touch-controls">{([-1,1] as const).map(d=><IconButton key={d} icon={d<0?'up':'down'} aria-label={d<0?'Move up':'Move down'} disabled={!canPlay} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);move(d);}} onPointerUp={()=>move(0)} onPointerCancel={()=>move(0)} onLostPointerCapture={()=>move(0)}/>)}</div>:snapshot.phase>=3?<button onClick={()=>setShowResult(n=>n+1)}>View result</button>:null}</div></section>
    :<section className="rooms-entry"><h1>{recoveringArena?'Recovering this arena':offer?.status===2?'Waiting for an available arena':mine?.away?'Take your next turn':'Bring a rival'}</h1><div className="rooms-member-strip">{room.members.map((m:any)=><span key={m.player}><Avatar index={profile(m.player)?.avatar}/>{name(m.player)}</span>)}</div><div className="rooms-button-row">{mine?.away?<button className="primary" disabled={busy} onClick={()=>void ensure(s=>act(s,'rejoinQueue',[room.id]))}>Rejoin queue</button>:<button className="primary" onClick={()=>setPanel('invite')}>Invite someone</button>}<button disabled={busy} onClick={()=>void ensure(s=>act(s,offer?.status===2?'cancelAdmission':'leaveRoom',offer?.status===2?[offer.id]:[]))}>Back</button></div></section>}
   </>:null}
@@ -247,7 +263,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
    {panel==='account'&&family&&manifest&&<div className="rooms-button-row"><button onClick={()=>setPanel('private')}>Private notebook</button><button onClick={()=>setPanel('market')}>Wallet and payments</button><button disabled={busy} onClick={()=>void run(async()=>{let pending=true;try{const result=await disconnectFamily(manifest,family,active&&lastGame.current?lastGame.current:undefined);pending=result.revocationPending;}finally{lane.current?.stop();eraseFamilyLocal(manifest);setFamily(null);current.current.family=null;setReady(false);setControlled(false);lock.current?.();lock.current=null;setPanel(null);setNotice(pending?'Disconnected locally. Network revocation remains to be confirmed.':'Disconnected. Arcade authorization revoked.');}})}>Disconnect</button><button disabled={busy} onClick={()=>{forgetAccount();setSaved(undefined);setNotice('Remembered passkey forgotten. Disconnect to revoke your active arcade session.');}}>Forget this account</button></div>}
    {panel==='private'&&manifest&&player&&<IndependentPrivate manifest={manifest} player={player} kind="notebook" matchRef={resultId??undefined} atUs={snapshot?.clock}/>}
    {panel==='market'&&manifest&&player&&<IndependentMarket manifest={manifest} player={player} id={snapshot?.state.mode===1?snapshot.id:undefined} onBusy={v=>{working.current=v;setBusy(v);}}/>}
-   {panel==='history'&&player&&<IndependentHistory player={player} matchId={replayId}/>}
+   {panel==='history'&&player&&<IndependentHistory player={player} matchId={replayId} rulesVersion={manifest?.rulesVersion}/>}
    {(panel==='invite'||panel==='create')&&manifest&&player&&<IndependentPrivate manifest={manifest} player={player} kind="contacts" onChallenge={p=>setTarget(p)}/>}
    {(panel==='invite'||panel==='create')&&frequent.length>0&&<section><h3>Recent rivals</h3>{frequent.map(row=><button key={row.player} onClick={()=>setTarget(row.player)}>{name(row.player)} · {row.count} matches</button>)}</section>}
    {panel==='connect'&&<><button className="primary" disabled={busy} onClick={()=>void login(false)}>Use a passkey</button><button disabled={busy} onClick={()=>void login(true)}>Create a passkey</button></>}

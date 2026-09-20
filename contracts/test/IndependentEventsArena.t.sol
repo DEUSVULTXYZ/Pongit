@@ -72,7 +72,7 @@ contract IndependentEventsArenaTest is Test {
     }
     function open(uint256 id) private returns(IndependentEventsArena arena){
         arena=IndependentEventsArena(lobby.assignNext());assertEq(arena.boundMatch().epoch,0);
-        vm.roll(block.number+1);lobby.openArena(id);vm.chainId(4242);arena.start();vm.chainId(10143);
+        vm.roll(block.number+1);lobby.openArena(id);vm.chainId(4242);arena.start();vm.warp(block.timestamp+3);arena.start();vm.chainId(10143);
     }
     function finish(IndependentEventsArena arena,uint256 id,uint256 loser) private {
         vm.chainId(4242);vm.prank(vm.addr(loser+1000));arena.concede(id);vm.chainId(10143);hub.publish(address(arena));lobby.capture(id);
@@ -159,6 +159,16 @@ contract IndependentEventsArenaTest is Test {
         (uint256 id,)=bettingMatch();(bool allowed,uint256 version)=settlement.bettingWindow(id,0);assertTrue(allowed);buy(id,0);
         vm.roll(block.number+41);(bool later,uint256 afterVersion)=settlement.bettingWindow(id,0);assertTrue(later);assertEq(version,afterVersion);
         settlement.openRound(id);buy(id,1);
+    }
+    function testCountdownUsesContractTimeAndCannotBeSkippedOrExtended() public {
+        uint256 id=propose(101,102,1);IndependentEventsArena arena=IndependentEventsArena(lobby.assignNext());
+        vm.roll(block.number+1);lobby.openArena(id);vm.chainId(4242);arena.start();uint64 at=arena.launchAt(id);
+        assertEq(at,block.timestamp+3);vm.warp(block.timestamp+2);
+        vm.expectRevert("countdown pending");arena.start();assertEq(arena.launchAt(id),at);
+        vm.expectRevert();vm.prank(vm.addr(1101));arena.input(id,1,1,block.number+100);
+        vm.warp(block.timestamp+1);arena.start();assertEq(arena.launchAt(id),at);
+        vm.expectRevert("unopened or started arena");arena.start();
+        vm.prank(vm.addr(1101));arena.input(id,1,1,block.number+100);
     }
     function testCutoffAndUnclaimedGainsSurviveArenaReuse() public {
         (uint256 id,IndependentEventsArena arena)=bettingMatch();buy(id,1);

@@ -2,16 +2,17 @@ import {encodeAbiParameters,keccak256,parseEther,zeroHash,type Abi,type Address,
 import {privateKeyToAccount} from 'viem/accounts';
 import type {Pool} from 'pg';
 import type {IndependentManifest} from '../../shared/independent';
-import {abi as marketAbi} from '../../shared/abi-independent-MarketV4';
-import {abi as settlementAbi} from '../../shared/abi-independent-IndependentSettlement';
 import {independentReader} from '../../shared/independent-read';
 import {sameChaosPause} from '../../shared/independent-recovery';
 import type {EngineState} from '../../shared/engine-stream';
 import type {independentEngine} from './independent-engine';
+import {independentRules} from '../../shared/independent-rules';
+import {independentEventsPressure} from './independent-events-pressure';
 
 type Enqueue=(at:Address,abi:Abi,name:string,args?:readonly unknown[],value?:bigint,priority?:number)=>Promise<unknown>;
 /** Finance observes Monad independently of game admission and of expired engines. */
 export async function independentFinance(db:Pool,base:PublicClient,m:IndependentManifest,key:Hex,queue:Enqueue){
+ const rules=independentRules(m),marketAbi=rules.market,settlementAbi=rules.settlement;
  const signer=privateKeyToAccount(key),r=independentReader(base,m);
  if(signer.address.toLowerCase()!==m.pressureSigner.toLowerCase())throw Error('Bridge signer mismatch');
  await db.query(`CREATE TABLE IF NOT EXISTS independent_pressure(
@@ -22,7 +23,9 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
  CREATE TABLE IF NOT EXISTS independent_finance_cursor(lobby text PRIMARY KEY,block_number bigint NOT NULL);
  CREATE TABLE IF NOT EXISTS independent_payments(lobby text NOT NULL,payout_id text NOT NULL,state text NOT NULL,hash text NOT NULL,PRIMARY KEY(lobby,payout_id));`);
  const read=(at:Address,abi:Abi,name:string,args:readonly unknown[]=[],blockNumber?:bigint):Promise<any>=>base.readContract({address:at,abi,functionName:name,args,blockNumber} as any);
+ const events=rules.events?await independentEventsPressure(db,base,m,key,queue):null;
  async function checkpoint(e:ReturnType<typeof independentEngine>){
+  if(events)return events.checkpoint(e);
   const s=await e.read();if(s.phase!==2||s.state.mode!==1||!s.state.awaitingServe)return;
   const b=await r.arena(e.app,'boundMatch');if(b.id!==s.id)throw Error('Pressure match reference changed');
   const published=await r.arena(e.app,'getSnapshot',[s.id]);
@@ -59,6 +62,7 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
   await e.send('tick',[s.id]);
  }
  async function rallyStatus(app:Address,s:EngineState){
+  if(events)return null;
   if(s.phase!==2||s.state.mode!==1||!s.state.awaitingServe)return null;
   const identity={id:String(s.id),rally:s.state.scoreA+s.state.scoreB,resumeAt:String(s.state.resumeAt)};
   const published=await r.arena(app,'getSnapshot',[s.id]);
@@ -101,7 +105,8 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
   const payoutId=await read(m.market,marketAbi,'payoutId',[0,id,player]);
   const payout=await read(m.market,marketAbi,'payouts',[payoutId]);
   const payment=(await db.query('SELECT state,hash FROM independent_payments WHERE lobby=$1 AND payout_id=$2',[m.lobby.toLowerCase(),payoutId])).rows[0]??null;
-  return {book,window,result,position,paid,quote,head,payoutId,payout,payment};
+  const claimPreview=rules.events?await read(m.market,marketAbi,'claimPreview',[id,player]):null;
+  return {book,window,result,position,paid,quote,head,payoutId,payout,payment,claimPreview};
  }
  async function accountPayments(player:Address){
   const rows=(await db.query('SELECT id FROM independent_bettors WHERE lobby=$1 AND player=$2 ORDER BY id DESC LIMIT 50',[m.lobby.toLowerCase(),player.toLowerCase()])).rows;
