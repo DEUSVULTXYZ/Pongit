@@ -9,5 +9,7 @@ export function chaosBrowserPayload(abi:Abi,header:any[],id:number,other=0):Hex{
  const words=[...ball(),...(both?ball(true):[0n,0n]),effect(id),effect(other),s.left*P|(s.right*P<<56n)|(t<<112n)|((t+10000n)<<176n),
  BigInt(s.scoreA)|(BigInt(s.scoreB)<<3n)|(1n<<6n)|(s.finished?1n<<38n:0n)|(1n<<41n)|(1n<<43n)|(BigInt((id?1<<(id-1):0)|(other?1<<(other-1):0))<<45n)|(96000000n<<101n)|(96000000n<<133n)];
  const getter=abi.find(x=>x.type==='function'&&x.name==='getSnapshot') as any;
- return encodeAbiParameters([{type:'tuple',components:getter.outputs.map((o:any,i:number)=>({...o,name:`f${i}`}))},{type:'uint256[8]'},{type:'uint256'},{type:'uint256'}],[header,words as [bigint,bigint,bigint,bigint,bigint,bigint,bigint,bigint],0n,0n]);
+ const fields=getter.outputs.length===1&&getter.outputs[0].type==='tuple'?getter.outputs[0].components:getter.outputs;
+ if(fields.length!==13)throw Error('Unsupported fixture snapshot header');
+ return encodeAbiParameters([{type:'tuple',components:fields.map((o:any,i:number)=>({...o,name:`f${i}`}))},{type:'uint256[8]'},{type:'uint256'},{type:'uint256'}],[header,words as [bigint,bigint,bigint,bigint,bigint,bigint,bigint,bigint],0n,0n]);
 }

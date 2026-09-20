@@ -5,7 +5,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {extname,resolve,relative} from 'node:path';
 import {chromium} from '@playwright/test';
 import {decodeFunctionData,encodeFunctionResult,zeroAddress,zeroHash,type Address} from 'viem';
-import {pooledAgentArenaAbi as abi} from '../shared/abi-PooledAgentArena';
+import {agentPoolArenaAbi} from '../shared/agent-pool-abi';
 import {pooledHouseBots,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../shared/agent-pool';
 import {initial} from '../shared/physics-v2';
 import {chaosBrowserPayload} from './chaos-browser-fixture';
@@ -13,19 +13,20 @@ import {decodeChaosRead} from '../shared/chaos-codec';
 import {engineState} from '../shared/engine-stream';
 assert.equal(process.env.PONG_POOL_UI_TEST,'isolated-fixture');
 const origin='http://127.0.0.1:4189',channel=process.env.BROWSER_CHANNEL??'chrome';
-const series=process.env.PONG_POOL_UI_RULES==='11';assert(!process.env.PONG_POOL_UI_RULES||['10','11'].includes(process.env.PONG_POOL_UI_RULES));
+const rulesVersion=Number(process.env.PONG_POOL_UI_RULES??10);assert(rulesVersion===10||rulesVersion===11||rulesVersion===15);
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const node=JSON.parse(await readFile('deployments/agents.json','utf8')).node;
 const people=pooledHouseBots.map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90),difficulty:b.difficulty,modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false}));
-const m:AgentPoolManifest={version:series?3:2,chainId:10143,engineChainId:4242,rulesVersion:series?11:10,hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),challenges:address(6),qualifications:address(7),family:address(8),
+const m:AgentPoolManifest={version:rulesVersion===15?4:rulesVersion===11?3:2,chainId:10143,engineChainId:4242,rulesVersion,hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),challenges:address(6),qualifications:address(7),family:address(8),
  arenas:[9,10,11].map(n=>({app:address(n),node,runtimeHash:zeroHash})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:`0x${'b'.repeat(64)}`,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
+const abi=agentPoolArenaAbi(m);
 const ref={chainId:10143 as const,app:address(9),epoch:'1',id:'1'};
 const observation={block:'50',hash:zeroHash,timestamp:String(Math.floor(Date.now()/1000)),revision:'fixture'};
 const tournament=(id:string,league:boolean,mode:0|1):TournamentView=>({id,mode,format:league?'championship':'elimination',status:'playing',revision:1,startedAt:observation.timestamp,completedAt:null,champion:zeroAddress,
  entrants:people.map(p=>({agent:p.agent,controllerHash:zeroHash,initialElo:1000})),
  fixtures:Array.from({length:league?28:7},(_,i)=>({index:i,ref:i===0?ref:null,a:people[i%8].agent,b:people[(i+1)%8].agent,advanced:zeroAddress,resolved:false,administrative:false,attempt:i===0?1:0,result:null})),
  standings:people.map((p,i)=>({agent:p.agent,points:21-i*3,difference:14-i*2,wins:7-i,initialElo:1000})),observedBlock:'50',published:true,nextAt:null});
-const report:any={at:new Date().toISOString(),channel,scope:'Captured isolated VPS production build; synthetic API/engine; no authentication or hosted gameplay qualification',checks:[],errors:[]};
+const report:any={at:new Date().toISOString(),channel,rulesVersion,scope:'Captured isolated VPS production build; synthetic API/engine; no authentication or hosted gameplay qualification',checks:[],errors:[]};
 const mime:Record<string,string>={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.ico':'image/x-icon','.woff2':'font/woff2','.ttf':'font/ttf','.mp3':'audio/mpeg'};
 await mkdir('artifacts/qualification/20260919/pool-ui',{recursive:true});
 const browser=await chromium.launch({channel,headless:true});
@@ -76,9 +77,11 @@ try{
      engineReads++;
      const rpc=request.postDataJSON(),reply=(result:any)=>route.fulfill({json:{jsonrpc:'2.0',id:rpc.id,result}});
      if(rpc.method==='interlude_session')return reply({app:ref.app,chainId:4242,epoch:1,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]});
+     if(rpc.method==='eth_getBlockByNumber')return reply({number:'0x64',hash:zeroHash,timestamp:`0x${Math.floor(Date.now()/1000).toString(16)}`});
      if(rpc.method==='eth_call'){
       const call=decodeFunctionData({abi,data:rpc.params[0].data});
       if(call.functionName==='RULES_VERSION')return reply(encodeFunctionResult({abi,functionName:'RULES_VERSION',result:BigInt(m.rulesVersion)}));
+      if(call.functionName==='launchAt')return reply(encodeFunctionResult({abi,functionName:'launchAt',result:0n}));
       assert.equal(call.functionName,'chaosState');
       const state={...initial(zeroHash,mode),t:3000000n,scoreA:3,scoreB:2};
       const header=[1n,revision,2n,people[0].agent,people[1].agent,zeroAddress,zeroAddress,100n+revision,state.t,0n,0n,0n,state];

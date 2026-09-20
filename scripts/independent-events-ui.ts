@@ -17,10 +17,10 @@ import {chaosBrowserPayload} from './chaos-browser-fixture';
 assert.equal(process.env.PONG_INDEPENDENT_UI_TEST,'isolated-vps');
 const origin='https://pongit.xyz',web=process.env.PONG_INDEPENDENT_UI_WEB??'http://independent-events-web:3000',channel=process.env.BROWSER_CHANNEL??'chrome';
 assert(['http://independent-events-web:3000','http://independent-web:3000'].includes(web));
-const rulesVersion=Number(process.env.PONG_INDEPENDENT_UI_RULES??13);assert([12,13].includes(rulesVersion));
+const rulesVersion=Number(process.env.PONG_INDEPENDENT_UI_RULES??13);assert([12,13,14].includes(rulesVersion));
 const address=(n:number)=>toHex(n,{size:20}) as Address;
 const node=JSON.parse(await readFile('deployments/interlude-rooms.json','utf8')).node;
-const m=publicIndependentManifest({rulesVersion,chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(n=>({app:address(n),node})),genesis:1700000000,createdAt:'2026-09-20T00:00:00Z'});
+const m=publicIndependentManifest({rulesVersion,chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),resultVerifier:address(14),admissionSigner:address(15),arenas:[11,12,13].map(n=>({app:address(n),node})),genesis:1700000000,createdAt:'2026-09-20T00:00:00Z'});
 const rules=independentRules(m),app=m.arenas[0].app,players=[address(20),address(21)];
 const report:any={at:new Date().toISOString(),channel,rulesVersion,scope:'Actual isolated VPS build; synthetic chain/API, no real credentials or hosted gameplay',checks:[],errors:[],passed:false};
 const run=process.env.PONG_INDEPENDENT_UI_RUN??'2';assert(/^[a-z0-9-]{1,30}$/.test(run));
@@ -36,7 +36,7 @@ try{
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
   const key=generatePrivateKey(),grant={player:players[0],key:privateKeyToAccount(key).address,issuedAt:BigInt(Math.floor(Date.now()/1000)),expires:BigInt(Math.floor(Date.now()/1000)+7200),revision:0n};
   let phase=1,revision=1n,launch=0,nonce=0,inputNonce=0n,direction=0,effect=0,terminal=false,roomVisible=false;
-  let readyMask=rulesVersion===13?2:3,readyCommands=0,nonceReads=0;
+  let readyMask=rulesVersion>=13?2:3,readyCommands=0,nonceReads=0;
   const receipts=new Map<string,any>(),inputs:number[]=[];
   const binding={id:1n,epoch:1n,room:1n,a:players[0],b:players[1],mode,ranked:false,keyA:grant.key,keyB:address(22),expiresA:grant.expires,expiresB:grant.expires,preparedBlock:90n};
   await context.addInitScript(({family,key})=>{sessionStorage.setItem(key,JSON.stringify(family));localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:true,intensity:'full'}));},{family:json({grant,key,signature:`0x${'11'.repeat(65)}`}),key:`pongit:family:${m.family.toLowerCase()}`});
@@ -53,6 +53,7 @@ try{
    const values:any={occupancy:roomVisible?1n:0n,activeMatchOf:roomVisible?1n:0n,grantOf:grant,room:struct(rules.lobby,'room',{id:1n,host:players[0],mode,ranked:false,proposal:1n,members:players.map((player,i)=>({player,position:BigInt(i+1),joined:grant.issuedAt,away:false}))}),
     invitationPage:[[],0n],proposal:struct(rules.lobby,'proposal',{id:1n,a:players[0],b:players[1],room:1n,mode,status:2,accepted:3,expires:grant.expires}),arenaOf:app,boundMatch:binding,
     profileOf:struct(profilesAbi,'profileOf',{handle:call.args?.[0]===players[1]?'Rival':'Player',avatar:0}),indexOf:0n,delegationOf:struct(roomsLifecycleHubAbi,'delegationOf',{app,status:1,epoch:1n,expiresAt:grant.expires,batchIndex:1n})};
+   if(fn==='ticketOf')values.ticketOf=[struct(rules.lobby,'ticketOf',{authority:m.lobby,arena:app,epoch:1n,sequence:1n,matchId:1n,rules:14n}),binding];
    assert(fn in values,`Unexpected base read ${fn}`);return encodeFunctionResult({abi,functionName:fn,result:values[fn]} as any);
   };
   const block=()=>({number:'0x64',hash:zeroHash,parentHash:zeroHash,timestamp:toHex(BigInt(Math.floor(Date.now()/1000))),gasLimit:'0x1c9c380',gasUsed:'0x0',transactions:[],baseFeePerGas:'0x0',difficulty:'0x0',extraData:'0x',logsBloom:'0x',miner:zeroAddress,mixHash:zeroHash,nonce:'0x0000000000000000',receiptsRoot:zeroHash,sha3Uncles:zeroHash,size:'0x0',stateRoot:zeroHash,transactionsRoot:zeroHash,totalDifficulty:'0x0',uncles:[]});
@@ -80,9 +81,10 @@ try{
    }else if(v.method==='interlude_sendTransaction'){
     const tx=parseTransaction(v.params[0]),hash=keccak256(v.params[0]);if(receipts.has(hash))return {jsonrpc:'2.0',id:v.id,result:receipts.get(hash)};
     assert.equal(tx.nonce,nonce);const c=decodeFunctionData({abi:rules.arena,data:tx.data!});
+    if(rulesVersion===14)assert.equal(c.args?.[0],1n,'Every reusable command must bind its epoch');
     if(c.functionName==='confirmReady'){assert.equal(phase,1);assert.equal(readyMask,2);readyMask=3;readyCommands++;}
     else{assert.equal(phase,2,'No movement before contract phase2');
-     if(c.functionName==='input'){inputNonce++;assert.equal(c.args![2],inputNonce);direction=Number(c.args![1]);inputs.push(direction);}
+     if(c.functionName==='input'){inputNonce++;assert.equal(c.args![rulesVersion===14?3:2],inputNonce);direction=Number(c.args![rulesVersion===14?2:1]);inputs.push(direction);}
      else assert.equal(c.functionName,'tick');}
     nonce++;revision++;result={status:'0x1',transactionHash:hash,blockHash:zeroHash,logs:[]};receipts.set(hash,result);
    }else throw Error(`Unexpected method ${v.method}`);
@@ -119,7 +121,7 @@ try{
   await page.waitForFunction(()=>{const b=document.querySelector('button[aria-label="Move up"]') as HTMLButtonElement;return b&&!b.disabled;});
   const canvas=page.locator('canvas').first(),before=await canvas.boundingBox();assert(before&&before.height>70&&Math.abs(before.width/before.height-16/9)<.04);
   await page.keyboard.down('ArrowUp');await page.waitForTimeout(700);await page.keyboard.up('ArrowUp');await page.waitForTimeout(700);assert(inputs.includes(-1)&&inputs.includes(0));
-  if(rulesVersion===13){assert.equal(readyCommands,1,'One loading acknowledgement per player');assert(nonceReads>=2,'Refresh the EVM nonce between readiness and movement');}
+  if(rulesVersion>=13){assert.equal(readyCommands,1,'One loading acknowledgement per player');assert(nonceReads>=2,'Refresh the EVM nonce between readiness and movement');}
   if(mode){effect=21;revision++;await page.getByText('MULTIBALL',{exact:true}).waitFor();effect=13;revision++;await page.getByText('PINBALL',{exact:true}).waitFor();const after=await canvas.boundingBox();assert(after&&Math.abs(after.y-before.y)<1&&Math.abs(after.height-before.height)<1,'Effects shifted the court');}
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Page overflow');
   await page.screenshot({path:`${out}/${channel}-${mode}-${width}.png`,fullPage:true});
