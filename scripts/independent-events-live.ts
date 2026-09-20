@@ -1,4 +1,4 @@
-// Real hosted rules-12 service qualification with disposable synthetic owners.
+// Real hosted versioned events service qualification with disposable synthetic owners.
 // This is not a physical passkey/browser test. All signed bytes stay private.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
@@ -19,7 +19,7 @@ import {betTypes,domain} from '../shared/protocol';
 
 assert.equal(process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION,'isolated-vps');
 const raw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
-assert.equal(raw.production,false);assert.equal(raw.rulesVersion,12);assert.equal(raw.status,'sealed');
+assert.equal(raw.production,false);assert([12,13].includes(raw.rulesVersion));assert.equal(raw.status,'sealed');
 const m=publicIndependentManifest(raw),rules=independentRules(m),base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:12000})}),r=independentReader(base,m);
 const run=process.env.PONG_EVENTS_RUN??'1';assert(/^[1-9][0-9]?$/.test(run));
 const secret=`/secrets/events-live-${run}.json`,out=`artifacts/independent-candidate/events-live-${run}.json`;
@@ -27,7 +27,7 @@ try{await readFile(secret);throw Error('Preserve and reconcile the previous fixt
 const api='http://independent-events-service:4012/independent';
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2);
 const privateState:any={lobby:m.lobby,createdAt:new Date().toISOString(),players:Array.from({length:5},()=>({owner:generatePrivateKey(),arcade:generatePrivateKey()})),operations:{},jobs:[],matches:[]};
-const report:any={at:new Date().toISOString(),rules:12,lobby:m.lobby,scope:'Actual private service, Monad and hosted Interlude; synthetic owners, no physical passkey claim',matches:[],checks:[],operations:[],passed:false};
+const report:any={at:new Date().toISOString(),rules:m.rulesVersion,lobby:m.lobby,scope:'Actual private service, Monad and hosted Interlude; synthetic owners, no physical passkey claim',matches:[],checks:[],operations:[],passed:false};
 let tail=Promise.resolve();const save=()=>{const text=json(privateState);tail=tail.then(async()=>{await writeFile(secret+'.next',text,{mode:0o600});await rename(secret+'.next',secret);});return tail;};
 await mkdir('artifacts/independent-candidate',{recursive:true});const flush=()=>writeFile(out,json(report));
 const owners=privateState.players.map((p:any)=>privateKeyToAccount(p.owner)),keys=privateState.players.map((p:any)=>privateKeyToAccount(p.arcade));
@@ -71,7 +71,7 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
  const observer=createPublicClient({transport:engineTransport(match.node),pollingInterval:1000}),stream=new EngineStream(match.node,app,url=>new WebSocket(url,{origin:'https://pongit.xyz'}) as any);
  const feed=new EngineFeed({node:observer,app,abi:rules.arena},stream);stops.push(feed.watch(id,()=>row.frames++),()=>stream.stop());
  await until(async()=>{try{const s:any=await observer.request({method:'interlude_session',params:[]} as any);return String(s.epoch)===String(epoch)&&s.app.toLowerCase()===app.toLowerCase();}catch{return false;}},'hosted engine identity',240000);
- assert.equal(await observer.readContract({address:app,abi:rules.arena,functionName:'RULES_VERSION'}),12n);
+ assert.equal(await observer.readContract({address:app,abi:rules.arena,functionName:'RULES_VERSION'}),BigInt(m.rulesVersion!));
  const d=await readHubDelegation(base,m.hub,app);assert.equal(d.epoch,epoch);assert.equal(d.status,1);
  const players=[match.a,match.b].map(index=>{
   const transport=engineTransport(match.node,{
@@ -86,6 +86,10 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
   });
   const node=createPublicClient({transport});return {index,node,session:compactArenaSession({node,abi:rules.arena,app,key:privateState.players[index].arcade,match:id,expires:BigInt(privateState.expires)}),direction:0};
  });
+ if(m.rulesVersion===13){
+  for(const p of players){const receipt=await p.session.send('confirmReady',[id]);await feed.receipt(id,receipt,'confirmReady',[id],keys[p.index].address);}
+  row.readinessConfirmed=true;
+ }
  let firstPlaying=0,lastTick=0,lastScore='',money:Promise<void>|undefined,moneyError:unknown,bought=false;
  const started=Date.now(),end=started+240000;
  async function bet(){

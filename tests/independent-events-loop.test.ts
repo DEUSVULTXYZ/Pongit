@@ -46,3 +46,25 @@ test('slow admission reads cannot start a replaced match or a busy writer',async
  await loop.progress();assert.equal(f.sent.length,0);loop.stop();
  const g=fixture();g.busy(true);await independentEventsLoop(g.actor).progress();assert.equal(g.sent.length,0);
 });
+test('readiness waits for both players, preserves its timeout and cancels an absent player',async()=>{
+ const f=fixture();let mask=0,deadline=0n;
+ const actor={...f.actor,readiness:async()=>[mask,deadline] as const,send:async(action:string,args:readonly unknown[])=>{
+  if(action==='start'&&mask!==3){f.sent.push({action,args});deadline=130n;return;}
+  return f.actor.send(action,args);
+ }};
+ const loop=independentEventsLoop(actor);
+ await loop.progress();assert.equal(deadline,130n);assert.equal(f.sent.length,1);
+ mask=1;f.clock(130n);await loop.progress();assert.equal(f.sent.length,1);
+ f.clock(131n);await loop.progress();assert.equal(f.sent[1].action,'cancelUnready');assert.deepEqual(f.sent[1].args,[20n]);loop.stop();
+});
+test('ready participants retain the three-second authoritative countdown',async()=>{
+ const f=fixture(),loop=independentEventsLoop({...f.actor,readiness:async()=>[3,130n] as const});
+ await loop.progress();f.clock(102n);await loop.progress();assert.equal(f.sent.length,1);
+ f.clock(103n);await loop.progress();assert.equal(f.state().phase,2);assert.deepEqual(f.sent.map(x=>x.action),['start','start']);loop.stop();
+});
+test('a delayed readiness response cannot cancel or start a replacement match',async()=>{
+ for(const mask of [1,3]){
+  const f=fixture(),loop=independentEventsLoop({...f.actor,readiness:async()=>{f.bind();return [mask,1n] as const;}});
+  await loop.progress();assert.equal(f.sent.length,0);loop.stop();
+ }
+});

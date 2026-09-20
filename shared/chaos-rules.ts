@@ -13,4 +13,4 @@ export const isChaosEventsRules=(rules:unknown):rules is ChaosEventsRules=>rules
 export const chaosResolvesEveryContact=(rules:unknown)=>rules===8;
 /** 9/12 (human), 10 and 11 (agents) resolve obstacles and effect boundaries as a batch.
  * Keep the historical 6/7/8 algorithms selectable for saved matches. */
-export const chaosContactResolution=(rules:unknown):boolean|'complete'=>rules===9||rules===10||rules===11||rules===12?'complete':chaosResolvesEveryContact(rules);
+export const chaosContactResolution=(rules:unknown):boolean|'complete'=>rules===9||rules===10||rules===11||rules===12||rules===13?'complete':chaosResolvesEveryContact(rules);

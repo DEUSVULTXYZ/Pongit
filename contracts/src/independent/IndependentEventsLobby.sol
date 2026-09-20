@@ -15,6 +15,7 @@ contract IndependentEventsLobby is IndependentLobby {
 
     constructor(ArcadeFamily f,IInterludeHub h,address admin,address bridge)
         IndependentLobby(f,h,admin,bridge) {}
+    function arenaRulesVersion() public pure virtual returns(uint256){return 12;}
 
     function capture(uint256 id) public override {
         bool first=ratings.indexOf(id)==0;
@@ -22,7 +23,7 @@ contract IndependentEventsLobby is IndependentLobby {
         if(first){
             T.Result memory r=ratings.entry(id).first;
             IndependentEventsArena arena=IndependentEventsArena(r.arena);
-            require(arena.RULES_VERSION()==12,"current human rules required");
+            require(arena.RULES_VERSION()==arenaRulesVersion(),"current human rules required");
             uint64 cutoff=arena.finishedAt(id);
             require(r.status==4 || cutoff>0 && cutoff<=block.timestamp,"published cutoff pending");
             bettingCutoff[id]=cutoff;

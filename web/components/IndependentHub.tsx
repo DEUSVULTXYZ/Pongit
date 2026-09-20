@@ -161,7 +161,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
  // rotation cannot erase the seventh point or prevent the result dialog from opening.
  const bound=view.binding;
  useEffect(()=>{
-  if(manifest?.rulesVersion!==12||snapshot?.phase!==1||!arena.current||!bound?.epoch)return;
+  if(!manifest||![12,13].includes(manifest.rulesVersion??4)||snapshot?.phase!==1||!arena.current||!bound?.epoch)return;
   const instance=arena.current,id=snapshot.id,key=arenaReference(instance.client.app,bound.epoch,id);
   let stopped=false,timer:ReturnType<typeof setTimeout>;
   const read=async()=>{let armed=false;try{
@@ -196,6 +196,21 @@ export function IndependentHub({roomId}:{roomId?:string}){
    try{
     if(!lock.current)lock.current=await gameTabLock(s.grant.player);
     const session=await instance.session(s);if(stopped)return;
+    if(manifest.rulesVersion===13){
+     const initial=await instance.feed.read(id);receive(initial);
+     if(initial.phase===1){
+      // Let the actual court paint before acknowledging readiness. Hidden tabs
+      // do not claim to be ready and never invent a delayed visual countdown.
+      await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
+      if(stopped)return;
+      const [mask]=await instance.client.read('readiness',[id]) as readonly [number,bigint];
+      const bit=equal(binding.a,s.grant.player)?1:2;
+      if(!(mask&bit)){
+       const receipt=await session.send('confirmReady',[id]);
+       receive(await instance.feed.receipt(id,receipt,'confirmReady',[id],s.grant.player),receipt.latencyMs);
+      }
+     }
+    }
     play=new LabLane(fresh=>instance.feed.read(id,fresh),session,s.grant.player,receive,e=>{setControlled(false);setSync(recovery.failure(e));retryAt=Date.now()+recoveryDelay(e);},e=>setSync(recovery.failure(e)),{readMs:500,tickMs:300},{receipt:(result,name,args)=>instance.feed.receipt(id,result,name,args,s.grant.player),sending:value=>pilot.sending(value)});
     const known=instance.feed.peek(id);if(known)play.ingest(known);lane.current=play;setControlled(true);
    }catch(e){retryAt=Date.now()+recoveryDelay(e);if(!stopped)setSync(recovery.failure(e));}finally{opening=false;}
@@ -268,7 +283,7 @@ export function IndependentHub({roomId}:{roomId?:string}){
    {canAccept?<section className="rooms-entry rooms-duel"><div className="rooms-versus"><span>{name(offer.a)}</span><b>VS</b><span>{name(offer.b)}</span></div><small>{Math.max(0,Math.ceil(Number(offer.expires)-now/1000))}s</small><div className="rooms-button-row"><button className="primary" disabled={busy||!!(offer.accepted&(1<<offerSide))||Number(offer.expires)*1000<now} onClick={()=>void ensure(s=>act(s,'acceptProposal',[offer.id]))}>{offer.accepted&(1<<offerSide)?'Waiting…':'Accept'}</button><button disabled={busy} onClick={()=>void ensure(s=>act(s,'declineProposal',[offer.id]))}>Back</button></div></section>
    :snapshot&&(!offer||offer.id===snapshot.id)?<section className="rooms-court court-card"><div className="scoreboard">{[snapshot.a,snapshot.b].map((p,i)=><div className={`player-label ${i?'right':''}`} style={i?{gridColumn:3}:undefined} key={p}><Avatar index={profile(p)?.avatar}/><small>PLAYER 0{i+1}</small><span>{name(p)}</span><div className="arena-rounds" aria-hidden="true">{Array.from({length:7},(_,n)=><b key={n} data-won={n<(i?snapshot.state.scoreB:snapshot.state.scoreA)}/>)}</div></div>)}<div className="arena-score-module" style={{gridColumn:2,gridRow:1}}><small>FIRST TO SEVEN</small><div className="score"><span>{String(snapshot.state.scoreA).padStart(2,'0')}</span><i>:</i><span>{String(snapshot.state.scoreB).padStart(2,'0')}</span></div></div></div>
     {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.chaos.physics.t/1000n)} effectsEnabled={arcadeAudio.settings.background} players={[name(snapshot.a),name(snapshot.b)]}/>}
-    <div className="rooms-canvas">{snapshot.state.awaitingServe&&<div className="rooms-serve-status" role="status">{pauseLabel}</div>}<Court liveEngine externalIntermission chaos={snapshot.chaos} rulesVersion={manifest?.rulesVersion} state={snapshot.state} clock={snapshot.clock} observedAt={snapshot.observedAt} direction={direction} side={side} replay={!active||recoveringArena} matchId={resultId!} controllable={canPlay} pending={!!lane.current?.inputPending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} onStats={setFps}/>{manifest?.rulesVersion===12&&snapshot.phase===1&&<ArenaCountdown id={resultId!} deadline={countdown?.id===resultId?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
+    <div className="rooms-canvas">{snapshot.state.awaitingServe&&<div className="rooms-serve-status" role="status">{pauseLabel}</div>}<Court liveEngine externalIntermission chaos={snapshot.chaos} rulesVersion={manifest?.rulesVersion} state={snapshot.state} clock={snapshot.clock} observedAt={snapshot.observedAt} direction={direction} side={side} replay={!active||recoveringArena} matchId={resultId!} controllable={canPlay} pending={!!lane.current?.inputPending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} onStats={setFps}/>{(manifest?.rulesVersion===12||manifest?.rulesVersion===13)&&snapshot.phase===1&&<ArenaCountdown id={resultId!} deadline={countdown?.id===resultId?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
     <div className="rooms-court-controls"><span>{side>=0?'W / S · ↑ / ↓':spectating?'SPECTATING':`YOUR TURN ${Math.max(1,room.members.filter((m:any)=>!m.away).sort((a:any,b:any)=>Number(a.position-b.position)).findIndex((m:any)=>equal(m.player,player))+1)}`}</span>{active&&side>=0?<div className="touch-controls">{([-1,1] as const).map(d=><IconButton key={d} icon={d<0?'up':'down'} aria-label={d<0?'Move up':'Move down'} disabled={!canPlay} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);move(d);}} onPointerUp={()=>move(0)} onPointerCancel={()=>move(0)} onLostPointerCapture={()=>move(0)}/>)}</div>:snapshot.phase>=3?<button onClick={()=>setShowResult(n=>n+1)}>View result</button>:null}</div></section>
    :<section className="rooms-entry"><h1>{recoveringArena?'Recovering this arena':offer?.status===2?'Waiting for an available arena':mine?.away?'Take your next turn':'Bring a rival'}</h1><div className="rooms-member-strip">{room.members.map((m:any)=><span key={m.player}><Avatar index={profile(m.player)?.avatar}/>{name(m.player)}</span>)}</div><div className="rooms-button-row">{mine?.away?<button className="primary" disabled={busy} onClick={()=>void ensure(s=>act(s,'rejoinQueue',[room.id]))}>Rejoin queue</button>:ownRoom?<button className="primary" onClick={()=>setPanel('invite')}>Invite someone</button>:null}{spectating?<a className="rooms-button" href="/">Back</a>:<button disabled={busy} onClick={()=>void ensure(s=>act(s,offer?.status===2?'cancelAdmission':'leaveRoom',offer?.status===2?[offer.id]:[]))}>Back</button>}</div></section>}
   </>:null}

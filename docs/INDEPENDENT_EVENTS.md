@@ -149,6 +149,26 @@ cross-database recovery after journal creation, and refusal to resend another
 queue's pending transaction. No transactions were sent by that database fixture.
 The dispatcher also checks the chain gas limit before signing.
 
+Rules 13 is a separate immutable readiness candidate using exactly the rules-12
+physics. The hosted engine first provides a 30-second loading allowance. Both
+bound participant keys must acknowledge the displayed court before the contract
+arms its existing three-second countdown. Duplicate acknowledgements are harmless;
+a missing participant produces a published cancellation without a winner or ELO.
+Provisioning time does not consume the loading allowance. This is not a local
+countdown that starts after the ball is already in play.
+
+The readiness call uses the same compact, match-bound command journal and adds
+no financial permission or root passkey ceremony. Its nonce remains unresolved
+after a lost response until the original receipt is reconciled. Historical rules
+4 and 12 keep their decoders and permissions. Rules 13 requires new sealed arenas,
+lobby and settlement; it is not enabled in public production.
+
+Real browser qualification also exposed consent transactions waiting behind
+routine sponsoring. Signed proposal acceptances and declines now take priority
+over unsigned maintenance. The sole operator journal and uncertain transaction
+ordering are preserved. No deadline is extended and no signed transaction is
+replaced to obtain priority.
+
 A read-only preflight at block 64085546 found no pending operator transaction,
 the expected testnet pressure signer, and a successful admission simulation.
 This is not an arena reservation or evidence of three real hosted admissions.

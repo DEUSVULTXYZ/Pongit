@@ -10,9 +10,9 @@ const admin=new Pool({connectionString:process.env.DATABASE_URL});await admin.qu
 const journalSchema=schema+'_journal';await admin.query(`CREATE SCHEMA ${journalSchema}`);
 const db=new Pool({connectionString:process.env.DATABASE_URL,options:`-c search_path=${schema}`,max:12});
 const journal=new Pool({connectionString:process.env.DATABASE_URL,options:`-c search_path=${journalSchema}`,max:12});
-let simulationError:any,calls=0,sends=0;
+let simulationError:any,calls=0,sends=0;const simulated:string[]=[];
 const hash='0x'+'a'.repeat(64);
-const base:any={getChainId:async()=>10143,call:async()=>{calls++;await new Promise(r=>setTimeout(r,10));if(simulationError)throw simulationError;return {data:'0x'};},
+const base:any={getChainId:async()=>10143,getTransactionCount:async()=>900002,call:async({data}:any)=>{calls++;simulated.push(data);await new Promise(r=>setTimeout(r,10));if(simulationError)throw simulationError;return {data:'0x'};},
  getTransactionReceipt:async({hash}:any)=>({transactionHash:hash,status:'success'}),sendRawTransaction:async()=>{sends++;throw Error('No network writes in this fixture');}};
 let writer:Awaited<ReturnType<typeof independentWriter>>|undefined;
 const report:any={at:new Date().toISOString(),checks:[]};
@@ -42,5 +42,15 @@ try{
  await writer.dispatch();assert.equal(sends,0);
  assert.equal((await journal.query("SELECT status FROM il_lifecycle_jobs WHERE id='independent:another-queue'")).rows[0].status,'pending');
  report.checks.push('A pending operation owned by another queue blocks dispatch without resend');
+ await journal.query("UPDATE il_lifecycle_jobs SET status='confirmed' WHERE id='independent:another-queue'");
+ simulationError=undefined;
+ const routine=await writer.enqueue(target,'0x12345681',0n,0),consent=await writer.enqueue(target,'0x12345682',0n,-1);
+ // Stop before preparation/signing using a simulated network failure. This
+ // validates actual dispatcher selection without any live transaction.
+ simulationError={name:'HttpRequestError'};await writer.dispatch();
+ assert.equal(simulated.at(-1),'0x12345682');assert.equal(sends,0);
+ assert.equal((await writer.get(routine.id))?.status,'queued');assert.equal((await writer.get(consent.id))?.status,'queued');
+ assert.equal(Number((await journal.query('SELECT count(*) FROM il_lifecycle_jobs')).rows[0].count),2);
+ report.checks.push('Urgent consent runs before older unsigned maintenance; a read failure preserves both without allocating a nonce');
  report.passed=true;
 }finally{writer?.stop();await Promise.all([db.end(),journal.end()]);await admin.query(`DROP SCHEMA ${schema} CASCADE`);await admin.query(`DROP SCHEMA ${journalSchema} CASCADE`);await admin.end();await writeFile('artifacts/independent-candidate/writer-regression-separated.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

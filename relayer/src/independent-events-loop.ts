@@ -5,9 +5,10 @@ import {PoolProofLane} from './agents/pool-proof-lane';
 
 type Actor={
  reference():{id:bigint;epoch:bigint};busy():boolean;read():Promise<EngineState>;
- send(action:'start'|'tick'|'submitRandomness',args:readonly unknown[]):Promise<unknown>;
+ send(action:'start'|'tick'|'submitRandomness'|'cancelUnready',args:readonly unknown[]):Promise<unknown>;
  node:{getBlock():Promise<{timestamp:bigint}>};
  launchAt(id:bigint):Promise<bigint>;progressAge(id:bigint):number;
+ readiness?(id:bigint):Promise<readonly [number,bigint]>;
 };
 /** A proof uses the existing arena writer. Fetch latency never stops ticks;
  * only a ready proof reserves its next turn, after rechecking the full binding. */
@@ -40,6 +41,15 @@ export function independentEventsLoop(actor:Actor,beacon=new ChaosBeaconPump(),l
   const state=await actor.read();if(!same(ref)||state.id!==ref.id)return;
   if(state.phase===1){
    const [launch,block]=await Promise.all([actor.launchAt(ref.id),actor.node.getBlock()]);
+   if(actor.readiness){
+    const [mask,deadline]=await actor.readiness(ref.id);
+    if(!same(ref)||actor.busy())return;
+    if(mask!==3){
+     if(!deadline)await actor.send('start',[]);
+     else if(block.timestamp>deadline)await actor.send('cancelUnready',[ref.id]);
+     return;
+    }
+   }
    // The first start arms the deadline. Further calls cannot shorten/extend it.
    if(same(ref)&&!actor.busy()&&(!launch||block.timestamp>=launch))await actor.send('start',[]);
   }else if(state.phase===2&&actor.progressAge(ref.id)>=1500&&!lane.blocksTick()&&!actor.busy())await actor.send('tick',[ref.id]);

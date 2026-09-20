@@ -7,8 +7,8 @@ import {readHubDelegation} from '../shared/rooms-hub';
 const prefix=process.env.PONG_INDEPENDENT_PREFIX!;
 assert(prefix?.startsWith('independent-qualification-'));
 const out=process.env.PONG_INDEPENDENT_MANIFEST!;assert(out?.startsWith('/secrets/'));
-const rulesVersion=Number(process.env.PONG_INDEPENDENT_RULES??4);assert(rulesVersion===4||rulesVersion===12,'Explicit supported rules');
-const events=rulesVersion===12;
+const rulesVersion=Number(process.env.PONG_INDEPENDENT_RULES??4);assert([4,12,13].includes(rulesVersion),'Explicit supported rules');
+const events=rulesVersion>=12;
 const arenaCount=Number(process.env.PONG_INDEPENDENT_ARENAS??3);assert(Number.isInteger(arenaCount)&&arenaCount>=3&&arenaCount<=16);
 const t=await chainTools(prefix);
 const hub:Address='0x3Ef8327F69e09cf721772F345e2A887eA22cD595';
@@ -30,7 +30,7 @@ const save=async()=>{await writeFile(out+'.next',JSON.stringify(manifest,null,2)
 try{
  await save();
  manifest.family=await t.deploy('ArcadeFamily');await save();
- const lobbyName=events?'IndependentEventsLobby':'IndependentLobby';
+ const lobbyName=rulesVersion===13?'ReadyIndependentEventsLobby':events?'IndependentEventsLobby':'IndependentLobby';
  manifest.lobby=await t.deploy(lobbyName,[manifest.family,hub,t.account.address,pressureSigner]);await save();
  manifest.ratings=await t.deploy('PublishedRatings',[manifest.lobby,t.account.address,BigInt(manifest.genesis)]);await save();
  const l=await t.artifact(lobbyName),r=await t.artifact('PublishedRatings');
@@ -49,7 +49,7 @@ try{
    assert(!manifest.modules[name]||manifest.modules[name]===deployed,'Pinned module changed');manifest.modules[name]=deployed;await save();}
  }
  for(let i=0;i<arenaCount;i++){
-  const app=await t.deploy(events?'IndependentEventsArena':'IndependentArena',[hub,manifest.lobby,pressureSigner,...(events?[manifest.modules.ChaosEngine]:[])],`arena-${i}`);
+  const app=await t.deploy(rulesVersion===13?'ReadyIndependentEventsArena':events?'IndependentEventsArena':'IndependentArena',[hub,manifest.lobby,pressureSigner,...(events?[manifest.modules.ChaosEngine]:[])],`arena-${i}`);
   manifest.arenas[i]??={app,index:i};assert.equal(manifest.arenas[i].app,app);await save();
   await t.write(`register-arena-${i}`,manifest.lobby,l.abi,'addArena',[app]);
  }

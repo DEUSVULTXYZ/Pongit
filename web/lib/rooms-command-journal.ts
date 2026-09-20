@@ -90,7 +90,7 @@ export class RoomsCommandJournal implements EngineTransportJournal {
     player=r.player;
    }else{
    const d=this.direct;
-   if(!d||d.epoch!==this.epoch||signer.toLowerCase()!==d.key.toLowerCase()||!['input','tick','concede'].includes(inner.functionName)||String(inner.args?.[0])!==d.match)throw Error('Scoped game grant required');
+   if(!d||d.epoch!==this.epoch||signer.toLowerCase()!==d.key.toLowerCase()||!['input','tick','concede','confirmReady'].includes(inner.functionName)||String(inner.args?.[0])!==d.match)throw Error('Scoped game grant required');
    // An identical already-journaled call can still be reconciled after expiry.
    if(BigInt(Math.floor(Date.now()/1000))>=d.expires&&!this.load().some(j=>j.hash===keccak256(raw as Hex)&&j.state==='uncertain'))throw Error('Arcade session expired');
    player=d.key;

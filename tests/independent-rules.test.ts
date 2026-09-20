@@ -14,8 +14,15 @@ test('historical manifests keep their ABI while unknown versions fail closed',()
  assert.equal(r.permissionDomain,'PONGIT Pooled Arena');assert(r.arena.some(x=>x.type==='function'&&x.name==='submitRandomness'));
  assert(!r.settlement.some(x=>x.type==='function'&&String(x.name)==='checkpointReady'));
  assert(!JSON.stringify(current).includes('excluded'));
- for(const version of [0,9,11,'12',13])assert.throws(()=>publicIndependentManifest({...raw,rulesVersion:version}));
+ for(const version of [0,9,11,'12',14])assert.throws(()=>publicIndependentManifest({...raw,rulesVersion:version}));
  assert.equal(independentRules({}).permissionDomain,'PONGIT Arena Revocation');
+});
+test('readiness is explicit to rules13 without changing historical countdown permissions',()=>{
+ const legacy=independentRules(publicIndependentManifest({...raw,rulesVersion:12}));
+ const ready=independentRules(publicIndependentManifest({...raw,rulesVersion:13}));
+ assert(!legacy.arena.some(x=>x.type==='function'&&String(x.name)==='confirmReady'));
+ for(const name of ['confirmReady','cancelUnready','readiness','submitRandomness'])assert(ready.arena.some(x=>x.type==='function'&&x.name===name));
+ assert.equal(ready.permissionDomain,legacy.permissionDomain);assert.equal(ready.events,true);
 });
 test('rules12 reads use the packed getter at the same pinned Monad block',async()=>{
  const m=publicIndependentManifest({...raw,rulesVersion:12}),abi=independentRules(m).arena;

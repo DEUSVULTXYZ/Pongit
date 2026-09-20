@@ -40,14 +40,14 @@ contract IndependentEventsArenaTest is Test {
     function setUp() public {
         vm.chainId(10143);vm.warp(1_800_000_000);vm.roll(100);
         hub=new IndependentHubFixture();family=new ArcadeFamily();
-        lobby=new IndependentEventsLobby(family,IInterludeHub(address(hub)),address(this),vm.addr(900));
+        lobby=makeLobby();
         ratings=new PublishedRatings(address(lobby),address(this),block.timestamp);
         ratings.sealMigration(keccak256("isolated empty season"));lobby.bindRatings(ratings);
         ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,new ChaosModifiers());
         ChaosPhysics physics=new ChaosPhysics(effects,new ChaosRally(),dynamics,new ChaosContacts(dynamics));
         ChaosEngine kernel=new ChaosEngine(new ChaosCodec(),physics,new DrandEvmnet(),new ChaosDrawRules());
         for(uint8 i;i<3;i++){
-            arenas[i]=new IndependentEventsArena(IInterludeHub(address(hub)),address(lobby),vm.addr(900),kernel);
+            arenas[i]=makeArena(kernel);
             lobby.addArena(IndependentArena(address(arenas[i])));
         }
         lobby.seal();for(uint256 i=101;i<=106;i++)register(i);
@@ -56,6 +56,10 @@ contract IndependentEventsArenaTest is Test {
         vault.registerModule(address(market));vault.seal();vm.deal(address(this),10 ether);
         vault.depositFor{value:1 ether}(vm.addr(777));
     }
+    function makeLobby() internal virtual returns(IndependentLobby){return new IndependentEventsLobby(family,IInterludeHub(address(hub)),address(this),vm.addr(900));}
+    function makeArena(ChaosEngine kernel) internal virtual returns(IndependentEventsArena){return new IndependentEventsArena(IInterludeHub(address(hub)),address(lobby),vm.addr(900),kernel);}
+    function acknowledge(IndependentEventsArena,uint256) internal virtual {}
+    function expectedRules() internal pure virtual returns(uint256){return 12;}
     function sig(uint256 key,bytes32 digest) private pure returns(bytes memory){(uint8 v,bytes32 r,bytes32 s)=vm.sign(key,digest);return abi.encodePacked(r,s,v);}
     function register(uint256 key) private {
         ArcadeFamily.Grant memory g=ArcadeFamily.Grant(vm.addr(key),vm.addr(key+1000),uint64(block.timestamp),uint64(block.timestamp+7200),family.revisions(vm.addr(key)));
@@ -65,14 +69,14 @@ contract IndependentEventsArenaTest is Test {
         bytes32 grant=family.grantDigest(family.grantOf(vm.addr(key)));uint256 n=lobby.commandNonces(grant);uint64 deadline=uint64(block.timestamp+30);
         return lobby.relay(vm.addr(key),data,n,deadline,sig(key+1000,lobby.commandDigest(grant,data,n,deadline)));
     }
-    function propose(uint256 a,uint256 b,uint8 mode) private returns(uint256 id){
+    function propose(uint256 a,uint256 b,uint8 mode) internal returns(uint256 id){
         uint256 room=abi.decode(callLobby(a,abi.encodeCall(lobby.createRoom,(mode))),(uint256));
         callLobby(b,abi.encodeCall(lobby.joinRoom,(room)));id=lobby.propose(room);
         callLobby(a,abi.encodeCall(lobby.acceptProposal,(id)));callLobby(b,abi.encodeCall(lobby.acceptProposal,(id)));
     }
     function open(uint256 id) private returns(IndependentEventsArena arena){
         arena=IndependentEventsArena(lobby.assignNext());assertEq(arena.boundMatch().epoch,0);
-        vm.roll(block.number+1);lobby.openArena(id);vm.chainId(4242);arena.start();vm.warp(block.timestamp+3);arena.start();vm.chainId(10143);
+        vm.roll(block.number+1);lobby.openArena(id);vm.chainId(4242);acknowledge(arena,id);arena.start();vm.warp(block.timestamp+3);arena.start();vm.chainId(10143);
     }
     function finish(IndependentEventsArena arena,uint256 id,uint256 loser) private {
         vm.chainId(4242);vm.prank(vm.addr(loser+1000));arena.concede(id);vm.chainId(10143);hub.publish(address(arena));lobby.capture(id);
@@ -80,7 +84,7 @@ contract IndependentEventsArenaTest is Test {
     function testBothModesHumanControlsAndIndependentClosure() public {
         uint256 a=propose(101,102,0);IndependentEventsArena first=open(a);
         uint256 b=propose(103,104,1);IndependentEventsArena second=open(b);
-        assertEq(first.RULES_VERSION(),12);assertEq(first.gameEpoch(a),1);
+        assertEq(first.RULES_VERSION(),expectedRules());assertEq(first.gameEpoch(a),1);
         vm.chainId(4242);vm.prank(vm.addr(1101));first.input(a,1,1,block.number+100);
         vm.prank(vm.addr(1104));second.input(b,-1,1,block.number+100);vm.chainId(10143);
         finish(first,a,101);lobby.closeArena(a);
@@ -162,7 +166,7 @@ contract IndependentEventsArenaTest is Test {
     }
     function testCountdownUsesContractTimeAndCannotBeSkippedOrExtended() public {
         uint256 id=propose(101,102,1);IndependentEventsArena arena=IndependentEventsArena(lobby.assignNext());
-        vm.roll(block.number+1);lobby.openArena(id);vm.chainId(4242);arena.start();uint64 at=arena.launchAt(id);
+        vm.roll(block.number+1);lobby.openArena(id);vm.chainId(4242);acknowledge(arena,id);arena.start();uint64 at=arena.launchAt(id);
         assertEq(at,block.timestamp+3);vm.warp(block.timestamp+2);
         vm.expectRevert("countdown pending");arena.start();assertEq(arena.launchAt(id),at);
         vm.expectRevert();vm.prank(vm.addr(1101));arena.input(id,1,1,block.number+100);

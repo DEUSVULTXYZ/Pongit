@@ -20,7 +20,7 @@ contract IndependentEventsArena is PongChaosEvents {
     error LobbyActionOnly();
     error SharedHumanRanking();
     address public immutable lobby;
-    T.Binding private admission;
+    T.Binding internal admission;
     A.Binding private controls;
     uint256 private openedEpoch;
 
@@ -29,7 +29,7 @@ contract IndependentEventsArena is PongChaosEvents {
         require(authority.code.length>0,"contract lobby required");lobby=authority;
         DelegatedLayout.layout().owner=authority;
     }
-    function RULES_VERSION() public pure override returns(uint256){return 12;}
+    function RULES_VERSION() public pure virtual override returns(uint256){return 12;}
     function boundMatch() external view returns(T.Binding memory){return admission;}
     function prepare(T.Binding calldata next) external {
         require(next.keyA!=address(0)&&next.keyB!=address(0)&&next.keyA!=next.keyB,"distinct arcade keys");
@@ -50,7 +50,7 @@ contract IndependentEventsArena is PongChaosEvents {
         require(admission.epoch==0&&admission.expiresA>block.timestamp&&admission.expiresB>block.timestamp,"unopened/current grants");
         PoolAdmission.open(words,controls,hub,lobby);admission.epoch=controls.epoch;openedEpoch=controls.epoch;
     }
-    function start() external engine whenNotDelegated(Types.GLOBAL){
+    function start() public virtual engine whenNotDelegated(Types.GLOBAL){
         require(admission.epoch!=0&&_phase(admission.id)==1,"unopened or started arena");
         uint256 at=_get(admission.id,60);
         if(at==0){_set(admission.id,60,block.timestamp+3);_publish(admission.id);return;}

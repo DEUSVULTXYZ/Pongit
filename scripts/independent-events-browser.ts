@@ -13,14 +13,14 @@ const run=process.env.INDEPENDENT_TEST_RUN||'';assert(!run||/^[a-z0-9]{1,16}$/.t
 const suffix=run?'-'+run:'';
 const origin='https://pongit.xyz',out=`artifacts/independent-candidate/browser${chaos?'-chaos':''}${suffix}`,secret=`/secrets/independent-browser-v2${chaos?'-chaos':''}${suffix}.json`;
 const manifest=publicIndependentManifest(JSON.parse(await readFile('deployments/independent.json','utf8')));
-assert.equal(manifest.rulesVersion,12);const rules=independentRules(manifest);
+assert([12,13].includes(manifest.rulesVersion!));const rules=independentRules(manifest);
 const nodes=new Set(manifest.arenas.map(a=>new URL(a.node!).origin));
 let saved:any={lobby:manifest.lobby,players:[],stage:0};
 try{await readFile(secret);throw Error('Preserve and reconcile the previous browser run. Never import its PRF credential.');}catch(e){if((e as any).code!=='ENOENT')throw e;}
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox'],channel:process.env.BROWSER_CHANNEL??'chrome'});
 const pages:Page[]=[],contexts:BrowserContext[]=[],devices:any[]=[],counts=[0,0,0,0];
-const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:12,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
+const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:manifest.rulesVersion,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 let reporting=false;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
 async function until(fn:()=>Promise<any>,label:string,ms=60000){const end=Date.now()+ms;while(Date.now()<end){if(await fn().catch(()=>false))return;await sleep(250);}throw Error('Timed out: '+label);}

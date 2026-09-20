@@ -42,6 +42,21 @@ test('lost response keeps exact bytes and blocks any replacement until reconcili
  restored.received('eth_getTransactionReceipt',{transactionHash:keccak256(f.sent[0]),status:'0x1'});
  assert.equal(restored.pending(f.account.address),undefined);
 });
+test('readiness uses the same scoped journal and is absent from historical sessions',async()=>{
+ const f=await fixture();await assert.rejects(f.sender.send('confirmReady',[8n]),/only permits/);
+ const readyAbi=[...abi,...parseAbi(['function confirmReady(uint256)','function cancelUnready(uint256)'])];
+ let stored:string|null=null;const journal=new RoomsCommandJournal({getItem:()=>stored,setItem:(_key,value)=>{stored=value;}},app,readyAbi);
+ journal.received('interlude_session',{app,chainId:4242,epoch:2});journal.bindDirect(f.account.address,2n,8n,9000000000n);
+ const sent:Hex[]=[];const node:any={getTransactionCount:async()=>5,request:async({params}:any)=>{
+  await journal.beforeSend(params[0]);sent.push(params[0]);throw Error('response lost');
+ }};
+ const sender=compactArenaSession({node,abi:readyAbi,app,key:f.key,match:8n,expires:9000000000n});
+ await assert.rejects(sender.send('confirmReady',[9n]),/only permits/);
+ await assert.rejects(sender.send('cancelUnready',[8n]),/only permits/);
+ await assert.rejects(sender.send('confirmReady',[8n]),/response lost/);
+ await assert.rejects(sender.send('confirmReady',[8n]),/Reconcile/);
+ assert.equal(sent.length,1);assert.equal(journal.pending(f.account.address)?.raw,sent[0]);
+});
 test('mismatched receipt is uncertain; confirmed revert consumes the nonce',async()=>{
  const wrong=await fixture(()=>({transactionHash:'0x00',status:'0x1'}));
  await assert.rejects(wrong.sender.send('tick',[8n]),/not confirmed/);await assert.rejects(wrong.sender.send('tick',[8n]),/Reconcile/);

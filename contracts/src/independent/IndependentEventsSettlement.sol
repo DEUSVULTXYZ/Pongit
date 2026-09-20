@@ -15,13 +15,17 @@ import {Types} from "../../vendor/interlude/interfaces/Types.sol";
 contract IndependentEventsSettlement is IMatchResultV2 {
     IndependentEventsLobby public immutable lobby;
     PublishedRatings public immutable ledger;
+    uint256 public immutable rulesVersion;
     struct MarketBinding {address arena;uint256 epoch;}
     mapping(uint256=>MarketBinding) public markets;
     event MarketBound(uint256 indexed id,address indexed arena,uint256 indexed epoch);
     constructor(IndependentEventsLobby l){
         require(block.chainid==10143&&l.setupSealed(),"sealed testnet lobby");
         IndependentArena[] memory arenas=l.arenaPage();
-        for(uint256 i;i<arenas.length;i++)require(IndependentEventsArena(address(arenas[i])).RULES_VERSION()==12,"current human rules required");
+        uint256 version=IndependentEventsArena(address(arenas[0])).RULES_VERSION();
+        require(version==12||version==13,"current human rules required");
+        for(uint256 i;i<arenas.length;i++)require(IndependentEventsArena(address(arenas[i])).RULES_VERSION()==version,"current human rules required");
+        rulesVersion=version;
         lobby=l;ledger=l.ratings();
     }
     modifier base(){require(block.chainid==10143,"Monad only");_;}
@@ -45,7 +49,7 @@ contract IndependentEventsSettlement is IMatchResultV2 {
         if(block.chainid!=10143||ledger.indexOf(id)!=0)return(false,0);
         MarketBinding memory market=markets[id];if(market.arena==address(0))return(false,0);
         (address at,T.Binding memory b,uint256 phase,uint8 mode)=_live(id);
-        version=uint256(keccak256(abi.encode(uint256(10143),at,b.epoch,id,uint256(12))));
+        version=uint256(keccak256(abi.encode(uint256(10143),at,b.epoch,id,rulesVersion)));
         if(phase!=2||mode!=1||at!=market.arena||b.epoch!=market.epoch)return(false,version);
         Types.Session memory s=lobby.hub().sessionOf(at,0);
         return(s.status==Types.Status.Active&&s.epoch==b.epoch&&s.expiresAt>block.timestamp,version);

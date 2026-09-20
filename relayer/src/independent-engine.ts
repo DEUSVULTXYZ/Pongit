@@ -12,7 +12,7 @@ import {engineJobIdentity,engineReceiptOutcome,reconcileEngineJobs} from './room
 import {assertCommandEpoch} from './rooms-command-epoch';
 
 /** Each application/epoch has its own journal and writer. Nothing queues behind another arena. */
-export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12;node?:PublicClient;feed?:EngineFeed}){
+export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12|13;node?:PublicClient;feed?:EngineFeed}){
  const rules=independentRules({rulesVersion:runtime?.rulesVersion}),abi=rules.arena;
  const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
  const client={app,abi:abi as Abi,node};
@@ -24,8 +24,9 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
   if(id&&epoch)stop=feed.watch(id,s=>onSnapshot?.(app,epoch,s));else stop=undefined;
   return true;
  }
- async function send(name:'tick'|'submitPressure'|'revokeActive'|'renewActive'|'start'|'submitRandomness'|'submitLivePressure',args:readonly unknown[]=[]){
+ async function send(name:'tick'|'submitPressure'|'revokeActive'|'renewActive'|'start'|'submitRandomness'|'submitLivePressure'|'cancelUnready',args:readonly unknown[]=[]){
   const allowed=rules.events?['start','tick','submitRandomness','submitLivePressure','revokeActive','renewActive']:['tick','submitPressure','revokeActive','renewActive'];
+  if(rules.version===13)allowed.push('cancelUnready');
   if(!allowed.includes(name))throw Error('Operation is not supported by this arena version');
   if(busy)throw Error('This arena is reconciling a command');busy=true;
   const commandMatch=match,commandEpoch=epoch;
@@ -38,7 +39,7 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
    const data=encodeFunctionData({abi:abi as Abi,functionName:name,args});
    if(!commandMatch||!commandEpoch)throw Error('No current arena binding');
    assertCommandEpoch(abi,data,commandEpoch);
-   if(['tick','submitRandomness'].includes(name)&&args[0]!==commandMatch)throw Error('Command belongs to another match');
+   if(['tick','submitRandomness','cancelUnready'].includes(name)&&args[0]!==commandMatch)throw Error('Command belongs to another match');
    if(['submitPressure','submitLivePressure','renewActive'].includes(name)&&(args[0] as {matchId:bigint})?.matchId!==commandMatch)throw Error('Command belongs to another match');
    const requestKey=name==='revokeActive'||name==='renewActive'?keccak256(data):null;
    if(requestKey){

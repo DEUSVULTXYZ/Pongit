@@ -10,7 +10,8 @@ export function compactArenaSession(options:{node:PublicClient;abi:Abi;app:Addre
  const {node,abi,app,match,expires}=options,signer=privateKeyToAccount(options.key),now=options.now??Date.now;
  let nonce:number|undefined,busy=false,uncertain=false;
  return {async send(name,args=[]){
-  if(!['input','tick','concede'].includes(name)||args[0]!==match)throw Error('Compact session only permits this match’s game controls');
+  const ready=name==='confirmReady'&&abi.some(item=>item.type==='function'&&item.name==='confirmReady');
+  if((!['input','tick','concede'].includes(name)&&!ready)||args[0]!==match)throw Error('Compact session only permits this match’s game controls');
   if(BigInt(Math.floor(now()/1000))>=expires)throw Error('Arcade session expired');
   if(busy||uncertain)throw Error('Reconcile the previous game command before sending another');
   busy=true;const started=now();

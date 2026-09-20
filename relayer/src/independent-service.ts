@@ -34,7 +34,7 @@ export async function independentService(o:Options){
  const m=publicIndependentManifest(JSON.parse(await readFile(path,'utf8'))),{db,base}=o;
  // Explicit private qualification opt-in, never enabled by merely replacing a
  // production manifest. Public rollout still requires hosted/browser evidence.
- if(m.rulesVersion===12&&process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION!=='isolated-vps')throw Error('Rules 12 service qualification is not complete');
+ if((m.rulesVersion===12||m.rulesVersion===13)&&process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION!=='isolated-vps')throw Error('Event arena service qualification is not complete');
  const rules=independentRules(m),{arena:arenaAbi,lobby:lobbyAbi,market:marketAbi,settlement:settlementAbi}=rules;
  await independentSchema(db);
  const r=independentReader(base,m);
@@ -63,7 +63,10 @@ export async function independentService(o:Options){
  const history=await independentHistory(db,base,m,o.graphql);
  const diagnostics=await createRpcDiagnostics(db,m.lobby,o.collectRpc!==false),diagnosticAt=new Map<string,number>();
  const engines=m.arenas.map(a=>independentEngine(db,base,a.app,a.node!,pressure.privateKey,history.record,{rulesVersion:m.rulesVersion}));
- const eventLoops=engines.map(e=>rules.events?independentEventsLoop({...e,launchAt:async id=>BigInt(await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchAt',args:[id]} as any) as bigint),progressAge:id=>e.feed.progressAge(id)}):null);
+ const eventLoops=engines.map(e=>rules.events?independentEventsLoop({...e,
+  launchAt:async id=>BigInt(await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchAt',args:[id]} as any) as bigint),
+  ...(rules.version===13?{readiness:async(id:bigint)=>await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'readiness',args:[id]} as any) as readonly [number,bigint]}:{}),
+  progressAge:id=>e.feed.progressAge(id)}):null);
  const financialEngines=engines.map((e,i)=>({...e,busy:()=>e.busy()||!!eventLoops[i]?.blocksWrite()}));
  if(engines.some(e=>e.signer.address.toLowerCase()!==m.pressureSigner.toLowerCase()))throw Error('Independent bridge identity mismatch');
  const health=m.arenas.map(a=>({app:a.app,node:a.node,epoch:'0',id:'0',stage:'observing',online:false,expiresAt:0,releaseAt:0,lastProgressAt:0,code:'',rally:null as Awaited<ReturnType<Awaited<ReturnType<typeof independentFinance>>['rallyStatus']>>}));
@@ -265,9 +268,14 @@ export async function independentService(o:Options){
     const b=await o.body(req);if(!isAddress(b.to)||typeof b.data!=='string'||!/^0x[\da-f]+$/i.test(b.data)||b.data.length>44000)throw Error('Invalid sponsored call');
     const allowed=permitted.get(b.to.toLowerCase());if(!allowed)throw Error('Contract is outside the arcade scope');
     const decoded=decodeFunctionData({abi:allowed.abi,data:b.data});if(!allowed.methods.includes(decoded.functionName))throw Error('Action is not sponsored');
-    if(decoded.functionName==='relay'&&process.env.PONG_INDEPENDENT_ADMISSION!=='true'){
+    let priority=2;
+    if(decoded.functionName==='relay'){
      const inner=decodeFunctionData({abi:lobbyAbi,data:decoded.args![1] as Hex});
-     if(!['cancelQueue','leaveRoom','declineProposal','cancelAdmission','blockPlayer'].includes(inner.functionName))throw Error('New admissions are temporarily paused');
+     if(process.env.PONG_INDEPENDENT_ADMISSION!=='true'&&!['cancelQueue','leaveRoom','declineProposal','cancelAdmission','blockPlayer'].includes(inner.functionName))throw Error('New admissions are temporarily paused');
+     // The contract's twenty-second consent window cannot wait behind routine
+     // maintenance or profiles. Only unsigned work is reordered; an uncertain
+     // operator transaction still owns its existing nonce until reconciliation.
+     priority=['acceptProposal','declineProposal'].includes(inner.functionName)?-1:0;
     }
     // A deferred payment may be attempted again, but its recipient and reserved
     // amount are still fixed by the contract. No new operation re-credits a claim.
@@ -275,7 +283,7 @@ export async function independentService(o:Options){
      const payout:any=await base.readContract({address:m.market,abi:marketAbi,functionName:'payouts',args:[decoded.args![0] as Hex]});
      o.send(res,await writer.enqueue(b.to,b.data,0n,2,String(payout[3])),202);return true;
     }
-    o.send(res,await writer.enqueue(b.to,b.data,0n,decoded.functionName==='relay'?0:2),202);return true;
+    o.send(res,await writer.enqueue(b.to,b.data,0n,priority),202);return true;
    }
    if(req.method==='POST'&&path==='/independent/credit'){
     const b=await o.body(req);if(!isAddress(b.player)||!Number.isSafeInteger(b.expires)||typeof b.signature!=='string'||!/^0x[\da-f]{130}$/i.test(b.signature))throw Error('Invalid credit proof');
