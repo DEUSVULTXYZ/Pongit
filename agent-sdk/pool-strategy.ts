@@ -18,7 +18,7 @@ async function main(){
  const call=async(path:string,body?:PoolSignedCall)=>{
   const r=await fetch(api.href.replace(/\/$/,'')+'/'+path,{method:body?'POST':'GET',...(body?{headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000)});
   const data=await r.json().catch(()=>null);
-  if(!r.ok){const wait=Number(r.headers.get('retry-after'));throw Object.assign(Error(`Agent API HTTP ${r.status}`),{status:r.status,code:data?.code,accepted:data?.accepted,retryMs:Number.isFinite(wait)&&wait>0?Math.min(60000,wait*1000):5000});}
+  if(!r.ok){const wait=Number(r.headers.get('retry-after')),code=/^[A-Z_]{2,64}$/.test(data?.code??'')?` (${data.code})`:'';throw Object.assign(Error(`Agent API HTTP ${r.status}${code}`),{status:r.status,code:data?.code,accepted:data?.accepted,retryMs:Number.isFinite(wait)&&wait>0?Math.min(60000,wait*1000):5000});}
   return data;
  };
  const manifest=validateAgentPoolManifest(await call('config'));

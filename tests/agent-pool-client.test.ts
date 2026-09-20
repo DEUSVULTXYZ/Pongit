@@ -9,14 +9,23 @@ const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersi
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 test('registration signs the exact creator, strategy, metadata, catalogue and Monad chain',async()=>{
  const owner=privateKeyToAccount(generatePrivateKey());let signed=0;
- const client={getBlock:async()=>({number:44n,timestamp:100n}),getChainId:async()=>10143,readContract:async(c:any)=>{
-  assert.equal(c.blockNumber,44n);if(c.functionName==='nonces')return 7n;
+ const client={getBlock:async()=>({number:44n,timestamp:100n}),getChainId:async()=>10143,getCode:async(c:any)=>{assert.equal(c.blockNumber,44n);return '0x60006000f3';},readContract:async(c:any)=>{
+  assert.equal(c.blockNumber,44n);if(c.functionName==='creator')return owner.address;if(c.functionName==='nonces')return 7n;
   return hashTypedData({domain:{name:'PONGIT Agent Catalog',version:'1',chainId:10143,verifyingContract:m.catalog},types:poolRegistrationTypes,primaryType:'StrategyRegistration',message:c.args[0]});
  }} as unknown as PublicClient;
  const prepared=await preparePoolRegistration(client,m,{...owner,signTypedData:async args=>{signed++;return owner.signTypedData(args);}}, {strategy:addr(20),name:'Tracker',avatar:2,modes:3});
  const call=decodeFunctionData({abi:agentCatalogAbi,data:prepared.data});assert.equal(call.functionName,'register');if(call.functionName!=='register')throw Error();
  const [registration,signature]=call.args;assert.equal(registration.strategy,addr(20));assert.equal(registration.nonce,7n);assert.equal(registration.deadline,400n);assert.equal(signed,1);
  assert.equal(await recoverTypedDataAddress({domain:{name:'PONGIT Agent Catalog',version:'1',chainId:10143,verifyingContract:m.catalog},types:poolRegistrationTypes,primaryType:'StrategyRegistration',message:registration,signature}),owner.address);
+});
+test('registration refuses incompatible runtime and a different creator before requesting a signature',async()=>{
+ const owner=privateKeyToAccount(generatePrivateKey());let code='0x00a2',claimed=owner.address,signed=0;
+ const client={getBlock:async()=>({number:44n,timestamp:100n}),getChainId:async()=>10143,getCode:async()=>code,readContract:async()=>claimed} as unknown as PublicClient;
+ const signer={...owner,signTypedData:async(args:any)=>{signed++;return owner.signTypedData(args);}};
+ const options={strategy:addr(20),name:'Tracker',avatar:2,modes:3 as const};
+ await assert.rejects(preparePoolRegistration(client,m,signer,options),/metadata is also checked/);
+ code='0x60006000f3';claimed=addr(90);await assert.rejects(preparePoolRegistration(client,m,signer,options),/creator differs/);
+ assert.equal(signed,0);
 });
 test('challenge is signed only by the granted arcade key and never exceeds the grant expiry',async()=>{
  const key=privateKeyToAccount(generatePrivateKey()),grant=keccak256(toHex('limited fixture grant'));let expired=false,wrongDomain=false;

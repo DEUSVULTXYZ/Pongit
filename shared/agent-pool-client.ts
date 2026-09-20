@@ -4,6 +4,7 @@ import {agentChallengesAbi} from './abi-AgentChallenges';
 import {abi as familyAbi} from './abi-independent-ArcadeFamily';
 import {agentMetadata} from './agents';
 import {validateAgentPoolManifest,type AgentPoolManifest} from './agent-pool';
+import {validateStrategyRuntime} from './agent-strategy-code';
 
 export const poolRegistrationTypes={StrategyRegistration:[
  {name:'strategy',type:'address'},{name:'creator',type:'address'},{name:'metadata',type:'bytes32'},
@@ -24,7 +25,11 @@ export async function preparePoolRegistration(client:PublicClient,manifest:Agent
  const m=validateAgentPoolManifest(manifest),block=await client.getBlock();
  if(await client.getChainId()!==10143)throw Error('Registration requires Monad Testnet');
  if(![1,2,3].includes(options.modes))throw Error('Choose Classic, Chaos or both modes');
- const strategy=getAddress(options.strategy),nonce=await client.readContract({address:m.catalog,abi:agentCatalogAbi,functionName:'nonces',args:[creator.address],blockNumber:block.number});
+ const strategy=getAddress(options.strategy);
+ validateStrategyRuntime(await client.getCode({address:strategy,blockNumber:block.number}));
+ const claimed=await client.readContract({address:strategy,abi:[{type:'function',name:'creator',stateMutability:'view',inputs:[],outputs:[{type:'address'}]}],functionName:'creator',blockNumber:block.number});
+ if(claimed.toLowerCase()!==creator.address.toLowerCase())throw Error('The strategy creator differs from this signing account');
+ const nonce=await client.readContract({address:m.catalog,abi:agentCatalogAbi,functionName:'nonces',args:[creator.address],blockNumber:block.number});
  const registration={strategy,creator:creator.address,metadata:agentMetadata(options.name,options.avatar),modes:options.modes,deadline:block.timestamp+300n,nonce};
  const typed={domain:{name:'PONGIT Agent Catalog',version:'1',chainId:10143,verifyingContract:m.catalog},types:poolRegistrationTypes,primaryType:'StrategyRegistration' as const,message:registration};
  const digest=hashTypedData(typed),onchain=await client.readContract({address:m.catalog,abi:agentCatalogAbi,functionName:'digest',args:[registration],blockNumber:block.number});

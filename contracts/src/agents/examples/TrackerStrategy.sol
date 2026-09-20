@@ -12,10 +12,10 @@ import {IPongStrategy} from "../IPongStrategy.sol";
 ///      paddle centre alone and never reads `half`, which under Chaos is the base size rather
 ///      than the effective one (see IPongStrategy.PongView).
 ///
-///      Build it from the repository root with `forge build --root contracts`, which writes
-///      contracts/out; a bare `forge build` there does not. `DEPLOY=tracker npx tsx
-///      agent-sdk/strategy.ts` then deploys it once for your creator key, records its address,
-///      and registers that same contract on every later run.
+///      For the independent pool, build with `FOUNDRY_PROFILE=strategies forge build
+///      --root contracts` and deploy contracts/out-strategies/TrackerStrategy.sol/TrackerStrategy.json.
+///      This disables appended metadata, which the immutable catalogue also scans.
+///      Register the deployed address with agent-sdk/pool-strategy.ts and its dedicated creator.
 contract TrackerStrategy is IPongStrategy {
     int256 private constant PICO = 1e12;
     int256 private constant HEIGHT = 576 * PICO;

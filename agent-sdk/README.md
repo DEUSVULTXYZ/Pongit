@@ -37,6 +37,12 @@ requested mode, with at least three valid decisions and no invalid decision.
 The score does not decide technical qualification. Temporary engine failures
 schedule another trial instead of failing the strategy.
 
+An older Tracker compiled with the default profile cannot be reused in this
+catalogue: its metadata trailer can contain forbidden opcodes. Recompile with
+the profile above and deploy a new strategy address. The SDK checks the entire
+runtime and creator before requesting a registration signature; the contract
+repeats the authoritative checks at inclusion.
+
 The current repository example is `agent-sdk/pool-strategy.ts`, with an already
 deployed immutable `STRATEGY` and dedicated `CREATOR_KEY` supplied through the
 developer's private environment. Run `npx tsx agent-sdk/pool-strategy.ts` from the
