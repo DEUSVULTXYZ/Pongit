@@ -18,6 +18,9 @@ contract HubReleaseBudgetForkTest is Test {
     PublicationProbe probe;
     uint256 batches;
     uint256 width;
+    uint256 txCount;
+    uint256 rawBytes;
+    uint256 slotGroups;
     bool distinct;
     bool enabled;
     function setUp() public {
@@ -45,7 +48,11 @@ contract HubReleaseBudgetForkTest is Test {
         batches=vm.envOr("PONG_HUB_RELEASE_BATCHES",uint256(1200));
         width=vm.envOr("PONG_HUB_RELEASE_WIDTH",uint256(64));
         distinct=vm.envOr("PONG_HUB_RELEASE_DISTINCT",false);
-        require(batches>0&&batches<=16000&&width<=64,"bounded diagnostic");
+        txCount=vm.envOr("PONG_HUB_RELEASE_TXS",uint256(1));
+        rawBytes=vm.envOr("PONG_HUB_RELEASE_RAW_BYTES",uint256(32));
+        slotGroups=distinct?batches:vm.envOr("PONG_HUB_RELEASE_SLOT_GROUPS",uint256(1));
+        require(batches>0&&batches<=16000&&width<=64&&txCount>0&&txCount<=64&&rawBytes>=32&&rawBytes<=1024,"bounded diagnostic");
+        require(slotGroups>0&&slotGroups<=batches,"bounded overlay groups");
         // Setup gas is not part of the release measurement. The release itself
         // has a real 30 M call allowance, before refunds, with all slots cold.
         vm.pauseGasMetering();
@@ -58,13 +65,22 @@ contract HubReleaseBudgetForkTest is Test {
     function syntheticCommit(uint256 i,uint256 validatorKey) external {
         require(msg.sender==address(this));
         Types.SlotDiff[] memory diffs=new Types.SlotDiff[](width);
-        Types.TxEntry[] memory entries=new Types.TxEntry[](1);bytes[] memory raws=new bytes[](1);
-        raws[0]=abi.encode(i);
-        for(uint256 j;j<width;j++){
-            bytes32 key=bytes32(j+1+(distinct?(i-1)*width:0));
-            diffs[j]=Types.SlotDiff(keccak256(abi.encode(key,uint256(0))),distinct?bytes32(0):bytes32(i-1),bytes32(i),true,0,key);
+        Types.TxEntry[] memory entries=new Types.TxEntry[](txCount);bytes[] memory raws=new bytes[](txCount);
+        for(uint256 j;j<txCount;j++){
+            bytes memory raw=new bytes(rawBytes);
+            // Dense, unique bytes exercise retained transaction data rather
+            // than understating its cost with empty or zero-filled payloads.
+            for(uint256 at;at<rawBytes;at+=32){
+                bytes32 word=keccak256(abi.encode(i,j,at));
+                assembly("memory-safe"){mstore(add(add(raw,32),at),word)}
+            }
+            raws[j]=raw;entries[j]=Types.TxEntry(keccak256(raw),uint64((i-1)*txCount+j+1),uint64(block.timestamp));
         }
-        entries[0]=Types.TxEntry(keccak256(raws[0]),uint64(i),uint64(block.timestamp));
+        for(uint256 j;j<width;j++){
+            bytes32 key=bytes32(j+1+((i-1)%slotGroups)*width);
+            uint256 prior=i>slotGroups?i-slotGroups:0;
+            diffs[j]=Types.SlotDiff(keccak256(abi.encode(key,uint256(0))),bytes32(prior),bytes32(i),true,0,key);
+        }
         Types.Batch memory batch=Types.Batch(address(probe),0,i,hub.hashOverlay(diffs),ICommitHash(address(hub)).hashTxLog(entries),uint64(block.timestamp));
         (uint8 v,bytes32 r,bytes32 s)=vm.sign(validatorKey,ICommitHash(address(hub)).hashCommit(batch,diffs));
         hub.commit(batch,diffs,entries,raws,abi.encodePacked(r,s,v));
@@ -77,7 +93,9 @@ contract HubReleaseBudgetForkTest is Test {
         (bool released,)=address(hub).call{gas:30_000_000}(abi.encodeCall(hub.releaseStake,(address(probe),bytes32(0))));
         uint256 used=beforeGas-gasleft();
         emit log_named_uint("batches",batches);emit log_named_uint("changed_words_per_batch",width);
-        emit log_named_uint("distinct_overlay_slots",distinct?batches*width:width);
+        emit log_named_uint("distinct_overlay_slots",slotGroups*width);
+        emit log_named_uint("transactions_per_batch",txCount);
+        emit log_named_uint("raw_bytes_per_transaction",rawBytes);
         emit log_named_uint("release_call_gas_before_refunds",used);emit log_named_uint("released_within_30M",released?1:0);
         assertTrue(released,"This workload exceeds the release transaction budget");
         assertEq(uint8(hub.statusOf(address(probe),0)),uint8(Types.Status.None));

@@ -2,6 +2,30 @@
 
 Status: private implementation and qualification only. Human production, Agent Arcade and public tournament admissions remain closed. The previous one-match pool and its evidence are preserved. This candidate does not establish continuous capacity or a passing 24-hour trial.
 
+## Private browser checkpoint, 20 September 10:35 UTC
+
+Build `9d6212e` passed 27 checks each in Chrome and Edge at five viewports,
+including a blocked catalogue response while the arena connects. These checks
+use the actual built page and synthetic API/engine state. Earlier fixture
+launch/captured-reference failures remain preserved.
+
+The subsequent **real Classic** round in `series-browser-13` restored controls
+3,995 ms after F5, without another owner assertion. A lost reply after execution
+and a pre-send HTTP 429 were actually injected, then a new movement receipt was
+confirmed (nonce 71). Player and spectator matched the published 0-7 result in
+arena `0xb29db94965f9c8d8f9325ade2a8cbccf46e4d7cb`, epoch 11, match 21,
+hash `0xbde69e2ea91e28c7b80e42cd3aeb0e828785851f031f21dbdd9ef3b104f212fe`.
+The original virtual PRF remains open for the Chaos round; the whole report is
+still pending. This does not establish continuous capacity or physical-device
+passkey recovery. Neither the frozen web nor the running controller was changed.
+
+A further source correction shares a node's `Retry-After` and publication pause
+between observer and player transports, including newly created clients. Previously
+creating a client registered a new independent gate, permitting another client to
+send during the first client's cooldown. Regression tests require rejection before
+journaling/sending and preserve recovery reads during a publication pause. This
+correction is not in the frozen `9d6212e` browser run.
+
 ## Browser reload diagnosis, 20 September 10:00 UTC
 
 Browser run 12 remains failed: its 36.7-second Classic challenge ended 0-7 before

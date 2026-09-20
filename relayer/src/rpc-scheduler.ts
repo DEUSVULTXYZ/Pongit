@@ -1,3 +1,13 @@
+/** Classify the requested state, not only the RPC method. Current headers are
+ * needed for grants, acceptance deadlines and sponsor fees, including while
+ * an indexer is downloading old blocks. Receipt/hash reconciliation is also
+ * interactive: delaying it can leave an already executed command uncertain. */
+export function historicalRpcRequest(method:string, params:readonly unknown[]):boolean {
+  if(method === "eth_getLogs" || method === "eth_getBlockByHash")return true;
+  if(method !== "eth_getBlockByNumber")return false;
+  return !["latest", "pending", "safe", "finalized"].includes(String(params[0]));
+}
+
 /** One upstream rate budget; gameplay reads take priority over historical scans. */
 export function rpcScheduler(spacingMs:number) {
   const live:Array<()=>void>=[], history:Array<()=>void>=[];

@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 import {chunkedLogs,historyGate} from "./log-ranges";
-import { rpcScheduler } from "./rpc-scheduler";
+import { historicalRpcRequest, rpcScheduler } from "./rpc-scheduler";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
@@ -29,7 +29,7 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
     waiting++;
     try {
       for (let attempt = 0; attempt < 4; attempt++) {
-        await scheduler.acquire(["eth_getLogs","eth_getBlockByNumber","eth_getBlockByHash","eth_getTransactionByHash"].includes(method));
+        await scheduler.acquire(historicalRpcRequest(method, params));
         let response:Response;
         try { response = await fetch(attempt>0 && (read || method==='eth_sendRawTransaction') && secondary!==upstream ? secondary : upstream, {
           method: "POST", headers: { "content-type": "application/json" },

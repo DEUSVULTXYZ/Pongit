@@ -6,6 +6,7 @@ const cooldowns=new Map<string,()=>number>();
 export const engineCooldownMs=(url:string)=>Math.max(0,cooldowns.get(url)?.()??0);
 type EngineGate=<T>(send:()=>Promise<T>)=>Promise<T>;
 const gates=new Map<string,EngineGate>();
+const publicationPauses=new Map<string,number>();
 /** The node's shared request gate, for requests outside the JSON-RPC transport
  * (the relayer's /health read): refused locally while a Retry-After runs, and a
  * 429 it sees extends the same cooldown for every method. Before any transport
@@ -38,9 +39,11 @@ export type EngineTransportJournal = {
   received:(method:string,result:any)=>void;
 };
 export function engineTransport(url: string,journal?:EngineTransportJournal): Transport {
-  const gate = engineRequestGate(Date.now,remaining=>cooldowns.set(url,remaining));
-  gates.set(url,gate);
-  let publicationUntil=0;
+  // Observer, scoped player and maintenance clients can share a node. Creating
+  // another viem client must not clear or bypass that node's existing pause.
+  let gate=gates.get(url);
+  if(!gate){gate=engineRequestGate(Date.now,remaining=>cooldowns.set(url,remaining));gates.set(url,gate);}
+  const requestGate=gate;
   return options => {
     const measured=measuredFetch("interlude");
     const fetchFn:typeof fetch=async(input,init)=>{
@@ -59,14 +62,14 @@ export function engineTransport(url: string,journal?:EngineTransportJournal): Tr
     const transport = http(url, {retryCount: 0, timeout: 4000,fetchFn})(options);
     return {...transport, request: async args => {
       const write=["interlude_sendTransaction","eth_sendRawTransaction"].includes(args.method);
-      if(write&&Date.now()<publicationUntil){recordRpc({at:Date.now(),target:"interlude",method:"write.blocked",status:503,ms:0,source:"cooldown"});throw new EnginePublicationUnavailable();}
-      try{return await gate(async()=>{
+      if(write&&Date.now()<(publicationPauses.get(url)??0)){recordRpc({at:Date.now(),target:"interlude",method:"write.blocked",status:503,ms:0,source:"cooldown"});throw new EnginePublicationUnavailable();}
+      try{return await requestGate(async()=>{
         if(write)await journal?.beforeSend((args.params as any)?.[0]);
         const result:any=await transport.request(args);
         journal?.received(args.method,result);
         return result;
       });}
-      catch(e){if(publicationUnavailable(e)){publicationUntil=Date.now()+30000;throw new EnginePublicationUnavailable(e);}throw e;}
+      catch(e){if(publicationUnavailable(e)){publicationPauses.set(url,Date.now()+30000);throw new EnginePublicationUnavailable(e);}throw e;}
     }};
   };
 }

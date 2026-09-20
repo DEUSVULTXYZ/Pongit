@@ -43,3 +43,29 @@ test('Retry-After survives the real viem HTTP transport rather than becoming ten
   assert.equal(calls,1,'the cooldown never sends a second request');
  }finally{globalThis.fetch=original;}
 });
+
+test('observer throttling also pauses existing and newly created player clients before journaling or sending',async()=>{
+ const original=globalThis.fetch;let calls=0,journaled=0;
+ globalThis.fetch=async()=>{calls++;return new Response('Busy',{status:429,headers:{'retry-after':'5'}});};
+ try{
+  const url='https://shared-arena-budget.invalid';
+  const observer=engineTransport(url)({} as any);
+  const existing=engineTransport(url,{beforeSend:async()=>{journaled++;},received:()=>{}})({} as any);
+  await assert.rejects(observer.request({method:'eth_call',params:[]}));
+  const recreated=engineTransport(url,{beforeSend:async()=>{journaled++;},received:()=>{}})({} as any);
+  for(const t of [existing,recreated])await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x00']}),(e:any)=>e.code==='ENGINE_COOLDOWN');
+  assert.equal(calls,1);assert.equal(journaled,0);assert(engineCooldownMs(url)>0);
+ }finally{globalThis.fetch=original;}
+});
+
+test('a publication failure fences every player client while other clients still observe recovery',async()=>{
+ const original=globalThis.fetch;let calls=0,journaled=0;
+ globalThis.fetch=async(_url,init)=>{calls++;const body=JSON.parse(String(init?.body));return new Response(JSON.stringify({jsonrpc:'2.0',id:body.id,...(body.method==='eth_call'?{result:'0x1'}:{error:{code:-32000,message:'this session is over: commit relay failed: 401 Unauthorized'}})}),{headers:{'content-type':'application/json'}});};
+ try{
+  const url='https://shared-publication.invalid',first=engineTransport(url)({} as any),second=engineTransport(url,{beforeSend:async()=>{journaled++;},received:()=>{}})({} as any);
+  await assert.rejects(first.request({method:'interlude_sendTransaction',params:['0x00']}));
+  await assert.rejects(second.request({method:'interlude_sendTransaction',params:['0x00']}),(e:any)=>e.code==='ENGINE_PUBLICATION_UNAVAILABLE');
+  assert.equal(await second.request({method:'eth_call',params:[]}), '0x1');
+  assert.equal(calls,2);assert.equal(journaled,0);
+ }finally{globalThis.fetch=original;}
+});

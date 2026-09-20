@@ -38,6 +38,14 @@ Do not turn these diagnostic numbers into a universal slot allowance or remove
 the legacy pressure guard without that qualification. Pool post-release capture
 and finalization also cost gas beyond the hub-only call measured here.
 
+A further fork at block 64139195 used 1,200 batches with 64 repeatedly modified
+keys and **sixteen dense 384-byte transactions per batch**. It also released in
+1,100,051 gas before refunds. Thus this larger synthetic raw-transaction payload
+did not increase the measured release cost. It does not prove hosted publication
+payload capacity. A 16,000-batch/2,048-key negative control was interrupted after
+more than twenty minutes of setup: its report remains incomplete, not a pass or
+a measured release failure. The existing 1,900-key negative control is retained.
+
 ## Reproduction
 
 Install the locked dependencies, run `npx tsx scripts/prepare-hub-bytecode-check.ts`,
@@ -45,6 +53,12 @@ then use `contracts/test/HubReleaseBudgetFork.t.sol`. Set
 `PONG_HUB_RELEASE_FORK_RPC` to a read-only Monad Testnet endpoint,
 `PONG_HUB_RELEASE_BATCHES`, `PONG_HUB_RELEASE_WIDTH` (maximum 64), and
 `PONG_HUB_RELEASE_DISTINCT` (`false` rewrites the same keys).
+
+`PONG_HUB_RELEASE_TXS` (1 through 64) and `PONG_HUB_RELEASE_RAW_BYTES` (32 through
+1,024) control dense synthetic transaction data. `PONG_HUB_RELEASE_SLOT_GROUPS`
+cycles each batch through that many groups of `WIDTH` mapping keys, with the
+correct prior values; it defaults to one. `DISTINCT=true` uses one group per
+batch. These are diagnostic workload controls, not application limits.
 
 ```text
 forge test --root contracts --match-contract HubReleaseBudgetForkTest --gas-limit 1000000000 -vv

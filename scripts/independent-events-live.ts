@@ -19,11 +19,12 @@ import {betTypes,domain} from '../shared/protocol';
 import {lobbyCommandContext,familyGrantHash} from '../shared/independent-command';
 import {lobbyCommandTypes} from '../shared/independent';
 import {fixtureSnapshot} from './fixture-snapshot';
+import {measuredFetch,rpcSamples} from '../shared/rpc-metrics';
 
 assert.equal(process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION,'isolated-vps');
 const raw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
 assert.equal(raw.production,false);assert([12,13].includes(raw.rulesVersion));assert.equal(raw.status,'sealed');
-const m=publicIndependentManifest(raw),rules=independentRules(m),base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:12000})}),r=independentReader(base,m);
+const m=publicIndependentManifest(raw),rules=independentRules(m),base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:12000,fetchFn:measuredFetch('monad')})}),r=independentReader(base,m);
 const run=process.env.PONG_EVENTS_RUN??'1';assert(/^[1-9][0-9]?$/.test(run));
 const secret=`/secrets/events-live-${run}.json`,out=`artifacts/independent-candidate/events-live-${run}.json`;
 try{await readFile(secret);throw Error('Preserve and reconcile the previous fixture before a new run');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
@@ -32,7 +33,7 @@ const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,
 const privateState:any={lobby:m.lobby,createdAt:new Date().toISOString(),players:Array.from({length:5},()=>({owner:generatePrivateKey(),arcade:generatePrivateKey()})),operations:{},jobs:[],matches:[]};
 const report:any={at:new Date().toISOString(),rules:m.rulesVersion,lobby:m.lobby,scope:'Actual private service, Monad and hosted Interlude; synthetic owners, no physical passkey claim',matches:[],checks:[],operations:[],passed:false};
 let tail=Promise.resolve();const save=()=>{const text=json(privateState);tail=tail.then(async()=>{await writeFile(secret+'.next',text,{mode:0o600});await rename(secret+'.next',secret);});return tail;};
-await mkdir('artifacts/independent-candidate',{recursive:true});const flush=()=>writeFile(out,json(report));
+await mkdir('artifacts/independent-candidate',{recursive:true});const flush=()=>{report.rpc=rpcSamples();return writeFile(out,json(report));};
 const owners=privateState.players.map((p:any)=>privateKeyToAccount(p.owner)),keys=privateState.players.map((p:any)=>privateKeyToAccount(p.arcade));
 const grants:FamilyGrant[]=[];
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -128,8 +129,8 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
   assert.equal(s.id,id);const score=`${s.state.scoreA}-${s.state.scoreB}`;
   if(score!==lastScore){row.scores.push({at:new Date().toISOString(),score,t:String(s.state.t)});lastScore=score;await flush();}
   if(s.phase===1){
-   const launch=await observer.readContract({address:app,abi:rules.arena,functionName:'launchAt',args:[id]}) as bigint;
-   const now=(await observer.getBlock()).timestamp;row.countdown.push({launch,now});
+   const clocks=()=>Promise.all([observer.readContract({address:app,abi:rules.arena,functionName:'launchAt',args:[id]}),observer.getBlock()]);
+   const [launchValue,block]=await synchronized(clocks,clocks),launch=launchValue as bigint,now=block.timestamp;row.countdown.push({launch,now});
    if(launch>now)assert.equal(s.state.t,0n,'Countdown advanced physical time');
    await sleep(250);continue;
   }

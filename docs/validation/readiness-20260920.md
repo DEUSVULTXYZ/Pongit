@@ -4,6 +4,34 @@ Public production remains `7d35926`, with human, Agent Arcade and tournament
 admissions closed. This checkpoint does not authorize reopening. No unchanged
 final 24-hour trial has begun.
 
+## Follow-up at 10:35 UTC
+
+Private human web `42c7cf0` and sponsor `e6174aa` are running. The simultaneous
+`events-live-6` fixture obtained both admissions and both readiness receipts per
+arena, then **failed before any movement** on a read timeout while the launch
+deadline was not yet armed. Both games subsequently ran without fixture control;
+their results cannot count as gameplay passes. The preserved report lacked
+method-level timeout evidence. Read-only probes made after the arenas closed
+cannot establish the cause of the earlier interruption.
+
+The next driver records payload-free RPC timings and applies the same bounded
+read recovery to launch-clock reads as to snapshots. Read timeouts and actual
+`Retry-After` delays are recorded, never used to retry a signed command. Persistent
+failures, unknown errors and a retry delay beyond the fixture budget still fail.
+
+The shared Monad gateway also incorrectly put current-block reads behind old
+block downloads. The source correction prioritizes current headers and transaction
+reconciliation, preserving the existing shared rate and fairness to history. An
+isolated real HTTP integration passed with twenty archive reads queued ahead of
+a current header and transaction lookup. Its upstream was synthetic and network
+access disabled. An earlier fixture incorrectly treated HTTP arrival spacing
+under CPU throttling as dispatch timing; that failed report is preserved. The
+corrected integration verifies ordering and whole-burst pacing; a fake-clock
+test separately checks every dispatch interval. No running gateway was changed.
+
+The full TypeScript suite passes 508 tests, and type checking passes. These new
+source corrections still need their private deployment and hosted recovery checks.
+
 The isolated rules-13 human build `a788eb5` adds participant readiness before
 the contract's three-second countdown, faster preparation of sponsored consents,
 a fresh EVM nonce read between a confirmed readiness receipt and gameplay, and
