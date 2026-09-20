@@ -1,5 +1,40 @@
 # Reusable arenas and testnet admission transport
 
+## Delayed publication recovered, 20 September 18:15 UTC
+
+The fifth terminal result in agent arena
+`0xf868bdb4669f4de471555ccadc3bac5589a3fcaa`, epoch 1, was eventually
+published in batch 1031 after the provider's publisher was funded.
+Transaction `0x925084d75efbceb0add180f99317751cfbaf83037c180c73a98d0a70fc19d816`
+at Monad block 64231517 succeeded, with 8,000,000 charged gas at 102 gwei:
+0.816 test MON. Its submitted maximum fee required a 1.4592 MON provision.
+The publisher is shared; its balance changes cannot all be attributed to PONGIT.
+
+The recovery-only script verified the complete five-result canonical prefix and
+the original issued ticket, then captured match 5 (4-3 at five minutes) in
+transaction `0x3cdf6d98a635cd34dc3e090c0be9d8a87b12434f95d8563ab1a57e26d2615fe2`,
+block 64233438. Both participation locks are now free. This sent no engine
+command, new admission or delegation closure. The original publication-timeout
+verdict remains failed; later recovery does not retroactively pass the trial.
+The private state was backed up and its off-VPS SHA-256 verified before capture.
+
+At 18:15:12 UTC the publisher held 4,985.306122920494194802 test MON.
+The same-source qualifier resumed at 18:15:36 UTC with its existing journal and
+captured matches. It remains private and is not the final unchanged 24-hour run.
+Production's compatible web/API release is now `802ae5e`; public human, agent
+and tournament admissions remain closed pending the remaining qualifications.
+
+The five compact results were subsequently imported into a dedicated temporary
+PostgreSQL database and proved against the canonical prefix at block 64233438.
+Repeating the import passed without adding duplicates. Every result is checked
+against its issued ticket and complete Merkle prefix; imported slot observations
+do not become fabricated receipts. No engine command or nonce journal was moved.
+The first import container used an older source without the required decoder
+export and failed before database writes; it is retained. The corrected run uses
+the current `802ae5e` decoder/archive modules. Source type checking and the staged
+secret scan passed. This is archive recovery evidence, not continuous-service
+qualification.
+
 ## Hosted cancellation and service adapters, 20 September 15:50 UTC
 
 The replacement private pool is `0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5`.
