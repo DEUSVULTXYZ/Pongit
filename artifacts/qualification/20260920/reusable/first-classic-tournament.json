@@ -1,0 +1,210 @@
+{
+  "startedAt": "2026-09-20T20:43:39.956Z",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "tournament": "1",
+  "scope": "One private Classic elimination tournament with actual hosted games and published results. Not a final budget, two-lane or 24-hour verdict.",
+  "fixtures": [
+    {
+      "index": 0,
+      "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+      "epoch": "1",
+      "id": "16",
+      "admissionHash": "0x491248d0c0dd73d1523d1d0ae7a46b794e11dd82a3964f1b6a22056f7709df28",
+      "admittedAt": "2026-09-20T20:43:53.731Z",
+      "resolved": true,
+      "captured": false,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "1",
+          "id": "16"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0x40cd2e484b8dec7817d14d0f5bf88fe1a854edd2af93ce6258c1cd7b505bc856",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "196572040",
+        "finality": false
+      }
+    },
+    {
+      "index": 1,
+      "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+      "epoch": "1",
+      "id": "17",
+      "admissionHash": "0xa0b87c168c936ae4c219e34519254021f39217c999f2d9f78ace441cc8574464",
+      "admittedAt": "2026-09-20T20:48:00.325Z",
+      "resolved": true,
+      "captured": false,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "1",
+          "id": "17"
+        },
+        "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "winner": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "hash": "0xbfbde547306c85357617ae47ce99edda71830d781da5a78bf956b17fecf0a7d6",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 4,
+        "elapsedUs": "300000000",
+        "finality": false
+      }
+    },
+    {
+      "index": 2,
+      "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+      "epoch": "1",
+      "id": "18",
+      "admissionHash": "0xbd6e02bde806ee4b6b23dca843eeca9c48f858652f7ddc066a0ce961ba75ef1c",
+      "admittedAt": "2026-09-20T20:53:51.119Z",
+      "resolved": true,
+      "captured": false,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "1",
+          "id": "18"
+        },
+        "a": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "winner": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "hash": "0x0cf18fe6462679dfda081a2ae9ee7b0879ff50a1625657e46c2decd2c145d63d",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 5,
+        "elapsedUs": "300000000",
+        "finality": false
+      }
+    },
+    {
+      "index": 3,
+      "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+      "epoch": "1",
+      "id": "19",
+      "admissionHash": "0x3f43981c009c7aae479f55bfc9cf3064ee00a53e429e070339f020b38df5d589",
+      "admittedAt": "2026-09-20T20:59:28.351Z",
+      "resolved": true,
+      "captured": false,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "1",
+          "id": "19"
+        },
+        "a": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "hash": "0x4a915b5e758277c6d2713b75ba2c924bdddda2dade3900c351f7e11770016010",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 2,
+        "elapsedUs": "300000000",
+        "finality": false
+      }
+    },
+    {
+      "index": 4,
+      "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+      "epoch": "1",
+      "id": "20",
+      "admissionHash": "0x95934f5c4293736bbf7b60d1a5a156b50f80fd2fbe0eb51e5559c2bb053ff656",
+      "admittedAt": "2026-09-20T21:05:20.771Z",
+      "resolved": true,
+      "captured": false,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "1",
+          "id": "20"
+        },
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0x90fb709f17d06d8b7fe9f11bdb440be00239dbcb5e46b1be39fe9854ade2319d",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      }
+    },
+    {
+      "index": 5,
+      "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+      "epoch": "1",
+      "id": "21",
+      "admissionHash": "0x5e9aa376e285bd79bbfb6657046b0ba80f43e46ad44564b6c7ea9657b8649f59",
+      "admittedAt": "2026-09-20T21:11:24.963Z",
+      "resolved": true,
+      "captured": false,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "1",
+          "id": "21"
+        },
+        "a": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "hash": "0xe9ff0398fb1310d2bd18fbef93b16642861f83d2266d7e0225b65cd1e29d72e4",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 4,
+        "elapsedUs": "300000000",
+        "finality": false
+      }
+    },
+    {
+      "index": 6,
+      "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+      "epoch": "1",
+      "id": "22",
+      "admissionHash": "0xc7369be5da48ea84bcdade441fe235facc560d3f0b9727a3c4406226769cfdd3",
+      "admittedAt": "2026-09-20T21:17:05.876Z",
+      "resolved": true,
+      "captured": false,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "1",
+          "id": "22"
+        },
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0x830aec1083a2507ad3bbed41d0ca4efed5cc2e1e7681c1ba66ebc7376277cd29",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      }
+    }
+  ],
+  "rotations": [],
+  "passed": true,
+  "observedAt": "2026-09-20T21:23:02.426Z",
+  "status": 3,
+  "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+  "finishedAt": "2026-09-20T21:23:05.014Z"
+}

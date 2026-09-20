@@ -1,5 +1,46 @@
 # Reusable arenas and testnet admission transport
 
+## First complete tournament, 20 September 21:28 UTC
+
+The private Classic elimination tournament passed at 21:23:05 UTC. All seven
+fixtures (logical matches 16 through 22) ran on the hosted rules-15 arena,
+published on Monad and advanced the contract-owned bracket. The first ended
+1-7; the remaining games reached regulation with unequal scores. The champion
+is `0x23F8A67B448496896416d66A87d4E4994a99Dc98`. Tournament admissions were
+closed again by transaction
+`0xcf793d462dfda16a2dd0448ee156008e5cb8bf261750713cc164b6de694f3eef`.
+
+At 21:26:24 UTC, the used arena `1c5ec...`, epoch 1, closed after 1,230 batches.
+The close fixture checked all seven captured results and equality of the
+engine and Monad result roots before submission. Root
+`0x1202369e44b9f773c47c8d008d98b92c1aabdaeb77a7592f908b6769abaf4de1`
+contains those seven results. Release is eligible at 22:26:23 UTC. The other
+two hosted arenas remained open and idle. This is not proof of two active
+games during renewal, and the other three tournament formats remain untested
+on this deployment.
+
+The shipped SDK registered the metadata-free community tracker
+`0xd36361a5516a73307bf95cdb7495590bbb49ae59` through the isolated sponsor.
+Registration transaction
+`0x75e098a94446ea4c80bfd0c698257b681508038ba2ca2c3cd2342934c9b0fe78`
+is confirmed. Its creator enabled availability; both gameplay qualifications
+remain pending. The earlier attempt with a legacy metadata-bearing runtime
+was correctly rejected before signing. That failed attempt is preserved.
+
+A separate read-only canonical window, 21:12:36 to 21:14:07 UTC, contains 55
+successful publications attributable to these arenas. Each transaction had
+an 8,000,000 gas limit and gas used at 102 gwei; their total fee was 44.88 test
+MON. Calldata measured at most 2,532 bytes in this window. The collector does
+not attribute the shared publisher's other spending to PONGIT, and this short
+window is not a guarantee of future cost or maximum payload. Further sustained
+trials require additional testnet funding; no automatic transfer was made.
+
+The final unchanged 24-hour trial has not started. Public gates remain closed.
+The tournament report, closure checks, sampled publication receipts and SDK
+registration proof are in `artifacts/qualification/20260920/reusable`. An exact
+runtime database dump, private journals and configuration were hash-verified
+off the VPS before closure.
+
 ## Publication bounds and replay indexing, 20 September 21:07 UTC
 
 The longer read-only fork completed 16,000 batches over 86 reused storage

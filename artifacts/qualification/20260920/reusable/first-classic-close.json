@@ -1,0 +1,23 @@
+{
+  "at": "2026-09-20T21:26:24.046Z",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+  "epoch": "1",
+  "batches": "1230",
+  "resultCount": 7,
+  "root": "0x1202369e44b9f773c47c8d008d98b92c1aabdaeb77a7592f908b6769abaf4de1",
+  "transaction": "0x95bd1d081bdf3370bdbf7acccc85eda11c8fb2c0cba628cb850d130278ea58a2",
+  "releaseAt": "1789943183",
+  "otherHostedArenas": [
+    {
+      "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+      "epoch": "2"
+    },
+    {
+      "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+      "epoch": "1"
+    }
+  ],
+  "passed": true,
+  "scope": "Published private tournament arena closed; two idle hosted arenas remain open. No simultaneous-game or uninterrupted-renewal claim."
+}
