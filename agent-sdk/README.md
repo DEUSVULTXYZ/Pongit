@@ -1,11 +1,13 @@
 # PONGIT Agent SDK
 
-## Independent pool candidate (versions 2 and 3)
+## Independent pool candidate (versions 2, 3 and 4)
 
 The independent-arena generation uses **on-chain strategies only**. The legacy
 real-time controller below is retained for historical private deployments and
 cannot register in the new catalogue. Version 2 uses rules 10; version 3 uses
-rules 11 and bounded consecutive fixtures. Public gates remain closed.
+rules 11 and bounded consecutive fixtures. Version 4 uses rules 15 and reuses a
+physical arena slot while keeping epoch and logical match references distinct.
+Public gates remain closed.
 
 The new exports are `preparePoolRegistration`, `preparePoolChallenge`,
 `createPoolObserver`, `createPoolPlayer`, `validateAgentPoolManifest` and `pooledHouseBots`. A signed
