@@ -31,8 +31,7 @@ Real hosted evidence remains separate:
 
 - The first rules-13 browser match reached a published 5-7 result and displayed
   the countdown on both players and the spectator. The second player's movement
-  failed with a nonce disagreement. The overall report remains failed. A new
-  real-browser run must validate the cache-boundary correction.
+  failed with a nonce disagreement. That original report remains failed.
 - The subsequent synthetic two-match run accepted both pairs after the sponsor
   preparation fix, then exceeded its four-minute hosted-identity wait. Delayed
   public IPv4 records appeared later. The two unready matches cancelled at 0-0,
@@ -40,11 +39,31 @@ Real hosted evidence remains separate:
   were captured by the ledger and verified at 08:12 UTC. They are not played-match
   passes. See `INTERLUDE_IPV4_DIAGNOSTIC_20260920.md`.
 - The next synthetic run waits for two genuinely released arenas before
-  registering its temporary families. The next browser run waits for one.
+  registering its temporary families. The browser waited for one.
   Neither waiting time nor a running test container is a successful qualification.
 
-Still required: real corrected controls and simultaneous Classic/Chaos matches,
-spectators, financial settlement, original-passkey renewal, eight qualified bots,
+The second real Chrome run passed at 08:55 UTC on the unchanged private
+`a788eb5` build. Arena `0xdf06ff134d0969bba67d861cab8dee538e124976`, epoch 2,
+match `340282366920938463463374607431768211470`, finished naturally at 7-6.
+Both players and the spectator observed 3, 2, 1; F5 restored control without
+another root passkey assertion. The players received 68 and 75 accepted input
+receipts, including releases. These are not 100 confirmed direction changes
+per player. The final score matched all three browsers. No RPC errors or HTTP
+429 appeared in the captured Interlude responses; this is not a whole-VPS
+traffic measurement or proof that throttling cannot recur.
+
+The result was independently read from the Monad ledger at 09:03 UTC: the first
+and current captures agree on 7-6 and hash
+`0x7e179ee0f6b6f09d8b8f9711c10d121e94c5bb56319a3cc046fc732e289213df`.
+The arena closed after 53 batches and is awaiting its actual release time,
+09:54:51 UTC. The capture is still contestable. Original reports remain under
+`human-ready-events/artifacts/independent-candidate/browser-ready2` in the private
+diagnostics directory. The result screenshot was visually inspected. The
+temporary remembered-account screen during F5 resolved during normal loading;
+it was not a lost session.
+
+Still required: simultaneous Classic/Chaos matches with 100 confirmed changes,
+real Chaos browser and financial checks, original-passkey renewal, eight qualified bots,
 all tournament formats, verified reserve capacity and publication/release limits,
 the unchanged 24-hour trial, verified production migration, fresh off-VPS backups
 and progressive public deployment. Every earlier failed report is retained.

@@ -2,7 +2,28 @@
 
 Status: private implementation and qualification only. Human production, Agent Arcade and public tournament admissions remain closed. The previous one-match pool and its evidence are preserved. This candidate does not establish continuous capacity or a passing 24-hour trial.
 
-## Latest checkpoint, 20 September 04:15 UTC
+## Cumulative coverage, 20 September 09:02 UTC
+
+The read-only `agent-series-coverage.ts` audit matched 18 observed completed
+games against their versioned arena bindings, Monad publications and common
+ledger captures. All 24 Chaos effects were observed across those games, with
+no observer resets in the included records. This is cumulative evidence from
+several private controller builds, not the required unchanged 24-hour trial,
+all 276 combinations, or an animation review.
+
+Registry checks now qualify NOVA, PULSE, ONYX, VECTOR and DRIFT in both modes.
+ECHO, GLITCH, VIPER and the community Tracker still await qualification. DRIFT's
+latest Classic result was 3-4; Chaos ended 1-1 at the regulation limit. Both
+results matched their captures. Both arenas are closing, so this is still
+evidence of insufficient reserve capacity, not continuous service.
+
+The audit pins Monad reads to one block, checks arena runtime hashes and excludes
+uncaptured, inconsistent or reset observations from effect coverage. It exports
+only public references and compact diagnostic counters, never deployment keys
+or grants. Its original report is `series3-runtime/coverage-20260920T0900.json`.
+Public opening remains unauthorized by this report.
+
+## Earlier checkpoint, 20 September 04:15 UTC
 
 The corrected SDK example was deployed as immutable strategy
 `0xd36361a5516a73307bf95cdb7495590bbb49ae59` and registered through the actual
