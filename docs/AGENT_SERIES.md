@@ -187,3 +187,8 @@ and fails its continuity checks when all arenas stop during renewal. Its source
 inputs cover every executing backend role. A short diagnostic run cannot pass
 the 24-hour gate, and this monitor never authorizes public opening. Full traffic,
 costs, published results, all effects and real capacity remain separate evidence.
+
+Original agent browser 11 renewed the retained original virtual PRF account
+after its actual two-hour expiry at 09:17:05 UTC on 20 September. This passes
+that specific expiry/identity gate only. Its earlier Chaos wait failure and
+empty fault coverage remain failures; the following real match is pending.

@@ -6,7 +6,7 @@ import {createPublicClient,http,encodeFunctionData,encodeAbiParameters,keccak256
 import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import WebSocket from 'ws';
-import {publicIndependentManifest,independentCreditMessage} from '../shared/independent';
+import {publicIndependentManifest,independentCreditMessage,type FamilyGrant} from '../shared/independent';
 import {independentRules} from '../shared/independent-rules';
 import {independentReader} from '../shared/independent-read';
 import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
@@ -33,6 +33,7 @@ const report:any={at:new Date().toISOString(),rules:m.rulesVersion,lobby:m.lobby
 let tail=Promise.resolve();const save=()=>{const text=json(privateState);tail=tail.then(async()=>{await writeFile(secret+'.next',text,{mode:0o600});await rename(secret+'.next',secret);});return tail;};
 await mkdir('artifacts/independent-candidate',{recursive:true});const flush=()=>writeFile(out,json(report));
 const owners=privateState.players.map((p:any)=>privateKeyToAccount(p.owner)),keys=privateState.players.map((p:any)=>privateKeyToAccount(p.arcade));
+const grants:FamilyGrant[]=[];
 const sleep=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 async function until<T>(fn:()=>Promise<T>,label:string,timeout=120000):Promise<NonNullable<T>>{
  const end=Date.now()+timeout;while(Date.now()<end){const value=await fn();if(value)return value as NonNullable<T>;await sleep(750);}throw Error('Timeout: '+label);
@@ -44,14 +45,19 @@ async function request(path:string,body?:unknown){
 }
 async function operation(id:Hex){return until(async()=>{const v=await request('/operations/'+id);assert.notEqual(v.status,'failed','Confirmed sponsor revert');return v.status==='confirmed'?v:null;},'sponsored operation');}
 async function submit(name:string,to:Address,data:Hex){
+ const startedAt=new Date().toISOString(),start=performance.now();
  const id=keccak256(encodeAbiParameters([{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[to,data,0n,'']));
  privateState.operations[name]={id,to,data};await save();
  const result=await request('/transactions',{to,data});assert.equal(result.id,id);
- const done=await operation(id);report.operations.push({name,id,hash:done.hash});await flush();return done;
+ const done=await operation(id);report.operations.push({name,id,hash:done.hash,startedAt,confirmedAt:new Date().toISOString(),ms:performance.now()-start});await flush();return done;
 }
 async function command(player:number,name:string,method:string,args:readonly unknown[]=[]){
- const grant=await r.family('grantOf',[owners[player].address]);
+ // Match the browser: retain the exact grant we registered. The shared
+ // context reader still verifies its current revision, key, expiry and nonce.
+ const grant=grants[player];assert(grant,'Family was not registered');
+ const start=performance.now();
  const {hash,nonce,deadline}=await lobbyCommandContext(base,m,grant);
+ report.commandPreparation??=[];report.commandPreparation.push({name,at:new Date().toISOString(),ms:performance.now()-start});
  const data=encodeFunctionData({abi:rules.lobby as Abi,functionName:method,args});
  const signature=await keys[player].signTypedData({domain:{name:'PONGIT Independent Lobby',version:'1',chainId:10143,verifyingContract:m.lobby},types:lobbyCommandTypes,primaryType:'LobbyCommand',message:{grantHash:hash,dataHash:keccak256(data),nonce,deadline}});
  return submit(name,m.lobby,encodeFunctionData({abi:rules.lobby,functionName:'relay',args:[owners[player].address,data,nonce,deadline,signature]}));
@@ -173,6 +179,7 @@ try{
   const localHash=familyGrantHash(m,grant);assert.equal(localHash,await r.family('grantDigest',[grant]),'Local grant hash differs from deployed contract');
   const signature=await owners[i].sign({hash:localHash});
   await submit(`register-${i}`,m.family,encodeFunctionData({abi:familyAbi,functionName:'register',args:[grant,signature]}));
+  grants[i]=grant;
  }
  for(const mode of [0,1] as const){const match=await prepare(mode);const task=play(match);task.catch(()=>{});tasks.push(task);}
  await Promise.all(tasks);report.checks.push('Two independently admitted real Classic/Chaos matches, natural results, contract capture and realtime payout');report.passed=true;

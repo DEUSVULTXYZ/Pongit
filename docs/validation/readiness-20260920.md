@@ -67,3 +67,24 @@ real Chaos browser and financial checks, original-passkey renewal, eight qualifi
 all tournament formats, verified reserve capacity and publication/release limits,
 the unchanged 24-hour trial, verified production migration, fresh off-VPS backups
 and progressive public deployment. Every earlier failed report is retained.
+
+At 09:09 UTC, `events-live-4` failed before gameplay: the second consent mined
+at timestamp 1789895351, two seconds after proposal 340282366920938463463374607431768211472
+expired. A historical call at its receipt block confirmed `proposal expired`.
+Both requested arenas were available. Both consent operations had entered the
+sponsor queue at 09:08:57, but receipts arrived at 09:09:04 and 09:09:11. This is
+an acceptance-latency failure, not successful simultaneous gameplay.
+
+The sponsor now shares its one in-flight latest-block observation with viem's
+public fee estimator. It retains fresh per-transaction observations, the
+pending/latest nonce guard, gas limits and the sole operator journal. The live
+fixture retains its registered grant like the browser, while still validating
+the current onchain authorization before signing; it records preparation and
+confirmation timings. Eight focused tests passed, including actual viem custom
+transport counts, concurrent reads, fee fallback and rejection guards. A fresh
+hosted run is required; the failed run is not rewritten.
+
+Separately, the original agent Chrome PRF context survived its real two-hour
+expiry and renewed at 09:17:05 UTC with the same account. Its subsequent game is
+still pending. The complete `series-browser-11` report remains failed because
+its earlier Chaos round timed out and no fault injections were completed.
