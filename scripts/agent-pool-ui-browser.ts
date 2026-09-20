@@ -34,7 +34,7 @@ try{
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
   let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0;
   await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
-  await context.addInitScript(()=>Object.defineProperty(navigator.credentials,'get',{value:async()=>{throw Error('Qualification cancelled passkey request');}}));
+  await context.addInitScript({content:"Object.defineProperty(navigator.credentials,'get',{value:function(){window.fixtureRefusedPasskey=true;return Promise.reject(new Error('Qualification cancelled passkey request'));}});"});
   await context.route('**/*',async route=>{
    const request=route.request(),url=new URL(request.url());
    try{
@@ -49,7 +49,8 @@ try{
      assert(!relative(root,file).startsWith('..'));
      return route.fulfill({body:await readFile(file),contentType:mime[extname(file)]??'application/octet-stream'});
     }
-    if(url.origin==='http://localhost:4000'){
+    if(url.origin==='http://localhost:4000'||url.origin==='https://pongit.xyz'&&url.pathname.startsWith('/api/')){
+     if(url.pathname.startsWith('/api/'))url.pathname=url.pathname.slice(4);
      let data:any;
      if(url.pathname==='/agents/config')data=m;
      else if(url.pathname==='/agents/catalog'){catalogReads++;data={items:people,total:'8',offset:'0',next:null};}
@@ -98,11 +99,12 @@ try{
   if(width===360){
    await page.getByRole('button',{name:'Connect & play',exact:true}).click();
    const actionError=page.getByRole('dialog').getByRole('alert');await actionError.waitFor();
-   assert.match(await actionError.innerText(),/Qualification cancelled passkey request/);
+   assert.equal(await page.evaluate(()=>!!(window as any).fixtureRefusedPasskey),true,'Exercise the explicit refusal fixture');
+   const originalError=await actionError.innerText();assert.match(originalError,/passkey/i);
    const before=catalogReads,end=Date.now()+15000;
    while(catalogReads===before&&Date.now()<end)await new Promise(r=>setTimeout(r,100));
    assert(catalogReads>before,'A real background catalogue refresh must occur');
-   assert.match(await actionError.innerText(),/Qualification cancelled passkey request/,'Catalogue refresh erased the action error');
+   assert.equal(await actionError.innerText(),originalError,'Catalogue refresh erased the action error');
    report.checks.push({width,actionErrorSurvivesCatalogRefresh:true,authentication:'Explicit refusal fixture only'});
   }
   await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);assert.equal(await page.locator(':focus').textContent(),'Challenge NOVA');

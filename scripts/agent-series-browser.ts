@@ -109,13 +109,13 @@ try{
   const message=String(value).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
   if(message&&!report.alerts.some((a:{message:string})=>a.message===message))report.alerts.push({at:new Date().toISOString(),message});
  });
- await page.addInitScript(()=>{
-  const observe=()=>new MutationObserver(()=>{
+ await page.addInitScript({content:`(function(){
+  function observe(){new MutationObserver(function(){
    for(const element of document.querySelectorAll('[role="alert"]'))
-    void (window as unknown as {recordQualificationAlert:(text:string)=>Promise<void>}).recordQualificationAlert(element.textContent??'');
-  }).observe(document.body,{subtree:true,childList:true,characterData:true});
+    void window.recordQualificationAlert(element.textContent||'');
+  }).observe(document.body,{subtree:true,childList:true,characterData:true});}
   if(document.body)observe();else document.addEventListener('DOMContentLoaded',observe,{once:true});
- });
+ })();`});
  cdp=await human.newCDPSession(page);await cdp.send('WebAuthn.enable');
  ({authenticatorId}=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}}));
  for(const credential of restored?.credentials?.credentials??[])await cdp.send('WebAuthn.addCredential',{authenticatorId,credential});
