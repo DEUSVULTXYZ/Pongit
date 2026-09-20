@@ -1,5 +1,35 @@
 # Reusable arenas and testnet admission transport
 
+## Actual releases verified, 20 September 20:10 UTC
+
+The new human arena released epoch 1 at 19:56:46 UTC. Transaction
+`0x01e7d792bceefd65b9cc7ab98cb4de23ad6a6d5f05bd625fc09de643f5ff0849`
+used 1,085,437 gas. Its original root was sealed and both historical results
+were recaptured after release. This is a successful close/release test, not yet
+a renewed full human game or financial qualification. Its private service now
+observes with admissions disabled.
+
+The agent keeper released the actual 4,264-batch epoch at 20:09:39 UTC:
+`0x52d51b311c127539ac61a5b9b3bb175572987da55933b814aa199049efef27da`.
+The receipt succeeded with 1,509,550 gas and cost 0.1539741 test MON. A read at
+Monad block 64256731 confirmed no active delegation and the unchanged sealed
+15-result root
+`0x708322ac3349b5c7d93fe9a22a44e29bcad502d80978e36b0943be1cde7699ab`.
+These receipts include their respective application call paths; the fork's
+hub-only gas measurement is a different scope.
+
+The larger 16,000-batch fork attempt reached its 2,100-second harness timeout
+before producing a release verdict. It remains incomplete. A longer, isolated
+retry is running; neither elapsed time nor a successful smaller workload proves
+the remaining admission, publication and continuity bounds.
+
+Web build `2d889b5` passed offline compilation, type checking and prerendering.
+Its private preview serves the JavaScript assets and documentation successfully.
+Reusable UI fixtures use the real rules-14/15 ABI, including the named snapshot
+header, pinned base block and epoch-bound controls. Early fixture failures are
+preserved. Browser checks use synthetic contracts; they do not substitute for
+hosted Mera, movement or financial tests. Public gates remain closed.
+
 ## Eight agents qualified; closed epoch awaiting release, 20 September 19:27 UTC
 
 All eight house identities now have both Classic and Chaos qualifications in
