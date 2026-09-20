@@ -1,0 +1,16 @@
+{
+  "deployments": [
+    {
+      "chainId": 10143,
+      "rulesVersion": 14,
+      "ratings": "0xc5a6468ab50faacd1c4c27b977d5a2ae977dc7dd",
+      "startBlock": 64241256,
+      "deploymentTransaction": "0xcecaee4037be1de4b767199203efcf48c680450d96bee9052d83953cc4b03758",
+      "arenas": [
+        "0x3a0c55bef5682d531d8b56538b7212ee1933ff6c",
+        "0x98612da5cacbd96dde0a903079aa3bab0b99e8bf",
+        "0x18ab50f7710e599abc4d88b5928c532f61ffb071"
+      ]
+    }
+  ]
+}

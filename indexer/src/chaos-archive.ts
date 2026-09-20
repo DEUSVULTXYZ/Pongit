@@ -17,7 +17,7 @@ export async function applySeriesArchive(context:any,event:any,deployments:Recor
  await applyChaosArchive(context,{...event,params:{...event.params,
   played:BigInt(event.params.elapsedUs)>0n||Number(event.params.status)===3}},version);
 }
-export async function applyChaosArchive(context:any,event:any,rulesVersion:6|7|8|9|10|11|15=6){
+export async function applyChaosArchive(context:any,event:any,rulesVersion:4|6|7|8|9|10|11|12|13|14|15=6){
  const p=event.params,id=`10143:${p.app.toLowerCase()}:${p.epoch}:${p.id}`,previous=await context.Match.get(id);
  const endedAt=previous?.endedAt||`${String(event.block.number).padStart(20,'0')}:${String(event.logIndex).padStart(10,'0')}`;
  const value={id,deployment:`10143:${p.app.toLowerCase()}`,rawId:String(p.id),mode:Number(p.mode),ranked:p.ranked,rulesVersion,

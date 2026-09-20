@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-20T21:48:17.364Z",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "transactions": [],
+  "complete": true,
+  "scope": "Exact successful publication fees and payload sizes in a bounded canonical Monad window for the approved agent arenas only. Excludes unrelated publisher spending, reverted publication attempts, operator sponsorship and transfers.",
+  "window": {
+    "from": "64275681",
+    "to": "64275980",
+    "endHash": "0x804166c4a0161e4a955f3a347fc8d5b8d8f9c80bb6ce7f3f40e6df5b043c74b6",
+    "startUtc": "2026-09-20T21:46:46.000Z",
+    "endUtc": "2026-09-20T21:48:17.000Z",
+    "seconds": 91
+  },
+  "commits": 0,
+  "feeWei": "0",
+  "maxCalldataBytes": 0,
+  "finishedAt": "2026-09-20T21:48:29.442Z"
+}

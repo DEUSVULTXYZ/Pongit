@@ -1,5 +1,34 @@
 # Reusable arenas and testnet admission transport
 
+## Versioned human indexing, 20 September 21:56 UTC
+
+The independent-result handler previously hardcoded rules 4, including for a
+newer human ledger, and did not recalculate shared retention on a correction.
+It now binds each allowed ledger to its immutable arenas and rules version,
+rejects identity/reference changes, and uses the shared correction and retention
+path. It preserves existing ledger-based references and payment records.
+
+The rules-14 candidate ledger is
+`0xc5a6468ab50faacd1c4c27b977d5a2ae977dc7dd`. Its successful creation receipt
+`0xcecaee4037be1de4b767199203efcf48c680450d96bee9052d83953cc4b03758`
+at block 64,241,256 was rechecked before adding the public index manifest.
+Seventeen targeted tests, root TypeScript checking, actual Envio code generation
+and indexer type checking passed. The isolated backfill already running still
+uses its frozen prior source; this correction has not modified it or production.
+
+A second canonical 91-second publication sample, 21:46:46 to 21:48:17 UTC,
+contained zero commits from the three idle candidate agent arenas. The shared
+publisher's continued balance decrease during this period cannot be attributed
+to those arenas. No further game was admitted while additional funding remained
+pending.
+
+An optional full-contract regression compilation failed first for missing
+dependencies in its temporary sandbox; the second compiler was killed with
+SIGKILL while running under a 1,800 MB limit. Both reports are preserved.
+Neither attempt is a contract-test pass;
+the earlier targeted contract evidence remains distinct. No production service
+was restarted or contract changed by those attempts.
+
 ## Human second release and remaining tournament trials
 
 The human rules-14 arena released epoch 2 at 21:34 UTC on 20 September.
