@@ -3,6 +3,29 @@
 This is a read-only RPC fork experiment, not hosted capacity qualification. No
 network transaction, real validator signature or provider modification is used.
 
+## Admission headroom at the actual hub state
+
+`HubAdmissionHeadroomFork.t.sol` separately tests the **existing** hub storage
+and default validator, without constructing an empty hub, changing governance,
+altering terms or depositing validator funds. At block **64151155**, the real
+state admitted **one** additional fork-only probe, then reverted with
+`ValidatorAtCapacity()` (`0xe90bcd65`). The maximum was 32, bond 7.2 test MON and
+initial reserved bond 3.1 test MON. The test checks each accepted session and the
+exact increase in reserved stake; it does not infer free slots from bond alone.
+
+This is a snapshot admission bound, not a real hosted session, capacity reservation
+or proof that an admission remains possible later. It cannot qualify the reserve
+needed for continuous renewal. The original failed container launch executed a
+shell entrypoint instead of Forge and made no fork; that failure is retained.
+The corrected explicit-Forge run passed. Use `PONG_HUB_HEADROOM_FORK_RPC` and
+`--match-contract HubAdmissionHeadroomForkTest` to reproduce on a fresh fork.
+
+The current sealed two-arena pool cannot be expanded in place. Additional reserve
+capacity still requires actual admissions on a suitable replacement deployment;
+neither these fork openings nor a PostgreSQL counter may be presented as available
+hosted arenas. The operator has been asked to confirm capacity that PONGIT can
+actually use. Public admissions remain closed while independent gates continue.
+
 The live Monad Testnet hub is `0x3Ef8327F69e09cf721772F345e2A887eA22cD595`.
 Its runtime code hash at the sampled blocks was
 `0x9380248d1c5debacf028290ca54271acd79f68eedfd91dbc9e605ec19937d8da`.

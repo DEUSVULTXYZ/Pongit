@@ -8,6 +8,32 @@ The release still requires the hosted, browser, financial, capacity and unchange
 24-hour gates described in `AGENT_SERIES.md`. Preserve the previous release,
 existing contract references, databases and every uncertain transaction.
 
+## Shared gateway correction, 20 September 2026
+
+The compatible shared RPC gateway correction was deployed at 11:08 UTC while
+all public game admissions remained closed. Image
+`pongit-rpc:priority-359523f` has digest
+`sha256:d48c9b547a298adc199e45c639339636ebf63526cb9969fc17a0d505261d3ad9`.
+The existing upstream settings, 60 ms dispatch spacing, private IP and `rpc`
+alias were preserved. Current headers and transaction reconciliation have
+priority over backfill; the queue retains fairness and one upstream budget.
+The image also carries the repository's bounded historical log-range handler.
+
+The actual packaged image passed four HTTP queue checks with a synthetic local
+upstream and network disabled. A verified off-VPS backup contains the previous
+container configuration, gateway/scheduler sources, image ID and Compose file.
+The previous container is stopped and disconnected as
+`pongit-rpc-before-priority-20260920`. Rollback must stop/disconnect the new
+container before restoring the old `rpc` alias, IP and configuration. Never run
+two copies of this gateway against the same upstream budget.
+
+The runtime Compose RPC service pins the new image instead of rebuilding the
+old release's gateway sources. Public web, relayer, indexer and contracts were
+not replaced. `/`, `/docs` and `/api/interlude/config` returned HTTP 200 after
+the switch, with the old human application and `admission:false`. This is a
+compatible infrastructure deployment, not the full game release or a latency
+qualification result.
+
 ## Roles and secrets
 
 Build the audited `agent-pool` Docker target and pin its image. The fixed-role
