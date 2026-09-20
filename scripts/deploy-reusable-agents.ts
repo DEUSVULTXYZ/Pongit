@@ -17,6 +17,8 @@ let r:any;try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJ
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 const t=await chainTools(prefix);
 try{
+ await t.preflight(['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
+  'HousePolicies','AgentCatalog','ReusableAgentPool','PublishedResultVerifier','AgentTournaments','AgentPublishedRatings','AgentQualifications','ArcadeFamily','AgentChallenges','ReusableAgentArena']);
  if(!r){r={prefix,rulesVersion:15,arenaCount,genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.prefix,prefix);assert.equal(r.rulesVersion,15);assert.equal(r.arenaCount,arenaCount);
  const bridge=privateKeyToAccount(r.admissionKey).address;

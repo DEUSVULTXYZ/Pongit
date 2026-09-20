@@ -5,6 +5,7 @@ import {Pool} from 'pg';
 import {createPublicClient,createWalletClient,http,keccak256,parseTransaction,encodeDeployData,encodeFunctionData,getContractAddress,type Address,type Hex,type Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
+import {assertDeploymentArtifact,preflightDeploymentArtifacts} from '../shared/deployment-artifacts';
 
 export async function chainTools(prefix:string,fetchFn?:typeof fetch){
  assert.equal(process.env.PONG_INDEPENDENT_WRITE,'authorized-testnet');
@@ -57,11 +58,7 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch){
  async function deploy(name:string,args:readonly unknown[]=[],instance=name):Promise<Address>{
   if(deployed[instance])return deployed[instance];
   const a=await artifact(name); let code=a.bytecode.object as string;
-  // Monad supports 128 KiB runtimes. These explicit candidate contracts
-  // have a stricter 32 KiB budget; all other artifacts retain 24 KiB. The
-  // common pool stays on Monad. Hosted arena execution is qualified separately.
-  const maxRuntime=['SeriesAgentArena','AgentSeriesPool','ReusableAgentPool','IndependentEventsArena','IndependentEventsLobby','ReadyIndependentEventsArena','ReadyIndependentEventsLobby','ReusableEventsLobby'].includes(name)?32768:24576;
-  assert((a.deployedBytecode.object.length-2)/2<=maxRuntime,`${name} exceeds its reviewed runtime budget`);
+  assertDeploymentArtifact(name,a);
   for(const libs of Object.values(a.bytecode.linkReferences??{}) as any[]){
    for(const [lib,refs] of Object.entries(libs) as Array<[string,Array<{start:number,length:number}>]>){
     const address=await deploy(lib);
@@ -77,5 +74,5 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch){
  async function write(name:string,at:Address,abi:Abi,method:string,args:readonly unknown[]=[],value=0n){
   return submit(name,encodeFunctionData({abi,functionName:method,args}),at,value);
  }
- return {base,account,db,submit,deploy,artifact,write,deployed,close:()=>db.end()};
+ return {base,account,db,submit,deploy,artifact,write,deployed,preflight:(names:readonly string[])=>preflightDeploymentArtifacts(names,artifact),close:()=>db.end()};
 }

@@ -32,9 +32,15 @@ if(reusable)assert.equal(manifest.admissionSigner.toLowerCase(),admissionSigner!
 assert(!manifest.migrationHash||manifest.migrationHash===migrationHash,'Migration source changed during deployment');
 const save=async()=>{await writeFile(out+'.next',JSON.stringify(manifest,null,2),{mode:0o600});await rename(out+'.next',out);};
 try{
+ const lobbyName=reusable?'ReusableEventsLobby':rulesVersion===13?'ReadyIndependentEventsLobby':events?'IndependentEventsLobby':'IndependentLobby';
+ const arenaName=reusable?'ReusableEventsArena':rulesVersion===13?'ReadyIndependentEventsArena':events?'IndependentEventsArena':'IndependentArena';
+ await t.preflight(['ArcadeFamily',lobbyName,'PublishedRatings',arenaName,
+  ...(reusable?['PublishedResultVerifier']:[]),
+  ...(events?['ChaosEffects','ChaosModifiers','ChaosRally','ChaosDynamics','ChaosContacts','ChaosPhysics','ChaosCodec','DrandEvmnet','ChaosDrawRules','ChaosEngine']:[]),
+  reusable?'ReusableEventsSettlement':events?'IndependentEventsSettlement':'IndependentSettlement',
+  'RoomsVault','LMSRV2',events?'RealtimeMarket':'MarketV4','ProfileRegistry','PrivateDataStore']);
  await save();
  manifest.family=await t.deploy('ArcadeFamily');await save();
- const lobbyName=reusable?'ReusableEventsLobby':rulesVersion===13?'ReadyIndependentEventsLobby':events?'IndependentEventsLobby':'IndependentLobby';
  manifest.lobby=await t.deploy(lobbyName,[manifest.family,hub,t.account.address,...(reusable?[admissionSigner]:[]),pressureSigner]);await save();
  manifest.ratings=await t.deploy('PublishedRatings',[manifest.lobby,t.account.address,BigInt(manifest.genesis)]);await save();
  const l=await t.artifact(lobbyName),r=await t.artifact('PublishedRatings');

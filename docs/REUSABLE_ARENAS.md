@@ -1,5 +1,35 @@
 # Reusable arenas and testnet admission transport
 
+## Linked human admission size correction, 20 September 18:35 UTC
+
+The next private human deployment stopped before creating any arena because
+`ReusableGame` was 27,719 bytes. The earlier root-only size check missed growth
+from the expired-ticket cancellation path. The deployment guard worked, but
+several common contracts had already been created. That partial deployment and
+its journal are retained; their operation IDs cannot be reused with changed bytes.
+
+Admission and expired-ticket binding now live in a separate immutable linked
+`ReusableHumanBinding` library. The validation, fixed storage, physics, public
+ABI and authorization rules are unchanged. `ReusableGame` is now 22,480 bytes,
+the new binding is 7,102 bytes, and the arena remains 24,035 bytes. The existing
+24 KiB limit was not raised. The complete 30-contract dependency graph also passes
+the explicit runtime and creation-size preflight before any deployment writes.
+
+All 27 targeted Solidity checks pass, including library sizes, cancellation,
+readiness, same-epoch reuse, historical proofs and financial settlement. Seven
+actual SDK layout checks pass without changing a delegated field. TypeScript
+regressions additionally reject oversized transitive libraries, missing or cyclic
+dependencies and invalid link offsets. The first layout invocation could not
+locate the cached compiler; the passing invocation pins the already-installed
+Solc 0.8.30 and keeps networking disabled. Both reports remain available.
+
+The full TypeScript suite passes all 577 tests. Regenerating the independent
+ABIs changes only declaration order, with no added or removed public items;
+type checking passes. These are code and build checks, not hosted gameplay.
+
+This correction requires a new immutable human candidate and its actual hosted
+qualification. It does not replace the public contract or reopen admissions.
+
 ## Delayed publication recovered, 20 September 18:15 UTC
 
 The fifth terminal result in agent arena

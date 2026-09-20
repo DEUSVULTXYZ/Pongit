@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 import {ReusableArenaStorage as S} from "./ReusableArenaStorage.sol";
 import {ReusableAdmission as Admission} from "./ReusableAdmission.sol";
+import {ReusableHumanBinding as Binding} from "./ReusableHumanBinding.sol";
 import {IndependentTypes as T} from "./IndependentTypes.sol";
 import {PhysicsV2} from "../v2/PhysicsV2.sol";
 import {RoomsRules} from "../labs/RoomsRules.sol";
@@ -33,7 +34,7 @@ library ReusableGame {
     function phase(mapping(bytes32=>uint256) storage w) internal view returns(uint8){return uint8(S.get(w,0)>>161&7);}
     function admit(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,T.Binding calldata binding,
         bytes calldata signature,address signer,address authority) external returns(bytes32){
-        return S.admit(w,ticket,binding,signature,signer,authority,RULES);
+        return Binding.admit(w,ticket,binding,signature,signer,authority);
     }
     function packed(mapping(bytes32=>uint256) storage w) internal view returns(uint256[8] memory p){for(uint256 i;i<8;i++)p[i]=S.get(w,21+i);}
     function state(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public view returns(PhysicsV2.State memory){
@@ -49,7 +50,7 @@ library ReusableGame {
     }
     function cancelAdmission(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,T.Binding calldata binding,
         bytes calldata signature,address signer,address authority,RoomsRules classic,ChaosEngine kernel) external {
-        S.cancelExpired(w,ticket,binding,signature,signer,authority,RULES);
+        Binding.cancelExpired(w,ticket,binding,signature,signer,authority);
         initialize(w,classic,kernel);finish(w,kernel,4,address(0));publish(w,kernel);
     }
     function publish(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public {

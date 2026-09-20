@@ -4,7 +4,7 @@ for(const name of names){
  const a=JSON.parse(await readFile(`contracts/out/${name}.sol/${name}.json`,'utf8'));
  if(name==='ReusableEventsArena'){
   const seen=new Set(a.abi.map((item:any)=>`${item.type}:${item.name}`));
-  for(const library of ['ReusableGame','ReusableAdmission','ReusableAuthorizations','ReusableArenaStorage','ChaosGameFlow']){
+  for(const library of ['ReusableGame','ReusableHumanBinding','ReusableAdmission','ReusableAuthorizations','ReusableArenaStorage','ChaosGameFlow']){
    const linked=JSON.parse(await readFile(`contracts/out/${library}.sol/${library}.json`,'utf8'));
    for(const item of linked.abi)if(['error','event'].includes(item.type)&&!seen.has(`${item.type}:${item.name}`)){a.abi.push(item);seen.add(`${item.type}:${item.name}`);}
   }

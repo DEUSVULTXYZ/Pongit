@@ -58,6 +58,11 @@ contract ReusableEventsArenaTest is Test, IReusableAdmissionAuthority {
         arena.start(epoch,id);vm.warp(vm.getBlockTimestamp()+3);arena.start(epoch,id);
     }
     function firstProof() internal pure returns(bytes32[16] memory proof){for(uint256 i=1;i<16;i++)proof[i]=keccak256(abi.encode(proof[i-1],proof[i-1]));}
+    function testLinkedLibrariesFitRuntimeBudget() public {
+        assertLe(vm.getDeployedCode("ReusableGame.sol:ReusableGame").length,24576,"ReusableGame runtime");
+        assertLe(vm.getDeployedCode("ReusableHumanBinding.sol:ReusableHumanBinding").length,24576,"ReusableHumanBinding runtime");
+        assertLe(vm.getDeployedCode("ReusableAuthorizations.sol:ReusableAuthorizations").length,24576,"ReusableAuthorizations runtime");
+    }
     function testSequentialClassicChaosKeepsEpochAndRejectsOldCommands() public {
         admit(9001,1,0);start(9001);vm.roll(vm.getBlockNumber()+10);vm.prank(vm.addr(1101));arena.input(1,9001,1,1,vm.getBlockNumber()+10);
         assertEq(arena.getSnapshot(9001).nonceA,1);vm.prank(vm.addr(1102));arena.concede(1,9001);
