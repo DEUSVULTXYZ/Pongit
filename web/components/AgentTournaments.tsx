@@ -1,4 +1,5 @@
 'use client';
+import {poolUserError} from '../../shared/agent-pool-error';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {zeroAddress} from 'viem';
@@ -33,7 +34,7 @@ export function AgentTournaments({enabled,initialId}:{enabled:boolean;initialId?
     setList(summaries.items);setNextPage(summaries.next);setTournament(detail);setIdentities(catalog.items);setError('');setLoading(false);
     const deadline=Number(summaries.nextAt)*1000;setNextAt(deadline>0?performance.now()+Math.max(0,deadline-Number(summaries.observation.timestamp)*1000):null);
     if(focusRequested.current){focusRequested.current=false;requestAnimationFrame(()=>heading.current?.focus());}
-   }catch(e){if(cancelled)return;setError((e as Error).message);setLoading(false);delay=15000;}
+   }catch(e){if(cancelled)return;setError(poolUserError(e));setLoading(false);delay=15000;}
    if(!cancelled)timer=setTimeout(refresh,delay);
   };
   void refresh();return()=>{cancelled=true;clearTimeout(timer);controller.abort();};

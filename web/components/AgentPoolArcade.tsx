@@ -1,4 +1,5 @@
 'use client';
+import {poolUserError} from '../../shared/agent-pool-error';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
@@ -38,7 +39,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     const [raw,catalog,games]=await Promise.all([poolApi<AgentPoolManifest>('config',undefined,abort.signal),poolApi<{items:Person[];next:string|null}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal),poolApi<{items:Live[]}>('live',undefined,abort.signal)]);
     const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade qualification is still in progress');
     if(stopped)return;setConfig(m);setPeople(catalog.items);setNext(catalog.next);setLive(games.items);setError('');
-   }catch(e){if(!stopped){setError((e as Error).message);delay=Math.max(10000,engineReadRetryMs(e));}}
+   }catch(e){if(!stopped){setError(poolUserError(e));delay=Math.max(10000,engineReadRetryMs(e));}}
    finally{if(!stopped)timer=setTimeout(refresh,delay);}
   };void refresh();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[enabled,retry,offset]);
@@ -47,10 +48,10 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   const poll=async()=>{let delay=2000;try{
    if(document.hidden)return;const result=await poolApi<{request:PoolChallengeView|null}>(`challenges/${account}`,undefined,abort.signal);
    if(stopped)return;setRequest(result.request);if(!result.request)delay=10000;if(result.request?.ref){router.push(matchHref(result.request.ref));return;}
-  }catch(e){if(!stopped)setError((e as Error).message);delay=Math.max(5000,engineReadRetryMs(e));}finally{if(!stopped)timer=setTimeout(poll,delay);}};
+  }catch(e){if(!stopped)setError(poolUserError(e));delay=Math.max(5000,engineReadRetryMs(e));}finally{if(!stopped)timer=setTimeout(poll,delay);}};
   void poll();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[config?.pool,account,retry,router]);
- async function run(fn:()=>Promise<void>){if(locked.current)return;locked.current=true;setBusy(true);setError('');try{await fn();}catch(e){if(alive.current)setError((e as Error).message);}finally{locked.current=false;if(alive.current)setBusy(false);}}
+ async function run(fn:()=>Promise<void>){if(locked.current)return;locked.current=true;setBusy(true);setError('');try{await fn();}catch(e){if(alive.current)setError(poolUserError(e));}finally{locked.current=false;if(alive.current)setBusy(false);}}
  async function challenge(m:AgentPoolManifest,s:PoolFamilySession,agent:Address){
   const sponsor=poolBrowserSponsor(m,s.grant.player);await finishPoolSponsor(sponsor);
   const existing=await poolApi<{request:PoolChallengeView|null}>(`challenges/${s.grant.player}`);

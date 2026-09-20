@@ -1,4 +1,5 @@
 'use client';
+import {poolUserError} from '../../shared/agent-pool-error';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/navigation';
@@ -83,17 +84,17 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     if(playerClient.current&&(wasHidden||performance.now()>=nextRecovery)){
      nextRecovery=performance.now()+10000;
      try{await playerClient.current.recover();if(cancelled)return;setReady(true);setControlError('');}
-     catch(e){if(cancelled)return;setReady(false);setControlError((e as Error).message);nextRecovery=performance.now()+Math.max(3000,engineReadRetryMs(e));}
+     catch(e){if(cancelled)return;setReady(false);setControlError(poolUserError(e));nextRecovery=performance.now()+Math.max(3000,engineReadRetryMs(e));}
     }
     const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);setError('');
-   }catch(e){if(cancelled)return;setError((e as Error).message);setConnection('Synchronizing');delay=Math.max(2000,engineReadRetryMs(e));}
+   }catch(e){if(cancelled)return;setError(poolUserError(e));setConnection('Synchronizing');delay=Math.max(2000,engineReadRetryMs(e));}
    finally{if(!cancelled)timer=setTimeout(poll,Math.min(30000,delay));}
   };
   void poll();return()=>{cancelled=true;controller.abort();clearTimeout(timer);observer?.close();playerClient.current=null;release?.();};
  },[enabled,refKey,retry]);
  async function move(dir:-1|0|1){
   const client=playerClient.current;if(!client||!control.current&&dir!==0)return;const version=++commandVersion.current;setDirection(dir);setPending(true);
-  try{await client.move(dir);setControlError('');}catch(e){setControlError((e as Error).message);setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
+  try{await client.move(dir);setControlError('');}catch(e){setControlError(poolUserError(e));setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
  }
  useEffect(()=>{
   const keys=new Set<string>();const key=(e:KeyboardEvent)=>{if(!control.current||!['ArrowUp','ArrowDown','KeyW','KeyS'].includes(e.code)||(e.target as HTMLElement)?.closest('input,textarea,select,[contenteditable=true],[role=dialog]'))return;
@@ -103,7 +104,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   return()=>{window.removeEventListener('keydown',key);window.removeEventListener('keyup',key);window.removeEventListener('blur',stop);document.removeEventListener('visibilitychange',visibility);};
  },[]);
  useEffect(()=>{arcadeAudio.setGameplay(snapshot?.phase===2&&!view?.result);return()=>arcadeAudio.setGameplay(false);},[snapshot?.phase,!!view?.result]);
- async function action(fn:()=>Promise<void>){if(actionBusy.current)return;actionBusy.current=true;setBusy(true);try{await fn();setControlError('');}catch(e){setControlError((e as Error).message);}finally{actionBusy.current=false;setBusy(false);}}
+ async function action(fn:()=>Promise<void>){if(actionBusy.current)return;actionBusy.current=true;setBusy(true);try{await fn();setControlError('');}catch(e){setControlError(poolUserError(e));}finally{actionBusy.current=false;setBusy(false);}}
  async function renew(){await action(async()=>{
   const m=manifest.current;if(!m||!view||!account)throw Error('Read this arena before renewing');
   const identity=await connect();try{
