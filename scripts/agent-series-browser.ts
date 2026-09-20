@@ -145,6 +145,8 @@ try{
   report.matches.push({ref,mode,result:result.result,scoreMatched:true,authAssertions:assertions});
  }
  assert(!loseReply&&!throttle,'Both labelled faults must actually be exercised');
+ for(const kind of ['Reply lost after execution','Injected 429 before send'])
+  assert.equal(report.faults.filter((f:{kind:string})=>f.kind===kind).length,1,`Required fault was not exercised: ${kind}`);
  for(const mode of [0,1])assert(report.checks.includes(`Mode ${mode}: F5 reused scoped key`),'A complete browser pass requires F5 in both modes');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=(e as Error).message.split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);process.exitCode=1;}
