@@ -10,10 +10,36 @@ import {decodePublishedEntry} from '../indexer/src/published-result';
 import {encodeFunctionResult,decodeFunctionResult,zeroHash} from 'viem';
 import {initial} from '../shared/physics-v2';
 import {roomRoute} from '../shared/room-route';
-import {ArenaRecovery,sameChaosPause,maintenanceContext} from '../shared/independent-recovery';
+import {ArenaRecovery,sameChaosPause,maintenanceContext,maintainQueuePresence} from '../shared/independent-recovery';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 const address=(i:number)=>toHex(i,{size:20}) as Address;
 const input={chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(i=>({app:address(i)})),genesis:1700000000,createdAt:'2026-09-12T12:00:00Z'};
+
+test('a consumed queue avoids a heartbeat and only dismisses a proven intake rejection',async()=>{
+ let sends=0,reads=0;
+ assert.equal(await maintainQueuePresence(async()=>false,async()=>{sends++;}),'left');assert.equal(sends,0);
+ assert.equal(await maintainQueuePresence(async()=>++reads===1,async()=>{throw {code:'CONTRACT_REJECTED',accepted:false};}),'left');
+ for(const error of [Error('response lost'),{code:'CONTRACT_REJECTED',accepted:true},{code:'SPONSOR_PENDING'},Error('receipt missing')]){
+  reads=0;await assert.rejects(maintainQueuePresence(async()=>++reads===1,async()=>{throw error;}),e=>e===error);
+  assert.equal(reads,1,'An uncertain command is never dismissed using a later queue read');
+ }
+ await assert.rejects(maintainQueuePresence(async()=>true,async()=>{throw {code:'CONTRACT_REJECTED',accepted:false};}));
+ assert.equal(await maintainQueuePresence(async()=>true,async()=>{sends++;}),'sent');assert.equal(sends,1);
+});
+
+test('a requested ranked room stays separate from the spectator own participation',async()=>{
+ const m=publicIndependentManifest(input),player=address(20),calls:string[]=[];
+ const base:any={getBlock:async()=>({number:100n,timestamp:200n}),readContract:async(c:any)=>{
+  assert.equal(c.blockNumber,100n);calls.push(c.functionName);
+  if(c.functionName==='room')assert.equal(c.args[0],9n);
+  if(c.functionName==='arenaOf')assert.equal(c.args[0],14n,'Never follow the spectator own match 99');
+  const values:any={occupancy:8n,activeMatchOf:99n,grantOf:{key:zeroAddress},room:{id:9n,ranked:true,proposal:14n,members:[{player:address(21)},{player:address(22)}]},invitationPage:[[],0n],proposal:{id:14n,status:3},arenaOf:address(11),boundMatch:{id:15n,epoch:2n},profileOf:{handle:'player',avatar:0},indexOf:1n,entry:{first:{id:14n}}};
+  assert(c.functionName in values,c.functionName);return values[c.functionName];
+ }};
+ const view=await readIndependentLobby(base,m,player,9n);
+ assert.equal(view.occupancy,8n);assert.equal(view.active,99n);assert.equal(view.room.id,9n);assert.equal(view.binding,null);assert.equal(view.published.first.id,14n);
+ assert(!calls.some(c=>['joinRoom','relay'].includes(c)),'Spectating performs reads only');
+});
 
 test('readable stale snapshots cannot hide a publication failure or demand a new passkey',()=>{
  const recovery=new ArenaRecovery(),message=recovery.failure(Error('commit relay failed: 413 Payload Too Large'));
@@ -49,6 +75,10 @@ test('published result is readable without the closed engine after room rotation
  }};
  const view=await readIndependentLobby(base,m,player,undefined,last);
  assert.equal(view.publishedSnapshot?.state.scoreA,7);assert.equal(view.publishedSnapshot?.winner,player);assert.equal(view.binding,null);
+ const spectator=await readIndependentLobby(base,m,undefined,8n,{...last,room:8n});
+ assert.equal(spectator.publishedSnapshot?.state.scoreA,7,'An anonymous spectator can restore the observed result after F5');
+ const otherRoom=await readIndependentLobby(base,m,undefined,9n,{...last,room:8n});
+ assert.equal(otherRoom.published,null,'A saved result never leaks into a different observed room');
 });
 
 test('closing and challenged arenas restore a partial published score without contacting the engine',async()=>{

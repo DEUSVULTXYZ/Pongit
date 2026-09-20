@@ -25,3 +25,16 @@ export function sameChaosPause(live:{scoreA:number;scoreB:number;resumeAt:bigint
 export function maintenanceContext(kind:'round'|'room',state:unknown){
  return kind+':'+JSON.stringify(state,(_,v)=>typeof v==='bigint'?String(v):v);
 }
+
+/** Matchmaking can consume the queue between observation and heartbeat intake.
+ * Only an explicitly unaccepted command can be dismissed after that transition.
+ * Uncertain submitted commands retain their ordinary sponsorship journal. */
+export async function maintainQueuePresence(queued:()=>Promise<boolean>,send:()=>Promise<unknown>){
+ if(!await queued())return 'left' as const;
+ try{await send();return 'sent' as const;}
+ catch(e){
+  const rejection=e as {code?:string;accepted?:boolean};
+  if(rejection.code==='CONTRACT_REJECTED'&&rejection.accepted===false&&!await queued())return 'left' as const;
+  throw e;
+ }
+}

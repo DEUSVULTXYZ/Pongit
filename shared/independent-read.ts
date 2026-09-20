@@ -27,10 +27,13 @@ export function independentReader(base:PublicClient,m:IndependentManifest,blockN
  };
 }
 /** A view is pinned to one base block. No database invents occupancy, consent or capacity. */
-export async function readIndependentLobby(base:PublicClient,m:IndependentManifest,player?:Address,requestedRoom?:bigint,lastMatch?:{app:Address;id:bigint;epoch:bigint}){
+export async function readIndependentLobby(base:PublicClient,m:IndependentManifest,player?:Address,requestedRoom?:bigint,lastMatch?:{app:Address;id:bigint;epoch:bigint;room?:bigint}){
  const block=await base.getBlock(),r=independentReader(base,m,block.number);
  const [occupancy,active,grant]=player?await Promise.all([r.lobby('occupancy',[player]),r.lobby('activeMatchOf',[player]),r.family('grantOf',[player])]):[0n,0n,null];
- const id=occupancy>0n&&occupancy!==maxUint256?occupancy:requestedRoom;
+ // A shared room link observes that room, even if the viewer participates elsewhere.
+ // It never borrows the viewer's unrelated active arena or changes occupancy.
+ const id=requestedRoom??(occupancy>0n&&occupancy!==maxUint256?occupancy:undefined);
+ const visibleActive=requestedRoom&&occupancy!==requestedRoom?0n:active;
  const [room,queue,inbox]=await Promise.all([
   id?r.lobby('room',[id]):null,
   player&&occupancy===maxUint256?r.lobby('queueOf',[player]):null,
@@ -40,9 +43,9 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
  const invitations=invitationRows.filter(i=>i.status===1&&BigInt(i.expires)>=block.timestamp);
  const proposal=room?.proposal?r.lobby('proposal',[room.proposal]):null;
  const p=await proposal;
- const app=active?await r.lobby('arenaOf',[active]):p?.id?await r.lobby('arenaOf',[p.id]):zeroAddress;
+ const app=visibleActive?await r.lobby('arenaOf',[visibleActive]):p?.id?await r.lobby('arenaOf',[p.id]):zeroAddress;
  const binding=app!==zeroAddress?await r.arena(app,'boundMatch'):null;
- const visibleMatch=binding?.id===active||binding?.id===p?.id?binding:null;
+ const visibleMatch=binding?.id===visibleActive||binding?.id===p?.id?binding:null;
  const delegation=visibleMatch?.epoch?await readHubDelegation(base,m.hub,app,block.number):null;
  // A closing node may already be offline. Reconnect through the canonical base
  // snapshot without pretending a partial score is a result or enabling inputs.
@@ -50,7 +53,8 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
  if(recoverySnapshot&&recoverySnapshot.id!==visibleMatch.id)throw Error('Recovery snapshot belongs to another match');
  const addresses=[...new Set([player,...(room?.members??[]).map((x:any)=>x.player),...invitations.flatMap(i=>[i.sender,i.recipient])].filter(Boolean))] as Address[];
  const profiles=Object.fromEntries(await Promise.all(addresses.map(async a=>[a.toLowerCase(),await r.profiles('profileOf',[a])])));
- const terminalId=p?.id&&p.status>=3?p.id:!active&&!p?.id&&lastMatch?lastMatch.id:0n;
+ const sameObservedRoom=requestedRoom!==undefined&&requestedRoom===lastMatch?.room;
+ const terminalId=p?.id&&p.status>=3?p.id:(!requestedRoom&&!active||sameObservedRoom)&&!p?.id&&lastMatch?lastMatch.id:0n;
  const published=terminalId&&await r.ratings('indexOf',[terminalId])?await r.ratings('entry',[terminalId]):null;
  let publishedSnapshot=null;
  if(published&&lastMatch&&published.first.id===lastMatch.id&&published.first.arena.toLowerCase()===lastMatch.app.toLowerCase()&&published.first.epoch===lastMatch.epoch){

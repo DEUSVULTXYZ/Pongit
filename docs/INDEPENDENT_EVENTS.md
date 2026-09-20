@@ -1,7 +1,43 @@
 # Independent human arenas with current Chaos rules
 
-This is a **source candidate**, not a deployed or qualified release. Production
-remains closed on its existing deployment. Agent arenas are unchanged.
+This is a **privately deployed candidate**, not a qualified public release.
+Production remains closed on its existing deployment. Agent arenas are unchanged.
+
+## Hosted checkpoint, 20 September 2026
+
+Contract source `3a4c3ec` was deployed with service `5e3cae2` into a separate
+temporary database and private network. Its three arenas are
+`0x983ea4b68129b349afe141727b3a1644fafe3f93`,
+`0x88e89abda6d46244f44f596fdb69a7ddc97e926e` and
+`0x5301c251dc29b9b73cb15db56e1cd4cf1cd40c9a`.
+The common lobby is `0x82f122b569f4ce2b8be5326f47a05794e1295362`.
+This fixture deliberately sealed an empty migration; it is not the production
+ELO/profile migration.
+
+The first controlled hosted Chaos game ended naturally at 4-7. Both synthetic
+players exceeded 100 confirmed direction changes (150 and 129). The 279 input
+receipts measured approximately 112 ms p50 and 132 ms p95. Four revealed effects
+were observed, including multiball. Actual 0.006-test-MON positions on each side
+were transported as confirmed pressure; publication and capture were followed
+by an automatic 0.006-test-MON payout to the disconnected beneficiary. The
+reported service countdown was backed by the contract deadline. This is not
+all-effect, browser, physical passkey or sustained-load qualification.
+
+That combined run **failed** its Classic engine-identity deadline. The endpoint
+initially lacked a reachable IPv4 address and became reachable later. The
+service resumed observation without creating a duplicate session, then started
+and captured a 7-6 game without test players controlling it. That game is not a
+passing controlled Classic trial. Chaos completed independently during the
+outage. Both original reports are retained.
+
+The next real Chrome check created three Mera accounts and saved their unique
+profiles successfully, closing each profile dialog after confirmation. It then
+exposed two client defects before starting a game: a ranked-room link attempted
+to join its spectator as a participant, and a queue heartbeat racing with
+matchmaking surfaced an unrelated rejection. The client now uses an explicit
+read-only spectator entrance and rechecks queue occupancy. An uncertain signed
+heartbeat is still reconciled through its existing journal. Browser validation
+of these fixes is pending; the failed run is not overwritten.
 
 `IndependentEventsArena` (rules 12) binds the existing contract-owned
 `IndependentLobby` to the corrected `PongChaosEvents` engine and its immutable
