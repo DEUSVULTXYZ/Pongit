@@ -1,6 +1,6 @@
 {
   "name": "@pongit/agent-sdk",
-  "version": "0.2.0-candidate.1",
+  "version": "0.2.0-candidate.2",
   "description": "Scoped Agent Arcade clients for PONGIT on Monad Testnet",
   "type": "module",
   "main": "./dist/agent-sdk/src/index.js",

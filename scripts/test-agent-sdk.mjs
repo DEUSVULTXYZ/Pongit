@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import {mkdtemp} from 'node:fs/promises';
+import {mkdtemp, readFile} from 'node:fs/promises';
 import {execFileSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 assert.equal(process.env.PONG_AGENT_PACKAGE_TEST,'isolated-vps');
 const directory=await mkdtemp(join(tmpdir(),'pongit-sdk-'));
-execFileSync('npm',['install','--ignore-scripts','--no-audit','--no-fund','/qualification/pongit-agent-sdk-0.1.0-candidate.1.tgz'],{cwd:directory,stdio:'inherit'});
+const {version}=JSON.parse(await readFile(new URL('../agent-sdk/package.json',import.meta.url),'utf8'));
+assert(/^\d+\.\d+\.\d+(?:-[a-z\d.]+)?$/.test(version),'Pinned SDK package version');
+execFileSync('npm',['install','--ignore-scripts','--no-audit','--no-fund',`/qualification/pongit-agent-sdk-${version}.tgz`],{cwd:directory,stdio:'inherit'});
 execFileSync(process.execPath,['--input-type=module','-e',`import {createAgentClient,AgentController,agentArcadeAbi,preparePoolRegistration,preparePoolChallenge,createPoolObserver,createPoolPlayer,pooledHouseBots,preparePoolFamily,observePoolFamily,loadPoolFamily,createPoolSponsor,poolOperationId} from '@pongit/agent-sdk';
 if(typeof createAgentClient!=='function'||typeof AgentController!=='function'||!agentArcadeAbi.length)process.exit(1);
 if(typeof preparePoolRegistration!=='function'||typeof preparePoolChallenge!=='function'||typeof createPoolObserver!=='function'||pooledHouseBots.length!==8)process.exit(1);
