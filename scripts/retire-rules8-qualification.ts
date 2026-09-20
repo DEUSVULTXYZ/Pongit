@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
+import {createReadStream} from 'node:fs';
 import {Pool} from 'pg';
 import {createPublicClient, http, parseAbi, zeroHash} from 'viem';
 import {chainTools} from './independent-chain-tools';
@@ -18,7 +19,9 @@ const manifest = await readFile('/backup/SHA256SUMS', 'utf8');
 assert.equal(createHash('sha256').update(manifest).digest('hex'), process.env.PONG_VERIFIED_BACKUP_MANIFEST);
 for (const line of manifest.trim().split('\n')) {
   const [hash, name] = line.split('  '); assert(/^[a-z\d.-]+$/i.test(name));
-  assert.equal(createHash('sha256').update(await readFile('/backup/' + name)).digest('hex'), hash);
+  const digest = createHash('sha256');
+  for await (const chunk of createReadStream('/backup/' + name)) digest.update(chunk);
+  assert.equal(digest.digest('hex'), hash);
 }
 const fixture = new Pool({connectionString: process.env.PONG_RULES8_DATABASE_URL});
 const t = await chainTools('retire-rules8-empty-20260920');
