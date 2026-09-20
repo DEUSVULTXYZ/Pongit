@@ -64,6 +64,15 @@ test('mismatched receipt is uncertain; confirmed revert consumes the nonce',asyn
  await assert.rejects(reverted.sender.send('tick',[8n]),(e:any)=>e.name==='AppRevertError'&&e.errorName==='StaleInput');
  await assert.rejects(reverted.sender.send('tick',[8n]));assert.equal(parseTransaction(reverted.sent[1]).nonce,6);
 });
+
+test('successful loading readiness rereads the engine nonce before the first gameplay command',async()=>{
+ const key=generatePrivateKey(),readyAbi=[...abi,...parseAbi(['function confirmReady(uint256)'])],sent:Hex[]=[];
+ let reads=0;
+ const node:any={getTransactionCount:async()=>{reads++;return reads===1?5:0;},request:async({params}:any)=>{sent.push(params[0]);return {transactionHash:keccak256(params[0]),status:'0x1',logs:[]};}};
+ const sender=compactArenaSession({node,abi:readyAbi,app,key,match:8n,expires:9000000000n});
+ await sender.send('confirmReady',[8n]);await sender.send('input',[8n,1,1n,200n]);await sender.send('input',[8n,0,2n,300n]);
+ assert.equal(reads,2);assert.deepEqual(sent.map(raw=>parseTransaction(raw).nonce),[5,0,1]);
+});
 test('journal requires a verified direct binding and refuses a different key, match, epoch or financial call',async()=>{
  const f=await fixture();
  for(const variant of ['unbound','key','match','epoch','funds','method','chain','app','expired']){

@@ -50,6 +50,8 @@ async function init(i:number){
  page.on('pageerror',e=>report.checks.push({pageError:e.message.replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,300)}));
  page.on('response',async response=>{const request=response.request(),url=new URL(response.url());if(!request.postData()||!url.hostname.endsWith('.fly.dev'))return;let method='unknown';try{method=request.postDataJSON()?.method;}catch{}
   const row:any={player:i,at:Date.now(),method,status:response.status(),requestBytes:Buffer.byteLength(request.postData()||'')};report.network.push(row);
+  if(method==='interlude_sendTransaction'){try{const tx=parseTransaction(request.postDataJSON().params[0]);row.nonce=tx.nonce;row.action=decodeFunctionData({abi:rules.arena,data:tx.data!}).functionName;}catch{}}
+  if(method==='eth_getTransactionCount'){try{row.count=(await response.json()).result;}catch{}}
   try{const body=await response.json();if(['0x1','success'].includes(String(body.result?.status))&&method==='interlude_sendTransaction'){const tx=parseTransaction(request.postDataJSON().params[0]);const call=decodeFunctionData({abi:rules.arena,data:tx.data!});if(call.functionName==='input')report.inputs[i].push({direction:Number(call.args![1]),at:Date.now(),hash:body.result.transactionHash});}if(body.error)row.rpcError={code:body.error.code,message:String(body.error.message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,350)};}catch{}
  });
  await page.goto(origin);const muted=page.getByRole('button',{name:'Enter muted',exact:true});if(await muted.isVisible())await muted.click();
