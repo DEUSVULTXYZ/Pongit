@@ -5,6 +5,7 @@ import {readFile} from 'node:fs/promises';
 import type {Pool,PoolClient} from 'pg';
 import type {ChainOperation} from '../../shared/independent';
 import {measuredFetch} from '../../shared/rpc-metrics';
+import {prepareSponsoredTransaction} from './sponsor-prepare';
 export function confirmedContractRevert(error:unknown){
  let cause:any=error;for(let i=0;cause&&i<10;i++,cause=cause.cause)if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name))return true;return false;
 }
@@ -89,18 +90,15 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
     return;
    }
    const row=(await db.query("SELECT * FROM independent_operations WHERE status='queued' ORDER BY priority,created_at LIMIT 1")).rows[0];if(!row)return;
-   const nonce=await base.getTransactionCount({address:account.address,blockTag:'pending'});
-   if(nonce!==await base.getTransactionCount({address:account.address,blockTag:'latest'}))throw Error('Existing operator transaction needs reconciliation');
-   const tx={to:row.target as Address,data:row.data as Hex,value:BigInt(row.value),nonce};
-   try{await base.call({account:account.address,...tx});}catch(e){
+   let request:Awaited<ReturnType<typeof prepareSponsoredTransaction>>;
+   try{request=await prepareSponsoredTransaction(base,account.address,{to:row.target as Address,data:row.data as Hex,value:BigInt(row.value)});}catch(e){
     // RPC availability does not prove invalid execution. Only a decoded contract revert
     // may retire an unsigned operation. Signed operations never take this branch.
     const reverted=confirmedContractRevert(e);
     if(reverted)await db.query("UPDATE independent_operations SET status='failed',error=$2,updated_at=now() WHERE id=$1 AND status='queued'",[row.id,'The action is no longer valid. Refresh its contract state.']);
     throw e;
    }
-   const request=await wallet.prepareTransactionRequest(tx);request.gas=request.gas*12n/10n;
-   if(request.gas>30_000_000n||request.gas>(await base.getBlock()).gasLimit)throw Error('Sponsor gas estimate exceeds the chain limit; no transaction signed');
+   const nonce=request.nonce;
    const raw=await wallet.signTransaction(request),hash=keccak256(raw);
    await journal.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",['independent:'+row.id,row.target,account.address.toLowerCase(),nonce,raw,hash]);
    await db.query("UPDATE independent_operations SET status='pending',hash=$2,updated_at=now() WHERE id=$1",[row.id,hash]);

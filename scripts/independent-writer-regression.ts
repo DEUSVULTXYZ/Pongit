@@ -13,6 +13,7 @@ const journal=new Pool({connectionString:process.env.DATABASE_URL,options:`-c se
 let simulationError:any,calls=0,sends=0;const simulated:string[]=[];
 const hash='0x'+'a'.repeat(64);
 const base:any={getChainId:async()=>10143,getTransactionCount:async()=>900002,call:async({data}:any)=>{calls++;simulated.push(data);await new Promise(r=>setTimeout(r,10));if(simulationError)throw simulationError;return {data:'0x'};},
+ getBlock:async()=>({gasLimit:30_000_000n}),estimateFeesPerGas:async()=>({maxFeePerGas:2n,maxPriorityFeePerGas:1n}),estimateGas:async({data}:any)=>{simulated.push(data);if(simulationError)throw simulationError;return 21_000n;},
  getTransactionReceipt:async({hash}:any)=>({transactionHash:hash,status:'success'}),sendRawTransaction:async()=>{sends++;throw Error('No network writes in this fixture');}};
 let writer:Awaited<ReturnType<typeof independentWriter>>|undefined;
 const report:any={at:new Date().toISOString(),checks:[]};
