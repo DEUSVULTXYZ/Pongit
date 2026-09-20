@@ -1,5 +1,39 @@
 # Reusable arenas and testnet admission transport
 
+## Real renewal and dedicated capacity, 20 September 20:41 UTC
+
+All three dedicated agent arenas are now actually hosted and ready: `f868...`
+in epoch 2 and `7fb78...` / `1c5ec...` in epoch 1. This is empty-arena readiness,
+not proof of simultaneous games or continuous service. Opening receipts and
+exact epoch observations are in the reviewed qualification artifacts.
+
+The human rules-14 arena completed its actual renewal test at 20:34:08 UTC.
+Classic and Chaos ran in epoch 2, both results were published and captured,
+and both old epoch-1 results remained verifiable as final. Chaos verified two
+drand draws with observed effects 1 and 9. Scores were 5-2 and 1-5, each ended
+by explicit concession. This is not the full browser/financial qualification.
+Epoch 2 closed after 78 batches; its hub release deadline is 21:34:08 UTC.
+The journal and report have matching off-VPS SHA-256 copies.
+
+The 4,571-command agent handoff passed its actual import and second idempotent
+check after release. An isolated database restore reproduced the exact rows of
+all six runtime/archive tables. Chrome and Edge both passed the actual-build
+UI fixtures (27 agent checks and 10 human checks each), using synthetic chain
+responses. Original failed fixtures remain preserved.
+
+The qualification monitor no longer counts a released but unopened contract
+as available service. Playing samples require matching epoch and match IDs;
+idle reusable arenas require current hosted health, published contract
+eligibility and a reviewed publication budget. Empty new epochs no longer
+satisfy the renewal-game check. Rules-15 monitoring is supported, but its final
+24-hour trial has not started and public admission remains closed.
+
+The first bounded hosted tournament fixture admits only one private Classic
+elimination tournament, using the persistent engine writers and sole operator
+journal. It retires an idle arena at 1,500 observed batches between games and
+never creates a production budget or opens extra capacity. This conservative
+experiment does not establish the still-pending worst-case publication bound.
+
 ## Actual releases verified, 20 September 20:10 UTC
 
 The new human arena released epoch 1 at 19:56:46 UTC. Transaction

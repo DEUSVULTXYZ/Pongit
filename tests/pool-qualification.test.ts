@@ -4,16 +4,37 @@ import {poolAvailability, newPoolQualification, recordPoolSample, poolQualificat
 const at = 1789873000000;
 const sample = (): PoolSample => ({at, blockTimestamp: at / 1000, admissions: true, apiReadable: true, arenas: [
   {app: 'a', epoch: '2', hubStatus: 1, expiresAt: at / 1000 + 3600, available: false, batches: '10',
-    stage: 'playing', healthAt: at, matchId: '3', progressAt: at, pendingCommandAgeMs: 0},
+    stage: 'playing', healthAt: at, healthEpoch: '2', healthMatchId: '3', matchId: '3', progressAt: at, pendingCommandAgeMs: 0},
 ]});
 test('live process with two closing arenas is unavailable', () => {
   const s = sample(); s.arenas[0].hubStatus = 2; s.arenas.push({...s.arenas[0], app: 'b'});
   const v = poolAvailability(s); assert.equal(v.unavailable, true); assert.equal(v.closing, 2); assert.equal(v.progressing, 0);
 });
 test('fresh health cannot hide stalled physics, old epochs or pending commands', () => {
-  for (const patch of [{progressAt: at - 11000}, {healthAt: at - 16000}, {expiresAt: at / 1000}, {pendingCommandAgeMs: 10000}, {progressAt: at + 3000}]) {
+  for (const patch of [{progressAt: at - 11000}, {healthAt: at - 16000}, {healthEpoch: '1'}, {healthMatchId: '2'},
+    {expiresAt: at / 1000}, {pendingCommandAgeMs: 10000}, {pendingCommandAgeMs: NaN}, {progressAt: at + 3000}]) {
     const s = sample(); Object.assign(s.arenas[0], patch); assert.equal(poolAvailability(s).unavailable, true);
   }
+});
+test('released capacity alone never counts as available service', () => {
+  const s = sample(); Object.assign(s.arenas[0], {hubStatus: 0, available: true});
+  assert.equal(poolAvailability(s).reusable, 1);
+  assert.equal(poolAvailability(s).unavailable, true);
+});
+test('an idle hosted arena needs current health, exact epoch and a reviewed admission budget', () => {
+  const s = sample(); Object.assign(s.arenas[0], {stage: 'available', matchId: null, healthMatchId: null, available: true, admissionReady: true});
+  const v = poolAvailability(s); assert.equal(v.ready, 1); assert.equal(v.progressing, 0); assert.equal(v.unavailable, false);
+  for (const patch of [{admissionReady: false}, {healthEpoch: '1'}, {healthAt: at - 16000}, {available: false}, {pendingCommandAgeMs: 1}]) {
+    const bad = structuredClone(s); Object.assign(bad.arenas[0], patch); assert.equal(poolAvailability(bad).unavailable, true);
+  }
+});
+test('empty new epochs do not prove games after renewal', () => {
+  const state = newPoolQualification(at), s = sample(); recordPoolSample(state, s);
+  const next = structuredClone(s); next.at += 15000;
+  Object.assign(next.arenas[0], {epoch: '3', healthEpoch: '3', healthAt: next.at, stage: 'available', matchId: null, admissionReady: true, available: true});
+  recordPoolSample(state, next, s); assert.deepEqual(state.epochs.a, ['2']);
+  Object.assign(next.arenas[0], {stage: 'playing', matchId: '4', healthMatchId: '4', progressAt: next.at});
+  recordPoolSample(state, next); assert.deepEqual(state.epochs.a, ['2', '3']);
 });
 test('an unused contract is potential reserve, not a confirmed second game', () => {
   const s = sample(); s.arenas.push({...s.arenas[0], app: 'b', hubStatus: 0, available: true});

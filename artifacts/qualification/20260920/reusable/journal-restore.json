@@ -1,0 +1,39 @@
+{
+  "at": "2026-09-20T20:13:51.110660+00:00",
+  "passed": true,
+  "source": "reusable_agents_candidate",
+  "restore": "reusable_restore_20260920_2014",
+  "checks": [
+    {
+      "table": "agent_pool.engine_jobs",
+      "rows": 4571,
+      "exactRowDigestMatches": true
+    },
+    {
+      "table": "agent_pool.health",
+      "rows": 0,
+      "exactRowDigestMatches": true
+    },
+    {
+      "table": "agent_pool.lifecycle",
+      "rows": 0,
+      "exactRowDigestMatches": true
+    },
+    {
+      "table": "agent_pool.lifecycle_events",
+      "rows": 0,
+      "exactRowDigestMatches": true
+    },
+    {
+      "table": "public.il_reusable_results",
+      "rows": 0,
+      "exactRowDigestMatches": true
+    },
+    {
+      "table": "public.il_reusable_slot_results",
+      "rows": 15,
+      "exactRowDigestMatches": true
+    }
+  ],
+  "scope": "Actual PostgreSQL restore; every table row counted and hashed without exposing raw commands"
+}

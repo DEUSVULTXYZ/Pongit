@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-09-20T20:19:26.715Z",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "arenas": [
+    {
+      "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+      "epoch": "2",
+      "stage": "opened",
+      "hash": "0x60bdada4f5598f713669e46818b4aa89c4f33a11a89feca38f2f62d9692fcb0e",
+      "gasUsed": "1439732",
+      "baseBlock": "64258529",
+      "expiresAt": "1790021971",
+      "hosted": {
+        "stage": "available",
+        "epoch": "2",
+        "observedAt": "2026-09-20T20:19:59.258Z"
+      }
+    },
+    {
+      "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+      "epoch": "1",
+      "stage": "opened",
+      "hash": "0xca256cde48d4d424b74b472bf6012b01df86d31cd4886d913f8aa0bd6e25d38a",
+      "gasUsed": "1490462",
+      "baseBlock": "64258540",
+      "expiresAt": "1790021974",
+      "hosted": {
+        "stage": "available",
+        "epoch": "1",
+        "observedAt": "2026-09-20T20:19:59.562Z"
+      }
+    },
+    {
+      "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+      "epoch": "1",
+      "stage": "opened",
+      "hash": "0x537d7ae2bcc28c07ce2b525bf637ad9587d54e0cdd781cd9b1bbd031c67d4c24",
+      "gasUsed": "1490462",
+      "baseBlock": "64258553",
+      "expiresAt": "1790021978",
+      "hosted": {
+        "stage": "available",
+        "epoch": "1",
+        "observedAt": "2026-09-20T20:19:59.286Z"
+      }
+    }
+  ],
+  "passed": true,
+  "scope": "Three empty private hosted arenas, epoch identity and readiness only; no game/publication/rotation or continuous capacity verdict",
+  "observedAt": "2026-09-20T20:19:59.568Z",
+  "finishedAt": "2026-09-20T20:19:59.570Z"
+}

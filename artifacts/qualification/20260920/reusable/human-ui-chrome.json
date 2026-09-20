@@ -1,0 +1,179 @@
+{
+  "at": "2026-09-20T20:07:26.361Z",
+  "channel": "chrome",
+  "rulesVersion": 14,
+  "scope": "Actual isolated VPS build; synthetic chain/API, no real credentials or hosted gameplay",
+  "checks": [
+    {
+      "width": 360,
+      "height": 640,
+      "mode": 0,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7777777777777777,
+      "effectsStable": false,
+      "result": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "mode": 1,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7777777777777777,
+      "effectsStable": true,
+      "result": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mode": 0,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7777777777777777,
+      "effectsStable": false,
+      "result": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mode": 1,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7777777777777777,
+      "effectsStable": true,
+      "result": true
+    },
+    {
+      "width": 768,
+      "height": 1000,
+      "mode": 0,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7777777777777777,
+      "effectsStable": false,
+      "result": true
+    },
+    {
+      "width": 768,
+      "height": 1000,
+      "mode": 1,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7777777777777777,
+      "effectsStable": true,
+      "result": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "mode": 0,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7778110373353653,
+      "effectsStable": false,
+      "result": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "mode": 1,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7778095238095237,
+      "effectsStable": true,
+      "result": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": 0,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.7779436647755549,
+      "effectsStable": false,
+      "result": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": 1,
+      "countdown": [
+        "3",
+        "2",
+        "1"
+      ],
+      "readyCommands": 1,
+      "nonceReads": 2,
+      "inputRelease": true,
+      "aspect": 1.777943146301533,
+      "effectsStable": true,
+      "result": true
+    }
+  ],
+  "errors": [],
+  "passed": true,
+  "current": {
+    "width": 844,
+    "height": 390,
+    "mode": 1,
+    "inputs": [
+      -1,
+      0
+    ]
+  }
+}

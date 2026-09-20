@@ -1,0 +1,16 @@
+{
+  "startedAt": "2026-09-20T18:58:32.006Z",
+  "app": "0x3a0c55bef5682d531d8b56538b7212ee1933ff6c",
+  "epoch": "1",
+  "checks": [
+    "Actual hub release, unchanged final root sealed, both historical results recaptured after release"
+  ],
+  "passed": true,
+  "releaseAt": "1789934196",
+  "observedAt": "2026-09-20T19:56:38.030Z",
+  "release": {
+    "hash": "0x01e7d792bceefd65b9cc7ab98cb4de23ad6a6d5f05bd625fc09de643f5ff0849",
+    "gasUsed": "1085437"
+  },
+  "finishedAt": "2026-09-20T19:56:46.541Z"
+}

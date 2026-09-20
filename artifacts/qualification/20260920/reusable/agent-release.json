@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-20T20:10:25.666Z",
+  "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+  "epoch": "1",
+  "batches": "4264",
+  "block": "64256731",
+  "blockHash": "0xfbb405f706dcc783e246cc93836f20459dbffead33d665c8a010e0338055b1d8",
+  "release": {
+    "hash": "0x52d51b311c127539ac61a5b9b3bb175572987da55933b814aa199049efef27da",
+    "status": "success",
+    "gasUsed": "1509550",
+    "gasPrice": "102000000000",
+    "costMon": "0.1539741"
+  },
+  "status": 0,
+  "sealed": {
+    "root": "0x708322ac3349b5c7d93fe9a22a44e29bcad502d80978e36b0943be1cde7699ab",
+    "count": 15
+  },
+  "scope": "Actual hosted session release and sealed original result prefix; not continuous capacity or final soak"
+}

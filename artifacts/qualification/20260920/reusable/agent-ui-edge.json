@@ -1,0 +1,254 @@
+{
+  "at": "2026-09-20T20:08:26.357Z",
+  "channel": "msedge",
+  "rulesVersion": 15,
+  "scope": "Captured isolated VPS production build; synthetic API/engine; no authentication or hosted gameplay qualification",
+  "checks": [
+    {
+      "width": 360,
+      "actionErrorSurvivesCatalogRefresh": true,
+      "authentication": "Explicit refusal fixture only"
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 360,
+      "arenaConnectsBeforeCatalog": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true
+    }
+  ],
+  "errors": [],
+  "passed": true
+}
