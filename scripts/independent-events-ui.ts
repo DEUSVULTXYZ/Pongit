@@ -52,7 +52,7 @@ try{
    const call=decodeFunctionData({abi,data}),fn=call.functionName;
    const values:any={occupancy:roomVisible?1n:0n,activeMatchOf:roomVisible?1n:0n,grantOf:grant,room:struct(rules.lobby,'room',{id:1n,host:players[0],mode,ranked:false,proposal:1n,members:players.map((player,i)=>({player,position:BigInt(i+1),joined:grant.issuedAt,away:false}))}),
     invitationPage:[[],0n],proposal:struct(rules.lobby,'proposal',{id:1n,a:players[0],b:players[1],room:1n,mode,status:2,accepted:3,expires:grant.expires}),arenaOf:app,boundMatch:binding,
-    profileOf:struct(profilesAbi,'profileOf',{handle:call.args?.[0]===players[1]?'Rival':'Player',avatar:0}),indexOf:0n,delegationOf:struct(roomsLifecycleHubAbi,'delegationOf',{app,status:1,epoch:1n,expiresAt:grant.expires,batchIndex:1n})};
+    profileOf:struct(profilesAbi,'profileOf',{handle:call.args?.[0]===players[1]?'Rival':'Player',avatar:0}),indexOf:0n,delegationOf:struct(roomsLifecycleHubAbi,'delegationOf',{app,status:1,epoch:1n,baseBlock:90n,expiresAt:grant.expires,batchIndex:1n})};
    if(fn==='ticketOf')values.ticketOf=[struct(rules.lobby,'ticketOf',{authority:m.lobby,arena:app,epoch:1n,sequence:1n,matchId:1n,rules:14n}),binding];
    assert(fn in values,`Unexpected base read ${fn}`);return encodeFunctionResult({abi,functionName:fn,result:values[fn]} as any);
   };
@@ -64,7 +64,7 @@ try{
    else if(v.method==='eth_chainId')result=isNode?'0x1092':'0x279f';
    else if(v.method==='eth_getTransactionCount'){nonceReads++;result=toHex(nonce);}
    else if(v.method==='eth_getTransactionReceipt')result=receipts.get(v.params[0])??null;
-   else if(v.method==='interlude_session')result={app,chainId:4242,epoch:1,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]};
+   else if(v.method==='interlude_session')result={app,chainId:4242,epoch:1,baseBlock:90,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]};
    else if(v.method==='eth_call'&&!isNode)result=readBase(v.params[0].to,v.params[0].data);
    else if(v.method==='eth_call'){
     const call=decodeFunctionData({abi:rules.arena,data:v.params[0].data});
