@@ -95,11 +95,15 @@ try{
    globalThis.fetch=originalFetch;await wait(1500);await player.recover();assert(!player.journal.pending(session.grant.key));
    state.rateDone=true;save();check('injected-429-recovery-exact-command',{hash:pending.hash,nonce:pending.nonce});
   }
-  if(run>=3&&!state.permissionDone){
-   const previous=JSON.parse(readFileSync('/diagnostics/pool-human-check-2.json','utf8'));
+  if(run>1&&!state.permissionDone){
+   const permissionRun=Number(process.env.PONG_POOL_PERMISSION_RUN??(run>=3?2:1));
+   assert(Number.isInteger(permissionRun)&&permissionRun>=1&&permissionRun<run);
+   const previous=JSON.parse(readFileSync(`/diagnostics/pool-human-check${permissionRun===1?'':`-${permissionRun}`}.json`,'utf8'));
    assert.equal(previous.player.toLowerCase(),owner.address.toLowerCase());
+   assert.equal(previous.pool.toLowerCase(),m.pool.toLowerCase());
+   assert(previous.checks.some((c:any)=>c.name==='owner-revocation-enforced'));
    assert(previous.checks.some((c:any)=>c.name==='owner-renewal-restores-same-limited-key'));
-   check('permission-tested-in-separate-preserved-run',{run:2});state.permissionDone=true;save();
+   check('permission-tested-in-separate-preserved-run',{run:permissionRun});state.permissionDone=true;save();
   }
   if(!state.permissionDone){
    await player.revoke(owner);await assert.rejects(player.move(1),/revoked/);check('owner-revocation-enforced');

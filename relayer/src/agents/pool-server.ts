@@ -9,12 +9,14 @@ import {poolRoutes} from './pool-api';
 import {measuredFetch,recordRpc} from '../../../shared/rpc-metrics';
 import {agentMetrics} from './metrics';
 import {readPoolSignedBody,type poolSponsorRoutes} from './pool-sponsor';
+import {Pool} from 'pg';
+import {PoolReplays,initializePoolReplays,poolReplayRetention} from './pool-replays';
 
 // Dedicated version-2 process. Never starts the legacy single-application
 // coordinator and never loads an operator key. A private qualification endpoint
 // is bound to loopback unless an isolated Docker network is explicitly selected.
-export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>}){
- const routes=poolRoutes(reader),rates=new Map<string,{until:number;n:number}>();
+export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>;replays?:PoolReplays}){
+ const routes=poolRoutes(reader,undefined,options.replays),rates=new Map<string,{until:number;n:number}>();
  const normalize=(value:string)=>value.replace(/^::ffff:/,'');
  const proxies=new Set((options.trustedProxies??[]).map(normalize));let global={until:0,n:0};
  const server=createServer(async(req,res)=>{
@@ -45,7 +47,7 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
    }
    if(req.method!=='GET'){res.setHeader('Allow','GET');send({error:'This endpoint serves published contract views',code:'AGENT_METHOD_NOT_ALLOWED'},405);return;}
    const section=url.pathname.replace(/^\/agents\//,'/').split('/')[1];
-   if(['config','catalog','live','matches','challenges','tournaments','rankings','healthz'].includes(section))metric=`agents.${section}`;
+   if(['config','catalog','live','matches','replay','challenges','tournaments','rankings','healthz'].includes(section))metric=`agents.${section}`;
    if(url.pathname==='/healthz'){send({process:'alive',writes:!!options.sponsor});return;}
    if(options.public){const config=await routes(new URL('http://localhost/config'));if(!('enabled' in config.value)||!config.value.enabled){send({error:'Agent Arcade is not open',code:'AGENT_CLOSED'},503);return;}}
    const view=await routes(url);res.setHeader('ETag',`"${view.revision}"`);
@@ -71,8 +73,12 @@ if(process.env.PONG_AGENT_POOL_READER==='1'){
  const metrics=await agentMetrics('/diagnostics/pool','reader');
  const client=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:4096}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
  if(await client.getChainId()!==10143)throw Error('Agent pool reader requires Monad Testnet');
+ const replayDb=process.env.AGENT_DATABASE_URL?new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3}):undefined;
+ if(replayDb)await initializePoolReplays(replayDb);
+ const replays=replayDb?new PoolReplays(replayDb,process.env.GRAPHQL_URL?poolReplayRetention(process.env.GRAPHQL_URL,
+  process.env.HASURA_ADMIN_SECRET?{'x-hasura-admin-secret':process.env.HASURA_ADMIN_SECRET}:{}):undefined):undefined;
  const service=await startPoolReadService(new AgentPoolReader(client,manifest,humanApps),
   {host:process.env.HOST??'127.0.0.1',port:Number(process.env.PORT??4101),public:process.env.PONG_AGENT_POOL_PUBLIC==='1',
-   trustedProxies:(process.env.PONG_AGENT_POOL_TRUSTED_PROXIES??'').split(',').filter(Boolean)});
- process.once('SIGTERM',()=>void service.close().finally(metrics));
+   trustedProxies:(process.env.PONG_AGENT_POOL_TRUSTED_PROXIES??'').split(',').filter(Boolean),replays});
+ process.once('SIGTERM',()=>void service.close().finally(async()=>{await replayDb?.end();await metrics();}));
 }

@@ -24,12 +24,13 @@ import {ArcadeAmbience} from './ArcadeAmbience';
 import {Outcome} from './Outcome';
 import {Dialog} from './Dialog';
 import {IconButton} from './IconButton';
+import {AgentReplay} from './AgentReplay';
 
 type Identity={agent:string;name:string;avatar:number};
 const quiet=()=>{};
 export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:AgentMatchRef}){
  const [view,setView]=useState<PoolMatchView|null>(null),[snapshot,setSnapshot]=useState<EngineState|null>(null),[people,setPeople]=useState<Identity[]>([]);
- const [error,setError]=useState(''),[connection,setConnection]=useState('Connecting'),[retry,setRetry]=useState(0),[copied,setCopied]=useState('');
+ const [error,setError]=useState(''),[connection,setConnection]=useState('Connecting'),[retry,setRetry]=useState(0),[copied,setCopied]=useState(''),[replay,setReplay]=useState(false);
  const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState('');
  const playerClient=useRef<ReturnType<typeof createPoolPlayer>|null>(null),manifest=useRef<AgentPoolManifest|null>(null),lastRef=useRef(''),commandVersion=useRef(0),actionBusy=useRef(false),router=useRouter();
  const side=view&&account?view.a.toLowerCase()===account.toLowerCase()?0:view.b.toLowerCase()===account.toLowerCase()?1:-1:-1;
@@ -143,6 +144,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     <div className="agent-scoreboard"><div>{player(view.a)}</div><div className="agent-score"><b>{String(scoreA).padStart(2,'0')}</b><small>:</small><b>{String(scoreB).padStart(2,'0')}</b></div><div>{player(view.b)}</div></div>
     {result?<div className="pool-published-result"><h1>{result.status===4?'Match cancelled':result.winner===zeroAddress?'Draw':`${name(result.winner)} wins`}</h1>
      <p>{result.finality?'Final published result':'Published on Monad, still contestable'}</p>
+     {result.status===3&&<button onClick={()=>setReplay(true)}>Watch replay</button>}
      {view.tournament!=='0'&&<Link href={`/agents/tournaments?id=${view.tournament}`}>View tournament</Link>}
      <p className="pool-match-reference">Arena {short(reference.app)} · Epoch {reference.epoch} · Match {reference.id}</p></div>:snapshot?<>
      <div className="agent-clock">{engineDone?'Waiting for publication':`${overtime?'Sudden death':'Time remaining'} ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}</div>
@@ -156,6 +158,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   {tools&&<Dialog label="Arena tools" onClose={()=>setTools(false)}><IconButton aria-label="Close arena tools" onClick={()=>setTools(false)}/><h2>Arena tools</h2>{controlError&&<p role="alert">{controlError}</p>}
    <button disabled={busy} onClick={()=>void renew()}>Renew arcade session</button><button disabled={busy||!playerClient.current} onClick={()=>void revoke()}>Revoke this arena session</button><button disabled={busy||!playerClient.current} onClick={()=>void action(async()=>{await playerClient.current!.concede();setTools(false);})}>Concede match</button></Dialog>}
   <Outcome id={refKey} match={snapshot?{playerA:snapshot.a,playerB:snapshot.b,winner:result?.winner??snapshot.winner,status:result?.status??snapshot.phase,state:{...snapshot.state,scoreA,scoreB},ranked:false,mode:view?.mode??0,draw:(result?.status??snapshot.phase)===3&&(result?.winner??snapshot.winner)===zeroAddress}:null}
-   account={account??''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" rematch={rematch} again={()=>router.push('/agents')} againLabel="Choose another agent"/>
+   account={account??''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" rematch={rematch} watch={()=>setReplay(true)} again={()=>router.push('/agents')} againLabel="Choose another agent"/>
+  {replay&&<Dialog label="Match replay" onClose={()=>setReplay(false)}><IconButton className="modal-close" aria-label="Close replay" onClick={()=>setReplay(false)}/><h2>Match replay</h2><AgentReplay reference={reference}/></Dialog>}
  </main>;
 }

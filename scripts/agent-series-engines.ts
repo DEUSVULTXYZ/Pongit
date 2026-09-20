@@ -15,6 +15,8 @@ import {provisionPoolArena,observePoolArenaReady} from '../relayer/src/agents/po
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {initializePoolObservations,PoolObservations} from '../relayer/src/agents/pool-observations';
 import {PoolProofLane} from '../relayer/src/agents/pool-proof-lane';
+import {PoolReplays,initializePoolReplays,poolReplayRetention} from '../relayer/src/agents/pool-replays';
+import {AgentPoolReader} from '../relayer/src/agents/pool-read';
 assert.equal(process.env.PONG_AGENT_SERIES_ENGINES,'private-qualification');assert.equal(process.getuid?.(),1000);
 const prefix=process.env.PONG_AGENT_SERIES_PREFIX!;assert(/^agent-series-candidate-\d{8}(-[2-9])?$/.test(prefix));
 const r=JSON.parse(await readFile(`/secrets/${prefix}.json`,'utf8'));assert.equal(r.phase,'deployed-closed');
@@ -22,9 +24,20 @@ const protectedApps=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').f
 for(const a of r.arenas)assert(!protectedApps.includes(a.app.toLowerCase()));
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:8000,fetchFn:measuredFetch('monad')})});
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:6}),metrics=await agentMetrics('/diagnostics/series','controllers');
-await initializePoolOperations(db);await initializePoolObservations(db);let stopping=false;
+await initializePoolOperations(db);await initializePoolObservations(db);await initializePoolReplays(db);let stopping=false;
+const replays=new PoolReplays(db,process.env.GRAPHQL_URL?poolReplayRetention(process.env.GRAPHQL_URL,
+ process.env.HASURA_ADMIN_SECRET?{'x-hasura-admin-secret':process.env.HASURA_ADMIN_SECRET}:{}):undefined);
+await replays.resumeRecorder();
+const replayReader=new AgentPoolReader(base,{...r.common,version:3,chainId:10143,engineChainId:4242,rulesVersion:11,
+ arenas:r.arenas.map((a:any)=>({app:a.app,runtimeHash:a.runtimeHash,node:`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`})),
+ enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2},protectedApps);
 process.once('SIGTERM',()=>{stopping=true;});process.once('SIGINT',()=>{stopping=true;});
 const delay=(n:number)=>new Promise(resolve=>setTimeout(resolve,n));
+async function replayMaintenance(){while(!stopping){
+ try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}
+ catch{console.error(JSON.stringify({at:new Date().toISOString(),service:'pool-replays',error:'Replay reconciliation pending'}));}
+ for(let i=0;i<60&&!stopping;i++)await delay(1000);
+}}
 async function arenaLoop(app:Address){
  let engine:ReturnType<typeof createPoolEngine>|undefined,binding:any,delegation:any,url='',nextBase=0,lastTick=0,stage='',healthAt=0;
  let proofTask:Promise<void>|undefined,observation:PoolObservations|undefined;
@@ -60,7 +73,10 @@ async function arenaLoop(app:Address){
      binding=await node.readContract({address:app,abi,functionName:'boundMatch'});assert.equal(binding.epoch,delegation.epoch);assert(binding.id>0n);
      await observePoolArenaReady(db,app,delegation.epoch,true);
      const observations=new PoolObservations(db,app,{epoch:binding.epoch,id:binding.id});observation=observations;
-     engine=createPoolEngine(db,base,r.common.hub,app,url,r.engineKey,{epoch:binding.epoch,id:binding.id},s=>observations.observe(s),{node,series:true});
+     const replayRef={chainId:10143 as const,app,epoch:String(binding.epoch),id:String(binding.id)};
+     engine=createPoolEngine(db,base,r.common.hub,app,url,r.engineKey,{epoch:binding.epoch,id:binding.id},s=>{
+      observations.observe(s);replays.capture(replayRef,11,s);
+     },{node,series:true});
     }catch(error){await observePoolArenaReady(db,app,delegation.epoch,false);throw error;}
    }
    let s=await engine.read();
@@ -102,4 +118,4 @@ async function arenaLoop(app:Address){
   if(!stopping)await delay(Math.min(pause,30000));
  }}finally{engine?.close();await proofTask;await flush();}
 }
-try{await Promise.all(r.arenas.map((a:{app:Address})=>arenaLoop(a.app)));}finally{await metrics();await db.end();}
+try{await Promise.all([...r.arenas.map((a:{app:Address})=>arenaLoop(a.app)),replayMaintenance()]);}finally{await replays.flush();await metrics();await db.end();}
