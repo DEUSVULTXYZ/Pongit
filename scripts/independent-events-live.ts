@@ -18,6 +18,7 @@ import {readHubDelegation} from '../shared/rooms-hub';
 import {betTypes,domain} from '../shared/protocol';
 import {lobbyCommandContext,familyGrantHash} from '../shared/independent-command';
 import {lobbyCommandTypes} from '../shared/independent';
+import {fixtureSnapshot} from './fixture-snapshot';
 
 assert.equal(process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION,'isolated-vps');
 const raw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
@@ -81,6 +82,9 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
  const {app,id,epoch,mode}=match,row:any={app,id,epoch,mode,changes:[0,0],scores:[],effects:[],inputs:[],frames:0,countdown:[],startedAt:new Date().toISOString()};report.matches.push(row);await flush();
  const observer=createPublicClient({transport:engineTransport(match.node),pollingInterval:1000}),stream=new EngineStream(match.node,app,url=>new WebSocket(url,{origin:'https://pongit.xyz'}) as any);
  const feed=new EngineFeed({node:observer,app,abi:rules.arena},stream);stops.push(feed.watch(id,()=>row.frames++),()=>stream.stop());
+ const synchronized=<T>(first:()=>Promise<T>,fresh:()=>Promise<T>)=>fixtureSnapshot(first,fresh,(reason,attempt)=>{row.synchronizations??=[];row.synchronizations.push({at:new Date().toISOString(),reason,attempt});});
+ const read=(force=false)=>synchronized(()=>feed.read(id,force),()=>feed.read(id,true));
+ const observed=(receipt:any,name:string,args:readonly unknown[],player:number)=>synchronized(()=>feed.receipt(id,receipt,name,args,owners[player].address),()=>feed.read(id,true));
  const provisioningAt=Date.now();
  await until(async()=>{try{const s:any=await observer.request({method:'interlude_session',params:[]} as any);return String(s.epoch)===String(epoch)&&s.app.toLowerCase()===app.toLowerCase();}catch{return false;}},'hosted engine identity',720000);
  row.provisioningMs=Date.now()-provisioningAt;await flush();
@@ -100,7 +104,7 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
   const node=createPublicClient({transport});return {index,node,session:compactArenaSession({node,abi:rules.arena,app,key:privateState.players[index].arcade,match:id,expires:BigInt(privateState.expires)}),direction:0};
  });
  if(m.rulesVersion===13){
-  for(const p of players){const receipt=await p.session.send('confirmReady',[id]);await feed.receipt(id,receipt,'confirmReady',[id],keys[p.index].address);}
+  for(const p of players){const receipt=await p.session.send('confirmReady',[id]);await observed(receipt,'confirmReady',[id],p.index);}
   row.readinessConfirmed=true;
  }
  let firstPlaying=0,lastTick=0,lastScore='',money:Promise<void>|undefined,moneyError:unknown,bought=false;
@@ -120,7 +124,7 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
  }
  while(Date.now()<end){
   if(moneyError)throw moneyError;
-  const s=await feed.read(id);
+  const s=await read();
   assert.equal(s.id,id);const score=`${s.state.scoreA}-${s.state.scoreB}`;
   if(score!==lastScore){row.scores.push({at:new Date().toISOString(),score,t:String(s.state.t)});lastScore=score;await flush();}
   if(s.phase===1){
@@ -135,7 +139,7 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
   if(mode&&!money)money=bet().catch(e=>{moneyError=e;});
   for(const e of s.chaos?.physics.effects??[])if(e.id&&!row.effects.includes(e.id))row.effects.push(e.id);
   await Promise.all(players.map(async(p,side)=>{
-   const current=await feed.read(id);if(current.phase!==2)return;
+   const current=await read();if(current.phase!==2)return;
    const v=current.state,position=side?v.right:v.left;
    let target=50000000n;
    if(Date.now()-firstPlaying<50000||mode&&!bought){
@@ -145,11 +149,11 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
    const direction=row.changes[side]<100?(row.changes[side]%2?1:-1):position<target-8000000n?1:position>target+8000000n?-1:0;
    if(direction===p.direction)return;
    const args=[id,direction,(side?current.nonceB:current.nonceA)+1n,current.head+150n],at=performance.now();
-   try{const receipt=await p.session.send('input',args);await feed.receipt(id,receipt,'input',args,keys[p.index].address);row.inputs.push({side,ms:performance.now()-at,hash:receipt.hash});row.changes[side]++;p.direction=direction;lastTick=Date.now();}
-   catch(e){const fresh=await feed.read(id,true);if((e as any).name==='AppRevertError'&&fresh.phase===3)return;throw e;}
+   try{const receipt=await p.session.send('input',args);row.inputs.push({side,ms:performance.now()-at,hash:receipt.hash});row.changes[side]++;p.direction=direction;lastTick=Date.now();await observed(receipt,'input',args,p.index);}
+   catch(e){const fresh=await read(true);if((e as any).name==='AppRevertError'&&fresh.phase===3)return;throw e;}
   }));
-  const fresh=await feed.read(id);
-  if(fresh.phase===2&&Date.now()-lastTick>=300){const receipt=await players[0].session.send('tick',[id]);await feed.receipt(id,receipt,'tick',[id],keys[match.a].address);lastTick=Date.now();}
+  const fresh=await read();
+  if(fresh.phase===2&&Date.now()-lastTick>=300){const receipt=await players[0].session.send('tick',[id]);await observed(receipt,'tick',[id],match.a);lastTick=Date.now();}
   await sleep(row.changes.some((n:number)=>n<100)?40:150);
  }
  if(money)await money;if(moneyError)throw moneyError;
@@ -181,7 +185,7 @@ try{
   await submit(`register-${i}`,m.family,encodeFunctionData({abi:familyAbi,functionName:'register',args:[grant,signature]}));
   grants[i]=grant;
  }
- for(const mode of [0,1] as const){const match=await prepare(mode);const task=play(match);task.catch(()=>{});tasks.push(task);}
+ for(const mode of [0,1] as const){const match=await prepare(mode);const task=play(match).catch(async e=>{const row=report.matches.find((x:any)=>x.app===match.app&&x.id===match.id);if(row){row.error=String(e?.shortMessage||e?.message||'Hosted fixture failed').split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,300);await flush();}throw e;});task.catch(()=>{});tasks.push(task);}
  await Promise.all(tasks);report.checks.push('Two independently admitted real Classic/Chaos matches, natural results, contract capture and realtime payout');report.passed=true;
 }catch(e){report.error=String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,500);process.exitCode=1;await Promise.allSettled(tasks);}
 finally{stops.forEach(fn=>fn());report.finishedAt=new Date().toISOString();await save();await flush();console.log(json({passed:report.passed,error:report.error,matches:report.matches.map((x:any)=>({app:x.app,id:x.id,mode:x.mode,score:x.finalScore,changes:x.changes,passed:x.passed}))}));}

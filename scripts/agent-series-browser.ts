@@ -183,7 +183,13 @@ try{
    }
   }
   await checkpoint();
-  await page.waitForURL(/\/agents\/arenas\/0x[\da-fA-F]{40}\/\d+\/\d+/,{timeout:660000});await savePrivate();
+  // A private two-arena fixture can cross the actual one-hour release window.
+  // Measure that outage instead of abandoning an already accepted challenge
+  // after eleven minutes. This wait is not evidence of continuous availability.
+  const queuedAt=Date.now();
+  report.waitingForArena={round,mode,at:new Date(queuedAt).toISOString()};await checkpoint();
+  await page.waitForURL(/\/agents\/arenas\/0x[\da-fA-F]{40}\/\d+\/\d+/,{timeout:5_400_000});
+  report.arenaWaits??=[];report.arenaWaits.push({round,mode,ms:Date.now()-queuedAt});delete report.waitingForArena;await savePrivate();
   const url:string=page.url(),parts:string[]=new URL(url).pathname.split('/');
   const ref:AgentMatchRef={chainId:10143,app:parts[3] as Address,epoch:parts[4],id:parts[5]};
   assert(manifest.arenas.some(a=>a.app.toLowerCase()===ref.app.toLowerCase()));

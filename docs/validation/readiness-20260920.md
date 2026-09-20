@@ -88,3 +88,22 @@ Separately, the original agent Chrome PRF context survived its real two-hour
 expiry and renewed at 09:17:05 UTC with the same account. Its subsequent game is
 still pending. The complete `series-browser-11` report remains failed because
 its earlier Chaos round timed out and no fault injections were completed.
+
+The next bounded read-only command path removes the large full-block response
+from command preparation: authorization, nonce and the EVM timestamp are fetched
+in a block-pinned Multicall3 call after a fresh block-number read. It still checks
+the full current family identity and expiry. Its actual-viem transport regression
+requires exactly those two RPCs and refuses a failed read.
+
+`events-live-5` accepted all four consents, but failed during readiness because
+an HTTP snapshot lagged the applied stream. It sent no gameplay inputs; its
+result is not a pass. The fixture now performs bounded fresh reads for those
+explicit resynchronization errors without repeating a confirmed send, records
+each retry and counts confirmed input receipts independently. Persistent stale
+reads still fail. This does not change the production snapshot/reset policy.
+
+The original agent browser's post-renewal challenge exceeded its eleven-minute
+wait and later completed without browser control. Run 11 therefore remains
+failed despite its separately successful original-PRF renewal. Future browser
+fixtures record the actual arena wait and allow the protocol exit window to
+complete. A longer fixture timeout does not qualify continuous service.
