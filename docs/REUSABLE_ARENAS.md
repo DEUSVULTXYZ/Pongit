@@ -1,5 +1,39 @@
 # Reusable arenas and testnet admission transport
 
+## Eight agents qualified; closed epoch awaiting release, 20 September 19:27 UTC
+
+All eight house identities now have both Classic and Chaos qualifications in
+the private catalog. The same rules-15 arena completed fourteen full games and
+one expired-ticket cancellation, retaining fifteen canonical results. Its
+4,571 journalled engine commands are confirmed. Twenty-three distinct Chaos
+effects were observed; BOSS ROUND (23) remains missing from this hosted coverage.
+
+The original qualifier still exits with a failed aggregate verdict because its
+earlier proof-cache and publication-timeout failures are retained. Subsequent
+recovery and successful games do not turn that failed trial into a passing
+24-hour qualification. The arena closed after 4,264 batches at 19:09:31 UTC,
+with real release eligibility at 20:09:31 UTC.
+
+All fifteen complete result bodies and their canonical prefix were imported
+into a separate private PostgreSQL archive. The source is Monad block 64245448,
+hash `0x87486a9f3d1d6325bd0454ae2f9bf79af131d7b652baa60d853fa435020e6304`.
+Both database dumps and the frozen original journal have verified off-VPS copies.
+The persistent recovery keeper runs with admissions disabled and no budget file;
+it can release, seal roots and recover historical results without opening games.
+
+`scripts/import-reusable-agent-journal.ts` prepares the next handoff. It refuses
+to import until the hub has released the old epoch and the full root is sealed.
+It verifies each original signed command's signer, arena, epoch, nonce and match,
+then imports the entire journal atomically under the runtime arena lock. Retired
+commands become obsolete with their original source verdict preserved; this
+does not fabricate new receipt evidence. Repeating the import must reproduce
+exactly the same records. The positive hosted import is still pending release.
+
+A read-only fork of the actual hub runtime released 5,000 synthetic batches
+over 86 reused slots with 1,451,957 gas before refunds. The 16,000-batch trial is
+still running. These diagnose release cost only; neither proves hosted
+publication continuity, capacity or a reviewed production admission budget.
+
 ## Corrected human deployment and hosted smoke, 20 September 19:03 UTC
 
 The canonical `1367f8f` candidate deployed successfully. Its common lobby is
