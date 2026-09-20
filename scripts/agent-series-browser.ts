@@ -194,7 +194,11 @@ try{
   await savePrivate();await page.reload();await page.bringToFront();
   await until(()=>up.isEnabled({timeout:1000}).catch(()=>false),'F5 session reuse');
   assert.equal(assertions,initialAssertions,'F5 or another arena requested a fresh passkey');report.checks.push(`Mode ${mode}: F5 reused scoped key`);await checkpoint();
-  await watch.goto(url);await watch.locator('canvas').waitFor();await page.bringToFront();
+  // A spectator's complete authorization/read setup may outlast a novice's
+  // genuine match. Exercise player controls immediately while it loads; it
+  // remains an independently verified observer before comparing final scores.
+  const watchReady=(async()=>{await watch.goto(url);await watch.locator('canvas').waitFor();})();
+  void watchReady.catch(()=>{});await page.bringToFront();
   assert.equal(await page.evaluate(()=>document.hidden),false,'The controlled browser must be in the foreground');
   for(let i=0;i<60;i++){
    if(!await up.count())break;
@@ -206,7 +210,8 @@ try{
    // Exercise faults early: a novice who misses every serve can lose in under
    // forty seconds. A later unused injection must never count as passing.
    if(round===0&&i===0)loseReply=true;if(round===0&&i===1)throttle=true;
-   await page.keyboard.down(i%2?'s':'w');await sleep(100);await page.keyboard.up(i%2?'s':'w');await sleep(100);
+   await page.keyboard.down(i%2?'s':'w');await sleep(250);await page.keyboard.up(i%2?'s':'w');await sleep(100);
+   if(round===0&&i<2)await until(async()=>report.faults.some((f:{kind:string})=>f.kind===(i===0?'Reply lost after execution':'Injected 429 before send')),'Actual transport fault '+i,10000);
    if(round===0&&report.faults.length===2&&await up.isEnabled({timeout:1000}).catch(()=>false)){
     report.controlRecoveredAfterFaults={at:new Date().toISOString(),ref,authAssertions:assertions};
    }
@@ -216,7 +221,7 @@ try{
   }
   await until(async()=>{const r=await fetch(`${api}/agents/matches/${ref.app}/${ref.epoch}/${ref.id}`);const v=await r.json();return r.ok&&!!v.result;},'Published result',390000);
   const result:PoolMatchView=await (await fetch(`${api}/agents/matches/${ref.app}/${ref.epoch}/${ref.id}`)).json();assert(result.result);
-  await page.keyboard.press('Escape');await watch.locator('.pool-published-result').waitFor();
+  await watchReady;await page.keyboard.press('Escape');await watch.locator('.pool-published-result').waitFor();
   const expected:number[]=[result.result.scoreA,result.result.scoreB];
   for(const p of [page,watch])assert.deepEqual((await p.locator('.agent-score b').allTextContents()).map(Number),expected);
   await savePrivate();assert.equal(assertions,initialAssertions,'Family reuse requested a new ceremony');
