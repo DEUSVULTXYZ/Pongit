@@ -18,6 +18,8 @@ const agentOrigins=existsSync(agentPath)?(()=>{
  return `${m.node} ${m.node.replace(/^http/,'ws')}`;
 })():'';
 const poolPath=path.resolve('deployments/agent-pool.json');
+if(process.env.PONG_REQUIRE_AGENT_POOL_MANIFEST==='true'&&!existsSync(poolPath))
+ throw Error('Agent Arcade build requires deployments/agent-pool.json for its network security policy');
 const poolOrigins=existsSync(poolPath)?(()=>{
  const m=JSON.parse(readFileSync(poolPath,'utf8'));
  if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11)||m.chainId!==10143||!Array.isArray(m.arenas)

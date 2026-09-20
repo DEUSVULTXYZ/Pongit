@@ -9,6 +9,8 @@ import {pooledAgentArenaAbi as abi} from '../shared/abi-PooledAgentArena';
 import {pooledHouseBots,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../shared/agent-pool';
 import {initial} from '../shared/physics-v2';
 import {chaosBrowserPayload} from './chaos-browser-fixture';
+import {decodeChaosRead} from '../shared/chaos-codec';
+import {engineState} from '../shared/engine-stream';
 assert.equal(process.env.PONG_POOL_UI_TEST,'isolated-fixture');
 const origin='http://127.0.0.1:4189',channel=process.env.BROWSER_CHANNEL??'chrome';
 const series=process.env.PONG_POOL_UI_RULES==='11';assert(!process.env.PONG_POOL_UI_RULES||['10','11'].includes(process.env.PONG_POOL_UI_RULES));
@@ -30,7 +32,7 @@ const browser=await chromium.launch({channel,headless:true});
 try{
  for(const [width,height] of [[360,640],[390,844],[768,900],[1440,1000],[844,390]]){
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
-  let mode:0|1=0,league=false,published=false,effect=21,revision=1n;
+  let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0;
   await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
   await context.route('**/*',async route=>{
    const request=route.request(),url=new URL(request.url());
@@ -40,7 +42,7 @@ try{
      const pathname=decodeURIComponent(url.pathname);
      let root:string,file:string;
      if(pathname==='/agents'||pathname==='/agents/tournaments'||pathname.startsWith('/agents/arenas/')){root=resolve('artifacts/qualification/20260919/pool-ui');file=resolve(root,pathname==='/agents'?'catalog.html':pathname==='/agents/tournaments'?'tournaments.html':'arena.html');}
-     else if(pathname.startsWith('/_next/static/')){root=resolve('web/.next/static');file=resolve(root,pathname.slice('/_next/static/'.length));}
+     else if(pathname.startsWith('/_next/static/')){root=resolve(process.env.PONG_POOL_UI_STATIC??'web/.next/static');file=resolve(root,pathname.slice('/_next/static/'.length));}
      else if(pathname==='/icon.svg'||pathname==='/icon.png'){root=resolve('web/app');file=resolve(root,pathname.slice(1));}
      else{root=resolve('web/public');file=resolve(root,pathname.slice(1));}
      assert(!relative(root,file).startsWith('..'));
@@ -53,12 +55,22 @@ try{
      else if(url.pathname==='/agents/live')data={items:[{ref,a:people[0].agent,b:people[1].agent,mode:0,lane:'tournament'}]};
      else if(url.pathname==='/agents/tournaments')data={items:[tournament('1',league,mode)],total:'1',offset:'0',next:null,nextAt:'0'};
      else if(url.pathname==='/agents/tournaments/1')data=tournament('1',league,mode);
+     else if(url.pathname==='/agents/replay'){
+      assert.equal(url.searchParams.get('app'),ref.app);assert.equal(url.searchParams.get('epoch'),ref.epoch);assert.equal(url.searchParams.get('id'),ref.id);
+      const frames=Array.from({length:10},(_,i)=>{
+       const state={...initial(zeroHash,mode),t:BigInt(i)*1000000n,scoreA:i===9?7:3,scoreB:2,finished:i===9};
+       const header=[1n,BigInt(i+1),i===9?3n:2n,people[0].agent,people[1].agent,zeroAddress,i===9?people[0].agent:zeroAddress,100n+BigInt(i),state.t,0n,0n,0n,state];
+       return engineState(decodeChaosRead(abi,chaosBrowserPayload(abi,header,mode?21:0,mode?13:0)));
+      });
+      data=JSON.parse(JSON.stringify({ref,rulesVersion:m.rulesVersion,availability:replayRetired?'pruned':'partial',frames:replayRetired?[]:frames,frameCount:replayRetired?0:frames.length},(_,v)=>typeof v==='bigint'?String(v):v));
+     }
      else if(url.pathname.startsWith('/agents/matches/'))data={ref,a:people[0].agent,b:people[1].agent,mode,ranked:false,tournament:'1',lane:0,node:published?null:node,currentBinding:!published,regulationSeconds:300,overtimeSeconds:league?0:60,
       result:published?{hash:zeroHash,winner:people[0].agent,status:3,scoreA:7,scoreB:2,elapsedUs:'60000000',finality:true}:null} satisfies PoolMatchView;
      else throw Error('Unexpected fixture API '+url.pathname);
      return route.fulfill({json:{...data,observation}});
     }
     if(url.origin===node){
+     engineReads++;
      const rpc=request.postDataJSON(),reply=(result:any)=>route.fulfill({json:{jsonrpc:'2.0',id:rpc.id,result}});
      if(rpc.method==='interlude_session')return reply({app:ref.app,chainId:4242,epoch:1,ephemeralBlock:100,execTimestamp:Math.floor(Date.now()/1000),pendingDiffs:[]});
      if(rpc.method==='eth_call'){
@@ -104,7 +116,19 @@ try{
    await page.screenshot({path:`artifacts/qualification/20260919/pool-ui/${channel}-${mode?'chaos':'classic'}-${width}.png`,fullPage:true});
    published=true;await page.getByRole('heading',{name:'NOVA wins',exact:true}).waitFor({timeout:16000});
    assert.equal(await page.locator('canvas').count(),0);assert(await page.getByText('Final published result',{exact:true}).isVisible());
-   report.checks.push({width,height,mode,pixelCourt:true,noEffectShift:true,publishedResult:true});
+   replayRetired=false;const readsBeforeReplay=engineReads;
+   await page.locator('.pool-published-result').getByRole('button',{name:'Watch replay',exact:true}).click();
+   const replay=page.getByRole('dialog',{name:'Match replay',exact:true});await replay.locator('canvas').waitFor();
+   await replay.getByText('PARTIAL REPLAY · Some snapshots were not recorded',{exact:true}).waitFor();
+   assert(await page.evaluate(()=>getComputedStyle(document.body).overflow==='hidden'),'Replay must lock the background');
+   await replay.getByRole('button',{name:'Play replay',exact:true}).click();await page.waitForFunction(()=>Number((document.querySelector('[role=dialog] input[type=range]') as HTMLInputElement)?.value)>0);
+   await replay.getByRole('button',{name:'Pause',exact:true}).click();assert.equal(engineReads,readsBeforeReplay,'Replay opened a live engine reader');
+   await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog',{name:'Match replay'}).count(),0);
+   assert.equal(await page.locator(':focus').textContent(),'Watch replay');
+   replayRetired=true;await page.locator('.pool-published-result').getByRole('button',{name:'Watch replay',exact:true}).click();
+   await page.getByText('Replay retired. The result remains available.',{exact:true}).waitFor();assert.equal(await page.locator('canvas').count(),0);
+   await page.keyboard.press('Escape');
+   report.checks.push({width,height,mode,pixelCourt:true,noEffectShift:true,publishedResult:true,replayPlayback:true,replayFocus:true,retiredSummary:true,noReplayEngineRequests:true});
   }
   await context.close();
  }

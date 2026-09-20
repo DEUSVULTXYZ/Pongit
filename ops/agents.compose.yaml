@@ -99,8 +99,9 @@ services:
       PONG_AGENT_OPERATIONS: dedicated-authorized
       PONG_AGENT_DIAGNOSTICS: /diagnostics/agents
       PONG_INDEPENDENT_WRITE: authorized-testnet
-      # A stake release replays every batch of the epoch in one transaction that
-      # must fit in a single Monad block. Roll the epoch well before that wall.
+      # Conservative legacy pressure guard, not a proven release-gas formula.
+      # Release also depends on distinct modified storage slots. Keep this
+      # guard until the exact application workload and release are qualified.
       PONG_AGENT_MAX_BATCHES: ${PONG_AGENT_MAX_BATCHES:-1000}
       PONG_AGENT_MAX_EPOCH_SECONDS: ${PONG_AGENT_MAX_EPOCH_SECONDS:-14400}
       ROOMS_LIFECYCLE_KEY_FILE: /ops/lifecycle.json

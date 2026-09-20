@@ -62,7 +62,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      setView(current);nextPublished=performance.now()+5000;
     }
     if(!current)return;
-    if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection(current.result.finality?'Final result':'Published, still contestable');setError('');delay=10000;return;}
+    if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setControlError('');setConnection(current.result.finality?'Final result':'Published, still contestable');setError('');delay=10000;return;}
     if(!current.node){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection('Waiting for the published result');delay=2000;return;}
     if(!observer){
      const remembered=rememberedAccount(),saved=remembered?loadPoolFamily(config,remembered.address,sessionStorage):null;
