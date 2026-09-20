@@ -101,6 +101,7 @@ export function engineReceiptOutcome(receipt:any,hash:Hex):'observed'|'failed'|n
 export async function reconcileEngineJobs(o: {
   db: Pick<Pool, "query">; app: Address;
   receipt: (hash: Hex) => Promise<any>;
+  beforeAcknowledge?: (receipt:any,job:EngineJob) => Promise<void>;
 }) {
   const jobs = (await o.db.query("SELECT * FROM il_engine_jobs WHERE app=$1 AND status IN ('pending','quarantined') ORDER BY epoch,nonce", [o.app])).rows;
   for (const job of jobs) {
@@ -108,6 +109,9 @@ export async function reconcileEngineJobs(o: {
     try { receipt = await o.receipt(job.hash); } catch { continue; }
     const outcome=engineReceiptOutcome(receipt,job.hash);
     if(!outcome)continue;
+    // Reusable arenas must persist complete terminal records before the
+    // command can leave the unresolved journal, including after restart.
+    if(outcome==='observed')await o.beforeAcknowledge?.(receipt,job);
     const status=String(receipt.status);
     await o.db.query("UPDATE il_engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2 AND status IN ('pending','quarantined')",
       [o.app, job.id, outcome,

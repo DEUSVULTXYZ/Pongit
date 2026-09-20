@@ -64,7 +64,7 @@ library ReusableArenaStorage {
         set(w,0,uint160(b.a)|(b.ranked?1<<160:0)|(1<<161)|(uint256(b.mode)<<168));
         set(w,1,uint160(b.b));set(w,3,uint256(keccak256(abi.encode(ticketHash,b.id,epoch))));
         set(w,11,b.room);set(w,31,epoch);set(w,32,uint160(b.keyA));set(w,33,uint160(b.keyB));
-        set(w,34,uint256(b.expiresA)|(uint256(b.expiresB)<<64));
+        set(w,34,uint256(b.expiresA)|(uint256(b.expiresB)<<64));set(w,35,b.preparedBlock);
         set(w,36,uint256(ticketHash));set(w,37,b.id);set(w,38,t.sequence);
     }
     function assertMatch(mapping(bytes32=>uint256) storage w,uint256 epoch,uint256 id) internal view {

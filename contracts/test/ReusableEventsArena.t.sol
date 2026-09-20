@@ -79,6 +79,21 @@ contract ReusableEventsArenaTest is Test, IReusableAdmissionAuthority {
         vm.prank(vm.addr(1102));arena.confirmReady(1,42);arena.start(1,42);assertEq(arena.launchAt(42),vm.getBlockTimestamp()+3);
         vm.expectRevert("countdown pending");arena.start(1,42);vm.warp(vm.getBlockTimestamp()+3);arena.start(1,42);assertEq(arena.getSnapshot(42).phase,2);
     }
+    function testBrowserBindingAndPressureViewsRetainOnlyTheCurrentLogicalMatch() public {
+        (Admission.Ticket memory t,T.Binding memory b)=ticket(4242,1,1);
+        arena.admit(t,b,sign(BRIDGE,Admission.digest(t)));
+        assertEq(keccak256(abi.encode(arena.boundMatch())),keccak256(abi.encode(b)));
+        start(4242);RoomsState.Header memory h=arena.getSnapshot(4242);
+        Flow.LivePressure memory p=Flow.LivePressure(4242,1,h.state.seed,1,0.003 ether,0.001 ether,101,keccak256("paid checkpoint"),uint64(vm.getBlockTimestamp()+20));
+        arena.submitLivePressure(p,sign(PRESSURE,arena.pressureDigest(p)));
+        (uint256 paidA,uint256 paidB,uint64 source,bytes32 checkpoint)=arena.queuedPressure(4242);
+        assertEq(paidA,p.paidA);assertEq(paidB,p.paidB);assertEq(source,p.sourceBlock);assertEq(checkpoint,p.checkpoint);
+        vm.prank(vm.addr(1102));arena.concede(1,4242);admit(9009,2,0);
+        assertEq(arena.boundMatch().id,9009);assertEq(arena.boundMatch().preparedBlock,99);
+        vm.expectRevert("stale match reference");arena.queuedPressure(4242);
+        (paidA,paidB,source,checkpoint)=arena.queuedPressure(9009);
+        assertEq(paidA,0);assertEq(paidB,0);assertEq(source,0);assertEq(checkpoint,0);
+    }
     function testAbandonedLoadingCommitsCancellationAndSlotCanBeReused() public {
         admit(42,1,0);vm.warp(vm.getBlockTimestamp()+31);arena.cancelUnready(1,42);
         assertEq(arena.publishedResult().match_.status,4);assertEq(arena.publishedResult().match_.winner,address(0));admit(43,2,1);

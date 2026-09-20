@@ -22,7 +22,9 @@ export const beaconRequestEpoch=(request:bigint)=>(request>>64n)&0xffff_ffffn;
 /** The epoch a command is bound to, or undefined for commands bound to none. */
 export function commandEpoch(abi:Abi,data:Hex):bigint|undefined{
  let decoded;try{decoded=decodeFunctionData({abi,data});}catch{return undefined;}
- if(decoded.functionName==='submitLivePressure')return BigInt((decoded.args?.[0] as {epoch:bigint}).epoch);
+ const fn=abi.find(x=>x.type==='function'&&x.name===decoded.functionName);
+ if(fn?.type==='function'&&fn.inputs[0]?.name==='epoch')return BigInt(decoded.args![0] as bigint);
+ if(['submitLivePressure','renewActive','admit','cancelAdmission'].includes(decoded.functionName))return BigInt((decoded.args?.[0] as {epoch:bigint}).epoch);
  if(decoded.functionName==='submitRandomness')return beaconRequestEpoch(BigInt(decoded.args?.[1] as bigint));
  return undefined;
 }
@@ -40,9 +42,17 @@ export const isStaleEpochCommand=(error:unknown)=>(error as {code?:unknown})?.co
 /** Throws StaleEpochCommand when `data` is bound to another epoch than `current`. */
 export function assertCommandEpoch(abi:Abi,data:Hex,current:bigint){
  const epoch=commandEpoch(abi,data);
- if(epoch===undefined||epoch===current)return;
+ if(epoch===undefined)return;
  let action='command';try{action=decodeFunctionData({abi,data}).functionName;}catch{}
- throw new StaleEpochCommand(action,epoch,current);
+ if(epoch!==current)throw new StaleEpochCommand(action,epoch,current);
+ // Reusable calls carry an explicit epoch AND the packed beacon's epoch.
+ // Checking only the outer field would admit an impossible stale proof.
+ if(action==='submitRandomness'){
+  const decoded=decodeFunctionData({abi,data}),fn=abi.find(x=>x.type==='function'&&x.name===action);
+  const offset=fn?.type==='function'&&fn.inputs[0]?.name==='epoch'?2:1;
+  const requestEpoch=beaconRequestEpoch(BigInt(decoded.args![offset] as bigint));
+  if(requestEpoch!==current)throw new StaleEpochCommand(action,requestEpoch,current);
+ }
 }
 
 /** Whether the beacon pump may fetch and submit a proof for this request now.

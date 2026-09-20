@@ -1,33 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {toHex,verifyTypedData,type Address} from 'viem';
+import {toHex,verifyTypedData,encodeFunctionData,type Address} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {independentEventsPressure} from '../relayer/src/independent-events-pressure';
 import {eventsPressureDomain,eventsPressureTypes,livePressureCheckpoint} from '../shared/rooms-live-pressure';
 
 const app='0x0000000000000000000000000000000000000012',market='0x0000000000000000000000000000000000000013',hash=toHex(98,{size:32}),seed=toHex(5,{size:32});
-async function fixture(){
+async function fixture(rulesVersion=12){
  const key=generatePrivateKey(),signer=privateKeyToAccount(key),calls:any[]=[],journal:any[]=[],sends:any[]=[];
  const state:any={id:10n,phase:2,state:{mode:1,seed,scoreA:2,scoreB:1,awaitingServe:false},chaos:{physics:{score:{rally:37}}}};
  let changed=false,reorg=false,book=1n,marketEpoch=2n,queued:readonly bigint[]=[0n,0n,0n],paid:readonly bigint[]=[5n,7n];
- const manifest:any={rulesVersion:12,lobby:app,market,settlement:app,pressureSigner:signer.address,arenas:[{app}]};
+ const manifest:any={rulesVersion,lobby:app,market,settlement:app,pressureSigner:signer.address,arenas:[{app}]};
  const db:any={query:async(sql:string,args:any[]=[])=>{
   if(sql.startsWith('INSERT INTO'))journal.push(args);
   return {rows:sql.startsWith('SELECT')?[{checkpoint:journal.at(-1)?.[8]}]:[]};
  }};
  let blockReads=0;
  const base:any={getBlockNumber:async()=>100n,getBlock:async()=>({hash:reorg&&++blockReads>1?toHex(99,{size:32}):hash}),readContract:async(o:any)=>{
-  assert.equal(o.blockNumber,98n);calls.push(o.functionName);
+  assert.equal(o.blockNumber,98n);encodeFunctionData({abi:o.abi,functionName:o.functionName,args:o.args});calls.push(o.functionName);
   switch(o.functionName){
    case 'boundMatch':return {id:10n,epoch:2n};case 'books':return [0n,0n,book];
    case 'markets':return [app,marketEpoch];case 'pressure':return paid;
-   case 'getSnapshot':return [10n,1n,2n,null,null,null,null,null,null,null,null,null,state.state];
+   case 'getSnapshot':return rulesVersion===14?{id:10n,revision:1n,phase:2n,state:state.state}:[10n,1n,2n,null,null,null,null,null,null,null,null,null,state.state];
    default:throw Error('Unexpected read '+o.functionName);
   }
  }};
  let refReads=0;
  const engine:any={app,busy:()=>false,reference:()=>({id:changed&&++refReads>1?11n:10n,epoch:2n}),read:async()=>state,
-  node:{readContract:async(o:any)=>{assert.equal(o.functionName,'queuedPressure');return queued;},getBlock:async()=>({timestamp:1800000000n})},
+  node:{readContract:async(o:any)=>{assert.equal(o.functionName,'queuedPressure');encodeFunctionData({abi:o.abi,functionName:o.functionName,args:o.args});return queued;},getBlock:async()=>({timestamp:1800000000n})},
   send:async(name:string,args:any[])=>sends.push({name,args})};
  const queuedOperations:string[]=[];
  const worker=await independentEventsPressure(db,base,manifest,key,async(_at,_abi,name)=>{queuedOperations.push(name);});
@@ -45,6 +45,13 @@ test('live pressure uses confirmed payments and the real rally without awaitingS
 test('new realtime market is opened once its current game is published',async()=>{
  const f=await fixture();f.mutate({book:0n});await f.worker.checkpoint(f.engine);assert.deepEqual(f.queuedOperations,['open']);assert.equal(f.sends.length,0);
  const other=await fixture();other.mutate({marketEpoch:0n});await other.worker.checkpoint(other.engine);assert.deepEqual(other.queuedOperations,['openRound']);
+});
+
+test('reusable named headers open a market and expose the retained pressure checkpoint',async()=>{
+ const f=await fixture(14);f.mutate({book:0n});await f.worker.checkpoint(f.engine);assert.deepEqual(f.queuedOperations,['open']);
+ const round=await fixture(14);round.mutate({marketEpoch:0n});await round.worker.checkpoint(round.engine);assert.deepEqual(round.queuedOperations,['openRound']);
+ const paid=await fixture(14);await paid.worker.checkpoint(paid.engine);assert.equal(paid.sends.length,1);
+ assert.equal(paid.sends[0].args[0].epoch,2n);assert.equal(paid.sends[0].args[0].matchId,10n);
 });
 test('a changed match or reorganized source cannot produce a pressure signature',async()=>{
  const f=await fixture();f.mutate({changed:true});await f.worker.checkpoint(f.engine);assert.equal(f.sends.length,0);

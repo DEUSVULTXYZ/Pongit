@@ -23,24 +23,29 @@ export const reusableBindingHash=(binding:ReusableBinding)=>keccak256(encodeAbiP
 /** Fail closed before attestation. Every evidence field must come from one
  * canonical Monad read set and the registered engine's actual epoch. A bridge
  * is still trusted for admission; this validation is not a state-proof claim. */
-export function validateReusableAdmission(ticket:ReusableTicket,binding:ReusableBinding,e:{
+export type ReusableAdmissionEvidence={
  chainId:number;authority:Address;arena:Address;issuedDigest:Hex;sourceHash:Hex;
  reservedMatch:bigint;hubEpoch:bigint;hubStatus:number;hubExpires:bigint;
  engineEpoch:bigint;engineCount:number;now:bigint;
-}){
+};
+function validate(ticket:ReusableTicket,binding:ReusableBinding,e:ReusableAdmissionEvidence,cancel:boolean){
  const same=(a:string,b:string)=>a.toLowerCase()===b.toLowerCase();
  const address=(a:string)=>isAddress(a)&&!same(a,zeroAddress);
  if(e.chainId!==10143||ticket.rules!==14n||!address(ticket.authority)||!address(ticket.arena)
   ||!same(ticket.authority,e.authority)||!same(ticket.arena,e.arena)
   ||ticket.matchId<=0n||ticket.matchId!==e.reservedMatch||ticket.matchId!==binding.id
   ||ticket.epoch<=0n||ticket.epoch!==e.hubEpoch||ticket.epoch!==e.engineEpoch||ticket.epoch!==binding.epoch
-  ||e.hubStatus!==1||e.hubExpires<=e.now+1860n
+  ||e.hubStatus!==1||e.hubExpires<=e.now+(cancel?0n:1860n)
   ||!Number.isInteger(e.engineCount)||e.engineCount<0||e.engineCount>=65536||ticket.sequence!==BigInt(e.engineCount)+1n
-  ||ticket.issuedAt>e.now||ticket.expires<=e.now||ticket.expires<=ticket.issuedAt||ticket.expires-ticket.issuedAt>120n
+  ||ticket.issuedAt>e.now||(cancel?ticket.expires>e.now:ticket.expires<=e.now)||ticket.expires<=ticket.issuedAt||ticket.expires-ticket.issuedAt>120n
   ||ticket.sourceBlock<=0n||ticket.sourceBlock!==binding.preparedBlock||same(ticket.sourceHash,zeroHash)||!same(ticket.sourceHash,e.sourceHash)
   ||!same(ticket.bindingHash,reusableBindingHash(binding))||!same(e.issuedDigest,reusableAdmissionDigest(ticket))
   ||![binding.a,binding.b,binding.keyA,binding.keyB].every(address)||same(binding.a,binding.b)||same(binding.keyA,binding.keyB)
-  ||![0,1].includes(binding.mode)||binding.expiresA<=e.now||binding.expiresB<=e.now
+  ||![0,1].includes(binding.mode)||binding.expiresA<=(cancel?ticket.issuedAt:e.now)||binding.expiresB<=(cancel?ticket.issuedAt:e.now)
   ||binding.expiresA>ticket.issuedAt+7200n||binding.expiresB>ticket.issuedAt+7200n)throw Error('Admission differs from authoritative Monad ticket or current arena');
  return reusableAdmissionMessage(ticket);
 }
+export const validateReusableAdmission=(ticket:ReusableTicket,b:ReusableBinding,e:ReusableAdmissionEvidence)=>validate(ticket,b,e,false);
+/** Expiration is evidence for cancellation only. It never authorizes late play
+ * or frees a reservation without the cancellation's actual published result. */
+export const validateReusableCancellation=(ticket:ReusableTicket,b:ReusableBinding,e:ReusableAdmissionEvidence)=>validate(ticket,b,e,true);

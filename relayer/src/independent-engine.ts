@@ -6,14 +6,15 @@ import {randomUUID} from 'node:crypto';
 import {publicationUnavailable} from '../../shared/service-error';
 import {independentRules} from '../../shared/independent-rules';
 import {engineTransport,engineCooldownMs} from '../../shared/engine-transport';
-import {EngineStream,type EngineState} from '../../shared/engine-stream';
+import {EngineStream,receiptFrame,type EngineState} from '../../shared/engine-stream';
+import {reusableResults,type ReusableResultCandidate} from '../../shared/reusable-results';
 import {EngineFeed} from '../../shared/engine-feed';
 import {engineJobIdentity,engineReceiptOutcome,reconcileEngineJobs} from './rooms-engine-recovery';
 import {assertCommandEpoch} from './rooms-command-epoch';
 
 /** Each application/epoch has its own journal and writer. Nothing queues behind another arena. */
-export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12|13|14;node?:PublicClient;feed?:EngineFeed}){
- if(runtime?.rulesVersion===14)throw Error('Reusable human commands require their dedicated archive and admission worker');
+export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12|13|14;node?:PublicClient;feed?:EngineFeed;archive?:(results:ReusableResultCandidate[])=>Promise<void>}){
+ if(runtime?.rulesVersion===14&&!runtime.archive)throw Error('Reusable human commands require a durable result archive');
  const rules=independentRules({rulesVersion:runtime?.rulesVersion}),abi=rules.arena;
  const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
  const client={app,abi:abi as Abi,node};
@@ -25,9 +26,15 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
   if(id&&epoch)stop=feed.watch(id,s=>onSnapshot?.(app,epoch,s));else stop=undefined;
   return true;
  }
- async function send(name:'tick'|'submitPressure'|'revokeActive'|'renewActive'|'start'|'submitRandomness'|'submitLivePressure'|'cancelUnready',args:readonly unknown[]=[]){
+ const archiveReceipt=async(receipt:any)=>{
+  if(rules.version!==14)return;
+  const frame=receiptFrame(receipt,app);if(!frame)throw Error('Reusable receipt logs are incomplete');
+  const results=reusableResults(abi,app,14,frame);if(results.length)await runtime!.archive!(results);
+ };
+ async function send(name:'tick'|'submitPressure'|'revokeActive'|'renewActive'|'start'|'submitRandomness'|'submitLivePressure'|'cancelUnready'|'admit'|'cancelAdmission',args:readonly unknown[]=[]){
   const allowed=rules.events?['start','tick','submitRandomness','submitLivePressure','revokeActive','renewActive']:['tick','submitPressure','revokeActive','renewActive'];
-  if(rules.version===13)allowed.push('cancelUnready');
+  if(rules.version===13||rules.version===14)allowed.push('cancelUnready');
+  if(rules.version===14)allowed.push('admit','cancelAdmission');
   if(!allowed.includes(name))throw Error('Operation is not supported by this arena version');
   if(busy)throw Error('This arena is reconciling a command');busy=true;
   const commandMatch=match,commandEpoch=epoch;
@@ -40,8 +47,9 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
    const data=encodeFunctionData({abi:abi as Abi,functionName:name,args});
    if(!commandMatch||!commandEpoch)throw Error('No current arena binding');
    assertCommandEpoch(abi,data,commandEpoch);
-   if(['tick','submitRandomness','cancelUnready'].includes(name)&&args[0]!==commandMatch)throw Error('Command belongs to another match');
-   if(['submitPressure','submitLivePressure','renewActive'].includes(name)&&(args[0] as {matchId:bigint})?.matchId!==commandMatch)throw Error('Command belongs to another match');
+   const matchOffset=rules.version===14?1:0;
+   if(['tick','submitRandomness','cancelUnready',...(rules.version===14?['start','revokeActive']:[])].includes(name)&&args[matchOffset]!==commandMatch)throw Error('Command belongs to another match');
+   if(['submitPressure','submitLivePressure','renewActive','admit','cancelAdmission'].includes(name)&&(args[0] as {matchId:bigint})?.matchId!==commandMatch)throw Error('Command belongs to another match');
    const requestKey=name==='revokeActive'||name==='renewActive'?keccak256(data):null;
    if(requestKey){
     const previous=(await db.query("SELECT * FROM il_engine_jobs WHERE app=$1 AND epoch=$2 AND request_key=$3 AND status IN ('observed','confirmed')",[app.toLowerCase(),String(commandEpoch),requestKey])).rows[0];
@@ -69,6 +77,7 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
    if(!receipt)receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);
    const outcome=engineReceiptOutcome(receipt,job.hash);
    if(!outcome)throw Error('Command receipt is not yet available');
+   if(outcome==='observed')await archiveReceipt(receipt);
    await db.query('UPDATE il_engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2',[job.app,job.id,outcome,{kind:'receipt',hash:job.hash,blockHash:receipt.blockHash,at:new Date().toISOString()}]);
    if(outcome==='failed'){feed.invalidate();throw Error('Command reverted. Reading current arena state.');}
    if(identity.data!==data||match!==commandMatch||epoch!==commandEpoch){feed.invalidate();throw Error('Previous command reconciled. Refresh before the next action.');}
@@ -84,7 +93,14 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
   restoreHealth:async()=>{const row=(await db.query('SELECT failed_at FROM independent_engine_health WHERE app=$1 AND epoch=$2',[app.toLowerCase(),String(epoch)])).rows[0];publicationFailedAt=row?Number(row.failed_at):0;},
   read:()=>feed.read(match),
   status:()=>node.request({method:'interlude_session',params:[]} as any) as Promise<any>,
-  reconcile:()=>reconcileEngineJobs({db,app:app.toLowerCase() as Address,receipt:hash=>node.getTransactionReceipt({hash})}),
+  reconcile:()=>reconcileEngineJobs({db,app:app.toLowerCase() as Address,receipt:hash=>node.getTransactionReceipt({hash}),beforeAcknowledge:archiveReceipt}),
+  retireOlder:async(currentEpoch:bigint,finalized:(epoch:bigint)=>Promise<boolean>)=>{
+   const rows=(await db.query("SELECT DISTINCT epoch FROM il_engine_jobs WHERE app=$1 AND epoch::numeric<$2::numeric AND status IN ('pending','quarantined')",[app.toLowerCase(),String(currentEpoch)])).rows;
+   for(const row of rows){
+    const old=BigInt(row.epoch);if(!await finalized(old))throw Error('Previous epoch command requires a sealed final root');
+    await db.query("UPDATE il_engine_jobs SET status='obsolete',resolution=COALESCE(resolution,'{}'::jsonb)||$3::jsonb,updated_at=now() WHERE app=$1 AND epoch=$2 AND status IN ('pending','quarantined')",[app.toLowerCase(),String(old),JSON.stringify({kind:'sealed-epoch',epoch:String(old),nextEpoch:String(currentEpoch),at:new Date().toISOString()})]);
+   }
+  },
   retire:async(closedEpoch:bigint)=>{
    // Caller must establish status None on Monad first. Never retire on a timeout.
    await db.query("UPDATE il_engine_jobs SET status='obsolete',resolution=COALESCE(resolution,'{}'::jsonb)||$3::jsonb,updated_at=now() WHERE app=$1 AND epoch=$2 AND status IN ('pending','quarantined')",[app.toLowerCase(),String(closedEpoch),JSON.stringify({kind:'epoch-closed',epoch:String(closedEpoch),at:new Date().toISOString()})]);

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {zeroAddress,zeroHash} from 'viem';
+import {zeroAddress,zeroHash,encodeFunctionData,type Abi} from 'viem';
+import {abi as reusableAbi} from '../shared/abi-independent-ReusableEventsArena';
 import {initial} from '../shared/physics-v2';
 import type {EngineState} from '../shared/engine-stream';
 import {ChaosBeaconPump} from '../shared/chaos-beacon-pump';
@@ -67,4 +68,20 @@ test('a delayed readiness response cannot cancel or start a replacement match',a
   const f=fixture(),loop=independentEventsLoop({...f.actor,readiness:async()=>{f.bind();return [mask,1n] as const;}});
   await loop.progress();assert.equal(f.sent.length,0);loop.stop();
  }
+});
+
+test('reusable readiness, countdown, ticks and proofs bind the real logical id and epoch',async()=>{
+ const f=fixture(),errors:unknown[]=[];let mask=0,deadline=0n;
+ const actor={...f.actor,epochCommands:true,readiness:async()=>[mask,deadline] as const,
+  send:async(action:string,args:readonly unknown[])=>{
+   encodeFunctionData({abi:reusableAbi as Abi,functionName:action,args});f.sent.push({action,args});
+   if(action==='start'&&!deadline)deadline=130n;
+  }};
+ const loop=independentEventsLoop(actor,new ChaosBeaconPump({read:async()=>({signature:'0x12'} as any)},()=>1727521080000));
+ await loop.progress();assert.deepEqual(f.sent[0],{action:'start',args:[3n,20n]});
+ f.clock(131n);await loop.progress();assert.deepEqual(f.sent[1],{action:'cancelUnready',args:[3n,20n]});
+ mask=3;await loop.progress();assert.deepEqual(f.sent[2].args,[3n,20n]);
+ f.setState({phase:2,chaos:{request:1n,pending:0n} as any});await loop.progress();assert.deepEqual(f.sent[3],{action:'tick',args:[3n,20n]});
+ await loop.supply(e=>errors.push(e));await turn();await turn();
+ assert.deepEqual(f.sent[4],{action:'submitRandomness',args:[3n,20n,1n,'0x12']});assert.deepEqual(errors,[]);loop.stop();
 });

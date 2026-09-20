@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,type Hex} from 'viem';
 import {roomsEventsAbi} from '../shared/abi-PongChaosEvents';
+import {abi as reusableAbi} from '../shared/abi-independent-ReusableEventsArena';
 import {
  StaleEpochCommand,assertCommandEpoch,beaconRequestCurrent,beaconRequestEpoch,commandEpoch,isStaleEpochCommand,livePressureEpochUsable,
 } from '../relayer/src/rooms-command-epoch';
@@ -22,6 +23,17 @@ test('the epoch a command is bound to: the beacon request word and LivePressure.
  assert.equal(commandEpoch(roomsEventsAbi,pressure(6n)),6n);
  assert.equal(commandEpoch(roomsEventsAbi,tick),undefined,'a tick is bound to no epoch');
  assert.equal(commandEpoch(roomsEventsAbi,'0x12345678'),undefined);
+});
+
+test('reusable commands verify the outer epoch and the embedded randomness epoch',()=>{
+ const proof=(outer:bigint,inner:bigint)=>encodeFunctionData({abi:reusableAbi,functionName:'submitRandomness',args:[outer,id,request(inner),'0x12']});
+ assert.equal(commandEpoch(reusableAbi,proof(7n,7n)),7n);
+ assert.doesNotThrow(()=>assertCommandEpoch(reusableAbi,proof(7n,7n),7n));
+ for(const [outer,inner] of [[6n,7n],[7n,6n],[6n,6n]])assert.throws(()=>assertCommandEpoch(reusableAbi,proof(outer,inner),7n),StaleEpochCommand);
+ for(const action of ['tick','start','cancelUnready'] as const){
+  assert.doesNotThrow(()=>assertCommandEpoch(reusableAbi,encodeFunctionData({abi:reusableAbi,functionName:action,args:[7n,id]}),7n));
+  assert.throws(()=>assertCommandEpoch(reusableAbi,encodeFunctionData({abi:reusableAbi,functionName:action,args:[6n,id]}),7n),StaleEpochCommand);
+ }
 });
 
 test('epoch 7 never sends the resumed match\'s epoch-6 beacon proof or live pressure',()=>{

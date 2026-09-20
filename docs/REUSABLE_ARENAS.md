@@ -388,3 +388,50 @@ own algorithms. The full TypeScript suite passes 548 tests. The legacy service
 explicitly rejects rules 14 until its dedicated admission/archive worker is
 wired and qualified. These changes do not activate public admissions or claim
 a passing browser or financial trial for the reusable candidate.
+
+### Human service integration, 20 September 16:55 UTC
+
+The human reusable observer is now wired behind the explicit private
+`PONG_INDEPENDENT_REUSABLE_QUALIFICATION=isolated-vps` gate. It transports the
+exact Monad reservation with a separate limited admission key, verifies the
+node's application, base block and epoch, and preserves the existing operator
+and arena command journals. It does not choose players or sign spending rights.
+Expired, never-admitted tickets submit a cancellation that must publish before
+participation is released. A lost receipt is never a cancellation verdict.
+
+Complete results are archived before acknowledging their engine commands.
+After restart, a retained terminal slot can repair that archive without inventing
+a transaction receipt. Captures require the canonical published prefix and the
+original ticket. Historical capture never reads a later match occupying the
+same slot. Final root sealing precedes recovery and reuse. A command left behind
+when a service missed an epoch transition requires its old sealed root before
+being retired. Missing archive, RPC or publication evidence remains unresolved.
+
+The reusable root now exposes the original `boundMatch` and `queuedPressure`
+getters used by the browser and financial bridge, retaining its fixed storage
+bound. Rules-14 snapshots return a named Header struct; the pressure service
+now handles that format as well as historical tuples. All readiness, start,
+tick and randomness calls bind both epoch and logical match. The getters change
+the immutable candidate bytecode and require a new deployment; existing
+rules-14 deployments are not silently upgraded.
+
+Admission and renewal require `PONG_INDEPENDENT_PUBLICATION_BUDGET` to reference
+reviewed worst-case evidence bound to the actual deployed runtime hashes. Human
+admission reserves 31 minutes, not the seven-minute agent allowance. An absent
+budget holds new admissions and opening only; result recovery, release and
+payments keep running. Rotation never migrates an occupied match. Additional
+registered addresses are not provider capacity. The scoped key is read from
+`PONG_INDEPENDENT_ADMISSION_KEY_FILE`; it is never part of the public manifest.
+
+Twenty-six targeted Solidity tests pass. The runtime is 24,035 bytes; seven
+generated Interlude surfaces pass the installed CLI layout check. Isolated
+TypeScript tests cover slot reuse, archive failure, final proof of absence,
+stale epochs, authority mismatch, renewal reserve and historical finality.
+These are implementation checks, not a passing hosted service, browser,
+financial migration or final 24-hour qualification. Public gates stay closed.
+
+The read-only recheck at 16:45 UTC still found four results published on Monad,
+five in the engine, 1,030 batches and 15 pending diffs. The publisher's balance
+and nonce were unchanged. No funding transfer or protected commit call was
+performed during this recheck. The request for a one-time 2 test MON funding
+diagnostic remains unanswered; it must not become recurring funding implicitly.

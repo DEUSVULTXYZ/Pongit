@@ -26,7 +26,8 @@ export async function independentEventsPressure(db:Pool,base:PublicClient,m:Inde
   const [book,market]=await Promise.all([read(m.market,rules.market,'books',[ref.id],source),read(m.settlement,rules.settlement,'markets',[ref.id],source)]);
   if(book[2]===0n||market[1]===0n){
    const published=await r.arena(e.app,'getSnapshot',[ref.id]);
-   if(Number(published[2])!==2||published[12].mode!==1||published[12].seed!==s.state.seed)return;
+   const phase=rules.version===14?published.phase:published[2],state=rules.version===14?published.state:published[12];
+   if(Number(phase)!==2||state.mode!==1||state.seed!==s.state.seed)return;
    if(book[2]===0n){await queue(m.market,rules.market,'open',[ref.id,parseEther('0.005')],parseEther('0.004'),2);return;}
    await queue(m.settlement,rules.settlement,'openRound',[ref.id],0n,1);return;
   }

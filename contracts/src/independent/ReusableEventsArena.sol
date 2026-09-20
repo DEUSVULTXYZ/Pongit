@@ -60,6 +60,14 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
     function currentAdmission() external view returns(uint256 epoch,uint256 id,uint256 sequence,bytes32 hash){
         return(S.get(words,31),S.get(words,37),S.get(words,38),bytes32(S.get(words,36)));
     }
+    /// Original admitted binding; subsequent owner renewals have their own
+    /// revision records. Reconstruction uses only the bounded physical slot.
+    function boundMatch() external view returns(T.Binding memory b){
+        uint256 meta=S.get(words,0);uint256 expires=S.get(words,34);
+        return T.Binding(S.get(words,37),S.get(words,11),address(uint160(meta)),address(uint160(S.get(words,1))),
+            address(uint160(S.get(words,32))),address(uint160(S.get(words,33))),uint64(expires),uint64(expires>>64),
+            uint8(meta>>168&1),meta>>160&1!=0,uint64(S.get(words,35)),S.get(words,31));
+    }
     function openEngine() external payable {
         require(block.chainid==10143&&msg.sender==lobby&&hub.statusOf(address(this),Types.GLOBAL)==Types.Status.None,"released authority only");
         (uint256 prior,uint32 count,bytes32 root)=S.commitment(words);
@@ -116,6 +124,10 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
     function submitRandomness(uint256 epoch,uint256 id,uint256 request,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.randomness(words,classic,kernel,hub,request,signature);}
     function submitLivePressure(ChaosGameFlow.LivePressure calldata p,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){Game.pressure(words,classic,kernel,hub,pressureDomain,pressureSigner,p,signature);}
     function pressureDigest(ChaosGameFlow.LivePressure calldata p) external view returns(bytes32){return ChaosGameFlow.pressureDigest(pressureDomain,p);}
+    function queuedPressure(uint256 id) external view returns(uint256,uint256,uint64,bytes32){
+        S.assertMatch(words,S.get(words,31),id);uint256 p=S.get(words,17);
+        return(uint128(p),uint128(p>>128),uint64(S.get(words,16)),bytes32(S.get(words,18)));
+    }
     function revokeActive(uint256 epoch,uint256 id,address player,uint64 deadline,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Auth.revoke(words,player,deadline,signature);}
     function renewActive(ArenaAuthorizations.Renewal calldata r,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){
         require(Game.phase(words)>0&&Game.phase(words)<3,"match ended");Auth.renew(words,r,signature);
