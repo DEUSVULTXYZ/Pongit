@@ -2,7 +2,7 @@
 // credential request is allowed through this fixture. Hosted tests are separate.
 import assert from 'node:assert/strict';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
-import {chromium} from '@playwright/test';
+import {chromium,type Page} from '@playwright/test';
 import {decodeFunctionData,encodeFunctionResult,parseTransaction,keccak256,zeroAddress,zeroHash,toHex,multicall3Abi,type Abi,type Address} from 'viem';
 import {monadTestnet} from 'viem/chains';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
@@ -21,8 +21,11 @@ const node=JSON.parse(await readFile('deployments/interlude-rooms.json','utf8'))
 const m=publicIndependentManifest({rulesVersion:12,chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(n=>({app:address(n),node})),genesis:1700000000,createdAt:'2026-09-20T00:00:00Z'});
 const rules=independentRules(m),app=m.arenas[0].app,players=[address(20),address(21)];
 const report:any={at:new Date().toISOString(),channel,source:'3a4c3ec',scope:'Actual isolated VPS build; synthetic chain/API, no real credentials or hosted gameplay',checks:[],errors:[],passed:false};
-const out='/diagnostics/independent-ui';await mkdir(out,{recursive:true});
+const run=process.env.PONG_INDEPENDENT_UI_RUN??'2';assert(/^[a-z0-9-]{1,30}$/.test(run));
+const out=`/diagnostics/independent-ui/${run}`;await mkdir(out,{recursive:true});
+try{await readFile(`${out}/${channel}.json`);throw Error('Preserve the previous report');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const browser=await chromium.launch({headless:true,channel,args:['--no-sandbox']});
+let activePage:Page|undefined;
 const json=(v:unknown)=>JSON.parse(JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x));
 function empty(p:any):any{if(p.type==='tuple')return Object.fromEntries(p.components.map((c:any)=>[c.name,empty(c)]));if(p.type.endsWith('[]'))return [];if(p.type==='address')return zeroAddress;if(p.type==='bool')return false;if(p.type==='string')return '';if(p.type==='bytes32')return zeroHash;if(p.type==='bytes')return '0x';return 0n;}
 function struct(abi:Abi,name:string,values:Record<string,unknown>){const fn=abi.find((x:any)=>x.type==='function'&&x.name===name) as any;return {...empty(fn.outputs[0]),...values};}
@@ -94,7 +97,7 @@ try{
   }catch(e){report.errors.push(String((e as Error).message).slice(0,350));await route.abort();}});
   // Disable push to exercise the real polling fallback in this UI fixture.
   await context.routeWebSocket('**/*',r=>r.close());
-  const page=await context.newPage();page.setDefaultTimeout(20000);page.on('pageerror',e=>report.errors.push(e.message));
+  const page=await context.newPage();activePage=page;report.current={width,height,mode,inputs};page.setDefaultTimeout(20000);page.on('pageerror',e=>report.errors.push(e.message));
   await page.goto(origin);await page.locator('.rooms-choice').first().waitFor();
   const choices=await page.locator('.rooms-choice').all();assert.equal(choices.length,3);
   if(width===360)for(const c of choices){const b=await c.boundingBox();assert(b&&b.height>=44&&b.y+b.height<=height,'Home choices must fit');}
@@ -104,6 +107,7 @@ try{
   while(Date.now()<until&&phase===1){digits.add((await page.locator('.match-countdown-digit').textContent().catch(()=>''))??'');await page.waitForTimeout(120);}
   assert(digits.has('3')&&digits.has('2')&&digits.has('1'),`Countdown digits missing: ${[...digits]}`);
   await page.getByRole('button',{name:'Move up',exact:true}).waitFor();assert.equal(await page.locator('.match-countdown').count(),0);
+  await page.waitForFunction(()=>{const b=document.querySelector('button[aria-label="Move up"]') as HTMLButtonElement;return b&&!b.disabled;});
   const canvas=page.locator('canvas').first(),before=await canvas.boundingBox();assert(before&&before.height>70&&Math.abs(before.width/before.height-16/9)<.04);
   await page.keyboard.down('ArrowUp');await page.waitForTimeout(700);await page.keyboard.up('ArrowUp');await page.waitForTimeout(700);assert(inputs.includes(-1)&&inputs.includes(0));
   if(mode){effect=21;revision++;await page.getByText('MULTIBALL',{exact:true}).waitFor();effect=13;revision++;await page.getByText('PINBALL',{exact:true}).waitFor();const after=await canvas.boundingBox();assert(after&&Math.abs(after.y-before.y)<1&&Math.abs(after.height-before.height)<1,'Effects shifted the court');}
@@ -115,5 +119,7 @@ try{
   await context.close();
  }
  assert.equal(report.errors.length,0,JSON.stringify(report.errors.slice(0,8)));report.passed=true;
-}catch(e){report.failure=(e as Error).message;}finally{await writeFile(`${out}/${channel}.json`,JSON.stringify(report,null,2));await browser.close();}
+}catch(e){report.failure=(e as Error).message;if(activePage&&!activePage.isClosed()){
+ report.page=(await activePage.locator('body').innerText()).slice(0,5000);await activePage.screenshot({path:`${out}/${channel}-failure.png`,fullPage:true}).catch(()=>{});
+}}finally{await writeFile(`${out}/${channel}.json`,JSON.stringify(report,null,2));await browser.close();}
 assert.equal(report.passed,true,report.failure);
