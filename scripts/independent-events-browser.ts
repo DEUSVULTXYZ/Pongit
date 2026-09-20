@@ -146,8 +146,9 @@ try{
  }
  await Promise.all([a,b].map(p=>p.getByRole('button',{name:'Move up',exact:true}).waitFor()));
  for(let i=0;i<100;i++){
+  if(await a.getByRole('dialog',{name:'Confirmed match result'}).isVisible()||await b.getByRole('dialog',{name:'Confirmed match result'}).isVisible())break;
   const key=i%2?'s':'w';
-  await Promise.all([a,b].map(async p=>{if(await p.getByRole('button',{name:'Move up',exact:true}).isEnabled())await p.keyboard.down(key);}));
+  await Promise.all([a,b].map(async p=>{if(await p.getByRole('button',{name:'Move up',exact:true}).isEnabled({timeout:300}).catch(()=>false))await p.keyboard.down(key);}));
   await sleep(120);await Promise.all([a,b].map(p=>p.keyboard.up(key)));await sleep(70);
  }
  assert(report.inputs[0].length>1&&report.inputs[1].length>1,'Both browsers must have real accepted movement receipts');
@@ -157,7 +158,7 @@ try{
  await a.getByRole('button',{name:/Skip animation/}).click().catch(()=>{});
  await b.getByRole('button',{name:/Skip animation/}).click().catch(()=>{});
  const scoreA=await a.locator('.outcome-score').textContent(),scoreB=await b.locator('.outcome-score').textContent();assert.equal(scoreA,scoreB);assert(/7/.test(scoreA!));report.checks.push({finalScore:scoreA});
- if(!chaos){await until(()=>spectator.getByRole('dialog',{name:'Confirmed match result'}).isVisible(),'spectator terminal result');assert.equal(await spectator.locator('.outcome-score').textContent(),scoreA);}saved.stage=3;await persist();report.passed=true;
+ if(!chaos){await until(()=>spectator.locator('.spectator-result').isVisible(),'neutral spectator terminal result');assert((await spectator.locator('.spectator-result').textContent())?.includes(scoreA!));assert.equal(await spectator.getByRole('dialog',{name:'Confirmed match result'}).count(),0,'Spectators do not receive a player victory dialog');}saved.stage=3;await persist();report.passed=true;
 }catch(e){report.passed=false;report.error=String((e as Error).message).replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,650);process.exitCode=1;
  for(let i=0;i<pages.length;i++){await pages[i].screenshot({path:`${out}/failure-${i}.png`}).catch(()=>{});report.checks.push({page:i,visible:(await pages[i].locator('body').innerText().catch(()=>'' )).slice(0,1600)});}
  await persist().catch(()=>{});
