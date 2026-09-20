@@ -33,7 +33,7 @@ try{
  for(const [width,height] of [[360,640],[390,844],[768,1000],[1440,1000],[844,390]])for(const mode of [0,1] as const){
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
   const key=generatePrivateKey(),grant={player:players[0],key:privateKeyToAccount(key).address,issuedAt:BigInt(Math.floor(Date.now()/1000)),expires:BigInt(Math.floor(Date.now()/1000)+7200),revision:0n};
-  let phase=1,revision=1n,launch=0,nonce=0,inputNonce=0n,effect=0,terminal=false,roomVisible=false;
+  let phase=1,revision=1n,launch=0,nonce=0,inputNonce=0n,direction=0,effect=0,terminal=false,roomVisible=false;
   const receipts=new Map<string,any>(),inputs:number[]=[];
   const binding={id:1n,epoch:1n,room:1n,a:players[0],b:players[1],mode,ranked:false,keyA:grant.key,keyB:address(22),expiresA:grant.expires,expiresB:grant.expires,preparedBlock:90n};
   await context.addInitScript(({family,key})=>{sessionStorage.setItem(key,JSON.stringify(family));localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:true,intensity:'full'}));},{family:json({grant,key,signature:`0x${'11'.repeat(65)}`}),key:`pongit:family:${m.family.toLowerCase()}`});
@@ -67,14 +67,14 @@ try{
     else if(call.functionName==='RULES_VERSION')result=encodeFunctionResult({abi:rules.arena,functionName:'RULES_VERSION',result:12n});
     else{
      assert.equal(call.functionName,'chaosState');if(phase===1&&launch&&Date.now()>=Math.ceil(launch/1000)*1000){phase=2;revision++;}
-     const state={...initial(zeroHash,mode),t:phase===1?0n:3000000n,scoreA:terminal?7:0,scoreB:terminal?6:0,finished:terminal};
+     const state={...initial(zeroHash,mode),leftDir:direction,t:phase===1?0n:3000000n,scoreA:terminal?7:0,scoreB:terminal?6:0,finished:terminal};
      const h=[1n,revision,BigInt(terminal?3:phase),players[0],players[1],zeroAddress,terminal?players[0]:zeroAddress,100n+revision,state.t,inputNonce,0n,0n,state];
      result=encodeFunctionResult({abi:rules.arena,functionName:'chaosState',result:chaosBrowserPayload(rules.arena,h,mode&&phase===2?effect:0,0)});
     }
    }else if(v.method==='interlude_sendTransaction'){
     const tx=parseTransaction(v.params[0]),hash=keccak256(v.params[0]);if(receipts.has(hash))return {jsonrpc:'2.0',id:v.id,result:receipts.get(hash)};
     assert.equal(tx.nonce,nonce);const c=decodeFunctionData({abi:rules.arena,data:tx.data!});assert.equal(phase,2,'No movement before contract phase2');
-    if(c.functionName==='input'){inputNonce++;assert.equal(c.args![2],inputNonce);inputs.push(Number(c.args![1]));}
+    if(c.functionName==='input'){inputNonce++;assert.equal(c.args![2],inputNonce);direction=Number(c.args![1]);inputs.push(direction);}
     else assert.equal(c.functionName,'tick');nonce++;revision++;result={status:'0x1',transactionHash:hash,blockHash:zeroHash,logs:[]};receipts.set(hash,result);
    }else throw Error(`Unexpected method ${v.method}`);
    return {jsonrpc:'2.0',id:v.id,result};
