@@ -58,6 +58,12 @@ inside-court ball samples, 88.76% moving frames, p95 interval 18.1 ms, maximum
 stationary interval 1,383.8 ms. Short pauses are still measurable; none of these
 results establish uninterrupted service or a fixed provider quota.
 
+After deployment, an additional Chrome window used public HTML/assets directly
+(no proxy): real Chaos match 79, same arena/epoch, 60 seconds, 99.97% inside-court
+samples, 92.67% moving frames, p95 interval 17.9 ms and maximum stationary
+interval 1,032.3 ms. It passed with no page errors. Its run is
+`public-e566b7d-1-chrome`.
+
 Chrome's isolated UI suite passed all 27 checks at 360, 390, 768 and 1440 px,
 plus 844 px landscape. It covers both courts, all 24 effect HUDs without layout
 shifts, catalogue, both tournament layouts, keyboard/focus, dialogs and retired
@@ -107,6 +113,29 @@ returned HTTP 200; public Agent Arcade HTML contains the shared cabinet class.
 The human admission gate stays true. Roll back by restoring that single web
 image to `spectator-fa7a5b1`, then recreating only `web`, without rebuilding or
 restoring databases.
+
+### Idle arenas delayed by archive maintenance
+
+Keeper logs show eight successive `captureProof` operations from 19:08:34 to
+19:11:37 before `admitTournament` at 19:12:21, while the arena service reported
+both arenas available. This is separate from motion within a playing match.
+
+Commit `3680db2` moves the bounded old archive scan after actionable admissions.
+Current lane capture, uncertain-operation reconciliation, delegation recovery,
+rating rebuilds and current tournament advancement still precede admission.
+Historical scans also run when budgets or admissions are unavailable, and while
+the lanes are occupied; their durable cursor and all proof checks remain.
+Each keeper step still submits at most one operation. Root TypeScript and 13
+targeted maintenance, recovery and budget tests passed for this change.
+
+After SHA-verified off-VPS backup `agent-scheduler-20260921T1915Z`, only the
+public keeper's script mount was replaced by `keeper-priority-3680db2` and that
+service recreated. Its original operator database, advisory lock, nonce journal,
+state directory and exclusion of retired arena `1c5…` remain. The backup includes
+operator and agent dumps and private journals; it must never be published.
+Rollback restores only the previous `keeper-retirement-0116c96` script mount,
+not an older journal. A new complete match transition must still be measured
+before claiming a specific reduction in inter-match waiting time.
 
 ## House instances remain a separate migration
 
