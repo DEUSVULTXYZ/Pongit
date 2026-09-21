@@ -680,7 +680,7 @@ const roomsCoordinator=await createRoomsCoordinator({db:pool,origin,body,send,gr
 // journal. Legacy data stays in its original database throughout the cutover.
 const independentDb=process.env.PONG_INDEPENDENT_MANIFEST&&process.env.PONG_INDEPENDENT_DATABASE_URL
   ?new Pool({connectionString:process.env.PONG_INDEPENDENT_DATABASE_URL}):pool;
-const independent=await independentService({db:independentDb,operatorDb:pool,base:publicClient,body,send,graphql,collectRpc:!roomsCoordinator});
+const independent=await independentService({db:independentDb,operatorDb:pool,legacyDb:pool,base:publicClient,body,send,graphql,collectRpc:!roomsCoordinator});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)

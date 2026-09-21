@@ -4,9 +4,10 @@ import {abi as ratingsAbi} from '../../shared/abi-independent-PublishedRatings';
 import {independentReader} from '../../shared/independent-read';
 import {arenaReference,type IndependentManifest} from '../../shared/independent';
 import type {EngineState} from '../../shared/engine-stream';
+import {independentLegacy} from './independent-legacy';
 type Graphql=(query:string,variables?:any)=>Promise<any>;
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
-export async function independentHistory(db:Pool,base:PublicClient,m:IndependentManifest,graphql?:Graphql){
+export async function independentHistory(db:Pool,base:PublicClient,m:IndependentManifest,graphql?:Graphql,legacy=independentLegacy(db)){
  const scope=m.lobby.toLowerCase(),r=independentReader(base,m);
  await db.query(`CREATE TABLE IF NOT EXISTS independent_history(lobby text NOT NULL,id text NOT NULL,ref text NOT NULL,record jsonb NOT NULL,block_number bigint NOT NULL,ended_at bigint NOT NULL,replay text NOT NULL DEFAULT 'recording',PRIMARY KEY(lobby,id));
  CREATE TABLE IF NOT EXISTS independent_frames(lobby text NOT NULL,id text NOT NULL,revision bigint NOT NULL,snapshot jsonb NOT NULL,PRIMARY KEY(lobby,id,revision));
@@ -83,7 +84,7 @@ export async function independentHistory(db:Pool,base:PublicClient,m:Independent
  async function frequent(player:Address){
   const rows=(await db.query("SELECT record FROM independent_history WHERE lobby=$1 AND ended_at>$3 AND record->'latest'->>'status'='3' AND (lower(record->'latest'->>'a')=$2 OR lower(record->'latest'->>'b')=$2)",[scope,player.toLowerCase(),Math.floor(Date.now()/1000)-30*86400])).rows;
   const count=new Map<string,{player:Address;count:number;at:number}>(),records=rows.map(row=>({...row.record.latest,at:Number(row.record.at)}));
-  const old=(await db.query("SELECT a,b,extract(epoch FROM ended_at)::bigint AS at FROM il_results WHERE verified AND phase=3 AND ended_at>now()-interval '30 days' AND (lower(a)=$1 OR lower(b)=$1)",[player.toLowerCase()]).catch(()=>({rows:[]}))).rows;
+  const old=await legacy.results(player).catch(()=>[]);
   records.push(...old);
   if(graphql){let offset=0;const cutoff=Math.floor(Date.now()/1000)-30*86400,blocks=new Map<string,number>();
    for(;;){const data=await graphql('query($player:String!,$offset:Int!){Match(where:{played:{_eq:true},status:{_eq:3},_or:[{playerA:{_eq:$player}},{playerB:{_eq:$player}}]},order_by:{block:desc},limit:100,offset:$offset){id playerA playerB endedAt block}}',{player:player.toLowerCase(),offset}).catch(()=>null);if(!data)break;

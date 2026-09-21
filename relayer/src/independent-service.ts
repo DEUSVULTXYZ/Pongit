@@ -34,9 +34,10 @@ import {independentReusableLifecycle} from './independent-reusable-lifecycle';
 import {independentReusablePool} from './independent-reusable-pool';
 import {independentRoomDiscovery} from './independent-room-discovery';
 import {independentRuntime} from './independent-runtime';
+import {independentLegacy} from './independent-legacy';
 import {abi as verifierAbi} from '../../shared/abi-independent-PublishedResultVerifier';
 
-type Options={db:Pool;operatorDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
+type Options={db:Pool;operatorDb?:Pool;legacyDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
 export async function independentService(o:Options){
  const path=process.env.PONG_INDEPENDENT_MANIFEST;if(!path)return null;
  const rawManifest=JSON.parse(await readFile(path,'utf8'));
@@ -79,7 +80,8 @@ export async function independentService(o:Options){
  const discoverRooms=independentRoomDiscovery(base,m.lobby,[...lobbyAbi,...lobbyEventsAbi.filter(x=>x.type==='event')],async room=>{
   await db.query('INSERT INTO independent_rooms VALUES($1,$2) ON CONFLICT DO NOTHING',[m.lobby.toLowerCase(),String(room)]);
  });
- const history=await independentHistory(db,base,m,o.graphql);
+ const legacy=independentLegacy(o.legacyDb??db);
+ const history=await independentHistory(db,base,m,o.graphql,legacy);
  const diagnostics=await createRpcDiagnostics(db,m.lobby,o.collectRpc!==false),diagnosticAt=new Map<string,number>();
  if(m.rulesVersion===14)await initializeReusableResultArchive(db);
  const reusableResults=m.rulesVersion===14?independentReusableResults(db,base,m,(...args)=>queue(...args)):null;
@@ -303,7 +305,7 @@ export async function independentService(o:Options){
    }
    if(req.method==='GET'&&path==='/independent/import/contacts'){
     const player=await authenticatedPlayer(req);
-    const contacts=(await db.query('SELECT contact FROM il_contacts WHERE player=$1 ORDER BY contact',[player])).rows.map(r=>r.contact);
+    const contacts=await legacy.contacts(player);
     res.setHeader('Cache-Control','no-store');o.send(res,{contacts});return true;
    }
    if(req.method==='GET'&&/^\/independent\/operations\/0x[\da-f]{64}$/.test(path)){

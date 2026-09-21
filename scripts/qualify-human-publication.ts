@@ -17,7 +17,8 @@ const base=createPublicClient({transport:http(process.env.RPC_URL,{fetchFn:paced
 const flush=()=>writeFile(file,JSON.stringify(report,null,2));
 try{
  assert.equal(await base.getChainId(),10143);
- const end=await base.getBlock(),from=BigInt(process.env.PONG_PUBLICATION_FROM!);
+ const from=BigInt(process.env.PONG_PUBLICATION_FROM!);
+ const end=await base.getBlock(process.env.PONG_PUBLICATION_TO?{blockNumber:BigInt(process.env.PONG_PUBLICATION_TO)}:{});
  assert(from>=BigInt(m.startBlock!)&&from<=end.number&&end.number-from<=9000n,'Bounded migration publication window');
  report.from=String(from);report.to=String(end.number);report.endHash=end.hash;
  const logs=[];
