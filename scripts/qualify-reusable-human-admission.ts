@@ -27,6 +27,8 @@ assert(indices.length===arenaCount&&new Set(indices).size===arenaCount&&indices.
 const testArenas=indices.map(i=>m.arenas[i]);
 assert(existing.length===0||existing.length===arenaCount,'Explicit existing epoch (zero means released) for each test arena');
 const priorPublished=process.env.PONG_REUSABLE_ADMISSION_HISTORY==='verified-published';
+const configUrl=process.env.PONG_REUSABLE_ADMISSION_TARGET==='closed-production-qualification'
+ ?'https://pongit.xyz/api/independent/config':'http://independent-events-service:4012/independent/config';
 const file=`artifacts/reusable-candidate/admission-${label}.json`;
 await mkdir('artifacts/reusable-candidate',{recursive:true});
 let report:any={startedAt:new Date().toISOString(),lobby:m.lobby,arenas:[],assignments:[],passed:false,
@@ -77,7 +79,7 @@ try{
  while(Date.now()<deadline&&report.assignments.length<8){
   let config:any;
   try{
-   const response=await fetch('http://independent-events-service:4012/independent/config',{signal:AbortSignal.timeout(8000)});
+   const response=await fetch(configUrl,{signal:AbortSignal.timeout(8000)});
    assert(response.ok,'Private service unavailable');config=await response.json();
   }catch{
    report.observedAt=new Date().toISOString();report.waiting='private-service-unavailable';await save();
@@ -85,6 +87,7 @@ try{
   }
   delete report.waiting;
   assert.equal(config.manifest.lobby.toLowerCase(),m.lobby.toLowerCase());
+  if(configUrl.startsWith('https:'))assert.equal(config.admission,false,'Do not compete with public admission');
   report.observedAt=new Date().toISOString();
   report.health=config.arenas.map((a:any)=>({app:a.app,stage:a.stage,epoch:a.epoch}));await save();
   if(config.arenas.filter((a:any)=>a.stage==='available'&&report.arenas.some((r:any)=>r.app.toLowerCase()===a.app.toLowerCase())).length){

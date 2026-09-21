@@ -21,6 +21,8 @@ import {lobbyCommandTypes} from '../shared/independent';
 import {fixtureSnapshot} from './fixture-snapshot';
 import {terminalAfterRevert} from '../shared/terminal-command';
 import {measuredFetch,rpcSamples} from '../shared/rpc-metrics';
+import {chainTools} from './independent-chain-tools';
+import {retryOperatorContention} from '../shared/operator-contention';
 
 assert.equal(process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION,'isolated-vps');
 const raw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
@@ -31,10 +33,16 @@ const chaosTrackingSeconds=Number(process.env.PONG_EVENTS_CHAOS_TRACK_SECONDS??5
 assert(Number.isInteger(chaosTrackingSeconds)&&chaosTrackingSeconds>=50&&chaosTrackingSeconds<=180,'Bounded private rotation observation');
 const secret=`/secrets/events-live-${run}.json`,out=`artifacts/independent-candidate/events-live-${run}.json`;
 try{await readFile(secret);throw Error('Preserve and reconcile the previous fixture before a new run');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
-const api='http://independent-events-service:4012/independent';
+const closedProduction=process.env.PONG_EVENTS_TARGET==='closed-production-qualification';
+const api=closedProduction?'https://pongit.xyz/api/independent':'http://independent-events-service:4012/independent';
+// Disposable owners sign exactly the same contract commands. This bounded
+// qualifier can sponsor them through the original operator journal while the
+// public intake remains closed. No public API admission bypass is installed.
+const operator=closedProduction?await chainTools('human-public-fixture-'+run,measuredFetch('monad')):undefined;
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2);
 const privateState:any={lobby:m.lobby,createdAt:new Date().toISOString(),players:Array.from({length:5},()=>({owner:generatePrivateKey(),arcade:generatePrivateKey()})),operations:{},jobs:[],matches:[]};
 const report:any={at:new Date().toISOString(),rules:m.rulesVersion,lobby:m.lobby,scope:'Actual private service, Monad and hosted Interlude; synthetic owners, no physical passkey claim',matches:[],checks:[],operations:[],passed:false};
+if(closedProduction)report.scope='Actual production observer/API and hosted Interlude, public admissions closed; disposable owners, journaled operator sponsorship instead of public lobby intake';
 let tail=Promise.resolve();const save=()=>{const text=json(privateState);tail=tail.then(async()=>{await writeFile(secret+'.next',text,{mode:0o600});await rename(secret+'.next',secret);});return tail;};
 await mkdir('artifacts/independent-candidate',{recursive:true});let reportTail=Promise.resolve();
 const flush=()=>{report.rpc=rpcSamples();const text=json(report);reportTail=reportTail.then(async()=>{await writeFile(out+'.next',text);await rename(out+'.next',out);});return reportTail;};
@@ -54,6 +62,12 @@ async function submit(name:string,to:Address,data:Hex){
  const startedAt=new Date().toISOString(),start=performance.now();
  const id=keccak256(encodeAbiParameters([{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[to,data,0n,'']));
  privateState.operations[name]={id,to,data};await save();
+ if(operator){
+  assert([m.family,m.lobby,m.market,m.vault].some(a=>a.toLowerCase()===to.toLowerCase()));
+  const receipt=await retryOperatorContention(()=>operator.submit(name,data,to));
+  report.operations.push({name,id,hash:receipt.transactionHash,startedAt,confirmedAt:new Date().toISOString(),ms:performance.now()-start});await flush();
+  return {id,status:'confirmed',hash:receipt.transactionHash};
+ }
  const result=await request('/transactions',{to,data});assert.equal(result.id,id);
  const done=await operation(id);report.operations.push({name,id,hash:done.hash,startedAt,confirmedAt:new Date().toISOString(),ms:performance.now()-start});await flush();return done;
 }
@@ -204,7 +218,8 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
 }
 const tasks:Promise<unknown>[]=[];
 try{
- await save();assert.equal((await request('/config')).manifest.lobby.toLowerCase(),m.lobby.toLowerCase());
+ await save();const config=await request('/config');assert.equal(config.manifest.lobby.toLowerCase(),m.lobby.toLowerCase());
+ if(closedProduction)assert.equal(config.admission,false,'This fixture requires closed public admissions');
  // The private service and shared Monad gateway live on separate networks.
  // Diagnose a missing RPC route before spending an hour waiting for capacity.
  assert.equal(await base.getChainId(),10143);await base.getBlock();
@@ -231,4 +246,4 @@ try{
  assert(report.simultaneousPlayMs>=1000,'Two prepared arenas are not proof of simultaneous gameplay');
  report.checks.push('Two independently admitted real Classic/Chaos matches, overlapping play, natural results, contract capture and realtime payout');report.passed=true;
 }catch(e){report.error=String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,500);process.exitCode=1;await Promise.allSettled(tasks);}
-finally{stops.forEach(fn=>fn());report.finishedAt=new Date().toISOString();await save();await flush();console.log(json({passed:report.passed,error:report.error,matches:report.matches.map((x:any)=>({app:x.app,id:x.id,mode:x.mode,score:x.finalScore,changes:x.changes,passed:x.passed}))}));}
+finally{stops.forEach(fn=>fn());report.finishedAt=new Date().toISOString();await save();await flush();await operator?.close();console.log(json({passed:report.passed,error:report.error,matches:report.matches.map((x:any)=>({app:x.app,id:x.id,mode:x.mode,score:x.finalScore,changes:x.changes,passed:x.passed}))}));}

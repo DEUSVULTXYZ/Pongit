@@ -1,0 +1,196 @@
+{
+  "at": "2026-09-21T09:09:16.923Z",
+  "finishedAt": "2026-09-21T09:12:39.11Z",
+  "rules": 14,
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "scope": "Actual private service, Monad and hosted Interlude; synthetic owners, no physical passkey claim",
+  "passed": true,
+  "simultaneousPlayMs": 58633,
+  "checks": [
+    "Two independently admitted real Classic/Chaos matches, overlapping play, natural results, contract capture and realtime payout"
+  ],
+  "matches": [
+    {
+      "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+      "id": "340282366920938463463374607431768211484",
+      "epoch": "1",
+      "mode": 1,
+      "changes": [
+        147,
+        135
+      ],
+      "finalScore": [
+        5,
+        7
+      ],
+      "winner": "0xcBA7AA2972025ABb43a2c26a00383933eC590D93",
+      "effects": [
+        14,
+        24,
+        5,
+        2,
+        1
+      ],
+      "countdown": [
+        {
+          "launch": "0",
+          "now": "1789981860"
+        },
+        {
+          "launch": "0",
+          "now": "1789981860"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981860"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981862"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981862"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981862"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981862"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981862"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981862"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981864"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981864"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981864"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981864"
+        },
+        {
+          "launch": "1789981863",
+          "now": "1789981864"
+        }
+      ],
+      "readinessConfirmed": true,
+      "pressureDelivered": true,
+      "betsConfirmed": true,
+      "payment": {
+        "id": "0x031b16727f24a453cd9a271a845368282b06d0f88ca1c50c07398e1094413bbc",
+        "amount": "6000000000000000",
+        "beneficiary": "0xA108549B4206C9f505174CBd76940DD8bd309053"
+      },
+      "startedAt": "2026-09-21T09:10:43.685Z",
+      "playingAt": "2026-09-21T09:11:06.956Z",
+      "finishedAt": "2026-09-21T09:12:39.093Z",
+      "passed": true
+    },
+    {
+      "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+      "id": "340282366920938463463374607431768211485",
+      "epoch": "1",
+      "mode": 0,
+      "changes": [
+        129,
+        129
+      ],
+      "finalScore": [
+        7,
+        6
+      ],
+      "winner": "0x947B31E94F10d7e847Fa09F0F97BD803542eC970",
+      "effects": [],
+      "countdown": [
+        {
+          "launch": "0",
+          "now": "1789981866"
+        },
+        {
+          "launch": "0",
+          "now": "1789981868"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981868"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981868"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981868"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981868"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981870"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981870"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981870"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981870"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981870"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981870"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981872"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981872"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981872"
+        },
+        {
+          "launch": "1789981871",
+          "now": "1789981872"
+        }
+      ],
+      "readinessConfirmed": true,
+      "pressureDelivered": null,
+      "betsConfirmed": null,
+      "payment": null,
+      "startedAt": "2026-09-21T09:10:55.383Z",
+      "playingAt": "2026-09-21T09:11:14.612Z",
+      "finishedAt": "2026-09-21T09:12:36.012Z",
+      "passed": true
+    }
+  ]
+}

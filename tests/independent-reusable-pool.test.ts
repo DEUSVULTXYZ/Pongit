@@ -60,3 +60,13 @@ test('age-based rotation waits for the replacement engine, not only its hub admi
  assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs[0].name,'closeReusableArena');
  assert.deepEqual(f.jobs[0].args,[f.apps[0]]);
 });
+
+test('age rotation selects the oldest epoch rather than starving the last registered arena',async t=>{
+ const f=await fixture(t);
+ f.ds[0].baseBlock=20n;f.ds[1].baseBlock=10n;f.ds[2].baseBlock=3n;
+ for(const d of f.ds)d.expiresAt=100000n;
+ f.base.getBlock=async(c:any)=>({number:30n,timestamp:c?.blockNumber===20n?5000n:c?.blockNumber===10n?100n:c?.blockNumber===3n?1n:8000n});
+ assert.equal(await f.worker.admissionReady(),false);
+ assert.equal(f.jobs.length,1);assert.equal(f.jobs[0].name,'closeReusableArena');
+ assert.deepEqual(f.jobs[0].args,[f.apps[2]]);
+});

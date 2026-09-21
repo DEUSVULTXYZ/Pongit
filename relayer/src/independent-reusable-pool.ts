@@ -41,7 +41,10 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
     await queue(m.lobby,lobbyAbi,'openReusableArena',[released.app],terms.delegationFee,0);
    }
   }
-  const idle=active.filter(a=>!a.reserved);
+  // Rotate the oldest epoch first. Registration order would repeatedly retire
+  // the first two addresses and starve the third until expiry or exhaustion.
+  const idle=active.filter(a=>!a.reserved).sort((a,b)=>a.d.baseBlock===b.d.baseBlock
+   ?a.app.toLowerCase().localeCompare(b.app.toLowerCase()):a.d.baseBlock<b.d.baseBlock?-1:1);
   const readyCount=active.filter(a=>states.some(h=>h.app.toLowerCase()===a.app.toLowerCase()
    &&h.online&&BigInt(h.epoch)===a.d.epoch&&['available','countdown','playing','publishing'].includes(h.stage))).length;
   for(const a of idle){

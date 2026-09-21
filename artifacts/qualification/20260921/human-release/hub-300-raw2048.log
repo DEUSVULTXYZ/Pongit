@@ -1,0 +1,20 @@
+Compiling 1 files with Solc 0.8.30
+Solc 0.8.30 finished in 5.06s
+Compiler run successful!
+
+Ran 1 test for test/HubReleaseBudgetFork.t.sol:HubReleaseBudgetForkTest
+[PASS] testColdReleaseAtConfiguredBatchCount() (gas: 1185864)
+Logs:
+  fork_block: 64263956
+  hub_code_hash: 0x9380248d1c5debacf028290ca54271acd79f68eedfd91dbc9e605ec19937d8da
+  batches: 300
+  changed_words_per_batch: 43
+  distinct_overlay_slots: 86
+  transactions_per_batch: 4
+  raw_bytes_per_transaction: 2048
+  release_call_gas_before_refunds: 1451957
+  released_within_30M: 1
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 4.32s (3.70ms CPU time)
+
+Ran 1 test suite in 4.32s (4.32s CPU time): 1 tests passed, 0 failed, 0 skipped (1 total tests)
