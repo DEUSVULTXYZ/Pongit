@@ -86,6 +86,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
    assert(d);
    const entry=common.lanes.find((x:any)=>x.ref.id>0n&&x.ref.arena.toLowerCase()===app.toLowerCase());
    if(d.status===0){await close();node=undefined;await health('awaiting-delegation',{epoch:String(d.epoch)});await delay(2000);continue;}
+   if(d.status!==1&&!entry){await close();node=undefined;await health('challenge-window',{epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt)});await delay(2000);continue;}
    if(!node){
     await health('provisioning',{epoch:String(d.epoch)});url=await provisionPoolArena(db,app,d.epoch,url||undefined);
     const candidate=createPublicClient({transport:engineTransport(url),pollingInterval:1000});

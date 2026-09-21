@@ -34,21 +34,21 @@ export async function initializePoolOperations(db:Pool){await db.query(`
  * permissionless maintenance only; it cannot impersonate a human or spend funds.
  * No pending entry is deleted, including a refusal proven safe to retire. */
 export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Address,url:string,key:Hex,
- ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;archive?:(results:ReusableResultCandidate[])=>Promise<void>}){
+ ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number}){
  if(runtime?.series&&runtime?.reusable)throw Error('Choose one arena generation');
  if(runtime?.reusable&&!runtime.archive)throw Error('Reusable results require a durable archive');
  const arenaAbi=runtime?.reusable?reusableAgentArenaAbi:runtime?.series?seriesAgentArenaAbi:abi;
  const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
  const stream=new EngineStream(url,app,u=>new WebSocket(u,{origin:'https://pongit.xyz'}) as any,()=>engineCooldownMs(url));
  const feed=runtime?.feed??new EngineFeed({app,abi:arenaAbi,node},stream),unwatch=feed.watch(ref.id,s=>onSnapshot?.(s));
- const lower=app.toLowerCase();let busy=false,fenceUntil=0;
- async function fence(){
-  if(Date.now()<fenceUntil)return;
+ const lower=app.toLowerCase(),now=runtime?.now??Date.now;let busy=false,fenceUntil=0,closed=false;
+ let fenceTask:Promise<void>|undefined;
+ async function verifyFence(){
   const block=await base.getBlock(),d=await readHubDelegation(base,hub,app,block.number);
   if((await base.getBlock({blockNumber:block.number})).hash!==block.hash)
    throw Error('Arena publication changed during lifecycle verification');
   // This is proof of epoch closure, not an inference from an unavailable node.
-  if(d.status===0||d.epoch>ref.epoch){
+  if(!closed&&(d.status===0||d.epoch>ref.epoch)){
    await db.query("UPDATE agent_pool.engine_jobs SET status='obsolete',resolution=$3,updated_at=now() WHERE app=$1 AND epoch<=$2 AND status='pending'",
     [lower,String(d.status===0?ref.epoch:d.epoch-1n),{kind:'hub-epoch-closed',block:String(block.number),hash:block.hash,observedEpoch:String(d.epoch)}]);
   }
@@ -56,7 +56,16 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   const engine:any=await node.request({method:'interlude_session',params:[]} as any);
   if(String(engine.app).toLowerCase()!==lower||BigInt(engine.epoch)!==ref.epoch||engine.chainId!==4242)throw Error('Hosted arena epoch is not ready');
   if(runtime?.reusable&&BigInt(engine.baseBlock??-1)!==d.baseBlock)throw Error('Hosted arena base block is not ready');
-  fenceUntil=Date.now()+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
+  fenceUntil=now()+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
+ }
+ function refreshFence(){
+  return fenceTask??=verifyFence().catch(error=>{fenceUntil=0;throw error;}).finally(()=>{fenceTask=undefined;});
+ }
+ async function fence(){
+  if(closed)throw Error('Arena transport is closed');
+  if(now()<fenceUntil)return;
+  // An expired check must wait, even when its refresh was started earlier.
+  await refreshFence();
  }
  async function resolution(job:any,unsent=false){
   const identity=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
@@ -144,5 +153,10 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    const resolved=await resolution(job,unsent);return feed.receipt(ref.id,{receipt:resolved.receipt},name,args,signer.address);
   }finally{try{if(locked)await c?.query('SELECT pg_advisory_unlock(hashtextextended($1,701349))',[lower]);}finally{c?.release();busy=false;}}
  }
- return{node,feed,send,read:(force=false)=>feed.read(ref.id,force),close:unwatch,ref,app,busy:()=>busy};
+ return{node,feed,send,read:(force=false)=>{
+  // Warm the same three-second fence before it expires. This changes neither
+  // its validity window nor the checks required before sending a command.
+  if(!closed&&!busy&&fenceUntil>0&&now()>=fenceUntil-1500)void refreshFence().catch(()=>{});
+  return feed.read(ref.id,force);
+ },close:()=>{closed=true;unwatch();},ref,app,busy:()=>busy};
 }
