@@ -58,9 +58,17 @@ async function replayLoop(){while(!stopping){try{await replays.reconcile(async r
 
 async function arenaLoop(app:Address,runtimeHash:string){
  let engine:ReturnType<typeof createPoolEngine>|undefined,node:PublicClient|undefined;
- let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url='',nextHub=0,lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
+ let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url='',lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
  let observations:PoolObservations|undefined,proofTask:Promise<void>|undefined;
- let cachedTicket:{key:string;pair:readonly [ReusableTicket,ReusableAgentBinding]}|undefined,admitted=false,nextBindingCheck=0;
+ let cachedTicket:{key:string;pair:readonly [ReusableTicket,ReusableAgentBinding]}|undefined,admitted=false;
+ let admission:BackgroundObservation<boolean>|undefined;
+ // Refresh the same public fences before they expire. Serial five/ten-second
+ // reads used to stop the tick loop even while the last observation was valid.
+ // Initial/expired checks still block; createPoolEngine independently fences
+ // every command against its hub epoch, permission and hosted session.
+ const hub=new BackgroundObservation(async()=>{
+  const {block}=await assignments.read();return readHubDelegation(base,m.hub,app,block.number);
+ },2500,5000);
  let publicationPaused=false;
  const publicationObservation=()=>new BackgroundObservation(async()=>{
   const response=await measuredFetch('interlude')(url+'/health',{signal:AbortSignal.timeout(4000)});
@@ -69,7 +77,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
  },10000,15000);
  let publication=publicationObservation();
  const beacon=new ChaosBeaconPump(),proofLane=new PoolProofLane();
- const close=async()=>{engine?.close();engine=undefined;await proofTask;await observations?.flush();observations=undefined;lastProgress=0;lastRevision=-1n;admitted=false;nextBindingCheck=0;};
+ const close=async()=>{engine?.close();engine=undefined;await proofTask;await observations?.flush();observations=undefined;lastProgress=0;lastRevision=-1n;admitted=false;admission=undefined;};
  const health=async(next:string,detail:Record<string,unknown>={})=>{
   if(stage===next&&Date.now()-healthAt<10000)return;healthAt=Date.now();
   if(stage!==next)console.log(JSON.stringify({at:new Date().toISOString(),app,stage:next,...detail}));stage=next;
@@ -88,8 +96,8 @@ async function arenaLoop(app:Address,runtimeHash:string){
  try{while(!stopping){let pause=100;
   try{
    const common=await assignments.read(),block=common.block;
-   if(Date.now()>=nextHub){
-    const next=await readHubDelegation(base,m.hub,app,block.number);nextHub=Date.now()+5000;
+   {
+    const next=await hub.read();
     if(!d||next.epoch!==d.epoch){await close();node=undefined;publicationPaused=false;publication=publicationObservation();}d=next;
     if(!node&&d.status===1){
      assert.equal(keccak256((await base.getCode({address:app,blockNumber:block.number}))!).toLowerCase(),runtimeHash.toLowerCase(),'Arena bytecode changed');
@@ -136,11 +144,13 @@ async function arenaLoop(app:Address,runtimeHash:string){
     if(!p.healthy){await archiveSlot(ticket);await health('publication-paused',{epoch:String(ref.epoch),id:String(ref.id),publication:p});await delay(2000);continue;}
     publicationPaused=false;
    }
-   if(!admitted||Date.now()>=nextBindingCheck){
-    const current=await node.readContract({address:app,abi,functionName:'currentAdmission'});
-    admitted=current[0]===ref.epoch&&current[1]===ref.id;
-    if(admitted){assert.equal(current[3],reusableAdmissionDigest(ticket),'Engine admission differs from the assigned ticket');nextBindingCheck=Date.now()+10000;}
-   }
+   admission??=new BackgroundObservation(async()=>{
+    const current=await node!.readContract({address:app,abi,functionName:'currentAdmission'});
+    const matches=current[0]===ref.epoch&&current[1]===ref.id;
+    if(matches)assert.equal(current[3],reusableAdmissionDigest(ticket),'Engine admission differs from the assigned ticket');
+    return matches;
+   },7500,10000);
+   admitted=await admission.read();
    if(!admitted){
     const [engineEpoch,count]=await node.readContract({address:app,abi,functionName:'resultCommitment'});
     const session:any=await node.request({method:'interlude_session',params:[]} as any);
@@ -153,7 +163,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      engineEpoch,engineCount:count,now:block.timestamp,engineCodeHashA:await code(binding.controlA,binding.a),engineCodeHashB:await code(binding.controlB,binding.b)};
     (cancel?validateReusableAgentCancellation:validateReusableAgentAdmission)(ticket,binding,evidence);
     await engine.send(cancel?'cancel-expired':'admit',cancel?'cancelAdmission':'admit',[ticket,binding,await bridge.sign({hash:reusableAdmissionDigest(ticket)})]);
-    lastProgress=Date.now();continue;
+    admission=undefined;lastProgress=Date.now();continue;
    }
    const s=await engine.read();
    if(s.revision!==lastRevision){lastRevision=s.revision;lastProgress=Date.now();}

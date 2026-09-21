@@ -9,7 +9,7 @@ import {validateAgentPoolManifest,type AgentPoolManifest,type PoolMatchView} fro
 /** Read-only spectator, bound to one complete reference. No wallet, session key,
  * signing SDK or permissionless game ticks are created by watching an arena. */
 export async function createPoolObserver(manifest:AgentPoolManifest,match:PoolMatchView,
- socket:(url:string)=>any,runtime?:{node:PublicClient;feed:EngineFeed}){
+ socket:(url:string)=>any,runtime?:{node:PublicClient;feed:EngineFeed;now?:()=>number}){
  const m=validateAgentPoolManifest(manifest),arena=m.arenas.find(a=>a.app.toLowerCase()===match.ref.app.toLowerCase());
  const abi=agentPoolArenaAbi(m);
  if(!arena||!match.node||match.node!==arena.node||!match.currentBinding||match.result
@@ -17,14 +17,37 @@ export async function createPoolObserver(manifest:AgentPoolManifest,match:PoolMa
   ||BigInt(match.ref.id)<1n||BigInt(match.ref.epoch)<1n||BigInt(match.ref.id)>=2n**256n||BigInt(match.ref.epoch)>=2n**256n)throw Error('This reference is available as a published summary only');
  const node=runtime?.node??createPublicClient({transport:engineTransport(arena.node),pollingInterval:1000});
  const stream=new EngineStream(arena.node,arena.app,socket,()=>engineCooldownMs(arena.node));
- const feed=runtime?.feed??new EngineFeed({app:arena.app,abi,node},stream);let checkedAt=0,stopped=false;
+ const feed=runtime?.feed??new EngineFeed({app:arena.app,abi,node},stream),now=runtime?.now??Date.now;
+ let checkedAt=-Infinity,stopped=false,validation:Promise<void>|undefined,retryAt=0,validationError:unknown;
+ const fresh=()=>now()-checkedAt<10000;
+ const refresh=()=>{
+  if(!validation){
+   const started=now();
+   validation=Promise.all([
+    node.request({method:'interlude_session',params:[]} as any),
+    node.readContract({address:arena.app,abi,functionName:'RULES_VERSION'}),
+   ]).then(([session,rules]:any[])=>{
+    if(String(session.app).toLowerCase()!==arena.app.toLowerCase()||BigInt(session.epoch)!==BigInt(match.ref.epoch)||session.chainId!==4242)
+     throw Error('This arena has changed epoch. Reading its published result.');
+    if(rules!==BigInt(m.rulesVersion))throw Error('Unsupported agent arena rules');
+    if(now()-started>=10000)throw Error('Arena identity verification took too long');
+    checkedAt=started;validationError=undefined;retryAt=0;
+   }).catch(error=>{checkedAt=-Infinity;retryAt=now()+2000;validationError=error;feed.invalidate();throw error;})
+    .finally(()=>{validation=undefined;});
+  }
+  return validation;
+ };
+ const prefetch=()=>{
+  // Refresh before the existing ten-second fence expires. Waiting until expiry
+  // discarded valid socket frames for the entire pair of identity RPC calls.
+  // A failed refresh invalidates the fence immediately, without extending it.
+  if(!stopped&&now()-checkedAt>=8000&&now()>=retryAt)void refresh().catch(()=>{});
+ };
  const validate=async(force=false)=>{
-  if(stopped)throw Error('Arena observation has stopped');if(!force&&Date.now()-checkedAt<10000)return;
-  const session:any=await node.request({method:'interlude_session',params:[]} as any);
-  if(String(session.app).toLowerCase()!==arena.app.toLowerCase()||BigInt(session.epoch)!==BigInt(match.ref.epoch)||session.chainId!==4242)
-   throw Error('This arena has changed epoch. Reading its published result.');
-  if(await node.readContract({address:arena.app,abi,functionName:'RULES_VERSION'})!==BigInt(m.rulesVersion))throw Error('Unsupported agent arena rules');
-  checkedAt=Date.now();
+  if(stopped)throw Error('Arena observation has stopped');
+  if(!force&&fresh()){prefetch();return;}
+  if(now()<retryAt)throw validationError;
+  await refresh();
  };
  const verify=(s:EngineState)=>{
   if(s.id!==BigInt(match.ref.id)||s.a.toLowerCase()!==match.a.toLowerCase()||s.b.toLowerCase()!==match.b.toLowerCase())throw Error('Arena state belongs to another match');
@@ -35,7 +58,7 @@ export async function createPoolObserver(manifest:AgentPoolManifest,match:PoolMa
   async launch(){await validate();return m.version===4?readArenaLaunch(node,arena.app,BigInt(match.ref.id),m.countdownClock):undefined;},
   async read(force=false){await validate(force);return verify(await feed.read(BigInt(match.ref.id),force));},
   watch(listener:(s:EngineState)=>void){
-   const stop=feed.watch(BigInt(match.ref.id),s=>{try{if(!stopped&&Date.now()-checkedAt<10000)listener(verify(s));}catch{feed.invalidate();}});
+   const stop=feed.watch(BigInt(match.ref.id),s=>{try{prefetch();if(!stopped&&fresh())listener(verify(s));}catch{feed.invalidate();}});
    watchers.add(stop);return()=>{stop();watchers.delete(stop);};
   },
   close(){stopped=true;for(const stop of watchers)stop();watchers.clear();},

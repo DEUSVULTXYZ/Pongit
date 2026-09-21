@@ -45,3 +45,34 @@ test('series spectator validates rules 11 and stays bound to its original game I
  const observer=await createPoolObserver(manifest,match,socket,runtime);assert.equal((await observer.read()).id,4n);
  id=5n;await assert.rejects(observer.read(),/another match/);observer.close();
 });
+
+test('spectator prefetch keeps valid socket frames flowing without extending its identity fence',async()=>{
+ let now=0,release:(value:any)=>void=()=>{},requests=0,listener:(s:any)=>void=()=>{};
+ const state={id:4n,a:match.a,b:match.b};let invalidations=0,received=0;
+ const runtime:any={now:()=>now,node:{
+  request:async()=>{requests++;if(requests===1)return{app:addr(9),epoch:1,chainId:4242};return new Promise(resolve=>{release=resolve;});},
+  readContract:async()=>10n,
+ },feed:{read:async()=>state,watch:(_id:any,cb:any)=>{listener=cb;return()=>{};},invalidate(){invalidations++;}}};
+ const observer=await createPoolObserver(m,match,()=>{},runtime);observer.watch(()=>received++);
+ now=8100;listener(state);await observer.read();
+ assert.equal(requests,2,'only one prefetch, shared by socket and reads');assert.equal(received,1);
+ now=9700;listener(state);assert.equal(received,2,'valid frames continue during slow refresh');
+ now=10000;listener(state);assert.equal(received,2,'expiry still blocks even with a pending refresh');
+ release({app:addr(9),epoch:1,chainId:4242});await observer.read();listener(state);assert.equal(received,3);
+ now=16200;listener(state);assert.equal(requests,3);
+ release({app:addr(9),epoch:2,chainId:4242});await assert.rejects(observer.read(true),/changed epoch/);
+ listener(state);assert.equal(received,4,'wrong epoch invalidates immediately, no stale delivery');assert.equal(invalidations,1);
+ observer.close();now=20000;listener(state);assert.equal(requests,3,'closing stops prefetch');
+});
+
+test('a failed identity refresh pauses observations and retries once after its backoff',async()=>{
+ let now=0,requests=0,listener:(s:any)=>void=()=>{},received=0;
+ const state={id:4n,a:match.a,b:match.b};
+ const runtime:any={now:()=>now,node:{request:async()=>{if(++requests===2)throw Error('temporary 429');return{app:addr(9),epoch:1,chainId:4242};},readContract:async()=>10n},
+  feed:{read:async()=>state,watch:(_id:any,cb:any)=>{listener=cb;return()=>{};},invalidate(){}}};
+ const observer=await createPoolObserver(m,match,()=>{},runtime);observer.watch(()=>received++);
+ now=8100;await assert.rejects(observer.read(true),/temporary 429/);
+ for(let n=0;n<100;n++)listener(state);assert.equal(requests,2);assert.equal(received,0);
+ await assert.rejects(observer.read(),/temporary 429/);now=10100;await observer.read();listener(state);
+ assert.equal(requests,3);assert.equal(received,1);observer.close();
+});
