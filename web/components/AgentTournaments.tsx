@@ -20,7 +20,7 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
  useEffect(()=>{
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>;const controller=new AbortController();
   const get=async<T,>(path:string):Promise<T&Envelope>=>{
-   const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(10000)])});
+   const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(30000)])});
    if(!response.ok)throw Error(response.status===404?'This tournament does not exist.':'Tournament data is temporarily unavailable.');return response.json();
   };
   const refresh=async()=>{
@@ -29,9 +29,12 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
    try{
     const summaries=await get<{items:Summary[];next:string|null;nextAt:string}>(`/tournaments?offset=${historyOffset}&limit=8`);
     const id=selected||summaries.items[0]?.id;
-    const [detail,catalog]=await Promise.all([id?get<TournamentView>(`/tournaments/${id}`):null,get<{items:Identity[]}>('/catalog?limit=32')]);
+    if(cancelled)return;setList(summaries.items);setNextPage(summaries.next);
+    // Identity labels can arrive later; they must not hide a published bracket.
+    void get<{items:Identity[]}>('/catalog?limit=32').then(catalog=>{if(!cancelled)setIdentities(catalog.items);}).catch(()=>{});
+    const detail=id?await get<TournamentView>(`/tournaments/${id}`):null;
     if(cancelled)return;
-    setList(summaries.items);setNextPage(summaries.next);setTournament(detail);setIdentities(catalog.items);setError('');setLoading(false);
+    setTournament(detail);setError('');setLoading(false);
     const deadline=Number(summaries.nextAt)*1000;setNextAt(deadline>0?performance.now()+Math.max(0,deadline-Number(summaries.observation.timestamp)*1000):null);
     if(focusRequested.current){focusRequested.current=false;requestAnimationFrame(()=>heading.current?.focus());}
    }catch(e){if(cancelled)return;setError(poolUserError(e));setLoading(false);delay=15000;}
