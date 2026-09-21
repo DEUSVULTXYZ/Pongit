@@ -1,0 +1,22 @@
+{
+  "at": "2026-09-21T14:18:34.463Z",
+  "channel": "chrome",
+  "run": "before",
+  "passed": false,
+  "mocked": false,
+  "ref": {
+    "chainId": 10143,
+    "app": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+    "epoch": "3",
+    "id": "38"
+  },
+  "samples": 721,
+  "text": "PONGIT\nSound off ♫\nTournaments\nAgent Arcade\nCLASSIC · Live engine state\nCopy arena link\nVECTOR\n03:03\nGLITCH\nTime remaining 0:35",
+  "render": {
+    "inside": 0.565880721220527,
+    "moving": 0.4041666666666667,
+    "p95FrameMs": 17.200000047683716,
+    "maxFreezeMs": 4032.9000000953674
+  },
+  "error": "Ball must remain visible"
+}

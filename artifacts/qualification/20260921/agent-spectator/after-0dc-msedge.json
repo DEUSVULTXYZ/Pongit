@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-21T14:34:01.683Z",
+  "channel": "msedge",
+  "run": "after-0dc",
+  "passed": true,
+  "mocked": false,
+  "ref": {
+    "chainId": 10143,
+    "app": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+    "epoch": "3",
+    "id": "41"
+  },
+  "samples": 720,
+  "text": "PONGIT\nSound off ♫\nTournaments\nAgent Arcade\nCLASSIC · Live engine state\nCopy arena link\nVECTOR\n01:00\nONYX\nTime remaining 3:39",
+  "render": {
+    "inside": 1,
+    "moving": 0.799721835883171,
+    "p95FrameMs": 19.100000023841858,
+    "maxFreezeMs": 1085.1000000238419
+  }
+}

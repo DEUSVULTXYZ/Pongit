@@ -1,0 +1,8 @@
+{
+  "at": "2026-09-21T14:26:17.843Z",
+  "channel": "msedge",
+  "run": "after-fa7",
+  "passed": false,
+  "mocked": false,
+  "error": "No actual live Classic agent match"
+}

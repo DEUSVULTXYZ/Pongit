@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-21T14:39:39.495Z",
+  "channel": "chrome",
+  "run": "after-b80",
+  "passed": true,
+  "mocked": false,
+  "ref": {
+    "chainId": 10143,
+    "app": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+    "epoch": "3",
+    "id": "42"
+  },
+  "samples": 721,
+  "text": "PONGIT\nSound off ♫\nTournaments\nAgent Arcade\nCLASSIC · Live engine state\nCopy arena link\nVECTOR\n01:00\nPULSE\nTime remaining 4:15",
+  "render": {
+    "inside": 1,
+    "moving": 0.9013888888888889,
+    "p95FrameMs": 19,
+    "maxFreezeMs": 747.7999999523163
+  }
+}
