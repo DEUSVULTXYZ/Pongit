@@ -6,7 +6,7 @@ result and is not represented as passing.
 
 ## Deployment and migration
 
-The public web uses `0c44f08`; the service uses `7952580`. Both use the new sealed
+The public web uses `0c44f08`; the reviewed service candidate is `748215d`. Both use the new sealed
 lobby `0x5dbea9692d443e04e1bd0b74fb307b079a5cb212`. The three human arenas are:
 
 | Index | Arena |
@@ -65,7 +65,7 @@ hub runtime with local synthetic state. They are not hosted gameplay or proof
 of an arbitrary provider HTTP payload limit. Failed and incomplete earlier
 trials are retained.
 
-The proposed operating budget is 16,000 batches, with 8,000 reserved before
+The reviewed operating budget is 16,000 batches, with 8,000 reserved before
 admitting another match, a 1,860-second time reserve and an age-rotation target
 of 3,600 seconds. These are PONGIT safeguards, **not provider quotas**. The
 8,000-batch reserve is not claimed as a mathematical bound on adversarial RPC
@@ -102,12 +102,36 @@ review does not promise a service-level availability percentage.
 
 ## Opening gate and rollback
 
-At this checkpoint the web/API are deployed but **human admissions remain
-closed**. The production observer must release and seal arena 0 epoch 1 after
-09:55:26 UTC. The sole bounded renewal helper then opens epoch 2 through the
-original nonce journal and verifies the hosted epoch and base block. A new
-published game after renewal, canonical release evidence, the final reviewed
-budget and public smoke checks remain required before opening.
+The production observer released arena 0 epoch 1 at Monad block 64418270.
+Canonical transaction
+`0xd1a150eb4b66ad11e903115b1d2961c6800d2662a6f98681decff42c4988f6c0`
+used 1,224,618 charged gas (0.124911036 test MON). Its seven-result root was
+sealed before the sole bounded helper opened epoch 2 at block 64418311, through
+the original operator journal. Hosted identity, base block and the empty
+commitment were verified. Classic subsequently finished 7–6, then a further
+Classic/Chaos pair finished 5–7 and 7–4 with published results and Chaos payout.
+
+The latter pair **did not overlap**. Its whole concurrent-fixture verdict is
+failed and is preserved as such. At 10:12 UTC the old production observer
+mistakenly force-closed the other two fully published idle arenas when they had
+no new batches for an hour. This was PONGIT's lifecycle policy, not evidence of
+a provider outage. The initial closed-API fixtures also retain their missing
+manual proposal and shared-operator consent-expiration failures.
+
+Candidate `748215d` keeps a verified, fully published idle slot open. A new
+ticket after a long idle interval has its own publication observation window.
+Expired active publication and genuinely unpublished idle commitments still
+enter recovery; a failed read is not proof of unpublished state. The full
+615-test TypeScript suite, targeted lifecycle regressions and type check pass.
+No game rules or contracts change in this fix.
+
+Those two already-submitted closures cannot be undone. Their actual release
+times are 11:12:32 and 11:12:46 UTC. Human reopening may temporarily expose one
+verified lane, with explicit waiting for additional capacity. This is degraded
+capacity, not a claim that two lanes survived this incident. Their release,
+renewal and a new concurrent check remain tracked independently. Public API
+intake and Mera/browser smoke checks follow progressive activation. Agent
+Arcade and its tournaments remain closed pending their own qualification.
 
 Verified off-VPS backups include the full production snapshot, the new stopped
 business database, exact restore proof, secrets/configuration and the final
