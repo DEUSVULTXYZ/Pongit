@@ -34,10 +34,12 @@ assert(Number.isInteger(chaosTrackingSeconds)&&chaosTrackingSeconds>=50&&chaosTr
 const secret=`/secrets/events-live-${run}.json`,out=`artifacts/independent-candidate/events-live-${run}.json`;
 try{await readFile(secret);throw Error('Preserve and reconcile the previous fixture before a new run');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const closedProduction=process.env.PONG_EVENTS_TARGET==='closed-production-qualification';
+const publicRelease=process.env.PONG_EVENTS_TARGET==='public-release';
+assert(!process.env.PONG_EVENTS_TARGET||closedProduction||publicRelease,'Unknown qualification target');
 const renewedApp=process.env.PONG_EVENTS_RENEWED_APP?.toLowerCase();
 const renewedEpoch=BigInt(process.env.PONG_EVENTS_RENEWED_EPOCH??'0');
 if(renewedApp)assert(m.arenas.some(a=>a.app.toLowerCase()===renewedApp)&&renewedEpoch>1n);
-const api=closedProduction?'https://pongit.xyz/api/independent':'http://independent-events-service:4012/independent';
+const api=closedProduction||publicRelease?'https://pongit.xyz/api/independent':'http://independent-events-service:4012/independent';
 // Disposable owners sign exactly the same contract commands. This bounded
 // qualifier can sponsor them through the original operator journal while the
 // public intake remains closed. No public API admission bypass is installed.
@@ -46,6 +48,7 @@ const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,
 const privateState:any={lobby:m.lobby,createdAt:new Date().toISOString(),players:Array.from({length:5},()=>({owner:generatePrivateKey(),arcade:generatePrivateKey()})),operations:{},jobs:[],matches:[]};
 const report:any={at:new Date().toISOString(),rules:m.rulesVersion,lobby:m.lobby,scope:'Actual private service, Monad and hosted Interlude; synthetic owners, no physical passkey claim',matches:[],checks:[],operations:[],passed:false};
 if(closedProduction)report.scope='Actual production observer/API and hosted Interlude, public admissions closed; disposable owners, journaled operator sponsorship instead of public lobby intake';
+if(publicRelease)report.scope='Actual public HTTPS API sponsorship, production services and hosted Interlude; disposable synthetic owners, no operator key or physical passkey claim';
 let tail=Promise.resolve();const save=()=>{const text=json(privateState);tail=tail.then(async()=>{await writeFile(secret+'.next',text,{mode:0o600});await rename(secret+'.next',secret);});return tail;};
 await mkdir('artifacts/independent-candidate',{recursive:true});let reportTail=Promise.resolve();
 const flush=()=>{report.rpc=rpcSamples();const text=json(report);reportTail=reportTail.then(async()=>{await writeFile(out+'.next',text);await rename(out+'.next',out);});return reportTail;};
@@ -226,6 +229,7 @@ const tasks:Promise<unknown>[]=[];
 try{
  await save();const config=await request('/config');assert.equal(config.manifest.lobby.toLowerCase(),m.lobby.toLowerCase());
  if(closedProduction)assert.equal(config.admission,false,'This fixture requires closed public admissions');
+ if(publicRelease)assert.equal(config.admission,true,'This fixture requires open public admissions');
  // The private service and shared Monad gateway live on separate networks.
  // Diagnose a missing RPC route before spending an hour waiting for capacity.
  assert.equal(await base.getChainId(),10143);await base.getBlock();
@@ -250,7 +254,7 @@ try{
   // The closed-release qualifier shares one operator with maintenance. Finish
   // one room's twenty-second consent window before preparing the next room;
   // its game keeps running while the second room is prepared.
-  const prepared=closedProduction?await prepare(mode):undefined;
+  const prepared=closedProduction||publicRelease?await prepare(mode):undefined;
   const task=(async()=>play(prepared??await prepare(mode)))().catch(async e=>{const row=report.matches.find((x:any)=>x.mode===mode);if(row){row.error=String(e?.shortMessage||e?.message||'Hosted fixture failed').split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,300);await flush();}throw e;});task.catch(()=>{});tasks.push(task);
  }
  await Promise.all(tasks);
