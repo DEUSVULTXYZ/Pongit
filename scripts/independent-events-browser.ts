@@ -4,7 +4,9 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import {chromium,type Page,type BrowserContext} from '@playwright/test';
-import {parseTransaction,decodeFunctionData} from 'viem';
+import {parseTransaction,decodeFunctionData,createPublicClient,http,type Address} from 'viem';
+import {monadTestnet} from 'viem/chains';
+import {abi as vaultAbi} from '../shared/abi-independent-RoomsVault';
 import {independentRules} from '../shared/independent-rules';
 import {publicIndependentManifest} from '../shared/independent';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
@@ -15,6 +17,7 @@ const suffix=run?'-'+run:'';
 const origin='https://pongit.xyz',out=`artifacts/independent-candidate/browser${chaos?'-chaos':''}${suffix}`,secret=`/secrets/independent-browser-v2${chaos?'-chaos':''}${suffix}.json`;
 const manifest=publicIndependentManifest(JSON.parse(await readFile('deployments/independent.json','utf8')));
 assert([12,13,14].includes(manifest.rulesVersion!));const rules=independentRules(manifest);
+const financialBase=createPublicClient({chain:monadTestnet,transport:http('https://testnet-rpc.monad.xyz',{timeout:10000,retryCount:0})});
 const nodes=new Set(manifest.arenas.map(a=>new URL(a.node!).origin));
 let saved:any={lobby:manifest.lobby,players:[],stage:0};
 try{await readFile(secret);throw Error('Preserve and reconcile the previous browser run. Never import its PRF credential.');}catch(e){if((e as any).code!=='ENOENT')throw e;}
@@ -133,7 +136,17 @@ try{
     report.roomConsent.offers.push({player:i,visibleAt:new Date().toISOString()});
     await accept.click();
    }),
-   (async()=>{await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();await until(()=>spectator.getByRole('button',{name:'Members 3',exact:true}).isVisible(),'spectator joined');})(),
+   (async()=>{
+    await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();
+    await until(()=>spectator.getByRole('button',{name:'Members 3',exact:true}).isVisible(),'spectator joined');
+    // Fund while the players finish admission. A fast match can otherwise end
+    // between the credit ceremony and inclusion of the first actual bet.
+    await spectator.getByRole('button',{name:'Betting',exact:true}).click();
+    await spectator.getByRole('button',{name:'Get test betting credit',exact:true}).click();
+    await until(async()=>await financialBase.readContract({address:manifest.vault,abi:vaultAbi,functionName:'balances',args:[saved.players[2].address]})>0n,'confirmed betting credit',90000);
+    await until(()=>spectator.getByRole('button',{name:'Get test betting credit',exact:true}).isEnabled(),'credit ceremony completed');
+    await spectator.getByRole('button',{name:'Close Wallet and betting',exact:true}).click();
+   })(),
   ]);await persist();
   await Promise.all([a,b,spectator].map(p=>p.locator('.rooms-canvas canvas').waitFor({timeout:720000})));
   saved.stage=2;await persist();report.checks.push('Three members in a real Chaos room, dual consent and automatic spectator');
@@ -184,12 +197,15 @@ try{
  void movement.catch(()=>{});
  const financial=(async()=>{if(chaos){
   await spectator.getByRole('button',{name:'Betting',exact:true}).click();
-  await spectator.getByRole('button',{name:'Get test betting credit',exact:true}).click();
-  await until(async()=>!(await spectator.getByRole('button',{name:'Get test betting credit',exact:true}).isDisabled()),'sponsored betting credit',90000);
   await spectator.getByLabel('Shares (1 winning share = 1 MON)').fill('0.006');
   await until(()=>spectator.getByRole('button',{name:'Confirm bet with passkey',exact:true}).isEnabled(),'Chaos betting window',120000);
   await spectator.getByRole('button',{name:'Confirm bet with passkey',exact:true}).click();
-  await until(()=>spectator.getByRole('button',{name:'Get test betting credit',exact:true}).isEnabled(),'bet confirmed',90000);
+  const id=BigInt(saved.matchRef.split(':').at(-1)!);
+  await until(async()=>{
+   const position=await financialBase.readContract({address:manifest.market,abi:rules.market,functionName:'positions',args:[id,saved.players[2].address as Address]});
+   return position[0]===6000000000000000n&&position[2]>0n;
+  },'actual purchased shares on Monad (a re-enabled button is not confirmation)',90000);
+  report.bet={matchId:String(id),player:saved.players[2].address,shares:'6000000000000000',verifiedAt:new Date().toISOString()};
   report.checks.push('Root-signed test MON bet accepted during a live Chaos rally');
   await spectator.getByRole('button',{name:'Close Wallet and betting',exact:true}).click();
   // The beneficiary browser is disconnected while the relayer settles the payout.
