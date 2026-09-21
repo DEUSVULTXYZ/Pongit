@@ -114,28 +114,31 @@ async function step(){
   const work=await capturedTournamentWork(read,m,record);
   if(work&&!cooling(work.to,work.method)){await act(work.to,work.method,work.args);return;}
  }
- // Bounded old-result scan survives newer matches and does not confuse the
- // physical slot with an older epoch. Both receipt and reconnect archives count.
- const cursor=state.archiveCursor??{app:'',epoch:'0',id:'0'};
- const history=(await db.query(`SELECT app,epoch,match_id FROM (
+ // Old finality/correction proofs stay resumable, but do not occupy every
+ // operator step before an available next match. Current lane capture, release,
+ // nonce recovery and rating rebuilds above always retain priority.
+ const archiveHistory=async()=>{
+  const cursor=state.archiveCursor??{app:'',epoch:'0',id:'0'};
+  const history=(await db.query(`SELECT app,epoch,match_id FROM (
   SELECT DISTINCT app,epoch,match_id FROM il_reusable_results WHERE chain_id=10143
   UNION SELECT DISTINCT app,epoch,match_id FROM il_reusable_slot_results WHERE chain_id=10143) records
   WHERE (app,epoch,match_id)>($1,$2::numeric,$3::numeric) ORDER BY app,epoch,match_id LIMIT 3`,[cursor.app,cursor.epoch,cursor.id])).rows;
- if(!history.length){delete state.archiveCursor;await save();}
- for(const row of history){state.archiveCursor={app:row.app,epoch:String(row.epoch),id:String(row.match_id)};await save();
-  if(!r.arenas.some((a:any)=>a.app.toLowerCase()===row.app))continue;
-  try{if(await capture({chainId:10143n,arena:row.app,epoch:BigInt(row.epoch),id:BigInt(row.match_id)}))return;}
-  catch(e){if(state.intent)throw e;console.error(JSON.stringify({event:'historical-proof-pending',arena:row.app,error:clean(e)}));}
- }
+  if(!history.length){delete state.archiveCursor;await save();}
+  for(const row of history){state.archiveCursor={app:row.app,epoch:String(row.epoch),id:String(row.match_id)};await save();
+   if(!r.arenas.some((a:any)=>a.app.toLowerCase()===row.app))continue;
+   try{if(await capture({chainId:10143n,arena:row.app,epoch:BigInt(row.epoch),id:BigInt(row.match_id)}))return;}
+   catch(e){if(state.intent)throw e;console.error(JSON.stringify({event:'historical-proof-pending',arena:row.app,error:clean(e)}));}
+  }
+ };
  const expired=await expiredChallenge(read,m,state.challengeCursor??1n);state.challengeCursor=expired.next;await save();
  if(expired.expired!==null&&!cooling(m.challenges,'expire')){await act(m.challenges,'expire',[expired.expired]);return;}
  // A missing worst-case proof holds NEW admissions only. Recovery above is
  // deliberately still live while qualification or the provider is unavailable.
- if(!budget)return;
+ if(!budget){await archiveHistory();return;}
  const privateSetup=process.env.PONG_REUSABLE_AGENT_RUNTIME!=='reviewed-release';
  const admissions=await read<boolean>(m.pool,poolAbi,'admissions');
  if(privateSetup&&!admissions&&process.env.PONG_REUSABLE_AGENT_START==='1'&&!cooling(m.pool,'setAdmissions')){await act(m.pool,'setAdmissions',[true]);return;}
- if(!admissions)return;
+ if(!admissions){await archiveHistory();return;}
  if(privateSetup&&process.env.PONG_REUSABLE_AGENT_CHALLENGES==='1'&&!await read<boolean>(m.challenges,challengeAbi,'admissions')){await act(m.challenges,'setAdmissions',[true]);return;}
  // Review after recovery and reconciliation. Retiring owned capacity never
  // bypasses an uncertain transaction or the existing close/release sequence.
@@ -192,7 +195,7 @@ async function step(){
   if(result.hash!==f.published.hash||result.finality!==f.published.finality||result.status!==f.published.status){await act(m.tournaments,'synchronize',[cursor.id,cursor.index]);return;}
   if(!f.resolved&&f.published.status===4&&f.published.finality){await act(m.tournaments,'retryCancelled',[cursor.id,cursor.index]);return;}
  }
- if(!available)return;
+ if(!available){await archiveHistory();return;}
  const bookOpen=await read<boolean>(m.tournaments,bookAbi,'admissions');
  if(privateSetup&&process.env.PONG_REUSABLE_AGENT_TOURNAMENTS==='1'&&!bookOpen){
   const identities=await Promise.all(r.bots.map((b:any)=>read(m.catalog,catalogAbi,'identity',[b.agent])));
@@ -206,11 +209,14 @@ async function step(){
   }else if(laneFree&&!cooling(m.pool,'admitTournament')){const [index]=await read(m.tournaments,bookAbi,'nextFixture',[count]);if(index!==255){await act(m.pool,'admitTournament',[count]);return;}}
  }
  if(lanes[1].ref.id===0n){
-  if(!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart')){if(!cooling(m.pool,'admitChallenge'))await act(m.pool,'admitChallenge');return;}
+  if(!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart')){
+   if(!cooling(m.pool,'admitChallenge'))await act(m.pool,'admitChallenge');else await archiveHistory();return;
+  }
   const newestBase=idle.reduce((n,a)=>a.d.baseBlock>n?a.d.baseBlock:n,0n);
   const work=await qualificationWork(read,m,state.qualificationCursor??0n,block.timestamp,16,newestBase);state.qualificationCursor=work.next;await save();
-  if(work.needed&&!cooling(m.pool,'admitQualification'))await act(m.pool,'admitQualification');
+  if(work.needed&&!cooling(m.pool,'admitQualification')){await act(m.pool,'admitQualification');return;}
  }
+ await archiveHistory();
 }
 function clean(e:any){return String(e?.shortMessage??e?.message??'Reusable keeper unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220);}
 try{
