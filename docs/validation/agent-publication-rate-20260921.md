@@ -99,7 +99,14 @@ required the queue's normal priority scan. Preserve `house-controllers-2.json`.
 The bounded driver in `c97c430` scans only after verifying every private request
 is completed or canceled, then rechecks the empty lane and queue permission.
 It does not bypass a waiting human. Trial 3 began at 16:40:35 with four requested
-games and an original deadline of 17:40:35; its report must establish the verdict.
+games and an original deadline of 17:40:35. It passed at 17:06:15 with published
+Classic 3:4, Chaos 5:2, Classic 4:3 and Chaos 2:4 results. These regulation-time
+finishes do not prove concurrent instances or browser performance.
+
+After that trial, the actual hosted node was healthy at 1,157 committed batches.
+Trial 4 requests only two further games, starts at 17:08:41 and retains an
+original 17:38:41 deadline. The driver still checks the epoch reserve before
+each admission. The running report is not a qualification verdict.
 
 ## Distribution candidate, not deployed
 
