@@ -33,7 +33,7 @@ function fixture(){
   queue:async(at,abi,name,args)=>{encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args});},
   stage:async(name,code)=>{events.push('stage:'+name+(code?':'+code:''));},admit:async()=>{events.push('admit');},
   ensureHosted:async epoch=>{events.push('hosted:'+epoch);}});
- return{worker,health,d,events,jobs,session,results,reference:()=>ref,
+ return{worker,health,d,events,jobs,session,results,base,engine,reference:()=>ref,
   change:(o:{now?:bigint;reserved?:bigint;phase?:bigint;livePhase?:number;sealed?:Hex;current?:any;known?:bigint;failedRead?:boolean;slot?:bigint[];hostedCommitment?:any;publishedCommitment?:any})=>{
    now=o.now??now;reserved=o.reserved??reserved;phase=o.phase??phase;livePhase=o.livePhase??livePhase;sealed=o.sealed??sealed;current=o.current??current;known=o.known??known;failedRead=o.failedRead??failedRead;
    slot=o.slot??slot;hostedCommitment=o.hostedCommitment??hostedCommitment;publishedCommitment=o.publishedCommitment??publishedCommitment;
@@ -45,6 +45,27 @@ test('a published human result leaves the same delegation open for its next issu
  assert(f.events.indexOf('archive')<f.events.indexOf('capture:91'));assert.equal(f.jobs.length,0);assert.equal(f.health.online,true);
  f.events.length=0;f.change({reserved:0n});await f.worker.observe();
  assert(f.events.includes('stage:available'));assert.equal(f.jobs.length,0);assert.equal(f.health.id,'0');
+});
+
+test('routine in-flight observation preserves verified availability but a failed read clears it',async()=>{
+ const f=fixture();await f.worker.observe();assert.equal(f.health.online,true);
+ const getBlock=f.base.getBlock;
+ let resume!:()=>void;f.base.getBlock=async()=>{await new Promise<void>(r=>resume=r);return getBlock();};
+ const pending=f.worker.observe();assert.equal(f.health.online,true);resume();await pending;
+ assert.equal(f.health.online,true);
+ f.base.getBlock=async()=>{throw Error('RPC unavailable');};
+ await assert.rejects(f.worker.observe(),/RPC unavailable/);assert.equal(f.health.online,false);
+ f.base.getBlock=getBlock;await f.worker.observe();assert.equal(f.health.online,true);
+ f.change({failedRead:true});await assert.rejects(f.worker.observe(),/node unavailable/);assert.equal(f.health.online,false);
+});
+
+test('a different match binding becomes unavailable before asynchronous recovery',async()=>{
+ const f=fixture();await f.worker.observe();assert.equal(f.health.online,true);
+ f.change({reserved:92n});let resume!:()=>void;
+ const restoring=new Promise<void>(resolve=>{f.engine.restoreHealth=async()=>{resolve();await new Promise<void>(r=>resume=r);};});
+ const pending=f.worker.observe();await restoring;assert.equal(f.health.online,false);
+ resume();await pending;assert.equal(f.health.online,true);
+ f.d.status=2;await f.worker.observe();assert.equal(f.health.online,false);
 });
 
 test('a fresh or renewed empty arena uses the verified commitment epoch before its first admission',async()=>{

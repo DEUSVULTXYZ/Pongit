@@ -30,15 +30,20 @@ export function independentReusableLifecycle(o:Options){
  const {base,manifest:m,engine:e,health:h,results,queue}=o;
  if(m.rulesVersion!==14||!m.resultVerifier)throw Error('Reusable human lifecycle manifest required');
  const verifier=m.resultVerifier;let validated=0n,checked=0;
- async function observe(){
-  h.online=false;
+ async function observeState(){
+  // A routine read does not make a previously verified engine unavailable.
+  // Retain that state while reading the same binding; fail closed on a new
+  // binding, a protocol transition or an actual failed observation.
   const block=await base.getBlock({includeTransactions:false}),r=independentReader(base,m,block.number);
   const [reserved,d,slot]=await Promise.all([r.lobby('reservedMatch',[e.app]),readHubDelegation(base,m.hub,e.app,block.number),r.arena(e.app,'currentMatch')]);
   const id=BigInt(reserved||slot[1]),epoch=d.status===0?BigInt(slot[0]):d.epoch;
   h.id=String(reserved);h.epoch=String(epoch);h.expiresAt=Number(d.expiresAt)*1000;h.releaseAt=Number(d.stakeUnlockAt)*1000;
   // Retain the exact last logical match for receipt recovery, including while
   // closing. A stale physical slot is never labelled with a newer reservation.
-  if(e.bind(id,epoch))await e.restoreHealth();
+  const rebound=e.bind(id,epoch);
+  if(rebound||d.status!==1||block.timestamp>=d.expiresAt
+   ||d.maxBatchInterval>0n&&block.timestamp>d.lastCommitAt+d.maxBatchInterval)h.online=false;
+  if(rebound)await e.restoreHealth();
   if(d.status===3){await o.stage('review','DELEGATION_CHALLENGED');return;}
   if(d.status===0){
    if(epoch){
@@ -113,7 +118,7 @@ export function independentReusableLifecycle(o:Options){
     const known=await r.ratings('indexOf',[current[1]]);
     if(issued.arena.toLowerCase()!==e.app.toLowerCase()||issued.epoch!==epoch||!known
      ||current[2]!==issued.sequence||current[3]!==reusableAdmissionDigest(issued)){
-     await o.stage('review','UNRESOLVED_ENGINE_ADMISSION');return;
+     h.online=false;await o.stage('review','UNRESOLVED_ENGINE_ADMISSION');return;
     }
    }
    h.online=true;await o.stage('available');return;
@@ -131,6 +136,9 @@ export function independentReusableLifecycle(o:Options){
    return;
   }
   await o.stage(e.publicationFailure()?'publication-paused':live.phase===1?'countdown':'playing',e.publicationFailure()?'ENGINE_PUBLICATION_UNAVAILABLE':'');
+ }
+ async function observe(){
+  try{await observeState();}catch(error){h.online=false;throw error;}
  }
  return{observe};
 }
