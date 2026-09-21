@@ -10,9 +10,9 @@ const app='0x0000000000000000000000000000000000000011';
 function fixture(){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false;
  let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'='ok';
- let logs:any[]=[],archiveError=false;const archived:any[]=[];
+ let logs:any[]=[],archiveError=false,receiptReads=0;const archived:any[]=[];
  const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
- const node:any={getTransactionCount:async()=>nonce,getTransactionReceipt:async({hash}:{hash:Hex})=>receipts.get(hash)??null,request:async(r:any)=>{
+ const node:any={getTransactionCount:async()=>nonce,getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
   if(r.method==='interlude_session')return{app,epoch:String(epoch),chainId:4242,baseBlock:20};
   assert.equal(r.method,'interlude_sendTransaction');const raw=r.params[0];sent.push(raw);
   if(behavior==='429')throw Object.assign(Error('busy'),{status:429});
@@ -36,8 +36,15 @@ function fixture(){
  const receiptIds:bigint[]=[],readIds:bigint[]=[];
  const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2};},receipt:async(id:bigint)=>{receiptIds.push(id);return{id,phase:2};},invalidate(){}};
  const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
- return{make,jobs,sent,receipts,receiptIds,readIds,archived,logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
+ return{make,jobs,sent,receipts,receiptIds,readIds,archived,receiptReads:()=>receiptReads,logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
+
+test('a new journaled command avoids an impossible receipt lookup; a restarted uncertain one must read it',async()=>{
+ const f=fixture();let e=f.make();f.behavior('lost-after-execution');
+ await assert.rejects(e.send('first','tick',[1n]),/lost/);assert.equal(f.receiptReads(),0);e.close();
+ e=f.make();f.behavior('ok');await e.send('first','tick',[1n]);assert.equal(f.receiptReads(),1);
+ assert.equal(f.sent.length,1);assert.equal(f.jobs.length,1);assert.equal(f.jobs[0].status,'observed');e.close();
+});
 test('lost executed response reconciles exact receipt without another command or nonce',async()=>{
  const f=fixture(),e=f.make();f.behavior('lost-after-execution');await assert.rejects(e.send('first','tick',[1n]),/lost/);
  assert.equal(f.jobs[0].status,'pending');assert.equal(parseTransaction(f.jobs[0].raw).gas,POOL_COMMAND_GAS);

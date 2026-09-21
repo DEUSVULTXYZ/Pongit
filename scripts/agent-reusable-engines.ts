@@ -24,6 +24,7 @@ import {PoolReplays,initializePoolReplays,poolReplayRetention} from '../relayer/
 import {AgentPoolReader} from '../relayer/src/agents/pool-read';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {BackgroundObservation} from '../shared/background-observation';
 
 const {record:r,protectedApps}=await loadReusableRuntime('engines'),m=r.common;
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
@@ -42,15 +43,11 @@ let stopping=false;process.once('SIGTERM',()=>{stopping=true;});process.once('SI
 const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clean=(e:any)=>String(e?.shortMessage??e?.message??'Arena unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220);
 // One shared canonical observation for all arena loops, no per-tick lobby RPC.
-let observationAt=0,observation:Promise<any>|undefined;
-async function assignments(){
- if(!observation||Date.now()>=observationAt){observationAt=Date.now()+2000;observation=(async()=>{
+const assignments=new BackgroundObservation(async()=>{
   const block=await base.getBlock({includeTransactions:false});
   const lanes=await Promise.all([0,1].map(lane=>base.readContract({address:m.pool,abi:poolAbi,functionName:'laneRecord',args:[lane],blockNumber:block.number})));
   return{block,lanes};
- })();observation.catch(()=>{observation=undefined;});}
- return observation;
-}
+},2000,5000);
 async function replayLoop(){while(!stopping){try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}catch{console.error(JSON.stringify({service:'reusable-replays',error:'Reconciliation pending'}));}
  for(let n=0;n<60&&!stopping;n++)await delay(1000);}}
 
@@ -78,7 +75,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
  };
  try{while(!stopping){let pause=100;
   try{
-   const common=await assignments(),block=common.block;
+   const common=await assignments.read(),block=common.block;
    if(Date.now()>=nextHub){
     const next=await readHubDelegation(base,m.hub,app,block.number);nextHub=Date.now()+5000;
     if(!d||next.epoch!==d.epoch){await close();node=undefined;}d=next;
@@ -108,7 +105,12 @@ async function arenaLoop(app:Address,runtimeHash:string){
    if(!engine||engine.ref.epoch!==ref.epoch||engine.ref.id!==ref.id){
     await close();observations=new PoolObservations(db,app,ref);
     const observed=observations,replayRef={chainId:10143 as const,app,epoch:String(ref.epoch),id:String(ref.id)};
-    engine=createPoolEngine(db,base,m.hub,app,url,r.engineKey,ref,s=>{observed.observe(s);replays.capture(replayRef,15,s);},{node,reusable:true,archive:archive.store});
+    engine=createPoolEngine(db,base,m.hub,app,url,r.engineKey,ref,s=>{
+     // Timestamp progress when it arrives. Detecting the same revision on the
+     // next loop must not impose a second 300 ms pause after every own tick.
+     if(s.revision!==lastRevision){lastRevision=s.revision;lastProgress=Date.now();}
+     observed.observe(s);replays.capture(replayRef,15,s);
+    },{node,reusable:true,archive:archive.store});
    }
    // Expiry forbids new commands, not the reads needed to preserve a result.
    if(d.status!==1||d.expiresAt<=block.timestamp){

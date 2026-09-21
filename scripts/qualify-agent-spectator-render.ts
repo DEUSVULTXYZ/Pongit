@@ -19,8 +19,14 @@ try{
    }
   };
  });
- const response=await page.request.get('https://pongit.xyz/api/agents/live');assert(response.ok());
- const game=(await response.json()).items.find((g:any)=>g.mode===0);assert(game,'No actual live Classic agent match');report.ref=game.ref;
+ let game:any;
+ const deadline=Date.now()+120000;
+ while(Date.now()<deadline&&!game){
+  const response=await page.request.get('https://pongit.xyz/api/agents/live');assert(response.ok());
+  game=(await response.json()).items.find((g:any)=>g.mode===0);
+  if(!game)await page.waitForTimeout(4000);
+ }
+ assert(game,'No actual live Classic agent match within two minutes');report.ref=game.ref;
  await page.goto(`https://pongit.xyz/agents/arenas/${game.ref.app}/${game.ref.epoch}/${game.ref.id}`,{waitUntil:'domcontentloaded'});
  const court=page.locator('.pool-canvas-slot canvas');await court.waitFor({timeout:60000});
  await page.waitForTimeout(4000);await page.evaluate(()=>(window as any).__ballFrames=[]);

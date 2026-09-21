@@ -58,12 +58,14 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   if(runtime?.reusable&&BigInt(engine.baseBlock??-1)!==d.baseBlock)throw Error('Hosted arena base block is not ready');
   fenceUntil=Date.now()+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
  }
- async function resolution(job:any){
+ async function resolution(job:any,unsent=false){
   const identity=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
   const allowed=runtime?.reusable?['admit','cancelAdmission','start','tick','submitRandomness','cancelUnready']:runtime?.series?['start','tick','submitRandomness','advanceSeries','drainSeries']:['start','tick','submitRandomness'];
   if(!allowed.includes(identity.action))throw Error('Unexpected permissionless pool operation');
   if(!runtime?.series&&!runtime?.reusable&&identity.action!=='start'&&identity.matchId!==String(ref.id))throw Error('Command belongs to another match');
-  let receipt:any=await node.getTransactionReceipt({hash:job.hash}).catch(()=>null);
+  // Only an entry created in this invocation is known never to have been sent.
+  // Persisted entries, including after restart, always reconcile their receipt.
+  let receipt:any=unsent?null:await node.getTransactionReceipt({hash:job.hash}).catch(()=>null);
   if(!receipt){
    try{receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);}
    catch(error){
@@ -112,6 +114,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    locked=(await c.query('SELECT pg_try_advisory_lock(hashtextextended($1,701349)) AS ok',[lower])).rows[0].ok;
    if(!locked)throw Error('This arena already has a writer');await fence();
    const data=encodeFunctionData({abi:arenaAbi,functionName:name,args:args as any});
+   let unsent=false;
    let job=(await db.query('SELECT * FROM agent_pool.engine_jobs WHERE app=$1 AND epoch=$2 AND operation=$3',[lower,String(ref.epoch),operation])).rows[0];
    if(job){
     const prior=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
@@ -130,14 +133,15 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
      else await feed.read(ref.id,true);
      throw Object.assign(Error('Previous command reconciled; refresh before another action'),{code:'POOL_RECONCILED'});
     }
-    const nonce=await node.getTransactionCount({address:signer.address,blockTag:'pending'});
-    if(nonce!==await node.getTransactionCount({address:signer.address,blockTag:'latest'}))throw Error('Arena nonce is still in flight');
+    const [nonce,latest]=await Promise.all(['pending','latest'].map(blockTag=>node.getTransactionCount({address:signer.address,blockTag:blockTag as 'pending'|'latest'})));
+    if(nonce!==latest)throw Error('Arena nonce is still in flight');
     const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce,to:app,data,value:0n,gas:POOL_COMMAND_GAS,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
     job={app:lower,id:randomUUID(),operation,epoch:String(ref.epoch),nonce:String(nonce),raw,hash:keccak256(raw),status:'pending'};
     await db.query('INSERT INTO agent_pool.engine_jobs(app,id,operation,epoch,signer,nonce,raw,hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
      [lower,job.id,operation,job.epoch,signer.address.toLowerCase(),job.nonce,raw,job.hash]);
+    unsent=true;
    }
-   const resolved=await resolution(job);return feed.receipt(ref.id,{receipt:resolved.receipt},name,args,signer.address);
+   const resolved=await resolution(job,unsent);return feed.receipt(ref.id,{receipt:resolved.receipt},name,args,signer.address);
   }finally{try{if(locked)await c?.query('SELECT pg_advisory_unlock(hashtextextended($1,701349))',[lower]);}finally{c?.release();busy=false;}}
  }
  return{node,feed,send,read:(force=false)=>feed.read(ref.id,force),close:unwatch,ref,app,busy:()=>busy};
