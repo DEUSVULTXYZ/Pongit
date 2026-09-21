@@ -93,7 +93,7 @@ contract ReusableAgentPoolTest is Test {
     function finish(T.Ref memory ref,address winner) internal returns(Game.Result memory r){
         vm.chainId(4242);ReusableAgentPoolHarness(ref.arena).terminal(winner);r=ReusableAgentArena(ref.arena).publishedResult();vm.chainId(10143);hub.publish(ref.arena);
     }
-    function testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() public {
+    function testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() public virtual {
         uint64 id=begin();T.Ref memory first=pool.admitTournament(id);admit(first);
         Game.Result memory one=finish(first,book.fixture(id,0).a);pool.captureProof(first,one,firstProof());pool.captureProof(first,one,firstProof());
         assertEq(ratings.count(),1);book.synchronize(id,0);sourceBlock();T.Ref memory next=pool.admitTournament(id);

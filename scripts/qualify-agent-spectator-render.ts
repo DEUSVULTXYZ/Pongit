@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 const channel=process.env.BROWSER_CHANNEL??'chrome',run=process.env.RENDER_RUN??'before';
-assert(['chrome','msedge'].includes(channel)&&/^[a-z0-9-]+$/.test(run));
+const mode=Number(process.env.RENDER_MODE??0);
+assert(['chrome','msedge'].includes(channel)&&/^[a-z0-9-]+$/.test(run)&&(mode===0||mode===1));
 const out=`/diagnostics/agent-spectator/${run}-${channel}`;await mkdir(out,{recursive:true});
 const browser=await chromium.launch({channel,headless:true,args:['--no-sandbox']});
-const report:any={at:new Date().toISOString(),channel,run,passed:false,mocked:false};
+const report:any={at:new Date().toISOString(),channel,run,mode,passed:false,mocked:false};
 try{
  const page=await browser.newPage({viewport:{width:1280,height:900}});
  await page.addInitScript(()=>{
@@ -14,7 +15,9 @@ try{
   const fill=CanvasRenderingContext2D.prototype.fillRect;
   CanvasRenderingContext2D.prototype.fillRect=function(x,y,w,h){
    fill.call(this,x,y,w,h);
-   if(w===12&&h===12&&['#f3fcff','#e7deff'].includes(String(this.fillStyle))&&this.canvas.closest('.pool-canvas-slot')){
+   // Track the primary ball separately. Interleaving a second ball's draw would
+   // falsely count its distance from the first as motion and inflate fluency.
+   if(w===12&&h===12&&String(this.fillStyle)==='#f3fcff'&&this.canvas.closest('.pool-canvas-slot')){
     const frames=(window as any).__ballFrames;if(frames.length<6000)frames.push({at:performance.now(),x:x+6,y:y+6});
    }
   };
@@ -23,10 +26,10 @@ try{
  const deadline=Date.now()+120000;
  while(Date.now()<deadline&&!game){
   const response=await page.request.get('https://pongit.xyz/api/agents/live');assert(response.ok());
-  game=(await response.json()).items.find((g:any)=>g.mode===0);
+  game=(await response.json()).items.find((g:any)=>g.mode===mode);
   if(!game)await page.waitForTimeout(4000);
  }
- assert(game,'No actual live Classic agent match within two minutes');report.ref=game.ref;
+ assert(game,`No actual live ${mode?'Chaos':'Classic'} agent match within two minutes`);report.ref=game.ref;
  await page.goto(`https://pongit.xyz/agents/arenas/${game.ref.app}/${game.ref.epoch}/${game.ref.id}`,{waitUntil:'domcontentloaded'});
  const court=page.locator('.pool-canvas-slot canvas');await court.waitFor({timeout:60000});
  await page.waitForTimeout(4000);await page.evaluate(()=>(window as any).__ballFrames=[]);

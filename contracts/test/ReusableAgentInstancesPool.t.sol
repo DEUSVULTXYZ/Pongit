@@ -14,7 +14,7 @@ import {AgentArenaTypes as A} from "../src/agents/competition/AgentArenaTypes.so
 import {IInterludeHub} from "../vendor/interlude/interfaces/IInterludeHub.sol";
 
 contract ReusableAgentInstancesPoolTest is ReusableAgentPoolTest {
-    function makePool() internal override returns(ReusableAgentPool){return new ReusableAgentInstancesPool(catalog,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE));}
+    function makePool() internal virtual override returns(ReusableAgentPool){return new ReusableAgentInstancesPool(catalog,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE));}
     function makeChallenges() internal override returns(AgentChallenges){return new HouseInstanceChallenges(family,catalog,address(pool),address(this));}
     function makeQualifications() internal override returns(AgentQualifications){return new HouseInstanceQualifications(catalog,address(pool));}
 

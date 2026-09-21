@@ -10,6 +10,7 @@ import {IInterludeHub} from "../../../vendor/interlude/interfaces/IInterludeHub.
 /// Versioned replacement, never an upgrade of an existing deployed authority.
 /// Same two lanes; reuse supplies independent controllers, not extra capacity.
 contract ReusableAgentInstancesPool is ReusableAgentPool {
+    error InstanceQueuesRequired();
     uint256 public constant AUTHORITY_VERSION=2;
     constructor(AgentCatalog c,IInterludeHub h,address admin,address bridge) ReusableAgentPool(c,h,admin,bridge){}
     function supportsHouseInstances() external pure returns(bool){return true;}
@@ -17,8 +18,8 @@ contract ReusableAgentInstancesPool is ReusableAgentPool {
         return HouseInstances.eligible(catalog,agent,mode,qualification);
     }
     function seal() public override {
-        require(HouseInstanceChallenges(address(challenges)).supportsHouseInstances()
-            &&HouseInstanceQualifications(address(qualifications)).supportsHouseInstances(),"instance queues required");
+        if(!HouseInstanceChallenges(address(challenges)).supportsHouseInstances()
+            ||!HouseInstanceQualifications(address(qualifications)).supportsHouseInstances())revert InstanceQueuesRequired();
         super.seal();
     }
 }

@@ -26,6 +26,8 @@ contract ReusableAgentPool is ICompetitionAuthority {
     error InvalidChallengeQueue();
     error InvalidQualificationQueue();
     error RankingCorrectionInProgress();
+    error InactiveAdmissionEpoch();
+    error InvalidAdmissionSourceBlock();
     struct Record {T.Ref ref;address a;address b;uint64 tournament;uint8 fixture;uint8 lane;bool ranked;bool captured;}
     AgentCatalog public immutable catalog;
     IInterludeHub public immutable hub;
@@ -121,7 +123,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
     function seedElo(address agent,uint8 mode) external view returns(uint32){
         if(ratings.buildGeneration()!=0)revert RankingCorrectionInProgress();return ratings.ratingOf(agent,mode).elo;
     }
-    function _idle(ReusableAgentArena arena) private view returns(bool){
+    function _idle(ReusableAgentArena arena) internal view returns(bool){
         Types.Session memory session=hub.sessionOf(address(arena),Types.GLOBAL);
         if(session.status!=Types.Status.Active||session.expiresAt<=block.timestamp+7 minutes)return false;
         (uint256 epoch,uint32 count,)=arena.resultCommitment();if(epoch!=session.epoch||count>=65_536)return false;
@@ -131,7 +133,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
     }
     /// Actual published capacity inside open sessions, not a provider quota.
     function releasedArenaCount() external view returns(uint256 count){for(uint256 i;i<arenas.length;i++)if(_idle(arenas[i]))count++;}
-    function _newestIdle() private view returns(ReusableAgentArena chosen){
+    function _newestIdle() internal view virtual returns(ReusableAgentArena chosen){
         uint256 newest;
         for(uint256 i;i<arenas.length;i++)if(_idle(arenas[i])){
             uint256 baseBlock=hub.sessionOf(address(arenas[i]),Types.GLOBAL).baseBlock;
@@ -144,6 +146,9 @@ contract ReusableAgentPool is ICompetitionAuthority {
     /// Legacy deployments retain exclusive identities. Only the versioned
     /// replacement opts official house controllers into independent instances.
     function _independentHouse(address,uint8,bool) internal view virtual returns(bool){return false;}
+    /// Versioned candidates may distribute matches across compatible idle
+    /// sessions. The legacy pool deliberately retains its existing selection.
+    function _matchArena(ReusableAgentArena chosen,address,address) internal view virtual returns(ReusableAgentArena){return chosen;}
     function _controller(address agent,uint64 tournament,bytes32 frozen) private view returns(A.Controller memory c){
         return PoolPublication.controller(catalog,agent,tournament,frozen,learned(tournament,agent));
     }
@@ -152,10 +157,10 @@ contract ReusableAgentPool is ICompetitionAuthority {
     }
     function _prepare(ReusableAgentArena arena,A.Binding memory binding) private {
         Types.Session memory session=hub.sessionOf(address(arena),Types.GLOBAL);
-        require(binding.epoch==session.epoch&&session.status==Types.Status.Active,"active admission epoch");
+        if(binding.epoch!=session.epoch||session.status!=Types.Status.Active)revert InactiveAdmissionEpoch();
         if(binding.controlA.codeHash!=0)require(_known(binding.a,session.baseBlock),"first strategy awaits a newer arena");
         if(binding.controlB.codeHash!=0)require(_known(binding.b,session.baseBlock),"second strategy awaits a newer arena");
-        require(block.number>1&&block.number-1<=type(uint64).max,"source block");binding.preparedBlock=uint64(block.number-1);
+        if(block.number<=1||block.number-1>type(uint64).max)revert InvalidAdmissionSourceBlock();binding.preparedBlock=uint64(block.number-1);
         (,uint32 count,)=arena.resultCommitment();
         Admission.Ticket memory ticket=Admission.Ticket(address(this),address(arena),binding.epoch,uint256(count)+1,binding.id,
             keccak256(abi.encode(binding)),uint64(block.timestamp),uint64(block.timestamp+120),binding.preparedBlock,blockhash(binding.preparedBlock),15);
@@ -176,6 +181,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
         if(address(chosen)==address(0))return ref;
         uint256 baseBlock=hub.sessionOf(address(chosen),Types.GLOBAL).baseBlock;
         if(!_known(a,baseBlock)||!_known(b,baseBlock))return ref;
+        chosen=_matchArena(chosen,a,b);
         bytes32 hashA;bytes32 hashB;for(uint8 i;i<8;i++){if(t.agents[i]==a)hashA=t.controllers[i];if(t.agents[i]==b)hashB=t.controllers[i];}
         ref=T.Ref(10143,address(chosen),arenaEpoch[address(chosen)],++nonce);
         A.Binding memory binding;binding.id=ref.id;binding.epoch=ref.epoch;binding.preparedBlock=uint64(block.number);binding.tournament=id;
@@ -192,6 +198,8 @@ contract ReusableAgentPool is ICompetitionAuthority {
         if(address(chosen)==address(0))return ref;
         (uint256 id,AgentChallenges.Request memory request,ArcadeFamily.Grant memory grant)=challenges.takeNextKnown(hub.sessionOf(address(chosen),Types.GLOBAL).baseBlock);
         if(id==0)return ref;
+        // A human's scoped key needs no strategy code at the engine base block.
+        chosen=_matchArena(chosen,address(0),request.agent);
         bool independent=_independentHouse(request.agent,request.mode,false);
         require(playing[request.player]==0&&(independent||playing[request.agent]==0),"previous match still playing");
         ref=T.Ref(10143,address(chosen),arenaEpoch[address(chosen)],++nonce);bytes32 key=T.key(ref);
@@ -210,6 +218,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
         ReusableAgentArena chosen=_newestIdle();
         if(address(chosen)==address(0))return ref;
         (address a,address b,uint8 mode)=qualifications.takeNextKnown(hub.sessionOf(address(chosen),Types.GLOBAL).baseBlock);if(a==address(0))return ref;
+        chosen=_matchArena(chosen,a,b);
         bool independentA=_independentHouse(a,mode,true);bool independentB=_independentHouse(b,mode,true);
         require((independentA||playing[a]==0)&&(independentB||playing[b]==0),"previous match still playing");
         ref=T.Ref(10143,address(chosen),arenaEpoch[address(chosen)],++nonce);bytes32 key=T.key(ref);
