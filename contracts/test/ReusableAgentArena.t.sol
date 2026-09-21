@@ -87,14 +87,21 @@ contract ReusableAgentArenaTest is Test,IReusableAdmissionAuthority {
     }
     function start(uint256 id,bool human) internal {
         (uint256 epoch,)=arena.currentMatch();if(human){vm.prank(vm.addr(1101));arena.confirmReady(epoch,id);}
-        arena.start(epoch,id);vm.warp(vm.getBlockTimestamp()+3);arena.start(epoch,id);
+        arena.start(epoch,id);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(epoch,id);
     }
     function testHouseReadinessAndHumanCountdownRemainSeparate() public {
         admit(1,0,false,3,false);(uint8 ready,)=arena.readiness(1);assertEq(ready,2);arena.start(1,1);assertEq(arena.launchAt(1),0);
         vm.prank(vm.addr(1101));arena.confirmReady(1,1);arena.start(1,1);assertEq(arena.launchAt(1),vm.getBlockTimestamp()+3);
-        vm.expectRevert("countdown pending");arena.start(1,1);vm.warp(vm.getBlockTimestamp()+3);arena.start(1,1);
+        vm.expectRevert("countdown pending");arena.start(1,1);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(1,1);
         vm.prank(vm.addr(1101));arena.concede(1,1);admit(2,1,false,5,true);(ready,)=arena.readiness(2);assertEq(ready,3);start(2,false);
         vm.expectRevert("unbound or expired arcade key");vm.prank(vm.addr(1101));arena.input(1,2,1,1,vm.getBlockNumber()+100);
+    }
+    function testBatchTimestampJumpCannotSkipAgentCountdown() public {
+        admit(1,0,false,3,false);vm.prank(vm.addr(1101));arena.confirmReady(1,1);arena.start(1,1);
+        (uint256 deadline,uint256 clock)=arena.launchClock(1);assertEq(deadline-clock,3000);
+        uint256 head=vm.getBlockNumber();vm.warp(vm.getBlockTimestamp()+10);
+        vm.roll(head+299);vm.expectRevert("countdown pending");arena.start(1,1);
+        vm.roll(head+300);arena.start(1,1);assertEq(arena.getSnapshot(1).phase,2);
     }
     function testAllEightPoliciesUseFixedStorageAndNewMatchesResetControls() public {
         bytes32[] memory union=new bytes32[](86);uint256 n;

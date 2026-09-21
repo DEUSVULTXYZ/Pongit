@@ -88,6 +88,7 @@ export async function independentService(o:Options){
  const eventLoops=engines.map(e=>rules.events?independentEventsLoop({...e,
   epochCommands:rules.version===14,
   launchAt:async id=>BigInt(await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchAt',args:[id]} as any) as bigint),
+  ...(m.countdownClock?{launchClock:async(id:bigint)=>await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchClock',args:[id]} as any) as readonly [bigint,bigint]}:{}),
   ...(rules.version===13||rules.version===14?{readiness:async(id:bigint)=>await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'readiness',args:[id]} as any) as readonly [number,bigint]}:{}),
   progressAge:id=>e.feed.progressAge(id)}):null);
  const financialEngines=engines.map((e,i)=>({...e,busy:()=>e.busy()||!!eventLoops[i]?.blocksWrite()}));

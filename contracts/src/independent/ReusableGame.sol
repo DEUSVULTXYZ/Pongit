@@ -90,9 +90,15 @@ library ReusableGame {
     function start(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) external {
         require(phase(w)==1,"not loading");
         if(S.get(w,61)!=3){require(block.timestamp<=S.get(w,62),"loading expired");return;}
-        uint256 at=S.get(w,60);
-        if(at==0){S.set(w,60,block.timestamp+3);publish(w,kernel);return;}
-        require(block.timestamp>=at,"countdown pending");
+        uint256 packedLaunch=S.get(w,60);uint256 at=uint64(packedLaunch);
+        // The execution timestamp is pinned for a publication batch and may
+        // jump several seconds. Use the same 100 Hz clock as gameplay as an
+        // additional minimum, while retaining the historical wall deadline.
+        if(at==0){
+            require(block.number<=type(uint64).max-300,"engine block overflow");
+            S.set(w,60,uint64(block.timestamp+3)|((block.number+300)<<64));publish(w,kernel);return;
+        }
+        require(block.timestamp>=at&&block.number>=uint64(packedLaunch>>64),"countdown pending");
         S.set(w,0,(S.get(w,0)&~(uint256(7)<<161))|(2<<161));
         require(block.number<=type(uint64).max,"engine block overflow");
         S.set(w,2,(S.get(w,2)&(uint256(type(uint64).max)<<128))|uint64(block.number));publish(w,kernel);

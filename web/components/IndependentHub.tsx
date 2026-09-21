@@ -1,4 +1,5 @@
 "use client";
+import {readArenaLaunch} from '../../shared/arena-launch';
 import {useEffect,useMemo,useRef,useState,useCallback} from 'react';
 import {isAddress,zeroAddress,maxUint256,type Address} from 'viem';
 import {Court} from './Court';
@@ -166,12 +167,12 @@ export function IndependentHub({roomId}:{roomId?:string}){
   const instance=arena.current,id=snapshot.id,key=arenaReference(instance.client.app,bound.epoch,id);
   let stopped=false,timer:ReturnType<typeof setTimeout>;
   const read=async()=>{let armed=false;try{
-   const [launch,block]=await Promise.all([instance.client.read('launchAt',[id]),instance.client.node.getBlock()]);
-   if(!stopped&&BigInt(launch as bigint)>0n){armed=true;setCountdown({id:key,deadline:Number(launch)*1000,clock:Number(block.timestamp)*1000,observedAt:performance.now()});}
+   const sample=await readArenaLaunch(instance.client.node,instance.client.app,id,manifest.countdownClock);
+   if(!stopped&&sample){armed=true;setCountdown({id:key,...sample});}
   }catch{/* The ordinary engine observer reports outages and keeps controls off. */}
   finally{if(!stopped&&!armed)timer=setTimeout(read,500);}};
   void read();return()=>{stopped=true;clearTimeout(timer);};
- },[manifest?.rulesVersion,snapshot?.phase,snapshot?.id,bound?.epoch]);
+ },[manifest?.rulesVersion,manifest?.countdownClock,snapshot?.phase,snapshot?.id,bound?.epoch]);
  useEffect(()=>{
   if(!manifest||!bound?.epoch||!view.app||recoveringArena||!ownRoom&&!spectating)return;
   const binding=bound,app=view.app as Address;

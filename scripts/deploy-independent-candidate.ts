@@ -27,8 +27,9 @@ if(snapshot){
 }
 let manifest:any;
 try{manifest=JSON.parse(await readFile(out,'utf8'));assert.equal(manifest.prefix,prefix);assert.equal(manifest.rulesVersion??4,rulesVersion,'Never replace a journalled deployment with different rules');assert.equal(manifest.arenaCount??3,arenaCount,'Arena count changed during deployment');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
-manifest??={prefix,purpose:snapshot?'independent migration candidate':'independent contract qualification',production:false,chainId:10143,rulesVersion,arenaCount,hub,pressureSigner,...(reusable?{admissionSigner}:{}),createdAt:new Date().toISOString(),genesis:Number(snapshot?.genesis??Math.floor(Date.now()/1000)),startBlock:String(await t.base.getBlockNumber()),migrationHash,arenas:[]};
+manifest??={prefix,purpose:snapshot?'independent migration candidate':'independent contract qualification',production:false,chainId:10143,rulesVersion,...(reusable?{countdownClock:'engine-ticks-v1'}:{}),arenaCount,hub,pressureSigner,...(reusable?{admissionSigner}:{}),createdAt:new Date().toISOString(),genesis:Number(snapshot?.genesis??Math.floor(Date.now()/1000)),startBlock:String(await t.base.getBlockNumber()),migrationHash,arenas:[]};
 if(reusable)assert.equal(manifest.admissionSigner.toLowerCase(),admissionSigner!.toLowerCase(),'Admission signer changed during deployment');
+if(reusable)assert.equal(manifest.countdownClock,'engine-ticks-v1','Preserve old candidate journals; new clock requires a new deployment prefix');
 assert(!manifest.migrationHash||manifest.migrationHash===migrationHash,'Migration source changed during deployment');
 const save=async()=>{await writeFile(out+'.next',JSON.stringify(manifest,null,2),{mode:0o600});await rename(out+'.next',out);};
 try{

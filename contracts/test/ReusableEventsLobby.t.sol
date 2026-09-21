@@ -60,7 +60,7 @@ contract ReusableEventsLobbyTest is Test {
     }
     function play(uint256 id) internal returns(Game.Result memory result){
         (Admission.Ticket memory t,T.Binding memory b)=lobby.ticketOf(id);vm.chainId(4242);arena.admit(t,b,sig(BRIDGE,Admission.digest(t)));
-        vm.prank(b.keyA);arena.confirmReady(t.epoch,id);vm.prank(b.keyB);arena.confirmReady(t.epoch,id);arena.start(t.epoch,id);vm.warp(vm.getBlockTimestamp()+3);arena.start(t.epoch,id);
+        vm.prank(b.keyA);arena.confirmReady(t.epoch,id);vm.prank(b.keyB);arena.confirmReady(t.epoch,id);arena.start(t.epoch,id);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(t.epoch,id);
         vm.prank(b.keyB);arena.concede(t.epoch,id);result=arena.publishedResult();vm.chainId(10143);
     }
     function firstProof() internal pure returns(bytes32[16] memory proof){for(uint256 i=1;i<16;i++)proof[i]=keccak256(abi.encode(proof[i-1],proof[i-1]));}
@@ -82,7 +82,7 @@ contract ReusableEventsLobbyTest is Test {
         // authoritative family grant and cannot be laundered through publication.
         b.keyA=vm.addr(5001);b.keyB=vm.addr(5002);t.bindingHash=keccak256(abi.encode(b));
         vm.chainId(4242);arena.admit(t,b,sig(BRIDGE,Admission.digest(t)));
-        vm.prank(b.keyA);arena.confirmReady(1,id);vm.prank(b.keyB);arena.confirmReady(1,id);arena.start(1,id);vm.warp(vm.getBlockTimestamp()+3);arena.start(1,id);
+        vm.prank(b.keyA);arena.confirmReady(1,id);vm.prank(b.keyB);arena.confirmReady(1,id);arena.start(1,id);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(1,id);
         vm.prank(b.keyB);arena.concede(1,id);Game.Result memory r=arena.publishedResult();vm.chainId(10143);hub.publish(address(arena));
         vm.expectRevert("result proof");lobby.captureProof(id,r,firstProof());assertEq(ratings.count(),0);assertEq(lobby.reservedMatch(address(arena)),id);
     }

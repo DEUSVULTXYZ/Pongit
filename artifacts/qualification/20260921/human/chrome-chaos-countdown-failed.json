@@ -1,0 +1,889 @@
+{
+  "startedAt": "2026-09-21T07:14:06.006Z",
+  "lobby": "0x4ac828012cd2bE48ab669A55db5A85CAC81B4bCF",
+  "rules": 14,
+  "checks": [
+    "Delivered CSP includes every human arena",
+    "Three Mera accounts and root-signed unique profiles saved",
+    "Three members in a real Chaos room, dual consent and automatic spectator",
+    {
+      "page": 0,
+      "visible": "PONGIT\nSound off ♫\nDocs ↗\nRanking\nMore\nqaawtf780\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nPLAYER 01\nqaawtf780\nPLAYER 02\nqaawtp631\nFIRST TO SEVEN\n00\n:\n00\nW / S · ↑ / ↓"
+    },
+    {
+      "page": 1,
+      "visible": "PONGIT\nSound off ♫\nDocs ↗\nRanking\nMore\nqaawtp631\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nPLAYER 01\nqaawtf780\nPLAYER 02\nqaawtp631\nFIRST TO SEVEN\n00\n:\n00\nW / S · ↑ / ↓"
+    },
+    {
+      "page": 2,
+      "visible": "PONGIT\nSound off ♫\nDocs ↗\nRanking\nMore\nqaawtyna2\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nPLAYER 01\nqaawtf780\nPLAYER 02\nqaawtp631\nFIRST TO SEVEN\n01\n:\n00\nYOUR TURN 3"
+    }
+  ],
+  "network": [
+    {
+      "player": 0,
+      "at": 1789974934338,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974934699,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 67
+    },
+    {
+      "player": 0,
+      "at": 1789974934892,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 138
+    },
+    {
+      "player": 2,
+      "at": 1789974935178,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974936347,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974936824,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974937186,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 66
+    },
+    {
+      "player": 1,
+      "at": 1789974937287,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 137
+    },
+    {
+      "player": 2,
+      "at": 1789974937543,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974938123,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 0,
+      "at": 1789974938440,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 67
+    },
+    {
+      "player": 0,
+      "at": 1789974938543,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 138
+    },
+    {
+      "player": 2,
+      "at": 1789974938744,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974939941,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974940494,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974941002,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 66
+    },
+    {
+      "player": 1,
+      "at": 1789974941106,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 137
+    },
+    {
+      "player": 2,
+      "at": 1789974941143,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974941736,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 0,
+      "at": 1789974941754,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 67
+    },
+    {
+      "player": 0,
+      "at": 1789974941855,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 138
+    },
+    {
+      "player": 2,
+      "at": 1789974942352,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974943543,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974944293,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974944328,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 66
+    },
+    {
+      "player": 1,
+      "at": 1789974944428,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 137
+    },
+    {
+      "player": 2,
+      "at": 1789974944749,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974945032,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 0,
+      "at": 1789974945057,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 67
+    },
+    {
+      "player": 0,
+      "at": 1789974945160,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 138
+    },
+    {
+      "player": 2,
+      "at": 1789974945950,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974947154,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974947297,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 2,
+      "at": 1789974947298,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974947591,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974947700,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 66
+    },
+    {
+      "player": 1,
+      "at": 1789974947726,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974947727,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 1,
+      "at": 1789974947814,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 137
+    },
+    {
+      "player": 2,
+      "at": 1789974947907,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974947910,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 1,
+      "at": 1789974947939,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974948045,
+      "method": "eth_getTransactionCount",
+      "status": 200,
+      "requestBytes": 125,
+      "count": "0x0"
+    },
+    {
+      "player": 1,
+      "at": 1789974948187,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 424,
+      "nonce": 0,
+      "action": "confirmReady"
+    },
+    {
+      "player": 1,
+      "at": 1789974948302,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974948339,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 1,
+      "at": 1789974948343,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974948344,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 2,
+      "at": 1789974948490,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974948503,
+      "method": "interlude_session",
+      "status": 200,
+      "requestBytes": 67
+    },
+    {
+      "player": 0,
+      "at": 1789974948604,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 0,
+      "at": 1789974948604,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 84
+    },
+    {
+      "player": 2,
+      "at": 1789974948692,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 0,
+      "at": 1789974948698,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 138
+    },
+    {
+      "player": 2,
+      "at": 1789974948700,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974948898,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 1,
+      "at": 1789974948992,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 1,
+      "at": 1789974948993,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974949004,
+      "method": "eth_getTransactionCount",
+      "status": 200,
+      "requestBytes": 126,
+      "count": "0x0"
+    },
+    {
+      "player": 0,
+      "at": 1789974949133,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 425,
+      "nonce": 0,
+      "action": "confirmReady"
+    },
+    {
+      "player": 0,
+      "at": 1789974949208,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 84
+    },
+    {
+      "player": 0,
+      "at": 1789974949209,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 0,
+      "at": 1789974949236,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 2,
+      "at": 1789974949246,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974949294,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974949305,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 2,
+      "at": 1789974949306,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974949598,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 1,
+      "at": 1789974949599,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974949742,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974949819,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 0,
+      "at": 1789974949820,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 84
+    },
+    {
+      "player": 2,
+      "at": 1789974949911,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974949912,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 0,
+      "at": 1789974949932,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 1,
+      "at": 1789974949990,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974950198,
+      "method": "eth_getBlockByNumber",
+      "status": 200,
+      "requestBytes": 83
+    },
+    {
+      "player": 1,
+      "at": 1789974950202,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974951038,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    },
+    {
+      "player": 2,
+      "at": 1789974951043,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974951116,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974951416,
+      "method": "eth_getTransactionCount",
+      "status": 200,
+      "requestBytes": 126,
+      "count": "0x1"
+    },
+    {
+      "player": 1,
+      "at": 1789974951509,
+      "method": "eth_getTransactionCount",
+      "status": 200,
+      "requestBytes": 125,
+      "count": "0x1"
+    },
+    {
+      "player": 0,
+      "at": 1789974951690,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 425,
+      "nonce": 1,
+      "action": "tick"
+    },
+    {
+      "player": 1,
+      "at": 1789974952311,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 424,
+      "nonce": 1,
+      "action": "tick"
+    },
+    {
+      "player": 0,
+      "at": 1789974952506,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 425,
+      "nonce": 2,
+      "action": "tick"
+    },
+    {
+      "player": 2,
+      "at": 1789974952518,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974952590,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 2,
+      "at": 1789974953791,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974953794,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 425,
+      "nonce": 3,
+      "action": "tick"
+    },
+    {
+      "player": 1,
+      "at": 1789974953896,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 0,
+      "at": 1789974954803,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 425,
+      "nonce": 4,
+      "action": "tick"
+    },
+    {
+      "player": 2,
+      "at": 1789974954814,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 201
+    },
+    {
+      "player": 1,
+      "at": 1789974954815,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 202
+    }
+  ],
+  "viewports": [
+    {
+      "size": {
+        "width": 360,
+        "height": 640
+      },
+      "rects": [
+        {
+          "x": 12,
+          "y": 249.78125,
+          "w": 336,
+          "h": 98,
+          "bottom": 347.78125
+        },
+        {
+          "x": 12,
+          "y": 359.78125,
+          "w": 336,
+          "h": 98,
+          "bottom": 457.78125
+        },
+        {
+          "x": 12,
+          "y": 469.78125,
+          "w": 336,
+          "h": 98,
+          "bottom": 567.78125
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 390,
+        "height": 844
+      },
+      "rects": [
+        {
+          "x": 12,
+          "y": 254.4375,
+          "w": 366,
+          "h": 98,
+          "bottom": 352.4375
+        },
+        {
+          "x": 12,
+          "y": 364.4375,
+          "w": 366,
+          "h": 98,
+          "bottom": 462.4375
+        },
+        {
+          "x": 12,
+          "y": 474.4375,
+          "w": 366,
+          "h": 98,
+          "bottom": 572.4375
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 768,
+        "height": 1024
+      },
+      "rects": [
+        {
+          "x": 24,
+          "y": 260.375,
+          "w": 225.328125,
+          "h": 390,
+          "bottom": 650.375
+        },
+        {
+          "x": 271.328125,
+          "y": 260.375,
+          "w": 225.328125,
+          "h": 390,
+          "bottom": 650.375
+        },
+        {
+          "x": 518.65625,
+          "y": 260.375,
+          "w": 225.328125,
+          "h": 390,
+          "bottom": 650.375
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "rects": [
+        {
+          "x": 180,
+          "y": 296.78125,
+          "w": 345.328125,
+          "h": 390,
+          "bottom": 686.78125
+        },
+        {
+          "x": 547.328125,
+          "y": 296.78125,
+          "w": 345.328125,
+          "h": 390,
+          "bottom": 686.78125
+        },
+        {
+          "x": 914.65625,
+          "y": 296.78125,
+          "w": 345.34375,
+          "h": 390,
+          "bottom": 686.78125
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 844,
+        "height": 390
+      },
+      "rects": [
+        {
+          "x": 24,
+          "y": 169.28125,
+          "w": 257.328125,
+          "h": 156,
+          "bottom": 325.28125
+        },
+        {
+          "x": 293.328125,
+          "y": 169.28125,
+          "w": 257.328125,
+          "h": 156,
+          "bottom": 325.28125
+        },
+        {
+          "x": 562.65625,
+          "y": 169.28125,
+          "w": 257.34375,
+          "h": 156,
+          "bottom": 325.28125
+        }
+      ]
+    }
+  ],
+  "countdown": [
+    [
+      "3",
+      "2"
+    ],
+    [
+      "3"
+    ],
+    [
+      "3",
+      "2"
+    ]
+  ],
+  "inputs": [
+    [],
+    [],
+    []
+  ],
+  "authenticator": "Chromium virtual PRF, real Mera SDK; no physical-device recovery claim",
+  "pages": [
+    {
+      "url": "https://pongit.xyz/",
+      "text": "PONGIT\nSound off ♫\nDocs ↗\nRanking\nMore\nqaawtf780\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nPLAYER 01\nqaawtf780\nPLAYER 02\nqaawtp631\nFIRST TO SEVEN\n00\n:\n00\nGET READY\n2\nW / S · ↑ / ↓\nMusic by Karl Casey @ White Bat Audio · Last Stop\nPowered by InterludeLayer\nPrevious arenas"
+    },
+    {
+      "url": "https://pongit.xyz/rooms/0x4ac828012cd2be48ab669a55db5a85cac81b4bcf:340282366920938463463374607431768211485",
+      "text": "PONGIT\nSound off ♫\nDocs ↗\nRanking\nMore\nqaawtp631\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nPLAYER 01\nqaawtf780\nPLAYER 02\nqaawtp631\nFIRST TO SEVEN\n00\n:\n00\nGET READY\n3\nW / S · ↑ / ↓\nMusic by Karl Casey @ White Bat Audio · Last Stop\nPowered by InterludeLayer\nPrevious arenas"
+    },
+    {
+      "url": "https://pongit.xyz/rooms/0x4ac828012cd2be48ab669a55db5a85cac81b4bcf:340282366920938463463374607431768211485",
+      "text": "PONGIT\nSound off ♫\nDocs ↗\nRanking\nMore\nqaawtyna2\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nPLAYER 01\nqaawtf780\nPLAYER 02\nqaawtp631\nFIRST TO SEVEN\n00\n:\n00\nGET READY\n2\nYOUR TURN 3\nMusic by Karl Casey @ White Bat Audio · Last Stop\nPowered by InterludeLayer\nPrevious arenas"
+    }
+  ],
+  "passed": false,
+  "error": "All three countdown digits missing on browser 0",
+  "finishedAt": "2026-09-21T07:15:54.904Z",
+  "passkeyAssertions": [
+    1,
+    1,
+    1,
+    0
+  ]
+}

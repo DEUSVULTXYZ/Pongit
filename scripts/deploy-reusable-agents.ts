@@ -19,8 +19,8 @@ const t=await chainTools(prefix);
 try{
  await t.preflight(['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
   'HousePolicies','AgentCatalog','ReusableAgentPool','PublishedResultVerifier','AgentTournaments','AgentPublishedRatings','AgentQualifications','ArcadeFamily','AgentChallenges','ReusableAgentArena']);
- if(!r){r={prefix,rulesVersion:15,arenaCount,genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
- assert.equal(r.prefix,prefix);assert.equal(r.rulesVersion,15);assert.equal(r.arenaCount,arenaCount);
+ if(!r){r={prefix,rulesVersion:15,countdownClock:"engine-ticks-v1",arenaCount,genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
+ assert.equal(r.countdownClock,"engine-ticks-v1","New countdown needs a new deployment prefix");assert.equal(r.prefix,prefix);assert.equal(r.rulesVersion,15);assert.equal(r.arenaCount,arenaCount);
  const bridge=privateKeyToAccount(r.admissionKey).address;
  const deploy=async(name:string,args:readonly unknown[]=[],instance=name)=>{const a=await retryOperatorContention(()=>t.deploy(name,args,instance));r.modules??={};r.modules[instance]=a;await save();return a;};
  const write=async(op:string,contract:string,at:Address,fn:string,args:readonly unknown[]=[])=>retryOperatorContention(async()=>t.write(op,at,(await t.artifact(contract)).abi,fn,args));

@@ -135,7 +135,7 @@ async function play(mode:0|1){
  if(snapshot.phase===1n){
   await send(`launch-${id}`,'start',[epoch,id],admission);
   const launch=await node.readContract({address:app,abi:arenaAbi,functionName:'launchAt',args:[id]});
-  await until(async()=>{const b=await node.getBlock();return b.timestamp>=launch;},'three-second countdown');
+  await until(async()=>{const b=await node.getBlock();const ticks=m.countdownClock?await node.readContract({address:app,abi:arenaAbi,functionName:'launchClock',args:[id]}):[0n,0n];return b.timestamp>=launch&&ticks[1]>=ticks[0];},'three-second countdown');
   await send(`start-${id}`,'start',[epoch,id],admission);
  }
  const began=Date.now(),beacon=new DrandBeaconTransport();

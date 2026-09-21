@@ -80,7 +80,7 @@ contract ReusableAgentPoolTest is Test {
         ReusableAgentArena arena=ReusableAgentArena(ref.arena);arena.admit(ticket,b,sig(BRIDGE,Admission.digest(ticket)));
         if(b.controlA.codeHash==0){vm.prank(b.controlA.key);arena.confirmReady(ref.epoch,ref.id);}
         if(b.controlB.codeHash==0){vm.prank(b.controlB.key);arena.confirmReady(ref.epoch,ref.id);}
-        arena.start(ref.epoch,ref.id);vm.warp(vm.getBlockTimestamp()+3);arena.start(ref.epoch,ref.id);vm.chainId(10143);
+        arena.start(ref.epoch,ref.id);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(ref.epoch,ref.id);vm.chainId(10143);
     }
     function firstProof() internal pure returns(bytes32[16] memory p){for(uint8 i=1;i<16;i++)p[i]=keccak256(abi.encode(p[i-1],p[i-1]));}
     function leaf(T.Ref memory ref,Game.Result memory result) internal view returns(bytes32){

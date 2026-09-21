@@ -23,7 +23,7 @@ contract ReusableEventsSettlementTest is ReusableEventsLobbyTest {
     function live(uint8 mode) private returns(uint256 room_,uint256 id){
         (room_,id)=roomAndProposal(mode);lobby.assignNext();(Admission.Ticket memory t,T.Binding memory b)=lobby.ticketOf(id);
         vm.chainId(4242);arena.admit(t,b,sig(BRIDGE,Admission.digest(t)));vm.prank(b.keyA);arena.confirmReady(1,id);vm.prank(b.keyB);arena.confirmReady(1,id);
-        arena.start(1,id);vm.warp(vm.getBlockTimestamp()+3);arena.start(1,id);vm.chainId(10143);hub.publish(address(arena));
+        arena.start(1,id);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(1,id);vm.chainId(10143);hub.publish(address(arena));
     }
     function buy(uint256 id,uint8 side) private returns(uint256 cost){
         (,uint256 version)=settlement.bettingWindow(id,0);

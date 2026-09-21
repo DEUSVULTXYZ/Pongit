@@ -55,7 +55,7 @@ contract ReusableEventsArenaTest is Test, IReusableAdmissionAuthority {
     function start(uint256 id) internal {
         (uint256 epoch,)=arena.currentMatch();
         vm.prank(vm.addr(1101));arena.confirmReady(epoch,id);vm.prank(vm.addr(1102));arena.confirmReady(epoch,id);
-        arena.start(epoch,id);vm.warp(vm.getBlockTimestamp()+3);arena.start(epoch,id);
+        arena.start(epoch,id);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(epoch,id);
     }
     function firstProof() internal pure returns(bytes32[16] memory proof){for(uint256 i=1;i<16;i++)proof[i]=keccak256(abi.encode(proof[i-1],proof[i-1]));}
     function testLinkedLibrariesFitRuntimeBudget() public {
@@ -82,7 +82,7 @@ contract ReusableEventsArenaTest is Test, IReusableAdmissionAuthority {
         vm.expectRevert("unbound or expired arcade key");arena.confirmReady(1,42);
         vm.prank(vm.addr(1101));arena.confirmReady(1,42);arena.start(1,42);assertEq(arena.launchAt(42),0);
         vm.prank(vm.addr(1102));arena.confirmReady(1,42);arena.start(1,42);assertEq(arena.launchAt(42),vm.getBlockTimestamp()+3);
-        vm.expectRevert("countdown pending");arena.start(1,42);vm.warp(vm.getBlockTimestamp()+3);arena.start(1,42);assertEq(arena.getSnapshot(42).phase,2);
+        vm.expectRevert("countdown pending");arena.start(1,42);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(1,42);assertEq(arena.getSnapshot(42).phase,2);
     }
     function testBrowserBindingAndPressureViewsRetainOnlyTheCurrentLogicalMatch() public {
         (Admission.Ticket memory t,T.Binding memory b)=ticket(4242,1,1);
@@ -98,6 +98,16 @@ contract ReusableEventsArenaTest is Test, IReusableAdmissionAuthority {
         vm.expectRevert("stale match reference");arena.queuedPressure(4242);
         (paidA,paidB,source,checkpoint)=arena.queuedPressure(9009);
         assertEq(paidA,0);assertEq(paidB,0);assertEq(source,0);assertEq(checkpoint,0);
+    }
+    function testBatchTimestampJumpCannotSkipCountdownTicks() public {
+        admit(420,1,0);
+        vm.prank(vm.addr(1101));arena.confirmReady(1,420);
+        vm.prank(vm.addr(1102));arena.confirmReady(1,420);arena.start(1,420);
+        (uint256 deadline,uint256 clock)=arena.launchClock(420);assertEq(deadline-clock,3000);
+        uint256 head=vm.getBlockNumber();vm.warp(vm.getBlockTimestamp()+10);
+        vm.roll(head+299);vm.expectRevert("countdown pending");arena.start(1,420);
+        vm.roll(head+300);arena.start(1,420);assertEq(arena.getSnapshot(420).phase,2);
+        assertEq(arena.launchAt(420),vm.getBlockTimestamp()-7);
     }
     function testAbandonedLoadingCommitsCancellationAndSlotCanBeReused() public {
         admit(42,1,0);vm.warp(vm.getBlockTimestamp()+31);arena.cancelUnready(1,42);

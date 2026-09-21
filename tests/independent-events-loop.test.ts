@@ -85,3 +85,12 @@ test('reusable readiness, countdown, ticks and proofs bind the real logical id a
  await loop.supply(e=>errors.push(e));await turn();await turn();
  assert.deepEqual(f.sent[4],{action:'submitRandomness',args:[3n,20n,1n,'0x12']});assert.deepEqual(errors,[]);loop.stop();
 });
+
+test('publication timestamp jumps cannot bypass the monotonic engine countdown',async()=>{
+ const f=fixture();let ticks=1000n;
+ const actor={...f.actor,launchClock:async()=>[4000n,ticks] as const};
+ const loop=independentEventsLoop(actor);
+ await loop.progress();f.clock(110n);await loop.progress();assert.equal(f.sent.length,1);
+ ticks=3990n;await loop.progress();assert.equal(f.sent.length,1);
+ ticks=4000n;await loop.progress();assert.equal(f.state().phase,2);loop.stop();
+});

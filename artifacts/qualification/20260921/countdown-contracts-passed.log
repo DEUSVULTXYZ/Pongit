@@ -1,0 +1,127 @@
+Compiling 13 files with Solc 0.8.30
+Solc 0.8.30 finished in 139.43s
+Compiler run successful with warnings:
+Warning (5740): Unreachable code.
+   --> src/independent/IndependentLobby.sol:183:22:
+    |
+183 |         capture(id); IndependentArena a = IndependentArena(arenaOf[id]);
+    |                      ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (5740): Unreachable code.
+   --> src/independent/IndependentLobby.sol:185:9:
+    |
+185 |         a.closeEngine(); emit ArenaClosing(id,address(a),a.boundMatch().epoch);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/chaos/ChaosDynamics.sol:84:5:
+   |
+84 |     function force(T.State memory s) external view returns(T.State memory){
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/autonomous/AuthorityRating.sol:42:5:
+   |
+42 |     function _calculate(
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/Independent.t.sol:60:5:
+   |
+60 |     function _sig(uint256 key,bytes32 h) private view returns(bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+  --> test/ReusableEventsArena.t.sol:61:5:
+   |
+61 |     function testLinkedLibrariesFitRuntimeBudget() public {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 8 tests for test/ReusableAgentArena.t.sol:ReusableAgentArenaTest
+[PASS] testAgentBindingCrossLanguageGoldenVector() (gas: 3451)
+[PASS] testAllEightPoliciesUseFixedStorageAndNewMatchesResetControls() (gas: 28983058)
+Logs:
+  agent short-game distinct keys: 46
+
+[PASS] testBatchTimestampJumpCannotSkipAgentCountdown() (gas: 914681)
+[PASS] testFiveMinutesResolvesScoreBeforeAnyLateCatchup() (gas: 2376190)
+[PASS] testHouseReadinessAndHumanCountdownRemainSeparate() (gas: 1475004)
+[PASS] testNoFinancialPressureAndNoExternalBotControls() (gas: 841700)
+[PASS] testRegulationDrawAndCappedOvertimeDoNotInventWinner() (gas: 2013935)
+[PASS] testRootAndGameHaveDeploymentBudgets() (gas: 7230)
+Logs:
+  agent harness runtime: 27736
+
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 264.29ms (255.68ms CPU time)
+
+Ran 10 tests for test/ReusableAgentPool.t.sol:ReusableAgentPoolTest
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6774468)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 3981245)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2209384)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2525381)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3824394)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4093301)
+[PASS] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6206195)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 31395
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6793254)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 2919404)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2175274)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 70.93ms (57.94ms CPU time)
+
+Ran 3 tests for test/ReusableArenaStorage.t.sol:ReusableArenaStorageTest
+[PASS] testChangingPlayersAndMatchIdsNeverAddsUnboundedStorageKeys() (gas: 120681698)
+Logs:
+  distinct storage keys after 64 games / 128 players: 70
+  maximum admission gas in storage harness: 425510
+  maximum result append gas in storage harness: 104898
+
+[PASS] testClearsEveryPriorPhysicsAndPermissionWordButRetainsResultRoot() (gas: 1544569)
+[PASS] testRejectUnfinishedUncommittedDuplicateAndOldLogicalCommands() (gas: 687888)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 441.50ms (438.05ms CPU time)
+
+Ran 13 tests for test/ReusableEventsArena.t.sol:ReusableEventsArenaTest
+[PASS] testAbandonedLoadingCommitsCancellationAndSlotCanBeReused() (gas: 1250025)
+[PASS] testBatchTimestampJumpCannotSkipCountdownTicks() (gas: 937117)
+[PASS] testBrowserBindingAndPressureViewsRetainOnlyTheCurrentLogicalMatch() (gas: 2220861)
+[PASS] testExpiredTicketCannotCancelAnAdmittedMatchOrAlterItsBinding() (gas: 1336278)
+[PASS] testExpiredUnadmittedTicketPublishesCancellationWithoutClosingEpoch() (gas: 1380779)
+[PASS] testLinkedLibrariesFitRuntimeBudget() (gas: 28059)
+[PASS] testLogicalRandomnessPressureAndEventsNeverUsePhysicalSlot() (gas: 3352839)
+[PASS] testOldOwnerAuthorizationCannotReviveAfterSlotReuse() (gas: 3101654)
+[PASS] testReadinessAndTrueThreeSecondCountdownAreRequired() (gas: 986035)
+[PASS] testRecoveryAfterPermissionlessRootSealCannotChangeFinalCommitment() (gas: 910728)
+[PASS] testResultProofIsHistoricalAndEpochCannotResetBeforeReleaseAndSeal() (gas: 2230478)
+[PASS] testSequentialClassicChaosKeepsEpochAndRejectsOldCommands() (gas: 2830319)
+Logs:
+  reusable runtime bytes: 24189
+
+[PASS] testSixtyFourRealPhysicsGamesHaveBoundedKeysAndReservePublication() (gas: 124267594)
+Logs:
+  distinct keys after 64 short real physics games: 43
+  max distinct keys in one complete short game: 37
+
+Suite result: ok. 13 passed; 0 failed; 0 skipped; finished in 817.41ms (811.24ms CPU time)
+
+Ran 4 tests for test/ReusableEventsLobby.t.sol:ReusableEventsLobbyTest
+[PASS] testAmbiguousExpiredTicketKeepsLockUntilActualEpochRelease() (gas: 2067185)
+[PASS] testFalseBridgeTicketCannotSettleDespitePublishedPhysicsResult() (gas: 2566954)
+[PASS] testNoVisitorClosesHealthySessionAndNoUnverifiedCaptureShortcut() (gas: 40007)
+[PASS] testTwoGamesOneDelegationWithAuthoritativeTicketsAndPublishedRelease() (gas: 4420486)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 34.14ms (23.51ms CPU time)
+
+Ran 8 tests for test/ReusableEventsSettlement.t.sol:ReusableEventsSettlementTest
+[PASS] testAmbiguousExpiredTicketKeepsLockUntilActualEpochRelease() (gas: 2067320)
+[PASS] testClassicAndBridgeOnlyAdmissionsCannotOpenAMarket() (gas: 2263402)
+[PASS] testCorrectionLogsAndRatingsChangeButFrozenPaymentDoesNot() (gas: 4461674)
+[PASS] testFalseBridgeTicketCannotSettleDespitePublishedPhysicsResult() (gas: 2567138)
+[PASS] testNoVisitorClosesHealthySessionAndNoUnverifiedCaptureShortcut() (gas: 40051)
+[PASS] testPaymentSurvivesSameEpochSlotReuseAndCannotPayTwice() (gas: 5246190)
+[PASS] testReleasedAbsentResultRefundsAndSealedRootRemainsUnchanged() (gas: 3534780)
+[PASS] testTwoGamesOneDelegationWithAuthoritativeTicketsAndPublishedRelease() (gas: 4420856)
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 76.57ms (65.39ms CPU time)
+
+Ran 6 test suites in 1.71s (1.70s CPU time): 46 tests passed, 0 failed, 0 skipped (46 total tests)

@@ -139,6 +139,10 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
     function chaosState(uint256 id) external view returns(bytes memory){S.assertMatch(words,S.get(words,31),id);return abi.encode(Game.snapshot(words,kernel,isEphemeral()),Game.packed(words),S.get(words,29),S.get(words,30));}
     function publishedResult() external view returns(Game.Result memory){return Game.result(words,kernel);}
     function launchAt(uint256 id) external view returns(uint64){S.assertMatch(words,S.get(words,31),id);return uint64(S.get(words,60));}
+    /// 100 Hz engine clock, independent of the timestamp pinned per batch.
+    function launchClock(uint256 id) external view returns(uint256 deadline,uint256 clock){
+        S.assertMatch(words,S.get(words,31),id);return(uint256(uint64(S.get(words,60)>>64))*10,block.number*10);
+    }
     function readiness(uint256 id) external view returns(uint8,uint64){S.assertMatch(words,S.get(words,31),id);return(uint8(S.get(words,61)),uint64(S.get(words,62)));}
     function _isSessionBlocked(bytes4 selector) internal view override returns(bool){
         // Compact commands are authenticated by their bound direct signer. The

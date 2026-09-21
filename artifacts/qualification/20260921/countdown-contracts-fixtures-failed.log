@@ -1,0 +1,126 @@
+Compiling 12 files with Solc 0.8.30
+Solc 0.8.30 finished in 109.98s
+Compiler run successful with warnings:
+Warning (5740): Unreachable code.
+   --> src/independent/IndependentLobby.sol:183:22:
+    |
+183 |         capture(id); IndependentArena a = IndependentArena(arenaOf[id]);
+    |                      ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (5740): Unreachable code.
+   --> src/independent/IndependentLobby.sol:185:9:
+    |
+185 |         a.closeEngine(); emit ArenaClosing(id,address(a),a.boundMatch().epoch);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/chaos/ChaosDynamics.sol:84:5:
+   |
+84 |     function force(T.State memory s) external view returns(T.State memory){
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/autonomous/AuthorityRating.sol:42:5:
+   |
+42 |     function _calculate(
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/Independent.t.sol:60:5:
+   |
+60 |     function _sig(uint256 key,bytes32 h) private view returns(bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to view
+  --> test/ReusableEventsArena.t.sol:61:5:
+   |
+61 |     function testLinkedLibrariesFitRuntimeBudget() public {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 7 tests for test/ReusableAgentArena.t.sol:ReusableAgentArenaTest
+[PASS] testAgentBindingCrossLanguageGoldenVector() (gas: 3451)
+[PASS] testAllEightPoliciesUseFixedStorageAndNewMatchesResetControls() (gas: 28982612)
+Logs:
+  agent short-game distinct keys: 46
+
+[PASS] testFiveMinutesResolvesScoreBeforeAnyLateCatchup() (gas: 2376086)
+[PASS] testHouseReadinessAndHumanCountdownRemainSeparate() (gas: 1474963)
+[PASS] testNoFinancialPressureAndNoExternalBotControls() (gas: 841648)
+[PASS] testRegulationDrawAndCappedOvertimeDoNotInventWinner() (gas: 2013831)
+[PASS] testRootAndGameHaveDeploymentBudgets() (gas: 7230)
+Logs:
+  agent harness runtime: 27737
+
+Suite result: ok. 7 passed; 0 failed; 0 skipped; finished in 268.47ms (244.20ms CPU time)
+
+Ran 3 tests for test/ReusableArenaStorage.t.sol:ReusableArenaStorageTest
+[PASS] testChangingPlayersAndMatchIdsNeverAddsUnboundedStorageKeys() (gas: 120681698)
+Logs:
+  distinct storage keys after 64 games / 128 players: 70
+  maximum admission gas in storage harness: 425510
+  maximum result append gas in storage harness: 104898
+
+[PASS] testClearsEveryPriorPhysicsAndPermissionWordButRetainsResultRoot() (gas: 1544569)
+[PASS] testRejectUnfinishedUncommittedDuplicateAndOldLogicalCommands() (gas: 687888)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 431.75ms (428.66ms CPU time)
+
+Ran 13 tests for test/ReusableEventsArena.t.sol:ReusableEventsArenaTest
+[PASS] testAbandonedLoadingCommitsCancellationAndSlotCanBeReused() (gas: 1250025)
+[PASS] testBatchTimestampJumpCannotSkipCountdownTicks() (gas: 937112)
+[PASS] testBrowserBindingAndPressureViewsRetainOnlyTheCurrentLogicalMatch() (gas: 2220861)
+[PASS] testExpiredTicketCannotCancelAnAdmittedMatchOrAlterItsBinding() (gas: 1336278)
+[PASS] testExpiredUnadmittedTicketPublishesCancellationWithoutClosingEpoch() (gas: 1380779)
+[PASS] testLinkedLibrariesFitRuntimeBudget() (gas: 28059)
+[PASS] testLogicalRandomnessPressureAndEventsNeverUsePhysicalSlot() (gas: 3352839)
+[PASS] testOldOwnerAuthorizationCannotReviveAfterSlotReuse() (gas: 3101654)
+[PASS] testReadinessAndTrueThreeSecondCountdownAreRequired() (gas: 986035)
+[PASS] testRecoveryAfterPermissionlessRootSealCannotChangeFinalCommitment() (gas: 910728)
+[PASS] testResultProofIsHistoricalAndEpochCannotResetBeforeReleaseAndSeal() (gas: 2230478)
+[PASS] testSequentialClassicChaosKeepsEpochAndRejectsOldCommands() (gas: 2830319)
+Logs:
+  reusable runtime bytes: 24190
+
+[PASS] testSixtyFourRealPhysicsGamesHaveBoundedKeysAndReservePublication() (gas: 124267594)
+Logs:
+  distinct keys after 64 short real physics games: 43
+  max distinct keys in one complete short game: 37
+
+Suite result: ok. 13 passed; 0 failed; 0 skipped; finished in 804.17ms (797.88ms CPU time)
+
+Ran 4 tests for test/ReusableEventsLobby.t.sol:ReusableEventsLobbyTest
+[PASS] testAmbiguousExpiredTicketKeepsLockUntilActualEpochRelease() (gas: 2067185)
+[FAIL: countdown pending] testFalseBridgeTicketCannotSettleDespitePublishedPhysicsResult() (gas: 2160156)
+[PASS] testNoVisitorClosesHealthySessionAndNoUnverifiedCaptureShortcut() (gas: 40007)
+[FAIL: countdown pending] testTwoGamesOneDelegationWithAuthoritativeTicketsAndPublishedRelease() (gas: 2168661)
+Suite result: FAILED. 2 passed; 2 failed; 0 skipped; finished in 25.15ms (14.82ms CPU time)
+
+Ran 8 tests for test/ReusableEventsSettlement.t.sol:ReusableEventsSettlementTest
+[PASS] testAmbiguousExpiredTicketKeepsLockUntilActualEpochRelease() (gas: 2067320)
+[FAIL: countdown pending] testClassicAndBridgeOnlyAdmissionsCannotOpenAMarket() (gas: 2158611)
+[FAIL: countdown pending] testCorrectionLogsAndRatingsChangeButFrozenPaymentDoesNot() (gas: 2153551)
+[FAIL: countdown pending] testFalseBridgeTicketCannotSettleDespitePublishedPhysicsResult() (gas: 2160269)
+[PASS] testNoVisitorClosesHealthySessionAndNoUnverifiedCaptureShortcut() (gas: 40051)
+[FAIL: countdown pending] testPaymentSurvivesSameEpochSlotReuseAndCannotPayTwice() (gas: 2153422)
+[FAIL: countdown pending] testReleasedAbsentResultRefundsAndSealedRootRemainsUnchanged() (gas: 2153661)
+[FAIL: countdown pending] testTwoGamesOneDelegationWithAuthoritativeTicketsAndPublishedRelease() (gas: 2168874)
+Suite result: FAILED. 2 passed; 6 failed; 0 skipped; finished in 45.96ms (34.90ms CPU time)
+
+Ran 5 test suites in 1.59s (1.58s CPU time): 27 tests passed, 8 failed, 0 skipped (35 total tests)
+
+Failing tests:
+Encountered 2 failing tests in test/ReusableEventsLobby.t.sol:ReusableEventsLobbyTest
+[FAIL: countdown pending] testFalseBridgeTicketCannotSettleDespitePublishedPhysicsResult() (gas: 2160156)
+[FAIL: countdown pending] testTwoGamesOneDelegationWithAuthoritativeTicketsAndPublishedRelease() (gas: 2168661)
+
+Encountered 6 failing tests in test/ReusableEventsSettlement.t.sol:ReusableEventsSettlementTest
+[FAIL: countdown pending] testClassicAndBridgeOnlyAdmissionsCannotOpenAMarket() (gas: 2158611)
+[FAIL: countdown pending] testCorrectionLogsAndRatingsChangeButFrozenPaymentDoesNot() (gas: 2153551)
+[FAIL: countdown pending] testFalseBridgeTicketCannotSettleDespitePublishedPhysicsResult() (gas: 2160269)
+[FAIL: countdown pending] testPaymentSurvivesSameEpochSlotReuseAndCannotPayTwice() (gas: 2153422)
+[FAIL: countdown pending] testReleasedAbsentResultRefundsAndSealedRootRemainsUnchanged() (gas: 2153661)
+[FAIL: countdown pending] testTwoGamesOneDelegationWithAuthoritativeTicketsAndPublishedRelease() (gas: 2168874)
+
+Encountered a total of 8 failing tests, 27 tests succeeded
+
+Tip: Run `forge test --rerun` to retry only the 8 failed tests

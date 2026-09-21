@@ -7,6 +7,7 @@ import {validateAgentPoolManifest,type AgentPoolManifest} from '../../../shared/
 const fields=['hub','pool','catalog','tournaments','ratings','qualifications','family','challenges','verifier'] as const;
 export function validateReusableRecord(record:any,humans:readonly string[],manifest?:AgentPoolManifest,evidence?:string){
  validateSeriesRecord(record,humans);
+ if(record.countdownClock!==undefined)assert.equal(record.countdownClock,"engine-ticks-v1");
  assert.equal(record.rulesVersion,15,'Reusable rules required');
  assert(record.arenas.length>=3&&record.arenas.length<=16,'Reviewed reusable arena bounds');
  assert(isAddress(record.common.verifier)&&record.common.verifier.toLowerCase()!==zeroAddress,'Result verifier required');
@@ -14,6 +15,7 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
  assert(isAddress(record.modules?.HousePolicies),'Pinned house strategy required');
  if(manifest){
   const m=validateAgentPoolManifest(manifest,humans);
+  assert.equal(m.countdownClock,record.countdownClock,"Countdown capability mismatch");
   assert(m.version===4&&m.rulesVersion===15&&m.verifiedCapacity===2&&m.qualificationEvidence&&BigInt(m.qualificationEvidence)!==0n,'Reviewed reusable capacity evidence required');
   assert.equal(m.qualificationEvidence.toLowerCase(),evidence?.toLowerCase());
   for(const field of fields)if(field!=='verifier')assert.equal(record.common[field].toLowerCase(),(m as any)[field]?.toLowerCase(),'Reusable authority mismatch');

@@ -8,6 +8,7 @@ type Actor={
  send(action:'start'|'tick'|'submitRandomness'|'cancelUnready',args:readonly unknown[]):Promise<unknown>;
  node:{getBlock():Promise<{timestamp:bigint}>};
  launchAt(id:bigint):Promise<bigint>;progressAge(id:bigint):number;
+ launchClock?(id:bigint):Promise<readonly [bigint,bigint]>;
  readiness?(id:bigint):Promise<readonly [number,bigint]>;
  epochCommands?:boolean;
 };
@@ -56,6 +57,10 @@ export function independentEventsLoop(actor:Actor,beacon=new ChaosBeaconPump(),l
     }
    }
    // The first start arms the deadline. Further calls cannot shorten/extend it.
+   if(launch&&actor.launchClock){
+    const [deadline,clock]=await actor.launchClock(ref.id);
+    if(!deadline||clock<deadline)return;
+   }
    if(same(ref)&&!actor.busy()&&(!launch||block.timestamp>=launch))await send(ref,'start',[]);
   }else if(state.phase===2&&actor.progressAge(ref.id)>=1500&&!lane.blocksTick()&&!actor.busy())await send(ref,'tick',[ref.id]);
  }

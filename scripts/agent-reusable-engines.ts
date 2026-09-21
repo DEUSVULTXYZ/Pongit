@@ -139,7 +139,10 @@ async function arenaLoop(app:Address,runtimeHash:string){
     const [mask,deadline]=await node.readContract({address:app,abi,functionName:'readiness',args:[ref.id]});
     const launch=await node.readContract({address:app,abi,functionName:'launchAt',args:[ref.id]}),now=(await node.getBlock()).timestamp;
     if(mask!==3&&now>deadline)await engine.send('cancel-unready','cancelUnready',[ref.epoch,ref.id]);
-    else if(mask===3&&(!launch||now>=launch))await engine.send(launch?'start':'launch','start',[ref.epoch,ref.id]);
+    else if(mask===3&&(!launch||now>=launch)){
+     const [deadline,clock]=r.countdownClock&&launch?await node.readContract({address:app,abi,functionName:'launchClock',args:[ref.id]}):[0n,0n];
+     if(clock>=deadline)await engine.send(launch?'start':'launch','start',[ref.epoch,ref.id]);
+    }
     await health(mask===3?'countdown':'waiting-for-player',{epoch:String(ref.epoch),id:String(ref.id),launchAt:String(launch)});pause=500;
    }else if(s.phase===2){
     await health('playing',{epoch:String(ref.epoch),id:String(ref.id),node:url,mode:s.state.mode,time:String(s.state.t),score:[s.state.scoreA,s.state.scoreB]});

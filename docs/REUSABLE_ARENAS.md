@@ -860,3 +860,20 @@ uses the existing operator journal and never renews the historical application.
 Migration still requires its verified release, a real profile-write freeze and
 a fresh canonical snapshot. The empty-seeded private candidate is not the
 production migration destination.
+
+### Countdowns and publication clocks, 21 September
+
+The real Chrome Chaos run `browser-chaos-rules14chrome3` failed its countdown
+assertion, after the Chrome Classic and Edge Chaos runs had passed. Its failure
+is retained. Actual node samples show `execTimestamp` and the latest block's
+timestamp staying pinned within a batch and jumping by two or three seconds.
+Extrapolating that timestamp as a smooth wall clock is incorrect.
+
+The next immutable candidate additionally requires 300 engine ticks before
+starting. It uses the existing physics clock of 10 ms per tick. The timestamp
+deadline remains required, while the high half of the existing launch word
+stores the tick deadline. No additional storage key, move payload or permission
+is introduced. The explicit `engine-ticks-v1` manifest capability selects an
+atomic `launchClock` read for UI and maintenance; old deployments retain their
+historical timestamp interface and versioned references. A new deployment
+prefix is mandatory. Hosted qualification of this candidate remains pending.
