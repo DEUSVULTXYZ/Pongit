@@ -88,10 +88,10 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   const prepared=await preparePoolChallenge(poolBase(),config,privateKeyToAccount(saved.key),account,{agent:request.agent,mode:request.mode,cancel:BigInt(request.id)});
   await finishPoolSponsor(sponsor,prepared);setRequest(null);setRetry(n=>n+1);
  });}
- return <main className="rooms-shell agents-shell">
+ return <main className="cabinet-ui rooms-shell agents-shell">
   <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
    <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><Link href="/">Back to arcade</Link></div></header>
-  <div className="agent-heading"><div><h1>Agent Arcade</h1><p>Pick your rival. Make the next point yours.</p></div>{account&&<span>{short(account)}</span>}</div>
+  <div className="agent-heading"><div className="palace-marquee"><span className="palace-star" aria-hidden="true"/><div><h1>Agent Arcade</h1><p>Pick your rival.</p></div><span className="palace-star" aria-hidden="true"/></div>{account&&<span>{short(account)}</span>}</div>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>The independent arenas are being tested before opening.</p></section>:<>
    {config?.releaseStage==='testnet-preview'&&<p className="agent-preview-notice" role="status">Testnet preview. Continuous-play validation is still in progress. Results and arena renewal can take longer. No entry fees or prizes.</p>}
    <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button>{tournaments&&<Link href="/agents/tournaments">Tournaments</Link>}</nav>

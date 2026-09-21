@@ -16,3 +16,12 @@
 .tournament-fixtures{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.tournament-footnote{margin:24px 0 0;color:#bccbd9;line-height:1.7}.tournament-error{padding:14px;border:1px solid #d09898;border-radius:8px;margin-bottom:16px}.tournament-error button{min-height:44px}.tournament-error p{line-height:1.6;margin-top:0}
 @media(max-width:900px){.tournament-bracket{gap:12px}.tournament-fixtures{grid-template-columns:repeat(2,minmax(0,1fr))}.tournament-title{align-items:flex-start;flex-direction:column}.tournament-fixture{padding:10px}}
 @media(max-width:640px){.tournament-bracket,.tournament-fixtures{grid-template-columns:1fr}.tournament-bracket>section{justify-content:initial!important}.tournament-fixture{padding:14px}.tournament-champion{padding:14px;gap:10px}.tournament-champion p{margin:0;width:100%}.tournament-shell .rooms-header-actions a{min-height:44px;display:inline-flex;align-items:center}.tournament-detail{padding:12px}}
+.cabinet-ui.tournament-shell .tournament-detail{position:relative;isolation:isolate;background:none;border:0;border-radius:10px;padding:24px;box-shadow:0 12px 24px #02041299}
+.cabinet-ui.tournament-shell .tournament-detail::before{content:"";position:absolute;inset:0;z-index:-1;border:20px solid transparent;border-image:var(--palace-frame) 40 fill / 20px / 0 stretch;pointer-events:none}
+.cabinet-ui.tournament-shell .tournament-fixture{background:linear-gradient(110deg,#153252,#111331 50%,#25163b);border-color:#655783;border-left-color:var(--palace-pink);border-radius:3px;box-shadow:inset 0 2px #b4a4eb25,inset 0 -3px #04081b}
+.cabinet-ui.tournament-shell .tournament-fixture[data-complete=true]{border-left-color:var(--palace-cyan)}
+.cabinet-ui.tournament-shell .tournament-validation{border-radius:3px;background:#16102e;border-color:#574878;color:#d5c9ef}
+.cabinet-ui.tournament-shell .tournament-table{border-color:#655783;border-radius:3px;background:#0b0b20}
+.cabinet-ui.tournament-shell .tournament-table thead{background:#21183d}
+.cabinet-ui.tournament-shell .tournament-champion{background:linear-gradient(110deg,#38294a,#20132d);border-radius:3px;border-color:var(--palace-gold)}
+.cabinet-ui.tournament-shell .tournament-history button[aria-current=page]{background:linear-gradient(#302555,#1b1438);border-color:var(--palace-cyan)}

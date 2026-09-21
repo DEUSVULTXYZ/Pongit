@@ -21,6 +21,28 @@ export function projectChaos(source:ChaosPhysicsState,target:bigint,everyContact
  if(goal)for(const b of state.balls)b.alive=false;
  return {state,collisions,waiting:!complete||target>limit||goal||state.cancelled&&!source.cancelled};
 }
+
+/** Buffered spectators already have a confirmed future sample. Advance the
+ * mirror incrementally rather than repeatedly hitting the 600 ms prediction
+ * ceiling from the same old sample. Work stays bounded for each painted frame.
+ * A new source always reconciles controls/effects; no goal is extrapolated. */
+export class SpectatorChaosProjection {
+ private source?:ChaosPhysicsState;
+ private projected?:ReturnType<typeof projectChaos>;
+ reset(){this.source=undefined;this.projected=undefined;}
+ sample(source:ChaosPhysicsState,target:bigint,everyContact:boolean|'complete'){
+  if(source!==this.source||!this.projected||target<this.projected.state.t){
+   this.source=source;this.projected=undefined;
+  }
+  const previous=this.projected?.state??source;
+  // A predicted goal is a boundary, even when more render time is buffered.
+  if(previous.score.rally!==source.score.rally||previous.score.finished!==source.score.finished||previous.cancelled&&!source.cancelled)return this.projected!;
+  const next=projectChaos(previous,target,everyContact);
+  this.projected=next.state.score.rally!==source.score.rally||next.state.score.finished!==source.score.finished
+   ?{state:previous,collisions:[],waiting:true}:next;
+  return this.projected;
+ }
+}
 export function eventCanvas(s:ChaosPhysicsState,effectsEnabled:boolean,reducedMotion:boolean):ChaosCanvasFrame{
  const p=eventPaddles(s),ghost=new Set<string>();
  for(const e of s.effects)for(const ball of s.balls){

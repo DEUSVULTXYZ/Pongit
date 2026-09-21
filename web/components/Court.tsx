@@ -9,7 +9,7 @@ import { BallTrail } from "../lib/ball-trail";
 import type {ChaosDecoded} from '../../shared/chaos-codec';
 import {chaosLegacy} from '../../shared/chaos-codec';
 import {chaosEvent} from '../../shared/chaos-events';
-import {projectChaos,eventCanvas,eventPaddles} from '../lib/chaos-presentation';
+import {projectChaos,eventCanvas,eventPaddles,SpectatorChaosProjection} from '../lib/chaos-presentation';
 import {drawChaosCourt,drawChaosPaddles,drawChaosBalls,type ChaosCanvasFrame} from '../lib/chaos-canvas';
 import {courtSprites} from '../lib/court-sprites';
 import {chaosContactResolution} from '../../shared/chaos-rules';
@@ -93,10 +93,11 @@ export function Court({
     let anchor=last,anchorObserved=0,anchorAge=0,localDirection=0,localAt=last,correction=0;
     const livePaddle = new LivePaddle(), liveClock = new LiveClock();
     const playout=new SpectatorPlayout();
+    const spectatorChaos=new SpectatorChaosProjection();
     function draw(now: number) {
       let p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
-      if (identity !== context) { playout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
+      if (identity !== context) { playout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const buffered=p.bufferedSpectator&&p.side<0&&!p.replay&&!!p.state;
       if(buffered)playout.push({state:p.state!,chaos:p.chaos,at:now-Math.max(0,Date.now()-p.observedAt)});
       const playback=buffered?playout.sample(now):null;
@@ -118,7 +119,7 @@ export function Court({
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
       const target=p.replay||playback?p.clock:p.liveEngine?liveClock.sample(timing.target):timing.target;
       let waiting = false;
-      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
+      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:playback?spectatorChaos.sample(p.chaos.physics,target,chaosContactResolution(p.rulesVersion??10)):projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
       if(cp){s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
       else if (s) {
         const projected = p.replay ? { state: s, waiting: false }
@@ -237,6 +238,12 @@ export function Court({
       }
       count++;
       if (now - last > 1000) {
+        if(buffered){
+          el.dataset.processedUs=String(current.current.state?.t??0n);
+          el.dataset.renderedUs=String(s?.t??0n);
+          el.dataset.bufferMs=String(Math.round(playback?.delayMs??0));
+          el.dataset.streamStalled=String(playback?.stalled??false);
+        }
         p.onNetwork(timing.ageMs,correction);
         p.onStats(
           Math.round((count * 1000) / (now - last)),

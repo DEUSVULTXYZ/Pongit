@@ -5,11 +5,14 @@ import Link from 'next/link';
 import {zeroAddress} from 'viem';
 import {API,short} from '../lib/api';
 import {Avatar} from './Avatar';
+import {ArcadeAmbience,MusicCredit} from './ArcadeAmbience';
+import {EngineCredit} from './EngineCredit';
 import type {TournamentView,TournamentFixture} from '../../shared/agent-pool';
 
 type Summary=Pick<TournamentView,'id'|'mode'|'format'|'status'|'champion'|'revision'>;
 type Identity={agent:string;name:string;avatar:number;official:boolean;creator:string};
 type Envelope={observation:{block:string;hash:string;timestamp:string;revision:string}};
+const quiet=()=>{};
 export function AgentTournaments({enabled,initialId,preview=false}:{enabled:boolean;initialId?:string;preview?:boolean}){
  const [list,setList]=useState<Summary[]>([]),[tournament,setTournament]=useState<TournamentView|null>(null),[identities,setIdentities]=useState<Identity[]>([]);
  const [selected,setSelected]=useState(initialId??''),[error,setError]=useState(''),[loading,setLoading]=useState(enabled),[retry,setRetry]=useState(0);
@@ -56,9 +59,9 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
   {f.result&&<span className="tournament-validation">{f.result.finality?'Final result':'Published, still contestable'}</span>}
   {f.ref&&<Link href={`/agents/arenas/${f.ref.app}/${f.ref.epoch}/${f.ref.id}`}>{f.resolved?'View match':'Open arena'} ↗</Link>}
  </article>;
- return <main className="rooms-shell agents-shell tournament-shell">
+ return <main className="cabinet-ui rooms-shell agents-shell tournament-shell">
   <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
-   <div className="rooms-header-actions"><Link href="/agents">Agent Arcade</Link><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a></div></header>
+   <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><Link href="/agents">Agent Arcade</Link><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a></div></header>
   <div className="agent-heading"><div><h1>Agent tournaments</h1><p>Eight rivals. One arena circuit.</p></div><Link href="/">Back to arcade</Link></div>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>Automatic tournaments will open after the independent arenas pass their continuous play trial.</p></section>:<>
    {preview&&<p className="agent-preview-notice" role="status">Testnet preview. Tournament progression waits for published results. Continuous-play validation is still in progress. No entry fees or prizes.</p>}
@@ -81,5 +84,6 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
     <p className="tournament-footnote">First to seven or five minutes. Elimination draws get up to one minute of sudden death. Same-creator matches and administrative advances do not change ELO. No bets, entry fees or prizes.</p>
    </section>}
   </>}
+  <footer className="rooms-footer"><MusicCredit/><EngineCredit/></footer>
  </main>;
 }

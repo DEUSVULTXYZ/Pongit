@@ -8,7 +8,8 @@ export class SpectatorPlayout {
  private frames:Frame[]=[];
  private interval=600;
  private playhead=0n;
- reset(){this.frames=[];this.interval=600;this.playhead=0n;}
+ private sampledAt:number|undefined;
+ reset(){this.frames=[];this.interval=600;this.playhead=0n;this.sampledAt=undefined;}
  push(frame:Frame){
   const last=this.frames.at(-1);
   if(last&&(frame.state.seed!==last.state.seed||frame.state.t<last.state.t
@@ -26,6 +27,17 @@ export class SpectatorPlayout {
   for(const next of this.frames.slice(1)){b=next;if(next.at>=at)break;a=next;}
   const fraction=b===a?0:Math.max(0,Math.min(1,(at-a.at)/(b.at-a.at)));
   let target=a.state.t+BigInt(Math.floor(Number(b.state.t-a.state.t)*fraction));
+  if(this.sampledAt!==undefined&&now-this.sampledAt<1000){
+   const dt=Math.max(0,Math.min(100,now-this.sampledAt));
+   const rate=b.at>a.at?Math.min(2,Math.max(.1,Number(b.state.t-a.state.t)/(b.at-a.at)/1000)):1;
+   // A larger jitter estimate previously moved the desired clock backwards,
+   // freezing every frame until wall time caught up. Slew instead of stopping;
+   // never advance beyond the latest actually processed snapshot.
+   const correction=Number(target-this.playhead)/1000;
+   const speed=Math.max(.8,Math.min(1.2,1+correction/1500));
+   target=this.playhead+BigInt(Math.floor(dt*1000*rate*speed));
+  }
+  this.sampledAt=now;
   if(target<this.playhead)target=this.playhead;
   const latest=this.frames.at(-1)!;if(target>latest.state.t)target=latest.state.t;
   this.playhead=target;

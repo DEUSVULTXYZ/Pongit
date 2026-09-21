@@ -16,7 +16,7 @@ import {engineReadRetryMs} from '../../shared/engine-read';
 import {API,short} from '../lib/api';
 import {eventHud} from '../lib/chaos-presentation';
 import {Court} from './Court';
-import {Avatar} from './Avatar';
+import {AgentScoreboard} from './AgentScoreboard';
 import {ChaosEffectsHud} from './ChaosEffectsHud';
 import {poolBase,poolBrowserSponsor,finishPoolSponsor} from '../lib/agent-pool';
 import {connect,rememberedAccount} from '../lib/wallet';
@@ -182,8 +182,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const result=view?.result,engineDone=!!snapshot&&snapshot.phase>=3,scoreA=result?.scoreA??snapshot?.state.scoreA??0,scoreB=result?.scoreB??snapshot?.state.scoreB??0;
  const elapsed=Number(snapshot?.state.t??0n)/1_000_000,overtime=!!view?.overtimeSeconds&&elapsed>=300;
  const seconds=Math.max(0,Math.ceil((overtime?360:300)-elapsed));
- const player=(address:string)=><div className="agent-score-name"><Avatar index={avatar(address)}/><span>{name(address)}</span></div>;
- return <main className={`rooms-shell agents-shell pool-match-shell ${snapshot?.phase===2&&!result?'rooms-playing':''}`}>
+ return <main className={`cabinet-ui rooms-shell agents-shell pool-match-shell ${snapshot?.phase===2&&!result?'rooms-playing':''}`}>
   <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
    <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link>{side>=0&&<button onClick={()=>{void move(0);setTools(true);}}>Tools</button>}</div></header>
   {!enabled?<section className="agent-empty"><h1>Qualification in progress</h1><p>Independent agent arenas are not open yet.</p></section>:<>
@@ -191,18 +190,17 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    {error&&<div className="pool-match-error" role="alert"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
    {controlError&&!tools&&<div className="pool-match-error" role="status"><p>{controlError}</p><button onClick={()=>{void move(0);setTools(true);}}>Session tools</button></div>}
    {!view&&!error&&<p role="status">Reading the match reference…</p>}
-   {view&&<section className="agent-court" aria-label="Agent arena">
-    <div className="agent-scoreboard"><div>{player(view.a)}</div><div className="agent-score"><b>{String(scoreA).padStart(2,'0')}</b><small>:</small><b>{String(scoreB).padStart(2,'0')}</b></div><div>{player(view.b)}</div></div>
+   {view&&<section className="rooms-court court-card agent-court" aria-label="Agent arena">
+    <AgentScoreboard players={[{name:name(view.a),avatar:avatar(view.a)},{name:name(view.b),avatar:avatar(view.b)}]} scores={[scoreA,scoreB]} caption={engineDone?'RESULT ON ENGINE':`${overtime?'SUDDEN DEATH':'FIRST TO SEVEN'} · ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}/>
     {result?<div className="pool-published-result"><h1>{result.status===4?'Match cancelled':result.winner===zeroAddress?'Draw':`${name(result.winner)} wins`}</h1>
      <p>{result.finality?'Final published result':'Published on Monad, still contestable'}</p>
      {result.status===3&&<button onClick={()=>setReplay(true)}>Watch replay</button>}
      {view.tournament!=='0'&&<Link href={`/agents/tournaments?id=${view.tournament}`}>View tournament</Link>}
      <p className="pool-match-reference">Arena {short(reference.app)} · Epoch {reference.epoch} · Match {reference.id}</p></div>:snapshot?<>
-     <div className="agent-clock">{engineDone?'Waiting for publication':`${overtime?'Sudden death':'Time remaining'} ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}</div>
      {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
      <div className="pool-canvas-slot"><Court state={snapshot.state} chaos={snapshot.chaos} rulesVersion={manifest.current?.rulesVersion??10} clock={snapshot.clock>BigInt(view.overtimeSeconds?360_000_000:300_000_000)?BigInt(view.overtimeSeconds?360_000_000:300_000_000):snapshot.clock}
       observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onStats={quiet}/>{manifest.current?.version===4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
-     {side>=0&&<div className="agent-controls"><small>W / S · ↑ / ↓</small><div>{([-1,1] as const).map(dir=><button key={dir} aria-label={dir===-1?'Move up':'Move down'} disabled={!controllable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void move(dir);}} onPointerUp={()=>void move(0)} onPointerCancel={()=>void move(0)} onLostPointerCapture={()=>void move(0)}>{dir===-1?'↑':'↓'}</button>)}</div></div>}
+     <div className="rooms-court-controls"><span>{side>=0?'W / S · ↑ / ↓':'SPECTATING'}</span>{side>=0&&<div className="touch-controls">{([-1,1] as const).map(dir=><IconButton key={dir} icon={dir===-1?'up':'down'} aria-label={dir===-1?'Move up':'Move down'} disabled={!controllable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void move(dir);}} onPointerUp={()=>void move(0)} onPointerCancel={()=>void move(0)} onLostPointerCapture={()=>void move(0)}/>)}</div>}</div>
     </>:<div className="agent-empty"><p>Waiting for this arena to become ready.</p></div>}
    </section>}
   </>}
