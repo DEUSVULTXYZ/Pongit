@@ -1,0 +1,79 @@
+{
+  "at": "2026-09-21T11:15:25.498Z",
+  "finishedAt": "2026-09-21T11:18:55.910Z",
+  "passed": true,
+  "scope": "Actual public HTTPS API sponsorship, production services and hosted Interlude; disposable synthetic owners, no operator key or physical passkey claim",
+  "rules": 14,
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "checks": [
+    "Two independently admitted real Classic/Chaos matches, overlapping play, natural results, contract capture and realtime payout"
+  ],
+  "simultaneousPlayMs": 22713,
+  "sourceReportSHA256": "80361a590b713a816dee56ae1aaeee8fc1cf6f9c122d9109d2603f5555ba8bfe",
+  "controllerSource": "43ac424",
+  "backend": "e4eceb6",
+  "matches": [
+    {
+      "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+      "epoch": "2",
+      "id": "340282366920938463463374607431768211513",
+      "mode": 0,
+      "changes": [
+        133,
+        130
+      ],
+      "playingAt": "2026-09-21T11:16:39.503Z",
+      "finishedAt": "2026-09-21T11:17:59.102Z",
+      "finalScore": [
+        5,
+        7
+      ],
+      "winner": "0xB08c611e14bF549E2f6696Cc2e6D488106E05E73",
+      "passed": true,
+      "effects": [],
+      "confirmedInputMs": {
+        "50": 108.92,
+        "95": 119.96,
+        "99": 215.04
+      },
+      "confirmedInputs": 263,
+      "payment": null
+    },
+    {
+      "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+      "epoch": "2",
+      "id": "340282366920938463463374607431768211515",
+      "mode": 1,
+      "changes": [
+        142,
+        134
+      ],
+      "playingAt": "2026-09-21T11:17:24.063Z",
+      "finishedAt": "2026-09-21T11:18:55.893Z",
+      "finalScore": [
+        7,
+        6
+      ],
+      "winner": "0x8f4FF5463106A39Df353e8d02989d6d2C89F910f",
+      "passed": true,
+      "effects": [
+        11,
+        2,
+        16,
+        17
+      ],
+      "confirmedInputMs": {
+        "50": 116.83,
+        "95": 140.76,
+        "99": 217.25
+      },
+      "confirmedInputs": 276,
+      "payment": {
+        "id": "0x90bed44248bea33fa4047857e5089a126abd5f296f57f594423d820c9fcde051",
+        "amount": "6000000000000000",
+        "beneficiary": "0x59E79013C1Edb2e7165D6337f1A762804a5Bf55d"
+      }
+    }
+  ],
+  "measurementLimit": "Input timings cover this synthetic public API/SDK controller only, not physical input-to-photon delay or all VPS traffic. No 24-hour availability claim."
+}

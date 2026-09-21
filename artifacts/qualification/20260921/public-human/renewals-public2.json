@@ -1,0 +1,97 @@
+{
+  "observedAt": "2026-09-21T11:20:21.037Z",
+  "transactions": [
+    {
+      "hash": "0x22cb3c206e7ee05e5c9891e93ed84b2e47acf2ce2e9390d545d62f5a9a83b67a",
+      "status": "confirmed",
+      "nonce": 4088,
+      "method": "releaseStake",
+      "args": [
+        "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+        "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "success": true,
+      "canonical": true,
+      "block": "64433228",
+      "blockHash": "0xeb13c6a830b98d7858f7d857fbf2b3691b96fc13a49ce7231036cca4daa31cff",
+      "at": "2026-09-21T11:12:38.000Z",
+      "gas": "1208154"
+    },
+    {
+      "hash": "0xa53b1544a5b5d65534cae3f4e8ce2e31aebb6d477321aab2cfcced93fcf452d9",
+      "status": "confirmed",
+      "nonce": 4089,
+      "method": "sealReleased",
+      "args": [
+        "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1"
+      ],
+      "success": true,
+      "canonical": true,
+      "block": "64433243",
+      "blockHash": "0x67f0977589e65ea2150f686da37a9cc6baa5c30a0f8222233d3b2c72165e79e4",
+      "at": "2026-09-21T11:12:42.000Z",
+      "gas": "175645"
+    },
+    {
+      "hash": "0x970e60b86fdee82701b0d0195643126480d26721fa1ce5bb5ad70472140e7002",
+      "status": "confirmed",
+      "nonce": 4090,
+      "method": "releaseStake",
+      "args": [
+        "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+        "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "success": true,
+      "canonical": true,
+      "block": "64433275",
+      "blockHash": "0xdcb46d22cdf1208b2e32d84140f6841142a70d54b7fad707e6e94a0e3bf4051b",
+      "at": "2026-09-21T11:12:52.000Z",
+      "gas": "1242873"
+    },
+    {
+      "hash": "0xdb02bf935407c84b2b1bf9a43512ce781076f7ee43e897656e699e0745ad33b5",
+      "status": "confirmed",
+      "nonce": 4093,
+      "method": "sealReleased",
+      "args": [
+        "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F"
+      ],
+      "success": true,
+      "canonical": true,
+      "block": "64433304",
+      "blockHash": "0x753a81fe2db1c406dd5eb1e4935d03635630ad11b69acb1b25121af1f7a767b2",
+      "at": "2026-09-21T11:13:01.000Z",
+      "gas": "175659"
+    },
+    {
+      "hash": "0x265405d21a51d2c4c7a2986fb5603de8a21336eb6ee2e11793917bafff21fe42",
+      "status": "confirmed",
+      "nonce": 4094,
+      "method": "openReusableArena",
+      "args": [
+        "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1"
+      ],
+      "success": true,
+      "canonical": true,
+      "block": "64433312",
+      "blockHash": "0x3705bdefae93b3aa826f1fb138c37f3b06f8a39d1eafdb8bce3d82c0a958ae8d",
+      "at": "2026-09-21T11:13:04.000Z",
+      "gas": "1338862"
+    },
+    {
+      "hash": "0x310f604519e270312c6c377fa4cd683313b60a3830553036adaa13c44acedf2c",
+      "status": "confirmed",
+      "nonce": 4099,
+      "method": "openReusableArena",
+      "args": [
+        "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F"
+      ],
+      "success": true,
+      "canonical": true,
+      "block": "64433376",
+      "blockHash": "0xcb9fa5c335e58a0e89aa934d36e6eab9b918f08850f738a871ebd8f3d7ca74ff",
+      "at": "2026-09-21T11:13:23.000Z",
+      "gas": "1350864"
+    }
+  ]
+}
