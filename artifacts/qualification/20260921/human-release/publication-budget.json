@@ -4,7 +4,7 @@
   "matchReserveBatches": 8000,
   "rotationLeadSeconds": 1860,
   "serviceSeconds": 3600,
-  "evidence": "0x527cc4d15256dc0ce045b6c6e7d5e8ac523c1ca955d4eb76690e04ae207c22af",
+  "evidence": "0x79b3356254fca8fbc4ea0cba0915d09d7b7646c173372ece9bc3d72bf2ba34f6",
   "runtimeHashes": [
     "0xf3f5983469c57f69853b0d1769fe39047e18dd4dce9b6d904915b2e2af91beec",
     "0x42421aa545c3464b10f2a136b1ad044ec93556d5276180ec2d956f9f2d2f9507",
