@@ -16,7 +16,8 @@ try{
  let publicationCalls=0,publicationDelayed=false;
  if(process.env.PONG_PREVIEW_DELAY_PUBLISHED==='1'){
   report.publicationDelayInjected=true;
-  await page.route('**/api/agents/matches/**',async route=>{
+  // Production can use either the API subdomain or the same-origin /api proxy.
+  await page.route(/\/agents\/matches\//,async route=>{
    if(++publicationCalls===2){publicationDelayed=true;await new Promise(r=>setTimeout(r,12000));publicationDelayed=false;}
    await route.continue();
   });
@@ -49,6 +50,12 @@ try{
   const ref=games[0].ref;report.liveRef=ref;
   await page.goto(`https://pongit.xyz/agents/arenas/${ref.app}/${ref.epoch}/${ref.id}`,{waitUntil:'domcontentloaded'});
   await page.locator('canvas').first().waitFor({timeout:60000});
+  if(report.publicationDelayInjected){
+   const deadline=Date.now()+60000;
+   while(!publicationDelayed&&Date.now()<deadline)await page.waitForTimeout(100);
+   report.publicationCalls=publicationCalls;
+   assert(publicationDelayed,'The second actual published-result request must be intercepted');
+  }
   const hashes=[],delayedHashes=[];
   for(let i=0;i<(report.publicationDelayInjected?16:4);i++){await page.waitForTimeout(1200);const png=await page.locator('canvas').first().screenshot();const hash=createHash('sha256').update(png).digest('hex');hashes.push(hash);if(publicationDelayed)delayedHashes.push(hash);}
   report.liveCanvas={rendered:true,changed:new Set(hashes).size>1,hashes};assert(report.liveCanvas.changed,'Live canvas must progress');
