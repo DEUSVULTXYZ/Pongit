@@ -1,4 +1,4 @@
-import {encodeAbiParameters,keccak256,parseEther,zeroHash,type Abi,type Address,type Hex,type PublicClient} from 'viem';
+import {decodeEventLog,encodeAbiParameters,keccak256,parseEther,zeroHash,type Abi,type Address,type Hex,type PublicClient} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import type {Pool} from 'pg';
 import type {IndependentManifest} from '../../shared/independent';
@@ -21,7 +21,8 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
  PRIMARY KEY(lobby,id,rally));
  CREATE TABLE IF NOT EXISTS independent_bettors(lobby text NOT NULL,id text NOT NULL,player text NOT NULL,settled boolean NOT NULL DEFAULT false,PRIMARY KEY(lobby,id,player));
  CREATE TABLE IF NOT EXISTS independent_finance_cursor(lobby text PRIMARY KEY,block_number bigint NOT NULL);
- CREATE TABLE IF NOT EXISTS independent_payments(lobby text NOT NULL,payout_id text NOT NULL,state text NOT NULL,hash text NOT NULL,PRIMARY KEY(lobby,payout_id));`);
+ CREATE TABLE IF NOT EXISTS independent_payments(lobby text NOT NULL,payout_id text NOT NULL,state text NOT NULL,hash text NOT NULL,PRIMARY KEY(lobby,payout_id));
+ CREATE TABLE IF NOT EXISTS independent_finance_receipts(lobby text NOT NULL,operation text NOT NULL,hash text NOT NULL,block_hash text NOT NULL,PRIMARY KEY(lobby,operation));`);
  const read=(at:Address,abi:Abi,name:string,args:readonly unknown[]=[],blockNumber?:bigint):Promise<any>=>base.readContract({address:at,abi,functionName:name,args,blockNumber} as any);
  const events=rules.events?await independentEventsPressure(db,base,m,key,queue):null;
  async function checkpoint(e:ReturnType<typeof independentEngine>){
@@ -72,7 +73,40 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
   const head=await base.getBlockNumber();
   return {...identity,label:head<round[0]?'Betting open':head<round[0]+2n?'Closing bets':'Preparing next rally',closeBlock:String(round[0]),head:String(head)};
  }
- async function payments(){
+ async function storeLogs(c:Pick<Pool,'query'>,logs:readonly any[],revisit=false){
+  for(const log of logs){
+   if(log.removed||log.address.toLowerCase()!==m.market.toLowerCase())continue;
+   const a=log.args;
+   if(log.eventName==='BetPlaced')await c.query('INSERT INTO independent_bettors(lobby,id,player) VALUES($1,$2,$3) ON CONFLICT(lobby,id,player) '+(revisit?'DO UPDATE SET settled=false':'DO NOTHING'),[m.lobby.toLowerCase(),String(a.matchId),a.player.toLowerCase()]);
+   if(['PayoutPaid','PayoutDeferred'].includes(log.eventName))await c.query('INSERT INTO independent_payments VALUES($1,$2,$3,$4) ON CONFLICT(lobby,payout_id) DO UPDATE SET state=$3,hash=$4',[m.lobby.toLowerCase(),a.payoutId,log.eventName,log.transactionHash]);
+  }
+ }
+ // Current events and sponsored receipts do not wait for historical backfill.
+ // They only discover beneficiaries; positions and payment rights are reread
+ // from the financial contracts before every claim or retry.
+ async function discoverPayments(){
+  const head=await base.getBlockNumber();
+  await storeLogs(db,await base.getContractEvents({address:m.market,abi:marketAbi,fromBlock:head>99n?head-99n:0n,toBlock:head}));
+ }
+ async function recoverSponsoredPayments(){
+  const rows=(await db.query(`SELECT o.id,o.hash FROM independent_operations o WHERE o.target=$1 AND o.status='confirmed' AND o.hash IS NOT NULL
+   AND NOT EXISTS(SELECT 1 FROM independent_finance_receipts f WHERE f.lobby=$2 AND f.operation=o.id) ORDER BY o.created_at LIMIT 8`,[m.market.toLowerCase(),m.lobby.toLowerCase()])).rows;
+  for(const row of rows){
+   const receipt=await base.getTransactionReceipt({hash:row.hash});
+   if(receipt.status!=='success'||receipt.transactionHash.toLowerCase()!==row.hash.toLowerCase()
+    ||receipt.to?.toLowerCase()!==m.market.toLowerCase())throw Error('Sponsored financial receipt identity mismatch');
+   if((await base.getBlock({blockNumber:receipt.blockNumber})).hash!==receipt.blockHash)throw Error('Sponsored financial receipt reorganized');
+   const logs=receipt.logs.filter(log=>log.address.toLowerCase()===m.market.toLowerCase()).map(log=>{
+    try{return {...log,...decodeEventLog({abi:marketAbi,data:log.data,topics:log.topics})};}catch{return null;}
+   }).filter(log=>log!==null);
+   const c=await db.connect();try{
+    await c.query('BEGIN');await storeLogs(c,logs);
+    await c.query('INSERT INTO independent_finance_receipts VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',[m.lobby.toLowerCase(),row.id,row.hash,receipt.blockHash]);
+    await c.query('COMMIT');
+   }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+  }
+ }
+ async function indexPayments(){
   const head=await base.getBlockNumber();
   const row=(await db.query('SELECT block_number FROM independent_finance_cursor WHERE lobby=$1',[m.lobby.toLowerCase()])).rows[0];
   const from=row?BigInt(row.block_number)>8n?BigInt(row.block_number)-8n:0n:BigInt(m.startBlock??process.env.PONG_INDEPENDENT_START_BLOCK??head);
@@ -80,12 +114,11 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
   const logs=await base.getContractEvents({address:m.market,abi:marketAbi,fromBlock:from,toBlock:to});
   const c=await db.connect();try{
    await c.query('BEGIN');
-   for(const log of logs){const a=log.args as any;
-    if(log.eventName==='BetPlaced')await c.query('INSERT INTO independent_bettors(lobby,id,player) VALUES($1,$2,$3) ON CONFLICT(lobby,id,player) DO UPDATE SET settled=false',[m.lobby.toLowerCase(),String(a.matchId),a.player.toLowerCase()]);
-    if(['PayoutPaid','PayoutDeferred'].includes(log.eventName))await c.query('INSERT INTO independent_payments VALUES($1,$2,$3,$4) ON CONFLICT(lobby,payout_id) DO UPDATE SET state=$3,hash=$4',[m.lobby.toLowerCase(),a.payoutId,log.eventName,log.transactionHash]);
-   }
+   await storeLogs(c,logs,true);
    await c.query('INSERT INTO independent_finance_cursor VALUES($1,$2) ON CONFLICT(lobby) DO UPDATE SET block_number=$2',[m.lobby.toLowerCase(),String(to)]);await c.query('COMMIT');
   }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
+ }
+ async function payments(){
   const pending=(await db.query('SELECT id,player FROM independent_bettors WHERE lobby=$1 AND NOT settled ORDER BY id LIMIT 20',[m.lobby.toLowerCase()])).rows;
   for(const p of pending){
    const id=BigInt(p.id),result=await read(m.settlement,settlementAbi,'result',[id]);if(result[3]<3)continue;
@@ -117,5 +150,5 @@ export async function independentFinance(db:Pool,base:PublicClient,m:Independent
    results.push({id,payoutId,payout,result,position,payment});
   }return results;
  }
- return {checkpoint,payments,view,accountPayments,rallyStatus};
+ return {checkpoint,payments,indexPayments,discoverPayments,recoverSponsoredPayments,view,accountPayments,rallyStatus};
 }

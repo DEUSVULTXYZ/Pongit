@@ -170,7 +170,7 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
   if(m.rulesVersion===14&&BigInt((node as any).baseBlock??-1)!==d.baseBlock)throw Error('Waiting for the current arena base state');
   const binding:any=await client.read('boundMatch',[]);
   if(BigInt(binding.epoch)!==d.epoch||BigInt(binding.id)===0n||![binding.a,binding.b].some(a=>a.toLowerCase()===s.grant.player.toLowerCase()))throw Error('Arena participant binding changed');
-  journal.bindDirect(s.grant.key,d.epoch,BigInt(binding.id),s.grant.expires);
+  journal.bindDirect(s.grant.key,d.epoch,BigInt(binding.id),s.grant.expires,m.rulesVersion===14);
   journal.retirePrevious(s.grant.key,d.epoch);
   const pending=journal.pending(s.grant.key);if(pending){
    if(pending.epoch!==String(d.epoch))throw Error('A previous arena command is still being reconciled');

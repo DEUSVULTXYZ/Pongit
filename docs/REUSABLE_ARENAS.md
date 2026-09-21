@@ -835,3 +835,28 @@ five in the engine, 1,030 batches and 15 pending diffs. The publisher's balance
 and nonce were unchanged. No funding transfer or protected commit call was
 performed during this recheck. The request for a one-time 2 test MON funding
 diagnostic remains unanswered; it must not become recurring funding implicitly.
+
+### Actual human qualification, 21 September
+
+Two concurrent hosted games reached their natural 3–7 results, with 137/136
+confirmed direction changes in Classic and 151/144 in Chaos. Both results
+published and were captured. Chaos exercised verified draws, betting pressure
+and real test-token bets. The overall fixture failed because automatic payout
+discovery was behind the historical event cursor; this is not a passing
+financial qualification. Current financial events and canonical sponsored
+receipts now feed beneficiary discovery independently of historical backfill.
+Every claim still rereads its rights from the financial contracts.
+
+An actual Chrome/Mera fixture exposed a separate browser wiring error: its
+journal treated the epoch argument of rules-14 controls as a match identifier,
+so readiness was refused locally and no command reached the node. The journal
+now receives the same explicit epoch format as the compact signer. Existing
+negative scope tests and all 601 TypeScript tests pass. A new production build
+and actual Chrome/Edge matches must qualify this wiring before public opening.
+
+The idle historical source epoch 7 was closed normally after comparing all six
+rating entries and checking for unpublished state. The source retirement helper
+uses the existing operator journal and never renews the historical application.
+Migration still requires its verified release, a real profile-write freeze and
+a fresh canonical snapshot. The empty-seeded private candidate is not the
+production migration destination.

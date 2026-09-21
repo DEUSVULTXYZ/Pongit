@@ -381,6 +381,9 @@ export async function independentService(o:Options){
    for(const row of rows)run(`published:${row.id}`,async()=>{await reusableResults.capture(BigInt(row.id));},10000);
   },10000);
   run('payments',finance.payments,6000);
+  run('payment-history',finance.indexPayments,6000);
+  run('payment-discovery',finance.discoverPayments,4000);
+  run('payment-receipts',finance.recoverSponsoredPayments,6000);
   run('ranking',async()=>{if(await r.ratings('buildGeneration'))await queue(m.ratings,ratingAbi,'rebuild',[32n],0n,2);},10000);
  },rules.events?250:2000);timer.unref();
  return {route,manifest:m,engines,writer,queue,status:()=>({online:health.some(h=>h.online||h.stage==='available'),admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:writer.status()}),stop:()=>{stopped=true;clearInterval(timer);writer.stop();history.stop();diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());}};
