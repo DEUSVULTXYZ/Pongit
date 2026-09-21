@@ -3,13 +3,14 @@
 // Match choice remains in assignNext(); only the existing service writes physics.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
-import {zeroAddress,type Address} from 'viem';
+import {createPublicClient,http,zeroAddress,type Address} from 'viem';
 import {chainTools} from './independent-chain-tools';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {retryOperatorContention} from '../shared/operator-contention';
 import {abi as lobbyAbi} from '../shared/abi-independent-ReusableEventsLobby';
 import {abi as arenaAbi} from '../shared/abi-independent-ReusableEventsArena';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
+import {abi as ratingsAbi} from '../shared/abi-independent-PublishedRatings';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 
@@ -20,10 +21,11 @@ assert.equal(m.production,false);assert.equal(m.rulesVersion,14);assert.equal(m.
 const label=process.env.PONG_REUSABLE_ADMISSION_RUN!;assert(/^[a-z0-9-]{1,32}$/.test(label));
 const existing=(process.env.PONG_REUSABLE_ADMISSION_EXISTING??'').split(',').filter(Boolean).map(BigInt);
 assert(existing.length===0||existing.length===2,'Explicit existing epochs required for both test arenas');
+const priorPublished=process.env.PONG_REUSABLE_ADMISSION_HISTORY==='verified-published';
 const file=`artifacts/reusable-candidate/admission-${label}.json`;
 await mkdir('artifacts/reusable-candidate',{recursive:true});
 let report:any={startedAt:new Date().toISOString(),lobby:m.lobby,arenas:[],assignments:[],passed:false,
- scope:'Two empty hosted arenas and at most eight private test assignments over 45 minutes; no production budget or continuity qualification.'};
+ scope:'Two verified idle hosted arenas and at most eight private test assignments over 45 minutes; no production budget or continuity qualification.'};
 try{report=JSON.parse(await readFile(file,'utf8'));assert.equal(report.lobby,m.lobby);assert(!report.finishedAt,'Preserve completed fixture');}
 catch(e){if((e as any).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(report,null,2));await rename(file+'.next',file);};
@@ -41,8 +43,19 @@ try{
    assert.equal(await read(m.lobby,lobbyAbi,'reservedMatch',[a.app]),0n);
    const [prior,count]=await read(a.app,arenaAbi,'resultCommitment');
    if(existing.length){
-    assert.equal(d.status,1);assert.equal(d.epoch,existing[m.arenas.indexOf(a)]);assert.equal(prior,d.epoch);assert.equal(count,0);
-    const [slotEpoch,id]=await read(a.app,arenaAbi,'currentMatch');assert.equal(slotEpoch,0n);assert.equal(id,0n);
+    assert.equal(d.status,1);assert.equal(d.epoch,existing[m.arenas.indexOf(a)]);assert.equal(prior,d.epoch);
+    const [slotEpoch,id]=await read(a.app,arenaAbi,'currentMatch');
+    if(count===0){assert.equal(slotEpoch,0n);assert.equal(id,0n);}
+    else{
+     assert(priorPublished,'Prior games need explicit published-history verification');assert.equal(slotEpoch,d.epoch);assert(id>0n);
+     const node=createPublicClient({transport:http(a.node??`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`,{retryCount:0,timeout:10000})});
+     const session:any=await node.request({method:'interlude_session',params:[]} as any);
+     assert.equal(session.app.toLowerCase(),a.app.toLowerCase());assert.equal(BigInt(session.epoch),d.epoch);assert.equal(BigInt(session.baseBlock),d.baseBlock);
+     assert.deepEqual(await node.readContract({address:a.app,abi:arenaAbi,functionName:'resultCommitment'}),await read(a.app,arenaAbi,'resultCommitment'));
+     assert.deepEqual(await node.readContract({address:a.app,abi:arenaAbi,functionName:'currentMatch'}),[slotEpoch,id]);
+     assert((await read(a.app,arenaAbi,'getSnapshot',[id])).phase>=3n);
+     assert(await read(m.ratings,ratingsAbi,'indexOf',[id])>0n,'Capture the published previous result first');
+    }
     row={app:a.app,epoch:String(d.epoch),existing:true};
    }else{assert.equal(d.status,0,'Only released arenas may enter this experiment');row={app:a.app,epoch:String(prior+1n)};}
    report.arenas.push(row);await save();

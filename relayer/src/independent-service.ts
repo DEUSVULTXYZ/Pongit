@@ -33,25 +33,22 @@ import {independentReusableAdmission} from './independent-reusable-admission';
 import {independentReusableLifecycle} from './independent-reusable-lifecycle';
 import {independentReusablePool} from './independent-reusable-pool';
 import {independentRoomDiscovery} from './independent-room-discovery';
+import {independentRuntime} from './independent-runtime';
 import {abi as verifierAbi} from '../../shared/abi-independent-PublishedResultVerifier';
 
 type Options={db:Pool;operatorDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
 export async function independentService(o:Options){
  const path=process.env.PONG_INDEPENDENT_MANIFEST;if(!path)return null;
- const m=publicIndependentManifest(JSON.parse(await readFile(path,'utf8'))),{db,base}=o;
- // Explicit private opt-in. A manifest replacement cannot activate a reusable
- // deployment, and missing reviewed budget still holds new admissions.
- if(m.rulesVersion===14&&process.env.PONG_INDEPENDENT_REUSABLE_QUALIFICATION!=='isolated-vps')throw Error('Reusable human service adapter is not yet qualified');
- // Explicit private qualification opt-in, never enabled by merely replacing a
- // production manifest. Public rollout still requires hosted/browser evidence.
- if((m.rulesVersion===12||m.rulesVersion===13)&&process.env.PONG_INDEPENDENT_EVENTS_QUALIFICATION!=='isolated-vps')throw Error('Event arena service qualification is not complete');
+ const rawManifest=JSON.parse(await readFile(path,'utf8'));
+ const m=independentRuntime(rawManifest),{db,base}=o;
  const rules=independentRules(m),{arena:arenaAbi,lobby:lobbyAbi,market:marketAbi,settlement:settlementAbi}=rules;
  await independentSchema(db);
  const r=independentReader(base,m);
  const profileHints=new Map<string,{handle:string;avatar:number}>();
  if(process.env.PONG_INDEPENDENT_SNAPSHOT){
   const source=await readFile(process.env.PONG_INDEPENDENT_SNAPSHOT,'utf8');
-  if(keccak256(new TextEncoder().encode(source))!==await r.ratings('migrationEvidence'))throw Error('Profile migration evidence mismatch');
+  const sourceHash=keccak256(new TextEncoder().encode(source));
+  if(sourceHash!==await r.ratings('migrationEvidence')||(process.env.PONG_INDEPENDENT_REUSABLE_RUNTIME==='reviewed-release'&&sourceHash!==rawManifest.migrationHash))throw Error('Profile migration evidence mismatch');
   for(const p of JSON.parse(source).profiles){if(!isAddress(p.player)||!/^[a-z][a-z0-9_]{2,19}$/i.test(p.handle)||!Number.isInteger(p.avatar)||p.avatar<0||p.avatar>11)throw Error('Invalid reserved profile');profileHints.set(p.player.toLowerCase(),{handle:p.handle,avatar:p.avatar});}
  }
  const pressure=JSON.parse(await readFile(process.env.ROOMS_PRESSURE_KEY_FILE!,'utf8'));

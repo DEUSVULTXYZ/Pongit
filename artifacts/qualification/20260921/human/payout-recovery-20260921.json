@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-21T06:59:56.844Z",
+  "passed": true,
+  "originalFixture": "events-live-4 remains FAIL",
+  "recovery": "new service automatically discovered sponsored betting receipt and paid disconnected beneficiary",
+  "market": "0xca1efcd053c4bfb0687236b75c83787b0d750e7e",
+  "hash": "0xe518e50d0665a11e9c347cc3cab832ec7023ab72e1f3238ea57908523686ead6",
+  "block": "64383903",
+  "blockHash": "0xa61996e8567066992fe4ff8bee99c23d17b8ad0f6c4eb42a9ee11e32197c0566",
+  "recipient": "0x44A9988705c6dD069946701C46Ba0d20DD8bb94a",
+  "amountWei": "6000000000000000",
+  "balanceIncreaseWei": "6000000000000000",
+  "attempts": 1,
+  "sourceCommit": "3792a0d"
+}
