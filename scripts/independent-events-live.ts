@@ -34,6 +34,9 @@ assert(Number.isInteger(chaosTrackingSeconds)&&chaosTrackingSeconds>=50&&chaosTr
 const secret=`/secrets/events-live-${run}.json`,out=`artifacts/independent-candidate/events-live-${run}.json`;
 try{await readFile(secret);throw Error('Preserve and reconcile the previous fixture before a new run');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const closedProduction=process.env.PONG_EVENTS_TARGET==='closed-production-qualification';
+const renewedApp=process.env.PONG_EVENTS_RENEWED_APP?.toLowerCase();
+const renewedEpoch=BigInt(process.env.PONG_EVENTS_RENEWED_EPOCH??'0');
+if(renewedApp)assert(m.arenas.some(a=>a.app.toLowerCase()===renewedApp)&&renewedEpoch>1n);
 const api=closedProduction?'https://pongit.xyz/api/independent':'http://independent-events-service:4012/independent';
 // Disposable owners sign exactly the same contract commands. This bounded
 // qualifier can sponsor them through the original operator journal while the
@@ -225,7 +228,8 @@ try{
  assert.equal(await base.getChainId(),10143);await base.getBlock();
  // A cooling arena is not free capacity. Wait before registering the temporary
  // two-hour families; do not spend their validity on the previous hub window.
- await until(async()=>{const c=await request('/config');return c.arenas.filter((a:any)=>a.stage==='available').length>=2;},'two actually released arenas',4200000);
+ await until(async()=>{const c=await request('/config');return c.arenas.filter((a:any)=>a.stage==='available'&&a.online).length>=2
+  &&(!renewedApp||c.arenas.some((a:any)=>a.app.toLowerCase()===renewedApp&&BigInt(a.epoch)===renewedEpoch&&a.stage==='available'&&a.online));},'two available arenas including the required renewed epoch',4200000);
  report.capacityObservedAt=new Date().toISOString();await flush();
  const issued=(await base.getBlock()).timestamp;privateState.expires=String(issued+7200n);await save();
  for(let i=0;i<4;i++){
@@ -244,6 +248,7 @@ try{
  const began=report.matches.map((x:any)=>Date.parse(x.playingAt)),ended=report.matches.map((x:any)=>Date.parse(x.scores.at(-1).at));
  report.simultaneousPlayMs=Math.min(...ended)-Math.max(...began);
  assert(report.simultaneousPlayMs>=1000,'Two prepared arenas are not proof of simultaneous gameplay');
+ if(renewedApp)assert(report.matches.some((x:any)=>x.app.toLowerCase()===renewedApp&&BigInt(x.epoch)===renewedEpoch&&x.passed),'The renewed arena must actually finish and publish a new game');
  report.checks.push('Two independently admitted real Classic/Chaos matches, overlapping play, natural results, contract capture and realtime payout');report.passed=true;
 }catch(e){report.error=String((e as any).shortMessage||(e as Error).message).split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,500);process.exitCode=1;await Promise.allSettled(tasks);}
 finally{stops.forEach(fn=>fn());report.finishedAt=new Date().toISOString();await save();await flush();await operator?.close();console.log(json({passed:report.passed,error:report.error,matches:report.matches.map((x:any)=>({app:x.app,id:x.id,mode:x.mode,score:x.finalScore,changes:x.changes,passed:x.passed}))}));}
