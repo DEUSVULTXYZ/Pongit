@@ -1,0 +1,25 @@
+{
+  "at": "2026-09-21T17:49:43.210578+00:00",
+  "action": "paused-superseded-private-indexers",
+  "containers": [
+    {
+      "name": "pongit-series3-indexer",
+      "status": "exited",
+      "exitCode": 143
+    },
+    {
+      "name": "pongit-rules8-indexer",
+      "status": "exited",
+      "exitCode": 1
+    },
+    {
+      "name": "pongit-agent-indexer-20260913",
+      "status": "exited",
+      "exitCode": 1
+    }
+  ],
+  "dataDeleted": false,
+  "backup": "indexer-pauses-20260921T1751Z",
+  "publicHumanChanged": false,
+  "publicAgentsChanged": false
+}

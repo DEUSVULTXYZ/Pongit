@@ -1,0 +1,36 @@
+{
+  "at": "2026-09-21T18:00:32.464635+00:00",
+  "http": 200,
+  "endpoint": "https://pongit.xyz/api/independent/config",
+  "keys": [
+    "manifest",
+    "admission",
+    "arenas",
+    "sponsor"
+  ],
+  "admissions": null,
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "arenas": [
+    {
+      "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+      "epoch": "4",
+      "stage": "available",
+      "online": true,
+      "releaseAt": 0
+    },
+    {
+      "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+      "epoch": "3",
+      "stage": "available",
+      "online": true,
+      "releaseAt": 0
+    },
+    {
+      "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+      "epoch": "0",
+      "stage": "released",
+      "online": false,
+      "releaseAt": 0
+    }
+  ]
+}

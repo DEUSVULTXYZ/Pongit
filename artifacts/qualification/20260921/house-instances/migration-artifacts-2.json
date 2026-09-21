@@ -1,0 +1,80 @@
+{
+  "at": "2026-09-21T17:50:28.671Z",
+  "contracts": [
+    {
+      "name": "MigratingAgentCatalog",
+      "runtime": 16576,
+      "creation": 18760
+    },
+    {
+      "name": "ContinuingAgentTournaments",
+      "runtime": 22875,
+      "creation": 24027
+    },
+    {
+      "name": "AgentArenaSelection",
+      "runtime": 2389,
+      "creation": 2419
+    },
+    {
+      "name": "HouseInstances",
+      "runtime": 1237,
+      "creation": 1267
+    },
+    {
+      "name": "PoolPublication",
+      "runtime": 4956,
+      "creation": 4988
+    },
+    {
+      "name": "ReusableAgentLearning",
+      "runtime": 1926,
+      "creation": 1956
+    },
+    {
+      "name": "BalancedAgentInstancesPool",
+      "runtime": 32720,
+      "creation": 33471
+    },
+    {
+      "name": "ReusableAgentBinding",
+      "runtime": 9148,
+      "creation": 9180
+    },
+    {
+      "name": "PoolSteer",
+      "runtime": 9233,
+      "creation": 9265
+    },
+    {
+      "name": "ChaosGameFlow",
+      "runtime": 12419,
+      "creation": 12451
+    },
+    {
+      "name": "PendingControls",
+      "runtime": 2272,
+      "creation": 2304
+    },
+    {
+      "name": "RoomsState",
+      "runtime": 3709,
+      "creation": 3741
+    },
+    {
+      "name": "ReusableAgentGame",
+      "runtime": 22540,
+      "creation": 22572
+    },
+    {
+      "name": "ReusableAuthorizations",
+      "runtime": 4253,
+      "creation": 4285
+    },
+    {
+      "name": "ReusableAgentArena",
+      "runtime": 24516,
+      "creation": 31841
+    }
+  ]
+}

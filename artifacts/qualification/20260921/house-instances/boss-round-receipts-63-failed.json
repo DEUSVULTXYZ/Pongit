@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-21T17:49:48.750Z",
+  "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "epoch": "2",
+  "id": "63",
+  "passed": false,
+  "draws": [],
+  "activeEffects": [],
+  "scope": "Successful hosted verification receipts and canonical published result. Not a proof of every combination, continuous service or finality.",
+  "error": "Receipt qualification incomplete; preserve this report and do not infer missing event proof."
+}

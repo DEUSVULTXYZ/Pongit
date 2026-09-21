@@ -145,3 +145,15 @@ The separate balanced-arena contract candidate is not an upgrade to the live
 pool. It needs a fresh deployment and a migration preserving the existing
 identities, registrations, ratings and requests. Never replace the frozen
 deployment artifacts or an existing nonce journal with that candidate's files.
+
+## Shared indexer concurrency, 21 September
+
+The public shared indexer now pins Envio 3.9.0 to four concurrent chain fetches
+using `ops/pin-envio-rpc-concurrency.mjs`. Startup verifies the exact package and
+runtime before resuming the existing checkpoint. Preserve this mount and command
+in the public Compose service; re-review it when upgrading Envio. The operator,
+game commands, contract writes and RPC rate budget are unaffected.
+Three superseded private indexers are stopped with their databases retained.
+Do not automatically restart them against the same history gateway.
+Deployment evidence, precise scope and rollback are in
+[the migration/indexer report](validation/agent-migration-indexer-20260921.md).

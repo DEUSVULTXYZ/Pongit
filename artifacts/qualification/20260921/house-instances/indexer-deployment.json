@@ -1,0 +1,57 @@
+{
+  "at": "2026-09-21T17:59:39.098001+00:00",
+  "source": "7b661ba",
+  "component": "shared-history-indexer",
+  "concurrency": 4,
+  "checks": {
+    "pongit-agent-public-indexer": {
+      "image": "pongit-indexer:rules8-fixture",
+      "status": "running",
+      "startedAt": "2026-09-21T17:57:32.784279116Z"
+    },
+    "pongit-relayer-1": {
+      "image": "pongit-relayer:human-e4eceb6",
+      "status": "running",
+      "startedAt": "2026-09-21T11:08:16.193865663Z"
+    },
+    "pongit-agent-public-engines": {
+      "image": "pongit-agent-reusable:spectator-b80bee9",
+      "status": "running",
+      "startedAt": "2026-09-21T16:17:51.08774442Z"
+    },
+    "pongit-agent-public-keeper": {
+      "image": "pongit-agent-reusable:progress-4e90490",
+      "status": "running",
+      "startedAt": "2026-09-21T15:35:13.468473183Z"
+    }
+  },
+  "scope": "Compatibility restart and current progress, not completed replay catch-up or 24-hour qualification",
+  "gateway": {
+    "ok": true,
+    "waiting": 14,
+    "queued": {
+      "interactive": 0,
+      "history": 13
+    },
+    "requestsPerSecond": 16.666666666666668
+  },
+  "progress": "63831313|64283315|138",
+  "public": {
+    "/": {
+      "http": 200
+    },
+    "/docs": {
+      "http": 200
+    },
+    "/api/agents/config": {
+      "http": 200,
+      "enabled": true,
+      "qualified": false,
+      "tournamentsEnabled": true
+    },
+    "/api/interlude/config": {
+      "http": 200,
+      "admission": false
+    }
+  }
+}

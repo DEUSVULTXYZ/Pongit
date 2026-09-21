@@ -1,5 +1,11 @@
 # House instances candidate and capacity handoff, 21 September 2026
 
+Latest update at 18:00 UTC: trial 4 passed with two published results, including
+a Chaos draw. No driver remains active. The identity-preserving migration is
+partly implemented but undeployed. Public catalogue inventory and the deployed
+history-indexer correction are recorded in
+[the migration/indexer report](agent-migration-indexer-20260921.md).
+
 Update at 16:25 UTC: the owned capacity handoff succeeded. The sole public
 keeper released `1c5…` epoch 2 at 16:10:03, transaction
 `0xa03424969e223b466368671edc07c355d5c89e0c678e4cdd942181878ae24c09`,

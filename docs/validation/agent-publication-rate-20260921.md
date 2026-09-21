@@ -105,8 +105,10 @@ finishes do not prove concurrent instances or browser performance.
 
 After that trial, the actual hosted node was healthy at 1,157 committed batches.
 Trial 4 requests only two further games, starts at 17:08:41 and retains an
-original 17:38:41 deadline. The driver still checks the epoch reserve before
-each admission. The running report is not a qualification verdict.
+original 17:38:41 deadline. It passed at 17:21:32 with published Classic 4:3
+and Chaos 3:3 at regulation time. The node subsequently reported 1,548 batches
+and zero pending diffs. No further driver was started; the reserve must be
+reviewed before another admission. This does not qualify concurrent copies.
 
 ## Distribution candidate, not deployed
 
@@ -169,3 +171,8 @@ real browser controls and simultaneous house copies, implement a verified produc
 migration and establish publication pressure limits that cover real commands.
 Do not claim that this diagnostic patch removes the hourly limit or qualifies
 continuous service. No funding or provider configuration change is requested.
+
+The later canonical inventory, all-24-effects observation and shared-history
+indexer correction are recorded in
+[the migration/indexer report](agent-migration-indexer-20260921.md). That RPC queue
+correction is independent of the Interlude publication-relay quota described here.

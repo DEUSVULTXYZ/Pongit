@@ -1,0 +1,459 @@
+{
+  "at": "2026-09-21T17:38:58.098Z",
+  "chainId": 10143,
+  "block": "64508364",
+  "blockHash": "0x5fade59ee2fb41c0dde141fba033fd3b30767b50ce3a6ddb074613033ff86c61",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "snapshotComplete": true,
+  "migrationReady": false,
+  "identities": [
+    {
+      "address": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "creator": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "codeHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "metadata": "0x6617df9037f631e02f64cd64398d7d83f4b85341a624f0b884f04c8129823770",
+      "lastTournament": "4",
+      "modes": 3,
+      "qualified": 3,
+      "house": 1,
+      "available": true,
+      "participation": "0x45cb7fd6139c1ec3e61e01c1e0b69841cf396c2ba52994e05d08f3afe2dea1e5",
+      "registeredBlock": "64199358",
+      "creatorNonce": "0",
+      "qualificationEvidence": [
+        "0x511491cb4ddd5575cfa211e50d787a7d679faff75ac19797f1d81fe54397b40f",
+        "0x08b32658c84fc3e302900242e27a80703e0f3168f7b90eab7b75bccab17958d4"
+      ],
+      "retryAt": [
+        "1789931425",
+        "1789918913"
+      ]
+    },
+    {
+      "address": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "creator": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "codeHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "metadata": "0xe2fe7a5c52d5a1364cd893cde1191c36cd3e34c41ce55e0316950b9ba9be49df",
+      "lastTournament": "4",
+      "modes": 3,
+      "qualified": 3,
+      "house": 2,
+      "available": true,
+      "participation": "0x45cb7fd6139c1ec3e61e01c1e0b69841cf396c2ba52994e05d08f3afe2dea1e5",
+      "registeredBlock": "64199364",
+      "creatorNonce": "0",
+      "qualificationEvidence": [
+        "0x5e314e1d726d695cbd3b7b9b11e7576a2edfa899104a9f05912dcb6e77f9ba67",
+        "0x9ff69c39be77c2967febe1f1c8e20a701958722486f6db7a10eddf971db73cf6"
+      ],
+      "retryAt": [
+        "1789919237",
+        "1789919566"
+      ]
+    },
+    {
+      "address": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "creator": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "codeHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "metadata": "0xab988c929327e00ef2ffef823a9578430c6237e0f21da503f90f62fd0b7d3a8f",
+      "lastTournament": "4",
+      "modes": 3,
+      "qualified": 3,
+      "house": 3,
+      "available": true,
+      "participation": "0x45cb7fd6139c1ec3e61e01c1e0b69841cf396c2ba52994e05d08f3afe2dea1e5",
+      "registeredBlock": "64199372",
+      "creatorNonce": "0",
+      "qualificationEvidence": [
+        "0xbe05e3650468a0b7dd233458b44e5b24c6f79b0443d99dd9edafc39f5172bea0",
+        "0x785d89d666adc9a63a4b145dbfb4c5ba12dd20a7a3115976bf5796a069e0f0dd"
+      ],
+      "retryAt": [
+        "1790009082",
+        "1789931105"
+      ]
+    },
+    {
+      "address": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "creator": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "codeHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "metadata": "0x0611a3bdef4191eec0f7cec63b3dfaa79e12e23fdb5ef6078bcf171f86c60180",
+      "lastTournament": "4",
+      "modes": 3,
+      "qualified": 3,
+      "house": 4,
+      "available": true,
+      "participation": "0x45cb7fd6139c1ec3e61e01c1e0b69841cf396c2ba52994e05d08f3afe2dea1e5",
+      "registeredBlock": "64199379",
+      "creatorNonce": "0",
+      "qualificationEvidence": [
+        "0x4700e5d9e0a62b5053159bb143122e50dccd67b240f846222b689a814f3d7f4e",
+        "0x0685bb9f50237ef751384024ee37fdf501d6ac2e57ce4fec4b3b1702b728030a"
+      ],
+      "retryAt": [
+        "1789927989",
+        "1789928529"
+      ]
+    },
+    {
+      "address": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "creator": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "codeHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "metadata": "0xe0c18659e15ab64715b910395aba6d931109d4a4f5e53190647e438b2b107af6",
+      "lastTournament": "4",
+      "modes": 3,
+      "qualified": 3,
+      "house": 5,
+      "available": true,
+      "participation": "0x45cb7fd6139c1ec3e61e01c1e0b69841cf396c2ba52994e05d08f3afe2dea1e5",
+      "registeredBlock": "64199388",
+      "creatorNonce": "0",
+      "qualificationEvidence": [
+        "0xe1d95868e6a2cad0c7127cc89d85da0675deb0a593759392aa594bee062e6234",
+        "0xe821d6105f832252bbcdaae32668a39e6a0819007cc27c0b0e41660c5c41873e"
+      ],
+      "retryAt": [
+        "1789928847",
+        "1789929173"
+      ]
+    },
+    {
+      "address": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "creator": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "codeHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "metadata": "0x25e17e4bb8e34cfc0ea99d22705a275440889e849967e16c3ef4e57220cca6ef",
+      "lastTournament": "4",
+      "modes": 3,
+      "qualified": 3,
+      "house": 6,
+      "available": true,
+      "participation": "0x45cb7fd6139c1ec3e61e01c1e0b69841cf396c2ba52994e05d08f3afe2dea1e5",
+      "registeredBlock": "64199398",
+      "creatorNonce": "0",
+      "qualificationEvidence": [
+        "0xb692078573eb5c11c5744d887b826f1b9462f07cb3fdfd0aac6e14e36683c061",
+        "0x6cccdf96e2f119f231aad0db622bcbee34b2ebc0fc551b02a0891b7051b20edb"
+      ],
+      "retryAt": [
+        "1789929493",
+        "1789929821"
+      ]
+    },
+    {
+      "address": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "creator": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "codeHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "metadata": "0x521873f24274688c0757b24478e7eba067b7c9e0eae3e0b4fc174c32c45384d1",
+      "lastTournament": "4",
+      "modes": 3,
+      "qualified": 3,
+      "house": 7,
+      "available": true,
+      "participation": "0x45cb7fd6139c1ec3e61e01c1e0b69841cf396c2ba52994e05d08f3afe2dea1e5",
+      "registeredBlock": "64199408",
+      "creatorNonce": "0",
+      "qualificationEvidence": [
+        "0xf6e21bde8618020bab65d9fd17551cd4312cdaed4869684c3be44ae33eadddec",
+        "0x7b08d85db47741b897249fac745f823197febf394c722f15a22d4b3a1a97cde9"
+      ],
+      "retryAt": [
+        "1789930141",
+        "1789930464"
+      ]
+    },
+    {
+      "address": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "creator": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "codeHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "metadata": "0x2cd08f368f8f07b9b90ae4347b13a11bd27eb0f171950e18c92588777ae96c90",
+      "lastTournament": "4",
+      "modes": 3,
+      "qualified": 3,
+      "house": 8,
+      "available": true,
+      "participation": "0x45cb7fd6139c1ec3e61e01c1e0b69841cf396c2ba52994e05d08f3afe2dea1e5",
+      "registeredBlock": "64199417",
+      "creatorNonce": "0",
+      "qualificationEvidence": [
+        "0x8774225da9556cf1926accc0822bda0cc2e738099bd55364fbc49142406161b1",
+        "0x785d89d666adc9a63a4b145dbfb4c5ba12dd20a7a3115976bf5796a069e0f0dd"
+      ],
+      "retryAt": [
+        "1789930780",
+        "1789931105"
+      ]
+    },
+    {
+      "address": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+      "creator": "0x74c2C802efDbDc962624a61b9e2180214bd8c228",
+      "codeHash": "0x635bf8108871af9ac8a482102535ce921932a419df3816ec018f5d8802de1088",
+      "metadata": "0x66e95326c1b7a6e7652e27e272acdc7e52b175a839bbd29f538ec51b90acc303",
+      "lastTournament": "0",
+      "modes": 3,
+      "qualified": 1,
+      "house": 0,
+      "available": true,
+      "participation": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "registeredBlock": "64270968",
+      "creatorNonce": "1",
+      "qualificationEvidence": [
+        "0xbe05e3650468a0b7dd233458b44e5b24c6f79b0443d99dd9edafc39f5172bea0",
+        "0x0000000000000000000000000000000000000000000000000000000000000000"
+      ],
+      "retryAt": [
+        "1790009082",
+        "0"
+      ]
+    }
+  ],
+  "pendingRequests": [],
+  "tournaments": [
+    {
+      "id": "1",
+      "status": 3,
+      "mode": 0,
+      "league": false,
+      "startedAt": "1789937028",
+      "completedAt": "1789939378",
+      "catalogRevision": "96",
+      "scanCount": "8",
+      "cursor": "8",
+      "selected": 8,
+      "agents": [
+        "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "0xe8F76A048B5b12538033aa69417D32ad85b9c416"
+      ],
+      "controllers": [
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9"
+      ],
+      "seeds": [
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "revision": 0,
+      "resolved": 7,
+      "final": 7
+    },
+    {
+      "id": "2",
+      "status": 3,
+      "mode": 1,
+      "league": false,
+      "startedAt": "1789987281",
+      "completedAt": "1789994945",
+      "catalogRevision": "122",
+      "scanCount": "9",
+      "cursor": "9",
+      "selected": 8,
+      "agents": [
+        "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "0xe8F76A048B5b12538033aa69417D32ad85b9c416"
+      ],
+      "controllers": [
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9"
+      ],
+      "seeds": [
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "revision": 0,
+      "resolved": 7,
+      "final": 7
+    },
+    {
+      "id": "3",
+      "status": 3,
+      "mode": 0,
+      "league": true,
+      "startedAt": "1789995045",
+      "completedAt": "1790008580",
+      "catalogRevision": "146",
+      "scanCount": "9",
+      "cursor": "9",
+      "selected": 8,
+      "agents": [
+        "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "0xe8F76A048B5b12538033aa69417D32ad85b9c416"
+      ],
+      "controllers": [
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9"
+      ],
+      "seeds": [
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "revision": 0,
+      "resolved": 28,
+      "final": 7
+    },
+    {
+      "id": "4",
+      "status": 2,
+      "mode": 1,
+      "league": true,
+      "startedAt": "1790009064",
+      "completedAt": "0",
+      "catalogRevision": "176",
+      "scanCount": "9",
+      "cursor": "9",
+      "selected": 8,
+      "agents": [
+        "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "0xe8F76A048B5b12538033aa69417D32ad85b9c416"
+      ],
+      "controllers": [
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9"
+      ],
+      "seeds": [
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000,
+        1000
+      ],
+      "champion": "0x0000000000000000000000000000000000000000",
+      "revision": 0,
+      "resolved": 8,
+      "final": 0
+    }
+  ],
+  "ratings": [],
+  "blockers": [
+    "Source admissions are still open.",
+    "Active participation: 0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "Active participation: 0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+    "Active participation: 0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+    "Active participation: 0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+    "Active participation: 0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+    "Active participation: 0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+    "Active participation: 0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+    "Active participation: 0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+    "Tournament 3 has non-final fixtures; correction continuity is required.",
+    "Tournament 4 not complete.",
+    "Tournament 4 has non-final fixtures; correction continuity is required.",
+    "Verify rating repeat counters and historical correction handling; this inventory does not import them.",
+    "Qualify the replacement contracts, queue/session continuity and real concurrent house instances before activation."
+  ],
+  "scope": "Canonical read-only inventory, not an opening or migration authorization. No signatures or grants exported.",
+  "common": {
+    "catalog": "0xe2b39Aa9A2be16bC848430C82CFEdDc7da2CAD6c",
+    "book": "0xb99f8B0f00ff56B448b2BC1349C41BbFc6A7b8dc",
+    "ratings": "0xe6f5F6B7672859dcb6821889A8c50968Ef478e2d",
+    "challenges": "0xfA2CAdc91CbC9210D9B9571b676Bb7D7A2eA3751",
+    "qualifications": "0x087e45B99407D2Ba581795d50EB76Ee4B027B347",
+    "family": "0x42007a8d3d7017d4b43Fef9e9BEeb2E7cB89Fccb"
+  },
+  "runtimeHashes": {
+    "pool": "0xd55ef8ca395756ae672f8aa3cb4a924a6d36c3eca624c49e3f5b301c5a6c22a6",
+    "catalog": "0x4af3451261ad5deeaf73a08e69054ec762521cda7c0e536454a21a52a57ef33d",
+    "book": "0x770667aa73fcb03087ba33dec8a4388f3f1320ff5c3c1b4a80f471564fdc0bb0",
+    "ratings": "0xa42c756d7298af17853ee6e1c06a776832ad4c6686e2d14ff55c03cc7bfd1624",
+    "challenges": "0xd25f31be60ecb1535640a90ffc8e0b6b018d417dd9ede956c72a37ca9e1dd512",
+    "qualifications": "0x899283968242a6f4c38e474fc063bf8cba3023a900db42169cc27b052d2af707",
+    "family": "0xdd30dc03e74c10b6353715fa3586efa8f32e1958b1cfa2c7df088c5969cca086"
+  },
+  "gates": {
+    "pool": true,
+    "public": true,
+    "tournaments": true,
+    "challenges": true
+  },
+  "catalogRevision": "192",
+  "house": [
+    "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+    "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+    "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+    "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+    "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+    "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+    "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f"
+  ],
+  "tournamentCount": "4",
+  "nextAt": "1790008640",
+  "challengeCount": "2",
+  "ratingState": {
+    "genesis": "1789917473",
+    "generation": "1",
+    "building": "0",
+    "revision": "0",
+    "results": "66",
+    "priorMigrationEvidence": "0xd91df77158760a6ce09e95e10c3a4591f8ce3d19cd9da88ffb3b5e0260b75849"
+  }
+}
