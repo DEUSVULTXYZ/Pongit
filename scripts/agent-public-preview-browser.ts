@@ -48,8 +48,18 @@ try{
  if(watchOnly)assert(games.length,'No public live match became available');
  if(games.length){
   const ref=games[0].ref;report.liveRef=ref;
-  await page.goto(`https://pongit.xyz/agents/arenas/${ref.app}/${ref.epoch}/${ref.id}`,{waitUntil:'domcontentloaded'});
-  await page.locator('canvas').first().waitFor({timeout:60000});
+  if(process.env.PONG_PREVIEW_HOME_WATCH==='1'){
+   const start=Date.now();
+   await page.goto('https://pongit.xyz/',{waitUntil:'domcontentloaded'});
+   await page.getByRole('link',{name:/Watch agents/}).click();
+   await page.getByRole('button',{name:'All live matches',exact:true}).waitFor();
+   assert.equal(await page.getByRole('button',{name:'All live matches',exact:true}).getAttribute('aria-pressed'),'true');
+   await page.getByRole('link',{name:/Open arena/}).first().click({timeout:60000});
+   await page.waitForURL(/\/agents\/arenas\//,{timeout:60000});
+   report.homeWatch={url:page.url(),openMs:Date.now()-start,allModes:true};
+  }else await page.goto(`https://pongit.xyz/agents/arenas/${ref.app}/${ref.epoch}/${ref.id}`,{waitUntil:'domcontentloaded'});
+  const court=page.locator('.pool-canvas-slot canvas');
+  await court.waitFor({timeout:60000});
   if(report.publicationDelayInjected){
    const deadline=Date.now()+60000;
    while(!publicationDelayed&&Date.now()<deadline)await page.waitForTimeout(100);
@@ -57,7 +67,8 @@ try{
    assert(publicationDelayed,'The second actual published-result request must be intercepted');
   }
   const hashes=[],delayedHashes=[];
-  for(let i=0;i<(report.publicationDelayInjected?16:4);i++){await page.waitForTimeout(1200);const png=await page.locator('canvas').first().screenshot();const hash=createHash('sha256').update(png).digest('hex');hashes.push(hash);if(publicationDelayed)delayedHashes.push(hash);}
+  for(let i=0;i<(report.publicationDelayInjected?16:8);i++){await page.waitForTimeout(1200);const png=await court.screenshot();const hash=createHash('sha256').update(png).digest('hex');hashes.push(hash);if(publicationDelayed)delayedHashes.push(hash);}
+  report.arenaText=await page.locator('.agent-court').innerText();
   report.liveCanvas={rendered:true,changed:new Set(hashes).size>1,hashes};assert(report.liveCanvas.changed,'Live canvas must progress');
   if(report.publicationDelayInjected){report.duringPublicationDelay={samples:delayedHashes.length,changed:new Set(delayedHashes).size>1};assert(report.duringPublicationDelay.changed,'Engine rendering must continue during the delayed result check');}
   await page.screenshot({path:`${out}/live.png`,fullPage:true});

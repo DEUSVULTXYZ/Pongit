@@ -9,6 +9,21 @@ import {agentArenaPoolAbi as poolAbi} from '../../../shared/abi-AgentArenaPool';
 export type PoolRead=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<T>;
 type Common={catalog:Address;qualifications:Address;challenges:Address;family:Address;tournaments:Address;pool:Address};
 
+/** Capture clears the active lane. Recover its tournament work from the durable
+ * pool record before the slower historical scan, including after a restart. */
+export async function capturedTournamentWork(read:PoolRead,m:Common,record:any){
+ if(!record.captured||!record.tournament||!record.ref.id)return null;
+ const f=await read(m.tournaments,bookAbi,'fixture',[record.tournament,record.fixture]);
+ if(!f.bound||f.ref.chainId!==record.ref.chainId||f.ref.epoch!==record.ref.epoch||f.ref.id!==record.ref.id
+  ||f.ref.arena.toLowerCase()!==record.ref.arena.toLowerCase())return null;
+ const result=await read(m.pool,poolAbi,'result',[record.ref]);
+ if(result.hash!==f.published.hash||result.finality!==f.published.finality||result.status!==f.published.status)
+  return{to:m.tournaments,method:'synchronize',args:[record.tournament,record.fixture]};
+ if(!f.resolved&&result.status===4&&result.finality)
+  return{to:m.tournaments,method:'retryCancelled',args:[record.tournament,record.fixture]};
+ return null;
+}
+
 /** Resumable inspection of the entire catalogue, without a first-256 cutoff.
  * This never chooses the trial participants; the contract cursor does that. */
 export async function qualificationWork(read:PoolRead,m:Common,cursor:bigint,now:bigint,budget=16,baseBlock?:bigint){

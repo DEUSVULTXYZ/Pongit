@@ -1,9 +1,32 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
-import {expiredChallenge,historicalRepairWork,qualificationWork,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,type PoolRead} from '../relayer/src/agents/pool-maintenance';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
+
+test('captured current results advance tournaments after lane release or restart without waiting for a historical scan',async()=>{
+ const ref={chainId:10143n,arena:address(22),epoch:2n,id:35n};
+ const record={captured:true,tournament:3n,fixture:6,ref};
+ const result={hash:'0x'+'1'.repeat(64),status:3,finality:false};
+ const f={bound:true,resolved:false,ref:{...ref},published:{hash:String(zeroHash),status:0,finality:false}};
+ const read:PoolRead=async(_a,abi,fn,args=[])=>{
+  encodeFunctionData({abi,functionName:fn,args});
+  if(fn==='fixture')return f as any;if(fn==='result')return result as any;throw Error(fn);
+ };
+ assert.deepEqual(await capturedTournamentWork(read,m,record),{to:m.tournaments,method:'synchronize',args:[3n,6]});
+ f.published={...result};f.resolved=true;
+ assert.equal(await capturedTournamentWork(read,m,record),null);
+ result.finality=true;assert.equal((await capturedTournamentWork(read,m,record))?.method,'synchronize');
+ f.ref.id=36n;assert.equal(await capturedTournamentWork(read,m,record),null);
+ f.ref={...ref};f.ref.epoch=3n;assert.equal(await capturedTournamentWork(read,m,record),null);
+ f.ref={...ref};f.ref.arena=address(23);assert.equal(await capturedTournamentWork(read,m,record),null);
+ f.ref={...ref};record.captured=false;assert.equal(await capturedTournamentWork(read,m,record),null);
+ record.captured=true;record.tournament=0n;assert.equal(await capturedTournamentWork(read,m,record),null);
+ record.tournament=3n;result.status=4;f.published={...result};f.resolved=false;
+ assert.equal((await capturedTournamentWork(read,m,record))?.method,'retryCancelled');
+ await assert.rejects(capturedTournamentWork((async()=>{throw Error('lost read');}) as PoolRead,m,record),/lost read/);
+});
 
 test('bounded qualification scans eventually reach agents beyond the first 256 and wrap after catalogue changes',async()=>{
  let cursor=0n,inspected=0,found=false;
