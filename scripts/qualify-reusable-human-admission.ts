@@ -22,6 +22,9 @@ const label=process.env.PONG_REUSABLE_ADMISSION_RUN!;assert(/^[a-z0-9-]{1,32}$/.
 const existing=(process.env.PONG_REUSABLE_ADMISSION_EXISTING??'').split(',').filter(Boolean).map(BigInt);
 const arenaCount=Number(process.env.PONG_REUSABLE_ADMISSION_COUNT??2);
 assert([1,2,3].includes(arenaCount)&&arenaCount<=m.arenas.length,'Bounded private lanes and one rotating reserve');
+const indices=process.env.PONG_REUSABLE_ADMISSION_INDICES?.split(',').map(Number)??Array.from({length:arenaCount},(_,i)=>i);
+assert(indices.length===arenaCount&&new Set(indices).size===arenaCount&&indices.every(i=>Number.isInteger(i)&&i>=0&&i<m.arenas.length),'Explicit distinct private arena indices');
+const testArenas=indices.map(i=>m.arenas[i]);
 assert(existing.length===0||existing.length===arenaCount,'Explicit existing epoch (zero means released) for each test arena');
 const priorPublished=process.env.PONG_REUSABLE_ADMISSION_HISTORY==='verified-published';
 const file=`artifacts/reusable-candidate/admission-${label}.json`;
@@ -38,14 +41,14 @@ const write=(...args:Parameters<typeof t.write>)=>retryOperatorContention(()=>t.
 const deadline=Date.parse(report.startedAt)+45*60_000;
 try{
  assert(deadline>Date.now(),'Original fixture deadline expired');
- for(const a of m.arenas.slice(0,arenaCount)){
+ for(const a of testArenas){
   assert.equal((await read(a.app,arenaAbi,'lobby')).toLowerCase(),m.lobby.toLowerCase());
   let d=await readHubDelegation(t.base,m.hub,a.app),row=report.arenas.find((x:any)=>x.app===a.app);
   if(!row){
    assert.equal(await read(m.lobby,lobbyAbi,'reservedMatch',[a.app]),0n);
    const [prior,count]=await read(a.app,arenaAbi,'resultCommitment');
-   if(existing.length&&existing[m.arenas.indexOf(a)]>0n){
-    assert.equal(d.status,1);assert.equal(d.epoch,existing[m.arenas.indexOf(a)]);assert.equal(prior,d.epoch);
+   if(existing.length&&existing[testArenas.indexOf(a)]>0n){
+    assert.equal(d.status,1);assert.equal(d.epoch,existing[testArenas.indexOf(a)]);assert.equal(prior,d.epoch);
     const [slotEpoch,id]=await read(a.app,arenaAbi,'currentMatch');
     if(count===0){assert.equal(slotEpoch,0n);assert.equal(id,0n);}
     else{
