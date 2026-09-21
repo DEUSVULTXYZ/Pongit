@@ -122,8 +122,17 @@ try{
   }
   await b.goto(saved.roomUrl);await b.getByRole('button',{name:'Accept',exact:true}).click();
   await until(()=>b.getByRole('button',{name:'Members 2',exact:true}).isVisible(),'rival joined');
+  report.roomConsent={joinedAt:new Date().toISOString(),offers:[]};
   await Promise.all([
-   ...[a,b].map(p=>p.getByRole('button',{name:'Accept',exact:true}).click()),
+   ...[a,b].map(async(p,i)=>{
+    // Like ranked matchmaking, room creation can wait for sponsored Monad
+    // work. Record the real delay instead of confusing Playwright's default
+    // 30-second locator timeout with the contract's 20-second consent window.
+    const accept=p.getByRole('button',{name:'Accept',exact:true});
+    await accept.waitFor({timeout:120000});
+    report.roomConsent.offers.push({player:i,visibleAt:new Date().toISOString()});
+    await accept.click();
+   }),
    (async()=>{await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();await until(()=>spectator.getByRole('button',{name:'Members 3',exact:true}).isVisible(),'spectator joined');})(),
   ]);await persist();
   await Promise.all([a,b,spectator].map(p=>p.locator('.rooms-canvas canvas').waitFor({timeout:720000})));
