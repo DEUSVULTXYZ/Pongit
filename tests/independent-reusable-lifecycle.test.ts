@@ -33,7 +33,7 @@ function fixture(){
   queue:async(at,abi,name,args)=>{encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args});},
   stage:async(name,code)=>{events.push('stage:'+name+(code?':'+code:''));},admit:async()=>{events.push('admit');},
   ensureHosted:async epoch=>{events.push('hosted:'+epoch);}});
- return{worker,health,d,events,jobs,session,results,base,engine,reference:()=>ref,
+ return{worker,health,d,events,jobs,session,results,base,engine,ticket,reference:()=>ref,
   change:(o:{now?:bigint;reserved?:bigint;phase?:bigint;livePhase?:number;sealed?:Hex;current?:any;known?:bigint;failedRead?:boolean;slot?:bigint[];hostedCommitment?:any;publishedCommitment?:any})=>{
    now=o.now??now;reserved=o.reserved??reserved;phase=o.phase??phase;livePhase=o.livePhase??livePhase;sealed=o.sealed??sealed;current=o.current??current;known=o.known??known;failedRead=o.failedRead??failedRead;
    slot=o.slot??slot;hostedCommitment=o.hostedCommitment??hostedCommitment;publishedCommitment=o.publishedCommitment??publishedCommitment;
@@ -130,4 +130,28 @@ test('a challenged result cannot release, renew or admit a player',async()=>{
 test('publication silence uses the real hub deadline, not an ordinary RPC failure',async()=>{
  const f=fixture();f.change({failedRead:true});await assert.rejects(f.worker.observe(),/unavailable/);assert.equal(f.jobs.length,0);
  f.change({now:4501n});await f.worker.observe();assert.equal(f.jobs[0].name,'forceClose');assert(!f.events.includes('retire:2'));
+});
+
+test('an idle fully published arena survives the publication silence window',async()=>{
+ for(const empty of [false,true]){
+  const f=fixture();f.change({now:4501n,reserved:0n,...(empty?{slot:[0n,0n],current:[0n,0n,0n,zeroHash]}:{})});
+  await f.worker.observe();assert.equal(f.jobs.length,0);assert.equal(f.health.online,true);
+  assert(f.events.includes('stage:available'));
+ }
+});
+
+test('a newly issued ticket after idle has time to publish without ignoring an actual stalled match',async()=>{
+ const f=fixture();f.ticket.issuedAt=4490n;f.change({now:4501n});
+ await f.worker.observe();assert.equal(f.jobs.length,0);assert(f.events.includes('admit'));
+ f.change({now:8091n});await f.worker.observe();assert.equal(f.jobs[0].name,'forceClose');
+});
+
+test('idle uncommitted changes still require recovery after the real deadline',async()=>{
+ const f=fixture();f.change({now:4501n,reserved:0n,hostedCommitment:[2n,1,toHex(5,{size:32})]});
+ await f.worker.observe();assert.equal(f.jobs[0].name,'forceClose');assert.equal(f.health.online,false);
+});
+
+test('a failed idle read is not evidence of an unpublished result',async()=>{
+ const f=fixture();f.change({now:4501n,reserved:0n});f.engine.node.readContract=async()=>{throw Error('RPC unavailable');};
+ await assert.rejects(f.worker.observe(),/RPC unavailable/);assert.equal(f.jobs.length,0);assert.equal(f.health.online,false);
 });

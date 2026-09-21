@@ -41,8 +41,7 @@ export function independentReusableLifecycle(o:Options){
   // Retain the exact last logical match for receipt recovery, including while
   // closing. A stale physical slot is never labelled with a newer reservation.
   const rebound=e.bind(id,epoch);
-  if(rebound||d.status!==1||block.timestamp>=d.expiresAt
-   ||d.maxBatchInterval>0n&&block.timestamp>d.lastCommitAt+d.maxBatchInterval)h.online=false;
+  if(rebound||d.status!==1||block.timestamp>=d.expiresAt)h.online=false;
   if(rebound)await e.restoreHealth();
   if(d.status===3){await o.stage('review','DELEGATION_CHALLENGED');return;}
   if(d.status===0){
@@ -78,9 +77,20 @@ export function independentReusableLifecycle(o:Options){
    await o.stage('recovering','DELEGATION_EXPIRED');await e.reconcile();
    await queue(m.lobby,lobbyAbi,'closeReusableArena',[e.app],0n,0);return;
   }
-  if(d.maxBatchInterval>0n&&block.timestamp>d.lastCommitAt+d.maxBatchInterval){
-   await o.stage('recovering','PUBLICATION_SILENCE_DEADLINE');await e.reconcile();
-   await queue(m.hub,hubCalls,'forceClose',[e.app,zeroHash],0n,0);return;
+  const publicationOverdue=(since:bigint)=>d.maxBatchInterval>0n&&block.timestamp>since+d.maxBatchInterval;
+  const closeUnpublished=async()=>{
+   h.online=false;await o.stage('recovering','PUBLICATION_SILENCE_DEADLINE');await e.reconcile();
+   await queue(m.hub,hubCalls,'forceClose',[e.app,zeroHash],0n,0);
+  };
+  // An idle engine has nothing to publish. A fresh reservation after a long
+  // idle interval starts its own publication observation window; the previous
+  // game's last commit must not immediately close this new admission.
+  const ticket=reserved?(await r.lobby('ticketOf',[reserved]))[0]:null;
+  if(ticket){
+   if(ticket.arena.toLowerCase()!==e.app.toLowerCase()||ticket.epoch!==epoch)throw Error('Reservation belongs to another epoch');
+   if(publicationOverdue(ticket.issuedAt>d.lastCommitAt?ticket.issuedAt:d.lastCommitAt)){
+    await closeUnpublished();return;
+   }
   }
   try{
    if(validated!==epoch||Date.now()-checked>15000){
@@ -99,6 +109,18 @@ export function independentReusableLifecycle(o:Options){
    // A bridge-only or unpublished game cannot be silently discarded. The
    // authority's assignNext also checks the published previous result.
    const current=await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'currentAdmission'});
+   if(publicationOverdue(d.lastCommitAt)){
+    const [hosted,published]=await Promise.all([
+     e.node.readContract({address:e.app,abi:arenaAbi,functionName:'resultCommitment'}),
+     r.arena(e.app,'resultCommitment'),
+    ]);
+    // A fully published idle slot is safe to keep. Do not manufacture missing
+    // publication from a read failure, a wrong epoch, or an unrelated slot.
+    if(hosted[0]!==epoch||published[0]!==epoch)throw Error('Engine result epoch changed');
+    if(hosted[1]!==published[1]||hosted[2]!==published[2]||current[1]!==slot[1]){
+     await closeUnpublished();return;
+    }
+   }
    if(current[0]!==epoch){
     // openEngine initializes the commitment epoch but clears the physical
     // admission slot. Its epoch therefore stays zero until the first ticket.
@@ -123,8 +145,6 @@ export function independentReusableLifecycle(o:Options){
    }
    h.online=true;await o.stage('available');return;
   }
-  const [ticket]=await r.lobby('ticketOf',[reserved]);
-  if(ticket.arena.toLowerCase()!==e.app.toLowerCase()||ticket.epoch!==epoch)throw Error('Reservation belongs to another epoch');
   // Even after app admission is disabled, finish transporting already issued
   // tickets (or their expiry cancellation) so the participation can resolve.
   await o.admit(e);
