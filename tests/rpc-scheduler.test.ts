@@ -2,6 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {historicalRpcRequest, rpcScheduler} from "../relayer/src/rpc-scheduler";
 
+test('canonical UI headers near an observed head are interactive without promoting old or invented future blocks',()=>{
+ assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3e8',false],1000n),false);
+ assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3a8',false],1000n),false);
+ assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3a7',false],1000n),true);
+ assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3e9',false],1000n),true);
+ assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3e8',false]),true);
+ assert.equal(historicalRpcRequest('eth_getLogs',[{fromBlock:'0x3e8'}],1000n),true);
+});
+
 test("gameplay jumps ahead of backfill without starving history or bypassing the shared rate",async(t)=>{
  // The queue must be populated before time advances. A throttled CI worker can
  // otherwise spend more than 10 ms merely scheduling the fixture's promises.

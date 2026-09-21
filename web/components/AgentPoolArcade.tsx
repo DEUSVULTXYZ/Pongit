@@ -28,6 +28,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const [mode,setMode]=useState(initialMode),[view,setView]=useState(initialView),[account,setAccount]=useState<Address>(),[request,setRequest]=useState<PoolChallengeView|null>(null);
  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[connectOpen,setConnectOpen]=useState(false),[selected,setSelected]=useState(initialAgent??''),[retry,setRetry]=useState(0),[offset,setOffset]=useState('0'),[next,setNext]=useState<string|null>(null);
  const [catalogError,setCatalogError]=useState(''),[queueError,setQueueError]=useState('');
+ const [watchMode,setWatchMode]=useState<'all'|0|1>('all');
  const visibleError=(!connectOpen&&error)||queueError||catalogError;
  const session=useRef<PoolFamilySession|null>(null),locked=useRef(false),intent=useRef<Address|null>(null),alive=useRef(false);
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
@@ -38,9 +39,13 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   const refresh=async()=>{let delay=10000;
    try{
     if(document.hidden)return;
-    const [raw,catalog,games]=await Promise.all([poolApi<AgentPoolManifest>('config',undefined,abort.signal),poolApi<{items:Person[];next:string|null}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal),poolApi<{items:Live[]}>('live',undefined,abort.signal)]);
-    const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade qualification is still in progress');
-    if(stopped)return;setConfig(m);setPeople(catalog.items);setNext(catalog.next);setLive(games.items);setCatalogError('');
+    const results=await Promise.allSettled([
+     poolApi<AgentPoolManifest>('config',undefined,abort.signal).then(raw=>{const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade is not open');if(!stopped)setConfig(m);}),
+     poolApi<{items:Person[];next:string|null}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal).then(catalog=>{if(!stopped){setPeople(catalog.items);setNext(catalog.next);}}),
+     poolApi<{items:Live[]}>('live',undefined,abort.signal).then(games=>{if(!stopped)setLive(games.items);}),
+    ]);
+    const failed=results.find(r=>r.status==='rejected');if(failed?.status==='rejected')throw failed.reason;
+    if(!stopped)setCatalogError('');
    }catch(e){if(!stopped){setCatalogError(poolUserError(e));delay=Math.max(10000,engineReadRetryMs(e));}}
    finally{if(!stopped)timer=setTimeout(refresh,delay);}
   };void refresh();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
@@ -90,18 +95,19 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>The independent arenas are being tested before opening.</p></section>:<>
    {config?.releaseStage==='testnet-preview'&&<p className="agent-preview-notice" role="status">Testnet preview. Continuous-play validation is still in progress. Results and arena renewal can take longer. No entry fees or prizes.</p>}
    <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button>{tournaments&&<Link href="/agents/tournaments">Tournaments</Link>}</nav>
-   <div className="agent-toolbar" role="group" aria-label="Game mode">{([0,1] as const).map(n=><button key={n} aria-pressed={mode===n} onClick={()=>setMode(n)} disabled={busy||!!request}>{n===0?'Classic':'Chaos'}</button>)}</div>
+   <div className="agent-toolbar" role="group" aria-label="Game mode">{view==='watch'&&<button aria-pressed={watchMode==='all'} onClick={()=>setWatchMode('all')}>All live matches</button>}{([0,1] as const).map(n=><button key={n} aria-pressed={(view==='watch'?watchMode:mode)===n} onClick={()=>view==='watch'?setWatchMode(n):setMode(n)} disabled={view==='play'&&(busy||!!request)}>{n===0?'Classic':'Chaos'}</button>)}</div>
    {visibleError&&<div className="tournament-error" role="alert"><p>{visibleError}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
    {busy&&<p role="status">Confirming your action…</p>}
-   {request&&<section className="agent-wait" aria-live="polite"><h2>{request.ref?'Your arena is ready':'Waiting for an available arena'}</h2><p>{person(request.agent)?.name??short(request.agent)} · {request.mode===0?'Classic':'Chaos'} · Friendly</p>
+   {request&&<section className="agent-wait" aria-live="polite"><h2>{request.ref?'Your arena is ready':request.waitReason==='tournament'?'Your rival is in a tournament':request.waitReason==='match'?'Your rival is finishing a match':'Waiting for an available arena'}</h2><p>{person(request.agent)?.name??short(request.agent)} · {request.mode===0?'Classic':'Chaos'} · Friendly</p>
+    {!request.ref&&request.waitReason==='tournament'&&<p>This bot is reserved until the tournament ends. <Link href="/agents/tournaments">Watch tournament</Link> or cancel your challenge.</p>}
     {request.ref?<Link className="rooms-button" href={matchHref(request.ref)}>Enter arena</Link>:<button disabled={busy||request.status!==1} onClick={()=>void cancel()}>Cancel challenge</button>}</section>}
    {view==='play'?<><div className="agent-grid">{people.filter(p=>p.modes.includes(mode)).map(p=><article className="agent-card" key={p.agent} data-selected={selected.toLowerCase()===p.agent.toLowerCase()}>
     <span className="agent-badge">{p.official?'PONGIT BOT':'COMMUNITY AGENT'}</span><div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.difficulty}</p></div></div>
     <p className="agent-creator">Creator {p.official?'PONGIT':short(p.creator)}</p><span className="agent-status" data-online={p.available&&p.qualification[mode]}>{!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':p.waiting?'Busy, next duel can be reserved':'Available'}</span>
     <button className="primary" disabled={busy||!!request||!p.available||!p.qualification[mode]} onClick={()=>choose(p.agent)}>Challenge {p.name}</button></article>)}</div>
     {!people.length&&!error&&<p role="status">Reading the agent catalogue…</p>}<div className="agent-toolbar">{offset!=='0'&&<button onClick={()=>setOffset('0')}>First page</button>}{next&&<button onClick={()=>setOffset(next)}>More agents</button>}</div></>:<div className="agent-grid">
-    {live.filter(g=>g.mode===mode).map(g=><article className="agent-card" key={matchHref(g.ref)}><span className="agent-badge">{g.lane.toUpperCase()}</span><h2>{person(g.a)?.name??short(g.a)} vs {person(g.b)?.name??short(g.b)}</h2><Link className="rooms-button" href={matchHref(g.ref)}>Open arena ↗</Link></article>)}
-    {!live.some(g=>g.mode===mode)&&<section className="agent-empty"><h2>No arena is playing right now</h2><p>The next match will appear here when it is assigned.</p></section>}</div>}
+    {live.filter(g=>watchMode==='all'||g.mode===watchMode).map(g=><article className="agent-card" key={matchHref(g.ref)}><span className="agent-badge">{g.lane.toUpperCase()} · {g.mode===0?'CLASSIC':'CHAOS'}</span><h2>{person(g.a)?.name??short(g.a)} vs {person(g.b)?.name??short(g.b)}</h2><Link className="rooms-button" href={matchHref(g.ref)}>Open arena ↗</Link></article>)}
+    {!live.some(g=>watchMode==='all'||g.mode===watchMode)&&<section className="agent-empty"><h2>No arena is playing right now</h2><p>The next match will appear here when it is assigned.</p></section>}</div>}
    <p>Human challenges are friendly. No bets, entry fees or prizes.</p>
   </>}
   {connectOpen&&<Dialog label="Connect to challenge an agent" onClose={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}><IconButton aria-label="Close connection" onClick={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}/><h2>Your next rival is ready</h2><p>Connect your passkey to continue.</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void login()}>Connect & play</button><button disabled={busy} onClick={()=>void login(true)}>Create account</button></div>{error&&<p role="alert">{error}</p>}</Dialog>}

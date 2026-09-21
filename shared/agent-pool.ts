@@ -71,5 +71,5 @@ export type TournamentView={id:string;mode:0|1;format:TournamentFormat;status:To
 export type PoolMatchView={ref:AgentMatchRef;a:Address;b:Address;mode:0|1;ranked:boolean;tournament:string;lane:number;
  node:string|null;currentBinding:boolean;regulationSeconds:300;overtimeSeconds:0|60;
  result:NonNullable<TournamentFixture['result']>|null};
-export type PoolChallengeView={id:string;player:Address;agent:Address;mode:0|1;status:1|2|3|4;at:string;ref:AgentMatchRef|null};
+export type PoolChallengeView={id:string;player:Address;agent:Address;mode:0|1;status:1|2|3|4;at:string;ref:AgentMatchRef|null;waitReason?:'tournament'|'match'|'arena';tournamentId?:string};
 export const normalizedAgent=(value:string)=>getAddress(value);

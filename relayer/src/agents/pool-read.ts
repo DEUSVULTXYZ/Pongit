@@ -180,7 +180,16 @@ export class AgentPoolReader {
     if(!ref)throw Error('The active challenge has no matching arena reference');
     }
    }
-   return{request:{id:String(id),player:owner,agent,mode,status,at:String(at),ref}};
+   let waitReason:PoolChallengeView['waitReason'],tournamentId:string|undefined;
+   if(status===1&&m.version===4){
+    const [identity,participation,playing]=await Promise.all([read(m.catalog,catalogAbi,'identity',[agent]),
+     read<string>(m.catalog,catalogAbi,'participation',[agent]),read<string>(m.pool,this.poolAbi,'playing',[agent])]);
+    waitReason=playing!==zeroHash?'match':'arena';
+    if(identity.lastTournament>0n&&participation===await read<string>(m.tournaments,tournamentAbi,'token',[identity.lastTournament])){
+     waitReason='tournament';tournamentId=String(identity.lastTournament);
+    }
+   }
+   return{request:{id:String(id),player:owner,agent,mode,status,at:String(at),ref,...(waitReason?{waitReason,tournamentId}:{})}};
   });
  }
  async match(ref:AgentMatchRef){
@@ -192,11 +201,15 @@ export class AgentPoolReader {
    const series=m.version===3;
    const record=await read(m.pool,this.poolAbi,'record',[series?wanted.id:wanted]);
    if(record.ref.arena.toLowerCase()!==arena.app.toLowerCase()||record.ref.id!==wanted.id||record.ref.epoch!==wanted.epoch||record.ref.chainId!==10143n)throw poolNotFound();
-   const binding=await read(arena.app,this.arenaAbi,'boundMatch');const current=binding.id===wanted.id&&binding.epoch===wanted.epoch;
+   const binding=await read(arena.app,this.arenaAbi,'boundMatch');let current=binding.id===wanted.id&&binding.epoch===wanted.epoch;
    const own=m.version===4?(await read(m.pool,this.poolAbi,'ticketOf',[wanted]))[1]:series?await read(arena.app,seriesArenaAbi,'bindingFor',[wanted.id]):binding;
    if(m.version===4&&(own.id!==wanted.id||own.epoch!==wanted.epoch||own.a.toLowerCase()!==record.a.toLowerCase()||own.b.toLowerCase()!==record.b.toLowerCase()))throw poolNotFound();
    if(series&&(own.id!==wanted.id||own.epoch!==wanted.epoch))throw poolNotFound();
    const r=record.captured?await read(m.pool,this.poolAbi,'result',[wanted]):null;
+   // The current Monad assignment authorizes observation before the engine's
+   // new binding is republished. The observer still verifies the engine epoch,
+   // logical match and both participants before accepting any snapshot.
+   if(m.version===4)current=!r&&await read<string>(m.pool,this.poolAbi,'arenaMatch',[arena.app])===refKey(wanted);
    if(m.version===2&&!current&&!r)throw Error('An archived arena reference has no verified result yet');
    // An old link always reads its immutable pool record. It never follows the
    // node into the replacement match when this physical arena is reused.

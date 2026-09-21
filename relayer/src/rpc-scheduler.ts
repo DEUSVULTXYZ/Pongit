@@ -2,10 +2,17 @@
  * needed for grants, acceptance deadlines and sponsor fees, including while
  * an indexer is downloading old blocks. Receipt/hash reconciliation is also
  * interactive: delaying it can leave an already executed command uncertain. */
-export function historicalRpcRequest(method:string, params:readonly unknown[]):boolean {
+export function historicalRpcRequest(method:string, params:readonly unknown[],observedHead?:bigint):boolean {
   if(method === "eth_getLogs" || method === "eth_getBlockByHash")return true;
   if(method !== "eth_getBlockByNumber")return false;
-  return !["latest", "pending", "safe", "finalized"].includes(String(params[0]));
+  const tag=String(params[0]);
+  if(["latest", "pending", "safe", "finalized"].includes(tag))return false;
+  // A UI pins its reads to a recent concrete block and rechecks that block's
+  // hash. That verification is interactive, not an indexer backfill request.
+  if(observedHead!==undefined&&/^0x[\da-f]+$/i.test(tag)){
+    const height=BigInt(tag);if(height<=observedHead&&observedHead-height<=64n)return false;
+  }
+  return true;
 }
 
 /** One upstream rate budget; gameplay reads take priority over historical scans. */

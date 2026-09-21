@@ -49,8 +49,11 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
    const section=url.pathname.replace(/^\/agents\//,'/').split('/')[1];
    if(['config','catalog','live','matches','replay','challenges','tournaments','rankings','healthz'].includes(section))metric=`agents.${section}`;
    if(url.pathname==='/healthz'){send({process:'alive',writes:!!options.sponsor});return;}
-   if(options.public){const config=await routes(new URL('http://localhost/config'));if(!('enabled' in config.value)||!config.value.enabled){send({error:'Agent Arcade is not open',code:'AGENT_CLOSED'},503);return;}}
-   const view=await routes(url);res.setHeader('ETag',`"${view.revision}"`);
+   // Read the gate and the requested public view concurrently. They still both
+   // have to succeed before returning any data, without two serial RPC waits.
+   const [config,view]=await Promise.all([options.public?routes(new URL('http://localhost/config')):null,routes(url)]);
+   if(config&&(!('enabled' in config.value)||!config.value.enabled)){send({error:'Agent Arcade is not open',code:'AGENT_CLOSED'},503);return;}
+   res.setHeader('ETag',`"${view.revision}"`);
    if(req.headers['if-none-match']===`"${view.revision}"`){res.statusCode=304;res.end();return;}
    send({...view.value,observation:{block:view.observedBlock,hash:view.observedHash,timestamp:view.observedTimestamp,revision:view.revision}});
   }catch(e){

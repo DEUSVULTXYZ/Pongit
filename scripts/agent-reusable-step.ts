@@ -189,7 +189,8 @@ async function step(){
  }
  if(lanes[1].ref.id===0n){
   if(!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart')){if(!cooling(m.pool,'admitChallenge'))await act(m.pool,'admitChallenge');return;}
-  const work=await qualificationWork(read,m,state.qualificationCursor??0n,block.timestamp);state.qualificationCursor=work.next;await save();
+  const newestBase=idle.reduce((n,a)=>a.d.baseBlock>n?a.d.baseBlock:n,0n);
+  const work=await qualificationWork(read,m,state.qualificationCursor??0n,block.timestamp,16,newestBase);state.qualificationCursor=work.next;await save();
   if(work.needed&&!cooling(m.pool,'admitQualification'))await act(m.pool,'admitQualification');
  }
 }

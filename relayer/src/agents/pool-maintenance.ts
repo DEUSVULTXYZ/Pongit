@@ -11,16 +11,25 @@ type Common={catalog:Address;qualifications:Address;challenges:Address;family:Ad
 
 /** Resumable inspection of the entire catalogue, without a first-256 cutoff.
  * This never chooses the trial participants; the contract cursor does that. */
-export async function qualificationWork(read:PoolRead,m:Common,cursor:bigint,now:bigint,budget=16){
+export async function qualificationWork(read:PoolRead,m:Common,cursor:bigint,now:bigint,budget=16,baseBlock?:bigint){
  if(!Number.isInteger(budget)||budget<1||budget>32)throw Error('Qualification inspection budget');
  const count=await read<bigint>(m.catalog,catalogAbi,'count');if(!count)return{needed:false,next:0n};
  let at=cursor%count;
  for(let n=0;n<budget&&BigInt(n)<count;n++){
   const agent=await read<Address>(m.catalog,catalogAbi,'at',[at]);at=(at+1n)%count;
   const identity=await read(m.catalog,catalogAbi,'identity',[agent]);
+  if(baseBlock!==undefined&&!identity.house&&await read<bigint>(m.catalog,catalogAbi,'registeredBlock',[agent])>baseBlock)continue;
   for(const mode of [0,1])if(identity.available&&(identity.modes&(1<<mode))&&!(identity.qualified&(1<<mode))){
    if(await read<bigint>(m.qualifications,qualificationAbi,'retryAt',[agent,mode])>now)continue;
-   if(await read<boolean>(m.catalog,catalogAbi,'qualificationEligible',[agent,mode]))return{needed:true,next:at};
+   if(!await read<boolean>(m.catalog,catalogAbi,'qualificationEligible',[agent,mode]))continue;
+   // The contract needs an available house opponent, not just a candidate.
+   // Otherwise it only advances its scan cursor and burns sponsor transactions
+   // while every house identity is reserved by a tournament.
+   for(let j=0;j<8;j++){
+    const opponent=await read<Address>(m.catalog,catalogAbi,'house',[(j+2)%8]);
+    if(opponent!==zeroAddress&&opponent.toLowerCase()!==agent.toLowerCase()
+     &&await read<boolean>(m.catalog,catalogAbi,'qualificationEligible',[opponent,mode]))return{needed:true,next:at};
+   }
   }
  }
  return{needed:false,next:at};

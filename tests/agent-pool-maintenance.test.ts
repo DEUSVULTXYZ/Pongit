@@ -12,11 +12,28 @@ test('bounded qualification scans eventually reach agents beyond the first 256 a
   if(fn==='at'){inspected++;return address(Number(args[0])+100) as any;}
   if(fn==='identity')return{available:true,modes:3,qualified:args[0]===address(612)?1:3} as any;
   if(fn==='retryAt')return 0n as any;
+  if(fn==='house')return address(999) as any;
   if(fn==='qualificationEligible')return true as any;throw Error(fn);
  };
  for(let n=0;n<33;n++){const before=inspected,r=await qualificationWork(read,m,cursor,1000n);cursor=r.next;assert(inspected-before<=16);if(r.needed){found=true;break;}}
  assert(found);assert.equal(cursor,0n);
  const r=await qualificationWork(read,m,1026n,1000n);assert.equal(r.needed,false);assert.equal(r.next,16n);
+});
+
+test('qualification waits for an actual opponent and a base block containing the strategy',async()=>{
+ let partner=false,base=500n;
+ const candidate=address(100),house=address(101);
+ const read:PoolRead=async(_a,_abi,fn,args=[])=>{
+  if(fn==='count')return 1n as any;if(fn==='at')return candidate as any;
+  if(fn==='identity')return{available:true,modes:1,qualified:0,house:0} as any;
+  if(fn==='registeredBlock')return base as any;if(fn==='retryAt')return 0n as any;
+  if(fn==='house')return house as any;
+  if(fn==='qualificationEligible')return(args[0]===candidate||partner) as any;
+  throw Error(fn);
+ };
+ assert.equal((await qualificationWork(read,m,0n,1000n,16,600n)).needed,false);
+ partner=true;assert.equal((await qualificationWork(read,m,0n,1000n,16,400n)).needed,false);
+ assert.equal((await qualificationWork(read,m,0n,1000n,16,500n)).needed,true);
 });
 
 test('qualification inspection respects retry times and propagates unavailable reads',async()=>{

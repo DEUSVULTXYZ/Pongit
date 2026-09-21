@@ -10,6 +10,7 @@ const spacing = Math.max(50, Number(process.env.RPC_SPACING_MS || 60));
 const scheduler=rpcScheduler(spacing);
 const historicalBatch=historyGate(4);
 let waiting = 0;
+let observedHead:bigint|undefined;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 async function request(method: string, params: unknown[]):Promise<unknown> {
@@ -29,7 +30,7 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
     waiting++;
     try {
       for (let attempt = 0; attempt < 4; attempt++) {
-        await scheduler.acquire(historicalRpcRequest(method, params));
+        await scheduler.acquire(historicalRpcRequest(method, params,observedHead));
         let response:Response;
         try { response = await fetch(attempt>0 && (read || method==='eth_sendRawTransaction') && secondary!==upstream ? secondary : upstream, {
           method: "POST", headers: { "content-type": "application/json" },
@@ -50,6 +51,9 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
         if(result.error && method==='eth_sendRawTransaction' && attempt===0 && secondary!==upstream && /insufficient balance|insufficient funds/i.test(result.error.message))continue;
         if (result.error) throw result.error;
         if (!response.ok || !("result" in result)) throw new Error("Upstream RPC unavailable");
+        const height=method==='eth_blockNumber'?result.result:
+          method==='eth_getBlockByNumber'&&params[0]==='latest'?(result.result as any)?.number:undefined;
+        if(typeof height==='string'&&/^0x[\da-f]+$/i.test(height))observedHead=BigInt(height);
         const ttl = method === "eth_chainId" ? 3600000 : method === "eth_gasPrice" ? 3000 : method === "eth_blockNumber" ? 150 : 0;
         if (ttl) cache.set(key, { expires: Date.now() + ttl, result: result.result });
         return result.result;
