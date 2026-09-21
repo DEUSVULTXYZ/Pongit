@@ -1,0 +1,41 @@
+{
+  "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "catalog": "0xe2b39aa9a2be16bc848430c82cfeddc7da2cad6c",
+  "tournaments": "0xb99f8b0f00ff56b448b2bc1349c41bbfc6a7b8dc",
+  "ratings": "0xe6f5f6b7672859dcb6821889a8c50968ef478e2d",
+  "challenges": "0xfa2cadc91cbc9210d9b9571b676bb7d7a2ea3751",
+  "qualifications": "0x087e45b99407d2ba581795d50eb76ee4b027b347",
+  "family": "0x42007a8d3d7017d4b43fef9e9beeb2e7cb89fccb",
+  "version": 4,
+  "chainId": 10143,
+  "engineChainId": 4242,
+  "rulesVersion": 15,
+  "arenas": [
+    {
+      "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+      "runtimeHash": "0x6988b8b525a10d569e2f2f997fb1af95b3c939e795833eeb051a3eca70d5e4ae",
+      "node": "https://il-f868bdb4669f4de4.fly.dev"
+    },
+    {
+      "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+      "runtimeHash": "0x83e8ff5bd481764f6549f68221ce14920057433210ae3a8d122dc6e3224cfb53",
+      "node": "https://il-7fb78a8fbfd597da.fly.dev"
+    },
+    {
+      "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+      "runtimeHash": "0x1458f09ebed03b9905c33b2d6c5b2cdeb95fbafc3efcc0cbf8a80b28903bc88f",
+      "node": "https://il-1c5ec4b86149249e.fly.dev"
+    }
+  ],
+  "enabled": true,
+  "tournamentsEnabled": true,
+  "verifiedCapacity": 0,
+  "qualificationEvidence": null,
+  "durationSeconds": 300,
+  "overtimeSeconds": 60,
+  "intervalSeconds": 60,
+  "maxMatches": 2,
+  "releaseStage": "testnet-preview",
+  "previewEvidence": "0xfde2fc1bc34727fb81ede76580ddbccb71c1b62525eb217a7c17c889cc47b51d"
+}

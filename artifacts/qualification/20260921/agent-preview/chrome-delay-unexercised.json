@@ -1,0 +1,44 @@
+{
+  "startedAt": "2026-09-21T13:18:31.021Z",
+  "channel": "chrome",
+  "origin": "https://pongit.xyz",
+  "mocked": false,
+  "passed": false,
+  "checks": [],
+  "errors": [],
+  "publicationDelayInjected": true,
+  "liveRef": {
+    "chainId": 10143,
+    "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+    "epoch": "2",
+    "id": "32"
+  },
+  "liveCanvas": {
+    "rendered": true,
+    "changed": true,
+    "hashes": [
+      "13efc2b6000f2003b9aa5e1b00f1e9f5a09e6c8ddcaaaa14cb9171082428b362",
+      "978185a71adda59622f5734f2168554eb761114020bb9abc2d3d6c8004381d2c",
+      "978185a71adda59622f5734f2168554eb761114020bb9abc2d3d6c8004381d2c",
+      "978185a71adda59622f5734f2168554eb761114020bb9abc2d3d6c8004381d2c",
+      "978185a71adda59622f5734f2168554eb761114020bb9abc2d3d6c8004381d2c",
+      "978185a71adda59622f5734f2168554eb761114020bb9abc2d3d6c8004381d2c",
+      "636b801496e640d3d244bcaf9b63afc6ac88a9dbeb4a99fbd72462482bb46d86",
+      "7e0298a814c34ac4d723bbbde310dec7cea5900610e4fda383e08425a4a785c3",
+      "21b5bda1e32092bb8ea7c95b8566d7a69e1f6c281e69a27ae1fe16fc0fae8f0d",
+      "21b5bda1e32092bb8ea7c95b8566d7a69e1f6c281e69a27ae1fe16fc0fae8f0d",
+      "21b5bda1e32092bb8ea7c95b8566d7a69e1f6c281e69a27ae1fe16fc0fae8f0d",
+      "21b5bda1e32092bb8ea7c95b8566d7a69e1f6c281e69a27ae1fe16fc0fae8f0d",
+      "21b5bda1e32092bb8ea7c95b8566d7a69e1f6c281e69a27ae1fe16fc0fae8f0d",
+      "94340db4fd0472fb6edf1c39cfd9bc2c8cfd2a31c12953a1b1b07b3352655dcc",
+      "94340db4fd0472fb6edf1c39cfd9bc2c8cfd2a31c12953a1b1b07b3352655dcc",
+      "fb81105f524df589c6149b0fae3f2035c4ee294036798b5dbcf31196d1043c6e"
+    ]
+  },
+  "duringPublicationDelay": {
+    "samples": 0,
+    "changed": false
+  },
+  "failure": "Engine rendering must continue during the delayed result check",
+  "finishedAt": "2026-09-21T13:20:48.501Z"
+}

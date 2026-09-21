@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-21T12:35:13.175Z",
+  "stage": "testnet-preview",
+  "previewEvidence": "0xfde2fc1bc34727fb81ede76580ddbccb71c1b62525eb217a7c17c889cc47b51d",
+  "verifiedCapacity": 0,
+  "full24hQualified": false,
+  "receipts": [
+    {
+      "hash": "0x7b01110e29f210178f1b01603699a299e1f3842781c32b80b841bdc6ca9ad7bb",
+      "block": "64449299",
+      "status": "success"
+    },
+    {
+      "hash": "0x829dd942fbcbc29b21fdf8571f2b513b4c1ee9618079f048b37fbcc65f585e63",
+      "block": "64449311",
+      "status": "success"
+    },
+    {
+      "hash": "0x7e8bdcd88d1ed9ffdc20a7e233d939b12d731036e0eea9d2ad63d23476ba587e",
+      "block": "64449317",
+      "status": "success"
+    }
+  ]
+}

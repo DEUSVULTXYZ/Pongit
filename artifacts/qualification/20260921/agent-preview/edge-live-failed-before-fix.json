@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-09-21T13:08:28.312Z",
+  "channel": "msedge",
+  "origin": "https://pongit.xyz",
+  "mocked": false,
+  "passed": false,
+  "checks": [],
+  "errors": [],
+  "liveRef": {
+    "chainId": 10143,
+    "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+    "epoch": "2",
+    "id": "31"
+  },
+  "liveCanvas": {
+    "rendered": true,
+    "changed": false,
+    "hashes": [
+      "7e0298a814c34ac4d723bbbde310dec7cea5900610e4fda383e08425a4a785c3",
+      "7e0298a814c34ac4d723bbbde310dec7cea5900610e4fda383e08425a4a785c3",
+      "7e0298a814c34ac4d723bbbde310dec7cea5900610e4fda383e08425a4a785c3",
+      "7e0298a814c34ac4d723bbbde310dec7cea5900610e4fda383e08425a4a785c3"
+    ]
+  },
+  "failure": "Live canvas must progress",
+  "finishedAt": "2026-09-21T13:08:53.601Z"
+}

@@ -1,0 +1,47 @@
+{
+  "startedAt": "2026-09-21T13:02:46.461Z",
+  "channel": "chrome",
+  "origin": "https://pongit.xyz",
+  "mocked": false,
+  "passed": true,
+  "checks": [
+    {
+      "width": 360,
+      "home": true,
+      "eightBots": true,
+      "preview": true,
+      "tournament": true,
+      "noOverflow": true
+    },
+    {
+      "width": 390,
+      "home": true,
+      "eightBots": true,
+      "preview": true,
+      "tournament": true,
+      "noOverflow": true
+    },
+    {
+      "width": 768,
+      "home": true,
+      "eightBots": true,
+      "preview": true,
+      "tournament": true,
+      "noOverflow": true
+    },
+    {
+      "width": 1440,
+      "home": true,
+      "eightBots": true,
+      "preview": true,
+      "tournament": true,
+      "noOverflow": true
+    }
+  ],
+  "errors": [],
+  "liveCanvas": {
+    "rendered": false,
+    "reason": "No live admission at observation"
+  },
+  "finishedAt": "2026-09-21T13:05:09.035Z"
+}

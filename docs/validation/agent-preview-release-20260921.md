@@ -58,3 +58,82 @@ including rejection of a preview falsely claiming completed qualification,
 mismatched on-chain evidence and leaked service-key metadata. Documentation builds
 28 articles and 190 searchable sections. Production build, exact backups, public
 API/browser checks and the deployment receipt are recorded after cutover below.
+
+## Public cutover and verification
+
+Public Agent Arcade and tournaments opened on 21 September. The final web source
+is `9bcb8b4`, image `aa990dfb336487d4fec0ff93adff16f704c116e4d228a7faea3db42c0bfe19b9`;
+dedicated services use `16cf0fa`, image
+`cf81dca8a781221bd2b9c95fe1a8eae3e95f746456e9611127df074f0736fce5`.
+Human backend `e4eceb6` and its admission switch remain unchanged and open.
+The original dedicated database and maintenance journal were promoted in place;
+the private writers were stopped before their permanent replacements started.
+The existing shared indexer was also made persistent on its existing database.
+Replay retention reads that shared index; indexing may still be incomplete.
+
+The public API reports `enabled: true`, `qualified: false`,
+`validation: "testnet-preview"`. Both the catalogue and tournaments display this
+status. The signed admission gate is tied to review hash
+`fde2fc1bc34727fb81ede76580ddbccb71c1b62525eb217a7c17c889cc47b51d`.
+See the sanitized activation receipts and public deployment record under
+`artifacts/qualification/20260921/agent-preview`.
+
+Real public HTTPS checks, without intercepted API or engine replies:
+
+- Chrome and Edge passed home navigation, eight house identities, tournament
+  rendering and no page overflow at 360, 390, 768 and 1440 pixels.
+- A Chrome spectator rendered changing court frames on the renewed dedicated
+  arena `0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b`, epoch 2, match 31.
+- Chrome and Edge subsequently passed the live observer check on match 32 with
+  a twelve-second delay injected into the second real published-result request.
+  Both recorded changing court frames during eight samples of that delay. No
+  response or engine state was fabricated. The first delay attempts did not
+  intercept the API subdomain and remain recorded as failed, unexercised checks.
+- A new virtual Mera PRF account created a sponsored public challenge, restored
+  it after F5 without another ceremony and cancelled it with contract confirmation.
+  This is a queue/session test, not a physical-device or completed human-bot duel.
+- Chaos elimination completed after recovery; the permanent keeper automatically
+  began Classic championship #3. The original timed Chaos trial remains failed.
+  A full championship, all four uninterrupted formats and the final unchanged
+  24-hour run are still outstanding.
+
+The browser checks found and corrected a tablet card overflow, a tournament
+read timeout and a live-court freeze while checking published results. Canonical
+reads can take over ten seconds, so the UI now lets those reads complete, keeps
+engine observations independent and does not wait for optional identity labels
+to show the bracket.
+The initial image packaging incorrectly retained an absolute self-referencing
+`node_modules` symlink. The previous web was restored promptly; the corrected
+image reuses the dependency layer and is privately smoke-tested before cutover.
+Failed packaging and browser reports remain retained.
+
+The obsolete September 18 test arena was released after its actual hub deadline,
+with all 18 results archived. Receipt
+`0x0dcb4c7f1995491668992275ab55adcbd107cace9edc8f9b04c0db5ac8772a8c`
+at block 64455057 freed one of PONGIT's own slots. The permanent keeper then opened
+the reserve and admitted match 31 there. No provider quota was changed and no human
+arena was used. This demonstrates that transition, not continuous 24-hour capacity.
+
+## Operations and rollback
+
+Permanent role configuration is
+`/opt/pongit/releases/agents-preview-16cf0fa/compose.json`. The reader and sponsor
+have private Docker network aliases used by Caddy; no new public service ports
+were opened. Keys, private browser recovery material and environment files are
+outside the repository. The operator retains the original `il_lifecycle_jobs`
+journal and advisory lock 701340.
+
+Backups `agent-preview-20260921T1228Z` (ten files) and
+`agent-public-live-20260921T1304Z` (eight files) have verified off-VPS SHA-256 copies.
+The final web/proxy/service configuration is also backed up in
+`agent-public-final-20260921T1320Z` (five files), verified off VPS.
+They preserve the dedicated database, original operator journal, keys, exact
+metadata, proxy and service configuration. Only unused build caches were removed;
+production/rollback images, database volumes, reports and historical rights remain.
+
+To withdraw public access, close the pool's public/general admissions and the
+challenge/tournament admission switches through the same operator journal. Hide
+the three optional web gates and restore the previous web/proxy configuration if
+needed. Keep engines, observation and recovery running for already admitted games.
+Never restore an old database over new results or restart a private writer beside
+its permanent replacement. The previous human web image `human-0c44f08` is retained.

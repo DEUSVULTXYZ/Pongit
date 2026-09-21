@@ -1,0 +1,15 @@
+{
+  "startedAt": "2026-09-21T12:51:48.608Z",
+  "passed": true,
+  "origin": "https://pongit.xyz",
+  "mockedNetwork": false,
+  "virtualPrf": true,
+  "checks": [
+    "Actual Mera family and public sponsored challenge",
+    "F5 restores queued challenge without a new ceremony",
+    "Cancellation confirmed by public contract-backed API"
+  ],
+  "player": "0x567A208031885d9cCe739484049E5F899598FA19",
+  "challengeId": "1",
+  "finishedAt": "2026-09-21T12:53:27.560Z"
+}

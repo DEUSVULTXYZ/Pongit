@@ -1,0 +1,42 @@
+{
+  "releaseStage": "testnet-preview",
+  "sourceCommit": "16cf0fa",
+  "ownerRequestedImmediateOpening": true,
+  "chainId": 10143,
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "arenas": [
+    {
+      "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+      "runtimeHash": "0x6988b8b525a10d569e2f2f997fb1af95b3c939e795833eeb051a3eca70d5e4ae"
+    },
+    {
+      "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+      "runtimeHash": "0x83e8ff5bd481764f6549f68221ce14920057433210ae3a8d122dc6e3224cfb53"
+    },
+    {
+      "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+      "runtimeHash": "0x1458f09ebed03b9905c33b2d6c5b2cdeb95fbafc3efcc0cbf8a80b28903bc88f"
+    }
+  ],
+  "tests": {
+    "typescript": 629,
+    "rootTypecheck": true,
+    "classicElimination": true,
+    "finalUnchanged24h": false,
+    "allTournamentFormats": false,
+    "continuousReserve": false
+  },
+  "budget": {
+    "maxBatches": 16000,
+    "matchReserveBatches": 8000,
+    "storageEnvelope": 86,
+    "forkReleaseGas": 1451957,
+    "actualReleaseGas": 1509550,
+    "actualReleaseTx": "0x52d51b311c127539ac61a5b9b3bb175572987da55933b814aa199049efef27da"
+  },
+  "limitations": [
+    "Publication can delay progression",
+    "Reserve capacity still under qualification",
+    "Testnet only; no agent bets, fees or prizes"
+  ]
+}

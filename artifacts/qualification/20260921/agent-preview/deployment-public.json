@@ -1,0 +1,192 @@
+{
+  "at": "2026-09-21T13:07:43.808499+00:00",
+  "webCommit": "ec2f841",
+  "serviceCommit": "16cf0fa",
+  "public": true,
+  "full24hQualified": false,
+  "urls": {
+    "/": {
+      "status": 200,
+      "bytes": 14696
+    },
+    "/agents": {
+      "status": 200,
+      "bytes": 13219
+    },
+    "/agents/tournaments": {
+      "status": 200,
+      "bytes": 12566
+    },
+    "/docs/playing/agents": {
+      "status": 200,
+      "bytes": 42054
+    },
+    "/docs/technical/agent-sdk": {
+      "status": 200,
+      "bytes": 58910
+    },
+    "/api/health": {
+      "status": 200,
+      "bytes": 962
+    },
+    "/api/independent/config": {
+      "status": 200,
+      "bytes": 1979
+    },
+    "/api/agents/config": {
+      "status": 200,
+      "bytes": 1691
+    },
+    "/api/agents/tournaments": {
+      "status": 200,
+      "bytes": 878
+    }
+  },
+  "humanAdmission": true,
+  "agentConfig": {
+    "version": 4,
+    "releaseStage": "testnet-preview",
+    "previewEvidence": "0xfde2fc1bc34727fb81ede76580ddbccb71c1b62525eb217a7c17c889cc47b51d",
+    "chainId": 10143,
+    "engineChainId": 4242,
+    "rulesVersion": 15,
+    "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+    "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+    "catalog": "0xe2b39aa9a2be16bc848430c82cfeddc7da2cad6c",
+    "tournaments": "0xb99f8b0f00ff56b448b2bc1349c41bbfc6a7b8dc",
+    "ratings": "0xe6f5f6b7672859dcb6821889a8c50968ef478e2d",
+    "challenges": "0xfa2cadc91cbc9210d9b9571b676bb7d7a2ea3751",
+    "qualifications": "0x087e45b99407d2ba581795d50eb76ee4b027b347",
+    "family": "0x42007a8d3d7017d4b43fef9e9beeb2e7cb89fccb",
+    "arenas": [
+      {
+        "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+        "node": "https://il-f868bdb4669f4de4.fly.dev",
+        "runtimeHash": "0x6988b8b525a10d569e2f2f997fb1af95b3c939e795833eeb051a3eca70d5e4ae"
+      },
+      {
+        "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+        "node": "https://il-7fb78a8fbfd597da.fly.dev",
+        "runtimeHash": "0x83e8ff5bd481764f6549f68221ce14920057433210ae3a8d122dc6e3224cfb53"
+      },
+      {
+        "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+        "node": "https://il-1c5ec4b86149249e.fly.dev",
+        "runtimeHash": "0x1458f09ebed03b9905c33b2d6c5b2cdeb95fbafc3efcc0cbf8a80b28903bc88f"
+      }
+    ],
+    "enabled": true,
+    "tournamentsEnabled": true,
+    "verifiedCapacity": 0,
+    "qualificationEvidence": null,
+    "durationSeconds": 300,
+    "overtimeSeconds": 60,
+    "intervalSeconds": 60,
+    "maxMatches": 2,
+    "qualified": false,
+    "registration": {
+      "strategies": true,
+      "realtime": false
+    },
+    "financial": false,
+    "validation": "testnet-preview",
+    "observation": {
+      "block": "64455648",
+      "hash": "0x7d53d8e78345d69b9a58805d2c9111eedc035f37ec9e01b1c0403db17e0e12a1",
+      "timestamp": "1789996064",
+      "revision": "a78b24d0e2e766dc5a64e497cff14a39cbfec376b2e31bf2b8ca8a1211b85942"
+    }
+  },
+  "tournaments": {
+    "items": [
+      {
+        "id": "3",
+        "mode": 0,
+        "format": "championship",
+        "status": "playing",
+        "revision": 0,
+        "champion": "0x0000000000000000000000000000000000000000",
+        "startedAt": "1789995045",
+        "completedAt": "0",
+        "participants": 8
+      },
+      {
+        "id": "2",
+        "mode": 1,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "startedAt": "1789987281",
+        "completedAt": "1789994945",
+        "participants": 8
+      },
+      {
+        "id": "1",
+        "mode": 0,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "startedAt": "1789937028",
+        "completedAt": "1789939378",
+        "participants": 8
+      }
+    ],
+    "total": "3",
+    "offset": "0",
+    "next": null,
+    "nextAt": "1789995005",
+    "observation": {
+      "block": "64455660",
+      "hash": "0xc2cbff04efb2a4c58115b5dfd80e3daae5949156bccc3f11fe55ea80b60b3875",
+      "timestamp": "1789996068",
+      "revision": "0d47522a28a0428fe3fdfdef9254f3df241441ea7dfeb262a82c4264f7ab1ee1"
+    }
+  },
+  "images": {
+    "pongit-web-1": {
+      "image": "pongit-web:agents-preview-ec2f841",
+      "digest": "sha256:cf86253feec84d92a1cc0c97f8c075ee4c3fca81e79399e6e1d58567594fdc18",
+      "status": "running",
+      "restartCount": 0
+    },
+    "pongit-agent-public-keeper": {
+      "image": "pongit-agent-reusable:preview-16cf0fa",
+      "digest": "sha256:cf81dca8a781221bd2b9c95fe1a8eae3e95f746456e9611127df074f0736fce5",
+      "status": "running",
+      "restartCount": 0
+    },
+    "pongit-agent-public-engines": {
+      "image": "pongit-agent-reusable:preview-16cf0fa",
+      "digest": "sha256:cf81dca8a781221bd2b9c95fe1a8eae3e95f746456e9611127df074f0736fce5",
+      "status": "running",
+      "restartCount": 0
+    },
+    "pongit-agent-public-reader": {
+      "image": "pongit-agent-reusable:preview-16cf0fa",
+      "digest": "sha256:cf81dca8a781221bd2b9c95fe1a8eae3e95f746456e9611127df074f0736fce5",
+      "status": "running",
+      "restartCount": 0
+    },
+    "pongit-agent-public-sponsor": {
+      "image": "pongit-agent-reusable:preview-16cf0fa",
+      "digest": "sha256:cf81dca8a781221bd2b9c95fe1a8eae3e95f746456e9611127df074f0736fce5",
+      "status": "running",
+      "restartCount": 0
+    },
+    "pongit-agent-public-indexer": {
+      "image": "pongit-indexer:rules8-fixture",
+      "digest": "sha256:ec6c1e3666fd3d00a923af366477169a04ab1e97aae6e77c6bd43ea8c59faf40",
+      "status": "running",
+      "restartCount": 0
+    },
+    "pongit-relayer-1": {
+      "image": "pongit-relayer:human-e4eceb6",
+      "digest": "sha256:e6fa5f722906a48093b89d29c059bc75c44c10cb0c197273798c61882567ac97",
+      "status": "running",
+      "restartCount": 0
+    }
+  },
+  "diskUsedPercent": 79.7682669349686
+}

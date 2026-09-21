@@ -1,0 +1,26 @@
+{
+  "startedAt": "2026-09-21T13:06:19.136Z",
+  "channel": "chrome",
+  "origin": "https://pongit.xyz",
+  "mocked": false,
+  "passed": true,
+  "checks": [],
+  "errors": [],
+  "liveRef": {
+    "chainId": 10143,
+    "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+    "epoch": "2",
+    "id": "31"
+  },
+  "liveCanvas": {
+    "rendered": true,
+    "changed": true,
+    "hashes": [
+      "6e8302114b53e4c0aa87e19b919202a04244993903afb95734bbe95d2c0cf051",
+      "11b57040a39e171cdc72f67d71e5664d6f7d680814b0823c9f9e060ad8e34b3a",
+      "ed8e458be164be207e28f3f31ceb437527dc65b411f709d8a4c4535e7a5f19a8",
+      "ed8e458be164be207e28f3f31ceb437527dc65b411f709d8a4c4535e7a5f19a8"
+    ]
+  },
+  "finishedAt": "2026-09-21T13:07:12.847Z"
+}
