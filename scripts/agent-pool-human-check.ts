@@ -28,6 +28,7 @@ const deployment=JSON.parse(readFileSync(reusable?'/secrets/deployment.json':`/s
 if(reusable){assert.equal(deployment.prefix,prefix);assert.equal(deployment.rulesVersion,15);}
 const file=`/secrets/${prefix}-human-check${suffix}.json`,reportFile=`/diagnostics/pool-human-check${suffix}.json`;
 const m:AgentPoolManifest={version:reusable?4:series?3:2,chainId:10143,engineChainId:4242,rulesVersion:reusable?15:series?11:10,...deployment.common,
+ countdownClock:deployment.countdownClock,houseInstances:deployment.houseInstances,
  arenas:deployment.arenas.map((a:any)=>({app:a.app,runtimeHash:a.runtimeHash,node:`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`})),
  enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 const protectedApps=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(protectedApps.length);
