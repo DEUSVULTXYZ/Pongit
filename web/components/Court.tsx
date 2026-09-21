@@ -13,6 +13,7 @@ import {projectChaos,eventCanvas,eventPaddles} from '../lib/chaos-presentation';
 import {drawChaosCourt,drawChaosPaddles,drawChaosBalls,type ChaosCanvasFrame} from '../lib/chaos-canvas';
 import {courtSprites} from '../lib/court-sprites';
 import {chaosContactResolution} from '../../shared/chaos-rules';
+import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
 type Props = {
   state: State | null;
   chaos?:ChaosDecoded;
@@ -29,6 +30,7 @@ type Props = {
   confirmedNonce?: bigint;
   debug?: boolean;
   liveEngine?: boolean;
+  bufferedSpectator?: boolean;
   externalIntermission?: boolean;
   onNetwork?:(age:number,correction:number)=>void;
   onStats: (fps: number, extrapolated: boolean, waiting: boolean) => void;
@@ -45,7 +47,7 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, liveEngine = false, externalIntermission = false, onNetwork = ()=>{},
+  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{},
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
@@ -58,7 +60,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, liveEngine, externalIntermission, onNetwork,
+    onStats, pendingInputs, confirmedNonce, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork,
   });
   current.current = {
     state,
@@ -70,7 +72,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, liveEngine, externalIntermission, onNetwork,
+    onStats, pendingInputs, confirmedNonce, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork,
   };
   useEffect(() => {
     const el = canvas.current!;
@@ -90,10 +92,15 @@ export function Court({
     let lastDraw = last, visualY: number | null = null, context = "";
     let anchor=last,anchorObserved=0,anchorAge=0,localDirection=0,localAt=last,correction=0;
     const livePaddle = new LivePaddle(), liveClock = new LiveClock();
+    const playout=new SpectatorPlayout();
     function draw(now: number) {
-      const p = current.current;
-      const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}`;
-      if (identity !== context) { trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
+      let p = current.current;
+      const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
+      if (identity !== context) { playout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
+      const buffered=p.bufferedSpectator&&p.side<0&&!p.replay&&!!p.state;
+      if(buffered)playout.push({state:p.state!,chaos:p.chaos,at:now-Math.max(0,Date.now()-p.observedAt)});
+      const playback=buffered?playout.sample(now):null;
+      if(playback)p={...p,state:playback.frame.state,chaos:playback.frame.chaos,clock:playback.target};
       const dt = Math.max(0, Math.min(50, now - lastDraw));
       lastDraw = now;
       const dpr = Math.min(devicePixelRatio || 1, 2);
@@ -109,7 +116,7 @@ export function Court({
       if(anchorObserved!==p.observedAt){anchorObserved=p.observedAt;anchor=now;anchorAge=Math.max(0,Date.now()-p.observedAt);}
       if(localDirection!==p.direction){localDirection=p.direction;localAt=now;}
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
-      const target=p.replay?p.clock:p.liveEngine?liveClock.sample(timing.target):timing.target;
+      const target=p.replay||playback?p.clock:p.liveEngine?liveClock.sample(timing.target):timing.target;
       let waiting = false;
       const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
       if(cp){s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
@@ -128,6 +135,7 @@ export function Court({
         yA = Number(paddles.left) / Number(SCALE);
         yB = Number(paddles.right) / Number(SCALE);
       }
+      if(playback){yA=playback.left;yB=playback.right;waiting=playback.stalled;}
       const mod=cp?eventPaddles(cp.state):null;
       const halfA=mod?Number(mod.heightA)/2e6+(mod.splitA?8:0):Number(s?.halfA || 48000000n)/1e6, halfB=mod?Number(mod.heightB)/2e6+(mod.splitB?8:0):Number(s?.halfB || 48000000n)/1e6;
       const half=p.side===0?halfA:halfB;
@@ -213,7 +221,10 @@ export function Court({
         previousSound={vx:s.vx,vy:s.vy,score,time:now};
       } else previousSound=null;
       if (s&&!cp) {
-        sprites.ball(Number(s.x) / 1e6, Number(s.y) / 1e6);
+        // A predicted goal remains unconfirmed. Keep its last visible edge
+        // position instead of leaving the spectator with an empty court.
+        const ball=playback?visibleBall(Number(s.x)/1e6,Number(s.y)/1e6):{x:Number(s.x)/1e6,y:Number(s.y)/1e6};
+        sprites.ball(ball.x,ball.y);
       } else if(!s) {
         ctx.strokeStyle = "#777";
         ctx.strokeRect(506, 282, 12, 12);
@@ -237,7 +248,7 @@ export function Court({
       }
       frame = requestAnimationFrame(draw);
     }
-    const visibility=()=>{cancelAnimationFrame(frame);trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
+    const visibility=()=>{cancelAnimationFrame(frame);playout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
     document.addEventListener("visibilitychange",visibility);
     if(!document.hidden)frame = requestAnimationFrame(draw);
     return () => {cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};
