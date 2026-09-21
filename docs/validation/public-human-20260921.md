@@ -73,6 +73,30 @@ Their real hub release deadlines are 11:12:32 and 11:12:46 UTC; production owns
 their release, sealing and renewal. Until that recovery is observed, there is
 one available lane, not a verified continuous two-lane service.
 
+That recovery completed automatically at 11:13 UTC. Both epoch-1 releases,
+result-root seals and epoch-2 openings were verified against canonical Monad
+receipts. All three hosted arenas then reported their current epoch and were
+available. The renewed openings were transactions
+`0x265405d21a51d2c4c7a2986fb5603de8a21336eb6ee2e11793917bafff21fe42`
+and `0x310f604519e270312c6c377fa4cd683313b60a3830553036adaa13c44acedf2c`.
+The public production worker performed the recovery without a competing helper.
+
+A subsequent public API/SDK trial passed at 11:18:55 UTC using both renewed
+arenas: Classic ended 5:7 after 133/130 confirmed direction changes, and Chaos
+ended 7:6 after 142/134. Gameplay overlapped for 22.713 seconds. Results were
+captured in the common contract and the Chaos beneficiary received 0.006 test
+MON automatically. This used disposable synthetic owners and the public
+sponsor API, with no operator key available to the controller. Its completed
+test rooms were left through their limited arcade keys. Canonical lifecycle
+receipts, the sanitized game evidence and cleanup proof are retained beside
+the public browser reports.
+
+Confirmed SDK input timings in that trial were p50/p95/p99 of
+108.92/119.96/215.04 ms for Classic and 116.83/140.76/217.25 ms for Chaos.
+These measure this controller's acknowledgements, not physical input-to-photon
+latency or total VPS traffic. The short concurrent trial demonstrates usable
+renewed capacity; it does not replace a full continuous availability trial.
+
 A separate private agent renewal at 10:56 UTC was rejected with
 `ValidatorAtCapacity()` (`0xe90bcd65`). Its selected arena was already released;
 there was no new delegation or public agent opening. The two existing agent
