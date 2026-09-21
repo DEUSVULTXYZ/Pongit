@@ -1,5 +1,33 @@
 # Reusable arenas and testnet admission transport
 
+## Human admission recovery, 21 September 2026
+
+The renewed human rules-14 arena exposed a real observer defect. `openEngine`
+initializes the result commitment epoch but clears the physical admission slot.
+The service incorrectly required that empty slot to already contain the new
+epoch and permanently reported `starting`. Actual hosted reads confirmed zero
+admission fields with the correct empty commitment in epochs 3 and 1.
+
+The observer now accepts this initial state only when all admission fields and
+the Monad physical slot are zero, and both engine and Monad commitments have
+the actual delegation epoch, zero results and the canonical empty root. Stale
+epochs, unexplained results, nonzero hashes and unissued matches remain blocked.
+
+A separate live room-discovery worker prevents historical indexing backlog
+from delaying new room proposals after a restart. It reads an overlapping
+100-block head window, respecting the actual Monad RPC range limit, and stores
+only deduplicated room IDs. Historical events keep their original cursor. The
+contract state and transaction simulation still determine whether a proposal
+is valid; a room hint never grants participation or assigns a result.
+
+All 600 TypeScript tests and root type checking passed. Dedicated regressions
+cover the empty epochs, eleven invalid variants, current room discovery,
+duplicate/removed/wrong-address logs and RPC failures. These changes are under
+actual private human qualification on the existing VPS. The waiting fixtures
+interrupted by service replacement and the initial 128-block RPC-range failure
+are retained. They are not successful gameplay proofs. Public admissions remain
+closed; no user/ELO migration or final continuous-service trial is implied.
+
 ## First tournament finality, 20 September 22:30 UTC
 
 The existing keeper released arena

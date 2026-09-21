@@ -4,6 +4,7 @@ import {encodeFunctionData,encodeFunctionResult,toHex,zeroAddress,zeroHash,type 
 import {independentReusableLifecycle} from '../relayer/src/independent-reusable-lifecycle';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {reusableAdmissionDigest} from '../shared/reusable-admission';
+import {EMPTY_RESULT_ROOT} from '../shared/published-result-tree';
 const at=(n:number)=>toHex(n,{size:20}) as Address;
 function fixture(){
  const app=at(1),m:any={rulesVersion:14,arenas:[{app}],resultVerifier:at(2),hub:at(3),lobby:at(4),ratings:at(5)};
@@ -13,27 +14,29 @@ function fixture(){
  Object.assign(d,{app,status:1,epoch:2n,baseBlock:3n,expiresAt:10000n,maxBatchInterval:3600n,lastCommitAt:900n,batchIndex:5n,stakeUnlockAt:1100n});
  let now=1000n,reserved=91n,slot=[2n,91n],phase=2n,current=[2n,91n,1n,reusableAdmissionDigest(ticket)],known=1n,sealed:Hex=zeroHash;
  let ref={id:0n,epoch:0n},livePhase=2,failedRead=false;
+ let hostedCommitment:any=[2n,0,EMPTY_RESULT_ROOT],publishedCommitment:any=[2n,0,EMPTY_RESULT_ROOT];
  const jobs:any[]=[],events:string[]=[],session={chainId:4242,app,epoch:2,baseBlock:3};
  const health={id:'0',epoch:'0',expiresAt:0,releaseAt:0,online:false,lastProgressAt:0};
  const base:any={getBlock:async()=>({number:20n,timestamp:now}),request:async()=>encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d}),readContract:async(c:any)=>{
   encodeFunctionData({abi:c.abi,functionName:c.functionName,args:c.args});assert.equal(c.blockNumber,20n);
   switch(c.functionName){case 'reservedMatch':return reserved;case 'currentMatch':return slot;case 'finalizedRoots':return[sealed,1];
-   case 'getSnapshot':return{phase};case 'ticketOf':return[ticket,{}];case 'indexOf':return known;default:throw Error('Unexpected read '+c.functionName);}
+   case 'resultCommitment':return publishedCommitment;case 'getSnapshot':return{phase};case 'ticketOf':return[ticket,{}];case 'indexOf':return known;default:throw Error('Unexpected read '+c.functionName);}
  }};
  const engine:any={app,bind:(id:bigint,epoch:bigint)=>{const changed=id!==ref.id||epoch!==ref.epoch;ref={id,epoch};return changed;},
   restoreHealth:async()=>{},retire:async(epoch:bigint)=>events.push('retire:'+epoch),status:async()=>session,
   retireOlder:async()=>{},
   reconcile:async()=>events.push('reconcile'),read:async()=>{if(failedRead)throw Error('node unavailable');return{id:ref.id,phase:livePhase};},
   feed:{progressAge:()=>50},publicationFailure:()=>0,
-  node:{readContract:async(c:any)=>{encodeFunctionData({abi:c.abi,functionName:c.functionName,args:c.args});assert.equal(c.functionName,'currentAdmission');return current;}}};
+  node:{readContract:async(c:any)=>{encodeFunctionData({abi:c.abi,functionName:c.functionName,args:c.args});if(c.functionName==='resultCommitment')return hostedCommitment;assert.equal(c.functionName,'currentAdmission');return current;}}};
  const results:any={capture:async(id:bigint)=>{events.push('capture:'+id);return true;},archiveSlot:async()=>{events.push('archive');return true;}};
  const worker=independentReusableLifecycle({base,manifest:m,engine,health,results,
   queue:async(at,abi,name,args)=>{encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args});},
   stage:async(name,code)=>{events.push('stage:'+name+(code?':'+code:''));},admit:async()=>{events.push('admit');},
   ensureHosted:async epoch=>{events.push('hosted:'+epoch);}});
  return{worker,health,d,events,jobs,session,results,reference:()=>ref,
-  change:(o:{now?:bigint;reserved?:bigint;phase?:bigint;livePhase?:number;sealed?:Hex;current?:any;known?:bigint;failedRead?:boolean})=>{
+  change:(o:{now?:bigint;reserved?:bigint;phase?:bigint;livePhase?:number;sealed?:Hex;current?:any;known?:bigint;failedRead?:boolean;slot?:bigint[];hostedCommitment?:any;publishedCommitment?:any})=>{
    now=o.now??now;reserved=o.reserved??reserved;phase=o.phase??phase;livePhase=o.livePhase??livePhase;sealed=o.sealed??sealed;current=o.current??current;known=o.known??known;failedRead=o.failedRead??failedRead;
+   slot=o.slot??slot;hostedCommitment=o.hostedCommitment??hostedCommitment;publishedCommitment=o.publishedCommitment??publishedCommitment;
   }};
 }
 
@@ -42,6 +45,31 @@ test('a published human result leaves the same delegation open for its next issu
  assert(f.events.indexOf('archive')<f.events.indexOf('capture:91'));assert.equal(f.jobs.length,0);assert.equal(f.health.online,true);
  f.events.length=0;f.change({reserved:0n});await f.worker.observe();
  assert(f.events.includes('stage:available'));assert.equal(f.jobs.length,0);assert.equal(f.health.id,'0');
+});
+
+test('a fresh or renewed empty arena uses the verified commitment epoch before its first admission',async()=>{
+ for(const epoch of [1n,3n]){
+  const f=fixture();f.d.epoch=epoch;f.session.epoch=Number(epoch);
+  f.change({reserved:0n,slot:[0n,0n],current:[0n,0n,0n,zeroHash],
+   hostedCommitment:[epoch,0,EMPTY_RESULT_ROOT],publishedCommitment:[epoch,0,EMPTY_RESULT_ROOT]});
+  await f.worker.observe();assert.equal(f.health.online,true);assert(f.events.includes('stage:available'));
+  assert.equal(f.health.epoch,String(epoch));assert.equal(f.jobs.length,0);
+ }
+});
+
+test('empty admission cannot conceal stale epochs, uncleared slots or unpublished results',async()=>{
+ for(const change of [
+  {current:[1n,0n,0n,zeroHash]}, {current:[0n,91n,0n,zeroHash]},
+  {current:[0n,0n,1n,zeroHash]}, {current:[0n,0n,0n,toHex(1,{size:32})]},
+  {slot:[1n,91n]}, {hostedCommitment:[1n,0,EMPTY_RESULT_ROOT]},
+  {publishedCommitment:[1n,0,EMPTY_RESULT_ROOT]}, {hostedCommitment:[2n,1,EMPTY_RESULT_ROOT]},
+  {publishedCommitment:[2n,1,EMPTY_RESULT_ROOT]}, {hostedCommitment:[2n,0,zeroHash]},
+  {publishedCommitment:[2n,0,zeroHash]},
+ ]){
+  const f=fixture();f.change({reserved:0n,slot:[0n,0n],current:[0n,0n,0n,zeroHash],...change});
+  await assert.rejects(f.worker.observe(),/epoch changed|commitment/);
+  assert.equal(f.health.online,false);assert(!f.events.includes('stage:available'));assert.equal(f.jobs.length,0);
+ }
 });
 
 test('an expired delegation still reconciles and closes independently from new admissions',async()=>{

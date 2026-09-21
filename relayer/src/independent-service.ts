@@ -32,6 +32,7 @@ import {independentReusableResults} from './independent-reusable-results';
 import {independentReusableAdmission} from './independent-reusable-admission';
 import {independentReusableLifecycle} from './independent-reusable-lifecycle';
 import {independentReusablePool} from './independent-reusable-pool';
+import {independentRoomDiscovery} from './independent-room-discovery';
 import {abi as verifierAbi} from '../../shared/abi-independent-PublishedResultVerifier';
 
 type Options={db:Pool;operatorDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
@@ -78,6 +79,9 @@ export async function independentService(o:Options){
  CREATE TABLE IF NOT EXISTS independent_rooms(lobby text NOT NULL,id text NOT NULL,PRIMARY KEY(lobby,id));
  CREATE TABLE IF NOT EXISTS independent_credits(vault text NOT NULL,player text NOT NULL,operation text NOT NULL,PRIMARY KEY(vault,player));
  CREATE TABLE IF NOT EXISTS independent_incidents(lobby text NOT NULL,arena text NOT NULL,stage text NOT NULL,code text,changed_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(lobby,arena));`);
+ const discoverRooms=independentRoomDiscovery(base,m.lobby,[...lobbyAbi,...lobbyEventsAbi.filter(x=>x.type==='event')],async room=>{
+  await db.query('INSERT INTO independent_rooms VALUES($1,$2) ON CONFLICT DO NOTHING',[m.lobby.toLowerCase(),String(room)]);
+ });
  const history=await independentHistory(db,base,m,o.graphql);
  const diagnostics=await createRpcDiagnostics(db,m.lobby,o.collectRpc!==false),diagnosticAt=new Map<string,number>();
  if(m.rulesVersion===14)await initializeReusableResultArchive(db);
@@ -368,7 +372,7 @@ export async function independentService(o:Options){
     if(!eventLoops[i]?.blocksWrite()&&!engines[i].busy())run(`chaos:${i}`,()=>finance.checkpoint(financialEngines[i]));
    }
   }
-  run('index',index,6000);run('history',history.observe,6000);run('admission',admission,4000);
+  run('index',index,6000);run('room-discovery',discoverRooms,4000);run('history',history.observe,6000);run('admission',admission,4000);
   if(reusableResults)run('published-history',async()=>{
    // Bounded historical scan revisits provisional entries after finality or a
    // correction. The archive retains previous bodies across slot/epoch reuse.

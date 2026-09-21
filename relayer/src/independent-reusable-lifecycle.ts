@@ -3,6 +3,7 @@ import type {IndependentManifest} from '../../shared/independent';
 import {independentReader} from '../../shared/independent-read';
 import {readHubDelegation} from '../../shared/rooms-hub';
 import {reusableAdmissionDigest} from '../../shared/reusable-admission';
+import {EMPTY_RESULT_ROOT} from '../../shared/published-result-tree';
 import {abi as arenaAbi} from '../../shared/abi-independent-ReusableEventsArena';
 import {abi as lobbyAbi} from '../../shared/abi-independent-ReusableEventsLobby';
 import {abi as verifierAbi} from '../../shared/abi-independent-PublishedResultVerifier';
@@ -93,7 +94,20 @@ export function independentReusableLifecycle(o:Options){
    // A bridge-only or unpublished game cannot be silently discarded. The
    // authority's assignNext also checks the published previous result.
    const current=await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'currentAdmission'});
-   if(current[0]!==epoch)throw Error('Engine result epoch changed');
+   if(current[0]!==epoch){
+    // openEngine initializes the commitment epoch but clears the physical
+    // admission slot. Its epoch therefore stays zero until the first ticket.
+    // Only an entirely empty slot AND a matching empty commitment on both
+    // chains qualify; a stale/missing admission cannot hide an old result.
+    if(current[0]!==0n||current[1]!==0n||current[2]!==0n||current[3]!==zeroHash
+     ||slot[0]!==0n||slot[1]!==0n)throw Error('Engine result epoch changed');
+    const [hosted,published]=await Promise.all([
+     e.node.readContract({address:e.app,abi:arenaAbi,functionName:'resultCommitment'}),
+     r.arena(e.app,'resultCommitment'),
+    ]);
+    if([hosted,published].some(c=>c[0]!==epoch||c[1]!==0||c[2]!==EMPTY_RESULT_ROOT))
+     throw Error('Empty arena commitment does not match its delegation');
+   }
    if(current[1]){
     const [issued]=await r.lobby('ticketOf',[current[1]]);
     const known=await r.ratings('indexOf',[current[1]]);
