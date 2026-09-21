@@ -89,6 +89,9 @@ async function prepare(mode:0|1){
  const a=mode*2,b=a+1;
  await command(a,`room-${mode}`,'createRoom',[mode]);const room=await r.lobby('occupancy',[owners[a].address]);
  await command(b,`join-${mode}`,'joinRoom',[room]);
+ // Publicly paused admission also pauses automatic room proposals. Trigger
+ // this permissionless rule only for this fixture's own newly created room.
+ if(closedProduction)await submit(`propose-${mode}`,m.lobby,encodeFunctionData({abi:rules.lobby,functionName:'propose',args:[room]}));
  const proposal=await until(async()=>{const v=await r.lobby('room',[room]);return v.proposal||null;},'contract room proposal');
  // Separate participant keys may consent concurrently, as the two browsers do.
  // Waiting for A's mined receipt before B even starts consumes the offer window.
