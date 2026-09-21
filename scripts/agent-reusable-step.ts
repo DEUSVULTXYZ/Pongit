@@ -20,6 +20,7 @@ import {qualificationWork,historicalRepairWork,expiredChallenge} from '../relaye
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {overdueAgentPublication} from '../relayer/src/agents/reusable-recovery';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 const {record:r,prefix,stateFile:file}=await loadReusableRuntime('keeper'),m=r.common;
 const metrics=await agentMetrics('/diagnostics/reusable','lifecycle'),t=await chainTools(prefix+'-maintenance',measuredFetch('monad'));
@@ -28,7 +29,7 @@ const archive=createReusableResultArchive(db),guard=await t.db.connect();let loc
 let state:{sequence:number;retry?:Record<string,number>;qualificationCursor?:bigint;challengeCursor?:bigint;history?:{id:bigint;index:number};
  archiveCursor?:{app:string;epoch:string;id:string};intent?:{to:Address;method:string;args:any[];value:bigint}}={sequence:0};
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(state,(_,v)=>typeof v==='bigint'?{bigint:String(v)}:v),{mode:0o600});await rename(file+'.next',file);};
-const abiFor=(at:Address):Abi=>at===m.pool?poolAbi:at===m.tournaments?bookAbi:at===m.ratings?ratingsAbi:at===m.challenges?challengeAbi:at===m.verifier?verifierAbi:catalogAbi;
+const abiFor=(at:Address):Abi=>at===m.hub?hubAbi:at===m.pool?poolAbi:at===m.tournaments?bookAbi:at===m.ratings?ratingsAbi:at===m.challenges?challengeAbi:at===m.verifier?verifierAbi:catalogAbi;
 const cooling=(to:Address,method:string)=>(state.retry?.[`${to.toLowerCase()}:${method}`]??0)>Date.now();
 async function act(to:Address,method:string,args:any[]=[],value=0n){
  state.intent={to,method,args,value};await save();let receipt;
@@ -81,7 +82,19 @@ async function step(){
   }
   if(d.status===2&&block.timestamp>=d.stakeUnlockAt&&!cooling(m.pool,'releaseArena')){await act(m.pool,'releaseArena',[app]);return;}
   if(d.status===1&&block.timestamp>=d.expiresAt&&!cooling(m.pool,'recoverExpired')){await act(m.pool,'recoverExpired',[app]);return;}
-  const occupied=lanes.some(row=>row.ref.id>0n&&row.ref.arena.toLowerCase()===app.toLowerCase());
+  const reservation=lanes.find(row=>row.ref.id>0n&&row.ref.arena.toLowerCase()===app.toLowerCase());
+  const occupied=!!reservation;
+  // Terminal engine results may remain unpublished even while /health says
+  // OK. Keep their archive and recover only after the real protocol deadline.
+  // A new ticket after a long idle interval must never close immediately.
+  if(d.status===1&&reservation&&!cooling(m.hub,'forceClose')){
+   const [ticket]=await read(m.pool,poolAbi,'ticketOf',[reservation.ref]);
+   if(ticket.matchId!==reservation.ref.id||ticket.epoch!==reservation.ref.epoch)throw Error('Reservation ticket identity changed');
+   const commitment=await read(app,arenaAbi,'resultCommitment');
+   if(overdueAgentPublication({app,...d},ticket,commitment,block.timestamp)){
+    await act(m.hub,'forceClose',[app,zeroHash]);return;
+   }
+  }
   // An active or unpublished game never migrates to a different arena.
   if(d.status===1&&!occupied&&(d.expiresAt<=block.timestamp+420n||budget&&!reusableAdmissionBudget(budget,d.batchIndex,d.expiresAt,block.timestamp))&&!cooling(m.pool,'closeReusableArena')){
    await act(m.pool,'closeReusableArena',[app]);return;
