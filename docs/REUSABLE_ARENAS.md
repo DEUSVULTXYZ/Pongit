@@ -1,5 +1,35 @@
 # Reusable arenas and testnet admission transport
 
+## Migrated human deployment, 21 September 08:10 UTC
+
+The historical human source released epoch 7 at block 64,392,852. It is retired,
+not renewed. After confirmed profile-write freeze, the final canonical snapshot
+at block 64,392,960 preserved ten username reservations and six ratings. The new
+sealed registry was checked field by field at block 64,394,468. Existing avatars
+are supplied as migration hints; their owners claim the reserved profile through
+the normal signed save. No private data or financial balance is copied arbitrarily.
+
+The new lobby is `0x5dbea9692d443e04e1bd0b74fb307b079a5cb212`.
+Its first actual hosted arena is `0x596562d63e678a2b391ff01f63cf7ded99fc2c25`.
+These remain private until the remaining release gates pass. The final migration
+backup, including the original operator journal, has fifteen verified off-VPS
+file hashes. Earlier complete backups and old contracts remain available.
+
+Real Chrome Chaos, Chrome Classic and Edge Classic runs passed on the compiled
+new build and new contracts. All three clients observed 3, 2, 1; each player sent
+more than one hundred confirmed directions, reused the session after F5 and saw
+the same final score. Chaos included a root-signed test-MON bet. These used real
+Mera with virtual PRF authenticators, not physical-device recovery. Safe reports
+are under `artifacts/qualification/20260921/migration`.
+
+A separately bounded interruption fixture prepares a real private Chaos match,
+then requires an explicit marker after stopping its isolated service. It observes
+the real engine clock for thirty minutes before checking technical cancellation,
+publication and participation recovery. Its implementation is not a passing
+trial and does not claim continuous gameplay during the deliberate interruption.
+Two old private human sessions are cooling until 08:42 UTC to reclaim our own
+validator capacity. Public admissions and Agent Arcade remain closed.
+
 ## Human admission recovery, 21 September 2026
 
 The renewed human rules-14 arena exposed a real observer defect. `openEngine`

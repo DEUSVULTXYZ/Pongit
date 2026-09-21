@@ -20,12 +20,14 @@ const m=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8')
 assert.equal(m.production,false);assert.equal(m.rulesVersion,14);assert.equal(m.status,'sealed');
 const label=process.env.PONG_REUSABLE_ADMISSION_RUN!;assert(/^[a-z0-9-]{1,32}$/.test(label));
 const existing=(process.env.PONG_REUSABLE_ADMISSION_EXISTING??'').split(',').filter(Boolean).map(BigInt);
-assert(existing.length===0||existing.length===2,'Explicit existing epochs required for both test arenas');
+const arenaCount=Number(process.env.PONG_REUSABLE_ADMISSION_COUNT??2);
+assert(arenaCount===1||arenaCount===2,'Bounded one/two-arena private trial');
+assert(existing.length===0||existing.length===arenaCount,'Explicit existing epoch (zero means released) for each test arena');
 const priorPublished=process.env.PONG_REUSABLE_ADMISSION_HISTORY==='verified-published';
 const file=`artifacts/reusable-candidate/admission-${label}.json`;
 await mkdir('artifacts/reusable-candidate',{recursive:true});
 let report:any={startedAt:new Date().toISOString(),lobby:m.lobby,arenas:[],assignments:[],passed:false,
- scope:'Two verified idle hosted arenas and at most eight private test assignments over 45 minutes; no production budget or continuity qualification.'};
+ scope:`${arenaCount} verified idle hosted arenas and at most eight private test assignments over 45 minutes; no production budget or continuity qualification.`};
 try{report=JSON.parse(await readFile(file,'utf8'));assert.equal(report.lobby,m.lobby);assert(!report.finishedAt,'Preserve completed fixture');}
 catch(e){if((e as any).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(report,null,2));await rename(file+'.next',file);};
@@ -36,13 +38,13 @@ const write=(...args:Parameters<typeof t.write>)=>retryOperatorContention(()=>t.
 const deadline=Date.parse(report.startedAt)+45*60_000;
 try{
  assert(deadline>Date.now(),'Original fixture deadline expired');
- for(const a of m.arenas.slice(0,2)){
+ for(const a of m.arenas.slice(0,arenaCount)){
   assert.equal((await read(a.app,arenaAbi,'lobby')).toLowerCase(),m.lobby.toLowerCase());
   let d=await readHubDelegation(t.base,m.hub,a.app),row=report.arenas.find((x:any)=>x.app===a.app);
   if(!row){
    assert.equal(await read(m.lobby,lobbyAbi,'reservedMatch',[a.app]),0n);
    const [prior,count]=await read(a.app,arenaAbi,'resultCommitment');
-   if(existing.length){
+   if(existing.length&&existing[m.arenas.indexOf(a)]>0n){
     assert.equal(d.status,1);assert.equal(d.epoch,existing[m.arenas.indexOf(a)]);assert.equal(prior,d.epoch);
     const [slotEpoch,id]=await read(a.app,arenaAbi,'currentMatch');
     if(count===0){assert.equal(slotEpoch,0n);assert.equal(id,0n);}
@@ -70,8 +72,15 @@ try{
   row.baseBlock=String(d.baseBlock);row.expiresAt=String(d.expiresAt);await save();
  }
  while(Date.now()<deadline&&report.assignments.length<8){
-  const response=await fetch('http://independent-events-service:4012/independent/config',{signal:AbortSignal.timeout(8000)});
-  assert(response.ok,'Private service unavailable');const config=await response.json() as any;
+  let config:any;
+  try{
+   const response=await fetch('http://independent-events-service:4012/independent/config',{signal:AbortSignal.timeout(8000)});
+   assert(response.ok,'Private service unavailable');config=await response.json();
+  }catch{
+   report.observedAt=new Date().toISOString();report.waiting='private-service-unavailable';await save();
+   await new Promise(resolve=>setTimeout(resolve,2500));continue;
+  }
+  delete report.waiting;
   assert.equal(config.manifest.lobby.toLowerCase(),m.lobby.toLowerCase());
   report.observedAt=new Date().toISOString();
   report.health=config.arenas.map((a:any)=>({app:a.app,stage:a.stage,epoch:a.epoch}));await save();
