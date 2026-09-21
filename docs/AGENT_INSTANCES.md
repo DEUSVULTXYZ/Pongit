@@ -1,6 +1,7 @@
 # House bot archetypes and independent matches
 
-Status on 21 September 2026, 15:23 UTC: implemented candidate, not deployed.
+Status on 21 September 2026, 15:38 UTC: private candidate deployed with both
+admission gates closed; not activated on the public site.
 The current immutable pool still reserves an official bot identity throughout a
 tournament. The user clarified that a bot should be a reusable archetype able to
 play people and other bots concurrently.
@@ -62,7 +63,7 @@ reads the same opponent eligibility view used by the new contract. Catalogue
 responses retain competitive participation and separately expose per-mode
 friendly instance eligibility. Friendly waiting then refers to arena capacity.
 
-Local validation on 21 September: root TypeScript passed, 646 TypeScript tests
+Local validation on 21 September: root TypeScript passed, 647 TypeScript tests
 passed and 89 relevant Solidity tests passed, including 17 candidate-pool cases.
 Coverage includes both capture orders, repeated capture, unpublished results,
 unadmitted cancellation, renewal, catalogue/controller spoofing, community
@@ -82,3 +83,13 @@ migration script.** Public replacement must preserve verified ratings, official
 identities, registrations, pending requests and historical routes; the current
 tournament must finish before retirement. Actual concurrent hosted admission,
 publication and human controls are still required.
+
+The private authority is `0xed5998627c21188db01750ea03b2309311435f5b`
+(source `1af79ad`). All 51 deployment/setup transactions succeeded. No engine
+delegation was opened: the real hub currently rejects the three opening
+simulations with `ValidatorAtCapacity` (`0xe90bcd65`). Rather than requesting a
+provider change, the existing keeper will recover and retire the already-closing
+owned arena `0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b` after its actual release
+deadline, 21 September 16:09:21 UTC. The other public arenas remain operational.
+Retirement creates an opportunity for private admission, not a guaranteed slot.
+See [the evidence and remaining migration work](validation/agent-instances-20260921.md).

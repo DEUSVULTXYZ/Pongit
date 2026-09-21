@@ -1,0 +1,217 @@
+Compiling 11 files with Solc 0.8.30
+Solc 0.8.30 finished in 114.12s
+Compiler run successful with warnings:
+Warning (2519): This declaration shadows an existing declaration.
+   --> test/AgentSeriesPool.t.sol:196:18:
+    |
+196 |                 (address app,uint256[] memory ids)=openGroup(earlier);finishGroup(app,ids);releaseClosed();
+    |                  ^^^^^^^^^^^
+Note: The shadowed declaration is here:
+   --> test/AgentSeriesPool.t.sol:200:10:
+    |
+200 |         (address app,uint256[] memory ids)=openGroup(league);
+    |          ^^^^^^^^^^^
+
+Warning (2519): This declaration shadows an existing declaration.
+   --> test/AgentSeriesPool.t.sol:196:30:
+    |
+196 |                 (address app,uint256[] memory ids)=openGroup(earlier);finishGroup(app,ids);releaseClosed();
+    |                              ^^^^^^^^^^^^^^^^^^^^
+Note: The shadowed declaration is here:
+   --> test/AgentSeriesPool.t.sol:200:22:
+    |
+200 |         (address app,uint256[] memory ids)=openGroup(league);
+    |                      ^^^^^^^^^^^^^^^^^^^^
+
+Warning (5740): Unreachable code.
+   --> src/labs/PongInterludeRoomsChaos.sol:349:9:
+    |
+349 |         Rating memory rb = ratingOf(b, mode);
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (5740): Unreachable code.
+   --> src/labs/PongInterludeRoomsChaos.sol:350:9:
+    |
+350 |         _set(id, 12, uint256(ra.elo) | (uint256(rb.elo) << 32));
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (5740): Unreachable code.
+   --> src/labs/PongInterludeRoomsChaos.sol:351:9:
+    |
+351 |         (ra, rb) = _calculate(ra, rb, winner == a, _pairCount(a, b, mode));
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (5740): Unreachable code.
+   --> src/labs/PongInterludeRoomsChaos.sol:352:9:
+    |
+352 |         _rating(id, a, ra);
+    |         ^^^^^^^^^^^^^^^^^^
+
+Warning (5740): Unreachable code.
+   --> src/labs/PongInterludeRoomsChaos.sol:353:9:
+    |
+353 |         _rating(id, b, rb);
+    |         ^^^^^^^^^^^^^^^^^^
+
+Warning (5740): Unreachable code.
+   --> src/labs/PongInterludeRoomsChaos.sol:354:9:
+    |
+354 |         _set(id, 12, _get(id, 12) | (uint256(ra.elo) << 64) | (uint256(rb.elo) << 96));
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/chaos/ChaosDynamics.sol:84:5:
+   |
+84 |     function force(T.State memory s) external view returns(T.State memory){
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/autonomous/AuthorityRating.sol:42:5:
+   |
+42 |     function _calculate(
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/Independent.t.sol:60:5:
+   |
+60 |     function _sig(uint256 key,bytes32 h) private view returns(bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+   --> test/AgentSeriesPool.t.sol:135:5:
+    |
+135 |     function sign(uint256 key,bytes32 digest) private returns(bytes memory){
+    |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 1 test for test/ReusableAgentLearning.t.sol:ReusableAgentLearningTest
+[PASS] testInvalidatedBranchAndCorrectionCannotSeedReplacement() (gas: 2976548)
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 12.98ms (3.12ms CPU time)
+
+Ran 4 tests for test/AgentQualifications.t.sol:AgentQualificationsTest
+[PASS] testCorrectedEngineCancellationRestoresStandingBeforeTrial() (gas: 395088)
+[PASS] testInvalidDecisionsCannotHideBehindValidOnesAndNonceIsPoolOnly() (gas: 372286)
+[PASS] testOldTrialCorrectionCannotEraseNewQualificationOrChangeItsRetry() (gas: 644026)
+[PASS] testTechnicalCancellationCanBeCorrectedWithoutLosingLaterValidEvidence() (gas: 393952)
+Suite result: ok. 4 passed; 0 failed; 0 skipped; finished in 12.99ms (1.79ms CPU time)
+
+Ran 3 tests for test/AgentPublishedRatings.t.sol:AgentPublishedRatingsTest
+[PASS] testDifferentArenasShareOneLedgerAndCorrectionRebuildsAtomically() (gas: 1228262)
+[PASS] testDrawLeavesEloPlacementsAndPairCountUnchanged() (gas: 1019894)
+[PASS] testFriendlyAndCancellationNeverChangeAgentRatings() (gas: 910582)
+Suite result: ok. 3 passed; 0 failed; 0 skipped; finished in 13.00ms (1.55ms CPU time)
+
+Ran 10 tests for test/ReusableAgentPool.t.sol:ReusableAgentPoolTest
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6774512)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 3981289)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2209371)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2525413)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3826804)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4095526)
+[PASS] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6206195)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 31582
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6793408)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 2921629)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2177481)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 31.15ms (37.67ms CPU time)
+
+Ran 23 tests for test/AgentSeriesPool.t.sol:AgentSeriesPoolTest
+[PASS] testAdmissionIsFrozenAndCannotBeExtendedByOperatorOrPlayer() (gas: 1110820)
+[PASS] testArchiveRecordsOnlyVerifiedChangedPublicationsAndFinality() (gas: 6962735)
+[PASS] testBrainLearningFollowsTournamentAcrossTheSeries() (gas: 2985581)
+[PASS] testBudgetDrainPublishesOneCancellationPerCommand() (gas: 3006812)
+[PASS] testBudgetReservesWholeNextMatchAndDrainsWithoutStartingIt() (gas: 1627646)
+[PASS] testCancelledFutureLeagueGamesCannotEraseCompletedControllerLearning() (gas: 38414955)
+[PASS] testCannotAdmitSecondSeriesOrForgeHistoricalReference() (gas: 7874040)
+[PASS] testCannotSkipLiveMatchOrDrainAnAvailableSeries() (gas: 1250522)
+[PASS] testCommonPoolFitsReviewedMonadRuntimeBudget() (gas: 5572)
+[PASS] testConsecutiveClassicChaosShareEpochAndKeepSeparateResults() (gas: 3767736)
+[PASS] testDuplicateIdsAndAmbiguousControllersRejected() (gas: 293328)
+[PASS] testExpiredChallengeCanBeCancelledWithoutEpochOrScore() (gas: 2068839)
+[PASS] testExpiredSeriesCancelsUnstartedGamesWithoutFakeScore() (gas: 6856870)
+[PASS] testHumanChallengeHasPriorityAndOnlyItsBoundKeyCanPlay() (gas: 2648168)
+[PASS] testNewDelegationDoesNotOverwritePriorBindingsOrResults() (gas: 1923600)
+[PASS] testOldCommandsCannotReachNewGameAndFreshNonceIsIndependent() (gas: 3019739)
+[PASS] testProductionRuntimeRemainsDeployable() (gas: 8183809)
+[PASS] testPublishedBudgetDrainReleasesUnstartedReservationsBeforeHubFinality() (gas: 6937295)
+[PASS] testPublishedQuarterResultsUnlockOnlyKnownNextOpponents() (gas: 16477039)
+[PASS] testQualificationsReserveDistinctPairsAndRequirePublishedControllerEvidence() (gas: 2714946)
+[PASS] testRecoveryCannotRewriteAlreadyCompletedGame() (gas: 1719468)
+[PASS] testUnopenedTournamentCancellationPreservesEpochAndRetriesFreshMatch() (gas: 9036420)
+[PASS] testWaitingHumanDoesNotInterruptQualificationButWinsNextAdmission() (gas: 3258102)
+Suite result: ok. 23 passed; 0 failed; 0 skipped; finished in 34.60ms (83.22ms CPU time)
+
+Ran 9 tests for test/AgentTournaments.t.sol:AgentTournamentsTest
+[PASS] testCorrectionInvalidatesOnlyDescendantsAndWaitsForExistingParticipation() (gas: 14005696)
+[PASS] testFourFormatsCompleteWithContractScheduleAndOneMinuteGap() (gas: 61046300)
+[PASS] testKnockoutDrawHasAdministrativeAdvanceWithoutChangingPublishedWinner() (gas: 3041163)
+[PASS] testLeagueStandingsRecalculateAfterPublishedCorrection() (gas: 35777165)
+[PASS] testNamesCannotImpersonateOfficialBotsAndCodeMustRemainImmutable() (gas: 548781)
+[PASS] testNoDoubleBindingWrongReferenceOrCrossControllerUnlock() (gas: 2376047)
+[PASS] testRoundRobinVisitsEachPairOnceAndDeployedContractsFit() (gas: 73979)
+[PASS] testSelectionUsesLongestWaitAndRestartsOnConcurrentCatalogueChange() (gas: 17031131)
+[PASS] testTransportErrorPreservesResultAndFinalityCannotBeReversed() (gas: 2176305)
+Suite result: ok. 9 passed; 0 failed; 0 skipped; finished in 35.91ms (76.55ms CPU time)
+
+Ran 14 tests for test/AgentArenaPool.t.sol:AgentArenaPoolTest
+[PASS] testActiveRevocationAndExplicitRootRenewalDoNotGrantBotOrFinancialRights() (gas: 1715551)
+[PASS] testExpiredUnpublishedArenaReleasesOnlyAfterRealHubDeadline() (gas: 4009144)
+[PASS] testFiveMinuteChallengeDrawHasNoHumanElo() (gas: 2212932)
+[PASS] testFiveMinuteLeadStopsBeforeAnyOvertimeAndDrawGetsOneMinute() (gas: 6580835)
+[PASS] testHouseQualifiesFromPublishedValidDecisionsRegardlessOfWinner() (gas: 3792913)
+[PASS] testHumanChallengesWaitForTournamentAndCannotUseBotKeys() (gas: 3004283)
+[PASS] testInvalidControllerFallsBackSafelyButDoesNotQualify() (gas: 4070588)
+[PASS] testNoEarlyPublicationNoArbitraryResultAndUncertainOpenCannotDuplicate() (gas: 2947632)
+[PASS] testPrivateTrialNeverPretendsToBeQualifiedPublicCapacity() (gas: 1305186)
+[PASS] testQualificationCannotOvertakeWaitingHumanAndCancellationIsRetry() (gas: 3394952)
+[PASS] testRuntimeSizesAreDeployable() (gas: 7319454)
+[PASS] testSharedGrantControlsOnlyTheHumanSeatAndProfilesDoNotGrantPermissions() (gas: 3233761)
+[PASS] testTournamentAndHumanChallengeUseSeparateLanesAndThirdArenaDuringClosure() (gas: 8350157)
+[PASS] testUnopenedFailureCanBeCancelledWithoutInventingAnEpochOrConsumingNonce() (gas: 4074330)
+Suite result: ok. 14 passed; 0 failed; 0 skipped; finished in 39.51ms (42.78ms CPU time)
+
+Ran 17 tests for test/ReusableAgentInstancesPool.t.sol:ReusableAgentInstancesPoolTest
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6775033)
+[PASS] testCommunityIdentityCannotUseHouseInstancesToBypassTournamentLock() (gas: 1967102)
+[PASS] testCommunityQualificationCanUseAHouseOpponentDuringItsTournament() (gas: 6953950)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 3981744)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2171256)
+[PASS] testFriendlyMissingPublicationAndCancellationCannotReleaseTournamentIdentity() (gas: 5765159)
+[PASS] testHouseInstancesStillUseExactlyTwoLanesAndRejectAThirdAdmission() (gas: 5561560)
+[PASS] testHouseTournamentAndFriendlyCaptureInEitherOrder() (gas: 81584997)
+[PASS] testInstanceEligibilityRequiresPinnedOfficialControllerAndQualifiedMode() (gas: 395208)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2541299)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3846013)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4114694)
+[PASS] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6206382)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 32603
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6794461)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 2938751)
+[PASS] testUnadmittedHouseInstanceCancellationAndRenewalPreserveTournamentLock() (gas: 6452995)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2194650)
+Suite result: ok. 17 passed; 0 failed; 0 skipped; finished in 39.53ms (72.96ms CPU time)
+
+Ran 8 tests for test/ReusableAgentArena.t.sol:ReusableAgentArenaTest
+[PASS] testAgentBindingCrossLanguageGoldenVector() (gas: 3451)
+[PASS] testAllEightPoliciesUseFixedStorageAndNewMatchesResetControls() (gas: 28978885)
+Logs:
+  agent short-game distinct keys: 46
+
+[PASS] testBatchTimestampJumpCannotSkipAgentCountdown() (gas: 914681)
+[PASS] testFiveMinutesResolvesScoreBeforeAnyLateCatchup() (gas: 2376226)
+[PASS] testHouseReadinessAndHumanCountdownRemainSeparate() (gas: 1475004)
+[PASS] testNoFinancialPressureAndNoExternalBotControls() (gas: 841700)
+[PASS] testRegulationDrawAndCappedOvertimeDoNotInventWinner() (gas: 2014119)
+[PASS] testRootAndGameHaveDeploymentBudgets() (gas: 7230)
+Logs:
+  agent harness runtime: 27736
+
+Suite result: ok. 8 passed; 0 failed; 0 skipped; finished in 111.77ms (133.98ms CPU time)
+
+Ran 9 test suites in 120.38ms (331.44ms CPU time): 89 tests passed, 0 failed, 0 skipped (89 total tests)

@@ -1,0 +1,36 @@
+{
+  "at": "2026-09-21T15:36:29.582Z",
+  "source": "1af79ad",
+  "block": "64484495",
+  "blockHash": "0x3737fcbbd4487d87c0d4b573b0781dd79e7da8a342a9a2a11de44fee8323d53a",
+  "pool": "0xed5998627c21188db01750ea03b2309311435f5b",
+  "publicAdmissions": false,
+  "admissions": false,
+  "authorityVersion": "2",
+  "arenas": [
+    {
+      "app": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+      "simulated": false,
+      "opened": false,
+      "error": "The contract function \"openReusableArena\" reverted with the following signature:\n0xe90bcd65"
+    },
+    {
+      "app": "0x515b86ad589ecd352e0536d106d4bf154d1dd960",
+      "simulated": false,
+      "opened": false,
+      "error": "The contract function \"openReusableArena\" reverted with the following signature:\n0xe90bcd65"
+    },
+    {
+      "app": "0xc9641ff6d5477d13e6000aa68e762ba6c8b69b71",
+      "simulated": false,
+      "opened": false,
+      "error": "The contract function \"openReusableArena\" reverted with the following signature:\n0xe90bcd65"
+    }
+  ],
+  "deployment": {
+    "confirmed": 51,
+    "gas": "102825650",
+    "MON": "10.4882163"
+  },
+  "qualified": false
+}

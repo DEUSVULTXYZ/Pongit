@@ -1,0 +1,102 @@
+# House instances candidate and capacity handoff, 21 September 2026
+
+The public preview still uses its original immutable authority. Its house bots
+remain exclusively reserved for tournaments until the replacement is qualified
+and migrated. Human Classic/Chaos and the live agent tournament remain open.
+
+## Candidate implementation and deployment
+
+Source `1af79ad` adds official house instances with separate friendly/qualification
+state and preserves tournament participation. Its local validation passed root
+TypeScript, the complete 646-test TypeScript suite and 89 relevant Solidity tests.
+The subsequent retirement-policy change `0116c96` passed root TypeScript and the
+complete 647-test suite. There are 17 candidate-pool Solidity cases. These are
+authority/transport tests, including terminal-state harnesses, not real matches.
+
+The first inline-library build failed the unchanged 32 KiB pool budget at 33,687
+bytes. The linked helper version is 32,603 bytes, with a 1,237-byte helper and
+24,516-byte agent arena. Both failed and successful reports are preserved under
+`artifacts/qualification/20260921/house-instances`.
+
+The private testnet deployment completed at 15:27:13 UTC:
+
+| Contract | Address |
+| --- | --- |
+| Pool, authority version 2 | `0xed5998627c21188db01750ea03b2309311435f5b` |
+| Catalogue | `0xf6647b9bad7e4329b46a6c0019ec387d8bc4bd24` |
+| Tournaments | `0x18c537165368e48c0ffc03e40800469a72e0b13d` |
+| Published ratings | `0x53e1d68929932beaeaf42cd40844d1363a521cdc` |
+| Qualifications | `0x37f2b50d880454a5edaf5e48c35a24e6b02f9791` |
+| Arcade family | `0x1326ffc0a90ead2d22244f0248e78de2551eb621` |
+| Challenges | `0x17cf9a6d528462531b621cbb9b4b1f9d5a5c1a5a` |
+| Result verifier | `0x8c080065e19a9cd4e5aafbd4b536465ef58e5e23` |
+
+Registered empty arenas are `0xdde88fadb426e6e26fa58cbef3ad98de4946b64e`,
+`0x515b86ad589ecd352e0536d106d4bf154d1dd960` and
+`0xc9641ff6d5477d13e6000aa68e762ba6c8b69b71`. Registration is not provider capacity.
+Both admission gates remain false. The 51 successful receipts used 102,825,650
+gas in total and cost 10.4882163 test MON. No financial market was deployed.
+
+Opening simulations at 15:36:29 UTC, observation block 64484495, all failed with
+`ValidatorAtCapacity()` / `0xe90bcd65`. No opening transaction was sent and no
+hosted instance, human-bot match or 24-hour qualification is claimed.
+
+## Reusing owned capacity
+
+The sole public keeper now runs the `0116c96` step and two pinned helper files
+over the existing `progress-4e90490` image. Its step SHA-256 is
+`275339fff558c08d4f6cfa9fc025568c9d60a5c16bd1b5faa440be4cfb977999`.
+The change was applied at 15:35:11 UTC without restarting the engine controllers,
+reader, sponsor, web or human backend. Its original state and nonce journal remain
+in use; no second keeper was started.
+
+`metadata/renewal-policy.json` excludes only the already-closing public agent
+arena `0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b` from new openings. Its epoch 2
+release deadline is 16:09:21 UTC. The keeper still captures, releases, seals and
+recovers it normally. The policy neither forces closure nor erases uncertain
+transactions. At 15:35, `7fb…` epoch 2 continued match 50 and `f868…` epoch 3 was
+available. Private admission must wait for actual release and successful hub
+acceptance; no capacity count is inferred from this policy.
+
+Rollback removes the policy and these source mounts from the backed-up Compose
+configuration, then replaces only the keeper using its same journals. Do not
+reopen the retired arena if a new candidate has already consumed its capacity.
+Never restart a private keeper against these public arenas.
+
+## Replay index repair
+
+The live engine and reader had the correct shared index URL and matching private
+admin credential, but Hasura exported a `default` source with zero tracked
+tables. Its only GraphQL field was `no_queries_available`; requests for `Match`
+failed even though PostgreSQL contained `indexer.Match` and recorded replays.
+
+After a verified off-VPS metadata backup, an additive `pg_track_table` operation
+exposed the existing table as `Match` at 15:29:20 UTC. No table, row, permission or
+public endpoint was created or deleted. The actual retention query returned
+HTTP 200 with a row. There were zero `Reconciliation pending` messages in the
+engine log from 15:30 through the 15:37 check. The shared index is still catching
+up; missing indexed matches remain honestly marked `indexing`, not pruned.
+
+## Backups and remaining gates
+
+Before deployment, operator and agents database dumps and configuration were
+verified off VPS (`house-instances-before-20260921T1523Z`). After deployment,
+new candidate private state, the operator dump and public configuration/state
+were verified off VPS (`house-instances-deployed-20260921T1536Z`). The original
+Hasura metadata is in `agent-replay-metadata-20260921T1531Z`; directory names are
+backup identifiers, not an event-time source. No secret is included in this repo.
+The final keeper policy, mounted sources, Compose configuration and journal
+state were also verified off VPS in `house-instances-retirement-20260921T1540Z`.
+
+The private namespace is `reusable-agents-20260921-1`; source/artifacts are in
+`/opt/pongit/tests/arcade-release-20260919/house-instances-1af79ad`. The bounded
+deployment container exited successfully. There is no new engine/keeper running
+for this candidate. Continue through the same operator journal and lock 701340.
+
+Still required: actual hosted qualification and publication of concurrent house
+instances; human controls; preserving old identities, community registrations,
+ratings, pending requests and contract-qualified historical routes during public
+migration. This candidate intentionally has a fresh private season and new house
+addresses; its deployment record must not replace production metadata directly.
+Remaining release gates include full championships, the missing Chaos coverage,
+shared replay catch-up, reserve/rotation and the unchanged 24-hour trial.

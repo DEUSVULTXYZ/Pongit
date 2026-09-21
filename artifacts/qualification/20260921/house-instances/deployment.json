@@ -1,0 +1,411 @@
+{
+  "at": "2026-09-21T15:27:13.508Z",
+  "prefix": "reusable-agents-20260921-1",
+  "rulesVersion": 15,
+  "houseInstances": "official-v1",
+  "common": {
+    "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+    "pool": "0xed5998627c21188db01750ea03b2309311435f5b",
+    "catalog": "0xf6647b9bad7e4329b46a6c0019ec387d8bc4bd24",
+    "tournaments": "0x18c537165368e48c0ffc03e40800469a72e0b13d",
+    "ratings": "0x53e1d68929932beaeaf42cd40844d1363a521cdc",
+    "qualifications": "0x37f2b50d880454a5edaf5e48c35a24e6b02f9791",
+    "family": "0x1326ffc0a90ead2d22244f0248e78de2551eb621",
+    "challenges": "0x17cf9a6d528462531b621cbb9b4b1f9d5a5c1a5a",
+    "verifier": "0x8c080065e19a9cd4e5aafbd4b536465ef58e5e23"
+  },
+  "admissionSigner": "0xd149D1612e2462c8DB6815F8c912f61F80941AA4",
+  "arenas": [
+    {
+      "app": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+      "runtimeHash": "0xf89867c00a1db64b9fbe43371cc7e3afe9865063af19739d652737b834bca62d"
+    },
+    {
+      "app": "0x515b86ad589ecd352e0536d106d4bf154d1dd960",
+      "runtimeHash": "0x6fea2a395c7529a45edd07093a6b95cf1ccb2822ba508e2c8fc19d12f222029a"
+    },
+    {
+      "app": "0xc9641ff6d5477d13e6000aa68e762ba6c8b69b71",
+      "runtimeHash": "0xdfa954d3d4f863b68635206ed3bec7ad046cfb7c662824290fdc7b0f879f7cbd"
+    }
+  ],
+  "bots": [
+    {
+      "agent": "0x0326Fd11a8F74534b38F2A09B04A6Ba87bfc7592",
+      "name": "NOVA",
+      "difficulty": "Rookie",
+      "avatar": 0,
+      "reactionMs": 280,
+      "error": 58,
+      "deadZone": 17
+    },
+    {
+      "agent": "0xf26907145a382cED201b126da6d0d756abfB39a2",
+      "name": "PULSE",
+      "difficulty": "Arcade",
+      "avatar": 3,
+      "reactionMs": 160,
+      "error": 25,
+      "deadZone": 10
+    },
+    {
+      "agent": "0x4889162D88D1e33B3F781d5e66d0D61a004e2543",
+      "name": "ONYX",
+      "difficulty": "Expert",
+      "avatar": 8,
+      "reactionMs": 85,
+      "error": 8,
+      "deadZone": 6
+    },
+    {
+      "agent": "0x752B5f82555E01CbB7E47e01Db8D03F9D5009019",
+      "name": "VECTOR",
+      "difficulty": "Wall reader",
+      "avatar": 2,
+      "reactionMs": 120,
+      "error": 12,
+      "deadZone": 7
+    },
+    {
+      "agent": "0xCaD10Dc0Eebd87d13CF4EEfb7F3E97C5d6D6DEAA",
+      "name": "DRIFT",
+      "difficulty": "Mobile defender",
+      "avatar": 4,
+      "reactionMs": 110,
+      "error": 20,
+      "deadZone": 9
+    },
+    {
+      "agent": "0xEb64A667208d9b407C4C1518e954c73475194A57",
+      "name": "ECHO",
+      "difficulty": "Adaptive",
+      "avatar": 7,
+      "reactionMs": 140,
+      "error": 15,
+      "deadZone": 8
+    },
+    {
+      "agent": "0xa7cA93327ab5a3bf145cf927A7c23674b8Df1d0E",
+      "name": "GLITCH",
+      "difficulty": "Unpredictable aim",
+      "avatar": 9,
+      "reactionMs": 130,
+      "error": 42,
+      "deadZone": 8
+    },
+    {
+      "agent": "0xE54399e57c856b183880bedecF23ca281B23EdD6",
+      "name": "VIPER",
+      "difficulty": "Edge chaser",
+      "avatar": 11,
+      "reactionMs": 105,
+      "error": 10,
+      "deadZone": 5
+    }
+  ],
+  "modules": {
+    "ChaosCodec": "0x5d7c0488154ba2fc61152b191e790191c1cf7634",
+    "ChaosEffects": "0x0cb6e01bd1f35c402fafda9d0c4970b47497428b",
+    "ChaosModifiers": "0x6fd27eefe68e25128d0cdb6e544d7bece7e9feec",
+    "ChaosDynamics": "0x8da535cbecf957cc3f051bf3fac8e7d2dbbdc32e",
+    "ChaosContacts": "0x9c8b59bb1ed53c765c0fd85c7b475523803fe301",
+    "ChaosRally": "0x4384e3d1e094b2c23b3ddc87e98ec93e56692a5d",
+    "ChaosPhysics": "0xd56b9af1d3fe9109d75d9d65e8244063f5585805",
+    "DrandEvmnet": "0x07d897c3a858b2c4e40bda75f4b2b35c279bf365",
+    "ChaosDrawRules": "0xd74273c766d239e8c83af3bbf768d1de77f7ae71",
+    "ChaosEngine": "0xe21c5b94cfddf37c21c7c86404c02c2115ccd4a1",
+    "HousePolicies": "0x4916cbd50552bea4ab8ec7d78d85fe8321398ee6",
+    "HouseInstances": "0xd4f93a04479e785e70fda445e348d84296916c74",
+    "AgentCatalog": "0xf6647b9bad7e4329b46a6c0019ec387d8bc4bd24",
+    "PoolPublication": "0x7daefdd10e168a8bf3cf0c57c943d55313cb9356",
+    "ReusableAgentLearning": "0xea4fe69fef84109560ddeeab99aacb877328f91b",
+    "ReusableAgentInstancesPool": "0xed5998627c21188db01750ea03b2309311435f5b",
+    "PublishedResultVerifier": "0x8c080065e19a9cd4e5aafbd4b536465ef58e5e23",
+    "AgentTournaments": "0x18c537165368e48c0ffc03e40800469a72e0b13d",
+    "AgentPublishedRatings": "0x53e1d68929932beaeaf42cd40844d1363a521cdc",
+    "HouseInstanceQualifications": "0x37f2b50d880454a5edaf5e48c35a24e6b02f9791",
+    "ArcadeFamily": "0x1326ffc0a90ead2d22244f0248e78de2551eb621",
+    "HouseInstanceChallenges": "0x17cf9a6d528462531b621cbb9b4b1f9d5a5c1a5a",
+    "ReusableAgentBinding": "0x2058dc836983a6b28619e02809b1ff99ffe5cd26",
+    "PoolSteer": "0xb6b26e449b1c6965ab46019576845065d6101e9f",
+    "ChaosGameFlow": "0xf5d036b867a52c1938d647ce4f24ac65cb8b8d16",
+    "PendingControls": "0x9b87da1f1935ab783bc7700b3cc2210b8f9c7fc3",
+    "RoomsState": "0x47211ca686940b080e8f7d54e8a2b854c1b730bc",
+    "ReusableAgentGame": "0x9cb29bc590765b5031997c4833d7215afb9ec998",
+    "ReusableAuthorizations": "0x59cb905516cdea205cc372cd17cf19e45b431490",
+    "ReusableAgentArena-0": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+    "ReusableAgentArena-1": "0x515b86ad589ecd352e0536d106d4bf154d1dd960",
+    "ReusableAgentArena-2": "0xc9641ff6d5477d13e6000aa68e762ba6c8b69b71"
+  },
+  "indexBinding": {
+    "chainId": 10143,
+    "rulesVersion": 15,
+    "pool": "0xed5998627c21188db01750ea03b2309311435f5b",
+    "startBlock": "64482346",
+    "arenas": [
+      "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+      "0x515b86ad589ecd352e0536d106d4bf154d1dd960",
+      "0xc9641ff6d5477d13e6000aa68e762ba6c8b69b71"
+    ]
+  },
+  "delegationOpened": false,
+  "publiclyEnabled": false,
+  "qualified": false,
+  "transactions": [
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaoscodec",
+      "hash": "0x46d5f974232effedef8af25a904ce2c18208958125610998d447d783884bc5ec",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaoseffects",
+      "hash": "0x98a966f6ee0ccd87b18d93a74fd618cb8d127fd5bcce03679e01ae94a9520ce6",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaosmodifiers",
+      "hash": "0xdca5692b625d4c8e8032cb0ba28cd0e778b6aea8892376c16ecf417adebdbf92",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaosdynamics",
+      "hash": "0xd6c8025ae990a6fbd1ee44388ebba09563f0f8a9518ee02aa3114ae822f939ea",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaoscontacts",
+      "hash": "0xf35a6cddbc1db1e5ea2bf8a9b1c1c701e237a0ff4b0b3217cd829562fd723ca9",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaosrally",
+      "hash": "0x7172efc67a69783582f05ae661ff0019b196459a6690a5a641421de74a24fffc",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaosphysics",
+      "hash": "0xcea897ab62bc48259100af3088a8e06553133339524e22a4d7abcd575b25e108",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-drandevmnet",
+      "hash": "0x9e5a0849ccf15cf0106a0eaf02f7e3ce56376660e19f4ceec285cd2566cae2ea",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaosdrawrules",
+      "hash": "0xad219f5b67bc5cde94eeac729e9c2323a84106dacfd92fac5ac89f3a954ae086",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaosengine",
+      "hash": "0x1ed1ca1f753c9ec106eec0f023713f36dcca89030df0a43cbfec833d48425783",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-housepolicies",
+      "hash": "0x14c3da210c00214a77086519ba3a810d6f970dd1fe9d4b36893a9c38eadedaf2",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-houseinstances",
+      "hash": "0xf485b476ab8c166aea842852023b0c3071cb77afe31034e8bf5561107b6b5147",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-agentcatalog",
+      "hash": "0xa5bc1e1f1903187f787557aad51253976716180db4eb8260dcb2228c824c517f",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-poolpublication",
+      "hash": "0x44416a8ac5ac65d5a5b32ce8d55239a69daa4863a75406d73e7123416f6e90c3",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-reusableagentlearning",
+      "hash": "0x8d2e2e073b5977812f11331a1fb5c2ea9bf46ed913e246b98e6bd73737273e48",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-reusableagentinstancespool",
+      "hash": "0x062dbbcfe82cd98bc4e016fd91d10f8b1d793e8744f92e74fba88e71d6e66894",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-publishedresultverifier",
+      "hash": "0xfb66f435f55ff1656acb19bb15acf5ad75a41621465480e7ca697c7b95c3dbbd",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-agenttournaments",
+      "hash": "0xe203dd7005c4949f5ab8a33e5c3271eb3cc4d12dbf3c09012562636eb68b3f6c",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-agentpublishedratings",
+      "hash": "0xc867a46323ad4fc1b160d8a1799696f97b626b344cbcf41caeb2e01b2aaba47f",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-houseinstancequalifications",
+      "hash": "0xc0bc530477faaa792eb73b88aeaac19814500e3450f34faea02e3d8d963ba2b6",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-arcadefamily",
+      "hash": "0xb519105033d31c6084c6c1b4c1485f08f748f848632478ee92b41f62bcb16b4c",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-houseinstancechallenges",
+      "hash": "0x0a4bb23b16a229126d576bb848d310433e0548d453b720b06fbe08d475e304f0",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:configure-catalog",
+      "hash": "0x2f5233bb09cbd06f88c96e37a71f7bc2dba93a681f5e95a9f23bca99ede46b27",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:bind-qualifications",
+      "hash": "0x64f825f8dd3fb527acb2da669d8f040ef70b94e2998446fa44f2a4f3e336b76b",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:bind-challenges",
+      "hash": "0x9226c5e157bcebe08d198ec6a1ed4b201cf13aceb750b13bab71d06a4bfb27d8",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:bind-verifier",
+      "hash": "0x334ed4ab3a4f5dc2e5cf9ca1481aeb3b5efca6596e7c3cca75c4ded0652d6871",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:configure-pool",
+      "hash": "0x4bc58e9689c6c2c7768c2fa3576b54fd103125b410895d730d8521dc32731ac8",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:empty-agent-season",
+      "hash": "0xa0bbf533f453b2e52a597ebd050eab1e312f75366991b1941f8106afe8da764b",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:official-0",
+      "hash": "0x10791bf74f325af69f56878d8ff1cddd54f1615140026020f1f528040e472937",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:official-1",
+      "hash": "0x2d092047bcf5153dffbf2325c3e120896dc43f211aa709547b442e05cbe09734",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:official-2",
+      "hash": "0x67d0c1913a84b9b6f40db5ac9038e3e56c5168342b3248cd588ea395886e7301",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:official-3",
+      "hash": "0x6eca2b1787e4f71b926278b32d11872aa0971300ac69543c1aa25f7eabf09b16",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:official-4",
+      "hash": "0x26da3d799d10b8da84e1b7bd5c8ef3dd55a9c8443d942b31431ab0d50b898079",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:official-5",
+      "hash": "0xe23dd19f24bafccd1046331d44f130e6350e2f9b5ea43514dc67d88d4de21c1c",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:official-6",
+      "hash": "0x0497f797e709f9b445118289c2c7baeb7d291aa219424108e143ba8651da43ba",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:official-7",
+      "hash": "0x6596211a083068c952687a3ea063a56abfb3d6ed78dc59f486d6d72fb00b38e0",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:seal-catalog",
+      "hash": "0xded4cbb417c4997a7ba8b45be69aeac47894860111dc7df43494aef835bf823f",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-reusableagentbinding",
+      "hash": "0x486ffe8e95f6adfe0084e1fee72bfdc97eaf29f15e3a83097329ba5cee5322a6",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-poolsteer",
+      "hash": "0xcf1ac56db670d1867e5560c714396bae576bbf85cd4aac3b36c1f076fb84c2d9",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-chaosgameflow",
+      "hash": "0xaa76dddc24e9bdb92ea27e31112664e543688a704d76c656b913b36708e29388",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-pendingcontrols",
+      "hash": "0x794786c07a98d5f49da941fe0f0e421ec78d1f8331fc80d8729c3c723d386647",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-roomsstate",
+      "hash": "0x8067cfb0eaef114d963e511fac4f2e12a8fb9e689541a0b9c86414a2990899ea",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-reusableagentgame",
+      "hash": "0xb9a15b69135688b1ad4104518c12c51ab56917e4bfde2fb543e4a6cc08b7bfa8",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-reusableauthorizations",
+      "hash": "0x59daed566f01a146d036ce889e2ef83f42f72afa335765d54e73f816dbb62a33",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-reusableagentarena-0",
+      "hash": "0xeeb848c7d755a6fcbd1752c5d2947f557db5636b95823c107fa5481e9fc01891",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:register-arena-0",
+      "hash": "0xea48d6040d0c7119a7afc6a11378882937d9071c7c6347d81059b1915d50ebe2",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-reusableagentarena-1",
+      "hash": "0x01d7780975af3ec60fa75e320270ccb7af984a36db582763508a8c25a926b825",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:register-arena-1",
+      "hash": "0xbf73bd7957f95889900e748d3e871aaed1514427338a21eb8820eb388e6d022e",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:deploy-reusableagentarena-2",
+      "hash": "0x8d94eccafbb4e3d60f0cfc54c95049432902d96d600a141178a2661a5dd41681",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:register-arena-2",
+      "hash": "0x596448f6d895f89f0ef11e4a2c9352ba1511d0df201f78d53c4b09356ee5845a",
+      "status": "confirmed"
+    },
+    {
+      "id": "reusable-agents-20260921-1:seal-pool",
+      "hash": "0xd450a07c63a5db41a76c4a189d12d9a27667e29c351534c9748edd6a350804c4",
+      "status": "confirmed"
+    }
+  ]
+}
