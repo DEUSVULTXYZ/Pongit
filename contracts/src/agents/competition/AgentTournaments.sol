@@ -24,7 +24,7 @@ contract AgentTournaments {
     uint64 public count;
     uint64 public nextAt;
     uint256 private guard;
-    mapping(uint64=>Tournament) private tournaments;
+    mapping(uint64=>Tournament) internal tournaments;
     mapping(uint64=>mapping(uint8=>Fixture)) private fixtures;
     mapping(uint64=>mapping(uint8=>T.Ref[])) private attempts;
     mapping(bytes32=>bool) public usedMatch;
@@ -41,12 +41,12 @@ contract AgentTournaments {
     }
     modifier base(){require(block.chainid==10143,"Monad tournaments only");_;}
     modifier locked(){require(guard==0,"reentrant tournament");guard=1;_;guard=0;}
-    function setAdmissions(bool value) external base {require(msg.sender==owner,"operator only");admissions=value;}
+    function setAdmissions(bool value) public virtual base {require(msg.sender==owner,"operator only");admissions=value;}
     function token(uint64 id) public view returns(bytes32){return keccak256(abi.encode(address(this),id));}
-    function tournament(uint64 id) external view returns(Tournament memory){return tournaments[id];}
-    function fixture(uint64 id,uint8 index) external view returns(Fixture memory){return fixtures[id][index];}
-    function attemptCount(uint64 id,uint8 index) external view returns(uint256){return attempts[id][index].length;}
-    function attemptRef(uint64 id,uint8 index,uint256 n) external view returns(T.Ref memory){return attempts[id][index][n];}
+    function tournament(uint64 id) public view virtual returns(Tournament memory){return tournaments[id];}
+    function fixture(uint64 id,uint8 index) public view virtual returns(Fixture memory){return fixtures[id][index];}
+    function attemptCount(uint64 id,uint8 index) public view virtual returns(uint256){return attempts[id][index].length;}
+    function attemptRef(uint64 id,uint8 index,uint256 n) public view virtual returns(T.Ref memory){return attempts[id][index][n];}
     function begin() external base locked returns(uint64 id){
         require(admissions&&catalog.setupSealed()&&block.timestamp>=nextAt,"tournament admission waiting");
         require(count==0||tournaments[count].status==Status.Complete||tournaments[count].status==Status.RepairWaiting,"tournament running");
@@ -194,7 +194,7 @@ contract AgentTournaments {
         if(id==count)nextAt=uint64(block.timestamp+1 minutes);
         emit TournamentCompleted(id,t.champion,nextAt);
     }
-    function standings(uint64 id) public view returns(T.Standing[8] memory rows){
+    function standings(uint64 id) public view virtual returns(T.Standing[8] memory rows){
         Tournament storage t=tournaments[id];for(uint8 i;i<8;i++)rows[i]=T.Standing(t.agents[i],0,0,0,t.seeds[i]);
         if(!t.league)return rows;
         for(uint8 i;i<28;i++){

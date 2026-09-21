@@ -29,13 +29,13 @@ contract AgentCatalog is EIP712 {
     bool public setupSealed;
     uint256 public revision;
     mapping(address=>uint256) public nonces;
-    mapping(address=>Identity) private identities;
+    mapping(address=>Identity) internal identities;
     mapping(address=>uint256) public registeredBlock;
     mapping(address=>bytes32) public participation;
     mapping(address=>mapping(uint8=>bytes32)) public qualificationEvidence;
     mapping(address=>address) private reservingController;
     address[8] public house;
-    address[] private strategies;
+    address[] internal strategies;
     event Registered(address indexed strategy,address indexed creator,bytes32 codeHash,bytes32 metadata,uint8 modes,uint8 official);
     event Qualified(address indexed strategy,uint8 mode,bool passed,bytes32 evidence);
     event Availability(address indexed strategy,bool available,uint256 revision);
@@ -51,7 +51,7 @@ contract AgentCatalog is EIP712 {
         require(msg.sender==owner&&!setupSealed&&competition==address(0)&&tournaments.code.length>0&&pool.code.length>0,"setup only");
         competition=tournaments;arenaPool=pool;
     }
-    function addHouse(address strategy,bytes32 metadata,uint8 style) external base {
+    function addHouse(address strategy,bytes32 metadata,uint8 style) public virtual base {
         require(msg.sender==owner&&!setupSealed&&style<8&&house[style]==address(0),"house setup only");
         require(strategy!=address(0)&&strategy.code.length==0&&metadata!=0&&identities[strategy].creator==address(0),"house identity");
         identities[strategy]=Identity(owner,houseCodeHash,metadata,0,3,0,style+1,true);
@@ -59,7 +59,7 @@ contract AgentCatalog is EIP712 {
         house[style]=strategy;strategies.push(strategy);revision++;
         emit Registered(strategy,owner,houseCodeHash,metadata,3,style+1);
     }
-    function seal() external base {
+    function seal() public virtual base {
         require(msg.sender==owner&&!setupSealed&&competition!=address(0),"setup only");
         for(uint8 i;i<8;i++)require(house[i]!=address(0),"eight house identities required");
         setupSealed=true;
@@ -70,7 +70,7 @@ contract AgentCatalog is EIP712 {
     function digest(Registration calldata r) public view returns(bytes32){
         return _hashTypedDataV4(keccak256(abi.encode(REGISTER,r.strategy,r.creator,r.metadata,r.modes,r.deadline,r.nonce)));
     }
-    function register(Registration calldata r,bytes calldata signature) external base {
+    function register(Registration calldata r,bytes calldata signature) public virtual base {
         require(r.deadline>=block.timestamp&&r.deadline<=block.timestamp+10 minutes&&r.nonce==nonces[r.creator],"registration lifetime/nonce");
         require(ECDSA.recover(digest(r),signature)==r.creator,"creator signature");
         nonces[r.creator]++;_register(r.strategy,r.creator,r.metadata,r.modes,0);
@@ -85,7 +85,7 @@ contract AgentCatalog is EIP712 {
         registeredBlock[strategy]=block.number;
         strategies.push(strategy);revision++;emit Registered(strategy,creator,codeHash,metadata,modes,official);
     }
-    function qualify(address strategy,uint8 mode,bool passed,bytes32 evidence) external base {
+    function qualify(address strategy,uint8 mode,bool passed,bytes32 evidence) public virtual base {
         Identity storage p=identities[strategy];
         require((msg.sender==qualifier||msg.sender==qualificationQueue)&&mode<2&&p.creator!=address(0)&&p.modes&(1<<mode)!=0&&evidence!=0,"qualification");
         require(!passed||!setupSealed||msg.sender==qualificationQueue,"published qualification required");
@@ -93,7 +93,7 @@ contract AgentCatalog is EIP712 {
         p.qualified=passed?p.qualified|uint8(1<<mode):p.qualified&~uint8(1<<mode);qualificationEvidence[strategy][mode]=evidence;revision++;
         emit Qualified(strategy,mode,passed,evidence);
     }
-    function setAvailable(address strategy,bool value) external base {
+    function setAvailable(address strategy,bool value) public virtual base {
         Identity storage p=identities[strategy];require(msg.sender==p.creator&&p.house==0,"community creator");
         if(p.available!=value){p.available=value;revision++;emit Availability(strategy,value,revision);}
     }
