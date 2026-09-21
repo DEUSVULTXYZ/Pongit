@@ -7,7 +7,7 @@ target=/opt/pongit/shared/backups/$stamp
 test ! -e "$target"
 mkdir -m 700 "$target"
 cd /opt/pongit/current
-databases=$(docker exec pongit-postgres-1 psql -X -U pong -d postgres -Atc "SELECT datname FROM pg_database WHERE datname='pong_relayer' OR datname ~ '^pong_indexer(_[a-z0-9_]+)?$' ORDER BY datname")
+databases=$(docker exec pongit-postgres-1 psql -X -U pong -d postgres -Atc "SELECT datname FROM pg_database WHERE datname='pong_relayer' OR datname ~ '^pong_indexer(_[a-z0-9_]+)?$' OR datname ~ '^pong_human_rules[0-9]+$' ORDER BY datname")
 for database in $databases; do
   [[ "$database" =~ ^pong_[a-z0-9_]+$ ]] || exit 1
   docker exec pongit-postgres-1 pg_dump -U pong -d "$database" -Fc > "$target/$database.dump"
@@ -20,6 +20,9 @@ cp compose.yaml "$target/compose.yaml"
 if test -f compose.override.yaml; then cp compose.override.yaml "$target/compose.override.yaml"; fi
 cp -a deployments "$target/deployments"
 cp -a /opt/pongit/secrets/rooms "$target/rooms-secrets"
+if test -d /opt/pongit/secrets/independent; then
+  cp -a /opt/pongit/secrets/independent "$target/independent-secrets"
+fi
 if test -d /opt/pongit/shared/early-payment-deployment; then
   cp -a /opt/pongit/shared/early-payment-deployment "$target/early-payment-deployment"
 fi

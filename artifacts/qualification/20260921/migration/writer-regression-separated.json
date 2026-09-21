@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-21T08:21:11.096Z",
+  "checks": [
+    "40 concurrent contexts enqueue one immutable operation",
+    "Uncertain submitted operation reused without simulation or replacement",
+    "Rejected signatures and RPC failures never enter the unsigned queue",
+    "Private business storage does not create a second operator nonce journal",
+    "Cross-database restart recovers the confirmed original hash without re-signing",
+    "A pending operation owned by another queue blocks dispatch without resend",
+    "Urgent consent runs before older unsigned maintenance; a read failure preserves both without allocating a nonce",
+    "Two occupied proposal slots admit independently after first confirmation; uncertain assignment never gets a duplicate"
+  ],
+  "passed": true
+}

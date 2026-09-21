@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "scope": "Exact sorted-row digests from isolated business database to scratch production-host database; no service cutover",
+  "database": "pong_human_rules14_restore_20260921",
+  "exactTables": 21,
+  "tableCounts": {
+    "il_engine_jobs": 21,
+    "il_lifecycle": 1,
+    "il_reusable_results": 0,
+    "il_reusable_slot_results": 4,
+    "il_rpc_diagnostics": 170,
+    "independent_bettors": 2,
+    "independent_credits": 2,
+    "independent_cursor": 1,
+    "independent_engine_health": 0,
+    "independent_events": 103,
+    "independent_finance_cursor": 1,
+    "independent_finance_receipts": 6,
+    "independent_frames": 524,
+    "independent_history": 4,
+    "independent_history_cursor": 1,
+    "independent_incidents": 3,
+    "independent_live_pressure": 1,
+    "independent_operations": 73,
+    "independent_payments": 2,
+    "independent_pressure": 0,
+    "independent_rooms": 6
+  }
+}

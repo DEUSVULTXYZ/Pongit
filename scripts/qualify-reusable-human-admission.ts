@@ -21,7 +21,7 @@ assert.equal(m.production,false);assert.equal(m.rulesVersion,14);assert.equal(m.
 const label=process.env.PONG_REUSABLE_ADMISSION_RUN!;assert(/^[a-z0-9-]{1,32}$/.test(label));
 const existing=(process.env.PONG_REUSABLE_ADMISSION_EXISTING??'').split(',').filter(Boolean).map(BigInt);
 const arenaCount=Number(process.env.PONG_REUSABLE_ADMISSION_COUNT??2);
-assert(arenaCount===1||arenaCount===2,'Bounded one/two-arena private trial');
+assert([1,2,3].includes(arenaCount)&&arenaCount<=m.arenas.length,'Bounded private lanes and one rotating reserve');
 assert(existing.length===0||existing.length===arenaCount,'Explicit existing epoch (zero means released) for each test arena');
 const priorPublished=process.env.PONG_REUSABLE_ADMISSION_HISTORY==='verified-published';
 const file=`artifacts/reusable-candidate/admission-${label}.json`;

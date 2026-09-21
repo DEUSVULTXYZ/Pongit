@@ -52,6 +52,7 @@ services:
       ROOMS_LIFECYCLE_MAX_BATCHES: ${ROOMS_LIFECYCLE_MAX_BATCHES:-}
       ROOMS_LIFECYCLE_HOLD_RENEW: ${ROOMS_LIFECYCLE_HOLD_RENEW:-false}
       PONG_INDEPENDENT_MANIFEST: ${PONG_INDEPENDENT_MANIFEST:-}
+      PONG_INDEPENDENT_DATABASE_URL: ${PONG_INDEPENDENT_DATABASE_URL:-}
       PONG_INDEPENDENT_SNAPSHOT: ${PONG_INDEPENDENT_SNAPSHOT:-}
       PONG_INDEPENDENT_ADMISSION: ${PONG_INDEPENDENT_ADMISSION:-false}
       PONG_INDEPENDENT_REUSABLE_RUNTIME: ${PONG_INDEPENDENT_REUSABLE_RUNTIME:-}
@@ -62,6 +63,7 @@ services:
     volumes:
       - ./deployments:/app/deployments:ro
       - ${ROOMS_SECRET_DIRECTORY:-/opt/pongit/secrets/rooms}:/run/pongit-rooms:ro
+      - ${INDEPENDENT_SECRET_DIRECTORY:-/opt/pongit/secrets/independent}:/run/pongit-independent:ro
     read_only: true
     tmpfs: [/tmp]
     security_opt: [no-new-privileges:true]

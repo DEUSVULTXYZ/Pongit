@@ -18,7 +18,7 @@ SQL
 }
 for dump in "$backup"/*.dump; do
   database=$(basename "$dump" .dump)
-  [[ "$database" =~ ^pong_(agents|relayer|indexer(_[a-z0-9]+)*)$ ]] || { echo "Unexpected database name in backup"; exit 1; }
+  [[ "$database" =~ ^pong_(agents|relayer|human_rules[0-9]+|indexer(_[a-z0-9]+)*)$ ]] || { echo "Unexpected database name in backup"; exit 1; }
   database_exec=(docker compose exec -T postgres); database_user=pong; source_database=$database
   if test "$database" = pong_agents; then
     agent_db=$(docker ps --filter label=com.docker.compose.project=pongit --filter label=com.docker.compose.service=agent-db --format '{{.ID}}')

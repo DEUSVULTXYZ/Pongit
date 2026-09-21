@@ -1,0 +1,3650 @@
+TAP version 13
+# Subtest: registration signs the exact creator, strategy, metadata, catalogue and Monad chain
+ok 1 - registration signs the exact creator, strategy, metadata, catalogue and Monad chain
+  ---
+  duration_ms: 126.7402
+  type: 'test'
+  ...
+# Subtest: registration refuses incompatible runtime and a different creator before requesting a signature
+ok 2 - registration refuses incompatible runtime and a different creator before requesting a signature
+  ---
+  duration_ms: 2.3874
+  type: 'test'
+  ...
+# Subtest: challenge is signed only by the granted arcade key and never exceeds the grant expiry
+ok 3 - challenge is signed only by the granted arcade key and never exceeds the grant expiry
+  ---
+  duration_ms: 25.5264
+  type: 'test'
+  ...
+# Subtest: lost executed response reconciles exact receipt without another command or nonce
+ok 4 - lost executed response reconciles exact receipt without another command or nonce
+  ---
+  duration_ms: 166.4832
+  type: 'test'
+  ...
+# Subtest: lost unexecuted response resends identical bytes instead of replacing the nonce
+ok 5 - lost unexecuted response resends identical bytes instead of replacing the nonce
+  ---
+  duration_ms: 97.8897
+  type: 'test'
+  ...
+# Subtest: 429 and generic refusal retain uncertainty, permanent gas refusal retains its full journal
+ok 6 - 429 and generic refusal retain uncertainty, permanent gas refusal retains its full journal
+  ---
+  duration_ms: 164.3307
+  type: 'test'
+  ...
+# Subtest: a verified closed epoch retires uncertainty without resending into the next epoch
+ok 7 - a verified closed epoch retires uncertainty without resending into the next epoch
+  ---
+  duration_ms: 99.7207
+  type: 'test'
+  ...
+# Subtest: a database interruption releases the local writer guard and changed operation data is refused
+ok 8 - a database interruption releases the local writer guard and changed operation data is refused
+  ---
+  duration_ms: 59.5006
+  type: 'test'
+  ...
+# Subtest: reorganized closure evidence preserves the exact uncertain command and sends nothing
+ok 9 - reorganized closure evidence preserves the exact uncertain command and sends nothing
+  ---
+  duration_ms: 47.7922
+  type: 'test'
+  ...
+# Subtest: series reconciles an executed previous-match command without importing its snapshot
+ok 10 - series reconciles an executed previous-match command without importing its snapshot
+  ---
+  duration_ms: 454.6783
+  type: 'test'
+  ...
+# Subtest: series replays only the exact uncertain prior bytes before any next-match action
+ok 11 - series replays only the exact uncertain prior bytes before any next-match action
+  ---
+  duration_ms: 84.8691
+  type: 'test'
+  ...
+# Subtest: series methods stay opt-in and cannot sign an action targeting another current match
+ok 12 - series methods stay opt-in and cannot sign an action targeting another current match
+  ---
+  duration_ms: 37.9927
+  type: 'test'
+  ...
+# Subtest: reusable matches preserve exact pending bytes and never import a previous start receipt
+ok 13 - reusable matches preserve exact pending bytes and never import a previous start receipt
+  ---
+  duration_ms: 411.8114
+  type: 'test'
+  ...
+# Subtest: reusable binding rejects another epoch, match or incompatible series mode before signing
+ok 14 - reusable binding rejects another epoch, match or incompatible series mode before signing
+  ---
+  duration_ms: 2.473
+  type: 'test'
+  ...
+# Subtest: result archive failure retains the completed command and recovers exact receipt before slot reuse
+ok 15 - result archive failure retains the completed command and recovers exact receipt before slot reuse
+  ---
+  duration_ms: 86.9234
+  type: 'test'
+  ...
+# Subtest: a missing terminal commitment cannot acknowledge its command
+ok 16 - a missing terminal commitment cannot acknowledge its command
+  ---
+  duration_ms: 41.2908
+  type: 'test'
+  ...
+# Subtest: public arena errors never render signed transport payloads
+ok 17 - public arena errors never render signed transport payloads
+  ---
+  duration_ms: 1.7155
+  type: 'test'
+  ...
+# Subtest: network throttling preserves the saved-session explanation
+ok 18 - network throttling preserves the saved-session explanation
+  ---
+  duration_ms: 0.4163
+  type: 'test'
+  ...
+# Subtest: actionable local session instructions and cancellation remain legible
+ok 19 - actionable local session instructions and cancellation remain legible
+  ---
+  duration_ms: 0.2233
+  type: 'test'
+  ...
+# Subtest: hosted creation writes its intent first and looks up a lost response without a second POST
+ok 20 - hosted creation writes its intent first and looks up a lost response without a second POST
+  ---
+  duration_ms: 37.8639
+  type: 'test'
+  ...
+# Subtest: a generic HTTP error cannot prove creation absent; only an explicit non-creating refusal permits retry
+ok 21 - a generic HTTP error cannot prove creation absent; only an explicit non-creating refusal permits retry
+  ---
+  duration_ms: 3.9508
+  type: 'test'
+  ...
+# Subtest: wrong application or changed node origin requires inspection and is never followed by another POST
+ok 22 - wrong application or changed node origin requires inspection and is never followed by another POST
+  ---
+  duration_ms: 2.2952
+  type: 'test'
+  ...
+# Subtest: concurrent provisioning cannot create two hosted engines
+ok 23 - concurrent provisioning cannot create two hosted engines
+  ---
+  duration_ms: 1.3312
+  type: 'test'
+  ...
+# Subtest: a persistently missing response or stale engine becomes an explicit intervention without another creation
+ok 24 - a persistently missing response or stale engine becomes an explicit intervention without another creation
+  ---
+  duration_ms: 26.8634
+  type: 'test'
+  ...
+# Subtest: readiness requires the same persisted epoch and preserves previous creation evidence
+ok 25 - readiness requires the same persisted epoch and preserves previous creation evidence
+  ---
+  duration_ms: 5.2598
+  type: 'test'
+  ...
+# Subtest: a previously returned URL stays pinned across process restarts
+ok 26 - a previously returned URL stays pinned across process restarts
+  ---
+  duration_ms: 1.8539
+  type: 'test'
+  ...
+# Subtest: bounded qualification scans eventually reach agents beyond the first 256 and wrap after catalogue changes
+ok 27 - bounded qualification scans eventually reach agents beyond the first 256 and wrap after catalogue changes
+  ---
+  duration_ms: 8.8746
+  type: 'test'
+  ...
+# Subtest: qualification inspection respects retry times and propagates unavailable reads
+ok 28 - qualification inspection respects retry times and propagates unavailable reads
+  ---
+  duration_ms: 1.0205
+  type: 'test'
+  ...
+# Subtest: only waiting challenges with a verifiably different or expired grant can be cleared
+ok 29 - only waiting challenges with a verifiably different or expired grant can be cleared
+  ---
+  duration_ms: 0.4662
+  type: 'test'
+  ...
+# Subtest: historical repairs wait for existing participation and can later schedule their original bracket
+ok 30 - historical repairs wait for existing participation and can later schedule their original bracket
+  ---
+  duration_ms: 1.1974
+  type: 'test'
+  ...
+# Subtest: spectator checks app, epoch, chain and rules without a signing account or ticks
+ok 31 - spectator checks app, epoch, chain and rules without a signing account or ticks
+  ---
+  duration_ms: 6.7871
+  type: 'test'
+  ...
+# Subtest: archived match returns its own result and no live node after the arena is reused
+ok 32 - archived match returns its own result and no live node after the arena is reused
+  ---
+  duration_ms: 6.4106
+  type: 'test'
+  ...
+# Subtest: series spectator validates rules 11 and stays bound to its original game ID
+ok 33 - series spectator validates rules 11 and stays bound to its original game ID
+  ---
+  duration_ms: 0.8508
+  type: 'test'
+  ...
+# Subtest: a burst during recovery keeps only the latest movement and signs compact sequential controls
+ok 34 - a burst during recovery keeps only the latest movement and signs compact sequential controls
+  ---
+  duration_ms: 345.8146
+  type: 'test'
+  ...
+# Subtest: reusable controls bind epoch and logical ID, recover after F5 and keep the fixed permission slot
+ok 35 - reusable controls bind epoch and logical ID, recover after F5 and keep the fixed permission slot
+  ---
+  duration_ms: 170.0392
+  type: 'test'
+  ...
+# Subtest: a confirmed input racing the last point preserves its consumed nonce and exposes the terminal state
+ok 36 - a confirmed input racing the last point preserves its consumed nonce and exposes the terminal state
+  ---
+  duration_ms: 15.2908
+  type: 'test'
+  ...
+# Subtest: an invalid live match or unrelated terminal revert still fails
+ok 37 - an invalid live match or unrelated terminal revert still fails
+  ---
+  duration_ms: 97.3499
+  type: 'test'
+  ...
+# Subtest: series human controls preserve their exact uncertain command across F5 and reject a mismatched rules manifest
+ok 38 - series human controls preserve their exact uncertain command across F5 and reject a mismatched rules manifest
+  ---
+  duration_ms: 27.4243
+  type: 'test'
+  ...
+# Subtest: F5 reconciles the exact lost command receipt before sending a new intent, without a root key
+ok 39 - F5 reconciles the exact lost command receipt before sending a new intent, without a root key
+  ---
+  duration_ms: 24.8868
+  type: 'test'
+  ...
+# Subtest: missing receipt only permits identical resend and repeated loss never signs a replacement
+ok 40 - missing receipt only permits identical resend and repeated loss never signs a replacement
+  ---
+  duration_ms: 105.1311
+  type: 'test'
+  ...
+# Subtest: expiry and Exiting preserve uncertainty and observation; verified closure retires it without contacting the old node
+ok 41 - expiry and Exiting preserve uncertainty and observation; verified closure retires it without contacting the old node
+  ---
+  duration_ms: 141.9556
+  type: 'test'
+  ...
+# Subtest: RPC failure or reorganized hub read cannot erase an uncertain command
+ok 42 - RPC failure or reorganized hub read cannot erase an uncertain command
+  ---
+  duration_ms: 44.8507
+  type: 'test'
+  ...
+# Subtest: read permissions include active revocation and owner renewal instead of only the admission binding
+ok 43 - read permissions include active revocation and owner renewal instead of only the admission binding
+  ---
+  duration_ms: 56.4358
+  type: 'test'
+  ...
+# Subtest: different reference, participant, runtime bytecode or stopped client cannot issue commands
+ok 44 - different reference, participant, runtime bytecode or stopped client cannot issue commands
+  ---
+  duration_ms: 5.3121
+  type: 'test'
+  ...
+# Subtest: owner renewal and revocation use exact journaled calls, survive loss and reject another owner
+ok 45 - owner renewal and revocation use exact journaled calls, survive loss and reject another owner
+  ---
+  duration_ms: 175.0754
+  type: 'test'
+  ...
+# Subtest: an unresolved permission blocks a different root action until the original is reconciled
+ok 46 - an unresolved permission blocks a different root action until the original is reconciled
+  ---
+  duration_ms: 91.7113
+  type: 'test'
+  ...
+# Subtest: closing the client during slow authorization prevents the queued input from being signed
+ok 47 - closing the client during slow authorization prevents the queued input from being signed
+  ---
+  duration_ms: 42.2932
+  type: 'test'
+  ...
+# Subtest: periodic hub fences preserve the verified binding and sequential sender, but a closing epoch blocks writes
+ok 48 - periodic hub fences preserve the verified binding and sequential sender, but a closing epoch blocks writes
+  ---
+  duration_ms: 115.2622
+  type: 'test'
+  ...
+# Subtest: a failed or reorganized light fence never sends the waiting movement
+ok 49 - a failed or reorganized light fence never sends the waiting movement
+  ---
+  duration_ms: 105.6636
+  type: 'test'
+  ...
+# Subtest: periodic UI synchronization preserves signer nonce while checking mutable revocation
+ok 50 - periodic UI synchronization preserves signer nonce while checking mutable revocation
+  ---
+  duration_ms: 69.7632
+  type: 'test'
+  ...
+# Subtest: periodic UI synchronization reconciles a lost receipt before a new nonce
+ok 51 - periodic UI synchronization reconciles a lost receipt before a new nonce
+  ---
+  duration_ms: 44.8609
+  type: 'test'
+  ...
+# Subtest: recovery waits for the current intent and exposes its second failure instead of falsely enabling controls
+ok 52 - recovery waits for the current intent and exposes its second failure instead of falsely enabling controls
+  ---
+  duration_ms: 29.3056
+  type: 'test'
+  ...
+# Subtest: ready proof waits for the existing tick without competing for its nonce
+ok 53 - ready proof waits for the existing tick without competing for its nonce
+  ---
+  duration_ms: 1.7637
+  type: 'test'
+  ...
+# Subtest: result or changed request while waiting discards proof without signing
+ok 54 - result or changed request while waiting discards proof without signing
+  ---
+  duration_ms: 0.5425
+  type: 'test'
+  ...
+# Subtest: timeout and send failure release proof priority without swallowing uncertainty
+ok 55 - timeout and send failure release proof priority without swallowing uncertainty
+  ---
+  duration_ms: 0.7898
+  type: 'test'
+  ...
+# Subtest: published view pins all reads and rejects a mid-read reorganization
+ok 56 - published view pins all reads and rejects a mid-read reorganization
+  ---
+  duration_ms: 4.0813
+  type: 'test'
+  ...
+# Subtest: a local enabled flag cannot bypass a missing or different on-chain qualification
+ok 57 - a local enabled flag cannot bypass a missing or different on-chain qualification
+  ---
+  duration_ms: 1.7425
+  type: 'test'
+  ...
+# Subtest: restored challenge binds its owner, agent and assigned arena at one block
+ok 58 - restored challenge binds its owner, agent and assigned arena at one block
+  ---
+  duration_ms: 11.5595
+  type: 'test'
+  ...
+# Subtest: read cache coalesces concurrent spectators, retries failures and expires independently of traffic
+ok 59 - read cache coalesces concurrent spectators, retries failures and expires independently of traffic
+  ---
+  duration_ms: 1.0894
+  type: 'test'
+  ...
+# Subtest: routes reject unbounded page requests without sending RPC
+ok 60 - routes reject unbounded page requests without sending RPC
+  ---
+  duration_ms: 1.4718
+  type: 'test'
+  ...
+# Subtest: slow reads stay single-flight beyond the TTL and cannot evict another pending read
+ok 61 - slow reads stay single-flight beyond the TTL and cannot evict another pending read
+  ---
+  duration_ms: 0.3607
+  type: 'test'
+  ...
+# Subtest: series readers preserve prior results and never watch a future reserved fixture
+ok 62 - series readers preserve prior results and never watch a future reserved fixture
+  ---
+  duration_ms: 1.6533
+  type: 'test'
+  ...
+# Subtest: series live discovery excludes captured results while the engine advances its next fixture
+ok 63 - series live discovery excludes captured results while the engine advances its next fixture
+  ---
+  duration_ms: 22.6552
+  type: 'test'
+  ...
+# Subtest: reusable discovery reads the Monad ticket before engine admission and preserves historical links
+ok 64 - reusable discovery reads the Monad ticket before engine admission and preserves historical links
+  ---
+  duration_ms: 21.6226
+  type: 'test'
+  ...
+# Subtest: sponsor rejects foreign targets, administrative actions, tails, ether and unsigned data
+ok 65 - sponsor rejects foreign targets, administrative actions, tails, ether and unsigned data
+  ---
+  duration_ms: 11.1673
+  type: 'test'
+  ...
+# Subtest: paused admission reconciles prior operations and still permits cancellation and revocation
+ok 66 - paused admission reconciles prior operations and still permits cancellation and revocation
+  ---
+  duration_ms: 7.4603
+  type: 'test'
+  ...
+# Subtest: sponsor simulation errors never claim non-acceptance from a network outage
+ok 67 - sponsor simulation errors never claim non-acceptance from a network outage
+  ---
+  duration_ms: 1.3903
+  type: 'test'
+  ...
+# Subtest: lost response after acceptance survives F5 without another POST or a new nonce
+ok 68 - lost response after acceptance survives F5 without another POST or a new nonce
+  ---
+  duration_ms: 6.2755
+  type: 'test'
+  ...
+# Subtest: 429, corrupt responses and account switching preserve the original signed intent
+ok 69 - 429, corrupt responses and account switching preserve the original signed intent
+  ---
+  duration_ms: 4.1951
+  type: 'test'
+  ...
+# Subtest: two clicks do not send parallel calls; server receipt of a revert clears only that intent
+ok 70 - two clicks do not send parallel calls; server receipt of a revert clears only that intent
+  ---
+  duration_ms: 0.9569
+  type: 'test'
+  ...
+# Subtest: two-hour root grant persists before sponsoring and reuses exactly across F5 and arena changes
+ok 71 - two-hour root grant persists before sponsoring and reuses exactly across F5 and arena changes
+  ---
+  duration_ms: 104.1583
+  type: 'test'
+  ...
+# Subtest: temporary failure never renews a passkey; only confirmed expiration or revocation requires consent
+ok 72 - temporary failure never renews a passkey; only confirmed expiration or revocation requires consent
+  ---
+  duration_ms: 63.3769
+  type: 'test'
+  ...
+# Subtest: newer authorization on another device is not retried forever as a stale grant
+ok 73 - newer authorization on another device is not retried forever as a stale grant
+  ---
+  duration_ms: 11.1487
+  type: 'test'
+  ...
+# Subtest: public pool is gated by evidence and remains separate from human apps
+ok 74 - public pool is gated by evidence and remains separate from human apps
+  ---
+  duration_ms: 2.0432
+  type: 'test'
+  ...
+# Subtest: the displayed automatic cycle exactly matches the contract schedule
+ok 75 - the displayed automatic cycle exactly matches the contract schedule
+  ---
+  duration_ms: 0.7274
+  type: 'test'
+  ...
+# Subtest: series manifests retain their version, require both common lanes and cannot bypass capacity review
+ok 76 - series manifests retain their version, require both common lanes and cannot bypass capacity review
+  ---
+  duration_ms: 3.1926
+  type: 'test'
+  ...
+# Subtest: reusable manifests keep a separate generation and cannot call registered arenas verified capacity
+ok 77 - reusable manifests keep a separate generation and cannot call registered arenas verified capacity
+  ---
+  duration_ms: 0.4698
+  type: 'test'
+  ...
+# Subtest: the browser policy accepts reusable arenas without widening origins or admission gates
+ok 78 - the browser policy accepts reusable arenas without widening origins or admission gates
+  ---
+  duration_ms: 35.1272
+  type: 'test'
+  ...
+# Subtest: the clock samples whatever the lifecycle says
+ok 79 - the clock samples whatever the lifecycle says
+  ---
+  duration_ms: 2.7064
+  type: 'test'
+  ...
+# Subtest: a renewal keeps the soak sampling through the service's own restart
+ok 80 - a renewal keeps the soak sampling through the service's own restart
+  ---
+  duration_ms: 0.5087
+  type: 'test'
+  ...
+# Subtest: a renewal stuck past the bound ends the soak
+ok 81 - a renewal stuck past the bound ends the soak
+  ---
+  duration_ms: 0.2981
+  type: 'test'
+  ...
+# Subtest: no grace outside a renewal, whatever the service reports
+ok 82 - no grace outside a renewal, whatever the service reports
+  ---
+  duration_ms: 0.2353
+  type: 'test'
+  ...
+# Subtest: a renewal the lifecycle has just reopened waits briefly for the service
+ok 83 - a renewal the lifecycle has just reopened waits briefly for the service
+  ---
+  duration_ms: 0.3163
+  type: 'test'
+  ...
+# Subtest: the record's view is its latest change
+ok 84 - the record's view is its latest change
+  ---
+  duration_ms: 0.8259
+  type: 'test'
+  ...
+# Subtest: the source closure reaches what the roles run during a renewal
+ok 85 - the source closure reaches what the roles run during a renewal
+  ---
+  duration_ms: 11911.8173
+  type: 'test'
+  ...
+# Subtest: immutable strategy preflight distinguishes PUSH data from forbidden executable instructions
+ok 86 - immutable strategy preflight distinguishes PUSH data from forbidden executable instructions
+  ---
+  duration_ms: 1.2457
+  type: 'test'
+  ...
+# Subtest: strategy metadata is scanned, and malformed or delegated-wallet runtime is rejected
+ok 87 - strategy metadata is scanned, and malformed or delegated-wallet runtime is rejected
+  ---
+  duration_ms: 0.29
+  type: 'test'
+  ...
+# Subtest: bot difficulty controls reaction time and stops immediately when a match ends
+ok 88 - bot difficulty controls reaction time and stops immediately when a match ends
+  ---
+  duration_ms: 26.1512
+  type: 'test'
+  ...
+# Subtest: controllers use bounded public state and keep their own randomness out of match identity
+ok 89 - controllers use bounded public state and keep their own randomness out of match identity
+  ---
+  duration_ms: 2.9346
+  type: 'test'
+  ...
+# Subtest: agent manifests cannot substitute chains, financial arenas, duration or an insecure endpoint
+ok 90 - agent manifests cannot substitute chains, financial arenas, duration or an insecure endpoint
+  ---
+  duration_ms: 0.8706
+  type: 'test'
+  ...
+# Subtest: registration metadata commits exact validated names and an existing avatar
+ok 91 - registration metadata commits exact validated names and an existing avatar
+  ---
+  duration_ms: 3.0969
+  type: 'test'
+  ...
+# Subtest: the client recognises exactly the seats the contract steers, and reads the tiers from its source
+ok 92 - the client recognises exactly the seats the contract steers, and reads the tiers from its source
+  ---
+  duration_ms: 43.7722
+  type: 'test'
+  ...
+# Subtest: a catch-up is always sliced and bounded on gas, never advanced whole and unsteered
+ok 93 - a catch-up is always sliced and bounded on gas, never advanced whole and unsteered
+  ---
+  duration_ms: 129.0839
+  type: 'test'
+  ...
+# Subtest: only commands that catch a match up get the large gas budget
+ok 94 - only commands that catch a match up get the large gas budget
+  ---
+  duration_ms: 0.3611
+  type: 'test'
+  ...
+# Subtest: the strategy interface the service speaks is the one the contracts compile
+ok 95 - the strategy interface the service speaks is the one the contracts compile
+  ---
+  duration_ms: 201.9999
+  type: 'test'
+  ...
+# Subtest: a strategy is vetted on Monad before anything is written, and only its own answers condemn it
+ok 96 - a strategy is vetted on Monad before anything is written, and only its own answers condemn it
+  ---
+  duration_ms: 526.5477
+  type: 'test'
+  ...
+# Subtest: JSON-RPC errors from a throttled provider over HTTP are an outage, not a broken strategy
+ok 97 - JSON-RPC errors from a throttled provider over HTTP are an outage, not a broken strategy
+  ---
+  duration_ms: 835.8349
+  type: 'test'
+  ...
+# Subtest: every refusal of AgentIdentity.register the request shows is a 400 with its reason
+ok 98 - every refusal of AgentIdentity.register the request shows is a 400 with its reason
+  ---
+  duration_ms: 58.1809
+  type: 'test'
+  ...
+# Subtest: a house bot name and avatar are refused to anyone but the house, strategy or key
+ok 99 - a house bot name and avatar are refused to anyone but the house, strategy or key
+  ---
+  duration_ms: 1.0768
+  type: 'test'
+  ...
+# Subtest: a named InvalidRegistration is blamed on the pinned epoch only when the engine clock does not explain it
+ok 100 - a named InvalidRegistration is blamed on the pinned epoch only when the engine clock does not explain it
+  ---
+  duration_ms: 14.2808
+  type: 'test'
+  ...
+# Subtest: the league gives every qualified agent its turn and pairs across creators
+ok 101 - the league gives every qualified agent its turn and pairs across creators
+  ---
+  duration_ms: 0.7682
+  type: 'test'
+  ...
+# Subtest: the league starves nobody once the qualified pool outgrows any window of recent matches
+ok 102 - the league starves nobody once the qualified pool outgrows any window of recent matches
+  ---
+  duration_ms: 188.7438
+  type: 'test'
+  ...
+# Subtest: a failing strategy gets a bounded number of qualification matches, then waits out the cool-down
+ok 103 - a failing strategy gets a bounded number of qualification matches, then waits out the cool-down
+  ---
+  duration_ms: 1.0073
+  type: 'test'
+  ...
+# Subtest: a strategy qualification sends the same command however often a pass is retried
+ok 104 - a strategy qualification sends the same command however often a pass is retried
+  ---
+  duration_ms: 2.6359
+  type: 'test'
+  ...
+# Subtest: tick countdown reads the contract clock atomically without a pinned batch timestamp
+ok 105 - tick countdown reads the contract clock atomically without a pinned batch timestamp
+  ---
+  duration_ms: 5.2873
+  type: 'test'
+  ...
+# Subtest: historical deployments retain their block-pinned timestamp interface
+ok 106 - historical deployments retain their block-pinned timestamp interface
+  ---
+  duration_ms: 0.8774
+  type: 'test'
+  ...
+# Subtest: healthy Interlude remains preferred even when idle publication is old
+ok 107 - healthy Interlude remains preferred even when idle publication is old
+  ---
+  duration_ms: 15.9285
+  type: 'test'
+  ...
+# Subtest: 429 and isolated failures cannot cause base-chain execution
+ok 108 - 429 and isolated failures cannot cause base-chain execution
+  ---
+  duration_ms: 0.7565
+  type: 'test'
+  ...
+# Subtest: sustained failure must also satisfy the hub's strict silence boundary
+ok 109 - sustained failure must also satisfy the hub's strict silence boundary
+  ---
+  duration_ms: 0.3289
+  type: 'test'
+  ...
+# Subtest: expiry, closure and failed startup request recovery without opening Monad
+ok 110 - expiry, closure and failed startup request recovery without opening Monad
+  ---
+  duration_ms: 0.2656
+  type: 'test'
+  ...
+# Subtest: contestation blocks recovery and admission in every controller state
+ok 111 - contestation blocks recovery and admission in every controller state
+  ---
+  duration_ms: 0.2294
+  type: 'test'
+  ...
+# Subtest: challenge window must end before recovery submission; Monad waits for contract confirmation
+ok 112 - challenge window must end before recovery submission; Monad waits for contract confirmation
+  ---
+  duration_ms: 0.1799
+  type: 'test'
+  ...
+# Subtest: restored node health does not automatically reopen an Interlude delegation
+ok 113 - restored node health does not automatically reopen an Interlude delegation
+  ---
+  duration_ms: 0.1451
+  type: 'test'
+  ...
+# Subtest: malformed observations cannot be used as fallback evidence
+ok 114 - malformed observations cannot be used as fallback evidence
+  ---
+  duration_ms: 0.6361
+  type: 'test'
+  ...
+# Subtest: concurrent recovery triggers share one journal operation; restart does not duplicate it
+ok 115 - concurrent recovery triggers share one journal operation; restart does not duplicate it
+  ---
+  duration_ms: 3.248
+  type: 'test'
+  ...
+# Subtest: lost receipt is reconciled, not interpreted as failed execution
+ok 116 - lost receipt is reconciled, not interpreted as failed execution
+  ---
+  duration_ms: 1.5435
+  type: 'test'
+  ...
+# Subtest: failed recovery is held for inspection; missing sponsor never charges a player
+ok 117 - failed recovery is held for inspection; missing sponsor never charges a player
+  ---
+  duration_ms: 0.9305
+  type: 'test'
+  ...
+# Subtest: a recovered generation or new hub phase during RPC work cancels the pending write
+ok 118 - a recovered generation or new hub phase during RPC work cancels the pending write
+  ---
+  duration_ms: 0.6293
+  type: 'test'
+  ...
+# Subtest: reorganizations and lagging replicas cannot schedule recovery
+ok 119 - reorganizations and lagging replicas cannot schedule recovery
+  ---
+  duration_ms: 0.5579
+  type: 'test'
+  ...
+# Subtest: unavailable observations preserve warning privacy and do not spam unchanged errors
+ok 120 - unavailable observations preserve warning privacy and do not spam unchanged errors
+  ---
+  duration_ms: 0.4175
+  type: 'test'
+  ...
+# Subtest: fallback completion has a distinct journal identity and never schedules an automatic return
+ok 121 - fallback completion has a distinct journal identity and never schedules an automatic return
+  ---
+  duration_ms: 0.6598
+  type: 'test'
+  ...
+# Subtest: browser transition diagnostics warn on fallback and deduplicate repeated observations
+ok 122 - browser transition diagnostics warn on fallback and deduplicate repeated observations
+  ---
+  duration_ms: 0.3652
+  type: 'test'
+  ...
+# Subtest: the real RPC adapter pins controller and hub calls to the same Monad block
+ok 123 - the real RPC adapter pins controller and hub calls to the same Monad block
+  ---
+  duration_ms: 18.7663
+  type: 'test'
+  ...
+# Subtest: planned closure waits for normal renewal, never erases room generations through automatic recovery
+ok 124 - planned closure waits for normal renewal, never erases room generations through automatic recovery
+  ---
+  duration_ms: 0.4635
+  type: 'test'
+  ...
+# Subtest: published session closure uses the same journal with an epoch-bound close call
+ok 125 - published session closure uses the same journal with an epoch-bound close call
+  ---
+  duration_ms: 1.7505
+  type: 'test'
+  ...
+# Subtest: a failed draining engine can still enter protocol-gated disaster recovery
+ok 126 - a failed draining engine can still enter protocol-gated disaster recovery
+  ---
+  duration_ms: 0.7694
+  type: 'test'
+  ...
+# Subtest: the RPC adapter rejects engine RPCs, wrong hubs and a reorganized pinned block
+ok 127 - the RPC adapter rejects engine RPCs, wrong hubs and a reorganized pinned block
+  ---
+  duration_ms: 5.4376
+  type: 'test'
+  ...
+# Subtest: engine commands bind both execution generation and delegation epoch
+ok 128 - engine commands bind both execution generation and delegation epoch
+  ---
+  duration_ms: 6.4566
+  type: 'test'
+  ...
+# Subtest: ciphertext Merkle chunks roundtrip at limits, corruption cannot pass
+ok 129 - ciphertext Merkle chunks roundtrip at limits, corruption cannot pass
+  ---
+  duration_ms: 79.0181
+  type: 'test'
+  ...
+# Subtest: atomic upload stops on conflict and resumes missing chunks only
+ok 130 - atomic upload stops on conflict and resumes missing chunks only
+  ---
+  duration_ms: 11.0434
+  type: 'test'
+  ...
+# Subtest: private keys remain nonextractable and ciphertext binds namespace and account
+ok 131 - private keys remain nonextractable and ciphertext binds namespace and account
+  ---
+  duration_ms: 56.7824
+  type: 'test'
+  ...
+# Subtest: leaderboard comes from pinned contract pages with stable address tiebreak
+ok 132 - leaderboard comes from pinned contract pages with stable address tiebreak
+  ---
+  duration_ms: 12.6517
+  type: 'test'
+  ...
+# Subtest: grants bind generation and private transition diagnostics contain no signatures
+ok 133 - grants bind generation and private transition diagnostics contain no signatures
+  ---
+  duration_ms: 7.1733
+  type: 'test'
+  ...
+# Subtest: leaderboard rejects missing pages and totals changing inside one snapshot
+ok 134 - leaderboard rejects missing pages and totals changing inside one snapshot
+  ---
+  duration_ms: 2.7394
+  type: 'test'
+  ...
+# Subtest: optional executor never chooses opponents, retries an uncertain send or charges a player
+ok 135 - optional executor never chooses opponents, retries an uncertain send or charges a player
+  ---
+  duration_ms: 2.5342
+  type: 'test'
+  ...
+# Subtest: the trail is bounded and fades while the ball is stationary
+ok 136 - the trail is bounded and fades while the ball is stationary
+  ---
+  duration_ms: 4.2927
+  type: 'test'
+  ...
+# Subtest: points, seeks and corrections never draw a streak across the court
+ok 137 - points, seeks and corrections never draw a streak across the court
+  ---
+  duration_ms: 0.2151
+  type: 'test'
+  ...
+# Subtest: disabled effects and tab resets discard their previous history
+ok 138 - disabled effects and tab resets discard their previous history
+  ---
+  duration_ms: 0.6369
+  type: 'test'
+  ...
+# Subtest: base reads share a paced queue and coalesce only identical in-flight requests
+ok 139 - base reads share a paced queue and coalesce only identical in-flight requests
+  ---
+  duration_ms: 36.4978
+  type: 'test'
+  ...
+# Subtest: a confirmed JSON-RPC read limit backs off and recovers without consuming a write nonce
+ok 140 - a confirmed JSON-RPC read limit backs off and recovers without consuming a write nonce
+  ---
+  duration_ms: 3.2339
+  type: 'test'
+  ...
+# Subtest: read retries honor Retry-After and remain bounded; other failures are not replayed
+ok 141 - read retries honor Retry-After and remain bounded; other failures are not replayed
+  ---
+  duration_ms: 4.701
+  type: 'test'
+  ...
+# Subtest: rules 11 captures index distinct arenas, epochs and tournament references without an archive writer
+ok 142 - rules 11 captures index distinct arenas, epochs and tournament references without an archive writer
+  ---
+  duration_ms: 16.1536
+  type: 'test'
+  ...
+# Subtest: rules 15 captures index distinct arenas, epochs and tournament references without an archive writer
+ok 143 - rules 15 captures index distinct arenas, epochs and tournament references without an archive writer
+  ---
+  duration_ms: 1.2921
+  type: 'test'
+  ...
+# Subtest: reusable capture shares retention with earlier series without relabelling their rules
+ok 144 - reusable capture shares retention with earlier series without relabelling their rules
+  ---
+  duration_ms: 0.8791
+  type: 'test'
+  ...
+# Subtest: immutable archive bindings preserve historical rules 6 and index corrected rules 8 separately
+ok 145 - immutable archive bindings preserve historical rules 6 and index corrected rules 8 separately
+  ---
+  duration_ms: 0.631
+  type: 'test'
+  ...
+# Subtest: rules 6 shares three replay places with all four generations and keeps financial entities
+ok 146 - rules 6 shares three replay places with all four generations and keeps financial entities
+  ---
+  duration_ms: 0.735
+  type: 'test'
+  ...
+# Subtest: agents and human games share the same three replay places across modes and epochs
+ok 147 - agents and human games share the same three replay places across modes and epochs
+  ---
+  duration_ms: 0.7758
+  type: 'test'
+  ...
+# Subtest: correction, replayed archive notification and reorganization never double a retained place or restore deleted frames
+ok 148 - correction, replayed archive notification and reorganization never double a retained place or restore deleted frames
+  ---
+  duration_ms: 2.6619
+  type: 'test'
+  ...
+# Subtest: serialized replay restores both balls, effects, actual rally and collision timestamps
+ok 149 - serialized replay restores both balls, effects, actual rally and collision timestamps
+  ---
+  duration_ms: 1.2935
+  type: 'test'
+  ...
+# Subtest: a corrected result evicts frames only after both players lose their retained reference
+ok 150 - a corrected result evicts frames only after both players lose their retained reference
+  ---
+  duration_ms: 0.9034
+  type: 'test'
+  ...
+# Subtest: identified Chaos events deduplicate and respect mute, visibility and voice budget
+ok 151 - identified Chaos events deduplicate and respect mute, visibility and voice budget
+  ---
+  duration_ms: 3.7659
+  type: 'test'
+  ...
+# Subtest: music restoration survives settings changes during a jingle and short Chaos cues
+ok 152 - music restoration survives settings changes during a jingle and short Chaos cues
+  ---
+  duration_ms: 0.6546
+  type: 'test'
+  ...
+# Subtest: a delayed beacon is deduplicated and never sent to a changed epoch or completed game
+ok 153 - a delayed beacon is deduplicated and never sent to a changed epoch or completed game
+  ---
+  duration_ms: 2.122
+  type: 'test'
+  ...
+# Subtest: only the committed round is transported; future, pending and competing proofs wait
+ok 154 - only the committed round is transported; future, pending and competing proofs wait
+  ---
+  duration_ms: 0.4456
+  type: 'test'
+  ...
+# Subtest: failed retrieval respects retryAt without suspending any other arena
+ok 155 - failed retrieval respects retryAt without suspending any other arena
+  ---
+  duration_ms: 0.6481
+  type: 'test'
+  ...
+# Subtest: a proof is due exactly when drand has published the requested round and nothing is pending
+ok 156 - a proof is due exactly when drand has published the requested round and nothing is pending
+  ---
+  duration_ms: 0.244
+  type: 'test'
+  ...
+# Subtest: a multiball retired on the contact boundary cannot spend the player charge
+ok 157 - a multiball retired on the contact boundary cannot spend the player charge
+  ---
+  duration_ms: 18.1559
+  type: 'test'
+  ...
+# Subtest: Hot Potato opposite simultaneous contacts preserve either prior holder
+ok 158 - Hot Potato opposite simultaneous contacts preserve either prior holder
+  ---
+  duration_ms: 7.7065
+  type: 'test'
+  ...
+# Subtest: brick contact on a force-grid microsecond reflects and consumes exactly once
+ok 159 - brick contact on a force-grid microsecond reflects and consumes exactly once
+  ---
+  duration_ms: 13.2418
+  type: 'test'
+  ...
+# Subtest: UI fixture decodes actual historical header, multiball and terminal score
+ok 160 - UI fixture decodes actual historical header, multiball and terminal score
+  ---
+  duration_ms: 10.2139
+  type: 'test'
+  ...
+# Subtest: UI fixture decodes actual human rules 14 header, multiball and terminal score
+ok 161 - UI fixture decodes actual human rules 14 header, multiball and terminal score
+  ---
+  duration_ms: 1.55
+  type: 'test'
+  ...
+# Subtest: UI fixture decodes actual agents rules 15 header, multiball and terminal score
+ok 162 - UI fixture decodes actual agents rules 15 header, multiball and terminal score
+  ---
+  duration_ms: 1.2058
+  type: 'test'
+  ...
+# Subtest: candidate catalogue preserves all 24 events and their weights
+ok 163 - candidate catalogue preserves all 24 events and their weights
+  ---
+  duration_ms: 1.3
+  type: 'test'
+  ...
+# Subtest: all 276 active pairs are excluded from draw selection (not a physics test)
+ok 164 - all 276 active pairs are excluded from draw selection (not a physics test)
+  ---
+  duration_ms: 114.6794
+  type: 'test'
+  ...
+# Subtest: all draw context fields are committed before revelation
+ok 165 - all draw context fields are committed before revelation
+  ---
+  duration_ms: 1.9238
+  type: 'test'
+  ...
+# Subtest: future round calculation never selects a round at or before commitment time
+ok 166 - future round calculation never selects a round at or before commitment time
+  ---
+  duration_ms: 0.1557
+  type: 'test'
+  ...
+# Subtest: collision identity separates deployments, epochs, rallies and balls
+ok 167 - collision identity separates deployments, epochs, rallies and balls
+  ---
+  duration_ms: 0.1773
+  type: 'test'
+  ...
+# Subtest: charges, bricks and hot potato keep their own slot and expire
+ok 168 - charges, bricks and hot potato keep their own slot and expire
+  ---
+  duration_ms: 3.5407
+  type: 'test'
+  ...
+# Subtest: every mystery reward refreshes without stacking and preserves last hitter ownership
+ok 169 - every mystery reward refreshes without stacking and preserves last hitter ownership
+  ---
+  duration_ms: 1.5193
+  type: 'test'
+  ...
+# Subtest: jackpot finishes at seven, duplicate results are inert, opposite goals void a real rally
+ok 170 - jackpot finishes at seven, duplicate results are inert, opposite goals void a real rally
+  ---
+  duration_ms: 1.8426
+  type: 'test'
+  ...
+# Subtest: 24 distinct transparent pixel icons fit the same grid and palette
+ok 171 - 24 distinct transparent pixel icons fit the same grid and palette
+  ---
+  duration_ms: 6.247
+  type: 'test'
+  ...
+# Subtest: Monad must publish the exact pause before it can open its betting window
+ok 172 - Monad must publish the exact pause before it can open its betting window
+  ---
+  duration_ms: 28.5044
+  type: 'test'
+  ...
+# Subtest: only explicit window-state reverts are classified as a reobservation
+ok 173 - only explicit window-state reverts are classified as a reobservation
+  ---
+  duration_ms: 0.4023
+  type: 'test'
+  ...
+# Subtest: human rules retain 6 and 8 history and add 9; agent rules are separate
+ok 174 - human rules retain 6 and 8 history and add 9; agent rules are separate
+  ---
+  duration_ms: 3.8228
+  type: 'test'
+  ...
+# Subtest: finance bindings accept historical and current human kernels but never agent kernels
+ok 175 - finance bindings accept historical and current human kernels but never agent kernels
+  ---
+  duration_ms: 872.0972
+  type: 'test'
+  ...
+# Subtest: the mirror plays either kernel: rules 6 lets the second Multiball ball through, rules 8 returns it
+ok 176 - the mirror plays either kernel: rules 6 lets the second Multiball ball through, rules 8 returns it
+  ---
+  duration_ms: 25.7305
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 1, side 0, bottom false, overshoot 0
+ok 177 - boundary paddle reclamp: effect 1, side 0, bottom false, overshoot 0
+  ---
+  duration_ms: 5.7318
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 1, side 0, bottom false, overshoot 1000
+ok 178 - boundary paddle reclamp: effect 1, side 0, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.8399
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 1, side 0, bottom true, overshoot 0
+ok 179 - boundary paddle reclamp: effect 1, side 0, bottom true, overshoot 0
+  ---
+  duration_ms: 0.6366
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 1, side 0, bottom true, overshoot 1000
+ok 180 - boundary paddle reclamp: effect 1, side 0, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.5312
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 1, side 1, bottom false, overshoot 0
+ok 181 - boundary paddle reclamp: effect 1, side 1, bottom false, overshoot 0
+  ---
+  duration_ms: 0.6734
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 1, side 1, bottom false, overshoot 1000
+ok 182 - boundary paddle reclamp: effect 1, side 1, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.3645
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 1, side 1, bottom true, overshoot 0
+ok 183 - boundary paddle reclamp: effect 1, side 1, bottom true, overshoot 0
+  ---
+  duration_ms: 1.24
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 1, side 1, bottom true, overshoot 1000
+ok 184 - boundary paddle reclamp: effect 1, side 1, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.5541
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 7, side 0, bottom false, overshoot 0
+ok 185 - boundary paddle reclamp: effect 7, side 0, bottom false, overshoot 0
+  ---
+  duration_ms: 0.6826
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 7, side 0, bottom false, overshoot 1000
+ok 186 - boundary paddle reclamp: effect 7, side 0, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.7975
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 7, side 0, bottom true, overshoot 0
+ok 187 - boundary paddle reclamp: effect 7, side 0, bottom true, overshoot 0
+  ---
+  duration_ms: 0.4431
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 7, side 0, bottom true, overshoot 1000
+ok 188 - boundary paddle reclamp: effect 7, side 0, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.4081
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 7, side 1, bottom false, overshoot 0
+ok 189 - boundary paddle reclamp: effect 7, side 1, bottom false, overshoot 0
+  ---
+  duration_ms: 0.3344
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 7, side 1, bottom false, overshoot 1000
+ok 190 - boundary paddle reclamp: effect 7, side 1, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.3285
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 7, side 1, bottom true, overshoot 0
+ok 191 - boundary paddle reclamp: effect 7, side 1, bottom true, overshoot 0
+  ---
+  duration_ms: 0.3338
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 7, side 1, bottom true, overshoot 1000
+ok 192 - boundary paddle reclamp: effect 7, side 1, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.3186
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 9, side 0, bottom false, overshoot 0
+ok 193 - boundary paddle reclamp: effect 9, side 0, bottom false, overshoot 0
+  ---
+  duration_ms: 0.3059
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 9, side 0, bottom false, overshoot 1000
+ok 194 - boundary paddle reclamp: effect 9, side 0, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.3197
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 9, side 0, bottom true, overshoot 0
+ok 195 - boundary paddle reclamp: effect 9, side 0, bottom true, overshoot 0
+  ---
+  duration_ms: 0.2957
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 9, side 0, bottom true, overshoot 1000
+ok 196 - boundary paddle reclamp: effect 9, side 0, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.3694
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 9, side 1, bottom false, overshoot 0
+ok 197 - boundary paddle reclamp: effect 9, side 1, bottom false, overshoot 0
+  ---
+  duration_ms: 0.3447
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 9, side 1, bottom false, overshoot 1000
+ok 198 - boundary paddle reclamp: effect 9, side 1, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.3935
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 9, side 1, bottom true, overshoot 0
+ok 199 - boundary paddle reclamp: effect 9, side 1, bottom true, overshoot 0
+  ---
+  duration_ms: 0.3541
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 9, side 1, bottom true, overshoot 1000
+ok 200 - boundary paddle reclamp: effect 9, side 1, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.3102
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 11, side 0, bottom false, overshoot 0
+ok 201 - boundary paddle reclamp: effect 11, side 0, bottom false, overshoot 0
+  ---
+  duration_ms: 0.3877
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 11, side 0, bottom false, overshoot 1000
+ok 202 - boundary paddle reclamp: effect 11, side 0, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.3406
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 11, side 0, bottom true, overshoot 0
+ok 203 - boundary paddle reclamp: effect 11, side 0, bottom true, overshoot 0
+  ---
+  duration_ms: 0.3246
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 11, side 0, bottom true, overshoot 1000
+ok 204 - boundary paddle reclamp: effect 11, side 0, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.3353
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 11, side 1, bottom false, overshoot 0
+ok 205 - boundary paddle reclamp: effect 11, side 1, bottom false, overshoot 0
+  ---
+  duration_ms: 1.7238
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 11, side 1, bottom false, overshoot 1000
+ok 206 - boundary paddle reclamp: effect 11, side 1, bottom false, overshoot 1000
+  ---
+  duration_ms: 1.2669
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 11, side 1, bottom true, overshoot 0
+ok 207 - boundary paddle reclamp: effect 11, side 1, bottom true, overshoot 0
+  ---
+  duration_ms: 0.8008
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 11, side 1, bottom true, overshoot 1000
+ok 208 - boundary paddle reclamp: effect 11, side 1, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.7886
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 12, side 0, bottom false, overshoot 0
+ok 209 - boundary paddle reclamp: effect 12, side 0, bottom false, overshoot 0
+  ---
+  duration_ms: 1.7548
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 12, side 0, bottom false, overshoot 1000
+ok 210 - boundary paddle reclamp: effect 12, side 0, bottom false, overshoot 1000
+  ---
+  duration_ms: 1.2569
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 12, side 0, bottom true, overshoot 0
+ok 211 - boundary paddle reclamp: effect 12, side 0, bottom true, overshoot 0
+  ---
+  duration_ms: 1.8197
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 12, side 0, bottom true, overshoot 1000
+ok 212 - boundary paddle reclamp: effect 12, side 0, bottom true, overshoot 1000
+  ---
+  duration_ms: 1.0154
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 12, side 1, bottom false, overshoot 0
+ok 213 - boundary paddle reclamp: effect 12, side 1, bottom false, overshoot 0
+  ---
+  duration_ms: 0.8968
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 12, side 1, bottom false, overshoot 1000
+ok 214 - boundary paddle reclamp: effect 12, side 1, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.7184
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 12, side 1, bottom true, overshoot 0
+ok 215 - boundary paddle reclamp: effect 12, side 1, bottom true, overshoot 0
+  ---
+  duration_ms: 0.3184
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 12, side 1, bottom true, overshoot 1000
+ok 216 - boundary paddle reclamp: effect 12, side 1, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.7422
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 23, side 0, bottom false, overshoot 0
+ok 217 - boundary paddle reclamp: effect 23, side 0, bottom false, overshoot 0
+  ---
+  duration_ms: 0.8645
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 23, side 0, bottom false, overshoot 1000
+ok 218 - boundary paddle reclamp: effect 23, side 0, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.6194
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 23, side 0, bottom true, overshoot 0
+ok 219 - boundary paddle reclamp: effect 23, side 0, bottom true, overshoot 0
+  ---
+  duration_ms: 0.6465
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 23, side 0, bottom true, overshoot 1000
+ok 220 - boundary paddle reclamp: effect 23, side 0, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.3529
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 23, side 1, bottom false, overshoot 0
+ok 221 - boundary paddle reclamp: effect 23, side 1, bottom false, overshoot 0
+  ---
+  duration_ms: 0.4275
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 23, side 1, bottom false, overshoot 1000
+ok 222 - boundary paddle reclamp: effect 23, side 1, bottom false, overshoot 1000
+  ---
+  duration_ms: 0.3703
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 23, side 1, bottom true, overshoot 0
+ok 223 - boundary paddle reclamp: effect 23, side 1, bottom true, overshoot 0
+  ---
+  duration_ms: 0.4173
+  type: 'test'
+  ...
+# Subtest: boundary paddle reclamp: effect 23, side 1, bottom true, overshoot 1000
+ok 224 - boundary paddle reclamp: effect 23, side 1, bottom true, overshoot 1000
+  ---
+  duration_ms: 0.5456
+  type: 'test'
+  ...
+# Subtest: replay of 2026-09-18: both balls are returned by the paddle that covers them
+ok 225 - replay of 2026-09-18: both balls are returned by the paddle that covers them
+  ---
+  duration_ms: 1.9237
+  type: 'test'
+  ...
+# Subtest: opposite paddles, wall and paddle, a corner and opposite walls in one microsecond
+ok 226 - opposite paddles, wall and paddle, a corner and opposite walls in one microsecond
+  ---
+  duration_ms: 1.5948
+  type: 'test'
+  ...
+# Subtest: contacts due exactly on a force tick or an effect boundary
+ok 227 - contacts due exactly on a force tick or an effect boundary
+  ---
+  duration_ms: 4.1606
+  type: 'test'
+  ...
+# Subtest: guards: one shield charge, misses, and obstacles that still act once
+ok 228 - guards: one shield charge, misses, and obstacles that still act once
+  ---
+  duration_ms: 3.2447
+  type: 'test'
+  ...
+# Subtest: controls: nothing else due in the microsecond
+ok 229 - controls: nothing else due in the microsecond
+  ---
+  duration_ms: 0.8324
+  type: 'test'
+  ...
+# Subtest: a full microsecond after seven collisions fits the log: 7 + 4 = 11
+ok 230 - a full microsecond after seven collisions fits the log: 7 + 4 = 11
+  ---
+  duration_ms: 0.7845
+  type: 'test'
+  ...
+# Subtest: 300 lockstep Multiball arrivals at a covering paddle: no ball passes
+ok 231 - 300 lockstep Multiball arrivals at a covering paddle: no ball passes
+  ---
+  duration_ms: 44.1782
+  type: 'test'
+  ...
+# Subtest: all events have distinct bounded synthesized announcement cues
+ok 232 - all events have distinct bounded synthesized announcement cues
+  ---
+  duration_ms: 1.2932
+  type: 'test'
+  ...
+# Subtest: both reusable ABIs retain linked Chaos snapshots, random draws and collision identities
+ok 233 - both reusable ABIs retain linked Chaos snapshots, random draws and collision identities
+  ---
+  duration_ms: 49.1819
+  type: 'test'
+  ...
+# Subtest: atomic read and push preserve second-ball state, real rally, explicit nonces and draw state
+ok 234 - atomic read and push preserve second-ball state, real rally, explicit nonces and draw state
+  ---
+  duration_ms: 10.4684
+  type: 'test'
+  ...
+# Subtest: a discontinuity cannot guess a new draw or final result from partial event state
+ok 235 - a discontinuity cannot guess a new draw or final result from partial event state
+  ---
+  duration_ms: 2.7425
+  type: 'test'
+  ...
+# Subtest: every game-node command is signed with 30,000,000 gas by default, the node maximum, at no fee
+ok 236 - every game-node command is signed with 30,000,000 gas by default, the node maximum, at no fee
+  ---
+  duration_ms: 105.3786
+  type: 'test'
+  ...
+# Subtest: a live Chaos match is ticked only after the stale threshold without observed progress
+ok 237 - a live Chaos match is ticked only after the stale threshold without observed progress
+  ---
+  duration_ms: 0.5592
+  type: 'test'
+  ...
+# Subtest: never a Classic match, an offer, a finished or cancelled match, or a rally awaiting its serve
+ok 238 - never a Classic match, an offer, a finished or cancelled match, or a rally awaiting its serve
+  ---
+  duration_ms: 0.2871
+  type: 'test'
+  ...
+# Subtest: never a second command for a match while one is queued or in flight, nor during its backoff
+ok 239 - never a second command for a match while one is queued or in flight, nor during its backoff
+  ---
+  duration_ms: 0.292
+  type: 'test'
+  ...
+# Subtest: the guard follows the engine verdict: disabled, disconnected, not writable (halted included) or cooling down means no send
+ok 240 - the guard follows the engine verdict: disabled, disconnected, not writable (halted included) or cooling down means no send
+  ---
+  duration_ms: 0.4901
+  type: 'test'
+  ...
+# Subtest: a frozen match: after any relayer tick of it reverted, the guard stays silent until progress, however long
+ok 241 - a frozen match: after any relayer tick of it reverted, the guard stays silent until progress, however long
+  ---
+  duration_ms: 0.2177
+  type: 'test'
+  ...
+# Subtest: tick outcomes are keyed by the executed command's match, cleared by a later success
+ok 242 - tick outcomes are keyed by the executed command's match, cleared by a later success
+  ---
+  duration_ms: 0.2138
+  type: 'test'
+  ...
+# Subtest: backoff scoping: a recovered entry of another match resolved inside a guard tick is never this match's revert
+ok 243 - backoff scoping: a recovered entry of another match resolved inside a guard tick is never this match's revert
+  ---
+  duration_ms: 2.8303
+  type: 'test'
+  ...
+# Subtest: tolerances: the worst measured state is two balls inside the gravity well
+ok 244 - tolerances: the worst measured state is two balls inside the gravity well
+  ---
+  duration_ms: 0.2914
+  type: 'test'
+  ...
+# Subtest: timing budget against the worst state: the guard fits up to a 215 ms round trip, the backup does not
+ok 245 - timing budget against the worst state: the guard fits up to a 215 ms round trip, the backup does not
+  ---
+  duration_ms: 0.5132
+  type: 'test'
+  ...
+# Subtest: the release limit could not absorb the backup takeover; the interim can, except in the worst state
+ok 246 - the release limit could not absorb the backup takeover; the interim can, except in the worst state
+  ---
+  duration_ms: 0.1269
+  type: 'test'
+  ...
+# Subtest: reusable arena commands and durable journal bind both epoch and logical match
+ok 247 - reusable arena commands and durable journal bind both epoch and logical match
+  ---
+  duration_ms: 273.2498
+  type: 'test'
+  ...
+# {"fixture":"serialized signed input, not relay HTTP body","directBytes":237,"wrappedBytes":847,"reductionPercent":72}
+# Subtest: compact controls use the bound key, zero value, exact match and sequential nonces
+ok 248 - compact controls use the bound key, zero value, exact match and sequential nonces
+  ---
+  duration_ms: 67.8087
+  type: 'test'
+  ...
+# Subtest: lost response keeps exact bytes and blocks any replacement until reconciliation
+ok 249 - lost response keeps exact bytes and blocks any replacement until reconciliation
+  ---
+  duration_ms: 29.1485
+  type: 'test'
+  ...
+# Subtest: readiness uses the same scoped journal and is absent from historical sessions
+ok 250 - readiness uses the same scoped journal and is absent from historical sessions
+  ---
+  duration_ms: 11.3256
+  type: 'test'
+  ...
+# Subtest: mismatched receipt is uncertain; confirmed revert consumes the nonce
+ok 251 - mismatched receipt is uncertain; confirmed revert consumes the nonce
+  ---
+  duration_ms: 24.3381
+  type: 'test'
+  ...
+# Subtest: successful loading readiness rereads the engine nonce before the first gameplay command
+ok 252 - successful loading readiness rereads the engine nonce before the first gameplay command
+  ---
+  duration_ms: 6.5114
+  type: 'test'
+  ...
+# Subtest: journal requires a verified direct binding and refuses a different key, match, epoch or financial call
+ok 253 - journal requires a verified direct binding and refuses a different key, match, epoch or financial call
+  ---
+  duration_ms: 52.3817
+  type: 'test'
+  ...
+# Subtest: serialized direct input removes the repeated SDK grant without changing inner calldata
+ok 254 - serialized direct input removes the repeated SDK grant without changing inner calldata
+  ---
+  duration_ms: 12.7984
+  type: 'test'
+  ...
+# {"fixture":"rules5 signed movement","directBytes":238,"wrappedBytes":912,"reductionPercent":74}
+# Subtest: one grant registration, then compact controls with a single sequential nonce owner
+ok 255 - one grant registration, then compact controls with a single sequential nonce owner
+  ---
+  duration_ms: 1479.7012
+  type: 'test'
+  ...
+# Subtest: every compact control is signed with the 30,000,000 gas ceiling at no fee
+ok 256 - every compact control is signed with the 30,000,000 gas ceiling at no fee
+  ---
+  duration_ms: 158.8247
+  type: 'test'
+  ...
+# Subtest: F5 reuses the binding; an uncertain registration cannot be replaced or followed by input
+ok 257 - F5 reuses the binding; an uncertain registration cannot be replaced or followed by input
+  ---
+  duration_ms: 131.7645
+  type: 'test'
+  ...
+# Subtest: confirmed reverts consume nonces; financial actions and expired grants never send
+ok 258 - confirmed reverts consume nonces; financial actions and expired grants never send
+  ---
+  duration_ms: 76.5216
+  type: 'test'
+  ...
+# Subtest: disconnect revokes only its existing binding, and never registers an unused key
+ok 259 - disconnect revokes only its existing binding, and never registers an unused key
+  ---
+  duration_ms: 102.347
+  type: 'test'
+  ...
+# Subtest: an open tab signs its next control with the limit the relayer serves, without a reload
+ok 260 - an open tab signs its next control with the limit the relayer serves, without a reload
+  ---
+  duration_ms: 70.2351
+  type: 'test'
+  ...
+# Subtest: lost availability response resumes the exact signed transaction; a known receipt sends nothing
+ok 261 - lost availability response resumes the exact signed transaction; a known receipt sends nothing
+  ---
+  duration_ms: 263.2398
+  type: 'test'
+  ...
+# Subtest: consumed nonce without the exact receipt and an RPC outage never trigger a new send
+ok 262 - consumed nonce without the exact receipt and an RPC outage never trigger a new send
+  ---
+  duration_ms: 107.8491
+  type: 'test'
+  ...
+# Subtest: journal replay is bound to creator, chain, zero value, target, calldata, nonce and exact receipt
+ok 263 - journal replay is bound to creator, chain, zero value, target, calldata, nonce and exact receipt
+  ---
+  duration_ms: 279.8893
+  type: 'test'
+  ...
+# Subtest: preflight rejects an oversized transitive library before a deployer can submit any root
+ok 264 - preflight rejects an oversized transitive library before a deployer can submit any root
+  ---
+  duration_ms: 1.6091
+  type: 'test'
+  ...
+# Subtest: the full library graph is checked once, and missing or cyclic links fail closed
+ok 265 - the full library graph is checked once, and missing or cyclic links fail closed
+  ---
+  duration_ms: 0.8089
+  type: 'test'
+  ...
+# Subtest: runtime exceptions remain explicit and creation/reference bounds cannot be bypassed
+ok 266 - runtime exceptions remain explicit and creation/reference bounds cannot be bypassed
+  ---
+  duration_ms: 0.4115
+  type: 'test'
+  ...
+# Subtest: documentation covers unique routes and finds phrases and recovery concepts
+ok 267 - documentation covers unique routes and finds phrases and recovery concepts
+  ---
+  duration_ms: 14.8187
+  type: 'test'
+  ...
+# Subtest: concurrent transports share one request and cache the exact round
+ok 268 - concurrent transports share one request and cache the exact round
+  ---
+  duration_ms: 42.4167
+  type: 'test'
+  ...
+# Subtest: 429 respects Retry-After and preserves the round on another mirror
+ok 269 - 429 respects Retry-After and preserves the round on another mirror
+  ---
+  duration_ms: 1.2901
+  type: 'test'
+  ...
+# Subtest: missing or malformed replies never select an older round
+ok 270 - missing or malformed replies never select an older round
+  ---
+  duration_ms: 5.1362
+  type: 'test'
+  ...
+# Subtest: oversized chunked response is rejected and an honest mirror can recover
+ok 271 - oversized chunked response is rejected and an honest mirror can recover
+  ---
+  duration_ms: 0.6581
+  type: 'test'
+  ...
+# Subtest: future beacon absence is explicit, without caching a failure forever
+ok 272 - future beacon absence is explicit, without caching a failure forever
+  ---
+  duration_ms: 0.8274
+  type: 'test'
+  ...
+# Subtest: external strategy code uses the exact agreed opening block, never latest
+ok 273 - external strategy code uses the exact agreed opening block, never latest
+  ---
+  duration_ms: 6.3405
+  type: 'test'
+  ...
+# Subtest: the command gas limit: 30,000,000 by default, the operator may lower it without a rebuild, never raise it
+ok 274 - the command gas limit: 30,000,000 by default, the operator may lower it without a rebuild, never raise it
+  ---
+  duration_ms: 1.6881
+  type: 'test'
+  ...
+# Subtest: the browser signs with the limit the relayer's config serves, and keeps its own on anything invalid
+ok 275 - the browser signs with the limit the relayer's config serves, and keeps its own on anything invalid
+  ---
+  duration_ms: 0.3004
+  type: 'test'
+  ...
+# Subtest: a config that serves no limit comes from the release relayer: the tab signs its 15,000,000, never 30 M
+ok 276 - a config that serves no limit comes from the release relayer: the tab signs its 15,000,000, never 30 M
+  ---
+  duration_ms: 0.2327
+  type: 'test'
+  ...
+# Subtest: the operator switches reach the relayer container, and every instruction says to recreate it
+ok 277 - the operator switches reach the relayer container, and every instruction says to recreate it
+  ---
+  duration_ms: 8.2675
+  type: 'test'
+  ...
+# Subtest: health: a halted report is a halt, an explicit healthy report is not, anything else is unknown
+ok 278 - health: a halted report is a halt, an explicit healthy report is not, anything else is unknown
+  ---
+  duration_ms: 3.2131
+  type: 'test'
+  ...
+# Subtest: health: the report names its session (app, epoch) as the node's /health does, and only a matching one applies
+ok 279 - health: the report names its session (app, epoch) as the node's /health does, and only a matching one applies
+  ---
+  duration_ms: 0.5605
+  type: 'test'
+  ...
+# Subtest: health read: short timeout, and a failed, slow or unreadable read is unknown, never a halt
+ok 280 - health read: short timeout, and a failed, slow or unreadable read is unknown, never a halt
+  ---
+  duration_ms: 110.8127
+  type: 'test'
+  ...
+# Subtest: health read: through the node's shared cooldown and RPC metrics
+ok 281 - health read: through the node's shared cooldown and RPC metrics
+  ---
+  duration_ms: 5.0315
+  type: 'test'
+  ...
+# Subtest: refusal patterns: only the gas cap and a halted node retire, nested in SDK and transport wrappers
+ok 282 - refusal patterns: only the gas cap and a halted node retire, nested in SDK and transport wrappers
+  ---
+  duration_ms: 23.9453
+  type: 'test'
+  ...
+# Subtest: refusal patterns: the generic "rejected before execution" alone never retires
+ok 283 - refusal patterns: the generic "rejected before execution" alone never retires
+  ---
+  duration_ms: 6.1351
+  type: 'test'
+  ...
+# Subtest: refusal patterns: nothing else counts, least of all a lost response or a local gate
+ok 284 - refusal patterns: nothing else counts, least of all a lost response or a local gate
+  ---
+  duration_ms: 1.1262
+  type: 'test'
+  ...
+# Subtest: EngineHalted and EngineGasCapped are 503s with a 30 s retry, never a player session problem
+ok 285 - EngineHalted and EngineGasCapped are 503s with a 30 s retry, never a player session problem
+  ---
+  duration_ms: 0.589
+  type: 'test'
+  ...
+# Subtest: the halt message never claims that finished results are saved
+ok 286 - the halt message never claims that finished results are saved
+  ---
+  duration_ms: 0.4326
+  type: 'test'
+  ...
+# Subtest: halt monitor: health decides both ways, a failed health read changes nothing
+ok 287 - halt monitor: health decides both ways, a failed health read changes nothing
+  ---
+  duration_ms: 0.7715
+  type: 'test'
+  ...
+# Subtest: halt monitor: a send refused as "session over" halts at once; other send errors do not
+ok 288 - halt monitor: a send refused as "session over" halts at once; other send errors do not
+  ---
+  duration_ms: 0.6726
+  type: 'test'
+  ...
+# Subtest: halt monitor: a new epoch is a new node session
+ok 289 - halt monitor: a new epoch is a new node session
+  ---
+  duration_ms: 0.1307
+  type: 'test'
+  ...
+# Subtest: gas-cap monitor: a gas-cap refusal makes the node unavailable for that epoch and limit, nothing else does
+ok 290 - gas-cap monitor: a gas-cap refusal makes the node unavailable for that epoch and limit, nothing else does
+  ---
+  duration_ms: 0.3476
+  type: 'test'
+  ...
+# Subtest: the maintenance verdict: a halted node is not writable (online and admission false) and says ENGINE_HALTED
+ok 291 - the maintenance verdict: a halted node is not writable (online and admission false) and says ENGINE_HALTED
+  ---
+  duration_ms: 0.8635
+  type: 'test'
+  ...
+# Subtest: the maintenance verdict: a gas-cap refusal closes the arena (online and admission false) with ENGINE_GAS_CAP
+ok 292 - the maintenance verdict: a gas-cap refusal closes the arena (online and admission false) with ENGINE_GAS_CAP
+  ---
+  duration_ms: 0.2113
+  type: 'test'
+  ...
+# Subtest: gas-cap wording: the numbered revm text, go-ethereum's and a pool's limit all count; a full block does not
+ok 293 - gas-cap wording: the numbered revm text, go-ethereum's and a pool's limit all count; a full block does not
+  ---
+  duration_ms: 0.7259
+  type: 'test'
+  ...
+# Subtest: an unrecognised refusal is logged with the node's own words, bounded
+ok 294 - an unrecognised refusal is logged with the node's own words, bounded
+  ---
+  duration_ms: 0.1401
+  type: 'test'
+  ...
+# Subtest: gas-cap monitor: a mark survives a restart at the same epoch and limit; an executed command at that limit lifts it
+ok 295 - gas-cap monitor: a mark survives a restart at the same epoch and limit; an executed command at that limit lifts it
+  ---
+  duration_ms: 0.507
+  type: 'test'
+  ...
+# Subtest: gas acceptance: the first executed command per epoch and limit is the operator's proof
+ok 296 - gas acceptance: the first executed command per epoch and limit is the operator's proof
+  ---
+  duration_ms: 0.3898
+  type: 'test'
+  ...
+# Subtest: overlapping reads coalesce and retain their original observation time
+ok 297 - overlapping reads coalesce and retain their original observation time
+  ---
+  duration_ms: 1.1629
+  type: 'test'
+  ...
+# Subtest: a post-write read cannot be satisfied or overwritten by an older in-flight read
+ok 298 - a post-write read cannot be satisfied or overwritten by an older in-flight read
+  ---
+  duration_ms: 0.3754
+  type: 'test'
+  ...
+# Subtest: failed reads are not cached and HTTP 429 keeps the server cooldown
+ok 299 - failed reads are not cached and HTTP 429 keeps the server cooldown
+  ---
+  duration_ms: 41.0404
+  type: 'test'
+  ...
+# Subtest: structured API limits preserve retryAt rather than repeating authentication every ten seconds
+ok 300 - structured API limits preserve retryAt rather than repeating authentication every ten seconds
+  ---
+  duration_ms: 1.5394
+  type: 'test'
+  ...
+# Subtest: a raw 36-byte Solidity panic is diagnosed as a state read failure
+ok 301 - a raw 36-byte Solidity panic is diagnosed as a state read failure
+  ---
+  duration_ms: 13.8385
+  type: 'test'
+  ...
+# Subtest: clock errors, malformed responses and complete snapshots stay distinct
+ok 302 - clock errors, malformed responses and complete snapshots stay distinct
+  ---
+  duration_ms: 9.4531
+  type: 'test'
+  ...
+# Subtest: applied envelopes reject other apps, failed calls, malformed heads and logs
+ok 303 - applied envelopes reject other apps, failed calls, malformed heads and logs
+  ---
+  duration_ms: 4.1531
+  type: 'test'
+  ...
+# Subtest: Snapshot advances known clock and physics without guessing nonces
+ok 304 - Snapshot advances known clock and physics without guessing nonces
+  ---
+  duration_ms: 25.9036
+  type: 'test'
+  ...
+# Subtest: one subscription serves multiple observers and filters subscription ids
+ok 305 - one subscription serves multiple observers and filters subscription ids
+  ---
+  duration_ms: 5.5336
+  type: 'test'
+  ...
+# Subtest: push plus receipt confirms an input once, without a post-write RPC read
+ok 306 - push plus receipt confirms an input once, without a post-write RPC read
+  ---
+  duration_ms: 8.6819
+  type: 'test'
+  ...
+# Subtest: backup pilot waits for primary, then ticks at 300 ms; successful inputs suppress ticks
+ok 307 - backup pilot waits for primary, then ticks at 300 ms; successful inputs suppress ticks
+  ---
+  duration_ms: 0.6571
+  type: 'test'
+  ...
+# Subtest: a completed snapshot needs a matching winner, and another match cannot end this one
+ok 308 - a completed snapshot needs a matching winner, and another match cannot end this one
+  ---
+  duration_ms: 8.6506
+  type: 'test'
+  ...
+# Subtest: a receipt with no matching Snapshot forces recovery instead of confirming guessed metadata
+ok 309 - a receipt with no matching Snapshot forces recovery instead of confirming guessed metadata
+  ---
+  duration_ms: 2.9463
+  type: 'test'
+  ...
+# Subtest: backup ownership survives its own websocket event arriving before its receipt
+ok 310 - backup ownership survives its own websocket event arriving before its receipt
+  ---
+  duration_ms: 0.2753
+  type: 'test'
+  ...
+# Subtest: a restart is reconciled only after a discontinuity and two consistent full reads
+ok 311 - a restart is reconciled only after a discontinuity and two consistent full reads
+  ---
+  duration_ms: 3.0797
+  type: 'test'
+  ...
+# Subtest: a contiguous applied event overtaking HTTP keeps the newer frame without a false reset
+ok 312 - a contiguous applied event overtaking HTTP keeps the newer frame without a false reset
+  ---
+  duration_ms: 2.0435
+  type: 'test'
+  ...
+# Subtest: an adjacent receipt overtaking its predecessor is reordered without another RPC
+ok 313 - an adjacent receipt overtaking its predecessor is reordered without another RPC
+  ---
+  duration_ms: 65.4881
+  type: 'test'
+  ...
+# Subtest: missing or disconnected reordered events still require a complete read
+ok 314 - missing or disconnected reordered events still require a complete read
+  ---
+  duration_ms: 87.579
+  type: 'test'
+  ...
+# Subtest: replacing a recovered lane retains its arena stream and snapshot
+ok 315 - replacing a recovered lane retains its arena stream and snapshot
+  ---
+  duration_ms: 2.4207
+  type: 'test'
+  ...
+# Subtest: a subscribed Chaos pause waits for its event with a ten-second consistency read
+ok 316 - a subscribed Chaos pause waits for its event with a ten-second consistency read
+  ---
+  duration_ms: 28.6232
+  type: 'test'
+  ...
+# Subtest: HTTP 429 pauses all RPC methods and never queues or replays writes
+ok 317 - HTTP 429 pauses all RPC methods and never queues or replays writes
+  ---
+  duration_ms: 71.8717
+  type: 'test'
+  ...
+# Subtest: unrelated RPC failures are not retried or mistaken for throttling
+ok 318 - unrelated RPC failures are not retried or mistaken for throttling
+  ---
+  duration_ms: 0.3473
+  type: 'test'
+  ...
+# Subtest: a node publication halt blocks new writes but permits recovery reads
+ok 319 - a node publication halt blocks new writes but permits recovery reads
+  ---
+  duration_ms: 46.9205
+  type: 'test'
+  ...
+# Subtest: Retry-After survives the real viem HTTP transport rather than becoming ten seconds
+ok 320 - Retry-After survives the real viem HTTP transport rather than becoming ten seconds
+  ---
+  duration_ms: 1.895
+  type: 'test'
+  ...
+# Subtest: observer throttling also pauses existing and newly created player clients before journaling or sending
+ok 321 - observer throttling also pauses existing and newly created player clients before journaling or sending
+  ---
+  duration_ms: 2.0711
+  type: 'test'
+  ...
+# Subtest: a publication failure fences every player client while other clients still observe recovery
+ok 322 - a publication failure fences every player client while other clients still observe recovery
+  ---
+  duration_ms: 4.1177
+  type: 'test'
+  ...
+# Subtest: a confirmed receipt is applied once; subsequent resync only reads
+ok 323 - a confirmed receipt is applied once; subsequent resync only reads
+  ---
+  duration_ms: 1.7377
+  type: 'test'
+  ...
+# Subtest: read-only timeout and Retry-After recovery is bounded and records every interruption
+ok 324 - read-only timeout and Retry-After recovery is bounded and records every interruption
+  ---
+  duration_ms: 0.913
+  type: 'test'
+  ...
+# Subtest: persistent stale reads fail the fixture and unrelated errors are never hidden
+ok 325 - persistent stale reads fail the fixture and unrelated errors are never hidden
+  ---
+  duration_ms: 0.8154
+  type: 'test'
+  ...
+# Subtest: historical comparison verifies linked code before masking its address and records exact runtime hashes
+ok 326 - historical comparison verifies linked code before masking its address and records exact runtime hashes
+  ---
+  duration_ms: 6.4061
+  type: 'test'
+  ...
+# Subtest: a malicious linked library, altered root opcode, missing code or invalid mask rejects the export
+ok 327 - a malicious linked library, altered root opcode, missing code or invalid mask rejects the export
+  ---
+  duration_ms: 2.8461
+  type: 'test'
+  ...
+# Subtest: independent rules 4 retain their pinned version and original match reference
+ok 328 - independent rules 4 retain their pinned version and original match reference
+  ---
+  duration_ms: 3.2027
+  type: 'test'
+  ...
+# Subtest: independent rules 12 retain their pinned version and original match reference
+ok 329 - independent rules 12 retain their pinned version and original match reference
+  ---
+  duration_ms: 0.5274
+  type: 'test'
+  ...
+# Subtest: independent rules 13 retain their pinned version and original match reference
+ok 330 - independent rules 13 retain their pinned version and original match reference
+  ---
+  duration_ms: 0.5917
+  type: 'test'
+  ...
+# Subtest: independent rules 14 retain their pinned version and original match reference
+ok 331 - independent rules 14 retain their pinned version and original match reference
+  ---
+  duration_ms: 0.3017
+  type: 'test'
+  ...
+# Subtest: foreign ledger, arena and changed identity cannot write a published result
+ok 332 - foreign ledger, arena and changed identity cannot write a published result
+  ---
+  duration_ms: 1.5038
+  type: 'test'
+  ...
+# Subtest: human result corrections share retention with agents and never erase payment records
+ok 333 - human result corrections share retention with agents and never erase payment records
+  ---
+  duration_ms: 17.4574
+  type: 'test'
+  ...
+# Subtest: a consumed queue avoids a heartbeat and only dismisses a proven intake rejection
+ok 334 - a consumed queue avoids a heartbeat and only dismisses a proven intake rejection
+  ---
+  duration_ms: 2.6476
+  type: 'test'
+  ...
+# Subtest: a requested ranked room stays separate from the spectator own participation
+ok 335 - a requested ranked room stays separate from the spectator own participation
+  ---
+  duration_ms: 14.5959
+  type: 'test'
+  ...
+# Subtest: readable stale snapshots cannot hide a publication failure or demand a new passkey
+ok 336 - readable stale snapshots cannot hide a publication failure or demand a new passkey
+  ---
+  duration_ms: 0.6851
+  type: 'test'
+  ...
+# Subtest: Chaos will not re-open an older published pause or deduplicate a new rally
+ok 337 - Chaos will not re-open an older published pause or deduplicate a new rally
+  ---
+  duration_ms: 0.2902
+  type: 'test'
+  ...
+# Subtest: public deployment serialization excludes private provisioning and rejects foreign node URLs
+ok 338 - public deployment serialization excludes private provisioning and rejects foreign node URLs
+  ---
+  duration_ms: 0.6483
+  type: 'test'
+  ...
+# Subtest: published result is readable without the closed engine after room rotation
+ok 339 - published result is readable without the closed engine after room rotation
+  ---
+  duration_ms: 1.3602
+  type: 'test'
+  ...
+# Subtest: closing and challenged arenas restore a partial published score without contacting the engine
+ok 340 - closing and challenged arenas restore a partial published score without contacting the engine
+  ---
+  duration_ms: 8.2581
+  type: 'test'
+  ...
+# Subtest: indexer entry decoder matches the exact Solidity ABI and rejects truncated state
+ok 341 - indexer entry decoder matches the exact Solidity ABI and rejects truncated state
+  ---
+  duration_ms: 1.719
+  type: 'test'
+  ...
+# Subtest: reusable admission is discovered from its ticket without borrowing the preceding physical slot
+ok 342 - reusable admission is discovered from its ticket without borrowing the preceding physical slot
+  ---
+  duration_ms: 3.6197
+  type: 'test'
+  ...
+# Subtest: room and match references never resolve across deployments or epochs
+ok 343 - room and match references never resolve across deployments or epochs
+  ---
+  duration_ms: 1.1658
+  type: 'test'
+  ...
+# Subtest: room deep links accept an escaped colon exactly once and reject injected path segments
+ok 344 - room deep links accept an escaped colon exactly once and reject injected path segments
+  ---
+  duration_ms: 1.1369
+  type: 'test'
+  ...
+# Subtest: temporary RPC failures cannot retire an unsigned action as a contract revert
+ok 345 - temporary RPC failures cannot retire an unsigned action as a contract revert
+  ---
+  duration_ms: 0.2058
+  type: 'test'
+  ...
+# Subtest: a rotated room never reads another match from a reused arena; all reads use one block
+ok 346 - a rotated room never reads another match from a reused arena; all reads use one block
+  ---
+  duration_ms: 0.7062
+  type: 'test'
+  ...
+# Subtest: authorization, nonce and EVM clock use one pinned multicall and no full block RPC
+ok 347 - authorization, nonce and EVM clock use one pinned multicall and no full block RPC
+  ---
+  duration_ms: 19.937
+  type: 'test'
+  ...
+# Subtest: revocation, replaced key, identity, revision and expiration prevent a command context
+ok 348 - revocation, replaced key, identity, revision and expiration prevent a command context
+  ---
+  duration_ms: 23.1364
+  type: 'test'
+  ...
+# Subtest: RPC failure propagates without declaring session expiry
+ok 349 - RPC failure propagates without declaring session expiry
+  ---
+  duration_ms: 7.8445
+  type: 'test'
+  ...
+# Subtest: the grant digest commits to deployment, identity, timing and revision
+ok 350 - the grant digest commits to deployment, identity, timing and revision
+  ---
+  duration_ms: 3.3462
+  type: 'test'
+  ...
+# Subtest: lost execution response resolves the same journal without signing another nonce
+ok 351 - lost execution response resolves the same journal without signing another nonce
+  ---
+  duration_ms: 268.7511
+  type: 'test'
+  ...
+# Subtest: confirmed owner renewal is deduplicated using the actual observed journal status
+ok 352 - confirmed owner renewal is deduplicated using the actual observed journal status
+  ---
+  duration_ms: 62.8186
+  type: 'test'
+  ...
+# Subtest: stale proofs, wrong matches and a busy nonce cannot enter the new command journal
+ok 353 - stale proofs, wrong matches and a busy nonce cannot enter the new command journal
+  ---
+  duration_ms: 9.0885
+  type: 'test'
+  ...
+# Subtest: changing the arena binding during simulation refuses a fresh signature
+ok 354 - changing the arena binding during simulation refuses a fresh signature
+  ---
+  duration_ms: 4.4676
+  type: 'test'
+  ...
+# Subtest: a recovered action cannot resolve a different requested command
+ok 355 - a recovered action cannot resolve a different requested command
+  ---
+  duration_ms: 96.7924
+  type: 'test'
+  ...
+# Subtest: reusable human completion stays unresolved until archived, including read-only reconciliation
+ok 356 - reusable human completion stays unresolved until archived, including read-only reconciliation
+  ---
+  duration_ms: 106.6649
+  type: 'test'
+  ...
+# Subtest: reusable human writer rejects stale outer and embedded references before journaling
+ok 357 - reusable human writer rejects stale outer and embedded references before journaling
+  ---
+  duration_ms: 30.088
+  type: 'test'
+  ...
+# Subtest: a restart in a newer epoch retires an old uncertain command only against its sealed final root
+ok 358 - a restart in a newer epoch retires an old uncertain command only against its sealed final root
+  ---
+  duration_ms: 81.7083
+  type: 'test'
+  ...
+# Subtest: countdown arms once and can start only after the contract engine deadline
+ok 359 - countdown arms once and can start only after the contract engine deadline
+  ---
+  duration_ms: 4.1843
+  type: 'test'
+  ...
+# Subtest: proof transport allows ticks; a ready proof uses the same writer only after its current command
+ok 360 - proof transport allows ticks; a ready proof uses the same writer only after its current command
+  ---
+  duration_ms: 69.2284
+  type: 'test'
+  ...
+# Subtest: a delayed proof cannot follow a renewed binding, stopped loop or completed game
+ok 361 - a delayed proof cannot follow a renewed binding, stopped loop or completed game
+  ---
+  duration_ms: 2.3216
+  type: 'test'
+  ...
+# Subtest: slow admission reads cannot start a replaced match or a busy writer
+ok 362 - slow admission reads cannot start a replaced match or a busy writer
+  ---
+  duration_ms: 1.2238
+  type: 'test'
+  ...
+# Subtest: readiness waits for both players, preserves its timeout and cancels an absent player
+ok 363 - readiness waits for both players, preserves its timeout and cancels an absent player
+  ---
+  duration_ms: 0.6871
+  type: 'test'
+  ...
+# Subtest: ready participants retain the three-second authoritative countdown
+ok 364 - ready participants retain the three-second authoritative countdown
+  ---
+  duration_ms: 2.3996
+  type: 'test'
+  ...
+# Subtest: a delayed readiness response cannot cancel or start a replacement match
+ok 365 - a delayed readiness response cannot cancel or start a replacement match
+  ---
+  duration_ms: 1.3091
+  type: 'test'
+  ...
+# Subtest: reusable readiness, countdown, ticks and proofs bind the real logical id and epoch
+ok 366 - reusable readiness, countdown, ticks and proofs bind the real logical id and epoch
+  ---
+  duration_ms: 10.3212
+  type: 'test'
+  ...
+# Subtest: publication timestamp jumps cannot bypass the monotonic engine countdown
+ok 367 - publication timestamp jumps cannot bypass the monotonic engine countdown
+  ---
+  duration_ms: 1.3808
+  type: 'test'
+  ...
+# Subtest: live pressure uses confirmed payments and the real rally without awaitingServe
+ok 368 - live pressure uses confirmed payments and the real rally without awaitingServe
+  ---
+  duration_ms: 112.7991
+  type: 'test'
+  ...
+# Subtest: new realtime market is opened once its current game is published
+ok 369 - new realtime market is opened once its current game is published
+  ---
+  duration_ms: 10.4128
+  type: 'test'
+  ...
+# Subtest: reusable named headers open a market and expose the retained pressure checkpoint
+ok 370 - reusable named headers open a market and expose the retained pressure checkpoint
+  ---
+  duration_ms: 59.7123
+  type: 'test'
+  ...
+# Subtest: a changed match or reorganized source cannot produce a pressure signature
+ok 371 - a changed match or reorganized source cannot produce a pressure signature
+  ---
+  duration_ms: 5.8754
+  type: 'test'
+  ...
+# Subtest: unchanged totals need no submission and decreasing confirmed totals fail safely
+ok 372 - unchanged totals need no submission and decreasing confirmed totals fail safely
+  ---
+  duration_ms: 19.0139
+  type: 'test'
+  ...
+# Subtest: an earlier epoch financial binding is not signed for the new engine
+ok 373 - an earlier epoch financial binding is not signed for the new engine
+  ---
+  duration_ms: 15.9432
+  type: 'test'
+  ...
+# Subtest: Chaos recognizes the ABI uint256 phase and still rejects an older published pause
+ok 374 - Chaos recognizes the ABI uint256 phase and still rejects an older published pause
+  ---
+  duration_ms: 170.9448
+  type: 'test'
+  ...
+# Subtest: sponsored betting receipts recover payouts while historical RPC indexing is unavailable
+ok 375 - sponsored betting receipts recover payouts while historical RPC indexing is unavailable
+  ---
+  duration_ms: 10.5933
+  type: 'test'
+  ...
+# Subtest: the human bridge signs only the issued reserved ticket under its exact epoch
+ok 376 - the human bridge signs only the issued reserved ticket under its exact epoch
+  ---
+  duration_ms: 138.0081
+  type: 'test'
+  ...
+# Subtest: expiry only transports a published cancellation, including expired player permissions
+ok 377 - expiry only transports a published cancellation, including expired player permissions
+  ---
+  duration_ms: 5.524
+  type: 'test'
+  ...
+# Subtest: the bridge refuses a changed reservation, fork, engine base or active preceding slot
+ok 378 - the bridge refuses a changed reservation, fork, engine base or active preceding slot
+  ---
+  duration_ms: 27.0513
+  type: 'test'
+  ...
+# Subtest: a published human result leaves the same delegation open for its next issued match
+ok 379 - a published human result leaves the same delegation open for its next issued match
+  ---
+  duration_ms: 12.639
+  type: 'test'
+  ...
+# Subtest: a fresh or renewed empty arena uses the verified commitment epoch before its first admission
+ok 380 - a fresh or renewed empty arena uses the verified commitment epoch before its first admission
+  ---
+  duration_ms: 3.8058
+  type: 'test'
+  ...
+# Subtest: empty admission cannot conceal stale epochs, uncleared slots or unpublished results
+ok 381 - empty admission cannot conceal stale epochs, uncleared slots or unpublished results
+  ---
+  duration_ms: 25.7264
+  type: 'test'
+  ...
+# Subtest: an expired delegation still reconciles and closes independently from new admissions
+ok 382 - an expired delegation still reconciles and closes independently from new admissions
+  ---
+  duration_ms: 1.5062
+  type: 'test'
+  ...
+# Subtest: closing respects the actual release deadline and retains unpublished participation
+ok 383 - closing respects the actual release deadline and retains unpublished participation
+  ---
+  duration_ms: 2.1618
+  type: 'test'
+  ...
+# Subtest: released roots are sealed before recovery or reuse, with no engine availability prerequisite
+ok 384 - released roots are sealed before recovery or reuse, with no engine availability prerequisite
+  ---
+  duration_ms: 2.8204
+  type: 'test'
+  ...
+# Subtest: a readable but wrong hosted epoch or base never enables the match
+ok 385 - a readable but wrong hosted epoch or base never enables the match
+  ---
+  duration_ms: 1.2297
+  type: 'test'
+  ...
+# Subtest: an unissued physical match cannot look like available capacity
+ok 386 - an unissued physical match cannot look like available capacity
+  ---
+  duration_ms: 1.118
+  type: 'test'
+  ...
+# Subtest: a challenged result cannot release, renew or admit a player
+ok 387 - a challenged result cannot release, renew or admit a player
+  ---
+  duration_ms: 1.0821
+  type: 'test'
+  ...
+# Subtest: publication silence uses the real hub deadline, not an ordinary RPC failure
+ok 388 - publication silence uses the real hub deadline, not an ordinary RPC failure
+  ---
+  duration_ms: 1.9688
+  type: 'test'
+  ...
+# Subtest: an absent reviewed budget cannot reserve capacity or admit a human match
+ok 389 - an absent reviewed budget cannot reserve capacity or admit a human match
+  ---
+  duration_ms: 4.3793
+  type: 'test'
+  ...
+# Subtest: contract-selected candidates must all have an observed healthy epoch and publication reserve
+ok 390 - contract-selected candidates must all have an observed healthy epoch and publication reserve
+  ---
+  duration_ms: 121.1358
+  type: 'test'
+  ...
+# Subtest: rotation never closes an occupied arena and creates only a released unreserved replacement
+ok 391 - rotation never closes an occupied arena and creates only a released unreserved replacement
+  ---
+  duration_ms: 89.9935
+  type: 'test'
+  ...
+# Subtest: an idle session retires before its remaining time is too short for a human match
+ok 392 - an idle session retires before its remaining time is too short for a human match
+  ---
+  duration_ms: 71.5979
+  type: 'test'
+  ...
+# Subtest: reusable human result survives slot reuse and captures only its canonical published prefix
+ok 393 - reusable human result survives slot reuse and captures only its canonical published prefix
+  ---
+  duration_ms: 22.3675
+  type: 'test'
+  ...
+# Subtest: missing receipts or incomplete publications never prove a cancellation
+ok 394 - missing receipts or incomplete publications never prove a cancellation
+  ---
+  duration_ms: 5.2514
+  type: 'test'
+  ...
+# Subtest: slot archiving rejects a racing result, wrong identity, nonterminal state and unavailable storage
+ok 395 - slot archiving rejects a racing result, wrong identity, nonterminal state and unavailable storage
+  ---
+  duration_ms: 18.1236
+  type: 'test'
+  ...
+# Subtest: a published alternative ticket is not submitted as the original reservation
+ok 396 - a published alternative ticket is not submitted as the original reservation
+  ---
+  duration_ms: 4.5566
+  type: 'test'
+  ...
+# Subtest: new rooms are discovered at the head independently of the historical backlog
+ok 397 - new rooms are discovered at the head independently of the historical backlog
+  ---
+  duration_ms: 3.0409
+  type: 'test'
+  ...
+# Subtest: historical manifests keep their ABI while unknown versions fail closed
+ok 398 - historical manifests keep their ABI while unknown versions fail closed
+  ---
+  duration_ms: 13.9955
+  type: 'test'
+  ...
+# Subtest: reusable human rules require public authority references and explicit epoch-bound controls
+ok 399 - reusable human rules require public authority references and explicit epoch-bound controls
+  ---
+  duration_ms: 1.8478
+  type: 'test'
+  ...
+# Subtest: readiness is explicit to rules13 without changing historical countdown permissions
+ok 400 - readiness is explicit to rules13 without changing historical countdown permissions
+  ---
+  duration_ms: 0.442
+  type: 'test'
+  ...
+# Subtest: rules12 reads use the packed getter at the same pinned Monad block
+ok 401 - rules12 reads use the packed getter at the same pinned Monad block
+  ---
+  duration_ms: 5.8448
+  type: 'test'
+  ...
+# Subtest: private reusable adapters cannot become production by replacing a manifest
+ok 402 - private reusable adapters cannot become production by replacing a manifest
+  ---
+  duration_ms: 13.7341
+  type: 'test'
+  ...
+# Subtest: reviewed adapter needs matching nonzero evidence and a verified migration source
+ok 403 - reviewed adapter needs matching nonzero evidence and a verified migration source
+  ---
+  duration_ms: 1.2784
+  type: 'test'
+  ...
+# Subtest: an estimate can follow the latest direction only within the same nonce and gameplay scope
+ok 404 - an estimate can follow the latest direction only within the same nonce and gameplay scope
+  ---
+  duration_ms: 1.2897
+  type: 'test'
+  ...
+# Subtest: stop and reversal reach the server while the first receipt is unresolved; only ACK gates sending
+ok 405 - stop and reversal reach the server while the first receipt is unresolved; only ACK gates sending
+  ---
+  duration_ms: 36.1741
+  type: 'test'
+  ...
+# Subtest: server nonce races are re-signed, old account responses are discarded
+ok 406 - server nonce races are re-signed, old account responses are discarded
+  ---
+  duration_ms: 4.0192
+  type: 'test'
+  ...
+# Subtest: reconstruction applies only unconfirmed latest intentions and freezes old snapshots
+ok 407 - reconstruction applies only unconfirmed latest intentions and freezes old snapshots
+  ---
+  duration_ms: 0.6071
+  type: 'test'
+  ...
+# Subtest: Interlude keeps the ball moving through both paddle contacts while legacy rendering waits
+ok 408 - Interlude keeps the ball moving through both paddle contacts while legacy rendering waits
+  ---
+  duration_ms: 4.9548
+  type: 'test'
+  ...
+# Subtest: a missed paddle crosses its plane but never invents a score, serve or winner
+ok 409 - a missed paddle crosses its plane but never invents a score, serve or winner
+  ---
+  duration_ms: 19.5125
+  type: 'test'
+  ...
+# Subtest: late direction corrections replace predicted collisions with the actual engine trajectory
+ok 410 - late direction corrections replace predicted collisions with the actual engine trajectory
+  ---
+  duration_ms: 0.4919
+  type: 'test'
+  ...
+# Subtest: live preview follows an elapsed wall bounce and moving paddle with identical rounding
+ok 411 - live preview follows an elapsed wall bounce and moving paddle with identical rounding
+  ---
+  duration_ms: 2.2943
+  type: 'test'
+  ...
+# Subtest: Interlude sends the latest release after an in-flight direction, with sequential nonces
+ok 412 - Interlude sends the latest release after an in-flight direction, with sequential nonces
+  ---
+  duration_ms: 8.3559
+  type: 'test'
+  ...
+# Subtest: a failed read after an accepted input preserves the grant and never resubmits that input
+ok 413 - a failed read after an accepted input preserves the grant and never resubmits that input
+  ---
+  duration_ms: 265.1995
+  type: 'test'
+  ...
+# Subtest: a stale read after an accepted input waits for its nonce before sending another command
+ok 414 - a stale read after an accepted input waits for its nonce before sending another command
+  ---
+  duration_ms: 262.1036
+  type: 'test'
+  ...
+# Subtest: an accepted action with a failed observation cannot be double clicked or revoke the grant
+ok 415 - an accepted action with a failed observation cannot be double clicked or revoke the grant
+  ---
+  duration_ms: 264.0697
+  type: 'test'
+  ...
+# Subtest: an unavailable preflight read sends nothing and recovers without a new session
+ok 416 - an unavailable preflight read sends nothing and recovers without a new session
+  ---
+  duration_ms: 263.2124
+  type: 'test'
+  ...
+# Subtest: Interlude freezes on uncertain submission without retrying or advancing a second input
+ok 417 - Interlude freezes on uncertain submission without retrying or advancing a second input
+  ---
+  duration_ms: 0.5145
+  type: 'test'
+  ...
+# Subtest: Interlude actions wait for the single writer, suppress duplicate clicks and preempt ticks
+ok 418 - Interlude actions wait for the single writer, suppress duplicate clicks and preempt ticks
+  ---
+  duration_ms: 29.7645
+  type: 'test'
+  ...
+# Subtest: Interlude spectator and completed state never send an input or idle tick
+ok 419 - Interlude spectator and completed state never send an input or idle tick
+  ---
+  duration_ms: 0.3718
+  type: 'test'
+  ...
+# Subtest: a rival's seventh point does not invalidate the session when the last tick races it
+ok 420 - a rival's seventh point does not invalidate the session when the last tick races it
+  ---
+  duration_ms: 1.3592
+  type: 'test'
+  ...
+# Subtest: a reverted final tick waits through a read outage and observes the seventh point without another write
+ok 421 - a reverted final tick waits through a read outage and observes the seventh point without another write
+  ---
+  duration_ms: 0.9645
+  type: 'test'
+  ...
+# Subtest: idle RPC traffic is paced while release and reversal bypass the idle cadence
+ok 422 - idle RPC traffic is paced while release and reversal bypass the idle cadence
+  ---
+  duration_ms: 0.73
+  type: 'test'
+  ...
+# Subtest: a movement after a cached Chaos pause refreshes its deadline before signing
+ok 423 - a movement after a cached Chaos pause refreshes its deadline before signing
+  ---
+  duration_ms: 0.4044
+  type: 'test'
+  ...
+# Subtest: 100 rapid reversals per player coalesce without nonce gaps in Classic and Chaos
+ok 424 - 100 rapid reversals per player coalesce without nonce gaps in Classic and Chaos
+  ---
+  duration_ms: 1.6074
+  type: 'test'
+  ...
+# Subtest: known node cooldown does not enter the SDK or discard the last unsent intention
+ok 425 - known node cooldown does not enter the SDK or discard the last unsent intention
+  ---
+  duration_ms: 0.5311
+  type: 'test'
+  ...
+# Subtest: a temporary control outage blends the displayed paddle instead of resetting it
+ok 426 - a temporary control outage blends the displayed paddle instead of resetting it
+  ---
+  duration_ms: 1.1489
+  type: 'test'
+  ...
+# Subtest: held input never rolls backwards across jittered acknowledgements
+ok 427 - held input never rolls backwards across jittered acknowledgements
+  ---
+  duration_ms: 1.0899
+  type: 'test'
+  ...
+# Subtest: reversal is immediate, release waits for its acknowledgement without continuing the old direction
+ok 428 - reversal is immediate, release waits for its acknowledgement without continuing the old direction
+  ---
+  duration_ms: 0.5051
+  type: 'test'
+  ...
+# Subtest: preview is bounded, stale inputs stop extending it, and a new match resets the position
+ok 429 - preview is bounded, stale inputs stop extending it, and a new match resets the position
+  ---
+  duration_ms: 3.6825
+  type: 'test'
+  ...
+# Subtest: presentation clock never rewinds when a later RPC response carries an earlier projection
+ok 430 - presentation clock never rewinds when a later RPC response carries an earlier projection
+  ---
+  duration_ms: 0.2435
+  type: 'test'
+  ...
+# Subtest: a coalesced input is a terminal receipt, while a failed job rejects immediately
+ok 431 - a coalesced input is a terminal receipt, while a failed job rejects immediately
+  ---
+  duration_ms: 47.9205
+  type: 'test'
+  ...
+# Subtest: offer deadlines use the shared clock while the queue is entirely monotonic and local
+ok 432 - offer deadlines use the shared clock while the queue is entirely monotonic and local
+  ---
+  duration_ms: 0.8574
+  type: 'test'
+  ...
+# Subtest: legacy clock fallback progresses and fresh queues reset without inheriting waiting time
+ok 433 - legacy clock fallback progresses and fresh queues reset without inheriting waiting time
+  ---
+  duration_ms: 0.1431
+  type: 'test'
+  ...
+# Subtest: historical log chunks preserve filters, exact bounds and canonical ordering
+ok 434 - historical log chunks preserve filters, exact bounds and canonical ordering
+  ---
+  duration_ms: 4.5321
+  type: 'test'
+  ...
+# Subtest: historical reads reject oversized or failed ranges and leave small/block-hash requests alone
+ok 435 - historical reads reject oversized or failed ranges and leave small/block-hash requests alone
+  ---
+  duration_ms: 1.0666
+  type: 'test'
+  ...
+# Subtest: large historical batches have a global concurrency bound and release failed slots
+ok 436 - large historical batches have a global concurrency bound and release failed slots
+  ---
+  duration_ms: 120.4834
+  type: 'test'
+  ...
+# Subtest: notebook recovers from the same PRF on another device, with independent nonces and no extractable key
+ok 437 - notebook recovers from the same PRF on another device, with independent nonces and no extractable key
+  ---
+  duration_ms: 18.6704
+  type: 'test'
+  ...
+# Subtest: operator contention waits for the other writer and preserves this operation
+ok 438 - operator contention waits for the other writer and preserves this operation
+  ---
+  duration_ms: 2.2031
+  type: 'test'
+  ...
+# Subtest: operator contention is bounded and does not retry uncertain network results
+ok 439 - operator contention is bounded and does not retry uncertain network results
+  ---
+  duration_ms: 1.5479
+  type: 'test'
+  ...
+# Subtest: hosted cooldown exposes its actual deadline and sends no control-plane request
+ok 440 - hosted cooldown exposes its actual deadline and sends no control-plane request
+  ---
+  duration_ms: 1.6545
+  type: 'test'
+  ...
+# Subtest: records only active revealed effects, ignores old snapshots and preserves exact arena epochs
+ok 441 - records only active revealed effects, ignores old snapshots and preserves exact arena epochs
+  ---
+  duration_ms: 3.4371
+  type: 'test'
+  ...
+# Subtest: a slow database keeps one latest sample, retains effects and publishes terminal observations
+ok 442 - a slow database keeps one latest sample, retains effects and publishes terminal observations
+  ---
+  duration_ms: 0.4212
+  type: 'test'
+  ...
+# Subtest: failed observation storage is visible and a following sample retries without blocking controls
+ok 443 - failed observation storage is visible and a following sample retries without blocking controls
+  ---
+  duration_ms: 0.6657
+  type: 'test'
+  ...
+# Subtest: live process with two closing arenas is unavailable
+ok 444 - live process with two closing arenas is unavailable
+  ---
+  duration_ms: 1.0569
+  type: 'test'
+  ...
+# Subtest: fresh health cannot hide stalled physics, old epochs or pending commands
+ok 445 - fresh health cannot hide stalled physics, old epochs or pending commands
+  ---
+  duration_ms: 0.4087
+  type: 'test'
+  ...
+# Subtest: released capacity alone never counts as available service
+ok 446 - released capacity alone never counts as available service
+  ---
+  duration_ms: 0.135
+  type: 'test'
+  ...
+# Subtest: an idle hosted arena needs current health, exact epoch and a reviewed admission budget
+ok 447 - an idle hosted arena needs current health, exact epoch and a reviewed admission budget
+  ---
+  duration_ms: 0.3674
+  type: 'test'
+  ...
+# Subtest: empty new epochs do not prove games after renewal
+ok 448 - empty new epochs do not prove games after renewal
+  ---
+  duration_ms: 1.0464
+  type: 'test'
+  ...
+# Subtest: healthy reserve cannot conceal a stalled assigned game
+ok 449 - healthy reserve cannot conceal a stalled assigned game
+  ---
+  duration_ms: 0.2141
+  type: 'test'
+  ...
+# Subtest: an unused contract is potential reserve, not a confirmed second game
+ok 450 - an unused contract is potential reserve, not a confirmed second game
+  ---
+  duration_ms: 0.1229
+  type: 'test'
+  ...
+# Subtest: missed samples do not fabricate availability
+ok 451 - missed samples do not fabricate availability
+  ---
+  duration_ms: 0.213
+  type: 'test'
+  ...
+# Subtest: a renewal outage remains a failure even after service returns
+ok 452 - a renewal outage remains a failure even after service returns
+  ---
+  duration_ms: 0.365
+  type: 'test'
+  ...
+# Subtest: an elapsed day alone does not qualify a stopped or changed run
+ok 453 - an elapsed day alone does not qualify a stopped or changed run
+  ---
+  duration_ms: 0.3451
+  type: 'test'
+  ...
+# Subtest: late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
+ok 454 - late HTTP frames cannot overwrite a newer WebSocket state or reset the clock
+  ---
+  duration_ms: 0.98
+  type: 'test'
+  ...
+# Subtest: preview never invents paddle bounces or points while waiting for inclusion
+ok 455 - preview never invents paddle bounces or points while waiting for inclusion
+  ---
+  duration_ms: 0.774
+  type: 'test'
+  ...
+# Subtest: key reversal moves from the current paddle rather than its old snapshot position
+ok 456 - key reversal moves from the current paddle rather than its old snapshot position
+  ---
+  duration_ms: 0.163
+  type: 'test'
+  ...
+# Subtest: a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
+ok 457 - a WebSocket receipt wins over a slow HTTP job poll, including receipts arriving before the waiter
+  ---
+  duration_ms: 0.6185
+  type: 'test'
+  ...
+# Subtest: Mera PRF creation and recovery preserve identity; ending a session disables signing
+ok 458 - Mera PRF creation and recovery preserve identity; ending a session disables signing
+  ---
+  duration_ms: 231.4694
+  type: 'test'
+  ...
+# Subtest: Mera rejects a passkey provider without PRF
+ok 459 - Mera rejects a passkey provider without PRF
+  ---
+  duration_ms: 0.7024
+  type: 'test'
+  ...
+# Subtest: Indexed ABI snapshots round-trip through JSON without losing integer precision
+ok 460 - Indexed ABI snapshots round-trip through JSON without losing integer precision
+  ---
+  duration_ms: 2.4905
+  type: 'test'
+  ...
+# Subtest: fixed proof vector matches the independently compiled Solidity consumer
+ok 461 - fixed proof vector matches the independently compiled Solidity consumer
+  ---
+  duration_ms: 3.6423
+  type: 'test'
+  ...
+# Subtest: ordered historical proofs agree with independent dense prefixes
+ok 462 - ordered historical proofs agree with independent dense prefixes
+  ---
+  duration_ms: 361.139
+  type: 'test'
+  ...
+# Subtest: wrong identity, ticket, result, sibling order and unpublished padding are rejected
+ok 463 - wrong identity, ticket, result, sibling order and unpublished padding are rejected
+  ---
+  duration_ms: 12.3806
+  type: 'test'
+  ...
+# Subtest: failed log validation does not mutate the verified prefix; corrections need canonical root
+ok 464 - failed log validation does not mutate the verified prefix; corrections need canonical root
+  ---
+  duration_ms: 5.8066
+  type: 'test'
+  ...
+# Subtest: human qualification keeps old and corrected contracts in separate journals
+ok 465 - human qualification keeps old and corrected contracts in separate journals
+  ---
+  duration_ms: 3.0539
+  type: 'test'
+  ...
+# Subtest: Realtime Chaos has exactly Classic timing and motion without pressure, including point boundaries
+ok 466 - Realtime Chaos has exactly Classic timing and motion without pressure, including point boundaries
+  ---
+  duration_ms: 89.4832
+  type: 'test'
+  ...
+# Subtest: funded Monad sponsorship skips quiet windows without dipping into the reserve
+ok 467 - funded Monad sponsorship skips quiet windows without dipping into the reserve
+  ---
+  duration_ms: 2.4811
+  type: 'test'
+  ...
+# Subtest: three per player across modes and deployments; shared replay survives until both participants release it
+ok 468 - three per player across modes and deployments; shared replay survives until both participants release it
+  ---
+  duration_ms: 12.6835
+  type: 'test'
+  ...
+# Subtest: retention preserves financial entities and deterministic score summary decoding
+ok 469 - retention preserves financial entities and deterministic score summary decoding
+  ---
+  duration_ms: 3.6254
+  type: 'test'
+  ...
+# Subtest: admission attestation uses the exact Monad-issued binding and pinned domain
+ok 470 - admission attestation uses the exact Monad-issued binding and pinned domain
+  ---
+  duration_ms: 10.0322
+  type: 'test'
+  ...
+# Subtest: an attestation never lets participant, mode or grant changes retain the issued digest
+ok 471 - an attestation never lets participant, mode or grant changes retain the issued digest
+  ---
+  duration_ms: 8.6208
+  type: 'test'
+  ...
+# Subtest: the admission matches the Solidity controller tuple golden vector
+ok 472 - the admission matches the Solidity controller tuple golden vector
+  ---
+  duration_ms: 1.8704
+  type: 'test'
+  ...
+# Subtest: only a genuinely expired original ticket permits cancellation, even without pinned strategy code
+ok 473 - only a genuinely expired original ticket permits cancellation, even without pinned strategy code
+  ---
+  duration_ms: 32.044
+  type: 'test'
+  ...
+# Subtest: the agent bridge binds the full controller, match and current publication epoch
+ok 474 - the agent bridge binds the full controller, match and current publication epoch
+  ---
+  duration_ms: 4.5507
+  type: 'test'
+  ...
+# Subtest: a strategy never gains an external key and a human never gains bot memory
+ok 475 - a strategy never gains an external key and a human never gains bot memory
+  ---
+  duration_ms: 7.112
+  type: 'test'
+  ...
+# Subtest: missing or foreign worst-case evidence cannot open reusable admissions
+ok 476 - missing or foreign worst-case evidence cannot open reusable admissions
+  ---
+  duration_ms: 1.5491
+  type: 'test'
+  ...
+# Subtest: a human match reserves its full thirty-minute duration rather than the agent limit
+ok 477 - a human match reserves its full thirty-minute duration rather than the agent limit
+  ---
+  duration_ms: 0.3655
+  type: 'test'
+  ...
+# Subtest: rules 14 retain a canonical result and reject partial or substituted publication logs
+ok 478 - rules 14 retain a canonical result and reject partial or substituted publication logs
+  ---
+  duration_ms: 14.0612
+  type: 'test'
+  ...
+# Subtest: rules 15 retain a canonical result and reject partial or substituted publication logs
+ok 479 - rules 15 retain a canonical result and reject partial or substituted publication logs
+  ---
+  duration_ms: 45.1498
+  type: 'test'
+  ...
+# Subtest: reconnect can retain the current terminal slot without inventing a receipt
+ok 480 - reconnect can retain the current terminal slot without inventing a receipt
+  ---
+  duration_ms: 6.4159
+  type: 'test'
+  ...
+# Subtest: reusable recovery stays available with public gates closed only on the exact reviewed deployment
+ok 481 - reusable recovery stays available with public gates closed only on the exact reviewed deployment
+  ---
+  duration_ms: 5.7565
+  type: 'test'
+  ...
+# Subtest: named reusable headers decode identically to historical flat headers
+ok 482 - named reusable headers decode identically to historical flat headers
+  ---
+  duration_ms: 7.24
+  type: 'test'
+  ...
+# Subtest: published idle predicate requires an open current epoch and its full seven-minute reserve
+ok 483 - published idle predicate requires an open current epoch and its full seven-minute reserve
+  ---
+  duration_ms: 0.9283
+  type: 'test'
+  ...
+# Subtest: prior result must be captured and match the current published slot
+ok 484 - prior result must be captured and match the current published slot
+  ---
+  duration_ms: 0.2996
+  type: 'test'
+  ...
+# Subtest: an empty renewed slot retains the prior capture requirement
+ok 485 - an empty renewed slot retains the prior capture requirement
+  ---
+  duration_ms: 0.1313
+  type: 'test'
+  ...
+# Subtest: human linked snapshots confirm the logical match nonce without another read
+ok 486 - human linked snapshots confirm the logical match nonce without another read
+  ---
+  duration_ms: 38.8978
+  type: 'test'
+  ...
+# Subtest: human nested completion carries the real winner and rejects another match
+ok 487 - human nested completion carries the real winner and rejects another match
+  ---
+  duration_ms: 9.0418
+  type: 'test'
+  ...
+# Subtest: agent linked snapshots confirm the logical match nonce without another read
+ok 488 - agent linked snapshots confirm the logical match nonce without another read
+  ---
+  duration_ms: 4.4217
+  type: 'test'
+  ...
+# Subtest: agent nested completion carries the real winner and rejects another match
+ok 489 - agent nested completion carries the real winner and rejects another match
+  ---
+  duration_ms: 15.6019
+  type: 'test'
+  ...
+# Subtest: two UI readiness signals start one shared intro without inventing engine consent
+ok 490 - two UI readiness signals start one shared intro without inventing engine consent
+  ---
+  duration_ms: 3.2117
+  type: 'test'
+  ...
+# Subtest: countdown rejects outsiders, too-late starts and offers without a completed intro
+ok 491 - countdown rejects outsiders, too-late starts and offers without a completed intro
+  ---
+  duration_ms: 0.8179
+  type: 'test'
+  ...
+# Subtest: only a successful engine event for this player, duel and deployment confirms acceptance
+ok 492 - only a successful engine event for this player, duel and deployment confirms acceptance
+  ---
+  duration_ms: 39.8642
+  type: 'test'
+  ...
+# Subtest: two stale HTTP acceptances expire once and cannot generate another offer
+ok 493 - two stale HTTP acceptances expire once and cannot generate another offer
+  ---
+  duration_ms: 0.9869
+  type: 'test'
+  ...
+# Subtest: missing, pending or active engine state cannot be expired as an unsubmitted offer
+ok 494 - missing, pending or active engine state cannot be expired as an unsubmitted offer
+  ---
+  duration_ms: 0.9483
+  type: 'test'
+  ...
+# Subtest: expired engine delegation cannot be mistaken for a rejected player grant
+ok 495 - expired engine delegation cannot be mistaken for a rejected player grant
+  ---
+  duration_ms: 1.5415
+  type: 'test'
+  ...
+# Subtest: reopening requires matching app, chain, active delegation and current epoch
+ok 496 - reopening requires matching app, chain, active delegation and current epoch
+  ---
+  duration_ms: 0.389
+  type: 'test'
+  ...
+# Subtest: expiry never silently drains unfinished or unpublished matches
+ok 497 - expiry never silently drains unfinished or unpublished matches
+  ---
+  duration_ms: 0.2493
+  type: 'test'
+  ...
+# Subtest: candidate consent binds mode, opponent, ranking, expiry and deployment
+ok 498 - candidate consent binds mode, opponent, ranking, expiry and deployment
+  ---
+  duration_ms: 38.2531
+  type: 'test'
+  ...
+# Subtest: original Classic consent is not interchangeable with candidate consent
+ok 499 - original Classic consent is not interchangeable with candidate consent
+  ---
+  duration_ms: 1.2273
+  type: 'test'
+  ...
+# Subtest: the epoch a command is bound to: the beacon request word and LivePressure.epoch
+ok 500 - the epoch a command is bound to: the beacon request word and LivePressure.epoch
+  ---
+  duration_ms: 44.2693
+  type: 'test'
+  ...
+# Subtest: reusable commands verify the outer epoch and the embedded randomness epoch
+ok 501 - reusable commands verify the outer epoch and the embedded randomness epoch
+  ---
+  duration_ms: 30.4116
+  type: 'test'
+  ...
+# Subtest: epoch 7 never sends the resumed match's epoch-6 beacon proof or live pressure
+ok 502 - epoch 7 never sends the resumed match's epoch-6 beacon proof or live pressure
+  ---
+  duration_ms: 11.1451
+  type: 'test'
+  ...
+# Subtest: a refused stale command never occupies the writer or counts as in flight for the guard
+ok 503 - a refused stale command never occupies the writer or counts as in flight for the guard
+  ---
+  duration_ms: 14.3418
+  type: 'test'
+  ...
+# Subtest: the beacon pump and live pressure are skipped for another epoch, before any network read
+ok 504 - the beacon pump and live pressure are skipped for another epoch, before any network read
+  ---
+  duration_ms: 0.2099
+  type: 'test'
+  ...
+# Subtest: persist before wire, survive reload and allow only the identical uncertain bytes
+ok 505 - persist before wire, survive reload and allow only the identical uncertain bytes
+  ---
+  duration_ms: 141.0375
+  type: 'test'
+  ...
+# Subtest: only a matching receipt resolves execution; a newer verified hub epoch retires old bytes
+ok 506 - only a matching receipt resolves execution; a newer verified hub epoch retires old bytes
+  ---
+  duration_ms: 26.6101
+  type: 'test'
+  ...
+# Subtest: journal refuses financial calls and wrong deployment or chain
+ok 507 - journal refuses financial calls and wrong deployment or chain
+  ---
+  duration_ms: 22.0929
+  type: 'test'
+  ...
+# Subtest: a command lost with its epoch can be sent again in the next, and only there
+ok 508 - a command lost with its epoch can be sent again in the next, and only there
+  ---
+  duration_ms: 23.7397
+  type: 'test'
+  ...
+# Subtest: the 2026-09-18 recovery: a registerControls lost with epoch 6 is signed byte-identical in epoch 7 and sent
+ok 509 - the 2026-09-18 recovery: a registerControls lost with epoch 6 is signed byte-identical in epoch 7 and sent
+  ---
+  duration_ms: 13.9786
+  type: 'test'
+  ...
+# Subtest: a refused command is retired only when the node confirms its nonce unused; the same control is then sent again at that nonce
+ok 510 - a refused command is retired only when the node confirms its nonce unused; the same control is then sent again at that nonce
+  ---
+  duration_ms: 19.4968
+  type: 'test'
+  ...
+# Subtest: a refused command at a lower gas limit takes the freed nonce too
+ok 511 - a refused command at a lower gas limit takes the freed nonce too
+  ---
+  duration_ms: 13.2454
+  type: 'test'
+  ...
+# Subtest: local gas cap survives successful config polls, F5 and a node epoch claim until hub verification or a lower gas limit
+ok 512 - local gas cap survives successful config polls, F5 and a node epoch claim until hub verification or a lower gas limit
+  ---
+  duration_ms: 27.7842
+  type: 'test'
+  ...
+# Subtest: recovery resend: a gas-cap or halt refusal with the nonce confirmed unused retires and stops the tab
+ok 513 - recovery resend: a gas-cap or halt refusal with the nonce confirmed unused retires and stops the tab
+  ---
+  duration_ms: 41.1602
+  type: 'test'
+  ...
+# Subtest: recovery resend: a generic refusal, a lost response, a moved or unreadable nonce, or a local gate keep the command uncertain
+ok 514 - recovery resend: a generic refusal, a lost response, a moved or unreadable nonce, or a local gate keep the command uncertain
+  ---
+  duration_ms: 52.1727
+  type: 'test'
+  ...
+# Subtest: reusable journal binds logical match and rejects a mismatched execution epoch
+ok 515 - reusable journal binds logical match and rejects a mismatched execution epoch
+  ---
+  duration_ms: 74.6973
+  type: 'test'
+  ...
+# Subtest: missing receipt never resolves or rebroadcasts a pending command
+ok 516 - missing receipt never resolves or rebroadcasts a pending command
+  ---
+  duration_ms: 5.8089
+  type: 'test'
+  ...
+# Subtest: published terminal tick is quarantined with evidence, not marked failed
+ok 517 - published terminal tick is quarantined with evidence, not marked failed
+  ---
+  duration_ms: 52.539
+  type: 'test'
+  ...
+# Subtest: a recovered pressure receipt keeps its original match and full command identity
+ok 518 - a recovered pressure receipt keeps its original match and full command identity
+  ---
+  duration_ms: 13.9119
+  type: 'test'
+  ...
+# Subtest: unknown execution status stays uncertain on the direct send path too
+ok 519 - unknown execution status stays uncertain on the direct send path too
+  ---
+  duration_ms: 0.3808
+  type: 'test'
+  ...
+# Subtest: unpublished or contested result, new epoch and non-tick all retain uncertainty
+ok 520 - unpublished or contested result, new epoch and non-tick all retain uncertainty
+  ---
+  duration_ms: 57.3858
+  type: 'test'
+  ...
+# Subtest: receipt resolves execution only when its hash and status are known
+ok 521 - receipt resolves execution only when its hash and status are known
+  ---
+  duration_ms: 1.6904
+  type: 'test'
+  ...
+# Subtest: a gas-cap or halt refusal is retired only when the node also confirms its nonce unused
+ok 522 - a gas-cap or halt refusal is retired only when the node also confirms its nonce unused
+  ---
+  duration_ms: 8.145
+  type: 'test'
+  ...
+# Subtest: a refused command whose nonce moved, or could not be read, a generic refusal or any other failure stays pending
+ok 523 - a refused command whose nonce moved, or could not be read, a generic refusal or any other failure stays pending
+  ---
+  duration_ms: 12.1326
+  type: 'test'
+  ...
+# Subtest: once the hub has released an epoch, its pending commands no longer block the next one
+ok 524 - once the hub has released an epoch, its pending commands no longer block the next one
+  ---
+  duration_ms: 0.769
+  type: 'test'
+  ...
+# Subtest: finalizeResult's own requirements decide: published terminal result, result hash, match epoch, finish time
+ok 525 - finalizeResult's own requirements decide: published terminal result, result hash, match epoch, finish time
+  ---
+  duration_ms: 1.3487
+  type: 'test'
+  ...
+# Subtest: the finalizing pass defers an unpublished result instead of deadlocking the renewal it needs
+ok 526 - the finalizing pass defers an unpublished result instead of deadlocking the renewal it needs
+  ---
+  duration_ms: 1.5284
+  type: 'test'
+  ...
+# Subtest: a result waiting on seconds of clock skew holds the pass
+ok 527 - a result waiting on seconds of clock skew holds the pass
+  ---
+  duration_ms: 0.3649
+  type: 'test'
+  ...
+# Subtest: one failed read skips only its own result: the pass goes on, and the failure is reported, not deferred
+ok 528 - one failed read skips only its own result: the pass goes on, and the failure is reported, not deferred
+  ---
+  duration_ms: 1.0058
+  type: 'test'
+  ...
+# Subtest: a result Monad cannot answer for, while it answers the others, stops holding the renewal after FINALIZATION_READ_ATTEMPTS passes
+ok 529 - a result Monad cannot answer for, while it answers the others, stops holding the renewal after FINALIZATION_READ_ATTEMPTS passes
+  ---
+  duration_ms: 1.3871
+  type: 'test'
+  ...
+# Subtest: while Monad answers nothing, no result is deferred: the renewal waits and ready results are still finalized in this epoch
+ok 530 - while Monad answers nothing, no result is deferred: the renewal waits and ready results are still finalized in this epoch
+  ---
+  duration_ms: 4.2611
+  type: 'test'
+  ...
+# Subtest: outage passes neither count nor reset: only passes in which Monad answered count, in a row
+ok 531 - outage passes neither count nor reset: only passes in which Monad answered count, in a row
+  ---
+  duration_ms: 1.333
+  type: 'test'
+  ...
+# Subtest: finalized and unmarketed results are never read again; unpublished ones not again in the same epoch
+ok 532 - finalized and unmarketed results are never read again; unpublished ones not again in the same epoch
+  ---
+  duration_ms: 0.6277
+  type: 'test'
+  ...
+# Subtest: the reader asks Monad exactly what the rules-6 adapter checks, at the latest block
+ok 533 - the reader asks Monad exactly what the rules-6 adapter checks, at the latest block
+  ---
+  duration_ms: 18.9682
+  type: 'test'
+  ...
+# Subtest: restarts preserve the binding; case-only addresses and equivalent block numbers do not rebind
+ok 534 - restarts preserve the binding; case-only addresses and equivalent block numbers do not rebind
+  ---
+  duration_ms: 5.8867
+  type: 'test'
+  ...
+# Subtest: a new finance generation cannot retarget legacy jobs
+ok 535 - a new finance generation cannot retarget legacy jobs
+  ---
+  duration_ms: 119.2026
+  type: 'test'
+  ...
+# Subtest: a changed destination cannot reinterpret an unsigned financial job after restart
+ok 536 - a changed destination cannot reinterpret an unsigned financial job after restart
+  ---
+  duration_ms: 5.5825
+  type: 'test'
+  ...
+# Subtest: another app appends a binding without replacing the previous financial deployment
+ok 537 - another app appends a binding without replacing the previous financial deployment
+  ---
+  duration_ms: 0.6615
+  type: 'test'
+  ...
+# Subtest: confirmed receipt discovers its exact bettor before historical indexing; replay is idempotent
+ok 538 - confirmed receipt discovers its exact bettor before historical indexing; replay is idempotent
+  ---
+  duration_ms: 5.5065
+  type: 'test'
+  ...
+# Subtest: reverted, unknown-emitter and malformed receipt logs never nominate a bettor
+ok 539 - reverted, unknown-emitter and malformed receipt logs never nominate a bettor
+  ---
+  duration_ms: 2.0235
+  type: 'test'
+  ...
+# Subtest: a verified payout receipt makes the transaction link available before historical catch-up
+ok 540 - a verified payout receipt makes the transaction link available before historical catch-up
+  ---
+  duration_ms: 9.7102
+  type: 'test'
+  ...
+# Subtest: confirmed creation is looked up; only a new epoch creates again
+ok 541 - confirmed creation is looked up; only a new epoch creates again
+  ---
+  duration_ms: 53.355
+  type: 'test'
+  ...
+# Subtest: lost POST and repeated 404 escalates without duplicate creation
+ok 542 - lost POST and repeated 404 escalates without duplicate creation
+  ---
+  duration_ms: 22.2867
+  type: 'test'
+  ...
+# Subtest: explicit non-creation retries with backoff; unqualified 503 does not
+ok 543 - explicit non-creation retries with backoff; unqualified 503 does not
+  ---
+  duration_ms: 8.6884
+  type: 'test'
+  ...
+# Subtest: different endpoint is never silently adopted
+ok 544 - different endpoint is never silently adopted
+  ---
+  duration_ms: 0.9519
+  type: 'test'
+  ...
+# Subtest: a live control record cannot hide an unavailable epoch indefinitely
+ok 545 - a live control record cannot hide an unavailable epoch indefinitely
+  ---
+  duration_ms: 1.0027
+  type: 'test'
+  ...
+# Subtest: an unrelated application in a lookup is rejected
+ok 546 - an unrelated application in a lookup is rejected
+  ---
+  duration_ms: 0.4216
+  type: 'test'
+  ...
+# Subtest: both deployed hub tuples decode their epoch, base pin and challenge window at the right offsets
+ok 547 - both deployed hub tuples decode their epoch, base pin and challenge window at the right offsets
+  ---
+  duration_ms: 5.893
+  type: 'test'
+  ...
+# Subtest: batch pressure trips at the threshold, before expiry, and expiry is unchanged below it
+ok 548 - batch pressure trips at the threshold, before expiry, and expiry is unchanged below it
+  ---
+  duration_ms: 13.1565
+  type: 'test'
+  ...
+# Subtest: the threshold defaults below the release ceiling and refuses unsafe configuration
+ok 549 - the threshold defaults below the release ceiling and refuses unsafe configuration
+  ---
+  duration_ms: 0.8586
+  type: 'test'
+  ...
+# Subtest: supervised recovery holds closure, release, finalization and renewal while still observing the hub
+ok 550 - supervised recovery holds closure, release, finalization and renewal while still observing the hub
+  ---
+  duration_ms: 11.917
+  type: 'test'
+  ...
+# Subtest: supervised recovery preserves an uncertain operator transaction without rebroadcast or nonce replacement
+ok 551 - supervised recovery preserves an uncertain operator transaction without rebroadcast or nonce replacement
+  ---
+  duration_ms: 2.5959
+  type: 'test'
+  ...
+# Subtest: below the threshold a far-from-expiry epoch keeps serving
+ok 552 - below the threshold a far-from-expiry epoch keeps serving
+  ---
+  duration_ms: 2.6194
+  type: 'test'
+  ...
+# Subtest: batch pressure stops admissions at once and closes through the shared journal only after the drain
+ok 553 - batch pressure stops admissions at once and closes through the shared journal only after the drain
+  ---
+  duration_ms: 47.6099
+  type: 'test'
+  ...
+# Subtest: the fence rechecks the live engine after beforeClose and signs nothing if a match appeared
+ok 554 - the fence rechecks the live engine after beforeClose and signs nothing if a match appeared
+  ---
+  duration_ms: 2.0607
+  type: 'test'
+  ...
+# Subtest: an unconfirmed engine transaction or published match still blocks a pressure close
+ok 555 - an unconfirmed engine transaction or published match still blocks a pressure close
+  ---
+  duration_ms: 2.5246
+  type: 'test'
+  ...
+# Subtest: a busy lock 701340 or operator nonce defers the close but never keeps admitting past the limit
+ok 556 - a busy lock 701340 or operator nonce defers the close but never keeps admitting past the limit
+  ---
+  duration_ms: 2.7131
+  type: 'test'
+  ...
+# Subtest: a busy journal below the limit leaves admissions as they were
+ok 557 - a busy journal below the limit leaves admissions as they were
+  ---
+  duration_ms: 1.81
+  type: 'test'
+  ...
+# Subtest: a drain is one-way: raising the threshold later never readmits into the epoch
+ok 558 - a drain is one-way: raising the threshold later never readmits into the epoch
+  ---
+  duration_ms: 2.318
+  type: 'test'
+  ...
+# Subtest: expiry still drains an epoch far below the threshold
+ok 559 - expiry still drains an epoch far below the threshold
+  ---
+  duration_ms: 1.9704
+  type: 'test'
+  ...
+# Subtest: a configured threshold is honoured, and an unsafe one refuses to start
+ok 560 - a configured threshold is honoured, and an unsafe one refuses to start
+  ---
+  duration_ms: 2.147
+  type: 'test'
+  ...
+# Subtest: the command gas limit: 30,000,000 by default, the operator may lower it without a rebuild, never raise it
+ok 561 - the command gas limit: 30,000,000 by default, the operator may lower it without a rebuild, never raise it
+  ---
+  duration_ms: 1.8184
+  type: 'test'
+  ...
+# Subtest: the browser signs with the limit the relayer's config serves, and keeps its own on anything invalid
+ok 562 - the browser signs with the limit the relayer's config serves, and keeps its own on anything invalid
+  ---
+  duration_ms: 0.2915
+  type: 'test'
+  ...
+# Subtest: maintenance: a live match that is not frozen is ticked after 1.5 s without progress, as before
+ok 563 - maintenance: a live match that is not frozen is ticked after 1.5 s without progress, as before
+  ---
+  duration_ms: 0.5752
+  type: 'test'
+  ...
+# Subtest: maintenance: a frozen match gets no 29 M-gas tick every 2 s, only one when its 30-minute cancel is due
+ok 564 - maintenance: a frozen match gets no 29 M-gas tick every 2 s, only one when its 30-minute cancel is due
+  ---
+  duration_ms: 0.9888
+  type: 'test'
+  ...
+# Subtest: maintenance: a frozen match whose node restarted and can re-anchor its clock is ticked once
+ok 565 - maintenance: a frozen match whose node restarted and can re-anchor its clock is ticked once
+  ---
+  duration_ms: 0.3143
+  type: 'test'
+  ...
+# Subtest: maintenance: progress ages without the applied-event stream
+ok 566 - maintenance: progress ages without the applied-event stream
+  ---
+  duration_ms: 0.3321
+  type: 'test'
+  ...
+# Subtest: invitations use a quiet observer and final states stop instead of consuming the gameplay quota
+ok 567 - invitations use a quiet observer and final states stop instead of consuming the gameplay quota
+  ---
+  duration_ms: 0.7264
+  type: 'test'
+  ...
+# Subtest: missing or unfinished engine state remains observable despite a lobby cancellation
+ok 568 - missing or unfinished engine state remains observable despite a lobby cancellation
+  ---
+  duration_ms: 0.1395
+  type: 'test'
+  ...
+# Subtest: checkpoint commits paid MON, canonical source, app, market and exact rally boundary
+ok 569 - checkpoint commits paid MON, canonical source, app, market and exact rally boundary
+  ---
+  duration_ms: 10.7872
+  type: 'test'
+  ...
+# Subtest: pressure signature cannot become a player consent, another deployment or a different cutoff
+ok 570 - pressure signature cannot become a player consent, another deployment or a different cutoff
+  ---
+  duration_ms: 85.3441
+  type: 'test'
+  ...
+# Subtest: publication failure survives healthy reads and coordinator restart until both layers publish the failed batch
+ok 571 - publication failure survives healthy reads and coordinator restart until both layers publish the failed batch
+  ---
+  duration_ms: 2.3358
+  type: 'test'
+  ...
+# Subtest: only one immutable-command retry is admitted per thirty seconds; cooldown errors preserve cause
+ok 572 - only one immutable-command retry is admitted per thirty seconds; cooldown errors preserve cause
+  ---
+  duration_ms: 0.3859
+  type: 'test'
+  ...
+# Subtest: an older or mismatched epoch does not erase the incident
+ok 573 - an older or mismatched epoch does not erase the incident
+  ---
+  duration_ms: 0.3628
+  type: 'test'
+  ...
+# Subtest: diagnostics never include signed bytes, request bodies or authentication details
+ok 574 - diagnostics never include signed bytes, request bodies or authentication details
+  ---
+  duration_ms: 0.2394
+  type: 'test'
+  ...
+# Subtest: the room still exists: the match goes back into it, active, with both players
+ok 575 - the room still exists: the match goes back into it, active, with both players
+  ---
+  duration_ms: 1.672
+  type: 'test'
+  ...
+# Subtest: the room is gone (deleted 24 h after its last activity): it is recreated from the signed offer in il_offers
+ok 576 - the room is gone (deleted 24 h after its last activity): it is recreated from the signed offer in il_offers
+  ---
+  duration_ms: 0.3722
+  type: 'test'
+  ...
+# Subtest: refused, and the lobby untouched: another unfinished match in the room, too many members, or another match's offer
+ok 577 - refused, and the lobby untouched: another unfinished match in the room, too many members, or another match's offer
+  ---
+  duration_ms: 0.2911
+  type: 'test'
+  ...
+# Subtest: the audit deletes the stale row only once the match is back in a (recreated) room
+ok 578 - the audit deletes the stale row only once the match is back in a (recreated) room
+  ---
+  duration_ms: 0.793
+  type: 'test'
+  ...
+# Subtest: no signed offer on record, or no room can take it: the row stays, the operator is alerted and the match is ticked by id
+ok 579 - no signed offer on record, or no room can take it: the row stays, the operator is alerted and the match is ticked by id
+  ---
+  duration_ms: 0.8414
+  type: 'test'
+  ...
+# Subtest: a match the node ended differently is recorded again, not deleted; an unknown one is kept for review
+ok 580 - a match the node ended differently is recorded again, not deleted; an unknown one is kept for review
+  ---
+  duration_ms: 0.2397
+  type: 'test'
+  ...
+# Subtest: orphans: reported once, forgotten once restored or ended; room offers come first in the maintenance targets
+ok 581 - orphans: reported once, forgotten once restored or ended; room offers come first in the maintenance targets
+  ---
+  duration_ms: 0.2401
+  type: 'test'
+  ...
+# Subtest: Chaos uses the exact rally, paid-bet cutoff and confirmation blocks, never a fake three-second pause
+ok 582 - Chaos uses the exact rally, paid-bet cutoff and confirmation blocks, never a fake three-second pause
+  ---
+  duration_ms: 1.4635
+  type: 'test'
+  ...
+# Subtest: winner stays and loser goes behind six waiting members
+ok 583 - winner stays and loser goes behind six waiting members
+  ---
+  duration_ms: 1.7577
+  type: 'test'
+  ...
+# Subtest: away and disconnected members never consume an offer
+ok 584 - away and disconnected members never consume an offer
+  ---
+  duration_ms: 0.2509
+  type: 'test'
+  ...
+# Subtest: two members can repeat a duel
+ok 585 - two members can repeat a duel
+  ---
+  duration_ms: 0.1756
+  type: 'test'
+  ...
+# Subtest: social proof binds the deployment and is not a financial authorization
+ok 586 - social proof binds the deployment and is not a financial authorization
+  ---
+  duration_ms: 0.347
+  type: 'test'
+  ...
+# Subtest: RPC coalesces reads and rebroadcasts only identical signed bytes on failover
+ok 587 - RPC coalesces reads and rebroadcasts only identical signed bytes on failover
+  ---
+  duration_ms: 3700.2486
+  type: 'test'
+  ...
+# (node:72036) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: gameplay jumps ahead of backfill without starving history or bypassing the shared rate
+ok 588 - gameplay jumps ahead of backfill without starving history or bypassing the shared rate
+  ---
+  duration_ms: 3.706
+  type: 'test'
+  ...
+# Subtest: acceptance and uncertain-command recovery pass queued archive reads within the same upstream budget
+ok 589 - acceptance and uncertain-command recovery pass queued archive reads within the same upstream budget
+  ---
+  duration_ms: 1.0489
+  type: 'test'
+  ...
+# Subtest: closed reviewed release still permits maintenance without opening admissions
+ok 590 - closed reviewed release still permits maintenance without opening admissions
+  ---
+  duration_ms: 1.5825
+  type: 'test'
+  ...
+# Subtest: release refuses absent evidence, another pool or another arena runtime
+ok 591 - release refuses absent evidence, another pool or another arena runtime
+  ---
+  duration_ms: 2.5517
+  type: 'test'
+  ...
+# Subtest: shared release metadata cannot expose an engine key to the keeper or reader
+ok 592 - shared release metadata cannot expose an engine key to the keeper or reader
+  ---
+  duration_ms: 0.6148
+  type: 'test'
+  ...
+# Subtest: private and released pools reject protected human arenas and duplicate identities
+ok 593 - private and released pools reject protected human arenas and duplicate identities
+  ---
+  duration_ms: 0.312
+  type: 'test'
+  ...
+# Subtest: a failed permission lookup is not a revoked session
+ok 594 - a failed permission lookup is not a revoked session
+  ---
+  duration_ms: 1.2569
+  type: 'test'
+  ...
+# Subtest: a halted publication service is neither an expired player session nor a 429
+ok 595 - a halted publication service is neither an expired player session nor a 429
+  ---
+  duration_ms: 0.274
+  type: 'test'
+  ...
+# Subtest: Retry-After dates and long cooldowns are respected without shortening them
+ok 596 - Retry-After dates and long cooldowns are respected without shortening them
+  ---
+  duration_ms: 1.5973
+  type: 'test'
+  ...
+# Subtest: real viem preparation shares one fresh block for gas and fees, preserving explicit nonce and chain
+ok 597 - real viem preparation shares one fresh block for gas and fees, preserving explicit nonce and chain
+  ---
+  duration_ms: 3.4259
+  type: 'test'
+  ...
+# Subtest: nonce, block and simulation RPCs start concurrently; no sequential preparation window
+ok 598 - nonce, block and simulation RPCs start concurrently; no sequential preparation window
+  ---
+  duration_ms: 0.5066
+  type: 'test'
+  ...
+# Subtest: fee fallback keeps viem semantics and does not fetch a second block
+ok 599 - fee fallback keeps viem semantics and does not fetch a second block
+  ---
+  duration_ms: 0.5795
+  type: 'test'
+  ...
+# Subtest: unknown nonce, excess gas, missing base fee and RPC failure prevent preparation
+ok 600 - unknown nonce, excess gas, missing base fee and RPC failure prevent preparation
+  ---
+  duration_ms: 3.0633
+  type: 'test'
+  ...
+# Subtest: confirmed end-of-match revert reads the actual result instead of inventing one
+ok 601 - confirmed end-of-match revert reads the actual result instead of inventing one
+  ---
+  duration_ms: 0.879
+  type: 'test'
+  ...
+# Subtest: lost response, unresolved journal and another revert never qualify as a terminal race
+ok 602 - lost response, unresolved journal and another revert never qualify as a terminal race
+  ---
+  duration_ms: 0.3999
+  type: 'test'
+  ...
+# Subtest: a failed confirmation read still fails instead of accepting a stale result
+ok 603 - a failed confirmation read still fails instead of accepting a stale result
+  ---
+  duration_ms: 0.5489
+  type: 'test'
+  ...
+# Subtest: eight players can send release/reversal intents without using the financial request budget
+ok 604 - eight players can send release/reversal intents without using the financial request budget
+  ---
+  duration_ms: 1.7443
+  type: 'test'
+  ...
+# Subtest: arena health and sponsor receipts do not consume the financial action budget
+ok 605 - arena health and sponsor receipts do not consume the financial action budget
+  ---
+  duration_ms: 0.219
+  type: 'test'
+  ...
+# Subtest: the installed Next config loader resolves the shared browser policy
+ok 606 - the installed Next config loader resolves the shared browser policy
+  ---
+  duration_ms: 824.4862
+  type: 'test'
+  ...
+1..606
+# tests 606
+# suites 0
+# pass 606
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15665.209

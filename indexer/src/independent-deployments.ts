@@ -7,5 +7,13 @@ export const independentArchiveDeployments = {
       "0x98612da5cacbd96dde0a903079aa3bab0b99e8bf"
     ],
     "rulesVersion": 14
+  },
+  "0x10d7c8aeddcec23d7638f9c9dbbc73d82f28c5b9": {
+    "apps": [
+      "0x596562d63e678a2b391ff01f63cf7ded99fc2c25",
+      "0x9bc7eac922640b0a2c7544a900f50de549790de1",
+      "0xa429e8e01c4b57dddfc6e8c75094cb68333f7f2f"
+    ],
+    "rulesVersion": 14
   }
 } as const;

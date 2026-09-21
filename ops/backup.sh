@@ -5,7 +5,7 @@ cd /opt/pongit/current
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 target=/opt/pongit/shared/backups/$stamp
 mkdir -p "$target"
-databases=$(docker compose exec -T postgres psql -U pong -d postgres -Atc "SELECT datname FROM pg_database WHERE datname='pong_relayer' OR datname ~ '^pong_indexer(_[a-z0-9_]+)?$' ORDER BY datname" </dev/null)
+databases=$(docker compose exec -T postgres psql -U pong -d postgres -Atc "SELECT datname FROM pg_database WHERE datname='pong_relayer' OR datname ~ '^pong_indexer(_[a-z0-9_]+)?$' OR datname ~ '^pong_human_rules[0-9]+$' ORDER BY datname" </dev/null)
 for database in $databases; do
   [[ "$database" =~ ^pong_[a-z0-9_]+$ ]] || exit 1
   if ! docker compose exec -T postgres psql -U pong -d postgres -Atc "SELECT 1 FROM pg_database WHERE datname='$database'" </dev/null | grep -qx 1; then continue; fi
@@ -40,6 +40,9 @@ done
 # This directory is outside the checkout and is never included in a release.
 if test -d /opt/pongit/secrets/rooms; then
   cp -a /opt/pongit/secrets/rooms "$target/rooms-secrets"
+fi
+if test -d /opt/pongit/secrets/independent; then
+  cp -a /opt/pongit/secrets/independent "$target/independent-secrets"
 fi
 if test -f /opt/pongit/shared/early-payment-deployment/deployment.json; then
   cp /opt/pongit/shared/early-payment-deployment/deployment.json "$target/early-payment-deployment.json"

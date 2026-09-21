@@ -30,6 +30,21 @@ trial and does not claim continuous gameplay during the deliberate interruption.
 Two old private human sessions are cooling until 08:42 UTC to reclaim our own
 validator capacity. Public admissions and Agent Arcade remain closed.
 
+Production packaging can restore the dedicated human business database without
+moving the operator nonce journal: `PONG_INDEPENDENT_DATABASE_URL` selects only
+business storage; the existing relayer pool remains the operator store. Shutdown
+stops both arena and legacy maintenance before closing their database pools.
+Backup and restore include `pong_human_rulesN` and the separate limited admission
+key and migration metadata. An actual scratch restore matched all 21 tables by
+sorted row digest. The existing isolated writer regression also passed restart
+reconciliation across the two databases without signing or dispatching a real
+transaction. All 606 TypeScript tests pass after these packaging changes.
+
+The new ledger's creation transaction was verified at block 64,393,211 before
+adding its immutable arena binding to the indexer. The old binding and databases
+remain intact. The new configuration passed actual Envio code generation and
+type checking; it has not replaced the running historical backfill.
+
 ## Human admission recovery, 21 September 2026
 
 The renewed human rules-14 arena exposed a real observer defect. `openEngine`

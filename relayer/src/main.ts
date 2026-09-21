@@ -3,6 +3,7 @@ import { initializeInputs, createInputs, sharesInputEstimate } from "./inputs";
 import {trafficBudget} from "./traffic";
 import {createRoomsCoordinator} from "./interlude-rooms";
 import {independentService} from "./independent-service";
+import {Pool} from "pg";
 import {measuredFetch} from "../../shared/rpc-metrics";
 import {loadRoomsFinance} from "./rooms-finance-config";
 import {transitionGas} from "./transition-gas";
@@ -675,7 +676,11 @@ const handleSocial = socialRoutes({deployment,origin,profileChanged:()=>ladderCa
 });
 const payoutWorker=createPayoutWorker({db:pool,deployment,client:publicClient,graphql,enqueue});
 const roomsCoordinator=await createRoomsCoordinator({db:pool,origin,body,send,graphql,financeConfig:roomsFinanceConfig,enqueue});
-const independent=await independentService({db:pool,base:publicClient,body,send,graphql,collectRpc:!roomsCoordinator});
+// A restored arena service database must not replace the shared operator nonce
+// journal. Legacy data stays in its original database throughout the cutover.
+const independentDb=process.env.PONG_INDEPENDENT_MANIFEST&&process.env.PONG_INDEPENDENT_DATABASE_URL
+  ?new Pool({connectionString:process.env.PONG_INDEPENDENT_DATABASE_URL}):pool;
+const independent=await independentService({db:independentDb,operatorDb:pool,base:publicClient,body,send,graphql,collectRpc:!roomsCoordinator});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)
@@ -1316,6 +1321,8 @@ for (const signal of ["SIGINT", "SIGTERM"] as const)
     stopping = true;
     ws.close();
     server.close();
+    independent?.stop();
+    roomsCoordinator?.stop();
     signingLock.release();
-    void pool.end().then(() => process.exit(0));
+    void Promise.all([pool.end(),...(independentDb!==pool?[independentDb.end()]:[])]).then(() => process.exit(0));
   });

@@ -10,7 +10,7 @@ sha256sum -c "$backup/SHA256SUMS"
 docker compose stop relayer indexer hasura
 for dump in "$backup"/*.dump; do
   database=$(basename "$dump" .dump)
-  [[ "$database" =~ ^pong_(relayer|indexer(_[a-z0-9_]+)?)$ ]] || { echo 'Unexpected database name'; exit 1; }
+  [[ "$database" =~ ^pong_(relayer|human_rules[0-9]+|indexer(_[a-z0-9_]+)?)$ ]] || { echo 'Unexpected database name'; exit 1; }
   docker compose exec -T postgres psql -U pong -d postgres -Atc "SELECT 1 FROM pg_database WHERE datname='$database'" </dev/null | grep -qx 1 || { echo "Create the matching database and role before restore: $database"; exit 1; }
   docker compose exec -T postgres pg_restore -U pong -d "$database" --clean --if-exists --exit-on-error < "$backup/$database.dump"
 done
