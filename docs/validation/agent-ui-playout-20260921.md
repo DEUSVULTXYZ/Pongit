@@ -134,8 +134,13 @@ service recreated. Its original operator database, advisory lock, nonce journal,
 state directory and exclusion of retired arena `1c5…` remain. The backup includes
 operator and agent dumps and private journals; it must never be published.
 Rollback restores only the previous `keeper-retirement-0116c96` script mount,
-not an older journal. A new complete match transition must still be measured
-before claiming a specific reduction in inter-match waiting time.
+not an older journal. Its first observed transition then completed through
+`captureProof` at 19:17:54, `synchronize` at 19:18:17 and `admitTournament` at
+19:18:49 (steps 442–444). Championship 4 advanced to 21/28 resolved fixtures.
+That is about 55 seconds from capture to admission in this observation, versus
+the earlier archive run's nearly four minutes. This is not an equal-load
+benchmark or a promise of instant matchmaking. Candidate smoke web containers
+were stopped after the actual public verification; images and reports remain.
 
 ## House instances remain a separate migration
 
