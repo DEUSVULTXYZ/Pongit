@@ -1,0 +1,93 @@
+{
+  "at": "2026-09-21T11:47:16.361Z",
+  "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+  "epoch": "1",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "ref": {
+    "chainId": "10143",
+    "arena": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+    "epoch": "1",
+    "id": "24"
+  },
+  "canonicalBlock": {
+    "number": "64439950",
+    "hash": "0xb7ae3732ef71de10aacd3d61d91b2b57112144e4da77138431875e365a63e3c1",
+    "stillCanonical": true
+  },
+  "health": {
+    "ok": true,
+    "halted": null,
+    "pendingDiffs": 14,
+    "committedBatches": 198,
+    "commits": {
+      "denied": 0,
+      "err": 0,
+      "ok": 0
+    }
+  },
+  "session": {
+    "committedBatches": 198,
+    "pendingDiffs": 14
+  },
+  "hub": {
+    "status": 1,
+    "batches": "199",
+    "lastCommit": "1789988073",
+    "maxBatchInterval": "3600",
+    "expires": "1790021974"
+  },
+  "ticketIssued": "1789987992",
+  "publicationDeadline": "1789991673",
+  "publishedCommitment": [
+    "1",
+    1,
+    "0x1d39ccb745f4b5cfdcfdf8010de629821fe6d642a1584174189ff3c0ea9ce1f4"
+  ],
+  "liveCommitment": [
+    "1",
+    2,
+    "0x281f6356c8fe5469e58521299a74889ae3596f86871464374a289f065bcbe201"
+  ],
+  "liveResult": {
+    "ref": {
+      "chainId": "10143",
+      "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+      "epoch": "1",
+      "id": "24"
+    },
+    "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+    "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+    "winner": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+    "hash": "0x70798c289bbd6c302941dfe01d7eaa695c8b55ecedfb50d3f4b596aadd4262fd",
+    "mode": 1,
+    "status": 3,
+    "scoreA": 4,
+    "scoreB": 3,
+    "elapsedUs": "300000000",
+    "finality": false
+  },
+  "publishedResult": {
+    "ref": {
+      "chainId": "10143",
+      "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+      "epoch": "1",
+      "id": "24"
+    },
+    "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+    "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+    "winner": "0x0000000000000000000000000000000000000000",
+    "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "mode": 1,
+    "status": 2,
+    "scoreA": 0,
+    "scoreB": 0,
+    "elapsedUs": "11300000",
+    "finality": false
+  },
+  "publisherBalanceMON": "116085.125122920494194802",
+  "simulation": {
+    "success": false,
+    "error": "The contract function \"forceClose\" reverted with the following signature:"
+  },
+  "conclusion": "The engine completed match24 but its result is not published. Healthy HTTP and no local pending command are not evidence of publication. Underlying hosted publication cause is unconfirmed."
+}

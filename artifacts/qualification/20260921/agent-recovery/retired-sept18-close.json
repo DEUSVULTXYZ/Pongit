@@ -1,0 +1,105 @@
+{
+  "at": "2026-09-21T12:03:23.021Z",
+  "app": "0x3ff9be7d8c3fbea0dc617f9cd59ff141fb6725db",
+  "epoch": "21",
+  "step": "close",
+  "passed": true,
+  "results": [
+    {
+      "id": "455",
+      "hash": "0xf47e465f6c94be3d36543ec0073178888c335accd26afcf5756bc9bf4cbc00ef",
+      "archived": true
+    },
+    {
+      "id": "456",
+      "hash": "0xd8dc7361d0869157e5d8a71287e337eab5c4819ebcf837842d11b888cec578a2",
+      "archived": true
+    },
+    {
+      "id": "457",
+      "hash": "0xfec58f5e51295ac4fdcd9381c8f236252a81b173f61a9388c5da65dc9d43b40f",
+      "archived": true
+    },
+    {
+      "id": "458",
+      "hash": "0xc287ccfb52d3a9e7ad39dbc8539122aa122808291281fd3e061abd19e73781f0",
+      "archived": true
+    },
+    {
+      "id": "459",
+      "hash": "0x096427b2057a17caf7c0ed0b2a2ce3d2ceed4673fc21fca16d4cadb67584dea5",
+      "archived": true
+    },
+    {
+      "id": "460",
+      "hash": "0x4ca6538e96adf791850e5f827f38e53e7557e837b7baa513894dd245985226ac",
+      "archived": true
+    },
+    {
+      "id": "461",
+      "hash": "0x14b41dc8bb740a9933464028b1835e9c5983ef8867114c695101b72618a2d97a",
+      "archived": true
+    },
+    {
+      "id": "462",
+      "hash": "0x1e83b1acf754cb95499731188b5436a444fdfeaaa89bf9c64daf76067c2f49eb",
+      "archived": true
+    },
+    {
+      "id": "463",
+      "hash": "0x2aa0110fd0025a947d2b5d18a13f6e20cb530bc708fc2cef902a132718cbdf6b",
+      "archived": true
+    },
+    {
+      "id": "464",
+      "hash": "0x580ce4ec041ccbd351504d1a9a3cb9fb42936fffb2dfdccae116aaf299be56f5",
+      "archived": true
+    },
+    {
+      "id": "465",
+      "hash": "0x7df7d8397027c9eb01b33e31ebb1bbf2f6e6e87cc7678f61282e34c3b7856b51",
+      "archived": true
+    },
+    {
+      "id": "466",
+      "hash": "0x3dae8a6790751a07f9e119637413d2ebe455ceea5781428b17e2a13a6e8eb9dc",
+      "archived": true
+    },
+    {
+      "id": "467",
+      "hash": "0x6ad8e185295cceca760341741089483aecbfd05dc567f072de601db4e3978e0f",
+      "archived": true
+    },
+    {
+      "id": "468",
+      "hash": "0xfd2dd2fd3adc8ba9d119201acad0da32e02284a1298c0b1fe54e34743e458a65",
+      "archived": true
+    },
+    {
+      "id": "469",
+      "hash": "0x46f0777580cac1d0828a71ea219ad4b29ba1ec5eab3e138eb6ca8b2cd6c74dc2",
+      "archived": true
+    },
+    {
+      "id": "470",
+      "hash": "0xf8c18115a066c52747df145df8125e0a7f2e0859c0122a58e8057d355cf63fe3",
+      "archived": true
+    },
+    {
+      "id": "471",
+      "hash": "0xd85543c807533ced1289d3fe9270dc5e13686f3c4009ebb19291af7d1cfefea4",
+      "archived": true
+    },
+    {
+      "id": "472",
+      "hash": "0x3a42c09bfacf2cdfad5ad6ba4297664f5b4af8306ba54cb51cc252ca71917b89",
+      "archived": true
+    }
+  ],
+  "batches": "777",
+  "pendingDiffs": 0,
+  "simulation": "passed",
+  "hash": "0x06a33cc96b340fa9b061e8076710caa25c09518f212b0f5f4321427cec4854d3",
+  "status": 2,
+  "releaseAt": "1789995826"
+}

@@ -1,0 +1,82 @@
+{
+  "startedAt": "2026-09-21T10:40:52.554Z",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "tournament": "2",
+  "mode": 1,
+  "league": false,
+  "scope": "One private tournament with actual hosted games and published results. Not a final budget, two-lane or 24-hour verdict.",
+  "fixtures": [
+    {
+      "index": 0,
+      "app": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+      "epoch": "1",
+      "id": "23",
+      "admissionHash": "0xc0a85fb58a222cd75c14533dbde58deff9b449ed17b32cd55be36342a823693f",
+      "admittedAt": "2026-09-21T10:41:34.413Z",
+      "resolved": true,
+      "captured": true,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "1",
+          "id": "23"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0x9aac6632ff6ab7a2af7238920993313505e209bb1301f1e62adaf8a3e49d9222",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "256963708",
+        "finality": false
+      }
+    },
+    {
+      "index": 1,
+      "app": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+      "epoch": "1",
+      "id": "24",
+      "admissionHash": "0x80f0b1fd257b1ac9c52d36f958cade554794f15db32e02824769d8c52c3fe85c",
+      "admittedAt": "2026-09-21T10:53:13.106Z",
+      "resolved": true,
+      "captured": true,
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "1",
+          "id": "24"
+        },
+        "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "winner": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "hash": "0x70798c289bbd6c302941dfe01d7eaa695c8b55ecedfb50d3f4b596aadd4262fd",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      }
+    },
+    {
+      "index": 2,
+      "app": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+      "epoch": "1",
+      "id": "25",
+      "admissionHash": "0xbf3cd25ed48443dcf8c1ce81fa794394103076f123b3d18c271fe78070f6ce29",
+      "admittedAt": "2026-09-21T11:52:50.025Z",
+      "resolved": false,
+      "captured": false
+    }
+  ],
+  "rotations": [],
+  "passed": false,
+  "observedAt": "2026-09-21T11:55:52.503Z",
+  "status": 2,
+  "error": "Tournament did not complete within the bounded diagnostic",
+  "finishedAt": "2026-09-21T11:55:55.913Z"
+}

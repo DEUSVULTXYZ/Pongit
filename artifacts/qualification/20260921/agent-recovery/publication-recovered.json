@@ -1,0 +1,26 @@
+{
+  "observedAt": "2026-09-21T12:03:56.575Z",
+  "captureHash": "0x05c1442da71b29ec32a101d7795cd442b123fc8d0b807f9b25c9a06f0ae539c8",
+  "block": "64441019",
+  "blockHash": "0x9877cd9671d1da64f7f2a9d308e03975604a81b2847133e55fae933ef4ee6518",
+  "blockTime": "2026-09-21T11:52:41.000Z",
+  "result": {
+    "ref": {
+      "chainId": "10143",
+      "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+      "epoch": "1",
+      "id": "24"
+    },
+    "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+    "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+    "winner": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+    "hash": "0x70798c289bbd6c302941dfe01d7eaa695c8b55ecedfb50d3f4b596aadd4262fd",
+    "mode": 1,
+    "status": 3,
+    "scoreA": 4,
+    "scoreB": 3,
+    "elapsedUs": "300000000",
+    "finality": false
+  },
+  "conclusion": "Publication recovered before the actual hub deadline. No forceClose was sent for this incident. The original tournament trial still failed its deadline."
+}
