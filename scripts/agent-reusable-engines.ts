@@ -26,8 +26,11 @@ import {initializeReusableResultArchive,createReusableResultArchive} from '../re
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {BackgroundObservation} from '../shared/background-observation';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
+import {publicationUnavailable} from '../shared/service-error';
+import {agentPublicationHealth,agentTickInterval} from '../shared/agent-publication-health';
 
 const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances};
+const tickInterval=agentTickInterval(process.env.PONG_AGENT_TICK_INTERVAL_MS);
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
 await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>base.readContract({address,abi,functionName,args}) as Promise<T>,m);
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:8}),metrics=await agentMetrics('/diagnostics/reusable','controllers');
@@ -58,6 +61,13 @@ async function arenaLoop(app:Address,runtimeHash:string){
  let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url='',nextHub=0,lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
  let observations:PoolObservations|undefined,proofTask:Promise<void>|undefined;
  let cachedTicket:{key:string;pair:readonly [ReusableTicket,ReusableAgentBinding]}|undefined,admitted=false,nextBindingCheck=0;
+ let publicationPaused=false;
+ const publicationObservation=()=>new BackgroundObservation(async()=>{
+  const response=await measuredFetch('interlude')(url+'/health',{signal:AbortSignal.timeout(4000)});
+  if(!response.ok)throw Error('Hosted publication health is temporarily unavailable');
+  return agentPublicationHealth(await response.json(),app,d!.epoch);
+ },10000,15000);
+ let publication=publicationObservation();
  const beacon=new ChaosBeaconPump(),proofLane=new PoolProofLane();
  const close=async()=>{engine?.close();engine=undefined;await proofTask;await observations?.flush();observations=undefined;lastProgress=0;lastRevision=-1n;admitted=false;nextBindingCheck=0;};
  const health=async(next:string,detail:Record<string,unknown>={})=>{
@@ -80,7 +90,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
    const common=await assignments.read(),block=common.block;
    if(Date.now()>=nextHub){
     const next=await readHubDelegation(base,m.hub,app,block.number);nextHub=Date.now()+5000;
-    if(!d||next.epoch!==d.epoch){await close();node=undefined;}d=next;
+    if(!d||next.epoch!==d.epoch){await close();node=undefined;publicationPaused=false;publication=publicationObservation();}d=next;
     if(!node&&d.status===1){
      assert.equal(keccak256((await base.getCode({address:app,blockNumber:block.number}))!).toLowerCase(),runtimeHash.toLowerCase(),'Arena bytecode changed');
     }
@@ -118,6 +128,13 @@ async function arenaLoop(app:Address,runtimeHash:string){
    // Expiry forbids new commands, not the reads needed to preserve a result.
    if(d.status!==1||d.expiresAt<=block.timestamp){
     await archiveSlot(ticket);await health('recovering',{epoch:String(ref.epoch),id:String(ref.id),releaseAt:String(d.stakeUnlockAt)});await delay(2000);continue;
+   }
+   if(publicationPaused){
+    const p=await publication.read();
+    // Reading a playing snapshot is not proof that publications have resumed.
+    // Keep exact pending commands for reconciliation after explicit recovery.
+    if(!p.healthy){await archiveSlot(ticket);await health('publication-paused',{epoch:String(ref.epoch),id:String(ref.id),publication:p});await delay(2000);continue;}
+    publicationPaused=false;
    }
    if(!admitted||Date.now()>=nextBindingCheck){
     const current=await node.readContract({address:app,abi,functionName:'currentAdmission'});
@@ -157,9 +174,13 @@ async function arenaLoop(app:Address,runtimeHash:string){
       await proofLane.submit({busy:actor.busy,read:actor.read,send:(op,_action,args)=>actor.send(op,'submitRandomness',[epoch,...args])},id,request,proof);lastProgress=Date.now();
      }).catch(e=>console.error(JSON.stringify({at:new Date().toISOString(),app,event:'randomness-retry',error:clean(e)}))).finally(()=>{proofTask=undefined;});
     }
-    if(!proofLane.blocksTick()&&!engine.busy()&&Date.now()-lastProgress>=300){await engine.send(`tick:${s.revision}:${s.head}:${Math.floor(Date.now()/300)}`,'tick',[ref.epoch,ref.id]);lastProgress=Date.now();}
+    if(!proofLane.blocksTick()&&!engine.busy()&&Date.now()-lastProgress>=tickInterval){await engine.send(`tick:${s.revision}:${s.head}:${Math.floor(Date.now()/tickInterval)}`,'tick',[ref.epoch,ref.id]);lastProgress=Date.now();}
    }else if(s.phase>=3){await archiveSlot(ticket);await health('awaiting-publication',{epoch:String(ref.epoch),id:String(ref.id),score:[s.state.scoreA,s.state.scoreB]});pause=1500;}
-  }catch(e){await health('synchronizing',{epoch:String(d?.epoch??0),id:String(engine?.ref.id??0),error:clean(e)});pause=Math.max(1000,engineCooldownMs(url));}
+  }catch(e){
+   if(publicationUnavailable(e)&&!publicationPaused){publicationPaused=true;publication=publicationObservation();}
+   await health(publicationPaused?'publication-paused':'synchronizing',{epoch:String(d?.epoch??0),id:String(engine?.ref.id??0),error:clean(e)});
+   pause=Math.max(publicationPaused?2000:1000,engineCooldownMs(url));
+  }
   if(!stopping)await delay(Math.min(pause,30000));
  }}finally{await close();}
 }
