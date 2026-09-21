@@ -30,11 +30,21 @@ assert.equal(r.arenas.length, 3);
 const metrics = await agentMetrics('/diagnostics/reusable', 'qualification-tournament');
 const t = await chainTools(r.prefix + ':' + trial, measuredFetch('monad'));
 const db = new Pool({connectionString: process.env.AGENT_DATABASE_URL, max: 2});
-const out = `artifacts/reusable-candidate/tournament-${id === 1n ? 'first-classic' : idText}.json`;
+const originalOut = `artifacts/reusable-candidate/tournament-${id === 1n ? 'first-classic' : idText}.json`;
+const attempt = process.env.PONG_REUSABLE_TOURNAMENT_ATTEMPT;
+assert(!attempt || /^resume[1-9][0-9]*$/.test(attempt), 'Use a separate, explicit recovery report');
+const out = attempt ? originalOut.replace(/\.json$/, `-${attempt}.json`) : originalOut;
 await mkdir('artifacts/reusable-candidate', {recursive: true});
 let report: any = {startedAt: new Date().toISOString(), pool: r.common.pool, tournament: idText, mode, league,
   scope: 'One private tournament with actual hosted games and published results. Not a final budget, two-lane or 24-hour verdict.',
   fixtures: [], rotations: [], passed: false};
+if (attempt) {
+  const original = JSON.parse(await readFile(originalOut, 'utf8'));
+  assert.equal(original.pool, r.common.pool); assert.equal(original.tournament, idText);
+  assert(original.finishedAt && original.passed === false, 'Only resume a preserved failed trial');
+  report.resumedFrom = {file: originalOut, startedAt: original.startedAt, finishedAt: original.finishedAt, passed: false};
+  report.scope += ' Separate recovery attempt; the original failure and elapsed time remain unchanged.';
+}
 try { const old = JSON.parse(await readFile(out, 'utf8')); assert.equal(old.pool, report.pool); assert.equal(old.tournament, idText); assert(!old.finishedAt, 'Preserve finished trial'); report = old; }
 catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; }
 const save = async () => { await writeFile(out + '.next', JSON.stringify(report, (_, v) => typeof v === 'bigint' ? String(v) : v, 2)); await rename(out + '.next', out); };
