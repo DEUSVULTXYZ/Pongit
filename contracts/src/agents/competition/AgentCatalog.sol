@@ -97,10 +97,10 @@ contract AgentCatalog is EIP712 {
         Identity storage p=identities[strategy];require(msg.sender==p.creator&&p.house==0,"community creator");
         if(p.available!=value){p.available=value;revision++;emit Availability(strategy,value,revision);}
     }
-    function identity(address strategy) external view returns(Identity memory){return identities[strategy];}
+    function identity(address strategy) public view virtual returns(Identity memory){return identities[strategy];}
     function count() external view returns(uint256){return strategies.length;}
     function at(uint256 index) external view returns(address){return strategies[index];}
-    function eligible(address strategy,uint8 mode) public view returns(bool){
+    function eligible(address strategy,uint8 mode) public view virtual returns(bool){
         Identity storage p=identities[strategy];
         return mode<2&&p.available&&p.qualified&(1<<mode)!=0&&participation[strategy]==0&&(p.house==0?strategy:houseController).codehash==p.codeHash;
     }

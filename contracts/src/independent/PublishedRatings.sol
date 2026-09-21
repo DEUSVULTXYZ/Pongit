@@ -14,7 +14,7 @@ contract PublishedRatings is ILobbyRatings {
     EloFormulaV2 public immutable formula;
     bool public migrationSealed;
     bytes32 public migrationEvidence;
-    Entry[] private entries;
+    Entry[] internal entries;
     mapping(uint256 => uint256) public indexOf;
     mapping(address => mapping(uint8 => Rating)) private seeds;
     mapping(uint256 => mapping(address => mapping(uint8 => Rating))) private ratings;
@@ -37,10 +37,10 @@ contract PublishedRatings is ILobbyRatings {
         lobby = lobby_; migrationOwner = admin; genesisTime = genesis; formula = new EloFormulaV2();
     }
     modifier onlyLobby() { require(msg.sender == lobby && block.chainid == 10143, "lobby only"); _; }
-    function _add(address p, uint8 mode) private {
+    function _add(address p, uint8 mode) internal {
         if (!known[mode][p]) { known[mode][p] = true; players[mode].push(p); }
     }
-    function seed(address[] calldata accounts, uint8 mode, Rating[] calldata values) external {
+    function seed(address[] calldata accounts, uint8 mode, Rating[] calldata values) public virtual {
         require(msg.sender == migrationOwner && !migrationSealed && accounts.length == values.length
             && accounts.length <= 100 && mode < 2, "migration only");
         for (uint256 i; i < accounts.length; i++) {
@@ -49,11 +49,11 @@ contract PublishedRatings is ILobbyRatings {
             seeds[accounts[i]][mode] = values[i]; _add(accounts[i],mode);
         }
     }
-    function sealMigration(bytes32 evidence) external {
+    function sealMigration(bytes32 evidence) public virtual {
         require(msg.sender == migrationOwner && !migrationSealed && evidence != 0, "migration only");
         migrationEvidence = evidence; migrationSealed = true;
     }
-    function seedPairCounts(bytes32[] calldata pairs, uint8[] calldata values) external {
+    function seedPairCounts(bytes32[] calldata pairs, uint8[] calldata values) public virtual {
         require(msg.sender == migrationOwner && !migrationSealed && pairs.length == values.length
             && pairs.length <= 100, "migration only");
         for (uint256 i; i < pairs.length; i++) {
@@ -87,13 +87,13 @@ contract PublishedRatings is ILobbyRatings {
         for (uint256 i; i < 16 && uint256(r.season)+i < season; i++) value = 1000 + (value-1000)/2;
         return Rating(uint32(uint256(value)),0,0,season);
     }
-    function ratingOf(address p, uint8 mode) external view returns (Rating memory) {
+    function ratingOf(address p, uint8 mode) public view virtual returns (Rating memory) {
         require(mode < 2, "mode"); return _at(generation,p,mode,block.timestamp);
     }
     function ratingChange(uint256 id) external view returns (uint32 beforeA,uint32 beforeB,uint32 afterA,uint32 afterB) {
         uint128 v = changes[generation][id]; return (uint32(v),uint32(v>>32),uint32(v>>64),uint32(v>>96));
     }
-    function publish(T.Result calldata r, bool finality) external onlyLobby {
+    function publish(T.Result calldata r, bool finality) public virtual onlyLobby {
         require(migrationSealed && indexOf[r.id] == 0 && r.id != 0 && r.epoch > 0 && r.hash != 0, "result identity");
         _terminal(r);
         indexOf[r.id] = entries.length+1;
@@ -103,11 +103,14 @@ contract PublishedRatings is ILobbyRatings {
         emit ResultPublished(r.id,r.arena,r.epoch,r.hash,entries.length-1);
         if (finality) emit ResultFinal(r.id,r.hash);
     }
-    function _terminal(T.Result calldata r) internal pure virtual {
+    function _terminal(T.Result memory r) internal pure virtual {
         require(r.mode < 2 && r.a != address(0) && r.b != address(0) && r.a != r.b, "participants");
         require((r.status == 3 && (r.winner == r.a || r.winner == r.b)) || (r.status == 4 && r.winner == address(0)), "terminal result");
     }
-    function reconcile(T.Result calldata r, bool finality) external onlyLobby {
+    function reconcile(T.Result calldata r, bool finality) public virtual onlyLobby {
+        _reconcile(r,finality);
+    }
+    function _reconcile(T.Result memory r, bool finality) internal {
         require(indexOf[r.id] > 0, "unpublished result");
         Entry storage e = entries[indexOf[r.id]-1];
         require(e.first.arena == r.arena && e.first.epoch == r.epoch && e.first.a == r.a && e.first.b == r.b
@@ -132,7 +135,7 @@ contract PublishedRatings is ILobbyRatings {
         }
     }
     function _positive(int256 n) private pure returns (uint32) { return uint32(uint256(n < 100 ? int256(100) : n)); }
-    function _apply(uint256 gen, uint256 i) private {
+    function _apply(uint256 gen, uint256 i) internal {
         Entry storage e = entries[i]; T.Result memory r = e.latest;
         if (!r.ranked || r.status != 3 || r.winner == address(0)) return;
         Rating memory a = _at(gen,r.a,r.mode,e.at); Rating memory b = _at(gen,r.b,r.mode,e.at);

@@ -44,6 +44,11 @@ try{
  }
  report.gates={pool:await read(pool,poolAbi,'admissions'),public:await read(pool,poolAbi,'publicAdmissions'),
   tournaments:await read(book,bookAbi,'admissions'),challenges:await read(challenges,challengeAbi,'admissions')};
+ report.matchCounter=await read(pool,poolAbi,'nonce');
+ report.lanes=[await read(pool,poolAbi,'laneMatch',[0n]),await read(pool,poolAbi,'laneMatch',[1n])];
+ report.challengeCursor=await read(challenges,challengeAbi,'cursor');
+ report.qualificationCursor=await read(qualifications,qualificationAbi,'cursor');
+ if(report.lanes.some((lane:string)=>BigInt(lane)!==0n))report.blockers.push('An assigned lane must finish on its original authority before import.');
  if(Object.values(report.gates).some(Boolean))report.blockers.push('Source admissions are still open.');
  report.catalogRevision=await read(catalog,catalogAbi,'revision');
  const n=await read(catalog,catalogAbi,'count');assert(n<=10000n,'Explicit review required for a larger catalogue');
@@ -84,6 +89,22 @@ try{
   building:await read(ratings,ratingsAbi,'buildGeneration'),revision:await read(ratings,ratingsAbi,'revision'),
   results:await read(ratings,ratingsAbi,'count'),priorMigrationEvidence:await read(ratings,ratingsAbi,'migrationEvidence')};
  if(report.ratingState.building!==0n)report.blockers.push('Ratings correction rebuild is incomplete.');
+ assert(report.ratingState.results<=10000n,'Explicit review required for a larger result archive');
+ report.results=[];const resultIds=new Set<string>();
+ for(let offset=0n;offset<report.ratingState.results;offset+=50n){
+  const [page,total]=await read(ratings,ratingsAbi,'resultPage',[offset,50n]);
+  assert.equal(total,report.ratingState.results);assert(page.length>0,'Empty result page');
+  for(const entry of page){
+   // PoolPublication keys the ledger by the complete reference hash, not the
+   // pool's sequential match number. Comparing this hash with nonce is invalid.
+   const id=String(entry.first.id);assert(!resultIds.has(id)&&entry.first.id>0n,'Duplicate or zero result reference hash');
+   assert.equal(entry.latest.id,entry.first.id);assert.equal(entry.latest.ranked,entry.first.ranked);
+   resultIds.add(id);report.results.push(entry);
+  }
+ }
+ report.results.reverse();assert.equal(BigInt(report.results.length),report.ratingState.results);
+ report.ratingState.rankedResults=report.results.filter((entry:any)=>entry.first.ranked).length;
+ report.ratingState.nonFinalResults=report.results.filter((entry:any)=>!entry.finality).length;
  for(let mode=0;mode<2;mode++){
   let offset=0n,total=0n;
   do{

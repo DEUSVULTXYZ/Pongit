@@ -8,6 +8,28 @@ const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const evidence=`0x${'b'.repeat(64)}` as const;
 const manifest:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:evidence,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
+
+test('an old URL reads its original pool after migration, never a same-number new match or a retired live node',async()=>{
+ const old={...manifest,enabled:false,tournamentsEnabled:false};
+ const current:AgentPoolManifest={...manifest,pool:addr(20),catalog:addr(21),tournaments:addr(22),ratings:addr(23),challenges:addr(24),qualifications:addr(25),
+  arenas:[28,29,30].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:zeroHash})),history:[old]};
+ const ref={chainId:10143 as const,app:old.arenas[0].app,epoch:'2',id:'11'};
+ let captured=true,reorg=false,reads=0;
+ const client={getBlock:async()=>({number:50n,hash:reorg&&reads>0?'0xb':'0xa',timestamp:1000n}),readContract:async(r:any)=>{
+  reads++;assert.equal(r.blockNumber,50n);assert.notEqual(r.address,current.pool,'no alias to current authority');
+  if(r.functionName==='record'){assert.equal(r.address,old.pool);return{ref:{chainId:10143n,arena:ref.app,epoch:2n,id:11n},a:addr(90),b:addr(91),ranked:false,captured,tournament:1n,lane:0};}
+  if(r.functionName==='boundMatch')return{id:11n,epoch:2n,mode:1};
+  if(r.functionName==='result')return{hash:zeroHash,winner:addr(90),status:3,scoreA:7,scoreB:5,mode:1,elapsedUs:10n,finality:false};
+  if(r.functionName==='tournament'){assert.equal(r.address,old.tournaments);return{league:false};}
+  throw Error(r.functionName);
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,current);
+ const observed=await reader.match(ref);assert.equal(observed.value.result?.scoreA,7);assert.equal(observed.value.node,null);assert.equal(observed.value.currentBinding,false);
+ assert.equal(observed.value.overtimeSeconds,60);assert.deepEqual(observed.value.ref,ref);
+ captured=false;await assert.rejects(reader.match(ref),/no published result/);
+ captured=true;reorg=true;reads=0;await assert.rejects(reader.match(ref),/changed during synchronization/);
+ await assert.rejects(reader.match({...ref,app:addr(99)}),/not found/);
+});
 test('published view pins all reads and rejects a mid-read reorganization',async()=>{
  let reads=0,reorg=false,second=false;
  const client={getBlock:async()=>({number:50n,hash:reorg&&second?'0xb':'0xa'}),readContract:async(r:any)=>{

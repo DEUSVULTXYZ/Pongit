@@ -21,6 +21,10 @@ const run = process.env.PONG_HOUSE_INSTANCE_RUN ?? '1';
 assert(/^[1-9]$/.test(run));
 const count = Number(process.env.PONG_HOUSE_INSTANCE_MATCHES ?? 2);
 assert(Number.isInteger(count) && count >= 1 && count <= 4, 'At most four reviewed games per trial');
+const idlePeers = process.env.PONG_HOUSE_INSTANCE_IDLE_PEERS === 'reviewed-private';
+const serviceDeadline = process.env.PONG_HOUSE_INSTANCE_DEADLINE;
+assert(!idlePeers || serviceDeadline, 'Two-arena trial needs an explicit service deadline');
+if (serviceDeadline) assert(Number.isFinite(Date.parse(serviceDeadline)), 'Invalid service deadline');
 const r = JSON.parse(await readFile('/secrets/deployment.json', 'utf8'));
 validateReusableRecord(r, (process.env.PONG_HUMAN_APPS ?? '').split(',').filter(Boolean));
 assert.equal(r.houseInstances, 'official-v1');
@@ -35,13 +39,15 @@ const write = (...args: Parameters<typeof t.write>) => retryOperatorContention((
 const out = `artifacts/reusable-candidate/house-controllers-${run}.json`;
 await mkdir('artifacts/reusable-candidate', {recursive: true});
 let report: any = {startedAt: new Date().toISOString(), pool: m.pool, app, source: process.env.PONG_SOURCE_COMMIT,
-  requested: count, matches: [], passed: false,
+  requested: count, idlePeers, serviceDeadline, matches: [], passed: false,
   scope: 'Private real controller qualification and canonical publication only. Not concurrent instances, human controls, release reserve or 24-hour qualification.'};
 try {const old = JSON.parse(await readFile(out, 'utf8')); assert(!old.finishedAt, 'Preserve completed verdict');
-  assert.equal(old.pool, m.pool); assert.equal(old.app, app); assert.equal(old.requested, count); report = old;
+  assert.equal(old.pool, m.pool); assert.equal(old.app, app); assert.equal(old.requested, count);
+  assert.equal(old.idlePeers ?? false, idlePeers); assert.equal(old.serviceDeadline, serviceDeadline); report = old;
 } catch (e) {if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;}
 const save = async () => {await writeFile(out + '.next', JSON.stringify(report, (_, v) => typeof v === 'bigint' ? String(v) : v, 2)); await rename(out + '.next', out);};
-const deadline = Date.parse(report.startedAt) + count * 15 * 60_000;
+const deadline = Math.min(Date.parse(report.startedAt) + count * 15 * 60_000,
+  serviceDeadline ? Date.parse(serviceDeadline) : Infinity);
 const wait = () => new Promise(resolve => setTimeout(resolve, 3000));
 try {
   await save();
@@ -63,8 +69,14 @@ try {
         // A bounded experiment on a nearly fresh epoch, not a fabricated
         // publication budget authorizing continuous service.
         assert(d.status === 1 && d.expiresAt > now + 1200n && d.batchIndex < 2000n, 'Inspect observed epoch reserve before another trial');
-        for (const a of r.arenas) if (a.app.toLowerCase() !== app.toLowerCase())
-          assert.equal((await readHubDelegation(t.base, m.hub, a.app)).status, 0, 'Only the selected private arena may admit');
+        for (const a of r.arenas) if (a.app.toLowerCase() !== app.toLowerCase()) {
+          const peer = await readHubDelegation(t.base, m.hub, a.app);
+          if (peer.status === 0) continue;
+          assert(idlePeers && peer.status === 1 && peer.baseBlock < d.baseBlock && peer.batchIndex < 2000n,
+            'Only explicitly reviewed older idle private peers are allowed');
+          const health = (await db.query("SELECT stage FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'", [a.app.toLowerCase()])).rows[0];
+          assert.equal(health?.stage, 'available', 'Peer must remain idle; no competing trial');
+        }
         const healthy = (await db.query("SELECT stage,detail FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'", [app.toLowerCase()])).rows[0];
         assert(healthy?.stage === 'available' && BigInt(healthy.detail.epoch) === d.epoch, 'Fresh hosted availability required');
         assert.equal((await read(m.pool, poolAbi, 'laneRecord', [1])).ref.id, 0n, 'Existing lane belongs to its original operation');

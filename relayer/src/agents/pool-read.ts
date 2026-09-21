@@ -1,5 +1,5 @@
 import {createHash} from 'node:crypto';
-import {encodeAbiParameters,keccak256,zeroAddress,zeroHash,type Abi,type Address,type PublicClient} from 'viem';
+import {encodeAbiParameters,keccak256,zeroAddress,zeroHash,type Abi,type Address,type Hex,type PublicClient} from 'viem';
 import {agentArenaPoolAbi as poolAbi} from '../../../shared/abi-AgentArenaPool';
 import {agentSeriesPoolAbi as seriesPoolAbi} from '../../../shared/abi-AgentSeriesPool';
 import {seriesAgentArenaAbi as seriesArenaAbi} from '../../../shared/abi-SeriesAgentArena';
@@ -200,8 +200,19 @@ export class AgentPoolReader {
    return{request:{id:String(id),player:owner,agent,mode,status,at:String(at),ref,...(waitReason?{waitReason,tournamentId}:{})}};
   });
  }
- async match(ref:AgentMatchRef){
+ async match(ref:AgentMatchRef):Promise<{value:PoolMatchView;observedBlock:string;observedHash:Hex;observedTimestamp:string;revision:string}>{
   const m=this.manifest,arena=m.arenas.find(a=>a.app.toLowerCase()===ref.app.toLowerCase());
+  if(!arena){
+   const predecessor=m.history?.find(prior=>prior.arenas.some(a=>a.app.toLowerCase()===ref.app.toLowerCase()));
+   if(predecessor){
+    const old=await new AgentPoolReader(this.client,predecessor).match(ref);
+    // An old URL always resolves to its original authority. Never treat a
+    // restored retired node as a new live game or authorize controls there.
+    if(!old.value.result)throw Object.assign(Error('Historical match has no published result'),{status:503,code:'AGENT_HISTORY_UNPUBLISHED'});
+    const value:PoolMatchView={...old.value,node:null,currentBinding:false};
+    return {...old,value,revision:createHash('sha256').update(poolJson(value)).digest('hex')};
+   }
+  }
   if(!arena||ref.chainId!==10143||!/^\d{1,78}$/.test(ref.epoch)||!/^\d{1,78}$/.test(ref.id)
    ||BigInt(ref.epoch)<1n||BigInt(ref.id)<1n||BigInt(ref.epoch)>=2n**256n||BigInt(ref.id)>=2n**256n)throw poolNotFound();
   const wanted:Ref={chainId:10143n,arena:arena.app,epoch:BigInt(ref.epoch),id:BigInt(ref.id)};

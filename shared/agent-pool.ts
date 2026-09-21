@@ -16,6 +16,9 @@ export type AgentPoolManifest={
  releaseStage?:'testnet-preview';previewEvidence?:Hex;
  countdownClock?:'engine-ticks-v1';
  houseInstances?:'official-v1';
+ // Read-only retired authorities. They never supply an admission, signing
+ // target, capacity slot or engine origin for the current deployment.
+ history?:AgentPoolManifest[];
  version:2|3|4;chainId:10143;engineChainId:4242;rulesVersion:10|11|15;hub:Address;pool:Address;catalog:Address;
  tournaments:Address;ratings:Address;challenges:Address;qualifications:Address;family:Address;arenas:PoolArena[];
  enabled:boolean;tournamentsEnabled:boolean;verifiedCapacity:0|2;qualificationEvidence:Hex|null;
@@ -47,9 +50,23 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
  if(m.enabled&&!preview&&(m.verifiedCapacity!==2||!m.qualificationEvidence||!/^0x[\da-f]{64}$/i.test(m.qualificationEvidence)||BigInt(m.qualificationEvidence)===0n))throw Error('Public Agent Arcade requires a reviewed capacity qualification');
  if(m.tournamentsEnabled&&!m.enabled)throw Error('Tournaments cannot open while Agent Arcade is closed');
  if(m.qualificationEvidence!==null&&!/^0x[\da-f]{64}$/i.test(m.qualificationEvidence))throw Error('Invalid qualification reference');
+ let history:AgentPoolManifest[]|undefined;
+ if(m.history!==undefined){
+  if(!Array.isArray(m.history)||m.history.length<1||m.history.length>8)throw Error('Retired authority bounds');
+  const pools=new Set([m.pool.toLowerCase()]),allArenas=new Set(seen);
+  history=m.history.map(prior=>{
+   if(prior.history!==undefined||prior.enabled!==false||prior.tournamentsEnabled!==false)throw Error('Historical authorities must be flat and read-only');
+   const safe=validateAgentPoolManifest(prior,humanApps);
+   if(pools.has(safe.pool.toLowerCase()))throw Error('Duplicate historical authority');pools.add(safe.pool.toLowerCase());
+   for(const arena of safe.arenas){
+    if(allArenas.has(arena.app.toLowerCase()))throw Error('Ambiguous historical arena');allArenas.add(arena.app.toLowerCase());
+   }
+   return safe;
+  });
+ }
  // Deployment journals may contain operator state next to these fields. Never
  // serialize unknown fields or nested arena properties to a browser.
- return {version:m.version,...(preview?{releaseStage:'testnet-preview' as const,previewEvidence:m.previewEvidence}:{}),...(m.countdownClock?{countdownClock:m.countdownClock}:{}),...(m.houseInstances?{houseInstances:m.houseInstances}:{}),chainId:10143,engineChainId:4242,rulesVersion:m.rulesVersion,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
+ return {version:m.version,...(preview?{releaseStage:'testnet-preview' as const,previewEvidence:m.previewEvidence}:{}),...(m.countdownClock?{countdownClock:m.countdownClock}:{}),...(m.houseInstances?{houseInstances:m.houseInstances}:{}),...(history?{history}:{}),chainId:10143,engineChainId:4242,rulesVersion:m.rulesVersion,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
   ratings:m.ratings,challenges:m.challenges,qualifications:m.qualifications,family:m.family,arenas:m.arenas.map(a=>({app:a.app,node:a.node,runtimeHash:a.runtimeHash})),
   enabled:m.enabled,tournamentsEnabled:m.tournamentsEnabled,verifiedCapacity:m.verifiedCapacity,qualificationEvidence:m.qualificationEvidence,
   durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};

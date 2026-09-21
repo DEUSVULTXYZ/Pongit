@@ -28,11 +28,11 @@ contract AgentChallenges is EIP712 {
         require(block.chainid==10143&&address(f).code.length>0&&address(c).code.length>0&&p!=address(0)&&admin!=address(0),"challenge roles");
         family=f;catalog=c;pool=p;owner=admin;
     }
-    function setAdmissions(bool value) external {require(block.chainid==10143&&msg.sender==owner,"operator only");admissions=value;}
+    function setAdmissions(bool value) public virtual {require(block.chainid==10143&&msg.sender==owner,"operator only");admissions=value;}
     function digest(bytes32 grant,uint8 action,address agent,uint8 mode,uint256 id,uint256 nonce,uint64 deadline) public view returns(bytes32){
         return _hashTypedDataV4(keccak256(abi.encode(COMMAND,grant,action,agent,mode,id,nonce,deadline)));
     }
-    function command(address player,uint8 action,address agent,uint8 mode,uint256 id,uint256 nonce,uint64 deadline,bytes calldata signature) external returns(uint256){
+    function command(address player,uint8 action,address agent,uint8 mode,uint256 id,uint256 nonce,uint64 deadline,bytes calldata signature) public virtual returns(uint256){
         require(block.chainid==10143,"Monad challenges only");ArcadeFamily.Grant memory g=family.grantOf(player);bytes32 h=family.grantDigest(g);
         require(g.key!=address(0)&&deadline>=block.timestamp&&deadline<=g.expires&&nonce==nonces[h],"arcade authorization/nonce");
         require(ECDSA.recover(digest(h,action,agent,mode,id,nonce,deadline),signature)==g.key,"arcade signature");nonces[h]++;
@@ -66,6 +66,7 @@ contract AgentChallenges is EIP712 {
         return _takeNext(baseBlock);
     }
     function _eligible(address agent,uint8 mode) internal view virtual returns(bool){return catalog.eligible(agent,mode);}
+    function _refreshRequest(uint256) internal virtual {}
     function _takeNext(uint256 baseBlock) private returns(uint256 id,Request memory request,ArcadeFamily.Grant memory grant){
         require(block.chainid==10143&&msg.sender==pool,"pool only");
         if(scanRevision!=catalog.revision()||scanCount!=count){scanRevision=catalog.revision();scanCount=count;scannedCount=0;}
@@ -73,7 +74,7 @@ contract AgentChallenges is EIP712 {
         // Cursor is resumable: a long list of busy tournament participants must
         // not permanently hide a playable challenge further down the queue.
         for(uint256 scanned;scanned<32&&scanned<count;scanned++){
-            id=cursor;cursor=cursor==count?1:cursor+1;Request storage r=requests[id];
+            id=cursor;cursor=cursor==count?1:cursor+1;_refreshRequest(id);Request storage r=requests[id];
             if(scannedCount<count)scannedCount++;
             if(r.status!=1||!_valid(r)||!_eligible(r.agent,r.mode))continue;
             if(catalog.identity(r.agent).house==0&&catalog.registeredBlock(r.agent)>baseBlock)continue;

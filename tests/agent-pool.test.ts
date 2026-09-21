@@ -21,6 +21,19 @@ test('the displayed automatic cycle exactly matches the contract schedule',()=>{
  {mode:0,format:'elimination'},{mode:1,format:'elimination'},{mode:0,format:'championship'},{mode:1,format:'championship'},{mode:0,format:'elimination'}]);
  assert.throws(()=>scheduledTournament(0n));assert.equal(pooledHouseBots.length,8);assert.equal(new Set(pooledHouseBots.map(x=>x.avatar)).size,8);
 });
+test('retired authorities preserve their manifest without creating writable slots or leaking journal fields',()=>{
+ const m=manifest(),old={...manifest(),pool:addr(20),catalog:addr(21),tournaments:addr(22),ratings:addr(23),challenges:addr(24),qualifications:addr(25),
+  arenas:[28,29,30].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}` as const}))};
+ const contaminated={...old,privateJournal:'private fixture',arenas:old.arenas.map(a=>({...a,grant:'private fixture'}))};
+ const safe=validateAgentPoolManifest({...m,history:[contaminated]});
+ assert.equal(safe.arenas.length,3);assert.equal(safe.history?.[0].pool,old.pool);assert(!JSON.stringify(safe).includes('private fixture'));
+ assert.throws(()=>validateAgentPoolManifest({...m,history:[{...old,enabled:true}]}),/read-only/);
+ assert.throws(()=>validateAgentPoolManifest({...m,history:[{...old,history:[m]}]}),/flat/);
+ assert.throws(()=>validateAgentPoolManifest({...m,history:[old,old]}),/Duplicate/);
+ assert.throws(()=>validateAgentPoolManifest({...m,history:[{...old,arenas:m.arenas}]}),/Ambiguous/);
+ assert.throws(()=>validateAgentPoolManifest({...m,history:[old]},[old.arenas[0].app]),/another space/);
+ assert.throws(()=>validateAgentPoolManifest({...m,history:Array(9).fill(old)}),/bounds/);
+});
 test('explicit testnet preview cannot be mislabeled as completed qualification',()=>{
  const m:AgentPoolManifest={...manifest(),version:4,rulesVersion:15,enabled:true,tournamentsEnabled:true,
   releaseStage:'testnet-preview',previewEvidence:`0x${'c'.repeat(64)}`};
@@ -52,6 +65,9 @@ test('the browser policy accepts reusable arenas without widening origins or adm
  const origins=agentPoolCspOrigins(m).split(' ');
  assert.deepEqual(origins,m.arenas.flatMap(a=>[a.node,a.node.replace('https:','wss:')]));
  assert.equal(m.enabled,false);assert.equal(m.verifiedCapacity,0);
+ const retired={...m,pool:addr(20),catalog:addr(21),tournaments:addr(22),ratings:addr(23),challenges:addr(24),qualifications:addr(25),
+  arenas:[28,29,30].map(n=>({app:addr(n),node:`https://il-${addr(n).slice(2,18)}.fly.dev`,runtimeHash:`0x${'d'.repeat(64)}` as const}))};
+ assert.equal(agentPoolCspOrigins({...m,history:[retired]}),agentPoolCspOrigins(m),'retired history never adds engine origins');
  for(const node of ["https://il-123.fly.dev; connect-src *",'https://il-123.fly.dev.evil.test','https://user:password@il-123.fly.dev','http://il-123.fly.dev'])
   assert.throws(()=>agentPoolCspOrigins({...m,arenas:m.arenas.map(a=>({...a,node}))}));
  assert.throws(()=>agentPoolCspOrigins({...m,rulesVersion:11}));

@@ -112,3 +112,11 @@ The current public inventory contains nine identities and no waiting challenges
 at its observation block. This is not a complete migration: ratings, retry state,
 sessions and historical routes still require integration and final validation.
 See [the migration and indexer report](validation/agent-migration-indexer-20260921.md).
+
+Continuation candidates now also preserve challenge requests with the original
+ArcadeFamily, qualification retry deadlines and logical match numbering.
+Inherited qualification corrections remain effective; old match URLs can resolve
+through bounded read-only historical manifests. These additions are not deployed.
+The newer canonical inventory found two waiting requests, so the earlier empty
+queue observation must not be used for migration. See the
+[continuation evidence and remaining gates](validation/agent-continuation-20260921.md).

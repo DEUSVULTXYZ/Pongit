@@ -6,6 +6,10 @@ import {AgentTournaments} from "./AgentTournaments.sol";
 interface IRetiredAgentPool {
     function admissions() external view returns(bool);
     function publicAdmissions() external view returns(bool);
+    function nonce() external view returns(uint256);
+    function laneMatch(uint256 lane) external view returns(bytes32);
+    function challenges() external view returns(address);
+    function qualifications() external view returns(address);
 }
 
 /// Imports the actual Monad registry, never an operator-supplied identity list.
@@ -19,9 +23,12 @@ contract MigratingAgentCatalog is AgentCatalog {
     uint256 public sourceCount;
     uint64 public sourceTournamentCount;
     uint64 public sourceNextTournamentAt;
+    uint256 public sourceMatchNonce;
     uint256 public imported;
     bool public importStarted;
     bytes32 public importDigest;
+    mapping(address=>bool) public inheritedIdentity;
+    mapping(address=>mapping(uint8=>bool)) private independentVerdict;
     event ImportStarted(address indexed source,uint256 revision,uint256 count,uint64 tournaments);
     event IdentityImported(address indexed strategy,uint256 index,bytes32 digest);
     event ImportSealed(address indexed source,uint256 revision,uint256 count,bytes32 digest);
@@ -40,6 +47,7 @@ contract MigratingAgentCatalog is AgentCatalog {
         IRetiredAgentPool pool=IRetiredAgentPool(predecessor.arenaPool());
         AgentTournaments book=AgentTournaments(predecessor.competition());
         require(!pool.admissions()&&!pool.publicAdmissions()&&!book.admissions(),"source admissions open");
+        require(pool.laneMatch(0)==0&&pool.laneMatch(1)==0,"source matches still active");
         uint64 n=book.count();
         require(n==0||book.tournament(n).status==AgentTournaments.Status.Complete,"source tournament unfinished");
         require(houseController.codehash==houseCodeHash,"official controller changed");
@@ -48,18 +56,20 @@ contract MigratingAgentCatalog is AgentCatalog {
         require(msg.sender==owner&&!importStarted&&!setupSealed,"import setup only");
         _closedSource();
         sourceRevision=predecessor.revision();sourceCount=predecessor.count();
+        sourceMatchNonce=IRetiredAgentPool(predecessor.arenaPool()).nonce();
         AgentTournaments book=AgentTournaments(predecessor.competition());
         sourceTournamentCount=book.count();sourceNextTournamentAt=book.nextAt();
         require(sourceCount>=8,"source identities");importStarted=true;
         importDigest=keccak256(abi.encode(block.chainid,address(predecessor),predecessorCodeHash,
-            sourceRevision,sourceCount,sourceTournamentCount,sourceNextTournamentAt));
+            sourceRevision,sourceCount,sourceTournamentCount,sourceNextTournamentAt,sourceMatchNonce));
         emit ImportStarted(address(predecessor),sourceRevision,sourceCount,sourceTournamentCount);
     }
     function _unchangedSource() private view {
         require(importStarted,"import not started");_closedSource();
         AgentTournaments book=AgentTournaments(predecessor.competition());
         require(predecessor.revision()==sourceRevision&&predecessor.count()==sourceCount
-            &&book.count()==sourceTournamentCount&&book.nextAt()==sourceNextTournamentAt,"source changed during import");
+            &&book.count()==sourceTournamentCount&&book.nextAt()==sourceNextTournamentAt
+            &&IRetiredAgentPool(predecessor.arenaPool()).nonce()==sourceMatchNonce,"source changed during import");
     }
     function importPage(uint8 budget) external base {
         require(msg.sender==owner&&!setupSealed&&budget>0&&budget<=32,"import page bounds");
@@ -81,7 +91,7 @@ contract MigratingAgentCatalog is AgentCatalog {
             bytes32 e0=predecessor.qualificationEvidence(agent,0);bytes32 e1=predecessor.qualificationEvidence(agent,1);
             require((p.qualified&1==0||e0!=0)&&(p.qualified&2==0||e1!=0),"source qualification evidence");
             uint256 nonce=predecessor.nonces(p.creator);
-            identities[agent]=p;registeredBlock[agent]=registered;nonces[p.creator]=nonce;
+            identities[agent]=p;inheritedIdentity[agent]=true;registeredBlock[agent]=registered;nonces[p.creator]=nonce;
             qualificationEvidence[agent][0]=e0;qualificationEvidence[agent][1]=e1;
             strategies.push(agent);revision++;
             importDigest=keccak256(abi.encode(importDigest,agent,p,registered,nonce,e0,e1));
@@ -98,7 +108,39 @@ contract MigratingAgentCatalog is AgentCatalog {
         require(setupSealed,"import not sealed");super.register(r,signature);
     }
     function qualify(address agent,uint8 mode,bool passed,bytes32 evidence) public override {
-        require(setupSealed,"import not sealed");super.qualify(agent,mode,passed,evidence);
+        require(setupSealed,"import not sealed");super.qualify(agent,mode,passed,evidence);independentVerdict[agent][mode]=true;
+    }
+    function qualificationInherited(address agent,uint8 mode) public view returns(bool){
+        return inheritedIdentity[agent]&&mode<2&&!independentVerdict[agent][mode];
+    }
+    /// A correction of the old published trial takes effect on eligibility even
+    /// before a keeper mirrors its evidence. A newer local verdict supersedes
+    /// that dependency separately for each mode.
+    function identity(address agent) public view override returns(Identity memory p){
+        p=super.identity(agent);
+        if(!inheritedIdentity[agent])return p;
+        if(qualificationInherited(agent,0)||qualificationInherited(agent,1)){
+            require(address(predecessor).codehash==predecessorCodeHash,"source code changed");
+            Identity memory prior=predecessor.identity(agent);
+            for(uint8 mode;mode<2;mode++)if(qualificationInherited(agent,mode)){
+                uint8 bit=uint8(1<<mode);p.qualified=(p.qualified&~bit)|(prior.qualified&bit);
+            }
+        }
+    }
+    function eligible(address agent,uint8 mode) public view override returns(bool){
+        Identity memory p=identity(agent);
+        return mode<2&&p.available&&p.qualified&(1<<mode)!=0&&participation[agent]==0
+            &&(p.house==0?agent:houseController).codehash==p.codeHash;
+    }
+    function synchronizeQualification(address agent,uint8 mode) external base {
+        require(setupSealed&&qualificationInherited(agent,mode),"qualification already superseded");
+        Identity memory p=identity(agent);bytes32 proof=predecessor.qualificationEvidence(agent,mode);
+        require(proof!=0,"source qualification evidence");
+        uint8 bit=uint8(1<<mode);
+        if(qualificationEvidence[agent][mode]==proof&&(identities[agent].qualified&bit)==(p.qualified&bit))return;
+        identities[agent].qualified=(identities[agent].qualified&~bit)|(p.qualified&bit);
+        qualificationEvidence[agent][mode]=proof;revision++;
+        emit Qualified(agent,mode,p.qualified&bit!=0,proof);
     }
     function setAvailable(address agent,bool value) public override {
         require(setupSealed,"import not sealed");super.setAvailable(agent,value);

@@ -12,11 +12,12 @@ contract AgentQualifications {
     address public immutable pool;
     uint256 public cursor;
     mapping(bytes32=>Trial) public trials;
-    mapping(address=>mapping(uint8=>uint64)) public retryAt;
+    mapping(address=>mapping(uint8=>uint64)) internal retries;
     event TrialBound(bytes32 indexed ref,address indexed a,address indexed b,uint8 mode);
     event TrialObserved(bytes32 indexed ref,bool completed,bool passedA,bool passedB,bytes32 resultHash);
     constructor(AgentCatalog c,address p){require(address(c).code.length>0&&p!=address(0),"qualification roles");catalog=c;pool=p;}
     modifier onlyPool(){require(block.chainid==10143&&msg.sender==pool,"Monad pool only");_;}
+    function retryAt(address agent,uint8 mode) public view virtual returns(uint64){return retries[agent][mode];}
     function takeNext() external onlyPool returns(address a,address b,uint8 mode){
         return _takeNext(type(uint256).max);
     }
@@ -24,11 +25,11 @@ contract AgentQualifications {
         return _takeNext(baseBlock);
     }
     function _opponentEligible(address agent,uint8 mode) internal view virtual returns(bool){return catalog.qualificationEligible(agent,mode);}
-    function _takeNext(uint256 baseBlock) private returns(address a,address b,uint8 mode){
+    function _takeNext(uint256 baseBlock) internal virtual returns(address a,address b,uint8 mode){
         uint256 n=catalog.count()*2;if(n==0)return(a,b,mode);
         for(uint256 i;i<32&&i<n;i++){
             uint256 position=cursor%n;cursor=(position+1)%n;a=catalog.at(position/2);mode=uint8(position%2);
-            if(catalog.identity(a).qualified&(1<<mode)!=0||retryAt[a][mode]>block.timestamp||!catalog.qualificationEligible(a,mode))continue;
+            if(catalog.identity(a).qualified&(1<<mode)!=0||retryAt(a,mode)>block.timestamp||!catalog.qualificationEligible(a,mode))continue;
             if(catalog.identity(a).house==0&&catalog.registeredBlock(a)>baseBlock)continue;
             for(uint8 j;j<8;j++){
                 b=catalog.house((j+2)%8);
@@ -54,15 +55,15 @@ contract AgentQualifications {
             // qualification. A technical cancellation restores prior standing.
             if(catalog.qualificationEvidence(t.a,t.mode)==t.evidenceA){
                 catalog.qualify(t.a,t.mode,completed?passedA:t.prior&1!=0,evidence);t.evidenceA=evidence;
-                retryAt[t.a][t.mode]=uint64(block.timestamp+(completed&&!passedA?15 minutes:1 minutes));
+                retries[t.a][t.mode]=uint64(block.timestamp+(completed&&!passedA?15 minutes:1 minutes));
             }
             if(catalog.qualificationEvidence(t.b,t.mode)==t.evidenceB){
                 catalog.qualify(t.b,t.mode,completed?passedB:t.prior&2!=0,evidence);t.evidenceB=evidence;
-                retryAt[t.b][t.mode]=uint64(block.timestamp+(completed&&!passedB?15 minutes:1 minutes));
+                retries[t.b][t.mode]=uint64(block.timestamp+(completed&&!passedB?15 minutes:1 minutes));
             }
         }else{
-            retryAt[t.a][t.mode]=uint64(block.timestamp+1 minutes);
-            retryAt[t.b][t.mode]=uint64(block.timestamp+1 minutes);
+            retries[t.a][t.mode]=uint64(block.timestamp+1 minutes);
+            retries[t.b][t.mode]=uint64(block.timestamp+1 minutes);
         }
         t.hash=evidence;t.recorded=true;emit TrialObserved(key,completed,passedA,passedB,r.hash);
     }

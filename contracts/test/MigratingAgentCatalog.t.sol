@@ -11,7 +11,14 @@ import {CompetitionAuthorityMock} from "./AgentTournaments.t.sol";
 contract MigrationAuthorityMock is CompetitionAuthorityMock {
     bool public admissions;
     bool public publicAdmissions;
+    uint256 public nonce;
+    mapping(uint256=>bytes32) public laneMatch;
+    address public challenges;
+    address public qualifications;
     function gates(bool a,bool p) external {admissions=a;publicAdmissions=p;}
+    function setNonce(uint256 n) external {nonce=n;}
+    function setLane(uint256 lane,bytes32 ref) external {laneMatch[lane]=ref;}
+    function setQueues(address c,address q) external {challenges=c;qualifications=q;}
 }
 
 contract MigratingAgentCatalogTest is Test {
@@ -84,6 +91,13 @@ contract MigratingAgentCatalogTest is Test {
         pool.gates(false,true);vm.expectRevert("source admissions open");next.startImport();
         pool.gates(false,false);book.setAdmissions(true);vm.expectRevert("source admissions open");next.startImport();
     }
+    function testIdleTournamentCannotHideAnActiveFriendlyLane() public {
+        pool.setLane(1,bytes32(uint256(1)));vm.expectRevert("source matches still active");next.startImport();
+    }
+    function testChangingMatchCounterInvalidatesImportBeforeSeal() public {
+        pool.setNonce(88);next.startImport();assertEq(next.sourceMatchNonce(),88);next.importPage(32);
+        pool.setNonce(89);vm.expectRevert("source changed during import");next.seal();
+    }
     function testUnfinishedTournamentCannotBeImported() public {
         book.setAdmissions(true);book.begin();book.setAdmissions(false);
         vm.expectRevert("source tournament unfinished");next.startImport();
@@ -148,5 +162,27 @@ contract MigratingAgentCatalogTest is Test {
     }
     function testOfficialRuntimeChangedAfterStartFailsClosed() public {
         next.startImport();vm.etch(builtin,hex"00");vm.expectRevert("official controller changed");next.importPage(8);
+    }
+    function testHistoricalVerdictCorrectionChangesEligibilityBeforeKeeperSynchronization() public {
+        _import();assertTrue(next.eligible(COMMUNITY,0));
+        vm.prank(address(pool));old.qualify(COMMUNITY,0,false,bytes32(uint256(555)));
+        assertFalse(next.eligible(COMMUNITY,0));assertEq(next.identity(COMMUNITY).qualified,0);
+        assertTrue(next.qualificationInherited(COMMUNITY,0));next.synchronizeQualification(COMMUNITY,0);
+        assertEq(next.qualificationEvidence(COMMUNITY,0),bytes32(uint256(555)));uint256 revision=next.revision();
+        next.synchronizeQualification(COMMUNITY,0);assertEq(next.revision(),revision,"idempotent mirror");
+        vm.prank(address(pool));old.qualify(COMMUNITY,0,true,bytes32(uint256(556)));
+        assertTrue(next.eligible(COMMUNITY,0));
+    }
+    function testNewIndependentVerdictSupersedesOldCorrectionsOnlyForItsOwnMode() public {
+        _import();vm.prank(address(pool));next.qualify(COMMUNITY,0,true,bytes32(uint256(777)));
+        vm.prank(address(pool));old.qualify(COMMUNITY,0,false,bytes32(uint256(778)));
+        assertTrue(next.eligible(COMMUNITY,0));assertFalse(next.qualificationInherited(COMMUNITY,0));
+        vm.expectRevert("qualification already superseded");next.synchronizeQualification(COMMUNITY,0);
+        vm.prank(address(pool));old.qualify(COMMUNITY,1,true,bytes32(uint256(779)));
+        assertTrue(next.eligible(COMMUNITY,1));assertTrue(next.qualificationInherited(COMMUNITY,1));
+        assertEq(next.qualificationEvidence(COMMUNITY,0),bytes32(uint256(777)));
+    }
+    function testPostImportSourceCodeChangeFailsInheritedEligibilityClosed() public {
+        _import();vm.etch(address(old),hex"00");vm.expectRevert("source code changed");next.eligible(COMMUNITY,0);
     }
 }

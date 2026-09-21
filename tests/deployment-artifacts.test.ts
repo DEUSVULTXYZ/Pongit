@@ -18,6 +18,8 @@ test('runtime exceptions remain explicit and creation/reference bounds cannot be
  assert.doesNotThrow(()=>assertDeploymentArtifact('ReusableEventsLobby',fixture(30000)));
  assert.doesNotThrow(()=>assertDeploymentArtifact('BalancedAgentInstancesPool',fixture(32768)));
  assert.throws(()=>assertDeploymentArtifact('BalancedAgentInstancesPool',fixture(32769)),/runtime/);
+ assert.doesNotThrow(()=>assertDeploymentArtifact('ContinuingAgentInstancesPool',fixture(32768)));
+ assert.throws(()=>assertDeploymentArtifact('ContinuingAgentInstancesPool',fixture(32769)),/runtime/);
  assert.throws(()=>assertDeploymentArtifact('ReusableGame',fixture(30000)),/runtime/);
  const a=fixture();a.bytecode.object='0x'+'00'.repeat(49153);assert.throws(()=>assertDeploymentArtifact('Root',a),/creation/);
  const b=fixture(100,['Lib']);b.bytecode.linkReferences!['fixture.sol'].Lib[0].start=190;assert.throws(()=>assertDeploymentArtifact('Root',b),/references/);
