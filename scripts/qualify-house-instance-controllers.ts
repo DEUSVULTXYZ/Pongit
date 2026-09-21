@@ -9,6 +9,7 @@ import {retryOperatorContention} from '../shared/operator-contention';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 import {agentCatalogAbi as catalogAbi} from '../shared/abi-AgentCatalog';
+import {agentChallengesAbi as challengeAbi} from '../shared/abi-AgentChallenges';
 import {houseInstanceAbi, verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {validateReusableRecord} from '../relayer/src/agents/reusable-runtime';
 import {measuredFetch} from '../shared/rpc-metrics';
@@ -67,6 +68,19 @@ try {
         const healthy = (await db.query("SELECT stage,detail FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'", [app.toLowerCase()])).rows[0];
         assert(healthy?.stage === 'available' && BigInt(healthy.detail.epoch) === d.epoch, 'Fresh hosted availability required');
         assert.equal((await read(m.pool, poolAbi, 'laneRecord', [1])).ref.id, 0n, 'Existing lane belongs to its original operation');
+        if(!await read(m.challenges,challengeAbi,'qualificationsMayStart')){
+          // A completed private human challenge still needs the queue's normal
+          // scan. Never bypass priority or accidentally admit a waiting person.
+          const queued=await read<bigint>(m.challenges,challengeAbi,'count');
+          assert(queued<=32n,'Review a larger private queue explicitly');
+          for(let id=1n;id<=queued;id++){
+            const request=await read(m.challenges,challengeAbi,'requests',[id]);
+            assert(request[3]===3||request[3]===4,'A waiting or active human challenge has priority');
+          }
+          await write(`completed-challenge-scan-${index}`,m.pool,poolAbi,'admitChallenge');
+          assert.equal((await read(m.pool,poolAbi,'laneRecord',[1])).ref.id,0n);
+          assert.equal(await read(m.challenges,challengeAbi,'qualificationsMayStart'),true);
+        }
       }
       const receipt = await write(row.operation, m.pool, poolAbi, 'admitQualification');
       const issued = receipt.logs.filter(l => l.address.toLowerCase() === m.pool.toLowerCase()).map(l => {
