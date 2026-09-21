@@ -8,6 +8,7 @@ import {parseTransaction,decodeFunctionData} from 'viem';
 import {independentRules} from '../shared/independent-rules';
 import {publicIndependentManifest} from '../shared/independent';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
+const publicRelease=process.env.PONG_HUMAN_BROWSER_TARGET==='public-release';
 const chaos=process.env.INDEPENDENT_SCENARIO==='chaos';
 const run=process.env.INDEPENDENT_TEST_RUN||'';assert(!run||/^[a-z0-9]{1,16}$/.test(run));
 const suffix=run?'-'+run:'';
@@ -24,7 +25,7 @@ if(capacityWait){
  const began=Date.now(),deadline=began+capacityWait;let available=false;
  while(Date.now()<deadline){
   try{
-   const response=await fetch('http://independent-events-service:4012/independent/config',{signal:AbortSignal.timeout(6000)});
+   const response=await fetch(publicRelease?'https://pongit.xyz/api/independent/config':'http://independent-events-service:4012/independent/config',{signal:AbortSignal.timeout(6000)});
    assert(response.ok);const config=await response.json() as any;
    assert.equal(config.manifest.lobby.toLowerCase(),manifest.lobby.toLowerCase());
    available=config.arenas.some((a:any)=>a.stage==='available');
@@ -37,6 +38,7 @@ if(capacityWait){
 const browser=await chromium.launch({headless:true,args:['--no-sandbox'],channel:process.env.BROWSER_CHANNEL??'chrome'});
 const pages:Page[]=[],contexts:BrowserContext[]=[],devices:any[]=[],counts=[0,0,0,0];
 const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:manifest.rulesVersion,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
+report.target=publicRelease?'Public HTTPS web and API, actual hosted game':'Isolated candidate';
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 let reporting=false,driving=true;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
 async function until(fn:()=>Promise<any>,label:string,ms=60000){const end=Date.now()+ms;while(Date.now()<end){if(await fn().catch(()=>false))return;await sleep(250);}throw Error('Timed out: '+label);}
@@ -57,7 +59,7 @@ async function init(i:number){
  await context.addInitScript(()=>{if(location.origin==='https://pongit.xyz')localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));});
  await context.exposeBinding('recordCountdown',(_source,digit:string)=>{if(/^[123]$/.test(digit)&&!report.countdown[i].includes(digit))report.countdown[i].push(digit);});
  await context.addInitScript({content:"addEventListener('DOMContentLoaded',function(){new MutationObserver(function(){var digit=document.querySelector('.match-countdown-digit')?.textContent?.trim();if(digit)window.recordCountdown(digit);}).observe(document.documentElement,{subtree:true,childList:true,characterData:true});});"});
- await context.route(origin+'/**',async route=>{
+ if(!publicRelease)await context.route(origin+'/**',async route=>{
   const url=new URL(route.request().url());
   let target='http://independent-web:3000'+url.pathname+url.search;
   if(url.pathname.startsWith('/api/independent/'))target='http://independent-events-service:4012'+url.pathname.slice(4)+url.search;
@@ -98,7 +100,7 @@ async function account(page:Page,i:number){
  await until(async()=>await page.getByRole('dialog',{name:'Your account'}).count()===0,'profile closes after confirmed save');await persist();
 }
 try{
- const response=await fetch('http://independent-web:3000');assert(response.ok);const csp=response.headers.get('content-security-policy')??'';const connect=csp.split(';').find(x=>x.trim().startsWith('connect-src '))?.trim().split(/\s+/).slice(1)??[];for(const node of nodes){assert(connect.includes(node));assert(connect.includes(node.replace(/^http/,'ws')));}report.checks.push('Delivered CSP includes every human arena');
+ const response=await fetch(publicRelease?origin:'http://independent-web:3000');assert(response.ok);const csp=response.headers.get('content-security-policy')??'';const connect=csp.split(';').find(x=>x.trim().startsWith('connect-src '))?.trim().split(/\s+/).slice(1)??[];for(const node of nodes){assert(connect.includes(node));assert(connect.includes(node.replace(/^http/,'ws')));}report.checks.push('Delivered CSP includes every human arena');
  for(let i=0;i<3;i++)await init(i);
  for(const size of [{width:360,height:640},{width:390,height:844},{width:768,height:1024},{width:1440,height:1000},{width:844,height:390}]){
   await pages[2].setViewportSize(size);await sleep(150);
