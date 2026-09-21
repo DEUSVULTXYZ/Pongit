@@ -1,0 +1,51 @@
+[
+  {
+    "name": "pongit-web-1",
+    "image": "pongit-web:agent-waits-6dc3c93",
+    "digest": "sha256:931697a082d57c7f3a6231a78034d9596ef753276151f78948e94ef427bd6e47",
+    "status": "running",
+    "startedAt": "2026-09-21T13:55:56.362042309Z"
+  },
+  {
+    "name": "pongit-rpc-1",
+    "image": "pongit-rpc:waits-6dc3c93",
+    "digest": "sha256:f36ba8270762d712aa95e7ce6ff4b517590fef9bfbe45ee7b0d5544dee48be2f",
+    "status": "running",
+    "startedAt": "2026-09-21T13:48:02.292346043Z"
+  },
+  {
+    "name": "pongit-relayer-1",
+    "image": "pongit-relayer:human-e4eceb6",
+    "digest": "sha256:e6fa5f722906a48093b89d29c059bc75c44c10cb0c197273798c61882567ac97",
+    "status": "running",
+    "startedAt": "2026-09-21T11:08:16.193865663Z"
+  },
+  {
+    "name": "pongit-agent-public-keeper",
+    "image": "pongit-agent-reusable:progress-4e90490",
+    "digest": "sha256:056f2e78c00f403996d496857d94f949112316b729f186fa70320c6437ed04f3",
+    "status": "running",
+    "startedAt": "2026-09-21T14:04:27.998061761Z"
+  },
+  {
+    "name": "pongit-agent-public-reader",
+    "image": "pongit-agent-reusable:waits-615af5d",
+    "digest": "sha256:30db28621ca9b0b1eec22ad5428ecf2359abbe2f5285ad4ac2dd68fd990e624e",
+    "status": "running",
+    "startedAt": "2026-09-21T13:55:26.923155599Z"
+  },
+  {
+    "name": "pongit-agent-public-sponsor",
+    "image": "pongit-agent-reusable:waits-615af5d",
+    "digest": "sha256:30db28621ca9b0b1eec22ad5428ecf2359abbe2f5285ad4ac2dd68fd990e624e",
+    "status": "running",
+    "startedAt": "2026-09-21T13:55:26.935827896Z"
+  },
+  {
+    "name": "pongit-agent-public-engines",
+    "image": "pongit-agent-reusable:preview-16cf0fa",
+    "digest": "sha256:cf81dca8a781221bd2b9c95fe1a8eae3e95f746456e9611127df074f0736fce5",
+    "status": "running",
+    "startedAt": "2026-09-21T12:48:46.150383428Z"
+  }
+]

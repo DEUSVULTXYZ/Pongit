@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-09-21T13:56:49.268Z",
+  "channel": "chrome",
+  "origin": "https://pongit.xyz",
+  "mocked": false,
+  "passed": false,
+  "checks": [],
+  "errors": [],
+  "liveRef": {
+    "chainId": 10143,
+    "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+    "epoch": "2",
+    "id": "35"
+  },
+  "homeWatch": {
+    "url": "https://pongit.xyz/agents?mode=0&view=watch",
+    "openMs": 5754,
+    "allModes": true
+  },
+  "liveCanvas": {
+    "rendered": true,
+    "changed": false,
+    "hashes": [
+      "4767975ca4c93564c5ba7e4764205557dd92f42911bee0b4ef82df70fa9141bc",
+      "4767975ca4c93564c5ba7e4764205557dd92f42911bee0b4ef82df70fa9141bc",
+      "4767975ca4c93564c5ba7e4764205557dd92f42911bee0b4ef82df70fa9141bc",
+      "4767975ca4c93564c5ba7e4764205557dd92f42911bee0b4ef82df70fa9141bc"
+    ]
+  },
+  "failure": "Live canvas must progress",
+  "finishedAt": "2026-09-21T13:57:13.847Z"
+}

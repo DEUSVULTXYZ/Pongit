@@ -1,0 +1,77 @@
+{
+  "at": "2026-09-21T13:48:54.344532+00:00",
+  "rows": [
+    {
+      "path": "/api/agents/config",
+      "seconds": 1.926,
+      "status": 200,
+      "count": 0
+    },
+    {
+      "path": "/api/agents/live",
+      "seconds": 2.47,
+      "status": 200,
+      "count": 1
+    },
+    {
+      "path": "/api/agents/catalog?limit=16",
+      "seconds": 4.035,
+      "status": 200,
+      "count": 9
+    },
+    {
+      "path": "/api/agents/tournaments",
+      "seconds": 3.071,
+      "status": 200,
+      "count": 3
+    },
+    {
+      "path": "/api/agents/config",
+      "seconds": 1.114,
+      "status": 200,
+      "count": 0
+    },
+    {
+      "path": "/api/agents/live",
+      "seconds": 1.955,
+      "status": 200,
+      "count": 1
+    },
+    {
+      "path": "/api/agents/catalog?limit=16",
+      "seconds": 3.281,
+      "status": 200,
+      "count": 9
+    },
+    {
+      "path": "/api/agents/tournaments",
+      "seconds": 2.619,
+      "status": 200,
+      "count": 3
+    },
+    {
+      "path": "/api/agents/config",
+      "seconds": 0.206,
+      "status": 200,
+      "count": 0
+    },
+    {
+      "path": "/api/agents/live",
+      "seconds": 2.018,
+      "status": 200,
+      "count": 1
+    },
+    {
+      "path": "/api/agents/catalog?limit=16",
+      "seconds": 2.983,
+      "status": 200,
+      "count": 9
+    },
+    {
+      "path": "/api/agents/tournaments",
+      "seconds": 2.501,
+      "status": 200,
+      "count": 3
+    }
+  ]
+}

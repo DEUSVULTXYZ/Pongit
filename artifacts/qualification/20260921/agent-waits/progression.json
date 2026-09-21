@@ -1,0 +1,68 @@
+{
+  "at": "2026-09-21T14:09:05.013279+00:00",
+  "keeperActions": [
+    {
+      "at": "2026-09-21T14:06:06.300Z",
+      "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+      "action": "releaseArena",
+      "hash": "0x2b2e784d723e52a2523231f1c88350a82f01e9bd7f51793f07c05b18e76bbc96"
+    },
+    {
+      "at": "2026-09-21T14:06:30.634Z",
+      "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+      "action": "openReusableArena",
+      "hash": "0x0b14ad951b78839b4448a5acf8932e69b204832ebdbe9aec39bf6031f1839d1b"
+    },
+    {
+      "at": "2026-09-21T14:07:06.626Z",
+      "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+      "action": "captureProof",
+      "hash": "0xeaeb7a38de265670add36852937a835fff729329aaec59079c9ea30611265984"
+    },
+    {
+      "at": "2026-09-21T14:07:23.425Z",
+      "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+      "action": "synchronize",
+      "hash": "0xd79a8d19f7b6481a0d59deb9250fdd1fa5d7438bcf11230a132abc39058bae92"
+    },
+    {
+      "at": "2026-09-21T14:07:47.744Z",
+      "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+      "action": "closeReusableArena",
+      "hash": "0x786e2c51f580fb876b66f5ee5091f8e263158523cd63cbcaedfad68d519c2a18"
+    },
+    {
+      "at": "2026-09-21T14:08:12.818Z",
+      "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+      "action": "admitTournament",
+      "hash": "0xb31dddaa939f227bd5abecf92fc091296d8dc8e0990e39bbf31691936c5a4f47"
+    }
+  ],
+  "live": {
+    "items": [
+      {
+        "ref": {
+          "chainId": 10143,
+          "app": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "37"
+        },
+        "node": "https://il-f868bdb4669f4de4.fly.dev",
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "mode": 0,
+        "ranked": false,
+        "tournament": "3",
+        "lane": "tournament",
+        "source": "published-admission",
+        "liveConfirmed": false
+      }
+    ],
+    "observation": {
+      "block": "64467537",
+      "hash": "0x9d2cc7e9fdcc82c9c97070f83cac772448868446ea31d0325488742251e7b681",
+      "timestamp": "1789999743",
+      "revision": "7cdbe382046fc11ea6b7b9d8f4927766c4ed82ecd6f08145201b593f86341950"
+    }
+  }
+}

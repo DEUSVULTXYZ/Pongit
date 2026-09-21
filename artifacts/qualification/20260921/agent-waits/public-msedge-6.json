@@ -1,0 +1,11 @@
+{
+  "startedAt": "2026-09-21T13:58:21.338Z",
+  "channel": "msedge",
+  "origin": "https://pongit.xyz",
+  "mocked": false,
+  "passed": false,
+  "checks": [],
+  "errors": [],
+  "failure": "No public live match became available",
+  "finishedAt": "2026-09-21T14:01:25.797Z"
+}

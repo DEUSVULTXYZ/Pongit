@@ -1,0 +1,36 @@
+{
+  "startedAt": "2026-09-21T14:05:16.491Z",
+  "channel": "msedge",
+  "origin": "https://pongit.xyz",
+  "mocked": false,
+  "passed": true,
+  "checks": [],
+  "errors": [],
+  "liveRef": {
+    "chainId": 10143,
+    "app": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+    "epoch": "2",
+    "id": "36"
+  },
+  "homeWatch": {
+    "url": "https://pongit.xyz/agents/arenas/0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b/2/36",
+    "openMs": 4997,
+    "allModes": true
+  },
+  "arenaText": "NOVA\n01:05\nPULSE\nTime remaining 1:06",
+  "liveCanvas": {
+    "rendered": true,
+    "changed": true,
+    "hashes": [
+      "95d232711046529e8e932616a8a2d5124b561400a7e91e32845ec4c45b99f42c",
+      "0b11cae55d192608bec3f48ec90004b8669c0ed98a2369f9cf6d55f44d8e8af1",
+      "d1ca6069bafe4ea1d557c7018e0086e406ff0269a203d87abdebd367eb95ef13",
+      "13515d03b546ddbc217ada97a70af60bacd06fca64b3328faa8b0bd9bffcac92",
+      "847eb525ac6a258d9aedb0c59915b2d513d41f46514ce5c7aaf0535389a7fa86",
+      "7f6f7615367eff57bd5ba71627c9b0eb4a2bde06307c08e585cb7f3609a8f899",
+      "7e0298a814c34ac4d723bbbde310dec7cea5900610e4fda383e08425a4a785c3",
+      "9795680a39e3f1bf59d6e9652b1cbc88b54884d1f377afc7c7b1704db9729958"
+    ]
+  },
+  "finishedAt": "2026-09-21T14:05:39.967Z"
+}
