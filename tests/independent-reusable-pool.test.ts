@@ -27,11 +27,11 @@ async function fixture(t:any,withBudget=true){
  }
  const worker=await independentReusablePool(base,m,async(at,abi,name,args,value)=>{
   encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args,value});},()=>health,()=>enabled,path);
- return{apps,worker,ds,health,reserved,jobs,disable:()=>enabled=false};
+ return{apps,worker,ds,health,reserved,jobs,base,disable:()=>enabled=false};
 }
 
 test('an absent reviewed budget cannot reserve capacity or admit a human match',async t=>{
- const f=await fixture(t,false);assert.equal(f.worker.qualified,false);assert.equal(await f.worker.admissionReady(),false);assert.deepEqual(f.jobs,[]);
+ const f=await fixture(t,false);assert.equal(f.worker.qualified,false);assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0);
 });
 test('contract-selected candidates must all have an observed healthy epoch and publication reserve',async t=>{
  const f=await fixture(t);assert.equal(await f.worker.admissionReady(),true);
@@ -49,4 +49,14 @@ test('rotation never closes an occupied arena and creates only a released unrese
 test('an idle session retires before its remaining time is too short for a human match',async t=>{
  const f=await fixture(t);f.ds[1].expiresAt=2860n;assert.equal(await f.worker.admissionReady(),false);
  assert.equal(f.jobs[0].name,'closeReusableArena');assert.deepEqual(f.jobs[0].args,[f.apps[1]]);
+});
+
+test('age-based rotation waits for the replacement engine, not only its hub admission',async t=>{
+ const f=await fixture(t);f.base.getBlock=async(c:any)=>({number:20n,timestamp:c?.blockNumber===3n?1n:8000n});
+ for(const d of f.ds)d.expiresAt=100000n;
+ f.health[2].stage='starting';f.health[2].online=false;
+ assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0);
+ f.health[2].stage='available';f.health[2].online=true;
+ assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs[0].name,'closeReusableArena');
+ assert.deepEqual(f.jobs[0].args,[f.apps[0]]);
 });

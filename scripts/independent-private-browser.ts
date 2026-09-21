@@ -3,13 +3,15 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
-const out='artifacts/independent-candidate/private-browser';await mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
-const report:any={at:new Date().toISOString(),checks:[],scope:'One disposable virtual PRF credential on real Monad; no physical-device recovery claim'};
+const publicRelease=process.env.PONG_PRIVATE_BROWSER_TARGET==='public-release';
+const run=process.env.PONG_PRIVATE_BROWSER_RUN??'';assert(/^[a-z0-9-]{0,32}$/.test(run));
+const out='artifacts/independent-candidate/private-browser'+(run?'-'+run:'');await mkdir(out,{recursive:true});
+const browser=await chromium.launch({headless:true,args:['--no-sandbox'],channel:process.env.BROWSER_CHANNEL??'chrome'});
+const report:any={at:new Date().toISOString(),checks:[],target:publicRelease?'public HTTPS release':'isolated candidate',scope:'One disposable virtual PRF credential on real Monad; no gameplay, no physical-device recovery claim'};
 let page:Awaited<ReturnType<typeof browser.newPage>>;
 try{
  const context=await browser.newContext({viewport:{width:1440,height:1000}});page=await context.newPage();
- await context.route('https://pongit.xyz/**',async route=>{
+ if(!publicRelease)await context.route('https://pongit.xyz/**',async route=>{
   const url=new URL(route.request().url());let target='http://independent-web:3000'+url.pathname+url.search;
   if(url.pathname.startsWith('/api/independent/'))target='http://independent-service:4012'+url.pathname.slice(4)+url.search;
   else if(url.pathname.startsWith('/api/')){assert(/^\/api\/(auth\/|notebook)/.test(url.pathname));target='http://pongit-relayer-1:4000'+url.pathname.slice(4)+url.search;}

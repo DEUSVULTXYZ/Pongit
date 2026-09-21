@@ -42,10 +42,12 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
    }
   }
   const idle=active.filter(a=>!a.reserved);
+  const readyCount=active.filter(a=>states.some(h=>h.app.toLowerCase()===a.app.toLowerCase()
+   &&h.online&&BigInt(h.epoch)===a.d.epoch&&['available','countdown','playing','publishing'].includes(h.stage))).length;
   for(const a of idle){
    const opening=await base.getBlock({blockNumber:a.d.baseBlock});
    const exhausted=!reusableAdmissionBudget(budget,a.d.batchIndex,a.d.expiresAt,block.timestamp);
-   if(exhausted||active.length>=3&&(block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)
+   if(exhausted||readyCount>=3&&(block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)
     ||a.d.expiresAt<=block.timestamp+BigInt(budget.rotationLeadSeconds))){
     await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);return false;
    }
