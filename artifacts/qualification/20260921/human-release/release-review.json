@@ -1,0 +1,39 @@
+{
+  "reviewedAt": "2026-09-21T10:18:45.6983723Z",
+  "scope": "Human rules14 reopening; Agent Arcade excluded",
+  "product": "748215d",
+  "web": "0c44f08",
+  "tests": 615,
+  "knownLimitations": [
+    "Temporarily one lane until two prior idle closures release",
+    "Concurrent fixture7 failed; both sequential games passed",
+    "Virtual PRF browsers, not physical authenticator validation",
+    "Agent Arcade and final 24h not qualified"
+  ],
+  "sources": [
+    {
+      "path": "docs/validation/human-release-20260921.md",
+      "sha256": "96ba0d155ae4a7d0e638471f938f6a95d36719f50e71542af2afecd5bff0b284"
+    },
+    {
+      "path": "artifacts/qualification/20260921/human-release/release-production1.json",
+      "sha256": "fecacea71cf630f3cbfa7f7e082b348ef92da32d1e7397168f194b74fd74e90c"
+    },
+    {
+      "path": "artifacts/qualification/20260921/human-release/renewal-production1.json",
+      "sha256": "2a8d2d03920a5e16445c843f070671081d46b9c739d1cff8945de9cc3a3af2a6"
+    },
+    {
+      "path": "artifacts/qualification/20260921/human-release/post-renewal-games-7.json",
+      "sha256": "9dd95fe53d5d02670a3a3dd25c1049655c6c5255d2fed7405d24d0b25a00c8c9"
+    },
+    {
+      "path": "artifacts/qualification/20260921/human-release/hub-16000-86.log",
+      "sha256": "491937a7e497a419d420da5d734d8c08b4af1a83962f9ae8b8a90779486dfa48"
+    },
+    {
+      "path": "artifacts/qualification/20260921/human-release/hub-300-raw2048.log",
+      "sha256": "fa449e275626fc3669f9dafadf8dc5cdfc6d961adaabca8f76a0aee912cc7369"
+    }
+  ]
+}

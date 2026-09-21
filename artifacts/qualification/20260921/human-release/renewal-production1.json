@@ -1,0 +1,28 @@
+{
+  "at": "2026-09-21T09:38:17.554Z",
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "app": "0x596562d63e678a2b391ff01f63cf7ded99fc2c25",
+  "previousEpoch": "1",
+  "passed": true,
+  "scope": "Actual release/seal/renewal and verified hosted empty epoch. A subsequent published game is a separate gate.",
+  "runtimeHash": "0xf3f5983469c57f69853b0d1769fe39047e18dd4dce9b6d904915b2e2af91beec",
+  "released": {
+    "observedAt": "2026-09-21T09:55:39.438Z",
+    "epoch": "1",
+    "root": "0x0731d626b879b40e621be55541474fbc25e3dcbc69593a1fd7d9567d8e979bc8",
+    "count": 7
+  },
+  "open": {
+    "hash": "0x77d6b38b48c9147a8e5a62f474d0c465ec49a0cbc574a964a64200255db4d39a",
+    "block": "64418311",
+    "gasUsed": "1342932"
+  },
+  "hosted": {
+    "at": "2026-09-21T09:56:04.953Z",
+    "epoch": "2",
+    "baseBlock": "64418311",
+    "expiresAt": "1790070943",
+    "emptyRoot": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f"
+  },
+  "finishedAt": "2026-09-21T09:56:05.719Z"
+}

@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-09-21T10:08:36.453Z",
+  "passed": true,
+  "hash": "0xd1a150eb4b66ad11e903115b1d2961c6800d2662a6f98681decff42c4988f6c0",
+  "hub": "0x3ef8327f69e09cf721772f345e2a887ea22cd595",
+  "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+  "epoch": 1,
+  "block": "64418270",
+  "blockHash": "0x3aa1f755afbed5f802383fcae750edf16c7d40dd1c1ee07f6af1333559412c64",
+  "gasUsed": "1224618",
+  "costWei": "124911036000000000",
+  "runtimeHash": "0x9380248d1c5debacf028290ca54271acd79f68eedfd91dbc9e605ec19937d8da",
+  "scope": "Canonical receipt and decoded releaseStake target; previous epoch sealed and renewed in separate report"
+}
