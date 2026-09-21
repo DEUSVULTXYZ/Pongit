@@ -33,6 +33,7 @@ type Props = {
   bufferedSpectator?: boolean;
   externalIntermission?: boolean;
   onNetwork?:(age:number,correction:number)=>void;
+  onPlayback?:(frame:{matchId:string;scoreA:number;scoreB:number;gameMs:number})=>void;
   onStats: (fps: number, extrapolated: boolean, waiting: boolean) => void;
 };
 export function Court({
@@ -47,7 +48,7 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{},
+  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{},
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
@@ -60,7 +61,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork,
+    onStats, pendingInputs, confirmedNonce, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
   });
   current.current = {
     state,
@@ -72,7 +73,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork,
+    onStats, pendingInputs, confirmedNonce, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
   };
   useEffect(() => {
     const el = canvas.current!;
@@ -91,15 +92,16 @@ export function Court({
       last = performance.now();
     let lastDraw = last, visualY: number | null = null, context = "";
     let anchor=last,anchorObserved=0,anchorAge=0,localDirection=0,localAt=last,correction=0;
+    let played="",playedAt=0;
     const livePaddle = new LivePaddle(), liveClock = new LiveClock();
     const playout=new SpectatorPlayout();
     const spectatorChaos=new SpectatorChaosProjection();
     function draw(now: number) {
       let p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
-      if (identity !== context) { playout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
+      if (identity !== context) { played="";playout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const buffered=p.bufferedSpectator&&p.side<0&&!p.replay&&!!p.state;
-      if(buffered)playout.push({state:p.state!,chaos:p.chaos,at:now-Math.max(0,Date.now()-p.observedAt)});
+      if(buffered)playout.push({state:p.state!,chaos:p.chaos,at:now-Math.min(2000,Math.max(0,Date.now()-p.observedAt))});
       const playback=buffered?playout.sample(now):null;
       if(playback)p={...p,state:playback.frame.state,chaos:playback.frame.chaos,clock:playback.target};
       const dt = Math.max(0, Math.min(50, now - lastDraw));
@@ -235,6 +237,12 @@ export function Court({
       ctx.font = `10px ${fontFamily}`;
       ctx.fillText("0,0", 12, 20);
       ctx.fillText("1024 × 576", 912, 560);
+      }
+      if(buffered&&s){
+        // The scoreboard and the effect countdowns belong to the frame on screen,
+        // not to the newest snapshot the buffer has yet to reach.
+        const rally=`${s.scoreA}:${s.scoreB}:${s.finished}`;
+        if(rally!==played||now-playedAt>=250){played=rally;playedAt=now;p.onPlayback({matchId:p.matchId,scoreA:s.scoreA,scoreB:s.scoreB,gameMs:Number(s.t)/1000});}
       }
       count++;
       if (now - last > 1000) {

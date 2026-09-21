@@ -26,12 +26,49 @@ test('adaptive buffering never reverses time and a prolonged outage cannot inven
  }
  assert.equal(p.sample(50000)!.target,3500000n);assert(p.sample(50000)!.stalled);
 });
-test('a confirmed point, new match or engine reset discards old trajectories without inventing a result',()=>{
- const p=new SpectatorPlayout();p.push({state:state(1000),at:1000});
- const point={...state(1200),scoreA:1};p.push({state:point,at:1200});
- assert.equal(p.sample(1200)!.frame.state,point);assert.equal(p.sample(1200)!.target,point.t);
- const reset=state(100);p.push({state:reset,at:1400});assert.equal(p.sample(1400)!.target,reset.t);
- p.reset();assert.equal(p.sample(1500),null);
+test('a confirmed point keeps the jitter buffer instead of teleporting the court and freezing it',()=>{
+ const p=new SpectatorPlayout();let next=0,prior=-1n,frozen=0,worst=0,jump=0n;
+ const snapshots=Array.from({length:14},(_,i)=>({at:i*600,state:{...state(i*600),scoreA:i>=6?1:0}}));
+ for(let now=0;now<=snapshots.at(-1)!.at;now+=16){
+  while(next<snapshots.length&&snapshots[next].at<=now){p.push(snapshots[next]);next++;}
+  const s=p.sample(now)!;
+  if(prior>=0n){
+   const advanced=s.target-prior;if(advanced>jump)jump=advanced;
+   // Ignore the one buffer fill at the start; after it, confirmed frames are
+   // always available ahead of the playhead and the court must keep painting.
+   if(now>1800){if(advanced<=0n)frozen+=16;else{if(frozen>worst)worst=frozen;frozen=0;}}
+  }
+  prior=s.target;
+ }
+ if(frozen>worst)worst=frozen;
+ assert(jump<=40000n,`rendered ${Number(jump)/1000} ms of game time in a single frame`);
+ assert(worst<=64,`court frozen for ${worst} ms while confirmed frames remained`);
+});
+test('a point resolved at an already observed instant replaces that frame instead of being dropped',()=>{
+ const p=new SpectatorPlayout();p.push({state:state(600),at:600});p.push({state:state(1200),at:1200});
+ // The engine resolved the goal at an instant the spectator had already seen.
+ p.push({state:{...state(1200),scoreA:1},at:1260});p.push({state:{...state(1800),scoreA:1},at:1800});
+ let played;for(let now=1260;now<=3000&&!played;now+=16){const s=p.sample(now)!;if(s.target>1200000n)played=s;}
+ assert(played,'the court reaches the confirmed point');
+ assert.equal(played!.frame.state.scoreA,1,'the point must not be dropped as a duplicate instant');
+});
+test('an engine reset or another match still discards old trajectories without inventing a result',()=>{
+ const p=new SpectatorPlayout();p.push({state:state(1000),at:1000});p.push({state:state(1200),at:1200});
+ const rewound=state(100);p.push({state:rewound,at:1400});assert.equal(p.sample(1400)!.target,rewound.t);
+ const other={...state(1500),seed:`0x${'11'.repeat(32)}` as const};p.push({state:other,at:1600});
+ assert.equal(p.sample(1600)!.frame.state,other);assert.equal(p.sample(1600)!.target,other.t);
+ p.reset();assert.equal(p.sample(1700),null);
+});
+test('paddles hold their confirmed position across a serve and interpolate inside a rally',()=>{
+ const serve=new SpectatorPlayout();
+ serve.push({state:{...state(600),left:400000000n},at:600});
+ serve.push({state:{...state(1200),scoreA:1,left:288000000n},at:1200});
+ serve.sample(1200);assert.equal(serve.sample(1500)!.left,400,'a serve recentres paddles at its own instant');
+ const rally=new SpectatorPlayout();
+ rally.push({state:{...state(600),left:400000000n},at:600});
+ rally.push({state:{...state(1200),left:288000000n},at:1200});
+ rally.sample(1200);const inside=rally.sample(1500)!.left;
+ assert(inside>288&&inside<400,`smooth inside one rally, got ${inside}`);
 });
 test('an unconfirmed goal stays visible at the edge and does not change the score',()=>{
  assert.deepEqual(visibleBall(1030,280),{x:1018,y:280});assert.deepEqual(visibleBall(-6,280),{x:6,y:280});

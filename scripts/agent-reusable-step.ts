@@ -16,7 +16,7 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
-import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork} from '../relayer/src/agents/pool-maintenance';
+import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue} from '../relayer/src/agents/pool-maintenance';
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
 import {agentMetrics} from '../relayer/src/agents/metrics';
@@ -203,7 +203,9 @@ async function step(){
  }
  if(bookOpen){
   const last=count?await read(m.tournaments,bookAbi,'tournament',[count]):null;
-  if(!last||last.status===3||last.status===4){if(block.timestamp>=await read<bigint>(m.tournaments,bookAbi,'nextAt')){await act(m.tournaments,'begin');return;}}
+  if(!last||last.status===3||last.status===4){
+   if(tournamentDue(last,await read<bigint>(m.tournaments,bookAbi,'nextAt'),block.timestamp)){await act(m.tournaments,'begin');return;}
+  }
   else if(last.status===1){
    if(last.cursor<last.scanCount||last.catalogRevision!==await read(m.catalog,catalogAbi,'revision')){await act(m.tournaments,'select',[count,32]);return;}
   }else if(laneFree&&!cooling(m.pool,'admitTournament')){const [index]=await read(m.tournaments,bookAbi,'nextFixture',[count]);if(index!==255){await act(m.pool,'admitTournament',[count]);return;}}

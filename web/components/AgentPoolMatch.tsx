@@ -34,6 +34,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const [view,setView]=useState<PoolMatchView|null>(null),[snapshot,setSnapshot]=useState<EngineState|null>(null),[people,setPeople]=useState<Identity[]>([]);
  const [error,setError]=useState(''),[connection,setConnection]=useState('Connecting'),[retry,setRetry]=useState(0),[copied,setCopied]=useState(''),[replay,setReplay]=useState(false);
  const [streamPaused,setStreamPaused]=useState(false);
+ const [painted,setPainted]=useState<{matchId:string;scoreA:number;scoreB:number;gameMs:number}>();
  const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState('');
  const playerClient=useRef<ReturnType<typeof createPoolPlayer>|null>(null),manifest=useRef<AgentPoolManifest|null>(null),lastRef=useRef(''),commandVersion=useRef(0),actionBusy=useRef(false),router=useRouter();
  const recoveryVersion=useRef(0);
@@ -180,7 +181,13 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   const sponsor=poolBrowserSponsor(m,account);await finishPoolSponsor(sponsor);const agent=side===0?view.b:view.a;
   await finishPoolSponsor(sponsor,await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),account,{agent,mode:view.mode}));router.push(`/agents?mode=${view.mode}`);
  }
- const result=view?.result,engineDone=!!snapshot&&snapshot.phase>=3,scoreA=result?.scoreA??snapshot?.state.scoreA??0,scoreB=result?.scoreB??snapshot?.state.scoreB??0;
+ const result=view?.result,engineDone=!!snapshot&&snapshot.phase>=3;
+ // A spectator court plays a short buffer behind the newest snapshot. Read the
+ // running score and the effect countdowns from the frame actually on screen so
+ // nothing announces a point the court has not shown yet. A published or
+ // engine-final result is authoritative and replaces the buffered reading.
+ const playout=side<0&&!result&&!engineDone&&painted?.matchId===refKey?painted:null;
+ const scoreA=result?.scoreA??playout?.scoreA??snapshot?.state.scoreA??0,scoreB=result?.scoreB??playout?.scoreB??snapshot?.state.scoreB??0;
  const elapsed=Number(snapshot?.state.t??0n)/1_000_000,overtime=!!view?.overtimeSeconds&&elapsed>=300;
  const seconds=Math.max(0,Math.ceil((overtime?360:300)-elapsed));
  return <main className={`cabinet-ui rooms-shell agents-shell pool-match-shell ${snapshot?.phase===2&&!result?'rooms-playing':''}`}>
@@ -198,9 +205,9 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      {result.status===3&&<button onClick={()=>setReplay(true)}>Watch replay</button>}
      {view.tournament!=='0'&&<Link href={`/agents/tournaments?id=${view.tournament}`}>View tournament</Link>}
      <p className="pool-match-reference">Arena {short(reference.app)} · Epoch {reference.epoch} · Match {reference.id}</p></div>:snapshot?<>
-     {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
+     {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={playout?playout.gameMs:Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
      <div className="pool-canvas-slot"><Court state={snapshot.state} chaos={snapshot.chaos} rulesVersion={manifest.current?.rulesVersion??10} clock={snapshot.clock>BigInt(view.overtimeSeconds?360_000_000:300_000_000)?BigInt(view.overtimeSeconds?360_000_000:300_000_000):snapshot.clock}
-      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onStats={(_fps,_predicted,waiting)=>setStreamPaused(waiting)}/>{manifest.current?.version===4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
+      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onPlayback={setPainted} onStats={(_fps,_predicted,waiting)=>setStreamPaused(waiting)}/>{manifest.current?.version===4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
      <div className="rooms-court-controls"><span>{side>=0?'W / S · ↑ / ↓':'SPECTATING'}</span>{side>=0&&<div className="touch-controls">{([-1,1] as const).map(dir=><IconButton key={dir} icon={dir===-1?'up':'down'} aria-label={dir===-1?'Move up':'Move down'} disabled={!controllable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void move(dir);}} onPointerUp={()=>void move(0)} onPointerCancel={()=>void move(0)} onLostPointerCapture={()=>void move(0)}/>)}</div>}</div>
     </>:<div className="agent-empty"><p>Waiting for this arena to become ready.</p></div>}
    </section>}

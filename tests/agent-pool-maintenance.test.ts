@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
-import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,tournamentIntervalSeconds,type PoolRead} from '../relayer/src/agents/pool-maintenance';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
 
@@ -95,4 +95,17 @@ test('historical repairs wait for existing participation and can later schedule 
  changed=false;assert.equal((await historicalRepairWork(read,m,1n,t,1n,true))?.method,'resumeRepair');
  t.status=2;assert.deepEqual(await historicalRepairWork(read,m,1n,t,1n,true),{to:m.pool,method:'admitTournament',args:[1n]});
  assert.equal(await historicalRepairWork(read,m,1n,t,1n,false),null);assert.equal(await historicalRepairWork(read,m,1n,t,0n,true),null);
+});
+
+test('public tournaments start once every three days, anchored on the previous onchain start',()=>{
+ const day=86400n,start=1_000_000n;
+ // The book only enforces a one-minute floor; the keeper owns the cadence.
+ assert.equal(tournamentDue({startedAt:start},start+60n,start+60n),false);
+ assert.equal(tournamentDue({startedAt:start},start+60n,start+3n*day-1n),false);
+ assert.equal(tournamentDue({startedAt:start},start+60n,start+3n*day),true);
+ assert.equal(tournamentIntervalSeconds,3n*day);
+ // A restart cannot shorten the gap, and the book's own floor still applies.
+ assert.equal(tournamentDue({startedAt:start},start+4n*day,start+3n*day),false);
+ // The very first tournament waits for nothing but the book.
+ assert.equal(tournamentDue(null,0n,0n),true);
 });

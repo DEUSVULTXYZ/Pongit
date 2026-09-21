@@ -8,6 +8,16 @@ import {agentArenaPoolAbi as poolAbi} from '../../../shared/abi-AgentArenaPool';
 import {houseInstanceAbi} from '../../../shared/agent-house-instances';
 
 export type PoolRead=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<T>;
+
+/** One public tournament every three days. The book's own nextAt is a one-minute
+ * safety floor, not a cadence: starting tournaments back to back spent the
+ * Interlude engine budget continuously. The keeper owns the public cadence and
+ * anchors it on the previous tournament's onchain start, so neither a keeper
+ * restart nor a lost local state file can shorten the gap. */
+export const tournamentIntervalSeconds=3n*24n*60n*60n;
+export function tournamentDue(last:{startedAt:bigint}|null,nextAt:bigint,now:bigint){
+ return now>=nextAt&&(!last||now>=last.startedAt+tournamentIntervalSeconds);
+}
 type Common={catalog:Address;qualifications:Address;challenges:Address;family:Address;tournaments:Address;pool:Address;houseInstances?:'official-v1'};
 
 /** Capture clears the active lane. Recover its tournament work from the durable
