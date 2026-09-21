@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {zeroAddress,zeroHash,type Address} from 'viem';
+import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
 import {expiredChallenge,historicalRepairWork,qualificationWork,type PoolRead} from '../relayer/src/agents/pool-maintenance';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
@@ -23,7 +23,9 @@ test('bounded qualification scans eventually reach agents beyond the first 256 a
 test('qualification waits for an actual opponent and a base block containing the strategy',async()=>{
  let partner=false,base=500n;
  const candidate=address(100),house=address(101);
- const read:PoolRead=async(_a,_abi,fn,args=[])=>{
+ const read:PoolRead=async(_a,abi,fn,args=[])=>{
+  // Exercise the shipped ABI as the actual RPC client does, not only the mock's dispatch.
+  encodeFunctionData({abi,functionName:fn,args});
   if(fn==='count')return 1n as any;if(fn==='at')return candidate as any;
   if(fn==='identity')return{available:true,modes:1,qualified:0,house:0} as any;
   if(fn==='registeredBlock')return base as any;if(fn==='retryAt')return 0n as any;
