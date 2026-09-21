@@ -95,7 +95,12 @@ contract AgentTournaments {
         for(uint8 i;i<(t.league?28:7);i++){
             Fixture storage f=fixtures[id][i];if(f.bound&&!f.resolved)return(255,address(0),address(0),false);
             if(f.resolved)continue;(a,b)=_pair(id,i);if(a==address(0)||b==address(0))continue;
-            return(i,a,b,catalog.identity(a).creator!=catalog.identity(b).creator);
+            // The eight official bots share the catalogue owner as their creator, and
+            // their duels are the reference ladder: they stay ranked. Any other pair
+            // behind one creator is friendly, so a creator cannot mint rating for its
+            // own agents by fielding several of them.
+            AgentCatalog.Identity memory ia=catalog.identity(a);AgentCatalog.Identity memory ib=catalog.identity(b);
+            return(i,a,b,ia.house!=0&&ib.house!=0||ia.creator!=ib.creator);
         }return(255,address(0),address(0),false);
     }
     /// Known independent fixtures may be reserved together before delegation.

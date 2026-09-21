@@ -39,7 +39,9 @@ contract ReusableAgentInstancesPoolTest is ReusableAgentPoolTest {
             }
             pool.captureProof(friendly,f,firstProof());assertEq(queue.pending(vm.addr(PLAYER)),0);
             assertEq(catalog.participation(bot),book.token(tournament));assertEq(pool.playing(bot),bytes32(0));
-            assertEq(ratings.ratingOf(bot,0).played,0);assertEq(ratings.ratingOf(vm.addr(PLAYER),0).played,0);
+            // The official duel is the reference ladder and counts. A human friendly
+            // never touches a rating, whichever capture lands first.
+            assertEq(ratings.ratingOf(bot,0).played,1);assertEq(ratings.ratingOf(vm.addr(PLAYER),0).played,0);
             book.synchronize(tournament,0);assertEq(book.fixture(tournament,0).published.winner,bot);
             sourceBlock();T.Ref memory next=pool.admitTournament(tournament);assertTrue(next.id>0);
         }

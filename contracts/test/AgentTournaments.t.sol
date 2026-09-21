@@ -40,16 +40,17 @@ contract AgentTournamentsTest is Test {
     function code(address strategy,address creator) private {vm.etch(strategy,abi.encodePacked(hex"73",creator,hex"60005260206000f3"));}
     function begin() private returns(uint64 id){id=book.begin();for(uint8 i;i<4&&book.tournament(id).status==AgentTournaments.Status.Selecting;i++)book.select(id,32);}
     function finish(uint64 id,bool draw) private returns(T.Result memory r){
-        (uint8 index,address a,address b,bool ranked)=book.nextFixture(id);require(index!=255,"next fixture expected");assertFalse(ranked,"same creator is friendly");
+        (uint8 index,address a,address b,bool ranked)=book.nextFixture(id);require(index!=255,"next fixture expected");assertTrue(ranked,"official house duels are ranked");
         T.Ref memory ref=T.Ref(10143,address(0xaa),1,++serial);source.bind(book,id,index,ref);
         r=T.Result(ref,a,b,draw?address(0):a,keccak256(abi.encode(serial)),book.tournament(id).mode,3,draw?6:7,draw?6:0,draw?360_000_000:20_000_000,false);
         source.put(r);book.synchronize(id,index);
     }
     function finishAll(uint64 id,bool draw) private {uint8 n=book.tournament(id).league?28:7;for(uint8 i;i<n;i++)finish(id,draw);}
     function waitMinute() private {clock+=60;vm.warp(clock);}
-    function community(uint256 key,address agent) private {
+    function community(uint256 key,address agent) private {communityAs(key,agent,0);}
+    function communityAs(uint256 key,address agent,uint256 nonce) private {
         address creator=vm.addr(key);code(agent,creator);
-        AgentCatalog.Registration memory r=AgentCatalog.Registration(agent,creator,bytes32(uint256(uint160(agent))),3,uint64(clock+300),0);
+        AgentCatalog.Registration memory r=AgentCatalog.Registration(agent,creator,bytes32(uint256(uint160(agent))),3,uint64(clock+300),nonce);
         (uint8 v,bytes32 rr,bytes32 s)=vm.sign(key,catalog.digest(r));catalog.register(r,abi.encodePacked(rr,s,v));
         source.qualify(catalog,agent,0);source.qualify(catalog,agent,1);
         vm.prank(creator);catalog.setAvailable(agent,true);
@@ -118,6 +119,20 @@ contract AgentTournamentsTest is Test {
         StrategyCodeHarness check=new StrategyCodeHarness();vm.etch(address(0x4000),hex"60005400");vm.expectRevert();check.verify(address(0x4000));
         vm.etch(address(0x4000),hex"60545000");check.verify(address(0x4000)); // forbidden value inside PUSH is data
         vm.etch(address(0x4000),hex"6000fa00");vm.expectRevert();check.verify(address(0x4000));
+    }
+    function testOfficialHouseDuelsRankWhileOneCreatorCannotFarmItsOwnAgents() public {
+        uint64 id=begin();(,address a,address b,bool official)=book.nextFixture(id);
+        assertTrue(catalog.identity(a).house!=0&&catalog.identity(b).house!=0,"official bracket expected");
+        assertEq(catalog.identity(a).creator,catalog.identity(b).creator,"official bots share one creator");
+        assertTrue(official,"official house duels are ranked");
+        finishAll(id,false);waitMinute();
+        // Eight agents behind a single creator wait longer than the official bots,
+        // so the next bracket is entirely theirs. None of those duels may rank.
+        for(uint256 i;i<8;i++)communityAs(321,address(uint160(0x5000+i)),i);
+        id=begin();(,address c,address d,bool farmed)=book.nextFixture(id);
+        assertEq(catalog.identity(c).house,0);assertEq(catalog.identity(d).house,0);
+        assertEq(catalog.identity(c).creator,catalog.identity(d).creator,"one creator fielded both");
+        assertFalse(farmed,"a creator cannot farm rating against its own agents");
     }
     function testRoundRobinVisitsEachPairOnceAndDeployedContractsFit() public view {
         uint256 seen;for(uint8 i;i<28;i++){(uint8 a,uint8 b)=R.leaguePair(i);assertLt(a,b);uint256 bit=uint256(1)<<(a*8+b);assertEq(seen&bit,0);seen|=bit;}
