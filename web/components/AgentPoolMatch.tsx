@@ -60,9 +60,10 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>,observer:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>|undefined,release:(()=>void)|undefined;
   if(lastRef.current!==refKey){lastRef.current=refKey;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
   let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,retryRecoveryAt=0,recoveredVersion=-1,wasHidden=false;
+  let publishedRequest:Promise<void>|undefined;
   const controller=new AbortController();
   const get=async<T,>(path:string):Promise<T>=>{
-   const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(10000)])});
+   const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(30000)])});
    if(!response.ok)throw Error(response.status===404?'This match reference does not exist.':'Agent Arcade is synchronizing. Please retry shortly.');return response.json();
   };
   const publish=(s:EngineState)=>{if(!cancelled){setSnapshot(s);setConnection(s.phase>=3?'Result on engine, publication pending':'Live engine state');}};
@@ -70,6 +71,15 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   const acceptView=(value:PoolMatchView)=>{
    if(value.ref.app.toLowerCase()!==reference.app.toLowerCase()||value.ref.epoch!==reference.epoch||value.ref.id!==reference.id)throw Error('Match reference changed unexpectedly');
    current=value;setView(value);nextPublished=performance.now()+5000;
+  };
+  const refreshPublished=()=>{
+   if(publishedRequest)return;
+   nextPublished=performance.now()+5000;
+   // Canonical result verification may be slow. Keep observing the engine while
+   // this single request runs; its result remains authoritative when it arrives.
+   publishedRequest=get<PoolMatchView>(matchPath).then(value=>{if(!cancelled)acceptView(value);})
+    .catch(()=>{if(!cancelled)nextPublished=performance.now()+5000;})
+    .finally(()=>{publishedRequest=undefined;});
   };
   const poll=async()=>{
    let delay=500;
@@ -82,7 +92,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      const saved=rememberedAccount();if(saved)setAccount(saved.address);
     }
     if(performance.now()>=nextPublished||wasHidden){
-     const value=await get<PoolMatchView>(matchPath);if(cancelled)return;acceptView(value);
+     refreshPublished();
     }
     if(!current)return;
     if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setControlError('');setConnection(current.result.finality?'Final result':'Published, still contestable');setError('');delay=10000;return;}

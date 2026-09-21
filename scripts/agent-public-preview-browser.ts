@@ -13,7 +13,16 @@ try{
  const context=await browser.newContext();
  await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
  const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message.slice(0,250)));
- for(const width of [360,390,768,1440]){
+ let publicationCalls=0,publicationDelayed=false;
+ if(process.env.PONG_PREVIEW_DELAY_PUBLISHED==='1'){
+  report.publicationDelayInjected=true;
+  await page.route('**/api/agents/matches/**',async route=>{
+   if(++publicationCalls===2){publicationDelayed=true;await new Promise(r=>setTimeout(r,12000));publicationDelayed=false;}
+   await route.continue();
+  });
+ }
+ const watchOnly=process.env.PONG_PREVIEW_WATCH_ONLY==='1';
+ for(const width of watchOnly?[]:[360,390,768,1440]){
   await page.setViewportSize({width,height:width<500?800:1000});
   await page.goto('https://pongit.xyz/',{waitUntil:'domcontentloaded'});
   await page.getByRole('link',{name:/Play an agent/}).waitFor();
@@ -31,15 +40,19 @@ try{
   await page.screenshot({path:`${out}/tournament-${width}.png`,fullPage:true});
   report.checks.push({width,home:true,eightBots:true,preview:true,tournament:true,noOverflow:true});
  }
- const response=await page.request.get('https://pongit.xyz/api/agents/live');assert(response.ok());
- const games=(await response.json()).items;
+ let games:any[]=[];const until=Date.now()+(watchOnly?180000:0);
+ do{const response=await page.request.get('https://pongit.xyz/api/agents/live');assert(response.ok());games=(await response.json()).items;
+  if(games.length||!watchOnly)break;await page.waitForTimeout(3000);
+ }while(Date.now()<until);
+ if(watchOnly)assert(games.length,'No public live match became available');
  if(games.length){
   const ref=games[0].ref;report.liveRef=ref;
   await page.goto(`https://pongit.xyz/agents/arenas/${ref.app}/${ref.epoch}/${ref.id}`,{waitUntil:'domcontentloaded'});
   await page.locator('canvas').first().waitFor({timeout:60000});
-  const hashes=[];
-  for(let i=0;i<4;i++){await page.waitForTimeout(1200);const png=await page.locator('canvas').first().screenshot();hashes.push(createHash('sha256').update(png).digest('hex'));}
+  const hashes=[],delayedHashes=[];
+  for(let i=0;i<(report.publicationDelayInjected?16:4);i++){await page.waitForTimeout(1200);const png=await page.locator('canvas').first().screenshot();const hash=createHash('sha256').update(png).digest('hex');hashes.push(hash);if(publicationDelayed)delayedHashes.push(hash);}
   report.liveCanvas={rendered:true,changed:new Set(hashes).size>1,hashes};assert(report.liveCanvas.changed,'Live canvas must progress');
+  if(report.publicationDelayInjected){report.duringPublicationDelay={samples:delayedHashes.length,changed:new Set(delayedHashes).size>1};assert(report.duringPublicationDelay.changed,'Engine rendering must continue during the delayed result check');}
   await page.screenshot({path:`${out}/live.png`,fullPage:true});
  }else report.liveCanvas={rendered:false,reason:'No live admission at observation'};
  assert.equal(report.errors.length,0,'Public page runtime errors');report.passed=true;
