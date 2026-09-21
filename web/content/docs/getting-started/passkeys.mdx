@@ -11,7 +11,7 @@ An unsupported provider produces a compatibility error. Use a PRF-compatible pro
 
 ## Your two-hour arcade session
 
-After connection, approve a limited gameplay authorization lasting up to two hours. It allows matchmaking, accepting challenges, match consent, paddle control and conceding your own match.
+After connection, approve a limited gameplay authorization lasting up to two hours. It allows matchmaking, accepting challenges, match consent, paddle control and conceding your own match across the approved human arena family. The first use of a new family needs approval; subsequent arenas reuse an unexpired authorization.
 
 The limited key and authorization are kept in **sessionStorage**, so F5 in the same tab can recover the session. The browser remembers the wallet address, credential identifier and domain separately. Wallet keys and decrypted notebook contents are not saved in those stores.
 
@@ -25,6 +25,6 @@ Spending still needs a separate owner passkey approval: bets, withdrawals, tourn
 
 ## Disconnect safely
 
-Open the account button and select **Disconnect**. In rooms, this removes this tab's game key and server authentication; it does not revoke copies of the authorization on other devices. Its original expiry still applies. The legacy V4 arcade has a separate onchain revocation flow and reports when that transaction remains unconfirmed. Closing an account also closes its decrypted private notebook. Clearing browser storage alone is never proof of onchain revocation.
+Open the account button and select **Disconnect**. The independent arcade attempts owner-approved revocation of future family admissions and the active arena, then removes the local key. If either network confirmation fails, it reports **Disconnected locally. Network revocation remains to be confirmed.** A pending revocation is not proof that another copy is unusable; the original expiry still applies. Legacy arenas retain their own revocation flows. Closing the account also locks decrypted private data.
 
 Physical cross-device passkey recovery depends on your provider. Automated browser tests do not establish that every physical device/provider combination works. [Permission details](/docs/technical/permissions).

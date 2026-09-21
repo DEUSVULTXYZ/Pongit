@@ -27,6 +27,8 @@ const raw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8
 assert.equal(raw.production,false);assert([12,13,14].includes(raw.rulesVersion));assert.equal(raw.status,'sealed');
 const m=publicIndependentManifest(raw),rules=independentRules(m),base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:12000,fetchFn:measuredFetch('monad')})}),r=independentReader(base,m);
 const run=process.env.PONG_EVENTS_RUN??'1';assert(/^[1-9][0-9]?$/.test(run));
+const chaosTrackingSeconds=Number(process.env.PONG_EVENTS_CHAOS_TRACK_SECONDS??50);
+assert(Number.isInteger(chaosTrackingSeconds)&&chaosTrackingSeconds>=50&&chaosTrackingSeconds<=180,'Bounded private rotation observation');
 const secret=`/secrets/events-live-${run}.json`,out=`artifacts/independent-candidate/events-live-${run}.json`;
 try{await readFile(secret);throw Error('Preserve and reconcile the previous fixture before a new run');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const api='http://independent-events-service:4012/independent';
@@ -153,7 +155,7 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
    const current=await read();if(current.phase!==2)return;
    const v=current.state,position=side?v.right:v.left;
    let target=50000000n;
-   if(Date.now()-firstPlaying<50000||mode&&!bought||report.matches.length<2||report.matches.some((x:any)=>!x.playingAt)){
+   if(Date.now()-firstPlaying<(mode?chaosTrackingSeconds:50)*1000||mode&&!bought||report.matches.length<2||report.matches.some((x:any)=>!x.playingAt)){
     const plane=side?984000000n:40000000n,dt=v.vx===0n?0n:(plane-v.x)*1000000n/v.vx;
     let y=v.y+(dt>0n?v.vy*dt/1000000n:0n)-6000000n;const period=1128000000n;y=((y%period)+period)%period;target=6000000n+(y>564000000n?period-y:y);
    }

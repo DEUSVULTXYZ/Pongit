@@ -1,0 +1,21 @@
+{
+  "startedAt": "2026-09-21T08:46:48.915Z",
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "passed": true,
+  "closeHash": "0x51581f268f7c078091765e828275685d0feebb754f725b254e7a4bfe7ec10608",
+  "closed": {
+    "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+    "epoch": "1",
+    "releaseAt": "1789984526",
+    "batches": "435"
+  },
+  "parallel": {
+    "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+    "id": "340282366920938463463374607431768211477",
+    "beforeUs": "80460000",
+    "afterUs": "89500000",
+    "phase": "2"
+  },
+  "reserve": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+  "finishedAt": "2026-09-21T08:55:31.911Z"
+}

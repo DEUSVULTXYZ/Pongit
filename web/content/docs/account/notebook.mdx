@@ -1,21 +1,21 @@
 ## A private playbook
 
-Open **Rivals** and find **Your private playbook**. **Unlock notebook** uses the same passkey as your account but a separate Mera PRF namespace and encryption key. Public profile names and avatars are not stored in this notebook.
+Open your account and select **Private notebook**, then **Unlock notebook**. It uses the same passkey but a separate Mera PRF namespace and encryption key. **Unlock contacts** in the invitation or room panel opens a distinct encrypted address book. Public profile names and avatars are not stored in either private record.
 
-The decrypted content and key stay in memory. The server stores only ciphertext and technical metadata such as a revision and encryption IV.
+The decrypted content and key stay in memory. The independent release stores authenticated ciphertext and revision metadata on Monad. An owner-authenticated import can load an older server copy; **Save encrypted** explicitly migrates it. Old records are not deleted automatically.
 
 ## Keep rivals and replay notes
 
 - Add a favourite rival's full address and a private nickname. These names do not reserve public usernames or change another player's profile.
-- Open a match or replay, then use **Note this moment** to attach an observation to its versioned reference and timestamp.
-- Choose a preferred mode and sound preference. **Apply preferences** updates this browser; finish an active match or queue search first.
+- Open a match or replay, then **Add note** to associate an observation with its versioned reference and timestamp.
+- Choose a preferred mode and save it with the notebook.
 - Remove individual rivals or notes with their delete controls.
 
 ## Save, lock and recover
 
 Edits remain in memory until you select **Save encrypted**. Each save uses fresh encryption randomness. **Lock**, disconnecting or changing account closes the decrypted notebook.
 
-**Reload saved copy (discard local edits)** replaces your unsaved changes with the server's version. If another device saved first, PONGIT reports a revision conflict; preserve any edits you need before choosing to reload and merge manually.
+**Reload saved copy** replaces local edits with the committed version. Large encrypted saves are split into chunks; only a complete verified commit becomes the new revision. An interrupted upload can resume after F5. If another device commits first, the interface reports the conflict and keeps the pending encrypted upload until you choose **Discard pending upload**. Preserve edits you need before reloading and merging manually.
 
 Recovering on another device requires the same PRF-capable passkey. A new passkey derives a different key and cannot decrypt the old notebook. Physical cross-device compatibility has not been established for every provider.
 

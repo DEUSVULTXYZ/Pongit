@@ -1,4 +1,4 @@
-<Callout title="Testnet preview">Classic and Chaos rooms are open for testing. The hosted RPC may rate-limit requests and pause gameplay. This deployment is still undergoing multiplayer, payout and renewal validation. V4 balances and financial features remain separate.</Callout>
+<Callout title="Versioned testnet deployment">The independent rules-14 human release and the private Agent Arcade have separate contracts and admission gates. Check the live configuration for availability. Preserved V4 balances and financial features remain separate.</Callout>
 
 ## One authoritative game
 
@@ -15,7 +15,8 @@ The following diagram describes the preserved V4 arcade:
 | Component | Role |
 | --- | --- |
 | Browser | Passkey interaction, local input intent, bounded prediction, rendering and audio |
-| Game contract | Match consent, block clock, collision physics, points, results and ratings |
+| Arena contracts | Epoch-bound consent, engine clock, collision physics, points and result commitments |
+| Common Monad contracts | Matchmaking, rooms, participation lock, published ratings, profiles and encrypted records |
 | Relayer | Validate signed requests, persist jobs, submit transactions and track receipts |
 | Envio | Index all supported deployments for history, replay retention, rankings and payment discovery |
 | Vault and markets | Owner-approved spend, funded market accounting, settlement and native payouts |
@@ -31,13 +32,13 @@ The following diagram describes the preserved V4 arcade:
 
 The live transport is **Monad Testnet, chain 10143**, using public RPC services through application gateways. The site does not currently route transactions through Alchemy, and does not represent a sponsor integration as active just because it was considered.
 
-The main [rooms arcade](/docs/playing/rooms) uses a multi-match Interlude engine. Mera signs a scoped SDK grant and game calls go directly to the hosted operator. Classic and Chaos results and ratings are computed in the Solidity application and published to Monad. The original single-arena lab and V4 are separate deployments.
+The independent [rooms arcade](/docs/playing/rooms) uses one current physical slot per arena, reused between logical matches. Each arena has its own Interlude delegation. Mera signs a two-hour family grant, and compact controls go directly to the assigned hosted engine. The common Monad lobby chooses and reserves opponents. A testnet bridge attests the resulting admission ticket. Result capture verifies its participants and original ticket before applying ratings in the common Monad registry. This bridge adds explicit admission trust; it is not a cryptographic cross-chain proof.
 
 Chaos uses a testnet VPS attester to queue cumulative MON actually paid, bound to a canonical source block, market, match, epoch and seed. The engine consumes available pressure only at future point boundaries and keeps playing if the bridge is delayed. Its authority covers handicap input, not financial settlement. The new settlement adapter captures the first published terminal result and its end timestamp while the session is not challenged. The market refunds bets mined in or after the final execution second. It deliberately accepts correction risk; older adapters still require hub status None after closure and the challenge period. The rooms coordinator indexes its own market events and reconciles contracts; it does not claim the new rooms stream is already an Envio replay pipeline. Envio continues to index V1 to V4.
 
-Scheduled renewal drains games, closes the delegation, waits the one-hour challenge period, finalizes results and verifies the hosted node's new epoch. This creates a game maintenance interval. New early testnet market payments do not wait for this lifecycle; previous market payments still do. No browser prediction or VPS signature can choose their winner.
+Rotation drains and closes one idle arena, observes the real hub deadline, releases its stake, seals its result root and verifies a new hosted epoch. Ready arenas can continue independently. The admission guard requires a reviewed publication budget and actual hosted health; provider capacity or publication failure may still cause a wait. There is no automatic Monad gameplay fallback. New early testnet payments do not wait for arena renewal; previous markets retain their original rules.
 
-<Callout title="Independent arenas are still being qualified">A new candidate places rooms, matchmaking and the ranking journal on Monad, with a separate physics contract and delegation for each arena. Its real isolation rehearsal passed, but complete candidate games hit a hosted batch publication error. The public arcade has not migrated. See the [candidate implementation and evidence](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/contract-authority/docs/INDEPENDENT_ARENAS.md) for the remaining activation gates.</Callout>
+The independent service database stores recoverable observations, frames and operation journals. The original database retains legacy account data and the sole operator nonce journal. Stopping a process, losing a receipt or changing a UI gate never releases an uncertain nonce. See the [versioned evidence and remaining gates](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/arcade-release-20260919/docs/REUSABLE_ARENAS.md).
 
 ## Trust and limits
 

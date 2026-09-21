@@ -2,9 +2,11 @@
 
 ## Rooms deployment
 
-The active manifest identifies the immutable multi-room application on Monad Testnet 10143, with separate Classic and Chaos ratings inherited from the published preceding deployment. Classic keeps its physics. Chaos adds 24 verified random events, with two simultaneous effects at most. Rules-6 markets use continuous betting and the `events-v1` settlement adapter, including late-bet refunds. The rules-8 candidate requires a new game, adapter, sealed vault and market; existing addresses retain their withdrawals. Human admissions remain closed during recovery and qualification. Rules 8 is not live until its new manifest and qualification are published.
+The independent human release is rules 14 on Monad Testnet 10143. It keeps Classic physics and all 24 Chaos events, while using bounded physics work and reusable storage inside each independently delegated arena. Shared lobby, rating, profile, private-data and financial contracts remain on Monad. New games are enabled only by the release admission gate; deployed addresses alone do not establish availability.
 
-The [rooms manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/interlude-rooms.json) identifies the current engine. Its [deployment evidence](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/chaos-events.json) lists the stateless modules and deployment transactions. Original markets and their immutable financial bindings remain in the [financial manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/rooms-finance.json). The tables below list the preserved V1 to V4 contracts.
+Read `GET /api/independent/config` for the exact approved arenas, epoch health and admission state. The migration reserves ten existing usernames and seeds six verified rating records from the retired deployment. Saving the profile claims its reserved name with the original owner's signature. Historical balances are not transferred.
+
+The [independent source and evidence](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/arcade-release-20260919/docs/REUSABLE_ARENAS.md) documents the new generation. The historical [rooms manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/interlude-rooms.json) and [financial manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/rooms-finance.json) keep their original meanings. The tables below list preserved V1 to V4 contracts.
 
 ## Preserved V4 arcade
 

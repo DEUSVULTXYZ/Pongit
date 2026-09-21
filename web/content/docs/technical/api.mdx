@@ -1,4 +1,28 @@
-<Callout title="Testnet preview">Classic and Chaos rooms are open for testing. The hosted RPC may rate-limit requests and pause gameplay. This deployment is still undergoing multiplayer, payout and renewal validation. V4 balances and financial features remain separate.</Callout>
+<Callout title="Versioned routes">Independent human arenas use `/independent`. The historical `/interlude` and V4 routes below retain their original contracts and authentication. Check each configuration before interpreting match identifiers or signing an action.</Callout>
+
+## Independent human arenas
+
+All paths below are relative to `https://pongit.xyz/api`. Read-only methods require no passkey, except the explicitly private legacy contact import. Transaction bodies use `{to, data}` with ABI-encoded calls to the approved manifest only. Contracts verify the appropriate family, game-key or owner signature; this endpoint is not an arbitrary transaction relay. Responses identify a persistent operation, and an absent receipt never authorizes a new nonce.
+
+| Method and path | Purpose |
+| --- | --- |
+| GET `/independent/config` | Approved manifest, admission gate, per-arena epoch/health and sponsoring status |
+| POST `/independent/transactions` | Allowed signed lobby, family, profile, private-data, market or vault call |
+| GET `/independent/operations/:hash` | Queued, pending, confirmed or failed operation and available transaction reference |
+| GET `/independent/profile-migration/:address` | Public reserved username and avatar hint |
+| GET `/independent/player/:address/recent` | Verified recent summaries with versioned references and replay availability |
+| GET `/independent/player/:address/frequent` | Verified recent-opponent suggestions |
+| GET `/independent/player/:address/payments` | Current financial obligations and payment states |
+| GET `/independent/replay/:id?after=-1` | Up to 1,000 recorded revisions for this exact deployment |
+| GET `/independent/market/:id?player=0x…&side=0&shares=1000000000000000` | Market quote, position and published-result state |
+| POST `/independent/credit` | Owner-signed one-time test-credit request, bound to this vault and expiry |
+| POST `/independent/arena-command` | Owner-signed renewal or revocation of an active arena binding |
+| GET `/independent/import/contacts` | Legacy HttpOnly app session; only the authenticated owner's old private contacts |
+| POST `/independent/diagnostics` | Limited-key authenticated, bounded and private network measurements |
+
+Ordinary movement goes directly to the assigned engine. Rules-14 controls bind both epoch and logical match ID; the browser journals the signed transaction before sending. `launchClock(id)` returns the shared countdown deadline and engine-clock observation for `engine-ticks-v1` manifests. Snapshot events update the cache, while missing identity, nonce or result data requires an authoritative read.
+
+Recovery errors retain a readable message plus `code`, `source`, `retryAt` and `requestId` where available. `CONTRACT_REJECTED` is distinct from a temporarily unavailable action. A 404 operation response is not proof that a previously submitted engine transaction failed. Historic reference format remains `10143:arena:epoch:id`.
 
 ## Base URLs and conventions
 

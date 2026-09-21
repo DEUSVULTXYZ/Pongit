@@ -14,9 +14,15 @@ Match joins bind the opponent, room, commitment, session, nonce, expiry, tournam
 
 Only the limited arcade material and recovery data are stored in sessionStorage. The remembered passkey hint in localStorage is not the wallet key. Owner-derived keys are opened for their operation and closed afterward.
 
-### Compact room controls
+### Independent family and compact controls
 
-The current rooms deployment verifies the complete owner-signed SDK grant once through `registerControls`. It records the player, limited game key, expiry and engine epoch. Later movements use direct zero-value transactions from that game key, so the full grant is no longer repeated in every command. The approved scope remains match acceptance, input, ticking, cancellation and concession. It does not permit financial operations.
+Rules 14 registers a limited two-hour family authorization on Monad. Admission binds its player and game key to the exact approved arena, epoch and logical match. Later controls carry compact arguments and a game-key transaction signature, without repeating a full owner grant on every movement. Root signatures remain necessary for spending, profile writes, encrypted-data writes and revocation.
+
+Family revocation prevents future admissions. Revocation of a binding already admitted to an engine is a separate operation. The interface reports a pending network revocation instead of claiming that a local logout invalidated every remote copy. The journal preserves uncertain signed bytes across F5 and reconciles their exact hash before another nonce is used.
+
+### Historical single-application controls
+
+The previous rooms deployment verifies the complete owner-signed SDK grant once through `registerControls`. It records the player, limited game key, expiry and engine epoch. Later movements use direct zero-value transactions from that game key, so the full grant is no longer repeated in every command. Historical match links retain these authorization rules.
 
 Reloading the same tab checks the recorded binding and reuses it. Changing the engine epoch requires a new binding. Disconnect attempts `revokeControls` before removing the local key; a refused or offline attempt is shown as pending, and expiry still applies. Revocation leaves a tombstone, so the same grant cannot register that key again. Older deployments retain their existing authorization paths.
 

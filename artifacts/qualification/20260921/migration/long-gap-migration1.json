@@ -1,0 +1,29 @@
+{
+  "startedAt": "2026-09-21T08:12:36.435Z",
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "passed": true,
+  "scope": "Actual engine clock, private service interruption, technical cancellation, publication and participation recovery; no continuous-gameplay claim",
+  "match": {
+    "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+    "id": "340282366920938463463374607431768211468",
+    "epoch": "1"
+  },
+  "initial": {
+    "head": "147097",
+    "clock": "160000",
+    "t": "0"
+  },
+  "pauseRequestedAt": "2026-09-21T08:14:00.425Z",
+  "pausedAt": "2026-09-21T08:14:01.928Z",
+  "frozenRevision": "5",
+  "observedAt": "2026-09-21T08:44:16.089Z",
+  "observedClock": "1796250000",
+  "cancellation": {
+    "hash": "0xebab7bc4adf0f4d15e4869631f13b82df107c399bb0e7ec190e308a941d95c62",
+    "clock": "0",
+    "t": "0",
+    "phase": 4
+  },
+  "resumeRequestedAt": "2026-09-21T08:44:26.540Z",
+  "finishedAt": "2026-09-21T08:45:05.464Z"
+}

@@ -82,7 +82,7 @@
       "title": "Passkeys & arcade sessions",
       "description": "Keep your account, renew your session and understand what you sign.",
       "group": "Getting started",
-      "updated": "2026-09-07",
+      "updated": "2026-09-21",
       "keywords": [
         "login",
         "connect",
@@ -251,7 +251,7 @@
       "title": "Rooms & matchmaking",
       "description": "Classic and Chaos, private contacts and rotating shared cabinets.",
       "group": "Playing",
-      "updated": "2026-09-13",
+      "updated": "2026-09-21",
       "keywords": [
         "rooms",
         "contacts",
@@ -535,7 +535,7 @@
       "title": "Usernames & avatars",
       "description": "Choose a unique name and your character in the arcade.",
       "group": "Your account",
-      "updated": "2026-09-07",
+      "updated": "2026-09-21",
       "keywords": [
         "profile",
         "save",
@@ -571,7 +571,7 @@
       "title": "Private notebook",
       "description": "Keep favourite rivals, private nicknames and timestamped replay notes.",
       "group": "Your account",
-      "updated": "2026-09-07",
+      "updated": "2026-09-21",
       "keywords": [
         "mera",
         "encryption",
@@ -887,7 +887,7 @@
       "title": "Architecture & integrations",
       "description": "How the browser, relayer, Envio and Monad work together.",
       "group": "Technical reference",
-      "updated": "2026-09-13",
+      "updated": "2026-09-21",
       "keywords": [
         "Mera",
         "Envio",
@@ -928,7 +928,7 @@
       "title": "Physics, prediction & latency",
       "description": "The contract determines collisions; the browser makes the motion readable.",
       "group": "Technical reference",
-      "updated": "2026-09-13",
+      "updated": "2026-09-21",
       "keywords": [
         "block",
         "clock",
@@ -972,6 +972,11 @@
           "id": "rules-6-events-and-continuous-collisions",
           "text": "Rules 6: events and continuous collisions",
           "level": 2
+        },
+        {
+          "id": "reusable-rules-14",
+          "text": "Reusable rules 14",
+          "level": 2
         }
       ]
     },
@@ -980,7 +985,7 @@
       "title": "Contracts & deployments",
       "description": "Public addresses and versioned references for V4 and its archives.",
       "group": "Technical reference",
-      "updated": "2026-09-13",
+      "updated": "2026-09-21",
       "keywords": [
         "addresses",
         "V1",
@@ -1022,7 +1027,7 @@
       "title": "Authentication & permissions",
       "description": "Separate gameplay authorization, app access and owner-approved spending.",
       "group": "Technical reference",
-      "updated": "2026-09-07",
+      "updated": "2026-09-21",
       "keywords": [
         "EIP-712",
         "nonce",
@@ -1042,8 +1047,13 @@
           "level": 2
         },
         {
-          "id": "compact-room-controls",
-          "text": "Compact room controls",
+          "id": "independent-family-and-compact-controls",
+          "text": "Independent family and compact controls",
+          "level": 3
+        },
+        {
+          "id": "historical-single-application-controls",
+          "text": "Historical single-application controls",
           "level": 3
         },
         {
@@ -1068,7 +1078,7 @@
       "title": "HTTP API & WebSocket reference",
       "description": "Read application data and understand the authenticated transaction interfaces.",
       "group": "Technical reference",
-      "updated": "2026-09-13",
+      "updated": "2026-09-21",
       "keywords": [
         "API",
         "HTTP",
@@ -1077,6 +1087,11 @@
         "integration"
       ],
       "headings": [
+        {
+          "id": "independent-human-arenas",
+          "text": "Independent human arenas",
+          "level": 2
+        },
         {
           "id": "base-urls-and-conventions",
           "text": "Base URLs and conventions",

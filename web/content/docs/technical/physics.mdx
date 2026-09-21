@@ -51,3 +51,9 @@ Eight packed words carry both balls, the two effects, paddle positions, actual r
 The renderer uses the same kernel for a bounded preview. It does not publish predicted goals or choose random events. Ball trails are separated by ball identity, epoch, rally and teleport revision. Replays retain the typed state for both balls and effects, subject to the shared retention policy.
 
 Future drand rounds are committed before revelation. A missing proof delays only the event. Gameplay commands do not carry a BLS proof; a dedicated permissionless transaction submits it once per draw. The server proof worker shares its signer's existing nonce journal with other public engine operations.
+
+## Reusable rules 14
+
+Rules 14 carries the bounded Chaos kernel into independently delegated arenas. The physical slot is reused, while all commands and results retain the logical match ID and epoch. Pending controls preserve the latest intent while catch-up resumes. A human match beyond thirty minutes of engine time is cancelled without a winner or ELO, so recovery does not need to simulate an arbitrarily long outage.
+
+The initial countdown requires both three timestamp seconds and 300 ticks of the existing 100 Hz engine clock. This avoids losing countdown digits when the hosted execution timestamp jumps between publication batches. A result or readiness observation does not restart a separate browser timer.
