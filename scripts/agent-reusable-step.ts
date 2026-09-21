@@ -133,10 +133,19 @@ async function step(){
    const match=await read(m.pool,poolAbi,'arenaMatch',[app]);
    if(match!==zeroHash&&lanes.some(l=>l.ref.arena.toLowerCase()===app.toLowerCase()&&l.ref.id>0n))continue;
    const validator=await read(m.hub,hubAbi,'defaultValidator'),terms=await read(m.hub,hubAbi,'termsOf',[validator]);
-   await act(m.pool,'openReusableArena',[app],terms.delegationFee);return;
+   try{await act(m.pool,'openReusableArena',[app],terms.delegationFee);return;}
+   catch(e){
+    // A refused reserve opening must not suppress games on admitted arenas.
+    // An uncertain signed transaction retains its intent and stops this step.
+    if(state.intent)throw e;
+    console.error(JSON.stringify({at:new Date().toISOString(),event:'reserve-opening-delayed',arena:app,error:clean(e)}));
+    break;
+   }
   }
  }
- if(active.length>=3&&!cooling(m.pool,'closeReusableArena')){
+ const hosted=(await db.query("SELECT app,stage,detail FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
+ const ready=active.filter(a=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch)));
+ if(ready.length>=3&&!cooling(m.pool,'closeReusableArena')){
   const candidates=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase())).sort((a,b)=>a.d.baseBlock<b.d.baseBlock?-1:1);
   for(const candidate of candidates){
    const opening=await t.base.getBlock({blockNumber:candidate.d.baseBlock,includeTransactions:false});

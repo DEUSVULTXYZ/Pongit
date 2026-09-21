@@ -27,3 +27,9 @@ test('reusable recovery stays available with public gates closed only on the exa
   assert.throws(()=>validateReusableRecord(v.record,v.humans,v.manifest,v.evidence),mutation);
  }
 });
+test('preview runtime requires the exact explicit evidence and still rejects service keys in metadata',()=>{
+ const f=fixture();f.manifest={...f.manifest,enabled:true,releaseStage:'testnet-preview',previewEvidence:f.evidence,verifiedCapacity:0,qualificationEvidence:null};
+ validateReusableRecord(f.record,f.humans,f.manifest,f.evidence);
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,toHex(999,{size:32})));
+ assert.throws(()=>validateReusableRecord({...f.record,admissionKey:'private'},f.humans,f.manifest,f.evidence));
+});

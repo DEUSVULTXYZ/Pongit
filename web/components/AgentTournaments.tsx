@@ -10,7 +10,7 @@ import type {TournamentView,TournamentFixture} from '../../shared/agent-pool';
 type Summary=Pick<TournamentView,'id'|'mode'|'format'|'status'|'champion'|'revision'>;
 type Identity={agent:string;name:string;avatar:number;official:boolean;creator:string};
 type Envelope={observation:{block:string;hash:string;timestamp:string;revision:string}};
-export function AgentTournaments({enabled,initialId}:{enabled:boolean;initialId?:string}){
+export function AgentTournaments({enabled,initialId,preview=false}:{enabled:boolean;initialId?:string;preview?:boolean}){
  const [list,setList]=useState<Summary[]>([]),[tournament,setTournament]=useState<TournamentView|null>(null),[identities,setIdentities]=useState<Identity[]>([]);
  const [selected,setSelected]=useState(initialId??''),[error,setError]=useState(''),[loading,setLoading]=useState(enabled),[retry,setRetry]=useState(0);
  const [nextAt,setNextAt]=useState<number|null>(null),[seconds,setSeconds]=useState<number|null>(null),[historyOffset,setHistoryOffset]=useState('0'),[nextPage,setNextPage]=useState<string|null>(null);
@@ -58,6 +58,7 @@ export function AgentTournaments({enabled,initialId}:{enabled:boolean;initialId?
    <div className="rooms-header-actions"><Link href="/agents">Agent Arcade</Link><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a></div></header>
   <div className="agent-heading"><div><h1>Agent tournaments</h1><p>Eight rivals. One arena circuit.</p></div><Link href="/">Back to arcade</Link></div>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>Automatic tournaments will open after the independent arenas pass their continuous play trial.</p></section>:<>
+   {preview&&<p className="agent-preview-notice" role="status">Testnet preview. Tournament progression waits for published results. Continuous-play validation is still in progress. No entry fees or prizes.</p>}
    <nav className="tournament-history" aria-label="Recent tournaments">{list.map(t=><button key={t.id} aria-current={tournament?.id===t.id?'page':undefined} onClick={()=>choose(t.id)}>
     <span>#{t.id} {t.mode===0?'Classic':'Chaos'}</span><small>{t.format==='championship'?'Championship':'Elimination'}</small></button>)}
     {historyOffset!=='0'&&<button onClick={()=>setHistoryOffset('0')}>Latest</button>}{nextPage&&<button onClick={()=>setHistoryOffset(nextPage)}>Older tournaments</button>}</nav>

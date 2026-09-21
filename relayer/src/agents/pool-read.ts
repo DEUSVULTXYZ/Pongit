@@ -54,9 +54,10 @@ export class AgentPoolReader {
    if(arenas.length!==m.arenas.length||arenas.some((a,i)=>a.toLowerCase()!==m.arenas[i].app.toLowerCase()))
     throw Error('Configured arenas differ from the common contract');
    const qualified=m.verifiedCapacity===2&&!!m.qualificationEvidence&&evidence.toLowerCase()===m.qualificationEvidence.toLowerCase();
-   const enabled=m.enabled&&qualified&&admissions&&publicAdmissions;
+   const preview=m.releaseStage==='testnet-preview'&&!!m.previewEvidence&&evidence.toLowerCase()===m.previewEvidence.toLowerCase();
+   const enabled=m.enabled&&(qualified||preview)&&admissions&&publicAdmissions;
    return {...m,enabled,qualified,tournamentsEnabled:enabled&&m.tournamentsEnabled&&tournamentsOpen,
-    registration:{strategies:true,realtime:false},financial:false,validation:qualified?'qualified':'private-qualification'};
+    registration:{strategies:true,realtime:false},financial:false,validation:qualified?'qualified':preview?'testnet-preview':'private-qualification'};
   });
  }
  async catalog(offset=0n,limit=16){

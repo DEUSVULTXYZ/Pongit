@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {isAddress,zeroAddress,type Hex} from 'viem';
 import {validateSeriesRecord} from './series-runtime';
-import {validateAgentPoolManifest,type AgentPoolManifest} from '../../../shared/agent-pool';
+import {validateAgentPoolManifest,agentPoolReleaseEvidence,type AgentPoolManifest} from '../../../shared/agent-pool';
 
 const fields=['hub','pool','catalog','tournaments','ratings','qualifications','family','challenges','verifier'] as const;
 export function validateReusableRecord(record:any,humans:readonly string[],manifest?:AgentPoolManifest,evidence?:string){
@@ -16,8 +16,9 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
  if(manifest){
   const m=validateAgentPoolManifest(manifest,humans);
   assert.equal(m.countdownClock,record.countdownClock,"Countdown capability mismatch");
-  assert(m.version===4&&m.rulesVersion===15&&m.verifiedCapacity===2&&m.qualificationEvidence&&BigInt(m.qualificationEvidence)!==0n,'Reviewed reusable capacity evidence required');
-  assert.equal(m.qualificationEvidence.toLowerCase(),evidence?.toLowerCase());
+  const releaseEvidence=agentPoolReleaseEvidence(m);
+  assert(m.version===4&&m.rulesVersion===15&&releaseEvidence&&BigInt(releaseEvidence)!==0n,'Explicit reusable release evidence required');
+  assert.equal(releaseEvidence.toLowerCase(),evidence?.toLowerCase());
   for(const field of fields)if(field!=='verifier')assert.equal(record.common[field].toLowerCase(),(m as any)[field]?.toLowerCase(),'Reusable authority mismatch');
   assert.equal(record.arenas.length,m.arenas.length);
   record.arenas.forEach((a:any,i:number)=>{assert.equal(a.app.toLowerCase(),m.arenas[i].app.toLowerCase());assert.equal(a.runtimeHash.toLowerCase(),m.arenas[i].runtimeHash.toLowerCase());});

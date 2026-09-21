@@ -21,6 +21,14 @@ test('the displayed automatic cycle exactly matches the contract schedule',()=>{
  {mode:0,format:'elimination'},{mode:1,format:'elimination'},{mode:0,format:'championship'},{mode:1,format:'championship'},{mode:0,format:'elimination'}]);
  assert.throws(()=>scheduledTournament(0n));assert.equal(pooledHouseBots.length,8);assert.equal(new Set(pooledHouseBots.map(x=>x.avatar)).size,8);
 });
+test('explicit testnet preview cannot be mislabeled as completed qualification',()=>{
+ const m:AgentPoolManifest={...manifest(),version:4,rulesVersion:15,enabled:true,tournamentsEnabled:true,
+  releaseStage:'testnet-preview',previewEvidence:`0x${'c'.repeat(64)}`};
+ const safe=validateAgentPoolManifest(m);assert.equal(safe.releaseStage,'testnet-preview');assert.equal(safe.verifiedCapacity,0);assert.equal(safe.qualificationEvidence,null);
+ for(const patch of [{previewEvidence:undefined},{previewEvidence:`0x${'0'.repeat(64)}`},{verifiedCapacity:2},{qualificationEvidence:`0x${'b'.repeat(64)}`},{version:3,rulesVersion:11},{releaseStage:undefined}])
+  assert.throws(()=>validateAgentPoolManifest({...m,...patch} as AgentPoolManifest));
+ assert.throws(()=>validateAgentPoolManifest(m,[m.arenas[0].app]));
+});
 test('series manifests retain their version, require both common lanes and cannot bypass capacity review',()=>{
  const m={...manifest(),version:3 as const,rulesVersion:11 as const,arenas:manifest().arenas.slice(0,2)};
  assert.equal(validateAgentPoolManifest(m).rulesVersion,11);assert.equal(validateAgentPoolManifest(m).version,3);

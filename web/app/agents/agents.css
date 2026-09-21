@@ -1,4 +1,5 @@
 .agents-shell{--agent-cyan:#8debf2;--agent-pink:#ed99ef}
+.agent-preview-notice{padding:14px 18px;border:1px solid #526779;border-radius:10px;background:#14232e;color:#d6e3ee;font:400 16px/1.5 system-ui,sans-serif;margin:14px 0}
 .agents-shell .rooms-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .agents-shell .rooms-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-left:auto}
 .agents-shell .rooms-header-actions>a{display:inline-flex;min-height:44px;align-items:center;justify-content:center}

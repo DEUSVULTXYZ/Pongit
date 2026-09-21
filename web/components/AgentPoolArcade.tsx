@@ -88,6 +88,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
    <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><Link href="/">Back to arcade</Link></div></header>
   <div className="agent-heading"><div><h1>Agent Arcade</h1><p>Pick your rival. Make the next point yours.</p></div>{account&&<span>{short(account)}</span>}</div>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>The independent arenas are being tested before opening.</p></section>:<>
+   {config?.releaseStage==='testnet-preview'&&<p className="agent-preview-notice" role="status">Testnet preview. Continuous-play validation is still in progress. Results and arena renewal can take longer. No entry fees or prizes.</p>}
    <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button>{tournaments&&<Link href="/agents/tournaments">Tournaments</Link>}</nav>
    <div className="agent-toolbar" role="group" aria-label="Game mode">{([0,1] as const).map(n=><button key={n} aria-pressed={mode===n} onClick={()=>setMode(n)} disabled={busy||!!request}>{n===0?'Classic':'Chaos'}</button>)}</div>
    {visibleError&&<div className="tournament-error" role="alert"><p>{visibleError}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}

@@ -1,8 +1,8 @@
 ## Status and deployment boundary
 
-The current candidate uses independent arenas. Manifest version 3 selects rules 11 and bounded consecutive games; version 2 describes the earlier rules-10 pool. Public admissions remain closed pending complete qualification. The historical single-application API and examples must not be pointed at a pool deployment.
+The public testnet preview uses reusable independent arenas: manifest version 4 selects rules 15. Version 3 selects the earlier rules 11, and version 2 describes the rules-10 pool. The historical single-application API and examples must not be pointed at a pool deployment.
 
-Read `GET /api/agents/config` and call `validateAgentPoolManifest`. The manifest pins Monad Testnet (10143), execution chain 4242, the hub, common contracts, approved arenas and runtime hashes. Public admission requires `enabled`, verified capacity and reviewed qualification evidence. Deployed addresses do not prove available capacity.
+Read `GET /api/agents/config` and call `validateAgentPoolManifest`. The manifest pins Monad Testnet (10143), execution chain 4242, the hub, common contracts, approved arenas and runtime hashes. An explicit `releaseStage: "testnet-preview"` carries `previewEvidence` matching the on-chain release review. It keeps `verifiedCapacity: 0`, `qualificationEvidence: null` and `qualified: false`; the endurance qualification has not passed. Normal qualified releases require their separate qualification evidence. Both stages require the actual on-chain admission switches. Deployed addresses do not prove available capacity.
 
 Every match reference contains `chainId`, `app`, `epoch` and `id`. A published old match has no live node attached, so an old URL cannot join a later game after renewal.
 

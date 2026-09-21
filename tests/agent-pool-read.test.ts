@@ -32,6 +32,19 @@ test('a local enabled flag cannot bypass a missing or different on-chain qualifi
  gate=true;assert.equal((await reader.config()).value.enabled,true);
  const disabled=new AgentPoolReader(client,{...manifest,enabled:false,tournamentsEnabled:false});assert.equal((await disabled.config()).value.enabled,false);
 });
+test('a public preview stays explicitly unqualified and requires matching on-chain review plus admissions',async()=>{
+ const m:AgentPoolManifest={...manifest,version:4,rulesVersion:15,releaseStage:'testnet-preview',previewEvidence:evidence,verifiedCapacity:0,qualificationEvidence:null};
+ let proof:string=zeroHash,gate=false;
+ const client={getBlock:async()=>({number:50n,hash:'0xa'}),readContract:async(r:any)=>{
+  if(r.functionName==='arenaPage')return m.arenas.map(a=>a.app);
+  if(r.functionName==='capacityEvidence')return proof;
+  if(r.functionName==='publicAdmissions')return gate;
+  return true;
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,m);assert.equal((await reader.config()).value.enabled,false);
+ proof=evidence;assert.equal((await reader.config()).value.enabled,false);gate=true;
+ const view=(await reader.config()).value;assert.equal(view.enabled,true);assert.equal(view.tournamentsEnabled,true);assert.equal(view.qualified,false);assert.equal(view.validation,'testnet-preview');
+});
 test('restored challenge binds its owner, agent and assigned arena at one block',async()=>{
  const {encodeAbiParameters,keccak256}=await import('viem');
  const owner=addr(90),agent=addr(91),arena=manifest.arenas[1].app;
