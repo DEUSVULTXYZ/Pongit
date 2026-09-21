@@ -177,7 +177,24 @@ try{
  await until(()=>a.getByRole('button',{name:'Move up',exact:true}).isEnabled(),'contract countdown ended',720000);
  for(let i=0;i<3;i++)assert(report.countdown[i].includes('3')&&report.countdown[i].includes('2')&&report.countdown[i].includes('1'),`All three countdown digits missing on browser ${i}`);report.checks.push('Real three-second countdown on both players and spectator');
  // Controls and F5 must not trigger a root passkey request.
- const before=counts.slice();await a.reload();await a.locator('.rooms-canvas canvas').waitFor({timeout:45000});assert.equal(counts[0],before[0]);
+ const before=counts.slice();
+ const financial=(async()=>{if(chaos){
+  await spectator.getByRole('button',{name:'Betting',exact:true}).click();
+  await spectator.getByLabel('Shares (1 winning share = 1 MON)').fill('0.006');
+  await until(()=>spectator.getByRole('button',{name:'Confirm bet with passkey',exact:true}).isEnabled(),'Chaos betting window',120000);
+  await spectator.getByRole('button',{name:'Confirm bet with passkey',exact:true}).click();
+  const id=await financialBase.readContract({address:manifest.lobby,abi:rules.lobby,functionName:'activeMatchOf',args:[saved.players[0].address]});assert(id>0n,'Live match needed for the bet');
+  await until(async()=>{
+   const position=await financialBase.readContract({address:manifest.market,abi:rules.market,functionName:'positions',args:[id,saved.players[2].address as Address]});
+   return position[0]===6000000000000000n&&position[2]>0n;
+  },'actual purchased shares on Monad (a re-enabled button is not confirmation)',90000);
+  report.bet={matchId:String(id),player:saved.players[2].address,shares:'6000000000000000',verifiedAt:new Date().toISOString()};
+  report.checks.push('Root-signed test MON bet accepted during a live Chaos rally');
+  await spectator.getByRole('button',{name:'Close Wallet and betting',exact:true}).click();
+  // The beneficiary browser is disconnected while the relayer settles the payout.
+  before[2]=counts[2];await persist();await spectator.goto('about:blank');
+ }})();
+ await a.reload();await a.locator('.rooms-canvas canvas').waitFor({timeout:45000});assert.equal(counts[0],before[0]);
  await until(()=>a.getByRole('button',{name:'Move up',exact:true}).isEnabled(),'restored engine control',90000);
  await a.getByRole('button',{name:'Tools',exact:true}).click();
  const ref=await a.locator('.rooms-dialog .rooms-address').textContent();assert(ref?.startsWith('10143:'));saved.matchRef=ref;await a.getByRole('button',{name:'Close Cabinet tools',exact:true}).click();
@@ -195,22 +212,6 @@ try{
   }
  })();
  void movement.catch(()=>{});
- const financial=(async()=>{if(chaos){
-  await spectator.getByRole('button',{name:'Betting',exact:true}).click();
-  await spectator.getByLabel('Shares (1 winning share = 1 MON)').fill('0.006');
-  await until(()=>spectator.getByRole('button',{name:'Confirm bet with passkey',exact:true}).isEnabled(),'Chaos betting window',120000);
-  await spectator.getByRole('button',{name:'Confirm bet with passkey',exact:true}).click();
-  const id=BigInt(saved.matchRef.split(':').at(-1)!);
-  await until(async()=>{
-   const position=await financialBase.readContract({address:manifest.market,abi:rules.market,functionName:'positions',args:[id,saved.players[2].address as Address]});
-   return position[0]===6000000000000000n&&position[2]>0n;
-  },'actual purchased shares on Monad (a re-enabled button is not confirmation)',90000);
-  report.bet={matchId:String(id),player:saved.players[2].address,shares:'6000000000000000',verifiedAt:new Date().toISOString()};
-  report.checks.push('Root-signed test MON bet accepted during a live Chaos rally');
-  await spectator.getByRole('button',{name:'Close Wallet and betting',exact:true}).click();
-  // The beneficiary browser is disconnected while the relayer settles the payout.
-  before[2]=counts[2];await persist();await spectator.goto('about:blank');
- }})();
  await Promise.all([movement,financial]);
  assert(report.inputs[0].length>1&&report.inputs[1].length>1,'Both browsers must have real accepted movement receipts');
  assert.deepEqual(counts,before,'Gameplay unexpectedly requested a passkey');report.checks.push('F5 and direction input without a root passkey ceremony');
