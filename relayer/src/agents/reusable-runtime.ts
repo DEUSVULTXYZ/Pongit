@@ -8,6 +8,10 @@ const fields=['hub','pool','catalog','tournaments','ratings','qualifications','f
 export function validateReusableRecord(record:any,humans:readonly string[],manifest?:AgentPoolManifest,evidence?:string){
  validateSeriesRecord(record,humans);
  if(record.countdownClock!==undefined)assert.equal(record.countdownClock,"engine-ticks-v1");
+ if(record.houseInstances!==undefined){
+  assert.equal(record.houseInstances,'official-v1');
+  assert(isAddress(record.modules?.HouseInstances),'Pinned instance library required');
+ }
  assert.equal(record.rulesVersion,15,'Reusable rules required');
  assert(record.arenas.length>=3&&record.arenas.length<=16,'Reviewed reusable arena bounds');
  assert(isAddress(record.common.verifier)&&record.common.verifier.toLowerCase()!==zeroAddress,'Result verifier required');
@@ -16,6 +20,7 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
  if(manifest){
   const m=validateAgentPoolManifest(manifest,humans);
   assert.equal(m.countdownClock,record.countdownClock,"Countdown capability mismatch");
+  assert.equal(m.houseInstances,record.houseInstances,'House instance capability mismatch');
   const releaseEvidence=agentPoolReleaseEvidence(m);
   assert(m.version===4&&m.rulesVersion===15&&releaseEvidence&&BigInt(releaseEvidence)!==0n,'Explicit reusable release evidence required');
   assert.equal(releaseEvidence.toLowerCase(),evidence?.toLowerCase());

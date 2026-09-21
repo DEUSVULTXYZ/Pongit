@@ -65,6 +65,7 @@ contract AgentChallenges is EIP712 {
     function takeNextKnown(uint256 baseBlock) external returns(uint256 id,Request memory request,ArcadeFamily.Grant memory grant){
         return _takeNext(baseBlock);
     }
+    function _eligible(address agent,uint8 mode) internal view virtual returns(bool){return catalog.eligible(agent,mode);}
     function _takeNext(uint256 baseBlock) private returns(uint256 id,Request memory request,ArcadeFamily.Grant memory grant){
         require(block.chainid==10143&&msg.sender==pool,"pool only");
         if(scanRevision!=catalog.revision()||scanCount!=count){scanRevision=catalog.revision();scanCount=count;scannedCount=0;}
@@ -74,7 +75,7 @@ contract AgentChallenges is EIP712 {
         for(uint256 scanned;scanned<32&&scanned<count;scanned++){
             id=cursor;cursor=cursor==count?1:cursor+1;Request storage r=requests[id];
             if(scannedCount<count)scannedCount++;
-            if(r.status!=1||!_valid(r)||!catalog.eligible(r.agent,r.mode))continue;
+            if(r.status!=1||!_valid(r)||!_eligible(r.agent,r.mode))continue;
             if(catalog.identity(r.agent).house==0&&catalog.registeredBlock(r.agent)>baseBlock)continue;
             scannedCount=0;
             r.status=2;emit ChallengeChanged(id,r.player,r.agent,2);return(id,r,family.grantOf(r.player));

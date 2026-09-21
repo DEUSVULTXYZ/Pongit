@@ -5,9 +5,10 @@ import {agentChallengesAbi as challengeAbi} from '../../../shared/abi-AgentChall
 import {abi as familyAbi} from '../../../shared/abi-independent-ArcadeFamily';
 import {agentTournamentsAbi as bookAbi} from '../../../shared/abi-AgentTournaments';
 import {agentArenaPoolAbi as poolAbi} from '../../../shared/abi-AgentArenaPool';
+import {houseInstanceAbi} from '../../../shared/agent-house-instances';
 
 export type PoolRead=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<T>;
-type Common={catalog:Address;qualifications:Address;challenges:Address;family:Address;tournaments:Address;pool:Address};
+type Common={catalog:Address;qualifications:Address;challenges:Address;family:Address;tournaments:Address;pool:Address;houseInstances?:'official-v1'};
 
 /** Capture clears the active lane. Recover its tournament work from the durable
  * pool record before the slower historical scan, including after a restart. */
@@ -43,7 +44,8 @@ export async function qualificationWork(read:PoolRead,m:Common,cursor:bigint,now
    for(let j=0;j<8;j++){
     const opponent=await read<Address>(m.catalog,catalogAbi,'house',[(j+2)%8]);
     if(opponent!==zeroAddress&&opponent.toLowerCase()!==agent.toLowerCase()
-     &&await read<boolean>(m.catalog,catalogAbi,'qualificationEligible',[opponent,mode]))return{needed:true,next:at};
+     &&await (m.houseInstances?read<boolean>(m.qualifications,houseInstanceAbi,'opponentEligible',[opponent,mode])
+      :read<boolean>(m.catalog,catalogAbi,'qualificationEligible',[opponent,mode])))return{needed:true,next:at};
    }
   }
  }

@@ -23,6 +23,7 @@ contract AgentQualifications {
     function takeNextKnown(uint256 baseBlock) external onlyPool returns(address a,address b,uint8 mode){
         return _takeNext(baseBlock);
     }
+    function _opponentEligible(address agent,uint8 mode) internal view virtual returns(bool){return catalog.qualificationEligible(agent,mode);}
     function _takeNext(uint256 baseBlock) private returns(address a,address b,uint8 mode){
         uint256 n=catalog.count()*2;if(n==0)return(a,b,mode);
         for(uint256 i;i<32&&i<n;i++){
@@ -31,7 +32,7 @@ contract AgentQualifications {
             if(catalog.identity(a).house==0&&catalog.registeredBlock(a)>baseBlock)continue;
             for(uint8 j;j<8;j++){
                 b=catalog.house((j+2)%8);
-                if(b!=a&&catalog.qualificationEligible(b,mode))return(a,b,mode);
+                if(b!=a&&_opponentEligible(b,mode))return(a,b,mode);
             }
         }
         return(address(0),address(0),0);

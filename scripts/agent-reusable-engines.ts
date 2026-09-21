@@ -2,7 +2,7 @@
 // a terminal result is archived before another logical match can reuse its slot.
 import assert from 'node:assert/strict';
 import {Pool} from 'pg';
-import {createPublicClient,http,keccak256,zeroHash,type Address,type PublicClient} from 'viem';
+import {createPublicClient,http,keccak256,zeroHash,type Address,type PublicClient,type Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {reusableAgentArenaAbi as abi} from '../shared/abi-ReusableAgentArena';
@@ -25,9 +25,11 @@ import {AgentPoolReader} from '../relayer/src/agents/pool-read';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {BackgroundObservation} from '../shared/background-observation';
+import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 
-const {record:r,protectedApps}=await loadReusableRuntime('engines'),m=r.common;
+const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances};
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
+await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>base.readContract({address,abi,functionName,args}) as Promise<T>,m);
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:8}),metrics=await agentMetrics('/diagnostics/reusable','controllers');
 await initializePoolOperations(db);await initializePoolObservations(db);await initializePoolReplays(db);await initializeReusableResultArchive(db);
 const archive=createReusableResultArchive(db),bridge=privateKeyToAccount(r.admissionKey);

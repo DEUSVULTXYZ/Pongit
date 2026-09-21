@@ -13,6 +13,7 @@ import {agentChallengesAbi as challengeAbi} from '../../../shared/abi-AgentChall
 import type {PoolChallengeView} from '../../../shared/agent-pool';
 import {pooledHouseBots,tournamentStatuses,validateAgentPoolManifest,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../../../shared/agent-pool';
 import type {AgentMatchRef} from '../../../shared/agents';
+import {houseInstanceAbi,verifyHouseInstanceAuthorities} from '../../../shared/agent-house-instances';
 
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 const refView=(r:Ref):AgentMatchRef=>({chainId:10143,app:r.arena,epoch:String(r.epoch),id:String(r.id)});
@@ -46,6 +47,7 @@ export class AgentPoolReader {
  async config(){
   const m=this.manifest;
   return this.snapshot(async read=>{
+   await verifyHouseInstanceAuthorities(read,m);
    const [admissions,publicAdmissions,evidence,tournamentsOpen,arenas]=await Promise.all([
     read<boolean>(m.pool,this.poolAbi,'admissions'),read<boolean>(m.pool,this.poolAbi,'publicAdmissions'),
     read<string>(m.pool,this.poolAbi,'capacityEvidence'),read<boolean>(m.tournaments,tournamentAbi,'admissions'),
@@ -72,10 +74,12 @@ export class AgentPoolReader {
     ]);
     const official=p.house>0&&p.house<=8&&String(await read(m.catalog,catalogAbi,'house',[p.house-1])).toLowerCase()===agent.toLowerCase();
     const bot=official?pooledHouseBots[p.house-1]:null;
+    const instances=m.houseInstances&&official?await Promise.all([0,1].map(mode=>read<boolean>(m.challenges,houseInstanceAbi,'houseInstanceEligible',[agent,mode]))):[false,false];
     return {agent,creator:p.creator,controllerHash:p.codeHash,metadata:p.metadata,kind:official?'pongit':'strategy',official,
      name:bot?.name??`${agent.slice(0,6)}…${agent.slice(-4)}`,avatar:bot?.avatar??9,difficulty:bot?.difficulty??'Community strategy',
      modes:[0,1].filter(mode=>(p.modes&(1<<mode))!==0),qualification:{0:(p.qualified&1)!==0,1:(p.qualified&2)!==0},
-     available:p.available,participation,playing,waiting:participation!==zeroHash,lastTournament:String(p.lastTournament)};
+     available:p.available,participation,playing,waiting:participation!==zeroHash&&!instances.some(Boolean),
+     friendlyInstances:{0:instances[0],1:instances[1]},lastTournament:String(p.lastTournament)};
    }));
    return {items,total:String(total),offset:String(offset),next:offset+BigInt(size)<total?String(offset+BigInt(size)):null};
   });
@@ -182,11 +186,15 @@ export class AgentPoolReader {
    }
    let waitReason:PoolChallengeView['waitReason'],tournamentId:string|undefined;
    if(status===1&&m.version===4){
+    const independent=m.houseInstances&&await read<boolean>(m.challenges,houseInstanceAbi,'houseInstanceEligible',[agent,mode]);
+    if(independent)waitReason='arena';
+    else{
     const [identity,participation,playing]=await Promise.all([read(m.catalog,catalogAbi,'identity',[agent]),
      read<string>(m.catalog,catalogAbi,'participation',[agent]),read<string>(m.pool,this.poolAbi,'playing',[agent])]);
     waitReason=playing!==zeroHash?'match':'arena';
     if(identity.lastTournament>0n&&participation===await read<string>(m.tournaments,tournamentAbi,'token',[identity.lastTournament])){
      waitReason='tournament';tournamentId=String(identity.lastTournament);
+    }
     }
    }
    return{request:{id:String(id),player:owner,agent,mode,status,at:String(at),ref,...(waitReason?{waitReason,tournamentId}:{})}};

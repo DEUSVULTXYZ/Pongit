@@ -7,19 +7,28 @@ import {chainTools} from './independent-chain-tools';
 import {retryOperatorContention} from '../shared/operator-contention';
 import {agentMetadata} from '../shared/agents';
 import {pooledHouseBots} from '../shared/agent-pool';
+import {houseInstanceAbi} from '../shared/agent-house-instances';
 
 assert.equal(process.env.PONG_REUSABLE_AGENT_DEPLOY,'authorized-private-testnet');
 assert.equal(process.getuid?.(),1000);
 const prefix=process.env.PONG_REUSABLE_AGENT_PREFIX!;assert(/^reusable-agents-\d{8}(?:-[1-9]\d?)?$/.test(prefix));
 const file='/secrets/deployment.json',hub='0x3Ef8327F69e09cf721772F345e2A887eA22cD595' as Address,arenaCount=3;
+// Private qualification only. This script creates a fresh season; a public
+// replacement requires a separate verified identity/rating migration.
+const houseInstances=process.env.PONG_REUSABLE_HOUSE_INSTANCES;
+assert(houseInstances===undefined||houseInstances==='official-v1','Unknown house instance capability');
+const poolName=houseInstances?'ReusableAgentInstancesPool':'ReusableAgentPool';
+const challengeName=houseInstances?'HouseInstanceChallenges':'AgentChallenges';
+const qualificationName=houseInstances?'HouseInstanceQualifications':'AgentQualifications';
 const humans=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').filter(Boolean);assert(humans.length>0);
 let r:any;try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 const t=await chainTools(prefix);
 try{
  await t.preflight(['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
-  'HousePolicies','AgentCatalog','ReusableAgentPool','PublishedResultVerifier','AgentTournaments','AgentPublishedRatings','AgentQualifications','ArcadeFamily','AgentChallenges','ReusableAgentArena']);
- if(!r){r={prefix,rulesVersion:15,countdownClock:"engine-ticks-v1",arenaCount,genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
+  'HousePolicies','AgentCatalog',poolName,'PublishedResultVerifier','AgentTournaments','AgentPublishedRatings',qualificationName,'ArcadeFamily',challengeName,'ReusableAgentArena']);
+ if(!r){r={prefix,rulesVersion:15,countdownClock:"engine-ticks-v1",houseInstances,arenaCount,genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
+ assert.equal(r.houseInstances,houseInstances,'House instances need a new deployment namespace');
  assert.equal(r.countdownClock,"engine-ticks-v1","New countdown needs a new deployment prefix");assert.equal(r.prefix,prefix);assert.equal(r.rulesVersion,15);assert.equal(r.arenaCount,arenaCount);
  const bridge=privateKeyToAccount(r.admissionKey).address;
  const deploy=async(name:string,args:readonly unknown[]=[],instance=name)=>{const a=await retryOperatorContention(()=>t.deploy(name,args,instance));r.modules??={};r.modules[instance]=a;await save();return a;};
@@ -28,13 +37,14 @@ try{
  const dynamics=await deploy('ChaosDynamics',[effects,modifiers]),contacts=await deploy('ChaosContacts',[dynamics]),rally=await deploy('ChaosRally');
  const physics=await deploy('ChaosPhysics',[effects,rally,dynamics,contacts]),beacon=await deploy('DrandEvmnet'),draws=await deploy('ChaosDrawRules');
  const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]),policies=await deploy('HousePolicies');
+ if(houseInstances)await deploy('HouseInstances');
  const catalog=await deploy('AgentCatalog',[t.account.address,t.account.address,policies]);
- const pool=await deploy('ReusableAgentPool',[catalog,hub,t.account.address,bridge]);
+ const pool=await deploy(poolName,[catalog,hub,t.account.address,bridge]);
  const verifier=await deploy('PublishedResultVerifier',[pool,hub]);
  const tournaments=await deploy('AgentTournaments',[catalog,pool,t.account.address]);
  const ratings=await deploy('AgentPublishedRatings',[pool,t.account.address,BigInt(r.genesis)]);
- const qualifications=await deploy('AgentQualifications',[catalog,pool]),family=await deploy('ArcadeFamily');
- const challenges=await deploy('AgentChallenges',[family,catalog,pool,t.account.address]);
+ const qualifications=await deploy(qualificationName,[catalog,pool]),family=await deploy('ArcadeFamily');
+ const challenges=await deploy(challengeName,[family,catalog,pool,t.account.address]);
  await write('configure-catalog','AgentCatalog',catalog,'configure',[tournaments,pool]);
  await write('bind-qualifications','ReusableAgentPool',pool,'bindQualifications',[qualifications]);
  await write('bind-challenges','ReusableAgentPool',pool,'bindChallenges',[challenges]);
@@ -56,10 +66,14 @@ try{
  await write('seal-pool','ReusableAgentPool',pool,'seal');const poolAbi=(await t.artifact('ReusableAgentPool')).abi;
  assert.equal(await t.base.readContract({address:pool,abi:poolAbi,functionName:'admissions'}),false);
  assert.equal(await t.base.readContract({address:pool,abi:poolAbi,functionName:'publicAdmissions'}),false);
+ if(houseInstances){
+  assert.equal(await t.base.readContract({address:pool,abi:houseInstanceAbi,functionName:'AUTHORITY_VERSION'}),2n);
+  for(const address of [pool,challenges,qualifications])assert.equal(await t.base.readContract({address,abi:houseInstanceAbi,functionName:'supportsHouseInstances'}),true);
+ }
  r.common={hub,pool,catalog,tournaments,ratings,qualifications,family,challenges,verifier};r.phase='deployed-closed';await save();
- const job=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',[prefix+':deploy-reusableagentpool'])).rows[0];assert.equal(job.status,'confirmed');
+ const job=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',[prefix+':deploy-'+poolName.toLowerCase()])).rows[0];assert.equal(job.status,'confirmed');
  const receipt=await t.base.getTransactionReceipt({hash:job.hash});assert.equal(receipt.status,'success');
- const evidence={at:new Date().toISOString(),prefix,rulesVersion:15,common:r.common,admissionSigner:bridge,arenas:r.arenas,bots:r.bots,modules:{...t.deployed,...r.modules},
+ const evidence={at:new Date().toISOString(),prefix,rulesVersion:15,houseInstances,common:r.common,admissionSigner:bridge,arenas:r.arenas,bots:r.bots,modules:{...t.deployed,...r.modules},
   indexBinding:{chainId:10143,rulesVersion:15,pool,startBlock:String(receipt.blockNumber),arenas:r.arenas.map((a:any)=>a.app)},
   delegationOpened:false,publiclyEnabled:false,qualified:false,
   transactions:(await t.db.query('SELECT id,hash,status FROM il_lifecycle_jobs WHERE id LIKE $1 ORDER BY nonce',[prefix+':%'])).rows};

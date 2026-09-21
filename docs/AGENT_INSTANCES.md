@@ -1,6 +1,6 @@
 # House bot archetypes and independent matches
 
-Status on 21 September 2026: design for the requested correction, not deployed.
+Status on 21 September 2026, 15:23 UTC: implemented candidate, not deployed.
 The current immutable pool still reserves an official bot identity throughout a
 tournament. The user clarified that a bot should be a reusable archetype able to
 play people and other bots concurrently.
@@ -43,3 +43,42 @@ house bot, results in both orders, repeated capture, missing publication,
 cancellation, renewed arenas, unchanged competitive locks and ELO, community
 exclusivity and actual human controls. Public deployment requires real hosted
 admission and publication, not only a unit-test harness.
+
+## Candidate authority version 2
+
+`ReusableAgentInstancesPool` opts into `HouseInstanceChallenges` and
+`HouseInstanceQualifications`. The original classes retain exclusive identities.
+An immutable linked `HouseInstances` helper validates catalogue membership,
+creator, qualified mode and the pinned official controller hash. A friendly
+instance has zero initial learning memory and no competitive `playing` pointer.
+Its persisted per-match mask prevents capture or cancellation from releasing
+another match's catalogue reservation, even if qualification changes meanwhile.
+Community identities retain their existing reservation checks.
+
+The optional manifest capability is `houseInstances: "official-v1"`.
+Readers and runtime check the versioned pool and both queues; old manifests do
+not gain the capability by changing a display label. Qualification maintenance
+reads the same opponent eligibility view used by the new contract. Catalogue
+responses retain competitive participation and separately expose per-mode
+friendly instance eligibility. Friendly waiting then refers to arena capacity.
+
+Local validation on 21 September: root TypeScript passed, 646 TypeScript tests
+passed and 89 relevant Solidity tests passed, including 17 candidate-pool cases.
+Coverage includes both capture orders, repeated capture, unpublished results,
+unadmitted cancellation, renewal, catalogue/controller spoofing, community
+exclusivity and the two-lane limit. These authority tests use a terminal-state
+harness; they are not hosted match or browser qualification. Physics is unchanged.
+
+The first inline-helper build failed the existing runtime budget at 33,687 bytes.
+Moving the stateless predicate into a linked helper reduced the candidate pool
+to 32,603 bytes, below its unchanged 32,768-byte Monad allowance. The helper is
+1,237 bytes; the unchanged agent arena is 24,516 bytes. The full deployment graph
+passes runtime, creation and link-reference checks. Preserve the failed report.
+
+`deploy-reusable-agents.ts` can prepare a closed private candidate with
+`PONG_REUSABLE_HOUSE_INSTANCES=official-v1` and a fresh namespace. It opens no
+delegations and creates a fresh private season. **It is not a production
+migration script.** Public replacement must preserve verified ratings, official
+identities, registrations, pending requests and historical routes; the current
+tournament must finish before retirement. Actual concurrent hosted admission,
+publication and human controls are still required.

@@ -33,3 +33,12 @@ test('preview runtime requires the exact explicit evidence and still rejects ser
  assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,toHex(999,{size:32})));
  assert.throws(()=>validateReusableRecord({...f.record,admissionKey:'private'},f.humans,f.manifest,f.evidence));
 });
+
+test('house instances require exact release metadata and their pinned helper library',()=>{
+ const f=fixture();f.record.houseInstances='official-v1';f.record.modules.HouseInstances=address(14);
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,f.evidence),/capability mismatch/);
+ f.manifest.houseInstances='official-v1';validateReusableRecord(f.record,f.humans,f.manifest,f.evidence);
+ delete f.record.modules.HouseInstances;assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,f.evidence),/Pinned instance/);
+ f.record.modules.HouseInstances=address(14);f.record.houseInstances='community';
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,f.evidence));
+});

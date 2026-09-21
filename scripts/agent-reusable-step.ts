@@ -21,8 +21,9 @@ import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {overdueAgentPublication} from '../relayer/src/agents/reusable-recovery';
+import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
-const {record:r,prefix,stateFile:file}=await loadReusableRuntime('keeper'),m=r.common;
+const {record:r,prefix,stateFile:file}=await loadReusableRuntime('keeper'),m={...r.common,houseInstances:r.houseInstances};
 const metrics=await agentMetrics('/diagnostics/reusable','lifecycle'),t=await chainTools(prefix+'-maintenance',measuredFetch('monad'));
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3});await initializeReusableResultArchive(db);
 const archive=createReusableResultArchive(db),guard=await t.db.connect();let locked=false;
@@ -47,6 +48,7 @@ async function step(){
  if(state.intent){const i=state.intent;await act(i.to,i.method,i.args,i.value);return;}
  const block=await t.base.getBlock({includeTransactions:false});
  const read=<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>t.base.readContract({address,abi,functionName,args,blockNumber:block.number}) as Promise<T>;
+ await verifyHouseInstanceAuthorities(read,m);
  assert.equal((await read<Address>(m.pool,poolAbi,'verifier')).toLowerCase(),m.verifier.toLowerCase());
  let budget:ReusablePublicationBudget|undefined;
  try{budget=validateReusableBudget(JSON.parse(await readFile('/metadata/reusable-budget.json','utf8')),r.arenas.map((a:any)=>a.runtimeHash));}

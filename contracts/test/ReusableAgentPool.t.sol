@@ -43,16 +43,19 @@ contract ReusableAgentPoolTest is Test {
     AgentPublishedRatings ratings;AgentChallenges queue;ArcadeFamily family;HousePolicies policies;ChaosEngine kernel;
     PublishedResultVerifier verifier;ReusableAgentPoolHarness[3] arenas;
     uint256 constant PLAYER=123;uint256 constant KEY=456;uint256 constant BRIDGE=812;
-    function setUp() public {
+    function makePool() internal virtual returns(ReusableAgentPool){return new ReusableAgentPool(catalog,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE));}
+    function makeChallenges() internal virtual returns(AgentChallenges){return new AgentChallenges(family,catalog,address(pool),address(this));}
+    function makeQualifications() internal virtual returns(AgentQualifications){return new AgentQualifications(catalog,address(pool));}
+    function setUp() public virtual {
         vm.chainId(10143);vm.warp(1_800_000_000);vm.roll(100);vm.setBlockhash(99,keccak256("Monad source"));
         hub=new IndependentHubFixture();policies=new HousePolicies();family=new ArcadeFamily();
         catalog=new AgentCatalog(address(this),address(this),address(policies));
-        pool=new ReusableAgentPool(catalog,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE));
+        pool=makePool();
         verifier=new PublishedResultVerifier(IReusableAdmissionAuthority(address(pool)),IInterludeHub(address(hub)));pool.bindVerifier(verifier);
         book=new AgentTournaments(catalog,ICompetitionAuthority(address(pool)),address(this));
         ratings=new AgentPublishedRatings(address(pool),address(this),vm.getBlockTimestamp());ratings.sealMigration(keccak256("empty fixture"));pool.configure(book,ratings);
-        queue=new AgentChallenges(family,catalog,address(pool),address(this));pool.bindChallenges(queue);catalog.configure(address(book),address(pool));
-        pool.bindQualifications(new AgentQualifications(catalog,address(pool)));
+        queue=makeChallenges();pool.bindChallenges(queue);catalog.configure(address(book),address(pool));
+        pool.bindQualifications(makeQualifications());
         ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,new ChaosModifiers());
         ChaosPhysics physics=new ChaosPhysics(effects,new ChaosRally(),dynamics,new ChaosContacts(dynamics));
         kernel=new ChaosEngine(new ChaosCodec(),physics,new DrandEvmnet(),new ChaosDrawRules());

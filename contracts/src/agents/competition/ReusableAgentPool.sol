@@ -54,6 +54,9 @@ contract ReusableAgentPool is ICompetitionAuthority {
     mapping(bytes32=>T.Result) private captured;
     mapping(bytes32=>uint256) public challengeOf;
     mapping(bytes32=>bool) public qualificationOf;
+    // Friendly/qualification instances never own their archetype's competitive
+    // lock. Persist the decision for capture, even if qualification later changes.
+    mapping(bytes32=>uint8) public houseInstancesOf;
     mapping(bytes32=>uint256[2]) private resultBrains;
     bytes32[2] public laneMatch;
     event ArenaRegistered(address indexed arena,bytes32 runtimeHash);
@@ -97,7 +100,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
             ||address(queue.catalog())!=address(catalog))revert InvalidQualificationQueue();
         qualifications=queue;catalog.bindQualifications(address(queue));
     }
-    function seal() external base {
+    function seal() public virtual base {
         require(msg.sender==owner&&!setupSealed&&arenas.length>=3&&address(verifier)!=address(0)&&address(tournaments)!=address(0)&&address(challenges)!=address(0)
             &&ratings.migrationSealed()&&catalog.setupSealed(),"setup incomplete");
         setupSealed=true;
@@ -138,6 +141,9 @@ contract ReusableAgentPool is ICompetitionAuthority {
     function _known(address agent,uint256 baseBlock) private view returns(bool){
         return catalog.identity(agent).house!=0||catalog.registeredBlock(agent)<=baseBlock;
     }
+    /// Legacy deployments retain exclusive identities. Only the versioned
+    /// replacement opts official house controllers into independent instances.
+    function _independentHouse(address,uint8,bool) internal view virtual returns(bool){return false;}
     function _controller(address agent,uint64 tournament,bytes32 frozen) private view returns(A.Controller memory c){
         return PoolPublication.controller(catalog,agent,tournament,frozen,learned(tournament,agent));
     }
@@ -186,14 +192,16 @@ contract ReusableAgentPool is ICompetitionAuthority {
         if(address(chosen)==address(0))return ref;
         (uint256 id,AgentChallenges.Request memory request,ArcadeFamily.Grant memory grant)=challenges.takeNextKnown(hub.sessionOf(address(chosen),Types.GLOBAL).baseBlock);
         if(id==0)return ref;
-        require(playing[request.player]==0&&playing[request.agent]==0,"previous match still playing");
+        bool independent=_independentHouse(request.agent,request.mode,false);
+        require(playing[request.player]==0&&(independent||playing[request.agent]==0),"previous match still playing");
         ref=T.Ref(10143,address(chosen),arenaEpoch[address(chosen)],++nonce);bytes32 key=T.key(ref);
-        catalog.reserve(request.agent,request.mode,key);
+        if(!independent)catalog.reserve(request.agent,request.mode,key);
         AgentCatalog.Identity memory bot=catalog.identity(request.agent);
         A.Binding memory binding=A.Binding(ref.id,ref.epoch,uint64(block.number),0,request.player,request.agent,request.mode,false,false,
             A.Controller(0,0,0,grant.key,grant.expires),_controller(request.agent,0,bot.codeHash));
         _prepare(chosen,binding);records[key]=Record(ref,request.player,request.agent,0,0,1,false,false);arenaMatch[address(chosen)]=key;
-        playing[request.player]=key;playing[request.agent]=key;laneMatch[1]=key;challengeOf[key]=id;
+        playing[request.player]=key;if(independent)houseInstancesOf[key]=2;else playing[request.agent]=key;
+        laneMatch[1]=key;challengeOf[key]=id;
         emit Assigned(key,address(chosen),0,0,1);
     }
     function admitQualification() external base locked returns(T.Ref memory ref){
@@ -202,13 +210,16 @@ contract ReusableAgentPool is ICompetitionAuthority {
         ReusableAgentArena chosen=_newestIdle();
         if(address(chosen)==address(0))return ref;
         (address a,address b,uint8 mode)=qualifications.takeNextKnown(hub.sessionOf(address(chosen),Types.GLOBAL).baseBlock);if(a==address(0))return ref;
-        require(playing[a]==0&&playing[b]==0,"previous match still playing");
+        bool independentA=_independentHouse(a,mode,true);bool independentB=_independentHouse(b,mode,true);
+        require((independentA||playing[a]==0)&&(independentB||playing[b]==0),"previous match still playing");
         ref=T.Ref(10143,address(chosen),arenaEpoch[address(chosen)],++nonce);bytes32 key=T.key(ref);
-        catalog.reserveQualification(a,mode,key);catalog.reserveQualification(b,mode,key);
+        if(!independentA)catalog.reserveQualification(a,mode,key);if(!independentB)catalog.reserveQualification(b,mode,key);
         A.Binding memory binding=A.Binding(ref.id,ref.epoch,uint64(block.number),0,a,b,mode,false,false,
             _controller(a,0,catalog.identity(a).codeHash),_controller(b,0,catalog.identity(b).codeHash));
         _prepare(chosen,binding);records[key]=Record(ref,a,b,0,0,1,false,false);arenaMatch[address(chosen)]=key;
-        playing[a]=key;playing[b]=key;laneMatch[1]=key;qualificationOf[key]=true;qualifications.bind(ref,a,b,mode);
+        if(independentA)houseInstancesOf[key]|=1;else playing[a]=key;
+        if(independentB)houseInstancesOf[key]|=2;else playing[b]=key;
+        laneMatch[1]=key;qualificationOf[key]=true;qualifications.bind(ref,a,b,mode);
         emit Assigned(key,address(chosen),0,0,1);
     }
     function openReusableArena(address app) external payable base locked {
@@ -233,8 +244,10 @@ contract ReusableAgentPool is ICompetitionAuthority {
             PoolPublication.ledger(ratings,r,record_.ranked,false);record_.captured=true;
             if(playing[r.a]==key)delete playing[r.a];if(playing[r.b]==key)delete playing[r.b];
             if(laneMatch[record_.lane]==key)delete laneMatch[record_.lane];
-            if(challengeOf[key]!=0){catalog.release(r.b,key);challenges.completed(challengeOf[key]);}
-            else if(qualificationOf[key]){catalog.release(r.a,key);catalog.release(r.b,key);}
+            if(challengeOf[key]!=0){if(houseInstancesOf[key]&2==0)catalog.release(r.b,key);challenges.completed(challengeOf[key]);}
+            else if(qualificationOf[key]){
+                if(houseInstancesOf[key]&1==0)catalog.release(r.a,key);if(houseInstancesOf[key]&2==0)catalog.release(r.b,key);
+            }
         }else PoolPublication.ledger(ratings,r,record_.ranked,true);
         if(qualificationOf[key])qualifications.complete(r,brainA,brainB);
         captured[key]=r;resultBrains[key]=[brainA,brainB];
