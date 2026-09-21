@@ -1,0 +1,250 @@
+{
+  "startedAt": "2026-09-21T07:53:36.172Z",
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "rules": 14,
+  "checks": [
+    "Delivered CSP includes every human arena",
+    "Three Mera accounts and root-signed unique profiles saved",
+    "Three members in a real Chaos room, dual consent and automatic spectator",
+    "Real three-second countdown on both players and spectator",
+    "Root-signed test MON bet accepted during a live Chaos rally",
+    "F5 and direction input without a root passkey ceremony",
+    {
+      "finalScore": "5 : 7"
+    }
+  ],
+  "viewports": [
+    {
+      "size": {
+        "width": 360,
+        "height": 640
+      },
+      "rects": [
+        {
+          "x": 12,
+          "y": 249.78125,
+          "w": 336,
+          "h": 98,
+          "bottom": 347.78125
+        },
+        {
+          "x": 12,
+          "y": 359.78125,
+          "w": 336,
+          "h": 98,
+          "bottom": 457.78125
+        },
+        {
+          "x": 12,
+          "y": 469.78125,
+          "w": 336,
+          "h": 98,
+          "bottom": 567.78125
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 390,
+        "height": 844
+      },
+      "rects": [
+        {
+          "x": 12,
+          "y": 254.4375,
+          "w": 366,
+          "h": 98,
+          "bottom": 352.4375
+        },
+        {
+          "x": 12,
+          "y": 364.4375,
+          "w": 366,
+          "h": 98,
+          "bottom": 462.4375
+        },
+        {
+          "x": 12,
+          "y": 474.4375,
+          "w": 366,
+          "h": 98,
+          "bottom": 572.4375
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 768,
+        "height": 1024
+      },
+      "rects": [
+        {
+          "x": 24,
+          "y": 260.375,
+          "w": 225.328125,
+          "h": 390,
+          "bottom": 650.375
+        },
+        {
+          "x": 271.328125,
+          "y": 260.375,
+          "w": 225.328125,
+          "h": 390,
+          "bottom": 650.375
+        },
+        {
+          "x": 518.65625,
+          "y": 260.375,
+          "w": 225.328125,
+          "h": 390,
+          "bottom": 650.375
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 1440,
+        "height": 1000
+      },
+      "rects": [
+        {
+          "x": 180,
+          "y": 296.78125,
+          "w": 345.328125,
+          "h": 390,
+          "bottom": 686.78125
+        },
+        {
+          "x": 547.328125,
+          "y": 296.78125,
+          "w": 345.328125,
+          "h": 390,
+          "bottom": 686.78125
+        },
+        {
+          "x": 914.65625,
+          "y": 296.78125,
+          "w": 345.34375,
+          "h": 390,
+          "bottom": 686.78125
+        }
+      ]
+    },
+    {
+      "size": {
+        "width": 844,
+        "height": 390
+      },
+      "rects": [
+        {
+          "x": 24,
+          "y": 169.28125,
+          "w": 257.328125,
+          "h": 156,
+          "bottom": 325.28125
+        },
+        {
+          "x": 293.328125,
+          "y": 169.28125,
+          "w": 257.328125,
+          "h": 156,
+          "bottom": 325.28125
+        },
+        {
+          "x": 562.65625,
+          "y": 169.28125,
+          "w": 257.34375,
+          "h": 156,
+          "bottom": 325.28125
+        }
+      ]
+    }
+  ],
+  "countdown": [
+    [
+      "3",
+      "2",
+      "1"
+    ],
+    [
+      "3",
+      "2",
+      "1"
+    ],
+    [
+      "3",
+      "2",
+      "1"
+    ]
+  ],
+  "authenticator": "Chromium virtual PRF, real Mera SDK; no physical-device recovery claim",
+  "passed": true,
+  "finishedAt": "2026-09-21T07:57:11.686Z",
+  "passkeyAssertions": [
+    1,
+    1,
+    3,
+    0
+  ],
+  "acceptedInputs": [
+    126,
+    124,
+    0
+  ],
+  "network": {
+    "2:eth_call": {
+      "requests": 28,
+      "bytes": 5629,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    },
+    "1:eth_call": {
+      "requests": 21,
+      "bytes": 3966,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    },
+    "1:interlude_session": {
+      "requests": 4,
+      "bytes": 264,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    },
+    "0:eth_call": {
+      "requests": 18,
+      "bytes": 3313,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    },
+    "0:interlude_session": {
+      "requests": 5,
+      "bytes": 334,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    },
+    "1:eth_getTransactionCount": {
+      "requests": 2,
+      "bytes": 251,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    },
+    "1:interlude_sendTransaction": {
+      "requests": 138,
+      "bytes": 82917,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    },
+    "0:eth_getTransactionCount": {
+      "requests": 2,
+      "bytes": 251,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    },
+    "0:interlude_sendTransaction": {
+      "requests": 130,
+      "bytes": 79623,
+      "httpErrors": 0,
+      "rpcErrors": 0
+    }
+  }
+}
