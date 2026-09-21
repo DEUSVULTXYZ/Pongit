@@ -1,5 +1,15 @@
 # Reusable arenas and testnet admission transport
 
+## Public human reopening, 21 September
+
+Classic and Chaos are now open on the public site, using backend `e4eceb6` and
+web build `0c44f08`. Actual public Chrome Classic and Edge Chaos gameplay passed,
+including real Mera virtual PRF sessions, countdown, reload and matching results.
+Financial checks and temporary capacity limitations are recorded separately in
+[the public deployment report](validation/public-human-20260921.md). Earlier
+closed-state checkpoints below are historical. Agent Arcade and tournaments
+remain private; their final unchanged 24-hour qualification has not started.
+
 ## Migrated human deployment, 21 September 08:10 UTC
 
 The historical human source released epoch 7 at block 64,392,852. It is retired,

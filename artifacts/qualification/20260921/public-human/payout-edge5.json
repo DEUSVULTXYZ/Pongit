@@ -1,0 +1,22 @@
+{
+  "checkedAt": "2026-09-21T11:07:04.376Z",
+  "passed": true,
+  "chainId": 10143,
+  "market": "0xdB5b91128d0b2b3795CF62D2B2E980cFa2C276e4",
+  "hash": "0x0288e66e88df2bdf8da9dbeeb27275499e9d2155662590c100cc8612d99b2c7d",
+  "block": "64431716",
+  "blockHash": "0xb42f3ac84323b6d4a1907acb753258ac68f51de8d7792f00979bb3510182efcd",
+  "gasUsed": "540680",
+  "events": [
+    {
+      "eventName": "PayoutPaid",
+      "args": {
+        "payoutId": "0x8848156ca54e3ca97c0d657a145b3ffbce5f01c3e44753bda62b370230119578",
+        "recipient": "0x60C5d93aA1a688561bc3EbC7309c86De07De2C81",
+        "amount": "6000000000000000"
+      }
+    }
+  ],
+  "beneficiaryDisconnected": true,
+  "scope": "Canonical Monad automatic payout, separate from the browser verdict"
+}

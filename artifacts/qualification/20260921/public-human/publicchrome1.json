@@ -1,0 +1,54 @@
+{
+  "startedAt": "2026-09-21T10:21:59.525Z",
+  "finishedAt": "2026-09-21T10:24:47.405Z",
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "rules": 14,
+  "target": "Public HTTPS web and API, actual hosted game",
+  "authenticator": "Chromium virtual PRF, real Mera SDK; no physical-device recovery claim",
+  "passed": true,
+  "checks": [
+    "Delivered CSP includes every human arena",
+    "Three Mera accounts and root-signed unique profiles saved",
+    "Contract matchmaking, two consents and automatic hosted admission",
+    "Real three-second countdown on both players and spectator",
+    "F5 and direction input without a root passkey ceremony",
+    {
+      "finalScore": "7 : 6"
+    }
+  ],
+  "countdown": [
+    [
+      "3",
+      "2",
+      "1"
+    ],
+    [
+      "3",
+      "2",
+      "1"
+    ],
+    [
+      "3",
+      "2",
+      "1"
+    ]
+  ],
+  "passkeyAssertions": [
+    1,
+    1,
+    1,
+    0
+  ],
+  "sourceReportSha256": "301e752995193a72ea9010b193a6ab9e38f425a28d1cf94563465f65078ec817",
+  "acceptedInputs": [
+    153,
+    154,
+    0
+  ],
+  "observedRpcResponses": {
+    "eth_call": 67,
+    "interlude_session": 10,
+    "eth_getTransactionCount": 4,
+    "interlude_sendTransaction": 325
+  }
+}

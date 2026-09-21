@@ -1,0 +1,44 @@
+{
+  "startedAt": "2026-09-21T10:25:46.588Z",
+  "finishedAt": "2026-09-21T10:27:17.007Z",
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "rules": 14,
+  "target": "Public HTTPS web and API, actual hosted game",
+  "authenticator": "Chromium virtual PRF, real Mera SDK; no physical-device recovery claim",
+  "passed": false,
+  "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('button', { name: 'Accept', exact: true })\n",
+  "checks": [
+    "Delivered CSP includes every human arena",
+    "Three Mera accounts and root-signed unique profiles saved",
+    {
+      "page": 0,
+      "visible": "PONGIT\nSound off \u266b\nDocs \u2197\nRanking\nMore\nqab3nvl60\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nBring a rival\nqab3nvl60\nqab3o3ty1\nqab3od8e2\nInvite someone\nBack\nMusic by Karl Casey @ White Bat Audio \u00b7 Last Stop\nPowered by InterludeLayer\nPrevious arenas"
+    },
+    {
+      "page": 1,
+      "visible": "PONGIT\nSound off \u266b\nDocs \u2197\nRanking\nMore\nqab3o3ty1\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nBring a rival\nqab3nvl60\nqab3o3ty1\nqab3od8e2\nInvite someone\nBack\nMusic by Karl Casey @ White Bat Audio \u00b7 Last Stop\nPowered by InterludeLayer\nPrevious arenas"
+    },
+    {
+      "page": 2,
+      "visible": "PONGIT\nSound off \u266b\nDocs \u2197\nRanking\nMore\nqab3od8e2\nCHAOS / WINNER STAYS\nCopy room link\nMembers 3\nBetting\nTools\nBring a rival\nqab3nvl60\nqab3o3ty1\nqab3od8e2\nInvite someone\nBack\nMusic by Karl Casey @ White Bat Audio \u00b7 Last Stop\nPowered by InterludeLayer\nPrevious arenas"
+    }
+  ],
+  "countdown": [
+    [],
+    [],
+    []
+  ],
+  "passkeyAssertions": [
+    1,
+    1,
+    1,
+    0
+  ],
+  "sourceReportSha256": "717ff0f688657b03021d7a7af8fe89444c9a40543f1bd0fa453a0b794cf826aa",
+  "acceptedInputs": [
+    0,
+    0,
+    0
+  ],
+  "observedRpcResponses": {}
+}

@@ -1,0 +1,72 @@
+{
+  "startedAt": "2026-09-21T10:45:19.787Z",
+  "finishedAt": "2026-09-21T10:49:02.998Z",
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "rules": 14,
+  "target": "Public HTTPS web and API, actual hosted game",
+  "authenticator": "Chromium virtual PRF, real Mera SDK; no physical-device recovery claim",
+  "passed": true,
+  "checks": [
+    "Delivered CSP includes every human arena",
+    "Three Mera accounts and root-signed unique profiles saved",
+    "Three members in a real Chaos room, dual consent and automatic spectator",
+    "Real three-second countdown on both players and spectator",
+    "Root-signed test MON bet accepted during a live Chaos rally",
+    "F5 and direction input without a root passkey ceremony",
+    {
+      "finalScore": "7 : 6"
+    }
+  ],
+  "countdown": [
+    [
+      "3",
+      "2",
+      "1"
+    ],
+    [
+      "3",
+      "2",
+      "1"
+    ],
+    [
+      "3",
+      "2",
+      "1"
+    ]
+  ],
+  "passkeyAssertions": [
+    1,
+    1,
+    3,
+    0
+  ],
+  "roomConsent": {
+    "joinedAt": "2026-09-21T10:46:27.476Z",
+    "offers": [
+      {
+        "player": 1,
+        "visibleAt": "2026-09-21T10:46:35.449Z"
+      },
+      {
+        "player": 0,
+        "visibleAt": "2026-09-21T10:46:37.463Z"
+      }
+    ]
+  },
+  "sourceReportSha256": "1a9ec95c7398b21a168fc4e31af56c40483f18c77451e823d3ea4d2b973fd674",
+  "acceptedInputs": [
+    163,
+    153,
+    0
+  ],
+  "observedRpcResponses": {
+    "eth_call": 62,
+    "interlude_session": 11,
+    "eth_getTransactionCount": 5,
+    "interlude_sendTransaction": 334
+  },
+  "financialVerification": {
+    "passed": false,
+    "reason": "The original button-state assertion did not prove a purchase. Actual bet reverted after window closed. Gameplay passed; do not use this report as financial evidence."
+  }
+}
