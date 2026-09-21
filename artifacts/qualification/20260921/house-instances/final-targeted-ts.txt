@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: house instance support is explicit and requires the matching pool and both queue contracts
+ok 1 - house instance support is explicit and requires the matching pool and both queue contracts
+  ---
+  duration_ms: 5.1502
+  type: 'test'
+  ...
+# Subtest: independent house waiting status uses contract eligibility while competitive and community references remain intact
+ok 2 - independent house waiting status uses contract eligibility while competitive and community references remain intact
+  ---
+  duration_ms: 2.9409
+  type: 'test'
+  ...
+# Subtest: qualification inspects the same versioned opponent rule as the contract without bypassing candidate or fresh-base checks
+ok 3 - qualification inspects the same versioned opponent rule as the contract without bypassing candidate or fresh-base checks
+  ---
+  duration_ms: 1.5478
+  type: 'test'
+  ...
+# Subtest: hourly publications are diagnosed separately from generic RPC throttling
+ok 4 - hourly publications are diagnosed separately from generic RPC throttling
+  ---
+  duration_ms: 6.0433
+  type: 'test'
+  ...
+# Subtest: only matching explicitly healthy hosted epochs clear publication holds
+ok 5 - only matching explicitly healthy hosted epochs clear publication holds
+  ---
+  duration_ms: 0.3875
+  type: 'test'
+  ...
+# Subtest: tick comparison is explicit and bounded without changing the normal cadence
+ok 6 - tick comparison is explicit and bounded without changing the normal cadence
+  ---
+  duration_ms: 0.1653
+  type: 'test'
+  ...
+# Subtest: preflight rejects an oversized transitive library before a deployer can submit any root
+ok 7 - preflight rejects an oversized transitive library before a deployer can submit any root
+  ---
+  duration_ms: 0.8211
+  type: 'test'
+  ...
+# Subtest: the full library graph is checked once, and missing or cyclic links fail closed
+ok 8 - the full library graph is checked once, and missing or cyclic links fail closed
+  ---
+  duration_ms: 0.3421
+  type: 'test'
+  ...
+# Subtest: runtime exceptions remain explicit and creation/reference bounds cannot be bypassed
+ok 9 - runtime exceptions remain explicit and creation/reference bounds cannot be bypassed
+  ---
+  duration_ms: 0.2295
+  type: 'test'
+  ...
+# Subtest: reusable recovery stays available with public gates closed only on the exact reviewed deployment
+ok 10 - reusable recovery stays available with public gates closed only on the exact reviewed deployment
+  ---
+  duration_ms: 4.7632
+  type: 'test'
+  ...
+# Subtest: preview runtime requires the exact explicit evidence and still rejects service keys in metadata
+ok 11 - preview runtime requires the exact explicit evidence and still rejects service keys in metadata
+  ---
+  duration_ms: 0.646
+  type: 'test'
+  ...
+# Subtest: house instances require exact release metadata and their pinned helper library
+ok 12 - house instances require exact release metadata and their pinned helper library
+  ---
+  duration_ms: 0.7003
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 844.5485

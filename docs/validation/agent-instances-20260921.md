@@ -1,5 +1,24 @@
 # House instances candidate and capacity handoff, 21 September 2026
 
+Update at 16:25 UTC: the owned capacity handoff succeeded. The sole public
+keeper released `1c5…` epoch 2 at 16:10:03, transaction
+`0xa03424969e223b466368671edc07c355d5c89e0c678e4cdd942181878ae24c09`,
+block 64491047. Canonical verification found status None and a finalized root
+containing six results. The retirement policy remains in place.
+
+The private candidate `dde8…` epoch 1 then actually opened in transaction
+`0xdaf08211235c551f28751a8d2aacdac319ae2cdc18b7eee94c59e1646ed6e19a`,
+block 64491278, and became hosted/available at 16:11:35. The selected-arena
+readiness check passed at 16:11:40. The other two candidate arenas remain
+unopened. This proves one admission, not concurrent capacity or continuity.
+
+The private services use the separate database `house_instances_20260921` on
+the existing agents PostgreSQL container. No public rows or journal were copied
+over it. The operator still uses the original database and advisory lock 701340.
+The recovery-only keeper has no publication budget and cannot start new games.
+Bounded trial 1 has captured an actual Classic 0:7 result; its Chaos match is
+still being observed. See [publication and cadence evidence](agent-publication-rate-20260921.md).
+
 The public preview still uses its original immutable authority. Its house bots
 remain exclusively reserved for tournaments until the replacement is qualified
 and migrated. Human Classic/Chaos and the live agent tournament remain open.
@@ -77,6 +96,35 @@ HTTP 200 with a row. There were zero `Reconciliation pending` messages in the
 engine log from 15:30 through the 15:37 check. The shared index is still catching
 up; missing indexed matches remain honestly marked `indexing`, not pruned.
 
+## Actual capacity and controls, 16:30 UTC
+
+The keeper released retired public arena `1c5…` epoch 2 at 16:10:03, transaction
+`0xa03424969e223b466368671edc07c355d5c89e0c678e4cdd942181878ae24c09`,
+canonical block 64491047. The owned slot then admitted private arena `dde…`
+epoch 1 at block 64491278, transaction
+`0xdaf08211235c551f28751a8d2aacdac319ae2cdc18b7eee94c59e1646ed6e19a`.
+Its hosted node was available at 16:11:35. The other two candidate arenas remain
+unopened. The public retirement policy must not reclaim this slot.
+
+Private controller trial 1 passed Classic 0:7 and Chaos 2:6 at five minutes, with
+both results published and both controllers qualified for both modes. A separate
+synthetic human then passed 100 controls, lost-response reconciliation, injected
+429 recovery, owner revocation and renewal. Its concession result was published
+0:6. Reports distinguish simulation of controller reload from a real browser
+reload and a physical passkey ceremony; neither is claimed here.
+
+The private services use `house_instances_20260921`, a separate database, and
+the same original operator nonce authority. The recovery-only keeper is bounded
+until approximately 20:01 UTC and sends no autonomous new admissions. The sole
+engine controller is bounded until approximately 19:17 UTC. The private public
+admission gate remains false; only the owner's explicit trials are open.
+
+The experimental 1,500 ms maintenance interval is **not deployed publicly**.
+Its control p95 of 1.31 s and observed Chaos processing gap require more work.
+See [publication and cadence evidence](agent-publication-rate-20260921.md).
+The public controller received only compatible publication-health handling,
+retaining its 300 ms interval and existing spectator fixes.
+
 ## Backups and remaining gates
 
 Before deployment, operator and agents database dumps and configuration were
@@ -87,16 +135,22 @@ Hasura metadata is in `agent-replay-metadata-20260921T1531Z`; directory names ar
 backup identifiers, not an event-time source. No secret is included in this repo.
 The final keeper policy, mounted sources, Compose configuration and journal
 state were also verified off VPS in `house-instances-retirement-20260921T1540Z`.
+After the actual private trials, `house-validation-20260921T164759Z` refreshed
+the three relevant databases and protected state/configuration, with SHA-256
+verification off VPS. Its incomplete first tar attempt is retained separately
+from the successful replacement.
 
 The private namespace is `reusable-agents-20260921-1`; source/artifacts are in
 `/opt/pongit/tests/arcade-release-20260919/house-instances-1af79ad`. The bounded
-deployment container exited successfully. There is no new engine/keeper running
-for this candidate. Continue through the same operator journal and lock 701340.
+deployment container exited successfully. The separately bounded private roles
+described above now own this candidate. Continue through the same operator
+journal and lock 701340; never start a competing engine writer.
 
-Still required: actual hosted qualification and publication of concurrent house
-instances; human controls; preserving old identities, community registrations,
+Still required: actual hosted publication of concurrent house instances and
+browser controls; preserving old identities, community registrations,
 ratings, pending requests and contract-qualified historical routes during public
 migration. This candidate intentionally has a fresh private season and new house
 addresses; its deployment record must not replace production metadata directly.
-Remaining release gates include full championships, the missing Chaos coverage,
+Classic championship 3 now has 28 canonically cross-checked published results.
+Remaining release gates include Chaos championship 4, the missing Chaos coverage,
 shared replay catch-up, reserve/rotation and the unchanged 24-hour trial.

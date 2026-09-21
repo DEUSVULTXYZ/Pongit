@@ -1,0 +1,13 @@
+{
+  "at": "2026-09-21T16:08:48.413927+00:00",
+  "endpoint": "https://il-7fb78a8fbfd597da.fly.dev/health",
+  "health": {
+    "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+    "committedBatches": 3599,
+    "epoch": 2,
+    "halted": "batch 3600 could not be settled (commit relay failed: 429 Too Many Requests: {\"error\":\"too many commits this hour\"}); refusing further transactions so they are not promised a commit this node cannot make",
+    "ok": false,
+    "pendingDiffs": 9,
+    "execTimestamp": 1790006926
+  }
+}

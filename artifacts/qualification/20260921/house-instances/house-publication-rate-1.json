@@ -1,0 +1,1049 @@
+{
+  "startedAt": "2026-09-21T16:22:40.412Z",
+  "app": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+  "pool": "0xed5998627c21188db01750ea03b2309311435f5b",
+  "rows": [
+    {
+      "at": "2026-09-21T16:22:40.412Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 148,
+      "observedAt": "2026-09-21T16:22:41.211Z",
+      "phase": 2,
+      "revision": "71",
+      "mode": 1,
+      "gameUs": "51700000",
+      "clockUs": "53820000",
+      "score": [
+        1,
+        0
+      ]
+    },
+    {
+      "at": "2026-09-21T16:22:51.405Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 154,
+      "observedAt": "2026-09-21T16:22:51.645Z",
+      "phase": 2,
+      "revision": "81",
+      "mode": 1,
+      "gameUs": "63880000",
+      "clockUs": "63990000",
+      "score": [
+        1,
+        0
+      ]
+    },
+    {
+      "at": "2026-09-21T16:23:01.763Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 160,
+      "observedAt": "2026-09-21T16:23:01.998Z",
+      "phase": 2,
+      "revision": "85",
+      "mode": 1,
+      "gameUs": "68800000",
+      "clockUs": "74190000",
+      "score": [
+        1,
+        0
+      ]
+    },
+    {
+      "at": "2026-09-21T16:23:12.111Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 170,
+      "observedAt": "2026-09-21T16:23:12.325Z",
+      "phase": 2,
+      "revision": "97",
+      "mode": 1,
+      "gameUs": "82600000",
+      "clockUs": "84170000",
+      "score": [
+        1,
+        0
+      ]
+    },
+    {
+      "at": "2026-09-21T16:23:22.435Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 177,
+      "observedAt": "2026-09-21T16:23:22.660Z",
+      "phase": 2,
+      "revision": "106",
+      "mode": 1,
+      "gameUs": "92520000",
+      "clockUs": "94250000",
+      "score": [
+        1,
+        1
+      ]
+    },
+    {
+      "at": "2026-09-21T16:23:32.765Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 183,
+      "observedAt": "2026-09-21T16:23:32.981Z",
+      "phase": 2,
+      "revision": "112",
+      "mode": 1,
+      "gameUs": "100200000",
+      "clockUs": "104380000",
+      "score": [
+        2,
+        1
+      ]
+    },
+    {
+      "at": "2026-09-21T16:23:43.087Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 189,
+      "observedAt": "2026-09-21T16:23:43.569Z",
+      "phase": 2,
+      "revision": "121",
+      "mode": 1,
+      "gameUs": "110800000",
+      "clockUs": "114690000",
+      "score": [
+        2,
+        1
+      ]
+    },
+    {
+      "at": "2026-09-21T16:23:53.679Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 194,
+      "observedAt": "2026-09-21T16:23:53.897Z",
+      "phase": 2,
+      "revision": "130",
+      "mode": 1,
+      "gameUs": "121500000",
+      "clockUs": "124750000",
+      "score": [
+        2,
+        1
+      ]
+    },
+    {
+      "at": "2026-09-21T16:24:04.005Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 200,
+      "observedAt": "2026-09-21T16:24:04.229Z",
+      "phase": 2,
+      "revision": "140",
+      "mode": 1,
+      "gameUs": "133400000",
+      "clockUs": "134790000",
+      "score": [
+        2,
+        1
+      ]
+    },
+    {
+      "at": "2026-09-21T16:24:14.334Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 206,
+      "observedAt": "2026-09-21T16:24:14.560Z",
+      "phase": 2,
+      "revision": "147",
+      "mode": 1,
+      "gameUs": "141400000",
+      "clockUs": "144940000",
+      "score": [
+        2,
+        2
+      ]
+    },
+    {
+      "at": "2026-09-21T16:24:24.667Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 213,
+      "observedAt": "2026-09-21T16:24:24.888Z",
+      "phase": 2,
+      "revision": "157",
+      "mode": 1,
+      "gameUs": "153300000",
+      "clockUs": "155010000",
+      "score": [
+        2,
+        2
+      ]
+    },
+    {
+      "at": "2026-09-21T16:24:34.996Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 219,
+      "observedAt": "2026-09-21T16:24:35.219Z",
+      "phase": 2,
+      "revision": "166",
+      "mode": 1,
+      "gameUs": "163300000",
+      "clockUs": "165030000",
+      "score": [
+        2,
+        2
+      ]
+    },
+    {
+      "at": "2026-09-21T16:24:45.322Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 224,
+      "observedAt": "2026-09-21T16:24:45.560Z",
+      "phase": 2,
+      "revision": "173",
+      "mode": 1,
+      "gameUs": "166200000",
+      "clockUs": "175150000",
+      "score": [
+        2,
+        2
+      ]
+    },
+    {
+      "at": "2026-09-21T16:24:55.667Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 235,
+      "observedAt": "2026-09-21T16:24:55.888Z",
+      "phase": 2,
+      "revision": "203",
+      "mode": 1,
+      "gameUs": "183500000",
+      "clockUs": "184740000",
+      "score": [
+        2,
+        2
+      ]
+    },
+    {
+      "at": "2026-09-21T16:25:05.993Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 242,
+      "observedAt": "2026-09-21T16:25:06.215Z",
+      "phase": 2,
+      "revision": "210",
+      "mode": 1,
+      "gameUs": "191000000",
+      "clockUs": "194850000",
+      "score": [
+        2,
+        2
+      ]
+    },
+    {
+      "at": "2026-09-21T16:25:16.330Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 249,
+      "observedAt": "2026-09-21T16:25:16.554Z",
+      "phase": 2,
+      "revision": "221",
+      "mode": 1,
+      "gameUs": "202600000",
+      "clockUs": "204910000",
+      "score": [
+        2,
+        3
+      ]
+    },
+    {
+      "at": "2026-09-21T16:25:26.656Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 255,
+      "observedAt": "2026-09-21T16:25:26.880Z",
+      "phase": 2,
+      "revision": "230",
+      "mode": 1,
+      "gameUs": "213900000",
+      "clockUs": "214950000",
+      "score": [
+        2,
+        3
+      ]
+    },
+    {
+      "at": "2026-09-21T16:25:36.987Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 262,
+      "observedAt": "2026-09-21T16:25:37.209Z",
+      "phase": 2,
+      "revision": "237",
+      "mode": 1,
+      "gameUs": "221700000",
+      "clockUs": "225060000",
+      "score": [
+        2,
+        3
+      ]
+    },
+    {
+      "at": "2026-09-21T16:25:47.317Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 269,
+      "observedAt": "2026-09-21T16:25:47.537Z",
+      "phase": 2,
+      "revision": "246",
+      "mode": 1,
+      "gameUs": "232600000",
+      "clockUs": "235120000",
+      "score": [
+        2,
+        3
+      ]
+    },
+    {
+      "at": "2026-09-21T16:25:57.639Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 277,
+      "observedAt": "2026-09-21T16:25:57.862Z",
+      "phase": 2,
+      "revision": "255",
+      "mode": 1,
+      "gameUs": "242400000",
+      "clockUs": "245200000",
+      "score": [
+        2,
+        4
+      ]
+    },
+    {
+      "at": "2026-09-21T16:26:07.972Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 282,
+      "observedAt": "2026-09-21T16:26:08.194Z",
+      "phase": 2,
+      "revision": "263",
+      "mode": 1,
+      "gameUs": "252600000",
+      "clockUs": "255260000",
+      "score": [
+        2,
+        4
+      ]
+    },
+    {
+      "at": "2026-09-21T16:26:18.292Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 289,
+      "observedAt": "2026-09-21T16:26:18.513Z",
+      "phase": 2,
+      "revision": "271",
+      "mode": 1,
+      "gameUs": "261600000",
+      "clockUs": "265360000",
+      "score": [
+        2,
+        4
+      ]
+    },
+    {
+      "at": "2026-09-21T16:26:28.617Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 294,
+      "observedAt": "2026-09-21T16:26:28.840Z",
+      "phase": 2,
+      "revision": "280",
+      "mode": 1,
+      "gameUs": "272000000",
+      "clockUs": "275440000",
+      "score": [
+        2,
+        4
+      ]
+    },
+    {
+      "at": "2026-09-21T16:26:38.946Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 301,
+      "observedAt": "2026-09-21T16:26:39.180Z",
+      "phase": 2,
+      "revision": "290",
+      "mode": 1,
+      "gameUs": "283400000",
+      "clockUs": "285530000",
+      "score": [
+        2,
+        5
+      ]
+    },
+    {
+      "at": "2026-09-21T16:26:49.287Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 308,
+      "observedAt": "2026-09-21T16:26:49.507Z",
+      "phase": 2,
+      "revision": "300",
+      "mode": 1,
+      "gameUs": "294980000",
+      "clockUs": "295610000",
+      "score": [
+        2,
+        5
+      ]
+    },
+    {
+      "at": "2026-09-21T16:26:59.612Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:26:59.835Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:27:09.943Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:27:10.163Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:27:20.266Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:27:20.482Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:27:30.590Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:27:30.809Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:27:40.912Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:27:41.149Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:27:51.256Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:27:51.481Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:28:01.594Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:28:01.813Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:28:11.923Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:28:12.145Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:28:22.261Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:28:22.492Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:28:32.596Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:28:32.827Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:28:43.006Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:28:43.236Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:28:53.337Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:28:53.563Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:29:03.670Z",
+      "id": "2",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:29:03.896Z",
+      "phase": 3,
+      "revision": "304",
+      "mode": 1,
+      "gameUs": "300000000",
+      "clockUs": "300000000",
+      "score": [
+        2,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:29:14.005Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 313,
+      "observedAt": "2026-09-21T16:29:14.225Z",
+      "phase": 1,
+      "revision": "1",
+      "mode": 0,
+      "gameUs": "0",
+      "clockUs": "0",
+      "score": [
+        0,
+        0
+      ]
+    },
+    {
+      "at": "2026-09-21T16:29:24.331Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 314,
+      "observedAt": "2026-09-21T16:29:24.553Z",
+      "phase": 1,
+      "revision": "1",
+      "mode": 0,
+      "gameUs": "0",
+      "clockUs": "0",
+      "score": [
+        0,
+        0
+      ]
+    },
+    {
+      "at": "2026-09-21T16:29:34.659Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 316,
+      "observedAt": "2026-09-21T16:29:34.885Z",
+      "phase": 1,
+      "revision": "3",
+      "mode": 0,
+      "gameUs": "0",
+      "clockUs": "0",
+      "score": [
+        0,
+        0
+      ]
+    },
+    {
+      "at": "2026-09-21T16:29:44.991Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 321,
+      "observedAt": "2026-09-21T16:29:45.214Z",
+      "phase": 2,
+      "revision": "8",
+      "mode": 0,
+      "gameUs": "6300000",
+      "clockUs": "8020000",
+      "score": [
+        0,
+        0
+      ]
+    },
+    {
+      "at": "2026-09-21T16:29:55.318Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 328,
+      "observedAt": "2026-09-21T16:29:55.551Z",
+      "phase": 2,
+      "revision": "15",
+      "mode": 0,
+      "gameUs": "16800000",
+      "clockUs": "18250000",
+      "score": [
+        0,
+        2
+      ]
+    },
+    {
+      "at": "2026-09-21T16:30:05.652Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 340,
+      "observedAt": "2026-09-21T16:30:05.871Z",
+      "phase": 2,
+      "revision": "50",
+      "mode": 0,
+      "gameUs": "28440000",
+      "clockUs": "28480000",
+      "score": [
+        0,
+        4
+      ]
+    },
+    {
+      "at": "2026-09-21T16:30:15.978Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 354,
+      "observedAt": "2026-09-21T16:30:16.195Z",
+      "phase": 2,
+      "revision": "98",
+      "mode": 0,
+      "gameUs": "38400000",
+      "clockUs": "38470000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:30:26.303Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:30:26.544Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:30:36.651Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:30:36.877Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:30:46.986Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:30:47.281Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:30:57.387Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:30:57.612Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:31:07.715Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:31:07.943Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:31:18.043Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:31:18.282Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:31:28.386Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:31:28.601Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:31:38.707Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:31:38.923Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:31:49.026Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:31:49.248Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:31:59.359Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:31:59.576Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:32:09.680Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:32:09.893Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:32:19.997Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:32:20.220Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:32:30.323Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:32:30.542Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:32:40.644Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:32:40.863Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:32:50.970Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:32:51.209Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    },
+    {
+      "at": "2026-09-21T16:33:01.316Z",
+      "id": "3",
+      "healthy": true,
+      "epoch": "1",
+      "committedBatches": 362,
+      "observedAt": "2026-09-21T16:33:01.548Z",
+      "phase": 3,
+      "revision": "124",
+      "mode": 0,
+      "gameUs": "42860000",
+      "clockUs": "42860000",
+      "score": [
+        0,
+        6
+      ]
+    }
+  ],
+  "complete": true,
+  "source": "f097fd7",
+  "tickIntervalMs": 1500,
+  "scope": "Ten-minute private actual engine sample. Single arena, non-identical opponents; no rendering or 24-hour verdict.",
+  "finishedAt": "2026-09-21T16:33:01.653Z"
+}

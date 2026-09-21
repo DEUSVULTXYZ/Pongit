@@ -1,0 +1,100 @@
+Compiling 7 files with Solc 0.8.30
+Solc 0.8.30 finished in 72.70s
+Compiler run successful with warnings:
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/chaos/ChaosDynamics.sol:84:5:
+   |
+84 |     function force(T.State memory s) external view returns(T.State memory){
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/autonomous/AuthorityRating.sol:42:5:
+   |
+42 |     function _calculate(
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/Independent.t.sol:60:5:
+   |
+60 |     function _sig(uint256 key,bytes32 h) private view returns(bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 10 tests for test/ReusableAgentPool.t.sol:ReusableAgentPoolTest
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6774512)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 3981289)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2209371)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2525410)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3826804)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4095526)
+[PASS] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6206195)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 31582
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6793408)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 2921629)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2177481)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 27.36ms (54.07ms CPU time)
+
+Ran 17 tests for test/ReusableAgentInstancesPool.t.sol:ReusableAgentInstancesPoolTest
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6775033)
+[PASS] testCommunityIdentityCannotUseHouseInstancesToBypassTournamentLock() (gas: 1967102)
+[PASS] testCommunityQualificationCanUseAHouseOpponentDuringItsTournament() (gas: 6953950)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 3981744)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2171256)
+[PASS] testFriendlyMissingPublicationAndCancellationCannotReleaseTournamentIdentity() (gas: 5765159)
+[PASS] testHouseInstancesStillUseExactlyTwoLanesAndRejectAThirdAdmission() (gas: 5561560)
+[PASS] testHouseTournamentAndFriendlyCaptureInEitherOrder() (gas: 81584997)
+[PASS] testInstanceEligibilityRequiresPinnedOfficialControllerAndQualifiedMode() (gas: 395208)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2541299)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3846013)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4114694)
+[PASS] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6206382)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 32603
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6794461)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 2938751)
+[PASS] testUnadmittedHouseInstanceCancellationAndRenewalPreserveTournamentLock() (gas: 6452995)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2194650)
+Suite result: ok. 17 passed; 0 failed; 0 skipped; finished in 27.45ms (72.18ms CPU time)
+
+Ran 21 tests for test/BalancedAgentInstancesPool.t.sol:BalancedAgentInstancesPoolTest
+[PASS] testAvailabilityExcludesUnknownStaleAndNearExpirySessions() (gas: 2905479)
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6895187)
+[PASS] testCommunityIdentityCannotUseHouseInstancesToBypassTournamentLock() (gas: 1980962)
+[PASS] testCommunityQualificationCanUseAHouseOpponentDuringItsTournament() (gas: 7076306)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 4050023)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2250234)
+[PASS] testFriendlyMissingPublicationAndCancellationCannotReleaseTournamentIdentity() (gas: 5899345)
+[PASS] testHouseInstancesStillUseExactlyTwoLanesAndRejectAThirdAdmission() (gas: 5697820)
+[PASS] testHouseTournamentAndFriendlyCaptureInEitherOrder() (gas: 82047070)
+[PASS] testInstanceEligibilityRequiresPinnedOfficialControllerAndQualifiedMode() (gas: 395362)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2622343)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3914349)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4191827)
+[PASS] testQualificationSpreadsAcrossIdleArenas() (gas: 4118335)
+[PASS] testRepeatedHumanChallengesSpreadWithoutChangingIdentityOrRatings() (gas: 8088938)
+[FAIL: assertion failed: 32772 > 32768] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6199638)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 32772
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6919948)
+[PASS] testSequentialTournamentMatchesUseEachIdleArenaBeforeRepeating() (gas: 12300288)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 3017823)
+[PASS] testUnadmittedHouseInstanceCancellationAndRenewalPreserveTournamentLock() (gas: 6643194)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2271737)
+Suite result: FAILED. 20 passed; 1 failed; 0 skipped; finished in 29.03ms (128.49ms CPU time)
+
+Ran 3 test suites in 31.43ms (83.84ms CPU time): 47 tests passed, 1 failed, 0 skipped (48 total tests)
+
+Failing tests:
+Encountered 1 failing test in test/BalancedAgentInstancesPool.t.sol:BalancedAgentInstancesPoolTest
+[FAIL: assertion failed: 32772 > 32768] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6199638)
+
+Encountered a total of 1 failing tests, 47 tests succeeded
+
+Tip: Run `forge test --rerun` to retry only the 1 failed test

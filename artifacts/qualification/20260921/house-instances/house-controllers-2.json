@@ -1,0 +1,18 @@
+{
+  "startedAt": "2026-09-21T16:31:48.534Z",
+  "pool": "0xed5998627c21188db01750ea03b2309311435f5b",
+  "app": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+  "source": "f30eb5a",
+  "requested": 4,
+  "matches": [
+    {
+      "index": 0,
+      "operation": "qualification-0",
+      "stage": "planned"
+    }
+  ],
+  "passed": false,
+  "scope": "Private real controller qualification and canonical publication only. Not concurrent instances, human controls, release reserve or 24-hour qualification.",
+  "error": "Execution reverted with reason: challenge priority/qualification waiting.",
+  "finishedAt": "2026-09-21T16:31:57.547Z"
+}

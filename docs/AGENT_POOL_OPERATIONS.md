@@ -124,3 +124,24 @@ backup, delete pending jobs, or point an old match URL at a replacement arena.
 contracts. Unobserved time and a global renewal outage fail its continuity
 checks. Its report is one input to release review, not an automated opening
 command. A reusable contract still needs a successful provider admission.
+
+## Publication holds and private cadence trials
+
+The compatible controller in `f30eb5a` retains `publication-paused` after an
+actual publication refusal. A readable playing snapshot does not clear that
+state. Only fresh healthy evidence for the same application and epoch resumes
+writes. Result archival and lifecycle recovery continue, with exact pending
+commands and nonces preserved. Do not reset a player's authorization or delete
+a pending command to clear a publication hold.
+
+On 21 September a hosted node reported `too many commits this hour` from its
+publication relay. This is distinct from RPC throughput and does not establish
+the quota's complete scope. The public controller still uses 300 ms maintenance
+ticks. `PONG_AGENT_TICK_INTERVAL_MS=1500` is a bounded private experiment only;
+measured human input p95 and Chaos processing lag do not qualify that setting
+for public performance. See [the evidence](validation/agent-publication-rate-20260921.md).
+
+The separate balanced-arena contract candidate is not an upgrade to the live
+pool. It needs a fresh deployment and a migration preserving the existing
+identities, registrations, ratings and requests. Never replace the frozen
+deployment artifacts or an existing nonce journal with that candidate's files.

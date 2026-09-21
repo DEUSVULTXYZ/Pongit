@@ -1,0 +1,447 @@
+{
+  "id": "4",
+  "mode": 1,
+  "format": "championship",
+  "status": "playing",
+  "revision": 0,
+  "champion": "0x0000000000000000000000000000000000000000",
+  "startedAt": "1790009064",
+  "completedAt": null,
+  "entrants": [
+    {
+      "agent": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "controllerHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "controllerHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "controllerHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "controllerHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "controllerHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "controllerHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "initialElo": 1000
+    },
+    {
+      "agent": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "controllerHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "initialElo": 1000
+    },
+    {
+      "agent": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "controllerHash": "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "initialElo": 1000
+    }
+  ],
+  "fixtures": [
+    {
+      "index": 0,
+      "ref": {
+        "chainId": 10143,
+        "app": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "59"
+      },
+      "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "b": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "advanced": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "resolved": true,
+      "administrative": false,
+      "attempt": 1,
+      "result": {
+        "hash": "0xff87373676d440ac3cdb6fd1fcc8a64c4c12d40c862c968b7d7d33988277eef8",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 4,
+        "elapsedUs": "300000000",
+        "finality": false
+      }
+    },
+    {
+      "index": 1,
+      "ref": {
+        "chainId": 10143,
+        "app": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "60"
+      },
+      "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "b": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 1,
+      "result": null
+    },
+    {
+      "index": 2,
+      "ref": null,
+      "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 3,
+      "ref": null,
+      "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 4,
+      "ref": null,
+      "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 5,
+      "ref": null,
+      "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 6,
+      "ref": null,
+      "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 7,
+      "ref": null,
+      "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "b": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 8,
+      "ref": null,
+      "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 9,
+      "ref": null,
+      "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 10,
+      "ref": null,
+      "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 11,
+      "ref": null,
+      "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 12,
+      "ref": null,
+      "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 13,
+      "ref": null,
+      "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 14,
+      "ref": null,
+      "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 15,
+      "ref": null,
+      "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 16,
+      "ref": null,
+      "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 17,
+      "ref": null,
+      "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 18,
+      "ref": null,
+      "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 19,
+      "ref": null,
+      "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 20,
+      "ref": null,
+      "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 21,
+      "ref": null,
+      "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 22,
+      "ref": null,
+      "a": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 23,
+      "ref": null,
+      "a": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 24,
+      "ref": null,
+      "a": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 25,
+      "ref": null,
+      "a": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 26,
+      "ref": null,
+      "a": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    },
+    {
+      "index": 27,
+      "ref": null,
+      "a": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "advanced": "0x0000000000000000000000000000000000000000",
+      "resolved": false,
+      "administrative": false,
+      "attempt": 0,
+      "result": null
+    }
+  ],
+  "standings": [
+    {
+      "agent": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "points": 3,
+      "difference": 1,
+      "wins": 1,
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "points": 0,
+      "difference": 0,
+      "wins": 0,
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "points": 0,
+      "difference": 0,
+      "wins": 0,
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "points": 0,
+      "difference": 0,
+      "wins": 0,
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "points": 0,
+      "difference": 0,
+      "wins": 0,
+      "initialElo": 1000
+    },
+    {
+      "agent": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "points": 0,
+      "difference": 0,
+      "wins": 0,
+      "initialElo": 1000
+    },
+    {
+      "agent": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "points": 0,
+      "difference": 0,
+      "wins": 0,
+      "initialElo": 1000
+    },
+    {
+      "agent": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "points": 0,
+      "difference": -1,
+      "wins": 0,
+      "initialElo": 1000
+    }
+  ],
+  "observedBlock": "64500013",
+  "published": true,
+  "nextAt": "1790008640",
+  "observation": {
+    "block": "64500013",
+    "hash": "0x7526589ed7fb88406fbb7f8ccdc2f81bec33a99e895f5373df831c73b3dde5d8",
+    "timestamp": "1790009770",
+    "revision": "ddf8748df67405846c0c1559d8565849d95fb462bca2ebb6f89eb0f61b73c534"
+  }
+}

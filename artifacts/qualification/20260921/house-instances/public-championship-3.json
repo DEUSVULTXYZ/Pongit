@@ -1,0 +1,867 @@
+{
+  "at": "2026-09-21T16:46:22.553Z",
+  "book": "0xb99f8b0f00ff56b448b2bc1349c41bbfc6a7b8dc",
+  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "id": "3",
+  "block": "64498108",
+  "blockHash": "0x6835c20c1142bb352b02b427b201977f405bca1857ad5495eeceb1b86384da51",
+  "passed": true,
+  "fixtures": [
+    {
+      "index": 0,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "1",
+        "id": "30"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "1",
+          "id": "30"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0xf766feb0f72406d0f72639d761db6604372789253c64ca14e2f460884ec397f6",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 6,
+        "elapsedUs": "300000000",
+        "finality": true
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 1,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+        "epoch": "2",
+        "id": "31"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "2",
+          "id": "31"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "winner": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "hash": "0xa805e94d6185819443f8eb7ff33cad8e5e08118e756bb54585dedb761e893479",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 6,
+        "elapsedUs": "300000000",
+        "finality": true
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 2,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+        "epoch": "2",
+        "id": "32"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "2",
+          "id": "32"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "winner": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "hash": "0xe77c738b55133768c1a9dbfd1f13d2afb590dd3489808e18c29690c4f478891a",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 5,
+        "elapsedUs": "300000000",
+        "finality": true
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 3,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+        "epoch": "2",
+        "id": "33"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "2",
+          "id": "33"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "hash": "0xdcc80ca5f1024933a1528fd2319b2356f2668aef576c3b30bc0748ab2b43acfa",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": true
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 4,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+        "epoch": "2",
+        "id": "34"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "2",
+          "id": "34"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "winner": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "hash": "0xe667c24cc9bad0e5991bbdf55c4904c4d19c6ea03457e2bbc99105595cd4caeb",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "257635208",
+        "finality": true
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 5,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+        "epoch": "2",
+        "id": "35"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "2",
+          "id": "35"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "hash": "0x8fb9ed086d661ebf85074892c39cba67a62fc5b0d9f22e59fb0ce4282e0e84a7",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "163462665",
+        "finality": true
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 6,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+        "epoch": "2",
+        "id": "36"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x1c5eC4b86149249E0B1A24aA2605eDA6Cb3F267b",
+          "epoch": "2",
+          "id": "36"
+        },
+        "a": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "winner": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "hash": "0x727001019d18fed27ff127711e63a8f375dd75654d60db6731a132f9ad61d82b",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 5,
+        "elapsedUs": "300000000",
+        "finality": true
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 7,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "37"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "37"
+        },
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0x494eb3ae1806d7cd94b39b1f2bd2a468e32cb921227bf16b2e91fc0d036f140c",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 2,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 8,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "38"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "38"
+        },
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0x6fada1b37d997d21611b6ac831f82fc03533355defdde0f308b721ffe52588e5",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 9,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "39"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "39"
+        },
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0xd0c927311eff5ccb3fed1f102eac12afcd85d41b184a8b586d37af62ab814297",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 10,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "40"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "40"
+        },
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0xc67c293cc3f472678ae9183a271fef186dad21e9d1ae74c5e5f07785d91857d0",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 11,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "41"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "41"
+        },
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0x248b1b2bc6e7ab83b2cba34144ea22c25210303bd2e92da5c4e024b33dd2ee88",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 12,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "42"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "42"
+        },
+        "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "winner": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "hash": "0xfb74bd71d6defda1ead8aaa3fa9486c338c910b4a9688a621f33260595c2d597",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 6,
+        "scoreB": 1,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 13,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "43"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "43"
+        },
+        "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "b": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "winner": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "hash": "0xba9d185e7d47d23afb0edb47c380d03c6716a93ec74756f725987ad9b21e4525",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 2,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 14,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "44"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "44"
+        },
+        "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "winner": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "hash": "0xc539ef30222436279bbc66f18ddded10a7cac9eb9a6d482d62b7416f0453cbea",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 4,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 15,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "45"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "45"
+        },
+        "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "winner": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "hash": "0x879a00520a98c7b0781af77d239dcbca62f6434929edeb86bcb203bb06a52cf3",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 6,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 16,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+        "epoch": "3",
+        "id": "46"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xF868bDb4669f4de471555CCaDc3bAC5589A3fCaA",
+          "epoch": "3",
+          "id": "46"
+        },
+        "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "winner": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "hash": "0x4dfea99a6c6d85de7b0d08edace9135a25bb530aaf3b886365f64c78fd56e819",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 17,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "47"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "47"
+        },
+        "a": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "winner": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "hash": "0x2880e002c376c497afdf8e75713b8fa0f3bb431635b6f1973ae3a58bd22687b6",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 4,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 18,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "48"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "48"
+        },
+        "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "winner": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "hash": "0xabfc74ab4f02d92e1e8cf9c25b476df512d7a20456020543d808b599449614c7",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 19,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "49"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "49"
+        },
+        "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "winner": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "hash": "0x0f7e5358e73baf3220021148381c98c51ad8a8ba5e6627f50f45b8634bebbdd3",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 6,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 20,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "50"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "50"
+        },
+        "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "hash": "0xcdffc06a2b73bf5b684ebfeb4278e466b0531a58cfda9f1748f8733c34062113",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 4,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 21,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "51"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "51"
+        },
+        "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "winner": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "hash": "0xb1c42f798b380103c6b18a6591137b00a20e6595bf7dff5bc3332ffce0e794aa",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 22,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "52"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "52"
+        },
+        "a": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "b": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "winner": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "hash": "0x86294bf59df123ed3cae36f16cd962faf0ffa9db159f844c9b3e7db6cde14741",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 4,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 23,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "53"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "53"
+        },
+        "a": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "winner": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "hash": "0x684bc52baccdb2b1dd6d9133ead1f606e1528c10da58b2727d0e61ef15e958dc",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 24,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "54"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "54"
+        },
+        "a": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "winner": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "hash": "0xd25bc393e52f7013ff16d879d5084ac687c2302dac9c95107c96175feb3c43c0",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 3,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 25,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "55"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "55"
+        },
+        "a": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "hash": "0x726f868d3d59fa0e27fe7c49295610f767490e5026664f5e0153641847e06eb0",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 4,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 26,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "56"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "56"
+        },
+        "a": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "winner": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "hash": "0xfc9fee9468986c2a30ca4713ce5fb35cc27424a87ecf8f0325c7183178df630e",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 6,
+        "scoreB": 1,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    },
+    {
+      "index": 27,
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+        "epoch": "2",
+        "id": "57"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+          "epoch": "2",
+          "id": "57"
+        },
+        "a": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "b": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "hash": "0xafecded1ffd07ba2cc21a1afcd662bd8f2d60bfa52beed2acffc96370e050ed4",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 2,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "administrative": false,
+      "attempt": 1
+    }
+  ],
+  "scope": "Published results at a canonical block, not continuous service or challenge-final results.",
+  "tournament": {
+    "status": 3,
+    "mode": 0,
+    "league": true,
+    "startedAt": "1789995045",
+    "completedAt": "1790008580",
+    "catalogRevision": "146",
+    "scanCount": "9",
+    "cursor": "9",
+    "selected": 8,
+    "agents": [
+      "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "0xe8F76A048B5b12538033aa69417D32ad85b9c416"
+    ],
+    "controllers": [
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9"
+    ],
+    "seeds": [
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000,
+      1000
+    ],
+    "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+    "revision": 0
+  }
+}

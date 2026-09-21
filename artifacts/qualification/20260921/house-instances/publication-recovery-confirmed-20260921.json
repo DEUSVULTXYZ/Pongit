@@ -1,0 +1,13 @@
+{
+  "at": "2026-09-21T16:18:33.900502+00:00",
+  "endpoint": "https://il-7fb78a8fbfd597da.fly.dev/health",
+  "health": {
+    "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+    "committedBatches": 3815,
+    "epoch": 2,
+    "halted": null,
+    "ok": true,
+    "pendingDiffs": 9,
+    "execTimestamp": 1790007512
+  }
+}

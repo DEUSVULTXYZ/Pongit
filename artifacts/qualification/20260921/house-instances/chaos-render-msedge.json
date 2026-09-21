@@ -1,0 +1,22 @@
+{
+  "at": "2026-09-21T17:01:37.601Z",
+  "channel": "msedge",
+  "run": "chaos-f30",
+  "mode": 1,
+  "passed": true,
+  "mocked": false,
+  "ref": {
+    "chainId": 10143,
+    "app": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+    "epoch": "2",
+    "id": "61"
+  },
+  "samples": 717,
+  "text": "PONGIT\nSound off ♫\nTournaments\nAgent Arcade\nCHAOS · Live engine state\nCopy arena link\nNOVA\n00:04\nGLITCH\nTime remaining 3:20",
+  "render": {
+    "inside": 1,
+    "moving": 0.6019553072625698,
+    "p95FrameMs": 18.200000047683716,
+    "maxFreezeMs": 1300.8999999761581
+  }
+}

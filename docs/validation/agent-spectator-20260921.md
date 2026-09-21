@@ -37,3 +37,25 @@ The initial post-web runs found no active match between fixtures, then a further
 - Roll back the web to `pongit-web:agent-waits-6dc3c93` and the agent engines to `pongit-agent-reusable:preview-16cf0fa` using the existing compose projects. Preserve the live database, nonce journals and other services; do not restore old private writers.
 
 The human backend remains `human-e4eceb6`. No arena, delegation, result or financial contract was replaced. Public Agent Arcade remains a testnet preview; house-bot friendly instances, community qualification, replay reconciliation and the final unchanged 24-hour trial remain separate outstanding work.
+
+## Actual Chaos windows, 16:59 and 17:01 UTC
+
+The mode-selectable read-only browser check in `c47128a` measures the primary
+white ball separately, so a multiball draw cannot inflate movement by jumping
+between two ball positions. No page response, physics or match was mocked.
+Both browsers observed public Chaos match 61 on `7fb…` epoch 2, using the same
+web `fa7a5b1` and controller `b80bee9` plus the compatible `f30eb5a` publication
+health overlay. The public tick cadence remains unchanged.
+
+| Browser | Samples | Visible primary-ball frames | Moving frames | Frame p95 | Longest stationary run |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Chrome | 719 | 99.86% | 80.22% | 18.0 ms | 733 ms |
+| Edge | 717 | 100% | 60.20% | 18.2 ms | 1,301 ms |
+
+Each was a 12-second sample after warmup, at 1280×900, run sequentially in a
+temporary container with 0.7 CPU and 900 MiB memory. The Chrome window displayed
+BANK SHOT. Both meet the existing test thresholds, but Edge is close to the
+movement threshold and noticeable holds remain. This is not complete coverage
+of all 24 effects, mobile viewports, every match or continuous 24-hour service.
+Reports are in the house-instance qualification evidence directory; raw frames
+and screenshots remain in the public release's private diagnostics directory.

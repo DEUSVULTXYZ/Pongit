@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-21T16:10:59.423Z",
+  "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+  "epoch": "2",
+  "status": 0,
+  "root": [
+    "0xb7bfc9c514cd8e9fff7f7704d27839c60d22d94d16c5ead473e1377f98a5934d",
+    6
+  ],
+  "release": {
+    "hash": "0xa03424969e223b466368671edc07c355d5c89e0c678e4cdd942181878ae24c09",
+    "block": "64491047",
+    "blockHash": "0x478aa834eedab49761e6760f26c39f12c6e451ce1d7380393ee0b86b65228d10"
+  },
+  "observedBlock": "64491201",
+  "observedHash": "0xe7054a426db610be6756d413b9acbaacfb162f4dc6bee1eeb30d7262af4e0a9d"
+}

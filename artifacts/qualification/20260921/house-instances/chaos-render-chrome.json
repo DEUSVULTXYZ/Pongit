@@ -1,0 +1,22 @@
+{
+  "at": "2026-09-21T16:59:43.487Z",
+  "channel": "chrome",
+  "run": "chaos-f30",
+  "mode": 1,
+  "passed": true,
+  "mocked": false,
+  "ref": {
+    "chainId": 10143,
+    "app": "0x7FB78A8FbfD597DaaDbE6971c106720eb1510D7D",
+    "epoch": "2",
+    "id": "61"
+  },
+  "samples": 719,
+  "text": "PONGIT\nSound off ♫\nTournaments\nAgent Arcade\nCHAOS · Live engine state\nCopy arena link\nNOVA\n00:02\nGLITCH\nTime remaining 4:38\nCOURT\nBANK SHOT\nWall rebounds increase the vertical slope by 25% while preserving the ball’s total speed.\n7s",
+  "render": {
+    "inside": 0.9986091794158554,
+    "moving": 0.8022284122562674,
+    "p95FrameMs": 18,
+    "maxFreezeMs": 733.2000000476837
+  }
+}

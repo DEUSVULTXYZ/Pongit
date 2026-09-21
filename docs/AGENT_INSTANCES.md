@@ -1,7 +1,10 @@
 # House bot archetypes and independent matches
 
-Status on 21 September 2026, 15:38 UTC: private candidate deployed with both
-admission gates closed; not activated on the public site.
+Status on 21 September 2026, 16:55 UTC: one private candidate arena was actually
+opened after releasing owned capacity. Private qualification admissions are
+enabled; public admissions remain closed. Classic and Chaos controller trials
+and a synthetic human fault-recovery check passed. Further private qualification
+is running. This candidate is not activated on the site.
 The current immutable pool still reserves an official bot identity throughout a
 tournament. The user clarified that a bot should be a reusable archetype able to
 play people and other bots concurrently.
@@ -85,11 +88,20 @@ tournament must finish before retirement. Actual concurrent hosted admission,
 publication and human controls are still required.
 
 The private authority is `0xed5998627c21188db01750ea03b2309311435f5b`
-(source `1af79ad`). All 51 deployment/setup transactions succeeded. No engine
-delegation was opened: the real hub currently rejects the three opening
-simulations with `ValidatorAtCapacity` (`0xe90bcd65`). Rather than requesting a
-provider change, the existing keeper will recover and retire the already-closing
-owned arena `0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b` after its actual release
-deadline, 21 September 16:09:21 UTC. The other public arenas remain operational.
-Retirement creates an opportunity for private admission, not a guaranteed slot.
+(source `1af79ad`). All 51 deployment/setup transactions succeeded. Initial
+opening simulations failed with `ValidatorAtCapacity` (`0xe90bcd65`). The sole
+keeper subsequently released owned arena `1c5…` at 16:10:03, and the hub admitted
+private arena `dde…` epoch 1 using that freed capacity. Its hosted Classic and
+Chaos controller trials passed, followed by 100 synthetic human controls with
+fault recovery and a published concession result. Only one candidate arena is
+open. Concurrent copies, real browser controls and preservation of the existing
+season during migration remain unproven. Private admission is operator-only;
+the original public preview has not migrated.
 See [the evidence and remaining migration work](validation/agent-instances-20260921.md).
+
+The separate `BalancedAgentInstancesPool` candidate distributes matches across
+eligible idle arenas instead of concentrating on the newest. Queue eligibility
+still uses the newest available base block, then participant compatibility is
+checked for the chosen arena. It does not create slots or guarantee a provider
+quota. This candidate is not deployed; its tests and bytecode limits are recorded
+in [the publication investigation](validation/agent-publication-rate-20260921.md).

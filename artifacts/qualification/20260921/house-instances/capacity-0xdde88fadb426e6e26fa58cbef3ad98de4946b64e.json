@@ -1,0 +1,24 @@
+{
+  "startedAt": "2026-09-21T16:11:06.624Z",
+  "pool": "0xed5998627c21188db01750ea03b2309311435f5b",
+  "arenas": [
+    {
+      "app": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+      "epoch": "1",
+      "stage": "opened",
+      "hash": "0xdaf08211235c551f28751a8d2aacdac319ae2cdc18b7eee94c59e1646ed6e19a",
+      "gasUsed": "1490462",
+      "baseBlock": "64491278",
+      "expiresAt": "1790093474",
+      "hosted": {
+        "stage": "available",
+        "epoch": "1",
+        "observedAt": "2026-09-21T16:11:35.652Z"
+      }
+    }
+  ],
+  "passed": true,
+  "scope": "One explicitly selected released arena, epoch identity and readiness only; no game/publication/rotation or continuous capacity verdict",
+  "observedAt": "2026-09-21T16:11:40.591Z",
+  "finishedAt": "2026-09-21T16:11:40.593Z"
+}

@@ -1,0 +1,110 @@
+{
+  "startedAt": "2026-09-21T16:17:33.689Z",
+  "pool": "0xed5998627c21188db01750ea03b2309311435f5b",
+  "app": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+  "source": "f30eb5a",
+  "requested": 2,
+  "matches": [
+    {
+      "index": 0,
+      "operation": "qualification-0",
+      "stage": "captured",
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+        "epoch": "1",
+        "id": "1"
+      },
+      "hash": "0xabbeb8287c910937a36ac13552874342bfd1b8eb05b3ae7df71a8805e75f8f33",
+      "admittedAt": "2026-09-21T16:17:50.319Z",
+      "observedAt": "2026-09-21T16:21:17.947Z",
+      "health": {
+        "stage": "awaiting-publication",
+        "detail": {
+          "id": "1",
+          "epoch": "1",
+          "score": [
+            0,
+            7
+          ]
+        },
+        "updated_at": "2026-09-21T16:21:17.573Z"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xDDe88FadB426e6e26fa58cbEf3aD98de4946b64e",
+          "epoch": "1",
+          "id": "1"
+        },
+        "a": "0x0326Fd11a8F74534b38F2A09B04A6Ba87bfc7592",
+        "b": "0x4889162D88D1e33B3F781d5e66d0D61a004e2543",
+        "winner": "0x4889162D88D1e33B3F781d5e66d0D61a004e2543",
+        "hash": "0x56338b8d89bf5b8341858feee4f92daf0104a548984a9c31905e0969795b82cd",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "152158536",
+        "finality": false
+      },
+      "capturedAt": "2026-09-21T16:21:23.549Z",
+      "qualifiedMasks": [
+        1,
+        1
+      ]
+    },
+    {
+      "index": 1,
+      "operation": "qualification-1",
+      "stage": "captured",
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xdde88fadb426e6e26fa58cbef3ad98de4946b64e",
+        "epoch": "1",
+        "id": "2"
+      },
+      "hash": "0x3479a7f26454d71e16d2648f113cbe10fa973f8bd12a27834ebb11ca1b691ab3",
+      "admittedAt": "2026-09-21T16:21:31.532Z",
+      "observedAt": "2026-09-21T16:27:06.669Z",
+      "health": {
+        "stage": "awaiting-publication",
+        "detail": {
+          "id": "2",
+          "epoch": "1",
+          "score": [
+            2,
+            6
+          ]
+        },
+        "updated_at": "2026-09-21T16:26:56.471Z"
+      },
+      "result": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xDDe88FadB426e6e26fa58cbEf3aD98de4946b64e",
+          "epoch": "1",
+          "id": "2"
+        },
+        "a": "0x0326Fd11a8F74534b38F2A09B04A6Ba87bfc7592",
+        "b": "0x4889162D88D1e33B3F781d5e66d0D61a004e2543",
+        "winner": "0x4889162D88D1e33B3F781d5e66d0D61a004e2543",
+        "hash": "0x6c18dbb8402cfc386538be5046dea64ef1ab00a642929b0a629cf719876d882e",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 6,
+        "elapsedUs": "300000000",
+        "finality": false
+      },
+      "capturedAt": "2026-09-21T16:27:11.255Z",
+      "qualifiedMasks": [
+        3,
+        3
+      ]
+    }
+  ],
+  "passed": true,
+  "scope": "Private real controller qualification and canonical publication only. Not concurrent instances, human controls, release reserve or 24-hour qualification.",
+  "finishedAt": "2026-09-21T16:27:14.257Z"
+}

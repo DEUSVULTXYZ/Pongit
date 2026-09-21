@@ -1,0 +1,92 @@
+Compiling 6 files with Solc 0.8.30
+Solc 0.8.30 finished in 56.37s
+Compiler run successful with warnings:
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/chaos/ChaosDynamics.sol:84:5:
+   |
+84 |     function force(T.State memory s) external view returns(T.State memory){
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> src/autonomous/AuthorityRating.sol:42:5:
+   |
+42 |     function _calculate(
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+Warning (2018): Function state mutability can be restricted to pure
+  --> test/Independent.t.sol:60:5:
+   |
+60 |     function _sig(uint256 key,bytes32 h) private view returns(bytes memory) {
+   |     ^ (Relevant source part starts here and spans across multiple lines).
+
+
+Ran 17 tests for test/ReusableAgentInstancesPool.t.sol:ReusableAgentInstancesPoolTest
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6775045)
+[PASS] testCommunityIdentityCannotUseHouseInstancesToBypassTournamentLock() (gas: 1967102)
+[PASS] testCommunityQualificationCanUseAHouseOpponentDuringItsTournament() (gas: 6953962)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 3981750)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2171262)
+[PASS] testFriendlyMissingPublicationAndCancellationCannotReleaseTournamentIdentity() (gas: 5765171)
+[PASS] testHouseInstancesStillUseExactlyTwoLanesAndRejectAThirdAdmission() (gas: 5561572)
+[PASS] testHouseTournamentAndFriendlyCaptureInEitherOrder() (gas: 81558139)
+[PASS] testInstanceEligibilityRequiresPinnedOfficialControllerAndQualifiedMode() (gas: 395208)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2541305)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3846019)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4114700)
+[PASS] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6206382)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 32469
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6794473)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 2938757)
+[PASS] testUnadmittedHouseInstanceCancellationAndRenewalPreserveTournamentLock() (gas: 6453013)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2194656)
+Suite result: ok. 17 passed; 0 failed; 0 skipped; finished in 26.04ms (84.71ms CPU time)
+
+Ran 21 tests for test/BalancedAgentInstancesPool.t.sol:BalancedAgentInstancesPoolTest
+[PASS] testAvailabilityExcludesUnknownStaleAndNearExpirySessions() (gas: 2905485)
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6895199)
+[PASS] testCommunityIdentityCannotUseHouseInstancesToBypassTournamentLock() (gas: 1980955)
+[PASS] testCommunityQualificationCanUseAHouseOpponentDuringItsTournament() (gas: 7076318)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 4050029)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2250150)
+[PASS] testFriendlyMissingPublicationAndCancellationCannotReleaseTournamentIdentity() (gas: 5899267)
+[PASS] testHouseInstancesStillUseExactlyTwoLanesAndRejectAThirdAdmission() (gas: 5697742)
+[PASS] testHouseTournamentAndFriendlyCaptureInEitherOrder() (gas: 82036482)
+[PASS] testInstanceEligibilityRequiresPinnedOfficialControllerAndQualifiedMode() (gas: 395362)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2622252)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3914355)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4191743)
+[PASS] testQualificationSpreadsAcrossIdleArenas() (gas: 4118347)
+[PASS] testRepeatedHumanChallengesSpreadWithoutChangingIdentityOrRatings() (gas: 8088686)
+[PASS] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6206514)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 32720
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6919960)
+[PASS] testSequentialTournamentMatchesUseEachIdleArenaBeforeRepeating() (gas: 12300312)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 3017739)
+[PASS] testUnadmittedHouseInstanceCancellationAndRenewalPreserveTournamentLock() (gas: 6643032)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2271653)
+Suite result: ok. 21 passed; 0 failed; 0 skipped; finished in 26.04ms (109.83ms CPU time)
+
+Ran 10 tests for test/ReusableAgentPool.t.sol:ReusableAgentPoolTest
+[PASS] testClosureDoesNotStopOtherLaneAndNextAdmissionUsesOtherArena() (gas: 6774524)
+[PASS] testDisputedRootCannotReleaseParticipationOrCreateRating() (gas: 3981295)
+[PASS] testFalseBridgeControllerCannotBecomeAuthoritativeResult() (gas: 2209377)
+[PASS] testNewCommunityCodeWaitsWithoutConsumingChallengeThenUsesNewerArena() (gas: 2525419)
+[PASS] testNewCommunityDoesNotHoldUpKnownQualification() (gas: 3826810)
+[PASS] testNewHumanAfterOpeningHasExactGrantAndNoHumanElo() (gas: 4095532)
+[PASS] testRuntimeBudgetsAndPublicGateRemainExplicit() (gas: 6206195)
+Logs:
+  reusable agent root bytes: 24516
+  reusable agent pool bytes: 31500
+
+[PASS] testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() (gas: 6793420)
+[PASS] testUnadmittedExpiryCapturesCancellationAndReusesSameEpoch() (gas: 2921635)
+[PASS] testUncertainExpiredTicketKeepsParticipationUntilReleasedAbsence() (gas: 2177487)
+Suite result: ok. 10 passed; 0 failed; 0 skipped; finished in 25.97ms (39.73ms CPU time)
+
+Ran 3 test suites in 27.81ms (78.06ms CPU time): 48 tests passed, 0 failed, 0 skipped (48 total tests)
