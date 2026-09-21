@@ -22,6 +22,7 @@ import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationB
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {overdueAgentPublication} from '../relayer/src/agents/reusable-recovery';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
+import {arenaRenewalExclusions} from '../shared/arena-renewal-policy';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 const {record:r,prefix,stateFile:file}=await loadReusableRuntime('keeper'),m={...r.common,houseInstances:r.houseInstances};
 const metrics=await agentMetrics('/diagnostics/reusable','lifecycle'),t=await chainTools(prefix+'-maintenance',measuredFetch('monad'));
@@ -136,12 +137,17 @@ async function step(){
  if(privateSetup&&!admissions&&process.env.PONG_REUSABLE_AGENT_START==='1'&&!cooling(m.pool,'setAdmissions')){await act(m.pool,'setAdmissions',[true]);return;}
  if(!admissions)return;
  if(privateSetup&&process.env.PONG_REUSABLE_AGENT_CHALLENGES==='1'&&!await read<boolean>(m.challenges,challengeAbi,'admissions')){await act(m.challenges,'setAdmissions',[true]);return;}
+ // Review after recovery and reconciliation. Retiring owned capacity never
+ // bypasses an uncertain transaction or the existing close/release sequence.
+ let renewalExclusions:ReadonlySet<string>=new Set();
+ try{renewalExclusions=arenaRenewalExclusions(JSON.parse(await readFile('/metadata/renewal-policy.json','utf8')),m.pool,r.arenas.map((a:any)=>a.app));}
+ catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
  const active=delegations.filter(x=>x.d.status===1&&x.d.expiresAt>block.timestamp+420n);
  // Keep an actually admitted third arena, not an imaginary database reserve.
  // Rotate only one early while two others remain; opening all arenas together
  // and waiting until their simultaneous expiry would recreate a global outage.
  if(active.length<3&&!cooling(m.pool,'openReusableArena')){
-  for(const {app,d} of delegations)if(d.status===0){
+  for(const {app,d} of delegations)if(d.status===0&&!renewalExclusions.has(app.toLowerCase())){
    const match=await read(m.pool,poolAbi,'arenaMatch',[app]);
    if(match!==zeroHash&&lanes.some(l=>l.ref.arena.toLowerCase()===app.toLowerCase()&&l.ref.id>0n))continue;
    const validator=await read(m.hub,hubAbi,'defaultValidator'),terms=await read(m.hub,hubAbi,'termsOf',[validator]);
