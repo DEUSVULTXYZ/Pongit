@@ -33,6 +33,7 @@ import {independentReusableAdmission} from './independent-reusable-admission';
 import {independentReusableLifecycle} from './independent-reusable-lifecycle';
 import {independentReusablePool} from './independent-reusable-pool';
 import {independentRoomDiscovery} from './independent-room-discovery';
+import {independentRoomAdmission} from './independent-room-admission';
 import {independentRuntime} from './independent-runtime';
 import {independentLegacy} from './independent-legacy';
 import {abi as verifierAbi} from '../../shared/abi-independent-PublishedResultVerifier';
@@ -77,8 +78,14 @@ export async function independentService(o:Options){
  CREATE TABLE IF NOT EXISTS independent_rooms(lobby text NOT NULL,id text NOT NULL,PRIMARY KEY(lobby,id));
  CREATE TABLE IF NOT EXISTS independent_credits(vault text NOT NULL,player text NOT NULL,operation text NOT NULL,PRIMARY KEY(vault,player));
  CREATE TABLE IF NOT EXISTS independent_incidents(lobby text NOT NULL,arena text NOT NULL,stage text NOT NULL,code text,changed_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(lobby,arena));`);
+ const roomAdmission=independentRoomAdmission({
+  page:async offset=>(await db.query('SELECT id FROM independent_rooms WHERE lobby=$1 ORDER BY id LIMIT 16 OFFSET $2',[m.lobby.toLowerCase(),offset])).rows.map(row=>BigInt(row.id)),
+  room:id=>r.lobby('room',[id]),
+  propose:id=>queue(m.lobby,lobbyAbi,'propose',[id],0n,1),
+ });
  const discoverRooms=independentRoomDiscovery(base,m.lobby,[...lobbyAbi,...lobbyEventsAbi.filter(x=>x.type==='event')],async room=>{
   await db.query('INSERT INTO independent_rooms VALUES($1,$2) ON CONFLICT DO NOTHING',[m.lobby.toLowerCase(),String(room)]);
+  roomAdmission.hint(room);
  });
  const legacy=independentLegacy(o.legacyDb??db);
  const history=await independentHistory(db,base,m,o.graphql,legacy);
@@ -97,7 +104,7 @@ export async function independentService(o:Options){
  if(engines.some(e=>e.signer.address.toLowerCase()!==m.pressureSigner.toLowerCase()))throw Error('Independent bridge identity mismatch');
  const health=m.arenas.map(a=>({app:a.app,node:a.node,epoch:'0',id:'0',stage:'observing',online:false,expiresAt:0,releaseAt:0,lastProgressAt:0,code:'',rally:null as Awaited<ReturnType<Awaited<ReturnType<typeof independentFinance>>['rallyStatus']>>}));
  const validated=m.arenas.map(()=>({epoch:0n,checked:0}));
- const jobs=new Set<string>(),retry=new Map<string,number>(),reported=new Map<string,{detail:string;at:number}>();let stopped=false,roomOffset=0,publicationOffset=0;
+ const jobs=new Set<string>(),retry=new Map<string,number>(),reported=new Map<string,{detail:string;at:number}>();let stopped=false,publicationOffset=0;
  const run=(name:string,fn:()=>Promise<void>,interval=2000)=>{
   if(stopped||jobs.has(name)||(retry.get(name)??0)>Date.now())return;
   jobs.add(name);void fn().then(()=>retry.set(name,Date.now()+interval)).catch(e=>{
@@ -243,17 +250,6 @@ export async function independentService(o:Options){
    const progress=await r.lobby('queueProgress',[mode]);
    if(progress[1]>0n&&(progress[0]||1n)<=progress[1])await queue(m.lobby,lobbyAbi,'matchmake',[mode,32n],0n,0);
   }
-  // Room ids are reconstructed from events. This table is an index, never authority.
-  const rooms=(await db.query('SELECT id FROM independent_rooms WHERE lobby=$1 ORDER BY id LIMIT 16 OFFSET $2',[m.lobby.toLowerCase(),roomOffset])).rows;
-  roomOffset=rooms.length===16?roomOffset+16:0;
-  for(const {id} of rooms){
-   const room=await r.lobby('room',[BigInt(id)]).catch(()=>null);if(!room)continue;
-   // A two-player rematch is requested by its result action and receives 60s.
-   // Larger rooms rotate automatically with the ordinary 20s consent window.
-   if(room.members.length===2&&room.winner!==zeroAddress&&!room.proposal)continue;
-   const p=room.proposal?await r.lobby('proposal',[room.proposal]):null;
-   if(!p||p.status>=3){await queue(m.lobby,lobbyAbi,'propose',[room.id],0n,1).catch(()=>{});}
-  }
  }
  async function index(){
   const head=await base.getBlockNumber();
@@ -373,6 +369,8 @@ export async function independentService(o:Options){
    }
   }
   run('index',index,6000);run('room-discovery',discoverRooms,4000);run('history',history.observe,6000);run('admission',admission,4000);
+  // Slow historical rooms never delay accepted proposals or ranked admission.
+  if(process.env.PONG_INDEPENDENT_ADMISSION==='true')run('room-admission',roomAdmission.run,2000);
   if(reusableResults)run('published-history',async()=>{
    // Bounded historical scan revisits provisional entries after finality or a
    // correction. The archive retains previous bodies across slot/epoch reuse.
