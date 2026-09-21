@@ -46,3 +46,14 @@
 .agents-shell .agent-court.rooms-court{border:0;background:none;box-shadow:0 12px 36px #020412b3;padding:22px 24px 16px}
 .agents-shell .agent-court .scoreboard{flex:none}
 @media(max-width:767px){.agents-shell .agent-card{padding:22px}.agents-shell .agent-heading{align-items:center}.agents-shell .agent-heading>span{position:static}.agents-shell .agent-heading .palace-marquee{gap:14px;padding:24px}.agents-shell .agent-court.rooms-court{padding:14px 14px 10px}.agents-shell .agent-tabs{gap:5px}.agents-shell .agent-tabs>button,.agents-shell .agent-tabs>a{font-size:10px;padding:10px 6px}}
+@media(max-width:767px) and (min-height:501px){
+ .agents-shell .rooms-header{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 6px;padding:7px}
+ .agents-shell .rooms-header .brand{grid-column:1/3;grid-row:1;min-width:0}
+ .agents-shell .rooms-header-actions{display:contents}
+ .agents-shell .rooms-header .arcade-settings-toggle{grid-column:3;grid-row:1;min-width:0;font-size:11px;padding:7px}
+ .agents-shell .rooms-header-actions>a{grid-row:2;grid-column:auto;justify-self:stretch;min-width:0;padding:7px 4px;font-size:12px}
+ .agents-shell .rooms-header-actions>a:first-of-type{grid-column:1}
+ .agents-shell .rooms-header-actions>a:nth-of-type(2){grid-column:2/4}
+ .agents-shell.pool-match-shell .rooms-header-actions>a:nth-of-type(2){grid-column:2}
+ .agents-shell .rooms-header-actions>button:not(.arcade-settings-toggle){grid-column:3;grid-row:2;padding:7px;font-size:12px}
+}

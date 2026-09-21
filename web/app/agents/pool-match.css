@@ -13,6 +13,7 @@
 .pool-match-shell.rooms-playing .pool-canvas-slot{display:grid;place-items:center;container-type:size;flex:1;min-height:0;width:100%;margin-top:8px}
 .pool-match-shell.rooms-playing .pool-canvas-slot canvas{width:min(100cqw,calc(100cqh * 16 / 9));height:auto;max-height:100%;aspect-ratio:16/9}
 @media(orientation:landscape) and (max-height:600px){.pool-match-toolbar{margin:6px 0}.pool-match-shell.rooms-playing .agent-court{width:100%;margin-inline:0}}
-@media(max-width:390px){.pool-match-toolbar{gap:8px}.pool-match-toolbar>span:first-child{flex-basis:100%}.pool-match-error{align-items:flex-start;flex-direction:column}}
+@media(max-width:390px){.pool-match-toolbar{gap:8px}.pool-match-toolbar>span:first-child{font-size:12px}.pool-match-toolbar button{font-size:11px;padding:8px}.pool-match-error{align-items:flex-start;flex-direction:column}}
+.pool-match-toolbar>span:empty{display:none}
 @media(max-width:767px){.pool-match-shell .arena-score-module{min-width:0;padding:0 4px}.pool-match-shell .arena-score-module>small{font-size:8px}.pool-match-shell .pool-match-toolbar{margin:6px 0;min-height:44px}}
 @media(orientation:landscape) and (max-height:600px){.pool-match-shell .rooms-court .scoreboard{min-height:46px;padding:4px 8px;margin-bottom:6px}.pool-match-shell .rooms-court .score{font-size:26px}.pool-match-shell .rooms-court .player-label .avatar{width:30px;height:36px}.pool-match-shell .rooms-court .player-label{grid-template-columns:30px minmax(0,1fr);gap:2px 8px}.pool-match-shell .rooms-court .player-label.right{grid-template-columns:minmax(0,1fr) 30px}.pool-match-shell .rooms-court-controls{min-height:26px;padding-top:4px;margin-top:4px}.pool-match-shell .rooms-court-controls::before{width:14px;height:14px;background-size:7px 7px}}
