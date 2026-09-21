@@ -12,7 +12,7 @@ async function fixture(t:any,withBudget=true){
  const fields=roomsLifecycleHubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
  const ds=apps.map(app=>({...Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n])),
   app,status:1,epoch:2n,baseBlock:3n,expiresAt:10000n,batchIndex:100n}));
- const health=apps.map(app=>({app,epoch:'2',stage:'available',online:true})),reserved=[0n,0n,0n],jobs:any[]=[];let enabled=true;
+ const health=apps.map(app=>({app,epoch:'2',stage:'available',online:true})),reserved=[0n,0n,0n],jobs:any[]=[];let enabled=true,openFailure:Error|undefined;
  const base:any={getCode:async()=> '0x1234',getBlock:async(c:any)=>({number:20n,timestamp:c?.blockNumber===3n?1n:1000n}),
   request:async(c:any)=>{const call=decodeFunctionData({abi:roomsLifecycleHubAbi,data:c.params[0].data}),app=call.args![0];
    return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:ds[apps.indexOf(app as Address)] as any});},
@@ -26,8 +26,8 @@ async function fixture(t:any,withBudget=true){
   t.after(async()=>{await unlink(path);await rmdir(dir);});
  }
  const worker=await independentReusablePool(base,m,async(at,abi,name,args,value)=>{
-  encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args,value});},()=>health,()=>enabled,path);
- return{apps,worker,ds,health,reserved,jobs,base,disable:()=>enabled=false};
+  encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args,value});if(name==='openReusableArena'&&openFailure)throw openFailure;},()=>health,()=>enabled,path);
+ return{apps,worker,ds,health,reserved,jobs,base,disable:()=>enabled=false,failOpening:(error:Error)=>openFailure=error};
 }
 
 test('an absent reviewed budget cannot reserve capacity or admit a human match',async t=>{
@@ -69,4 +69,24 @@ test('age rotation selects the oldest epoch rather than starving the last regist
  assert.equal(await f.worker.admissionReady(),false);
  assert.equal(f.jobs.length,1);assert.equal(f.jobs[0].name,'closeReusableArena');
  assert.deepEqual(f.jobs[0].args,[f.apps[2]]);
+});
+
+test('a refused reserve cannot close admission on an existing healthy arena or trigger a retry storm',async t=>{
+ const f=await fixture(t);f.ds[2].status=0;f.health[2].stage='released';f.health[2].online=false;
+ f.failOpening(Error('ValidatorAtCapacity'));t.mock.method(console,'warn',()=>{});
+ assert.equal(await f.worker.admissionReady(),true);
+ assert.equal(await f.worker.admissionReady(),true);
+ assert.equal(f.jobs.filter(j=>j.name==='openReusableArena').length,1);
+ f.health[0].epoch='1';assert.equal(await f.worker.admissionReady(),false,'Reserve failure does not relax actual epoch validation');
+ f.health[0].epoch='2';f.ds[1].batchIndex=40000n;
+ assert.equal(await f.worker.admissionReady(),false,'Publication budget still blocks an exhausted live arena');
+ assert(f.jobs.some(j=>j.name==='closeReusableArena'));
+});
+
+test('reserve RPC failure does not disable an independent observed live epoch',async t=>{
+ const f=await fixture(t);f.ds[2].status=0;f.health[2].stage='released';f.health[2].online=false;
+ const original=f.base.readContract;f.base.readContract=async(c:any)=>{if(c.functionName==='defaultValidator')throw Error('RPC timeout');return original(c);};
+ t.mock.method(console,'warn',()=>{});
+ assert.equal(await f.worker.admissionReady(),true);assert.equal(f.jobs.length,0);
+ f.health[1].online=false;assert.equal(await f.worker.admissionReady(),false);
 });

@@ -6,6 +6,7 @@ import {readHubDelegation} from '../../shared/rooms-hub';
 import {abi as lobbyAbi} from '../../shared/abi-independent-ReusableEventsLobby';
 import {abi as hubAbi} from '../../shared/abi-independent-IInterludeHub';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from './agents/reusable-budget';
+import {engineReadRetryMs} from '../../shared/engine-read';
 
 type Queue=(at:Address,abi:Abi,name:string,args:readonly unknown[],value?:bigint,priority?:number)=>Promise<unknown>;
 /** No evidence file means no new capacity/admission; it never disables the
@@ -15,6 +16,7 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
  health:()=>readonly {app:Address;epoch:string;stage:string;online:boolean}[],enabled:()=>boolean,
  budgetPath=process.env.PONG_INDEPENDENT_PUBLICATION_BUDGET){
  if(m.rulesVersion!==14)throw Error('Reusable human pool required');
+ let reserveRetryAt=0;
  let budget:ReusablePublicationBudget|undefined;
  const path=budgetPath;
  if(path){
@@ -35,10 +37,19 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
   // count it as ready until its hosted epoch is actually observed.
   if(active.length<3){
    const released=arenas.find(a=>a.d.status===0&&!a.reserved&&states.some(h=>h.app===a.app&&h.stage==='released'));
-   if(released){
-    const validator=await base.readContract({address:m.hub,abi:hubAbi,functionName:'defaultValidator'});
-    const terms=await base.readContract({address:m.hub,abi:hubAbi,functionName:'termsOf',args:[validator]});
-    await queue(m.lobby,lobbyAbi,'openReusableArena',[released.app],terms.delegationFee,0);
+   if(released&&Date.now()>=reserveRetryAt){
+    try{
+     const validator=await base.readContract({address:m.hub,abi:hubAbi,functionName:'defaultValidator'});
+     const terms=await base.readContract({address:m.hub,abi:hubAbi,functionName:'termsOf',args:[validator]});
+     await queue(m.lobby,lobbyAbi,'openReusableArena',[released.app],terms.delegationFee,0);
+    }catch(error){
+     // A refused or unreachable reserve is not an outage of an already hosted
+     // arena. Keep its actual epoch/health/budget checks below; never pretend
+     // the failed opening created capacity or release its uncertain nonce.
+     reserveRetryAt=Date.now()+Math.max(10000,engineReadRetryMs(error));
+     console.warn(JSON.stringify({event:'arena-reserve-opening-deferred',arena:released.app,
+      retryAt:new Date(reserveRetryAt).toISOString(),at:new Date().toISOString()}));
+    }
    }
   }
   // Rotate the oldest epoch first. Registration order would repeatedly retire
