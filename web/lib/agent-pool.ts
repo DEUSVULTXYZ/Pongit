@@ -8,9 +8,10 @@ import {browserBase} from './base-read';
 const base=browserBase;
 export const poolBase=()=>base;
 export async function poolApi<T>(path:string,body?:unknown,signal?:AbortSignal):Promise<T>{
+ const timeout=AbortSignal.timeout(body===undefined?30000:12000);
  const response=await measuredFetch('pongit')(`${API}/agents/${path}`,{method:body===undefined?'GET':'POST',
   ...(body===undefined?{}:{headers:{'content-type':'application/json'},body:JSON.stringify(body)}),
-  signal:signal?AbortSignal.any([signal,AbortSignal.timeout(12000)]):AbortSignal.timeout(12000)});
+  signal:signal?AbortSignal.any([signal,timeout]):timeout});
  const value=await response.json();
  if(!response.ok)throw Object.assign(Error(value.error||'Agent Arcade is synchronizing'),{...value,status:response.status,headers:response.headers});
  return value;
