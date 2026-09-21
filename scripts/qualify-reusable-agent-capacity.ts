@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {Pool} from 'pg';
-import {keccak256,type Address} from 'viem';
+import {keccak256,isAddress,type Address} from 'viem';
 import {chainTools} from './independent-chain-tools';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {reusableAgentPoolAbi as abi} from '../shared/abi-ReusableAgentPool';
@@ -15,18 +15,26 @@ assert.equal(process.env.PONG_REUSABLE_AGENT_CAPACITY,'private-empty-arena-quali
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 validateReusableRecord(r,(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean));
 assert.equal(r.arenas.length,3,'Only the three reviewed candidate arenas');
-const t=await chainTools(r.prefix+':capacity-1'),db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:2});
-const out='artifacts/reusable-candidate/capacity-1.json';await mkdir('artifacts/reusable-candidate',{recursive:true});
+const selected=process.env.PONG_REUSABLE_CAPACITY_APP;
+assert(!selected||isAddress(selected),'Explicit registered arena address required');
+const arenas=selected?r.arenas.filter((a:any)=>a.app.toLowerCase()===selected.toLowerCase()):r.arenas;
+assert.equal(arenas.length,selected?1:3,'Unknown dedicated arena');
+const trial=selected?'capacity-'+selected.toLowerCase():'capacity-1';
+const t=await chainTools(r.prefix+':'+trial),db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:2});
+const out=`artifacts/reusable-candidate/${trial}.json`;await mkdir('artifacts/reusable-candidate',{recursive:true});
 let report:any={startedAt:new Date().toISOString(),pool:r.common.pool,arenas:[],passed:false,
- scope:'Three empty private hosted arenas, epoch identity and readiness only; no game/publication/rotation or continuous capacity verdict'};
+ scope:`${selected?'One explicitly selected released arena':'Three empty private hosted arenas'}, epoch identity and readiness only; no game/publication/rotation or continuous capacity verdict`};
 try{report=JSON.parse(await readFile(out,'utf8'));assert.equal(report.pool,r.common.pool);assert(!report.finishedAt,'Preserve completed verdict');}
 catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(out+'.next',JSON.stringify(report,null,2));await rename(out+'.next',out);};
 try{
  assert.equal((await t.base.readContract({address:r.common.pool,abi,functionName:'owner'})).toLowerCase(),t.account.address.toLowerCase());
  assert.equal(await t.base.readContract({address:r.common.pool,abi,functionName:'publicAdmissions'}),false);
- for(const lane of [0,1])assert.equal((await t.base.readContract({address:r.common.pool,abi,functionName:'laneRecord',args:[lane]})).ref.id,0n,'Do not interfere with a game');
- for(const a of r.arenas){
+ for(const lane of [0,1]){
+  const {ref}=await t.base.readContract({address:r.common.pool,abi,functionName:'laneRecord',args:[lane]});
+  assert(ref.id===0n||selected&&ref.arena.toLowerCase()!==selected.toLowerCase(),'Do not interfere with a game');
+ }
+ for(const a of arenas){
   const app=a.app as Address;
   assert.equal(keccak256((await t.base.getCode({address:app}))!).toLowerCase(),a.runtimeHash.toLowerCase());
   let d=await readHubDelegation(t.base,r.common.hub,app);
@@ -44,7 +52,7 @@ try{
    row.stage='opened';await save();d=await readHubDelegation(t.base,r.common.hub,app);
   }else if(!row.hash){
    // A lost response must resolve the same operation; never invent a new ID.
-   const job=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',[r.prefix+':capacity-1:'+name])).rows[0];
+   const job=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',[r.prefix+':'+trial+':'+name])).rows[0];
    assert(job,'Unjournaled opening needs inspection');
    const receipt=await t.write(name,r.common.pool,abi,'openReusableArena',[app],0n);
    row.hash=receipt.transactionHash;row.gasUsed=String(receipt.gasUsed);row.stage='opened';
@@ -60,6 +68,6 @@ try{
   if(report.arenas.every((a:any)=>a.hosted?.stage==='available'&&String(a.hosted.epoch)===a.epoch)){report.passed=true;break;}
   await new Promise(resolve=>setTimeout(resolve,5000));
  }
- assert(report.passed,'All three hosted epochs were not ready before the qualification deadline');
+ assert(report.passed,'Selected hosted epochs were not ready before the qualification deadline');
 }catch(e){report.error=String((e as any).shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{90,}/gi,'[omitted]').slice(0,300);process.exitCode=1;}
 finally{report.finishedAt=new Date().toISOString();await save();await db.end();await t.close();console.log(JSON.stringify(report));}
