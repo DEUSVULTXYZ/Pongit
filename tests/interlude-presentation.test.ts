@@ -42,11 +42,23 @@ test("reversal is immediate, release waits for its acknowledgement without conti
   assert.ok(previousError < 0.16);
 });
 
-test("preview is bounded, stale inputs stop extending it, and a new match resets the position", () => {
+test("preview is bounded, a stale held key keeps moving inside that bound, a release converges, and a new match resets", () => {
   const p = new LivePaddle();
   for (let i = 0; i < 1000; i++) assert.ok(p.step(288, 1, 0, 48, 16, false, true).y <= 399);
-  for (let i = 0; i < 1000; i++) p.step(288, 1, 0, 48, 16, true, true);
-  assert.ok(Math.abs(p.step(288, 1, 0, 48, 16, true, true).y - 288) < 0.16);
+  // A stale stream must not freeze this paddle while the opponent keeps being
+  // extrapolated along its confirmed direction. The excursion stays bounded.
+  const stalled = new LivePaddle();
+  let y = stalled.step(288, 1, 0, 48, 16, true, true).y;
+  assert.ok(y > 288, "a held key still moves while the stream is stale");
+  for (let i = 0; i < 1000; i++) {
+    const next = stalled.step(288, 1, 0, 48, 16, true, true).y;
+    assert.ok(next >= y - 1e-9, "never reverses under a held key");
+    y = next;
+  }
+  assert.ok(y <= 396 + 1e-9 && y >= 395, `bounded at 108 px of unconfirmed travel, got ${y}`);
+  // Releasing while still stale gives the paddle back to the engine.
+  for (let i = 0; i < 1000; i++) stalled.step(288, 0, 0, 48, 16, true, true);
+  assert.ok(Math.abs(stalled.step(288, 0, 0, 48, 16, true, true).y - 288) < 0.16);
   p.reset(); assert.equal(p.step(50, 0, 0, 48, 0, false, false).y, 50);
 });
 
