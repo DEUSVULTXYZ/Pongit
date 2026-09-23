@@ -27,6 +27,7 @@ import {Dialog} from './Dialog';
 import {IconButton} from './IconButton';
 import {AgentReplay} from './AgentReplay';
 import {ArenaCountdown} from './MatchCountdown';
+import {quietFailure} from '../lib/quiet-failure';
 
 type Identity={agent:string;name:string;avatar:number};
 const quiet=()=>{};
@@ -63,7 +64,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   if(lastRef.current!==refKey){lastRef.current=refKey;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
   let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,retryRecoveryAt=0,recoveredVersion=-1,wasHidden=false;
   let publishedRequest:Promise<void>|undefined;
-  const controller=new AbortController();
+  const controller=new AbortController(),quiet=quietFailure();
   const get=async<T,>(path:string):Promise<T>=>{
    const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(30000)])});
    if(!response.ok)throw Error(response.status===404?'This match reference does not exist.':'The arcade is reconnecting. One moment.');return response.json();
@@ -125,7 +126,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      }
      catch(e){if(cancelled)return;setReady(false);setControlError(poolUserError(e));retryRecoveryAt=performance.now()+Math.max(1000,engineReadRetryMs(e));nextRecovery=retryRecoveryAt;}
     }
-    const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);setError('');
+    const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');
     if(config.version===4&&state.phase===1){
      // The human seat acknowledges an actually painted court. A hidden tab
      // cannot start a countdown it has never shown to its player.
@@ -137,7 +138,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      }
      const launch=await observer.launch();if(!cancelled&&launch)setCountdown({id:refKey,...launch});
     }
-   }catch(e){if(cancelled)return;setError(poolUserError(e));setConnection('Reconnecting');delay=Math.max(2000,engineReadRetryMs(e));}
+   }catch(e){if(cancelled)return;setError(quiet.failed(poolUserError(e)));setConnection('Reconnecting');delay=Math.max(2000,engineReadRetryMs(e));}
    finally{if(!cancelled)timer=setTimeout(poll,Math.min(30000,delay));}
   };
   void poll();return()=>{cancelled=true;controller.abort();clearTimeout(timer);observer?.close();playerClient.current=null;release?.();};
@@ -204,7 +205,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link>{side>=0&&<button onClick={()=>{void move(0);setTools(true);}}>Tools</button>}</div></header>
   {!enabled?<section className="agent-empty"><h1>Qualification in progress</h1><p>Independent agent arenas are not open yet.</p></section>:<>
    <div className="pool-match-toolbar"><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {side<0&&streamPaused&&snapshot?.phase===2&&!result?'Reconnecting':connection}</span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button><span role="status">{copied}</span></div>
-   {error&&<div className="pool-match-error" role="alert"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
+   {error&&<div className="pool-match-error" role="status"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
    {controlError&&!tools&&<div className="pool-match-error" role="status"><p>{controlError}</p><button onClick={()=>{void move(0);setTools(true);}}>Account</button></div>}
    {!view&&!error&&<p role="status">Reading the match reference…</p>}
    {view&&<section className="rooms-court court-card agent-court" aria-label="Agent arena">

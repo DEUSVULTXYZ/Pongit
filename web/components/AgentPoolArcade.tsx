@@ -12,6 +12,7 @@ import type {AgentMatchRef} from '../../shared/agents';
 import {engineReadRetryMs} from '../../shared/engine-read';
 import {poolApi,poolBase,poolBrowserSponsor,finishPoolSponsor} from '../lib/agent-pool';
 import {connect,rememberedAccount} from '../lib/wallet';
+import {quietFailure} from '../lib/quiet-failure';
 import {short} from '../lib/api';
 import {Avatar} from './Avatar';
 import {Dialog} from './Dialog';
@@ -35,7 +36,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  useEffect(()=>{if(!enabled)return;const remembered=rememberedAccount();if(remembered)setAccount(remembered.address);},[enabled]);
  useEffect(()=>{
-  if(!enabled)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController();
+  if(!enabled)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController(),quiet=quietFailure();
   const refresh=async()=>{let delay=10000;
    try{
     if(document.hidden)return;
@@ -45,17 +46,17 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
      poolApi<{items:Live[]}>('live',undefined,abort.signal).then(games=>{if(!stopped)setLive(games.items);}),
     ]);
     const failed=results.find(r=>r.status==='rejected');if(failed?.status==='rejected')throw failed.reason;
-    if(!stopped)setCatalogError('');
-   }catch(e){if(!stopped){setCatalogError(poolUserError(e));delay=Math.max(10000,engineReadRetryMs(e));}}
+    if(!stopped){quiet.recovered();setCatalogError('');}
+   }catch(e){if(!stopped){setCatalogError(quiet.failed(poolUserError(e)));delay=Math.max(10000,engineReadRetryMs(e));}}
    finally{if(!stopped)timer=setTimeout(refresh,delay);}
   };void refresh();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[enabled,retry,offset]);
  useEffect(()=>{
-  if(!config||!account)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController();
+  if(!config||!account)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController(),quiet=quietFailure();
   const poll=async()=>{let delay=2000;try{
    if(document.hidden)return;const result=await poolApi<{request:PoolChallengeView|null}>(`challenges/${account}`,undefined,abort.signal);
-   if(stopped)return;setRequest(result.request);setQueueError('');if(!result.request)delay=10000;if(result.request?.ref){router.push(matchHref(result.request.ref));return;}
-  }catch(e){if(!stopped)setQueueError(poolUserError(e));delay=Math.max(5000,engineReadRetryMs(e));}finally{if(!stopped)timer=setTimeout(poll,delay);}};
+   if(stopped)return;quiet.recovered();setRequest(result.request);setQueueError('');if(!result.request)delay=10000;if(result.request?.ref){router.push(matchHref(result.request.ref));return;}
+  }catch(e){if(!stopped)setQueueError(quiet.failed(poolUserError(e)));delay=Math.max(5000,engineReadRetryMs(e));}finally{if(!stopped)timer=setTimeout(poll,delay);}};
   void poll();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[config?.pool,account,retry,router]);
  async function run(fn:()=>Promise<void>){if(locked.current)return;locked.current=true;setBusy(true);setError('');try{await fn();}catch(e){if(alive.current)setError(poolUserError(e));}finally{locked.current=false;if(alive.current)setBusy(false);}}

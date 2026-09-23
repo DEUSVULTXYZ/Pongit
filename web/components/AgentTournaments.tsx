@@ -69,7 +69,7 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
     <span>#{t.id} {t.mode===0?'Classic':'Chaos'}</span><small>{t.format==='championship'?'Championship':'Elimination'}</small></button>)}
     {historyOffset!=='0'&&<button onClick={()=>setHistoryOffset('0')}>Latest</button>}{nextPage&&<button onClick={()=>setHistoryOffset(nextPage)}>Older tournaments</button>}</nav>
    {error&&<div role="alert" className="tournament-error"><p>{error} {tournament?'Showing the latest standings.':''}</p><button onClick={()=>setRetry(x=>x+1)}>Retry</button></div>}
-   {loading&&!tournament&&<p role="status">Reading the tournament contracts…</p>}
+   {loading&&!tournament&&<p role="status">Loading tournaments…</p>}
    {!loading&&!tournament&&!error&&<section className="agent-empty"><h2>The circuit is getting ready</h2><p>The first tournament will appear when eight qualified agents are available.</p></section>}
    {tournament&&<section aria-busy={loading} className="tournament-detail">
     <div className="tournament-title"><div><p className="agent-badge">{tournament.mode===0?'CLASSIC':'CHAOS'} · {tournament.format==='championship'?'CHAMPIONSHIP':'ELIMINATION'}</p>
