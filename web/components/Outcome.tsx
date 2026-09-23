@@ -51,9 +51,9 @@ export function Outcome({id,match,account,rating,ratingDelta,sound,replay,rematc
       <div className="result-vortex"/><div className="result-ring ring-a"/><div className="result-ring ring-b"/><div className="result-scan"/>
       {animate && <div className="arcade-particles">{Array.from({length:32},(_,i)=><i key={i} style={{"--i":i} as React.CSSProperties}/>)}</div>}
     </div>
-    <p className="eyebrow">{confirmation==="engine"?"RESULT CONFIRMED ON INTERLUDE":"RESULT CONFIRMED ON MONAD"}</p><h2 data-title={resultTitle}>{resultTitle}</h2>
+    <p className="eyebrow">{confirmation==="engine"?"RESULT RECORDED":"RESULT RECORDED"}</p><h2 data-title={resultTitle}>{resultTitle}</h2>
     <p className="outcome-score">{match.state.scoreA} : {match.state.scoreB}</p><p>{match.draw?'Time is up. ELO unchanged.':`${short(match.winner)} wins`}</p>
-    {result.victory!==null && <p>{match.ranked===false?"Friendly match · ELO unchanged":!match.ratingFinalized?"ELO settlement pending…":delta!==null?`${match.mode===1?"Chaos":"Classic"} ELO ${delta>=0?"+":""}${delta}`:"ELO updated"}</p>}
+    {result.victory!==null && <p>{match.ranked===false?"Friendly match · ELO unchanged":!match.ratingFinalized?"Updating ratings…":delta!==null?`${match.mode===1?"Chaos":"Classic"} ELO ${delta>=0?"+":""}${delta}`:"ELO updated"}</p>}
     {animate && <button className="outcome-skip" data-autofocus onClick={()=>setAnimate(false)}>Skip animation · Esc</button>}
     {rematchStatus && <p role="status">{rematchStatus}</p>}
     <div className="button-row">{result.victory!==null && <button disabled={rematchBusy} onClick={()=>{setRematchBusy(true);setRematchStatus("");void rematch().then(()=>setResult(null)).catch(e=>setRematchStatus(e.message)).finally(()=>setRematchBusy(false));}}>{rematchBusy?"Sending rematch…":"Rematch ↗"}</button>}{watch&&<button onClick={()=>{setResult(null);watch();}}>Watch replay</button>}<button onClick={()=>{setResult(null);again();}}>{againLabel}</button></div>

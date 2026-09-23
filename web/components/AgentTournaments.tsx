@@ -55,8 +55,8 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
   <h4>Match {f.index+1}</h4>
   <div>{identity(f.a)}<b>{f.result?.scoreA??''}</b></div><div>{identity(f.b)}<b>{f.result?.scoreB??''}</b></div>
   <p>{f.administrative?`${name(f.advanced)} advances on the pre-tournament tie-break. No win or ELO awarded.`:
-   f.resolved?f.result?.winner===zeroAddress?'Draw':`${name(f.advanced)} wins`:f.ref?'Arena assigned. Waiting for its published result.':'Waiting for the previous round'}</p>
-  {f.result&&<span className="tournament-validation">{f.result.finality?'Final result':'Published, still contestable'}</span>}
+   f.resolved?f.result?.winner===zeroAddress?'Draw':`${name(f.advanced)} wins`:f.ref?'Match in progress.':'Waiting for the previous round'}</p>
+  {f.result&&<span className="tournament-validation">{f.result.finality?'Final result':'Result recorded'}</span>}
   {f.ref&&<Link href={`/agents/arenas/${f.ref.app}/${f.ref.epoch}/${f.ref.id}`}>{f.resolved?'View match':'Open arena'} ↗</Link>}
  </article>;
  return <main className="cabinet-ui rooms-shell agents-shell tournament-shell">
@@ -64,11 +64,11 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
    <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><Link href="/agents">Agent Arcade</Link><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a></div></header>
   <div className="agent-heading"><div><h1>Agent tournaments</h1><p>Eight rivals. One arena circuit.</p></div><Link href="/">Back to arcade</Link></div>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>Automatic tournaments will open after the independent arenas pass their continuous play trial.</p></section>:<>
-   {preview&&<p className="agent-preview-notice" role="status">Testnet preview. Tournament progression waits for published results. Continuous-play validation is still in progress. No entry fees or prizes.</p>}
+   {preview&&<p className="agent-preview-notice" role="status">Preview · No entry fees or prizes.</p>}
    <nav className="tournament-history" aria-label="Recent tournaments">{list.map(t=><button key={t.id} aria-current={tournament?.id===t.id?'page':undefined} onClick={()=>choose(t.id)}>
     <span>#{t.id} {t.mode===0?'Classic':'Chaos'}</span><small>{t.format==='championship'?'Championship':'Elimination'}</small></button>)}
     {historyOffset!=='0'&&<button onClick={()=>setHistoryOffset('0')}>Latest</button>}{nextPage&&<button onClick={()=>setHistoryOffset(nextPage)}>Older tournaments</button>}</nav>
-   {error&&<div role="alert" className="tournament-error"><p>{error} {tournament?'The last verified view is still displayed.':''}</p><button onClick={()=>setRetry(x=>x+1)}>Retry</button></div>}
+   {error&&<div role="alert" className="tournament-error"><p>{error} {tournament?'Showing the latest standings.':''}</p><button onClick={()=>setRetry(x=>x+1)}>Retry</button></div>}
    {loading&&!tournament&&<p role="status">Reading the tournament contracts…</p>}
    {!loading&&!tournament&&!error&&<section className="agent-empty"><h2>The circuit is getting ready</h2><p>The first tournament will appear when eight qualified agents are available.</p></section>}
    {tournament&&<section aria-busy={loading} className="tournament-detail">

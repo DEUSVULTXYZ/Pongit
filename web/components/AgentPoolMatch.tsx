@@ -66,9 +66,9 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   const controller=new AbortController();
   const get=async<T,>(path:string):Promise<T>=>{
    const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(30000)])});
-   if(!response.ok)throw Error(response.status===404?'This match reference does not exist.':'Agent Arcade is synchronizing. Please retry shortly.');return response.json();
+   if(!response.ok)throw Error(response.status===404?'This match reference does not exist.':'The arcade is reconnecting. One moment.');return response.json();
   };
-  const publish=(s:EngineState)=>{if(!cancelled){setSnapshot(s);setConnection(s.phase>=3?'Result on engine, publication pending':'Live engine state');}};
+  const publish=(s:EngineState)=>{if(!cancelled){setSnapshot(s);setConnection(s.phase>=3?'Match over':'Live');}};
   const matchPath=`/matches/${reference.app}/${reference.epoch}/${reference.id}`;
   const acceptView=(value:PoolMatchView)=>{
    if(value.ref.app.toLowerCase()!==reference.app.toLowerCase()||value.ref.epoch!==reference.epoch||value.ref.id!==reference.id)throw Error('Match reference changed unexpectedly');
@@ -97,8 +97,8 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      refreshPublished();
     }
     if(!current)return;
-    if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setControlError('');setConnection(current.result.finality?'Final result':'Published, still contestable');setError('');delay=10000;return;}
-    if(!current.node){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection('Waiting for arena synchronization');delay=2000;return;}
+    if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setControlError('');setConnection(current.result.finality?'Final result':'Result recorded');setError('');delay=10000;return;}
+    if(!current.node){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection('Getting the arena ready');delay=2000;return;}
     if(!observer){
      const remembered=rememberedAccount(),saved=remembered?loadPoolFamily(config,remembered.address,sessionStorage):null;
      const participant=saved&&[current.a,current.b].some(a=>a.toLowerCase()===saved.grant.player.toLowerCase());
@@ -137,7 +137,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      }
      const launch=await observer.launch();if(!cancelled&&launch)setCountdown({id:refKey,...launch});
     }
-   }catch(e){if(cancelled)return;setError(poolUserError(e));setConnection('Synchronizing');delay=Math.max(2000,engineReadRetryMs(e));}
+   }catch(e){if(cancelled)return;setError(poolUserError(e));setConnection('Reconnecting');delay=Math.max(2000,engineReadRetryMs(e));}
    finally{if(!cancelled)timer=setTimeout(poll,Math.min(30000,delay));}
   };
   void poll();return()=>{cancelled=true;controller.abort();clearTimeout(timer);observer?.close();playerClient.current=null;release?.();};
@@ -194,17 +194,17 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
    <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link>{side>=0&&<button onClick={()=>{void move(0);setTools(true);}}>Tools</button>}</div></header>
   {!enabled?<section className="agent-empty"><h1>Qualification in progress</h1><p>Independent agent arenas are not open yet.</p></section>:<>
-   <div className="pool-match-toolbar"><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {side<0&&streamPaused&&snapshot?.phase===2&&!result?'Synchronizing live match':connection}</span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button><span role="status">{copied}</span></div>
+   <div className="pool-match-toolbar"><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {side<0&&streamPaused&&snapshot?.phase===2&&!result?'Reconnecting':connection}</span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button><span role="status">{copied}</span></div>
    {error&&<div className="pool-match-error" role="alert"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
-   {controlError&&!tools&&<div className="pool-match-error" role="status"><p>{controlError}</p><button onClick={()=>{void move(0);setTools(true);}}>Session tools</button></div>}
+   {controlError&&!tools&&<div className="pool-match-error" role="status"><p>{controlError}</p><button onClick={()=>{void move(0);setTools(true);}}>Account</button></div>}
    {!view&&!error&&<p role="status">Reading the match reference…</p>}
    {view&&<section className="rooms-court court-card agent-court" aria-label="Agent arena">
-    <AgentScoreboard players={[{name:name(view.a),avatar:avatar(view.a)},{name:name(view.b),avatar:avatar(view.b)}]} scores={[scoreA,scoreB]} caption={engineDone?'RESULT ON ENGINE':`${overtime?'SUDDEN DEATH':'FIRST TO SEVEN'} · ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}/>
+    <AgentScoreboard players={[{name:name(view.a),avatar:avatar(view.a)},{name:name(view.b),avatar:avatar(view.b)}]} scores={[scoreA,scoreB]} caption={engineDone?'MATCH OVER':`${overtime?'SUDDEN DEATH':'FIRST TO SEVEN'} · ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}/>
     {result?<div className="pool-published-result"><h1>{result.status===4?'Match cancelled':result.winner===zeroAddress?'Draw':`${name(result.winner)} wins`}</h1>
-     <p>{result.finality?'Final published result':'Published on Monad, still contestable'}</p>
+     <p>{result.finality?'Final result':'Result recorded'}</p>
      {result.status===3&&<button onClick={()=>setReplay(true)}>Watch replay</button>}
      {view.tournament!=='0'&&<Link href={`/agents/tournaments?id=${view.tournament}`}>View tournament</Link>}
-     <p className="pool-match-reference">Arena {short(reference.app)} · Epoch {reference.epoch} · Match {reference.id}</p></div>:snapshot?<>
+     <details className="pool-match-reference"><summary>Match details</summary><p>{result.finality?"Recorded on Monad and final.":"Recorded on Monad. It can still be challenged until it is final."}</p><p>Arena {short(reference.app)} · Epoch {reference.epoch} · Match {reference.id}</p></details></div>:snapshot?<>
      {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={playout?playout.gameMs:Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
      <div className="pool-canvas-slot"><Court state={snapshot.state} chaos={snapshot.chaos} rulesVersion={manifest.current?.rulesVersion??10} clock={snapshot.clock>BigInt(view.overtimeSeconds?360_000_000:300_000_000)?BigInt(view.overtimeSeconds?360_000_000:300_000_000):snapshot.clock}
       observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onPlayback={setPainted} onStats={(_fps,_predicted,waiting)=>setStreamPaused(waiting)}/>{manifest.current?.version===4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
@@ -213,7 +213,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    </section>}
   </>}
   {tools&&<Dialog label="Arena tools" onClose={()=>setTools(false)}><IconButton aria-label="Close arena tools" onClick={()=>setTools(false)}/><h2>Arena tools</h2>{controlError&&<p role="alert">{controlError}</p>}
-   <button disabled={busy} onClick={()=>void renew()}>Renew arcade session</button><button disabled={busy||!playerClient.current} onClick={()=>void revoke()}>Revoke this arena session</button><button disabled={busy||!playerClient.current} onClick={()=>void action(async()=>{await playerClient.current!.concede();setTools(false);})}>Concede match</button></Dialog>}
+   <button disabled={busy} onClick={()=>void renew()}>Sign in again</button><button disabled={busy||!playerClient.current} onClick={()=>void revoke()}>Sign out of this match</button><button disabled={busy||!playerClient.current} onClick={()=>void action(async()=>{await playerClient.current!.concede();setTools(false);})}>Concede match</button></Dialog>}
   <Outcome id={refKey} match={snapshot?{playerA:snapshot.a,playerB:snapshot.b,winner:result?.winner??snapshot.winner,status:result?.status??snapshot.phase,state:{...snapshot.state,scoreA,scoreB},ranked:false,mode:view?.mode??0,draw:(result?.status??snapshot.phase)===3&&(result?.winner??snapshot.winner)===zeroAddress}:null}
    account={account??''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" rematch={rematch} watch={()=>setReplay(true)} again={()=>router.push('/agents')} againLabel="Choose another agent"/>
   {replay&&<Dialog label="Match replay" onClose={()=>setReplay(false)}><IconButton className="modal-close" aria-label="Close replay" onClick={()=>setReplay(false)}/><h2>Match replay</h2><AgentReplay reference={reference}/></Dialog>}
