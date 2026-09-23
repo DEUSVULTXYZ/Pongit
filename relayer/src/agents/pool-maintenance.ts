@@ -34,6 +34,15 @@ export function pinnedReads(load:(address:Address,abi:Abi,functionName:string,ar
  const prefetch=(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>{read(address,abi,functionName,args).catch(()=>{});};
  return{read,prefetch};
 }
+/** Every new hosted epoch needs Interlude's control plane. Any HTTP answer, a 404
+ * included, proves it is serving; a timeout or a 5xx means a rotated arena could
+ * not be hosted again yet. Only voluntary, age-based rotations consult this. */
+export async function controlPlaneAnswers(app:Address,transport:typeof fetch=fetch,timeoutMs=5000){
+ try{
+  const response=await transport(`https://control.interludelayer.xyz/sessions/${app}`,{signal:AbortSignal.timeout(timeoutMs)});
+  await response.body?.cancel().catch(()=>{});return response.status<500;
+ }catch{return false;}
+}
 export function tournamentDue(last:{startedAt:bigint}|null,nextAt:bigint,now:bigint){
  return now>=nextAt&&(!last||now>=last.startedAt+tournamentIntervalSeconds);
 }

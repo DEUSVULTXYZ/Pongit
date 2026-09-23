@@ -12,7 +12,7 @@ async function fixture(t:any,withBudget=true){
  const fields=roomsLifecycleHubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
  const ds=apps.map(app=>({...Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n])),
   app,status:1,epoch:2n,baseBlock:3n,expiresAt:10000n,batchIndex:100n}));
- const health=apps.map(app=>({app,epoch:'2',stage:'available',online:true})),reserved=[0n,0n,0n],jobs:any[]=[];let enabled=true,openFailure:Error|undefined;
+ const health=apps.map(app=>({app,epoch:'2',stage:'available',online:true})),reserved=[0n,0n,0n],jobs:any[]=[];let enabled=true,openFailure:Error|undefined,controlUp=true;
  const base:any={getCode:async()=> '0x1234',getBlock:async(c:any)=>({number:20n,timestamp:c?.blockNumber===3n?1n:1000n}),
   request:async(c:any)=>{const call=decodeFunctionData({abi:roomsLifecycleHubAbi,data:c.params[0].data}),app=call.args![0];
    return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:ds[apps.indexOf(app as Address)] as any});},
@@ -26,8 +26,8 @@ async function fixture(t:any,withBudget=true){
   t.after(async()=>{await unlink(path);await rmdir(dir);});
  }
  const worker=await independentReusablePool(base,m,async(at,abi,name,args,value)=>{
-  encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args,value});if(name==='openReusableArena'&&openFailure)throw openFailure;},()=>health,()=>enabled,path);
- return{apps,worker,ds,health,reserved,jobs,base,disable:()=>enabled=false,failOpening:(error:Error)=>openFailure=error};
+  encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args,value});if(name==='openReusableArena'&&openFailure)throw openFailure;},()=>health,()=>enabled,path,async()=>controlUp);
+ return{apps,worker,ds,health,reserved,jobs,base,disable:()=>enabled=false,failOpening:(error:Error)=>openFailure=error,controlDown:()=>controlUp=false};
 }
 
 test('an absent reviewed budget cannot reserve capacity or admit a human match',async t=>{
@@ -59,6 +59,15 @@ test('age-based rotation waits for the replacement engine, not only its hub admi
  f.health[2].stage='available';f.health[2].online=true;
  assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs[0].name,'closeReusableArena');
  assert.deepEqual(f.jobs[0].args,[f.apps[0]]);
+});
+
+test('age rotation keeps a healthy arena while the control plane cannot host its next epoch',async t=>{
+ const f=await fixture(t);f.base.getBlock=async(c:any)=>({number:20n,timestamp:c?.blockNumber===3n?1n:8000n});
+ for(const d of f.ds)d.expiresAt=100000n;f.controlDown();
+ assert.equal(await f.worker.admissionReady(),true,'the aged arenas keep serving');assert.equal(f.jobs.length,0);
+ // A delegation near its end still closes: that is not a choice.
+ f.ds[0].expiresAt=9000n;
+ assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs[0].name,'closeReusableArena');assert.deepEqual(f.jobs[0].args,[f.apps[0]]);
 });
 
 test('age rotation selects the oldest epoch rather than starving the last registered arena',async t=>{

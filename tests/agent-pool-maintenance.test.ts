@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
-import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,tournamentIntervalSeconds,pinnedReads,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,tournamentIntervalSeconds,pinnedReads,controlPlaneAnswers,type PoolRead} from '../relayer/src/agents/pool-maintenance';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
 
@@ -152,4 +152,12 @@ test('challenge expiry starts its whole scan window together and keeps the first
  assert.deepEqual(issued,[3n,4n,5n,1n,2n],'the window follows the cursor and wraps');
  assert.equal(peak,5,'the reads overlap instead of waiting for each other');
  assert.deepEqual(found,{expired:3n,next:4n},'first waiting challenge with a changed grant, cursor right after it');
+});
+
+test('a voluntary rotation needs a control plane that answers, even with a 404',async()=>{
+ const answer=(status:number)=>(async()=>new Response('{}',{status})) as typeof fetch;
+ assert.equal(await controlPlaneAnswers(address(1),answer(200)),true);
+ assert.equal(await controlPlaneAnswers(address(1),answer(404)),true,'an unknown session still proves control is serving');
+ assert.equal(await controlPlaneAnswers(address(1),answer(503)),false);
+ assert.equal(await controlPlaneAnswers(address(1),(async()=>{throw Error('timeout');}) as typeof fetch),false);
 });

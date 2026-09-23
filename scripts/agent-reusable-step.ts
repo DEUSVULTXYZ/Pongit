@@ -16,7 +16,7 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
-import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads} from '../relayer/src/agents/pool-maintenance';
+import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers} from '../relayer/src/agents/pool-maintenance';
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
 import {agentMetrics} from '../relayer/src/agents/metrics';
@@ -212,7 +212,10 @@ async function step(){
   const candidates=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase())).sort((a,b)=>a.d.baseBlock<b.d.baseBlock?-1:1);
   for(const candidate of candidates){
    const opening=await t.base.getBlock({blockNumber:candidate.d.baseBlock,includeTransactions:false});
-   if(block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)||candidate.d.expiresAt<=block.timestamp+BigInt(budget.rotationLeadSeconds)){
+   const leading=candidate.d.expiresAt<=block.timestamp+BigInt(budget.rotationLeadSeconds);
+   // Age alone is a voluntary rotation: never retire a healthy arena into an
+   // epoch that Interlude's control plane cannot host right now.
+   if(leading||block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)&&await controlPlaneAnswers(candidate.app)){
     await act(m.pool,'closeReusableArena',[candidate.app]);return;
    }
   }

@@ -9,12 +9,21 @@ import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationB
 import {engineReadRetryMs} from '../../shared/engine-read';
 
 type Queue=(at:Address,abi:Abi,name:string,args:readonly unknown[],value?:bigint,priority?:number)=>Promise<unknown>;
+/** Every new hosted epoch needs Interlude's control plane. Any HTTP answer, a 404
+ * included, proves it is serving; a timeout or a 5xx means a rotated arena could
+ * not be hosted again yet. Only voluntary, age-based rotations consult this. */
+async function controlPlaneAnswers(app:Address){
+ try{
+  const response=await fetch(`https://control.interludelayer.xyz/sessions/${app}`,{signal:AbortSignal.timeout(5000)});
+  await response.body?.cancel().catch(()=>{});return response.status<500;
+ }catch{return false;}
+}
 /** No evidence file means no new capacity/admission; it never disables the
  * separate lifecycle observer or financial recovery. Actual hub reads define
  * capacity. A registered address or successful old HTTP response does not. */
 export async function independentReusablePool(base:PublicClient,m:IndependentManifest,queue:Queue,
  health:()=>readonly {app:Address;epoch:string;stage:string;online:boolean}[],enabled:()=>boolean,
- budgetPath=process.env.PONG_INDEPENDENT_PUBLICATION_BUDGET){
+ budgetPath=process.env.PONG_INDEPENDENT_PUBLICATION_BUDGET,control:(app:Address)=>Promise<boolean>=controlPlaneAnswers){
  if(m.rulesVersion!==14)throw Error('Reusable human pool required');
  let reserveRetryAt=0;
  let budget:ReusablePublicationBudget|undefined;
@@ -61,8 +70,10 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
   for(const a of idle){
    const opening=await base.getBlock({blockNumber:a.d.baseBlock});
    const exhausted=!reusableAdmissionBudget(budget,a.d.batchIndex,a.d.expiresAt,block.timestamp);
-   if(exhausted||readyCount>=3&&(block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)
-    ||a.d.expiresAt<=block.timestamp+BigInt(budget.rotationLeadSeconds))){
+   const leading=a.d.expiresAt<=block.timestamp+BigInt(budget.rotationLeadSeconds);
+   // Age alone is a voluntary rotation: never retire a healthy arena into an
+   // epoch that Interlude's control plane cannot host right now.
+   if(exhausted||readyCount>=3&&(leading||block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)&&await control(a.app))){
     await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);return false;
    }
   }
