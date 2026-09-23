@@ -24,7 +24,7 @@ export const tournamentIntervalSeconds=3n*24n*60n*60n;
 export function pinnedReads(load:(address:Address,abi:Abi,functionName:string,args:readonly unknown[])=>Promise<unknown>){
  const memo=new Map<string,Promise<unknown>>();
  const key=(address:Address,functionName:string,args:readonly unknown[])=>address.toLowerCase()+'|'+functionName+'|'+JSON.stringify(args,(_,v)=>
-  typeof v==='bigint'?{bigint:String(v)}:typeof v==='string'&&/^0x[da-f]{40}$/i.test(v)?v.toLowerCase():v);
+  typeof v==='bigint'?{bigint:String(v)}:typeof v==='string'&&/^0x[\da-f]{40}$/i.test(v)?v.toLowerCase():v);
  const read=<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[]):Promise<T>=>{
   const k=key(address,functionName,args),cached=memo.get(k);if(cached)return cached as Promise<T>;
   const pending=load(address,abi,functionName,args);memo.set(k,pending);

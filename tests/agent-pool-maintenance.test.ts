@@ -120,6 +120,10 @@ test('pinned step reads are served once, normalised, started together and retrie
  pinned.prefetch(a,[] as any,'record',[{id:5n,arena:a}]);
  const value=await pinned.read(a.toUpperCase().replace('0X','0x') as any,[] as any,'record',[{id:5n,arena:a.toUpperCase().replace('0X','0x')}]);
  assert.equal(calls.filter(c=>c==='record').length,1);assert.match(String(value),/^record:/);
+ // Checksummed and lower-case spellings of an address with hex letters are one call.
+ const mixed='0xAbCdEf0123456789aBcDeF0123456789AbCdEf01';
+ pinned.prefetch(mixed as any,[] as any,'owner',[mixed]);await pinned.read(mixed.toLowerCase() as any,[] as any,'owner',[mixed.toLowerCase()]);
+ assert.equal(calls.filter(c=>c==='owner').length,1,'address spelling must not split the memo');
  // A number and a bigint are different arguments and must never share a result.
  await pinned.read(a,[] as any,'lane',[0]);await pinned.read(a,[] as any,'lane',[0n]);
  assert.equal(calls.filter(c=>c==='lane').length,2);
