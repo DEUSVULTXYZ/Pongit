@@ -9,7 +9,7 @@ import type {AgentMatchRef} from '../../shared/agents';
 import type {AgentPoolManifest,PoolMatchView} from '../../shared/agent-pool';
 import {createPoolObserver} from '../../shared/agent-pool-observer';
 import {createPoolPlayer} from '../../shared/agent-pool-player';
-import {loadPoolFamily,preparePoolFamily} from '../../shared/agent-pool-family';
+import {loadPoolFamily,preparePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN} from '../../shared/agent-pool-family';
 import {preparePoolChallenge} from '../../shared/agent-pool-client';
 import type {EngineState} from '../../shared/engine-stream';
 import {engineReadRetryMs} from '../../shared/engine-read';
@@ -177,8 +177,17 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    await client.revoke(identity.account);setReady(false);setTools(false);setRetry(n=>n+1);
   }finally{identity.end();}
  });}
- async function rematch(){const m=manifest.current;if(!m||!view||!account)throw Error('Your arcade session is unavailable');const s=loadPoolFamily(m,account,sessionStorage);if(!s)throw Error('Renew your arcade session');
+ async function rematch(){const m=manifest.current;if(!m||!view||!account)throw Error('Your arcade session is unavailable');let s=loadPoolFamily(m,account,sessionStorage);if(!s)throw Error('Renew your arcade session');
   const sponsor=poolBrowserSponsor(m,account);await finishPoolSponsor(sponsor);const agent=side===0?view.b:view.a;
+  // The rematch starts from the result screen: renew here, never mid-match.
+  if(familyExpiresSoon(s,(await poolBase().getBlock()).timestamp)){
+   const identity=await connect();
+   try{
+    if(identity.account.address.toLowerCase()!==account.toLowerCase())throw Error('Use the passkey for this player');
+    const prepared=await preparePoolFamily(poolBase(),m,identity.account,sessionStorage,{renewWithin:SESSION_RENEW_MARGIN});
+    if(prepared.call)await finishPoolSponsor(sponsor,prepared.call);s=prepared.session;
+   }finally{identity.end();}
+  }
   await finishPoolSponsor(sponsor,await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),account,{agent,mode:view.mode}));router.push(`/agents?mode=${view.mode}`);
  }
  const result=view?.result,engineDone=!!snapshot&&snapshot.phase>=3;

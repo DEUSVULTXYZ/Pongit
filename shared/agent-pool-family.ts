@@ -37,7 +37,13 @@ export async function observePoolFamily(client:PublicClient,m:AgentPoolManifest,
 /** Call only after reconciling the sponsor journal. Missing node/RPC replies
  * throw before any signing and preserve the key. A saved still-valid signed
  * grant is retried exactly after a page reload, not silently re-keyed. */
-export async function preparePoolFamily(client:PublicClient,m:AgentPoolManifest,owner:Owner,storage:PoolSessionStorage){
+/** A match must never outlive its authorization. Renew at a natural pause (the
+ * lobby or the result screen) once less than this remains: it covers the arena
+ * wait, the countdown and a full match with overtime. */
+export const SESSION_RENEW_MARGIN=1200n;
+export const familyExpiresSoon=(s:PoolFamilySession,now:bigint,margin=SESSION_RENEW_MARGIN)=>s.grant.expires-now<margin;
+
+export async function preparePoolFamily(client:PublicClient,m:AgentPoolManifest,owner:Owner,storage:PoolSessionStorage,options:{renewWithin?:bigint}={}){
  m=validateAgentPoolManifest(m);
  if(await client.getChainId()!==10143)throw Error('Arcade authorizations require Monad Testnet');
  const existing=loadPoolFamily(m,owner.address,storage),block=await client.getBlock();
@@ -45,10 +51,13 @@ export async function preparePoolFamily(client:PublicClient,m:AgentPoolManifest,
  if(existing){
   const observed=await client.readContract({address:m.family,abi:familyAbi,functionName:'grantOf',args:[owner.address],blockNumber:block.number});
   if((await client.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arcade authorization changed during synchronization');
-  if(observed.player.toLowerCase()===owner.address.toLowerCase()&&observed.key.toLowerCase()===existing.grant.key.toLowerCase()
+  // Asked to renew near the end: a fresh consent replaces a grant that could
+  // otherwise expire in the middle of the next match. Never done silently.
+  const ending=options.renewWithin!==undefined&&existing.grant.expires-block.timestamp<options.renewWithin;
+  if(!ending&&observed.player.toLowerCase()===owner.address.toLowerCase()&&observed.key.toLowerCase()===existing.grant.key.toLowerCase()
    &&observed.issuedAt===existing.grant.issuedAt&&observed.expires===existing.grant.expires&&observed.revision===existing.grant.revision&&observed.expires>block.timestamp)
    return{session:existing,call:null};
-  if(existing.grant.expires>block.timestamp&&existing.grant.revision===revision
+  if(!ending&&existing.grant.expires>block.timestamp&&existing.grant.revision===revision
    &&(observed.key==='0x0000000000000000000000000000000000000000'||observed.issuedAt<existing.grant.issuedAt)){
    // Still-valid unregistered consent survives a failed POST or F5. A proven
    // newer authorization on another device instead requires fresh owner consent.

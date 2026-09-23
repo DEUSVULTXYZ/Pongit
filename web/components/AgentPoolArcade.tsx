@@ -6,7 +6,7 @@ import {useRouter} from 'next/navigation';
 import type {Address} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {preparePoolChallenge} from '../../shared/agent-pool-client';
-import {preparePoolFamily,loadPoolFamily,observePoolFamily,type PoolFamilySession} from '../../shared/agent-pool-family';
+import {preparePoolFamily,loadPoolFamily,observePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN,type PoolFamilySession} from '../../shared/agent-pool-family';
 import {validateAgentPoolManifest,type AgentPoolManifest,type PoolChallengeView} from '../../shared/agent-pool';
 import type {AgentMatchRef} from '../../shared/agents';
 import {engineReadRetryMs} from '../../shared/engine-read';
@@ -27,7 +27,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const router=useRouter(),[config,setConfig]=useState<AgentPoolManifest|null>(null),[people,setPeople]=useState<Person[]>([]),[live,setLive]=useState<Live[]>([]);
  const [mode,setMode]=useState(initialMode),[view,setView]=useState(initialView),[account,setAccount]=useState<Address>(),[request,setRequest]=useState<PoolChallengeView|null>(null);
  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[connectOpen,setConnectOpen]=useState(false),[selected,setSelected]=useState(initialAgent??''),[retry,setRetry]=useState(0),[offset,setOffset]=useState('0'),[next,setNext]=useState<string|null>(null);
- const [catalogError,setCatalogError]=useState(''),[queueError,setQueueError]=useState('');
+ const [catalogError,setCatalogError]=useState(''),[queueError,setQueueError]=useState(''),[renewing,setRenewing]=useState(false);
  const [watchMode,setWatchMode]=useState<'all'|0|1>('all');
  const visibleError=(!connectOpen&&error)||queueError||catalogError;
  const session=useRef<PoolFamilySession|null>(null),locked=useRef(false),intent=useRef<Address|null>(null),alive=useRef(false);
@@ -69,16 +69,19 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  function choose(agent:Address){setSelected(agent);intent.current=agent;void run(async()=>{
   if(!config)throw Error('The arcade is reconnecting');
   const saved=account?loadPoolFamily(config,account,sessionStorage):null;
-  if(saved){await finishPoolSponsor(poolBrowserSponsor(config,saved.grant.player));if((await observePoolFamily(poolBase(),config,saved)).active){session.current=saved;await challenge(config,saved,agent);intent.current=null;return;}}
+  if(saved){await finishPoolSponsor(poolBrowserSponsor(config,saved.grant.player));const observed=await observePoolFamily(poolBase(),config,saved);
+   // Renew here, in the lobby, rather than let the grant expire mid-match.
+   if(observed.active&&!familyExpiresSoon(saved,observed.block.timestamp)){session.current=saved;await challenge(config,saved,agent);intent.current=null;return;}
+   setRenewing(observed.active);}
   setConnectOpen(true);
  });}
  async function login(create=false){await run(async()=>{
   if(!config)throw Error('The arcade is reconnecting');const identity=await connect(create);
   try{
    setAccount(identity.account.address);const sponsor=poolBrowserSponsor(config,identity.account.address);await finishPoolSponsor(sponsor);
-   const prepared=await preparePoolFamily(poolBase(),config,identity.account,sessionStorage);
+   const prepared=await preparePoolFamily(poolBase(),config,identity.account,sessionStorage,{renewWithin:SESSION_RENEW_MARGIN});
    if(prepared.call)await finishPoolSponsor(sponsor,prepared.call);
-   session.current=prepared.session;setConnectOpen(false);const agent=intent.current;
+   session.current=prepared.session;setConnectOpen(false);setRenewing(false);const agent=intent.current;
    if(agent)await challenge(config,prepared.session,agent);intent.current=null;
   }finally{identity.end();}
  });}
@@ -110,7 +113,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     {!live.some(g=>watchMode==='all'||g.mode===watchMode)&&<section className="agent-empty"><h2>No arena is playing right now</h2><p>The next match will appear here when it is assigned.</p></section>}</div>}
    <p>Human challenges are friendly. No bets, entry fees or prizes.</p>
   </>}
-  {connectOpen&&<Dialog label="Connect to challenge an agent" onClose={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}><IconButton aria-label="Close connection" onClick={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}/><h2>Your next rival is ready</h2><p>Sign in to continue.</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void login()}>Connect & play</button><button disabled={busy} onClick={()=>void login(true)}>Create account</button></div>{error&&<p role="alert">{error}</p>}</Dialog>}
+  {connectOpen&&<Dialog label="Connect to challenge an agent" onClose={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}><IconButton aria-label="Close connection" onClick={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}/><h2>{renewing?'Keep playing':'Your next rival is ready'}</h2><p>{renewing?'Your session ends soon. Confirm once to keep playing.':'Sign in to continue.'}</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void login()}>{renewing?'Continue':'Connect & play'}</button>{!renewing&&<button disabled={busy} onClick={()=>void login(true)}>Create account</button>}</div>{error&&<p role="alert">{error}</p>}</Dialog>}
   <footer className="rooms-footer"><MusicCredit/><EngineCredit/></footer>
  </main>;
 }

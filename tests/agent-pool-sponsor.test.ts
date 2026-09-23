@@ -8,7 +8,7 @@ import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
 import {familyGrantTypes,type ChainOperation} from '../shared/independent';
 import type {AgentPoolManifest} from '../shared/agent-pool';
 import {createPoolSponsor,PoolSponsorPending,poolOperationId,validatePoolSignedCall,type PoolSessionStorage,type PoolSignedCall} from '../shared/agent-pool-sponsor';
-import {preparePoolFamily,loadPoolFamily,observePoolFamily} from '../shared/agent-pool-family';
+import {preparePoolFamily,loadPoolFamily,observePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN} from '../shared/agent-pool-family';
 import {poolSponsorRoutes} from '../relayer/src/agents/pool-sponsor';
 
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
@@ -114,4 +114,22 @@ test('newer authorization on another device is not retried forever as a stale gr
  const renewed=await preparePoolFamily(f.client,m,f.owner,f.storage);assert.equal(f.state().signatures,2);assert.notEqual(renewed.session.key,first.session.key);
  const corrupt=memory();for(const [key,value] of f.storage.values)corrupt.setItem(key,value.replace(renewed.session.key,'invalid'));
  await assert.rejects(preparePoolFamily(f.client,m,f.owner,corrupt),/Saved arcade authorization is invalid/);assert.equal(f.state().signatures,2);
+});
+
+test('a grant near its end is renewed at a pause instead of expiring during the next match',async()=>{
+ const f=familyFixture();const first=await preparePoolFamily(f.client,m,f.owner,f.storage);f.grant(first.session.grant);
+ // Early in its two hours the margin changes nothing: no prompt, same key.
+ f.time(1000n);assert.equal(familyExpiresSoon(first.session,1000n),false);
+ const kept=await preparePoolFamily(f.client,m,f.owner,f.storage,{renewWithin:SESSION_RENEW_MARGIN});
+ assert.equal(kept.call,null);assert.equal(kept.session.key,first.session.key);assert.equal(f.state().signatures,1);
+ // Fifteen minutes before its end, a match could outlive it.
+ const late=first.session.grant.expires-900n;f.time(late);assert.equal(familyExpiresSoon(first.session,late),true);
+ // Without asking to renew, nothing is silently re-keyed.
+ const untouched=await preparePoolFamily(f.client,m,f.owner,f.storage);
+ assert.equal(untouched.session.key,first.session.key);assert.equal(f.state().signatures,1);
+ // Asked at a pause, one consent replaces it with a full two hours.
+ const renewed=await preparePoolFamily(f.client,m,f.owner,f.storage,{renewWithin:SESSION_RENEW_MARGIN});
+ assert(renewed.call);assert.notEqual(renewed.session.key,first.session.key);
+ assert.equal(renewed.session.grant.expires,late+7200n);assert.equal(f.state().signatures,2);
+ assert.equal(loadPoolFamily(m,f.owner.address,f.storage)?.key,renewed.session.key);
 });
