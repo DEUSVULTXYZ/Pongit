@@ -48,10 +48,19 @@ async function act(to:Address,method:string,args:any[]=[],value=0n){
 // Same paced transport and no retries, plus Multicall3 batching: reads started
 // together travel as one eth_call. Writes and raw requests still use t.base.
 const reader=createPublicClient({chain:t.base.chain,transport:custom({request:(args:any)=>t.base.request(args)},{retryCount:0}),batch:{multicall:true}});
+// Operator profiling: create /state/profile to log one timing line per step.
+// The flag only adds a log line; it never changes what the keeper does.
+const profile=await readFile('/state/profile','utf8').then(()=>({start:performance.now(),marks:[] as [string,number][],reads:new Map<string,{n:number;ms:number}>()}),()=>null);
+const mark=(label:string)=>{if(profile)profile.marks.push([label,Math.round(performance.now()-profile.start)]);};
 async function step(){
  if(state.intent){const i=state.intent;await act(i.to,i.method,i.args,i.value);return;}
  const block=await t.base.getBlock({includeTransactions:false});
- const pinned=pinnedReads((address,abi,functionName,args)=>reader.readContract({address,abi,functionName,args,blockNumber:block.number}));
+ mark('block');
+ const pinned=pinnedReads(async(address,abi,functionName,args)=>{
+  const began=performance.now();
+  try{return await reader.readContract({address,abi,functionName,args,blockNumber:block.number});}
+  finally{if(profile){const e=profile.reads.get(functionName)??{n:0,ms:0};e.n++;e.ms+=performance.now()-began;profile.reads.set(functionName,e);}}
+ });
  const read=pinned.read;
  // Start the common path's independent reads together. They are exactly the
  // values the logic below reads at this block; the batch makes them one call.
@@ -70,6 +79,7 @@ async function step(){
  let budget:ReusablePublicationBudget|undefined;
  try{budget=validateReusableBudget(JSON.parse(await readFile('/metadata/reusable-budget.json','utf8')),r.arenas.map((a:any)=>a.runtimeHash));}
  catch(e){if((e as any).code!=='ENOENT')console.error(JSON.stringify({event:'admissions-budget-unavailable',error:clean(e)}));}
+ mark('authority');
  const lanes=await Promise.all([0,1].map(l=>read(m.pool,poolAbi,'laneRecord',[l])));
  async function capture(ref:Ref){
   const entry=await read(m.pool,poolAbi,'record',[ref]);if(!entry.ref.id)return false;
@@ -88,6 +98,7 @@ async function step(){
   if(state.intent)throw e;
   console.error(JSON.stringify({at:new Date().toISOString(),arena:row.ref.arena,id:String(row.ref.id),event:'publication-proof-pending',error:clean(e)}));
  }}
+ mark('lane-capture');
  const delegations=await Promise.all(r.arenas.map(async(a:any)=>({app:a.app as Address,d:await readHubDelegation(t.base,m.hub,a.app,block.number)})));
  for(const {app,d} of delegations){
   if(d.status===0&&!cooling(m.pool,'recoverReleased')){
@@ -119,6 +130,7 @@ async function step(){
    await act(m.pool,'closeReusableArena',[app]);return;
   }
  }
+ mark('arena-lifecycle');
  if(await read<bigint>(m.ratings,ratingsAbi,'buildGeneration')){if(!cooling(m.ratings,'rebuild'))await act(m.ratings,'rebuild',[32n]);return;}
  // Result capture releases the lane, but nextFixture still waits for the
  // tournament ledger. Do not bury this current result in a rotating scan of
@@ -133,6 +145,7 @@ async function step(){
  // Old finality/correction proofs stay resumable, but do not occupy every
  // operator step before an available next match. Current lane capture, release,
  // nonce recovery and rating rebuilds above always retain priority.
+ mark('captured-work');
  const archiveHistory=async()=>{
   const cursor=state.archiveCursor??{app:'',epoch:'0',id:'0'};
   const history=(await db.query(`SELECT app,epoch,match_id FROM (
@@ -150,6 +163,7 @@ async function step(){
  if(expired.expired!==null&&!cooling(m.challenges,'expire')){await act(m.challenges,'expire',[expired.expired]);return;}
  // A missing worst-case proof holds NEW admissions only. Recovery above is
  // deliberately still live while qualification or the provider is unavailable.
+ mark('expired-challenge');
  if(!budget){await archiveHistory();return;}
  const privateSetup=process.env.PONG_REUSABLE_AGENT_RUNTIME!=='reviewed-release';
  const admissions=await read<boolean>(m.pool,poolAbi,'admissions');
@@ -180,6 +194,7 @@ async function step(){
    }
   }
  }
+ mark('reserve');
  const hosted=(await db.query("SELECT app,stage,detail FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
  const ready=active.filter(a=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch)));
  if(ready.length>=3&&!cooling(m.pool,'closeReusableArena')){
@@ -191,6 +206,7 @@ async function step(){
    }
   }
  }
+ mark('rotation');
  const healthy=(await db.query("SELECT app,detail FROM agent_pool.health WHERE stage='available' AND updated_at>now()-interval '15 seconds'")).rows;
  // The contract picks the newest idle arena. Require every potentially chosen
  // idle arena to satisfy the measured budget, rather than assuming it picks ours.
@@ -198,6 +214,7 @@ async function step(){
  const available=idle.length>0&&idle.every(x=>reusableAdmissionBudget(budget,x.d.batchIndex,x.d.expiresAt,block.timestamp)
   &&healthy.some(h=>h.app===x.app.toLowerCase()&&BigInt(h.detail.epoch)===x.d.epoch));
  const laneFree=lanes[0].ref.id===0n,count=await read<bigint>(m.tournaments,bookAbi,'count');
+ mark('available');
  for(let checked=0;count>0n&&checked<3;checked++){
   const cursor=state.history&&state.history.id<=count?state.history:{id:count,index:0},tournament=await read(m.tournaments,bookAbi,'tournament',[cursor.id]);
   state.history=cursor.index+1<(tournament.league?28:7)?{id:cursor.id,index:cursor.index+1}:{id:cursor.id>1n?cursor.id-1n:count,index:0};await save();
@@ -211,6 +228,7 @@ async function step(){
   if(result.hash!==f.published.hash||result.finality!==f.published.finality||result.status!==f.published.status){await act(m.tournaments,'synchronize',[cursor.id,cursor.index]);return;}
   if(!f.resolved&&f.published.status===4&&f.published.finality){await act(m.tournaments,'retryCancelled',[cursor.id,cursor.index]);return;}
  }
+ mark('history-walk');
  if(!available){await archiveHistory();return;}
  const bookOpen=await read<boolean>(m.tournaments,bookAbi,'admissions');
  if(privateSetup&&process.env.PONG_REUSABLE_AGENT_TOURNAMENTS==='1'&&!bookOpen){
@@ -226,14 +244,17 @@ async function step(){
    if(last.cursor<last.scanCount||last.catalogRevision!==await read(m.catalog,catalogAbi,'revision')){await act(m.tournaments,'select',[count,32]);return;}
   }else if(laneFree&&!cooling(m.pool,'admitTournament')){const [index]=await read(m.tournaments,bookAbi,'nextFixture',[count]);if(index!==255){await act(m.pool,'admitTournament',[count]);return;}}
  }
+ mark('tournaments');
  if(lanes[1].ref.id===0n){
   if(!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart')){
    if(!cooling(m.pool,'admitChallenge'))await act(m.pool,'admitChallenge');else await archiveHistory();return;
   }
+  mark('challenge');
   const newestBase=idle.reduce((n,a)=>a.d.baseBlock>n?a.d.baseBlock:n,0n);
   const work=await qualificationWork(read,m,state.qualificationCursor??0n,block.timestamp,16,newestBase);state.qualificationCursor=work.next;await save();
   if(work.needed&&!cooling(m.pool,'admitQualification')){await act(m.pool,'admitQualification');return;}
  }
+ mark('qualification');
  await archiveHistory();
 }
 function clean(e:any){return String(e?.shortMessage??e?.message??'Reusable keeper unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220);}
@@ -242,4 +263,6 @@ try{
  try{state=JSON.parse(await readFile(file,'utf8'),(_,v)=>v&&typeof v==='object'&&Object.keys(v).length===1&&typeof v.bigint==='string'?BigInt(v.bigint):v);}catch(e){if((e as any).code!=='ENOENT')throw e;}
  await step();
 }catch(e){console.error(JSON.stringify({at:new Date().toISOString(),pool:m.pool,error:clean(e)}));process.exitCode=1;}
-finally{if(locked)await guard.query('SELECT pg_advisory_unlock(hashtextextended($1,701354))',[prefix]);guard.release();await metrics();await db.end();await t.close();}
+finally{if(profile)console.log(JSON.stringify({event:'keeper-step-profile',at:new Date().toISOString(),totalMs:Math.round(performance.now()-profile.start),marks:profile.marks,
+ reads:[...profile.reads].sort((a,b)=>b[1].ms-a[1].ms).slice(0,10).map(([name,v])=>[name,v.n,Math.round(v.ms)])}));
+ if(locked)await guard.query('SELECT pg_advisory_unlock(hashtextextended($1,701354))',[prefix]);guard.release();await metrics();await db.end();await t.close();}
