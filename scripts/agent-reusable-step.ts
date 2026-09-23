@@ -87,7 +87,11 @@ async function step(){
  catch(e){if((e as any).code!=='ENOENT')console.error(JSON.stringify({event:'admissions-budget-unavailable',error:clean(e)}));}
  mark('authority');
  const lanes=await Promise.all([0,1].map(l=>read(m.pool,poolAbi,'laneRecord',[l])));
+ // Everything capture() reads depends only on ref: start those reads together.
+ const warmCapture=(ref:Ref)=>{pinned.prefetch(m.pool,poolAbi,'record',[ref]);pinned.prefetch(m.pool,poolAbi,'ticketOf',[ref]);
+  pinned.prefetch(m.verifier,verifierAbi,'currentRoot',[ref.arena,ref.epoch]);pinned.prefetch(m.pool,poolAbi,'result',[ref]);};
  async function capture(ref:Ref){
+  warmCapture(ref);
   const entry=await read(m.pool,poolAbi,'record',[ref]);if(!entry.ref.id)return false;
   const [ticket]=await read(m.pool,poolAbi,'ticketOf',[ref]),[root,finality]=await read(m.verifier,verifierAbi,'currentRoot',[ref.arena,ref.epoch]);
   if(root.count<ticket.sequence){if(finality&&!entry.captured&&!cooling(m.pool,'captureMissing')){await act(m.pool,'captureMissing',[ref]);return true;}return false;}
@@ -159,6 +163,7 @@ async function step(){
   UNION SELECT DISTINCT app,epoch,match_id FROM il_reusable_slot_results WHERE chain_id=10143) records
   WHERE (app,epoch,match_id)>($1,$2::numeric,$3::numeric) ORDER BY app,epoch,match_id LIMIT 3`,[cursor.app,cursor.epoch,cursor.id])).rows;
   if(!history.length){delete state.archiveCursor;await save();}
+  for(const row of history)if(r.arenas.some((a:any)=>a.app.toLowerCase()===row.app))warmCapture({chainId:10143n,arena:row.app,epoch:BigInt(row.epoch),id:BigInt(row.match_id)});
   for(const row of history){state.archiveCursor={app:row.app,epoch:String(row.epoch),id:String(row.match_id)};await save();
    if(!r.arenas.some((a:any)=>a.app.toLowerCase()===row.app))continue;
    try{if(await capture({chainId:10143n,arena:row.app,epoch:BigInt(row.epoch),id:BigInt(row.match_id)}))return;}
@@ -224,11 +229,14 @@ async function step(){
  for(let checked=0;count>0n&&checked<3;checked++){
   const cursor=state.history&&state.history.id<=count?state.history:{id:count,index:0},tournament=await read(m.tournaments,bookAbi,'tournament',[cursor.id]);
   state.history=cursor.index+1<(tournament.league?28:7)?{id:cursor.id,index:cursor.index+1}:{id:cursor.id>1n?cursor.id-1n:count,index:0};await save();
+  // The next fixtures of this bracket do not depend on this one: fetch them together.
+  for(let k=1;checked+k<3&&cursor.index+k<(tournament.league?28:7);k++)pinned.prefetch(m.tournaments,bookAbi,'fixture',[cursor.id,cursor.index+k]);
   if(cursor.index===0&&(cursor.id<count||tournament.status===4)){
    const repair=await historicalRepairWork(read,m,cursor.id,tournament,available?1n:0n,laneFree);
    if(repair&&!cooling(repair.to,repair.method)){await act(repair.to,repair.method,repair.args);return;}
   }
   const f=await read(m.tournaments,bookAbi,'fixture',[cursor.id,cursor.index]);if(!f.bound)continue;
+  pinned.prefetch(m.pool,poolAbi,'result',[f.ref]);
   if(!(await read(m.pool,poolAbi,'record',[f.ref])).captured)continue;
   const result=await read(m.pool,poolAbi,'result',[f.ref]);
   if(result.hash!==f.published.hash||result.finality!==f.published.finality||result.status!==f.published.status){await act(m.tournaments,'synchronize',[cursor.id,cursor.index]);return;}

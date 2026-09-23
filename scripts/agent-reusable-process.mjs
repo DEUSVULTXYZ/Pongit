@@ -13,7 +13,9 @@ while(!stopped){
  const code=await new Promise(resolve=>{child=spawn(process.execPath,['--import','tsx',entries[role]],{stdio:'inherit'});child.once('exit',resolve);child.once('error',()=>resolve(1));});
  clearTimeout(killTimer);child=undefined;if(stopped)break;
  failures=code===0||Date.now()-start>60000?0:Math.min(failures+1,5);
- const delay=failures?Math.min(30000,1000*2**failures):role==='keeper'?5000:1000;
+ // A batched keeper step now costs a few RPC round trips, so a shorter pause
+ // reacts to new challenges and captures sooner without raising request volume.
+ const delay=failures?Math.min(30000,1000*2**failures):role==='keeper'?2000:1000;
  if(code!==0)console.error(JSON.stringify({at:new Date().toISOString(),service:'agent-reusable-process',role,event:'role-restarting',delayMs:delay}));
  await new Promise(resolve=>{const timer=setTimeout(resolve,delay);wake=()=>{clearTimeout(timer);resolve();};});wake=undefined;
 }
