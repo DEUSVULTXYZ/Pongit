@@ -24,10 +24,16 @@ import {overdueAgentPublication} from '../relayer/src/agents/reusable-recovery';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {arenaRenewalExclusions} from '../shared/arena-renewal-policy';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
+// Process-relative setup times, logged only when profiling is enabled.
+const boot:[string,number][]=[['imports',Math.round(performance.now())]];
 const {record:r,prefix,stateFile:file}=await loadReusableRuntime('keeper'),m={...r.common,houseInstances:r.houseInstances};
+boot.push(['runtime',Math.round(performance.now())]);
 const metrics=await agentMetrics('/diagnostics/reusable','lifecycle'),t=await chainTools(prefix+'-maintenance',measuredFetch('monad'));
+boot.push(['chain-tools',Math.round(performance.now())]);
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3});await initializeReusableResultArchive(db);
+boot.push(['archive-init',Math.round(performance.now())]);
 const archive=createReusableResultArchive(db),guard=await t.db.connect();let locked=false;
+boot.push(['guard',Math.round(performance.now())]);
 let state:{sequence:number;retry?:Record<string,number>;qualificationCursor?:bigint;challengeCursor?:bigint;history?:{id:bigint;index:number};
  archiveCursor?:{app:string;epoch:string;id:string};intent?:{to:Address;method:string;args:any[];value:bigint}}={sequence:0};
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(state,(_,v)=>typeof v==='bigint'?{bigint:String(v)}:v),{mode:0o600});await rename(file+'.next',file);};
@@ -263,6 +269,7 @@ try{
  try{state=JSON.parse(await readFile(file,'utf8'),(_,v)=>v&&typeof v==='object'&&Object.keys(v).length===1&&typeof v.bigint==='string'?BigInt(v.bigint):v);}catch(e){if((e as any).code!=='ENOENT')throw e;}
  await step();
 }catch(e){console.error(JSON.stringify({at:new Date().toISOString(),pool:m.pool,error:clean(e)}));process.exitCode=1;}
-finally{if(profile)console.log(JSON.stringify({event:'keeper-step-profile',at:new Date().toISOString(),totalMs:Math.round(performance.now()-profile.start),marks:profile.marks,
- reads:[...profile.reads].sort((a,b)=>b[1].ms-a[1].ms).slice(0,10).map(([name,v])=>[name,v.n,Math.round(v.ms)])}));
- if(locked)await guard.query('SELECT pg_advisory_unlock(hashtextextended($1,701354))',[prefix]);guard.release();await metrics();await db.end();await t.close();}
+finally{const summary=profile?{event:'keeper-step-profile',at:new Date().toISOString(),boot,startMs:Math.round(profile.start),totalMs:Math.round(performance.now()-profile.start),marks:profile.marks,
+ reads:[...profile.reads].sort((a,b)=>b[1].ms-a[1].ms).slice(0,10).map(([name,v])=>[name,v.n,Math.round(v.ms)])}:null;
+ const down=performance.now();
+ if(locked)await guard.query('SELECT pg_advisory_unlock(hashtextextended($1,701354))',[prefix]);guard.release();await metrics();await db.end();await t.close();if(summary)console.log(JSON.stringify({...summary,teardownMs:Math.round(performance.now()-down)}));}

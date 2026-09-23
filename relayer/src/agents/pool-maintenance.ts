@@ -87,14 +87,19 @@ export async function expiredChallenge(read:PoolRead,m:Common,cursor:bigint,budg
  if(!Number.isInteger(budget)||budget<1||budget>32)throw Error('Challenge inspection budget');
  const count=await read<bigint>(m.challenges,challengeAbi,'count');if(!count)return{expired:null,next:1n};
  let at=cursor>=1n&&cursor<=count?cursor:1n;
- for(let n=0;n<budget&&BigInt(n)<count;n++){
-  const id=at;at=at===count?1n:at+1n;
-  const request=await read(m.challenges,challengeAbi,'requests',[id]);
+ // The scan order is fixed by the cursor, so start every request read together
+ // and consume them in that order: same first match, same next cursor, one
+ // batched round trip instead of one per inspected challenge.
+ const scan:{id:bigint;next:bigint}[]=[];
+ for(let n=0;n<budget&&BigInt(n)<count;n++){const id=at;at=at===count?1n:at+1n;scan.push({id,next:at});}
+ const requests=scan.map(({id})=>read(m.challenges,challengeAbi,'requests',[id]));
+ for(const request of requests)request.catch(()=>{});
+ for(let i=0;i<scan.length;i++){
   // Solidity's public mapping getter returns the tuple in ABI order.
-  const [player,,,status,,expected]=request;
+  const [player,,,status,,expected]=await requests[i];
   if(status!==1)continue;
   const grant=await read(m.family,familyAbi,'grantOf',[player]);
-  if(grant.key===zeroAddress||await read(m.family,familyAbi,'grantDigest',[grant])!==expected)return{expired:id,next:at};
+  if(grant.key===zeroAddress||await read(m.family,familyAbi,'grantDigest',[grant])!==expected)return{expired:scan[i].id,next:scan[i].next};
  }
  return{expired:null,next:at};
 }

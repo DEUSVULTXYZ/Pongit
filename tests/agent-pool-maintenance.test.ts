@@ -132,3 +132,20 @@ test('pinned step reads are served once, normalised, started together and retrie
  assert.equal(await pinned.read(a,[] as any,'flaky'),'flaky:'+a.toLowerCase()+':[]');
  assert.equal(calls.filter(c=>c==='flaky').length,2);
 });
+
+test('challenge expiry starts its whole scan window together and keeps the first match and cursor',async()=>{
+ const issued:bigint[]=[];let inFlight=0,peak=0;
+ const statuses=new Map<bigint,number>([[3n,1],[4n,2],[5n,1],[1n,2],[2n,2]]);
+ const read:any=async(_address:unknown,_abi:unknown,fn:string,args:any[]=[])=>{
+  if(fn==='count')return 5n;
+  if(fn==='requests'){issued.push(args[0]);inFlight++;peak=Math.max(peak,inFlight);await new Promise(r=>setTimeout(r,5));inFlight--;
+   return[address(9),address(8),0,statuses.get(args[0]),0n,'0x'+'11'.repeat(32)];}
+  if(fn==='grantOf')return{key:address(7)};
+  if(fn==='grantDigest')return '0x'+'22'.repeat(32);
+  throw Error('Unexpected read '+fn);
+ };
+ const found=await expiredChallenge(read,{challenges:address(1),family:address(2)} as any,3n);
+ assert.deepEqual(issued,[3n,4n,5n,1n,2n],'the window follows the cursor and wraps');
+ assert.equal(peak,5,'the reads overlap instead of waiting for each other');
+ assert.deepEqual(found,{expired:3n,next:4n},'first waiting challenge with a changed grant, cursor right after it');
+});
