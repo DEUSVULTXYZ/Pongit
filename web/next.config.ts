@@ -5,6 +5,7 @@ import {readFileSync,existsSync} from "node:fs";
 import {createRequire} from 'node:module';
 // Next's compiled config module does not retain a relative parent filename.
 const {agentPoolCspOrigins}=createRequire(path.resolve('web/next.config.ts'))('../shared/agent-pool-csp.ts') as typeof import('../shared/agent-pool-csp');
+const {INTERLUDE_REGIONS}=createRequire(path.resolve('web/next.config.ts'))('../shared/interlude-regions.ts') as typeof import('../shared/interlude-regions');
 const interludeLab=JSON.parse(readFileSync(path.resolve("deployments/interlude-lab.json"),"utf8")) as {node:string};
 const interludeRooms=JSON.parse(readFileSync(path.resolve("deployments/interlude-rooms.json"),"utf8")) as {node:string};
 const independentPath=path.resolve("deployments/independent.json");
@@ -54,6 +55,7 @@ const nextConfig: NextConfig = {
               " " + independentOrigins +
               " " + agentOrigins +
               " " + poolOrigins +
+              " " + INTERLUDE_REGIONS.map(r=>r.node).join(" ") +
               "; frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
           },
         ],

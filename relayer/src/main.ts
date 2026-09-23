@@ -60,6 +60,7 @@ import { gameV2Abi, marketV2Abi, tournamentsV2Abi } from "../../shared/abis-v2";
 import { arcadeSessionsAbi } from "../../shared/abis-v3";
 import { legacyRoutes } from "./legacy";
 import { initializeSocial, socialRoutes, authenticatedPlayer } from "./social";
+import { initializeRegionProbe, regionProbeRoutes } from "./region-probe";
 import { pool, initializeStore } from "./store";
 import { readSponsorCosts, needsMonadValueWindow } from "./budget";
 
@@ -110,6 +111,7 @@ const wallet = createWalletClient({ account, chain, transport: http(rpc,{fetchFn
 const signingLock = await initializeStore();
 await roomsFinanceConfig.bind(pool);
 await initializeSocial();
+await initializeRegionProbe(pool);
 await initializeInputs(pool);
 await initializePayouts(pool);
 await pool.query("CREATE TABLE IF NOT EXISTS faucets_v4 (player text PRIMARY KEY,job_id text NOT NULL,created_at timestamptz NOT NULL DEFAULT now())");
@@ -671,6 +673,7 @@ async function notifySocial(players:string[]) {
     catch { socialSockets.delete(socket);socket.send(json({type:"social-expired"})); }
   }
 }
+const handleRegionProbe = regionProbeRoutes({db:pool,readBody:body,send});
 const handleSocial = socialRoutes({deployment,origin,profileChanged:()=>ladderCaches.clear(),readBody:body,send,serialize:serializeMatchmaking,assertAvailable,verifyGameplayMessage,isGameplaySigner,notify:notifySocial,
   sourceMatch:async(ref:string)=>{const [version,id]=ref.split(":"); const d=resolveDeployment(version as any,deployment);if(!/^\d+$/.test(id))throw new Error("Invalid match reference"); const m=await publicClient.readContract({address:d.game,abi:contractsFor(d).game,functionName:"getMatch",args:[BigInt(id)]}) as any; if(m.status!==3)throw new Error("Finish this match before requesting a rematch"); return {playerA:m.playerA.toLowerCase(),playerB:m.playerB.toLowerCase(),mode:m.mode||0,ranked:m.ranked??true}; }
 });
@@ -711,7 +714,7 @@ const server = createServer(async (req, res) => {
     }
     if (rates.size > 10000)
       for (const [key, r] of rates) if (r.until < Date.now()) rates.delete(key);
-    if (await independent?.route(req,res,path) || await roomsCoordinator?.route(req,res,path) || await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;
+    if (await handleRegionProbe(req,res,path) || await independent?.route(req,res,path) || await roomsCoordinator?.route(req,res,path) || await handleSocial(req,res,path) || await handleLegacy(req,res,path)) return;
     if (req.method === "GET" && path === "/health") {
       const ok = chainHealthy && Date.now() - lastObserved < 15000;
       return send(

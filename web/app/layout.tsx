@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { siteOrigin, socialMetadata } from "../lib/social-metadata";
+import { RegionProbe } from "../components/RegionProbe";
 import "./globals.css";
 import "./neon-rush.css";
 import "./cabinet.css";
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={michroma.variable}>
-      <body>{children}</body>
+      <body>{children}<RegionProbe /></body>
     </html>
   );
 }
