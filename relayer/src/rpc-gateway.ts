@@ -2,22 +2,55 @@
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 import {chunkedLogs,historyGate} from "./log-ranges";
-import { historicalRpcRequest, rpcScheduler } from "./rpc-scheduler";
+import { historicalRpcRequest, pinnedRpcRequest, rpcScheduler } from "./rpc-scheduler";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
 // Providers throttle per IP. The floor stops a misconfiguration from flooding
 // them; RPC_SPACING_MS below it is ignored. 25 ms allows 40 requests/second.
 const spacing = Math.max(25, Number(process.env.RPC_SPACING_MS || 60));
-const scheduler=rpcScheduler(spacing);
+// Each provider has its own rate budget. Block-pinned reads use whichever is less
+// loaded; everything else keeps the primary-first behaviour below unchanged.
+const spread=secondary!==upstream;
+type Upstream="primary"|"secondary";
+const upstreams:Record<Upstream,string>={primary:upstream,secondary};
+const schedulers={primary:rpcScheduler(spacing),secondary:spread?rpcScheduler(Math.max(25,Number(process.env.RPC_SECONDARY_SPACING_MS||spacing))):undefined};
+const schedulerOf=(u:Upstream)=>u==="secondary"&&schedulers.secondary?schedulers.secondary:schedulers.primary;
 const historicalBatch=historyGate(4);
 let waiting = 0;
-// Upstream throttling answers since start. A rising count means the spacing is
-// above what the provider accepts and should be raised again.
-let throttled = 0;
+// Answers and throttling per provider since start. A rising throttled count
+// means that provider's spacing is above what it accepts and should be raised.
+const stats:Record<Upstream,{served:number;throttled:number}>={primary:{served:0,throttled:0},secondary:{served:0,throttled:0}};
 let observedHead:bigint|undefined;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
+// A block-pinned read has one correct answer. Start with the less loaded provider
+// and ask the other when one throttles, fails or has not got that block. A real
+// execution error is the same on both and is returned at once, unchanged.
+async function spreadRead(method:string,params:unknown[],historical:boolean):Promise<unknown>{
+ const load=(u:Upstream)=>{const p=schedulerOf(u).pending();return p.interactive+p.history;};
+ const first:Upstream=load("secondary")<=load("primary")?"secondary":"primary";
+ const order:Upstream[]=[first,first==="primary"?"secondary":"primary"];
+ for(let attempt=0;attempt<4;attempt++){
+  const target=order[attempt%2];
+  if(attempt>=2)await delay(500*(attempt-1));
+  await schedulerOf(target).acquire(historical);
+  let response:Response;
+  try{response=await fetch(upstreams[target],{method:"POST",headers:{"content-type":"application/json"},
+   body:JSON.stringify({jsonrpc:"2.0",id:1,method,params}),signal:AbortSignal.timeout(15000)});}catch{continue;}
+  if(response.status>=500)continue;
+  if(response.status===429){stats[target].throttled++;continue;}
+  const result=await response.json().catch(()=>null) as {result?:unknown;error?:{code:number;message:string;data?:unknown}}|null;
+  if(!result)continue;
+  const message=result.error?.message||"";
+  if(/limited to|rate limit/i.test(message)){stats[target].throttled++;continue;}
+  if(result.error&&result.error.code!==3&&!/revert/i.test(message)&&/header not found|unknown block|block not found|missing trie node/i.test(message))continue;
+  if(result.error)throw result.error;
+  if(!response.ok||!("result" in result))continue;
+  stats[target].served++;return result.result;
+ }
+ throw new Error("Upstream RPC unavailable; retry shortly");
+}
 async function request(method: string, params: unknown[]):Promise<unknown> {
   if(method==="eth_getLogs" && process.env.RPC_CHUNK_LOGS==="true") {
     const filter=params[0] as any;
@@ -34,20 +67,22 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
   const operation = (async () => {
     waiting++;
     try {
+      if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historicalRpcRequest(method,params,observedHead));
       for (let attempt = 0; attempt < 4; attempt++) {
-        await scheduler.acquire(historicalRpcRequest(method, params,observedHead));
+        const target:Upstream=attempt>0 && (read || method==='eth_sendRawTransaction') && spread ? "secondary" : "primary";
+        await schedulerOf(target).acquire(historicalRpcRequest(method, params,observedHead));
         let response:Response;
-        try { response = await fetch(attempt>0 && (read || method==='eth_sendRawTransaction') && secondary!==upstream ? secondary : upstream, {
+        try { response = await fetch(upstreams[target], {
           method: "POST", headers: { "content-type": "application/json" },
           body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
           signal: AbortSignal.timeout(15000),
         }); } catch { if(attempt===3)throw new Error("RPC transport unavailable");await delay(250*(attempt+1));continue; }
         if(response.status>=500) {await delay(250*(attempt+1));continue;}
         // Some providers return plain text for HTTP 429. Do not parse it as JSON.
-        if(response.status===429){throttled++;await delay(1000*(attempt+1));continue;}
+        if(response.status===429){stats[target].throttled++;await delay(1000*(attempt+1));continue;}
         const result = await response.json() as { result?: unknown; error?: { code: number; message: string; data?: unknown } };
         if (/limited to|rate limit/i.test(result.error?.message || "")) {
-          throttled++;
+          stats[target].throttled++;
           await delay(1000 * (attempt + 1));
           continue;
         }
@@ -57,6 +92,7 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
         if(result.error && method==='eth_sendRawTransaction' && attempt===0 && secondary!==upstream && /insufficient balance|insufficient funds/i.test(result.error.message))continue;
         if (result.error) throw result.error;
         if (!response.ok || !("result" in result)) throw new Error("Upstream RPC unavailable");
+        stats[target].served++;
         const height=method==='eth_blockNumber'?result.result:
           method==='eth_getBlockByNumber'&&params[0]==='latest'?(result.result as any)?.number:undefined;
         if(typeof height==='string'&&/^0x[\da-f]+$/i.test(height))observedHead=BigInt(height);
@@ -73,7 +109,9 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
 createServer(async (req, res) => {
   res.setHeader("content-type", "application/json");
   if (req.method === "GET" && req.url === "/health") {
-    res.end(JSON.stringify({ ok: true, waiting, queued:scheduler.pending(), requestsPerSecond: 1000 / spacing, throttled })); return;
+    res.end(JSON.stringify({ ok: true, waiting, queued:schedulers.primary.pending(), requestsPerSecond: 1000 / spacing,
+      throttled: stats.primary.throttled+stats.secondary.throttled,
+      upstreams: {primary:{queued:schedulers.primary.pending(),...stats.primary},secondary:schedulers.secondary?{queued:schedulers.secondary.pending(),...stats.secondary}:null} })); return;
   }
   let id: unknown = null;
   try {

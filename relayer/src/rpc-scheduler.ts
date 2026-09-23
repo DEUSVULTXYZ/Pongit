@@ -15,6 +15,26 @@ export function historicalRpcRequest(method:string, params:readonly unknown[],ob
   return true;
 }
 
+/** A read naming a concrete block (number or hash) or a closed log range has one
+ * answer on every synchronized provider, so only these may be spread across
+ * upstreams. "latest", pending, receipts, nonces and writes stay on one provider:
+ * two providers at different heights could make state appear to move backwards
+ * between consecutive reads of the same caller. */
+export function pinnedRpcRequest(method:string,params:readonly unknown[]):boolean{
+ const number=(v:unknown)=>typeof v==='string'&&/^0x[\da-f]+$/i.test(v);
+ const hash=(v:unknown)=>typeof v==='string'&&/^0x[\da-f]{64}$/i.test(v);
+ const block=(v:unknown)=>number(v)||!!v&&typeof v==='object'&&hash((v as {blockHash?:unknown}).blockHash);
+ switch(method){
+  case 'eth_call':case 'eth_getBalance':case 'eth_getCode':return block(params[1]);
+  case 'eth_getStorageAt':return block(params[2]);
+  case 'eth_getBlockByNumber':return number(params[0]);
+  case 'eth_getBlockByHash':return hash(params[0]);
+  case 'eth_getLogs':{const f=params[0] as {blockHash?:unknown;fromBlock?:unknown;toBlock?:unknown}|undefined;
+   return !!f&&typeof f==='object'&&(hash(f.blockHash)||number(f.fromBlock)&&number(f.toBlock));}
+  default:return false;
+ }
+}
+
 /** One upstream rate budget; gameplay reads take priority over historical scans. */
 export function rpcScheduler(spacingMs:number) {
   const live:Array<()=>void>=[], history:Array<()=>void>=[];

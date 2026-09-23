@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {historicalRpcRequest, rpcScheduler} from "../relayer/src/rpc-scheduler";
+import {historicalRpcRequest, rpcScheduler, pinnedRpcRequest } from "../relayer/src/rpc-scheduler";
 
 test('canonical UI headers near an observed head are interactive without promoting old or invented future blocks',()=>{
  assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3e8',false],1000n),false);
@@ -41,4 +41,16 @@ test("acceptance and uncertain-command recovery pass queued archive reads within
  assert.deepEqual(seen.slice(0,7).map(v=>v.name),["archive-start","grant-deadline","pending-fee","lost-response","receipt","archive-0","safe-result"]);
  assert(seen.every((v,i)=>i===0 || v.at-seen[i-1].at>=60),"interactive traffic must not bypass upstream pacing");
  assert.deepEqual(s.pending(),{interactive:0,history:0});
+});
+
+test("only reads naming a concrete block or closed range may be spread across providers",()=>{
+ const hash="0xabababababababababababababababababababababababababababababababab";
+ // One answer on every synchronized provider.
+ for(const [method,params] of [["eth_call",[{to:"0x01"},"0x10"]],["eth_call",[{to:"0x01"},{blockHash:hash}]],["eth_getCode",["0x01","0x10"]],
+  ["eth_getBalance",["0x01","0x10"]],["eth_getStorageAt",["0x01","0x0","0x10"]],["eth_getBlockByNumber",["0x10",false]],["eth_getBlockByHash",[hash,false]],
+  ["eth_getLogs",[{fromBlock:"0x10",toBlock:"0x20"}]],["eth_getLogs",[{blockHash:hash}]]] as const)assert.equal(pinnedRpcRequest(method,params as any),true,method);
+ // Head-relative, pending, receipt, nonce and write requests could move backwards between providers.
+ for(const [method,params] of [["eth_call",[{to:"0x01"},"latest"]],["eth_call",[{to:"0x01"}]],["eth_getBlockByNumber",["latest",false]],
+  ["eth_getLogs",[{fromBlock:"0x10",toBlock:"latest"}]],["eth_blockNumber",[]],["eth_getTransactionCount",["0x01","0x10"]],
+  ["eth_getTransactionReceipt",[hash]],["eth_sendRawTransaction",["0x02"]],["eth_estimateGas",[{to:"0x01"},"0x10"]]] as const)assert.equal(pinnedRpcRequest(method,params as any),false,method);
 });

@@ -142,3 +142,36 @@ test("RPC spacing honours the configured rate down to its floor and reports upst
   await new Promise<void>(r=>upstream.close(()=>r()));
  }
 });
+
+test("block-pinned reads use both providers, fall back on a missing block and never retry a revert",async()=>{
+ const seen:{primary:string[];secondary:string[]}={primary:[],secondary:[]};
+ const mock=async(name:"primary"|"secondary")=>{
+  const server=createServer(async(req,res)=>{let text="";for await(const part of req)text+=part;const q=JSON.parse(text);
+   const block=q.method==="eth_call"?String(q.params[1]):"";seen[name].push(q.method+(block?"@"+block:""));res.setHeader("content-type","application/json");
+   // The secondary has not imported block 0x99 yet and reverts the 0x77 call like any node would.
+   if(name==="secondary"&&block==="0x99"){res.end(JSON.stringify({jsonrpc:"2.0",id:q.id,error:{code:-32000,message:"header not found"}}));return;}
+   if(block==="0x77"){res.end(JSON.stringify({jsonrpc:"2.0",id:q.id,error:{code:3,message:"execution reverted: agent unavailable",data:"0x08c379a0"}}));return;}
+   res.end(JSON.stringify({jsonrpc:"2.0",id:q.id,result:name==="primary"?"0xaa":"0xbb"}));});
+  await new Promise<void>(r=>server.listen(0,"127.0.0.1",r));return{server,url:`http://127.0.0.1:${(server.address() as any).port}`};
+ };
+ const primary=await mock("primary"),secondary=await mock("secondary"),probe=createServer();
+ await new Promise<void>(r=>probe.listen(0,"127.0.0.1",r));const port=(probe.address() as any).port;await new Promise<void>(r=>probe.close(()=>r()));
+ const child=spawn(process.execPath,["--import","tsx","relayer/src/rpc-gateway.ts"],{env:{...process.env,RPC_PORT:String(port),RPC_UPSTREAM:primary.url,RPC_UPSTREAM_FALLBACK:secondary.url,RPC_SPACING_MS:"25"},stdio:"ignore",windowsHide:true});
+ const base=`http://127.0.0.1:${port}`;
+ try{
+  for(let i=0;i<100;i++){try{await fetch(base+"/health");break;}catch{await new Promise(r=>setTimeout(r,50));}}
+  const call=(block:string)=>fetch(base,{method:"POST",body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_call",params:[{to:"0x01",data:"0x"},block]})}).then(r=>r.json());
+  // A pinned read goes to the idle secondary; the same read at "latest" stays on the primary.
+  assert.equal((await call("0x10")).result,"0xbb");assert.deepEqual(seen.secondary,["eth_call@0x10"]);
+  assert.equal((await call("latest")).result,"0xaa");assert.deepEqual(seen.primary,["eth_call@latest"]);
+  // A provider without the block is skipped; the caller still gets the answer.
+  assert.equal((await call("0x99")).result,"0xaa");assert(seen.primary.includes("eth_call@0x99"));
+  // A revert is the contract's answer: returned unchanged, asked once only.
+  const reverted=await call("0x77");assert.match(reverted.error.message,/agent unavailable/);assert.equal(reverted.error.code,3);
+  assert.equal([...seen.primary,...seen.secondary].filter(x=>x==="eth_call@0x77").length,1);
+  const health:any=await (await fetch(base+"/health")).json();
+  assert.equal(health.upstreams.secondary.served,1);assert.equal(health.upstreams.primary.served,2);assert.equal(health.throttled,0);
+ }finally{
+  child.kill();for(const s of [primary.server,secondary.server]){s.closeAllConnections();await new Promise<void>(r=>s.close(()=>r()));}
+ }
+});
