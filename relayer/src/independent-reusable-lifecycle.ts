@@ -58,6 +58,16 @@ export function independentReusableLifecycle(o:Options){
      await queue(m.lobby,lobbyAbi,'recoverReleased',[e.app],0n,0);return;
     }
    }
+   // An epoch released without a single bound match still leaves a result
+   // commitment, and openEngine refuses the next epoch until that root is
+   // sealed. currentMatch() reports [0,0] for such an epoch, so the branch
+   // above never runs: seal from the commitment itself, or the arena stays
+   // released forever and every room waits for an arena that cannot open.
+   const [committed]=await base.readContract({address:e.app,abi:arenaAbi,functionName:'resultCommitment',blockNumber:block.number});
+   if(committed){
+    const [emptySealed]=await base.readContract({address:verifier,abi:verifierAbi,functionName:'finalizedRoots',args:[e.app,committed],blockNumber:block.number});
+    if(emptySealed===zeroHash){await o.stage('sealing');await queue(verifier,verifierAbi,'sealReleased',[e.app],0n,0);return;}
+   }
    e.bind(0n,0n);await o.stage('released');return;
   }
   if(d.status===2){

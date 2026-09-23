@@ -155,3 +155,16 @@ test('a failed idle read is not evidence of an unpublished result',async()=>{
  const f=fixture();f.change({now:4501n,reserved:0n});f.engine.node.readContract=async()=>{throw Error('RPC unavailable');};
  await assert.rejects(f.worker.observe(),/RPC unavailable/);assert.equal(f.jobs.length,0);assert.equal(f.health.online,false);
 });
+
+test('an epoch released without a single match is still sealed so its arena can reopen',async()=>{
+ const f=fixture();
+ // The delegation expired before anyone played: no current match, yet the
+ // arena committed an empty result root that openEngine requires sealed.
+ f.d.status=0;f.change({reserved:0n,slot:[0n,0n],publishedCommitment:[4n,0,EMPTY_RESULT_ROOT],sealed:zeroHash});
+ await f.worker.observe();
+ assert.deepEqual(f.jobs.map(j=>j.name),['sealReleased'],'seal the empty epoch before it is offered for reopening');
+ assert(f.events.includes('stage:sealing'));assert(!f.events.includes('stage:released'));
+ f.jobs.length=0;f.events.length=0;f.change({sealed:toHex(9,{size:32})});
+ await f.worker.observe();
+ assert.equal(f.jobs.length,0);assert(f.events.includes('stage:released'),'once sealed it is released to the reserve opener as before');
+});
