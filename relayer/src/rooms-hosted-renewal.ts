@@ -1,7 +1,8 @@
 import type { Pool } from "pg";
 import type { Address } from "viem";
 
-type Provision = { epoch: string; state: "sending" | "uncertain" | "rejected" | "confirmed" | "intervention"; attemptedAt: number; retryAt: number; attempts: number; status?: number };
+type Provision = { epoch: string; state: "sending" | "uncertain" | "rejected" | "confirmed" | "intervention"; attemptedAt: number; retryAt: number; attempts: number; status?: number;
+  reason?: "identity"; stalledAt?: number; alertedAt?: number };
 
 /** Persist intent before HTTP. Lost replies are resolved by lookup, not another POST. */
 export async function requestHostedRenewal(
@@ -13,11 +14,28 @@ export async function requestHostedRenewal(
   if(!p && String(row.provision_epoch)===String(epoch))p={epoch:String(epoch),state:"uncertain",attemptedAt:now,retryAt:0,attempts:1};
   if(p?.epoch!==String(epoch))p=null;
   if(p && p.retryAt>now)throw new Error("Hosted engine retry is cooling down");
-  if(p?.state==="intervention")throw new Error("Hosted creation remains ambiguous; inspect the persisted provisioning request before another creation");
+  // Only a changed identity or URL is terminal. An older intervention came from
+  // ambiguity alone: resume lookups, which never create and recheck identity.
+  if(p?.state==="intervention"){
+    if(p.reason==="identity")throw new Error("Hosted engine identity changed; operator inspection required");
+    p={...p,state:"uncertain"};
+  }
   const create=!p || p.state==="rejected";
   const save=async(next:Provision)=>{
     p=next;
     await db.query("UPDATE il_lifecycle SET provision_epoch=$2,provisioning=$3 WHERE app=$1",[app,String(epoch),p]);
+  };
+  // Ambiguity keeps looking up: a GET never creates, so it is always safe and it
+  // adopts the session as soon as control answers. Past five minutes the state is
+  // flagged for operators instead of freezing every later lookup.
+  const pending=(next:Partial<Provision>,reason:string):Provision=>{
+    const value:Provision={...p!,state:"uncertain",...next};
+    if(now-p!.attemptedAt>=300000){
+      value.stalledAt=p!.stalledAt??now;
+      if(p!.alertedAt===undefined||now-p!.alertedAt>=600000){value.alertedAt=now;console.warn(JSON.stringify({event:"hosted-provisioning-stalled",app,epoch:String(epoch),
+        since:new Date(p!.attemptedAt).toISOString(),reason,attempts:p!.attempts}));}
+    }
+    return value;
   };
   if(create)await save({epoch:String(epoch),state:"sending",attemptedAt:now,retryAt:0,attempts:(p?.attempts??0)+1});
   else if(!row.provisioning)await save(p!);
@@ -28,7 +46,7 @@ export async function requestHostedRenewal(
       ...(create?{body:JSON.stringify({app})}:{}),signal:AbortSignal.timeout(10000),
     });
   }catch {
-    await save({...p!,state:"uncertain",retryAt:now+10000});
+    await save(pending({retryAt:now+10000},"response-lost"));
     throw new Error("Hosted engine response lost; looking up the existing session before any new creation");
   }
   const body=await response.json().catch(()=>null);
@@ -37,27 +55,27 @@ export async function requestHostedRenewal(
     const rejected=create && response.status>=400 && response.status<500 && body?.created===false;
     const retryHeader=Number(response.headers.get("retry-after"));
     const wait=Number.isFinite(retryHeader)&&retryHeader>0?Math.min(3600,retryHeader)*1000:Math.min(60000,10000*p!.attempts);
-    const intervention=!rejected && now-p!.attemptedAt>=300000;
-    await save({...p!,state:rejected?"rejected":intervention?"intervention":"uncertain",status:response.status,retryAt:now+wait});
-    throw new Error(`Hosted engine ${create?"creation":"lookup"} pending (${response.status})${intervention?"; operator inspection required":""}`);
+    // A 404 after a lost POST is still ambiguous: never create again on it.
+    await save(pending({state:rejected?"rejected":"uncertain",status:response.status,retryAt:now+wait},"http-"+response.status));
+    throw new Error(`Hosted engine ${create?"creation":"lookup"} pending (${response.status})`);
   }
   if(typeof body?.url!=="string"){
-    await save({...p!,state:now-p!.attemptedAt>=300000?"intervention":"uncertain",retryAt:now+10000});
+    await save(pending({retryAt:now+10000},"missing-url"));
     throw new Error("Hosted engine response has no URL; waiting for provisioning confirmation");
   }
   if(body.app && String(body.app).toLowerCase()!==app.toLowerCase()){
-    await save({...p!,state:"intervention",retryAt:0});
+    await save({...p!,state:"intervention",reason:"identity",retryAt:0});
     throw new Error("Hosted lookup belongs to another application; operator inspection required");
   }
   if(body.url.replace(/\/$/,"")!==expectedUrl.replace(/\/$/,"")){
-    await save({...p!,state:"intervention",retryAt:0});
+    await save({...p!,state:"intervention",reason:"identity",retryAt:0});
     throw new Error("Hosted node URL changed; update and verify the deployment manifest before admission");
   }
   // This function is called only while the engine itself still fails validation.
   // A live control-plane record must not hide an old or unavailable engine forever.
   if(now-p!.attemptedAt>=300000){
-    await save({...p!,state:"intervention",status:response.status,retryAt:0});
-    throw new Error("Hosted session exists but the new engine epoch is still unavailable; operator inspection required");
+    await save(pending({state:"confirmed",status:response.status,retryAt:now+10000},"engine-unavailable"));
+    throw new Error("Hosted session exists but the new engine epoch is still unavailable; still checking");
   }
   await save({...p!,state:"confirmed",status:response.status,retryAt:now+10000});
 }

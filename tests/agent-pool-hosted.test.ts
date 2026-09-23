@@ -47,17 +47,46 @@ test('concurrent provisioning cannot create two hosted engines',async()=>{
  release();await first;assert.equal(sends,1);
 });
 
-test('a persistently missing response or stale engine becomes an explicit intervention without another creation',async()=>{
- for(const kind of ['network','no-url','stale-node']){
-  const f=fixture();await provisionPoolArena(f.db,app,1n,undefined,(async()=>Response.json({app,url:'https://test-arena.example'})) as typeof fetch);
-  f.row.provisioning.at=Date.now()-301000;f.row.provisioning.retryAt=0;
-  if(kind==='stale-node')await assert.rejects(observePoolArenaReady(f.db,app,1n,false),/never became ready/);
-  else await assert.rejects(provisionPoolArena(f.db,app,1n,undefined,(async(_url,init)=>{
-   assert.equal(init?.method,'GET');if(kind==='network')throw Error('offline');return Response.json({});
-  }) as typeof fetch));
-  assert.equal(f.row.provisioning.state,'intervention');
-  assert(f.history.some(e=>e[2]==='sending'));assert(f.history.some(e=>e[2]==='intervention'));
+test('a persistently missing response or slow engine keeps being looked up, alerts once and never creates again',async()=>{
+ const warned:string[]=[],original=console.warn;console.warn=(line:unknown)=>{warned.push(String(line));};
+ try{
+  for(const kind of ['network','no-url','stale-node']){
+   warned.length=0;
+   const f=fixture();await provisionPoolArena(f.db,app,1n,undefined,(async()=>Response.json({app,url:'https://test-arena.example'})) as typeof fetch);
+   f.row.provisioning.at=Date.now()-301000;f.row.provisioning.retryAt=0;
+   const methods:string[]=[];
+   const outage=(async(_url:unknown,init?:RequestInit)=>{methods.push(String(init?.method));if(kind==='network')throw Error('offline');return Response.json({});}) as typeof fetch;
+   if(kind==='stale-node')await observePoolArenaReady(f.db,app,1n,false);
+   else await assert.rejects(provisionPoolArena(f.db,app,1n,undefined,outage));
+   // Past five minutes the arena is flagged for operators, not frozen.
+   assert.notEqual(f.row.provisioning.state,'intervention',kind);assert(f.row.provisioning.stalledAt,kind);
+   assert.equal(warned.filter(w=>w.includes('hosted-provisioning-stalled')).length,1,kind);
+   if(kind!=='stale-node'){
+    // A second failed lookup inside the alert window neither alerts again nor creates.
+    f.row.provisioning.retryAt=0;await assert.rejects(provisionPoolArena(f.db,app,1n,undefined,outage));
+    assert.equal(warned.filter(w=>w.includes('hosted-provisioning-stalled')).length,1,kind);
+   }
+   assert(methods.every(m=>m==='GET'),kind);
+   assert.equal(f.history.filter(e=>e[2]==='sending').length,1,kind+': only the original creation');
+   // As soon as control answers with the known node, the arena is adopted.
+   f.row.provisioning.retryAt=0;
+   assert.equal(await provisionPoolArena(f.db,app,1n,undefined,(async()=>Response.json({app,url:'https://test-arena.example'})) as typeof fetch),'https://test-arena.example');
+   await observePoolArenaReady(f.db,app,1n,true);assert.equal(f.row.provisioning.state,'ready',kind);
+  }
+ }finally{console.warn=original;}
+});
+
+test('an ambiguity-only intervention from an older release resumes lookups; an identity change stays terminal',async()=>{
+ for(const reason of ['response-lost','control-plane-http','missing-url','node-identity-not-ready']){
+  const f=fixture();f.row.provision_epoch='1';f.row.provisioning={state:'intervention',reason,at:Date.now()-3600000,attempts:1,retryAt:0};
+  const methods:string[]=[];
+  assert.equal(await provisionPoolArena(f.db,app,1n,undefined,(async(_url:unknown,init?:RequestInit)=>{methods.push(String(init?.method));
+   return Response.json({app,url:'https://test-arena.example'});}) as typeof fetch),'https://test-arena.example',reason);
+  assert.deepEqual(methods,['GET'],reason+': resumed by lookup, never by a new creation');
  }
+ const f=fixture();f.row.provision_epoch='1';f.row.provisioning={state:'intervention',reason:'identity-or-url',at:Date.now(),attempts:1,retryAt:0};
+ let calls=0;await assert.rejects(provisionPoolArena(f.db,app,1n,undefined,(async()=>{calls++;return Response.json({});}) as typeof fetch),/inspection/);
+ assert.equal(calls,0);
 });
 
 test('readiness requires the same persisted epoch and preserves previous creation evidence',async()=>{
