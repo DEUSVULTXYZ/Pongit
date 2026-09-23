@@ -111,3 +111,34 @@ test("RPC coalesces reads and rebroadcasts only identical signed bytes on failov
     ]);
   }
 });
+
+test("RPC spacing honours the configured rate down to its floor and reports upstream throttling",async()=>{
+ let hits=0;
+ const upstream=createServer(async(req,res)=>{let text="";for await(const part of req)text+=part;const q=JSON.parse(text);
+  res.setHeader("content-type","application/json");
+  // The provider rejects the first request with HTTP 429, then answers.
+  if(hits++===0){res.statusCode=429;res.end("Too Many Requests");return;}
+  res.end(JSON.stringify({jsonrpc:"2.0",id:q.id,result:"0x1"}));});
+ await new Promise<void>(r=>upstream.listen(0,"127.0.0.1",r));
+ const url=`http://127.0.0.1:${(upstream.address() as any).port}`;
+ const start=async(spacing:string)=>{
+  const probe=createServer();await new Promise<void>(r=>probe.listen(0,"127.0.0.1",r));
+  const port=(probe.address() as any).port;await new Promise<void>(r=>probe.close(()=>r()));
+  const child=spawn(process.execPath,["--import","tsx","relayer/src/rpc-gateway.ts"],{env:{...process.env,RPC_PORT:String(port),RPC_UPSTREAM:url,RPC_UPSTREAM_FALLBACK:url,RPC_SPACING_MS:spacing},stdio:"ignore",windowsHide:true});
+  const base=`http://127.0.0.1:${port}`;
+  for(let i=0;i<100;i++){try{await fetch(base+"/health");break;}catch{await new Promise(r=>setTimeout(r,50));}}
+  return{child,base,health:async()=>(await fetch(base+"/health")).json() as Promise<any>};
+ };
+ const configured=await start("40"),floored=await start("5");
+ try{
+  // 40 ms was silently raised to 50 ms before; it is now honoured.
+  assert.equal((await configured.health()).requestsPerSecond,25);
+  assert.equal((await floored.health()).requestsPerSecond,40,"a spacing below the floor is still bounded");
+  const answer=await fetch(configured.base,{method:"POST",body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_blockNumber",params:[]})}).then(r=>r.json());
+  assert.equal(answer.result,"0x1","the throttled read is retried and answered");
+  assert.equal((await configured.health()).throttled,1,"upstream throttling is visible to operators");
+ }finally{
+  configured.child.kill();floored.child.kill();upstream.closeAllConnections();
+  await new Promise<void>(r=>upstream.close(()=>r()));
+ }
+});

@@ -6,10 +6,15 @@ import { historicalRpcRequest, rpcScheduler } from "./rpc-scheduler";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
-const spacing = Math.max(50, Number(process.env.RPC_SPACING_MS || 60));
+// Providers throttle per IP. The floor stops a misconfiguration from flooding
+// them; RPC_SPACING_MS below it is ignored. 25 ms allows 40 requests/second.
+const spacing = Math.max(25, Number(process.env.RPC_SPACING_MS || 60));
 const scheduler=rpcScheduler(spacing);
 const historicalBatch=historyGate(4);
 let waiting = 0;
+// Upstream throttling answers since start. A rising count means the spacing is
+// above what the provider accepts and should be raised again.
+let throttled = 0;
 let observedHead:bigint|undefined;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
@@ -39,9 +44,10 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
         }); } catch { if(attempt===3)throw new Error("RPC transport unavailable");await delay(250*(attempt+1));continue; }
         if(response.status>=500) {await delay(250*(attempt+1));continue;}
         // Some providers return plain text for HTTP 429. Do not parse it as JSON.
-        if(response.status===429){await delay(1000*(attempt+1));continue;}
+        if(response.status===429){throttled++;await delay(1000*(attempt+1));continue;}
         const result = await response.json() as { result?: unknown; error?: { code: number; message: string; data?: unknown } };
         if (/limited to|rate limit/i.test(result.error?.message || "")) {
+          throttled++;
           await delay(1000 * (attempt + 1));
           continue;
         }
@@ -67,7 +73,7 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
 createServer(async (req, res) => {
   res.setHeader("content-type", "application/json");
   if (req.method === "GET" && req.url === "/health") {
-    res.end(JSON.stringify({ ok: true, waiting, queued:scheduler.pending(), requestsPerSecond: 1000 / spacing })); return;
+    res.end(JSON.stringify({ ok: true, waiting, queued:scheduler.pending(), requestsPerSecond: 1000 / spacing, throttled })); return;
   }
   let id: unknown = null;
   try {
