@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename} from 'node:fs/promises';
 import {Pool} from 'pg';
-import {decodeAbiParameters,getAbiItem,zeroHash,type Address,type Abi} from 'viem';
+import {createPublicClient,custom,decodeAbiParameters,getAbiItem,zeroHash,type Address,type Abi} from 'viem';
 import {chainTools} from './independent-chain-tools';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
@@ -16,7 +16,7 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
-import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue} from '../relayer/src/agents/pool-maintenance';
+import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads} from '../relayer/src/agents/pool-maintenance';
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
 import {agentMetrics} from '../relayer/src/agents/metrics';
@@ -45,10 +45,26 @@ async function act(to:Address,method:string,args:any[]=[],value=0n){
  }
  state.sequence++;delete state.intent;await save();console.log(JSON.stringify({at:new Date().toISOString(),pool:m.pool,action:method,hash:receipt.transactionHash}));
 }
+// Same paced transport and no retries, plus Multicall3 batching: reads started
+// together travel as one eth_call. Writes and raw requests still use t.base.
+const reader=createPublicClient({chain:t.base.chain,transport:custom({request:(args:any)=>t.base.request(args)},{retryCount:0}),batch:{multicall:true}});
 async function step(){
  if(state.intent){const i=state.intent;await act(i.to,i.method,i.args,i.value);return;}
  const block=await t.base.getBlock({includeTransactions:false});
- const read=<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>t.base.readContract({address,abi,functionName,args,blockNumber:block.number}) as Promise<T>;
+ const pinned=pinnedReads((address,abi,functionName,args)=>reader.readContract({address,abi,functionName,args,blockNumber:block.number}));
+ const read=pinned.read;
+ // Start the common path's independent reads together. They are exactly the
+ // values the logic below reads at this block; the batch makes them one call.
+ pinned.prefetch(m.pool,poolAbi,'verifier');
+ for(const l of [0,1])pinned.prefetch(m.pool,poolAbi,'laneRecord',[l]);
+ pinned.prefetch(m.ratings,ratingsAbi,'buildGeneration');
+ pinned.prefetch(m.pool,poolAbi,'admissions');
+ pinned.prefetch(m.tournaments,bookAbi,'admissions');
+ pinned.prefetch(m.tournaments,bookAbi,'nextAt');
+ pinned.prefetch(m.challenges,challengeAbi,'qualificationsMayStart');
+ for(const a of r.arenas){pinned.prefetch(m.pool,poolAbi,'arenaMatch',[a.app]);pinned.prefetch(a.app,arenaAbi,'currentMatch');}
+ if(state.history){pinned.prefetch(m.tournaments,bookAbi,'tournament',[state.history.id]);pinned.prefetch(m.tournaments,bookAbi,'fixture',[state.history.id,state.history.index]);}
+ read<bigint>(m.tournaments,bookAbi,'count').then(count=>{if(count)pinned.prefetch(m.tournaments,bookAbi,'tournament',[count]);}).catch(()=>{});
  await verifyHouseInstanceAuthorities(read,m);
  assert.equal((await read<Address>(m.pool,poolAbi,'verifier')).toLowerCase(),m.verifier.toLowerCase());
  let budget:ReusablePublicationBudget|undefined;

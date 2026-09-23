@@ -15,6 +15,25 @@ export type PoolRead=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly un
  * anchors it on the previous tournament's onchain start, so neither a keeper
  * restart nor a lost local state file can shorten the gap. */
 export const tournamentIntervalSeconds=3n*24n*60n*60n;
+/** Reads pinned to one block are pure functions of their call. Memoize them for
+ * one keeper step and let independent reads start together, so a batched client
+ * serves the common path in one multicall instead of dozens of sequential round
+ * trips through the paced RPC gateway. Every write ends the step, so no read can
+ * observe state changed after it was cached. A rejected read is evicted and a
+ * later caller retries it exactly as before. */
+export function pinnedReads(load:(address:Address,abi:Abi,functionName:string,args:readonly unknown[])=>Promise<unknown>){
+ const memo=new Map<string,Promise<unknown>>();
+ const key=(address:Address,functionName:string,args:readonly unknown[])=>address.toLowerCase()+'|'+functionName+'|'+JSON.stringify(args,(_,v)=>
+  typeof v==='bigint'?{bigint:String(v)}:typeof v==='string'&&/^0x[da-f]{40}$/i.test(v)?v.toLowerCase():v);
+ const read=<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[]):Promise<T>=>{
+  const k=key(address,functionName,args),cached=memo.get(k);if(cached)return cached as Promise<T>;
+  const pending=load(address,abi,functionName,args);memo.set(k,pending);
+  pending.catch(()=>{if(memo.get(k)===pending)memo.delete(k);});
+  return pending as Promise<T>;
+ };
+ const prefetch=(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>{read(address,abi,functionName,args).catch(()=>{});};
+ return{read,prefetch};
+}
 export function tournamentDue(last:{startedAt:bigint}|null,nextAt:bigint,now:bigint){
  return now>=nextAt&&(!last||now>=last.startedAt+tournamentIntervalSeconds);
 }

@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
-import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,tournamentIntervalSeconds,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,tournamentIntervalSeconds,pinnedReads,type PoolRead} from '../relayer/src/agents/pool-maintenance';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
 
@@ -108,4 +108,27 @@ test('public tournaments start once every three days, anchored on the previous o
  assert.equal(tournamentDue({startedAt:start},start+4n*day,start+3n*day),false);
  // The very first tournament waits for nothing but the book.
  assert.equal(tournamentDue(null,0n,0n),true);
+});
+
+test('pinned step reads are served once, normalised, started together and retried after a failure',async()=>{
+ const calls:string[]=[];let fail=true;
+ const pinned=pinnedReads(async(address,_abi,fn,args)=>{calls.push(fn);await Promise.resolve();
+  if(fn==='flaky'&&fail){fail=false;throw Error('transport');}return fn+':'+String(address).toLowerCase()+':'+JSON.stringify(args,(_,v)=>typeof v==='bigint'?String(v):v);});
+ const a=address(7);
+ // A prefetch and the later read of the same pinned call share one request,
+ // whatever the address case and even for bigint arguments.
+ pinned.prefetch(a,[] as any,'record',[{id:5n,arena:a}]);
+ const value=await pinned.read(a.toUpperCase().replace('0X','0x') as any,[] as any,'record',[{id:5n,arena:a.toUpperCase().replace('0X','0x')}]);
+ assert.equal(calls.filter(c=>c==='record').length,1);assert.match(String(value),/^record:/);
+ // A number and a bigint are different arguments and must never share a result.
+ await pinned.read(a,[] as any,'lane',[0]);await pinned.read(a,[] as any,'lane',[0n]);
+ assert.equal(calls.filter(c=>c==='lane').length,2);
+ // Independent reads are issued before any of them resolves, so a batched
+ // client can place them in one multicall.
+ const started=calls.length;const together=[pinned.read(a,[] as any,'x'),pinned.read(a,[] as any,'y'),pinned.read(a,[] as any,'z')];
+ assert.equal(calls.length,started+3);await Promise.all(together);
+ // A failed read is not cached: the next caller retries it.
+ await assert.rejects(pinned.read(a,[] as any,'flaky'),/transport/);
+ assert.equal(await pinned.read(a,[] as any,'flaky'),'flaky:'+a.toLowerCase()+':[]');
+ assert.equal(calls.filter(c=>c==='flaky').length,2);
 });
