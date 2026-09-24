@@ -16,7 +16,8 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
-import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers} from '../relayer/src/agents/pool-maintenance';
+import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,writeRetryMs} from '../relayer/src/agents/pool-maintenance';
+import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget} from '../shared/arena-replacement';
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
 import {agentMetrics} from '../relayer/src/agents/metrics';
@@ -26,6 +27,13 @@ import {arenaRenewalExclusions} from '../shared/arena-renewal-policy';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 // Process-relative setup times, logged only when profiling is enabled.
 const boot:[string,number][]=[['imports',Math.round(performance.now())]];
+// A pre-started step (agent-reusable-process.mjs) loads its modules while the
+// previous step is still running or pausing, then waits here for its turn. Nothing
+// above this line reads chain state, holds a lock or writes.
+if(process.env.PONG_KEEPER_PRESTARTED==='1'&&process.send){
+ const turn=new Promise(resolve=>process.once('message',resolve));process.send('ready');await turn;process.disconnect();
+ boot.push(['released',Math.round(performance.now())]);
+}
 const {record:r,prefix,stateFile:file}=await loadReusableRuntime('keeper'),m={...r.common,houseInstances:r.houseInstances};
 boot.push(['runtime',Math.round(performance.now())]);
 const metrics=await agentMetrics('/diagnostics/reusable','lifecycle'),t=await chainTools(prefix+'-maintenance',measuredFetch('monad'));
@@ -35,7 +43,8 @@ boot.push(['archive-init',Math.round(performance.now())]);
 const archive=createReusableResultArchive(db),guard=await t.db.connect();let locked=false;
 boot.push(['guard',Math.round(performance.now())]);
 let state:{sequence:number;retry?:Record<string,number>;qualificationCursor?:bigint;challengeCursor?:bigint;history?:{id:bigint;index:number};
- archiveCursor?:{app:string;epoch:string;id:string};intent?:{to:Address;method:string;args:any[];value:bigint}}={sequence:0};
+ archiveCursor?:{app:string;epoch:string;id:string};intent?:{to:Address;method:string;args:any[];value:bigint};
+ deadSince?:Record<string,number>;replaced?:Record<string,number[]>;replacementAlerted?:Record<string,number>}={sequence:0};
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(state,(_,v)=>typeof v==='bigint'?{bigint:String(v)}:v),{mode:0o600});await rename(file+'.next',file);};
 const abiFor=(at:Address):Abi=>at===m.hub?hubAbi:at===m.pool?poolAbi:at===m.tournaments?bookAbi:at===m.ratings?ratingsAbi:at===m.challenges?challengeAbi:at===m.verifier?verifierAbi:catalogAbi;
 const cooling=(to:Address,method:string)=>(state.retry?.[`${to.toLowerCase()}:${method}`]??0)>Date.now();
@@ -46,7 +55,7 @@ async function act(to:Address,method:string,args:any[]=[],value=0n){
   const job=(await t.db.query('SELECT status FROM il_lifecycle_jobs WHERE id=$1',[`${prefix}-maintenance:step-${state.sequence}`])).rows[0];
   // No signed record or an exact reverted receipt can retire this intention.
   // A missing receipt keeps the exact operation and nonce for the next process.
-  if(!job||job.status==='failed'){state.sequence++;delete state.intent;state.retry??={};state.retry[`${to.toLowerCase()}:${method}`]=Date.now()+30000;await save();}
+  if(!job||job.status==='failed'){state.sequence++;delete state.intent;state.retry??={};state.retry[`${to.toLowerCase()}:${method}`]=Date.now()+(job?30000:writeRetryMs(e));await save();}
   throw e;
  }
  state.sequence++;delete state.intent;await save();console.log(JSON.stringify({at:new Date().toISOString(),pool:m.pool,action:method,hash:receipt.transactionHash}));
@@ -207,7 +216,34 @@ async function step(){
  }
  mark('reserve');
  const hosted=(await db.query("SELECT app,stage,detail FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
- const ready=active.filter(a=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch)));
+ const serving=(a:{app:Address;d:{epoch:bigint}})=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch));
+ // Replace an idle arena whose engine never comes back while Interlude answers
+ // (shared/arena-replacement.ts). Only a fresh report from the engines process
+ // counts: a silent engines process is its own outage, not three dead arenas.
+ {
+  const now=Date.now(),dead=state.deadSince??={},replaced=state.replaced??={},alerted=state.replacementAlerted??={};
+  const idleNow=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase()));
+  for(const key of Object.keys(dead))if(!idleNow.some(a=>a.app.toLowerCase()===key))delete dead[key];
+  for(const a of idleNow){
+   const key=a.app.toLowerCase();
+   if(serving(a)||!hosted.some(h=>h.app===key)){delete dead[key];continue;}
+   dead[key]??=now;
+   if(now-dead[key]<DEAD_ARENA_MS)continue;
+   const opening=await t.base.getBlock({blockNumber:a.d.baseBlock,includeTransactions:false});
+   if(block.timestamp-opening.timestamp<DEAD_ARENA_MIN_EPOCH_SECONDS)continue;
+   const {recent,allowed}=replacementBudget(replaced[key],now);
+   if(!allowed){
+    if(!alerted[key]){alerted[key]=now;console.warn(JSON.stringify({at:new Date().toISOString(),event:'arena-replacement-exhausted',arena:a.app,epoch:String(a.d.epoch),since:new Date(dead[key]).toISOString()}));}
+    continue;
+   }
+   if(cooling(m.pool,'closeReusableArena')||!await controlPlaneAnswers(a.app))continue;
+   const since=dead[key];replaced[key]=[...recent,now];delete dead[key];delete alerted[key];await save();
+   console.warn(JSON.stringify({at:new Date().toISOString(),event:'arena-replaced-unhealthy',arena:a.app,epoch:String(a.d.epoch),since:new Date(since).toISOString()}));
+   await act(m.pool,'closeReusableArena',[a.app]);return;
+  }
+  await save();
+ }
+ const ready=active.filter(serving);
  if(ready.length>=3&&!cooling(m.pool,'closeReusableArena')){
   const candidates=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase())).sort((a,b)=>a.d.baseBlock<b.d.baseBlock?-1:1);
   for(const candidate of candidates){
@@ -229,6 +265,12 @@ async function step(){
   &&healthy.some(h=>h.app===x.app.toLowerCase()&&BigInt(h.detail.epoch)===x.d.epoch));
  const laneFree=lanes[0].ref.id===0n,count=await read<bigint>(m.tournaments,bookAbi,'count');
  mark('available');
+ // A player waiting on a challenge comes before background bookkeeping: history
+ // repairs and tournaments use lane 0 and wait one step at most. The unchanged
+ // lane 1 section below still handles qualifications and cooldowns.
+ if(available&&lanes[1].ref.id===0n&&!cooling(m.pool,'admitChallenge')&&!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart')){
+  await act(m.pool,'admitChallenge');return;
+ }
  for(let checked=0;count>0n&&checked<3;checked++){
   const cursor=state.history&&state.history.id<=count?state.history:{id:count,index:0},tournament=await read(m.tournaments,bookAbi,'tournament',[cursor.id]);
   state.history=cursor.index+1<(tournament.league?28:7)?{id:cursor.id,index:cursor.index+1}:{id:cursor.id>1n?cursor.id-1n:count,index:0};await save();

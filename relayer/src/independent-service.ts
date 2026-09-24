@@ -34,6 +34,7 @@ import {independentReusableLifecycle} from './independent-reusable-lifecycle';
 import {independentReusablePool} from './independent-reusable-pool';
 import {independentRoomDiscovery} from './independent-room-discovery';
 import {independentRoomAdmission} from './independent-room-admission';
+import {arenaOutage,quietRetry} from './independent-service-policy';
 import {independentRuntime} from './independent-runtime';
 import {independentLegacy} from './independent-legacy';
 import {abi as verifierAbi} from '../../shared/abi-independent-PublishedResultVerifier';
@@ -104,12 +105,15 @@ export async function independentService(o:Options){
  if(engines.some(e=>e.signer.address.toLowerCase()!==m.pressureSigner.toLowerCase()))throw Error('Independent bridge identity mismatch');
  const health=m.arenas.map(a=>({app:a.app,node:a.node,epoch:'0',id:'0',stage:'observing',online:false,expiresAt:0,releaseAt:0,lastProgressAt:0,code:'',rally:null as Awaited<ReturnType<Awaited<ReturnType<typeof independentFinance>>['rallyStatus']>>}));
  const validated=m.arenas.map(()=>({epoch:0n,checked:0}));
- const jobs=new Set<string>(),retry=new Map<string,number>(),reported=new Map<string,{detail:string;at:number}>();let stopped=false,publicationOffset=0;
+ const jobs=new Set<string>(),retry=new Map<string,number>(),reported=new Map<string,{detail:string;at:number}>();let stopped=false,publicationOffset=0,eagerArenasUntil=0;
  const run=(name:string,fn:()=>Promise<void>,interval=2000)=>{
   if(stopped||jobs.has(name)||(retry.get(name)??0)>Date.now())return;
   jobs.add(name);void fn().then(()=>retry.set(name,Date.now()+interval)).catch(e=>{
    retry.set(name,Date.now()+Math.max(engineReadRetryMs(e),3000));
    const detail=String(e?.shortMessage||e?.message||'Unavailable').split(/\n(?:Request|Details|URL)/)[0].replace(/0x[\da-f]{130,}/gi,'[signed data omitted]').slice(0,400);
+   // A cooldown is the retry itself, not news: it would alternate with the real
+   // reason and defeat the one-line-per-minute deduplication below.
+   if(quietRetry(detail))return;
    const before=reported.get(name);if(before?.detail!==detail||Date.now()-before.at>=60000){reported.set(name,{detail,at:Date.now()});console.warn(JSON.stringify({event:'independent-job-retry',job:name,detail,at:new Date().toISOString()}));}
   }).finally(()=>jobs.delete(name));
  };
@@ -241,11 +245,20 @@ export async function independentService(o:Options){
    if(p.status===1&&Number(p.expires)*1000<Date.now())await queue(m.lobby,lobbyAbi,'expireProposal',[id],0n,0);
    if(p.status===2&&await r.lobby('arenaOf',[id])===zeroAddress&&reusableReady){
     try{const assigned=await base.simulateContract({address:m.lobby,abi:lobbyAbi,functionName:'assignNext'});
-     if(assigned.result!==zeroAddress)await queue(m.lobby,lobbyAbi,'assignNext',[],0n,0);
+     if(assigned.result!==zeroAddress){
+      await queue(m.lobby,lobbyAbi,'assignNext',[],0n,0);
+      // The engine admission follows the reservation: look for it every 1.5 s
+      // for a while instead of waiting for the idle ten-second check.
+      eagerArenasUntil=Date.now()+20000;for(let k=0;k<engines.length;k++)retry.delete(`arena:${k}`);
+     }
     }catch{/* Re-evaluate invalid grants without blocking the other slot. */}
     await queue(m.lobby,lobbyAbi,'cancelUnopened',[id],0n,0).catch(()=>{});
    }
   }
+  // No arena online at all: a new proposal could never be served, and players
+  // would loop through accept and wait. Accepted pairs keep their place and are
+  // served first; pairing resumes as soon as one arena answers again.
+  if(arenaOutage(!!reusablePool,health))return;
   for(const mode of [0,1]){
    const progress=await r.lobby('queueProgress',[mode]);
    if(progress[1]>0n&&(progress[0]||1n)<=progress[1])await queue(m.lobby,lobbyAbi,'matchmake',[mode,32n],0n,0);
@@ -360,7 +373,8 @@ export async function independentService(o:Options){
   }
  }
  const timer=setInterval(()=>{
-  for(let i=0;i<engines.length;i++){run(`arena:${i}`,()=>observeArena(i),health[i].stage==='available'?10000:3000);run(`progress:${i}`,()=>progressArena(i),rules.events?250:2000);}
+  const eager=Date.now()<eagerArenasUntil;
+  for(let i=0;i<engines.length;i++){run(`arena:${i}`,()=>observeArena(i),eager?1500:health[i].stage==='available'?10000:3000);run(`progress:${i}`,()=>progressArena(i),rules.events?250:2000);}
   for(let i=0;i<engines.length;i++)if(health[i].online&&['playing','publication-paused'].includes(health[i].stage)){
    run(`rally:${i}`,async()=>{health[i].rally=await finance.rallyStatus(engines[i].app,await engines[i].read());},3000);
    if(health[i].stage==='playing'){
@@ -370,7 +384,7 @@ export async function independentService(o:Options){
   }
   run('index',index,6000);run('room-discovery',discoverRooms,4000);run('history',history.observe,6000);run('admission',admission,4000);
   // Slow historical rooms never delay accepted proposals or ranked admission.
-  if(process.env.PONG_INDEPENDENT_ADMISSION==='true')run('room-admission',roomAdmission.run,2000);
+  if(process.env.PONG_INDEPENDENT_ADMISSION==='true'&&!arenaOutage(!!reusablePool,health))run('room-admission',roomAdmission.run,2000);
   if(reusableResults)run('published-history',async()=>{
    // Bounded historical scan revisits provisional entries after finality or a
    // correction. The archive retains previous bodies across slot/epoch reuse.

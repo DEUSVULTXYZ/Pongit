@@ -68,6 +68,8 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
  }catch{return {state:previous,resync:true,changed:false};}
 }
 
+/** Reconnection delay after `failures` consecutive failures: 250 ms, doubling to 2 s. */
+export const streamRetryMs=(failures:number)=>Math.min(2000,250*2**Math.min(Math.max(failures,0),3));
 export interface StreamSocket {
  readyState:number;send(data:string):void;close():void;
  addEventListener(type:string,listener:(event:any)=>void):void;
@@ -107,6 +109,8 @@ export class EngineStream {
    socket.addEventListener("close",e=>{if(socket!==this.socket)return;recordRpc({at:Date.now(),target:"interlude",method:`stream.closed.${Number.isInteger(e.code)?e.code:0}`,status:0,ms:0,source:"websocket"});clearTimeout(this.handshake);this.setConnected(false);this.schedule();});
   }catch{this.setConnected(false);this.schedule();}
  }
- private schedule(){if(!this.stopped)this.retry=setTimeout(()=>this.open(),Math.max(this.delay(),Math.min(15000,500*2**Math.min(this.failures++,5)))+Math.floor(Math.random()*200));}
+ // Like the Interlude SDK: 250 ms doubling to a 2 s cap, so a blip never leaves a
+ // player on polling for long. An explicit server cooldown (delay) still wins.
+ private schedule(){if(!this.stopped)this.retry=setTimeout(()=>this.open(),Math.max(this.delay(),streamRetryMs(this.failures++))+Math.floor(Math.random()*200));}
  stop(){this.stopped=true;clearTimeout(this.retry);clearTimeout(this.handshake);const socket=this.socket;this.socket=undefined;socket?.close();this.setConnected(false);}
 }

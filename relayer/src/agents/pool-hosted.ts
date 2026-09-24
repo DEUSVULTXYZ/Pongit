@@ -1,6 +1,7 @@
 import type {Pool,PoolClient} from 'pg';
 import type {Address} from 'viem';
 import {measuredFetch} from '../../../shared/rpc-metrics';
+import {HOME_REGION} from '../../../shared/interlude-regions';
 
 const INSPECTION_AFTER_MS=300_000,ALERT_EVERY_MS=600_000;
 type Provision={state:string;at:number;attempts:number;retryAt:number;http?:number;url?:string;readyAt?:number;reason?:string;stalledAt?:number;alertedAt?:number};
@@ -55,7 +56,8 @@ export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expect
   if(!p)throw Error('Hosted provisioning intent missing');
   let response:Response;
   try{response=await transport(`https://control.interludelayer.xyz/sessions${create?'':'/'+app}`,{method:create?'POST':'GET',headers:{'content-type':'application/json'},
-   ...(create?{body:JSON.stringify({app})}:{}),signal:AbortSignal.timeout(10000)});}
+   // Without a region, Interlude places the node near the caller (this VPS), not the players.
+   ...(create?{body:JSON.stringify({app,region:HOME_REGION})}:{}),signal:AbortSignal.timeout(10000)});}
   catch{await save(c,app,epoch,pending(p,now,'response-lost',app,epoch));throw Error('Hosted response lost; the existing creation will be looked up');}
   const body=await response.json().catch(()=>null);
   if(!response.ok){

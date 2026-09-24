@@ -1,5 +1,6 @@
 import type { Pool } from "pg";
 import type { Address } from "viem";
+import { HOME_REGION } from "../../shared/interlude-regions";
 
 type Provision = { epoch: string; state: "sending" | "uncertain" | "rejected" | "confirmed" | "intervention"; attemptedAt: number; retryAt: number; attempts: number; status?: number;
   reason?: "identity"; stalledAt?: number; alertedAt?: number };
@@ -43,7 +44,8 @@ export async function requestHostedRenewal(
   try {
     response=await transport(`https://control.interludelayer.xyz/sessions${create?"":"/"+app}`,{
       method:create?"POST":"GET",headers:{"content-type":"application/json"},
-      ...(create?{body:JSON.stringify({app})}:{}),signal:AbortSignal.timeout(10000),
+      // Without a region, Interlude places the node near the caller (this VPS), not the players.
+      ...(create?{body:JSON.stringify({app,region:HOME_REGION})}:{}),signal:AbortSignal.timeout(10000),
     });
   }catch {
     await save(pending({retryAt:now+10000},"response-lost"));

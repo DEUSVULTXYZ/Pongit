@@ -7,6 +7,7 @@ import {abi as lobbyAbi} from '../../shared/abi-independent-ReusableEventsLobby'
 import {abi as hubAbi} from '../../shared/abi-independent-IInterludeHub';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from './agents/reusable-budget';
 import {engineReadRetryMs} from '../../shared/engine-read';
+import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget} from '../../shared/arena-replacement';
 
 type Queue=(at:Address,abi:Abi,name:string,args:readonly unknown[],value?:bigint,priority?:number)=>Promise<unknown>;
 /** Every new hosted epoch needs Interlude's control plane. Any HTTP answer, a 404
@@ -23,9 +24,10 @@ async function controlPlaneAnswers(app:Address){
  * capacity. A registered address or successful old HTTP response does not. */
 export async function independentReusablePool(base:PublicClient,m:IndependentManifest,queue:Queue,
  health:()=>readonly {app:Address;epoch:string;stage:string;online:boolean}[],enabled:()=>boolean,
- budgetPath=process.env.PONG_INDEPENDENT_PUBLICATION_BUDGET,control:(app:Address)=>Promise<boolean>=controlPlaneAnswers){
+ budgetPath=process.env.PONG_INDEPENDENT_PUBLICATION_BUDGET,control:(app:Address)=>Promise<boolean>=controlPlaneAnswers,now:()=>number=Date.now){
  if(m.rulesVersion!==14)throw Error('Reusable human pool required');
  let reserveRetryAt=0;
+ const unhealthySince=new Map<string,number>(),replaced=new Map<string,number[]>(),exhaustionAlerted=new Set<string>();
  let budget:ReusablePublicationBudget|undefined;
  const path=budgetPath;
  if(path){
@@ -67,6 +69,30 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
    ?a.app.toLowerCase().localeCompare(b.app.toLowerCase()):a.d.baseBlock<b.d.baseBlock?-1:1);
   const readyCount=active.filter(a=>states.some(h=>h.app.toLowerCase()===a.app.toLowerCase()
    &&h.online&&BigInt(h.epoch)===a.d.epoch&&['available','countdown','playing','publishing'].includes(h.stage))).length;
+  // Only an engine that never synchronizes counts as dead: every other stage
+  // (forced close, sealing, review) already runs its own recovery.
+  const t=now();
+  for(const key of [...unhealthySince.keys()])if(!idle.some(a=>a.app.toLowerCase()===key))unhealthySince.delete(key);
+  for(const a of idle){
+   const key=a.app.toLowerCase(),h=states.find(s=>s.app.toLowerCase()===key);
+   if(!h||h.online||h.stage!=='starting'){unhealthySince.delete(key);continue;}
+   const since=unhealthySince.get(key)??t;unhealthySince.set(key,since);
+   if(t-since<DEAD_ARENA_MS)continue;
+   const opening=await base.getBlock({blockNumber:a.d.baseBlock});
+   if(block.timestamp-opening.timestamp<DEAD_ARENA_MIN_EPOCH_SECONDS)continue;
+   const {recent,allowed}=replacementBudget(replaced.get(key),t);
+   if(!allowed){
+    if(!exhaustionAlerted.has(key)){exhaustionAlerted.add(key);console.warn(JSON.stringify({event:'arena-replacement-exhausted',arena:a.app,
+     epoch:String(a.d.epoch),since:new Date(since).toISOString(),at:new Date(t).toISOString()}));}
+    continue;
+   }
+   // A new epoch needs Interlude to host it: never trade a dead node for none.
+   if(!await control(a.app))continue;
+   await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);
+   unhealthySince.delete(key);exhaustionAlerted.delete(key);replaced.set(key,[...recent,t]);
+   console.warn(JSON.stringify({event:'arena-replaced-unhealthy',arena:a.app,epoch:String(a.d.epoch),since:new Date(since).toISOString(),at:new Date(t).toISOString()}));
+   return false;
+  }
   for(const a of idle){
    const opening=await base.getBlock({blockNumber:a.d.baseBlock});
    const exhausted=!reusableAdmissionBudget(budget,a.d.batchIndex,a.d.expiresAt,block.timestamp);

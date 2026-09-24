@@ -43,6 +43,14 @@ export async function controlPlaneAnswers(app:Address,transport:typeof fetch=fet
   await response.body?.cancel().catch(()=>{});return response.status<500;
  }catch{return false;}
 }
+/** The shared operator key was busy with another transaction (a sponsored player
+ * action, usually): nothing was signed, so the next step may simply try again. */
+export function operatorBusy(error:unknown){
+ return /Operator is busy|Reconcile the existing operator transaction first|Operator nonce is in use/.test(String((error as any)?.message??error));
+}
+/** Cooldown after a failed keeper write: short when only the operator was busy,
+ * long for a revert or anything that needs the situation to change first. */
+export const writeRetryMs=(error:unknown)=>operatorBusy(error)?3000:30000;
 export function tournamentDue(last:{startedAt:bigint}|null,nextAt:bigint,now:bigint){
  return now>=nextAt&&(!last||now>=last.startedAt+tournamentIntervalSeconds);
 }

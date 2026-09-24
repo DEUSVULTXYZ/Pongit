@@ -5,6 +5,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {encodeFunctionData,encodeFunctionResult,decodeFunctionData,keccak256,toHex,zeroAddress,zeroHash,type Address} from 'viem';
 import {independentReusablePool} from '../relayer/src/independent-reusable-pool';
+import {DEAD_ARENA_MS} from '../shared/arena-replacement';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 const at=(n:number)=>toHex(n,{size:20}) as Address;
 async function fixture(t:any,withBudget=true){
@@ -12,7 +13,7 @@ async function fixture(t:any,withBudget=true){
  const fields=roomsLifecycleHubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
  const ds=apps.map(app=>({...Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n])),
   app,status:1,epoch:2n,baseBlock:3n,expiresAt:10000n,batchIndex:100n}));
- const health=apps.map(app=>({app,epoch:'2',stage:'available',online:true})),reserved=[0n,0n,0n],jobs:any[]=[];let enabled=true,openFailure:Error|undefined,controlUp=true;
+ const health=apps.map(app=>({app,epoch:'2',stage:'available',online:true})),reserved=[0n,0n,0n],jobs:any[]=[];let enabled=true,openFailure:Error|undefined,controlUp=true,clock=1_000_000_000;
  const base:any={getCode:async()=> '0x1234',getBlock:async(c:any)=>({number:20n,timestamp:c?.blockNumber===3n?1n:1000n}),
   request:async(c:any)=>{const call=decodeFunctionData({abi:roomsLifecycleHubAbi,data:c.params[0].data}),app=call.args![0];
    return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:ds[apps.indexOf(app as Address)] as any});},
@@ -26,8 +27,9 @@ async function fixture(t:any,withBudget=true){
   t.after(async()=>{await unlink(path);await rmdir(dir);});
  }
  const worker=await independentReusablePool(base,m,async(at,abi,name,args,value)=>{
-  encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args,value});if(name==='openReusableArena'&&openFailure)throw openFailure;},()=>health,()=>enabled,path,async()=>controlUp);
- return{apps,worker,ds,health,reserved,jobs,base,disable:()=>enabled=false,failOpening:(error:Error)=>openFailure=error,controlDown:()=>controlUp=false};
+  encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args,value});if(name==='openReusableArena'&&openFailure)throw openFailure;},()=>health,()=>enabled,path,async()=>controlUp,()=>clock);
+ return{apps,worker,ds,health,reserved,jobs,base,disable:()=>enabled=false,failOpening:(error:Error)=>openFailure=error,
+  controlDown:()=>controlUp=false,controlUp:()=>controlUp=true,tick:(ms:number)=>{clock+=ms;}};
 }
 
 test('an absent reviewed budget cannot reserve capacity or admit a human match',async t=>{
@@ -90,6 +92,53 @@ test('a refused reserve cannot close admission on an existing healthy arena or t
  f.health[0].epoch='2';f.ds[1].batchIndex=40000n;
  assert.equal(await f.worker.admissionReady(),false,'Publication budget still blocks an exhausted live arena');
  assert(f.jobs.some(j=>j.name==='closeReusableArena'));
+});
+
+// The three epochs are old enough to judge, not yet due for age rotation; arena 1 lost its hosted node.
+async function deadArena(t:any){
+ const f=await fixture(t);f.base.getBlock=async(c:any)=>({number:20n,timestamp:c?.blockNumber===3n?1n:5000n});
+ f.health[1].stage='starting';f.health[1].online=false;
+ const events:any[]=[];t.mock.method(console,'warn',(line:string)=>events.push(JSON.parse(line)));
+ return {...f,events};
+}
+
+test('an idle arena whose engine never comes back is replaced once Interlude can host again',async t=>{
+ const f=await deadArena(t);
+ assert.equal(await f.worker.admissionReady(),false,'a dead idle arena still blocks admission');
+ f.tick(DEAD_ARENA_MS-1);assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0,'not before fifteen minutes');
+ f.tick(1);f.controlDown();
+ assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0,'never while no new epoch could be hosted');
+ f.controlUp();assert.equal(await f.worker.admissionReady(),false);
+ assert.deepEqual(f.jobs.map(j=>[j.name,j.args[0]]),[['closeReusableArena',f.apps[1]]]);
+ assert.equal(f.events.at(-1).event,'arena-replaced-unhealthy');
+ f.ds[1].status=2;f.health[1].stage='closing';
+ assert.equal(await f.worker.admissionReady(),true,'the two healthy arenas admit while the third is replaced');
+});
+
+test('a fresh epoch gets time to build its node before it can be judged',async t=>{
+ const f=await deadArena(t);f.base.getBlock=async(c:any)=>({number:20n,timestamp:c?.blockNumber===3n?7000n:8000n});
+ await f.worker.admissionReady();f.tick(DEAD_ARENA_MS*2);
+ assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0);
+});
+
+test('one healthy moment restarts the clock, and a reserved arena is never replaced',async t=>{
+ const f=await deadArena(t);
+ await f.worker.admissionReady();f.tick(DEAD_ARENA_MS-1000);
+ f.health[1].stage='available';f.health[1].online=true;await f.worker.admissionReady();
+ f.health[1].stage='starting';f.health[1].online=false;await f.worker.admissionReady();
+ f.tick(DEAD_ARENA_MS-1);assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0);
+ f.reserved[1]=77n;f.tick(DEAD_ARENA_MS);await f.worker.admissionReady();
+ assert(!f.jobs.some(j=>j.name==='closeReusableArena'),'its match must finish or be recovered first');
+});
+
+test('an arena that keeps dying is replaced twice a day at most, then flagged for an operator',async t=>{
+ const f=await deadArena(t);
+ for(let i=0;i<3;i++){await f.worker.admissionReady();f.tick(DEAD_ARENA_MS);await f.worker.admissionReady();}
+ assert.equal(f.jobs.filter(j=>j.name==='closeReusableArena').length,2);
+ assert.equal(f.events.filter(e=>e.event==='arena-replacement-exhausted').length,1);
+ await f.worker.admissionReady();assert.equal(f.events.filter(e=>e.event==='arena-replacement-exhausted').length,1,'alerted once');
+ f.tick(86_400_000);await f.worker.admissionReady();f.tick(DEAD_ARENA_MS);await f.worker.admissionReady();
+ assert.equal(f.jobs.filter(j=>j.name==='closeReusableArena').length,3,'the daily allowance comes back');
 });
 
 test('reserve RPC failure does not disable an independent observed live epoch',async t=>{
