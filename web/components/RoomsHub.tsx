@@ -523,7 +523,11 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
       configTimer: ReturnType<typeof setTimeout>;
     const config = async () => {
       try {
-        const c = await api("/interlude/config");
+        // Read config directly: its `error` field describes the engine, it is not
+        // a failed request, and api() would surface that raw text to players.
+        const response = await fetch(`${API}/interlude/config`, { credentials: "include", signal: AbortSignal.timeout(15000) });
+        if (!response.ok) throw new Error("The game service is reconnecting. Please retry shortly.");
+        const c = await response.json();
         if (c.app !== roomsManifest.app)
           throw new Error("Deployment changed. Reload to continue.");
         if (!done) {
@@ -537,13 +541,14 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
           // the current one; a relayer serving none is the release's, and the tab
           // signs its 15,000,000 (shared/engine-gas.ts).
           adoptServedEngineCommandGas(c);
+          // A held lifecycle on a closed room app is retirement, not a pause: these
+          // rooms will not reopen, and their node is gone, so the engine error is
+          // meaningless to a player. Send them to the arcade instead.
+          if(c.maintenance?.operatorHold && !c.admission) setNotice(RETIRED_ROOMS_MESSAGE);
           // A halted node explains the pause better than a lifecycle stage that
           // cannot progress until the operator recovers it.
-          if(halted.current) setNotice(c.error || ENGINE_HALTED_MESSAGE);
+          else if(halted.current) setNotice(c.error || ENGINE_HALTED_MESSAGE);
           else if(gasCapped.current) setNotice(c.error || ENGINE_GAS_CAP_MESSAGE);
-          // A held lifecycle on a closed room app is retirement, not a pause: these
-          // rooms will not reopen, so send players to the arcade instead of waiting.
-          else if(c.maintenance?.operatorHold && !c.admission) setNotice(RETIRED_ROOMS_MESSAGE);
           else if(c.maintenance?.stage && c.maintenance.stage!=='playing') {
             const m=c.maintenance;
             const until=m.releaseAt>Date.now()?` The hub permits release at ${new Date(m.releaseAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}.`:'';
