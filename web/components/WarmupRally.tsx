@@ -18,7 +18,7 @@ export function WarmupRally({onClose}:{onClose?:()=>void}){
   const keys=new Set<string>(),up=new Set(['w','arrowup']),down=new Set(['s','arrowdown']);
   const key=(e:KeyboardEvent,on:boolean)=>{
    const k=e.key.toLowerCase();if(!up.has(k)&&!down.has(k))return;
-   if((e.target as HTMLElement).closest('input,textarea,select,[contenteditable=true]'))return;
+   if(e.target instanceof Element&&e.target.closest('input,textarea,select,[contenteditable=true]'))return;
    e.preventDefault();if(on)keys.add(k);else keys.delete(k);
   };
   const kd=(e:KeyboardEvent)=>key(e,true),ku=(e:KeyboardEvent)=>key(e,false),blur=()=>keys.clear();
