@@ -789,3 +789,12 @@
 @keyframes match-countdown-pop{0%{opacity:1;transform:scale(.65)}65%{opacity:.8}100%{opacity:0;transform:scale(1.45)}}
 @media(prefers-reduced-motion:reduce){.match-countdown-digit{animation:none;will-change:auto;text-shadow:none}}
 @media(max-width:480px){.rooms-intro-players{gap:8px;padding:14px 8px}.rooms-intro .rooms-court-controls>span{max-width:65%;font-size:14px}.rooms-serve-status{top:8px;width:90%;padding:7px 10px}.rooms-serve-status small{font-size:12px}}
+/* Local warm-up rally, shown while an arena gets ready. */
+.warmup-rally{display:flex;flex-direction:column;gap:10px;width:min(100%,720px);margin:18px auto 0;padding:14px;border:1px solid #385361;border-radius:14px;background:#050a14e6}
+.warmup-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.warmup-head small{color:#9cb4c0;letter-spacing:.08em}
+.warmup-score{font:20px/1 var(--font-michroma),system-ui,sans-serif;color:#e5e1ff}
+.warmup-canvas{position:relative}
+.warmup-canvas canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#000;border:1px solid #60737b;touch-action:none}
+.warmup-rally .rooms-caption{margin:0;text-align:center}
+.rooms-wait-status{margin:6px 0 0;color:#9cb4c0;font-size:14px}

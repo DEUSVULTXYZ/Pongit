@@ -89,7 +89,9 @@ export function createAgentClient(options:AgentClientOptions){
     const owner=typeof wallet.account==='string'?wallet.account:wallet.account?.address;
     if(owner&&journal.pending(owner)){if(player?.toLowerCase()===owner.toLowerCase())await recover();if(journal.pending(owner))throw Error('Resolve the current command before renewing the session');}
    }
-   const session=await client.openSession({wallet,scope:[...agentActions],expirySeconds:7200,assertDigest:true,force:options.renew});player=session.granter;
+   // No assertDigest: the Interlude SDK reserves it for development, and it costs a
+   // chain read before the passkey prompt. The relayer verifies every grant anyway.
+   const session=await client.openSession({wallet,scope:[...agentActions],expirySeconds:7200,force:options.renew});player=session.granter;
    await recover();await authenticate();return player;
   },
   async resume(owner:Address){player=owner;await client.restoreSession(owner);await recover();await authenticate();return owner;},

@@ -63,6 +63,7 @@ import {takeRpcSamples} from "../../shared/rpc-metrics";
 import {publicationUnavailable,EnginePublicationUnavailable} from "../../shared/service-error";
 import {ENGINE_GAS_CAP_CODE,ENGINE_GAS_CAP_MESSAGE,ENGINE_HALTED_CODE,ENGINE_HALTED_MESSAGE,EngineGasCapped,EngineHalted,gasCapRefusal,haltRefusal,isEngineGasCapped,isEngineHalted} from "../../shared/engine-halt";
 import {adoptServedEngineCommandGas} from "../../shared/engine-gas";
+const RETIRED_ROOMS_MESSAGE="These rooms have closed. Head back to the arcade to play.";
 type Profile = {
   player: string;
   handle?: string;
@@ -540,6 +541,9 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
           // cannot progress until the operator recovers it.
           if(halted.current) setNotice(c.error || ENGINE_HALTED_MESSAGE);
           else if(gasCapped.current) setNotice(c.error || ENGINE_GAS_CAP_MESSAGE);
+          // A held lifecycle on a closed room app is retirement, not a pause: these
+          // rooms will not reopen, so send players to the arcade instead of waiting.
+          else if(c.maintenance?.operatorHold && !c.admission) setNotice(RETIRED_ROOMS_MESSAGE);
           else if(c.maintenance?.stage && c.maintenance.stage!=='playing') {
             const m=c.maintenance;
             const until=m.releaseAt>Date.now()?` The hub permits release at ${new Date(m.releaseAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}.`:'';

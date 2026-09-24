@@ -19,6 +19,9 @@ import {Dialog} from './Dialog';
 import {IconButton} from './IconButton';
 import {ArcadeAmbience,MusicCredit} from './ArcadeAmbience';
 import {EngineCredit} from './EngineCredit';
+import {WarmupRally} from './WarmupRally';
+import {useQueueElapsed} from '../lib/use-lobby-clock';
+import {clockLabel} from '../lib/arena-wait';
 
 type Person={agent:Address;creator:Address;name:string;avatar:number;official:boolean;difficulty:string;modes:number[];qualification:Record<0|1,boolean>;available:boolean;waiting:boolean};
 type Live={ref:AgentMatchRef;a:Address;b:Address;mode:0|1;lane:string};
@@ -31,7 +34,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const [catalogError,setCatalogError]=useState(''),[queueError,setQueueError]=useState(''),[renewing,setRenewing]=useState(false);
  const [watchMode,setWatchMode]=useState<'all'|0|1>('all');
  const visibleError=(!connectOpen&&error)||queueError||catalogError;
- const session=useRef<PoolFamilySession|null>(null),locked=useRef(false),intent=useRef<Address|null>(null),alive=useRef(false);
+ const session=useRef<PoolFamilySession|null>(null),locked=useRef(false),intent=useRef<Address|null>(null),alive=useRef(false),waiting=useRef(false);
+ const [warmup,setWarmup]=useState(false);
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  useEffect(()=>{if(!enabled)return;const remembered=rememberedAccount();if(remembered)setAccount(remembered.address);},[enabled]);
@@ -54,8 +58,17 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  useEffect(()=>{
   if(!config||!account)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController(),quiet=quietFailure();
   const poll=async()=>{let delay=2000;try{
-   if(document.hidden)return;const result=await poolApi<{request:PoolChallengeView|null}>(`challenges/${account}`,undefined,abort.signal);
-   if(stopped)return;quiet.recovered();setRequest(result.request);setQueueError('');if(!result.request)delay=10000;if(result.request?.ref){router.push(matchHref(result.request.ref));return;}
+   // A pending challenge keeps being followed in a background tab: the match only
+   // waits about thirty seconds for its player once an arena admits it.
+   if(document.hidden&&!waiting.current)return;const result=await poolApi<{request:PoolChallengeView|null}>(`challenges/${account}`,undefined,abort.signal);
+   if(stopped)return;quiet.recovered();setRequest(result.request);setQueueError('');waiting.current=!!result.request&&!result.request.ref;if(!result.request)delay=10000;
+   if(result.request?.ref){
+    const href=matchHref(result.request.ref);
+    if(!document.hidden){router.push(href);return;}
+    const title=document.title;document.title='Your match is ready! · PONGIT';
+    const back=()=>{if(document.hidden)return;document.removeEventListener('visibilitychange',back);document.title=title;router.push(href);};
+    document.addEventListener('visibilitychange',back);return;
+   }
   }catch(e){if(!stopped)setQueueError(quiet.failed(poolUserError(e)));delay=Math.max(5000,engineReadRetryMs(e));}finally{if(!stopped)timer=setTimeout(poll,delay);}};
   void poll();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[config?.pool,account,retry,router]);
@@ -92,6 +105,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   const prepared=await preparePoolChallenge(poolBase(),config,privateKeyToAccount(saved.key),account,{agent:request.agent,mode:request.mode,cancel:BigInt(request.id)});
   await finishPoolSponsor(sponsor,prepared);setRequest(null);setRetry(n=>n+1);
  });}
+ const waitSeconds=useQueueElapsed(request&&!request.ref?`challenge:${request.id}`:undefined);
  return <main className="cabinet-ui rooms-shell agents-shell">
   <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
    <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><Link href="/">Back to arcade</Link></div></header>
@@ -102,9 +116,11 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
    <div className="agent-toolbar" role="group" aria-label="Game mode">{view==='watch'&&<button aria-pressed={watchMode==='all'} onClick={()=>setWatchMode('all')}>All live matches</button>}{([0,1] as const).map(n=><button key={n} aria-pressed={(view==='watch'?watchMode:mode)===n} onClick={()=>view==='watch'?setWatchMode(n):setMode(n)} disabled={view==='play'&&(busy||!!request)}>{n===0?'Classic':'Chaos'}</button>)}</div>
    {visibleError&&<div className="tournament-error" role="alert"><p>{visibleError}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
    {busy&&<p role="status">Confirming your action…</p>}
-   {request&&<section className="agent-wait" aria-live="polite"><h2>{request.ref?'Your arena is ready':request.waitReason==='tournament'?'Your rival is in a tournament':request.waitReason==='match'?'Your rival is finishing a match':'Waiting for an available arena'}</h2><p>{person(request.agent)?.name??short(request.agent)} · {request.mode===0?'Classic':'Chaos'} · Friendly</p>
+   {request&&<section className="agent-wait" aria-live="polite"><h2>{request.ref?'Your arena is ready':request.waitReason==='tournament'?'Your rival is in a tournament':request.waitReason==='match'?'Your rival is finishing a match':'Preparing your arena'}</h2><p>{person(request.agent)?.name??short(request.agent)} · {request.mode===0?'Classic':'Chaos'} · Friendly</p>
+    {!request.ref&&<p className="rooms-timer">{clockLabel(waitSeconds)}</p>}
     {!request.ref&&request.waitReason==='tournament'&&<p>This bot is reserved until the tournament ends. <Link href="/agents/tournaments">Watch tournament</Link> or cancel your challenge.</p>}
-    {request.ref?<Link className="rooms-button" href={matchHref(request.ref)}>Enter arena</Link>:<button disabled={busy||request.status!==1} onClick={()=>void cancel()}>Cancel challenge</button>}</section>}
+    {request.ref?<Link className="rooms-button" href={matchHref(request.ref)}>Enter arena</Link>:<div className="rooms-button-row"><button disabled={busy||request.status!==1} onClick={()=>void cancel()}>Cancel challenge</button><button onClick={()=>setWarmup(w=>!w)}>{warmup?'Hide warm-up':'Warm up'}</button></div>}
+    {!request.ref&&warmup&&<WarmupRally onClose={()=>setWarmup(false)}/>}</section>}
    {view==='play'?<><div className="agent-grid">{people.filter(p=>p.modes.includes(mode)).map(p=><article className="agent-card" key={p.agent} data-selected={selected.toLowerCase()===p.agent.toLowerCase()}>
     <span className="agent-badge">{p.official?'PONGIT BOT':'COMMUNITY AGENT'}</span><div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.difficulty}</p></div></div>
     <p className="agent-creator">Creator {p.official?'PONGIT':short(p.creator)}</p><span className="agent-status" data-online={p.available&&p.qualification[mode]}>{!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':p.waiting?'Busy, next duel can be reserved':'Available'}</span>

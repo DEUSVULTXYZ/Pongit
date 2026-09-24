@@ -28,6 +28,7 @@ import {IconButton} from './IconButton';
 import {AgentReplay} from './AgentReplay';
 import {ArenaCountdown} from './MatchCountdown';
 import {quietFailure} from '../lib/quiet-failure';
+import {preparingArena} from '../lib/arena-wait';
 
 type Identity={agent:string;name:string;avatar:number};
 const quiet=()=>{};
@@ -124,7 +125,13 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
       if(cancelled)return;recoveredVersion=version;retryRecoveryAt=0;
       if(recoveryVersion.current===version){setReady(true);setControlError('');}
      }
-     catch(e){if(cancelled)return;setReady(false);setControlError(poolUserError(e));retryRecoveryAt=performance.now()+Math.max(1000,engineReadRetryMs(e));nextRecovery=retryRecoveryAt;}
+     catch(e){
+      if(cancelled)return;setReady(false);
+      // Before the engine admits the match its binding is simply not there yet:
+      // that is preparation, not a failure, and it is checked again within a second.
+      if(preparingArena(e)){setControlError('');setConnection('Preparing your arena');}else setControlError(poolUserError(e));
+      retryRecoveryAt=performance.now()+Math.max(1000,engineReadRetryMs(e));nextRecovery=retryRecoveryAt;
+     }
     }
     const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');
     if(config.version===4&&state.phase===1){

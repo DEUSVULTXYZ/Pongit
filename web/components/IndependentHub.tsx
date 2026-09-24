@@ -31,11 +31,15 @@ import {readIndependentLobby,readIndependentRanking,independentReader} from '../
 import {publicIndependentManifest,arenaReference,parseRoomReference,roomReference,type IndependentManifest} from '../../shared/independent';
 import {independentApi,independentBase,loadFamily,openFamily,renewIndependentControl,validateFamily,resumeSponsored,lobbyCommand,saveIndependentProfile,disconnectFamily,eraseFamilyLocal,createIndependentArena,type FamilySession} from '../lib/independent';
 import {independentControlArgs} from '../../shared/independent-rules';
+import {SESSION_RENEW_MARGIN} from '../../shared/agent-pool-family';
+import {arenaOutage,arenaWaitStatus,clockLabel,preparingArena} from '../lib/arena-wait';
+import {WarmupRally} from './WarmupRally';
 
 type Panel='account'|'ranking'|'invite'|'create'|'members'|'tools'|'more'|'connect'|'private'|'market'|'history'|null;
 const short=(a:string)=>`${a.slice(0,6)}…${a.slice(-4)}`;
 const equal=(a?:string,b?:string)=>!!a&&!!b&&a.toLowerCase()===b.toLowerCase();
-const recoveryDelay=(e:unknown)=>Math.max(engineReadRetryMs(e),publicationUnavailable(e)?30000:3000);
+// Before admission, look again within a second so the match starts once bound.
+const recoveryDelay=(e:unknown)=>Math.max(engineReadRetryMs(e),publicationUnavailable(e)?30000:preparingArena(e)?1000:3000);
 const empty={room:null,proposal:null,queue:null,invitations:[],profiles:{},binding:null,app:null,published:null,occupancy:0n,active:0n,now:0n};
 export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentArcade?:boolean}){
  const base=useMemo(independentBase,[]);
@@ -51,6 +55,8 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
  const [handle,setHandle]=useState(''),[avatar,setAvatar]=useState(0),[target,setTarget]=useState(''),[ranking,setRanking]=useState<any>(),[showResult,setShowResult]=useState(0),[settled,setSettled]=useState<any>(null);
  const [frequent,setFrequent]=useState<any[]>([]),[replayId,setReplayId]=useState<bigint>();
  const pendingAction=useRef<((s:FamilySession)=>Promise<void>)|null>(null),working=useRef(false),refreshing=useRef(false);
+ const heartbeat=useRef<Promise<void>>(Promise.resolve()),autoAccepted=useRef('');
+ const [warmup,setWarmup]=useState(false);
  const scoreSeen=useRef<{id:bigint;score:number;at:number}|null>(null);
  const current=useRef({family,view,panel,ready});current.current={family,view,panel,ready};
  const lane=useRef<LabLane|null>(null),arena=useRef<ReturnType<typeof createIndependentArena>|null>(null),lock=useRef<(()=>void)|null>(null);
@@ -114,7 +120,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
  },[manifest,family?.grant.key]);
  async function run(fn:()=>Promise<void>){
   if(working.current)return;working.current=true;setBusy(true);setError('');
-  try{await fn();}catch(e){setError(poolUserError(e));}finally{working.current=false;setBusy(false);}
+  try{await heartbeat.current;await fn();}catch(e){setError(poolUserError(e));}finally{working.current=false;setBusy(false);}
  }
  const progress=(op:{status:string})=>setNotice(op.status==='queued'?'Getting ready…':op.status==='pending'?'Confirming…':'');
  async function act(s:FamilySession,method:string,args:readonly unknown[]=[]){if(!manifest)return;await lobbyCommand(manifest,s,method,args,progress);await refresh();}
@@ -147,6 +153,13 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   });
  }
  async function copy(text:string){try{await navigator.clipboard.writeText(text);setNotice('Copied');setTimeout(()=>setNotice(''),2000);}catch{setError('Copy failed. Select the address or link and copy it manually.');}}
+ // A session that would end during the match is renewed now, at the click, with
+ // the one passkey confirmation the player expects: never in the middle of a game.
+ function queueUp(){
+  const s=current.current.family;
+  if(s&&Number(s.grant.expires-BigInt(Math.floor(Date.now()/1000)))<Number(SESSION_RENEW_MARGIN)){pendingAction.current=startQueue;void login(false);return;}
+  void ensure(startQueue);
+ }
  async function startQueue(s:FamilySession){
   const occupancy=await independentReader(base,manifest!).lobby('occupancy',[s.grant.player]);
   if(occupancy&&occupancy!==maxUint256)await act(s,'leaveRoom');
@@ -243,19 +256,39 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
  },[canPlay,move]);
  useEffect(()=>{arcadeAudio.setGameplay(!!active);return()=>arcadeAudio.setGameplay(false);},[active]);
  useEffect(()=>{
-  if(!manifest||!family||!view.queue)return;let stopped=false;
+  if(!manifest||!family||!view.queue)return;let stopped=false,pulsing=false;
   const pulse=async()=>{
-   if(stopped||working.current||!current.current.view.queue||current.current.family?.grant.key!==family.grant.key)return;
-   working.current=true;setBusy(true);
-   try{
-    await resumeSponsored(manifest);
-    await maintainQueuePresence(async()=>await independentReader(base,manifest).lobby('occupancy',[family.grant.player])===maxUint256,()=>lobbyCommand(manifest,family,'queueHeartbeat'));
-    await refresh();
-   }catch{if(!stopped)setLobbySync('Reconnecting to the queue. Your game is saved.');}
-   finally{working.current=false;setBusy(false);}
+   if(stopped||pulsing||working.current||!current.current.view.queue||current.current.family?.grant.key!==family.grant.key)return;
+   // Presence runs in the background: the queue screen and Cancel stay responsive.
+   // A player action waits for this beat (see run) instead of racing it.
+   pulsing=true;
+   const beat=(async()=>{
+    try{
+     await resumeSponsored(manifest);
+     await maintainQueuePresence(async()=>await independentReader(base,manifest).lobby('occupancy',[family.grant.player])===maxUint256,()=>lobbyCommand(manifest,family,'queueHeartbeat'));
+     await refresh();
+    }catch{if(!stopped)setLobbySync('Reconnecting to the queue. Your game is saved.');}
+   })();
+   heartbeat.current=beat;
+   try{await beat;}finally{pulsing=false;}
   };
   const t=setInterval(()=>void pulse(),10000);return()=>{stopped=true;clearInterval(t);};
  },[manifest,family?.grant.key,!!view.queue]);
+ // Matchmaking already expressed consent: accept its pairing at once. A hidden tab
+ // is told through its title and accepts when the player comes back in time.
+ useEffect(()=>{
+  if(!canAccept||!room?.ranked||!family||!offer||busy||offer.accepted&(1<<offerSide))return;
+  const key=String(offer.id);if(autoAccepted.current===key)return;
+  const accept=()=>{
+   if(document.visibilityState!=='visible'||autoAccepted.current===key||working.current||Number(offer.expires)*1000<Date.now())return;
+   autoAccepted.current=key;void ensure(s=>act(s,'acceptProposal',[offer.id]));
+  };
+  if(document.visibilityState==='visible'){accept();return;}
+  const title=document.title;document.title='Match found! · PONGIT';
+  const back=()=>{if(document.visibilityState!=='visible')return;document.title=title;accept();};
+  document.addEventListener('visibilitychange',back);
+  return()=>{document.removeEventListener('visibilitychange',back);document.title=title;};
+ },[canAccept,room?.ranked,offer?.id,offer?.accepted,offerSide,family?.grant.key,busy]);
  useEffect(()=>{let alive=true;if(panel==='account'&&player){const p=profile(player);setHandle(p?.handle||'');setAvatar(p?.avatar||0);if(!p?.handle)void independentApi(`profile-migration/${player}`).then(hint=>{if(alive&&hint){setHandle(hint.handle);setAvatar(hint.avatar);setNotice('Your previous username is reserved. Save profile to claim it.');}}).catch(()=>{});}return()=>{alive=false;};},[panel,player]);
  useEffect(()=>{if(panel==='ranking'&&manifest)void readIndependentRanking(base,manifest,mode).then(setRanking).catch(()=>setError('Ranking temporarily unavailable.'));},[panel,mode,manifest,base]);
  useEffect(()=>{if((panel==='invite'||panel==='create')&&player)void independentApi(`player/${player}/frequent`).then(setFrequent).catch(()=>setFrequent([]));},[panel,player]);
@@ -266,6 +299,10 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   }}catch{/* Publication is independently retried. */}finally{if(!stopped&&!final)timer=setTimeout(read,5000);}};
   void read();return()=>{stopped=true;clearTimeout(timer);};
  },[manifest,base,snapshot?.id,snapshot?.phase]);
+ const outage=arenaOutage(config?.arenas),waitStatus=arenaWaitStatus(config?.arenas);
+ const arenaWaitSeconds=useQueueElapsed(offer?.status===2?`arena:${offer.id}`:undefined);
+ // The warm-up gives way the moment a real match is bound to this player.
+ useEffect(()=>{if(!bound?.id||!warmup)return;setWarmup(false);setNotice('Your match is ready');const t=setTimeout(()=>setNotice(''),3000);return()=>clearTimeout(t);},[bound?.id]);
  const modalTitle=panel==='account'?'Your account':panel==='ranking'?'Ranking':panel==='invite'?'Invite someone':panel==='create'?'Create room':panel==='members'?'Room members':panel==='tools'?'Cabinet tools':panel==='connect'?'Connect to play':panel==='private'?'Private notebook':panel==='market'?'Wallet and betting':panel==='history'?'Match history':'More';
  const observedArena=view.binding?{app:view.app,binding:view.binding}:lastGame.current;
  const arenaHealth=config?.arenas.find((a:any)=>equal(a.app,observedArena?.app)&&String(a.epoch)===String(observedArena?.binding.epoch));
@@ -281,20 +318,20 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   {view.invitations[0]&&<aside className="rooms-invitation"><Avatar index={profile(view.invitations[0].sender)?.avatar}/><strong>{name(view.invitations[0].sender)}</strong><button className="primary" disabled={busy} onClick={()=>void ensure(s=>act(s,'answerInvitation',[view.invitations[0].id,true]))}>Accept</button><button disabled={busy} onClick={()=>void ensure(s=>act(s,'answerInvitation',[view.invitations[0].id,false]))}>Back</button></aside>}
   {roomId&&!ownRoom&&!spectating?<section className="rooms-entry"><h1>{view.room?name(view.room.host):'PONGIT room'}</h1><div className="rooms-button-row"><button className="primary" disabled={busy||!manifest||!view.room} onClick={()=>{if(view.room?.ranked){sessionStorage.setItem(`pongit:spectate:${roomId}`,'1');setSpectatorRoom(roomId);}else void ensure(s=>act(s,'joinRoom',[parseRoomReference(roomId,manifest!.lobby)]));}}>Accept</button><a className="rooms-button" href="/">Back</a></div></section>
   :!room&&!view.queue?<section className="rooms-home"><div className="palace-marquee"><span className="palace-star" aria-hidden="true"/><h1><span>Pong is back</span><span>Bring a rival</span></h1><span className="palace-star" aria-hidden="true"/></div><div className="rooms-choices">
-   {(['match','invite','room'] as const).map((kind,i)=>agentArcade&&kind!=='match'?<a key={kind} className={`rooms-choice rooms-choice-${kind}`} href={`/agents?mode=${mode}${kind==='room'?'&view=watch':''}`}><span className="rooms-choice-stage"><PixelPalaceArt kind={kind}/></span><strong>{kind==='invite'?'Play an agent':'Watch agents'}</strong><span>{kind==='invite'?'Eight arcade rivals':'Live games · Tournaments'}</span><i className="palace-key" aria-hidden="true">↗</i></a>:<button key={kind} className={`rooms-choice rooms-choice-${kind}`} disabled={busy||!manifest} onClick={()=>void ensure(async s=>{if(kind==='match')await startQueue(s);else setPanel(kind==='invite'?'invite':'create');})}><span className="rooms-choice-stage"><PixelPalaceArt kind={kind}/></span><strong>{agentArcade?'Play a person':['Matchmaking','Invite someone','Create room'][i]}</strong><span>{[`${mode?'Chaos':'Classic'} · Ranked`,'Your next rival','8 friends · Winner stays'][i]}</span><i className="palace-key" aria-hidden="true">↗</i></button>)}
+   {(['match','invite','room'] as const).map((kind,i)=>agentArcade&&kind!=='match'?<a key={kind} className={`rooms-choice rooms-choice-${kind}`} href={`/agents?mode=${mode}${kind==='room'?'&view=watch':''}`}><span className="rooms-choice-stage"><PixelPalaceArt kind={kind}/></span><strong>{kind==='invite'?'Play an agent':'Watch agents'}</strong><span>{kind==='invite'?'Eight arcade rivals':'Live games · Tournaments'}</span><i className="palace-key" aria-hidden="true">↗</i></a>:<button key={kind} className={`rooms-choice rooms-choice-${kind}`} disabled={busy||!manifest||kind==='match'&&outage} onClick={()=>kind==='match'?queueUp():void ensure(async()=>setPanel(kind==='invite'?'invite':'create'))}><span className="rooms-choice-stage"><PixelPalaceArt kind={kind}/></span><strong>{agentArcade?'Play a person':['Matchmaking','Invite someone','Create room'][i]}</strong><span>{[outage?'Arenas warming up · back shortly':`${mode?'Chaos':'Classic'} · Ranked`,'Your next rival','8 friends · Winner stays'][i]}</span><i className="palace-key" aria-hidden="true">↗</i></button>)}
   </div>{agentArcade&&<div className="rooms-button-row"><button disabled={busy||!manifest} onClick={()=>void ensure(async()=>setPanel('invite'))}>Invite someone</button><button disabled={busy||!manifest} onClick={()=>void ensure(async()=>setPanel('create'))}>Create room</button><a className="rooms-button" href="/agents/tournaments">Tournaments</a></div>}
-  <div className="control-segments rooms-mode-choice" role="group" aria-label="Game mode"><button aria-pressed={mode===0} onClick={()=>setMode(0)}>Classic</button><button aria-pressed={mode===1} onClick={()=>setMode(1)}>Chaos</button></div><p className="rooms-caption">Free to play · Monad Testnet</p>{ready&&player&&!profile(player)?.handle&&<button className="rooms-profile-prompt" onClick={()=>setPanel('account')}>Choose your username ↗</button>}</section>
-  :view.queue?<section className="rooms-entry"><h1>Finding your rival</h1><p className="rooms-timer">{Math.floor(queueSeconds/60)}:{String(queueSeconds%60).padStart(2,'0')}</p><span>{view.queue[0]?'Chaos':'Classic'} · Ranked</span><button disabled={busy} onClick={()=>void ensure(s=>act(s,'cancelQueue'))}>Cancel</button></section>
+  <div className="control-segments rooms-mode-choice" role="group" aria-label="Game mode"><button aria-pressed={mode===0} onClick={()=>setMode(0)}>Classic</button><button aria-pressed={mode===1} onClick={()=>setMode(1)}>Chaos</button></div><p className="rooms-caption">Free to play · Monad Testnet</p>{outage&&(warmup?<WarmupRally onClose={()=>setWarmup(false)}/>:<button onClick={()=>setWarmup(true)}>Warm up while the arenas restart</button>)}{ready&&player&&!profile(player)?.handle&&<button className="rooms-profile-prompt" onClick={()=>setPanel('account')}>Choose your username ↗</button>}</section>
+  :view.queue?<section className="rooms-entry"><h1>Finding your rival</h1><p className="rooms-timer">{Math.floor(queueSeconds/60)}:{String(queueSeconds%60).padStart(2,'0')}</p><span>{view.queue[0]?'Chaos':'Classic'} · Ranked</span>{outage&&<p className="rooms-wait-status" role="status">Arenas are restarting. Your spot is kept.</p>}<div className="rooms-button-row"><button disabled={busy} onClick={()=>void ensure(s=>act(s,'cancelQueue'))}>Cancel</button><button onClick={()=>setWarmup(w=>!w)}>{warmup?'Hide warm-up':'Warm up'}</button></div>{warmup&&<WarmupRally onClose={()=>setWarmup(false)}/>}</section>
   :room?<><div className="rooms-room-bar"><span>{room.mode?'CHAOS':'CLASSIC'} / {room.ranked?'RANKED':'WINNER STAYS'}</span><div><button onClick={()=>void copy(`${location.origin}/rooms/${roomReference(manifest!.lobby,room.id)}`)}>Copy room link</button><button onClick={()=>setPanel('members')}>Members {room.members.length}</button>{room.mode===1&&<button onClick={()=>setPanel('market')}>Betting</button>}<button onClick={()=>setPanel('tools')}>Tools</button></div></div>
    {canAccept?<section className="rooms-entry rooms-duel"><div className="rooms-versus"><span>{name(offer.a)}</span><b>VS</b><span>{name(offer.b)}</span></div><small>{Math.max(0,Math.ceil(Number(offer.expires)-now/1000))}s</small><div className="rooms-button-row"><button className="primary" disabled={busy||!!(offer.accepted&(1<<offerSide))||Number(offer.expires)*1000<now} onClick={()=>void ensure(s=>act(s,'acceptProposal',[offer.id]))}>{offer.accepted&(1<<offerSide)?'Waiting…':'Accept'}</button><button disabled={busy} onClick={()=>void ensure(s=>act(s,'declineProposal',[offer.id]))}>Back</button></div></section>
    :snapshot&&(!offer||offer.id===snapshot.id)?<section className="rooms-court court-card"><div className="scoreboard">{[snapshot.a,snapshot.b].map((p,i)=><div className={`player-label ${i?'right':''}`} style={i?{gridColumn:3}:undefined} key={p}><Avatar index={profile(p)?.avatar}/><small>PLAYER 0{i+1}</small><span>{name(p)}</span><div className="arena-rounds" aria-hidden="true">{Array.from({length:7},(_,n)=><b key={n} data-won={n<(i?snapshot.state.scoreB:snapshot.state.scoreA)}/>)}</div></div>)}<div className="arena-score-module" style={{gridColumn:2,gridRow:1}}><small>FIRST TO SEVEN</small><div className="score"><span>{String(snapshot.state.scoreA).padStart(2,'0')}</span><i>:</i><span>{String(snapshot.state.scoreB).padStart(2,'0')}</span></div></div></div>
     {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.chaos.physics.t/1000n)} effectsEnabled={arcadeAudio.settings.background} players={[name(snapshot.a),name(snapshot.b)]}/>}
     <div className="rooms-canvas">{snapshot.state.awaitingServe&&<div className="rooms-serve-status" role="status">{pauseLabel}</div>}<Court liveEngine externalIntermission chaos={snapshot.chaos} rulesVersion={manifest?.rulesVersion} state={snapshot.state} clock={snapshot.clock} observedAt={snapshot.observedAt} direction={direction} side={side} replay={!active||recoveringArena} matchId={resultId!} controllable={canPlay} pending={!!lane.current?.inputPending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} onStats={setFps}/>{[12,13,14].includes(manifest?.rulesVersion??4)&&snapshot.phase===1&&<ArenaCountdown id={resultId!} deadline={countdown?.id===resultId?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
     <div className="rooms-court-controls"><span>{side>=0?'W / S · ↑ / ↓':spectating?'SPECTATING':`YOUR TURN ${Math.max(1,room.members.filter((m:any)=>!m.away).sort((a:any,b:any)=>Number(a.position-b.position)).findIndex((m:any)=>equal(m.player,player))+1)}`}</span>{active&&side>=0?<div className="touch-controls">{([-1,1] as const).map(d=><IconButton key={d} icon={d<0?'up':'down'} aria-label={d<0?'Move up':'Move down'} disabled={!canPlay} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);move(d);}} onPointerUp={()=>move(0)} onPointerCancel={()=>move(0)} onLostPointerCapture={()=>move(0)}/>)}</div>:snapshot.phase>=3?<button onClick={()=>setShowResult(n=>n+1)}>View result</button>:null}</div></section>
-   :<section className="rooms-entry"><h1>{engineUnavailable?'Arena temporarily unavailable':recoveringArena?'Getting the arena ready':offer?.status===2?'Waiting for an available arena':mine?.away?'Take your next turn':'Bring a rival'}</h1><div className="rooms-member-strip">{room.members.map((m:any)=><span key={m.player}><Avatar index={profile(m.player)?.avatar}/>{name(m.player)}</span>)}</div><div className="rooms-button-row">{mine?.away?<button className="primary" disabled={busy} onClick={()=>void ensure(s=>act(s,'rejoinQueue',[room.id]))}>Rejoin queue</button>:ownRoom?<button className="primary" onClick={()=>setPanel('invite')}>Invite someone</button>:null}{spectating?<a className="rooms-button" href="/">Back</a>:<button disabled={busy} onClick={()=>void ensure(s=>act(s,offer?.status===2?'cancelAdmission':'leaveRoom',offer?.status===2?[offer.id]:[]))}>Back</button>}</div></section>}
+   :<section className="rooms-entry"><h1>{engineUnavailable?'Arena temporarily unavailable':recoveringArena?'Getting the arena ready':offer?.status===2?'Preparing your arena':mine?.away?'Take your next turn':'Bring a rival'}</h1>{offer?.status===2&&<><p className="rooms-timer">{clockLabel(arenaWaitSeconds)}</p>{waitStatus&&<p className="rooms-wait-status" role="status">{waitStatus}</p>}</>}<div className="rooms-member-strip">{room.members.map((m:any)=><span key={m.player}><Avatar index={profile(m.player)?.avatar}/>{name(m.player)}</span>)}</div><div className="rooms-button-row">{mine?.away?<button className="primary" disabled={busy} onClick={()=>void ensure(s=>act(s,'rejoinQueue',[room.id]))}>Rejoin queue</button>:ownRoom?<button className="primary" onClick={()=>setPanel('invite')}>Invite someone</button>:null}{spectating?<a className="rooms-button" href="/">Back</a>:<button disabled={busy} onClick={()=>void ensure(s=>act(s,offer?.status===2?'cancelAdmission':'leaveRoom',offer?.status===2?[offer.id]:[]))}>Back</button>}{offer?.status===2&&<button onClick={()=>setWarmup(w=>!w)}>{warmup?'Hide warm-up':'Warm up'}</button>}</div>{offer?.status===2&&warmup&&<WarmupRally onClose={()=>setWarmup(false)}/>}</section>}
   </>:null}
   {!active&&<footer className="rooms-footer"><MusicCredit/><EngineCredit/><a href="/?deployment=v4">Previous arenas</a></footer>}
-  <Outcome id={resultId} match={outcome} account={player||''} rating={null} ratingDelta={ratingDelta} sound={sound} replay={false} confirmation={resultEntry?'monad':'engine'} showResultKey={showResult} watch={()=>{setReplayId(snapshot?.id);setPanel('history');}} rematch={async()=>{if(!family||!snapshot)throw Error('Connect to request a rematch');await act(family,'rematch',[snapshot.id]);setNotice('Waiting for your rival');}} again={()=>void ensure(startQueue)}/>
+  <Outcome id={resultId} match={outcome} account={player||''} rating={null} ratingDelta={ratingDelta} sound={sound} replay={false} confirmation={resultEntry?'monad':'engine'} showResultKey={showResult} watch={()=>{setReplayId(snapshot?.id);setPanel('history');}} rematch={async()=>{if(!family||!snapshot)throw Error('Connect to request a rematch');await act(family,'rematch',[snapshot.id]);setNotice('Waiting for your rival');}} again={queueUp}/>
   {panel&&<Dialog label={modalTitle} className="rooms-dialog" onClose={()=>{if(busy)return;if(panel==='connect')pendingAction.current=null;setPanel(null);setError('');}}><IconButton className="modal-close" aria-label={`Close ${modalTitle}`} disabled={busy} onClick={()=>{if(panel==='connect')pendingAction.current=null;setPanel(null);setError('');}}/><h2>{modalTitle}</h2>
    {panel==='account'&&family&&manifest&&<div className="rooms-button-row"><button onClick={()=>setPanel('private')}>Private notebook</button><button onClick={()=>setPanel('market')}>Wallet and payments</button><button disabled={busy} onClick={()=>void run(async()=>{let pending=true;try{const result=await disconnectFamily(manifest,family,active&&lastGame.current?lastGame.current:undefined);pending=result.revocationPending;}finally{lane.current?.stop();eraseFamilyLocal(manifest);setFamily(null);current.current.family=null;setReady(false);setControlled(false);lock.current?.();lock.current=null;setPanel(null);setNotice(pending?'Disconnected locally. Network revocation remains to be confirmed.':'Disconnected. Arcade authorization revoked.');}})}>Disconnect</button><button disabled={busy} onClick={()=>{forgetAccount();setSaved(undefined);setNotice('Remembered passkey forgotten. Disconnect to revoke your active arcade session.');}}>Forget this account</button></div>}
    {panel==='private'&&manifest&&player&&<IndependentPrivate manifest={manifest} player={player} kind="notebook" matchRef={resultId??undefined} atUs={snapshot?.clock}/>}
