@@ -7,6 +7,7 @@ import {privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {assertDeploymentArtifact,preflightDeploymentArtifacts} from '../shared/deployment-artifacts';
 import {writerIdentity,type ScopedWriter} from '../shared/scoped-writer';
+import {operatorNeedsFunding,operatorFundingMessage} from '../shared/operator-funding';
 
 export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:ScopedWriter){
  assert.equal(process.env.PONG_INDEPENDENT_WRITE,'authorized-testnet');
@@ -32,7 +33,9 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:Scop
     assert.equal(job.owner.toLowerCase(),identity.owner,'Operation belongs to another signer');
     const raw=parseTransaction(job.raw);
     assert.equal((await recoverTransactionAddress({serializedTransaction:job.raw})).toLowerCase(),identity.owner,'Operation signer mismatch');
-    assert.equal(raw.data,data,'Operation data changed');assert.equal(raw.to?.toLowerCase(),to?.toLowerCase(),'Operation target changed');
+    // viem omits data when decoding an empty-calldata transfer. It is the same
+    // signed intent as 0x, including when reconciling an already funded role.
+    assert.equal(raw.data??'0x',data,'Operation data changed');assert.equal(raw.to?.toLowerCase(),to?.toLowerCase(),'Operation target changed');
     assert.equal(raw.value??0n,value);assert.equal(raw.chainId,10143);assert.equal(keccak256(job.raw),job.hash);
     assert.notEqual(job.status,'failed','A confirmed revert needs a reviewed new operation');
    }else{
@@ -51,7 +54,12 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:Scop
       [id,app,account.address.toLowerCase(),nonce,raw,hash]); job={raw,hash,status:'pending'};
    }
    let receipt=await base.getTransactionReceipt({hash:job.hash}).catch(()=>null);
-   if(!receipt){try{await base.sendRawTransaction({serializedTransaction:job.raw});}catch{/* Only this exact hash can resolve the intent. */}
+   if(!receipt){try{await base.sendRawTransaction({serializedTransaction:job.raw});}catch(error){
+     // Preserve the signed journal, but surface a definitive gas refusal rather
+     // than turning it into an unexplained 45-second receipt timeout.
+     if(operatorNeedsFunding(error))throw Object.assign(Error(operatorFundingMessage),{code:'OPERATOR_GAS_UNAVAILABLE',source:'monad'});
+     /* Only this exact hash can resolve any other uncertain submission. */
+    }
     receipt=await base.waitForTransactionReceipt({hash:job.hash,timeout:45000});}
    await db.query('UPDATE il_lifecycle_jobs SET status=$2 WHERE id=$1',[id,receipt.status==='success'?'confirmed':'failed']);
    assert.equal(receipt.status,'success',`Transaction ${receipt.transactionHash} reverted`);

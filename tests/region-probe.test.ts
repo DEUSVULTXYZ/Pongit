@@ -58,6 +58,12 @@ test('a tab hidden during the probe discards it and stops timing',async()=>{
  assert.equal(asked.length,6,'no region is timed once the tab is hidden');
 });
 
+test('entering a game during warm-up prevents the remaining region requests',async()=>{
+ let idle=true,calls=0;
+ const result=await probeRegions(async()=>{calls++;idle=false;return 30;},()=>idle);
+ assert.equal(result,undefined);assert.equal(calls,1);
+});
+
 test('the operator table weighs every sample and shows what a local arena would save',()=>{
  const summary=summarizeRegionProbes([
   {region:'eu',ms:30,home_ms:30,samples:6},

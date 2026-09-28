@@ -51,3 +51,17 @@ test('isolated qualification reads sanitized metadata without inventing public e
  f.manifest.verifiedCapacity=2;f.manifest.qualificationEvidence=f.evidence;
  assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,undefined,true),/cannot claim/);
 });
+
+test('continuation binds every historical authority and retains the family before loading keys',()=>{
+ const f=fixture();f.manifest.verifiedCapacity=0;f.manifest.qualificationEvidence=null;
+ const prior={...f.manifest,arenas:f.manifest.arenas.map((a,i)=>({...a,app:address(210+i)}))};
+ const keys=['pool','catalog','tournaments','ratings','qualifications','challenges'] as const;
+ keys.forEach((key,i)=>prior[key]=address(220+i));
+ f.record.continuation=Object.fromEntries(keys.map(k=>[k,prior[k]]));
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,undefined,true),/historical manifest/);
+ f.manifest.history=[prior];validateReusableRecord(f.record,f.humans,f.manifest,undefined,true);
+ for(const key of keys){const old=f.record.continuation[key];f.record.continuation[key]=address(250);
+  assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,undefined,true),/authority|manifest/);f.record.continuation[key]=old;}
+ prior.family=address(251);
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,undefined,true),/family grants/);
+});

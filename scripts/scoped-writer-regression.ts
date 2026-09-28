@@ -5,9 +5,10 @@ import {randomBytes} from 'node:crypto';
 import {mkdtemp,writeFile,rm,mkdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {createServer} from 'node:http';
 import {Pool} from 'pg';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
-import {keccak256,parseTransaction,recoverTransactionAddress,type Hex,type PublicClient} from 'viem';
+import {InsufficientFundsError,keccak256,parseTransaction,recoverTransactionAddress,type Hex,type PublicClient} from 'viem';
 import {independentWriter} from '../relayer/src/independent-writer';
 
 assert.equal(process.env.SCOPED_WRITER_TEST,'isolated-postgres-fake-rpc');
@@ -19,6 +20,16 @@ const root=await mkdtemp(join(tmpdir(),'pongit-writer-'));
 const target='0x0000000000000000000000000000000000000020';
 const report:{at:string;scope:string;checks:string[];passed?:boolean;error?:string}={at:new Date().toISOString(),scope:'Actual temporary PostgreSQL schemas; simulated chain; no network transaction submission',checks:[]};
 const pools:Pool[]=[],writers:Awaited<ReturnType<typeof independentWriter>>[]=[];
+// viem verifies the wallet chain before local signing. Keep even that read on
+// loopback; a fixture must not depend on a public RPC being reachable.
+const signingRpc=createServer(async(req,res)=>{
+ let body='';for await(const chunk of req)body+=chunk;
+ const rpc=JSON.parse(body);res.setHeader('content-type','application/json');
+ res.end(JSON.stringify({jsonrpc:'2.0',id:rpc.id,...(rpc.method==='eth_chainId'?{result:'0x279f'}:{error:{code:-32601,message:'Unexpected fixture method'}})}));
+});
+await new Promise<void>(resolve=>signingRpc.listen(0,'127.0.0.1',resolve));
+const signingAddress=signingRpc.address();assert(signingAddress&&typeof signingAddress==='object');
+process.env.RPC_URL=`http://127.0.0.1:${signingAddress.port}`;
 try{
  for(const name of schemas)await admin.query(`CREATE SCHEMA ${name}`);
  for(const name of schemas)pools.push(new Pool({connectionString:process.env.DATABASE_URL,options:`-c search_path=${name}`,max:12}));
@@ -29,7 +40,7 @@ try{
   return{address,keyFile,allowCall:(to:string,data:Hex,value:bigint)=>{assert.equal(to.toLowerCase(),target);assert.match(data,/^0x123456[0-9a-f]{2}$/);assert.equal(value,0n);}};
  };
  const one=await makeScope('one'),two=await makeScope('two');
- let visible=false,loseResponse=true,sends=0,executions=0;
+ let visible=false,loseResponse=true,funded=true,sends=0,executions=0;
  const nonces=new Map<string,number>(),seen=new Set<Hex>();
  const base={
   getChainId:async()=>10143,
@@ -39,6 +50,7 @@ try{
   request:async()=> '0x1',estimateGas:async()=>21_000n,
   getTransactionReceipt:async({hash}:{hash:Hex})=>{if(!visible||!seen.has(hash))throw Error('Response unavailable');return{transactionHash:hash,status:'success'};},
   sendRawTransaction:async({serializedTransaction:raw}:{serializedTransaction:Hex})=>{
+   if(!funded)throw new InsufficientFundsError();
    sends++;const hash=keccak256(raw),owner=(await recoverTransactionAddress({serializedTransaction:raw as Parameters<typeof recoverTransactionAddress>[0]["serializedTransaction"]})).toLowerCase(),tx=parseTransaction(raw);
    if(!seen.has(hash)){assert.equal(tx.nonce,nonces.get(owner)??0);nonces.set(owner,(tx.nonce??0)+1);seen.add(hash);executions++;}
    if(loseResponse){loseResponse=false;throw Error('Response lost after execution');}return hash;
@@ -68,6 +80,15 @@ try{
  assert.deepEqual(rows.filter(r=>r.owner===one.address.toLowerCase()).map(r=>Number(r.nonce)),[0,1]);
  assert(rows.every(r=>r.status==='confirmed'));
  report.checks.push('Confirmation resumes the next nonce exactly once; separate roles retain separate nonce sequences in the shared journal');
+ funded=false;
+ const unfunded=await writer.enqueue(target,'0x12345684');await writer.dispatch();
+ const retained=await writer.get(unfunded.id);assert.equal(retained?.status,'pending');assert(retained.hash);
+ assert.equal(writer.status().code,'OPERATOR_GAS_UNAVAILABLE');assert.equal(writer.status().available,false);
+ await writer.dispatch();assert.equal(executions,3);assert.equal((await writer.get(unfunded.id))?.hash,retained.hash);
+ funded=true;await writer.dispatch();await writer.observe();
+ assert.equal((await writer.get(unfunded.id))?.status,'confirmed');assert.equal((await writer.get(unfunded.id))?.hash,retained.hash);assert.equal(executions,4);
+ assert.equal(writer.status().available,true);assert.equal(writer.status().code,undefined);
+ report.checks.push('Gas rejection reports unavailable sponsorship, retains the signed nonce/hash and confirms that same operation after funding');
  let release!:()=>void,entered!:()=>void;
  const started=new Promise<void>(r=>{entered=r;}),gate=new Promise<void>(r=>{release=r;});
  const original=base.call;
@@ -84,6 +105,7 @@ finally{
  await Promise.allSettled(writers.map(w=>w.close()));await Promise.all(pools.map(p=>p.end()));
  for(const name of schemas)await admin.query(`DROP SCHEMA IF EXISTS ${name} CASCADE`);
  await admin.end();await rm(root,{recursive:true,force:true});
+ await new Promise<void>(resolve=>signingRpc.close(()=>resolve()));
  const output=process.env.SCOPED_WRITER_REPORT??'artifacts/qualification/20260928/scoped-writer.json';
  await mkdir(join(output,'..'),{recursive:true});await writeFile(output,JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }

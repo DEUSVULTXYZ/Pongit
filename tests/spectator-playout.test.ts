@@ -63,11 +63,11 @@ test('paddles hold their confirmed position across a serve and interpolate insid
  const serve=new SpectatorPlayout();
  serve.push({state:{...state(600),left:400000000n},at:600});
  serve.push({state:{...state(1200),scoreA:1,left:288000000n},at:1200});
- serve.sample(1200);assert.equal(serve.sample(1500)!.left,400,'a serve recentres paddles at its own instant');
+ serve.sample(1200);assert.equal(serve.sample(1800)!.left,400,'a serve recentres paddles at its own instant');
  const rally=new SpectatorPlayout();
  rally.push({state:{...state(600),left:400000000n},at:600});
  rally.push({state:{...state(1200),left:288000000n},at:1200});
- rally.sample(1200);const inside=rally.sample(1500)!.left;
+ rally.sample(1200);const inside=rally.sample(1800)!.left;
  assert(inside>288&&inside<400,`smooth inside one rally, got ${inside}`);
 });
 test('an unconfirmed goal stays visible at the edge and does not change the score',()=>{
@@ -116,4 +116,15 @@ test('normal confirmed playout stays within 2 percent of wall time and the revie
   if(prior&&now>2000){const rate=Number(s.target-prior.target)/1000/(now-prior.now);assert(rate>=.98&&rate<=1.0201,`rate ${rate}`);}
   prior={target:s.target,now};
  }
+});
+
+test('one late delivery on a 500 ms stream does not cause a half-second slideshow',()=>{
+ const p=new SpectatorPlayout();let next=0,prior=0n,held=0,worst=0;
+ for(let now=0;now<16000;now+=16){
+  if(now>=next){p.push({state:state(next),at:next});next+=next===10000?1400:500;}
+  const s=p.sample(now)!;
+  if(now>3000){if(s.target===prior)held+=16;else{worst=Math.max(worst,held);held=0;}}
+  prior=s.target;
+ }
+ assert(Math.max(worst,held)<=500,`A delayed delivery froze confirmed playout for ${Math.max(worst,held)} ms`);
 });

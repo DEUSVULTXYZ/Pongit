@@ -35,6 +35,7 @@ const scope=manifest.version===5?{
 }:undefined;
 const writer = await independentWriter(db, base,journal,scope);
 const service = await startPoolReadService(reader, {host: process.env.HOST ?? '0.0.0.0', port: 4102, public: exposure.public,
+  sponsorHealth:writer.status,
   sponsor: poolSponsorRoutes(manifest, writer, async () => exposure.public?(await reader.config()).value.enabled:
    base.readContract({address:manifest.pool,abi:reusableAgentPoolAbi,functionName:'admissions'})),
   trustedProxies: (process.env.PONG_AGENT_POOL_TRUSTED_PROXIES ?? '').split(',').filter(Boolean)});

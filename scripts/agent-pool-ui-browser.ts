@@ -37,8 +37,9 @@ await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel,headless:true});
 try{
  for(const [width,height] of [[360,640],[390,844],[768,900],[1440,1000],[844,390]].filter(([w])=>!process.env.PONG_POOL_UI_WIDTH||w===Number(process.env.PONG_POOL_UI_WIDTH))){
-  const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
-  let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0;
+  const touch=width<=390||height<=500;
+  const context=await browser.newContext({viewport:{width,height},hasTouch:touch,reducedMotion:width===390?'reduce':'no-preference'});
+  let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0,closedAdmissions=false;
   let releaseCatalog:(()=>void)|undefined,catalogGate:Promise<void>|undefined;
   await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
   await context.addInitScript({content:"Object.defineProperty(navigator.credentials,'get',{value:function(){window.fixtureRefusedPasskey=true;return Promise.reject(new Error('Qualification cancelled passkey request'));}});"});
@@ -61,7 +62,7 @@ try{
      if(url.pathname.startsWith('/api/'))url.pathname=url.pathname.slice(4);
      let data:any;
      if(url.pathname==='/agents/events')return route.fulfill({status:503,body:'Fixture uses polling'});
-     if(url.pathname==='/agents/config')data=m;
+     if(url.pathname==='/agents/config')data=closedAdmissions?{...m,enabled:false,tournamentsEnabled:false}:m;
      else if(url.pathname==='/agents/catalog'){catalogReads++;if(catalogGate)await catalogGate;data={items:people,total:'8',offset:'0',next:null};}
      else if(url.pathname==='/agents/live')data={items:[{ref,a:people[0].agent,b:people[1].agent,mode:0,lane:'tournament'}]};
      else if(url.pathname==='/agents/tournaments')data={items:[tournament('1',league,mode)],total:'1',offset:'0',next:null,nextAt:'0'};
@@ -108,7 +109,9 @@ try{
   const small=await page.locator('.agent-card button').evaluateAll(elements=>elements.filter(el=>{const r=el.getBoundingClientRect();return r.width<44||r.height<44;}).length);assert.equal(small,0,'Every card action meets the touch target');
   const docs=await page.getByRole('link',{name:'Docs ↗',exact:true}).boundingBox(),back=await page.getByRole('link',{name:'Back to arcade',exact:true}).boundingBox();
   assert(docs&&back&&(docs.x+docs.width<=back.x||back.x+back.width<=docs.x||docs.y+docs.height<=back.y||back.y+back.height<=docs.y),'Header links overlap');
-  await page.getByRole('button',{name:'Challenge NOVA',exact:true}).click();await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
+  const challenge=page.getByRole('button',{name:'Challenge NOVA',exact:true});
+  if(touch)await challenge.tap();else await challenge.click();
+  await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
   if(width===360){
    await page.getByRole('button',{name:'Connect & play',exact:true}).click();
    const actionError=page.getByRole('dialog').getByRole('alert');await actionError.waitFor();
@@ -121,9 +124,11 @@ try{
    report.checks.push({width,actionErrorSurvivesCatalogRefresh:true,authentication:'Explicit refusal fixture only'});
   }
   await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);assert.equal(await page.locator(':focus').getAttribute('aria-label'),'Challenge NOVA');
-  await page.getByRole('button',{name:'Chaos',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Chaos',exact:true}).getAttribute('aria-pressed'),'true');
+  const chaosButton=page.getByRole('button',{name:'Chaos',exact:true});
+  if(touch)await chaosButton.tap();else await chaosButton.click();
+  assert.equal(await chaosButton.getAttribute('aria-pressed'),'true');
   await page.screenshot({path:`${output}/${channel}-catalogue-${width}.png`,fullPage:true});
-  report.checks.push({width,height,catalogue:true,eightBots:true,connectIntent:true,escape:true,focusRestored:true});
+  report.checks.push({width,height,catalogue:true,eightBots:true,connectIntent:true,escape:true,focusRestored:true,touchActions:touch});
   for(league of [false,true]){
    mode=league?1:0;await page.goto(origin+'/agents/tournaments?id=1');await page.getByRole('heading',{name:'Tournament #1',exact:true}).waitFor();
    assert.equal(await page.locator('.tournament-fixture').count(),league?28:7);
@@ -133,6 +138,7 @@ try{
    report.checks.push({width,height,format:league?'championship':'elimination',layout:true,focus:true});
   }
   for(mode of [0,1] as const){
+   closedAdmissions=width===360;
    published=false;effect=21;revision=1n;
    if(width===360&&mode===0)catalogGate=new Promise<void>(resolve=>{releaseCatalog=resolve;});
    await page.goto(`${origin}/agents/arenas/${ref.app}/1/1`);await page.locator('canvas').waitFor({timeout:5000});
@@ -146,7 +152,32 @@ try{
    assert(before.height>80&&before.y+before.height<=height,'The complete court must fit the viewport: '+JSON.stringify({width,height,mode,before}));
    if(mode){effect=23;revision++;await page.waitForTimeout(1100);const after=await page.locator('canvas').boundingBox();assert(after&&Math.abs(before.y-after.y)<1,'Effect shifted the court');}
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'arena page overflow');
+   const labels=await page.locator('.player-label').evaluateAll(elements=>elements.map(el=>{
+    const name=el.querySelector<HTMLElement>(':scope > span:not(.avatar)')!,avatar=el.querySelector<HTMLElement>('.avatar')!;
+    const n=name.getBoundingClientRect(),a=avatar.getBoundingClientRect(),p=el.getBoundingClientRect();
+    const board=el.parentElement!,score=board.querySelector<HTMLElement>('.arena-score-module')!;
+    return{name:name.textContent,width:n.width,scroll:name.scrollWidth,client:name.clientWidth,
+     board:board.clientWidth,columns:getComputedStyle(board).gridTemplateColumns,score:score.clientWidth,scoreMin:getComputedStyle(score).minWidth,
+     inside:n.left>=p.left-.5&&n.right<=p.right+.5,
+     separated:getComputedStyle(avatar).display==='none'||n.right<=a.left||a.right<=n.left};
+   }));
+   if(!labels.every(v=>v.inside&&v.separated&&v.scroll<=v.client+1))await page.screenshot({path:`${output}/${channel}-names-${width}-${mode}.png`,fullPage:true});
+   assert(labels.every(v=>v.inside&&v.separated&&v.scroll<=v.client+1),'Player name overlaps the avatar or is clipped: '+JSON.stringify(labels));
+   if(height<=500&&width>height){assert(await page.locator('.pool-compact-clock').isVisible(),'Regulation clock must remain visible in landscape');assert.match(await page.locator('.pool-compact-clock').innerText(),/\d+:\d{2}/);}
    await page.screenshot({path:`${output}/${channel}-${mode?'chaos':'classic'}-${width}.png`,fullPage:true});
+   if(touch){
+    // Chromium's actual visual viewport zoom, not CSS zoom or an assertion
+    // based only on device scale. No claim of physical-device testing.
+    const cdp=await context.newCDPSession(page);
+    await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:2});
+    assert.equal(await page.evaluate(()=>visualViewport!.scale),2);
+    assert.equal(await page.locator('canvas').count(),1);
+    await cdp.send('Emulation.setPageScaleFactor',{pageScaleFactor:1});
+    await cdp.detach();
+    const afterZoom=await page.locator('canvas').boundingBox();
+    assert(afterZoom&&Math.abs(afterZoom.width-before.width)<1&&Math.abs(afterZoom.y-before.y)<1,'Pinch zoom changed the restored court layout');
+    report.checks.push({width,height,mode,pinchZoom:2,restored:true});
+   }
    published=true;await page.getByRole('heading',{name:'NOVA wins',exact:true}).waitFor({timeout:16000});
    assert.equal(await page.locator('canvas').count(),0);assert(await page.getByText('Final result',{exact:true}).isVisible());
    replayRetired=false;const readsBeforeReplay=engineReads;
@@ -161,7 +192,7 @@ try{
    replayRetired=true;await page.locator('.pool-published-result').getByRole('button',{name:'Watch replay',exact:true}).click();
    await page.getByText('Replay retired. The result remains available.',{exact:true}).waitFor();assert.equal(await page.locator('canvas').count(),0);
    await page.keyboard.press('Escape');
-   report.checks.push({width,height,mode,pixelCourt:true,noEffectShift:true,publishedResult:true,replayPlayback:true,replayFocus:true,retiredSummary:true,noReplayEngineRequests:true});
+   report.checks.push({width,height,mode,pixelCourt:true,noEffectShift:true,publishedResult:true,replayPlayback:true,replayFocus:true,retiredSummary:true,noReplayEngineRequests:true,closedAdmissionsObserved:closedAdmissions});
   }
   await context.close();
  }

@@ -21,6 +21,7 @@ assert(!reader.manifest.enabled,'Private sponsorship must not open public admiss
 const db=new Pool({connectionString:process.env.DATABASE_URL});
 const metrics=await agentMetrics('/diagnostics/pool','sponsor'),writer=await independentWriter(db,client);
 const service=await startPoolReadService(reader,{host:process.env.HOST??'127.0.0.1',port:Number(process.env.PORT??4102),public:false,
+ sponsorHealth:writer.status,
  sponsor:poolSponsorRoutes(reader.manifest,writer,async()=>process.env.PONG_AGENT_POOL_PRIVATE_CHALLENGES==='authorized-testnet'),
  trustedProxies:(process.env.PONG_AGENT_POOL_TRUSTED_PROXIES??'').split(',').filter(Boolean)});
 process.once('SIGTERM',()=>void service.close().finally(async()=>{await writer.close();await db.end();await metrics();}));

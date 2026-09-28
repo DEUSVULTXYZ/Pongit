@@ -7,6 +7,7 @@ import type {ChainOperation} from '../../shared/independent';
 import {measuredFetch} from '../../shared/rpc-metrics';
 import {prepareSponsoredTransaction} from './sponsor-prepare';
 import {writerIdentity,type ScopedWriter} from '../../shared/scoped-writer';
+import {operatorNeedsFunding,operatorFundingMessage} from '../../shared/operator-funding';
 export function confirmedContractRevert(error:unknown){
  let cause:any=error;for(let i=0;cause&&i<10;i++,cause=cause.cause)if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name))return true;return false;
 }
@@ -63,7 +64,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    await c.query('COMMIT');return view(row);
   }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
  }
- let sending=false,observing=false,lastError='';
+ let sending=false,observing=false,lastError='',lastCode:string|undefined;
  async function observe(){
   if(observing)return;observing=true;
   try{
@@ -84,7 +85,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
     const records=(await journal.query('SELECT id,status,hash FROM il_lifecycle_jobs WHERE owner=$1 AND id=ANY($2::text[])',[account.address.toLowerCase(),unresolved.map(x=>jobId(x.id))])).rows;
     for(const j of records)await db.query("UPDATE independent_operations SET status=$2,hash=$3,updated_at=now() WHERE id=$1 AND status IN ('queued','pending') AND (status<>$2 OR hash IS DISTINCT FROM $3)",[j.id.slice(identity.prefix.length),j.status,j.hash]);
    }
-   if(!jobs.length)lastError='';
+   if(!jobs.length){lastError='';lastCode=undefined;}
   }finally{observing=false;}
  }
  async function dispatch(){
@@ -103,6 +104,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
      if(raw.to?.toLowerCase()!==owned.target||raw.data!==owned.data||(raw.value??0n)!==BigInt(owned.value))throw Error('Operator queue identity mismatch');
      check(owned.target,owned.data,BigInt(owned.value));
      await base.sendRawTransaction({serializedTransaction:pending.raw});
+     lastError='';lastCode=undefined;
     }
     return;
    }
@@ -120,14 +122,14 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    const raw=await wallet.signTransaction(request),hash=keccak256(raw);
    await journal.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",[jobId(row.id),row.target,account.address.toLowerCase(),nonce,raw,hash]);
    await db.query("UPDATE independent_operations SET status='pending',hash=$2,updated_at=now() WHERE id=$1",[row.id,hash]);
-   await base.sendRawTransaction({serializedTransaction:raw});lastError='';
-  }catch{lastError='Sponsor is reconciling a pending operation. Gameplay observations continue.';}
+   await base.sendRawTransaction({serializedTransaction:raw});lastError='';lastCode=undefined;
+  }catch(error){lastCode=operatorNeedsFunding(error)?'OPERATOR_GAS_UNAVAILABLE':'OPERATOR_RECONCILING';lastError=lastCode==='OPERATOR_GAS_UNAVAILABLE'?operatorFundingMessage:'Sponsor is reconciling a pending operation. Gameplay observations continue.';}
   finally{try{if(locked)await c?.query('SELECT pg_advisory_unlock($1::bigint)',[identity.lock]);}finally{c?.release();sending=false;}}
  }
  const timers=[setInterval(()=>void track(observe).catch(()=>{}),750),setInterval(()=>void track(dispatch).catch(()=>{}),1000)];
  for(const t of timers)t.unref();
  const stop=()=>timers.forEach(clearInterval);
  return {enqueue:(...args:Parameters<typeof enqueue>)=>track(()=>enqueue(...args)),get,account:account.address,
-  observe:()=>track(observe),dispatch:()=>track(dispatch),status:()=>({available:!closing&&!lastError,error:lastError||undefined}),stop,
+  observe:()=>track(observe),dispatch:()=>track(dispatch),status:()=>({available:!closing&&!lastError,error:lastError||undefined,code:lastCode}),stop,
   close:async()=>{closing=true;stop();await Promise.allSettled([...tasks]);}};
 }

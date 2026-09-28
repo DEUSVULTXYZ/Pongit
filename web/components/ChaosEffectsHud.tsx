@@ -15,8 +15,8 @@ export function ChaosEffectsHud({effects,gameMs,effectsEnabled=true,players=['PL
    const remaining=Math.max(0,effect.expiresAt-Math.max(effect.startsAt,gameMs));
    const duration=effect.expiresAt-effect.startsAt;
    const target=effect.target===2?(definition.target==='both'?'BOTH PLAYERS':'COURT'):players[effect.target];
-   return <div key={`${effect.slot}:${effect.startsAt}:${effect.id}`} className={styles.card} data-announcing={announcing||undefined}
-    style={{gridColumn:effect.slot+1,gridRow:1,'--chaos-color':definition.color,'--chaos-remaining':`${Math.max(0,Math.min(100,remaining/Math.max(1,duration)*100))}%`} as CSSProperties}>
+   return <div key={`${effect.slot}:${effect.startsAt}:${effect.id}`} className={styles.card} data-slot={effect.slot} data-announcing={announcing||undefined}
+    style={{'--chaos-slot':effect.slot+1,'--chaos-color':definition.color,'--chaos-remaining':`${Math.max(0,Math.min(100,remaining/Math.max(1,duration)*100))}%`} as CSSProperties}>
     <img className={styles.icon} src={`/chaos/events-v6/${definition.key}.svg`} alt="" width="36" height="36"/>
     <div className={styles.copy}>
      <span className={styles.target}>{target}</span>

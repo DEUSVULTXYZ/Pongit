@@ -10,7 +10,8 @@ export class SpectatorPlayout {
  private interval=600;
  private playhead=0n;
  private sampledAt:number|undefined;
- reset(){this.frames=[];this.interval=600;this.playhead=0n;this.sampledAt=undefined;}
+ private started=false;
+ reset(){this.frames=[];this.interval=600;this.playhead=0n;this.sampledAt=undefined;this.started=false;}
  push(frame:Frame){
   const last=this.frames.at(-1);
   // A point and the final whistle are ordinary forward progress: processed time
@@ -35,12 +36,21 @@ export class SpectatorPlayout {
  }
  sample(now:number){
   if(!this.frames.length)return null;
-  const delay=Math.max(300,Math.min(1000,this.interval*1.25)),at=now-delay;
+  // Reserve two normal deliveries, not just one plus a quarter. On the hosted
+  // 500 ms stream that small margin ran dry during a single delayed update,
+  // despite the next authoritative frame arriving well within 1.5 seconds.
+  // Fast streams still approach 300 ms; no unconfirmed time is extrapolated.
+  const delay=Math.max(300,Math.min(1000,this.interval*2)),at=now-delay;
   let a=this.frames[0],b=a;
   for(const next of this.frames.slice(1)){b=next;if(next.at>=at)break;a=next;}
   const fraction=b===a?0:Math.max(0,Math.min(1,(at-a.at)/(b.at-a.at)));
   let target=a.state.t+BigInt(Math.floor(Number(b.state.t-a.state.t)*fraction));
-  if(this.sampledAt!==undefined&&now-this.sampledAt<1000){
+  if(!this.started){
+   // Fill once on entry. Starting immediately and only slowing by 2% could
+   // never accumulate the advertised reserve before the first delayed packet.
+   if(now-this.frames[0].at<delay)target=this.frames[0].state.t;
+   else this.started=true;
+  }else if(this.sampledAt!==undefined&&now-this.sampledAt<1000){
    const dt=Math.max(0,Math.min(100,now-this.sampledAt));
    // A larger jitter estimate previously moved the desired clock backwards,
    // freezing every frame until wall time caught up. Slew instead of stopping;

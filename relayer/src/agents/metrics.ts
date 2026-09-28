@@ -5,6 +5,7 @@ import {setRpcMetricSink,type RpcMetric} from '../../../shared/rpc-metrics';
 /** Seven days of bounded aggregate diagnostics, without payloads or identities. */
 export async function agentMetrics(directory:string,role:string){
  if(!directory.startsWith('/diagnostics/'))throw Error('Agent diagnostics require a private mounted directory');
+ if(!/^[a-z][a-z0-9-]{0,63}$/.test(role))throw Error('Invalid diagnostic role');
  await mkdir(directory,{recursive:true,mode:0o700});
  let groups=new Map<string,{count:number;errors:number;bytes:number;maxBytes:number;latencies:number[];seconds:Map<number,number>}>(),closed=false,writing=Promise.resolve();
  const sample=(s:RpcMetric)=>{
@@ -26,7 +27,7 @@ export async function agentMetrics(directory:string,role:string){
    return {at:at.toISOString(),role,key,count:g.count,errors:g.errors,requestBytes:g.bytes,maxRequestBytes:g.maxBytes,p50:p(.5),p95:p(.95),p99:p(.99),sampled:ms.length,histogram:{upperBoundsMs:[...bounds,null],counts:histogram},peak1s:peak(1),peak10s:peak(10),peak60s:peak(60)};});
   if(rows.length)await appendFile(join(directory,`${day}-${role}.ndjson`),rows.map(x=>JSON.stringify(x)).join('\n')+'\n',{mode:0o600});
   const oldest=Date.now()-7*86400000;
-  for(const name of await readdir(directory))if(/^\d{4}-\d{2}-\d{2}-[a-z]+\.ndjson$/.test(name)&&Date.parse(name.slice(0,10)+'T23:59:59Z')<oldest)await unlink(join(directory,name));
+  for(const name of await readdir(directory))if(/^\d{4}-\d{2}-\d{2}-[a-z][a-z0-9-]{0,63}\.ndjson$/.test(name)&&Date.parse(name.slice(0,10)+'T23:59:59Z')<oldest)await unlink(join(directory,name));
  }
  const enqueue=()=>{writing=writing.then(flush).catch(()=>{console.error(JSON.stringify({at:new Date().toISOString(),service:'agent-metrics',error:'Private diagnostics write failed'}));});};
  const timer=setInterval(enqueue,60000);timer.unref();

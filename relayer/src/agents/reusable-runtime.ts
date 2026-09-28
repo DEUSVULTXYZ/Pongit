@@ -21,6 +21,16 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
  assert(isAddress(record.modules?.HousePolicies),'Pinned house strategy required');
  if(manifest){
   const m=validateAgentPoolManifest(manifest,humans);
+  if(record.continuation){
+   const prior=m.history?.find(p=>p.pool.toLowerCase()===String(record.continuation.pool).toLowerCase());
+   assert(prior,'Continuation requires its historical manifest');
+   for(const field of ['pool','catalog','tournaments','ratings','qualifications','challenges'] as const){
+    assert(isAddress(record.continuation[field]),'Invalid predecessor authority');
+    assert.equal(record.continuation[field].toLowerCase(),prior[field].toLowerCase(),'Predecessor authority mismatch');
+    assert.notEqual(record.continuation[field].toLowerCase(),record.common[field].toLowerCase(),'Continuation cannot point to itself');
+   }
+   assert.equal(m.family.toLowerCase(),prior.family.toLowerCase(),'Continuation must retain existing family grants');
+  }
   assert.equal(m.countdownClock,record.countdownClock,"Countdown capability mismatch");
   assert.equal(m.houseInstances,record.houseInstances,'House instance capability mismatch');
   assert.equal(m.maxMatches,record.maxMatches??2,'Lane count mismatch');

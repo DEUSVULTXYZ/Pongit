@@ -248,8 +248,12 @@ export function Court({
       count++;
       if (now - last > 1000) {
         if(buffered){
+          // Diagnostics use this draw's timestamp, rather than the later poll
+          // that happens to read the once-per-second DOM sample.
+          el.dataset.sampledAt=String(now);
           el.dataset.processedUs=String(current.current.state?.t??0n);
           el.dataset.renderedUs=String(s?.t??0n);
+          el.dataset.finished=String(s?.finished??false);
           el.dataset.bufferMs=String(Math.round(playback?.delayMs??0));
           el.dataset.streamStalled=String(playback?.stalled??false);
         }

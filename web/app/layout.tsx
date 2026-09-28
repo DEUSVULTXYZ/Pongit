@@ -2,13 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { siteOrigin, socialMetadata } from "../lib/social-metadata";
 import { RegionProbe } from "../components/RegionProbe";
-import "./globals.css";
-import "./neon-rush.css";
-import "./cabinet.css";
-import "./cabinet-tokens.css";
-import "./neon-cabinet.css";
-import "./cabinet-controls.css";
-import "./pixel-palace.css";
+import "./arcade.css";
 const michroma = localFont({ src: "./fonts/Michroma-Regular.ttf", weight: "400", display: "swap", variable: "--font-michroma" });
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),

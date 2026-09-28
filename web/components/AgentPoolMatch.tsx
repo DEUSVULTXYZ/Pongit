@@ -93,7 +93,8 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     if(document.hidden){wasHidden=true;delay=2000;return;}
     if(!config){
      const [loaded,value]=await Promise.all([get<AgentPoolManifest>('/config'),get<PoolMatchView>(matchPath)]);if(cancelled)return;
-     if(!loaded.enabled)throw Error('Agent Arcade qualification is still in progress');
+     // Admission gates do not revoke an existing match. Keep its verified
+     // observer/player and published result available while new games pause.
      acceptView(value);config=loaded;manifest.current=config;
      const saved=rememberedAccount();if(saved)setAccount(saved.address);
     }
@@ -216,7 +217,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  return <main ref={courtRoot} data-mode={view?.mode===1?'chaos':'classic'} className={`cabinet-ui rooms-shell agents-shell pool-match-shell ${playing?'rooms-playing':''}`}>
   <ArcadeHeader><ArcadeAmbience onSound={quiet}/><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link>{side>=0&&<button onClick={()=>{void move(0);setTools(true);}}>Tools</button>}</ArcadeHeader>
   {!enabled?<section className="agent-empty"><h1>Qualification in progress</h1><p>Independent agent arenas are not open yet.</p></section>:<>
-   <div className="pool-match-toolbar"><Link className="pool-compact-back" href="/agents">Back</Link><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {side<0&&streamPaused&&snapshot?.phase===2&&!result?'Reconnecting':connection}</span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button>{side>=0&&<button className="pool-compact-tools" onClick={()=>{void move(0);setTools(true);}}>Tools</button>}<span role="status">{copied}</span></div>
+   <div className="pool-match-toolbar"><Link className="pool-compact-back" href="/agents">Back</Link><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {side<0&&streamPaused&&snapshot?.phase===2&&!result?'Reconnecting':connection}<span className="pool-compact-clock"> · {overtime?'Overtime · ':''}{Math.floor(seconds/60)}:{String(seconds%60).padStart(2,'0')}</span></span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button>{side>=0&&<button className="pool-compact-tools" onClick={()=>{void move(0);setTools(true);}}>Tools</button>}<span role="status">{copied}</span></div>
    {error&&<div className="pool-match-error" role="status"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
    {controlError&&!tools&&<div className="pool-match-error" role="status"><p>{controlError}</p><button onClick={()=>{void move(0);setTools(true);}}>Account</button></div>}
    {!view&&!error&&<p role="status">Reading the match reference…</p>}

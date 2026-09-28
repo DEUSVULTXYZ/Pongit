@@ -16,7 +16,7 @@ import {PoolReplays,initializePoolReplays,poolReplayRetention} from './pool-repl
 // Dedicated version-2 process. Never starts the legacy single-application
 // coordinator and never loads an operator key. A private qualification endpoint
 // is bound to loopback unless an isolated Docker network is explicitly selected.
-export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>;replays?:PoolReplays}){
+export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>;sponsorHealth?:()=>{available:boolean;error?:string;code?:string};replays?:PoolReplays}){
  const routes=poolRoutes(reader,undefined,options.replays),rates=new Map<string,{until:number;n:number}>();
  const events=new PoolNotifications(routes,options.public);
  const normalize=(value:string)=>value.replace(/^::ffff:/,'');
@@ -51,11 +51,11 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
    if(url.pathname==='/agents/events'){metric='agents.events';events.add(res,url.searchParams.get('account'));return;}
    const section=url.pathname.replace(/^\/agents\//,'/').split('/')[1];
    if(['config','catalog','live','matches','replay','challenges','tournaments','rankings','healthz'].includes(section))metric=`agents.${section}`;
-   if(url.pathname==='/healthz'){send({process:'alive',writes:!!options.sponsor});return;}
-   // Read the gate and the requested public view concurrently. They still both
-   // have to succeed before returning any data, without two serial RPC waits.
-   const [config,view]=await Promise.all([options.public?routes(new URL('http://localhost/config')):null,routes(url)]);
-   if(config&&(!('enabled' in config.value)||!config.value.enabled)){send({error:'Agent Arcade is not open',code:'AGENT_CLOSED'},503);return;}
+   if(url.pathname==='/healthz'){send({process:'alive',writes:!!options.sponsor,sponsorship:options.sponsorHealth?.()??{available:false,code:options.sponsor?'SPONSOR_UNVERIFIED':'READ_ONLY_SERVICE'}});return;}
+   // Closing admissions must not close observers, published results or pending
+   // requests. These routes contain public contract data only. Config reports
+   // the gates; signed writes keep their separate canonical admission checks.
+   const view=await routes(url);
    res.setHeader('ETag',`"${view.revision}"`);
    if(req.headers['if-none-match']===`"${view.revision}"`){res.statusCode=304;res.end();return;}
    send({...view.value,observation:{block:view.observedBlock,hash:view.observedHash,timestamp:view.observedTimestamp,revision:view.revision}});

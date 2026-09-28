@@ -19,7 +19,9 @@ export function useCourtFit(active: boolean, layoutKey: string) {
    const px = (value: string) => Number.parseFloat(value) || 0;
    const bottom = page.getBoundingClientRect().top + page.clientHeight - px(pageStyle.paddingBottom);
    const available = bottom - rect.top - px(style.marginBottom) - (rect.height - canvas.height) - 2;
-   const horizontal = px(style.paddingLeft) + px(style.paddingRight) + px(style.borderLeftWidth) + px(style.borderRightWidth);
+   // The short landscape layout keeps Chaos indicators beside the field. Its
+   // reserved rail is width, not lost playing height; include it in the fit.
+   const horizontal = rect.width - canvas.width;
    const width = Math.min(page.clientWidth - px(pageStyle.paddingLeft) - px(pageStyle.paddingRight), Math.max(80, available) * 16 / 9 + horizontal);
    const value = `${Math.floor(width)}px`;
    if (page.style.getPropertyValue('--fitted-court-width') !== value) page.style.setProperty('--fitted-court-width', value);
@@ -36,7 +38,11 @@ export function useCourtFit(active: boolean, layoutKey: string) {
   };
   const mutations = new MutationObserver(observe);
   mutations.observe(page, {childList: true});
-  observe(); void document.fonts.ready.then(schedule);
+  observe();
+  // The first visible court must already fit. Waiting one animation frame here
+  // briefly painted a full-width canvas below the viewport on desktop.
+  cancelAnimationFrame(frame); fit();
+  void document.fonts.ready.then(schedule);
   return () => { closed = true; cancelAnimationFrame(frame); resize.disconnect(); mutations.disconnect(); page.style.removeProperty('--fitted-court-width'); delete page.dataset.courtScroll; };
  }, [active, layoutKey]);
  return root;

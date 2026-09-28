@@ -19,10 +19,10 @@ test('notifications are shared, unchanged views stay quiet and reconnect reloads
  a.end();const c=new Response();hub.add(c as unknown as ServerResponse,null);await hub.tick();assert.equal(c.messages()[0].resync,true);
  assert(!a.chunks.join('').includes('never sent'));hub.close();assert(b.ended&&c.ended);
 });
-test('a failed read is never advertised as an empty result and a closed public gate terminates observation',async()=>{
+test('failed reads retain state and closing admissions delivers a change without disconnecting spectators',async()=>{
  let open=true,fail=false;const hub=new PoolNotifications(async url=>{
-  if(fail&&url.pathname.endsWith('/live'))throw Error('RPC timeout');return{revision:fail?'b':'a',value:{enabled:open}};
+  if(fail&&url.pathname.endsWith('/live'))throw Error('RPC timeout');return{revision:!open?'closed':fail?'b':'a',value:{enabled:open}};
  },true);const a=new Response();hub.add(a as unknown as ServerResponse,null);await hub.tick();fail=true;await hub.tick();
  assert(!a.messages()[1].changed.includes('live'));assert.equal(a.messages()[1].revisions.live,'a');
- open=false;await hub.tick();assert(a.ended);hub.close();
+ open=false;await hub.tick();assert(!a.ended);assert(a.messages().at(-1).changed.includes('config'));hub.close();
 });

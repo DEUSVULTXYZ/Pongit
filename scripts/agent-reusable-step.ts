@@ -19,7 +19,7 @@ import {initializeReusableResultArchive,createReusableResultArchive} from '../re
 import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,writeRetryMs} from '../relayer/src/agents/pool-maintenance';
 import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget,verifiedRecovery,type ArenaRecoveryWindow} from '../shared/arena-replacement';
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
-import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
+import {validateReusableBudget,reusableAdmissionBudget,reusableCapacity,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {overdueAgentPublication} from '../relayer/src/agents/reusable-recovery';
 import {verifyHouseInstanceAuthorities,agentPoolAdmissionAbi} from '../shared/agent-house-instances';
@@ -244,11 +244,14 @@ async function step(){
  try{renewalExclusions=arenaRenewalExclusions(JSON.parse(await readFile('/metadata/renewal-policy.json','utf8')),m.pool,r.arenas.map((a:any)=>a.app));}
  catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
  const active=delegations.filter(x=>x.d.status===1&&x.d.expiresAt>block.timestamp+420n);
- // Keep an actually admitted third arena, not an imaginary database reserve.
- // Rotate only one early while two others remain; opening all arenas together
- // and waiting until their simultaneous expiry would recreate a global outage.
+ const hosted=(await db.query("SELECT app,stage,detail FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
+ const serving=(a:{app:Address;d:{epoch:bigint}})=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch));
+ const capacity=reusableCapacity(budget,active.map(a=>({app:a.app,batches:a.d.batchIndex,expires:a.d.expiresAt,
+  occupied:lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===a.app.toLowerCase()),serving:serving(a)})),block.timestamp);
+ // Prepare one actually usable reserve. Unavailable engines cannot suppress
+ // opening a released spare just because their hub status is still Active.
  const reserveTarget=m.maxMatches+1;
- if(doesMaintenance&&active.length<reserveTarget&&!cooling(m.pool,'openReusableArena')){
+ if(doesMaintenance&&capacity.ready.length<reserveTarget&&!cooling(m.pool,'openReusableArena')){
   for(const {app,d} of delegations)if(d.status===0&&!renewalExclusions.has(app.toLowerCase())){
    const match=await read(m.pool,poolAbi,'arenaMatch',[app]);
    if(match!==zeroHash&&lanes.some(l=>l.ref.arena.toLowerCase()===app.toLowerCase()&&l.ref.id>0n))continue;
@@ -264,8 +267,6 @@ async function step(){
   }
  }
  mark('reserve');
- const hosted=(await db.query("SELECT app,stage,detail FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
- const serving=(a:{app:Address;d:{epoch:bigint}})=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch));
  // Replace an idle arena whose engine never comes back while Interlude answers
  // (shared/arena-replacement.ts). Only a fresh report from the engines process
  // counts: a silent engines process is its own outage, not three dead arenas.
@@ -297,8 +298,7 @@ async function step(){
   }
   await save();
  }
- const ready=active.filter(serving);
- if(doesMaintenance&&ready.length>=reserveTarget&&!cooling(m.pool,'closeReusableArena')){
+ if(doesMaintenance&&capacity.ready.length>=reserveTarget&&!cooling(m.pool,'closeReusableArena')){
   const candidates=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase())).sort((a,b)=>a.d.baseBlock<b.d.baseBlock?-1:1);
   for(const candidate of candidates){
    const opening=await t.base.getBlock({blockNumber:candidate.d.baseBlock,includeTransactions:false});

@@ -29,7 +29,9 @@ export class PoolNotifications {
   await Promise.all([...topics].map(async topic=>{try{values.set(topic,await this.load(new URL(`/agents/${topic}`,'http://localhost')));}catch{/* Keep the last revision; polling remains available. */}}));
   for(const c of this.clients){
    const gate=values.get('config');
-   if(this.publicGate&&(!gate||gate.value.enabled!==true)){c.response.end();continue;}
+   // A paused admission is a state change to deliver, not a reason to reconnect
+   // every client in a loop. Unknown configuration retains the last revision.
+   if(this.publicGate&&!gate)continue;
    const changed=c.topics.filter(topic=>{const v=values.get(topic);return v&&c.seen.get(topic)!==v.revision;});
    for(const topic of changed)c.seen.set(topic,values.get(topic)!.revision);
    if(changed.length||c.initial){

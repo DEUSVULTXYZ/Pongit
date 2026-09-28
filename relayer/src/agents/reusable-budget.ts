@@ -15,3 +15,17 @@ export function validateReusableBudget(value:unknown,hashes:readonly string[],ex
 export function reusableAdmissionBudget(b:ReusablePublicationBudget|undefined,batches:bigint,expires:bigint,now:bigint){
  return !!b&&batches>=0n&&batches+BigInt(b.matchReserveBatches)<BigInt(b.maxBatches)&&expires>now+(b.rulesVersion===14?1860n:420n);
 }
+/** A delegated idle arena with no admission reserve is not usable capacity.
+ * Active games keep their slot until captured; exhaustion can retire only idle
+ * arenas. Unknown health never supplies the reserve for a voluntary rotation. */
+export function reusableCapacity(b:ReusablePublicationBudget,arenas:readonly {
+ app:string;batches:bigint;expires:bigint;occupied:boolean;serving:boolean;
+}[],now:bigint){
+ const ready:string[]=[],exhausted:string[]=[];
+ for(const a of arenas){
+  const admits=reusableAdmissionBudget(b,a.batches,a.expires,now);
+  if(a.serving&&(a.occupied||admits))ready.push(a.app);
+  if(!a.occupied&&!admits)exhausted.push(a.app);
+ }
+ return{ready,exhausted};
+}

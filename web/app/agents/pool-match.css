@@ -1,5 +1,6 @@
 .pool-match-shell[data-court-scroll=true]{overflow-y:auto}
 .pool-match-toolbar .pool-compact-back,.pool-match-toolbar .pool-compact-tools{display:none}
+.pool-compact-clock{display:none;font-variant-numeric:tabular-nums}
 .pool-match-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:52px;margin:16px 0;color:#c1d2e6}
 .pool-match-toolbar>span:first-of-type{flex:1;font-size:14px}.pool-match-toolbar button,.pool-match-error button{min-height:44px}
 .pool-match-error{padding:12px 16px;border:1px solid #c48eaa;background:#221725;border-radius:10px;display:flex;gap:12px;align-items:center;justify-content:space-between}
@@ -18,4 +19,11 @@
 @media(max-width:390px){.pool-match-toolbar{gap:8px}.pool-match-toolbar>span:first-of-type{font-size:12px}.pool-match-toolbar button{font-size:14px;padding:8px}.pool-match-error{align-items:flex-start;flex-direction:column}}
 .pool-match-toolbar>span:empty{display:none}
 @media(max-width:767px){.pool-match-shell .arena-score-module{min-width:0;padding:0 4px}.pool-match-shell .arena-score-module>small{font-size:10px}.pool-match-shell .pool-match-toolbar{margin:6px 0;min-height:44px}}
-@media(orientation:landscape) and (max-height:600px){.pool-match-shell .rooms-court .scoreboard{min-height:46px;padding:4px 8px;margin-bottom:6px}.pool-match-shell .rooms-court .score{font-size:26px}.pool-match-shell .rooms-court .player-label .avatar{width:30px;height:36px}.pool-match-shell .rooms-court .player-label{grid-template-columns:30px minmax(0,1fr);gap:2px 8px}.pool-match-shell .rooms-court .player-label.right{grid-template-columns:minmax(0,1fr) 30px}.pool-match-shell .rooms-court-controls{min-height:26px;padding-top:4px;margin-top:4px}.pool-match-shell .rooms-court-controls::before{width:14px;height:14px;background-size:7px 7px}}
+@media(orientation:landscape) and (max-height:600px){.pool-match-shell .rooms-court .scoreboard{min-height:46px;padding:4px 8px;margin-bottom:6px}.pool-match-shell .rooms-court .score{font-size:26px}.pool-match-shell .rooms-court-controls{min-height:26px;padding-top:4px;margin-top:4px}.pool-match-shell .rooms-court-controls::before{width:14px;height:14px;background-size:7px 7px}}
+@media(orientation:landscape) and (max-height:500px){
+ .pool-compact-clock{display:inline}
+ .pool-match-shell.rooms-playing .agent-court{padding:8px 12px 6px;margin:6px auto}
+ .pool-match-shell.rooms-playing .agent-court:has([aria-label="Chaos effects"]){display:grid;grid-template-columns:minmax(0,1fr) 140px;column-gap:12px}
+ .pool-match-shell .agent-court>.scoreboard,.pool-match-shell .agent-court>.rooms-court-controls{grid-column:1/-1}
+ .pool-match-shell .agent-court>.pool-canvas-slot{grid-column:1;grid-row:2;margin-top:0}
+}

@@ -21,9 +21,11 @@ const agentOrigins=existsSync(agentPath)?(()=>{
  if(m.chainId!==10143||!/^0x[\da-fA-F]{40}$/.test(m.app)||!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(m.node))throw Error('Unapproved agent arena in CSP manifest');
  return `${m.node} ${m.node.replace(/^http/,'ws')}`;
 })():'';
-const poolPath=path.resolve('deployments/agent-pool.json');
-if(process.env.PONG_REQUIRE_AGENT_POOL_MANIFEST==='true'&&!existsSync(poolPath))
- throw Error('Agent Arcade build requires deployments/agent-pool.json for its network security policy');
+// Private and migration builds must bind the same reviewed manifest as their
+// reader. Never broaden connect-src to all provider hosts for a new deployment.
+const poolPath=path.resolve(process.env.PONG_AGENT_POOL_MANIFEST??'deployments/agent-pool.json');
+if((process.env.PONG_REQUIRE_AGENT_POOL_MANIFEST==='true'||process.env.PONG_AGENT_POOL_MANIFEST)&&!existsSync(poolPath))
+ throw Error('Agent Arcade build requires its configured manifest for the network security policy');
 const poolOrigins=existsSync(poolPath)?agentPoolCspOrigins(JSON.parse(readFileSync(poolPath,'utf8'))):'';
 const nextConfig: NextConfig = {
   output: "standalone",

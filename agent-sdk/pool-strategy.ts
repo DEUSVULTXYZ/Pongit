@@ -8,15 +8,16 @@ import {monadTestnet} from 'viem/chains';
 import {createPoolSponsor,preparePoolRegistration,validateAgentPoolManifest,agentMetadata,type PoolSignedCall} from './src';
 import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
 import {settleCreatorTransaction} from '../shared/creator-transaction';
+import {measuredFetch} from '../shared/rpc-metrics';
 
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 const safe=(e:unknown)=>String((e as Error)?.message??'Registration failed').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,180);
 async function main(){
  const api=new URL(process.env.AGENT_API??'https://pongit.xyz/api/agents');
- const privateRun=process.env.AGENT_PRIVATE_QUALIFICATION==='isolated-vps'&&/^pongit-(?:series[3-9]|reusable-agents[1-9]\d?)-sponsor$/.test(api.hostname)&&api.port==='4102'&&api.pathname==='/agents';
+ const privateRun=process.env.AGENT_PRIVATE_QUALIFICATION==='isolated-vps'&&/^pongit-(?:(?:series[3-9]|reusable-agents[1-9]\d?)-sponsor|five-20\d{6}-[1-9]-sponsor-1)$/.test(api.hostname)&&api.port==='4102'&&api.pathname==='/agents';
  if(api.username||api.password||api.search||api.hash||api.protocol!=='https:'&&!privateRun)throw Error('Use a credential-free HTTPS PONGIT API');
  const call=async(path:string,body?:PoolSignedCall)=>{
-  const r=await fetch(api.href.replace(/\/$/,'')+'/'+path,{method:body?'POST':'GET',...(body?{headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000)});
+  const r=await measuredFetch('pongit',body?'agents.submit':'agents.read')(api.href.replace(/\/$/,'')+'/'+path,{method:body?'POST':'GET',...(body?{headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000)});
   const data=await r.json().catch(()=>null);
   if(!r.ok){const wait=Number(r.headers.get('retry-after')),code=/^[A-Z_]{2,64}$/.test(data?.code??'')?` (${data.code})`:'';throw Object.assign(Error(`Agent API HTTP ${r.status}${code}`),{status:r.status,code:data?.code,accepted:data?.accepted,retryMs:Number.isFinite(wait)&&wait>0?Math.min(60000,wait*1000):5000});}
   return data;
@@ -28,9 +29,9 @@ async function main(){
  const owner=privateKeyToAccount(key as Hex),strategy=getAddress(process.env.STRATEGY??'');
  const modes=Number(process.env.MODES??3);if(![1,2,3].includes(modes))throw Error('MODES must be 1, 2 or 3');
  const name=process.env.AGENT_NAME??'Tracker',avatar=Number(process.env.AGENT_AVATAR??4),metadata=agentMetadata(name,avatar);
- const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:15000})});
+ const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:15000,fetchFn:measuredFetch('monad')})});
  if(await base.getChainId()!==10143)throw Error('Monad Testnet required');
- const wallet=createWalletClient({account:owner,chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:15000})});
+ const wallet=createWalletClient({account:owner,chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:15000,fetchFn:measuredFetch('monad')})});
  const path=resolve(process.env.STRATEGY_STATE??`.agent-state/pool-${manifest.pool.toLowerCase()}-${owner.address.toLowerCase()}.json`);
  mkdirSync(dirname(path),{recursive:true,mode:0o700});let fd:number;
  const lock=resolve(dirname(path),`creator-${owner.address.toLowerCase()}.lock`);
