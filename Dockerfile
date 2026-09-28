@@ -54,7 +54,9 @@ CMD ["node","scripts/agent-reusable-process.mjs","reader"]
 # exact compiler artifacts are mounted read-only and checked before deployment.
 FROM agent-reusable AS agent-qualification
 COPY scripts ./scripts
+USER root
 RUN mkdir -p /app/artifacts/reusable-candidate && chown -R node:node /app/artifacts
+USER node
 
 FROM dependencies AS web-build
 COPY shared ./shared
