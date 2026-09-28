@@ -157,3 +157,17 @@ Candidate `084bcb0` is published on `codex/arcade-release-20260919`. Further rep
 Latest funding read: block **66320812**, 04:58:50 UTC, shared publisher **16,463.974185383116930335 test MON**. The existing request for a 2-million-test-MON reserve has no response. Do not automatically transfer PONGIT funds or launch a costly endurance run. This is separate from role sponsoring and RPC request limits. The inspected hosted SDK/CLI does not expose the publication gas limit/interval as an app deployment parameter; no provider configuration was changed.
 
 Remaining release gates include championships, worst-case publication/release reserve, five agents alongside two human games, public catalogue admission latency, final migration/financial checks, reproducible final services, audit and unchanged 24-hour qualification. The current tests establish substantial bounded operation, not a finished production release.
+
+### 05:27 UTC handoff
+
+Published candidate is **85d7bf4**. The shared publisher balance remains exactly
+16,463.974185383116930335 MON at block 66325869 (05:24:47 UTC). Long trials remain
+unfunded. The isolated replay reader is stopped cleanly; Envio exited at its
+original 1,500-second bound and private Hasura was stopped (exit 137 after its
+30-second grace period, not OOM). Databases and failed evidence remain intact.
+Only the named bounded private release worker is running; production is untouched.
+
+The existing follow-up has been updated with this current state and scheduled for
+minute 55. It must verify the seven releases, refresh and copy backups off VPS,
+publish evidence, then pause if funding still requires user action. It must not
+restart old private services or the obsolete September 21 trial.
