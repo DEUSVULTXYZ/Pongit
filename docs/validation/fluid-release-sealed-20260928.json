@@ -1,0 +1,143 @@
+{
+  "startedAt": "2026-09-28T05:58:58.753Z",
+  "passed": true,
+  "arenas": [
+    {
+      "app": "0x5d6524e0f513db9bb788c42af28012b077e143a2",
+      "epoch": "2",
+      "status": 0,
+      "batches": "789",
+      "root": [
+        "0x9615025b75baff47cc3cdff7da279fa402ea67cee0ed0edab63b237c207ec73c",
+        2
+      ],
+      "release": {
+        "hash": "0x5e32106a789a549600988f828af8ec4b16c90b68db75338562578e4ae1342e0d",
+        "block": "66331249",
+        "gasUsed": "1442680"
+      },
+      "blockHash": "0x76efca8b579a76106be3ab5e59050a8ea47eac24bad460867c1e4a7627f8f3a3",
+      "confirmations": "1278",
+      "feeMON": "0.14715336"
+    },
+    {
+      "app": "0x9ecb6a0bdcebfc257a26d369f531de284ef43e07",
+      "epoch": "1",
+      "status": 0,
+      "batches": "1449",
+      "root": [
+        "0xac96b666cedf6957881ed47b5a836c367d3d1c1212989ecdaf63f0036703ab72",
+        7
+      ],
+      "release": {
+        "hash": "0x42cd5d323a9ed86ed6b249e600ba1e2b0dcbce010a9f786e312037361b2aa0dd",
+        "block": "66331257",
+        "gasUsed": "1552348"
+      },
+      "blockHash": "0xe8cafc9241167382c291e99e3c9128de9cd80f61ba0c2a5e9c0f67274f736a50",
+      "confirmations": "1270",
+      "feeMON": "0.158339496"
+    },
+    {
+      "app": "0x5296ba8cac39f205da695b891bfea4dbd8c6da44",
+      "epoch": "1",
+      "status": 0,
+      "batches": "1599",
+      "root": [
+        "0xa5d13ee751b4379c13d7c6ee7ca6bc493dab7d0b1d82b96396acb6ba9feae318",
+        7
+      ],
+      "release": {
+        "hash": "0xc2014da75527db8b1648e3f725f3a06c6f9c35357f07c10f77691786301714fa",
+        "block": "66331313",
+        "gasUsed": "1568798"
+      },
+      "blockHash": "0x75b2add8a374ab56c2e26de9a3f40065c8148dfbe62fd8caa691c9bfdda5408d",
+      "confirmations": "1214",
+      "feeMON": "0.160017396"
+    },
+    {
+      "app": "0x04356ae994b21b26b061db7919128814685ae564",
+      "epoch": "1",
+      "status": 0,
+      "batches": "1452",
+      "root": [
+        "0xa1f90c60a6e42c9cd2c23de5e4285a3636771cdee06105836f84c8c8cf351564",
+        7
+      ],
+      "release": {
+        "hash": "0x4f1fb464035576de09faeb24feba4b56108c91c8d1c2644baf02f255ae837125",
+        "block": "66331326",
+        "gasUsed": "1555735"
+      },
+      "blockHash": "0x9e4e4a6e3fd1fa9dc1ae6b661d680cdd797937af5276223f0bdf3339630fc0d8",
+      "confirmations": "1201",
+      "feeMON": "0.15868497"
+    },
+    {
+      "app": "0x64f61406243246b8b171f295151222a2c248c57d",
+      "epoch": "1",
+      "status": 0,
+      "batches": "1235",
+      "root": [
+        "0x2038ae7a7b9c9c39721375348e2efd04e13e2c23cc294122a1d2889f3951d893",
+        5
+      ],
+      "release": {
+        "hash": "0x952fceb4c8022488ca0f65b7c9ca968237f3ee76de1bfcecf617d5d363599918",
+        "block": "66331333",
+        "gasUsed": "1506643"
+      },
+      "blockHash": "0x875cbaee4eb740484d994b78eab58f5aebc5a4b7993538d456a6f8814698388c",
+      "confirmations": "1194",
+      "feeMON": "0.153677586"
+    },
+    {
+      "app": "0x45bf6064d05ecb41a569e71f466b9cce117e9c4b",
+      "epoch": "1",
+      "status": 0,
+      "batches": "1474",
+      "root": [
+        "0x01b635e2ca2b49252ead91eaa35f565697760852b8220edcf208f1a70a2bda79",
+        3
+      ],
+      "release": {
+        "hash": "0x8b912b004f3b8d28f7d6bcbd19d97dd6007e2ee4317fe4c0d2b6dbfe4bfb383c",
+        "block": "66331343",
+        "gasUsed": "1508223"
+      },
+      "blockHash": "0x39d18ffce49ed525ab419e2b5c6819ee0fc47412ff81e6d8da46e03a8caadb7b",
+      "confirmations": "1184",
+      "feeMON": "0.153838746"
+    },
+    {
+      "app": "0xa4c880d75b2a1896ae56d1bb8e460ea18c07f917",
+      "epoch": "1",
+      "status": 0,
+      "batches": "1296",
+      "root": [
+        "0x6f81e2f61657ad1685781b4218e9242d385e9c68c95a2bbdffa2283519f0e522",
+        3
+      ],
+      "release": {
+        "hash": "0xb7759f71dc35bc86946319eb667f0a3ba66b0e6e95229c53803506ad4e27698f",
+        "block": "66331352",
+        "gasUsed": "1355980"
+      },
+      "blockHash": "0x676f9ff502e54a1bfdd689de728148f52b6ffe61c8bb3bc1a072f39e739f79ac",
+      "confirmations": "1175",
+      "feeMON": "0.13830996"
+    }
+  ],
+  "scope": "Canonical receipts, released delegations and finalized roots at one Monad block. No new opening, gameplay or production write.",
+  "block": {
+    "number": "66332526",
+    "hash": "0x5ef7085a4c6d736a48870b073a68c5e297da1bd0ebf611031745cbd43b3274d4",
+    "timestamp": "1790575138"
+  },
+  "publisher": {
+    "address": "0xB28E684815b095aB5Fb324214cfEa63d76F3d691",
+    "balanceMON": "16463.974185383116930335"
+  },
+  "finishedAt": "2026-09-28T05:59:04.658Z"
+}

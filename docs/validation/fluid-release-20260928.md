@@ -1,6 +1,6 @@
 # Fluid PONGIT candidate — 28 September 2026
 
-Status: implementation and bounded hosted qualification. **No production changes and no final 24-hour trial. Five simultaneous hosted matches passed; sustained capacity, rotation and migration remain unqualified.**
+Status: implementation and bounded hosted qualification. **No production changes and no final 24-hour trial. Five simultaneous hosted matches and a normal renewal passed; sustained capacity, worst-case reserve and final migration remain unqualified.**
 
 The approved release has one cutover after qualification. Preserve the existing human release, public agent preview, old contracts, withdrawals, identities, ratings, replay references and uncertain transaction journals. Never substitute a fresh private season for the public migration.
 
@@ -171,3 +171,39 @@ The existing follow-up has been updated with this current state and scheduled fo
 minute 55. It must verify the seven releases, refresh and copy backups off VPS,
 publish evidence, then pause if funding still requires user action. It must not
 restart old private services or the obsolete September 21 trial.
+
+## Checkpoint — 28 September, 06:01 UTC
+
+The bounded private lifecycle finished successfully at **05:52:58 UTC**, before
+its original 06:07:05 deadline. All seven normal releases confirmed. The worker
+exited zero and was not restarted. No forced close, new opening or production
+intervention occurred.
+
+A separate read-only audit at canonical Monad block **66332526**, hash
+`0x5ef7085a4c6d736a48870b073a68c5e297da1bd0ebf611031745cbd43b3274d4`,
+verified each release receipt and its canonical block hash, all seven delegation
+statuses `None`, and every finalized root/count against the previously published
+commitment. All five lanes are empty and both pool gates are closed. There are
+14 confirmed lifecycle journal operations for the seven closes/releases and no
+pending engine command among 17,656 observed entries. See the machine-readable
+[sealed result evidence](fluid-release-sealed-20260928.json).
+
+Release gas ranged from **1,355,980 to 1,568,798**, for these observed epochs of
+789–1,599 batches. This does not establish the worst-case publication/release
+reserve or sustained capacity. Existing historical incidents are untouched.
+
+Backup **after-release-20260928T0600Z** contains the operator database, candidate
+database, isolated indexer database and private runtime/journals. All three
+PostgreSQL dump headers validate. At **06:00:46 UTC**, all four files matched their
+off-VPS SHA-256 hashes in
+`C:/Users/wwwle/.codex/private-backups/pongit/after-release-20260928T0600Z`.
+The earlier exact off-VPS restore proof remains valid and preserved; this new
+snapshot adds the final release transactions and current index. No backup was
+restored over a running service.
+
+The shared publisher still holds **16,463.974185383116930335 test MON** at the
+audit block. No requested funding has arrived. All private qualification services
+are stopped; only their retained database container remains running. The follow-up
+is paused pending the already requested funding, as instructed. No duplicate
+funding request, transfer or costly new trial was made. Resume from this checkpoint
+after funding and recheck actual balances before continuing the remaining gates.
