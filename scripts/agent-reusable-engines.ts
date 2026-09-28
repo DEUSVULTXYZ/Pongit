@@ -33,7 +33,7 @@ import {verifyHostedArenaEvidence} from '../shared/hosted-arena-identity';
 const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances,maxMatches:r.maxMatches??2};
 const laneNumbers=Array.from({length:m.maxMatches},(_,i)=>i);
 const tickInterval=agentTickInterval(process.env.PONG_AGENT_TICK_INTERVAL_MS);
-const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
+const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
 await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>base.readContract({address,abi,functionName,args}) as Promise<T>,m);
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:8}),metrics=await agentMetrics('/diagnostics/reusable','controllers');
 await initializePoolOperations(db);await initializePoolObservations(db);await initializePoolReplays(db);await initializeReusableResultArchive(db);

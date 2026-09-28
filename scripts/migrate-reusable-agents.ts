@@ -125,7 +125,7 @@ try{
  r.common={hub:source.hub,pool,catalog,tournaments,ratings,qualifications,family:source.family,challenges,verifier};
  r.continuation={pool:source.pool,catalog:source.catalog,tournaments:source.tournaments,ratings:source.ratings,qualifications:source.qualifications,challenges:source.challenges};
  r.bots=await Promise.all(pooledHouseBots.map(async(bot,i)=>({agent:await read('AgentCatalog',catalog,'house',[i]),...bot})));
- r.phase='imported-closed';await save();
+ r.phase='deployed-closed';r.migrationPhase='imported-closed';await save();
  await mkdir('artifacts/reusable-candidate',{recursive:true});
  await writeFile('artifacts/reusable-candidate/migration.json',JSON.stringify({at:new Date().toISOString(),prefix,common:r.common,continuation:r.continuation,
   source:r.source,arenas:r.arenas,bots:r.bots,modules:r.modules,serviceOperators:r.serviceOperators,qualified:false,publiclyEnabled:false,

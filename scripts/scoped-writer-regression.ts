@@ -87,4 +87,3 @@ finally{
  const output=process.env.SCOPED_WRITER_REPORT??'artifacts/qualification/20260928/scoped-writer.json';
  await mkdir(join(output,'..'),{recursive:true});await writeFile(output,JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }
-
