@@ -1,4 +1,5 @@
 "use client";
+import {ArcadeHeader} from './ArcadeChrome';
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {useRouter} from 'next/navigation';
 import {
@@ -1155,18 +1156,7 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
   ];
   return (
     <main className={`cabinet-ui rooms-shell ${active ? "rooms-playing" : ""}`}>
-      <header className="rooms-header">
-        <a href="/" className="brand" aria-label="PONGIT home">
-          <img
-            className="brand-mark"
-            src="/brand/opposing-orbits.webp"
-            width="40"
-            height="40"
-            alt=""
-          />
-          <span className="brand-word">PONGIT</span>
-        </a>
-        <div className="rooms-header-actions">
+      <ArcadeHeader>
           <ArcadeAmbience onSound={quiet} />
           <a href="/docs" target="_blank" rel="noreferrer">
             Docs ↗
@@ -1195,8 +1185,7 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
                   ? renewRequired ? "Renew session" : "Reconnecting…"
                   : "Connect"}
           </button>
-        </div>
-      </header>
+      </ArcadeHeader>
       {notice && (
         <div className="rooms-notice" role="status">
           {notice}

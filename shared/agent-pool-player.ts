@@ -23,7 +23,7 @@ export const POOL_PLAYER_GAS=14_800_000n;
 export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,session:PoolFamilySession,
  options:{base:PublicClient;storage:PoolSessionStorage;socket:(url:string)=>any;now?:()=>number},runtime?:{node:PublicClient;feed:EngineFeed}){
  const m=validateAgentPoolManifest(manifest),arena=m.arenas.find(a=>a.app.toLowerCase()===match.ref.app.toLowerCase()),player=session.grant.player;
- const abi=agentPoolArenaAbi(m),reusable=m.version===4;
+ const abi=agentPoolArenaAbi(m),reusable=m.version>=4;
  if(!arena||match.node!==arena.node||!match.currentBinding||match.result||match.ref.chainId!==10143
   ||!/^\d{1,78}$/.test(match.ref.id)||!/^\d{1,78}$/.test(match.ref.epoch)||BigInt(match.ref.id)<1n||BigInt(match.ref.epoch)<1n
   ||BigInt(match.ref.id)>=2n**256n||BigInt(match.ref.epoch)>=2n**256n||![match.a,match.b].some(a=>a.toLowerCase()===player.toLowerCase())
@@ -33,6 +33,18 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  const stream=new EngineStream(arena.node,arena.app,options.socket,()=>engineCooldownMs(arena.node));
  const feed=runtime?.feed??new EngineFeed({app:arena.app,abi,node},stream);
  let sender:ArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
+ let fenceGeneration=0;
+ let fencePending:Promise<void>|undefined,fenceTimer:ReturnType<typeof setTimeout>|undefined;
+ const prefetchFence=()=>{
+  clearTimeout(fenceTimer);if(stopped||!sender)return;
+  fenceTimer=setTimeout(()=>{
+   if(stopped||!sender)return;
+   void refreshFence().catch(()=>{}).finally(prefetchFence);
+  },1500);
+  // Node-side qualification clients must still close explicitly, but a timer
+  // alone must not keep a stopped fixture process alive.
+  (fenceTimer as any).unref?.();
+ };
  let moving:Promise<void>|undefined,intention:{dir:-1|0|1}|undefined;
  const listeners=new Set<()=>void>();
  const serial=<T>(work:()=>Promise<T>)=>{const p=lane.then(work,work);lane=p.catch(()=>{});return p;};
@@ -62,7 +74,8 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  }
  async function recoverNow(){
   if(stopped)throw Error('Arena controls have stopped');
-  sender=undefined;
+  sender=undefined;controlsUntil=0;fenceGeneration++;clearTimeout(fenceTimer);
+  const started=now();
   if(await options.base.getChainId()!==10143)throw Error('Arena authorization requires Monad Testnet');
   const block=await options.base.getBlock(),hub=await readHubDelegation(options.base,m.hub,arena!.app,block.number);
   // A new hub epoch is closure evidence even when the old node is unavailable.
@@ -102,28 +115,40 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   if(stopped)throw Error('Arena controls have stopped');
   // Fence against the hub again shortly. UI health changes must not reset the
   // renderer, session key, last intent or authoritative positions.
-  controlsUntil=now()+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
+  controlsUntil=started+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
   sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,...(reusable?{epoch}:{}),expires:control.expires,gas:POOL_PLAYER_GAS,now});
+  prefetchFence();
   feed.invalidate();return verify(await feed.read(id,true));
  }
  async function authorizeControls(){
-  if(!sender||journal.pending(session.grant.key)){await recoverNow();return;}
+  if(!sender||journal.pending(session.grant.key))await recoverNow();
   if(stopped)throw Error('Arena controls have stopped');
-  if(now()<controlsUntil)return;
+  if(now()<controlsUntil){if(controlsUntil-now()<1500)void refreshFence().catch(()=>{});return;}
   try{
    // The immutable binding and runtime were checked during recovery. Repeating
    // that entire handshake every three seconds stalls input and discards the
    // sender's known nonce. Only the mutable hub fence needs this cadence; the
    // contract still checks active permission/expiry on every signed command.
+   await refreshFence();
+   if(now()>=controlsUntil)throw Error('Arena authorization is awaiting a fresh observation');
+  }catch(error){sender=undefined;throw error;}
+ }
+ function refreshFence():Promise<void>{
+  if(fencePending)return fencePending;
+  const started=now(),generation=fenceGeneration;
+  const loading=(async()=>{
    const block=await options.base.getBlock(),hub=await readHubDelegation(options.base,m.hub,arena!.app,block.number);
    if((await options.base.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arena publication changed during authorization');
-   if(hub.epoch>epoch){journal.retirePrevious(session.grant.key,hub.epoch);throw Error('The prior arena epoch is closed. Read its published result.');}
-   if(hub.epoch===epoch&&hub.status===0){journal.retireClosed(session.grant.key,epoch);throw Error('The arena epoch is closed. Read its published result.');}
-   if(hub.epoch!==epoch||hub.status!==1||hub.expiresAt<=block.timestamp)throw Error('This arena is recovering; your arcade key is saved');
+   if(generation!==fenceGeneration||stopped)return;
+   // Read-only prefetch must not retire a pending command behind its owner.
+   // The serialized recovery path records canonical closure evidence.
+   if(hub.epoch!==epoch||hub.status!==1||hub.expiresAt<=block.timestamp){controlsUntil=0;throw Error('This arena is recovering; your arcade key is saved');}
    await identify();
-   if(stopped)throw Error('Arena controls have stopped');
-   controlsUntil=now()+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
-  }catch(error){sender=undefined;throw error;}
+   if(generation!==fenceGeneration||stopped)return;
+   // Charge read latency to validity: a slow successful RPC is not a new lease.
+   controlsUntil=started+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
+  })();
+  fencePending=loading.finally(()=>{fencePending=undefined;});return fencePending;
  }
  async function sendNow(name:'input'|'concede'|'confirmReady',args:readonly unknown[]){
   if(stopped)throw Error('Arena controls have stopped');
@@ -211,6 +236,6 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   concede(){intention=undefined;return serial(()=>sendNow('concede',[id]));},
   renew:(owner:Pick<LocalAccount,'address'|'signTypedData'>)=>permission(owner,'renew'),
   revoke:(owner:Pick<LocalAccount,'address'|'signTypedData'>)=>permission(owner,'revoke'),
-  close(){stopped=true;intention=undefined;for(const stop of listeners)stop();listeners.clear();stream.stop();},
+  close(){stopped=true;fenceGeneration++;controlsUntil=0;clearTimeout(fenceTimer);intention=undefined;for(const stop of listeners)stop();listeners.clear();stream.stop();},
  };
 }

@@ -8,12 +8,13 @@ import { createCourtSurface } from "../lib/court-art";
 import { BallTrail } from "../lib/ball-trail";
 import type {ChaosDecoded} from '../../shared/chaos-codec';
 import {chaosLegacy} from '../../shared/chaos-codec';
-import {chaosEvent} from '../../shared/chaos-events';
-import {projectChaos,eventCanvas,eventPaddles,SpectatorChaosProjection} from '../lib/chaos-presentation';
+import {chaosEvent,type ChaosEffectState} from '../../shared/chaos-events';
+import {projectChaos,eventCanvas,eventPaddles,eventHud,SpectatorChaosProjection} from '../lib/chaos-presentation';
 import {drawChaosCourt,drawChaosPaddles,drawChaosBalls,type ChaosCanvasFrame} from '../lib/chaos-canvas';
 import {courtSprites} from '../lib/court-sprites';
 import {chaosContactResolution} from '../../shared/chaos-rules';
 import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
+export type CourtPlayback={matchId:string;scoreA:number;scoreB:number;gameMs:number;finished:boolean;effects:ChaosEffectState[]};
 type Props = {
   state: State | null;
   chaos?:ChaosDecoded;
@@ -33,7 +34,7 @@ type Props = {
   bufferedSpectator?: boolean;
   externalIntermission?: boolean;
   onNetwork?:(age:number,correction:number)=>void;
-  onPlayback?:(frame:{matchId:string;scoreA:number;scoreB:number;gameMs:number})=>void;
+  onPlayback?:(frame:CourtPlayback)=>void;
   onStats: (fps: number, extrapolated: boolean, waiting: boolean) => void;
 };
 export function Court({
@@ -241,8 +242,8 @@ export function Court({
       if(buffered&&s){
         // The scoreboard and the effect countdowns belong to the frame on screen,
         // not to the newest snapshot the buffer has yet to reach.
-        const rally=`${s.scoreA}:${s.scoreB}:${s.finished}`;
-        if(rally!==played||now-playedAt>=250){played=rally;playedAt=now;p.onPlayback({matchId:p.matchId,scoreA:s.scoreA,scoreB:s.scoreB,gameMs:Number(s.t)/1000});}
+        const rally=`${s.scoreA}:${s.scoreB}:${s.finished}:${cp?.state.effects.map(e=>`${e.serial}:${e.remaining}`).join(',')??''}`;
+        if(rally!==played||now-playedAt>=250){played=rally;playedAt=now;p.onPlayback({matchId:p.matchId,scoreA:s.scoreA,scoreB:s.scoreB,gameMs:Number(s.t)/1000,finished:s.finished,effects:cp?eventHud(cp.state):[]});}
       }
       count++;
       if (now - last > 1000) {

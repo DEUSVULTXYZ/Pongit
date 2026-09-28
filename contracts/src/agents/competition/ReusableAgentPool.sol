@@ -6,6 +6,8 @@ import {AgentPublishedRatings} from "./AgentPublishedRatings.sol";
 import {AgentChallenges} from "./AgentChallenges.sol";
 import {AgentQualifications} from "./AgentQualifications.sol";
 import {PoolPublication} from "./PoolPublication.sol";
+import {ReusablePoolAdmission} from "./ReusablePoolAdmission.sol";
+import {PoolResultValidation} from "./PoolResultValidation.sol";
 import {ReusableAgentLearning} from "./ReusableAgentLearning.sol";
 import {ArcadeFamily} from "../../independent/ArcadeFamily.sol";
 import {AgentArenaTypes as A} from "./AgentArenaTypes.sol";
@@ -47,7 +49,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
     bytes32 public capacityEvidence;
     uint256 public nonce;
     uint256 private guard;
-    ReusableAgentArena[] private arenas;
+    ReusableAgentArena[] internal arenas;
     mapping(address=>bool) public registered;
     mapping(address=>bytes32) public arenaMatch;
     mapping(address=>uint256) public arenaEpoch;
@@ -60,7 +62,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
     // lock. Persist the decision for capture, even if qualification later changes.
     mapping(bytes32=>uint8) public houseInstancesOf;
     mapping(bytes32=>uint256[2]) private resultBrains;
-    bytes32[2] public laneMatch;
+    mapping(uint256=>bytes32) private laneMatches;
     event ArenaRegistered(address indexed arena,bytes32 runtimeHash);
     event Assigned(bytes32 indexed ref,address indexed arena,uint64 indexed tournament,uint8 fixture,uint8 lane);
     event Opened(bytes32 indexed ref,uint256 epoch);
@@ -116,7 +118,13 @@ contract ReusableAgentPool is ICompetitionAuthority {
     function record(T.Ref calldata ref) external view returns(Record memory){return records[T.key(ref)];}
     /// Discovery comes from the Monad assignment, even before its admission is
     /// published back from the engine. No indexer or stale physical slot needed.
-    function laneRecord(uint8 lane) external view returns(Record memory){require(lane<2,"lane bounds");return records[laneMatch[lane]];}
+    function laneCount() public pure virtual returns(uint8){return 2;}
+    function laneMatch(uint256 lane) external view returns(bytes32){require(lane<laneCount(),"lane bounds");return laneMatches[lane];}
+    function laneRecord(uint8 lane) external view returns(Record memory){require(lane<laneCount(),"lane bounds");return records[laneMatches[lane]];}
+    function _freeChallengeLane() internal view returns(uint8){
+        for(uint8 lane=1;lane<laneCount();lane++)if(laneMatches[lane]==0)return lane;
+        return 0;
+    }
     function result(T.Ref calldata ref) external view returns(T.Result memory){
         bytes32 key=T.key(ref);require(records[key].captured,"unpublished result");return captured[key];
     }
@@ -125,7 +133,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
     }
     function _idle(ReusableAgentArena arena) internal view returns(bool){
         Types.Session memory session=hub.sessionOf(address(arena),Types.GLOBAL);
-        if(session.status!=Types.Status.Active||session.expiresAt<=block.timestamp+7 minutes)return false;
+        if(session.status!=Types.Status.Active||session.expiresAt<=block.timestamp+7 minutes||!_admissionAllowed(address(arena),session.epoch))return false;
         (uint256 epoch,uint32 count,)=arena.resultCommitment();if(epoch!=session.epoch||count>=65_536)return false;
         bytes32 prior=arenaMatch[address(arena)];if(prior!=0&&!records[prior].captured)return false;
         (uint256 currentEpoch,uint256 id)=arena.currentMatch();
@@ -133,6 +141,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
     }
     /// Actual published capacity inside open sessions, not a provider quota.
     function releasedArenaCount() external view returns(uint256 count){for(uint256 i;i<arenas.length;i++)if(_idle(arenas[i]))count++;}
+    function _admissionAllowed(address,uint256) internal view virtual returns(bool){return true;}
     function _newestIdle() internal view virtual returns(ReusableAgentArena chosen){
         uint256 newest;
         for(uint256 i;i<arenas.length;i++)if(_idle(arenas[i])){
@@ -156,22 +165,12 @@ contract ReusableAgentPool is ICompetitionAuthority {
         return ReusableAgentLearning.latest(tournaments,captured,resultBrains,tournament,agent);
     }
     function _prepare(ReusableAgentArena arena,A.Binding memory binding) private {
-        Types.Session memory session=hub.sessionOf(address(arena),Types.GLOBAL);
-        if(binding.epoch!=session.epoch||session.status!=Types.Status.Active)revert InactiveAdmissionEpoch();
-        if(binding.controlA.codeHash!=0)require(_known(binding.a,session.baseBlock),"first strategy awaits a newer arena");
-        if(binding.controlB.codeHash!=0)require(_known(binding.b,session.baseBlock),"second strategy awaits a newer arena");
-        if(block.number<=1||block.number-1>type(uint64).max)revert InvalidAdmissionSourceBlock();binding.preparedBlock=uint64(block.number-1);
-        (,uint32 count,)=arena.resultCommitment();
-        Admission.Ticket memory ticket=Admission.Ticket(address(this),address(arena),binding.epoch,uint256(count)+1,binding.id,
-            keccak256(abi.encode(binding)),uint64(block.timestamp),uint64(block.timestamp+120),binding.preparedBlock,blockhash(binding.preparedBlock),15);
-        require(ticket.sourceHash!=0&&issuedTicket[address(arena)][ticket.epoch][ticket.sequence]==0,"fresh ticket source");
-        bytes32 key=T.key(T.Ref(10143,address(arena),binding.epoch,binding.id));
-        tickets[key]=ticket;bindings[key]=binding;issuedTicket[address(arena)][ticket.epoch][ticket.sequence]=Admission.digest(ticket);
-        emit AdmissionIssued(key,address(arena),ticket.epoch,ticket,binding);
+        ReusablePoolAdmission.prepare(catalog,hub,arena,binding,tickets,bindings,issuedTicket);
     }
+    function _admissionCaller() internal view virtual returns(bool){return msg.sender==owner;}
     function admitTournament(uint64 id) external base locked returns(T.Ref memory ref){
-        require(msg.sender==owner||publicAdmissions,"private qualification");
-        require(admissions&&laneMatch[0]==0,"tournament lane waiting");
+        require(_admissionCaller()||publicAdmissions,"private qualification");
+        require(admissions&&laneMatches[0]==0,"tournament lane waiting");
         (uint8 index,address a,address b,bool ranked)=tournaments.nextFixture(id);require(index!=255,"no tournament fixture");
         require(playing[a]==0&&playing[b]==0,"previous match still playing");
         AgentTournaments.Tournament memory t=tournaments.tournament(id);
@@ -189,12 +188,12 @@ contract ReusableAgentPool is ICompetitionAuthority {
         binding.controlA=_controller(a,id,hashA);binding.controlB=_controller(b,id,hashB);
         _prepare(chosen,binding);
         bytes32 key=T.key(ref);records[key]=Record(ref,a,b,id,index,0,ranked,false);arenaMatch[address(chosen)]=key;
-        playing[a]=key;playing[b]=key;laneMatch[0]=key;
+        playing[a]=key;playing[b]=key;laneMatches[0]=key;
         tournaments.bind(id,index,ref);emit Assigned(key,address(chosen),id,index,0);
     }
     function admitChallenge() external base locked returns(T.Ref memory ref){
-        require(msg.sender==owner||publicAdmissions,"private qualification");
-        require(admissions&&laneMatch[1]==0,"challenge lane waiting");ReusableAgentArena chosen=_newestIdle();
+        require(_admissionCaller()||publicAdmissions,"private qualification");
+        uint8 lane=_freeChallengeLane();require(admissions&&lane!=0,"challenge lane waiting");ReusableAgentArena chosen=_newestIdle();
         if(address(chosen)==address(0))return ref;
         (uint256 id,AgentChallenges.Request memory request,ArcadeFamily.Grant memory grant)=challenges.takeNextKnown(hub.sessionOf(address(chosen),Types.GLOBAL).baseBlock);
         if(id==0)return ref;
@@ -207,14 +206,14 @@ contract ReusableAgentPool is ICompetitionAuthority {
         AgentCatalog.Identity memory bot=catalog.identity(request.agent);
         A.Binding memory binding=A.Binding(ref.id,ref.epoch,uint64(block.number),0,request.player,request.agent,request.mode,false,false,
             A.Controller(0,0,0,grant.key,grant.expires),_controller(request.agent,0,bot.codeHash));
-        _prepare(chosen,binding);records[key]=Record(ref,request.player,request.agent,0,0,1,false,false);arenaMatch[address(chosen)]=key;
+        _prepare(chosen,binding);records[key]=Record(ref,request.player,request.agent,0,0,lane,false,false);arenaMatch[address(chosen)]=key;
         playing[request.player]=key;if(independent)houseInstancesOf[key]=2;else playing[request.agent]=key;
-        laneMatch[1]=key;challengeOf[key]=id;
-        emit Assigned(key,address(chosen),0,0,1);
+        laneMatches[lane]=key;challengeOf[key]=id;
+        emit Assigned(key,address(chosen),0,0,lane);
     }
     function admitQualification() external base locked returns(T.Ref memory ref){
-        require(msg.sender==owner||publicAdmissions,"private qualification");
-        require(admissions&&laneMatch[1]==0&&address(qualifications)!=address(0)&&challenges.qualificationsMayStart(),"challenge priority/qualification waiting");
+        require(_admissionCaller()||publicAdmissions,"private qualification");
+        uint8 lane=_freeChallengeLane();require(admissions&&lane!=0&&address(qualifications)!=address(0)&&challenges.qualificationsMayStart(),"challenge priority/qualification waiting");
         ReusableAgentArena chosen=_newestIdle();
         if(address(chosen)==address(0))return ref;
         (address a,address b,uint8 mode)=qualifications.takeNextKnown(hub.sessionOf(address(chosen),Types.GLOBAL).baseBlock);if(a==address(0))return ref;
@@ -225,12 +224,13 @@ contract ReusableAgentPool is ICompetitionAuthority {
         if(!independentA)catalog.reserveQualification(a,mode,key);if(!independentB)catalog.reserveQualification(b,mode,key);
         A.Binding memory binding=A.Binding(ref.id,ref.epoch,uint64(block.number),0,a,b,mode,false,false,
             _controller(a,0,catalog.identity(a).codeHash),_controller(b,0,catalog.identity(b).codeHash));
-        _prepare(chosen,binding);records[key]=Record(ref,a,b,0,0,1,false,false);arenaMatch[address(chosen)]=key;
+        _prepare(chosen,binding);records[key]=Record(ref,a,b,0,0,lane,false,false);arenaMatch[address(chosen)]=key;
         if(independentA)houseInstancesOf[key]|=1;else playing[a]=key;
         if(independentB)houseInstancesOf[key]|=2;else playing[b]=key;
-        laneMatch[1]=key;qualificationOf[key]=true;qualifications.bind(ref,a,b,mode);
-        emit Assigned(key,address(chosen),0,0,1);
+        laneMatches[lane]=key;qualificationOf[key]=true;qualifications.bind(ref,a,b,mode);
+        emit Assigned(key,address(chosen),0,0,lane);
     }
+    function _maintenanceCaller() internal view virtual returns(bool){return msg.sender==owner;}
     function openReusableArena(address app) external payable base locked {
         require(setupSealed&&registered[app],"registered arena");bytes32 prior=arenaMatch[app];
         require(prior==0||records[prior].captured,"recover pending match first");
@@ -240,11 +240,8 @@ contract ReusableAgentPool is ICompetitionAuthority {
         emit Opened(bytes32(0),session.epoch);
     }
     function captureProof(T.Ref calldata ref,Game.Result calldata complete,bytes32[16] calldata proof) external base locked {
-        bytes32 key=T.key(ref);Record memory record_=records[key];A.Binding memory binding=bindings[key];T.Result memory r=complete.match_;
-        require(record_.ref.arena!=address(0)&&T.same(record_.ref,ref)&&T.same(r.ref,ref)&&r.a==record_.a&&r.b==record_.b
-            &&r.mode==binding.mode&&r.hash!=0&&r.status>=3&&r.status<=4&&!r.finality&&complete.rules==15
-            &&r.elapsedUs<=(binding.overtime?360_000_000:300_000_000)&&complete.finishedAt>0&&complete.finishedAt<=block.timestamp,"canonical agent result");
-        r.finality=verifier.verify(tickets[key],keccak256(abi.encode(complete)),uint32(tickets[key].sequence-1),proof);
+        bytes32 key=T.key(ref);
+        T.Result memory r=PoolResultValidation.verify(verifier,ref,complete,bindings[key],tickets[key],proof);
         _capture(key,r,complete.brainA,complete.brainB);
     }
     function _capture(bytes32 key,T.Result memory r,uint256 brainA,uint256 brainB) private {
@@ -252,7 +249,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
         if(!record_.captured){
             PoolPublication.ledger(ratings,r,record_.ranked,false);record_.captured=true;
             if(playing[r.a]==key)delete playing[r.a];if(playing[r.b]==key)delete playing[r.b];
-            if(laneMatch[record_.lane]==key)delete laneMatch[record_.lane];
+            if(laneMatches[record_.lane]==key)delete laneMatches[record_.lane];
             if(challengeOf[key]!=0){if(houseInstancesOf[key]&2==0)catalog.release(r.b,key);challenges.completed(challengeOf[key]);}
             else if(qualificationOf[key]){
                 if(houseInstancesOf[key]&1==0)catalog.release(r.a,key);if(houseInstancesOf[key]&2==0)catalog.release(r.b,key);
@@ -272,7 +269,8 @@ contract ReusableAgentPool is ICompetitionAuthority {
     }
     function closeReusableArena(address app) external base locked {
         require(setupSealed&&registered[app],"registered arena");Types.Session memory session=hub.sessionOf(app,Types.GLOBAL);
-        require(session.status==Types.Status.Active&&(msg.sender==owner||block.timestamp+7 minutes>=session.expiresAt),"arena still admitting");
+        bytes32 prior=arenaMatch[app];bool settled=prior==0||records[prior].captured;
+        require(session.status==Types.Status.Active&&(msg.sender==owner||(_maintenanceCaller()&&settled)||block.timestamp+7 minutes>=session.expiresAt),"arena still admitting");
         ReusableAgentArena(app).closeEngine();emit Closing(arenaMatch[app],session.epoch);
     }
     function recoverExpired(address app) external base locked {

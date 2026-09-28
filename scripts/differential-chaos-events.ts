@@ -12,6 +12,7 @@ const count=Number(process.env.PONG_CHAOS_PHYSICS_CASES??10000);assert(Number.is
 const ties=Number(process.env.PONG_CHAOS_TIE_CASES??10000);assert(Number.isInteger(ties)&&ties>=0&&ties<=100000&&count+ties>0);
 // The mirror's rules-6 mode against the kernel deployed on 13 September 2026 (test/legacy copy).
 const legacy=Number(process.env.PONG_CHAOS_LEGACY_CASES??4000);assert(Number.isInteger(legacy)&&legacy>=0&&legacy<=100000);
+const reportDirectory=process.env.PONG_QUALIFICATION_OUTPUT??"artifacts/drand";
 const chain=await localChain(),started=Date.now();
 type Case={s:ChaosPhysicsState;target:bigint;budget:number;stop:boolean;family:string;at?:bigint;rules6?:boolean};
 try{
@@ -133,7 +134,7 @@ try{
   await Promise.all(slice.map(async(c,j)=>{
    const expected=advanceChaosEvents(c.s,c.target,c.budget,c.stop,c.rules6?false:'complete');
    const actual=await chain.publicClient.readContract({address:c.rules6?oldAddress:address,abi:a.abi,functionName:c.stop?'advanceUntilPoint':'advance',args:[c.s,c.target,c.budget]});
-   try{assert.deepEqual(actual,expected,`Chaos ${c.family} case ${batch+j}`);}catch(e){await mkdir('artifacts/drand',{recursive:true});await writeFile('artifacts/drand/physics-mismatch.json',JSON.stringify({index:batch+j,...c,expected,actual},(_,v)=>typeof v==='bigint'?v.toString():v,2));throw e;}
+   try{assert.deepEqual(actual,expected,`Chaos ${c.family} case ${batch+j}`);}catch(e){await mkdir(reportDirectory,{recursive:true});await writeFile(`${reportDirectory}/physics-mismatch.json`,JSON.stringify({index:batch+j,...c,expected,actual},(_,v)=>typeof v==='bigint'?v.toString():v,2));throw e;}
    const log=expected[2] as ChaosPhysicsCollision[],r=coverage[c.family]??={cases:0,shared:0,atInstant:0,points:0,cancelled:0};
    r.cases++;if(log.some((x,i)=>log.some((y,k)=>k!==i&&y.at===x.at)))r.shared++;
    if(c.at!==undefined&&log.some(x=>x.at===c.at))r.atInstant++;
@@ -145,5 +146,5 @@ try{
   cases:cases.length,randomCases:count,simultaneousCases:ties,rules6Cases:legacy,mismatches:0,coverage,
   legend:{shared:'the returned log holds two collisions in one microsecond',atInstant:'a collision was logged in the constructed microsecond',points:'a point or result was scored'},
   ms:Date.now()-started,at:new Date().toISOString()};
- await mkdir('artifacts/drand',{recursive:true});await writeFile('artifacts/drand/physics-differential.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));
+ await mkdir(reportDirectory,{recursive:true});await writeFile(`${reportDirectory}/physics-differential.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));
 }finally{chain.close();}

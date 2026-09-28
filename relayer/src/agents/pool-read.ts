@@ -11,9 +11,10 @@ import {agentPublishedRatingsAbi as ratingsAbi} from '../../../shared/abi-AgentP
 import {pooledAgentArenaAbi as arenaAbi} from '../../../shared/abi-PooledAgentArena';
 import {agentChallengesAbi as challengeAbi} from '../../../shared/abi-AgentChallenges';
 import type {PoolChallengeView} from '../../../shared/agent-pool';
-import {pooledHouseBots,tournamentStatuses,validateAgentPoolManifest,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../../../shared/agent-pool';
+import {agentPoolLanes,pooledHouseBots,tournamentStatuses,validateAgentPoolManifest,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../../../shared/agent-pool';
 import type {AgentMatchRef} from '../../../shared/agents';
-import {houseInstanceAbi,verifyHouseInstanceAuthorities} from '../../../shared/agent-house-instances';
+import {houseInstanceAbi,agentPoolAdmissionAbi,verifyHouseInstanceAuthorities} from '../../../shared/agent-house-instances';
+import {agentAvailability,freshArenaState,type ArenaOperationalState,type AgentCapacity} from '../../../shared/agent-availability';
 
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 const refView=(r:Ref):AgentMatchRef=>({chainId:10143,app:r.arena,epoch:String(r.epoch),id:String(r.id)});
@@ -29,11 +30,11 @@ const pageBounds=(offset:bigint,limit:number)=>{
  * signatures or operator key are needed to reconstruct these pages. */
 export class AgentPoolReader {
  readonly manifest:AgentPoolManifest;
- constructor(readonly client:PublicClient,manifest:AgentPoolManifest,humanApps:readonly string[]=[]){
+ constructor(readonly client:PublicClient,manifest:AgentPoolManifest,humanApps:readonly string[]=[],readonly operational?:()=>Promise<ArenaOperationalState[]>){
   this.manifest=validateAgentPoolManifest(manifest,humanApps);
  }
- private get poolAbi():Abi{return this.manifest.version===4?reusableAgentPoolAbi:this.manifest.version===3?seriesPoolAbi:poolAbi;}
- private get arenaAbi():Abi{return this.manifest.version===4?reusableAgentArenaAbi:this.manifest.version===3?seriesArenaAbi:arenaAbi;}
+ private get poolAbi():Abi{return this.manifest.version>=4?reusableAgentPoolAbi:this.manifest.version===3?seriesPoolAbi:poolAbi;}
+ private get arenaAbi():Abi{return this.manifest.version>=4?reusableAgentArenaAbi:this.manifest.version===3?seriesArenaAbi:arenaAbi;}
  private async snapshot<T>(work:(read:<R=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<R>,block:bigint)=>Promise<T>,at?:bigint){
   const block=await this.client.getBlock(at===undefined?{}:{blockNumber:at});
   const read=<R=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>
@@ -42,7 +43,7 @@ export class AgentPoolReader {
   const confirmed=await this.client.getBlock({blockNumber:block.number});
   if(confirmed.hash!==block.hash)throw Object.assign(Error('Published state changed during synchronization'),{status:503,code:'AGENT_PUBLICATION_CHANGED'});
   return {value,observedBlock:String(block.number),observedHash:block.hash,observedTimestamp:String(block.timestamp),
-   revision:createHash('sha256').update(JSON.stringify(value,(k,v)=>k==='observedBlock'?undefined:typeof v==='bigint'?String(v):v)).digest('hex')};
+   revision:createHash('sha256').update(JSON.stringify(value,(k,v)=>['observedBlock','observedAt'].includes(k)?undefined:typeof v==='bigint'?String(v):v)).digest('hex')};
  }
  async config(){
   const m=this.manifest;
@@ -55,7 +56,7 @@ export class AgentPoolReader {
    ]);
    if(arenas.length!==m.arenas.length||arenas.some((a,i)=>a.toLowerCase()!==m.arenas[i].app.toLowerCase()))
     throw Error('Configured arenas differ from the common contract');
-   const qualified=m.verifiedCapacity===2&&!!m.qualificationEvidence&&evidence.toLowerCase()===m.qualificationEvidence.toLowerCase();
+   const qualified=m.verifiedCapacity===m.maxMatches&&!!m.qualificationEvidence&&evidence.toLowerCase()===m.qualificationEvidence.toLowerCase();
    const preview=m.releaseStage==='testnet-preview'&&!!m.previewEvidence&&evidence.toLowerCase()===m.previewEvidence.toLowerCase();
    const enabled=m.enabled&&(qualified||preview)&&admissions&&publicAdmissions;
    return {...m,enabled,qualified,tournamentsEnabled:enabled&&m.tournamentsEnabled&&tournamentsOpen,
@@ -65,6 +66,18 @@ export class AgentPoolReader {
  async catalog(offset=0n,limit=16){
   pageBounds(offset,limit);const m=this.manifest;
   return this.snapshot(async read=>{
+   let capacity:AgentCapacity={observedAt:Date.now(),known:false,freeChallengeLanes:0,readyArenas:0,admissions:false};
+   if(m.version===5&&this.operational){
+    const [health,open,lanes,arenas]=await Promise.all([this.operational(),read<boolean>(m.pool,this.poolAbi,'admissions'),
+     Promise.all(agentPoolLanes(m).slice(1).map(l=>read(m.pool,this.poolAbi,'laneRecord',[l]))),
+     Promise.all(m.arenas.map(async a=>({app:a.app,epoch:await read<bigint>(m.pool,this.poolAbi,'arenaEpoch',[a.app]),
+      idle:await read<boolean>(m.pool,agentPoolAdmissionAbi,'arenaAvailable',[a.app])}))),
+    ]);
+    const observedAt=Date.now(),fresh=arenas.filter(a=>freshArenaState(health.find(h=>h.app.toLowerCase()===a.app.toLowerCase()),a.epoch,observedAt));
+    capacity={observedAt,admissions:open&&m.enabled,known:fresh.length>0,freeChallengeLanes:lanes.filter(l=>l.ref.id===0n).length,
+     readyArenas:fresh.filter(a=>a.idle&&health.some(h=>h.app.toLowerCase()===a.app.toLowerCase()&&h.stage==='available')).length};
+    if(!fresh.some(a=>health.some(h=>h.app.toLowerCase()===a.app.toLowerCase()&&['available','playing','countdown','waiting-for-player','awaiting-publication'].includes(h.stage))))capacity.known=false;
+   }
    const total=await read<bigint>(m.catalog,catalogAbi,'count');
    const size=Number(total>offset?(total-offset>BigInt(limit)?BigInt(limit):total-offset):0n);
    const addresses=await Promise.all(Array.from({length:size},(_,i)=>read<Address>(m.catalog,catalogAbi,'at',[offset+BigInt(i)])));
@@ -79,9 +92,11 @@ export class AgentPoolReader {
      name:bot?.name??`${agent.slice(0,6)}…${agent.slice(-4)}`,avatar:bot?.avatar??9,difficulty:bot?.difficulty??'Community strategy',
      modes:[0,1].filter(mode=>(p.modes&(1<<mode))!==0),qualification:{0:(p.qualified&1)!==0,1:(p.qualified&2)!==0},
      available:p.available,participation,playing,waiting:participation!==zeroHash&&!instances.some(Boolean),
+     availability:Object.fromEntries([0,1].map(mode=>[mode,agentAvailability(capacity,{modeSupported:(p.modes&(1<<mode))!==0,qualified:(p.qualified&(1<<mode))!==0,
+      available:p.available,exclusiveBusy:!instances[mode]&&(participation!==zeroHash||playing!==zeroHash)})])),
      friendlyInstances:{0:instances[0],1:instances[1]},lastTournament:String(p.lastTournament)};
    }));
-   return {items,total:String(total),offset:String(offset),next:offset+BigInt(size)<total?String(offset+BigInt(size)):null};
+   return {items,capacity,total:String(total),offset:String(offset),next:offset+BigInt(size)<total?String(offset+BigInt(size)):null};
   });
  }
  async tournaments(offset=0n,limit=8){
@@ -131,8 +146,8 @@ export class AgentPoolReader {
  async live(){
   const m=this.manifest;
   return this.snapshot(async read=>{
-   if(m.version===4){
-    const records=await Promise.all([0,1].map(lane=>read(m.pool,this.poolAbi,'laneRecord',[lane])));
+   if(m.version>=4){
+    const records=await Promise.all(agentPoolLanes(m).map(lane=>read(m.pool,this.poolAbi,'laneRecord',[lane])));
     const items=await Promise.all(records.filter(r=>r.ref.id&&!r.captured).map(async r=>{
      const arena=m.arenas.find(a=>a.app.toLowerCase()===r.ref.arena.toLowerCase());if(!arena)throw Error('Assigned arena is outside this deployment');
      const [,b]=await read(m.pool,this.poolAbi,'ticketOf',[r.ref]);
@@ -168,9 +183,10 @@ export class AgentPoolReader {
    let ref:AgentMatchRef|null=null;
    if(status===2){
     const playing=await read<string>(m.pool,this.poolAbi,'playing',[player]);
-    if(m.version===4){
-     const r=await read(m.pool,this.poolAbi,'laneRecord',[1]);
-     if(!r.ref.id||refKey(r.ref)!==playing||r.a.toLowerCase()!==player.toLowerCase()||r.b.toLowerCase()!==agent.toLowerCase()
+    if(m.version>=4){
+     const records=await Promise.all(agentPoolLanes(m).slice(1).map(lane=>read(m.pool,this.poolAbi,'laneRecord',[lane])));
+     const r=records.find(row=>row.ref.id>0n&&refKey(row.ref)===playing);
+     if(!r?.ref.id||refKey(r.ref)!==playing||r.a.toLowerCase()!==player.toLowerCase()||r.b.toLowerCase()!==agent.toLowerCase()
       ||await read<bigint>(m.pool,this.poolAbi,'challengeOf',[playing])!==id)throw Error('The active challenge has no matching arena reference');
      if(!m.arenas.some(a=>a.app.toLowerCase()===r.ref.arena.toLowerCase()))throw Error('Challenge arena is outside this deployment');
      ref=refView(r.ref);
@@ -185,7 +201,7 @@ export class AgentPoolReader {
     }
    }
    let waitReason:PoolChallengeView['waitReason'],tournamentId:string|undefined;
-   if(status===1&&m.version===4){
+   if(status===1&&m.version>=4){
     const independent=m.houseInstances&&await read<boolean>(m.challenges,houseInstanceAbi,'houseInstanceEligible',[agent,mode]);
     if(independent)waitReason='arena';
     else{
@@ -221,14 +237,14 @@ export class AgentPoolReader {
    const record=await read(m.pool,this.poolAbi,'record',[series?wanted.id:wanted]);
    if(record.ref.arena.toLowerCase()!==arena.app.toLowerCase()||record.ref.id!==wanted.id||record.ref.epoch!==wanted.epoch||record.ref.chainId!==10143n)throw poolNotFound();
    const binding=await read(arena.app,this.arenaAbi,'boundMatch');let current=binding.id===wanted.id&&binding.epoch===wanted.epoch;
-   const own=m.version===4?(await read(m.pool,this.poolAbi,'ticketOf',[wanted]))[1]:series?await read(arena.app,seriesArenaAbi,'bindingFor',[wanted.id]):binding;
-   if(m.version===4&&(own.id!==wanted.id||own.epoch!==wanted.epoch||own.a.toLowerCase()!==record.a.toLowerCase()||own.b.toLowerCase()!==record.b.toLowerCase()))throw poolNotFound();
+   const own=m.version>=4?(await read(m.pool,this.poolAbi,'ticketOf',[wanted]))[1]:series?await read(arena.app,seriesArenaAbi,'bindingFor',[wanted.id]):binding;
+   if(m.version>=4&&(own.id!==wanted.id||own.epoch!==wanted.epoch||own.a.toLowerCase()!==record.a.toLowerCase()||own.b.toLowerCase()!==record.b.toLowerCase()))throw poolNotFound();
    if(series&&(own.id!==wanted.id||own.epoch!==wanted.epoch))throw poolNotFound();
    const r=record.captured?await read(m.pool,this.poolAbi,'result',[wanted]):null;
    // The current Monad assignment authorizes observation before the engine's
    // new binding is republished. The observer still verifies the engine epoch,
    // logical match and both participants before accepting any snapshot.
-   if(m.version===4)current=!r&&await read<string>(m.pool,this.poolAbi,'arenaMatch',[arena.app])===refKey(wanted);
+   if(m.version>=4)current=!r&&await read<string>(m.pool,this.poolAbi,'arenaMatch',[arena.app])===refKey(wanted);
    if(m.version===2&&!current&&!r)throw Error('An archived arena reference has no verified result yet');
    // An old link always reads its immutable pool record. It never follows the
    // node into the replacement match when this physical arena is reused.

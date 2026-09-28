@@ -11,13 +11,13 @@ import {IInterludeHub} from "../../../vendor/interlude/interfaces/IInterludeHub.
 /// Same two lanes; reuse supplies independent controllers, not extra capacity.
 contract ReusableAgentInstancesPool is ReusableAgentPool {
     error InstanceQueuesRequired();
-    uint256 public constant AUTHORITY_VERSION=2;
+    function AUTHORITY_VERSION() public pure virtual returns(uint256){return 2;}
     constructor(AgentCatalog c,IInterludeHub h,address admin,address bridge) ReusableAgentPool(c,h,admin,bridge){}
     function supportsHouseInstances() external pure returns(bool){return true;}
     function _independentHouse(address agent,uint8 mode,bool qualification) internal view override returns(bool){
         return HouseInstances.eligible(catalog,agent,mode,qualification);
     }
-    function seal() public override {
+    function seal() public virtual override {
         if(!HouseInstanceChallenges(address(challenges)).supportsHouseInstances()
             ||!HouseInstanceQualifications(address(qualifications)).supportsHouseInstances())revert InstanceQueuesRequired();
         super.seal();

@@ -1,0 +1,23 @@
+# Replace the existing hand-started Hasura only during the coordinated cutover.
+# Its metadata and application tables stay in the existing PostgreSQL volume.
+services:
+  shared-replays:
+    profiles: [shared-replays]
+    image: ${SHARED_REPLAY_IMAGE:?Pin the reviewed Hasura image digest}
+    container_name: ${SHARED_REPLAY_CONTAINER_NAME:-pongit-reusable-shared-hasura-human14}
+    restart: unless-stopped
+    env_file: ["${SHARED_REPLAY_ENV_FILE:?Private environment file with rotated credentials}"]
+    environment:
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
+      HASURA_GRAPHQL_DEV_MODE: "false"
+      HASURA_GRAPHQL_ENABLE_TELEMETRY: "false"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup,http-log,webhook-log,websocket-log
+    networks: [replay-store]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    cpus: 0.5
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+
+networks:
+  replay-store: {external: true, name: "${SHARED_REPLAY_NETWORK:?Existing database network}"}

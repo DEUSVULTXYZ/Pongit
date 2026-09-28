@@ -1,0 +1,18 @@
+.header.header {display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 18px}
+.actions.actions {display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0}
+.actions a,.actions button {min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.heading.heading {display:flex;justify-content:space-between;align-items:end;gap:24px;margin:32px 0 24px}
+.heading h1 {font:400 clamp(24px,3vw,36px)/1.4 var(--font-michroma),sans-serif;color:#f5f3ff;margin:8px 0 12px;text-shadow:0 2px #6d55be}
+.heading p {font:400 16px/1.6 var(--cabinet-font),system-ui,sans-serif;color:#c4bdd9;margin:0}
+.eyebrow {display:inline-flex;align-items:center;gap:10px;color:var(--palace-cyan);font:600 12px/1.5 var(--cabinet-font),system-ui,sans-serif;letter-spacing:.14em}
+.eyebrow::before {content:'';width:8px;height:8px;background:currentColor;box-shadow:8px -8px #8debf244}
+.headingActions {display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.headingActions a {min-height:44px;display:flex;align-items:center}
+.state.state {grid-column:1/-1;padding:32px 24px;text-align:center;background:var(--palace-panel);border:1px solid #7664a6;border-radius:5px}
+.state h2 {font-size:18px;line-height:1.6;margin:0 0 12px}
+.state p {font-size:16px;line-height:1.6;color:#c4bdd9;margin:8px 0}
+.stateActions {display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:20px}
+.action.action {display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:12px 18px;background:linear-gradient(#b2f9ef,#70c8d1);border:1px solid #b2fbef;border-radius:5px;box-shadow:inset 0 1px #effffd,0 3px #286471;color:#132c35;font:600 16px/1.5 var(--cabinet-font),system-ui,sans-serif;text-decoration:none}
+.action.action:hover {background:linear-gradient(#d1fff8,#9ce2eb);color:#10252e}
+.action.action:focus-visible {outline:3px solid #c8fbff;outline-offset:4px}
+@media(max-width:767px){.header.header{padding:10px;gap:8px}.actions.actions{flex:1 1 100%;justify-content:space-between}.actions a,.actions button{font-size:13px;padding:8px}.heading.heading{align-items:start;flex-direction:column;margin:24px 0 20px;gap:12px}.heading h1{font-size:24px}.state.state{padding:24px 16px}}

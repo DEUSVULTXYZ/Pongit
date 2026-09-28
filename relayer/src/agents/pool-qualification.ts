@@ -24,6 +24,7 @@ export type PoolSample = {
   apiReadable: boolean;
   arenas: ArenaSample[];
   error?: string;
+  requiredMatches?: 2|5;
 };
 export type PoolAvailability = {
   progressing: number;
@@ -66,6 +67,7 @@ export function poolAvailability(sample: PoolSample): PoolAvailability {
   // A released contract is only potential capacity. It cannot keep service
   // green through an hour of closure or an unsuccessful hosted provisioning.
   if (!view.progressing && !view.ready) view.reasons.push('no-progressing-or-ready-arena');
+  if(sample.requiredMatches===5&&view.progressing+view.ready<5)view.reasons.push('five-lane-capacity-unavailable');
   view.unavailable = view.reasons.length > 0;
   return view;
 }
@@ -109,18 +111,21 @@ export function recordPoolSample(state: PoolQualification, sample: PoolSample, p
 }
 export function poolQualificationVerdict(state: PoolQualification, input: {
   last: PoolSample | undefined; stopped: boolean; sourcesUnchanged: boolean; durationMs: number;
+  requiredMatches?:2|5;
 }) {
   const reasons: string[] = [];
   if (input.durationMs < 86400000 || state.lastAt - state.startedAt < input.durationMs) reasons.push('full-24-hours-not-observed');
   if (input.stopped) reasons.push('monitor-stopped');
   if (!input.sourcesUnchanged) reasons.push('source-changed-or-unresolved');
   if (state.maxGapMs > 45000 || state.unknownMs > 45000) reasons.push('sample-gaps');
-  if (state.maxProgressing < 2) reasons.push('two-simultaneous-games-not-observed');
+  const required=input.requiredMatches??2;
+  if (state.maxProgressing < required) reasons.push(required===5?'five-simultaneous-games-not-observed':'two-simultaneous-games-not-observed');
   if (state.renewalOutageSamples) reasons.push('global-interruption-during-renewal');
-  if (state.unavailableMs) reasons.push('service-interruptions-observed');
+  const availability=state.measuredMs?1-state.unavailableMs/state.measuredMs:0;
+  if(required===5?availability<.995:state.unavailableMs>0)reasons.push('service-interruptions-observed');
   if (!Object.values(state.epochs).some(epochs => epochs.length >= 2)) reasons.push('renewal-not-observed');
   if (!input.last || poolAvailability(input.last).unavailable) reasons.push('ended-unavailable');
   // This is deliberately not a deployment decision: actual capacity, published
   // results, costs, traffic, all effects and browser evidence need a full review.
-  return {continuousServiceChecksPassed: reasons.length === 0, reasons, publicOpeningAuthorized: false as const};
+  return {continuousServiceChecksPassed: reasons.length === 0, availability, requiredMatches:required,reasons, publicOpeningAuthorized: false as const};
 }

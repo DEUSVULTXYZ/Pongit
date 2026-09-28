@@ -1,4 +1,5 @@
 'use client';
+import {ArcadeHeader} from './ArcadeChrome';
 import {poolUserError} from '../../shared/agent-pool-error';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
@@ -15,7 +16,7 @@ import type {EngineState} from '../../shared/engine-stream';
 import {engineReadRetryMs} from '../../shared/engine-read';
 import {API,short} from '../lib/api';
 import {eventHud} from '../lib/chaos-presentation';
-import {Court} from './Court';
+import {Court,type CourtPlayback} from './Court';
 import {AgentScoreboard} from './AgentScoreboard';
 import {ChaosEffectsHud} from './ChaosEffectsHud';
 import {poolBase,poolBrowserSponsor,finishPoolSponsor} from '../lib/agent-pool';
@@ -29,6 +30,7 @@ import {AgentReplay} from './AgentReplay';
 import {ArenaCountdown} from './MatchCountdown';
 import {quietFailure} from '../lib/quiet-failure';
 import {preparingArena} from '../lib/arena-wait';
+import {useCourtFit} from '../lib/use-court-fit';
 
 type Identity={agent:string;name:string;avatar:number};
 const quiet=()=>{};
@@ -36,7 +38,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const [view,setView]=useState<PoolMatchView|null>(null),[snapshot,setSnapshot]=useState<EngineState|null>(null),[people,setPeople]=useState<Identity[]>([]);
  const [error,setError]=useState(''),[connection,setConnection]=useState('Connecting'),[retry,setRetry]=useState(0),[copied,setCopied]=useState(''),[replay,setReplay]=useState(false);
  const [streamPaused,setStreamPaused]=useState(false);
- const [painted,setPainted]=useState<{matchId:string;scoreA:number;scoreB:number;gameMs:number}>();
+ const [painted,setPainted]=useState<CourtPlayback>();
  const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState('');
  const playerClient=useRef<ReturnType<typeof createPoolPlayer>|null>(null),manifest=useRef<AgentPoolManifest|null>(null),lastRef=useRef(''),commandVersion=useRef(0),actionBusy=useRef(false),router=useRouter();
  const recoveryVersion=useRef(0);
@@ -134,7 +136,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      }
     }
     const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');
-    if(config.version===4&&state.phase===1){
+    if(config.version>=4&&state.phase===1){
      // The human seat acknowledges an actually painted court. A hidden tab
      // cannot start a countdown it has never shown to its player.
      const controlled=playerClient.current;
@@ -199,39 +201,42 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   await finishPoolSponsor(sponsor,await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),account,{agent,mode:view.mode}));router.push(`/agents?mode=${view.mode}`);
  }
  const result=view?.result,engineDone=!!snapshot&&snapshot.phase>=3;
- // A spectator court plays a short buffer behind the newest snapshot. Read the
- // running score and the effect countdowns from the frame actually on screen so
- // nothing announces a point the court has not shown yet. A published or
- // engine-final result is authoritative and replaces the buffered reading.
- const playout=side<0&&!result&&!engineDone&&painted?.matchId===refKey?painted:null;
- const scoreA=result?.scoreA??playout?.scoreA??snapshot?.state.scoreA??0,scoreB=result?.scoreB??playout?.scoreB??snapshot?.state.scoreB??0;
- const elapsed=Number(snapshot?.state.t??0n)/1_000_000,overtime=!!view?.overtimeSeconds&&elapsed>=300;
+ // A terminal engine snapshot stays on the court until the confirmed buffer
+ // reaches it. Published history without a live terminal snapshot is shown
+ // directly; it must not strand a spectator waiting for a retired engine.
+ const playout=side<0&&painted?.matchId===refKey?painted:null;
+ const draining=!!playout&&engineDone&&!playout.finished;
+ const displayedResult=draining?undefined:result;
+ const displayDone=engineDone&&!draining;
+ const scoreA=displayedResult?.scoreA??playout?.scoreA??snapshot?.state.scoreA??0,scoreB=displayedResult?.scoreB??playout?.scoreB??snapshot?.state.scoreB??0;
+ const elapsed=playout?playout.gameMs/1000:Number(snapshot?.state.t??0n)/1_000_000,overtime=!!view?.overtimeSeconds&&elapsed>=300;
  const seconds=Math.max(0,Math.ceil((overtime?360:300)-elapsed));
- return <main className={`cabinet-ui rooms-shell agents-shell pool-match-shell ${snapshot?.phase===2&&!result?'rooms-playing':''}`}>
-  <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
-   <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link>{side>=0&&<button onClick={()=>{void move(0);setTools(true);}}>Tools</button>}</div></header>
+ const playing=!!snapshot&&!displayedResult;
+ const courtRoot=useCourtFit(playing,`${refKey}:${view?.mode??0}`);
+ return <main ref={courtRoot} data-mode={view?.mode===1?'chaos':'classic'} className={`cabinet-ui rooms-shell agents-shell pool-match-shell ${playing?'rooms-playing':''}`}>
+  <ArcadeHeader><ArcadeAmbience onSound={quiet}/><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link>{side>=0&&<button onClick={()=>{void move(0);setTools(true);}}>Tools</button>}</ArcadeHeader>
   {!enabled?<section className="agent-empty"><h1>Qualification in progress</h1><p>Independent agent arenas are not open yet.</p></section>:<>
-   <div className="pool-match-toolbar"><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {side<0&&streamPaused&&snapshot?.phase===2&&!result?'Reconnecting':connection}</span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button><span role="status">{copied}</span></div>
+   <div className="pool-match-toolbar"><Link className="pool-compact-back" href="/agents">Back</Link><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {side<0&&streamPaused&&snapshot?.phase===2&&!result?'Reconnecting':connection}</span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button>{side>=0&&<button className="pool-compact-tools" onClick={()=>{void move(0);setTools(true);}}>Tools</button>}<span role="status">{copied}</span></div>
    {error&&<div className="pool-match-error" role="status"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
    {controlError&&!tools&&<div className="pool-match-error" role="status"><p>{controlError}</p><button onClick={()=>{void move(0);setTools(true);}}>Account</button></div>}
    {!view&&!error&&<p role="status">Reading the match reference…</p>}
    {view&&<section className="rooms-court court-card agent-court" aria-label="Agent arena">
-    <AgentScoreboard players={[{name:name(view.a),avatar:avatar(view.a)},{name:name(view.b),avatar:avatar(view.b)}]} scores={[scoreA,scoreB]} caption={engineDone?'MATCH OVER':`${overtime?'SUDDEN DEATH':'FIRST TO SEVEN'} · ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}/>
-    {result?<div className="pool-published-result"><h1>{result.status===4?'Match cancelled':result.winner===zeroAddress?'Draw':`${name(result.winner)} wins`}</h1>
+    <AgentScoreboard players={[{name:name(view.a),avatar:avatar(view.a)},{name:name(view.b),avatar:avatar(view.b)}]} scores={[scoreA,scoreB]} caption={displayDone?'MATCH OVER':`${overtime?'SUDDEN DEATH':'FIRST TO SEVEN'} · ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}/>
+    {displayedResult&&result?<div className="pool-published-result"><h1>{result.status===4?'Match cancelled':result.winner===zeroAddress?'Draw':`${name(result.winner)} wins`}</h1>
      <p>{result.finality?'Final result':'Result recorded'}</p>
      {result.status===3&&<button onClick={()=>setReplay(true)}>Watch replay</button>}
      {view.tournament!=='0'&&<Link href={`/agents/tournaments?id=${view.tournament}`}>View tournament</Link>}
      <details className="pool-match-reference"><summary>Match details</summary><p>{result.finality?"Recorded on Monad and final.":"Recorded on Monad. It can still be challenged until it is final."}</p><p>Arena {short(reference.app)} · Epoch {reference.epoch} · Match {reference.id}</p></details></div>:snapshot?<>
-     {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={playout?playout.gameMs:Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
+     {snapshot.chaos&&<ChaosEffectsHud effects={playout?.effects??eventHud(snapshot.chaos.physics)} gameMs={playout?playout.gameMs:Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
      <div className="pool-canvas-slot"><Court state={snapshot.state} chaos={snapshot.chaos} rulesVersion={manifest.current?.rulesVersion??10} clock={snapshot.clock>BigInt(view.overtimeSeconds?360_000_000:300_000_000)?BigInt(view.overtimeSeconds?360_000_000:300_000_000):snapshot.clock}
-      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onPlayback={setPainted} onStats={(_fps,_predicted,waiting)=>setStreamPaused(waiting)}/>{manifest.current?.version===4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
+      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onPlayback={setPainted} onStats={(_fps,_predicted,waiting)=>setStreamPaused(waiting)}/>{(manifest.current?.version??0)>=4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
      <div className="rooms-court-controls"><span>{side>=0?'W / S · ↑ / ↓':'SPECTATING'}</span>{side>=0&&<div className="touch-controls">{([-1,1] as const).map(dir=><IconButton key={dir} icon={dir===-1?'up':'down'} aria-label={dir===-1?'Move up':'Move down'} disabled={!controllable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void move(dir);}} onPointerUp={()=>void move(0)} onPointerCancel={()=>void move(0)} onLostPointerCapture={()=>void move(0)}/>)}</div>}</div>
     </>:<div className="agent-empty"><p>Waiting for this arena to become ready.</p></div>}
    </section>}
   </>}
   {tools&&<Dialog label="Arena tools" onClose={()=>setTools(false)}><IconButton aria-label="Close arena tools" onClick={()=>setTools(false)}/><h2>Arena tools</h2>{controlError&&<p role="alert">{controlError}</p>}
    <button disabled={busy} onClick={()=>void renew()}>Sign in again</button><button disabled={busy||!playerClient.current} onClick={()=>void revoke()}>Sign out of this match</button><button disabled={busy||!playerClient.current} onClick={()=>void action(async()=>{await playerClient.current!.concede();setTools(false);})}>Concede match</button></Dialog>}
-  <Outcome id={refKey} match={snapshot?{playerA:snapshot.a,playerB:snapshot.b,winner:result?.winner??snapshot.winner,status:result?.status??snapshot.phase,state:{...snapshot.state,scoreA,scoreB},ranked:false,mode:view?.mode??0,draw:(result?.status??snapshot.phase)===3&&(result?.winner??snapshot.winner)===zeroAddress}:null}
+  <Outcome id={refKey} match={snapshot&&!draining?{playerA:snapshot.a,playerB:snapshot.b,winner:result?.winner??snapshot.winner,status:result?.status??snapshot.phase,state:{...snapshot.state,scoreA,scoreB},ranked:false,mode:view?.mode??0,draw:(result?.status??snapshot.phase)===3&&(result?.winner??snapshot.winner)===zeroAddress}:null}
    account={account??''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" rematch={rematch} watch={()=>setReplay(true)} again={()=>router.push('/agents')} againLabel="Choose another agent"/>
   {replay&&<Dialog label="Match replay" onClose={()=>setReplay(false)}><IconButton className="modal-close" aria-label="Close replay" onClick={()=>setReplay(false)}/><h2>Match replay</h2><AgentReplay reference={reference}/></Dialog>}
  </main>;

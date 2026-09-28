@@ -55,7 +55,7 @@ export async function createPoolObserver(manifest:AgentPoolManifest,match:PoolMa
  };
  await validate(true);const watchers=new Set<()=>void>();
  return{
-  async launch(){await validate();return m.version===4?readArenaLaunch(node,arena.app,BigInt(match.ref.id),m.countdownClock):undefined;},
+  async launch(){await validate();return m.version>=4?readArenaLaunch(node,arena.app,BigInt(match.ref.id),m.countdownClock):undefined;},
   async read(force=false){await validate(force);return verify(await feed.read(BigInt(match.ref.id),force));},
   watch(listener:(s:EngineState)=>void){
    const stop=feed.watch(BigInt(match.ref.id),s=>{try{prefetch();if(!stopped&&fresh())listener(verify(s));}catch{feed.invalidate();}});

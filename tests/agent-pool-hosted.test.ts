@@ -1,5 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {provisionPoolArena,observePoolArenaReady} from '../relayer/src/agents/pool-hosted';
+import {verifyHostedArenaEvidence,type HostedArenaEvidence} from '../shared/hosted-arena-identity';
 const app='0x0000000000000000000000000000000000000011';
 function fixture(){const row:any={provision_epoch:null,provisioning:null},history:any[]=[];let locked=false;
  const db:any={connect:async()=>({release(){},query:async(sql:string,a:any[]=[])=>{
@@ -102,4 +103,53 @@ test('a previously returned URL stays pinned across process restarts',async()=>{
  const f=fixture();await provisionPoolArena(f.db,app,1n,undefined,(async()=>Response.json({app,url:'https://first.example'})) as typeof fetch);
  f.row.provisioning.retryAt=0;
  await assert.rejects(provisionPoolArena(f.db,app,1n,undefined,(async()=>Response.json({app,url:'https://second.example'})) as typeof fetch),/identity or URL/);
+});
+
+const expectation={app,epoch:10n,chainId:4242,baseBlock:66021799n,rulesVersion:15n,runtimeHash:'0x'+'12'.repeat(32)};
+const evidence=():HostedArenaEvidence=>({session:{app,epoch:'10',chainId:4242,baseBlock:'66021799'},
+ rulesVersion:15n,runtimeHash:expectation.runtimeHash,health:{app,epoch:'10',ok:true,committedBatches:0}});
+test('a verified pinned node recovers the directory-404 incident during directory cooldown without a creation',async()=>{
+ const f=fixture();f.row.provision_epoch='10';
+ const prior={state:'uncertain',reason:'control-plane-http',http:404,at:Date.now()-3600000,attempts:1,retryAt:Date.now()+60000};
+ f.row.provisioning={...prior};let discovery=0,probes=0;
+ const url=await provisionPoolArena(f.db,app,10n,'https://pinned.example',(async()=>{discovery++;return Response.json({error:'no node for this app'},{status:404});}) as typeof fetch,
+  {expected:expectation,inspect:async u=>{assert.equal(u,'https://pinned.example');probes++;return evidence();}});
+ assert.equal(url,'https://pinned.example');assert.equal(discovery,0);assert.equal(probes,1);
+ assert.equal(f.row.provisioning.state,'ready');assert.equal(f.row.provisioning.at,prior.at);assert.equal(f.row.provisioning.attempts,1);
+ assert.equal(f.row.provisioning.http,404);assert.equal(f.row.provisioning.adopted.baseBlock,'66021799');
+ assert.equal(f.history.filter(e=>e[2]==='sending').length,0);
+});
+test('a correctly identified pre-existing pinned node can be adopted before any local creation intent',async()=>{
+ const f=fixture();let network=0;
+ await provisionPoolArena(f.db,app,10n,'https://pinned.example',(async()=>{network++;throw Error('must not create');}) as typeof fetch,
+  {expected:expectation,inspect:async()=>evidence()});
+ assert.equal(network,0);assert.equal(f.row.provisioning.attempts,0);assert.equal(f.row.provisioning.state,'ready');
+});
+test('wrong identity, code, rules or publication cannot be adopted from a successful HTTP response',async()=>{
+ const variants:HostedArenaEvidence[]=[
+  {...evidence(),session:{...(evidence().session as any),app:'0x0000000000000000000000000000000000000012'}},
+  {...evidence(),session:{...(evidence().session as any),epoch:9}},
+  {...evidence(),session:{...(evidence().session as any),chainId:10143}},
+  {...evidence(),session:{...(evidence().session as any),baseBlock:66021000}},
+  {...evidence(),session:{...(evidence().session as any),baseBlock:null}},
+  {...evidence(),rulesVersion:14n}, {...evidence(),runtimeHash:'0x'+'34'.repeat(32)},
+  {...evidence(),health:{...(evidence().health as any),epoch:9}},
+  {...evidence(),health:{...(evidence().health as any),ok:false}},
+  {...evidence(),health:{...(evidence().health as any),halted:'publication failed'}},
+ ];
+ for(const bad of variants){
+  assert.throws(()=>verifyHostedArenaEvidence(expectation,bad));
+  const f=fixture();f.row.provision_epoch='10';f.row.provisioning={state:'uncertain',at:Date.now(),attempts:1,retryAt:Date.now()+60000};let network=0;
+  await assert.rejects(provisionPoolArena(f.db,app,10n,'https://pinned.example',(async()=>{network++;throw Error('must not create');}) as typeof fetch,
+   {expected:expectation,inspect:async()=>bad}),e=>(e as any).code==='AGENT_HOSTED_COOLDOWN');
+  assert.equal(network,0);assert.equal(f.row.provisioning.state,'uncertain');assert.equal(f.row.provisioning.attempts,1);
+ }
+});
+test('failed pinned checks are throttled independently and preserve uncertain creation journals',async()=>{
+ const f=fixture();f.row.provision_epoch='10';f.row.provisioning={state:'uncertain',at:Date.now(),attempts:1,retryAt:Date.now()+60000};
+ let probes=0,discovery=0;
+ const check={expected:expectation,inspect:async()=>{probes++;throw Error('lost response');}};
+ const transport=(async()=>{discovery++;throw Error('unexpected directory request');}) as typeof fetch;
+ for(let n=0;n<3;n++)await assert.rejects(provisionPoolArena(f.db,app,10n,'https://pinned.example',transport,check),e=>(e as any).retryAt> Date.now());
+ assert.equal(probes,1);assert.equal(discovery,0);assert.equal(f.history.filter(e=>e[2]==='sending').length,0);
 });

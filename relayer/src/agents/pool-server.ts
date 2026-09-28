@@ -6,6 +6,7 @@ import {createPublicClient,http} from 'viem';
 import {monadTestnet} from 'viem/chains';
 import {AgentPoolReader,poolJson} from './pool-read';
 import {poolRoutes} from './pool-api';
+import {PoolNotifications} from './pool-notifications';
 import {measuredFetch,recordRpc} from '../../../shared/rpc-metrics';
 import {agentMetrics} from './metrics';
 import {readPoolSignedBody,type poolSponsorRoutes} from './pool-sponsor';
@@ -17,6 +18,7 @@ import {PoolReplays,initializePoolReplays,poolReplayRetention} from './pool-repl
 // is bound to loopback unless an isolated Docker network is explicitly selected.
 export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>;replays?:PoolReplays}){
  const routes=poolRoutes(reader,undefined,options.replays),rates=new Map<string,{until:number;n:number}>();
+ const events=new PoolNotifications(routes,options.public);
  const normalize=(value:string)=>value.replace(/^::ffff:/,'');
  const proxies=new Set((options.trustedProxies??[]).map(normalize));let global={until:0,n:0};
  const server=createServer(async(req,res)=>{
@@ -46,6 +48,7 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
     if(result){send(result.value,result.status);return;}
    }
    if(req.method!=='GET'){res.setHeader('Allow','GET');send({error:'This endpoint serves published contract views',code:'AGENT_METHOD_NOT_ALLOWED'},405);return;}
+   if(url.pathname==='/agents/events'){metric='agents.events';events.add(res,url.searchParams.get('account'));return;}
    const section=url.pathname.replace(/^\/agents\//,'/').split('/')[1];
    if(['config','catalog','live','matches','replay','challenges','tournaments','rankings','healthz'].includes(section))metric=`agents.${section}`;
    if(url.pathname==='/healthz'){send({process:'alive',writes:!!options.sponsor});return;}
@@ -66,7 +69,7 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
  });
  server.requestTimeout=15000;server.headersTimeout=10000;server.keepAliveTimeout=5000;
  return new Promise<{server:ReturnType<typeof createServer>;close:()=>Promise<void>}>(resolve=>{
-  server.listen(options.port,options.host,()=>resolve({server,close:()=>new Promise((done,reject)=>server.close(e=>e?reject(e):done()))}));
+  server.listen(options.port,options.host,()=>resolve({server,close:()=>new Promise((done,reject)=>{events.close();server.close(e=>e?reject(e):done());})}));
  });
 }
 if(process.env.PONG_AGENT_POOL_READER==='1'){
@@ -80,7 +83,11 @@ if(process.env.PONG_AGENT_POOL_READER==='1'){
  if(replayDb)await initializePoolReplays(replayDb);
  const replays=replayDb?new PoolReplays(replayDb,process.env.GRAPHQL_URL?poolReplayRetention(process.env.GRAPHQL_URL,
   process.env.HASURA_ADMIN_SECRET?{'x-hasura-admin-secret':process.env.HASURA_ADMIN_SECRET}:{}):undefined):undefined;
- const service=await startPoolReadService(new AgentPoolReader(client,manifest,humanApps),
+ const operational=replayDb?async()=>{
+  const rows=(await replayDb.query("SELECT app,stage,detail->>'epoch' AS epoch,updated_at FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
+  return rows.map(row=>({app:row.app,epoch:String(row.epoch),stage:row.stage,observedAt:new Date(row.updated_at).getTime()}));
+ }:undefined;
+ const service=await startPoolReadService(new AgentPoolReader(client,manifest,humanApps,operational),
   {host:process.env.HOST??'127.0.0.1',port:Number(process.env.PORT??4101),public:process.env.PONG_AGENT_POOL_PUBLIC==='1',
    trustedProxies:(process.env.PONG_AGENT_POOL_TRUSTED_PROXIES??'').split(',').filter(Boolean),replays});
  process.once('SIGTERM',()=>void service.close().finally(async()=>{await replayDb?.end();await metrics();}));

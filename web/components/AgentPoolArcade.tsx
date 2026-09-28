@@ -1,4 +1,5 @@
 'use client';
+import {watchAgentChanges} from '../lib/agent-notifications';
 import {poolUserError} from '../../shared/agent-pool-error';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
@@ -22,8 +23,11 @@ import {EngineCredit} from './EngineCredit';
 import {WarmupRally} from './WarmupRally';
 import {useQueueElapsed} from '../lib/use-lobby-clock';
 import {clockLabel} from '../lib/arena-wait';
+import {ArcadeHeader,ArcadeHeading,ArcadeState} from './ArcadeChrome';
+import type {AgentAvailability} from '../../shared/agent-availability';
 
-type Person={agent:Address;creator:Address;name:string;avatar:number;official:boolean;difficulty:string;modes:number[];qualification:Record<0|1,boolean>;available:boolean;waiting:boolean};
+type Person={agent:Address;creator:Address;name:string;avatar:number;official:boolean;difficulty:string;modes:number[];qualification:Record<0|1,boolean>;available:boolean;waiting:boolean;availability?:Record<0|1,AgentAvailability>};
+const availabilityLabels:Record<AgentAvailability,string>={available:'Ready to play','capacity-occupied':'Waiting for an arena','service-unavailable':'Arenas reconnecting','agent-busy':'Finishing a match',qualifying:'Qualifying',incompatible:'Mode unavailable'};
 type Live={ref:AgentMatchRef;a:Address;b:Address;mode:0|1;lane:string};
 const quiet=()=>{};
 const matchHref=(ref:AgentMatchRef)=>`/agents/arenas/${ref.app}/${ref.epoch}/${ref.id}`;
@@ -36,7 +40,9 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const visibleError=(!connectOpen&&error)||queueError||catalogError;
  const session=useRef<PoolFamilySession|null>(null),locked=useRef(false),intent=useRef<Address|null>(null),alive=useRef(false),waiting=useRef(false);
  const [warmup,setWarmup]=useState(false);
+ const [detailAgent,setDetailAgent]=useState<Person|null>(null),[catalogLoaded,setCatalogLoaded]=useState(false);
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
+ useEffect(()=>{if(enabled)return watchAgentChanges(()=>setRetry(n=>n+1),account);},[enabled,account]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  useEffect(()=>{if(!enabled)return;const remembered=rememberedAccount();if(remembered)setAccount(remembered.address);},[enabled]);
  useEffect(()=>{
@@ -46,7 +52,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     if(document.hidden)return;
     const results=await Promise.allSettled([
      poolApi<AgentPoolManifest>('config',undefined,abort.signal).then(raw=>{const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade is not open');if(!stopped)setConfig(m);}),
-     poolApi<{items:Person[];next:string|null}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal).then(catalog=>{if(!stopped){setPeople(catalog.items);setNext(catalog.next);}}),
+     poolApi<{items:Person[];next:string|null}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal).then(catalog=>{if(!stopped){setPeople(catalog.items);setNext(catalog.next);setCatalogLoaded(true);}}),
      poolApi<{items:Live[]}>('live',undefined,abort.signal).then(games=>{if(!stopped)setLive(games.items);}),
     ]);
     const failed=results.find(r=>r.status==='rejected');if(failed?.status==='rejected')throw failed.reason;
@@ -107,9 +113,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  });}
  const waitSeconds=useQueueElapsed(request&&!request.ref?`challenge:${request.id}`:undefined);
  return <main className="cabinet-ui rooms-shell agents-shell">
-  <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
-   <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><Link href="/">Back to arcade</Link></div></header>
-  <div className="agent-heading"><div className="palace-marquee"><span className="palace-star" aria-hidden="true"/><div><h1>Agent Arcade</h1><p>Pick your rival.</p></div><span className="palace-star" aria-hidden="true"/></div>{account&&<span>{short(account)}</span>}</div>
+  <ArcadeHeader><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><Link href="/">Back to arcade</Link></ArcadeHeader>
+  <ArcadeHeading title="Agent Arcade" description="Pick a rival. Find your rhythm.">{account&&<span>{short(account)}</span>}</ArcadeHeading>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>The independent arenas are being tested before opening.</p></section>:<>
    {config?.releaseStage==='testnet-preview'&&<p className="agent-preview-notice" role="status">Preview · No entry fees or prizes.</p>}
    <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button>{tournaments&&<Link href="/agents/tournaments">Tournaments</Link>}</nav>
@@ -122,15 +127,17 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     {request.ref?<Link className="rooms-button" href={matchHref(request.ref)}>Enter arena</Link>:<div className="rooms-button-row"><button disabled={busy||request.status!==1} onClick={()=>void cancel()}>Cancel challenge</button><button onClick={()=>setWarmup(w=>!w)}>{warmup?'Hide warm-up':'Warm up'}</button></div>}
     {!request.ref&&warmup&&<WarmupRally onClose={()=>setWarmup(false)}/>}</section>}
    {view==='play'?<><div className="agent-grid">{people.filter(p=>p.modes.includes(mode)).map(p=><article className="agent-card" key={p.agent} data-selected={selected.toLowerCase()===p.agent.toLowerCase()}>
-    <span className="agent-badge">{p.official?'PONGIT BOT':'COMMUNITY AGENT'}</span><div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.difficulty}</p></div></div>
-    <p className="agent-creator">Creator {p.official?'PONGIT':short(p.creator)}</p><span className="agent-status" data-online={p.available&&p.qualification[mode]}>{!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':p.waiting?'Busy, next duel can be reserved':'Available'}</span>
-    <button className="primary" disabled={busy||!!request||!p.available||!p.qualification[mode]} onClick={()=>choose(p.agent)}>Challenge {p.name}</button></article>)}</div>
-    {!people.length&&!error&&<p role="status">Reading the agent catalogue…</p>}<div className="agent-toolbar">{offset!=='0'&&<button onClick={()=>setOffset('0')}>First page</button>}{next&&<button onClick={()=>setOffset(next)}>More agents</button>}</div></>:<div className="agent-grid">
+    <div className="agent-card-top"><span className="agent-badge">{p.official?'PONGIT BOT':'COMMUNITY'}</span><button className="agent-details" aria-label={`About ${p.name}`} onClick={()=>setDetailAgent(p)}>···</button></div>
+    <div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.difficulty}</p></div></div>
+    <span className="agent-status" data-online={p.availability?.[mode]==='available'}>{p.availability?availabilityLabels[p.availability[mode]]:!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':'Checking arenas'}</span>
+    <button className="primary" aria-label={`Challenge ${p.name}`} disabled={busy||!!request||!p.available||!p.qualification[mode]} onClick={()=>choose(p.agent)}>{p.availability?.[mode]==='available'?'Play':'Challenge'} <span aria-hidden="true">↗</span></button></article>)}</div>
+    {!people.length&&!visibleError&&<ArcadeState title={catalogLoaded?'No agents in this mode yet':'Loading your rivals'}><p>{catalogLoaded?'Try the other mode or return shortly.':'Checking the catalogue and available arenas…'}</p></ArcadeState>}<div className="agent-toolbar">{offset!=='0'&&<button onClick={()=>setOffset('0')}>First page</button>}{next&&<button onClick={()=>setOffset(next)}>More agents</button>}</div></>:<div className="agent-grid agent-live-grid">
     {live.filter(g=>watchMode==='all'||g.mode===watchMode).map(g=><article className="agent-card" key={matchHref(g.ref)}><span className="agent-badge">{g.lane.toUpperCase()} · {g.mode===0?'CLASSIC':'CHAOS'}</span><h2>{person(g.a)?.name??short(g.a)} vs {person(g.b)?.name??short(g.b)}</h2><Link className="rooms-button" href={matchHref(g.ref)}>Open arena ↗</Link></article>)}
     {!live.some(g=>watchMode==='all'||g.mode===watchMode)&&<section className="agent-empty"><h2>No arena is playing right now</h2><p>The next match will appear here when it is assigned.</p></section>}</div>}
    <p>Human challenges are friendly. No bets, entry fees or prizes.</p>
   </>}
   {connectOpen&&<Dialog label="Connect to challenge an agent" onClose={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}><IconButton aria-label="Close connection" onClick={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}/><h2>{renewing?'Keep playing':'Your next rival is ready'}</h2><p>{renewing?'Your session ends soon. Confirm once to keep playing.':'Sign in to continue.'}</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void login()}>{renewing?'Continue':'Connect & play'}</button>{!renewing&&<button disabled={busy} onClick={()=>void login(true)}>Create account</button>}</div>{error&&<p role="alert">{error}</p>}</Dialog>}
+  {detailAgent&&<Dialog label={`About ${detailAgent.name}`} onClose={()=>setDetailAgent(null)}><IconButton aria-label="Close agent details" onClick={()=>setDetailAgent(null)}/><h2>{detailAgent.name}</h2><p>{detailAgent.difficulty}</p><p>{detailAgent.official?'PONGIT BOT':'COMMUNITY AGENT'} · Creator {detailAgent.official?'PONGIT':short(detailAgent.creator)}</p><p>{detailAgent.modes.map(m=>m===0?'Classic':'Chaos').join(' · ')}</p><p>{detailAgent.official&&config?.houseInstances?'Each friendly match has its own controller. You can play this rival while another instance competes.':'A challenge waits until this agent is free.'}</p></Dialog>}
   <footer className="rooms-footer"><MusicCredit/><EngineCredit/></footer>
  </main>;
 }

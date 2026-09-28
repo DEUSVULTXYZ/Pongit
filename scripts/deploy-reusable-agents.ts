@@ -12,12 +12,15 @@ import {houseInstanceAbi} from '../shared/agent-house-instances';
 assert.equal(process.env.PONG_REUSABLE_AGENT_DEPLOY,'authorized-private-testnet');
 assert.equal(process.getuid?.(),1000);
 const prefix=process.env.PONG_REUSABLE_AGENT_PREFIX!;assert(/^reusable-agents-\d{8}(?:-[1-9]\d?)?$/.test(prefix));
-const file='/secrets/deployment.json',hub='0x3Ef8327F69e09cf721772F345e2A887eA22cD595' as Address,arenaCount=3;
+const file='/secrets/deployment.json',hub='0x3Ef8327F69e09cf721772F345e2A887eA22cD595' as Address;
+const maxMatches=Number(process.env.PONG_REUSABLE_AGENT_LANES??2),arenaCount=Number(process.env.PONG_REUSABLE_ARENA_COUNT??(maxMatches===5?5:3));
+assert([2,5].includes(maxMatches)&&Number.isInteger(arenaCount)&&arenaCount>=(maxMatches===5?5:3)&&arenaCount<=16,'Reviewed private candidate dimensions required');
 // Private qualification only. This script creates a fresh season; a public
 // replacement requires a separate verified identity/rating migration.
 const houseInstances=process.env.PONG_REUSABLE_HOUSE_INSTANCES;
 assert(houseInstances===undefined||houseInstances==='official-v1','Unknown house instance capability');
-const poolName=houseInstances?'ReusableAgentInstancesPool':'ReusableAgentPool';
+assert(maxMatches===2||houseInstances==='official-v1','Five lanes require independent official instances');
+const poolName=maxMatches===5?'FiveLaneAgentInstancesPool':houseInstances?'ReusableAgentInstancesPool':'ReusableAgentPool';
 const challengeName=houseInstances?'HouseInstanceChallenges':'AgentChallenges';
 const qualificationName=houseInstances?'HouseInstanceQualifications':'AgentQualifications';
 const humans=(process.env.PONG_HUMAN_APPS??'').toLowerCase().split(',').filter(Boolean);assert(humans.length>0);
@@ -27,7 +30,8 @@ const t=await chainTools(prefix);
 try{
  await t.preflight(['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
   'HousePolicies','AgentCatalog',poolName,'PublishedResultVerifier','AgentTournaments','AgentPublishedRatings',qualificationName,'ArcadeFamily',challengeName,'ReusableAgentArena']);
- if(!r){r={prefix,rulesVersion:15,countdownClock:"engine-ticks-v1",houseInstances,arenaCount,genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
+ if(!r){r={prefix,rulesVersion:15,countdownClock:"engine-ticks-v1",houseInstances,arenaCount,maxMatches,...(maxMatches===5?{arenaAdmissions:'verified-epoch-v1'}:{}),genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
+ assert.equal(r.maxMatches??2,maxMatches,'Lane changes need a new deployment namespace');
  assert.equal(r.houseInstances,houseInstances,'House instances need a new deployment namespace');
  assert.equal(r.countdownClock,"engine-ticks-v1","New countdown needs a new deployment prefix");assert.equal(r.prefix,prefix);assert.equal(r.rulesVersion,15);assert.equal(r.arenaCount,arenaCount);
  const bridge=privateKeyToAccount(r.admissionKey).address;
@@ -63,17 +67,30 @@ try{
   await write(`register-arena-${i}`,'ReusableAgentPool',pool,'addArena',[app]);
   if(r.arenas[i])assert.equal(r.arenas[i].app,app);r.arenas[i]={app,runtimeHash:keccak256((await t.base.getCode({address:app}))!)};await save();
  }
+ if(maxMatches===5){
+  r.serviceOperators??={};
+  for(const role of ['admission','maintenance','archive','sponsor']){
+   const path=`/secrets/${role}.json`;let privateKey;
+   try{privateKey=JSON.parse(await readFile(path,'utf8')).privateKey;}
+   catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;privateKey=generatePrivateKey();await writeFile(path,JSON.stringify({privateKey}),{mode:0o600,flag:'wx'});}
+   const address=privateKeyToAccount(privateKey).address;
+   if(r.serviceOperators[role])assert.equal(address,r.serviceOperators[role],'Role key changed');
+   r.serviceOperators[role]=address;await save();
+  }
+  assert.equal(new Set(Object.values(r.serviceOperators)).size,4,'Roles require distinct signers');
+  await write('configure-admission-operator',poolName,pool,'configureOperators',[r.serviceOperators.admission,r.serviceOperators.maintenance]);
+ }
  await write('seal-pool','ReusableAgentPool',pool,'seal');const poolAbi=(await t.artifact('ReusableAgentPool')).abi;
  assert.equal(await t.base.readContract({address:pool,abi:poolAbi,functionName:'admissions'}),false);
  assert.equal(await t.base.readContract({address:pool,abi:poolAbi,functionName:'publicAdmissions'}),false);
  if(houseInstances){
-  assert.equal(await t.base.readContract({address:pool,abi:houseInstanceAbi,functionName:'AUTHORITY_VERSION'}),2n);
+  assert.equal(await t.base.readContract({address:pool,abi:houseInstanceAbi,functionName:'AUTHORITY_VERSION'}),maxMatches===5?3n:2n);
   for(const address of [pool,challenges,qualifications])assert.equal(await t.base.readContract({address,abi:houseInstanceAbi,functionName:'supportsHouseInstances'}),true);
  }
  r.common={hub,pool,catalog,tournaments,ratings,qualifications,family,challenges,verifier};r.phase='deployed-closed';await save();
  const job=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',[prefix+':deploy-'+poolName.toLowerCase()])).rows[0];assert.equal(job.status,'confirmed');
  const receipt=await t.base.getTransactionReceipt({hash:job.hash});assert.equal(receipt.status,'success');
- const evidence={at:new Date().toISOString(),prefix,rulesVersion:15,houseInstances,common:r.common,admissionSigner:bridge,arenas:r.arenas,bots:r.bots,modules:{...t.deployed,...r.modules},
+ const evidence={at:new Date().toISOString(),prefix,rulesVersion:15,houseInstances,maxMatches,common:r.common,admissionSigner:bridge,arenas:r.arenas,bots:r.bots,modules:{...t.deployed,...r.modules},
   indexBinding:{chainId:10143,rulesVersion:15,pool,startBlock:String(receipt.blockNumber),arenas:r.arenas.map((a:any)=>a.app)},
   delegationOpened:false,publiclyEnabled:false,qualified:false,
   transactions:(await t.db.query('SELECT id,hash,status FROM il_lifecycle_jobs WHERE id LIKE $1 ORDER BY nonce',[prefix+':%'])).rows};

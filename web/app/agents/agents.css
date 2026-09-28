@@ -1,59 +1,59 @@
-.agents-shell{--agent-cyan:#8debf2;--agent-pink:#ed99ef}
-.cabinet-ui.agents-shell{--agent-cyan:var(--palace-cyan);--agent-pink:var(--palace-pink)}
-.agent-preview-notice{padding:14px 18px;border:1px solid #526779;border-radius:10px;background:#14232e;color:#d6e3ee;font:400 16px/1.5 system-ui,sans-serif;margin:14px 0}
-.agents-shell .rooms-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.agents-shell .rooms-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-left:auto}
-.agents-shell .rooms-header-actions>a{display:inline-flex;min-height:44px;align-items:center;justify-content:center}
-.agent-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:24px 0 18px}
-.agent-heading h1{font-size:clamp(20px,3vw,32px);margin:0 0 8px}.agent-heading p{color:#bbc8d7;margin:0}
-.agent-tabs,.agent-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.agent-tabs{margin:16px 0}
-.agents-shell nav.agent-tabs{height:auto;min-height:44px;align-items:stretch;overflow:visible;margin-bottom:16px}
-.agents-shell .agent-tabs>button,.agents-shell .agent-tabs>a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;height:auto;padding:10px 14px;border:1px solid #46536d;border-radius:10px;background:#131c2d;white-space:normal;text-decoration:none}
-.agent-tabs button[aria-pressed=true]{background:#203c49;color:var(--agent-cyan);border-color:var(--agent-cyan)}
-.agent-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px;margin:18px 0}
-.agent-identity>div{min-width:0}.agent-card .agent-identity h2{overflow-wrap:anywhere}.agent-card .portrait-avatar{flex-shrink:0}
-.agent-card{display:flex;flex-direction:column;gap:14px;min-width:0;padding:22px;border:1px solid #556789;border-top:3px solid #91ddea;background:linear-gradient(145deg,#172636,#131529 65%);box-shadow:inset 0 0 0 3px #0b1021,0 8px 0 #060815;border-radius:12px}
-.agent-card[data-selected=true]{outline:2px solid var(--agent-cyan);outline-offset:3px}.agent-card h2{font-size:22px;margin:0}.agent-card .portrait-avatar{width:100px;height:100px;border-radius:12px}.agent-card .agent-identity{display:flex;align-items:center;gap:14px}.agent-card p{margin:0;color:#c0ccda}.agent-card button{margin-top:auto;width:100%}.agent-card .agent-creator{font-size:14px;overflow-wrap:anywhere;color:#b0c1d3}.agent-badge{color:var(--agent-cyan);font-size:12px;letter-spacing:.08em;font-weight:700}
-.agent-status{display:inline-flex;align-items:center;gap:8px;font-size:14px}.agent-status:before{content:'';width:8px;height:8px;background:#71849c;box-shadow:0 0 10px #71849c55}.agent-status[data-online=true]:before{background:#9cf4cd;box-shadow:0 0 10px #9cf4cd55}
-.agent-empty{padding:40px 24px;border:1px solid #45536c;background:#111a27;border-radius:14px;text-align:center}.agent-empty h2{font-size:24px}.agent-empty p{color:#c0ccda}
-.agent-court{padding:14px;border:1px solid #7a72a7;border-radius:12px;background:#100f24;box-shadow:inset 0 0 0 4px #252144,0 0 0 4px #0a1023;margin:16px 0}
-.agent-scoreboard{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:10px 5px 18px}.agent-scoreboard>div:last-child{justify-self:end;text-align:right}.agent-scoreboard .portrait-avatar{width:44px;height:44px}.agent-score-name{display:flex;align-items:center;gap:10px}.agent-scoreboard>div:last-child .agent-score-name{flex-direction:row-reverse}.agent-score{font-family:var(--font-michroma);font-size:clamp(28px,5vw,58px);white-space:nowrap}.agent-score b:first-child{color:var(--agent-cyan)}.agent-score b:last-child{color:var(--agent-pink)}.agent-score small{font-size:.5em;color:#95a4b9;margin:0 10px}.agent-clock{text-align:center;font-variant-numeric:tabular-nums;color:#d4dcec;font-size:16px}
-.agent-court canvas{display:block;width:100%;height:auto;max-width:100%;aspect-ratio:16/9;object-fit:contain}.agent-controls{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px}.agent-controls button{width:48px;height:48px;touch-action:none;font-size:26px}.agent-controls>div{display:flex;gap:8px}.agent-controls small{color:#aabdd0;font-size:14px}.agent-match-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.agent-match-actions a{min-height:44px;display:inline-flex;align-items:center}
-.agent-results-list{list-style:none;padding:0}.agent-results-list li{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #344157}.agent-wait{padding:24px;text-align:center}.agent-wait p{margin:10px 0;color:#bac9d7}
-@media(max-width:767px){.agent-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.agent-card{padding:16px}.agent-card .agent-identity{flex-direction:column;align-items:flex-start}.agent-heading{align-items:flex-start;flex-direction:column}.agent-score-name>span:last-child{max-width:80px;overflow:hidden;text-overflow:ellipsis}.agent-scoreboard{gap:6px}.agent-court{padding:9px}.agents-shell.rooms-shell{padding:10px}}
-@media(max-width:420px){.agent-grid{grid-template-columns:1fr}.agent-card .agent-identity{flex-direction:row;align-items:center}.agent-card .portrait-avatar{width:76px;height:76px}.agent-scoreboard .portrait-avatar{width:32px;height:32px}.agent-score-name{gap:5px}.agent-score-name>span:last-child{font-size:12px;max-width:56px}.agent-score small{margin:0 4px}.agent-scoreboard{padding-bottom:10px}.agent-controls small{max-width:180px}}
-@media(orientation:landscape) and (max-height:600px){.agents-shell.rooms-playing .rooms-header{display:none}.agent-court{max-width:calc((100dvh - 120px)*16/9);margin:8px auto}.agent-scoreboard{padding:0 0 5px}.agent-score{font-size:24px}.agent-scoreboard .portrait-avatar{width:26px;height:26px}.agent-controls{padding-top:5px}.agent-clock{font-size:12px}}
-
-/* Same frame assets, enamel, typography and controls as the human cabinet. */
-.cabinet-ui.agents-shell h1,.cabinet-ui.agents-shell h2,.cabinet-ui.agents-shell h3{font-family:var(--font-michroma),sans-serif}
-.agents-shell .agent-heading{justify-content:center;position:relative;margin:26px 0 20px}
-.agents-shell .agent-heading>.palace-marquee{margin:0;min-width:min(100%,500px);text-align:center}
-.agents-shell .agent-heading .palace-marquee h1{font-size:clamp(21px,3vw,32px);color:#f5f3ff;text-shadow:0 2px #6d55be,0 4px #352369}
-.agents-shell .agent-heading>span{position:absolute;right:0;bottom:0;color:#c5b8df;font-size:14px}
-.agents-shell .agent-tabs{justify-content:center;padding:6px;background:#0b0a21;border:1px solid #514474;border-radius:5px}
-.agents-shell .agent-tabs>button,.agents-shell .agent-tabs>a{border-radius:5px;background:linear-gradient(#2d2857,#151732);border-color:#655e99;box-shadow:inset 0 1px #d5d1ff25,0 3px #06081a;font:12px/1.5 var(--font-michroma),sans-serif;flex:1}
-.agents-shell .agent-tabs>button[aria-pressed=true]{background:linear-gradient(#b2f9ef,#70c8d1);color:#132c35;border-color:#b2fbef;box-shadow:inset 0 1px #effffd,0 3px #286471}
-.agents-shell .agent-toolbar{justify-content:center;margin:16px 0}
-.agents-shell .agent-card{position:relative;isolation:isolate;border:0;background:none;box-shadow:0 10px 20px #02041299;border-radius:10px;padding:26px;gap:16px}
-.agents-shell .agent-card::before{content:"";position:absolute;inset:0;z-index:-1;border:20px solid transparent;border-image:var(--palace-frame) 40 fill / 20px / 0 stretch;pointer-events:none}
-.agents-shell .agent-card[data-selected=true]{outline-color:var(--palace-cyan)}
-.agents-shell .agent-card .portrait-avatar{width:88px;height:100px;border:2px solid var(--avatar-accent);border-radius:5px;box-shadow:-3px 3px #193e6c,0 0 14px #39c7f21f}
-.agents-shell .agent-card h2{font-size:17px;line-height:1.5}.agents-shell .agent-card .agent-creator{font-size:14px}
-.agents-shell .agent-badge{font:10px/1.5 var(--font-michroma),sans-serif;color:var(--palace-cyan)}
-.agents-shell .agent-preview-notice{padding:10px 14px;background:#100d25;border-color:#514474;border-radius:4px;color:#c9c2df;font-size:14px}
-.agents-shell .agent-empty,.agents-shell .agent-wait{background:var(--palace-panel);border:1px solid #7664a6;border-radius:5px;box-shadow:inset 0 2px #c3a7f533,0 5px #080717}
-.agents-shell .agent-empty h2,.agents-shell .agent-wait h2{font-size:18px;line-height:1.6}
+/* Agent Arcade shares the Pixel Palace cabinet. One definition per component. */
+.agents-shell {--agent-cyan:var(--palace-cyan);--agent-pink:var(--palace-pink);font:400 16px/1.6 var(--cabinet-font),system-ui,sans-serif;color:#f0edf9}
+.agents-shell :is(h1,h2,h3){font-family:var(--font-michroma),sans-serif}
+.agents-shell :is(button,a.rooms-button){min-width:44px;min-height:44px;line-height:1.5}
+.agents-shell :is(button,a):focus-visible{outline:3px solid #c8fbff;outline-offset:4px}
+.agent-preview-notice{padding:10px 14px;border:1px solid #514474;border-radius:4px;background:#100d25;color:#c9c2df;font:400 14px/1.6 var(--cabinet-font),system-ui,sans-serif;margin:14px 0}
+.agent-tabs,.agent-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.agents-shell nav.agent-tabs{height:auto;min-height:56px;align-items:stretch;overflow:visible;margin:20px 0;padding:6px;background:#0b0a21;border:1px solid #514474;border-radius:5px}
+.agents-shell .agent-tabs>button,.agents-shell .agent-tabs>a{display:flex;align-items:center;justify-content:center;flex:1;min-width:0;min-height:44px;height:auto;padding:10px 14px;border:1px solid #655e99;border-radius:4px;background:linear-gradient(#2d2857,#151732);box-shadow:inset 0 1px #d5d1ff25,0 3px #06081a;color:#ebe8fb;font:400 14px/1.6 var(--font-michroma),sans-serif;white-space:normal;text-decoration:none}
+.agents-shell .agent-tabs button[aria-pressed=true]{background:linear-gradient(#b2f9ef,#70c8d1);color:#132c35;border-color:#b2fbef;box-shadow:inset 0 1px #effffd,0 3px #286471}
+.agents-shell .agent-toolbar{justify-content:flex-start;margin:16px 0;gap:8px}
+.agents-shell .agent-toolbar button{font-size:14px;padding:10px 18px}
+.agent-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin:24px 0}
+.agent-card{position:relative;isolation:isolate;display:flex;flex-direction:column;gap:16px;min-width:0;padding:20px;border:0;border-radius:8px;background:none;box-shadow:0 10px 20px #02041288}
+.agent-card::before{content:"";position:absolute;inset:0;z-index:-1;border:18px solid transparent;border-image:var(--palace-frame) 40 fill / 18px / 0 stretch;pointer-events:none}
+.agent-card[data-selected=true]{outline:2px solid var(--agent-cyan);outline-offset:3px}
+.agent-card-top{display:flex;justify-content:space-between;align-items:center;gap:4px;min-height:44px;margin:-6px -4px -8px 0}
+.agent-badge{color:var(--agent-cyan);font:600 12px/1.4 var(--cabinet-font),system-ui,sans-serif;letter-spacing:.08em}
+.agent-card .agent-details{min-height:44px;min-width:44px;width:44px;padding:0;border:0;box-shadow:none;background:transparent;font:700 24px/1 system-ui;margin:0;color:#c5b7e8}
+.agent-card .agent-identity{display:flex;flex-direction:column;align-items:flex-start;gap:16px;min-width:0}
+.agent-identity>div{min-width:0;width:100%}
+.agent-card h2{font-size:17px;line-height:1.5;margin:0 0 6px;overflow-wrap:anywhere}
+.agent-card .portrait-avatar{width:88px;height:100px;flex:none;border:2px solid var(--avatar-accent);border-radius:4px;box-shadow:-3px 3px #193e6c,0 0 14px #39c7f21f}
+.agent-card p{margin:0;color:#c7bfdc;font-size:16px;line-height:1.5;min-height:3em}
+.agent-card>button.primary{margin-top:auto;width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px 16px;font-size:14px}
+.agent-card .agent-creator{overflow-wrap:anywhere;color:#b0c1d3;min-height:0}
+.agent-status{display:flex;align-items:center;gap:8px;font-size:14px;line-height:1.5;min-height:32px;color:#c5bfda}
+.agent-status:before{content:'';flex:none;width:7px;height:7px;background:#9888ac}
+.agent-status[data-online=true]:before{background:#9cf4cd;box-shadow:0 0 10px #9cf4c455}
+.agent-live-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.agent-empty,.agent-wait{grid-column:1/-1;padding:32px 24px;background:var(--palace-panel);border:1px solid #7664a6;border-radius:5px;box-shadow:inset 0 2px #c3a7f533,0 5px #080717;text-align:center}
+.agent-empty h2,.agent-wait h2{font-size:18px;line-height:1.6;margin:0 0 12px}
+.agent-empty p,.agent-wait p{font-size:16px;color:#c7bfdc;margin:10px 0}
+.agent-court{margin:16px 0}
 .agents-shell .agent-court.rooms-court{border:0;background:none;box-shadow:0 12px 36px #020412b3;padding:22px 24px 16px}
 .agents-shell .agent-court .scoreboard{flex:none}
-@media(max-width:767px){.agents-shell .agent-card{padding:22px}.agents-shell .agent-heading{align-items:center}.agents-shell .agent-heading>span{position:static}.agents-shell .agent-heading .palace-marquee{gap:14px;padding:24px}.agents-shell .agent-court.rooms-court{padding:14px 14px 10px}.agents-shell .agent-tabs{gap:5px}.agents-shell .agent-tabs>button,.agents-shell .agent-tabs>a{font-size:10px;padding:10px 6px}}
-@media(max-width:767px) and (min-height:501px){
- .agents-shell .rooms-header{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px 6px;padding:7px}
- .agents-shell .rooms-header .brand{grid-column:1/3;grid-row:1;min-width:0}
- .agents-shell .rooms-header-actions{display:contents}
- .agents-shell .rooms-header .arcade-settings-toggle{grid-column:3;grid-row:1;min-width:0;font-size:11px;padding:7px}
- .agents-shell .rooms-header-actions>a{grid-row:2;grid-column:auto;justify-self:stretch;min-width:0;padding:7px 4px;font-size:12px}
- .agents-shell .rooms-header-actions>a:first-of-type{grid-column:1}
- .agents-shell .rooms-header-actions>a:nth-of-type(2){grid-column:2/4}
- .agents-shell.pool-match-shell .rooms-header-actions>a:nth-of-type(2){grid-column:2}
- .agents-shell .rooms-header-actions>button:not(.arcade-settings-toggle){grid-column:3;grid-row:2;padding:7px;font-size:12px}
+.agent-scoreboard{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:10px 5px 18px}
+.agent-scoreboard>div:last-child{justify-self:end;text-align:right}
+.agent-scoreboard .portrait-avatar{width:44px;height:44px}
+.agent-score-name{display:flex;align-items:center;gap:10px}
+.agent-scoreboard>div:last-child .agent-score-name{flex-direction:row-reverse}
+.agent-score{font-family:var(--font-michroma);font-size:clamp(28px,5vw,58px);white-space:nowrap}
+.agent-score b:first-child{color:var(--agent-cyan)}.agent-score b:last-child{color:var(--agent-pink)}.agent-score small{font-size:.5em;color:#b5aacb;margin:0 10px}
+.agent-clock{text-align:center;font-variant-numeric:tabular-nums;color:#d4ccec;font-size:16px}
+.agent-court canvas{display:block;width:100%;height:auto;max-width:100%;aspect-ratio:16/9;object-fit:contain}
+.agent-controls{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:12px}
+.agent-controls button{width:48px;height:48px;touch-action:none;font-size:26px}.agent-controls>div{display:flex;gap:8px}.agent-controls small{color:#bbb0d0;font-size:14px}
+.agent-match-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.agent-match-actions a{min-height:44px;display:inline-flex;align-items:center}
+.agent-results-list{list-style:none;padding:0}.agent-results-list li{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #514474}
+@media(max-width:1099px){.agent-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.agent-card .agent-identity{flex-direction:row;align-items:center}}
+@media(max-width:767px){
+ .agents-shell.rooms-shell{padding:10px}.agent-grid{gap:12px;margin:20px 0}.agent-card{padding:16px;gap:10px}.agent-card::before{border-image-width:14px}
+ .agent-card .agent-identity{flex-direction:column;align-items:flex-start;gap:12px}.agent-card .portrait-avatar{width:54px;height:64px}.agent-card h2{font-size:15px}.agent-card p{font-size:16px}
+ .agent-card>button.primary{font:600 16px/1.5 var(--cabinet-font),system-ui,sans-serif;padding:10px 12px}.agent-badge{font-size:11px;letter-spacing:.04em}
+ .agents-shell .agent-tabs{gap:5px}.agents-shell .agent-tabs>button,.agents-shell .agent-tabs>a{font:600 14px/1.4 var(--cabinet-font),system-ui,sans-serif;padding:10px 6px}
+ .agent-live-grid{grid-template-columns:1fr}.agents-shell .agent-court.rooms-court{padding:14px 12px 10px}.agent-scoreboard{gap:6px}.agent-score-name>span:last-child{max-width:80px;overflow:hidden;text-overflow:ellipsis}
+ .agent-scoreboard .portrait-avatar{width:32px;height:32px}.agent-score-name{gap:5px}.agent-score small{margin:0 4px}.agent-controls small{max-width:180px}
 }
+@media(orientation:landscape) and (max-height:600px){.agents-shell.rooms-playing .rooms-header{display:none}.agent-court{max-width:calc((100dvh - 120px)*16/9);margin:8px auto}.agent-scoreboard{padding:0 0 5px}.agent-score{font-size:24px}.agent-scoreboard .portrait-avatar{width:26px;height:26px}.agent-controls{padding-top:5px}}

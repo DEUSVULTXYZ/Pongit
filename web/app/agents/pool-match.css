@@ -1,19 +1,21 @@
+.pool-match-shell[data-court-scroll=true]{overflow-y:auto}
+.pool-match-toolbar .pool-compact-back,.pool-match-toolbar .pool-compact-tools{display:none}
 .pool-match-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:52px;margin:16px 0;color:#c1d2e6}
-.pool-match-toolbar>span:first-child{flex:1;font-size:14px}.pool-match-toolbar button,.pool-match-error button{min-height:44px}
+.pool-match-toolbar>span:first-of-type{flex:1;font-size:14px}.pool-match-toolbar button,.pool-match-error button{min-height:44px}
 .pool-match-error{padding:12px 16px;border:1px solid #c48eaa;background:#221725;border-radius:10px;display:flex;gap:12px;align-items:center;justify-content:space-between}
 .pool-match-error p{margin:0}.pool-published-result{text-align:center;padding:clamp(24px,6vw,70px) 12px;background:#0a101b;border:1px solid #324a61;border-radius:8px}
 .pool-published-result h1{font-size:clamp(22px,4vw,38px);overflow-wrap:anywhere}.pool-published-result p{font-size:16px;color:#c1d2e6}.pool-published-result a{display:inline-flex;align-items:center;min-height:44px;color:#8debf2}
 .pool-match-reference{overflow-wrap:anywhere}.pool-match-shell .agent-court{max-width:100%}
 .pool-canvas-slot{position:relative}
 .pool-match-shell.rooms-playing>.rooms-header,.pool-match-toolbar,.pool-match-error{flex:none}
-.pool-match-shell.rooms-playing .agent-court{display:flex;flex:1;flex-direction:column;min-height:0;max-height:100%;margin-bottom:8px}
+.pool-match-shell.rooms-playing .agent-court{display:flex;flex:none;flex-direction:column;min-height:0;width:var(--fitted-court-width,100%);max-height:none;margin:12px auto 8px}
 .pool-match-shell.rooms-playing .agent-scoreboard,.pool-match-shell.rooms-playing .agent-clock{flex:none}
 .pool-match-shell .rooms-court-controls{flex:none}
 .pool-match-shell .pool-canvas-slot canvas{border:1px solid #5b567e;background:#030613;box-shadow:0 0 0 2px #0a071e,0 0 0 3px #71619c66}
-.pool-match-shell.rooms-playing .pool-canvas-slot{display:grid;place-items:center;container-type:size;flex:1;min-height:0;width:100%;margin-top:8px}
-.pool-match-shell.rooms-playing .pool-canvas-slot canvas{width:min(100cqw,calc(100cqh * 16 / 9));height:auto;max-height:100%;aspect-ratio:16/9}
-@media(orientation:landscape) and (max-height:600px){.pool-match-toolbar{margin:6px 0}.pool-match-shell.rooms-playing .agent-court{width:100%;margin-inline:0}}
-@media(max-width:390px){.pool-match-toolbar{gap:8px}.pool-match-toolbar>span:first-child{font-size:12px}.pool-match-toolbar button{font-size:11px;padding:8px}.pool-match-error{align-items:flex-start;flex-direction:column}}
+.pool-match-shell.rooms-playing .pool-canvas-slot{display:block;flex:none;min-height:0;width:100%;aspect-ratio:16/9;margin-top:8px}
+.pool-match-shell.rooms-playing .pool-canvas-slot canvas{width:100%;height:auto;aspect-ratio:16/9}
+@media(orientation:landscape) and (max-height:600px){.pool-match-toolbar{margin:6px 0}.pool-match-toolbar .pool-compact-back,.pool-match-toolbar .pool-compact-tools{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px}.pool-match-toolbar>span{flex:1}}
+@media(max-width:390px){.pool-match-toolbar{gap:8px}.pool-match-toolbar>span:first-of-type{font-size:12px}.pool-match-toolbar button{font-size:14px;padding:8px}.pool-match-error{align-items:flex-start;flex-direction:column}}
 .pool-match-toolbar>span:empty{display:none}
-@media(max-width:767px){.pool-match-shell .arena-score-module{min-width:0;padding:0 4px}.pool-match-shell .arena-score-module>small{font-size:8px}.pool-match-shell .pool-match-toolbar{margin:6px 0;min-height:44px}}
+@media(max-width:767px){.pool-match-shell .arena-score-module{min-width:0;padding:0 4px}.pool-match-shell .arena-score-module>small{font-size:10px}.pool-match-shell .pool-match-toolbar{margin:6px 0;min-height:44px}}
 @media(orientation:landscape) and (max-height:600px){.pool-match-shell .rooms-court .scoreboard{min-height:46px;padding:4px 8px;margin-bottom:6px}.pool-match-shell .rooms-court .score{font-size:26px}.pool-match-shell .rooms-court .player-label .avatar{width:30px;height:36px}.pool-match-shell .rooms-court .player-label{grid-template-columns:30px minmax(0,1fr);gap:2px 8px}.pool-match-shell .rooms-court .player-label.right{grid-template-columns:minmax(0,1fr) 30px}.pool-match-shell .rooms-court-controls{min-height:26px;padding-top:4px;margin-top:4px}.pool-match-shell .rooms-court-controls::before{width:14px;height:14px;background-size:7px 7px}}

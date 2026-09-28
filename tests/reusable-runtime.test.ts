@@ -42,3 +42,12 @@ test('house instances require exact release metadata and their pinned helper lib
  f.record.modules.HouseInstances=address(14);f.record.houseInstances='community';
  assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,f.evidence));
 });
+
+test('isolated qualification reads sanitized metadata without inventing public evidence',()=>{
+ const f=fixture();f.manifest.verifiedCapacity=0;f.manifest.qualificationEvidence=null;
+ validateReusableRecord(f.record,f.humans,f.manifest,undefined,true);
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest));
+ assert.throws(()=>validateReusableRecord({...f.record,engineKey:'private'},f.humans,f.manifest,undefined,true));
+ f.manifest.verifiedCapacity=2;f.manifest.qualificationEvidence=f.evidence;
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,undefined,true),/cannot claim/);
+});

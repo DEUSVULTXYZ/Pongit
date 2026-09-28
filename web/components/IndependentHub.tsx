@@ -1,4 +1,5 @@
 "use client";
+import {ArcadeHeader} from './ArcadeChrome';
 import {readArenaLaunch} from '../../shared/arena-launch';
 import {useEffect,useMemo,useRef,useState,useCallback} from 'react';
 import {isAddress,zeroAddress,maxUint256,type Address} from 'viem';
@@ -310,10 +311,10 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
  const networkMessage=engineUnavailable?'This arena is unavailable right now. Your game is saved.':recoveringArena||active&&['publication-paused','recovering','closing','review'].includes(arenaHealth?.stage)?'This arena is getting ready. Your game is saved.':sync||lobbySync;
  const pauseLabel=recoveringArena?'Getting the arena ready':snapshot&&arenaHealth?.rally?.id===String(snapshot.id)&&arenaHealth.rally.rally===snapshot.state.scoreA+snapshot.state.scoreB&&arenaHealth.rally.resumeAt===String(snapshot.state.resumeAt)?arenaHealth.rally.label:'Waiting for Chaos bets to be confirmed';
  return <main className={`cabinet-ui rooms-shell ${active?'rooms-playing':''}`}>
-  <header className="rooms-header"><a className="brand" href="/" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" alt="" width="40" height="40"/><span className="brand-word">PONGIT</span></a><div className="rooms-header-actions">
+  <ArcadeHeader>
    <ArcadeAmbience onSound={setSound}/><a className="rooms-button" href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><button onClick={()=>setPanel('ranking')}>Ranking</button><button onClick={()=>setPanel('more')}>More</button>
    <button disabled={busy||!manifest} onClick={()=>ready?setPanel('account'):void ensure(async()=>{})}>{ready&&player?name(player):family&&view.grant?'Renew arcade session':saved?'Continue as '+short(saved):'Connect'}</button>
-  </div></header>
+  </ArcadeHeader>
   {notice&&<p className="rooms-notice" role="status">{notice}</p>}{error&&!panel&&<p className="rooms-error" role="alert">{error}</p>}{networkMessage&&<p className="rooms-notice" role="status">{networkMessage}</p>}
   {view.invitations[0]&&<aside className="rooms-invitation"><Avatar index={profile(view.invitations[0].sender)?.avatar}/><strong>{name(view.invitations[0].sender)}</strong><button className="primary" disabled={busy} onClick={()=>void ensure(s=>act(s,'answerInvitation',[view.invitations[0].id,true]))}>Accept</button><button disabled={busy} onClick={()=>void ensure(s=>act(s,'answerInvitation',[view.invitations[0].id,false]))}>Back</button></aside>}
   {roomId&&!ownRoom&&!spectating?<section className="rooms-entry"><h1>{view.room?name(view.room.host):'PONGIT room'}</h1><div className="rooms-button-row"><button className="primary" disabled={busy||!manifest||!view.room} onClick={()=>{if(view.room?.ranked){sessionStorage.setItem(`pongit:spectate:${roomId}`,'1');setSpectatorRoom(roomId);}else void ensure(s=>act(s,'joinRoom',[parseRoomReference(roomId,manifest!.lobby)]));}}>Accept</button><a className="rooms-button" href="/">Back</a></div></section>

@@ -28,8 +28,10 @@ import {BackgroundObservation} from '../shared/background-observation';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {publicationUnavailable} from '../shared/service-error';
 import {agentPublicationHealth,agentTickInterval} from '../shared/agent-publication-health';
+import {verifyHostedArenaEvidence} from '../shared/hosted-arena-identity';
 
-const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances};
+const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances,maxMatches:r.maxMatches??2};
+const laneNumbers=Array.from({length:m.maxMatches},(_,i)=>i);
 const tickInterval=agentTickInterval(process.env.PONG_AGENT_TICK_INTERVAL_MS);
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
 await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>base.readContract({address,abi,functionName,args}) as Promise<T>,m);
@@ -41,16 +43,17 @@ assert.equal((await base.readContract({address:m.pool,abi:poolAbi,functionName:'
 const replays=new PoolReplays(db,process.env.GRAPHQL_URL?poolReplayRetention(process.env.GRAPHQL_URL,
  process.env.HASURA_ADMIN_SECRET?{'x-hasura-admin-secret':process.env.HASURA_ADMIN_SECRET}:{}):undefined);
 await replays.resumeRecorder();
-const replayReader=new AgentPoolReader(base,{...m,version:4,chainId:10143,engineChainId:4242,rulesVersion:15,
+const replayReader=new AgentPoolReader(base,{...m,version:m.maxMatches===5?5:4,chainId:10143,engineChainId:4242,rulesVersion:15,
+ ...(m.maxMatches===5?{lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',countdownClock:r.countdownClock}:{}),
  arenas:r.arenas.map((a:any)=>({...a,node:`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`})),
- enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2},protectedApps);
+ enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60},protectedApps);
 let stopping=false;process.once('SIGTERM',()=>{stopping=true;});process.once('SIGINT',()=>{stopping=true;});
 const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clean=(e:any)=>String(e?.shortMessage??e?.message??'Arena unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220);
 // One shared canonical observation for all arena loops, no per-tick lobby RPC.
 const assignments=new BackgroundObservation(async()=>{
   const block=await base.getBlock({includeTransactions:false});
-  const lanes=await Promise.all([0,1].map(lane=>base.readContract({address:m.pool,abi:poolAbi,functionName:'laneRecord',args:[lane],blockNumber:block.number})));
+  const lanes=await Promise.all(laneNumbers.map(lane=>base.readContract({address:m.pool,abi:poolAbi,functionName:'laneRecord',args:[lane],blockNumber:block.number})));
   return{block,lanes};
 },2000,5000);
 async function replayLoop(){while(!stopping){try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}catch{console.error(JSON.stringify({service:'reusable-replays',error:'Reconciliation pending'}));}
@@ -58,7 +61,8 @@ async function replayLoop(){while(!stopping){try{await replays.reconcile(async r
 
 async function arenaLoop(app:Address,runtimeHash:string){
  let engine:ReturnType<typeof createPoolEngine>|undefined,node:PublicClient|undefined;
- let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url='',lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
+ let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url=`https://il-${app.slice(2,18).toLowerCase()}.fly.dev`,lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
+ let observedRuntimeHash='';
  let observations:PoolObservations|undefined,proofTask:Promise<void>|undefined;
  let cachedTicket:{key:string;pair:readonly [ReusableTicket,ReusableAgentBinding]}|undefined,admitted=false;
  let admission:BackgroundObservation<boolean>|undefined;
@@ -99,8 +103,9 @@ async function arenaLoop(app:Address,runtimeHash:string){
    {
     const next=await hub.read();
     if(!d||next.epoch!==d.epoch){await close();node=undefined;publicationPaused=false;publication=publicationObservation();}d=next;
-    if(!node&&d.status===1){
-     assert.equal(keccak256((await base.getCode({address:app,blockNumber:block.number}))!).toLowerCase(),runtimeHash.toLowerCase(),'Arena bytecode changed');
+    if(!node&&d.status!==0){
+     observedRuntimeHash=keccak256((await base.getCode({address:app,blockNumber:block.number}))!);
+     assert.equal(observedRuntimeHash.toLowerCase(),runtimeHash.toLowerCase(),'Arena bytecode changed');
     }
    }
    assert(d);
@@ -108,13 +113,21 @@ async function arenaLoop(app:Address,runtimeHash:string){
    if(d.status===0){await close();node=undefined;await health('awaiting-delegation',{epoch:String(d.epoch)});await delay(2000);continue;}
    if(d.status!==1&&!entry){await close();node=undefined;await health('challenge-window',{epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt)});await delay(2000);continue;}
    if(!node){
-    await health('provisioning',{epoch:String(d.epoch)});url=await provisionPoolArena(db,app,d.epoch,url||undefined);
-    const candidate=createPublicClient({transport:engineTransport(url),pollingInterval:1000});
+    const expected={app,epoch:d.epoch,chainId:4242,baseBlock:d.baseBlock,rulesVersion:15n,runtimeHash};
+    let inspected:PublicClient|undefined;
+    const inspect=async(origin:string)=>{
+     const candidate=createPublicClient({transport:engineTransport(origin),pollingInterval:1000});
+     const [session,rulesVersion,response]=await Promise.all([
+      candidate.request({method:'interlude_session',params:[]} as any),candidate.readContract({address:app,abi,functionName:'RULES_VERSION'}),
+      measuredFetch('interlude','hosted.health')(origin+'/health',{signal:AbortSignal.timeout(4000)})]);
+     if(!response.ok)throw Error('Hosted publication health is temporarily unavailable');
+     const evidence={session,rulesVersion,runtimeHash:observedRuntimeHash,health:await response.json()};
+     verifyHostedArenaEvidence(expected,evidence);inspected=candidate;return evidence;
+    };
+    url=await provisionPoolArena(db,app,d.epoch,url,undefined,{expected,inspect});
     try{
-     const session:any=await candidate.request({method:'interlude_session',params:[]} as any);
-     assert.equal(String(session.app).toLowerCase(),app.toLowerCase());assert.equal(BigInt(session.epoch),d.epoch);assert.equal(session.chainId,4242);
-     assert.equal(BigInt(session.baseBlock),d.baseBlock);assert.equal(await candidate.readContract({address:app,abi,functionName:'RULES_VERSION'}),15n);
-     await observePoolArenaReady(db,app,d.epoch,true);node=candidate;
+     if(!inspected){await inspect(url);await observePoolArenaReady(db,app,d.epoch,true);}
+     assert(inspected,'Hosted node was not verified');node=inspected;
     }catch(e){await observePoolArenaReady(db,app,d.epoch,false);throw e;}
    }
    if(!entry){await close();await health(d.status===2?'challenge-window':'available',{epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt)});await delay(1000);continue;}
@@ -188,8 +201,10 @@ async function arenaLoop(app:Address,runtimeHash:string){
    }else if(s.phase>=3){await archiveSlot(ticket);await health('awaiting-publication',{epoch:String(ref.epoch),id:String(ref.id),score:[s.state.scoreA,s.state.scoreB]});pause=1500;}
   }catch(e){
    if(publicationUnavailable(e)&&!publicationPaused){publicationPaused=true;publication=publicationObservation();}
-   await health(publicationPaused?'publication-paused':'synchronizing',{epoch:String(d?.epoch??0),id:String(engine?.ref.id??0),error:clean(e)});
-   pause=Math.max(publicationPaused?2000:1000,engineCooldownMs(url));
+   const retryAt=typeof (e as any)?.retryAt==='number'?(e as any).retryAt:0;
+   await health(publicationPaused?'publication-paused':(e as any)?.code==='AGENT_HOSTED_COOLDOWN'?'provisioning':'synchronizing',
+    {epoch:String(d?.epoch??0),id:String(engine?.ref.id??0),error:clean(e),...(retryAt?{retryAt}:{})});
+   pause=Math.max(publicationPaused?2000:1000,engineCooldownMs(url),retryAt-Date.now());
   }
   if(!stopping)await delay(Math.min(pause,30000));
  }}finally{await close();}

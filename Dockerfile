@@ -46,9 +46,15 @@ CMD ["node","scripts/agent-series-process.mjs","reader"]
 # Reusable rules-15 roles retain the shared operator journal and keep admission
 # and gameplay keys in their respective runtime mounts, never this image.
 FROM agent-pool AS agent-reusable
-COPY scripts/agent-reusable-engines.ts scripts/agent-reusable-step.ts scripts/agent-reusable-process.mjs ./scripts/
+COPY scripts/agent-reusable-engines.ts scripts/agent-reusable-step.ts scripts/agent-reusable-process.mjs scripts/agent-role-supervisor.mjs ./scripts/
 RUN mkdir -p /diagnostics/reusable && chown node:node /diagnostics/reusable
 CMD ["node","scripts/agent-reusable-process.mjs","reader"]
+
+# Bounded qualification/migration tools use the identical runtime source. The
+# exact compiler artifacts are mounted read-only and checked before deployment.
+FROM agent-reusable AS agent-qualification
+COPY scripts ./scripts
+RUN mkdir -p /app/artifacts/reusable-candidate && chown -R node:node /app/artifacts
 
 FROM dependencies AS web-build
 COPY shared ./shared

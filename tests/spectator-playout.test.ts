@@ -98,3 +98,22 @@ test('buffered Chaos holds a visible ball at an unconfirmed point and reconciles
  const next=initialChaosEvents(zeroHash);next.score.a=1;next.score.rally=2;next.t=600000n;next.nextForce=600000n;
  assert.equal(p.sample(next,next.t,'complete').state.score.a,1);
 });
+
+
+test('terminal frame drains at its exact confirmed instant without staying one frame behind',()=>{
+ const p=new SpectatorPlayout();p.push({state:state(1000),at:1000});
+ p.push({state:{...state(1300),scoreA:7,finished:true},at:1300});
+ assert.equal(p.sample(1300)!.frame.state.finished,false);
+ let last;for(let now=1316;now<2600;now+=16)last=p.sample(now)!;
+ assert.equal(last!.target,1300000n);assert.equal(last!.frame.state.scoreA,7);assert.equal(last!.frame.state.finished,true);
+});
+
+test('normal confirmed playout stays within 2 percent of wall time and the reviewed buffer range',()=>{
+ const p=new SpectatorPlayout();let next=0,prior:{target:bigint;now:number}|undefined;
+ for(let now=0;now<10000;now+=16){
+  while(next<=now){p.push({state:state(next),at:next});next+=300;}
+  const s=p.sample(now)!;assert(s.delayMs>=300&&s.delayMs<=1000);
+  if(prior&&now>2000){const rate=Number(s.target-prior.target)/1000/(now-prior.now);assert(rate>=.98&&rate<=1.0201,`rate ${rate}`);}
+  prior={target:s.target,now};
+ }
+});

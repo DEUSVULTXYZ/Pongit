@@ -7,7 +7,8 @@ import {resolve} from 'node:path';
 import {Pool} from 'pg';
 import {createPublicClient, http, zeroHash, keccak256, encodeAbiParameters, parseAbiParameters} from 'viem';
 import {monadTestnet} from 'viem/chains';
-import {validateAgentPoolManifest} from '../shared/agent-pool';
+import {validateAgentPoolManifest,agentPoolLanes} from '../shared/agent-pool';
+import {agentPoolAdmissionAbi} from '../shared/agent-house-instances';
 import {agentSeriesPoolAbi} from '../shared/abi-AgentSeriesPool';
 import {seriesAgentArenaAbi} from '../shared/abi-SeriesAgentArena';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
@@ -27,8 +28,8 @@ const manifestBytes = await readFile(manifestPath);
 const protectedApps = (process.env.PONG_HUMAN_APPS ?? '').split(',').filter(Boolean);
 assert(protectedApps.length, 'Explicitly protect human deployments');
 const manifest = validateAgentPoolManifest(JSON.parse(manifestBytes.toString()), protectedApps);
-assert(manifest.version === 3 || manifest.version === 4);
-const reusable = manifest.version === 4;
+assert([3,4,5].includes(manifest.version));
+const reusable = manifest.version >= 4;
 const poolAbi = reusable ? reusableAgentPoolAbi : agentSeriesPoolAbi;
 const budgetPath = '/metadata/reusable-budget.json';
 const budget = reusable ? validateReusableBudget(JSON.parse(await readFile(budgetPath, 'utf8')), manifest.arenas.map(a => a.runtimeHash)) : undefined;
@@ -36,12 +37,12 @@ assert.equal(manifest.enabled, false, 'Final qualification still takes place pri
 const durationMs = Number(process.env.PONG_SERIES_SOAK_HOURS ?? 24) * 3600000;
 assert(Number.isFinite(durationMs) && durationMs >= 60000 && durationMs <= 90000000);
 const api = new URL(process.env.PONG_SERIES_SOAK_API!);
-assert(api.protocol === 'http:' && (reusable ? /^pongit-reusable-agents[1-9]\d?-reader-replays$/ : /^pongit-series[3-9]-reader-replays$/).test(api.hostname) && api.port === '4101');
+assert(api.protocol === 'http:' && (manifest.version===5 ? /^pongit-five-\d{8}-[1-9]\d?-reader-1$/ : reusable ? /^pongit-reusable-agents[1-9]\d?-reader-replays$/ : /^pongit-series[3-9]-reader-replays$/).test(api.hostname) && api.port === '4101');
 assert(!api.username && !api.password && !api.search && !api.hash);
 const directory = '/diagnostics/series-soak';
 await mkdir(directory, {recursive: true, mode: 0o700});
 const sources = JSON.parse(await readFile(process.env.PONG_SERIES_SOAK_SOURCES!, 'utf8')) as Record<string, {root: string; entries: string[]}>;
-assert(Object.keys(sources).sort().join(',') === 'controllers,keeper,reader,sponsor', 'Every executing backend role needs its own mounted source');
+assert(Object.keys(sources).sort().join(',') === (manifest.version===5?'admission,archive,controllers,maintenance,reader,sponsor':'controllers,keeper,reader,sponsor'), 'Every executing backend role needs its own mounted source');
 for (const [role, value] of Object.entries(sources)) {
   assert.equal(value.root, `/sources/${role}`);
   assert(value.entries.length > 0 && value.entries.every(p => /^(scripts|relayer)\/[a-zA-Z0-9/_.-]+\.(ts|mjs)$/.test(p) && !p.includes('..')));
@@ -101,7 +102,7 @@ async function sample(): Promise<PoolSample> {
   const observedEffects = new Set<number>(report.observedChaosEffects);
   for (const o of observations.rows) for (const id of o.effects) if (id >= 1 && id <= 24) observedEffects.add(id);
   report.observedChaosEffects = [...observedEffects].sort((a, b) => a - b);
-  const lanes = reusable ? await Promise.all([0, 1].map(l => read(manifest.pool, poolAbi, 'laneRecord', [l]))) : [];
+  const lanes = reusable ? await Promise.all(agentPoolLanes(manifest).map(l => read(manifest.pool, poolAbi, 'laneRecord', [l]))) : [];
   const arenas = await Promise.all(manifest.arenas.map(async arena => {
     const hub = await readHubDelegation(base, manifest.hub, arena.app, block.number);
     let available: boolean, id: bigint;
@@ -132,6 +133,7 @@ async function sample(): Promise<PoolSample> {
         read(arena.app, seriesAgentArenaAbi, 'boundMatch').then(binding => BigInt(binding.id)),
       ]);
     }
+    if(manifest.version===5)available&&=await read(manifest.pool,agentPoolAdmissionAbi,'arenaAdmissionEnabled',[arena.app,hub.epoch]);
     const app = arena.app.toLowerCase(), h = health.rows.find(x => x.app === app);
     const o = observations.rows.find(x => x.app === app && x.epoch === String(hub.epoch) && x.match_id === String(id));
     const p = pending.rows.find(x => x.app === app);
@@ -145,18 +147,18 @@ async function sample(): Promise<PoolSample> {
   }));
   // The runtime will not choose an idle arena until every selectable idle
   // candidate is healthy and budgeted. Do not invent availability from one.
-  if (reusable && arenas.some(a => a.available && (!a.admissionReady || a.healthEpoch !== a.epoch || a.stage !== 'available'
+  if (reusable && manifest.version<5 && arenas.some(a => a.available && (!a.admissionReady || a.healthEpoch !== a.epoch || a.stage !== 'available'
     || at - a.healthAt > 15000 || a.healthAt > at + 2000 || a.pendingCommandAgeMs > 0)))
     for (const arena of arenas) arena.admissionReady = false;
   assert.equal((await base.getBlock({blockNumber: block.number})).hash, block.hash, 'Reorganized sample');
-  return {at: Date.now(), blockTimestamp: Number(block.timestamp), admissions, apiReadable, arenas};
+  return {at: Date.now(), blockTimestamp: Number(block.timestamp), admissions, apiReadable, arenas,requiredMatches:manifest.maxMatches};
 }
 try {
   while (!stopped) {
     let next: PoolSample;
     try { next = await sample(); }
     catch {
-      next = {at: Date.now(), blockTimestamp: 0, admissions: false, apiReadable: false, arenas: [], error: 'sample-unavailable'};
+      next = {at: Date.now(), blockTimestamp: 0, admissions: false, apiReadable: false, arenas: [],requiredMatches:manifest.maxMatches, error: 'sample-unavailable'};
       if (report.errors.length < 200) report.errors.push({at: next.at, code: next.error!});
     }
     const view = recordPoolSample(state, next, report.last);
@@ -179,7 +181,7 @@ try {
   report.complete = !stopped && state.lastAt - started >= durationMs;
   try { report.sourcesUnchanged &&= JSON.stringify(await hashSources()) === JSON.stringify(sourceHashes); }
   catch { report.sourcesUnchanged = false; }
-  report.verdict = poolQualificationVerdict(state, {last: report.last, stopped, sourcesUnchanged: report.sourcesUnchanged, durationMs});
+  report.verdict = poolQualificationVerdict(state, {last: report.last, stopped, sourcesUnchanged: report.sourcesUnchanged, durationMs,requiredMatches:manifest.maxMatches});
   await save(); await db.end(); await metrics();
   console.log(JSON.stringify({file, complete: report.complete, verdict: report.verdict}));
 }

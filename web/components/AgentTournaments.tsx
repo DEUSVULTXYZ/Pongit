@@ -1,4 +1,6 @@
 'use client';
+import {watchAgentChanges} from '../lib/agent-notifications';
+import {ArcadeHeader,ArcadeHeading,ArcadeAction} from './ArcadeChrome';
 import {poolUserError} from '../../shared/agent-pool-error';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
@@ -20,6 +22,7 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
  const heading=useRef<HTMLHeadingElement>(null),focusRequested=useRef(false);
  const person=(address:string)=>identities.find(x=>x.agent.toLowerCase()===address.toLowerCase());
  const name=(address:string)=>address===zeroAddress?'To be decided':person(address)?.name??short(address);
+ useEffect(()=>{if(enabled)return watchAgentChanges(()=>setRetry(n=>n+1));},[enabled]);
  useEffect(()=>{
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>;const controller=new AbortController();
   const get=async<T,>(path:string):Promise<T&Envelope>=>{
@@ -50,6 +53,8 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
   if(id===selected){heading.current?.focus();return;}
   setSelected(id);setLoading(true);focusRequested.current=true;const url=new URL(location.href);url.searchParams.set('id',id);history.replaceState(null,'',url);
  }
+ const current=tournament?.fixtures.find(f=>!f.resolved&&f.ref);
+ const upcoming=tournament?.fixtures.filter(f=>!f.resolved&&!f.ref&&f.a!==zeroAddress&&f.b!==zeroAddress).slice(0,2)??[];
  const identity=(address:string)=><span className="tournament-player"><Avatar index={person(address)?.avatar??9}/><span>{name(address)}</span></span>;
  const fixture=(f:TournamentFixture)=><article key={f.index} className="tournament-fixture" data-complete={f.resolved}>
   <h4>Match {f.index+1}</h4>
@@ -60,14 +65,11 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
   {f.ref&&<Link href={`/agents/arenas/${f.ref.app}/${f.ref.epoch}/${f.ref.id}`}>{f.resolved?'View match':'Open arena'} ↗</Link>}
  </article>;
  return <main className="cabinet-ui rooms-shell agents-shell tournament-shell">
-  <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
-   <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><Link href="/agents">Agent Arcade</Link><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a></div></header>
-  <div className="agent-heading"><div><h1>Agent tournaments</h1><p>Eight rivals. One arena circuit.</p></div><Link href="/">Back to arcade</Link></div>
+  <ArcadeHeader><ArcadeAmbience onSound={quiet}/><Link href="/agents">Agent Arcade</Link><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a></ArcadeHeader>
+  <ArcadeHeading title="Agent tournaments" description="Eight rivals. One arena circuit."><Link href="/agents">Choose a rival</Link></ArcadeHeading>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>Automatic tournaments will open after the independent arenas pass their continuous play trial.</p></section>:<>
    {preview&&<p className="agent-preview-notice" role="status">Preview · No entry fees or prizes.</p>}
-   <nav className="tournament-history" aria-label="Recent tournaments">{list.map(t=><button key={t.id} aria-current={tournament?.id===t.id?'page':undefined} onClick={()=>choose(t.id)}>
-    <span>#{t.id} {t.mode===0?'Classic':'Chaos'}</span><small>{t.format==='championship'?'Championship':'Elimination'}</small></button>)}
-    {historyOffset!=='0'&&<button onClick={()=>setHistoryOffset('0')}>Latest</button>}{nextPage&&<button onClick={()=>setHistoryOffset(nextPage)}>Older tournaments</button>}</nav>
+
    {error&&<div role="alert" className="tournament-error"><p>{error} {tournament?'Showing the latest standings.':''}</p><button onClick={()=>setRetry(x=>x+1)}>Retry</button></div>}
    {loading&&!tournament&&<p role="status">Loading tournaments…</p>}
    {!loading&&!tournament&&!error&&<section className="agent-empty"><h2>The circuit is getting ready</h2><p>The first tournament will appear when eight qualified agents are available.</p></section>}
@@ -76,6 +78,9 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
      <h2 ref={heading} tabIndex={-1}>Tournament #{tournament.id}</h2></div><span className="tournament-validation">{tournament.status==='repair-waiting'?'Result correction in progress':tournament.status==='complete'?'Completed':tournament.status==='selecting'?'Selecting participants':'In progress'}</span></div>
     {tournament.revision>0&&<p role="status">A published result was corrected. The affected standings or bracket are being rebuilt. Revision {tournament.revision}.</p>}
     {tournament.status==='complete'&&<div className="tournament-champion"><span>Champion</span>{identity(tournament.champion)}{tournament.nextAt&&seconds!==null&&<p>{seconds>0?`Next tournament in ${seconds}s`:'Preparing the next tournament'}</p>}</div>}
+    {current&&<section className="tournament-now" aria-label="Current match"><div><span className="agent-badge">CURRENT MATCH</span><h3>{name(current.a)} <span>vs</span> {name(current.b)}</h3>
+     <p>{tournament.mode===0?'Classic':'Chaos'} · Match {current.index+1}</p></div><ArcadeAction href={`/agents/arenas/${current.ref!.app}/${current.ref!.epoch}/${current.ref!.id}`}>Watch match ↗</ArcadeAction></section>}
+    {upcoming.length>0&&<section className="tournament-next" aria-label="Next matches"><h3>Up next</h3>{upcoming.map(f=><div key={f.index}>{identity(f.a)}<span>vs</span>{identity(f.b)}</div>)}</section>}
     {tournament.format==='championship'?<>
      <div className="tournament-table" role="region" aria-label="Championship standings" tabIndex={0}><table><caption>Three points for a win, one for a draw</caption><thead><tr><th scope="col">Agent</th><th scope="col">Points</th><th scope="col">Difference</th><th scope="col">Wins</th><th scope="col">Starting ELO</th></tr></thead>
       <tbody>{tournament.standings.filter(r=>r.agent!==zeroAddress).map(r=><tr key={r.agent}><th scope="row">{identity(r.agent)}</th><td>{r.points}</td><td>{r.difference>0?'+':''}{r.difference}</td><td>{r.wins}</td><td>{r.initialElo}</td></tr>)}</tbody></table></div>
@@ -83,6 +88,11 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
     </>:<div className="tournament-bracket">{[{title:'Quarter-finals',from:0,to:4},{title:'Semi-finals',from:4,to:6},{title:'Final',from:6,to:7}].map(round=><section key={round.title}><h3>{round.title}</h3>{tournament.fixtures.slice(round.from,round.to).map(fixture)}</section>)}</div>}
     <p className="tournament-footnote">First to seven or five minutes. Elimination draws get up to one minute of sudden death. Same-creator matches and administrative advances do not change ELO. No bets, entry fees or prizes.</p>
    </section>}
+   <details className="tournament-history-disclosure"><summary>Tournament history</summary>
+   <nav className="tournament-history" aria-label="Recent tournaments">{list.map(t=><button key={t.id} aria-current={tournament?.id===t.id?'page':undefined} onClick={()=>choose(t.id)}>
+    <span>#{t.id} {t.mode===0?'Classic':'Chaos'}</span><small>{t.format==='championship'?'Championship':'Elimination'}</small></button>)}
+    {historyOffset!=='0'&&<button onClick={()=>setHistoryOffset('0')}>Latest</button>}{nextPage&&<button onClick={()=>setHistoryOffset(nextPage)}>Older tournaments</button>}</nav>
+   </details>
   </>}
   <footer className="rooms-footer"><MusicCredit/><EngineCredit/></footer>
  </main>;

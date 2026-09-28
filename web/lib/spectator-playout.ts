@@ -35,20 +35,19 @@ export class SpectatorPlayout {
  }
  sample(now:number){
   if(!this.frames.length)return null;
-  const delay=Math.max(200,Math.min(1800,this.interval*1.25)),at=now-delay;
+  const delay=Math.max(300,Math.min(1000,this.interval*1.25)),at=now-delay;
   let a=this.frames[0],b=a;
   for(const next of this.frames.slice(1)){b=next;if(next.at>=at)break;a=next;}
   const fraction=b===a?0:Math.max(0,Math.min(1,(at-a.at)/(b.at-a.at)));
   let target=a.state.t+BigInt(Math.floor(Number(b.state.t-a.state.t)*fraction));
   if(this.sampledAt!==undefined&&now-this.sampledAt<1000){
    const dt=Math.max(0,Math.min(100,now-this.sampledAt));
-   const rate=b.at>a.at?Math.min(2,Math.max(.1,Number(b.state.t-a.state.t)/(b.at-a.at)/1000)):1;
    // A larger jitter estimate previously moved the desired clock backwards,
    // freezing every frame until wall time caught up. Slew instead of stopping;
    // never advance beyond the latest actually processed snapshot.
    const correction=Number(target-this.playhead)/1000;
-   const speed=Math.max(.8,Math.min(1.2,1+correction/1500));
-   target=this.playhead+BigInt(Math.floor(dt*1000*rate*speed));
+   const speed=Math.max(.98,Math.min(1.02,1+correction/5000));
+   target=this.playhead+BigInt(Math.floor(dt*1000*speed));
   }
   this.sampledAt=now;
   if(target<this.playhead)target=this.playhead;
@@ -56,7 +55,7 @@ export class SpectatorPlayout {
   this.playhead=target;
   // Choose again by game time: an adaptive delay must never rewind physics.
   a=this.frames[0];b=a;
-  for(const next of this.frames.slice(1)){b=next;if(next.state.t>=target)break;a=next;}
+  for(const next of this.frames.slice(1)){b=next;if(next.state.t>target)break;a=next;}
   // Paddles are continuous within a rally. A serve recentres them at its own
   // instant, so hold the confirmed position instead of sliding across a point.
   const k=b.state.t===a.state.t||rally(a.state)!==rally(b.state)?0:Math.max(0,Math.min(1,Number(target-a.state.t)/Number(b.state.t-a.state.t)));

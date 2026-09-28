@@ -5,6 +5,7 @@ import { localChain } from "./local-chain";
 import { initial, advance, accelerate } from "../shared/physics-interlude";
 import { next } from "../shared/physics-v2";
 
+const reportDirectory=process.env.PONG_QUALIFICATION_OUTPUT??"artifacts/interlude";
 const chain = await localChain();
 try {
   const a = JSON.parse(await readFile("contracts/out/PhysicsInterlude.sol/PhysicsInterludeHarness.json", "utf8"));
@@ -33,7 +34,7 @@ try {
     }));
     if(i%1200===0)console.log(`Interlude rules 3: ${Math.min(i+24,10000)}/10000`);
   }
-  await mkdir("artifacts/interlude",{recursive:true});
-  await writeFile("artifacts/interlude/differential-rules3.json",JSON.stringify({cases:10000,mismatches:0,rulesVersion:3,seed:"0xc0ffee",checkedAt:new Date().toISOString()},null,2));
+  await mkdir(reportDirectory,{recursive:true});
+  await writeFile(`${reportDirectory}/differential-rules3.json`,JSON.stringify({cases:10000,mismatches:0,rulesVersion:3,seed:"0xc0ffee",checkedAt:new Date().toISOString()},null,2));
   console.log("PASS: 10000 Interlude rules 3 differential cases.");
 } finally {chain.close();}

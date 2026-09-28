@@ -12,13 +12,18 @@ import {chaosBrowserPayload} from './chaos-browser-fixture';
 import {decodeChaosRead} from '../shared/chaos-codec';
 import {engineState} from '../shared/engine-stream';
 assert.equal(process.env.PONG_POOL_UI_TEST,'isolated-fixture');
-const origin='http://127.0.0.1:4189',channel=process.env.BROWSER_CHANNEL??'chrome';
+const origin=process.env.PONG_POOL_UI_ORIGIN??'http://127.0.0.1:4189',channel=process.env.BROWSER_CHANNEL??'chrome';
+assert(new URL(origin).hostname==='127.0.0.1','UI fixtures may only use loopback');
+const output=process.env.PONG_POOL_UI_OUTPUT??'artifacts/qualification/20260919/pool-ui';
 const rulesVersion=Number(process.env.PONG_POOL_UI_RULES??10);assert(rulesVersion===10||rulesVersion===11||rulesVersion===15);
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const node=JSON.parse(await readFile('deployments/agents.json','utf8')).node;
-const people=pooledHouseBots.map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90),difficulty:b.difficulty,modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false}));
+const people=pooledHouseBots.map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90),difficulty:b.difficulty,modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false,availability:{0:'available',1:'available'}}));
 const m:AgentPoolManifest={version:rulesVersion===15?4:rulesVersion===11?3:2,chainId:10143,engineChainId:4242,rulesVersion,hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),challenges:address(6),qualifications:address(7),family:address(8),
  arenas:[9,10,11].map(n=>({app:address(n),node,runtimeHash:zeroHash})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:`0x${'b'.repeat(64)}`,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
+if(process.env.PONG_POOL_UI_LANES==='5'){
+ assert.equal(rulesVersion,15);Object.assign(m,{version:5,maxMatches:5,verifiedCapacity:5,lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',arenas:[9,10,11,12,13,14,15].map(n=>({app:address(n),node,runtimeHash:zeroHash}))});
+}
 const abi=agentPoolArenaAbi(m);
 const ref={chainId:10143 as const,app:address(9),epoch:'1',id:'1'};
 const observation={block:'50',hash:zeroHash,timestamp:String(Math.floor(Date.now()/1000)),revision:'fixture'};
@@ -26,12 +31,12 @@ const tournament=(id:string,league:boolean,mode:0|1):TournamentView=>({id,mode,f
  entrants:people.map(p=>({agent:p.agent,controllerHash:zeroHash,initialElo:1000})),
  fixtures:Array.from({length:league?28:7},(_,i)=>({index:i,ref:i===0?ref:null,a:people[i%8].agent,b:people[(i+1)%8].agent,advanced:zeroAddress,resolved:false,administrative:false,attempt:i===0?1:0,result:null})),
  standings:people.map((p,i)=>({agent:p.agent,points:21-i*3,difference:14-i*2,wins:7-i,initialElo:1000})),observedBlock:'50',published:true,nextAt:null});
-const report:any={at:new Date().toISOString(),channel,rulesVersion,scope:'Captured isolated VPS production build; synthetic API/engine; no authentication or hosted gameplay qualification',checks:[],errors:[]};
+const report:any={at:new Date().toISOString(),channel,rulesVersion,lanes:m.maxMatches,scope:'Isolated production build; synthetic API/engine; no authentication or hosted gameplay qualification',checks:[],errors:[]};
 const mime:Record<string,string>={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.ico':'image/x-icon','.woff2':'font/woff2','.ttf':'font/ttf','.mp3':'audio/mpeg'};
-await mkdir('artifacts/qualification/20260919/pool-ui',{recursive:true});
+await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel,headless:true});
 try{
- for(const [width,height] of [[360,640],[390,844],[768,900],[1440,1000],[844,390]]){
+ for(const [width,height] of [[360,640],[390,844],[768,900],[1440,1000],[844,390]].filter(([w])=>!process.env.PONG_POOL_UI_WIDTH||w===Number(process.env.PONG_POOL_UI_WIDTH))){
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference'});
   let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0;
   let releaseCatalog:(()=>void)|undefined,catalogGate:Promise<void>|undefined;
@@ -41,6 +46,7 @@ try{
    const request=route.request(),url=new URL(request.url());
    try{
     if(url.origin===origin){
+     if(process.env.PONG_POOL_UI_ORIGIN)return route.continue();
      if(request.headers().rsc==='1')return route.fulfill({status:404,body:''});
      const pathname=decodeURIComponent(url.pathname);
      let root:string,file:string;
@@ -54,6 +60,7 @@ try{
     if(url.origin==='http://localhost:4000'||url.origin==='https://pongit.xyz'&&url.pathname.startsWith('/api/')){
      if(url.pathname.startsWith('/api/'))url.pathname=url.pathname.slice(4);
      let data:any;
+     if(url.pathname==='/agents/events')return route.fulfill({status:503,body:'Fixture uses polling'});
      if(url.pathname==='/agents/config')data=m;
      else if(url.pathname==='/agents/catalog'){catalogReads++;if(catalogGate)await catalogGate;data={items:people,total:'8',offset:'0',next:null};}
      else if(url.pathname==='/agents/live')data={items:[{ref,a:people[0].agent,b:people[1].agent,mode:0,lane:'tournament'}]};
@@ -97,6 +104,8 @@ try{
   await page.goto(origin+'/agents');await page.getByRole('heading',{name:'Agent Arcade',exact:true}).waitFor();
   await page.getByRole('button',{name:'Challenge NOVA',exact:true}).waitFor();assert.equal(await page.locator('.agent-card').count(),8);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'catalogue page overflow');
+  assert.equal(await page.locator('.agent-grid').first().evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),width>=1100?4:2);
+  const small=await page.locator('.agent-card button').evaluateAll(elements=>elements.filter(el=>{const r=el.getBoundingClientRect();return r.width<44||r.height<44;}).length);assert.equal(small,0,'Every card action meets the touch target');
   const docs=await page.getByRole('link',{name:'Docs ↗',exact:true}).boundingBox(),back=await page.getByRole('link',{name:'Back to arcade',exact:true}).boundingBox();
   assert(docs&&back&&(docs.x+docs.width<=back.x||back.x+back.width<=docs.x||docs.y+docs.height<=back.y||back.y+back.height<=docs.y),'Header links overlap');
   await page.getByRole('button',{name:'Challenge NOVA',exact:true}).click();await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
@@ -111,16 +120,16 @@ try{
    assert.equal(await actionError.innerText(),originalError,'Catalogue refresh erased the action error');
    report.checks.push({width,actionErrorSurvivesCatalogRefresh:true,authentication:'Explicit refusal fixture only'});
   }
-  await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);assert.equal(await page.locator(':focus').textContent(),'Challenge NOVA');
+  await page.keyboard.press('Escape');assert.equal(await page.getByRole('dialog').count(),0);assert.equal(await page.locator(':focus').getAttribute('aria-label'),'Challenge NOVA');
   await page.getByRole('button',{name:'Chaos',exact:true}).click();assert.equal(await page.getByRole('button',{name:'Chaos',exact:true}).getAttribute('aria-pressed'),'true');
-  await page.screenshot({path:`artifacts/qualification/20260919/pool-ui/${channel}-catalogue-${width}.png`,fullPage:true});
+  await page.screenshot({path:`${output}/${channel}-catalogue-${width}.png`,fullPage:true});
   report.checks.push({width,height,catalogue:true,eightBots:true,connectIntent:true,escape:true,focusRestored:true});
   for(league of [false,true]){
    mode=league?1:0;await page.goto(origin+'/agents/tournaments?id=1');await page.getByRole('heading',{name:'Tournament #1',exact:true}).waitFor();
    assert.equal(await page.locator('.tournament-fixture').count(),league?28:7);
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'tournament page overflow');
-   await page.getByRole('button',{name:/#1/}).click();await page.waitForFunction(()=>document.activeElement?.textContent==='Tournament #1');
-   await page.screenshot({path:`artifacts/qualification/20260919/pool-ui/${channel}-${league?'championship':'elimination'}-${width}.png`,fullPage:true});
+   await page.getByText('Tournament history',{exact:true}).click();await page.getByRole('button',{name:/#1/}).click();await page.waitForFunction(()=>document.activeElement?.textContent==='Tournament #1');
+   await page.screenshot({path:`${output}/${channel}-${league?'championship':'elimination'}-${width}.png`,fullPage:true});
    report.checks.push({width,height,format:league?'championship':'elimination',layout:true,focus:true});
   }
   for(mode of [0,1] as const){
@@ -128,17 +137,18 @@ try{
    if(width===360&&mode===0)catalogGate=new Promise<void>(resolve=>{releaseCatalog=resolve;});
    await page.goto(`${origin}/agents/arenas/${ref.app}/1/1`);await page.locator('canvas').waitFor({timeout:5000});
    if(catalogGate){
-    assert(await page.getByText('Live engine state',{exact:false}).isVisible(),'A stalled catalogue must not block observation');
+    assert(await page.getByText('CLASSIC · Live',{exact:false}).isVisible(),'A stalled catalogue must not block observation');
     releaseCatalog!();catalogGate=undefined;await page.getByText('NOVA',{exact:true}).waitFor();
     report.checks.push({width,arenaConnectsBeforeCatalog:true});
    }
    const before=await page.locator('canvas').boundingBox();assert(before&&Math.abs(before.width/before.height-16/9)<.03);
-   assert(before.height>80&&before.y+before.height<=height,'The complete court must fit the viewport');
+   if(!(before.height>80&&before.y+before.height<=height))await page.screenshot({path:`${output}/${channel}-overflow-${width}-${mode}.png`,fullPage:true});
+   assert(before.height>80&&before.y+before.height<=height,'The complete court must fit the viewport: '+JSON.stringify({width,height,mode,before}));
    if(mode){effect=23;revision++;await page.waitForTimeout(1100);const after=await page.locator('canvas').boundingBox();assert(after&&Math.abs(before.y-after.y)<1,'Effect shifted the court');}
    assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'arena page overflow');
-   await page.screenshot({path:`artifacts/qualification/20260919/pool-ui/${channel}-${mode?'chaos':'classic'}-${width}.png`,fullPage:true});
+   await page.screenshot({path:`${output}/${channel}-${mode?'chaos':'classic'}-${width}.png`,fullPage:true});
    published=true;await page.getByRole('heading',{name:'NOVA wins',exact:true}).waitFor({timeout:16000});
-   assert.equal(await page.locator('canvas').count(),0);assert(await page.getByText('Final published result',{exact:true}).isVisible());
+   assert.equal(await page.locator('canvas').count(),0);assert(await page.getByText('Final result',{exact:true}).isVisible());
    replayRetired=false;const readsBeforeReplay=engineReads;
    await page.locator('.pool-published-result').getByRole('button',{name:'Watch replay',exact:true}).click();
    const replay=page.getByRole('dialog',{name:'Match replay',exact:true});await replay.locator('canvas').waitFor();
@@ -157,4 +167,4 @@ try{
  }
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.passed=false;report.error=(e as Error).message;process.exitCode=1;}
-finally{await browser.close();await writeFile(`artifacts/qualification/20260919/pool-ui/${channel}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));}
+finally{await browser.close();await writeFile(`${output}/${channel}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

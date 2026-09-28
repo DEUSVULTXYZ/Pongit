@@ -168,3 +168,35 @@ test('reusable discovery reads the Monad ticket before engine admission and pres
  assert.equal((await reader.live()).value.items.length,0);
  await assert.rejects(reader.match({...reference,epoch:'3'}),/not found/);
 });
+
+
+test('five-lane catalogue distinguishes stale engines and full capacity without blocking healthy copies',async()=>{
+ const m:AgentPoolManifest={...manifest,version:5,rulesVersion:15,maxMatches:5,verifiedCapacity:5,
+  lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',
+  arenas:[8,9,10,12,13].map(n=>({...manifest.arenas[0],app:addr(n),node:`https://arena-${n}.example`}))};
+ let busy=false,now=Date.now(),epoch='2';const laneReads:number[]=[];
+ const client={getBlock:async()=>({number:50n,hash:zeroHash}),readContract:async(r:any)=>{
+  assert.equal(r.blockNumber,50n);
+  switch(r.functionName){
+   case 'admissions':return true;
+   case 'laneRecord':laneReads.push(Number(r.args[0]));return{ref:{id:busy?1n:0n}};
+   case 'arenaEpoch':return 2n;
+   case 'arenaAvailable':return r.args[0]===m.arenas[1].app;
+   case 'count':return 1n;
+   case 'at':case 'house':return addr(90);
+   case 'identity':return{house:1,modes:3,qualified:3,creator:addr(91),codeHash:zeroHash,metadata:zeroHash,available:true,lastTournament:8n};
+   case 'participation':case 'playing':return evidence;
+   case 'houseInstanceEligible':return true;
+   default:throw Error(r.functionName);
+  }
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,m,[],async()=>[
+  {app:m.arenas[0].app,epoch:'1',stage:'available',observedAt:now},
+  {app:m.arenas[1].app,epoch,stage:'available',observedAt:now},
+ ]);
+ let observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'available');
+ assert.equal(observed.value.capacity.readyArenas,1);assert.deepEqual(laneReads,[1,2,3,4]);
+ busy=true;observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'capacity-occupied');
+ epoch='1';observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'service-unavailable');
+ epoch='2';now-=16000;observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'service-unavailable');
+});

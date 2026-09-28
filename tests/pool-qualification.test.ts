@@ -67,3 +67,22 @@ test('an elapsed day alone does not qualify a stopped or changed run', () => {
   assert(verdict.reasons.includes('monitor-stopped')); assert(verdict.reasons.includes('source-changed-or-unresolved'));
   assert(verdict.reasons.includes('renewal-not-observed')); assert(verdict.reasons.includes('two-simultaneous-games-not-observed'));
 });
+
+test('five-lane qualification counts only five actually ready or progressing arenas',()=>{
+ const s=sample();s.requiredMatches=5;
+ assert(poolAvailability(s).reasons.includes('five-lane-capacity-unavailable'));
+ for(let i=1;i<5;i++)s.arenas.push({...s.arenas[0],app:String(i)});
+ assert.equal(poolAvailability(s).unavailable,false);
+ const state=newPoolQualification(at);recordPoolSample(state,s);
+ assert.equal(state.maxProgressing,5);
+ s.arenas[4].healthEpoch='wrong';assert.equal(poolAvailability(s).unavailable,true);
+});
+
+test('five-lane threshold allows at most 0.5 percent outage but never a renewal-wide outage',()=>{
+ const s=sample();s.requiredMatches=5;for(let i=1;i<5;i++)s.arenas.push({...s.arenas[0],app:String(i)});
+ const state=newPoolQualification(at);Object.assign(state,{lastAt:at+86400000,measuredMs:86400000,maxProgressing:5,epochs:{a:['1','2']},unavailableMs:400000});
+ const input={last:s,stopped:false,sourcesUnchanged:true,durationMs:86400000,requiredMatches:5 as const};
+ assert.equal(poolQualificationVerdict(state,input).continuousServiceChecksPassed,true);
+ state.unavailableMs=433000;assert.equal(poolQualificationVerdict(state,input).continuousServiceChecksPassed,false);
+ state.unavailableMs=1000;state.renewalOutageSamples=1;assert(poolQualificationVerdict(state,input).reasons.includes('global-interruption-during-renewal'));
+});

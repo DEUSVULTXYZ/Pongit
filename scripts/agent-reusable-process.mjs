@@ -5,8 +5,12 @@ import {spawn} from 'node:child_process';
 import {superviseRole} from './agent-role-supervisor.mjs';
 const role=process.argv[2],entries={keeper:'scripts/agent-reusable-step.ts',engines:'scripts/agent-reusable-engines.ts',
  reader:'relayer/src/agents/pool-server.ts',sponsor:'relayer/src/agents/pool-sponsor-server.ts'};
+for(const r of ['admission','maintenance','archive'])entries[r]=entries.keeper;
 assert(Object.hasOwn(entries,role),'Unknown reusable service role');assert.equal(process.getuid?.(),1000);
-// Only keeper steps are short-lived enough for pre-starting to matter.
-const supervisor=superviseRole({role,entry:entries[role],spawn,prestart:role==='keeper'});
+// The candidate keeps connections/imports alive and retains one serialized
+// journal owner. Legacy one-shot invocation of the step script still works.
+if(['keeper','admission','maintenance','archive'].includes(role))process.env.PONG_KEEPER_PERSISTENT='1';
+if(['admission','maintenance','archive'].includes(role))process.env.PONG_AGENT_KEEPER_ROLE=role;
+const supervisor=superviseRole({role,entry:entries[role],spawn});
 process.once('SIGTERM',supervisor.stop);process.once('SIGINT',supervisor.stop);
 await supervisor.done;

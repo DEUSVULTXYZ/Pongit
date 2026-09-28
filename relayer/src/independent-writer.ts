@@ -1,4 +1,4 @@
-import {createWalletClient,http,keccak256,encodeAbiParameters,parseTransaction,type Address,type Hex,type PublicClient} from 'viem';
+import {createWalletClient,http,keccak256,encodeAbiParameters,parseTransaction,recoverTransactionAddress,type Address,type Hex,type PublicClient} from 'viem';
 import {monadTestnet} from 'viem/chains';
 import {privateKeyToAccount} from 'viem/accounts';
 import {readFile} from 'node:fs/promises';
@@ -6,6 +6,7 @@ import type {Pool,PoolClient} from 'pg';
 import type {ChainOperation} from '../../shared/independent';
 import {measuredFetch} from '../../shared/rpc-metrics';
 import {prepareSponsoredTransaction} from './sponsor-prepare';
+import {writerIdentity,type ScopedWriter} from '../../shared/scoped-writer';
 export function confirmedContractRevert(error:unknown){
  let cause:any=error;for(let i=0;cause&&i<10;i++,cause=cause.cause)if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name))return true;return false;
 }
@@ -14,9 +15,12 @@ export function confirmedContractRevert(error:unknown){
  * Network observation never holds a PostgreSQL transaction or a lobby lock. The advisory
  * lock protects only signing/submission; receipts are observed by a separate pump.
  */
-export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=db){
- const secret=JSON.parse(await readFile(process.env.ROOMS_LIFECYCLE_KEY_FILE!,'utf8'));
+export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=db,scope?:ScopedWriter){
+ if(scope&&!scope.keyFile)throw Error('Dedicated sponsor key path required');
+ const secret=JSON.parse(await readFile(scope?.keyFile??process.env.ROOMS_LIFECYCLE_KEY_FILE!,'utf8'));
  const account=privateKeyToAccount(secret.privateKey as Hex);
+ const identity=writerIdentity(account.address,scope),jobId=(id:string)=>identity.prefix+id;
+ const check=(to:Address,data:Hex,value:bigint)=>scope?.allowCall(to,data,value);
  if(await base.getChainId()!==10143)throw Error('Independent sponsoring is testnet only');
  const wallet=createWalletClient({account,chain:monadTestnet,transport:http(process.env.RPC_URL,{timeout:8000,retryCount:0,fetchFn:measuredFetch('monad')})});
  await db.query(`CREATE TABLE IF NOT EXISTS independent_operations(
@@ -24,9 +28,20 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  status text NOT NULL DEFAULT 'queued',hash text,error text,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now());
  CREATE INDEX IF NOT EXISTS independent_operations_pending ON independent_operations(priority,created_at) WHERE status='queued';`);
  await journal.query(`CREATE TABLE IF NOT EXISTS il_lifecycle_jobs(id text PRIMARY KEY,app text NOT NULL,owner text NOT NULL,nonce bigint NOT NULL,raw text NOT NULL,hash text NOT NULL,status text NOT NULL,UNIQUE(owner,nonce));`);
+ await db.query('CREATE TABLE IF NOT EXISTS independent_writer_binding(id integer PRIMARY KEY CHECK(id=1),owner text NOT NULL)');
+ if(scope&&!(await db.query('SELECT owner FROM independent_writer_binding WHERE id=1')).rowCount&&Number((await db.query("SELECT count(*) FROM independent_operations WHERE status IN ('queued','pending')")).rows[0].count)>0)throw Error('Unbound pending sponsor queue');
+ const binding=await db.query('INSERT INTO independent_writer_binding(id,owner) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET owner=independent_writer_binding.owner RETURNING owner',[identity.owner]);
+ if(binding.rows[0].owner!==identity.owner)throw Error('Sponsor queue belongs to another signer; drain and migrate it explicitly');
  const view=(r:any):ChainOperation=>({id:r.id,status:r.status,hash:r.hash??undefined,error:r.error??undefined});
+ let closing=false;
+ const tasks=new Set<Promise<unknown>>();
+ const track=<T>(run:()=>Promise<T>):Promise<T>=>{
+  if(closing)return Promise.reject(Error('Sponsor is stopping; no operation accepted'));
+  const task=run();tasks.add(task);void task.finally(()=>tasks.delete(task)).catch(()=>{});return task;
+ };
  async function get(id:string){const r=(await db.query('SELECT id,status,hash,error FROM independent_operations WHERE id=$1',[id])).rows[0];return r?view(r):null;}
  async function enqueue(to:Address,data:Hex,value=0n,priority=1,context=''):Promise<ChainOperation>{
+  check(to,data,value);
   const id=keccak256(encodeAbiParameters([{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[to,data,value,context]));
   const old=await get(id);if(old)return old;
   const inFlight=(await db.query("SELECT * FROM independent_operations WHERE target=$1 AND data=$2 AND value=$3 AND status IN ('queued','pending') ORDER BY created_at LIMIT 1",[to.toLowerCase(),data,String(value)])).rows[0];
@@ -66,8 +81,8 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    // must still be the operator's existing database and advisory-lock domain.
    const unresolved=(await db.query("SELECT id FROM independent_operations WHERE status IN ('queued','pending') ORDER BY created_at LIMIT 200")).rows;
    if(unresolved.length){
-    const records=(await journal.query('SELECT id,status,hash FROM il_lifecycle_jobs WHERE owner=$1 AND id=ANY($2::text[])',[account.address.toLowerCase(),unresolved.map(x=>'independent:'+x.id)])).rows;
-    for(const j of records)await db.query("UPDATE independent_operations SET status=$2,hash=$3,updated_at=now() WHERE id=$1 AND status IN ('queued','pending') AND (status<>$2 OR hash IS DISTINCT FROM $3)",[j.id.slice('independent:'.length),j.status,j.hash]);
+    const records=(await journal.query('SELECT id,status,hash FROM il_lifecycle_jobs WHERE owner=$1 AND id=ANY($2::text[])',[account.address.toLowerCase(),unresolved.map(x=>jobId(x.id))])).rows;
+    for(const j of records)await db.query("UPDATE independent_operations SET status=$2,hash=$3,updated_at=now() WHERE id=$1 AND status IN ('queued','pending') AND (status<>$2 OR hash IS DISTINCT FROM $3)",[j.id.slice(identity.prefix.length),j.status,j.hash]);
    }
    if(!jobs.length)lastError='';
   }finally{observing=false;}
@@ -76,20 +91,23 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
   if(sending)return;sending=true;let c:PoolClient|undefined,locked=false;
   try{
    c=await journal.connect();
-   locked=(await c.query('SELECT pg_try_advisory_lock(701340) AS ok')).rows[0].ok;if(!locked)return;
+   locked=(await c.query('SELECT pg_try_advisory_lock($1::bigint) AS ok',[identity.lock])).rows[0].ok;if(!locked)return;
    const pending=(await journal.query("SELECT * FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending' ORDER BY nonce LIMIT 1",[account.address.toLowerCase()])).rows[0];
    if(pending){
     // Only resend an operation owned by this queue. Other writers retain their journal.
-    const owned=pending.id.startsWith('independent:')?(await db.query('SELECT * FROM independent_operations WHERE id=$1',[pending.id.slice('independent:'.length)])).rows[0]:null;
+    const owned=pending.id.startsWith(identity.prefix)?(await db.query('SELECT * FROM independent_operations WHERE id=$1',[pending.id.slice(identity.prefix.length)])).rows[0]:null;
     if(owned){
      if(keccak256(pending.raw)!==pending.hash)throw Error('Operator journal hash mismatch');
+     if((await recoverTransactionAddress({serializedTransaction:pending.raw})).toLowerCase()!==identity.owner)throw Error('Operator journal signer mismatch');
      const raw=parseTransaction(pending.raw);if(raw.chainId!==10143||raw.nonce!==Number(pending.nonce))throw Error('Operator journal identity mismatch');
      if(raw.to?.toLowerCase()!==owned.target||raw.data!==owned.data||(raw.value??0n)!==BigInt(owned.value))throw Error('Operator queue identity mismatch');
+     check(owned.target,owned.data,BigInt(owned.value));
      await base.sendRawTransaction({serializedTransaction:pending.raw});
     }
     return;
    }
    const row=(await db.query("SELECT * FROM independent_operations WHERE status='queued' ORDER BY priority,created_at LIMIT 1")).rows[0];if(!row)return;
+   check(row.target,row.data,BigInt(row.value));
    let request:Awaited<ReturnType<typeof prepareSponsoredTransaction>>;
    try{request=await prepareSponsoredTransaction(base,account.address,{to:row.target as Address,data:row.data as Hex,value:BigInt(row.value)});}catch(e){
     // RPC availability does not prove invalid execution. Only a decoded contract revert
@@ -100,13 +118,16 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    }
    const nonce=request.nonce;
    const raw=await wallet.signTransaction(request),hash=keccak256(raw);
-   await journal.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",['independent:'+row.id,row.target,account.address.toLowerCase(),nonce,raw,hash]);
+   await journal.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",[jobId(row.id),row.target,account.address.toLowerCase(),nonce,raw,hash]);
    await db.query("UPDATE independent_operations SET status='pending',hash=$2,updated_at=now() WHERE id=$1",[row.id,hash]);
    await base.sendRawTransaction({serializedTransaction:raw});lastError='';
   }catch{lastError='Sponsor is reconciling a pending operation. Gameplay observations continue.';}
-  finally{try{if(locked)await c?.query('SELECT pg_advisory_unlock(701340)');}finally{c?.release();sending=false;}}
+  finally{try{if(locked)await c?.query('SELECT pg_advisory_unlock($1::bigint)',[identity.lock]);}finally{c?.release();sending=false;}}
  }
- const timers=[setInterval(()=>void observe().catch(()=>{}),750),setInterval(()=>void dispatch().catch(()=>{}),1000)];
+ const timers=[setInterval(()=>void track(observe).catch(()=>{}),750),setInterval(()=>void track(dispatch).catch(()=>{}),1000)];
  for(const t of timers)t.unref();
- return {enqueue,get,account:account.address,observe,dispatch,status:()=>({available:!lastError,error:lastError||undefined}),stop:()=>timers.forEach(clearInterval)};
+ const stop=()=>timers.forEach(clearInterval);
+ return {enqueue:(...args:Parameters<typeof enqueue>)=>track(()=>enqueue(...args)),get,account:account.address,
+  observe:()=>track(observe),dispatch:()=>track(dispatch),status:()=>({available:!closing&&!lastError,error:lastError||undefined}),stop,
+  close:async()=>{closing=true;stop();await Promise.allSettled([...tasks]);}};
 }

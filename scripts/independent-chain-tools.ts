@@ -2,30 +2,36 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {Pool} from 'pg';
-import {createPublicClient,createWalletClient,http,keccak256,parseTransaction,encodeDeployData,encodeFunctionData,getContractAddress,type Address,type Hex,type Abi} from 'viem';
+import {createPublicClient,createWalletClient,http,keccak256,parseTransaction,recoverTransactionAddress,encodeDeployData,encodeFunctionData,getContractAddress,type Address,type Hex,type Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {assertDeploymentArtifact,preflightDeploymentArtifacts} from '../shared/deployment-artifacts';
+import {writerIdentity,type ScopedWriter} from '../shared/scoped-writer';
 
-export async function chainTools(prefix:string,fetchFn?:typeof fetch){
+export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:ScopedWriter){
  assert.equal(process.env.PONG_INDEPENDENT_WRITE,'authorized-testnet');
  assert(/^[a-z0-9:-]+$/.test(prefix));
- const secret=JSON.parse(await readFile(process.env.ROOMS_LIFECYCLE_KEY_FILE!,'utf8'));
+ if(scope&&!scope.keyFile)throw Error('Dedicated operator key path required');
+ const secret=JSON.parse(await readFile(scope?.keyFile??process.env.ROOMS_LIFECYCLE_KEY_FILE!,'utf8'));
  const account=privateKeyToAccount(secret.privateKey as Hex);
- assert.equal(account.address.toLowerCase(),'0x369158ac444278541322643e46e0d5b45ac21c4c');
+ if(!scope)assert.equal(account.address.toLowerCase(),'0x369158ac444278541322643e46e0d5b45ac21c4c');
+ const identity=writerIdentity(account.address,scope);
  const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn}),pollingInterval:1000});
  assert.equal(await base.getChainId(),10143);
  const wallet=createWalletClient({account,chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn})});
  const db=new Pool({connectionString:process.env.DATABASE_URL});
  const wait=(ms:number)=>new Promise(r=>setTimeout(r,ms));
  async function submit(name:string,data:Hex,to?:Address,value=0n){
+  if(scope){assert(to,'Scoped roles cannot deploy contracts');scope.allowCall(to,data,value);}
   const id=`${prefix}:${name}`,c=await db.connect(); let locked=false;
   try{
-   for(let i=0;i<30&&!locked;i++){locked=(await c.query('SELECT pg_try_advisory_lock(701340) AS ok')).rows[0].ok;if(!locked)await wait(1000);}
+   for(let i=0;i<30&&!locked;i++){locked=(await c.query('SELECT pg_try_advisory_lock($1::bigint) AS ok',[identity.lock])).rows[0].ok;if(!locked)await wait(1000);}
    assert(locked,'Operator is busy; retry without creating another operation');
    let job=(await db.query('SELECT * FROM il_lifecycle_jobs WHERE id=$1',[id])).rows[0];
    if(job){
+    assert.equal(job.owner.toLowerCase(),identity.owner,'Operation belongs to another signer');
     const raw=parseTransaction(job.raw);
+    assert.equal((await recoverTransactionAddress({serializedTransaction:job.raw})).toLowerCase(),identity.owner,'Operation signer mismatch');
     assert.equal(raw.data,data,'Operation data changed');assert.equal(raw.to?.toLowerCase(),to?.toLowerCase(),'Operation target changed');
     assert.equal(raw.value??0n,value);assert.equal(raw.chainId,10143);assert.equal(keccak256(job.raw),job.hash);
     assert.notEqual(job.status,'failed','A confirmed revert needs a reviewed new operation');
@@ -51,7 +57,7 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch){
    assert.equal(receipt.status,'success',`Transaction ${receipt.transactionHash} reverted`);
    console.log(JSON.stringify({operation:name,hash:receipt.transactionHash,block:String(receipt.blockNumber),address:receipt.contractAddress}));
    return receipt;
-  }finally{if(locked)await c.query('SELECT pg_advisory_unlock(701340)');c.release();}
+  }finally{if(locked)await c.query('SELECT pg_advisory_unlock($1::bigint)',[identity.lock]);c.release();}
  }
  const deployed:Record<string,Address>={};
  async function artifact(name:string){const source=name==='LMSRV2'?'MarketV2':name;return JSON.parse(await readFile(`contracts/out/${source}.sol/${name}.json`,'utf8'));}

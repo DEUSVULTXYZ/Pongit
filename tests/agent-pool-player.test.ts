@@ -210,3 +210,14 @@ test('recovery waits for the current intent and exposes its second failure inste
  assert.deepEqual(f.sent.map(raw=>parseTransaction(raw).nonce),[0,1]);
  assert.equal(f.player.journal.pending(f.session.grant.key),undefined);f.player.close();
 });
+
+
+test('slow prefetch never blocks a valid movement and cannot extend authorization after its original expiry',async()=>{
+ const f=fixture(15);await f.player.move(1);f.advance(1600);
+ let release!:()=>void;const gate=new Promise<void>(r=>release=r);f.hold(()=>gate);
+ await f.player.move(-1);assert.equal(f.sent.length,2,'Cached valid fence avoids the slow Monad read');
+ f.advance(4000);let finished=false;const next=f.player.move(1).then(()=>{finished=true;});
+ await new Promise(r=>setImmediate(r));assert.equal(f.sent.length,2);assert.equal(finished,false);
+ release();await assert.rejects(next,/fresh observation/);assert.equal(f.sent.length,2);
+ f.hold();await f.player.move(1);assert.equal(f.sent.length,3);f.player.close();
+});

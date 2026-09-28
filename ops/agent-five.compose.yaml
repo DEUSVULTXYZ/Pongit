@@ -1,0 +1,108 @@
+# Five-lane candidate/release only. No source overrides, public ports, automatic
+# administrative gates or legacy lifecycle key. Each role has a dedicated env
+# file (0600) and signer; never print `docker compose config` without --quiet.
+x-role: &role
+  profiles: [agent-five]
+  image: ${AGENT_FIVE_IMAGE:?Pin the audited immutable image digest}
+  restart: unless-stopped
+  user: "1000:1000"
+  read_only: true
+  tmpfs: [/tmp:size=64m]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  stop_grace_period: 65s
+  cpus: 0.5
+  mem_limit: 256m
+  networks: [operations, store]
+  logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+
+x-metadata: &metadata ${AGENT_FIVE_METADATA:?Sanitized metadata directory}:/metadata:ro
+x-diagnostics: &diagnostics ${AGENT_FIVE_DIAGNOSTICS:?Private diagnostics directory}:/diagnostics
+x-state: &state ${AGENT_FIVE_STATE:?Durable role journals directory}:/state
+
+services:
+  reader:
+    <<: *role
+    command: [node, scripts/agent-reusable-process.mjs, reader]
+    env_file: ["${AGENT_FIVE_ENV_DIRECTORY:?Dedicated role environment files}/reader.env"]
+    environment:
+      PONG_AGENT_POOL_READER: "1"
+      PONG_AGENT_POOL_MANIFEST: /metadata/manifest.json
+      PONG_AGENT_POOL_PUBLIC: ${AGENT_PUBLIC_API:-0}
+      HOST: 0.0.0.0
+      PORT: 4101
+    volumes: [*metadata, *diagnostics]
+    depends_on: {database: {condition: service_healthy}}
+
+  engines:
+    <<: *role
+    cpus: 1.5
+    mem_limit: 512m
+    command: [node, scripts/agent-reusable-process.mjs, engines]
+    env_file: ["${AGENT_FIVE_ENV_DIRECTORY}/engines.env"]
+    volumes:
+      - *metadata
+      - *diagnostics
+      - ${AGENT_FIVE_KEYS:?Separate limited role keys}/engine.json:/run/pongit-agent-pool/engine.json:ro
+      - ${AGENT_FIVE_KEYS}/bridge.json:/run/pongit-agent-pool/admission.json:ro
+    depends_on: {database: {condition: service_healthy}}
+
+  admission:
+    <<: *role
+    command: [node, scripts/agent-reusable-process.mjs, admission]
+    env_file: ["${AGENT_FIVE_ENV_DIRECTORY}/admission.env"]
+    environment: {PONG_AGENT_ROLE_KEY_FILE: /run/role.json}
+    volumes: [*metadata, *diagnostics, *state, "${AGENT_FIVE_KEYS}/admission.json:/run/role.json:ro"]
+    depends_on: {database: {condition: service_healthy}}
+
+  maintenance:
+    <<: *role
+    command: [node, scripts/agent-reusable-process.mjs, maintenance]
+    env_file: ["${AGENT_FIVE_ENV_DIRECTORY}/maintenance.env"]
+    environment: {PONG_AGENT_ROLE_KEY_FILE: /run/role.json}
+    volumes: [*metadata, *diagnostics, *state, "${AGENT_FIVE_KEYS}/maintenance.json:/run/role.json:ro"]
+    depends_on: {database: {condition: service_healthy}}
+
+  archive:
+    <<: *role
+    command: [node, scripts/agent-reusable-process.mjs, archive]
+    env_file: ["${AGENT_FIVE_ENV_DIRECTORY}/archive.env"]
+    environment: {PONG_AGENT_ROLE_KEY_FILE: /run/role.json}
+    volumes: [*metadata, *diagnostics, *state, "${AGENT_FIVE_KEYS}/archive.json:/run/role.json:ro"]
+    depends_on: {database: {condition: service_healthy}}
+
+  sponsor:
+    <<: *role
+    command: [node, scripts/agent-reusable-process.mjs, sponsor]
+    env_file: ["${AGENT_FIVE_ENV_DIRECTORY}/sponsor.env"]
+    environment: {PONG_AGENT_SPONSOR_KEY_FILE: /run/role.json, HOST: 0.0.0.0}
+    volumes: [*metadata, *diagnostics, "${AGENT_FIVE_KEYS}/sponsor.json:/run/role.json:ro"]
+    depends_on: {database: {condition: service_healthy}}
+
+  database:
+    profiles: [agent-five]
+    image: ${AGENT_FIVE_POSTGRES_IMAGE:?Pin the reviewed PostgreSQL image digest}
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 384m
+    networks: [store]
+    environment:
+      POSTGRES_DB: agent_five
+      POSTGRES_USER: agent_five_owner
+      POSTGRES_PASSWORD_FILE: /run/database-password
+    volumes:
+      - agent-five-data:/var/lib/postgresql/data
+      - ${AGENT_FIVE_KEYS}/database-password:/run/database-password:ro
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U agent_five_owner -d agent_five]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    logging: {driver: json-file, options: {max-size: "10m", max-file: "3"}}
+
+networks:
+  operations: {external: true, name: "${PONG_SHARED_NETWORK:?Existing RPC/operator network}"}
+  store: {internal: true}
+
+volumes:
+  agent-five-data: {external: true, name: "${AGENT_FIVE_DATABASE_VOLUME:?Existing restored volume name}"}

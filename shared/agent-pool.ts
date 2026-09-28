@@ -16,28 +16,33 @@ export type AgentPoolManifest={
  releaseStage?:'testnet-preview';previewEvidence?:Hex;
  countdownClock?:'engine-ticks-v1';
  houseInstances?:'official-v1';
+ lanes?:{tournament:1;challenge:4};arenaAdmissions?:'verified-epoch-v1';
  // Read-only retired authorities. They never supply an admission, signing
  // target, capacity slot or engine origin for the current deployment.
  history?:AgentPoolManifest[];
- version:2|3|4;chainId:10143;engineChainId:4242;rulesVersion:10|11|15;hub:Address;pool:Address;catalog:Address;
+ version:2|3|4|5;chainId:10143;engineChainId:4242;rulesVersion:10|11|15;hub:Address;pool:Address;catalog:Address;
  tournaments:Address;ratings:Address;challenges:Address;qualifications:Address;family:Address;arenas:PoolArena[];
- enabled:boolean;tournamentsEnabled:boolean;verifiedCapacity:0|2;qualificationEvidence:Hex|null;
- durationSeconds:300;overtimeSeconds:60;intervalSeconds:60;maxMatches:2;
+ enabled:boolean;tournamentsEnabled:boolean;verifiedCapacity:0|2|5;qualificationEvidence:Hex|null;
+ durationSeconds:300;overtimeSeconds:60;intervalSeconds:60;maxMatches:2|5;
 };
 export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly string[]=[]):AgentPoolManifest {
  const preview=m.releaseStage==='testnet-preview';
  if(m.releaseStage!==undefined&&!preview)throw Error('Unsupported release stage');
  if(preview&&(m.version!==4||m.verifiedCapacity!==0||m.qualificationEvidence!==null||!m.previewEvidence||!/^0x[\da-f]{64}$/i.test(m.previewEvidence)||BigInt(m.previewEvidence)===0n))throw Error('Testnet preview must retain incomplete qualification and explicit review evidence');
  if(!preview&&m.previewEvidence!==undefined)throw Error('Preview evidence requires the preview stage');
- if(m.countdownClock!==undefined&&(m.version!==4||m.countdownClock!=='engine-ticks-v1'))throw Error('Unsupported countdown clock');
- if(m.houseInstances!==undefined&&(m.version!==4||m.houseInstances!=='official-v1'))throw Error('Unsupported house instances');
- if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11||m.version===4&&m.rulesVersion===15)||m.chainId!==10143||m.engineChainId!==4242
-  ||m.durationSeconds!==300||m.overtimeSeconds!==60||m.intervalSeconds!==60||m.maxMatches!==2)throw Error('Unsupported Agent Arcade pool rules');
+ if(m.countdownClock!==undefined&&(m.version<4||m.countdownClock!=='engine-ticks-v1'))throw Error('Unsupported countdown clock');
+ if(m.houseInstances!==undefined&&(m.version<4||m.houseInstances!=='official-v1'))throw Error('Unsupported house instances');
+ if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11||(m.version===4||m.version===5)&&m.rulesVersion===15)||m.chainId!==10143||m.engineChainId!==4242
+  ||m.durationSeconds!==300||m.overtimeSeconds!==60||m.intervalSeconds!==60||m.maxMatches!==(m.version===5?5:2))throw Error('Unsupported Agent Arcade pool rules');
+ if(m.version===5){
+  if(m.lanes?.tournament!==1||m.lanes?.challenge!==4||m.arenaAdmissions!=='verified-epoch-v1'||m.houseInstances!=='official-v1'||m.countdownClock!=='engine-ticks-v1')
+   throw Error('Five-lane authority capabilities are incomplete');
+ }else if(m.lanes!==undefined||m.arenaAdmissions!==undefined)throw Error('Legacy authority cannot advertise five-lane capabilities');
  if(typeof m.enabled!=='boolean'||typeof m.tournamentsEnabled!=='boolean')throw Error('Explicit boolean admission gates required');
  const contracts=[m.hub,m.pool,m.catalog,m.tournaments,m.ratings,m.challenges,m.qualifications,m.family];
  if(contracts.some(x=>!isAddress(x)||BigInt(x)===0n))throw Error('Invalid common contract address');
  if(new Set(contracts.map(x=>x.toLowerCase())).size!==contracts.length)throw Error('Common contracts must be distinct');
- const minimum=m.version===3?2:3,maximum=m.version===3?16:32;
+ const minimum=m.version===5?5:m.version===3?2:3,maximum=m.version===3?16:32;
  if(!Array.isArray(m.arenas)||m.arenas.length<minimum||m.arenas.length>maximum)throw Error(`Independent arena pool requires ${minimum} to ${maximum} configured arenas`);
  const forbidden=new Set([...humanApps,...contracts].map(x=>x.toLowerCase())),seen=new Set<string>();
  for(const a of m.arenas){
@@ -46,8 +51,8 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
   if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.pathname!=='/')throw Error('Arena node must be a credential-free HTTPS origin');
   if(!/^0x[\da-f]{64}$/i.test(a.runtimeHash))throw Error('Missing arena runtime hash');
  }
- if(m.verifiedCapacity!==0&&m.verifiedCapacity!==2)throw Error('Unsupported verified capacity');
- if(m.enabled&&!preview&&(m.verifiedCapacity!==2||!m.qualificationEvidence||!/^0x[\da-f]{64}$/i.test(m.qualificationEvidence)||BigInt(m.qualificationEvidence)===0n))throw Error('Public Agent Arcade requires a reviewed capacity qualification');
+ if(m.verifiedCapacity!==0&&m.verifiedCapacity!==m.maxMatches)throw Error('Unsupported verified capacity');
+ if(m.enabled&&!preview&&(m.verifiedCapacity!==m.maxMatches||!m.qualificationEvidence||!/^0x[\da-f]{64}$/i.test(m.qualificationEvidence)||BigInt(m.qualificationEvidence)===0n))throw Error('Public Agent Arcade requires a reviewed capacity qualification');
  if(m.tournamentsEnabled&&!m.enabled)throw Error('Tournaments cannot open while Agent Arcade is closed');
  if(m.qualificationEvidence!==null&&!/^0x[\da-f]{64}$/i.test(m.qualificationEvidence))throw Error('Invalid qualification reference');
  let history:AgentPoolManifest[]|undefined;
@@ -69,11 +74,13 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
  return {version:m.version,...(preview?{releaseStage:'testnet-preview' as const,previewEvidence:m.previewEvidence}:{}),...(m.countdownClock?{countdownClock:m.countdownClock}:{}),...(m.houseInstances?{houseInstances:m.houseInstances}:{}),...(history?{history}:{}),chainId:10143,engineChainId:4242,rulesVersion:m.rulesVersion,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
   ratings:m.ratings,challenges:m.challenges,qualifications:m.qualifications,family:m.family,arenas:m.arenas.map(a=>({app:a.app,node:a.node,runtimeHash:a.runtimeHash})),
   enabled:m.enabled,tournamentsEnabled:m.tournamentsEnabled,verifiedCapacity:m.verifiedCapacity,qualificationEvidence:m.qualificationEvidence,
-  durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
+  durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:m.maxMatches,
+  ...(m.version===5?{lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1'}:{})};
 }
+export const agentPoolLanes=(m:Pick<AgentPoolManifest,'maxMatches'>)=>Array.from({length:m.maxMatches},(_,i)=>i);
 /** An explicit preview review does not claim completed capacity/soak qualification. */
 export function agentPoolReleaseEvidence(m:AgentPoolManifest):Hex|null{
- return m.releaseStage==='testnet-preview'?m.previewEvidence??null:m.verifiedCapacity===2?m.qualificationEvidence:null;
+ return m.releaseStage==='testnet-preview'?m.previewEvidence??null:m.verifiedCapacity===m.maxMatches?m.qualificationEvidence:null;
 }
 export type TournamentFormat='elimination'|'championship';
 export const tournamentStatuses=['none','selecting','playing','complete','repair-waiting'] as const;

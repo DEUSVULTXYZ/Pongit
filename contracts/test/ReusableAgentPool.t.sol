@@ -38,14 +38,17 @@ contract ReusableAgentPoolHarness is ReusableAgentArena {
     function terminal(address winner) external {Game.finish(words,kernel,3,winner);}
 }
 
-contract ReusableAgentPoolTest is Test {
+abstract contract ReusableAgentPoolFixture is Test {
     IndependentHubFixture hub;AgentCatalog catalog;ReusableAgentPool pool;AgentTournaments book;
     AgentPublishedRatings ratings;AgentChallenges queue;ArcadeFamily family;HousePolicies policies;ChaosEngine kernel;
-    PublishedResultVerifier verifier;ReusableAgentPoolHarness[3] arenas;
+    PublishedResultVerifier verifier;ReusableAgentPoolHarness[] arenas;
     uint256 constant PLAYER=123;uint256 constant KEY=456;uint256 constant BRIDGE=812;
     function makePool() internal virtual returns(ReusableAgentPool){return new ReusableAgentPool(catalog,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE));}
     function makeChallenges() internal virtual returns(AgentChallenges){return new AgentChallenges(family,catalog,address(pool),address(this));}
     function makeQualifications() internal virtual returns(AgentQualifications){return new AgentQualifications(catalog,address(pool));}
+    function arenaCount() internal pure virtual returns(uint8){return 3;}
+    function beforeSeal() internal virtual {}
+    function afterOpen() internal virtual {}
     function setUp() public virtual {
         vm.chainId(10143);vm.warp(1_800_000_000);vm.roll(100);vm.setBlockhash(99,keccak256("Monad source"));
         hub=new IndependentHubFixture();policies=new HousePolicies();family=new ArcadeFamily();
@@ -63,13 +66,13 @@ contract ReusableAgentPoolTest is Test {
             address bot=address(uint160(0x1000+i));catalog.addHouse(bot,bytes32(uint256(i+1)),i);
             catalog.qualify(bot,0,true,bytes32(uint256(1)));catalog.qualify(bot,1,true,bytes32(uint256(1)));
         }
-        catalog.seal();for(uint8 i;i<3;i++){
-            arenas[i]=new ReusableAgentPoolHarness(IInterludeHub(address(hub)),address(pool),vm.addr(BRIDGE),policies,kernel,verifier);pool.addArena(arenas[i]);
+        catalog.seal();delete arenas;for(uint8 i;i<arenaCount();i++){
+            arenas.push(new ReusableAgentPoolHarness(IInterludeHub(address(hub)),address(pool),vm.addr(BRIDGE),policies,kernel,verifier));pool.addArena(arenas[i]);
         }
-        pool.seal();pool.setAdmissions(true);book.setAdmissions(true);queue.setAdmissions(true);
+        beforeSeal();pool.seal();pool.setAdmissions(true);book.setAdmissions(true);queue.setAdmissions(true);
         ArcadeFamily.Grant memory g=ArcadeFamily.Grant(vm.addr(PLAYER),vm.addr(KEY),uint64(vm.getBlockTimestamp()),uint64(vm.getBlockTimestamp()+7200),0);
         family.register(g,sig(PLAYER,family.grantDigest(g)));
-        for(uint8 i;i<3;i++)pool.openReusableArena(address(arenas[i]));
+        for(uint8 i;i<arenaCount();i++)pool.openReusableArena(address(arenas[i]));afterOpen();
     }
     function sig(uint256 key,bytes32 hash) internal pure returns(bytes memory){(uint8 v,bytes32 r,bytes32 s)=vm.sign(key,hash);return abi.encodePacked(r,s,v);}
     function challenge(address bot,uint8 mode) internal returns(uint256){
@@ -93,6 +96,9 @@ contract ReusableAgentPoolTest is Test {
     function finish(T.Ref memory ref,address winner) internal returns(Game.Result memory r){
         vm.chainId(4242);ReusableAgentPoolHarness(ref.arena).terminal(winner);r=ReusableAgentArena(ref.arena).publishedResult();vm.chainId(10143);hub.publish(ref.arena);
     }
+}
+
+contract ReusableAgentPoolTest is ReusableAgentPoolFixture {
     function testSameSessionNextTournamentFixtureAndHistoricalProofAfterReuse() public virtual {
         uint64 id=begin();T.Ref memory first=pool.admitTournament(id);admit(first);
         Game.Result memory one=finish(first,book.fixture(id,0).a);pool.captureProof(first,one,firstProof());pool.captureProof(first,one,firstProof());

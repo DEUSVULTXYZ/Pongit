@@ -15,7 +15,9 @@ contract HubAdmissionHeadroomForkTest is Test {
         vm.createSelectFork(rpc);assertEq(block.chainid,10143);
         IInterludeHub hub=IInterludeHub(0x3Ef8327F69e09cf721772F345e2A887eA22cD595);
         address validator=hub.defaultValidator();Types.Terms memory terms=hub.termsOf(validator);
-        require(terms.open&&terms.maxDelegations>0&&terms.maxDelegations<=64,"Bound this diagnostic to the observed small validator");
+        require(terms.open&&terms.maxDelegations>0,"Validator is not open");
+        uint256 probes=vm.envOr("PONG_HUB_HEADROOM_PROBES",uint256(8));
+        require(probes>0&&probes<=32,"Bounded admission diagnostic");
         (uint256 bond,uint256 reserved)=hub.bondOf(validator);
         emit log_named_uint("fork_block",block.number);
         emit log_named_bytes32("hub_code_hash",address(hub).codehash);
@@ -23,17 +25,19 @@ contract HubAdmissionHeadroomForkTest is Test {
         emit log_named_uint("max_delegations",terms.maxDelegations);
         emit log_named_uint("initial_bond",bond);
         emit log_named_uint("initial_reserved",reserved);
-        vm.deal(address(this),(uint256(terms.maxDelegations)+1)*terms.delegationFee);
+        vm.deal(address(this),probes*terms.delegationFee);
         uint256 admitted;bytes4 failure;
-        for(uint256 i;i<=terms.maxDelegations;i++){
+        for(uint256 i;i<probes;i++){
             PublicationProbe probe=new PublicationProbe(hub);
             (bool ok,bytes memory reason)=address(probe).call{value:terms.delegationFee}(abi.encodeWithSignature("delegateAll()"));
             if(!ok){require(reason.length>=4,"Unclassified admission failure");failure=bytes4(reason);break;}
             assertEq(uint8(hub.statusOf(address(probe),0)),uint8(Types.Status.Active));admitted++;
         }
         emit log_named_uint("additional_fork_admissions",admitted);
+        emit log_named_uint("probe_limit",probes);
         emit log_named_bytes32("refusal_selector",bytes32(failure));
-        assertEq(failure,bytes4(keccak256("ValidatorAtCapacity()")),"Do not misclassify a different refusal as capacity");
+        if(failure!=bytes4(0))assertEq(failure,bytes4(keccak256("ValidatorAtCapacity()")),"Do not misclassify a different refusal as capacity");
+        else assertEq(admitted,probes,"Report a lower bound, never invented total free capacity");
         assertLe(admitted,terms.maxDelegations);
         (,uint256 afterReserved)=hub.bondOf(validator);
         assertEq(afterReserved,reserved+admitted*terms.stakePerDelegation);
