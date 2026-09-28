@@ -15,6 +15,7 @@ import {agentPoolLanes,pooledHouseBots,tournamentStatuses,validateAgentPoolManif
 import type {AgentMatchRef} from '../../../shared/agents';
 import {houseInstanceAbi,agentPoolAdmissionAbi,verifyHouseInstanceAuthorities} from '../../../shared/agent-house-instances';
 import {agentAvailability,freshArenaState,type ArenaOperationalState,type AgentCapacity} from '../../../shared/agent-availability';
+import {challengeStage} from '../../../shared/arcade-progress';
 
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 const refView=(r:Ref):AgentMatchRef=>({chainId:10143,app:r.arena,epoch:String(r.epoch),id:String(r.id)});
@@ -213,7 +214,10 @@ export class AgentPoolReader {
     }
     }
    }
-   return{request:{id:String(id),player:owner,agent,mode,status,at:String(at),ref,...(waitReason?{waitReason,tournamentId}:{})}};
+   const stage=challengeStage(!!ref,waitReason);
+   const revision=createHash('sha256').update(poolJson({id,status,ref,stage})).digest('hex');
+   return{request:{id:String(id),player:owner,agent,mode,status,at:String(at),ref,...(waitReason?{waitReason,tournamentId}:{}),
+    progress:{stage,revision,observedAt:Date.now()}}};
   });
  }
  async match(ref:AgentMatchRef):Promise<{value:PoolMatchView;observedBlock:string;observedHash:Hex;observedTimestamp:string;revision:string}>{

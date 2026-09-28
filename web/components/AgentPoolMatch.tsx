@@ -1,4 +1,5 @@
 'use client';
+import {ArcadeProgress} from './ArcadeProgress';
 import {ArcadeHeader} from './ArcadeChrome';
 import {poolUserError} from '../../shared/agent-pool-error';
 import {useEffect,useRef,useState} from 'react';
@@ -219,9 +220,9 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   <ArcadeHeader><ArcadeAmbience onSound={quiet}/><Link href="/agents/tournaments">Tournaments</Link><Link href="/agents">Agent Arcade</Link>{side>=0&&<button onClick={()=>{void move(0);setTools(true);}}>Tools</button>}</ArcadeHeader>
   {!enabled?<section className="agent-empty"><h1>Qualification in progress</h1><p>Independent agent arenas are not open yet.</p></section>:<>
    <div className="pool-match-toolbar"><Link className="pool-compact-back" href="/agents">Back</Link><span>{view?.mode===1?'CHAOS':'CLASSIC'} · {side<0&&streamPaused&&snapshot?.phase===2&&!result?'Reconnecting':connection}<span className="pool-compact-clock"> · {overtime?'Overtime · ':''}{Math.floor(seconds/60)}:{String(seconds%60).padStart(2,'0')}</span></span><button onClick={()=>void navigator.clipboard.writeText(location.href).then(()=>setCopied('Link copied')).catch(()=>setCopied('Copy failed'))}>Copy arena link</button>{side>=0&&<button className="pool-compact-tools" onClick={()=>{void move(0);setTools(true);}}>Tools</button>}<span role="status">{copied}</span></div>
-   {error&&<div className="pool-match-error" role="status"><p>{error}</p><button onClick={()=>setRetry(n=>n+1)}>Retry</button></div>}
-   {controlError&&!tools&&<div className="pool-match-error" role="status"><p>{controlError}</p><button onClick={()=>{void move(0);setTools(true);}}>Account</button></div>}
-   {!view&&!error&&<p role="status">Reading the match reference…</p>}
+   {error&&!playing&&<ArcadeProgress stage="error" detail={error} actions={<button onClick={()=>setRetry(n=>n+1)}>Retry</button>} compact/>}
+   {controlError&&!tools&&!error&&!playing&&<ArcadeProgress stage="error" detail={controlError} actions={<button onClick={()=>{void move(0);setTools(true);}}>Account</button>} compact/>}
+   {!view&&!error&&<ArcadeProgress stage="loading" title="Opening your arena"/>}
    {view&&<section className="rooms-court court-card agent-court" aria-label="Agent arena">
     <AgentScoreboard players={[{name:name(view.a),avatar:avatar(view.a)},{name:name(view.b),avatar:avatar(view.b)}]} scores={[scoreA,scoreB]} caption={displayDone?'MATCH OVER':`${overtime?'SUDDEN DEATH':'FIRST TO SEVEN'} · ${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}/>
     {displayedResult&&result?<div className="pool-published-result"><h1>{result.status===4?'Match cancelled':result.winner===zeroAddress?'Draw':`${name(result.winner)} wins`}</h1>
@@ -231,9 +232,9 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      <details className="pool-match-reference"><summary>Match details</summary><p>{result.finality?"Recorded on Monad and final.":"Recorded on Monad. It can still be challenged until it is final."}</p><p>Arena {short(reference.app)} · Epoch {reference.epoch} · Match {reference.id}</p></details></div>:snapshot?<>
      {snapshot.chaos&&<ChaosEffectsHud effects={playout?.effects??eventHud(snapshot.chaos.physics)} gameMs={playout?playout.gameMs:Number(snapshot.state.t)/1000} players={[name(view.a),name(view.b)]}/>}
      <div className="pool-canvas-slot"><Court state={snapshot.state} chaos={snapshot.chaos} rulesVersion={manifest.current?.rulesVersion??10} clock={snapshot.clock>BigInt(view.overtimeSeconds?360_000_000:300_000_000)?BigInt(view.overtimeSeconds?360_000_000:300_000_000):snapshot.clock}
-      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onPlayback={setPainted} onStats={(_fps,_predicted,waiting)=>setStreamPaused(waiting)}/>{(manifest.current?.version??0)>=4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
+      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onPlayback={setPainted} onStats={(_fps,_predicted,waiting)=>setStreamPaused(waiting)}/>{error?<ArcadeProgress stage="error" detail={error} actions={<button onClick={()=>setRetry(n=>n+1)}>Retry</button>} compact overlay/>:controlError&&!tools?<ArcadeProgress stage="error" detail={controlError} actions={<button onClick={()=>{void move(0);setTools(true);}}>Account</button>} compact overlay/>:streamPaused&&snapshot.phase===2&&!result?<ArcadeProgress stage="synchronizing" compact overlay/>:null}{(manifest.current?.version??0)>=4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
      <div className="rooms-court-controls"><span>{side>=0?'W / S · ↑ / ↓':'SPECTATING'}</span>{side>=0&&<div className="touch-controls">{([-1,1] as const).map(dir=><IconButton key={dir} icon={dir===-1?'up':'down'} aria-label={dir===-1?'Move up':'Move down'} disabled={!controllable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void move(dir);}} onPointerUp={()=>void move(0)} onPointerCancel={()=>void move(0)} onLostPointerCapture={()=>void move(0)}/>)}</div>}</div>
-    </>:<div className="agent-empty"><p>Waiting for this arena to become ready.</p></div>}
+    </>:<ArcadeProgress stage={error?'unavailable':'preparing'}/>}
    </section>}
   </>}
   {tools&&<Dialog label="Arena tools" onClose={()=>setTools(false)}><IconButton aria-label="Close arena tools" onClick={()=>setTools(false)}/><h2>Arena tools</h2>{controlError&&<p role="alert">{controlError}</p>}

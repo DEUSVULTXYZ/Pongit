@@ -40,6 +40,7 @@ try{
   const touch=width<=390||height<=500;
   const context=await browser.newContext({viewport:{width,height},hasTouch:touch,reducedMotion:width===390?'reduce':'no-preference'});
   let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0,closedAdmissions=false;
+  let launchStarted=0;
   let releaseCatalog:(()=>void)|undefined,catalogGate:Promise<void>|undefined;
   await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
   await context.addInitScript({content:"Object.defineProperty(navigator.credentials,'get',{value:function(){window.fixtureRefusedPasskey=true;return Promise.reject(new Error('Qualification cancelled passkey request'));}});"});
@@ -90,9 +91,10 @@ try{
       const call=decodeFunctionData({abi,data:rpc.params[0].data});
       if(call.functionName==='RULES_VERSION')return reply(encodeFunctionResult({abi,functionName:'RULES_VERSION',result:BigInt(m.rulesVersion)}));
       if(call.functionName==='launchAt')return reply(encodeFunctionResult({abi,functionName:'launchAt',result:0n}));
+     if(call.functionName==='launchClock'){if(launchStarted===-1)launchStarted=Date.now();return reply(encodeFunctionResult({abi,functionName:'launchClock',result:[3000n,BigInt(Math.max(0,Date.now()-launchStarted))]}));}
       assert.equal(call.functionName,'chaosState');
       const state={...initial(zeroHash,mode),t:3000000n,scoreA:3,scoreB:2};
-      const header=[1n,revision,2n,people[0].agent,people[1].agent,zeroAddress,zeroAddress,100n+revision,state.t,0n,0n,0n,state];
+      const header=[1n,revision,(launchStarted===-1||launchStarted&&Date.now()-launchStarted<3000)?1n:2n,people[0].agent,people[1].agent,zeroAddress,zeroAddress,100n+revision,state.t,0n,0n,0n,state];
       return reply(encodeFunctionResult({abi,functionName:'chaosState',result:chaosBrowserPayload(abi,header,mode?effect:0,mode?13:0)}));
      }
      throw Error('Unexpected engine request '+rpc.method);
@@ -136,6 +138,13 @@ try{
    await page.getByText('Tournament history',{exact:true}).click();await page.getByRole('button',{name:/#1/}).click();await page.waitForFunction(()=>document.activeElement?.textContent==='Tournament #1');
    await page.screenshot({path:`${output}/${channel}-${league?'championship':'elimination'}-${width}.png`,fullPage:true});
    report.checks.push({width,height,format:league?'championship':'elimination',layout:true,focus:true});
+  }
+  if(width===360&&m.countdownClock){
+   mode=0;launchStarted=-1;
+   await page.goto(`${origin}/agents/arenas/${ref.app}/1/1`);
+   for(const digit of ['3','2','1'])await page.locator('.match-countdown-digit').filter({hasText:digit}).waitFor({timeout:5000});
+   await page.locator('.match-countdown').waitFor({state:'hidden',timeout:10000});
+   report.checks.push({width,countdown:'3,2,1',confirmedEngineClock:true});launchStarted=0;
   }
   for(mode of [0,1] as const){
    closedAdmissions=width===360;

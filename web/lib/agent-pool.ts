@@ -4,6 +4,7 @@ import {measuredFetch} from '../../shared/rpc-metrics';
 import {createPoolSponsor,type PoolSignedCall} from '../../shared/agent-pool-sponsor';
 import type {AgentPoolManifest} from '../../shared/agent-pool';
 import {browserBase} from './base-read';
+import type {ChainOperation} from '../../shared/independent';
 
 const base=browserBase;
 export const poolBase=()=>base;
@@ -20,11 +21,12 @@ export function poolBrowserSponsor(m:AgentPoolManifest,player:Address){
  return createPoolSponsor(m,player,sessionStorage,(path,body)=>poolApi(path,body));
 }
 /** Poll one saved sponsored action. A timeout leaves its exact intent intact. */
-export async function finishPoolSponsor(sponsor:ReturnType<typeof poolBrowserSponsor>,call?:PoolSignedCall){
+export async function finishPoolSponsor(sponsor:ReturnType<typeof poolBrowserSponsor>,call?:PoolSignedCall,onProgress?:(operation:ChainOperation)=>void){
  let operation=call?await sponsor.send(call):await sponsor.resume();const until=performance.now()+45000;
+ if(operation)onProgress?.(operation);
  while(operation&&['pending','queued'].includes(operation.status)){
   if(performance.now()>=until)throw Error('Sponsorship is still pending. Retry to resume this saved action.');
-  await new Promise(r=>setTimeout(r,1000));operation=await sponsor.resume();
+  await new Promise(r=>setTimeout(r,1000));operation=await sponsor.resume();if(operation)onProgress?.(operation);
  }
  if(operation?.status==='failed')throw Error('The transaction reverted. Refresh before retrying.');return operation;
 }

@@ -1,6 +1,7 @@
 'use client';
 import {watchAgentChanges} from '../lib/agent-notifications';
 import {ArcadeHeader,ArcadeHeading,ArcadeAction} from './ArcadeChrome';
+import {ArcadeProgress} from './ArcadeProgress';
 import {poolUserError} from '../../shared/agent-pool-error';
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
@@ -70,14 +71,14 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>Automatic tournaments will open after the independent arenas pass their continuous play trial.</p></section>:<>
    {preview&&<p className="agent-preview-notice" role="status">Preview · No entry fees or prizes.</p>}
 
-   {error&&<div role="alert" className="tournament-error"><p>{error} {tournament?'Showing the latest standings.':''}</p><button onClick={()=>setRetry(x=>x+1)}>Retry</button></div>}
-   {loading&&!tournament&&<p role="status">Loading tournaments…</p>}
-   {!loading&&!tournament&&!error&&<section className="agent-empty"><h2>The circuit is getting ready</h2><p>The first tournament will appear when eight qualified agents are available.</p></section>}
+   {error&&<ArcadeProgress stage="error" detail={`${error} ${tournament?'Showing the latest standings.':''}`} actions={<button onClick={()=>setRetry(x=>x+1)}>Retry</button>}/>}
+   {loading&&!tournament&&!error&&<ArcadeProgress stage="loading" title="Loading tournaments"/>}
+   {!loading&&!tournament&&!error&&<ArcadeProgress stage="preparing" title="The circuit is getting ready" detail="Waiting for eight qualified rivals"/>}
    {tournament&&<section aria-busy={loading} className="tournament-detail">
     <div className="tournament-title"><div><p className="agent-badge">{tournament.mode===0?'CLASSIC':'CHAOS'} · {tournament.format==='championship'?'CHAMPIONSHIP':'ELIMINATION'}</p>
      <h2 ref={heading} tabIndex={-1}>Tournament #{tournament.id}</h2></div><span className="tournament-validation">{tournament.status==='repair-waiting'?'Result correction in progress':tournament.status==='complete'?'Completed':tournament.status==='selecting'?'Selecting participants':'In progress'}</span></div>
-    {tournament.revision>0&&<p role="status">A published result was corrected. The affected standings or bracket are being rebuilt. Revision {tournament.revision}.</p>}
-    {tournament.status==='complete'&&<div className="tournament-champion"><span>Champion</span>{identity(tournament.champion)}{tournament.nextAt&&seconds!==null&&<p>{seconds>0?`Next tournament in ${seconds}s`:'Preparing the next tournament'}</p>}</div>}
+    {tournament.status==='repair-waiting'&&<ArcadeProgress stage="synchronizing" title="Updating corrected results" detail={`Revision ${tournament.revision}`} compact/>}
+    {tournament.status==='complete'&&<div className="tournament-champion"><span>Champion</span>{identity(tournament.champion)}{tournament.nextAt&&seconds!==null&&<ArcadeProgress stage="preparing" title={seconds>0?`Next tournament in ${seconds}s`:'Preparing the next tournament'} compact/>}</div>}
     {current&&<section className="tournament-now" aria-label="Current match"><div><span className="agent-badge">CURRENT MATCH</span><h3>{name(current.a)} <span>vs</span> {name(current.b)}</h3>
      <p>{tournament.mode===0?'Classic':'Chaos'} · Match {current.index+1}</p></div><ArcadeAction href={`/agents/arenas/${current.ref!.app}/${current.ref!.epoch}/${current.ref!.id}`}>Watch match ↗</ArcadeAction></section>}
     {upcoming.length>0&&<section className="tournament-next" aria-label="Next matches"><h3>Up next</h3>{upcoming.map(f=><div key={f.index}>{identity(f.a)}<span>vs</span>{identity(f.b)}</div>)}</section>}

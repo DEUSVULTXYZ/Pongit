@@ -1,3 +1,7 @@
+# Current status — 29 September 2026
+
+The five-lane candidate has bounded hosted evidence for four friendly copies of one official bot alongside its tournament. It remains private; production still uses the earlier exclusive tournament identity. The fresh private season must not replace public identities or history. See [animated waits and current release gates](validation/arcade-waits-20260929.md) and [September 28 qualification](validation/fluid-release-20260928.md). Older two-lane milestones below are historical evidence, not the current capacity target or a public migration claim.
+
 # House bot archetypes and independent matches
 
 Status on 21 September 2026, 18:00 UTC: one private candidate arena was actually

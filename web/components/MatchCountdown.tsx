@@ -4,6 +4,8 @@ import {zeroHash} from 'viem';
 import {initial} from '../../shared/physics-v2';
 import {Court} from './Court';
 import {arcadeAudio} from '../lib/audio';
+import {ArcadeProgress} from './ArcadeProgress';
+import {arenaLaunchRemaining} from '../../shared/arena-launch';
 const preview=initial(zeroHash),quiet=()=>{};
 function CountdownDigit({digit,offset}:{digit:number;offset:number}){
  const [delay]=useState(()=>`-${offset}ms`);
@@ -14,12 +16,12 @@ function CountdownDigit({digit,offset}:{digit:number;offset:number}){
 export function ArenaCountdown({id,deadline,clock,observedAt}:{id:string;deadline?:number;clock?:number;observedAt?:number}){
  const [at,setAt]=useState(()=>performance.now());
  useEffect(()=>{const timer=setInterval(()=>setAt(performance.now()),100);return()=>clearInterval(timer);},[]);
- const remaining=deadline&&clock&&observedAt!==undefined?Math.max(0,deadline-clock-Math.max(0,at-observedAt)):0;
+ const remaining=arenaLaunchRemaining(deadline,clock,observedAt,at);
  const digit=Math.min(3,Math.ceil(remaining/1000));
  useEffect(()=>{if(digit)arcadeAudio.play('countdown',`${id}:intro:${digit}`);},[id,digit]);
  return <div className="match-countdown" role="status" aria-live="polite" aria-atomic="true">
   <span className="match-countdown-label">{digit?'GET READY':'STARTING MATCH'}</span>
-  {digit>0?<CountdownDigit key={digit} digit={digit} offset={(1000-remaining%1000)%1000}/>:<span className="match-countdown-wait">Waiting for the game to start</span>}
+  {digit>0?<CountdownDigit key={digit} digit={digit} offset={(1000-remaining%1000)%1000}/>:<div style={{width:'min(360px,90%)'}}><ArcadeProgress stage="preparing" title="Starting match" compact/></div>}
  </div>;
 }
 /** Pre-admission scene: the engine has not received both acceptance signatures. */
@@ -33,7 +35,7 @@ export function MatchCountdown({id,endsAt,now,players,onBack,busy}:{id:string;en
    <Court state={preview} clock={0n} observedAt={0} direction={0} side={-1} replay matchId={`intro:${id}`} controllable={false} pending={false} onStats={quiet}/>
    <div className="match-countdown" role="status" aria-live="polite" aria-atomic="true">
     <span className="match-countdown-label">{digit?'GET READY':endsAt?'STARTING MATCH':'READY TO PLAY'}</span>
-    {digit>0?<CountdownDigit key={digit} digit={digit} offset={(1000-remaining%1000)%1000}/>:<span className="match-countdown-wait">{endsAt?'Waiting for the game to start':'Waiting for your rival'}</span>}
+    {digit>0?<CountdownDigit key={digit} digit={digit} offset={(1000-remaining%1000)%1000}/>:<div style={{width:'min(360px,90%)'}}><ArcadeProgress stage={endsAt?'preparing':'opponent'} compact/></div>}
    </div>
   </div>
   <div className="rooms-court-controls"><span>{digit?'First to seven':endsAt?'Confirming both players':'Your rival must accept too'}</span><button disabled={busy} onClick={onBack}>Back</button></div>

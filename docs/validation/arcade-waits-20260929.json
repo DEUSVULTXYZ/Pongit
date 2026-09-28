@@ -1,0 +1,56 @@
+{
+  "publicDeploymentChanged": false,
+  "releaseReady": false,
+  "testScope": "Local TypeScript/Solidity and production UI with synthetic APIs, no new hosted admissions",
+  "tests": {
+    "typescript": 752,
+    "solidity": 144,
+    "browserProgressGroups": 10,
+    "browserPageChecks": 68
+  },
+  "publisher": {
+    "at": "2026-09-28T22:44:00.781Z",
+    "block": "66527633",
+    "hash": "0xcbdf09ff78fb49d99a1f83cc4167515c2f55502668d7e9b6e5b0b16ebe2c0bdd",
+    "balanceMON": "16463.974185383116930335"
+  },
+  "remaining": [
+    "final public-data migration",
+    "hosted championships",
+    "five agent matches alongside two human games",
+    "worst publication/release reserve",
+    "real catalogue admission latency",
+    "final financial checks",
+    "unchanged 24-hour qualification"
+  ],
+  "evidence": [
+    {
+      "path": "artifacts/qualification/20260929-typescript-2.log",
+      "sha256": "9e05e761da2fc959c64d23caa76a4e74a69a0a05fee754a8bd3a40913ffa801e"
+    },
+    {
+      "path": "artifacts/qualification/20260929-instances-contracts-1.log",
+      "sha256": "9f71e10527d5d1272d35c148af152f1fdc0682ca30d71ba4ee028eec812cad49"
+    },
+    {
+      "path": "artifacts/qualification/20260929-ui-build-5.log",
+      "sha256": "3b94f12fca9a0be3d37799a26c34e6dc4a0bc75bf51141c9eaa1abdea463fe29"
+    },
+    {
+      "path": "artifacts/qualification/20260929/progress-3/chrome.json",
+      "sha256": "87e391ab634b511529b58da2783aefff54c1cceaf9d0b560bd705c1f0cbd3ac0"
+    },
+    {
+      "path": "artifacts/qualification/20260929/progress-3/msedge.json",
+      "sha256": "7be954f53edcf111945b9e56f1c039bc0b0e0e0b4d030dc79b14018ee589e98f"
+    },
+    {
+      "path": "artifacts/qualification/20260929/ui-2/chrome.json",
+      "sha256": "e2c0f15e6c7985dba364e6531d4df55783b08000f14502b414a4a880baf05dc2"
+    },
+    {
+      "path": "artifacts/qualification/20260929/ui-2/msedge.json",
+      "sha256": "223d7abffefe8b1386c855509ee4e0fb708a6ca6c68f650a89ebcd6acb14f766"
+    }
+  ]
+}

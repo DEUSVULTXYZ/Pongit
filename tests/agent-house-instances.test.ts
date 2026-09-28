@@ -47,8 +47,12 @@ test('independent house waiting status uses contract eligibility while competiti
  const house=(await reader.catalog()).value.items[0];assert.equal(house.waiting,false);
  assert.equal(house.participation,token);assert.equal(house.playing,playing);assert.equal(house.friendlyInstances[1],true);
  let request=(await reader.challenge(human)).value.request!;assert.equal(request.waitReason,'arena');assert.equal(request.tournamentId,undefined);
+ assert.equal(request.progress?.stage,'capacity');assert(request.progress!.observedAt>0);
+ const again=(await reader.challenge(human)).value.request!;assert.equal(again.progress?.revision,request.progress?.revision,'unchanged state has a stable revision');
+ assert.equal(request.progress?.progress,undefined,'no estimated completion from elapsed waiting time');
  eligible=false;assert.equal((await reader.catalog()).value.items[0].waiting,true);
  request=(await reader.challenge(human)).value.request!;assert.equal(request.waitReason,'tournament');assert.equal(request.tournamentId,'3');
+ assert.equal(request.progress?.stage,'opponent');assert.notEqual(request.progress?.revision,again.progress?.revision);
  official=false;const community=(await reader.catalog()).value.items[0];assert.equal(community.official,false);assert.equal(community.friendlyInstances[0],false);
  const legacy=new AgentPoolReader(client,{...m,houseInstances:undefined});eligible=true;
  assert.equal((await legacy.catalog()).value.items[0].waiting,true);assert.equal((await legacy.challenge(human)).value.request?.waitReason,'tournament');

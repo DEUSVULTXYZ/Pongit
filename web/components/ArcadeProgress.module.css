@@ -1,0 +1,24 @@
+.panel{--glow:#8debf2;box-sizing:border-box;width:100%;min-width:0;padding:20px;margin:12px 0;color:#f5f3ff;background:linear-gradient(120deg,#151532,#201337);border:2px solid #8f7abb;box-shadow:inset 0 0 0 3px #0b0b22,inset 0 0 0 5px #3e3463,3px 3px 0 #08091c;position:relative}
+.caption{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;font:400 14px/1.6 var(--font-michroma),sans-serif}
+.clock{flex:none;color:var(--glow);font:600 16px/1.4 var(--cabinet-font),system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.track{position:relative;height:26px;padding:4px;background:#060818;border:2px solid #5f507e;box-shadow:inset 2px 2px #000;margin:12px 0;overflow:hidden}
+.segments{height:100%;display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:4px}
+.segments i{background:#302849;box-shadow:inset 0 2px #65558444}
+.segments i[data-filled=true]{background:var(--glow);box-shadow:inset 0 3px #d9ffff,inset 0 -3px #327983}
+.panel:not([data-incident=true]):not([data-complete=true]):not([data-measured=true]) .segments i{animation:charge 1.6s steps(1,end) infinite;animation-delay:calc(var(--segment)*100ms)}
+.ball{position:absolute;left:5px;top:8px;width:8px;height:8px;background:#fff3ff;box-shadow:-5px 0 #ce9afa,-10px 0 #805fac;animation:rally 1.6s steps(16,end) infinite alternate}
+.detail{min-height:26px;display:flex;justify-content:space-between;gap:12px;color:#c9c4de;font:400 16px/1.5 var(--cabinet-font),system-ui,sans-serif;overflow-wrap:anywhere}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+.actions button,.actions a{min-height:44px;min-width:44px}
+.compact{padding:12px 16px;margin:8px 0}
+.compact .caption{min-height:32px;font-size:13px}
+.compact .detail:empty{min-height:0}
+.overlay{position:absolute;z-index:4;left:50%;top:8px;transform:translateX(-50%);width:min(360px,90%);margin:0;pointer-events:none}
+.overlay .actions{pointer-events:auto}
+.panel[data-incident=true]{--glow:#f7bd80;border-color:#b28a70}
+.panel[data-incident=true] .segments i{background:repeating-linear-gradient(135deg,#694f40 0 4px,#292033 4px 8px)}
+.panel[data-complete=true] .track{border-color:var(--glow)}
+@keyframes charge{0%,24%,100%{background:#302849}25%,43%{background:#8364b1}44%,62%{background:#8debf2}63%,81%{background:#be89e7}}
+@keyframes rally{to{left:calc(100% - 14px)}}
+@media(max-width:480px){.panel{padding:16px 12px}.caption{font-size:12px}.detail{font-size:16px}.segments{gap:3px}.compact{padding:10px 12px}}
+@media(prefers-reduced-motion:reduce){.panel .segments i,.ball{animation:none!important}.ball{left:50%}.panel:not([data-incident=true]):not([data-complete=true]):not([data-measured=true]) .segments i:nth-child(4n){background:#8d76b1}}
