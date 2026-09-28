@@ -3,6 +3,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
+COPY pin-envio-rpc-concurrency.mjs ./
+RUN node pin-envio-rpc-concurrency.mjs node_modules/envio 4
 COPY config.yaml schema.graphql tsconfig.json ./
 COPY src ./src
 RUN npm run codegen && npm run typecheck

@@ -7,6 +7,7 @@ import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {chainTools} from './independent-chain-tools';
 import {retryOperatorContention} from '../shared/operator-contention';
 import {validateAgentPoolManifest,pooledHouseBots} from '../shared/agent-pool';
+import {agentIndexDeployments} from '../shared/agent-index-manifest';
 
 assert.equal(process.env.PONG_CONTINUING_AGENT_MIGRATION,'authorized-closed-source-testnet');
 assert.equal(process.getuid?.(),1000);
@@ -15,6 +16,14 @@ assert(/^reusable-agents-\d{8}(?:-[1-9]\d?)?$/.test(prefix));
 const humans=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(humans.length);
 const source=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/source-manifest.json','utf8')),humans);
 assert.equal(source.version,4,'Reviewed predecessor is the two-lane rules15 pool');
+const sourceIndexBytes=await readFile('/metadata/source-agent-index.json');
+const sourceIndex=agentIndexDeployments(JSON.parse(sourceIndexBytes.toString()),10143,15);
+const indexedSources=[source,...(source.history??[])].filter(s=>s.rulesVersion===15);
+assert.equal(sourceIndex.length,indexedSources.length,'Every historical rules15 emitter must remain indexed');
+for(const prior of indexedSources){
+ const entry=sourceIndex.find(s=>s.pool===prior.pool.toLowerCase());assert(entry,'Missing historical index binding');
+ assert.deepEqual([...entry.arenas].sort(),prior.arenas.map(a=>a.app.toLowerCase()).sort(),'Historical arena index differs');
+}
 const auditBytes=await readFile('/metadata/ratings-empty-seed-audit.json');
 const audit=JSON.parse(auditBytes.toString());
 assert(audit.complete===true&&audit.noSeeds===true&&audit.chainId===10143
@@ -52,9 +61,10 @@ try{
  for(const name of ['pool','catalog','tournaments','ratings','qualifications','challenges','family'] as const)hashes[name]=await codeHash(source[name]);
  if(!r){r={prefix,rulesVersion:15,countdownClock:'engine-ticks-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
   arenaAdmissions:'verified-epoch-v1',genesis:String(await read('AgentPublishedRatings',source.ratings,'genesisTime')),
-  source:{manifest:source,hashes,block:String(anchor.number),blockHash:anchor.hash,emptySeedAudit:auditHash,seal},
+  source:{manifest:source,indexHash:keccak256(sourceIndexBytes),hashes,block:String(anchor.number),blockHash:anchor.hash,emptySeedAudit:auditHash,seal},
   admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'importing-closed',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.prefix,prefix);assert.equal(r.source.emptySeedAudit,auditHash);assert.equal(r.arenaCount,arenaCount);
+ assert.equal(r.source.indexHash,keccak256(sourceIndexBytes),'Source index metadata changed');
  assert.deepEqual(r.source.hashes,hashes,'Source code changed');assert.deepEqual(r.source.manifest,source,'Source manifest changed');
  const bridge=privateKeyToAccount(r.admissionKey).address;
  const deploy=async(name:string,args:readonly unknown[]=[],instance=name)=>{
@@ -125,8 +135,17 @@ try{
  r.common={hub:source.hub,pool,catalog,tournaments,ratings,qualifications,family:source.family,challenges,verifier};
  r.continuation={pool:source.pool,catalog:source.catalog,tournaments:source.tournaments,ratings:source.ratings,qualifications:source.qualifications,challenges:source.challenges};
  r.bots=await Promise.all(pooledHouseBots.map(async(bot,i)=>({agent:await read('AgentCatalog',catalog,'house',[i]),...bot})));
+ const deploymentJob=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',
+  [prefix+':deploy-continuingfivelaneagentpool'])).rows[0];
+ assert.equal(deploymentJob?.status,'confirmed');
+ const poolReceipt=await t.base.getTransactionReceipt({hash:deploymentJob.hash});
+ assert.equal(poolReceipt.status,'success');assert.equal(poolReceipt.contractAddress?.toLowerCase(),pool.toLowerCase());
+ const indexManifest={version:2,chainId:10143,deployments:[...sourceIndex,
+  {chainId:10143,rulesVersion:15,pool,startBlock:String(poolReceipt.blockNumber),arenas:r.arenas.map((a:any)=>a.app)}]};
+ agentIndexDeployments(indexManifest,10143,15);
  r.phase='deployed-closed';r.migrationPhase='imported-closed';await save();
  await mkdir('artifacts/reusable-candidate',{recursive:true});
+ await writeFile('artifacts/reusable-candidate/agent-reusable-index.json',JSON.stringify(indexManifest,null,2));
  await writeFile('artifacts/reusable-candidate/migration.json',JSON.stringify({at:new Date().toISOString(),prefix,common:r.common,continuation:r.continuation,
   source:r.source,arenas:r.arenas,bots:r.bots,modules:r.modules,serviceOperators:r.serviceOperators,qualified:false,publiclyEnabled:false,
   transactions:(await t.db.query('SELECT id,hash,status FROM il_lifecycle_jobs WHERE id LIKE $1 ORDER BY nonce',[prefix+':%'])).rows},null,2));

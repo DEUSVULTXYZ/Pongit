@@ -1,3 +1,23 @@
+.replay { padding: 0; margin: 0; max-width: none; min-width: 0; min-height: 0; height: auto; display: block; }
+.heading { position: sticky; top: -32px; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; background: var(--palace-panel, #11112c); }
+:global(.cabinet-dialog) .heading h2 { margin: 0; font-size: clamp(18px, 2vw, 28px); }
+.heading button { flex: none; order: 2; }
+.replay > p { font: 16px/1.5 var(--cabinet-font), sans-serif; }
+.replay .recording { margin: 0; padding: 12px; }
+.controls { display: flex; align-items: end; gap: 16px; margin-top: 16px; }
+.controls button { min-height: 44px; flex: none; }
+.controls label { flex: 1; min-width: 0; margin: 0; font-size: 16px; }
+.controls input { display: block; width: 100%; margin: 0; min-height: 44px; }
+.accessibleScore { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+:global(.cabinet-dialog) .modal { width: min(800px, calc(100vw - 24px)); max-width: 800px; border-radius: 3px; border-color: #8874b3; background: var(--palace-panel, linear-gradient(140deg,#252046,#0d1128 60%)); }
+@media(max-width:600px) {
+  .controls { gap: 10px; flex-wrap: wrap; }
+  .controls label { order: -1; flex-basis: 100%; }
+  .controls button { width: 100%; }
+  .replay .recording { padding: 8px; }
+  :global(.cabinet-dialog) .modal { padding: 20px 12px; }
+  .heading { top: -20px; }
+}
 .court {
   width: 100%;
   aspect-ratio: 16 / 9;

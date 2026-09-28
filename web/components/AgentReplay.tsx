@@ -7,8 +7,9 @@ import {API} from '../lib/api';
 import {Court} from './Court';
 import {ChaosEffectsHud} from './ChaosEffectsHud';
 import {eventHud} from '../lib/chaos-presentation';
+import {AgentScoreboard} from './AgentScoreboard';
 import styles from './AgentReplay.module.css';
-export function AgentReplay({reference}:{reference:AgentMatchRef}){
+export function AgentReplay({reference,players}:{reference:AgentMatchRef;players?:[{name:string;avatar:number},{name:string;avatar:number}]}){
  const [frames,setFrames]=useState<EngineState[]>([]),[index,setIndex]=useState(0),[playing,setPlaying]=useState(false),[message,setMessage]=useState('Loading replay'),[rules,setRules]=useState<number>();
  useEffect(()=>{let done=false;setFrames([]);setIndex(0);setPlaying(false);
   void fetch(`${API}/agents/replay?${new URLSearchParams({id:reference.id,app:reference.app,epoch:reference.epoch})}`,{signal:AbortSignal.timeout(15000)})
@@ -22,11 +23,16 @@ export function AgentReplay({reference}:{reference:AgentMatchRef}){
    setIndex(old=>{let i=old;while(i+1<frames.length&&Number(frames[i+1].state.t)<=clock)i++;if(i===frames.length-1)setPlaying(false);return i;});
   },80);return()=>clearInterval(t);
  },[playing,frames]);
- const s=frames[index];return <section><p role="status">{message}</p>{s&&<>
-  {s.chaos&&<ChaosEffectsHud effects={eventHud(s.chaos.physics)} gameMs={Number(s.state.t)/1000} effectsEnabled={false}/>}
+ const s=frames[index],short=(a:string)=>`${a.slice(0,6)}…${a.slice(-4)}`;
+ return <section className={`rooms-shell ${styles.replay}`}><p role="status">{message}</p>{s&&<>
+  <div className={`rooms-court ${styles.recording}`}>
+  <AgentScoreboard players={players??[{name:short(s.a),avatar:0},{name:short(s.b),avatar:1}]} scores={[s.state.scoreA,s.state.scoreB]} caption={index===frames.length-1?'FINAL SCORE':'RECORDED MATCH'}/>
+  <p className={styles.accessibleScore}>{s.state.scoreA} : {s.state.scoreB}</p>
+  {s.chaos&&<ChaosEffectsHud effects={eventHud(s.chaos.physics)} gameMs={Number(s.state.t)/1000} effectsEnabled={false} players={players?.map(p=>p.name) as [string,string]|undefined}/>}
   <div className={styles.court}><Court state={s.state} chaos={s.chaos} rulesVersion={rules} clock={s.clock} observedAt={Date.now()} direction={0} side={-1} replay
    matchId={`replay:${agentMatchKey(reference)}`} controllable={false} pending={false} liveEngine onStats={()=>{}}/></div>
-  <label>Replay position<input type="range" min={0} max={frames.length-1} value={index} onChange={e=>{setPlaying(false);setIndex(Number(e.target.value));}}/></label>
-  <button onClick={()=>{if(index===frames.length-1)setIndex(0);setPlaying(v=>!v);}}>{playing?'Pause':'Play replay'}</button><p>{s.state.scoreA} : {s.state.scoreB}</p>
+  </div>
+  <div className={styles.controls}><button onClick={()=>{if(index===frames.length-1)setIndex(0);setPlaying(v=>!v);}}>{playing?'Pause':'Play replay'}</button>
+  <label>Replay position<input type="range" min={0} max={frames.length-1} value={index} onChange={e=>{setPlaying(false);setIndex(Number(e.target.value));}}/></label></div>
  </>}</section>;
 }

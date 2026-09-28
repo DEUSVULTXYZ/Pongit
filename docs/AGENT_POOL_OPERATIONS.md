@@ -157,3 +157,25 @@ Three superseded private indexers are stopped with their databases retained.
 Do not automatically restart them against the same history gateway.
 Deployment evidence, precise scope and rollback are in
 [the migration/indexer report](validation/agent-migration-indexer-20260921.md).
+
+## Five-lane archive continuity, 28 September
+
+The five-lane migration requires `/metadata/source-agent-index.json`, containing
+the exact existing `deployments/agent-reusable-index.json`. Its hash and every
+historical pool/arena binding are checked before migration writes. The generated
+`artifacts/reusable-candidate/agent-reusable-index.json` keeps those original
+boundaries and adds the new pool at its confirmed deployment block. Copy this
+reviewed artifact during the coordinated cutover, then run `configure-indexer.ts`.
+Never replace the old emitter with only the new pool: later corrections and
+finalization still belong to the old contract and match reference.
+
+The configuration accepts the legacy single-pool format or a version-2 manifest
+with `chainId` and a `deployments` array. Each entry retains its own `chainId`,
+`rulesVersion`, `pool`, `startBlock` and `arenas`. Duplicate emitters, ambiguous
+arena ownership and incompatible rules are rejected. Existing series and human
+archive manifests remain separate and must be retained as well.
+
+`configure-indexer.ts` also copies the reviewed Envio patch into its generated
+build directory. The indexer image applies it at build time with concurrency four
+and verifies the exact Envio 3.9.0 source hash. This replaces runtime source mounts
+for the new image; it does not alter the currently running production indexer.

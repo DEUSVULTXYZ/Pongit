@@ -27,6 +27,7 @@ import {Outcome} from './Outcome';
 import {Dialog} from './Dialog';
 import {IconButton} from './IconButton';
 import {AgentReplay} from './AgentReplay';
+import replayStyles from './AgentReplay.module.css';
 import {ArenaCountdown} from './MatchCountdown';
 import {quietFailure} from '../lib/quiet-failure';
 import {preparingArena} from '../lib/arena-wait';
@@ -239,6 +240,6 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    <button disabled={busy} onClick={()=>void renew()}>Sign in again</button><button disabled={busy||!playerClient.current} onClick={()=>void revoke()}>Sign out of this match</button><button disabled={busy||!playerClient.current} onClick={()=>void action(async()=>{await playerClient.current!.concede();setTools(false);})}>Concede match</button></Dialog>}
   <Outcome id={refKey} match={snapshot&&!draining?{playerA:snapshot.a,playerB:snapshot.b,winner:result?.winner??snapshot.winner,status:result?.status??snapshot.phase,state:{...snapshot.state,scoreA,scoreB},ranked:false,mode:view?.mode??0,draw:(result?.status??snapshot.phase)===3&&(result?.winner??snapshot.winner)===zeroAddress}:null}
    account={account??''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" rematch={rematch} watch={()=>setReplay(true)} again={()=>router.push('/agents')} againLabel="Choose another agent"/>
-  {replay&&<Dialog label="Match replay" onClose={()=>setReplay(false)}><IconButton className="modal-close" aria-label="Close replay" onClick={()=>setReplay(false)}/><h2>Match replay</h2><AgentReplay reference={reference}/></Dialog>}
+  {replay&&<Dialog label="Match replay" className={`rooms-dialog ${replayStyles.modal}`} onClose={()=>setReplay(false)}><header className={replayStyles.heading}><IconButton aria-label="Close replay" onClick={()=>setReplay(false)}/><h2>Match replay</h2></header><AgentReplay reference={reference} players={view?[{name:name(view.a),avatar:avatar(view.a)},{name:name(view.b),avatar:avatar(view.b)}]:undefined}/></Dialog>}
  </main>;
 }
