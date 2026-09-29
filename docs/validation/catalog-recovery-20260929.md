@@ -89,3 +89,30 @@ a loopback-only fixture server. This was necessary because SSH forwarding is
 administratively prohibited; no SSH policy or provider setting was changed.
 Mobile and desktop captures were visually inspected. The public read-only check
 is separate and cannot be replaced by these fixture results.
+
+## Public rollout and additional race regression
+
+The reader was deployed at 10:27:41 UTC; its new capacity route returned HTTP 200
+and publication unavailability. Web `a3383a2` was deployed at 10:28:20 UTC.
+Actual public Chrome and Edge checks passed the small mobile views but failed
+when selecting a rival before the separate config response arrived. These
+failed reports are preserved in `catalog-public-1` and `catalog-public-2`.
+The failure was a UI ordering defect, not a funded admission test.
+
+`d6170ba` makes recovery-only rival selection independent from configuration.
+A healthy new challenge stays disabled until the manifest arrives. The new
+regression deliberately delays config behind catalogue and proves immediate
+selection without a reconnect error, passkey or transaction. Development Chrome
+passed this race and all five recovery viewport groups; typecheck passed.
+
+The deployment verification's first human-runtime hash also failed because Docker
+returns the Mounts array in varying order. Three repeated reads showed identical
+canonical sorted fingerprints but different unsorted ones. The human relayer
+still has its September 24 start time, zero restarts and its existing image and
+mounts. The failed unsorted comparison is retained in the deployment report.
+No human service was updated or restarted by this rollout.
+
+Final runtime delta `catalog-final-20260929T1031Z` is SHA-verified off VPS. It
+complements, rather than replaces, the fresh 10:00 agent/operator dumps. The
+initial local `gitleaks` invocation was unavailable on PATH; the explicit cached
+8.30.1 executable subsequently scanned all four published commits with no leaks.
