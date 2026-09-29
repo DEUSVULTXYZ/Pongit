@@ -105,7 +105,11 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   const prepared=await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),s.grant.player,{agent,mode});
   await finishPoolSponsor(sponsor,prepared,progress);setRetry(n=>n+1);
  }
- function choose(agent:Address,trigger:HTMLButtonElement){launchFocus.current=trigger;setSelected(agent);intent.current=agent;void run(async()=>{
+ function choose(agent:Address,trigger:HTMLButtonElement){launchFocus.current=trigger;setSelected(agent);intent.current=agent;
+  // The catalogue and config arrive independently. Selecting an archetype
+  // during recovery needs neither a manifest nor a session ceremony.
+  if(serviceDown){setError('');return;}
+  void run(async()=>{
   if(!config)throw Error('The arcade is reconnecting');
   if(!canQueueAgent(person(agent)?.availability?.[mode])||!await canStart(config))return;
   const saved=account?loadPoolFamily(config,account,sessionStorage):null;
@@ -158,7 +162,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     <div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.difficulty}</p></div></div>
     {p.level&&<div className="agent-difficulty" aria-label={`Difficulty ${p.level} of 8`}>{Array.from({length:8},(_,i)=><i key={i} data-filled={i<p.level!}/>)}</div>}
     <span className="agent-status" data-online={!serviceDown&&p.availability?.[mode]==='available'}>{serviceDown||capacityBusy?(p.official?'Friendly instance':'Community agent'):p.availability?availabilityLabels[p.availability[mode]]:!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':'Checking arenas'}</span>
-    <button className="primary" aria-label={`Challenge ${p.name}`} disabled={busy||!!request||!p.available||!p.qualification[mode]} onClick={e=>choose(p.agent,e.currentTarget)}>{serviceDown?'Select':p.availability?.[mode]==='available'?'Play':'Join queue'} <span aria-hidden="true">↗</span></button></article>)}</div>
+    <button className="primary" aria-label={`Challenge ${p.name}`} disabled={busy||!!request||(!config&&!serviceDown)||!p.available||!p.qualification[mode]} onClick={e=>choose(p.agent,e.currentTarget)}>{serviceDown?'Select':p.availability?.[mode]==='available'?'Play':'Join queue'} <span aria-hidden="true">↗</span></button></article>)}</div>
     {!people.length&&!visibleError&&(catalogLoaded?<ArcadeState title="No agents in this mode yet"><p>Try the other mode or return shortly.</p></ArcadeState>:<ArcadeProgress stage="loading" title="Loading your rivals"/>)}<div className="agent-toolbar">{offset!=='0'&&<button onClick={()=>setOffset('0')}>First page</button>}{next&&<button onClick={()=>setOffset(next)}>More agents</button>}</div></>:<div className="agent-grid agent-live-grid">
     {live.filter(g=>watchMode==='all'||g.mode===watchMode).map(g=><article className="agent-card" key={matchHref(g.ref)}><span className="agent-badge">{g.lane.toUpperCase()} · {g.mode===0?'CLASSIC':'CHAOS'}</span><h2>{person(g.a)?.name??short(g.a)} vs {person(g.b)?.name??short(g.b)}</h2><Link className="rooms-button" href={matchHref(g.ref)}>Open arena ↗</Link></article>)}
     {!serviceDown&&!live.some(g=>watchMode==='all'||g.mode===watchMode)&&<ArcadeProgress stage="preparing" title="Next match is on its way" detail="A live match appears here once play starts."/>}</div>}

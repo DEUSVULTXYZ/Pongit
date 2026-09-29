@@ -8,6 +8,7 @@ const out=process.env.PONG_CATALOG_PUBLIC_OUTPUT??'artifacts/qualification/20260
 await mkdir(out,{recursive:true});
 const report:any={at:new Date().toISOString(),channel,scope:'Actual HTTPS and canonical API; read-only, no live-game or physical-passkey claim',checks:[],errors:[],writes:0};
 const browser=await chromium.launch({channel,headless:true});
+let lastPage:import('@playwright/test').Page|undefined;
 try{
  const context=await browser.newContext();
  await context.addInitScript({content:'globalThis.__name=(fn)=>fn;'});
@@ -20,7 +21,7 @@ try{
   if(route.request().method()!=='GET'){report.writes++;return route.abort();}
   return route.continue();
  });
- const page=await context.newPage();page.setDefaultTimeout(20000);
+ const page=await context.newPage();lastPage=page;page.setDefaultTimeout(20000);
  page.on('pageerror',e=>report.errors.push(e.message));
  const capacityResponse=await context.request.get('https://pongit.xyz/api/agents/capacity');
  assert(capacityResponse.ok());const {capacity}=await capacityResponse.json();report.capacity=capacity;
@@ -29,7 +30,8 @@ try{
   const response=await page.goto('https://pongit.xyz/agents',{waitUntil:'domcontentloaded'});assert.equal(response?.status(),200);
   await page.getByRole('button',{name:'Challenge NOVA',exact:true}).waitFor();
   const catalogueMs=Date.now()-start;
-  assert.equal(await page.locator('.agent-card').count(),8);
+  assert.equal(await page.getByText('PONGIT BOT',{exact:true}).count(),8);
+  assert(await page.locator('.agent-card').count()>=8,'Community registrations must remain visible');
   const modes=page.getByRole('group',{name:'Game mode'}),chaos=modes.getByRole('button',{name:'Chaos',exact:true});
   await chaos.click();assert.equal(await chaos.getAttribute('aria-pressed'),'true');
   const design=await chaos.evaluate(el=>({radius:getComputedStyle(el).borderRadius,height:el.getBoundingClientRect().height,icon:!!el.querySelector('svg')}));
@@ -51,5 +53,5 @@ try{
   await page.locator('main').waitFor();report.checks.push({path,status:response?.status()});
  }
  assert.equal(report.writes,0);assert.deepEqual(report.errors,[]);report.passed=true;
-}catch(e){report.passed=false;report.failure=(e as Error).message;process.exitCode=1;}
+}catch(e){report.passed=false;report.failure=(e as Error).message;report.page=await lastPage?.locator('body').innerText().catch(()=>null);await lastPage?.screenshot({path:`${out}/${channel}-failure.png`,fullPage:true}).catch(()=>{});process.exitCode=1;}
 finally{await browser.close();await writeFile(`${out}/${channel}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

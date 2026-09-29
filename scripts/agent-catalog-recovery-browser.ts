@@ -20,7 +20,7 @@ let lastPage:import('@playwright/test').Page|undefined;
 try{
  for(const [width,height] of [[360,640],[390,844],[768,1000],[1440,1000],[844,390]]){
   let capacity:AgentCapacity={known:false,admissions:true,serviceUnavailable:true,reason:'publication',readyArenas:0,freeChallengeLanes:4,observedAt:Date.now()};
-  let pending=false,staleCatalog=false,slowPreflight=false,failCatalog=false,writes=0,preflights=0;
+  let pending=false,staleCatalog=false,slowPreflight=false,failCatalog=false,slowConfig=false,configSent=false,writes=0,preflights=0;
   const context=await browser.newContext({viewport:{width,height},hasTouch:width<=390||height<=390,reducedMotion:width===390?'reduce':'no-preference',recordVideo:{dir:`${output}/${channel}-${width}-video`,size:{width,height}}});
   await context.addInitScript({content:'globalThis.__name=(fn)=>fn;'});
   await context.addInitScript(({owner})=>{
@@ -35,7 +35,7 @@ try{
    if(p==='/agents/events')return route.fulfill({status:503,body:'Polling fixture'});
    const advertised=staleCatalog?{...capacity,known:true,serviceUnavailable:false,readyArenas:4}:capacity;
    let body:any;
-   if(p==='/agents/config')body={...manifest,enabled:true};
+   if(p==='/agents/config'){if(slowConfig)await new Promise(r=>setTimeout(r,3000));configSent=true;body={...manifest,enabled:true};}
    else if(p==='/agents/catalog'){if(failCatalog)return route.fulfill({status:503,json:{error:'Fixture unavailable'}});body={items:people.map(bot=>({...bot,availability:{0:agentAvailability(advertised,{modeSupported:true,qualified:true,available:true,exclusiveBusy:false}),1:agentAvailability(advertised,{modeSupported:true,qualified:true,available:true,exclusiveBusy:false})}})),capacity:advertised,next:null};}
    else if(p==='/agents/capacity'){preflights++;if(slowPreflight)await new Promise(r=>setTimeout(r,7000));body={capacity};}
    else if(p==='/agents/live')body={items:[]};
@@ -80,6 +80,13 @@ try{
    failCatalog=true;await page.reload();await page.getByText('The arcade could not be loaded. Please retry.',{exact:true}).waitFor({timeout:3000});
    assert.equal(await page.locator('[data-arcade-progress=loading]').count(),0,'Failed first load still displays a loading bar');failCatalog=false;await page.reload();await challenge.waitFor();
    report.deadlines={preflightMs,firstLoadErrorVisible:true,noAuthentication:true,noTransaction:true};
+   capacity={...capacity,known:false,serviceUnavailable:true,reason:'publication'};slowConfig=true;configSent=false;
+   await page.reload();await challenge.click();await page.getByText('NOVA is selected.',{exact:false}).waitFor({timeout:2000});
+   assert.equal(configSent,false,'The fixture did not reproduce catalogue arriving before config');
+   assert.equal(await page.getByText('The arcade is reconnecting',{exact:true}).count(),0);
+   assert.equal(await page.getByRole('dialog').count(),0);assert.equal(writes,0);
+   report.catalogueBeforeConfig={selectionPreserved:true,noSpuriousError:true,noAuthentication:true};
+   slowConfig=false;capacity={...capacity,known:true,serviceUnavailable:false};await page.reload();await challenge.waitFor();
   }
   if(width===1440){await page.evaluate(()=>{document.documentElement.style.zoom='2';});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'2x zoom overflow');await page.screenshot({path:`${output}/${channel}-zoom.png`,fullPage:true});}
   report.checks.push({width,height,pixelModeControls:design,unavailableDoesNotAuthenticate:true,preflightChecksStaleCatalogue:true,requestPreserved:true,cancelAccessible:true,healthyQueueUsable:true,focusRestored:true,writes,preflights});
