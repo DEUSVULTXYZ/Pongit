@@ -32,14 +32,26 @@ const savePrivate=async()=>writeFile(privatePath,JSON.stringify({storage:await c
  session:await page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage))),
  credentials:await cdp.send('WebAuthn.getCredentials',{authenticatorId})}),{mode:0o600});
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
+const requests=new WeakMap<object,{at:string;method:string;path:string}>();
 const controls=new Map<string,{direction:number;sequence:string}>();
 page.on('request',r=>{starts.set(r,performance.now());try{
+ const url=new URL(r.url()),body=r.postDataJSON();
+ // Timing metadata only: never retain payloads, signatures, grants or URLs
+ // containing operation/account identifiers.
+ if(url.origin===report.origin&&url.pathname.startsWith('/api/agents/'))requests.set(r,{at:new Date().toISOString(),method:r.method(),path:url.pathname.replace(/0x[\da-f]+/gi,':id')});
+ else if(typeof body?.method==='string')requests.set(r,{at:new Date().toISOString(),method:body.method,path:'rpc'});
+ }catch{/* GET requests do not have JSON bodies. */}
+ try{
  const body=r.postDataJSON();if(body?.method!=='interlude_sendTransaction')return;
  const raw=body.params[0],hash=keccak256(raw),tx=parseTransaction(raw);
  const call=decodeFunctionData({abi:reusableAgentArenaAbi,data:tx.data!});
  if(call.functionName==='input')controls.set(hash,{direction:Number(call.args[2]),sequence:String(call.args[3])});
 }catch{/* Decode in memory; never retain signed bytes or grants. */}});page.on('pageerror',e=>report.errors.push(clean(e)));
 page.on('response',async response=>{try{
+ const request=response.request(),metadata=requests.get(request);
+ if(metadata&&!report.playingAt){report.admissionNetwork??=[];report.admissionNetwork.push({...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status()});}
+ }catch{/* Diagnostic failure cannot change gameplay. */}
+ try{
  const request=response.request(),body=request.postDataJSON();if(!body||Array.isArray(body))return;
  if(!['interlude_sendTransaction','interlude_getTransactionReceipt','eth_getTransactionReceipt'].includes(body.method))return;
  const reply=await response.json();

@@ -222,3 +222,27 @@ test('five-lane catalogue distinguishes stale engines and full capacity without 
  epoch='1';observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'capacity-occupied','Only the fresh pending result remains known');
  epoch='2';now-=16000;observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'service-unavailable');
 });
+
+test('arena entry batches independent reads without weakening binding or reorganization checks',async()=>{
+ const {encodeAbiParameters,keccak256}=await import('viem');
+ const m={...manifest,version:4 as const,rulesVersion:15 as const};
+ const app=m.arenas[0].app,a=addr(90),b=addr(91),ref={chainId:10143n,arena:app,epoch:2n,id:91n};
+ const key=keccak256(encodeAbiParameters([{type:'uint256'},{type:'address'},{type:'uint256'},{type:'uint256'}],[10143n,app,2n,91n]));
+ let wrong=false,reorg=false,blocks=0;const started=new Set<string>();
+ const client={getBlock:async()=>({number:50n,hash:reorg&&++blocks%2===0?evidence:zeroHash,timestamp:1000n}),readContract:async(r:any)=>{
+  assert.equal(r.blockNumber,50n);
+  if(r.functionName==='record')return{ref,a,b,ranked:false,tournament:1n,lane:0,captured:false};
+  started.add(r.functionName);
+  await new Promise(resolve=>setImmediate(resolve));
+  for(const fn of ['boundMatch','ticketOf','arenaMatch','tournament'])assert(started.has(fn),`${fn} must start before another independent read completes`);
+  if(r.functionName==='boundMatch')return{id:90n,epoch:2n};
+  if(r.functionName==='ticketOf')return[{},{id:91n,epoch:2n,a:wrong?addr(99):a,b,mode:1}];
+  if(r.functionName==='arenaMatch')return key;
+  if(r.functionName==='tournament')return{league:false};
+  throw Error(r.functionName);
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,m),wanted={chainId:10143 as const,app,epoch:'2',id:'91'};
+ const result=await reader.match(wanted);assert.equal(result.value.node,m.arenas[0].node);assert.equal(result.value.overtimeSeconds,60);
+ wrong=true;await assert.rejects(reader.match(wanted),/not found/);wrong=false;reorg=true;
+ await assert.rejects(reader.match(wanted),/changed during synchronization/);
+});
