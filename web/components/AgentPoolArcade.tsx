@@ -49,6 +49,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const [warmup,setWarmup]=useState(false);
  const [detailAgent,setDetailAgent]=useState<Person|null>(null),[catalogLoaded,setCatalogLoaded]=useState(false);
  const serviceDown=!!capacity&&agentServiceUnavailable(capacity);
+ const capacityBusy=!!capacity&&!serviceDown&&(!capacity.freeChallengeLanes||!capacity.readyArenas);
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
  useEffect(()=>{if(enabled)return watchAgentChanges(()=>setRetry(n=>n+1),account);},[enabled,account]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
@@ -139,6 +140,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
    {serviceDown&&!request&&!visibleError&&<ArcadeProgress stage="unavailable" title="Arcade is recovering"
     detail={selected?`${person(selected)?.name??'Your rival'} is selected. Play resumes when an arena is ready.`:'Play is paused while arenas recover. You can still choose your rival.'}
     actions={<><button onClick={()=>setRetry(n=>n+1)}>Check again</button><Link className="rooms-button" href="/">Back to arcade</Link></>}/>}
+   {view==='play'&&capacityBusy&&!request&&!busy&&!visibleError&&<ArcadeProgress stage="capacity" title="Arenas are in play"
+    detail="Choose your rival to join the next available arena."/>}
 
    {visibleError&&!request&&<ArcadeProgress stage="error" detail={visibleError} actions={<button onClick={()=>setRetry(n=>n+1)}>Retry</button>}/>}
    {busy&&!request&&!connectOpen&&!visibleError&&!serviceDown&&<ArcadeProgress stage={checking?'loading':actionStage}/>}
@@ -151,7 +154,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     <div className="agent-card-top"><span className="agent-badge">{p.official?'PONGIT BOT':'COMMUNITY'}</span><button className="agent-details" aria-label={`About ${p.name}`} onClick={()=>setDetailAgent(p)}>···</button></div>
     <div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.difficulty}</p></div></div>
     {p.level&&<div className="agent-difficulty" aria-label={`Difficulty ${p.level} of 8`}>{Array.from({length:8},(_,i)=><i key={i} data-filled={i<p.level!}/>)}</div>}
-    <span className="agent-status" data-online={p.availability?.[mode]==='available'}>{serviceDown?(p.official?'Friendly instance':'Community agent'):p.availability?availabilityLabels[p.availability[mode]]:!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':'Checking arenas'}</span>
+    <span className="agent-status" data-online={!serviceDown&&p.availability?.[mode]==='available'}>{serviceDown||capacityBusy?(p.official?'Friendly instance':'Community agent'):p.availability?availabilityLabels[p.availability[mode]]:!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':'Checking arenas'}</span>
     <button className="primary" aria-label={`Challenge ${p.name}`} disabled={busy||!!request||!p.available||!p.qualification[mode]} onClick={e=>choose(p.agent,e.currentTarget)}>{serviceDown?'Select':p.availability?.[mode]==='available'?'Play':'Join queue'} <span aria-hidden="true">↗</span></button></article>)}</div>
     {!people.length&&!visibleError&&(catalogLoaded?<ArcadeState title="No agents in this mode yet"><p>Try the other mode or return shortly.</p></ArcadeState>:<ArcadeProgress stage="loading" title="Loading your rivals"/>)}<div className="agent-toolbar">{offset!=='0'&&<button onClick={()=>setOffset('0')}>First page</button>}{next&&<button onClick={()=>setOffset(next)}>More agents</button>}</div></>:<div className="agent-grid agent-live-grid">
     {live.filter(g=>watchMode==='all'||g.mode===watchMode).map(g=><article className="agent-card" key={matchHref(g.ref)}><span className="agent-badge">{g.lane.toUpperCase()} · {g.mode===0?'CLASSIC':'CHAOS'}</span><h2>{person(g.a)?.name??short(g.a)} vs {person(g.b)?.name??short(g.b)}</h2><Link className="rooms-button" href={matchHref(g.ref)}>Open arena ↗</Link></article>)}

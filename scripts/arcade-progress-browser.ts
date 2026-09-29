@@ -17,7 +17,7 @@ const manifest:AgentPoolManifest={version:5,rulesVersion:15,houseInstances:'offi
  enabled:true,tournamentsEnabled:true,verifiedCapacity:5,qualificationEvidence:`0x${'b'.repeat(64)}`,maxMatches:5,
  lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',durationSeconds:300,overtimeSeconds:60,intervalSeconds:60};
 const people=pooledHouseBots.map((p,i)=>({...p,agent:address(100+i),creator:address(90),official:true,available:true,waiting:false,modes:[0,1],qualification:{0:true,1:true},availability:{0:'available',1:'available'},friendlyInstances:{0:true,1:true}}));
-const report:any={at:new Date().toISOString(),scope:'Actual production build, synthetic API states; no hosted game or physical device claim',channel,checks:[],errors:[]};
+const report:any={at:new Date().toISOString(),build:process.env.PONG_BROWSER_BUILD??'development',scope:'Isolated app, synthetic API states; no hosted game or physical device claim',channel,checks:[],errors:[]};
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel,headless:true});
 try{

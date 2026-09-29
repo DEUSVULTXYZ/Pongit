@@ -31,7 +31,7 @@ const tournament=(id:string,league:boolean,mode:0|1):TournamentView=>({id,mode,f
  entrants:people.map(p=>({agent:p.agent,controllerHash:zeroHash,initialElo:1000})),
  fixtures:Array.from({length:league?28:7},(_,i)=>({index:i,ref:i===0?ref:null,a:people[i%8].agent,b:people[(i+1)%8].agent,advanced:zeroAddress,resolved:false,administrative:false,attempt:i===0?1:0,result:null})),
  standings:people.map((p,i)=>({agent:p.agent,points:21-i*3,difference:14-i*2,wins:7-i,initialElo:1000})),observedBlock:'50',published:true,nextAt:null});
-const report:any={at:new Date().toISOString(),channel,rulesVersion,lanes:m.maxMatches,scope:'Isolated production build; synthetic API/engine; no authentication or hosted gameplay qualification',checks:[],errors:[]};
+const report:any={at:new Date().toISOString(),channel,build:process.env.PONG_BROWSER_BUILD??'development',rulesVersion,lanes:m.maxMatches,scope:'Isolated app; synthetic API/engine; no authentication or hosted gameplay qualification',checks:[],errors:[]};
 const mime:Record<string,string>={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.ico':'image/x-icon','.woff2':'font/woff2','.ttf':'font/ttf','.mp3':'audio/mpeg'};
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel,headless:true});
@@ -105,8 +105,9 @@ try{
     throw Error('Unexpected external origin '+url.origin);
    }catch(e){report.errors.push((e as Error).message);await route.abort();}
   });
-  await context.routeWebSocket('**/*',route=>{route.onMessage(raw=>{const r=JSON.parse(String(raw));route.send(JSON.stringify({jsonrpc:'2.0',id:r.id,result:'fixture-applied'}));});});
+  await context.routeWebSocket(url=>url.hostname===new URL(node).hostname,route=>{route.onMessage(raw=>{const r=JSON.parse(String(raw));route.send(JSON.stringify({jsonrpc:'2.0',id:r.id,result:'fixture-applied'}));});});
   const page=await context.newPage();lastPage=page;page.setDefaultTimeout(15000);page.on('pageerror',e=>report.errors.push(e.message));
+  page.on('requestfailed',r=>{if(r.failure()?.errorText==='net::ERR_ABORTED')report.abortedRequests=(report.abortedRequests??0)+1;else report.errors.push(r.url().replace(/\?.*/, '')+' '+r.failure()?.errorText);});
   await page.goto(origin+'/agents');await page.getByRole('heading',{name:'Agent Arcade',exact:true}).waitFor();
   await page.getByRole('button',{name:'Challenge NOVA',exact:true}).waitFor();assert.equal(await page.locator('.agent-card').count(),8);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'catalogue page overflow');
@@ -209,5 +210,5 @@ try{
   await context.close();
  }
  assert.equal(report.errors.length,0);report.passed=true;
-}catch(e){report.passed=false;report.error=(e as Error).message;report.page=await lastPage?.locator('body').innerText().catch(()=>null);await lastPage?.screenshot({path:`${output}/${channel}-failure.png`,fullPage:true}).catch(()=>{});process.exitCode=1;}
+}catch(e){report.passed=false;report.error=(e as Error).message;report.hidden=await lastPage?.evaluate(()=>document.hidden).catch(()=>null);report.page=await lastPage?.locator('body').innerText().catch(()=>null);await lastPage?.screenshot({path:`${output}/${channel}-failure.png`,fullPage:true}).catch(()=>{});process.exitCode=1;}
 finally{await browser.close();await writeFile(`${output}/${channel}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

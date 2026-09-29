@@ -13,7 +13,7 @@ const output=process.env.PONG_CATALOG_OUTPUT??'artifacts/qualification/20260929/
 const manifest=JSON.parse(await readFile('deployments/agent-pool.json','utf8'));
 const owner='0x0000000000000000000000000000000000000200';
 const people=pooledHouseBots.map((b,i)=>({...b,agent:`0x${(100+i).toString(16).padStart(40,'0')}`,creator:owner,official:true,modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false}));
-const report:any={at:new Date().toISOString(),channel,scope:'Isolated UI and synthetic API; no chain writes, passkeys or hosted game claim',checks:[],errors:[]};
+const report:any={at:new Date().toISOString(),build:process.env.PONG_BROWSER_BUILD??'development',channel,scope:'Isolated UI and synthetic API; no chain writes, passkeys or hosted game claim',checks:[],errors:[]};
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel,headless:true});
 let lastPage:import('@playwright/test').Page|undefined;
@@ -68,6 +68,8 @@ try{
   // Healthy, occupied capacity is a queue, not an outage. A house tournament
   // does not reserve the archetype or prevent another friendly challenge.
   capacity={...capacity,known:true,serviceUnavailable:false,readyArenas:0,freeChallengeLanes:0};await page.reload();
+  await page.getByRole('progressbar',{name:'Arenas are in play'}).waitFor();
+  assert.equal(await page.locator('.agent-card').getByText('Waiting for an arena',{exact:true}).count(),0,'Shared capacity wait is repeated as unstyled card text');
   const challenge=page.getByRole('button',{name:'Challenge NOVA',exact:true});await challenge.waitFor();await challenge.click();await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
   await page.keyboard.press('Escape');assert.equal(await page.locator(':focus').getAttribute('aria-label'),'Challenge NOVA');
   capacity={...capacity,readyArenas:4,freeChallengeLanes:4};await page.reload();await challenge.waitFor();
