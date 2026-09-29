@@ -10,3 +10,11 @@ test('private sponsor requires closed public metadata, explicit isolated mode an
  assert.throws(()=>validateAgentSponsorRuntime(privateManifest,'isolated-candidate','reviewed-release',undefined));
  assert.throws(()=>validateAgentSponsorRuntime(privateManifest,'reviewed-release',undefined,undefined));
 });
+
+test('a public five-lane preview still requires the exact review reference',()=>{
+ const evidence=`0x${'c'.repeat(64)}` as const;
+ const m:AgentPoolManifest={...privateManifest,enabled:true,releaseStage:'testnet-preview',previewEvidence:evidence};
+ assert.deepEqual(validateAgentSponsorRuntime(m,'reviewed-release','reviewed-release',evidence),{public:true});
+ assert.throws(()=>validateAgentSponsorRuntime(m,'reviewed-release','reviewed-release',undefined));
+ assert.throws(()=>validateAgentSponsorRuntime(m,'reviewed-release','reviewed-release',`0x${'d'.repeat(64)}`));
+});

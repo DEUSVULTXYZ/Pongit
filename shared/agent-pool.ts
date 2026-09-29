@@ -28,7 +28,7 @@ export type AgentPoolManifest={
 export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly string[]=[]):AgentPoolManifest {
  const preview=m.releaseStage==='testnet-preview';
  if(m.releaseStage!==undefined&&!preview)throw Error('Unsupported release stage');
- if(preview&&(m.version!==4||m.verifiedCapacity!==0||m.qualificationEvidence!==null||!m.previewEvidence||!/^0x[\da-f]{64}$/i.test(m.previewEvidence)||BigInt(m.previewEvidence)===0n))throw Error('Testnet preview must retain incomplete qualification and explicit review evidence');
+ if(preview&&(![4,5].includes(m.version)||m.verifiedCapacity!==0||m.qualificationEvidence!==null||!m.previewEvidence||!/^0x[\da-f]{64}$/i.test(m.previewEvidence)||BigInt(m.previewEvidence)===0n))throw Error('Testnet preview must retain incomplete qualification and explicit review evidence');
  if(!preview&&m.previewEvidence!==undefined)throw Error('Preview evidence requires the preview stage');
  if(m.countdownClock!==undefined&&(m.version<4||m.countdownClock!=='engine-ticks-v1'))throw Error('Unsupported countdown clock');
  if(m.houseInstances!==undefined&&(m.version<4||m.houseInstances!=='official-v1'))throw Error('Unsupported house instances');

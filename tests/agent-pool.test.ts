@@ -76,14 +76,19 @@ test('the browser policy accepts reusable arenas without widening origins or adm
 });
 
 
-test('five lanes require the new authority and explicit verified capacity, never a preview bypass',()=>{
+test('five lanes require the new authority and cannot misrepresent preview qualification',()=>{
  const old=manifest();const m:AgentPoolManifest={...old,version:5,rulesVersion:15,maxMatches:5,
   lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',
   arenas:[8,9,10,12,13].map(n=>({...old.arenas[0],app:addr(n),node:`https://arena-${n}.example`}))};
  assert.equal(validateAgentPoolManifest(m).maxMatches,5);
  for(const patch of [{maxMatches:2},{lanes:undefined},{arenaAdmissions:undefined},{houseInstances:undefined},{countdownClock:undefined},
-  {version:4},{arenas:m.arenas.slice(0,4)},{enabled:true},{verifiedCapacity:2},
-  {releaseStage:'testnet-preview',previewEvidence:`0x${'c'.repeat(64)}`}])assert.throws(()=>validateAgentPoolManifest({...m,...patch} as AgentPoolManifest));
+  {version:4},{arenas:m.arenas.slice(0,4)},{enabled:true},{verifiedCapacity:2}])assert.throws(()=>validateAgentPoolManifest({...m,...patch} as AgentPoolManifest));
+ const preview:AgentPoolManifest={...m,enabled:true,tournamentsEnabled:true,releaseStage:'testnet-preview',previewEvidence:`0x${'c'.repeat(64)}`};
+ const open=validateAgentPoolManifest(preview);assert.equal(open.verifiedCapacity,0);assert.equal(open.qualificationEvidence,null);
+ assert.equal(open.releaseStage,'testnet-preview');assert.equal(open.maxMatches,5);
+ for(const patch of [{previewEvidence:undefined},{previewEvidence:`0x${'0'.repeat(64)}`},{verifiedCapacity:5},
+  {qualificationEvidence:`0x${'d'.repeat(64)}`},{houseInstances:undefined},{lanes:undefined}])
+  assert.throws(()=>validateAgentPoolManifest({...preview,...patch} as AgentPoolManifest));
  const ready=validateAgentPoolManifest({...m,enabled:true,tournamentsEnabled:true,verifiedCapacity:5,qualificationEvidence:`0x${'d'.repeat(64)}`});
  assert.equal(ready.lanes?.challenge,4);assert.equal(ready.verifiedCapacity,5);
 });
