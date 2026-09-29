@@ -6,7 +6,7 @@ const channel=process.env.BROWSER_CHANNEL??'chrome';
 assert(channel==='chrome'||channel==='msedge');
 const out=process.env.PONG_CATALOG_PUBLIC_OUTPUT??'artifacts/qualification/20260929/catalog-public-1';
 await mkdir(out,{recursive:true});
-const report:any={at:new Date().toISOString(),channel,scope:'Actual HTTPS and canonical API; read-only, no live-game or physical-passkey claim',checks:[],errors:[],writes:0};
+const report:any={at:new Date().toISOString(),channel,scope:'Actual HTTPS and canonical API; read-only, no live-game or physical-passkey claim',checks:[],errors:[],writes:0,blockedRequests:[]};
 const browser=await chromium.launch({channel,headless:true});
 let lastPage:import('@playwright/test').Page|undefined;
 try{
@@ -18,7 +18,12 @@ try{
  });
  // A regression must fail without creating a public challenge or sponsorship.
  await context.route('**/*',async route=>{
-  if(route.request().method()!=='GET'){report.writes++;return route.abort();}
+  if(route.request().method()!=='GET'){
+   const request=route.request(),url=new URL(request.url());let rpcMethod:unknown;
+   try{rpcMethod=request.postDataJSON()?.method;}catch{}
+   report.blockedRequests.push({origin:url.origin,path:url.pathname,method:request.method(),rpcMethod:typeof rpcMethod==='string'?rpcMethod:undefined});
+   report.writes++;return route.abort();
+  }
   return route.continue();
  });
  const page=await context.newPage();lastPage=page;page.setDefaultTimeout(20000);
@@ -45,8 +50,13 @@ try{
    assert.equal(await page.getByRole('dialog').count(),0);
    assert.equal(await page.evaluate(()=>(window as any).passkeyCalls??0),0);
   }
+  // Full-page screenshots do not cause below-fold lazy portraits to load.
+  // Visit every row and verify decoded images rather than accepting blank cards.
+  for(const card of await page.locator('.agent-card').all())await card.scrollIntoViewIfNeeded();
+  await page.waitForFunction(()=>Array.from(document.querySelectorAll<HTMLImageElement>('.agent-card img')).every(img=>img.complete&&img.naturalWidth>0));
+  await page.getByRole('heading',{name:'Agent Arcade',exact:true}).scrollIntoViewIfNeeded();
   await page.screenshot({path:`${out}/${channel}-${size.width}.png`,fullPage:true});
-  report.checks.push({...size,catalogueMs,pixelMode:design,outageSelection:!!down,noOverflow:true});
+  report.checks.push({...size,catalogueMs,pixelMode:design,outageSelection:!!down,noOverflow:true,portraitsDecoded:true});
  }
  for(const path of ['/','/agents/tournaments','/docs']){
   const response=await page.goto('https://pongit.xyz'+path,{waitUntil:'domcontentloaded'});assert.equal(response?.status(),200);

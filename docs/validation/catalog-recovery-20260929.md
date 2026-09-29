@@ -116,3 +116,53 @@ Final runtime delta `catalog-final-20260929T1031Z` is SHA-verified off VPS. It
 complements, rather than replaces, the fresh 10:00 agent/operator dumps. The
 initial local `gitleaks` invocation was unavailable on PATH; the explicit cached
 8.30.1 executable subsequently scanned all four published commits with no leaks.
+
+## Final public state, 10:40 UTC
+
+The corrected web `d6170ba` is now public as
+`sha256:4ff4c198a0b9ca86e091864400cf2dafce795a11e878324d4c92c1dd2aea737d`
+since 10:39:06 UTC. Reader remains `2e18c71` / `71b535e3062d`.
+The final isolated image passed both browsers' five recovery viewport groups,
+including the delayed-config race (`catalog-final-2/recovery`). Earlier final-1
+image passed 34 page checks and five animation groups per browser; presentation
+and non-catalogue code did not change in the subsequent race correction.
+
+Actual public Edge (`catalog-public-3`) and Chrome (`catalog-public-4`) passed at
+360, 390, 768 and 1440 pixels: eight house bots plus the existing community agent,
+pixel mode controls, no horizontal overflow, correct outage selection without
+passkeys, and home/tournaments/docs HTTP 200. Catalogue display samples were
+0.5 to 5.3 seconds, NOT admission or gameplay latency. No transactions were sent.
+The initial Chrome public-3 run completed all UI checks but its conservative
+network guard aborted one unclassified non-GET request while navigating the
+remaining site; this FAIL is retained. Request-metadata instrumentation was added
+without logging bodies. The subsequent Chrome run had no non-GET attempts or
+runtime errors. This does not identify or retroactively pass the earlier request.
+
+The exact 10:00 backup dumps were restored to temporary isolated databases:
+67 operator public tables and four agent public tables restored successfully.
+Only those scratch databases were dropped. Final runtime delta
+`catalog-final-20260929T1040Z` is SHA-verified off VPS, hash
+`7184ea5432002bfdede3932339289c7cf675a63d88b15cf080ca94b2d1a2abd7`.
+All temporary UI/reader containers and local fixture servers from this operation
+are stopped. Their evidence and prior images remain. The canonical human image,
+start time and sorted mounts were unchanged across the final deployment.
+
+At 10:37 UTC publisher balance remained 1.126185383116930335 test MON and the
+controlled operator held 3641.957501328 MON. No funding transfer was made.
+The pending explicit 3,000-MON authorization remains unanswered. Production
+correctly reports four free lanes, zero ready arenas and publication unavailable;
+there is no claim that this UI patch restored funded gameplay. Progressive bot
+contracts, live synchronization, full concurrency and the unchanged 24-hour
+trial remain pending. The paused funding follow-up must not launch trials yet.
+
+Rollback: use the exact previous reader `10cfb2bff842` and web `b47e7954a1ef`
+images recorded in `deployment.json`, retaining the current runtime flags and all
+current databases/journals. Do not restore an old database over later operations.
+The intermediate `a3383a2` image is retained for evidence but is not preferred for
+rollback because its catalogue/config race is known.
+
+Final visual check: `catalog-public-5` passed Chrome and Edge on the actual site
+at all four widths, with all lazy portraits explicitly decoded before screenshots.
+No runtime errors, non-GET attempts or passkey calls occurred. Earlier screenshots
+taken before below-fold lazy images loaded remain preserved; they are not the
+visual deliverable. Use `catalog-public-5/chrome-1440.png` for the published view.
