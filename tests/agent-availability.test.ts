@@ -6,6 +6,7 @@ test('identity compatibility cannot masquerade as available operational capacity
  assert.equal(agentAvailability(capacity,bot),'available');
  assert.equal(agentAvailability({...capacity,known:false},bot),'service-unavailable');
  assert.equal(agentAvailability({...capacity,admissions:false},bot),'service-unavailable');
+ assert.equal(agentAvailability({...capacity,serviceUnavailable:true,readyArenas:0},bot),'service-unavailable','A funding/publication outage is not a busy arena');
  assert.equal(agentAvailability({...capacity,readyArenas:0},bot),'capacity-occupied');
  assert.equal(agentAvailability({...capacity,freeChallengeLanes:0},bot),'capacity-occupied');
  assert.equal(agentAvailability(capacity,{...bot,exclusiveBusy:true}),'agent-busy');

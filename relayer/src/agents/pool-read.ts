@@ -77,6 +77,9 @@ export class AgentPoolReader {
     const observedAt=Date.now(),fresh=arenas.filter(a=>freshArenaState(health.find(h=>h.app.toLowerCase()===a.app.toLowerCase()),a.epoch,observedAt));
     capacity={observedAt,admissions:open&&m.enabled,known:fresh.length>0,freeChallengeLanes:lanes.filter(l=>l.ref.id===0n).length,
      readyArenas:fresh.filter(a=>a.idle&&health.some(h=>h.app.toLowerCase()===a.app.toLowerCase()&&h.stage==='available')).length};
+    const stages=fresh.map(a=>health.find(h=>h.app.toLowerCase()===a.app.toLowerCase())!.stage);
+    capacity.serviceUnavailable=!stages.some(s=>['available','playing','countdown','waiting-for-player'].includes(s))
+     &&stages.some(s=>s==='publisher-unfunded'||s==='publication-paused');
     if(!fresh.some(a=>health.some(h=>h.app.toLowerCase()===a.app.toLowerCase()&&['available','playing','countdown','waiting-for-player','awaiting-publication'].includes(h.stage))))capacity.known=false;
    }
    const total=await read<bigint>(m.catalog,catalogAbi,'count');

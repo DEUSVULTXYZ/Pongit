@@ -181,7 +181,7 @@ test('five-lane catalogue distinguishes stale engines and full capacity without 
  const m:AgentPoolManifest={...manifest,version:5,rulesVersion:15,maxMatches:5,verifiedCapacity:5,
   lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',
   arenas:[8,9,10,12,13].map(n=>({...manifest.arenas[0],app:addr(n),node:`https://arena-${n}.example`}))};
- let busy=false,now=Date.now(),epoch='2';const laneReads:number[]=[];
+ let busy=false,now=Date.now(),epoch='2',stage='available';const laneReads:number[]=[];
  const client={getBlock:async()=>({number:50n,hash:zeroHash}),readContract:async(r:any)=>{
   assert.equal(r.blockNumber,50n);
   switch(r.functionName){
@@ -199,11 +199,14 @@ test('five-lane catalogue distinguishes stale engines and full capacity without 
  }} as unknown as PublicClient;
  const reader=new AgentPoolReader(client,m,[],async()=>[
   {app:m.arenas[0].app,epoch:'1',stage:'available',observedAt:now},
-  {app:m.arenas[1].app,epoch,stage:'available',observedAt:now},
+  {app:m.arenas[1].app,epoch,stage,observedAt:now},
+  {app:m.arenas[2].app,epoch:'2',id:'91',stage:'awaiting-publication',observedAt:now},
  ]);
  let observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'available');
  assert.equal(observed.value.capacity.readyArenas,1);assert.deepEqual(laneReads,[1,2,3,4]);
  busy=true;observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'capacity-occupied');
- epoch='1';observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'service-unavailable');
+ stage='publisher-unfunded';observed=await reader.catalog();assert.equal(observed.value.capacity.serviceUnavailable,true);
+ assert.equal(observed.value.items[0].availability[0],'service-unavailable','A terminal pending result cannot mask the funding outage');stage='available';
+ epoch='1';observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'capacity-occupied','Only the fresh pending result remains known');
  epoch='2';now-=16000;observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'service-unavailable');
 });
