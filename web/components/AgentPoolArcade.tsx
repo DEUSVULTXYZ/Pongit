@@ -23,9 +23,10 @@ import {EngineCredit} from './EngineCredit';
 import {WarmupRally} from './WarmupRally';
 import {useQueueElapsed} from '../lib/use-lobby-clock';
 import {ArcadeHeader,ArcadeHeading,ArcadeState} from './ArcadeChrome';
-import type {AgentAvailability} from '../../shared/agent-availability';
+import {agentServiceUnavailable,canQueueAgent,type AgentCapacity,type AgentAvailability} from '../../shared/agent-availability';
 import {ArcadeProgress} from './ArcadeProgress';
 import {challengeStage,sponsorStage,type ArcadeStage} from '../../shared/arcade-progress';
+import {AgentModeSwitch} from './AgentModeSwitch';
 import type {ChainOperation} from '../../shared/independent';
 
 type Person={agent:Address;creator:Address;name:string;avatar:number;official:boolean;difficulty:string;level?:number;modes:number[];qualification:Record<0|1,boolean>;available:boolean;waiting:boolean;availability?:Record<0|1,AgentAvailability>};
@@ -39,12 +40,15 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[connectOpen,setConnectOpen]=useState(false),[selected,setSelected]=useState(initialAgent??''),[retry,setRetry]=useState(0),[offset,setOffset]=useState('0'),[next,setNext]=useState<string|null>(null);
  const [actionStage,setActionStage]=useState<ArcadeStage>('preparing'),[cancelQueued,setCancelQueued]=useState<string|null>(null);
  const progress=(op:ChainOperation)=>setActionStage(sponsorStage(op.status));
+ const [capacity,setCapacity]=useState<AgentCapacity>(),[checking,setChecking]=useState(false);
  const [catalogError,setCatalogError]=useState(''),[queueError,setQueueError]=useState(''),[renewing,setRenewing]=useState(false);
  const [watchMode,setWatchMode]=useState<'all'|0|1>('all');
  const visibleError=(!connectOpen&&error)||queueError||catalogError;
  const session=useRef<PoolFamilySession|null>(null),locked=useRef(false),intent=useRef<Address|null>(null),alive=useRef(false),waiting=useRef(false);
+ const launchFocus=useRef<HTMLButtonElement>(null);
  const [warmup,setWarmup]=useState(false);
  const [detailAgent,setDetailAgent]=useState<Person|null>(null),[catalogLoaded,setCatalogLoaded]=useState(false);
+ const serviceDown=!!capacity&&agentServiceUnavailable(capacity);
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
  useEffect(()=>{if(enabled)return watchAgentChanges(()=>setRetry(n=>n+1),account);},[enabled,account]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
@@ -56,7 +60,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     if(document.hidden)return;
     const results=await Promise.allSettled([
      poolApi<AgentPoolManifest>('config',undefined,abort.signal).then(raw=>{const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade is not open');if(!stopped)setConfig(m);}),
-     poolApi<{items:Person[];next:string|null}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal).then(catalog=>{if(!stopped){setPeople(catalog.items);setNext(catalog.next);setCatalogLoaded(true);}}),
+     poolApi<{items:Person[];next:string|null;capacity?:AgentCapacity}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal).then(catalog=>{if(!stopped){setPeople(catalog.items);setCapacity(catalog.capacity);setNext(catalog.next);setCatalogLoaded(true);}}),
      poolApi<{items:Live[]}>('live',undefined,abort.signal).then(games=>{if(!stopped)setLive(games.items);}),
     ]);
     const failed=results.find(r=>r.status==='rejected');if(failed?.status==='rejected')throw failed.reason;
@@ -83,15 +87,23 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   void poll();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[config?.pool,account,retry,router]);
  async function run(fn:()=>Promise<void>){if(locked.current)return;locked.current=true;setBusy(true);setActionStage('preparing');setError('');try{await fn();}catch(e){if(alive.current)setError(poolUserError(e));}finally{locked.current=false;if(alive.current)setBusy(false);}}
+ async function canStart(m:AgentPoolManifest){
+  if(m.version<5)return true;
+  setChecking(true);
+  try{const result=await poolApi<{capacity:AgentCapacity}>('capacity');setCapacity(result.capacity);return !agentServiceUnavailable(result.capacity);}
+  finally{setChecking(false);}
+ }
  async function challenge(m:AgentPoolManifest,s:PoolFamilySession,agent:Address){
   const sponsor=poolBrowserSponsor(m,s.grant.player);await finishPoolSponsor(sponsor,undefined,progress);
   const existing=await poolApi<{request:PoolChallengeView|null}>(`challenges/${s.grant.player}`);
   if(existing.request){setRequest(existing.request);if(existing.request.ref)router.push(matchHref(existing.request.ref));return;}
+  if(!await canStart(m))return;
   const prepared=await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),s.grant.player,{agent,mode});
   await finishPoolSponsor(sponsor,prepared,progress);setRetry(n=>n+1);
  }
- function choose(agent:Address){setSelected(agent);intent.current=agent;void run(async()=>{
+ function choose(agent:Address,trigger:HTMLButtonElement){launchFocus.current=trigger;setSelected(agent);intent.current=agent;void run(async()=>{
   if(!config)throw Error('The arcade is reconnecting');
+  if(!canQueueAgent(person(agent)?.availability?.[mode])||!await canStart(config))return;
   const saved=account?loadPoolFamily(config,account,sessionStorage):null;
   if(saved){await finishPoolSponsor(poolBrowserSponsor(config,saved.grant.player),undefined,progress);const observed=await observePoolFamily(poolBase(),config,saved);
    // Renew here, in the lobby, rather than let the grant expire mid-match.
@@ -100,7 +112,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   setConnectOpen(true);
  });}
  async function login(create=false){await run(async()=>{
-  if(!config)throw Error('The arcade is reconnecting');setActionStage('connecting');const identity=await connect(create);
+  if(!config)throw Error('The arcade is reconnecting');if(!await canStart(config)){setConnectOpen(false);return;}setActionStage('connecting');const identity=await connect(create);
   try{
    setAccount(identity.account.address);setActionStage('preparing');const sponsor=poolBrowserSponsor(config,identity.account.address);await finishPoolSponsor(sponsor,undefined,progress);
    const prepared=await preparePoolFamily(poolBase(),config,identity.account,sessionStorage,{renewWithin:SESSION_RENEW_MARGIN});
@@ -123,24 +135,29 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   <ArcadeHeading title="Agent Arcade" description="Pick a rival. Find your rhythm.">{account&&<span>{short(account)}</span>}</ArcadeHeading>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>The independent arenas are being tested before opening.</p></section>:<>
    <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button>{tournaments&&<Link href="/agents/tournaments">Tournaments</Link>}</nav>
-   <div className="agent-toolbar" role="group" aria-label="Game mode">{view==='watch'&&<button aria-pressed={watchMode==='all'} onClick={()=>setWatchMode('all')}>All live matches</button>}{([0,1] as const).map(n=><button key={n} aria-pressed={(view==='watch'?watchMode:mode)===n} onClick={()=>view==='watch'?setWatchMode(n):setMode(n)} disabled={view==='play'&&(busy||!!request)}>{n===0?'Classic':'Chaos'}</button>)}</div>
+   <AgentModeSwitch value={view==='watch'?watchMode:mode} all={view==='watch'} disabled={view==='play'&&(busy||!!request)} onChange={n=>view==='watch'?setWatchMode(n):n!=='all'&&setMode(n)}/>
+   {serviceDown&&!request&&!visibleError&&<ArcadeProgress stage="unavailable" title="Arcade is recovering"
+    detail={selected?`${person(selected)?.name??'Your rival'} is selected. Play resumes when an arena is ready.`:'Play is paused while arenas recover. You can still choose your rival.'}
+    actions={<><button onClick={()=>setRetry(n=>n+1)}>Check again</button><Link className="rooms-button" href="/">Back to arcade</Link></>}/>}
+
    {visibleError&&!request&&<ArcadeProgress stage="error" detail={visibleError} actions={<button onClick={()=>setRetry(n=>n+1)}>Retry</button>}/>}
-   {busy&&!request&&!connectOpen&&!visibleError&&<ArcadeProgress stage={actionStage}/>}
+   {busy&&!request&&!connectOpen&&!visibleError&&!serviceDown&&<ArcadeProgress stage={checking?'loading':actionStage}/>}
    {request&&<section aria-label="Your challenge">
-    <ArcadeProgress stage={visibleError?'error':busy?actionStage:request.progress?.stage??challengeStage(!!request.ref,request.waitReason)} elapsed={request.ref?undefined:waitSeconds}
-     title={cancelQueued?'Cancellation queued':undefined} detail={visibleError||`${person(request.agent)?.name??short(request.agent)} · ${request.mode===0?'Classic':'Chaos'} · Friendly`}
+    <ArcadeProgress stage={visibleError?'error':busy?actionStage:serviceDown&&!request.ref?'unavailable':request.progress?.stage??challengeStage(!!request.ref,request.waitReason)} elapsed={request.ref?undefined:waitSeconds}
+     title={cancelQueued?'Cancellation queued':!busy&&!request.ref&&(serviceDown||request.progress?.stage==='unavailable')?'Arcade is recovering':undefined} detail={visibleError||(!busy&&!request.ref&&(serviceDown||request.progress?.stage==='unavailable')?'Your challenge is saved. Cancel or wait for recovery.':`${person(request.agent)?.name??short(request.agent)} · ${request.mode===0?'Classic':'Chaos'} · Friendly`)}
      progress={request.progress?.progress} actions={request.ref?<Link className="rooms-button" href={matchHref(request.ref)}>Enter arena</Link>:<><button disabled={!!cancelQueued||request.status!==1} onClick={()=>setCancelQueued(request.id)}>{cancelQueued?'Cancelling…':'Cancel challenge'}</button><button onClick={()=>setWarmup(w=>!w)}>{warmup?'Hide warm-up':'Warm up'}</button></>}/>
     {!request.ref&&warmup&&<WarmupRally onClose={()=>setWarmup(false)}/>}</section>}
    {view==='play'?<><div className="agent-grid">{people.filter(p=>p.modes.includes(mode)).sort((a,b)=>(a.level??9)-(b.level??9)).map(p=><article className="agent-card" key={p.agent} data-selected={selected.toLowerCase()===p.agent.toLowerCase()}>
     <div className="agent-card-top"><span className="agent-badge">{p.official?'PONGIT BOT':'COMMUNITY'}</span><button className="agent-details" aria-label={`About ${p.name}`} onClick={()=>setDetailAgent(p)}>···</button></div>
     <div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.difficulty}</p></div></div>
-    <span className="agent-status" data-online={p.availability?.[mode]==='available'}>{p.availability?availabilityLabels[p.availability[mode]]:!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':'Checking arenas'}</span>
-    <button className="primary" aria-label={`Challenge ${p.name}`} disabled={busy||!!request||!p.available||!p.qualification[mode]} onClick={()=>choose(p.agent)}>{p.availability?.[mode]==='available'?'Play':'Challenge'} <span aria-hidden="true">↗</span></button></article>)}</div>
+    {p.level&&<div className="agent-difficulty" aria-label={`Difficulty ${p.level} of 8`}>{Array.from({length:8},(_,i)=><i key={i} data-filled={i<p.level!}/>)}</div>}
+    <span className="agent-status" data-online={p.availability?.[mode]==='available'}>{serviceDown?(p.official?'Friendly instance':'Community agent'):p.availability?availabilityLabels[p.availability[mode]]:!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':'Checking arenas'}</span>
+    <button className="primary" aria-label={`Challenge ${p.name}`} disabled={busy||!!request||!p.available||!p.qualification[mode]} onClick={e=>choose(p.agent,e.currentTarget)}>{serviceDown?'Select':p.availability?.[mode]==='available'?'Play':'Join queue'} <span aria-hidden="true">↗</span></button></article>)}</div>
     {!people.length&&!visibleError&&(catalogLoaded?<ArcadeState title="No agents in this mode yet"><p>Try the other mode or return shortly.</p></ArcadeState>:<ArcadeProgress stage="loading" title="Loading your rivals"/>)}<div className="agent-toolbar">{offset!=='0'&&<button onClick={()=>setOffset('0')}>First page</button>}{next&&<button onClick={()=>setOffset(next)}>More agents</button>}</div></>:<div className="agent-grid agent-live-grid">
     {live.filter(g=>watchMode==='all'||g.mode===watchMode).map(g=><article className="agent-card" key={matchHref(g.ref)}><span className="agent-badge">{g.lane.toUpperCase()} · {g.mode===0?'CLASSIC':'CHAOS'}</span><h2>{person(g.a)?.name??short(g.a)} vs {person(g.b)?.name??short(g.b)}</h2><Link className="rooms-button" href={matchHref(g.ref)}>Open arena ↗</Link></article>)}
-    {!live.some(g=>watchMode==='all'||g.mode===watchMode)&&<section className="agent-empty"><h2>No arena is playing right now</h2><p>The next match will appear here when it is assigned.</p></section>}</div>}
+    {!serviceDown&&!live.some(g=>watchMode==='all'||g.mode===watchMode)&&<ArcadeProgress stage="preparing" title="Next match is on its way" detail="A live match appears here once play starts."/>}</div>}
   </>}
-  {connectOpen&&<Dialog label="Connect to challenge an agent" onClose={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}><IconButton aria-label="Close connection" onClick={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}/><h2>{renewing?'Keep playing':'Your next rival is ready'}</h2><p>{renewing?'Your session ends soon. Confirm once to keep playing.':'Sign in to continue.'}</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void login()}>{renewing?'Continue':'Connect & play'}</button>{!renewing&&<button disabled={busy} onClick={()=>void login(true)}>Create account</button>}</div>{error?<ArcadeProgress stage="error" detail={error} compact/>:busy?<ArcadeProgress stage={actionStage} compact/>:null}</Dialog>}
+  {connectOpen&&<Dialog returnFocus={launchFocus} label="Connect to challenge an agent" onClose={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}><IconButton aria-label="Close connection" onClick={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}/><h2>{renewing?'Keep playing':'Your next rival is ready'}</h2><p>{renewing?'Your session ends soon. Confirm once to keep playing.':'Sign in to continue.'}</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void login()}>{renewing?'Continue':'Connect & play'}</button>{!renewing&&<button disabled={busy} onClick={()=>void login(true)}>Create account</button>}</div>{error?<ArcadeProgress stage="error" detail={error} compact/>:busy?<ArcadeProgress stage={actionStage} compact/>:null}</Dialog>}
   {detailAgent&&<Dialog label={`About ${detailAgent.name}`} onClose={()=>setDetailAgent(null)}><IconButton aria-label="Close agent details" onClick={()=>setDetailAgent(null)}/><h2>{detailAgent.name}</h2><p>{detailAgent.difficulty}</p><p>{detailAgent.official?'PONGIT BOT':'COMMUNITY AGENT'} · Creator {detailAgent.official?'PONGIT':short(detailAgent.creator)}</p><p>{detailAgent.modes.map(m=>m===0?'Classic':'Chaos').join(' · ')}</p><p>{detailAgent.official&&config?.houseInstances?'Each friendly match has its own controller. You can play this rival while another instance competes.':'A challenge waits until this agent is free.'}</p></Dialog>}
   <footer className="rooms-footer"><MusicCredit/><EngineCredit/></footer>
  </main>;

@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'; script-src 'self' 'unsafe-inline'" +
               (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "") +
               "; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' " +
-              (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000") +
+              new URL(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").origin +
               " " +
               (process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000") +
               " https://testnet-rpc.monad.xyz " + new URL(interludeLab.node).origin + " " + new URL(interludeRooms.node).origin +

@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {agentAvailability,freshArenaState,type AgentCapacity} from '../shared/agent-availability';
+import {agentAvailability,canQueueAgent,freshArenaState,type AgentCapacity} from '../shared/agent-availability';
 const capacity:AgentCapacity={observedAt:100000,known:true,freeChallengeLanes:4,readyArenas:5,admissions:true};
 const bot={modeSupported:true,qualified:true,available:true,exclusiveBusy:false};
 test('identity compatibility cannot masquerade as available operational capacity',()=>{
@@ -12,6 +12,11 @@ test('identity compatibility cannot masquerade as available operational capacity
  assert.equal(agentAvailability(capacity,{...bot,exclusiveBusy:true}),'agent-busy');
  assert.equal(agentAvailability(capacity,{...bot,qualified:false}),'qualifying');
  assert.equal(agentAvailability(capacity,{...bot,modeSupported:false}),'incompatible');
+});
+
+test('only healthy capacity or a rival reservation may enter the challenge queue',()=>{
+ for(const state of ['available','capacity-occupied','agent-busy'] as const)assert(canQueueAgent(state));
+ for(const state of ['service-unavailable','qualifying','incompatible',undefined] as const)assert(!canQueueAgent(state));
 });
 test('health must belong to the current epoch and a recent non-future observation',()=>{
  const row={app:'arena',epoch:'8',stage:'available',observedAt:100000};

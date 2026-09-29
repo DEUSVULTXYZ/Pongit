@@ -14,7 +14,7 @@ import type {PoolChallengeView} from '../../../shared/agent-pool';
 import {agentPoolLanes,pooledHouseBots,progressiveHouseBots,tournamentStatuses,validateAgentPoolManifest,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../../../shared/agent-pool';
 import type {AgentMatchRef} from '../../../shared/agents';
 import {houseInstanceAbi,agentPoolAdmissionAbi,verifyHouseInstanceAuthorities} from '../../../shared/agent-house-instances';
-import {agentAvailability,freshArenaState,type ArenaOperationalState,type AgentCapacity} from '../../../shared/agent-availability';
+import {agentAvailability,agentServiceUnavailable,freshArenaState,type ArenaOperationalState,type AgentCapacity} from '../../../shared/agent-availability';
 import {challengeStage} from '../../../shared/arcade-progress';
 
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
@@ -64,10 +64,8 @@ export class AgentPoolReader {
     registration:{strategies:true,realtime:false},financial:false,validation:qualified?'qualified':preview?'testnet-preview':'private-qualification'};
   });
  }
- async catalog(offset=0n,limit=16){
-  pageBounds(offset,limit);const m=this.manifest;
-  return this.snapshot(async read=>{
-   let capacity:AgentCapacity={observedAt:Date.now(),known:false,freeChallengeLanes:0,readyArenas:0,admissions:false};
+ private async readCapacity(read:<R=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<R>):Promise<AgentCapacity>{
+  const m=this.manifest;let capacity:AgentCapacity={observedAt:Date.now(),known:false,freeChallengeLanes:0,readyArenas:0,admissions:false};
    if(m.version===5&&this.operational){
     const [health,open,lanes,arenas]=await Promise.all([this.operational(),read<boolean>(m.pool,this.poolAbi,'admissions'),
      Promise.all(agentPoolLanes(m).slice(1).map(l=>read(m.pool,this.poolAbi,'laneRecord',[l]))),
@@ -82,6 +80,14 @@ export class AgentPoolReader {
      &&stages.some(s=>s==='publisher-unfunded'||s==='publication-paused');
     if(!fresh.some(a=>health.some(h=>h.app.toLowerCase()===a.app.toLowerCase()&&['available','playing','countdown','waiting-for-player','awaiting-publication'].includes(h.stage))))capacity.known=false;
    }
+  if(agentServiceUnavailable(capacity))capacity.reason=!capacity.admissions?'closed':capacity.serviceUnavailable?'publication':'recovery';
+  return capacity;
+ }
+ async capacity(){return this.snapshot(async read=>({capacity:await this.readCapacity(read)}));}
+ async catalog(offset=0n,limit=16){
+  pageBounds(offset,limit);const m=this.manifest;
+  return this.snapshot(async read=>{
+   const capacity=await this.readCapacity(read);
    const total=await read<bigint>(m.catalog,catalogAbi,'count');
    const size=Number(total>offset?(total-offset>BigInt(limit)?BigInt(limit):total-offset):0n);
    const addresses=await Promise.all(Array.from({length:size},(_,i)=>read<Address>(m.catalog,catalogAbi,'at',[offset+BigInt(i)])));
@@ -229,7 +235,8 @@ export class AgentPoolReader {
     }
     }
    }
-   const stage=challengeStage(!!ref,waitReason);
+   const unavailable=status===1&&m.version===5&&!!this.operational&&agentServiceUnavailable(await this.readCapacity(read));
+   const stage=challengeStage(!!ref,waitReason,unavailable);
    const revision=createHash('sha256').update(poolJson({id,status,ref,stage})).digest('hex');
    return{request:{id:String(id),player:owner,agent,mode,status,at:String(at),ref,...(waitReason?{waitReason,tournamentId}:{}),
     progress:{stage,revision,observedAt:Date.now()}}};

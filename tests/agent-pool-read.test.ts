@@ -197,6 +197,8 @@ test('five-lane catalogue distinguishes stale engines and full capacity without 
    case 'identity':return{house:1,modes:3,qualified:3,creator:addr(91),codeHash:zeroHash,metadata:zeroHash,available:true,lastTournament:8n};
    case 'participation':case 'playing':return evidence;
    case 'houseInstanceEligible':return true;
+   case 'pending':return 1n;
+   case 'requests':return[addr(92),addr(90),0,1,1000n];
    default:throw Error(r.functionName);
   }
  }} as unknown as PublicClient;
@@ -209,7 +211,14 @@ test('five-lane catalogue distinguishes stale engines and full capacity without 
  assert.equal(observed.value.capacity.readyArenas,1);assert.deepEqual(laneReads,[1,2,3,4]);
  busy=true;observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'capacity-occupied');
  stage='publisher-unfunded';observed=await reader.catalog();assert.equal(observed.value.capacity.serviceUnavailable,true);
- assert.equal(observed.value.items[0].availability[0],'service-unavailable','A terminal pending result cannot mask the funding outage');stage='available';
+ assert.equal(observed.value.items[0].availability[0],'service-unavailable','A terminal pending result cannot mask the funding outage');
+ assert.equal((await reader.capacity()).value.capacity.reason,'publication');
+ const waiting=await reader.challenge(addr(92));
+ assert.equal(waiting.value.request?.progress?.stage,'unavailable','An existing queue must report the incident, not a capacity spinner');
+ assert.equal(waiting.value.request?.id,'1','Recovery does not abandon or replace the pending request');
+ stage='available';
+ assert.equal((await reader.challenge(addr(92))).value.request?.progress?.stage,'capacity','A healthy full pool remains a normal queue');
+ assert.notEqual((await reader.challenge(addr(92))).value.request?.progress?.revision,waiting.value.request?.progress?.revision);
  epoch='1';observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'capacity-occupied','Only the fresh pending result remains known');
  epoch='2';now-=16000;observed=await reader.catalog();assert.equal(observed.value.items[0].availability[0],'service-unavailable');
 });

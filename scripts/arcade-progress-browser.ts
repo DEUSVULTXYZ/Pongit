@@ -24,13 +24,13 @@ try{
  for(const [width,height] of [[360,640],[390,844],[768,1000],[1440,1000],[844,390]]){
   const context=await browser.newContext({viewport:{width,height},reducedMotion:width===390?'reduce':'no-preference',hasTouch:width<=390,recordVideo:{dir:`${output}/video-${channel}-${width}`,size:{width:Math.min(width,1440),height}}});
   await context.addInitScript(({owner})=>{
-   localStorage.setItem('pongit:remembered-passkey',JSON.stringify({address:owner,credential:{credentialId:'read-only-fixture'},rpId:location.hostname}));
+   localStorage.setItem('pongit:remembered-passkey',JSON.stringify({address:owner,credential:{credentialId:'read-only-fixture'},rpId:'pongit.xyz'}));
    localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,background:false}));
   },{owner:address(200)});
   let stage:ArcadeStage='capacity',progress:undefined|{completed:number;total:number},failed=false;
   let release:()=>void=()=>{};const gate=new Promise<void>(resolve=>{release=resolve;});let catalogLoading=true;
   await context.route('**/*',async route=>{
-   const req=route.request(),u=new URL(req.url());
+   const req=route.request(),u=new URL(req.url());if(u.pathname.startsWith('/api/'))u.pathname=u.pathname.slice(4);
    if(u.origin===origin)return route.continue();
    if(req.method()!=='GET'){report.errors.push(`Unexpected write: ${u.pathname}`);return route.abort();}
    if(u.pathname==='/agents/events')return route.fulfill({status:503,body:'Use fallback reads'});

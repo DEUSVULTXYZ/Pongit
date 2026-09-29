@@ -14,11 +14,13 @@ function updateBackground(){
   window.dispatchEvent(new Event("pongit:overlay"));
 }
 /** All dialogs are portalled to body; only the top one handles focus and Escape. */
-export function useDialog(ref:RefObject<HTMLElement|null>,active:boolean,close:()=>void){
+export function useDialog(ref:RefObject<HTMLElement|null>,active:boolean,close:()=>void,returnFocus?:RefObject<HTMLElement|null>){
   const closeRef=useRef(close);closeRef.current=close;
   useEffect(()=>{
     const el=ref.current;if(!active || !el)return;
-    const previous=document.activeElement as HTMLElement|null;
+    // Async openers can disable their button during preflight and lose native
+    // focus before the dialog mounts. Retain that explicit initiating control.
+    const previous=returnFocus?.current??document.activeElement as HTMLElement|null;
     if(!stack.length){
       const body=document.body,root=document.documentElement,x=scrollX,y=scrollY;
       const saved=body.style.cssText,overflow=root.style.overflow;
@@ -50,5 +52,5 @@ export function useDialog(ref:RefObject<HTMLElement|null>,active:boolean,close:(
       updateBackground();if(!stack.length)unlock();
       if(previous?.isConnected && !previous.closest('[inert]'))previous.focus({preventScroll:true});
     };
-  },[active,ref]);
+  },[active,ref,returnFocus]);
 }

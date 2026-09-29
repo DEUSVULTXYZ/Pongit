@@ -1,12 +1,12 @@
 "use client";
 import { IconButton } from "./IconButton";
 
-import {useRef,type ReactNode} from "react";
+import {useRef,type ReactNode,type RefObject} from "react";
 import {createPortal} from "react-dom";
 import {useDialog} from "../lib/dialog";
 
-export function Dialog({label,children,onClose,className="",backdropClass=""}:{label:string;children:ReactNode;onClose:()=>void;className?:string;backdropClass?:string}){
-  const ref=useRef<HTMLElement>(null);useDialog(ref,true,onClose);
+export function Dialog({label,children,onClose,className="",backdropClass="",returnFocus}:{label:string;children:ReactNode;onClose:()=>void;className?:string;backdropClass?:string;returnFocus?:RefObject<HTMLElement|null>}){
+  const ref=useRef<HTMLElement>(null);useDialog(ref,true,onClose,returnFocus);
   return createPortal(<div className={`modal-backdrop cabinet-dialog ${backdropClass}`} onClick={e=>{if(e.target===e.currentTarget)onClose();}}><section ref={ref} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} className={`connect-modal ${className}`}>{children}</section></div>,document.body);
 }
 

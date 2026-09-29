@@ -35,10 +35,12 @@ const report:any={at:new Date().toISOString(),channel,rulesVersion,lanes:m.maxMa
 const mime:Record<string,string>={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.ico':'image/x-icon','.woff2':'font/woff2','.ttf':'font/ttf','.mp3':'audio/mpeg'};
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel,headless:true});
+let lastPage:import('@playwright/test').Page|undefined;
 try{
  for(const [width,height] of [[360,640],[390,844],[768,900],[1440,1000],[844,390]].filter(([w])=>!process.env.PONG_POOL_UI_WIDTH||w===Number(process.env.PONG_POOL_UI_WIDTH))){
   const touch=width<=390||height<=500;
   const context=await browser.newContext({viewport:{width,height},hasTouch:touch,reducedMotion:width===390?'reduce':'no-preference'});
+  await context.addInitScript({content:'globalThis.__name=(fn)=>fn;'});
   let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0,closedAdmissions=false;
   let launchStarted=0;
   let releaseCatalog:(()=>void)|undefined,catalogGate:Promise<void>|undefined;
@@ -64,6 +66,7 @@ try{
      let data:any;
      if(url.pathname==='/agents/events')return route.fulfill({status:503,body:'Fixture uses polling'});
      if(url.pathname==='/agents/config')data=closedAdmissions?{...m,enabled:false,tournamentsEnabled:false}:m;
+     else if(url.pathname==='/agents/capacity')data={capacity:{known:true,observedAt:Date.now(),admissions:true,readyArenas:4,freeChallengeLanes:4}};
      else if(url.pathname==='/agents/catalog'){catalogReads++;if(catalogGate)await catalogGate;data={items:people,total:'8',offset:'0',next:null};}
      else if(url.pathname==='/agents/live')data={items:[{ref,a:people[0].agent,b:people[1].agent,mode:0,lane:'tournament'}]};
      else if(url.pathname==='/agents/tournaments')data={items:[tournament('1',league,mode)],total:'1',offset:'0',next:null,nextAt:'0'};
@@ -103,7 +106,7 @@ try{
    }catch(e){report.errors.push((e as Error).message);await route.abort();}
   });
   await context.routeWebSocket('**/*',route=>{route.onMessage(raw=>{const r=JSON.parse(String(raw));route.send(JSON.stringify({jsonrpc:'2.0',id:r.id,result:'fixture-applied'}));});});
-  const page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',e=>report.errors.push(e.message));
+  const page=await context.newPage();lastPage=page;page.setDefaultTimeout(15000);page.on('pageerror',e=>report.errors.push(e.message));
   await page.goto(origin+'/agents');await page.getByRole('heading',{name:'Agent Arcade',exact:true}).waitFor();
   await page.getByRole('button',{name:'Challenge NOVA',exact:true}).waitFor();assert.equal(await page.locator('.agent-card').count(),8);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'catalogue page overflow');
@@ -206,5 +209,5 @@ try{
   await context.close();
  }
  assert.equal(report.errors.length,0);report.passed=true;
-}catch(e){report.passed=false;report.error=(e as Error).message;process.exitCode=1;}
+}catch(e){report.passed=false;report.error=(e as Error).message;report.page=await lastPage?.locator('body').innerText().catch(()=>null);await lastPage?.screenshot({path:`${output}/${channel}-failure.png`,fullPage:true}).catch(()=>{});process.exitCode=1;}
 finally{await browser.close();await writeFile(`${output}/${channel}.json`,JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

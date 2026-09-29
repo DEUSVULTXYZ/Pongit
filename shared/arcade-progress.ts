@@ -21,6 +21,6 @@ export function measuredProgress(progress?:ArcadeProgress['progress']){
   ||progress.completed<0||progress.completed>progress.total)return undefined;
  return progress;
 }
-export function challengeStage(assigned:boolean,reason?:'arena'|'match'|'tournament'):ArcadeStage{
- return assigned?'preparing':reason==='match'||reason==='tournament'?'opponent':'capacity';
+export function challengeStage(assigned:boolean,reason?:'arena'|'match'|'tournament',unavailable=false):ArcadeStage{
+ return assigned?'preparing':unavailable?'unavailable':reason==='match'||reason==='tournament'?'opponent':'capacity';
 }

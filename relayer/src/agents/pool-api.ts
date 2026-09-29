@@ -36,6 +36,7 @@ export function poolRoutes(reader:AgentPoolReader,cache=new PoolReadCache(),repl
   const path=url.pathname.replace(/^\/agents(?=\/|$)/,''),offset=unsigned(url.searchParams.get('offset'),0n),limit=Number(unsigned(url.searchParams.get('limit'),16n,32n));
   if(!limit)throw Object.assign(Error('Page limit must be positive'),{status:400,code:'AGENT_PAGE_BOUNDS'});
   if(path==='/config')return cache.get('config',()=>reader.config());
+  if(path==='/capacity')return cache.get('capacity',()=>reader.capacity());
   if(path==='/catalog')return cache.get(`catalog:${offset}:${limit}`,()=>reader.catalog(offset,limit));
   if(path==='/live')return cache.get('live',()=>reader.live());
   if(path==='/replay'){

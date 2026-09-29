@@ -25,4 +25,7 @@ test('sponsorship is not confirmation and arena assignment is not game readiness
  assert.equal(challengeStage(false,'arena'),'capacity');
  assert.equal(challengeStage(false,'tournament'),'opponent');
  assert.equal(challengeStage(true,'arena'),'preparing');
+ assert.equal(challengeStage(false,'arena',true),'unavailable');
+ assert.equal(challengeStage(false,'tournament',true),'unavailable');
+ assert.equal(challengeStage(true,'arena',true),'preparing','An assigned match retains its reference during recovery');
 });
