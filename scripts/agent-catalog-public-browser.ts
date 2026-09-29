@@ -42,6 +42,13 @@ try{
   const design=await chaos.evaluate(el=>({radius:getComputedStyle(el).borderRadius,height:el.getBoundingClientRect().height,icon:!!el.querySelector('svg')}));
   assert(design.radius==='0px'&&design.height>=44&&design.icon);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  const header=await page.locator('.rooms-header').evaluate(el=>({radius:getComputedStyle(el).borderRadius,
+   frame:getComputedStyle(el,'::before').borderImageSource,height:el.getBoundingClientRect().height,
+   controls:Array.from(el.querySelectorAll('button,a:not(.brand)')).filter(e=>e.getBoundingClientRect().width>0)
+    .map(e=>({height:e.getBoundingClientRect().height,width:e.getBoundingClientRect().width,radius:getComputedStyle(e).borderRadius})),
+  }));
+  assert(header.radius==='0px'&&header.frame.includes('frame-violet.svg'),'Public pixel header missing');
+  assert(header.controls.every(c=>c.height>=44&&c.width>=44&&c.radius==='0px'),'Public header controls lost their pixel design or touch size');
   assert.equal(await page.getByText(/No entry fees|Testnet preview|No fees or prize/i).count(),0);
   const down=await page.locator('[data-arcade-progress=unavailable]').count();
   if(down){
@@ -56,7 +63,7 @@ try{
   await page.waitForFunction(()=>Array.from(document.querySelectorAll<HTMLImageElement>('.agent-card img')).every(img=>img.complete&&img.naturalWidth>0));
   await page.getByRole('heading',{name:'Agent Arcade',exact:true}).scrollIntoViewIfNeeded();
   await page.screenshot({path:`${out}/${channel}-${size.width}.png`,fullPage:true});
-  report.checks.push({...size,catalogueMs,pixelMode:design,outageSelection:!!down,noOverflow:true,portraitsDecoded:true});
+  report.checks.push({...size,catalogueMs,pixelMode:design,pixelHeader:header,outageSelection:!!down,noOverflow:true,portraitsDecoded:true});
  }
  for(const path of ['/','/agents/tournaments','/docs']){
   const response=await page.goto('https://pongit.xyz'+path,{waitUntil:'domcontentloaded'});assert.equal(response?.status(),200);

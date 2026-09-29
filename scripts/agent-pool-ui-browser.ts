@@ -167,7 +167,9 @@ try{
    if(width===360&&mode===0)catalogGate=new Promise<void>(resolve=>{releaseCatalog=resolve;});
    await page.goto(`${origin}/agents/arenas/${ref.app}/1/1`);await page.locator('canvas').waitFor({timeout:5000});
    if(catalogGate){
-    assert(await page.getByText('CLASSIC · Live',{exact:false}).isVisible(),'A stalled catalogue must not block observation');
+    // The spectator fills up to one second of confirmed play before advancing.
+    // It must become live while this catalogue request is still unresolved.
+    await page.getByText('CLASSIC · Live',{exact:false}).waitFor({timeout:2500});
     releaseCatalog!();catalogGate=undefined;await page.getByText('NOVA',{exact:true}).waitFor();
     report.checks.push({width,arenaConnectsBeforeCatalog:true});
    }
