@@ -25,6 +25,7 @@ import {AgentPoolReader} from '../relayer/src/agents/pool-read';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {BackgroundObservation} from '../shared/background-observation';
+import {hubObservations} from '../shared/hub-observation';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {publicationUnavailable} from '../shared/service-error';
 import {agentPublicationHealth,agentTickInterval} from '../shared/agent-publication-health';
@@ -56,6 +57,7 @@ const assignments=new BackgroundObservation(async()=>{
   const lanes=await Promise.all(laneNumbers.map(lane=>base.readContract({address:m.pool,abi:poolAbi,functionName:'laneRecord',args:[lane],blockNumber:block.number})));
   return{block,lanes};
 },2000,5000);
+const sharedHub=hubObservations(base,m.hub,r.arenas.map((a:any)=>a.app));
 async function replayLoop(){while(!stopping){try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}catch{console.error(JSON.stringify({service:'reusable-replays',error:'Reconciliation pending'}));}
  for(let n=0;n<60&&!stopping;n++)await delay(1000);}}
 
@@ -70,9 +72,6 @@ async function arenaLoop(app:Address,runtimeHash:string){
  // reads used to stop the tick loop even while the last observation was valid.
  // Initial/expired checks still block; createPoolEngine independently fences
  // every command against its hub epoch, permission and hosted session.
- const hub=new BackgroundObservation(async()=>{
-  const {block}=await assignments.read();return readHubDelegation(base,m.hub,app,block.number);
- },2500,5000);
  let publicationPaused=false;
  const publicationObservation=()=>new BackgroundObservation(async()=>{
   const response=await measuredFetch('interlude')(url+'/health',{signal:AbortSignal.timeout(4000)});
@@ -101,7 +100,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
   try{
    const common=await assignments.read(),block=common.block;
    {
-    const next=await hub.read();
+    const next=(await sharedHub.read(app)).delegation;
     if(!d||next.epoch!==d.epoch){await close();node=undefined;publicationPaused=false;publication=publicationObservation();}d=next;
     if(!node&&d.status!==0){
      observedRuntimeHash=keccak256((await base.getCode({address:app,blockNumber:block.number}))!);
@@ -144,7 +143,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      // next loop must not impose a second 300 ms pause after every own tick.
      if(s.revision!==lastRevision){lastRevision=s.revision;lastProgress=Date.now();}
      observed.observe(s);replays.capture(replayRef,15,s);
-    },{node,reusable:true,archive:archive.store});
+    },{node,reusable:true,archive:archive.store,hubObservation:()=>sharedHub.read(app)});
    }
    // Expiry forbids new commands, not the reads needed to preserve a result.
    if(d.status!==1||d.expiresAt<=block.timestamp){

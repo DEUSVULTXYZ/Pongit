@@ -11,6 +11,7 @@ import {EngineFeed} from '../../../shared/engine-feed';
 import {EngineStream,receiptFrame,type EngineState} from '../../../shared/engine-stream';
 import {reusableResults,type ReusableResultCandidate} from '../../../shared/reusable-results';
 import {readHubDelegation} from '../../../shared/rooms-hub';
+import type {HubObservation} from '../../../shared/hub-observation';
 import {engineJobIdentity,engineReceiptOutcome} from '../rooms-engine-recovery';
 import {retirableRefusal,refusalReason} from '../../../shared/engine-halt';
 
@@ -34,7 +35,7 @@ export async function initializePoolOperations(db:Pool){await db.query(`
  * permissionless maintenance only; it cannot impersonate a human or spend funds.
  * No pending entry is deleted, including a refusal proven safe to retire. */
 export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Address,url:string,key:Hex,
- ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number}){
+ ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number;hubObservation?:()=>Promise<HubObservation>}){
  if(runtime?.series&&runtime?.reusable)throw Error('Choose one arena generation');
  if(runtime?.reusable&&!runtime.archive)throw Error('Reusable results require a durable archive');
  const arenaAbi=runtime?.reusable?reusableAgentArenaAbi:runtime?.series?seriesAgentArenaAbi:abi;
@@ -44,8 +45,9 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
  const lower=app.toLowerCase(),now=runtime?.now??Date.now;let busy=false,fenceUntil=0,closed=false;
  let fenceTask:Promise<void>|undefined;
  async function verifyFence(){
-  const block=await base.getBlock(),d=await readHubDelegation(base,hub,app,block.number);
-  if((await base.getBlock({blockNumber:block.number})).hash!==block.hash)
+  const started=now(),shared=await runtime?.hubObservation?.();
+  const block=shared?.block??await base.getBlock(),d=shared?.delegation??await readHubDelegation(base,hub,app,block.number);
+  if(!shared&&(await base.getBlock({blockNumber:block.number})).hash!==block.hash)
    throw Error('Arena publication changed during lifecycle verification');
   // This is proof of epoch closure, not an inference from an unavailable node.
   if(!closed&&(d.status===0||d.epoch>ref.epoch)){
@@ -56,7 +58,8 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   const engine:any=await node.request({method:'interlude_session',params:[]} as any);
   if(String(engine.app).toLowerCase()!==lower||BigInt(engine.epoch)!==ref.epoch||engine.chainId!==4242)throw Error('Hosted arena epoch is not ready');
   if(runtime?.reusable&&BigInt(engine.baseBlock??-1)!==d.baseBlock)throw Error('Hosted arena base block is not ready');
-  fenceUntil=now()+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
+  fenceUntil=(shared?.observedAt??started)+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
+  if(now()>=fenceUntil)throw Error('Arena lifecycle verification became stale');
  }
  function refreshFence(){
   return fenceTask??=verifyFence().catch(error=>{fenceUntil=0;throw error;}).finally(()=>{fenceTask=undefined;});
