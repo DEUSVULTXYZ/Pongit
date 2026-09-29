@@ -46,6 +46,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const visibleError=(!connectOpen&&error)||queueError||catalogError;
  const session=useRef<PoolFamilySession|null>(null),locked=useRef(false),intent=useRef<Address|null>(null),alive=useRef(false),waiting=useRef(false);
  const launchFocus=useRef<HTMLButtonElement>(null);
+ const hasCatalogue=useRef(false);
  const [warmup,setWarmup]=useState(false);
  const [detailAgent,setDetailAgent]=useState<Person|null>(null),[catalogLoaded,setCatalogLoaded]=useState(false);
  const serviceDown=!!capacity&&agentServiceUnavailable(capacity);
@@ -59,14 +60,15 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   const refresh=async()=>{let delay=10000;
    try{
     if(document.hidden)return;
+    const readSignal=AbortSignal.any([abort.signal,AbortSignal.timeout(8000)]);
     const results=await Promise.allSettled([
-     poolApi<AgentPoolManifest>('config',undefined,abort.signal).then(raw=>{const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade is not open');if(!stopped)setConfig(m);}),
-     poolApi<{items:Person[];next:string|null;capacity?:AgentCapacity}>(`catalog?offset=${offset}&limit=16`,undefined,abort.signal).then(catalog=>{if(!stopped){setPeople(catalog.items);setCapacity(catalog.capacity);setNext(catalog.next);setCatalogLoaded(true);}}),
-     poolApi<{items:Live[]}>('live',undefined,abort.signal).then(games=>{if(!stopped)setLive(games.items);}),
+     poolApi<AgentPoolManifest>('config',undefined,readSignal).then(raw=>{const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade is not open');if(!stopped)setConfig(m);}),
+     poolApi<{items:Person[];next:string|null;capacity?:AgentCapacity}>(`catalog?offset=${offset}&limit=16`,undefined,readSignal).then(catalog=>{if(!stopped){hasCatalogue.current=true;setPeople(catalog.items);setCapacity(catalog.capacity);setNext(catalog.next);setCatalogLoaded(true);}}),
+     poolApi<{items:Live[]}>('live',undefined,readSignal).then(games=>{if(!stopped)setLive(games.items);}),
     ]);
     const failed=results.find(r=>r.status==='rejected');if(failed?.status==='rejected')throw failed.reason;
     if(!stopped){quiet.recovered();setCatalogError('');}
-   }catch(e){if(!stopped){setCatalogError(quiet.failed(poolUserError(e)));delay=Math.max(10000,engineReadRetryMs(e));}}
+   }catch(e){if(!stopped){setCatalogError(hasCatalogue.current?quiet.failed(poolUserError(e)):'The arcade could not be loaded. Please retry.');delay=Math.max(10000,engineReadRetryMs(e));}}
    finally{if(!stopped)timer=setTimeout(refresh,delay);}
   };void refresh();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
  },[enabled,retry,offset]);
@@ -91,7 +93,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  async function canStart(m:AgentPoolManifest){
   if(m.version<5)return true;
   setChecking(true);
-  try{const result=await poolApi<{capacity:AgentCapacity}>('capacity');setCapacity(result.capacity);return !agentServiceUnavailable(result.capacity);}
+  try{const result=await poolApi<{capacity:AgentCapacity}>('capacity',undefined,AbortSignal.timeout(5000));setCapacity(result.capacity);return !agentServiceUnavailable(result.capacity);}
+  catch{throw Error('Arena availability could not be checked. Please retry.');}
   finally{setChecking(false);}
  }
  async function challenge(m:AgentPoolManifest,s:PoolFamilySession,agent:Address){
