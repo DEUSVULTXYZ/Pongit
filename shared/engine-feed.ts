@@ -27,6 +27,17 @@ export class EngineFeed {
   };
  }
  peek(id:bigint){return this.entries.get(id)?.value;}
+ /** Input already has a verified authorization and a receipt-owned nonce. A
+  * routine consistency read must not sit ahead of it while fresh, contiguous
+  * events are available. Gaps, stale frames and resets still await a full read. */
+ async forCommand(id:bigint):Promise<EngineState>{
+  const e=this.entry(id);
+  if(!e.dirty&&e.value&&this.now()-e.value.observedAt<500){
+   if(this.now()-e.fullAt>=10000)void this.read(id).catch(()=>{});
+   return e.value;
+  }
+  return this.read(id);
+ }
  progressAge(id:bigint){return this.now()-this.entry(id).progressAt;}
  invalidate(){for(const e of this.entries.values()){e.dirty=true;e.gap=undefined;}}
  private publish(entry:Entry,next:EngineState){

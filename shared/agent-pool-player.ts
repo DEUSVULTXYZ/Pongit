@@ -46,6 +46,10 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   (fenceTimer as any).unref?.();
  };
  let moving:Promise<void>|undefined,intention:{dir:-1|0|1}|undefined;
+ // A receipt acknowledges the latest queued intent, not necessarily the
+ // direction of physics still catching up. Never deduplicate against that
+ // older direction: doing so drops a release/reversal after a queued input.
+ let acceptedDirection:-1|0|1|undefined;
  const listeners=new Set<()=>void>();
  const serial=<T>(work:()=>Promise<T>)=>{const p=lane.then(work,work);lane=p.catch(()=>{});return p;};
  const verify=(s:EngineState)=>{if(s.id!==id||s.a.toLowerCase()!==match.a.toLowerCase()||s.b.toLowerCase()!==match.b.toLowerCase())throw Error('Arena state belongs to another match');return s;};
@@ -74,7 +78,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  }
  async function recoverNow(){
   if(stopped)throw Error('Arena controls have stopped');
-  sender=undefined;controlsUntil=0;fenceGeneration++;clearTimeout(fenceTimer);
+  sender=undefined;acceptedDirection=undefined;controlsUntil=0;fenceGeneration++;clearTimeout(fenceTimer);
   const started=now();
   if(await options.base.getChainId()!==10143)throw Error('Arena authorization requires Monad Testnet');
   const block=await options.base.getBlock(),hub=await readHubDelegation(options.base,m.hub,arena!.app,block.number);
@@ -131,7 +135,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // contract still checks active permission/expiry on every signed command.
    await refreshFence();
    if(now()>=controlsUntil)throw Error('Arena authorization is awaiting a fresh observation');
-  }catch(error){sender=undefined;throw error;}
+  }catch(error){throw error;}
  }
  function refreshFence():Promise<void>{
   if(fencePending)return fencePending;
@@ -168,11 +172,14 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    const latest=intention;
    try{await serial(async()=>{
     await authorizeControls();
-   const s=verify(await feed.read(id));if(s.phase!==2){intention=undefined;return;}
+   const s=verify(await feed.forCommand(id));if(s.phase!==2){intention=undefined;return;}
     if(stopped)throw Error('Arena controls have stopped');
     // Coalesce again after awaited recovery; never dispatch an obsolete intent.
     const selected=intention??latest,side=s.a.toLowerCase()===player.toLowerCase()?0:1;
-    if((side===0?s.state.leftDir:s.state.rightDir)!==selected.dir)await sendNow('input',[id,selected.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]);
+    if(acceptedDirection!==selected.dir){
+     await sendNow('input',[id,selected.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]);
+     acceptedDirection=selected.dir;
+    }
     if(intention===selected)intention=undefined;
    });}catch(error){throw error;}
   }})().finally(()=>{moving=undefined;});return moving;
@@ -210,20 +217,24 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   async launch(){await identify();return reusable?readArenaLaunch(node,arena.app,id,m.countdownClock):undefined;},
   async read(force=false){await identify(force);return verify(await feed.read(id,force));},
   watch(listener:(s:EngineState)=>void){const stop=feed.watch(id,s=>{try{if(!stopped&&verifiedAt&&now()-verifiedAt<10000)listener(verify(s));}catch{feed.invalidate();}});listeners.add(stop);return()=>{stop();listeners.delete(stop);};},
-  async recover(){const s=await serial(recoverNow);if(intention)await pump();return s;},
-  async synchronize(){return serial(async()=>{
+  controlsAvailable(){return !stopped&&!!sender&&now()<controlsUntil&&!journal.pending(session.grant.key);},
+  async recover(){const s=await serial(recoverNow);if(s.phase===2)intention??={dir:0};if(intention)await pump();return s;},
+  async synchronize(){
    // Periodic observation must not rebuild the signer or discard its confirmed
    // nonce. A missing sender/pending command still takes the full recovery path.
+   if(!sender||journal.pending(session.grant.key))return serial(recoverNow);
    await authorizeControls();
+   const generation=fenceGeneration;
    try{
     const side=match.a.toLowerCase()===player.toLowerCase()?0:1;
     const control=await readPoolPermission(node,arena.app,id,side,{key:session.grant.key,expires:session.grant.expires},reusable);
-    if(control.revoked)throw Error('This arena authorization was revoked by its owner');
+    if(stopped||generation!==fenceGeneration)throw Error('Arena controls changed during observation');
+    if(control.revoked){sender=undefined;controlsUntil=0;throw Error('This arena authorization was revoked by its owner');}
     if(control.key.toLowerCase()!==session.grant.key.toLowerCase()||control.expires!==session.grant.expires)
-     throw Error('The current arena needs its own confirmed owner authorization');
+     {sender=undefined;controlsUntil=0;throw Error('The current arena needs its own confirmed owner authorization');}
     return verify(await feed.read(id));
-   }catch(error){sender=undefined;throw error;}
-  });},
+   }catch(error){throw error;}
+  },
   move(dir:-1|0|1){if(![-1,0,1].includes(dir)||stopped)return Promise.reject(Error('Invalid or stopped arena control'));intention={dir};return pump();},
   ready(){return serial(async()=>{
    if(!reusable)return verify(await feed.read(id));

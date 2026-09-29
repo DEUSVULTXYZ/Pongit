@@ -131,10 +131,11 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
       if(recoveryVersion.current===version){setReady(true);setControlError('');}
      }
      catch(e){
-      if(cancelled)return;setReady(false);
+      if(cancelled)return;
+      const valid=playerClient.current?.controlsAvailable()??false;setReady(valid);
       // Before the engine admits the match its binding is simply not there yet:
       // that is preparation, not a failure, and it is checked again within a second.
-      if(preparingArena(e)){setControlError('');setConnection('Preparing your arena');}else setControlError(poolUserError(e));
+      if(valid)setControlError('');else if(preparingArena(e)){setControlError('');setConnection('Preparing your arena');}else setControlError(poolUserError(e));
       retryRecoveryAt=performance.now()+Math.max(1000,engineReadRetryMs(e));nextRecovery=retryRecoveryAt;
      }
     }

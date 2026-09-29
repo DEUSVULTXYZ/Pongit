@@ -4,7 +4,7 @@ import {zeroHash} from 'viem';
 import {initial} from '../shared/physics-interlude';
 import {SpectatorPlayout,visibleBall} from '../web/lib/spectator-playout';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
-import {SpectatorChaosProjection} from '../web/lib/chaos-presentation';
+import {projectChaos,SpectatorChaosProjection} from '../web/lib/chaos-presentation';
 const state=(ms:number)=>({...initial(zeroHash),t:BigInt(ms)*1000n,left:BigInt(100+ms/10)*1000000n});
 
 test('spectator follows processed time smoothly between sparse observations, not an unprocessed engine deadline',()=>{
@@ -97,6 +97,14 @@ test('buffered Chaos holds a visible ball at an unconfirmed point and reconciles
  assert.equal(s.state.score.rally,source.score.rally);assert(s.state.balls[0].alive);assert(s.waiting);
  const next=initialChaosEvents(zeroHash);next.score.a=1;next.score.rally=2;next.t=600000n;next.nextForce=600000n;
  assert.equal(p.sample(next,next.t,'complete').state.score.a,1);
+});
+
+test('player Chaos prediction never paints an unconfirmed point or makes the ball disappear',()=>{
+ const source=initialChaosEvents(zeroHash);source.balls[0].x=1010000000000000n;source.balls[0].vx=800000000n;
+ const p=projectChaos(source,500000n,'complete');
+ assert(p.waiting);assert(p.state.balls[0].alive);
+ assert.deepEqual(p.state.score,source.score);assert(p.state.balls[0].x>=source.balls[0].x);
+ assert(p.state.balls[0].x<=1030000000000000n);
 });
 
 

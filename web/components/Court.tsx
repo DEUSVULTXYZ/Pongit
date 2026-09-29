@@ -170,6 +170,7 @@ export function Court({
       } else { visualY = null; livePaddle.reset(); }
       if(cp&&p.chaos){
         const f=eventCanvas(cp.state,arcadeAudio.settings.background,reducedMotion.matches);
+        if(!p.replay)for(const ball of f.balls)Object.assign(ball,visibleBall(ball.x,ball.y));
         f.paddles[0].y=yA;f.paddles[1].y=yB;
         const epoch=p.chaos.request>>64n&0xffffffffn;
         if(!p.replay&&!document.hidden){

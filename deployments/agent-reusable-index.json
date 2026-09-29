@@ -1,12 +1,34 @@
 {
+  "version": 2,
   "chainId": 10143,
-  "rulesVersion": 15,
-  "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
-  "startBlock": 64199244,
-  "deploymentTransaction": "0xa84929c48026a7a4666105c7c0ce484dddd1d3e25f5baf9134f969025dd37020",
-  "arenas": [
-    "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
-    "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
-    "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b"
+  "deployments": [
+    {
+      "chainId": 10143,
+      "rulesVersion": 15,
+      "pool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+      "startBlock": "64199244",
+      "arenas": [
+        "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+        "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+        "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b"
+      ]
+    },
+    {
+      "chainId": 10143,
+      "rulesVersion": 15,
+      "pool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
+      "startBlock": "66549863",
+      "arenas": [
+        "0x40178b386730985a9d1df46c3a811f8e7138e4ec",
+        "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+        "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+        "0xf202862714f61d6f6b8b14c1d2f5d3ca7ea3e41b",
+        "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+        "0xaf7c017a6729ec6f5d9d14288c5214489bb5be3b",
+        "0x9b8e61621682da7b59239774f76dcf04071ea059",
+        "0x028f656e76cc1973ced7c41d8584d4f94be9e003"
+      ],
+      "archiveContract": "AgentReusableFiveArchive"
+    }
   ]
 }

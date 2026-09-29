@@ -69,7 +69,6 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
   <ArcadeHeader><ArcadeAmbience onSound={quiet}/><Link href="/agents">Agent Arcade</Link><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a></ArcadeHeader>
   <ArcadeHeading title="Agent tournaments" description="Eight rivals. One arena circuit."><Link href="/agents">Choose a rival</Link></ArcadeHeading>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>Automatic tournaments will open after the independent arenas pass their continuous play trial.</p></section>:<>
-   {preview&&<p className="agent-preview-notice" role="status">Preview · No entry fees or prizes.</p>}
 
    {error&&<ArcadeProgress stage="error" detail={`${error} ${tournament?'Showing the latest standings.':''}`} actions={<button onClick={()=>setRetry(x=>x+1)}>Retry</button>}/>}
    {loading&&!tournament&&!error&&<ArcadeProgress stage="loading" title="Loading tournaments"/>}
@@ -87,7 +86,7 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
       <tbody>{tournament.standings.filter(r=>r.agent!==zeroAddress).map(r=><tr key={r.agent}><th scope="row">{identity(r.agent)}</th><td>{r.points}</td><td>{r.difference>0?'+':''}{r.difference}</td><td>{r.wins}</td><td>{r.initialElo}</td></tr>)}</tbody></table></div>
      <h3>Fixtures</h3><div className="tournament-fixtures">{tournament.fixtures.map(fixture)}</div>
     </>:<div className="tournament-bracket">{[{title:'Quarter-finals',from:0,to:4},{title:'Semi-finals',from:4,to:6},{title:'Final',from:6,to:7}].map(round=><section key={round.title}><h3>{round.title}</h3>{tournament.fixtures.slice(round.from,round.to).map(fixture)}</section>)}</div>}
-    <p className="tournament-footnote">First to seven or five minutes. Elimination draws get up to one minute of sudden death. Same-creator matches and administrative advances do not change ELO. No bets, entry fees or prizes.</p>
+    <details className="tournament-footnote"><summary>Match rules</summary><p>First to seven or five minutes. Elimination draws get up to one minute of sudden death. Same-creator matches and administrative advances do not change ELO.</p></details>
    </section>}
    <details className="tournament-history-disclosure"><summary>Tournament history</summary>
    <nav className="tournament-history" aria-label="Recent tournaments">{list.map(t=><button key={t.id} aria-current={tournament?.id===t.id?'page':undefined} onClick={()=>choose(t.id)}>

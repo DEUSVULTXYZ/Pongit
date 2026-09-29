@@ -151,3 +151,21 @@ test("a subscribed Chaos pause waits for its event with a ten-second consistency
  socket.close();await feed.read(1n);assert.equal(reads,4,'A lost stream forces reconciliation');
  off();await Promise.resolve();
 });
+
+test('fresh contiguous commands bypass a slow consistency read but never bypass a gap',async()=>{
+ let now=1000,reads=0,finish!:(v:Hex)=>void;
+ const socket=new Socket(),stream=new EngineStream('https://node.invalid',app,()=>socket);
+ const encoded=()=>encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(baseline()) as any});
+ const client={app:app as Address,abi,node:{request:async()=>++reads===1?encoded():new Promise<Hex>(r=>finish=r)}};
+ const feed=new EngineFeed(client,stream,()=>now),off=feed.watch(1n,()=>{});
+ socket.emit('open',{});socket.emit('message',{data:JSON.stringify({id:1,result:99})});await feed.read(1n);
+ now+=11000;feed.apply(frame());
+ assert.equal((await feed.forCommand(1n)).revision,6n);assert.equal(reads,2);
+ finish(encoded());await new Promise(r=>setImmediate(r));
+ feed.invalidate();let resolved=false;const afterGap=feed.forCommand(1n).then(()=>{resolved=true;});
+ await new Promise(r=>setImmediate(r));assert(!resolved,'A gap still waits for reconciliation');
+ // The mocked read is behind; two stable reads would be required to adopt it.
+ const fresh={...baseline(),revision:6n,head:110n,state:{...baseline().state,t:200000n}};
+ finish(encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(fresh) as any}));
+ await afterGap;off();
+});

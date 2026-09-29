@@ -16,10 +16,16 @@ export function eventHud(s:ChaosPhysicsState):ChaosEffectState[]{return s.effect
  * point, starts a new rally or chooses an event. Work per frame is bounded. */
 export function projectChaos(source:ChaosPhysicsState,target:bigint,everyContact=chaosContactResolution(Number(manifest.rulesVersion))){
  const limit=source.t+600000n,bounded=target<source.t?source.t:target>limit?limit:target;
- const [state,complete,collisions]=advanceChaosEvents(source,bounded,96,true,everyContact);
+ let [state,complete,collisions]=advanceChaosEvents(source,bounded,96,true,everyContact);
  const goal=state.score.rally!==source.score.rally||state.score.finished!==source.score.finished;
- if(goal)for(const b of state.balls)b.alive=false;
- return {state,collisions,waiting:!complete||target>limit||goal||state.cancelled&&!source.cancelled};
+ if(goal){
+  // The mirror has located a goal, not confirmed it. Keep the visible ball at
+  // the final instant before that boundary; never paint a speculative score,
+  // serve, effect reset or empty court while waiting for the next receipt.
+  [state,,collisions]=advanceChaosEvents(source,state.t>source.t?state.t-1n:source.t,96,true,everyContact);
+  if(state.score.rally!==source.score.rally||state.score.finished!==source.score.finished){state=source;collisions=[];}
+ }
+ return {state,collisions,pointBoundary:goal,waiting:!complete||target>limit||goal||state.cancelled&&!source.cancelled};
 }
 
 /** Buffered spectators already have a confirmed future sample. Advance the
@@ -36,10 +42,10 @@ export class SpectatorChaosProjection {
   }
   const previous=this.projected?.state??source;
   // A predicted goal is a boundary, even when more render time is buffered.
-  if(previous.score.rally!==source.score.rally||previous.score.finished!==source.score.finished||previous.cancelled&&!source.cancelled)return this.projected!;
+  if(this.projected?.pointBoundary||previous.score.rally!==source.score.rally||previous.score.finished!==source.score.finished||previous.cancelled&&!source.cancelled)return this.projected!;
   const next=projectChaos(previous,target,everyContact);
   this.projected=next.state.score.rally!==source.score.rally||next.state.score.finished!==source.score.finished
-   ?{state:previous,collisions:[],waiting:true}:next;
+   ?{state:previous,collisions:[],pointBoundary:true,waiting:true}:next;
   return this.projected;
  }
 }

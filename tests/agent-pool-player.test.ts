@@ -58,7 +58,7 @@ function fixture(rules:10|11|15=10){
   }
   if(lost)throw Error('Lost response');const result=receipts.get(hash);player.journal.received(r.method,result);return result;
  }};
- const feed:any={read:async()=>state,receipt:async()=>state,invalidate(){},watch:()=>()=>{}};
+ const feed:any={read:async()=>state,forCommand:async()=>state,receipt:async()=>state,invalidate(){},watch:()=>()=>{}};
  const create=()=>player=createPoolPlayer(m,match,session,{base,storage,now:()=>clock,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
  return{m,match,session,owner,player,create,hub,state,sent,storage,binding,base,node,feed,
   lost:(v:boolean)=>lost=v,visible:(v:boolean)=>receiptVisible=v,epoch:(v:number)=>nodeEpoch=v,calls:()=>nodeCalls,hold:(v?:()=>Promise<void>)=>hold=v,
@@ -145,8 +145,9 @@ test('owner renewal and revocation use exact journaled calls, survive loss and r
  await assert.rejects(f.player.renew(privateKeyToAccount(generatePrivateKey())),/participant/);
  f.lost(true);await assert.rejects(f.player.renew(f.owner),/Lost/);const raw=f.sent[0];assert.equal(f.player.journal.pending(f.session.grant.key)?.action,'renewActive');
  f.player.close();f.visible(true);f.lost(false);const restored=f.create();await restored.recover();await restored.move(1);
- assert.equal(f.sent.length,2);assert.equal(parseTransaction(f.sent[1]).nonce,1);assert.notEqual(raw,f.sent[1]);
- await restored.revoke(f.owner);assert.equal(parseTransaction(f.sent[2]).nonce,2);await assert.rejects(restored.move(-1),/revoked/);assert.equal(f.sent.length,3);restored.close();
+ assert.equal(f.sent.length,3);assert.equal(parseTransaction(f.sent[1]).nonce,1);assert.notEqual(raw,f.sent[1]);
+ assert.equal(parseTransaction(f.sent[2]).nonce,2,'Neutral recovery is followed by the requested direction');
+ await restored.revoke(f.owner);assert.equal(parseTransaction(f.sent[3]).nonce,3);await assert.rejects(restored.move(-1),/revoked/);assert.equal(f.sent.length,4);restored.close();
 });
 test('an unresolved permission blocks a different root action until the original is reconciled',async()=>{
  const f=fixture();f.lost(true);await assert.rejects(f.player.renew(f.owner));f.lost(false);f.visible(true);
@@ -176,7 +177,7 @@ test('a failed or reorganized light fence never sends the waiting movement',asyn
   if(problem==='failure')f.failBase(true);else f.reorg(true);
   await assert.rejects(f.player.move(-1));assert.equal(f.sent.length,1);
   f.failBase(false);f.reorg(false);await f.player.move(-1);
-  assert.equal(f.bindings(),2);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
+  assert.equal(f.bindings(),1,'A failed read-only fence preserves the verified signer');assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
  }
 });
 
@@ -220,4 +221,32 @@ test('slow prefetch never blocks a valid movement and cannot extend authorizatio
  await new Promise(r=>setImmediate(r));assert.equal(f.sent.length,2);assert.equal(finished,false);
  release();await assert.rejects(next,/fresh observation/);assert.equal(f.sent.length,2);
  f.hold();await f.player.move(1);assert.equal(f.sent.length,3);f.player.close();
+});
+
+test('a release replaces the accepted queued movement even while processed physics still says stopped',async()=>{
+ const f=fixture(15);const receipt=f.feed.receipt;
+ f.feed.receipt=async()=>{const s=await receipt();s.state.leftDir=0;return s;};
+ await f.player.move(1);assert.equal(f.state.state.leftDir,0);
+ await f.player.move(0);
+ assert.equal(f.sent.length,2,'Stop must cancel the queued up/down command');
+ const call=decodeFunctionData({abi:reusableAgentArenaAbi,data:parseTransaction(f.sent[1]).data!});
+ assert.deepEqual(call.args?.slice(0,4),[1n,4n,0,2n]);
+ await f.player.move(0);assert.equal(f.sent.length,2,'An already accepted intention stays deduplicated');
+ f.player.close();
+});
+
+test('F5 sends a neutral intent instead of assuming processed physics has no pending direction',async()=>{
+ const f=fixture(15);await f.player.move(1);f.state.state.leftDir=0;f.player.close();
+ const resumed=f.create();await resumed.recover();assert.equal(f.sent.length,2);
+ assert.equal(parseTransaction(f.sent[1]).nonce,1);resumed.close();
+});
+
+test('periodic permission observation cannot hold movement behind a slow read',async()=>{
+ const f=fixture(15);await f.player.move(1);
+ let release!:()=>void;const gate=new Promise<void>(r=>release=r);
+ const read=f.node.getStorageAt;f.node.getStorageAt=async(r:any)=>{await gate;return read(r);};
+ const observing=f.player.synchronize();let moved=false;
+ const moving=f.player.move(-1).then(()=>{moved=true;});
+ await new Promise(r=>setTimeout(r,30));assert(moved,'A healthy command must pass while periodic reads wait');
+ assert.equal(f.sent.length,2);release();await observing;await moving;f.player.close();
 });

@@ -3,6 +3,8 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
+import {decodeFunctionData,keccak256,parseTransaction} from 'viem';
+import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
@@ -25,7 +27,13 @@ const savePrivate=async()=>writeFile(privatePath,JSON.stringify({storage:await c
  session:await page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage))),
  credentials:await cdp.send('WebAuthn.getCredentials',{authenticatorId})}),{mode:0o600});
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
-page.on('request',r=>starts.set(r,performance.now()));page.on('pageerror',e=>report.errors.push(clean(e)));
+const controls=new Map<string,{direction:number;sequence:string}>();
+page.on('request',r=>{starts.set(r,performance.now());try{
+ const body=r.postDataJSON();if(body?.method!=='interlude_sendTransaction')return;
+ const raw=body.params[0],hash=keccak256(raw),tx=parseTransaction(raw);
+ const call=decodeFunctionData({abi:reusableAgentArenaAbi,data:tx.data!});
+ if(call.functionName==='input')controls.set(hash,{direction:Number(call.args[2]),sequence:String(call.args[3])});
+}catch{/* Decode in memory; never retain signed bytes or grants. */}});page.on('pageerror',e=>report.errors.push(clean(e)));
 page.on('response',async response=>{try{
  const request=response.request(),body=request.postDataJSON();if(!body||Array.isArray(body))return;
  if(!['interlude_sendTransaction','interlude_getTransactionReceipt','eth_getTransactionReceipt'].includes(body.method))return;
@@ -33,7 +41,14 @@ page.on('response',async response=>{try{
  if(body.method==='interlude_sendTransaction'){
   const began=starts.get(request)??performance.now();report.submissions.push({ms:performance.now()-began,http:response.status(),error:!!reply.error});
   const hash=typeof reply.result==='string'?reply.result:reply.result?.transactionHash;
-  if(typeof hash==='string')submitted.set(hash.toLowerCase(),began);
+  if(typeof hash==='string'){
+   submitted.set(hash.toLowerCase(),began);
+   // Interlude returns the executed receipt in the send response. Counting only
+   // later receipt polling silently omitted every ordinary successful control.
+   if(reply.result?.transactionHash&&['0x1','success'].includes(reply.result.status)&&!receipts.has(hash.toLowerCase())){
+    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,status:reply.result.status,...controls.get(hash.toLowerCase())});
+   }
+  }
  }else if(reply.result){
   const hash=String(reply.result.transactionHash??body.params?.[0]??'').toLowerCase(),began=submitted.get(hash);
   if(began!==undefined&&!receipts.has(hash)){receipts.add(hash);report.receipts.push({ms:performance.now()-began,status:reply.result.status});}
@@ -76,6 +91,7 @@ try{
  assert(report.submissions.length>=100&&report.submissions.every((s:any)=>!s.error),'At least 100 successful command submissions required');
  assert(local.length>=50&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
+ assert(report.receipts.filter((r:any)=>r.sequence).length>=100&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');
  report.checks.push('At least 100 public command submissions and local input latency');
  // Explicitly concede this synthetic friendly fixture through the same UI.
  await page.getByRole('button',{name:'Tools',exact:true}).first().click();
