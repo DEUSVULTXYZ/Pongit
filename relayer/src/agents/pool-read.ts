@@ -149,8 +149,17 @@ export class AgentPoolReader {
   const m=this.manifest;
   return this.snapshot(async read=>{
    if(m.version>=4){
-    const records=await Promise.all(agentPoolLanes(m).map(lane=>read(m.pool,this.poolAbi,'laneRecord',[lane])));
-    const items=await Promise.all(records.filter(r=>r.ref.id&&!r.captured).map(async r=>{
+    const [records,health]=await Promise.all([
+     Promise.all(agentPoolLanes(m).map(lane=>read(m.pool,this.poolAbi,'laneRecord',[lane]))),this.operational?.()??Promise.resolve([]),
+    ]);
+    const now=Date.now();
+    const items=await Promise.all(records.filter(r=>{
+     if(!r.ref.id||r.captured)return false;
+     const observed=health.find(h=>h.app.toLowerCase()===r.ref.arena.toLowerCase());
+     // A finished engine can await publication without becoming a live stream.
+     // This hides no history and does not release a seat or invent a result.
+     return !(freshArenaState(observed,r.ref.epoch,now)&&observed?.id===String(r.ref.id)&&observed.stage==='awaiting-publication');
+    }).map(async r=>{
      const arena=m.arenas.find(a=>a.app.toLowerCase()===r.ref.arena.toLowerCase());if(!arena)throw Error('Assigned arena is outside this deployment');
      const [,b]=await read(m.pool,this.poolAbi,'ticketOf',[r.ref]);
      if(b.id!==r.ref.id||b.epoch!==r.ref.epoch||b.a.toLowerCase()!==r.a.toLowerCase()||b.b.toLowerCase()!==r.b.toLowerCase())throw Error('Admission binding differs from its assignment');

@@ -161,7 +161,8 @@ async function arenaLoop(app:Address,runtimeHash:string){
     const p=await publication.read();
     // Reading a playing snapshot is not proof that publications have resumed.
     // Keep exact pending commands for reconciliation after explicit recovery.
-    if(!p.healthy){await archiveSlot(ticket);await health('publication-paused',{epoch:String(ref.epoch),id:String(ref.id),publication:p});await delay(2000);continue;}
+    if(!p.healthy){const terminal=await archiveSlot(ticket);await health(terminal?'awaiting-publication':'publication-paused',
+     {epoch:String(ref.epoch),id:String(ref.id),publication:p});await delay(2000);continue;}
     publicationPaused=false;
    }
    admission??=new BackgroundObservation(async()=>{

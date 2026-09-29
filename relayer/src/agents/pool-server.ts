@@ -84,8 +84,8 @@ if(process.env.PONG_AGENT_POOL_READER==='1'){
  const replays=replayDb?new PoolReplays(replayDb,process.env.GRAPHQL_URL?poolReplayRetention(process.env.GRAPHQL_URL,
   process.env.HASURA_ADMIN_SECRET?{'x-hasura-admin-secret':process.env.HASURA_ADMIN_SECRET}:{}):undefined):undefined;
  const operational=replayDb?async()=>{
-  const rows=(await replayDb.query("SELECT app,stage,detail->>'epoch' AS epoch,updated_at FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
-  return rows.map(row=>({app:row.app,epoch:String(row.epoch),stage:row.stage,observedAt:new Date(row.updated_at).getTime()}));
+  const rows=(await replayDb.query("SELECT app,stage,detail->>'epoch' AS epoch,detail->>'id' AS id,updated_at FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
+  return rows.map(row=>({app:row.app,epoch:String(row.epoch),id:row.id==null?undefined:String(row.id),stage:row.stage,observedAt:new Date(row.updated_at).getTime()}));
  }:undefined;
  const service=await startPoolReadService(new AgentPoolReader(client,manifest,humanApps,operational),
   {host:process.env.HOST??'127.0.0.1',port:Number(process.env.PORT??4101),public:process.env.PONG_AGENT_POOL_PUBLIC==='1',

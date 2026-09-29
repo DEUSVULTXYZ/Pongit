@@ -1,4 +1,4 @@
-export type ArenaOperationalState={app:string;epoch:string;stage:string;observedAt:number};
+export type ArenaOperationalState={app:string;epoch:string;id?:string;stage:string;observedAt:number};
 export type AgentCapacity={observedAt:number;known:boolean;freeChallengeLanes:number;readyArenas:number;admissions:boolean};
 export type AgentAvailability='available'|'capacity-occupied'|'service-unavailable'|'agent-busy'|'qualifying'|'incompatible';
 export function freshArenaState(row:ArenaOperationalState|undefined,epoch:bigint,now:number){
