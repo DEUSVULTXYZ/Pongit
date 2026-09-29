@@ -5,7 +5,7 @@ import styles from './ArcadeChrome.module.css';
 export function ArcadeHeader({children}:{children:ReactNode}){
  return <header className={`rooms-header ${styles.header}`}><Link href="/" className="brand" aria-label="PONGIT home">
   <img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span>
- </Link><div className={`rooms-header-actions ${styles.actions}`}>{children}</div></header>;
+ </Link><div role="navigation" aria-label="Arcade navigation" className={`rooms-header-actions ${styles.actions}`}>{children}</div></header>;
 }
 export function ArcadeHeading({title,description,children}:{title:string;description:string;children?:ReactNode}){
  return <div className={`agent-heading ${styles.heading}`}><div><span className={styles.eyebrow}>PONGIT / ARCADE</span>

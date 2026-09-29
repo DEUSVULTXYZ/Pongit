@@ -1,6 +1,31 @@
-.header.header {display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 18px}
-.actions.actions {display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0}
-.actions a,.actions button {min-height:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;font-size:14px;padding:8px 12px;border:1px solid #65558b;border-radius:0;background:#1c1735;box-shadow:inset 0 2px #c3afe52b,2px 2px #08071b;color:#eee9fb;text-decoration:none}
+.header.header.header {
+ position:relative;isolation:auto;display:flex;align-items:center;justify-content:space-between;
+ gap:16px;flex-wrap:wrap;padding:18px 24px;border:0;border-radius:0;background:transparent;
+ box-shadow:0 6px 0 #050617;
+}
+.header::before {
+ content:'';position:absolute;inset:0;z-index:0;pointer-events:none;
+ border:16px solid transparent;border-image:var(--palace-frame) 40 fill / 16px / 0 stretch;
+}
+.header :global(.brand) {position:relative;padding:4px 0;min-height:44px;flex-shrink:0}
+.actions.actions {position:relative;display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin:0}
+.header .actions :is(a,button) {
+ position:relative;min-height:44px;min-width:44px;display:inline-flex;align-items:center;
+ justify-content:center;font:500 13px/1.4 var(--cabinet-font),system-ui,sans-serif;padding:10px 14px;
+ border:2px solid #8672b7;border-radius:0;background:#211b40;
+ box-shadow:inset 2px 2px #cdbcf542,inset -2px -2px #0b0923,0 3px #070719;
+ color:#eee9fb;text-decoration:none;transition:background-color .12s,color .12s;
+}
+.header .actions :is(a,button)::before {
+ content:'';width:4px;height:4px;flex:none;background:#aa91d0;margin-right:4px;
+ box-shadow:4px -4px #aa91d044;
+}
+.header .actions :is(a,button):hover:not(:disabled) {
+ background:#30244f;border-color:#87eefa;color:#d9fcff;
+ box-shadow:inset 2px 2px #c5f9ff42,inset -2px -2px #0b0923,0 3px #070719;
+}
+.header .actions :is(a,button):focus-visible {outline:3px solid #85efff;outline-offset:3px}
+.header .actions :is(a,button):active:not(:disabled) {box-shadow:inset 2px 2px #09071b,0 1px #070719}
 .heading.heading {position:relative;isolation:isolate;display:flex;justify-content:space-between;align-items:end;gap:24px;margin:24px 0;padding:28px 32px;border:0;background:linear-gradient(115deg,#141632,#241439);box-shadow:0 8px 0 #08071c}
 .heading::before{content:'';position:absolute;inset:0;z-index:-1;border:18px solid transparent;border-image:var(--palace-frame) 40 fill / 18px / 0 stretch;pointer-events:none}
 .heading::after{content:'';position:absolute;right:30px;top:24px;width:8px;height:8px;background:#8debf2;box-shadow:-12px 0 #706397,0 12px #706397;opacity:.6;pointer-events:none}
@@ -17,4 +42,14 @@
 .action.action {display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:12px 18px;background:linear-gradient(#b2f9ef,#70c8d1);border:1px solid #b2fbef;border-radius:5px;box-shadow:inset 0 1px #effffd,0 3px #286471;color:#132c35;font:600 16px/1.5 var(--cabinet-font),system-ui,sans-serif;text-decoration:none}
 .action.action:hover {background:linear-gradient(#d1fff8,#9ce2eb);color:#10252e}
 .action.action:focus-visible {outline:3px solid #c8fbff;outline-offset:4px}
-@media(max-width:767px){.header.header{padding:10px;gap:8px}.actions.actions{flex:1 1 100%;justify-content:space-between}.actions a,.actions button{font-size:13px;padding:8px}.heading.heading{align-items:start;flex-direction:column;margin:20px 0;gap:12px;padding:22px}.heading h1{font-size:22px}.heading::after{right:20px;top:20px}.state.state{padding:24px 16px}}
+@media(orientation:landscape) and (max-height:600px){:global(.rooms-playing) .header.header.header{display:none}}
+@media(max-width:767px){.header.header.header{padding:14px;gap:10px}.actions.actions{flex:1 1 100%;justify-content:space-between}.header .actions :is(a,button){font-size:13px;padding:8px;flex:1 1 auto}.heading.heading{align-items:start;flex-direction:column;margin:20px 0;gap:12px;padding:22px}.heading h1{font-size:22px}.heading::after{right:20px;top:20px}.state.state{padding:24px 16px}}
+@media(max-width:767px) and (min-height:601px){
+ .header.header.header {display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 96px;padding:10px 12px;gap:6px}
+ .header :global(.brand) {grid-column:1/4;grid-row:1;min-width:0}
+ .header .actions {display:contents}
+ .header .actions :global(.arcade-settings-toggle) {grid-column:4;grid-row:1;font-size:12px!important;max-width:none}
+ .header .actions :is(a,button):not(:global(.arcade-settings-toggle)) {position:relative;grid-column:auto;grid-row:2;font-size:12px;padding:6px;min-height:44px;min-width:0;overflow:hidden}
+ :global(.agents-shell) .header .actions :is(a,button):not(:global(.arcade-settings-toggle)){grid-column:span 2}
+ .header .actions :global(.arcade-settings-toggle)::before{display:none}
+}

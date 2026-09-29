@@ -95,15 +95,16 @@ export function Court({
     let anchor=last,anchorObserved=0,anchorAge=0,localDirection=0,localAt=last,correction=0;
     let played="",playedAt=0;
     const livePaddle = new LivePaddle(), liveClock = new LiveClock();
-    const playout=new SpectatorPlayout();
+    const playout=new SpectatorPlayout(),playerPlayout=new SpectatorPlayout(true);
     const spectatorChaos=new SpectatorChaosProjection();
     function draw(now: number) {
       let p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
-      if (identity !== context) { played="";playout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
-      const buffered=p.bufferedSpectator&&p.side<0&&!p.replay&&!!p.state;
-      if(buffered)playout.push({state:p.state!,chaos:p.chaos,at:now-Math.min(2000,Math.max(0,Date.now()-p.observedAt))});
-      const playback=buffered?playout.sample(now):null;
+      if (identity !== context) { played="";playout.reset();playerPlayout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
+      const buffered=(p.bufferedSpectator||p.liveEngine)&&!p.replay&&!!p.state;
+      const timeline=p.side>=0?playerPlayout:playout;
+      if(buffered)timeline.push({state:p.state!,chaos:p.chaos,at:now-Math.max(0,Date.now()-p.observedAt)});
+      const playback=buffered?timeline.sample(now):null;
       if(playback)p={...p,state:playback.frame.state,chaos:playback.frame.chaos,clock:playback.target};
       const dt = Math.max(0, Math.min(50, now - lastDraw));
       lastDraw = now;
@@ -139,15 +140,23 @@ export function Court({
         yA = Number(paddles.left) / Number(SCALE);
         yB = Number(paddles.right) / Number(SCALE);
       }
-      if(playback){yA=playback.left;yB=playback.right;waiting=playback.stalled;}
+      if(playback&&p.side<0){yA=playback.left;yB=playback.right;}
+      if(playback)waiting=playback.stalled;
       const mod=cp?eventPaddles(cp.state):null;
       const halfA=mod?Number(mod.heightA)/2e6+(mod.splitA?8:0):Number(s?.halfA || 48000000n)/1e6, halfB=mod?Number(mod.heightB)/2e6+(mod.splitB?8:0):Number(s?.halfB || 48000000n)/1e6;
       const half=p.side===0?halfA:halfB;
-      const confirmedY = p.side === 0 ? yA : yB;
+      // The scene has a short presentation delay; local controls must remain
+      // immediate and reconcile against the latest authoritative paddle.
+      const ownerState=current.current.state;
+      const ownerMods=current.current.chaos?eventPaddles(current.current.chaos.physics):null;
+      const ownerSpeed=ownerMods?Number(p.side===0?ownerMods.speedA:ownerMods.speedB)/1e6:180;
+      const ownerAge=Math.min(600,Math.max(0,Date.now()-current.current.observedAt))/1000;
+      const confirmedY = p.liveEngine&&ownerState?Math.max(half,Math.min(576-half,
+        Number(p.side===0?ownerState.left:ownerState.right)/1e6+(p.side===0?ownerState.leftDir:ownerState.rightDir)*ownerSpeed*ownerAge)):p.side === 0 ? yA : yB;
       if (s && !s.awaitingServe && (p.controllable || p.liveEngine) && !p.replay && p.side >= 0) {
         if (p.liveEngine) {
           const owner = livePaddle.step(confirmedY, p.controllable ? p.direction : 0,
-            p.side === 0 ? p.state!.leftDir : p.state!.rightDir,
+            p.side === 0 ? ownerState!.leftDir : ownerState!.rightDir,
             half, dt, timing.stale || !p.controllable, p.pending,mod?Number(p.side===0?mod.speedA:mod.speedB)/1e6:180);
           visualY = owner.y; correction = owner.correction;
         } else {
@@ -168,6 +177,8 @@ export function Court({
         if(p.side===0)yA=visualY;else yB=visualY;
         if(p.debug && Math.abs(visualY-confirmedY)>3){ctx.strokeStyle="#738497";ctx.strokeRect(p.side===0?22:990,confirmedY-half,12,2*half);}
       } else { visualY = null; livePaddle.reset(); }
+      const renderedRally=cp?String(cp.state.score.rally):`${s?.scoreA}:${s?.scoreB}`;
+      if(el.dataset.rally!==renderedRally)el.dataset.rally=renderedRally;
       if(cp&&p.chaos){
         const f=eventCanvas(cp.state,arcadeAudio.settings.background,reducedMotion.matches);
         if(!p.replay)for(const ball of f.balls)Object.assign(ball,visibleBall(ball.x,ball.y));
@@ -269,7 +280,7 @@ export function Court({
       }
       frame = requestAnimationFrame(draw);
     }
-    const visibility=()=>{cancelAnimationFrame(frame);playout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
+    const visibility=()=>{cancelAnimationFrame(frame);playout.reset();playerPlayout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
     document.addEventListener("visibilitychange",visibility);
     if(!document.hidden)frame = requestAnimationFrame(draw);
     return () => {cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};

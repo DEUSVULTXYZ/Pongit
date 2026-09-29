@@ -208,7 +208,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  // A terminal engine snapshot stays on the court until the confirmed buffer
  // reaches it. Published history without a live terminal snapshot is shown
  // directly; it must not strand a spectator waiting for a retired engine.
- const playout=side<0&&painted?.matchId===refKey?painted:null;
+ const playout=painted?.matchId===refKey?painted:null;
  const draining=!!playout&&engineDone&&!playout.finished;
  const displayedResult=draining?undefined:result;
  const displayDone=engineDone&&!draining;

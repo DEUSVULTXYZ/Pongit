@@ -115,6 +115,17 @@ try{
   const small=await page.locator('.agent-card button').evaluateAll(elements=>elements.filter(el=>{const r=el.getBoundingClientRect();return r.width<44||r.height<44;}).length);assert.equal(small,0,'Every card action meets the touch target');
   const docs=await page.getByRole('link',{name:'Docs ↗',exact:true}).boundingBox(),back=await page.getByRole('link',{name:'Back to arcade',exact:true}).boundingBox();
   assert(docs&&back&&(docs.x+docs.width<=back.x||back.x+back.width<=docs.x||docs.y+docs.height<=back.y||back.y+back.height<=docs.y),'Header links overlap');
+  const headerStyle=await page.locator('header.rooms-header').evaluate(el=>({
+   radius:getComputedStyle(el).borderRadius,frame:getComputedStyle(el,'::before').borderImageSource,
+   height:el.getBoundingClientRect().height,
+   controls:Array.from(el.querySelectorAll('button,a:not(.brand)')).filter(e=>e.getBoundingClientRect().width>0).map(e=>({
+    width:e.getBoundingClientRect().width,height:e.getBoundingClientRect().height,radius:getComputedStyle(e).borderRadius,
+   })),
+  }));
+  assert.equal(headerStyle.radius,'0px');assert(headerStyle.frame.includes('frame-violet.svg'));
+  assert(headerStyle.controls.every(c=>c.width>=44&&c.height>=44&&c.radius==='0px'),'Pixel header controls must remain square and touch accessible');
+  if(width<=390)assert(headerStyle.height<=120,'Mobile header must not consume the playing field');
+  report.checks.push({width,pixelHeader:headerStyle});
   const challenge=page.getByRole('button',{name:'Challenge NOVA',exact:true});
   if(touch)await challenge.tap();else await challenge.click();
   await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();

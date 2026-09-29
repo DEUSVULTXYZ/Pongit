@@ -5,7 +5,37 @@ import {initial} from '../shared/physics-interlude';
 import {SpectatorPlayout,visibleBall} from '../web/lib/spectator-playout';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {projectChaos,SpectatorChaosProjection} from '../web/lib/chaos-presentation';
+import {projectLive} from '../web/lib/presentation';
+import {move} from '../shared/physics-v2';
 const state=(ms:number)=>({...initial(zeroHash),t:BigInt(ms)*1000n,left:BigInt(100+ms/10)*1000000n});
+
+test('player playout absorbs 850 ms deliveries without a frame jump when the authoritative clock catches up',()=>{
+ const p=new SpectatorPlayout(true),base={...initial(zeroHash),vx:10000000n,vy:5000000n};
+ const arrivals=[0,300,650,950,1800,2100,2400];let next=0,last:{x:bigint;t:bigint}|undefined;
+ for(let now=0;now<2400;now+=16){
+  while(next<arrivals.length&&arrivals[next]<=now){const at=arrivals[next++];p.push({state:move(base,BigInt(at)*1000n),at});}
+  const frame=p.sample(now)!,rendered=projectLive(frame.frame.state,frame.target).state;
+  if(last){assert(rendered.t>=last.t);assert(rendered.t-last.t<=17000n,'A late snapshot must not jump the presentation clock');
+   assert(Math.abs(Number(rendered.x-last.x))<=170000,'Straight trajectory remains continuous');}
+  last=rendered;
+ }
+ assert(p.sample(10000)!.stalled);
+ assert(p.sample(10016)!.target<=3000000n,'Prediction remains bounded after a real outage');
+});
+test('rapid commands cannot evict confirmed frames still needed by a spectator',()=>{
+ const p=new SpectatorPlayout();let previous=0n;
+ for(let now=0;now<2400;now+=10){
+  p.push({state:{...initial(zeroHash),t:BigInt(now)*1000n},at:now});
+  const s=p.sample(now)!;
+  if(now>1100)assert(s.target-previous<=11000n,'Input bursts cannot force the buffer forward');
+  previous=s.target;
+ }
+});
+test('same-instant direction changes replace the trajectory without refreshing a stalled clock',()=>{
+ const p=new SpectatorPlayout(true),first=state(100);
+ p.push({state:first,at:0});p.push({state:{...first,leftDir:1},at:500});
+ const s=p.sample(2000)!;assert.equal(s.frame.state.leftDir,1);assert(s.stalled);
+});
 
 test('spectator follows processed time smoothly between sparse observations, not an unprocessed engine deadline',()=>{
  const p=new SpectatorPlayout();p.push({state:state(0),at:0});p.push({state:state(1200),at:1200});

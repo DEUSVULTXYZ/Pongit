@@ -11,6 +11,7 @@ export class SpectatorPlayout {
  private playhead=0n;
  private sampledAt:number|undefined;
  private started=false;
+ constructor(private readonly player=false){}
  reset(){this.frames=[];this.interval=600;this.playhead=0n;this.sampledAt=undefined;this.started=false;}
  push(frame:Frame){
   const last=this.frames.at(-1);
@@ -27,12 +28,18 @@ export class SpectatorPlayout {
   else if(last&&frame.state.t===last.state.t){
    // One processed instant holds one frame: a repeated observation adds nothing,
    // and a point resolved at that instant replaces the frame it belongs to.
-   if(rally(frame.state)===rally(last.state))return;
-   this.frames[this.frames.length-1]=frame;return;
+   if(frame.state===last.state&&frame.chaos?.physics===last.chaos?.physics)return;
+   // Inputs/effects may change at the same processed instant. Replace their
+   // state without making a repeated read renew its freshness timestamp.
+   this.frames[this.frames.length-1]={...frame,at:last.at};return;
   }
   const prior=this.frames.at(-1);
   if(prior){const gap=frame.at-prior.at;if(gap>0)this.interval=.75*this.interval+.25*Math.min(2500,gap);}
-  this.frames.push(frame);if(this.frames.length>16)this.frames.shift();
+  this.frames.push(frame);
+  // A burst of player inputs must not evict the entire delayed trajectory.
+  // Retain time, not sixteen commands (which can represent only 100 ms).
+  while(this.frames.length>2&&this.frames[1].at<frame.at-3000)this.frames.shift();
+  while(this.frames.length>512)this.frames.shift();
  }
  sample(now:number){
   if(!this.frames.length)return null;
@@ -40,11 +47,13 @@ export class SpectatorPlayout {
   // 500 ms stream that small margin ran dry during a single delayed update,
   // despite the next authoritative frame arriving well within 1.5 seconds.
   // Fast streams still approach 300 ms; no unconfirmed time is extrapolated.
-  const delay=Math.max(300,Math.min(1000,this.interval*2)),at=now-delay;
+  const delay=this.player?120:Math.max(300,Math.min(1000,this.interval*2)),at=now-delay;
   let a=this.frames[0],b=a;
   for(const next of this.frames.slice(1)){b=next;if(next.at>=at)break;a=next;}
   const fraction=b===a?0:Math.max(0,Math.min(1,(at-a.at)/(b.at-a.at)));
   let target=a.state.t+BigInt(Math.floor(Number(b.state.t-a.state.t)*fraction));
+  if(this.player&&at>b.at)target=b.state.t+BigInt(Math.floor(Math.min(600,at-b.at)*1000));
+  if(this.player&&!this.started)this.started=true;
   if(!this.started){
    // Fill once on entry. Starting immediately and only slowing by 2% could
    // never accumulate the advertised reserve before the first delayed packet.
@@ -61,7 +70,8 @@ export class SpectatorPlayout {
   }
   this.sampledAt=now;
   if(target<this.playhead)target=this.playhead;
-  const latest=this.frames.at(-1)!;if(target>latest.state.t)target=latest.state.t;
+  const latest=this.frames.at(-1)!,ceiling=latest.state.t+(this.player&&!latest.state.finished?600000n:0n);
+  if(target>ceiling)target=ceiling;
   this.playhead=target;
   // Choose again by game time: an adaptive delay must never rewind physics.
   a=this.frames[0];b=a;

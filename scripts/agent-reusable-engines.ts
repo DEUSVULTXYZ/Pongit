@@ -205,7 +205,14 @@ async function arenaLoop(app:Address,runtimeHash:string){
       await proofLane.submit({busy:actor.busy,read:actor.read,send:(op,_action,args)=>actor.send(op,'submitRandomness',[epoch,...args])},id,request,proof);lastProgress=Date.now();
      }).catch(e=>console.error(JSON.stringify({at:new Date().toISOString(),app,event:'randomness-retry',error:clean(e)}))).finally(()=>{proofTask=undefined;});
     }
-    if(!proofLane.blocksTick()&&!engine.busy()&&Date.now()-lastProgress>=tickInterval){await engine.send(`tick:${s.revision}:${s.head}:${Math.floor(Date.now()/tickInterval)}`,'tick',[ref.epoch,ref.id]);lastProgress=Date.now();}
+    if(!proofLane.blocksTick()&&!engine.busy()&&Date.now()-lastProgress>=tickInterval){
+     const started=Date.now();
+     const completed=await engine.send(`tick:${s.revision}:${s.head}:${Math.floor(started/tickInterval)}`,'tick',[ref.epoch,ref.id]);
+     // Cadence is measured between submissions, not after the receipt and its
+     // database write. Adding that latency every tick made 300 ms become 530 ms.
+     // A newer player command observed meanwhile keeps its own progress time.
+     if(completed.revision===lastRevision)lastProgress=started;
+    }
    }else if(s.phase>=3){await archiveSlot(ticket);await health('awaiting-publication',{epoch:String(ref.epoch),id:String(ref.id),score:[s.state.scoreA,s.state.scoreB]});pause=1500;}
   }catch(e){
    if(publicationUnavailable(e)&&!publicationPaused){publicationPaused=true;publication=publicationObservation();}

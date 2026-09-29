@@ -5,6 +5,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 import {decodeFunctionData,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
+import {installSyncProbe,syncMetrics} from './browser-sync-probe';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
@@ -22,6 +23,15 @@ const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz'
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
+if(process.env.PONG_SYNC_PROBE==='1')await installSyncProbe(page);
+if(process.env.PONG_CATALOGUE_ASSET_ORIGIN){
+ const candidate=process.env.PONG_CATALOGUE_ASSET_ORIGIN;assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(candidate));
+ report.candidateAssets=candidate;
+ await page.route('https://pongit.xyz/**',async route=>{
+  const url=new URL(route.request().url());if(url.pathname.startsWith('/api/'))return route.continue();
+  const response=await route.fetch({url:candidate+url.pathname+url.search});await route.fulfill({response});
+ });
+}
 if(restored)await context.addInitScript(session=>{for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));},restored.session);
 page.setDefaultTimeout(60000);
 const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
@@ -32,6 +42,11 @@ const savePrivate=async()=>writeFile(privatePath,JSON.stringify({storage:await c
  session:await page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage))),
  credentials:await cdp.send('WebAuthn.getCredentials',{authenticatorId})}),{mode:0o600});
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
+report.sockets=[];
+page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:new Date().toISOString(),messages:0,applied:0,schemas:{}};report.sockets.push(record);
+ ws.on('framereceived',event=>{try{const p=JSON.parse(String(event.payload));record.messages++;if(p.params?.result){record.applied++;
+  const shape=JSON.stringify({method:p.method,keys:Object.keys(p.params.result),logKeys:Object.keys(p.params.result.logs?.[0]??{})});record.schemas[shape]=(record.schemas[shape]??0)+1;}}
+ catch{/* Record shape only, never payload. */}});ws.on('close',()=>record.closedAt=new Date().toISOString());});
 const requests=new WeakMap<object,{at:string;method:string;path:string}>();
 const controls=new Map<string,{direction:number;sequence:string}>();
 page.on('request',r=>{starts.set(r,performance.now());try{
@@ -117,9 +132,17 @@ try{
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
  assert(report.receipts.filter((r:any)=>r.sequence).length>=100&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');
  report.checks.push('At least 100 public command submissions and local input latency');
+ if(process.env.PONG_SYNC_PROBE==='1'){
+  // Observe ordinary rallies after the burst of controls, instead of treating
+  // a fast command acknowledgement as proof of smooth rendered trajectories.
+  await page.waitForTimeout(45000);
+  const data=await page.evaluate(()=>(window as any).__syncProbe);
+  await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);
+ }
  // Explicitly concede this synthetic friendly fixture through the same UI.
- await page.getByRole('button',{name:'Tools',exact:true}).first().click();
- await page.getByRole('button',{name:'Concede match',exact:true}).click();
+ const current=await (await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
+ if(!current.result){await page.getByRole('button',{name:'Tools',exact:true}).first().click();
+  const concede=page.getByRole('button',{name:'Concede match',exact:true});if(await concede.isEnabled())await concede.click();}
  const until=Date.now()+90000;
  while(Date.now()<until){
   const response=await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`);
