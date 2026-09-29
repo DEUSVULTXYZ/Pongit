@@ -26,7 +26,7 @@ import {verifyHouseInstanceAuthorities,agentPoolAdmissionAbi} from '../shared/ag
 import {arenaRenewalExclusions} from '../shared/arena-renewal-policy';
 import {keeperLoop} from '../shared/keeper-loop';
 import {keeperRolePolicy,type AgentKeeperRole} from '../shared/agent-keeper-role';
-import {agentContinuationAbi,localTournamentCursor,ratingContinuationWork} from '../shared/agent-continuation';
+import {agentContinuationAbi,localTournamentCursor,ratingContinuationWork,ratingFinalityPage} from '../shared/agent-continuation';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 // Process-relative setup times, logged only when profiling is enabled.
 const boot:[string,number][]=[['imports',Math.round(performance.now())]];
@@ -55,7 +55,7 @@ const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3});await
 boot.push(['archive-init',Math.round(performance.now())]);
 const archive=createReusableResultArchive(db),guard=await t.db.connect();let locked=false;
 boot.push(['guard',Math.round(performance.now())]);
-let state:{sequence:number;retry?:Record<string,number>;sourceFinalityScanAt?:number;qualificationCursor?:bigint;challengeCursor?:bigint;history?:{id:bigint;index:number};
+let state:{sequence:number;retry?:Record<string,number>;sourceFinalityScanAt?:number;sourceFinalityCursor?:bigint;qualificationCursor?:bigint;challengeCursor?:bigint;history?:{id:bigint;index:number};
  archiveCursor?:{app:string;epoch:string;id:string};intent?:{to:Address;method:string;args:any[];value:bigint};
  verifiedRecovery?:Record<string,ArenaRecoveryWindow>;recoveredAt?:Record<string,number>;deadSince?:Record<string,number>;replaced?:Record<string,number[]>;replacementAlerted?:Record<string,number>}={sequence:0};
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(state,(_,v)=>typeof v==='bigint'?{bigint:String(v)}:v),{mode:0o600});await rename(file+'.next',file);};
@@ -94,7 +94,7 @@ async function step(){
  if(r.continuation){
   const prior=await read<Address>(m.tournaments,agentContinuationAbi,'predecessor');
   assert.equal(prior.toLowerCase(),r.continuation.tournaments.toLowerCase(),'Tournament predecessor mismatch');
-  if(doesArchive){const correction=await ratingContinuationWork(read,m.ratings,r.continuation.ratings,ratingsAbi,(state.sourceFinalityScanAt??0)<=Date.now());
+  if(doesArchive){const correction=await ratingContinuationWork(read,m.ratings,r.continuation.ratings,ratingsAbi);
    if(correction){if(!cooling(correction.to,correction.method)){
     await act(correction.to,correction.method,correction.args);state.sourceFinalityScanAt=Date.now()+60_000;await save();
    }return;}}
@@ -183,6 +183,16 @@ async function step(){
   const record=await read(m.pool,poolAbi,'record',[{chainId:10143n,arena:app,epoch,id}]);
   const work=await capturedTournamentWork(read,m,record);
   if(work&&!cooling(work.to,work.method)){await act(work.to,work.method,work.args);return;}
+ }
+ // Read-only finality inspection follows current result capture. Historical
+ // records that have not changed neither hold current lanes nor spend gas.
+ if(doesArchive&&r.continuation&&(state.sourceFinalityScanAt??0)<=Date.now()){
+  const page=await ratingFinalityPage(read,m.ratings,r.continuation.ratings,ratingsAbi,state.sourceFinalityCursor??0n);
+  if(page.changed){
+   if(!cooling(m.ratings,'synchronizeHistory'))await act(m.ratings,'synchronizeHistory',[32]);
+   return;
+  }
+  state.sourceFinalityCursor=page.next;state.sourceFinalityScanAt=Date.now()+60_000;await save();
  }
  // Old finality/correction proofs stay resumable, but do not occupy every
  // operator step before an available next match. Current lane capture, release,
