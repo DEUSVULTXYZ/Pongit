@@ -93,7 +93,7 @@ export function Court({
       last = performance.now();
     let lastDraw = last, visualY: number | null = null, context = "";
     let anchor=last,anchorObserved=0,anchorAge=0,localDirection=0,localAt=last,correction=0;
-    let played="",playedAt=0;
+    let played="",playedAt=0,lastWaiting:boolean|undefined;
     const livePaddle = new LivePaddle(), liveClock = new LiveClock();
     const playout=new SpectatorPlayout(),playerPlayout=new SpectatorPlayout(true);
     const spectatorChaos=new SpectatorChaosProjection();
@@ -141,7 +141,10 @@ export function Court({
         yB = Number(paddles.right) / Number(SCALE);
       }
       if(playback&&p.side<0){yA=playback.left;yB=playback.right;}
-      if(playback)waiting=playback.stalled;
+      if(playback)waiting=playback.stalled||playback.buffering;
+      if(buffered&&lastWaiting!==waiting){lastWaiting=waiting;p.onStats(0,false,waiting);}
+      const buffering=String(playback?.buffering??false);
+      if(el.dataset.buffering!==buffering)el.dataset.buffering=buffering;
       const mod=cp?eventPaddles(cp.state):null;
       const halfA=mod?Number(mod.heightA)/2e6+(mod.splitA?8:0):Number(s?.halfA || 48000000n)/1e6, halfB=mod?Number(mod.heightB)/2e6+(mod.splitB?8:0):Number(s?.halfB || 48000000n)/1e6;
       const half=p.side===0?halfA:halfB;

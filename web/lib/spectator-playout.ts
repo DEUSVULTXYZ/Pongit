@@ -34,6 +34,11 @@ export class SpectatorPlayout {
    this.frames[this.frames.length-1]={...frame,at:last.at};return;
   }
   const prior=this.frames.at(-1);
+  // Countdown observations all have t=0. Their wall-clock age is not buffered
+  // game time: anchor that first frame to the actual beginning of progression.
+  if(!this.player&&!this.started&&this.frames.length===1&&prior?.state.t===0n&&frame.state.t>0n){
+   prior.at=frame.at-Number(frame.state.t)/1000;
+  }
   if(prior){const gap=frame.at-prior.at;if(gap>0)this.interval=.75*this.interval+.25*Math.min(2500,gap);}
   this.frames.push(frame);
   // A burst of player inputs must not evict the entire delayed trajectory.
@@ -47,7 +52,7 @@ export class SpectatorPlayout {
   // 500 ms stream that small margin ran dry during a single delayed update,
   // despite the next authoritative frame arriving well within 1.5 seconds.
   // Fast streams still approach 300 ms; no unconfirmed time is extrapolated.
-  const delay=this.player?120:Math.max(300,Math.min(1000,this.interval*2)),at=now-delay;
+  const delay=this.player?120:!this.started?1000:Math.max(300,Math.min(1000,this.interval*2)),at=now-delay;
   let a=this.frames[0],b=a;
   for(const next of this.frames.slice(1)){b=next;if(next.at>=at)break;a=next;}
   const fraction=b===a?0:Math.max(0,Math.min(1,(at-a.at)/(b.at-a.at)));
@@ -57,7 +62,7 @@ export class SpectatorPlayout {
   if(!this.started){
    // Fill once on entry. Starting immediately and only slowing by 2% could
    // never accumulate the advertised reserve before the first delayed packet.
-   if(now-this.frames[0].at<delay)target=this.frames[0].state.t;
+   if((this.frames.length===1&&this.frames[0].state.t===0n)||now-this.frames[0].at<delay)target=this.frames[0].state.t;
    else this.started=true;
   }else if(this.sampledAt!==undefined&&now-this.sampledAt<1000){
    const dt=Math.max(0,Math.min(100,now-this.sampledAt));
@@ -79,7 +84,7 @@ export class SpectatorPlayout {
   // Paddles are continuous within a rally. A serve recentres them at its own
   // instant, so hold the confirmed position instead of sliding across a point.
   const k=b.state.t===a.state.t||rally(a.state)!==rally(b.state)?0:Math.max(0,Math.min(1,Number(target-a.state.t)/Number(b.state.t-a.state.t)));
-  return {frame:a,target,delayMs:delay,stalled:now-latest.at>Math.max(1800,delay*2),
+  return {frame:a,target,delayMs:delay,buffering:!this.started,stalled:now-latest.at>Math.max(1800,delay*2),
    left:Number(a.state.left)/1e6+(Number(b.state.left-a.state.left)/1e6)*k,
    right:Number(a.state.right)/1e6+(Number(b.state.right-a.state.right)/1e6)*k};
  }

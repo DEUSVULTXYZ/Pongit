@@ -1,5 +1,5 @@
-// Rules-12 real HTTPS-origin browser qualification, fresh retained virtual PRF contexts.
-// No credential import, no clock acceleration, no public deployment.
+// Real HTTPS-origin browser qualification, retained virtual PRF contexts.
+// A separate recovery run may explicitly resume its own saved fixture.
 // Virtual PRF authenticators use the real Mera SDK. Their keys stay in /secrets.
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
@@ -9,17 +9,24 @@ import {monadTestnet} from 'viem/chains';
 import {abi as vaultAbi} from '../shared/abi-independent-RoomsVault';
 import {independentRules} from '../shared/independent-rules';
 import {publicIndependentManifest} from '../shared/independent';
+import {installSyncProbe,syncMetrics} from './browser-sync-probe';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const publicRelease=process.env.PONG_HUMAN_BROWSER_TARGET==='public-release';
 const chaos=process.env.INDEPENDENT_SCENARIO==='chaos';
 const run=process.env.INDEPENDENT_TEST_RUN||'';assert(!run||/^[a-z0-9]{1,16}$/.test(run));
 const suffix=run?'-'+run:'';
-const origin='https://pongit.xyz',out=`artifacts/independent-candidate/browser${chaos?'-chaos':''}${suffix}`,secret=`/secrets/independent-browser-v2${chaos?'-chaos':''}${suffix}.json`;
+const origin='https://pongit.xyz',out=`artifacts/independent-candidate/browser${chaos?'-chaos':''}${suffix}`,secret=process.env.PONG_BROWSER_PRIVATE_PATH??`/secrets/independent-browser-v2${chaos?'-chaos':''}${suffix}.json`;
+assert(!process.env.PONG_BROWSER_PRIVATE_PATH||secret.includes('private-backups'));
+const assets=process.env.PONG_CATALOGUE_ASSET_ORIGIN;
+assert(!assets||publicRelease&&/^http:\/\/127\.0\.0\.1:\d+$/.test(assets));
 const manifest=publicIndependentManifest(JSON.parse(await readFile('deployments/independent.json','utf8')));
 assert([12,13,14].includes(manifest.rulesVersion!));const rules=independentRules(manifest);
 const financialBase=createPublicClient({chain:monadTestnet,transport:http('https://testnet-rpc.monad.xyz',{timeout:10000,retryCount:0})});
 const nodes=new Set(manifest.arenas.map(a=>new URL(a.node!).origin));
-let saved:any={lobby:manifest.lobby,players:[],stage:0};
+const restore=process.env.PONG_HUMAN_RESTORE_PRIVATE_PATH;
+assert(!restore||restore.includes('private-backups')&&restore!==secret);
+let saved:any=restore?JSON.parse(await readFile(restore,'utf8')):{lobby:manifest.lobby,players:[],stage:0};
+assert.equal(saved.lobby.toLowerCase(),manifest.lobby.toLowerCase());
 try{await readFile(secret);throw Error('Preserve and reconcile the previous browser run. Never import its PRF credential.');}catch(e){if((e as any).code!=='ENOENT')throw e;}
 await mkdir(out,{recursive:true});
 const capacityWait=Number(process.env.PONG_BROWSER_ARENA_WAIT_MS??0);
@@ -42,6 +49,7 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox'],channel
 const pages:Page[]=[],contexts:BrowserContext[]=[],devices:any[]=[],counts=[0,0,0,0];
 const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:manifest.rulesVersion,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
 report.target=publicRelease?'Public HTTPS web and API, actual hosted game':'Isolated candidate';
+report.resumedFixture=!!restore;
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 let reporting=false,driving=true;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
 async function until(fn:()=>Promise<any>,label:string,ms=60000){const end=Date.now()+ms;while(Date.now()<end){if(await fn().catch(()=>false))return;await sleep(250);}throw Error('Timed out: '+label);}
@@ -58,7 +66,8 @@ async function persist(){
  await writeFile(secret+'.next',JSON.stringify(saved),{mode:0o600});await rename(secret+'.next',secret);
 }
 async function init(i:number){
- const context=await browser.newContext({viewport:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write']});contexts.push(context);
+ const context=await browser.newContext({viewport:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write'],...(restore?{storageState:saved.players[i].storage}:{})});contexts.push(context);
+ if(restore)await context.addInitScript(session=>{for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));},saved.players[i].session);
  await context.addInitScript(()=>{if(location.origin==='https://pongit.xyz')localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));});
  await context.exposeBinding('recordCountdown',(_source,digit:string)=>{if(/^[123]$/.test(digit)&&!report.countdown[i].includes(digit))report.countdown[i].push(digit);});
  await context.addInitScript({content:"addEventListener('DOMContentLoaded',function(){new MutationObserver(function(){var digit=document.querySelector('.match-countdown-digit')?.textContent?.trim();if(digit)window.recordCountdown(digit);}).observe(document.documentElement,{subtree:true,childList:true,characterData:true});});"});
@@ -73,8 +82,14 @@ async function init(i:number){
   const response=await route.fetch({url:target,timeout:30000});await route.fulfill({response});
  });
  const page=await context.newPage();pages.push(page);const cdp=await context.newCDPSession(page);
+ if(assets)await page.route(origin+'/**',async route=>{
+  const url=new URL(route.request().url());if(url.pathname.startsWith('/api/'))return route.continue();
+  const response=await route.fetch({url:assets+url.pathname+url.search});await route.fulfill({response});
+ });
+ if(process.env.PONG_SYNC_PROBE==='1')await installSyncProbe(page);
  await cdp.send('WebAuthn.enable');const {authenticatorId}=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
  devices.push({id:authenticatorId,cdp});
+ if(restore)for(const credential of saved.players[i].credentials)await cdp.send('WebAuthn.addCredential',{authenticatorId,credential});
  cdp.on('WebAuthn.credentialAsserted',()=>counts[i]++);
  page.on('pageerror',e=>report.checks.push({pageError:e.message.replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,300)}));
  page.on('response',async response=>{const request=response.request(),url=new URL(response.url());if(!request.postData()||!url.hostname.endsWith('.fly.dev'))return;let method='unknown';try{method=request.postDataJSON()?.method;}catch{}
@@ -105,7 +120,7 @@ async function account(page:Page,i:number){
 try{
  const response=await fetch(publicRelease?origin:'http://independent-web:3000');assert(response.ok);const csp=response.headers.get('content-security-policy')??'';const connect=csp.split(';').find(x=>x.trim().startsWith('connect-src '))?.trim().split(/\s+/).slice(1)??[];for(const node of nodes){assert(connect.includes(node));assert(connect.includes(node.replace(/^http/,'ws')));}report.checks.push('Delivered CSP includes every human arena');
  for(let i=0;i<3;i++)await init(i);
- for(const size of [{width:360,height:640},{width:390,height:844},{width:768,height:1024},{width:1440,height:1000},{width:844,height:390}]){
+ for(const size of restore?[]:[{width:360,height:640},{width:390,height:844},{width:768,height:1024},{width:1440,height:1000},{width:844,height:390}]){
   await pages[2].setViewportSize(size);await sleep(150);
   const rects=await pages[2].locator('.rooms-choice').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,bottom:r.bottom};}));
   assert.equal(rects.length,3);assert(rects.every(r=>r.h>=44));
@@ -116,6 +131,11 @@ try{
  await pages[2].setViewportSize({width:1440,height:1000});
  if(saved.stage<1){for(let i=0;i<3;i++)await account(pages[i],i);saved.stage=1;await persist();report.checks.push('Three Mera accounts and root-signed unique profiles saved');}
  const a=pages[0],b=pages[1],spectator=pages[2];
+ if(restore&&saved.roomUrl){
+  await spectator.goto(saved.roomUrl);
+  await Promise.all(pages.map(p=>p.locator('.rooms-canvas canvas').waitFor({timeout:30000})));
+  saved.stage=2;await persist();
+ }
  if(chaos&&saved.stage<2){
   if(!saved.roomUrl){
    await a.getByRole('button',{name:'Chaos',exact:true}).click();await a.getByRole('button',{name:/^Create room/}).click();
@@ -159,7 +179,7 @@ try{
     await tools.click();const leave=p.getByRole('button',{name:'Leave room',exact:true});if(await leave.isVisible())await leave.click();
     await p.getByRole('button',{name:'Close Cabinet tools',exact:true}).click();
    }
-   const button=p.getByRole('button',{name:/^Matchmaking/});if(await button.isVisible())await button.click();
+   const button=p.getByRole('button',{name:/^(Matchmaking|Play a person)/});if(await button.isVisible())await button.click();
    const rejoin=p.getByRole('button',{name:'Rejoin queue',exact:true});if(await rejoin.isVisible())await rejoin.click();
   }));
   await Promise.all([a,b].map(p=>until(async()=>await p.getByRole('button',{name:'Accept',exact:true}).isVisible()||await p.locator('.rooms-canvas canvas').isVisible(),'offer or resumed game',120000)));
@@ -168,14 +188,16 @@ try{
   // browser is independent setup, not a prerequisite for either player's consent.
   // Do not consume the acceptance window waiting for spectator RPC reads.
   await Promise.all([
-   ...[a,b].map(async p=>{const accept=p.getByRole('button',{name:'Accept',exact:true});if(await accept.isVisible())await accept.click();}),
+   // Ranked matchmaking now accepts automatically. An already submitted
+   // acceptance becomes disabled before its button disappears; never wait on it.
+   ...[a,b].map(async p=>{const accept=p.getByRole('button',{name:'Accept',exact:true});if(await accept.isVisible()&&await accept.isEnabled())await accept.click({timeout:2000}).catch(async e=>{if(await accept.isVisible()&&await accept.isEnabled())throw e;});}),
    (async()=>{await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();await until(()=>spectator.getByRole('button',{name:'Members 2',exact:true}).isVisible(),'spectator observes without occupying a ranked room');})(),
   ]);await persist();
   await Promise.all([a,b,spectator].map(p=>p.locator('.rooms-canvas canvas').waitFor({timeout:720000})));
   saved.stage=2;await persist();report.checks.push('Contract matchmaking, two consents and automatic hosted admission');
  }
  await until(()=>a.getByRole('button',{name:'Move up',exact:true}).isEnabled(),'contract countdown ended',720000);
- for(let i=0;i<3;i++)assert(report.countdown[i].includes('3')&&report.countdown[i].includes('2')&&report.countdown[i].includes('1'),`All three countdown digits missing on browser ${i}`);report.checks.push('Real three-second countdown on both players and spectator');
+ if(!restore){for(let i=0;i<3;i++)assert(report.countdown[i].includes('3')&&report.countdown[i].includes('2')&&report.countdown[i].includes('1'),`All three countdown digits missing on browser ${i}`);report.checks.push('Real three-second countdown on both players and spectator');}
  // Controls and F5 must not trigger a root passkey request.
  const before=counts.slice();
  const financial=(async()=>{if(chaos){
@@ -224,4 +246,9 @@ try{
 }catch(e){report.passed=false;report.error=String((e as Error).message).replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,650);process.exitCode=1;
  for(let i=0;i<pages.length;i++){await pages[i].screenshot({path:`${out}/failure-${i}.png`}).catch(()=>{});report.checks.push({page:i,visible:(await pages[i].locator('body').innerText().catch(()=>'' )).slice(0,1600)});}
  await persist().catch(()=>{});
-}finally{driving=false;clearInterval(progress);report.finishedAt=new Date().toISOString();report.passkeyAssertions=counts;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}
+}finally{driving=false;clearInterval(progress);
+ if(process.env.PONG_SYNC_PROBE==='1')for(let i=0;i<pages.length;i++){
+  const trace=await pages[i].evaluate(()=>(window as any).__syncProbe).catch(()=>null);
+  if(trace){await writeFile(`${out}/sync-${i}.json`,JSON.stringify(trace));report.sync??=[];report.sync[i]=syncMetrics(trace);}
+ }
+ report.finishedAt=new Date().toISOString();report.passkeyAssertions=counts;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}

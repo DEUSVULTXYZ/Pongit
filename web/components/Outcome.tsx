@@ -7,7 +7,7 @@ import {createPortal} from "react-dom";
 import {useDialog} from "../lib/dialog";
 import { short } from "../lib/api";
 
-export function Outcome({id,match,account,rating,ratingDelta,sound,replay,rematch,watch,again,confirmation="monad",againLabel="Find another opponent",showResultKey=0}:{id:string|null;match:any;account:string;rating:number|null;ratingDelta?:number;sound:boolean;replay:boolean;rematch:()=>Promise<void>;watch?:()=>void;again:()=>void;confirmation?:"monad"|"engine";againLabel?:string;showResultKey?:number}) {
+export function Outcome({id,match,account,rating,ratingDelta,sound,replay,rematch,watch,again,confirmation="monad",againLabel="Find another opponent",showResultKey=0,defer=false}:{id:string|null;match:any;account:string;rating:number|null;ratingDelta?:number;sound:boolean;replay:boolean;rematch:()=>Promise<void>;watch?:()=>void;again:()=>void;confirmation?:"monad"|"engine";againLabel?:string;showResultKey?:number;defer?:boolean}) {
   const [rematchBusy,setRematchBusy]=useState(false),[rematchStatus,setRematchStatus]=useState("");
   const dialog=useRef<HTMLElement>(null);
   const seen=useRef<{id:string;status:number;account:string;rating:number|null}|null>(null);
@@ -17,6 +17,9 @@ export function Outcome({id,match,account,rating,ratingDelta,sound,replay,rematc
     const previous=seen.current;
     if(!id || !match || replay){seen.current=null;setResult(null);return;}
     if(previous?.id!==id || previous.account!==account)setResult(null);
+    // Keep the playing transition while the court drains its confirmed frames.
+    // Passing a null match here erased it, so the result never opened afterward.
+    if(defer && match.status===3)return;
     const participant=account && [match.playerA,match.playerB].some((a:string)=>a.toLowerCase()===account.toLowerCase());
     if(previous?.id===id && previous.account===account && previous.status===2 && match.status===3){
       const victory=participant?match.winner.toLowerCase()===account.toLowerCase():null;
@@ -27,7 +30,7 @@ export function Outcome({id,match,account,rating,ratingDelta,sound,replay,rematc
       setResult({id,account,victory:null,before:previous.rating,cancelled:true});setAnimate(false);
     }
     seen.current={id,status:match.status,account,rating};
-  },[id,match?.status,account,replay]);
+  },[id,match?.status,account,replay,defer]);
   useEffect(()=>{
     if(!showResultKey || !id || !match || ![3,4].includes(match.status) || replay)return;
     const participant=account && [match.playerA,match.playerB].some((a:string)=>a.toLowerCase()===account.toLowerCase());

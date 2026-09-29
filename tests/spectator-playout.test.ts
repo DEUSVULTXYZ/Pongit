@@ -166,3 +166,18 @@ test('one late delivery on a 500 ms stream does not cause a half-second slidesho
  }
  assert(Math.max(worst,held)<=500,`A delayed delivery froze confirmed playout for ${Math.max(worst,held)} ms`);
 });
+
+test('a countdown cannot consume the spectator reserve before the first rally',()=>{
+ const p=new SpectatorPlayout();p.push({state:state(0),at:0});
+ for(let now=0;now<6000;now+=16)assert.equal(p.sample(now)!.target,0n);
+ p.push({state:state(300),at:6300});
+ assert.equal(p.sample(6300)!.target,0n,'Fill from actual game progress, not time spent counting down');
+ let next=6600,prior=0n,held=0,worst=0;
+ for(let now=6316;now<17000;now+=16){
+  if(now>=next){p.push({state:state(next-6000),at:next});next+=next===10800?1340:300;}
+  const current=p.sample(now)!.target;
+  if(now>8000){if(current===prior)held+=16;else{worst=Math.max(worst,held);held=0;}}
+  prior=current;
+ }
+ assert(Math.max(worst,held)<=500,`Reload delivery interruption froze spectator for ${Math.max(worst,held)} ms`);
+});

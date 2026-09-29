@@ -24,14 +24,16 @@ const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].repla
 const browser=await chromium.launch({channel,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
 if(process.env.PONG_SYNC_PROBE==='1')await installSyncProbe(page);
-if(process.env.PONG_CATALOGUE_ASSET_ORIGIN){
+async function candidateAssets(target:import('@playwright/test').Page){if(process.env.PONG_CATALOGUE_ASSET_ORIGIN){
  const candidate=process.env.PONG_CATALOGUE_ASSET_ORIGIN;assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(candidate));
  report.candidateAssets=candidate;
- await page.route('https://pongit.xyz/**',async route=>{
+ await target.route('https://pongit.xyz/**',async route=>{
   const url=new URL(route.request().url());if(url.pathname.startsWith('/api/'))return route.continue();
   const response=await route.fetch({url:candidate+url.pathname+url.search});await route.fulfill({response});
  });
-}
+}}
+await candidateAssets(page);
+let spectator:import('@playwright/test').Page|undefined;
 if(restored)await context.addInitScript(session=>{for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));},restored.session);
 page.setDefaultTimeout(60000);
 const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
@@ -110,6 +112,11 @@ try{
  if(!restored)await page.getByRole('button',{name:'Create account',exact:true}).click();
  await page.waitForURL(/\/agents\/arenas\//,{timeout:180000});await savePrivate();
  const parts=new URL(page.url()).pathname.split('/');report.ref={app:parts[3],epoch:parts[4],id:parts[5]};
+ if(process.env.PONG_SYNC_SPECTATOR==='1'){
+  spectator=await browser.newPage({viewport:{width:1440,height:1000}});await candidateAssets(spectator);await installSyncProbe(spectator);
+  await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
+  await spectator.goto(page.url(),{waitUntil:'domcontentloaded'});
+ }
  await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:60000});
  report.playingAt=new Date().toISOString();report.digits=await page.evaluate(()=>(window as any).__digits);
  report.countdownAt=await page.evaluate(()=>(window as any).__firstCountdownAt);
@@ -127,6 +134,7 @@ try{
  report.input={samples:local.length,p95Ms:p95(local)};report.submissionP95Ms=p95(report.submissions.filter((s:any)=>!s.error).map((s:any)=>s.ms));
  if(report.receipts.length)report.receiptP95Ms=p95(report.receipts.map((r:any)=>r.ms));
  await page.screenshot({path:out+'/court.png',fullPage:true});
+ if(spectator)await spectator.screenshot({path:out+'/spectator.png',fullPage:true});
  assert(report.submissions.length>=100&&report.submissions.every((s:any)=>!s.error),'At least 100 successful command submissions required');
  assert(local.length>=50&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
@@ -138,6 +146,8 @@ try{
   await page.waitForTimeout(45000);
   const data=await page.evaluate(()=>(window as any).__syncProbe);
   await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);
+  if(spectator){const observed=await spectator.evaluate(()=>(window as any).__syncProbe);
+   await writeFile(out+'/spectator-trace.json',JSON.stringify(observed));report.spectatorSync=syncMetrics(observed);}
  }
  // Explicitly concede this synthetic friendly fixture through the same UI.
  const current=await (await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
@@ -150,6 +160,9 @@ try{
   await page.waitForTimeout(1000);
  }
  assert(report.result,'Conceded fixture must have a published result');
+ await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).waitFor({timeout:10000});
+ assert.match(await page.locator('.outcome-score').innerText(),new RegExp(`${report.result.scoreA}\\s*:\\s*${report.result.scoreB}`));
+ report.checks.push('Final score and result window survived the delayed terminal frame');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
 finally{await savePrivate();report.finishedAt=new Date().toISOString();await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({out,passed:report.passed,error:report.error,ref:report.ref,input:report.input,submissionP95Ms:report.submissionP95Ms,receiptP95Ms:report.receiptP95Ms}));}
