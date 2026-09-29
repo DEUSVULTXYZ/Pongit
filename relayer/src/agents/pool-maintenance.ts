@@ -73,10 +73,21 @@ export async function qualificationWork(read:PoolRead,m:Common,cursor:bigint,now
  if(!Number.isInteger(budget)||budget<1||budget>32)throw Error('Qualification inspection budget');
  const count=await read<bigint>(m.catalog,catalogAbi,'count');if(!count)return{needed:false,next:0n};
  let at=cursor%count;
+ const page:Promise<{agent:Address;identity:any;known:boolean;next:bigint}>[]=[];
  for(let n=0;n<budget&&BigInt(n)<count;n++){
-  const agent=await read<Address>(m.catalog,catalogAbi,'at',[at]);at=(at+1n)%count;
-  const identity=await read(m.catalog,catalogAbi,'identity',[agent]);
-  if(baseBlock!==undefined&&!identity.house&&await read<bigint>(m.catalog,catalogAbi,'registeredBlock',[agent])>baseBlock)continue;
+  const index=at,next=(at+1n)%count;at=next;
+  // Independent entries share one block and can use the keeper's multicall.
+  // Consume them in cursor order; a later failed read cannot invalidate an
+  // earlier eligible candidate, nor cause an unhandled promise rejection.
+  const load=(async()=>{const agent=await read<Address>(m.catalog,catalogAbi,'at',[index]);
+   const identity=await read(m.catalog,catalogAbi,'identity',[agent]);
+   const known=baseBlock===undefined||identity.house||await read<bigint>(m.catalog,catalogAbi,'registeredBlock',[agent])<=baseBlock;
+   return{agent,identity,known:!!known,next};})();
+  load.catch(()=>{});page.push(load);
+ }
+ for(const pending of page){
+  const {agent,identity,known,next}=await pending;at=next;
+  if(!known)continue;
   for(const mode of [0,1])if(identity.available&&(identity.modes&(1<<mode))&&!(identity.qualified&(1<<mode))){
    if(await read<bigint>(m.qualifications,qualificationAbi,'retryAt',[agent,mode])>now)continue;
    if(!await read<boolean>(m.catalog,catalogAbi,'qualificationEligible',[agent,mode]))continue;

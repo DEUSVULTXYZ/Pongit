@@ -10,18 +10,23 @@ assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
 const mode=Number(process.env.PONG_CATALOGUE_MODE??0),name=process.env.PONG_CATALOGUE_BOT??'NOVA';
 const privatePath=process.env.PONG_BROWSER_PRIVATE_PATH!;
+const restorePath=process.env.PONG_CATALOGUE_RESTORE_PRIVATE_PATH;
 assert(/^[a-z0-9-]+$/.test(run)&&['chrome','msedge'].includes(channel)&&[0,1].includes(mode));
 assert(/^[A-Z]+$/.test(name)&&privatePath?.includes('private-backups'));
+assert(!restorePath||restorePath.includes('private-backups')&&restorePath!==privatePath);
+const restored=restorePath?JSON.parse(await readFile(restorePath,'utf8')):undefined;
 await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
- virtualPrf:true,mockedNetwork:false,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+ virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
-const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
+const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
+if(restored)await context.addInitScript(session=>{for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));},restored.session);
 page.setDefaultTimeout(60000);
 const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
 const {authenticatorId}=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
+for(const credential of restored?.credentials?.credentials??[])await cdp.send('WebAuthn.addCredential',{authenticatorId,credential});
 let assertions=0;cdp.on('WebAuthn.credentialAsserted',()=>assertions++);
 const savePrivate=async()=>writeFile(privatePath,JSON.stringify({storage:await context.storageState(),
  session:await page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage))),
@@ -68,9 +73,10 @@ try{
  report.pool=config.pool;
  await page.goto(report.origin+'/agents',{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:mode?'Chaos':'Classic',exact:true}).click();
+ report.clickedAt=new Date().toISOString();
  await page.getByRole('button',{name:`Challenge ${name}`,exact:true}).click();
  report.requestedAt=new Date().toISOString();
- await page.getByRole('button',{name:'Create account',exact:true}).click();
+ if(!restored)await page.getByRole('button',{name:'Create account',exact:true}).click();
  await page.waitForURL(/\/agents\/arenas\//,{timeout:180000});await savePrivate();
  const parts=new URL(page.url()).pathname.split('/');report.ref={app:parts[3],epoch:parts[4],id:parts[5]};
  await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:60000});

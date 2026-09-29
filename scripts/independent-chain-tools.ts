@@ -8,6 +8,7 @@ import {monadTestnet} from 'viem/chains';
 import {assertDeploymentArtifact,preflightDeploymentArtifacts} from '../shared/deployment-artifacts';
 import {writerIdentity,type ScopedWriter} from '../shared/scoped-writer';
 import {operatorNeedsFunding,operatorFundingMessage} from '../shared/operator-funding';
+import {rebroadcastFundedOperation} from '../shared/operator-rebroadcast';
 
 export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:ScopedWriter){
  assert.equal(process.env.PONG_INDEPENDENT_WRITE,'authorized-testnet');
@@ -20,6 +21,8 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:Scop
  const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn}),pollingInterval:1000});
  assert.equal(await base.getChainId(),10143);
  const wallet=createWalletClient({account,chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn})});
+ const recovery=process.env.OPERATOR_RECOVERY_RPC_URL?createPublicClient({chain:monadTestnet,
+  transport:http(process.env.OPERATOR_RECOVERY_RPC_URL,{retryCount:0,timeout:10000,fetchFn})}):undefined;
  const db=new Pool({connectionString:process.env.DATABASE_URL});
  const wait=(ms:number)=>new Promise(r=>setTimeout(r,ms));
  async function submit(name:string,data:Hex,to?:Address,value=0n){
@@ -48,6 +51,10 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:Scop
     // A transaction above the block gas limit can never be mined. Journaled as pending it
     // would hold this shared operator nonce for good, and production's lifecycle with it.
     assert(request.gas<=30_000_000n&&request.gas<=(await base.getBlock()).gasLimit,'Gas limit exceeds the Monad transaction/block limit');
+    const maximumFee=request.maxFeePerGas??request.gasPrice;
+    assert(maximumFee!==undefined,'Transaction fee must be known before signing');
+    if(await base.getBalance({address:account.address})<request.gas*maximumFee+value)
+     throw Object.assign(Error(operatorFundingMessage),{code:'OPERATOR_GAS_UNAVAILABLE',source:'monad'});
     const raw=await wallet.signTransaction(request),hash=keccak256(raw);
     const app=to??getContractAddress({from:account.address,nonce:BigInt(nonce)});
     await db.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",
@@ -57,7 +64,8 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:Scop
    if(!receipt){try{await base.sendRawTransaction({serializedTransaction:job.raw});}catch(error){
      // Preserve the signed journal, but surface a definitive gas refusal rather
      // than turning it into an unexplained 45-second receipt timeout.
-     if(operatorNeedsFunding(error))throw Object.assign(Error(operatorFundingMessage),{code:'OPERATOR_GAS_UNAVAILABLE',source:'monad'});
+     if(operatorNeedsFunding(error)&&(!recovery||!await rebroadcastFundedOperation(base,recovery,job,account.address)))
+      throw Object.assign(Error(operatorFundingMessage),{code:'OPERATOR_GAS_UNAVAILABLE',source:'monad'});
      /* Only this exact hash can resolve any other uncertain submission. */
     }
     receipt=await base.waitForTransactionReceipt({hash:job.hash,timeout:45000});}

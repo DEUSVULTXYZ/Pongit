@@ -7,7 +7,7 @@ export function operatorNeedsFunding(error:unknown){
   if(cause.name==='ExecutionRevertedError'||cause.name==='ContractFunctionRevertedError')return false;
   if(cause instanceof InsufficientFundsError)return true;
   if(['RpcRequestError','UnknownRpcError','TransactionRejectedRpcError'].includes(cause.name??'')
-   &&[cause.message,cause.details].some(v=>typeof v==='string'&&/^(insufficient funds|insufficient balance|exceeds transaction sender account balance)(?:[ .:]|$)/i.test(v)))return true;
+   &&[cause.message,cause.details].some(v=>typeof v==='string'&&/^(insufficient funds|insufficient balance|signer had insufficient balance|exceeds transaction sender account balance)(?:[ .:]|$)/i.test(v)))return true;
  }
  return false;
 }

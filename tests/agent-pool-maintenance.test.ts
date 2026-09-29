@@ -67,6 +67,22 @@ test('qualification inspection respects retry times and propagates unavailable r
  await assert.rejects(qualificationWork((async()=>{throw Error('RPC unavailable');}) as PoolRead,m,0n,1300n),/RPC unavailable/);
 });
 
+test('qualification metadata starts together but preserves first eligible cursor and later error isolation',async()=>{
+ let release!:()=>void;const gate=new Promise<void>(r=>{release=r;}),started:number[]=[];
+ const read:PoolRead=async(_a,_abi,fn,args=[])=>{
+  if(fn==='count')return 4n as any;
+  if(fn==='at'){started.push(Number(args[0]));await gate;return address(100+Number(args[0])) as any;}
+  if(fn==='identity'){if(args[0]===address(103))throw Error('later entry unavailable');return{available:true,modes:1,qualified:0,house:1} as any;}
+  if(fn==='retryAt')return 0n as any;
+  if(fn==='qualificationEligible')return true as any;
+  if(fn==='house')return address(200) as any;
+  throw Error(fn);
+ };
+ const result=qualificationWork(read,m,0n,1000n,4);
+ try{await new Promise(r=>setImmediate(r));assert.deepEqual(started,[0,1,2,3]);}finally{release();}
+ assert.deepEqual(await result,{needed:true,next:1n});
+});
+
 test('only waiting challenges with a verifiably different or expired grant can be cleared',async()=>{
  const grant='0x'+'1'.repeat(64);let status=2,changed=false;
  const read:PoolRead=async(_a,_abi,fn)=>{
