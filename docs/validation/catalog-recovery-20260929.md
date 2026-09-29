@@ -59,3 +59,33 @@ transaction journals with these snapshots.
 The progressive policies for all eight bots remain a separate, undeployed
 candidate. Their contract migration, funded gameplay checks and the final
 24-hour trial are not established by this UI correction.
+
+## Final isolated production image
+
+Web `a3383a2` built as
+`sha256:735a27a8a8327de72ec3eeb134ec2c499e0eafa32031909d5caaa8c808919999`.
+Reader `2e18c71` built as
+`sha256:71b535e3062d143792c7fa800a1223fd43448088847aa803214327507fa3fd03`.
+The isolated reader returned canonical capacity/catalogue/live views at 10:11 UTC.
+It reported the actual publication outage, eight identities and no live match.
+
+The final web image passed Chrome and Edge runs in
+`artifacts/qualification/20260929/catalog-final-1`: 34 page checks, five recovery
+viewport groups and five progress groups in each browser. This includes Classic
+and Chaos courts, countdown, both tournament layouts, results and replay playback,
+keyboard focus, touch targets, landscape, zoom and reduced motion. The page suite
+also keeps the historical two-lane decoder under test; the recovery/progress
+suites exercise current five-lane views. APIs and game states in these suites
+are fixtures, not proof of live gameplay or hosted capacity.
+
+The capacity preflight now has a five-second deadline. The real browser fixture
+observed the error in approximately 5.4 seconds, without a passkey or transaction.
+Initial catalogue failures show immediately; the grouped metadata read has an
+eight-second deadline instead of compounding quiet retry windows. Confirmed and
+uncertain transactions keep their existing reconciliation policy.
+
+The production HTML, RSC, headers and assets were copied without modification to
+a loopback-only fixture server. This was necessary because SSH forwarding is
+administratively prohibited; no SSH policy or provider setting was changed.
+Mobile and desktop captures were visually inspected. The public read-only check
+is separate and cannot be replaced by these fixture results.
