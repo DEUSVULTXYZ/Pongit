@@ -113,3 +113,38 @@ Publisher balance was 180.383509657116693993 test MON at 14:55 UTC. Each current
 this synchronization operation. A request for 1,000 test MON to the controlled
 PONGIT account, and authorization to fund publication, is pending. Avoid starting
 more paid trials until a sufficient reserve is verified.
+
+## Public delivery, 14:57–15:02 UTC
+
+Web `cafce6a` is public as
+`sha256:dcabacfa5356c99c5830904e71b2dae730269550fd841b1de5c2c1b7696f662a`,
+started 14:57:45 UTC. The agent cadence image above remains deployed. The human
+backend is still its September 24 image, with zero restarts. No new arena or
+contract was opened. Current public manifests and gates were preserved.
+
+The final image's matching local build passed **39 browser fixture checks per
+browser**, 78 total. Actual public Edge and Chrome passed catalogue/header/mode
+controls at 360/390/768/1440 px and HTTP 200 for home, tournaments and docs. No
+runtime errors or signing attempts. The first Chrome check conservatively blocked
+`eth_getBlockByNumber` because JSON-RPC uses POST; it remains a failed report.
+Allowing only this exact read on the known Monad RPC produced a passing rerun.
+Home-header captures with the real static background also passed 360/1440 px.
+
+Public captures: `artifacts/qualification/sync-public-20260929/msedge-*.png` and
+`artifacts/qualification/sync-public2-20260929/{chrome-*,header-*}.png`.
+The hosted gameplay proof above preceded the web cutover and used candidate assets
+with real public backends; post-cutover checks were read-only because publication
+funding is low. Do not describe them as new complete public games.
+
+Final runtime delta `sync-deployed-20260929T1501Z` has a verified off-VPS copy,
+SHA-256 `4d3c9e95e2fa4d9f782b2ee7eb5b6a7c83fcb80ca3625e3cf0c49e3eeacc3ccf`.
+It complements the restored 14:52 database dumps. A metadata-report command had
+a Python syntax error after this archive was created; only that read-only report
+was rerun successfully. The backup and deployed services were unaffected.
+
+Rollback only `arcade-web` to
+`sha256:4ff4c198a0b9ca86e091864400cf2dafce795a11e878324d4c92c1dd2aea737d`
+in the existing five-runtime Compose, retaining its current flags and mounts.
+Engine rollback is independent. The precise pre-web configuration is
+`compose.json.before-sync-cafce6a`; do not blindly restore it over later unrelated
+configuration changes, and never restore an old database over later journals.

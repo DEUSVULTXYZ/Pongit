@@ -21,6 +21,11 @@ try{
   if(route.request().method()!=='GET'){
    const request=route.request(),url=new URL(request.url());let rpcMethod:unknown;
    try{rpcMethod=request.postDataJSON()?.method;}catch{}
+   // JSON-RPC uses POST even for a public block read. This exact observed
+   // request is read-only; signing and transaction methods stay blocked.
+   if(request.method()==='POST'&&url.origin==='https://testnet-rpc.monad.xyz'&&rpcMethod==='eth_getBlockByNumber'){
+    report.blockReads=(report.blockReads??0)+1;return route.continue();
+   }
    report.blockedRequests.push({origin:url.origin,path:url.pathname,method:request.method(),rpcMethod:typeof rpcMethod==='string'?rpcMethod:undefined});
    report.writes++;return route.abort();
   }
