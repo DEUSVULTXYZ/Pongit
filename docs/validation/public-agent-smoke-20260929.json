@@ -1,0 +1,62 @@
+{
+  "at": "2026-09-29T01:13:17.685289+00:00",
+  "items": {
+    "config": {
+      "status": 200,
+      "bytes": 4112,
+      "version": 5,
+      "pool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
+      "maxMatches": 5,
+      "lanes": {
+        "tournament": 1,
+        "challenge": 4
+      },
+      "enabled": true,
+      "tournamentsEnabled": true,
+      "verifiedCapacity": 0,
+      "releaseStage": "testnet-preview"
+    },
+    "live": {
+      "status": 200,
+      "bytes": 582,
+      "count": 1
+    },
+    "catalogue": {
+      "status": 200,
+      "bytes": 6854,
+      "count": 9
+    },
+    "replay173": {
+      "status": 200,
+      "bytes": 85563,
+      "availability": "available",
+      "frameCount": 117,
+      "ref": {
+        "chainId": 10143,
+        "app": "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+        "epoch": "1",
+        "id": "173"
+      }
+    },
+    "replay175": {
+      "status": 200,
+      "bytes": 223747,
+      "availability": "available",
+      "frameCount": 117,
+      "ref": {
+        "chainId": 10143,
+        "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+        "epoch": "1",
+        "id": "175"
+      }
+    },
+    "docs": {
+      "status": 200,
+      "bytes": 31055
+    },
+    "home": {
+      "status": 200,
+      "bytes": 17011
+    }
+  }
+}

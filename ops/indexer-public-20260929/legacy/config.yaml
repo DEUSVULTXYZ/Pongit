@@ -85,12 +85,6 @@ contracts:
       - event: ResultCorrected(uint256 indexed id, bytes32 previousHash, bytes32 correctedHash, uint256 revision)
       - event: ResultFinal(uint256 indexed id, bytes32 hash)
 
-  - name: CurrentIndependentRatings
-    events:
-      - event: ResultPublished(uint256 indexed id, address indexed arena, uint256 epoch, bytes32 hash, uint256 index)
-      - event: ResultCorrected(uint256 indexed id, bytes32 previousHash, bytes32 correctedHash, uint256 revision)
-      - event: ResultFinal(uint256 indexed id, bytes32 hash)
-
   - name: ChaosEventsArchive
     events:
       - event: MatchRecorded(uint256 indexed id, uint256 indexed epoch, address indexed app, bytes32 hash, address a, address b, address winner, uint8 status, uint8 mode, bool ranked, uint8 scoreA, uint8 scoreB, bool played, uint64 finishedAt)
@@ -101,17 +95,68 @@ contracts:
     events:
       - event: SeriesResultRecorded(uint256 indexed id, uint256 indexed epoch, address indexed app, bytes32 hash, address a, address b, address winner, uint8 status, uint8 mode, bool ranked, uint8 scoreA, uint8 scoreB, uint64 elapsedUs, uint64 tournament, bool finality)
 
-  - name: AgentReusableFiveArchive
-    events:
-      - event: SeriesResultRecorded(uint256 indexed id, uint256 indexed epoch, address indexed app, bytes32 hash, address a, address b, address winner, uint8 status, uint8 mode, bool ranked, uint8 scoreA, uint8 scoreB, uint64 elapsedUs, uint64 tournament, bool finality)
-
 chains:
   - id: 10143
-    start_block: 0
+    start_block: 62260200
+    rpc:
+      url: "http://rpc-indexer:8545"
+      for: sync
+      initial_block_interval: 1999
+      interval_ceiling: 1999
+      polling_interval: 1500
+      query_timeout_millis: 120000
     contracts:
       - name: Game
-        address: "0x0000000000000000000000000000000000000000"
+        address: "0xb66d62f0eabc5f1f86faca76bebc8353c2fbe0dd"
+        start_block: 62260200
       - name: Market
-        address: "0x0000000000000000000000000000000000000000"
+        address: "0x11ba82f64e872b360e6f876ec06725c44536ef17"
+        start_block: 62260200
       - name: Tournaments
-        address: "0x0000000000000000000000000000000000000000"
+        address: "0x3420ca36e834aab3d5b6415d867397a916cf25ea"
+        start_block: 62260200
+      - name: GameV2
+        address: "0x47dba35e83e6488bb558bb8cdd95ec729d26770d"
+        start_block: 62260200
+      - name: MarketV2
+        address: "0x8ab2502ddb70751c6c94155d9c71eeacf58abd04"
+        start_block: 62260200
+      - name: TournamentsV2
+        address: "0x11d61844e32352f4f7676915035ac20c015bbfd3"
+        start_block: 62260200
+      - name: GameV3
+        address: "0x7b54521dfc6e8a4f310180fe2c232a4aab8582ad"
+        start_block: 62260200
+      - name: MarketV3
+        address: "0x61d0c59b376b482eb30b521bf696a54f33a4d567"
+        start_block: 62260200
+      - name: TournamentsV3
+        address: "0x9ef9ee646786eabda1ea32b9b23f3c8b6dff0e01"
+        start_block: 62260200
+      - name: GameV4
+        address: "0x1ff69df68a3c4c370ce47d75c0bf002ae64d6e64"
+        start_block: 62260200
+      - name: MarketV4
+        address: "0xc4e238db1dd847d9c5eac7924532b69b491a5c55"
+        start_block: 62260200
+      - name: TournamentsV4
+        address: "0x6a3081ea75c773810f8811cbf1a3e01c5ccf5da2"
+        start_block: 62260200
+      - name: ChaosEventsArchive
+        address: "0xd7602b6ae87798e0f39ea25b97f75dcc5dd0822f"
+        start_block: 62260200
+      - name: ChaosEventsArchive
+        address: "0x59118327c9d5a3098274b6370f6256a225a3f672"
+        start_block: 64001154
+      - name: AgentArchive
+        address: "0xb25353a7816157d8b3470f33ade44e6bfe729eef"
+        start_block: 62260200
+      - name: AgentSeriesArchive
+        address: "0x4d8d809d72ea74b6ac0a1ab86aebbb41c71146a1"
+        start_block: 64017048
+      - name: AgentSeriesArchive
+        address: "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5"
+        start_block: 64199244
+      - name: IndependentRatings
+        address: "0xc5a6468ab50faacd1c4c27b977d5a2ae977dc7dd"
+        start_block: 64241256

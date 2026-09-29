@@ -1,0 +1,131 @@
+type Match {
+  id: ID!
+  deployment: String!
+  rawId: String!
+  mode: Int!
+  ranked: Boolean!
+  rulesVersion: Int!
+  playerA: String!
+  playerB: String!
+  tournamentId: String!
+  status: Int!
+  winner: String!
+  played: Boolean!
+  scoreA: Int!
+  scoreB: Int!
+  endedAt: String!
+  replayAvailability: String!
+  block: BigInt!
+}
+type Frame {
+  id: ID!
+  matchId: String!
+  version: BigInt!
+  state: String!
+  clock: BigInt!
+  nextAt: BigInt!
+  nextKind: Int!
+  block: BigInt!
+}
+type Player {
+  id: ID!
+  deployment: String!
+  mode: Int!
+  address: String!
+  season: BigInt!
+  elo: Int!
+  played: Int!
+  wins: Int!
+}
+type SeasonRating {
+  id: ID!
+  deployment: String!
+  mode: Int!
+  address: String!
+  season: BigInt!
+  elo: Int!
+  played: Int!
+  wins: Int!
+}
+type Bet {
+  id: ID!
+  matchId: String!
+  player: String!
+  side: Int!
+  shares: BigInt!
+  cost: BigInt!
+}
+type Pair {
+  id: ID!
+  matches: Int!
+}
+type Pattern {
+  id: ID!
+  bettor: String!
+  opponent: String!
+  occurrences: Int!
+}
+type Alert {
+  id: ID!
+  kind: String!
+  detail: String!
+  block: BigInt!
+}
+type Tournament {
+  id: ID!
+  closesAt: BigInt!
+  capacity: Int!
+  fee: BigInt!
+  prize: BigInt!
+  round: BigInt!
+  status: Int!
+  winner: String!
+  bracket: [String!]!
+}
+
+type Handicap {
+  id: ID!
+  matchId: String!
+  halfA: BigInt!
+  halfB: BigInt!
+  paidA: BigInt!
+  paidB: BigInt!
+  clock: BigInt!
+  block: BigInt!
+}
+
+# Stable logical payment; cursor orders first discovery without duplicating repeated bets.
+type PayoutCandidate {
+  id: ID!
+  deployment: String!
+  module: String!
+  kind: Int!
+  sourceId: String!
+  recipient: String!
+  cursor: String!
+}
+type Payout {
+  id: ID!
+  deployment: String!
+  module: String!
+  payoutId: String!
+  sourceId: String!
+  recipient: String!
+  kind: Int!
+  amount: BigInt!
+  status: String!
+  attempts: Int!
+  block: BigInt!
+  txHash: String!
+}
+type TournamentEntry {
+  id: ID!
+  tournamentId: String!
+  recipient: String!
+}
+
+# One global list per address, across modes and deployments.
+type RecentReplays {
+  id: ID!
+  matches: [String!]!
+}

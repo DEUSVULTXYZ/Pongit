@@ -41,6 +41,8 @@ for(const file of ['independent.json','independent-index.json'])try{
  for(const independent of file==='independent.json'?[raw]:raw.deployments){
   const address=(a:unknown):a is string=>typeof a==='string'&&/^0x[\da-fA-F]{40}$/.test(a)&&!/^0x0{40}$/.test(a);
   const rules=independent.rulesVersion??4;
+  if(independent.archiveContract !== undefined && independent.archiveContract !== 'CurrentIndependentRatings')
+   throw Error('Invalid independent archive contract alias');
   const apps=independent.arenas?.map((a:any)=>typeof a==='string'?a:a.app);
   if(independent.chainId!==d.chainId||!address(independent.ratings)||!/^\d+$/.test(String(independent.startBlock))
    ||![4,12,13,14].includes(rules)||!Array.isArray(apps)||!apps.length||apps.length>32||!apps.every(address)
@@ -53,7 +55,7 @@ for(const file of ['independent.json','independent-index.json'])try{
    continue;
   }
   independentBindings[ledger]=binding;independentStarts[ledger]=String(independent.startBlock);
-  config+=`      - name: IndependentRatings\n        address: "${independent.ratings}"\n        start_block: ${start(independent.startBlock)}\n`;
+  config+=`      - name: ${independent.archiveContract??'IndependentRatings'}\n        address: "${independent.ratings}"\n        start_block: ${start(independent.startBlock)}\n`;
  }
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const chaosBindings:Record<string,ChaosArchiveDeployment>={};
@@ -81,7 +83,7 @@ for(const [file,rules] of [['agent-series-index.json',11],['agent-reusable-index
  for(const series of agentIndexDeployments(raw,d.chainId,rules)){
   const emitter=series.pool;if(chaosBindings[emitter])throw Error('Conflicting series archive emitter');
   chaosBindings[emitter]={apps:series.arenas,rulesVersion:rules};
-  config+=`      - name: AgentSeriesArchive\n        address: "${series.pool}"\n        start_block: ${start(series.startBlock)}\n`;
+  config+=`      - name: ${series.archiveContract??'AgentSeriesArchive'}\n        address: "${series.pool}"\n        start_block: ${start(series.startBlock)}\n`;
  }
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 // Keep the reviewed, hash-checked runtime patch inside the reproducible image.

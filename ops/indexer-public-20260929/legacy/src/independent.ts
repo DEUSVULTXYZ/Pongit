@@ -10,9 +10,8 @@ const publishedEntry=createEffect({name:'pongitPublishedEntryV1',input:{ledger:S
  const entry=decodePublishedEntry(body.result);if(entry.first.id!==String(input.id))throw Error('Published result identity mismatch');
  return JSON.stringify(entry);
 });
-for(const contract of ['IndependentRatings','CurrentIndependentRatings'] as const)
 for(const name of ['ResultPublished','ResultCorrected','ResultFinal'] as const){
- indexer.onEvent({contract,event:name},async({event,context})=>{
+ indexer.onEvent({contract:'IndependentRatings',event:name},async({event,context})=>{
   const record=JSON.parse(await context.effect(publishedEntry,{ledger:event.srcAddress,id:event.params.id,block:BigInt(event.block.number),hash:event.block.hash}));
   await applyIndependentArchive(context,event,record,independentArchiveDeployments);
  });

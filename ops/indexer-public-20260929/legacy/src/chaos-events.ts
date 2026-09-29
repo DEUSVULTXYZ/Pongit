@@ -12,9 +12,6 @@ indexer.onEvent({contract:'AgentArchive',event:'MatchRecorded'},async({event,con
 });
 // The common pool emits this only after reading and capturing the exact Monad
 // publication. No extra archive transaction or VPS-supplied result is needed.
-// Envio keys each chain binding by contract name. A successor must not shadow
-// the predecessor's address/start block in an already initialized database.
-for(const contract of ['AgentSeriesArchive','AgentReusableFiveArchive'] as const)
-indexer.onEvent({contract,event:'SeriesResultRecorded'},async({event,context})=>{
+indexer.onEvent({contract:'AgentSeriesArchive',event:'SeriesResultRecorded'},async({event,context})=>{
  await applySeriesArchive(context,event,chaosArchiveDeployments);
 });

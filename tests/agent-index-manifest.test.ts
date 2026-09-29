@@ -42,8 +42,12 @@ test('actual indexer configuration keeps predecessor and successor and packages 
     await writeFile(join(temporary, 'deployments/testnet.json'), JSON.stringify({version: 4, chainId: 10143,
       game: addr(100), market: addr(101), tournaments: addr(102), startBlock: 50}));
     await writeFile(join(temporary, 'deployments/agent-reusable-index.json'), JSON.stringify({
-      version: 2, chainId: 10143, deployments: [old, next],
+      version: 2, chainId: 10143, deployments: [old, {...next, archiveContract:'AgentReusableFiveArchive'}],
     }));
+    await writeFile(join(temporary,'deployments/independent-index.json'),JSON.stringify({deployments:[
+      {chainId:10143,rulesVersion:14,ratings:addr(200),startBlock:90,arenas:[addr(201)]},
+      {chainId:10143,rulesVersion:14,ratings:addr(202),startBlock:190,arenas:[addr(203)],archiveContract:'CurrentIndependentRatings'},
+    ]}));
     const env: NodeJS.ProcessEnv = {...process.env, INDEXER_RPC_URL: 'http://127.0.0.1:8545'};
     delete env.INDEXER_HISTORY_START_BLOCK; delete env.DEPLOYMENT_FILE;
     execFileSync(process.execPath, [join(root, 'node_modules/tsx/dist/cli.mjs'), join(root, 'scripts/configure-indexer.ts')],
@@ -51,6 +55,14 @@ test('actual indexer configuration keeps predecessor and successor and packages 
     const config = await readFile(join(temporary, 'indexer/config.yaml'), 'utf8');
     for (const [pool, start] of [[old.pool, 100], [next.pool, 200]])
       assert(config.includes(`address: "${pool}"\n        start_block: ${start}`));
+    // Names become object keys in Envio: a duplicate would silently replace
+    // the old address and refuse resuming its existing database.
+    const chainConfig=config.slice(config.indexOf('\nchains:'));
+    for(const [name,address] of [['AgentSeriesArchive',old.pool],['AgentReusableFiveArchive',next.pool],
+      ['IndependentRatings',addr(200)],['CurrentIndependentRatings',addr(202)]]){
+      assert.equal(chainConfig.split(`- name: ${name}\n`).length-1,1);
+      assert(chainConfig.includes(`- name: ${name}\n        address: "${address}"`));
+    }
     const source = await readFile(join(temporary, 'indexer/src/chaos-deployments.ts'), 'utf8');
     const bindings = JSON.parse(source.slice(source.indexOf('=') + 1, source.lastIndexOf(' as const;')));
     assert.deepEqual(bindings[old.pool], {apps: old.arenas, rulesVersion: 15});

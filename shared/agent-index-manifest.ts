@@ -1,5 +1,6 @@
 export type AgentIndexDeployment = {
   chainId: number; rulesVersion: 11 | 15; pool: string; startBlock: string; arenas: string[];
+  archiveContract?: 'AgentReusableFiveArchive';
 };
 
 /** Legacy single-pool files remain valid. A migration must list each retired
@@ -18,6 +19,8 @@ export function agentIndexDeployments(raw: unknown, chainId: number, rulesVersio
       || !Array.isArray(item.arenas) || item.arenas.length < (rulesVersion === 15 ? 3 : 2)
       || item.arenas.length > (rulesVersion === 15 ? 32 : 16) || !item.arenas.every(address))
       throw Error('Invalid series archive manifest');
+    if(item.archiveContract !== undefined && (item.archiveContract !== 'AgentReusableFiveArchive' || rulesVersion !== 15))
+      throw Error('Invalid series archive contract alias');
     const pool = item.pool.toLowerCase();
     if (pools.has(pool)) throw Error('Duplicate series archive emitter');
     pools.add(pool);
@@ -26,7 +29,8 @@ export function agentIndexDeployments(raw: unknown, chainId: number, rulesVersio
       if (arenas.has(app)) throw Error('Ambiguous historical arena');
       arenas.add(app);
     }
-    return {chainId, rulesVersion, pool, startBlock: String(item.startBlock), arenas: apps};
+    return {chainId, rulesVersion, pool, startBlock: String(item.startBlock), arenas: apps,
+      ...(item.archiveContract ? {archiveContract:item.archiveContract} : {})};
   });
   if ([...pools].some(pool => arenas.has(pool))) throw Error('Archive emitter cannot be an arena');
   return result;

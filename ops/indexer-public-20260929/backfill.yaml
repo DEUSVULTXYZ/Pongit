@@ -85,12 +85,6 @@ contracts:
       - event: ResultCorrected(uint256 indexed id, bytes32 previousHash, bytes32 correctedHash, uint256 revision)
       - event: ResultFinal(uint256 indexed id, bytes32 hash)
 
-  - name: CurrentIndependentRatings
-    events:
-      - event: ResultPublished(uint256 indexed id, address indexed arena, uint256 epoch, bytes32 hash, uint256 index)
-      - event: ResultCorrected(uint256 indexed id, bytes32 previousHash, bytes32 correctedHash, uint256 revision)
-      - event: ResultFinal(uint256 indexed id, bytes32 hash)
-
   - name: ChaosEventsArchive
     events:
       - event: MatchRecorded(uint256 indexed id, uint256 indexed epoch, address indexed app, bytes32 hash, address a, address b, address winner, uint8 status, uint8 mode, bool ranked, uint8 scoreA, uint8 scoreB, bool played, uint64 finishedAt)
@@ -101,17 +95,30 @@ contracts:
     events:
       - event: SeriesResultRecorded(uint256 indexed id, uint256 indexed epoch, address indexed app, bytes32 hash, address a, address b, address winner, uint8 status, uint8 mode, bool ranked, uint8 scoreA, uint8 scoreB, uint64 elapsedUs, uint64 tournament, bool finality)
 
+  - name: CurrentIndependentRatings
+    events:
+      - event: ResultPublished(uint256 indexed id, address indexed arena, uint256 epoch, bytes32 hash, uint256 index)
+      - event: ResultCorrected(uint256 indexed id, bytes32 previousHash, bytes32 correctedHash, uint256 revision)
+      - event: ResultFinal(uint256 indexed id, bytes32 hash)
+
   - name: AgentReusableFiveArchive
     events:
       - event: SeriesResultRecorded(uint256 indexed id, uint256 indexed epoch, address indexed app, bytes32 hash, address a, address b, address winner, uint8 status, uint8 mode, bool ranked, uint8 scoreA, uint8 scoreB, uint64 elapsedUs, uint64 tournament, bool finality)
 
 chains:
   - id: 10143
-    start_block: 0
+    start_block: 64393211
+    rpc:
+      url: "http://rpc-indexer:8545"
+      for: sync
+      initial_block_interval: 1999
+      interval_ceiling: 1999
+      polling_interval: 1500
+      query_timeout_millis: 120000
     contracts:
-      - name: Game
-        address: "0x0000000000000000000000000000000000000000"
-      - name: Market
-        address: "0x0000000000000000000000000000000000000000"
-      - name: Tournaments
-        address: "0x0000000000000000000000000000000000000000"
+      - name: AgentReusableFiveArchive
+        address: "0x205d5739136d6cb73d732e1146e1ce034798a613"
+        start_block: 66549863
+      - name: CurrentIndependentRatings
+        address: "0x10d7c8aeddcec23d7638f9c9dbbc73d82f28c5b9"
+        start_block: 64393211

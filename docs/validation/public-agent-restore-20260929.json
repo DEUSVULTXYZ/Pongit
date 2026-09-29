@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-29T01:19:48.296091+00:00",
+  "restoredInSeparateDatabases": true,
+  "temporaryDatabasesRemoved": true,
+  "results": {
+    "agents-five": {
+      "replays": 165,
+      "frames": 722,
+      "engineJobs": 2394
+    },
+    "replays": {
+      "old": 641,
+      "current": 10,
+      "union": 674,
+      "backfill": 23
+    }
+  },
+  "diagnosticRetry": "Initial post-restore count used frames instead of replay_frames; restore itself had succeeded."
+}
