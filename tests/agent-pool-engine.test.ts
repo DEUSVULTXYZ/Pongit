@@ -11,9 +11,9 @@ function fixture(){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false,now=0;
  let blockGate:Promise<void>|undefined;
  let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'='ok';
- let logs:any[]=[],archiveError=false,receiptReads=0;const archived:any[]=[];
+ let logs:any[]=[],archiveError=false,receiptReads=0,nonceReads=0,reset=false,feedError=false;const archived:any[]=[];
  const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
- const node:any={getTransactionCount:async()=>nonce,getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
+ const node:any={getTransactionCount:async()=>{nonceReads++;return nonce;},getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
   if(r.method==='interlude_session')return{app,epoch:String(epoch),chainId:4242,baseBlock:20};
   assert.equal(r.method,'interlude_sendTransaction');const raw=r.params[0];sent.push(raw);
   if(behavior==='429')throw Object.assign(Error('busy'),{status:429});
@@ -30,15 +30,49 @@ function fixture(){
  }};
  const db:any={connect:async()=>{if(connectError)throw Error('database unavailable');return{query:async()=>({rows:[{ok:true}]}),release(){}};},query:async(sql:string,a:any[])=>{
   if(sql.startsWith('SELECT'))return{rows:jobs.filter(j=>sql.includes('operation=$3')?j.epoch===a[1]&&j.operation===a[2]:j.status==='pending').slice(0,1)};
-  if(sql.startsWith('INSERT')){jobs.push({app:a[0],id:a[1],operation:a[2],epoch:a[3],signer:a[4],nonce:a[5],raw:a[6],hash:a[7],status:'pending'});return{rowCount:1};}
+  if(sql.startsWith('INSERT')){
+   if(jobs.some(j=>j.app===a[0]&&j.epoch===a[3]&&String(j.nonce)===String(a[5])&&!['refused','obsolete'].includes(j.status)))throw Error('pool_used_nonce');
+   jobs.push({app:a[0],id:a[1],operation:a[2],epoch:a[3],signer:a[4],nonce:a[5],raw:a[6],hash:a[7],status:'pending'});return{rowCount:1};}
   if(sql.includes("SET status='obsolete'")){for(const j of jobs)if(BigInt(j.epoch)<=BigInt(a[1])&&j.status==='pending'){j.status='obsolete';j.resolution=a[2];}return{rowCount:1};}
   const j=jobs.find(j=>j.id===a[1]);assert(j);j.status=sql.includes("SET status='refused'")?'refused':a[2];j.resolution=sql.includes("SET status='refused'")?a[2]:a[3];return{rowCount:1};
  }};
  const receiptIds:bigint[]=[],readIds:bigint[]=[];
- const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2};},receipt:async(id:bigint)=>{receiptIds.push(id);return{id,phase:2};},invalidate(){}};
+ const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2,reset};},receipt:async(id:bigint)=>{if(feedError)throw Error('snapshot gap');receiptIds.push(id);return{id,phase:2};},invalidate(){}};
  const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,now:()=>now,archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
- return{make,jobs,sent,receipts,receiptIds,readIds,archived,now:(v:number)=>{now=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
+ return{make,jobs,sent,receipts,receiptIds,readIds,archived,now:(v:number)=>{now=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
+
+test('exact acknowledged receipts reuse nonce proof without indefinitely extending its RPC validity',async()=>{
+ const f=fixture(),e=f.make();
+ for(let i=0;i<6;i++){f.now(i*150);await e.send(`tick-${i}`,'tick',[1n]);}
+ assert.equal(f.nonceReads(),2);assert.deepEqual(f.sent.map(raw=>parseTransaction(raw).nonce),[0,1,2,3,4,5]);
+ f.now(1000);await e.send('after-validity','tick',[1n]);assert.equal(f.nonceReads(),4);e.close();
+ const restarted=f.make();await restarted.send('after-restart','tick',[1n]);assert.equal(f.nonceReads(),6);restarted.close();
+});
+
+test('a lost response discards cached nonce proof and reconciles the exact journal first',async()=>{
+ const f=fixture(),e=f.make();await e.send('one','tick',[1n]);f.behavior('lost-after-execution');
+ await assert.rejects(e.send('two','tick',[1n]),/lost/);const pending=f.jobs[1];assert.equal(pending.nonce,'1');
+ f.behavior('ok');await assert.rejects(e.send('three','tick',[1n]),{code:'POOL_RECONCILED'});
+ assert.equal(f.sent.length,2);assert.equal(f.jobs[1].hash,pending.hash);
+ await e.send('three','tick',[1n]);assert.equal(f.jobs[2].nonce,'2');assert.equal(f.nonceReads(),4);e.close();
+});
+
+test('snapshot failures and observed resets invalidate nonce proof without losing confirmed jobs',async()=>{
+ const f=fixture(),e=f.make();await e.send('one','tick',[1n]);f.feedError(true);
+ await assert.rejects(e.send('two','tick',[1n]),/snapshot gap/);assert.equal(f.jobs[1].status,'observed');
+ f.feedError(false);await e.send('three','tick',[1n]);assert.equal(f.nonceReads(),4);
+ f.reset();await e.read();await e.send('four','tick',[1n]);assert.equal(f.nonceReads(),6);e.close();
+});
+
+test('another journaled writer cannot reuse a cached nonce before the next RPC refresh',async()=>{
+ const f=fixture(),a=f.make(),b=f.make();
+ await a.send('a-one','tick',[1n]);await b.send('b-one','tick',[1n]);
+ await assert.rejects(a.send('a-two','tick',[1n]),/pool_used_nonce/);
+ assert.equal(f.sent.length,2);assert.equal(f.jobs.length,2);
+ await a.send('a-two','tick',[1n]);assert.equal(parseTransaction(f.sent[2]).nonce,2);
+ assert.equal(f.jobs.length,3);a.close();b.close();
+});
 
 test('prefetched lifecycle checks do not pause valid ticks and an expired check still blocks the next command',async()=>{
  const f=fixture(),e=f.make();await e.send('first','tick',[1n]);

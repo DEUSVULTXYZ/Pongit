@@ -43,6 +43,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
  const stream=new EngineStream(url,app,u=>new WebSocket(u,{origin:'https://pongit.xyz'}) as any,()=>engineCooldownMs(url));
  const feed=runtime?.feed??new EngineFeed({app,abi:arenaAbi,node},stream),unwatch=feed.watch(ref.id,s=>onSnapshot?.(s));
  const lower=app.toLowerCase(),now=runtime?.now??Date.now;let busy=false,fenceUntil=0,closed=false;
+ let nonceProof:{next:number;until:number}|undefined;
  let fenceTask:Promise<void>|undefined;
  async function verifyFence(){
   const started=now(),shared=await runtime?.hubObservation?.();
@@ -103,6 +104,10 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   await db.query('UPDATE agent_pool.engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2',
    [lower,job.id,outcome,{kind:'receipt',hash:job.hash,blockHash:receipt.blockHash,block:String(receipt.blockNumber),status:receipt.status}]);
   if(outcome==='failed'){feed.invalidate();throw Object.assign(Error('Arena action reverted; state must be refreshed'),{code:'POOL_ACTION_REVERTED'});}
+  // Only a matching executed receipt, durably acknowledged above, owns the next
+  // nonce. The arena's lock and unique journal constraint still fence writers.
+  // Anchor expiry to the last RPC check: receipts cannot extend it indefinitely.
+  if(nonceProof&&now()<nonceProof.until)nonceProof.next=Number(job.nonce)+1;
   return {identity,receipt};
  }
  async function send(operation:string,name:'admit'|'cancelAdmission'|'cancelUnready'|'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries',args:readonly unknown[]=[]){
@@ -131,7 +136,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    if(job){
     const prior=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
     if(prior.data!==data)throw Error('An operation cannot change its signed command');
-    if(job.status==='observed')return feed.read(ref.id);
+    if(job.status==='observed')return await feed.read(ref.id);
     if(job.status!=='pending')throw Error(`Arena operation is ${job.status}; refresh its state`);
    }else{
     const pending=(await db.query("SELECT * FROM agent_pool.engine_jobs WHERE app=$1 AND status='pending' ORDER BY created_at LIMIT 1",[lower])).rows[0];
@@ -145,21 +150,28 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
      else await feed.read(ref.id,true);
      throw Object.assign(Error('Previous command reconciled; refresh before another action'),{code:'POOL_RECONCILED'});
     }
-    const [nonce,latest]=await Promise.all(['pending','latest'].map(blockTag=>node.getTransactionCount({address:signer.address,blockTag:blockTag as 'pending'|'latest'})));
-    if(nonce!==latest)throw Error('Arena nonce is still in flight');
+    if(!nonceProof||now()>=nonceProof.until){
+     const checkedAt=now();
+     const [nonce,latest]=await Promise.all(['pending','latest'].map(blockTag=>node.getTransactionCount({address:signer.address,blockTag:blockTag as 'pending'|'latest'})));
+     if(nonce!==latest)throw Error('Arena nonce is still in flight');
+     nonceProof={next:nonce,until:checkedAt+1000};
+    }
+    const nonce=nonceProof.next;
     const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce,to:app,data,value:0n,gas:POOL_COMMAND_GAS,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
     job={app:lower,id:randomUUID(),operation,epoch:String(ref.epoch),nonce:String(nonce),raw,hash:keccak256(raw),status:'pending'};
     await db.query('INSERT INTO agent_pool.engine_jobs(app,id,operation,epoch,signer,nonce,raw,hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
      [lower,job.id,operation,job.epoch,signer.address.toLowerCase(),job.nonce,raw,job.hash]);
     unsent=true;
    }
-   const resolved=await resolution(job,unsent);return feed.receipt(ref.id,{receipt:resolved.receipt},name,args,signer.address);
+   const resolved=await resolution(job,unsent);return await feed.receipt(ref.id,{receipt:resolved.receipt},name,args,signer.address);
+  }catch(error){nonceProof=undefined;throw error;
   }finally{try{if(locked)await c?.query('SELECT pg_advisory_unlock(hashtextextended($1,701349))',[lower]);}finally{c?.release();busy=false;}}
  }
- return{node,feed,send,read:(force=false)=>{
+ return{node,feed,send,read:async(force=false)=>{
   // Warm the same three-second fence before it expires. This changes neither
   // its validity window nor the checks required before sending a command.
   if(!closed&&!busy&&fenceUntil>0&&now()>=fenceUntil-1500)void refreshFence().catch(()=>{});
-  return feed.read(ref.id,force);
- },close:()=>{closed=true;unwatch();},ref,app,busy:()=>busy};
+  try{const state=await feed.read(ref.id,force);if(force||state.reset)nonceProof=undefined;return state;}
+  catch(error){nonceProof=undefined;throw error;}
+ },close:()=>{closed=true;nonceProof=undefined;unwatch();},ref,app,busy:()=>busy};
 }

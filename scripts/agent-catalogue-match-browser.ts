@@ -14,7 +14,8 @@ const privatePath=process.env.PONG_BROWSER_PRIVATE_PATH!;
 const restorePath=process.env.PONG_CATALOGUE_RESTORE_PRIVATE_PATH;
 // Opt-in, bounded cadence samples are separate from the full 100-control gate.
 const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
-const controlCount=cadenceProbe?20:110,idleMs=cadenceProbe?8000:45000;
+const controlCount=cadenceProbe?20:110,idleMs=cadenceProbe?Number(process.env.PONG_CATALOGUE_PROBE_IDLE_MS??8000):45000;
+assert(!cadenceProbe||Number.isInteger(idleMs)&&idleMs>=4000&&idleMs<=8000);
 assert(/^[a-z0-9-]+$/.test(run)&&['chrome','msedge'].includes(channel)&&[0,1].includes(mode));
 assert(/^[A-Z]+$/.test(name)&&privatePath?.includes('private-backups'));
 assert(!restorePath||restorePath.includes('private-backups')&&restorePath!==privatePath);
@@ -37,7 +38,11 @@ async function candidateAssets(target:import('@playwright/test').Page){if(proces
 }}
 await candidateAssets(page);
 let spectator:import('@playwright/test').Page|undefined;
-if(restored)await context.addInitScript(session=>{for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));},restored.session);
+if(restored)await context.addInitScript(session=>{
+ if(sessionStorage.getItem('pongit:test-restored'))return;
+ for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));
+ sessionStorage.setItem('pongit:test-restored','1');
+},restored.session);
 page.setDefaultTimeout(60000);
 const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
 const {authenticatorId}=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
@@ -112,9 +117,25 @@ try{
  await page.getByRole('button',{name:`Challenge ${name}`,exact:true}).click();
  report.challengeClickedAt=await page.evaluate(()=>(window as any).__challengeClickedAt);
  report.requestedAt=new Date().toISOString();
+ const admissionDeadline=Date.now()+180000;
  if(!restored)await page.getByRole('button',{name:'Create account',exact:true}).click();
- await page.waitForURL(/\/agents\/arenas\//,{timeout:180000});await savePrivate();
+ else{
+  const connect=page.getByRole('dialog',{name:'Connect to challenge an agent',exact:true});
+  // Capacity and authorization checks precede this dialog. Wait for either
+  // real outcome, within the original admission deadline, without guessing how
+  // long those checks take. Both promises have rejection handlers via race.
+  const outcome=await Promise.race([
+   connect.waitFor({state:'visible',timeout:180000}).then(()=>'connect'),
+   page.waitForURL(/\/agents\/arenas\//,{timeout:180000}).then(()=>'arena')]);
+  if(outcome==='connect'){
+   report.initialReauthorization=true;
+   console.log(JSON.stringify({run,event:'reauthorizing-test-session'}));
+   await connect.getByRole('button',{name:/^(Connect & play|Continue)$/}).click();
+  }
+ }
+ await page.waitForURL(/\/agents\/arenas\//,{timeout:Math.max(1,admissionDeadline-Date.now())});await savePrivate();
  const parts=new URL(page.url()).pathname.split('/');report.ref={app:parts[3],epoch:parts[4],id:parts[5]};
+ console.log(JSON.stringify({run,event:'admitted',ref:report.ref}));
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
   spectator=await browser.newPage({viewport:{width:1440,height:1000}});await candidateAssets(spectator);await installSyncProbe(spectator);
   await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
