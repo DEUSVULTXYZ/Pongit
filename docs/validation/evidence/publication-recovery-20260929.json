@@ -1,0 +1,199 @@
+{
+  "scope": "Actual public catalogue and hosted games. Virtual Mera. Not 24-hour or physical-device qualification.",
+  "runs": [
+    {
+      "report": "artifacts/qualification/catalogue-recovery-20260929-1256-chrome/report.json",
+      "passed": false,
+      "error": "Conceded fixture must have a published result",
+      "browser": "chrome",
+      "mode": 0,
+      "virtualPrf": true,
+      "mockedNetwork": false,
+      "ref": {
+        "app": "0xa5f79fC906A238a80604EE5912a4A18998dC7ab4",
+        "epoch": "4",
+        "id": "192"
+      },
+      "startedAt": "2026-09-29T12:55:42.474Z",
+      "finishedAt": "2026-09-29T12:58:24.135Z",
+      "actualClickAt": null,
+      "countdownAt": null,
+      "admissionMs": null,
+      "localP95Ms": 15.399999976158142,
+      "executedP95Ms": 15.997499999997672,
+      "executedControls": 221,
+      "checks": [
+        "F5 reused the Mera grant",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "publishedResult": false
+    },
+    {
+      "report": "artifacts/qualification/catalogue-recovery-20260929-1313-edge/report.json",
+      "passed": true,
+      "error": null,
+      "browser": "msedge",
+      "mode": 1,
+      "virtualPrf": true,
+      "mockedNetwork": false,
+      "ref": {
+        "app": "0x7A45dCd516896A22E4cDEd587086ee57B8aDF9c6",
+        "epoch": "4",
+        "id": "193"
+      },
+      "startedAt": "2026-09-29T13:12:31.342Z",
+      "finishedAt": "2026-09-29T13:14:03.916Z",
+      "actualClickAt": null,
+      "countdownAt": null,
+      "admissionMs": null,
+      "localP95Ms": 15.899999976158142,
+      "executedP95Ms": 28.30340000000433,
+      "executedControls": 199,
+      "checks": [
+        "F5 reused the Mera grant",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "publishedResult": true
+    },
+    {
+      "report": "artifacts/qualification/catalogue-recovery-20260929-1316-chrome/report.json",
+      "passed": true,
+      "error": null,
+      "browser": "chrome",
+      "mode": 0,
+      "virtualPrf": true,
+      "mockedNetwork": false,
+      "reusedSession": true,
+      "ref": {
+        "app": "0x9b8e61621682da7b59239774f76DcF04071Ea059",
+        "epoch": "4",
+        "id": "195"
+      },
+      "startedAt": "2026-09-29T13:15:30.858Z",
+      "finishedAt": "2026-09-29T13:16:41.909Z",
+      "actualClickAt": null,
+      "countdownAt": null,
+      "admissionMs": null,
+      "localP95Ms": 15.600000023841858,
+      "executedP95Ms": 17.521999999997206,
+      "executedControls": 221,
+      "checks": [
+        "F5 reused the Mera grant",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "publishedResult": true
+    },
+    {
+      "report": "artifacts/qualification/catalogue-recovery-20260929-1331-chrome/report.json",
+      "passed": true,
+      "error": null,
+      "browser": "chrome",
+      "mode": 0,
+      "virtualPrf": true,
+      "mockedNetwork": false,
+      "reusedSession": true,
+      "ref": {
+        "app": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+        "epoch": "4",
+        "id": "196"
+      },
+      "startedAt": "2026-09-29T13:30:25.248Z",
+      "finishedAt": "2026-09-29T13:31:49.214Z",
+      "actualClickAt": null,
+      "countdownAt": null,
+      "admissionMs": null,
+      "localP95Ms": 15.400000095367432,
+      "executedP95Ms": 16.377599999999802,
+      "executedControls": 221,
+      "checks": [
+        "F5 reused the Mera grant",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "publishedResult": true
+    },
+    {
+      "report": "artifacts/qualification/catalogue-recovery-20260929-1335-chrome/report.json",
+      "passed": true,
+      "error": null,
+      "browser": "chrome",
+      "mode": 0,
+      "virtualPrf": true,
+      "mockedNetwork": false,
+      "reusedSession": true,
+      "ref": {
+        "app": "0xa5f79fC906A238a80604EE5912a4A18998dC7ab4",
+        "epoch": "4",
+        "id": "197"
+      },
+      "startedAt": "2026-09-29T13:32:46.666Z",
+      "finishedAt": "2026-09-29T13:34:04.255Z",
+      "actualClickAt": null,
+      "countdownAt": null,
+      "admissionMs": null,
+      "localP95Ms": 15.100000023841858,
+      "executedP95Ms": 15.657599999998638,
+      "executedControls": 217,
+      "checks": [
+        "F5 reused the Mera grant",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "publishedResult": true
+    },
+    {
+      "report": "artifacts/qualification/catalogue-recovery-20260929-1341-edge/report.json",
+      "passed": true,
+      "error": null,
+      "browser": "msedge",
+      "mode": 1,
+      "virtualPrf": true,
+      "mockedNetwork": false,
+      "reusedSession": true,
+      "ref": {
+        "app": "0x7A45dCd516896A22E4cDEd587086ee57B8aDF9c6",
+        "epoch": "4",
+        "id": "198"
+      },
+      "startedAt": "2026-09-29T13:39:46.399Z",
+      "finishedAt": "2026-09-29T13:40:57.075Z",
+      "actualClickAt": "2026-09-29T13:39:50.868Z",
+      "countdownAt": "2026-09-29T13:40:20.709Z",
+      "admissionMs": 29841,
+      "localP95Ms": 15.5,
+      "executedP95Ms": 16.346599999997125,
+      "executedControls": 221,
+      "checks": [
+        "F5 reused the Mera grant",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "publishedResult": true
+    },
+    {
+      "report": "artifacts/qualification/catalogue-recovery-20260929-1350-chrome/report.json",
+      "passed": true,
+      "error": null,
+      "browser": "chrome",
+      "mode": 0,
+      "virtualPrf": true,
+      "mockedNetwork": false,
+      "reusedSession": true,
+      "ref": {
+        "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+        "epoch": "4",
+        "id": "199"
+      },
+      "startedAt": "2026-09-29T13:48:57.211Z",
+      "finishedAt": "2026-09-29T13:50:04.089Z",
+      "actualClickAt": "2026-09-29T13:49:02.087Z",
+      "countdownAt": "2026-09-29T13:49:33.971Z",
+      "admissionMs": 31884,
+      "localP95Ms": 15.699999928474426,
+      "executedP95Ms": 15.78519999999844,
+      "executedControls": 204,
+      "checks": [
+        "F5 reused the Mera grant",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "publishedResult": true
+    }
+  ]
+}

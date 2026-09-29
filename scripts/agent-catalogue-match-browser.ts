@@ -74,10 +74,13 @@ page.on('response',async response=>{try{
 await context.addInitScript(()=>{
  localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));
  (window as any).__paddle=[];(window as any).__keys=[];(window as any).__digits=[];
+ window.addEventListener('click',e=>{if((e.target as Element)?.closest('button')?.getAttribute('aria-label')?.startsWith('Challenge '))
+  (window as any).__challengeClickedAt=new Date().toISOString();},true);
  const fill=CanvasRenderingContext2D.prototype.fillRect;
  CanvasRenderingContext2D.prototype.fillRect=function(x,y,w,h){fill.call(this,x,y,w,h);if(x===22&&w===12&&h>40&&this.canvas.closest('.pool-canvas-slot')){const a=(window as any).__paddle;if(a.length<30000)a.push({at:performance.now(),y});}};
  window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown'].includes(e.code))(window as any).__keys.push({at:performance.now(),dir:e.code});});
- setInterval(()=>{const digit=document.querySelector('.match-countdown-digit')?.textContent;if(digit)(window as any).__digits.push(digit);},30);
+ setInterval(()=>{const digit=document.querySelector('.match-countdown-digit')?.textContent;if(digit){(window as any).__digits.push(digit);
+  (window as any).__firstCountdownAt??=new Date().toISOString();}},30);
 });
 try{
  const config=await (await page.request.get(report.origin+'/api/agents/config')).json();
@@ -87,12 +90,15 @@ try{
  await page.getByRole('button',{name:mode?'Chaos':'Classic',exact:true}).click();
  report.clickedAt=new Date().toISOString();
  await page.getByRole('button',{name:`Challenge ${name}`,exact:true}).click();
+ report.challengeClickedAt=await page.evaluate(()=>(window as any).__challengeClickedAt);
  report.requestedAt=new Date().toISOString();
  if(!restored)await page.getByRole('button',{name:'Create account',exact:true}).click();
  await page.waitForURL(/\/agents\/arenas\//,{timeout:180000});await savePrivate();
  const parts=new URL(page.url()).pathname.split('/');report.ref={app:parts[3],epoch:parts[4],id:parts[5]};
  await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:60000});
  report.playingAt=new Date().toISOString();report.digits=await page.evaluate(()=>(window as any).__digits);
+ report.countdownAt=await page.evaluate(()=>(window as any).__firstCountdownAt);
+ if(report.challengeClickedAt&&report.countdownAt)report.admissionMs=Date.parse(report.countdownAt)-Date.parse(report.challengeClickedAt);
  assert(report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1'),'Real launch countdown incomplete');
  const before=assertions;
  for(let i=0;i<110;i++){
