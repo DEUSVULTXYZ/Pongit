@@ -156,18 +156,20 @@ export class AgentPoolReader {
      Promise.all(agentPoolLanes(m).map(lane=>read(m.pool,this.poolAbi,'laneRecord',[lane]))),this.operational?.()??Promise.resolve([]),
     ]);
     const now=Date.now();
+    const playing=(r:any)=>health.some(h=>h.app.toLowerCase()===r.ref.arena.toLowerCase()
+     &&freshArenaState(h,r.ref.epoch,now)&&h.id===String(r.ref.id)&&h.stage==='playing');
     const items=await Promise.all(records.filter(r=>{
      if(!r.ref.id||r.captured)return false;
-     const observed=health.find(h=>h.app.toLowerCase()===r.ref.arena.toLowerCase());
-     // A finished engine can await publication without becoming a live stream.
-     // This hides no history and does not release a seat or invent a result.
-     return !(freshArenaState(observed,r.ref.epoch,now)&&observed?.id===String(r.ref.id)&&observed.stage==='awaiting-publication');
+     // A published assignment is not proof of live play. In deployments with
+     // operational observation, require fresh, exact-match playing evidence.
+     // A failed read must never resurrect an unpublished terminal stream.
+     return !this.operational||playing(r);
     }).map(async r=>{
      const arena=m.arenas.find(a=>a.app.toLowerCase()===r.ref.arena.toLowerCase());if(!arena)throw Error('Assigned arena is outside this deployment');
      const [,b]=await read(m.pool,this.poolAbi,'ticketOf',[r.ref]);
      if(b.id!==r.ref.id||b.epoch!==r.ref.epoch||b.a.toLowerCase()!==r.a.toLowerCase()||b.b.toLowerCase()!==r.b.toLowerCase())throw Error('Admission binding differs from its assignment');
      return{ref:refView(r.ref),node:arena.node,a:r.a,b:r.b,mode:b.mode,ranked:r.ranked,tournament:String(r.tournament),
-      lane:r.lane===0?'tournament':b.controlA.codeHash!==zeroHash?'qualification':'challenge',source:'published-admission',liveConfirmed:false};
+      lane:r.lane===0?'tournament':b.controlA.codeHash!==zeroHash?'qualification':'challenge',source:'published-admission',liveConfirmed:playing(r)};
     }));
     return{items};
    }

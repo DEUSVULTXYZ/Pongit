@@ -75,10 +75,17 @@ Publication had stopped. Frame p95 was 17.1 ms, but there was no ball movement.
 This is preserved separately from the earlier preparing/countdown failure; it
 does not demonstrate an active live stream or passing smoothness.
 
-Candidate `e4bd537` excludes a terminal match from discovery only when fresh
-operational evidence matches its arena, epoch and match ID. Its historical URL,
-participation and unpublished result remain recoverable. A read failure is not
-treated as a terminal result or a released seat.
+The first live-discovery correction in `e4bd537` excluded freshly observed
+terminal matches. The final public check then exposed a remaining failure:
+a subsequent network error replaced that terminal health with `synchronizing`,
+allowing the unpublished result to reappear. The failed check is preserved in
+`sync-final-check-assertion-20260929.json`.
+
+Discovery now requires fresh **playing** evidence for the exact arena, epoch and
+match ID whenever operational observation is configured. Missing, stale,
+countdown or synchronization health cannot advertise a live stream. Historical
+URLs, participation and unpublished results remain recoverable. Legacy readers
+without operational observation retain explicitly unconfirmed discovery.
 
 ## Publication and RPC recovery
 
@@ -164,6 +171,22 @@ Backend image from `e4bd537`:
 Actual runtime source hashes were checked against the published Git archive.
 The initial build invocation used a wrong Dockerfile path and failed; the second
 build succeeded. Both logs remain preserved.
+
+This image was deployed to the shared RPC at 02:30:12 UTC and to the six agent
+roles at 02:30:16 UTC. Previous RPC source overrides were removed so the audited
+image code actually executes. At 02:35:57 UTC the gateway had served 10,535 calls
+with one primary throttle and zero secondary throttles; it adapted spacing and
+recovered without restart. This is a short observation, not a zero-429 guarantee.
+The seven idle arenas correctly reported `publisher-unfunded`; the pending result
+was read and retained. Neither funding checks nor pauses discarded its command
+or result journals.
+
+Reader `3b263a1` was deployed at 02:37:39 UTC as
+`sha256:0f290127b7cb45c63f595bf597c0462d9a8a65246c815af8714306c39c501622`.
+It distinguishes publication/funding unavailability from full capacity. The
+final live-discovery patch uses this immutable base plus its source-verified
+reader file in `ops/reader-sync-20260929.Dockerfile`; no host source mount is used.
+All 14 reader/availability regressions and root typecheck passed after that fix.
 
 Rollback uses the retained previous compatible images and configuration backups;
 never restore an old database over newer operations. The shared RPC override must

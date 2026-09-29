@@ -158,15 +158,18 @@ test('reusable discovery reads the Monad ticket before engine admission and pres
   if(r.functionName==='result')return{hash:zeroHash,winner:a,status:3,scoreA:7,scoreB:4,mode:1,elapsedUs:100n,finality:false};
   throw Error(r.functionName);
  }} as unknown as PublicClient;
- let health:{app:string;epoch:string;id?:string;stage:string;observedAt:number}[]=[];
+ let health:{app:string;epoch:string;id?:string;stage:string;observedAt:number}[]=[{app,epoch:'2',id:'91',stage:'playing',observedAt:Date.now()}];
  const reader=new AgentPoolReader(client,m,[],async()=>health),reference={chainId:10143 as const,app,epoch:'2',id:'91'};
- assert.equal((await reader.live()).value.items[0].ref.id,'91');assert.equal((await reader.live()).value.items[0].liveConfirmed,false);
+ assert.equal((await reader.live()).value.items[0].ref.id,'91');assert.equal((await reader.live()).value.items[0].liveConfirmed,true);
+ const legacy=new AgentPoolReader(client,m);assert.equal((await legacy.live()).value.items[0].liveConfirmed,false,'Legacy discovery stays explicitly unconfirmed');
  health=[{app,epoch:'2',id:'91',stage:'awaiting-publication',observedAt:Date.now()}];
  assert.equal((await reader.live()).value.items.length,0,'A terminal, unpublished match is not advertised as live');
- for(const mismatch of [{epoch:'1'},{id:'90'},{app:addr(99)},{id:undefined},{observedAt:Date.now()-16000},{stage:'publication-paused'}]){
-  const prior=health[0];health=[{...prior,...mismatch}];assert.equal((await reader.live()).value.items.length,1,'Only the exact fresh terminal reference can be hidden');health=[prior];
+ for(const mismatch of [{epoch:'1'},{id:'90'},{app:addr(99)},{id:undefined},{observedAt:Date.now()-16000},{stage:'publication-paused'},{stage:'synchronizing'},{stage:'countdown'}]){
+  health=[{app,epoch:'2',id:'91',stage:'playing',observedAt:Date.now(),...mismatch}];
+  assert.equal((await reader.live()).value.items.length,0,'Stale, different or non-playing observations cannot claim a live stream');
  }
  assert.equal((await reader.challenge(a)).value.request?.ref?.id,'91','The waiting result retains its participation');health=[];
+ assert.equal((await reader.live()).value.items.length,0,'Missing health does not resurrect a finished stream');
  assert.deepEqual((await reader.challenge(a)).value.request?.ref,reference);
  let view=(await reader.match(reference)).value;assert.equal(view.node,m.arenas[0].node,'Observe the assigned engine before its binding is republished');assert.equal(view.mode,1);assert.equal(view.result,null);
  assigned=false;view=(await reader.match(reference)).value;assert.equal(view.node,null,'Old assignments cannot observe a replacement');assigned=true;
