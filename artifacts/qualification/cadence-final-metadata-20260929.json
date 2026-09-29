@@ -1,0 +1,69 @@
+{
+  "at": "2026-09-29T15:48:32.360941+00:00",
+  "roles": {
+    "pongit-arcade-five-engines-1": {
+      "image": "sha256:9e230c480e5515d355f5da075f25d32bd091234c9f8ce78fc333fddd83ee897f",
+      "status": "running",
+      "startedAt": "2026-09-29T15:43:51.027048522Z",
+      "restarts": 0
+    },
+    "pongit-arcade-five-arcade-web-1": {
+      "image": "sha256:dcabacfa5356c99c5830904e71b2dae730269550fd841b1de5c2c1b7696f662a",
+      "status": "running",
+      "startedAt": "2026-09-29T14:57:45.351599086Z",
+      "restarts": 0
+    },
+    "pongit-relayer-1": {
+      "image": "sha256:e6fa5f722906a48093b89d29c059bc75c44c10cb0c197273798c61882567ac97",
+      "status": "running",
+      "startedAt": "2026-09-24T11:56:47.467202901Z",
+      "restarts": 0
+    }
+  },
+  "ticks": [
+    {
+      "match": "206",
+      "ticks": 38,
+      "first": "2026-09-29T15:36:25.993569+00:00",
+      "last": "2026-09-29T15:36:35.751879+00:00",
+      "p50GapMs": 234.83,
+      "p95GapMs": 334.07,
+      "receiptP95Ms": 114.26
+    },
+    {
+      "match": "207",
+      "ticks": 44,
+      "first": "2026-09-29T15:44:49.486807+00:00",
+      "last": "2026-09-29T15:44:57.44392+00:00",
+      "p50GapMs": 136.93,
+      "p95GapMs": 315.55,
+      "receiptP95Ms": 113.62
+    }
+  ],
+  "fixtureJobs": "206|failed|1|1\n206|observed|40|40\n207|failed|1|1\n207|observed|46|46",
+  "live": {
+    "items": [],
+    "observation": {
+      "block": "66726836",
+      "hash": "0x6510dfec517764d9cd7dbdfb675eef00eed8244af21613f9c737b6d5addd59c2",
+      "timestamp": "1790696911",
+      "revision": "eef46741adfc3a9f76294d3b78f37a45f113092ac9d44ee77c7a038a88ff09a1"
+    }
+  },
+  "capacity": {
+    "capacity": {
+      "observedAt": 1790696913915,
+      "admissions": true,
+      "known": true,
+      "freeChallengeLanes": 4,
+      "readyArenas": 5,
+      "serviceUnavailable": false
+    },
+    "observation": {
+      "block": "66726840",
+      "hash": "0x31173cb601297516d59c4a573f7ef3e6bb05df550f621713f0aad5e2cbd57429",
+      "timestamp": "1790696913",
+      "revision": "b2f491bf28c5241262b7e38996b43f60af6c76d16fa4ca45c46c8ac0424017c8"
+    }
+  }
+}

@@ -1,0 +1,1416 @@
+{
+  "startedAt": "2026-09-29T15:35:30.400Z",
+  "origin": "https://pongit.xyz",
+  "run": "cadence150-20260929-fresh",
+  "channel": "chrome",
+  "mode": 0,
+  "bot": "NOVA",
+  "virtualPrf": true,
+  "reusedSession": false,
+  "mockedNetwork": false,
+  "cadenceProbe": true,
+  "controlCount": 20,
+  "idleMs": 8000,
+  "passed": true,
+  "checks": [
+    "Final score and result window survived the delayed terminal frame",
+    "At least 20 public command submissions and local input latency"
+  ],
+  "errors": [],
+  "submissions": [
+    {
+      "ms": 39.80539999999746,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 38.75489999999991,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 9.566700000003038,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 14.959300000002258,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 7.4156999999977415,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 9.07719999999972,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 14.280999999995402,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.00010000000475,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.440200000004552,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 11.103699999999662,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 16.677300000003015,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.42779999999766,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 11.739699999998265,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 14.014100000000326,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 7.41990000000078,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.911400000004505,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 15.906399999999849,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 7.370300000002317,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 9.006700000005367,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 11.192300000002433,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.106599999999162,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.779499999996915,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 12.210299999998824,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 21.093199999995704,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.266200000005483,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 10.384900000004563,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.38590000000113,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.193899999998393,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 15.726600000001781,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.084799999996903,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 8.847200000003795,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 13.543400000002293,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 9.093699999997625,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 11.454499999999825,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 14.284299999999348,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 9.471199999999953,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 13.328200000003562,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 17.594600000003993,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 14.654899999994086,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 10.928700000004028,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 13.606500000001688,
+      "http": 200,
+      "error": false
+    },
+    {
+      "ms": 231.77530000000115,
+      "http": 200,
+      "error": false
+    }
+  ],
+  "receipts": [
+    {
+      "ms": 39.82529999999679,
+      "status": "0x1"
+    },
+    {
+      "ms": 38.7609999999986,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "1"
+    },
+    {
+      "ms": 9.569600000002538,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "2"
+    },
+    {
+      "ms": 14.962099999997008,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "3"
+    },
+    {
+      "ms": 7.420200000000477,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "4"
+    },
+    {
+      "ms": 9.08060000000114,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "5"
+    },
+    {
+      "ms": 14.283899999994901,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "6"
+    },
+    {
+      "ms": 8.003199999999197,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "7"
+    },
+    {
+      "ms": 8.444500000005064,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "8"
+    },
+    {
+      "ms": 11.106699999996636,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "9"
+    },
+    {
+      "ms": 16.679900000002817,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "10"
+    },
+    {
+      "ms": 8.430999999996857,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "11"
+    },
+    {
+      "ms": 11.742799999999988,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "12"
+    },
+    {
+      "ms": 14.016800000004878,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "13"
+    },
+    {
+      "ms": 7.422700000002806,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "14"
+    },
+    {
+      "ms": 8.914600000003702,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "15"
+    },
+    {
+      "ms": 15.933700000001409,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "16"
+    },
+    {
+      "ms": 7.373200000001816,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "17"
+    },
+    {
+      "ms": 9.010000000002037,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "18"
+    },
+    {
+      "ms": 11.195999999996275,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "19"
+    },
+    {
+      "ms": 8.109900000003108,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "20"
+    },
+    {
+      "ms": 8.784299999999348,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "21"
+    },
+    {
+      "ms": 12.215900000002875,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "22"
+    },
+    {
+      "ms": 21.10319999999774,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "23"
+    },
+    {
+      "ms": 8.273400000005495,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "24"
+    },
+    {
+      "ms": 10.389600000002247,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "25"
+    },
+    {
+      "ms": 8.388800000000629,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "26"
+    },
+    {
+      "ms": 8.197599999999511,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "27"
+    },
+    {
+      "ms": 15.732300000003306,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "28"
+    },
+    {
+      "ms": 8.09139999999752,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "29"
+    },
+    {
+      "ms": 8.850200000000768,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "30"
+    },
+    {
+      "ms": 13.548099999999977,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "31"
+    },
+    {
+      "ms": 9.112999999997555,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "32"
+    },
+    {
+      "ms": 11.460299999998824,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "33"
+    },
+    {
+      "ms": 14.290099999998347,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "34"
+    },
+    {
+      "ms": 9.474999999998545,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "35"
+    },
+    {
+      "ms": 13.33520000000135,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "36"
+    },
+    {
+      "ms": 17.603800000004412,
+      "status": "0x1",
+      "direction": -1,
+      "sequence": "37"
+    },
+    {
+      "ms": 14.666299999997136,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "38"
+    },
+    {
+      "ms": 10.93800000000192,
+      "status": "0x1",
+      "direction": 1,
+      "sequence": "39"
+    },
+    {
+      "ms": 13.616000000001804,
+      "status": "0x1",
+      "direction": 0,
+      "sequence": "40"
+    },
+    {
+      "ms": 231.78169999999955,
+      "status": "0x1"
+    }
+  ],
+  "sockets": [
+    {
+      "host": "il-76ca139497ff3fa6.fly.dev",
+      "openedAt": "2026-09-29T15:36:14.668Z",
+      "messages": 83,
+      "applied": 82,
+      "schemas": {
+        "{\"method\":\"interlude_subscribe\",\"keys\":[\"app\",\"hash\",\"from\",\"to\",\"selector\",\"input\",\"output\",\"logs\",\"blockNumber\",\"succeeded\"],\"logKeys\":[\"address\",\"topics\",\"data\"]}": 81,
+        "{\"method\":\"interlude_subscribe\",\"keys\":[\"app\",\"hash\",\"from\",\"to\",\"selector\",\"input\",\"output\",\"logs\",\"blockNumber\",\"succeeded\"],\"logKeys\":[]}": 1
+      }
+    }
+  ],
+  "pool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
+  "clickedAt": "2026-09-29T15:35:31.923Z",
+  "admissionNetwork": [
+    {
+      "at": "2026-09-29T15:35:31.876Z",
+      "method": "GET",
+      "path": "/api/agents/events",
+      "ms": 91.5338999999999,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:31.876Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1182.9636,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:31.875Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 2184.4139,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:34.163Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 90.65949999999975,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:34.164Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 91.30090000000018,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:34.163Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1115.9984999999997,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:35.345Z",
+      "method": "GET",
+      "path": "/api/agents/capacity",
+      "ms": 1125.7429000000002,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:36.787Z",
+      "method": "GET",
+      "path": "/api/agents/capacity",
+      "ms": 89.45949999999993,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:36.888Z",
+      "method": "eth_chainId",
+      "path": "rpc",
+      "ms": 91.89350000000013,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:36.890Z",
+      "method": "GET",
+      "path": "/api/agents/events",
+      "ms": 93.12950000000001,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:36.988Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.091699999999946,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:37.098Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 14.965699999999742,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:37.199Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 14.90059999999994,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:37.307Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.400099999999838,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:37.324Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 95.53409999999985,
+      "http": 404
+    },
+    {
+      "at": "2026-09-29T15:35:36.890Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1113.5641999999998,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:39.979Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 92.33139999999912,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:37.419Z",
+      "method": "POST",
+      "path": "/api/agents/transactions",
+      "ms": 3586.4074,
+      "http": 202
+    },
+    {
+      "at": "2026-09-29T15:35:39.980Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1859.6998999999996,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:39.980Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1859.8333999999995,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:42.016Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.17460000000028,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:43.113Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.50879999999961,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:44.206Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.35419999999976,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:39.979Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 4338.786,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:44.298Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1404.8073000000004,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:45.977Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 90.3125,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:45.978Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 90.2515999999996,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:45.978Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 90.97710000000006,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:45.703Z",
+      "method": "GET",
+      "path": "/api/agents/capacity",
+      "ms": 1933.7097000000012,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:47.637Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 25.863900000000285,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:47.747Z",
+      "method": "eth_chainId",
+      "path": "rpc",
+      "ms": 12.748499999997875,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:45.978Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1829.083300000002,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:47.852Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 14.912600000003295,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:47.958Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 13.899500000003172,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:48.071Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 14.20339999999851,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:48.180Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 15.573199999998906,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:48.198Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.9387999999999,
+      "http": 404
+    },
+    {
+      "at": "2026-09-29T15:35:48.290Z",
+      "method": "POST",
+      "path": "/api/agents/transactions",
+      "ms": 3500.953800000003,
+      "http": 202
+    },
+    {
+      "at": "2026-09-29T15:35:52.797Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.02800000000207,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:53.896Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.40549999999712,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:54.989Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.25019999999859,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:55.084Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 90.13869999999952,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:55.084Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 92.10909999999785,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:55.084Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 998.8682000000008,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:35:55.084Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 3812.4547999999995,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:02.778Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 90.61609999999928,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:02.779Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 95.08100000000559,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:02.779Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1408.413499999995,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:02.779Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 3633.5297999999966,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:04.877Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 2550.674500000001,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:09.436Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 2839.873200000002,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:12.603Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 629.8905999999988,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:12.603Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1481.0714999999982,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:12.603Z",
+      "method": "GET",
+      "path": "/api/agents/matches/:id/5/206",
+      "ms": 1993.5699999999997,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:14.605Z",
+      "method": "eth_chainId",
+      "path": "rpc",
+      "ms": 30.372699999999895,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:14.716Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.416999999994005,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:14.822Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 16.20980000000418,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:14.927Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.187700000002224,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:14.941Z",
+      "method": "interlude_session",
+      "path": "rpc",
+      "ms": 24.936000000001513,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:14.967Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.114199999996345,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:14.973Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.430500000002212,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.033Z",
+      "method": "eth_getCode",
+      "path": "rpc",
+      "ms": 25.025300000001153,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.136Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.286200000002282,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.150Z",
+      "method": "eth_blockNumber",
+      "path": "rpc",
+      "ms": 5.436600000000908,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.157Z",
+      "method": "eth_getStorageAt",
+      "path": "rpc",
+      "ms": 5.481699999996636,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.157Z",
+      "method": "eth_getStorageAt",
+      "path": "rpc",
+      "ms": 5.717400000001362,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.157Z",
+      "method": "eth_getStorageAt",
+      "path": "rpc",
+      "ms": 5.795799999999872,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.164Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 6.018499999998312,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.200Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.812400000002526,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.206Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.481099999997241,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.212Z",
+      "method": "eth_getTransactionCount",
+      "path": "rpc",
+      "ms": 5.650900000000547,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.222Z",
+      "method": "interlude_sendTransaction",
+      "path": "rpc",
+      "ms": 37.775399999998626,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.262Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.498500000001513,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.268Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.026999999994587,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.818Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.327100000002247,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.824Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.374600000002829,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:15.830Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.7180999999982305,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.366Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.525199999996403,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.372Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.171799999996438,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.366Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 12.830300000001444,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.378Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.570699999996577,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.466Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 17.508999999998196,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.578Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.38470000000234,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.679Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.138999999995576,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.786Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 15.607199999998556,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.886Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.9438999999983935,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.886Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.63180000000284,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.916Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.662700000000768,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.922Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.420200000000477,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:16.928Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 6.139799999997194,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:17.466Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.9126000000032946,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:17.473Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 6.002800000002026,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:17.479Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 8.829700000002049,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.033Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.463799999997718,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.039Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.251900000002934,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.045Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.923600000001898,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.408Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 12.912799999998242,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.514Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 15.00119999999879,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.583Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.961600000002363,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.589Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.8465999999971245,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.595Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.730300000002899,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:18.616Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.357699999993201,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:19.133Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.035800000005111,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:19.139Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.468699999997625,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:19.145Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.918499999999767,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:19.699Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.661499999994703,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:19.706Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.009200000000419,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:19.711Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.335500000001048,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:20.147Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 25.742200000000594,
+      "http": 200
+    },
+    {
+      "at": "2026-09-29T15:36:20.229Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 9.89589999999589,
+      "http": 200
+    }
+  ],
+  "challengeClickedAt": "2026-09-29T15:35:35.342Z",
+  "requestedAt": "2026-09-29T15:35:35.348Z",
+  "ref": {
+    "app": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+    "epoch": "5",
+    "id": "206"
+  },
+  "playingAt": "2026-09-29T15:36:20.249Z",
+  "digits": [
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1"
+  ],
+  "countdownAt": "2026-09-29T15:36:16.936Z",
+  "admissionMs": 41594,
+  "controlsEndedAt": "2026-09-29T15:36:23.092Z",
+  "input": {
+    "samples": 20,
+    "p95Ms": 15.100000023841858
+  },
+  "submissionP95Ms": 21.093199999995704,
+  "receiptP95Ms": 21.10319999999774,
+  "idleStartedAt": "2026-09-29T15:36:23.523Z",
+  "idleEndedAt": "2026-09-29T15:36:31.525Z",
+  "sync": {
+    "frames": 981,
+    "snapshots": 86,
+    "startupFillMs": 0,
+    "p95FrameMs": 17.200000047683716,
+    "maxHoldMs": 150.5,
+    "holds": [
+      {
+        "at": 54366.299999952316,
+        "ms": 150.5,
+        "sourceT": 5310,
+        "rally": "0:0"
+      }
+    ],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 550.2000000476837,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "spectatorSync": {
+    "frames": 1018,
+    "snapshots": 77,
+    "startupFillMs": 615.8999999761581,
+    "p95FrameMs": 17.100000023841858,
+    "maxHoldMs": 16.600000023841858,
+    "holds": [],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 399.60000002384186,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "result": {
+    "hash": "0x108fd0a599902d48c557327916a97479a50a74e266da7dabbb7638424525b1b1",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 0,
+    "scoreB": 2,
+    "elapsedUs": "13050000",
+    "finality": false
+  },
+  "finishedAt": "2026-09-29T15:36:51.859Z"
+}
