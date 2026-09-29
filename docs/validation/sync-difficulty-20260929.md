@@ -188,6 +188,24 @@ final live-discovery patch uses this immutable base plus its source-verified
 reader file in `ops/reader-sync-20260929.Dockerfile`; no host source mount is used.
 All 14 reader/availability regressions and root typecheck passed after that fix.
 
+Final reader `393df94` was deployed at 02:41:53 UTC as
+`sha256:10cfb2bff842584661812308ac9c6cfeab6322b20e6b140a559c5d6afad7ccb7`.
+Six subsequent public checks between 02:43:02 and 02:43:42 UTC passed: no finished
+match appeared in `/agents/live`, all catalogue entries reported service
+unavailability, and no new controller was falsely advertised. The API remains
+enabled with five lanes, and `qualified=false`. This verifies honest recovery
+presentation, not live play during the publication outage.
+
+Final backup `sync-final-20260929T0243Z` contains fresh agent/operator dumps and
+runtime/configuration. All files were SHA-verified off VPS under
+`C:/Users/wwwle/.codex/private-backups/pongit/sync-final-20260929T0243Z`.
+Both dumps were actually restored into isolated temporary databases and queried:
+6,967 engine jobs, the pending match-190 result, and 6,577 lifecycle jobs were
+present. Only those temporary restore databases were removed. Production data
+and journals were untouched. At 02:45:39 UTC the publisher still held
+1.126185383116930335 MON; the controlled operator held 3,643.161807168 MON.
+No new transfer was made. Disk usage is 62%, with approximately 27 GiB available.
+
 Rollback uses the retained previous compatible images and configuration backups;
 never restore an old database over newer operations. The shared RPC override must
 be reverted independently if necessary. Human backend images/mounts and all
