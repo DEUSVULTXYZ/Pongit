@@ -12,7 +12,7 @@ contract HousePolicies {
     }
     struct Tuning {uint32 reactionUs;int256 error;int256 deadZone;}
     int256 private constant P=1e12;
-    function tuning(uint8 style) public pure returns(Tuning memory){
+    function tuning(uint8 style) public pure virtual returns(Tuning memory){
         require(style<8,"house style");
         if(style==0)return Tuning(280000,58*P,17*P); // NOVA
         if(style==1)return Tuning(160000,25*P,10*P); // PULSE
@@ -35,7 +35,7 @@ contract HousePolicies {
             if(arrival<soonest){soonest=arrival;chosen=i;}
         }
     }
-    function decide(uint8 style,View memory v,Memory memory brain) external pure returns(int8,Memory memory){
+    function decide(uint8 style,View memory v,Memory memory brain) public pure virtual returns(int8,Memory memory){
         Tuning memory t=tuning(style);require(v.side<2&&v.half>0&&v.half<=120*P&&v.balls.length<=2,"policy view");
         if(v.t<brain.nextDecision)return(brain.held,brain);
         brain.nextDecision=(v.t/t.reactionUs+1)*t.reactionUs;

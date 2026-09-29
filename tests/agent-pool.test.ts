@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {validateAgentPoolManifest,pooledHouseBots,scheduledTournament,type AgentPoolManifest} from '../shared/agent-pool';
+import {validateAgentPoolManifest,pooledHouseBots,progressiveHouseBots,scheduledTournament,type AgentPoolManifest} from '../shared/agent-pool';
 import {type Address} from 'viem';
 import {agentPoolCspOrigins} from '../shared/agent-pool-csp';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
@@ -91,4 +91,13 @@ test('five lanes require the new authority and cannot misrepresent preview quali
   assert.throws(()=>validateAgentPoolManifest({...preview,...patch} as AgentPoolManifest));
  const ready=validateAgentPoolManifest({...m,enabled:true,tournamentsEnabled:true,verifiedCapacity:5,qualificationEvidence:`0x${'d'.repeat(64)}`});
  assert.equal(ready.lanes?.challenge,4);assert.equal(ready.verifiedCapacity,5);
+ assert.equal(validateAgentPoolManifest({...m,housePolicy:'progressive-v1'}).housePolicy,'progressive-v1');
+ assert.throws(()=>validateAgentPoolManifest({...old,housePolicy:'progressive-v1'}),/difficulty policy/);
+});
+
+test('difficulty is a linear curve while official style identities retain their historical indices',()=>{
+ assert.deepEqual(progressiveHouseBots.map(b=>[b.name,b.avatar]),pooledHouseBots.map(b=>[b.name,b.avatar]));
+ const ordered=[...progressiveHouseBots].sort((a,b)=>a.level-b.level);
+ assert.equal(ordered[0].name,'NOVA');assert.equal(ordered[7].name,'ONYX');
+ ordered.forEach((bot,i)=>{assert.equal(bot.level,i+1);assert.equal(bot.reactionMs,450-i*50);assert.equal(bot.mistakePercent,55-i*7);});
 });

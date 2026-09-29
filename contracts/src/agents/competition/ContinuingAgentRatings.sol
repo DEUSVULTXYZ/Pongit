@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 import {AgentPublishedRatings} from "./AgentPublishedRatings.sol";
 import {IndependentTypes as T} from "../../independent/IndependentTypes.sol";
+import {RetiredAgentLanes} from "./MigratingAgentCatalog.sol";
 
 interface IRatingSourcePool {
     function admissions() external view returns(bool);
@@ -41,7 +42,8 @@ contract ContinuingAgentRatings is AgentPublishedRatings {
     }
     function _closedSource() private view {
         require(address(predecessor).codehash==predecessorCodeHash,"source ratings code");
-        require(!sourcePool.admissions()&&!sourcePool.publicAdmissions()&&sourcePool.laneMatch(0)==0&&sourcePool.laneMatch(1)==0,"source ratings still active");
+        require(!sourcePool.admissions()&&!sourcePool.publicAdmissions(),"source ratings still active");
+        RetiredAgentLanes.requireIdle(address(sourcePool));
     }
     function _unchangedImport() private view {
         _closedSource();require(importStarted&&!migrationSealed&&predecessor.count()==sourceCount

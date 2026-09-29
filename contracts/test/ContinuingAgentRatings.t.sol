@@ -74,7 +74,7 @@ contract ContinuingAgentRatingsTest is Test {
     }
     function testClosedSourceAndEmptyLanesAreRequired() public {
         oldPool.gate(true);vm.expectRevert("source ratings still active");next.startImport();oldPool.gate(false);
-        oldPool.lane(1,bytes32(uint256(1)));vm.expectRevert("source ratings still active");next.startImport();oldPool.lane(1,0);
+        oldPool.lane(1,bytes32(uint256(1)));vm.expectRevert("source matches still active");next.startImport();oldPool.lane(1,0);
         migrate();oldPool.gate(true);vm.expectRevert("source ratings still active");next.publish(result(1,a,true,0),false);
     }
     function testCannotSkipLedgerOrPlayerValidationOrInjectSeeds() public {

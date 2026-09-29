@@ -26,6 +26,7 @@ import {initializeReusableResultArchive,createReusableResultArchive} from '../re
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {BackgroundObservation} from '../shared/background-observation';
 import {hubObservations} from '../shared/hub-observation';
+import {publisherFunding} from '../shared/publisher-funding';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {publicationUnavailable} from '../shared/service-error';
 import {agentPublicationHealth,agentTickInterval} from '../shared/agent-publication-health';
@@ -58,6 +59,7 @@ const assignments=new BackgroundObservation(async()=>{
   return{block,lanes};
 },2000,5000);
 const sharedHub=hubObservations(base,m.hub,r.arenas.map((a:any)=>a.app));
+const funding=publisherFunding(base);
 async function replayLoop(){while(!stopping){try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}catch{console.error(JSON.stringify({service:'reusable-replays',error:'Reconciliation pending'}));}
  for(let n=0;n<60&&!stopping;n++)await delay(1000);}}
 
@@ -121,15 +123,21 @@ async function arenaLoop(app:Address,runtimeHash:string){
       measuredFetch('interlude','hosted.health')(origin+'/health',{signal:AbortSignal.timeout(4000)})]);
      if(!response.ok)throw Error('Hosted publication health is temporarily unavailable');
      const evidence={session,rulesVersion,runtimeHash:observedRuntimeHash,health:await response.json()};
-     verifyHostedArenaEvidence(expected,evidence);inspected=candidate;return evidence;
+     const verified=verifyHostedArenaEvidence(expected,evidence,{observePausedPublication:true});
+     publicationPaused=!verified.publicationReady;inspected=candidate;return evidence;
     };
-    url=await provisionPoolArena(db,app,d.epoch,url,undefined,{expected,inspect});
+    url=await provisionPoolArena(db,app,d.epoch,url,undefined,{expected,inspect,observePausedPublication:true});
     try{
      if(!inspected){await inspect(url);await observePoolArenaReady(db,app,d.epoch,true);}
      assert(inspected,'Hosted node was not verified');node=inspected;
     }catch(e){await observePoolArenaReady(db,app,d.epoch,false);throw e;}
    }
-   if(!entry){await close();await health(d.status===2?'challenge-window':'available',{epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt)});await delay(1000);continue;}
+   if(!entry){
+    if(publicationPaused)publicationPaused=!(await publication.read()).healthy;
+    const budget=await funding(d.validator);
+    await close();await health(d.status===2?'challenge-window':publicationPaused?'publication-paused':!budget.funded?'publisher-unfunded':'available',
+     {epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt),...(!budget.funded?{publisher:d.validator,balanceWei:String(budget.balance),minimumWei:String(budget.minimum)}:{})});await delay(1000);continue;
+   }
    assert.equal(entry.ref.epoch,d.epoch,'Previous result requires historical recovery');
    const ref={epoch:entry.ref.epoch,id:entry.ref.id};
    const ticketKey=`${ref.epoch}:${ref.id}`;

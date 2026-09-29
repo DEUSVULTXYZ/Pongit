@@ -38,7 +38,7 @@ export function pinnedRpcRequest(method:string,params:readonly unknown[]):boolea
 /** One upstream rate budget; gameplay reads take priority over historical scans. */
 export function rpcScheduler(spacingMs:number) {
   const live:Array<()=>void>=[], history:Array<()=>void>=[];
-  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0;
+  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
   function tick(){
     timer=undefined;
     if(!live.length && !history.length)return;
@@ -46,11 +46,27 @@ export function rpcScheduler(spacingMs:number) {
     if(wait){timer=setTimeout(tick,wait);return;}
     const low=history.length>0 && (!live.length || liveRun>=4);
     const release=(low?history:live).shift()!;
-    liveRun=low?0:liveRun+1;next=Date.now()+spacingMs;release();
-    if(live.length || history.length)timer=setTimeout(tick,spacingMs);
+    liveRun=low?0:liveRun+1;next=Date.now()+effectiveSpacing;release();
+    if(live.length || history.length)timer=setTimeout(tick,effectiveSpacing);
   }
   return {
     acquire(historical:boolean){return new Promise<void>(resolve=>{(historical?history:live).push(resolve);if(!timer)tick();});},
     pending(){return {interactive:live.length,history:history.length};},
+    throttle(retryMs:number){
+      // All callers share a provider cooldown. Sleeping only the rejected
+      // caller left the other indexers/arenas hammering that same provider.
+      if(Date.now()-lastAdjustment>=1000){
+        effectiveSpacing=Math.min(500,Math.max(effectiveSpacing+10,Math.ceil(effectiveSpacing*1.1)));lastAdjustment=Date.now();
+      }
+      next=Math.max(next,Date.now()+Math.max(250,Math.min(60000,retryMs)));
+    },
+    spacing(){return effectiveSpacing;},
+    success(){
+      // Recover slowly after a quiet minute; a temporary incident must not
+      // permanently strand gameplay at the emergency rate until a restart.
+      if(effectiveSpacing>spacingMs&&Date.now()-lastAdjustment>=60000){
+        effectiveSpacing=Math.max(spacingMs,effectiveSpacing-5);lastAdjustment=Date.now();
+      }
+    },
   };
 }

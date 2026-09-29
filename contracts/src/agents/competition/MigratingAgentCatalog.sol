@@ -12,13 +12,23 @@ interface IRetiredAgentPool {
     function qualifications() external view returns(address);
 }
 
+library RetiredAgentLanes {
+    function requireIdle(address pool) internal view {
+        (bool ok,bytes memory data)=pool.staticcall(abi.encodeWithSignature("laneCount()"));
+        uint256 count=ok&&data.length==32?abi.decode(data,(uint256)):2;
+        require(count==2||count==5,"unsupported source lanes");
+        for(uint256 lane;lane<count;lane++)require(IRetiredAgentPool(pool).laneMatch(lane)==0,"source matches still active");
+    }
+}
+
 /// Imports the actual Monad registry, never an operator-supplied identity list.
 /// All pages belong to one source revision. A concurrent source edit invalidates
 /// this candidate; it cannot quietly mix identities from different snapshots.
 /// This does not migrate results, queues or grants and is not an opening switch.
-contract MigratingAgentCatalog is AgentCatalog {
+abstract contract MigratingAgentCatalogBase is AgentCatalog {
     AgentCatalog public immutable predecessor;
     bytes32 public immutable predecessorCodeHash;
+    bool public immutable housePolicyChanged;
     uint256 public sourceRevision;
     uint256 public sourceCount;
     uint64 public sourceTournamentCount;
@@ -33,12 +43,13 @@ contract MigratingAgentCatalog is AgentCatalog {
     event IdentityImported(address indexed strategy,uint256 index,bytes32 digest);
     event ImportSealed(address indexed source,uint256 revision,uint256 count,bytes32 digest);
 
-    constructor(AgentCatalog source,bytes32 expectedCodeHash,address admin,address qualification)
-        AgentCatalog(admin,qualification,source.houseController())
+    constructor(AgentCatalog source,bytes32 expectedCodeHash,address admin,address qualification,address builtin)
+        AgentCatalog(admin,qualification,builtin)
     {
         require(address(source).codehash==expectedCodeHash&&expectedCodeHash!=0,"source code hash");
         require(source.setupSealed()&&source.owner()==admin,"sealed source owner");
-        require(source.houseCodeHash()==houseCodeHash,"official controller changed");
+        require(source.houseController().codehash==source.houseCodeHash(),"official controller changed");
+        housePolicyChanged=source.houseCodeHash()!=houseCodeHash;
         predecessor=source;predecessorCodeHash=expectedCodeHash;
     }
 
@@ -47,7 +58,7 @@ contract MigratingAgentCatalog is AgentCatalog {
         IRetiredAgentPool pool=IRetiredAgentPool(predecessor.arenaPool());
         AgentTournaments book=AgentTournaments(predecessor.competition());
         require(!pool.admissions()&&!pool.publicAdmissions()&&!book.admissions(),"source admissions open");
-        require(pool.laneMatch(0)==0&&pool.laneMatch(1)==0,"source matches still active");
+        RetiredAgentLanes.requireIdle(address(pool));
         uint64 n=book.count();
         require(n==0||book.tournament(n).status==AgentTournaments.Status.Complete,"source tournament unfinished");
         require(houseController.codehash==houseCodeHash,"official controller changed");
@@ -82,7 +93,7 @@ contract MigratingAgentCatalog is AgentCatalog {
             require(p.lastTournament<=sourceTournamentCount,"source tournament order");
             if(p.house!=0){
                 require(p.house<=8&&predecessor.house(p.house-1)==agent&&house[p.house-1]==address(0)
-                    &&p.creator==owner&&p.codeHash==houseCodeHash&&agent.code.length==0,"official source identity");
+                    &&p.creator==owner&&p.codeHash==predecessor.houseCodeHash()&&agent.code.length==0,"official source identity");
                 house[p.house-1]=agent;
             }
             // Preserve a changed community controller's original hash. It stays
@@ -90,6 +101,13 @@ contract MigratingAgentCatalog is AgentCatalog {
             uint256 registered=predecessor.registeredBlock(agent);require(registered>0&&registered<=block.number,"source registration block");
             bytes32 e0=predecessor.qualificationEvidence(agent,0);bytes32 e1=predecessor.qualificationEvidence(agent,1);
             require((p.qualified&1==0||e0!=0)&&(p.qualified&2==0||e1!=0),"source qualification evidence");
+            if(p.house!=0&&housePolicyChanged){
+                // The identity and ranking survive, but qualification of old
+                // code is not evidence for a new controller. Its real trials
+                // must finish before this archetype becomes eligible again.
+                p.codeHash=houseCodeHash;p.qualified=0;e0=0;e1=0;
+                independentVerdict[agent][0]=true;independentVerdict[agent][1]=true;
+            }
             uint256 nonce=predecessor.nonces(p.creator);
             identities[agent]=p;inheritedIdentity[agent]=true;registeredBlock[agent]=registered;nonces[p.creator]=nonce;
             qualificationEvidence[agent][0]=e0;qualificationEvidence[agent][1]=e1;
@@ -145,4 +163,15 @@ contract MigratingAgentCatalog is AgentCatalog {
     function setAvailable(address agent,bool value) public override {
         require(setupSealed,"import not sealed");super.setAvailable(agent,value);
     }
+}
+
+contract MigratingAgentCatalog is MigratingAgentCatalogBase {
+    constructor(AgentCatalog source,bytes32 hash,address admin,address qualification)
+        MigratingAgentCatalogBase(source,hash,admin,qualification,source.houseController()) {}
+}
+
+contract RebalancedAgentCatalog is MigratingAgentCatalogBase {
+    constructor(AgentCatalog source,bytes32 hash,address admin,address qualification,address builtin)
+        MigratingAgentCatalogBase(source,hash,admin,qualification,builtin)
+    { require(housePolicyChanged,"new house policy required"); }
 }

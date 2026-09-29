@@ -15,6 +15,8 @@ contract MigrationAuthorityMock is CompetitionAuthorityMock {
     mapping(uint256=>bytes32) public laneMatch;
     address public challenges;
     address public qualifications;
+    uint256 public laneCount=2;
+    function setLaneCount(uint256 count) external {laneCount=count;}
     function gates(bool a,bool p) external {admissions=a;publicAdmissions=p;}
     function setNonce(uint256 n) external {nonce=n;}
     function setLane(uint256 lane,bytes32 ref) external {laneMatch[lane]=ref;}

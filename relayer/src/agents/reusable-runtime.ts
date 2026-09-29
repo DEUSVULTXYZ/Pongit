@@ -8,6 +8,10 @@ const fields=['hub','pool','catalog','tournaments','ratings','qualifications','f
 export function validateReusableRecord(record:any,humans:readonly string[],manifest?:AgentPoolManifest,evidence?:string,isolated=false){
  validateSeriesRecord(record,humans);
  if(record.countdownClock!==undefined)assert.equal(record.countdownClock,"engine-ticks-v1");
+ if(record.housePolicy!==undefined&&record.housePolicy!=='inherited'){
+  assert.equal(record.housePolicy,'progressive-v1');assert.equal(record.maxMatches,5);
+  assert.equal(record.modules?.ProgressiveHousePolicies?.toLowerCase(),record.modules?.HousePolicies?.toLowerCase(),'Progressive controller binding mismatch');
+ }
  if(record.houseInstances!==undefined){
   assert.equal(record.houseInstances,'official-v1');
   assert(isAddress(record.modules?.HouseInstances),'Pinned instance library required');
@@ -33,6 +37,7 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
   }
   assert.equal(m.countdownClock,record.countdownClock,"Countdown capability mismatch");
   assert.equal(m.houseInstances,record.houseInstances,'House instance capability mismatch');
+  assert.equal(m.housePolicy,record.housePolicy==='inherited'?undefined:record.housePolicy,'House policy capability mismatch');
   assert.equal(m.maxMatches,record.maxMatches??2,'Lane count mismatch');
   assert.equal(m.arenaAdmissions,record.arenaAdmissions,'Admission gate mismatch');
   assert(m.version===(record.maxMatches===5?5:4)&&m.rulesVersion===15,'Reusable manifest version mismatch');

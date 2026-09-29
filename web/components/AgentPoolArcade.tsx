@@ -28,7 +28,7 @@ import {ArcadeProgress} from './ArcadeProgress';
 import {challengeStage,sponsorStage,type ArcadeStage} from '../../shared/arcade-progress';
 import type {ChainOperation} from '../../shared/independent';
 
-type Person={agent:Address;creator:Address;name:string;avatar:number;official:boolean;difficulty:string;modes:number[];qualification:Record<0|1,boolean>;available:boolean;waiting:boolean;availability?:Record<0|1,AgentAvailability>};
+type Person={agent:Address;creator:Address;name:string;avatar:number;official:boolean;difficulty:string;level?:number;modes:number[];qualification:Record<0|1,boolean>;available:boolean;waiting:boolean;availability?:Record<0|1,AgentAvailability>};
 const availabilityLabels:Record<AgentAvailability,string>={available:'Ready to play','capacity-occupied':'Waiting for an arena','service-unavailable':'Arenas reconnecting','agent-busy':'Finishing a match',qualifying:'Qualifying',incompatible:'Mode unavailable'};
 type Live={ref:AgentMatchRef;a:Address;b:Address;mode:0|1;lane:string};
 const quiet=()=>{};
@@ -131,7 +131,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
      title={cancelQueued?'Cancellation queued':undefined} detail={visibleError||`${person(request.agent)?.name??short(request.agent)} · ${request.mode===0?'Classic':'Chaos'} · Friendly`}
      progress={request.progress?.progress} actions={request.ref?<Link className="rooms-button" href={matchHref(request.ref)}>Enter arena</Link>:<><button disabled={!!cancelQueued||request.status!==1} onClick={()=>setCancelQueued(request.id)}>{cancelQueued?'Cancelling…':'Cancel challenge'}</button><button onClick={()=>setWarmup(w=>!w)}>{warmup?'Hide warm-up':'Warm up'}</button></>}/>
     {!request.ref&&warmup&&<WarmupRally onClose={()=>setWarmup(false)}/>}</section>}
-   {view==='play'?<><div className="agent-grid">{people.filter(p=>p.modes.includes(mode)).map(p=><article className="agent-card" key={p.agent} data-selected={selected.toLowerCase()===p.agent.toLowerCase()}>
+   {view==='play'?<><div className="agent-grid">{people.filter(p=>p.modes.includes(mode)).sort((a,b)=>(a.level??9)-(b.level??9)).map(p=><article className="agent-card" key={p.agent} data-selected={selected.toLowerCase()===p.agent.toLowerCase()}>
     <div className="agent-card-top"><span className="agent-badge">{p.official?'PONGIT BOT':'COMMUNITY'}</span><button className="agent-details" aria-label={`About ${p.name}`} onClick={()=>setDetailAgent(p)}>···</button></div>
     <div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.difficulty}</p></div></div>
     <span className="agent-status" data-online={p.availability?.[mode]==='available'}>{p.availability?availabilityLabels[p.availability[mode]]:!p.qualification[mode]?'Qualifying':!p.available?'Unavailable':'Checking arenas'}</span>

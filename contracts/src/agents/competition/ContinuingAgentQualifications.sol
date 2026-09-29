@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 import {AgentQualifications} from "./AgentQualifications.sol";
 import {HouseInstanceQualifications} from "./HouseInstanceQualifications.sol";
-import {MigratingAgentCatalog,IRetiredAgentPool} from "./MigratingAgentCatalog.sol";
+import {MigratingAgentCatalogBase,IRetiredAgentPool,RetiredAgentLanes} from "./MigratingAgentCatalog.sol";
 
 /// Preserves qualification order and per-mode retry deadlines. Historical
 /// trials retain their original authority; a source correction's later retry
@@ -10,7 +10,7 @@ import {MigratingAgentCatalog,IRetiredAgentPool} from "./MigratingAgentCatalog.s
 contract ContinuingAgentQualifications is HouseInstanceQualifications {
     AgentQualifications public immutable predecessor;
     bytes32 public immutable predecessorCodeHash;
-    MigratingAgentCatalog public immutable importedCatalog;
+    MigratingAgentCatalogBase public immutable importedCatalog;
     uint256 public imported;
     uint256 public sourceCursor;
     bool public importStarted;
@@ -19,7 +19,7 @@ contract ContinuingAgentQualifications is HouseInstanceQualifications {
     bytes32 public importDigest;
     event RetryImported(address indexed agent,uint8 indexed mode,uint64 retryAt,bytes32 evidence);
     event ContinuationSealed(address indexed source,uint256 cursor,bytes32 digest);
-    constructor(AgentQualifications source,bytes32 expectedCodeHash,MigratingAgentCatalog c,address p)
+    constructor(AgentQualifications source,bytes32 expectedCodeHash,MigratingAgentCatalogBase c,address p)
         HouseInstanceQualifications(c,p)
     {
         require(address(source).codehash==expectedCodeHash&&expectedCodeHash!=0,"source qualification code");
@@ -31,6 +31,7 @@ contract ContinuingAgentQualifications is HouseInstanceQualifications {
         require(address(predecessor).codehash==predecessorCodeHash,"source qualification code");
         IRetiredAgentPool oldPool=IRetiredAgentPool(predecessor.pool());
         require(!oldPool.admissions()&&!oldPool.publicAdmissions(),"source qualifications open");
+        RetiredAgentLanes.requireIdle(address(oldPool));
         require(importedCatalog.predecessor().revision()==importedCatalog.sourceRevision(),"source catalogue changed");
     }
     function startImport() external {
@@ -47,7 +48,8 @@ contract ContinuingAgentQualifications is HouseInstanceQualifications {
         while(imported<end){
             address agent=catalog.at(imported);
             for(uint8 mode;mode<2;mode++){
-                uint64 retry=predecessor.retryAt(agent,mode);bytes32 evidence=catalog.qualificationEvidence(agent,mode);
+                uint64 retry=importedCatalog.qualificationInherited(agent,mode)?predecessor.retryAt(agent,mode):0;
+                bytes32 evidence=catalog.qualificationEvidence(agent,mode);
                 retries[agent][mode]=retry;inheritedEvidence[agent][mode]=evidence;
                 importDigest=keccak256(abi.encode(importDigest,agent,mode,retry,evidence));
                 emit RetryImported(agent,mode,retry,evidence);

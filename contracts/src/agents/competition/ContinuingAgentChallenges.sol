@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 import {AgentChallenges} from "./AgentChallenges.sol";
 import {HouseInstanceChallenges} from "./HouseInstanceChallenges.sol";
-import {MigratingAgentCatalog,IRetiredAgentPool} from "./MigratingAgentCatalog.sol";
+import {MigratingAgentCatalogBase,IRetiredAgentPool,RetiredAgentLanes} from "./MigratingAgentCatalog.sol";
 
 /// Carries queued requests across a pool replacement without a new root grant.
 /// Historical in-flight duels must finish on their original pool first. The old
@@ -11,7 +11,7 @@ import {MigratingAgentCatalog,IRetiredAgentPool} from "./MigratingAgentCatalog.s
 contract ContinuingAgentChallenges is HouseInstanceChallenges {
     AgentChallenges public immutable predecessor;
     bytes32 public immutable predecessorCodeHash;
-    MigratingAgentCatalog public immutable importedCatalog;
+    MigratingAgentCatalogBase public immutable importedCatalog;
     uint256 public inheritedCount;
     uint256 public imported;
     bool public importStarted;
@@ -20,7 +20,7 @@ contract ContinuingAgentChallenges is HouseInstanceChallenges {
     event RequestImported(uint256 indexed id,address indexed player,uint8 status);
     event ContinuationSealed(address indexed source,uint256 count,bytes32 digest);
 
-    constructor(AgentChallenges source,bytes32 expectedCodeHash,MigratingAgentCatalog c,address p,address admin)
+    constructor(AgentChallenges source,bytes32 expectedCodeHash,MigratingAgentCatalogBase c,address p,address admin)
         HouseInstanceChallenges(source.family(),c,p,admin)
     {
         require(address(source).codehash==expectedCodeHash&&expectedCodeHash!=0,"source queue code");
@@ -33,6 +33,7 @@ contract ContinuingAgentChallenges is HouseInstanceChallenges {
         require(address(predecessor).codehash==predecessorCodeHash,"source queue code");
         IRetiredAgentPool oldPool=IRetiredAgentPool(predecessor.pool());
         require(!predecessor.admissions()&&!oldPool.admissions()&&!oldPool.publicAdmissions(),"source queue open");
+        RetiredAgentLanes.requireIdle(address(oldPool));
     }
     function startImport() external {
         require(block.chainid==10143&&msg.sender==owner&&!importStarted&&!admissions,"import setup only");

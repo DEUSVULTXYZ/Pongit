@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 import {AgentTournaments} from "./AgentTournaments.sol";
-import {MigratingAgentCatalog,IRetiredAgentPool} from "./MigratingAgentCatalog.sol";
+import {MigratingAgentCatalogBase,IRetiredAgentPool,RetiredAgentLanes} from "./MigratingAgentCatalog.sol";
 import {CompetitionTypes as T,ICompetitionAuthority} from "./CompetitionTypes.sol";
 
 /// Continues numbering and the four-format cycle without rewriting old results.
 /// Historical reads retain the old authority. Its correction jobs must continue
 /// there; rating migration remains a separate release gate.
 contract ContinuingAgentTournaments is AgentTournaments {
-    MigratingAgentCatalog public immutable importedCatalog;
+    MigratingAgentCatalogBase public immutable importedCatalog;
     AgentTournaments public immutable predecessor;
     uint64 public inheritedCount;
     bool public continuationSealed;
     event ContinuationSealed(address indexed predecessor,uint64 count,uint64 nextAt,bytes32 catalogDigest);
-    constructor(MigratingAgentCatalog c,ICompetitionAuthority pool,address admin)
+    constructor(MigratingAgentCatalogBase c,ICompetitionAuthority pool,address admin)
         AgentTournaments(c,pool,admin)
     {
         require(c.owner()==admin,"import owner");importedCatalog=c;
@@ -27,6 +27,7 @@ contract ContinuingAgentTournaments is AgentTournaments {
         require(!predecessor.admissions(),"source tournament admission open");
         IRetiredAgentPool oldPool=IRetiredAgentPool(address(predecessor.authority()));
         require(!oldPool.admissions()&&!oldPool.publicAdmissions(),"source pool admission open");
+        RetiredAgentLanes.requireIdle(address(oldPool));
         uint64 n=predecessor.count();
         require(n==importedCatalog.sourceTournamentCount()&&predecessor.nextAt()==importedCatalog.sourceNextTournamentAt()
             &&importedCatalog.predecessor().revision()==importedCatalog.sourceRevision(),"source changed after import");

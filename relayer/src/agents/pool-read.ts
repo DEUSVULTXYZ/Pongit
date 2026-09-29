@@ -11,7 +11,7 @@ import {agentPublishedRatingsAbi as ratingsAbi} from '../../../shared/abi-AgentP
 import {pooledAgentArenaAbi as arenaAbi} from '../../../shared/abi-PooledAgentArena';
 import {agentChallengesAbi as challengeAbi} from '../../../shared/abi-AgentChallenges';
 import type {PoolChallengeView} from '../../../shared/agent-pool';
-import {agentPoolLanes,pooledHouseBots,tournamentStatuses,validateAgentPoolManifest,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../../../shared/agent-pool';
+import {agentPoolLanes,pooledHouseBots,progressiveHouseBots,tournamentStatuses,validateAgentPoolManifest,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../../../shared/agent-pool';
 import type {AgentMatchRef} from '../../../shared/agents';
 import {houseInstanceAbi,agentPoolAdmissionAbi,verifyHouseInstanceAuthorities} from '../../../shared/agent-house-instances';
 import {agentAvailability,freshArenaState,type ArenaOperationalState,type AgentCapacity} from '../../../shared/agent-availability';
@@ -87,10 +87,11 @@ export class AgentPoolReader {
      read(m.catalog,catalogAbi,'identity',[agent]),read(m.catalog,catalogAbi,'participation',[agent]),read(m.pool,this.poolAbi,'playing',[agent]),
     ]);
     const official=p.house>0&&p.house<=8&&String(await read(m.catalog,catalogAbi,'house',[p.house-1])).toLowerCase()===agent.toLowerCase();
-    const bot=official?pooledHouseBots[p.house-1]:null;
+    const bot=official?(m.housePolicy==='progressive-v1'?progressiveHouseBots:pooledHouseBots)[p.house-1]:null;
     const instances=m.houseInstances&&official?await Promise.all([0,1].map(mode=>read<boolean>(m.challenges,houseInstanceAbi,'houseInstanceEligible',[agent,mode]))):[false,false];
     return {agent,creator:p.creator,controllerHash:p.codeHash,metadata:p.metadata,kind:official?'pongit':'strategy',official,
      name:bot?.name??`${agent.slice(0,6)}…${agent.slice(-4)}`,avatar:bot?.avatar??9,difficulty:bot?.difficulty??'Community strategy',
+     ...(bot&&'level' in bot?{level:bot.level}:{}),
      modes:[0,1].filter(mode=>(p.modes&(1<<mode))!==0),qualification:{0:(p.qualified&1)!==0,1:(p.qualified&2)!==0},
      available:p.available,participation,playing,waiting:participation!==zeroHash&&!instances.some(Boolean),
      availability:Object.fromEntries([0,1].map(mode=>[mode,agentAvailability(capacity,{modeSupported:(p.modes&(1<<mode))!==0,qualified:(p.qualified&(1<<mode))!==0,

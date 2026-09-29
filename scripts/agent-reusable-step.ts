@@ -245,7 +245,7 @@ async function step(){
  catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
  const active=delegations.filter(x=>x.d.status===1&&x.d.expiresAt>block.timestamp+420n);
  const hosted=(await db.query("SELECT app,stage,detail FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
- const serving=(a:{app:Address;d:{epoch:bigint}})=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch));
+ const serving=(a:{app:Address;d:{epoch:bigint}})=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication','publisher-unfunded'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch));
  const capacity=reusableCapacity(budget,active.map(a=>({app:a.app,batches:a.d.batchIndex,expires:a.d.expiresAt,
   occupied:lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===a.app.toLowerCase()),serving:serving(a)})),block.timestamp);
  // Prepare one actually usable reserve. Unavailable engines cannot suppress

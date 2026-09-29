@@ -153,3 +153,16 @@ test('failed pinned checks are throttled independently and preserve uncertain cr
  for(let n=0;n<3;n++)await assert.rejects(provisionPoolArena(f.db,app,10n,'https://pinned.example',transport,check),e=>(e as any).retryAt> Date.now());
  assert.equal(probes,1);assert.equal(discovery,0);assert.equal(f.history.filter(e=>e[2]==='sending').length,0);
 });
+
+test('restart can observe its verified paused node without claiming write readiness or depending on discovery',async()=>{
+ const f=fixture();const paused={...evidence(),health:{...(evidence().health as any),ok:false,halted:'commit relay failed: 503'}};
+ assert.throws(()=>verifyHostedArenaEvidence(expectation,paused),/publication/);
+ let discovery=0;
+ const url=await provisionPoolArena(f.db,app,10n,'https://pinned.example',(async()=>{discovery++;throw Error('404');}) as typeof fetch,
+  {expected:expectation,inspect:async()=>paused,observePausedPublication:true});
+ assert.equal(url,'https://pinned.example');assert.equal(discovery,0);
+ assert.equal(f.row.provisioning.adopted.publicationReady,false);assert.equal(f.row.provisioning.attempts,0);
+ for(const bad of [{...paused,session:{...(paused.session as any),epoch:9}},{...paused,rulesVersion:14n},
+  {...paused,health:{...(paused.health as any),app:'0x0000000000000000000000000000000000000012'}}])
+  assert.throws(()=>verifyHostedArenaEvidence(expectation,bad,{observePausedPublication:true}));
+});

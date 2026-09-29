@@ -22,3 +22,9 @@ test('tick comparison is explicit and bounded without changing the normal cadenc
  assert.equal(agentTickInterval(),300);assert.equal(agentTickInterval('1500'),1500);
  for(const n of ['0','299','5001','NaN','301.5'])assert.throws(()=>agentTickInterval(n));
 });
+
+test('an unfunded publisher is distinguished from RPC throttling without copying relay contents',()=>{
+ const value=agentPublicationHealth({...health,halted:'batch 915 could not be settled (commit relay failed: 502 Bad Gateway: Signer had insufficient balance)'},app,2n);
+ assert.equal(value.reason,'publisher_unfunded');assert.equal(value.relayStatus,502);assert.equal(value.batch,'915');
+ assert.equal(value.healthy,false);assert(!JSON.stringify(value).includes('Signer had'));
+});

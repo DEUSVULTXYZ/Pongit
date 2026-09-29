@@ -7,7 +7,7 @@ import {verifyHostedArenaEvidence,type HostedArenaExpectation,type HostedArenaEv
 const INSPECTION_AFTER_MS=300_000,ALERT_EVERY_MS=600_000;
 type Provision={state:string;at:number;attempts:number;retryAt:number;http?:number;url?:string;readyAt?:number;reason?:string;stalledAt?:number;alertedAt?:number;
  nodeRetryAt?:number;adopted?:ReturnType<typeof verifyHostedArenaEvidence>};
-type PinnedInspection={expected:HostedArenaExpectation;inspect:(url:string)=>Promise<HostedArenaEvidence>};
+type PinnedInspection={expected:HostedArenaExpectation;inspect:(url:string)=>Promise<HostedArenaEvidence>;observePausedPublication?:boolean};
 function safeOrigin(value:string){
  const url=new URL(value);
  if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash||url.pathname!=='/')throw Error('Hosted arena identity or URL changed');
@@ -68,7 +68,7 @@ export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expect
    if(pinnedInspection.expected.app.toLowerCase()!==app.toLowerCase()||pinnedInspection.expected.epoch!==epoch)
     throw Error('Hosted inspection does not match the requested delegation');
    let adopted:ReturnType<typeof verifyHostedArenaEvidence>|undefined;
-   try{adopted=verifyHostedArenaEvidence(pinnedInspection.expected,await pinnedInspection.inspect(origin));}
+   try{adopted=verifyHostedArenaEvidence(pinnedInspection.expected,await pinnedInspection.inspect(origin),pinnedInspection);}
    catch{
     // Unreachable/stale nodes are not proof that a creation did not happen.
     // Keep the original uncertain intent and its control-plane retry deadline.

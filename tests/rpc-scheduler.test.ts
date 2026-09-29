@@ -54,3 +54,16 @@ test("only reads naming a concrete block or closed range may be spread across pr
   ["eth_getLogs",[{fromBlock:"0x10",toBlock:"latest"}]],["eth_blockNumber",[]],["eth_getTransactionCount",["0x01","0x10"]],
   ["eth_getTransactionReceipt",[hash]],["eth_sendRawTransaction",["0x02"]],["eth_estimateGas",[{to:"0x01"},"0x10"]]] as const)assert.equal(pinnedRpcRequest(method,params as any),false,method);
 });
+
+test('an upstream throttle holds every queued caller and adapts only that scheduler',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const a=rpcScheduler(50),b=rpcScheduler(85),times:number[]=[];
+ await a.acquire(false);a.throttle(2000);
+ const one=a.acquire(false).then(()=>times.push(Date.now()));const two=a.acquire(true).then(()=>times.push(Date.now()));
+ t.mock.timers.tick(1999);await Promise.resolve();assert.deepEqual(times,[]);
+ t.mock.timers.tick(1);await Promise.resolve();assert.deepEqual(times,[3000]);
+ t.mock.timers.tick(60);await Promise.all([one,two]);assert.deepEqual(times,[3000,3060]);
+ assert.equal(a.spacing(),60);assert.equal(b.spacing(),85);
+ t.mock.timers.tick(60000);a.success();assert.equal(a.spacing(),55);a.success();assert.equal(a.spacing(),55);
+ t.mock.timers.tick(60000);a.success();assert.equal(a.spacing(),50);
+});

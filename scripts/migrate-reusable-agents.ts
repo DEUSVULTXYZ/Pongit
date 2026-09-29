@@ -15,7 +15,10 @@ const prefix=process.env.PONG_REUSABLE_AGENT_PREFIX!;
 assert(/^reusable-agents-\d{8}(?:-[1-9]\d?)?$/.test(prefix));
 const humans=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(humans.length);
 const source=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/source-manifest.json','utf8')),humans);
-assert.equal(source.version,4,'Reviewed predecessor is the two-lane rules15 pool');
+assert([4,5].includes(source.version),'Reviewed predecessor must be a reusable pool');
+const rebalanced=process.env.PONG_HOUSE_POLICY==='progressive-v1';
+assert(process.env.PONG_HOUSE_POLICY===undefined||rebalanced,'Unreviewed house policy');
+const catalogArtifact=rebalanced?'RebalancedAgentCatalog':'MigratingAgentCatalog';
 const sourceIndexBytes=await readFile('/metadata/source-agent-index.json');
 const sourceIndex=agentIndexDeployments(JSON.parse(sourceIndexBytes.toString()),10143,15);
 const indexedSources=[source,...(source.history??[])].filter(s=>s.rulesVersion===15);
@@ -36,18 +39,19 @@ try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoExc
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 try{
  const names=['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
-  'HouseInstances','MigratingAgentCatalog','ContinuingFiveLaneAgentPool','PublishedResultVerifier','ContinuingAgentTournaments','ContinuingAgentRatings',
+  'HouseInstances',catalogArtifact,...(rebalanced?['ProgressiveHousePolicies']:[]),'ContinuingFiveLaneAgentPool','PublishedResultVerifier','ContinuingAgentTournaments','ContinuingAgentRatings',
   'ContinuingAgentQualifications','ContinuingAgentChallenges','ReusableAgentArena'];
  await t.preflight(names);
  const read=async(name:string,address:Address,method:string,args:readonly unknown[]=[])=>t.base.readContract({address,abi:(await t.artifact(name)).abi,functionName:method,args}) as Promise<any>;
  const codeHash=async(address:Address)=>{const code=await t.base.getCode({address});assert(code&&code!=='0x');return keccak256(code);};
  const frozen=async()=>{
-  const [poolOpen,publicOpen,bookOpen,queueOpen,lane0,lane1,owner]=await Promise.all([
+  const [poolOpen,publicOpen,bookOpen,queueOpen,owner]=await Promise.all([
    read('ReusableAgentPool',source.pool,'admissions'),read('ReusableAgentPool',source.pool,'publicAdmissions'),
    read('AgentTournaments',source.tournaments,'admissions'),read('AgentChallenges',source.challenges,'admissions'),
-   read('ReusableAgentPool',source.pool,'laneMatch',[0n]),read('ReusableAgentPool',source.pool,'laneMatch',[1n]),read('ReusableAgentPool',source.pool,'owner'),
+   read('ReusableAgentPool',source.pool,'owner'),
   ]);
-  assert(!poolOpen&&!publicOpen&&!bookOpen&&!queueOpen&&BigInt(lane0)===0n&&BigInt(lane1)===0n,'Source must already be drained and closed');
+  const lanes=await Promise.all(Array.from({length:source.maxMatches},(_,i)=>read('ReusableAgentPool',source.pool,'laneMatch',[BigInt(i)])));
+  assert(!poolOpen&&!publicOpen&&!bookOpen&&!queueOpen&&lanes.every(l=>BigInt(l)===0n),'Source must already be drained and closed');
   assert.equal(owner.toLowerCase(),t.account.address.toLowerCase());
  };
  await frozen();
@@ -60,10 +64,11 @@ try{
  const hashes:Record<string,Hex>={};
  for(const name of ['pool','catalog','tournaments','ratings','qualifications','challenges','family'] as const)hashes[name]=await codeHash(source[name]);
  if(!r){r={prefix,rulesVersion:15,countdownClock:'engine-ticks-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
-  arenaAdmissions:'verified-epoch-v1',genesis:String(await read('AgentPublishedRatings',source.ratings,'genesisTime')),
+  arenaAdmissions:'verified-epoch-v1',housePolicy:rebalanced?'progressive-v1':'inherited',genesis:String(await read('AgentPublishedRatings',source.ratings,'genesisTime')),
   source:{manifest:source,indexHash:keccak256(sourceIndexBytes),hashes,block:String(anchor.number),blockHash:anchor.hash,emptySeedAudit:auditHash,seal},
   admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'importing-closed',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.prefix,prefix);assert.equal(r.source.emptySeedAudit,auditHash);assert.equal(r.arenaCount,arenaCount);
+ assert.equal(r.housePolicy??'inherited',rebalanced?'progressive-v1':'inherited','Cannot change a journaled controller migration');
  assert.equal(r.source.indexHash,keccak256(sourceIndexBytes),'Source index metadata changed');
  assert.deepEqual(r.source.hashes,hashes,'Source code changed');assert.deepEqual(r.source.manifest,source,'Source manifest changed');
  const bridge=privateKeyToAccount(r.admissionKey).address;
@@ -75,9 +80,10 @@ try{
  const dynamics=await deploy('ChaosDynamics',[effects,modifiers]),contacts=await deploy('ChaosContacts',[dynamics]),rally=await deploy('ChaosRally');
  const physics=await deploy('ChaosPhysics',[effects,rally,dynamics,contacts]),beacon=await deploy('DrandEvmnet'),draws=await deploy('ChaosDrawRules');
  const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]);await deploy('HouseInstances');
- const policies=await read('AgentCatalog',source.catalog,'houseController') as Address;
- assert.equal(await codeHash(policies),await read('AgentCatalog',source.catalog,'houseCodeHash'));r.modules.HousePolicies=policies;
- const catalog=await deploy('MigratingAgentCatalog',[source.catalog,hashes.catalog,t.account.address,t.account.address]);
+ const oldPolicies=await read('AgentCatalog',source.catalog,'houseController') as Address;
+ assert.equal(await codeHash(oldPolicies),await read('AgentCatalog',source.catalog,'houseCodeHash'));
+ const policies=rebalanced?await deploy('ProgressiveHousePolicies'):oldPolicies;r.modules.HousePolicies=policies;
+ const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(rebalanced?[policies]:[])]);
  await write('catalog-start','MigratingAgentCatalog',catalog,'startImport');
  const pool=await deploy('ContinuingFiveLaneAgentPool',[catalog,source.hub,t.account.address,bridge,hashes.pool]);
  const verifier=await deploy('PublishedResultVerifier',[pool,source.hub]);

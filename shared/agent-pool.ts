@@ -11,11 +11,19 @@ export const pooledHouseBots=[
  {name:'GLITCH',difficulty:'Unpredictable aim',avatar:9,reactionMs:130,error:42,deadZone:8},
  {name:'VIPER',difficulty:'Edge chaser',avatar:11,reactionMs:105,error:10,deadZone:5},
 ] as const;
+// Historical controllers retain their old labels/tuning. Only a manifest for
+// the explicitly migrated immutable policy advertises this difficulty curve.
+export const progressiveHouseBots=pooledHouseBots.map((bot,style)=>{
+ const level=[0,3,7,5,2,4,1,6][style];
+ return {...bot,level:level+1,difficulty:`${['Rookie','Easy','Casual','Arcade','Skilled','Advanced','Hard','Expert'][level]} · ${level+1}/8`,
+  reactionMs:450-50*level,error:18-2*level,deadZone:14-level,mistakePercent:55-7*level};
+});
 export type PoolArena={app:Address;node:string;runtimeHash:Hex};
 export type AgentPoolManifest={
  releaseStage?:'testnet-preview';previewEvidence?:Hex;
  countdownClock?:'engine-ticks-v1';
  houseInstances?:'official-v1';
+ housePolicy?:'progressive-v1';
  lanes?:{tournament:1;challenge:4};arenaAdmissions?:'verified-epoch-v1';
  // Read-only retired authorities. They never supply an admission, signing
  // target, capacity slot or engine origin for the current deployment.
@@ -32,6 +40,7 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
  if(!preview&&m.previewEvidence!==undefined)throw Error('Preview evidence requires the preview stage');
  if(m.countdownClock!==undefined&&(m.version<4||m.countdownClock!=='engine-ticks-v1'))throw Error('Unsupported countdown clock');
  if(m.houseInstances!==undefined&&(m.version<4||m.houseInstances!=='official-v1'))throw Error('Unsupported house instances');
+ if(m.housePolicy!==undefined&&(m.version!==5||m.housePolicy!=='progressive-v1'))throw Error('Unsupported house difficulty policy');
  if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11||(m.version===4||m.version===5)&&m.rulesVersion===15)||m.chainId!==10143||m.engineChainId!==4242
   ||m.durationSeconds!==300||m.overtimeSeconds!==60||m.intervalSeconds!==60||m.maxMatches!==(m.version===5?5:2))throw Error('Unsupported Agent Arcade pool rules');
  if(m.version===5){
@@ -71,7 +80,7 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
  }
  // Deployment journals may contain operator state next to these fields. Never
  // serialize unknown fields or nested arena properties to a browser.
- return {version:m.version,...(preview?{releaseStage:'testnet-preview' as const,previewEvidence:m.previewEvidence}:{}),...(m.countdownClock?{countdownClock:m.countdownClock}:{}),...(m.houseInstances?{houseInstances:m.houseInstances}:{}),...(history?{history}:{}),chainId:10143,engineChainId:4242,rulesVersion:m.rulesVersion,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
+ return {version:m.version,...(m.housePolicy?{housePolicy:m.housePolicy}:{}),...(preview?{releaseStage:'testnet-preview' as const,previewEvidence:m.previewEvidence}:{}),...(m.countdownClock?{countdownClock:m.countdownClock}:{}),...(m.houseInstances?{houseInstances:m.houseInstances}:{}),...(history?{history}:{}),chainId:10143,engineChainId:4242,rulesVersion:m.rulesVersion,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
   ratings:m.ratings,challenges:m.challenges,qualifications:m.qualifications,family:m.family,arenas:m.arenas.map(a=>({app:a.app,node:a.node,runtimeHash:a.runtimeHash})),
   enabled:m.enabled,tournamentsEnabled:m.tournamentsEnabled,verifiedCapacity:m.verifiedCapacity,qualificationEvidence:m.qualificationEvidence,
   durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:m.maxMatches,
