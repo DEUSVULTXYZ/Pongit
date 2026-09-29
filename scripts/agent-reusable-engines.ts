@@ -29,7 +29,7 @@ import {hubObservations} from '../shared/hub-observation';
 import {publisherFunding} from '../shared/publisher-funding';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {publicationUnavailable} from '../shared/service-error';
-import {agentPublicationHealth,agentTickInterval} from '../shared/agent-publication-health';
+import {agentPublicationHealth,agentTickInterval,agentTickPause} from '../shared/agent-publication-health';
 import {verifyHostedArenaEvidence} from '../shared/hosted-arena-identity';
 
 const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances,maxMatches:r.maxMatches??2};
@@ -213,6 +213,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      // A newer player command observed meanwhile keeps its own progress time.
      if(completed.revision===lastRevision)lastProgress=started;
     }
+    pause=agentTickPause(tickInterval,Date.now()-lastProgress,proofLane.blocksTick()||engine.busy());
    }else if(s.phase>=3){await archiveSlot(ticket);await health('awaiting-publication',{epoch:String(ref.epoch),id:String(ref.id),score:[s.state.scoreA,s.state.scoreB]});pause=1500;}
   }catch(e){
    if(publicationUnavailable(e)&&!publicationPaused){publicationPaused=true;publication=publicationObservation();}

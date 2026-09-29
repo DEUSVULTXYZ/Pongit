@@ -12,6 +12,9 @@ const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'
 const mode=Number(process.env.PONG_CATALOGUE_MODE??0),name=process.env.PONG_CATALOGUE_BOT??'NOVA';
 const privatePath=process.env.PONG_BROWSER_PRIVATE_PATH!;
 const restorePath=process.env.PONG_CATALOGUE_RESTORE_PRIVATE_PATH;
+// Opt-in, bounded cadence samples are separate from the full 100-control gate.
+const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
+const controlCount=cadenceProbe?20:110,idleMs=cadenceProbe?8000:45000;
 assert(/^[a-z0-9-]+$/.test(run)&&['chrome','msedge'].includes(channel)&&[0,1].includes(mode));
 assert(/^[A-Z]+$/.test(name)&&privatePath?.includes('private-backups'));
 assert(!restorePath||restorePath.includes('private-backups')&&restorePath!==privatePath);
@@ -19,7 +22,7 @@ const restored=restorePath?JSON.parse(await readFile(restorePath,'utf8')):undefi
 await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
- virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+ virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
@@ -123,10 +126,11 @@ try{
  if(report.challengeClickedAt&&report.countdownAt)report.admissionMs=Date.parse(report.countdownAt)-Date.parse(report.challengeClickedAt);
  assert(report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1'),'Real launch countdown incomplete');
  const before=assertions;
- for(let i=0;i<110;i++){
+ for(let i=0;i<controlCount;i++){
   const key=i%2?'ArrowDown':'ArrowUp';await page.keyboard.down(key);await page.waitForTimeout(80);await page.keyboard.up(key);await page.waitForTimeout(40);
   if(i===34){await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
  }
+ report.controlsEndedAt=new Date().toISOString();
  const trace=await page.evaluate(()=>({paddle:(window as any).__paddle,keys:(window as any).__keys}));
  await writeFile(out+'/input-trace.json',JSON.stringify(trace));
  const local:number[]=[];for(const key of trace.keys){const p=[...trace.paddle].reverse().find((p:any)=>p.at<=key.at);if(!p)continue;const q=trace.paddle.find((q:any)=>q.at>key.at&&q.at-key.at<300&&Math.abs(q.y-p.y)>.2);if(q)local.push(q.at-key.at);}
@@ -135,15 +139,10 @@ try{
  if(report.receipts.length)report.receiptP95Ms=p95(report.receipts.map((r:any)=>r.ms));
  await page.screenshot({path:out+'/court.png',fullPage:true});
  if(spectator)await spectator.screenshot({path:out+'/spectator.png',fullPage:true});
- assert(report.submissions.length>=100&&report.submissions.every((s:any)=>!s.error),'At least 100 successful command submissions required');
- assert(local.length>=50&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
- assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
- assert(report.receipts.filter((r:any)=>r.sequence).length>=100&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');
- report.checks.push('At least 100 public command submissions and local input latency');
  if(process.env.PONG_SYNC_PROBE==='1'){
   // Observe ordinary rallies after the burst of controls, instead of treating
   // a fast command acknowledgement as proof of smooth rendered trajectories.
-  await page.waitForTimeout(45000);
+  report.idleStartedAt=new Date().toISOString();await page.waitForTimeout(idleMs);report.idleEndedAt=new Date().toISOString();
   const data=await page.evaluate(()=>(window as any).__syncProbe);
   await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);
   if(spectator){const observed=await spectator.evaluate(()=>(window as any).__syncProbe);
@@ -163,6 +162,12 @@ try{
  await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).waitFor({timeout:10000});
  assert.match(await page.locator('.outcome-score').innerText(),new RegExp(`${report.result.scoreA}\\s*:\\s*${report.result.scoreB}`));
  report.checks.push('Final score and result window survived the delayed terminal frame');
+ const requiredControls=cadenceProbe?20:100;
+ assert(report.submissions.length>=requiredControls&&report.submissions.every((s:any)=>!s.error),'Insufficient successful command submissions');
+ assert(local.length>=(cadenceProbe?15:50)&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
+ assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
+ assert(report.receipts.filter((r:any)=>r.sequence).length>=requiredControls&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');
+ report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
 finally{await savePrivate();report.finishedAt=new Date().toISOString();await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({out,passed:report.passed,error:report.error,ref:report.ref,input:report.input,submissionP95Ms:report.submissionP95Ms,receiptP95Ms:report.receiptP95Ms}));}

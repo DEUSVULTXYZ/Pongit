@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {agentPublicationHealth,agentTickInterval} from '../shared/agent-publication-health';
+import {agentPublicationHealth,agentTickInterval,agentTickPause} from '../shared/agent-publication-health';
 import {publicationFailureDetails} from '../shared/service-error';
 const app='0x7fb78a8fbfd597daadbe6971c106720eb1510d7d';
 const health={app,epoch:2,ok:false,committedBatches:3599,
@@ -20,7 +20,38 @@ test('only matching explicitly healthy hosted epochs clear publication holds',()
 });
 test('tick comparison is explicit and bounded without changing the normal cadence',()=>{
  assert.equal(agentTickInterval(),300);assert.equal(agentTickInterval('1500'),1500);
- for(const n of ['0','299','5001','NaN','301.5'])assert.throws(()=>agentTickInterval(n));
+ assert.equal(agentTickInterval('150'),150);assert.equal(agentTickInterval('100'),100);
+ for(const n of ['0','99','5001','NaN','301.5'])assert.throws(()=>agentTickInterval(n));
+});
+
+test('serial ticks spend only the remaining interval after the receipt and journal',()=>{
+ const starts:number[]=[];let now=0,lastProgress=-150;
+ for(let i=0;i<30;i++){
+  if(now-lastProgress>=150){starts.push(now);lastProgress=now;now+=130;}
+  now+=agentTickPause(150,now-lastProgress);
+ }
+ assert.equal(starts.length,30);
+ assert(starts.slice(1).every((t,i)=>t-starts[i]===150));
+ // With the former fixed 100 ms sleep each serial round took 230 ms.
+ assert.equal(agentTickPause(150,130),20);
+});
+
+test('new player progress postpones a tick and a slow iteration cannot cause catch-up bursts',()=>{
+ let now=125,lastProgress=120,ticks=0;
+ while(now<270){
+  assert(now-lastProgress<150);
+  now+=agentTickPause(150,now-lastProgress);
+ }
+ assert.equal(now,270);
+ if(now-lastProgress>=150){ticks++;lastProgress=now;now+=500;}
+ assert.equal(ticks,1);assert.equal(agentTickPause(150,now-lastProgress),20);
+ assert.equal(agentTickPause(100,130),20); // Serial work sets the real achievable cadence.
+ assert.equal(agentTickPause(150,-100),100); // A backwards wall-clock change does not spin.
+});
+
+test('proofs and an occupied command journal retain the bounded wait',()=>{
+ assert.equal(agentTickPause(100,1000,true),100);
+ assert.equal(agentTickPause(150,140,true),100);
 });
 
 test('an unfunded publisher is distinguished from RPC throttling without copying relay contents',()=>{
