@@ -45,25 +45,29 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
  const lower=app.toLowerCase(),now=runtime?.now??Date.now;let busy=false,fenceUntil=0,closed=false;
  let nonceProof:{next:number;until:number}|undefined;
  let fenceTask:Promise<void>|undefined;
+ const rejectFence=(message:string):never=>{fenceUntil=0;throw Error(message);};
  async function verifyFence(){
   const started=now(),shared=await runtime?.hubObservation?.();
   const block=shared?.block??await base.getBlock(),d=shared?.delegation??await readHubDelegation(base,hub,app,block.number);
   if(!shared&&(await base.getBlock({blockNumber:block.number})).hash!==block.hash)
-   throw Error('Arena publication changed during lifecycle verification');
+   rejectFence('Arena publication changed during lifecycle verification');
   // This is proof of epoch closure, not an inference from an unavailable node.
   if(!closed&&(d.status===0||d.epoch>ref.epoch)){
    await db.query("UPDATE agent_pool.engine_jobs SET status='obsolete',resolution=$3,updated_at=now() WHERE app=$1 AND epoch<=$2 AND status='pending'",
     [lower,String(d.status===0?ref.epoch:d.epoch-1n),{kind:'hub-epoch-closed',block:String(block.number),hash:block.hash,observedEpoch:String(d.epoch)}]);
   }
-  if(d.status!==1||d.epoch!==ref.epoch||d.expiresAt<=block.timestamp)throw Error('This arena is awaiting its own lifecycle recovery');
+  if(d.status!==1||d.epoch!==ref.epoch||d.expiresAt<=block.timestamp)rejectFence('This arena is awaiting its own lifecycle recovery');
   const engine:any=await node.request({method:'interlude_session',params:[]} as any);
-  if(String(engine.app).toLowerCase()!==lower||BigInt(engine.epoch)!==ref.epoch||engine.chainId!==4242)throw Error('Hosted arena epoch is not ready');
-  if(runtime?.reusable&&BigInt(engine.baseBlock??-1)!==d.baseBlock)throw Error('Hosted arena base block is not ready');
+  if(String(engine.app).toLowerCase()!==lower||BigInt(engine.epoch)!==ref.epoch||engine.chainId!==4242)rejectFence('Hosted arena epoch is not ready');
+  if(runtime?.reusable&&BigInt(engine.baseBlock??-1)!==d.baseBlock)rejectFence('Hosted arena base block is not ready');
   fenceUntil=(shared?.observedAt??started)+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
   if(now()>=fenceUntil)throw Error('Arena lifecycle verification became stale');
  }
  function refreshFence(){
-  return fenceTask??=verifyFence().catch(error=>{fenceUntil=0;throw error;}).finally(()=>{fenceTask=undefined;});
+  // A failed transport refresh does not revoke an already verified window.
+  // Its original deadline still blocks writes; contradictory evidence above
+  // invalidates immediately, including closure, changed epoch and reorg.
+  return fenceTask??=verifyFence().finally(()=>{fenceTask=undefined;});
  }
  async function fence(){
   if(closed)throw Error('Arena transport is closed');

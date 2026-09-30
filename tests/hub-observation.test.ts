@@ -36,3 +36,14 @@ test('failed refresh never extends the original valid window',async()=>{
  assert.equal((await f.cache.read(apps[0])).observedAt,0);await new Promise(r=>setImmediate(r));
  f.time(3001);await assert.rejects(f.cache.read(apps[0]),/network/);
 });
+
+test('command fences await the shared renewal instead of using its nearly expired predecessor',async()=>{
+ const f=fixture();await f.cache.read(apps[0]);f.time(1600);
+ const values=await Promise.all(apps.map(app=>f.cache.read(app,true)));
+ assert(values.every(v=>v.observedAt===1600));assert.deepEqual(f.counts(),{reads:2,headers:4});
+ f.time(2999);assert.equal((await f.cache.read(apps[0],true)).observedAt,1600);
+ assert.equal(f.counts().reads,2,'no extra refresh before the next half-window');
+ f.unavailable();f.time(3200);await assert.rejects(f.cache.read(apps[0],true),/network/);
+ assert.equal((await f.cache.read(apps[0])).observedAt,1600,'ordinary observations retain their original validity');
+ f.time(4601);await assert.rejects(f.cache.read(apps[0]),/network/);
+});

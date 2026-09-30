@@ -25,9 +25,12 @@ export function hubObservations(base:PublicClient,hub:Address,apps:readonly Addr
   values=updated;at=started;
  }
  function load(){return task??=refresh().finally(()=>{task=undefined;});}
- return {async read(app:Address):Promise<HubObservation>{
+ return {async read(app:Address,forCommand=false):Promise<HubObservation>{
   const key=app.toLowerCase();if(!names.includes(key))throw Error('Arena is outside the observed pool');
-  if(now()-at>=3000)await load();else if(now()>=next)void load().catch(()=>{});
+  // A command fence also verifies the hosted session. Do not give that check
+  // an almost expired observation while its replacement is already in flight.
+  // Concurrent fences still share the same refresh; the validity stays 3 s.
+  if(now()-at>=(forCommand?1500:3000))await load();else if(now()>=next)void load().catch(()=>{});
   if(now()-at>=3000)throw Error('Hub observation is stale');
   const value=values.get(key);if(!value||value instanceof Error)throw value??Error('Arena hub observation absent');
   return value;

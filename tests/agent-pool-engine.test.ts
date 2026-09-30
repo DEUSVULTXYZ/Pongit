@@ -9,7 +9,7 @@ import {resultFixture} from './fixtures/reusable-result';
 const app='0x0000000000000000000000000000000000000011';
 function fixture(){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false,now=0;
- let blockGate:Promise<void>|undefined;
+ let blockGate:Promise<void>|undefined,blockError=false;
  let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'='ok';
  let logs:any[]=[],archiveError=false,receiptReads=0,nonceReads=0,reset=false,feedError=false;const archived:any[]=[];
  const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
@@ -24,7 +24,7 @@ function fixture(){
   if(behavior==='lost-after-execution')throw Error('response lost');return receipts.get(keccak256(raw));
  }};
  const fields=roomsLifecycleHubAbi[0].outputs[0].components;
- const base:any={getBlock:async(options?:any)=>{await blockGate;return{number:50n,hash:options&&reorg?keccak256('0x01'):zeroHash,timestamp:1000n};},request:async()=>{
+ const base:any={getBlock:async(options?:any)=>{await blockGate;if(blockError)throw Error('RPC unavailable');return{number:50n,hash:options&&reorg?keccak256('0x01'):zeroHash,timestamp:1000n};},request:async()=>{
   const d:any=Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n]));
   Object.assign(d,{status,epoch,expiresAt:10000n,baseBlock:20n});return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d});
  }};
@@ -39,7 +39,7 @@ function fixture(){
  const receiptIds:bigint[]=[],readIds:bigint[]=[];
  const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2,reset};},receipt:async(id:bigint)=>{if(feedError)throw Error('snapshot gap');receiptIds.push(id);return{id,phase:2};},invalidate(){}};
  const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,now:()=>now,archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
- return{make,jobs,sent,receipts,receiptIds,readIds,archived,now:(v:number)=>{now=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
+ return{make,jobs,sent,receipts,receiptIds,readIds,archived,now:(v:number)=>{now=v;},blockError:(v:boolean)=>{blockError=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
 
 test('exact acknowledged receipts reuse nonce proof without indefinitely extending its RPC validity',async()=>{
@@ -87,6 +87,15 @@ test('a prefetched closure immediately invalidates the write window',async()=>{
  const f=fixture(),e=f.make();await e.send('first','tick',[1n]);f.now(2000);f.status(2);
  await e.read();await new Promise(resolve=>setImmediate(resolve));
  await assert.rejects(e.send('closed','tick',[1n]),/lifecycle/);assert.equal(f.sent.length,1);e.close();
+});
+
+test('a failed background RPC does not revoke a valid fence or extend its original deadline',async()=>{
+ const f=fixture(),e=f.make();await e.send('first','tick',[1n]);f.now(1600);f.blockError(true);
+ await e.read();await new Promise(resolve=>setImmediate(resolve));
+ await e.send('original-window','tick',[1n]);assert.equal(f.sent.length,2);
+ f.now(3000);await assert.rejects(e.send('expired','tick',[1n]),/RPC unavailable/);
+ assert.equal(f.sent.length,2);assert.equal(f.jobs.length,2,'no unsigned failure consumes a nonce');
+ f.blockError(false);await e.send('recovered','tick',[1n]);assert.equal(f.sent.length,3);e.close();
 });
 
 test('a new journaled command avoids an impossible receipt lookup; a restarted uncertain one must read it',async()=>{

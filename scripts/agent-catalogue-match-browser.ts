@@ -171,8 +171,19 @@ try{
  }
  // Explicitly concede this synthetic friendly fixture through the same UI.
  const current=await (await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
- if(!current.result){await page.getByRole('button',{name:'Tools',exact:true}).first().click();
-  const concede=page.getByRole('button',{name:'Concede match',exact:true});if(await concede.isEnabled())await concede.click();}
+ const resultDialog=page.getByRole('dialog',{name:'Confirmed match result',exact:true});
+ if(!current.result&&!await resultDialog.isVisible()){
+  // A natural seventh point can open the result while the slower publication
+  // API still has no result. Never click through that modal or wait a minute
+  // trying to concede a match that has already finished.
+  try{
+   await page.getByRole('button',{name:'Tools',exact:true}).first().click({timeout:5000});
+   if(!await resultDialog.isVisible()){
+    const concede=page.getByRole('button',{name:'Concede match',exact:true});
+    if(await concede.isEnabled())await concede.click({timeout:5000});
+   }
+  }catch(error){if(!await resultDialog.isVisible())throw error;}
+ }
  const until=Date.now()+90000;
  while(Date.now()<until){
   const response=await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`);

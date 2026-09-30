@@ -151,7 +151,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      // next loop must not impose a second 300 ms pause after every own tick.
      if(s.revision!==lastRevision){lastRevision=s.revision;lastProgress=Date.now();}
      observed.observe(s);replays.capture(replayRef,15,s);
-    },{node,reusable:true,archive:archive.store,hubObservation:()=>sharedHub.read(app)});
+    },{node,reusable:true,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
    }
    // Expiry forbids new commands, not the reads needed to preserve a result.
    if(d.status!==1||d.expiresAt<=block.timestamp){
