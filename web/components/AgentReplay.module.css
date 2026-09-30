@@ -9,7 +9,17 @@
 .controls label { flex: 1; min-width: 0; margin: 0; font-size: 16px; }
 .controls input { display: block; width: 100%; margin: 0; min-height: 44px; }
 .accessibleScore { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-:global(.cabinet-dialog) .modal { width: min(800px, calc(100vw - 24px)); max-width: 800px; border-radius: 3px; border-color: #8874b3; background: var(--palace-panel, linear-gradient(140deg,#252046,#0d1128 60%)); }
+:global(.cabinet-dialog) .modal { width: min(800px, calc(100vw - 24px)); max-width: 800px; border: 8px solid transparent; border-radius: 0; border-image: url('/art/pixel-palace/frame-violet.svg') 40 fill / 12px / 0 stretch; background: var(--palace-panel, #11112c); }
+/* Dialogs render through a portal, outside the page's pixel control selectors. */
+:global(.cabinet-dialog) .modal button { min-width: 44px; min-height: 44px; border: 2px solid #8672b7; border-radius: 0; background: #211b40; box-shadow: inset 2px 2px #cdbcf542,inset -2px -2px #0b0923,0 3px #070719; color: #eee9fb; }
+:global(.cabinet-dialog) .modal button:hover:not(:disabled) { background: #30244f; border-color: #87eefa; }
+:global(.cabinet-dialog) .modal .controls button { border-color: #adfcf2; background: #8de3e5; color: #15253a; box-shadow: inset 0 3px #dcfff6,inset 0 -4px #52a3b7,3px 3px #080a20; }
+:global(.cabinet-dialog) .modal :is(button,input):focus-visible { outline: 3px solid #c8fbff; outline-offset: 4px; }
+.controls input[type=range] { appearance: none; border: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 0; cursor: pointer; }
+.controls input[type=range]::-webkit-slider-runnable-track { height: 8px; border: 2px solid #605083; border-radius: 0; background: #17132e; }
+.controls input[type=range]::-webkit-slider-thumb { appearance: none; width: 20px; height: 24px; margin-top: -10px; border: 2px solid #d0fff9; border-radius: 0; background: #79dce8; box-shadow: inset -3px -3px #378ca7,3px 3px #080a20; }
+.controls input[type=range]::-moz-range-track { height: 4px; border: 2px solid #605083; border-radius: 0; background: #17132e; }
+.controls input[type=range]::-moz-range-thumb { width: 16px; height: 20px; border: 2px solid #d0fff9; border-radius: 0; background: #79dce8; box-shadow: inset -3px -3px #378ca7,3px 3px #080a20; }
 @media(max-width:600px) {
   .controls { gap: 10px; flex-wrap: wrap; }
   .controls label { order: -1; flex-basis: 100%; }

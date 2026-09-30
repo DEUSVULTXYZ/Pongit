@@ -708,3 +708,20 @@ its failed log is retained and the corrected fixture passes. No contract rule,
 sponsor authority, nonce ownership or human deployment changed.
 
 Full suite: 824 TypeScript tests and root typecheck pass. Public atomic rollout remains disabled until a new real browser trial meets its gates.
+
+## Actual public replay and remaining pixel controls — 30 September, 18:52 UTC
+
+The latest three resolved tournament games (240, 241, 242) have public replay
+frames, with 343, 1,871 and 2,007 frames respectively. API reads returned 200.
+Match 242 (f202/2, 4–3) passed actual public playback on Chrome and Edge at 360
+and 1440 pixels: animation advances, seeking reaches the final score, body
+scroll is locked, Escape closes the window, and focus returns to its button.
+No engine request, passkey or write was made. This is retained-history playback,
+not another hosted match or a physical-device test.
+
+Visual review exposed a real styling omission: portal-based replay controls
+still inherited the older rounded theme. The new strict pixel check correctly
+fails on the current public build. A scoped replay CSS correction reuses the
+Pixel Palace frame, square bevelled buttons and a square cyan range thumb,
+keeping 44-pixel controls and keyboard focus. It does not modify human gameplay
+or global control rules. Candidate browser validation is still required.

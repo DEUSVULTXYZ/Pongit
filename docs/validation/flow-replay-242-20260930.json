@@ -1,0 +1,63 @@
+{
+  "startedAt": "2026-09-30T18:49:13.196Z",
+  "scope": "Actual public replay API and desktop Chrome/Edge with emulated mobile viewport; no engine, passkey or write",
+  "reference": {
+    "chainId": 10143,
+    "app": "0xf202862714F61D6f6b8b14C1D2F5d3cA7EA3E41b",
+    "epoch": "2",
+    "id": "242"
+  },
+  "frameCount": 2007,
+  "checks": [
+    {
+      "channel": "chrome",
+      "width": 360,
+      "height": 640,
+      "playback": true,
+      "finalScore": [
+        4,
+        3
+      ],
+      "focus": true,
+      "blockedRequests": 0
+    },
+    {
+      "channel": "chrome",
+      "width": 1440,
+      "height": 1000,
+      "playback": true,
+      "finalScore": [
+        4,
+        3
+      ],
+      "focus": true,
+      "blockedRequests": 0
+    },
+    {
+      "channel": "msedge",
+      "width": 360,
+      "height": 640,
+      "playback": true,
+      "finalScore": [
+        4,
+        3
+      ],
+      "focus": true,
+      "blockedRequests": 0
+    },
+    {
+      "channel": "msedge",
+      "width": 1440,
+      "height": 1000,
+      "playback": true,
+      "finalScore": [
+        4,
+        3
+      ],
+      "focus": true,
+      "blockedRequests": 0
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-09-30T18:49:43.042Z"
+}
