@@ -54,7 +54,7 @@ try{
      if(request.headers().rsc==='1')return route.fulfill({status:404,body:''});
      const pathname=decodeURIComponent(url.pathname);
      let root:string,file:string;
-     if(pathname==='/agents'||pathname==='/agents/tournaments'||pathname.startsWith('/agents/arenas/')){root=resolve('artifacts/qualification/20260919/pool-ui');file=resolve(root,pathname==='/agents'?'catalog.html':pathname==='/agents/tournaments'?'tournaments.html':'arena.html');}
+     if(pathname==='/agents'||pathname==='/agents/tournaments'||pathname.startsWith('/agents/arenas/')){root=resolve(process.env.PONG_POOL_UI_CAPTURE??'artifacts/qualification/20260919/pool-ui');file=resolve(root,pathname==='/agents'?'catalog.html':pathname==='/agents/tournaments'?'tournaments.html':'arena.html');}
      else if(pathname.startsWith('/_next/static/')){root=resolve(process.env.PONG_POOL_UI_STATIC??'web/.next/static');file=resolve(root,pathname.slice('/_next/static/'.length));}
      else if(pathname==='/icon.svg'||pathname==='/icon.png'){root=resolve('web/app');file=resolve(root,pathname.slice(1));}
      else{root=resolve('web/public');file=resolve(root,pathname.slice(1));}

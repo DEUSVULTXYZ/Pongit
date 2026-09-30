@@ -2,7 +2,7 @@
 // authenticator is virtual. Recovery material never enters the public report.
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
-import {chromium} from '@playwright/test';
+import {chromium,expect} from '@playwright/test';
 import {decodeFunctionData,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {installSyncProbe,syncMetrics} from './browser-sync-probe';
@@ -112,7 +112,11 @@ try{
  assert(config.version===5&&config.houseInstances==='official-v1'&&config.maxMatches===5,'Public five-lane migration is not active');
  report.pool=config.pool;
  await page.goto(report.origin+'/agents',{waitUntil:'domcontentloaded'});
+ // Server-rendered buttons can be visible before their React handlers exist.
+ // A loaded actionable catalogue proves hydration; verify the selection too.
+ await expect(page.getByRole('button',{name:`Challenge ${name}`,exact:true})).toBeEnabled({timeout:60000});
  await page.getByRole('button',{name:mode?'Chaos':'Classic',exact:true}).click();
+ await expect(page.getByRole('button',{name:mode?'Chaos':'Classic',exact:true})).toHaveAttribute('aria-pressed','true');
  report.clickedAt=new Date().toISOString();
  await page.getByRole('button',{name:`Challenge ${name}`,exact:true}).click();
  report.challengeClickedAt=await page.evaluate(()=>(window as any).__challengeClickedAt);
@@ -135,6 +139,8 @@ try{
  }
  await page.waitForURL(/\/agents\/arenas\//,{timeout:Math.max(1,admissionDeadline-Date.now())});await savePrivate();
  const parts=new URL(page.url()).pathname.split('/');report.ref={app:parts[3],epoch:parts[4],id:parts[5]};
+ const admitted=await (await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
+ report.actualMode=admitted.mode;assert.equal(report.actualMode,mode,'The actual contract match must use the selected mode');
  console.log(JSON.stringify({run,event:'admitted',ref:report.ref}));
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
   spectator=await browser.newPage({viewport:{width:1440,height:1000}});await candidateAssets(spectator);await installSyncProbe(spectator);
@@ -171,6 +177,7 @@ try{
  }
  // Explicitly concede this synthetic friendly fixture through the same UI.
  const current=await (await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
+ assert.equal(current.mode,mode,'Mode changed after reconnection');
  const resultDialog=page.getByRole('dialog',{name:'Confirmed match result',exact:true});
  if(!current.result&&!await resultDialog.isVisible()){
   // A natural seventh point can open the result while the slower publication
@@ -200,6 +207,10 @@ try{
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
  assert(report.receipts.filter((r:any)=>r.sequence).length>=requiredControls&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
+ report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.receiptP95Ms<=300,
+  player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0:null,
+  spectator:report.spectatorSync?report.spectatorSync.p95FrameMs<=20&&report.spectatorSync.maxHoldMs<=500&&report.spectatorSync.frameGaps.length===0:null};
+ if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
 finally{await savePrivate();report.finishedAt=new Date().toISOString();await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({out,passed:report.passed,error:report.error,ref:report.ref,input:report.input,submissionP95Ms:report.submissionP95Ms,receiptP95Ms:report.receiptP95Ms}));}
