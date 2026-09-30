@@ -1,12 +1,13 @@
 // Canonical public transaction evidence; never serialize calldata/signatures.
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
-import {createPublicClient,http,decodeEventLog,decodeFunctionData,multicall3Abi,type Hex} from 'viem';
+import {createPublicClient,http,decodeEventLog,decodeFunctionData,multicall3Abi,encodeAbiParameters,keccak256,type Hex} from 'viem';
 import {monadTestnet} from 'viem/chains';
 import {validateAgentPoolManifest} from '../shared/agent-pool';
 import {validatePoolSignedCall,POOL_ADMISSION_BATCH} from '../shared/agent-pool-sponsor';
 import {agentChallengesAbi} from '../shared/abi-AgentChallenges';
 import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
+import {readChallengeAdmission} from '../shared/agent-challenge-receipt';
 const [hash,out]=process.argv.slice(2);assert(/^0x[\da-f]{64}$/i.test(hash)&&out);
 const base=createPublicClient({chain:monadTestnet,transport:http('https://testnet-rpc.monad.xyz',{retryCount:0})});
 const m=validateAgentPoolManifest(await (await fetch('https://pongit.xyz/api/agents/config')).json());
@@ -30,9 +31,20 @@ assert(changes.every(c=>c.player.toLowerCase()===player.toLowerCase()&&c.agent.t
 const a=assignments[0];assert.equal(a.tournament,0n);assert(a.lane>0&&a.lane<5);
 const request=await base.readContract({address:m.challenges,abi:agentChallengesAbi,functionName:'requests',args:[changes[0].id],blockNumber:r.blockNumber});
 assert.equal(request[2],mode);assert.equal(request[3],2);
+const lane=await base.readContract({address:m.pool,abi:reusableAgentPoolAbi,functionName:'laneRecord',args:[a.lane],blockNumber:r.blockNumber});
+assert.equal(lane.a.toLowerCase(),player.toLowerCase());assert.equal(lane.b.toLowerCase(),agent.toLowerCase());
+assert.equal(keccak256(encodeAbiParameters([{type:'uint256'},{type:'address'},{type:'uint256'},{type:'uint256'}],
+ [lane.ref.chainId,lane.ref.arena,lane.ref.epoch,lane.ref.id])),a.ref);
 assert.equal((await base.getBlock({blockNumber:r.blockNumber})).hash,r.blockHash,'Receipt reorganized');
+assert(mode===0||mode===1);
+const browserReference=await readChallengeAdmission(base,m,hash as Hex,player,{agent,mode});
+assert.deepEqual(browserReference,{chainId:10143,app:lane.ref.arena,epoch:String(lane.ref.epoch),id:String(lane.ref.id)});
+const current=await base.getBlock();
+const record=await base.readContract({address:m.pool,abi:reusableAgentPoolAbi,functionName:'record',args:[lane.ref],blockNumber:current.number});
+const result=record.captured?await base.readContract({address:m.pool,abi:reusableAgentPoolAbi,functionName:'result',args:[lane.ref],blockNumber:current.number}):null;
+assert.equal((await base.getBlock({blockNumber:current.number})).hash,current.hash,'Result observation reorganized');
 const report={at:new Date().toISOString(),passed:true,readOnly:true,transaction:r.transactionHash,block:r.blockNumber,blockHash:r.blockHash,
- request:changes[0].id,player,agent,mode,assignment:a,gasUsed:r.gasUsed,effectiveGasPrice:r.effectiveGasPrice,
+ request:changes[0].id,player,agent,mode,assignment:a,ref:lane.ref,browserReference,current:{block:current.number,blockHash:current.hash,captured:record.captured,result},gasUsed:r.gasUsed,effectiveGasPrice:r.effectiveGasPrice,
  scope:'Signed request and same-player assignment in one canonical Monad transaction; no extra admission transaction required. No full-game or latency claim.'};
 await writeFile(out,JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v,2)+'\n',{flag:'wx'});
 console.log(JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v));

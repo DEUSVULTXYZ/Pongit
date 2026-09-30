@@ -677,3 +677,34 @@ SDK documents a node commit interval and a manual commit method, but PONGIT's
 production code does not call `interlude_commit`. The local-node CLI option
 is not proof that the hosted API accepts a commit-interval override. No provider
 configuration was changed or guessed.
+
+## Canonical recovery and receipt shortcut — 30 September, 18:43 UTC
+
+The normal services recovered fixture 239 after publication resumed. At canonical
+Monad block 67044225, its result is captured, status 3, score 0–7, hash
+`0xd9fb79a79bd43228a48853d19463411106522074171aca4165122feba3d3c5f9`.
+This later recovery does not change the failed browser trial or its original
+deadline. Full reference and canonical block hashes are preserved separately in
+`flow-atomic-recovery-239-20260930.json`. No force-close, replacement transaction
+or new game driver was used. Tournament 11 had reached 24/28 by 18:34 UTC.
+
+A further browser candidate avoids the full challenge/arena health API read
+when the queue contract reports no pending request. After atomic sponsorship,
+it can navigate from the actual canonical admission receipt. It validates the
+queue and pool emitters, accepted player/agent, mode, rules, known arena, epoch
+and full reference. An admission for an older queued player, missing receipt,
+reorganisation or optional admission failure falls back to normal observation;
+it never causes a replacement signed request. The arena still checks current
+admission and authorization before play. This shortcut is not yet deployed,
+and the public atomic capability remains absent.
+
+The decoder also passed a read-only check against transaction
+`0xde125d7a07d214e97fabf82ac14f0e4f6fd1db4c73c820f7094380d229f079b3`,
+resolving exactly 76ca/12/239. That proves receipt interpretation, not the latency
+of a new browser admission. Eighteen focused checks pass, including queued older
+players, foreign emitters, wrong mode/epoch/rules, duplicate events, lost reads
+and reorganisation. The first test fixture encoded an indexed event incorrectly;
+its failed log is retained and the corrected fixture passes. No contract rule,
+sponsor authority, nonce ownership or human deployment changed.
+
+Full suite: 824 TypeScript tests and root typecheck pass. Public atomic rollout remains disabled until a new real browser trial meets its gates.

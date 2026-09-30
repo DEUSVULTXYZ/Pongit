@@ -7,6 +7,8 @@ import {useRouter} from 'next/navigation';
 import type {Address} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {preparePoolChallenge} from '../../shared/agent-pool-client';
+import {agentChallengesAbi} from '../../shared/abi-AgentChallenges';
+import {readChallengeAdmission} from '../../shared/agent-challenge-receipt';
 import {preparePoolFamily,loadPoolFamily,observePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN,type PoolFamilySession} from '../../shared/agent-pool-family';
 import {validateAgentPoolManifest,type AgentPoolManifest,type PoolChallengeView} from '../../shared/agent-pool';
 import type {AgentMatchRef} from '../../shared/agents';
@@ -103,11 +105,23 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  }
  async function challenge(m:AgentPoolManifest,s:PoolFamilySession,agent:Address,capacityChecked=false){
   const sponsor=poolBrowserSponsor(m,s.grant.player);await finishPoolSponsor(sponsor,undefined,progress);
-  const existing=await poolApi<{request:PoolChallengeView|null}>(`challenges/${s.grant.player}`);
-  if(existing.request){setRequest(existing.request);if(existing.request.ref)router.push(matchHref(existing.request.ref));return;}
+  // The queue contract alone knows whether a request already exists. Avoid
+  // the much heavier catalogue/arena health snapshot when there is none.
+  const pending=await poolBase().readContract({address:m.challenges,abi:agentChallengesAbi,functionName:'pending',args:[s.grant.player]});
+  if(pending){const existing=await poolApi<{request:PoolChallengeView|null}>(`challenges/${s.grant.player}`);
+   setRequest(existing.request);if(existing.request?.ref)router.push(matchHref(existing.request.ref));setRetry(n=>n+1);return;}
   if(!capacityChecked&&!await canStart(m))return;
   const prepared=await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),s.grant.player,{agent,mode});
-  await finishPoolSponsor(sponsor,prepared,progress);setRetry(n=>n+1);
+  const operation=await finishPoolSponsor(sponsor,prepared,progress);
+  // Read the actual confirmed receipt instead of waiting behind a pre-submit
+  // API snapshot. An optional admission can assign somebody else: validate the
+  // player, mode and full reference, then let the arena perform its own checks.
+  if(m.challengeAdmission==='atomic-v1'&&operation?.status==='confirmed'&&operation.hash){
+   try{const ref=await readChallengeAdmission(poolBase(),m,operation.hash,s.grant.player,{agent,mode});
+    if(ref&&!document.hidden){router.push(matchHref(ref));return;}
+   }catch{/* The saved action is confirmed; resume observation, never resubmit. */}
+  }
+  waiting.current=true;setRetry(n=>n+1);
  }
  function choose(agent:Address,trigger:HTMLButtonElement){launchFocus.current=trigger;setSelected(agent);intent.current=agent;
   // The catalogue and config arrive independently. Selecting an archetype

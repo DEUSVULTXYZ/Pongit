@@ -1,0 +1,51 @@
+{
+  "at": "2026-09-30T18:35:36.106Z",
+  "passed": true,
+  "readOnly": true,
+  "transaction": "0xde125d7a07d214e97fabf82ac14f0e4f6fd1db4c73c820f7094380d229f079b3",
+  "block": "67041529",
+  "blockHash": "0x1b6cff99873f4ff12a48389ddfaa4b4d231334573b4f8615ffd1b48ab56da121",
+  "request": "48",
+  "player": "0x3acd07485A67cF14C1Af136C03f7E14D70B2297D",
+  "agent": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+  "mode": 1,
+  "assignment": {
+    "ref": "0xbf36d8c0643c52ec65bf3d23dbe4a5d3f492f3a05ba5daf1e5c509282b04744c",
+    "arena": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+    "tournament": "0",
+    "fixture": 0,
+    "lane": 1
+  },
+  "ref": {
+    "chainId": "10143",
+    "arena": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+    "epoch": "12",
+    "id": "239"
+  },
+  "current": {
+    "block": "67044225",
+    "blockHash": "0x344c5c4f9810d8d56d3a9cf48bf4b431068bf23d3419455b8966fd10a1a8d908",
+    "captured": true,
+    "result": {
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+        "epoch": "12",
+        "id": "239"
+      },
+      "a": "0x3acd07485A67cF14C1Af136C03f7E14D70B2297D",
+      "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "hash": "0xd9fb79a79bd43228a48853d19463411106522074171aca4165122feba3d3c5f9",
+      "mode": 1,
+      "status": 3,
+      "scoreA": 0,
+      "scoreB": 7,
+      "elapsedUs": "36677091",
+      "finality": false
+    }
+  },
+  "gasUsed": "2685504",
+  "effectiveGasPrice": "102000000000",
+  "scope": "Signed request and same-player assignment in one canonical Monad transaction; no extra admission transaction required. No full-game or latency claim."
+}
