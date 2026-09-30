@@ -5,7 +5,7 @@ import {readFile,writeFile,rename} from 'node:fs/promises';
 import {Pool} from 'pg';
 import {createPublicClient,custom,decodeAbiParameters,getAbiItem,zeroHash,keccak256,stringToHex,type Address,type Abi} from 'viem';
 import {chainTools} from './independent-chain-tools';
-import {readHubDelegation} from '../shared/rooms-hub';
+import {readHubDelegations} from '../shared/rooms-hub';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 import {reusableAgentArenaAbi as arenaAbi} from '../shared/abi-ReusableAgentArena';
 import {agentTournamentsAbi as bookAbi} from '../shared/abi-AgentTournaments';
@@ -75,7 +75,7 @@ async function act(to:Address,method:string,args:any[]=[],value=0n){
 }
 // Same paced transport and no retries, plus Multicall3 batching: reads started
 // together travel as one eth_call. Writes and raw requests still use t.base.
-const reader=createPublicClient({chain:t.base.chain,transport:custom({request:(args:any)=>t.base.request(args)},{retryCount:0}),batch:{multicall:true}});
+const reader=createPublicClient({chain:t.base.chain,transport:custom({request:(args:any)=>t.base.request(args)},{retryCount:0}),batch:{multicall:{wait:5,batchSize:16384}}});
 // Operator profiling: create /state/profile to log one timing line per step.
 // The flag only adds a log line; it never changes what the keeper does.
 const profile=await readFile('/state/profile','utf8').then(()=>({start:performance.now(),marks:[] as [string,number][],reads:new Map<string,{n:number;ms:number}>()}),()=>null);
@@ -90,6 +90,8 @@ async function step(){
   finally{if(profile){const e=profile.reads.get(functionName)??{n:0,ms:0};e.n++;e.ms+=performance.now()-began;profile.reads.set(functionName,e);}}
  });
  const read=pinned.read;
+ const delegationRead=readHubDelegations(t.base,m.hub,r.arenas.map((a:any)=>a.app),block.number);
+ delegationRead.catch(()=>{});
  const inherited=r.continuation?await read<bigint>(m.tournaments,agentContinuationAbi,'inheritedCount'):0n;
  if(r.continuation){
   const prior=await read<Address>(m.tournaments,agentContinuationAbi,'predecessor');
@@ -103,13 +105,13 @@ async function step(){
  // values the logic below reads at this block; the batch makes them one call.
  pinned.prefetch(m.pool,poolAbi,'verifier');
  for(const l of laneNumbers)pinned.prefetch(m.pool,poolAbi,'laneRecord',[l]);
- pinned.prefetch(m.ratings,ratingsAbi,'buildGeneration');
+ if(doesArchive)pinned.prefetch(m.ratings,ratingsAbi,'buildGeneration');
  pinned.prefetch(m.pool,poolAbi,'admissions');
  pinned.prefetch(m.tournaments,bookAbi,'admissions');
  pinned.prefetch(m.tournaments,bookAbi,'nextAt');
  pinned.prefetch(m.challenges,challengeAbi,'qualificationsMayStart');
- for(const a of r.arenas){pinned.prefetch(m.pool,poolAbi,'arenaMatch',[a.app]);pinned.prefetch(a.app,arenaAbi,'currentMatch');}
- if(state.history){pinned.prefetch(m.tournaments,bookAbi,'tournament',[state.history.id]);pinned.prefetch(m.tournaments,bookAbi,'fixture',[state.history.id,state.history.index]);}
+ if(doesMaintenance||doesArchive)for(const a of r.arenas){pinned.prefetch(m.pool,poolAbi,'arenaMatch',[a.app]);pinned.prefetch(a.app,arenaAbi,'currentMatch');}
+ if(doesArchive&&state.history){pinned.prefetch(m.tournaments,bookAbi,'tournament',[state.history.id]);pinned.prefetch(m.tournaments,bookAbi,'fixture',[state.history.id,state.history.index]);}
  read<bigint>(m.tournaments,bookAbi,'count').then(count=>{if(count)pinned.prefetch(m.tournaments,bookAbi,'tournament',[count]);}).catch(()=>{});
  await verifyHouseInstanceAuthorities(read,m);
  if(role==='admission'||role==='maintenance'){const expected=await read<Address>(m.pool,agentPoolAdmissionAbi,role+'Operator');assert.equal(expected.toLowerCase(),t.account.address.toLowerCase(),'Keeper signer differs from contract role');}
@@ -141,7 +143,8 @@ async function step(){
   console.error(JSON.stringify({at:new Date().toISOString(),arena:row.ref.arena,id:String(row.ref.id),event:'publication-proof-pending',error:clean(e)}));
  }}
  mark('lane-capture');
- const delegations=await Promise.all(r.arenas.map(async(a:any)=>({app:a.app as Address,d:await readHubDelegation(t.base,m.hub,a.app,block.number)})));
+ const observedDelegations=await delegationRead;
+ const delegations:{app:Address;d:typeof observedDelegations[number]}[]=r.arenas.map((a:any,i:number)=>({app:a.app as Address,d:observedDelegations[i]}));
  if(doesMaintenance)for(const {app,d} of delegations){
   if(d.status===0&&!cooling(m.pool,'recoverReleased')){
    const [epoch]=await read(app,arenaAbi,'resultCommitment');
@@ -163,7 +166,7 @@ async function step(){
    const [ticket]=await read(m.pool,poolAbi,'ticketOf',[reservation.ref]);
    if(ticket.matchId!==reservation.ref.id||ticket.epoch!==reservation.ref.epoch)throw Error('Reservation ticket identity changed');
    const commitment=await read(app,arenaAbi,'resultCommitment');
-   if(overdueAgentPublication({app,...d},ticket,commitment,block.timestamp)){
+   if(overdueAgentPublication({...d,app},ticket,commitment,block.timestamp)){
     await act(m.hub,'forceClose',[app,zeroHash]);return;
    }
   }
@@ -237,11 +240,9 @@ async function step(){
   if(!await tournamentHistory(await read<bigint>(m.tournaments,bookAbi,'count'),false,false))await archiveHistory();
   return;
  }
- if(doesAdmission){const expired=await expiredChallenge(read,m,state.challengeCursor??1n);state.challengeCursor=expired.next;await save();
- if(expired.expired!==null&&!cooling(m.challenges,'expire')){await act(m.challenges,'expire',[expired.expired]);return;}}
  // A missing worst-case proof holds NEW admissions only. Recovery above is
  // deliberately still live while qualification or the provider is unavailable.
- mark('expired-challenge');
+ mark('recovery');
  if(!budget){await archiveHistory();return;}
  const privateSetup=process.env.PONG_REUSABLE_AGENT_RUNTIME!=='reviewed-release';
  const admissions=await read<boolean>(m.pool,poolAbi,'admissions');
@@ -353,7 +354,12 @@ async function step(){
  if(doesAdmission&&available&&challengeLaneFree&&!cooling(m.pool,'admitChallenge')&&!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart')){
   await act(m.pool,'admitChallenge');return;
  }
- if(await tournamentHistory(count,available,laneFree))return;
+ // Expiry and historical scans cannot delay an eligible waiting player. The
+ // contract still validates every request and advances its bounded cursor.
+ if(doesAdmission){const expired=await expiredChallenge(read,m,state.challengeCursor??1n);state.challengeCursor=expired.next;await save();
+ if(expired.expired!==null&&!cooling(m.challenges,'expire')){await act(m.challenges,'expire',[expired.expired]);return;}}
+ mark('expired-challenge');
+ if((doesArchive||available&&laneFree)&&await tournamentHistory(count,available,laneFree))return;
  mark('history-walk');
  if(!available){await archiveHistory();return;}
  const bookOpen=await read<boolean>(m.tournaments,bookAbi,'admissions');
