@@ -16,6 +16,7 @@ import {engineJobIdentity,engineReceiptOutcome} from '../rooms-engine-recovery';
 import {retirableRefusal,refusalReason} from '../../../shared/engine-halt';
 
 export const POOL_COMMAND_GAS=14_800_000n;
+type PoolCommand='admit'|'cancelAdmission'|'cancelUnready'|'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries';
 
 export async function initializePoolOperations(db:Pool){await db.query(`
  CREATE SCHEMA IF NOT EXISTS agent_pool;
@@ -77,7 +78,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
  }
  async function resolution(job:any,unsent=false){
   const identity=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
-  const allowed=runtime?.reusable?['admit','cancelAdmission','start','tick','submitRandomness','cancelUnready']:runtime?.series?['start','tick','submitRandomness','advanceSeries','drainSeries']:['start','tick','submitRandomness'];
+  const allowed=runtime?.reusable?['admit','cancelAdmission','start','tick','submitRandomness','cancelUnready','RULES_VERSION']:runtime?.series?['start','tick','submitRandomness','advanceSeries','drainSeries']:['start','tick','submitRandomness'];
   if(!allowed.includes(identity.action))throw Error('Unexpected permissionless pool operation');
   if(!runtime?.series&&!runtime?.reusable&&identity.action!=='start'&&identity.matchId!==String(ref.id))throw Error('Command belongs to another match');
   // Only an entry created in this invocation is known never to have been sent.
@@ -114,11 +115,14 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   if(nonceProof&&now()<nonceProof.until)nonceProof.next=Number(job.nonce)+1;
   return {identity,receipt};
  }
- async function send(operation:string,name:'admit'|'cancelAdmission'|'cancelUnready'|'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries',args:readonly unknown[]=[]){
+ async function execute(operation:string,name:PoolCommand|'RULES_VERSION',args:readonly unknown[]=[]){
+  const probe=name==='RULES_VERSION';
+  if(probe&&(!runtime?.reusable||ref.id!==0n||args.length))throw Error('Publication probe requires an empty reusable arena');
+  if(!probe&&ref.id===0n)throw Error('A game command requires a match');
   if(!/^[a-z0-9:._-]{1,160}$/i.test(operation))throw Error('Invalid operation identity');
   if((name==='advanceSeries'||name==='drainSeries')&&!runtime?.series)throw Error('Series transport is not enabled');
   if((name==='admit'||name==='cancelAdmission'||name==='cancelUnready')&&!runtime?.reusable)throw Error('Reusable transport is not enabled');
-  if(runtime?.reusable){
+  if(runtime?.reusable&&!probe){
    const first=args[0] as {epoch?:bigint;matchId?:bigint};
    const intendedEpoch=(name==='admit'||name==='cancelAdmission')?first?.epoch:args[0],intendedMatch=(name==='admit'||name==='cancelAdmission')?first?.matchId:args[1];
    if(intendedEpoch!==ref.epoch||intendedMatch!==ref.id)throw Error('Command belongs to another match or epoch');
@@ -134,22 +138,29 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    c=await db.connect();
    locked=(await c.query('SELECT pg_try_advisory_lock(hashtextextended($1,701349)) AS ok',[lower])).rows[0].ok;
    if(!locked)throw Error('This arena already has a writer');await fence();
+   if(probe){
+    const [epoch,id]=await node.readContract({address:app,abi:reusableAgentArenaAbi,functionName:'currentMatch'});
+    if(epoch!==ref.epoch||id!==0n)throw Error('Publication probe cannot touch an admitted match');
+   }
    const data=encodeFunctionData({abi:arenaAbi,functionName:name,args:args as any});
    let unsent=false;
    let job=(await db.query('SELECT * FROM agent_pool.engine_jobs WHERE app=$1 AND epoch=$2 AND operation=$3',[lower,String(ref.epoch),operation])).rows[0];
    if(job){
     const prior=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
     if(prior.data!==data)throw Error('An operation cannot change its signed command');
-    if(job.status==='observed')return await feed.read(ref.id);
+    if(job.status==='observed')return probe?undefined:await feed.read(ref.id);
     if(job.status!=='pending')throw Error(`Arena operation is ${job.status}; refresh its state`);
    }else{
     const pending=(await db.query("SELECT * FROM agent_pool.engine_jobs WHERE app=$1 AND status='pending' ORDER BY created_at LIMIT 1",[lower])).rows[0];
     if(pending){
      if(BigInt(pending.epoch)!==ref.epoch)throw Error('Previous epoch command requires verified closure');
+     if(probe&&(await engineJobIdentity({...pending,nonce:String(pending.nonce)},arenaAbi,signer.address)).action!=='RULES_VERSION')throw Error('Publication probe cannot reconcile a game command');
      const resolved=await resolution(pending);feed.invalidate();
      // A prior match's receipt resolves its own nonce only. Never project its
      // state onto the next match, even when both share the same engine epoch.
-     if((resolved.identity.action==='start'&&!runtime?.reusable&&(!runtime?.series||pending.operation.startsWith(`match:${ref.id}:`)))||resolved.identity.matchId===String(ref.id))
+     if(resolved.identity.action==='RULES_VERSION'){
+      // A read-only probe has no game frame. Its receipt owns only its nonce.
+     }else if((resolved.identity.action==='start'&&!runtime?.reusable&&(!runtime?.series||pending.operation.startsWith(`match:${ref.id}:`)))||resolved.identity.matchId===String(ref.id))
       await feed.receipt(ref.id,{receipt:resolved.receipt},resolved.identity.action,resolved.identity.args??[],signer.address);
      else await feed.read(ref.id,true);
      throw Object.assign(Error('Previous command reconciled; refresh before another action'),{code:'POOL_RECONCILED'});
@@ -161,17 +172,20 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
      nonceProof={next:nonce,until:checkedAt+1000};
     }
     const nonce=nonceProof.next;
-    const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce,to:app,data,value:0n,gas:POOL_COMMAND_GAS,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+    const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce,to:app,data,value:0n,gas:probe?100_000n:POOL_COMMAND_GAS,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
     job={app:lower,id:randomUUID(),operation,epoch:String(ref.epoch),nonce:String(nonce),raw,hash:keccak256(raw),status:'pending'};
     await db.query('INSERT INTO agent_pool.engine_jobs(app,id,operation,epoch,signer,nonce,raw,hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
      [lower,job.id,operation,job.epoch,signer.address.toLowerCase(),job.nonce,raw,job.hash]);
     unsent=true;
    }
-   const resolved=await resolution(job,unsent);return await feed.receipt(ref.id,{receipt:resolved.receipt},name,args,signer.address);
+   const resolved=await resolution(job,unsent);return probe?undefined:await feed.receipt(ref.id,{receipt:resolved.receipt},name,args,signer.address);
   }catch(error){nonceProof=undefined;throw error;
   }finally{try{if(locked)await c?.query('SELECT pg_advisory_unlock(hashtextextended($1,701349))',[lower]);}finally{c?.release();busy=false;}}
  }
- return{node,feed,send,read:async(force=false)=>{
+ const send=async(operation:string,name:PoolCommand,args:readonly unknown[]=[]):Promise<EngineState>=>{
+  const state=await execute(operation,name,args);if(!state)throw Error('Game command produced no snapshot');return state;
+ };
+ return{node,feed,send,probePublication:async()=>{await execute('publication-probe','RULES_VERSION');},read:async(force=false)=>{
   // Warm the same three-second fence before it expires. This changes neither
   // its validity window nor the checks required before sending a command.
   if(!closed&&!busy&&fenceUntil>0&&now()>=fenceUntil-1500)void refreshFence().catch(()=>{});

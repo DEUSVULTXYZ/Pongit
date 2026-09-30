@@ -11,9 +11,9 @@ function fixture(){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false,now=0;
  let blockGate:Promise<void>|undefined,blockError=false;
  let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'='ok';
- let logs:any[]=[],archiveError=false,receiptReads=0,nonceReads=0,reset=false,feedError=false;const archived:any[]=[];
+ let logs:any[]=[],archiveError=false,receiptReads=0,nonceReads=0,reset=false,feedError=false,currentId=0n;const archived:any[]=[];
  const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
- const node:any={getTransactionCount:async()=>{nonceReads++;return nonce;},getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
+ const node:any={readContract:async()=>[epoch,currentId],getTransactionCount:async()=>{nonceReads++;return nonce;},getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
   if(r.method==='interlude_session')return{app,epoch:String(epoch),chainId:4242,baseBlock:20};
   assert.equal(r.method,'interlude_sendTransaction');const raw=r.params[0];sent.push(raw);
   if(behavior==='429')throw Object.assign(Error('busy'),{status:429});
@@ -39,8 +39,30 @@ function fixture(){
  const receiptIds:bigint[]=[],readIds:bigint[]=[];
  const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2,reset};},receipt:async(id:bigint)=>{if(feedError)throw Error('snapshot gap');receiptIds.push(id);return{id,phase:2};},invalidate(){}};
  const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,now:()=>now,archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
- return{make,jobs,sent,receipts,receiptIds,readIds,archived,now:(v:number)=>{now=v;},blockError:(v:boolean)=>{blockError=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
+ return{make,jobs,sent,receipts,receiptIds,readIds,archived,currentId:(v:bigint)=>{currentId=v;},now:(v:number)=>{now=v;},blockError:(v:boolean)=>{blockError=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
+
+test('a publication probe is a single journaled getter, without any game frame',async()=>{
+ const f=fixture();let e=f.make(0n,false,true);await e.probePublication();e.close();
+ e=f.make(0n,false,true);await e.probePublication();
+ assert.equal(f.jobs.length,1);assert.equal(f.sent.length,1);assert.equal(parseTransaction(f.sent[0]).gas,100_000n);
+ assert.deepEqual(f.receiptIds,[]);assert.deepEqual(f.readIds,[]);assert.equal(f.jobs[0].status,'observed');e.close();
+});
+
+test('a lost probe response is reconciled before a game and preserves its exact nonce',async()=>{
+ const f=fixture();let e=f.make(0n,false,true);f.behavior('lost-after-execution');
+ await assert.rejects(e.probePublication(),/lost/);e.close();
+ e=f.make(91n,false,true);f.behavior('ok');await assert.rejects(e.send('start','start',[1n,91n]),{code:'POOL_RECONCILED'});
+ assert.equal(f.sent.length,1);assert.deepEqual(f.readIds,[]);assert.deepEqual(f.receiptIds,[]);
+ await e.send('start','start',[1n,91n]);assert.equal(parseTransaction(f.sent[1]).nonce,1);e.close();
+});
+
+test('publication probes cannot run in a game or replay an uncertain game command',async()=>{
+ const f=fixture();let e=f.make(91n,false,true);await assert.rejects(e.probePublication(),/empty reusable/);
+ f.behavior('lost-before-execution');await assert.rejects(e.send('tick','tick',[1n,91n]),/lost/);e.close();
+ e=f.make(0n,false,true);await assert.rejects(e.probePublication(),/cannot reconcile a game/);assert.equal(f.sent.length,1);
+ f.currentId(91n);await assert.rejects(e.probePublication(),/cannot touch/);assert.equal(f.sent.length,1);e.close();
+});
 
 test('exact acknowledged receipts reuse nonce proof without indefinitely extending its RPC validity',async()=>{
  const f=fixture(),e=f.make();

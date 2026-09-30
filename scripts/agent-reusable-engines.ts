@@ -137,6 +137,16 @@ async function arenaLoop(app:Address,runtimeHash:string){
     // not keep an arena admissible forever after its relay has stopped.
     publicationPaused=!(await publication.read()).healthy;
     const budget=await funding(d.validator);
+    if(d.status===1&&!publicationPaused&&budget.funded&&d.batchIndex===0n){
+     // A reachable fresh node has not demonstrated that its relay can publish.
+     // Execute one getter through the existing signer journal, without reserving
+     // a player, then wait for a canonical hub batch. A receipt alone never opens
+     // admissions. If no batch is produced this remains explicitly unqualified.
+     engine??=createPoolEngine(db,base,m.hub,app,url,r.engineKey,{epoch:d.epoch,id:0n},undefined,
+      {node,reusable:true,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
+     await engine.probePublication();
+     await health('publication-check',{epoch:String(d.epoch),committedBatches:0});await delay(2000);continue;
+    }
     await close();await health(d.status===2?'challenge-window':publicationPaused?'publication-paused':!budget.funded?'publisher-unfunded':'available',
      {epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt),...(!budget.funded?{publisher:d.validator,balanceWei:String(budget.balance),minimumWei:String(budget.minimum)}:{})});await delay(1000);continue;
    }
