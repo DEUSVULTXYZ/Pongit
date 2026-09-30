@@ -766,3 +766,31 @@ Tournament 11 is complete. Its 28 fixtures match the canonical pool at block
 the existing bounded read transport. This is publication proof, not finality
 or 24-hour continuity. Subsequent tournaments may already run: check live
 locks before any catalogue migration. Difficulty policies remain undeployed.
+
+## Candidate build and regression evidence — 30 September, 19:22 UTC
+
+Source cbfe406 built successfully. Sponsor image
+`sha256:fb08e18b0e1012445c7078e8789cb0ef525b6c294b6497a542a1a7384b95cccf`;
+web image `sha256:d50e8b8440547813fa40d568813d2c8c266138bcf5f3102fd3dc3c7b26d2e400`.
+Both use the exact published source; runtime secrets were not build inputs.
+The bounded UI server used network=none and is stopped. Browser qualification
+is in progress before deployment. Public atomic mode is still disabled.
+
+The exact replay-hover baseline fails the contrast assertion on public f058201.
+Two earlier harness failures are retained separately: an incorrectly transcribed
+address, then an esbuild-injected callback helper absent in browser scope. The
+fixed callback runs as browser JavaScript; neither earlier failure proves a
+product regression. An additional signed-client test verifies that count and
+grant share block 44, 49 prior requests select two passes, and cancellation does
+not scan or admit. The original 826-test suite passed before this added case.
+
+Backup flow-scan-20260930T1918Z is SHA-verified off VPS, before deployment:
+
+- agents.dump: `8b664ba9eadb4650c6bf2c626b4d5287004b2cf84d51f0aa8589dfe44f95d04d`
+- operator.dump: `d98264806cded0a876400fb0e788a55f05980bed8a963784f5fc20aeb6b1e001`
+- runtime.tar.gz: `6eb942ce6800e2601d6e94e846049fba766e02a9087f561e2fbee2d7343c40eb`
+
+The sponsor had 56 confirmed operations and no queued/pending rows. A later
+rollback must again check for pending multi-pass intents: an older sponsor
+cannot replay them. Preserve the current signer and journal until resolution.
+Tournament 12 is playing; catalogue migration cannot assume the service drained.

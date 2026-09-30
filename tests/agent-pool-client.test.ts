@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {decodeFunctionData,hashTypedData,keccak256,recoverTypedDataAddress,toHex,type Address,type PublicClient} from 'viem';
+import {decodeFunctionData,hashTypedData,keccak256,multicall3Abi,recoverTypedDataAddress,toHex,type Address,type PublicClient} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {preparePoolChallenge,preparePoolRegistration,poolChallengeTypes,poolRegistrationTypes} from '../shared/agent-pool-client';
 import {agentChallengesAbi} from '../shared/abi-AgentChallenges';import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
@@ -40,4 +40,25 @@ test('challenge is signed only by the granted arcade key and never exceeds the g
  assert.equal(await recoverTypedDataAddress({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant,action,agent,mode,id,nonce,deadline},signature}),key.address);
  expired=true;await assert.rejects(preparePoolChallenge(client,m,key,addr(99),{agent:addr(20),mode:1}),/Renew/);
  expired=false;wrongDomain=true;await assert.rejects(preparePoolChallenge(client,m,key,addr(99),{agent:addr(20),mode:1}),/domain/);
+});
+
+test('new atomic challenge sizes its bounded scan at the same block without changing its signature',async()=>{
+ const key=privateKeyToAccount(generatePrivateKey()),grant=keccak256(toHex('scoped queue scan'));const reads:string[]=[];
+ const five={...m,version:5,rulesVersion:15,maxMatches:5,houseInstances:'official-v1',countdownClock:'engine-ticks-v1',arenaAdmissions:'verified-epoch-v1',
+  lanes:{tournament:1,challenge:4},challengeAdmission:'atomic-v1',arenas:[...m.arenas,...[12,13].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`}))]} as AgentPoolManifest;
+ const client={getBlock:async()=>({number:44n,timestamp:100n}),getChainId:async()=>10143,readContract:async(c:any)=>{
+  assert.equal(c.blockNumber,44n);reads.push(c.functionName);
+  if(c.functionName==='count')return 49n;if(c.functionName==='grantOf')return {key:key.address,expires:250n};
+  if(c.functionName==='grantDigest')return grant;if(c.functionName==='nonces')return 3n;
+  const [g,action,agent,mode,id,nonce,deadline]=c.args;
+  return hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant:g,action,agent,mode,id,nonce,deadline}});
+ }} as unknown as PublicClient;
+ const prepared=await preparePoolChallenge(client,five,key,addr(99),{agent:addr(20),mode:1});
+ const batch=decodeFunctionData({abi:multicall3Abi,data:prepared.data});assert.equal(batch.functionName,'aggregate3');if(batch.functionName!=='aggregate3')throw Error();
+ assert.equal(batch.args[0].length,3);assert.equal(reads.filter(n=>n==='count').length,1);
+ const command=decodeFunctionData({abi:agentChallengesAbi,data:batch.args[0][0].callData});if(command.functionName!=='command')throw Error();
+ const [,action,agent,mode,id,nonce,deadline,signature]=command.args;
+ assert.equal(await recoverTypedDataAddress({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant,action,agent,mode,id,nonce,deadline},signature}),key.address);
+ reads.length=0;const cancel=await preparePoolChallenge(client,five,key,addr(99),{agent:addr(20),mode:1,cancel:50n});
+ assert.equal(cancel.to,m.challenges);assert(!reads.includes('count'),'Cancellation must not scan or admit other players');
 });
