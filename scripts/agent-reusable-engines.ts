@@ -189,15 +189,22 @@ async function arenaLoop(app:Address,runtimeHash:string){
    },7500,10000);
    admitted=await admission.read();
    if(!admitted){
-    const [engineEpoch,count]=await node.readContract({address:app,abi,functionName:'resultCommitment'});
-    const session:any=await node.request({method:'interlude_session',params:[]} as any);
+    const [[engineEpoch,count],session]=await Promise.all([
+     node.readContract({address:app,abi,functionName:'resultCommitment'}),
+     node.request({method:'interlude_session',params:[]} as any) as Promise<any>,
+    ]);
     const cancel=block.timestamp>ticket.expires;
     const code=async(c:ReusableAgentBinding['controlA'],player:Address)=>cancel||c.codeHash===zeroHash?zeroHash:pinnedEngineCodeHash({
      address:c.house?r.modules.HousePolicies:player,hubBaseBlock:d!.baseBlock,engineBaseBlock:session.baseBlock,hubEpoch:d!.epoch,engineEpoch:session.epoch,getCode:args=>base.getCode(args)});
+    // Independent evidence shares the same pinned blocks. Wait for every check
+    // before signing; a failed code/header/ticket read cannot admit a player.
+    const [issuedDigest,source,engineCodeHashA,engineCodeHashB]=await Promise.all([
+     base.readContract({address:m.pool,abi:poolAbi,functionName:'issuedTicket',args:[app,ref.epoch,ticket.sequence],blockNumber:block.number}),
+     base.getBlock({blockNumber:ticket.sourceBlock}),code(binding.controlA,binding.a),code(binding.controlB,binding.b),
+    ]);
     const evidence={chainId:10143,authority:m.pool,arena:app,reservedMatch:ref.id,
-     issuedDigest:await base.readContract({address:m.pool,abi:poolAbi,functionName:'issuedTicket',args:[app,ref.epoch,ticket.sequence],blockNumber:block.number}),
-     sourceHash:(await base.getBlock({blockNumber:ticket.sourceBlock})).hash!,hubEpoch:d.epoch,hubStatus:d.status,hubExpires:d.expiresAt,
-     engineEpoch,engineCount:count,now:block.timestamp,engineCodeHashA:await code(binding.controlA,binding.a),engineCodeHashB:await code(binding.controlB,binding.b)};
+     issuedDigest,sourceHash:source.hash!,hubEpoch:d.epoch,hubStatus:d.status,hubExpires:d.expiresAt,
+     engineEpoch,engineCount:count,now:block.timestamp,engineCodeHashA,engineCodeHashB};
     (cancel?validateReusableAgentCancellation:validateReusableAgentAdmission)(ticket,binding,evidence);
     await engine.send(cancel?'cancel-expired':'admit',cancel?'cancelAdmission':'admit',[ticket,binding,await bridge.sign({hash:reusableAdmissionDigest(ticket)})]);
     admission=undefined;lastProgress=Date.now();continue;

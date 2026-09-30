@@ -429,3 +429,27 @@ The engine/runtime backup `flow-pinned-20260930T1656Z` is SHA-verified off VPS:
 
 It includes the deployed `01d3a06` engine but predates player trials 220/221.
 Refresh the journals and runtime after the final compatible API deployment.
+
+## Admission path correction — 30 September, 17:22 UTC
+
+Reader `7b93abd` deployed at 17:12:29 UTC. Offline imports and exact source
+hashes passed. The engine and human relayer were not restarted. Its real public
+Classic match 224 completed and published 1–7, but the strict test remains failed:
+admission 29.415 seconds and local input p95 59.1 ms exceed their targets. Executed
+receipt p95 was 15.73 ms; player/spectator holds were 67 / 83.1 ms, frame p95
+17.1 ms, without snapshot jumps or frame gaps. The read patch alone therefore
+does not establish an admission improvement.
+
+Canonical transaction decoding found 9b8 epoch 11 disabled and re-enabled by two
+successive gate updates before the challenge. The next candidate defers only an
+optional enable when a waiting challenge can already use an enabled, freshly
+verified idle arena. Any exclusion remains mandatory before admission. Initial
+capacity and ordinary reserve maintenance are unchanged. A focused regression
+covers exclusions, mixed batches, unavailable capacity and idle maintenance.
+
+The same candidate removes a duplicate capacity request from a valid-session
+click, overlaps the independent session check, and batches independent engine
+admission evidence. All identity, code, epoch, grant and ticket checks still
+complete before signing. No command permissions or nonce ownership change.
+Root TypeScript and 812 TypeScript tests pass. The build and actual browser
+qualification of this candidate are still pending at this checkpoint.

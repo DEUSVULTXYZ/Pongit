@@ -672,5 +672,75 @@
         "finality": false
       }
     }
-  ]
+  ],
+  "readerOptimization": {
+    "source": "7b93abd",
+    "deployedAt": "2026-09-30T17:12:29.546Z",
+    "image": "sha256:d8d4219d23038c9214aac67c452adfc7dd99c9f923122b37e4bd3990b4c4c06c",
+    "trial": {
+      "path": "artifacts/qualification/catalogue-reader-valid-20260930-classic/report.json",
+      "sha256": "a20a7e925a7b72beedf4d3e38d66f62fb52e221d9580874a682ef645738c68f3",
+      "passed": false,
+      "error": "Local movement latency exceeded 50 ms",
+      "ref": {
+        "app": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+        "epoch": "12",
+        "id": "224"
+      },
+      "admissionMs": 29415,
+      "input": {
+        "samples": 75,
+        "p95Ms": 59.10000002384186
+      },
+      "receiptP95Ms": 15.731399999996938,
+      "sync": {
+        "frames": 2829,
+        "snapshots": 252,
+        "startupFillMs": 0,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 67,
+        "holds": [],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 249.60000002384186,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": []
+      },
+      "spectatorSync": {
+        "frames": 3444,
+        "snapshots": 341,
+        "startupFillMs": 684,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 83.10000002384186,
+        "holds": [],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 249.70000004768372,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": []
+      },
+      "result": {
+        "hash": "0x87c2ec8218e82e39737a736bb97f02cc9ddfff573e113f004734a578f9159b04",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927095",
+        "finality": false
+      }
+    },
+    "gateChanges": [
+      {
+        "hash": "0xe45c09dca1c5ee32520862cc448ff22ddde3bc16276e315cb9abb96dce6d06fb",
+        "arena": "0x9b8e61621682da7b59239774f76DcF04071Ea059",
+        "epoch": 11,
+        "enabled": false
+      },
+      {
+        "hash": "0xf83bf4181f3bb73ef98753aeefd4744a68cd00aece548b87f131bcb78e01e468",
+        "arena": "0x9b8e61621682da7b59239774f76DcF04071Ea059",
+        "epoch": 11,
+        "enabled": true
+      }
+    ],
+    "conclusion": "No demonstrated admission improvement. Rendering passed; local input and admission failed. Preserve the original report."
+  }
 }

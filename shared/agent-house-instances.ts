@@ -17,6 +17,11 @@ export const agentPoolAdmissionAbi=parseAbi([
  'function arenaAvailable(address arena) view returns (bool)',
 ]);
 type Read=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<T>;
+/** Exclusions are urgent. Adding another healthy reserve is not urgent when
+ * an already enabled, freshly verified arena can serve a waiting challenge. */
+export function deferReserveEnable(changes:readonly {enabled:boolean}[],waitingChallenge:boolean,readyEnabled:boolean){
+ return waitingChallenge&&readyEnabled&&changes.length>0&&changes.every(change=>change.enabled);
+}
 export async function verifyHouseInstanceAuthorities(read:Read,m:{pool:Address;challenges:Address;qualifications:Address;houseInstances?:'official-v1';maxMatches?:2|5}){
  if(!m.houseInstances)return;
  const [version,lanes,...supported]=await Promise.all([

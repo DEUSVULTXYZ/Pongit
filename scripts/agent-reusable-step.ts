@@ -22,7 +22,7 @@ import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,reusableCapacity,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {overdueAgentPublication} from '../relayer/src/agents/reusable-recovery';
-import {verifyHouseInstanceAuthorities,agentPoolAdmissionAbi} from '../shared/agent-house-instances';
+import {verifyHouseInstanceAuthorities,agentPoolAdmissionAbi,deferReserveEnable} from '../shared/agent-house-instances';
 import {arenaRenewalExclusions} from '../shared/arena-renewal-policy';
 import {keeperLoop} from '../shared/keeper-loop';
 import {keeperRolePolicy,type AgentKeeperRole} from '../shared/agent-keeper-role';
@@ -333,29 +333,30 @@ async function step(){
  const idle=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase()));
  const eligible=(x:typeof idle[number])=>reusableAdmissionBudget(budget,x.d.batchIndex,x.d.expiresAt,block.timestamp)
   &&healthy.some(h=>h.app===x.app.toLowerCase()&&BigInt(h.detail.epoch)===x.d.epoch);
+ const challengeLaneFree=lanes.slice(1).some(l=>l.ref.id===0n);
+ const waitingChallenge=challengeLaneFree&&!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart');
  if(doesAdmission&&m.maxMatches===5){
-  const changes=await Promise.all(delegations.filter(x=>x.d.status===1).map(async x=>{
+  const gates=await Promise.all(delegations.filter(x=>x.d.status===1).map(async x=>{
    // The contract alone selects the arena. Gate updates cannot move active games.
    const occupied=lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase());
    const prior=await read<boolean>(m.pool,agentPoolAdmissionAbi,'arenaAdmissionEnabled',[x.app,x.d.epoch]);
    const enabled=occupied?prior:idle.some(a=>a.app===x.app)&&eligible(x);
-   return enabled===prior?null:{app:x.app,epoch:x.d.epoch,enabled};
+   return {app:x.app,epoch:x.d.epoch,enabled,prior,ready:!occupied&&prior&&enabled};
   }));
-  const pending=changes.filter(x=>x!==null);
-  if(pending.length){
+  const pending=gates.filter(x=>x.enabled!==x.prior);
+  if(pending.length&&!deferReserveEnable(pending,waitingChallenge,gates.some(x=>x.ready))){
    if(!cooling(m.pool,'setArenaAdmissions'))await act(m.pool,'setArenaAdmissions',[
     pending.map(x=>x.app),pending.map(x=>x.epoch),pending.map(x=>x.enabled),keccak256(stringToHex('PONGIT_VERIFIED_NODE_AND_PUBLICATION_V1'))]);
    return;
   }
  }
  const available=idle.length>0&&(m.maxMatches===5?idle.some(eligible):idle.every(eligible));
- const challengeLaneFree=lanes.slice(1).some(l=>l.ref.id===0n);
  const laneFree=lanes[0].ref.id===0n,count=await read<bigint>(m.tournaments,bookAbi,'count');
  mark('available');
  // A player waiting on a challenge comes before background bookkeeping: history
  // repairs and tournaments use lane 0 and wait one step at most. The unchanged
  // lane 1 section below still handles qualifications and cooldowns.
- if(doesAdmission&&available&&challengeLaneFree&&!cooling(m.pool,'admitChallenge')&&!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart')){
+ if(doesAdmission&&available&&waitingChallenge&&!cooling(m.pool,'admitChallenge')){
   await act(m.pool,'admitChallenge');return;
  }
  // Expiry and historical scans cannot delay an eligible waiting player. The

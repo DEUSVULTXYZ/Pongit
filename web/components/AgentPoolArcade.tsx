@@ -101,11 +101,11 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   catch{throw Error('Arena availability could not be checked. Please retry.');}
   finally{setChecking(false);}
  }
- async function challenge(m:AgentPoolManifest,s:PoolFamilySession,agent:Address){
+ async function challenge(m:AgentPoolManifest,s:PoolFamilySession,agent:Address,capacityChecked=false){
   const sponsor=poolBrowserSponsor(m,s.grant.player);await finishPoolSponsor(sponsor,undefined,progress);
   const existing=await poolApi<{request:PoolChallengeView|null}>(`challenges/${s.grant.player}`);
   if(existing.request){setRequest(existing.request);if(existing.request.ref)router.push(matchHref(existing.request.ref));return;}
-  if(!await canStart(m))return;
+  if(!capacityChecked&&!await canStart(m))return;
   const prepared=await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),s.grant.player,{agent,mode});
   await finishPoolSponsor(sponsor,prepared,progress);setRetry(n=>n+1);
  }
@@ -115,12 +115,17 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   if(serviceDown){setError('');return;}
   void run(async()=>{
   if(!config)throw Error('The arcade is reconnecting');
-  if(!canQueueAgent(person(agent)?.availability?.[mode])||!await canStart(config))return;
+  if(!canQueueAgent(person(agent)?.availability?.[mode]))return;
   const saved=account?loadPoolFamily(config,account,sessionStorage):null;
-  if(saved){await finishPoolSponsor(poolBrowserSponsor(config,saved.grant.player),undefined,progress);const observed=await observePoolFamily(poolBase(),config,saved);
+  if(saved){await finishPoolSponsor(poolBrowserSponsor(config,saved.grant.player),undefined,progress);
+   const [observed,available]=await Promise.all([observePoolFamily(poolBase(),config,saved),canStart(config)]);
+   if(!available)return;
    // Renew here, in the lobby, rather than let the grant expire mid-match.
-   if(observed.active&&!familyExpiresSoon(saved,observed.block.timestamp)){session.current=saved;await challenge(config,saved,agent);intent.current=null;return;}
+   // Capacity is advisory; reuse this click's observation, not a second serial
+   // request. The sponsored contract still checks the live admission gates.
+   if(observed.active&&!familyExpiresSoon(saved,observed.block.timestamp)){session.current=saved;await challenge(config,saved,agent,true);intent.current=null;return;}
    setRenewing(observed.active);}
+  else if(!await canStart(config))return;
   setConnectOpen(true);
  });}
  async function login(create=false){await run(async()=>{

@@ -1,9 +1,21 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
+import {deferReserveEnable} from '../shared/agent-house-instances';
 import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,inspectionSchedule,type PoolRead} from '../relayer/src/agents/pool-maintenance';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
+
+test('an enabled healthy arena serves a waiting challenge before an optional reserve update',()=>{
+ assert.equal(deferReserveEnable([{enabled:true}],true,true),true);
+ // Never leave an unsafe selectable arena enabled, including mixed batches.
+ assert.equal(deferReserveEnable([{enabled:false}],true,true),false);
+ assert.equal(deferReserveEnable([{enabled:true},{enabled:false}],true,true),false);
+ // Initial capacity and idle reserve maintenance still run normally.
+ assert.equal(deferReserveEnable([{enabled:true}],true,false),false);
+ assert.equal(deferReserveEnable([{enabled:true}],false,true),false);
+ assert.equal(deferReserveEnable([],true,true),false);
+});
 
 test('background inspections are independently bounded without suppressing failed pages or restart',()=>{
  let now=1000;const s=inspectionSchedule(()=>now);
