@@ -37,11 +37,17 @@ try{
     await dialog.getByRole('button',{name:'Play replay',exact:true}).click();await page.waitForTimeout(1800);assert(Number(await slider.inputValue())>0);
     await slider.fill(String(replay.frameCount-1));await page.waitForTimeout(200);
     const last=replay.frames.at(-1).state;await dialog.getByText(`${last.scoreA} : ${last.scoreB}`,{exact:true}).waitFor();
+    const play=dialog.getByRole('button',{name:'Play replay',exact:true});await play.hover();
+    const contrast=await play.evaluate(el=>{const s=getComputedStyle(el),luminance=(color:string)=>{
+     const channels=(color.match(/[\d.]+/g)??[]).slice(0,3).map(Number).map(v=>{v/=255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4;});
+     return .2126*channels[0]+.7152*channels[1]+.0722*channels[2];};
+     const a=luminance(s.color),b=luminance(s.backgroundColor);return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+    });assert(contrast>=4.5,'Hovered replay text lacks contrast');
     assert(await page.evaluate(()=>getComputedStyle(document.body).overflow==='hidden'&&document.documentElement.scrollWidth<=innerWidth+1));
     await page.screenshot({path:`${out}/${channel}-${width}.png`,fullPage:true});
     await page.keyboard.press('Escape');assert.equal(await dialog.count(),0);assert(await open.evaluate(el=>el===document.activeElement));
     assert.deepEqual(errors,[]);assert.deepEqual(blocked,[]);
-    report.checks.push({channel,width,height,playback:true,finalScore:[last.scoreA,last.scoreB],focus:true,pixelControls:true,blockedRequests:blocked.length});
+    report.checks.push({channel,width,height,playback:true,finalScore:[last.scoreA,last.scoreB],focus:true,pixelControls:true,hoverContrast:contrast,blockedRequests:blocked.length});
    }catch(e){await page.screenshot({path:`${out}/${channel}-${width}-failure.png`,fullPage:true}).catch(()=>{});throw e;}
    finally{await context.unrouteAll({behavior:'ignoreErrors'});await context.close();}
   }}finally{await browser.close();}

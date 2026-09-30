@@ -6,14 +6,15 @@ import {estimateFeesPerGas} from 'viem/actions';
  * whole acceptance window. Nothing is signed until all checks succeed.
  */
 export async function prepareSponsoredTransaction(base:PublicClient,account:Address,tx:{to:Address;data:Hex;value:bigint},
- strictEstimate?:{to:Address;data:Hex;value:bigint}|null){
+ strictEstimate?:{to:Address;data:Hex;value:bigint}|readonly {to:Address;data:Hex;value:bigint}[]|null){
  // The public viem fee action also reads the latest block. Share this one
  // in-flight observation, only within this preparation; never cache it across
  // transactions or replace viem's chain-specific fee calculation.
  const blockRead=base.getBlock();
  const feeClient={...base,getBlock:()=>blockRead};
  const gasRead=(async()=>{
-  if(strictEstimate){try{return await base.estimateGas({account,...strictEstimate});}catch(error){
+  const candidates=Array.isArray(strictEstimate)?strictEstimate:strictEstimate?[strictEstimate]:[];
+  for(const candidate of candidates){try{return await base.estimateGas({account,...candidate});}catch(error){
    let cause:any=error,reverted=false;for(let i=0;cause&&i<10;i++,cause=cause.cause)
     if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name)){reverted=true;break;}
    if(!reverted)throw error;

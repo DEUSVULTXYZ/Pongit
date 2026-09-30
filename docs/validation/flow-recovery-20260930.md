@@ -725,3 +725,44 @@ fails on the current public build. A scoped replay CSS correction reuses the
 Pixel Palace frame, square bevelled buttons and a square cyan range thumb,
 keeping 44-pixel controls and keyboard focus. It does not modify human gameplay
 or global control rules. Candidate browser validation is still required.
+
+## Real match and queue traversal diagnosis — 30 September, 19:14 UTC
+
+Public web f058201 deployed at 18:58:55 UTC after 78 Chrome/Edge fixture checks.
+The public replay 242 passes actual playback, seeking, focus and pixel-control
+checks at 360 and 1440 on both browsers. Visual review then found inadequate
+hover contrast on its Play button; a scoped CSS correction and measured
+contrast assertion are prepared, not yet deployed.
+
+Fixture 246 (af7c/12), Classic, completed and published. It included a first
+virtual-Mera authorization: admission 27.807 s, local response p95 15.2 ms,
+executed receipt p95 14.7608 ms, rendering p95 17.1 ms, player/spectator holds
+133.3/166.8 ms. This is not a valid-session admission pass or physical passkey
+proof. Fixture 248 (7a45/12), Chaos, reused that grant, sent 110 controls,
+reconnected after F5 and published 0–7. It FAILS admission at 18.490 s; other
+measured gates passed: local p95 15.4 ms, receipt 14.8955 ms, frame 17.2 ms,
+player/spectator holds 366.4/183.1 ms, no snapshot jumps. Original reports and
+deadlines remain unchanged. Both drivers have stopped.
+
+Canonical diagnosis at block 67049710: the challenge queue had 49 historical
+requests and cursor 16. The signed transaction created request 50 but its sole
+admission pass scanned only through 47. The cursor became 48 without an
+admission. A read-only replay of the exact historical transaction reproduces
+this: one pass gives the zero reference; two passes admit exactly 7a45/12/248.
+Strict gas estimates were 1,307,317 and 2,326,691. No signature was replaced,
+transaction sent, queue priority bypassed or contract state mutated by this
+reproduction.
+
+The candidate derives the number of 32-item passes from the same observed
+block, caps it at four, and retains normal resumable queuing beyond that bound.
+Only identical permissionless admission calls may follow the one signed
+request. Gas simulation requires the longest successful prefix while keeping
+the remaining original optional calls. Transport uncertainty never enables a
+gas guess, different intent or nonce reuse. Public atomic capability remains
+disabled until real qualification. 826 TypeScript tests pass.
+
+Tournament 11 is complete. Its 28 fixtures match the canonical pool at block
+67048954. The first unpaced RPC audit failed and is preserved; the second uses
+the existing bounded read transport. This is publication proof, not finality
+or 24-hour continuity. Subsequent tournaments may already run: check live
+locks before any catalogue migration. Difficulty policies remain undeployed.

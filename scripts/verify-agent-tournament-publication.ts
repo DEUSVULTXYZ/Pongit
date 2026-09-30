@@ -1,12 +1,13 @@
 // Read-only canonical result audit. Completion is not a continuity or finality verdict.
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
-import {createPublicClient,http,type Address} from 'viem';
+import {createPublicClient,type Address} from 'viem';
+import {baseReadTransport} from '../shared/base-read-transport';
 import {agentTournamentsAbi as bookAbi} from '../shared/abi-AgentTournaments';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 const [book,pool,idText,out]=process.argv.slice(2);
 assert(/^0x[\da-f]{40}$/i.test(book)&&/^0x[\da-f]{40}$/i.test(pool)&&/^\d+$/.test(idText)&&out);
-const base=createPublicClient({transport:http(process.env.RPC_URL,{retryCount:0,timeout:15000})});
+const base=createPublicClient({transport:baseReadTransport(process.env.RPC_URL??'https://testnet-rpc.monad.xyz',{intervalMs:150,maxConcurrent:2})});
 assert.equal(await base.getChainId(),10143);
 const block=await base.getBlock(),id=BigInt(idText);
 const read=(address:Address,abi:any,functionName:string,args:readonly unknown[]=[])=>

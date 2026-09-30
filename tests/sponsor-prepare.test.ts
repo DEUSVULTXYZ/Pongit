@@ -61,3 +61,17 @@ test('only a strict contract revert permits estimating the queued-only path',asy
  await assert.rejects(prepareSponsoredTransaction(offline.client,owner,tx,strict),/RPC offline/);
  assert.equal(offline.requests.filter(m=>m==='eth_estimateGas').length,1,'No gas guess or fallback on uncertain transport');
 });
+
+test('a filled lane estimates the successful prefix while retaining original optional calls',async()=>{
+ const full={...tx,data:'0x1111' as const},prefix={...tx,data:'0x2222' as const};const observed:string[]=[];
+ const f=fixture({eth_estimateGas:([call])=>{
+  observed.push(call.data);
+  if(call.data===full.data)throw {code:3,message:'execution reverted: challenge lane waiting',data:'0x'};
+  assert.equal(call.data,prefix.data);return '0x1e8480';
+ }});
+ const result=await prepareSponsoredTransaction(f.client,owner,tx,[full,prefix]);
+ assert.deepEqual(observed,[full.data,prefix.data]);assert.equal(result.gas,2_400_000n);assert.equal(result.data,tx.data);
+ const offline=fixture({eth_estimateGas:()=>{throw Error('429');}});
+ await assert.rejects(prepareSponsoredTransaction(offline.client,owner,tx,[full,prefix]),/429/);
+ assert.equal(offline.requests.filter(m=>m==='eth_estimateGas').length,1);
+});

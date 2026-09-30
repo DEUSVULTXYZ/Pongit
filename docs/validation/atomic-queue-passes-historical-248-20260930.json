@@ -1,0 +1,48 @@
+{
+  "at": "2026-09-30T19:11:41.275Z",
+  "readOnly": true,
+  "historicalBlock": "67049710",
+  "canonicalHash": "0x52f283aa5e33ab89430d638840e24294ee2d773d204872032e73396e71ba0e63",
+  "transaction": "0x325c97aa3ed3a316ba86a233f589388bc92a6e884575d74f71aa3af6212a0854",
+  "results": [
+    {
+      "passes": 1,
+      "gas": "1307317",
+      "admissions": [
+        {
+          "success": true,
+          "ref": {
+            "chainId": "0",
+            "arena": "0x0000000000000000000000000000000000000000",
+            "epoch": "0",
+            "id": "0"
+          }
+        }
+      ]
+    },
+    {
+      "passes": 2,
+      "gas": "2326691",
+      "admissions": [
+        {
+          "success": true,
+          "ref": {
+            "chainId": "0",
+            "arena": "0x0000000000000000000000000000000000000000",
+            "epoch": "0",
+            "id": "0"
+          }
+        },
+        {
+          "success": true,
+          "ref": {
+            "chainId": "10143",
+            "arena": "0x7A45dCd516896A22E4cDEd587086ee57B8aDF9c6",
+            "epoch": "12",
+            "id": "248"
+          }
+        }
+      ]
+    }
+  ]
+}

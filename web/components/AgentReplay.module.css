@@ -14,6 +14,7 @@
 :global(.cabinet-dialog) .modal button { min-width: 44px; min-height: 44px; border: 2px solid #8672b7; border-radius: 0; background: #211b40; box-shadow: inset 2px 2px #cdbcf542,inset -2px -2px #0b0923,0 3px #070719; color: #eee9fb; }
 :global(.cabinet-dialog) .modal button:hover:not(:disabled) { background: #30244f; border-color: #87eefa; }
 :global(.cabinet-dialog) .modal .controls button { border-color: #adfcf2; background: #8de3e5; color: #15253a; box-shadow: inset 0 3px #dcfff6,inset 0 -4px #52a3b7,3px 3px #080a20; }
+:global(.cabinet-dialog) .modal .controls button:hover:not(:disabled) { background: #b2fff6; color: #10252e; }
 :global(.cabinet-dialog) .modal :is(button,input):focus-visible { outline: 3px solid #c8fbff; outline-offset: 4px; }
 .controls input[type=range] { appearance: none; border: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 0; cursor: pointer; }
 .controls input[type=range]::-webkit-slider-runnable-track { height: 8px; border: 2px solid #605083; border-radius: 0; background: #17132e; }

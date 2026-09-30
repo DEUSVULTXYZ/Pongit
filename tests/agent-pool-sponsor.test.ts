@@ -7,7 +7,7 @@ import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
 import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
 import {familyGrantTypes,type ChainOperation} from '../shared/independent';
 import type {AgentPoolManifest} from '../shared/agent-pool';
-import {batchPoolChallenge,strictPoolAdmissionEstimate,POOL_ADMISSION_BATCH,createPoolSponsor,PoolSponsorPending,poolOperationId,validatePoolSignedCall,type PoolSessionStorage,type PoolSignedCall} from '../shared/agent-pool-sponsor';
+import {admissionPasses,batchPoolChallenge,strictPoolAdmissionEstimate,strictPoolAdmissionEstimates,POOL_ADMISSION_BATCH,createPoolSponsor,PoolSponsorPending,poolOperationId,validatePoolSignedCall,type PoolSessionStorage,type PoolSignedCall} from '../shared/agent-pool-sponsor';
 import {preparePoolFamily,loadPoolFamily,observePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN} from '../shared/agent-pool-family';
 import {poolSponsorRoutes} from '../relayer/src/agents/pool-sponsor';
 
@@ -26,7 +26,7 @@ test('atomic admission only permits one signed request followed by optional curr
  assert.equal(batch.to,POOL_ADMISSION_BATCH);assert.equal(validatePoolSignedCall(five,batch).admission,true);
  assert.equal(decoded.functionName,'aggregate3');if(decoded.functionName!=='aggregate3')throw Error();
  const calls=decoded.args[0],mutate=(next:typeof calls)=>({to:batch.to,data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[next]})});
- for(const bad of [mutate([...calls,calls[1]]),mutate([calls[0]]),mutate([calls[1],calls[0]]),
+ for(const bad of [mutate([...calls,calls[1],calls[1],calls[1],calls[1]]),mutate([calls[0]]),mutate([calls[1],calls[0]]),
   mutate([{...calls[0],allowFailure:true},calls[1]]),mutate([calls[0],{...calls[1],allowFailure:false}]),
   mutate([{...calls[0],target:batch.to,callData:batch.data},calls[1]]),
   mutate([calls[0],{...calls[1],target:m.arenas[0].app}]),mutate([calls[0],{...calls[1],callData:request.data}]),
@@ -41,6 +41,27 @@ test('atomic admission only permits one signed request followed by optional curr
  const strictDecoded=decodeFunctionData({abi:multicall3Abi,data:strict.data});assert.equal(strictDecoded.functionName,'aggregate3');
  if(strictDecoded.functionName==='aggregate3')assert(strictDecoded.args[0].every(c=>!c.allowFailure));
  assert.throws(()=>validatePoolSignedCall(five,strict),'Estimate-only bytes cannot enter the sponsor journal');
+});
+
+test('historical queue scanning is bounded without choosing or bypassing queued players',()=>{
+ const five={...m,version:5,challengeAdmission:'atomic-v1'} as AgentPoolManifest;
+ for(const [count,passes] of [[0n,1],[1n,1],[32n,1],[33n,2],[50n,2],[64n,2],[65n,3],[97n,4],[129n,4],[10_000n,4]] as const)
+  assert.equal(admissionPasses(count),passes);
+ for(const passes of [1,2,3,4]){
+  const batch=batchPoolChallenge(five,request,passes);validatePoolSignedCall(five,batch);
+  const decoded=decodeFunctionData({abi:multicall3Abi,data:batch.data});assert.equal(decoded.functionName,'aggregate3');
+  if(decoded.functionName!=='aggregate3')throw Error();
+  assert.equal(decoded.args[0].length,passes+1);assert.equal(decoded.args[0][0].callData,request.data);
+  const estimates=strictPoolAdmissionEstimates(five,batch);assert.equal(estimates.length,passes);
+  estimates.forEach((estimate,i)=>{
+   const e=decodeFunctionData({abi:multicall3Abi,data:estimate.data});if(e.functionName!=='aggregate3')throw Error();
+   assert.equal(e.args[0].length,passes+1,'Keep all original calls when estimating a successful prefix');
+   e.args[0].forEach((c,j)=>{assert.equal(c.callData,decoded.args[0][j].callData);assert.equal(c.target,decoded.args[0][j].target);assert.equal(c.allowFailure,j>passes-i);});
+   assert.throws(()=>validatePoolSignedCall(five,estimate),'Strict estimates must never be journalled');
+  });
+ }
+ for(const invalid of [0,-1,5,1.5,NaN])assert.throws(()=>batchPoolChallenge(five,request,invalid));
+ assert.deepEqual(strictPoolAdmissionEstimates(five,request),[]);
 });
 
 test('an uncertain atomic request resumes exact bytes after F5 and a disabled client rollout flag',async()=>{

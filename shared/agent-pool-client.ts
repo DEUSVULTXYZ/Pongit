@@ -5,7 +5,7 @@ import {abi as familyAbi} from './abi-independent-ArcadeFamily';
 import {agentMetadata} from './agents';
 import {validateAgentPoolManifest,type AgentPoolManifest} from './agent-pool';
 import {validateStrategyRuntime} from './agent-strategy-code';
-import {batchPoolChallenge} from './agent-pool-sponsor';
+import {admissionPasses,batchPoolChallenge} from './agent-pool-sponsor';
 
 export const poolRegistrationTypes={StrategyRegistration:[
  {name:'strategy',type:'address'},{name:'creator',type:'address'},{name:'metadata',type:'bytes32'},
@@ -43,7 +43,11 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
  const m=validateAgentPoolManifest(manifest),block=await client.getBlock();
  if(await client.getChainId()!==10143)throw Error('Challenges require Monad Testnet');
  if(![0,1].includes(options.mode)||options.cancel!==undefined&&options.cancel<1n)throw Error('Invalid challenge mode or cancellation reference');
- const family=await client.readContract({address:m.family,abi:familyAbi,functionName:'grantOf',args:[player],blockNumber:block.number});
+ const [family,count]=await Promise.all([
+  client.readContract({address:m.family,abi:familyAbi,functionName:'grantOf',args:[player],blockNumber:block.number}),
+  m.challengeAdmission==='atomic-v1'&&options.cancel===undefined?
+   client.readContract({address:m.challenges,abi:agentChallengesAbi,functionName:'count',blockNumber:block.number}):Promise.resolve(0n),
+ ]);
  if(family.key.toLowerCase()!==key.address.toLowerCase()||family.expires<=block.timestamp)throw Error('Renew arcade session');
  const grant=await client.readContract({address:m.family,abi:familyAbi,functionName:'grantDigest',args:[family],blockNumber:block.number});
  const nonce=await client.readContract({address:m.challenges,abi:agentChallengesAbi,functionName:'nonces',args:[grant],blockNumber:block.number});
@@ -54,6 +58,6 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
   args:[grant,message.action,message.agent,message.mode,message.id,nonce,deadline],blockNumber:block.number});
  if(digest!==onchain)throw Error('Challenge domain differs from the deployed queue');
  const signature=await key.signTypedData(typed);
- const call=batchPoolChallenge(m,{to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[player,message.action,message.agent,message.mode,message.id,nonce,deadline,signature]})});
+ const call=batchPoolChallenge(m,{to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[player,message.action,message.agent,message.mode,message.id,nonce,deadline,signature]})},admissionPasses(count+1n));
  return {...call,digest,nonce,deadline};
 }

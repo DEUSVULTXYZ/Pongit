@@ -9,6 +9,10 @@ import {reusableAgentPoolAbi} from './abi-ReusableAgentPool';
 export const POOL_ADMISSION_BATCH='0xcA11bde05977b3631167028862bE2a173976CA11' as const;
 // Observed deployed runtime, independently compared before a sponsor starts.
 export const POOL_ADMISSION_BATCH_HASH='0xd5c15df687b16f2ff992fc8d767b4216323184a2bbc6ee2f9c398c318e770891' as const;
+export const MAX_ADMISSION_PASSES=4;
+/** The deployed queue scans 32 historical requests per call. More than four
+ * passes remains the ordinary resumable queue's responsibility. */
+export const admissionPasses=(count:bigint)=>Number((count+31n)/32n>4n?4n:(count+31n)/32n<1n?1n:(count+31n)/32n);
 const admitData=encodeFunctionData({abi:reusableAgentPoolAbi,functionName:'admitChallenge'});
 
 export type PoolSignedCall={to:Address;data:Hex};
@@ -30,8 +34,8 @@ export function validatePoolSignedCall(m:AgentPoolManifest,body:unknown):PoolSig
   const decoded=decodeFunctionData({abi:multicall3Abi,data});
   if(decoded.functionName!=='aggregate3'||encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:decoded.args}).toLowerCase()!==data)throw Error('Invalid admission batch');
   const calls=decoded.args[0];
-  if(calls.length!==2||calls[0].target.toLowerCase()!==m.challenges.toLowerCase()||calls[0].allowFailure
-   ||calls[1].target.toLowerCase()!==m.pool.toLowerCase()||!calls[1].allowFailure||calls[1].callData!==admitData)throw Error('Invalid admission batch scope');
+  if(calls.length<2||calls.length>MAX_ADMISSION_PASSES+1||calls[0].target.toLowerCase()!==m.challenges.toLowerCase()||calls[0].allowFailure
+   ||calls.slice(1).some(c=>c.target.toLowerCase()!==m.pool.toLowerCase()||!c.allowFailure||c.callData!==admitData))throw Error('Invalid admission batch scope');
   const request=validatePoolSignedCall(m,{to:calls[0].target,data:calls[0].callData});
   if(!request.admission)throw Error('Only a new challenge can request atomic admission');
   return {to,data,admission:true};
@@ -51,11 +55,12 @@ export function validatePoolSignedCall(m:AgentPoolManifest,body:unknown):PoolSig
  return{to,data,admission:decoded.functionName==='register'||action===1};
 }
 
-export function batchPoolChallenge(m:AgentPoolManifest,call:PoolSignedCall):PoolSignedCall{
+export function batchPoolChallenge(m:AgentPoolManifest,call:PoolSignedCall,passes=1):PoolSignedCall{
  if(m.challengeAdmission!=='atomic-v1'||call.to.toLowerCase()!==m.challenges.toLowerCase()||!validatePoolSignedCall(m,{to:call.to,data:call.data}).admission)return call;
+ if(!Number.isInteger(passes)||passes<1||passes>MAX_ADMISSION_PASSES)throw Error('Invalid admission pass count');
  const batch={to:POOL_ADMISSION_BATCH,data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[[
   {target:call.to,allowFailure:false,callData:call.data},
-  {target:m.pool,allowFailure:true,callData:admitData},
+  ...Array.from({length:passes},()=>({target:m.pool,allowFailure:true,callData:admitData})),
  ]]})};
  validatePoolSignedCall(m,batch);return batch;
 }
@@ -68,6 +73,18 @@ export function strictPoolAdmissionEstimate(m:AgentPoolManifest,call:PoolSignedC
  const decoded=decodeFunctionData({abi:multicall3Abi,data:call.data});
  if(decoded.functionName!=='aggregate3')throw Error('Invalid admission batch');
  return {to:call.to,data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[decoded.args[0].map(c=>({...c,allowFailure:false}))]})};
+}
+
+/** Try the longest required prefix first, retaining the entire original batch
+ * in each simulation. If capacity fills after the first admission, later calls
+ * may fail without underestimating the successful prefix or signing new bytes. */
+export function strictPoolAdmissionEstimates(m:AgentPoolManifest,call:PoolSignedCall):PoolSignedCall[]{
+ const strict=strictPoolAdmissionEstimate(m,call);if(!strict)return [];
+ const decoded=decodeFunctionData({abi:multicall3Abi,data:call.data});
+ if(decoded.functionName!=='aggregate3')throw Error('Invalid admission batch');
+ const calls=decoded.args[0];
+ return Array.from({length:calls.length-1},(_,i)=>({to:call.to,data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',
+  args:[calls.map((c,index)=>({...c,allowFailure:index>calls.length-1-i}))]})}));
 }
 
 export class PoolSponsorPending extends Error {
