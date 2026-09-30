@@ -312,3 +312,45 @@ responses, restart, wrong epochs/applications, unavailable health, conflicting
 commands, consumed nonces and gas refusals. All **809 TypeScript tests** and root
 typecheck pass. Production deployment and the actual match-214 result must still
 be checked separately; no new game driver has been started.
+
+## Actual recovered result and remaining latency — 30 September, 16:42 UTC
+
+Engine `c04443e` deployed at 16:29:03 UTC as
+`sha256:09fd1103a16e69ecf40b353708cc0a82afe0152c448bdb34c844aa3b4daea6cf`.
+The exact original nonce-2 start was observed at 16:29:11; its old refusal proof
+remains in the journal. No replacement bytes were signed. The canonical match
+214 result is **7–0**, elapsed 297.135317 seconds, captured with its tournament
+fixture resolved. It remains contestable (`finality=false`). Tournament 11 has
+resumed. Proofs, including the exact receipt, are in `flow-recovered-20260930.json`.
+
+Both scheduled fixture recoveries are complete. 40178 was released at 16:21:04
+UTC in `0xf1d1ee3a9d533786896a199d1c4a8ed28eaffd4f848ed76b17e468028422b3f7`
+and reopened at 16:21:11 in
+`0x2858dbf51d22b66929a76849b67368c019c3cab3d813b96163128b255debc617`.
+
+A real public Chrome spectator measured 60 seconds of match 214: 100% ball
+visibility, 97.69% moving frames, 17.1 ms frame p95, engine clock 99.20% and
+displayed clock 99.36% of wall time. **The test failed** on a 966.7 ms hold;
+the accepted maximum remains 500 ms. No page errors or slow browser HTTP
+requests explain that hold. The engine journal separately records 1,246 and
+1,201 ms gaps between commands near that window, although their own execution
+round trips were 117 and 112 ms. This is not a passing fluidity qualification.
+
+The next compatible optimization removes a serial header verification RPC by
+using an exact block hash with `requireCanonical:true`. There is no fallback to
+latest. A real probe through the production RPC proxy decoded all eight arenas;
+three two-call observations took 556, 934 and 370 ms. The proxy rejected an
+unknown block hash between two successful reads of the known hash. Unit tests
+retain the three-second fence, reorganization refusal and per-arena isolation.
+Immutable arena code is now verified once per epoch/base instead of repeatedly
+while hosted discovery is unavailable. Public rendering must be remeasured after
+deployment. All 809 TypeScript tests and root typecheck pass on this candidate.
+
+The final recovery backup `flow-recovered-20260930T1640Z` is SHA-verified off VPS:
+
+- agents.dump: `9eb67672af3381976fdc762da48b88db07a1e406f3cc9644542f0d07e55d5d6a`
+- operator.dump: `66706039cf1d245b73088441a128c95d0e107e0304731f509e93130a861ffd90`
+- runtime.tar.gz: `17411d1d9c4fd7f6c74bf8acc985fc33be8fa355920da88227b7b1a962b55341`
+
+No human service or contract was changed. The difficulty migration, admission
+target, financial/replay checks and unchanged 24-hour qualification remain open.

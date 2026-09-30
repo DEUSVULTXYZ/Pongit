@@ -66,7 +66,7 @@ async function replayLoop(){while(!stopping){try{await replays.reconcile(async r
 async function arenaLoop(app:Address,runtimeHash:string){
  let engine:ReturnType<typeof createPoolEngine>|undefined,node:PublicClient|undefined;
  let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url=`https://il-${app.slice(2,18).toLowerCase()}.fly.dev`,lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
- let observedRuntimeHash='';
+ let observedRuntimeHash='',observedRuntimeBase:bigint|undefined;
  let observations:PoolObservations|undefined,proofTask:Promise<void>|undefined;
  let cachedTicket:{key:string;pair:readonly [ReusableTicket,ReusableAgentBinding]}|undefined,admitted=false;
  let admission:BackgroundObservation<boolean>|undefined;
@@ -103,10 +103,14 @@ async function arenaLoop(app:Address,runtimeHash:string){
    const common=await assignments.read(),block=common.block;
    {
     const next=(await sharedHub.read(app)).delegation;
-    if(!d||next.epoch!==d.epoch){await close();node=undefined;publicationPaused=false;publication=publicationObservation();}d=next;
-    if(!node&&d.status!==0){
-     observedRuntimeHash=keccak256((await base.getCode({address:app,blockNumber:block.number}))!);
-     assert.equal(observedRuntimeHash.toLowerCase(),runtimeHash.toLowerCase(),'Arena bytecode changed');
+    if(!d||next.epoch!==d.epoch){await close();node=undefined;observedRuntimeHash='';observedRuntimeBase=undefined;publicationPaused=false;publication=publicationObservation();}d=next;
+    if(!node&&d.status!==0&&observedRuntimeBase!==d.baseBlock){
+     // Immutable arena code needs one verification per epoch/base, not another
+     // Monad read for every failed hosted discovery. An unavailable idle node
+     // otherwise congests the same RPC gateway used by active command fences.
+     const hash=keccak256((await base.getCode({address:app,blockNumber:block.number}))!);
+     assert.equal(hash.toLowerCase(),runtimeHash.toLowerCase(),'Arena bytecode changed');
+     observedRuntimeHash=hash;observedRuntimeBase=d.baseBlock;
     }
    }
    assert(d);

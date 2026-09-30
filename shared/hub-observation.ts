@@ -1,11 +1,11 @@
-import {encodeFunctionData,multicall3Abi,zeroHash,type Address,type PublicClient} from 'viem';
+import {decodeFunctionResult,encodeFunctionData,multicall3Abi,zeroHash,type Address,type PublicClient} from 'viem';
 import {roomsLifecycleHubAbi} from './abi-rooms-lifecycle';
 import {decodeHubDelegation} from './rooms-hub';
 
 type Delegation=ReturnType<typeof decodeHubDelegation>;
 export type HubObservation={block:{number:bigint;hash:string;timestamp:bigint};delegation:Delegation;observedAt:number};
 
-/** All arenas share one canonical header and one raw multicall. Decode each hub
+/** All arenas share one canonical header and one hash-pinned raw multicall. Decode each hub
  * version separately and isolate a failed subcall. A slow/failed refresh never
  * extends the 3-second command fence from the START of its observation. */
 export function hubObservations(base:PublicClient,hub:Address,apps:readonly Address[],now=Date.now){
@@ -14,9 +14,16 @@ export function hubObservations(base:PublicClient,hub:Address,apps:readonly Addr
  async function refresh(){
   const started=now();next=started+1500;
   const block=await base.getBlock({includeTransactions:false});
-  const results=await base.readContract({address:'0xcA11bde05977b3631167028862bE2a173976CA11',abi:multicall3Abi,functionName:'aggregate3',
-   args:[apps.map(app=>({target:hub,allowFailure:true,callData:encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[app,zeroHash]})}))],blockNumber:block.number});
-  if((await base.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Hub observation changed canonical block');
+  // EIP-1898 requires this exact hash to remain canonical while the call runs.
+  // It replaces the third serial RPC (re-reading a header by number), without
+  // accepting a different block or falling back to an unpinned observation.
+  const data=encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[apps.map(app=>({
+   target:hub,allowFailure:true,callData:encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[app,zeroHash]}),
+  }))]});
+  const raw=await base.request({method:'eth_call',params:[{to:'0xcA11bde05977b3631167028862bE2a173976CA11',data},
+   {blockHash:block.hash!,requireCanonical:true}]} as any);
+  const results=decodeFunctionResult({abi:multicall3Abi,functionName:'aggregate3',data:raw as `0x${string}`});
+  if(results.length!==apps.length)throw Error('Incomplete hub observation');
   const updated=new Map<string,HubObservation|Error>();
   results.forEach((r,i)=>{try{
    if(!r.success)throw Error('Arena hub observation failed');

@@ -1,0 +1,666 @@
+{
+  "ownedRecovery": {
+    "at": "2026-09-30T16:21:12.353Z",
+    "scope": "Canonical recovery and allowlisted hosted health only; no transaction submitted",
+    "allRecovered": true,
+    "fixtures": [
+      {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x028f656e76cc1973ced7c41d8584d4f94be9e003",
+          "epoch": "11",
+          "id": "212"
+        },
+        "expectedReleaseAt": "2026-09-30T16:10:45.000Z",
+        "recovered": true,
+        "close": {
+          "hash": "0xf181a816538519e2977b8914e14e346e6175fc684be367fadecc04b4745a1134",
+          "block": "67003549"
+        },
+        "delegation": {
+          "epoch": "12",
+          "status": 1,
+          "releaseAt": "0"
+        },
+        "sealed": {
+          "root": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f",
+          "count": 0
+        },
+        "captured": true,
+        "result": {
+          "ref": {
+            "chainId": "10143",
+            "arena": "0x028f656e76CC1973cEd7c41d8584d4F94bE9e003",
+            "epoch": "11",
+            "id": "212"
+          },
+          "a": "0x8870e4Bae43fa8F18f9E1614b6aF2e0FE903De9c",
+          "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+          "winner": "0x0000000000000000000000000000000000000000",
+          "hash": "0xc60c005686684cd4af9586b1165fed2843ef6d04bb301e184b1ce0a65aeca854",
+          "mode": 0,
+          "status": 4,
+          "scoreA": 0,
+          "scoreB": 0,
+          "elapsedUs": "0",
+          "finality": true
+        },
+        "hostedObservation": "unavailable-or-identity-mismatch"
+      },
+      {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x40178b386730985a9d1df46c3a811f8e7138e4ec",
+          "epoch": "12",
+          "id": "213"
+        },
+        "expectedReleaseAt": "2026-09-30T16:20:56.000Z",
+        "recovered": true,
+        "close": {
+          "hash": "0x5033066c192785e8ddbda022ad0b6908deb540c5f1b7fbb6ec54790beea2f266",
+          "block": "67005568"
+        },
+        "delegation": {
+          "epoch": "13",
+          "status": 1,
+          "releaseAt": "0"
+        },
+        "sealed": {
+          "root": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f",
+          "count": 0
+        },
+        "captured": true,
+        "result": {
+          "ref": {
+            "chainId": "10143",
+            "arena": "0x40178b386730985A9D1Df46c3a811F8e7138E4eC",
+            "epoch": "12",
+            "id": "213"
+          },
+          "a": "0x9aBBd6DD94B74D24342E9e616F55586d459e9381",
+          "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+          "winner": "0x0000000000000000000000000000000000000000",
+          "hash": "0xabe8c124ec2e55e36a8abba4c74dc57c5efb43fe738d9dc1779663adfbbe2f75",
+          "mode": 1,
+          "status": 4,
+          "scoreA": 0,
+          "scoreB": 0,
+          "elapsedUs": "0",
+          "finality": true
+        },
+        "hostedObservation": "unavailable-or-identity-mismatch"
+      }
+    ],
+    "block": "67017557",
+    "blockHash": "0xfa7a11d662a214bf6bad897470609833f26ac4103d2717f4d02571f3cb38951a"
+  },
+  "startReceipt": {
+    "at": "2026-09-30T16:33:31.567Z",
+    "app": "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+    "epoch": "12",
+    "hash": "0x4f57c4df3640055a25e6d28be9df96fd01ea4b3f03fb7978f14ccf9ae3b13146",
+    "status": "success",
+    "block": "480709",
+    "blockHash": "0x00000000000000000000000000000000000000000000000000000000000755c5",
+    "scope": "Exact original start receipt; canonical progress is verified separately"
+  },
+  "publishedResult": {
+    "at": "2026-09-30T16:35:49.022Z",
+    "block": "67020457",
+    "blockHash": "0xab7586317acf8cc9b3cd0e96ddd84574e826c2b695b2c761fede5b3155072d76",
+    "ref": {
+      "chainId": "10143",
+      "arena": "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+      "epoch": "12",
+      "id": "214"
+    },
+    "captured": true,
+    "result": {
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+        "epoch": "12",
+        "id": "214"
+      },
+      "a": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+      "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "winner": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+      "hash": "0x454f8595d017733475f9b3d257b16ac20f75356ee08c6137786acd05212cd48b",
+      "mode": 0,
+      "status": 3,
+      "scoreA": 7,
+      "scoreB": 0,
+      "elapsedUs": "297135317",
+      "finality": false
+    },
+    "fixture": {
+      "ref": {
+        "chainId": "10143",
+        "arena": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+        "epoch": "12",
+        "id": "214"
+      },
+      "a": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+      "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "advanced": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+      "resultDigest": "0xbaef9887673fa02dee0000a781f967cf9761841b11ce6d157942b1578fff7218",
+      "published": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+          "epoch": "12",
+          "id": "214"
+        },
+        "a": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "winner": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "hash": "0x454f8595d017733475f9b3d257b16ac20f75356ee08c6137786acd05212cd48b",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 0,
+        "elapsedUs": "297135317",
+        "finality": false
+      },
+      "bound": true,
+      "resolved": true,
+      "administrative": false,
+      "attempt": 2
+    },
+    "tournament": {
+      "status": 2,
+      "mode": 0,
+      "league": true,
+      "startedAt": "1790645637",
+      "completedAt": "0",
+      "catalogRevision": "33",
+      "scanCount": "9",
+      "cursor": "9",
+      "selected": 8,
+      "agents": [
+        "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+        "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+        "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca"
+      ],
+      "controllers": [
+        "0x635bf8108871af9ac8a482102535ce921932a419df3816ec018f5d8802de1088",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+        "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9"
+      ],
+      "seeds": [
+        1210,
+        945,
+        948,
+        978,
+        980,
+        981,
+        983,
+        954
+      ],
+      "champion": "0x0000000000000000000000000000000000000000",
+      "revision": 0
+    }
+  },
+  "spectator": {
+    "startedAt": "2026-09-30T16:32:00.494Z",
+    "channel": "chrome",
+    "mode": 0,
+    "seconds": 60,
+    "passed": false,
+    "scope": "Actual public HTTPS spectator and direct hosted engine. Read-only headless desktop browser; no game admission, wallet authorization or physical mobile proof.",
+    "errors": [],
+    "requests": [
+      {
+        "at": "2026-09-30T16:32:05.147Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 41
+      },
+      {
+        "at": "2026-09-30T16:32:05.147Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 41
+      },
+      {
+        "at": "2026-09-30T16:32:05.157Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 8
+      },
+      {
+        "at": "2026-09-30T16:32:05.667Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 6
+      },
+      {
+        "at": "2026-09-30T16:32:13.154Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 13
+      },
+      {
+        "at": "2026-09-30T16:32:13.154Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 13
+      },
+      {
+        "at": "2026-09-30T16:32:15.788Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 6
+      },
+      {
+        "at": "2026-09-30T16:32:21.198Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:32:21.198Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:32:25.905Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 6
+      },
+      {
+        "at": "2026-09-30T16:32:29.220Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:32:29.221Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:32:36.027Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:32:37.277Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 6
+      },
+      {
+        "at": "2026-09-30T16:32:37.277Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 6
+      },
+      {
+        "at": "2026-09-30T16:32:45.294Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 14
+      },
+      {
+        "at": "2026-09-30T16:32:45.294Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 14
+      },
+      {
+        "at": "2026-09-30T16:32:46.121Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 7
+      },
+      {
+        "at": "2026-09-30T16:32:51.193Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:32:52.715Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 6
+      },
+      {
+        "at": "2026-09-30T16:32:53.307Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 5
+      },
+      {
+        "at": "2026-09-30T16:32:53.307Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 5
+      },
+      {
+        "at": "2026-09-30T16:33:01.328Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:33:01.328Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:33:02.840Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 7
+      },
+      {
+        "at": "2026-09-30T16:33:09.409Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "interlude_session"
+        ],
+        "status": 200,
+        "ms": 11
+      },
+      {
+        "at": "2026-09-30T16:33:09.409Z",
+        "host": "il-76ca139497ff3fa6.fly.dev",
+        "methods": [
+          "eth_call"
+        ],
+        "status": 200,
+        "ms": 11
+      }
+    ],
+    "ref": {
+      "chainId": 10143,
+      "app": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+      "epoch": "12",
+      "id": "214"
+    },
+    "text": "PONGIT\nSound off ♫\nTournaments\nAgent Arcade\nCLASSIC · Live\nCopy arena link\nPLAYER 01\n0xD363…Ae59\nPLAYER 02\nDRIFT\nFIRST TO SEVEN · 0:59\n05\n:\n00\nSPECTATING",
+    "render": {
+      "samples": 3599,
+      "visible": 1,
+      "moving": 0.9769316286826014,
+      "p95FrameMs": 17.100000023841858,
+      "maxHoldMs": 966.7000000476837,
+      "holds": [
+        {
+          "at": 23253.5,
+          "ms": 216.60000002384186,
+          "x": 202.605992,
+          "y": 525.303181
+        },
+        {
+          "at": 39303.799999952316,
+          "ms": 149,
+          "x": 1018,
+          "y": 19.000065
+        },
+        {
+          "at": 48603.39999997616,
+          "ms": 966.7000000476837,
+          "x": 629.307068,
+          "y": 530.653588
+        }
+      ]
+    },
+    "clock": {
+      "samples": 61,
+      "durationMs": 60633.6,
+      "processedRatio": 0.9920242241925269,
+      "renderedRatio": 0.9936219027074101,
+      "stalledSamples": 0
+    },
+    "error": "A hold exceeds 500 ms; inspect its exact cause before accepting",
+    "finishedAt": "2026-09-30T16:33:11.713Z"
+  },
+  "canonicalReadProbe": {
+    "at": "2026-09-30T16:39:49.901Z",
+    "kind": "actual-proxy-hash-pinned-multicall",
+    "readOnly": true,
+    "samples": [
+      {
+        "block": "67021235",
+        "blockHash": "0xbb7d0595203a94d33dc75bc2724c6a88af39cf556ecf74f459c3175321f01963",
+        "ms": 556,
+        "arenas": [
+          {
+            "app": "0x40178b386730985a9d1df46c3a811f8e7138e4ec",
+            "epoch": "13",
+            "status": 1
+          },
+          {
+            "app": "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+            "epoch": "12",
+            "status": 1
+          },
+          {
+            "app": "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+            "epoch": "12",
+            "status": 1
+          },
+          {
+            "app": "0xf202862714f61d6f6b8b14c1d2f5d3ca7ea3e41b",
+            "epoch": "2",
+            "status": 1
+          },
+          {
+            "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+            "epoch": "11",
+            "status": 2
+          },
+          {
+            "app": "0xaf7c017a6729ec6f5d9d14288c5214489bb5be3b",
+            "epoch": "11",
+            "status": 1
+          },
+          {
+            "app": "0x9b8e61621682da7b59239774f76dcf04071ea059",
+            "epoch": "11",
+            "status": 1
+          },
+          {
+            "app": "0x028f656e76cc1973ced7c41d8584d4f94be9e003",
+            "epoch": "12",
+            "status": 1
+          }
+        ]
+      },
+      {
+        "block": "67021237",
+        "blockHash": "0x872e3b986cc6b181f16efc86117280c48f098f2a9f2f932ce66162a1c2e7e854",
+        "ms": 934,
+        "arenas": [
+          {
+            "app": "0x40178b386730985a9d1df46c3a811f8e7138e4ec",
+            "epoch": "13",
+            "status": 1
+          },
+          {
+            "app": "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+            "epoch": "12",
+            "status": 1
+          },
+          {
+            "app": "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+            "epoch": "12",
+            "status": 1
+          },
+          {
+            "app": "0xf202862714f61d6f6b8b14c1d2f5d3ca7ea3e41b",
+            "epoch": "2",
+            "status": 1
+          },
+          {
+            "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+            "epoch": "11",
+            "status": 2
+          },
+          {
+            "app": "0xaf7c017a6729ec6f5d9d14288c5214489bb5be3b",
+            "epoch": "11",
+            "status": 1
+          },
+          {
+            "app": "0x9b8e61621682da7b59239774f76dcf04071ea059",
+            "epoch": "11",
+            "status": 1
+          },
+          {
+            "app": "0x028f656e76cc1973ced7c41d8584d4f94be9e003",
+            "epoch": "12",
+            "status": 1
+          }
+        ]
+      },
+      {
+        "block": "67021239",
+        "blockHash": "0xac5c9fde684467d632d092c675936c4373d1ab465b7ed49ea5571225e2ba42a7",
+        "ms": 370,
+        "arenas": [
+          {
+            "app": "0x40178b386730985a9d1df46c3a811f8e7138e4ec",
+            "epoch": "13",
+            "status": 1
+          },
+          {
+            "app": "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+            "epoch": "12",
+            "status": 1
+          },
+          {
+            "app": "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+            "epoch": "12",
+            "status": 1
+          },
+          {
+            "app": "0xf202862714f61d6f6b8b14c1d2f5d3ca7ea3e41b",
+            "epoch": "2",
+            "status": 1
+          },
+          {
+            "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+            "epoch": "11",
+            "status": 2
+          },
+          {
+            "app": "0xaf7c017a6729ec6f5d9d14288c5214489bb5be3b",
+            "epoch": "11",
+            "status": 1
+          },
+          {
+            "app": "0x9b8e61621682da7b59239774f76dcf04071ea059",
+            "epoch": "11",
+            "status": 1
+          },
+          {
+            "app": "0x028f656e76cc1973ced7c41d8584d4f94be9e003",
+            "epoch": "12",
+            "status": 1
+          }
+        ]
+      }
+    ]
+  },
+  "unknownHashProbe": {
+    "at": "2026-09-30T16:41:01.599Z",
+    "block": "67021474",
+    "hash": "0x8da31d08c5478d1161060d073c528072018eb7e02f4c9055629e517ccc9c4d67",
+    "unknownHashRejected": true,
+    "reason": "Unknown block hash rejected by actual RPC"
+  }
+}

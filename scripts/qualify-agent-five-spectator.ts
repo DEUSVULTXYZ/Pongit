@@ -4,14 +4,15 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from '@playwright/test';
 import {clockProgression} from '../shared/clock-progression';
-assert.equal(process.env.PONG_FIVE_SPECTATOR,'private-read-only');
+assert(['private-read-only','public-read-only'].includes(process.env.PONG_FIVE_SPECTATOR??''));
+const publicSite=process.env.PONG_FIVE_SPECTATOR==='public-read-only';
 const channel=process.env.BROWSER_CHANNEL??'chrome',mode=Number(process.env.RENDER_MODE??0),run=process.env.RENDER_RUN!;
 assert(['chrome','msedge'].includes(channel)&&[0,1].includes(mode)&&/^[a-z0-9-]+$/.test(run));
-const origin='http://127.0.0.1:4190',api='http://127.0.0.1:4193';
+const origin=publicSite?'https://pongit.xyz':'http://127.0.0.1:4190',api=publicSite?origin+'/api':'http://127.0.0.1:4193';
 const seconds=Number(process.env.RENDER_SECONDS??60);assert(seconds>=30&&seconds<=120);
 const out=`artifacts/qualification/20260928/live-${run}-${channel}-${mode}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),channel,mode,seconds,passed:false,
- scope:'Local production build, private API transported unchanged over SSH, direct hosted Interlude HTTP/WebSocket. Headless desktop browser; no physical mobile or public HTTPS journey proof.',errors:[],requests:[]};
+ scope:publicSite?'Actual public HTTPS spectator and direct hosted engine. Read-only headless desktop browser; no game admission, wallet authorization or physical mobile proof.':'Local production build, private API transported unchanged over SSH, direct hosted Interlude HTTP/WebSocket. Headless desktop browser; no physical mobile or public HTTPS journey proof.',errors:[],requests:[]};
 const browser=await chromium.launch({channel,headless:true});
 const page=await browser.newPage({viewport:{width:1440,height:1000}});
 page.on('pageerror',e=>report.errors.push(e.message.slice(0,300)));
@@ -22,7 +23,7 @@ page.on('response',r=>{const q=r.request(),u=new URL(r.url());if(u.hostname.incl
  report.requests.push({at:new Date().toISOString(),host:u.hostname,methods,status:r.status(),ms:Date.now()-(started.get(q)??Date.now())});
 }});
 try{
- await page.route('http://localhost:4000/agents/**',async route=>{assert.equal(route.request().method(),'GET');const u=new URL(route.request().url());const response=await route.fetch({url:api+u.pathname+u.search});await route.fulfill({response});});
+ if(!publicSite)await page.route('http://localhost:4000/agents/**',async route=>{assert.equal(route.request().method(),'GET');const u=new URL(route.request().url());const response=await route.fetch({url:api+u.pathname+u.search});await route.fulfill({response});});
  await page.addInitScript(()=>{
   localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));
   (window as any).__ball=[];(window as any).__clock=[];
