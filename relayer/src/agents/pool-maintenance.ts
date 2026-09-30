@@ -9,6 +9,15 @@ import {houseInstanceAbi} from '../../../shared/agent-house-instances';
 
 export type PoolRead=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<T>;
 
+/** Background expiry/qualification pages do not belong on every admission
+ * cycle. A failed page stays due; restart starts with a fresh inspection. This
+ * schedule never gates player admission or replaces contract eligibility. */
+export function inspectionSchedule(now=Date.now,intervalMs=10_000){
+ const next=new Map<'expiry'|'qualification',number>();
+ return{due:(task:'expiry'|'qualification')=>now()>=(next.get(task)??0),
+  completed:(task:'expiry'|'qualification')=>{next.set(task,now()+intervalMs);}};
+}
+
 /** Reads pinned to one block are pure functions of their call. Memoize them for
  * one keeper step and let independent reads start together, so a batched client
  * serves the common path in one multicall instead of dozens of sequential round

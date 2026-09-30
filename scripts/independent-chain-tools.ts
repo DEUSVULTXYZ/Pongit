@@ -9,6 +9,7 @@ import {assertDeploymentArtifact,preflightDeploymentArtifacts} from '../shared/d
 import {writerIdentity,type ScopedWriter} from '../shared/scoped-writer';
 import {operatorNeedsFunding,operatorFundingMessage} from '../shared/operator-funding';
 import {rebroadcastFundedOperation} from '../shared/operator-rebroadcast';
+import {prepareSponsoredTransaction} from '../relayer/src/sponsor-prepare';
 
 export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:ScopedWriter){
  assert.equal(process.env.PONG_INDEPENDENT_WRITE,'authorized-testnet');
@@ -44,14 +45,23 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:Scop
    }else{
     const pending=(await db.query("SELECT id FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending'",[account.address.toLowerCase()])).rows;
     assert.equal(pending.length,0,'Reconcile the existing operator transaction first');
-    const nonce=await base.getTransactionCount({address:account.address,blockTag:'pending'});
-    assert.equal(nonce,await base.getTransactionCount({address:account.address,blockTag:'latest'}),'Operator nonce is in use');
-    await base.call({account:account.address,...(to?{to}:{}),data,value});
-    const request=await wallet.prepareTransactionRequest({...(to?{to}:{}),data,value,nonce});request.gas=request.gas*12n/10n;
+    // Dedicated roles use the same reviewed parallel preparation as sponsoring.
+    // The original operator and deployment path keep their existing preparation.
+    // Both paths still simulate, reconcile nonces and journal before submission.
+    const request=scope&&to?await (async()=>{
+     await base.call({account:account.address,to,data,value});
+     return prepareSponsoredTransaction(base,account.address,{to,data,value});
+    })():await (async()=>{
+     const nonce=await base.getTransactionCount({address:account.address,blockTag:'pending'});
+     assert.equal(nonce,await base.getTransactionCount({address:account.address,blockTag:'latest'}),'Operator nonce is in use');
+     await base.call({account:account.address,...(to?{to}:{}),data,value});
+     const request=await wallet.prepareTransactionRequest({...(to?{to}:{}),data,value,nonce});request.gas=request.gas*12n/10n;return request;
+    })();
+    const nonce=request.nonce;
     // A transaction above the block gas limit can never be mined. Journaled as pending it
     // would hold this shared operator nonce for good, and production's lifecycle with it.
     assert(request.gas<=30_000_000n&&request.gas<=(await base.getBlock()).gasLimit,'Gas limit exceeds the Monad transaction/block limit');
-    const maximumFee=request.maxFeePerGas??request.gasPrice;
+    const maximumFee=request.maxFeePerGas??('gasPrice' in request?request.gasPrice:undefined);
     assert(maximumFee!==undefined,'Transaction fee must be known before signing');
     if(await base.getBalance({address:account.address})<request.gas*maximumFee+value)
      throw Object.assign(Error(operatorFundingMessage),{code:'OPERATOR_GAS_UNAVAILABLE',source:'monad'});

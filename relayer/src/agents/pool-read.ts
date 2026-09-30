@@ -49,8 +49,8 @@ export class AgentPoolReader {
  async config(){
   const m=this.manifest;
   return this.snapshot(async read=>{
-   await verifyHouseInstanceAuthorities(read,m);
-   const [admissions,publicAdmissions,evidence,tournamentsOpen,arenas]=await Promise.all([
+   const [,admissions,publicAdmissions,evidence,tournamentsOpen,arenas]=await Promise.all([
+    verifyHouseInstanceAuthorities(read,m),
     read<boolean>(m.pool,this.poolAbi,'admissions'),read<boolean>(m.pool,this.poolAbi,'publicAdmissions'),
     read<string>(m.pool,this.poolAbi,'capacityEvidence'),read<boolean>(m.tournaments,tournamentAbi,'admissions'),
     read<Address[]>(m.pool,this.poolAbi,'arenaPage'),

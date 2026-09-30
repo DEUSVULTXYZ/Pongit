@@ -16,7 +16,7 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
-import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,writeRetryMs} from '../relayer/src/agents/pool-maintenance';
+import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,writeRetryMs,inspectionSchedule} from '../relayer/src/agents/pool-maintenance';
 import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget,verifiedRecovery,type ArenaRecoveryWindow} from '../shared/arena-replacement';
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,reusableCapacity,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
@@ -80,6 +80,7 @@ const reader=createPublicClient({chain:t.base.chain,transport:custom({request:(a
 // The flag only adds a log line; it never changes what the keeper does.
 const profile=await readFile('/state/profile','utf8').then(()=>({start:performance.now(),marks:[] as [string,number][],reads:new Map<string,{n:number;ms:number}>()}),()=>null);
 const mark=(label:string)=>{if(profile)profile.marks.push([label,Math.round(performance.now()-profile.start)]);};
+const inspections=inspectionSchedule();
 async function step(){
  if(state.intent){const i=state.intent;await act(i.to,i.method,i.args,i.value);return;}
  const block=await t.base.getBlock({includeTransactions:false});
@@ -92,6 +93,7 @@ async function step(){
  const read=pinned.read;
  const delegationRead=readHubDelegations(t.base,m.hub,r.arenas.map((a:any)=>a.app),block.number);
  delegationRead.catch(()=>{});
+ const authorityRead=verifyHouseInstanceAuthorities(read,m);authorityRead.catch(()=>{});
  // Start the common path's independent reads together. They are exactly the
  // values the logic below reads at this block; the batch makes them one call.
  pinned.prefetch(m.pool,poolAbi,'verifier');
@@ -115,7 +117,7 @@ async function step(){
     await act(correction.to,correction.method,correction.args);state.sourceFinalityScanAt=Date.now()+60_000;await save();
    }return;}}
  }
- await verifyHouseInstanceAuthorities(read,m);
+ await authorityRead;
  if(role==='admission'||role==='maintenance'){const expected=await read<Address>(m.pool,agentPoolAdmissionAbi,role+'Operator');assert.equal(expected.toLowerCase(),t.account.address.toLowerCase(),'Keeper signer differs from contract role');}
  assert.equal((await read<Address>(m.pool,poolAbi,'verifier')).toLowerCase(),m.verifier.toLowerCase());
  let budget:ReusablePublicationBudget|undefined;
@@ -358,7 +360,7 @@ async function step(){
  }
  // Expiry and historical scans cannot delay an eligible waiting player. The
  // contract still validates every request and advances its bounded cursor.
- if(doesAdmission){const expired=await expiredChallenge(read,m,state.challengeCursor??1n);state.challengeCursor=expired.next;await save();
+ if(doesAdmission&&inspections.due('expiry')){const expired=await expiredChallenge(read,m,state.challengeCursor??1n);state.challengeCursor=expired.next;await save();inspections.completed('expiry');
  if(expired.expired!==null&&!cooling(m.challenges,'expire')){await act(m.challenges,'expire',[expired.expired]);return;}}
  mark('expired-challenge');
  if((doesArchive||available&&laneFree)&&await tournamentHistory(count,available,laneFree))return;
@@ -384,8 +386,9 @@ async function step(){
    if(!cooling(m.pool,'admitChallenge'))await act(m.pool,'admitChallenge');else await archiveHistory();return;
   }
   mark('challenge');
+  if(!inspections.due('qualification'))return;
   const newestBase=idle.reduce((n,a)=>a.d.baseBlock>n?a.d.baseBlock:n,0n);
-  const work=await qualificationWork(read,m,state.qualificationCursor??0n,block.timestamp,16,newestBase);state.qualificationCursor=work.next;await save();
+  const work=await qualificationWork(read,m,state.qualificationCursor??0n,block.timestamp,16,newestBase);state.qualificationCursor=work.next;await save();inspections.completed('qualification');
   if(work.needed&&!cooling(m.pool,'admitQualification')){await act(m.pool,'admitQualification');return;}
  }
  mark('qualification');

@@ -9,6 +9,25 @@ const evidence=`0x${'b'.repeat(64)}` as const;
 const manifest:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:evidence,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 
+test('configuration batches authority and admission reads but never returns before authority verification',async()=>{
+ const m:AgentPoolManifest={...manifest,version:5,rulesVersion:15,maxMatches:5,verifiedCapacity:5,
+  lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',
+  arenas:[8,9,10,12,13].map(n=>({...manifest.arenas[0],app:addr(n),node:`https://arena-${n}.example`}))};
+ let release!:()=>void,wrong=false,returned=false;const gate=new Promise<void>(r=>release=r),started:string[]=[];
+ const client={getBlock:async()=>({number:50n,hash:zeroHash}),readContract:async(r:any)=>{
+  assert.equal(r.blockNumber,50n);started.push(r.functionName);
+  if(r.functionName==='AUTHORITY_VERSION'){await gate;return wrong?2n:3n;}
+  if(r.functionName==='laneCount')return 5;
+  if(r.functionName==='arenaPage')return m.arenas.map(a=>a.app);
+  if(r.functionName==='capacityEvidence')return evidence;
+  return true;
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,m),pending=reader.config().then(r=>{returned=true;return r;});
+ await new Promise(r=>setImmediate(r));assert(started.includes('publicAdmissions'));assert(started.includes('arenaPage'));assert(!returned);
+ release();assert((await pending).value.enabled);wrong=true;
+ await assert.rejects(reader.config(),/authority mismatch/);
+});
+
 test('an old URL reads its original pool after migration, never a same-number new match or a retired live node',async()=>{
  const old={...manifest,enabled:false,tournamentsEnabled:false};
  const current:AgentPoolManifest={...manifest,pool:addr(20),catalog:addr(21),tournaments:addr(22),ratings:addr(23),challenges:addr(24),qualifications:addr(25),

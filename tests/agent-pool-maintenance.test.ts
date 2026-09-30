@@ -1,9 +1,19 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
-import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,inspectionSchedule,type PoolRead} from '../relayer/src/agents/pool-maintenance';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
+
+test('background inspections are independently bounded without suppressing failed pages or restart',()=>{
+ let now=1000;const s=inspectionSchedule(()=>now);
+ assert(s.due('expiry'));assert(s.due('qualification'));
+ s.completed('expiry');assert(!s.due('expiry'));assert(s.due('qualification'));
+ // A failed qualification page never calls completed and remains due.
+ now+=9999;assert(!s.due('expiry'));assert(s.due('qualification'));
+ now++;assert(s.due('expiry'));s.completed('qualification');assert(!s.due('qualification'));
+ assert(inspectionSchedule(()=>now).due('qualification'),'restart does not inherit a blind cooldown');
+});
 
 test('captured current results advance tournaments after lane release or restart without waiting for a historical scan',async()=>{
  const ref={chainId:10143n,arena:address(22),epoch:2n,id:35n};
