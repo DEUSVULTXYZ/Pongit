@@ -139,8 +139,12 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    locked=(await c.query('SELECT pg_try_advisory_lock(hashtextextended($1,701349)) AS ok',[lower])).rows[0].ok;
    if(!locked)throw Error('This arena already has a writer');await fence();
    if(probe){
-    const [epoch,id]=await node.readContract({address:app,abi:reusableAgentArenaAbi,functionName:'currentMatch'});
-    if(epoch!==ref.epoch||id!==0n)throw Error('Publication probe cannot touch an admitted match');
+    const [[matchEpoch,id],[epoch,count]]=await Promise.all([
+     node.readContract({address:app,abi:reusableAgentArenaAbi,functionName:'currentMatch'}),
+     node.readContract({address:app,abi:reusableAgentArenaAbi,functionName:'resultCommitment'})]);
+    // initialize() clears the physical match header to (0,0); the separate
+    // result commitment carries the new epoch before the first admission.
+    if(epoch!==ref.epoch||count!==0||matchEpoch!==0n||id!==0n)throw Error('Publication probe cannot touch an admitted match');
    }
    const data=encodeFunctionData({abi:arenaAbi,functionName:name,args:args as any});
    let unsent=false;

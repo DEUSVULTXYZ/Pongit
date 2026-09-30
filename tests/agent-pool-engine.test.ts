@@ -13,7 +13,7 @@ function fixture(){
  let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'='ok';
  let logs:any[]=[],archiveError=false,receiptReads=0,nonceReads=0,reset=false,feedError=false,currentId=0n;const archived:any[]=[];
  const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
- const node:any={readContract:async()=>[epoch,currentId],getTransactionCount:async()=>{nonceReads++;return nonce;},getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
+ const node:any={readContract:async({functionName}:any)=>functionName==='resultCommitment'?[epoch,0,zeroHash]:[currentId?epoch:0n,currentId],getTransactionCount:async()=>{nonceReads++;return nonce;},getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
   if(r.method==='interlude_session')return{app,epoch:String(epoch),chainId:4242,baseBlock:20};
   assert.equal(r.method,'interlude_sendTransaction');const raw=r.params[0];sent.push(raw);
   if(behavior==='429')throw Object.assign(Error('busy'),{status:429});
