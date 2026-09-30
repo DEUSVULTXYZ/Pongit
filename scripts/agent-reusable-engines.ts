@@ -8,7 +8,7 @@ import {monadTestnet} from 'viem/chains';
 import {reusableAgentArenaAbi as abi} from '../shared/abi-ReusableAgentArena';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 import {readHubDelegation} from '../shared/rooms-hub';
-import {engineTransport,engineCooldownMs} from '../shared/engine-transport';
+import {engineTransport,engineCooldownMs,observeEnginePublication} from '../shared/engine-transport';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {pinnedEngineCodeHash} from '../shared/engine-base-code';
 import {reusableAdmissionDigest,type ReusableTicket} from '../shared/reusable-admission';
@@ -29,7 +29,7 @@ import {hubObservations} from '../shared/hub-observation';
 import {publisherFunding} from '../shared/publisher-funding';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {publicationUnavailable} from '../shared/service-error';
-import {agentPublicationHealth,agentTickInterval,agentTickPause} from '../shared/agent-publication-health';
+import {agentRecoveryPause,agentTickInterval,agentTickPause} from '../shared/agent-publication-health';
 import {verifyHostedArenaEvidence} from '../shared/hosted-arena-identity';
 
 const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances,maxMatches:r.maxMatches??2};
@@ -75,11 +75,12 @@ async function arenaLoop(app:Address,runtimeHash:string){
  // Initial/expired checks still block; createPoolEngine independently fences
  // every command against its hub epoch, permission and hosted session.
  let publicationPaused=false;
- const publicationObservation=()=>new BackgroundObservation(async()=>{
+ const publicationObservation=()=>new BackgroundObservation(()=>observeEnginePublication(url,app,d!.epoch,async()=>{
   const response=await measuredFetch('interlude')(url+'/health',{signal:AbortSignal.timeout(4000)});
+  if(response.status===429)throw Object.assign(Error('Hosted health is temporarily rate limited'),{status:429,headers:response.headers});
   if(!response.ok)throw Error('Hosted publication health is temporarily unavailable');
-  return agentPublicationHealth(await response.json(),app,d!.epoch);
- },10000,15000);
+  return response.json();
+ }),10000,15000);
  let publication=publicationObservation();
  const beacon=new ChaosBeaconPump(),proofLane=new PoolProofLane();
  const close=async()=>{engine?.close();engine=undefined;await proofTask;await observations?.flush();observations=undefined;lastProgress=0;lastRevision=-1n;admitted=false;admission=undefined;};
@@ -174,7 +175,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
     await archiveSlot(ticket);await health('recovering',{epoch:String(ref.epoch),id:String(ref.id),releaseAt:String(d.stakeUnlockAt)});await delay(2000);continue;
    }
    if(publicationPaused){
-    const p=await publication.read();
+    const p=await publication.read(true);
     // Reading a playing snapshot is not proof that publications have resumed.
     // Keep exact pending commands for reconciliation after explicit recovery.
     if(!p.healthy){const terminal=await archiveSlot(ticket);await health(terminal?'awaiting-publication':'publication-paused',
@@ -243,7 +244,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
    const retryAt=typeof (e as any)?.retryAt==='number'?(e as any).retryAt:0;
    await health(publicationPaused?'publication-paused':(e as any)?.code==='AGENT_HOSTED_COOLDOWN'?'provisioning':'synchronizing',
     {epoch:String(d?.epoch??0),id:String(engine?.ref.id??0),error:clean(e),...(retryAt?{retryAt}:{})});
-   pause=Math.max(publicationPaused?2000:1000,engineCooldownMs(url),retryAt-Date.now());
+   pause=agentRecoveryPause(publicationPaused,engineCooldownMs(url),retryAt,Date.now());
   }
   if(!stopping)await delay(Math.min(pause,30000));
  }}finally{await close();}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {agentPublicationHealth,agentTickInterval,agentTickPause} from '../shared/agent-publication-health';
+import {agentPublicationHealth,agentTickInterval,agentTickPause,agentRecoveryPause} from '../shared/agent-publication-health';
 import {publicationFailureDetails} from '../shared/service-error';
 const app='0x7fb78a8fbfd597daadbe6971c106720eb1510d7d';
 const health={app,epoch:2,ok:false,committedBatches:3599,
@@ -25,8 +25,16 @@ test('only matching explicitly healthy hosted epochs clear publication holds',()
  assert.equal(agentPublicationHealth({...health,ok:true},app,2n).healthy,false);
  assert.equal(agentPublicationHealth({...health,halted:null},app,2n).healthy,false);
  assert.equal(agentPublicationHealth({...health,ok:true,halted:null,committedBatches:3601},app,2n).healthy,true);
+ assert.equal(agentPublicationHealth({...health,ok:true,halted:true},app,2n).healthy,false);
  for(const change of [{app:'0xwrong'},{epoch:3},{ok:undefined},{committedBatches:-1},{committedBatches:'3599'}])
   assert.throws(()=>agentPublicationHealth({...health,...change},app,2n));
+});
+
+test('a thirty-second write hold does not delay recovery health; RPC Retry-After still applies',()=>{
+ assert.equal(agentRecoveryPause(true,0,31000,1000),2000);
+ assert.equal(agentRecoveryPause(true,9000,31000,1000),9000);
+ assert.equal(agentRecoveryPause(false,0,31000,1000),30000);
+ assert.equal(agentRecoveryPause(false,0,0,1000),1000);
 });
 test('tick comparison is explicit and bounded without changing the normal cadence',()=>{
  assert.equal(agentTickInterval(),300);assert.equal(agentTickInterval('1500'),1500);

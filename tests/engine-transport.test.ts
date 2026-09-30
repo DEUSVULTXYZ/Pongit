@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {engineRequestGate,engineTransport,engineCooldownMs} from "../shared/engine-transport";
+import {engineRequestGate,engineTransport,engineCooldownMs,observeEnginePublication} from "../shared/engine-transport";
 import {engineReadRetryMs} from "../shared/engine-read";
 
 test("HTTP 429 pauses all RPC methods and never queues or replays writes",async()=>{
@@ -67,5 +67,48 @@ test('a publication failure fences every player client while other clients still
   await assert.rejects(second.request({method:'interlude_sendTransaction',params:['0x00']}),(e:any)=>e.code==='ENGINE_PUBLICATION_UNAVAILABLE');
   assert.equal(await second.request({method:'eth_call',params:[]}), '0x1');
   assert.equal(calls,2);assert.equal(journaled,0);
+ }finally{globalThis.fetch=original;}
+});
+
+test('fresh identified recovery ends only the publication gate and never resends a command by itself',async()=>{
+ const original=globalThis.fetch,app='0x0000000000000000000000000000000000000001',url='https://fresh-recovery.invalid';
+ const healthy={app,chainId:4242,epoch:2,ok:true,halted:null,committedBatches:8};
+ let refuse=true,calls=0,journaled=0;
+ globalThis.fetch=async(_url,init)=>{calls++;const body=JSON.parse(String(init?.body));return new Response(JSON.stringify({jsonrpc:'2.0',id:body.id,
+  ...(refuse?{error:{code:-32000,message:'commit relay failed: 401 Unauthorized'}}:{result:'0x1'})}),{headers:{'content-type':'application/json'}});};
+ try{
+  const t=engineTransport(url,{beforeSend:async()=>{journaled++;},received:()=>{}})({} as any);
+  const send=()=>t.request({method:'interlude_sendTransaction',params:['0x00']});
+  await assert.rejects(send());refuse=false;
+  for(const value of [{...healthy,app:'different'},{...healthy,epoch:3},{...healthy,chainId:10143},{...healthy,halted:{}}]){
+   await assert.rejects(observeEnginePublication(url,app,2n,async()=>value));await assert.rejects(send());
+  }
+  assert.equal((await observeEnginePublication(url,app,2n,async()=>({...healthy,ok:false}))).healthy,false);
+  await assert.rejects(send());assert.equal(calls,1);assert.equal(journaled,1);
+  await observeEnginePublication(url,app,2n,async()=>healthy);
+  assert.equal(calls,1,'health recovery never replays saved bytes');
+  assert.equal(await send(),'0x1');assert.equal(calls,2);assert.equal(journaled,2);
+  // A real HTTP cooldown remains effective, including against health probes.
+  globalThis.fetch=async()=>new Response('Busy',{status:429,headers:{'retry-after':'5'}});
+  await assert.rejects(t.request({method:'eth_call',params:[]}));let healthCalls=0;
+  await assert.rejects(observeEnginePublication(url,app,2n,async()=>{healthCalls++;return healthy;}));
+  assert.equal(healthCalls,0);assert(engineCooldownMs(url)>0);
+ }finally{globalThis.fetch=original;}
+});
+
+test('a healthy response started before a newer publication failure cannot clear that failure',async()=>{
+ const original=globalThis.fetch,app='0x0000000000000000000000000000000000000001',url='https://recovery-race.invalid';
+ globalThis.fetch=async(_url,init)=>{const body=JSON.parse(String(init?.body));return new Response(JSON.stringify({jsonrpc:'2.0',id:body.id,
+  error:{code:-32000,message:'commit relay failed: 401 Unauthorized'}}),{headers:{'content-type':'application/json'}});};
+ try{
+  const t=engineTransport(url)({} as any);
+  await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x00']}));
+  let resolve!:(v:unknown)=>void;
+  const observation=observeEnginePublication(url,app,2n,()=>new Promise(r=>resolve=r));
+  // A recovery RPC can independently report a later publication failure.
+  await assert.rejects(t.request({method:'eth_call',params:[]}));
+  resolve({app,chainId:4242,epoch:2,ok:true,halted:null,committedBatches:8});await observation;
+  let calls=0;globalThis.fetch=async()=>{calls++;throw Error('must stay local');};
+  await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x00']}));assert.equal(calls,0);
  }finally{globalThis.fetch=original;}
 });

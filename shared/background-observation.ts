@@ -13,8 +13,8 @@ export class BackgroundObservation<T> {
   }
   return this.pending;
  }
- async read():Promise<T>{
-  if(this.value===undefined||this.now()-this.at>=this.maxAgeMs)return this.refresh();
+ async read(fresh=false):Promise<T>{
+  if(fresh||this.value===undefined||this.now()-this.at>=this.maxAgeMs)return this.refresh();
   if(this.now()>=this.next)void this.refresh().catch(()=>{});
   return this.value;
  }

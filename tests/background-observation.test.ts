@@ -16,3 +16,13 @@ test('failed refresh preserves the old observation without making it fresh or si
  await new Promise(resolve=>setImmediate(resolve));assert.equal(calls,2);
  now=5000;await assert.rejects(c.read(),/RPC unavailable/);assert.equal(calls,3);
 });
+
+test('explicit recovery reads await fresh evidence and coalesce instead of returning a cached halt',async()=>{
+ let calls=0,resolve!:(value:boolean)=>void;
+ const c=new BackgroundObservation(()=>++calls===1?Promise.resolve(false):new Promise<boolean>(done=>resolve=done),10000,15000);
+ assert.equal(await c.read(),false);
+ let done=false;const a=c.read(true).then(v=>{done=true;return v;}),b=c.read(true);
+ await Promise.resolve();assert.equal(calls,2);assert.equal(done,false);
+ resolve(true);assert.deepEqual(await Promise.all([a,b]),[true,true]);
+ assert.equal(await c.read(),true);assert.equal(calls,2);
+});

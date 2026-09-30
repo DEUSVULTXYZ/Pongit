@@ -2,16 +2,29 @@ import {http, type Transport} from "viem";
 import {engineReadRetryMs} from "./engine-read";
 import {measuredFetch,recordRpc} from "./rpc-metrics";
 import {EnginePublicationUnavailable,publicationUnavailable} from "./service-error";
+import {agentPublicationHealth} from './agent-publication-health';
 const cooldowns=new Map<string,()=>number>();
 export const engineCooldownMs=(url:string)=>Math.max(0,cooldowns.get(url)?.()??0);
 type EngineGate=<T>(send:()=>Promise<T>)=>Promise<T>;
 const gates=new Map<string,EngineGate>();
-const publicationPauses=new Map<string,number>();
+const publicationPauses=new Map<string,{until:number}>();
 /** The node's shared request gate, for requests outside the JSON-RPC transport
  * (the relayer's /health read): refused locally while a Retry-After runs, and a
  * 429 it sees extends the same cooldown for every method. Before any transport
  * for the node exists, requests pass through ungated. */
 export const engineGate=(url:string):EngineGate=>send=>(gates.get(url)??(next=>next()))(send);
+
+/** A fresh, identified health read may end a publication-only hold early.
+ * Never clear an RPC Retry-After or a newer failure that arrived during the read.
+ * This only reopens transport: command journals still reconcile exact bytes.
+ */
+export async function observeEnginePublication(url:string,app:string,epoch:bigint,load:()=>Promise<unknown>){
+  const pause=publicationPauses.get(url),value=await engineGate(url)(load);
+  if((value as any)?.chainId!==4242)throw Error('Hosted publication chain is not verified');
+  const health=agentPublicationHealth(value,app,epoch);
+  if(health.healthy&&pause&&publicationPauses.get(url)===pause)publicationPauses.delete(url);
+  return health;
+}
 
 /** One cooldown for all methods on a node, including SDK reads and writes.
  * Reject locally while throttled. Never queue or replay a signed transaction. */
@@ -62,14 +75,14 @@ export function engineTransport(url: string,journal?:EngineTransportJournal): Tr
     const transport = http(url, {retryCount: 0, timeout: 4000,fetchFn})(options);
     return {...transport, request: async args => {
       const write=["interlude_sendTransaction","eth_sendRawTransaction"].includes(args.method);
-      if(write&&Date.now()<(publicationPauses.get(url)??0)){recordRpc({at:Date.now(),target:"interlude",method:"write.blocked",status:503,ms:0,source:"cooldown"});throw new EnginePublicationUnavailable();}
+      if(write&&Date.now()<(publicationPauses.get(url)?.until??0)){recordRpc({at:Date.now(),target:"interlude",method:"write.blocked",status:503,ms:0,source:"cooldown"});throw new EnginePublicationUnavailable();}
       try{return await requestGate(async()=>{
         if(write)await journal?.beforeSend((args.params as any)?.[0]);
         const result:any=await transport.request(args);
         journal?.received(args.method,result);
         return result;
       });}
-      catch(e){if(publicationUnavailable(e)){publicationPauses.set(url,Date.now()+30000);throw new EnginePublicationUnavailable(e);}throw e;}
+      catch(e){if(publicationUnavailable(e)){publicationPauses.set(url,{until:Date.now()+30000});throw new EnginePublicationUnavailable(e);}throw e;}
     }};
   };
 }
