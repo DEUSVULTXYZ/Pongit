@@ -272,20 +272,22 @@ export class AgentPoolReader {
   const wanted:Ref={chainId:10143n,arena:arena.app,epoch:BigInt(ref.epoch),id:BigInt(ref.id)};
   return this.snapshot(async(read):Promise<PoolMatchView>=>{
    const series=m.version===3;
-   const record=await read(m.pool,this.poolAbi,'record',[series?wanted.id:wanted]);
-   if(record.ref.arena.toLowerCase()!==arena.app.toLowerCase()||record.ref.id!==wanted.id||record.ref.epoch!==wanted.epoch||record.ref.chainId!==10143n)throw poolNotFound();
-   // Once the immutable record is verified, these reads are independent and
-   // pinned to the same block. Let Multicall serve them together instead of
-   // delaying every arena entry behind five sequential RPC round trips.
-   const [binding,ticket,seriesBinding,r,assigned,tournament]=await Promise.all([
-    read(arena.app,this.arenaAbi,'boundMatch'),
+   // The requested reference is already validated. Read its immutable record,
+   // ticket and current assignment together at one block. Reusable arenas use
+   // the ticket, not the last Monad-published physics binding, for admission.
+   const [record,binding,ticket,seriesBinding,assigned]=await Promise.all([
+    read(m.pool,this.poolAbi,'record',[series?wanted.id:wanted]),
+    m.version<4?read(arena.app,this.arenaAbi,'boundMatch'):null,
     m.version>=4?read(m.pool,this.poolAbi,'ticketOf',[wanted]):null,
     series?read(arena.app,seriesArenaAbi,'bindingFor',[wanted.id]):null,
+    m.version>=4?read<string>(m.pool,this.poolAbi,'arenaMatch',[arena.app]):null,
+   ]);
+   if(record.ref.arena.toLowerCase()!==arena.app.toLowerCase()||record.ref.id!==wanted.id||record.ref.epoch!==wanted.epoch||record.ref.chainId!==10143n)throw poolNotFound();
+   const [r,tournament]=await Promise.all([
     record.captured?read(m.pool,this.poolAbi,'result',[wanted]):null,
-    m.version>=4&&!record.captured?read<string>(m.pool,this.poolAbi,'arenaMatch',[arena.app]):null,
     record.tournament!==0n?read(m.tournaments,tournamentAbi,'tournament',[record.tournament]):null,
    ]);
-   let current=binding.id===wanted.id&&binding.epoch===wanted.epoch;
+   let current=binding?.id===wanted.id&&binding?.epoch===wanted.epoch;
    const own=m.version>=4?ticket[1]:series?seriesBinding:binding;
    if(m.version>=4&&(own.id!==wanted.id||own.epoch!==wanted.epoch||own.a.toLowerCase()!==record.a.toLowerCase()||own.b.toLowerCase()!==record.b.toLowerCase()))throw poolNotFound();
    if(series&&(own.id!==wanted.id||own.epoch!==wanted.epoch))throw poolNotFound();

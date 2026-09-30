@@ -292,11 +292,10 @@ test('arena entry batches independent reads without weakening binding or reorgan
  let wrong=false,reorg=false,blocks=0;const started=new Set<string>();
  const client={getBlock:async()=>({number:50n,hash:reorg&&++blocks%2===0?evidence:zeroHash,timestamp:1000n}),readContract:async(r:any)=>{
   assert.equal(r.blockNumber,50n);
-  if(r.functionName==='record')return{ref,a,b,ranked:false,tournament:1n,lane:0,captured:false};
   started.add(r.functionName);
   await new Promise(resolve=>setImmediate(resolve));
-  for(const fn of ['boundMatch','ticketOf','arenaMatch','tournament'])assert(started.has(fn),`${fn} must start before another independent read completes`);
-  if(r.functionName==='boundMatch')return{id:90n,epoch:2n};
+  for(const fn of ['record','ticketOf','arenaMatch'])assert(started.has(fn),`${fn} must start before another independent read completes`);
+  if(r.functionName==='record')return{ref,a,b,ranked:false,tournament:1n,lane:0,captured:false};
   if(r.functionName==='ticketOf')return[{},{id:91n,epoch:2n,a:wrong?addr(99):a,b,mode:1}];
   if(r.functionName==='arenaMatch')return key;
   if(r.functionName==='tournament')return{league:false};
@@ -304,6 +303,7 @@ test('arena entry batches independent reads without weakening binding or reorgan
  }} as unknown as PublicClient;
  const reader=new AgentPoolReader(client,m),wanted={chainId:10143 as const,app,epoch:'2',id:'91'};
  const result=await reader.match(wanted);assert.equal(result.value.node,m.arenas[0].node);assert.equal(result.value.overtimeSeconds,60);
+ assert(!started.has('boundMatch'),'Reusable discovery must not wait for the obsolete Monad physics binding');
  wrong=true;await assert.rejects(reader.match(wanted),/not found/);wrong=false;reorg=true;
  await assert.rejects(reader.match(wanted),/changed during synchronization/);
 });

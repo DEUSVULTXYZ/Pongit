@@ -1,0 +1,40 @@
+{
+  "at": "2026-09-30T19:45:28.115Z",
+  "readOnly": true,
+  "chain": "actual Monad testnet",
+  "block": "67058087",
+  "hash": "0x0e4fe2c3c387e2643674c2a9541345b4db635f448123dbe4d7c894f156d5222b",
+  "ref": {
+    "chainId": 10143,
+    "app": "0x028f656e76CC1973cEd7c41d8584d4F94bE9e003",
+    "epoch": "14",
+    "id": "253"
+  },
+  "samples": [
+    {
+      "revision": "before",
+      "ms": 1009.5668369999999
+    },
+    {
+      "revision": "after",
+      "ms": 2247.736591
+    },
+    {
+      "revision": "after",
+      "ms": 1961.18793
+    },
+    {
+      "revision": "before",
+      "ms": 2383.720093000001
+    },
+    {
+      "revision": "before",
+      "ms": 1122.8356590000003
+    },
+    {
+      "revision": "after",
+      "ms": 1933.7150359999996
+    }
+  ],
+  "passed": true
+}

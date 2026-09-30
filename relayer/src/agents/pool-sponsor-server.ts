@@ -38,7 +38,7 @@ const scope=manifest.version===5?{
  allowCall:(to:Address,data:`0x${string}`,value:bigint)=>{assert.equal(value,0n);validatePoolSignedCall(manifest,{to,data});},
  strictEstimate:(to:Address,data:`0x${string}`,value:bigint)=>{assert.equal(value,0n);return strictPoolAdmissionEstimates(manifest,{to,data}).map(call=>({...call,value}));},
 }:undefined;
-const writer = await independentWriter(db, base,journal,scope);
+const writer = await independentWriter(db, base,journal,scope,{eager:manifest.version===5});
 const service = await startPoolReadService(reader, {host: process.env.HOST ?? '0.0.0.0', port: 4102, public: exposure.public,
   sponsorHealth:writer.status,
   sponsor: poolSponsorRoutes(manifest, writer, async () => exposure.public?(await reader.config()).value.enabled:

@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-30T19:40:01.518Z",
+  "readOnly": true,
+  "hash": "0x019f42cdfd66ed9d280b7fb10bdaa099ff4a72b26cd244c645376586baec5319",
+  "block": "67055216",
+  "blockHash": "0xb11dfa64cc1ed4c2517c30f7df1f2d9d5cad7fe8b0ae9ed27bd2c913be2919bd",
+  "status": "success",
+  "gasUsed": "2825899",
+  "sameTransactionRequestAndAdmission": true,
+  "ref": {
+    "chainId": 10143,
+    "app": "0x028f656e76CC1973cEd7c41d8584d4F94bE9e003",
+    "epoch": "14",
+    "id": "253"
+  }
+}

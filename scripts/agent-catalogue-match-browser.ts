@@ -6,6 +6,7 @@ import {chromium,expect} from '@playwright/test';
 import {decodeFunctionData,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {installSyncProbe,syncMetrics} from './browser-sync-probe';
+import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
@@ -68,6 +69,7 @@ page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:
  catch{/* Record shape only, never payload. */}});ws.on('close',()=>record.closedAt=new Date().toISOString());});
 const requests=new WeakMap<object,{at:string;method:string;path:string}>();
 const controls=new Map<string,{direction:number;sequence:string}>();
+const actions=new WeakMap<object,string>();
 page.on('request',r=>{starts.set(r,performance.now());try{
  const url=new URL(r.url()),body=r.postDataJSON();
  // Timing metadata only: never retain payloads, signatures, grants or URLs
@@ -79,6 +81,7 @@ page.on('request',r=>{starts.set(r,performance.now());try{
  const body=r.postDataJSON();if(body?.method!=='interlude_sendTransaction')return;
  const raw=body.params[0],hash=keccak256(raw),tx=parseTransaction(raw);
  const call=decodeFunctionData({abi:reusableAgentArenaAbi,data:tx.data!});
+ actions.set(r,call.functionName);
  if(call.functionName==='input')controls.set(hash,{direction:Number(call.args[2]),sequence:String(call.args[3])});
 }catch{/* Decode in memory; never retain signed bytes or grants. */}});page.on('pageerror',e=>report.errors.push(clean(e)));
 page.on('response',async response=>{try{
@@ -97,7 +100,10 @@ page.on('response',async response=>{try{
  if(!['interlude_sendTransaction','interlude_getTransactionReceipt','eth_getTransactionReceipt'].includes(body.method))return;
  const reply=await response.json();
  if(body.method==='interlude_sendTransaction'){
-  const began=starts.get(request)??performance.now();report.submissions.push({ms:performance.now()-began,http:response.status(),error:!!reply.error});
+  const began=starts.get(request)??performance.now();report.submissions.push({at:new Date().toISOString(),action:actions.get(request)??'unknown',
+   ms:performance.now()-began,http:response.status(),error:!!reply.error,
+   ...(Number.isSafeInteger(reply.error?.code)?{rpcErrorCode:reply.error.code}:{}),
+   ...(publicationUnavailable(reply.error)?{publication:publicationFailureDetails(reply.error)}:{})});
   const hash=typeof reply.result==='string'?reply.result:reply.result?.transactionHash;
   if(typeof hash==='string'){
    submitted.set(hash.toLowerCase(),began);
@@ -217,15 +223,18 @@ try{
  await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).waitFor({timeout:10000});
  assert.match(await page.locator('.outcome-score').innerText(),new RegExp(`${report.result.scoreA}\\s*:\\s*${report.result.scoreB}`));
  report.checks.push('Final score and result window survived the delayed terminal frame');
+ // Retain every measured gate even when another assertion fails. Diagnostics
+ // never turn a failed run into a pass or discard a rejected command.
+ report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.receiptP95Ms<=300,
+  player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0:null,
+  spectator:report.spectatorSync?report.spectatorSync.p95FrameMs<=20&&report.spectatorSync.maxHoldMs<=500&&report.spectatorSync.frameGaps.length===0:null};
  const requiredControls=cadenceProbe?20:100;
- assert(report.submissions.length>=requiredControls&&report.submissions.every((s:any)=>!s.error),'Insufficient successful command submissions');
+ assert(report.submissions.length>=requiredControls,'Insufficient command submissions');
+ assert(report.submissions.every((s:any)=>!s.error),'At least one command submission was rejected; inspect action and error metadata');
  assert(local.length>=(cadenceProbe?15:50)&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
  assert(report.receipts.filter((r:any)=>r.sequence).length>=requiredControls&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
- report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.receiptP95Ms<=300,
-  player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0:null,
-  spectator:report.spectatorSync?report.spectatorSync.p95FrameMs<=20&&report.spectatorSync.maxHoldMs<=500&&report.spectatorSync.frameGaps.length===0:null};
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}

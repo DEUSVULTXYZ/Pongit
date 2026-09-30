@@ -99,6 +99,18 @@ try{
  await assert.rejects(writer.enqueue(target,'0x12345683'),/stopping/);
  release();await queued;await closing;(base as any).call=original;
  report.checks.push('Shutdown rejects new intake and drains the operation already accepted before database connections close');
+ await peer.close();
+ const eager=await independentWriter(second,base,journal,two,{eager:true});writers.push(eager);
+ const beforeEager=executions,startedEager=performance.now();
+ const eagerOperation=await eager.enqueue(target,'0x12345685');
+ while(performance.now()-startedEager<600&&(await eager.get(eagerOperation.id))?.status!=='confirmed')await new Promise(r=>setTimeout(r,5));
+ assert.equal((await eager.get(eagerOperation.id))?.status,'confirmed','Durable intake should wake dispatch and receipt observation before their fallback intervals');
+ assert.equal(executions,beforeEager+1);
+ await Promise.all([eager.dispatch(),eager.observe(),eager.dispatch()]);assert.equal(executions,beforeEager+1);
+ eager.stop();const stopped=await eager.enqueue(target,'0x12345686');await new Promise(r=>setTimeout(r,40));
+ assert.equal((await eager.get(stopped.id))?.status,'queued','Explicit stop disables eager work as well as timers');
+ assert.equal(executions,beforeEager+1);
+ report.checks.push('Scoped eager intake confirms before fallback intervals, remains single-writer under parallel wakeups, and respects stop');
  report.passed=true;
 }catch(error){report.passed=false;report.error=(error as Error).message;process.exitCode=1;}
 finally{

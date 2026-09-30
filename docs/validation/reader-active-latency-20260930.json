@@ -1,0 +1,136 @@
+{
+  "at": "2026-09-30T19:46:44.513Z",
+  "readOnly": true,
+  "chain": "actual Monad testnet historical admission block",
+  "block": "67055216",
+  "hash": "0xb11dfa64cc1ed4c2517c30f7df1f2d9d5cad7fe8b0ae9ed27bd2c913be2919bd",
+  "ref": {
+    "chainId": 10143,
+    "app": "0x028f656e76CC1973cEd7c41d8584d4F94bE9e003",
+    "epoch": "14",
+    "id": "253"
+  },
+  "samples": [
+    {
+      "revision": "after",
+      "ms": 5776.521373,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 1425.110127
+        },
+        {
+          "method": "eth_call",
+          "ms": 490.4917860000005
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 3821.0618449999993
+        }
+      ]
+    },
+    {
+      "revision": "before",
+      "ms": 6035.864977000001,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 4089.872274000001
+        },
+        {
+          "method": "eth_call",
+          "ms": 369.075288
+        },
+        {
+          "method": "eth_call",
+          "ms": 534.6401619999997
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 998.1931139999997
+        }
+      ]
+    },
+    {
+      "revision": "before",
+      "ms": 1524.3085620000002,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 614.3943490000001
+        },
+        {
+          "method": "eth_call",
+          "ms": 321.4580029999979
+        },
+        {
+          "method": "eth_call",
+          "ms": 483.57713499999954
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 65.31701399999656
+        }
+      ]
+    },
+    {
+      "revision": "after",
+      "ms": 5916.399507999999,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 2331.4874280000004
+        },
+        {
+          "method": "eth_call",
+          "ms": 154.5149429999983
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 3407.8828240000003
+        }
+      ]
+    },
+    {
+      "revision": "after",
+      "ms": 4181.115711000002,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 41.94023699999889
+        },
+        {
+          "method": "eth_call",
+          "ms": 401.9002839999994
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 3711.7834280000025
+        }
+      ]
+    },
+    {
+      "revision": "before",
+      "ms": 5031.125415999999,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 2046.2979019999984
+        },
+        {
+          "method": "eth_call",
+          "ms": 482.3825399999987
+        },
+        {
+          "method": "eth_call",
+          "ms": 477.94818600000144
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 1987.5250489999999
+        }
+      ]
+    }
+  ],
+  "passed": true
+}

@@ -832,3 +832,56 @@ The last valid-session measurement remains 18.490 seconds, failing the target.
 A read-only historical payment-index check found nine PayoutPaid records and
 no other indexed states in pong_human_rules14; it is not new payment or legacy
 withdrawal qualification. Difficulty migration and the full release remain open.
+
+## Admission 253 and scoped scheduling fix - 30 September, 19:50 UTC
+
+The actual valid-session Chrome Chaos fixture `scan-valid-cbfe406-chaos` fails.
+It requested and admitted match 253 (028f/14) in one canonical transaction at
+block 67055216, using 2,825,899 gas. This proves the queue scan correction works;
+it does not prove the latency target. Click to countdown was 17.902 seconds.
+The result published 1-7; F5 and the final-score window worked. The browser
+recorded 186 executed input receipts, local p95 16.1 ms, receipt p95 15.17 ms,
+and render p95 17.1 ms. Player/spectator holds reached 2.067/2.234 seconds.
+One RPC command was rejected. Its original report has no action/error detail,
+so the rejection must not be attributed to a terminal input without evidence.
+The report remains FAIL; the driver is stopped and normal services retain the
+published record. Future reports include allowlisted action, UTC, error code
+and publication classification, and retain performance gates before assertions.
+
+Matching engine logs explain the prolonged countdown and rally hold: at VPS
+19:31:15.328, batch 1 was publication-paused with the relay's hourly gas-budget
+reason; recovery appeared at 19:31:20.369. Batch 6 paused again at 19:31:36.198
+with relay HTTP429, then recovered at 19:31:38.394. VPS and browser clocks differ
+by approximately 5.8 seconds; their absolute times must not be treated as one
+precise clock. No RPC request-rate quota, token shortage or permanent outage is
+inferred. No repeated closing, session creation or provider change was made.
+
+The next compatible candidate wakes the existing scoped sponsor immediately
+AFTER durable intake, and observes its first receipt after sending. Its normal
+periodic recovery, exact transaction journal, signer lock and single-flight
+checks remain. The legacy human writer keeps its default timing. An isolated
+PostgreSQL test with synthetic RPC passes concurrent intake, lost responses,
+restart, funding refusal, role isolation, shutdown and eager wake/stop checks.
+No real transaction was submitted by that test.
+
+The candidate also batches an arena record, immutable admission ticket and
+current assignment at the same block. It removes the obsolete Monad physics
+binding read for reusable arenas. Historical references and final canonical
+block verification remain. All 827 TypeScript tests and root typecheck pass.
+Real-chain read comparisons return identical views. On the historical active
+admission block, RPC count falls from four to three. Timing samples are noisy
+and include historical-priority gateway waits: they do NOT prove a production
+latency improvement. The first isolated comparison failed DNS because it used
+only one network; its container is preserved, and later comparisons use the
+reader's existing network namespace without changing that reader.
+
+Backup flow-eager-20260930T1950Z is copied off VPS and SHA-verified:
+
+- agents.dump: `a6d711e1bf55df1f4abb212b8d77740fd13f7d36a65665a0a7472000b7c08685`
+- operator.dump: `1d11827203ab40d9a83e57d2f7df3afc1a49e4f029e2ef7b67d5e6913bc74c7a`
+- runtime.tar.gz: `70a7eab04137be8a4bab3b3835b4c536986ba84ac165ba37d35664f0108f7b1c`
+
+This backup precedes the eager candidate deployment. Public atomic admission
+remains disabled. Tournament 12 may be active; difficulty migration remains
+blocked by its live participation, not silently performed. No final 24-hour
+trial or complete release is claimed.

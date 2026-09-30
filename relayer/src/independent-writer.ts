@@ -16,7 +16,7 @@ export function confirmedContractRevert(error:unknown){
  * Network observation never holds a PostgreSQL transaction or a lobby lock. The advisory
  * lock protects only signing/submission; receipts are observed by a separate pump.
  */
-export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=db,scope?:ScopedWriter){
+export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=db,scope?:ScopedWriter,options:{eager?:boolean}={}){
  if(scope&&!scope.keyFile)throw Error('Dedicated sponsor key path required');
  const secret=JSON.parse(await readFile(scope?.keyFile??process.env.ROOMS_LIFECYCLE_KEY_FILE!,'utf8'));
  const account=privateKeyToAccount(secret.privateKey as Hex);
@@ -34,7 +34,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  const binding=await db.query('INSERT INTO independent_writer_binding(id,owner) VALUES(1,$1) ON CONFLICT(id) DO UPDATE SET owner=independent_writer_binding.owner RETURNING owner',[identity.owner]);
  if(binding.rows[0].owner!==identity.owner)throw Error('Sponsor queue belongs to another signer; drain and migrate it explicitly');
  const view=(r:any):ChainOperation=>({id:r.id,status:r.status,hash:r.hash??undefined,error:r.error??undefined});
- let closing=false;
+ let closing=false,running=true;
  const tasks=new Set<Promise<unknown>>();
  const track=<T>(run:()=>Promise<T>):Promise<T>=>{
   if(closing)return Promise.reject(Error('Sponsor is stopping; no operation accepted'));
@@ -61,7 +61,11 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    if(existing){await c.query('COMMIT');return view(existing);}
    if(Number((await c.query("SELECT count(*) FROM independent_operations WHERE status='queued'")).rows[0].count)>=200)throw Error('Sponsoring is busy. Your wallet has not been charged.');
    const row=(await c.query('INSERT INTO independent_operations(id,target,data,value,priority) VALUES($1,$2,$3,$4,$5) RETURNING *',[id,to.toLowerCase(),data,String(value),priority])).rows[0];
-   await c.query('COMMIT');return view(row);
+   await c.query('COMMIT');
+   // Wake this same nonce owner after durable intake. Keep the normal timer as
+   // recovery, and retain dispatch's signer lock and single-flight guard.
+   if(options.eager&&running&&!closing)void track(dispatch).catch(()=>{});
+   return view(row);
   }catch(e){await c.query('ROLLBACK');throw e;}finally{c.release();}
  }
  let sending=false,observing=false,lastError='',lastCode:string|undefined;
@@ -123,12 +127,15 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    await journal.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",[jobId(row.id),row.target,account.address.toLowerCase(),nonce,raw,hash]);
    await db.query("UPDATE independent_operations SET status='pending',hash=$2,updated_at=now() WHERE id=$1",[row.id,hash]);
    await base.sendRawTransaction({serializedTransaction:raw});lastError='';lastCode=undefined;
+   // A fast inclusion need not wait for the next receipt interval. A missing
+   // receipt remains pending and is observed by the existing bounded pump.
+   if(options.eager&&running&&!closing)void track(observe).catch(()=>{});
   }catch(error){lastCode=operatorNeedsFunding(error)?'OPERATOR_GAS_UNAVAILABLE':'OPERATOR_RECONCILING';lastError=lastCode==='OPERATOR_GAS_UNAVAILABLE'?operatorFundingMessage:'Sponsor is reconciling a pending operation. Gameplay observations continue.';}
   finally{try{if(locked)await c?.query('SELECT pg_advisory_unlock($1::bigint)',[identity.lock]);}finally{c?.release();sending=false;}}
  }
  const timers=[setInterval(()=>void track(observe).catch(()=>{}),750),setInterval(()=>void track(dispatch).catch(()=>{}),1000)];
  for(const t of timers)t.unref();
- const stop=()=>timers.forEach(clearInterval);
+ const stop=()=>{running=false;timers.forEach(clearInterval);};
  return {enqueue:(...args:Parameters<typeof enqueue>)=>track(()=>enqueue(...args)),get,account:account.address,
   observe:()=>track(observe),dispatch:()=>track(dispatch),status:()=>({available:!closing&&!lastError,error:lastError||undefined,code:lastCode}),stop,
   close:async()=>{closing=true;stop();await Promise.allSettled([...tasks]);}};
