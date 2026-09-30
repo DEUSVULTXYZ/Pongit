@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-30T19:58:25.095Z",
+  "scope": "Actual temporary PostgreSQL schemas; simulated chain; no network transaction submission",
+  "checks": [
+    "40 intake races and parallel dispatch sign once; restart and lost receipt resend the identical transaction without a new nonce",
+    "A pending sponsor does not hold the independent maintenance signer",
+    "Queue binding rejects changed keys; scoped policy rejects another selector and any value",
+    "Confirmation resumes the next nonce exactly once; separate roles retain separate nonce sequences in the shared journal",
+    "Gas rejection reports unavailable sponsorship, retains the signed nonce/hash and confirms that same operation after funding",
+    "Shutdown rejects new intake and drains the operation already accepted before database connections close",
+    "Scoped eager intake confirms before fallback intervals, remains single-writer under parallel wakeups, and respects stop"
+  ],
+  "passed": true
+}

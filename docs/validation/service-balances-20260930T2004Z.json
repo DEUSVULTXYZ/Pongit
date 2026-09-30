@@ -1,0 +1,22 @@
+{
+  "at": "2026-09-30T20:04:09.552Z",
+  "block": "67061813",
+  "hash": "0x00ef7ea0a93a7b0bfe610abb373f8208b3922601717f00203dfe7e1bcb3dacc7",
+  "rows": [
+    {
+      "role": "archive",
+      "address": "0x38078433f7a63b3e6abdef49a726599d655f42c5",
+      "mon": "0.020184109756275296"
+    },
+    {
+      "role": "legacy-reserve",
+      "address": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+      "mon": "625.129813394"
+    },
+    {
+      "role": "Interlude-publisher",
+      "address": "0xB28E684815b095aB5Fb324214cfEa63d76F3d691",
+      "mon": "89830.155335810931609426"
+    }
+  ]
+}

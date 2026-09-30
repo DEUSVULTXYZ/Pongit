@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-09-30T20:11:12.1720479Z",
+  "offVps": true,
+  "files": [
+    {
+      "name": "agents.dump",
+      "sha256": "6d41e33adbd5433ae4c8b0375212f5fcb37b1f4d73dc833dd778ec2a444f63fe"
+    },
+    {
+      "name": "operator.dump",
+      "sha256": "6af4d6a73761af5e8c2a2890492018c70440c10c4bdcbd7f9dfce1502d838bab"
+    },
+    {
+      "name": "runtime.tar.gz",
+      "sha256": "50917bbe7edf7733e6f0b31c13227ccc1d12ec315ba9916a318f68a90c3a4fc3"
+    }
+  ]
+}

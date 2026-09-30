@@ -1,0 +1,23 @@
+[
+  {
+    "image": "sha256:a7575ea9e424b7cdf6b27d042cf53170d0434e9418f2541062f44824172d4379",
+    "name": "rejected",
+    "exit": 1,
+    "expectedPass": false,
+    "expectationMet": true
+  },
+  {
+    "image": "sha256:a2b19f855a98339c2f17f1174073f0e388073837f20afe4f0adc9f244412aead",
+    "name": "reader",
+    "exit": 0,
+    "expectedPass": true,
+    "expectationMet": true
+  },
+  {
+    "image": "sha256:fb08e18b0e1012445c7078e8789cb0ef525b6c294b6497a542a1a7384b95cccf",
+    "name": "rollback",
+    "exit": 0,
+    "expectedPass": true,
+    "expectationMet": true
+  }
+]

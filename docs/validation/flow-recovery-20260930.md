@@ -885,3 +885,116 @@ This backup precedes the eager candidate deployment. Public atomic admission
 remains disabled. Tournament 12 may be active; difficulty migration remains
 blocked by its live participation, not silently performed. No final 24-hour
 trial or complete release is claimed.
+
+## Scoped deployment - 30 September, 19:52 UTC
+
+Published source `8d32413` is deployed to only the agent sponsor and reader.
+Sponsor image: `sha256:a7575ea9e424b7cdf6b27d042cf53170d0434e9418f2541062f44824172d4379`.
+Reader image: `sha256:a2b19f855a98339c2f17f1174073f0e388073837f20afe4f0adc9f244412aead`.
+Both started at 19:51:50 UTC. The queue had 57 confirmed operations and no
+unresolved rows before replacement. No other service, key, journal, contract or
+manifest gate changed. Public config still reports atomic admission absent and
+qualified=false. The compose rollback is `compose.json.before-eager-8d32413`;
+use the preserved services/images, never restore a database over new work.
+
+The bounded real Chaos fixture `eager-8d32413-chaos` started after this deployment,
+using the prior valid virtual-Mera grant and the explicit atomic capability
+override. Its original deadlines apply. Inspect its report before any new
+fixture; it is not proof until the report completes. At 19:53, actual catalogue
+capacity reports four free challenge lanes and four ready arenas. Tournament 12
+is still playing, with six of 28 fixtures resolved. No difficulty migration is
+possible while those competitive participants remain reserved.
+
+## Image regression, rollback and repair - 30 September, 20:00 UTC
+
+The first eager sponsor image was defective. It also copied the current reader
+module onto an older sponsor dependency graph; that graph lacks the export
+`agentServiceUnavailable`. The supervisor kept its container alive while its
+HTTP child repeatedly failed to start. This is a PONGIT deployment error, not an
+Interlude incident. The `eager-8d32413-chaos` browser report fails its original
+180-second deadline: GET operation returned 502, no POST was sent, no new
+sponsor row or game was created. Its failed report and image remain preserved.
+
+The sponsor was rolled back to cbfe406. The independent reader stayed healthy.
+Actual public checks then returned the expected 404 for an unknown operation
+and 200 for published match 253. The repaired image copies ONLY the sponsor
+entry point and writer, retaining its internally compatible reader graph.
+`agent-role-import-check.ts`, run with network=none and no runtime secrets,
+reproduces failure in the rejected image and passes in the reader and rollback
+images. The repaired sponsor passes the same import check and the actual
+isolated PostgreSQL regression from its built image, without a source override
+for the writer. Every temporary database/test container has stopped.
+
+Repaired sponsor image:
+`sha256:475058091b380a1cbde7005e6644e3d57ba3694bc31c69438dc2a39724ad4918`.
+It started at 19:58:52.505 UTC. Its HTTP route was verified inside the container
+and through the public origin before another fixture. The underlying source
+is still 8d32413; the bad image must never be selected for rollback. Prefer
+cbfe406 for sponsor rollback, preserving the database and exact intents.
+
+The second bounded fixture `eager-repaired-8d32413-chaos` has actually admitted
+7a45/12/255. It uses the original clean session from the successful-submission
+scan trial, not the expired local intent retained in the failed 502 trial.
+No submission occurred for that failed intent. Keep both reports distinct;
+the second remains unqualified until its original checks finish.
+
+## Real Chaos sample and results funding blocker - 30 September, 20:12 UTC
+
+The repaired-image fixture `eager-repaired-8d32413-chaos` has finished. Its
+original report remains FAIL: the final result was not captured by the pool
+before the original deadline. It used the actual public catalogue, browser,
+API, Monad and Interlude with a reused virtual-Mera grant and the explicit
+qualification-only atomic capability override. Public atomic admission remains
+absent. This is not physical-passkey or public atomic-admission qualification.
+
+Match 255 on 7a45/12 recorded 221 executed input receipts without RPC rejection,
+F5 grant reuse, local response p95 15.8 ms, executed-receipt p95 15.05 ms and
+render p95 17.2 ms. The measured player and spectator holds were at most
+99.8 ms and 249.5 ms; neither view recorded a snapshot jump. These are short
+observed windows, not a guarantee of continuous service. Click to countdown
+was 10.080 seconds, which still FAILS the 8-second target. Earlier comparable
+samples were 17.902 and 18.490 seconds, but three samples do not establish p95.
+The sanitized report is `eager-chaos-255-20260930.json`. The original full
+report, failed 502 fixture and all earlier failures remain preserved.
+
+The missing capture is diagnosed separately from Interlude publication.
+At canonical block 67062130, exact archived proofs match the published arena
+roots for tournament match 254 (9b8e/12, 2-4) and fixture 255 (7a45/12, 0-7).
+Both terminal states are published, not yet final, and not yet captured by the
+pool. Read-only `captureProof` estimates succeed. With the existing margins,
+their maximum fee provisions are 0.150970608 and 0.134031884 MON. The archive
+signer `0x38078433f7a63b3e6abdef49a726599d655f42c5` has only
+0.020184109756275296 MON. See `capture-funding-20260930.json` and the independent
+balance snapshot at block 67061813. The PONGIT reserve still has
+625.129813394 MON; the shared publisher has 89,830.155335810931609426 MON.
+This immediate blocker is the archive signer's funding, not RPC rate limits
+or the earlier publisher-authentication incident.
+
+No transfer has been sent. A pending user question requests permission to move
+100 test MON from the existing PONGIT reserve to this archive signer because
+the standing heartbeat explicitly forbids automatic transfers. No new funds
+from the user are required for this action. Until approval or direct funding,
+do not launch more games. The existing archive process retains both results
+and owns their eventual capture. Do not create another writer, force-close a
+finished arena or relabel the original deadline failure after a later capture.
+
+Tournament 12 remains active, so ProgressiveHousePolicies/RebalancedAgentCatalog
+are still undeployed. No identity, ELO, repeat state, community registration,
+pending request or existing authorization has been migrated. The human backend
+remains e4eceb6. Admission, difficulty, finance, concurrency, publication-reserve
+and final unchanged 24-hour qualification gates remain open.
+
+The final backup `flow-eager-final-20260930T2010Z` includes the repaired runtime
+and both live databases. Its off-VPS copy was SHA-verified at 20:11:12 UTC:
+
+- agents.dump: `6d41e33adbd5433ae4c8b0375212f5fcb37b1f4d73dc833dd778ec2a444f63fe`
+- operator.dump: `6af4d6a73761af5e8c2a2890492018c70440c10c4bdcbd7f9dfce1502d838bab`
+- runtime.tar.gz: `50917bbe7edf7733e6f0b31c13227ccc1d12ec315ba9916a318f68a90c3a4fc3`
+
+These fresh copies are not a new restore test; the earlier scratch-database
+restore proof remains separate. The final root typecheck passes. All 827
+TypeScript tests passed on the unchanged implementation before this evidence
+update. Actual image import and PostgreSQL checks pass on the repaired image.
+Future role-image updates must run the transitive import check inside the
+built image with network disabled before deployment, even if the source tests
+pass. A live supervisor alone is insufficient service-health evidence.

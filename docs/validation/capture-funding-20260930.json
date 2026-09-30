@@ -1,0 +1,47 @@
+{
+  "at": "2026-09-30T20:05:49.472Z",
+  "readOnly": true,
+  "owner": "0x38078433f7a63b3e6abdef49a726599d655f42c5",
+  "rows": [
+    {
+      "app": "0x9b8e61621682da7b59239774f76dcf04071ea059",
+      "id": "254",
+      "epoch": 12,
+      "captured": false,
+      "root": "0xbf5a44eb71b618971ae96c4739e806d7b92940349e91687c98895b959891a9f6",
+      "count": 1,
+      "finality": false,
+      "score": [
+        2,
+        4
+      ],
+      "status": 3,
+      "resultHash": "0x8db7d089c3d608d2e9af41aa9ae76ce0e2a1a0f5466e311f8e85dc2ec417a3d3",
+      "estimatedGas": "1031220",
+      "gasLimit": "1237464",
+      "requiredMaximumFeeMon": "0.150970608"
+    },
+    {
+      "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+      "id": "255",
+      "epoch": 12,
+      "captured": false,
+      "root": "0xcad5a2cf7d0b9822192ecd17e6ae009c2ed0ae7e4d97399ca056e2e141dac910",
+      "count": 6,
+      "finality": false,
+      "score": [
+        0,
+        7
+      ],
+      "status": 3,
+      "resultHash": "0xaee872ee31cca021af0b49b13325efa3a338ca0ef183d6593185a1b3b8725e83",
+      "estimatedGas": "915519",
+      "gasLimit": "1098622",
+      "requiredMaximumFeeMon": "0.134031884"
+    }
+  ],
+  "passed": true,
+  "block": "67062130",
+  "blockHash": "0x2265e90f6d739fdce5079fb420d5000e160dd613a5d7f41e9536767482d89439",
+  "balanceMon": "0.020184109756275296"
+}

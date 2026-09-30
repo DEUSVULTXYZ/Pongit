@@ -1,0 +1,19 @@
+{
+  "source": "8d32413",
+  "services": [
+    {
+      "role": "reader",
+      "image": "sha256:a2b19f855a98339c2f17f1174073f0e388073837f20afe4f0adc9f244412aead",
+      "startedAt": "2026-09-30T19:51:50.891229396Z",
+      "running": true,
+      "restartCount": 0
+    },
+    {
+      "role": "sponsor",
+      "image": "sha256:a7575ea9e424b7cdf6b27d042cf53170d0434e9418f2541062f44824172d4379",
+      "startedAt": "2026-09-30T19:51:50.894926007Z",
+      "running": true,
+      "restartCount": 0
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "startedAt": "2026-09-30T19:59:53.553Z",
+  "finishedAt": "2026-09-30T20:02:50.106Z",
+  "run": "eager-repaired-8d32413-chaos",
+  "passed": false,
+  "error": "Conceded fixture must have a published result",
+  "mode": 1,
+  "actualMode": 1,
+  "bot": "NOVA",
+  "virtualPrf": true,
+  "reusedSession": true,
+  "mockedNetwork": false,
+  "atomicQualification": true,
+  "ref": {
+    "app": "0x7A45dCd516896A22E4cDEd587086ee57B8aDF9c6",
+    "epoch": "12",
+    "id": "255"
+  },
+  "admissionMs": 10080,
+  "receiptP95Ms": 15.049699999999575,
+  "submissionP95Ms": 15.044300000001385,
+  "input": {
+    "samples": 75,
+    "p95Ms": 15.800000071525574
+  },
+  "sync": {
+    "frames": 1767,
+    "snapshots": 277,
+    "startupFillMs": 0,
+    "p95FrameMs": 17.200000047683716,
+    "maxHoldMs": 99.80000007152557,
+    "holds": [],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 233.29999995231628,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "spectatorSync": {
+    "frames": 2408,
+    "snapshots": 377,
+    "startupFillMs": 732.6000000238419,
+    "p95FrameMs": 17.199999928474426,
+    "maxHoldMs": 249.5,
+    "holds": [
+      {
+        "at": 13585.100000023842,
+        "ms": 249.5,
+        "sourceT": 8160,
+        "rally": "2"
+      }
+    ],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 233.10000002384186,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "checks": [
+    "F5 reused the Mera grant"
+  ],
+  "scope": "Actual public browser, API, Monad and Interlude; virtual Mera authenticator, qualification-only atomic capability override. Original report FAIL retained. Short sample, not a 24-hour result."
+}
