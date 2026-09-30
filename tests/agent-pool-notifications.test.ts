@@ -26,3 +26,20 @@ test('failed reads retain state and closing admissions delivers a change without
  assert(!a.messages()[1].changed.includes('live'));assert.equal(a.messages()[1].revisions.live,'a');
  open=false;await hub.tick();assert(!a.ended);assert(a.messages().at(-1).changed.includes('config'));hub.close();
 });
+
+test('a ready challenge is delivered while the catalogue remains slow',async()=>{
+ let release!:()=>void;const slow=new Promise<void>(resolve=>{release=resolve;});
+ const account='0x1111111111111111111111111111111111111111';
+ const hub=new PoolNotifications(async url=>{
+  if(url.pathname.endsWith('/catalog'))await slow;
+  return{revision:'ready',value:{privateGrant:'never send'}};
+ },true);
+ const response=new Response();hub.add(response as unknown as ServerResponse,account);
+ try{
+  await new Promise(resolve=>setImmediate(resolve));
+  assert(response.messages().some(m=>m.changed.includes(`challenges/${account}`)));
+  assert(!response.messages().some(m=>m.changed.includes('catalog')));
+  assert(!response.chunks.join('').includes('privateGrant'));
+  release();await hub.tick();assert(response.messages().some(m=>m.changed.includes('catalog')));
+ }finally{release();hub.close();}
+});

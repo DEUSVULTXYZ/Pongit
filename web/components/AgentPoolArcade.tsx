@@ -39,6 +39,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const [mode,setMode]=useState(initialMode),[view,setView]=useState(initialView),[account,setAccount]=useState<Address>(),[request,setRequest]=useState<PoolChallengeView|null>(null);
  const [error,setError]=useState(''),[busy,setBusy]=useState(false),[connectOpen,setConnectOpen]=useState(false),[selected,setSelected]=useState(initialAgent??''),[retry,setRetry]=useState(0),[offset,setOffset]=useState('0'),[next,setNext]=useState<string|null>(null);
  const [actionStage,setActionStage]=useState<ArcadeStage>('preparing'),[cancelQueued,setCancelQueued]=useState<string|null>(null);
+ const [catalogRevision,setCatalogRevision]=useState(0),[challengeRevision,setChallengeRevision]=useState(0);
  const progress=(op:ChainOperation)=>setActionStage(sponsorStage(op.status));
  const [capacity,setCapacity]=useState<AgentCapacity>(),[checking,setChecking]=useState(false);
  const [catalogError,setCatalogError]=useState(''),[queueError,setQueueError]=useState(''),[renewing,setRenewing]=useState(false);
@@ -52,7 +53,10 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const serviceDown=!!capacity&&agentServiceUnavailable(capacity);
  const capacityBusy=!!capacity&&!serviceDown&&(!capacity.freeChallengeLanes||!capacity.readyArenas);
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
- useEffect(()=>{if(enabled)return watchAgentChanges(()=>setRetry(n=>n+1),account);},[enabled,account]);
+ useEffect(()=>{if(enabled)return watchAgentChanges(change=>{
+  if(change.resync||change.changed.some(topic=>['config','catalog','live'].includes(topic)))setCatalogRevision(n=>n+1);
+  if(change.resync||change.changed.some(topic=>topic==='config'||topic===`challenges/${account?.toLowerCase()}`))setChallengeRevision(n=>n+1);
+ },account);},[enabled,account]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  useEffect(()=>{if(!enabled)return;const remembered=rememberedAccount();if(remembered)setAccount(remembered.address);},[enabled]);
  useEffect(()=>{
@@ -71,7 +75,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
    }catch(e){if(!stopped){setCatalogError(hasCatalogue.current?quiet.failed(poolUserError(e)):'The arcade could not be loaded. Please retry.');delay=Math.max(10000,engineReadRetryMs(e));}}
    finally{if(!stopped)timer=setTimeout(refresh,delay);}
   };void refresh();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
- },[enabled,retry,offset]);
+ },[enabled,retry,catalogRevision,offset]);
  useEffect(()=>{
   if(!config||!account)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController(),quiet=quietFailure();
   const poll=async()=>{let delay=2000;try{
@@ -88,7 +92,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
    }
   }catch(e){if(!stopped)setQueueError(quiet.failed(poolUserError(e)));delay=Math.max(5000,engineReadRetryMs(e));}finally{if(!stopped)timer=setTimeout(poll,delay);}};
   void poll();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
- },[config?.pool,account,retry,router]);
+ },[config?.pool,account,retry,challengeRevision,router]);
  async function run(fn:()=>Promise<void>){if(locked.current)return;locked.current=true;setBusy(true);setActionStage('preparing');setError('');try{await fn();}catch(e){if(alive.current)setError(poolUserError(e));}finally{locked.current=false;if(alive.current)setBusy(false);}}
  async function canStart(m:AgentPoolManifest){
   if(m.version<5)return true;

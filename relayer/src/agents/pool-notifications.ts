@@ -26,7 +26,16 @@ export class PoolNotifications {
  }
  private async observe(){
   const topics=new Set([...this.clients].flatMap(c=>c.topics)),values=new Map<string,View>();
-  await Promise.all([...topics].map(async topic=>{try{values.set(topic,await this.load(new URL(`/agents/${topic}`,'http://localhost')));}catch{/* Keep the last revision; polling remains available. */}}));
+  const reads=new Map([...topics].map(topic=>[topic,(async()=>{try{values.set(topic,await this.load(new URL(`/agents/${topic}`,'http://localhost')));}catch{/* Keep the last revision; polling remains available. */}})()]));
+  // A slow public catalogue must not hold a player's ready-arena notification.
+  // Every view still shares one load; private bodies never enter the stream.
+  if([...topics].some(t=>t.startsWith('challenges/'))){
+   await Promise.all([...reads].filter(([t])=>t==='config'||t.startsWith('challenges/')).map(([,p])=>p));
+   this.deliver(values);
+  }
+  await Promise.all(reads.values());this.deliver(values);
+ }
+ private deliver(values:Map<string,View>){
   for(const c of this.clients){
    const gate=values.get('config');
    // A paused admission is a state change to deliver, not a reason to reconnect

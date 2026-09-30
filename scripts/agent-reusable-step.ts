@@ -92,15 +92,6 @@ async function step(){
  const read=pinned.read;
  const delegationRead=readHubDelegations(t.base,m.hub,r.arenas.map((a:any)=>a.app),block.number);
  delegationRead.catch(()=>{});
- const inherited=r.continuation?await read<bigint>(m.tournaments,agentContinuationAbi,'inheritedCount'):0n;
- if(r.continuation){
-  const prior=await read<Address>(m.tournaments,agentContinuationAbi,'predecessor');
-  assert.equal(prior.toLowerCase(),r.continuation.tournaments.toLowerCase(),'Tournament predecessor mismatch');
-  if(doesArchive){const correction=await ratingContinuationWork(read,m.ratings,r.continuation.ratings,ratingsAbi);
-   if(correction){if(!cooling(correction.to,correction.method)){
-    await act(correction.to,correction.method,correction.args);state.sourceFinalityScanAt=Date.now()+60_000;await save();
-   }return;}}
- }
  // Start the common path's independent reads together. They are exactly the
  // values the logic below reads at this block; the batch makes them one call.
  pinned.prefetch(m.pool,poolAbi,'verifier');
@@ -113,6 +104,17 @@ async function step(){
  if(doesMaintenance||doesArchive)for(const a of r.arenas){pinned.prefetch(m.pool,poolAbi,'arenaMatch',[a.app]);pinned.prefetch(a.app,arenaAbi,'currentMatch');}
  if(doesArchive&&state.history){pinned.prefetch(m.tournaments,bookAbi,'tournament',[state.history.id]);pinned.prefetch(m.tournaments,bookAbi,'fixture',[state.history.id,state.history.index]);}
  read<bigint>(m.tournaments,bookAbi,'count').then(count=>{if(count)pinned.prefetch(m.tournaments,bookAbi,'tournament',[count]);}).catch(()=>{});
+ if(role==='admission'||role==='maintenance')pinned.prefetch(m.pool,agentPoolAdmissionAbi,role+'Operator');
+ if(r.continuation){pinned.prefetch(m.tournaments,agentContinuationAbi,'inheritedCount');pinned.prefetch(m.tournaments,agentContinuationAbi,'predecessor');}
+ const inherited=r.continuation?await read<bigint>(m.tournaments,agentContinuationAbi,'inheritedCount'):0n;
+ if(r.continuation){
+  const prior=await read<Address>(m.tournaments,agentContinuationAbi,'predecessor');
+  assert.equal(prior.toLowerCase(),r.continuation.tournaments.toLowerCase(),'Tournament predecessor mismatch');
+  if(doesArchive){const correction=await ratingContinuationWork(read,m.ratings,r.continuation.ratings,ratingsAbi);
+   if(correction){if(!cooling(correction.to,correction.method)){
+    await act(correction.to,correction.method,correction.args);state.sourceFinalityScanAt=Date.now()+60_000;await save();
+   }return;}}
+ }
  await verifyHouseInstanceAuthorities(read,m);
  if(role==='admission'||role==='maintenance'){const expected=await read<Address>(m.pool,agentPoolAdmissionAbi,role+'Operator');assert.equal(expected.toLowerCase(),t.account.address.toLowerCase(),'Keeper signer differs from contract role');}
  assert.equal((await read<Address>(m.pool,poolAbi,'verifier')).toLowerCase(),m.verifier.toLowerCase());

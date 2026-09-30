@@ -19,10 +19,11 @@ export const agentPoolAdmissionAbi=parseAbi([
 type Read=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<T>;
 export async function verifyHouseInstanceAuthorities(read:Read,m:{pool:Address;challenges:Address;qualifications:Address;houseInstances?:'official-v1';maxMatches?:2|5}){
  if(!m.houseInstances)return;
- const [version,...supported]=await Promise.all([
+ const [version,lanes,...supported]=await Promise.all([
   read<bigint>(m.pool,houseInstanceAbi,'AUTHORITY_VERSION'),
+  m.maxMatches===5?read<number>(m.pool,agentPoolAdmissionAbi,'laneCount'):Promise.resolve(2),
   ...[m.pool,m.challenges,m.qualifications].map(at=>read<boolean>(at,houseInstanceAbi,'supportsHouseInstances')),
  ]);
  if(version!==(m.maxMatches===5?3n:2n)||supported.some(value=>value!==true))throw Error('House instance authority mismatch');
- if(m.maxMatches===5&&await read<number>(m.pool,agentPoolAdmissionAbi,'laneCount')!==5)throw Error('Agent lane count mismatch');
+ if(m.maxMatches===5&&lanes!==5)throw Error('Agent lane count mismatch');
 }
