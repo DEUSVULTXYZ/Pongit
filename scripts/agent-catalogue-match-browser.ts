@@ -14,6 +14,7 @@ const privatePath=process.env.PONG_BROWSER_PRIVATE_PATH!;
 const restorePath=process.env.PONG_CATALOGUE_RESTORE_PRIVATE_PATH;
 // Opt-in, bounded cadence samples are separate from the full 100-control gate.
 const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
+const atomicQualification=process.env.PONG_CATALOGUE_ATOMIC_QUALIFICATION==='1';
 const controlCount=cadenceProbe?20:110,idleMs=cadenceProbe?Number(process.env.PONG_CATALOGUE_PROBE_IDLE_MS??8000):45000;
 assert(!cadenceProbe||Number.isInteger(idleMs)&&idleMs>=4000&&idleMs<=8000);
 assert(/^[a-z0-9-]+$/.test(run)&&['chrome','msedge'].includes(channel)&&[0,1].includes(mode));
@@ -23,7 +24,7 @@ const restored=restorePath?JSON.parse(await readFile(restorePath,'utf8')):undefi
 await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
- virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+ virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
@@ -37,6 +38,12 @@ async function candidateAssets(target:import('@playwright/test').Page){if(proces
  });
 }}
 await candidateAssets(page);
+// Qualification-only capability rollout. All RPC, sponsorship and gameplay
+// still hit the actual deployment; record this override explicitly.
+if(atomicQualification)await page.route('https://pongit.xyz/api/agents/config',async route=>{
+ const response=await route.fetch(),config=await response.json();assert.equal(config.version,5);
+ await route.fulfill({response,json:{...config,challengeAdmission:'atomic-v1'}});
+});
 let spectator:import('@playwright/test').Page|undefined;
 if(restored)await context.addInitScript(session=>{
  if(sessionStorage.getItem('pongit:test-restored'))return;
@@ -76,6 +83,13 @@ page.on('response',async response=>{try{
  const request=response.request(),metadata=requests.get(request);
  if(metadata&&!report.playingAt){report.admissionNetwork??=[];report.admissionNetwork.push({...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status()});}
  }catch{/* Diagnostic failure cannot change gameplay. */}
+ try{
+  const u=new URL(response.url());if(u.origin===report.origin&&(/^\/api\/agents\/operations\/0x[\da-f]{64}$/i.test(u.pathname)||u.pathname==='/api/agents/transactions')){
+   const v=await response.json();if(typeof v?.id==='string'&&typeof v.status==='string'){
+    report.sponsorOperations??=[];report.sponsorOperations.push({at:new Date().toISOString(),id:v.id,status:v.status,...(typeof v.hash==='string'?{hash:v.hash}:{})});
+   }
+  }
+ }catch{/* Only public transaction identifiers; never request bodies. */}
  try{
  const request=response.request(),body=request.postDataJSON();if(!body||Array.isArray(body))return;
  if(!['interlude_sendTransaction','interlude_getTransactionReceipt','eth_getTransactionReceipt'].includes(body.method))return;

@@ -5,6 +5,7 @@ import {abi as familyAbi} from './abi-independent-ArcadeFamily';
 import {agentMetadata} from './agents';
 import {validateAgentPoolManifest,type AgentPoolManifest} from './agent-pool';
 import {validateStrategyRuntime} from './agent-strategy-code';
+import {batchPoolChallenge} from './agent-pool-sponsor';
 
 export const poolRegistrationTypes={StrategyRegistration:[
  {name:'strategy',type:'address'},{name:'creator',type:'address'},{name:'metadata',type:'bytes32'},
@@ -53,5 +54,6 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
   args:[grant,message.action,message.agent,message.mode,message.id,nonce,deadline],blockNumber:block.number});
  if(digest!==onchain)throw Error('Challenge domain differs from the deployed queue');
  const signature=await key.signTypedData(typed);
- return {to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[player,message.action,message.agent,message.mode,message.id,nonce,deadline,signature]}),digest,nonce,deadline};
+ const call=batchPoolChallenge(m,{to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[player,message.action,message.agent,message.mode,message.id,nonce,deadline,signature]})});
+ return {...call,digest,nonce,deadline};
 }

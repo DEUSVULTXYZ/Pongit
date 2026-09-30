@@ -111,7 +111,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    const row=(await db.query("SELECT * FROM independent_operations WHERE status='queued' ORDER BY priority,created_at LIMIT 1")).rows[0];if(!row)return;
    check(row.target,row.data,BigInt(row.value));
    let request:Awaited<ReturnType<typeof prepareSponsoredTransaction>>;
-   try{request=await prepareSponsoredTransaction(base,account.address,{to:row.target as Address,data:row.data as Hex,value:BigInt(row.value)});}catch(e){
+   try{request=await prepareSponsoredTransaction(base,account.address,{to:row.target as Address,data:row.data as Hex,value:BigInt(row.value)},scope?.strictEstimate?.(row.target,row.data,BigInt(row.value)));}catch(e){
     // RPC availability does not prove invalid execution. Only a decoded contract revert
     // may retire an unsigned operation. Signed operations never take this branch.
     const reverted=confirmedContractRevert(e);

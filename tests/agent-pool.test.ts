@@ -93,6 +93,10 @@ test('five lanes require the new authority and cannot misrepresent preview quali
  assert.equal(ready.lanes?.challenge,4);assert.equal(ready.verifiedCapacity,5);
  assert.equal(validateAgentPoolManifest({...m,housePolicy:'progressive-v1'}).housePolicy,'progressive-v1');
  assert.throws(()=>validateAgentPoolManifest({...old,housePolicy:'progressive-v1'}),/difficulty policy/);
+ assert.equal(validateAgentPoolManifest({...m,challengeAdmission:'atomic-v1'}).challengeAdmission,'atomic-v1');
+ assert.equal(validateAgentPoolManifest(m).challengeAdmission,undefined);
+ assert.throws(()=>validateAgentPoolManifest({...old,challengeAdmission:'atomic-v1'}),/challenge admission/);
+ assert.throws(()=>validateAgentPoolManifest({...m,challengeAdmission:'anything' as any}),/challenge admission/);
 });
 
 test('difficulty is a linear curve while official style identities retain their historical indices',()=>{

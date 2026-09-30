@@ -42,3 +42,22 @@ test('unknown nonce, excess gas, missing base fee and RPC failure prevent prepar
  await assert.rejects(prepareSponsoredTransaction(f.client,owner,tx),/EIP-1559/);
  await assert.rejects(prepareSponsoredTransaction(fixture({eth_estimateGas:()=>{throw Error('RPC offline');}}).client,owner,tx),/RPC offline/);
 });
+
+test('optional admission uses strict successful gas but signs only original best-effort bytes',async()=>{
+ const strict={...tx,data:'0x5678' as const};let estimates=0;
+ const f=fixture({eth_estimateGas:([call])=>{estimates++;assert.equal(call.data,strict.data);return '0x1e8480';}});
+ const request=await prepareSponsoredTransaction(f.client,owner,tx,strict);
+ assert.equal(request.gas,2_400_000n);assert.equal(request.data,tx.data);assert.equal(estimates,1);
+});
+test('only a strict contract revert permits estimating the queued-only path',async()=>{
+ const strict={...tx,data:'0x5678' as const};let estimates=0;
+ const f=fixture({eth_estimateGas:([call])=>{estimates++;
+  if(call.data===strict.data)throw {code:3,message:'execution reverted: challenge lane waiting',data:'0x'};
+  assert.equal(call.data,tx.data);return '0x186a0';
+ }});
+ const result=await prepareSponsoredTransaction(f.client,owner,tx,strict);
+ assert.equal(result.data,tx.data);assert.equal(result.gas,120_000n);assert.equal(estimates,2);
+ const offline=fixture({eth_estimateGas:()=>{throw Error('RPC offline');}});
+ await assert.rejects(prepareSponsoredTransaction(offline.client,owner,tx,strict),/RPC offline/);
+ assert.equal(offline.requests.filter(m=>m==='eth_estimateGas').length,1,'No gas guess or fallback on uncertain transport');
+});

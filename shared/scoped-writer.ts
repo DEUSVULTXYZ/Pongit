@@ -1,7 +1,10 @@
 import {isAddress,keccak256,stringToHex,type Address,type Hex} from 'viem';
 
 export const LEGACY_OPERATOR='0x369158ac444278541322643e46e0d5b45ac21c4c';
-export type ScopedWriter={keyFile:string;address:Address;allowCall:(to:Address,data:Hex,value:bigint)=>void};
+export type ScopedWriter={keyFile:string;address:Address;allowCall:(to:Address,data:Hex,value:bigint)=>void;
+ /** An estimate-only equivalent may require optional work to succeed. The
+  * original transaction bytes remain the sole journalled/signed intent. */
+ strictEstimate?:(to:Address,data:Hex,value:bigint)=>{to:Address;data:Hex;value:bigint}|null};
 
 /** The old signer keeps its existing advisory lock and journal namespace.
  * A new role gets exactly one lock across services, derived from its address. */

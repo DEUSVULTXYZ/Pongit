@@ -1,22 +1,41 @@
-import {decodeFunctionData,encodeAbiParameters,encodeFunctionData,getAddress,isAddress,keccak256,type Abi,type Address,type Hex} from 'viem';
+import {decodeFunctionData,encodeAbiParameters,encodeFunctionData,getAddress,isAddress,keccak256,multicall3Abi,type Abi,type Address,type Hex} from 'viem';
 import {abi as familyAbi} from './abi-independent-ArcadeFamily';
 import {agentCatalogAbi} from './abi-AgentCatalog';
 import {agentChallengesAbi} from './abi-AgentChallenges';
 import type {AgentPoolManifest} from './agent-pool';
 import type {ChainOperation} from './independent';
+import {reusableAgentPoolAbi} from './abi-ReusableAgentPool';
+
+export const POOL_ADMISSION_BATCH='0xcA11bde05977b3631167028862bE2a173976CA11' as const;
+// Observed deployed runtime, independently compared before a sponsor starts.
+export const POOL_ADMISSION_BATCH_HASH='0xd5c15df687b16f2ff992fc8d767b4216323184a2bbc6ee2f9c398c318e770891' as const;
+const admitData=encodeFunctionData({abi:reusableAgentPoolAbi,functionName:'admitChallenge'});
 
 export type PoolSignedCall={to:Address;data:Hex};
 export const poolOperationId=(call:PoolSignedCall)=>keccak256(encodeAbiParameters(
  [{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[call.to,call.data,0n,'']));
 
 /** Only owner/arcade-signed, zero-value Monad actions. Never accept a strategy
- * execution, owner-only administrative action, arena write or financial call. */
+ * execution, owner-only administrative action, arena write or financial call.
+ * The one permitted batch preserves the signed request even if optional
+ * permissionless admission cannot run. No arbitrary multicall is sponsored. */
 export function validatePoolSignedCall(m:AgentPoolManifest,body:unknown):PoolSignedCall&{admission:boolean}{
  const b=body as Record<string,unknown>;
  if(!b||typeof b!=='object'||Object.keys(b).some(k=>!['to','data'].includes(k))||typeof b.to!=='string'||!isAddress(b.to)
   ||typeof b.data!=='string'||!/^0x(?:[\da-f]{2}){4,2048}$/i.test(b.data))throw Error('Invalid signed pool call');
  const to=getAddress(b.to),data=b.data.toLowerCase() as Hex;
  const target=to.toLowerCase();let abi:Abi,methods:string[];
+ if(target===POOL_ADMISSION_BATCH.toLowerCase()){
+  if(m.version!==5)throw Error('Atomic admission requires the five-lane pool');
+  const decoded=decodeFunctionData({abi:multicall3Abi,data});
+  if(decoded.functionName!=='aggregate3'||encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:decoded.args}).toLowerCase()!==data)throw Error('Invalid admission batch');
+  const calls=decoded.args[0];
+  if(calls.length!==2||calls[0].target.toLowerCase()!==m.challenges.toLowerCase()||calls[0].allowFailure
+   ||calls[1].target.toLowerCase()!==m.pool.toLowerCase()||!calls[1].allowFailure||calls[1].callData!==admitData)throw Error('Invalid admission batch scope');
+  const request=validatePoolSignedCall(m,{to:calls[0].target,data:calls[0].callData});
+  if(!request.admission)throw Error('Only a new challenge can request atomic admission');
+  return {to,data,admission:true};
+ }
  if(target===m.family.toLowerCase()){abi=familyAbi;methods=['register','revoke'];}
  else if(target===m.catalog.toLowerCase()){abi=agentCatalogAbi;methods=['register'];}
  else if(target===m.challenges.toLowerCase()){abi=agentChallengesAbi;methods=['command'];}
@@ -30,6 +49,25 @@ export function validatePoolSignedCall(m:AgentPoolManifest,body:unknown):PoolSig
  const action=decoded.functionName==='command'?Number(args[1]):undefined;
  if(action!==undefined&&action!==1&&action!==2)throw Error('Unknown challenge action');
  return{to,data,admission:decoded.functionName==='register'||action===1};
+}
+
+export function batchPoolChallenge(m:AgentPoolManifest,call:PoolSignedCall):PoolSignedCall{
+ if(m.challengeAdmission!=='atomic-v1'||call.to.toLowerCase()!==m.challenges.toLowerCase()||!validatePoolSignedCall(m,{to:call.to,data:call.data}).admission)return call;
+ const batch={to:POOL_ADMISSION_BATCH,data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[[
+  {target:call.to,allowFailure:false,callData:call.data},
+  {target:m.pool,allowFailure:true,callData:admitData},
+ ]]})};
+ validatePoolSignedCall(m,batch);return batch;
+}
+
+/** Estimate the successful optional admission too: naive gas estimation can
+ * otherwise accept an out-of-gas second call and silently leave every user in
+ * the queue. This strict variant is NEVER signed or stored as a new intent. */
+export function strictPoolAdmissionEstimate(m:AgentPoolManifest,call:PoolSignedCall):PoolSignedCall|null{
+ validatePoolSignedCall(m,call);if(call.to.toLowerCase()!==POOL_ADMISSION_BATCH.toLowerCase())return null;
+ const decoded=decodeFunctionData({abi:multicall3Abi,data:call.data});
+ if(decoded.functionName!=='aggregate3')throw Error('Invalid admission batch');
+ return {to:call.to,data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[decoded.args[0].map(c=>({...c,allowFailure:false}))]})};
 }
 
 export class PoolSponsorPending extends Error {

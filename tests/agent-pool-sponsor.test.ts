@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {encodeFunctionData,hashTypedData,zeroAddress,zeroHash,type Address,type PublicClient} from 'viem';
+import {decodeFunctionData,encodeFunctionData,hashTypedData,multicall3Abi,zeroAddress,zeroHash,type Address,type PublicClient} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {agentChallengesAbi} from '../shared/abi-AgentChallenges';
 import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
 import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
 import {familyGrantTypes,type ChainOperation} from '../shared/independent';
 import type {AgentPoolManifest} from '../shared/agent-pool';
-import {createPoolSponsor,PoolSponsorPending,poolOperationId,validatePoolSignedCall,type PoolSessionStorage,type PoolSignedCall} from '../shared/agent-pool-sponsor';
+import {batchPoolChallenge,strictPoolAdmissionEstimate,POOL_ADMISSION_BATCH,createPoolSponsor,PoolSponsorPending,poolOperationId,validatePoolSignedCall,type PoolSessionStorage,type PoolSignedCall} from '../shared/agent-pool-sponsor';
 import {preparePoolFamily,loadPoolFamily,observePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN} from '../shared/agent-pool-family';
 import {poolSponsorRoutes} from '../relayer/src/agents/pool-sponsor';
 
@@ -19,6 +19,43 @@ const request:PoolSignedCall={to:m.challenges,data:encodeFunctionData({abi:agent
 const cancel:PoolSignedCall={to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[addr(20),2,addr(21),1,1n,1n,200n,sig]})};
 function memory(){const values=new Map<string,string>();return{values,getItem:(k:string)=>values.get(k)??null,setItem:(k:string,v:string)=>{values.set(k,v);},removeItem:(k:string)=>{values.delete(k);}} satisfies PoolSessionStorage&{values:Map<string,string>};}
 const missing=()=>Object.assign(Error('unknown operation'),{status:404});
+
+test('atomic admission only permits one signed request followed by optional current-pool admission',()=>{
+ const five={...m,version:5,challengeAdmission:'atomic-v1'} as AgentPoolManifest;
+ const batch=batchPoolChallenge(five,request),decoded=decodeFunctionData({abi:multicall3Abi,data:batch.data});
+ assert.equal(batch.to,POOL_ADMISSION_BATCH);assert.equal(validatePoolSignedCall(five,batch).admission,true);
+ assert.equal(decoded.functionName,'aggregate3');if(decoded.functionName!=='aggregate3')throw Error();
+ const calls=decoded.args[0],mutate=(next:typeof calls)=>({to:batch.to,data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[next]})});
+ for(const bad of [mutate([...calls,calls[1]]),mutate([calls[0]]),mutate([calls[1],calls[0]]),
+  mutate([{...calls[0],allowFailure:true},calls[1]]),mutate([calls[0],{...calls[1],allowFailure:false}]),
+  mutate([{...calls[0],target:batch.to,callData:batch.data},calls[1]]),
+  mutate([calls[0],{...calls[1],target:m.arenas[0].app}]),mutate([calls[0],{...calls[1],callData:request.data}]),
+  mutate([{...calls[0],callData:cancel.data},calls[1]]),{...batch,data:batch.data+'00'},
+  {...batch,value:'1'},mutate([{...calls[0],callData:(request.data+'00') as `0x${string}`},calls[1]])])
+  assert.throws(()=>validatePoolSignedCall(five,bad));
+ assert.throws(()=>validatePoolSignedCall(m,batch));
+ assert.deepEqual(batchPoolChallenge(m,request),request,'Legacy route stays unchanged');
+ assert.deepEqual(batchPoolChallenge(five,cancel),cancel,'Cancellation is never bundled');
+ assert.equal(strictPoolAdmissionEstimate(five,request),null);
+ const strict=strictPoolAdmissionEstimate(five,batch)!;
+ const strictDecoded=decodeFunctionData({abi:multicall3Abi,data:strict.data});assert.equal(strictDecoded.functionName,'aggregate3');
+ if(strictDecoded.functionName==='aggregate3')assert(strictDecoded.args[0].every(c=>!c.allowFailure));
+ assert.throws(()=>validatePoolSignedCall(five,strict),'Estimate-only bytes cannot enter the sponsor journal');
+});
+
+test('an uncertain atomic request resumes exact bytes after F5 and a disabled client rollout flag',async()=>{
+ const five={...m,version:5,challengeAdmission:'atomic-v1'} as AgentPoolManifest,store=memory();
+ const batch=batchPoolChallenge(five,request),id=poolOperationId(batch);let posts=0,operation:ChainOperation|null=null;
+ const transport=async(path:string,body?:PoolSignedCall)=>{
+  if(path.startsWith('operations/')){if(!operation)throw missing();return operation;}
+  posts++;assert.deepEqual(body,batch);operation={id,status:'pending',hash:zeroHash};throw Error('lost response');
+ };
+ await assert.rejects(createPoolSponsor(five,addr(20),store,transport).send(batch),/lost response/);
+ const resumed=createPoolSponsor({...five,challengeAdmission:undefined},addr(20),store,transport);
+ assert.equal((await resumed.resume())?.id,id);assert.equal(posts,1);
+ await assert.rejects(resumed.send(request),PoolSponsorPending);
+ operation={id,status:'confirmed',hash:zeroHash};assert.equal((await resumed.resume())?.status,'confirmed');assert.equal(resumed.pending(),null);
+});
 
 test('sponsor rejects foreign targets, administrative actions, tails, ether and unsigned data',()=>{
  assert.equal(validatePoolSignedCall(m,request).admission,true);assert.equal(validatePoolSignedCall(m,cancel).admission,false);

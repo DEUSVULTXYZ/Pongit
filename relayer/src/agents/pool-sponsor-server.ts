@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {Pool} from 'pg';
-import {createPublicClient, http,type Address} from 'viem';
+import {createPublicClient, http,keccak256,type Address} from 'viem';
 import {monadTestnet} from 'viem/chains';
 import {validateAgentPoolManifest,agentPoolReleaseEvidence} from '../../../shared/agent-pool';
 import {measuredFetch} from '../../../shared/rpc-metrics';
@@ -12,7 +12,7 @@ import {AgentPoolReader} from './pool-read';
 import {poolSponsorRoutes} from './pool-sponsor';
 import {startPoolReadService} from './pool-server';
 import {agentMetrics} from './metrics';
-import {validatePoolSignedCall} from '../../../shared/agent-pool-sponsor';
+import {validatePoolSignedCall,strictPoolAdmissionEstimate,POOL_ADMISSION_BATCH,POOL_ADMISSION_BATCH_HASH} from '../../../shared/agent-pool-sponsor';
 import {validateAgentSponsorRuntime} from '../../../shared/agent-sponsor-runtime';
 import {reusableAgentPoolAbi} from '../../../shared/abi-ReusableAgentPool';
 
@@ -26,12 +26,17 @@ const metrics = await agentMetrics(manifest.version>=4?'/diagnostics/reusable':'
 const base = createPublicClient({chain: monadTestnet, batch: {multicall: {wait: 15, batchSize: 8192}},
   transport: http(process.env.RPC_URL, {timeout: 10000, retryCount: 0, fetchFn: measuredFetch('monad')})});
 assert.equal(await base.getChainId(), 10143);
+if(manifest.version===5){
+ const code=await base.getCode({address:POOL_ADMISSION_BATCH});
+ assert(code&&keccak256(code)===POOL_ADMISSION_BATCH_HASH,'Atomic admission runtime differs');
+}
 const reader = new AgentPoolReader(base, manifest, humans);
 const db = new Pool({connectionString: process.env.DATABASE_URL});
 const journal=process.env.OPERATOR_DATABASE_URL?new Pool({connectionString:process.env.OPERATOR_DATABASE_URL}):db;
 const scope=manifest.version===5?{
  keyFile:process.env.PONG_AGENT_SPONSOR_KEY_FILE!,address:process.env.PONG_AGENT_SPONSOR_ADDRESS! as Address,
  allowCall:(to:Address,data:`0x${string}`,value:bigint)=>{assert.equal(value,0n);validatePoolSignedCall(manifest,{to,data});},
+ strictEstimate:(to:Address,data:`0x${string}`,value:bigint)=>{assert.equal(value,0n);const call=strictPoolAdmissionEstimate(manifest,{to,data});return call?{...call,value}:null;},
 }:undefined;
 const writer = await independentWriter(db, base,journal,scope);
 const service = await startPoolReadService(reader, {host: process.env.HOST ?? '0.0.0.0', port: 4102, public: exposure.public,
