@@ -5,3 +5,4 @@ COPY --chown=1000:1000 scripts/agent-reusable-step.ts /app/scripts/agent-reusabl
 COPY --chown=1000:1000 scripts/independent-chain-tools.ts /app/scripts/independent-chain-tools.ts
 COPY --chown=1000:1000 relayer/src/sponsor-prepare.ts /app/relayer/src/sponsor-prepare.ts
 COPY --chown=1000:1000 relayer/src/agents/pool-maintenance.ts /app/relayer/src/agents/pool-maintenance.ts
+RUN node --import tsx -e "Promise.all([import('./scripts/independent-chain-tools.ts'),import('./relayer/src/agents/pool-maintenance.ts')])"
