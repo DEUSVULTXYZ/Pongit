@@ -157,6 +157,48 @@ test('series live discovery excludes captured results while the engine advances 
  captured=true;assert.equal((await reader.live()).value.items.length,0);
 });
 
+test('a newly admitted challenge bypasses the catalogue cache lifetime without duplicate reads',async()=>{
+ let now=0,challengeReads=0,catalogReads=0,release!:(v:any)=>void;
+ const cache=new PoolReadCache(()=>now),reader={
+  challenge:async()=>{challengeReads++;return{value:{request:{ref:challengeReads===1?null:{id:'2'}}}};},
+  catalog:async()=>{catalogReads++;return{value:{items:[]}};},
+ } as unknown as AgentPoolReader;
+ const routes=poolRoutes(reader,cache),url=new URL(`http://localhost/agents/challenges/${addr(90)}`);
+ const request=async()=>{const {value}=await routes(url);assert('request' in value);assert(value.request);return value.request;};
+ assert.equal((await request()).ref,null);
+ await routes(new URL('http://localhost/agents/catalog'));
+ now=249;assert.equal((await request()).ref,null);
+ now=251;assert.equal((await request()).ref?.id,'2');
+ await routes(new URL('http://localhost/agents/catalog'));assert.equal(catalogReads,1);
+ now=502;(reader as any).challenge=()=>{challengeReads++;return new Promise(r=>release=r);};
+ const first=routes(url),second=routes(url);assert.equal(challengeReads,3);
+ release({value:{request:{ref:{id:'3'}}}});
+ assert.deepEqual(await first,await second);assert.equal(challengeReads,3);
+});
+
+test('reusable admission reads overlap without returning an unverified assignment',async()=>{
+ const {encodeAbiParameters,keccak256}=await import('viem');
+ const m={...manifest,version:4 as const,rulesVersion:15 as const},player=addr(90),agent=addr(91),app=m.arenas[0].app;
+ const ref={chainId:10143n,arena:app,epoch:2n,id:91n};
+ const key=keccak256(encodeAbiParameters([{type:'uint256'},{type:'address'},{type:'uint256'},{type:'uint256'}],[10143n,app,2n,91n]));
+ let releaseRequest!:()=>void,releaseLane!:()=>void,returned=false,wrong=false;
+ const requestGate=new Promise<void>(r=>releaseRequest=r),laneGate=new Promise<void>(r=>releaseLane=r),calls:string[]=[];
+ const client={getBlock:async()=>({number:50n,hash:zeroHash}),readContract:async(r:any)=>{
+  calls.push(r.functionName);assert.equal(r.blockNumber,50n);
+  if(r.functionName==='pending')return 4n;
+  if(r.functionName==='requests'){await requestGate;return[player,agent,1,2,1000n,zeroHash];}
+  if(r.functionName==='playing')return key;
+  if(r.functionName==='laneRecord'){await laneGate;return{ref,a:player,b:agent};}
+  if(r.functionName==='challengeOf')return wrong?5n:4n;
+  throw Error(r.functionName);
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(client,m),pending=reader.challenge(player).then(v=>{returned=true;return v;});
+ await new Promise(r=>setImmediate(r));assert(calls.includes('playing'));assert(!returned);
+ releaseRequest();await new Promise(r=>setImmediate(r));assert(calls.includes('challengeOf'));assert(!returned);
+ releaseLane();assert.equal((await pending).value.request?.ref?.id,'91');
+ wrong=true;await assert.rejects(reader.challenge(player),/no matching arena reference/);
+});
+
 test('reusable discovery reads the Monad ticket before engine admission and preserves historical links',async()=>{
  const m={...manifest,version:4 as const,rulesVersion:15 as const},app=m.arenas[0].app,a=addr(90),b=addr(91);
  const ref={chainId:10143n,arena:app,epoch:2n,id:91n};let current=false,captured=false,assigned=true;

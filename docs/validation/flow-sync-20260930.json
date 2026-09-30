@@ -1,0 +1,676 @@
+{
+  "source": "01d3a06",
+  "image": "sha256:b4fb3eb64354d52e139027ea5653e5936d4728793c6b754e4586ab12d31c02a9",
+  "deployedAt": "2026-09-30T16:43:57.741Z",
+  "scope": "Actual public read-only desktop browsers. Short Classic windows; no full Chaos, player-admission, physical-device or 24-hour qualification.",
+  "reports": [
+    {
+      "path": "artifacts/qualification/20260928/live-recovered-214-20260930-chrome-0/report.json",
+      "sha256": "b894860e20702249b3d61b67c44cc55e9fedc5ea2cba22032e0b89edda716598",
+      "startedAt": "2026-09-30T16:32:00.494Z",
+      "finishedAt": "2026-09-30T16:33:11.713Z",
+      "channel": "chrome",
+      "ref": {
+        "chainId": 10143,
+        "app": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+        "epoch": "12",
+        "id": "214"
+      },
+      "passed": false,
+      "error": "A hold exceeds 500 ms; inspect its exact cause before accepting",
+      "render": {
+        "samples": 3599,
+        "visible": 1,
+        "moving": 0.9769316286826014,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 966.7000000476837,
+        "holds": [
+          {
+            "at": 23253.5,
+            "ms": 216.60000002384186,
+            "x": 202.605992,
+            "y": 525.303181
+          },
+          {
+            "at": 39303.799999952316,
+            "ms": 149,
+            "x": 1018,
+            "y": 19.000065
+          },
+          {
+            "at": 48603.39999997616,
+            "ms": 966.7000000476837,
+            "x": 629.307068,
+            "y": 530.653588
+          }
+        ]
+      },
+      "clock": {
+        "samples": 61,
+        "durationMs": 60633.6,
+        "processedRatio": 0.9920242241925269,
+        "renderedRatio": 0.9936219027074101,
+        "stalledSamples": 0
+      }
+    },
+    {
+      "path": "artifacts/qualification/20260928/live-pinned-reads-216-20260930-chrome-0/report.json",
+      "sha256": "b31864802f778599d4562d6d968b3ad626651cec87f174b5bab1a339cba139d5",
+      "startedAt": "2026-09-30T16:44:28.801Z",
+      "finishedAt": "2026-09-30T16:45:40.169Z",
+      "channel": "chrome",
+      "ref": {
+        "chainId": 10143,
+        "app": "0xf202862714F61D6f6b8b14C1D2F5d3cA7EA3E41b",
+        "epoch": "2",
+        "id": "216"
+      },
+      "passed": false,
+      "error": "Insufficient active clock window",
+      "render": {
+        "samples": 3597,
+        "visible": 1,
+        "moving": 0.9046162402669633,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 5500.100000023842,
+        "holds": [
+          {
+            "at": 69020.30000007153,
+            "ms": 5500.100000023842,
+            "x": 468.859136,
+            "y": 309.570432
+          }
+        ]
+      },
+      "clock": null
+    },
+    {
+      "path": "artifacts/qualification/20260928/live-pinned-reads-216-20260930-msedge-0/report.json",
+      "sha256": "4d8bb8f4d4290c1c84519df946fdefece7fdde5782d89bd2304b890d5fb0c656",
+      "startedAt": "2026-09-30T16:44:28.801Z",
+      "finishedAt": "2026-09-30T16:45:40.169Z",
+      "channel": "msedge",
+      "ref": {
+        "chainId": 10143,
+        "app": "0xf202862714F61D6f6b8b14C1D2F5d3cA7EA3E41b",
+        "epoch": "2",
+        "id": "216"
+      },
+      "passed": false,
+      "error": "Insufficient active clock window",
+      "render": {
+        "samples": 3597,
+        "visible": 1,
+        "moving": 0.9046162402669633,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 5500.100000023842,
+        "holds": [
+          {
+            "at": 69020.5,
+            "ms": 5500.100000023842,
+            "x": 468.859136,
+            "y": 309.570432
+          }
+        ]
+      },
+      "clock": null
+    },
+    {
+      "path": "artifacts/qualification/20260928/live-pinned-reads-217-20260930-chrome-0/report.json",
+      "sha256": "452df676e73a729b2ab36470560a851c60c1aabd974ae882cdf2f680a1c234f0",
+      "startedAt": "2026-09-30T16:49:45.32Z",
+      "finishedAt": "2026-09-30T16:50:56.665Z",
+      "channel": "chrome",
+      "ref": {
+        "chainId": 10143,
+        "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+        "epoch": "11",
+        "id": "217"
+      },
+      "passed": false,
+      "error": "Insufficient active clock window",
+      "render": {
+        "samples": 2043,
+        "visible": 1,
+        "moving": 0.5430950048971597,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 15583.299999952316,
+        "holds": [
+          {
+            "at": 42593.299999952316,
+            "ms": 15583.299999952316,
+            "x": 6,
+            "y": 385.000018
+          }
+        ]
+      },
+      "clock": null
+    },
+    {
+      "path": "artifacts/qualification/20260928/live-pinned-reads-217-20260930-msedge-0/report.json",
+      "sha256": "c61748cf1b2d1c275c78e7b318dbf6c2c18bf67abd10147bf0330536fa5d54c6",
+      "startedAt": "2026-09-30T16:49:45.346Z",
+      "finishedAt": "2026-09-30T16:50:56.664Z",
+      "channel": "msedge",
+      "ref": {
+        "chainId": 10143,
+        "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+        "epoch": "11",
+        "id": "217"
+      },
+      "passed": false,
+      "error": "Insufficient active clock window",
+      "render": {
+        "samples": 2042,
+        "visible": 1,
+        "moving": 0.5423811856932876,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 15599.899999976158,
+        "holds": [
+          {
+            "at": 42587.89999997616,
+            "ms": 15599.899999976158,
+            "x": 6,
+            "y": 385.000018
+          }
+        ]
+      },
+      "clock": null
+    },
+    {
+      "path": "artifacts/qualification/20260928/live-pinned-reads-218-20260930-chrome-0/report.json",
+      "sha256": "24af14a9df56399206f1498c5570771a3976e70288f2a663021ba39668833c75",
+      "startedAt": "2026-09-30T16:51:46.984Z",
+      "finishedAt": "2026-09-30T16:52:57.309Z",
+      "channel": "chrome",
+      "ref": {
+        "chainId": 10143,
+        "app": "0x9b8e61621682da7b59239774f76DcF04071Ea059",
+        "epoch": "11",
+        "id": "218"
+      },
+      "passed": true,
+      "error": null,
+      "render": {
+        "samples": 3592,
+        "visible": 1,
+        "moving": 0.9944305207463102,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 116.79999995231628,
+        "holds": [
+          {
+            "at": 23192.5,
+            "ms": 116.79999995231628,
+            "x": 1018,
+            "y": 111.000186
+          }
+        ]
+      },
+      "clock": {
+        "samples": 60,
+        "durationMs": 59549.99999999999,
+        "processedRatio": 0.9951301427371958,
+        "renderedRatio": 1.0016608060453402,
+        "stalledSamples": 0
+      }
+    },
+    {
+      "path": "artifacts/qualification/20260928/live-pinned-reads-218-20260930-msedge-0/report.json",
+      "sha256": "29b889c136b425eb1f888236844d8d3981ec0f1a41f2927b5cf3d26e9b2a059a",
+      "startedAt": "2026-09-30T16:51:46.984Z",
+      "finishedAt": "2026-09-30T16:52:57.291Z",
+      "channel": "msedge",
+      "ref": {
+        "chainId": 10143,
+        "app": "0x9b8e61621682da7b59239774f76DcF04071Ea059",
+        "epoch": "11",
+        "id": "218"
+      },
+      "passed": true,
+      "error": null,
+      "render": {
+        "samples": 3592,
+        "visible": 1,
+        "moving": 0.9944305207463102,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 116.79999995231628,
+        "holds": [
+          {
+            "at": 23105.200000047684,
+            "ms": 116.79999995231628,
+            "x": 1018,
+            "y": 111.000186
+          }
+        ]
+      },
+      "clock": {
+        "samples": 61,
+        "durationMs": 60666.4,
+        "processedRatio": 0.9942900847915814,
+        "renderedRatio": 1.0019373162079832,
+        "stalledSamples": 0
+      }
+    }
+  ],
+  "metrics": [
+    {
+      "at": "2026-09-30T16:47:01.027Z",
+      "key": "monad|eth_call|network|200",
+      "count": 84,
+      "errors": 0,
+      "p50": 462,
+      "p95": 824,
+      "p99": 1020,
+      "peak1s": 4
+    },
+    {
+      "at": "2026-09-30T16:47:01.027Z",
+      "key": "monad|eth_getBlockByNumber|network|200",
+      "count": 69,
+      "errors": 0,
+      "p50": 376,
+      "p95": 901,
+      "p99": 1558,
+      "peak1s": 3
+    },
+    {
+      "at": "2026-09-30T16:47:01.027Z",
+      "key": "monad|eth_gasPrice|network|200",
+      "count": 11,
+      "errors": 0,
+      "p50": 523,
+      "p95": 966,
+      "p99": 966,
+      "peak1s": 1
+    },
+    {
+      "at": "2026-09-30T16:47:01.027Z",
+      "key": "monad|eth_getCode|network|200",
+      "count": 2,
+      "errors": 0,
+      "p50": 164,
+      "p95": 175,
+      "p99": 175,
+      "peak1s": 2
+    },
+    {
+      "at": "2026-09-30T16:47:01.027Z",
+      "key": "interlude|interlude_sendTransaction|network|200",
+      "count": 313,
+      "errors": 0,
+      "p50": 98,
+      "p95": 100,
+      "p99": 103,
+      "peak1s": 7
+    },
+    {
+      "at": "2026-09-30T16:48:01.027Z",
+      "key": "interlude|interlude_sendTransaction|network|200",
+      "count": 395,
+      "errors": 0,
+      "p50": 97,
+      "p95": 100,
+      "p99": 104,
+      "peak1s": 7
+    },
+    {
+      "at": "2026-09-30T16:48:01.027Z",
+      "key": "monad|eth_call|network|200",
+      "count": 84,
+      "errors": 0,
+      "p50": 434,
+      "p95": 741,
+      "p99": 930,
+      "peak1s": 4
+    },
+    {
+      "at": "2026-09-30T16:48:01.027Z",
+      "key": "monad|eth_gasPrice|network|200",
+      "count": 12,
+      "errors": 0,
+      "p50": 384,
+      "p95": 691,
+      "p99": 691,
+      "peak1s": 1
+    },
+    {
+      "at": "2026-09-30T16:48:01.027Z",
+      "key": "monad|eth_getBlockByNumber|network|200",
+      "count": 69,
+      "errors": 0,
+      "p50": 290,
+      "p95": 549,
+      "p99": 674,
+      "peak1s": 3
+    },
+    {
+      "at": "2026-09-30T16:49:01.027Z",
+      "key": "interlude|interlude_sendTransaction|network|200",
+      "count": 395,
+      "errors": 0,
+      "p50": 97,
+      "p95": 100,
+      "p99": 108,
+      "peak1s": 7
+    },
+    {
+      "at": "2026-09-30T16:49:01.027Z",
+      "key": "monad|eth_getBlockByNumber|network|200",
+      "count": 70,
+      "errors": 0,
+      "p50": 282,
+      "p95": 520,
+      "p99": 600,
+      "peak1s": 3
+    },
+    {
+      "at": "2026-09-30T16:49:01.027Z",
+      "key": "monad|eth_call|network|200",
+      "count": 84,
+      "errors": 0,
+      "p50": 350,
+      "p95": 669,
+      "p99": 842,
+      "peak1s": 4
+    },
+    {
+      "at": "2026-09-30T16:49:01.027Z",
+      "key": "monad|eth_gasPrice|network|200",
+      "count": 12,
+      "errors": 0,
+      "p50": 294,
+      "p95": 387,
+      "p99": 387,
+      "peak1s": 1
+    },
+    {
+      "at": "2026-09-30T16:50:01.027Z",
+      "key": "interlude|interlude_sendTransaction|network|200",
+      "count": 392,
+      "errors": 0,
+      "p50": 98,
+      "p95": 100,
+      "p99": 107,
+      "peak1s": 7
+    },
+    {
+      "at": "2026-09-30T16:50:01.027Z",
+      "key": "monad|eth_getBlockByNumber|network|200",
+      "count": 70,
+      "errors": 0,
+      "p50": 344,
+      "p95": 706,
+      "p99": 1189,
+      "peak1s": 2
+    },
+    {
+      "at": "2026-09-30T16:50:01.027Z",
+      "key": "monad|eth_call|network|200",
+      "count": 85,
+      "errors": 0,
+      "p50": 432,
+      "p95": 655,
+      "p99": 900,
+      "peak1s": 5
+    },
+    {
+      "at": "2026-09-30T16:50:01.027Z",
+      "key": "monad|eth_gasPrice|network|200",
+      "count": 12,
+      "errors": 0,
+      "p50": 490,
+      "p95": 640,
+      "p99": 640,
+      "peak1s": 1
+    },
+    {
+      "at": "2026-09-30T16:51:01.027Z",
+      "key": "interlude|interlude_sendTransaction|network|200",
+      "count": 137,
+      "errors": 0,
+      "p50": 98,
+      "p95": 104,
+      "p99": 209,
+      "peak1s": 7
+    },
+    {
+      "at": "2026-09-30T16:51:01.027Z",
+      "key": "monad|eth_getBlockByNumber|network|200",
+      "count": 68,
+      "errors": 0,
+      "p50": 340,
+      "p95": 547,
+      "p99": 748,
+      "peak1s": 2
+    },
+    {
+      "at": "2026-09-30T16:51:01.027Z",
+      "key": "monad|eth_call|network|200",
+      "count": 82,
+      "errors": 0,
+      "p50": 398,
+      "p95": 768,
+      "p99": 886,
+      "peak1s": 4
+    },
+    {
+      "at": "2026-09-30T16:51:01.027Z",
+      "key": "monad|eth_gasPrice|network|200",
+      "count": 12,
+      "errors": 0,
+      "p50": 438,
+      "p95": 727,
+      "p99": 727,
+      "peak1s": 1
+    },
+    {
+      "at": "2026-09-30T16:51:01.027Z",
+      "key": "monad|eth_getCode|network|200",
+      "count": 2,
+      "errors": 0,
+      "p50": 449,
+      "p95": 506,
+      "p99": 506,
+      "peak1s": 2
+    }
+  ],
+  "playerTrials": [
+    {
+      "path": "artifacts/qualification/catalogue-pinned-live-20260930-chaos/report.json",
+      "sha256": "92d1b65d2cf77e6e63757b1ff30de00728f3a7397ceda1738512682d2c213728",
+      "startedAt": "2026-09-30T16:53:51.75Z",
+      "finishedAt": "2026-09-30T16:56:57.886Z",
+      "channel": "chrome",
+      "ref": null,
+      "actualMode": null,
+      "virtualPrf": true,
+      "reusedSession": true,
+      "initialReauthorization": true,
+      "functionalPassed": false,
+      "performance": null,
+      "error": "page.waitForURL: Timeout 178154ms exceeded.",
+      "admissionMs": null,
+      "input": null,
+      "receiptP95Ms": null,
+      "successfulControls": 0,
+      "sync": null,
+      "spectatorSync": null,
+      "checks": [],
+      "result": null
+    },
+    {
+      "path": "artifacts/qualification/catalogue-pinned-fresh-20260930-chaos/report.json",
+      "sha256": "6dbc7fef7f173c9429d9684e03c46c731387ba220a82e5939b99fb68910b7122",
+      "startedAt": "2026-09-30T16:58:09.733Z",
+      "finishedAt": "2026-09-30T16:59:53.537Z",
+      "channel": "chrome",
+      "ref": {
+        "app": "0xa5f79fC906A238a80604EE5912a4A18998dC7ab4",
+        "epoch": "12",
+        "id": "220"
+      },
+      "actualMode": 1,
+      "virtualPrf": true,
+      "reusedSession": false,
+      "initialReauthorization": null,
+      "functionalPassed": true,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "error": null,
+      "admissionMs": 29137,
+      "input": {
+        "samples": 75,
+        "p95Ms": 15.200000047683716
+      },
+      "receiptP95Ms": 15.812099999995553,
+      "successfulControls": 219,
+      "sync": {
+        "frames": 1784,
+        "snapshots": 271,
+        "startupFillMs": 0,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 183.30000007152557,
+        "holds": [
+          {
+            "at": 15546.5,
+            "ms": 183.30000007152557,
+            "sourceT": 20120,
+            "rally": "5"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 233.39999997615814,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": []
+      },
+      "spectatorSync": {
+        "frames": 2557,
+        "snapshots": 382,
+        "startupFillMs": 798.7999999523163,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 183.39999997615814,
+        "holds": [
+          {
+            "at": 26771.799999952316,
+            "ms": 183.39999997615814,
+            "sourceT": 20390,
+            "rally": "5"
+          },
+          {
+            "at": 36638.299999952316,
+            "ms": 100.40000009536743,
+            "sourceT": 30120,
+            "rally": "7"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 233.20000004768372,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": []
+      },
+      "checks": [
+        "F5 reused the Mera grant",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "result": {
+        "hash": "0x9ff7515815835fc71d8be6db0eb62bcdde92ae23377c657eb4b1d981064e5a52",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "36859382",
+        "finality": false
+      }
+    },
+    {
+      "path": "artifacts/qualification/catalogue-pinned-valid-20260930-classic/report.json",
+      "sha256": "c338b918be146619d3af17039cc1915163cab963e9f2a6e062f9a806b485b984",
+      "startedAt": "2026-09-30T17:00:27.172Z",
+      "finishedAt": "2026-09-30T17:02:05.094Z",
+      "channel": "msedge",
+      "ref": {
+        "app": "0xf202862714F61D6f6b8b14C1D2F5d3cA7EA3E41b",
+        "epoch": "2",
+        "id": "221"
+      },
+      "actualMode": 0,
+      "virtualPrf": true,
+      "reusedSession": true,
+      "initialReauthorization": null,
+      "functionalPassed": true,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "error": null,
+      "admissionMs": 21896,
+      "input": {
+        "samples": 75,
+        "p95Ms": 15.899999976158142
+      },
+      "receiptP95Ms": 15.493299999994633,
+      "successfulControls": 221,
+      "sync": {
+        "frames": 3179,
+        "snapshots": 275,
+        "startupFillMs": 0,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 100.09999990463257,
+        "holds": [
+          {
+            "at": 14979,
+            "ms": 100.09999990463257,
+            "sourceT": 19800,
+            "rally": "0:4"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 233.39999997615814,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": []
+      },
+      "spectatorSync": {
+        "frames": 3749,
+        "snapshots": 368,
+        "startupFillMs": 800.1999999284744,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 216.80000007152557,
+        "holds": [
+          {
+            "at": 35726.299999952316,
+            "ms": 216.80000007152557,
+            "sourceT": 30630,
+            "rally": "0:6"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 233,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": []
+      },
+      "checks": [
+        "F5 reused the Mera grant",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "result": {
+        "hash": "0x12a2eef9f124670a29d3608dd71bcd139eaf913a68864ce4a311c63b73d9ea11",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "36677094",
+        "finality": false
+      }
+    }
+  ]
+}

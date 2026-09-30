@@ -9,7 +9,7 @@ import {PoolReplays,replayRevision} from './pool-replays';
 export class PoolReadCache {
  private entries=new Map<string,{until:number;pending:boolean;promise:Promise<any>}>();
  constructor(readonly now=Date.now,readonly ttl=2000,readonly maxEntries=128){}
- get<T>(key:string,load:()=>Promise<T>):Promise<T>{
+ get<T>(key:string,load:()=>Promise<T>,ttl=this.ttl):Promise<T>{
   const now=this.now(),entry=this.entries.get(key);if(entry&&(entry.pending||entry.until>now))return entry.promise;
   this.entries.delete(key);for(const [k,e] of this.entries)if(!e.pending&&e.until<=now)this.entries.delete(k);
   if(this.entries.size>=this.maxEntries){
@@ -17,9 +17,9 @@ export class PoolReadCache {
    if(!completed)throw Object.assign(Error('Published reads are busy'),{status:503,code:'AGENT_READ_BUSY'});
    this.entries.delete(completed[0]);
   }
-  const promise=load().then(value=>{const e=this.entries.get(key);if(e?.promise===promise){e.pending=false;e.until=this.now()+this.ttl;}return value;})
+  const promise=load().then(value=>{const e=this.entries.get(key);if(e?.promise===promise){e.pending=false;e.until=this.now()+ttl;}return value;})
    .catch(error=>{if(this.entries.get(key)?.promise===promise)this.entries.delete(key);throw error;});
-  this.entries.set(key,{until:now+this.ttl,pending:true,promise});return promise;
+  this.entries.set(key,{until:now+ttl,pending:true,promise});return promise;
  }
 }
 function unsigned(value:string|null,fallback:bigint,max=2n**64n-1n){
@@ -50,7 +50,10 @@ export function poolRoutes(reader:AgentPoolReader,cache=new PoolReadCache(),repl
   }
   const challenge=/^\/challenges\/(0x[\da-fA-F]{40})$/.exec(path);
   if(challenge){if(!isAddress(challenge[1]))throw poolNotFound();
-   return cache.get(`challenge:${challenge[1].toLowerCase()}`,()=>reader.challenge(challenge[1] as Address));}
+   // A two-second cache renewed after a slow read can hide an admission for
+   // another polling cycle. Coalesce concurrent reads, but keep the player's
+   // request briefly cached rather than giving it the catalogue's lifetime.
+   return cache.get(`challenge:${challenge[1].toLowerCase()}`,()=>reader.challenge(challenge[1] as Address),250);}
   const match=/^\/matches\/(0x[\da-fA-F]{40})\/(\d{1,78})\/(\d{1,78})$/.exec(path);
   if(match){
    if(!isAddress(match[1]))throw poolNotFound();

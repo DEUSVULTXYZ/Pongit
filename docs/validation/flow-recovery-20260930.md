@@ -354,3 +354,78 @@ The final recovery backup `flow-recovered-20260930T1640Z` is SHA-verified off VP
 
 No human service or contract was changed. The difficulty migration, admission
 target, financial/replay checks and unchanged 24-hour qualification remain open.
+
+## Reduced reads deployed and measured — 30 September, 16:54 UTC
+
+Engine source `01d3a06` deployed at 16:43:57 UTC as
+`sha256:b4fb3eb64354d52e139027ea5653e5936d4728793c6b754e4586ab12d31c02a9`.
+It retains the exact-command recovery in `c04443e`, the sole arena writer and
+the same three-second authorization fence. The getter publication experiment
+remains disabled. Roll back only the engine image to `09fd1103…ea6cf` if needed;
+never restore an old operation database.
+
+At stable one-minute controller observations, canonical header reads fell from
+104 in the earlier sample to 69–70. Bytecode reads fell from 43 to zero in two
+stable minutes (two reads when a new match required its pinned strategy code).
+These are role-specific samples, not a total-RPC or five-lane qualification.
+The current tick cadence is unchanged. Engine submission p95 was 100 ms in
+three sampled active minutes.
+
+Two attempts joined matches 216 and 217 too late to obtain the required full
+active window. Both Chrome and Edge reports remain failed/non-qualifying;
+their long terminal holds are not an active-rally freeze measurement. No prior
+report or acceptance threshold was changed.
+
+A subsequent complete 60-second window on actual public Classic match 218
+passed in Chrome and Edge: 100% ball visibility, 99.44% moving frames, 17.1 ms
+frame p95, maximum active hold 116.8 ms, no stalled clock samples. Engine clock
+progression was 99.51% / 99.43%; displayed progression 100.17% / 100.19%.
+This is a short read-only desktop proof, not evidence for all games or 24 hours.
+Raw report paths, hashes and method metrics are preserved in
+`flow-sync-20260930.json`.
+
+The next bounded public catalogue test uses a virtual Mera authenticator and
+actual Chaos mode, controls, F5, a separate spectator and canonical result.
+No competing engine or lifecycle writer is started.
+
+## Player and admission measurements — 30 September, 17:04 UTC
+
+The first restored virtual authenticator could not provide PRF after import;
+its screenshot says `This passkey provider does not support PRF`. No sponsored
+transaction or game was created. The original three-minute failed report is
+preserved. This does not qualify physical passkey renewal.
+
+A newly created virtual Mera account completed actual public Chaos match 220
+on a5f7 epoch 12; then its still-valid grant completed public Classic match 221
+on f202 epoch 2 in Edge. Both verified their actual selected mode, at least 100
+executed input receipts, F5 without a fresh assertion, and published 0–7 results.
+These synthetic controls are not evidence of bot win rates or human difficulty.
+
+- Chaos: local input p95 15.2 ms, executed receipt p95 15.8 ms, player/spectator
+  holds 183.3 / 183.4 ms. No snapshot jumps or frame gaps were detected.
+- Classic: local input p95 15.9 ms, executed receipt p95 15.5 ms, holds
+  100.1 / 216.8 ms. No snapshot jumps or frame gaps were detected.
+- Both render p95 values were 17.1 ms. These are bounded windows with an actual
+  concurrent tournament, not proof of all lanes or the unchanged 24-hour trial.
+- Admission remains **FAIL**: 29.137 seconds including initial connection and
+  21.896 seconds with an already valid session. The target remains eight seconds.
+  A `passed` field in these functional reports does not override their explicit
+  `performance.admission=false`. The aggregate evidence distinguishes the two.
+
+The API still serialized request, participation, lane and challenge-reference
+reads. The next read-only patch overlaps independent reads at the same pinned
+block and retains all reference/owner/agent/reorganization checks. The request
+cache now lasts 250 ms, while the catalogue retains its two-second cache.
+Slow in-flight reads still coalesce and cannot create duplicate network work.
+Focused regressions verify both early refresh and refusal of a mismatched
+challenge before an arena reference can be returned. This API patch is not yet
+deployed at this checkpoint.
+
+The engine/runtime backup `flow-pinned-20260930T1656Z` is SHA-verified off VPS:
+
+- agents.dump: `b059bd70bc8dbb66b332a71c8d0f2c265e8a885975aaa1226281084ea252f887`
+- operator.dump: `852587386fc1a029ee647868562b8bec1875cdfd1461077f96f4fe9180b1866e`
+- runtime.tar.gz: `5581706b93b87c29102d1e88ed3967cc988512b5f0f6b387f7f2d01c9f84cfae`
+
+It includes the deployed `01d3a06` engine but predates player trials 220/221.
+Refresh the journals and runtime after the final compatible API deployment.

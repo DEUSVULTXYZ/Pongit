@@ -198,18 +198,26 @@ export class AgentPoolReader {
   const m=this.manifest;
   return this.snapshot(async(read):Promise<{request:PoolChallengeView|null}>=>{
    const id=await read<bigint>(m.challenges,challengeAbi,'pending',[player]);if(!id)return{request:null};
-   const request=await read(m.challenges,challengeAbi,'requests',[id]);
+   // These depend only on the known player/request, not on each other's
+   // result. Start them together so the paced transport can batch them.
+   const [request,currentPlaying]=await Promise.all([
+    read(m.challenges,challengeAbi,'requests',[id]),
+    m.version>=4?read<string>(m.pool,this.poolAbi,'playing',[player]):Promise.resolve(zeroHash),
+   ]);
    // Public mapping getter returns a tuple, unlike the struct-returning methods.
    const [owner,agent,mode,status,at]=request;
    if(owner.toLowerCase()!==player.toLowerCase()||![1,2].includes(status))throw Error('Challenge participation changed');
    let ref:AgentMatchRef|null=null;
    if(status===2){
     if(m.version>=4){
-     const [playing,records]=await Promise.all([read<string>(m.pool,this.poolAbi,'playing',[player]),
-      Promise.all(agentPoolLanes(m).slice(1).map(lane=>read(m.pool,this.poolAbi,'laneRecord',[lane])))]);
+     const playing=currentPlaying;
+     const [records,challengeId]=await Promise.all([
+      Promise.all(agentPoolLanes(m).slice(1).map(lane=>read(m.pool,this.poolAbi,'laneRecord',[lane]))),
+      read<bigint>(m.pool,this.poolAbi,'challengeOf',[playing]),
+     ]);
      const r=records.find(row=>row.ref.id>0n&&refKey(row.ref)===playing);
      if(!r?.ref.id||refKey(r.ref)!==playing||r.a.toLowerCase()!==player.toLowerCase()||r.b.toLowerCase()!==agent.toLowerCase()
-      ||await read<bigint>(m.pool,this.poolAbi,'challengeOf',[playing])!==id)throw Error('The active challenge has no matching arena reference');
+      ||challengeId!==id)throw Error('The active challenge has no matching arena reference');
      if(!m.arenas.some(a=>a.app.toLowerCase()===r.ref.arena.toLowerCase()))throw Error('Challenge arena is outside this deployment');
      ref=refView(r.ref);
     }else{
