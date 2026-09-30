@@ -28,7 +28,7 @@ import {BackgroundObservation} from '../shared/background-observation';
 import {hubObservations} from '../shared/hub-observation';
 import {publisherFunding} from '../shared/publisher-funding';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
-import {publicationUnavailable} from '../shared/service-error';
+import {publicationUnavailable,publicationFailureDetails} from '../shared/service-error';
 import {agentRecoveryPause,agentTickInterval,agentTickPause} from '../shared/agent-publication-health';
 import {verifyHostedArenaEvidence} from '../shared/hosted-arena-identity';
 
@@ -243,7 +243,8 @@ async function arenaLoop(app:Address,runtimeHash:string){
    if(publicationUnavailable(e)&&!publicationPaused){publicationPaused=true;publication=publicationObservation();}
    const retryAt=typeof (e as any)?.retryAt==='number'?(e as any).retryAt:0;
    await health(publicationPaused?'publication-paused':(e as any)?.code==='AGENT_HOSTED_COOLDOWN'?'provisioning':'synchronizing',
-    {epoch:String(d?.epoch??0),id:String(engine?.ref.id??0),error:clean(e),...(retryAt?{retryAt}:{})});
+    {epoch:String(d?.epoch??0),id:String(engine?.ref.id??0),error:clean(e),...(retryAt?{retryAt}:{}),
+     ...(publicationUnavailable(e)?{publication:publicationFailureDetails(e)}:{})});
    pause=agentRecoveryPause(publicationPaused,engineCooldownMs(url),retryAt,Date.now());
   }
   if(!stopping)await delay(Math.min(pause,30000));
