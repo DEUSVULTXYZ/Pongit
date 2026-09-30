@@ -492,3 +492,188 @@ The first isolated UI attempt failed because SSH port forwarding is prohibited,
 not because the private image was down. Both failed reports are retained. The
 same image's HTML/assets were captured through the authorized file/SSH path for
 browser fixtures; this does not qualify a real player admission.
+
+## Public rollout and strict failures — 30 September, 17:53 UTC
+
+The hourly publication gas-budget incident recovered at 17:33:41 without a
+provider restart or transfer. Match 226 on f202 epoch 2 published 4–3; its
+captured hash is `0x2ec84227de17cb20a2c08b7c8c0dd599a4413411939ff2110077f12456128f1c`.
+Tournament 11 had 14/28 fixtures resolved at 17:34. Publication recovery does not
+establish that this relay budget is sufficient for sustained traffic.
+
+Public web `a11abf6` and engine diagnostics `fb31e64` deployed at 17:35:27.
+The candidate UI passed 39 fixture checks per browser (78 total), including four
+widths, landscape, reduced motion and zoom. The first forwarding-denied attempt
+and the second attempt against a private build with public gates disabled remain
+failed. The successful third attempt used the actual enabled image's captured
+HTML/assets with synthetic API/engine fixtures. Public Chrome then verified four
+widths, pixel header and selectors, 44-pixel controls, decoded avatars and no
+overflow. This is distinct from real game evidence and physical-device testing.
+
+Additional public games used virtual Mera, actual contracts and engine, 110
+controls, F5, a spectator, and an ordinary-rally window before result recovery:
+
+| Match | Mode | Admission | Local input p95 | Executed receipt p95 | Maximum player / spectator hold | Verdict |
+|---|---|---:|---:|---:|---:|---|
+| 229, 76ca/12 | Chaos | 21.958 s | 15.9 ms | 15.67 ms | 116.5 / 133.5 ms | Admission FAIL |
+| 231, f202/2 | Classic | 18.712 s | 15.5 ms | 15.16 ms | 30,017 / 30,417 ms | Admission and flow FAIL |
+
+Both published 0–7. Reports and exact hashes are summarized in
+`flow-admission-20260930.json`. Their failed overall verdicts are retained.
+An earlier match 224 also failed local input (59.1 ms); the 108-unit prediction
+bound is a lead, not a proven fix. Do not remove this bound to hide divergence.
+
+Admission profiling shows ordinary iterations around one second, but occasional
+expiry/qualification scans add seconds. The actual admission step for match 231
+took 4.631 seconds, including 1.262 seconds before transaction preparation. Two
+later successful `admitChallenge` transactions emitted no assignment and scanned
+the old queue. They did not create duplicate games. Profiling was removed and
+admission restarted at 17:49:35. The observations do not pass the eight-second
+target and do not authorize changing that target.
+
+## Publication observation fix — 30 September, 17:53 UTC
+
+During match 231, the engine entered `publication-paused` at 17:44:44.493 and
+returned to playing at 17:45:14.810. The old loop slept for its generic 30-second
+write hold before checking health. We did not observe exactly when the remote
+node recovered, so cannot attribute the entire freeze to local delay.
+
+Published `4b5405a` makes recovery health observations every two seconds while
+publication is paused. Fresh matching application, chain and epoch evidence may
+clear the publication-only transport hold; a health request begun before a
+newer failure cannot clear that failure. Actual HTTP Retry-After still applies
+to all requests. Boolean halts cannot look healthy. Exact pending commands still
+pass the existing nonce, receipt and journal reconciliation before resubmission.
+No command is sent merely because health recovered.
+
+817 TypeScript tests and root typecheck pass, including 72 focused recovery,
+transport, journal and halt checks. Secret and diff checks passed before publish.
+The backend image passed isolated imports and was deployed at 17:51:56.288 UTC:
+`sha256:bffae7d6c4d1f3bf9ebb10f450a62bfd5a8b82eba676e1b0faca6fcc5416a0ba`.
+Only engines changed; the human relayer still has its September 24 start time.
+The former engine `sha256:427165650cec56e2463c5e5a4b0d112eda8b5b73a0a92caf779d254d8b5936a6`
+and `compose.json.before-recovery-4b5405a` remain for service rollback. Never roll
+back databases or signed journals.
+
+At 17:52 all observed agent epochs were healthy or normally closing. One actual
+post-deployment browser fixture is running: `health-valid-20260930-chaos`, match
+233 on 9b8 epoch 11. Do not duplicate it or claim it passed before its report.
+No funding request or provider change is needed at this checkpoint. Admission,
+difficulty migration, sustained publication, finances, concurrency and unchanged
+24-hour qualification remain open.
+
+Pre-deployment backup `flow-health-20260930T1750Z` is SHA-verified off VPS:
+
+- agents.dump: `e04d458d97c700e8b978267358de897da69b2ed593d2461301daa1f10fa92727`
+- operator.dump: `0f2a4a5fc5cdbc728298565d03604eb82f562456d40d7ad9911643488ffff097`
+- runtime.tar.gz: `687e13ec56fc1194586972ae66d12da282eb84200a832bf3e373e273a6532762`
+
+These are fresh copies, not an additional restore trial. The earlier actual
+scratch restore remains separately recorded. Disk usage is 69% (22 GB free).
+
+## Strict results and atomic-admission candidate — 30 September, 18:20 UTC
+
+Match 233 has finished: Chaos 0–7, canonical captured hash
+`0xd5245a7dccc1c20a45413927779070aa69e284454a0293f2c6e5f3015cc66778`.
+Its overall verdict remains FAIL: admission 21.323 s and maximum holds
+5.550 / 5.667 s. Local input p95 was 15.8 ms, executed receipts 18.45 ms,
+render p95 17.1 ms, no recorded snapshot jumps. The recovery patch reduces
+local observation delay but does not remove upstream publication outages.
+
+The 90-second read-only publication watch at 17:56 had 225 observations,
+nine unhealthy and no unknown. 76ca/12 batch 343 was refused for the relay's
+hourly gas budget, then recovered at 17:56:35.711. This is not an RPC quota
+or proof of wallet insolvency. Source `63be738` now records allowlisted first
+refusal details; engine image
+`sha256:e1ce8273387b3e316b8b84a579e62ed4628f7638187eba6babbf27d87f3a3055`
+started at 17:59:07.789. No game driver remains from these completed trials.
+
+Candidate `0083c13` batches the unchanged signed challenge with optional
+permissionless `admitChallenge`. The contract still selects the arena/player.
+No capacity means the original request stays queued. The sponsor accepts only
+these two exact targets/selectors, zero value, canonical bytes and a signed
+request; no arbitrary/nested multicall, cancellation batch or financial method.
+Its startup verifies Multicall3 runtime hash
+`0xd5c15df687b16f2ff992fc8d767b4216323184a2bbc6ee2f9c398c318e770891`.
+The gas estimate requires the optional admission to succeed when possible;
+only a decoded contract revert allows estimation of the queued-only path.
+The strict estimation bytes are never signed/stored. Lost responses retain the
+original operation, including after disabling the browser rollout capability.
+
+A read-only actual-chain simulation at block 67038599 assigned an arena using
+both calls. Strict estimate 2,198,308 gas; best-effort estimate 2,179,995 gas.
+No transaction was sent by that probe. This is not a real admission latency
+proof. The public client capability remains absent pending actual qualification.
+821 TypeScript tests and root typecheck passed; source/diff/secret audit passed.
+Sponsor image `sha256:7b04c4a40f5284f08feea3d2ae77f28f9687c74915c0a69e58081396a4b0b49b`
+started 18:16:17.164, its health confirms sponsorship available. Web candidate
+is building; no owned game fixture has started at this checkpoint.
+
+Backup `flow-atomic-20260930T1814Z` is SHA-verified off VPS:
+
+- agents.dump: `e1798f25ff09efe25b2a250054ea585c44de8a310361ded0b58d82eaeb846747`
+- operator.dump: `732c1b66ada186bc30ecff0b47524cb20432cd756e4c21097447cbb282cf5c42`
+- runtime.tar.gz: `a689abe25b05ac728e1bcdcaf13477e004e0488b394e2d80c2362012c2ac7e2f`
+
+It precedes the sponsor switch. Rollback: disable the atomic client capability
+first; keep the new sponsor until all accepted batched operations reconcile.
+The old sponsor cannot replay a queued multicall. Never restore an earlier
+nonce journal/database to roll back a service. Human backend remains unchanged.
+
+## Atomic admission actual test — 30 September, 18:30 UTC
+
+Web `0083c13` image
+`sha256:7a7f4744e9fbaaf3b5a4b113766c2dc9f708542bdd9753e7733ea511a6695aaf`
+started 18:21:20.823 UTC. The public manifest still does not enable
+`challengeAdmission`. Only the bounded virtual-Mera Chrome fixture overrode
+that capability. All its sponsorship/Monad/Interlude traffic was real. Public
+Edge read-only checks passed at 360/390/768/1440: pixel header/selectors, 44-pixel
+controls, decoded portraits, no overflow, main pages 200. Mobile capture was
+also visually inspected. The human backend and its main web remain unchanged.
+
+Fixture 239, 76ca epoch 12, Chaos: **FAIL**. One canonical Monad transaction
+created request 48 and assigned that exact player to lane 1 (proof in
+`flow-atomic-admission-20260930.json`). Gas used 2,685,504; paid at 102 gwei.
+No second operator admission was needed for this request. Actual admission was
+17.093 seconds, still above 8 seconds. Input p95 15.4 ms, executed receipt p95
+14.73 ms, render p95 17.2 ms. F5 preserved the grant. An ordinary-rally window
+then recorded a **42.267-second hold**. This run had no spectator probe and
+therefore cannot qualify spectator performance; the next harness now refuses
+a strict full-performance run unless both probes are configured at startup.
+
+The fixture ended at its original deadline, reporting no published result.
+Its browser is stopped; the game and its pending journals remain owned by
+normal services. At VPS 18:29:17 UTC, the matching node still reports 400
+committed batches, nine pending diffs, and the relay's hourly gas-budget
+refusal. The public result is absent. Do not create another fixture or
+implicitly force-close this game/community tournament while that halt persists.
+Tournament 11 had 23/28 fixtures resolved, with 240 active.
+
+This does not complete atomic public rollout, fluidity, difficulty migration
+or 24-hour qualification. Additional admission cost is measured in the
+pre-existing-request API read (1.79 s), sponsor intake (2.85 s), and delayed
+request/arena navigation. A possible next narrow optimization is to use the
+existing canonical `pending(player)` read and exact confirmed receipt before
+waiting for a repeated API snapshot; it has NOT been implemented.
+
+A clock comparison found VPS ahead of the local browser host by approximately
+5.76 s with 1.755 s SSH round trip. Cross-host UTC timelines must not be treated
+as precise latency measurements. Browser durations and the reported input,
+render and admission thresholds use the same browser clock. No host clock was
+changed. Gateway health separately showed queued Monad reads and throttling;
+that is distinct from the Interlude publication budget. No funding request.
+
+Final runtime/journal backup `flow-atomic-final-20260930T1831Z` is SHA-verified
+off VPS (not a new restore trial):
+
+- agents.dump: `ba3717925db2da4f8c4253b622359a6c8d5a08dd1ae26465716081d3e64b37ab`
+- operator.dump: `02cd58f22ee0dc614ebc74b8bc6ed792fb5f5af0677b1e4644af5f1483934600`
+- runtime.tar.gz: `4e127ad0fd9ee4be25f6e9314a62b5c1ae19938a667a45ffdf22e1573c6126c4`
+
+No owned driver, manual lifecycle writer or temporary UI server is running.
+The ordinary services retain match 239; preserve its failed report and wait
+for an actual published result before claiming later recovery. The current
+SDK documents a node commit interval and a manual commit method, but PONGIT's
+production code does not call `interlude_commit`. The local-node CLI option
+is not proof that the hosted API accepts a commit-interval override. No provider
+configuration was changed or guessed.

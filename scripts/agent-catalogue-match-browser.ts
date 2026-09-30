@@ -15,6 +15,8 @@ const restorePath=process.env.PONG_CATALOGUE_RESTORE_PRIVATE_PATH;
 // Opt-in, bounded cadence samples are separate from the full 100-control gate.
 const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
 const atomicQualification=process.env.PONG_CATALOGUE_ATOMIC_QUALIFICATION==='1';
+if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(process.env.PONG_SYNC_PROBE==='1'&&process.env.PONG_SYNC_SPECTATOR==='1',
+ 'Full performance qualification needs both player and spectator probes before creating a fixture');
 const controlCount=cadenceProbe?20:110,idleMs=cadenceProbe?Number(process.env.PONG_CATALOGUE_PROBE_IDLE_MS??8000):45000;
 assert(!cadenceProbe||Number.isInteger(idleMs)&&idleMs>=4000&&idleMs<=8000);
 assert(/^[a-z0-9-]+$/.test(run)&&['chrome','msedge'].includes(channel)&&[0,1].includes(mode));
