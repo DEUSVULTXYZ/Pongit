@@ -59,3 +59,11 @@ test('an unfunded publisher is distinguished from RPC throttling without copying
  assert.equal(value.reason,'publisher_unfunded');assert.equal(value.relayStatus,502);assert.equal(value.batch,'915');
  assert.equal(value.healthy,false);assert(!JSON.stringify(value).includes('Signer had'));
 });
+
+test('rejected relay tokens are not classified as RPC traffic or commit quota',()=>{
+ const value=agentPublicationHealth({...health,committedBatches:0,halted:'batch 1 could not be settled (commit relay failed: 429 Too Many Requests: {"error":"too many rejected tokens from you this hour"})'},app,2n);
+ assert.equal(value.reason,'relay_authentication_throttled');assert.equal(value.relayStatus,429);
+ assert.equal(value.healthy,false);assert.equal(value.batch,'1');
+ assert(!JSON.stringify(value).includes('rejected tokens from you'));
+ assert.equal(publicationFailureDetails(new Error('commit relay failed: 401 Unauthorized: missing or wrong bearer token')).reason,'relay_authentication');
+});

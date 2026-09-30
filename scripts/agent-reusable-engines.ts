@@ -133,7 +133,9 @@ async function arenaLoop(app:Address,runtimeHash:string){
     }catch(e){await observePoolArenaReady(db,app,d.epoch,false);throw e;}
    }
    if(!entry){
-    if(publicationPaused)publicationPaused=!(await publication.read()).healthy;
+    // Idle health can change after discovery. A previous healthy response must
+    // not keep an arena admissible forever after its relay has stopped.
+    publicationPaused=!(await publication.read()).healthy;
     const budget=await funding(d.validator);
     await close();await health(d.status===2?'challenge-window':publicationPaused?'publication-paused':!budget.funded?'publisher-unfunded':'available',
      {epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt),...(!budget.funded?{publisher:d.validator,balanceWei:String(budget.balance),minimumWei:String(budget.minimum)}:{})});await delay(1000);continue;
