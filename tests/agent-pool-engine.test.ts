@@ -10,7 +10,8 @@ const app='0x0000000000000000000000000000000000000011';
 function fixture(){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false,now=0;
  let blockGate:Promise<void>|undefined,blockError=false;
- let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'='ok';
+ let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'|'halt'='ok';
+ let publication:any={app,epoch:'1',ok:true,halted:null,committedBatches:1};
  let logs:any[]=[],archiveError=false,receiptReads=0,nonceReads=0,reset=false,feedError=false,currentId=0n;const archived:any[]=[];
  const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
  const node:any={readContract:async({functionName}:any)=>functionName==='resultCommitment'?[epoch,0,zeroHash]:[currentId?epoch:0n,currentId],getTransactionCount:async()=>{nonceReads++;return nonce;},getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
@@ -19,6 +20,7 @@ function fixture(){
   if(behavior==='429')throw Object.assign(Error('busy'),{status:429});
   if(behavior==='generic')throw Error('transaction rejected before execution: duplicate request');
   if(behavior==='cap')throw Error('transaction rejected before execution: transaction gas limit is greater than the cap');
+  if(behavior==='halt')throw Error('this session is over and the node is no longer accepting transactions: batch 1 could not be settled');
   if(behavior==='lost-before-execution')throw Error('response lost');
   if(!receipts.has(keccak256(raw))){assert.equal(parseTransaction(raw).nonce,nonce);nonce++;receipts.set(keccak256(raw),receipt(raw));}
   if(behavior==='lost-after-execution')throw Error('response lost');return receipts.get(keccak256(raw));
@@ -29,7 +31,7 @@ function fixture(){
   Object.assign(d,{status,epoch,expiresAt:10000n,baseBlock:20n});return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d});
  }};
  const db:any={connect:async()=>{if(connectError)throw Error('database unavailable');return{query:async()=>({rows:[{ok:true}]}),release(){}};},query:async(sql:string,a:any[])=>{
-  if(sql.startsWith('SELECT'))return{rows:jobs.filter(j=>sql.includes('operation=$3')?j.epoch===a[1]&&j.operation===a[2]:j.status==='pending').slice(0,1)};
+  if(sql.startsWith('SELECT'))return{rows:jobs.filter(j=>sql.includes('id<>$5')?j.id!==a[4]&&j.epoch===a[1]&&(j.status==='pending'||j.signer===a[2]&&String(j.nonce)===String(a[3])&&!['refused','obsolete'].includes(j.status)):sql.includes('operation=$3')?j.epoch===a[1]&&j.operation===a[2]:j.status==='pending').slice(0,1)};
   if(sql.startsWith('INSERT')){
    if(jobs.some(j=>j.app===a[0]&&j.epoch===a[3]&&String(j.nonce)===String(a[5])&&!['refused','obsolete'].includes(j.status)))throw Error('pool_used_nonce');
    jobs.push({app:a[0],id:a[1],operation:a[2],epoch:a[3],signer:a[4],nonce:a[5],raw:a[6],hash:a[7],status:'pending'});return{rowCount:1};}
@@ -38,9 +40,74 @@ function fixture(){
  }};
  const receiptIds:bigint[]=[],readIds:bigint[]=[];
  const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2,reset};},receipt:async(id:bigint)=>{if(feedError)throw Error('snapshot gap');receiptIds.push(id);return{id,phase:2};},invalidate(){}};
- const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,now:()=>now,archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
- return{make,jobs,sent,receipts,receiptIds,readIds,archived,currentId:(v:bigint)=>{currentId=v;},now:(v:number)=>{now=v;},blockError:(v:boolean)=>{blockError=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
+ const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,now:()=>now,publicationFetch:async()=>{if(publication instanceof Error)throw publication;return new Response(JSON.stringify(publication));},archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
+ return{make,jobs,sent,receipts,receiptIds,readIds,archived,publication:(v:any)=>{publication=v;},nonce:(v:number)=>{nonce=v;},currentId:(v:bigint)=>{currentId=v;},now:(v:number)=>{now=v;},blockError:(v:boolean)=>{blockError=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
+
+function historicalHalt(f:ReturnType<typeof fixture>){
+ const job=f.jobs[0];job.status='refused';job.resolution={kind:'permanent-pre-execution-refusal',reason:'this session is over and the node is no longer accepting transactions',latestNonce:job.nonce};return job;
+}
+
+test('a recovered halt resumes the exact historical start, preserving its nonce and refusal proof',async()=>{
+ const f=fixture();let e=f.make(214n,false,true);f.behavior('halt');
+ await assert.rejects(e.send('start','start',[1n,214n]),/no longer accepting/);
+ const job=historicalHalt(f),raw=job.raw,hash=job.hash,proof=job.resolution;e.close();
+ e=f.make(214n,false,true);f.behavior('ok');await e.send('start','start',[1n,214n]);
+ assert.equal(f.jobs.length,1);assert.equal(job.status,'observed');assert.equal(job.hash,hash);
+ assert.deepEqual(f.sent,[raw,raw]);assert.deepEqual(job.resolution.recoveredFrom.previous,proof);
+ await e.send('next','tick',[1n,214n]);assert.equal(f.jobs[1].nonce,'1');e.close();
+});
+
+test('new reusable publication halts keep the command pending instead of declaring its nonce reusable',async()=>{
+ const f=fixture(),e=f.make(214n,false,true);f.behavior('halt');
+ await assert.rejects(e.send('start','start',[1n,214n]));assert.equal(f.jobs[0].status,'pending');
+ f.behavior('ok');await e.send('start','start',[1n,214n]);assert.equal(f.sent[0],f.sent[1]);e.close();
+});
+
+test('historical halt recovery requires healthy exact-app and exact-epoch publication evidence',async()=>{
+ for(const evidence of [new Error('health timeout'),{app,epoch:'1',ok:false,halted:'paused',committedBatches:0},{app:zeroAddress,epoch:'1',ok:true,committedBatches:1},{app,epoch:'2',ok:true,committedBatches:1}]){
+  const f=fixture(),e=f.make(214n,false,true);f.behavior('halt');await assert.rejects(e.send('start','start',[1n,214n]));
+  const job=historicalHalt(f);f.behavior('ok');f.publication(evidence);
+  await assert.rejects(e.send('start','start',[1n,214n]));assert.equal(job.status,'refused');assert.equal(f.sent.length,1);e.close();
+ }
+});
+
+test('recovery never competes with another pending command or a claimed nonce',async()=>{
+ for(const status of ['pending','observed']){
+  const f=fixture(),e=f.make(214n,false,true);f.behavior('halt');await assert.rejects(e.send('start','start',[1n,214n]));
+  const job=historicalHalt(f);f.jobs.push({...job,id:'other',operation:'other',status});f.behavior('ok');
+  await assert.rejects(e.send('start','start',[1n,214n]),/another command/);assert.equal(job.status,'refused');assert.equal(f.sent.length,1);e.close();
+ }
+});
+
+test('a resumed command with a lost response stays journaled and reconciles its exact receipt after restart',async()=>{
+ const f=fixture();let e=f.make(214n,false,true);f.behavior('halt');await assert.rejects(e.send('start','start',[1n,214n]));
+ const job=historicalHalt(f);f.behavior('lost-after-execution');await assert.rejects(e.send('start','start',[1n,214n]),/lost/);
+ assert.equal(job.status,'pending');assert.equal(job.resolution.kind,'same-command-recovery');e.close();
+ e=f.make(214n,false,true);f.behavior('ok');await e.send('start','start',[1n,214n]);
+ assert.equal(f.sent.length,2);assert.equal(job.status,'observed');assert.equal(job.resolution.recoveredFrom.previous.kind,'permanent-pre-execution-refusal');e.close();
+});
+
+test('a historical refused nonce consumed without its exact receipt is not resubmitted',async()=>{
+ const f=fixture(),e=f.make(214n,false,true);f.behavior('halt');await assert.rejects(e.send('start','start',[1n,214n]));
+ const job=historicalHalt(f);f.behavior('ok');f.nonce(1);
+ await assert.rejects(e.send('start','start',[1n,214n]),/nonce requires/);assert.equal(job.status,'refused');assert.equal(f.sent.length,1);e.close();
+});
+
+test('a historical refusal with its executed receipt is reconciled without resending',async()=>{
+ const f=fixture(),e=f.make(214n,false,true);f.behavior('lost-after-execution');await assert.rejects(e.send('start','start',[1n,214n]));
+ const job=historicalHalt(f);f.behavior('ok');await e.send('start','start',[1n,214n]);
+ assert.equal(job.status,'observed');assert.equal(job.resolution.recoveredFrom.exactReceipt,true);assert.equal(f.sent.length,1);e.close();
+});
+
+test('closed epochs and permanent gas refusals cannot use publication recovery',async()=>{
+ for(const reason of ['closed','cap']){
+  const f=fixture();let e=f.make(214n,false,true);f.behavior(reason==='cap'?'cap':'halt');await assert.rejects(e.send('start','start',[1n,214n]));
+  if(reason==='closed'){historicalHalt(f);e.close();f.status(2);e=f.make(214n,false,true);}
+  f.behavior('ok');await assert.rejects(e.send('start','start',[1n,214n]),reason==='closed'?/lifecycle/:/refused/);
+  assert.equal(f.sent.length,1);assert.equal(f.jobs[0].status,'refused');e.close();
+ }
+});
 
 test('a publication probe is a single journaled getter, without any game frame',async()=>{
  const f=fixture();let e=f.make(0n,false,true);await e.probePublication();e.close();

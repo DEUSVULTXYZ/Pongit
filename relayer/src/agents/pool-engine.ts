@@ -6,14 +6,16 @@ import WebSocket from 'ws';
 import {pooledAgentArenaAbi as abi} from '../../../shared/abi-PooledAgentArena';
 import {seriesAgentArenaAbi} from '../../../shared/abi-SeriesAgentArena';
 import {reusableAgentArenaAbi} from '../../../shared/abi-ReusableAgentArena';
-import {engineTransport,engineCooldownMs} from '../../../shared/engine-transport';
+import {engineTransport,engineCooldownMs,engineGate} from '../../../shared/engine-transport';
 import {EngineFeed} from '../../../shared/engine-feed';
 import {EngineStream,receiptFrame,type EngineState} from '../../../shared/engine-stream';
 import {reusableResults,type ReusableResultCandidate} from '../../../shared/reusable-results';
 import {readHubDelegation} from '../../../shared/rooms-hub';
 import type {HubObservation} from '../../../shared/hub-observation';
 import {engineJobIdentity,engineReceiptOutcome} from '../rooms-engine-recovery';
-import {retirableRefusal,refusalReason} from '../../../shared/engine-halt';
+import {retirableRefusal,refusalReason,haltRefusal,gasCapRefusal} from '../../../shared/engine-halt';
+import {agentPublicationHealth} from '../../../shared/agent-publication-health';
+import {measuredFetch} from '../../../shared/rpc-metrics';
 
 export const POOL_COMMAND_GAS=14_800_000n;
 type PoolCommand='admit'|'cancelAdmission'|'cancelUnready'|'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries';
@@ -36,7 +38,7 @@ export async function initializePoolOperations(db:Pool){await db.query(`
  * permissionless maintenance only; it cannot impersonate a human or spend funds.
  * No pending entry is deleted, including a refusal proven safe to retire. */
 export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Address,url:string,key:Hex,
- ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number;hubObservation?:()=>Promise<HubObservation>}){
+ ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number;hubObservation?:()=>Promise<HubObservation>;publicationFetch?:typeof fetch}){
  if(runtime?.series&&runtime?.reusable)throw Error('Choose one arena generation');
  if(runtime?.reusable&&!runtime.archive)throw Error('Reusable results require a durable archive');
  const arenaAbi=runtime?.reusable?reusableAgentArenaAbi:runtime?.series?seriesAgentArenaAbi:abi;
@@ -88,11 +90,14 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    try{receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);}
    catch(error){
     // The generic pre-execution prefix, a timeout or a 429 is NOT proof.
-    if(retirableRefusal(error)){
+    // Hosted nodes can recover a publication halt in the SAME epoch. Keep its
+    // exact command pending; a halt no longer proves these bytes cannot run.
+    if(retirableRefusal(error)&&(!runtime?.reusable||gasCapRefusal(error))){
      const nonce=await node.getTransactionCount({address:signer.address,blockTag:'latest'}).catch(()=>null);
      if(nonce!==null&&BigInt(nonce)===BigInt(job.nonce))await db.query(
       "UPDATE agent_pool.engine_jobs SET status='refused',resolution=$3,updated_at=now() WHERE app=$1 AND id=$2 AND status='pending'",
-      [lower,job.id,{kind:'permanent-pre-execution-refusal',reason:refusalReason(error),latestNonce:String(nonce)}]);
+      [lower,job.id,{kind:'permanent-pre-execution-refusal',reason:refusalReason(error),latestNonce:String(nonce),
+       ...(job.resolution?.kind==='same-command-recovery'?{recoveredFrom:job.resolution}:{})}]);
     }
     throw error;
    }
@@ -107,13 +112,44 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    if(results.length)await runtime.archive!(results);
   }
   await db.query('UPDATE agent_pool.engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2',
-   [lower,job.id,outcome,{kind:'receipt',hash:job.hash,blockHash:receipt.blockHash,block:String(receipt.blockNumber),status:receipt.status}]);
+   [lower,job.id,outcome,{kind:'receipt',hash:job.hash,blockHash:receipt.blockHash,block:String(receipt.blockNumber),status:receipt.status,
+    ...(job.resolution?.kind==='same-command-recovery'?{recoveredFrom:job.resolution}:{})}]);
   if(outcome==='failed'){feed.invalidate();throw Object.assign(Error('Arena action reverted; state must be refreshed'),{code:'POOL_ACTION_REVERTED'});}
   // Only a matching executed receipt, durably acknowledged above, owns the next
   // nonce. The arena's lock and unique journal constraint still fence writers.
   // Anchor expiry to the last RPC check: receipts cannot extend it indefinitely.
   if(nonceProof&&now()<nonceProof.until)nonceProof.next=Number(job.nonce)+1;
   return {identity,receipt};
+ }
+ async function resumeHistoricalHalt(job:any){
+  const proof=job.resolution;
+  if(!runtime?.reusable||proof?.kind!=='permanent-pre-execution-refusal'
+   ||!haltRefusal(proof.reason)||gasCapRefusal(proof.reason))return;
+  // Existing rows retain their hash, signed bytes, nonce and first refusal.
+  // No replacement transaction is created, even after a lost response here.
+  await refreshFence();
+  const publication=await engineGate(url)(async()=>{
+   const response=await (runtime?.publicationFetch??measuredFetch('interlude','recovery.health'))(url+'/health',{signal:AbortSignal.timeout(4000)});
+   if(!response.ok){await response.body?.cancel().catch(()=>{});throw Object.assign(Error('Publication recovery is not verified'),{status:response.status,headers:response.headers});}
+   return agentPublicationHealth(await response.json(),app,ref.epoch);
+  });
+  if(!publication.healthy)throw Error('Publication recovery is not verified');
+  const conflict=(await db.query("SELECT id FROM agent_pool.engine_jobs WHERE app=$1 AND epoch=$2 AND id<>$5 AND (status='pending' OR (signer=$3 AND nonce=$4 AND status NOT IN ('refused','obsolete'))) LIMIT 1",
+   [lower,String(ref.epoch),signer.address.toLowerCase(),job.nonce,job.id])).rows[0];
+  if(conflict)throw Error('Recovered command conflicts with another command');
+  const receipt=await node.getTransactionReceipt({hash:job.hash}).catch(()=>null);
+  const outcome=receipt&&engineReceiptOutcome(receipt,job.hash);
+  if(!outcome){
+   const [pending,latest]=await Promise.all(['pending','latest'].map(blockTag=>node.getTransactionCount({address:signer.address,blockTag:blockTag as 'pending'|'latest'})));
+   if(BigInt(pending)!==BigInt(job.nonce)||BigInt(latest)!==BigInt(job.nonce))throw Error('Recovered command nonce requires its exact receipt');
+  }
+  // Health/nonce reads must not outlive the lifecycle fence.
+  await fence();nonceProof=undefined;
+  const recovery={kind:'same-command-recovery',previous:proof,publication,exactReceipt:!!outcome,nonce:String(job.nonce)};
+  const updated=await db.query("UPDATE agent_pool.engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2 AND status='refused'",
+   [lower,job.id,'pending',recovery]);
+  if(updated.rowCount!==1)throw Error('Recovered command journal changed');
+  job.status='pending';job.resolution=recovery;
  }
  async function execute(operation:string,name:PoolCommand|'RULES_VERSION',args:readonly unknown[]=[]){
   const probe=name==='RULES_VERSION';
@@ -153,6 +189,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
     const prior=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
     if(prior.data!==data)throw Error('An operation cannot change its signed command');
     if(job.status==='observed')return probe?undefined:await feed.read(ref.id);
+    if(job.status==='refused')await resumeHistoricalHalt(job);
     if(job.status!=='pending')throw Error(`Arena operation is ${job.status}; refresh its state`);
    }else{
     const pending=(await db.query("SELECT * FROM agent_pool.engine_jobs WHERE app=$1 AND status='pending' ORDER BY created_at LIMIT 1",[lower])).rows[0];

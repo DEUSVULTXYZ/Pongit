@@ -265,3 +265,50 @@ September 24 startup timestamp are unchanged. No fixture driver remains active.
 The follow-up retains the two bounded fixture-release checks before pausing on
 an unresolved external publication-authentication blocker. Current monetary
 reserve is not the cause of these exact authentication refusals.
+
+## Scheduled recovery — 30 September, 16:19 UTC
+
+The existing maintenance service released 028f epoch 11 at 16:10:50 UTC, block
+67015484, in `0x3102646cf6255a22d2d3bb922051b08a1af06b0dae361000024a87038084278b`.
+It opened epoch 12 at 16:11:00 UTC, block 67015514, in
+`0xf7afebfe676f8cc70716ab6892f2009d325eb27192fc11f13abd2839d8af5b5e`.
+The block-pinned audit at block 67016723 confirms match 212 is captured as a
+final cancellation, zero scores and no winner, with the exact expected empty
+root and zero results. The failed browser report remains failed. A reopened
+delegation is not proof that its hosted publication works.
+
+Match 213 was still closing at that observation; its actual deadline remains
+16:20:56 UTC. No replacement writer or recovery transaction was submitted by
+this follow-up. The existing scoped maintenance/archive services own completion.
+
+## Relay recovery and application defect — 30 September, 16:30 UTC
+
+The scheduled audit at 16:21 confirms both owned fixtures 212 and 213 are
+captured as final cancellations with the exact empty roots. Both arenas have
+advanced to their next epochs. Their failed browser trials remain failed.
+
+The relay recovered without a PONGIT session restart or credentials change.
+At block 67017549, 76ca epoch 12 has one canonical batch and match 214's admitted
+state is published. Matching hosted health reports healthy. This establishes
+recovery for this epoch; it is not a blanket qualification of all fresh sessions.
+
+The tournament did not resume because PONGIT had marked its `start` command
+permanently refused after the node said its session was over. The exact job is
+`match:214:start`, nonce 2, hash
+`0x4f57c4df3640055a25e6d28be9df96fd01ea4b3f03fb7978f14ccf9ae3b13146`.
+The old transport subsequently threw `Arena operation is refused; refresh its
+state` on every retry. This is an application recovery defect, independent of
+the earlier relay authentication incident.
+
+The compatible fix keeps new reusable-arena halt refusals pending. Historical
+halt refusals can resume only their original signed bytes, after matching healthy
+publication evidence, a valid lifecycle fence, exclusion of competing journal
+entries, and either their exact receipt or equal pending/latest nonce. The old
+refusal is retained in the resolution history. Gas-cap refusals and closed epochs
+cannot use this path. No replacement transaction or new signer is introduced.
+
+Regression tests reproduce the original failure, then verify recovery, missing
+responses, restart, wrong epochs/applications, unavailable health, conflicting
+commands, consumed nonces and gas refusals. All **809 TypeScript tests** and root
+typecheck pass. Production deployment and the actual match-214 result must still
+be checked separately; no new game driver has been started.
