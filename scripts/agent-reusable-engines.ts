@@ -137,7 +137,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
     // not keep an arena admissible forever after its relay has stopped.
     publicationPaused=!(await publication.read()).healthy;
     const budget=await funding(d.validator);
-    if(d.status===1&&!publicationPaused&&budget.funded&&d.batchIndex===0n){
+    if(process.env.PONG_AGENT_PUBLICATION_PROBE==='qualification-only'&&d.status===1&&!publicationPaused&&budget.funded&&d.batchIndex===0n){
      // A reachable fresh node has not demonstrated that its relay can publish.
      // Execute one getter through the existing signer journal, without reserving
      // a player, then wait for a canonical hub batch. A receipt alone never opens

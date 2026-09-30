@@ -1,0 +1,90 @@
+{
+  "at": "2026-09-30T15:25:36.407Z",
+  "ref": {
+    "chainId": "10143",
+    "arena": "0xf202862714f61d6f6b8b14c1d2f5d3ca7ea3e41b",
+    "epoch": "1",
+    "id": "190"
+  },
+  "recovered": true,
+  "scope": "Canonical recovery and tournament retry; no transaction submitted",
+  "block": "67006512",
+  "blockHash": "0x0e88926ae41552c265157d53f2b5498f1868b5f8862f7570b68577691827d197",
+  "delegation": {
+    "epoch": "2",
+    "status": 1,
+    "releaseAt": "0"
+  },
+  "sealed": {
+    "root": "0x95f4875acf696d6f3fc736a9c55f7f3b218feafc3373b4925e1c4f5d4c941a70",
+    "count": 2
+  },
+  "record": {
+    "ref": {
+      "chainId": "10143",
+      "arena": "0xf202862714F61D6f6b8b14C1D2F5d3cA7EA3E41b",
+      "epoch": "1",
+      "id": "190"
+    },
+    "a": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+    "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+    "tournament": "11",
+    "fixture": 4,
+    "lane": 0,
+    "ranked": true,
+    "captured": true
+  },
+  "fixture": {
+    "ref": {
+      "chainId": "10143",
+      "arena": "0x76CA139497ff3fA6D20b062bd5F54A5917513226",
+      "epoch": "12",
+      "id": "214"
+    },
+    "a": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+    "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+    "advanced": "0x0000000000000000000000000000000000000000",
+    "resultDigest": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "published": {
+      "ref": {
+        "chainId": "0",
+        "arena": "0x0000000000000000000000000000000000000000",
+        "epoch": "0",
+        "id": "0"
+      },
+      "a": "0x0000000000000000000000000000000000000000",
+      "b": "0x0000000000000000000000000000000000000000",
+      "winner": "0x0000000000000000000000000000000000000000",
+      "hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "mode": 0,
+      "status": 0,
+      "scoreA": 0,
+      "scoreB": 0,
+      "elapsedUs": "0",
+      "finality": false
+    },
+    "bound": true,
+    "resolved": false,
+    "administrative": false,
+    "attempt": 2
+  },
+  "result": {
+    "ref": {
+      "chainId": "10143",
+      "arena": "0xf202862714F61D6f6b8b14C1D2F5d3cA7EA3E41b",
+      "epoch": "1",
+      "id": "190"
+    },
+    "a": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+    "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+    "winner": "0x0000000000000000000000000000000000000000",
+    "hash": "0x5329206b005f556e6e3f8f1946d79e92895d3ef1c7a6da040e3010811e91a2fe",
+    "mode": 0,
+    "status": 4,
+    "scoreA": 0,
+    "scoreB": 0,
+    "elapsedUs": "0",
+    "finality": true
+  },
+  "retryConfirmed": true
+}

@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-30T14:40:12.930Z",
+  "chainId": 10143,
+  "ratings": "0xd6d0c7c6d8546f1a044d265881f24e4f228c51f0",
+  "complete": true,
+  "noSeeds": true,
+  "scope": "Verified immutable continuation that rejects rating and pair seeds, bound to its canonical predecessor audit. No migration or transaction submission.",
+  "block": "66997519",
+  "blockHash": "0x584225a1e944a2377caef47506b78a228bc6df1d6ce8c2eaf6abeb7bc0344c7e",
+  "runtimeHash": "0xa0c4bdc1933c53e332d29a112c549d0d5da9e829319628cb99a42b38745e7bb4",
+  "step": "sourceCount",
+  "predecessor": {
+    "ratings": "0xe6f5F6B7672859dcb6821889A8c50968Ef478e2d",
+    "auditHash": "0x0c0f997cf922af72b4d6c7347a6326a6e77d9e14e700b9ac1b20c44eabab9ac8",
+    "block": "66542084",
+    "blockHash": "0x267e02d39af390269d7fa5e8b9fd488b6c43fb9083b2ea950f980d670e07eaaa"
+  },
+  "migrationEvidence": "0x52b055b3288ea22e4f55f1f78ae400e07de9661e3daf113c386f5c72e3ea5b56",
+  "sourceCount": "170"
+}

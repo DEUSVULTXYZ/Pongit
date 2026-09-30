@@ -1,0 +1,84 @@
+{
+  "at": "2026-09-30T15:12:05.5981893+00:00",
+  "scope": "Public API backed by canonical block-pinned reader; original trial reports retained",
+  "matches": [
+    {
+      "ref": {
+        "chainId": 10143,
+        "app": "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+        "epoch": "11",
+        "id": "208"
+      },
+      "requestedMode": 1,
+      "actualMode": 1,
+      "modePassed": true,
+      "result": {
+        "hash": "0x9f6e51b83f8bdbffdc8d5a9b1deecb7be1fc5b41f35bb92b3beb076813ecf3d2",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "52451397",
+        "finality": false
+      },
+      "observation": {
+        "block": "67003809",
+        "hash": "0xb544ef73decf5388adff0bec67b46448037048e3fb729b269f6e5ebdee4b25e4",
+        "timestamp": "1790781124",
+        "revision": "1c64094ea27663812b304c9c29716aa6bbf9b91005f45e35654ae0feec0431eb"
+      }
+    },
+    {
+      "ref": {
+        "chainId": 10143,
+        "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+        "epoch": "11",
+        "id": "209"
+      },
+      "requestedMode": 1,
+      "actualMode": 1,
+      "modePassed": true,
+      "result": {
+        "hash": "0xfa7519effa429c703374a45eb0e1f6781e209992824a21f10bb0fbffc522fbe9",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "50776394",
+        "finality": false
+      },
+      "observation": {
+        "block": "67003817",
+        "hash": "0x99b127df190054ccaf9c7c1e90c57e12066c0f084d65a34106ebb333f00a1b27",
+        "timestamp": "1790781127",
+        "revision": "b8f24ef8d32834806f572842c09fdddc0f5e45d632aedaf9c55ff09084075f89"
+      }
+    },
+    {
+      "ref": {
+        "chainId": 10143,
+        "app": "0x9b8e61621682da7b59239774f76dcf04071ea059",
+        "epoch": "11",
+        "id": "211"
+      },
+      "requestedMode": 1,
+      "actualMode": 0,
+      "modePassed": false,
+      "result": {
+        "hash": "0x4c7b3178830e09487e3f4bc52d4968844f2f5b1fde49035c9d90f2aa32a42570",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "36677094",
+        "finality": false
+      },
+      "observation": {
+        "block": "67003820",
+        "hash": "0x80f33b006a12fd1616c529f86adcd88f4bbc12d2150a307d04890accc3728a70",
+        "timestamp": "1790781128",
+        "revision": "bf7477e71113221a90475a784f5cb10f7fbc53f1e09028ebdf2ac9d6ba825210"
+      }
+    }
+  ]
+}
