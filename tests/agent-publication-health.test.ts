@@ -5,6 +5,16 @@ import {publicationFailureDetails} from '../shared/service-error';
 const app='0x7fb78a8fbfd597daadbe6971c106720eb1510d7d';
 const health={app,epoch:2,ok:false,committedBatches:3599,
  halted:'batch 3600 could not be settled (commit relay failed: 429 Too Many Requests: {"error":"too many commits this hour"})'};
+test('the control-plane hourly gas budget is neither wallet insolvency nor RPC traffic',()=>{
+ const value=agentPublicationHealth({...health,committedBatches:189,
+  halted:'batch 190 could not be settled (commit relay failed: 429 Too Many Requests: {"error":"the control plane has spent its gas budget for this hour. try again later","retryAfterMs":548382,"token":"never-copy"})'},app,2n);
+ assert.equal(value.reason,'hourly_publication_gas_budget');assert.equal(value.relayStatus,429);
+ assert.equal(value.batch,'190');assert.equal(value.healthy,false);
+ assert(!JSON.stringify(value).includes('never-copy'));assert(!('retryAt' in value));
+ // A relative retry embedded in an old halt must not slide a deadline forward
+ // on every health read. Only new matching healthy evidence resumes commands.
+ assert.equal(agentPublicationHealth({...health,ok:true,halted:null},app,2n).healthy,true);
+});
 test('hourly publications are diagnosed separately from generic RPC throttling',()=>{
  const p=agentPublicationHealth({...health,privateToken:'never-copy',pendingDiffs:['do-not-copy']},app,2n);
  assert.equal(p.healthy,false);assert.equal(p.batch,'3600');assert.equal(p.relayStatus,429);assert.equal(p.reason,'hourly_commit_limit');

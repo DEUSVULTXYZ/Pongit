@@ -453,3 +453,42 @@ admission evidence. All identity, code, epoch, grant and ticket checks still
 complete before signing. No command permissions or nonce ownership change.
 Root TypeScript and 812 TypeScript tests pass. The build and actual browser
 qualification of this candidate are still pending at this checkpoint.
+
+## Hourly publication gas budget — 30 September, 17:28 UTC
+
+A different relay failure now pauses tournament match 226 on f202 epoch 2:
+`batch 190` was refused with HTTP 429 and `the control plane has spent its gas
+budget for this hour. try again later`. The matching node reports 189 committed
+batches and nine pending diffs. Preserve this tournament and its exact pending
+commands; no force-close is authorized by this incident.
+
+Evidence in `flow-publication-gas-20260930.json` includes the observed endpoint,
+UTC time and Fly response identifier. The shared publisher still held about
+90,006 test MON at the separately queried latest block. This is not proof of
+wallet insolvency, an RPC requests-per-second quota, or a need to transfer money.
+The reported relative `retryAfterMs` is embedded in the existing halt and must
+not restart a countdown every time health is read. Normal matching-epoch health
+must confirm resumption. No new game fixture is started during the failure.
+
+Source diagnostics now distinguish `hourly_publication_gas_budget` from hourly
+commit count, rejected relay tokens, generic publication throttling and an
+unfunded publisher. Thirteen targeted tests and root typecheck pass; raw relay
+contents remain excluded from public errors. This diagnostic source has not yet
+replaced the deployed engine at this checkpoint.
+
+Admission/engine `a11abf6` were deployed at 17:25:52 UTC with exact source hashes:
+
+- admission image: `sha256:b286700b3b198357b1edeceffdf313c6aba3ce52a6667a53323542871ce16208`
+- engine image: `sha256:578009bed854b28b347b9c46ca35d604b95dc497a7c579723758c9b31a66d1e7`
+- web candidate image: `sha256:ccba719c14b23a57e8f7540978a8d67e428056cb2ccadc9feb802bbb8b8b422f`, built but not public.
+
+The pre-deployment backup `flow-admission-20260930T1725Z` is SHA-verified off VPS:
+
+- agents.dump: `22ac8950061d7445a31ca7374e7807081a8004b423c5d8c57500730376362ddf`
+- operator.dump: `63599e01724796cd1b74448791c912cfbd0984cf08e3c4e2b410f0b722a600df`
+- runtime.tar.gz: `09077caa240effb41f009ffbade1c172e664837678878fb32dd1967b36ba003c`
+
+The first isolated UI attempt failed because SSH port forwarding is prohibited,
+not because the private image was down. Both failed reports are retained. The
+same image's HTML/assets were captured through the authorized file/SSH path for
+browser fixtures; this does not qualify a real player admission.
