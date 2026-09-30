@@ -794,3 +794,41 @@ The sponsor had 56 confirmed operations and no queued/pending rows. A later
 rollback must again check for pending multi-pass intents: an older sponsor
 cannot replay them. Preserve the current signer and journal until resolution.
 Tournament 12 is playing; catalogue migration cannot assume the service drained.
+
+## Deployed scan support and verified replay UI — 30 September, 19:30 UTC
+
+Sponsor cbfe406 started at 19:23:06.387 UTC; agent web cbfe406 at
+19:23:07.467 UTC. All 78 fixture checks passed on the captured built image
+(Chrome and Edge, synthetic API/engine). Public atomic capability remains
+absent, so new multi-pass commands are still qualification-only. Existing
+public requests and all historical one-pass saved operations remain supported.
+No human backend, engine, admission or maintenance service was restarted.
+
+Actual public replay 242 (Classic, 2,007 frames, 4–3) and 248 (Chaos, 246
+frames, 0–7) pass Chrome/Edge at 360/1440: advancing playback, final seeking,
+focus restoration, Escape, body-scroll lock, no overflow, pixel controls and
+measured hover contrast 13.97:1. Screenshots were reviewed. No wallet/engine
+write was involved. This verifies these retained recordings, not all history.
+
+Correction to the earlier contrast claims: string callbacks were initially
+passed to Locator.evaluate as function expressions, which returned no numeric
+result. Those failed assertions are harness failures, not quantitative proof
+of contrast. The corrected callback uses anonymous inline calculations and
+returns an actual number. Earlier snapshots/source still show the old dark
+text on purple; the final screenshots and numeric checks verify the fix. All
+failed reports, including initial address and callback errors, remain retained.
+
+At canonical block 67053742, five open nodes report the expected epochs.
+f202/2 is again halted at batch 573, with 572 committed batches, relay HTTP429
+and reason hourly_publication_gas_budget. Other open nodes answer healthy;
+three cooling nodes do not answer verified health. A repeat at 19:26:19 UTC
+still shows the same halt. No new admission fixture was started during it.
+This does not establish the scope of the relay quota, RPC request limits or
+insufficient wallet balance. Ordinary services retain the live tournament.
+
+The added signed-client scan test and root typecheck pass. No real latency
+claim is made for the deployed scan change until a new actual game succeeds.
+The last valid-session measurement remains 18.490 seconds, failing the target.
+A read-only historical payment-index check found nine PayoutPaid records and
+no other indexed states in pong_human_rules14; it is not new payment or legacy
+withdrawal qualification. Difficulty migration and the full release remain open.
