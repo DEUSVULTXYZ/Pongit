@@ -250,3 +250,18 @@ with three SHA-256 matches on the off-VPS copy:
 Pending scheduled recoveries remain 212 at 16:10:45 UTC and 213 at 16:20:56 UTC.
 Existing services own them. No additional close, game fixture, provider change,
 fund transfer or nonce writer is authorized by this note.
+
+## Final checkpoint — 30 September, 15:41 UTC
+
+The final post-experiment backup `flow-probe-final-20260930` is copied off VPS;
+all three SHA-256 hashes match:
+
+- agents.dump: `4ea5923322a3ce04657fce828f9309f6ce1ad7cbd8bfb60d88b51c5a0e929b01`
+- operator.dump: `ffda9247d7fcff7f649e6ab5535ffb0f268b2678f46011191297b11ac3877193`
+- runtime.tar.gz: `d42dcbf4979609b01d377dfcd1ea8826f8da229c3ef8c21ed92194c47d986b96`
+
+The validated engine restarted at 15:37:09 UTC; human relayer image and its
+September 24 startup timestamp are unchanged. No fixture driver remains active.
+The follow-up retains the two bounded fixture-release checks before pausing on
+an unresolved external publication-authentication blocker. Current monetary
+reserve is not the cause of these exact authentication refusals.
