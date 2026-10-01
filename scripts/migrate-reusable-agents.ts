@@ -10,6 +10,7 @@ import {retryOperatorContention} from '../shared/operator-contention';
 import {validateAgentPoolManifest,pooledHouseBots} from '../shared/agent-pool';
 import {agentIndexDeployments} from '../shared/agent-index-manifest';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
+import {agentCatalogMigration} from '../shared/agent-catalog-migration';
 
 assert.equal(process.env.PONG_CONTINUING_AGENT_MIGRATION,'authorized-closed-source-testnet');
 assert.equal(process.getuid?.(),1000);
@@ -25,7 +26,6 @@ assert(process.env.PONG_REUSABLE_HUB_V3===undefined||v3,'Unreviewed target hub')
 const hub=v3?NO_LEASE_HUB:source.hub,arenaArtifact=v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const rebalanced=process.env.PONG_HOUSE_POLICY==='progressive-v1';
 assert(process.env.PONG_HOUSE_POLICY===undefined||rebalanced,'Unreviewed house policy');
-const catalogArtifact=rebalanced?'RebalancedAgentCatalog':'MigratingAgentCatalog';
 const sourceIndexBytes=await readFile('/metadata/source-agent-index.json');
 const sourceIndex=agentIndexDeployments(JSON.parse(sourceIndexBytes.toString()),10143,15);
 const indexedSources=[source,...(source.history??[])].filter(s=>s.rulesVersion===15);
@@ -46,13 +46,20 @@ try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoExc
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 try{
  const names=['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
-  'HouseInstances',catalogArtifact,...(rebalanced?['ProgressiveHousePolicies']:[]),'ContinuingFiveLaneAgentPool','PublishedResultVerifier','ContinuingAgentTournaments','ContinuingAgentRatings',
+  'HouseInstances','RebalancedAgentCatalog',...(rebalanced?['ProgressiveHousePolicies']:[]),'ContinuingFiveLaneAgentPool','PublishedResultVerifier','ContinuingAgentTournaments','ContinuingAgentRatings',
   'ContinuingAgentQualifications','ContinuingAgentChallenges',arenaArtifact,
   // These inherited/source ABIs are read even when their bytecode is not deployed.
   'ReusableAgentPool','ReusableAgentArena','MigratingAgentCatalog','AgentCatalog','AgentTournaments','AgentPublishedRatings','AgentChallenges'];
  await t.preflight(names);
  const read=async(name:string,address:Address,method:string,args:readonly unknown[]=[])=>t.base.readContract({address,abi:(await t.artifact(name)).abi,functionName:method,args}) as Promise<any>;
  const codeHash=async(address:Address)=>{const code=await t.base.getCode({address});assert(code&&code!=='0x');return keccak256(code);};
+ const oldPolicies=await read('AgentCatalog',source.catalog,'houseController') as Address;
+ const oldPolicyHash=await codeHash(oldPolicies);
+ assert.equal(oldPolicyHash,await read('AgentCatalog',source.catalog,'houseCodeHash'));
+ const desiredPolicy=rebalanced?(await t.artifact('ProgressiveHousePolicies')).deployedBytecode.object as Hex:undefined;
+ if(desiredPolicy)assert(/^0x[\da-f]+$/i.test(desiredPolicy),'House policy must not require unresolved libraries');
+ const catalogMigration=agentCatalogMigration(oldPolicyHash,desiredPolicy?keccak256(desiredPolicy):oldPolicyHash);
+ const catalogArtifact=catalogMigration.artifact;
  const frozen=async()=>{
   const [poolOpen,publicOpen,bookOpen,queueOpen,owner]=await Promise.all([
    read('ReusableAgentPool',source.pool,'admissions'),read('ReusableAgentPool',source.pool,'publicAdmissions'),
@@ -88,6 +95,10 @@ try{
  assert.equal(r.housePolicy??'inherited',rebalanced?'progressive-v1':'inherited','Cannot change a journaled controller migration');
  assert.equal(r.source.indexHash,keccak256(sourceIndexBytes),'Source index metadata changed');
  assert.deepEqual(r.source.hashes,hashes,'Source code changed');assert.deepEqual(r.source.manifest,source,'Source manifest changed');
+ if(r.catalogMigration)assert.deepEqual(r.catalogMigration,catalogMigration,'Journaled controller migration changed');
+ if(r.modules?.MigratingAgentCatalog)assert.equal(catalogArtifact,'MigratingAgentCatalog','Existing catalogue cannot change migration type');
+ if(r.modules?.RebalancedAgentCatalog)assert.equal(catalogArtifact,'RebalancedAgentCatalog','Existing catalogue cannot change migration type');
+ r.catalogMigration=catalogMigration;await save();
  const bridge=privateKeyToAccount(r.admissionKey).address;
  const deploy=async(name:string,args:readonly unknown[]=[],instance=name)=>{
   const address=await retryOperatorContention(()=>t.deploy(name,args,instance));r.modules??={};r.modules[instance]=address;await save();return address;
@@ -97,10 +108,9 @@ try{
  const dynamics=await deploy('ChaosDynamics',[effects,modifiers]),contacts=await deploy('ChaosContacts',[dynamics]),rally=await deploy('ChaosRally');
  const physics=await deploy('ChaosPhysics',[effects,rally,dynamics,contacts]),beacon=await deploy('DrandEvmnet'),draws=await deploy('ChaosDrawRules');
  const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]);await deploy('HouseInstances');
- const oldPolicies=await read('AgentCatalog',source.catalog,'houseController') as Address;
- assert.equal(await codeHash(oldPolicies),await read('AgentCatalog',source.catalog,'houseCodeHash'));
- const policies=rebalanced?await deploy('ProgressiveHousePolicies'):oldPolicies;r.modules.HousePolicies=policies;
- const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(rebalanced?[policies]:[])]);
+ const policies=catalogMigration.changed?await deploy('ProgressiveHousePolicies'):oldPolicies;r.modules.HousePolicies=policies;
+ assert.equal(await codeHash(policies),catalogMigration.targetPolicyHash,'Target controller differs from the journaled migration');
+ const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(catalogMigration.changed?[policies]:[])]);
  if(stage==='prepare'){
   assert(!await read('MigratingAgentCatalog',catalog,'importStarted'),'Preparation cannot resume an active import');
   assert(!await read('AgentCatalog',catalog,'setupSealed'));
@@ -189,4 +199,9 @@ try{
   transactions:(await t.db.query('SELECT id,hash,status FROM il_lifecycle_jobs WHERE id LIKE $1 ORDER BY nonce',[prefix+':%'])).rows},null,2));
  console.log(JSON.stringify({phase:r.phase,pool,identities:String(identities),family:source.family,publiclyEnabled:false}));
  }
+}catch(error){
+ // Deployment simulations contain creation calldata. Keep only the concise
+ // reason in operator logs; signed commands stay in the original nonce journal.
+ console.error(JSON.stringify({stage,error:String((error as any)?.shortMessage??(error as Error).message)
+  .split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240)}));process.exitCode=1;
 }finally{await t.close();}
