@@ -792,3 +792,29 @@ cross-hub five-lane counter and identity continuation; the initial fixture
 without deployed target-hub code failed and remains preserved. Root typecheck
 and diff secret checks pass. The private recovery runner permits only normal
 closure/release of these two captured results after verified off-VPS backup.
+
+## Normal closure and browser origin repair, 07:43 UTC
+
+The two-game v3 arena normally closed in transaction
+0x3bc8dbae165559686b473f0647e5b6135ba4b650f2adff926c78fadd36432a45,
+block 67198498. The actual release deadline is 08:32:28 UTC. Its verified root
+is 0x2565a201d13577520c7130ff69de5bf44b150871ef45d70302ea0c13048e2918,
+count 2 and 29 batches. Both private workers remain stopped; no opening,
+forced closure or public migration is authorized by this recovery script.
+The 11-file control-20261001T0738Z backup, including the recovery runner and
+configuration, is SHA256-verified off VPS.
+
+The empty f455 v3 marker was released at 07:39:33 UTC in
+0x7614f6e3e6e755aa09c30d3c20ae3434cd14f3388272a4aaf60f5cb55be5d07c.
+Canonical block 67199899 confirms None and its exact sealed empty root/count 0.
+An earlier release invocation at 07:37:36 failed the hub deadline check before
+creating any transaction. That original failure is retained separately.
+Neither empty test may be reopened or released again.
+
+A browser integration regression reproduced the CSP rejection of actual v3
+origins. The correction permits only the exact application-derived il2-eu
+origin, only with the pinned v3 hub and generation 5. Legacy origin handling
+and historical read-only routing remain unchanged. Arbitrary Fly hosts, wrong
+apps, ports and mismatched hubs are rejected. All 10 focused tests and root
+typecheck pass; the pre-fix failure remains in the qualification artifacts.
+This change is not deployed publicly and browser gameplay remains to qualify.

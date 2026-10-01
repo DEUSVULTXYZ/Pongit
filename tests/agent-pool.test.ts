@@ -2,6 +2,7 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import {validateAgentPoolManifest,pooledHouseBots,progressiveHouseBots,scheduledTournament,type AgentPoolManifest} from '../shared/agent-pool';
 import {type Address} from 'viem';
 import {agentPoolCspOrigins} from '../shared/agent-pool-csp';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 function manifest():AgentPoolManifest{return{version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};}
@@ -75,6 +76,18 @@ test('the browser policy accepts reusable arenas without widening origins or adm
  for(const [version,rulesVersion] of [[2,10],[3,11]])assert(agentPoolCspOrigins({...m,version,rulesVersion}).includes('wss://'));
 });
 
+
+test('the pinned v3 browser policy binds each origin to its application without widening historical access',()=>{
+ const m:AgentPoolManifest={...manifest(),version:5,rulesVersion:15,hub:NO_LEASE_HUB,maxMatches:5,
+  lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',
+  arenas:[1,2,3,4,5].map(n=>{const app=`0x${n.toString().repeat(40)}` as Address;
+   return {app,node:`https://il2-eu-${app.slice(2,18)}.fly.dev`,runtimeHash:`0x${'a'.repeat(64)}`};})};
+ assert.deepEqual(agentPoolCspOrigins(m).split(' '),m.arenas.flatMap(a=>[a.node,a.node.replace('https:','wss:')]));
+ assert.throws(()=>agentPoolCspOrigins({...m,hub:addr(1)}),/Unapproved/);
+ for(const node of [m.arenas[1].node,'https://il2-eu-123.fly.dev','https://il2-eu-1111111111111111.fly.dev:444',
+  'https://il2-eu-1111111111111111.fly.dev.evil.test','https://il-1111111111111111.fly.dev'])
+  assert.throws(()=>agentPoolCspOrigins({...m,arenas:m.arenas.map((a,i)=>i===0?{...a,node}:a)}),/Unapproved/);
+});
 
 test('five lanes require the new authority and cannot misrepresent preview qualification',()=>{
  const old=manifest();const m:AgentPoolManifest={...old,version:5,rulesVersion:15,maxMatches:5,
