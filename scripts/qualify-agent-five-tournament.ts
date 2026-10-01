@@ -14,6 +14,7 @@ import {agentCatalogAbi as catalogAbi} from '../shared/abi-AgentCatalog';
 import {agentChallengesAbi as queueAbi} from '../shared/abi-AgentChallenges';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {NO_LEASE_HUB,hubLeaseValid} from '../shared/hub-lease';
 
 assert.equal(process.env.PONG_FIVE_TOURNAMENT,'bounded-private');
 assert.equal(process.getuid?.(),1000);
@@ -24,6 +25,9 @@ const deadline=Date.parse(process.env.PONG_FIVE_TOURNAMENT_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<Date.now()+(id>=3n?180:65)*60_000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 assert(r.maxMatches===5&&!r.continuation);
+const v3=process.env.PONG_FIVE_TOURNAMENT_V3==='reviewed-private';
+assert(!process.env.PONG_FIVE_TOURNAMENT_V3||v3);
+if(v3){assert.equal(r.common.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());assert.equal(r.common.pool.toLowerCase(),'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');}
 const file=`artifacts/reusable-candidate/five-tournament-${id}${attempt>1?'-attempt'+attempt:''}.json`;
 const report:any={startedAt:new Date().toISOString(),deadline,pool:r.common.pool,tournament:String(id),fixtures:[],passed:false,
  scope:'One real private tournament. Existing fixtures are verified canonically; no score injection, deadline extension, lifecycle writes or full-soak claim.'};
@@ -119,7 +123,7 @@ try{
   const candidates=await Promise.all(r.arenas.map(async(a:any)=>{
    const d=await readHubDelegation(t.base,r.common.hub,a.app,block.number),h=health.find(v=>v.app===a.app.toLowerCase());
    // Conservative diagnostic admission bound, not a qualified production policy.
-   const enabled=d.status===1&&d.expiresAt>block.timestamp+420n&&d.batchIndex<1200n&&h?.stage==='available'&&String(h.detail.epoch)===String(d.epoch);
+   const enabled=d.status===1&&hubLeaseValid(r.common.hub,d.expiresAt,block.timestamp,420n)&&d.batchIndex<1200n&&h?.stage==='available'&&String(h.detail.epoch)===String(d.epoch);
    return{app:a.app,epoch:d.epoch,active:d.status===1,enabled,batches:d.batchIndex};
   }));
   const key=JSON.stringify(candidates.map(a=>[a.app,String(a.epoch),a.enabled]));

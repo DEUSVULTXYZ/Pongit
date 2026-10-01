@@ -17,6 +17,9 @@ import {preparePoolActive} from './agent-pool-active';
 import {hubHasNoLease,hubLeaseValid} from './hub-lease';
 
 export const POOL_PLAYER_GAS=14_800_000n;
+class UnsentFenceExpired extends Error {
+ constructor(){super('Arena authorization is awaiting a fresh observation');}
+}
 /** One node connection and tab journal per watched arena. The family permission
  * was bound on Monad before delegation; no root grant travels with movements.
  * Watching/recovering remains possible when admissions or authorization expire.
@@ -36,12 +39,12 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  let sender:CompactArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
  let fenceGeneration=0;
  let fencePending:Promise<void>|undefined,fenceTimer:ReturnType<typeof setTimeout>|undefined;
- const prefetchFence=()=>{
+ const prefetchFence=(retry=false)=>{
   clearTimeout(fenceTimer);if(stopped||!sender)return;
   fenceTimer=setTimeout(()=>{
    if(stopped||!sender)return;
-   void refreshFence().catch(()=>{}).finally(prefetchFence);
-  },1500);
+   void refreshFence().then(()=>prefetchFence(),()=>prefetchFence(true));
+  },retry?1500:Math.max(250,Math.min(1500,controlsUntil-now()-1500)));
   // Node-side qualification clients must still close explicitly, but a timer
   // alone must not keep a stopped fixture process alive.
   (fenceTimer as any).unref?.();
@@ -137,7 +140,12 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // that entire handshake every three seconds stalls input and discards the
    // sender's known nonce. Only the mutable hub fence needs this cadence; the
    // contract still checks active permission/expiry on every signed command.
+   const prefetched=!!fencePending;
    await refreshFence();
+   // A slow background observation may already be stale when it resolves.
+   // Take one new observation instead of treating that local race as a lost
+   // command. Never extend the old fence or retry a failed network response.
+   if(prefetched&&now()>=controlsUntil)await refreshFence();
    if(now()>=controlsUntil)throw Error('Arena authorization is awaiting a fresh observation');
   }catch(error){throw error;}
  }
@@ -166,11 +174,24 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   let boundArgs:readonly unknown[]=[];
   const latestArgs=()=>{
    if(stopped)throw Error('Arena controls have stopped');
-   if(now()>=controlsUntil)throw Error('Arena authorization is awaiting a fresh observation');
+   if(now()>=controlsUntil)throw new UnsentFenceExpired();
    const current=typeof args==='function'?args():args;
    return boundArgs=reusable?[epoch,...current]:current;
   };
-  try{const result=await sender!.send(name,latestArgs);return verify(await feed.receipt(id,result,name,boundArgs,player));}
+  try{
+   let result;
+   try{result=await sender!.send(name,latestArgs);}
+   catch(error){
+    // The nonce read/signature can outlive a valid fence. This typed exception
+    // originates only before transport/journaling, so no transaction was sent.
+    // Refresh once and retain this sender's nonce and the newest unsent intent.
+    // Missing receipts or any remote error still take normal reconciliation.
+    if(!(error instanceof UnsentFenceExpired)||journal.pending(session.grant.key))throw error;
+    await authorizeControls();
+    result=await sender!.send(name,latestArgs);
+   }
+   return verify(await feed.receipt(id,result,name,boundArgs,player));
+  }
   catch(error){
    const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));
    if(terminal){intention=undefined;return terminal;}

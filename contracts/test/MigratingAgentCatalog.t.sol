@@ -88,6 +88,22 @@ contract MigratingAgentCatalogTest is Test {
         vm.etch(builtin,hex"00");
         vm.expectRevert("official controller changed");new MigratingAgentCatalog(old,address(old).codehash,address(this),address(this));
     }
+    function testPreparationWhileLiveImportsOnlyTheFinalClosedSnapshot() public {
+        pool.gates(true,true);
+        next=_candidate(address(old).codehash,address(this));
+        uint256 preparedRevision=old.revision();
+        assertFalse(next.importStarted());assertEq(next.count(),0);
+        vm.expectRevert("source admissions open");next.startImport();
+        _register(old,address(0x4001),1);pool.setNonce(42);_finishTournament();
+        vm.prank(vm.addr(CREATOR));old.setAvailable(COMMUNITY,false);
+        pool.gates(false,false);_import();
+        assertGt(next.sourceRevision(),preparedRevision);
+        assertEq(next.sourceRevision(),old.revision());assertEq(next.sourceMatchNonce(),42);
+        assertEq(next.sourceTournamentCount(),1);assertEq(next.count(),old.count());
+        assertEq(next.at(9),address(0x4001));assertFalse(next.identity(COMMUNITY).available);
+        assertEq(next.nonces(vm.addr(CREATOR)),old.nonces(vm.addr(CREATOR)));
+        for(uint256 i;i<old.count();i++)assertEq(abi.encode(next.identity(old.at(i))),abi.encode(old.identity(old.at(i))));
+    }
     function testAllSourceAdmissionGatesMustClose() public {
         pool.gates(true,false);vm.expectRevert("source admissions open");next.startImport();
         pool.gates(false,true);vm.expectRevert("source admissions open");next.startImport();

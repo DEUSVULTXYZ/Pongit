@@ -114,6 +114,28 @@ test('nonce lookup coalesces unsent movement and a stopped client sends nothing'
  }
 });
 
+test('a fence expiring during the first nonce read refreshes before sending only the latest intent',async()=>{
+ const f=fixture(15);let entered!:()=>void,release!:()=>void;
+ const waiting=new Promise<void>(r=>entered=r),gate=new Promise<void>(r=>release=r);
+ const original=f.node.getTransactionCount;
+ f.node.getTransactionCount=async()=>{entered();await gate;f.advance(3100);return original();};
+ const first=f.player.move(1);await waiting;
+ const last=f.player.move(-1);release();await Promise.all([first,last]);
+ assert.equal(f.sent.length,1);assert.equal(f.state.state.leftDir,-1);
+ assert.equal(parseTransaction(f.sent[0]).nonce,0);assert.equal(f.nonceReads(),1);
+ assert.equal(f.bindings(),1,'A local pre-send expiry must not reset the signer');
+ await f.player.move(0);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
+});
+
+test('a pre-send fence retry never sends after canonical closure or a failed fresh read',async()=>{
+ for(const failure of ['closed','timeout']){
+  const f=fixture(15);const original=f.node.getTransactionCount;
+  f.node.getTransactionCount=async()=>{f.advance(3100);if(failure==='closed')f.hub.status=2;else f.failBase(true);return original();};
+  await assert.rejects(f.player.move(1),failure==='closed'?/recovering/:/timeout/);
+  assert.equal(f.sent.length,0);assert.equal(f.player.journal.pending(f.session.grant.key),undefined);f.player.close();
+ }
+});
+
 test('reusable controls bind epoch and logical ID, recover after F5 and keep the fixed permission slot',async()=>{
  const f=fixture(15);f.state.phase=1;await f.player.ready();await f.player.ready();
  assert.equal(f.sent.length,1);const ready=decodeFunctionData({abi:reusableAgentArenaAbi,data:parseTransaction(f.sent[0]).data!});
@@ -253,14 +275,23 @@ test('recovery waits for the current intent and exposes its second failure inste
 });
 
 
-test('slow prefetch never blocks a valid movement and cannot extend authorization after its original expiry',async()=>{
+test('slow prefetch never blocks a valid movement and a new observation recovers an expired cached fence',async()=>{
  const f=fixture(15);await f.player.move(1);f.advance(1600);
  let release!:()=>void;const gate=new Promise<void>(r=>release=r);f.hold(()=>gate);
  await f.player.move(-1);assert.equal(f.sent.length,2,'Cached valid fence avoids the slow Monad read');
  f.advance(4000);let finished=false;const next=f.player.move(1).then(()=>{finished=true;});
  await new Promise(r=>setImmediate(r));assert.equal(f.sent.length,2);assert.equal(finished,false);
- release();await assert.rejects(next,/fresh observation/);assert.equal(f.sent.length,2);
- f.hold();await f.player.move(1);assert.equal(f.sent.length,3);f.player.close();
+ release();await next;assert.equal(f.sent.length,3);
+ assert.equal(parseTransaction(f.sent[2]).nonce,2);assert.equal(f.bindings(),1);f.player.close();
+});
+
+test('repeated slow fence observations fail closed without an unbounded retry or a command',async()=>{
+ const f=fixture(15);await f.player.move(1);f.advance(1600);
+ let release!:()=>void;const gate=new Promise<void>(r=>release=r);let reads=0;
+ f.hold(async()=>{reads++;await gate;f.advance(3100);});
+ await f.player.move(-1);assert.equal(f.sent.length,2);
+ f.advance(3100);const next=f.player.move(1);release();
+ await assert.rejects(next,/fresh observation/);assert.equal(f.sent.length,2);assert.equal(reads,2);f.player.close();
 });
 
 test('a release replaces the accepted queued movement even while processed physics still says stopped',async()=>{

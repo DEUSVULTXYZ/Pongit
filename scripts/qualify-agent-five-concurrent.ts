@@ -55,10 +55,25 @@ const allReady=new Promise<void>((resolve,reject)=>{releaseReady=resolve;rejectR
 const extract=(receipt:any)=>{const event=receipt.logs.filter((l:any)=>l.address.toLowerCase()===m.pool.toLowerCase()).flatMap((l:any)=>{try{const e=decodeEventLog({abi:poolAbi,data:l.data,topics:l.topics});return e.eventName==='AdmissionIssued'?[e]:[];}catch{return[];}})[0] as any;assert(event);const v=event.args.ticket;return{chainId:10143 as const,app:v.arena as Address,epoch:String(v.epoch),id:String(v.matchId)};};
 try{
  const predecessor=process.env.PONG_FIVE_RETRY_FROM;
- let previous:any;
+ let previous:any,previousCompleted=false;
  if(predecessor){assert(/^[1-9]$/.test(predecessor)&&Number(predecessor)<Number(run));previous=JSON.parse(readFileSync(`artifacts/reusable-candidate/five-concurrent-${predecessor}.json`,'utf8'));
   assert(previous.finishedAt&&!previous.passed&&previous['close-pool']&&previous['close-book']);
-  assert(previous.people.every((p:any)=>!p.ref),'A prior human admission requires its own recovery, not replacement');
+  if(previous.people.some((p:any)=>p.ref)){
+   assert(v3&&previous.people.length===4&&previous.people.every((p:any)=>p.ref)&&previous.tournament,
+    'Partial or legacy admissions require their own recovery');
+   const completion=[];
+   for(const ref of [previous.tournament,...previous.people.map((p:any)=>p.ref)]){
+    const result=(await reader.match(ref)).value.result;
+    assert(result?.status===3,'Every previous game must finish and publish normally before another trial');
+    completion.push({ref,result});
+   }
+   for(let i=0;i<5;i++)assert.equal((await read(m.pool,poolAbi,'laneRecord',[i])).ref.id,0n,'Previous trial still owns a lane');
+   const ref={chainId:10143n,arena:previous.tournament.app,epoch:BigInt(previous.tournament.epoch),id:BigInt(previous.tournament.id)};
+   const record=await read(m.pool,poolAbi,'record',[ref]);assert(record.captured&&record.tournament===1n);
+   const fixture=await read(m.tournaments,bookAbi,'fixture',[1n,record.fixture]);
+   if(!fixture.resolved)await write('synchronize-previous',m.tournaments,bookAbi,'synchronize',[1n,record.fixture]);
+   report.previousCompletion=completion;previousCompleted=true;
+  }
   report.previousTrial=predecessor;
  }
  const lane=await read(m.pool,poolAbi,'laneRecord',[0]);
@@ -67,7 +82,7 @@ try{
   const hub=await readHubDelegation(base,m.hub,arena.app),block=await base.getBlock();
   assert(hub.status===1&&hub.epoch===1n&&hub.batchIndex<2000n&&hubLeaseValid(m.hub,hub.expiresAt,block.timestamp,1800n),'Review original epoch reserve');
   const h=(await db.query("SELECT stage FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'",[arena.app.toLowerCase()])).rows[0];
-  assert(h?.stage==='available'||previous&&h?.stage==='playing'&&lane.ref.arena.toLowerCase()===arena.app.toLowerCase()&&String(lane.ref.id)===previous.tournament.id,'Only the preserved tournament may already be playing');
+  assert(h?.stage==='available'||previous&&!previousCompleted&&h?.stage==='playing'&&lane.ref.arena.toLowerCase()===arena.app.toLowerCase()&&String(lane.ref.id)===previous.tournament.id,'Only the preserved tournament may already be playing');
  }
  assert.equal(await read(m.pool,poolAbi,'publicAdmissions'),false);assert.equal(await read(m.tournaments,bookAbi,'count'),previous?1n:0n);
  const catalogue=(await reader.catalog(0n,32)).value;
@@ -79,7 +94,7 @@ try{
  const next=await read(m.tournaments,bookAbi,'nextFixture',[1n]);
  let archetype:Address;
  if(next[0]===255){
-  assert(previous&&lane.ref.id>0n,'Do not invent a tournament fixture');
+  assert(previous&&!previousCompleted&&lane.ref.id>0n,'Do not invent a tournament fixture');
   assert.equal((await reader.match(previous.tournament)).value.result,null,'A published fixture must be synchronized before retry');
   report.tournament=previous.tournament;report.adoptedExistingTournament=true;archetype=lane.a;
  }else{

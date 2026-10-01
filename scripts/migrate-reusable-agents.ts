@@ -1,5 +1,6 @@
-// Closed-source migration only. This never drains production, starts a game,
-// transfers old funds, or claims hosted qualification. Every write is journaled.
+// Preparation may deploy immutable modules while the predecessor stays live.
+// Import still requires a drained, closed source. Neither stage drains production,
+// starts a game, transfers old funds or claims hosted qualification.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {keccak256,type Address,type Hex} from 'viem';
@@ -12,6 +13,8 @@ import {NO_LEASE_HUB} from '../shared/hub-lease';
 
 assert.equal(process.env.PONG_CONTINUING_AGENT_MIGRATION,'authorized-closed-source-testnet');
 assert.equal(process.getuid?.(),1000);
+const stage=process.env.PONG_CONTINUING_STAGE??'import';
+assert(stage==='prepare'||stage==='import','Explicit preparation or closed-source import only');
 const prefix=process.env.PONG_REUSABLE_AGENT_PREFIX!;
 assert(/^reusable-agents-\d{8}(?:-[1-9]\d?)?$/.test(prefix));
 const humans=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(humans.length);
@@ -60,7 +63,8 @@ try{
   assert(!poolOpen&&!publicOpen&&!bookOpen&&!queueOpen&&lanes.every(l=>BigInt(l)===0n),'Source must already be drained and closed');
   assert.equal(owner.toLowerCase(),t.account.address.toLowerCase());
  };
- await frozen();
+ if(stage==='import')await frozen();
+ else assert.equal((await read('ReusableAgentPool',source.pool,'owner')).toLowerCase(),t.account.address.toLowerCase());
  const anchor=await t.base.getBlock();assert(anchor.hash);
  assert.equal((await t.base.getBlock({blockNumber:BigInt(audit.block)})).hash,audit.blockHash,'Seed audit block reorganized');
  // The audit must include every transaction before the irreversible seed seal.
@@ -72,7 +76,7 @@ try{
  if(!r){r={prefix,hub,rulesVersion:15,countdownClock:'engine-ticks-v1',publicationProbe:'epoch-marker-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
   arenaAdmissions:'verified-epoch-v1',housePolicy:rebalanced?'progressive-v1':'inherited',genesis:String(await read('AgentPublishedRatings',source.ratings,'genesisTime')),
   source:{manifest:source,indexHash:keccak256(sourceIndexBytes),hashes,block:String(anchor.number),blockHash:anchor.hash,emptySeedAudit:auditHash,seal},
-  admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'importing-closed',createdAt:new Date().toISOString()};await save();}
+  admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:stage==='prepare'?'preparing':'importing-closed',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.prefix,prefix);assert.equal(r.source.emptySeedAudit,auditHash);assert.equal(r.arenaCount,arenaCount);
  assert.equal((r.common?.hub??r.hub??source.hub).toLowerCase(),hub.toLowerCase(),'Target hub changes require a new migration namespace');
  if(v3){
@@ -97,6 +101,21 @@ try{
  assert.equal(await codeHash(oldPolicies),await read('AgentCatalog',source.catalog,'houseCodeHash'));
  const policies=rebalanced?await deploy('ProgressiveHousePolicies'):oldPolicies;r.modules.HousePolicies=policies;
  const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(rebalanced?[policies]:[])]);
+ if(stage==='prepare'){
+  assert(!await read('MigratingAgentCatalog',catalog,'importStarted'),'Preparation cannot resume an active import');
+  assert(!await read('AgentCatalog',catalog,'setupSealed'));
+  r.phase='prepared-unimported';r.preparedAt=new Date().toISOString();await save();
+  await mkdir('artifacts/reusable-candidate',{recursive:true});
+  await writeFile('artifacts/reusable-candidate/migration-prepared.json',JSON.stringify({at:r.preparedAt,prefix,
+   phase:r.phase,sourcePool:source.pool,sourceCodeHashes:hashes,modules:r.modules,importStarted:false,
+   qualified:false,publiclyEnabled:false},null,2));
+  console.log(JSON.stringify({phase:r.phase,catalog,importStarted:false,publiclyEnabled:false}));
+ }else{
+ // Recheck after provisioning. The final snapshot is captured by startImport,
+ // never from the potentially older preparation block or a local identity list.
+ await frozen();
+ const importAnchor=await t.base.getBlock();
+ r.importAnchor??={block:String(importAnchor.number),hash:importAnchor.hash};await save();
  await write('catalog-start','MigratingAgentCatalog',catalog,'startImport');
  const pool=await deploy('ContinuingFiveLaneAgentPool',[catalog,hub,t.account.address,bridge,hashes.pool]);
  const verifier=await deploy('PublishedResultVerifier',[pool,hub]);
@@ -169,4 +188,5 @@ try{
   source:r.source,arenas:r.arenas,bots:r.bots,modules:r.modules,serviceOperators:r.serviceOperators,qualified:false,publiclyEnabled:false,
   transactions:(await t.db.query('SELECT id,hash,status FROM il_lifecycle_jobs WHERE id LIKE $1 ORDER BY nonce',[prefix+':%'])).rows},null,2));
  console.log(JSON.stringify({phase:r.phase,pool,identities:String(identities),family:source.family,publiclyEnabled:false}));
+ }
 }finally{await t.close();}
