@@ -903,3 +903,79 @@ includes new worker configs, candidate/operator databases, scoped keys, journals
 and evidence; newer browser/driver reports still require a final refresh.
 Original engine/archive stop time remains 08:38:41; reader/sponsor 08:39:21.
 8194 release remains no earlier than 08:32:28 and only when lanes are idle.
+
+## Five simultaneous matches and catalogue qualification, 09:03 UTC
+
+The old bounded workers stopped at their original deadlines. Trial 6 finished
+at 08:36:44 with four published results, completing the eight house agents'
+Classic and Chaos mode qualification. This does not establish a statistical
+difficulty curve. The 8194 epoch 1 normal release completed at 08:37:37 in
+0xf7b6e965d9c7d0c42138cb00b0da113d094f9480adf29bde23e199c71908c33b.
+Canonical block 67211431 confirms None, the exact previously recorded root and
+two sealed results. Do not repeat this release or the earlier marker releases.
+
+Five-concurrent trial 1 failed: a control authorization expired while its
+prefetch or initial nonce read completed. All five matches subsequently
+finished and were captured normally; the original failed report is retained.
+Commit a32aec0 refreshes an expired successful prefetch once and retries only
+a typed, definitely unsent fence failure. The three-second fence remains
+unchanged; network uncertainty still uses the existing nonce journal.
+All 32 player tests, 883 TypeScript tests and root typecheck pass.
+
+Trial 2 passed at 08:55:04.450. Tournament match 23 and four friendly copies of
+the same archetype (matches 24–27) overlapped for 33,893 ms. Every controller
+sent 100 direction changes; confirmation p95 was 144.40, 212.74, 157.93 and
+211.24 ms. All five results published and were captured. Tournament score was
+7–2; challenges ended 2–7, 2–7, 1–7 and 1–7. These are actual hosted games with
+synthetic owners, not browser, physical-passkey or continuous-service proof.
+Evidence: v3-games-6033dbe/evidence/five-concurrent-2.json. The first failed
+trial is unchanged. Private pool 550f remains a fresh season, not a migration.
+
+The sole catalogue window is pongit-v3-catalogue-window1-7416e8c, started
+08:55:47 with original deadline 09:13:47. It opens only private actual gates,
+expects exactly two browser requests, Classic and Chaos, and closes on success,
+failure or deadline. Do not run another admission fixture concurrently. Its
+ready time is 08:56:21.576. Two browser setup attempts failed before creating
+any request: the first before readiness, the second because local web runtime
+homepage flags were absent. Their reports remain failed. The corrected actual
+build runs locally on 4197 with private API routing via SSH stdio; production
+and SSH configuration are unchanged. Chrome attempt 3 is now running.
+
+Private catalogue reader/sponsor started at 08:55:57 and stop at 09:15:57.
+Engine/archive workers started at 08:38:57 and stop at 09:28:57. These deadlines
+must not be extended. Reader metadata enables only private preview with a real
+five-match evidence hash; qualified remains false. Original metadata is
+unchanged. All 11 files of control-20261001T0857Z are SHA256-verified off VPS.
+They include original operator and private databases, scripts and journals.
+
+Migration preparation now permits deployment of unimported modules/policies
+while the source remains active, then takes the final snapshot at startImport.
+Seventy targeted Solidity tests pass. No public migration is deployed. The
+import-dependent pool and qualification sequence still require validation.
+Source 7416e8c is published; the browser finally-handler has a local change to
+preserve its report when saving a failed authenticator also fails.
+
+Remaining gates include real catalogue timing, all four complete tournament
+formats, seven-way human/agent overlap, reserve and renewal, compatible final
+migration, finances/replays and the unchanged 24-hour trial. Public human and
+agent runtime remain unchanged during these private tests. No funding request
+is needed; the user authorizes necessary test MON spending without repeated
+approval. Existing signer journals remain authoritative.
+
+## Real catalogue observations and fixture transport correction, 09:12 UTC
+
+Classic Chrome match 28 completed 2–7, published and captured. F5 and 220 input
+confirmations passed; confirmation p95 was 17.86 ms, local response 15.9 ms,
+player/spectator frame p95 17.2/17.1 ms and maximum holds 366.9/366.4 ms.
+No correction jump was observed. The full first-account admission took
+17.491 seconds and fails the eight-second gate; it includes first authorization,
+so it is not a valid-session measurement. The report remains failed overall.
+
+The following Edge setup failed before any POST or challenge. The private JSON
+bridge buffered SSE responses indefinitely, exhausting its four read workers.
+Actual API requests then timed out at 25 seconds. This is a qualification
+transport failure, not evidence of production latency. The bridge now rejects
+SSE explicitly, allowing the application's real bounded polling fallback;
+engine WebSockets remain direct. This limitation is declared in subsequent
+reports. No production endpoint or response content was changed. A new bounded
+Edge Chaos attempt is running within the original catalogue-window deadline.

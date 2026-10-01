@@ -15,6 +15,8 @@ import {measuredFetch} from '../shared/rpc-metrics';
 
 assert.equal(process.env.PONG_PRIVATE_CATALOGUE,'two-private-browser-matches');
 assert.equal(process.getuid?.(),1000);
+const trial=Number(process.env.PONG_PRIVATE_CATALOGUE_TRIAL??'1');
+assert(Number.isInteger(trial)&&trial>=1&&trial<=3);
 const deadline=Date.parse(process.env.PONG_PRIVATE_CATALOGUE_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<Date.now()+20*60_000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
@@ -22,7 +24,12 @@ const m=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.
 assert(!m.enabled&&!m.tournamentsEnabled&&!r.continuation);
 assert.equal(m.pool.toLowerCase(),'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');
 assert.equal(m.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());
-const root='artifacts/reusable-candidate',file=root+'/catalogue-window-1.json';
+const root='artifacts/reusable-candidate',file=root+`/catalogue-window-${trial}.json`;
+if(trial>1){
+ const previous=JSON.parse(await readFile(root+`/catalogue-window-${trial-1}.json`,'utf8'));
+ assert(previous.finishedAt&&previous.passed&&previous['public-close']&&previous['pool-close']&&previous['queue-close'],
+  'The prior bounded catalogue window must have completed normally');
+}
 const proofBytes=await readFile(root+'/five-concurrent-2.json');
 const proof=JSON.parse(proofBytes.toString());
 assert(proof.passed&&proof.pool===m.pool&&proof.people.length===4&&proof.people.every((p:any)=>p.moves===100&&p.result?.status===3));
@@ -31,7 +38,7 @@ const report:any={startedAt:new Date().toISOString(),deadline,pool:m.pool,eviden
  scope:'Isolated catalogue/browser qualification only. No public migration or 24-hour qualification.'};
 await writeFile(file,poolJson(report),{flag:'wx'});
 const save=async()=>{await writeFile(file+'.next',poolJson(report));await rename(file+'.next',file);};
-const t=await chainTools(r.prefix+':catalogue-window-1',measuredFetch('monad'));
+const t=await chainTools(r.prefix+':catalogue-window-'+trial,measuredFetch('monad'));
 const reader=new AgentPoolReader(t.base,m,[]);
 const metrics=await agentMetrics('/diagnostics/reusable','catalogue-window');
 const write=(id:string,to:any,abi:any,fn:string,args:any[]=[])=>retryOperatorContention(()=>t.write(id,to,abi,fn,args));

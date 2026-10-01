@@ -33,6 +33,7 @@ await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
  virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
@@ -265,4 +266,8 @@ try{
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
-finally{await savePrivate();report.finishedAt=new Date().toISOString();await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({out,passed:report.passed,error:report.error,ref:report.ref,input:report.input,submissionP95Ms:report.submissionP95Ms,receiptP95Ms:report.receiptP95Ms}));}
+finally{
+ try{await savePrivate();}catch{report.passed=false;report.error??='Private browser recovery state could not be saved';process.exitCode=1;}
+ report.finishedAt=new Date().toISOString();await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();
+ console.log(JSON.stringify({out,passed:report.passed,error:report.error,ref:report.ref,input:report.input,submissionP95Ms:report.submissionP95Ms,receiptP95Ms:report.receiptP95Ms}));
+}
