@@ -1,14 +1,15 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {decodeFunctionData,encodeFunctionResult,keccak256,parseTransaction,zeroAddress,zeroHash,type Hex} from 'viem';
+import {decodeFunctionData,encodeFunctionResult,keccak256,parseTransaction,zeroAddress,zeroHash,type Hex,type Address} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {generatePrivateKey} from 'viem/accounts';
 import {createPoolEngine,POOL_COMMAND_GAS} from '../relayer/src/agents/pool-engine';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {resultFixture} from './fixtures/reusable-result';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 
 const app='0x0000000000000000000000000000000000000011';
-function fixture(){
+function fixture(hub:Address=zeroAddress,expiresAt=10000n){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false,now=0;
  let blockGate:Promise<void>|undefined,blockError=false;
  let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'|'halt'='ok';
@@ -29,7 +30,7 @@ function fixture(){
  const fields=roomsLifecycleHubAbi[0].outputs[0].components;
  const base:any={getBlock:async(options?:any)=>{await blockGate;if(blockError)throw Error('RPC unavailable');return{number:50n,hash:options&&reorg?keccak256('0x01'):zeroHash,timestamp:1000n};},request:async()=>{
   const d:any=Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n]));
-  Object.assign(d,{status,epoch,expiresAt:10000n,baseBlock:20n});return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d});
+  Object.assign(d,{status,epoch,expiresAt,baseBlock:20n});return encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:d});
  }};
  const db:any={connect:async()=>{if(connectError)throw Error('database unavailable');return{query:async()=>({rows:[{ok:true}]}),release(){}};},query:async(sql:string,a:any[])=>{
   if(sql.startsWith('SELECT'))return{rows:jobs.filter(j=>sql.includes('id<>$5')?j.id!==a[4]&&j.epoch===a[1]&&(j.status==='pending'||j.signer===a[2]&&String(j.nonce)===String(a[3])&&!['refused','obsolete'].includes(j.status)):sql.includes('operation=$3')?j.epoch===a[1]&&j.operation===a[2]:j.status==='pending').slice(0,1)};
@@ -41,13 +42,31 @@ function fixture(){
  }};
  const receiptIds:bigint[]=[],readIds:bigint[]=[];
  const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2,reset};},receipt:async(id:bigint)=>{if(feedError)throw Error('snapshot gap');receiptIds.push(id);return{id,phase:2};},invalidate(){}};
- const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false,publicationProbe?:'epoch-marker-v1')=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,publicationProbe,now:()=>now,publicationFetch:async()=>{if(publication instanceof Error)throw publication;return new Response(JSON.stringify(publication));},archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
+ const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false,publicationProbe?:'epoch-marker-v1')=>createPoolEngine(db,base,hub,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,publicationProbe,now:()=>now,publicationFetch:async()=>{if(publication instanceof Error)throw publication;return new Response(JSON.stringify(publication));},archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
  return{make,jobs,sent,receipts,receiptIds,readIds,archived,publication:(v:any)=>{publication=v;},nonce:(v:number)=>{nonce=v;},currentId:(v:bigint)=>{currentId=v;},now:(v:number)=>{now=v;},blockError:(v:boolean)=>{blockError=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
 
 function historicalHalt(f:ReturnType<typeof fixture>){
  const job=f.jobs[0];job.status='refused';job.resolution={kind:'permanent-pre-execution-refusal',reason:'this session is over and the node is no longer accepting transactions',latestNonce:job.nonce};return job;
 }
+
+test('v3 no-lease sessions retain the three-second lifecycle fence and stop on closure',async()=>{
+ const f=fixture(NO_LEASE_HUB,0n),e=f.make(0n,false,true,'epoch-marker-v1');
+ await e.probePublication();assert.equal(f.sent.length,1);
+ f.now(3001);f.status(2);
+ await assert.rejects(e.probePublication(),/own lifecycle recovery/);
+ assert.equal(f.sent.length,1);e.close();
+});
+
+test('zero expiry is invalid on unknown/legacy hubs and finite v3 expiry remains binding',async()=>{
+ for(const [hub,expiry] of [[zeroAddress,0n],[NO_LEASE_HUB,1000n]] as const){
+  const f=fixture(hub,expiry),e=f.make(0n,false,true,'epoch-marker-v1');
+  await assert.rejects(e.probePublication(),/own lifecycle recovery/);
+  assert.equal(f.sent.length,0);assert.equal(f.jobs.length,0);e.close();
+ }
+ const f=fixture(NO_LEASE_HUB,0n),e=f.make(0n,false,true,'epoch-marker-v1');f.epoch(2n);
+ await assert.rejects(e.probePublication(),/own lifecycle recovery/);assert.equal(f.sent.length,0);e.close();
+});
 
 test('state-changing publication preflight resumes exact bytes after a lost response and never invents a game frame',async()=>{
  const f=fixture();let e=f.make(0n,false,true,'epoch-marker-v1');f.behavior('lost-after-execution');

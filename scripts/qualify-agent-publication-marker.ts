@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename} from 'node:fs/promises';
 import {Pool} from 'pg';
-import {createPublicClient,keccak256,type Address} from 'viem';
+import {createPublicClient,getAbiItem,keccak256,type Address} from 'viem';
 import {generatePrivateKey} from 'viem/accounts';
 import {chainTools} from './independent-chain-tools';
 import {readHubDelegation} from '../shared/rooms-hub';
@@ -18,6 +18,8 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {hostedControl} from '../shared/hosted-control';
 import {hostedOptInTransport} from '../shared/hosted-opt-in';
 import {measuredFetch} from '../shared/rpc-metrics';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
+import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 
 assert.equal(process.env.PONG_PUBLICATION_MARKER,'isolated-testnet');assert.equal(process.getuid?.(),1000);
 const action=process.argv[2];assert(['deploy','open','probe','close','release'].includes(action));
@@ -25,7 +27,9 @@ const epoch=BigInt(process.env.PONG_PUBLICATION_EPOCH??'1');
 assert(epoch===1n||epoch===2n,'Only the original trial or the explicit routing-repair trial is supported');
 const optIn=process.env.PONG_PUBLICATION_OPT_IN==='isolated-testnet';
 if(optIn)assert.equal(epoch,1n,'Provisioning consent has one separately journaled bounded trial');
-const prefix=optIn?'publication-consent-20261001':'publication-marker-20261001',file='/state/publication-marker.json';
+const v3=process.env.PONG_PUBLICATION_HUB_V3==='isolated-testnet';
+if(v3)assert(optIn&&epoch===1n,'The v3 test requires its own consent arena and first epoch');
+const prefix=v3?'publication-v3-20261001':optIn?'publication-consent-20261001':'publication-marker-20261001',file='/state/publication-marker.json';
 const arenaArtifact=optIn?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const manifest=JSON.parse(await readFile('/metadata/manifest.json','utf8'));
 const t=await chainTools(prefix),db=new Pool({connectionString:process.env.PONG_PUBLICATION_DATABASE_URL});
@@ -43,7 +47,8 @@ try{
   assert.equal(keccak256((await t.base.getCode({address:source.app,blockNumber:block.number}))!),source.runtimeHash);
   const [policies,kernel]=await Promise.all((['policies','kernel'] as const).map(functionName=>t.base.readContract({address:source.app,abi,functionName,blockNumber:block.number}) as Promise<Address>));
   assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);
-  r.hub=manifest.hub;r.dependencies={policies,kernel};await save();
+  r.hub=v3?NO_LEASE_HUB:manifest.hub;r.dependencies={policies,kernel};await save();
+  if(v3)await hostedControl(r.hub,measuredFetch('interlude','hosted.v3-configuration'));
   r.authority=await t.deploy('PublicationQualificationAuthority',[r.hub]);await save();
   r.verifier=await t.deploy('PublishedResultVerifier',[r.authority,r.hub]);await save();
   r.app=await t.deploy(arenaArtifact,[r.hub,r.authority,'0x0000000000000000000000000000000000000001',policies,kernel,r.verifier,...(optIn?[t.account.address]:[])]);await save();
@@ -52,6 +57,7 @@ try{
   r.runtimeHash=keccak256((await t.base.getCode({address:r.app}))!);r.phase='deployed-closed';await save();
  }else{
   assert(r?.app&&r.prefix===prefix);assert.equal(keccak256((await t.base.getCode({address:r.app}))!),r.runtimeHash);
+  assert.equal(r.hub.toLowerCase(),(v3?NO_LEASE_HUB:manifest.hub).toLowerCase(),'The qualification hub cannot change on resume');
   const authority=(await t.artifact('PublicationQualificationAuthority')).abi;
   if(action==='open'){
    const d=await readHubDelegation(t.base,r.hub,r.app);assert(d.status===0&&d.epoch===epoch-1n||d.status===1&&d.epoch===epoch,'No implicit epoch rollover');
@@ -61,7 +67,17 @@ try{
     assert.equal(sealed[1],0);assert(!/^0x0+$/.test(sealed[0]),'The previous empty epoch must be sealed before reuse');
     assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);report.previousSealed=sealed;
    }
-   await t.write(`open-epoch${epoch}`,r.authority,authority,'open');r.phase='opened';await save();
+   if(v3&&r.openFee===undefined){
+    const block=await t.base.getBlock();
+    const validator=await t.base.readContract({address:r.hub,abi:hubAbi,functionName:'defaultValidator',blockNumber:block.number});
+    assert.equal(validator.toLowerCase(),'0xa375cf27ed39491db8302ffc3df4210ad263ef43');
+    const terms=await t.base.readContract({address:r.hub,abi:hubAbi,functionName:'termsOf',args:[validator],blockNumber:block.number});
+    assert(terms.open&&terms.maxDelegationDuration===0n&&terms.delegationFee<=10n**16n,'Unexpected v3 terms or opening fee');
+    assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);
+    r.openFee=String(terms.delegationFee);r.terms={validator,block:String(block.number),hash:block.hash,maxDelegations:terms.maxDelegations,
+     maxDiffsPerCommit:terms.maxDiffsPerCommit,challengeWindow:String(terms.challengeWindow),maxDelegationDuration:'0'};await save();
+   }
+   await t.write(`open-epoch${epoch}`,r.authority,authority,'open',[],BigInt(r.openFee??0));r.phase='opened';await save();
   }else if(action==='probe'){
    const d=await readHubDelegation(t.base,r.hub,r.app);assert.equal(d.status,1);assert.equal(d.epoch,epoch);
    await initializePoolOperations(db);
@@ -92,7 +108,7 @@ try{
     report.provisioningConsent={owner,control,epoch:String(epoch),block:String(block.number),hash:block.hash};
    }
    const expected={app:r.app,epoch:d.epoch,chainId:4242,baseBlock:d.baseBlock,rulesVersion:15n,runtimeHash:r.runtimeHash};
-   let node:ReturnType<typeof createPublicClient>|undefined,url=`https://il-${r.app.slice(2,18).toLowerCase()}.fly.dev`;
+   let node:ReturnType<typeof createPublicClient>|undefined,url=`https://${v3?'il2-eu':'il'}-${r.app.slice(2,18).toLowerCase()}.fly.dev`;
    const deadline=Date.now()+180000;
    const inspect=async(origin:string)=>{
     const candidate=createPublicClient({transport:engineTransport(origin)});
@@ -124,6 +140,19 @@ try{
     if(marker===epoch&&delegation.epoch===epoch&&delegation.batchIndex>0n){
      assert.equal(commitment[1],0);assert.deepEqual(current,[0n,0n]);
      report.canonical={block:String(block.number),hash:block.hash,marker:String(marker),batches:String(delegation.batchIndex),root:commitment[2],count:0};
+     if(v3){
+      assert(block.number-d.baseBlock<3000n,'Publication cost inspection exceeded its bounded block window');
+      const logs=[];
+      for(let from=d.baseBlock;from<=block.number;from+=99n)logs.push(...await t.base.getLogs({address:r.hub,event:getAbiItem({abi:hubAbi,name:'Committed'}),
+       args:{app:r.app},fromBlock:from,toBlock:from+98n>block.number?block.number:from+98n}));
+      assert.equal(logs.length,1,'An empty marker qualification should publish exactly one batch');
+      const receipt=await t.base.getTransactionReceipt({hash:logs[0].transactionHash});
+      const tx=await t.base.getTransaction({hash:receipt.transactionHash});
+      assert.equal(receipt.status,'success');assert.equal(receipt.blockHash,logs[0].blockHash);assert.equal(tx.to?.toLowerCase(),r.hub.toLowerCase());
+      assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);
+      report.cost={hash:tx.hash,block:String(receipt.blockNumber),publisher:tx.from,calldataBytes:(tx.input.length-2)/2,
+       gasLimit:String(tx.gas),gasUsed:String(receipt.gasUsed),effectiveGasPrice:String(receipt.effectiveGasPrice),chargedFeeWei:String(tx.gas*receipt.effectiveGasPrice)};
+     }
      r.phase='publication-qualified';await save();break;
     }
     await new Promise(resolve=>setTimeout(resolve,2000));

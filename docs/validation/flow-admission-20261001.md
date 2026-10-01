@@ -506,3 +506,116 @@ created; do not claim its off-VPS copy until verified. The local sponsor candida
 avoids shorter gas estimates after the strongest estimate succeeds; 22 affected
 tests pass. It is not deployed. Admission and every remaining delivery gate
 remain open; no final 24-hour proof exists.
+
+## Provisioning consent and sponsor rollout, 05:58 UTC
+
+The original private marker epoch 2 failed its unchanged identity deadline at
+05:42:57 UTC. Correct hub-v1 control returned first POST HTTP 403, followed only
+by GET 404. No engine or publication occurred. Normal close transaction
+0x821b416a8a99c117dffa54150175b939962961591282b9f98679b5eb67b0ea8a
+confirmed at block 67177123; actual release deadline is 06:44:46 UTC. The private
+marker authority owns this recovery; public maintenance does not. Use the
+original compose-epoch2.json release runner once after the deadline. Never
+reopen that epoch or erase its failed report.
+
+Sponsor 91a96ed deployed 05:50:38 UTC, image
+7b529b37c620af52a81f906d477076a54eee5b915699939056569faed02ed113.
+Its strongest strict simulation now skips redundant shorter estimates after
+success. All nonce, gas, budget and exact signed-intent checks remain. Rollback
+is the sponsor-only prior 6c6fad29224e image, not a database restore. Human
+backend is untouched. Actual fresh virtual-Mera Classic 302 published 1-7,
+confirmed 220 inputs with p95 17.474 ms, zero obsolete intents, and passed local,
+player and spectator timing gates. Total admission 13.676 s included a new
+account and remains a failed performance report; a valid-session sample is
+still required. The prior restored virtual authenticator lacked PRF on renewal;
+that separate failed report admitted no match and is not a game failure.
+
+Official pinned CLI 7b3fde219d196e3851b14f1d1b0ff80c1417833f documents owner()
+EIP-191 opt-in for apps the control service did not deploy:
+https://github.com/Veenoway/interlude-sdk/blob/7b3fde219d196e3851b14f1d1b0ff80c1417833f/cli/src/sessions.ts
+The existing arena owner() is a contract and cannot produce this EOA signature.
+Candidate 0d2ee7f adds a PRIVATE derived arena whose owner() identifies only its
+immutable provisioning signer; DelegatedLayout.owner, onlyOwner, pool lifecycle,
+admissions, controls and result permissions are unchanged. The six generic SDK
+administrative methods reject the provisioning account. Its opt-in is bound to
+app and epoch, canonically checked against owner/hub/session, and sent only to
+the verified HTTPS control origin with redirects refused. Consent bytes are not
+logged or persisted. This is not a public ownership or migration change.
+
+41 focused Solidity tests, 861 TypeScript tests, root typecheck, artifact graph
+budgets and staged secret scan pass. The initial Solidity assertion expected the
+wrong revert text; its failed output is retained alongside the corrected run.
+Runtime is 24,532 bytes, below the 24,576-byte limit. Private qualification source
+is mounted over sponsor image 91a96ed at
+/opt/pongit/tests/fluid-20260928/publication-consent-0d2ee7f. Database
+pong_publication_consent_20261001 and operation prefix publication-consent-20261001
+are isolated; the original operator journal/lock still owns base transactions.
+The single deploy container is running; inspect it before another action. No
+consent arena has opened at this checkpoint. Its planned identity/publication
+bounds remain 180/90 seconds, no players or public changes.
+
+Backup control-20261001T0550Z, including both marker compose files and its exact
+runner, is SHA-verified off VPS: agents f53cb20b23ba, operator 1ebbb55c375f,
+marker dump 4a399f947444, marker files f45dd6c0c1f7, runtime 83c8d2f46d87.
+Public tournament progression continues. No final qualification or 24h claim.
+
+## Valid-session failure and private consent closure, 06:14 UTC
+
+Actual Edge Chaos 304 on 40178 epoch 18 admitted in 9.950 seconds, above the
+eight-second target. Its 124 confirmed controls had p95 19.345 ms and no stale
+direction mismatch. At 06:00:44 UTC, publication batch 117 was rejected with
+HTTP 429, `hourly_publication_gas_budget`. Player and spectator held for
+8,783.5 and 8,766.8 ms despite frame p95 17.2 ms. Publication recovered and the
+0-7 result was published. The whole report remains FAIL; no further load test
+is justified by its eventual result. This is a publication budget, not evidence
+of the RPC requests-per-second limit or insufficient wallet funds.
+
+Private consent arena 0x6126f042915d5314af11c2a64737813c73edd36f opened epoch 1
+at block 67180549. The owner-bound opt-in received HTTP 503 classified as
+capacity, then only GET 404 until its unchanged deadline at 06:05:47 UTC. No
+engine or publication was observed. Normal close confirmed in
+0xc879331446fe1f7ee7af105d1fe418dd7a3daa597341ffeffc505f4272276f89,
+block 67181519. Release is due 07:06:55 UTC. Its stopped, original private
+runner must release and seal through the original operator journal; public
+maintenance does not own it. Do not close or open it again. The older empty
+54fa epoch 2 separately awaits 06:44:46 UTC with compose-epoch2.json.
+
+At block 67181339, reserve 369158 held 518.843855926 MON, publisher B28 held
+49,236.481279334931582126 MON, and archive held 89.644318055756275296 MON.
+No funding request is needed. The user's latest authorization covers necessary
+test-MON spending without another per-transfer approval; it does not authorize
+provider configuration changes or abandonment of user matches.
+
+Hub v3 is an investigation, not a public migration. Its canonical session read
+at block 67181662 confirmed Active with expiresAt=0. Current PONGIT guards
+incorrectly treat that representation as expired. Before a bounded private
+publication qualification, support must retain Active/epoch/base checks and
+prevent zero expiry from authorizing closure of a running game. The pinned
+deployment documentation describes v3's different validator, control endpoint,
+0.01 MON opening fee and no lease duration. Production retains all versions
+listed above. No new private engine or browser driver is active.
+
+## Private v3 candidate, 06:25 UTC
+
+The candidate recognizes zero expiry only for the pinned v3 hub. Active status,
+matching epoch and base block remain required, and the client lifecycle fence
+still expires after three seconds. Unknown/legacy zero expiry fails closed.
+Normal closure of a running no-lease match is rejected. The cold closure check
+moved to the existing immutable binding library to retain the 24 KiB runtime
+limit. The first size check failed and remains preserved; the corrected
+provisioning arena is 24,303 bytes. Physics and all player permissions remain
+unchanged. The EIP-191 provisioning signer still lacks game/lifecycle powers.
+
+58 affected Solidity tests, 863 TypeScript tests and root typecheck pass. The
+first new client test used a game operation on an empty marker fixture; that
+test failure and the corrected rerun are separate artifacts. The private
+qualification requires its own namespace, the pinned v3 control configuration,
+canonical terms with a maximum 0.01 MON opening fee and one state-changing
+marker. It records the actual canonical publication cost. No public service
+uses this new code, and the remaining clients/pool/lifecycle paths are not yet
+claimed compatible with v3. Its only planned hosted operation is empty-arena
+publication followed by normal closure and release.
+
+Backup control-20261001T0614Z is hash-verified off VPS: agents 942f06e178e9,
+operator 95fa9d4a5b05, marker a8d58a303c47, marker files f45dd6c0c1f7,
+consent d3de1965d7d1, consent files 8903f419dbe4 and runtime ed0d407862d2.

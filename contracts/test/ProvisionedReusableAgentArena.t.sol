@@ -15,6 +15,7 @@ contract ProvisionedReusableAgentArenaTest is ReusableAgentArenaTest {
         PublicationQualificationAuthority authority=new PublicationQualificationAuthority(IInterludeHub(address(hub)));
         PublishedResultVerifier v=new PublishedResultVerifier(IReusableAdmissionAuthority(address(authority)),IInterludeHub(address(hub)));
         ProvisionedReusableAgentArena candidate=new ProvisionedReusableAgentArena(IInterludeHub(address(hub)),address(authority),address(1),policies,kernel,v,provisioner);
+        assertLe(address(candidate).code.length,24_576,"hosted runtime budget");
         assertEq(candidate.owner(),provisioner);assertEq(candidate.pool(),address(authority));
         assertEq(arena.owner(),address(this),"historical getter is unchanged");
         bytes[] memory forbidden=new bytes[](6);

@@ -16,6 +16,7 @@ import {engineJobIdentity,engineReceiptOutcome} from '../rooms-engine-recovery';
 import {retirableRefusal,refusalReason,haltRefusal,gasCapRefusal} from '../../../shared/engine-halt';
 import {agentPublicationHealth} from '../../../shared/agent-publication-health';
 import {measuredFetch} from '../../../shared/rpc-metrics';
+import {hubHasNoLease} from '../../../shared/hub-lease';
 
 export const POOL_COMMAND_GAS=14_800_000n;
 type PoolCommand='admit'|'cancelAdmission'|'cancelUnready'|'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries';
@@ -59,11 +60,12 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    await db.query("UPDATE agent_pool.engine_jobs SET status='obsolete',resolution=$3,updated_at=now() WHERE app=$1 AND epoch<=$2 AND status='pending'",
     [lower,String(d.status===0?ref.epoch:d.epoch-1n),{kind:'hub-epoch-closed',block:String(block.number),hash:block.hash,observedEpoch:String(d.epoch)}]);
   }
-  if(d.status!==1||d.epoch!==ref.epoch||d.expiresAt<=block.timestamp)rejectFence('This arena is awaiting its own lifecycle recovery');
+  const noLease=hubHasNoLease(hub,d.expiresAt);
+  if(d.status!==1||d.epoch!==ref.epoch||(!noLease&&d.expiresAt<=block.timestamp))rejectFence('This arena is awaiting its own lifecycle recovery');
   const engine:any=await node.request({method:'interlude_session',params:[]} as any);
   if(String(engine.app).toLowerCase()!==lower||BigInt(engine.epoch)!==ref.epoch||engine.chainId!==4242)rejectFence('Hosted arena epoch is not ready');
   if(runtime?.reusable&&BigInt(engine.baseBlock??-1)!==d.baseBlock)rejectFence('Hosted arena base block is not ready');
-  fenceUntil=(shared?.observedAt??started)+Math.min(3000,Number(d.expiresAt-block.timestamp)*1000);
+  fenceUntil=(shared?.observedAt??started)+(noLease?3000:Math.min(3000,Number(d.expiresAt-block.timestamp)*1000));
   if(now()>=fenceUntil)throw Error('Arena lifecycle verification became stale');
  }
  function refreshFence(){

@@ -51,9 +51,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     }
     modifier engine(){
         if(!isEphemeral())revert EngineOnly();
-        Types.Session memory s=hub.sessionOf(address(this),Types.GLOBAL);
-        (uint256 epoch,,)=S.commitment(words);
-        require(s.epoch==epoch&&s.status==Types.Status.Active&&block.timestamp<s.expiresAt,"engine session unavailable");_;
+        Binding.verifyEngine(words,hub);_;
     }
     modifier current(uint256 epoch,uint256 id){S.assertMatch(words,epoch,id);_;}
     function resultCommitment() external view returns(uint256,uint32,bytes32){return S.commitment(words);}
@@ -88,9 +86,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     }
     function closeEngine() external {
         require(block.chainid==10143&&msg.sender==lobby,"authority only");
-        Types.Session memory s=hub.sessionOf(address(this),Types.GLOBAL);
-        require(s.status==Types.Status.Active&&(S.get(words,37)==0||Game.phase(words)>=3||block.timestamp>=s.expiresAt),"published match running");
-        hub.closeDelegation(Types.GLOBAL);
+        Binding.closeEngine(words,hub);
     }
     function cancelRecovered() external {
         require(block.chainid==10143&&msg.sender==lobby&&hub.statusOf(address(this),Types.GLOBAL)==Types.Status.None,"released authority only");
@@ -106,7 +102,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     function admit(Admission.Ticket calldata ticket,T.Binding calldata binding,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){
         // Six-minute maximum regulation/overtime plus publication margin.
         // This is a conservative time reserve, not a claim of measured hub capacity.
-        require(hub.sessionOf(address(this),Types.GLOBAL).expiresAt>block.timestamp+7 minutes,"session admission reserve");
+        Binding.verifyAdmissionReserve(hub);
         bytes32 hash=Binding.admit(words,ticket,binding,signature,admissionSigner,lobby,policies);
         Game.initialize(words,classic,kernel);emit AdmissionBound(ticket.epoch,ticket.matchId,ticket.sequence,hash,binding);
     }

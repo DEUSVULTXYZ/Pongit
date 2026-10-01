@@ -12,7 +12,7 @@ import {PublishedResultVerifier} from "../independent/PublishedResultVerifier.so
 /// checks, opening, closure, admissions and results retain their existing gates.
 /// This signer cannot submit an arbitrary delegation, close a game or pay funds.
 contract ProvisionedReusableAgentArena is ReusableAgentArena {
-    address public immutable provisioningOwner;
+    address private immutable provisioningOwner;
     constructor(IInterludeHub h,address authority,address admissions,HousePolicies house,
         ChaosEngine physics,PublishedResultVerifier verifier,address provisioner)
         ReusableAgentArena(h,authority,admissions,house,physics,verifier) {

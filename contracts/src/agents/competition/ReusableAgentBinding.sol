@@ -11,11 +11,27 @@ import {Types} from "../../../vendor/interlude/interfaces/Types.sol";
 /// 63: tournament/overtime; 64..65: code hashes; 66: official controller IDs.
 library ReusableAgentBinding {
     uint256 internal constant RULES=15;
+    // Hub v3 represents a session without a lease deadline by zero. Keep that
+    // interpretation pinned; an absent/invalid expiry on an older hub fails closed.
+    address internal constant NO_LEASE_HUB=0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e;
     event PublicationPrepared(uint256 indexed epoch);
     function verifyEngine(mapping(bytes32=>uint256) storage w,IInterludeHub hub) public view {
         (uint256 epoch,,)=S.commitment(w);
         Types.Session memory s=hub.sessionOf(address(this),Types.GLOBAL);
-        require(s.epoch==epoch&&s.status==Types.Status.Active&&block.timestamp<s.expiresAt,"engine session unavailable");
+        require(s.epoch==epoch&&s.status==Types.Status.Active
+            &&(block.timestamp<s.expiresAt||(s.expiresAt==0&&address(hub)==NO_LEASE_HUB)),"engine session unavailable");
+    }
+    function verifyAdmissionReserve(IInterludeHub hub) public view {
+        uint256 expiry=hub.sessionOf(address(this),Types.GLOBAL).expiresAt;
+        require(expiry>block.timestamp+7 minutes||(expiry==0&&address(hub)==NO_LEASE_HUB),"session admission reserve");
+    }
+    /// The root checks the base chain and its authority before this cold path.
+    /// A zero lease must never make a running match eligible for normal closure.
+    function closeEngine(mapping(bytes32=>uint256) storage w,IInterludeHub hub) public {
+        Types.Session memory s=hub.sessionOf(address(this),Types.GLOBAL);
+        require(s.status==Types.Status.Active&&(S.get(w,37)==0||(S.get(w,0)>>161&7)>=3
+            ||(s.expiresAt!=0&&block.timestamp>=s.expiresAt)),"published match running");
+        hub.closeDelegation(Types.GLOBAL);
     }
     /// The arena checks the execution chain before delegating to this immutable
     /// binding library. Keep this cold preparation path outside the 24 KiB root.
