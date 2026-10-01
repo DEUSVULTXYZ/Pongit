@@ -619,3 +619,35 @@ publication followed by normal closure and release.
 Backup control-20261001T0614Z is hash-verified off VPS: agents 942f06e178e9,
 operator 95fa9d4a5b05, marker a8d58a303c47, marker files f45dd6c0c1f7,
 consent d3de1965d7d1, consent files 8903f419dbe4 and runtime ed0d407862d2.
+
+## Hosted v3 identity and marker gas failure, 06:35 UTC
+
+Candidate f7ce4ac deployed private app 0xf455432da84858a31142055f13f166ac39fd2644,
+authority 0xb5ef90e180c86dbc34a08d3f0e105f12cb553e9d and verifier
+0x8d2ca37fa47aa7390cebd16cd67a35f4c6202de4. Epoch 1 opened in
+0xfd3446aed0c053cda603c2e4ce7ab92ad5c6af88c4573b60bf6dcd319f21888f,
+block 67185763. Canonical terms confirm zero lease, 3,600-second challenge
+window and two-of-three resolution threshold. Owner consent successfully
+provisioned https://il2-eu-f455432da84858a3.fly.dev. App, epoch, base block,
+chain, code and rules identity checks passed. No public service changed.
+
+The first marker command reverted at nonce 0, hash
+0xae1c12d71c97f299614fea3bd4a0d0a929e71284cb8abfe21fea21b4c86e1dfe.
+The journal records its failed receipt; the original report remains FAIL.
+The cause is PONGIT's inherited 100,000-gas read-only probe budget. The actual
+node rejects the same call at 100,000 gas, accepts 300,000, and estimates
+137,154. No stateful retry has yet occurred. A batch containing the reverted
+transaction was committed, but marker remains zero, so it is not a successful
+state-publication qualification.
+
+The correction budgets 300,000 gas only for the marker. Game commands retain
+their existing limit. A separate bounded retry requires the original failed
+journal entry, its exact failed receipt, matching intent and consumed nonce;
+it creates a new operation with the next nonce and preserves original bytes.
+Lost responses, missing receipts and a reused nonce cannot authorize retry.
+The existing private epoch is kept open for this one diagnostic retry, not for
+games. The original failed deadline/report will not be relabelled as passed.
+
+Backup control-20261001T0627Z, including the new private state and deployment,
+is verified off VPS against all nine SHA256 hashes. Original 54fa and 6126
+releases remain due at 06:44:46 and 07:06:55 UTC respectively.

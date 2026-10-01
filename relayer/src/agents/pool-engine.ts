@@ -19,6 +19,7 @@ import {measuredFetch} from '../../../shared/rpc-metrics';
 import {hubHasNoLease} from '../../../shared/hub-lease';
 
 export const POOL_COMMAND_GAS=14_800_000n;
+export const PUBLICATION_MARKER_GAS=300_000n;
 type PoolCommand='admit'|'cancelAdmission'|'cancelUnready'|'start'|'tick'|'submitRandomness'|'advanceSeries'|'drainSeries';
 
 export async function initializePoolOperations(db:Pool){await db.query(`
@@ -153,7 +154,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   if(updated.rowCount!==1)throw Error('Recovered command journal changed');
   job.status='pending';job.resolution=recovery;
  }
- async function execute(operation:string,name:PoolCommand|'RULES_VERSION'|'preparePublication',args:readonly unknown[]=[]){
+ async function execute(operation:string,name:PoolCommand|'RULES_VERSION'|'preparePublication',args:readonly unknown[]=[],retryConfirmedRevert=false){
   const marker=name==='preparePublication',probe=marker||name==='RULES_VERSION';
   if(probe&&(!runtime?.reusable||ref.id!==0n||(marker?runtime.publicationProbe!=='epoch-marker-v1'||args.length!==1||args[0]!==ref.epoch:args.length!==0)))throw Error('Publication probe requires an empty reusable arena');
   if(!probe&&ref.id===0n)throw Error('A game command requires a match');
@@ -176,6 +177,16 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
    c=await db.connect();
    locked=(await c.query('SELECT pg_try_advisory_lock(hashtextextended($1,701349)) AS ok',[lower])).rows[0].ok;
    if(!locked)throw Error('This arena already has a writer');await fence();
+   if(retryConfirmedRevert){
+    if(!marker||operation!=='publication-marker-v1-retry-1')throw Error('Only a marker revert can use the bounded retry');
+    const prior=(await db.query('SELECT * FROM agent_pool.engine_jobs WHERE app=$1 AND epoch=$2 AND operation=$3',[lower,String(ref.epoch),'publication-marker-v1'])).rows[0];
+    if(!prior||prior.status!=='failed')throw Error('Publication retry requires a confirmed original revert');
+    const identity=await engineJobIdentity({...prior,nonce:String(prior.nonce)},arenaAbi,signer.address);
+    if(identity.action!=='preparePublication'||identity.data!==encodeFunctionData({abi:arenaAbi,functionName:name,args:args as any}))throw Error('Publication retry intent changed');
+    const receipt=await node.getTransactionReceipt({hash:prior.hash});
+    if(engineReceiptOutcome(receipt,prior.hash)!=='failed'||await node.getTransactionCount({address:signer.address,blockTag:'latest'})<=Number(prior.nonce))
+     throw Error('Publication retry requires a consumed original nonce and revert receipt');
+   }
    if(probe){
     const [[matchEpoch,id],[epoch,count]]=await Promise.all([
      node.readContract({address:app,abi:reusableAgentArenaAbi,functionName:'currentMatch'}),
@@ -216,7 +227,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
      nonceProof={next:nonce,until:checkedAt+1000};
     }
     const nonce=nonceProof.next;
-    const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce,to:app,data,value:0n,gas:probe?100_000n:POOL_COMMAND_GAS,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
+    const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce,to:app,data,value:0n,gas:marker?PUBLICATION_MARKER_GAS:probe?100_000n:POOL_COMMAND_GAS,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
     job={app:lower,id:randomUUID(),operation,epoch:String(ref.epoch),nonce:String(nonce),raw,hash:keccak256(raw),status:'pending'};
     await db.query('INSERT INTO agent_pool.engine_jobs(app,id,operation,epoch,signer,nonce,raw,hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8)',
      [lower,job.id,operation,job.epoch,signer.address.toLowerCase(),job.nonce,raw,job.hash]);
@@ -229,8 +240,9 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
  const send=async(operation:string,name:PoolCommand,args:readonly unknown[]=[]):Promise<EngineState>=>{
   const state=await execute(operation,name,args);if(!state)throw Error('Game command produced no snapshot');return state;
  };
- return{node,feed,send,probePublication:async()=>{
-  if(runtime?.publicationProbe==='epoch-marker-v1')await execute('publication-marker-v1','preparePublication',[ref.epoch]);
+ return{node,feed,send,probePublication:async(retryConfirmedRevert=false)=>{
+  if(runtime?.publicationProbe==='epoch-marker-v1')await execute(retryConfirmedRevert?'publication-marker-v1-retry-1':'publication-marker-v1','preparePublication',[ref.epoch],retryConfirmedRevert);
+  else if(retryConfirmedRevert)throw Error('Read-only publication probes cannot use a marker retry');
   else await execute('publication-probe','RULES_VERSION');
  },read:async(force=false)=>{
   // Warm the same three-second fence before it expires. This changes neither

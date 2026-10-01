@@ -29,6 +29,8 @@ const optIn=process.env.PONG_PUBLICATION_OPT_IN==='isolated-testnet';
 if(optIn)assert.equal(epoch,1n,'Provisioning consent has one separately journaled bounded trial');
 const v3=process.env.PONG_PUBLICATION_HUB_V3==='isolated-testnet';
 if(v3)assert(optIn&&epoch===1n,'The v3 test requires its own consent arena and first epoch');
+const retryMarker=process.env.PONG_PUBLICATION_REVERT_RETRY==='isolated-testnet';
+if(retryMarker)assert(v3&&action==='probe','Only the isolated v3 marker can retry its confirmed revert');
 const prefix=v3?'publication-v3-20261001':optIn?'publication-consent-20261001':'publication-marker-20261001',file='/state/publication-marker.json';
 const arenaArtifact=optIn?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const manifest=JSON.parse(await readFile('/metadata/manifest.json','utf8'));
@@ -124,7 +126,7 @@ try{
    assert(node,'Hosted identity unavailable before the original deadline');report.node=url;
    engine=createPoolEngine(db,t.base,r.hub,r.app,url,r.engineKey,{epoch,id:0n},undefined,
     {node:node as any,reusable:true,publicationProbe:'epoch-marker-v1',archive:async()=>{throw Error('An empty preflight cannot archive a game');}});
-   await engine.probePublication();report.receiptObservedAt=new Date().toISOString();
+   await engine.probePublication(retryMarker);report.receiptObservedAt=new Date().toISOString();report.confirmedRevertRetry=retryMarker;
    const publicationDeadline=Date.now()+90000;
    do{
     const health=await fetch(url+'/health',{signal:AbortSignal.timeout(5000)}).then(x=>x.json());
@@ -145,13 +147,16 @@ try{
       const logs=[];
       for(let from=d.baseBlock;from<=block.number;from+=99n)logs.push(...await t.base.getLogs({address:r.hub,event:getAbiItem({abi:hubAbi,name:'Committed'}),
        args:{app:r.app},fromBlock:from,toBlock:from+98n>block.number?block.number:from+98n}));
-      assert.equal(logs.length,1,'An empty marker qualification should publish exactly one batch');
-      const receipt=await t.base.getTransactionReceipt({hash:logs[0].transactionHash});
-      const tx=await t.base.getTransaction({hash:receipt.transactionHash});
-      assert.equal(receipt.status,'success');assert.equal(receipt.blockHash,logs[0].blockHash);assert.equal(tx.to?.toLowerCase(),r.hub.toLowerCase());
+      assert(logs.length>=1&&logs.length<=(retryMarker?2:1),'Unexpected batches in the empty marker qualification');
+      report.costs=[];
+      for(const log of logs){
+       const receipt=await t.base.getTransactionReceipt({hash:log.transactionHash});
+       const tx=await t.base.getTransaction({hash:receipt.transactionHash});
+       assert.equal(receipt.status,'success');assert.equal(receipt.blockHash,log.blockHash);assert.equal(tx.to?.toLowerCase(),r.hub.toLowerCase());
+       report.costs.push({hash:tx.hash,block:String(receipt.blockNumber),publisher:tx.from,calldataBytes:(tx.input.length-2)/2,
+        gasLimit:String(tx.gas),gasUsed:String(receipt.gasUsed),effectiveGasPrice:String(receipt.effectiveGasPrice),chargedFeeWei:String(tx.gas*receipt.effectiveGasPrice)});
+      }
       assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);
-      report.cost={hash:tx.hash,block:String(receipt.blockNumber),publisher:tx.from,calldataBytes:(tx.input.length-2)/2,
-       gasLimit:String(tx.gas),gasUsed:String(receipt.gasUsed),effectiveGasPrice:String(receipt.effectiveGasPrice),chargedFeeWei:String(tx.gas*receipt.effectiveGasPrice)};
      }
      r.phase='publication-qualified';await save();break;
     }

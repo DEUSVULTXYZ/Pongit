@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {decodeFunctionData,encodeFunctionResult,keccak256,parseTransaction,zeroAddress,zeroHash,type Hex,type Address} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {generatePrivateKey} from 'viem/accounts';
-import {createPoolEngine,POOL_COMMAND_GAS} from '../relayer/src/agents/pool-engine';
+import {createPoolEngine,POOL_COMMAND_GAS,PUBLICATION_MARKER_GAS} from '../relayer/src/agents/pool-engine';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {resultFixture} from './fixtures/reusable-result';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
@@ -12,10 +12,10 @@ const app='0x0000000000000000000000000000000000000011';
 function fixture(hub:Address=zeroAddress,expiresAt=10000n){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<Hex,any>();let nonce=0,status=1,epoch=1n,connectError=false,reorg=false,now=0;
  let blockGate:Promise<void>|undefined,blockError=false;
- let behavior:'ok'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'|'halt'='ok';
+ let behavior:'ok'|'revert'|'lost-after-execution'|'lost-before-execution'|'429'|'generic'|'cap'|'halt'='ok';
  let publication:any={app,epoch:'1',ok:true,halted:null,committedBatches:1};
  let logs:any[]=[],archiveError=false,receiptReads=0,nonceReads=0,reset=false,feedError=false,currentId=0n;const archived:any[]=[];
- const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
+ const receipt=(raw:Hex)=>({transactionHash:keccak256(raw),status:behavior==='revert'?'0x0':'0x1',blockNumber:'0x40',blockHash:zeroHash,logs});
  const node:any={readContract:async({functionName}:any)=>functionName==='resultCommitment'?[epoch,0,zeroHash]:[currentId?epoch:0n,currentId],getTransactionCount:async()=>{nonceReads++;return nonce;},getTransactionReceipt:async({hash}:{hash:Hex})=>{receiptReads++;return receipts.get(hash)??null;},request:async(r:any)=>{
   if(r.method==='interlude_session')return{app,epoch:String(epoch),chainId:4242,baseBlock:20};
   assert.equal(r.method,'interlude_sendTransaction');const raw=r.params[0];sent.push(raw);
@@ -73,10 +73,33 @@ test('state-changing publication preflight resumes exact bytes after a lost resp
  await assert.rejects(e.probePublication(),/response lost/);const job=f.jobs[0],raw=job.raw;
  const decoded=decodeFunctionData({abi:reusableAgentArenaAbi,data:parseTransaction(raw).data!});
  assert.equal(decoded.functionName,'preparePublication');assert.deepEqual(decoded.args,[1n]);assert.equal(job.operation,'publication-marker-v1');
+ assert.equal(parseTransaction(raw).gas,PUBLICATION_MARKER_GAS);
  e.close();e=f.make(0n,false,true,'epoch-marker-v1');f.behavior('ok');await e.probePublication();await e.probePublication();
  assert.equal(f.jobs.length,1);assert.equal(f.sent.length,1);assert.equal(job.status,'observed');assert.deepEqual(f.receiptIds,[]);assert.deepEqual(f.readIds,[]);
  e.close();const game=f.make(17n,false,true,'epoch-marker-v1');await game.send('start','start',[1n,17n]);
  assert.equal(f.jobs[1].nonce,'1');game.close();
+});
+
+test('explicit marker retry preserves the failed transaction and consumes a distinct nonce',async()=>{
+ const f=fixture();let e=f.make(0n,false,true,'epoch-marker-v1');f.behavior('revert');
+ await assert.rejects(e.probePublication(),/reverted/);const original={...f.jobs[0]};assert.equal(original.status,'failed');
+ e.close();e=f.make(0n,false,true,'epoch-marker-v1');f.behavior('ok');
+ await e.probePublication(true);await e.probePublication(true);
+ assert.equal(f.sent.length,2);assert.equal(f.jobs.length,2);assert.deepEqual(f.jobs[0],original);
+ assert.equal(f.jobs[1].nonce,'1');assert.equal(f.jobs[1].operation,'publication-marker-v1-retry-1');assert.equal(f.jobs[1].status,'observed');
+ assert.equal(parseTransaction(f.jobs[1].raw).gas,PUBLICATION_MARKER_GAS);e.close();
+});
+
+test('marker retry requires original receipt, consumed nonce and exact failed intent',async()=>{
+ for(const fault of ['pending','missing-receipt','unused-nonce','success-receipt']){
+  const f=fixture(),e=f.make(0n,false,true,'epoch-marker-v1');f.behavior('revert');await assert.rejects(e.probePublication());
+  const original=f.jobs[0];f.behavior('ok');
+  if(fault==='pending')original.status='pending';
+  if(fault==='missing-receipt')f.receipts.delete(original.hash);
+  if(fault==='unused-nonce')f.nonce(0);
+  if(fault==='success-receipt')f.receipts.get(original.hash).status='0x1';
+  await assert.rejects(e.probePublication(true),/Publication retry/);assert.equal(f.sent.length,1);assert.equal(f.jobs.length,1);e.close();
+ }
 });
 
 test('state-changing preflight preserves RPC uncertainty, refuses another game and binds each new epoch',async()=>{
