@@ -37,7 +37,7 @@ const cache = new Map<string, { expires: number; result: unknown }>();
 // and ask the other when one throttles, fails or has not got that block. A real
 // execution error is the same on both and is returned at once, unchanged.
 async function spreadRead(method:string,params:unknown[],historical:boolean):Promise<unknown>{
- const load=(u:Upstream)=>{const p=schedulerOf(u).pending();return p.interactive+p.history;};
+ const load=(u:Upstream)=>schedulerOf(u).waitMs(historical);
  const first:Upstream=load("secondary")<=load("primary")?"secondary":"primary";
  const order:Upstream[]=[first,first==="primary"?"secondary":"primary"];
  for(let attempt=0;attempt<4;attempt++){

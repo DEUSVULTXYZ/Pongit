@@ -232,3 +232,49 @@ checks and nonce ownership remain unchanged. This trades a small increase in
 shared lobby reads for removing the previous two-second assignment refresh
 plus one-second idle wait; actual traffic and admission must be measured before
 claiming the eight-second target. No production backend has adopted it yet.
+
+## Assignment trial and rollback, 03:34 UTC
+
+The bounded Chaos trial of ffc336b completed match 277 on af7c epoch 15 and
+published 0-7, with F5 and 221 control receipts. It FAILS performance:
+admission 10.457 s, player maximum hold 849.7 ms and spectator hold 832.4 ms.
+Input-to-confirmation p95 was 19.149 ms; frame p95 was 17.2 ms. The original
+report remains in artifacts/qualification/catalogue-assignment-ffc336b-chaos.
+The engine image was rolled back at 03:23:18 UTC to
+sha256:e1ce8273387b3e316b8b84a579e62ed4628f7638187eba6babbf27d87f3a3055.
+The sponsor retains the bounded-estimate candidate
+sha256:698957b5fc1f829dc1e6e8d99386c4303ebe11490ed132c206738768490eb95f.
+There is no active synthetic browser driver and no journal/database rollback.
+
+Five direct VPS header reads took 45-77 ms on the primary Monad provider and
+102-115 ms on its fallback. Five equivalent gateway reads took 54-752 ms.
+The shared gateway had 17 queued/in-flight requests at 03:28 and an actual
+provider throttle. Its configured 50-ms primary spacing permits 20 calls/s,
+above the separately observed public provider limit of 15/s. This is not an
+Interlude publication or RPC quota measurement. The old independent indexer
+gateway returned errors and remains a separate investigation.
+
+The gateway incorrectly counted archive backlog when choosing the provider
+for an interactive pinned read, although that read can overtake archive work.
+It also treated old contract-state reads as interactive. The candidate uses
+estimated dispatch delay under each existing priority/cooldown budget and
+classifies old numeric-block state reads as history. Writes, pending nonces,
+receipts and current authorization reads retain their existing semantics.
+
+The assignment candidate retains the original five-second planning validity,
+rather than expiring after 1.5 seconds during a slow refresh. Its batch is now
+hash-pinned with requireCanonical, saving the third serial header check.
+Actual command fences still expire after three seconds and are unchanged.
+Eleven focused gateway/planning checks pass. The preceding full suite passes
+838 TypeScript tests and root typecheck; one additional classifier regression
+passes in the focused suite. Hosted performance remains to be measured.
+
+Backup assignment-20261001T0318Z was verified off VPS before the failed engine
+trial: agents 3da2748d62587f9cf6bceffef13d2017ca9ad5cb1428adfa5b7c5cda64b9bd1f,
+operator 25f31f35cbf8281509582d2b94884f55df41225010b4f4f935480ada483f9305,
+runtime 4ca0fde0b30fd908ed577a745d4adf657f4bdba2750b652f0bdf07c075d83903.
+
+A separate, undeployed publication-marker candidate changes one reserved
+storage word per empty epoch. The next pool requires that marker on Monad
+before admission. Its contract/unit checks are not yet hosted publication
+proof and it is not part of this compatible latency deployment.

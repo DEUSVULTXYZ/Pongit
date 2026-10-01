@@ -2,6 +2,22 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {historicalRpcRequest, rpcScheduler, pinnedRpcRequest } from "../relayer/src/rpc-scheduler";
 
+test('upstream choice accounts for priority and cooldown instead of total archive backlog',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const s=rpcScheduler(85);
+ await s.acquire(true);
+ const history=Array.from({length:8},()=>s.acquire(true));
+ assert.equal(s.waitMs(false),85,'interactive work overtakes eight archived reads');
+ assert.equal(s.waitMs(true),765,'another archive request keeps its place');
+ s.throttle(1000);
+ assert.equal(s.waitMs(false),1000,'cooldown applies to every request');
+ const live=Array.from({length:5},()=>s.acquire(false));
+ assert.equal(s.waitMs(false),1000+6*95,'four live reads then one archive retain fairness');
+ t.mock.timers.tick(1000);await Promise.resolve();
+ for(let i=0;i<14;i++){t.mock.timers.tick(95);await Promise.resolve();}
+ await Promise.all([...history,...live]);
+});
+
 test('canonical UI headers near an observed head are interactive without promoting old or invented future blocks',()=>{
  assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3e8',false],1000n),false);
  assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3a8',false],1000n),false);
@@ -9,6 +25,18 @@ test('canonical UI headers near an observed head are interactive without promoti
  assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3e9',false],1000n),true);
  assert.equal(historicalRpcRequest('eth_getBlockByNumber',['0x3e8',false]),true);
  assert.equal(historicalRpcRequest('eth_getLogs',[{fromBlock:'0x3e8'}],1000n),true);
+});
+
+test('old contract-state scans share the archive budget while current authorization and nonce reconciliation remain live',()=>{
+ for(const method of ['eth_call','eth_getBalance','eth_getCode','eth_getStorageAt']){
+  const args=(tag:unknown)=>method==='eth_getStorageAt'?['0x01','0x0',tag]:['0x01',tag];
+  assert.equal(historicalRpcRequest(method,args('0x3a7'),1000n),true,method);
+  for(const tag of ['0x3a8','0x3e8','0x3e9','latest','pending',{blockHash:'0xabc',requireCanonical:true}])
+   assert.equal(historicalRpcRequest(method,args(tag),1000n),false,method);
+  assert.equal(historicalRpcRequest(method,args('0x1')),false,'unknown head must not misclassify a current call');
+ }
+ for(const method of ['eth_getTransactionCount','eth_getTransactionReceipt','eth_estimateGas','eth_sendRawTransaction'])
+  assert.equal(historicalRpcRequest(method,['0x01','0x1'],1000n),false,method);
 });
 
 test("gameplay jumps ahead of backfill without starving history or bypassing the shared rate",async(t)=>{

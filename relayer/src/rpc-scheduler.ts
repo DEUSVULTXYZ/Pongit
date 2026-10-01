@@ -4,6 +4,14 @@
  * interactive: delaying it can leave an already executed command uncertain. */
 export function historicalRpcRequest(method:string, params:readonly unknown[],observedHead?:bigint):boolean {
   if(method === "eth_getLogs" || method === "eth_getBlockByHash")return true;
+  // Result archives also read old contract state. Previously these eth_call
+  // requests occupied the live queue even while headers for that block waited
+  // in the history queue. Hash-pinned calls without a known height stay live.
+  const stateTag=method==='eth_getStorageAt'?params[2]:
+    ['eth_call','eth_getBalance','eth_getCode'].includes(method)?params[1]:undefined;
+  if(observedHead!==undefined&&typeof stateTag==='string'&&/^0x[\da-f]+$/i.test(stateTag)){
+    const height=BigInt(stateTag);return height<=observedHead&&observedHead-height>64n;
+  }
   if(method !== "eth_getBlockByNumber")return false;
   const tag=String(params[0]);
   if(["latest", "pending", "safe", "finalized"].includes(tag))return false;
@@ -52,6 +60,18 @@ export function rpcScheduler(spacingMs:number) {
   return {
     acquire(historical:boolean){return new Promise<void>(resolve=>{(historical?history:live).push(resolve);if(!timer)tick();});},
     pending(){return {interactive:live.length,history:history.length};},
+    waitMs(historical:boolean){
+      // Estimate this caller's dispatch time, including the existing cooldown.
+      // An interactive read overtakes archive work; counting the entire history
+      // queue made the gateway avoid an upstream that could serve it next.
+      let l=live.length,h=history.length,run=liveRun,before=0;
+      for(;;){
+        const low=(h>0||historical)&&(!(l>0||!historical)||run>=4);
+        if(low){if(h===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;h--;run=0;}
+        else {if(l===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;l--;run++;}
+        before++;
+      }
+    },
     throttle(retryMs:number){
       // All callers share a provider cooldown. Sleeping only the rejected
       // caller left the other indexers/arenas hammering that same provider.
