@@ -14,18 +14,22 @@ import {agentPublicationHealth} from '../shared/agent-publication-health';
 import {initializePoolOperations,createPoolEngine} from '../relayer/src/agents/pool-engine';
 import {provisionPoolArena} from '../relayer/src/agents/pool-hosted';
 import {reusableAgentArenaAbi as abi} from '../shared/abi-ReusableAgentArena';
+import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerifier';
 
 assert.equal(process.env.PONG_PUBLICATION_MARKER,'isolated-testnet');assert.equal(process.getuid?.(),1000);
 const action=process.argv[2];assert(['deploy','open','probe','close','release'].includes(action));
+const epoch=BigInt(process.env.PONG_PUBLICATION_EPOCH??'1');
+assert(epoch===1n||epoch===2n,'Only the original trial or the explicit routing-repair trial is supported');
 const prefix='publication-marker-20261001',file='/state/publication-marker.json';
 const manifest=JSON.parse(await readFile('/metadata/manifest.json','utf8'));
 const t=await chainTools(prefix),db=new Pool({connectionString:process.env.PONG_PUBLICATION_DATABASE_URL});
 let r:any,engine:ReturnType<typeof createPoolEngine>|undefined;
-const report:any={at:new Date().toISOString(),action,passed:false,scope:'Empty isolated arena; no public migration or gameplay qualification'};
+const report:any={at:new Date().toISOString(),action,epoch:String(epoch),source:process.env.SOURCE_REVISION,passed:false,scope:'Empty isolated arena; no public migration or gameplay qualification'};
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 try{
  try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
  if(action==='deploy'){
+  assert.equal(epoch,1n);
   await t.preflight(['PublicationQualificationAuthority','PublishedResultVerifier','ReusableAgentArena']);
   if(!r){r={prefix,source:process.env.SOURCE_REVISION,engineKey:generatePrivateKey(),phase:'deploying'};assert(r.source);await save();}
   assert.equal(r.source,process.env.SOURCE_REVISION,'Resume with the original source');
@@ -44,10 +48,16 @@ try{
   assert(r?.app&&r.prefix===prefix);assert.equal(keccak256((await t.base.getCode({address:r.app}))!),r.runtimeHash);
   const authority=(await t.artifact('PublicationQualificationAuthority')).abi;
   if(action==='open'){
-   const d=await readHubDelegation(t.base,r.hub,r.app);assert(d.status===0&&d.epoch===0n||d.status===1&&d.epoch===1n,'This test never reopens automatically');
-   await t.write('open-epoch1',r.authority,authority,'open');r.phase='opened';await save();
+   const d=await readHubDelegation(t.base,r.hub,r.app);assert(d.status===0&&d.epoch===epoch-1n||d.status===1&&d.epoch===epoch,'No implicit epoch rollover');
+   if(epoch===2n){
+    const block=await t.base.getBlock();
+    const sealed=await t.base.readContract({address:r.verifier,abi:verifierAbi,functionName:'finalizedRoots',args:[r.app,1n],blockNumber:block.number});
+    assert.equal(sealed[1],0);assert(!/^0x0+$/.test(sealed[0]),'The previous empty epoch must be sealed before reuse');
+    assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);report.previousSealed=sealed;
+   }
+   await t.write(`open-epoch${epoch}`,r.authority,authority,'open');r.phase='opened';await save();
   }else if(action==='probe'){
-   const d=await readHubDelegation(t.base,r.hub,r.app);assert.equal(d.status,1);assert.equal(d.epoch,1n);
+   const d=await readHubDelegation(t.base,r.hub,r.app);assert.equal(d.status,1);assert.equal(d.epoch,epoch);
    await initializePoolOperations(db);
    const expected={app:r.app,epoch:d.epoch,chainId:4242,baseBlock:d.baseBlock,rulesVersion:15n,runtimeHash:r.runtimeHash};
    let node:ReturnType<typeof createPublicClient>|undefined,url=`https://il-${r.app.slice(2,18).toLowerCase()}.fly.dev`;
@@ -64,13 +74,13 @@ try{
     catch(error){const retry=Number((error as any).retryAt??0);await new Promise(resolve=>setTimeout(resolve,Math.max(2000,Math.min(10000,retry-Date.now()))));}
    }
    assert(node,'Hosted identity unavailable before the original deadline');report.node=url;
-   engine=createPoolEngine(db,t.base,r.hub,r.app,url,r.engineKey,{epoch:1n,id:0n},undefined,
+   engine=createPoolEngine(db,t.base,r.hub,r.app,url,r.engineKey,{epoch,id:0n},undefined,
     {node:node as any,reusable:true,publicationProbe:'epoch-marker-v1',archive:async()=>{throw Error('An empty preflight cannot archive a game');}});
    await engine.probePublication();report.receiptObservedAt=new Date().toISOString();
    const publicationDeadline=Date.now()+90000;
    do{
     const health=await fetch(url+'/health',{signal:AbortSignal.timeout(5000)}).then(x=>x.json());
-    const observed=agentPublicationHealth(health,r.app,1n);report.publication=observed;
+    const observed=agentPublicationHealth(health,r.app,epoch);report.publication=observed;
     assert(observed.healthy,'Hosted publication halted during the marker test');
     const block=await t.base.getBlock(),delegation=await readHubDelegation(t.base,r.hub,r.app,block.number);
     const [marker,commitment,current]=await Promise.all([
@@ -79,7 +89,7 @@ try{
      t.base.readContract({address:r.app,abi,functionName:'currentMatch',blockNumber:block.number}),
     ]);
     assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);
-    if(marker===1n&&delegation.epoch===1n&&delegation.batchIndex>0n){
+    if(marker===epoch&&delegation.epoch===epoch&&delegation.batchIndex>0n){
      assert.equal(commitment[1],0);assert.deepEqual(current,[0n,0n]);
      report.canonical={block:String(block.number),hash:block.hash,marker:String(marker),batches:String(delegation.batchIndex),root:commitment[2],count:0};
      r.phase='publication-qualified';await save();break;
@@ -88,12 +98,21 @@ try{
    }while(Date.now()<publicationDeadline);
    assert(report.canonical,'No canonical publication before the original deadline');
   }else if(action==='close'){
+   assert.equal((await readHubDelegation(t.base,r.hub,r.app)).epoch,epoch);
    // Empty qualification only, never a user/community result abandonment.
    const current=await t.base.readContract({address:r.app,abi,functionName:'currentMatch'});assert.deepEqual(current,[0n,0n]);
-   await t.write('close-epoch1',r.authority,authority,'close');r.phase='closing';await save();
+   await t.write(`close-epoch${epoch}`,r.authority,authority,'close');r.phase='closing';await save();
   }else{
-   const d=await readHubDelegation(t.base,r.hub,r.app);assert.equal(d.epoch,1n);assert(d.status===0||d.status===2);assert((await t.base.getBlock()).timestamp>=d.stakeUnlockAt);
-   await t.write('release-epoch1',r.authority,authority,'release');assert.equal((await readHubDelegation(t.base,r.hub,r.app)).status,0);r.phase='released';await save();
+   const d=await readHubDelegation(t.base,r.hub,r.app);assert.equal(d.epoch,epoch);assert(d.status===0||d.status===2);assert((await t.base.getBlock()).timestamp>=d.stakeUnlockAt);
+   await t.write(`release-epoch${epoch}`,r.authority,authority,'release');
+   const block=await t.base.getBlock(),released=await readHubDelegation(t.base,r.hub,r.app,block.number);
+   const [sealed,commitment]=await Promise.all([
+    t.base.readContract({address:r.verifier,abi:verifierAbi,functionName:'finalizedRoots',args:[r.app,epoch],blockNumber:block.number}),
+    t.base.readContract({address:r.app,abi,functionName:'resultCommitment',blockNumber:block.number}),
+   ]);
+   assert.equal(released.status,0);assert.equal(commitment[0],epoch);assert.equal(commitment[1],0);
+   assert.deepEqual(sealed,[commitment[2],0]);assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);
+   report.canonical={block:String(block.number),hash:block.hash,root:sealed[0],count:0};r.phase='released';await save();
   }
  }
  report.app=r.app;report.authority=r.authority;report.phase=r.phase;report.delegation=await readHubDelegation(t.base,r.hub,r.app);report.passed=true;
