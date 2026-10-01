@@ -1053,3 +1053,50 @@ Evidence is gateway-hash-20261001/candidate/catalogue-read-pair.json; the old
 reader and executed script are preserved beside it. Type-only qualification
 adapter annotations were corrected after execution; runtime source is identical.
 At 09:50, tournament 1 had six published fixtures and final match 38 was active.
+
+## Tournament completion, community registration and spare, 10:22 UTC
+
+The Classic elimination trial finished at 09:55:44.021 UTC within its original
+deadline. All seven fixtures are published and captured: matches 18, 23, 34,
+35, 36, 37 and 38, scores 7-0, 7-2, 7-1, 7-1, 7-3, 6-3 and 5-2. The last two
+finished at exactly five minutes. Match 34 used renewed arena 8194 epoch 2.
+Both private pool and tournament gates closed normally. See five-tournament-1.json.
+
+Community setup attempt 1 failed because the default-profile TrackerStrategy
+artifact contains forbidden metadata. Its deployment and one-MON creator
+funding remain journaled. The vetted strategies-profile runtime is 971 bytes
+and passes opcode and source-hash validation. Attempt 2 deployed that artifact
+but was explicitly rejected by the private sponsor's closed admission gate.
+Attempt 3 reused the confirmed deployment and original funding; it opened only
+the isolated pool admission gate, registered through the real SDK, then closed
+the gate. Registration block is 67229621. Strategy is
+0x36d29b591bcb9b1308d64b1d5f8a7cb83324dff4. Qualification is still pending.
+Both earlier failed reports, artifact bytes and the creator journal are retained.
+
+All twelve files of control-20261001T1000Z and control-20261001T1010Z are
+SHA256-verified off VPS. The latter includes the successful registration,
+completed tournament, role journals and every failed attempt. The current
+off-vps.json receipt names 1010; its predecessor is preserved separately.
+
+The previously unused private arena 5472 epoch 1 opened in transaction
+0xe881b09429fe785154b70a86c1089f61c14abd607434d253a7973ce00721a5f7,
+block 67230186. Hosted identity passed at 10:12:18.616. A separate 10:13:07
+observation confirmed one actual committed marker batch, healthy matching epoch,
+no halt and no write gate. See five-spare-1.json and spare-publication-1.json.
+No public arena or provider setting changed.
+
+The only active match driver is pongit-v3-tournament2-7294fa9, original deadline
+11:08:07.674 UTC. It runs Chaos elimination and the two community-mode trials.
+At 10:20, match 39 was captured 7-0; match 40 and community match 41 were active.
+Private engine/archive workers retain their original 11:12:55.698 stop. The
+community sponsor stops at 10:37:52.097. Do not extend bounds or duplicate writers.
+The private season 550f remains unsuitable as a replacement for public history.
+
+The full TypeScript suite passed 888 tests before the final challenge batching
+patch. The browser challenge previously sent five contract RPCs in three
+dependent groups despite sharing a canonical block. The candidate now uses
+three explicitly encoded multicalls. Nine focused tests and root typecheck
+pass; the old source fails the request-count proof with five separate calls.
+A rejected member, wrong domain or reorganization still prevents signing.
+Neither this patch nor the reader/gateway candidates have been deployed publicly.
+End-to-end admission and rendering targets still need new real measurements.

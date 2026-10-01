@@ -27,10 +27,12 @@ test('paced browser challenge uses three encoded canonical rounds and fails clos
   if(request.method==='eth_getBlockByNumber')return{number:'0x2c',timestamp:'0x64',hash,transactions:[]};
   assert.equal(request.method,'eth_call');
   const [call,pin]=request.params as any;assert.deepEqual(pin,{blockHash:hash,requireCanonical:true});
-  const batch=decodeFunctionData({abi:multicall3Abi,data:call.data});assert.equal(batch.functionName,'aggregate3');
-  if(batch.functionName!=='aggregate3')throw Error('Unbatched challenge read');
+  const isBatch=call.to.toLowerCase()==='0xca11bde05977b3631167028862be2a173976ca11';
+  const batch=isBatch?decodeFunctionData({abi:multicall3Abi,data:call.data}):undefined;
+  if(batch&&batch.functionName!=='aggregate3')throw Error('Unexpected multicall');
+  const calls=batch?.args[0]??[{target:call.to,callData:call.data}];
   const names:string[]=[];rounds.push(names);
-  const results=batch.args[0].map(c=>{
+  const results=calls.map(c=>{
    const abi=c.target.toLowerCase()===m.family.toLowerCase()?familyAbi:agentChallengesAbi;
    const input=decodeFunctionData({abi,data:c.callData});names.push(input.functionName);
    if(failed&&input.functionName==='nonces')return{success:false,returnData:'0x' as Hex};
@@ -46,7 +48,7 @@ test('paced browser challenge uses three encoded canonical rounds and fails clos
    }
    return{success:true,returnData:encodeFunctionResult({abi,functionName:input.functionName,result} as any)};
   });
-  return encodeFunctionResult({abi:multicall3Abi,functionName:'aggregate3',result:results});
+  return isBatch?encodeFunctionResult({abi:multicall3Abi,functionName:'aggregate3',result:results}):results[0].returnData;
  }},{retryCount:0})});
  const five={...m,version:5,rulesVersion:15,maxMatches:5,houseInstances:'official-v1',countdownClock:'engine-ticks-v1',arenaAdmissions:'verified-epoch-v1',
   lanes:{tournament:1,challenge:4},challengeAdmission:'atomic-v1',arenas:[...m.arenas,...[12,13].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`}))]} as AgentPoolManifest;
