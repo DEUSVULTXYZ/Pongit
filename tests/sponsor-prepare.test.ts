@@ -73,17 +73,34 @@ test('a filled lane estimates the successful prefix while retaining original opt
  assert.deepEqual(observed,[full.data,prefix.data]);assert.equal(result.gas,2_400_000n);assert.equal(result.data,tx.data);
  const offline=fixture({eth_estimateGas:()=>{throw Error('429');}});
  await assert.rejects(prepareSponsoredTransaction(offline.client,owner,tx,[full,prefix]),/429/);
- assert.equal(offline.requests.filter(m=>m==='eth_estimateGas').length,2,'Both bounded variants ran; no permissive fallback');
+ assert.equal(offline.requests.filter(m=>m==='eth_estimateGas').length,1,'No extra estimates after an uncertain strongest check');
 });
 
-test('strict estimates overlap but result order and transport uncertainty still gate signing',async()=>{
+test('a successful full strict estimate avoids all shorter estimates without weakening the signed gas',async()=>{
  const full={...tx,data:'0x1111' as const},prefix={...tx,data:'0x2222' as const};
  let release!:(value:string)=>void,shortStarted=false;
  const f=fixture({eth_estimateGas:([call])=>call.data===full.data?new Promise<string>(r=>release=r):(shortStarted=true,'0x186a0')});
  let done=false;const pending=prepareSponsoredTransaction(f.client,owner,tx,[full,prefix]).then(r=>{done=true;return r;});
- await new Promise(r=>setImmediate(r));assert(shortStarted);assert(!done);
+ await new Promise(r=>setImmediate(r));assert(!shortStarted);assert(!done);
  release('0x1e8480');const result=await pending;assert.equal(result.gas,2_400_000n);assert.equal(result.data,tx.data);
+ assert(!shortStarted);assert.equal(f.requests.filter(m=>m==='eth_estimateGas').length,1);
  const uncertain=fixture({eth_estimateGas:([call])=>{if(call.data===full.data)throw Error('RPC offline');return '0x186a0';}});
  await assert.rejects(prepareSponsoredTransaction(uncertain.client,owner,tx,[full,prefix]),/RPC offline/);
  await assert.rejects(prepareSponsoredTransaction(f.client,owner,tx,Array(5).fill(prefix)),/Too many/);
+});
+test('after a full contract revert the shorter prefixes overlap, retain order and reject uncertain results',async()=>{
+ const full={...tx,data:'0x1111' as const},long={...tx,data:'0x2222' as const},short={...tx,data:'0x3333' as const};
+ let release!:(v:string)=>void,shortStarted=false;
+ const f=fixture({eth_estimateGas:([call])=>{
+  if(call.data===full.data)throw {code:3,message:'execution reverted: challenge lane waiting',data:'0x'};
+  if(call.data===long.data)return new Promise<string>(r=>release=r);shortStarted=true;return '0x186a0';
+ }});
+ const pending=prepareSponsoredTransaction(f.client,owner,tx,[full,long,short]);
+ await new Promise(r=>setImmediate(r));assert(shortStarted);release('0x1e8480');
+ assert.equal((await pending).gas,2_400_000n);
+ const bad=fixture({eth_estimateGas:([call])=>{
+  if(call.data===full.data)throw {code:3,message:'execution reverted',data:'0x'};
+  if(call.data===long.data)throw Error('RPC unavailable');return '0x186a0';
+ }});
+ await assert.rejects(prepareSponsoredTransaction(bad.client,owner,tx,[full,long,short]),/RPC unavailable/);
 });

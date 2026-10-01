@@ -470,3 +470,39 @@ The complete TypeScript suite has 858 passes and root typecheck passes. This
 checkpoint does not claim that the routing fix is deployed or has qualified a
 fresh publication. The private empty arena still awaits its actual 05:35:08
 release deadline; its original failed report is preserved.
+
+
+## Hub routing rollout and empty epoch release, 05:37 UTC
+
+Published ffd2e7c is deployed in agents engines and maintenance, image
+fb9bfc458943aca48a9d551a4f6be3e3497226ec4425a9a0deb1db2741eab548,
+started 05:30:26 and 05:33:20 UTC. Network-disabled transitive entrypoint imports
+reach the expected runtime namespace guard. A real built-image configuration
+check resolves the legacy hub to interlude-control.fly.dev. Healthy public
+arenas continue playing. The old uncertain 028f epoch 18 request is now looked
+up at the correct directory; its node remains unverified, and no new POST is
+sent for it. Web, other services and the human backend retain the versions above.
+
+The private empty epoch 1 released in transaction
+0x82ff7e7c966c0804a04e6e686bc32de8d8b29729b657392857837dd6ad845722,
+block 67175399. Separate canonical verification at block 67175635 confirms None,
+epoch 1, zero results and finalized root
+0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f.
+Its original failed publication trial remains failed.
+
+Runner 5314da0 prepares an explicit second trial after this sealed recovery.
+It retains the same isolated authority, original operator namespace and engine
+journal, uses distinct epoch-2 operation IDs, and cannot roll over implicitly.
+The separate compose-epoch2.json mounts that reviewed runner over the exact
+ffd2e7c image. It has not opened epoch 2 at this checkpoint. Inspect actual
+containers/reports before starting anything. The bounds remain 180 seconds for
+identity and 90 seconds for canonical marker publication. No public game is
+part of this trial; normal closure and actual delayed release follow afterward.
+
+Backup control-20261001T0530Z is SHA-verified off VPS (agents e689fb721187,
+operator 84eb0475b2d9, runtime c02337678933, marker dump aeaf061e994b,
+marker files e86b35079286). Post-release backup control-20261001T0537Z is being
+created; do not claim its off-VPS copy until verified. The local sponsor candidate
+avoids shorter gas estimates after the strongest estimate succeeds; 22 affected
+tests pass. It is not deployed. Admission and every remaining delivery gate
+remain open; no final 24-hour proof exists.
