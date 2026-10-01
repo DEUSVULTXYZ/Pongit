@@ -858,3 +858,48 @@ identities, ratings and financial contracts are unchanged.
 08:32:28 UTC and additionally requires idle lanes and closed admissions.
 No release worker runs. Do not repeat f455, 54fa or 6126 releases. The original
 operator journal remains the only lifecycle authority.
+
+## Actual Chrome/Edge controls and v3 release budget, 08:25 UTC
+
+Browser attempt 1a became an observer because the injected localhost relying
+party differed from the production build's pongit.xyz relying party. Match 7
+normally cancelled at 0–0; both failed reports remain failed. The corrected
+harness preserves the built relying-party origin and redirects all site and
+API requests inside that isolated browser to the private services. It does not
+alter Mera derivation, production routing or the live user's browser.
+
+Actual Chrome Classic match 8 and Edge Chaos match 9 both finished 2–7,
+published and captured. Canonical match views confirm their respective modes.
+Both used the real Mera implementation with a virtual PRF authenticator, 110
+direction changes and F5 without another ceremony. Chrome's local movement p95
+was 15.7 ms, send/receipt p95 14.60 ms, player/spectator frame p95 17.1/17.2 ms,
+and maximum holds 317/299.9 ms. No reconciliation jump was observed.
+Edge's full input-to-confirmation sample, including the local command queue,
+contained 219 confirmations: p95 20.77 ms, maximum 179.61 ms, no mismatched
+direction. Local movement p95 was 15.7 ms, player/spectator frame p95 17.3/17.2
+ms, holds 167/166.3 ms, no observed jump or frame gap over 500 ms. These short
+desktop samples pass the measured thresholds; they are not catalogue admission,
+physical mobile or continuous availability proof.
+
+The next controller trial 4 failed before any game admission because completed
+browser queue records still require the normal priority scan. Its gates closed
+and its failure is retained. The isolated driver now reproduces that scan only
+with challenge intake closed, at most 32 records and every request already
+cancelled/completed. It must create no match. Actual waiting requests stop this
+fixture. Trial 5 is the sole current driver, deadline 08:32:22 UTC, four games.
+This correction changes qualification tooling, not production priority rules.
+
+A read-only fork of actual v3 hub bytecode
+0xe84c1d8f41ad688955549a1cc245d6908bcd44e44709335769284d832e5a61ef
+passes release after 2,000 and 16,000 batches over 256 distinct overlay slots.
+The larger test includes 32 dense 1,233-byte transactions per batch. Release
+uses 82,088 gas before refunds in both samples, within the 30-million bound.
+This is simulated local publication on copied bytecode, not hosted throughput.
+An additional 4,096-slot test checks that release preserves every published
+value. No production budget or private 2,000-batch guard was raised.
+
+All 11 files of control-20261001T0809Z are SHA256-verified off VPS. The backup
+includes new worker configs, candidate/operator databases, scoped keys, journals
+and evidence; newer browser/driver reports still require a final refresh.
+Original engine/archive stop time remains 08:38:41; reader/sponsor 08:39:21.
+8194 release remains no earlier than 08:32:28 and only when lanes are idle.

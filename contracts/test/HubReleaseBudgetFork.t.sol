@@ -104,5 +104,14 @@ contract HubReleaseBudgetForkTest is Test {
         emit log_named_uint("release_call_gas_before_refunds",used);emit log_named_uint("released_within_30M",released?1:0);
         assertTrue(released,"This workload exceeds the release transaction budget");
         assertEq(uint8(hub.statusOf(address(probe),0)),uint8(Types.Status.None));
+        // A cheap release is useful only if every latest published value
+        // remains in the application. Status None alone cannot establish that.
+        for(uint256 group;group<slotGroups;group++){
+            uint256 last=group+1+(batches-group-1)/slotGroups*slotGroups;
+            for(uint256 j;j<width;j++){
+                bytes32 slot=keccak256(abi.encode(bytes32(j+1+group*width),uint256(0)));
+                assertEq(vm.load(address(probe),slot),bytes32(last),"Published slot lost at release");
+            }
+        }
     }
 }
