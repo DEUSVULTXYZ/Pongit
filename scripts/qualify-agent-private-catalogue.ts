@@ -16,7 +16,7 @@ import {measuredFetch} from '../shared/rpc-metrics';
 assert.equal(process.env.PONG_PRIVATE_CATALOGUE,'two-private-browser-matches');
 assert.equal(process.getuid?.(),1000);
 const trial=Number(process.env.PONG_PRIVATE_CATALOGUE_TRIAL??'1');
-assert(Number.isInteger(trial)&&trial>=1&&trial<=3);
+assert(Number.isInteger(trial)&&trial>=1&&trial<=9);
 const deadline=Date.parse(process.env.PONG_PRIVATE_CATALOGUE_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<Date.now()+20*60_000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));

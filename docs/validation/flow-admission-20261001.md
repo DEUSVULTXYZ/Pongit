@@ -1100,3 +1100,127 @@ pass; the old source fails the request-count proof with five separate calls.
 A rejected member, wrong domain or reorganization still prevents signing.
 Neither this patch nor the reader/gateway candidates have been deployed publicly.
 End-to-end admission and rendering targets still need new real measurements.
+
+## Shared observation candidate and remaining render failure, 10:46 UTC
+
+Replaying the actual Classic 32 state/frame trace reproduces its player 800-ms
+and spectator 616-ms holds. A genuine 866-ms delivery gap crosses the fourth
+point; projection correctly refuses to invent that point before confirmation.
+This is not a graphics-frame gap. It remains a failed smoothness gate.
+
+Candidate 0ea73a7 groups the controller's five lane records and seven hub
+observations into one hash-pinned multicall. Each arena retains independent
+failure handling and the same three-second command validity, timed from request
+start. Planning retains its separate five-second bound. Fifty-four relevant
+tests and root typecheck pass; the full TypeScript suite passes 894 tests.
+
+The actual paired read at block 67235316 reconstructs identical assignments and
+lifecycle values. The old path sends three requests (viem already deduplicates
+the concurrent headers), the candidate two. Baseline durations were 1389, 1341,
+1201 ms; candidate 1120, 1882, 1528 ms. This proves fewer requests, **not lower
+latency under this load**. The first comparison failed using an order-sensitive JSON digest; its report
+and script are kept. The exact earlier field difference was not retained.
+The second uses a structural comparison and sorted digest. No public deployment.
+
+Community strategy 36d29 passed both actual modes: Classic 41 finished 4-3 at
+five minutes; Chaos 44 finished 7-2. Both published and captured; the catalogue
+qualification mask is complete. Tournament 2's seventh fixture 47 is still
+running, so its overall result is not yet a pass. The private community sponsor
+stopped at its original 10:37:52 bound (timeout exit 124), not an unexpected crash.
+
+The source ratings audit passed: ten canonical original-owner transactions
+between deployment and sealing, no rating or repeated-opponent seed calls.
+Before any migration deployment, artifact validation reported an
+AgentArenaSelection/AgentSteer source mismatch. Investigation found only Windows
+CRLF versus compiler LF line endings, not stale Solidity behavior. A successful
+recompile and explicit line-ending hash comparison validate 40 artifacts and
+1,254 source hashes. The largest runtime is 32,734 bytes, within its reviewed
+32-KiB allowance. All 166 targeted Solidity migration/five-lane/policy tests pass;
+no migration transaction has yet been submitted. The new local web build passed, but the
+execution tool's automatic approval review rejected starting its local server
+with only "blocked by policy". No alternate launch was used to bypass that
+rejection; refreshed browser latency evidence remains outstanding.
+
+At canonical block 67236014 the seven private epochs have 26, 148, 178, 158,
+108, 81 and 86 committed batches. Publisher a375 has 49,437.652474 test MON,
+the authorized PONGIT reserve 456.959256, private archive 8.837641 and sponsor
+3.320107. No new user funding request is needed. A new private engine/archive
+configuration is prepared for a separate bounded operation; it is not started
+and does not extend the original workers' 11:12:55 stop.
+
+
+## Second elimination complete, 10:55 UTC
+
+Chaos tournament 2 passed at 10:45:58.831 UTC with all seven published/captured
+fixtures 39, 40, 42, 43, 45, 46 and 47. Match 46 ended 4-4 after exactly
+360 seconds and correctly used administrative advancement with zero result
+winner. Match 47 ended 6-5 in overtime at 320 seconds. Neither administrative
+advancement nor the community trial is counted as a ranked victory. Private
+pool/book admissions closed. Championships 3 and 4 remain outstanding.
+
+The artifact-export mismatch was line-ending normalization, not stale code;
+the first failed comparison remains a failed validation attempt.
+
+
+## Live read candidate and migration rehearsal, 11:10 UTC
+
+The former private tournament engine/archive stopped before the new workers
+started at 10:52:44.453 UTC. The only workers are now
+`pongit-v3-tournaments2-20261001-engines-1` and its archive companion, configured
+by `tournament-runtime-0ea73a7.json`, bounded until 14:12:44.453 UTC. Their
+canonical shared observations retain the existing validity and nonce fences.
+This is a separate bounded operation; the earlier deadline was not extended.
+
+The sole active driver is `pongit-v3-championship3-launch2-0ea73a7`, with the
+unchanged original 13:48:06.392 UTC deadline. The first launch lacked the
+explicit bounded-private flag and failed before report creation or any write;
+its container/config and `championship3-launch1-failed.json` are retained.
+The valid trial began at 10:53:34.516. At 11:05, results 48 (4-3) and 49 (7-0)
+were captured and match 50 was active. Do not start another gate owner or driver.
+
+A separate read-only Windows observation of actual Classic match 50 ran for
+120 seconds, 11:05:39-11:07:39 UTC, using the exact player/spectator projection
+modules. The 399 delivery intervals measured p95 413.6 ms, p99 427.4 ms,
+maximum 487.5 ms. Maximum projected goal holds were 234.6/231.7 ms.
+This is a useful passing short feed/projection measurement, **not browser, GPU,
+input-latency or final-soak proof**. Node timer frame p95 was 31.8 ms; it cannot
+certify the browser's 20-ms target. The first probe arrived after match 49 had
+ended and has zero usable frames, `passed=false`; it remains preserved.
+Local evidence is `artifacts/qualification/live-playout-0ea73a7-{49,50}` and
+`measure-live-playout-20261001.ts`. The previous browser Classic 32 failure is
+not erased or reclassified. A refreshed browser test remains blocked by the
+reported automatic review rejection of local server startup.
+
+Private continuing preparation uses
+`/opt/pongit/tests/fluid-20260928/v3-continuation-0ea73a7`, original operator
+journal, namespace `reusable-agents-20261001-2`. Attempt 1 deployed immutable
+modules then simulated RebalancedAgentCatalog, which rejected `new house policy
+required`: the source already runs byte-for-byte identical ProgressiveHousePolicies.
+No catalogue transaction was sent by that attempt. Commit e338282 chooses an
+inherited catalogue when the verified controller hash is unchanged; a real
+change still selects the contract that resets house qualification. It also
+sanitizes simulation errors before logging. Eleven focused tests and root
+typecheck pass. The 166 targeted Solidity tests and 894 earlier TypeScript tests
+remain separate evidence, not an assertion that every test reran after this patch.
+
+The retry reused all confirmed deployments and completed at 11:00:53.437 UTC:
+MigratingAgentCatalog `0xf03f2552931247806d98600e380870d8cd942680`,
+`prepared-unimported`, importStarted=false, publicEnabled=false. There are
+13 confirmed transactions, zero pending/failed journal entries. Actual receipts
+show 3.445774812 MON paid, including the unused same-code controller from the
+first attempt. The observed operator reserve is 452.065510038 MON. The source
+continues championship 3 unchanged; no import, gate closure, arena opening or
+public migration occurred. Public migration must use verified public state,
+never this fresh private season. See `migration-prepared.json`,
+`prepare-attempt1-failed.json` and `migration-costs.json` in that directory.
+
+A repeated deterministic contract test over the same 1,000 trajectories yields
+556, 481, 409, 341, 271, 198, 132 and 63 aim errors from easiest to hardest.
+This confirms decreasing errors across all eight algorithms, not human win rates.
+The command and result publication paths retain the old physics and score rules.
+
+Backup `control-20261001T1107Z` contains the original operator, public/private
+databases, journals, migration secrets, runtime configuration and failed reports.
+All 13 files are SHA256-verified off VPS in the corresponding private-backups
+directory. The later read-only migration cost report/config can be copied
+separately without rerunning the database backup. Production remains unchanged.
