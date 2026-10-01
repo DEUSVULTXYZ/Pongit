@@ -818,3 +818,43 @@ and historical read-only routing remain unchanged. Arbitrary Fly hosts, wrong
 apps, ports and mismatched hubs are rejected. All 10 focused tests and root
 typecheck pass; the pre-fix failure remains in the qualification artifacts.
 This change is not deployed publicly and browser gameplay remains to qualify.
+
+## Four concurrent hosted games and private browser trial, 08:08 UTC
+
+Five additional owned v3 arenas opened epoch 1, without human capacity or
+provider changes. The final spare remains unopened. Their operation records
+are in `v3-games-6033dbe/evidence/five-setup-more.json`; opening fees remain
+0.01 test MON per arena. The new bounded engine/archive runtime started at
+07:53:41 UTC and stops no later than 08:38:41. Earlier workers remain stopped.
+
+The original trial 3 completed at 08:01:29, before its 08:10:06 deadline.
+Four concurrent real matches, IDs 3–6, published and captured results 1–7,
+1–7, 3–4 and 1–7, across Classic and Chaos. Admissions closed normally.
+The 3–4 result reached the actual five-minute limit. This proves four
+qualification-controller games, not five concurrent human challenges or a
+complete difficulty ranking. The 60-second read-only observer recorded 480
+samples and no errors. Three games remained active throughout, with clock
+ratios 98.10%, 98.62% and 98.80%, and snapshot-read p95 210–217 ms. The fourth
+finished during sampling; its whole-window ratio cannot qualify active play.
+These measurements do not establish input or graphical latency.
+
+The actual candidate build fd74a04 passed Chrome and Edge UI fixtures at five
+dimensions, including progressive levels 1–8 in catalogue order. This uses
+synthetic API/engine data. The private browser admission worker started at
+08:04:41 with an original deadline of 08:24:34. It admits exactly one real
+browser account. Match 7 was assigned at 08:07:15; its result and rendering
+remain pending. Initial challenge creation uses the wallet harness, not the
+public catalogue, and the PRF authenticator is virtual.
+
+The first browser transport attempt failed before admission because SSH TCP
+forwarding is disabled; its log and private account file remain preserved.
+The resumed browser uses the existing scoped SSH stdio bridge with unchanged
+request/response bodies. No SSH configuration changed. Private reader/sponsor
+services started at 07:59:21 with original stop deadline 08:39:21. They are
+loopback-only and use the isolated database and scoped sponsor. Public runtime,
+identities, ratings and financial contracts are unchanged.
+
+8194 epoch 1 remains normally closing; release is not permitted before
+08:32:28 UTC and additionally requires idle lanes and closed admissions.
+No release worker runs. Do not repeat f455, 54fa or 6126 releases. The original
+operator journal remains the only lifecycle authority.
