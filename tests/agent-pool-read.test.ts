@@ -18,6 +18,35 @@ function withMulticall(client:PublicClient){
 const manifest:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:evidence,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 
+test('catalogue overlaps instance eligibility with identities without trusting a community house label',async()=>{
+ const m:AgentPoolManifest={...manifest,version:5,rulesVersion:15,maxMatches:5,verifiedCapacity:5,
+  lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',
+  arenas:[8,9,10,12,13].map(n=>({...manifest.arenas[0],app:addr(n),node:`https://arena-${n}.example`}))};
+ const groups:string[][]=[];
+ const client={getBlock:async()=>({number:50n,hash:zeroHash,timestamp:1000n}),readContract:async(r:any)=>{
+  const n=r.args?.[0];
+  switch(r.functionName){
+   case 'count':return 9n;
+   case 'at':return addr(100+Number(n));
+   case 'house':return addr(100+Number(n));
+   case 'identity':return{house:n===addr(108)?1:Number(BigInt(n))-99,creator:addr(99),codeHash:evidence,metadata:zeroHash,modes:3,qualified:3,available:true,lastTournament:1n};
+   case 'participation':case 'playing':return evidence;
+   case 'houseInstanceEligible':assert.notEqual(n,addr(108),'A claimed house number cannot request independent copies');return true;
+   default:throw Error(r.functionName);
+  }
+ }} as unknown as PublicClient;
+ const batched=withMulticall(client),multicall=batched.multicall;
+ batched.multicall=((request:any)=>{groups.push(request.contracts.map((r:any)=>r.functionName));return multicall(request);}) as typeof multicall;
+ const observed=await new AgentPoolReader(batched,m).catalog();
+ assert.equal(observed.value.items.length,9);assert.equal(observed.value.items[0].name,'NOVA');
+ assert(observed.value.items.slice(0,8).every(p=>p.official&&!p.waiting&&p.friendlyInstances[0]&&p.friendlyInstances[1]));
+ const impostor=observed.value.items[8];assert(!impostor.official);assert.equal(impostor.kind,'strategy');assert(impostor.waiting);
+ assert.deepEqual(impostor.friendlyInstances,{0:false,1:false});
+ assert.equal(groups.length,4,'Two bounded parallel profile batches, no dependent house or eligibility round');
+ assert(groups.some(group=>group.includes('at')&&group.includes('house')));
+ assert(groups.some(group=>group.includes('identity')&&group.includes('houseInstanceEligible')));
+});
+
 test('configuration batches authority and admission reads but never returns before authority verification',async()=>{
  const m:AgentPoolManifest={...manifest,version:5,rulesVersion:15,maxMatches:5,verifiedCapacity:5,
   lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',

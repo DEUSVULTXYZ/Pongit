@@ -1035,3 +1035,21 @@ delivery. Public human and agent deployments remain unchanged. Disk is 81%;
 another image build requires scoped cleanup first. Remaining migration,
 championships, human/agent overlap, finance/replay and unchanged 24-hour gates
 are still open. The private fresh season must never replace existing identities.
+
+## Paired catalogue reads, 09:51 UTC
+
+At canonical block 67225786, three alternating before/after samples reconstructed
+the exact same eight identities, permissions and ordering. Baseline took
+3.731/3.673/3.937 seconds with five RPC requests; the candidate took
+2.063/1.953/2.629 seconds with four. This isolates contract catalogue reads,
+excluding operational health, initial header acquisition and browser admission.
+It does not make the eight-second admission gate pass. Source now overlaps the
+eight official-registry lookups with page addresses, then instance eligibility
+with identities, removing dependent round trips. A community identity claiming
+a house number still cannot receive house-instance treatment. Twenty targeted
+reader/canonical tests and root typecheck pass.
+
+Evidence is gateway-hash-20261001/candidate/catalogue-read-pair.json; the old
+reader and executed script are preserved beside it. Type-only qualification
+adapter annotations were corrected after execution; runtime source is identical.
+At 09:50, tournament 1 had six published fixtures and final match 38 was active.

@@ -116,14 +116,23 @@ export class AgentPoolReader {
   return this.snapshot(async read=>{
    const [capacity,total]=await Promise.all([this.readCapacity(read),read<bigint>(m.catalog,catalogAbi,'count')]);
    const size=Number(total>offset?(total-offset>BigInt(limit)?BigInt(limit):total-offset):0n);
-   const addresses=await Promise.all(Array.from({length:size},(_,i)=>read<Address>(m.catalog,catalogAbi,'at',[offset+BigInt(i)])));
+   // Official identities are immutable registry entries. Read all eight with
+   // this page's addresses, then overlap eligibility with profile reads. Waiting
+   // for each profile before its house lookup added two canonical RPC rounds
+   // for every catalogue refresh without strengthening identity verification.
+   const [addresses,houses]=await Promise.all([
+    Promise.all(Array.from({length:size},(_,i)=>read<Address>(m.catalog,catalogAbi,'at',[offset+BigInt(i)]))),
+    size?Promise.all(Array.from({length:8},(_,i)=>read<Address>(m.catalog,catalogAbi,'house',[i]))):Promise.resolve([]),
+   ]);
    const items=await Promise.all(addresses.map(async agent=>{
-    const [p,participation,playing]=await Promise.all([
+    const registeredHouse=houses.some(h=>h.toLowerCase()===agent.toLowerCase());
+    const [p,participation,playing,eligible]=await Promise.all([
      read(m.catalog,catalogAbi,'identity',[agent]),read(m.catalog,catalogAbi,'participation',[agent]),read(m.pool,this.poolAbi,'playing',[agent]),
+     m.houseInstances&&registeredHouse?Promise.all([0,1].map(mode=>read<boolean>(m.challenges,houseInstanceAbi,'houseInstanceEligible',[agent,mode]))):Promise.resolve([false,false]),
     ]);
-    const official=p.house>0&&p.house<=8&&String(await read(m.catalog,catalogAbi,'house',[p.house-1])).toLowerCase()===agent.toLowerCase();
+    const official=p.house>0&&p.house<=8&&houses[p.house-1]?.toLowerCase()===agent.toLowerCase();
     const bot=official?(m.housePolicy==='progressive-v1'?progressiveHouseBots:pooledHouseBots)[p.house-1]:null;
-    const instances=m.houseInstances&&official?await Promise.all([0,1].map(mode=>read<boolean>(m.challenges,houseInstanceAbi,'houseInstanceEligible',[agent,mode]))):[false,false];
+    const instances=official?eligible:[false,false];
     return {agent,creator:p.creator,controllerHash:p.codeHash,metadata:p.metadata,kind:official?'pongit':'strategy',official,
      name:bot?.name??`${agent.slice(0,6)}…${agent.slice(-4)}`,avatar:bot?.avatar??9,difficulty:bot?.difficulty??'Community strategy',
      ...(bot&&'level' in bot?{level:bot.level}:{}),
