@@ -13,6 +13,7 @@ import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
 import {validateReusableRecord} from '../relayer/src/agents/reusable-runtime';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {NO_LEASE_HUB,hubLeaseValid} from '../shared/hub-lease';
 
 assert.equal(process.env.PONG_FIVE_CONTROLLER_TEST,'bounded-private-four');
 const run=process.env.PONG_FIVE_CONTROLLER_RUN!;assert(/^[1-9]$/.test(run));
@@ -37,9 +38,10 @@ const save=async()=>{await writeFile(path+'.next',JSON.stringify(report,(_,v)=>t
 const wait=()=>new Promise(resolve=>setTimeout(resolve,2000));
 try{
  await save();assert.equal(await read('publicAdmissions'),false);assert.equal((await read('laneRecord',[0])).ref.id,0n,'Tournament stays disabled during this trial');
- const observations=await Promise.all(r.arenas.slice(0,5).map(async(a:any)=>{
+ const v3=r.common.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
+ const observations=await Promise.all(r.arenas.slice(0,v3?requested:5).map(async(a:any)=>{
   const d=await readHubDelegation(t.base,r.common.hub,a.app),now=(await t.base.getBlock()).timestamp;
-  assert(d.status===1&&d.epoch===1n&&d.expiresAt>now+1200n&&d.batchIndex<2000n,'Inspect epoch reserve before a bounded trial');
+  assert(d.status===1&&d.epoch===1n&&hubLeaseValid(r.common.hub,d.expiresAt,now,1200n)&&d.batchIndex<2000n,'Inspect epoch reserve before a bounded trial');
   const h=(await db.query("SELECT stage,detail FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'",[a.app.toLowerCase()])).rows[0];
   assert(h&&['available','playing','awaiting-publication'].includes(h.stage)&&String(h.detail.epoch)===String(d.epoch),'Fresh verified hosted health required');
   return{app:a.app,epoch:d.epoch,baseBlock:d.baseBlock,batches:d.batchIndex};

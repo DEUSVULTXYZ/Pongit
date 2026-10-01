@@ -53,7 +53,8 @@ const terminal=(p:Provision|null)=>p?.state==='intervention'&&p.reason==='identi
  * non-creating refusal permits another POST. A control-plane URL is never an
  * availability certificate: observePoolArenaReady records the actual checks. */
 const sessionTransport=measuredFetch('interlude','hosted.session');
-export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expected?:string,transport=sessionTransport,pinnedInspection?:PinnedInspection,hub:Address=LEGACY_HOSTED_HUB){
+export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expected?:string,transport=sessionTransport,pinnedInspection?:PinnedInspection,hub:Address=LEGACY_HOSTED_HUB,
+ consent?:(control:string,transport:typeof fetch)=>Promise<typeof fetch>){
  return exclusively(db,app,async c=>{
   await c.query('INSERT INTO agent_pool.lifecycle(app) VALUES($1) ON CONFLICT DO NOTHING',[app.toLowerCase()]);
   const row=(await c.query('SELECT provision_epoch,provisioning FROM agent_pool.lifecycle WHERE app=$1',[app.toLowerCase()])).rows[0];
@@ -86,6 +87,9 @@ export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expect
   if(p&&p.retryAt>now)throw cooldown(pinnedInspection?Math.min(p.retryAt,p.nodeRetryAt||now+5000):p.retryAt);
   const create=!p||p.state==='rejected';
   const control=await hostedControl(hub,transport);
+  // Canonical owner/epoch checks and local signing happen before the sending
+  // intent. Failure here sent nothing; uncertain POSTs still use lookups only.
+  const dispatch=create&&consent?await consent(control,transport):transport;
   if(create){p={state:'sending',at:now,attempts:(p?.attempts??0)+1,retryAt:0,control,hub};await save(c,app,epoch,p);}
   else if(p){
    // Old uncertain creations remain uncertain after the routing repair. Record
@@ -95,7 +99,7 @@ export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expect
   }
   if(!p)throw Error('Hosted provisioning intent missing');
   let response:Response;
-  try{response=await transport(`${control}/sessions${create?'':'/'+app}`,{method:create?'POST':'GET',headers:{'content-type':'application/json'},redirect:'error',
+  try{response=await dispatch(`${control}/sessions${create?'':'/'+app}`,{method:create?'POST':'GET',headers:{'content-type':'application/json'},redirect:'error',
    // Without a region, Interlude places the node near the caller (this VPS), not the players.
    ...(create?{body:JSON.stringify({app,region:HOME_REGION})}:{}),signal:AbortSignal.timeout(10000)});}
   catch{await save(c,app,epoch,pending(p,now,'response-lost',app,epoch));throw Error('Hosted response lost; the existing creation will be looked up');}

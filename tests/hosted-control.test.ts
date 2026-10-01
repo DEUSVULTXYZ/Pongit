@@ -1,8 +1,15 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {hostedControl,LEGACY_HOSTED_HUB} from '../shared/hosted-control';
+import {hostedControl,hostedArenaOrigin,LEGACY_HOSTED_HUB} from '../shared/hosted-control';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {controlPlaneAnswers} from '../relayer/src/agents/pool-maintenance';
 const legacy={hub:LEGACY_HOSTED_HUB,chainId:10143,validator:'0xB28E684815b095aB5Fb324214cfEa63d76F3d691'};
+test('origin hints remain hub-specific and never turn unknown deployments into hosted engines',()=>{
+ const app='0x1111111111111111111111111111111111111111';
+ assert.equal(hostedArenaOrigin(LEGACY_HOSTED_HUB,app),'https://il-1111111111111111.fly.dev');
+ assert.equal(hostedArenaOrigin(NO_LEASE_HUB,app),'https://il2-eu-1111111111111111.fly.dev');
+ assert.throws(()=>hostedArenaOrigin(app,app),/Unsupported/);
+});
 test('partner hub uses the old control even when the public hostname serves another hub',async()=>{
  const urls:string[]=[];const transport=(async input=>{urls.push(String(input));return Response.json(legacy);}) as typeof fetch;
  assert.equal(await hostedControl(LEGACY_HOSTED_HUB,transport),'https://interlude-control.fly.dev');

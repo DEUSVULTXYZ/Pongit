@@ -8,13 +8,19 @@ import {retryOperatorContention} from '../shared/operator-contention';
 import {agentMetadata} from '../shared/agents';
 import {pooledHouseBots} from '../shared/agent-pool';
 import {houseInstanceAbi} from '../shared/agent-house-instances';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 
 assert.equal(process.env.PONG_REUSABLE_AGENT_DEPLOY,'authorized-private-testnet');
 assert.equal(process.getuid?.(),1000);
 const prefix=process.env.PONG_REUSABLE_AGENT_PREFIX!;assert(/^reusable-agents-\d{8}(?:-[1-9]\d?)?$/.test(prefix));
-const file='/secrets/deployment.json',hub='0x3Ef8327F69e09cf721772F345e2A887eA22cD595' as Address;
+const v3=process.env.PONG_REUSABLE_HUB_V3==='isolated-testnet';
+const file='/secrets/deployment.json',hub=v3?NO_LEASE_HUB:'0x3Ef8327F69e09cf721772F345e2A887eA22cD595' as Address;
+const housePolicy=process.env.PONG_REUSABLE_HOUSE_POLICY;
+assert(housePolicy===undefined||housePolicy==='progressive-v1','Unknown immutable house policy');
+const policyName=housePolicy?'ProgressiveHousePolicies':'HousePolicies',arenaName=v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const maxMatches=Number(process.env.PONG_REUSABLE_AGENT_LANES??2),arenaCount=Number(process.env.PONG_REUSABLE_ARENA_COUNT??(maxMatches===5?5:3));
 assert([2,5].includes(maxMatches)&&Number.isInteger(arenaCount)&&arenaCount>=(maxMatches===5?5:3)&&arenaCount<=16,'Reviewed private candidate dimensions required');
+assert(!v3||maxMatches===5,'Private v3 candidate requires five-lane authority');
 // Private qualification only. This script creates a fresh season; a public
 // replacement requires a separate verified identity/rating migration.
 const houseInstances=process.env.PONG_REUSABLE_HOUSE_INSTANCES;
@@ -29,9 +35,16 @@ const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode
 const t=await chainTools(prefix);
 try{
  await t.preflight(['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
-  'HousePolicies','AgentCatalog',poolName,'PublishedResultVerifier','AgentTournaments','AgentPublishedRatings',qualificationName,'ArcadeFamily',challengeName,'ReusableAgentArena']);
- if(!r){r={prefix,rulesVersion:15,countdownClock:"engine-ticks-v1",houseInstances,arenaCount,maxMatches,...(maxMatches===5?{arenaAdmissions:'verified-epoch-v1'}:{}),genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
+  policyName,'AgentCatalog',poolName,'PublishedResultVerifier','AgentTournaments','AgentPublishedRatings',qualificationName,'ArcadeFamily',challengeName,arenaName]);
+ if(!r){r={prefix,hub,housePolicy,rulesVersion:15,countdownClock:"engine-ticks-v1",houseInstances,arenaCount,maxMatches,...(maxMatches===5?{arenaAdmissions:'verified-epoch-v1',publicationProbe:v3?'epoch-marker-v1':undefined}:{}),genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.maxMatches??2,maxMatches,'Lane changes need a new deployment namespace');
+ assert.equal(r.common?.hub??r.hub??hub,hub,'Hub changes need a new deployment namespace');
+ assert.equal(r.housePolicy,housePolicy,'Policy changes need a new deployment namespace');
+ if(!r.hub){r.hub=hub;await save();}
+ if(v3){
+  assert(!r.common||r.hostedProvisioning==='owner-consent-v1','An old deployment cannot acquire provisioning consent');
+  r.provisioningKey??=generatePrivateKey();r.provisioningOwner=privateKeyToAccount(r.provisioningKey).address;r.hostedProvisioning='owner-consent-v1';await save();
+ }
  assert.equal(r.houseInstances,houseInstances,'House instances need a new deployment namespace');
  assert.equal(r.countdownClock,"engine-ticks-v1","New countdown needs a new deployment prefix");assert.equal(r.prefix,prefix);assert.equal(r.rulesVersion,15);assert.equal(r.arenaCount,arenaCount);
  const bridge=privateKeyToAccount(r.admissionKey).address;
@@ -40,7 +53,8 @@ try{
  const codec=await deploy('ChaosCodec'),effects=await deploy('ChaosEffects'),modifiers=await deploy('ChaosModifiers');
  const dynamics=await deploy('ChaosDynamics',[effects,modifiers]),contacts=await deploy('ChaosContacts',[dynamics]),rally=await deploy('ChaosRally');
  const physics=await deploy('ChaosPhysics',[effects,rally,dynamics,contacts]),beacon=await deploy('DrandEvmnet'),draws=await deploy('ChaosDrawRules');
- const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]),policies=await deploy('HousePolicies');
+ const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]),policies=await deploy(policyName);
+ r.modules.HousePolicies=policies;await save();
  if(houseInstances)await deploy('HouseInstances');
  const catalog=await deploy('AgentCatalog',[t.account.address,t.account.address,policies]);
  const pool=await deploy(poolName,[catalog,hub,t.account.address,bridge]);
@@ -62,7 +76,7 @@ try{
  }
  await write('seal-catalog','AgentCatalog',catalog,'seal');r.arenas??=[];
  for(let i=0;i<arenaCount;i++){
-  const app=await deploy('ReusableAgentArena',[hub,pool,bridge,policies,kernel,verifier],`ReusableAgentArena-${i}`);assert(!humans.includes(app.toLowerCase()));
+  const app=await deploy(arenaName,[hub,pool,bridge,policies,kernel,verifier,...(v3?[r.provisioningOwner]:[])],`ReusableAgentArena-${i}`);assert(!humans.includes(app.toLowerCase()));
   assert.equal(await t.base.readContract({address:app,abi:(await t.artifact('ReusableAgentArena')).abi,functionName:'RULES_VERSION'}),15n);
   await write(`register-arena-${i}`,'ReusableAgentPool',pool,'addArena',[app]);
   if(r.arenas[i])assert.equal(r.arenas[i].app,app);r.arenas[i]={app,runtimeHash:keccak256((await t.base.getCode({address:app}))!)};await save();

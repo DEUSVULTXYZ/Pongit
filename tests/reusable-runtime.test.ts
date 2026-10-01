@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {toHex,type Address} from 'viem';
 import {validateReusableRecord} from '../relayer/src/agents/reusable-runtime';
 import type {AgentPoolManifest} from '../shared/agent-pool';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 const address=(n:number)=>toHex(n,{size:20}) as Address;
 function fixture(){
  const common={hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),qualifications:address(6),family:address(7),challenges:address(8),verifier:address(9)};
@@ -26,6 +27,14 @@ test('reusable recovery stays available with public gates closed only on the exa
   if(mutation==='arena')v.record.arenas=v.record.arenas.slice(0,2);
   assert.throws(()=>validateReusableRecord(v.record,v.humans,v.manifest,v.evidence),mutation);
  }
+});
+test('v3 provisioning is explicit and never exposes its separate signer in shared metadata',()=>{
+ const f=fixture();f.record.common.hub=NO_LEASE_HUB;f.manifest.hub=NO_LEASE_HUB;
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,f.evidence),/provisioning capability/);
+ f.record.hostedProvisioning='owner-consent-v1';f.record.provisioningOwner=address(41);
+ validateReusableRecord(f.record,f.humans,f.manifest,f.evidence);
+ assert.throws(()=>validateReusableRecord({...f.record,provisioningKey:'private'},f.humans,f.manifest,f.evidence),/must not contain keys/);
+ assert.throws(()=>validateReusableRecord({...f.record,provisioningOwner:f.record.common.pool},f.humans,f.manifest,f.evidence),/authority/);
 });
 test('preview runtime requires the exact explicit evidence and still rejects service keys in metadata',()=>{
  const f=fixture();f.manifest={...f.manifest,enabled:true,releaseStage:'testnet-preview',previewEvidence:f.evidence,verifiedCapacity:0,qualificationEvidence:null};

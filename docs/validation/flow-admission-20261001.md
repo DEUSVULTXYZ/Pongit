@@ -708,3 +708,23 @@ mock froze the publication batch index; that failed report is preserved separate
 from the corrected test. These are local tests, not hosted match qualification.
 All nine files in the post-release `control-20261001T0648Z` backup are verified
 off VPS. No candidate game, new opening or public service deployment occurred.
+
+## Scoped v3 hosting integration, 07:02 UTC
+
+Candidate hosting now uses a separate provisioning signer. Immediately before
+a new POST, its owner, runtime and active epoch are read at one canonical Monad
+hash. The signature is restricted to the exact control destination/application/
+epoch. Lost POST responses keep their original journal and use unsigned lookups;
+failed local checks never create a sending intent. The known v3 origin is only a
+hint and must pass the existing identity/publication checks. Shared metadata
+cannot contain the provisioning key. Public services retain their old runtime.
+
+The private deployment runner can deploy five-lane v3 authorities with the
+immutable progressive eight-bot policy and closed gates. Its first-game setup
+can explicitly open one candidate arena, bounded by the observed 0.01 MON fee;
+this does not claim five hosted lanes. All 877 TypeScript tests, root typecheck,
+18 provisioning/policy Solidity tests and secret checks pass. Earlier fixture
+checksum/type failures are retained. At canonical block 67191928, operator
+reserve is 515.775 MON, v3 publisher 49,519.236 MON and legacy publisher
+49,165.953 MON. No transfer or funding request was needed. Disk is 79.345%
+before the small candidate image build. A full-game publication remains untested.

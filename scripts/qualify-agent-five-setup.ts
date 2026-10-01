@@ -9,11 +9,15 @@ import {validateReusableRecord} from '../relayer/src/agents/reusable-runtime';
 import {reusableAgentPoolAbi as abi} from '../shared/abi-ReusableAgentPool';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {retryOperatorContention} from '../shared/operator-contention';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 
 assert.equal(process.env.PONG_FIVE_SETUP,'bounded-private-five');
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 validateReusableRecord(r,(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean));
 assert(r.maxMatches===5&&r.houseInstances==='official-v1'&&!r.continuation,'Fresh private fixture only');
+const v3=r.common.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
+const count=Number(process.env.PONG_FIVE_SETUP_COUNT??5);
+assert(count===5||v3&&count===1,'Only the bounded v3 first-game trial may open one arena');
 const deadline=Date.parse(process.env.PONG_FIVE_SETUP_DEADLINE??'');
 assert(Number.isFinite(deadline)&&deadline>Date.now()&&deadline<Date.now()+30*60_000,'Bounded setup deadline required');
 const t=await chainTools(r.prefix+':five-setup');
@@ -26,13 +30,15 @@ try{
  for(let lane=0;lane<5;lane++)assert.equal((await t.base.readContract({address:r.common.pool,abi,functionName:'laneRecord',args:[lane],blockNumber:at.number})).ref.id,0n);
  const validator=await t.base.readContract({address:r.common.hub,abi:hubAbi,functionName:'defaultValidator',blockNumber:at.number});
  const terms=await t.base.readContract({address:r.common.hub,abi:hubAbi,functionName:'termsOf',args:[validator],blockNumber:at.number});
- assert.equal(terms.delegationFee,0n,'Review changed provider fees before qualification');
+ if(v3){assert.equal(validator.toLowerCase(),'0xa375cf27ed39491db8302ffc3df4210ad263ef43');assert(terms.open&&terms.maxDelegationDuration===0n&&terms.delegationFee<=parseEther('0.01'),'Unexpected v3 terms');}
+ else assert.equal(terms.delegationFee,0n,'Review changed provider fees before qualification');
+ assert.equal((await t.base.getBlock({blockNumber:at.number})).hash,at.hash,'Setup terms changed canonical block');
  for(const role of ['admission','maintenance','archive','sponsor']){
   assert(Date.now()<deadline,'Original setup deadline reached');
   const address=r.serviceOperators[role];assert(address&&address.toLowerCase()!==t.account.address.toLowerCase());
   await retryOperatorContention(()=>t.submit('fund-'+role,'0x',address,parseEther('5')));
  }
- for(const a of r.arenas.slice(0,5)){
+ for(const a of r.arenas.slice(0,count)){
   assert(Date.now()<deadline,'Original setup deadline reached');
   assert.equal(keccak256((await t.base.getCode({address:a.app}))!),a.runtimeHash,'Canonical candidate code mismatch');
   const prior=await readHubDelegation(t.base,r.common.hub,a.app);

@@ -1,4 +1,5 @@
 import type {Address} from 'viem';
+import {NO_LEASE_HUB} from './hub-lease';
 
 export const LEGACY_HOSTED_HUB:Address='0x3Ef8327F69e09cf721772F345e2A887eA22cD595';
 export const PREVIOUS_HOSTED_ORIGIN='https://control.interludelayer.xyz';
@@ -10,6 +11,11 @@ const controls:Record<string,{origin:string;validator:string}>={
  '0x98922c6e5e4bea62761c71d2401c7ec2c26ec43e':{origin:PREVIOUS_HOSTED_ORIGIN,validator:'0xa375CF27eD39491dB8302Ffc3dF4210Ad263eF43'},
 };
 const cache=new WeakMap<typeof fetch,Map<string,{until:number;request:Promise<string>}>>();
+/** A hint only. Adoption still verifies the actual node and canonical epoch. */
+export function hostedArenaOrigin(hub:Address,app:Address){
+ if(!controls[hub.toLowerCase()])throw Error('Unsupported hosted hub');
+ return `https://${hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()?'il2-eu':'il'}-${app.slice(2,18).toLowerCase()}.fly.dev`;
+}
 /** Check the control plane's chain, hub and validator before using its session
  * API. A failed check cannot create a node. This verifies routing only; the
  * hosted node must still prove its own epoch, base block, code and publication.

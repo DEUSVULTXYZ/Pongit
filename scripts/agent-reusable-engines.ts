@@ -2,6 +2,8 @@
 // a terminal result is archived before another logical match can reuse its slot.
 import assert from 'node:assert/strict';
 import {hubLeaseValid} from '../shared/hub-lease';
+import {hostedArenaOrigin} from '../shared/hosted-control';
+import {canonicalHostedConsent} from '../shared/hosted-provisioner';
 import {Pool} from 'pg';
 import {createPublicClient,http,keccak256,zeroHash,type Address,type PublicClient,type Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
@@ -41,6 +43,8 @@ await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionNam
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:8}),metrics=await agentMetrics('/diagnostics/reusable','controllers');
 await initializePoolOperations(db);await initializePoolObservations(db);await initializePoolReplays(db);await initializeReusableResultArchive(db);
 const archive=createReusableResultArchive(db),bridge=privateKeyToAccount(r.admissionKey);
+const provisioner=r.hostedProvisioning?privateKeyToAccount(r.provisioningKey):undefined;
+if(provisioner)assert.equal(provisioner.address.toLowerCase(),r.provisioningOwner.toLowerCase(),'Provisioning signer mismatch');
 assert.equal((await base.readContract({address:m.pool,abi:poolAbi,functionName:'admissionSigner'})).toLowerCase(),bridge.address.toLowerCase());
 assert.equal((await base.readContract({address:m.pool,abi:poolAbi,functionName:'verifier'})).toLowerCase(),m.verifier.toLowerCase());
 const replays=new PoolReplays(db,process.env.GRAPHQL_URL?poolReplayRetention(process.env.GRAPHQL_URL,
@@ -48,7 +52,7 @@ const replays=new PoolReplays(db,process.env.GRAPHQL_URL?poolReplayRetention(pro
 await replays.resumeRecorder();
 const replayReader=new AgentPoolReader(base,{...m,version:m.maxMatches===5?5:4,chainId:10143,engineChainId:4242,rulesVersion:15,
  ...(m.maxMatches===5?{lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',countdownClock:r.countdownClock}:{}),
- arenas:r.arenas.map((a:any)=>({...a,node:`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`})),
+ arenas:r.arenas.map((a:any)=>({...a,node:hostedArenaOrigin(m.hub,a.app)})),
  enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60},protectedApps);
 let stopping=false;process.once('SIGTERM',()=>{stopping=true;});process.once('SIGINT',()=>{stopping=true;});
 const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -63,7 +67,7 @@ async function replayLoop(){while(!stopping){try{await replays.reconcile(async r
 async function arenaLoop(app:Address,runtimeHash:string){
  const openingCode=pinnedEngineCodeReader(args=>base.getCode(args));
  let engine:ReturnType<typeof createPoolEngine>|undefined,node:PublicClient|undefined;
- let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url=`https://il-${app.slice(2,18).toLowerCase()}.fly.dev`,lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
+ let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url=hostedArenaOrigin(m.hub,app),lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
  let observedRuntimeHash='',observedRuntimeBase:bigint|undefined;
  let publicationPreparedEpoch:bigint|undefined;
  let observations:PoolObservations|undefined,proofTask:Promise<void>|undefined;
@@ -136,7 +140,8 @@ async function arenaLoop(app:Address,runtimeHash:string){
       hubEpoch:d!.epoch,engineEpoch:observedSession.epoch}).catch(()=>{});
      publicationPaused=!verified.publicationReady;inspected=candidate;return evidence;
     };
-    url=await provisionPoolArena(db,app,d.epoch,url,undefined,{expected,inspect,observePausedPublication:true},m.hub);
+    url=await provisionPoolArena(db,app,d.epoch,url,undefined,{expected,inspect,observePausedPublication:true},m.hub,
+     provisioner?(control,transport)=>canonicalHostedConsent(base,{hub:m.hub,app,epoch:d!.epoch,owner:r.provisioningOwner,runtimeHash:runtimeHash as `0x${string}`},provisioner,control,transport):undefined);
     try{
      if(!inspected){await inspect(url);await observePoolArenaReady(db,app,d.epoch,true);}
      assert(inspected,'Hosted node was not verified');node=inspected;

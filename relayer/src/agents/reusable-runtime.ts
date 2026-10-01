@@ -3,10 +3,17 @@ import {readFile} from 'node:fs/promises';
 import {isAddress,zeroAddress,type Hex} from 'viem';
 import {validateSeriesRecord} from './series-runtime';
 import {validateAgentPoolManifest,agentPoolReleaseEvidence,type AgentPoolManifest} from '../../../shared/agent-pool';
+import {NO_LEASE_HUB} from '../../../shared/hub-lease';
 
 const fields=['hub','pool','catalog','tournaments','ratings','qualifications','family','challenges','verifier'] as const;
 export function validateReusableRecord(record:any,humans:readonly string[],manifest?:AgentPoolManifest,evidence?:string,isolated=false){
  validateSeriesRecord(record,humans);
+ const v3=record.common.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
+ if(v3||record.hostedProvisioning!==undefined||record.provisioningOwner!==undefined){
+  assert(v3&&record.hostedProvisioning==='owner-consent-v1','Pinned v3 provisioning capability required');
+  assert(isAddress(record.provisioningOwner)&&record.provisioningOwner.toLowerCase()!==zeroAddress,'Provisioning owner required');
+  assert(!Object.values(record.common).some(value=>String(value).toLowerCase()===record.provisioningOwner.toLowerCase()),'Provisioner cannot own game authority');
+ }
  if(record.countdownClock!==undefined)assert.equal(record.countdownClock,"engine-ticks-v1");
  if(record.publicationProbe!==undefined){assert.equal(record.publicationProbe,'epoch-marker-v1');assert.equal(record.maxMatches,5);}
  if(record.housePolicy!==undefined&&record.housePolicy!=='inherited'){
@@ -50,7 +57,7 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
   for(const field of fields)if(field!=='verifier')assert.equal(record.common[field].toLowerCase(),(m as any)[field]?.toLowerCase(),'Reusable authority mismatch');
   assert.equal(record.arenas.length,m.arenas.length);
   record.arenas.forEach((a:any,i:number)=>{assert.equal(a.app.toLowerCase(),m.arenas[i].app.toLowerCase());assert.equal(a.runtimeHash.toLowerCase(),m.arenas[i].runtimeHash.toLowerCase());});
-  assert(!('engineKey' in record)&&!('admissionKey' in record),'Shared metadata must not contain keys');
+  assert(!('engineKey' in record)&&!('admissionKey' in record)&&!('provisioningKey' in record),'Shared metadata must not contain keys');
  }
 }
 export async function loadReusableRuntime(role:'engines'|'keeper'){
@@ -70,6 +77,10 @@ export async function loadReusableRuntime(role:'engines'|'keeper'){
   if(role==='engines')for(const [field,path] of [['engineKey','engine'],['admissionKey','admission']] as const){
    const key=JSON.parse(await readFile(`/run/pongit-agent-pool/${path}.json`,'utf8')).privateKey;
    assert(/^0x[\da-f]{64}$/i.test(key),'Invalid limited service key');record[field]=key as Hex;
+  }
+  if(role==='engines'&&record.hostedProvisioning){
+   const key=JSON.parse(await readFile('/run/pongit-agent-pool/provisioning.json','utf8')).privateKey;
+   assert(/^0x[\da-f]{64}$/i.test(key),'Invalid provisioning key');record.provisioningKey=key as Hex;
   }
  }else validateReusableRecord(record,protectedApps);
  return{record,prefix,protectedApps,stateFile:separated?`/state/${prefix}-maintenance.json`:`/secrets/${prefix}-maintenance.json`};

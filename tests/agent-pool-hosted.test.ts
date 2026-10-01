@@ -3,6 +3,21 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import {provisionPoolArena as actualprovisionPoolArena,observePoolArenaReady} from '../relayer/src/agents/pool-hosted';
 import {verifyHostedArenaEvidence,type HostedArenaEvidence} from '../shared/hosted-arena-identity';
 const app='0x0000000000000000000000000000000000000011';
+test('owner consent is created only for a new POST, never an uncertain lookup',async()=>{
+ const f=fixture();let signs=0,sent=0;
+ const transport=configuredControl((async(_url,init)=>{sent++;assert.equal(init?.method,sent===1?'POST':'GET');if(sent===1)throw Error('lost');return Response.json({app,url:'https://test-arena.example'});}) as typeof fetch);
+ const consent=async(_control:string,t:typeof fetch)=>{signs++;return t;};
+ await assert.rejects(actualprovisionPoolArena(f.db,app,1n,undefined,transport,undefined,undefined,consent),/lost/);
+ f.row.provisioning.retryAt=0;
+ await actualprovisionPoolArena(f.db,app,1n,undefined,transport,undefined,undefined,consent);
+ assert.equal(signs,1);assert.equal(sent,2);
+});
+test('failed local consent does not journal or send a creation',async()=>{
+ const f=fixture();let sent=0;
+ const transport=configuredControl((async()=>{sent++;throw Error('must not send');}) as typeof fetch);
+ await assert.rejects(actualprovisionPoolArena(f.db,app,1n,undefined,transport,undefined,undefined,async()=>{throw Error('owner changed');}),/owner changed/);
+ assert.equal(sent,0);assert.equal(f.row.provisioning,null);
+});
 test('wrong control configuration cannot journal or send a new session',async()=>{
  const f=fixture(),urls:string[]=[];
  await assert.rejects(actualprovisionPoolArena(f.db,app,1n,undefined,(async input=>{
