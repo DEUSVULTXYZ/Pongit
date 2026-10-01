@@ -139,6 +139,10 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
       // that is preparation, not a failure, and it is checked again within a second.
       if(valid)setControlError('');else if(preparingArena(e)){setControlError('');setConnection('Preparing your arena');}else setControlError(poolUserError(e));
       retryRecoveryAt=performance.now()+arenaEntryRetryMs(e,!firstState,performance.now()-entryStarted,1000);nextRecovery=retryRecoveryAt;
+      // An absent binding also makes the following snapshot read premature.
+      // Its unrelated revert used to replace the entry retry with a two-second
+      // generic backoff. Wait for the verified binding before asking for state.
+      if(!valid&&preparingArena(e)){delay=Math.max(0,retryRecoveryAt-performance.now());return;}
      }
     }
     const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');

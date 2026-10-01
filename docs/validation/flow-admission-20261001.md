@@ -149,3 +149,60 @@ setting. Progressive policies and catalogue migration remain undeployed.
 Candidate verification: 847 Solidity tests pass, eight are skipped; 830
 TypeScript tests and root typecheck pass. Twenty playout tests include the
 recorded failure. No final 24-hour or complete-delivery claim is supported.
+
+## Entry candidate 45f346d, 02:39 UTC
+
+The full-source runtime image is
+`sha256:9e2f2ffb31bc8bbdcd9f58242aac4c2aba85c33d839613ef913984f60d66698a`.
+Its isolated transitive import check passes. Only admission adopted it at
+02:38:53 UTC with `PONG_AGENT_TOURNAMENT_DRAIN=1`; this lets tournament 12
+finish and suppresses the next `begin`. No active match or financial operation
+is cancelled. At 02:40:46 it had admitted the next fixture and had no module
+error or restart. The human backend, engines and other roles are unchanged.
+
+Backup `entry-20261001T0239Z` was verified off VPS before this deployment:
+
+- agents.dump: `fed8f4f5ab81c2322395e023ff440e6bbb4472326ff8b488fac0b5a8d26f9c0d`
+- operator.dump: `0f571b582a357183bf1b3a036b81b7752993ceb3bd0815a2733a484b93639575`
+- runtime.tar.gz: `7adbd32bdc5d5ea580834936a96490be282c04a3cc3c80426a70f2f85d5321d3`
+
+The read-only migration inventory had hardcoded two lanes. It now reads and
+checks the actual lane count before enumerating every assigned reference.
+The first three attempts remain failed: the public Monad RPC explicitly
+reported `requests limited to 15/sec`. Using the existing paced read transport
+completes the canonical inventory at block 67140339, with five lanes, nine
+identities and twelve tournaments. This is not an Interlude quota observation.
+Tournament 12 and its eight participants remain active; final freeze/import
+has not started. Historical corrections still require continuity.
+
+## Public entry and independent cost checks, 02:54 UTC
+
+The web candidate `45f346d` passes 44 built-image Chrome and 44 Edge checks.
+Image `sha256:3d8cc6a033f34aec913749efa09adbfaac26f71f83c705ec42a78f26e1a2b804`
+was deployed at 02:45:46 UTC. Agent catalogue, tournaments, docs and config return
+200. `challengeAdmission` remains a qualification override, not a public flag.
+
+Actual Edge Chaos match 269 completed and published with F5 and 221 control
+receipts. Admission improved to 9.962 seconds but still FAILS the 8-second gate.
+Player and spectator maximum holds were 133.0 and 133.1 ms. Their frame p95 was
+17.3 and 17.2 ms. Including time queued before send, input confirmation p95 was
+19.80 ms with no obsolete direction observed. The first instrumented maximum
+also counted an automatic neutral resend after F5; subsequent instrumentation
+counts the first confirmation for each user intention, without changing the
+original report. Three metric regressions distinguish queue delay, coalesced
+intentions and neutral recovery sends. The historical receipt-only p95 values
+do not include browser queue delay.
+
+A remaining entry branch still read the snapshot after finding no engine
+binding. That premature read could replace the intended fast retry with the
+generic two-second delay. The next candidate returns to the verified binding
+check before reading state. The initial development-asset trial failed before
+catalogue hydration, without creating a match; its report is preserved and is
+not counted as a hosted game. Built-image validation is required instead.
+
+A bounded read-only cost scan of canonical blocks 67142190-67142489 (02:48:51
+through 02:50:21 UTC) identifies 26 successful publications for our agent
+arenas, costing 1.951712982 MON with maximum calldata 13,988 bytes. It does not
+attribute other publisher spending to PONGIT and is not a five-lane daily
+budget. The initial observer failed container network setup; the corrected
+observer completed and stopped. No transfer or game was sent by this observer.

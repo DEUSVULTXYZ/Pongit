@@ -2,20 +2,23 @@
 // supplies a migration/opening verdict while games and registrations are live.
 import assert from 'node:assert/strict';
 import {writeFile} from 'node:fs/promises';
-import {createPublicClient,http,encodeFunctionData,decodeFunctionResult,keccak256,type Address,type Abi,type Hex} from 'viem';
+import {createPublicClient,encodeFunctionData,decodeFunctionResult,keccak256,type Address,type Abi,type Hex} from 'viem';
+import {baseReadTransport} from '../shared/base-read-transport';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 import {agentCatalogAbi as catalogAbi} from '../shared/abi-AgentCatalog';
 import {agentTournamentsAbi as bookAbi} from '../shared/abi-AgentTournaments';
 import {agentPublishedRatingsAbi as ratingsAbi} from '../shared/abi-AgentPublishedRatings';
 import {agentChallengesAbi as challengeAbi} from '../shared/abi-AgentChallenges';
 import {agentQualificationsAbi as qualificationAbi} from '../shared/abi-AgentQualifications';
+import {agentPoolAdmissionAbi} from '../shared/agent-house-instances';
 
 const [poolText,out]=process.argv.slice(2);assert(/^0x[\da-f]{40}$/i.test(poolText)&&out&&process.env.RPC_URL);
 const pool=poolText as Address;
-const base=createPublicClient({transport:http(process.env.RPC_URL,{retryCount:0,timeout:15000})});
+const base=createPublicClient({transport:baseReadTransport(process.env.RPC_URL,{intervalMs:200,maxConcurrent:1})});
 assert.equal(await base.getChainId(),10143);const block=await base.getBlock();assert(block.hash);
 const anchor={blockHash:block.hash,requireCanonical:true} as const;
 async function read(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[]):Promise<any>{
+ report.step={address,functionName};
  const data=encodeFunctionData({abi,functionName,args});
  const raw=await (base.request as any)({method:'eth_call',params:[{to:address,data},anchor]});
  return decodeFunctionResult({abi,functionName,data:raw});
@@ -45,7 +48,9 @@ try{
  report.gates={pool:await read(pool,poolAbi,'admissions'),public:await read(pool,poolAbi,'publicAdmissions'),
   tournaments:await read(book,bookAbi,'admissions'),challenges:await read(challenges,challengeAbi,'admissions')};
  report.matchCounter=await read(pool,poolAbi,'nonce');
- report.lanes=[await read(pool,poolAbi,'laneMatch',[0n]),await read(pool,poolAbi,'laneMatch',[1n])];
+ report.laneCount=Number(await read(pool,agentPoolAdmissionAbi,'laneCount'));
+ assert([2,5].includes(report.laneCount),'Unreviewed source lane count');
+ report.lanes=await Promise.all(Array.from({length:report.laneCount},(_,lane)=>read(pool,poolAbi,'laneMatch',[BigInt(lane)])));
  report.challengeCursor=await read(challenges,challengeAbi,'cursor');
  report.qualificationCursor=await read(qualifications,qualificationAbi,'cursor');
  if(report.lanes.some((lane:string)=>BigInt(lane)!==0n))report.blockers.push('An assigned lane must finish on its original authority before import.');
@@ -118,8 +123,10 @@ try{
  report.blockers.push('Qualify the replacement contracts, queue/session continuity and real concurrent house instances before activation.');
  assert.equal((await base.getBlock({blockNumber:block.number})).hash,block.hash,'Source block reorganized');
  report.snapshotComplete=true;
-}catch{
- report.error='Canonical source inventory failed; the partial report is not a migration input.';process.exitCode=1;
+}catch(error){
+ report.error='Canonical source inventory failed; the partial report is not a migration input.';
+ report.cause=String((error as any)?.shortMessage??(error as Error)?.message??error).split('\n')[0].slice(0,240);
+ report.detail=String((error as any)?.details??'').split('\n')[0].slice(0,240);process.exitCode=1;
 }
 await writeFile(out,JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v,2)+'\n',{flag:'wx'});
 console.log(JSON.stringify({snapshotComplete:report.snapshotComplete,migrationReady:false,block:report.block,

@@ -1,5 +1,22 @@
 import type {Page} from '@playwright/test';
 
+/** Same-host epoch timestamps include the browser's queued intent before send.
+ * Receipt transport latency alone cannot qualify input-to-confirmation latency. */
+export function confirmedInputMetrics(intents:{at:number;direction:number}[],receipts:{sentAt?:number;confirmedAt?:number;direction?:number;sequence?:string}[]){
+ const ordered=[...intents].sort((a,b)=>b.at-a.at),confirmed=new Map<number,number>(),mismatches:any[]=[];
+ for(const receipt of receipts){
+  if(!receipt.sequence||receipt.sentAt===undefined||receipt.confirmedAt===undefined)continue;
+  const intent=ordered.find(i=>i.at<=receipt.sentAt!);
+  if(!intent)continue;
+  if(intent.direction!==receipt.direction){mismatches.push({sentAt:receipt.sentAt,expected:intent.direction,actual:receipt.direction});continue;}
+  const elapsed=receipt.confirmedAt-intent.at;
+  confirmed.set(intent.at,Math.min(elapsed,confirmed.get(intent.at)??Infinity));
+ }
+ const samples=[...confirmed.values()];
+ samples.sort((a,b)=>a-b);
+ return{samples:samples.length,p95Ms:samples[Math.floor((samples.length-1)*.95)],maxMs:samples.at(-1),mismatches};
+}
+
 /** Test-only instrumentation. Record public court state, never wallet props. */
 export async function installSyncProbe(page:Page){
  await page.addInitScript(()=>{

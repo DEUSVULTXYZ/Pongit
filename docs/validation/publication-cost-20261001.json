@@ -1,0 +1,488 @@
+{
+  "at": "2026-10-01T02:50:20.817Z",
+  "pool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
+  "transactions": [
+    {
+      "hash": "0xc053a5d7c8d0a53b476ef9ec72f478da2cbbd9d4684bebf6219cc3d8aabd3012",
+      "block": "67142194",
+      "blockHash": "0xdbf039b1910e0ce20f586aea13c7c1dbd5bbf8c88ab435915b69c643df4f8844",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8004,
+      "gasLimit": "743509",
+      "gasUsed": "743509",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "75837918000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "196"
+        }
+      ]
+    },
+    {
+      "hash": "0x54f5dd5772f9328d343d920aa3680549949e71ae8813f39bc31a30ee3f802013",
+      "block": "67142203",
+      "blockHash": "0xbbf653ee5195d10e5857ddd7eb5808a681f44742e22ce5d2180b4c6e506574ab",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8164,
+      "gasLimit": "783294",
+      "gasUsed": "783294",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "79895988000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "197"
+        }
+      ]
+    },
+    {
+      "hash": "0xb88e606f8b1dc4f2a510a894052e27016291e7e0fcebae0120a04aa0c24ce092",
+      "block": "67142211",
+      "blockHash": "0x559874d1256269203dc44de592101cfe7b1ec343abac5bd62c34e5a69cd0e1ce",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8164,
+      "gasLimit": "701850",
+      "gasUsed": "701850",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "71588700000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "198"
+        }
+      ]
+    },
+    {
+      "hash": "0x0d317e82dbc6bba71dfdfde4cc896b20a0bf662efd957f99d5d2ce4f0c9d66b6",
+      "block": "67142220",
+      "blockHash": "0xb88ee58a601f4bf8cdfa871c33ba2080e9cf49b32cf59431ce04ef5c1cffe524",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8516,
+      "gasLimit": "753290",
+      "gasUsed": "753290",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "76835580000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "199"
+        }
+      ]
+    },
+    {
+      "hash": "0x9a9fd19058749aed16fb566c13be336be2faa158a7fb5e7f7f1abf507a60d099",
+      "block": "67142229",
+      "blockHash": "0x17b0bcf8c5ef90cf43eb3e38e7cd3ad6c82f994884237f2ad7f6bbe48daa4f25",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 7812,
+      "gasLimit": "780091",
+      "gasUsed": "780091",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "79569282000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "200"
+        }
+      ]
+    },
+    {
+      "hash": "0x19beb7bb70a217ef0fe21df4cfdf24d122b88ad2182b3c5268f770e0fcfd182d",
+      "block": "67142237",
+      "blockHash": "0xc9e86b661d3c62484e332fef4bcc5cb411a6d98b3315728774f1c55f61bb39e7",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 7972,
+      "gasLimit": "654991",
+      "gasUsed": "654991",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "66809082000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "201"
+        }
+      ]
+    },
+    {
+      "hash": "0xfb5709e0e331172dba333cc3e94680353be9d46d2debf5a419f2e4b82174c233",
+      "block": "67142246",
+      "blockHash": "0x2ab867e4e65259228bc04c8018e325b11280eeed637731279de564b54baf7ee9",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8356,
+      "gasLimit": "750342",
+      "gasUsed": "750342",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "76534884000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "202"
+        }
+      ]
+    },
+    {
+      "hash": "0xcb57d89bb3c014d4c7992b96ae847b6a485deb5cb11ed1e03f5c41e4aa5d38b5",
+      "block": "67142254",
+      "blockHash": "0x5c07f275ef9b00125a1b4f984f2d028ad679d69b6ed63e2b6a628438236f1229",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8164,
+      "gasLimit": "705256",
+      "gasUsed": "705256",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "71936112000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "203"
+        }
+      ]
+    },
+    {
+      "hash": "0xdea59e8070f800a35878d70faf04393217f31df18a4ad4730ad989ab2dac955a",
+      "block": "67142263",
+      "blockHash": "0xf9906b3a36c261e98b7effcaac9afd8e788e87db9a85dea01fb4194fdc157a22",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 7780,
+      "gasLimit": "654006",
+      "gasUsed": "654006",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "66708612000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "204"
+        }
+      ]
+    },
+    {
+      "hash": "0xd725d652115844b54b98a7a2050a57cd6def31d45f5a07e86475379020e1cb2b",
+      "block": "67142271",
+      "blockHash": "0xe8c7986d64a24359e5964c0af7f08c15a4b778b2bd238e5ae9efed6173c4d6a4",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8004,
+      "gasLimit": "825368",
+      "gasUsed": "825368",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "84187536000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "205"
+        }
+      ]
+    },
+    {
+      "hash": "0x87a1222e84d1146d2c0940ebfd132b36fabe8204ee71646bd50b339fe3e2839d",
+      "block": "67142279",
+      "blockHash": "0x272f96038cc3a229ea0ecacc314a17df248be805417207635546a4e21e81951a",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 7620,
+      "gasLimit": "651698",
+      "gasUsed": "651698",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "66473196000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "206"
+        }
+      ]
+    },
+    {
+      "hash": "0x298ca3971ede4ce4b97013368ab1ff2a280c1788e9dccbe97fefd9b2bb8e116b",
+      "block": "67142288",
+      "blockHash": "0x3f5e33fdbbcc01cc527abc0ab1a8a7f91111835dfc118d507db6ae562c452cfc",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8164,
+      "gasLimit": "705406",
+      "gasUsed": "705406",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "71951412000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "207"
+        }
+      ]
+    },
+    {
+      "hash": "0xdbb580e402e27476c9bd5166da96aebcd5c2d364c3108ffcf155df5aa083233d",
+      "block": "67142294",
+      "blockHash": "0x4e5383833a0e4ec3b484e69e801d7b5d238b88dd75abcc3cd62913763bbfb448",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 6564,
+      "gasLimit": "630927",
+      "gasUsed": "630927",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "64354554000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "208"
+        }
+      ]
+    },
+    {
+      "hash": "0xf9f9a37ddac5b0d524ded016b46b97ebeed21ca64ae3bcd2f2766e107b6e8b67",
+      "block": "67142302",
+      "blockHash": "0xae074e80c65b8c07a7d45c6200a973602fcea26bf1ce41a8fc97e00c0cf76e45",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 5700,
+      "gasLimit": "657340",
+      "gasUsed": "657340",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "67048680000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "209"
+        }
+      ]
+    },
+    {
+      "hash": "0x895565c5e23a630461ea3eba8cd0db71abd6f44542496cd128afe0850b5dc7bb",
+      "block": "67142312",
+      "blockHash": "0x468c46bbc28d7dfa26aafd58a0ab22611f139dbbffa0bb78b38693318d6b11bf",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 6596,
+      "gasLimit": "757216",
+      "gasUsed": "757216",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "77236032000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "210"
+        }
+      ]
+    },
+    {
+      "hash": "0xe1e6e151f9b6df374e15247dc9e5c1dde5a3ed5f2f3df51337031759d0e76a70",
+      "block": "67142320",
+      "blockHash": "0xdbad43a1ce74bb7493d8b5dcc5ea4b8a7aa66f9bebca98803056859df6ea49d5",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8164,
+      "gasLimit": "705411",
+      "gasUsed": "705411",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "71951922000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "211"
+        }
+      ]
+    },
+    {
+      "hash": "0x5128f5042908001c57bc3c60f12f617843f4c523bfa8a028a118bb556272da89",
+      "block": "67142329",
+      "blockHash": "0xeab589869c2014e0733fd77b4e762b1d169e9321e50f371d47aeb1075564446e",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8004,
+      "gasLimit": "743552",
+      "gasUsed": "743552",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "75842304000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "212"
+        }
+      ]
+    },
+    {
+      "hash": "0x2a8cbe0840d853db8b9b23061e4c7c9a7b46bf182e720d99fe6923b826a9b53a",
+      "block": "67142415",
+      "blockHash": "0x0b1a51e756f61f8e70198df8d7f1503a82332764731e4c1433b4d0992e63c5c3",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 13988,
+      "gasLimit": "982557",
+      "gasUsed": "982557",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "100220814000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "213"
+        }
+      ]
+    },
+    {
+      "hash": "0xc69b3c5e7ae840807eeda3d3b77c96aea8bd9b41c365a5103b7470fc7389ed28",
+      "block": "67142428",
+      "blockHash": "0x1a115afcbd555a9bab9db99820fcd928a3d843b8902228c4a073d71fd1e13b62",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 3044,
+      "gasLimit": "604771",
+      "gasUsed": "604771",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "61686642000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "214"
+        }
+      ]
+    },
+    {
+      "hash": "0x80472701e9550ea3ef5027009dd1391c7193df03a0b3059468bfcfd29c21a776",
+      "block": "67142438",
+      "blockHash": "0xdd537b6ff1667ed65e36039108feec7e61f838185e8b4a2b11b7e5341a12665c",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8356,
+      "gasLimit": "778977",
+      "gasUsed": "778977",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "79455654000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "215"
+        }
+      ]
+    },
+    {
+      "hash": "0xee67dea5165f588fae5237166db7ace0aed876e60d1deebd82de7dd76899155b",
+      "block": "67142447",
+      "blockHash": "0x85aa38dd5bc9510834756bf13f34ed95279513fdb04923f0656cbca2cdb87a75",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 9572,
+      "gasLimit": "842142",
+      "gasUsed": "842142",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "85898484000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "216"
+        }
+      ]
+    },
+    {
+      "hash": "0x32746d9c7507ba9b28a93635933093fa617dca596f6e36b3e81d7640fb58b68b",
+      "block": "67142455",
+      "blockHash": "0xbd50cc23ec3b1bbe748ee243193d87bbfb4d28507bd5d4322e112621dc129a47",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8324,
+      "gasLimit": "665154",
+      "gasUsed": "665154",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "67845708000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "217"
+        }
+      ]
+    },
+    {
+      "hash": "0xcfb7d5bc14154af7f1609e588a1045780b9488d06f084ff4c9a2d4984390e298",
+      "block": "67142463",
+      "blockHash": "0xba94fcafddb33067f3a6410553bbdaa57363ee5ca7e343d05ecb3e841f686674",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 6916,
+      "gasLimit": "638020",
+      "gasUsed": "638020",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "65078040000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "218"
+        }
+      ]
+    },
+    {
+      "hash": "0xe5cdcb0e40a48b2d18165507bdbcaba91e931d7de38e0afa0590379116e5c643",
+      "block": "67142472",
+      "blockHash": "0xcac4e5e63a846ef5b6cfdcafc7ba869319ee43285247ba5276694c232132e4c2",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8164,
+      "gasLimit": "705367",
+      "gasUsed": "705367",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "71947434000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "219"
+        }
+      ]
+    },
+    {
+      "hash": "0x4f25bd36afa16c6d7d917fcb599c23786cdd9c2068544689da6936dbc63bf77b",
+      "block": "67142480",
+      "blockHash": "0x6c7ffdc2282c6057a3d5dea7750c42f084593a71538022d8b95a0262fcffd8f2",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8356,
+      "gasLimit": "831842",
+      "gasUsed": "831842",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "84847884000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "220"
+        }
+      ]
+    },
+    {
+      "hash": "0xa0a5a1351c5c8b105884c280a8d293f754d84582d33b37b3fcc5b346f4f8ad83",
+      "block": "67142489",
+      "blockHash": "0xb4f825c8f4828ced77fa38bb3d67d0cbc195539cbb7a8e3932993ab050c16083",
+      "publisher": "0xb28e684815b095ab5fb324214cfea63d76f3d691",
+      "method": "commit",
+      "calldataBytes": 8740,
+      "gasLimit": "882064",
+      "gasUsed": "882064",
+      "effectiveGasPrice": "102000000000",
+      "chargedFeeWei": "89970528000000000",
+      "commits": [
+        {
+          "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+          "batch": "221"
+        }
+      ]
+    }
+  ],
+  "complete": true,
+  "scope": "Exact successful publication fees and payload sizes in a bounded canonical Monad window for the approved agent arenas only. Excludes unrelated publisher spending, reverted publication attempts, operator sponsorship and transfers.",
+  "window": {
+    "from": "67142190",
+    "to": "67142489",
+    "endHash": "0xb4f825c8f4828ced77fa38bb3d67d0cbc195539cbb7a8e3932993ab050c16083",
+    "startUtc": "2026-10-01T02:48:51.000Z",
+    "endUtc": "2026-10-01T02:50:21.000Z",
+    "seconds": 90
+  },
+  "commits": 26,
+  "feeWei": "1951712982000000000",
+  "maxCalldataBytes": 13988,
+  "finishedAt": "2026-10-01T02:50:59.335Z"
+}

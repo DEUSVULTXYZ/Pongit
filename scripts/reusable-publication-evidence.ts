@@ -11,11 +11,12 @@ import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 
-assert.equal(process.env.PONG_REUSABLE_PUBLICATION_EVIDENCE, 'read-only-private');
+const scope=process.env.PONG_REUSABLE_PUBLICATION_EVIDENCE;
+assert(scope==='read-only-private'||scope==='read-only-public');
 assert.equal(process.getuid?.(), 1000);
 const m = validateAgentPoolManifest(JSON.parse(await readFile(process.env.PONG_AGENT_POOL_MANIFEST!, 'utf8')),
   (process.env.PONG_HUMAN_APPS ?? '').split(',').filter(Boolean));
-assert([4,5].includes(m.version)); assert.equal(m.enabled, false);
+assert([4,5].includes(m.version)); assert.equal(m.enabled,scope==='read-only-public');
 const label = process.env.PONG_PUBLICATION_LABEL!; assert(/^[a-z0-9-]{1,50}$/.test(label));
 const span = Number(process.env.PONG_PUBLICATION_BLOCKS ?? 300);
 assert(Number.isSafeInteger(span) && span >= 1 && span <= 3000);

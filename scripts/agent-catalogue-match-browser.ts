@@ -5,7 +5,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
 import {decodeFunctionData,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
-import {installSyncProbe,syncMetrics} from './browser-sync-probe';
+import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
 import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
@@ -70,6 +70,8 @@ page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:
 const requests=new WeakMap<object,{at:string;method:string;path:string}>();
 const controls=new Map<string,{direction:number;sequence:string}>();
 const actions=new WeakMap<object,string>();
+const inputIntents:{at:number;direction:number}[]=[];
+const retainInputIntents=async()=>{inputIntents.push(...await page.evaluate(()=>(window as any).__intents??[]));};
 page.on('request',r=>{starts.set(r,performance.now());try{
  const url=new URL(r.url()),body=r.postDataJSON();
  // Timing metadata only: never retain payloads, signatures, grants or URLs
@@ -97,6 +99,9 @@ page.on('response',async response=>{try{
  }catch{/* Only public transaction identifiers; never request bodies. */}
  try{
  const request=response.request(),body=request.postDataJSON();if(!body||Array.isArray(body))return;
+ if(body.method==='eth_call'&&new URL(response.url()).hostname.endsWith('.fly.dev')){
+  const value=await response.json();if(value.error){report.engineReadErrors??=[];report.engineReadErrors.push({at:new Date().toISOString(),message:clean(value.error)});}
+ }
  if(!['interlude_sendTransaction','interlude_getTransactionReceipt','eth_getTransactionReceipt'].includes(body.method))return;
  const reply=await response.json();
  if(body.method==='interlude_sendTransaction'){
@@ -110,22 +115,26 @@ page.on('response',async response=>{try{
    // Interlude returns the executed receipt in the send response. Counting only
    // later receipt polling silently omitted every ordinary successful control.
    if(reply.result?.transactionHash&&['0x1','success'].includes(reply.result.status)&&!receipts.has(hash.toLowerCase())){
-    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,status:reply.result.status,...controls.get(hash.toLowerCase())});
+    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,...controls.get(hash.toLowerCase())});
    }
   }
  }else if(reply.result){
   const hash=String(reply.result.transactionHash??body.params?.[0]??'').toLowerCase(),began=submitted.get(hash);
-  if(began!==undefined&&!receipts.has(hash)){receipts.add(hash);report.receipts.push({ms:performance.now()-began,status:reply.result.status});}
+  if(began!==undefined&&!receipts.has(hash)){receipts.add(hash);report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,...controls.get(hash)});}
  }
  }catch{/* No request bodies or private authorization data are logged. */}});
 await context.addInitScript(()=>{
  localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));
- (window as any).__paddle=[];(window as any).__keys=[];(window as any).__digits=[];
+ (window as any).__paddle=[];(window as any).__keys=[];(window as any).__digits=[];(window as any).__intents=[];
  window.addEventListener('click',e=>{if((e.target as Element)?.closest('button')?.getAttribute('aria-label')?.startsWith('Challenge '))
   (window as any).__challengeClickedAt=new Date().toISOString();},true);
  const fill=CanvasRenderingContext2D.prototype.fillRect;
  CanvasRenderingContext2D.prototype.fillRect=function(x,y,w,h){fill.call(this,x,y,w,h);if(x===22&&w===12&&h>40&&this.canvas.closest('.pool-canvas-slot')){const a=(window as any).__paddle;if(a.length<30000)a.push({at:performance.now(),y});}};
- window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown'].includes(e.code))(window as any).__keys.push({at:performance.now(),dir:e.code});});
+ window.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown'].includes(e.code)){
+  (window as any).__keys.push({at:performance.now(),dir:e.code});
+  (window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:e.code==='ArrowUp'?-1:1});
+ }});
+ window.addEventListener('keyup',e=>{if(['ArrowUp','ArrowDown'].includes(e.code))(window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:0});});
  setInterval(()=>{const digit=document.querySelector('.match-countdown-digit')?.textContent;if(digit){(window as any).__digits.push(digit);
   (window as any).__firstCountdownAt??=new Date().toISOString();}},30);
 });
@@ -177,7 +186,7 @@ try{
  const before=assertions;
  for(let i=0;i<controlCount;i++){
   const key=i%2?'ArrowDown':'ArrowUp';await page.keyboard.down(key);await page.waitForTimeout(80);await page.keyboard.up(key);await page.waitForTimeout(40);
-  if(i===34){await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
+  if(i===34){await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
  }
  report.controlsEndedAt=new Date().toISOString();
  const trace=await page.evaluate(()=>({paddle:(window as any).__paddle,keys:(window as any).__keys}));
@@ -186,6 +195,8 @@ try{
  const p95=(a:number[])=>[...a].sort((a,b)=>a-b)[Math.floor((a.length-1)*.95)];
  report.input={samples:local.length,p95Ms:p95(local)};report.submissionP95Ms=p95(report.submissions.filter((s:any)=>!s.error).map((s:any)=>s.ms));
  if(report.receipts.length)report.receiptP95Ms=p95(report.receipts.map((r:any)=>r.ms));
+ await retainInputIntents();report.confirmedInput=confirmedInputMetrics(inputIntents,report.receipts);
+ await writeFile(out+'/intent-trace.json',JSON.stringify(inputIntents));
  await page.screenshot({path:out+'/court.png',fullPage:true});
  if(spectator)await spectator.screenshot({path:out+'/spectator.png',fullPage:true});
  if(process.env.PONG_SYNC_PROBE==='1'){
@@ -225,7 +236,7 @@ try{
  report.checks.push('Final score and result window survived the delayed terminal frame');
  // Retain every measured gate even when another assertion fails. Diagnostics
  // never turn a failed run into a pass or discard a rejected command.
- report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.receiptP95Ms<=300,
+ report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.confirmedInput.samples>=(cadenceProbe?20:100)&&report.confirmedInput.p95Ms<=300&&report.confirmedInput.mismatches.length===0,
   player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0:null,
   spectator:report.spectatorSync?report.spectatorSync.p95FrameMs<=20&&report.spectatorSync.maxHoldMs<=500&&report.spectatorSync.frameGaps.length===0:null};
  const requiredControls=cadenceProbe?20:100;

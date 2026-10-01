@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {confirmedInputMetrics} from '../scripts/browser-sync-probe';
+
+test('confirmed input includes the unsent queue and both sides of F5',()=>{
+ const value=confirmedInputMetrics([{at:100,direction:-1},{at:800,direction:0},{at:1200,direction:1}],
+  [{sentAt:600,confirmedAt:615,direction:-1,sequence:'1'},
+   {sentAt:805,confirmedAt:820,direction:0,sequence:'2'},
+   {sentAt:1230,confirmedAt:1250,direction:1,sequence:'3'}]);
+ assert.equal(value.samples,3);assert.equal(value.maxMs,515);assert.deepEqual(value.mismatches,[]);
+});
+test('coalesced inputs measure the latest intention and flag obsolete directions',()=>{
+ const intents=[{at:100,direction:-1},{at:120,direction:1}];
+ const result=confirmedInputMetrics(intents,[{sentAt:10,confirmedAt:15,direction:0,sequence:'1'},
+  {sentAt:130,confirmedAt:140,direction:1,sequence:'2'},
+  {sentAt:160,confirmedAt:170,direction:-1,sequence:'3'}]);
+ assert.equal(result.samples,1);assert.equal(result.p95Ms,20);assert.equal(result.mismatches.length,1);
+ assert.equal(confirmedInputMetrics(intents,[]).p95Ms,undefined);
+});
+test('automatic neutral resend after F5 cannot count one already confirmed keyup twice',()=>{
+ const value=confirmedInputMetrics([{at:100,direction:0}],
+  [{sentAt:110,confirmedAt:125,direction:0,sequence:'2'},
+   {sentAt:4000,confirmedAt:4020,direction:0,sequence:'3'}]);
+ assert.equal(value.samples,1);assert.equal(value.maxMs,25);
+});
