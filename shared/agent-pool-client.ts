@@ -7,6 +7,7 @@ import {validateAgentPoolManifest,type AgentPoolManifest} from './agent-pool';
 import {validateStrategyRuntime} from './agent-strategy-code';
 import {admissionPasses,batchPoolChallenge} from './agent-pool-sponsor';
 import {familyGrantTypes} from './independent';
+import {canonicalContractReads} from './canonical-contract-reads';
 
 export const poolRegistrationTypes={StrategyRegistration:[
  {name:'strategy',type:'address'},{name:'creator',type:'address'},{name:'metadata',type:'bytes32'},
@@ -45,27 +46,27 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
  const [chainId,block]=await Promise.all([client.getChainId(),client.getBlock()]);
  if(chainId!==10143)throw Error('Challenges require Monad Testnet');
  if(!block.hash)throw Error('Challenge authorization has no canonical block');
- const pin={blockHash:block.hash,requireCanonical:true as const};
+ const {read}=canonicalContractReads(client,block.hash);
  if(![0,1].includes(options.mode)||options.cancel!==undefined&&options.cancel<1n)throw Error('Invalid challenge mode or cancellation reference');
  const [family,count]=await Promise.all([
-  client.readContract({address:m.family,abi:familyAbi,functionName:'grantOf',args:[player],...pin}),
+  read(m.family,familyAbi,'grantOf',[player]),
   m.challengeAdmission==='atomic-v1'&&options.cancel===undefined?
-   client.readContract({address:m.challenges,abi:agentChallengesAbi,functionName:'count',...pin}):Promise.resolve(0n),
+   read<bigint>(m.challenges,agentChallengesAbi,'count'):Promise.resolve(0n),
  ]);
  if(family.player.toLowerCase()!==player.toLowerCase()||family.key.toLowerCase()!==key.address.toLowerCase()||family.expires<=block.timestamp)throw Error('Renew arcade session');
  // Computing the expected digest allows the nonce and domain checks to travel
  // together. No signature is requested unless the deployed family agrees.
  const grant=hashTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:family});
  const [observedGrant,nonce]=await Promise.all([
-  client.readContract({address:m.family,abi:familyAbi,functionName:'grantDigest',args:[family],...pin}),
-  client.readContract({address:m.challenges,abi:agentChallengesAbi,functionName:'nonces',args:[grant],...pin}),
+  read<Hex>(m.family,familyAbi,'grantDigest',[family]),
+  read<bigint>(m.challenges,agentChallengesAbi,'nonces',[grant]),
  ]);
  if(grant!==observedGrant)throw Error('Arcade authorization domain differs from the approved family');
  const deadline=block.timestamp+120n<family.expires?block.timestamp+120n:family.expires;
  const message={grant,action:options.cancel===undefined?1:2,agent:getAddress(options.agent),mode:options.mode,id:options.cancel??0n,nonce,deadline};
  const typed={domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge' as const,message};
- const digest=hashTypedData(typed),onchain=await client.readContract({address:m.challenges,abi:agentChallengesAbi,functionName:'digest',
-  args:[grant,message.action,message.agent,message.mode,message.id,nonce,deadline],...pin});
+ const digest=hashTypedData(typed),onchain=await read<Hex>(m.challenges,agentChallengesAbi,'digest',
+  [grant,message.action,message.agent,message.mode,message.id,nonce,deadline]);
  if(digest!==onchain)throw Error('Challenge domain differs from the deployed queue');
  const signature=await key.signTypedData(typed);
  const call=batchPoolChallenge(m,{to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[player,message.action,message.agent,message.mode,message.id,nonce,deadline,signature]})},admissionPasses(count+1n));

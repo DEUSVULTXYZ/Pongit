@@ -1,5 +1,7 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {decodeFunctionData,hashTypedData,keccak256,multicall3Abi,recoverTypedDataAddress,toHex,zeroHash,type Address,type PublicClient} from 'viem';
+import {createPublicClient,custom,decodeFunctionData,encodeFunctionResult,hashTypedData,keccak256,multicall3Abi,recoverTypedDataAddress,toHex,zeroHash,type Address,type Hex,type PublicClient} from 'viem';
+import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
+import {monadTestnet} from 'viem/chains';
 import {familyGrantTypes} from '../shared/independent';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {preparePoolChallenge,preparePoolRegistration,poolChallengeTypes,poolRegistrationTypes} from '../shared/agent-pool-client';
@@ -9,6 +11,53 @@ const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 const grantHash=(grant:any)=>hashTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:grant});
+function canonicalFixture(client:PublicClient){
+ (client as any).multicall=async(c:any)=>{
+  assert.equal(c.allowFailure,false);assert.equal(c.requireCanonical,true);
+  return Promise.all(c.contracts.map((call:any)=>client.readContract({...call,blockHash:c.blockHash,requireCanonical:c.requireCanonical})));
+ };
+}
+
+test('paced browser challenge uses three encoded canonical rounds and fails closed on a rejected batch member',async()=>{
+ const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:250n,revision:0n};
+ const grant=grantHash(family),hash=`0x${'bc'.repeat(32)}` as Hex;let failed=false,signed=0;
+ const rounds:string[][]=[];
+ const client=createPublicClient({chain:monadTestnet,transport:custom({request:async request=>{
+  if(request.method==='eth_chainId')return '0x279f';
+  if(request.method==='eth_getBlockByNumber')return{number:'0x2c',timestamp:'0x64',hash,transactions:[]};
+  assert.equal(request.method,'eth_call');
+  const [call,pin]=request.params as any;assert.deepEqual(pin,{blockHash:hash,requireCanonical:true});
+  const batch=decodeFunctionData({abi:multicall3Abi,data:call.data});assert.equal(batch.functionName,'aggregate3');
+  if(batch.functionName!=='aggregate3')throw Error('Unbatched challenge read');
+  const names:string[]=[];rounds.push(names);
+  const results=batch.args[0].map(c=>{
+   const abi=c.target.toLowerCase()===m.family.toLowerCase()?familyAbi:agentChallengesAbi;
+   const input=decodeFunctionData({abi,data:c.callData});names.push(input.functionName);
+   if(failed&&input.functionName==='nonces')return{success:false,returnData:'0x' as Hex};
+   let result:any;
+   if(input.functionName==='grantOf')result=family;
+   else if(input.functionName==='count')result=49n;
+   else if(input.functionName==='grantDigest')result=grant;
+   else if(input.functionName==='nonces')result=3n;
+   else{
+    assert.equal(input.functionName,'digest');
+    const [g,action,agent,mode,id,nonce,deadline]=input.args as any;
+    result=hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant:g,action,agent,mode,id,nonce,deadline}});
+   }
+   return{success:true,returnData:encodeFunctionResult({abi,functionName:input.functionName,result} as any)};
+  });
+  return encodeFunctionResult({abi:multicall3Abi,functionName:'aggregate3',result:results});
+ }},{retryCount:0})});
+ const five={...m,version:5,rulesVersion:15,maxMatches:5,houseInstances:'official-v1',countdownClock:'engine-ticks-v1',arenaAdmissions:'verified-epoch-v1',
+  lanes:{tournament:1,challenge:4},challengeAdmission:'atomic-v1',arenas:[...m.arenas,...[12,13].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`}))]} as AgentPoolManifest;
+ const signer={...key,signTypedData:async(args:any)=>{signed++;return key.signTypedData(args);}};
+ await preparePoolChallenge(client,five,signer,family.player,{agent:addr(20),mode:1});
+ assert.deepEqual(rounds,[['grantOf','count'],['grantDigest','nonces'],['digest']]);assert.equal(signed,1);
+ failed=true;rounds.length=0;
+ await assert.rejects(preparePoolChallenge(client,five,signer,family.player,{agent:addr(20),mode:1}));
+ assert.equal(signed,1,'A failed member must not create another signed intent');
+ assert.equal(rounds.length,2,'No fallback to latest or a partial authorization');
+});
 test('registration signs the exact creator, strategy, metadata, catalogue and Monad chain',async()=>{
  const owner=privateKeyToAccount(generatePrivateKey());let signed=0;
  const client={getBlock:async()=>({number:44n,timestamp:100n}),getChainId:async()=>10143,getCode:async(c:any)=>{assert.equal(c.blockNumber,44n);return '0x60006000f3';},readContract:async(c:any)=>{
@@ -37,6 +86,7 @@ test('challenge is signed only by the granted arcade key and never exceeds the g
   const [g,action,agent,mode,id,nonce,deadline]=c.args;
   return hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:wrongDomain?4242:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant:g,action,agent,mode,id,nonce,deadline}});
  }} as unknown as PublicClient;
+ canonicalFixture(client);
  const p=await preparePoolChallenge(client,m,key,addr(99),{agent:addr(20),mode:1});assert.equal(p.deadline,150n);
  const call=decodeFunctionData({abi:agentChallengesAbi,data:p.data});assert.equal(call.functionName,'command');if(call.functionName!=='command')throw Error();
  const [player,action,agent,mode,id,nonce,deadline,signature]=call.args;assert.equal(player,addr(99));assert.equal(action,1);assert.equal(id,0n);
@@ -56,6 +106,7 @@ test('new atomic challenge sizes its bounded scan at the same block without chan
   const [g,action,agent,mode,id,nonce,deadline]=c.args;
   return hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant:g,action,agent,mode,id,nonce,deadline}});
  }} as unknown as PublicClient;
+ canonicalFixture(client);
  const prepared=await preparePoolChallenge(client,five,key,addr(99),{agent:addr(20),mode:1});
  const batch=decodeFunctionData({abi:multicall3Abi,data:prepared.data});assert.equal(batch.functionName,'aggregate3');if(batch.functionName!=='aggregate3')throw Error();
  assert.equal(batch.args[0].length,3);assert.equal(reads.filter(n=>n==='count').length,1);
@@ -77,6 +128,7 @@ test('challenge refuses a noncanonical observation or wrong family domain before
   if(c.functionName==='nonces'){nonceRead=true;return 3n;}
   throw Error('Must not request a challenge signature');
  }} as unknown as PublicClient;
+ canonicalFixture(client);
  await assert.rejects(preparePoolChallenge(client,m,signer,addr(99),{agent:addr(20),mode:0}),/not canonical/);
  assert(nonceRead,'Nonce read can overlap verification, but never authorizes signing');
  failure=false;await assert.rejects(preparePoolChallenge(client,m,signer,addr(99),{agent:addr(20),mode:0}),/domain differs/);
