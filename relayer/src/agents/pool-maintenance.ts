@@ -6,6 +6,7 @@ import {abi as familyAbi} from '../../../shared/abi-independent-ArcadeFamily';
 import {agentTournamentsAbi as bookAbi} from '../../../shared/abi-AgentTournaments';
 import {agentArenaPoolAbi as poolAbi} from '../../../shared/abi-AgentArenaPool';
 import {houseInstanceAbi} from '../../../shared/agent-house-instances';
+import {hostedControl,LEGACY_HOSTED_HUB} from '../../../shared/hosted-control';
 
 export type PoolRead=<T=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<T>;
 
@@ -37,13 +38,14 @@ export function pinnedReads(load:(address:Address,abi:Abi,functionName:string,ar
  const prefetch=(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>{read(address,abi,functionName,args).catch(()=>{});};
  return{read,prefetch};
 }
-/** Every new hosted epoch needs Interlude's control plane. Any HTTP answer, a 404
- * included, proves it is serving; a timeout or a 5xx means a rotated arena could
- * not be hosted again yet. Only voluntary, age-based rotations consult this. */
-export async function controlPlaneAnswers(app:Address,transport:typeof fetch=fetch,timeoutMs=5000){
+/** Voluntary rotations require the control plane for this exact hub. A missing
+ * session is normal, but authorization, throttling or server errors do not prove
+ * that the next epoch can be hosted. This is not a publication certificate. */
+export async function controlPlaneAnswers(app:Address,transport:typeof fetch=fetch,timeoutMs=5000,hub:Address=LEGACY_HOSTED_HUB){
  try{
-  const response=await transport(`https://control.interludelayer.xyz/sessions/${app}`,{signal:AbortSignal.timeout(timeoutMs)});
-  await response.body?.cancel().catch(()=>{});return response.status<500;
+  const origin=await hostedControl(hub,transport);
+  const response=await transport(`${origin}/sessions/${app}`,{signal:AbortSignal.timeout(timeoutMs),redirect:'error'});
+  await response.body?.cancel().catch(()=>{});return response.ok||response.status===404;
  }catch{return false;}
 }
 /** The shared operator key was busy with another transaction (a sponsored player

@@ -1,7 +1,26 @@
+import {configuredControl} from './fixtures/hosted-control';
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {provisionPoolArena,observePoolArenaReady} from '../relayer/src/agents/pool-hosted';
+import {provisionPoolArena as actualprovisionPoolArena,observePoolArenaReady} from '../relayer/src/agents/pool-hosted';
 import {verifyHostedArenaEvidence,type HostedArenaEvidence} from '../shared/hosted-arena-identity';
 const app='0x0000000000000000000000000000000000000011';
+test('wrong control configuration cannot journal or send a new session',async()=>{
+ const f=fixture(),urls:string[]=[];
+ await assert.rejects(actualprovisionPoolArena(f.db,app,1n,undefined,(async input=>{
+  urls.push(String(input));return Response.json({hub:'0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e',chainId:10143,
+   validator:'0xa375CF27eD39491dB8302Ffc3dF4210Ad263eF43'});
+ }) as typeof fetch),/configuration/);
+ assert.deepEqual(urls,['https://interlude-control.fly.dev/config']);assert.equal(f.row.provisioning,null);
+});
+test('routing correction preserves an old uncertain POST and only looks up on its matching hub',async()=>{
+ const f=fixture();f.row.provision_epoch='1';f.row.provisioning={state:'uncertain',at:1000,attempts:1,retryAt:0};
+ const calls:{url:string;method:unknown}[]=[];
+ const transport=configuredControl((async(input,init)=>{calls.push({url:String(input),method:init?.method});return Response.json({app,url:'https://test-arena.example'});}) as typeof fetch);
+ await actualprovisionPoolArena(f.db,app,1n,undefined,transport);
+ assert.deepEqual(calls,[{url:'https://interlude-control.fly.dev/sessions/'+app,method:'GET'}]);
+ assert.equal(f.row.provisioning.control,'https://control.interludelayer.xyz');
+ assert.equal(f.row.provisioning.lookupControl,'https://interlude-control.fly.dev');assert.equal(f.row.provisioning.attempts,1);
+ assert.equal(f.history.filter(e=>e[2]==='sending').length,0);
+});
 function fixture(){const row:any={provision_epoch:null,provisioning:null},history:any[]=[];let locked=false;
  const db:any={connect:async()=>({release(){},query:async(sql:string,a:any[]=[])=>{
   if(sql.includes('pg_try_advisory_lock')){const ok=!locked;if(ok)locked=true;return{rows:[{ok}]};}
@@ -166,3 +185,5 @@ test('restart can observe its verified paused node without claiming write readin
   {...paused,health:{...(paused.health as any),app:'0x0000000000000000000000000000000000000012'}}])
   assert.throws(()=>verifyHostedArenaEvidence(expectation,bad,{observePausedPublication:true}));
 });
+
+const provisionPoolArena=(...args:Parameters<typeof actualprovisionPoolArena>)=>{if(args[4])args[4]=configuredControl(args[4]);return actualprovisionPoolArena(...args);};

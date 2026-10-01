@@ -80,7 +80,7 @@ try{
   if(!valid){
    await db.query('INSERT INTO agent_arcade.lifecycle(app) VALUES($1) ON CONFLICT DO NOTHING',[m.app]);
    const adapter:any={query:(sql:string,args:unknown[])=>db.query(sql.replaceAll('il_lifecycle','agent_arcade.lifecycle'),args)};
-   await requestHostedRenewal(adapter,m.app,d.epoch,m.node);await event('provisioning',{epoch:String(d.epoch)});
+   await requestHostedRenewal(adapter,m.app,d.epoch,m.node,undefined,undefined,m.hub);await event('provisioning',{epoch:String(d.epoch)});
   }else{
    m.epoch=String(d.epoch);await writeFile(manifestFile+'.next',JSON.stringify(m,null,2),{mode:0o600});await rename(manifestFile+'.next',manifestFile);
    const health=(await db.query('SELECT detail FROM agent_arcade.health WHERE app=$1',[m.app])).rows[0];

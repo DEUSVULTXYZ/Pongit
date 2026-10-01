@@ -1,19 +1,21 @@
 import type { Pool } from "pg";
 import type { Address } from "viem";
 import { HOME_REGION } from "../../shared/interlude-regions";
+import {hostedControl,LEGACY_HOSTED_HUB,PREVIOUS_HOSTED_ORIGIN} from '../../shared/hosted-control';
 
 type Provision = { epoch: string; state: "sending" | "uncertain" | "rejected" | "confirmed" | "intervention"; attemptedAt: number; retryAt: number; attempts: number; status?: number;
-  reason?: "identity"; stalledAt?: number; alertedAt?: number };
+  reason?: "identity"; stalledAt?: number; alertedAt?: number;control?:string;lookupControl?:string;hub?:string };
 
 /** Persist intent before HTTP. Lost replies are resolved by lookup, not another POST. */
 export async function requestHostedRenewal(
   db: Pick<Pool, "query">, app: Address, epoch: bigint, expectedUrl: string,
-  transport: typeof fetch = fetch, now = Date.now(),
+  transport: typeof fetch = fetch, now = Date.now(), hub:Address=LEGACY_HOSTED_HUB,
 ) {
   const row=(await db.query("SELECT provision_epoch,provisioning FROM il_lifecycle WHERE app=$1",[app])).rows[0];
   let p: Provision | null = row.provisioning;
   if(!p && String(row.provision_epoch)===String(epoch))p={epoch:String(epoch),state:"uncertain",attemptedAt:now,retryAt:0,attempts:1};
   if(p?.epoch!==String(epoch))p=null;
+  if(p?.hub&&p.hub.toLowerCase()!==hub.toLowerCase())throw Error('Hosted journal hub changed; operator inspection required');
   if(p && p.retryAt>now)throw new Error("Hosted engine retry is cooling down");
   // Only a changed identity or URL is terminal. An older intervention came from
   // ambiguity alone: resume lookups, which never create and recheck identity.
@@ -38,12 +40,13 @@ export async function requestHostedRenewal(
     }
     return value;
   };
-  if(create)await save({epoch:String(epoch),state:"sending",attemptedAt:now,retryAt:0,attempts:(p?.attempts??0)+1});
-  else if(!row.provisioning)await save(p!);
+  const control=await hostedControl(hub,transport);
+  if(create)await save({epoch:String(epoch),state:"sending",attemptedAt:now,retryAt:0,attempts:(p?.attempts??0)+1,control,hub});
+  else await save({...p!,control:p!.control??PREVIOUS_HOSTED_ORIGIN,lookupControl:control,hub});
   let response:Response;
   try {
-    response=await transport(`https://control.interludelayer.xyz/sessions${create?"":"/"+app}`,{
-      method:create?"POST":"GET",headers:{"content-type":"application/json"},
+    response=await transport(`${control}/sessions${create?"":"/"+app}`,{
+      method:create?"POST":"GET",headers:{"content-type":"application/json"},redirect:'error',
       // Without a region, Interlude places the node near the caller (this VPS), not the players.
       ...(create?{body:JSON.stringify({app,region:HOME_REGION})}:{}),signal:AbortSignal.timeout(10000),
     });

@@ -60,7 +60,7 @@ try{
     verifyHostedArenaEvidence(expected,evidence);node=candidate;return evidence;
    };
    while(!node&&Date.now()<deadline){
-    try{url=await provisionPoolArena(db,r.app,d.epoch,url,undefined,{expected,inspect});if(!node)await inspect(url);}
+    try{url=await provisionPoolArena(db,r.app,d.epoch,url,undefined,{expected,inspect},r.hub);if(!node)await inspect(url);}
     catch(error){const retry=Number((error as any).retryAt??0);await new Promise(resolve=>setTimeout(resolve,Math.max(2000,Math.min(10000,retry-Date.now()))));}
    }
    assert(node,'Hosted identity unavailable before the original deadline');report.node=url;

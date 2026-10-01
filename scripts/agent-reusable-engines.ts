@@ -135,7 +135,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
       hubEpoch:d!.epoch,engineEpoch:observedSession.epoch}).catch(()=>{});
      publicationPaused=!verified.publicationReady;inspected=candidate;return evidence;
     };
-    url=await provisionPoolArena(db,app,d.epoch,url,undefined,{expected,inspect,observePausedPublication:true});
+    url=await provisionPoolArena(db,app,d.epoch,url,undefined,{expected,inspect,observePausedPublication:true},m.hub);
     try{
      if(!inspected){await inspect(url);await observePoolArenaReady(db,app,d.epoch,true);}
      assert(inspected,'Hosted node was not verified');node=inspected;

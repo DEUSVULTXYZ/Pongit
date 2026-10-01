@@ -1,9 +1,10 @@
+import {configuredControl} from './fixtures/hosted-control';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {arenaOutage,quietRetry} from '../relayer/src/independent-service-policy';
 import {streamRetryMs} from '../shared/engine-stream';
-import {requestHostedRenewal} from '../relayer/src/rooms-hosted-renewal';
-import {provisionPoolArena} from '../relayer/src/agents/pool-hosted';
+import {requestHostedRenewal as actualrequestHostedRenewal} from '../relayer/src/rooms-hosted-renewal';
+import {provisionPoolArena as actualprovisionPoolArena} from '../relayer/src/agents/pool-hosted';
 
 test('an outage means every pooled arena is offline, never a busy or partly healthy pool',()=>{
  assert.equal(arenaOutage(true,[{online:false},{online:false},{online:false}]),true);
@@ -34,3 +35,7 @@ test('a new hosted session is always requested in the arenas home region',async(
  await provisionPoolArena(agents,'0x0000000000000000000000000000000000000012',1n,undefined,(async(_:any,o:any)=>{bodies.push(o.body&&JSON.parse(o.body));return Response.json({url});}) as typeof fetch);
  assert.deepEqual(bodies,[{app:'0x0000000000000000000000000000000000000011',region:'eu'},{app:'0x0000000000000000000000000000000000000012',region:'eu'}]);
 });
+
+const provisionPoolArena=(...args:Parameters<typeof actualprovisionPoolArena>)=>{if(args[4])args[4]=configuredControl(args[4]);return actualprovisionPoolArena(...args);};
+
+const requestHostedRenewal=(...args:Parameters<typeof actualrequestHostedRenewal>)=>{if(args[4])args[4]=configuredControl(args[4]);return actualrequestHostedRenewal(...args);};

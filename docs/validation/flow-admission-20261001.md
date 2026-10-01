@@ -424,3 +424,49 @@ Backups `marker-closed-20261001T0439Z` and `player-web-20261001T0448Z` are
 SHA-verified off VPS. All failed attempts, old journals and rollback images
 remain. Human e4eceb6 is unchanged. Public atomic challenge capability is still
 absent; the real browser tests explicitly override it for qualification.
+
+
+## Input deployment and hub-bound discovery, 05:25 UTC
+
+Web 3573b79 (`505ee1ef6410`) deployed at 05:11:16 UTC after 88 Chrome/Edge
+UI fixture checks. The first capture lacked the runtime home-page flags and
+failed; it is preserved separately. Engine d2a7964 (`6afc3f0664b1`) deployed at
+05:02:49 UTC. Its immutable controller code prefetch retains the admission
+code-hash check and all command fences. The previous tournament match completed
+and subsequent fixtures started normally. Human e4eceb6 remains untouched.
+
+Actual virtual-Mera Classic 294 and Chaos 295 published 0-7, survived F5 and each
+confirmed 220 unique controls with no obsolete-direction mismatch. Confirmation
+p95 was 18.031/19.226 ms, frame p95 17.2 ms, and player/spectator maximum holds
+182.5/167 ms and 96.9/99.7 ms. Both complete reports remain FAIL because admission
+was 9.326/9.485 seconds, above eight seconds. These are two samples, not proof of
+a population p95. Atomic admission is still an explicit qualification override.
+No synthetic game driver is running. Backup intent-20261001T0504Z is verified
+off VPS; it predates these two runtime changes.
+
+At 05:18-05:20 UTC, both public control configurations were read from the VPS.
+`control.interludelayer.xyz/config` identifies hub v3 0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e
+and validator 0xa375CF27eD39491dB8302Ffc3dF4210Ad263eF43. The previous endpoint
+`interlude-control.fly.dev/config` identifies PONGIT's hub v1
+0x3Ef8327F69e09cf721772F345e2A887eA22cD595 and validator
+0xB28E684815b095aB5Fb324214cfEa63d76F3d691, both on chain 10143. Session lookups
+for all eight public agent arenas returned 404 from the new service and live
+records with their pinned URLs from the old service. Directory records do not
+prove a current working epoch; 028f and 40178 node probes timed out.
+
+The pinned official deployment document confirms the endpoint split:
+https://github.com/Veenoway/interlude-sdk/blob/7b3fde219d196e3851b14f1d1b0ff80c1417833f/docs/DEPLOYMENTS.md
+The new endpoint forwards machine commits for old apps, not their session
+lookup API. This explains the observed directory mismatch. The earlier private
+409 body was not retained, so its exact cause remains unproven.
+
+The routing fix validates hub, chain and validator before a session request,
+uses only pinned service origins, and rejects redirects. It coalesces the
+configuration check for 30 seconds. Existing uncertain creations preserve their
+original destination and permit only lookup at the corrected directory. Neither
+404 nor a live record is used to resubmit them. Wrong configuration cannot even
+journal a creation. Node identity and publication checks remain independent.
+The complete TypeScript suite has 858 passes and root typecheck passes. This
+checkpoint does not claim that the routing fix is deployed or has qualified a
+fresh publication. The private empty arena still awaits its actual 05:35:08
+release deadline; its original failed report is preserved.

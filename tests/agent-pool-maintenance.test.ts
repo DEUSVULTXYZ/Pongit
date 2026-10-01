@@ -1,3 +1,4 @@
+import {configuredControl} from './fixtures/hosted-control';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
@@ -194,8 +195,8 @@ test('challenge expiry starts its whole scan window together and keeps the first
 
 test('a voluntary rotation needs a control plane that answers, even with a 404',async()=>{
  const answer=(status:number)=>(async()=>new Response('{}',{status})) as typeof fetch;
- assert.equal(await controlPlaneAnswers(address(1),answer(200)),true);
- assert.equal(await controlPlaneAnswers(address(1),answer(404)),true,'an unknown session still proves control is serving');
- assert.equal(await controlPlaneAnswers(address(1),answer(503)),false);
+ assert.equal(await controlPlaneAnswers(address(1),configuredControl(answer(200))),true);
+ assert.equal(await controlPlaneAnswers(address(1),configuredControl(answer(404))),true,'an unknown session still proves control is serving');
+ assert.equal(await controlPlaneAnswers(address(1),configuredControl(answer(503))),false);
  assert.equal(await controlPlaneAnswers(address(1),(async()=>{throw Error('timeout');}) as typeof fetch),false);
 });

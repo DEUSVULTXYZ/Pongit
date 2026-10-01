@@ -1,6 +1,7 @@
+import {configuredControl} from './fixtures/hosted-control';
 import test from "node:test";
 import assert from "node:assert/strict";
-import { requestHostedRenewal } from "../relayer/src/rooms-hosted-renewal";
+import { requestHostedRenewal as actualrequestHostedRenewal } from "../relayer/src/rooms-hosted-renewal";
 const app="0x0000000000000000000000000000000000000011",url="https://test-engine.example";
 function journal(){const row={provision_epoch:"0",provisioning:null as any};return {query:async(sql:string,args:any[])=>{
   if(sql.startsWith("SELECT"))return {rows:[{...row}]};row.provision_epoch=args[1];row.provisioning=structuredClone(args[2]);return {rowCount:1};
@@ -75,3 +76,5 @@ test("a live control record cannot hide an unavailable epoch indefinitely",async
 test("an unrelated application in a lookup is rejected",async()=>{
   await assert.rejects(requestHostedRenewal(journal(),app,2n,url,(async()=>Response.json({app:'0x22',url})) as typeof fetch),/another application/);
 });
+
+const requestHostedRenewal=(...args:Parameters<typeof actualrequestHostedRenewal>)=>{if(args[4])args[4]=configuredControl(args[4]);return actualrequestHostedRenewal(...args);};

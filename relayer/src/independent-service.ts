@@ -160,7 +160,7 @@ export async function independentService(o:Options){
  const reusableLifecycles=engines.map((e,i)=>reusableResults&&reusableAdmit?independentReusableLifecycle({base,manifest:m,engine:e,health:health[i],results:reusableResults,queue,
   stage:(name,code)=>stage(i,name,code),admit:reusableAdmit,ensureHosted:async epoch=>{
    await db.query("INSERT INTO il_lifecycle(app,stage,epoch) VALUES($1,'starting',$2) ON CONFLICT(app) DO NOTHING",[e.app,String(epoch)]);
-   await requestHostedRenewal(db,e.app,epoch,m.arenas[i].node!);
+   await requestHostedRenewal(db,e.app,epoch,m.arenas[i].node!,undefined,undefined,m.hub);
   }}):null);
  async function observeArena(i:number){
   if(reusableLifecycles[i]){await reusableLifecycles[i]!.observe();return;}
@@ -222,7 +222,7 @@ export async function independentService(o:Options){
    // A creation acknowledgement is not reachability. The persisted state
    // makes subsequent requests GET lookups, never a duplicate POST; after
    // five minutes an unreachable existing engine needs explicit diagnosis.
-   try{await requestHostedRenewal(db,a.app,d.epoch,a.node!);}
+   try{await requestHostedRenewal(db,a.app,d.epoch,a.node!,undefined,undefined,m.hub);}
    catch(error){
     const provision=(await db.query('SELECT provisioning FROM il_lifecycle WHERE app=$1',[a.app])).rows[0]?.provisioning;
     if(provision?.epoch===String(d.epoch)&&provision.state==='intervention')await stage(i,'intervention','HOSTED_ENGINE_UNAVAILABLE');

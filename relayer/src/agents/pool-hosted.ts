@@ -3,10 +3,11 @@ import type {Address} from 'viem';
 import {measuredFetch} from '../../../shared/rpc-metrics';
 import {HOME_REGION} from '../../../shared/interlude-regions';
 import {verifyHostedArenaEvidence,type HostedArenaExpectation,type HostedArenaEvidence} from '../../../shared/hosted-arena-identity';
+import {hostedControl,LEGACY_HOSTED_HUB,PREVIOUS_HOSTED_ORIGIN} from '../../../shared/hosted-control';
 
 const INSPECTION_AFTER_MS=300_000,ALERT_EVERY_MS=600_000;
 type Provision={state:string;at:number;attempts:number;retryAt:number;http?:number;url?:string;readyAt?:number;reason?:string;stalledAt?:number;alertedAt?:number;
- nodeRetryAt?:number;adopted?:ReturnType<typeof verifyHostedArenaEvidence>};
+ nodeRetryAt?:number;adopted?:ReturnType<typeof verifyHostedArenaEvidence>;control?:string;lookupControl?:string;hub?:string};
 type PinnedInspection={expected:HostedArenaExpectation;inspect:(url:string)=>Promise<HostedArenaEvidence>;observePausedPublication?:boolean};
 function safeOrigin(value:string){
  const url=new URL(value);
@@ -51,11 +52,13 @@ const terminal=(p:Provision|null)=>p?.state==='intervention'&&p.reason==='identi
 /** Persist before POST, look up after an ambiguous response. Only an explicit
  * non-creating refusal permits another POST. A control-plane URL is never an
  * availability certificate: observePoolArenaReady records the actual checks. */
-export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expected?:string,transport=measuredFetch('interlude','hosted.session'),pinnedInspection?:PinnedInspection){
+const sessionTransport=measuredFetch('interlude','hosted.session');
+export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expected?:string,transport=sessionTransport,pinnedInspection?:PinnedInspection,hub:Address=LEGACY_HOSTED_HUB){
  return exclusively(db,app,async c=>{
   await c.query('INSERT INTO agent_pool.lifecycle(app) VALUES($1) ON CONFLICT DO NOTHING',[app.toLowerCase()]);
   const row=(await c.query('SELECT provision_epoch,provisioning FROM agent_pool.lifecycle WHERE app=$1',[app.toLowerCase()])).rows[0];
   let p:Provision|null=String(row.provision_epoch)===String(epoch)?row.provisioning:null;const now=Date.now();
+  if(p?.hub&&p.hub.toLowerCase()!==hub.toLowerCase())throw Error('Hosted journal hub changed; operator inspection required');
   if(terminal(p))throw Error('Hosted arena identity or URL changed; operator inspection required');
   // An older intervention came from ambiguity alone: resume safe lookups.
   if(p?.state==='intervention')p={...p,state:'uncertain',retryAt:0};
@@ -82,10 +85,17 @@ export async function provisionPoolArena(db:Pool,app:Address,epoch:bigint,expect
   }
   if(p&&p.retryAt>now)throw cooldown(pinnedInspection?Math.min(p.retryAt,p.nodeRetryAt||now+5000):p.retryAt);
   const create=!p||p.state==='rejected';
-  if(create){p={state:'sending',at:now,attempts:(p?.attempts??0)+1,retryAt:0};await save(c,app,epoch,p);}
+  const control=await hostedControl(hub,transport);
+  if(create){p={state:'sending',at:now,attempts:(p?.attempts??0)+1,retryAt:0,control,hub};await save(c,app,epoch,p);}
+  else if(p){
+   // Old uncertain creations remain uncertain after the routing repair. Record
+   // their original destination, then only LOOK UP at the verified directory.
+   // Neither a 404 nor a live record authorizes another creation in this epoch.
+   p={...p,control:p.control??PREVIOUS_HOSTED_ORIGIN,lookupControl:control,hub};await save(c,app,epoch,p);
+  }
   if(!p)throw Error('Hosted provisioning intent missing');
   let response:Response;
-  try{response=await transport(`https://control.interludelayer.xyz/sessions${create?'':'/'+app}`,{method:create?'POST':'GET',headers:{'content-type':'application/json'},
+  try{response=await transport(`${control}/sessions${create?'':'/'+app}`,{method:create?'POST':'GET',headers:{'content-type':'application/json'},redirect:'error',
    // Without a region, Interlude places the node near the caller (this VPS), not the players.
    ...(create?{body:JSON.stringify({app,region:HOME_REGION})}:{}),signal:AbortSignal.timeout(10000)});}
   catch{await save(c,app,epoch,pending(p,now,'response-lost',app,epoch));throw Error('Hosted response lost; the existing creation will be looked up');}

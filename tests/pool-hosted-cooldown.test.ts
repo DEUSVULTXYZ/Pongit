@@ -1,5 +1,6 @@
+import {configuredControl} from './fixtures/hosted-control';
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {provisionPoolArena} from '../relayer/src/agents/pool-hosted';
+import {provisionPoolArena as actualprovisionPoolArena} from '../relayer/src/agents/pool-hosted';
 test('hosted cooldown exposes its actual deadline and sends no control-plane request',async()=>{
  const at=Date.now()+10000;let network=0,released=false;
  const connection={query:async(sql:string)=>{
@@ -12,3 +13,5 @@ test('hosted cooldown exposes its actual deadline and sends no control-plane req
   (e:any)=>e.code==='AGENT_HOSTED_COOLDOWN'&&e.retryAt===at);
  assert.equal(network,0);assert(released);
 });
+
+const provisionPoolArena=(...args:Parameters<typeof actualprovisionPoolArena>)=>{if(args[4])args[4]=configuredControl(args[4]);return actualprovisionPoolArena(...args);};

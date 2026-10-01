@@ -283,7 +283,7 @@ export async function roomsLifecycle(o: {
             healthy = true;
             o.onReady?.(d.epoch);
           } else {
-            await requestHostedRenewal(o.db, o.app, d.epoch, o.nodeUrl);
+            await requestHostedRenewal(o.db, o.app, d.epoch, o.nodeUrl,undefined,undefined,o.hub);
             error = `Hosted engine has not confirmed epoch ${d.epoch}; awaiting operator startup`;
           }
           return;

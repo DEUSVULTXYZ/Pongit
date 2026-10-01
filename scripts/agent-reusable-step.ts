@@ -306,7 +306,7 @@ async function step(){
     if(!alerted[key]){alerted[key]=now;console.warn(JSON.stringify({at:new Date().toISOString(),event:'arena-replacement-exhausted',arena:a.app,epoch:String(a.d.epoch),since:new Date(dead[key]).toISOString()}));}
     continue;
    }
-   if(cooling(m.pool,'closeReusableArena')||!await controlPlaneAnswers(a.app))continue;
+   if(cooling(m.pool,'closeReusableArena')||!await controlPlaneAnswers(a.app,undefined,undefined,m.hub))continue;
    const since=dead[key];replaced[key]=[...(replaced[key]??[]),now];delete dead[key];delete alerted[key];await save();
    console.warn(JSON.stringify({at:new Date().toISOString(),event:'arena-replaced-unhealthy',arena:a.app,epoch:String(a.d.epoch),since:new Date(since).toISOString()}));
    await act(m.pool,'closeReusableArena',[a.app]);return;
@@ -320,7 +320,7 @@ async function step(){
    const leading=candidate.d.expiresAt<=block.timestamp+BigInt(budget.rotationLeadSeconds);
    // Age alone is a voluntary rotation: never retire a healthy arena into an
    // epoch that Interlude's control plane cannot host right now.
-   if(leading||block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)&&await controlPlaneAnswers(candidate.app)){
+   if(leading||block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)&&await controlPlaneAnswers(candidate.app,undefined,undefined,m.hub)){
     await act(m.pool,'closeReusableArena',[candidate.app]);return;
    }
   }
