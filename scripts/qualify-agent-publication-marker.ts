@@ -15,12 +15,18 @@ import {initializePoolOperations,createPoolEngine} from '../relayer/src/agents/p
 import {provisionPoolArena} from '../relayer/src/agents/pool-hosted';
 import {reusableAgentArenaAbi as abi} from '../shared/abi-ReusableAgentArena';
 import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerifier';
+import {hostedControl} from '../shared/hosted-control';
+import {hostedOptInTransport} from '../shared/hosted-opt-in';
+import {measuredFetch} from '../shared/rpc-metrics';
 
 assert.equal(process.env.PONG_PUBLICATION_MARKER,'isolated-testnet');assert.equal(process.getuid?.(),1000);
 const action=process.argv[2];assert(['deploy','open','probe','close','release'].includes(action));
 const epoch=BigInt(process.env.PONG_PUBLICATION_EPOCH??'1');
 assert(epoch===1n||epoch===2n,'Only the original trial or the explicit routing-repair trial is supported');
-const prefix='publication-marker-20261001',file='/state/publication-marker.json';
+const optIn=process.env.PONG_PUBLICATION_OPT_IN==='isolated-testnet';
+if(optIn)assert.equal(epoch,1n,'Provisioning consent has one separately journaled bounded trial');
+const prefix=optIn?'publication-consent-20261001':'publication-marker-20261001',file='/state/publication-marker.json';
+const arenaArtifact=optIn?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const manifest=JSON.parse(await readFile('/metadata/manifest.json','utf8'));
 const t=await chainTools(prefix),db=new Pool({connectionString:process.env.PONG_PUBLICATION_DATABASE_URL});
 let r:any,engine:ReturnType<typeof createPoolEngine>|undefined;
@@ -30,7 +36,7 @@ try{
  try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
  if(action==='deploy'){
   assert.equal(epoch,1n);
-  await t.preflight(['PublicationQualificationAuthority','PublishedResultVerifier','ReusableAgentArena']);
+  await t.preflight(['PublicationQualificationAuthority','PublishedResultVerifier',arenaArtifact]);
   if(!r){r={prefix,source:process.env.SOURCE_REVISION,engineKey:generatePrivateKey(),phase:'deploying'};assert(r.source);await save();}
   assert.equal(r.source,process.env.SOURCE_REVISION,'Resume with the original source');
   const source=manifest.arenas[0],block=await t.base.getBlock();
@@ -40,7 +46,7 @@ try{
   r.hub=manifest.hub;r.dependencies={policies,kernel};await save();
   r.authority=await t.deploy('PublicationQualificationAuthority',[r.hub]);await save();
   r.verifier=await t.deploy('PublishedResultVerifier',[r.authority,r.hub]);await save();
-  r.app=await t.deploy('ReusableAgentArena',[r.hub,r.authority,'0x0000000000000000000000000000000000000001',policies,kernel,r.verifier]);await save();
+  r.app=await t.deploy(arenaArtifact,[r.hub,r.authority,'0x0000000000000000000000000000000000000001',policies,kernel,r.verifier,...(optIn?[t.account.address]:[])]);await save();
   assert(!manifest.arenas.some((a:any)=>a.app.toLowerCase()===r.app.toLowerCase()));
   await t.write('bind',r.authority,(await t.artifact('PublicationQualificationAuthority')).abi,'bind',[r.app]);
   r.runtimeHash=keccak256((await t.base.getCode({address:r.app}))!);r.phase='deployed-closed';await save();
@@ -59,6 +65,32 @@ try{
   }else if(action==='probe'){
    const d=await readHubDelegation(t.base,r.hub,r.app);assert.equal(d.status,1);assert.equal(d.epoch,epoch);
    await initializePoolOperations(db);
+   let transport:typeof fetch|undefined;
+   if(optIn){
+    const block=await t.base.getBlock(),ownerAbi=(await t.artifact(arenaArtifact)).abi;
+    const [owner,actualHub,delegation]=await Promise.all([
+     t.base.readContract({address:r.app,abi:ownerAbi,functionName:'owner',blockNumber:block.number}),
+     t.base.readContract({address:r.app,abi:ownerAbi,functionName:'hub',blockNumber:block.number}),
+     readHubDelegation(t.base,r.hub,r.app,block.number),
+    ]);
+    assert.equal(String(owner).toLowerCase(),t.account.address.toLowerCase());assert.equal(String(actualHub).toLowerCase(),r.hub.toLowerCase());
+    assert.equal(delegation.status,1);assert.equal(delegation.epoch,epoch);assert.equal((await t.base.getBlock({blockNumber:block.number})).hash,block.hash);
+    const measured=measuredFetch('interlude','hosted.consent');
+    const control=await hostedControl(r.hub,measured);
+    const observe:typeof fetch=async(input,init)=>{
+     const response=await measured(input,init);
+     if(init?.method==='POST'&&!response.ok){
+      const body=await response.clone().json().catch(()=>({}));
+      // Do not retain arbitrary provider text: it might echo the consent.
+      const message=String(body.error??'');
+      report.provisioningRefusal={http:response.status,category:/signature|owner|opt.?in/i.test(message)?'owner-consent':/operator floor/i.test(message)?'operator-floor':/capacity/i.test(message)?'capacity':'other'};
+     }
+     return response;
+    };
+    transport=await hostedOptInTransport({app:r.app,epoch,owner:owner as Address,control,
+     sign:message=>t.account.signMessage({message}),transport:observe});
+    report.provisioningConsent={owner,control,epoch:String(epoch),block:String(block.number),hash:block.hash};
+   }
    const expected={app:r.app,epoch:d.epoch,chainId:4242,baseBlock:d.baseBlock,rulesVersion:15n,runtimeHash:r.runtimeHash};
    let node:ReturnType<typeof createPublicClient>|undefined,url=`https://il-${r.app.slice(2,18).toLowerCase()}.fly.dev`;
    const deadline=Date.now()+180000;
@@ -70,7 +102,7 @@ try{
     verifyHostedArenaEvidence(expected,evidence);node=candidate;return evidence;
    };
    while(!node&&Date.now()<deadline){
-    try{url=await provisionPoolArena(db,r.app,d.epoch,url,undefined,{expected,inspect},r.hub);if(!node)await inspect(url);}
+    try{url=await provisionPoolArena(db,r.app,d.epoch,url,transport,{expected,inspect},r.hub);if(!node)await inspect(url);}
     catch(error){const retry=Number((error as any).retryAt??0);await new Promise(resolve=>setTimeout(resolve,Math.max(2000,Math.min(10000,retry-Date.now()))));}
    }
    assert(node,'Hosted identity unavailable before the original deadline');report.node=url;

@@ -469,7 +469,7 @@ abstract contract Delegatable is IDelegatableApp {
 
     // --- views -----------------------------------------------------------
 
-    function owner() public view returns (address) {
+    function owner() public view virtual returns (address) {
         return DelegatedLayout.layout().owner;
     }
 
