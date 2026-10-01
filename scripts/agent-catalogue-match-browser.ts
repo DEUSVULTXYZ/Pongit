@@ -7,6 +7,7 @@ import {decodeFunctionData,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
 import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
@@ -16,6 +17,10 @@ const restorePath=process.env.PONG_CATALOGUE_RESTORE_PRIVATE_PATH;
 // Opt-in, bounded cadence samples are separate from the full 100-control gate.
 const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
 const atomicQualification=process.env.PONG_CATALOGUE_ATOMIC_QUALIFICATION==='1';
+const privateV3=process.env.PONG_CATALOGUE_PRIVATE_V3==='reviewed-private';
+assert(!process.env.PONG_CATALOGUE_PRIVATE_V3||privateV3);
+if(privateV3)assert(process.env.PONG_CATALOGUE_ASSET_ORIGIN==='http://127.0.0.1:4197'&&!atomicQualification,
+ 'Private v3 must use its isolated build and actual API capabilities');
 if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(process.env.PONG_SYNC_PROBE==='1'&&process.env.PONG_SYNC_SPECTATOR==='1',
  'Full performance qualification needs both player and spectator probes before creating a fixture');
 const controlCount=cadenceProbe?20:110,idleMs=cadenceProbe?Number(process.env.PONG_CATALOGUE_PROBE_IDLE_MS??8000):45000;
@@ -27,7 +32,7 @@ const restored=restorePath?JSON.parse(await readFile(restorePath,'utf8')):undefi
 await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
- virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+ virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
@@ -36,11 +41,21 @@ async function candidateAssets(target:import('@playwright/test').Page){if(proces
  const candidate=process.env.PONG_CATALOGUE_ASSET_ORIGIN;assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(candidate));
  report.candidateAssets=candidate;
  await target.route('https://pongit.xyz/**',async route=>{
-  const url=new URL(route.request().url());if(url.pathname.startsWith('/api/'))return route.continue();
-  const response=await route.fetch({url:candidate+url.pathname+url.search});await route.fulfill({response});
+  const url=new URL(route.request().url());
+  if(privateV3&&url.pathname.startsWith('/api/')){
+   if(!url.pathname.startsWith('/api/agents/'))return route.abort('blockedbyclient');
+   const path=url.pathname.replace(/^\/api/,'');
+   const port=/^\/agents\/(transactions|operations)(\/|$)/.test(path)?4196:4194;
+   try{return await route.fulfill({response:await route.fetch({url:`http://127.0.0.1:${port}`+path+url.search})});}
+   catch{report.errors.push('Private API transport failed');return route.abort().catch(()=>{});}
+  }
+  if(url.pathname.startsWith('/api/'))return route.continue();
+  try{const response=await route.fetch({url:candidate+url.pathname+url.search});await route.fulfill({response});}
+  catch{report.errors.push('Candidate web transport failed');await route.abort().catch(()=>{});}
  });
 }}
 await candidateAssets(page);
+const apiGet=(path:string)=>{assert(path.startsWith('/agents/'));return page.request.get(privateV3?'http://127.0.0.1:4194'+path:report.origin+'/api'+path);};
 // Qualification-only capability rollout. All RPC, sponsorship and gameplay
 // still hit the actual deployment; record this override explicitly.
 if(atomicQualification)await page.route('https://pongit.xyz/api/agents/config',async route=>{
@@ -139,7 +154,8 @@ await context.addInitScript(()=>{
   (window as any).__firstCountdownAt??=new Date().toISOString();}},30);
 });
 try{
- const config=await (await page.request.get(report.origin+'/api/agents/config')).json();
+ const config=await (await apiGet('/agents/config')).json();
+ if(privateV3)assert(config.pool.toLowerCase()==='0x550ff3c22e20fc760af9afd68fba2cb531140dc6'&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled&&config.challengeAdmission==='atomic-v1');
  assert(config.version===5&&config.houseInstances==='official-v1'&&config.maxMatches===5,'Public five-lane migration is not active');
  report.pool=config.pool;
  await page.goto(report.origin+'/agents',{waitUntil:'domcontentloaded'});
@@ -170,7 +186,7 @@ try{
  }
  await page.waitForURL(/\/agents\/arenas\//,{timeout:Math.max(1,admissionDeadline-Date.now())});await savePrivate();
  const parts=new URL(page.url()).pathname.split('/');report.ref={app:parts[3],epoch:parts[4],id:parts[5]};
- const admitted=await (await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
+ const admitted=await (await apiGet(`/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
  report.actualMode=admitted.mode;assert.equal(report.actualMode,mode,'The actual contract match must use the selected mode');
  console.log(JSON.stringify({run,event:'admitted',ref:report.ref}));
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
@@ -209,7 +225,7 @@ try{
    await writeFile(out+'/spectator-trace.json',JSON.stringify(observed));report.spectatorSync=syncMetrics(observed);}
  }
  // Explicitly concede this synthetic friendly fixture through the same UI.
- const current=await (await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
+ const current=await (await apiGet(`/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
  assert.equal(current.mode,mode,'Mode changed after reconnection');
  const resultDialog=page.getByRole('dialog',{name:'Confirmed match result',exact:true});
  if(!current.result&&!await resultDialog.isVisible()){
@@ -226,7 +242,7 @@ try{
  }
  const until=Date.now()+90000;
  while(Date.now()<until){
-  const response=await page.request.get(`${report.origin}/api/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`);
+  const response=await apiGet(`/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`);
   if(response.ok()){const value=await response.json();if(value.result?.status===3){report.result=value.result;break;}}
   await page.waitForTimeout(1000);
  }
