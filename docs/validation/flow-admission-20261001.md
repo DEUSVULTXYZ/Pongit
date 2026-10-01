@@ -206,3 +206,29 @@ arenas, costing 1.951712982 MON with maximum calldata 13,988 bytes. It does not
 attribute other publisher spending to PONGIT and is not a five-lane daily
 budget. The initial observer failed container network setup; the corrected
 observer completed and stopped. No transfer or game was sent by this observer.
+
+## Binding correction and entry follow-up, 03:11 UTC
+
+The web image `sha256:d28cfc23b3d90c97285c67089123892a65bc453a4b8eccf32e02ba1a318a51e3`
+from `6b24f14` deployed at 03:01:45 UTC after 24 additional built-image Chrome/Edge
+checks. Public config and catalogue return 200. The previous 88 viewport checks
+remain applicable to the unchanged styling. Backup `binding-20261001T0259Z` has
+SHA-verified off-VPS copies of both databases and runtime configuration.
+
+Actual Chrome Classic 273 on f202 epoch 4 finished, published, and retained F5
+and all 221 control receipts. It still FAILS admission at 11.412 seconds. Local
+input p95 is 15.7 ms; input-to-first-confirmation p95 is 18.41 ms, maximum 26.91
+ms. Player/spectator frame p95 is 17.2 ms; maximum holds are 50/166.7 ms. There
+are no observed snapshot jumps or obsolete direction confirmations. This is
+virtual Mera, not a physical passkey proof. The failed performance report is
+retained, with a sanitized copy in `admission-binding-20261001.json`.
+
+The next compatible backend candidate runs at most four independent gas
+estimates concurrently, preserving their original preference order and failing
+closed on unresolved transport errors. It never signs estimate-only bytes.
+A single block-consistent assignment batch serves all five engines every
+500 ms; healthy idle loops check it every 250 ms. Command fences, publication
+checks and nonce ownership remain unchanged. This trades a small increase in
+shared lobby reads for removing the previous two-second assignment refresh
+plus one-second idle wait; actual traffic and admission must be measured before
+claiming the eight-second target. No production backend has adopted it yet.

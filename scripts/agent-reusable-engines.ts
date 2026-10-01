@@ -25,6 +25,7 @@ import {AgentPoolReader} from '../relayer/src/agents/pool-read';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {BackgroundObservation} from '../shared/background-observation';
+import {agentAssignments} from '../shared/agent-assignments';
 import {hubObservations} from '../shared/hub-observation';
 import {publisherFunding} from '../shared/publisher-funding';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
@@ -33,7 +34,6 @@ import {agentRecoveryPause,agentTickInterval,agentTickPause} from '../shared/age
 import {verifyHostedArenaEvidence} from '../shared/hosted-arena-identity';
 
 const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances,maxMatches:r.maxMatches??2};
-const laneNumbers=Array.from({length:m.maxMatches},(_,i)=>i);
 const tickInterval=agentTickInterval(process.env.PONG_AGENT_TICK_INTERVAL_MS);
 const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
 await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>base.readContract({address,abi,functionName,args}) as Promise<T>,m);
@@ -53,11 +53,7 @@ let stopping=false;process.once('SIGTERM',()=>{stopping=true;});process.once('SI
 const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clean=(e:any)=>String(e?.shortMessage??e?.message??'Arena unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220);
 // One shared canonical observation for all arena loops, no per-tick lobby RPC.
-const assignments=new BackgroundObservation(async()=>{
-  const block=await base.getBlock({includeTransactions:false});
-  const lanes=await Promise.all(laneNumbers.map(lane=>base.readContract({address:m.pool,abi:poolAbi,functionName:'laneRecord',args:[lane],blockNumber:block.number})));
-  return{block,lanes};
-},2000,5000);
+const assignments=agentAssignments(base,m.pool,m.maxMatches);
 const sharedHub=hubObservations(base,m.hub,r.arenas.map((a:any)=>a.app));
 const funding=publisherFunding(base);
 async function replayLoop(){while(!stopping){try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}catch{console.error(JSON.stringify({service:'reusable-replays',error:'Reconciliation pending'}));}
@@ -153,7 +149,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      await health('publication-check',{epoch:String(d.epoch),committedBatches:0});await delay(2000);continue;
     }
     await close();await health(d.status===2?'challenge-window':publicationPaused?'publication-paused':!budget.funded?'publisher-unfunded':'available',
-     {epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt),...(!budget.funded?{publisher:d.validator,balanceWei:String(budget.balance),minimumWei:String(budget.minimum)}:{})});await delay(1000);continue;
+     {epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt),...(!budget.funded?{publisher:d.validator,balanceWei:String(budget.balance),minimumWei:String(budget.minimum)}:{})});await delay(publicationPaused||!budget.funded?1000:250);continue;
    }
    assert.equal(entry.ref.epoch,d.epoch,'Previous result requires historical recovery');
    const ref={epoch:entry.ref.epoch,id:entry.ref.id};

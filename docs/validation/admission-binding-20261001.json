@@ -1,0 +1,87 @@
+{
+  "startedAt": "2026-10-01T03:01:44.021Z",
+  "finishedAt": "2026-10-01T03:03:12.269Z",
+  "origin": "https://pongit.xyz",
+  "run": "binding-6b24f14-classic",
+  "channel": "chrome",
+  "mode": 0,
+  "actualMode": 0,
+  "bot": "NOVA",
+  "virtualPrf": true,
+  "reusedSession": true,
+  "mockedNetwork": false,
+  "atomicQualification": true,
+  "passed": false,
+  "checks": [
+    "F5 reused the Mera grant",
+    "Final score and result window survived the delayed terminal frame",
+    "At least 100 public command submissions and local input latency"
+  ],
+  "errors": [],
+  "ref": {
+    "app": "0xf202862714F61D6f6b8b14C1D2F5d3cA7EA3E41b",
+    "epoch": "4",
+    "id": "273"
+  },
+  "admissionMs": 11412,
+  "input": {
+    "samples": 75,
+    "p95Ms": 15.700000047683716
+  },
+  "confirmedInput": {
+    "samples": 220,
+    "p95Ms": 18.4091796875,
+    "maxMs": 26.907958984375,
+    "mismatches": []
+  },
+  "submissionP95Ms": 14.99210000000312,
+  "receiptP95Ms": 14.998600000002625,
+  "sync": {
+    "frames": 2585,
+    "snapshots": 277,
+    "startupFillMs": 0,
+    "p95FrameMs": 17.199999928474426,
+    "maxHoldMs": 50,
+    "holds": [],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 233.29999995231628,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "spectatorSync": {
+    "frames": 3347,
+    "snapshots": 377,
+    "startupFillMs": 883.2000000476837,
+    "p95FrameMs": 17.199999928474426,
+    "maxHoldMs": 166.69999992847443,
+    "holds": [
+      {
+        "at": 15661.600000023842,
+        "ms": 166.69999992847443,
+        "sourceT": 8080,
+        "rally": "0:1"
+      }
+    ],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 233.19999992847443,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "result": {
+    "hash": "0x3d6810eec412a0db3cf179f415e9e83584ba4e4b1c7e232026be2a89d31abad7",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 0,
+    "scoreB": 7,
+    "elapsedUs": "36677094",
+    "finality": false
+  },
+  "performance": {
+    "admission": false,
+    "localInput": true,
+    "confirmedInput": true,
+    "player": true,
+    "spectator": true
+  },
+  "error": "A required performance gate failed; inspect admission/render measurements"
+}

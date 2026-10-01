@@ -14,7 +14,12 @@ export async function prepareSponsoredTransaction(base:PublicClient,account:Addr
  const feeClient={...base,getBlock:()=>blockRead};
  const gasRead=(async()=>{
   const candidates=Array.isArray(strictEstimate)?strictEstimate:strictEstimate?[strictEstimate]:[];
-  for(const candidate of candidates){try{return await base.estimateGas({account,...candidate});}catch(error){
+  if(candidates.length>4)throw Error('Too many admission estimate variants');
+  // At most four independently simulated prefixes share the round trip. Keep
+  // the original preference order: a faster short prefix cannot win a race,
+  // and a transport failure cannot be mistaken for a contract refusal.
+  const results=await Promise.allSettled(candidates.map(candidate=>base.estimateGas({account,...candidate})));
+  for(const result of results){if(result.status==='fulfilled')return result.value;else{const error=result.reason;
    let cause:any=error,reverted=false;for(let i=0;cause&&i<10;i++,cause=cause.cause)
     if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name)){reverted=true;break;}
    if(!reverted)throw error;
