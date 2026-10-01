@@ -70,33 +70,36 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  }
  async function identify(force=false){
   if(stopped)throw Error('Arena controls have stopped');if(!force&&verifiedAt&&now()-verifiedAt<10000)return;
-  const status:any=await node.request({method:'interlude_session',params:[]} as any);journal.received('interlude_session',status);
+  const [status,rules]:any[]=await Promise.all([node.request({method:'interlude_session',params:[]} as any),
+   node.readContract({address:arena!.app,abi,functionName:'RULES_VERSION'})]);journal.received('interlude_session',status);
   if(String(status.app).toLowerCase()!==arena!.app.toLowerCase()||Number(status.chainId)!==4242)throw Error('Unexpected arena engine identity');
   if(BigInt(status.epoch)!==epoch)throw Error('This match has moved to its published result. Open its original result reference.');
-  if(await node.readContract({address:arena!.app,abi,functionName:'RULES_VERSION'})!==BigInt(m.rulesVersion))throw Error('Unexpected arena rules');
+  if(rules!==BigInt(m.rulesVersion))throw Error('Unexpected arena rules');
   verifiedAt=now();
  }
  async function recoverNow(){
   if(stopped)throw Error('Arena controls have stopped');
   sender=undefined;acceptedDirection=undefined;controlsUntil=0;fenceGeneration++;clearTimeout(fenceTimer);
   const started=now();
-  if(await options.base.getChainId()!==10143)throw Error('Arena authorization requires Monad Testnet');
-  const block=await options.base.getBlock(),hub=await readHubDelegation(options.base,m.hub,arena!.app,block.number);
-  // A new hub epoch is closure evidence even when the old node is unavailable.
-  // Verify the pinned block before retiring any uncertain command.
-  if((await options.base.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arena publication changed during authorization');
+  const [chainId,block]=await Promise.all([options.base.getChainId(),options.base.getBlock()]);
+  if(chainId!==10143)throw Error('Arena authorization requires Monad Testnet');
+  if(!block.hash)throw Error('Arena publication has no canonical block');
+  // Both mutable lifecycle and immutable code come from the same canonical
+  // hash. No trailing header reads, unpinned fallback or renewed validity.
+  const pin={blockHash:block.hash,requireCanonical:true as const};
+  const [hub,code]=await Promise.all([readHubDelegation(options.base,m.hub,arena!.app,pin),
+   options.base.getCode({address:arena!.app,...pin})]);
+  // A canonical new epoch is closure evidence even if the old node is down.
   if(hub.epoch>epoch){journal.retirePrevious(session.grant.key,hub.epoch);throw Error('The prior arena epoch is closed. Read its published result.');}
   if(hub.epoch!==epoch)throw Error('Waiting for the assigned arena epoch');
   if(hub.status===0){journal.retireClosed(session.grant.key,epoch);throw Error('The arena epoch is closed. Read its published result.');}
+  if(!code||keccak256(code)!==arena!.runtimeHash)throw Error('Arena bytecode differs from the approved deployment');
   await identify(true);
   if(permissionPending()&&hub.status===1&&hub.expiresAt>block.timestamp)await reconcilePermission();
   const b=await node.readContract({address:arena!.app,abi,functionName:'boundMatch'});
   if(b.id!==id||b.epoch!==epoch||b.a.toLowerCase()!==match.a.toLowerCase()||b.b.toLowerCase()!==match.b.toLowerCase())throw Error('Arena binding changed');
   const side=b.a.toLowerCase()===player.toLowerCase()?0:1,initial=side===0?b.controlA:b.controlB;
   if(initial.codeHash!==zeroHash)throw Error('Only the bound human participant can use these controls');
-  const code=await options.base.getCode({address:arena!.app,blockNumber:block.number});
-  if(!code||keccak256(code)!==arena!.runtimeHash)throw Error('Arena bytecode differs from the approved deployment');
-  if((await options.base.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arena publication changed during authorization');
   const control=await readPoolPermission(node,arena!.app,id,side,initial,reusable);
   if(control.key.toLowerCase()!==session.grant.key.toLowerCase()||control.expires!==session.grant.expires)
    throw Error('The current arena needs its own confirmed owner authorization');
@@ -141,8 +144,9 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   if(fencePending)return fencePending;
   const started=now(),generation=fenceGeneration;
   const loading=(async()=>{
-   const block=await options.base.getBlock(),hub=await readHubDelegation(options.base,m.hub,arena!.app,block.number);
-   if((await options.base.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arena publication changed during authorization');
+   const block=await options.base.getBlock();
+   if(!block.hash)throw Error('Arena publication has no canonical block');
+   const hub=await readHubDelegation(options.base,m.hub,arena!.app,{blockHash:block.hash,requireCanonical:true});
    if(generation!==fenceGeneration||stopped)return;
    // Read-only prefetch must not retire a pending command behind its owner.
    // The serialized recovery path records canonical closure evidence.

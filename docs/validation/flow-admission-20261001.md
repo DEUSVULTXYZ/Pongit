@@ -332,3 +332,52 @@ The new runtime configuration needs a fresh final backup. All nonce authorities,
 databases, previous reports and rollback images remain intact. No additional
 funding request is needed. Admission, hosted difficulty migration, financial
 checks, concurrency/reserve and the final unchanged 24-hour trial remain open.
+
+## Canonical reader and admission follow-up, 04:32 UTC
+
+Reader/sponsor image `sha256:6c6fad29224edb6810bfd7aaa78a3e16a92ad7f856c733181a5d457db1b8d68e`
+(source 4fa4739) deployed at 04:19:29 UTC. Six read-only contract views matched
+the previous reader at canonical block 67158951. Those observations used 40
+RPC calls instead of 52, principally removing redundant headers. Three match
+reads measured 0.851/1.825/1.174 s versus 1.886/2.473/2.308 s before. Separate
+short samples are not a statistical p95 comparison. Full TypeScript: 844 passes;
+root typecheck passes after the test literal correction in c5e8e10.
+
+Actual valid-session Edge Chaos 285 passed gameplay, F5 and publication but
+FAILED admission at 12.289 s. Confirmation p95 was 21.534 ms and player/spectator
+maximum holds 199.6/199.8 ms. The subsequent Chrome Classic 286 also passed
+gameplay/F5/publication but FAILED admission at 13.163 s. Its 220 confirmation
+samples had p95 17.713 ms, maximum 63.28 ms; player/spectator maximum holds were
+233.4/83.2 ms, with no observed jumps or obsolete directions. Both tests use
+virtual Mera and the explicit atomic-capability override; the public capability
+remains absent. No browser fixture is currently active.
+
+The Windows browser clock is about six seconds behind the VPS clock. Durations
+measured on the same clock remain valid; cross-host timestamp comparisons must
+first account for the offset. Do not infer a delayed countdown from UTC labels
+alone. Match 286 admission was journaled at server 04:20:06.799 and acknowledged
+at 04:20:08.567; the engine launch followed at 04:20:09.178.
+
+A player candidate removes repeated numeric-block headers in entry and periodic
+fences, pinning lifecycle and runtime-code reads to one canonical hash instead.
+An unsupported hash read fails closed without retrying at latest. Closure still
+resolves uncertainty only from a canonical hub observation; no nonce or session
+permission is broadened. Twenty-seven affected tests and root typecheck pass.
+This player candidate has not been built or deployed yet.
+
+An isolated empty arena `0x54fa2d221870538f26ae5bf145290c0be9be8b44`, authority
+`0x5b37b623e053c55d72d71911c0743cddc3119884`, was deployed from c5e8e10 and opened
+in epoch 1 at block 67162088. It cannot admit any player. The sole bounded probe
+is `pongit-publication-marker-probe-c5e8e10`, with state/evidence in
+`/opt/pongit/tests/fluid-20260928/publication-marker-c5e8e10` and a separate DB
+`pong_publication_marker_20261001`. It uses the original operator journal for
+base transactions. Its source imposes 180 seconds for hosted identification,
+then 90 seconds for a real marker publication. Do not duplicate or extend it.
+No success is claimed while this probe is running. Close normally afterward,
+then release/seal only after the actual hub deadline. Public lifecycle workers
+do not own this private authority.
+
+Backups `canonical-reader-20261001T040915Z` and
+`marker-before-open-20261001T0427Z` have hash-verified off-VPS copies. The latter
+contains operator, agent and private marker databases plus runtime configuration.
+All previous reports, journals and rollback images remain preserved.

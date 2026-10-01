@@ -26,7 +26,9 @@ function fixture(rules:10|11|15=10){
  let clock=Date.now(),bindings=0,nonceReads=0,rejectName:'InvalidMatch'|'StaleInput'|undefined,rejectPhase=2;
  let overrideKey:Address=zeroAddress,overrideMeta=0n,overrideRevision=0n;const sent:Hex[]=[],receipts=new Map<Hex,any>();
  const binding={id:4n,epoch:1n,a:match.a,b:match.b,controlA:{key:account.address,expires:session.grant.expires,codeHash:zeroHash},controlB:{key:addr(21),expires:session.grant.expires,codeHash:zeroHash}};
- const base:any={getChainId:async()=>10143,getBlock:async(opts?:any)=>{if(failBase)throw Error('RPC timeout');if(hold)await hold();return{number:100n,timestamp:BigInt(at),hash:opts&&reorg?toHex(1n,{size:32}):zeroHash};},getCode:async()=>'0x6000',request:async()=>encodeFunctionResult({abi:hubAbi,functionName:'delegationOf',result:hub})};
+ const base:any={getChainId:async()=>10143,getBlock:async(opts?:any)=>{if(failBase)throw Error('RPC timeout');if(hold)await hold();return{number:100n,timestamp:BigInt(at),hash:opts&&reorg?toHex(1n,{size:32}):zeroHash};},
+  getCode:async(opts:any)=>{if(opts.blockHash){assert.equal(opts.blockHash,zeroHash);assert.equal(opts.requireCanonical,true);if(reorg)throw Error('Canonical block changed');}return'0x6000';},
+  request:async(request:any)=>{if(typeof request.params[1]==='object'){assert.deepEqual(request.params[1],{blockHash:zeroHash,requireCanonical:true});if(reorg)throw Error('Canonical block changed');}return encodeFunctionResult({abi:hubAbi,functionName:'delegationOf',result:hub});}};
  let player!:ReturnType<typeof createPoolPlayer>;
  const node:any={getBlockNumber:async()=>10n,getStorageAt:async(r:any)=>{
   assert.equal(r.blockNumber,10n);for(let i=0;i<3;i++){
@@ -249,4 +251,23 @@ test('periodic permission observation cannot hold movement behind a slow read',a
  const moving=f.player.move(-1).then(()=>{moved=true;});
  await new Promise(r=>setTimeout(r,30));assert(moved,'A healthy command must pass while periodic reads wait');
  assert.equal(f.sent.length,2);release();await observing;await moving;f.player.close();
+});
+
+test('entry reads code and lifecycle at one canonical hash without trailing headers',async()=>{
+ const f=fixture(15),requests:any[]=[];let headers=0;
+ const request=f.base.request,code=f.base.getCode,header=f.base.getBlock;
+ f.base.request=async(r:any)=>{requests.push(r.params[1]);return request(r);};
+ f.base.getCode=async(r:any)=>{requests.push({blockHash:r.blockHash,requireCanonical:r.requireCanonical});return code(r);};
+ f.base.getBlock=async(r:any)=>{headers++;assert.equal(r,undefined);return header(r);};
+ await f.player.move(1);assert.equal(headers,1);assert.equal(f.sent.length,1);
+ assert.deepEqual(requests,[{blockHash:zeroHash,requireCanonical:true},{blockHash:zeroHash,requireCanonical:true}]);
+ f.advance(3100);await f.player.move(-1);assert.equal(headers,2);assert.equal(f.sent.length,2);
+ f.player.close();
+});
+
+test('an unsupported canonical read never falls back to latest or releases a pending nonce',async()=>{
+ const f=fixture(15);f.lost(true);await assert.rejects(f.player.move(1));
+ f.hub.epoch=2n;let calls=0;f.base.request=async(r:any)=>{calls++;assert.equal(r.params[1].requireCanonical,true);throw Error('EIP-1898 unsupported');};
+ await assert.rejects(f.player.recover(),/unsupported/);assert.equal(calls,1);
+ assert(f.player.journal.pending(f.session.grant.key));assert.equal(f.sent.length,1);f.player.close();
 });
