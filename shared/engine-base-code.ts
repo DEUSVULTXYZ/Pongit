@@ -19,3 +19,18 @@ export async function pinnedEngineCodeHash(o:{
  if(!code||code==='0x')throw Error('Strategy code is absent from the engine base block');
  return keccak256(code);
 }
+
+/** Opening-block code is immutable for this session. Warm it while idle so
+ * admitting the next player does not queue the same historical RPC again.
+ * Identity checks still run before every lookup; failed reads are not cached. */
+export function pinnedEngineCodeReader(getCode:Parameters<typeof pinnedEngineCodeHash>[0]['getCode']){
+ const cache=new Map<string,Promise<Hex|undefined>>();
+ return(o:Omit<Parameters<typeof pinnedEngineCodeHash>[0],'getCode'>)=>pinnedEngineCodeHash({...o,getCode:args=>{
+  const key=`${o.hubEpoch}:${args.blockNumber}:${args.address.toLowerCase()}`;
+  let pending=cache.get(key);if(pending)return pending;
+  pending=Promise.resolve().then(()=>getCode(args)).then(code=>{
+   if(!code||code==='0x')throw Error('Strategy code is absent from the engine base block');return code;
+  }).catch(error=>{if(cache.get(key)===pending)cache.delete(key);throw error;});
+  if(cache.size>=16)cache.delete(cache.keys().next().value!);cache.set(key,pending);return pending;
+ }});
+}

@@ -10,7 +10,7 @@ import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {engineTransport,engineCooldownMs,observeEnginePublication} from '../shared/engine-transport';
 import {measuredFetch} from '../shared/rpc-metrics';
-import {pinnedEngineCodeHash} from '../shared/engine-base-code';
+import {pinnedEngineCodeReader} from '../shared/engine-base-code';
 import {reusableAdmissionDigest,type ReusableTicket} from '../shared/reusable-admission';
 import {validateReusableAgentAdmission,validateReusableAgentCancellation,type ReusableAgentBinding} from '../shared/reusable-agent-admission';
 import {reusableSlotResult} from '../shared/reusable-results';
@@ -60,6 +60,7 @@ async function replayLoop(){while(!stopping){try{await replays.reconcile(async r
  for(let n=0;n<60&&!stopping;n++)await delay(1000);}}
 
 async function arenaLoop(app:Address,runtimeHash:string){
+ const openingCode=pinnedEngineCodeReader(args=>base.getCode(args));
  let engine:ReturnType<typeof createPoolEngine>|undefined,node:PublicClient|undefined;
  let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url=`https://il-${app.slice(2,18).toLowerCase()}.fly.dev`,lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
  let observedRuntimeHash='',observedRuntimeBase:bigint|undefined;
@@ -126,6 +127,12 @@ async function arenaLoop(app:Address,runtimeHash:string){
      if(!response.ok)throw Error('Hosted publication health is temporarily unavailable');
      const evidence={session,rulesVersion,runtimeHash:observedRuntimeHash,health:await response.json()};
      const verified=verifyHostedArenaEvidence(expected,evidence,{observePausedPublication:true});
+     // The house controller was fixed at this verified engine's base block.
+     // Preload without delaying availability; admission still validates its
+     // actual session and ticket code hash, and retries a failed code read.
+     const observedSession=session as any;
+     void openingCode({address:r.modules.HousePolicies,hubBaseBlock:d!.baseBlock,engineBaseBlock:observedSession.baseBlock,
+      hubEpoch:d!.epoch,engineEpoch:observedSession.epoch}).catch(()=>{});
      publicationPaused=!verified.publicationReady;inspected=candidate;return evidence;
     };
     url=await provisionPoolArena(db,app,d.epoch,url,undefined,{expected,inspect,observePausedPublication:true});
@@ -203,8 +210,8 @@ async function arenaLoop(app:Address,runtimeHash:string){
      node.request({method:'interlude_session',params:[]} as any) as Promise<any>,
     ]);
     const cancel=block.timestamp>ticket.expires;
-    const code=async(c:ReusableAgentBinding['controlA'],player:Address)=>cancel||c.codeHash===zeroHash?zeroHash:pinnedEngineCodeHash({
-     address:c.house?r.modules.HousePolicies:player,hubBaseBlock:d!.baseBlock,engineBaseBlock:session.baseBlock,hubEpoch:d!.epoch,engineEpoch:session.epoch,getCode:args=>base.getCode(args)});
+    const code=async(c:ReusableAgentBinding['controlA'],player:Address)=>cancel||c.codeHash===zeroHash?zeroHash:openingCode({
+     address:c.house?r.modules.HousePolicies:player,hubBaseBlock:d!.baseBlock,engineBaseBlock:session.baseBlock,hubEpoch:d!.epoch,engineEpoch:session.epoch});
     // Independent evidence shares the same pinned blocks. Wait for every check
     // before signing; a failed code/header/ticket read cannot admit a player.
     const [issuedDigest,source,engineCodeHashA,engineCodeHashB]=await Promise.all([

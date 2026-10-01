@@ -1,5 +1,12 @@
 # Agent pool release operations
 
+For the current deployed role images, scoped nonce owners, private recovery
+deadline and unqualified migration, start with
+[the 1 October runtime checkpoint](validation/flow-admission-20261001.md).
+The packaging sections below include earlier generations. Do not restart their
+writers beside the current five-lane services or infer a live release from an
+old Compose example.
+
 ## Reusable rules-15 packaging
 
 The reusable generation has a separate `agent-reusable` Docker target and

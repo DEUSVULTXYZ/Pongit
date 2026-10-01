@@ -1,6 +1,6 @@
-# Current status — 29 September 2026
+# Current status — 1 October 2026
 
-The five-lane candidate has bounded hosted evidence for four friendly copies of one official bot alongside its tournament. It remains private; production still uses the earlier exclusive tournament identity. The fresh private season must not replace public identities or history. See [animated waits and current release gates](validation/arcade-waits-20260929.md) and [September 28 qualification](validation/fluid-release-20260928.md). Older two-lane milestones below are historical evidence, not the current capacity target or a public migration claim.
+Production now exposes the reusable five-lane pool: four friendly house-bot challenges and a separate tournament lane. A house archetype's tournament reservation does not block its friendly instances. Actual catalogue Classic and Chaos games, controls, F5 and publication have bounded passing evidence. Admission still exceeds the eight-second target; the final unchanged 24-hour qualification has not passed. The new progressive difficulty policy and publication-preflight migration are not deployed. See [current runtime, measurements and blockers](validation/flow-admission-20261001.md). The private September trials and older two-lane milestones below are historical evidence; never replace public identities or history with their fresh seasons.
 
 # House bot archetypes and independent matches
 
