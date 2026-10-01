@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {HEIGHT,SCALE} from '../shared/physics-v2';
 import {botDirection,newWarmup,stepWarmup} from '../web/lib/warmup';
-import {arenaOutage,arenaWaitStatus,clockLabel,preparingArena} from '../web/lib/arena-wait';
+import {arenaOutage,arenaWaitStatus,clockLabel,preparingArena,arenaEntryRetryMs} from '../web/lib/arena-wait';
 
 const seed=()=>`0x${'ab'.repeat(32)}` as const;
 
@@ -48,4 +48,16 @@ test('a binding that is not there yet is preparation, not an error',()=>{
  assert.equal(preparingArena(Error('Arena binding changed')),true);
  assert.equal(preparingArena(Error('Waiting for the assigned arena epoch')),true);
  assert.equal(preparingArena(Error('This account is already controlling an arena in another tab')),false);
+});
+test('entry observation is bounded and never shortens a remote cooldown or active-match recovery',()=>{
+ const waiting=Error('Arena binding changed');
+ assert.equal(arenaEntryRetryMs(waiting,true,100),250);
+ assert.equal(arenaEntryRetryMs(Error('Arena state belongs to another match'),true,100),250);
+ assert.equal(arenaEntryRetryMs(waiting,true,5000),2000);
+ assert.equal(arenaEntryRetryMs(waiting,false,100),2000);
+ assert.equal(arenaEntryRetryMs(Error('Unsupported agent arena rules'),true,100),2000);
+ assert.equal(arenaEntryRetryMs(waiting,false,100,1000),1000);
+ const throttled=Object.assign(waiting,{status:429,headers:new Headers({'retry-after':'10'})});
+ assert.equal(arenaEntryRetryMs(throttled,true,100),10000);
+ assert.equal(arenaEntryRetryMs(throttled,true,100,1000),10000);
 });

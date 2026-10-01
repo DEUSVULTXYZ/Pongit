@@ -25,7 +25,7 @@ import {EngineCredit} from './EngineCredit';
 import {WarmupRally} from './WarmupRally';
 import {useQueueElapsed} from '../lib/use-lobby-clock';
 import {ArcadeHeader,ArcadeHeading,ArcadeState} from './ArcadeChrome';
-import {agentServiceUnavailable,canQueueAgent,type AgentCapacity,type AgentAvailability} from '../../shared/agent-availability';
+import {agentServiceUnavailable,canQueueAgent,reusableCapacity,type AgentCapacity,type AgentAvailability} from '../../shared/agent-availability';
 import {ArcadeProgress} from './ArcadeProgress';
 import {challengeStage,sponsorStage,type ArcadeStage} from '../../shared/arcade-progress';
 import {AgentModeSwitch} from './AgentModeSwitch';
@@ -44,6 +44,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const [catalogRevision,setCatalogRevision]=useState(0),[challengeRevision,setChallengeRevision]=useState(0);
  const progress=(op:ChainOperation)=>setActionStage(sponsorStage(op.status));
  const [capacity,setCapacity]=useState<AgentCapacity>(),[checking,setChecking]=useState(false);
+ const recentCapacity=useRef<{value:AgentCapacity;receivedAt:number}|undefined>(undefined);
+ const observeCapacity=(value:AgentCapacity|undefined)=>{setCapacity(value);recentCapacity.current=value?{value,receivedAt:performance.now()}:undefined;};
  const [catalogError,setCatalogError]=useState(''),[queueError,setQueueError]=useState(''),[renewing,setRenewing]=useState(false);
  const [watchMode,setWatchMode]=useState<'all'|0|1>('all');
  const visibleError=(!connectOpen&&error)||queueError||catalogError;
@@ -56,7 +58,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const capacityBusy=!!capacity&&!serviceDown&&(!capacity.freeChallengeLanes||!capacity.readyArenas);
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
  useEffect(()=>{if(enabled)return watchAgentChanges(change=>{
-  if(change.resync||change.changed.some(topic=>['config','catalog','live'].includes(topic)))setCatalogRevision(n=>n+1);
+  if(change.resync||change.changed.some(topic=>['config','catalog','live'].includes(topic))){recentCapacity.current=undefined;setCatalogRevision(n=>n+1);}
   if(change.resync||change.changed.some(topic=>topic==='config'||topic===`challenges/${account?.toLowerCase()}`))setChallengeRevision(n=>n+1);
  },account);},[enabled,account]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
@@ -69,7 +71,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     const readSignal=AbortSignal.any([abort.signal,AbortSignal.timeout(8000)]);
     const results=await Promise.allSettled([
      poolApi<AgentPoolManifest>('config',undefined,readSignal).then(raw=>{const m=validateAgentPoolManifest(raw);if(!m.enabled)throw Error('Agent Arcade is not open');if(!stopped)setConfig(m);}),
-     poolApi<{items:Person[];next:string|null;capacity?:AgentCapacity}>(`catalog?offset=${offset}&limit=16`,undefined,readSignal).then(catalog=>{if(!stopped){hasCatalogue.current=true;setPeople(catalog.items);setCapacity(catalog.capacity);setNext(catalog.next);setCatalogLoaded(true);}}),
+     poolApi<{items:Person[];next:string|null;capacity?:AgentCapacity}>(`catalog?offset=${offset}&limit=16`,undefined,readSignal).then(catalog=>{if(!stopped){hasCatalogue.current=true;setPeople(catalog.items);observeCapacity(catalog.capacity);setNext(catalog.next);setCatalogLoaded(true);}}),
      poolApi<{items:Live[]}>('live',undefined,readSignal).then(games=>{if(!stopped)setLive(games.items);}),
     ]);
     const failed=results.find(r=>r.status==='rejected');if(failed?.status==='rejected')throw failed.reason;
@@ -98,8 +100,10 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  async function run(fn:()=>Promise<void>){if(locked.current)return;locked.current=true;setBusy(true);setActionStage('preparing');setError('');try{await fn();}catch(e){if(alive.current)setError(poolUserError(e));}finally{locked.current=false;if(alive.current)setBusy(false);}}
  async function canStart(m:AgentPoolManifest){
   if(m.version<5)return true;
+  const recent=recentCapacity.current;
+  if(recent&&reusableCapacity(recent.value,performance.now()-recent.receivedAt))return true;
   setChecking(true);
-  try{const result=await poolApi<{capacity:AgentCapacity}>('capacity',undefined,AbortSignal.timeout(5000));setCapacity(result.capacity);return !agentServiceUnavailable(result.capacity);}
+  try{const result=await poolApi<{capacity:AgentCapacity}>('capacity',undefined,AbortSignal.timeout(5000));observeCapacity(result.capacity);return !agentServiceUnavailable(result.capacity);}
   catch{throw Error('Arena availability could not be checked. Please retry.');}
   finally{setChecking(false);}
  }

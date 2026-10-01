@@ -1,0 +1,444 @@
+{
+  "at": "2026-10-01T02:05:14.920Z",
+  "channel": "chrome",
+  "build": "5007c20",
+  "rulesVersion": 15,
+  "lanes": 5,
+  "scope": "Isolated app; synthetic API/engine; no authentication or hosted gameplay qualification",
+  "checks": [
+    {
+      "width": 360,
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"http://127.0.0.1:4189/art/pixel-palace/frame-violet.svg\")",
+        "height": 114,
+        "controls": [
+          {
+            "width": 85.796875,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 70.671875,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 111.59375,
+            "height": 44,
+            "radius": "0px"
+          }
+        ]
+      }
+    },
+    {
+      "width": 360,
+      "actionErrorSurvivesCatalogRefresh": true,
+      "authentication": "Explicit refusal fixture only"
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true,
+      "touchActions": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 360,
+      "countdown": "3,2,1",
+      "confirmedEngineClock": true
+    },
+    {
+      "width": 360,
+      "arenaConnectsBeforeCatalog": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "mode": 0,
+      "pinchZoom": 2,
+      "restored": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "mode": 1,
+      "pinchZoom": 2,
+      "restored": true
+    },
+    {
+      "width": 360,
+      "height": 640,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": true
+    },
+    {
+      "width": 390,
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"http://127.0.0.1:4189/art/pixel-palace/frame-violet.svg\")",
+        "height": 114,
+        "controls": [
+          {
+            "width": 85.796875,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 70.671875,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 111.59375,
+            "height": 44,
+            "radius": "0px"
+          }
+        ]
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true,
+      "touchActions": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mode": 0,
+      "pinchZoom": 2,
+      "restored": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": false
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mode": 1,
+      "pinchZoom": 2,
+      "restored": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": false
+    },
+    {
+      "width": 768,
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"http://127.0.0.1:4189/art/pixel-palace/frame-violet.svg\")",
+        "height": 84,
+        "controls": [
+          {
+            "width": 108.3125,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 93.90625,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 138.234375,
+            "height": 44,
+            "radius": "0px"
+          }
+        ]
+      }
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true,
+      "touchActions": false
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": false
+    },
+    {
+      "width": 768,
+      "height": 900,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": false
+    },
+    {
+      "width": 1440,
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"http://127.0.0.1:4189/art/pixel-palace/frame-violet.svg\")",
+        "height": 84,
+        "controls": [
+          {
+            "width": 108.3125,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 93.90625,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 138.234375,
+            "height": 44,
+            "radius": "0px"
+          }
+        ]
+      }
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true,
+      "touchActions": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": false
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": false
+    },
+    {
+      "width": 844,
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"http://127.0.0.1:4189/art/pixel-palace/frame-violet.svg\")",
+        "height": 80,
+        "controls": [
+          {
+            "width": 108.3125,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 93.90625,
+            "height": 44,
+            "radius": "0px"
+          },
+          {
+            "width": 138.234375,
+            "height": 44,
+            "radius": "0px"
+          }
+        ]
+      }
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "catalogue": true,
+      "eightBots": true,
+      "connectIntent": true,
+      "escape": true,
+      "focusRestored": true,
+      "touchActions": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "format": "elimination",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "format": "championship",
+      "layout": true,
+      "focus": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": 0,
+      "pinchZoom": 2,
+      "restored": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": 0,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": false
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": 1,
+      "pinchZoom": 2,
+      "restored": true
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "mode": 1,
+      "pixelCourt": true,
+      "noEffectShift": true,
+      "publishedResult": true,
+      "replayPlayback": true,
+      "replayFocus": true,
+      "retiredSummary": true,
+      "noReplayEngineRequests": true,
+      "closedAdmissionsObserved": false
+    }
+  ],
+  "errors": [],
+  "abortedRequests": 85,
+  "passed": true
+}

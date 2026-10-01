@@ -1,7 +1,12 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {agentAvailability,canQueueAgent,freshArenaState,type AgentCapacity} from '../shared/agent-availability';
+import {agentAvailability,canQueueAgent,freshArenaState,reusableCapacity,type AgentCapacity} from '../shared/agent-availability';
 const capacity:AgentCapacity={observedAt:100000,known:true,freeChallengeLanes:4,readyArenas:5,admissions:true};
 const bot={modeSupported:true,qualified:true,available:true,exclusiveBusy:false};
+test('advisory capacity reuse expires promptly and never hides closed or unknown admission',()=>{
+ assert(reusableCapacity(capacity,1999));assert(reusableCapacity({...capacity,freeChallengeLanes:0},100));
+ for(const age of [-1,2001,Infinity,NaN])assert(!reusableCapacity(capacity,age));
+ for(const value of [undefined,{...capacity,known:false},{...capacity,admissions:false},{...capacity,serviceUnavailable:true}])assert(!reusableCapacity(value,0));
+});
 test('identity compatibility cannot masquerade as available operational capacity',()=>{
  assert.equal(agentAvailability(capacity,bot),'available');
  assert.equal(agentAvailability({...capacity,known:false},bot),'service-unavailable');

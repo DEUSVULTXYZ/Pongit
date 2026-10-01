@@ -51,8 +51,10 @@ export class SpectatorPlayout {
   // Reserve two normal deliveries, not just one plus a quarter. On the hosted
   // 500 ms stream that small margin ran dry during a single delayed update,
   // despite the next authoritative frame arriving well within 1.5 seconds.
-  // Fast streams still approach 300 ms; no unconfirmed time is extrapolated.
-  const delay=this.player?120:!this.started?1000:Math.max(300,Math.min(1000,this.interval*2)),at=now-delay;
+  // A fast mean can hide a 700-800 ms delivery gap. Retain half a second for
+  // spectators even during input bursts; the player path stays at 120 ms.
+  // No unconfirmed time is extrapolated and scores share this same playhead.
+  const delay=this.player?120:!this.started?1000:Math.max(500,Math.min(1000,this.interval*2)),at=now-delay;
   let a=this.frames[0],b=a;
   for(const next of this.frames.slice(1)){b=next;if(next.at>=at)break;a=next;}
   const fraction=b===a?0:Math.max(0,Math.min(1,(at-a.at)/(b.at-a.at)));

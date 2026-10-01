@@ -1,4 +1,5 @@
 import {test} from 'node:test';
+import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {zeroHash} from 'viem';
 import {initial} from '../shared/physics-interlude';
@@ -8,6 +9,23 @@ import {projectChaos,SpectatorChaosProjection} from '../web/lib/chaos-presentati
 import {projectLive} from '../web/lib/presentation';
 import {move} from '../shared/physics-v2';
 const state=(ms:number)=>({...initial(zeroHash),t:BigInt(ms)*1000n,left:BigInt(100+ms/10)*1000000n});
+
+test('recorded hosted Chaos delivery gap keeps spectator holds below 500 ms without extrapolation',()=>{
+ const recorded=JSON.parse(readFileSync(new URL('./fixtures/agent-spectator-265.json',import.meta.url),'utf8'));
+ const p=new SpectatorPlayout();let cursor=0,hold=0,maxHold=0,lastAt:number|undefined,lastT:bigint|undefined;
+ for(const now of recorded.frames as number[]){
+  while(cursor<recorded.snapshots.length&&recorded.snapshots[cursor].at<=now){
+   const s=recorded.snapshots[cursor++];p.push({at:s.at,state:{...initial(zeroHash),t:BigInt(s.t),scoreA:s.scoreA,scoreB:s.scoreB,finished:s.finished}});
+  }
+  const sample=p.sample(now);if(!sample)continue;
+  assert(sample.target<=BigInt(recorded.snapshots[cursor-1].t),'Spectator cannot invent unprocessed time');
+  if(sample.buffering||sample.frame.state.finished||lastAt===undefined){hold=0;}
+  else if(sample.target===lastT){hold+=now-lastAt;maxHold=Math.max(maxHold,hold);}
+  else hold=0;
+  lastT=sample.target;lastAt=now;
+ }
+ assert(maxHold<=500,`Recorded delivery gap caused ${maxHold.toFixed(1)} ms hold`);
+});
 
 test('player playout absorbs 850 ms deliveries without a frame jump when the authoritative clock catches up',()=>{
  const p=new SpectatorPlayout(true),base={...initial(zeroHash),vx:10000000n,vy:5000000n};

@@ -67,3 +67,85 @@ and actual browser qualification before its public capability is enabled.
 Preserve all previous failed reports and pending operations. Hosted eight-bot
 difficulty, finances, full concurrency, publication reserve and the unchanged
 24-hour qualification remain required. No full-delivery claim is supported.
+
+## Built-image validation and compatible deployment, 02:08 UTC
+
+Commit `5007c20` contains the bounded multicall and confirmation-observation
+changes. Its full-source backend image is
+`sha256:bd5e80b4638c8d6a2cdd58a06e045a64af290b2a2338c4bc93e650a6b5991e13`.
+The actual image passes transitive role imports without network, keys or a
+database. Its PostgreSQL writer regression passes against an isolated database
+and simulated loopback RPC: intake races, lost responses, restart, insufficient
+gas, separate signer queues, shutdown and eager observation. No chain
+transaction is produced by this regression. See `admission-writer-20261001.json`.
+
+Backup `admission-20261001T0202Z` is SHA-verified off VPS:
+
+- agents.dump: `204443173e153fa9238cddcebb8bed5c46c3f0143bce8e99fe37a52ed0e6b156`
+- operator.dump: `5260a7d3615b2626838787d581694624704920072e4904e11065e9f20ad0e6c2`
+- runtime.tar.gz: `6a5b8f70da7f0a5eab869e8221c59703cfe151eb3b97f744356f43dccdfcba56`
+
+Reader and sponsor adopted that image at 02:03:53 UTC. The operator database,
+signers, journals, role resources and all engine/maintenance services are
+unchanged. Public config returns 200; an unknown operation returns the intended
+404. Both services remain running without module failures or restarts.
+
+The web image is
+`sha256:d11306886d0f62926162747c9f543c99632551e32d94ececdbb1a6c530bfb7dd`.
+The initial live-loopback fixture FAILED because SSH forwarding was refused;
+its report is preserved. Exact HTML/assets captured from the isolated image
+then passed 39 Chrome and 39 Edge checks, including mobile, landscape, reduced
+motion, touch/zoom, pixel header, countdown, results and replays. These are
+synthetic API/engine fixtures, not hosted gameplay proof. The compatible web
+update deployed at 02:07:54 UTC. `challengeAdmission` remains absent from the
+public manifest; atomic admission is still an explicit browser qualification
+override only. No human backend changed.
+
+Rollback: restore only the previous role image references from
+`compose.json.bak-admission-5007c20` and/or
+`compose.json.bak-admission-web-5007c20`; preserve later runtime changes.
+Recreate only the affected services. Never restore old databases or journals
+over newly accepted operations.
+
+## Actual catalogue qualification, 02:08-02:16 UTC
+
+The expired virtual-authenticator restore failed before submission: importing
+its credentials did not preserve the PRF capability. No match was created.
+The failure is retained; this is not evidence of a physical passkey regression.
+
+A fresh virtual-Mera Chrome Classic match 264 completed and published at 0-7.
+It survived F5 and 221 executed inputs. Admission including new authentication
+took 16.004 seconds. Edge Chaos match 265 reused that valid grant and completed
+with publication and F5, but failed the performance gate: admission was 12.521
+seconds and the spectator's maximum hold was 516.6 ms. Its local input p95 was
+15.8 ms, receipt p95 16.99 ms and frame p95 17.2 ms. These are actual hosted games
+with virtual authentication, not physical passkey tests. All original reports
+remain unchanged. See `admission-browser-5007c20-20261001.json`.
+
+The trace identifies a repeated 1.916-second capacity check and a two-second
+retry before the admitted match binding appeared. The next candidate reuses
+only a healthy capacity response received within two monotonic seconds. The
+sponsor and contract still verify current gates. Initial binding checks retry
+at 250 ms for at most five seconds, respecting any longer remote cooldown;
+active-match recovery retains its previous cadence.
+
+The recorded Chaos stream contained an 800-ms processed-state gap. The same
+trace reproduces the 516.6-ms spectator hold. Retaining a 500-ms minimum reserve
+reduces it to 350.2 ms without extrapolating unprocessed state; player buffering
+remains unchanged at 120 ms. This is a recorded-trace regression result, not
+yet a new hosted performance result.
+
+Portalled shared dialogs previously inherited none of the cabinet's pixel
+palette. The candidate supplies the Pixel Palace frame, square controls and
+44-pixel touch targets within the portal. Exact pre-fix fixture fails on its
+9-pixel corner radius. Development Chrome and Edge fixtures each pass 44
+checks; final built-image checks remain required.
+
+A migration drain setting suppresses only creation of the next tournament.
+It preserves progression of the current bracket, challenges and recovery.
+It has not yet been activated. No active tournament may be cancelled by this
+setting. Progressive policies and catalogue migration remain undeployed.
+
+Candidate verification: 847 Solidity tests pass, eight are skipped; 830
+TypeScript tests and root typecheck pass. Twenty playout tests include the
+recorded failure. No final 24-hour or complete-delivery claim is supported.

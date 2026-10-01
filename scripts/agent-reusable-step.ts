@@ -375,7 +375,9 @@ async function step(){
  if(bookOpen){
   const last=count>inherited?await read(m.tournaments,bookAbi,'tournament',[count]):null;
   if(!last||last.status===3||last.status===4){
-   if(tournamentDue(last,await read<bigint>(m.tournaments,bookAbi,'nextAt'),block.timestamp)){await act(m.tournaments,'begin');return;}
+   // Migration drain stops only the next tournament. Keep the current bracket,
+   // challenges, result capture and arena renewal progressing normally.
+   if(tournamentDue(last,await read<bigint>(m.tournaments,bookAbi,'nextAt'),block.timestamp,process.env.PONG_AGENT_TOURNAMENT_DRAIN!=='1')){await act(m.tournaments,'begin');return;}
   }
   else if(last.status===1){
    if(last.cursor<last.scanCount||last.catalogRevision!==await read(m.catalog,catalogAbi,'revision')){await act(m.tournaments,'select',[count,32]);return;}

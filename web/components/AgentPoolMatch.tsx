@@ -31,7 +31,7 @@ import {AgentReplay} from './AgentReplay';
 import replayStyles from './AgentReplay.module.css';
 import {ArenaCountdown} from './MatchCountdown';
 import {quietFailure} from '../lib/quiet-failure';
-import {preparingArena} from '../lib/arena-wait';
+import {preparingArena,arenaEntryRetryMs} from '../lib/arena-wait';
 import {useCourtFit} from '../lib/use-court-fit';
 
 type Identity={agent:string;name:string;avatar:number};
@@ -68,13 +68,14 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>,observer:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>|undefined,release:(()=>void)|undefined;
   if(lastRef.current!==refKey){lastRef.current=refKey;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
   let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,retryRecoveryAt=0,recoveredVersion=-1,wasHidden=false;
+  let entryStarted=0,firstState=false;
   let publishedRequest:Promise<void>|undefined;
   const controller=new AbortController(),quiet=quietFailure();
   const get=async<T,>(path:string):Promise<T>=>{
    const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(30000)])});
    if(!response.ok)throw Error(response.status===404?'This match reference does not exist.':'The arcade is reconnecting. One moment.');return response.json();
   };
-  const publish=(s:EngineState)=>{if(!cancelled){setSnapshot(s);setConnection(s.phase>=3?'Match over':'Live');}};
+  const publish=(s:EngineState)=>{if(!cancelled){firstState=true;setSnapshot(s);setConnection(s.phase>=3?'Match over':'Live');}};
   const matchPath=`/matches/${reference.app}/${reference.epoch}/${reference.id}`;
   const acceptView=(value:PoolMatchView)=>{
    if(value.ref.app.toLowerCase()!==reference.app.toLowerCase()||value.ref.epoch!==reference.epoch||value.ref.id!==reference.id)throw Error('Match reference changed unexpectedly');
@@ -107,6 +108,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     if(current.result){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setControlError('');setConnection(current.result.finality?'Final result':'Result recorded');setError('');delay=10000;return;}
     if(!current.node){observer?.close();observer=undefined;playerClient.current=null;setReady(false);setConnection('Getting the arena ready');delay=2000;return;}
     if(!observer){
+     if(!entryStarted)entryStarted=performance.now();
      const remembered=rememberedAccount(),saved=remembered?loadPoolFamily(config,remembered.address,sessionStorage):null;
      const participant=saved&&[current.a,current.b].some(a=>a.toLowerCase()===saved.grant.player.toLowerCase());
      let created:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>;
@@ -136,7 +138,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
       // Before the engine admits the match its binding is simply not there yet:
       // that is preparation, not a failure, and it is checked again within a second.
       if(valid)setControlError('');else if(preparingArena(e)){setControlError('');setConnection('Preparing your arena');}else setControlError(poolUserError(e));
-      retryRecoveryAt=performance.now()+Math.max(1000,engineReadRetryMs(e));nextRecovery=retryRecoveryAt;
+      retryRecoveryAt=performance.now()+arenaEntryRetryMs(e,!firstState,performance.now()-entryStarted,1000);nextRecovery=retryRecoveryAt;
      }
     }
     const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');
@@ -151,7 +153,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      }
      const launch=await observer.launch();if(!cancelled&&launch)setCountdown({id:refKey,...launch});
     }
-   }catch(e){if(cancelled)return;setError(quiet.failed(poolUserError(e)));setConnection('Reconnecting');delay=Math.max(2000,engineReadRetryMs(e));}
+   }catch(e){if(cancelled)return;setError(quiet.failed(poolUserError(e)));setConnection('Reconnecting');delay=arenaEntryRetryMs(e,!firstState,entryStarted?performance.now()-entryStarted:Infinity);}
    finally{if(!cancelled)timer=setTimeout(poll,Math.min(30000,delay));}
   };
   void poll();return()=>{cancelled=true;controller.abort();clearTimeout(timer);observer?.close();playerClient.current=null;release?.();};

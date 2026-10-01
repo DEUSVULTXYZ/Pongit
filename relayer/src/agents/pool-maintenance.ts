@@ -56,8 +56,8 @@ export function operatorBusy(error:unknown){
 export const writeRetryMs=(error:unknown)=>operatorBusy(error)?3000:30000;
 /** The contract records the minute after completion. Publication/capacity
  * guards can hold admission, but must not silently insert a multi-day gap. */
-export function tournamentDue(_last:{startedAt:bigint}|null,nextAt:bigint,now:bigint){
- return now>=nextAt;
+export function tournamentDue(_last:{startedAt:bigint}|null,nextAt:bigint,now:bigint,allowNew=true){
+ return allowNew&&now>=nextAt;
 }
 type Common={catalog:Address;qualifications:Address;challenges:Address;family:Address;tournaments:Address;pool:Address;houseInstances?:'official-v1'};
 

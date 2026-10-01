@@ -143,6 +143,9 @@ test('next tournament follows the contract minute after completion, including se
  assert.equal(tournamentDue({startedAt:start},next,next+1n),true);
  assert.equal(tournamentDue(null,next,next-1n),false);
  assert.equal(tournamentDue(null,0n,0n),true);
+ assert.equal(tournamentDue(null,0n,0n,false),false);
+ assert.equal(tournamentDue({startedAt:start},next,next+3600n,false),false);
+ assert.equal(tournamentDue({startedAt:start},next,next+3600n,true),true);
 });
 
 test('pinned step reads are served once, normalised, started together and retried after a failure',async()=>{

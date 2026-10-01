@@ -1,0 +1,204 @@
+[
+  {
+    "run": "admission-5007c20-renew-classic",
+    "startedAt": "2026-10-01T02:08:07.352Z",
+    "finishedAt": "2026-10-01T02:11:12.863Z",
+    "passed": false,
+    "error": "page.waitForURL: Timeout 178094ms exceeded.",
+    "mode": 0,
+    "channel": "chrome",
+    "virtualPrf": true,
+    "reusedSession": true,
+    "initialReauthorization": true,
+    "atomicQualification": true,
+    "checks": [],
+    "executedInputs": 0,
+    "receiptCount": 0,
+    "rejectedSubmissions": 0
+  },
+  {
+    "run": "admission-5007c20-new-classic",
+    "startedAt": "2026-10-01T02:11:50.598Z",
+    "finishedAt": "2026-10-01T02:13:21.375Z",
+    "passed": true,
+    "ref": {
+      "app": "0xaF7c017a6729ec6f5d9d14288C5214489bB5be3b",
+      "epoch": "15",
+      "id": "264"
+    },
+    "mode": 0,
+    "actualMode": 0,
+    "channel": "chrome",
+    "virtualPrf": true,
+    "reusedSession": false,
+    "atomicQualification": true,
+    "checks": [
+      "F5 reused the Mera grant",
+      "Final score and result window survived the delayed terminal frame",
+      "At least 100 public command submissions and local input latency"
+    ],
+    "admissionMs": 16004,
+    "performance": {
+      "admission": false,
+      "localInput": true,
+      "confirmedInput": true,
+      "player": true,
+      "spectator": true
+    },
+    "input": {
+      "samples": 75,
+      "p95Ms": 15.5
+    },
+    "submissionP95Ms": 15.452900000003865,
+    "receiptP95Ms": 15.457099999999627,
+    "sync": {
+      "frames": 2764,
+      "snapshots": 278,
+      "startupFillMs": 0,
+      "p95FrameMs": 17.100000023841858,
+      "maxHoldMs": 133.39999997615814,
+      "holds": [
+        {
+          "at": 24642.399999976158,
+          "ms": 133.39999997615814,
+          "sourceT": 29680,
+          "rally": "0:6"
+        }
+      ],
+      "frameGaps": [],
+      "snapshotGapP95Ms": 233.39999997615814,
+      "engineLagP95Ms": 0,
+      "snapshotJumps": []
+    },
+    "spectatorSync": {
+      "frames": 3393,
+      "snapshots": 374,
+      "startupFillMs": 516.7000000476837,
+      "p95FrameMs": 17.100000023841858,
+      "maxHoldMs": 133.79999995231628,
+      "holds": [
+        {
+          "at": 35404.39999997616,
+          "ms": 133.79999995231628,
+          "sourceT": 29940,
+          "rally": "0:6"
+        }
+      ],
+      "frameGaps": [],
+      "snapshotGapP95Ms": 233.10000002384186,
+      "engineLagP95Ms": 0,
+      "snapshotJumps": []
+    },
+    "result": {
+      "hash": "0x56eb5d588f0b0d137a095982440264c71e158894a5ac07024c4e926351d77fa7",
+      "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "status": 3,
+      "scoreA": 0,
+      "scoreB": 7,
+      "elapsedUs": "36677094",
+      "finality": false
+    },
+    "executedInputs": 221,
+    "receiptCount": 222,
+    "rejectedSubmissions": 0
+  },
+  {
+    "run": "admission-5007c20-valid-chaos-edge",
+    "startedAt": "2026-10-01T02:14:28.781Z",
+    "finishedAt": "2026-10-01T02:15:56.542Z",
+    "passed": false,
+    "error": "A required performance gate failed; inspect admission/render measurements",
+    "ref": {
+      "app": "0x7A45dCd516896A22E4cDEd587086ee57B8aDF9c6",
+      "epoch": "12",
+      "id": "265"
+    },
+    "mode": 1,
+    "actualMode": 1,
+    "channel": "msedge",
+    "virtualPrf": true,
+    "reusedSession": true,
+    "atomicQualification": true,
+    "checks": [
+      "F5 reused the Mera grant",
+      "Final score and result window survived the delayed terminal frame",
+      "At least 100 public command submissions and local input latency"
+    ],
+    "admissionMs": 12521,
+    "performance": {
+      "admission": false,
+      "localInput": true,
+      "confirmedInput": true,
+      "player": true,
+      "spectator": false
+    },
+    "input": {
+      "samples": 75,
+      "p95Ms": 15.800000071525574
+    },
+    "submissionP95Ms": 16.985799999998562,
+    "receiptP95Ms": 16.9916000000012,
+    "sync": {
+      "frames": 1807,
+      "snapshots": 267,
+      "startupFillMs": 0,
+      "p95FrameMs": 17.200000047683716,
+      "maxHoldMs": 166.5,
+      "holds": [
+        {
+          "at": 22397.599999904633,
+          "ms": 166.5,
+          "sourceT": 26960,
+          "rally": "6"
+        },
+        {
+          "at": 25897.5,
+          "ms": 133.5,
+          "sourceT": 30440,
+          "rally": "7"
+        }
+      ],
+      "frameGaps": [],
+      "snapshotGapP95Ms": 249.69999992847443,
+      "engineLagP95Ms": 0,
+      "snapshotJumps": []
+    },
+    "spectatorSync": {
+      "frames": 2545,
+      "snapshots": 357,
+      "startupFillMs": 648.9000000953674,
+      "p95FrameMs": 17.199999928474426,
+      "maxHoldMs": 516.6000000238419,
+      "holds": [
+        {
+          "at": 35031.39999997616,
+          "ms": 166.20000004768372,
+          "sourceT": 27220,
+          "rally": "6"
+        },
+        {
+          "at": 38281.10000002384,
+          "ms": 516.6000000238419,
+          "sourceT": 30440,
+          "rally": "7"
+        }
+      ],
+      "frameGaps": [],
+      "snapshotGapP95Ms": 249.69999992847443,
+      "engineLagP95Ms": 0,
+      "snapshotJumps": []
+    },
+    "result": {
+      "hash": "0x728d09c8866b8c6623d2d30dd9ac8cbd572bf69c0a8cde6ed973c7aa91e51414",
+      "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "status": 3,
+      "scoreA": 0,
+      "scoreB": 7,
+      "elapsedUs": "36626586",
+      "finality": false
+    },
+    "executedInputs": 221,
+    "receiptCount": 222,
+    "rejectedSubmissions": 0
+  }
+]

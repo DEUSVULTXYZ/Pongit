@@ -1,0 +1,44 @@
+/* Portals live under body, outside the cabinet's inherited palette and frame. */
+.backdrop.backdrop {
+ --palace-frame:url('/art/pixel-palace/frame-violet.svg');
+ --palace-cyan:#68edff;--palace-pink:#f683ed;
+ padding:12px;background:#050514d9;
+}
+.backdrop.backdrop .panel {
+ position:relative;border:16px solid transparent;border-radius:0;
+ border-image:var(--palace-frame) 40 fill / 16px / 0 stretch;
+ background:#100d27;color:#f4efff;box-shadow:0 8px 0 #050514;
+ padding:52px 22px 22px;max-width:calc(100vw - 24px);
+ max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;
+ animation:none;
+}
+.backdrop.backdrop .panel h2 {
+ font:400 clamp(20px,3vw,28px)/1.5 var(--font-michroma),sans-serif;
+ color:#f4efff;margin:0 0 16px;text-shadow:0 2px #6d55be;
+}
+.backdrop.backdrop .panel :is(p,label) {
+ font:400 16px/1.6 var(--cabinet-font),system-ui,sans-serif;color:#c4bdd9;
+}
+.backdrop.backdrop .panel button:where(:not([role=radio])) {
+ min-width:44px;min-height:44px;border:2px solid #8672b7;border-radius:0;
+ padding:10px 14px;background:#211b40;color:#eee9fb;
+ font:500 16px/1.4 var(--cabinet-font),system-ui,sans-serif;
+ box-shadow:inset 2px 2px #cdbcf542,inset -2px -2px #0b0923,0 3px #070719;
+ transition:background-color .12s,color .12s;
+}
+.backdrop.backdrop .panel button:global(.primary) {
+ background:#91e4df;border-color:#c4fffa;color:#112835;
+ box-shadow:inset 2px 2px #e5fff9,inset -2px -2px #539ca5,0 3px #070719;
+}
+.backdrop.backdrop .panel button:where(:not([role=radio])):hover:not(:disabled) {border-color:#87eefa;background:#30244f;color:#edfbff}
+.backdrop.backdrop .panel button:global(.primary):hover:not(:disabled) {background:#b8fff2;color:#112835}
+.backdrop.backdrop .panel button:focus-visible {outline:3px solid #85efff;outline-offset:3px}
+.backdrop.backdrop .panel button[role=radio] {border-radius:0}
+.backdrop.backdrop .panel > button:global(.icon-button) {position:absolute;right:4px;top:4px;padding:8px}
+.backdrop.backdrop .panel :global(.button-row) {display:flex;flex-wrap:wrap;gap:12px}
+.backdrop.backdrop .panel :is(input:not([type=range]):not([type=checkbox]),select,textarea) {border-radius:0;border-color:#8672b7;background:#0d0b20;color:#eee9fb}
+@media(max-width:480px){
+ .backdrop.backdrop .panel {padding:52px 10px 16px}
+ .backdrop.backdrop .panel :global(.button-row)>button {flex:1 1 auto}
+}
+@media(prefers-reduced-motion:reduce){.backdrop.backdrop .panel button{transition:none}}

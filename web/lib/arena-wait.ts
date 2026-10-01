@@ -1,3 +1,4 @@
+import {engineReadRetryMs} from '../../shared/engine-read';
 type ArenaState={online:boolean;stage:string};
 
 /** Every arena is offline: nothing can start until one comes back. */
@@ -15,6 +16,14 @@ export function arenaWaitStatus(arenas:readonly ArenaState[]|undefined){
 /** Before the engine admits a match, its arena binding is simply not there yet.
  * That is preparation, not a failure: say so quietly and look again soon. */
 export const preparingArena=(e:unknown)=>/Arena (participant )?binding changed|Waiting for the assigned arena epoch/.test(String((e as any)?.message??''));
+
+/** A verified admission can precede its engine binding. Probe promptly only
+ * during entry; invalid snapshots still never reach the court or controller. */
+export function arenaEntryRetryMs(error:unknown,waitingForFirstState:boolean,elapsedMs:number,ordinaryMs=2000){
+ const entry=preparingArena(error)||String((error as any)?.message??'')==='Arena state belongs to another match';
+ const delay=waitingForFirstState&&elapsedMs>=0&&elapsedMs<5000&&entry?250:ordinaryMs;
+ return Math.max(delay,engineReadRetryMs(error));
+}
 
 /** m:ss for a waiting timer. */
 export const clockLabel=(seconds:number)=>`${Math.floor(Math.max(0,seconds)/60)}:${String(Math.floor(Math.max(0,seconds)%60)).padStart(2,'0')}`;

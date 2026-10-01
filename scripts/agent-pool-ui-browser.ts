@@ -41,7 +41,7 @@ try{
   const touch=width<=390||height<=500;
   const context=await browser.newContext({viewport:{width,height},hasTouch:touch,reducedMotion:width===390?'reduce':'no-preference'});
   await context.addInitScript({content:'globalThis.__name=(fn)=>fn;'});
-  let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0,closedAdmissions=false;
+  let mode:0|1=0,league=false,published=false,effect=21,revision=1n,replayRetired=false,engineReads=0,catalogReads=0,capacityReads=0,closedAdmissions=false;
   let launchStarted=0;
   let releaseCatalog:(()=>void)|undefined,catalogGate:Promise<void>|undefined;
   await context.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
@@ -66,8 +66,8 @@ try{
      let data:any;
      if(url.pathname==='/agents/events')return route.fulfill({status:503,body:'Fixture uses polling'});
      if(url.pathname==='/agents/config')data=closedAdmissions?{...m,enabled:false,tournamentsEnabled:false}:m;
-     else if(url.pathname==='/agents/capacity')data={capacity:{known:true,observedAt:Date.now(),admissions:true,readyArenas:4,freeChallengeLanes:4}};
-     else if(url.pathname==='/agents/catalog'){catalogReads++;if(catalogGate)await catalogGate;data={items:people,total:'8',offset:'0',next:null};}
+     else if(url.pathname==='/agents/capacity'){capacityReads++;data={capacity:{known:true,observedAt:Date.now(),admissions:true,readyArenas:4,freeChallengeLanes:4}};}
+     else if(url.pathname==='/agents/catalog'){catalogReads++;if(catalogGate)await catalogGate;data={items:people,total:'8',offset:'0',next:null,capacity:{known:true,observedAt:Date.now(),admissions:true,readyArenas:4,freeChallengeLanes:4}};}
      else if(url.pathname==='/agents/live')data={items:[{ref,a:people[0].agent,b:people[1].agent,mode:0,lane:'tournament'}]};
      else if(url.pathname==='/agents/tournaments')data={items:[tournament('1',league,mode)],total:'1',offset:'0',next:null,nextAt:'0'};
      else if(url.pathname==='/agents/tournaments/1')data=tournament('1',league,mode);
@@ -127,8 +127,23 @@ try{
   if(width<=390)assert(headerStyle.height<=120,'Mobile header must not consume the playing field');
   report.checks.push({width,pixelHeader:headerStyle});
   const challenge=page.getByRole('button',{name:'Challenge NOVA',exact:true});
+  const capacityReadsBeforeClick=capacityReads;
   if(touch)await challenge.tap();else await challenge.click();
-  await page.getByRole('dialog',{name:'Connect to challenge an agent'}).waitFor();
+  const connectionDialog=page.getByRole('dialog',{name:'Connect to challenge an agent'});
+  await connectionDialog.waitFor();
+  assert.equal(capacityReads,capacityReadsBeforeClick,'A fresh advisory catalogue must not add another serialized capacity request');
+  const dialogStyle=await connectionDialog.evaluate(el=>({
+   radius:getComputedStyle(el).borderRadius,frame:getComputedStyle(el).borderImageSource,
+   width:el.getBoundingClientRect().width,height:el.getBoundingClientRect().height,
+   controls:Array.from(el.querySelectorAll('button')).map(b=>({radius:getComputedStyle(b).borderRadius,
+    width:b.getBoundingClientRect().width,height:b.getBoundingClientRect().height})),
+  }));
+  assert.equal(dialogStyle.radius,'0px','Portalled connection dialog must retain the pixel frame');
+  assert(dialogStyle.frame.includes('frame-violet.svg'));
+  assert(dialogStyle.width<=width&&dialogStyle.height<=height,'Connection dialog must fit the viewport');
+  assert(dialogStyle.controls.every(c=>c.radius==='0px'&&c.width>=44&&c.height>=44),'Dialog controls must remain pixel styled and touch accessible');
+  await page.screenshot({path:`${output}/${channel}-connection-${width}.png`,fullPage:true});
+  report.checks.push({width,pixelConnectionDialog:dialogStyle});
   if(width===360){
    await page.getByRole('button',{name:'Connect & play',exact:true}).click();
    const actionError=page.getByRole('dialog').getByRole('alert');await actionError.waitFor();
