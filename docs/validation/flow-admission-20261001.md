@@ -760,3 +760,35 @@ the nonce read. A failed canonical read or mismatched domain cannot request a
 signature, replace a saved key or silently use an unpinned read. Full TypeScript
 suite: 879 passes; root typecheck passes. Browser timing remains unmeasured on
 this candidate. Public services and ongoing public games are unchanged.
+
+## Two actual v3 games passed, 07:30 UTC
+
+First private arena 0x8194191a762a54f2a2bc05fe159e8f418cffe36e opened epoch 1
+in 0xa7f6ed3401e3501df1763e0c687e3786767f6675f8a2b3b74ae64b3acf4f228f,
+block 67195900. Its engine verified hosting identity and an actual published
+marker before admission. Four dedicated roles received 5 test MON each through
+the original journal. No transfer went to another project or a user market.
+
+The bounded trials completed Classic 0-7 and Chaos 1-7, NOVA versus ONYX.
+Both status-3 results were published and captured; their mode-specific
+qualifications were checked against the contract. Admissions closed after each
+trial. The original reports and command journals remain intact. The temporary
+engine and archive services stopped cleanly, exit 0, after both reports and
+read-only samplers completed. The other six candidate arenas remain unopened.
+
+Read-only sampling covered 40.018 seconds in Classic and 120.035 seconds in
+Chaos. Processed-clock/wall-clock ratios were 98.731% and 98.171%; snapshot-read
+p95 was 106 ms and 104 ms, with no failed sample. These one-second samples do
+not prove the 500 ms visual-freeze threshold, human controls or admission p95.
+The 28 publications observed from the epoch start cost 2.717783574 MON, with
+maximum calldata 14,692 bytes. The Classic subtotal was 1.016894916 MON for
+11 publications. This remains a small real sample, not a 24-hour budget proof.
+
+The migration runner now supports an explicitly pinned v3 target and separate
+provisioner while preserving the predecessor manifest, family permissions,
+identity imports, ratings, request nonces and historical index emitters. No
+production migration has run. 56 relevant Solidity checks pass, including
+cross-hub five-lane counter and identity continuation; the initial fixture
+without deployed target-hub code failed and remains preserved. Root typecheck
+and diff secret checks pass. The private recovery runner permits only normal
+closure/release of these two captured results after verified off-VPS backup.

@@ -8,6 +8,7 @@ import {chainTools} from './independent-chain-tools';
 import {retryOperatorContention} from '../shared/operator-contention';
 import {validateAgentPoolManifest,pooledHouseBots} from '../shared/agent-pool';
 import {agentIndexDeployments} from '../shared/agent-index-manifest';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 
 assert.equal(process.env.PONG_CONTINUING_AGENT_MIGRATION,'authorized-closed-source-testnet');
 assert.equal(process.getuid?.(),1000);
@@ -16,6 +17,9 @@ assert(/^reusable-agents-\d{8}(?:-[1-9]\d?)?$/.test(prefix));
 const humans=(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean);assert(humans.length);
 const source=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/source-manifest.json','utf8')),humans);
 assert([4,5].includes(source.version),'Reviewed predecessor must be a reusable pool');
+const v3=process.env.PONG_REUSABLE_HUB_V3==='isolated-testnet';
+assert(process.env.PONG_REUSABLE_HUB_V3===undefined||v3,'Unreviewed target hub');
+const hub=v3?NO_LEASE_HUB:source.hub,arenaArtifact=v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const rebalanced=process.env.PONG_HOUSE_POLICY==='progressive-v1';
 assert(process.env.PONG_HOUSE_POLICY===undefined||rebalanced,'Unreviewed house policy');
 const catalogArtifact=rebalanced?'RebalancedAgentCatalog':'MigratingAgentCatalog';
@@ -40,7 +44,9 @@ const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode
 try{
  const names=['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
   'HouseInstances',catalogArtifact,...(rebalanced?['ProgressiveHousePolicies']:[]),'ContinuingFiveLaneAgentPool','PublishedResultVerifier','ContinuingAgentTournaments','ContinuingAgentRatings',
-  'ContinuingAgentQualifications','ContinuingAgentChallenges','ReusableAgentArena'];
+  'ContinuingAgentQualifications','ContinuingAgentChallenges',arenaArtifact,
+  // These inherited/source ABIs are read even when their bytecode is not deployed.
+  'ReusableAgentPool','ReusableAgentArena','MigratingAgentCatalog','AgentCatalog','AgentTournaments','AgentPublishedRatings','AgentChallenges'];
  await t.preflight(names);
  const read=async(name:string,address:Address,method:string,args:readonly unknown[]=[])=>t.base.readContract({address,abi:(await t.artifact(name)).abi,functionName:method,args}) as Promise<any>;
  const codeHash=async(address:Address)=>{const code=await t.base.getCode({address});assert(code&&code!=='0x');return keccak256(code);};
@@ -63,11 +69,17 @@ try{
  assert.equal(await read('AgentPublishedRatings',source.ratings,'migrationSealed'),true);
  const hashes:Record<string,Hex>={};
  for(const name of ['pool','catalog','tournaments','ratings','qualifications','challenges','family'] as const)hashes[name]=await codeHash(source[name]);
- if(!r){r={prefix,rulesVersion:15,countdownClock:'engine-ticks-v1',publicationProbe:'epoch-marker-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
+ if(!r){r={prefix,hub,rulesVersion:15,countdownClock:'engine-ticks-v1',publicationProbe:'epoch-marker-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
   arenaAdmissions:'verified-epoch-v1',housePolicy:rebalanced?'progressive-v1':'inherited',genesis:String(await read('AgentPublishedRatings',source.ratings,'genesisTime')),
   source:{manifest:source,indexHash:keccak256(sourceIndexBytes),hashes,block:String(anchor.number),blockHash:anchor.hash,emptySeedAudit:auditHash,seal},
   admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'importing-closed',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.prefix,prefix);assert.equal(r.source.emptySeedAudit,auditHash);assert.equal(r.arenaCount,arenaCount);
+ assert.equal((r.common?.hub??r.hub??source.hub).toLowerCase(),hub.toLowerCase(),'Target hub changes require a new migration namespace');
+ if(v3){
+  assert(r.hostedProvisioning==='owner-consent-v1'||!r.modules,'Existing arena deployments cannot acquire provisioning consent');
+  r.provisioningKey??=generatePrivateKey();r.provisioningOwner=privateKeyToAccount(r.provisioningKey).address;
+  r.hostedProvisioning='owner-consent-v1';await save();
+ }
  assert.equal(r.publicationProbe,'epoch-marker-v1','An older migration must resume with its original source and artifacts');
  assert.equal(r.housePolicy??'inherited',rebalanced?'progressive-v1':'inherited','Cannot change a journaled controller migration');
  assert.equal(r.source.indexHash,keccak256(sourceIndexBytes),'Source index metadata changed');
@@ -86,8 +98,8 @@ try{
  const policies=rebalanced?await deploy('ProgressiveHousePolicies'):oldPolicies;r.modules.HousePolicies=policies;
  const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(rebalanced?[policies]:[])]);
  await write('catalog-start','MigratingAgentCatalog',catalog,'startImport');
- const pool=await deploy('ContinuingFiveLaneAgentPool',[catalog,source.hub,t.account.address,bridge,hashes.pool]);
- const verifier=await deploy('PublishedResultVerifier',[pool,source.hub]);
+ const pool=await deploy('ContinuingFiveLaneAgentPool',[catalog,hub,t.account.address,bridge,hashes.pool]);
+ const verifier=await deploy('PublishedResultVerifier',[pool,hub]);
  const tournaments=await deploy('ContinuingAgentTournaments',[catalog,pool,t.account.address]);
  const ratings=await deploy('ContinuingAgentRatings',[source.ratings,hashes.ratings,seal,auditHash,pool,t.account.address]);
  const qualifications=await deploy('ContinuingAgentQualifications',[source.qualifications,hashes.qualifications,catalog,pool]);
@@ -122,7 +134,7 @@ try{
  }
  r.arenas??=[];
  for(let i=0;i<arenaCount;i++){
-  const app=await deploy('ReusableAgentArena',[source.hub,pool,bridge,policies,kernel,verifier],`ReusableAgentArena-${i}`);
+  const app=await deploy(arenaArtifact,[hub,pool,bridge,policies,kernel,verifier,...(v3?[r.provisioningOwner]:[])],`ReusableAgentArena-${i}`);
   assert(!humans.some(h=>h.toLowerCase()===app.toLowerCase()));
   await write(`register-${i}`,'ReusableAgentPool',pool,'addArena',[app]);r.arenas[i]={app,runtimeHash:await codeHash(app)};await save();
  }
@@ -139,7 +151,7 @@ try{
  await write('pool-seal','ReusableAgentPool',pool,'seal');await frozen();
  assert.equal(await read('ReusableAgentPool',pool,'admissions'),false);assert.equal(await read('ReusableAgentPool',pool,'publicAdmissions'),false);
  assert.equal((await read('AgentChallenges',challenges,'family')).toLowerCase(),source.family.toLowerCase(),'Existing grants must keep their family');
- r.common={hub:source.hub,pool,catalog,tournaments,ratings,qualifications,family:source.family,challenges,verifier};
+ r.common={hub,pool,catalog,tournaments,ratings,qualifications,family:source.family,challenges,verifier};
  r.continuation={pool:source.pool,catalog:source.catalog,tournaments:source.tournaments,ratings:source.ratings,qualifications:source.qualifications,challenges:source.challenges};
  r.bots=await Promise.all(pooledHouseBots.map(async(bot,i)=>({agent:await read('AgentCatalog',catalog,'house',[i]),...bot})));
  const deploymentJob=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',
