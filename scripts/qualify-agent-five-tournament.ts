@@ -15,6 +15,7 @@ import {agentChallengesAbi as queueAbi} from '../shared/abi-AgentChallenges';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {NO_LEASE_HUB,hubLeaseValid} from '../shared/hub-lease';
+import {canonicalContractReads} from '../shared/canonical-contract-reads';
 
 assert.equal(process.env.PONG_FIVE_TOURNAMENT,'bounded-private');
 assert.equal(process.getuid?.(),1000);
@@ -41,8 +42,10 @@ const read=(to:Address,abi:any,fn:string,args:readonly unknown[]=[])=>t.base.rea
 const write=(op:string,to:Address,abi:any,fn:string,args:readonly unknown[]=[])=>retryOperatorContention(()=>t.write(op,to,abi,fn,args));
 const wait=()=>new Promise(resolve=>setTimeout(resolve,2500));
 const expected=id>=3n?28:7;
+const communityReport=process.env.PONG_FIVE_COMMUNITY_REPORT??'five-community-setup-attempt3.json';
+assert(/^five-community-setup(?:-attempt[23])?\.json$/.test(communityReport));
 const community=process.env.PONG_FIVE_TOURNAMENT_COMMUNITY==='true'
- ?JSON.parse(await readFile('artifacts/reusable-candidate/five-community-setup-attempt3.json','utf8')):undefined;
+ ?JSON.parse(await readFile('artifacts/reusable-candidate/'+communityReport,'utf8')):undefined;
 if(community){assert(id===2n&&community.registered&&community.pool===r.common.pool);report.community={strategy:community.strategy,matches:[],qualified:false};}
 async function qualifyCommunity(){
  if(!community)return true;
@@ -96,25 +99,34 @@ try{
  if(count===id-1n)await write('begin',r.common.tournaments,bookAbi,'begin');
  let gateRevision=0,gateKey='';
  while(Date.now()<deadline){
-  const tournament=await read(r.common.tournaments,bookAbi,'tournament',[id]);
+  const anchor=await t.base.getBlock();assert(anchor.hash);
+  const pinned=canonicalContractReads(t.base,anchor.hash).read;
+  const tournament=await pinned(r.common.tournaments,bookAbi,'tournament',[id]);
   assert.equal(tournament.mode,Number((id-1n)%2n));assert.equal(tournament.league,id>=3n);
   if(tournament.status===1){await write('select-'+tournament.cursor+'-'+tournament.catalogRevision,r.common.tournaments,bookAbi,'select',[id,32]);continue;}
   assert(tournament.status===2||tournament.status===3,'Tournament correction requires independent reconciliation');
+  // Qualification must not itself monopolize the gameplay RPC queue as the
+  // championship grows. Verify every fixture on every iteration in bounded
+  // canonical batches, including completed results; do not hide corrections in
+  // a fixture cache or infer results from the previously saved report.
+  const fixtures=await Promise.all(Array.from({length:expected},(_,index)=>pinned(r.common.tournaments,bookAbi,'fixture',[id,index])));
+  const records=await Promise.all(fixtures.map(f=>f.bound?pinned(r.common.pool,poolAbi,'record',[f.ref]):null));
+  const results=await Promise.all(fixtures.map((f,i)=>records[i]?.captured?pinned(r.common.pool,poolAbi,'result',[f.ref]):null));
   for(let index=0;index<expected;index++){
-   const f=await read(r.common.tournaments,bookAbi,'fixture',[id,index]);if(!f.bound)continue;
+   const f=fixtures[index];if(!f.bound)continue;
    let row=report.fixtures.find((v:any)=>v.index===index);
    if(!row){row={index,ref:f.ref,observedAt:new Date().toISOString()};report.fixtures.push(row);}
    else assert.deepEqual(JSON.parse(JSON.stringify(row.ref,(_,v)=>typeof v==='bigint'?String(v):v)),JSON.parse(JSON.stringify(f.ref,(_,v)=>typeof v==='bigint'?String(v):v)),'A fixture reference changed');
-   const record=await read(r.common.pool,poolAbi,'record',[f.ref]);
+   const record=records[index];assert(record);
    assert.equal(record.tournament,id);assert.equal(record.fixture,index);
    if(record.captured){
-    const result=await read(r.common.pool,poolAbi,'result',[f.ref]);assert.equal(result.status,3,'A canceled fixture is failed evidence');
+    const result=results[index];assert(result);assert.equal(result.status,3,'A canceled fixture is failed evidence');
     if(!f.resolved)await write('sync-'+index,r.common.tournaments,bookAbi,'synchronize',[id,index]);
-    const final=await read(r.common.tournaments,bookAbi,'fixture',[id,index]);assert(final.resolved&&final.published.hash===result.hash);
+    const final=f.resolved?f:await read(r.common.tournaments,bookAbi,'fixture',[id,index]);assert(final.resolved&&final.published.hash===result.hash);
     row.result=result;row.administrative=final.administrative;row.resolved=true;
    }
   }
-  report.observedAt=new Date().toISOString();await save();
+  report.observedAt=new Date().toISOString();report.observedBlock=String(anchor.number);report.observedHash=anchor.hash;await save();
   const communityReady=await qualifyCommunity();
   if(tournament.status===3){assert.equal(report.fixtures.filter((v:any)=>v.resolved).length,expected);report.champion=tournament.champion;if(id>=3n)report.standings=await read(r.common.tournaments,bookAbi,'standings',[id]);if(communityReady){report.passed=true;break;}await wait();continue;}
   const lane=await read(r.common.pool,poolAbi,'laneRecord',[0]);if(lane.ref.id>0n){await wait();continue;}
