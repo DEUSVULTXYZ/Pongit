@@ -279,7 +279,7 @@ storage word per empty epoch. The next pool requires that marker on Monad
 before admission. Its contract/unit checks are not yet hosted publication
 proof and it is not part of this compatible latency deployment.
 
-## RPC priority and publication preflight, 04:06 UTC
+## RPC priority and publication preflight, 04:03 UTC
 
 Published source 82c57fc produced image
 `sha256:fbe848fe0c376c23b245a1e1aedc68aa04a39ffbbfa0ba8bef827973519b942d`.

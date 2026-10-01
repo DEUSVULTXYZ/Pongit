@@ -29,6 +29,8 @@ test('archived match returns its own result and no live node after the arena is 
   if(r.functionName==='boundMatch')return{id:8n,epoch:2n,mode:1};
   if(r.functionName==='result')return result;throw Error(r.functionName);
  }} as unknown as PublicClient;
+ client.multicall=(async(r:any)=>{assert.equal(r.blockHash,zeroHash);assert.equal(r.requireCanonical,true);
+  return Promise.all(r.contracts.map((call:any)=>client.readContract(call)));}) as typeof client.multicall;
  const reader=new AgentPoolReader(client,m),view=(await reader.match(match.ref)).value;
  assert.equal(view.node,null);assert.equal(view.result?.scoreA,7);assert.equal(view.currentBinding,false);assert.equal(view.mode,0);
  await assert.rejects(createPoolObserver(m,view,()=>{throw Error('must not connect');}),/published summary/);

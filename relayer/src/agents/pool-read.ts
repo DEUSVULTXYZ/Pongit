@@ -16,6 +16,7 @@ import type {AgentMatchRef} from '../../../shared/agents';
 import {houseInstanceAbi,agentPoolAdmissionAbi,verifyHouseInstanceAuthorities} from '../../../shared/agent-house-instances';
 import {agentAvailability,agentServiceUnavailable,freshArenaState,type ArenaOperationalState,type AgentCapacity} from '../../../shared/agent-availability';
 import {challengeStage} from '../../../shared/arcade-progress';
+import {canonicalContractReads,type ContractRead} from '../../../shared/canonical-contract-reads';
 
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 const refView=(r:Ref):AgentMatchRef=>({chainId:10143,app:r.arena,epoch:String(r.epoch),id:String(r.id)});
@@ -36,19 +37,28 @@ export class AgentPoolReader {
  }
  private get poolAbi():Abi{return this.manifest.version>=4?reusableAgentPoolAbi:this.manifest.version===3?seriesPoolAbi:poolAbi;}
  private get arenaAbi():Abi{return this.manifest.version>=4?reusableAgentArenaAbi:this.manifest.version===3?seriesArenaAbi:arenaAbi;}
- private async snapshot<T>(work:(read:<R=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<R>,block:bigint)=>Promise<T>,at?:bigint){
+ private async snapshot<T>(work:(read:<R=any>(address:Address,abi:Abi,fn:string,args?:readonly unknown[])=>Promise<R>,block:bigint,batch:(calls:readonly ContractRead[])=>Promise<unknown[]>)=>Promise<T>,at?:bigint){
   const block=await this.client.getBlock(at===undefined?{}:{blockNumber:at});
-  const read=<R=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>
-   this.client.readContract({address,abi,functionName,args,blockNumber:block.number}) as Promise<R>;
-  const value=await work(read,block.number);
-  const confirmed=await this.client.getBlock({blockNumber:block.number});
-  if(confirmed.hash!==block.hash)throw Object.assign(Error('Published state changed during synchronization'),{status:503,code:'AGENT_PUBLICATION_CHANGED'});
+  if(!block.hash)throw Error('Published block has no hash');
+  // EIP-1898 checks canonical identity within every read. It replaces the
+  // trailing header RPC without weakening the block-consistency boundary.
+  const {read,batch}=canonicalContractReads(this.client,block.hash);
+  let value:T;
+  try{value=await work(read,block.number,batch);}
+  catch(error){
+   let cause:any=error;
+   for(let i=0;cause&&i<10;i++,cause=cause.cause){
+    if(/not canonical|no longer canonical|not in the canonical chain|header not found|unknown block|block not found/i.test(String(cause.details??cause.message??'')))
+     throw Object.assign(Error('Published state changed during synchronization'),{status:503,code:'AGENT_PUBLICATION_CHANGED'});
+   }
+   throw error;
+  }
   return {value,observedBlock:String(block.number),observedHash:block.hash,observedTimestamp:String(block.timestamp),
    revision:createHash('sha256').update(JSON.stringify(value,(k,v)=>['observedBlock','observedAt'].includes(k)?undefined:typeof v==='bigint'?String(v):v)).digest('hex')};
  }
  async config(){
   const m=this.manifest;
-  return this.snapshot(async (_read,block)=>{
+  return this.snapshot(async (_read,_block,batch)=>{
    // One explicit batch: timer-based grouping can split these ten small reads
    // into several RPC requests under CPU contention. Preserve every check and
    // the snapshot's canonical hash verification; no admission result is cached.
@@ -64,7 +74,7 @@ export class AgentPoolReader {
      ...[m.pool,m.challenges,m.qualifications].map(address=>({address,abi:houseInstanceAbi,functionName:'supportsHouseInstances'})),
     ]:[]),
    ];
-   const values=await this.client.multicall({contracts:calls,blockNumber:block,allowFailure:false,batchSize:0});
+   const values=await batch(calls);
    await verifyHouseInstanceAuthorities(<T>(address:Address,_abi:Abi,fn:string)=>{
     const i=calls.findIndex(call=>call.address===address&&call.functionName===fn);
     if(i<0)throw Error('Missing authority observation');

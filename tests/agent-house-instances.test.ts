@@ -43,6 +43,8 @@ test('independent house waiting status uses contract eligibility while competiti
    default:throw Error(r.functionName);
   }
  }} as unknown as PublicClient;
+ client.multicall=(async(r:any)=>{assert.equal(r.blockHash,zeroHash);assert.equal(r.requireCanonical,true);
+  return Promise.all(r.contracts.map((call:any)=>client.readContract({...call,blockNumber:50n})));}) as typeof client.multicall;
  const reader=new AgentPoolReader(client,m);
  const house=(await reader.catalog()).value.items[0];assert.equal(house.waiting,false);
  assert.equal(house.participation,token);assert.equal(house.playing,playing);assert.equal(house.friendlyInstances[1],true);

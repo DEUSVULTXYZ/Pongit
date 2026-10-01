@@ -9,8 +9,10 @@ const evidence=`0x${'b'.repeat(64)}` as const;
 function withMulticall(client:PublicClient){
  return {...client,multicall:async(request:any)=>{
   assert.equal(request.allowFailure,false);assert.equal(request.batchSize,0);
-  assert(request.contracts.length<=10);
-  return Promise.all(request.contracts.map((call:any)=>client.readContract({...call,blockNumber:request.blockNumber})));
+  assert(request.contracts.length<=32); assert.equal(request.requireCanonical,true);
+  const values=await Promise.all(request.contracts.map((call:any)=>client.readContract({...call,blockNumber:50n})));
+  if((await client.getBlock()).hash!==request.blockHash)throw Error('Published state changed during synchronization');
+  return values;
  }} as unknown as PublicClient;
 }
 const manifest:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
@@ -51,7 +53,7 @@ test('an old URL reads its original pool after migration, never a same-number ne
   if(r.functionName==='tournament'){assert.equal(r.address,old.tournaments);return{league:false};}
   throw Error(r.functionName);
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,current);
+ const reader=new AgentPoolReader(withMulticall(client),current);
  const observed=await reader.match(ref);assert.equal(observed.value.result?.scoreA,7);assert.equal(observed.value.node,null);assert.equal(observed.value.currentBinding,false);
  assert.equal(observed.value.overtimeSeconds,60);assert.deepEqual(observed.value.ref,ref);
  captured=false;await assert.rejects(reader.match(ref),/no published result/);
@@ -107,7 +109,7 @@ test('restored challenge binds its owner, agent and assigned arena at one block'
   if(r.functionName==='boundMatch')return r.address===arena?{id:10n,epoch:2n,a:owner,b:agent}:{id:0n,epoch:0n,a:zeroAddress,b:zeroAddress};
   throw Error(r.functionName);
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,manifest);assert.equal((await reader.challenge(owner)).value.request?.ref,null);
+ const reader=new AgentPoolReader(withMulticall(client),manifest);assert.equal((await reader.challenge(owner)).value.request?.ref,null);
  status=2;assert.deepEqual((await reader.challenge(owner)).value.request?.ref,{chainId:10143,app:arena,epoch:'2',id:'10'});
  other=true;await assert.rejects(reader.challenge(owner),/participation changed/);pending=0n;assert.equal((await reader.challenge(owner)).value.request,null);
 });
@@ -146,7 +148,7 @@ test('series readers preserve prior results and never watch a future reserved fi
   if(r.functionName==='result')return{hash:zeroHash,winner:owner,status:3,scoreA:7,scoreB:2,mode:0,elapsedUs:1n,finality:false};
   throw Error(r.functionName);
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,m);
+ const reader=new AgentPoolReader(withMulticall(client),m);
  const old=(await reader.match({chainId:10143,app:arena,epoch:'1',id:'1'})).value;
  assert.equal(old.node,null);assert.equal(old.result?.scoreA,7);assert.equal(old.currentBinding,false);assert.equal(old.mode,0);
  wanted=3n;const future=(await reader.match({chainId:10143,app:arena,epoch:'1',id:'3'})).value;
@@ -161,7 +163,7 @@ test('series live discovery excludes captured results while the engine advances 
   if(r.functionName==='boundMatch')return r.address===app?{id:1n,epoch:1n,a:addr(90),b:addr(91),mode:0,ranked:false,tournament:1n}:{id:0n};
   if(r.functionName==='record')return{captured};throw Error(r.functionName);
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,m);const live=(await reader.live()).value.items;
+ const reader=new AgentPoolReader(withMulticall(client),m);const live=(await reader.live()).value.items;
  assert.equal(live.length,1);assert.equal(live[0].lane,'tournament');assert.equal(live[0].liveConfirmed,false);
  captured=true;assert.equal((await reader.live()).value.items.length,0);
 });
@@ -201,7 +203,7 @@ test('reusable admission reads overlap without returning an unverified assignmen
   if(r.functionName==='challengeOf')return wrong?5n:4n;
   throw Error(r.functionName);
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,m),pending=reader.challenge(player).then(v=>{returned=true;return v;});
+ const reader=new AgentPoolReader(withMulticall(client),m),pending=reader.challenge(player).then(v=>{returned=true;return v;});
  await new Promise(r=>setImmediate(r));assert(calls.includes('playing'));assert(!returned);
  releaseRequest();await new Promise(r=>setImmediate(r));assert(calls.includes('challengeOf'));assert(!returned);
  releaseLane();assert.equal((await pending).value.request?.ref?.id,'91');
@@ -229,9 +231,9 @@ test('reusable discovery reads the Monad ticket before engine admission and pres
   throw Error(r.functionName);
  }} as unknown as PublicClient;
  let health:{app:string;epoch:string;id?:string;stage:string;observedAt:number}[]=[{app,epoch:'2',id:'91',stage:'playing',observedAt:Date.now()}];
- const reader=new AgentPoolReader(client,m,[],async()=>health),reference={chainId:10143 as const,app,epoch:'2',id:'91'};
+ const reader=new AgentPoolReader(withMulticall(client),m,[],async()=>health),reference={chainId:10143 as const,app,epoch:'2',id:'91'};
  assert.equal((await reader.live()).value.items[0].ref.id,'91');assert.equal((await reader.live()).value.items[0].liveConfirmed,true);
- const legacy=new AgentPoolReader(client,m);assert.equal((await legacy.live()).value.items[0].liveConfirmed,false,'Legacy discovery stays explicitly unconfirmed');
+ const legacy=new AgentPoolReader(withMulticall(client),m);assert.equal((await legacy.live()).value.items[0].liveConfirmed,false,'Legacy discovery stays explicitly unconfirmed');
  health=[{app,epoch:'2',id:'91',stage:'awaiting-publication',observedAt:Date.now()}];
  assert.equal((await reader.live()).value.items.length,0,'A terminal, unpublished match is not advertised as live');
  for(const mismatch of [{epoch:'1'},{id:'90'},{app:addr(99)},{id:undefined},{observedAt:Date.now()-16000},{stage:'publication-paused'},{stage:'synchronizing'},{stage:'countdown'}]){
@@ -272,7 +274,7 @@ test('five-lane catalogue distinguishes stale engines and full capacity without 
    default:throw Error(r.functionName);
   }
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,m,[],async()=>[
+ const reader=new AgentPoolReader(withMulticall(client),m,[],async()=>[
   {app:m.arenas[0].app,epoch:'1',stage:'available',observedAt:now},
   {app:m.arenas[1].app,epoch,stage,observedAt:now},
   {app:m.arenas[2].app,epoch:'2',id:'91',stage:'awaiting-publication',observedAt:now},
@@ -310,7 +312,7 @@ test('arena entry batches independent reads without weakening binding or reorgan
   if(r.functionName==='tournament')return{league:false};
   throw Error(r.functionName);
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,m),wanted={chainId:10143 as const,app,epoch:'2',id:'91'};
+ const reader=new AgentPoolReader(withMulticall(client),m),wanted={chainId:10143 as const,app,epoch:'2',id:'91'};
  const result=await reader.match(wanted);assert.equal(result.value.node,m.arenas[0].node);assert.equal(result.value.overtimeSeconds,60);
  assert(!started.has('boundMatch'),'Reusable discovery must not wait for the obsolete Monad physics binding');
  wrong=true;await assert.rejects(reader.match(wanted),/not found/);wrong=false;reorg=true;
