@@ -35,7 +35,9 @@ const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode
 const t=await chainTools(prefix);
 try{
  await t.preflight(['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
-  policyName,'AgentCatalog',poolName,'PublishedResultVerifier','AgentTournaments','AgentPublishedRatings',qualificationName,'ArcadeFamily',challengeName,arenaName]);
+  policyName,'AgentCatalog',poolName,'PublishedResultVerifier','AgentTournaments','AgentPublishedRatings',qualificationName,'ArcadeFamily',challengeName,arenaName,
+  // Inherited ABIs are used below even when only the derived bytecode is deployed.
+  'ReusableAgentPool','ReusableAgentArena']);
  if(!r){r={prefix,hub,housePolicy,rulesVersion:15,countdownClock:"engine-ticks-v1",houseInstances,arenaCount,maxMatches,...(maxMatches===5?{arenaAdmissions:'verified-epoch-v1',publicationProbe:v3?'epoch-marker-v1':undefined}:{}),genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.maxMatches??2,maxMatches,'Lane changes need a new deployment namespace');
  assert.equal(r.common?.hub??r.hub??hub,hub,'Hub changes need a new deployment namespace');

@@ -140,7 +140,7 @@ function familyFixture(){
  const owner=privateKeyToAccount(generatePrivateKey()),storage=memory();let signatures=0,chain=10143,now=100n,revision=0n,error=false;
  let grant:any={player:zeroAddress,key:zeroAddress,issuedAt:0n,expires:0n,revision:0n};
  const client={getChainId:async()=>chain,getBlock:async()=>{if(error)throw Error('RPC unavailable');return{number:44n,hash:zeroHash,timestamp:now};},readContract:async(c:any)=>{
-  assert.equal(c.blockNumber,44n);
+  assert.equal(c.blockHash,zeroHash);assert.equal(c.requireCanonical,true);assert.equal(c.blockNumber,undefined);
   if(c.functionName==='revisions')return revision;if(c.functionName==='grantOf')return grant;
   if(c.functionName==='grantDigest')return hashTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:c.args[0]});
   throw Error(c.functionName);
@@ -190,4 +190,18 @@ test('a grant near its end is renewed at a pause instead of expiring during the 
  assert(renewed.call);assert.notEqual(renewed.session.key,first.session.key);
  assert.equal(renewed.session.grant.expires,late+7200n);assert.equal(f.state().signatures,2);
  assert.equal(loadPoolFamily(m,f.owner.address,f.storage)?.key,renewed.session.key);
+});
+
+test('a reorg during family reads preserves the saved key and does not request new consent',async()=>{
+ const f=familyFixture(),first=await preparePoolFamily(f.client,m,f.owner,f.storage);f.grant(first.session.grant);
+ const before=[...f.storage.values],original=f.client.readContract;let headers=0;
+ const client={...f.client,getBlock:async()=>{headers++;return f.client.getBlock();},readContract:async(c:any)=>{
+  assert.equal(c.blockHash,zeroHash);assert.equal(c.requireCanonical,true);
+  if(c.functionName==='grantOf')throw Error('header is not canonical');
+  return original(c);
+ }} as unknown as PublicClient;
+ await assert.rejects(preparePoolFamily(client,m,f.owner,f.storage),/not canonical/);
+ assert.equal(headers,1);assert.equal(f.state().signatures,1);assert.deepEqual([...f.storage.values],before);
+ await assert.rejects(observePoolFamily(client,m,first.session),/not canonical/);
+ assert.equal(headers,2);assert.deepEqual([...f.storage.values],before);
 });

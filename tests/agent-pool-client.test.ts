@@ -1,5 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {decodeFunctionData,hashTypedData,keccak256,multicall3Abi,recoverTypedDataAddress,toHex,type Address,type PublicClient} from 'viem';
+import {decodeFunctionData,hashTypedData,keccak256,multicall3Abi,recoverTypedDataAddress,toHex,zeroHash,type Address,type PublicClient} from 'viem';
+import {familyGrantTypes} from '../shared/independent';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {preparePoolChallenge,preparePoolRegistration,poolChallengeTypes,poolRegistrationTypes} from '../shared/agent-pool-client';
 import {agentChallengesAbi} from '../shared/abi-AgentChallenges';import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
@@ -7,6 +8,7 @@ import type {AgentPoolManifest} from '../shared/agent-pool';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
+const grantHash=(grant:any)=>hashTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:grant});
 test('registration signs the exact creator, strategy, metadata, catalogue and Monad chain',async()=>{
  const owner=privateKeyToAccount(generatePrivateKey());let signed=0;
  const client={getBlock:async()=>({number:44n,timestamp:100n}),getChainId:async()=>10143,getCode:async(c:any)=>{assert.equal(c.blockNumber,44n);return '0x60006000f3';},readContract:async(c:any)=>{
@@ -28,9 +30,10 @@ test('registration refuses incompatible runtime and a different creator before r
  assert.equal(signed,0);
 });
 test('challenge is signed only by the granted arcade key and never exceeds the grant expiry',async()=>{
- const key=privateKeyToAccount(generatePrivateKey()),grant=keccak256(toHex('limited fixture grant'));let expired=false,wrongDomain=false;
- const client={getBlock:async()=>({number:44n,timestamp:100n}),getChainId:async()=>10143,readContract:async(c:any)=>{
-  if(c.functionName==='grantOf')return{key:key.address,expires:expired?99n:150n};if(c.functionName==='grantDigest')return grant;if(c.functionName==='nonces')return 3n;
+ const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:150n,revision:0n},grant=grantHash(family);let expired=false,wrongDomain=false;
+ const client={getBlock:async()=>({number:44n,timestamp:100n,hash:zeroHash}),getChainId:async()=>10143,readContract:async(c:any)=>{
+  assert.equal(c.blockHash,zeroHash);assert.equal(c.requireCanonical,true);assert.equal(c.blockNumber,undefined);
+  if(c.functionName==='grantOf')return {...family,expires:expired?99n:150n};if(c.functionName==='grantDigest')return grant;if(c.functionName==='nonces')return 3n;
   const [g,action,agent,mode,id,nonce,deadline]=c.args;
   return hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:wrongDomain?4242:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant:g,action,agent,mode,id,nonce,deadline}});
  }} as unknown as PublicClient;
@@ -43,12 +46,12 @@ test('challenge is signed only by the granted arcade key and never exceeds the g
 });
 
 test('new atomic challenge sizes its bounded scan at the same block without changing its signature',async()=>{
- const key=privateKeyToAccount(generatePrivateKey()),grant=keccak256(toHex('scoped queue scan'));const reads:string[]=[];
+ const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:250n,revision:0n},grant=grantHash(family);const reads:string[]=[];
  const five={...m,version:5,rulesVersion:15,maxMatches:5,houseInstances:'official-v1',countdownClock:'engine-ticks-v1',arenaAdmissions:'verified-epoch-v1',
   lanes:{tournament:1,challenge:4},challengeAdmission:'atomic-v1',arenas:[...m.arenas,...[12,13].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`}))]} as AgentPoolManifest;
- const client={getBlock:async()=>({number:44n,timestamp:100n}),getChainId:async()=>10143,readContract:async(c:any)=>{
-  assert.equal(c.blockNumber,44n);reads.push(c.functionName);
-  if(c.functionName==='count')return 49n;if(c.functionName==='grantOf')return {key:key.address,expires:250n};
+ const client={getBlock:async()=>({number:44n,timestamp:100n,hash:zeroHash}),getChainId:async()=>10143,readContract:async(c:any)=>{
+  assert.equal(c.blockHash,zeroHash);assert.equal(c.requireCanonical,true);reads.push(c.functionName);
+  if(c.functionName==='count')return 49n;if(c.functionName==='grantOf')return family;
   if(c.functionName==='grantDigest')return grant;if(c.functionName==='nonces')return 3n;
   const [g,action,agent,mode,id,nonce,deadline]=c.args;
   return hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant:g,action,agent,mode,id,nonce,deadline}});
@@ -61,4 +64,21 @@ test('new atomic challenge sizes its bounded scan at the same block without chan
  assert.equal(await recoverTypedDataAddress({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant,action,agent,mode,id,nonce,deadline},signature}),key.address);
  reads.length=0;const cancel=await preparePoolChallenge(client,five,key,addr(99),{agent:addr(20),mode:1,cancel:50n});
  assert.equal(cancel.to,m.challenges);assert(!reads.includes('count'),'Cancellation must not scan or admit other players');
+});
+
+test('challenge refuses a noncanonical observation or wrong family domain before signing',async()=>{
+ const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:250n,revision:0n};
+ let failure=true,signed=0,nonceRead=false;
+ const signer={...key,signTypedData:async(args:any)=>{signed++;return key.signTypedData(args);}};
+ const client={getChainId:async()=>10143,getBlock:async()=>({number:44n,timestamp:100n,hash:zeroHash}),readContract:async(c:any)=>{
+  assert.equal(c.requireCanonical,true);assert.equal(c.blockHash,zeroHash);
+  if(c.functionName==='grantOf')return family;
+  if(c.functionName==='grantDigest'){if(failure)throw Error('header is not canonical');return zeroHash;}
+  if(c.functionName==='nonces'){nonceRead=true;return 3n;}
+  throw Error('Must not request a challenge signature');
+ }} as unknown as PublicClient;
+ await assert.rejects(preparePoolChallenge(client,m,signer,addr(99),{agent:addr(20),mode:0}),/not canonical/);
+ assert(nonceRead,'Nonce read can overlap verification, but never authorizes signing');
+ failure=false;await assert.rejects(preparePoolChallenge(client,m,signer,addr(99),{agent:addr(20),mode:0}),/domain differs/);
+ assert.equal(signed,0);
 });

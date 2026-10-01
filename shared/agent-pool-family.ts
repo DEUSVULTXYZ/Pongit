@@ -27,9 +27,10 @@ export function poolFamilyCall(m:AgentPoolManifest,s:PoolFamilySession):PoolSign
  return{to:m.family,data:encodeFunctionData({abi:familyAbi,functionName:'register',args:[s.grant,s.signature]})};
 }
 export async function observePoolFamily(client:PublicClient,m:AgentPoolManifest,s:PoolFamilySession){
- if(await client.getChainId()!==10143)throw Error('Arcade authorizations require Monad Testnet');
- const block=await client.getBlock(),grant=await client.readContract({address:m.family,abi:familyAbi,functionName:'grantOf',args:[s.grant.player],blockNumber:block.number});
- if((await client.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arcade authorization changed during synchronization');
+ const [chainId,block]=await Promise.all([client.getChainId(),client.getBlock()]);
+ if(chainId!==10143)throw Error('Arcade authorizations require Monad Testnet');
+ if(!block.hash)throw Error('Arcade authorization has no canonical block');
+ const grant=await client.readContract({address:m.family,abi:familyAbi,functionName:'grantOf',args:[s.grant.player],blockHash:block.hash,requireCanonical:true});
  return {active:grant.player.toLowerCase()===s.grant.player.toLowerCase()&&grant.key.toLowerCase()===s.grant.key.toLowerCase()
   &&grant.issuedAt===s.grant.issuedAt&&grant.expires===s.grant.expires&&grant.revision===s.grant.revision&&grant.expires>block.timestamp,block};
 }
@@ -45,12 +46,17 @@ export const familyExpiresSoon=(s:PoolFamilySession,now:bigint,margin=SESSION_RE
 
 export async function preparePoolFamily(client:PublicClient,m:AgentPoolManifest,owner:Owner,storage:PoolSessionStorage,options:{renewWithin?:bigint}={}){
  m=validateAgentPoolManifest(m);
- if(await client.getChainId()!==10143)throw Error('Arcade authorizations require Monad Testnet');
- const existing=loadPoolFamily(m,owner.address,storage),block=await client.getBlock();
- const revision=await client.readContract({address:m.family,abi:familyAbi,functionName:'revisions',args:[owner.address],blockNumber:block.number});
+ const existing=loadPoolFamily(m,owner.address,storage);
+ const [chainId,block]=await Promise.all([client.getChainId(),client.getBlock()]);
+ if(chainId!==10143)throw Error('Arcade authorizations require Monad Testnet');
+ if(!block.hash)throw Error('Arcade authorization has no canonical block');
+ const pin={blockHash:block.hash,requireCanonical:true as const};
+ const [revision,observed]=await Promise.all([
+  client.readContract({address:m.family,abi:familyAbi,functionName:'revisions',args:[owner.address],...pin}),
+  existing?client.readContract({address:m.family,abi:familyAbi,functionName:'grantOf',args:[owner.address],...pin}):Promise.resolve(null),
+ ]);
  if(existing){
-  const observed=await client.readContract({address:m.family,abi:familyAbi,functionName:'grantOf',args:[owner.address],blockNumber:block.number});
-  if((await client.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arcade authorization changed during synchronization');
+  if(!observed)throw Error('Arcade authorization was not observed');
   // Asked to renew near the end: a fresh consent replaces a grant that could
   // otherwise expire in the middle of the next match. Never done silently.
   const ending=options.renewWithin!==undefined&&existing.grant.expires-block.timestamp<options.renewWithin;
@@ -66,9 +72,8 @@ export async function preparePoolFamily(client:PublicClient,m:AgentPoolManifest,
  }
  const key=generatePrivateKey(),grant:FamilyGrant={player:owner.address,key:privateKeyToAccount(key).address,issuedAt:block.timestamp,expires:block.timestamp+7200n,revision};
  const typed={domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant' as const,message:grant};
- const digest=await client.readContract({address:m.family,abi:familyAbi,functionName:'grantDigest',args:[grant],blockNumber:block.number});
+ const digest=await client.readContract({address:m.family,abi:familyAbi,functionName:'grantDigest',args:[grant],...pin});
  if(digest!==hashTypedData(typed))throw Error('Arcade authorization domain differs from the approved family');
- if((await client.getBlock({blockNumber:block.number})).hash!==block.hash)throw Error('Arcade authorization changed during synchronization');
  const signature=await owner.signTypedData(typed),session={grant,key,signature};
  storage.setItem(scope(m,owner.address),JSON.stringify(session,(_,v)=>typeof v==='bigint'?String(v):v));
  return{session,call:poolFamilyCall(m,session)};

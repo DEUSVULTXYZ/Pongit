@@ -728,3 +728,35 @@ checksum/type failures are retained. At canonical block 67191928, operator
 reserve is 515.775 MON, v3 publisher 49,519.236 MON and legacy publisher
 49,165.953 MON. No transfer or funding request was needed. Disk is 79.345%
 before the small candidate image build. A full-game publication remains untested.
+
+## Private full-game candidate and canonical admission reads, 07:17 UTC
+
+6126 epoch 1 was normally released in transaction
+0xda20e503a1e533bc479daf510ea218e00c7c7ce3e712856d678a712c5ec0162e.
+Canonical block 67193942 confirms status None and the exact sealed empty root,
+count zero. Do not repeat its release. The f455 v3 marker release remains due
+at 07:38:52 UTC through its original private runner.
+
+The first full-game v3 deployment stopped because the artifact package omitted
+the inherited ReusableAgentPool ABI. Its failed container/log remain preserved.
+The supplemental ABI bundle has SHA256
+893040aefad8d80211c51ad17ecc7e7150bc9c4442947b926d18da57fa5388e0.
+The same deployment resumed from its journal within the original deadline;
+confirmed deployments were reconciled, not duplicated. Future preflight now
+includes both inherited pool and arena artifacts before any deployment.
+
+Private pool 0x550ff3c22e20fc760af9afd68fba2cb531140dc6 is deployed with seven
+closed arenas, separate provisioning owner and ProgressiveHousePolicies
+0x0632e55be9994a46cf9f920de9302cc8e679ac78. Its immutable candidate image is
+sha256:5aa60dbc1a95507ad2df50325a5a647363f448780395d20e80d7b065241970ae,
+source 6033dbe. The isolated database is pong_v3_games_20261001 and root is
+/opt/pongit/tests/fluid-20260928/v3-games-6033dbe. No game, hosted opening or
+public migration is established by this deployment. Both public gates are closed.
+
+The browser candidate also reduces sequential authorization reads. Chain and
+header reads overlap; family, queue and nonce checks use the same canonical
+block hash. The expected family digest lets its on-chain verification overlap
+the nonce read. A failed canonical read or mismatched domain cannot request a
+signature, replace a saved key or silently use an unpinned read. Full TypeScript
+suite: 879 passes; root typecheck passes. Browser timing remains unmeasured on
+this candidate. Public services and ongoing public games are unchanged.
