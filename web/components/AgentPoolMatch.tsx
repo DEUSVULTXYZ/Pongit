@@ -51,10 +51,12 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const refKey=`${reference.app}:${reference.epoch}:${reference.id}`;
  const name=(address:string)=>people.find(p=>p.agent.toLowerCase()===address.toLowerCase())?.name??short(address);
  const avatar=(address:string)=>people.find(p=>p.agent.toLowerCase()===address.toLowerCase())?.avatar??9;
- // Names and portraits must not gate authorization, F5 recovery or observation.
- // A slow catalogue leaves address labels in place while the arena connects.
+ const courtObserved=!!snapshot||!!view?.result;
+ // The catalogue shares the Monad RPC budget with admission. Start cosmetic
+ // reads only after the court or published result arrives, so a large registry
+ // cannot delay authorization, F5 recovery or the initial countdown.
  useEffect(()=>{
-  if(!enabled)return;const abort=new AbortController();let cancelled=false,timer:ReturnType<typeof setTimeout>;
+  if(!enabled||!courtObserved)return;const abort=new AbortController();let cancelled=false,timer:ReturnType<typeof setTimeout>;
   const load=async()=>{
    try{
     const response=await fetch(`${API}/agents/catalog?limit=32`,{signal:AbortSignal.any([abort.signal,AbortSignal.timeout(10000)])});
@@ -63,7 +65,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    }catch{if(!cancelled)timer=setTimeout(load,30000);}
   };
   void load();return()=>{cancelled=true;abort.abort();clearTimeout(timer);};
- },[enabled,refKey]);
+ },[enabled,refKey,courtObserved]);
  useEffect(()=>{
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>,observer:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>|undefined,release:(()=>void)|undefined;
   if(lastRef.current!==refKey){lastRef.current=refKey;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
