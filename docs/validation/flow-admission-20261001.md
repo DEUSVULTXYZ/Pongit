@@ -651,3 +651,60 @@ games. The original failed deadline/report will not be relabelled as passed.
 Backup control-20261001T0627Z, including the new private state and deployment,
 is verified off VPS against all nine SHA256 hashes. Original 54fa and 6126
 releases remain due at 06:44:46 and 07:06:55 UTC respectively.
+
+## Actual v3 publication passed, 06:39 UTC
+
+The separate retry from 870fd0f executed at nonce 1, hash
+0x26e267696eabfc9d05d98a8ec68c868f017433fc44fab6c73d0fc8213eb5c4cf.
+It preserved the failed nonce-0 entry. At canonical block 67187454,
+hash 0xa040a8c714de6dc7bece576a2e51dbbe8991ce2b5883ced894cade8115060d75,
+the actual Monad marker is 1, batch count 2, match count zero and empty result
+root unchanged. Hosted identity, execution and canonical publication therefore
+pass for this bounded empty-arena test. The first failed attempt remains FAIL.
+
+The state-changing publication transaction is
+0x6a338060a2ea1516dad905f2f88ce141c1a23156e87b7fa10c463a10837e6e58:
+964 calldata bytes, 351,040 charged gas at 102 gwei, or 0.03580608 MON.
+The earlier reverted-command batch cost 0.02334015 MON. These are exact fees
+for this tiny qualification, not a game-cost forecast or proof that every
+publication budget problem is solved. The new path estimates publication gas
+instead of using the old 24-million-gas charge for this sample.
+
+Normal close confirmed in
+0x2590a0d210ae570e1854723119562b9389c9d9a890395c622f59c88ac15b8abb,
+block 67187855. Actual release deadline: **07:38:52 UTC**. Use the original
+`v3-operations.py release f7ce4ac`, which owns only this empty private arena,
+after verifying no prior release. Do not reopen or force-close it. No private
+driver remains active. The runtime still requires full pool, player, admission,
+budget, health and lifecycle adaptation before v3 can host PONGIT matches.
+
+The marker gas correction passes 865 TypeScript tests and root typecheck.
+No production service was changed by either private v3 candidate.
+
+## Private legacy recovery and backup, 06:45 UTC
+
+All nine files in `control-20261001T0640Z` are SHA256-verified off VPS.
+The original marker runner released 54fa epoch 2 in
+0x2d56d5f0cb751dc1182d3b55ee0d8624f1f9e9cd28f6dcd16dc72ac13119b2df,
+block 67189090. Canonical block 67189091 confirms status None, exact sealed
+empty root 0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f
+and count zero. Do not repeat this release or reopen the legacy test.
+6126 and f455 remain normally closing until 07:06:55 and 07:38:52 UTC.
+
+## Candidate lease integration, 06:56 UTC
+
+Pool admission, player recovery and controls, bridge evidence, engine scheduling,
+maintenance, publication budgets and soak predicates now recognize zero expiry
+only on the pinned v3 hub. Legacy and unknown zero-expiry sessions fail closed.
+The three-second command fence, two-hour human permission, current epoch,
+canonical code, result capture and measured batch reserve remain mandatory.
+Zero expiry cannot authorize public expiry recovery or closure of a running game.
+The human runtime is unchanged; its existing budget calls retain legacy semantics.
+
+871 TypeScript tests and root typecheck pass. Ten Solidity integration tests pass,
+including five concurrent assignments, reverse captures, unchanged tournament
+locks and restricted closure. The first new Solidity fixture failed because its
+mock froze the publication batch index; that failed report is preserved separately
+from the corrected test. These are local tests, not hosted match qualification.
+All nine files in the post-release `control-20261001T0648Z` backup are verified
+off VPS. No candidate game, new opening or public service deployment occurred.

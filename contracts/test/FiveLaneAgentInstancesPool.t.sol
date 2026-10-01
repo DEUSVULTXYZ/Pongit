@@ -18,7 +18,7 @@ contract FiveLaneAgentInstancesPoolTest is ReusableAgentPoolFixture {
     address constant MAINTENANCE=address(0xad02);
     bytes32 constant HEALTHY=keccak256("verified node and publication");
     function candidate() internal view returns(FiveLaneAgentInstancesPool){return FiveLaneAgentInstancesPool(address(pool));}
-    function makePool() internal override returns(ReusableAgentPool){return new FiveLaneAgentInstancesPool(catalog,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE));}
+    function makePool() internal virtual override returns(ReusableAgentPool){return new FiveLaneAgentInstancesPool(catalog,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE));}
     function makeChallenges() internal override returns(AgentChallenges){return new HouseInstanceChallenges(family,catalog,address(pool),address(this));}
     function makeQualifications() internal override returns(AgentQualifications){return new HouseInstanceQualifications(catalog,address(pool));}
     function arenaCount() internal pure override returns(uint8){return 7;}

@@ -15,6 +15,7 @@ import {CompetitionTypes as T,ICompetitionAuthority} from "./CompetitionTypes.so
 import {IInterludeHub} from "../../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../../vendor/interlude/interfaces/Types.sol";
 import {ReusableAgentArena} from "./ReusableAgentArena.sol";
+import {ReusableAgentBinding} from "./ReusableAgentBinding.sol";
 import {ReusableAgentGame as Game} from "./ReusableAgentGame.sol";
 import {ReusableAdmission as Admission} from "../../independent/ReusableAdmission.sol";
 import {PublishedResultVerifier} from "../../independent/PublishedResultVerifier.sol";
@@ -133,7 +134,8 @@ contract ReusableAgentPool is ICompetitionAuthority {
     }
     function _idle(ReusableAgentArena arena) internal view returns(bool){
         Types.Session memory session=hub.sessionOf(address(arena),Types.GLOBAL);
-        if(session.status!=Types.Status.Active||session.expiresAt<=block.timestamp+7 minutes||!_admissionAllowed(address(arena),session.epoch))return false;
+        if(session.status!=Types.Status.Active||!(session.expiresAt>block.timestamp+7 minutes
+            ||session.expiresAt==0&&address(hub)==ReusableAgentBinding.NO_LEASE_HUB)||!_admissionAllowed(address(arena),session.epoch))return false;
         (uint256 epoch,uint32 count,)=arena.resultCommitment();if(epoch!=session.epoch||count>=65_536)return false;
         bytes32 prior=arenaMatch[address(arena)];if(prior!=0&&!records[prior].captured)return false;
         (uint256 currentEpoch,uint256 id)=arena.currentMatch();
@@ -270,12 +272,13 @@ contract ReusableAgentPool is ICompetitionAuthority {
     function closeReusableArena(address app) external base locked {
         require(setupSealed&&registered[app],"registered arena");Types.Session memory session=hub.sessionOf(app,Types.GLOBAL);
         bytes32 prior=arenaMatch[app];bool settled=prior==0||records[prior].captured;
-        require(session.status==Types.Status.Active&&(msg.sender==owner||(_maintenanceCaller()&&settled)||block.timestamp+7 minutes>=session.expiresAt),"arena still admitting");
+        require(session.status==Types.Status.Active&&(msg.sender==owner||(_maintenanceCaller()&&settled)
+            ||session.expiresAt!=0&&block.timestamp+7 minutes>=session.expiresAt),"arena still admitting");
         ReusableAgentArena(app).closeEngine();emit Closing(arenaMatch[app],session.epoch);
     }
     function recoverExpired(address app) external base locked {
         require(registered[app],"registered arena");Types.Session memory session=hub.sessionOf(app,Types.GLOBAL);
-        require(session.status==Types.Status.Active&&block.timestamp>=session.expiresAt,"not expired");
+        require(session.status==Types.Status.Active&&session.expiresAt!=0&&block.timestamp>=session.expiresAt,"not expired");
         ReusableAgentArena(app).closeEngine();emit Closing(arenaMatch[app],session.epoch);
     }
     function releaseArena(address app) external base locked {

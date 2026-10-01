@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {poolAvailability, newPoolQualification, recordPoolSample, poolQualificationVerdict, type PoolSample} from '../relayer/src/agents/pool-qualification';
 const at = 1789873000000;
 const sample = (): PoolSample => ({at, blockTimestamp: at / 1000, admissions: true, apiReadable: true, arenas: [
@@ -9,6 +10,14 @@ const sample = (): PoolSample => ({at, blockTimestamp: at / 1000, admissions: tr
 test('live process with two closing arenas is unavailable', () => {
   const s = sample(); s.arenas[0].hubStatus = 2; s.arenas.push({...s.arenas[0], app: 'b'});
   const v = poolAvailability(s); assert.equal(v.unavailable, true); assert.equal(v.closing, 2); assert.equal(v.progressing, 0);
+});
+test('v3 no-lease health requires fresh progress and never erases renewal evidence',()=>{
+ const s=sample();s.hub=NO_LEASE_HUB;s.arenas[0].expiresAt=0;
+ assert.equal(poolAvailability(s).unavailable,false);
+ for(const patch of [{healthEpoch:'1'},{hubStatus:2},{progressAt:at-11000},{expiresAt:NaN},{expiresAt:-1}]){
+  const bad=structuredClone(s);Object.assign(bad.arenas[0],patch);assert(poolAvailability(bad).unavailable);
+ }
+ delete s.hub;assert(poolAvailability(s).unavailable);
 });
 test('fresh health cannot hide stalled physics, old epochs or pending commands', () => {
   for (const patch of [{progressAt: at - 11000}, {healthAt: at - 16000}, {healthEpoch: '1'}, {healthMatchId: '2'},

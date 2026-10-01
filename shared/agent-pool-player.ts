@@ -14,6 +14,7 @@ import type {PoolFamilySession} from './agent-pool-family';
 import type {PoolSessionStorage} from './agent-pool-sponsor';
 import {readPoolPermission} from './agent-pool-permission';
 import {preparePoolActive} from './agent-pool-active';
+import {hubHasNoLease,hubLeaseValid} from './hub-lease';
 
 export const POOL_PLAYER_GAS=14_800_000n;
 /** One node connection and tab journal per watched arena. The family permission
@@ -95,7 +96,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   if(hub.status===0){journal.retireClosed(session.grant.key,epoch);throw Error('The arena epoch is closed. Read its published result.');}
   if(!code||keccak256(code)!==arena!.runtimeHash)throw Error('Arena bytecode differs from the approved deployment');
   await identify(true);
-  if(permissionPending()&&hub.status===1&&hub.expiresAt>block.timestamp)await reconcilePermission();
+  if(permissionPending()&&hub.status===1&&hubLeaseValid(m.hub,hub.expiresAt,block.timestamp))await reconcilePermission();
   const b=await node.readContract({address:arena!.app,abi,functionName:'boundMatch'});
   if(b.id!==id||b.epoch!==epoch||b.a.toLowerCase()!==match.a.toLowerCase()||b.b.toLowerCase()!==match.b.toLowerCase())throw Error('Arena binding changed');
   const side=b.a.toLowerCase()===player.toLowerCase()?0:1,initial=side===0?b.controlA:b.controlB;
@@ -109,20 +110,20 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    if(BigInt(pending.epoch)!==epoch)throw Error('A command from another epoch is awaiting closure');
    const receipt=await node.getTransactionReceipt({hash:pending.hash}).catch(()=>null);
    if(receipt)journal.received('eth_getTransactionReceipt',receipt);
-   else if(hub.status===1&&hub.expiresAt>block.timestamp&&control.expires>block.timestamp&&!control.revoked){
+   else if(hub.status===1&&hubLeaseValid(m.hub,hub.expiresAt,block.timestamp)&&control.expires>block.timestamp&&!control.revoked){
     const outcome=await resendJournaled(journal,pending,{send:raw=>node.request({method:'interlude_sendTransaction',params:[raw]} as any),
      latestNonce:()=>node.getTransactionCount({address:session.grant.key,blockTag:'latest'}),commandGas:()=>POOL_PLAYER_GAS});
     if(outcome.kind==='sent')journal.received('interlude_sendTransaction',outcome.receipt);
    }
    if(journal.pending(session.grant.key))throw Error('The existing command is still being reconciled; your arcade key is saved');
   }
-  if(hub.status!==1||hub.expiresAt<=block.timestamp)throw Error('This arena is recovering; your arcade key is saved');
+  if(hub.status!==1||!hubLeaseValid(m.hub,hub.expiresAt,block.timestamp))throw Error('This arena is recovering; your arcade key is saved');
   if(control.revoked)throw Error('This arena authorization was revoked by its owner');
   if(control.expires<=block.timestamp)throw Error('Renew the active arena authorization');
   if(stopped)throw Error('Arena controls have stopped');
   // Fence against the hub again shortly. UI health changes must not reset the
   // renderer, session key, last intent or authoritative positions.
-  controlsUntil=started+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
+  controlsUntil=started+(hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000));
   sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,...(reusable?{epoch}:{}),expires:control.expires,gas:POOL_PLAYER_GAS,now});
   prefetchFence();
   feed.invalidate();return verify(await feed.read(id,true));
@@ -150,11 +151,11 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    if(generation!==fenceGeneration||stopped)return;
    // Read-only prefetch must not retire a pending command behind its owner.
    // The serialized recovery path records canonical closure evidence.
-   if(hub.epoch!==epoch||hub.status!==1||hub.expiresAt<=block.timestamp){controlsUntil=0;throw Error('This arena is recovering; your arcade key is saved');}
+   if(hub.epoch!==epoch||hub.status!==1||!hubLeaseValid(m.hub,hub.expiresAt,block.timestamp)){controlsUntil=0;throw Error('This arena is recovering; your arcade key is saved');}
    await identify();
    if(generation!==fenceGeneration||stopped)return;
    // Charge read latency to validity: a slow successful RPC is not a new lease.
-   controlsUntil=started+Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000);
+   controlsUntil=started+(hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000));
   })();
   fencePending=loading.finally(()=>{fencePending=undefined;});return fencePending;
  }
@@ -204,7 +205,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   return serial(async()=>{
    if(await options.base.getChainId()!==10143)throw Error('Arena authorization requires Monad Testnet');
    const block=await options.base.getBlock(),hub=await readHubDelegation(options.base,m.hub,arena!.app,block.number);
-   if(hub.status!==1||hub.epoch!==epoch||hub.expiresAt<=block.timestamp)throw Error('Wait for this arena to recover before changing its permission');
+   if(hub.status!==1||hub.epoch!==epoch||!hubLeaseValid(m.hub,hub.expiresAt,block.timestamp))throw Error('Wait for this arena to recover before changing its permission');
    await identify(true);const b=await node.readContract({address:arena!.app,abi,functionName:'boundMatch'});
    if(b.id!==id||b.epoch!==epoch||b.a.toLowerCase()!==match.a.toLowerCase()||b.b.toLowerCase()!==match.b.toLowerCase())throw Error('Arena binding changed');
    const code=await options.base.getCode({address:arena!.app,blockNumber:block.number});

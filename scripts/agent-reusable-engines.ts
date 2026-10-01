@@ -1,6 +1,7 @@
 // One engine writer per reusable arena. Admissions originate only from Monad;
 // a terminal result is archived before another logical match can reuse its slot.
 import assert from 'node:assert/strict';
+import {hubLeaseValid} from '../shared/hub-lease';
 import {Pool} from 'pg';
 import {createPublicClient,http,keccak256,zeroHash,type Address,type PublicClient,type Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
@@ -186,7 +187,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
     },{node,reusable:true,publicationProbe:r.publicationProbe,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
    }
    // Expiry forbids new commands, not the reads needed to preserve a result.
-   if(d.status!==1||d.expiresAt<=block.timestamp){
+   if(d.status!==1||!hubLeaseValid(m.hub,d.expiresAt,block.timestamp)){
     await archiveSlot(ticket);await health('recovering',{epoch:String(ref.epoch),id:String(ref.id),releaseAt:String(d.stakeUnlockAt)});await delay(2000);continue;
    }
    if(publicationPaused){
@@ -218,7 +219,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      base.readContract({address:m.pool,abi:poolAbi,functionName:'issuedTicket',args:[app,ref.epoch,ticket.sequence],blockNumber:block.number}),
      base.getBlock({blockNumber:ticket.sourceBlock}),code(binding.controlA,binding.a),code(binding.controlB,binding.b),
     ]);
-    const evidence={chainId:10143,authority:m.pool,arena:app,reservedMatch:ref.id,
+    const evidence={chainId:10143,hub:m.hub,authority:m.pool,arena:app,reservedMatch:ref.id,
      issuedDigest,sourceHash:source.hash!,hubEpoch:d.epoch,hubStatus:d.status,hubExpires:d.expiresAt,
      engineEpoch,engineCount:count,now:block.timestamp,engineCodeHashA,engineCodeHashB};
     (cancel?validateReusableAgentCancellation:validateReusableAgentAdmission)(ticket,binding,evidence);

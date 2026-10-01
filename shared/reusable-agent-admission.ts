@@ -1,5 +1,6 @@
 import {encodeAbiParameters,isAddress,keccak256,zeroAddress,zeroHash,type Address,type Hex} from 'viem';
 import {reusableAdmissionDigest,reusableAdmissionMessage,type ReusableTicket} from './reusable-admission';
+import {hubLeaseValid} from './hub-lease';
 
 export type ReusableAgentController={codeHash:Hex;memoryWord:bigint;house:number;key:Address;expires:bigint};
 export type ReusableAgentBinding={id:bigint;epoch:bigint;preparedBlock:bigint;tournament:bigint;a:Address;b:Address;mode:number;ranked:boolean;overtime:boolean;controlA:ReusableAgentController;controlB:ReusableAgentController};
@@ -15,7 +16,7 @@ export const reusableAgentBindingHash=(binding:ReusableAgentBinding)=>keccak256(
  * evidence must be read at one canonical Monad block; code hashes are also
  * checked in the target engine's immutable base state before signing. */
 export type ReusableAgentEvidence={
- chainId:number;authority:Address;arena:Address;issuedDigest:Hex;sourceHash:Hex;
+ chainId:number;hub?:Address;authority:Address;arena:Address;issuedDigest:Hex;sourceHash:Hex;
  reservedMatch:bigint;hubEpoch:bigint;hubStatus:number;hubExpires:bigint;
  engineEpoch:bigint;engineCount:number;now:bigint;engineCodeHashA:Hex;engineCodeHashB:Hex;
 };
@@ -30,7 +31,7 @@ function validate(ticket:ReusableTicket,b:ReusableAgentBinding,e:ReusableAgentEv
  if(e.chainId!==10143||ticket.rules!==15n||!address(ticket.authority)||!address(ticket.arena)
   ||!same(ticket.authority,e.authority)||!same(ticket.arena,e.arena)||ticket.matchId<=0n||ticket.matchId!==e.reservedMatch||ticket.matchId!==b.id
   ||ticket.epoch<=0n||ticket.epoch!==e.hubEpoch||ticket.epoch!==e.engineEpoch||ticket.epoch!==b.epoch
-  ||e.hubStatus!==1||e.hubExpires<=e.now+(cancel?0n:420n)||!Number.isInteger(e.engineCount)||e.engineCount<0||e.engineCount>=65536||ticket.sequence!==BigInt(e.engineCount)+1n
+  ||e.hubStatus!==1||!hubLeaseValid(e.hub,e.hubExpires,e.now,cancel?0n:420n)||!Number.isInteger(e.engineCount)||e.engineCount<0||e.engineCount>=65536||ticket.sequence!==BigInt(e.engineCount)+1n
   ||ticket.issuedAt>e.now||(cancel?ticket.expires>=e.now:ticket.expires<=e.now)||ticket.expires<=ticket.issuedAt||ticket.expires-ticket.issuedAt>120n
   ||ticket.sourceBlock<=0n||ticket.sourceBlock!==b.preparedBlock||same(ticket.sourceHash,zeroHash)||!same(ticket.sourceHash,e.sourceHash)
   ||!same(ticket.bindingHash,reusableAgentBindingHash(b))||!same(e.issuedDigest,reusableAdmissionDigest(ticket))

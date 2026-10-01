@@ -172,7 +172,7 @@ async function play(serial:number){
   assert.equal(await read(common.pool,poolAbi,'arenaMatch',[app],block.number),match.key);
   validateReusableAgentAdmission(ticket,binding,{chainId:10143,authority:common.pool,arena:app,reservedMatch:id,
    issuedDigest:await read(common.pool,poolAbi,'issuedTicket',[app,epoch,ticket.sequence],block.number),sourceHash:(await tools.base.getBlock({blockNumber:ticket.sourceBlock})).hash!,
-   hubEpoch:hub.epoch,hubStatus:hub.status,hubExpires:hub.expiresAt,engineEpoch,engineCount:count,now:block.timestamp,
+   hub:common.hub,hubEpoch:hub.epoch,hubStatus:hub.status,hubExpires:hub.expiresAt,engineEpoch,engineCount:count,now:block.timestamp,
    engineCodeHashA:await code(binding.controlA,binding.a),engineCodeHashB:await code(binding.controlB,binding.b)});
   await send(`admit-${id}`,'admit',[ticket,binding,await bridge.sign({hash:reusableAdmissionDigest(ticket)})]);match.admitted=true;await save();
  }

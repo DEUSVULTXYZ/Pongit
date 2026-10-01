@@ -8,6 +8,7 @@ import {roomsLifecycleHubAbi as hubAbi} from '../shared/abi-rooms-lifecycle';
 import type {AgentPoolManifest,PoolMatchView} from '../shared/agent-pool';
 import type {PoolFamilySession} from '../shared/agent-pool-family';
 import {poolRenewTypes,poolRevokeTypes} from '../shared/agent-pool-active';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 function fixture(rules:10|11|15=10){
  const fixtureAbi=rules===15?reusableAgentArenaAbi:abi;
@@ -74,6 +75,18 @@ test('a burst during recovery keeps only the latest movement and signs compact s
  const first=f.player.move(1);await Promise.resolve();const second=f.player.move(-1),stop=f.player.move(0),last=f.player.move(-1);release();
  await Promise.all([first,second,stop,last]);assert.equal(f.sent.length,1);assert.equal(f.state.state.leftDir,-1);
  await f.player.move(0);assert.equal(f.sent.length,2);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
+});
+test('a no-lease engine keeps the three-second fence and human authorization',async()=>{
+ const f=fixture(15);f.player.close();f.m.hub=NO_LEASE_HUB;f.hub.expiresAt=0n;const player=f.create();
+ await player.move(1);assert.equal(f.sent.length,1);
+ f.advance(3001);f.failBase(true);await assert.rejects(player.move(-1),/timeout/);assert.equal(f.sent.length,1);
+ f.failBase(false);await player.move(-1);assert.equal(f.sent.length,2);
+ await player.revoke(f.owner);await assert.rejects(player.move(0),/revoked/);player.close();
+});
+test('zero lease on an unknown hub and an expired human grant still fail closed',async()=>{
+ const f=fixture(15);f.hub.expiresAt=0n;await assert.rejects(f.player.move(1),/recovering/);assert.equal(f.sent.length,0);f.player.close();
+ f.m.hub=NO_LEASE_HUB;f.session.grant.expires=1n;f.binding.controlA.expires=1n;
+ const player=f.create();await assert.rejects(player.move(1),/Renew the active arena authorization/);assert.equal(f.sent.length,0);player.close();
 });
 
 test('the latest intent replaces a movement waiting behind the second authorization fence',async()=>{

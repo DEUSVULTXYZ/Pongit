@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {toHex,zeroAddress,zeroHash,type Address} from 'viem';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {reusableAdmissionDigest,type ReusableTicket} from '../shared/reusable-admission';
 import {reusableAgentBindingHash,validateReusableAgentAdmission,validateReusableAgentCancellation,type ReusableAgentBinding} from '../shared/reusable-agent-admission';
 const at=(n:number)=>toHex(n,{size:20}) as Address,code=toHex(123,{size:32});
@@ -8,6 +9,15 @@ const b:ReusableAgentBinding={id:99n,epoch:7n,preparedBlock:4n,tournament:0n,a:a
  controlA:{codeHash:zeroHash,memoryWord:0n,house:0,key:at(3),expires:7201n},controlB:{codeHash:code,memoryWord:0n,house:3,key:zeroAddress,expires:0n}};
 const t:ReusableTicket={authority:at(5),arena:at(6),epoch:7n,sequence:1n,matchId:99n,bindingHash:reusableAgentBindingHash(b),issuedAt:100n,expires:220n,sourceBlock:4n,sourceHash:toHex(5,{size:32}),rules:15n};
 const e={chainId:10143,authority:at(5),arena:at(6),issuedDigest:reusableAdmissionDigest(t),sourceHash:t.sourceHash,reservedMatch:99n,hubEpoch:7n,hubStatus:1,hubExpires:7300n,engineEpoch:7n,engineCount:0,now:110n,engineCodeHashA:zeroHash,engineCodeHashB:code};
+test('no-lease admissions retain ticket, human permission and epoch constraints',()=>{
+ const unlimited={...e,hub:NO_LEASE_HUB,hubExpires:0n};
+ assert.equal(validateReusableAgentAdmission(t,b,unlimited).domain.chainId,10143);
+ for(const patch of [{hub:undefined},{hub:at(10)},{hubStatus:2},{hubEpoch:8n},{hubExpires:530n},{now:220n}])
+  assert.throws(()=>validateReusableAgentAdmission(t,b,{...unlimited,...patch}));
+ const expiredHuman={...b,controlA:{...b.controlA,expires:e.now}},ticket={...t,bindingHash:reusableAgentBindingHash({...b,controlA:{...b.controlA,expires:e.now}})};
+ assert.throws(()=>validateReusableAgentAdmission(ticket,expiredHuman,{...unlimited,issuedDigest:reusableAdmissionDigest(ticket)}));
+ assert.equal(validateReusableAgentCancellation(t,b,{...unlimited,now:7210n}).domain.chainId,10143);
+});
 test('the admission matches the Solidity controller tuple golden vector',()=>{
  assert.equal(reusableAgentBindingHash(b),'0x71b7de9ac1baef9814b0571a0bb27d45e75a721b025ed4cdcbdf979a6c1ec3d3');
  assert.equal(reusableAdmissionDigest(t),'0x7347109fa74117c5134200e8c8749b12999e8b513c555d1980922778883ad1c4');

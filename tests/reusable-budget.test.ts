@@ -1,7 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {toHex} from 'viem';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {validateReusableBudget,reusableAdmissionBudget,reusableCapacity,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
+test('a no-lease epoch still needs measured publication reserve',()=>{
+ const b:ReusablePublicationBudget={rulesVersion:15,maxBatches:100,matchReserveBatches:20,rotationLeadSeconds:420,serviceSeconds:7200,evidence:toHex(2,{size:32}),runtimeHashes:[toHex(1,{size:32})]};
+ assert(reusableAdmissionBudget(b,79n,0n,500n,NO_LEASE_HUB));
+ for(const hub of [undefined,toHex(5,{size:20})])assert(!reusableAdmissionBudget(b,79n,0n,500n,hub));
+ assert(!reusableAdmissionBudget(b,80n,0n,500n,NO_LEASE_HUB));
+ assert(!reusableAdmissionBudget(undefined,0n,0n,500n,NO_LEASE_HUB));
+ assert(!reusableAdmissionBudget(b,0n,920n,500n,NO_LEASE_HUB));
+ const arenas=[{app:'a',batches:79n,expires:0n,occupied:false,serving:true}];
+ assert.deepEqual(reusableCapacity(b,arenas,500n,NO_LEASE_HUB).ready,['a']);
+ arenas[0].serving=false;assert.deepEqual(reusableCapacity(b,arenas,500n,NO_LEASE_HUB).ready,[]);
+});
 test('missing or foreign worst-case evidence cannot open reusable admissions',()=>{
  const runtime=toHex(1,{size:32}),b={rulesVersion:15,maxBatches:100,matchReserveBatches:20,rotationLeadSeconds:420,serviceSeconds:7200,evidence:toHex(2,{size:32}),runtimeHashes:[runtime]};
  const valid=validateReusableBudget(b,[runtime]);

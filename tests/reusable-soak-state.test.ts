@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {publishedReusableIdle} from '../relayer/src/agents/reusable-soak-state';
 const empty = () => ({status: 1, epoch: 2n, expires: 1000n, now: 1n, resultEpoch: 2n, resultCount: 0,
   prior: false, captured: false, currentEpoch: 2n, currentId: 0n, priorId: 0n, priorStatus: 0});
+test('a pinned no-lease session keeps capture and epoch requirements',()=>{
+ const open={...empty(),hub:NO_LEASE_HUB,expires:0n};assert(publishedReusableIdle(open));
+ for(const patch of [{hub:undefined},{status:2},{resultEpoch:1n},{prior:true},{resultCount:65536}])assert(!publishedReusableIdle({...open,...patch}));
+});
 test('published idle predicate requires an open current epoch and its full seven-minute reserve', () => {
   assert.equal(publishedReusableIdle(empty()), true);
   for (const patch of [{status: 0}, {status: 2}, {resultEpoch: 1n}, {expires: 421n}, {resultCount: 65536}])

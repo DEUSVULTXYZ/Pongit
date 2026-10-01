@@ -123,7 +123,7 @@ async function sample(): Promise<PoolSample> {
       // no other path opens this arena. A cleared slot with a nonempty result
       // root cannot use this invariant and is deliberately rejected.
       const freshlyOpened = BigInt(current[1]) === 0n && Number(root[1]) === 0 && BigInt(current[0]) === hub.epoch;
-      available = publishedReusableIdle({status: hub.status, epoch: hub.epoch, expires: hub.expiresAt, now: block.timestamp,
+      available = publishedReusableIdle({hub:manifest.hub,status: hub.status, epoch: hub.epoch, expires: hub.expiresAt, now: block.timestamp,
         resultEpoch: BigInt(root[0]), resultCount: Number(root[1]), prior, captured: freshlyOpened || !!entry?.captured,
         currentEpoch: BigInt(current[0]), currentId: BigInt(current[1]), priorId: BigInt(entry?.ref?.id ?? 0), priorStatus: Number(published?.status ?? 0)});
       id = BigInt(lanes.find(l => l.ref.arena.toLowerCase() === arena.app.toLowerCase() && l.ref.epoch === hub.epoch)?.ref.id ?? 0);
@@ -141,7 +141,7 @@ async function sample(): Promise<PoolSample> {
       available, batches: String(hub.batchIndex), stage: h?.stage ?? 'unobserved', healthAt: h ? Date.parse(h.updated_at) : 0,
       healthEpoch: h?.detail?.epoch === undefined ? null : String(h.detail.epoch),
       healthMatchId: h?.detail?.id === undefined ? null : String(h.detail.id),
-      admissionReady: reusable && available && reusableAdmissionBudget(budget, hub.batchIndex, hub.expiresAt, block.timestamp),
+      admissionReady: reusable && available && reusableAdmissionBudget(budget, hub.batchIndex, hub.expiresAt, block.timestamp,manifest.hub),
       matchId: id ? String(id) : null, progressAt: o ? Date.parse(o.progress_at) : null,
       pendingCommandAgeMs: p ? Math.max(0, at - Date.parse(p.oldest)) : 0};
   }));
@@ -151,7 +151,7 @@ async function sample(): Promise<PoolSample> {
     || at - a.healthAt > 15000 || a.healthAt > at + 2000 || a.pendingCommandAgeMs > 0)))
     for (const arena of arenas) arena.admissionReady = false;
   assert.equal((await base.getBlock({blockNumber: block.number})).hash, block.hash, 'Reorganized sample');
-  return {at: Date.now(), blockTimestamp: Number(block.timestamp), admissions, apiReadable, arenas,requiredMatches:manifest.maxMatches};
+  return {hub:manifest.hub,at: Date.now(), blockTimestamp: Number(block.timestamp), admissions, apiReadable, arenas,requiredMatches:manifest.maxMatches};
 }
 try {
   while (!stopped) {

@@ -1,3 +1,4 @@
+import {hubLeaseValid} from '../../../shared/hub-lease';
 /** Read-only qualification rules. HTTP liveness and an elapsed clock are not
  * evidence that an arena can play. Unknown samples always remain unavailable. */
 export type ArenaSample = {
@@ -18,6 +19,7 @@ export type ArenaSample = {
   pendingCommandAgeMs: number;
 };
 export type PoolSample = {
+  hub?: string;
   at: number;
   blockTimestamp: number;
   admissions: boolean;
@@ -36,8 +38,13 @@ export type PoolAvailability = {
   reasons: string[];
 };
 
+function leaseValid(sample: PoolSample, arena: ArenaSample) {
+  return Number.isSafeInteger(arena.expiresAt)&&Number.isSafeInteger(sample.blockTimestamp)
+    &&arena.expiresAt>=0&&sample.blockTimestamp>=0
+    &&hubLeaseValid(sample.hub,BigInt(arena.expiresAt),BigInt(sample.blockTimestamp));
+}
 function hostedFresh(sample: PoolSample, arena: ArenaSample) {
-  return arena.hubStatus === 1 && arena.expiresAt > sample.blockTimestamp && arena.healthEpoch === arena.epoch
+  return arena.hubStatus === 1 && leaseValid(sample,arena) && arena.healthEpoch === arena.epoch
     && Number.isFinite(arena.healthAt) && arena.healthAt <= sample.at + 2000 && sample.at - arena.healthAt <= 15000
     && Number.isFinite(arena.pendingCommandAgeMs) && arena.pendingCommandAgeMs >= 0 && arena.pendingCommandAgeMs < 10000;
 }
@@ -54,7 +61,7 @@ export function poolAvailability(sample: PoolSample): PoolAvailability {
   if (!sample.arenas.length) view.reasons.push('no-arena-evidence');
   for (const arena of sample.arenas) {
     if (arena.hubStatus === 2) view.closing++;
-    if (arena.hubStatus === 1 && arena.expiresAt <= sample.blockTimestamp) view.expired++;
+    if (arena.hubStatus === 1 && !leaseValid(sample,arena)) view.expired++;
     // Reusable means the contract permits admission, not that the provider has
     // accepted a new delegation. Keep it separate from actually progressing.
     if (arena.hubStatus === 0 && arena.available) view.reusable++;

@@ -25,6 +25,7 @@ import {overdueAgentPublication} from '../relayer/src/agents/reusable-recovery';
 import {verifyHouseInstanceAuthorities,agentPoolAdmissionAbi,deferReserveEnable} from '../shared/agent-house-instances';
 import {arenaRenewalExclusions} from '../shared/arena-renewal-policy';
 import {keeperLoop} from '../shared/keeper-loop';
+import {hubLeaseValid} from '../shared/hub-lease';
 import {keeperRolePolicy,type AgentKeeperRole} from '../shared/agent-keeper-role';
 import {agentContinuationAbi,localTournamentCursor,ratingContinuationWork,ratingFinalityPage} from '../shared/agent-continuation';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
@@ -160,7 +161,7 @@ async function step(){
    }
   }
   if(d.status===2&&block.timestamp>=d.stakeUnlockAt&&!cooling(m.pool,'releaseArena')){await act(m.pool,'releaseArena',[app]);return;}
-  if(d.status===1&&block.timestamp>=d.expiresAt&&!cooling(m.pool,'recoverExpired')){await act(m.pool,'recoverExpired',[app]);return;}
+  if(d.status===1&&d.expiresAt>0n&&block.timestamp>=d.expiresAt&&!cooling(m.pool,'recoverExpired')){await act(m.pool,'recoverExpired',[app]);return;}
   const reservation=lanes.find(row=>row.ref.id>0n&&row.ref.arena.toLowerCase()===app.toLowerCase());
   const occupied=!!reservation;
   // Terminal engine results may remain unpublished even while /health says
@@ -175,7 +176,7 @@ async function step(){
    }
   }
   // An active or unpublished game never migrates to a different arena.
-  if(d.status===1&&!occupied&&(d.expiresAt<=block.timestamp+420n||budget&&!reusableAdmissionBudget(budget,d.batchIndex,d.expiresAt,block.timestamp))&&!cooling(m.pool,'closeReusableArena')){
+  if(d.status===1&&!occupied&&(!hubLeaseValid(m.hub,d.expiresAt,block.timestamp,420n)||budget&&!reusableAdmissionBudget(budget,d.batchIndex,d.expiresAt,block.timestamp,m.hub))&&!cooling(m.pool,'closeReusableArena')){
    await act(m.pool,'closeReusableArena',[app]);return;
   }
  }
@@ -258,11 +259,11 @@ async function step(){
  let renewalExclusions:ReadonlySet<string>=new Set();
  try{renewalExclusions=arenaRenewalExclusions(JSON.parse(await readFile('/metadata/renewal-policy.json','utf8')),m.pool,r.arenas.map((a:any)=>a.app));}
  catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
- const active=delegations.filter(x=>x.d.status===1&&x.d.expiresAt>block.timestamp+420n);
+ const active=delegations.filter(x=>x.d.status===1&&hubLeaseValid(m.hub,x.d.expiresAt,block.timestamp,420n));
  const hosted=(await db.query("SELECT app,stage,detail FROM agent_pool.health WHERE updated_at>now()-interval '15 seconds'")).rows;
  const serving=(a:{app:Address;d:{epoch:bigint}})=>hosted.some(h=>h.app===a.app.toLowerCase()&&['available','playing','awaiting-publication','publisher-unfunded'].includes(h.stage)&&String(h.detail.epoch)===String(a.d.epoch));
  const capacity=reusableCapacity(budget,active.map(a=>({app:a.app,batches:a.d.batchIndex,expires:a.d.expiresAt,
-  occupied:lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===a.app.toLowerCase()),serving:serving(a)})),block.timestamp);
+  occupied:lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===a.app.toLowerCase()),serving:serving(a)})),block.timestamp,m.hub);
  // Prepare one actually usable reserve. Unavailable engines cannot suppress
  // opening a released spare just because their hub status is still Active.
  const reserveTarget=m.maxMatches+1;
@@ -317,7 +318,7 @@ async function step(){
   const candidates=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase())).sort((a,b)=>a.d.baseBlock<b.d.baseBlock?-1:1);
   for(const candidate of candidates){
    const opening=await t.base.getBlock({blockNumber:candidate.d.baseBlock,includeTransactions:false});
-   const leading=candidate.d.expiresAt<=block.timestamp+BigInt(budget.rotationLeadSeconds);
+   const leading=!hubLeaseValid(m.hub,candidate.d.expiresAt,block.timestamp,BigInt(budget.rotationLeadSeconds));
    // Age alone is a voluntary rotation: never retire a healthy arena into an
    // epoch that Interlude's control plane cannot host right now.
    if(leading||block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)&&await controlPlaneAnswers(candidate.app,undefined,undefined,m.hub)){
@@ -331,7 +332,7 @@ async function step(){
  // The contract picks the newest idle arena. Require every potentially chosen
  // idle arena to satisfy the measured budget, rather than assuming it picks ours.
  const idle=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase()));
- const eligible=(x:typeof idle[number])=>reusableAdmissionBudget(budget,x.d.batchIndex,x.d.expiresAt,block.timestamp)
+ const eligible=(x:typeof idle[number])=>reusableAdmissionBudget(budget,x.d.batchIndex,x.d.expiresAt,block.timestamp,m.hub)
   &&healthy.some(h=>h.app===x.app.toLowerCase()&&BigInt(h.detail.epoch)===x.d.epoch);
  const challengeLaneFree=lanes.slice(1).some(l=>l.ref.id===0n);
  const waitingChallenge=challengeLaneFree&&!await read<boolean>(m.challenges,challengeAbi,'qualificationsMayStart');
