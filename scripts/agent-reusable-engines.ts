@@ -28,8 +28,7 @@ import {AgentPoolReader} from '../relayer/src/agents/pool-read';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {BackgroundObservation} from '../shared/background-observation';
-import {agentAssignments} from '../shared/agent-assignments';
-import {hubObservations} from '../shared/hub-observation';
+import {agentRuntimeObservations} from '../shared/agent-runtime-observations';
 import {publisherFunding} from '../shared/publisher-funding';
 import {verifyHouseInstanceAuthorities} from '../shared/agent-house-instances';
 import {publicationUnavailable,publicationFailureDetails} from '../shared/service-error';
@@ -58,8 +57,7 @@ let stopping=false;process.once('SIGTERM',()=>{stopping=true;});process.once('SI
 const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clean=(e:any)=>String(e?.shortMessage??e?.message??'Arena unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220);
 // One shared canonical observation for all arena loops, no per-tick lobby RPC.
-const assignments=agentAssignments(base,m.pool,m.maxMatches);
-const sharedHub=hubObservations(base,m.hub,r.arenas.map((a:any)=>a.app));
+const {assignments,hub:sharedHub}=agentRuntimeObservations(base,m.pool,m.hub,r.arenas.map((a:any)=>a.app),m.maxMatches);
 const funding=publisherFunding(base);
 async function replayLoop(){while(!stopping){try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}catch{console.error(JSON.stringify({service:'reusable-replays',error:'Reconciliation pending'}));}
  for(let n=0;n<60&&!stopping;n++)await delay(1000);}}
