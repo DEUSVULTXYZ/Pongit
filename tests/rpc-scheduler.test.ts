@@ -1,6 +1,49 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {historicalRpcRequest, rpcScheduler, pinnedRpcRequest } from "../relayer/src/rpc-scheduler";
+import {historicalRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
+
+test('EIP-1898 archive calls retain historical priority after their header was observed',()=>{
+ const blocks=rpcBlockObservations(),old=`0x${'ab'.repeat(32)}`,recent=`0x${'cd'.repeat(32)}`;
+ blocks.observe('eth_getBlockByNumber',['latest',false],{number:'0x3e8',hash:recent});
+ blocks.observe('eth_getBlockByNumber',['0x20',false],{number:'0x20',hash:old});
+ assert.equal(blocks.head(),1000n,'An archive header must not move the observed head backwards');
+ for(const method of ['eth_call','eth_getBalance','eth_getCode','eth_getStorageAt']){
+  const args=(hash:string)=>method==='eth_getStorageAt'?['0x01','0x0',{blockHash:hash,requireCanonical:true}]:['0x01',{blockHash:hash,requireCanonical:true}];
+  assert.equal(historicalRpcRequest(method,args(old),blocks.head(),blocks.height),true,method);
+  assert.equal(historicalRpcRequest(method,args(recent),blocks.head(),blocks.height),false,method);
+  assert.equal(historicalRpcRequest(method,args(`0x${'ef'.repeat(32)}`),blocks.head(),blocks.height),false,'Unknown hashes stay interactive');
+ }
+ assert.equal(historicalRpcRequest('eth_getBlockByHash',[recent,false],blocks.head(),blocks.height),false);
+ assert.equal(historicalRpcRequest('eth_getBlockByHash',[old,false],blocks.head(),blocks.height),true);
+});
+
+test('scheduling header observations are bounded, validate identity and retain separate fork hashes',()=>{
+ const blocks=rpcBlockObservations(2),hash=(n:number)=>`0x${n.toString(16).padStart(64,'0')}`;
+ blocks.observe('eth_getBlockByNumber',['latest'],{number:'0x100',hash:hash(1)});
+ blocks.observe('eth_getBlockByHash',[hash(2)],{number:'0x10',hash:hash(3)});
+ blocks.observe('eth_getBlockByNumber',['0x11'],{number:'0x10',hash:hash(4)});
+ blocks.observe('eth_call',[],{number:'0x10',hash:hash(5)});
+ assert.equal(blocks.height(hash(3)),undefined);assert.equal(blocks.height(hash(4)),undefined);assert.equal(blocks.height(hash(5)),undefined);
+ blocks.observe('eth_getBlockByHash',[hash(2)],{number:'0x10',hash:hash(2)});
+ blocks.observe('eth_getBlockByNumber',['0x10'],{number:'0x10',hash:hash(3)});
+ assert.equal(blocks.height(hash(1)),undefined,'Oldest observation evicted');
+ assert.equal(blocks.height(hash(2)),16n);assert.equal(blocks.height(hash(3)),16n,'Fork replacement retains both identities');
+ assert.equal(blocks.head(),256n);
+ blocks.observe('eth_blockNumber',[],'0xff');assert.equal(blocks.head(),255n,'A real observed lower head is not concealed');
+});
+
+test('pending sponsor and receipt pass old hash-pinned reads without increasing upstream rate',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const blocks=rpcBlockObservations(),hash=`0x${'ab'.repeat(32)}`,queue=rpcScheduler(75),seen:string[]=[];
+ blocks.observe('eth_blockNumber',[],'0x1000');blocks.observe('eth_getBlockByHash',[hash],{number:'0x20',hash});
+ const take=(name:string,method:string,params:unknown[])=>queue.acquire(historicalRpcRequest(method,params,blocks.head(),blocks.height)).then(()=>seen.push(name));
+ const jobs=[...Array.from({length:12},(_,i)=>take(`archive${i}`,'eth_call',[{to:'0x01'},{blockHash:hash,requireCanonical:true}])),
+  take('estimate','eth_estimateGas',[{}]),take('receipt','eth_getTransactionReceipt',['0x01'])];
+ for(let i=0;i<jobs.length;i++){await Promise.resolve();t.mock.timers.tick(75);}
+ await Promise.all(jobs);
+ assert.deepEqual(seen.slice(0,3),['archive0','estimate','receipt']);
+ assert.equal(seen.filter(v=>v.startsWith('archive')).length,12);assert.equal(queue.spacing(),75);
+});
 
 test('upstream choice accounts for priority and cooldown instead of total archive backlog',async(t)=>{
  t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});

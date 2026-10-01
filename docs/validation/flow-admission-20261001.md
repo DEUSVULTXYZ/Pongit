@@ -979,3 +979,59 @@ SSE explicitly, allowing the application's real bounded polling fallback;
 engine WebSockets remain direct. This limitation is declared in subsequent
 reports. No production endpoint or response content was changed. A new bounded
 Edge Chaos attempt is running within the original catalogue-window deadline.
+
+## Catalogue follow-up, renewal and RPC priority, 09:44 UTC
+
+All three private catalogue windows finished normally and closed their gates.
+Their six actual browser games published and were captured. Chrome Classic 28
+and Edge Chaos 29 included first authorization (17.491/18.301 seconds). Restored
+valid sessions in Classic 30 and Chaos 31 took 11.073/10.131 seconds. Deferring
+portraits until the first court state in 9fe76fa gave 9.909/10.263 seconds for
+Classic 32 and Chaos 33. Every sample still fails the eight-second target.
+The private SSH bridge deliberately rejects SSE, using real polling fallback;
+engine WebSockets remain direct. These are virtual-PRF tests, not physical keys.
+
+Across games 30–33, confirmed command p95 was 18.06, 20.96, 18.39 and 18.42 ms.
+Classic 32 nevertheless held the player/spectator display for 800/616 ms and
+fails the 500-ms gate. Chaos 33 held 250/233 ms. Keep every failure; neither
+fast receipts nor a later passing sample proves uniformly smooth rendering.
+The catalogue2 service setup exited 127 due a malformed fixture command before
+any player submission; its original reports/configuration remain preserved.
+Corrected catalogue3 reader/sponsor stopped at their original 09:36:30 bound.
+
+The 8194 epoch 1 release was already complete. A separately journaled renewal
+in 645b158 confirmed epoch 2 at block 67222247 in
+0x83b7116ae7258177e835f88183d2bb1a5281a39885d74cce8d28bf29f85a7068.
+The old sealed root and count two remain exact. The private archive balance had
+fallen to 0.923846216 test MON; the authorized reserve supplied 10 MON in
+0xb0ec8f6b33dfb3a30bf57de2adc88f05cef0fe830f683f1ac393273d8b75ad80.
+No user funding request or public runtime change was needed.
+
+Actual renewed match 34 finished 7–1, published and captured. The sole private
+tournament1 driver started 09:32:55 with original deadline 10:12:55.698 UTC;
+engine/archive workers stop 11:12:55.698 UTC. Configuration is
+v3-games-6033dbe/tournament-runtime-645b158.json. At 09:41, four Classic
+elimination fixtures were published and match 36 was active. Do not duplicate
+drivers or extend bounds. No lifecycle worker runs. Arena 5472 remains unopened.
+
+The actual shared gateway is pongit-rpc-1, image 82c57fc, with primary/secondary
+spacing 75/85 ms, not the old 400-ms setting. At 09:38 it had 21–27 outstanding
+reads, 3–7 interactive requests queued per provider, and zero recorded throttles.
+Its classifier recognizes historical number tags but treats old EIP-1898 hash
+reads as interactive even after observing their old header. The candidate now
+remembers at most 2,048 header identities for scheduling only. It preserves all
+canonical flags, nonce ownership, provider pacing and archive fairness.
+
+The actual isolated HTTP test reproduces the defect on the old image and passes
+on the candidate. Both reports are retained under
+/opt/pongit/tests/fluid-20260928/gateway-hash-20261001/{baseline,candidate}.
+This uses a synthetic local upstream with network disabled; it is not a hosted
+latency claim. Thirteen targeted RPC tests and root typecheck pass. The gateway
+correction is not deployed publicly.
+
+All eleven control-20261001T0927Z files are SHA256-verified off VPS. They precede
+the renewal and tournament-worker configuration; refresh those before final
+delivery. Public human and agent deployments remain unchanged. Disk is 81%;
+another image build requires scoped cleanup first. Remaining migration,
+championships, human/agent overlap, finance/replay and unchanged 24-hour gates
+are still open. The private fresh season must never replace existing identities.

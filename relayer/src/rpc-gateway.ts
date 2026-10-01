@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 import {chunkedLogs,historyGate} from "./log-ranges";
-import { historicalRpcRequest, pinnedRpcRequest, rpcScheduler } from "./rpc-scheduler";
+import { historicalRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
@@ -30,7 +30,8 @@ function throttled(target:Upstream,method:string,response:Response,message=''){
  lastThrottle[target]={at:new Date().toISOString(),method,retryMs:Math.max(250,Math.min(60000,retryMs)),...(advertised?{advertisedRps:Number(advertised)}:{})};
  schedulerOf(target).throttle(retryMs);
 }
-let observedHead:bigint|undefined;
+const blocks=rpcBlockObservations();
+const historical=(method:string,params:unknown[])=>historicalRpcRequest(method,params,blocks.head(),blocks.height);
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 // A block-pinned read has one correct answer. Start with the less loaded provider
@@ -56,7 +57,7 @@ async function spreadRead(method:string,params:unknown[],historical:boolean):Pro
   if(result.error&&result.error.code!==3&&!/revert/i.test(message)&&/header not found|unknown block|block not found|missing trie node/i.test(message))continue;
   if(result.error)throw result.error;
   if(!response.ok||!("result" in result))continue;
-  schedulerOf(target).success();stats[target].served++;return result.result;
+  schedulerOf(target).success();stats[target].served++;blocks.observe(method,params,result.result);return result.result;
  }
  throw new Error("Upstream RPC unavailable; retry shortly");
 }
@@ -76,10 +77,10 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
   const operation = (async () => {
     waiting++;
     try {
-      if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historicalRpcRequest(method,params,observedHead));
+      if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historical(method,params));
       for (let attempt = 0; attempt < 4; attempt++) {
         const target:Upstream=attempt>0 && (read || method==='eth_sendRawTransaction') && spread ? "secondary" : "primary";
-        await schedulerOf(target).acquire(historicalRpcRequest(method, params,observedHead));
+        await schedulerOf(target).acquire(historical(method,params));
         let response:Response;
         try { response = await fetch(upstreams[target], {
           method: "POST", headers: { "content-type": "application/json" },
@@ -101,9 +102,7 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
         if (result.error) throw result.error;
         if (!response.ok || !("result" in result)) throw new Error("Upstream RPC unavailable");
         schedulerOf(target).success();stats[target].served++;
-        const height=method==='eth_blockNumber'?result.result:
-          method==='eth_getBlockByNumber'&&params[0]==='latest'?(result.result as any)?.number:undefined;
-        if(typeof height==='string'&&/^0x[\da-f]+$/i.test(height))observedHead=BigInt(height);
+        blocks.observe(method,params,result.result);
         const ttl = method === "eth_chainId" ? 3600000 : method === "eth_gasPrice" ? 3000 : method === "eth_blockNumber" ? 150 : 0;
         if (ttl) cache.set(key, { expires: Date.now() + ttl, result: result.result });
         return result.result;

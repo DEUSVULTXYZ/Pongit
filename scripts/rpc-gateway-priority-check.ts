@@ -13,7 +13,9 @@ const upstream=createServer(async(req,res)=>{
  let body='';for await(const part of req)body+=part;
  const input=JSON.parse(body);sent.push({method:input.method,params:input.params,at:performance.now()});
  res.setHeader('content-type','application/json');
- res.end(JSON.stringify({jsonrpc:'2.0',id:input.id,result:{fixture:true,method:input.method,params:input.params}}));
+ const header=input.method==='eth_getBlockByNumber';
+ const number=input.params[0]==='latest'?'0x1000':input.params[0];
+ res.end(JSON.stringify({jsonrpc:'2.0',id:input.id,result:header?{number,hash:`0x${String(number).slice(2).padStart(64,'0')}`}:{fixture:true,method:input.method,params:input.params}}));
 });
 upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
 const address=upstream.address();assert(address&&typeof address==='object');
@@ -56,6 +58,28 @@ try{
  assert(sent.at(-1)!.at-sent[0].at>=(sent.length-1)*45,'Interactive requests bypassed the shared burst budget');
  assert.equal(sent.filter(v=>v.method==='eth_getBlockByNumber'&&v.params[0]!=='latest').length,20,'History was starved');
  report.checks.push('Current grant/deadline header overtakes backfill','Transaction hash reconciliation overtakes backfill','All twenty archive reads complete','Shared upstream pacing preserved');
+ // Real archive readers use EIP-1898, not just historical number tags. Record
+ // that header first, then reproduce the previous interactive-queue pollution.
+ await rpc('eth_getBlockByNumber',['latest',false]);
+ const archivedHeader=await rpc('eth_getBlockByNumber',['0x20',false]);
+ const pin={blockHash:archivedHeader.hash,requireCanonical:true};
+ const archived=Array.from({length:20},(_,i)=>rpc('eth_call',[{to:'0x01',data:`0x${i.toString(16).padStart(2,'0')}`},pin]));
+ const hashDeadline=Date.now()+5000;
+ for(;;){
+  const health=await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any;
+  if(health.queued.history>=15)break;
+  assert(Date.now()<hashDeadline,'Canonical archive calls still occupy the interactive queue');await new Promise(r=>setTimeout(r,10));
+ }
+ const hashPrior=sent.length;
+ await Promise.all([...archived,rpc('eth_estimateGas',[{to:'0x01'}]),rpc('eth_getTransactionReceipt',['0x1234'])]);
+ for(const method of ['eth_estimateGas','eth_getTransactionReceipt']){
+  const i=sent.findIndex((v,i)=>i>=hashPrior&&v.method===method);
+  assert(i>=hashPrior&&i<hashPrior+5,`${method} waited behind hash-pinned archive traffic`);
+ }
+ const canonical=sent.filter(v=>v.method==='eth_call');assert.equal(canonical.length,20);
+ assert(canonical.every(v=>JSON.stringify(v.params[1])===JSON.stringify(pin)),'Canonical validation was changed');
+ report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
+ report.checks.push('Hash-pinned archive calls use historical scheduling','Sponsor simulation and receipts overtake canonical history','Every archive call retains requireCanonical');
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}
 finally{

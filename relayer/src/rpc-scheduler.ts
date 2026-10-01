@@ -2,13 +2,22 @@
  * needed for grants, acceptance deadlines and sponsor fees, including while
  * an indexer is downloading old blocks. Receipt/hash reconciliation is also
  * interactive: delaying it can leave an already executed command uncertain. */
-export function historicalRpcRequest(method:string, params:readonly unknown[],observedHead?:bigint):boolean {
-  if(method === "eth_getLogs" || method === "eth_getBlockByHash")return true;
+export function historicalRpcRequest(method:string, params:readonly unknown[],observedHead?:bigint,blockHeight?:(hash:string)=>bigint|undefined):boolean {
+  if(method === "eth_getLogs")return true;
+  if(method === "eth_getBlockByHash"){
+    const height=typeof params[0]==='string'?blockHeight?.(params[0]):undefined;
+    return observedHead===undefined||height===undefined||height>observedHead||observedHead-height>64n;
+  }
   // Result archives also read old contract state. Previously these eth_call
   // requests occupied the live queue even while headers for that block waited
   // in the history queue. Hash-pinned calls without a known height stay live.
   const stateTag=method==='eth_getStorageAt'?params[2]:
     ['eth_call','eth_getBalance','eth_getCode'].includes(method)?params[1]:undefined;
+  if(observedHead!==undefined&&stateTag&&typeof stateTag==='object'){
+    const hash=(stateTag as {blockHash?:unknown}).blockHash;
+    const height=typeof hash==='string'?blockHeight?.(hash):undefined;
+    if(height!==undefined)return height<=observedHead&&observedHead-height>64n;
+  }
   if(observedHead!==undefined&&typeof stateTag==='string'&&/^0x[\da-f]+$/i.test(stateTag)){
     const height=BigInt(stateTag);return height<=observedHead&&observedHead-height>64n;
   }
@@ -21,6 +30,33 @@ export function historicalRpcRequest(method:string, params:readonly unknown[],ob
     const height=BigInt(tag);if(height<=observedHead&&observedHead-height<=64n)return false;
   }
   return true;
+}
+
+/** Header observations classify scheduling only. They never replace canonical
+ * RPC validation or serve cached state. Remember hashes, not heights alone, so
+ * a replacement block cannot relabel reads of the orphaned hash. Unknown hashes
+ * remain interactive; stale/evicted observations cannot delay a player. */
+export function rpcBlockObservations(limit=2048){
+ const heights=new Map<string,bigint>();let head:bigint|undefined;
+ const number=(v:unknown)=>typeof v==='string'&&/^0x[\da-f]+$/i.test(v)?BigInt(v):undefined;
+ return{
+  head:()=>head,
+  height:(hash:string)=>heights.get(hash.toLowerCase()),
+  observe(method:string,params:readonly unknown[],result:unknown){
+   const block=result&&typeof result==='object'?result as {number?:unknown;hash?:unknown}:undefined;
+   const n=method==='eth_blockNumber'?number(result):number(block?.number);
+   if(method==='eth_blockNumber'||method==='eth_getBlockByNumber'&&params[0]==='latest'){
+    if(n!==undefined)head=n;
+   }
+   if(!['eth_getBlockByNumber','eth_getBlockByHash'].includes(method)||n===undefined
+    ||typeof block?.hash!=='string'||!/^0x[\da-f]{64}$/i.test(block.hash))return;
+   const hash=block.hash.toLowerCase();
+   if(method==='eth_getBlockByHash'&&String(params[0]).toLowerCase()!==hash)return;
+   if(method==='eth_getBlockByNumber'&&number(params[0])!==undefined&&number(params[0])!==n)return;
+   heights.delete(hash);heights.set(hash,n);
+   while(heights.size>limit)heights.delete(heights.keys().next().value!);
+  },
+ };
 }
 
 /** A read naming a concrete block (number or hash) or a closed log range has one
