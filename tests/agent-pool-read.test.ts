@@ -6,6 +6,13 @@ import {PoolReadCache,poolRoutes} from '../relayer/src/agents/pool-api';
 import type {AgentPoolManifest} from '../shared/agent-pool';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const evidence=`0x${'b'.repeat(64)}` as const;
+function withMulticall(client:PublicClient){
+ return {...client,multicall:async(request:any)=>{
+  assert.equal(request.allowFailure,false);assert.equal(request.batchSize,0);
+  assert(request.contracts.length<=10);
+  return Promise.all(request.contracts.map((call:any)=>client.readContract({...call,blockNumber:request.blockNumber})));
+ }} as unknown as PublicClient;
+}
 const manifest:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:evidence,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 
@@ -22,9 +29,11 @@ test('configuration batches authority and admission reads but never returns befo
   if(r.functionName==='capacityEvidence')return evidence;
   return true;
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,m),pending=reader.config().then(r=>{returned=true;return r;});
+ const batched=withMulticall(client);let batches=0;const multicall=batched.multicall;
+ batched.multicall=((request:any)=>{batches++;return multicall(request);}) as typeof multicall;
+ const reader=new AgentPoolReader(batched,m),pending=reader.config().then(r=>{returned=true;return r;});
  await new Promise(r=>setImmediate(r));assert(started.includes('publicAdmissions'));assert(started.includes('arenaPage'));assert(!returned);
- release();assert((await pending).value.enabled);wrong=true;
+ release();assert((await pending).value.enabled);assert.equal(batches,1);wrong=true;
  await assert.rejects(reader.config(),/authority mismatch/);
 });
 
@@ -57,7 +66,7 @@ test('published view pins all reads and rejects a mid-read reorganization',async
   if(r.functionName==='capacityEvidence')return evidence;
   return true;
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,manifest);assert.equal((await reader.config()).value.enabled,true);assert.equal(reads,5);
+ const reader=new AgentPoolReader(withMulticall(client),manifest);assert.equal((await reader.config()).value.enabled,true);assert.equal(reads,5);
  reorg=true;second=false;await assert.rejects(reader.config(),/changed during synchronization/);
 });
 test('a local enabled flag cannot bypass a missing or different on-chain qualification',async()=>{
@@ -68,10 +77,10 @@ test('a local enabled flag cannot bypass a missing or different on-chain qualifi
   if(r.functionName==='publicAdmissions')return gate;
   return true;
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,manifest);assert.equal((await reader.config()).value.enabled,false);
+ const reader=new AgentPoolReader(withMulticall(client),manifest);assert.equal((await reader.config()).value.enabled,false);
  proof=evidence;assert.equal((await reader.config()).value.enabled,false);
  gate=true;assert.equal((await reader.config()).value.enabled,true);
- const disabled=new AgentPoolReader(client,{...manifest,enabled:false,tournamentsEnabled:false});assert.equal((await disabled.config()).value.enabled,false);
+ const disabled=new AgentPoolReader(withMulticall(client),{...manifest,enabled:false,tournamentsEnabled:false});assert.equal((await disabled.config()).value.enabled,false);
 });
 test('a public preview stays explicitly unqualified and requires matching on-chain review plus admissions',async()=>{
  const m:AgentPoolManifest={...manifest,version:4,rulesVersion:15,releaseStage:'testnet-preview',previewEvidence:evidence,verifiedCapacity:0,qualificationEvidence:null};
@@ -82,7 +91,7 @@ test('a public preview stays explicitly unqualified and requires matching on-cha
   if(r.functionName==='publicAdmissions')return gate;
   return true;
  }} as unknown as PublicClient;
- const reader=new AgentPoolReader(client,m);assert.equal((await reader.config()).value.enabled,false);
+ const reader=new AgentPoolReader(withMulticall(client),m);assert.equal((await reader.config()).value.enabled,false);
  proof=evidence;assert.equal((await reader.config()).value.enabled,false);gate=true;
  const view=(await reader.config()).value;assert.equal(view.enabled,true);assert.equal(view.tournamentsEnabled,true);assert.equal(view.qualified,false);assert.equal(view.validation,'testnet-preview');
 });

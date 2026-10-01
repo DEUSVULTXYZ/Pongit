@@ -22,11 +22,13 @@ export function poolBrowserSponsor(m:AgentPoolManifest,player:Address){
 }
 /** Poll one saved sponsored action. A timeout leaves its exact intent intact. */
 export async function finishPoolSponsor(sponsor:ReturnType<typeof poolBrowserSponsor>,call?:PoolSignedCall,onProgress?:(operation:ChainOperation)=>void){
- let operation=call?await sponsor.send(call):await sponsor.resume();const until=performance.now()+45000;
+ let operation=call?await sponsor.send(call):await sponsor.resume();const began=performance.now(),until=began+45000;
  if(operation)onProgress?.(operation);
  while(operation&&['pending','queued'].includes(operation.status)){
   if(performance.now()>=until)throw Error('Sponsorship is still pending. Retry to resume this saved action.');
-  await new Promise(r=>setTimeout(r,1000));operation=await sponsor.resume();if(operation)onProgress?.(operation);
+  // This endpoint reads the saved operation, not the chain. Observe fast
+  // confirmations promptly, then return to the normal bounded recovery rate.
+  await new Promise(r=>setTimeout(r,performance.now()-began<5000?250:1000));operation=await sponsor.resume();if(operation)onProgress?.(operation);
  }
  if(operation?.status==='failed')throw Error('The transaction reverted. Refresh before retrying.');return operation;
 }

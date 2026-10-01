@@ -48,13 +48,29 @@ export class AgentPoolReader {
  }
  async config(){
   const m=this.manifest;
-  return this.snapshot(async read=>{
-   const [,admissions,publicAdmissions,evidence,tournamentsOpen,arenas]=await Promise.all([
-    verifyHouseInstanceAuthorities(read,m),
-    read<boolean>(m.pool,this.poolAbi,'admissions'),read<boolean>(m.pool,this.poolAbi,'publicAdmissions'),
-    read<string>(m.pool,this.poolAbi,'capacityEvidence'),read<boolean>(m.tournaments,tournamentAbi,'admissions'),
-    read<Address[]>(m.pool,this.poolAbi,'arenaPage'),
-   ]);
+  return this.snapshot(async (_read,block)=>{
+   // One explicit batch: timer-based grouping can split these ten small reads
+   // into several RPC requests under CPU contention. Preserve every check and
+   // the snapshot's canonical hash verification; no admission result is cached.
+   const calls:{address:Address;abi:Abi;functionName:string}[]=[
+    {address:m.pool,abi:this.poolAbi,functionName:'admissions'},
+    {address:m.pool,abi:this.poolAbi,functionName:'publicAdmissions'},
+    {address:m.pool,abi:this.poolAbi,functionName:'capacityEvidence'},
+    {address:m.tournaments,abi:tournamentAbi,functionName:'admissions'},
+    {address:m.pool,abi:this.poolAbi,functionName:'arenaPage'},
+    ...(m.houseInstances?[
+     {address:m.pool,abi:houseInstanceAbi,functionName:'AUTHORITY_VERSION'},
+     ...(m.maxMatches===5?[{address:m.pool,abi:agentPoolAdmissionAbi,functionName:'laneCount'}]:[]),
+     ...[m.pool,m.challenges,m.qualifications].map(address=>({address,abi:houseInstanceAbi,functionName:'supportsHouseInstances'})),
+    ]:[]),
+   ];
+   const values=await this.client.multicall({contracts:calls,blockNumber:block,allowFailure:false,batchSize:0});
+   await verifyHouseInstanceAuthorities(<T>(address:Address,_abi:Abi,fn:string)=>{
+    const i=calls.findIndex(call=>call.address===address&&call.functionName===fn);
+    if(i<0)throw Error('Missing authority observation');
+    return Promise.resolve(values[i] as T);
+   },m);
+   const [admissions,publicAdmissions,evidence,tournamentsOpen,arenas]=values as [boolean,boolean,string,boolean,Address[],...unknown[]];
    if(arenas.length!==m.arenas.length||arenas.some((a,i)=>a.toLowerCase()!==m.arenas[i].app.toLowerCase()))
     throw Error('Configured arenas differ from the common contract');
    const qualified=m.verifiedCapacity===m.maxMatches&&!!m.qualificationEvidence&&evidence.toLowerCase()===m.qualificationEvidence.toLowerCase();

@@ -1,0 +1,129 @@
+{
+  "at": "2026-10-01T01:46:57.808Z",
+  "block": "67129864",
+  "blockHash": "0xd33405cc79eab6a323cc5e281b2211c7dca818b850c181ebdd6d40fee3940dd1",
+  "scope": "Read-only alternating config observations at the same canonical block; no writes or authority bypass",
+  "passed": true,
+  "rows": [
+    {
+      "candidate": false,
+      "ms": 1362,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 424
+        },
+        {
+          "method": "eth_call",
+          "ms": 242
+        },
+        {
+          "method": "eth_call",
+          "ms": 339
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 310
+        }
+      ]
+    },
+    {
+      "candidate": true,
+      "ms": 1287,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 260
+        },
+        {
+          "method": "eth_call",
+          "ms": 557
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 444
+        }
+      ]
+    },
+    {
+      "candidate": false,
+      "ms": 2217,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 513
+        },
+        {
+          "method": "eth_call",
+          "ms": 572
+        },
+        {
+          "method": "eth_call",
+          "ms": 669
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 426
+        }
+      ]
+    },
+    {
+      "candidate": true,
+      "ms": 969,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 362
+        },
+        {
+          "method": "eth_call",
+          "ms": 259
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 326
+        }
+      ]
+    },
+    {
+      "candidate": false,
+      "ms": 2187,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 480
+        },
+        {
+          "method": "eth_call",
+          "ms": 752
+        },
+        {
+          "method": "eth_call",
+          "ms": 398
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 523
+        }
+      ]
+    },
+    {
+      "candidate": true,
+      "ms": 1127,
+      "calls": [
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 412
+        },
+        {
+          "method": "eth_call",
+          "ms": 273
+        },
+        {
+          "method": "eth_getBlockByNumber",
+          "ms": 423
+        }
+      ]
+    }
+  ]
+}
