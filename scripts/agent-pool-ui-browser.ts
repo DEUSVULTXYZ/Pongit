@@ -17,7 +17,10 @@ assert(new URL(origin).hostname==='127.0.0.1','UI fixtures may only use loopback
 const output=process.env.PONG_POOL_UI_OUTPUT??'artifacts/qualification/20260919/pool-ui';
 const rulesVersion=Number(process.env.PONG_POOL_UI_RULES??10);assert(rulesVersion===10||rulesVersion===11||rulesVersion===15);
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
-const node=JSON.parse(await readFile('deployments/agents.json','utf8')).node;
+// A private build may pin a newer engine origin in its CSP. Synthetic fixtures
+// must use that exact allowed origin; do not disable the browser's CSP checks.
+const node=process.env.PONG_POOL_UI_NODE??JSON.parse(await readFile('deployments/agents.json','utf8')).node;
+assert(/^https:\/\/il(?:2-eu)?-[a-f0-9]+\.fly\.dev$/.test(node));
 const people=pooledHouseBots.map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90),difficulty:b.difficulty,modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false,availability:{0:'available',1:'available'}}));
 const m:AgentPoolManifest={version:rulesVersion===15?4:rulesVersion===11?3:2,chainId:10143,engineChainId:4242,rulesVersion,hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),challenges:address(6),qualifications:address(7),family:address(8),
  arenas:[9,10,11].map(n=>({app:address(n),node,runtimeHash:zeroHash})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:`0x${'b'.repeat(64)}`,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};

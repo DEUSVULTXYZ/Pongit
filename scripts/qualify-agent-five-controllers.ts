@@ -39,7 +39,9 @@ const wait=()=>new Promise(resolve=>setTimeout(resolve,2000));
 try{
  await save();assert.equal(await read('publicAdmissions'),false);assert.equal((await read('laneRecord',[0])).ref.id,0n,'Tournament stays disabled during this trial');
  const v3=r.common.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
- const observations=await Promise.all(r.arenas.slice(0,v3?requested:5).map(async(a:any)=>{
+ const offset=Number(process.env.PONG_FIVE_CONTROLLER_ARENA_OFFSET??0);
+ assert(offset===0||offset===1&&v3&&r.common.pool.toLowerCase()==='0x550ff3c22e20fc760af9afd68fba2cb531140dc6','Only reviewed private v3 reserve arenas');
+ const observations=await Promise.all(r.arenas.slice(offset,offset+(v3?requested:5)).map(async(a:any)=>{
   const d=await readHubDelegation(t.base,r.common.hub,a.app),now=(await t.base.getBlock()).timestamp;
   assert(d.status===1&&d.epoch===1n&&hubLeaseValid(r.common.hub,d.expiresAt,now,1200n)&&d.batchIndex<2000n,'Inspect epoch reserve before a bounded trial');
   const h=(await db.query("SELECT stage,detail FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'",[a.app.toLowerCase()])).rows[0];
