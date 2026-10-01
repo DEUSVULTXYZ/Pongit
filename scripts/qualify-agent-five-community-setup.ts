@@ -3,12 +3,13 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
-import {parseEther} from 'viem';
+import {parseEther,type Hex} from 'viem';
 import {chainTools} from './independent-chain-tools';
 import {retryOperatorContention} from '../shared/operator-contention';
 import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {measuredFetch} from '../shared/rpc-metrics';
+import {validateStrategyRuntime} from '../shared/agent-strategy-code';
 assert.equal(process.env.PONG_FIVE_COMMUNITY,'bounded-private-contract');
 assert.equal(process.getuid?.(),1000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));assert(r.maxMatches===5&&!r.continuation);
@@ -22,7 +23,10 @@ const metrics=await agentMetrics('/diagnostics/reusable','community-qualificatio
 const t=await chainTools(r.prefix+':five-community',measuredFetch('monad'));
 try{
  await t.preflight(['TrackerStrategy']);
- privateState.strategy=await retryOperatorContention(()=>t.deploy('TrackerStrategy',[creator.address,12n]));await writeFile(file,JSON.stringify(privateState),{mode:0o600});
+ validateStrategyRuntime((await t.artifact('TrackerStrategy')).deployedBytecode.object as Hex);
+ const strategy=await retryOperatorContention(()=>t.deploy('TrackerStrategy',[creator.address,12n],attempt>1?'TrackerStrategyStrategies':'TrackerStrategy'));
+ if(privateState.strategy&&privateState.strategy!==strategy){privateState.supersededStrategies??=[];privateState.supersededStrategies.push(privateState.strategy);}
+ privateState.strategy=strategy;await writeFile(file,JSON.stringify(privateState),{mode:0o600});
  await retryOperatorContention(()=>t.submit('creator-gas','0x',creator.address,parseEther('1')));
  process.env.AGENT_PRIVATE_QUALIFICATION='isolated-vps';process.env.AGENT_API=process.env.PONG_FIVE_COMMUNITY_API??'http://pongit-five-20260928-1-sponsor-1:4102/agents';
  process.env.PONG_AGENT_POOL=r.common.pool;process.env.CREATOR_KEY=privateState.key;process.env.STRATEGY=privateState.strategy;

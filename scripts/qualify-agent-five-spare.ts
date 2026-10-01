@@ -30,7 +30,9 @@ if(v3){
  const tournament=JSON.parse(await readFile('artifacts/reusable-candidate/five-tournament-1.json','utf8'));
  assert(tournament.passed&&tournament.poolClosed&&tournament.bookClosed);
  assert(tournament.fixtures.some((f:any)=>f.ref.arena.toLowerCase()===r.arenas[0].app.toLowerCase()&&f.ref.epoch==='2'&&f.result?.status===3));
- const community=JSON.parse(await readFile('artifacts/reusable-candidate/five-community-setup.json','utf8'));
+ const communityReport=process.env.PONG_FIVE_COMMUNITY_REPORT??'five-community-setup.json';
+ assert(/^five-community-setup(?:-attempt[23])?\.json$/.test(communityReport));
+ const community=JSON.parse(await readFile('artifacts/reusable-candidate/'+communityReport,'utf8'));
  assert(community.registered&&community.pool===r.common.pool);
  requiredBackupAt=Math.max(Date.parse(tournament.finishedAt),Date.parse(community.finishedAt));assert(Number.isFinite(requiredBackupAt));
 }else assert(prior.passed&&prior.renewedVerified&&prior.source===r.arenas[0].app);
