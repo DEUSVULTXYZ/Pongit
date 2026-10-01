@@ -2,7 +2,7 @@
 // player client; this is not a physical passkey or browser input qualification.
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,renameSync,existsSync} from 'node:fs';
-import {createPublicClient,http,decodeEventLog,type Abi,type Address,type Hex} from 'viem';
+import {createPublicClient,http,decodeEventLog,keccak256,stringToHex,type Abi,type Address,type Hex} from 'viem';
 import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
 import {WebSocket} from 'ws';
@@ -22,12 +22,17 @@ import {validateAgentPoolManifest} from '../shared/agent-pool';
 import {AgentPoolReader,poolJson} from '../relayer/src/agents/pool-read';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {NO_LEASE_HUB,hubLeaseValid} from '../shared/hub-lease';
+import {agentPoolAdmissionAbi} from '../shared/agent-house-instances';
 assert.equal(process.env.PONG_FIVE_CONCURRENT,'bounded-private-five');assert.equal(process.getuid?.(),1000);
 const run=process.env.PONG_FIVE_CONCURRENT_RUN!;assert(/^[1-9]$/.test(run));
 const deadline=Date.parse(process.env.PONG_FIVE_CONCURRENT_DEADLINE??'');assert(deadline>Date.now()&&deadline<Date.now()+25*60_000);
 const r=JSON.parse(readFileSync('/secrets/deployment.json','utf8'));
 const m=validateAgentPoolManifest(JSON.parse(readFileSync('/metadata/manifest.json','utf8')),(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean));
 assert(m.version===5&&!m.enabled&&!m.tournamentsEnabled&&m.pool===r.common.pool&&!r.continuation);
+const v3=process.env.PONG_FIVE_CONCURRENT_V3==='reviewed-private';
+assert(!process.env.PONG_FIVE_CONCURRENT_V3||v3);
+if(v3){assert.equal(m.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());assert.equal(m.pool.toLowerCase(),'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');}
 const path=`artifacts/reusable-candidate/five-concurrent-${run}.json`,privatePath=`/secrets/five-concurrent-${run}.json`;
 assert(!existsSync(path),'Preserve every completed or incomplete trial; use its own recovery instead of a new admission');
 assert(!existsSync(privatePath),'Preserve private trial keys');
@@ -57,15 +62,18 @@ try{
   report.previousTrial=predecessor;
  }
  const lane=await read(m.pool,poolAbi,'laneRecord',[0]);
- for(const arena of m.arenas.slice(0,5)){
+ const selected=m.arenas.slice(v3?1:0,v3?6:5);
+ for(const arena of selected){
   const hub=await readHubDelegation(base,m.hub,arena.app),block=await base.getBlock();
-  assert(hub.status===1&&hub.epoch===1n&&hub.batchIndex<2000n&&hub.expiresAt>block.timestamp+1800n,'Review original epoch reserve');
+  assert(hub.status===1&&hub.epoch===1n&&hub.batchIndex<2000n&&hubLeaseValid(m.hub,hub.expiresAt,block.timestamp,1800n),'Review original epoch reserve');
   const h=(await db.query("SELECT stage FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'",[arena.app.toLowerCase()])).rows[0];
   assert(h?.stage==='available'||previous&&h?.stage==='playing'&&lane.ref.arena.toLowerCase()===arena.app.toLowerCase()&&String(lane.ref.id)===previous.tournament.id,'Only the preserved tournament may already be playing');
  }
  assert.equal(await read(m.pool,poolAbi,'publicAdmissions'),false);assert.equal(await read(m.tournaments,bookAbi,'count'),previous?1n:0n);
  const catalogue=(await reader.catalog(0n,32)).value;
  assert.equal(catalogue.items.filter(v=>v.official&&v.qualification[0]&&v.qualification[1]).length,8,'All eight bots require real mode qualification');
+ if(v3)await write('verified-private-epochs',m.pool,agentPoolAdmissionAbi,'setArenaAdmissions',[
+  selected.map(a=>a.app),selected.map(()=>1n),selected.map(()=>true),keccak256(stringToHex('BOUNDED_PRIVATE_FIVE_CONCURRENT_TRIAL'))]);
  await write('admissions',m.pool,poolAbi,'setAdmissions',[true]);await write('tournaments',m.tournaments,bookAbi,'setAdmissions',[true]);await write('challenges',m.challenges,challengeAbi,'setAdmissions',[true]);
  if(!previous){await write('begin',m.tournaments,bookAbi,'begin');await write('select',m.tournaments,bookAbi,'select',[1n,32]);}
  const next=await read(m.tournaments,bookAbi,'nextFixture',[1n]);

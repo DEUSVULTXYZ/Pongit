@@ -10,6 +10,7 @@ import {readHubDelegation} from '../shared/rooms-hub';
 import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
 import {agentPoolAdmissionAbi} from '../shared/agent-house-instances';
 import {agentCatalogAbi} from '../shared/abi-AgentCatalog';
+import {agentChallengesAbi} from '../shared/abi-AgentChallenges';
 import {validateReusableRecord} from '../relayer/src/agents/reusable-runtime';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
@@ -55,6 +56,20 @@ try{
   assert(Date.now()<deadline,'Original trial deadline reached');
   let row=report.matches[index];if(!row){row={index,operation:'qualification-'+index};report.matches.push(row);await save();}
   if(!row.ref){
+   // Browser trials leave completed queue records. The real scheduler scans
+   // challenges first, including after each catalogue revision. This isolated
+   // driver may reproduce that scan only with intake closed and no waiting user.
+   const queueCount=await t.base.readContract({address:r.common.challenges,abi:agentChallengesAbi,functionName:'count'});
+   if(queueCount>0n){
+    assert(queueCount<=32n,'Bounded private queue scan');
+    assert.equal(await t.base.readContract({address:r.common.challenges,abi:agentChallengesAbi,functionName:'admissions'}),false);
+    for(let id=1n;id<=queueCount;id++){
+     const request=await t.base.readContract({address:r.common.challenges,abi:agentChallengesAbi,functionName:'requests',args:[id]});
+     assert([3,4].includes(request[3]),'A waiting or active challenge requires its own driver');
+    }
+    const scan=await write('completed-challenge-scan-'+index,'admitChallenge');
+    assert(!scan.logs.some(l=>{try{return l.address.toLowerCase()===r.common.pool.toLowerCase()&&decodeEventLog({abi:reusableAgentPoolAbi,topics:l.topics,data:l.data}).eventName==='AdmissionIssued';}catch{return false;}}),'A queue scan must not create a match');
+   }
    const tx=await write(row.operation,'admitQualification');
    const issued=tx.logs.filter(l=>l.address.toLowerCase()===r.common.pool.toLowerCase()).flatMap(l=>{
     try{const e=decodeEventLog({abi:reusableAgentPoolAbi,topics:l.topics,data:l.data});return e.eventName==='AdmissionIssued'?[e]:[];}catch{return[];}

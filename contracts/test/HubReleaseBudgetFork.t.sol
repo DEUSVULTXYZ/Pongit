@@ -28,7 +28,9 @@ contract HubReleaseBudgetForkTest is Test {
         if(bytes(rpc).length==0)return;
         enabled=true;
         vm.createSelectFork(rpc);assertEq(block.chainid,10143);
-        address live=0x3Ef8327F69e09cf721772F345e2A887eA22cD595;
+        address live=vm.envOr("PONG_HUB_RELEASE_V3",false)
+            ? 0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e
+            : 0x3Ef8327F69e09cf721772F345e2A887eA22cD595;
         // Start with empty local storage so thousands of synthetic batch slots
         // do not cause thousands of unrelated RPC storage reads. Replace the
         // constructor's runtime with the exact deployed hub bytes, then verify
@@ -40,7 +42,8 @@ contract HubReleaseBudgetForkTest is Test {
         (bool ok,bytes memory data)=address(hub).staticcall(abi.encodeWithSignature("admin()"));require(ok);
         address admin=abi.decode(data,(address));assertEq(admin,address(this));uint256 validatorKey=uint256(keccak256("PONGIT FORK ONLY RELEASE BUDGET"));
         address validator=vm.addr(validatorKey);address resolver=address(0xb00c);
-        emit log_named_uint("fork_block",block.number);emit log_named_bytes32("hub_code_hash",address(hub).codehash);
+        emit log_named_uint("fork_block",block.number);emit log_named_address("hub_address",live);
+        emit log_named_bytes32("hub_code_hash",address(hub).codehash);
         vm.startPrank(admin);hub.allowValidator(validator,true);hub.allowResolver(resolver,true);hub.setDefaultValidator(validator);vm.stopPrank();
         vm.deal(validator,2 ether);
         vm.prank(validator);hub.register{value:1 ether}(Types.Terms(resolver,Types.Spec.MonadTen,0.1 ether,0.01 ether,0,3600,86400,3600,3600,64,2,0,true));
