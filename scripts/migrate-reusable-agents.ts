@@ -63,11 +63,12 @@ try{
  assert.equal(await read('AgentPublishedRatings',source.ratings,'migrationSealed'),true);
  const hashes:Record<string,Hex>={};
  for(const name of ['pool','catalog','tournaments','ratings','qualifications','challenges','family'] as const)hashes[name]=await codeHash(source[name]);
- if(!r){r={prefix,rulesVersion:15,countdownClock:'engine-ticks-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
+ if(!r){r={prefix,rulesVersion:15,countdownClock:'engine-ticks-v1',publicationProbe:'epoch-marker-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
   arenaAdmissions:'verified-epoch-v1',housePolicy:rebalanced?'progressive-v1':'inherited',genesis:String(await read('AgentPublishedRatings',source.ratings,'genesisTime')),
   source:{manifest:source,indexHash:keccak256(sourceIndexBytes),hashes,block:String(anchor.number),blockHash:anchor.hash,emptySeedAudit:auditHash,seal},
   admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'importing-closed',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.prefix,prefix);assert.equal(r.source.emptySeedAudit,auditHash);assert.equal(r.arenaCount,arenaCount);
+ assert.equal(r.publicationProbe,'epoch-marker-v1','An older migration must resume with its original source and artifacts');
  assert.equal(r.housePolicy??'inherited',rebalanced?'progressive-v1':'inherited','Cannot change a journaled controller migration');
  assert.equal(r.source.indexHash,keccak256(sourceIndexBytes),'Source index metadata changed');
  assert.deepEqual(r.source.hashes,hashes,'Source code changed');assert.deepEqual(r.source.manifest,source,'Source manifest changed');

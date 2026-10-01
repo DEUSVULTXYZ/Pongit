@@ -63,6 +63,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
  let engine:ReturnType<typeof createPoolEngine>|undefined,node:PublicClient|undefined;
  let d:Awaited<ReturnType<typeof readHubDelegation>>|undefined,url=`https://il-${app.slice(2,18).toLowerCase()}.fly.dev`,lastProgress=0,lastRevision=-1n,stage='',healthAt=0;
  let observedRuntimeHash='',observedRuntimeBase:bigint|undefined;
+ let publicationPreparedEpoch:bigint|undefined;
  let observations:PoolObservations|undefined,proofTask:Promise<void>|undefined;
  let cachedTicket:{key:string;pair:readonly [ReusableTicket,ReusableAgentBinding]}|undefined,admitted=false;
  let admission:BackgroundObservation<boolean>|undefined;
@@ -100,7 +101,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
    const common=await assignments.read(),block=common.block;
    {
     const next=(await sharedHub.read(app)).delegation;
-    if(!d||next.epoch!==d.epoch){await close();node=undefined;observedRuntimeHash='';observedRuntimeBase=undefined;publicationPaused=false;publication=publicationObservation();}d=next;
+    if(!d||next.epoch!==d.epoch){await close();node=undefined;observedRuntimeHash='';observedRuntimeBase=undefined;publicationPreparedEpoch=undefined;publicationPaused=false;publication=publicationObservation();}d=next;
     if(!node&&d.status!==0&&observedRuntimeBase!==d.baseBlock){
      // Immutable arena code needs one verification per epoch/base, not another
      // Monad read for every failed hosted discovery. An unavailable idle node
@@ -138,6 +139,17 @@ async function arenaLoop(app:Address,runtimeHash:string){
     // not keep an arena admissible forever after its relay has stopped.
     publicationPaused=!(await publication.read()).healthy;
     const budget=await funding(d.validator);
+    if(r.publicationProbe==='epoch-marker-v1'&&d.status===1&&!publicationPaused&&budget.funded&&publicationPreparedEpoch!==d.epoch){
+     const marker=await base.readContract({address:app,abi,functionName:'publicationCheckpoint',blockNumber:block.number});
+     assert.equal((await base.getBlock({blockNumber:block.number})).hash,block.hash,'Publication checkpoint block changed');
+     if(marker===d.epoch&&d.batchIndex>0n)publicationPreparedEpoch=d.epoch;
+     else{
+      engine??=createPoolEngine(db,base,m.hub,app,url,r.engineKey,{epoch:d.epoch,id:0n},undefined,
+       {node,reusable:true,publicationProbe:r.publicationProbe,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
+      await engine.probePublication();
+      await health('publication-check',{epoch:String(d.epoch),committedBatches:String(d.batchIndex)});await delay(2000);continue;
+     }
+    }
     if(process.env.PONG_AGENT_PUBLICATION_PROBE==='qualification-only'&&d.status===1&&!publicationPaused&&budget.funded&&d.batchIndex===0n){
      // A reachable fresh node has not demonstrated that its relay can publish.
      // Execute one getter through the existing signer journal, without reserving
@@ -164,7 +176,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      // next loop must not impose a second 300 ms pause after every own tick.
      if(s.revision!==lastRevision){lastRevision=s.revision;lastProgress=Date.now();}
      observed.observe(s);replays.capture(replayRef,15,s);
-    },{node,reusable:true,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
+    },{node,reusable:true,publicationProbe:r.publicationProbe,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
    }
    // Expiry forbids new commands, not the reads needed to preserve a result.
    if(d.status!==1||d.expiresAt<=block.timestamp){

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
-import {FiveLaneAgentInstancesPool} from "./FiveLaneAgentInstancesPool.sol";
+import {PublicationReadyAgentPool} from "./PublicationReadyAgentPool.sol";
 import {MigratingAgentCatalogBase,IRetiredAgentPool,RetiredAgentLanes} from "./MigratingAgentCatalog.sol";
 import {IInterludeHub} from "../../../vendor/interlude/interfaces/IInterludeHub.sol";
 
 /// One-time migration from the existing two-lane pool. The source code hash and
 /// frozen match counter bind this import; historical references remain intact.
-contract ContinuingFiveLaneAgentPool is FiveLaneAgentInstancesPool {
+contract ContinuingFiveLaneAgentPool is PublicationReadyAgentPool {
     event MatchCounterContinued(address indexed predecessor,uint256 nonce,bytes32 sourceCodeHash);
     constructor(MigratingAgentCatalogBase c,IInterludeHub h,address admin,address bridge,bytes32 sourceCodeHash)
-        FiveLaneAgentInstancesPool(c,h,admin,bridge)
+        PublicationReadyAgentPool(c,h,admin,bridge)
     {
         address prior=c.predecessor().arenaPool();IRetiredAgentPool source=IRetiredAgentPool(prior);
         require(prior.codehash==sourceCodeHash&&sourceCodeHash!=0,"source pool code");

@@ -38,6 +38,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     error NoAgentMarkets();
     event AdmissionBound(uint256 indexed epoch,uint256 indexed id,uint256 sequence,bytes32 ticketHash,T.Binding binding);
     event UnpublishedMatchCancelled(uint256 indexed epoch,uint256 indexed id);
+    event PublicationPrepared(uint256 indexed epoch);
 
     constructor(IInterludeHub protocol,address authority,address admissions,HousePolicies house,
         ChaosEngine physics,PublishedResultVerifier verifier) Delegatable(protocol) {
@@ -56,6 +57,15 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     }
     modifier current(uint256 epoch,uint256 id){S.assertMatch(words,epoch,id);_;}
     function resultCommitment() external view returns(uint256,uint32,bytes32){return S.commitment(words);}
+    /// One deterministic write proves publication before an epoch admits players.
+    /// Namespace 7 is outside the reusable physics and result-tree namespaces.
+    /// Only a canonical Monad observation proves this marker was published;
+    /// an Interlude receipt or health response alone is insufficient.
+    function publicationCheckpoint() external view returns(uint256){return words[S.key(7,0,0)];}
+    function preparePublication(uint256 expectedEpoch) external {
+        if(!isEphemeral())revert EngineOnly();
+        Binding.preparePublication(words,hub,expectedEpoch);
+    }
     function pool() external view returns(address){return lobby;}
     function boundMatch() external view returns(T.Binding memory){return Binding.binding(words);}
     function currentMatch() public view returns(uint256 epoch,uint256 id){return(S.get(words,31),S.get(words,37));}
@@ -106,8 +116,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     }
     function start(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.start(words,kernel);}
     function cancelUnready(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){
-        require(Game.phase(words)==1&&S.get(words,61)!=3&&block.timestamp>S.get(words,62),"loading not expired");
-        Game.finish(words,kernel,4,address(0));Game.publish(words,kernel);
+        Game.cancelUnready(words,kernel);
     }
     function input(uint256 epoch,uint256 id,int8 direction,uint256 sequence,uint256 deadlineBlock) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){
         Game.input(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender),direction,sequence,deadlineBlock);
@@ -126,7 +135,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     function renewalDigest(ArenaAuthorizations.Renewal calldata r) external view returns(bytes32){return Auth.renewalDigest(r);}
     function authorizationRevision(address player) external view returns(uint256){return Auth.revision(words,player);}
     function getSnapshot(uint256 id) external view returns(RoomsState.Header memory){S.assertMatch(words,S.get(words,31),id);return Game.snapshot(words,kernel,isEphemeral());}
-    function chaosState(uint256 id) external view returns(bytes memory){S.assertMatch(words,S.get(words,31),id);return abi.encode(Game.snapshot(words,kernel,isEphemeral()),Game.packed(words),S.get(words,29),S.get(words,30));}
+    function chaosState(uint256 id) external view returns(bytes memory){return Game.encodedState(words,kernel,id,isEphemeral());}
     function publishedResult() external view returns(Game.Result memory){return Game.result(words,kernel);}
     function launchAt(uint256 id) external view returns(uint64){S.assertMatch(words,S.get(words,31),id);return uint64(S.get(words,60));}
     function launchClock(uint256 id) external view returns(uint256 deadline,uint256 clock){
@@ -137,6 +146,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
         // Compact commands are authenticated by their bound direct signer. The
         // generic session wrapper must not turn the contract itself into a signer.
         return selector==this.openEngine.selector||selector==this.closeEngine.selector||selector==this.cancelRecovered.selector
+            ||selector==this.preparePublication.selector
             ||selector==this.admit.selector||selector==this.cancelAdmission.selector||selector==this.input.selector||selector==this.confirmReady.selector
             ||selector==this.concede.selector||selector==this.revokeActive.selector||selector==this.renewActive.selector
             ||super._isSessionBlocked(selector);

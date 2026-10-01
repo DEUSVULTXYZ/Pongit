@@ -4,11 +4,30 @@ import {ReusableArenaStorage as S} from "../../independent/ReusableArenaStorage.
 import {ReusableAdmission as Admission} from "../../independent/ReusableAdmission.sol";
 import {AgentArenaTypes as A} from "./AgentArenaTypes.sol";
 import {HousePolicies} from "./HousePolicies.sol";
+import {IInterludeHub} from "../../../vendor/interlude/interfaces/IInterludeHub.sol";
+import {Types} from "../../../vendor/interlude/interfaces/Types.sol";
 
 /// Fixed controller fields, never keyed by a newly admitted agent or match.
 /// 63: tournament/overtime; 64..65: code hashes; 66: official controller IDs.
 library ReusableAgentBinding {
     uint256 internal constant RULES=15;
+    event PublicationPrepared(uint256 indexed epoch);
+    function verifyEngine(mapping(bytes32=>uint256) storage w,IInterludeHub hub) public view {
+        (uint256 epoch,,)=S.commitment(w);
+        Types.Session memory s=hub.sessionOf(address(this),Types.GLOBAL);
+        require(s.epoch==epoch&&s.status==Types.Status.Active&&block.timestamp<s.expiresAt,"engine session unavailable");
+    }
+    /// The arena checks the execution chain before delegating to this immutable
+    /// binding library. Keep this cold preparation path outside the 24 KiB root.
+    function preparePublication(mapping(bytes32=>uint256) storage w,IInterludeHub hub,uint256 expectedEpoch) public {
+        (uint256 epoch,uint32 count,)=S.commitment(w);
+        verifyEngine(w,hub);
+        require(epoch==expectedEpoch,"publication epoch mismatch");
+        require(count==0&&S.get(w,31)==0&&S.get(w,37)==0,"pristine epoch required");
+        bytes32 key=S.key(7,0,0);
+        require(w[key]<epoch,"publication already prepared");
+        w[key]=epoch;emit PublicationPrepared(epoch);
+    }
     function binding(mapping(bytes32=>uint256) storage w) public view returns(A.Binding memory b){
         uint256 meta=S.get(w,0);uint256 controllers=S.get(w,66);uint256 permission=S.get(w,34);uint256 competition=S.get(w,63);
         b=A.Binding(S.get(w,37),S.get(w,31),uint64(S.get(w,35)),uint64(competition),address(uint160(meta)),address(uint160(S.get(w,1))),

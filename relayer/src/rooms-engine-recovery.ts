@@ -84,6 +84,7 @@ export async function engineJobIdentity(job: EngineJob, abi: Abi, signer: Addres
     ? (first as {matchId:bigint})?.matchId : decoded.args?.[offset];
   if(offset&&first!==BigInt(job.epoch))throw new Error('Engine command epoch differs from its journal');
   if(ticketBound&&(first as {epoch:bigint})?.epoch!==BigInt(job.epoch))throw new Error('Engine ticket epoch differs from its journal');
+  if(decoded.functionName==='preparePublication'&&first!==BigInt(job.epoch))throw new Error('Publication marker epoch differs from its journal');
   return { action: decoded.functionName, matchId: String(matchId), signer: signer.toLowerCase(), data:tx.data!, args:decoded.args };
 }
 

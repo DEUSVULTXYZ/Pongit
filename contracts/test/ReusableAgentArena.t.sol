@@ -35,6 +35,10 @@ import {ChaosState as C} from "../src/chaos/ChaosState.sol";
 contract ReusableAgentHarness is ReusableAgentArena {
     constructor(IInterludeHub h,address p,address bridge,HousePolicies policies_,ChaosEngine k,PublishedResultVerifier v)
         ReusableAgentArena(h,p,bridge,policies_,k,v){}
+    function legacyEncodedState(uint256 id) external view returns(bytes memory){
+        S.assertMatch(words,S.get(words,31),id);
+        return abi.encode(Game.snapshot(words,kernel,isEphemeral()),Game.packed(words),S.get(words,29),S.get(words,30));
+    }
     function nearDeadline(uint64 time,uint8 a,uint8 b) external {
         PhysicsV2.State memory p=Game.state(words,kernel);
         if(p.mode==0){
@@ -89,12 +93,56 @@ contract ReusableAgentArenaTest is Test,IReusableAdmissionAuthority {
         (uint256 epoch,)=arena.currentMatch();if(human){vm.prank(vm.addr(1101));arena.confirmReady(epoch,id);}
         arena.start(epoch,id);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(epoch,id);
     }
+    function testPublicationPreflightWritesOneKeyWithoutTouchingGameOrResults() public {
+        (uint256 epoch,uint32 count,bytes32 root)=arena.resultCommitment();
+        bytes32 beforeBinding=keccak256(abi.encode(arena.boundMatch()));
+        vm.record();vm.prank(address(777));arena.preparePublication(epoch);
+        (,bytes32[] memory writes)=vm.accesses(address(arena));assertEq(writes.length,1);
+        assertEq(arena.publicationCheckpoint(),epoch);
+        (uint256 afterEpoch,uint32 afterCount,bytes32 afterRoot)=arena.resultCommitment();
+        assertEq(afterEpoch,epoch);assertEq(afterCount,count);assertEq(afterRoot,root);
+        assertEq(keccak256(abi.encode(arena.boundMatch())),beforeBinding);
+        vm.expectRevert("publication already prepared");arena.preparePublication(epoch);
+        admit(1,0,false,1,true);assertEq(arena.publicationCheckpoint(),epoch);
+        vm.expectRevert("pristine epoch required");arena.preparePublication(epoch);
+    }
+    function testPublicationPreflightRejectsWrongEpochBaseChainExpiredAndClosedSession() public {
+        vm.expectRevert("publication epoch mismatch");arena.preparePublication(2);
+        vm.chainId(10143);vm.expectRevert(ReusableAgentArena.EngineOnly.selector);arena.preparePublication(1);
+        arena.closeEngine();vm.chainId(4242);
+        vm.expectRevert("engine session unavailable");arena.preparePublication(1);
+    }
+    function testPublicationPreflightCannotRunAfterExpiryOrACompletedMatch() public {
+        admit(1,0,false,1,true);start(1,false);
+        vm.expectRevert("pristine epoch required");arena.preparePublication(1);
+        vm.warp(hub.sessionOf(address(arena),bytes32(0)).expiresAt);
+        vm.expectRevert("engine session unavailable");arena.preparePublication(1);
+    }
+    function testPublicationPreflightMustChangeForTheNextEpoch() public {
+        arena.preparePublication(1);vm.chainId(10143);arena.closeEngine();
+        vm.warp(vm.getBlockTimestamp()+3601);hub.releaseStake(address(arena),bytes32(0));verifier.sealReleased(address(arena));
+        arena.openEngine();assertEq(arena.publicationCheckpoint(),1);
+        vm.chainId(4242);vm.expectRevert("publication epoch mismatch");arena.preparePublication(1);
+        arena.preparePublication(2);assertEq(arena.publicationCheckpoint(),2);
+    }
     function testHouseReadinessAndHumanCountdownRemainSeparate() public {
         admit(1,0,false,3,false);(uint8 ready,)=arena.readiness(1);assertEq(ready,2);arena.start(1,1);assertEq(arena.launchAt(1),0);
         vm.prank(vm.addr(1101));arena.confirmReady(1,1);arena.start(1,1);assertEq(arena.launchAt(1),vm.getBlockTimestamp()+3);
         vm.expectRevert("countdown pending");arena.start(1,1);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(1,1);
         vm.prank(vm.addr(1101));arena.concede(1,1);admit(2,1,false,5,true);(ready,)=arena.readiness(2);assertEq(ready,3);start(2,false);
         vm.expectRevert("unbound or expired arcade key");vm.prank(vm.addr(1101));arena.input(1,2,1,1,vm.getBlockNumber()+100);
+    }
+    function testEncodedStateKeepsHistoricalBytesAcrossModesAndExecutionChains() public {
+        for(uint8 mode;mode<2;mode++){
+            uint256 id=mode+1;admit(id,mode,false,2,false);start(id,true);
+            assertEq(arena.chaosState(id),arena.legacyEncodedState(id));
+            vm.roll(vm.getBlockNumber()+20);arena.tick(1,id);
+            assertEq(arena.chaosState(id),arena.legacyEncodedState(id));
+            vm.chainId(10143);assertEq(arena.chaosState(id),arena.legacyEncodedState(id));vm.chainId(4242);
+            vm.prank(vm.addr(1101));arena.concede(1,id);
+            assertEq(arena.chaosState(id),arena.legacyEncodedState(id));
+        }
+        vm.expectRevert("stale match reference");arena.chaosState(99);
     }
     function testBatchTimestampJumpCannotSkipAgentCountdown() public {
         admit(1,0,false,3,false);vm.prank(vm.addr(1101));arena.confirmReady(1,1);arena.start(1,1);

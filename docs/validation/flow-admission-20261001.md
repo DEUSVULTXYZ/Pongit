@@ -278,3 +278,57 @@ A separate, undeployed publication-marker candidate changes one reserved
 storage word per empty epoch. The next pool requires that marker on Monad
 before admission. Its contract/unit checks are not yet hosted publication
 proof and it is not part of this compatible latency deployment.
+
+## RPC priority and publication preflight, 04:06 UTC
+
+Published source 82c57fc produced image
+`sha256:fbe848fe0c376c23b245a1e1aedc68aa04a39ffbbfa0ba8bef827973519b942d`.
+The gateway adopted it at 03:41:04, maintenance/archive at 03:45:50 and engines
+at 03:51:35 UTC. The primary spacing is 75 ms, below the separately observed
+15/s Monad public endpoint limit. No provider setting was changed. No new
+gateway throttle was recorded during the next fifteen minutes; queues still
+exist. The engine retains the original five-second planning validity and
+three-second command fence. The failed ffc336b engine trial remains rolled back.
+
+Maintenance traffic fell from about 254 to 126 calls/minute in the observed
+windows. A nine-second, read-only diagnostic pause of the old indexer reduced
+gateway history backlog but did not remove interactive latency. That indexer
+was resumed at 03:55:59.725 UTC. No historical service is left paused by this
+experiment. It is not a passing admission benchmark.
+
+Actual Classic 280 passed gameplay, F5, 221 controls and publication, but failed
+admission at 15.263 s. The first renewed virtual-authenticator attempt after
+that failed before submitting a match: imported credentials could not renew
+their PRF authorization. The original failure is preserved. A fresh virtual
+Mera Chrome Classic 284 then passed both render and control gates: local p95
+15.7 ms, first input confirmation p95 18.356 ms, frame p95 17.1 ms, maximum
+player/spectator holds 216.9/216.5 ms, no jumps. Its 16.781-second admission
+includes a new grant and is not proof of the valid-session eight-second target.
+The valid-grant Edge Chaos follow-up is still running; do not duplicate it.
+
+Tournament 12 completed normally. Its 28 unique fixture results match the pool
+at canonical block 67156417. The drain still suppresses only the next tournament;
+human challenges remain open. This audit does not prove finality or continuity.
+
+The undeployed preflight now performs one deterministic storage write in an
+empty epoch, journals its exact command, and requires the same marker on Monad
+before the new pool admits a player. A receipt or a getter does not satisfy
+this condition. It preserves the old engine modifier and historical state
+encoding. The fixture measures 49,811 execution gas for the write; real hosted
+execution/publication is still required. The full Solidity suite has 854 passes
+and eight skips. The TypeScript suite has 840 passes, followed by an additional
+artifact-path regression and 53 passing affected checks; root typecheck passes.
+Artifact preflight reports arena runtime 24,505 bytes and continuing pool
+32,623 bytes, within their existing reviewed budgets. Earlier oversized builds
+and missing-artifact attempts remain failed evidence. No deployment is claimed.
+
+Backup `rpc-priority-20261001T0337Z` is SHA-verified off VPS:
+
+- agents.dump: `d0db5105c95928171cc0126bc719d335251846290c990cf477ecfa29cd2cf799`
+- operator.dump: `decf4069a4ddc524a35327cfe324bd0cf0ff140e760b72f230d3810d218f9640`
+- runtime.tar.gz: `94279882a51641a469a628c75fb0bae23bcec21dc3b1adfbc208b555f91ffd64`
+
+The new runtime configuration needs a fresh final backup. All nonce authorities,
+databases, previous reports and rollback images remain intact. No additional
+funding request is needed. Admission, hosted difficulty migration, financial
+checks, concurrency/reserve and the final unchanged 24-hour trial remain open.

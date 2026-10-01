@@ -38,7 +38,7 @@ export async function initializePoolOperations(db:Pool){await db.query(`
  * permissionless maintenance only; it cannot impersonate a human or spend funds.
  * No pending entry is deleted, including a refusal proven safe to retire. */
 export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Address,url:string,key:Hex,
- ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number;hubObservation?:()=>Promise<HubObservation>;publicationFetch?:typeof fetch}){
+ ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;publicationProbe?:'epoch-marker-v1';archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number;hubObservation?:()=>Promise<HubObservation>;publicationFetch?:typeof fetch}){
  if(runtime?.series&&runtime?.reusable)throw Error('Choose one arena generation');
  if(runtime?.reusable&&!runtime.archive)throw Error('Reusable results require a durable archive');
  const arenaAbi=runtime?.reusable?reusableAgentArenaAbi:runtime?.series?seriesAgentArenaAbi:abi;
@@ -80,7 +80,7 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
  }
  async function resolution(job:any,unsent=false){
   const identity=await engineJobIdentity({...job,nonce:String(job.nonce)},arenaAbi,signer.address);
-  const allowed=runtime?.reusable?['admit','cancelAdmission','start','tick','submitRandomness','cancelUnready','RULES_VERSION']:runtime?.series?['start','tick','submitRandomness','advanceSeries','drainSeries']:['start','tick','submitRandomness'];
+  const allowed=runtime?.reusable?['admit','cancelAdmission','start','tick','submitRandomness','cancelUnready','RULES_VERSION',...(runtime.publicationProbe?['preparePublication']:[])]:runtime?.series?['start','tick','submitRandomness','advanceSeries','drainSeries']:['start','tick','submitRandomness'];
   if(!allowed.includes(identity.action))throw Error('Unexpected permissionless pool operation');
   if(!runtime?.series&&!runtime?.reusable&&identity.action!=='start'&&identity.matchId!==String(ref.id))throw Error('Command belongs to another match');
   // Only an entry created in this invocation is known never to have been sent.
@@ -151,9 +151,9 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
   if(updated.rowCount!==1)throw Error('Recovered command journal changed');
   job.status='pending';job.resolution=recovery;
  }
- async function execute(operation:string,name:PoolCommand|'RULES_VERSION',args:readonly unknown[]=[]){
-  const probe=name==='RULES_VERSION';
-  if(probe&&(!runtime?.reusable||ref.id!==0n||args.length))throw Error('Publication probe requires an empty reusable arena');
+ async function execute(operation:string,name:PoolCommand|'RULES_VERSION'|'preparePublication',args:readonly unknown[]=[]){
+  const marker=name==='preparePublication',probe=marker||name==='RULES_VERSION';
+  if(probe&&(!runtime?.reusable||ref.id!==0n||(marker?runtime.publicationProbe!=='epoch-marker-v1'||args.length!==1||args[0]!==ref.epoch:args.length!==0)))throw Error('Publication probe requires an empty reusable arena');
   if(!probe&&ref.id===0n)throw Error('A game command requires a match');
   if(!/^[a-z0-9:._-]{1,160}$/i.test(operation))throw Error('Invalid operation identity');
   if((name==='advanceSeries'||name==='drainSeries')&&!runtime?.series)throw Error('Series transport is not enabled');
@@ -195,12 +195,13 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
     const pending=(await db.query("SELECT * FROM agent_pool.engine_jobs WHERE app=$1 AND status='pending' ORDER BY created_at LIMIT 1",[lower])).rows[0];
     if(pending){
      if(BigInt(pending.epoch)!==ref.epoch)throw Error('Previous epoch command requires verified closure');
-     if(probe&&(await engineJobIdentity({...pending,nonce:String(pending.nonce)},arenaAbi,signer.address)).action!=='RULES_VERSION')throw Error('Publication probe cannot reconcile a game command');
+     if(probe&&!['RULES_VERSION',...(runtime?.publicationProbe?['preparePublication']:[])].includes((await engineJobIdentity({...pending,nonce:String(pending.nonce)},arenaAbi,signer.address)).action))throw Error('Publication probe cannot reconcile a game command');
      const resolved=await resolution(pending);feed.invalidate();
      // A prior match's receipt resolves its own nonce only. Never project its
      // state onto the next match, even when both share the same engine epoch.
-     if(resolved.identity.action==='RULES_VERSION'){
-      // A read-only probe has no game frame. Its receipt owns only its nonce.
+     if(['RULES_VERSION','preparePublication'].includes(resolved.identity.action)){
+      // A preflight has no game frame. Its receipt owns only its nonce and is
+      // never substituted for the canonical published marker observation.
      }else if((resolved.identity.action==='start'&&!runtime?.reusable&&(!runtime?.series||pending.operation.startsWith(`match:${ref.id}:`)))||resolved.identity.matchId===String(ref.id))
       await feed.receipt(ref.id,{receipt:resolved.receipt},resolved.identity.action,resolved.identity.args??[],signer.address);
      else await feed.read(ref.id,true);
@@ -226,7 +227,10 @@ export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Addre
  const send=async(operation:string,name:PoolCommand,args:readonly unknown[]=[]):Promise<EngineState>=>{
   const state=await execute(operation,name,args);if(!state)throw Error('Game command produced no snapshot');return state;
  };
- return{node,feed,send,probePublication:async()=>{await execute('publication-probe','RULES_VERSION');},read:async(force=false)=>{
+ return{node,feed,send,probePublication:async()=>{
+  if(runtime?.publicationProbe==='epoch-marker-v1')await execute('publication-marker-v1','preparePublication',[ref.epoch]);
+  else await execute('publication-probe','RULES_VERSION');
+ },read:async(force=false)=>{
   // Warm the same three-second fence before it expires. This changes neither
   // its validity window nor the checks required before sending a command.
   if(!closed&&!busy&&fenceUntil>0&&now()>=fenceUntil-1500)void refreshFence().catch(()=>{});

@@ -25,6 +25,7 @@ export type AgentPoolManifest={
  houseInstances?:'official-v1';
  housePolicy?:'progressive-v1';
  challengeAdmission?:'atomic-v1';
+ publicationProbe?:'epoch-marker-v1';
  lanes?:{tournament:1;challenge:4};arenaAdmissions?:'verified-epoch-v1';
  // Read-only retired authorities. They never supply an admission, signing
  // target, capacity slot or engine origin for the current deployment.
@@ -50,6 +51,7 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
  }else if(m.lanes!==undefined||m.arenaAdmissions!==undefined)throw Error('Legacy authority cannot advertise five-lane capabilities');
  if(typeof m.enabled!=='boolean'||typeof m.tournamentsEnabled!=='boolean')throw Error('Explicit boolean admission gates required');
  if(m.challengeAdmission!==undefined&&(m.version!==5||m.challengeAdmission!=='atomic-v1'))throw Error('Unsupported challenge admission');
+ if(m.publicationProbe!==undefined&&(m.version!==5||m.publicationProbe!=='epoch-marker-v1'))throw Error('Unsupported publication preflight');
  const contracts=[m.hub,m.pool,m.catalog,m.tournaments,m.ratings,m.challenges,m.qualifications,m.family];
  if(contracts.some(x=>!isAddress(x)||BigInt(x)===0n))throw Error('Invalid common contract address');
  if(new Set(contracts.map(x=>x.toLowerCase())).size!==contracts.length)throw Error('Common contracts must be distinct');
@@ -82,7 +84,7 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
  }
  // Deployment journals may contain operator state next to these fields. Never
  // serialize unknown fields or nested arena properties to a browser.
- return {version:m.version,...(m.challengeAdmission?{challengeAdmission:m.challengeAdmission}:{}),...(m.housePolicy?{housePolicy:m.housePolicy}:{}),...(preview?{releaseStage:'testnet-preview' as const,previewEvidence:m.previewEvidence}:{}),...(m.countdownClock?{countdownClock:m.countdownClock}:{}),...(m.houseInstances?{houseInstances:m.houseInstances}:{}),...(history?{history}:{}),chainId:10143,engineChainId:4242,rulesVersion:m.rulesVersion,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
+ return {version:m.version,...(m.publicationProbe?{publicationProbe:m.publicationProbe}:{}),...(m.challengeAdmission?{challengeAdmission:m.challengeAdmission}:{}),...(m.housePolicy?{housePolicy:m.housePolicy}:{}),...(preview?{releaseStage:'testnet-preview' as const,previewEvidence:m.previewEvidence}:{}),...(m.countdownClock?{countdownClock:m.countdownClock}:{}),...(m.houseInstances?{houseInstances:m.houseInstances}:{}),...(history?{history}:{}),chainId:10143,engineChainId:4242,rulesVersion:m.rulesVersion,hub:m.hub,pool:m.pool,catalog:m.catalog,tournaments:m.tournaments,
   ratings:m.ratings,challenges:m.challenges,qualifications:m.qualifications,family:m.family,arenas:m.arenas.map(a=>({app:a.app,node:a.node,runtimeHash:a.runtimeHash})),
   enabled:m.enabled,tournamentsEnabled:m.tournamentsEnabled,verifiedCapacity:m.verifiedCapacity,qualificationEvidence:m.qualificationEvidence,
   durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:m.maxMatches,

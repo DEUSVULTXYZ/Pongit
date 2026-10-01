@@ -5,7 +5,7 @@ import {Pool} from 'pg';
 import {createPublicClient,createWalletClient,http,keccak256,parseTransaction,recoverTransactionAddress,encodeDeployData,encodeFunctionData,getContractAddress,type Address,type Hex,type Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
-import {assertDeploymentArtifact,preflightDeploymentArtifacts} from '../shared/deployment-artifacts';
+import {assertDeploymentArtifact,preflightDeploymentArtifacts,deploymentArtifactPath} from '../shared/deployment-artifacts';
 import {writerIdentity,type ScopedWriter} from '../shared/scoped-writer';
 import {operatorNeedsFunding,operatorFundingMessage} from '../shared/operator-funding';
 import {rebroadcastFundedOperation} from '../shared/operator-rebroadcast';
@@ -86,7 +86,7 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:Scop
   }finally{if(locked)await c.query('SELECT pg_advisory_unlock($1::bigint)',[identity.lock]);c.release();}
  }
  const deployed:Record<string,Address>={};
- async function artifact(name:string){const source=name==='LMSRV2'?'MarketV2':name;return JSON.parse(await readFile(`contracts/out/${source}.sol/${name}.json`,'utf8'));}
+ async function artifact(name:string){return JSON.parse(await readFile(deploymentArtifactPath(name),'utf8'));}
  async function deploy(name:string,args:readonly unknown[]=[],instance=name):Promise<Address>{
   if(deployed[instance])return deployed[instance];
   const a=await artifact(name); let code=a.bytecode.object as string;

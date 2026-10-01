@@ -33,6 +33,14 @@ library ReusableAgentGame {
 
     function phase(mapping(bytes32=>uint256) storage w) internal view returns(uint8){return uint8(S.get(w,0)>>161&7);}
     function packed(mapping(bytes32=>uint256) storage w) internal view returns(uint256[8] memory p){for(uint256 i;i<8;i++)p[i]=S.get(w,21+i);}
+    function encodedState(mapping(bytes32=>uint256) storage w,ChaosEngine kernel,uint256 id,bool ephemeral) public view returns(bytes memory){
+        S.assertMatch(w,S.get(w,31),id);
+        return abi.encode(snapshot(w,kernel,ephemeral),packed(w),S.get(w,29),S.get(w,30));
+    }
+    function cancelUnready(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public {
+        require(phase(w)==1&&S.get(w,61)!=3&&block.timestamp>S.get(w,62),"loading not expired");
+        finish(w,kernel,4,address(0));publish(w,kernel);
+    }
     function state(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public view returns(PhysicsV2.State memory){
         if(S.get(w,0)>>168&1==0)return RoomsState.state(w,SLOT);
         return kernel.codec().legacy(packed(w),bytes32(S.get(w,3)),S.get(w,8),phase(w)>=3);

@@ -92,6 +92,8 @@ test('five lanes require the new authority and cannot misrepresent preview quali
  const ready=validateAgentPoolManifest({...m,enabled:true,tournamentsEnabled:true,verifiedCapacity:5,qualificationEvidence:`0x${'d'.repeat(64)}`});
  assert.equal(ready.lanes?.challenge,4);assert.equal(ready.verifiedCapacity,5);
  assert.equal(validateAgentPoolManifest({...m,housePolicy:'progressive-v1'}).housePolicy,'progressive-v1');
+ assert.equal(validateAgentPoolManifest({...m,publicationProbe:'epoch-marker-v1'}).publicationProbe,'epoch-marker-v1');
+ assert.throws(()=>validateAgentPoolManifest({...old,publicationProbe:'epoch-marker-v1'}),/publication preflight/);
  assert.throws(()=>validateAgentPoolManifest({...old,housePolicy:'progressive-v1'}),/difficulty policy/);
  assert.equal(validateAgentPoolManifest({...m,challengeAdmission:'atomic-v1'}).challengeAdmission,'atomic-v1');
  assert.equal(validateAgentPoolManifest(m).challengeAdmission,undefined);

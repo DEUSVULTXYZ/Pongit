@@ -3,6 +3,13 @@
 const larger=new Set(['SeriesAgentArena','AgentSeriesPool','ReusableAgentPool','ReusableAgentInstancesPool','BalancedAgentInstancesPool','ContinuingAgentInstancesPool','FiveLaneAgentInstancesPool','ContinuingFiveLaneAgentPool','IndependentEventsArena','IndependentEventsLobby',
  'ReadyIndependentEventsArena','ReadyIndependentEventsLobby','ReusableEventsLobby']);
 export type DeploymentArtifact={bytecode:{object:string;linkReferences?:Record<string,Record<string,{start:number;length:number}[]>>};deployedBytecode:{object:string}};
+/** Several named contracts share a source file. Deployment must use the exact
+ * compiled artifact, never fail over to a similarly named runtime. */
+export function deploymentArtifactPath(name:string){
+ if(!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name))throw Error('Invalid artifact name');
+ const source=name==='LMSRV2'?'MarketV2':name==='RebalancedAgentCatalog'?'MigratingAgentCatalog':name;
+ return `contracts/out/${source}.sol/${name}.json`;
+}
 export function assertDeploymentArtifact(name:string,a:DeploymentArtifact){
  const runtime=(a.deployedBytecode.object.length-2)/2,creation=(a.bytecode.object.length-2)/2;
  if(!Number.isInteger(runtime)||runtime<=0||runtime>(larger.has(name)?32768:24576))throw Error(`${name} exceeds its reviewed runtime budget`);

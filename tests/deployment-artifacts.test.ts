@@ -1,7 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {assertDeploymentArtifact,preflightDeploymentArtifacts,type DeploymentArtifact} from '../shared/deployment-artifacts';
+import {assertDeploymentArtifact,preflightDeploymentArtifacts,deploymentArtifactPath,type DeploymentArtifact} from '../shared/deployment-artifacts';
 const fixture=(runtime=100,links:string[]=[]):DeploymentArtifact=>({bytecode:{object:'0x'+'00'.repeat(200),linkReferences:{'fixture.sol':Object.fromEntries(links.map((name,i)=>[name,[{start:i*20,length:20}]]))}},deployedBytecode:{object:'0x'+'00'.repeat(runtime)}});
+
+test('the rebalanced catalogue resolves its real compilation unit before deployment',()=>{
+ assert.equal(deploymentArtifactPath('RebalancedAgentCatalog'),'contracts/out/MigratingAgentCatalog.sol/RebalancedAgentCatalog.json');
+ assert.equal(deploymentArtifactPath('LMSRV2'),'contracts/out/MarketV2.sol/LMSRV2.json');
+ assert.equal(deploymentArtifactPath('ReusableAgentArena'),'contracts/out/ReusableAgentArena.sol/ReusableAgentArena.json');
+ assert.throws(()=>deploymentArtifactPath('../secrets'),/Invalid/);
+});
 test('preflight rejects an oversized transitive library before a deployer can submit any root',async()=>{
  const artifacts={Root:fixture(200,['Game']),Game:fixture(27719)};let submitted=false;
  await assert.rejects(async()=>{await preflightDeploymentArtifacts(['Root'],async name=>artifacts[name as keyof typeof artifacts]);submitted=true;},/Game exceeds/);

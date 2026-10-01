@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {encodeFunctionResult,keccak256,parseTransaction,zeroAddress,zeroHash,type Hex} from 'viem';
+import {decodeFunctionData,encodeFunctionResult,keccak256,parseTransaction,zeroAddress,zeroHash,type Hex} from 'viem';
+import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {generatePrivateKey} from 'viem/accounts';
 import {createPoolEngine,POOL_COMMAND_GAS} from '../relayer/src/agents/pool-engine';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
@@ -40,13 +41,34 @@ function fixture(){
  }};
  const receiptIds:bigint[]=[],readIds:bigint[]=[];
  const feed:any={watch:()=>()=>{},read:async(id:bigint)=>{readIds.push(id);return{id,phase:2,reset};},receipt:async(id:bigint)=>{if(feedError)throw Error('snapshot gap');receiptIds.push(id);return{id,phase:2};},invalidate(){}};
- const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false)=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,now:()=>now,publicationFetch:async()=>{if(publication instanceof Error)throw publication;return new Response(JSON.stringify(publication));},archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
+ const key=generatePrivateKey();const make=(id=1n,series=false,reusable=false,publicationProbe?:'epoch-marker-v1')=>createPoolEngine(db,base,zeroAddress,app,'https://fixture.example',key,{epoch,id},undefined,{node,feed,series,reusable,publicationProbe,now:()=>now,publicationFetch:async()=>{if(publication instanceof Error)throw publication;return new Response(JSON.stringify(publication));},archive:async(results)=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}});
  return{make,jobs,sent,receipts,receiptIds,readIds,archived,publication:(v:any)=>{publication=v;},nonce:(v:number)=>{nonce=v;},currentId:(v:bigint)=>{currentId=v;},now:(v:number)=>{now=v;},blockError:(v:boolean)=>{blockError=v;},blockGate:(v:Promise<void>|undefined)=>{blockGate=v;},receiptReads:()=>receiptReads,nonceReads:()=>nonceReads,reset:()=>{reset=true;},feedError:(v:boolean)=>{feedError=v;},logs:(value:any[])=>{logs=value;},archiveError:(value:boolean)=>{archiveError=value;},reorg:(value:boolean)=>{reorg=value;},behavior:(b:typeof behavior)=>{behavior=b;},status:(s:number)=>{status=s;},epoch:(e:bigint)=>{epoch=e;},dbError:(b:boolean)=>{connectError=b;}};
 }
 
 function historicalHalt(f:ReturnType<typeof fixture>){
  const job=f.jobs[0];job.status='refused';job.resolution={kind:'permanent-pre-execution-refusal',reason:'this session is over and the node is no longer accepting transactions',latestNonce:job.nonce};return job;
 }
+
+test('state-changing publication preflight resumes exact bytes after a lost response and never invents a game frame',async()=>{
+ const f=fixture();let e=f.make(0n,false,true,'epoch-marker-v1');f.behavior('lost-after-execution');
+ await assert.rejects(e.probePublication(),/response lost/);const job=f.jobs[0],raw=job.raw;
+ const decoded=decodeFunctionData({abi:reusableAgentArenaAbi,data:parseTransaction(raw).data!});
+ assert.equal(decoded.functionName,'preparePublication');assert.deepEqual(decoded.args,[1n]);assert.equal(job.operation,'publication-marker-v1');
+ e.close();e=f.make(0n,false,true,'epoch-marker-v1');f.behavior('ok');await e.probePublication();await e.probePublication();
+ assert.equal(f.jobs.length,1);assert.equal(f.sent.length,1);assert.equal(job.status,'observed');assert.deepEqual(f.receiptIds,[]);assert.deepEqual(f.readIds,[]);
+ e.close();const game=f.make(17n,false,true,'epoch-marker-v1');await game.send('start','start',[1n,17n]);
+ assert.equal(f.jobs[1].nonce,'1');game.close();
+});
+
+test('state-changing preflight preserves RPC uncertainty, refuses another game and binds each new epoch',async()=>{
+ const f=fixture();let e=f.make(0n,false,true,'epoch-marker-v1');f.behavior('429');
+ await assert.rejects(e.probePublication());assert.equal(f.jobs[0].status,'pending');const raw=f.jobs[0].raw;
+ f.behavior('ok');await e.probePublication();assert.equal(f.sent[1],raw);e.close();
+ f.currentId(17n);e=f.make(0n,false,true,'epoch-marker-v1');await assert.rejects(e.probePublication(),/admitted match/);e.close();
+ f.currentId(0n);f.epoch(2n);f.nonce(0);e=f.make(0n,false,true,'epoch-marker-v1');await e.probePublication();
+ assert.equal(f.jobs.length,2);assert.equal(f.jobs[1].epoch,'2');
+ const decoded=decodeFunctionData({abi:reusableAgentArenaAbi,data:parseTransaction(f.jobs[1].raw).data!});assert.deepEqual(decoded.args,[2n]);e.close();
+});
 
 test('a recovered halt resumes the exact historical start, preserving its nonce and refusal proof',async()=>{
  const f=fixture();let e=f.make(214n,false,true);f.behavior('halt');

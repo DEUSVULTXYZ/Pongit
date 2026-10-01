@@ -8,6 +8,7 @@ const fields=['hub','pool','catalog','tournaments','ratings','qualifications','f
 export function validateReusableRecord(record:any,humans:readonly string[],manifest?:AgentPoolManifest,evidence?:string,isolated=false){
  validateSeriesRecord(record,humans);
  if(record.countdownClock!==undefined)assert.equal(record.countdownClock,"engine-ticks-v1");
+ if(record.publicationProbe!==undefined){assert.equal(record.publicationProbe,'epoch-marker-v1');assert.equal(record.maxMatches,5);}
  if(record.housePolicy!==undefined&&record.housePolicy!=='inherited'){
   assert.equal(record.housePolicy,'progressive-v1');assert.equal(record.maxMatches,5);
   assert.equal(record.modules?.ProgressiveHousePolicies?.toLowerCase(),record.modules?.HousePolicies?.toLowerCase(),'Progressive controller binding mismatch');
@@ -36,6 +37,7 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
    assert.equal(m.family.toLowerCase(),prior.family.toLowerCase(),'Continuation must retain existing family grants');
   }
   assert.equal(m.countdownClock,record.countdownClock,"Countdown capability mismatch");
+  assert.equal(m.publicationProbe,record.publicationProbe,'Publication preflight capability mismatch');
   assert.equal(m.houseInstances,record.houseInstances,'House instance capability mismatch');
   assert.equal(m.housePolicy,record.housePolicy==='inherited'?undefined:record.housePolicy,'House policy capability mismatch');
   assert.equal(m.maxMatches,record.maxMatches??2,'Lane count mismatch');

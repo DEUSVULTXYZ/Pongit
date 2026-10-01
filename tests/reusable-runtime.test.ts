@@ -65,3 +65,15 @@ test('continuation binds every historical authority and retains the family befor
  prior.family=address(251);
  assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,undefined,true),/family grants/);
 });
+
+test('publication preparation is enabled only by matching new-deployment capabilities',()=>{
+ const f=fixture();f.record.maxMatches=5;f.record.houseInstances='official-v1';f.record.arenaAdmissions='verified-epoch-v1';f.record.countdownClock='engine-ticks-v1';
+ f.record.modules.HouseInstances=address(14);f.record.arenas.push(...[13,14].map(n=>({...f.record.arenas[0],app:address(n)})));
+ f.manifest={...f.manifest,version:5,maxMatches:5,lanes:{tournament:1,challenge:4},houseInstances:'official-v1',arenaAdmissions:'verified-epoch-v1',countdownClock:'engine-ticks-v1',
+  arenas:f.record.arenas,verifiedCapacity:5};
+ validateReusableRecord(f.record,f.humans,f.manifest,f.evidence);
+ f.record.publicationProbe='epoch-marker-v1';
+ assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,f.evidence),/preflight capability/);
+ f.manifest.publicationProbe='epoch-marker-v1';validateReusableRecord(f.record,f.humans,f.manifest,f.evidence);
+ f.record.publicationProbe='getter';assert.throws(()=>validateReusableRecord(f.record,f.humans,f.manifest,f.evidence));
+});

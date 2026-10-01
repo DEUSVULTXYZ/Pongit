@@ -32,7 +32,7 @@ contract FiveLaneAgentInstancesPool is BalancedAgentInstancesPool {
     function setArenaAdmissions(address[] calldata apps,uint256[] calldata epochs,bool[] calldata enabled,bytes32 reason) external base {
         PoolAdmissionGates.setMany(admissionState,registered,hub,owner,apps,epochs,enabled,reason);
     }
-    function _admissionAllowed(address app,uint256 epoch) internal view override returns(bool){return admissionState.enabled[app][epoch];}
+    function _admissionAllowed(address app,uint256 epoch) internal view virtual override returns(bool){return admissionState.enabled[app][epoch];}
     function _admissionCaller() internal view override returns(bool){return msg.sender==owner||msg.sender==admissionState.operator;}
     function _maintenanceCaller() internal view override returns(bool){return msg.sender==owner||msg.sender==admissionState.maintenance;}
     function seal() public override {
