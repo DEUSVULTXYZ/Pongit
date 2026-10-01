@@ -6,7 +6,7 @@ import {extname,resolve,relative} from 'node:path';
 import {chromium} from '@playwright/test';
 import {decodeFunctionData,encodeFunctionResult,zeroAddress,zeroHash,type Address} from 'viem';
 import {agentPoolArenaAbi} from '../shared/agent-pool-abi';
-import {pooledHouseBots,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../shared/agent-pool';
+import {pooledHouseBots,progressiveHouseBots,type AgentPoolManifest,type TournamentView,type PoolMatchView} from '../shared/agent-pool';
 import {initial} from '../shared/physics-v2';
 import {chaosBrowserPayload} from './chaos-browser-fixture';
 import {decodeChaosRead} from '../shared/chaos-codec';
@@ -21,12 +21,14 @@ const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 // must use that exact allowed origin; do not disable the browser's CSP checks.
 const node=process.env.PONG_POOL_UI_NODE??JSON.parse(await readFile('deployments/agents.json','utf8')).node;
 assert(/^https:\/\/il(?:2-eu)?-[a-f0-9]+\.fly\.dev$/.test(node));
-const people=pooledHouseBots.map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90),difficulty:b.difficulty,modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false,availability:{0:'available',1:'available'}}));
+const progressive=process.env.PONG_POOL_UI_POLICY==='progressive-v1';
+const people=(progressive?progressiveHouseBots:pooledHouseBots).map((b,i)=>({agent:address(100+i),name:b.name,avatar:b.avatar,official:true,creator:address(90),difficulty:b.difficulty,...('level' in b?{level:b.level}:{}),modes:[0,1],qualification:{0:true,1:true},available:true,waiting:false,availability:{0:'available',1:'available'}}));
 const m:AgentPoolManifest={version:rulesVersion===15?4:rulesVersion===11?3:2,chainId:10143,engineChainId:4242,rulesVersion,hub:address(1),pool:address(2),catalog:address(3),tournaments:address(4),ratings:address(5),challenges:address(6),qualifications:address(7),family:address(8),
  arenas:[9,10,11].map(n=>({app:address(n),node,runtimeHash:zeroHash})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:`0x${'b'.repeat(64)}`,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 if(process.env.PONG_POOL_UI_LANES==='5'){
  assert.equal(rulesVersion,15);Object.assign(m,{version:5,maxMatches:5,verifiedCapacity:5,lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',arenas:[9,10,11,12,13,14,15].map(n=>({app:address(n),node,runtimeHash:zeroHash}))});
 }
+if(progressive){assert.equal(m.version,5);m.housePolicy='progressive-v1';}
 const abi=agentPoolArenaAbi(m);
 const ref={chainId:10143 as const,app:address(9),epoch:'1',id:'1'};
 const observation={block:'50',hash:zeroHash,timestamp:String(Math.floor(Date.now()/1000)),revision:'fixture'};
@@ -34,7 +36,7 @@ const tournament=(id:string,league:boolean,mode:0|1):TournamentView=>({id,mode,f
  entrants:people.map(p=>({agent:p.agent,controllerHash:zeroHash,initialElo:1000})),
  fixtures:Array.from({length:league?28:7},(_,i)=>({index:i,ref:i===0?ref:null,a:people[i%8].agent,b:people[(i+1)%8].agent,advanced:zeroAddress,resolved:false,administrative:false,attempt:i===0?1:0,result:null})),
  standings:people.map((p,i)=>({agent:p.agent,points:21-i*3,difference:14-i*2,wins:7-i,initialElo:1000})),observedBlock:'50',published:true,nextAt:null});
-const report:any={at:new Date().toISOString(),channel,build:process.env.PONG_BROWSER_BUILD??'development',rulesVersion,lanes:m.maxMatches,scope:'Isolated app; synthetic API/engine; no authentication or hosted gameplay qualification',checks:[],errors:[]};
+const report:any={at:new Date().toISOString(),channel,build:process.env.PONG_BROWSER_BUILD??'development',rulesVersion,lanes:m.maxMatches,housePolicy:m.housePolicy,scope:'Isolated app; synthetic API/engine; no authentication or hosted gameplay qualification',checks:[],errors:[]};
 const mime:Record<string,string>={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png','.ico':'image/x-icon','.woff2':'font/woff2','.ttf':'font/ttf','.mp3':'audio/mpeg'};
 await mkdir(output,{recursive:true});
 const browser=await chromium.launch({channel,headless:true});
@@ -113,6 +115,11 @@ try{
   page.on('requestfailed',r=>{if(r.failure()?.errorText==='net::ERR_ABORTED')report.abortedRequests=(report.abortedRequests??0)+1;else report.errors.push(r.url().replace(/\?.*/, '')+' '+r.failure()?.errorText);});
   await page.goto(origin+'/agents');await page.getByRole('heading',{name:'Agent Arcade',exact:true}).waitFor();
   await page.getByRole('button',{name:'Challenge NOVA',exact:true}).waitFor();assert.equal(await page.locator('.agent-card').count(),8);
+  if(progressive){
+   assert.deepEqual(await page.locator('.agent-difficulty').evaluateAll(rows=>rows.map(row=>row.getAttribute('aria-label'))),
+    Array.from({length:8},(_,i)=>`Difficulty ${i+1} of 8`),'The actual catalogue orders all eight difficulty levels');
+   report.checks.push({width,progressiveDifficulty:true,levels:8});
+  }
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'catalogue page overflow');
   assert.equal(await page.locator('.agent-grid').first().evaluate(el=>getComputedStyle(el).gridTemplateColumns.split(' ').length),width>=1100?4:2);
   const small=await page.locator('.agent-card button').evaluateAll(elements=>elements.filter(el=>{const r=el.getBoundingClientRect();return r.width<44||r.height<44;}).length);assert.equal(small,0,'Every card action meets the touch target');

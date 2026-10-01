@@ -12,12 +12,16 @@ import {agentChallengesAbi as queueAbi} from '../shared/abi-AgentChallenges';
 import {AgentPoolReader,poolJson} from '../relayer/src/agents/pool-read';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {measuredFetch} from '../shared/rpc-metrics';
+import {NO_LEASE_HUB,hubLeaseValid} from '../shared/hub-lease';
 assert.equal(process.env.PONG_FIVE_BROWSER_SEAT,'one-private-request');assert.equal(process.getuid?.(),1000);
+const v3=process.env.PONG_FIVE_BROWSER_V3==='reviewed-private';
+assert(!process.env.PONG_FIVE_BROWSER_V3||v3);
 const run=process.env.PONG_FIVE_BROWSER_RUN!;assert(/^[1-9]$/.test(run));
 const deadline=Date.parse(process.env.PONG_FIVE_BROWSER_DEADLINE??'');assert(deadline>Date.now()&&deadline<Date.now()+25*60_000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 const m=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json','utf8')),(process.env.PONG_HUMAN_APPS??'').split(','));
 assert(!m.enabled&&m.version===5&&m.pool===r.common.pool&&!r.continuation);
+if(v3){assert.equal(m.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());assert.equal(m.pool.toLowerCase(),'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');}
 const path=`artifacts/reusable-candidate/browser-seat-${run}.json`,intentPath=`artifacts/reusable-candidate/browser-intent-${run}.json`;
 const report:any={startedAt:new Date().toISOString(),deadline,passed:false,scope:'Private, one actual browser-owned challenge; no public release'};
 await writeFile(path,poolJson(report),{flag:'wx'});
@@ -28,9 +32,9 @@ const reader=new AgentPoolReader(t.base,m,[]),wait=(ms=1000)=>new Promise(resolv
 const write=(id:string,to:Address,abi:any,method:string,args:readonly unknown[]=[])=>retryOperatorContention(()=>t.write(id,to,abi,method,args));
 try{
  const block=await t.base.getBlock();
- for(const arena of m.arenas.slice(0,5)){
+ for(const arena of m.arenas.slice(v3?1:0,v3?6:5)){
   const d=await readHubDelegation(t.base,m.hub,arena.app,block.number);
-  assert(d.status===1&&d.epoch===1n&&d.batchIndex<2000n&&d.expiresAt>block.timestamp+1800n,'Original bounded epoch reserve');
+  assert(d.status===1&&d.epoch===1n&&d.batchIndex<2000n&&hubLeaseValid(m.hub,d.expiresAt,block.timestamp,1800n),'Original bounded epoch reserve');
  }
  assert.equal((await reader.live()).value.items.length,0,'Another trial is active');
  await write('open-pool',m.pool,poolAbi,'setAdmissions',[true]);
