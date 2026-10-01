@@ -76,6 +76,31 @@ test('a burst during recovery keeps only the latest movement and signs compact s
  await f.player.move(0);assert.equal(f.sent.length,2);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
 });
 
+test('the latest intent replaces a movement waiting behind the second authorization fence',async()=>{
+ const f=fixture(15);await f.player.move(1);
+ let entered!:()=>void,release!:()=>void;
+ const waiting=new Promise<void>(r=>entered=r),gate=new Promise<void>(r=>release=r);
+ // The first fence is still valid, but expires during the command state read.
+ f.advance(2900);f.hold(async()=>{entered();await gate;});
+ f.feed.forCommand=async()=>{f.advance(200);return f.state;};
+ const moving=f.player.move(-1);await waiting;
+ const stopped=f.player.move(0);release();await Promise.all([moving,stopped]);
+ assert.equal(f.sent.length,2,'The obsolete reversal must never reach the node');
+ assert.equal(f.state.state.leftDir,0);assert.equal(parseTransaction(f.sent[1]).nonce,1);
+ f.player.close();
+});
+
+test('nonce lookup coalesces unsent movement and a stopped client sends nothing',async()=>{
+ for(const close of [false,true]){
+  const f=fixture(15);let entered!:()=>void,release!:()=>void;
+  const waiting=new Promise<void>(r=>entered=r),gate=new Promise<void>(r=>release=r);
+  const nonce=f.node.getTransactionCount;f.node.getTransactionCount=async()=>{entered();await gate;return nonce();};
+  const moving=f.player.move(1);await waiting;
+  if(close){f.player.close();release();await assert.rejects(moving,/stopped/);assert.equal(f.sent.length,0);}
+  else{const latest=f.player.move(-1);release();await Promise.all([moving,latest]);assert.equal(f.sent.length,1);assert.equal(f.state.state.leftDir,-1);f.player.close();}
+ }
+});
+
 test('reusable controls bind epoch and logical ID, recover after F5 and keep the fixed permission slot',async()=>{
  const f=fixture(15);f.state.phase=1;await f.player.ready();await f.player.ready();
  assert.equal(f.sent.length,1);const ready=decodeFunctionData({abi:reusableAgentArenaAbi,data:parseTransaction(f.sent[0]).data!});

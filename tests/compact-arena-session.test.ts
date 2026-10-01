@@ -62,6 +62,26 @@ test('lost response keeps exact bytes and blocks any replacement until reconcili
  restored.received('eth_getTransactionReceipt',{transactionHash:keccak256(f.sent[0]),status:'0x1'});
  assert.equal(restored.pending(f.account.address),undefined);
 });
+
+test('an intent changed during local signing is coalesced before journaling, never after submission',async()=>{
+ const f=await fixture(()=>{throw Error('lost response');});let reads=0;
+ await assert.rejects(f.sender.send('input',()=>[8n,++reads<=2?1:-1,1n,200n]),/lost response/);
+ assert.equal(f.sent.length,1);assert.equal(parseTransaction(f.sent[0]).nonce,5);
+ const call=decodeFunctionData({abi,data:parseTransaction(f.sent[0]).data!});assert.equal(call.args?.[1],-1);
+ const raw=f.sent[0];assert.equal(f.journal.pending(f.account.address)?.raw,raw);
+ await assert.rejects(f.sender.send('input',()=>[8n,0,2n,200n]),/Reconcile/);
+ assert.equal(f.sent.length,1);assert.equal(f.journal.pending(f.account.address)?.raw,raw);
+});
+
+test('late arguments cannot cross match, epoch or expiration while a nonce lookup awaits',async()=>{
+ for(const invalid of ['match','epoch','expiry']){
+  const f=await fixture();let clock=1000,epoch=2n,id=8n;
+  const scopedAbi=parseAbi(['function input(uint256,uint256,int8,uint256,uint256)']);
+  f.node.getTransactionCount=async()=>{if(invalid==='match')id=9n;if(invalid==='epoch')epoch=3n;if(invalid==='expiry')clock=3000;return 5;};
+  const sender=compactArenaSession({node:f.node,abi:scopedAbi,app,key:f.key,epoch:2n,match:8n,expires:3n,now:()=>clock});
+  await assert.rejects(sender.send('input',()=>[epoch,id,1,1n,200n]),/only permits|expired/);assert.equal(f.sent.length,0);
+ }
+});
 test('readiness uses the same scoped journal and is absent from historical sessions',async()=>{
  const f=await fixture();await assert.rejects(f.sender.send('confirmReady',[8n]),/only permits/);
  const readyAbi=[...abi,...parseAbi(['function confirmReady(uint256)','function cancelUnready(uint256)'])];

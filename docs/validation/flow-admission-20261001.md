@@ -381,3 +381,46 @@ Backups `canonical-reader-20261001T040915Z` and
 `marker-before-open-20261001T0427Z` have hash-verified off-VPS copies. The latter
 contains operator, agent and private marker databases plus runtime configuration.
 All previous reports, journals and rollback images remain preserved.
+
+## Latest unsent input and private probe outcome, 05:00 UTC
+
+Public web `418baf5-ws` (image `20e409a61f5b`) deployed after 44 Chrome and 44
+Edge UI fixture checks, root typecheck and 846 TypeScript tests. The first web
+build had the wrong WebSocket path and was rejected before deployment. The
+correct build uses `wss://pongit.xyz/ws`. No physical authenticator is claimed.
+
+Actual virtual-Mera Classic 289 on f202 epoch 4 published 0-7 and survived F5.
+It FAILED admission at 9.883 seconds and exposed one stale direction during
+ordinary controls. Sequence 210 sent stop 10.5 ms after a new down intention;
+sequence 211 followed with down. Local p95 was 16.4 ms, first-confirmation p95
+18.049 ms, frame p95 17.2 ms and maximum player/spectator holds 83.9/83.2 ms.
+Those good render numbers do not erase the input or admission failures.
+
+The narrow candidate selects the latest intention after authorization and
+nonce waits, and checks again after local signing. Only unjournaled, unsent
+bytes may be discarded. Once handed to the transport, the exact transaction
+must be reconciled. New regressions cover the second fence, nonce wait,
+closing the client, changes during signing, reference/expiry changes and lost
+responses. 37 affected tests, 852 total tests and root typecheck pass. The
+old generic sender type remains unchanged for historical sessions.
+
+The isolated marker probe FAILED: one POST returned 409, subsequent lookup
+returned 404 and the proposed node had no DNS record within the original
+180-second bound. No response body was retained for that 409, so its exact
+cause is unknown. There were no engine transactions, no state diffs and no
+publication. The arena was normally closed in transaction
+`0x91c181bce2af161be75f985e4e3c04c603f9c786791f7767133947f851e7144c`
+at block 67163300, 04:35:08 UTC. Its real release deadline is 05:35:08 UTC.
+All private containers are stopped. Release/seal this private authority once,
+through the existing runner and original journal; public maintenance does not
+own it. Never infer that a getter or a running node proves publication.
+
+Because the candidate migration remains unqualified, the tournament drain was
+removed at 04:40:44 UTC. Tournament 13 began normally. Preserve its results and
+all migration deltas; do not cancel it merely to migrate. The warm controller
+code candidate d2a7964 is built but not deployed at this checkpoint.
+
+Backups `marker-closed-20261001T0439Z` and `player-web-20261001T0448Z` are
+SHA-verified off VPS. All failed attempts, old journals and rollback images
+remain. Human e4eceb6 is unchanged. Public atomic challenge capability is still
+absent; the real browser tests explicitly override it for qualification.

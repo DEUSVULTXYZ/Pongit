@@ -4,7 +4,7 @@ import {EngineFeed} from './engine-feed';
 import {EngineStream,type EngineState} from './engine-stream';
 import {engineTransport,engineCooldownMs} from './engine-transport';
 import {readHubDelegation} from './rooms-hub';
-import {compactArenaSession,type ArenaSender} from './compact-arena-session';
+import {compactArenaSession,type CompactArenaSender,type ArenaArguments} from './compact-arena-session';
 import {terminalAfterRevert} from './terminal-command';
 import {RoomsCommandJournal,resendJournaled} from '../web/lib/rooms-command-journal';
 import {agentPoolArenaAbi} from './agent-pool-abi';
@@ -32,7 +32,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  const node=runtime?.node??createPublicClient({transport:engineTransport(arena.node,journal),pollingInterval:1000});
  const stream=new EngineStream(arena.node,arena.app,options.socket,()=>engineCooldownMs(arena.node));
  const feed=runtime?.feed??new EngineFeed({app:arena.app,abi,node},stream);
- let sender:ArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
+ let sender:CompactArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
  let fenceGeneration=0;
  let fencePending:Promise<void>|undefined,fenceTimer:ReturnType<typeof setTimeout>|undefined;
  const prefetchFence=()=>{
@@ -158,12 +158,18 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   })();
   fencePending=loading.finally(()=>{fencePending=undefined;});return fencePending;
  }
- async function sendNow(name:'input'|'concede'|'confirmReady',args:readonly unknown[]){
+ async function sendNow(name:'input'|'concede'|'confirmReady',args:ArenaArguments){
   if(stopped)throw Error('Arena controls have stopped');
   await authorizeControls();
   if(stopped)throw Error('Arena controls have stopped');
-  const boundArgs=reusable?[epoch,...args]:args;
-  try{const result=await sender!.send(name,boundArgs);return verify(await feed.receipt(id,result,name,boundArgs,player));}
+  let boundArgs:readonly unknown[]=[];
+  const latestArgs=()=>{
+   if(stopped)throw Error('Arena controls have stopped');
+   if(now()>=controlsUntil)throw Error('Arena authorization is awaiting a fresh observation');
+   const current=typeof args==='function'?args():args;
+   return boundArgs=reusable?[epoch,...current]:current;
+  };
+  try{const result=await sender!.send(name,latestArgs);return verify(await feed.receipt(id,result,name,boundArgs,player));}
   catch(error){
    const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));
    if(terminal){intention=undefined;return terminal;}
@@ -179,9 +185,12 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    const s=verify(await feed.forCommand(id));if(s.phase!==2){intention=undefined;return;}
     if(stopped)throw Error('Arena controls have stopped');
     // Coalesce again after awaited recovery; never dispatch an obsolete intent.
-    const selected=intention??latest,side=s.a.toLowerCase()===player.toLowerCase()?0:1;
+    let selected=intention??latest;const side=s.a.toLowerCase()===player.toLowerCase()?0:1;
     if(acceptedDirection!==selected.dir){
-     await sendNow('input',[id,selected.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]);
+     await sendNow('input',()=>{
+      selected=intention??selected;
+      return[id,selected.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n];
+     });
      acceptedDirection=selected.dir;
     }
     if(intention===selected)intention=undefined;
