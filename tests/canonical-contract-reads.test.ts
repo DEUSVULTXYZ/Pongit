@@ -18,7 +18,7 @@ function fixture(){
   return encodeFunctionResult({abi:multicall3Abi,functionName:'aggregate3',result:batch.args[0].map(c=>{
    // viem permits each EVM subcall, then enforces allowFailure:false while decoding.
    const input=decodeFunctionData({abi,data:c.callData});
-   if(failedCall&&input.args[0]===2n)return{success:false,returnData:'0x'};
+   if(failedCall&&input.args[0]===2n)return{success:false,returnData:'0x' as Hex};
    return{success:true,returnData:encodeFunctionResult({abi,functionName:'value',result:input.args[0]+10n})};
   })});
  }},{retryCount:0})});
