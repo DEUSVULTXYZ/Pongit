@@ -13,6 +13,8 @@ import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {abi as ratingsAbi} from '../shared/abi-independent-PublishedRatings';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {independentQualificationOpeningFee} from '../shared/independent-qualification-hub';
+import {hostedArenaOrigin} from '../shared/hosted-control';
 
 assert.equal(process.env.PONG_REUSABLE_HUMAN_ADMISSION_TEST,'bounded-private-qualification');
 assert.equal(process.getuid?.(),1000);
@@ -55,7 +57,7 @@ try{
     if(count===0){assert.equal(slotEpoch,0n);assert.equal(id,0n);}
     else{
      assert(priorPublished,'Prior games need explicit published-history verification');assert.equal(slotEpoch,d.epoch);assert(id>0n);
-     const node=createPublicClient({transport:http(a.node??`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`,{retryCount:0,timeout:10000})});
+     const node=createPublicClient({transport:http(a.node??hostedArenaOrigin(m.hub,a.app),{retryCount:0,timeout:10000})});
      const session:any=await node.request({method:'interlude_session',params:[]} as any);
      assert.equal(session.app.toLowerCase(),a.app.toLowerCase());assert.equal(BigInt(session.epoch),d.epoch);assert.equal(BigInt(session.baseBlock),d.baseBlock);
      assert.deepEqual(await node.readContract({address:a.app,abi:arenaAbi,functionName:'resultCommitment'}),await read(a.app,arenaAbi,'resultCommitment'));
@@ -69,8 +71,8 @@ try{
   }
   if(!row.hash&&!row.existing){
    const validator=await read(m.hub,hubAbi,'defaultValidator'),terms=await read(m.hub,hubAbi,'termsOf',[validator]);
-   assert.equal(terms.delegationFee,0n,'Changed provider fee needs review');
-   const receipt=await write('open-'+a.app+'-'+row.epoch,m.lobby,lobbyAbi,'openReusableArena',[a.app],0n);
+   const value=independentQualificationOpeningFee(m.hub,terms.delegationFee,process.env.PONG_INDEPENDENT_HUB_V3);
+   const receipt=await write('open-'+a.app+'-'+row.epoch,m.lobby,lobbyAbi,'openReusableArena',[a.app],value);
    row.hash=receipt.transactionHash;await save();
   }
   d=await readHubDelegation(t.base,m.hub,a.app);assert.equal(d.status,1);assert.equal(String(d.epoch),row.epoch);
