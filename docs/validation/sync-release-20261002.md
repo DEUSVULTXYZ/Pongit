@@ -1,5 +1,60 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 23:24 UTC — championship 3 passed; empty human recovery pending
+
+Published source is `acbc3e8`. Production is unchanged. Classic championship 3
+passed all 28 published fixtures at 22:42:05; its driver exited successfully.
+The only game driver is now `pongit-sync-continuation-tournament-4-7388c1c`,
+started 22:54:22 with original deadline **3 October 01:53:22.289415 UTC**.
+At 23:22 it had five resolved fixtures and match 76 active. The existing engine
+and archive workers retain **3 October 02:36:56.853276 UTC**. No extension.
+
+The hosted Chaos clock test failed: 292,970 ms of physical progression over
+303,225 ms of measured rally time, ratio 96.61795 percent. It recorded 22 feed
+gaps, maximum 1,350.84 ms; these are not browser frame measurements. Most
+segments had no pending physical catch-up. Read-only header probes subsequently
+measured an active engine block progression ratio of 97.69 percent and an idle
+engine ratio of 99.06 percent. Whole-second block timestamps followed wall time.
+Do not change clocks merely to disguise the failure. No final 24-hour trial.
+
+The first fresh human v3 deployment was sealed successfully, but hosting failed
+before any player or match existed: POST returned 403, lookup 404, and both node
+origins were absent. The old arena exposes its lobby as owner, whereas v3 needs
+an epoch-bound hosting consent from a signing owner. The service and admission
+driver were stopped at 23:00:46; all failed evidence remains. Root:
+`/opt/pongit/tests/fluid-20260928/sync-human-v3-2c8e025`; lobby
+`0xf10db99c564fe2af535f755ed8e1d239186f767c`. Its database is preserved.
+
+Bounded recovery `899b716` normally closed only its two proven-empty epochs,
+with zero batches, zero results and no reserved/current match. The close driver
+exited 0 at 23:12:51. Do not close again. Actual release deadlines are
+**3 October 00:12:43 UTC** for `0x2114c8e3d23e96ba0b1a020a4438e48ba0f08a57`
+and **00:12:50 UTC** for `0xee1b0a4a8dfeea4e494594425fbe873a20673de2`.
+After those deadlines, run only the reviewed script's `release` action through
+the original operator journal, then verify exact root/count, sealing, recovery
+and canonical None. No release worker is running and no new opening is included.
+Root for both empty commitments is
+`0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f`.
+
+Published `689e739` separates a dedicated hosting-consent owner from the human
+lobby's lifecycle authority. It adds strict v3/rules/code/epoch checks before
+signing a creation request. Lost responses still use journalled discovery without
+resigning or recreating. `acbc3e8` yields on contention with the original operator
+journal. The correction is not deployed. Thirty targeted contract tests, twelve
+no-lease tests, twenty focused TypeScript tests, two operator-contention tests
+and root typecheck pass. A fresh private namespace and artifact graph are needed;
+never reuse the failed manifest or imply that this is a public migration.
+
+Backup `sync-20261002T2310Z` has thirteen SHA-verified off-VPS files, including
+the failed human runtime and database. Manifest SHA256:
+`235a864b5bca6aeb0425fd211b85028c179bd2e795a62b2dd2e6b6f84e6a52c9`.
+The later close transactions require a refreshed backup. Disk remains above
+80 percent; scoped cleanup is required before another image build. Necessary
+test-MON spending is authorized; no funding request. Pending explicit browser
+startup permission after the automatic review rejection remains unresolved.
+Keep public history, unfinished tournament 23, human balances, all nonce journals,
+failed reports and personal documents. No subagents or public cutover.
+
 ## Checkpoint, 22:37 UTC — archive funding recovered; human runtime prepared
 
 The optimized private championship stalled after its twenty-fifth admission:
