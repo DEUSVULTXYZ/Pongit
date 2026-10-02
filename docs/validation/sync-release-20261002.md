@@ -1,5 +1,56 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 23:47 UTC — human consent works; seven-game trial remains failed
+
+Published source is `f8d70c1`. Production remains unchanged. The fresh private
+human consent deployment is sealed: lobby
+`0xe4cdf97e582282879219d7a888f8cd0ae629bd31`, hosted epoch-1 arenas
+`0x2b85a8ae733bbd713159f446e4781caa0f9d6110` and
+`0xc63aecc4bb92b9e13906b75b951b09b2f918c0b3`. The third is unopened.
+Root `sync-human-consent-acbc3e8`, DB `pong_sync_consent_20261002`.
+Hosting consent was accepted and both engines became available. This is a fresh
+private qualification, never a public migration. The bounded deployment stopped
+successfully. It used the verified clean 19e5fc5 image plus five exact acbc3e8
+source overrides and thirty hash-verified contract artifacts.
+
+Human game trial 1 retains a failure. Its Classic game finished 7–3 with 170/167
+controls and a published/captured result, but both Chaos acceptances became
+invalid while unsigned in the shared sponsor queue. They had no transaction hash;
+the old harness's "Confirmed sponsor revert" description was inaccurate. Source
+f8d70c1 now distinguishes unsigned rejection and prepares the second proposal
+after the first consent window, while allowing both actual games to overlap.
+The first driver is stopped with exit 1. The human service remains bounded by
+**3 October 00:33:40.842429 UTC**, its admission fixture by **00:18:40.842429 UTC**.
+
+Concurrent-copy trial 4 also failed: serial setup consumed the first loading
+deadline before the pilot acknowledged it. Three other games started; after
+the failed pilot exited, their rules-16 outage cancellation ran normally. The
+original archive captured all four results and the four challenge lanes were
+canonically empty at 23:45. The seven-way observer failed without collecting
+overlap; both drivers exited 1. Its earlier missing optional logging field was a
+separate preparation failure; the retry retained the original observation deadline.
+Source f8d70c1 starts each client immediately after its own admission. Root
+typecheck passes; the first definite-assignment compile failure remains retained.
+No replacement trial is launched until its own plan and lane checks pass.
+
+Source `7f1eb00` removes the full state decode from synchronization notifications.
+The measured isolated publication cost changes from 58,094 to 28,052 gas in Chaos
+and from 51,236 to 32,982 in Classic. Event clocks still match the complete snapshot
+codec through both modes, paused play, resume, cancellation and an earlier engine
+block. Thirty-four affected contract tests pass and the complete linked budgets
+remain unchanged. This optimization is **not deployed** to the active private
+engines and is not proof that the 96.6-percent Chaos clock failure is resolved.
+
+The sole empty-human release worker is now
+`pongit-sync-empty-human-release-899b716`. It waits until **3 October 00:12:53 UTC**,
+then releases/seals/recovers only the two previously closed empty epochs. Original
+deadline **00:22:53 UTC**, no new opening. Do not compete or close them again.
+Tournament 4 and agent engine/archive deadlines from the preceding checkpoint
+remain unchanged. Backup 2330 has fourteen off-VPS verified files; backup2347
+adds current human DB, trial failures and release configuration and is being
+copied off VPS. Verify its receipt before relying on it. Browser approval,
+legacy public hosting, public history migration and final 24-hour gates remain.
+
 ## Checkpoint, 23:24 UTC — championship 3 passed; empty human recovery pending
 
 Published source is `acbc3e8`. Production is unchanged. Classic championship 3
