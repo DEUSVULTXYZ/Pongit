@@ -1,5 +1,31 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 17:23 UTC — next private operation, original bounds preserved
+
+Controller trial 4 passed all four published results and exited 0 at
+17:20:16 UTC. The original engine/archive workers were stopped normally at
+17:22 UTC, after every game was captured. Their deadlines were not extended.
+Separate operation `pongit-sync-stage2-20261002` now has one engine and one
+archive worker, with fixed deadline **20:22:12.904511 UTC** in
+`worker-stage2-plan.json`. It uses the same private image, database and journals;
+there is no competing engine, automatic admission or lifecycle opener.
+
+The only game driver is now `pongit-sync-controllers-5-b1f72ee`, requesting four
+further policy qualifications with its own original 13-minute deadline. Read
+`controller-plan-5.json` and `five-controllers-5.json` before any next operation.
+The remaining sixth controller trial must request only one game. Then, only
+after all eight bots actually qualify in both modes and lanes are free, use the
+heartbeat-aware five-concurrent driver from `15a01b3` with the `cdde076` feed
+override. It must keep each human heartbeat independent while the tournament
+continues. None of those future gates has passed yet.
+
+The private action helper is `/opt/pongit/tests/fluid-20260928/sync-stage2-20261002.py`;
+its start action has already run and must not be repeated. Its qualify/concurrent
+actions verify preceding reports and worker coverage; inspect live state first.
+Production remains unchanged. Backup 1712 is off VPS and hash verified. No
+funding request. All prior limits, browser rejection and preservation rules below
+continue to apply.
+
 ## Checkpoint, 17:19 UTC — hosted Chaos and integrated projection pass
 
 Production remains unchanged. Published qualification additions are `159861f`
