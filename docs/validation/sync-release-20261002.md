@@ -1,5 +1,61 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 22:37 UTC — archive funding recovered; human runtime prepared
+
+The optimized private championship stalled after its twenty-fifth admission:
+match 67 had finished 7–1 and all 105 engine batches were published, but the
+archive account had only 0.042307748 test MON. Its original capture operation
+remained pending. This was not a provider publication or physics failure.
+Using the authorized reserve, published operation `09bc396` transferred exactly
+20 test MON through the existing operator journal to the private archive role
+`0x8AE9B9d2664Fb5D39D522C43A64Fa827EF2d123c`. Transaction
+`0x1e7f2537cc566216415418a56130ff408320771c4774e47060b22dccf5c1d5f4`
+confirmed in block 67662926. The existing worker recovered without restart,
+captured the result, and tournament 3 progressed to 26 resolved fixtures.
+The funding container exited successfully. Do not repeat the refill. This
+interruption remains evidence against continuous availability; it is not a
+passing unchanged 24-hour trial. Role funding reserves need explicit preflight
+before that trial.
+
+Read-only publication accounting passed for blocks 67648249–67648312, a
+19-second window surrounding the observed 17.039-second five-game overlap:
+10 successful commits cost 1.16422086 test MON. This excludes reverted attempts,
+archive operations, sponsoring and unrelated publisher spending. It is not a
+steady-state daily estimate. Report: `publication-optimized-five-overlap-20261002.json`.
+
+Human private qualification commit `19e5fc5` admits the reviewed v3 opening fee
+only with explicit private scope, capped at 0.01 test MON per opening. Legacy
+free openings retain their existing behavior. Seven focused tests and root
+typecheck pass. A clean image was built from the exact Git archive:
+`sha256:9ff2dc742a7419a79b3f922c86a22459adba9d4a4105218db9cdce0f658257e5`.
+All 634 source paths match, and 79 relevant tests pass inside that image.
+The first image-test selection named a nonexistent test file and stopped before
+starting the test container; the corrected selection is the 79-test result.
+
+No human v3 contracts or workers have started. Prepared runtime remains under
+`sync-human-v3-2c8e025`; helper `sync-human-runtime-20261002.py` first permits
+deployment only after tournament 3 succeeds and its driver stops. It uses three
+fresh private contracts, then at most two human qualification lanes, the original
+operator journal, and the existing limited pressure signer on those new arenas.
+This is not a public migration or authority to reset human accounts/history.
+
+Backup `sync-20261002T2212Z` contains twelve SHA-verified off-VPS files, including
+the private human preparation, index stop and replay reports. Manifest digest:
+`f5a30bcc26fc08f4f4e801beb5b3b981815a156632e6d176468b729d73bd234f`.
+The first human image build was blocked before extraction at 80.26 percent disk.
+Twenty old duplicate backup payloads from 2105/2150 were individually rechecked
+against their off-VPS originals before removal; their manifests and latest 2212
+backup remain. Disk was then 79.85 percent, allowing the bounded build.
+The secret scanner's single historical finding in `f166c25` is the documented
+2150 backup SHA256 after the word “keys”; it is a verified checksum, not a secret.
+The new funding script's separate scan is clean.
+
+Tournament 3 retains its original 23:37:46 UTC deadline; agent engine/archive
+workers retain 3 October 02:36:56 UTC. No new game driver or deadline extension.
+Tournament 4 still requires successful closure of tournament-3 admissions and
+at least three hours remaining on those original workers. Browser startup
+approval and old public hosting remain unresolved. Production is unchanged.
+
 ## Checkpoint, 22:02 UTC — human v3 compatibility and retained replay proof
 
 Published `d88b480` adds pinned v3 no-lease support to the candidate human
@@ -39,8 +95,8 @@ Indexer attempt 2 exited 143 on TERM at 21:59:30; private Hasura exceeded its
 30-second shutdown grace and exited 137 at 22:00:00, `OOMKilled=false`. Preserve
 that distinction and its earlier read-only-filesystem failure. Both databases
 and all reports remain; no restart is requested. Backup `sync-20261002T2150Z`
-has eleven off-VPS SHA-verified files, including private index/runtime and
-concurrent-player keys. Manifest SHA256:
+has eleven off-VPS SHA-verified files, including the private index/runtime
+and concurrent-player records. Manifest SHA256:
 `dc4b148cdefae0e3f310b0d236f710369c82ae770930e874f7bed06c867e6342`.
 Later verification/stop reports need inclusion in the next refresh.
 
