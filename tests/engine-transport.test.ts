@@ -4,6 +4,30 @@ import {engineRequestGate,engineTransport,engineCooldownMs,observeEnginePublicat
 import {engineReadRetryMs} from "../shared/engine-read";
 import {createSendRouter} from '@interludelayer-sdk/sdk';
 import {WebSocketServer} from 'ws';
+import {createServer} from 'node:http';
+
+test('a stalled HTTP body releases reads and uncertain writes without retry or acknowledgement',async()=>{
+ let calls=0,journaled=0,received=0;
+ const server=createServer((_request,response)=>{
+  calls++;response.writeHead(200,{'content-type':'application/json'});
+  response.write('{"jsonrpc":"2.0","result":');
+ });
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const rescue=setTimeout(()=>server.closeAllConnections(),7500);
+ try{
+  const address=server.address();assert(address&&typeof address!=='string');
+  const t=engineTransport(`http://127.0.0.1:${address.port}`,{beforeSend:async()=>{journaled++;},received:()=>{received++;}})({} as any);
+  const start=performance.now();
+  await Promise.all([
+   assert.rejects(t.request({method:'eth_call',params:[]})),
+   assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x0102']})),
+  ]);
+  assert(performance.now()-start<5500,'Receiving headers must not cancel the response-body deadline');
+  assert.equal(calls,2);assert.equal(journaled,1);assert.equal(received,0,'Unknown transaction remains in its journal');
+ }finally{
+  clearTimeout(rescue);server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));
+ }
+});
 
 test('an unanswered actual send socket releases the lane within the recovery budget without retrying',async()=>{
  const server=new WebSocketServer({host:'127.0.0.1',port:0});

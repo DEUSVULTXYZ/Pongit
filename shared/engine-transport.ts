@@ -78,7 +78,12 @@ export function engineTransport(url: string,journal?:EngineTransportJournal,send
   return options => {
     const measured=measuredFetch("interlude");
     const fetchFn:typeof fetch=async(input,init)=>{
-      const response=await measured(input,init);
+      // viem's HTTP deadline ends once headers arrive. Keep an independent
+      // abort signal alive while its decoder consumes a stalled response body.
+      // An interrupted write stays uncertain in its existing nonce journal.
+      const timeout=AbortSignal.timeout(4000);
+      const signal=init?.signal?AbortSignal.any([init.signal,timeout]):timeout;
+      const response=await measured(input,{...init,signal});
       if(response.status===429){
         // viem's HTTP error does not retain response headers. Preserve the
         // actual Retry-After in its cause instead of falling back to ten seconds.
