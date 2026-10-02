@@ -1,5 +1,36 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 19:22 UTC — optimized contracts preserve the physics
+
+The complete optimized Solidity suite passes **960 tests**; eight external/fork
+tests remain explicitly skipped. The isolated VPS differential run compares
+10,000 Classic cases, 10,000 legacy Chaos cases and 24,000 current/adversarial
+Chaos cases with **zero mismatches**, including returned collision events.
+The complete linked deployment graph fits its existing size limits. The pool
+still has only 11 bytes of reviewed runtime margin; its limit was not raised.
+
+The fixed six-second, twenty-tick benchmark preserves each exact final-state
+digest. Classic execution falls from 9,450,510 to **7,498,710 gas**; Chaos without
+effects from 36,117,733 to **28,767,377**; Solar Wind from 170,819,852 to
+**108,196,054**. These are local EVM execution costs, not a passing hosted clock
+or browser test. The optimizations avoid full-state decoding for scalar reads,
+combine immutable-module calls, skip absent obstacles and avoid redundant
+preparation at a boundary without contact. Preparation equivalence and
+idempotence have 1,000 fuzz cases. Rules and TypeScript physics are unchanged.
+
+Evidence is under `docs/evidence/sync-20261002/` and local `artifacts/sync-*`.
+The isolated container `pongit-sync-optimized-parity-20261002` exited 0, without
+host networking. Its artifact archive SHA256 is
+`60e6f290127a6c0b892dd3bca1c5faf3d40d292b60c278cccab3f50d3f266f99`.
+No new immutable contracts or public services have been deployed.
+
+Private continuation inputs now exist at
+`/opt/pongit/tests/fluid-20260928/sync-continuation-20261002`. The read-only
+source-rating seed audit passed, using the original operator journal and
+canonical receipts. This is the private d47 season only. No import, gate change
+or opening has occurred. The existing release worker still owns normal recovery
+at 20:04:44–20:05:00 UTC, with its original 20:22:29.101691 deadline.
+
 ## Checkpoint, 19:10 UTC — private results complete; normal release in progress
 
 Both private eliminations passed. Chaos tournament 2 finished at 18:49:51 UTC

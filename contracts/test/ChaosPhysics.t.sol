@@ -15,6 +15,22 @@ contract ChaosPhysicsTest is Test {
     function withEffect(T.State memory s,uint8 id,uint8 target,uint32 variant) private view returns(T.State memory){
         (s.effects,)=e.announce(s.effects,id,target,variant,id,0);s.t=1000000;s.nextForce=1000000;return s;
     }
+    function testFuzzCombinedPreparationPreservesSplitCalls(uint8 first,uint8 second,uint32 variant,uint32 elapsed,bool kick,uint8 forceOffset) public view {
+        first=uint8(bound(first,1,24));second=uint8(bound(second,1,24));
+        T.State memory source=withEffect(base(),first,0,variant);
+        if(first!=second)(source.effects,)=e.announce(source.effects,second,1,variant,25,0);
+        source.t=uint64(bound(elapsed,999000,15000000));
+        source.nextForce=forceOffset%3==0?source.t-1:forceOffset%3==1?source.t:source.t+10000;
+        source.balls[0].curveSteps=forceOffset%2==0?uint16(150):uint16(0);
+        source.balls[0].curveSign=1;
+        T.State memory expected=d.prepare(source);bool grid=d.needsGrid(expected);
+        if(grid){if(kick){if(expected.nextForce<expected.t)expected.nextForce=(expected.t+9999)/10000*10000;if(expected.nextForce==expected.t)expected=d.force(expected);}}
+        else expected.nextForce=(expected.t/10000+1)*10000;
+        (T.State memory actual,bool actualGrid)=d.prepareGrid(source,kick);
+        assertEq(actualGrid,grid);assertEq(keccak256(abi.encode(actual)),keccak256(abi.encode(expected)));
+        T.State memory once=d.prepare(source);
+        assertEq(keccak256(abi.encode(once)),keccak256(abi.encode(d.prepare(once))),"preparation must be idempotent at a boundary without contact");
+    }
     function testContinuousMotionAndBudgetedCatchup() public view {
         T.State memory s=base();bool complete;
         (s,complete,)=k.advance(s,100000,64);assertTrue(complete);assertEq(s.t,100000);

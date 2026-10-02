@@ -1,0 +1,101 @@
+{
+  "scope": "Current Chaos kernel (human rules 9, agent rules 10) against its TypeScript mirror, random play plus same-microsecond contacts; the mirror in rules-6 mode against the deployed rules-6 kernel",
+  "cases": 24000,
+  "randomCases": 10000,
+  "simultaneousCases": 10000,
+  "rules6Cases": 4000,
+  "mismatches": 0,
+  "coverage": {
+    "random": {
+      "cases": 10000,
+      "shared": 125,
+      "atInstant": 0,
+      "points": 2024,
+      "cancelled": 0
+    },
+    "lockstep": {
+      "cases": 1667,
+      "shared": 915,
+      "atInstant": 1359,
+      "points": 335,
+      "cancelled": 0
+    },
+    "two-planes": {
+      "cases": 3334,
+      "shared": 1265,
+      "atInstant": 1554,
+      "points": 1054,
+      "cancelled": 0
+    },
+    "corner": {
+      "cases": 1667,
+      "shared": 164,
+      "atInstant": 671,
+      "points": 234,
+      "cancelled": 0
+    },
+    "boundary": {
+      "cases": 1666,
+      "shared": 268,
+      "atInstant": 637,
+      "points": 657,
+      "cancelled": 0
+    },
+    "capacity": {
+      "cases": 1666,
+      "shared": 1666,
+      "atInstant": 1666,
+      "points": 0,
+      "cancelled": 0
+    },
+    "rules6:boundary": {
+      "cases": 333,
+      "shared": 0,
+      "atInstant": 4,
+      "points": 88,
+      "cancelled": 0
+    },
+    "rules6:lockstep": {
+      "cases": 334,
+      "shared": 0,
+      "atInstant": 249,
+      "points": 224,
+      "cancelled": 0
+    },
+    "rules6:two-planes": {
+      "cases": 667,
+      "shared": 0,
+      "atInstant": 349,
+      "points": 384,
+      "cancelled": 0
+    },
+    "rules6:random": {
+      "cases": 2000,
+      "shared": 0,
+      "atInstant": 0,
+      "points": 367,
+      "cancelled": 0
+    },
+    "rules6:corner": {
+      "cases": 333,
+      "shared": 9,
+      "atInstant": 175,
+      "points": 153,
+      "cancelled": 0
+    },
+    "rules6:capacity": {
+      "cases": 333,
+      "shared": 0,
+      "atInstant": 333,
+      "points": 0,
+      "cancelled": 0
+    }
+  },
+  "legend": {
+    "shared": "the returned log holds two collisions in one microsecond",
+    "atInstant": "a collision was logged in the constructed microsecond",
+    "points": "a point or result was scored"
+  },
+  "ms": 111713,
+  "at": "2026-10-02T19:20:56.832Z"
+}

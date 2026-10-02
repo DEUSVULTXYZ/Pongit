@@ -55,10 +55,7 @@ contract ChaosPhysics {
         log=new T.Collision[](LOG_CAPACITY);uint256 logs;
         for(uint16 step;step<budget;step++){
             if(s.cancelled||s.score.finished)break;
-            s=dynamics.prepare(s);
-            bool grid=dynamics.needsGrid(s);
-            if(grid){if(s.nextForce<s.t)s.nextForce=(s.t+9999)/10000*10000;if(s.nextForce==s.t)s=dynamics.force(s);}
-            else s.nextForce=(s.t/10000+1)*10000;
+            bool grid;(s,grid)=dynamics.prepareGrid(s,true);
             (T.Candidate memory hit,uint64[2] memory goals,uint8[2] memory beneficiaries,)=contacts.next(s);
             E.Effect[2] memory searchedEffects=s.effects;
             uint64 boundary=grid?s.nextForce:G.NEVER;
@@ -74,10 +71,11 @@ contract ChaosPhysics {
             if(hit.dt!=G.NEVER&&hit.dt<=remaining&&hit.dt<=boundary-s.t)(,,,tied)=contacts.nextAll(s);
             if(boundary<=target&&(hit.dt==G.NEVER||boundary-s.t<=hit.dt)){
                 uint64 dt=boundary-s.t;s=dynamics.move(s,boundary);
-                // Activation and expiry precede every contact at their timestamp,
-                // including contacts whose rational time rounded into this microsecond.
-                s=dynamics.prepare(s);
                 if(dt==hit.dt){
+                    // Activation and expiry precede contacts at this timestamp.
+                    // Without a contact, the next iteration (or final preparation)
+                    // performs this same idempotent step; do not decode it twice.
+                    s=dynamics.prepare(s);
                     uint8 scored;for(uint8 i;i<2;i++)if(s.balls[i].alive&&goals[i]==dt)scored|=beneficiaries[i];
                     if(scored!=0){s=point(s,scored);if(s.score.finished||stopAtPoint)break;continue;}
                     (s,logs)=resolve(s,tied,searchedEffects,true,log,logs);
@@ -100,8 +98,7 @@ contract ChaosPhysics {
         }
         assembly("memory-safe"){mstore(log,logs)}
         bool complete=s.cancelled||s.score.finished;
-        if(!complete)s=dynamics.prepare(s);
-        if(!complete&&!dynamics.needsGrid(s))s.nextForce=(s.t/10000+1)*10000;
+        if(!complete)(s,)=dynamics.prepareGrid(s,false);
         if(!complete&&s.t==target&&s.nextForce>s.t){(T.Candidate memory pending,,,)=contacts.next(s);complete=pending.dt!=0;}
         return(s,complete,log);
     }

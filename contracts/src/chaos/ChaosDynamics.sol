@@ -23,7 +23,7 @@ contract ChaosDynamics {
         for(uint8 i;i<2;i++)if(s.effects[i].id==id&&s.t/1000>=s.effects[i].startsAt&&s.t/1000<s.effects[i].expiresAt)return true;return false;
     }
     function variant(T.State memory s,uint8 id) public pure returns(uint32){for(uint8 i;i<2;i++)if(s.effects[i].id==id)return s.effects[i].variant;return 0;}
-    function needsGrid(T.State memory s) external pure returns(bool){
+    function needsGrid(T.State memory s) public pure returns(bool){
         bool wind=has(s,17);bool well=has(s,16);
         for(uint8 i;i<2;i++)if(s.balls[i].alive&&(wind||s.balls[i].curveSteps!=0||well&&s.balls[i].gravity))return true;return false;
     }
@@ -57,7 +57,7 @@ contract ChaosDynamics {
         if(bit>=4&&bit<=6)return has(s,19)&&G.abs(b.x-512*P)<=34*uint256(P)&&G.abs(b.y-brickY(bit-4))<=14*uint256(P);
         if(bit==7)return has(s,24)&&inside(b.x,b.y,512*P,120*P,22*P);return false;
     }
-    function prepare(T.State memory s) external view returns(T.State memory){
+    function prepare(T.State memory s) public view returns(T.State memory){
         uint24 mask;for(uint8 i;i<2;i++)if(s.effects[i].id!=0&&s.t/1000>=s.effects[i].startsAt&&s.t/1000<s.effects[i].expiresAt)mask|=uint24(1)<<(s.effects[i].id-1);
         uint24 born=mask&~s.activeMask;
         if(born&(uint24(1)<<20)!=0){s.balls[1]=abi.decode(abi.encode(s.balls[0]),(T.Ball));s.balls[1].vy=-s.balls[0].vy;s.balls[1].alive=true;s.balls[1].trailRevision++;}
@@ -66,14 +66,16 @@ contract ChaosDynamics {
             T.Ball memory b=s.balls[ball];
             for(uint8 bit;bit<8;bit++){
                 uint8 id=bit==0?13:bit<3?14:bit==3?18:bit<7?19:24;
-                bool covered=overlap(s,b,bit);
+                // The mask already evaluates this effect's exact activation and
+                // expiry predicates. Absent obstacles cannot overlap the ball.
+                bool covered=mask&(uint24(1)<<(id-1))!=0&&overlap(s,b,bit);
                 if((born&(uint24(1)<<(id-1))!=0||ball==1&&born&(uint24(1)<<20)!=0)&&covered)b.ghost|=uint16(1)<<bit;
                 else if(!covered)b.ghost&=~(uint16(1)<<bit);
             }
-            if(!has(s,14)||!overlap(s,b,1)&&!overlap(s,b,2))b.portalLock=false;
-            b.warp=has(s,15)&&(b.x>480*P&&b.x<544*P||b.x==480*P&&(b.vx>0||b.vx==0&&b.warp)||b.x==544*P&&(b.vx<0||b.vx==0&&b.warp));
+            if(mask&(uint24(1)<<13)==0||!overlap(s,b,1)&&!overlap(s,b,2))b.portalLock=false;
+            b.warp=mask&(uint24(1)<<14)!=0&&(b.x>480*P&&b.x<544*P||b.x==480*P&&(b.vx>0||b.vx==0&&b.warp)||b.x==544*P&&(b.vx<0||b.vx==0&&b.warp));
             int256 gx=b.x-512*P;int256 gy=b.y-288*P;int256 distance2=gx*gx+gy*gy;int256 radius2=160*P*160*P;
-            bool grav=has(s,16)&&(distance2<radius2||distance2==radius2&&gx*b.vx+gy*b.vy<0);if(!grav||!b.gravity)b.gravityUsed=0;b.gravity=grav;
+            bool grav=mask&(uint24(1)<<15)!=0&&(distance2<radius2||distance2==radius2&&gx*b.vx+gy*b.vy<0);if(!grav||!b.gravity)b.gravityUsed=0;b.gravity=grav;
             s.balls[ball]=b;
         }
         s.activeMask=mask;M.Paddles memory ps=paddles(s);s.left=clamp(s.left,outer(ps.heightA,ps.splitA));s.right=clamp(s.right,outer(ps.heightB,ps.splitB));
@@ -81,7 +83,7 @@ contract ChaosDynamics {
         return s;
     }
     /// Velocity kick at each fixed grid boundary, never on arbitrary RPC reads.
-    function force(T.State memory s) external view returns(T.State memory){
+    function force(T.State memory s) public view returns(T.State memory){
         if(s.nextForce!=s.t)revert G.NumericRange();s.nextForce+=STEP;
         for(uint8 i;i<2;i++)if(s.balls[i].alive){
             T.Ball memory b=s.balls[i];
@@ -104,5 +106,18 @@ contract ChaosDynamics {
             G.check(b.x,b.y,b.vx,b.vy);s.balls[i]=b;
         }
         return s;
+    }
+    /// Preserve preparation/force ordering while passing the large state across
+    /// the immutable module boundary once instead of three times per 10 ms step.
+    /// The final preparation checks the grid but never consumes a pending kick.
+    function prepareGrid(T.State memory s,bool kick) external view returns(T.State memory,bool grid){
+        s=prepare(s);grid=needsGrid(s);
+        if(grid){
+            if(kick){
+                if(s.nextForce<s.t)s.nextForce=(s.t+9999)/10000*10000;
+                if(s.nextForce==s.t)s=force(s);
+            }
+        }else s.nextForce=(s.t/10000+1)*10000;
+        return(s,grid);
     }
 }

@@ -33,6 +33,11 @@ library ReusableAgentGame {
     event Completed(uint256 indexed epoch,uint256 indexed id,Result result);
 
     function phase(mapping(bytes32=>uint256) storage w) internal view returns(uint8){return uint8(S.get(w,0)>>161&7);}
+    function gameTime(mapping(bytes32=>uint256) storage w) private view returns(uint64){
+        // These scalar fields use the exact legacy/Chaos codec layouts. Reading
+        // a clock never needs to decode both balls, effects and paddle geometry.
+        return S.get(w,0)>>168&1==0?uint64(S.get(w,7)>>128):uint64(S.get(w,27)>>112);
+    }
     function packed(mapping(bytes32=>uint256) storage w) internal view returns(uint256[8] memory p){for(uint256 i;i<8;i++)p[i]=S.get(w,21+i);}
     function result(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public view returns(Result memory r){
         PhysicsV2.State memory p=View.state(w,kernel);uint256 m=S.get(w,0);uint256 winner=m>>166&3;
@@ -56,10 +61,10 @@ library ReusableAgentGame {
     }
     function clockTarget(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) private returns(uint256 target){
         if(Fair.resume(w)){
-            uint256 time=View.state(w,kernel).t;
+            uint256 time=gameTime(w);
             S.set(w,2,(S.get(w,2)&(uint256(type(uint128).max)<<64))|uint64(block.number)|(time<<192));
         }
-        uint256 times=S.get(w,2);uint256 start_=uint64(times);uint64 t=View.state(w,kernel).t;
+        uint256 times=S.get(w,2);uint256 start_=uint64(times);uint64 t=gameTime(w);
         target=uint64(times>>192);if(block.number>=start_)target+=(block.number-start_)*10_000;
         if(block.number<start_||target<t){
             require(block.number<=type(uint64).max,"engine block overflow");
@@ -79,10 +84,11 @@ library ReusableAgentGame {
         binding.id=SLOT;
         for(uint8 pass;pass<16;pass++){
             if(phase(w)!=2)return true;
-            PhysicsV2.State memory p=View.state(w,kernel);uint64 end=Pending.next(w,SLOT,p.t,uint64(target));bool complete;
-            if(p.t<regulation&&end>regulation)end=regulation;
-            end=PoolSteer.steer(w,binding,policies,kernel,end);p=View.state(w,kernel);
-            if(p.mode==0){
+            uint64 at=gameTime(w);uint64 end=Pending.next(w,SLOT,at,uint64(target));bool complete;
+            if(at<regulation&&end>regulation)end=regulation;
+            end=PoolSteer.steer(w,binding,policies,kernel,end);
+            if(binding.mode==0){
+                PhysicsV2.State memory p=View.state(w,kernel);
                 (p,complete)=classic.advance(p,end,128);RoomsState.save(w,SLOT,p);
                 if(p.finished){finish(w,kernel,3,address(uint160(S.get(w,p.scoreA==7?0:1))));return true;}
             }else{
@@ -90,11 +96,14 @@ library ReusableAgentGame {
                 if(outcome!=0){finish(w,kernel,outcome,winner==0?address(0):address(uint160(S.get(w,winner==1?0:1))));return true;}
             }
             if(!complete)return false;
-            p=View.state(w,kernel);
-            if(p.t>=regulation&&(p.scoreA!=p.scoreB||p.t>=limit)){
-                finish(w,kernel,3,p.scoreA==p.scoreB?address(0):address(uint160(S.get(w,p.scoreA>p.scoreB?0:1))));return true;
+            at=gameTime(w);
+            if(at>=regulation){
+                uint256 scores=S.get(w,binding.mode==0?8:28);
+                uint8 a=binding.mode==0?uint8(scores>>4&15):uint8(scores&7);
+                uint8 b=binding.mode==0?uint8(scores>>8&15):uint8(scores>>3&7);
+                if(a!=b||at>=limit){finish(w,kernel,3,a==b?address(0):address(uint160(S.get(w,a>b?0:1))));return true;}
             }
-            applyPending(w,kernel,View.state(w,kernel).t);
+            applyPending(w,kernel,at);
             if(phase(w)!=2||end>=target){
                 if(phase(w)==2&&Fair.expired(w))finish(w,kernel,4,address(0));
                 return true;
@@ -118,7 +127,7 @@ library ReusableAgentGame {
         Fair.pulse(w,side,target);
         bool complete=advance(w,classic,kernel,policies,hub,target);
         record(w,side,uint8(direction+2),seq,uint64(target));
-        if(complete&&phase(w)==2)applyPending(w,kernel,View.state(w,kernel).t);View.publish(w,kernel);
+        if(complete&&phase(w)==2)applyPending(w,kernel,gameTime(w));View.publish(w,kernel);
     }
     function tick(mapping(bytes32=>uint256) storage w,RoomsRules classic,ChaosEngine kernel,HousePolicies policies,IInterludeHub hub) external {
         if(phase(w)!=2)revert InvalidMatch();advance(w,classic,kernel,policies,hub,clockTarget(w,kernel));View.publish(w,kernel);
@@ -127,7 +136,7 @@ library ReusableAgentGame {
         if(phase(w)!=2)revert InvalidMatch();require(Fair.enabled(w),"friendly pause unavailable");
         uint256 target=clockTarget(w,kernel);Fair.pulse(w,side,target);
         bool complete=advance(w,classic,kernel,policies,hub,target);
-        if(readyToResume&&phase(w)==2){require(complete,"pause catch-up pending");Fair.requestResume(w,side,View.state(w,kernel).t);}
+        if(readyToResume&&phase(w)==2){require(complete,"pause catch-up pending");Fair.requestResume(w,side,gameTime(w));}
         View.publish(w,kernel);
     }
     function concede(mapping(bytes32=>uint256) storage w,RoomsRules classic,ChaosEngine kernel,HousePolicies policies,IInterludeHub hub,uint8 side) external {

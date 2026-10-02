@@ -1,0 +1,180 @@
+{
+  "at": "2026-10-02T19:17:21.566Z",
+  "graph": [
+    {
+      "name": "ChaosCodec",
+      "runtime": 5658,
+      "creation": 5684
+    },
+    {
+      "name": "ChaosEffects",
+      "runtime": 4697,
+      "creation": 4723
+    },
+    {
+      "name": "ChaosModifiers",
+      "runtime": 2399,
+      "creation": 2425
+    },
+    {
+      "name": "ChaosDynamics",
+      "runtime": 13521,
+      "creation": 13700
+    },
+    {
+      "name": "ChaosContacts",
+      "runtime": 18426,
+      "creation": 18612
+    },
+    {
+      "name": "ChaosRally",
+      "runtime": 890,
+      "creation": 916
+    },
+    {
+      "name": "ChaosPhysics",
+      "runtime": 13573,
+      "creation": 25244
+    },
+    {
+      "name": "DrandEvmnet",
+      "runtime": 19610,
+      "creation": 19636
+    },
+    {
+      "name": "ChaosDrawRules",
+      "runtime": 2161,
+      "creation": 2187
+    },
+    {
+      "name": "ChaosEngine",
+      "runtime": 10082,
+      "creation": 10742
+    },
+    {
+      "name": "RoomsRules",
+      "runtime": 5448,
+      "creation": 5474
+    },
+    {
+      "name": "ProgressiveHousePolicies",
+      "runtime": 4517,
+      "creation": 4543
+    },
+    {
+      "name": "ReusableAgentBinding",
+      "runtime": 13285,
+      "creation": 13317
+    },
+    {
+      "name": "AgentFairPause",
+      "runtime": 3485,
+      "creation": 3517
+    },
+    {
+      "name": "PoolSteer",
+      "runtime": 9233,
+      "creation": 9265
+    },
+    {
+      "name": "RoomsState",
+      "runtime": 3709,
+      "creation": 3741
+    },
+    {
+      "name": "ReusableAgentView",
+      "runtime": 6483,
+      "creation": 6515
+    },
+    {
+      "name": "ChaosGameFlow",
+      "runtime": 12419,
+      "creation": 12451
+    },
+    {
+      "name": "PendingControls",
+      "runtime": 2272,
+      "creation": 2304
+    },
+    {
+      "name": "ReusableAgentGame",
+      "runtime": 20902,
+      "creation": 20934
+    },
+    {
+      "name": "ReusableAgentEntry",
+      "runtime": 5000,
+      "creation": 5032
+    },
+    {
+      "name": "ReusableAuthorizations",
+      "runtime": 4253,
+      "creation": 4285
+    },
+    {
+      "name": "ProvisionedSynchronizedAgentArena",
+      "runtime": 24165,
+      "creation": 31725
+    },
+    {
+      "name": "AgentArenaSelection",
+      "runtime": 2389,
+      "creation": 2419
+    },
+    {
+      "name": "HouseInstances",
+      "runtime": 1237,
+      "creation": 1267
+    },
+    {
+      "name": "PoolAdmissionGates",
+      "runtime": 1755,
+      "creation": 1787
+    },
+    {
+      "name": "PoolPublication",
+      "runtime": 4956,
+      "creation": 4988
+    },
+    {
+      "name": "PoolResultValidation",
+      "runtime": 3093,
+      "creation": 3123
+    },
+    {
+      "name": "ReusableAgentLearning",
+      "runtime": 1926,
+      "creation": 1956
+    },
+    {
+      "name": "ReusablePoolAdmission",
+      "runtime": 4353,
+      "creation": 4385
+    },
+    {
+      "name": "ContinuingFiveLaneAgentPool",
+      "runtime": 32757,
+      "creation": 35334
+    },
+    {
+      "name": "ContinuingAgentRatings",
+      "runtime": 17619,
+      "creation": 21936
+    },
+    {
+      "name": "ContinuingAgentTournaments",
+      "runtime": 23364,
+      "creation": 24516
+    },
+    {
+      "name": "RebalancedAgentCatalog",
+      "runtime": 19286,
+      "creation": 21699
+    },
+    {
+      "name": "PublishedResultVerifier",
+      "runtime": 4586,
+      "creation": 4891
+    }
+  ]
+}
