@@ -1,5 +1,83 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 16:51 UTC — hosted Classic pause and cancellation pass
+
+Published commits `f31eff0`, `b1f72ee`, `cdde076` and `8d817a0` contain the
+candidate, its packaging correction, a control-cache freshness correction, and
+the bounded hosted synchronization driver. Production remains unchanged.
+
+The first image omitted `tsx` because it inherited production dependency
+selection. Its actual isolated physics process failed before any game. The
+failure log, image identity and container state are retained in
+`sync-f31eff0/evidence/packaging-failed` on the VPS and in local
+`artifacts/sync-vps-20261002`. Only that unusable new image and its exited process
+were removed. The corrected image explicitly includes the locked development
+runtime and checks the TypeScript loader during build. Image `pongit:sync-b1f72ee`
+is `sha256:d094058851277aaf42566f72390cd20bfb516848397c89bc02b88b9f3a136fe1`.
+The first build command's unsupported Docker flag is a separate retained failed
+attempt. Actual filesystem usage was 79.374 percent before the corrected build.
+
+On this image, isolated VPS Anvil comparisons passed 10,000 Classic cases and
+24,000 Chaos cases: 10,000 random, 10,000 simultaneous-contact cases and 4,000
+legacy compatibility cases. No mismatch occurred. These are physical-module
+comparisons, not browser or final full-service acceptance. Reports are copied
+locally under `artifacts/sync-vps-20261002`.
+
+The control cache regression was reproduced: a state aged 550 ms could be reused
+because spectator reads permit 600 ms, or ten seconds between points. That stale
+state then failed the control heartbeat's 500-ms check. Command reads now obtain
+a fresh authoritative observation instead. The reproducer first failed, then all
+65 focused transport/feed/player/projection tests and root typecheck passed.
+
+Fresh PRIVATE season: `reusable-agents-20261002-1`, pool
+`0xd47bc7fece722a237c6547f85b4dd91c2601a4c8`. This is never a substitute for public
+migration/history. The five new rules-16 arenas are recorded in
+`sync-games-b1f72ee/evidence/agents-deployment.json`. Only
+`0x16420bcbb68b4bda117540dea0af3e8c6b1bd44c` is opened, epoch 1; the other four
+remain unopened. Its hosted state-changing publication preflight passed before
+the first admission. Public gates remain false.
+
+Actual Classic qualification match 1 finished 0-7 after 138.782151 seconds of
+physical play. Its result was captured at 16:45:40 UTC. NOVA and ONYX gained the
+Classic technical qualification from that published result. The controller trial
+passed and closed its admissions normally.
+
+Actual friendly Classic match 2 used a synthetic owner and the real scoped player
+client, with the `cdde076` feed correction mounted explicitly in that PRIVATE
+driver. One hundred commands had confirmation p95 117.98 ms from the VPS. During
+the deliberate input outage, physical time stopped at 7.210000 seconds and score
+1-1. Eight further observations across 3.585 seconds had the identical physical
+digest while the independent engine worker continued. Resume was committed for
+engine block 36907, exactly 300 blocks later; play resumed at block 36912 after
+3.082 seconds, preserving the frozen physical time. A second, prolonged outage
+then produced cancellation status 4 and zero winner. The result was published
+and captured; competitive rating remained 1000 with zero played/wins. The driver
+exited successfully and closed its private gates. This is not browser/GPU/Mera or
+real catalogue latency evidence.
+
+Runtime: `/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee`. The only engine and
+archive workers are `pongit-sync-workers-20261002-engines-1` and `-archive-1`,
+bounded by their original 3,000-second timeout from about 16:41 UTC. Read
+`worker-plan.json` for the exact deadline; never extend it or duplicate writers.
+At this checkpoint, only `pongit-sync-controllers-2-b1f72ee` is the active game
+driver, with original deadline about 17:04:51 UTC. It must qualify Chaos before
+the separate human-controller Chaos test. Inspect its report before another
+admission. No autonomous matchmaking/maintenance opener is running for this pool.
+
+At canonical block 67591382, the original operator held 438.839452374 test MON
+and the v3 publication account held 47,911.471029623516479201 test MON. The opening
+fee remained 0.01 MON. Four scoped private roles received five MON each through
+the original operator journal. No new funding request. Source preflight checked
+32 linked modules before deployment and found no pending operator transaction.
+
+Backup `sync-20261002T1632Z` contains operator/public-agent/private-v3 dumps and
+runtime/key configurations; all five files were copied off VPS and SHA256
+verified. Its name is a label; the manifest records the actual creation time.
+The post-deployment backup `sync-20261002T1650Z` is being created and adds the new
+private database and its keys/state. Verify its off-VPS copy before relying on it.
+Preserve the existing nonce authorities and every earlier failure. The browser
+startup approval rejection and remaining release gates below are still open.
+
 ## Checkpoint, 16:14 UTC — local candidate verified, no public deployment
 
 The implementation below now includes the rules-16 contract, atomic reads and
