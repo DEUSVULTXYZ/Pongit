@@ -12,7 +12,7 @@ function fixture(){const c:any={};for(const name of ['Match','Frame','Handicap',
  const rows=new Map<string,any>();c[name]={rows,get:async(id:string)=>rows.get(id),set:(v:any)=>rows.set(v.id,structuredClone(v)),deleteUnsafe:(id:string)=>rows.delete(id),getWhere:async(q:any)=>[...rows.values()].filter(row=>Object.entries(q).every(([key,v])=>row[key]===(v as any)._eq))};}return c;}
 const event=(id:number,status=3,winner=a)=>({params:{app,id,epoch:1,a,b,winner,status,mode:id%2,ranked:true,scoreA:7,scoreB:5,played:true},block:{number:100+id,hash:`block-${id}-${status}-${winner}`},logIndex:1});
 
-for(const version of [11,15] as const)test(`rules ${version} captures index distinct arenas, epochs and tournament references without an archive writer`,async()=>{
+for(const version of [11,15,16] as const)test(`rules ${version} captures index distinct arenas, epochs and tournament references without an archive writer`,async()=>{
  const pool='0x2222222222222222222222222222222222222222',other='0x3333333333333333333333333333333333333333';
  const bindings={[pool]:{apps:[app,other],rulesVersion:version}},c=fixture();
  const capture=(id:number,arena=app,epoch=1,status=3)=>({...event(id,status),srcAddress:pool,
