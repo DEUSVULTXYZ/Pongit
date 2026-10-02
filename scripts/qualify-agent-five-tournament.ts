@@ -16,6 +16,7 @@ import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {NO_LEASE_HUB,hubLeaseValid} from '../shared/hub-lease';
 import {canonicalContractReads} from '../shared/canonical-contract-reads';
+import {privateSyncContinuation} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_FIVE_TOURNAMENT,'bounded-private');
 assert.equal(process.getuid?.(),1000);
@@ -25,7 +26,9 @@ const attempt=Number(process.env.PONG_FIVE_TOURNAMENT_ATTEMPT??1);assert(Number.
 const deadline=Date.parse(process.env.PONG_FIVE_TOURNAMENT_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<Date.now()+(id>=3n?180:65)*60_000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
-assert(r.maxMatches===5&&!r.continuation);
+assert.equal(r.maxMatches,5);
+const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
+if(continuation)assert(id===3n||id===4n,'Only the next two private formats');
 const v3=process.env.PONG_FIVE_TOURNAMENT_V3==='reviewed-private';
 assert(!process.env.PONG_FIVE_TOURNAMENT_V3||v3);
 if(v3){assert.equal(r.common.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());assert.equal(r.common.pool.toLowerCase(),'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');}

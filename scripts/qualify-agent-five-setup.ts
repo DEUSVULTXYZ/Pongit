@@ -10,11 +10,18 @@ import {reusableAgentPoolAbi as abi} from '../shared/abi-ReusableAgentPool';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {retryOperatorContention} from '../shared/operator-contention';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
+import {privateSyncContinuation} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_FIVE_SETUP,'bounded-private-five');
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 validateReusableRecord(r,(process.env.PONG_HUMAN_APPS??'').split(',').filter(Boolean));
-assert(r.maxMatches===5&&r.houseInstances==='official-v1'&&!r.continuation,'Fresh private fixture only');
+assert(r.maxMatches===5&&r.houseInstances==='official-v1');
+const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
+if(continuation){
+ const recovered=JSON.parse(await readFile('/metadata/source-release.json','utf8'));
+ assert(recovered.passed&&recovered.pool.toLowerCase()===r.continuation.pool.toLowerCase());
+ assert(recovered.arenas.length===5&&recovered.arenas.every((a:any)=>a.release),'Exact predecessor recovery is required');
+}
 const v3=r.common.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
 const more=process.env.PONG_FIVE_SETUP_MORE==='after-first-games';
 assert(!process.env.PONG_FIVE_SETUP_MORE||more);

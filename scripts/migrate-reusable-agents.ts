@@ -10,7 +10,7 @@ import {retryOperatorContention} from '../shared/operator-contention';
 import {validateAgentPoolManifest,pooledHouseBots} from '../shared/agent-pool';
 import {agentIndexDeployments} from '../shared/agent-index-manifest';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
-import {agentCatalogMigration} from '../shared/agent-catalog-migration';
+import {agentCatalogMigration,migratedHousePolicyModules} from '../shared/agent-catalog-migration';
 
 assert.equal(process.env.PONG_CONTINUING_AGENT_MIGRATION,'authorized-closed-source-testnet');
 assert.equal(process.getuid?.(),1000);
@@ -112,8 +112,9 @@ try{
  const dynamics=await deploy('ChaosDynamics',[effects,modifiers]),contacts=await deploy('ChaosContacts',[dynamics]),rally=await deploy('ChaosRally');
  const physics=await deploy('ChaosPhysics',[effects,rally,dynamics,contacts]),beacon=await deploy('DrandEvmnet'),draws=await deploy('ChaosDrawRules');
  const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]);await deploy('HouseInstances');
- const policies=catalogMigration.changed?await deploy('ProgressiveHousePolicies'):oldPolicies;r.modules.HousePolicies=policies;
+ const policies=catalogMigration.changed?await deploy('ProgressiveHousePolicies'):oldPolicies;
  assert.equal(await codeHash(policies),catalogMigration.targetPolicyHash,'Target controller differs from the journaled migration');
+ Object.assign(r.modules,migratedHousePolicyModules(policies,rebalanced));
  const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(catalogMigration.changed?[policies]:[])]);
  if(stage==='prepare'){
   assert(!await read('MigratingAgentCatalog',catalog,'importStarted'),'Preparation cannot resume an active import');
