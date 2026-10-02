@@ -1,5 +1,67 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 20:46 UTC — optimized hosted Classic clock passes
+
+All five optimized arenas opened normally in the actually released private
+capacity. Setup exited 0 at 20:36:31. Each served its matching application,
+epoch 1 and chain 4242, and its state-changing preflight produced a committed
+batch verified on Monad. First health evidence is
+`sync-continuation-20261002/diagnostics/reusable/optimized-health-1.json`.
+
+The only game driver is `pongit-sync-continuation-tournament-3-7388c1c`, started
+20:38:46.598862 UTC, original deadline 23:37:46.598862. It runs the complete
+Classic championship, up to 28 matches. The sole engine/archive pair is
+`pongit-sync-continuation-workers-20261002-{engines,archive}-1`, with original
+deadline **3 October 02:36:56.853276 UTC**. No autonomous admission, opening or
+closure runs beside these workers. Do not extend their bounds or duplicate
+drivers. Tournament 4 may start only after tournament 3 passes and enough
+original worker time remains for its entire bounded trial.
+
+Read-only clock observer `pongit-sync-continuation-clock-3-1-7388c1c` exited 0
+at 20:45:29.666 UTC. Eight rally segments cover 300,394 ms of wall time and
+295,950 ms of physics: **98.5205 percent**, within the 98–102 percent target.
+Two feed gaps over 500 ms remain in the report; this is not a passing browser
+render or full smoothness verdict. Optimized Chaos has not yet been measured.
+Evidence: `evidence/sync-clock-3.json`, copied locally as
+`artifacts/sync-vps-20261002/optimized-sync-clock-3.json`.
+
+The public human configuration also reports all three historical arenas as
+`starting / ENGINE_SYNCHRONIZING`. An HTTP-200 site or health route must not be
+reported as playable. Legacy control and engine IPv4 connections complete TLS
+but return no body within seven seconds; IPv6 is unavailable from the VPS.
+A separate 45-second read is underway to distinguish slow boot from timeout.
+No public service, session or admission gate has been changed.
+
+## Checkpoint, 20:35 UTC — private optimized continuation preserves the source
+
+Import completed at 20:31:32 UTC, exit 0, with 68 confirmed journal entries and
+no uncertain entries. New private pool:
+`0xdee98e3f7a0f0049244a8257a9cde304d909e5dc`. It has five optimized immutable
+arenas, rules 16, the same verified progressive policies and the source family.
+The source remains the isolated d47 season, never public history.
+
+Read-only verifier `a6786c2` passes at canonical block 67639413. It compares all
+eight identities, sixteen ratings, thirty-four ledger entries, two tournaments,
+fourteen fixtures and six historical challenge requests. It also verifies the
+same family, qualifications, registration nonces, inherited match counter,
+empty lanes, closed gates and historical manifest routes. Evidence is
+`sync-continuation-20261002/evidence/continuation-preservation.json`.
+
+The first runtime preparation encountered an existing empty keys directory and
+stopped before runtime/database changes. The first verifier launch therefore
+also stopped before container creation. Both attempts are recorded in
+`evidence/preparation-attempts.json`. The helper was corrected to accept only an
+empty, non-symlink directory. No existing key was overwritten. Preparation then
+created isolated database `pong_sync_continuation_20261002` successfully.
+
+Backup `sync-20261002T2033Z` has nine SHA256-verified off-VPS files, including the
+new deployment and database. Manifest SHA256:
+`53b24e36489ba788061c5521dfc3eefa6db8bfe928c730a2ee7e921fa74ec7a2`.
+The bounded setup now uses the five actually released owned slots; no human
+slot, public gate or public service is changed. Inspect its exact setup plan,
+container and report before starting workers. Championships 3 and 4 and actual
+optimized clock measurements still remain. No final qualification claim.
+
 ## Checkpoint, 20:25 UTC — source released and canonically finalized
 
 The five private d47 arenas completed normal release at 20:05:36 UTC. The
