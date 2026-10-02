@@ -122,7 +122,7 @@ async function step(){
  if(role==='admission'||role==='maintenance'){const expected=await read<Address>(m.pool,agentPoolAdmissionAbi,role+'Operator');assert.equal(expected.toLowerCase(),t.account.address.toLowerCase(),'Keeper signer differs from contract role');}
  assert.equal((await read<Address>(m.pool,poolAbi,'verifier')).toLowerCase(),m.verifier.toLowerCase());
  let budget:ReusablePublicationBudget|undefined;
- try{budget=validateReusableBudget(JSON.parse(await readFile('/metadata/reusable-budget.json','utf8')),r.arenas.map((a:any)=>a.runtimeHash));}
+ try{budget=validateReusableBudget(JSON.parse(await readFile('/metadata/reusable-budget.json','utf8')),r.arenas.map((a:any)=>a.runtimeHash),r.rulesVersion);}
  catch(e){if((e as any).code!=='ENOENT')console.error(JSON.stringify({event:'admissions-budget-unavailable',error:clean(e)}));}
  mark('authority');
  const lanes=await Promise.all(laneNumbers.map(l=>read(m.pool,poolAbi,'laneRecord',[l])));

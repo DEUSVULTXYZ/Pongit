@@ -13,11 +13,12 @@ export function compactArenaSession(options:{node:PublicClient;abi:Abi;app:Addre
  let nonce:number|undefined,busy=false,uncertain=false;
  return {async send(name,args=[]){
   const ready=name==='confirmReady'&&abi.some(item=>item.type==='function'&&item.name==='confirmReady');
+  const liveness=options.epoch!==undefined&&['heartbeat','resumeReady'].includes(name)&&abi.some(item=>item.type==='function'&&item.name==='synchronizedState');
   if(busy||uncertain)throw Error('Reconcile the previous game command before sending another');
   const readArgs=()=>{
    const current=typeof args==='function'?args():args;
    const reference=options.epoch===undefined?current[0]===match:options.epoch>0n&&current[0]===options.epoch&&current[1]===match;
-   if((!['input','tick','concede'].includes(name)&&!ready)||!reference)throw Error('Compact session only permits this match’s game controls');
+   if((!['input','tick','concede'].includes(name)&&!ready&&!liveness)||!reference)throw Error('Compact session only permits this match’s game controls');
    if(BigInt(Math.floor(now()/1000))>=expires)throw Error('Arcade session expired');
    return current;
   };

@@ -6,6 +6,8 @@ import {AgentArenaTypes as A} from "./AgentArenaTypes.sol";
 import {HousePolicies} from "./HousePolicies.sol";
 import {IInterludeHub} from "../../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../../vendor/interlude/interfaces/Types.sol";
+import {PublishedResultVerifier} from "../../independent/PublishedResultVerifier.sol";
+import {DelegatedLayout} from "../../../vendor/interlude/libraries/DelegatedLayout.sol";
 
 /// Fixed controller fields, never keyed by a newly admitted agent or match.
 /// 63: tournament/overtime; 64..65: code hashes; 66: official controller IDs.
@@ -15,6 +17,20 @@ library ReusableAgentBinding {
     // interpretation pinned; an absent/invalid expiry on an older hub fails closed.
     address internal constant NO_LEASE_HUB=0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e;
     event PublicationPrepared(uint256 indexed epoch);
+    function openEngine(mapping(bytes32=>uint256) storage w,IInterludeHub hub,address authority,PublishedResultVerifier verifier,uint256 value) external {
+        require(block.chainid==10143&&msg.sender==authority&&hub.statusOf(address(this),Types.GLOBAL)==Types.Status.None,"released authority only");
+        (uint256 prior,uint32 count,bytes32 root)=S.commitment(w);
+        if(prior!=0){
+            require(S.get(w,37)==0||(S.get(w,0)>>161&7)>=3,"recover unfinished match first");
+            (bytes32 sealedRoot,uint32 sealedCount)=verifier.finalizedRoots(address(this),prior);
+            require(sealedRoot==root&&sealedRoot!=0&&sealedCount==count,"seal released root first");
+        }
+        S.initialize(w,prior+1);
+        for(uint256 i=63;i<=66;i++)S.set(w,i,0);
+        DelegatedLayout.Layout storage l=DelegatedLayout.layout();
+        hub.openDelegation{value:value}(Types.GLOBAL,l.globalSlots,l.globalMappingBases,address(0),authority,l.minStake);
+        require(hub.sessionOf(address(this),Types.GLOBAL).epoch==prior+1,"unexpected hub epoch");
+    }
     function verifyEngine(mapping(bytes32=>uint256) storage w,IInterludeHub hub) public view {
         (uint256 epoch,,)=S.commitment(w);
         Types.Session memory s=hub.sessionOf(address(this),Types.GLOBAL);
@@ -69,20 +85,20 @@ library ReusableAgentBinding {
         }
     }
     function admit(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,A.Binding calldata b,bytes calldata signature,
-        address signer,address authority,HousePolicies policies) external returns(bytes32 hash){
-        return bind(w,ticket,b,signature,signer,authority,policies,false);
+        address signer,address authority,HousePolicies policies,uint256 rules) external returns(bytes32 hash){
+        return bind(w,ticket,b,signature,signer,authority,policies,false,rules);
     }
     function cancelExpired(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,A.Binding calldata b,bytes calldata signature,
-        address signer,address authority,HousePolicies policies) external returns(bytes32 hash){
+        address signer,address authority,HousePolicies policies,uint256 rules) external returns(bytes32 hash){
         require(block.timestamp>=ticket.expires,"admission still valid");
-        return bind(w,ticket,b,signature,signer,authority,policies,true);
+        return bind(w,ticket,b,signature,signer,authority,policies,true,rules);
     }
     function bind(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,A.Binding calldata b,bytes calldata signature,
-        address signer,address authority,HousePolicies policies,bool cancelling) private returns(bytes32 hash){
+        address signer,address authority,HousePolicies policies,bool cancelling,uint256 rules) private returns(bytes32 hash){
         (uint256 epoch,uint32 count,)=S.commitment(w);uint256 phase=S.get(w,0)>>161&7;
         require(count<65_536&&(phase==0||phase>=3)&&S.get(w,38)==count,"slot busy/full");
         uint256 at=cancelling?ticket.issuedAt:block.timestamp;
-        hash=Admission.verify(ticket,signature,signer,authority,address(this),epoch,uint256(count)+1,RULES,at);
+        hash=Admission.verify(ticket,signature,signer,authority,address(this),epoch,uint256(count)+1,rules,at);
         require(keccak256(abi.encode(b))==ticket.bindingHash&&b.id==ticket.matchId&&b.epoch==epoch&&b.preparedBlock==ticket.sourceBlock
             &&b.a!=address(0)&&b.b!=address(0)&&b.a!=b.b&&b.mode<2,"agent admission binding");
         require(b.controlA.codeHash!=0||b.controlB.codeHash!=0,"agent required");

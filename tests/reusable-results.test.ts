@@ -2,13 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeAbiParameters,encodeEventTopics,keccak256,zeroHash,type Abi,type Address,type Hex} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
+import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {abi as humanAbi} from '../shared/abi-independent-ReusableEventsArena';
 import {reusableResults,reusableSlotResult} from '../shared/reusable-results';
 import {resultFixture} from './fixtures/reusable-result';
 import {publishedResultLeaf,PublishedResultIndex,verifyPublishedResult} from '../shared/published-result-tree';
 const app='0x1111111111111111111111111111111111111111',a='0x2222222222222222222222222222222222222222',b='0x3333333333333333333333333333333333333333';
 function log(abi:Abi,name:string,args:any){const e=abi.find(x=>x.type==='event'&&x.name===name) as any;return{address:app as Address,topics:encodeEventTopics({abi,eventName:name,args} as any) as Hex[],data:encodeAbiParameters(e.inputs.filter((x:any)=>!x.indexed),e.inputs.filter((x:any)=>!x.indexed).map((x:any)=>args[x.name]))};}
-for(const [rules,abi] of [[14,humanAbi],[15,reusableAgentArenaAbi]] as const)test(`rules ${rules} retain a canonical result and reject partial or substituted publication logs`,()=>{
+for(const [rules,abi] of [[14,humanAbi],[15,reusableAgentArenaAbi],[16,synchronizedAgentArenaAbi]] as const)test(`rules ${rules} retain a canonical result and reject partial or substituted publication logs`,()=>{
  const ref={chainId:10143n,arena:app as Address,epoch:2n},ticketHash=keccak256('0x1234');
  const common={a,b,winner:a,mode:1,status:3,scoreA:7,scoreB:6,hash:keccak256('0xabcd')};
  const match_=rules===14?{...common,arena:app,epoch:2n,id:91n,ranked:false}:{...common,ref:{...ref,id:91n},elapsedUs:200000n,finality:false};

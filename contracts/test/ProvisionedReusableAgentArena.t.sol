@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 import {ReusableAgentArenaTest} from "./ReusableAgentArena.t.sol";
 import {ProvisionedReusableAgentArena} from "../src/labs/ProvisionedReusableAgentArena.sol";
+import {ProvisionedSynchronizedAgentArena} from "../src/labs/ProvisionedSynchronizedAgentArena.sol";
 import {PublicationQualificationAuthority} from "../src/labs/PublicationQualificationAuthority.sol";
 import {PublishedResultVerifier,IReusableAdmissionAuthority} from "../src/independent/PublishedResultVerifier.sol";
 import {IInterludeHub} from "../vendor/interlude/interfaces/IInterludeHub.sol";
@@ -9,6 +10,20 @@ import {Delegatable} from "../vendor/interlude/Delegatable.sol";
 import {Types} from "../vendor/interlude/interfaces/Types.sol";
 
 contract ProvisionedReusableAgentArenaTest is ReusableAgentArenaTest {
+    function testSynchronizedProvisioningBudgetAndPayableOpenKeepAuthority() public {
+        vm.chainId(10143);
+        address provisioner=vm.addr(678);
+        ProvisionedSynchronizedAgentArena candidate=new ProvisionedSynchronizedAgentArena(IInterludeHub(address(hub)),address(this),address(1),policies,kernel,verifier,provisioner);
+        assertLe(address(candidate).code.length,24_576,"synchronized hosted runtime budget");
+        assertEq(candidate.RULES_VERSION(),16);assertEq(candidate.owner(),provisioner);
+        vm.prank(provisioner);vm.expectRevert("released authority only");candidate.openEngine();
+        uint256 beforeBalance=address(hub).balance;vm.deal(address(this),1 ether);
+        candidate.openEngine{value:1 ether}();
+        assertEq(address(hub).balance,beforeBalance+1 ether,"opening bond reaches hub through linked module");
+        assertEq(address(candidate).balance,0);
+        vm.prank(provisioner);vm.expectRevert("authority only");candidate.closeEngine();
+        vm.chainId(4242);vm.prank(provisioner);vm.expectRevert();candidate.heartbeat(1,1);
+    }
     function testProvisionConsentDoesNotGrantDelegationOrGameAuthority() public {
         vm.chainId(10143);
         address provisioner=vm.addr(678);

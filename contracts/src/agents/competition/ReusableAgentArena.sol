@@ -7,6 +7,8 @@ import {IInterludeHub} from "../../../vendor/interlude/interfaces/IInterludeHub.
 import {Types} from "../../../vendor/interlude/interfaces/Types.sol";
 import {ReusableArenaStorage as S} from "../../independent/ReusableArenaStorage.sol";
 import {ReusableAdmission as Admission} from "../../independent/ReusableAdmission.sol";
+import {ReusableAgentView as View} from "./ReusableAgentView.sol";
+import {ReusableAgentEntry as Entry} from "./ReusableAgentEntry.sol";
 import {ReusableAgentGame as Game} from "./ReusableAgentGame.sol";
 import {ReusableAuthorizations as Auth} from "../../independent/ReusableAuthorizations.sol";
 import {ArenaAuthorizations} from "../../independent/ArenaAuthorizations.sol";
@@ -31,7 +33,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     ChaosEngine public immutable kernel;
     RoomsRules public immutable classic;
     PublishedResultVerifier public immutable resultVerifier;
-    uint256 public constant RULES_VERSION=15;
+    function RULES_VERSION() public pure virtual returns(uint256){return 15;}
     uint256 public constant TICK_US=10_000;
     uint256 public constant CAPACITY=1;
     error EngineOnly();
@@ -71,18 +73,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
         return(S.get(words,31),S.get(words,37),S.get(words,38),bytes32(S.get(words,36)));
     }
     function openEngine() external payable {
-        require(block.chainid==10143&&msg.sender==lobby&&hub.statusOf(address(this),Types.GLOBAL)==Types.Status.None,"released authority only");
-        (uint256 prior,uint32 count,bytes32 root)=S.commitment(words);
-        if(prior!=0){
-            require(S.get(words,37)==0||Game.phase(words)>=3,"recover unfinished match first");
-            (bytes32 sealedRoot,uint32 sealedCount)=resultVerifier.finalizedRoots(address(this),prior);
-            require(sealedRoot==root&&sealedRoot!=0&&sealedCount==count,"seal released root first");
-        }
-        S.initialize(words,prior+1);
-        for(uint256 i=63;i<=66;i++)S.set(words,i,0);
-        DelegatedLayout.Layout storage l=DelegatedLayout.layout();
-        hub.openDelegation{value:msg.value}(Types.GLOBAL,l.globalSlots,l.globalMappingBases,address(0),lobby,l.minStake);
-        require(hub.sessionOf(address(this),Types.GLOBAL).epoch==prior+1,"unexpected hub epoch");
+        Binding.openEngine(words,hub,lobby,resultVerifier,msg.value);
     }
     function closeEngine() external {
         require(block.chainid==10143&&msg.sender==lobby,"authority only");
@@ -103,21 +94,23 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
         // Six-minute maximum regulation/overtime plus publication margin.
         // This is a conservative time reserve, not a claim of measured hub capacity.
         Binding.verifyAdmissionReserve(hub);
-        bytes32 hash=Binding.admit(words,ticket,binding,signature,admissionSigner,lobby,policies);
-        Game.initialize(words,classic,kernel);emit AdmissionBound(ticket.epoch,ticket.matchId,ticket.sequence,hash,binding);
+        bytes32 hash=Binding.admit(words,ticket,binding,signature,admissionSigner,lobby,policies,RULES_VERSION());
+        Entry.initialize(words,classic,kernel,RULES_VERSION());emit AdmissionBound(ticket.epoch,ticket.matchId,ticket.sequence,hash,binding);
     }
-    function confirmReady(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.ready(words,kernel,Auth.actor(words,msg.sender));}
+    function confirmReady(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Entry.ready(words,kernel,Auth.actor(words,msg.sender));}
     function cancelAdmission(Admission.Ticket calldata ticket,T.Binding calldata binding,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){
-        Game.cancelAdmission(words,ticket,binding,signature,admissionSigner,lobby,policies,classic,kernel);
+        Entry.cancelAdmission(words,ticket,binding,signature,admissionSigner,lobby,policies,classic,kernel,RULES_VERSION());
     }
-    function start(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.start(words,kernel);}
+    function start(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Entry.start(words,kernel);}
     function cancelUnready(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){
-        Game.cancelUnready(words,kernel);
+        Entry.cancelUnready(words,kernel);
     }
     function input(uint256 epoch,uint256 id,int8 direction,uint256 sequence,uint256 deadlineBlock) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){
         Game.input(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender),direction,sequence,deadlineBlock);
     }
     function tick(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.tick(words,classic,kernel,policies,hub);}
+    function heartbeat(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.heartbeat(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender),false);}
+    function resumeReady(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.heartbeat(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender),true);}
     function concede(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.concede(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender));}
     function submitRandomness(uint256 epoch,uint256 id,uint256 request,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.randomness(words,classic,kernel,policies,hub,request,signature);}
     function submitLivePressure(ChaosGameFlow.LivePressure calldata,bytes calldata) external pure {revert NoAgentMarkets();}
@@ -130,8 +123,8 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
     function revocationDigest(address player,uint64 deadline) external view returns(bytes32){return Auth.revokeDigest(words,player,deadline);}
     function renewalDigest(ArenaAuthorizations.Renewal calldata r) external view returns(bytes32){return Auth.renewalDigest(r);}
     function authorizationRevision(address player) external view returns(uint256){return Auth.revision(words,player);}
-    function getSnapshot(uint256 id) external view returns(RoomsState.Header memory){S.assertMatch(words,S.get(words,31),id);return Game.snapshot(words,kernel,isEphemeral());}
-    function chaosState(uint256 id) external view returns(bytes memory){return Game.encodedState(words,kernel,id,isEphemeral());}
+    function getSnapshot(uint256 id) external view returns(RoomsState.Header memory){S.assertMatch(words,S.get(words,31),id);return View.snapshot(words,kernel,isEphemeral());}
+    function chaosState(uint256 id) external view returns(bytes memory){return View.encodedState(words,kernel,id,isEphemeral());}
     function publishedResult() external view returns(Game.Result memory){return Game.result(words,kernel);}
     function launchAt(uint256 id) external view returns(uint64){S.assertMatch(words,S.get(words,31),id);return uint64(S.get(words,60));}
     function launchClock(uint256 id) external view returns(uint256 deadline,uint256 clock){
@@ -145,6 +138,7 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
             ||selector==this.preparePublication.selector
             ||selector==this.admit.selector||selector==this.cancelAdmission.selector||selector==this.input.selector||selector==this.confirmReady.selector
             ||selector==this.concede.selector||selector==this.revokeActive.selector||selector==this.renewActive.selector
+            ||selector==this.heartbeat.selector||selector==this.resumeReady.selector
             ||super._isSessionBlocked(selector);
     }
 }

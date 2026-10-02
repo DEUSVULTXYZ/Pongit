@@ -43,7 +43,13 @@ export class LivePaddle {
 export class LiveClock {
   private target = 0n;
   reset() { this.target = 0n; }
-  sample(target: bigint) {
+  sample(target: bigint, ceiling?: bigint) {
+    // An authoritative pause also bounds the stored clock. Clamping only the
+    // rendered target accumulates hidden time and jumps forward on resume.
+    if (ceiling !== undefined) {
+      if (target > ceiling) target = ceiling;
+      if (this.target > ceiling) this.target = ceiling;
+    }
     if (target > this.target) this.target = target;
     return this.target;
   }

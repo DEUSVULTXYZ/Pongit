@@ -14,6 +14,7 @@ import {drawChaosCourt,drawChaosPaddles,drawChaosBalls,type ChaosCanvasFrame} fr
 import {courtSprites} from '../lib/court-sprites';
 import {chaosContactResolution} from '../../shared/chaos-rules';
 import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
+import {projectParticipant,projectChaosParticipant,type TimedControl,type HousePrediction} from '../lib/participant-projection';
 export type CourtPlayback={matchId:string;scoreA:number;scoreB:number;gameMs:number;finished:boolean;effects:ChaosEffectState[]};
 type Props = {
   state: State | null;
@@ -29,6 +30,9 @@ type Props = {
   pending: boolean;
   pendingInputs?: PendingInput[];
   confirmedNonce?: bigint;
+  coherentControls?:readonly TimedControl[];
+  housePrediction?:HousePrediction;
+  progressionLimit?:bigint;
   debug?: boolean;
   liveEngine?: boolean;
   bufferedSpectator?: boolean;
@@ -49,7 +53,7 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{},
+  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{},
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
@@ -62,7 +66,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
+    onStats, pendingInputs, confirmedNonce,coherentControls,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
   });
   current.current = {
     state,
@@ -74,7 +78,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
+    onStats, pendingInputs, confirmedNonce,coherentControls,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
   };
   useEffect(() => {
     const el = canvas.current!;
@@ -101,7 +105,8 @@ export function Court({
       let p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
       if (identity !== context) { played="";playout.reset();playerPlayout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
-      const buffered=(p.bufferedSpectator||p.liveEngine)&&!p.replay&&!!p.state;
+      const coherent=p.coherentControls!==undefined&&p.side>=0&&!p.replay;
+      const buffered=(p.bufferedSpectator||p.liveEngine)&&!coherent&&!p.replay&&!!p.state;
       const timeline=p.side>=0?playerPlayout:playout;
       if(buffered)timeline.push({state:p.state!,chaos:p.chaos,at:now-Math.max(0,Date.now()-p.observedAt)});
       const playback=buffered?timeline.sample(now):null;
@@ -121,19 +126,20 @@ export function Court({
       if(anchorObserved!==p.observedAt){anchorObserved=p.observedAt;anchor=now;anchorAge=Math.max(0,Date.now()-p.observedAt);}
       if(localDirection!==p.direction){localDirection=p.direction;localAt=now;}
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
-      const target=p.replay||playback?p.clock:p.liveEngine?liveClock.sample(timing.target):timing.target;
+      let target=p.replay||playback?p.clock:p.liveEngine?liveClock.sample(timing.target,p.progressionLimit):timing.target;
+      if(p.progressionLimit!==undefined&&target>p.progressionLimit)target=p.progressionLimit;
       let waiting = false;
-      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:playback?spectatorChaos.sample(p.chaos.physics,target,chaosContactResolution(p.rulesVersion??10)):projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
+      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:coherent?projectChaosParticipant(p.chaos.physics,target,p.coherentControls!,chaosContactResolution(p.rulesVersion??10),p.housePrediction):playback?spectatorChaos.sample(p.chaos.physics,target,chaosContactResolution(p.rulesVersion??10)):projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
       if(cp){s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
       else if (s) {
         const projected = p.replay ? { state: s, waiting: false }
-          : p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
+          : coherent?projectParticipant(s,target,p.coherentControls!,p.housePrediction):p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
         s = projected.state;
         waiting = projected.waiting || timing.stale;
       }
       let yA = s ? Number(s.left) / Number(SCALE) : 288,
         yB = s ? Number(s.right) / Number(SCALE) : 288;
-      if (p.state && !cp && !p.replay && target > p.state.t) {
+      if (p.state && !coherent && !cp && !p.replay && target > p.state.t) {
         // Paddles keep moving along their confirmed directions even while the
         // ball waits at an unresolved impact; their bounds are independent.
         const paddles = move(p.state, target);
@@ -156,7 +162,7 @@ export function Court({
       const ownerAge=Math.min(600,Math.max(0,Date.now()-current.current.observedAt))/1000;
       const confirmedY = p.liveEngine&&ownerState?Math.max(half,Math.min(576-half,
         Number(p.side===0?ownerState.left:ownerState.right)/1e6+(p.side===0?ownerState.leftDir:ownerState.rightDir)*ownerSpeed*ownerAge)):p.side === 0 ? yA : yB;
-      if (s && !s.awaitingServe && (p.controllable || p.liveEngine) && !p.replay && p.side >= 0) {
+      if (s && !coherent && !s.awaitingServe && (p.controllable || p.liveEngine) && !p.replay && p.side >= 0) {
         if (p.liveEngine) {
           const owner = livePaddle.step(confirmedY, p.controllable ? p.direction : 0,
             p.side === 0 ? ownerState!.leftDir : ownerState!.rightDir,

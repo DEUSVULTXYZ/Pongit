@@ -2,6 +2,57 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {engineRequestGate,engineTransport,engineCooldownMs,observeEnginePublication} from "../shared/engine-transport";
 import {engineReadRetryMs} from "../shared/engine-read";
+import {createSendRouter} from '@interludelayer-sdk/sdk';
+import {WebSocketServer} from 'ws';
+
+test('an unanswered actual send socket releases the lane within the recovery budget without retrying',async()=>{
+ const server=new WebSocketServer({host:'127.0.0.1',port:0});
+ await new Promise<void>((resolve,reject)=>{server.once('listening',resolve);server.once('error',reject);});
+ let calls=0,received=0,journaled=0,close=()=>{};
+ server.on('connection',socket=>socket.on('message',()=>{calls++;}));
+ try{
+  const address=server.address();assert(address&&typeof address!=='string');
+  const t=engineTransport(`http://127.0.0.1:${address.port}`,{beforeSend:async()=>{journaled++;},received:()=>{received++;}},true)({} as any);
+  close=()=>t.value?.closeSend();
+  const at=performance.now();
+  await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x0102']}));
+  const elapsed=performance.now()-at;
+  assert(elapsed>=3500&&elapsed<6000,`bounded socket timeout: ${elapsed}ms`);
+  assert.equal(calls,1);assert.equal(journaled,1);assert.equal(received,0);
+ }finally{
+  close();
+  for(const client of server.clients)client.terminate();
+  await new Promise<void>(resolve=>server.close(()=>resolve()));
+ }
+});
+
+test('SDK socket loss does not replay writes; the journal owner resumes identical bytes over HTTP',async()=>{
+ const original=globalThis.fetch;let now=0,ws=0,http=0,journaled=0,allow=false,received=0;
+ const made:number[]=[];
+ const router=createSendRouter('https://send-router.invalid',{now:()=>now,make:(_url,_via,socket)=>({request:async()=>{
+  made.push(socket);ws++;if(ws===1)throw Error('Socket response lost');return 'socket receipt';
+ }}) as any,close:()=>{}});
+ globalThis.fetch=async(_url,init)=>{http++;const body=JSON.parse(String(init?.body));return new Response(JSON.stringify({jsonrpc:'2.0',id:body.id,result:'http receipt'}));};
+ try{
+  const t=engineTransport('https://send-router.invalid',{beforeSend:async()=>{if(journaled&&!allow)throw Error('Pending exact command');journaled++;},received:()=>{received++;}},router)({} as any);
+  await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x0102']}),/Socket response lost/);
+  assert.equal(ws,1);assert.equal(http,0,'no transport retry on an uncertain write');assert.equal(received,0);
+  await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x0304']}),/Pending exact command/);
+  assert.equal(http,0);allow=true;
+  assert.equal(await t.request({method:'interlude_sendTransaction',params:['0x0102']}),'http receipt');
+  assert.equal(http,1);now=2001;
+  assert.equal(await t.request({method:'interlude_sendTransaction',params:['0x0304']}),'socket receipt');
+  assert.deepEqual(made,[0,1],'socket rest ends with a fresh generation');assert.equal(received,2);
+ }finally{globalThis.fetch=original;}
+});
+
+test('an explicit RPC rejection does not start socket failover',async()=>{
+ let lost=0,calls=0;
+ const router={client:()=>({via:'ws' as const,client:{request:async()=>{calls++;throw Object.assign(Error('bad method'),{code:-32601});}} as any}),lost:()=>{lost++;},delivered:()=>{}};
+ const t=engineTransport('https://send-rejected.invalid',{beforeSend:async()=>{},received:()=>{}},router)({} as any);
+ await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x01']}));
+ assert.equal(calls,1);assert.equal(lost,0);
+});
 
 test("HTTP 429 pauses all RPC methods and never queues or replays writes",async()=>{
  let now=0,calls=0;const gate=engineRequestGate(()=>now);

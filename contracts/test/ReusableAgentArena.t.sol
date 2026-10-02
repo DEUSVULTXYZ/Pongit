@@ -5,6 +5,7 @@ import {Vm} from "forge-std/Vm.sol";
 import {IndependentHubFixture} from "./Independent.t.sol";
 import {ReusableAgentArena} from "../src/agents/competition/ReusableAgentArena.sol";
 import {ReusableAdmission as Admission} from "../src/independent/ReusableAdmission.sol";
+import {ReusableAgentView as View} from "../src/agents/competition/ReusableAgentView.sol";
 import {ReusableAgentGame as Game} from "../src/agents/competition/ReusableAgentGame.sol";
 import {ReusableArenaStorage as S} from "../src/independent/ReusableArenaStorage.sol";
 import {PublishedResultVerifier, IReusableAdmissionAuthority} from "../src/independent/PublishedResultVerifier.sol";
@@ -25,6 +26,7 @@ import {DrandEvmnet} from "../src/chaos/DrandEvmnet.sol";
 import {IInterludeHub} from "../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../vendor/interlude/interfaces/Types.sol";
 import {RoomsState} from "../src/labs/RoomsState.sol";
+import {AgentFairPause as Fair} from "../src/agents/competition/AgentFairPause.sol";
 
 
 import {HousePolicies} from "../src/agents/competition/HousePolicies.sol";
@@ -33,14 +35,15 @@ import {ChaosState as C} from "../src/chaos/ChaosState.sol";
 
 /// Artificial clock-boundary injection is restricted to this test harness.
 contract ReusableAgentHarness is ReusableAgentArena {
+    function synchronization(uint256 epoch,uint256 id) external view current(epoch,id) returns(Fair.View memory,uint256,uint256,uint256,uint256){return View.synchronization(words);}
     constructor(IInterludeHub h,address p,address bridge,HousePolicies policies_,ChaosEngine k,PublishedResultVerifier v)
         ReusableAgentArena(h,p,bridge,policies_,k,v){}
     function legacyEncodedState(uint256 id) external view returns(bytes memory){
         S.assertMatch(words,S.get(words,31),id);
-        return abi.encode(Game.snapshot(words,kernel,isEphemeral()),Game.packed(words),S.get(words,29),S.get(words,30));
+        return abi.encode(View.snapshot(words,kernel,isEphemeral()),Game.packed(words),S.get(words,29),S.get(words,30));
     }
     function nearDeadline(uint64 time,uint8 a,uint8 b) external {
-        PhysicsV2.State memory p=Game.state(words,kernel);
+        PhysicsV2.State memory p=View.state(words,kernel);
         if(p.mode==0){
             p.t=time;p.scoreA=a;p.scoreB=b;p.awaitingServe=false;p.resumeAt=0;
             // Classic never enters the legacy Chaos awaitingServe state.
@@ -71,7 +74,7 @@ contract ReusableAgentArenaTest is Test,IReusableAdmissionAuthority {
     mapping(address=>mapping(uint256=>mapping(uint256=>bytes32))) public issuedTicket;
     IndependentHubFixture hub;ReusableAgentHarness arena;ChaosEngine kernel;PublishedResultVerifier verifier;HousePolicies policies;
     uint256 constant BRIDGE=812;
-    function setUp() public {
+    function setUp() public virtual {
         vm.chainId(10143);vm.warp(1_800_000_000);vm.roll(100);hub=new IndependentHubFixture();policies=new HousePolicies();
         ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,new ChaosModifiers());
         ChaosPhysics physics=new ChaosPhysics(effects,new ChaosRally(),dynamics,new ChaosContacts(dynamics));
@@ -86,7 +89,7 @@ contract ReusableAgentArenaTest is Test,IReusableAdmissionAuthority {
         T.Binding memory b=T.Binding(id,epoch,uint64(vm.getBlockNumber()-1),overtime?uint64(3):0,vm.addr(101+id),vm.addr(102+id),mode,false,overtime,
             bothBots?T.Controller(address(policies).codehash,0,1,address(0),0):T.Controller(0,0,0,vm.addr(1101),uint64(vm.getBlockTimestamp()+7200)),
             T.Controller(address(policies).codehash,0,house,address(0),0));
-        ticket=Admission.Ticket(address(this),address(arena),epoch,uint256(count)+1,id,keccak256(abi.encode(b)),uint64(vm.getBlockTimestamp()),uint64(vm.getBlockTimestamp()+90),b.preparedBlock,keccak256("source"),15);
+        ticket=Admission.Ticket(address(this),address(arena),epoch,uint256(count)+1,id,keccak256(abi.encode(b)),uint64(vm.getBlockTimestamp()),uint64(vm.getBlockTimestamp()+90),b.preparedBlock,keccak256("source"),arena.RULES_VERSION());
         issuedTicket[address(arena)][epoch][ticket.sequence]=Admission.digest(ticket);arena.admit(ticket,b,signature(Admission.digest(ticket)));
     }
     function start(uint256 id,bool human) internal {

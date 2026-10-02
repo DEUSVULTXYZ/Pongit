@@ -32,7 +32,7 @@ assert([3,4,5].includes(manifest.version));
 const reusable = manifest.version >= 4;
 const poolAbi = reusable ? reusableAgentPoolAbi : agentSeriesPoolAbi;
 const budgetPath = '/metadata/reusable-budget.json';
-const budget = reusable ? validateReusableBudget(JSON.parse(await readFile(budgetPath, 'utf8')), manifest.arenas.map(a => a.runtimeHash)) : undefined;
+const budget = reusable ? validateReusableBudget(JSON.parse(await readFile(budgetPath, 'utf8')), manifest.arenas.map(a => a.runtimeHash),manifest.rulesVersion as 15|16) : undefined;
 assert.equal(manifest.enabled, false, 'Final qualification still takes place privately');
 const durationMs = Number(process.env.PONG_SERIES_SOAK_HOURS ?? 24) * 3600000;
 assert(Number.isFinite(durationMs) && durationMs >= 60000 && durationMs <= 90000000);

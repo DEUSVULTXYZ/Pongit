@@ -8,7 +8,8 @@ import {Pool} from 'pg';
 import {createPublicClient,http,keccak256,zeroHash,type Address,type PublicClient,type Abi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {monadTestnet} from 'viem/chains';
-import {reusableAgentArenaAbi as abi} from '../shared/abi-ReusableAgentArena';
+import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
+import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {engineTransport,engineCooldownMs,observeEnginePublication} from '../shared/engine-transport';
@@ -36,6 +37,7 @@ import {agentRecoveryPause,agentTickInterval,agentTickPause} from '../shared/age
 import {verifyHostedArenaEvidence} from '../shared/hosted-arena-identity';
 
 const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances,maxMatches:r.maxMatches??2};
+const rulesVersion=r.rulesVersion as 15|16,abi=rulesVersion===16?synchronizedAgentArenaAbi:reusableAgentArenaAbi;
 const tickInterval=agentTickInterval(process.env.PONG_AGENT_TICK_INTERVAL_MS);
 const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
 await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>base.readContract({address,abi,functionName,args}) as Promise<T>,m);
@@ -49,7 +51,7 @@ assert.equal((await base.readContract({address:m.pool,abi:poolAbi,functionName:'
 const replays=new PoolReplays(db,process.env.GRAPHQL_URL?poolReplayRetention(process.env.GRAPHQL_URL,
  process.env.HASURA_ADMIN_SECRET?{'x-hasura-admin-secret':process.env.HASURA_ADMIN_SECRET}:{}):undefined);
 await replays.resumeRecorder();
-const replayReader=new AgentPoolReader(base,{...m,version:m.maxMatches===5?5:4,chainId:10143,engineChainId:4242,rulesVersion:15,
+const replayReader=new AgentPoolReader(base,{...m,version:m.maxMatches===5?5:4,chainId:10143,engineChainId:4242,rulesVersion,friendlyPause:r.friendlyPause,housePolicy:r.housePolicy==='inherited'?undefined:r.housePolicy,
  ...(m.maxMatches===5?{lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',countdownClock:r.countdownClock}:{}),
  arenas:r.arenas.map((a:any)=>({...a,node:hostedArenaOrigin(m.hub,a.app)})),
  enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60},protectedApps);
@@ -97,7 +99,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
   const result=await node.readContract({address:app,abi,functionName:'publishedResult'});
   const after=await node.readContract({address:app,abi,functionName:'resultCommitment'});
   assert.deepEqual(before,after,'Result changed while recovering its body');
-  const candidate=reusableSlotResult(abi,{chainId:10143n,arena:app,epoch:ticket.epoch},15,ticket.matchId,reusableAdmissionDigest(ticket),ticket.sequence,result,before);
+  const candidate=reusableSlotResult(abi,{chainId:10143n,arena:app,epoch:ticket.epoch},rulesVersion,ticket.matchId,reusableAdmissionDigest(ticket),ticket.sequence,result,before);
   await archive.storeSlot(candidate);return true;
  };
  try{while(!stopping){let pause=100;
@@ -120,7 +122,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
    if(d.status===0){await close();node=undefined;await health('awaiting-delegation',{epoch:String(d.epoch)});await delay(2000);continue;}
    if(d.status!==1&&!entry){await close();node=undefined;await health('challenge-window',{epoch:String(d.epoch),releaseAt:String(d.stakeUnlockAt)});await delay(2000);continue;}
    if(!node){
-    const expected={app,epoch:d.epoch,chainId:4242,baseBlock:d.baseBlock,rulesVersion:15n,runtimeHash};
+    const expected={app,epoch:d.epoch,chainId:4242,baseBlock:d.baseBlock,rulesVersion:BigInt(rulesVersion),runtimeHash};
     let inspected:PublicClient|undefined;
     const inspect=async(origin:string)=>{
      const candidate=createPublicClient({transport:engineTransport(origin),pollingInterval:1000});
@@ -156,7 +158,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      if(marker===d.epoch&&d.batchIndex>0n)publicationPreparedEpoch=d.epoch;
      else{
       engine??=createPoolEngine(db,base,m.hub,app,url,r.engineKey,{epoch:d.epoch,id:0n},undefined,
-       {node,reusable:true,publicationProbe:r.publicationProbe,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
+       {node,reusable:true,rulesVersion,publicationProbe:r.publicationProbe,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
       await engine.probePublication();
       await health('publication-check',{epoch:String(d.epoch),committedBatches:String(d.batchIndex)});await delay(2000);continue;
      }
@@ -167,7 +169,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
      // a player, then wait for a canonical hub batch. A receipt alone never opens
      // admissions. If no batch is produced this remains explicitly unqualified.
      engine??=createPoolEngine(db,base,m.hub,app,url,r.engineKey,{epoch:d.epoch,id:0n},undefined,
-      {node,reusable:true,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
+      {node,reusable:true,rulesVersion,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
      await engine.probePublication();
      await health('publication-check',{epoch:String(d.epoch),committedBatches:0});await delay(2000);continue;
     }
@@ -186,8 +188,8 @@ async function arenaLoop(app:Address,runtimeHash:string){
      // Timestamp progress when it arrives. Detecting the same revision on the
      // next loop must not impose a second 300 ms pause after every own tick.
      if(s.revision!==lastRevision){lastRevision=s.revision;lastProgress=Date.now();}
-     observed.observe(s);replays.capture(replayRef,15,s);
-    },{node,reusable:true,publicationProbe:r.publicationProbe,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
+     observed.observe(s);replays.capture(replayRef,rulesVersion,s);
+    },{node,reusable:true,rulesVersion,publicationProbe:r.publicationProbe,archive:archive.store,hubObservation:()=>sharedHub.read(app,true)});
    }
    // Expiry forbids new commands, not the reads needed to preserve a result.
    if(d.status!==1||!hubLeaseValid(m.hub,d.expiresAt,block.timestamp)){

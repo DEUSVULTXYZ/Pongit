@@ -1,4 +1,4 @@
-// Private rules15 candidate. No delegations or public gates are opened here.
+// Private immutable candidate. No delegations or public gates are opened here.
 import assert from 'node:assert/strict';
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import {getAddress,keccak256,toHex,type Address} from 'viem';
@@ -17,10 +17,15 @@ const v3=process.env.PONG_REUSABLE_HUB_V3==='isolated-testnet';
 const file='/secrets/deployment.json',hub=v3?NO_LEASE_HUB:'0x3Ef8327F69e09cf721772F345e2A887eA22cD595' as Address;
 const housePolicy=process.env.PONG_REUSABLE_HOUSE_POLICY;
 assert(housePolicy===undefined||housePolicy==='progressive-v1','Unknown immutable house policy');
-const policyName=housePolicy?'ProgressiveHousePolicies':'HousePolicies',arenaName=v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
+const rulesVersion=Number(process.env.PONG_REUSABLE_RULES??15);
+assert([15,16].includes(rulesVersion),'Unknown immutable rules');
+const friendlyPause=rulesVersion===16?'heartbeat-v1':undefined;
+const policyName=housePolicy?'ProgressiveHousePolicies':'HousePolicies';
+const arenaName=rulesVersion===16?'ProvisionedSynchronizedAgentArena':v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const maxMatches=Number(process.env.PONG_REUSABLE_AGENT_LANES??2),arenaCount=Number(process.env.PONG_REUSABLE_ARENA_COUNT??(maxMatches===5?5:3));
 assert([2,5].includes(maxMatches)&&Number.isInteger(arenaCount)&&arenaCount>=(maxMatches===5?5:3)&&arenaCount<=16,'Reviewed private candidate dimensions required');
 assert(!v3||maxMatches===5,'Private v3 candidate requires five-lane authority');
+assert(rulesVersion!==16||v3&&maxMatches===5&&housePolicy==='progressive-v1','Rules 16 require v3, five lanes and progressive policies');
 // Private qualification only. This script creates a fresh season; a public
 // replacement requires a separate verified identity/rating migration.
 const houseInstances=process.env.PONG_REUSABLE_HOUSE_INSTANCES;
@@ -38,7 +43,7 @@ try{
   policyName,'AgentCatalog',poolName,'PublishedResultVerifier','AgentTournaments','AgentPublishedRatings',qualificationName,'ArcadeFamily',challengeName,arenaName,
   // Inherited ABIs are used below even when only the derived bytecode is deployed.
   'ReusableAgentPool','ReusableAgentArena']);
- if(!r){r={prefix,hub,housePolicy,rulesVersion:15,countdownClock:"engine-ticks-v1",houseInstances,arenaCount,maxMatches,...(maxMatches===5?{arenaAdmissions:'verified-epoch-v1',publicationProbe:v3?'epoch-marker-v1':undefined}:{}),genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
+ if(!r){r={prefix,hub,housePolicy,rulesVersion,friendlyPause,countdownClock:"engine-ticks-v1",houseInstances,arenaCount,maxMatches,...(maxMatches===5?{arenaAdmissions:'verified-epoch-v1',publicationProbe:v3?'epoch-marker-v1':undefined}:{}),genesis:String((await t.base.getBlock()).timestamp),admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:'deploying',createdAt:new Date().toISOString()};await save();}
  assert.equal(r.maxMatches??2,maxMatches,'Lane changes need a new deployment namespace');
  assert.equal(r.common?.hub??r.hub??hub,hub,'Hub changes need a new deployment namespace');
  assert.equal(r.housePolicy,housePolicy,'Policy changes need a new deployment namespace');
@@ -48,7 +53,7 @@ try{
   r.provisioningKey??=generatePrivateKey();r.provisioningOwner=privateKeyToAccount(r.provisioningKey).address;r.hostedProvisioning='owner-consent-v1';await save();
  }
  assert.equal(r.houseInstances,houseInstances,'House instances need a new deployment namespace');
- assert.equal(r.countdownClock,"engine-ticks-v1","New countdown needs a new deployment prefix");assert.equal(r.prefix,prefix);assert.equal(r.rulesVersion,15);assert.equal(r.arenaCount,arenaCount);
+ assert.equal(r.countdownClock,"engine-ticks-v1","New countdown needs a new deployment prefix");assert.equal(r.prefix,prefix);assert.equal(r.rulesVersion,rulesVersion);assert.equal(r.friendlyPause,friendlyPause);assert.equal(r.arenaCount,arenaCount);
  const bridge=privateKeyToAccount(r.admissionKey).address;
  const deploy=async(name:string,args:readonly unknown[]=[],instance=name)=>{const a=await retryOperatorContention(()=>t.deploy(name,args,instance));r.modules??={};r.modules[instance]=a;await save();return a;};
  const write=async(op:string,contract:string,at:Address,fn:string,args:readonly unknown[]=[])=>retryOperatorContention(async()=>t.write(op,at,(await t.artifact(contract)).abi,fn,args));
@@ -79,7 +84,7 @@ try{
  await write('seal-catalog','AgentCatalog',catalog,'seal');r.arenas??=[];
  for(let i=0;i<arenaCount;i++){
   const app=await deploy(arenaName,[hub,pool,bridge,policies,kernel,verifier,...(v3?[r.provisioningOwner]:[])],`ReusableAgentArena-${i}`);assert(!humans.includes(app.toLowerCase()));
-  assert.equal(await t.base.readContract({address:app,abi:(await t.artifact('ReusableAgentArena')).abi,functionName:'RULES_VERSION'}),15n);
+  assert.equal(await t.base.readContract({address:app,abi:(await t.artifact('ReusableAgentArena')).abi,functionName:'RULES_VERSION'}),BigInt(rulesVersion));
   await write(`register-arena-${i}`,'ReusableAgentPool',pool,'addArena',[app]);
   if(r.arenas[i])assert.equal(r.arenas[i].app,app);r.arenas[i]={app,runtimeHash:keccak256((await t.base.getCode({address:app}))!)};await save();
  }
@@ -106,8 +111,8 @@ try{
  r.common={hub,pool,catalog,tournaments,ratings,qualifications,family,challenges,verifier};r.phase='deployed-closed';await save();
  const job=(await t.db.query('SELECT hash,status FROM il_lifecycle_jobs WHERE id=$1',[prefix+':deploy-'+poolName.toLowerCase()])).rows[0];assert.equal(job.status,'confirmed');
  const receipt=await t.base.getTransactionReceipt({hash:job.hash});assert.equal(receipt.status,'success');
- const evidence={at:new Date().toISOString(),prefix,rulesVersion:15,houseInstances,maxMatches,common:r.common,admissionSigner:bridge,arenas:r.arenas,bots:r.bots,modules:{...t.deployed,...r.modules},
-  indexBinding:{chainId:10143,rulesVersion:15,pool,startBlock:String(receipt.blockNumber),arenas:r.arenas.map((a:any)=>a.app)},
+ const evidence={at:new Date().toISOString(),prefix,rulesVersion,friendlyPause,houseInstances,maxMatches,common:r.common,admissionSigner:bridge,arenas:r.arenas,bots:r.bots,modules:{...t.deployed,...r.modules},
+  indexBinding:{chainId:10143,rulesVersion,pool,startBlock:String(receipt.blockNumber),arenas:r.arenas.map((a:any)=>a.app)},
   delegationOpened:false,publiclyEnabled:false,qualified:false,
   transactions:(await t.db.query('SELECT id,hash,status FROM il_lifecycle_jobs WHERE id LIKE $1 ORDER BY nonce',[prefix+':%'])).rows};
  await mkdir('artifacts/reusable-candidate',{recursive:true});await writeFile('artifacts/reusable-candidate/agents-deployment.json',JSON.stringify(evidence,null,2));

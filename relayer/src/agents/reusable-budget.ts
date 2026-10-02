@@ -1,9 +1,9 @@
 import {isHex,type Hex} from 'viem';
 import {hubLeaseValid} from '../../../shared/hub-lease';
-export type ReusablePublicationBudget={rulesVersion:14|15;maxBatches:number;matchReserveBatches:number;rotationLeadSeconds:number;serviceSeconds:number;evidence:Hex;runtimeHashes:Hex[]};
+export type ReusablePublicationBudget={rulesVersion:14|15|16;maxBatches:number;matchReserveBatches:number;rotationLeadSeconds:number;serviceSeconds:number;evidence:Hex;runtimeHashes:Hex[]};
 /** Operational limits from an actual worst-case publication/release trial.
  * Absence of that evidence disables admissions, never result recovery. */
-export function validateReusableBudget(value:unknown,hashes:readonly string[],expectedRules:14|15=15):ReusablePublicationBudget{
+export function validateReusableBudget(value:unknown,hashes:readonly string[],expectedRules:14|15|16=15):ReusablePublicationBudget{
  const b=value as ReusablePublicationBudget;
  const lead=expectedRules===14?1860:420;
  if(!hashes.length||!b||b.rulesVersion!==expectedRules||!Number.isSafeInteger(b.maxBatches)||!Number.isSafeInteger(b.matchReserveBatches)

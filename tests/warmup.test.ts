@@ -2,9 +2,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {HEIGHT,SCALE} from '../shared/physics-v2';
 import {botDirection,newWarmup,stepWarmup} from '../web/lib/warmup';
+import {WarmupClock} from '../web/lib/warmup-clock';
 import {arenaOutage,arenaWaitStatus,clockLabel,preparingArena,arenaEntryRetryMs} from '../web/lib/arena-wait';
 
 const seed=()=>`0x${'ab'.repeat(32)}` as const;
+
+test('warm-up elapsed advances for a visible minute, across points, without a server clock',()=>{
+ const clock=new WarmupClock(500);
+ for(let i=1;i<=3600;i++)clock.sample(500+i*1000/60);
+ assert.equal(clock.sample(60_500),60_000);
+ // A new rally does not create a new session clock.
+ newWarmup(seed);
+ assert.equal(clock.sample(61_500),61_000);
+ assert.equal(new WarmupClock(61_500).sample(62_500),1000);
+});
+
+test('warm-up hidden time and delayed frames cannot add background time or rewind elapsed',()=>{
+ const clock=new WarmupClock(0);
+ clock.visibility(false,1000);
+ assert.equal(clock.sample(31_000),1000);
+ clock.visibility(true,61_000);
+ assert.equal(clock.sample(62_000),2000);
+ assert.equal(clock.sample(60_000),2000);
+ assert.equal(clock.sample(63_000),3000);
+});
 
 test('a warm-up step runs the real physics and never jumps after a background tab',()=>{
  let w=newWarmup(seed);

@@ -24,7 +24,9 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
   assert.equal(record.houseInstances,'official-v1');
   assert(isAddress(record.modules?.HouseInstances),'Pinned instance library required');
  }
- assert.equal(record.rulesVersion,15,'Reusable rules required');
+ assert([15,16].includes(record.rulesVersion),'Reusable rules required');
+ if(record.rulesVersion===16)assert(record.friendlyPause==='heartbeat-v1'&&record.maxMatches===5&&v3&&record.housePolicy==='progressive-v1','Rules 16 synchronization capabilities required');
+ else assert(record.friendlyPause===undefined,'Historical rules cannot acquire pause authority');
  if(record.maxMatches!==undefined)assert([2,5].includes(record.maxMatches),'Supported lane count required');
  if(record.maxMatches===5){assert(record.arenaAdmissions==='verified-epoch-v1'&&record.houseInstances==='official-v1'&&record.arenas.length>=5,'Five-lane capabilities required');}
  assert(record.arenas.length>=3&&record.arenas.length<=16,'Reviewed reusable arena bounds');
@@ -49,7 +51,8 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
   assert.equal(m.housePolicy,record.housePolicy==='inherited'?undefined:record.housePolicy,'House policy capability mismatch');
   assert.equal(m.maxMatches,record.maxMatches??2,'Lane count mismatch');
   assert.equal(m.arenaAdmissions,record.arenaAdmissions,'Admission gate mismatch');
-  assert(m.version===(record.maxMatches===5?5:4)&&m.rulesVersion===15,'Reusable manifest version mismatch');
+  assert(m.version===(record.maxMatches===5?5:4)&&m.rulesVersion===record.rulesVersion,'Reusable manifest version mismatch');
+  assert.equal(m.friendlyPause,record.friendlyPause,'Friendly pause capability mismatch');
   if(isolated){assert(!m.enabled&&!m.tournamentsEnabled&&m.verifiedCapacity===0&&m.qualificationEvidence===null&&!m.releaseStage,'Private qualification cannot claim a release');}
   else{const releaseEvidence=agentPoolReleaseEvidence(m);
    assert(releaseEvidence&&BigInt(releaseEvidence)!==0n,'Explicit reusable release evidence required');

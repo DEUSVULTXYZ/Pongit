@@ -17,6 +17,12 @@ test('index migration preserves old emitters, deployment boundaries and arena bi
   assert.deepEqual(agentIndexDeployments(old, 10143, 15), [rows[0]]);
 });
 
+test('synchronized migration keeps each historical rules version and never guesses an unknown decoder',()=>{
+ const raw={version:2,chainId:10143,deployments:[old,{...next,rulesVersion:16}]};
+ for(const rules of [15,16] as const)assert.deepEqual(agentIndexDeployments(raw,10143,rules).map(r=>r.rulesVersion),[15,16]);
+ assert.throws(()=>agentIndexDeployments({...raw,deployments:[old,{...next,rulesVersion:17}]},10143,16));
+});
+
 test('index manifest rejects ambiguous historical references and incompatible chains or rules', () => {
   const wrap = (a: any, b: any) => ({version: 2, chainId: 10143, deployments: [a, b]});
   for (const bad of [wrap(old, {...next, pool: old.pool}), wrap(old, {...next, arenas: [...next.arenas, old.arenas[0]]}),

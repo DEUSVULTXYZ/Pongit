@@ -1,8 +1,8 @@
 import {readFile,writeFile} from 'node:fs/promises';
-for(const name of ['ReusableAgentArena','ReusableAgentPool','AgentCatalog']){
+for(const name of ['ReusableAgentArena','SynchronizedAgentArena','ReusableAgentPool','AgentCatalog']){
  const artifact=JSON.parse(await readFile(`contracts/out/${name}.sol/${name}.json`,'utf8'));
  const abi=[...artifact.abi],seen=new Set(abi.map((item:any)=>`${item.type}:${item.name}`));
- if(name==='ReusableAgentArena')for(const library of ['ReusableAgentBinding','ReusableAgentGame','ReusableAdmission','ReusableAuthorizations','ReusableArenaStorage','PoolSteer','PendingControls','ChaosGameFlow']){
+ if(name==='ReusableAgentArena'||name==='SynchronizedAgentArena')for(const library of ['ReusableAgentBinding','ReusableAgentGame','ReusableAgentView','ReusableAdmission','ReusableAuthorizations','ReusableArenaStorage','PoolSteer','PendingControls','ChaosGameFlow']){
   const linked=JSON.parse(await readFile(`contracts/out/${library}.sol/${library}.json`,'utf8'));
   for(const item of linked.abi)if(['error','event'].includes(item.type)&&!seen.has(`${item.type}:${item.name}`)){abi.push(item);seen.add(`${item.type}:${item.name}`);}
  }

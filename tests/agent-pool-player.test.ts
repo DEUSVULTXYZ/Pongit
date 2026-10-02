@@ -3,6 +3,7 @@ import {decodeFunctionData,encodeAbiParameters,encodeFunctionResult,encodeErrorR
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {createPoolPlayer,POOL_PLAYER_GAS} from '../shared/agent-pool-player';
 import {pooledAgentArenaAbi as abi} from '../shared/abi-PooledAgentArena';
+import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {roomsLifecycleHubAbi as hubAbi} from '../shared/abi-rooms-lifecycle';
 import type {AgentPoolManifest,PoolMatchView} from '../shared/agent-pool';
@@ -10,13 +11,33 @@ import type {PoolFamilySession} from '../shared/agent-pool-family';
 import {poolRenewTypes,poolRevokeTypes} from '../shared/agent-pool-active';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
 const addr=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
-function fixture(rules:10|11|15=10){
- const fixtureAbi=rules===15?reusableAgentArenaAbi:abi;
+test('rules16 heartbeats require fresh perception, preserve pending nonces and select resume explicitly',async()=>{
+ const f=fixture(16);
+ await f.player.heartbeat();
+ assert.equal(decodeFunctionData({abi:synchronizedAgentArenaAbi,data:parseTransaction(f.sent[0]).data!}).functionName,'heartbeat');
+ f.advance(600);await assert.rejects(f.player.heartbeat(),/fresh arena observation/);assert.equal(f.sent.length,1);
+ f.fresh();f.state.sync.pause.status=2;
+ await f.player.heartbeat(true);
+ assert.equal(decodeFunctionData({abi:synchronizedAgentArenaAbi,data:parseTransaction(f.sent[1]).data!}).functionName,'resumeReady');
+ f.advance(200);f.lost(true);await assert.rejects(f.player.heartbeat(),/Lost response/);
+ const pending=f.player.journal.pending(f.session.grant.key)!;assert.equal(pending.action,'heartbeat');
+ f.lost(false);f.visible(true);await f.player.heartbeat();
+ assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
+ assert.deepEqual(f.sent.map(raw=>parseTransaction(raw).nonce),[0,1,2,3]);
+ f.player.close();
+});
+
+test('friendly pause methods cannot be used on a legacy arena',async()=>{
+ const f=fixture(15);await assert.rejects(f.player.heartbeat(true),/does not support/);assert.equal(f.sent.length,0);f.player.close();
+});
+function fixture(rules:10|11|15|16=10){
+ const fixtureAbi=rules===16?synchronizedAgentArenaAbi:rules>=15?reusableAgentArenaAbi:abi;
  const key=generatePrivateKey(),account=privateKeyToAccount(key),owner=privateKeyToAccount(generatePrivateKey()),at=Math.floor(Date.now()/1000);
  const session:PoolFamilySession={key,signature:`0x${'11'.repeat(65)}`,grant:{player:owner.address,key:account.address,issuedAt:BigInt(at),expires:BigInt(at+7200),revision:0n}};
  const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(7),family:addr(8),arenas:[9,10,11].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:keccak256('0x6000')})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
  if(rules===11){m.version=3;m.rulesVersion=11;}
  if(rules===15){m.version=4;m.rulesVersion=15;}
+ if(rules===16){m.version=5;m.rulesVersion=16;m.maxMatches=5;m.friendlyPause='heartbeat-v1';m.lanes={tournament:1,challenge:4};m.arenaAdmissions='verified-epoch-v1';m.houseInstances='official-v1';m.countdownClock='engine-ticks-v1';m.arenas.push(...[12,13].map(n=>({app:addr(n),node:"https://arena-"+n+'.example',runtimeHash:keccak256('0x6000')})));}
  const match:PoolMatchView={ref:{chainId:10143,app:addr(9),epoch:'1',id:'4'},a:owner.address,b:addr(21),mode:0,ranked:false,tournament:'0',lane:1,node:m.arenas[0].node,currentBinding:true,regulationSeconds:300,overtimeSeconds:0,result:null};
  const memory=new Map<string,string>(),storage={getItem:(k:string)=>memory.get(k)??null,setItem:(k:string,v:string)=>{memory.set(k,v);},removeItem:(k:string)=>{memory.delete(k);}};
  const fields=hubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
@@ -24,6 +45,7 @@ function fixture(rules:10|11|15=10){
  Object.assign(hub,{epoch:1n,status:1,expiresAt:BigInt(at+3600),resolveThreshold:2});
  const state:any={id:4n,phase:2,a:match.a,b:match.b,nonceA:0n,nonceB:0n,head:10n,state:{leftDir:0,rightDir:0}};
  let nodeEpoch=1,nonce=0,readyMask=2,lost=false,receiptVisible=false,hold:(()=>Promise<void>)|undefined,nodeCalls=0,reorg=false,failBase=false;
+ if(rules===16)Object.assign(state,{sync:{pause:{status:1,human:1,limitUs:500000n,deadlineBlock:60n,cancelBlock:0n,resumeBlock:0n},brainA:0n,brainB:0n,decision:0n,pendingControls:0n,controllers:256n}});
  let clock=Date.now(),bindings=0,nonceReads=0,rejectName:'InvalidMatch'|'StaleInput'|undefined,rejectPhase=2;
  let overrideKey:Address=zeroAddress,overrideMeta=0n,overrideRevision=0n;const sent:Hex[]=[],receipts=new Map<Hex,any>();
  const binding={id:4n,epoch:1n,a:match.a,b:match.b,controlA:{key:account.address,expires:session.grant.expires,codeHash:zeroHash},controlB:{key:addr(21),expires:session.grant.expires,codeHash:zeroHash}};
@@ -33,7 +55,7 @@ function fixture(rules:10|11|15=10){
  let player!:ReturnType<typeof createPoolPlayer>;
  const node:any={getBlockNumber:async()=>10n,getStorageAt:async(r:any)=>{
   assert.equal(r.blockNumber,10n);for(let i=0;i<3;i++){
-   const key=keccak256(encodeAbiParameters([{type:'address'},{type:'uint256'},{type:'uint256'},{type:'uint256'}],[addr(9),0n,rules===15?1n:4n,BigInt(54+i)]));
+   const key=keccak256(encodeAbiParameters([{type:'address'},{type:'uint256'},{type:'uint256'},{type:'uint256'}],[addr(9),0n,rules>=15?1n:4n,BigInt(54+i)]));
    const slot=keccak256(encodeAbiParameters([{type:'bytes32'},{type:'uint256'}],[key,0n]));
    if(r.slot===slot)return toHex([BigInt(overrideKey),overrideMeta,overrideRevision][i],{size:32});
   }throw Error('Unexpected permission slot');
@@ -41,7 +63,7 @@ function fixture(rules:10|11|15=10){
   if(r.functionName==='RULES_VERSION')return BigInt(rules);if(r.functionName==='boundMatch'){bindings++;return binding;}
   if(r.functionName==='authorizationRevision')return overrideRevision;
   if(r.functionName==='readiness')return[readyMask,BigInt(at+30)];
-  const domain={name:rules===15?'PONGIT Reusable Arena':'PONGIT Pooled Arena',version:'1',chainId:10143,verifyingContract:addr(9)};
+  const domain={name:rules>=15?'PONGIT Reusable Arena':'PONGIT Pooled Arena',version:'1',chainId:10143,verifyingContract:addr(9)};
   if(r.functionName==='renewalDigest')return hashTypedData({domain,types:poolRenewTypes,primaryType:'RenewArena',message:r.args[0]});
   if(r.functionName==='revocationDigest')return hashTypedData({domain,types:poolRevokeTypes,primaryType:'RevokeArena',message:{player:r.args[0],epoch:1n,matchId:4n,revision:overrideRevision,deadline:r.args[1]}});
   throw Error(r.functionName);
@@ -53,7 +75,7 @@ function fixture(rules:10|11|15=10){
   const tx=parseTransaction(raw),hash=keccak256(raw);if(!receipts.has(hash)){
    assert.equal(tx.nonce,nonce++);assert.equal(tx.gas,POOL_PLAYER_GAS);
    const call:any=decodeFunctionData({abi:fixtureAbi,data:tx.data!});if(rejectName){state.phase=rejectPhase;}
-   else if(call.functionName==='input'){state.nonceA=call.args[rules===15?3:2];state.state.leftDir=call.args[rules===15?2:1];}else if(call.functionName==='concede')state.phase=3;
+   else if(call.functionName==='input'){state.nonceA=call.args[rules>=15?3:2];state.state.leftDir=call.args[rules>=15?2:1];}else if(call.functionName==='concede')state.phase=3;
    else if(call.functionName==='confirmReady')readyMask|=1;
    else if(call.functionName==='renewActive'){assert.equal(call.args[0].revision,overrideRevision);overrideKey=call.args[0].key;overrideMeta=call.args[0].expires;overrideRevision++;}
    else if(call.functionName==='revokeActive'){overrideMeta|=1n<<64n;overrideRevision++;}
@@ -62,10 +84,11 @@ function fixture(rules:10|11|15=10){
   if(lost)throw Error('Lost response');const result=receipts.get(hash);player.journal.received(r.method,result);return result;
  }};
  const feed:any={read:async()=>state,forCommand:async()=>state,receipt:async()=>state,invalidate(){},watch:()=>()=>{}};
+ state.observedAt=clock;
  const create=()=>player=createPoolPlayer(m,match,session,{base,storage,now:()=>clock,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
  return{m,match,session,owner,player,create,hub,state,sent,storage,binding,base,node,feed,
   lost:(v:boolean)=>lost=v,visible:(v:boolean)=>receiptVisible=v,epoch:(v:number)=>nodeEpoch=v,calls:()=>nodeCalls,hold:(v?:()=>Promise<void>)=>hold=v,
-  advance:(ms:number)=>{clock+=ms;},bindings:()=>bindings,nonceReads:()=>nonceReads,
+  advance:(ms:number)=>{clock+=ms;},fresh:()=>{state.observedAt=clock;},bindings:()=>bindings,nonceReads:()=>nonceReads,
   reject:(name:'InvalidMatch'|'StaleInput',phase:number)=>{rejectName=name;rejectPhase=phase;},
   reorg:(v:boolean)=>reorg=v,failBase:(v:boolean)=>failBase=v,override:(key:Address,meta:bigint,revision=1n)=>{overrideKey=key;overrideMeta=meta;overrideRevision=revision;}};
 }

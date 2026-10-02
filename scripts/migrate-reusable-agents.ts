@@ -23,15 +23,19 @@ const source=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/sour
 assert([4,5].includes(source.version),'Reviewed predecessor must be a reusable pool');
 const v3=process.env.PONG_REUSABLE_HUB_V3==='isolated-testnet';
 assert(process.env.PONG_REUSABLE_HUB_V3===undefined||v3,'Unreviewed target hub');
-const hub=v3?NO_LEASE_HUB:source.hub,arenaArtifact=v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
+const rulesVersion=Number(process.env.PONG_REUSABLE_RULES??15);
+assert([15,16].includes(rulesVersion),'Unknown immutable rules');
+const friendlyPause=rulesVersion===16?'heartbeat-v1':undefined;
+const hub=v3?NO_LEASE_HUB:source.hub,arenaArtifact=rulesVersion===16?'ProvisionedSynchronizedAgentArena':v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const rebalanced=process.env.PONG_HOUSE_POLICY==='progressive-v1';
 assert(process.env.PONG_HOUSE_POLICY===undefined||rebalanced,'Unreviewed house policy');
+assert(rulesVersion!==16||v3&&rebalanced,'Rules 16 require v3 and progressive policies');
 const sourceIndexBytes=await readFile('/metadata/source-agent-index.json');
 const sourceIndex=agentIndexDeployments(JSON.parse(sourceIndexBytes.toString()),10143,15);
-const indexedSources=[source,...(source.history??[])].filter(s=>s.rulesVersion===15);
-assert.equal(sourceIndex.length,indexedSources.length,'Every historical rules15 emitter must remain indexed');
+const indexedSources=[source,...(source.history??[])].filter(s=>s.rulesVersion>=15);
+assert.equal(sourceIndex.length,indexedSources.length,'Every historical reusable emitter must remain indexed');
 for(const prior of indexedSources){
- const entry=sourceIndex.find(s=>s.pool===prior.pool.toLowerCase());assert(entry,'Missing historical index binding');
+ const entry=sourceIndex.find(s=>s.pool===prior.pool.toLowerCase());assert(entry,'Missing historical index binding');assert.equal(entry.rulesVersion,prior.rulesVersion,'Historical rules differ');
  assert.deepEqual([...entry.arenas].sort(),prior.arenas.map(a=>a.app.toLowerCase()).sort(),'Historical arena index differs');
 }
 const auditBytes=await readFile('/metadata/ratings-empty-seed-audit.json');
@@ -80,11 +84,11 @@ try{
  assert.equal(await read('AgentPublishedRatings',source.ratings,'migrationSealed'),true);
  const hashes:Record<string,Hex>={};
  for(const name of ['pool','catalog','tournaments','ratings','qualifications','challenges','family'] as const)hashes[name]=await codeHash(source[name]);
- if(!r){r={prefix,hub,rulesVersion:15,countdownClock:'engine-ticks-v1',publicationProbe:'epoch-marker-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
+ if(!r){r={prefix,hub,rulesVersion,friendlyPause,countdownClock:'engine-ticks-v1',publicationProbe:'epoch-marker-v1',houseInstances:'official-v1',maxMatches:5,arenaCount,
   arenaAdmissions:'verified-epoch-v1',housePolicy:rebalanced?'progressive-v1':'inherited',genesis:String(await read('AgentPublishedRatings',source.ratings,'genesisTime')),
   source:{manifest:source,indexHash:keccak256(sourceIndexBytes),hashes,block:String(anchor.number),blockHash:anchor.hash,emptySeedAudit:auditHash,seal},
   admissionKey:generatePrivateKey(),engineKey:generatePrivateKey(),phase:stage==='prepare'?'preparing':'importing-closed',createdAt:new Date().toISOString()};await save();}
- assert.equal(r.prefix,prefix);assert.equal(r.source.emptySeedAudit,auditHash);assert.equal(r.arenaCount,arenaCount);
+ assert.equal(r.rulesVersion,rulesVersion);assert.equal(r.friendlyPause,friendlyPause);assert.equal(r.prefix,prefix);assert.equal(r.source.emptySeedAudit,auditHash);assert.equal(r.arenaCount,arenaCount);
  assert.equal((r.common?.hub??r.hub??source.hub).toLowerCase(),hub.toLowerCase(),'Target hub changes require a new migration namespace');
  if(v3){
   assert(r.hostedProvisioning==='owner-consent-v1'||!r.modules,'Existing arena deployments cannot acquire provisioning consent');
@@ -189,7 +193,7 @@ try{
  const poolReceipt=await t.base.getTransactionReceipt({hash:deploymentJob.hash});
  assert.equal(poolReceipt.status,'success');assert.equal(poolReceipt.contractAddress?.toLowerCase(),pool.toLowerCase());
  const indexManifest={version:2,chainId:10143,deployments:[...sourceIndex,
-  {chainId:10143,rulesVersion:15,pool,startBlock:String(poolReceipt.blockNumber),arenas:r.arenas.map((a:any)=>a.app)}]};
+  {chainId:10143,rulesVersion,pool,startBlock:String(poolReceipt.blockNumber),arenas:r.arenas.map((a:any)=>a.app)}]};
  agentIndexDeployments(indexManifest,10143,15);
  r.phase='deployed-closed';r.migrationPhase='imported-closed';await save();
  await mkdir('artifacts/reusable-candidate',{recursive:true});

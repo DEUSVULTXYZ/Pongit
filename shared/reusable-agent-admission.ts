@@ -28,7 +28,7 @@ function validate(ticket:ReusableTicket,b:ReusableAgentBinding,e:ReusableAgentEv
   if(same(c.codeHash,zeroHash))return c.house===0&&c.memoryWord===0n&&address(c.key)&&c.expires>(cancel?ticket.issuedAt:e.now)&&c.expires<=ticket.issuedAt+7200n;
   return same(c.key,zeroAddress)&&c.expires===0n&&(cancel||same(c.codeHash,code));
  };
- if(e.chainId!==10143||ticket.rules!==15n||!address(ticket.authority)||!address(ticket.arena)
+ if(e.chainId!==10143||![15n,16n].includes(ticket.rules)||!address(ticket.authority)||!address(ticket.arena)
   ||!same(ticket.authority,e.authority)||!same(ticket.arena,e.arena)||ticket.matchId<=0n||ticket.matchId!==e.reservedMatch||ticket.matchId!==b.id
   ||ticket.epoch<=0n||ticket.epoch!==e.hubEpoch||ticket.epoch!==e.engineEpoch||ticket.epoch!==b.epoch
   ||e.hubStatus!==1||!hubLeaseValid(e.hub,e.hubExpires,e.now,cancel?0n:420n)||!Number.isInteger(e.engineCount)||e.engineCount<0||e.engineCount>=65536||ticket.sequence!==BigInt(e.engineCount)+1n

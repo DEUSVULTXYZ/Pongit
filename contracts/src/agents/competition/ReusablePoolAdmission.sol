@@ -25,7 +25,7 @@ library ReusablePoolAdmission {
         if(block.number<=1||block.number-1>type(uint64).max)revert InvalidAdmissionSourceBlock();binding.preparedBlock=uint64(block.number-1);
         (,uint32 count,)=arena.resultCommitment();
         Admission.Ticket memory ticket=Admission.Ticket(address(this),address(arena),binding.epoch,uint256(count)+1,binding.id,
-            keccak256(abi.encode(binding)),uint64(block.timestamp),uint64(block.timestamp+120),binding.preparedBlock,blockhash(binding.preparedBlock),15);
+            keccak256(abi.encode(binding)),uint64(block.timestamp),uint64(block.timestamp+120),binding.preparedBlock,blockhash(binding.preparedBlock),arena.RULES_VERSION());
         require(ticket.sourceHash!=0&&issued[address(arena)][ticket.epoch][ticket.sequence]==0,"fresh ticket source");
         bytes32 key=T.key(T.Ref(10143,address(arena),binding.epoch,binding.id));
         tickets[key]=ticket;bindings[key]=binding;issued[address(arena)][ticket.epoch][ticket.sequence]=Admission.digest(ticket);

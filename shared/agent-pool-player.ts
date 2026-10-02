@@ -1,4 +1,4 @@
-import {createPublicClient,keccak256,parseTransaction,zeroHash,type LocalAccount,type PublicClient} from 'viem';
+import {createPublicClient,decodeEventLog,keccak256,parseTransaction,zeroHash,type LocalAccount,type PublicClient} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {EngineFeed} from './engine-feed';
 import {EngineStream,type EngineState} from './engine-stream';
@@ -25,7 +25,7 @@ class UnsentFenceExpired extends Error {
  * Watching/recovering remains possible when admissions or authorization expire.
  * This client never chooses an agent, starts a game or transports financial calls. */
 export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,session:PoolFamilySession,
- options:{base:PublicClient;storage:PoolSessionStorage;socket:(url:string)=>any;now?:()=>number},runtime?:{node:PublicClient;feed:EngineFeed}){
+ options:{base:PublicClient;storage:PoolSessionStorage;socket:(url:string)=>any;now?:()=>number;onInput?:(input:{id:number;direction:-1|0|1;at:number;acceptedAt?:bigint})=>void;onReconciled?:(state:EngineState)=>void},runtime?:{node:PublicClient;feed:EngineFeed}){
  const m=validateAgentPoolManifest(manifest),arena=m.arenas.find(a=>a.app.toLowerCase()===match.ref.app.toLowerCase()),player=session.grant.player;
  const abi=agentPoolArenaAbi(m),reusable=m.version>=4;
  if(!arena||match.node!==arena.node||!match.currentBinding||match.result||match.ref.chainId!==10143
@@ -33,7 +33,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   ||BigInt(match.ref.id)>=2n**256n||BigInt(match.ref.epoch)>=2n**256n||![match.a,match.b].some(a=>a.toLowerCase()===player.toLowerCase())
   ||privateKeyToAccount(session.key).address.toLowerCase()!==session.grant.key.toLowerCase())throw Error('This arcade key is not bound to the requested match');
  const id=BigInt(match.ref.id),epoch=BigInt(match.ref.epoch),journal=new RoomsCommandJournal(options.storage,arena.app,abi),now=options.now??Date.now;
- const node=runtime?.node??createPublicClient({transport:engineTransport(arena.node,journal),pollingInterval:1000});
+ const node=runtime?.node??createPublicClient({transport:engineTransport(arena.node,journal,m.rulesVersion===16?true:undefined),pollingInterval:1000});
  const stream=new EngineStream(arena.node,arena.app,options.socket,()=>engineCooldownMs(arena.node));
  const feed=runtime?.feed??new EngineFeed({app:arena.app,abi,node},stream);
  let sender:CompactArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
@@ -49,7 +49,9 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   // alone must not keep a stopped fixture process alive.
   (fenceTimer as any).unref?.();
  };
- let moving:Promise<void>|undefined,intention:{dir:-1|0|1}|undefined;
+ let moving:Promise<void>|undefined,intention:{dir:-1|0|1;id:number;at:number}|undefined,inputId=0;
+ let receivedInputTime:bigint|undefined;
+ let lastWriteAt=0;
  // A receipt acknowledges the latest queued intent, not necessarily the
  // direction of physics still catching up. Never deduplicate against that
  // older direction: doing so drops a release/reversal after a queued input.
@@ -129,7 +131,10 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   controlsUntil=started+(hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000));
   sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,...(reusable?{epoch}:{}),expires:control.expires,gas:POOL_PLAYER_GAS,now});
   prefetchFence();
-  feed.invalidate();return verify(await feed.read(id,true));
+  feed.invalidate();const recovered=verify(await feed.read(id,true));
+  options.onReconciled?.(recovered);
+  if(intention)options.onInput?.({id:intention.id,direction:intention.dir,at:now()});
+  return recovered;
  }
  async function authorizeControls(){
   if(!sender||journal.pending(session.grant.key))await recoverNow();
@@ -167,7 +172,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   })();
   fencePending=loading.finally(()=>{fencePending=undefined;});return fencePending;
  }
- async function sendNow(name:'input'|'concede'|'confirmReady',args:ArenaArguments){
+ async function sendNow(name:'input'|'concede'|'confirmReady'|'heartbeat'|'resumeReady',args:ArenaArguments){
   if(stopped)throw Error('Arena controls have stopped');
   await authorizeControls();
   if(stopped)throw Error('Arena controls have stopped');
@@ -190,7 +195,15 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
     await authorizeControls();
     result=await sender!.send(name,latestArgs);
    }
-   return verify(await feed.receipt(id,result,name,boundArgs,player));
+   if(name==='input'){
+    receivedInputTime=undefined;
+    for(const log of result.receipt.logs??[])try{
+     if(log.address.toLowerCase()!==arena!.app.toLowerCase())continue;
+     const event=decodeEventLog({abi,data:log.data,topics:log.topics}) as any;
+     if(event.eventName==='ControlQueued'&&event.args.id===id&&event.args.sequence===boundArgs[reusable?3:2])receivedInputTime=event.args.gameTime;
+    }catch{}
+   }
+   lastWriteAt=now();return verify(await feed.receipt(id,result,name,boundArgs,player));
   }
   catch(error){
    const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));
@@ -214,6 +227,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
       return[id,selected.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n];
      });
      acceptedDirection=selected.dir;
+     if(receivedInputTime!==undefined)options.onInput?.({id:selected.id,direction:selected.dir,at:selected.at,acceptedAt:receivedInputTime});
     }
     if(intention===selected)intention=undefined;
    });}catch(error){throw error;}
@@ -253,7 +267,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   async read(force=false){await identify(force);return verify(await feed.read(id,force));},
   watch(listener:(s:EngineState)=>void){const stop=feed.watch(id,s=>{try{if(!stopped&&verifiedAt&&now()-verifiedAt<10000)listener(verify(s));}catch{feed.invalidate();}});listeners.add(stop);return()=>{stop();listeners.delete(stop);};},
   controlsAvailable(){return !stopped&&!!sender&&now()<controlsUntil&&!journal.pending(session.grant.key);},
-  async recover(){const s=await serial(recoverNow);if(s.phase===2)intention??={dir:0};if(intention)await pump();return s;},
+  async recover(){const s=await serial(recoverNow);if(s.phase===2)intention??={dir:0,id:++inputId,at:now()};if(intention)await pump();return s;},
   async synchronize(){
    // Periodic observation must not rebuild the signer or discard its confirmed
    // nonce. A missing sender/pending command still takes the full recovery path.
@@ -270,7 +284,12 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
     return verify(await feed.read(id));
    }catch(error){throw error;}
   },
-  move(dir:-1|0|1){if(![-1,0,1].includes(dir)||stopped)return Promise.reject(Error('Invalid or stopped arena control'));intention={dir};return pump();},
+  move(dir:-1|0|1){
+   if(![-1,0,1].includes(dir)||stopped)return Promise.reject(Error('Invalid or stopped arena control'));
+   if(intention?.dir===dir)return pump();
+   if(!moving&&acceptedDirection===dir)return Promise.resolve();
+   intention={dir,id:++inputId,at:now()};options.onInput?.({id:intention.id,direction:dir,at:intention.at});return pump();
+  },
   ready(){return serial(async()=>{
    if(!reusable)return verify(await feed.read(id));
    await authorizeControls();const state=verify(await feed.read(id,true));
@@ -279,9 +298,21 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    const side=state.a.toLowerCase()===player.toLowerCase()?0:1;
    return mask&(1<<side)?state:sendNow('confirmReady',[id]);
   });},
+  heartbeat(resume=false){return serial(async()=>{
+   if(m.friendlyPause!=='heartbeat-v1')throw Error('This arena does not support friendly pauses');
+   await authorizeControls();
+   const state=verify(await feed.forCommand(id));
+   if(state.phase!==2||!state.sync?.pause.human)return state;
+   // A working write channel alone must not let a blind player keep losing.
+   // Require a recently received, identified state before renewing liveness.
+   if(now()-state.observedAt>500)throw Error('Waiting for a fresh arena observation');
+   if(resume&&state.sync.pause.status===2)return sendNow('resumeReady',[id]);
+   if(now()-lastWriteAt<150)return state; // A real input already renewed it.
+   return sendNow('heartbeat',[id]);
+  });},
   concede(){intention=undefined;return serial(()=>sendNow('concede',[id]));},
   renew:(owner:Pick<LocalAccount,'address'|'signTypedData'>)=>permission(owner,'renew'),
   revoke:(owner:Pick<LocalAccount,'address'|'signTypedData'>)=>permission(owner,'revoke'),
-  close(){stopped=true;fenceGeneration++;controlsUntil=0;clearTimeout(fenceTimer);intention=undefined;for(const stop of listeners)stop();listeners.clear();stream.stop();},
+  close(){stopped=true;fenceGeneration++;controlsUntil=0;clearTimeout(fenceTimer);intention=undefined;for(const stop of listeners)stop();listeners.clear();stream.stop();(node.transport as any)?.closeSend?.();},
  };
 }
