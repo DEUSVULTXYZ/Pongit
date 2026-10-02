@@ -20,6 +20,8 @@ assert([4,5].includes(m.version)); assert.equal(m.enabled,scope==='read-only-pub
 const label = process.env.PONG_PUBLICATION_LABEL!; assert(/^[a-z0-9-]{1,50}$/.test(label));
 const span = Number(process.env.PONG_PUBLICATION_BLOCKS ?? 300);
 assert(Number.isSafeInteger(span) && span >= 1 && span <= 3000);
+const endText = process.env.PONG_PUBLICATION_END_BLOCK;
+assert(!endText || /^[1-9]\d*$/.test(endText), 'An explicit end block must be a positive decimal integer');
 let lane: Promise<unknown> = Promise.resolve(), nextAt = 0;
 const measured = measuredFetch('monad');
 const paced: typeof fetch = (input, init) => {
@@ -38,7 +40,11 @@ await writeFile(file, JSON.stringify(report), {flag: 'wx', mode: 0o600});
 const save = async () => { await writeFile(file + '.next', JSON.stringify(report, null, 2), {mode: 0o600}); await rename(file + '.next', file); };
 try {
   assert.equal(await base.getChainId(), 10143);
-  const end = await base.getBlock(), from = end.number - BigInt(span - 1), first = await base.getBlock({blockNumber: from});
+  const tip = await base.getBlock();
+  const endNumber = endText ? BigInt(endText) : tip.number;
+  assert(endNumber <= tip.number && endNumber >= BigInt(span - 1), 'Evidence window is outside the observed chain');
+  const end = endNumber === tip.number ? tip : await base.getBlock({blockNumber: endNumber});
+  const from = end.number - BigInt(span - 1), first = await base.getBlock({blockNumber: from});
   report.window = {from: String(from), to: String(end.number), endHash: end.hash, startUtc: new Date(Number(first.timestamp) * 1000).toISOString(), endUtc: new Date(Number(end.timestamp) * 1000).toISOString(), seconds: Number(end.timestamp - first.timestamp)};
   const logs = [];
   for (let at = from; at <= end.number; at += 99n)
