@@ -36,13 +36,16 @@ contract ReusableEventsLobbyTest is Test {
         ChaosPhysics physics=new ChaosPhysics(effects,new ChaosRally(),dynamics,new ChaosContacts(dynamics));
         ChaosEngine kernel=new ChaosEngine(new ChaosCodec(),physics,new DrandEvmnet(),new ChaosDrawRules());
         for(uint256 i;i<3;i++){
-            ReusableEventsArena next=new ReusableEventsArena(IInterludeHub(address(hub)),address(lobby),vm.addr(BRIDGE),vm.addr(813),kernel,verifier);
+            ReusableEventsArena next=createArena(kernel);
             lobby.addArena(IndependentArena(address(next)));if(i==0)arena=next;
         }
         lobby.seal();lobby.openReusableArena(address(arena));register(101);register(102);register(103);register(104);
         assertLe(address(lobby).code.length,32768,"reviewed Monad authority runtime budget");
     }
     function createHub() internal virtual returns(IndependentHubFixture){return new IndependentHubFixture();}
+    function createArena(ChaosEngine kernel) internal virtual returns(ReusableEventsArena){
+        return new ReusableEventsArena(IInterludeHub(address(hub)),address(lobby),vm.addr(BRIDGE),vm.addr(813),kernel,verifier);
+    }
     function sig(uint256 key,bytes32 h) internal pure returns(bytes memory){(uint8 v,bytes32 r,bytes32 s)=vm.sign(key,h);return abi.encodePacked(r,s,v);}
     function register(uint256 key) internal {
         ArcadeFamily.Grant memory g=ArcadeFamily.Grant(vm.addr(key),vm.addr(key+1000),uint64(vm.getBlockTimestamp()),uint64(vm.getBlockTimestamp()+7200),0);

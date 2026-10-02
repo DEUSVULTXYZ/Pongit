@@ -10,6 +10,7 @@ type Provision = { epoch: string; state: "sending" | "uncertain" | "rejected" | 
 export async function requestHostedRenewal(
   db: Pick<Pool, "query">, app: Address, epoch: bigint, expectedUrl: string,
   transport: typeof fetch = fetch, now = Date.now(), hub:Address=LEGACY_HOSTED_HUB,
+  consent?:(control:string,transport:typeof fetch)=>Promise<typeof fetch>,
 ) {
   const row=(await db.query("SELECT provision_epoch,provisioning FROM il_lifecycle WHERE app=$1",[app])).rows[0];
   let p: Provision | null = row.provisioning;
@@ -41,11 +42,14 @@ export async function requestHostedRenewal(
     return value;
   };
   const control=await hostedControl(hub,transport);
+  // Consent is scoped and verified before persisting the sending intent.
+  // Lost responses still reconcile through unsigned GETs, never a second POST.
+  const dispatch=create&&consent?await consent(control,transport):transport;
   if(create)await save({epoch:String(epoch),state:"sending",attemptedAt:now,retryAt:0,attempts:(p?.attempts??0)+1,control,hub});
   else await save({...p!,control:p!.control??PREVIOUS_HOSTED_ORIGIN,lookupControl:control,hub});
   let response:Response;
   try {
-    response=await transport(`${control}/sessions${create?"":"/"+app}`,{
+    response=await dispatch(`${control}/sessions${create?"":"/"+app}`,{
       method:create?"POST":"GET",headers:{"content-type":"application/json"},redirect:'error',
       // Without a region, Interlude places the node near the caller (this VPS), not the players.
       ...(create?{body:JSON.stringify({app,region:HOME_REGION})}:{}),signal:AbortSignal.timeout(10000),

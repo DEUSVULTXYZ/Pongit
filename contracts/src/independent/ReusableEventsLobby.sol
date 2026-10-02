@@ -41,7 +41,7 @@ contract ReusableEventsLobby is IndependentLobby {
     function addArena(IndependentArena candidate) external override {
         ReusableEventsArena a=ReusableEventsArena(address(candidate));
         require(msg.sender==setupOwner&&!setupSealed&&arenas.length<16&&!registeredArena[address(a)],"setup only");
-        require(a.lobby()==address(this)&&a.owner()==address(this)&&address(a.hub())==address(hub)
+        require(a.lobby()==address(this)&&a.lifecycleOwner()==address(this)&&address(a.hub())==address(hub)
             &&a.pressureSigner()==pressureSigner&&a.admissionSigner()==admissionSigner
             &&address(a.resultVerifier())==address(verifier)&&a.RULES_VERSION()==14&&!a.isEphemeral(),"arena configuration");
         require(hub.statusOf(address(a),Types.GLOBAL)==Types.Status.None,"arena already delegated");

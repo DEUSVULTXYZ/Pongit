@@ -5,6 +5,7 @@ import {isAddress,keccak256,toHex,type Address} from 'viem';
 import {chainTools} from './independent-chain-tools';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {independentQualificationHub} from '../shared/independent-qualification-hub';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 const prefix=process.env.PONG_INDEPENDENT_PREFIX!;
 assert(prefix?.startsWith('independent-qualification-'));
 const out=process.env.PONG_INDEPENDENT_MANIFEST!;assert(out?.startsWith('/secrets/'));
@@ -16,6 +17,9 @@ if(reusable)assert(admissionSigner&&isAddress(admissionSigner)&&!/^0x0{40}$/i.te
 const arenaCount=Number(process.env.PONG_INDEPENDENT_ARENAS??3);assert(Number.isInteger(arenaCount)&&arenaCount>=3&&arenaCount<=16);
 const t=await chainTools(prefix);
 const hub=independentQualificationHub(rulesVersion,process.env.PONG_INDEPENDENT_HUB_V3,!!process.env.PONG_INDEPENDENT_SNAPSHOT);
+const provisioned=hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
+const provisioningOwner=process.env.PONG_HOSTED_PROVISIONER as Address|undefined;
+if(provisioned)assert(provisioningOwner&&isAddress(provisioningOwner)&&BigInt(provisioningOwner)>0n,'Explicit nonfinancial hosting owner required');
 const pressureSigner:Address='0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659';
 const snapshotText=process.env.PONG_INDEPENDENT_SNAPSHOT?await readFile(process.env.PONG_INDEPENDENT_SNAPSHOT,'utf8'):null;
 const snapshot=snapshotText?JSON.parse(snapshotText):null;
@@ -28,7 +32,8 @@ if(snapshot){
 }
 let manifest:any;
 try{manifest=JSON.parse(await readFile(out,'utf8'));assert.equal(manifest.prefix,prefix);assert.equal(manifest.rulesVersion??4,rulesVersion,'Never replace a journalled deployment with different rules');assert.equal(manifest.arenaCount??3,arenaCount,'Arena count changed during deployment');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
-manifest??={prefix,purpose:snapshot?'independent migration candidate':'independent contract qualification',production:false,chainId:10143,rulesVersion,...(reusable?{countdownClock:'engine-ticks-v1'}:{}),arenaCount,hub,pressureSigner,...(reusable?{admissionSigner}:{}),createdAt:new Date().toISOString(),genesis:Number(snapshot?.genesis??Math.floor(Date.now()/1000)),startBlock:String(await t.base.getBlockNumber()),migrationHash,arenas:[]};
+manifest??={prefix,purpose:snapshot?'independent migration candidate':'independent contract qualification',production:false,chainId:10143,rulesVersion,...(reusable?{countdownClock:'engine-ticks-v1'}:{}),arenaCount,hub,pressureSigner,...(reusable?{admissionSigner}:{}),...(provisioned?{hostedProvisioning:'owner-consent-v1',provisioningOwner}:{}),createdAt:new Date().toISOString(),genesis:Number(snapshot?.genesis??Math.floor(Date.now()/1000)),startBlock:String(await t.base.getBlockNumber()),migrationHash,arenas:[]};
+if(provisioned)assert(manifest.hostedProvisioning==='owner-consent-v1'&&manifest.provisioningOwner?.toLowerCase()===provisioningOwner!.toLowerCase(),'Never replace a journalled provisioning authority');
 if(reusable)assert.equal(manifest.admissionSigner.toLowerCase(),admissionSigner!.toLowerCase(),'Admission signer changed during deployment');
 assert.equal(manifest.hub.toLowerCase(),hub.toLowerCase(),'Never change the hub of a journalled deployment');
 if(reusable)assert.equal(manifest.countdownClock,'engine-ticks-v1','Preserve old candidate journals; new clock requires a new deployment prefix');
@@ -36,7 +41,7 @@ assert(!manifest.migrationHash||manifest.migrationHash===migrationHash,'Migratio
 const save=async()=>{await writeFile(out+'.next',JSON.stringify(manifest,null,2),{mode:0o600});await rename(out+'.next',out);};
 try{
  const lobbyName=reusable?'ReusableEventsLobby':rulesVersion===13?'ReadyIndependentEventsLobby':events?'IndependentEventsLobby':'IndependentLobby';
- const arenaName=reusable?'ReusableEventsArena':rulesVersion===13?'ReadyIndependentEventsArena':events?'IndependentEventsArena':'IndependentArena';
+ const arenaName=provisioned?'ProvisionedReusableEventsArena':reusable?'ReusableEventsArena':rulesVersion===13?'ReadyIndependentEventsArena':events?'IndependentEventsArena':'IndependentArena';
  await t.preflight(['ArcadeFamily',lobbyName,'PublishedRatings',arenaName,
   ...(reusable?['PublishedResultVerifier']:[]),
   ...(events?['ChaosEffects','ChaosModifiers','ChaosRally','ChaosDynamics','ChaosContacts','ChaosPhysics','ChaosCodec','DrandEvmnet','ChaosDrawRules','ChaosEngine']:[]),
@@ -66,8 +71,9 @@ try{
    assert(!manifest.modules[name]||manifest.modules[name]===deployed,'Pinned module changed');manifest.modules[name]=deployed;await save();}
  }
  for(let i=0;i<arenaCount;i++){
-  const app=await t.deploy(reusable?'ReusableEventsArena':rulesVersion===13?'ReadyIndependentEventsArena':events?'IndependentEventsArena':'IndependentArena',[hub,manifest.lobby,...(reusable?[admissionSigner]:[]),pressureSigner,...(events?[manifest.modules.ChaosEngine]:[]),...(reusable?[manifest.resultVerifier]:[])],`arena-${i}`);
+  const app=await t.deploy(arenaName,[hub,manifest.lobby,...(reusable?[admissionSigner]:[]),pressureSigner,...(events?[manifest.modules.ChaosEngine]:[]),...(reusable?[manifest.resultVerifier]:[]),...(provisioned?[provisioningOwner]:[])],`arena-${i}`);
   manifest.arenas[i]??={app,index:i};assert.equal(manifest.arenas[i].app,app);await save();
+  if(provisioned){const runtimeHash=keccak256((await t.base.getCode({address:app}))!);assert(!manifest.arenas[i].runtimeHash||manifest.arenas[i].runtimeHash===runtimeHash,'Pinned human code changed');manifest.arenas[i].runtimeHash=runtimeHash;await save();}
   await t.write(`register-arena-${i}`,manifest.lobby,l.abi,'addArena',[app]);
  }
  // Realtime settlement requires a sealed immutable list for its exact rules.

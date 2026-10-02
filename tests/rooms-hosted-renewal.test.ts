@@ -78,3 +78,19 @@ test("an unrelated application in a lookup is rejected",async()=>{
 });
 
 const requestHostedRenewal=(...args:Parameters<typeof actualrequestHostedRenewal>)=>{if(args[4])args[4]=configuredControl(args[4]);return actualrequestHostedRenewal(...args);};
+
+test('human creation consent is prepared once; lost replies only perform unsigned lookups',async()=>{
+ const db=journal(),calls:string[]=[];let consent=0;
+ const transport=(async(_:any,o:any)=>{calls.push(o.method);if(o.method==='POST')throw Error('lost');return Response.json({url});}) as typeof fetch;
+ const prepare=async()=>{consent++;return transport;};
+ await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,1000,undefined,prepare),/response lost/);
+ await requestHostedRenewal(db,app,2n,url,transport,12000,undefined,prepare);
+ assert.equal(consent,1);assert.deepEqual(calls,['POST','GET']);
+});
+test('failed human consent sends no POST and acquires no creation intent',async()=>{
+ const db=journal();let calls=0;
+ const transport=(async()=>{calls++;return Response.json({url});}) as typeof fetch;
+ await assert.rejects(requestHostedRenewal(db,app,2n,url,transport,1000,undefined,async()=>{throw Error('wrong owner');}),/wrong owner/);
+ assert.equal(calls,0);assert.equal((await db.query('SELECT',[])).rows[0].provisioning,null);
+ await requestHostedRenewal(db,app,2n,url,transport,12000);assert.equal(calls,1);
+});

@@ -39,12 +39,24 @@ import {arenaOutage,quietRetry} from './independent-service-policy';
 import {independentRuntime} from './independent-runtime';
 import {independentLegacy} from './independent-legacy';
 import {abi as verifierAbi} from '../../shared/abi-independent-PublishedResultVerifier';
+import {privateKeyToAccount} from 'viem/accounts';
+import {canonicalHostedConsent} from '../../shared/hosted-provisioner';
+import {independentProvisioningScope} from '../../shared/independent-provisioning';
 
 type Options={db:Pool;operatorDb?:Pool;legacyDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
 export async function independentService(o:Options){
  const path=process.env.PONG_INDEPENDENT_MANIFEST;if(!path)return null;
  const rawManifest=JSON.parse(await readFile(path,'utf8'));
  const m=independentRuntime(rawManifest),{db,base}=o;
+ const provisioningFile=process.env.PONG_INDEPENDENT_PROVISIONER_FILE;
+ const provisioner=rawManifest.hostedProvisioning==='owner-consent-v1'
+  ?privateKeyToAccount(JSON.parse(await readFile(provisioningFile??'', 'utf8')).privateKey):undefined;
+ const hostingConsent=(app:Address,epoch:bigint)=>{
+  const scope=independentProvisioningScope(rawManifest,app,epoch,provisioner?.address);
+  return scope?(control:string,transport:typeof fetch)=>canonicalHostedConsent(base,scope,provisioner!,control,transport):undefined;
+ };
+ // Fail before any network creation when the pinned v3 consent is missing.
+ for(const arena of m.arenas)hostingConsent(arena.app,1n);
  const rules=independentRules(m),{arena:arenaAbi,lobby:lobbyAbi,market:marketAbi,settlement:settlementAbi}=rules;
  await independentSchema(db);
  const r=independentReader(base,m);
@@ -161,7 +173,7 @@ export async function independentService(o:Options){
  const reusableLifecycles=engines.map((e,i)=>reusableResults&&reusableAdmit?independentReusableLifecycle({base,manifest:m,engine:e,health:health[i],results:reusableResults,queue,
   stage:(name,code)=>stage(i,name,code),admit:reusableAdmit,ensureHosted:async epoch=>{
    await db.query("INSERT INTO il_lifecycle(app,stage,epoch) VALUES($1,'starting',$2) ON CONFLICT(app) DO NOTHING",[e.app,String(epoch)]);
-   await requestHostedRenewal(db,e.app,epoch,m.arenas[i].node!,undefined,undefined,m.hub);
+   await requestHostedRenewal(db,e.app,epoch,m.arenas[i].node!,undefined,undefined,m.hub,hostingConsent(e.app,epoch));
   }}):null);
  async function observeArena(i:number){
   if(reusableLifecycles[i]){await reusableLifecycles[i]!.observe();return;}

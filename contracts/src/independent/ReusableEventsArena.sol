@@ -56,6 +56,8 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
         require(s.epoch==epoch&&s.status==Types.Status.Active&&HubLease.valid(address(hub),s.expiresAt,0),"engine session unavailable");_;
     }
     modifier current(uint256 epoch,uint256 id){S.assertMatch(words,epoch,id);_;}
+    /// Hosting consent may use a separate EOA; delegation authority stays here.
+    function lifecycleOwner() external view returns(address){return DelegatedLayout.layout().owner;}
     function resultCommitment() external view returns(uint256,uint32,bytes32){return S.commitment(words);}
     function currentMatch() public view returns(uint256 epoch,uint256 id){return(S.get(words,31),S.get(words,37));}
     function currentAdmission() external view returns(uint256 epoch,uint256 id,uint256 sequence,bytes32 hash){
