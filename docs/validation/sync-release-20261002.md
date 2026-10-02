@@ -1,5 +1,71 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 17:19 UTC — hosted Chaos and integrated projection pass
+
+Production remains unchanged. Published qualification additions are `159861f`
+(opening the four remaining owned private arenas), `15a01b3` (heartbeat-aware
+five-way driver), and `414bfbe` (read-only hosted projection comparison). These
+are not public qualification or migration. The final unchanged 24 hours have
+not started. The prior browser server approval rejection is still unresolved.
+
+Rules-16 Chaos controller match 3 finished 1-7 and was captured at 16:52:40 UTC.
+Friendly Chaos match 4 then passed with 100 scoped commands, p95 130.54 ms from
+the VPS. A deliberate outage froze physics at 7.210000 seconds, score 0-1, for
+3.595 seconds. That point occurred during the permitted initial 500-ms credit;
+neither score nor physical state changed during the verified freeze. Resume
+waited exactly 300 engine blocks and preserved physical time. The match finished
+normally 1-7 at 42.480885 physical seconds; its published result hash is
+`0xb9cbc0adb34f11a0d3015ff3b797815c8467a6c667bf45ff0e7b5681c9db7011`.
+Competitive ratings remained unchanged. Driver `pongit-sync-player-1-8d817a0`
+exited 0 at 16:57:28 UTC and closed both private admission gates. This remains a
+synthetic owner test, not browser/Mera/input-to-paint evidence.
+
+The four other rules-16 arenas opened normally through the original operator
+journal at 17:06 UTC. Their report is `sync-capacity-open.json`. Publisher funds
+were 47,905.681427207516479201 MON and the operator 404.782893552 MON at block
+67598309; fee 0.01 MON per opening. All five hosted engines subsequently passed
+state-changing publication checks. No provider configuration or human slot was
+changed. No funding request is needed for these bounded trials.
+
+Controller trial 3 passed three simultaneous matches, including independent
+Classic and Chaos instances of the same official policies. It exited 0 at
+17:13:35 UTC. Trial 4 is the sole current game driver:
+`pongit-sync-controllers-4-b1f72ee`, four games 8-11, original deadline
+17:27:08.945 UTC. Three were published by 17:18; match 11 remained active. Do not
+start another gate owner until its report finishes and lanes are canonically
+free. Both existing engine/archive workers keep their ORIGINAL stop at
+17:31:04.778605 UTC. No deadline was extended. More qualification requires a
+separate bounded operation after these workers are stopped and inspected.
+
+Read-only hosted Classic match 9 comparison passed 103 eligible intervals:
+zero difference for ball X/Y and both paddle positions between participant
+projection and the next confirmed state. It ended when the real match finished,
+at 17:18:21 UTC. Report `sync-projection-9.json` does not claim browser rendering,
+GPU, input or network latency. The initial probe failed before connection because
+the backend image lacks the imported historical `interlude-rooms.json` file;
+its exited container is preserved. The second read-only attempt mounted that
+exact tracked manifest and passed. No gameplay or image was changed.
+
+Backup `sync-20261002T1650Z` has seven SHA256-verified off-VPS files. Its first
+restore in the old isolated test database failed: the database stores PGDATA in
+tmpfs and its 256-MiB cgroup killed COPY with OOM. The failed report and partial
+scratch database remain. A separate network-isolated, disk-backed database with
+512-MiB memory cap and 32-MiB shared buffers restored the SAME dump bytes without
+error or OOM: 66 operator tables/11,630 lifecycle jobs, 11 public-agent tables/
+400,682 engine jobs, and nine private tables/658 engine jobs. No production
+database was restored. That successful scratch container is stopped. Its report
+is `backup-restore-disk-1650.json`. The newer seven-file backup
+`sync-20261002T1712Z` is also SHA256 verified off VPS. Both directories are under
+`C:/Users/wwwle/.codex/private-backups/pongit/`.
+
+Keep prior failed browser/admission measurements as failures. Remaining gates
+include all eight real bot qualifications, four controlled copies plus tournament,
+all tournament formats, real browser/catalogue responsiveness, seven-way human
+overlap, publication/release reserve, compatible public migration, finances and
+replays, and the unchanged 24-hour trial. Disk exceeds 80 percent again; perform
+scoped cleanup before another image build. Preserve journals, historical data,
+failed reports and personal documents. No subagents or competing writers.
+
 ## Checkpoint, 16:51 UTC — hosted Classic pause and cancellation pass
 
 Published commits `f31eff0`, `b1f72ee`, `cdde076` and `8d817a0` contain the
