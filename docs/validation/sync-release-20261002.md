@@ -1,5 +1,38 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 19:49 UTC — reproducible optimized candidate ready for private continuation
+
+Published physics commit `3735e2c` contains the optimization verified below.
+Commit `7388c1c` also repairs the progressive-policy metadata alias when a
+continuation reuses the same verified policy. Twelve focused tests and root
+typecheck pass. Explicit private continuation guards preserve d47 history and
+allow only its remaining championships; they do not authorize public migration.
+Read-only source-finality verifier `1be6dbe` checks all 34 results, 14 fixtures,
+ratings, qualifications, empty lanes and exact released roots before import.
+
+Clean image `pongit:sync-clean-7388c1c` was built from pinned Node and `npm ci`,
+not a previously patched image. Digest:
+`sha256:a0d6ada5fa33fa12ee4a53461aa3c00e9f8054baa990d7698890c259fbbe57c1`.
+All 628 audited source paths match the Git commit; 99 isolated image tests pass.
+The build began below 80 percent disk use. No public service has changed.
+
+The sole release worker is still running normally, waiting for the five real
+20:04:44–20:05:00 release deadlines. Its original 20:22:29.101691 deadline is
+unchanged. No game or engine worker is running. After successful release,
+`sync-continuation-operations-20261002.py archive` starts only a bounded
+900-second source finality worker; `verify 1` is read-only. Stop that archive
+after verification, refresh and verify the off-VPS backup, then use the prepared
+private import. The import has a 1,200-second bound and opens no arenas. Inspect
+reports and journals before any retry. Target root is
+`/opt/pongit/tests/fluid-20260928/sync-continuation-20261002`, namespace
+`reusable-agents-20261002-2`. It has no deployed/imported target yet.
+
+Hosted Chaos clock remains a failure pending optimized hosted measurements.
+Browser startup permission remains pending after automatic review rejected it;
+do not launch another route. Admission, browser rendering, championships,
+community, concurrent human play, reserve/rotation, public migration, finance,
+replays and unchanged 24-hour proof remain outstanding.
+
 ## Checkpoint, 19:22 UTC — optimized contracts preserve the physics
 
 The complete optimized Solidity suite passes **960 tests**; eight external/fork
