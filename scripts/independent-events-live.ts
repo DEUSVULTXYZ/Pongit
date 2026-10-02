@@ -63,7 +63,7 @@ async function request(path:string,body?:unknown){
  const value=await response.json() as any;
  assert(response.ok,`Private API ${path} HTTP ${response.status}: ${value.code??'unavailable'}`);return value;
 }
-async function operation(id:Hex){return until(async()=>{const v=await request('/operations/'+id);assert.notEqual(v.status,'failed','Confirmed sponsor revert');return v.status==='confirmed'?v:null;},'sponsored operation');}
+async function operation(id:Hex){return until(async()=>{const v=await request('/operations/'+id);assert.notEqual(v.status,'failed',v.hash?'Confirmed sponsor revert':'Unsigned sponsored action became invalid before submission');return v.status==='confirmed'?v:null;},'sponsored operation');}
 async function submit(name:string,to:Address,data:Hex){
  const startedAt=new Date().toISOString(),start=performance.now();
  const id=keccak256(encodeAbiParameters([{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[to,data,0n,'']));
@@ -251,11 +251,11 @@ try{
  // window. Continue tracking the ball until the other arena is actually playing;
  // two delegated contracts alone are not simultaneous gameplay evidence.
  for(const mode of [0,1] as const){
-  // The closed-release qualifier shares one operator with maintenance. Finish
+  // These qualification environments share one operator with maintenance. Finish
   // one room's twenty-second consent window before preparing the next room;
   // its game keeps running while the second room is prepared.
-  const prepared=closedProduction||publicRelease?await prepare(mode):undefined;
-  const task=(async()=>play(prepared??await prepare(mode)))().catch(async e=>{const row=report.matches.find((x:any)=>x.mode===mode);if(row){row.error=String(e?.shortMessage||e?.message||'Hosted fixture failed').split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,300);await flush();}throw e;});task.catch(()=>{});tasks.push(task);
+  const prepared=await prepare(mode);
+  const task=play(prepared).catch(async e=>{const row=report.matches.find((x:any)=>x.mode===mode);if(row){row.error=String(e?.shortMessage||e?.message||'Hosted fixture failed').split('\n')[0].replace(/0x[\da-f]{130,}/gi,'[signed bytes omitted]').slice(0,300);await flush();}throw e;});task.catch(()=>{});tasks.push(task);
  }
  await Promise.all(tasks);
  const began=report.matches.map((x:any)=>Date.parse(x.playingAt)),ended=report.matches.map((x:any)=>Date.parse(x.scores.at(-1).at));

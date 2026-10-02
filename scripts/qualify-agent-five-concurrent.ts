@@ -63,6 +63,7 @@ const read=(to:Address,abi:Abi,fn:string,args:any[]=[])=>base.readContract({addr
 const write=(op:string,to:Address,abi:Abi,fn:string,args:any[]=[])=>retryOperatorContention(()=>t.write(op,to,abi,fn,args));
 const wait=(ms=1000)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clients:ReturnType<typeof createPoolPlayer>[]=[];
+const playingTasks:Promise<void>[]=[];
 const heartbeatStops:(()=>Promise<void>)[]=[];
 function keepPresent(client:ReturnType<typeof createPoolPlayer>,row:any){
  let stopped=false;
@@ -76,7 +77,7 @@ function keepPresent(client:ReturnType<typeof createPoolPlayer>,row:any){
  const stop=async()=>{stopped=true;await loop;};heartbeatStops.push(stop);return stop;
 }
 let tournamentObserver:Awaited<ReturnType<typeof createPoolObserver>>|undefined;
-let arrived=0,releaseReady:()=>void,rejectReady:(e:unknown)=>void;
+let arrived=0,releaseReady!:()=>void,rejectReady!:(e:unknown)=>void;
 const allReady=new Promise<void>((resolve,reject)=>{releaseReady=resolve;rejectReady=reject;});allReady.catch(()=>{});
 const extract=(receipt:any)=>{const event=receipt.logs.filter((l:any)=>l.address.toLowerCase()===m.pool.toLowerCase()).flatMap((l:any)=>{try{const e=decodeEventLog({abi:poolAbi,data:l.data,topics:l.topics});return e.eventName==='AdmissionIssued'?[e]:[];}catch{return[];}})[0] as any;assert(event);const v=event.args.ticket;return{chainId:10143 as const,app:v.arena as Address,epoch:String(v.epoch),id:String(v.matchId)};};
 try{
@@ -166,14 +167,14 @@ try{
   assert(adopted,'No live early fixture within original concurrent deadline');
  }
  await write('challenges',m.challenges,challengeAbi,'setAdmissions',[true]);
+ if(!report.tournament)report.tournament=extract(await write('tournament-first-fixture',m.pool,poolAbi,'admitTournament',[1n]));
+ tournamentObserver=await createPoolObserver(m,(await reader.match(report.tournament)).value,u=>new WebSocket(u));
+ tournamentObserver.watch(s=>{if(s.phase>=3&&!report.engineFinishedAt){report.engineFinishedAt=new Date().toISOString();save();}});
  for(const row of report.people){
   const p=secret.people[row.index],storage={getItem:(k:string)=>p.storage[k]??null,setItem:(k:string,v:string)=>{p.storage[k]=v;saveSecret();},removeItem:(k:string)=>{delete p.storage[k];saveSecret();}};
   const family=loadPoolFamily(m,row.player,storage)!;
   p.call=await preparePoolChallenge(base,m,privateKeyToAccount(family.key),row.player,{agent:archetype,mode:row.mode});saveSecret();
   await retryOperatorContention(()=>t.submit('challenge-'+row.index,p.call.data,p.call.to));row.queuedAt=new Date().toISOString();save();
- }
- if(!report.tournament)report.tournament=extract(await write('tournament-first-fixture',m.pool,poolAbi,'admitTournament',[1n]));
- for(const row of report.people){
   assert(Date.now()<deadline,'Original admission deadline');
   // Version-5 requests may have been admitted atomically by their own signed
   // command. Resolve the player's assigned lane before asking for another.
@@ -182,11 +183,13 @@ try{
   if(current)row.ref={chainId:10143,app:current.ref.arena,epoch:String(current.ref.epoch),id:String(current.ref.id)};
   else row.ref=extract(await write('admit-'+row.index,m.pool,poolAbi,'admitChallenge'));
   row.admittedAt=new Date().toISOString();save();
+  // An atomic challenge may already own a loading arena. Its player must
+  // acknowledge it immediately while the other independent accounts submit.
+  // Serial fixture setup must not consume this player's 30-second deadline.
+  const task=playRow(row);task.catch(()=>{});playingTasks.push(task);
  }
  assert.equal(new Set([report.tournament,...report.people.map((p:any)=>p.ref)].map(v=>v.app.toLowerCase())).size,5);
- tournamentObserver=await createPoolObserver(m,(await reader.match(report.tournament)).value,u=>new WebSocket(u));
- tournamentObserver.watch(s=>{if(s.phase>=3&&!report.engineFinishedAt){report.engineFinishedAt=new Date().toISOString();save();}});
- const played=await Promise.allSettled(report.people.map(async(row:any)=>{try{
+ async function playRow(row:any){try{
   const p=secret.people[row.index],storage={getItem:(k:string)=>p.storage[k]??null,setItem:(k:string,v:string)=>{p.storage[k]=v;saveSecret();},removeItem:(k:string)=>{delete p.storage[k];saveSecret();}};
   const view=(await reader.match(row.ref)).value;assert(view.b.toLowerCase()===archetype.toLowerCase()&&view.a.toLowerCase()===row.player.toLowerCase()&&!view.ranked&&view.tournament==='0');
   const session=loadPoolFamily(m,row.player,storage)!;
@@ -215,7 +218,8 @@ try{
   }
   await client.move(0);row.controlsFinishedAt=new Date().toISOString();row.p95=[...row.latencies].sort((a:number,b:number)=>a-b)[94];save();
   // Let the real game reach its rule-based outcome; no injected score/concession.
- }catch(e){rejectReady(e);throw e;}}));
+ }catch(e){rejectReady(e);throw e;}}
+ const played=await Promise.allSettled(playingTasks);
  const failure=played.find(v=>v.status==='rejected');if(failure?.status==='rejected')throw failure.reason;
  // Prove a conservative common live interval with two actual observation
  // rounds. A dropped terminal notification must not invent a finish timestamp
@@ -233,7 +237,7 @@ try{
  assert(report.people.every((p:any)=>!p.heartbeatError),'An independent player heartbeat failed');
  report.functionalPassed=true;report.latencyPassed=report.people.every((p:any)=>p.p95<=300);report.passed=report.functionalPassed&&report.latencyPassed;
  if(!report.passed){report.error='Actual player command p95 exceeds 300 ms';process.exitCode=1;}
-}catch(e){report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);process.exitCode=1;}
+}catch(e){rejectReady(e);await Promise.allSettled(playingTasks);report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);process.exitCode=1;}
 finally{
  await Promise.all(heartbeatStops.map(stop=>stop()));
  clients.forEach(c=>c.close());tournamentObserver?.close();

@@ -17,6 +17,8 @@ import {engineTransport} from '../shared/engine-transport';
 assert.equal(process.env.PONG_SEVEN_WAY,'read-only-private');
 const deadline=Date.parse(process.env.PONG_SEVEN_WAY_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<=Date.now()+20*60_000);
+const trial=process.env.PONG_SEVEN_WAY_RUN??'1';assert(['1','2'].includes(trial));
+const copyRun=trial==='1'?'4':'5',humanRun=trial;
 const agents=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json','utf8')));
 const raw=JSON.parse(await readFile('/human-manifest.json','utf8'));
 assert.equal(agents.pool.toLowerCase(),'0xdee98e3f7a0f0049244a8257a9cde304d909e5dc');
@@ -28,7 +30,7 @@ const human=publicIndependentManifest(raw),rules=independentRules(human);
 assert.equal(human.rulesVersion,14);assert.equal(human.hub.toLowerCase(),agents.hub.toLowerCase());
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:5000})});
 const reader=new AgentPoolReader(base,agents,human.arenas.map(a=>a.app));
-const out='/evidence/seven-way-1.json';
+const out=`/evidence/seven-way-${trial}.json`;
 const report:any={startedAt:new Date().toISOString(),deadline,source:process.env.PONG_SOURCE_COMMIT,
  scope:'Actual hosted snapshots from seven independent games. Read-only sampled overlap; not browser rendering, latency acceptance or 24-hour availability.',samples:[],passed:false};
 await writeFile(out,poolJson(report),{flag:'wx'});
@@ -40,8 +42,8 @@ async function optional(path:string){try{return JSON.parse(await readFile(path,'
 try{
  let copies:any,humans:any;
  while(Date.now()<deadline){
-  copies=await optional('/agents-evidence/five-concurrent-4.json');
-  humans=await optional('/human-evidence/events-live-1.json');
+  copies=await optional(`/agents-evidence/five-concurrent-${copyRun}.json`);
+  humans=await optional(`/human-evidence/events-live-${humanRun}.json`);
   if(copies?.finishedAt&&!copies.passed)throw Error('Concurrent controller fixture failed');
   if(humans?.finishedAt&&!humans.passed)throw Error('Human controller fixture failed');
   if(copies?.tournament&&copies.people?.length===4&&copies.people.every((p:any)=>p.ref)
