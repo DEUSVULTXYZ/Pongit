@@ -22,6 +22,10 @@ import {Dialog} from './Dialog';
 import {IconButton} from './IconButton';
 import {EngineCredit} from './EngineCredit';
 import {AgentReplay} from './AgentReplay';
+import {ArcadeHeader,ArcadeHeading} from './ArcadeChrome';
+import {ArcadeProgress} from './ArcadeProgress';
+import {AgentModeSwitch} from './AgentModeSwitch';
+import {useQueueElapsed} from '../lib/use-lobby-clock';
 
 const quiet=()=>{};
 export function AgentArcade({enabled,initialMode,initialView,initialAgent,initialMatch}:{enabled:boolean;initialMode:AgentMode;initialView:'play'|'watch';initialAgent?:string;initialMatch?:{id:string;app:string;epoch:string}}){
@@ -141,16 +145,17 @@ export function AgentArcade({enabled,initialMode,initialView,initialAgent,initia
  const seconds=Math.max(0,Math.ceil(300-elapsed));void now;
  const outcome=snapshot?{playerA:snapshot.a,playerB:snapshot.b,winner:snapshot.winner,status:snapshot.phase,state:snapshot.state,ranked:false,mode:snapshot.state.mode,draw:snapshot.phase===3&&BigInt(snapshot.winner)===0n}:null;
  const opponent=snapshot&&side>=0?profile(side===0?snapshot.b:snapshot.a):undefined;
+ const waiting=!!request&&['waiting','offered'].includes(request.status)&&!id;
+ const waitSeconds=useQueueElapsed(waiting?`legacy-challenge:${request.id}`:undefined);
  return <main className={`cabinet-ui rooms-shell agents-shell ${playing?'rooms-playing':''}`}>
-  <header className="rooms-header"><Link href="/" className="brand" aria-label="PONGIT home"><img className="brand-mark" src="/brand/opposing-orbits.webp" width="40" height="40" alt=""/><span className="brand-word">PONGIT</span></Link>
-   <div className="rooms-header-actions"><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><button disabled={!config} onClick={()=>void run(async()=>{const r=await api(`/rankings?mode=${mode}`);setRanking(r.entries);setPanel('rankings');})}>Agent ranking</button><button disabled={busy||!config} onClick={()=>setPanel(ready?'account':'connect')}>{account?ready?short(account):'Renew session':'Connect'}</button></div>
-  </header>
+  <ArcadeHeader><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><button disabled={!config} onClick={()=>void run(async()=>{const r=await api(`/rankings?mode=${mode}`);setRanking(r.entries);setPanel('rankings');})}>Agent ranking</button><button disabled={busy||!config} onClick={()=>setPanel(ready?'account':'connect')}>{account?ready?short(account):'Renew session':'Connect'}</button></ArcadeHeader>
   {(error||notice)&&<div className="rooms-notice" role={error?'alert':'status'}>{error||notice}</div>}
   {!enabled?<section className="agent-empty"><h1>Agent Arcade</h1><p>The dedicated arena is being qualified. Public agent matches are not open yet.</p><Link className="rooms-button" href="/">Back to arcade</Link></section>:<>
-  {!id&&<><div className="agent-heading"><div><h1>Agent Arcade</h1><p>House bots. Community rivals. One more game.</p></div><div className="control-segments" role="group" aria-label="Agent game mode"><button aria-pressed={mode===0} onClick={()=>setMode(0)}>Classic</button><button aria-pressed={mode===1} onClick={()=>setMode(1)}>Chaos</button></div></div>
+  {!id&&<><ArcadeHeading title="Agent Arcade" description="House bots. Community rivals. One more game."><AgentModeSwitch value={mode} onChange={value=>{if(value!=='all')setMode(value);}}/></ArcadeHeading>
    <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button><Link href="/">Play a person ↗</Link></nav>
    <p>First to seven · Five-minute limit</p></>}
-  {request&&['waiting','offered'].includes(request.status)&&!id&&<section className="agent-wait"><h2>Your next duel</h2><p>{name(request.agent)} · {mode===1?'Chaos':'Classic'}</p><p>Waiting for an available arena</p><button disabled={busy} onClick={()=>void run(async()=>{await api('/challenges/cancel',{id:request.id});setRequest(null);})}>Cancel challenge</button></section>}
+  {waiting&&<ArcadeProgress stage={error?'error':request.status==='offered'?'preparing':'capacity'} elapsed={waitSeconds}
+   detail={error||`${name(request.agent)} · ${mode===1?'Chaos':'Classic'}`} actions={<button disabled={busy} onClick={()=>void run(async()=>{await api('/challenges/cancel',{id:request.id});setRequest(null);})}>Cancel challenge</button>}/>}
   {!id&&view==='play'&&<div className="agent-grid">{profiles.filter(p=>p.modes.includes(mode)).map(p=><article className="agent-card" data-selected={selected.toLowerCase()===p.agent.toLowerCase()} key={p.agent}>
    <span className="agent-badge">{p.kind==='pongit'?'PONGIT BOT':p.kind==='strategy'?'ON-CHAIN STRATEGY':'COMMUNITY AGENT'}</span><div className="agent-identity"><Avatar index={p.avatar}/><div><h2>{p.name}</h2><p>{p.kind==='pongit'?houseBots.find(b=>b.name===p.name)?.difficulty:p.kind==='strategy'?'Plays from its own contract':'Community rival'}</p></div></div>
    <span className="agent-creator">Created by <a href={`https://testnet.monadexplorer.com/address/${p.creator}`} target="_blank" rel="noreferrer">{short(p.creator)}</a></span><span className="agent-status" data-online={p.available}>{p.qualification[mode]!=='qualified'?'Qualifying':!p.available?'Offline':p.playing?'Playing · next duel available':'Available'}</span>
@@ -158,6 +163,7 @@ export function AgentArcade({enabled,initialMode,initialView,initialAgent,initia
   </article>)}</div>}
   {!id&&view==='watch'&&(live.length?<div className="agent-grid">{live.filter(g=>g.mode===mode).map(g=><article className="agent-card" key={g.id}><span className="agent-badge">{g.status==='active'?'LIVE MATCH':'RESULT PUBLICATION'}</span><h2>{name(g.a)}<br/>vs {name(g.b)}</h2><p>{g.mode===1?'Chaos':'Classic'} · {g.ranked?'Agent ranked':'Friendly'}</p><button onClick={()=>watch(g)}>Watch match</button></article>)}</div>:<section className="agent-empty"><h2>No live agent match</h2><p>The arena will show a real match when the service is available.</p></section>)}
   {id&&<><div className="agent-toolbar"><Link href="/agents">Agent Arcade</Link><span>{snapshot?.state.mode===1?'Chaos':'Classic'} · {side>=0?'Friendly match':'Agent match'}</span><button onClick={()=>void copy()}>Copy match link</button>{snapshot&&snapshot.phase>=3&&<button onClick={()=>setResultKey(x=>x+1)}>View result</button>}{side>=0&&playing&&<button disabled={busy} onClick={()=>void run(async()=>{await client.current!.send('concede',[BigInt(id)]);})}>Concede</button>}</div>
+   {!snapshot&&!match?.offer&&<ArcadeProgress stage={error?'error':'synchronizing'} detail={error||undefined} actions={<Link className="rooms-button" href="/agents">Back to agents</Link>}/>}
    {match?.offer&&snapshot?.phase!==2&&snapshot?.phase!==3&&snapshot?.phase!==4&&<section className="agent-wait"><h2>{name(match.a)} vs {name(match.b)}</h2><div className="rooms-button-row"><button className="primary" disabled={busy||!ready} onClick={()=>void run(async()=>{await client.current!.accept(match.offer);await refreshMe();})}>Accept</button><button disabled={busy} onClick={()=>void run(async()=>{const s=await client.current!.read(BigInt(id),true);if(s.phase===1)await client.current!.send('cancelMatch',[BigInt(id)]);else if(s.phase===2)throw Error('This match has started. Use Concede to leave.');setMatch(null);setWatchId(undefined);})}>Back</button></div></section>}
    {snapshot&&snapshot.phase>=2&&<section className="agent-court"><div className="agent-scoreboard"><div><div className="agent-score-name"><Avatar index={profile(snapshot.a)?.avatar}/><span>{name(snapshot.a)}</span></div></div><div><div className="agent-clock">{Math.floor(seconds/60)}:{String(seconds%60).padStart(2,'0')}</div><div className="agent-score"><b>{snapshot.state.scoreA}</b><small>:</small><b>{snapshot.state.scoreB}</b></div></div><div><div className="agent-score-name"><Avatar index={profile(snapshot.b)?.avatar}/><span>{name(snapshot.b)}</span></div></div></div>
     {snapshot.chaos&&<ChaosEffectsHud effects={eventHud(snapshot.chaos.physics)} gameMs={Number(snapshot.state.t)/1000} players={[name(snapshot.a),name(snapshot.b)]}/>}
