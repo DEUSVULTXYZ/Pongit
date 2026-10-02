@@ -5,9 +5,22 @@ import {independentRules,independentControlArgs} from '../shared/independent-rul
 import {publicIndependentManifest} from '../shared/independent';
 import {independentReader} from '../shared/independent-read';
 import {initial} from '../shared/physics-v2';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
+import {hostedArenaOrigin} from '../shared/hosted-control';
 
 const address=(n:number)=>('0x'+n.toString(16).padStart(40,'0')) as Address;
 const raw={chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(i=>({app:address(i)})),genesis:1700000000,createdAt:'2026-09-20T00:00:00Z'};
+
+test('v3 human manifests pin the correct hosted generation without accepting caller origins',()=>{
+ const v3={...raw,hub:NO_LEASE_HUB,rulesVersion:14,resultVerifier:address(30),admissionSigner:address(31)};
+ const m=publicIndependentManifest(v3);
+ assert.equal(m.arenas[0].node,hostedArenaOrigin(NO_LEASE_HUB,m.arenas[0].app));
+ for(const node of ['https://il-0000000000000000.fly.dev','https://il2-eu-deadbeefdeadbeef.fly.dev','http://127.0.0.1:8080']){
+  assert.throws(()=>publicIndependentManifest({...v3,arenas:v3.arenas.map(a=>({...a,node}))}),/Unapproved hosted node/);
+ }
+ assert.throws(()=>publicIndependentManifest({...v3,rulesVersion:13}),/Unapproved hosted node/);
+ assert.match(publicIndependentManifest(raw).arenas[0].node!,/^https:\/\/il-/);
+});
 test('historical manifests keep their ABI while unknown versions fail closed',()=>{
  assert.equal(publicIndependentManifest(raw).rulesVersion,4);
  const current=publicIndependentManifest({...raw,rulesVersion:12,privateKey:'excluded'}),r=independentRules(current);

@@ -8,16 +8,17 @@ import {abi as hubAbi} from '../../shared/abi-independent-IInterludeHub';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from './agents/reusable-budget';
 import {engineReadRetryMs} from '../../shared/engine-read';
 import {hubLeaseValid} from '../../shared/hub-lease';
+import {hostedControl} from '../../shared/hosted-control';
 import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget} from '../../shared/arena-replacement';
 
 type Queue=(at:Address,abi:Abi,name:string,args:readonly unknown[],value?:bigint,priority?:number)=>Promise<unknown>;
-/** Every new hosted epoch needs Interlude's control plane. Any HTTP answer, a 404
- * included, proves it is serving; a timeout or a 5xx means a rotated arena could
- * not be hosted again yet. Only voluntary, age-based rotations consult this. */
-async function controlPlaneAnswers(app:Address){
+/** Voluntary rotation requires the matching hub's control plane. A directory
+ * 404 is valid only after its chain, hub and validator have been verified. */
+export async function humanControlPlaneAnswers(hub:Address,app:Address,transport:typeof fetch=fetch){
  try{
-  const response=await fetch(`https://control.interludelayer.xyz/sessions/${app}`,{signal:AbortSignal.timeout(5000)});
-  await response.body?.cancel().catch(()=>{});return response.status<500;
+  const origin=await hostedControl(hub,transport);
+  const response=await transport(`${origin}/sessions/${app}`,{signal:AbortSignal.timeout(5000)});
+  await response.body?.cancel().catch(()=>{});return response.ok||response.status===404;
  }catch{return false;}
 }
 /** No evidence file means no new capacity/admission; it never disables the
@@ -25,7 +26,7 @@ async function controlPlaneAnswers(app:Address){
  * capacity. A registered address or successful old HTTP response does not. */
 export async function independentReusablePool(base:PublicClient,m:IndependentManifest,queue:Queue,
  health:()=>readonly {app:Address;epoch:string;stage:string;online:boolean}[],enabled:()=>boolean,
- budgetPath=process.env.PONG_INDEPENDENT_PUBLICATION_BUDGET,control:(app:Address)=>Promise<boolean>=controlPlaneAnswers,now:()=>number=Date.now){
+ budgetPath=process.env.PONG_INDEPENDENT_PUBLICATION_BUDGET,control:(app:Address)=>Promise<boolean>=app=>humanControlPlaneAnswers(m.hub,app),now:()=>number=Date.now){
  if(m.rulesVersion!==14)throw Error('Reusable human pool required');
  let reserveRetryAt=0;
  const unhealthySince=new Map<string,number>(),replaced=new Map<string,number[]>(),exhaustionAlerted=new Set<string>();

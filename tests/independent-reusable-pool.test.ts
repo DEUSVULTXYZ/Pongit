@@ -4,11 +4,24 @@ import {mkdtemp,writeFile,unlink,rmdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {encodeFunctionData,encodeFunctionResult,decodeFunctionData,keccak256,toHex,zeroAddress,zeroHash,type Address} from 'viem';
-import {independentReusablePool} from '../relayer/src/independent-reusable-pool';
+import {independentReusablePool,humanControlPlaneAnswers} from '../relayer/src/independent-reusable-pool';
 import {DEAD_ARENA_MS} from '../shared/arena-replacement';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
+import {LEGACY_HOSTED_HUB} from '../shared/hosted-control';
 const at=(n:number)=>toHex(n,{size:20}) as Address;
+test('human rotation verifies the correct hub and does not treat rejected hosting as capacity',async()=>{
+ for(const status of [200,404,401,429,503]){
+  const urls:string[]=[];const transport=(async input=>{
+   urls.push(String(input));return String(input).endsWith('/config')
+    ?Response.json({hub:LEGACY_HOSTED_HUB,chainId:10143,validator:'0xB28E684815b095aB5Fb324214cfEa63d76F3d691'})
+    :Response.json({}, {status});
+  }) as typeof fetch;
+  assert.equal(await humanControlPlaneAnswers(LEGACY_HOSTED_HUB,at(1),transport),[200,404].includes(status));
+  assert(urls.every(u=>u.startsWith('https://interlude-control.fly.dev/')));
+ }
+ assert.equal(await humanControlPlaneAnswers(NO_LEASE_HUB,at(1),(async()=>Response.json({hub:LEGACY_HOSTED_HUB})) as typeof fetch),false);
+});
 async function fixture(t:any,withBudget=true){
  const apps=[at(1),at(2),at(3)],m:any={rulesVersion:14,hub:at(5),lobby:at(6),arenas:apps.map(app=>({app}))};
  const fields=roomsLifecycleHubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;

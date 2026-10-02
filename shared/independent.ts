@@ -1,4 +1,6 @@
 import {getAddress,isAddress,type Address,type Hex} from 'viem';
+import {NO_LEASE_HUB} from './hub-lease';
+import {hostedArenaOrigin} from './hosted-control';
 export type IndependentManifest={
  rulesVersion?:4|12|13|14;
  countdownClock?:'engine-ticks-v1';
@@ -16,8 +18,10 @@ export function publicIndependentManifest(raw:any):IndependentManifest{
  const arenas=raw.arenas.map((a:any,index:number)=>{
   if(!isAddress(a.app))throw Error('Invalid arena address');
   // Hosted addresses are pinned at deployment, never supplied by an API caller.
-  const node=a.node??`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`;
-  if(!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(node))throw Error('Unapproved hosted node');
+  const v3=raw.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
+  const expected=v3?hostedArenaOrigin(NO_LEASE_HUB,a.app):`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`;
+  const node=a.node??expected;
+  if(v3?raw.rulesVersion!==14||node!==expected:!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(node))throw Error('Unapproved hosted node');
   return {app:getAddress(a.app),index,node};
  });
  if(new Set(arenas.map((a:{app:Address})=>a.app.toLowerCase())).size!==arenas.length)throw Error('Duplicate arena');
