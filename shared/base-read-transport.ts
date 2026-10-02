@@ -22,7 +22,15 @@ export function baseReadTransport(url:string,options:{intervalMs?:number;maxConc
   });queue=start.catch(()=>{});return start;
  };
  return config=>{
-  const transport=http(url,{retryCount:0,timeout:8000,fetchFn:measuredFetch('monad')})(config);
+  const measured=measuredFetch('monad');
+  const boundedFetch:typeof fetch=(input,init)=>{
+   // viem clears its fetch deadline at the response headers. Keep this signal
+   // alive through decoding so a partial body cannot strand the shared queue
+   // or its coalesced authorization read forever.
+   const timeout=AbortSignal.timeout(8000);
+   return measured(input,{...init,signal:init?.signal?AbortSignal.any([init.signal,timeout]):timeout});
+  };
+  const transport=http(url,{retryCount:0,timeout:8000,fetchFn:boundedFetch})(config);
   return {...transport,request:args=>{
    if(!reads.has(args.method))return Promise.reject(Error('This connection only permits public chain reads'));
    const key=JSON.stringify(args),existing=inFlight.get(key);if(existing)return existing;

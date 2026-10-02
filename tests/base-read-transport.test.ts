@@ -1,6 +1,33 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
 import {baseReadTransport} from '../shared/base-read-transport';
+
+test('a stalled response body releases the base read lane and in-flight authorization read',async()=>{
+ let calls=0;
+ const server=createServer((request,response)=>{
+  let body='';request.on('data',chunk=>body+=chunk);request.on('end',()=>{
+   const value=JSON.parse(body);calls++;
+   response.writeHead(200,{'content-type':'application/json'});
+   if(calls===1){response.flushHeaders();response.write('{"jsonrpc":"2.0",');}
+   else response.end(JSON.stringify({jsonrpc:'2.0',id:value.id,result:'0x1'}));
+  });
+ });
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const rescue=setTimeout(()=>server.closeAllConnections(),10500);
+ try{
+  const address=server.address();assert(address&&typeof address!=='string');
+  const t=baseReadTransport(`http://127.0.0.1:${address.port}`,{intervalMs:0,maxConcurrent:1})({} as any);
+  const started=performance.now();
+  const failed=assert.rejects(t.request({method:'eth_blockNumber'}));
+  const following=t.request({method:'eth_chainId'});
+  await failed;
+  assert(performance.now()-started<9500,'Headers must not cancel the body deadline');
+  assert.equal(await following,'0x1');
+  assert.equal(await t.request({method:'eth_blockNumber'}),'0x1','A later authorization must make a fresh request');
+  assert.equal(calls,3,'A timed-out read is not silently replayed');
+ }finally{clearTimeout(rescue);server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}
+});
 
 test('base reads share a paced queue and coalesce only identical in-flight requests',async()=>{
  const original=globalThis.fetch;let now=0;const calls:{at:number;method:string}[]=[];
