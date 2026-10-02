@@ -68,7 +68,7 @@ function keepPresent(client:ReturnType<typeof createPoolPlayer>,row:any){
  let stopped=false;
  const loop=(async()=>{
   while(!stopped&&Date.now()<deadline){
-   try{const state=await client.heartbeat(true);if(state.phase>=3)return;}
+   try{const state=await client.heartbeat(true);if(state.phase>=3){row.engineFinishedAt??=new Date().toISOString();save();return;}}
    catch(e){row.heartbeatError=String((e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160);save();return;}
    await wait(200);
   }
@@ -217,13 +217,20 @@ try{
   // Let the real game reach its rule-based outcome; no injected score/concession.
  }catch(e){rejectReady(e);throw e;}}));
  const failure=played.find(v=>v.status==='rejected');if(failure?.status==='rejected')throw failure.reason;
+ // Prove a conservative common live interval with two actual observation
+ // rounds. A dropped terminal notification must not invent a finish timestamp
+ // or erase the already measured overlap. Every match must still be live now.
+ const stillPlaying=await Promise.all([...clients.map(c=>c.read(true)),tournamentObserver!.read(true)]);
+ assert(stillPlaying.every(s=>s.phase===2),'Five games did not remain live through all controls');
+ report.overlapConfirmedThrough=new Date(Math.min(...stillPlaying.map(s=>s.observedAt))).toISOString();
+ report.overlapMs=Date.parse(report.overlapConfirmedThrough)-Date.parse(report.overlapVerifiedAt);
+ assert(report.overlapMs>0,'No common measured live interval');save();
  while(Date.now()<deadline){
   for(const row of [report,...report.people]){const ref=row===report?report.tournament:row.ref;if(row.result)continue;const view=(await reader.match(ref)).value;if(view.result){assert.equal(view.result.status,3);row.result=view.result;row.capturedAt=new Date().toISOString();save();}}
   if(report.result&&report.people.every((p:any)=>p.result))break;await wait(2000);
  }
  assert(report.result&&report.people.every((p:any)=>p.result),'Original publication deadline');
  assert(report.people.every((p:any)=>!p.heartbeatError),'An independent player heartbeat failed');
- const start=Date.parse(report.overlapVerifiedAt),end=Math.min(...report.people.map((p:any)=>Date.parse(p.engineFinishedAt)),Date.parse(report.engineFinishedAt));report.overlapMs=end-start;assert(report.overlapMs>0);
  report.functionalPassed=true;report.latencyPassed=report.people.every((p:any)=>p.p95<=300);report.passed=report.functionalPassed&&report.latencyPassed;
  if(!report.passed){report.error='Actual player command p95 exceeds 300 ms';process.exitCode=1;}
 }catch(e){report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);process.exitCode=1;}
