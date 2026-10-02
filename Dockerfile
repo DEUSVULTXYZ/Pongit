@@ -1,7 +1,8 @@
-FROM node:24-bookworm-slim AS dependencies
+ARG NODE_IMAGE=node:24-bookworm-slim@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6
+FROM ${NODE_IMAGE} AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --no-audit --no-fund
+RUN npm ci --include=dev --ignore-scripts --no-audit --no-fund
 
 FROM dependencies AS relayer
 WORKDIR /app
@@ -43,7 +44,7 @@ ENV NODE_ENV=production
 USER node
 CMD ["node","scripts/agent-series-process.mjs","reader"]
 
-# Reusable rules-15 roles retain the shared operator journal and keep admission
+# Reusable roles retain the shared operator journal and keep admission
 # and gameplay keys in their respective runtime mounts, never this image.
 FROM agent-pool AS agent-reusable
 COPY scripts/agent-reusable-engines.ts scripts/agent-reusable-step.ts scripts/agent-reusable-process.mjs scripts/agent-role-supervisor.mjs ./scripts/
@@ -54,9 +55,13 @@ CMD ["node","scripts/agent-reusable-process.mjs","reader"]
 # exact compiler artifacts are mounted read-only and checked before deployment.
 FROM agent-reusable AS agent-qualification
 COPY scripts ./scripts
+COPY web/lib ./web/lib
+COPY agent-sdk ./agent-sdk
+COPY deployments/interlude-rooms.json ./deployments/interlude-rooms.json
 USER root
 RUN mkdir -p /app/artifacts/reusable-candidate && chown -R node:node /app/artifacts
 USER node
+RUN node --import tsx -e "Promise.all([import('./shared/agent-pool-player.ts'),import('./web/lib/participant-projection.ts'),import('./relayer/src/agents/pool-read.ts')])"
 
 FROM dependencies AS web-build
 COPY shared ./shared
@@ -72,7 +77,7 @@ ENV PONG_REQUIRE_AGENT_POOL_MANIFEST=$PONG_REQUIRE_AGENT_POOL_MANIFEST
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL NEXT_PUBLIC_RP_ID=$NEXT_PUBLIC_RP_ID NEXT_TELEMETRY_DISABLED=1
 RUN npx tsx scripts/docs-build.ts && npx next build web
 
-FROM node:24-bookworm-slim AS web
+FROM ${NODE_IMAGE} AS web
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 NEXT_TELEMETRY_DISABLED=1
 COPY --from=web-build --chown=node:node /app/web/.next/standalone ./
