@@ -6,6 +6,7 @@ import {chainTools} from './independent-chain-tools';
 import {readHubDelegation} from '../shared/rooms-hub';
 import {independentQualificationHub} from '../shared/independent-qualification-hub';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
+import {retryOperatorContention} from '../shared/operator-contention';
 const prefix=process.env.PONG_INDEPENDENT_PREFIX!;
 assert(prefix?.startsWith('independent-qualification-'));
 const out=process.env.PONG_INDEPENDENT_MANIFEST!;assert(out?.startsWith('/secrets/'));
@@ -15,7 +16,13 @@ const reusable=rulesVersion===14;
 const admissionSigner=process.env.PONG_ADMISSION_BRIDGE as Address|undefined;
 if(reusable)assert(admissionSigner&&isAddress(admissionSigner)&&!/^0x0{40}$/i.test(admissionSigner),'Explicit limited testnet admission bridge address');
 const arenaCount=Number(process.env.PONG_INDEPENDENT_ARENAS??3);assert(Number.isInteger(arenaCount)&&arenaCount>=3&&arenaCount<=16);
-const t=await chainTools(prefix);
+const operator=await chainTools(prefix);
+// Maintenance and isolated qualification share one nonce journal. Yield on its
+// lock without creating a replacement operation or losing a deployment step.
+const t={...operator,
+ deploy:(...args:Parameters<typeof operator.deploy>)=>retryOperatorContention(()=>operator.deploy(...args)),
+ write:(...args:Parameters<typeof operator.write>)=>retryOperatorContention(()=>operator.write(...args)),
+};
 const hub=independentQualificationHub(rulesVersion,process.env.PONG_INDEPENDENT_HUB_V3,!!process.env.PONG_INDEPENDENT_SNAPSHOT);
 const provisioned=hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
 const provisioningOwner=process.env.PONG_HOSTED_PROVISIONER as Address|undefined;
