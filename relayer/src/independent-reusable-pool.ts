@@ -7,6 +7,7 @@ import {abi as lobbyAbi} from '../../shared/abi-independent-ReusableEventsLobby'
 import {abi as hubAbi} from '../../shared/abi-independent-IInterludeHub';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from './agents/reusable-budget';
 import {engineReadRetryMs} from '../../shared/engine-read';
+import {hubLeaseValid} from '../../shared/hub-lease';
 import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget} from '../../shared/arena-replacement';
 
 type Queue=(at:Address,abi:Abi,name:string,args:readonly unknown[],value?:bigint,priority?:number)=>Promise<unknown>;
@@ -40,10 +41,10 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
   if(!enabled()||!budget)return false;
   const block=await base.getBlock(),r=independentReader(base,m,block.number),states=health();
   const arenas=await Promise.all(m.arenas.map(async a=>({app:a.app,reserved:await r.lobby('reservedMatch',[a.app]),d:await readHubDelegation(base,m.hub,a.app,block.number)})));
-  for(const a of arenas)if(a.d.status===1&&!a.reserved&&a.d.expiresAt<=block.timestamp+1860n){
+  for(const a of arenas)if(a.d.status===1&&!a.reserved&&!hubLeaseValid(m.hub,a.d.expiresAt,block.timestamp,1860n)){
    await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);return false;
   }
-  const active=arenas.filter(a=>a.d.status===1&&a.d.expiresAt>block.timestamp+1860n);
+  const active=arenas.filter(a=>a.d.status===1&&hubLeaseValid(m.hub,a.d.expiresAt,block.timestamp,1860n));
   // Leave two live lanes while one arena cools. Opening a reserve does not
   // count it as ready until its hosted epoch is actually observed.
   if(active.length<3){
@@ -95,8 +96,8 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
   }
   for(const a of idle){
    const opening=await base.getBlock({blockNumber:a.d.baseBlock});
-   const exhausted=!reusableAdmissionBudget(budget,a.d.batchIndex,a.d.expiresAt,block.timestamp);
-   const leading=a.d.expiresAt<=block.timestamp+BigInt(budget.rotationLeadSeconds);
+   const exhausted=!reusableAdmissionBudget(budget,a.d.batchIndex,a.d.expiresAt,block.timestamp,m.hub);
+   const leading=!hubLeaseValid(m.hub,a.d.expiresAt,block.timestamp,BigInt(budget.rotationLeadSeconds));
    // Age alone is a voluntary rotation: never retire a healthy arena into an
    // epoch that Interlude's control plane cannot host right now.
    if(exhausted||readyCount>=3&&(leading||block.timestamp-opening.timestamp>=BigInt(budget.serviceSeconds)&&await control(a.app))){
@@ -105,7 +106,7 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
   }
   // The contract selects the arena; require every possible idle choice to be
   // healthy and within its measured budget, rather than selecting it on VPS.
-  return idle.length>0&&idle.every(a=>reusableAdmissionBudget(budget,a.d.batchIndex,a.d.expiresAt,block.timestamp)
+  return idle.length>0&&idle.every(a=>reusableAdmissionBudget(budget,a.d.batchIndex,a.d.expiresAt,block.timestamp,m.hub)
    &&states.some(h=>h.app.toLowerCase()===a.app.toLowerCase()&&h.online&&h.stage==='available'&&BigInt(h.epoch)===a.d.epoch));
  }
  return{admissionReady,qualified:!!budget};

@@ -16,6 +16,7 @@ import {ChaosEngine} from "../chaos/ChaosEngine.sol";
 import {ChaosGameFlow} from "../chaos/ChaosGameFlow.sol";
 import {RoomsRules} from "../labs/RoomsRules.sol";
 import {RoomsState} from "../labs/RoomsState.sol";
+import {HubLease} from "./HubLease.sol";
 
 /// TESTNET CANDIDATE, not wired to production admission/settlement.
 /// One bounded physical slot; arbitrarily many players within a 65,536-result
@@ -52,7 +53,7 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
         if(!isEphemeral())revert EngineOnly();
         Types.Session memory s=hub.sessionOf(address(this),Types.GLOBAL);
         (uint256 epoch,,)=S.commitment(words);
-        require(s.epoch==epoch&&s.status==Types.Status.Active&&block.timestamp<s.expiresAt,"engine session unavailable");_;
+        require(s.epoch==epoch&&s.status==Types.Status.Active&&HubLease.valid(address(hub),s.expiresAt,0),"engine session unavailable");_;
     }
     modifier current(uint256 epoch,uint256 id){S.assertMatch(words,epoch,id);_;}
     function resultCommitment() external view returns(uint256,uint32,bytes32){return S.commitment(words);}
@@ -84,7 +85,7 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
     function closeEngine() external {
         require(block.chainid==10143&&msg.sender==lobby,"authority only");
         Types.Session memory s=hub.sessionOf(address(this),Types.GLOBAL);
-        require(s.status==Types.Status.Active&&(S.get(words,37)==0||Game.phase(words)>=3||block.timestamp>=s.expiresAt),"published match running");
+        require(s.status==Types.Status.Active&&(S.get(words,37)==0||Game.phase(words)>=3||HubLease.expired(s.expiresAt)),"published match running");
         hub.closeDelegation(Types.GLOBAL);
     }
     function cancelRecovered() external {
@@ -101,7 +102,7 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
     function admit(Admission.Ticket calldata ticket,T.Binding calldata binding,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){
         // A thirty-minute safety cancellation plus publication margin must fit.
         // This is a conservative time reserve, not a claim of measured hub capacity.
-        require(hub.sessionOf(address(this),Types.GLOBAL).expiresAt>block.timestamp+31 minutes,"session admission reserve");
+        require(HubLease.valid(address(hub),hub.sessionOf(address(this),Types.GLOBAL).expiresAt,31 minutes),"session admission reserve");
         bytes32 hash=Game.admit(words,ticket,binding,signature,admissionSigner,lobby);
         Game.initialize(words,classic,kernel);emit AdmissionBound(ticket.epoch,ticket.matchId,ticket.sequence,hash,binding);
     }

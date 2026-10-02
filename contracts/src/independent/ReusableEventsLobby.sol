@@ -12,6 +12,7 @@ import {ReusableGame as Game} from "./ReusableGame.sol";
 import {PublishedResultVerifier,IReusableAdmissionAuthority} from "./PublishedResultVerifier.sol";
 import {IInterludeHub} from "../../vendor/interlude/interfaces/IInterludeHub.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
+import {HubLease} from "./HubLease.sol";
 
 /// Candidate human authority. Reuses the unchanged deterministic lobby, family
 /// consent, rooms and participation rules. The bridge cannot call an assignment
@@ -67,7 +68,7 @@ contract ReusableEventsLobby is IndependentLobby {
         for(uint256 i;i<arenas.length;i++){
             address at=address(arenas[i]);if(reservedMatch[at]!=0)continue;
             Types.Session memory s=hub.sessionOf(at,Types.GLOBAL);
-            if(s.status!=Types.Status.Active||s.expiresAt<=block.timestamp+31 minutes)continue;
+            if(s.status!=Types.Status.Active||!HubLease.valid(address(hub),s.expiresAt,31 minutes))continue;
             (uint256 epoch,uint32 n,)=ReusableEventsArena(at).resultCommitment();
             if(epoch!=s.epoch||n>=65_536)continue;
             (uint256 currentEpoch,uint256 currentId)=ReusableEventsArena(at).currentMatch();
@@ -103,12 +104,12 @@ contract ReusableEventsLobby is IndependentLobby {
     function closeReusableArena(address at) external {
         require(setupSealed&&registeredArena[at],"registered arena");Types.Session memory s=hub.sessionOf(at,Types.GLOBAL);
         // No arbitrary visitor can shut down a healthy empty long-lived session.
-        require(s.status==Types.Status.Active&&(block.timestamp+31 minutes>=s.expiresAt||msg.sender==setupOwner),"session still admitting");
+        require(s.status==Types.Status.Active&&((s.expiresAt!=0&&block.timestamp+31 minutes>=s.expiresAt)||msg.sender==setupOwner),"session still admitting");
         ReusableEventsArena(at).closeEngine();
     }
     function recoverExpired(uint256 id) external override {
         address at=arenaOf[id];require(at!=address(0),"assigned match");Types.Session memory s=hub.sessionOf(at,Types.GLOBAL);
-        require(s.status==Types.Status.Active&&block.timestamp>=s.expiresAt,"not expired");ReusableEventsArena(at).closeEngine();
+        require(s.status==Types.Status.Active&&HubLease.expired(s.expiresAt),"not expired");ReusableEventsArena(at).closeEngine();
     }
     /// A ticket can have executed with its reply/publication lost. Its expiry
     /// alone never releases participation or frees its sequence for replacement.

@@ -5,6 +5,7 @@ import type {Pool} from 'pg';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {publicIndependentManifest,independentCreditMessage,independentDiagnosticsMessage} from '../../shared/independent';
 import {independentReader} from '../../shared/independent-read';
+import {hubLeaseValid} from '../../shared/hub-lease';
 import {abi as familyAbi} from '../../shared/abi-independent-ArcadeFamily';
 import {abi as ratingAbi} from '../../shared/abi-independent-PublishedRatings';
 import {abi as profileAbi} from '../../shared/abi-independent-ProfileRegistry';
@@ -201,7 +202,7 @@ export async function independentService(o:Options){
    await stage(i,'recovering','PUBLICATION_SILENCE_DEADLINE');await e.reconcile();
    await queue(m.hub,interludeHubReadAbi,'forceClose',[a.app,zeroHash],0n,0);return;
   }
-  if(Date.now()>=h.expiresAt){await stage(i,'recovering','DELEGATION_EXPIRED');await e.reconcile();await queue(m.lobby,lobbyAbi,'recoverExpired',[b.id],0n,0);return;}
+  if(!hubLeaseValid(m.hub,d.expiresAt,BigInt(Math.floor(Date.now()/1000)))){await stage(i,'recovering','DELEGATION_EXPIRED');await e.reconcile();await queue(m.lobby,lobbyAbi,'recoverExpired',[b.id],0n,0);return;}
   try{
    if(validated[i].epoch!==d.epoch||Date.now()-validated[i].checked>15000){
     const node=await e.status();
@@ -231,7 +232,7 @@ export async function independentService(o:Options){
   }
  }
  async function progressArena(i:number){
-  const h=health[i],e=engines[i];if(!h.online||!['countdown','playing','publication-paused'].includes(h.stage)||Date.now()>=h.expiresAt||e.publicationFailure()&&Date.now()-e.publicationFailure()<30000)return;
+  const h=health[i],e=engines[i];if(!h.online||!['countdown','playing','publication-paused'].includes(h.stage)||!hubLeaseValid(m.hub,BigInt(Math.floor(h.expiresAt/1000)),BigInt(Math.floor(Date.now()/1000)))||e.publicationFailure()&&Date.now()-e.publicationFailure()<30000)return;
   if(eventLoops[i]){await eventLoops[i]!.progress();return;}
   const s=await e.read();
   if(s.phase===2&&!s.state.awaitingServe&&e.feed.progressAge(s.id)>=1500)await e.send('tick',[s.id]);

@@ -40,7 +40,7 @@ export function independentReusableAdmission(base:PublicClient,m:IndependentMani
    r.lobby('issuedTicket',[actor.app,ticket.epoch,ticket.sequence]),base.getBlock({blockNumber:ticket.sourceBlock,includeTransactions:false})]);
   if(!source.hash)throw Error('Admission source block unavailable');
   const evidence={chainId:10143,authority:m.lobby,arena:actor.app,issuedDigest,sourceHash:source.hash,reservedMatch:reserved,
-   hubEpoch:hub.epoch,hubStatus:hub.status,hubExpires:hub.expiresAt,engineEpoch,engineCount,now:block.timestamp};
+   hub:m.hub,hubEpoch:hub.epoch,hubStatus:hub.status,hubExpires:hub.expiresAt,engineEpoch,engineCount,now:block.timestamp};
   const cancel=block.timestamp>=ticket.expires;
   (cancel?validateReusableCancellation:validateReusableAdmission)(ticket,binding,evidence);
   // Network awaits never keep using a changed authority or match binding.

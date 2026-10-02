@@ -1,11 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {toHex,type Address,type Hex} from 'viem';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {reusableAdmissionDigest,reusableBindingHash,validateReusableAdmission,type ReusableBinding,type ReusableTicket} from '../shared/reusable-admission';
 const at=(n:number)=>toHex(n,{size:20}) as Address;
 const b:ReusableBinding={id:99n,room:12n,a:at(1),b:at(2),keyA:at(3),keyB:at(4),expiresA:7201n,expiresB:7201n,mode:1,ranked:true,preparedBlock:4n,epoch:7n};
 const t:ReusableTicket={authority:at(5),arena:at(6),epoch:7n,sequence:1n,matchId:99n,bindingHash:reusableBindingHash(b),issuedAt:100n,expires:220n,sourceBlock:4n,sourceHash:toHex(5,{size:32}),rules:14n};
 const e={chainId:10143,authority:at(5),arena:at(6),issuedDigest:reusableAdmissionDigest(t),sourceHash:t.sourceHash,reservedMatch:99n,hubEpoch:7n,hubStatus:1,hubExpires:7300n,engineEpoch:7n,engineCount:0,now:110n};
+
+test('only the pinned no-lease hub can attest zero-expiry human admissions',()=>{
+ const current={...e,hub:NO_LEASE_HUB,hubExpires:0n};
+ assert.doesNotThrow(()=>validateReusableAdmission(t,b,current));
+ for(const change of [{hub:undefined},{hub:at(8)},{hubStatus:2},{hubEpoch:8n},{engineEpoch:8n},{issuedDigest:toHex(8,{size:32})}]){
+  assert.throws(()=>validateReusableAdmission(t,b,{...current,...change}));
+ }
+});
 test('admission attestation uses the exact Monad-issued binding and pinned domain',()=>{
  assert.equal(t.bindingHash,'0x5eab5bd06874a7d3f419747fd046325b8f15382dfe4a5a756e3020bda172cfca');
  assert.equal(reusableAdmissionDigest(t),'0xd3b24c45c87c148bf92a7990263752e3aa7d52e1a984c4fa9af4ba033b26cb5c');

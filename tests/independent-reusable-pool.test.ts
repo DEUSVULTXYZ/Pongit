@@ -7,6 +7,7 @@ import {encodeFunctionData,encodeFunctionResult,decodeFunctionData,keccak256,toH
 import {independentReusablePool} from '../relayer/src/independent-reusable-pool';
 import {DEAD_ARENA_MS} from '../shared/arena-replacement';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 const at=(n:number)=>toHex(n,{size:20}) as Address;
 async function fixture(t:any,withBudget=true){
  const apps=[at(1),at(2),at(3)],m:any={rulesVersion:14,hub:at(5),lobby:at(6),arenas:apps.map(app=>({app}))};
@@ -28,9 +29,22 @@ async function fixture(t:any,withBudget=true){
  }
  const worker=await independentReusablePool(base,m,async(at,abi,name,args,value)=>{
   encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args,value});if(name==='openReusableArena'&&openFailure)throw openFailure;},()=>health,()=>enabled,path,async()=>controlUp,()=>clock);
- return{apps,worker,ds,health,reserved,jobs,base,disable:()=>enabled=false,failOpening:(error:Error)=>openFailure=error,
+ return{apps,worker,ds,health,reserved,jobs,base,m,disable:()=>enabled=false,failOpening:(error:Error)=>openFailure=error,
   controlDown:()=>controlUp=false,controlUp:()=>controlUp=true,tick:(ms:number)=>{clock+=ms;}};
 }
+
+test('pinned no-lease human arenas admit without bypassing health or publication reserve',async t=>{
+ const f=await fixture(t);f.m.hub=NO_LEASE_HUB;for(const d of f.ds)d.expiresAt=0n;
+ assert.equal(await f.worker.admissionReady(),true);assert.equal(f.jobs.length,0);
+ f.health[1].online=false;assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0);
+ f.health[1].online=true;f.ds[1].batchIndex=30000n;
+ assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.at(-1).name,'closeReusableArena');
+});
+
+test('unknown zero expiry never counts as admissible human capacity',async t=>{
+ const f=await fixture(t);for(const d of f.ds)d.expiresAt=0n;
+ assert.equal(await f.worker.admissionReady(),false);
+});
 
 test('an absent reviewed budget cannot reserve capacity or admit a human match',async t=>{
  const f=await fixture(t,false);assert.equal(f.worker.qualified,false);assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0);

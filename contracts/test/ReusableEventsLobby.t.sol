@@ -29,7 +29,7 @@ contract ReusableEventsLobbyTest is Test {
     PublishedResultVerifier verifier;ReusableEventsArena arena;uint256 constant BRIDGE=812;
     function setUp() public virtual {
         vm.chainId(10143);vm.warp(1_800_000_000);vm.roll(100);vm.setBlockhash(99,keccak256("known Monad block"));
-        hub=new IndependentHubFixture();family=new ArcadeFamily();lobby=new ReusableEventsLobby(family,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE),vm.addr(813));
+        hub=createHub();family=new ArcadeFamily();lobby=new ReusableEventsLobby(family,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE),vm.addr(813));
         verifier=new PublishedResultVerifier(IReusableAdmissionAuthority(address(lobby)),IInterludeHub(address(hub)));lobby.bindVerifier(verifier);
         ratings=new PublishedRatings(address(lobby),address(this),vm.getBlockTimestamp());ratings.sealMigration(keccak256("empty fixture"));lobby.bindRatings(ratings);
         ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,new ChaosModifiers());
@@ -42,6 +42,7 @@ contract ReusableEventsLobbyTest is Test {
         lobby.seal();lobby.openReusableArena(address(arena));register(101);register(102);register(103);register(104);
         assertLe(address(lobby).code.length,32768,"reviewed Monad authority runtime budget");
     }
+    function createHub() internal virtual returns(IndependentHubFixture){return new IndependentHubFixture();}
     function sig(uint256 key,bytes32 h) internal pure returns(bytes memory){(uint8 v,bytes32 r,bytes32 s)=vm.sign(key,h);return abi.encodePacked(r,s,v);}
     function register(uint256 key) internal {
         ArcadeFamily.Grant memory g=ArcadeFamily.Grant(vm.addr(key),vm.addr(key+1000),uint64(vm.getBlockTimestamp()),uint64(vm.getBlockTimestamp()+7200),0);

@@ -5,7 +5,20 @@ import {independentReusableLifecycle} from '../relayer/src/independent-reusable-
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {reusableAdmissionDigest} from '../shared/reusable-admission';
 import {EMPTY_RESULT_ROOT} from '../shared/published-result-tree';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 const at=(n:number)=>toHex(n,{size:20}) as Address;
+test('no-lease human observation keeps exact-epoch play live and still enforces publication silence',async()=>{
+ const f=fixture();f.m.hub=NO_LEASE_HUB;f.d.expiresAt=0n;
+ await f.worker.observe();assert.equal(f.health.online,true);assert.equal(f.jobs.length,0);
+ f.change({now:5001n});await f.worker.observe();
+ assert.equal(f.health.online,false);assert.equal(f.jobs.at(-1).name,'forceClose');
+ assert(f.events.includes('stage:recovering:PUBLICATION_SILENCE_DEADLINE'));
+});
+
+test('unknown zero-expiry delegation never becomes a playable human engine',async()=>{
+ const f=fixture();f.d.expiresAt=0n;await f.worker.observe();
+ assert.equal(f.health.online,false);assert(f.events.includes('stage:recovering:DELEGATION_EXPIRED'));
+});
 function fixture(){
  const app=at(1),m:any={rulesVersion:14,arenas:[{app}],resultVerifier:at(2),hub:at(3),lobby:at(4),ratings:at(5)};
  const ticket={authority:m.lobby,arena:app,epoch:2n,sequence:1n,matchId:91n,bindingHash:toHex(2,{size:32}),issuedAt:900n,expires:1020n,sourceBlock:3n,sourceHash:toHex(3,{size:32}),rules:14n};
@@ -33,7 +46,7 @@ function fixture(){
   queue:async(at,abi,name,args)=>{encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args});},
   stage:async(name,code)=>{events.push('stage:'+name+(code?':'+code:''));},admit:async()=>{events.push('admit');},
   ensureHosted:async epoch=>{events.push('hosted:'+epoch);}});
- return{worker,health,d,events,jobs,session,results,base,engine,ticket,reference:()=>ref,
+ return{worker,health,d,events,jobs,session,results,base,engine,ticket,m,reference:()=>ref,
   change:(o:{now?:bigint;reserved?:bigint;phase?:bigint;livePhase?:number;sealed?:Hex;current?:any;known?:bigint;failedRead?:boolean;slot?:bigint[];hostedCommitment?:any;publishedCommitment?:any})=>{
    now=o.now??now;reserved=o.reserved??reserved;phase=o.phase??phase;livePhase=o.livePhase??livePhase;sealed=o.sealed??sealed;current=o.current??current;known=o.known??known;failedRead=o.failedRead??failedRead;
    slot=o.slot??slot;hostedCommitment=o.hostedCommitment??hostedCommitment;publishedCommitment=o.publishedCommitment??publishedCommitment;

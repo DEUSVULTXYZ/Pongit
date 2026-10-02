@@ -1,3 +1,4 @@
+import {hubLeaseValid} from '../../shared/hub-lease';
 import {encodeFunctionData,encodeAbiParameters,keccak256,isAddress,zeroAddress,type Address,type Hex,type Abi} from 'viem';
 import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
 import {createInterludeClient,webStorageStore} from '@interludelayer-sdk/sdk';
@@ -165,7 +166,7 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
  const client=createInterludeClient({app,abi:arenaAbi as Abi,node:entry.node,base:independentBase(),store:webStorageStore(sessionStorage),expirySeconds:7200,transport:engineTransport(entry.node,journal),fastPath:true});
  const feed=new EngineFeed(client,new EngineStream(entry.node,app,undefined,()=>engineCooldownMs(entry.node!)));
  return {client,feed,journal,async session(s:FamilySession){
-  const d=await readHubDelegation(client.base,m.hub,app);if(d.status!==1||Number(d.expiresAt)*1000<=Date.now())throw Error('This arena is recovering. Your arcade authorization is unchanged.');
+  const d=await readHubDelegation(client.base,m.hub,app);if(d.status!==1||!hubLeaseValid(m.hub,d.expiresAt,BigInt(Math.floor(Date.now()/1000))))throw Error('This arena is recovering. Your arcade authorization is unchanged.');
   const node=await client.status();if(BigInt(node.epoch)!==d.epoch)throw Error('Waiting for the current arena epoch');
   if(m.rulesVersion===14&&BigInt((node as any).baseBlock??-1)!==d.baseBlock)throw Error('Waiting for the current arena base state');
   const binding:any=await client.read('boundMatch',[]);

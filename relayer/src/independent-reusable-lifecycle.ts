@@ -2,6 +2,7 @@ import {zeroHash,type Abi,type Address,type PublicClient} from 'viem';
 import type {IndependentManifest} from '../../shared/independent';
 import {independentReader} from '../../shared/independent-read';
 import {readHubDelegation} from '../../shared/rooms-hub';
+import {hubLeaseValid} from '../../shared/hub-lease';
 import {reusableAdmissionDigest} from '../../shared/reusable-admission';
 import {EMPTY_RESULT_ROOT} from '../../shared/published-result-tree';
 import {abi as arenaAbi} from '../../shared/abi-independent-ReusableEventsArena';
@@ -41,7 +42,7 @@ export function independentReusableLifecycle(o:Options){
   // Retain the exact last logical match for receipt recovery, including while
   // closing. A stale physical slot is never labelled with a newer reservation.
   const rebound=e.bind(id,epoch);
-  if(rebound||d.status!==1||block.timestamp>=d.expiresAt)h.online=false;
+  if(rebound||d.status!==1||!hubLeaseValid(m.hub,d.expiresAt,block.timestamp))h.online=false;
   if(rebound)await e.restoreHealth();
   if(d.status===3){await o.stage('review','DELEGATION_CHALLENGED');return;}
   if(d.status===0){
@@ -83,7 +84,7 @@ export function independentReusableLifecycle(o:Options){
   });
   // These real protocol deadlines may retire an unavailable node, never a
   // guessed local RPC timeout. Simulations/inclusion recheck them on Monad.
-  if(block.timestamp>=d.expiresAt){
+  if(!hubLeaseValid(m.hub,d.expiresAt,block.timestamp)){
    await o.stage('recovering','DELEGATION_EXPIRED');await e.reconcile();
    await queue(m.lobby,lobbyAbi,'closeReusableArena',[e.app],0n,0);return;
   }

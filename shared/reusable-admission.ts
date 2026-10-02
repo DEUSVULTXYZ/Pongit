@@ -1,4 +1,5 @@
 import {encodeAbiParameters,hashTypedData,isAddress,keccak256,zeroAddress,zeroHash,type Address,type Hex} from 'viem';
+import {hubLeaseValid} from './hub-lease';
 
 export type ReusableTicket={authority:Address;arena:Address;epoch:bigint;sequence:bigint;matchId:bigint;bindingHash:Hex;issuedAt:bigint;expires:bigint;sourceBlock:bigint;sourceHash:Hex;rules:bigint};
 export type ReusableBinding={id:bigint;room:bigint;a:Address;b:Address;keyA:Address;keyB:Address;expiresA:bigint;expiresB:bigint;mode:number;ranked:boolean;preparedBlock:bigint;epoch:bigint};
@@ -25,7 +26,7 @@ export const reusableBindingHash=(binding:ReusableBinding)=>keccak256(encodeAbiP
  * is still trusted for admission; this validation is not a state-proof claim. */
 export type ReusableAdmissionEvidence={
  chainId:number;authority:Address;arena:Address;issuedDigest:Hex;sourceHash:Hex;
- reservedMatch:bigint;hubEpoch:bigint;hubStatus:number;hubExpires:bigint;
+ reservedMatch:bigint;hubEpoch:bigint;hubStatus:number;hubExpires:bigint;hub?:Address;
  engineEpoch:bigint;engineCount:number;now:bigint;
 };
 function validate(ticket:ReusableTicket,binding:ReusableBinding,e:ReusableAdmissionEvidence,cancel:boolean){
@@ -35,7 +36,7 @@ function validate(ticket:ReusableTicket,binding:ReusableBinding,e:ReusableAdmiss
   ||!same(ticket.authority,e.authority)||!same(ticket.arena,e.arena)
   ||ticket.matchId<=0n||ticket.matchId!==e.reservedMatch||ticket.matchId!==binding.id
   ||ticket.epoch<=0n||ticket.epoch!==e.hubEpoch||ticket.epoch!==e.engineEpoch||ticket.epoch!==binding.epoch
-  ||e.hubStatus!==1||e.hubExpires<=e.now+(cancel?0n:1860n)
+  ||e.hubStatus!==1||!hubLeaseValid(e.hub,e.hubExpires,e.now,cancel?0n:1860n)
   ||!Number.isInteger(e.engineCount)||e.engineCount<0||e.engineCount>=65536||ticket.sequence!==BigInt(e.engineCount)+1n
   ||ticket.issuedAt>e.now||(cancel?ticket.expires>e.now:ticket.expires<=e.now)||ticket.expires<=ticket.issuedAt||ticket.expires-ticket.issuedAt>120n
   ||ticket.sourceBlock<=0n||ticket.sourceBlock!==binding.preparedBlock||same(ticket.sourceHash,zeroHash)||!same(ticket.sourceHash,e.sourceHash)
