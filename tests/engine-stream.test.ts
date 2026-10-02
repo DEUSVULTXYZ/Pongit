@@ -152,6 +152,20 @@ test("a subscribed Chaos pause waits for its event with a ten-second consistency
  off();await Promise.resolve();
 });
 
+test('command freshness cannot reuse the longer spectator or between-point cache',async()=>{
+ for(const awaitingServe of [false,true]){
+  let now=1000,reads=0;const value={...baseline(),state:{...baseline().state,awaitingServe}};
+  const socket=new Socket(),stream=new EngineStream('https://node.invalid',app,()=>socket);
+  const client={app:app as Address,abi,node:{request:async()=>{reads++;return encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(value) as any});}}};
+  const feed=new EngineFeed(client,stream,()=>now),off=feed.watch(1n,()=>{});
+  socket.emit('open',{});socket.emit('message',{data:JSON.stringify({id:1,result:99})});await feed.read(1n);
+  now+=550;await feed.read(1n);assert.equal(reads,1,'Observer cache may retain this state');
+  const state=await feed.forCommand(1n);
+  assert.equal(reads,2,'A control heartbeat requires a new observation after 500 ms');
+  assert.equal(state.observedAt,now);off();
+ }
+});
+
 test('fresh contiguous commands bypass a slow consistency read but never bypass a gap',async()=>{
  let now=1000,reads=0,finish!:(v:Hex)=>void;
  const socket=new Socket(),stream=new EngineStream('https://node.invalid',app,()=>socket);

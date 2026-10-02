@@ -36,7 +36,10 @@ export class EngineFeed {
    if(this.now()-e.fullAt>=10000)void this.read(id).catch(()=>{});
    return e.value;
   }
-  return this.read(id);
+  // Observers tolerate a 600 ms frame (longer between points). Controls do not:
+  // reusing that cache would reject a healthy heartbeat at 500-600 ms or leave
+  // a player waiting until the next observer refresh. Observe before signing.
+  return this.read(id,!!e.value&&this.now()-e.value.observedAt>=500);
  }
  progressAge(id:bigint){return this.now()-this.entry(id).progressAt;}
  invalidate(){for(const e of this.entries.values()){e.dirty=true;e.gap=undefined;}}
