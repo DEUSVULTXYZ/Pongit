@@ -19,6 +19,9 @@ const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
 const atomicQualification=process.env.PONG_CATALOGUE_ATOMIC_QUALIFICATION==='1';
 const privateV3=process.env.PONG_CATALOGUE_PRIVATE_V3==='reviewed-private';
 assert(!process.env.PONG_CATALOGUE_PRIVATE_V3||privateV3);
+const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private';
+assert(!process.env.PONG_CATALOGUE_SYNCHRONIZATION||synchronized);
+assert(!synchronized||privateV3,'Synchronized qualification must use the isolated private API');
 if(privateV3)assert(process.env.PONG_CATALOGUE_ASSET_ORIGIN==='http://127.0.0.1:4197'&&!atomicQualification,
  'Private v3 must use its isolated build and actual API capabilities');
 if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(process.env.PONG_SYNC_PROBE==='1'&&process.env.PONG_SYNC_SPECTATOR==='1',
@@ -32,7 +35,7 @@ const restored=restorePath?JSON.parse(await readFile(restorePath,'utf8')):undefi
 await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
- virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+ virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
@@ -156,7 +159,7 @@ await context.addInitScript(()=>{
 });
 try{
  const config=await (await apiGet('/agents/config')).json();
- if(privateV3)assert(config.pool.toLowerCase()==='0x550ff3c22e20fc760af9afd68fba2cb531140dc6'&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled&&config.challengeAdmission==='atomic-v1');
+ if(privateV3)assert(config.pool.toLowerCase()===(synchronized?'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8':'0x550ff3c22e20fc760af9afd68fba2cb531140dc6')&&config.rulesVersion===(synchronized?16:15)&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled&&config.challengeAdmission==='atomic-v1');
  assert(config.version===5&&config.houseInstances==='official-v1'&&config.maxMatches===5,'Public five-lane migration is not active');
  report.pool=config.pool;
  await page.goto(report.origin+'/agents',{waitUntil:'domcontentloaded'});

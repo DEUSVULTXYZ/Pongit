@@ -14,6 +14,8 @@ import {agentMetrics} from '../relayer/src/agents/metrics';
 import {measuredFetch} from '../shared/rpc-metrics';
 
 assert.equal(process.env.PONG_PRIVATE_CATALOGUE,'two-private-browser-matches');
+const synchronized=process.env.PONG_PRIVATE_CATALOGUE_SYNCHRONIZATION==='rules16-private';
+assert(!process.env.PONG_PRIVATE_CATALOGUE_SYNCHRONIZATION||synchronized);
 assert.equal(process.getuid?.(),1000);
 const trial=Number(process.env.PONG_PRIVATE_CATALOGUE_TRIAL??'1');
 assert(Number.isInteger(trial)&&trial>=1&&trial<=9);
@@ -22,7 +24,8 @@ assert(deadline>Date.now()&&deadline<Date.now()+20*60_000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 const m=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json','utf8')));
 assert(!m.enabled&&!m.tournamentsEnabled&&!r.continuation);
-assert.equal(m.pool.toLowerCase(),'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');
+assert.equal(m.pool.toLowerCase(),synchronized?'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8':'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');
+assert.equal(m.rulesVersion,synchronized?16:15);
 assert.equal(m.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());
 const root='artifacts/reusable-candidate',file=root+`/catalogue-window-${trial}.json`;
 if(trial>1){
@@ -30,7 +33,7 @@ if(trial>1){
  assert(previous.finishedAt&&previous.passed&&previous['public-close']&&previous['pool-close']&&previous['queue-close'],
   'The prior bounded catalogue window must have completed normally');
 }
-const proofBytes=await readFile(root+'/five-concurrent-2.json');
+const proofBytes=await readFile(root+`/five-concurrent-${synchronized?1:2}.json`);
 const proof=JSON.parse(proofBytes.toString());
 assert(proof.passed&&proof.pool===m.pool&&proof.people.length===4&&proof.people.every((p:any)=>p.moves===100&&p.result?.status===3));
 const evidence=keccak256(toHex(proofBytes));
