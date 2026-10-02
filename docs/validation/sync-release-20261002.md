@@ -1,5 +1,44 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 19:10 UTC — private results complete; normal release in progress
+
+Both private eliminations passed. Chaos tournament 2 finished at 18:49:51 UTC
+with seven canonical results, including 1-5 and 1-6 regulation endings. Its
+driver exited 0 and closed both gates. No game driver is active. The private
+engine/archive workers stopped normally after all 34 results were captured.
+Public services remain unchanged.
+
+The sole private lifecycle process is now
+`pongit-sync-release-20261002-qualification-1`, source **59e5208**, image a9b3d62.
+It uses the original operator database, journal and advisory lock. All five
+private d47 arenas were closed normally only after live/canonical roots matched,
+all lanes were empty and no engine command remained pending. Counts are
+10, 7, 7, 6 and 4; committed batches are 199, 137, 130, 103 and 95.
+Actual release deadlines are **20:04:44 through 20:05:00 UTC**. The worker's
+original deadline is **20:22:29.101691 UTC**. Let this process release and verify
+the exact finalized roots; do not start a competitor, reopen an arena or extend
+the deadline. Runtime `release-runtime-1.json`, plan `release-plan-1.json`, report
+`evidence/sync-release-1.json` beneath the existing private root. No new opening
+is included. Refresh backups after final recovery.
+
+Backup `sync-20261002T1902Z` has seven SHA256-verified off-VPS files. It contains
+the completed tournaments, original operator/public/private databases and runtime
+journals. Its verification receipt is mounted read-only into the release worker.
+Earlier backups, failed reports and all public/historical contracts remain.
+
+Three contract optimizations are currently local and **uncommitted/undeployed**:
+scalar clock reads instead of repeatedly decoding full Chaos state; combined
+preparation/grid/force calls; and avoiding duplicate preparation at boundaries
+without contacts. A focused intermediate build passed 80 contract tests, including
+24 effects, 276 combinations and 1,000 preparation equivalence cases. The final
+full Solidity suite is running; inspect `artifacts/sync-optimized-solidity-full.log`
+before relying on it. The earlier local benchmark states were byte-identical;
+further complete differential and hosted measurements are still required.
+None of this resolves the measured Chaos clock failure yet.
+
+Browser startup permission remains pending. No alternate launch or public
+cutover occurred. Remaining gates below are unchanged.
+
 ## Checkpoint, 18:55 UTC — Chaos clock gate fails; body-bound transports pass
 
 Production remains unchanged. The private Classic elimination completed all seven
