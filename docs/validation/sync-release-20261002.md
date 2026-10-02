@@ -1,5 +1,43 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 20:25 UTC — source released and canonically finalized
+
+The five private d47 arenas completed normal release at 20:05:36 UTC. The
+release worker exited 0, with every exact root and result count verified; no
+force closure or reopening occurred. Read-only verifier `1be6dbe` exited 0 at
+20:20:13. At canonical block 67636774 it verified all 34 terminal results,
+14 final tournament fixtures, eight qualified identities, 16 ratings, empty
+lanes, closed gates and the five released roots. Its report is
+`sync-games-b1f72ee/evidence/sync-source-final-1.json`.
+
+The source archive ran to its original 20:21:07 bound and exited 124. That
+bounded process exit is not a failed result-finality assertion: the separate
+canonical verifier had already passed. It must not be restarted. Its gas
+reserve initially ran out at 0.016100072 test MON. The authorized, journaled
+10 MON top-up in `fc571fc` confirmed in transaction
+`0x7d296ac6ef777f8bdf2f5fcaa51cb2af0ad25a29d45febed86419bf40d3675d6`.
+Do not repeat this funding operation.
+
+Backup `sync-20261002T2025Z` has eight SHA256-verified off-VPS files. Manifest
+SHA256 is `e1d7e93a4432c3d40c1aaf8363f93b74ef37df9d1f2b3debbc3996fb576c2088`.
+The sole private import worker started at 20:27:10.757663 UTC with its original
+20:47:10.757663 deadline. Container:
+`pongit-sync-continuation-import-20261002-qualification-1`. All source game,
+engine, release and archive workers are stopped. Inspect the target deployment
+phase and original nonce journal before any retry. This import opens no arenas
+and preserves the private season; it is not a public migration.
+
+Separate read-only public checks found no ready arena despite four free lanes.
+All eight public arena health records reported synchronization timeouts. Two
+actual legacy engine origins and the legacy control origin timed out in six
+seconds. The new control origin responded in 204 ms with the expected v3 hub
+and chain. No session was recreated and no public configuration changed. These
+observations explain the current availability failure but do not qualify a fix.
+
+The full current TypeScript suite passes 922 tests, root typecheck and docs
+checks pass. Previous hosted Chaos clock and browser/admission failures remain
+open. No browser startup, public cutover or 24-hour proof is claimed.
+
 ## Checkpoint, 19:49 UTC — reproducible optimized candidate ready for private continuation
 
 Published physics commit `3735e2c` contains the optimization verified below.
