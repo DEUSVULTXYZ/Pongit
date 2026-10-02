@@ -82,7 +82,7 @@ for(const [file,rules] of [['agent-series-index.json',11],['agent-reusable-index
  const raw=JSON.parse(await readFile('deployments/'+file,'utf8'));
  for(const series of agentIndexDeployments(raw,d.chainId,rules)){
   const emitter=series.pool;if(chaosBindings[emitter])throw Error('Conflicting series archive emitter');
-  chaosBindings[emitter]={apps:series.arenas,rulesVersion:rules};
+  chaosBindings[emitter]={apps:series.arenas,rulesVersion:series.rulesVersion};
   config+=`      - name: ${series.archiveContract??'AgentSeriesArchive'}\n        address: "${series.pool}"\n        start_block: ${start(series.startBlock)}\n`;
  }
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}

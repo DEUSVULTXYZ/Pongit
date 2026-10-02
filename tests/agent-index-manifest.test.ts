@@ -48,7 +48,7 @@ test('actual indexer configuration keeps predecessor and successor and packages 
     await writeFile(join(temporary, 'deployments/testnet.json'), JSON.stringify({version: 4, chainId: 10143,
       game: addr(100), market: addr(101), tournaments: addr(102), startBlock: 50}));
     await writeFile(join(temporary, 'deployments/agent-reusable-index.json'), JSON.stringify({
-      version: 2, chainId: 10143, deployments: [old, {...next, archiveContract:'AgentReusableFiveArchive'}],
+      version: 2, chainId: 10143, deployments: [old, {...next, rulesVersion:16, archiveContract:'AgentReusableFiveArchive'}],
     }));
     await writeFile(join(temporary,'deployments/independent-index.json'),JSON.stringify({deployments:[
       {chainId:10143,rulesVersion:14,ratings:addr(200),startBlock:90,arenas:[addr(201)]},
@@ -72,7 +72,7 @@ test('actual indexer configuration keeps predecessor and successor and packages 
     const source = await readFile(join(temporary, 'indexer/src/chaos-deployments.ts'), 'utf8');
     const bindings = JSON.parse(source.slice(source.indexOf('=') + 1, source.lastIndexOf(' as const;')));
     assert.deepEqual(bindings[old.pool], {apps: old.arenas, rulesVersion: 15});
-    assert.deepEqual(bindings[next.pool], {apps: next.arenas, rulesVersion: 15});
+    assert.deepEqual(bindings[next.pool], {apps: next.arenas, rulesVersion: 16});
     assert.equal(await readFile(join(temporary, 'indexer/pin-envio-rpc-concurrency.mjs'), 'utf8'),
       await readFile(join(root, 'ops/pin-envio-rpc-concurrency.mjs'), 'utf8'));
   } finally {
