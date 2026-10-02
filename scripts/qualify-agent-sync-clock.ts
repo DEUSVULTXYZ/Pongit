@@ -1,0 +1,56 @@
+// Read-only wall/physics-clock evidence. This never drives gameplay or measures
+// browser paint. Point boundaries and intentional pauses delimit rally spans.
+import assert from 'node:assert/strict';
+import {readFile,writeFile} from 'node:fs/promises';
+import {createPublicClient,http} from 'viem';
+import {monadTestnet} from 'viem/chains';
+import {WebSocket} from 'ws';
+import {AgentPoolReader,poolJson} from '../relayer/src/agents/pool-read';
+import {validateAgentPoolManifest} from '../shared/agent-pool';
+import {createPoolObserver} from '../shared/agent-pool-observer';
+import type {EngineState} from '../shared/engine-stream';
+assert.equal(process.env.PONG_SYNC_CLOCK,'read-only-private');
+const tournament=Number(process.env.PONG_SYNC_CLOCK_TOURNAMENT);assert(tournament===1||tournament===2);
+const m=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json','utf8')));
+assert(m.pool.toLowerCase()==='0xd47bc7fece722a237c6547f85b4dd91c2601a4c8'&&m.rulesVersion===16&&!m.enabled);
+const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:5000})});
+const reader=new AgentPoolReader(base,m,[]),path=`artifacts/reusable-candidate/sync-clock-${tournament}.json`;
+const deadline=Date.now()+360000;
+const report:any={startedAt:new Date().toISOString(),deadline,scope:'Read-only hosted per-rally physical clock; not browser rendering or complete availability.',segments:[],gaps:[],errors:[],passed:false};
+await writeFile(path,poolJson(report),{flag:'wx'});
+const visited=new Set<string>();
+try{
+ while(Date.now()<deadline){
+  const trial=JSON.parse(await readFile(`artifacts/reusable-candidate/five-tournament-${tournament}.json`,'utf8'));
+  const row=trial.fixtures.find((f:any)=>!f.resolved&&!visited.has(String(f.ref.id)));
+  if(!row){if(trial.finishedAt)break;await new Promise(r=>setTimeout(r,1000));continue;}
+  const ref={chainId:10143 as const,app:row.ref.arena,epoch:String(row.ref.epoch),id:String(row.ref.id)};
+  const view=(await reader.match(ref)).value;visited.add(ref.id);if(view.result)continue;
+  const observer=await createPoolObserver(m,view,url=>new WebSocket(url));
+  let first:{at:number;t:bigint}|undefined,last:typeof first,rally='',revision=-1n,finished=false;
+  const flush=()=>{
+   if(first&&last&&last.at-first.at>=5000)report.segments.push({ref,rally,wallMs:last.at-first.at,physicalMs:Number(last.t-first.t)/1000});
+   first=last=undefined;
+  };
+  const accept=(s:EngineState)=>{
+   if(s.revision<=revision)return;revision=s.revision;
+   const current=s.chaos?String(s.chaos.physics.score.rally):`${s.state.scoreA}:${s.state.scoreB}`;
+   if(s.phase!==2||s.state.awaitingServe||(s.sync?.pause.status??0)>=2||current!==rally){flush();rally=current;}
+   if(s.phase>=3){finished=true;return;}
+   if(s.phase!==2||s.state.awaitingServe||(s.sync?.pause.status??0)>=2)return;
+   const sample={at:performance.now(),t:s.state.t};
+   if(last&&sample.at-last.at>500)report.gaps.push({ref,wallMs:sample.at-last.at,physicalMs:Number(sample.t-last.t)/1000});
+   first??=sample;last=sample;
+  };
+  const stop=observer.watch(accept);
+  try{while(Date.now()<deadline&&!finished){accept(await observer.read());await new Promise(r=>setTimeout(r,250));}}
+  finally{flush();stop();observer.close();}
+  await writeFile(path,poolJson(report));
+ }
+ report.wallMs=report.segments.reduce((n:number,s:any)=>n+s.wallMs,0);
+ report.physicalMs=report.segments.reduce((n:number,s:any)=>n+s.physicalMs,0);
+ report.ratio=report.wallMs?report.physicalMs/report.wallMs:null;
+ report.passed=report.wallMs>=60000&&report.ratio>=.98&&report.ratio<=1.02;
+ if(!report.passed)process.exitCode=1;
+}catch(e){report.errors.push(String((e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,180));process.exitCode=1;}
+finally{report.finishedAt=new Date().toISOString();await writeFile(path,poolJson(report));console.log(poolJson({passed:report.passed,wallMs:report.wallMs,ratio:report.ratio,segments:report.segments.length,errors:report.errors}));}
