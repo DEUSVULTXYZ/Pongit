@@ -6,11 +6,14 @@ import {HousePolicies} from "../src/agents/competition/HousePolicies.sol";
 import {ChaosEngine} from "../src/chaos/ChaosEngine.sol";
 import {PublishedResultVerifier} from "../src/independent/PublishedResultVerifier.sol";
 import {AgentFairPause as Fair} from "../src/agents/competition/AgentFairPause.sol";
+import {ReusableAgentView as View} from "../src/agents/competition/ReusableAgentView.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract SynchronizedHarness is ReusableAgentHarness {
     constructor(IInterludeHub h,address p,address bridge,HousePolicies policies_,ChaosEngine k,PublishedResultVerifier v)
         ReusableAgentHarness(h,p,bridge,policies_,k,v){}
     function RULES_VERSION() public pure override returns(uint256){return 16;}
+    function publishForTest() external {View.publish(words,kernel);}
 }
 
 contract SynchronizedAgentArenaTest is ReusableAgentArenaTest {
@@ -66,5 +69,40 @@ contract SynchronizedAgentArenaTest is ReusableAgentArenaTest {
     function testOnlyFriendlyHumanHouseGamesAreProtected() public {
         admit(1,0,false,1,true);start(1,false);(Fair.View memory v,,,,)=arena.synchronization(1,1);assertEq(v.status,0);
         vm.roll(vm.getBlockNumber()+100);arena.tick(1,1);assertEq(arena.getSnapshot(1).state.t,1_000_000);
+    }
+    function assertPublishedClock() internal returns(uint256 used){
+        // Compare the compact notification with the complete historical codec.
+        // No browser or transport assumption is involved in this equality.
+        uint256 expected=arena.getSnapshot(1).clock;
+        vm.recordLogs();uint256 beforeGas=gasleft();
+        SynchronizedHarness(address(arena)).publishForTest();used=beforeGas-gasleft();
+        Vm.Log[] memory logs=vm.getRecordedLogs();bool found;
+        for(uint256 i;i<logs.length;i++)if(logs[i].emitter==address(arena)&&logs[i].topics[0]==keccak256("Synchronization(uint256,uint256,(uint8,uint8,uint64,uint64,uint64,uint64),uint256,uint256,uint256,uint256,uint256,uint256)")){
+            uint256[13] memory data=abi.decode(logs[i].data,(uint256[13]));
+            assertEq(data[11],expected,"notification clock differs from full state");found=true;
+        }
+        assertTrue(found,"missing synchronization notification");
+    }
+    function testPublishedClockMatchesAcrossBothModesAndPauseLifecycle() public {
+        for(uint8 mode;mode<2;mode++){
+            admit(1,mode,false,1,false);assertPublishedClock();
+            start(1,true);uint256 origin=vm.getBlockNumber();assertPublishedClock();
+            vm.roll(origin-1);assertPublishedClock();vm.roll(origin+20);pulse();assertPublishedClock();
+            vm.roll(origin+80);arena.tick(1,1);assertPublishedClock();resume();assertPublishedClock();
+            for(uint256 i;i<15;i++){vm.roll(vm.getBlockNumber()+20);pulse();assertPublishedClock();}
+            vm.roll(vm.getBlockNumber()+60);arena.tick(1,1);assertPublishedClock();
+            (Fair.View memory v,,,,)=arena.synchronization(1,1);
+            vm.roll(v.cancelBlock);arena.tick(1,1);assertPublishedClock();
+        }
+    }
+    function testPublishedClockClassicTournamentGas() public {
+        admit(1,0,false,1,true);start(1,false);vm.roll(vm.getBlockNumber()+25);arena.tick(1,1);
+        uint256 used=assertPublishedClock();emit log_named_uint("publish gas Classic",used);
+        assertLt(used,35_000,"compact clock must not decode a full snapshot");
+    }
+    function testPublishedClockChaosTournamentGas() public {
+        admit(1,1,false,1,true);start(1,false);vm.roll(vm.getBlockNumber()+25);arena.tick(1,1);
+        uint256 used=assertPublishedClock();emit log_named_uint("publish gas Chaos",used);
+        assertLt(used,30_000,"compact clock must not decode a full snapshot");
     }
 }

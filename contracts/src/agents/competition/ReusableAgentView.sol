@@ -35,7 +35,21 @@ library ReusableAgentView {
         times+=uint256(1)<<128;S.set(w,2,times);
         bytes memory encoded=S.get(w,0)>>168&1==0?abi.encode(state(w,kernel)):abi.encode(uint8(6),S.get(w,8),packed(w));
         emit Snapshot(S.get(w,37),uint64(times>>128),phase(w),encoded);
-        if(Fair.rules(w)>=16)emit Synchronization(S.get(w,37),uint64(times>>128),Fair.inspect(w),S.get(w,51),S.get(w,52),S.get(w,53),S.get(w,0)>>176,snapshot(w,kernel,true).clock,S.get(w,66)|(uint256(uint64(S.get(w,63)))<<16));
+        if(Fair.rules(w)>=16){
+            Fair.View memory paused=Fair.inspect(w);
+            emit Synchronization(S.get(w,37),uint64(times>>128),paused,S.get(w,51),S.get(w,52),S.get(w,53),S.get(w,0)>>176,notificationClock(w,times,paused),S.get(w,66)|(uint256(uint64(S.get(w,63)))<<16));
+        }
+    }
+    function notificationClock(mapping(bytes32=>uint256) storage w,uint256 times,Fair.View memory paused) private view returns(uint256 clock){
+        // Exact scalar layouts used by the Classic and Chaos codecs. A compact
+        // notification must not decode and ABI-roundtrip the whole game merely
+        // to read this clock. Keep its semantics identical to RoomsState.snapshot.
+        clock=S.get(w,0)>>168&1==0?uint64(S.get(w,7)>>128):uint64(S.get(w,27)>>112);
+        if(phase(w)==2&&block.number>=uint64(times)){
+            uint256 elapsed=uint64(times>>192)+(block.number-uint64(times))*10_000;
+            if(elapsed>clock)clock=elapsed;
+        }
+        if(paused.human!=0&&clock>paused.limitUs)clock=paused.limitUs;
     }
     function snapshot(mapping(bytes32=>uint256) storage w,ChaosEngine kernel,bool ephemeral) public view returns(RoomsState.Header memory h){
         h=abi.decode(RoomsState.snapshot(w,SLOT,ephemeral,state(w,kernel)),(RoomsState.Header));h.id=S.get(w,37);
