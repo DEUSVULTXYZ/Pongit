@@ -109,7 +109,7 @@ try{
   const hub=await readHubDelegation(base,m.hub,arena.app),block=await base.getBlock();
   assert(hub.status===1&&hub.epoch===1n&&hub.batchIndex<2000n&&hubLeaseValid(m.hub,hub.expiresAt,block.timestamp,1800n),'Review original epoch reserve');
   const h=(await db.query("SELECT stage FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'",[arena.app.toLowerCase()])).rows[0];
-  assert(h?.stage==='available'||h?.stage==='playing'&&lane.ref.arena.toLowerCase()===arena.app.toLowerCase()&&(existingTournament||previous&&!previousCompleted&&String(lane.ref.id)===previous.tournament.id),'Only the preserved tournament may already be playing');
+  assert(h?.stage==='available'||h?.stage==='playing'&&(existingTournament||lane.ref.arena.toLowerCase()===arena.app.toLowerCase()&&previous&&!previousCompleted&&String(lane.ref.id)===previous.tournament.id),'Only the preserved tournament may already be playing');
  }
  assert.equal(await read(m.pool,poolAbi,'publicAdmissions'),false);assert.equal(await read(m.tournaments,bookAbi,'count'),existingTournament?BigInt(existingTournament):previous?1n:0n);
  const catalogue=(await reader.catalog(0n,32)).value;
@@ -125,10 +125,9 @@ try{
  const next=await read(m.tournaments,bookAbi,'nextFixture',[BigInt(existingTournament||1)]);
  let archetype:Address;
  if(existingTournament){
-  assert(lane.ref.id>0n&&lane.tournament===BigInt(existingTournament),'Existing championship must own its live lane');
-  report.tournament={chainId:10143,app:lane.ref.arena,epoch:String(lane.ref.epoch),id:String(lane.ref.id)};
-  const live=(await reader.match(report.tournament)).value;assert.equal(live.result,null);
-  report.adoptedExistingTournament=true;archetype=lane.a;
+  // It may be between fixtures now. Choose the real opponent only after the
+  // accounts are prepared and a fresh live lane has been verified below.
+  archetype=catalogue.items.find(v=>v.official)!.agent;
  }else if(next[0]===255){
   assert(previous&&!previousCompleted&&lane.ref.id>0n,'Do not invent a tournament fixture');
   assert.equal((await reader.match(previous.tournament)).value.result,null,'A published fixture must be synchronized before retry');
@@ -157,7 +156,8 @@ try{
     try{
      const state=await observer.read(true);
      if(state.phase===2&&state.clock<60_000_000n&&state.state.scoreA+state.state.scoreB<=2){
-      report.tournament=ref;archetype=active.a;report.archetype=archetype;adopted=true;save();break;
+      assert(catalogue.items.some(v=>v.official&&v.agent.toLowerCase()===active.a.toLowerCase()));
+      report.tournament=ref;archetype=active.a;report.archetype=archetype;report.adoptedExistingTournament=true;adopted=true;save();break;
      }
     }finally{observer.close();}
    }
