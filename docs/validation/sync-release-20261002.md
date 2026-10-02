@@ -1,5 +1,131 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 22:02 UTC — human v3 compatibility and retained replay proof
+
+Published `d88b480` adds pinned v3 no-lease support to the candidate human
+arena, lobby, attestation, lifecycle, pool, progress loop and browser session.
+Unknown zero-expiry hubs remain inadmissible. Active games cannot be closed
+as expired just because v3 reports zero; epoch/status, publication deadlines,
+player grants and measured batch reserve remain enforced. Existing positive
+lease behavior is retained. Tests: 929 TypeScript, root typecheck, 103 targeted
+Solidity and a complete Next build pass. The first new Solidity test attempted
+to concede during loading and failed; after actual ready/countdown/start the
+corrected test passes. Arena runtime is 24,315 bytes; lobby is 29,632 bytes,
+within their existing reviewed limits. No human contract has been deployed.
+
+Published `2c8e025` additionally pins v3 human node origins, prevents changing
+hub on a journalled deployment, and makes voluntary rotation check its own
+hub's control/validator rather than accepting arbitrary HTTP rejection from
+the newest origin. Forty focused tests and root typecheck pass afterward.
+Fresh private v3 deployment requires explicit `isolated-testnet` and rules 14;
+this path refuses a migration snapshot. Thirty compiled artifacts are staged
+and SHA-verified at `sync-human-v3-2c8e025`, not deployed or opened. The initial
+local packaging attempt misunderstood the preflight return shape and stopped
+before copying or chain writes; its empty staging directory was verified before
+retry. Archive SHA256:
+`9aeb04e763be7c1d970688df4937cd0197995168f034e6039e103faf21d0b387`.
+
+Read-only replay verifier `94507a4` passed at 21:51:53, canonical block 67655067.
+Twenty-nine actually retained replays from both private seasons have matching
+contract result hashes, final scores, players and decoded ordered frames. The
+real private Hasura retention query succeeds. This is not browser playback or
+public migration. Evidence: `evidence/sync-replays-1.json`. Source and target
+replay databases remain separate and unchanged by this read-only verifier.
+For a public migration, retain its existing shared replay database and historical
+routes; do not copy these private fixture histories into it.
+
+Private indexing is finished and stopped early after both verification gates.
+Indexer attempt 2 exited 143 on TERM at 21:59:30; private Hasura exceeded its
+30-second shutdown grace and exited 137 at 22:00:00, `OOMKilled=false`. Preserve
+that distinction and its earlier read-only-filesystem failure. Both databases
+and all reports remain; no restart is requested. Backup `sync-20261002T2150Z`
+has eleven off-VPS SHA-verified files, including private index/runtime and
+concurrent-player keys. Manifest SHA256:
+`dc4b148cdefae0e3f310b0d236f710369c82ae770930e874f7bed06c867e6342`.
+Later verification/stop reports need inclusion in the next refresh.
+
+Tournament 3 remains the only game driver; twenty fixtures were resolved at
+21:57. Its original 23:37:46 deadline and worker 02:36:56 deadline are unchanged.
+No production mutation, public migration, extra game writer, final 24-hour
+trial or complete release is claimed. Legacy hosting and pending browser
+startup approval remain the external obstacles already documented.
+
+## Checkpoint, 21:38 UTC — optimized simultaneous copies and canonical index pass
+
+The private optimized copy trial 3 passed at 21:19:52 UTC: one competitive
+fixture and four independent friendly copies of the same official archetype
+were observed concurrently for 17,039 ms. Both modes were covered; each human
+controller sent 100 acknowledged controls. VPS p95 command times were
+140.87, 140.85, 124.42 and 160.77 ms. All five results were published. The earlier
+trial 1 missing-terminal-timestamp failure and trial 2 between-fixture launch
+failure remain separate; neither was relabelled. No browser or seven-way proof.
+Evidence: `sync-continuation-20261002/evidence/five-concurrent-3.json`.
+
+Index configuration commit `277438f` fixes rules-16 manifests being emitted as
+rules 15. Its regression fails before and passes after the change; 15 focused
+tests and root typecheck pass. Isolated image
+`sha256:ec33806c2ac31aeaaf37c26c2a299e1809ef9ba4abeaa009d5b17583ae226d24`
+was built from a pinned base with actual Envio generation and typecheck. It
+indexes only private d47 and dee98 seasons into `pong_sync_index_20261002`.
+First startup failed on a read-only `.envio` directory before processing;
+attempt 2 supplies a bounded tmpfs and preserves the original **22:04:40 UTC**
+deadline. Active indexer `pongit-sync-index-20261002-attempt2`; stop its private
+Hasura `pongit-sync-index-20261002-hasura-1` after completion. No public index
+or database changed.
+
+Read-only canonical verifier `940eaa5` passed at 21:31:39, block 67650987. All
+55 indexed results match contract state at that exact processed block, with
+rules 16 and cross-season latest-three replay retention (22 players, 31 retained
+matches). This does not prove historical replay-frame migration or browser
+playback. Report: `evidence/sync-index-1.json`.
+
+Classic championship 3 remains active: 15/28 resolved at 21:37. Original driver
+deadline **23:37:46.598862 UTC**, original engine/archive deadline **3 October
+02:36:56.853276 UTC**. Do not duplicate or extend. All copy drivers are stopped.
+Tournament 4 can start only after actual tournament-3 success and sufficient
+remaining original worker time. New no-lease human compatibility defects were
+identified in candidate arena/lobby expiry checks; no such patch or deployment
+has occurred yet. Production remains unchanged; legacy hosting and pending
+local browser approval remain unresolved.
+
+Backup2105 is SHA-verified off VPS. Later copy evidence, private keys and the new
+index database still need a refreshed backup. Scoped cleanup archived four
+obsolete build contexts off VPS and removed only verified copies, leaving disk
+79.72 percent before the new index image. Preserve rollback, runtime and failed
+reports. No final qualification or public delivery claim.
+
+## Checkpoint, 21:00 UTC — legacy hosting failure confirmed; bounded copy trial prepared
+
+Read-only 45-second requests confirm HTTP 503 from the legacy control origin
+and both tested legacy human/agent engine origins, after 36.8–37.1 seconds.
+IPv4 TLS completes normally before the server wait. This is distinct from a
+browser delay, funding failure or a provider-capacity measurement. The current
+v3 control responds and the five optimized private engines publish normally.
+No public restart, session recreation, gate change or credential guess occurred.
+Evidence lives under `sync-continuation-20261002/evidence/` as
+`public-legacy-long-read.json`, `public-legacy-transport.json` and
+`public-human-read.json`. Public tournament 23 remains unfinished; its source
+locks and results must be preserved, not silently cancelled for migration.
+
+Private Classic championship 3 remains the sole tournament driver, with its
+original 23:37:46.598862 UTC deadline. Engine/archive retain their original
+3 October 02:36:56.853276 UTC bound. Inspect their reports before any launch.
+The read-only optimized Classic clock passed at 98.5205 percent; optimized
+Chaos and browser rendering remain unproved. Historical failures stay intact.
+
+Qualification commit `a226e50` permits four independently keyed synthetic
+friendly copies alongside that existing private championship. It does not own
+the tournament, pool or arena gates and never starts another tournament driver.
+Account setup precedes the loading deadline; atomic challenge admissions are
+resolved from actual lane records instead of assuming a separate admission.
+The fixture checks a real five-engine overlap and 100 acknowledged controls
+per player. Root typecheck and 49 focused tests pass. It has not yet run on the
+hosted candidate. Its forthcoming bound must be recorded before launch.
+
+The explicit browser-server question remains unanswered after automatic review
+rejected local Next startup. No alternate launch is permitted. Production is
+unchanged; no completed public release or unchanged 24-hour proof is claimed.
+
 ## Checkpoint, 20:46 UTC — optimized hosted Classic clock passes
 
 All five optimized arenas opened normally in the actually released private
