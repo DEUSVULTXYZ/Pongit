@@ -1,5 +1,84 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 18:03 UTC — five simultaneous games pass; HTTP body deadline fixed
+
+Production remains unchanged. All eight private official archetypes now have
+actual Classic and Chaos qualifications. Controller trials 5 and 6 exited 0;
+trial 5 includes a real 5-5 draw at exactly 300 physical seconds. No artificial
+winner was recorded. The private season is still not a public migration.
+
+The five-way trial passed at 17:48:21 UTC. VECTOR's tournament match 17 and its
+four independent friendly copies 18-21 overlapped for **36,997 ms**. Each
+synthetic human issued 100 confirmed movements; command p95 was respectively
+190.90, 129.35, 138.09 and 152.54 ms from the VPS. Every heartbeat loop completed
+without error. All five results were published and captured. The tournament
+ended 7-2; the four friendly results were 0-7, 0-7, 0-7 and 2-7. These stationary
+endings after the movement test are not measurements of human win rates.
+Report: `evidence/five-concurrent-1.json`, container
+`pongit-sync-concurrent-1-15a01b3`, exited 0. This is not browser, physical
+passkey, seven-way human overlap, admission-latency or 24-hour evidence.
+
+Read-only Chaos match 16 projection passed 107 eligible intervals with zero
+position error. Five intervals spanning new randomness were explicitly excluded;
+no future proof was supplied to the predictor. `sync-projection-16.json` also
+records physical/wall-clock ratio 0.9659 over a 34.7-second window spanning point
+boundaries. This is not a passing measurement of the 98-102% **during-rally**
+requirement; that gate remains open. Classic's prior 103 exact intervals remain.
+
+A private arena retained stale `awaiting-publication` health for match 19 after
+its result had been captured. Other arenas remained available; there were no
+pending engine commands or database lock waits. It recovered before the worker
+replacement. The exact suspended await in that process has not been proven.
+Investigation found and reproduced a separate concrete transport defect: viem's
+HTTP timeout covers receipt of headers, then clears while the response decoder
+can wait indefinitely for the body. The actual loopback reproducer failed after
+its 7.5-second rescue closed the connection. Commit **656a2e1** keeps an independent
+four-second abort signal through body consumption. Reads and uncertain writes
+are bounded; writes are neither retried nor acknowledged. All 66 focused tests
+and root typecheck pass. Before/after logs are retained in local artifacts.
+
+The clean Docker target from **a7f0b08** built from pinned Node and the lockfile,
+without a historically patched base. Image:
+`sha256:55490439d09cd9b12e57cf0b70f3a8c94f3869c319d0d2e9df2403046a96b7ef`.
+Its real imports and 81 isolated transport/player/projection tests pass. Source
+audit found only the expected concurrent-driver and command-feed differences
+against the prior private image, plus four new files; no source was removed.
+A fresh reproducible build of **656a2e1** is running with a separate original
+900-second bound; inspect `clean-build-656a2e1.json` before using its image.
+
+Both old stage-2 workers stopped normally at 17:56:35-36 UTC, after all games
+were captured. Their containers/logs remain. The sole workers now are
+`pongit-sync-body-20261002-engines-1` and `pongit-sync-body-20261002-archive-1`.
+They use the clean a7f0b08 image plus the reviewed 656a2e1 transport file, whose
+SHA256 is `2b9872b82cc53abdcd51c0514b297c94b1e5bf9df6e6b212eb100a2cd3f53551`.
+Their original **20:22:12.904511 UTC** deadline was retained, not extended.
+Runtime: `runtime-body.json`; evidence: `body-recovery.json`.
+
+The only game driver is **pongit-sync-tournament-1-a7f0b08**. It completes the
+existing elimination tournament, with original deadline **19:00:23.662342 UTC**.
+At 18:00:46, two of seven fixtures were resolved and the third was bound. Read
+`five-tournament-1.json` before acting. The helper
+`/opt/pongit/tests/fluid-20260928/sync-tournament-start-20261002.py 2` may start
+the next elimination only after the first passes, its container stops, the
+contract's one-minute interval ends, and the existing workers cover the new
+fixed deadline. It does not renew or open arenas. Championships need a separate
+bounded operation after these workers stop; never extend their deadlines.
+
+Backup **sync-20261002T1747Z**, seven files, is SHA256 verified off VPS. The prior
+1650 restore proof remains valid. Nineteen older intermediate backup files
+(422,582,739 bytes) were rechecked against their off-VPS SHA256 copies before
+their redundant VPS copies were removed. Their manifests and every original
+off-VPS byte remain. Latest backup, production, rollback, volumes and failed
+evidence are preserved. Before the next build, actual usable-space occupancy
+was below 80% (the rounded df display says 80%). Recheck before future builds.
+
+Remaining gates: real browser/catalogue control and latency, per-rally clock and
+render measurements, full formats, community qualification on a compatible base,
+seven-way overlap, publication/release reserve, public-data migration, finances,
+replays and the unchanged 24-hour trial. The previous local Next startup rejection
+by automatic approval review remains unresolved; do not bypass it with another
+launch route. No new funding request. Preserve all journals and failed reports.
+
 ## Checkpoint, 17:23 UTC — next private operation, original bounds preserved
 
 Controller trial 4 passed all four published results and exited 0 at
