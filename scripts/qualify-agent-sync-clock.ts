@@ -11,10 +11,11 @@ import {createPoolObserver} from '../shared/agent-pool-observer';
 import type {EngineState} from '../shared/engine-stream';
 assert.equal(process.env.PONG_SYNC_CLOCK,'read-only-private');
 const tournament=Number(process.env.PONG_SYNC_CLOCK_TOURNAMENT);assert(tournament===1||tournament===2);
+const attempt=Number(process.env.PONG_SYNC_CLOCK_ATTEMPT??1);assert(Number.isInteger(attempt)&&attempt>=1&&attempt<=3);
 const m=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json','utf8')));
 assert(m.pool.toLowerCase()==='0xd47bc7fece722a237c6547f85b4dd91c2601a4c8'&&m.rulesVersion===16&&!m.enabled);
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:5000})});
-const reader=new AgentPoolReader(base,m,[]),path=`artifacts/reusable-candidate/sync-clock-${tournament}.json`;
+const reader=new AgentPoolReader(base,m,[]),path=`artifacts/reusable-candidate/sync-clock-${tournament}${attempt===1?'':'-attempt'+attempt}.json`;
 const deadline=Date.now()+360000;
 const report:any={startedAt:new Date().toISOString(),deadline,scope:'Read-only hosted per-rally physical clock; not browser rendering or complete availability.',segments:[],gaps:[],errors:[],passed:false};
 await writeFile(path,poolJson(report),{flag:'wx'});
@@ -27,9 +28,11 @@ try{
   const ref={chainId:10143 as const,app:row.ref.arena,epoch:String(row.ref.epoch),id:String(row.ref.id)};
   const view=(await reader.match(ref)).value;visited.add(ref.id);if(view.result)continue;
   const observer=await createPoolObserver(m,view,url=>new WebSocket(url));
-  let first:{at:number;t:bigint}|undefined,last:typeof first,rally='',revision=-1n,finished=false;
+  let first:{at:number;t:bigint;head:bigint;clock:bigint}|undefined,last:typeof first,rally='',revision=-1n,finished=false;
   const flush=()=>{
-   if(first&&last&&last.at-first.at>=5000)report.segments.push({ref,rally,wallMs:last.at-first.at,physicalMs:Number(last.t-first.t)/1000});
+   if(first&&last&&last.at-first.at>=5000)report.segments.push({ref,rally,wallMs:last.at-first.at,physicalMs:Number(last.t-first.t)/1000,
+    engineBlockMs:Number(last.head-first.head)*10,clockMs:Number(last.clock-first.clock)/1000,
+    lagStartMs:Number(first.clock-first.t)/1000,lagEndMs:Number(last.clock-last.t)/1000});
    first=last=undefined;
   };
   const accept=(s:EngineState)=>{
@@ -38,7 +41,7 @@ try{
    if(s.phase!==2||s.state.awaitingServe||(s.sync?.pause.status??0)>=2||current!==rally){flush();rally=current;}
    if(s.phase>=3){finished=true;return;}
    if(s.phase!==2||s.state.awaitingServe||(s.sync?.pause.status??0)>=2)return;
-   const sample={at:performance.now(),t:s.state.t};
+   const sample={at:performance.now(),t:s.state.t,head:s.head,clock:s.clock};
    if(last&&sample.at-last.at>500)report.gaps.push({ref,wallMs:sample.at-last.at,physicalMs:Number(sample.t-last.t)/1000});
    first??=sample;last=sample;
   };
@@ -49,6 +52,8 @@ try{
  }
  report.wallMs=report.segments.reduce((n:number,s:any)=>n+s.wallMs,0);
  report.physicalMs=report.segments.reduce((n:number,s:any)=>n+s.physicalMs,0);
+ report.engineBlockMs=report.segments.reduce((n:number,s:any)=>n+s.engineBlockMs,0);
+ report.clockMs=report.segments.reduce((n:number,s:any)=>n+s.clockMs,0);
  report.ratio=report.wallMs?report.physicalMs/report.wallMs:null;
  report.passed=report.wallMs>=60000&&report.ratio>=.98&&report.ratio<=1.02;
  if(!report.passed)process.exitCode=1;

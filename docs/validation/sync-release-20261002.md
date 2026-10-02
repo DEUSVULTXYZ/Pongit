@@ -1,5 +1,63 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 18:55 UTC — Chaos clock gate fails; body-bound transports pass
+
+Production remains unchanged. The private Classic elimination completed all seven
+canonical fixtures at 18:21:21 UTC. The only game driver is now
+`pongit-sync-tournament-2-a7f0b08`, original deadline **19:25:16.159 UTC**.
+Its Chaos elimination has reached the final, match 34. Inspect the actual report
+before any further admission. Engine/archive workers retain their original
+**20:22:12.904511 UTC** bound and the 656a2e1 engine-body override. No writer or
+deadline was duplicated or extended.
+
+The per-rally Classic clock sample passed at 98.344% of wall time. Chaos failed:
+`sync-clock-2.json` measured 95.688%; a separate diagnostic attempt measured
+96.321% over 315.559 seconds. The latter compares engine heads as well as physical
+time: 303.010 nominal engine seconds and 303.950 physical seconds. Most rally
+spans start and end with zero simulation backlog. This identifies nominal
+10-ms-per-block timing as an important source of drift; it does not establish
+that a particular process causes the block slowdown. Preserve both failed
+reports. Header timestamps were also sampled read-only, not used to change game
+rules. No wall-clock fix or passing Chaos-clock claim exists yet.
+
+Commit `4d8b023` fixes a second reproduced body-timeout defect in shared Monad
+reads. Before the fix a partial JSON response retained the read lane until a
+10.552-second rescue; afterward it aborts around 8.067 seconds and the queued
+read progresses. Reads remain paced and bounded; uncertain writes are not
+replayed. Root typecheck and all 920 TypeScript tests pass. The Next production
+build passes. This does not authorize or prove a browser server launch.
+
+The reproducible a9b3d62 image built successfully:
+`sha256:b010c6189eeea540ffe49f67135afe82724159dd7237817371e67266e3b72284`.
+Its 87 isolated transport/player/projection/warmup tests passed. An initial test
+attempt omitted the test-directory mount and failed before running tests; that
+container remains. The earlier clean 656 image has 82 passing tests and 622
+source paths matching exact Git blobs. Its initial over-narrow source-difference
+assertion remains a separate failed audit, not overwritten.
+
+Canonical publication samples cost 0.731871114 MON for nine commits in 90 seconds
+with one active lane, and 1.868095116 MON for 18 commits during 36 seconds of the
+actual five-way overlap. Maximum calldata was respectively 14,148 and 31,364
+bytes. These are measured transaction charges, not a worst-case release reserve
+or guaranteed daily budget. No funding request is needed for current bounded work.
+
+A read-only public migration inventory at block 67612542 found nine identities,
+16 ratings, 463 results and 23 tournaments. Five lanes were empty and no requests
+were pending at that block, but tournament 23 was unfinished and tournament 9 has
+non-final results requiring correction continuity. `migrationReady=false`.
+No source gates, imports, public contracts or public services changed.
+
+Backup `sync-20261002T1822Z`, seven files, is SHA256 verified off VPS. The 1650
+restore proof remains. Redundant 1747 backup files and four source archives were
+removed from the VPS only after new local/VPS hash and mount checks; all original
+off-VPS bytes and manifests remain. Recheck occupancy before another image build.
+
+Commit a9b3d62 scopes the existing real-catalogue/browser harness to the exact
+private rules-16 pool. It was not launched. The explicit question about starting
+Next on 127.0.0.1:4197 is still pending after automatic approval review rejected
+the prior launch with `blocked by policy`; do not bypass it. Remaining release
+gates and all preservation/nonce-authority constraints below still apply.
+
 ## Checkpoint, 18:03 UTC — five simultaneous games pass; HTTP body deadline fixed
 
 Production remains unchanged. All eight private official archetypes now have
