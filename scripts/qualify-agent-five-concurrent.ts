@@ -33,6 +33,14 @@ assert(m.version===5&&!m.enabled&&!m.tournamentsEnabled&&m.pool===r.common.pool&
 const v3=process.env.PONG_FIVE_CONCURRENT_V3==='reviewed-private';
 assert(!process.env.PONG_FIVE_CONCURRENT_V3||v3);
 if(v3){assert.equal(m.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());assert.equal(m.pool.toLowerCase(),'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');}
+const synchronized=process.env.PONG_FIVE_CONCURRENT_SYNC==='reviewed-private';
+assert(!process.env.PONG_FIVE_CONCURRENT_SYNC||synchronized);
+if(synchronized){
+ assert(!v3&&m.rulesVersion===16&&m.friendlyPause==='heartbeat-v1');
+ assert.equal(m.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());
+ assert.equal(m.pool.toLowerCase(),'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8');
+}
+assert((m.rulesVersion===16)===synchronized,'Rules-16 trials require the explicit heartbeat-aware fixture');
 const path=`artifacts/reusable-candidate/five-concurrent-${run}.json`,privatePath=`/secrets/five-concurrent-${run}.json`;
 assert(!existsSync(path),'Preserve every completed or incomplete trial; use its own recovery instead of a new admission');
 assert(!existsSync(privatePath),'Preserve private trial keys');
@@ -49,6 +57,18 @@ const read=(to:Address,abi:Abi,fn:string,args:any[]=[])=>base.readContract({addr
 const write=(op:string,to:Address,abi:Abi,fn:string,args:any[]=[])=>retryOperatorContention(()=>t.write(op,to,abi,fn,args));
 const wait=(ms=1000)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clients:ReturnType<typeof createPoolPlayer>[]=[];
+const heartbeatStops:(()=>Promise<void>)[]=[];
+function keepPresent(client:ReturnType<typeof createPoolPlayer>,row:any){
+ let stopped=false;
+ const loop=(async()=>{
+  while(!stopped&&Date.now()<deadline){
+   try{const state=await client.heartbeat(true);if(state.phase>=3)return;}
+   catch(e){row.heartbeatError=String((e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160);save();return;}
+   await wait(200);
+  }
+ })();
+ const stop=async()=>{stopped=true;await loop;};heartbeatStops.push(stop);return stop;
+}
 let tournamentObserver:Awaited<ReturnType<typeof createPoolObserver>>|undefined;
 let arrived=0,releaseReady:()=>void,rejectReady:(e:unknown)=>void;
 const allReady=new Promise<void>((resolve,reject)=>{releaseReady=resolve;rejectReady=reject;});allReady.catch(()=>{});
@@ -87,7 +107,7 @@ try{
  assert.equal(await read(m.pool,poolAbi,'publicAdmissions'),false);assert.equal(await read(m.tournaments,bookAbi,'count'),previous?1n:0n);
  const catalogue=(await reader.catalog(0n,32)).value;
  assert.equal(catalogue.items.filter(v=>v.official&&v.qualification[0]&&v.qualification[1]).length,8,'All eight bots require real mode qualification');
- if(v3)await write('verified-private-epochs',m.pool,agentPoolAdmissionAbi,'setArenaAdmissions',[
+ if(v3||synchronized)await write('verified-private-epochs',m.pool,agentPoolAdmissionAbi,'setArenaAdmissions',[
   selected.map(a=>a.app),selected.map(()=>1n),selected.map(()=>true),keccak256(stringToHex('BOUNDED_PRIVATE_FIVE_CONCURRENT_TRIAL'))]);
  await write('admissions',m.pool,poolAbi,'setAdmissions',[true]);await write('tournaments',m.tournaments,bookAbi,'setAdmissions',[true]);await write('challenges',m.challenges,challengeAbi,'setAdmissions',[true]);
  if(!previous){await write('begin',m.tournaments,bookAbi,'begin');await write('select',m.tournaments,bookAbi,'select',[1n,32]);}
@@ -129,6 +149,7 @@ try{
    await wait(400);
   }
   assert(row.playingAt,'Original readiness deadline');
+  if(synchronized)keepPresent(client,row);
   if(++arrived===4){
    const states=await Promise.all([...clients.map(c=>c.read(true)),tournamentObserver!.read(true)]);
    assert(states.every(s=>s.phase===2),'Five games must actually overlap on the hosted engines');
@@ -151,11 +172,13 @@ try{
   if(report.result&&report.people.every((p:any)=>p.result))break;await wait(2000);
  }
  assert(report.result&&report.people.every((p:any)=>p.result),'Original publication deadline');
+ assert(report.people.every((p:any)=>!p.heartbeatError),'An independent player heartbeat failed');
  const start=Date.parse(report.overlapVerifiedAt),end=Math.min(...report.people.map((p:any)=>Date.parse(p.engineFinishedAt)),Date.parse(report.engineFinishedAt));report.overlapMs=end-start;assert(report.overlapMs>0);
  report.functionalPassed=true;report.latencyPassed=report.people.every((p:any)=>p.p95<=300);report.passed=report.functionalPassed&&report.latencyPassed;
  if(!report.passed){report.error='Actual player command p95 exceeds 300 ms';process.exitCode=1;}
 }catch(e){report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);process.exitCode=1;}
 finally{
+ await Promise.all(heartbeatStops.map(stop=>stop()));
  clients.forEach(c=>c.close());tournamentObserver?.close();
  for(const [op,to,abi] of [['close-pool',m.pool,poolAbi],['close-book',m.tournaments,bookAbi],['close-challenges',m.challenges,challengeAbi]] as const)try{await write(op,to,abi,'setAdmissions',[false]);report[op]=true;}catch{report.pendingReconciliation=true;process.exitCode=1;}
  report.finishedAt=new Date().toISOString();save();await t.close();await db.end();await metrics();console.log(JSON.stringify({passed:report.passed,functional:report.functionalPassed,error:report.error}));
