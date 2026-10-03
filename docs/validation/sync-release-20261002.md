@@ -1,5 +1,38 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 07:15 UTC — canonical source passed, private import running
+
+Source finality verification **passes at67766442**:168 final results, seven complete
+tournaments and112 exact fixtures, with all five released roots preserved. The
+archive worker stopped cleanly at07:08:38.787, exit0, no OOM or pending/failed scoped
+jobs, before its original deadline. Its final action counts are58 capture proofs
+and42 tournament synchronizations. The first verifier pinned67765568 before the
+last two07:08 synchronizations and correctly failed. A separate bounded diagnostic
+then found zero missing references, so its exact-two repair guard refused; **no
+repair transaction was sent**. Both attempts remain separate from verification2.
+
+Backup **`sync-20261003T0709Z`**,19files, is SHA-verified offVPS at07:11:30.957;
+manifest `e2833d4bd97f6826b08f411ea3412ac21ccfa832c400828b9a9ad0a3d1449734`.
+It follows the final source writes. Guarded private import started07:13:59.762 in
+**`pongit-sync-queue-import-20f9c1d`**, original deadline **07:33:59.238819 UTC**.
+It alone owns its scoped deployment work through the original operator journal.
+Do not duplicate the import or its12 already confirmed preparation transactions.
+The target is `sync-queue-continuation-20261003`, namespace20261003-2, continuing
+PRIVATE67a6 only. Production remains unchanged; no public history is imported.
+
+After import passes/exits, prepare the complete7e3d2e5 runtime, verify exact168
+results/seven books/112fixtures/43requests and preserved identities/ratings, then
+open the five actually freed owned slots through the original journal. No runtime,
+new opening, T8, browser or game driver is running yet. Prepared concurrency helpers
+`sync-queue-copies-20261003.py` and `sync-queue-seven-20261003.py` are not executed;
+their hashes are retained in target `operations-concurrency-7e3d2e5`. They retain
+separate original bounds and use the corrected immediate heartbeat loop, without
+source overrides or substitution of synthetic evidence for browser proof.
+
+Browser4197 remains blocked by automatic approval review. Admission, Chaos clock,
+seven-way progression, reserve/rotation, public migration, financial/replay and
+unchanged24h remain outstanding. No final delivery or new funding request.
+
 ## Checkpoint, 3 October 07:00 UTC — release verified, source finality in progress
 
 Production remains unchanged. The sole recovery finished **06:44:46.095 UTC**,
