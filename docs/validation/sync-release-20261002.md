@@ -1,5 +1,34 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 09:18 UTC — fourth concurrent launch trial
+
+Production remains unchanged. T8 Chaos championship finished PASS,28/28 resolved,
+at09:08:06.486, exit0/no OOM. Its original driver closed pool/book admissions.
+Its original deadline was not extended. This mixed trial is not an unchanged24h
+qualification. Every previous failed report remains preserved.
+
+T9 Classic elimination is the sole tournament driver,
+`pongit-sync-queue-tournament-9-7e3d2e5`, started09:09:29.345591, original deadline
+**10:13:28.899319 UTC**. Engines/archive retain **13:25:06.823834 UTC**. T10/T11
+have not started; the guarded helper requires the prior format passed/exited
+and its complete original worker window. Do not duplicate writers or extend bounds.
+
+`pongit-sync-queue-concurrent-4-d1008a3` started09:14:12, original deadline
+**09:38:12.118622 UTC**, after checking T9, four prior captures and archive funding.
+It mounts exactly four SHA-verified files fromd1008a3 over7e: player/feed/stream
+and116ec10 diagnostic harness. No engine/RPC override. It waits for an actually
+young tournament fixture after preparing accounts. No human/browser driver.
+
+Backup0905,20files, was SHA-verified offVPS09:04:45.3080331, manifest
+`7585c38d959c258ad56ad2644836c1fdecd01f4b8daf5dc3859e88eb89d90f57`.
+New0915,20files including new trial keys/config/journal, was SHA-verified offVPS
+09:17:06.6259319, manifest
+`559192ccf18185a862ee1197cb5498349da5c412ff5c1f330ed08dd59b1b42c2`.
+Never repeat the20MON archive funding or completed release/import. Browser4197
+approval rejection remains pending, no alternate launch. Clock, browser/admission,
+reserve/rotation, public migration and final24h remain outstanding. No deployment
+or completed release is claimed.
+
 ## Checkpoint, 3 October 09:05 UTC — launch-transition regression reproduced and fixed
 
 Production remains unchanged. Trial3 finished08:55:51.272, exit1, all four
