@@ -28,6 +28,10 @@ assert([15,16].includes(rulesVersion),'Unknown immutable rules');
 const friendlyPause=rulesVersion===16?'heartbeat-v1':undefined;
 const hub=v3?NO_LEASE_HUB:source.hub,arenaArtifact=rulesVersion===16?'ProvisionedSynchronizedAgentArena':v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const rebalanced=process.env.PONG_HOUSE_POLICY==='progressive-v1';
+const recovery=process.env.PONG_RETIRED_TOURNAMENT==='public-23-authorized';
+assert(process.env.PONG_RETIRED_TOURNAMENT===undefined||recovery,'Unreviewed tournament retirement');
+if(recovery)assert.equal(source.pool.toLowerCase(),'0x205d5739136d6cb73d732e1146e1ce034798a613','Retirement is bound to the public source');
+const retirementReason=keccak256(new TextEncoder().encode('PONGIT public tournament 23 interrupted for user-authorized v1 hosting recovery, 2026-10-03; published scores preserved; no champion'));
 assert(process.env.PONG_HOUSE_POLICY===undefined||rebalanced,'Unreviewed house policy');
 assert(rulesVersion!==16||v3&&rebalanced,'Rules 16 require v3 and progressive policies');
 const sourceIndexBytes=await readFile('/metadata/source-agent-index.json');
@@ -50,7 +54,7 @@ try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoExc
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 try{
  const names=['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
-  'HouseInstances','RebalancedAgentCatalog',...(rebalanced?['ProgressiveHousePolicies']:[]),'ContinuingFiveLaneAgentPool','PublishedResultVerifier','ContinuingAgentTournaments','ContinuingAgentRatings',
+  'HouseInstances','RebalancedAgentCatalog',...(recovery?['RecoveringAgentCatalog']:[]),...(rebalanced?['ProgressiveHousePolicies']:[]),'ContinuingFiveLaneAgentPool','PublishedResultVerifier','ContinuingAgentTournaments','ContinuingAgentRatings',
   'ContinuingAgentQualifications','ContinuingAgentChallenges',arenaArtifact,
   // These inherited/source ABIs are read even when their bytecode is not deployed.
   'ReusableAgentPool','ReusableAgentArena','MigratingAgentCatalog','AgentCatalog','AgentTournaments','AgentPublishedRatings','AgentChallenges'];
@@ -63,7 +67,7 @@ try{
  const desiredPolicy=rebalanced?(await t.artifact('ProgressiveHousePolicies')).deployedBytecode.object as Hex:undefined;
  if(desiredPolicy)assert(/^0x[\da-f]+$/i.test(desiredPolicy),'House policy must not require unresolved libraries');
  const catalogMigration=agentCatalogMigration(oldPolicyHash,desiredPolicy?keccak256(desiredPolicy):oldPolicyHash);
- const catalogArtifact=catalogMigration.artifact;
+ const catalogArtifact=recovery?'RecoveringAgentCatalog':catalogMigration.artifact;
  const frozen=async()=>{
   const [poolOpen,publicOpen,bookOpen,queueOpen,owner]=await Promise.all([
    read('ReusableAgentPool',source.pool,'admissions'),read('ReusableAgentPool',source.pool,'publicAdmissions'),
@@ -101,7 +105,14 @@ try{
  assert.deepEqual(r.source.hashes,hashes,'Source code changed');assert.deepEqual(r.source.manifest,source,'Source manifest changed');
  if(r.catalogMigration)assert.deepEqual(r.catalogMigration,catalogMigration,'Journaled controller migration changed');
  if(r.modules?.MigratingAgentCatalog)assert.equal(catalogArtifact,'MigratingAgentCatalog','Existing catalogue cannot change migration type');
- if(r.modules?.RebalancedAgentCatalog)assert.equal(catalogArtifact,'RebalancedAgentCatalog','Existing catalogue cannot change migration type');
+ if(r.modules?.RebalancedAgentCatalog&&!recovery)assert.equal(catalogArtifact,'RebalancedAgentCatalog','Existing catalogue cannot change migration type');
+ if(recovery){
+  assert(!r.common,'Cannot replace an imported public authority');
+  const retired={id:23,reason:retirementReason,sourceBook:source.tournaments};
+  if(r.retiredTournament)assert.deepEqual(r.retiredTournament,retired);
+  r.retiredTournament=retired;
+  if(r.modules?.RebalancedAgentCatalog)assert.equal(await read('MigratingAgentCatalog',r.modules.RebalancedAgentCatalog,'importStarted'),false,'Original prepared catalogue must remain unused');
+ }
  r.catalogMigration=catalogMigration;await save();
  const bridge=privateKeyToAccount(r.admissionKey).address;
  const deploy=async(name:string,args:readonly unknown[]=[],instance=name)=>{
@@ -115,7 +126,7 @@ try{
  const policies=catalogMigration.changed?await deploy('ProgressiveHousePolicies'):oldPolicies;
  assert.equal(await codeHash(policies),catalogMigration.targetPolicyHash,'Target controller differs from the journaled migration');
  Object.assign(r.modules,migratedHousePolicyModules(policies,rebalanced));
- const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(catalogMigration.changed?[policies]:[])]);
+ const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(catalogMigration.changed||recovery?[policies]:[])]);
  if(stage==='prepare'){
   assert(!await read('MigratingAgentCatalog',catalog,'importStarted'),'Preparation cannot resume an active import');
   assert(!await read('AgentCatalog',catalog,'setupSealed'));
@@ -131,6 +142,7 @@ try{
  await frozen();
  const importAnchor=await t.base.getBlock();
  r.importAnchor??={block:String(importAnchor.number),hash:importAnchor.hash};await save();
+ if(recovery)await write('catalog-retirement-23','RecoveringAgentCatalog',catalog,'authorizeRetirement',[23n,retirementReason]);
  await write('catalog-start','MigratingAgentCatalog',catalog,'startImport');
  const pool=await deploy('ContinuingFiveLaneAgentPool',[catalog,hub,t.account.address,bridge,hashes.pool]);
  const verifier=await deploy('PublishedResultVerifier',[pool,hub]);

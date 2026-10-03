@@ -54,14 +54,15 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
   if(id===selected){heading.current?.focus();return;}
   setSelected(id);setLoading(true);focusRequested.current=true;const url=new URL(location.href);url.searchParams.set('id',id);history.replaceState(null,'',url);
  }
- const current=tournament?.fixtures.find(f=>!f.resolved&&f.ref);
- const upcoming=tournament?.fixtures.filter(f=>!f.resolved&&!f.ref&&f.a!==zeroAddress&&f.b!==zeroAddress).slice(0,2)??[];
+ const interrupted=tournament?.status==='interrupted';
+ const current=interrupted?undefined:tournament?.fixtures.find(f=>!f.resolved&&f.ref);
+ const upcoming=interrupted?[]:tournament?.fixtures.filter(f=>!f.resolved&&!f.ref&&f.a!==zeroAddress&&f.b!==zeroAddress).slice(0,2)??[];
  const identity=(address:string)=><span className="tournament-player"><Avatar index={person(address)?.avatar??9}/><span>{name(address)}</span></span>;
  const fixture=(f:TournamentFixture)=><article key={f.index} className="tournament-fixture" data-complete={f.resolved}>
   <h4>Match {f.index+1}</h4>
   <div>{identity(f.a)}<b>{f.result?.scoreA??''}</b></div><div>{identity(f.b)}<b>{f.result?.scoreB??''}</b></div>
   <p>{f.administrative?`${name(f.advanced)} advances on the pre-tournament tie-break. No win or ELO awarded.`:
-   f.resolved?f.result?.winner===zeroAddress?'Draw':`${name(f.advanced)} wins`:f.ref?'Match in progress.':'Waiting for the previous round'}</p>
+   f.resolved?f.result?.winner===zeroAddress?'Draw':`${name(f.advanced)} wins`:interrupted?'Not played — tournament interrupted':f.ref?'Match in progress.':'Waiting for the previous round'}</p>
   {f.result&&<span className="tournament-validation">{f.result.finality?'Final result':'Result recorded'}</span>}
   {f.ref&&<Link href={`/agents/arenas/${f.ref.app}/${f.ref.epoch}/${f.ref.id}`}>{f.resolved?'View match':'Open arena'} ↗</Link>}
  </article>;
@@ -75,7 +76,8 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
    {!loading&&!tournament&&!error&&<ArcadeProgress stage="preparing" title="The circuit is getting ready" detail="Waiting for eight qualified rivals"/>}
    {tournament&&<section aria-busy={loading} className="tournament-detail">
     <div className="tournament-title"><div><p className="agent-badge">{tournament.mode===0?'CLASSIC':'CHAOS'} · {tournament.format==='championship'?'CHAMPIONSHIP':'ELIMINATION'}</p>
-     <h2 ref={heading} tabIndex={-1}>Tournament #{tournament.id}</h2></div><span className="tournament-validation">{tournament.status==='repair-waiting'?'Result correction in progress':tournament.status==='complete'?'Completed':tournament.status==='selecting'?'Selecting participants':'In progress'}</span></div>
+     <h2 ref={heading} tabIndex={-1}>Tournament #{tournament.id}</h2></div><span className="tournament-validation">{interrupted?'Interrupted':tournament.status==='repair-waiting'?'Result correction in progress':tournament.status==='complete'?'Completed':tournament.status==='selecting'?'Selecting participants':'In progress'}</span></div>
+    {interrupted&&<p className="tournament-validation">Interrupted during arena migration. Played results are preserved; no champion was awarded.</p>}
     {tournament.status==='repair-waiting'&&<ArcadeProgress stage="synchronizing" title="Updating corrected results" detail={`Revision ${tournament.revision}`} compact/>}
     {tournament.status==='complete'&&<div className="tournament-champion"><span>Champion</span>{identity(tournament.champion)}{tournament.nextAt&&seconds!==null&&<ArcadeProgress stage="preparing" title={seconds>0?`Next tournament in ${seconds}s`:'Preparing the next tournament'} compact/>}</div>}
     {current&&<section className="tournament-now" aria-label="Current match"><div><span className="agent-badge">CURRENT MATCH</span><h3>{name(current.a)} <span>vs</span> {name(current.b)}</h3>

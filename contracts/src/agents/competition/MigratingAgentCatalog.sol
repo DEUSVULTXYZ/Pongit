@@ -53,14 +53,23 @@ abstract contract MigratingAgentCatalogBase is AgentCatalog {
         predecessor=source;predecessorCodeHash=expectedCodeHash;
     }
 
-    function _closedSource() private view {
+    function retiredTournament() public view virtual returns(uint64){return 0;}
+    function retirementEvidence() public view virtual returns(bytes32){return 0;}
+    function retirementReason() public view virtual returns(bytes32){return 0;}
+    function _requireSourceTournament(AgentTournaments book,uint64 n) internal view virtual {
+        require(n==0||book.tournament(n).status==AgentTournaments.Status.Complete,"source tournament unfinished");
+    }
+    function _requireSourceParticipation(address agent) internal view virtual {
+        require(predecessor.participation(agent)==0,"source agent still participating");
+    }
+    function _closedSource() internal view {
         require(address(predecessor).codehash==predecessorCodeHash,"source code changed");
         IRetiredAgentPool pool=IRetiredAgentPool(predecessor.arenaPool());
         AgentTournaments book=AgentTournaments(predecessor.competition());
         require(!pool.admissions()&&!pool.publicAdmissions()&&!book.admissions(),"source admissions open");
         RetiredAgentLanes.requireIdle(address(pool));
         uint64 n=book.count();
-        require(n==0||book.tournament(n).status==AgentTournaments.Status.Complete,"source tournament unfinished");
+        _requireSourceTournament(book,n);
         require(houseController.codehash==houseCodeHash,"official controller changed");
     }
     function startImport() external base {
@@ -72,7 +81,8 @@ abstract contract MigratingAgentCatalogBase is AgentCatalog {
         sourceTournamentCount=book.count();sourceNextTournamentAt=book.nextAt();
         require(sourceCount>=8,"source identities");importStarted=true;
         importDigest=keccak256(abi.encode(block.chainid,address(predecessor),predecessorCodeHash,
-            sourceRevision,sourceCount,sourceTournamentCount,sourceNextTournamentAt,sourceMatchNonce));
+            sourceRevision,sourceCount,sourceTournamentCount,sourceNextTournamentAt,sourceMatchNonce,
+            retiredTournament(),retirementEvidence(),retirementReason()));
         emit ImportStarted(address(predecessor),sourceRevision,sourceCount,sourceTournamentCount);
     }
     function _unchangedSource() private view {
@@ -88,7 +98,7 @@ abstract contract MigratingAgentCatalogBase is AgentCatalog {
         while(imported<end){
             address agent=predecessor.at(imported);Identity memory p=predecessor.identity(agent);
             require(agent!=address(0)&&p.creator!=address(0)&&identities[agent].creator==address(0),"source identity");
-            require(predecessor.participation(agent)==0,"source agent still participating");
+            _requireSourceParticipation(agent);
             require(p.modes>0&&p.modes<=3&&p.qualified&~p.modes==0&&p.metadata!=0,"source capabilities");
             require(p.lastTournament<=sourceTournamentCount,"source tournament order");
             if(p.house!=0){

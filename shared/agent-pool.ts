@@ -98,7 +98,7 @@ export function agentPoolReleaseEvidence(m:AgentPoolManifest):Hex|null{
  return m.releaseStage==='testnet-preview'?m.previewEvidence??null:m.verifiedCapacity===m.maxMatches?m.qualificationEvidence:null;
 }
 export type TournamentFormat='elimination'|'championship';
-export const tournamentStatuses=['none','selecting','playing','complete','repair-waiting'] as const;
+export const tournamentStatuses=['none','selecting','playing','complete','repair-waiting','interrupted'] as const;
 export type TournamentStatus=typeof tournamentStatuses[number];
 export function scheduledTournament(id:bigint):{mode:0|1;format:TournamentFormat}{
  if(id<1n)throw Error('Invalid tournament id');return{mode:Number((id-1n)%2n) as 0|1,format:(id-1n)%4n>=2n?'championship':'elimination'};

@@ -7,7 +7,7 @@ import {TournamentRules as R} from "./TournamentRules.sol";
 /// Persistent automatic tournaments on Monad, outside physics delegations.
 /// Keepers choose when to trigger work, never the entrants, score or tie-break.
 contract AgentTournaments {
-    enum Status {None,Selecting,Playing,Complete,RepairWaiting}
+    enum Status {None,Selecting,Playing,Complete,RepairWaiting,Interrupted}
     struct Tournament {
         Status status;uint8 mode;bool league;uint64 startedAt;uint64 completedAt;
         uint256 catalogRevision;uint256 scanCount;uint256 cursor;uint8 selected;
