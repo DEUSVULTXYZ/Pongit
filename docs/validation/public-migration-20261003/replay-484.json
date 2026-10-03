@@ -1,0 +1,71 @@
+{
+  "startedAt": "2026-10-03T16:59:34.775Z",
+  "scope": "Actual public replay API and desktop Chrome/Edge with emulated mobile viewport; no engine, passkey or write",
+  "reference": {
+    "chainId": 10143,
+    "app": "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+    "epoch": "1",
+    "id": "484"
+  },
+  "frameCount": 222,
+  "checks": [
+    {
+      "channel": "chrome",
+      "width": 360,
+      "height": 640,
+      "playback": true,
+      "finalScore": [
+        2,
+        7
+      ],
+      "focus": true,
+      "pixelControls": true,
+      "hoverContrast": 13.971506990486423,
+      "blockedRequests": 0
+    },
+    {
+      "channel": "chrome",
+      "width": 1440,
+      "height": 1000,
+      "playback": true,
+      "finalScore": [
+        2,
+        7
+      ],
+      "focus": true,
+      "pixelControls": true,
+      "hoverContrast": 13.971506990486423,
+      "blockedRequests": 0
+    },
+    {
+      "channel": "msedge",
+      "width": 360,
+      "height": 640,
+      "playback": true,
+      "finalScore": [
+        2,
+        7
+      ],
+      "focus": true,
+      "pixelControls": true,
+      "hoverContrast": 13.971506990486423,
+      "blockedRequests": 0
+    },
+    {
+      "channel": "msedge",
+      "width": 1440,
+      "height": 1000,
+      "playback": true,
+      "finalScore": [
+        2,
+        7
+      ],
+      "focus": true,
+      "pixelControls": true,
+      "hoverContrast": 13.971506990486423,
+      "blockedRequests": 0
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-03T16:59:59.641Z"
+}

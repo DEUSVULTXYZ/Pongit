@@ -1,0 +1,141 @@
+{
+  "at": "2026-10-03T17:01:35.475Z",
+  "virtualAuthenticator": true,
+  "physicalPasskeyTest": false,
+  "mockedNetwork": false,
+  "note": "Original reports and failures are preserved unchanged. Render supplement separates explicit contractual pause/countdown and ignores terminal/startup frames; no unmarked stall is excluded. Metrics are short-run observations, not 24-hour or five-lane qualification.",
+  "processorSha256": "8a7eb0f8310f3e875f809bb951a1c0a53d034d9345c3466b393c45c2b86d67d7",
+  "trials": [
+    {
+      "run": "public-rules16-classic-1",
+      "reportSha256": "18cc642c9810591a7d014dedc7ff58d7a6c10b49f1dd7851519eb2ab564a5914",
+      "passed": false,
+      "error": "page.waitForFunction: Timeout 30000ms exceeded.",
+      "ref": {
+        "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+        "epoch": "1",
+        "id": "474"
+      },
+      "channel": "chrome",
+      "mode": 0,
+      "admissionMs": 42130
+    },
+    {
+      "run": "public-rules16-classic-2",
+      "reportSha256": "1aaf6e4e28c75ab0e5bed7d610e93c97769298e4acd89050a31e51044a34dceb",
+      "passed": false,
+      "error": "page.waitForURL: Timeout 180000ms exceeded.",
+      "channel": "chrome"
+    },
+    {
+      "run": "public-rules16-classic-3",
+      "reportSha256": "9e8d49281e104d4a2014190d002188c6c7a91b34fa5b4422016f7f8575cfc56f",
+      "passed": true,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "1",
+        "id": "482"
+      },
+      "channel": "chrome",
+      "mode": 0,
+      "admissionMs": 7941,
+      "confirmedInput": {
+        "samples": 220,
+        "p95Ms": 16.850341796875,
+        "maxMs": 22.72216796875,
+        "mismatches": []
+      },
+      "liveness": {
+        "heartbeats": 120,
+        "resumes": 1
+      }
+    },
+    {
+      "run": "public-rules16-classic-4",
+      "reportSha256": "1c935aaab927d81b08b71ccce7566344f6f0047ba21d766341a6f79c21e2a5f9",
+      "passed": true,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "1",
+        "id": "485"
+      },
+      "channel": "chrome",
+      "mode": 0,
+      "admissionMs": 7322,
+      "confirmedInput": {
+        "samples": 215,
+        "p95Ms": 17.4462890625,
+        "maxMs": 27.505615234375,
+        "mismatches": []
+      },
+      "liveness": {
+        "heartbeats": 127,
+        "resumes": 1
+      },
+      "render": {
+        "sync-trace": {
+          "traceSha256": "e91987cc41aab72344a8849117b11bcb96dcc4f2ed684606bdd0bc7fcc71ffe8",
+          "frames": 3175,
+          "p95FrameMs": 17.100000023841858,
+          "maxHoldMs": 149.5,
+          "contractPauseMs": 3100,
+          "frameGaps": 0,
+          "snapshotJumps": 0
+        },
+        "spectator-trace": {
+          "traceSha256": "a05b74bf4da6d7984b283e770966aee9bbbfdaccfa4c05ccb62293dcf2fd9779",
+          "frames": 3750,
+          "p95FrameMs": 17.100000023841858,
+          "maxHoldMs": 216.70000004768372,
+          "contractPauseMs": 3717.1999999284744,
+          "frameGaps": 0,
+          "snapshotJumps": 0
+        }
+      }
+    },
+    {
+      "run": "public-rules16-chaos-1",
+      "reportSha256": "0d3ba3ec399a25195444134dda1e6b56724de4d6bf07248c9389dd4acb2537d2",
+      "passed": true,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "1",
+        "id": "484"
+      },
+      "channel": "msedge",
+      "mode": 1,
+      "admissionMs": 7042,
+      "confirmedInput": {
+        "samples": 218,
+        "p95Ms": 17.00244140625,
+        "maxMs": 217.571044921875,
+        "mismatches": []
+      },
+      "liveness": {
+        "heartbeats": 131,
+        "resumes": 1
+      },
+      "render": {
+        "sync-trace": {
+          "traceSha256": "a72ac3c8f0050e1c82176c8b5993b5ade37bfde257cad9ad7f3accfebf2979a5",
+          "frames": 2188,
+          "p95FrameMs": 17.199999928474426,
+          "maxHoldMs": 265.7999999523163,
+          "contractPauseMs": 3083.8000000715256,
+          "frameGaps": 0,
+          "snapshotJumps": 0
+        },
+        "spectator-trace": {
+          "traceSha256": "5be4a8052521b2e1e87f687fd6e034c60f2c196a4422be4d74491b86a1bf2d5d",
+          "frames": 2790,
+          "p95FrameMs": 17.100000023841858,
+          "maxHoldMs": 183.29999995231628,
+          "contractPauseMs": 4084.3000000715256,
+          "frameGaps": 0,
+          "snapshotJumps": 0
+        }
+      }
+    }
+  ],
+  "replayReportSha256": "76603f0e312f7c011e2d3befec4a4fca2b52915dcefb0b7cd9521248cbaee58b"
+}

@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-03T17:05:50.997948+00:00",
+  "images": [
+    {
+      "image": "sha256:39ff5a3deac2a6777df6ece32da9f156bc372cf62dc3f986fc0287d605bdf60e",
+      "created": "2026-10-03T16:51:23.129925163Z",
+      "topStep": "/bin/sh -c npx tsx scripts/docs-build.ts && npx next build web",
+      "noContainerOrTagReferences": true
+    },
+    {
+      "image": "sha256:95f2c03b4478ab7ca3d58593ccc6409bdeee1493951a23a0fde1b3e8b21c078f",
+      "created": "2026-09-30T19:17:10.120675741Z",
+      "topStep": "/bin/sh -c npx tsx scripts/docs-build.ts && npx next build web",
+      "noContainerOrTagReferences": true
+    }
+  ],
+  "usableDiskPercent": 78.23944810875317
+}

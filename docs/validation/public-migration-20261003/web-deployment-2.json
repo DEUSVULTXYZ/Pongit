@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-03T16:52:10.578316+00:00",
+  "action": "web",
+  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+  "services": [
+    {
+      "service": "arcade-web",
+      "image": "sha256:ee52f22c2422e81d5452f1dfb8bbab100b9e1c1dba92d1d674b8bd18e76ec27b",
+      "status": "running",
+      "startedAt": "2026-10-03T16:52:10.252577333Z"
+    }
+  ],
+  "dispatched": true,
+  "verifiedFunctional": false
+}

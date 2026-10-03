@@ -1,0 +1,49 @@
+{
+  "at": "2026-10-03T16:56:14.152309+00:00",
+  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+  "composeSha256": "1c0bfeb7c5757d99b734d68d7e586516318ec2eb3e537d1f78bbdcb64ddc5481",
+  "services": [
+    {
+      "role": "admission",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-03T16:19:50.146081373Z"
+    },
+    {
+      "role": "archive",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-03T16:19:50.156241684Z"
+    },
+    {
+      "role": "engines",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-03T16:19:50.159149711Z"
+    },
+    {
+      "role": "maintenance",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-03T16:19:50.14259952Z"
+    },
+    {
+      "role": "reader",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-03T16:19:50.182859694Z"
+    },
+    {
+      "role": "sponsor",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-03T16:19:50.144968939Z"
+    },
+    {
+      "role": "arcade-web",
+      "image": "sha256:ee52f22c2422e81d5452f1dfb8bbab100b9e1c1dba92d1d674b8bd18e76ec27b",
+      "startedAt": "2026-10-03T16:52:10.252577333Z"
+    },
+    {
+      "role": "sync-indexer",
+      "image": "sha256:eaba40085e1d183045ad33332c24ba43d6486a20984cff135bb2a5e2e698fe00",
+      "startedAt": "2026-10-03T16:08:37.950518275Z"
+    }
+  ],
+  "databaseRestorePerformed": false,
+  "passed": true
+}

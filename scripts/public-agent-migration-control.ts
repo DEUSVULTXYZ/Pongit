@@ -1,6 +1,7 @@
 // Explicit October 3 public migration. Private seasons never enter this path.
 import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 import {keccak256,parseEther,zeroHash} from 'viem';
 import {chainTools} from './independent-chain-tools';
 import {retryOperatorContention} from '../shared/operator-contention';
@@ -17,9 +18,9 @@ import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerifier';
 
 assert.equal(process.env.PONG_PUBLIC_MIGRATION,'user-authorized-recovery-20261003');
-const action=process.argv[2];assert(['verify-source','verify-import','setup','qualifications','public'].includes(action));
+const action=process.argv[2];assert(['verify-source','verify-import','setup','qualifications','challenges','public'].includes(action));
 const output=process.env.PONG_PUBLIC_MIGRATION_REPORT!;
-assert(/^\/evidence\/public-(source|import|setup|qualifications|open)-[1-3]\.json$/.test(output));
+assert(/^\/evidence\/public-(source|import|setup|qualifications|challenges|open)-[1-3]\.json$/.test(output));
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 const source=r.source.manifest;
 assert.equal(r.prefix,'reusable-agents-20261003-4');
@@ -122,14 +123,27 @@ try{
    report.openings.push({app:a.app,epoch:next.epoch,baseBlock:next.baseBlock,hash:receipt.transactionHash});await save();
   }
  }
- if(action==='qualifications'||action==='public'){
+ if(action==='qualifications'||action==='challenges'||action==='public'){
   assert.equal(r.rulesVersion,16);assert.equal(r.common.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());
   if(action==='public')for(const agent of identities){const id=await read(r.common.catalog,catalogAbi,'identity',[agent]);if(id.house)assert.equal(id.qualified,3,'Real house qualifications required');}
+  if(action==='challenges'){
+   const agents=await Promise.all(identities.map(agent=>read(r.common.catalog,catalogAbi,'identity',[agent])));
+   assert(agents.filter(id=>id.house&&id.qualified===3).length>=2,'Two fully qualified house policies required');
+   assert.equal(await read(r.common.tournaments,bookAbi,'admissions'),false,'Partial opening keeps tournaments closed');
+  }
   await write('qualification-admissions',r.common.pool,poolAbi,'setAdmissions',[true]);
-  if(action==='public'){
+  if(action==='public'||action==='challenges'){
+   // The user explicitly chose public testnet evaluation before full capacity
+   // qualification. Bind that limited, published review; never call it a 24h pass.
+   const reviewBytes=await readFile('/metadata/publication-review.json');
+   const review=JSON.parse(reviewBytes.toString());
+   assert.equal(review.pool.toLowerCase(),r.common.pool.toLowerCase());
+   assert.equal(review.qualification.capacity,false);assert.equal(review.qualification.soak24h,false);
+   assert((await read(r.common.ratings,ratingsAbi,'count'))>=467n,'Published new Classic and Chaos qualifications required');
+   await write('preview-admission-evidence',r.common.pool,poolAbi,'qualifyCapacity',['0x'+createHash('sha256').update(reviewBytes).digest('hex')]);
    await write('challenge-admissions',r.common.challenges,queueAbi,'setAdmissions',[true]);
    await write('public-admissions',r.common.pool,poolAbi,'setPublicAdmissions',[true]);
-   await write('tournament-admissions',r.common.tournaments,bookAbi,'setAdmissions',[true]);
+   if(action==='public')await write('tournament-admissions',r.common.tournaments,bookAbi,'setAdmissions',[true]);
   }
  }
  report.passed=true;

@@ -27,8 +27,23 @@
         "0xaf7c017a6729ec6f5d9d14288c5214489bb5be3b",
         "0x9b8e61621682da7b59239774f76dcf04071ea059",
         "0x028f656e76cc1973ced7c41d8584d4f94be9e003"
-      ],
-      "archiveContract": "AgentReusableFiveArchive"
+      ]
+    },
+    {
+      "chainId": 10143,
+      "rulesVersion": 16,
+      "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+      "startBlock": "67869228",
+      "arenas": [
+        "0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+        "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+        "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+        "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+        "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+        "0x5572e348c5039d240b9b470c558e188345ada81b",
+        "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+        "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb"
+      ]
     }
   ]
 }

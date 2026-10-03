@@ -1,0 +1,145 @@
+{
+  "startedAt": "2026-10-03T16:01:38.354Z",
+  "action": "verify-import",
+  "sourcePool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
+  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+  "passed": true,
+  "transactions": [],
+  "block": "67871593",
+  "blockHash": "0xd1049f772cdf2e6adbc41d2a0fcd3ecc11e73cc20c35866335b21f674bb3395a",
+  "results": 463,
+  "tournaments": [
+    {
+      "id": "1",
+      "resolved": 7
+    },
+    {
+      "id": "2",
+      "resolved": 7
+    },
+    {
+      "id": "3",
+      "resolved": 28
+    },
+    {
+      "id": "4",
+      "resolved": 28
+    },
+    {
+      "id": "5",
+      "resolved": 7
+    },
+    {
+      "id": "6",
+      "resolved": 7
+    },
+    {
+      "id": "7",
+      "resolved": 28
+    },
+    {
+      "id": "8",
+      "resolved": 28
+    },
+    {
+      "id": "9",
+      "resolved": 7
+    },
+    {
+      "id": "10",
+      "resolved": 7
+    },
+    {
+      "id": "11",
+      "resolved": 28
+    },
+    {
+      "id": "12",
+      "resolved": 28
+    },
+    {
+      "id": "13",
+      "resolved": 7
+    },
+    {
+      "id": "14",
+      "resolved": 7
+    },
+    {
+      "id": "15",
+      "resolved": 28
+    },
+    {
+      "id": "16",
+      "resolved": 28
+    },
+    {
+      "id": "17",
+      "resolved": 7
+    },
+    {
+      "id": "18",
+      "resolved": 7
+    },
+    {
+      "id": "19",
+      "resolved": 28
+    },
+    {
+      "id": "20",
+      "resolved": 28
+    },
+    {
+      "id": "21",
+      "resolved": 7
+    },
+    {
+      "id": "22",
+      "resolved": 7
+    },
+    {
+      "id": "23",
+      "resolved": 17
+    }
+  ],
+  "requests": "67",
+  "identities": [
+    {
+      "agent": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "house": 1
+    },
+    {
+      "agent": "0xe8F76A048B5b12538033aa69417D32ad85b9c416",
+      "house": 2
+    },
+    {
+      "agent": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "house": 3
+    },
+    {
+      "agent": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "house": 4
+    },
+    {
+      "agent": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "house": 5
+    },
+    {
+      "agent": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "house": 6
+    },
+    {
+      "agent": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "house": 7
+    },
+    {
+      "agent": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "house": 8
+    },
+    {
+      "agent": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+      "house": 0
+    }
+  ],
+  "finishedAt": "2026-10-03T16:06:51.504Z"
+}

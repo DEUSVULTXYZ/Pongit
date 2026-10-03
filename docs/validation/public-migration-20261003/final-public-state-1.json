@@ -1,0 +1,119 @@
+{
+  "checkedAt": "2026-10-03T17:21:22.730002+00:00",
+  "config": {
+    "version": 5,
+    "chainId": 10143,
+    "engineChainId": 4242,
+    "rulesVersion": 16,
+    "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+    "catalog": "0x333e245f898898c65eadd92e8fdddd0f4b32b166",
+    "ratings": "0xbe8069ceb52f5a979579e705100ccbfdefb7c766",
+    "tournaments": "0xe44dd8a79616b861ea0619a70e4f8c74bb23f8f7",
+    "family": "0x42007a8d3d7017d4b43fef9e9beeb2e7cb89fccb",
+    "enabled": true,
+    "tournamentsEnabled": true,
+    "qualified": false,
+    "maxMatches": 5,
+    "verifiedCapacity": 0,
+    "lanes": {
+      "tournament": 1,
+      "challenge": 4
+    },
+    "observation": {
+      "block": "67887429",
+      "hash": "0x48f5288da957c16a4452441ed708c608b4fed9719922a4f62d632dee437a3828",
+      "timestamp": "1791048079",
+      "revision": "856951ce758bbebed1dbe2ef41e2b4b6efcb66bfe2c57c6c86c0108dff29024b"
+    }
+  },
+  "currentTournament": {
+    "id": "24",
+    "mode": 1,
+    "format": "championship",
+    "status": "playing",
+    "observedBlock": "67887431"
+  },
+  "currentResolvedFixtures": 9,
+  "historicalTournament": {
+    "id": "23",
+    "status": "interrupted",
+    "champion": "0x0000000000000000000000000000000000000000",
+    "completedAt": null
+  },
+  "provider": {
+    "status": "degraded",
+    "warnings": [
+      "machines near capacity: 50/50"
+    ],
+    "machines": null,
+    "validatorCapacity": null
+  },
+  "services": [
+    {
+      "name": "pongit-arcade-five-arcade-web-1",
+      "image": "sha256:ee52f22c2422e81d5452f1dfb8bbab100b9e1c1dba92d1d674b8bd18e76ec27b",
+      "status": "running",
+      "startedAt": "2026-10-03T16:52:10.252577333Z",
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-admission-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "status": "running",
+      "startedAt": "2026-10-03T16:19:50.146081373Z",
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-reader-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "status": "running",
+      "startedAt": "2026-10-03T16:19:50.182859694Z",
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-engines-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "status": "running",
+      "startedAt": "2026-10-03T16:19:50.159149711Z",
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-sponsor-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "status": "running",
+      "startedAt": "2026-10-03T16:19:50.144968939Z",
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-maintenance-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "status": "running",
+      "startedAt": "2026-10-03T16:19:50.14259952Z",
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-archive-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "status": "running",
+      "startedAt": "2026-10-03T16:19:50.156241684Z",
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-sync-indexer-1",
+      "image": "sha256:eaba40085e1d183045ad33332c24ba43d6486a20984cff135bb2a5e2e698fe00",
+      "status": "running",
+      "startedAt": "2026-10-03T16:08:37.950518275Z",
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-relayer-1",
+      "image": "sha256:e6fa5f722906a48093b89d29c059bc75c44c10cb0c197273798c61882567ac97",
+      "status": "running",
+      "startedAt": "2026-09-24T11:56:47.467202901Z",
+      "oomKilled": false
+    }
+  ],
+  "composeSha256": "1c0bfeb7c5757d99b734d68d7e586516318ec2eb3e537d1f78bbdcb64ddc5481",
+  "migrationLive": true,
+  "fullQualificationPassed": false
+}

@@ -1,0 +1,11 @@
+{
+  "startedAt": "2026-10-03T16:46:31.747367+00:00",
+  "action": "web",
+  "source": "b60d1f9",
+  "tag": "pongit:public-sync-web-b60d1f9",
+  "diskBefore": 78.27881405458564,
+  "passed": true,
+  "image": "sha256:ee52f22c2422e81d5452f1dfb8bbab100b9e1c1dba92d1d674b8bd18e76ec27b",
+  "finishedAt": "2026-10-03T16:51:46.742970+00:00",
+  "logSha256": "8c0064974381f8d572f868949d2bd647e93d714c187f14f5553fd7661452cba5"
+}

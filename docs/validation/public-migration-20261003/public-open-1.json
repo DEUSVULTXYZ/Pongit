@@ -1,0 +1,133 @@
+{
+  "startedAt": "2026-10-03T16:47:15.663Z",
+  "action": "public",
+  "sourcePool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
+  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+  "passed": true,
+  "transactions": [
+    {
+      "id": "qualification-admissions",
+      "hash": "0x7f9b535ef6d4f352dd6e5ddef27cb586becd118550b8c78fe4379708865adaf4",
+      "block": "67873017"
+    },
+    {
+      "id": "preview-admission-evidence",
+      "hash": "0xc9cffc0b6cbb8ad004739b910e1fb8699c5088c67e93a731f35b19fc0b43a071",
+      "block": "67877066"
+    },
+    {
+      "id": "challenge-admissions",
+      "hash": "0x1ee9461af8f1bd7ee319c3c2cf209c71d3202f2b4ef1a3d53aeddf0472b124e9",
+      "block": "67876378"
+    },
+    {
+      "id": "public-admissions",
+      "hash": "0xc72c1b98948cae808d2c39e1bef3238ea82af63f27ffa24de6dd3e5f7f567c1f",
+      "block": "67877103"
+    },
+    {
+      "id": "tournament-admissions",
+      "hash": "0x6389a5e23bafaf9cf84214859d545576bc9f54bda26bbfe71462c94b8d30b962",
+      "block": "67880825"
+    }
+  ],
+  "block": "67880660",
+  "blockHash": "0x14b694cf11375d6f087c4265356a650aa7c9b0b2d4f473054847b76c96a30ae1",
+  "results": 463,
+  "tournaments": [
+    {
+      "id": "1",
+      "resolved": 7
+    },
+    {
+      "id": "2",
+      "resolved": 7
+    },
+    {
+      "id": "3",
+      "resolved": 28
+    },
+    {
+      "id": "4",
+      "resolved": 28
+    },
+    {
+      "id": "5",
+      "resolved": 7
+    },
+    {
+      "id": "6",
+      "resolved": 7
+    },
+    {
+      "id": "7",
+      "resolved": 28
+    },
+    {
+      "id": "8",
+      "resolved": 28
+    },
+    {
+      "id": "9",
+      "resolved": 7
+    },
+    {
+      "id": "10",
+      "resolved": 7
+    },
+    {
+      "id": "11",
+      "resolved": 28
+    },
+    {
+      "id": "12",
+      "resolved": 28
+    },
+    {
+      "id": "13",
+      "resolved": 7
+    },
+    {
+      "id": "14",
+      "resolved": 7
+    },
+    {
+      "id": "15",
+      "resolved": 28
+    },
+    {
+      "id": "16",
+      "resolved": 28
+    },
+    {
+      "id": "17",
+      "resolved": 7
+    },
+    {
+      "id": "18",
+      "resolved": 7
+    },
+    {
+      "id": "19",
+      "resolved": 28
+    },
+    {
+      "id": "20",
+      "resolved": 28
+    },
+    {
+      "id": "21",
+      "resolved": 7
+    },
+    {
+      "id": "22",
+      "resolved": 7
+    },
+    {
+      "id": "23",
+      "resolved": 17
+    }
+  ],
+  "requests": "67",
+  "finishedAt": "2026-10-03T16:48:05.857Z"
+}

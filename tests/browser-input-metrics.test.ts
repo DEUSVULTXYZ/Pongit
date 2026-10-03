@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {confirmedInputMetrics} from '../scripts/browser-sync-probe';
+import {confirmedInputMetrics,syncMetrics} from '../scripts/browser-sync-probe';
+
+test('render metrics separate explicit contract pauses without hiding unmarked stalls',()=>{
+ const frame=(at:number,pauseStatus=0)=>({at,x:10,y:10,sourceT:1000,clock:1000,observedAt:at,score:'0:0',pauseStatus});
+ const stalled=syncMetrics({frames:Array.from({length:9},(_,i)=>frame(i*100)),snapshots:[]});
+ assert.equal(stalled.maxHoldMs,800);assert.equal(stalled.contractPauseMs,0);
+ const paused=syncMetrics({frames:Array.from({length:9},(_,i)=>frame(i*100,3)),snapshots:[]});
+ assert.equal(paused.maxHoldMs,0);assert.equal(paused.contractPauseMs,800);
+ const mixed=syncMetrics({frames:[...Array.from({length:7},(_,i)=>frame(i*100)),frame(700,2),frame(800,3)],snapshots:[]});
+ assert.equal(mixed.maxHoldMs,600);assert.equal(mixed.contractPauseMs,200);
+});
 
 test('confirmed input includes the unsent queue and both sides of F5',()=>{
  const value=confirmedInputMetrics([{at:100,direction:-1},{at:800,direction:0},{at:1200,direction:1}],

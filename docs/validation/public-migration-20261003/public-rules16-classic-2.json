@@ -1,0 +1,979 @@
+{
+  "startedAt": "2026-10-03T16:41:25.334Z",
+  "origin": "https://pongit.xyz",
+  "run": "public-rules16-classic-2",
+  "channel": "chrome",
+  "mode": 0,
+  "bot": "NOVA",
+  "virtualPrf": true,
+  "reusedSession": true,
+  "mockedNetwork": false,
+  "privateV3": false,
+  "synchronized": true,
+  "atomicQualification": false,
+  "cadenceProbe": false,
+  "controlCount": 110,
+  "idleMs": 45000,
+  "passed": false,
+  "checks": [],
+  "errors": [],
+  "submissions": [],
+  "receipts": [],
+  "sockets": [],
+  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+  "rulesVersion": 16,
+  "admissionNetwork": [
+    {
+      "at": "2026-10-03T16:41:27.259Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 93.7806999999998,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:27.263Z",
+      "method": "GET",
+      "path": "/api/agents/events",
+      "ms": 93.50630000000001,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:27.354Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 627.1725999999999,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:27.259Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1290.2346000000002,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:27.259Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1550.3693000000003,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:28.925Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 94.08030000000053,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:28.925Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 98.02710000000025,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:29.195Z",
+      "method": "eth_chainId",
+      "path": "rpc",
+      "ms": 74.34300000000076,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:29.299Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 15.188499999999294,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:29.404Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 18.79779999999937,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:29.516Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 16.739699999999175,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:28.925Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 701.4529999999995,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:28.925Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 701.2538999999997,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:29.616Z",
+      "method": "eth_chainId",
+      "path": "rpc",
+      "ms": 15.60950000000048,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:29.720Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 15.14219999999932,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:29.823Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 18.241300000000592,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:29.933Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 44.11899999999969,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:30.034Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 19.305900000000292,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:30.058Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 95.78300000000036,
+      "http": 404
+    },
+    {
+      "at": "2026-10-03T16:41:30.154Z",
+      "method": "POST",
+      "path": "/api/agents/transactions",
+      "ms": 840.7340999999997,
+      "http": 202
+    },
+    {
+      "at": "2026-10-03T16:41:31.250Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.33570000000054,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:31.384Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 91.91069999999945,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:31.594Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.53330000000005,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:31.940Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 90.96480000000065,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:32.284Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 93.47170000000006,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:32.643Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.5497000000014,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:32.996Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.90909999999894,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:33.340Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.53780000000006,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:33.434Z",
+      "method": "eth_getTransactionReceipt",
+      "path": "rpc",
+      "ms": 20.372699999999895,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:33.457Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 97.59740000000056,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:33.456Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 1234.3050000000003,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:33.457Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 2011.6285000000007,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:33.457Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 2012.7747999999992,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:35.584Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 91.16079999999965,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:37.686Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1782.6273,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:41.478Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1267.939699999999,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:45.484Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 94.7999000000018,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:44.749Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1027.2903000000006,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:45.484Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 638.4578000000001,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:45.484Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1565.3232000000025,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:47.782Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1420.108400000001,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:51.216Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 947.0869999999995,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:54.166Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1845.7079000000012,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:57.063Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 90.93540000000212,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:57.064Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 92.49509999999646,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:57.063Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1315.042599999997,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:41:58.023Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1412.0704999999944,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:01.443Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1784.5618000000031,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:05.229Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1608.1343000000052,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:08.383Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 753.8567000000039,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:08.383Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1383.587599999999,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:08.383Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 2033.470699999998,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:08.854Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1730.595699999998,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:12.600Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1563.3065999999963,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:16.173Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1318.5328000000009,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:20.433Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 92.78889999999956,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:20.433Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 93.3035000000018,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:19.504Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1407.3554000000004,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:20.433Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1991.619399999996,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:22.923Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 2072.6577000000034,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:27.004Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1831.2523999999976,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:30.844Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1416.8340000000026,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:32.435Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 92.59930000000168,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:32.435Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 93.1826000000001,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:32.435Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1526.414699999994,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:34.265Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1241.413400000005,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:37.516Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1639.1694000000134,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:41.163Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1665.5378999999957,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:43.966Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 93.06540000000678,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:43.966Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 788.7554999999993,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:43.966Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1316.8384000000078,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:44.832Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1987.5475000000006,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:48.832Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1229.4845999999961,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:52.063Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1355.5984999999928,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:55.294Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 626.8205000000016,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:55.294Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 838.6767000000109,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:55.294Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1171.3819000000076,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:55.432Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1470.5123000000021,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:42:58.906Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1365.6744000000035,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:02.285Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1416.832500000004,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:06.468Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 93.74190000000817,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:06.468Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 141.16090000000258,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:05.704Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1170.6603000000032,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:06.468Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1160.962400000004,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:08.884Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1420.8181999999942,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:12.310Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1681.902700000006,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:15.993Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1186.2110000000102,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:17.644Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 90.33659999999509,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:17.644Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 91.73070000000007,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:17.644Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1921.3703999999998,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:19.182Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1376.2406999999948,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:22.564Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1010.232600000003,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:25.575Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1805.7542000000103,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:29.573Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 365.238400000002,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:29.573Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 632.2289000000019,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:29.383Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1388.6194999999861,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:29.573Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 2045.0835999999981,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:32.776Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1325.5449999999983,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:36.102Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1486.8967999999877,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:39.604Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1356.5712000000058,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:41.633Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 91.04189999998198,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:41.633Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 92.70489999998244,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:41.633Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1179.6454000000085,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:42.966Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 2043.2931999999855,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:47.014Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1261.0862000000197,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:50.283Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1296.5501999999979,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:52.816Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 94.97139999998035,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:52.816Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 825.8800000000047,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:52.816Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1741.4186000000045,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:53.584Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1490.550500000012,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:43:57.077Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1756.2060000000056,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:00.844Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1483.0722999999998,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:04.564Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 322.3228999999992,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:04.564Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1016.4187000000093,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:04.564Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1169.9946000000054,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:04.333Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1560.6186999999918,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:07.894Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1090.987599999993,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:10.986Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1437.5523000000103,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:14.435Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1120.6880000000237,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:15.736Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 91.54829999999492,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:15.736Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 93.41109999999753,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:15.736Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1377.6878000000142,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:17.558Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1254.659400000004,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:20.824Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1927.4139999999898,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:24.754Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1416.1797000000079,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:27.124Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 93.62039999998524,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:27.124Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 94.71350000001257,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:44:27.124Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1429.1485000000102,
+      "http": 200
+    }
+  ],
+  "clickedAt": "2026-10-03T16:41:29.157Z",
+  "challengeClickedAt": "2026-10-03T16:41:29.186Z",
+  "requestedAt": "2026-10-03T16:41:29.197Z",
+  "sponsorOperations": [
+    {
+      "at": "2026-10-03T16:41:30.996Z",
+      "id": "0xf57fa76b50e8fcd90cf2657820cea753aff4582c2d233befee366fb8dcd266a8",
+      "status": "queued"
+    },
+    {
+      "at": "2026-10-03T16:41:31.342Z",
+      "id": "0xf57fa76b50e8fcd90cf2657820cea753aff4582c2d233befee366fb8dcd266a8",
+      "status": "queued"
+    },
+    {
+      "at": "2026-10-03T16:41:31.687Z",
+      "id": "0xf57fa76b50e8fcd90cf2657820cea753aff4582c2d233befee366fb8dcd266a8",
+      "status": "queued"
+    },
+    {
+      "at": "2026-10-03T16:41:32.032Z",
+      "id": "0xf57fa76b50e8fcd90cf2657820cea753aff4582c2d233befee366fb8dcd266a8",
+      "status": "pending",
+      "hash": "0x57274df9c205ced9cc94fca1f590c2550569ef12c7a5563b58bc737e1643fb02"
+    },
+    {
+      "at": "2026-10-03T16:41:32.378Z",
+      "id": "0xf57fa76b50e8fcd90cf2657820cea753aff4582c2d233befee366fb8dcd266a8",
+      "status": "pending",
+      "hash": "0x57274df9c205ced9cc94fca1f590c2550569ef12c7a5563b58bc737e1643fb02"
+    },
+    {
+      "at": "2026-10-03T16:41:32.737Z",
+      "id": "0xf57fa76b50e8fcd90cf2657820cea753aff4582c2d233befee366fb8dcd266a8",
+      "status": "pending",
+      "hash": "0x57274df9c205ced9cc94fca1f590c2550569ef12c7a5563b58bc737e1643fb02"
+    },
+    {
+      "at": "2026-10-03T16:41:33.089Z",
+      "id": "0xf57fa76b50e8fcd90cf2657820cea753aff4582c2d233befee366fb8dcd266a8",
+      "status": "pending",
+      "hash": "0x57274df9c205ced9cc94fca1f590c2550569ef12c7a5563b58bc737e1643fb02"
+    },
+    {
+      "at": "2026-10-03T16:41:33.434Z",
+      "id": "0xf57fa76b50e8fcd90cf2657820cea753aff4582c2d233befee366fb8dcd266a8",
+      "status": "confirmed",
+      "hash": "0x57274df9c205ced9cc94fca1f590c2550569ef12c7a5563b58bc737e1643fb02"
+    }
+  ],
+  "error": "page.waitForURL: Timeout 180000ms exceeded.",
+  "failureState": {
+    "hidden": false,
+    "text": "PONGIT\nSound off ♫\nDocs ↗\nBack to arcade\nPONGIT / ARCADE\nAgent Arcade\n\nPick a rival. Find your rhythm.\n\n0xB260…5644\nPlay an agent\nWatch agents\nTournaments\nClassic\nPure paddle skill\nChaos\nWild arcade effects\nWaiting for an arena\n2:53\nNOVA · Classic · Friendly\nCancel challenge\nWarm up\nPONGIT BOT\n···\nNOVA\n\nRookie · 1/8\n\nFriendly instance\nJoin queue\n↗\nPONGIT BOT\n···\nGLITCH\n\nEasy · 2/8\n\nFriendly instance\nJoin queue\n↗\nPONGIT BOT\n···\nDRIFT\n\nCasual · 3/8\n\nFriendly instance\nJoin queue\n↗\nPONGIT BOT\n···\nPULSE\n\nArcade · 4/8\n\nFriendly instance\nJoin queue\n↗\nPONGIT BOT\n···\nECHO\n\nSkilled · 5/8\n\nFriendly instance\nJoin queue\n↗\nPONGIT BOT\n···\nVECTOR\n\nAdvanced · 6/8\n\nFriendly instance\nJoin queue\n↗\nPONGIT BOT\n···\nVIPER\n\nHard · 7/8\n\nFriendly instance\nJoin queue\n↗\nPONGIT BOT\n···\nONYX\n\nExpert · 8/8\n\nFriendly instance\nJoin queue\n↗\nCOMMUNITY\n···\n0xD363…Ae59\n\nCommunity strategy\n\nCommunity agent\nJoin queue\n↗\nMusic by Karl Casey @ White Bat Audio · Last Stop\nPowered by InterludeLayer"
+  },
+  "finishedAt": "2026-10-03T16:44:29.471Z"
+}

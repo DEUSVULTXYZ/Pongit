@@ -1,0 +1,176 @@
+{
+  "startedAt": "2026-10-03T16:07:16.192Z",
+  "action": "setup",
+  "sourcePool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
+  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+  "passed": true,
+  "transactions": [
+    {
+      "id": "open-0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+      "hash": "0x0c1903af971953333c1d5e1ea0a99d30194afdbbc0e67203517b47c9d919a81d",
+      "block": "67872784"
+    },
+    {
+      "id": "open-0x34a7e7c09894af4e0a95b5922a824112257df92a",
+      "hash": "0xc85719b1136d88127bd563689be0ebcbedbc53100e83c8a0cf3399f4bd675aa1",
+      "block": "67872793"
+    },
+    {
+      "id": "open-0xbfc44e0cdb647689c138445e6e4796e71c425235",
+      "hash": "0xa890aa941e74964c8e5cfbe95482ed4db3cd0060710a2cf13c675ed3f51b0544",
+      "block": "67872803"
+    },
+    {
+      "id": "open-0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+      "hash": "0xa10c147a3fd957351e0fe195a8d6861fa83ab0d1492c7db9bbd5536dac5f1817",
+      "block": "67872811"
+    },
+    {
+      "id": "open-0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+      "hash": "0xcf89086b8708178e1ab4d130dc2496faea31a31238ca726b1c0ace69cd6890a3",
+      "block": "67872821"
+    },
+    {
+      "id": "open-0x5572e348c5039d240b9b470c558e188345ada81b",
+      "hash": "0xf909b3d1ca861ef9f382e104cf4f1e2c4ea3f2186977857ba1e8a9985c9ff284",
+      "block": "67872831"
+    }
+  ],
+  "block": "67872712",
+  "blockHash": "0x1e0e6e86ca046085d0127362e60686ee2d4501cb24baf7f2511134f7ca654550",
+  "results": 463,
+  "tournaments": [
+    {
+      "id": "1",
+      "resolved": 7
+    },
+    {
+      "id": "2",
+      "resolved": 7
+    },
+    {
+      "id": "3",
+      "resolved": 28
+    },
+    {
+      "id": "4",
+      "resolved": 28
+    },
+    {
+      "id": "5",
+      "resolved": 7
+    },
+    {
+      "id": "6",
+      "resolved": 7
+    },
+    {
+      "id": "7",
+      "resolved": 28
+    },
+    {
+      "id": "8",
+      "resolved": 28
+    },
+    {
+      "id": "9",
+      "resolved": 7
+    },
+    {
+      "id": "10",
+      "resolved": 7
+    },
+    {
+      "id": "11",
+      "resolved": 28
+    },
+    {
+      "id": "12",
+      "resolved": 28
+    },
+    {
+      "id": "13",
+      "resolved": 7
+    },
+    {
+      "id": "14",
+      "resolved": 7
+    },
+    {
+      "id": "15",
+      "resolved": 28
+    },
+    {
+      "id": "16",
+      "resolved": 28
+    },
+    {
+      "id": "17",
+      "resolved": 7
+    },
+    {
+      "id": "18",
+      "resolved": 7
+    },
+    {
+      "id": "19",
+      "resolved": 28
+    },
+    {
+      "id": "20",
+      "resolved": 28
+    },
+    {
+      "id": "21",
+      "resolved": 7
+    },
+    {
+      "id": "22",
+      "resolved": 7
+    },
+    {
+      "id": "23",
+      "resolved": 17
+    }
+  ],
+  "requests": "67",
+  "openings": [
+    {
+      "app": "0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+      "epoch": "1",
+      "baseBlock": "67872784",
+      "hash": "0x0c1903af971953333c1d5e1ea0a99d30194afdbbc0e67203517b47c9d919a81d"
+    },
+    {
+      "app": "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+      "epoch": "1",
+      "baseBlock": "67872793",
+      "hash": "0xc85719b1136d88127bd563689be0ebcbedbc53100e83c8a0cf3399f4bd675aa1"
+    },
+    {
+      "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+      "epoch": "1",
+      "baseBlock": "67872803",
+      "hash": "0xa890aa941e74964c8e5cfbe95482ed4db3cd0060710a2cf13c675ed3f51b0544"
+    },
+    {
+      "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+      "epoch": "1",
+      "baseBlock": "67872811",
+      "hash": "0xa10c147a3fd957351e0fe195a8d6861fa83ab0d1492c7db9bbd5536dac5f1817"
+    },
+    {
+      "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+      "epoch": "1",
+      "baseBlock": "67872821",
+      "hash": "0xcf89086b8708178e1ab4d130dc2496faea31a31238ca726b1c0ace69cd6890a3"
+    },
+    {
+      "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+      "epoch": "1",
+      "baseBlock": "67872831",
+      "hash": "0xf909b3d1ca861ef9f382e104cf4f1e2c4ea3f2186977857ba1e8a9985c9ff284"
+    }
+  ],
+  "finishedAt": "2026-10-03T16:07:52.706Z"
+}

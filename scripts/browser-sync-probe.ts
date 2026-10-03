@@ -36,22 +36,25 @@ export async function installSyncProbe(page:Page){
     observed=props.observedAt;source=props;
     if(data.snapshots.length<20000)data.snapshots.push(JSON.parse(JSON.stringify({at:performance.now(),
      observedAt:props.observedAt,clock:props.clock,state:props.state,chaos:props.chaos,
-     direction:props.direction,side:props.side,controllable:props.controllable,pending:props.pending},
+     direction:props.direction,side:props.side,controllable:props.controllable,pending:props.pending,pause:props.housePrediction?.pause},
      (_,v)=>typeof v==='bigint'?v.toString():v)));
    }
    if(data.frames.length<40000)data.frames.push({at:performance.now(),x:x+6,y:y+6,
     sourceT:Number(source?.state?.t??0)/1000,clock:Number(source?.clock??0)/1000,
-    score:`${source?.state?.scoreA}:${source?.state?.scoreB}`,rally:this.canvas.dataset.rally,buffering:this.canvas.dataset.buffering==='true',finished:source?.state?.finished,observedAt:observed});
+    score:`${source?.state?.scoreA}:${source?.state?.scoreB}`,rally:this.canvas.dataset.rally,buffering:this.canvas.dataset.buffering==='true',finished:source?.state?.finished,
+    pauseStatus:source?.housePrediction?.pause?.status??0,awaitingServe:!!source?.state?.awaitingServe,observedAt:observed});
   };
  });
 }
 
 export function syncMetrics(data:{frames:any[];snapshots:any[]}){
  const intervals:number[]=[],jumps:any[]=[],lags:number[]=[],gaps:number[]=[],holds:any[]=[],frameGaps:any[]=[];
- let hold=0,maxHold=0;
+ let hold=0,maxHold=0,contractPauseMs=0,intermissionMs=0;
  for(let i=1;i<data.frames.length;i++){
   const a=data.frames[i-1],b=data.frames[i],dt=b.at-a.at,d=Math.hypot(b.x-a.x,b.y-a.y);
   if(a.finished||b.finished||!a.sourceT||!b.sourceT||a.buffering||b.buffering){hold=0;continue;}
+  if(a.pauseStatus>=2||b.pauseStatus>=2){contractPauseMs+=dt;maxHold=Math.max(maxHold,hold);hold=0;continue;}
+  if(a.awaitingServe||b.awaitingServe){intermissionMs+=dt;maxHold=Math.max(maxHold,hold);hold=0;continue;}
   intervals.push(dt);
   if(dt>500){frameGaps.push({at:b.at,ms:dt});hold=0;continue;}
   if(d<.05)hold+=dt;else{maxHold=Math.max(maxHold,hold);if(hold>100)holds.push({at:b.at,ms:hold,sourceT:b.sourceT,rally:b.rally});hold=0;}
@@ -66,5 +69,5 @@ export function syncMetrics(data:{frames:any[];snapshots:any[]}){
  const p95=(v:number[])=>v.sort((a,b)=>a-b)[Math.floor((v.length-1)*.95)];
  const filling=data.frames.filter(f=>f.sourceT>0&&f.buffering);
  return{frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
-  maxHoldMs:Math.max(maxHold,hold),holds,frameGaps,snapshotGapP95Ms:p95(gaps),engineLagP95Ms:p95(lags),snapshotJumps:jumps};
+  maxHoldMs:Math.max(maxHold,hold),contractPauseMs,intermissionMs,holds,frameGaps,snapshotGapP95Ms:p95(gaps),engineLagP95Ms:p95(lags),snapshotJumps:jumps};
 }

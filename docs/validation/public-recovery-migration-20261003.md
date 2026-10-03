@@ -113,3 +113,191 @@ The off-VPS copy was SHA-verified at15:48:16, manifest
 `pongit-public-v3-import-1` started15:49:08 under the original operator journal.
 This imports the actual public205d source, never a private trial season.
 It is not yet a verified import or playable deployment at this checkpoint.
+
+## 16:50 UTC — actual public history migrated, tournaments resumed
+
+Import verification at block 67871593 passed: 463 ordered published results,
+9 registered identities (8 house bots), all ratings and repeat counters, 23 books
+and 67 requests. Historical grants, shared family and original URLs are retained.
+Public source is 205d only. No private trial history was imported.
+
+New authority on Monad Testnet:
+
+| Component | Address |
+| --- | --- |
+| Pool | `0x1f7d8a7b470a724df48d1b72723d7782d8e6014a` |
+| Catalogue | `0x333e245f898898c65eadd92e8fdddd0f4b32b166` |
+| Tournament book | `0xe44dd8a79616b861ea0619a70e4f8c74bb23f8f7` |
+| Ratings | `0xbe8069ceb52f5a979579e705100ccbfdefb7c766` |
+| Challenges | `0x270882c5e3d57b49d78fbc510d3636bc4e62ab46` |
+| Qualifications | `0x3ae42a01aaa2e63b302ac7211bf881409597b58c` |
+| Preserved family | `0x42007a8d3d7017d4b43fef9e9beeb2e7cb89fccb` |
+| Hub v3 | `0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e` |
+
+All eight house policies actually qualified in Classic and Chaos. Public challenge
+admissions opened at16:29 and tournament admissions at16:48. Tournament24 is a
+Chaos championship; fixture480 actually started with PULSE against NOVA. Old23
+remains Interrupted, with17 resolved fixtures and no invented champion.
+
+The manifest exposes rules16, progressive-v1 house policies, independent friendly
+instances, heartbeat-v1 fair pauses, atomic admission and epoch-marker publication.
+The user explicitly authorized public testnet evaluation before full qualification.
+`qualified=false` and `verifiedCapacity=0` remain truthful. The onchain admission
+review hash binds that limited authorization, not a successful five-lane/24h trial.
+
+Two hosted arenas actually work: `0x0a52fc60bf7710b1819bc1cf46375f048e2e7568`
+and `0x34a7e7c09894af4e0a95b5922a824112257df92a`, epoch1. Six other creations
+received503, followed by404 discovery; uncertain creation journals remain intact.
+Control health reports50/50 machines. The validator's128-delegation limit and
+funding are not this constraint. No provider changes or human slots were used.
+
+### Existing archive compatibility fix
+
+Production exposed an old named SQL constraint accepting only rules14/15. The
+CREATE IF NOT EXISTS definition did not upgrade it. Commit ffd9884 adds a locked,
+idempotent constraint migration for both receipt and slot tables. A real isolated
+PostgreSQL regression passed, including four concurrent initializers and rejected
+rules17. Production transaction retained all274 receipts and291 slot records,
+without deleting or rewriting rows. All six backend roles run immutable image
+`sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743`.
+
+Additive index schema `agents_sync_20261003` and history views preserve all old
+schemas and references. Public match464 has a real rules16 replay with122 frames.
+The human e4eceb6 relayer remains unchanged, running since24 September.
+
+### Public browser failures retained and narrow rendering repair
+
+Chrome/Edge catalogue checks passed at360/390/768/1440 plus home/tournaments/docs,
+without network mocks or writes. These checks do not prove game controls.
+
+Actual Chrome Classic474 launched and accepted inputs, but F5 recovery failed.
+The coherent player rendering path bypassed the buffered-only onPlayback callback,
+so its painted-frame timestamp was never renewed. The heartbeat loop correctly
+refused blind liveness; after reload the game paused and later cancelled.
+Commit b60d1f9 reports actually painted coherent frames too. It does not weaken
+permission checks, heartbeat credit, nonce reconciliation or publication fences.
+49 relevant unit tests and root TypeScript pass; a new public web build is running.
+The browser harness now measures direct WebSocket commands and exact receipts,
+instead of wrongly counting only HTTP writes.
+
+A second browser attempt expired waiting for the two occupied qualification arenas
+at its original180-second bound. It remains FAIL. Its later cleanup found no pending
+request or active owned fixture. No driver deadline was extended. Actual rendered
+F5/idle recovery on the patched web still requires a new bounded browser run.
+
+The Codex scheduled follow-up is PAUSED and must not be restarted automatically.
+
+## 17:00 UTC — actual public browser recovery and replay passed
+
+Web b60d1f9 was deployed at16:52:10, immutable image
+`sha256:ee52f22c2422e81d5452f1dfb8bbab100b9e1c1dba92d1d674b8bd18e76ec27b`.
+Canonical Compose now points to the same eight service/index images and new
+metadata mounts. Updating this restart definition did not restart human play or
+restore any database. Old private Compose snapshots remain available.
+
+Actual public HTTPS tests used a virtual PRF authenticator, the real Mera client,
+real sponsorship, contracts and hosted engines. No gameplay network was mocked.
+They do not establish physical passkey/mobile-device behavior.
+
+| Observed test | Chrome Classic485 | Edge Chaos484 |
+| --- | ---: | ---: |
+| Catalogue click to countdown, valid session | 7.322s | 7.042s |
+| Confirmed input samples | 215 | 218 |
+| Intent to confirmed receipt p95 | 17.45ms | 17.00ms |
+| Local movement p95 | 16.4ms | 16.8ms |
+| Player frame p95 | 17.1ms | 17.2ms |
+| Player maximum unmarked hold | 149.5ms | 265.8ms |
+| Spectator maximum unmarked hold | 216.7ms | 183.3ms |
+| Confirmed heartbeat commands | 127 | 131 |
+| Explicit resume after F5 | 1 | 1 |
+| Published score | 2–7 | 2–7 |
+
+Both tests reused the Mera grant after F5, exercised110 keypress pairs, then waited
+45 seconds and checked the published result. Terminal games can end before the
+idle window finishes. These short samples do not qualify 24-hour availability or
+five simultaneous matches. NOVA's independent friendly matches were admitted
+while its competitive identity remained reserved in tournament24.
+
+An earlier successful Classic482 report counted the intentional resume countdown
+as a freeze and retained false render gates. The subsequent collector records
+contract pause status explicitly. The render supplement excludes only explicit
+pause/countdown, intermission, initial and terminal frames. It reports those
+intervals separately and still fails an unmarked800ms stall in its regression
+fixture. Original reports, including the two genuine failed attempts, are unchanged.
+The supplement also removes terminal frames from the pause-duration total; real
+player resume countdowns measured3.10s/3.08s.
+
+Actual replay484 playback passed on Chrome and Edge at360 and1440 pixels:222
+recorded frames, moving replay position, final score2–7, pixel controls, contrast,
+16:9 court, keyboard close/focus and no blocked requests or page errors. Old
+match213 still resolves its original40178/epoch12 cancellation with finality=true;
+old tournament23 still resolves Interrupted with no champion.
+
+Evidence and screenshots are in `public-migration-20261003/`. Product and targeted
+checks include153 migration Solidity tests,49 player/feed/heartbeat tests,10
+manifest tests,4 browser-metric tests, root TypeScript and the successful Next
+production build. Earlier failed runs remain evidence, not passes.
+
+### Rollback and remaining limits
+
+Rollback services by selecting a compatible image in the current live-v3 Compose,
+retaining current metadata, keys, databases and nonce journals. Previous web image
+`sha256:2ab7dc26a41b3121531728a2f3a64f2f61896f7be1636b31e291d928a8516711`
+has the known coherent-heartbeat bug; do not roll back to it casually. Close new
+admissions for a severe incident, let existing matches resolve, then repair the
+new authority. Do not revive the retired205d authority or overwrite current
+DBs with a snapshot containing older nonces/results.
+
+Six hosted creations remain unresolved under the observed50/50 provider machine
+capacity. Contract lane count5 is not proof of five available engines. Four
+simultaneous human challenges, uninterrupted rotation, the worst hosted reserve,
+full human financial regression and the unchanged24h trial remain unqualified.
+The requested public migration is usable for actual testing; it is not the final
+complete performance qualification from the earlier plan. No MON request now.
+
+## 17:22 UTC — final backup, actual restore and public state
+
+The requested public migration is deployed. The public API resolves the new pool
+`0x1f7d8a7b470a724df48d1b72723d7782d8e6014a`, rules16, catalogue
+`0x333e245f898898c65eadd92e8fdddd0f4b32b166`, ratings
+`0xbe8069ceb52f5a979579e705100ccbfdefb7c766` and tournament book
+`0xe44dd8a79616b861ea0619a70e4f8c74bb23f8f7`. The existing Mera family
+`0x42007a8d3d7017d4b43fef9e9beeb2e7cb89fccb` is preserved. Tournament24
+is playing, with nine resolved fixtures at the final read. Tournament23 remains
+Interrupted with no champion. Original public history was imported, never the
+private trial season.
+
+Backup `sync-public-20261003T1702Z` contains seven files /157,171,813 bytes,
+including five databases, current runtime definitions and private journals.
+The Windows off-VPS copy was SHA-verified at17:04:46; manifest SHA256 is
+`ed4c29bbb3053787633cd888d6f673c1e391c07fe036741ee3782d9908b0a294`.
+
+All five dump files were then uploaded back from that Windows copy and restored
+into newly named scratch databases in a network-isolated PostgreSQL17 container.
+The first two attempts in a256MiB container failed when its checkpointer was killed
+by signal9. Both failed scratch databases, the first report and private diagnostic
+log are preserved. The successful attempt used the existing512MiB/.5CPU isolated
+restore container after checking host memory and its stopped state. It restored
+11/66/21/9/146 tables respectively, checked row counts and journal/archive presence,
+and completed at17:21:39 without OOM. Only the five successful scratch databases
+were dropped. The container stopped cleanly; production databases were untouched.
+See `public-migration-20261003/restore-1702-attempt3.json`.
+
+Two unused PONGIT compilation-stage images were removed only after verifying no
+container references or tags. Usable disk fell to78.24%; runtime images, rollback
+images, volumes and other projects were preserved. No image build remains.
+
+The final service inventory and public API check are recorded in
+`public-migration-20261003/final-public-state-1.json`. Its provider subfields were
+initially read at the wrong JSON nesting and are null; the separate
+`provider-capacity-final.json` correctly reads the documented health payload at
+17:22:24:50/50 machines, zero queued creations,128 delegation limit and11 active
+estimate. The six uncertain engine creations retain their journals. HTTP404 alone
+does not authorize a duplicate creation. Two hosted engines have real game proof;
+five lanes and eight deployed arena contracts do not imply five available engines.
+
+The Codex automation `pongit-release-qualification` remains PAUSED. No browser or
+game qualification driver remains running, and no new scheduled task was created.
+Normal public services continue. TypeScript and four browser-metric regression
+tests pass on the final source. Public runtime images and rollback instructions
+above remain authoritative; full capacity and24h qualification remain incomplete.

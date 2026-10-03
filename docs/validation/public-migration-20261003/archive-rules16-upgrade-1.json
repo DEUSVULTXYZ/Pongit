@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-03T16:16:05.305938+00:00",
+  "passed": true,
+  "sourceSha256": "89a6af1604b8c5c4f8326bfc079db0fde5680151c3f6eb7228e0cd016beaa17f",
+  "testSha256": "7ebab5a72471da3ed191b739cb589a7e61c2f6248a8d3548495065c988af0c40",
+  "receiptsRetained": 274,
+  "slotsRetained": 291,
+  "deletedRows": 0,
+  "rules": [
+    14,
+    15,
+    16
+  ]
+}

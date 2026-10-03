@@ -1,0 +1,224 @@
+{
+  "startedAt": "2026-10-03T14:39:38.846Z",
+  "deadline": 1791043054055,
+  "pool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
+  "arenas": [
+    {
+      "app": "0x40178b386730985a9d1df46c3a811f8e7138e4ec",
+      "epoch": "22",
+      "status": 1,
+      "root": [
+        "22",
+        0,
+        "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f"
+      ],
+      "batches": "0",
+      "close": {
+        "hash": "0xef8475c5b5faa31d32cec791f15d96640b169767bc9bedd4c1137f625dfd26bb",
+        "block": "67855363"
+      },
+      "releaseAt": "1791041997",
+      "release": {
+        "hash": "0x307118e3e0557e9a40471d06171063376a6c3758292fa056211d30042cf4d27b",
+        "block": "67867346"
+      },
+      "verified": true
+    },
+    {
+      "app": "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+      "epoch": "21",
+      "status": 1,
+      "root": [
+        "21",
+        1,
+        "0x61ddcf603f216c13b35559c7a9718f076a70f55ce919ee2de90d7a50b6609cbb"
+      ],
+      "batches": "124",
+      "close": {
+        "hash": "0x6a5f6abbf9b95075f874e65fcf027d6e729d0960313e3e6c20d6e2f7e7ad08a3",
+        "block": "67855376"
+      },
+      "releaseAt": "1791042001",
+      "release": {
+        "hash": "0xda7f7f615c5dd32b37791bddc81e3e374ead9c946be1186e178f15b04dea784e",
+        "block": "67867356"
+      },
+      "verified": true
+    },
+    {
+      "app": "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+      "epoch": "20",
+      "status": 1,
+      "root": [
+        "20",
+        0,
+        "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f"
+      ],
+      "batches": "0",
+      "close": {
+        "hash": "0x750a11e74f81743b5c236f56e0d5c3388ebe2c217521ba7ef843748573f68237",
+        "block": "67855387"
+      },
+      "releaseAt": "1791042004",
+      "release": {
+        "hash": "0x1fc30e757c483db2d7c0daea5828ba326ed0d7cb5e572d807742ab02f606fa57",
+        "block": "67867367"
+      },
+      "verified": true
+    },
+    {
+      "app": "0xf202862714f61d6f6b8b14c1d2f5d3ca7ea3e41b",
+      "epoch": "9",
+      "status": 1,
+      "root": [
+        "9",
+        0,
+        "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f"
+      ],
+      "batches": "0",
+      "close": {
+        "hash": "0x1c281ccffde5ea35ddc8839627e0336c598edabdf26334f14c723f8533a2a192",
+        "block": "67855398"
+      },
+      "releaseAt": "1791042007",
+      "release": {
+        "hash": "0x5c23f0670bb0b5e5bd49a2479ab9c8e42d7f3810b41d7d6201942d875d1e5928",
+        "block": "67867379"
+      },
+      "verified": true
+    },
+    {
+      "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+      "epoch": "19",
+      "status": 1,
+      "root": [
+        "19",
+        0,
+        "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f"
+      ],
+      "batches": "0",
+      "close": {
+        "hash": "0x1b5f2b52e38d807e9f4f96d3ba5976c2439bf0239bbbc5041bab4433e2a4664b",
+        "block": "67855410"
+      },
+      "releaseAt": "1791042011",
+      "release": {
+        "hash": "0x4ed1b3fd35f722d48deed0d61721f1adfed73b7007c23e78ffab3d125fd430de",
+        "block": "67867389"
+      },
+      "verified": true
+    },
+    {
+      "app": "0xaf7c017a6729ec6f5d9d14288c5214489bb5be3b",
+      "epoch": "24",
+      "status": 1,
+      "root": [
+        "24",
+        0,
+        "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f"
+      ],
+      "batches": "0",
+      "close": {
+        "hash": "0xba611ba3c7852f353a5d631643afe5fbb4528c6b827a71d8744893b740cbdba8",
+        "block": "67855421"
+      },
+      "releaseAt": "1791042014",
+      "release": {
+        "hash": "0x5b9eb9f05da63e557cc0d1e4acd01dfc5eb733b85fefb8f5355796aec3b7ebc9",
+        "block": "67867454"
+      },
+      "verified": true
+    },
+    {
+      "app": "0x9b8e61621682da7b59239774f76dcf04071ea059",
+      "epoch": "21",
+      "status": 1,
+      "root": [
+        "21",
+        0,
+        "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f"
+      ],
+      "batches": "0",
+      "close": {
+        "hash": "0x455d4584e4d192e59c21d636ea0cd6e30fc1114920e63be6f10c459fdef64ed5",
+        "block": "67855434"
+      },
+      "releaseAt": "1791042018",
+      "release": {
+        "hash": "0xf155b6a19d9ed716452538ecf8a02a8d06c53769c454ce35ad1fe0c2d8810d2c",
+        "block": "67867464"
+      },
+      "verified": true
+    },
+    {
+      "app": "0x028f656e76cc1973ced7c41d8584d4f94be9e003",
+      "epoch": "25",
+      "status": 1,
+      "root": [
+        "25",
+        1,
+        "0x175dd5143026b866cd6adcc99987425868ca066cc539fa6b0f750cce80b352ee"
+      ],
+      "batches": "123",
+      "close": {
+        "hash": "0x6bef070f1017b4fa17f4b459eb7653188bdeef429c9c7500be22d95d50ecd36d",
+        "block": "67855445"
+      },
+      "releaseAt": "1791042021",
+      "release": {
+        "hash": "0x6667c775ce1db691929801694e9d374149c9c59d4730b1ad21f6d729ca6713fd",
+        "block": "67867476"
+      },
+      "verified": true
+    }
+  ],
+  "passed": true,
+  "matchNonce": "463",
+  "tournament": {
+    "status": 2,
+    "mode": 0,
+    "league": true,
+    "startedAt": "1790888075",
+    "completedAt": "0",
+    "catalogRevision": "321",
+    "scanCount": "9",
+    "cursor": "9",
+    "selected": 8,
+    "agents": [
+      "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+      "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+      "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+      "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+      "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+      "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+      "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca"
+    ],
+    "controllers": [
+      "0x635bf8108871af9ac8a482102535ce921932a419df3816ec018f5d8802de1088",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9",
+      "0x385c77b29f2c280b310c9f200aacd807a3fb23e127447e9d27bd2f6bc99faae9"
+    ],
+    "seeds": [
+      1297,
+      734,
+      1113,
+      875,
+      964,
+      909,
+      1015,
+      1037
+    ],
+    "champion": "0x0000000000000000000000000000000000000000",
+    "revision": 0
+  },
+  "resumedAt": "2026-10-03T15:23:15.076Z",
+  "resumeReason": "Canonical verifier lookup; original writer stopped before release; original deadline and journal retained",
+  "verifier": "0x609c9EcBf2BA58080D3185003b42B309AF58701B",
+  "finishedAt": "2026-10-03T15:40:55.739Z"
+}

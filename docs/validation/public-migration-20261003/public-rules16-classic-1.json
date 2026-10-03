@@ -1,0 +1,1068 @@
+{
+  "startedAt": "2026-10-03T16:35:34.744Z",
+  "origin": "https://pongit.xyz",
+  "run": "public-rules16-classic-1",
+  "channel": "chrome",
+  "mode": 0,
+  "bot": "NOVA",
+  "virtualPrf": true,
+  "reusedSession": false,
+  "mockedNetwork": false,
+  "privateV3": false,
+  "synchronized": true,
+  "atomicQualification": false,
+  "cadenceProbe": false,
+  "controlCount": 110,
+  "idleMs": 45000,
+  "passed": false,
+  "checks": [],
+  "errors": [],
+  "submissions": [],
+  "receipts": [],
+  "sockets": [
+    {
+      "host": "il2-eu-0a52fc60bf7710b1.fly.dev",
+      "openedAt": "2026-10-03T16:36:18.646Z",
+      "messages": 74,
+      "applied": 73,
+      "schemas": {
+        "{\"method\":\"interlude_subscribe\",\"keys\":[\"app\",\"hash\",\"from\",\"to\",\"selector\",\"input\",\"output\",\"logs\",\"blockNumber\",\"succeeded\"],\"logKeys\":[\"address\",\"topics\",\"data\"]}": 73
+      }
+    },
+    {
+      "host": "il2-eu-0a52fc60bf7710b1.fly.dev",
+      "openedAt": "2026-10-03T16:36:19.227Z",
+      "messages": 71,
+      "applied": 0,
+      "schemas": {}
+    },
+    {
+      "host": "il2-eu-0a52fc60bf7710b1.fly.dev",
+      "openedAt": "2026-10-03T16:36:29.626Z",
+      "messages": 98,
+      "applied": 97,
+      "schemas": {
+        "{\"method\":\"interlude_subscribe\",\"keys\":[\"app\",\"hash\",\"from\",\"to\",\"selector\",\"input\",\"output\",\"logs\",\"blockNumber\",\"succeeded\"],\"logKeys\":[\"address\",\"topics\",\"data\"]}": 97
+      }
+    },
+    {
+      "host": "il2-eu-0a52fc60bf7710b1.fly.dev",
+      "openedAt": "2026-10-03T16:36:30.012Z",
+      "messages": 1,
+      "applied": 0,
+      "schemas": {}
+    }
+  ],
+  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+  "rulesVersion": 16,
+  "admissionNetwork": [
+    {
+      "at": "2026-10-03T16:35:36.868Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 95.95110000000022,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:36.875Z",
+      "method": "GET",
+      "path": "/api/agents/events",
+      "ms": 93.63920000000007,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:36.869Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 756.7739000000001,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:36.869Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1263.5166000000004,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:38.237Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 96.33929999999964,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:38.238Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 97.78999999999996,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:38.237Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 671.0938000000006,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:38.298Z",
+      "method": "GET",
+      "path": "/api/agents/capacity",
+      "ms": 610.8482999999997,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:39.176Z",
+      "method": "eth_chainId",
+      "path": "rpc",
+      "ms": 84.32759999999962,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:39.177Z",
+      "method": "GET",
+      "path": "/api/agents/events",
+      "ms": 97.31700000000001,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:39.286Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 17.27809999999954,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:39.399Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 14.965500000000247,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:39.501Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 15.548300000000381,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:39.521Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 102.63450000000012,
+      "http": 404
+    },
+    {
+      "at": "2026-10-03T16:35:39.177Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 802.0607,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:40.097Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 92.08849999999984,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:40.097Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 93.22320000000036,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:39.625Z",
+      "method": "POST",
+      "path": "/api/agents/transactions",
+      "ms": 866.3348999999998,
+      "http": 202
+    },
+    {
+      "at": "2026-10-03T16:35:40.757Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.9350999999997,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:40.097Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 1079.1454999999996,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:41.117Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.95170000000053,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:41.476Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.27589999999964,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:40.097Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1657.4102000000003,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:41.833Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.99549999999999,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:42.184Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.1893,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:42.528Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.44340000000011,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:42.886Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.40849999999955,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:42.995Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 18.07010000000082,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:43.098Z",
+      "method": "eth_chainId",
+      "path": "rpc",
+      "ms": 13.123199999999997,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:43.212Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.397600000000239,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:43.318Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 18.429000000000087,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:43.427Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 17.353499999999258,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:43.536Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 16.128200000001016,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:43.555Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.47750000000087,
+      "http": 404
+    },
+    {
+      "at": "2026-10-03T16:35:43.647Z",
+      "method": "POST",
+      "path": "/api/agents/transactions",
+      "ms": 990.4874,
+      "http": 202
+    },
+    {
+      "at": "2026-10-03T16:35:44.896Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 99.30479999999989,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:45.256Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 93.1198000000004,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:45.617Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 91.72510000000148,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:45.964Z",
+      "method": "GET",
+      "path": "/api/agents/operations/:id",
+      "ms": 92.65809999999874,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:46.058Z",
+      "method": "eth_getTransactionReceipt",
+      "path": "rpc",
+      "ms": 28.38889999999992,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:46.088Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 350.9437000000016,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:46.089Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 601.8572999999997,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:46.089Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1146.687,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:47.350Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 92.08430000000044,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:46.089Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1714.783800000001,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:49.457Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 899.2096999999994,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:52.366Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1347.4866000000002,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:55.726Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1480.7062000000005,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:57.808Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 91.78130000000237,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:57.808Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 93.21800000000076,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:57.808Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1463.2703000000001,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:35:59.216Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1602.948800000002,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:00.932Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 91.17280000000028,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:00.932Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 91.49599999999919,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:00.931Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 92.08410000000003,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:02.837Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1287.3509999999987,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:06.136Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1100.393500000002,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:07.351Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 90.51670000000013,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:07.352Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 92.82940000000235,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:07.351Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1358.1031000000003,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:09.249Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1335.9398,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:10.701Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 92.96140000000014,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:10.702Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 94.03570000000036,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:10.701Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1015.9124000000011,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:12.586Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1529.2582000000039,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:14.237Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 91.6336999999985,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:14.237Z",
+      "method": "GET",
+      "path": "/api/agents/live",
+      "ms": 91.89639999999781,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:14.237Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1575.6909000000014,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:16.126Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 1390.6419999999998,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:17.627Z",
+      "method": "GET",
+      "path": "/api/agents/challenges/:id",
+      "ms": 95.51729999999952,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:17.851Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 90.72080000000278,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:17.852Z",
+      "method": "GET",
+      "path": "/api/agents/matches/:id/1/474",
+      "ms": 736.0581999999995,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.593Z",
+      "method": "eth_chainId",
+      "path": "rpc",
+      "ms": 45.337500000001455,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.706Z",
+      "method": "eth_getBlockByNumber",
+      "path": "rpc",
+      "ms": 13.316200000001118,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.807Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 17.627599999999802,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.916Z",
+      "method": "eth_getCode",
+      "path": "rpc",
+      "ms": 18.95730000000185,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.945Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 31.409299999999348,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.945Z",
+      "method": "interlude_session",
+      "path": "rpc",
+      "ms": 32.17760000000271,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.977Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.0152000000016415,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.983Z",
+      "method": "eth_blockNumber",
+      "path": "rpc",
+      "ms": 5.164099999994505,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.989Z",
+      "method": "eth_getStorageAt",
+      "path": "rpc",
+      "ms": 6.586199999997916,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.989Z",
+      "method": "eth_getStorageAt",
+      "path": "rpc",
+      "ms": 6.670200000000477,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.989Z",
+      "method": "eth_getStorageAt",
+      "path": "rpc",
+      "ms": 6.705900000000838,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:18.997Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 6.144500000002154,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.033Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.7805999999982305,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.040Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.046900000001187,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.046Z",
+      "method": "eth_getTransactionCount",
+      "path": "rpc",
+      "ms": 32.40730000000622,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.268Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 6.23240000000078,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.276Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.308199999999488,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.817Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.810599999997066,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.823Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.3650999999954365,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.829Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 9.753100000001723,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:20.100Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 17.041400000001886,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:20.350Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 6.064400000002934,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:20.383Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.365499999999884,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:20.389Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.646300000000338,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:19.012Z",
+      "method": "GET",
+      "path": "/api/agents/catalog",
+      "ms": 1382.1232000000018,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:20.395Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.984499999998661,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:20.934Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.99659999999858,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:20.940Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.070400000004156,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:20.946Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.766700000000128,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:21.483Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.3127000000022235,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:21.490Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.244399999995949,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:21.495Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.831400000002759,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:21.616Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 15.63470000000234,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:22.033Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.429900000002817,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:22.039Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.708299999998417,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:22.045Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.370000000002619,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:22.584Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.638699999995879,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:22.590Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.96020000000135,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:22.596Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 7.052300000003015,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:23.116Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 16.34030000000348,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:23.133Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.777099999999336,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:23.140Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.481200000001991,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:23.146Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.503000000004249,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:23.683Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 5.586599999995087,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:23.690Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.373099999997066,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:23.695Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.126300000003539,
+      "http": 200
+    },
+    {
+      "at": "2026-10-03T16:36:23.737Z",
+      "method": "eth_call",
+      "path": "rpc",
+      "ms": 4.99029999999766,
+      "http": 200
+    }
+  ],
+  "clickedAt": "2026-10-03T16:35:38.258Z",
+  "challengeClickedAt": "2026-10-03T16:35:38.285Z",
+  "requestedAt": "2026-10-03T16:35:38.301Z",
+  "sponsorOperations": [
+    {
+      "at": "2026-10-03T16:35:40.492Z",
+      "id": "0x8f21467aed211a5ed0df7be3b6cdce68dd4b0a40110d705f4e5d522e00d0f2d0",
+      "status": "queued"
+    },
+    {
+      "at": "2026-10-03T16:35:40.850Z",
+      "id": "0x8f21467aed211a5ed0df7be3b6cdce68dd4b0a40110d705f4e5d522e00d0f2d0",
+      "status": "queued"
+    },
+    {
+      "at": "2026-10-03T16:35:41.210Z",
+      "id": "0x8f21467aed211a5ed0df7be3b6cdce68dd4b0a40110d705f4e5d522e00d0f2d0",
+      "status": "queued"
+    },
+    {
+      "at": "2026-10-03T16:35:41.569Z",
+      "id": "0x8f21467aed211a5ed0df7be3b6cdce68dd4b0a40110d705f4e5d522e00d0f2d0",
+      "status": "pending",
+      "hash": "0x16a3a32d117032c2deafb697541f8759f741368b8a45026904f319bc85b2d6e9"
+    },
+    {
+      "at": "2026-10-03T16:35:41.926Z",
+      "id": "0x8f21467aed211a5ed0df7be3b6cdce68dd4b0a40110d705f4e5d522e00d0f2d0",
+      "status": "pending",
+      "hash": "0x16a3a32d117032c2deafb697541f8759f741368b8a45026904f319bc85b2d6e9"
+    },
+    {
+      "at": "2026-10-03T16:35:42.277Z",
+      "id": "0x8f21467aed211a5ed0df7be3b6cdce68dd4b0a40110d705f4e5d522e00d0f2d0",
+      "status": "pending",
+      "hash": "0x16a3a32d117032c2deafb697541f8759f741368b8a45026904f319bc85b2d6e9"
+    },
+    {
+      "at": "2026-10-03T16:35:42.620Z",
+      "id": "0x8f21467aed211a5ed0df7be3b6cdce68dd4b0a40110d705f4e5d522e00d0f2d0",
+      "status": "pending",
+      "hash": "0x16a3a32d117032c2deafb697541f8759f741368b8a45026904f319bc85b2d6e9"
+    },
+    {
+      "at": "2026-10-03T16:35:42.980Z",
+      "id": "0x8f21467aed211a5ed0df7be3b6cdce68dd4b0a40110d705f4e5d522e00d0f2d0",
+      "status": "confirmed",
+      "hash": "0x16a3a32d117032c2deafb697541f8759f741368b8a45026904f319bc85b2d6e9"
+    },
+    {
+      "at": "2026-10-03T16:35:44.639Z",
+      "id": "0x8dcfdf94f0ad517ab92a623cff9b8185130d2f267d590a85dc9f0d52dad273a0",
+      "status": "queued"
+    },
+    {
+      "at": "2026-10-03T16:35:44.996Z",
+      "id": "0x8dcfdf94f0ad517ab92a623cff9b8185130d2f267d590a85dc9f0d52dad273a0",
+      "status": "queued"
+    },
+    {
+      "at": "2026-10-03T16:35:45.350Z",
+      "id": "0x8dcfdf94f0ad517ab92a623cff9b8185130d2f267d590a85dc9f0d52dad273a0",
+      "status": "pending",
+      "hash": "0x0598031c9a0abc0f1730ae85d5d7c2bd6b7d804e483f8af25bb6545891188ead"
+    },
+    {
+      "at": "2026-10-03T16:35:45.709Z",
+      "id": "0x8dcfdf94f0ad517ab92a623cff9b8185130d2f267d590a85dc9f0d52dad273a0",
+      "status": "pending",
+      "hash": "0x0598031c9a0abc0f1730ae85d5d7c2bd6b7d804e483f8af25bb6545891188ead"
+    },
+    {
+      "at": "2026-10-03T16:35:46.058Z",
+      "id": "0x8dcfdf94f0ad517ab92a623cff9b8185130d2f267d590a85dc9f0d52dad273a0",
+      "status": "confirmed",
+      "hash": "0x0598031c9a0abc0f1730ae85d5d7c2bd6b7d804e483f8af25bb6545891188ead"
+    }
+  ],
+  "ref": {
+    "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+    "epoch": "1",
+    "id": "474"
+  },
+  "actualMode": 0,
+  "playingAt": "2026-10-03T16:36:23.750Z",
+  "digits": [
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "3",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "2",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1",
+    "1"
+  ],
+  "countdownAt": "2026-10-03T16:36:20.415Z",
+  "admissionMs": 42130,
+  "error": "page.waitForFunction: Timeout 30000ms exceeded.",
+  "finishedAt": "2026-10-03T16:36:58.973Z"
+}

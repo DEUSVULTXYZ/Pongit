@@ -1,0 +1,173 @@
+{
+  "at": "2026-10-03T16:19:39.281Z",
+  "channel": "chrome",
+  "scope": "Actual HTTPS and canonical API; read-only, no live-game or physical-passkey claim",
+  "checks": [
+    {
+      "width": 360,
+      "height": 640,
+      "catalogueMs": 3562,
+      "pixelMode": {
+        "radius": "0px",
+        "height": 70,
+        "icon": true
+      },
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"https://pongit.xyz/art/pixel-palace/frame-violet.svg\")",
+        "height": 114,
+        "controls": [
+          {
+            "height": 44,
+            "width": 85.796875,
+            "radius": "0px"
+          },
+          {
+            "height": 44,
+            "width": 70.671875,
+            "radius": "0px"
+          },
+          {
+            "height": 44,
+            "width": 111.59375,
+            "radius": "0px"
+          }
+        ]
+      },
+      "outageSelection": false,
+      "noOverflow": true,
+      "portraitsDecoded": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "catalogueMs": 643,
+      "pixelMode": {
+        "radius": "0px",
+        "height": 70,
+        "icon": true
+      },
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"https://pongit.xyz/art/pixel-palace/frame-violet.svg\")",
+        "height": 114,
+        "controls": [
+          {
+            "height": 44,
+            "width": 85.796875,
+            "radius": "0px"
+          },
+          {
+            "height": 44,
+            "width": 70.671875,
+            "radius": "0px"
+          },
+          {
+            "height": 44,
+            "width": 111.59375,
+            "radius": "0px"
+          }
+        ]
+      },
+      "outageSelection": false,
+      "noOverflow": true,
+      "portraitsDecoded": true
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "catalogueMs": 2696,
+      "pixelMode": {
+        "radius": "0px",
+        "height": 79.796875,
+        "icon": true
+      },
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"https://pongit.xyz/art/pixel-palace/frame-violet.svg\")",
+        "height": 84,
+        "controls": [
+          {
+            "height": 44,
+            "width": 108.3125,
+            "radius": "0px"
+          },
+          {
+            "height": 44,
+            "width": 93.90625,
+            "radius": "0px"
+          },
+          {
+            "height": 44,
+            "width": 138.234375,
+            "radius": "0px"
+          }
+        ]
+      },
+      "outageSelection": false,
+      "noOverflow": true,
+      "portraitsDecoded": true
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "catalogueMs": 516,
+      "pixelMode": {
+        "radius": "0px",
+        "height": 79.796875,
+        "icon": true
+      },
+      "pixelHeader": {
+        "radius": "0px",
+        "frame": "url(\"https://pongit.xyz/art/pixel-palace/frame-violet.svg\")",
+        "height": 84,
+        "controls": [
+          {
+            "height": 44,
+            "width": 108.3125,
+            "radius": "0px"
+          },
+          {
+            "height": 44,
+            "width": 93.90625,
+            "radius": "0px"
+          },
+          {
+            "height": 44,
+            "width": 138.234375,
+            "radius": "0px"
+          }
+        ]
+      },
+      "outageSelection": false,
+      "noOverflow": true,
+      "portraitsDecoded": true
+    },
+    {
+      "path": "/",
+      "status": 200
+    },
+    {
+      "path": "/agents/tournaments",
+      "status": 200
+    },
+    {
+      "path": "/docs",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "writes": 0,
+  "blockedRequests": [],
+  "capacity": {
+    "observedAt": 1791044397730,
+    "admissions": true,
+    "known": false,
+    "freeChallengeLanes": 2,
+    "readyArenas": 0,
+    "serviceUnavailable": false,
+    "reason": "recovery"
+  },
+  "blockReads": 1,
+  "passed": true
+}
