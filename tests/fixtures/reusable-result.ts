@@ -2,7 +2,7 @@ import {encodeAbiParameters,encodeEventTopics,keccak256,zeroHash,type Abi,type A
 import {reusableAgentArenaAbi} from '../../shared/abi-ReusableAgentArena';
 import {abi as humanAbi} from '../../shared/abi-independent-ReusableEventsArena';
 import {publishedResultLeaf} from '../../shared/published-result-tree';
-export function resultFixture(rules:14|15=15,app:Address='0x1111111111111111111111111111111111111111',id=91n,epoch=2n){
+export function resultFixture(rules:14|15|16=15,app:Address='0x1111111111111111111111111111111111111111',id=91n,epoch=2n){
  const abi=rules===14?humanAbi:reusableAgentArenaAbi,a='0x2222222222222222222222222222222222222222',b='0x3333333333333333333333333333333333333333';
  const ref={chainId:10143n,arena:app,epoch},ticketHash=keccak256('0x1234');
  const common={a,b,winner:a,mode:1,status:3,scoreA:7,scoreB:6,hash:keccak256('0xabcd')};

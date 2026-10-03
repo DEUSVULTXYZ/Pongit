@@ -3,6 +3,23 @@ import {keccak256,type Hex} from 'viem';
 import {PublishedResultIndex,publishedResultLeaf,RESULT_TREE_CAPACITY,type ResultEpoch,type PublishedCommitment} from '../../shared/published-result-tree';
 import type {ReusableResultCandidate,ReusableSlotResult} from '../../shared/reusable-results';
 
+// CREATE TABLE IF NOT EXISTS leaves the old rules-15 checks in place. Serialize
+// this additive upgrade across the scoped services without rewriting results.
+export const reusableResultRulesUpgradeSql=`DO $upgrade$
+DECLARE relation_name text; constraint_name text; definition text;
+BEGIN
+ PERFORM pg_advisory_xact_lock(701358);
+ FOREACH relation_name IN ARRAY ARRAY['il_reusable_results','il_reusable_slot_results'] LOOP
+  constraint_name:=relation_name||'_rules_check';
+  SELECT pg_get_constraintdef(oid) INTO definition FROM pg_constraint
+   WHERE conrelid=to_regclass(relation_name) AND conname=constraint_name;
+  IF definition IS NULL THEN RAISE EXCEPTION 'Missing rules constraint on %',relation_name; END IF;
+  IF definition NOT LIKE '%16%' THEN
+   EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I, ADD CONSTRAINT %I CHECK (rules IN (14,15,16))',relation_name,constraint_name,constraint_name);
+  END IF;
+ END LOOP;
+END $upgrade$;`;
+
 /** Public compact results only. An observation is never a publication verdict.
  * Keep competing histories, including challenged ones, instead of overwriting
  * them when an engine or canonical chain is reorganized. */
@@ -21,6 +38,7 @@ export async function initializeReusableResultArchive(db:Pick<Pool,'query'>){
   match_id numeric(78,0) NOT NULL,rules integer NOT NULL CHECK(rules IN (14,15,16)),
   ticket_hash text NOT NULL,result_hash text NOT NULL,canonical text NOT NULL,
   observed_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(chain_id,app,epoch,position,leaf,root));`);
+ await db.query(reusableResultRulesUpgradeSql);
 }
 function validate(c:ReusableSlotResult){
  if(![14,15,16].includes(c.rules)||!Number.isInteger(c.index)||c.index<0||c.index>=RESULT_TREE_CAPACITY

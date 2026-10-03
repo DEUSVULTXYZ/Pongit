@@ -7,7 +7,7 @@ import {reusableResults,reusableSlotResult} from '../shared/reusable-results';
 import {resultFixture} from '../tests/fixtures/reusable-result';
 
 assert.equal(process.env.PONG_RESULT_ARCHIVE_DB_TEST,'isolated-disposable');
-const url=new URL(process.env.POOL_TEST_DATABASE_URL!);assert.equal(url.hostname,'pongit-result-archive-test-db');assert.equal(url.pathname,'/result_archive_test');
+const url=new URL(process.env.POOL_TEST_DATABASE_URL!);assert.equal(url.hostname,'pongit-result-archive-test-db');assert(['/result_archive_test','/result_archive_rules16_test'].includes(url.pathname));
 const db=new Pool({connectionString:url.toString(),max:8}),cases:string[]=[];
 try{
  await initializeReusableResultArchive(db);await initializeReusableResultArchive(db);
@@ -62,5 +62,17 @@ try{
  await db.query('UPDATE il_reusable_slot_results SET canonical=$1 WHERE epoch=$2',['0x00',String(slot.epoch)]);
  await assert.rejects(archive.proof(slot,{count:1,root:slot.root},slot.matchId),/no longer matches/);
  cases.push('disconnected terminal slot retained without fake receipt; receipt deduplicated and storage corruption rejected');
+ // Reproduce an existing production schema, not just a fresh CREATE TABLE.
+ for(const table of ['il_reusable_results','il_reusable_slot_results'])await db.query(`ALTER TABLE ${table} DROP CONSTRAINT ${table}_rules_check, ADD CONSTRAINT ${table}_rules_check CHECK(rules IN (14,15))`);
+ const next=resultFixture(16,r.arena,95n,r.epoch+3n),nextReceipt=reusableResults(next.abi,r.arena,16,next.frame);
+ const nextSlot=reusableSlotResult(next.abi,next.ref,16,95n,next.ticketHash,1n,next.result,[next.ref.epoch,1,next.root]);
+ await assert.rejects(archive.store(nextReceipt),/rules_check/);await assert.rejects(archive.storeSlot(nextSlot),/rules_check/);
+ const oldRows=(await db.query('SELECT * FROM il_reusable_results ORDER BY epoch,position,match_id')).rows;
+ await Promise.all(Array.from({length:4},()=>initializeReusableResultArchive(db)));
+ assert.deepEqual((await db.query('SELECT * FROM il_reusable_results ORDER BY epoch,position,match_id')).rows,oldRows);
+ await archive.store(nextReceipt);await archive.storeSlot(nextSlot);
+ assert.equal((await archive.proof(next.ref,{root:next.root,count:1},95n)).canonical,next.canonical);
+ for(const table of ['il_reusable_results','il_reusable_slot_results'])await assert.rejects(db.query(`UPDATE ${table} SET rules=17 WHERE match_id=95`),/rules_check/);
+ cases.push('concurrent legacy-schema upgrade preserves exact old rows; rules16 receipts and slots accepted, unsupported rules rejected');
  console.log(JSON.stringify({at:new Date().toISOString(),kind:'isolated-postgresql-result-archive',passed:true,cases,hostedInterlude:false,productionChanged:false}));
 }finally{await db.end();}
