@@ -15,6 +15,7 @@ import {validateAgentPoolManifest} from '../shared/agent-pool';
 import {preparePoolFamily} from '../shared/agent-pool-family';
 import {preparePoolChallenge} from '../shared/agent-pool-client';
 import {createPoolPlayer,type PoolPlayerTiming} from '../shared/agent-pool-player';
+import {agentHeartbeatLoop} from '../shared/agent-heartbeat-loop';
 import {challengeRefFromReceipt} from '../shared/agent-challenge-receipt';
 import {admissionPasses} from '../shared/agent-pool-sponsor';
 import {AgentPoolReader,poolJson} from '../relayer/src/agents/pool-read';
@@ -54,10 +55,10 @@ const wait=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,200);
 const requireTime=()=>assert(Date.now()<deadline,'Original diagnostic deadline reached');
 let client:ReturnType<typeof createPoolPlayer>|undefined,stopWatch:(()=>void)|undefined,latest:EngineState|undefined;
-let heartbeatTimer:ReturnType<typeof setInterval>|undefined,movementTimer:ReturnType<typeof setInterval>|undefined,enabled=false;
-let beating:Promise<unknown>|undefined,moving:Promise<unknown>|undefined,challengeOwned=false;
+let heartbeatLoop:ReturnType<typeof agentHeartbeatLoop>|undefined,movementTimer:ReturnType<typeof setInterval>|undefined,enabled=false;
+let moving:Promise<unknown>|undefined,challengeOwned=false;
 const percent95=(values:number[])=>values.length?[...values].sort((a,b)=>a-b)[Math.ceil(values.length*.95)-1]:null;
-const stopCadence=async()=>{enabled=false;clearInterval(heartbeatTimer);clearInterval(movementTimer);await Promise.allSettled([beating,moving].filter(Boolean));};
+const stopCadence=async()=>{enabled=false;clearInterval(movementTimer);await heartbeatLoop?.stop();await Promise.allSettled([moving].filter(Boolean));};
 function observe(s:EngineState){
  latest=s;const prior=report.samples.at(-1);
  if(prior?.revision===String(s.revision)&&prior?.head===String(s.head))return;
@@ -112,10 +113,9 @@ try{
  assert.equal(latest?.phase,2);report.playingAt=Date.now();save();enabled=true;
  // Match the public component's cadence and non-overlap guard. In particular,
  // do not add an artificial 200ms sleep after each completed network round trip.
- heartbeatTimer=setInterval(()=>{
-  if(!enabled||beating)return;const at=performance.now();
-  beating=client!.heartbeat(true).then(s=>{observe(s);report.heartbeats.push({at:Date.now(),ms:performance.now()-at});},e=>{report.errors.push({kind:'heartbeat',error:clean(e),at:Date.now()});enabled=false;}).finally(()=>{beating=undefined;});
- },200);
+ heartbeatLoop=agentHeartbeatLoop(async()=>{
+  const at=performance.now();observe(await client!.heartbeat(true));report.heartbeats.push({at:Date.now(),ms:performance.now()-at});
+ },()=>enabled,e=>{report.errors.push({kind:'heartbeat',error:clean(e),at:Date.now()});enabled=false;});
  movementTimer=setInterval(()=>{
   if(!enabled||moving||latest?.phase!==2||latest.sync?.pause.status!==1)return;
   const dir=defend(latest);if(dir===latest.state.leftDir)return;const at=performance.now();
@@ -123,7 +123,7 @@ try{
  },120);
  while(Date.now()-report.playingAt<90_000&&latest?.phase===2&&enabled){requireTime();await wait(1000);save();}
  await stopCadence();report.normalThrough=Date.now();
- const normal=report.samples.filter((s:any)=>s.at>=report.playingAt&&s.at<=report.normalThrough);
+ const normal=report.samples.filter((s:any)=>s.phase===2&&s.at>=report.playingAt&&s.at<=report.normalThrough);
  report.pauseTransitions=normal.filter((s:any,i:number)=>s.pause===2&&normal[i-1]?.pause!==2).length;
  report.activeMs=report.normalThrough-report.playingAt;report.heartbeatP95=percent95(report.heartbeats.map((s:any)=>s.ms));report.controlP95=percent95(report.moves.map((s:any)=>s.ms));save();
  const state=await client.read(true);

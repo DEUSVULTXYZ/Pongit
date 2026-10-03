@@ -13,6 +13,7 @@ import type {AgentMatchRef} from '../../shared/agents';
 import type {AgentPoolManifest,PoolMatchView} from '../../shared/agent-pool';
 import {createPoolObserver} from '../../shared/agent-pool-observer';
 import {createPoolPlayer} from '../../shared/agent-pool-player';
+import {agentHeartbeatLoop} from '../../shared/agent-heartbeat-loop';
 import {loadPoolFamily,preparePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN} from '../../shared/agent-pool-family';
 import {preparePoolChallenge} from '../../shared/agent-pool-client';
 import type {EngineState} from '../../shared/engine-stream';
@@ -54,6 +55,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const controllable=ready&&side>=0&&snapshot?.phase===2&&!view?.result&&!tools&&(snapshot.sync?.pause.status??0)<2;
  const control=useRef(false);control.current=controllable;
  const heartbeatEnabled=useRef(false);heartbeatEnabled.current=ready&&side>=0&&snapshot?.phase===2&&!view?.result&&!tools;
+ const heartbeatLoop=useRef<ReturnType<typeof agentHeartbeatLoop>|null>(null);
  const acceptIntent=useRef(false);acceptIntent.current=side>=0&&snapshot?.phase===2&&!view?.result&&!tools;
  const refKey=`${reference.app}:${reference.epoch}:${reference.id}`;
  const name=(address:string)=>people.find(p=>p.agent.toLowerCase()===address.toLowerCase())?.name??short(address);
@@ -179,17 +181,18 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   try{await client.move(dir);setControlError('');}catch(e){recoveryVersion.current++;setControlError(poolUserError(e));setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
  }
  useEffect(()=>{
-  let active=true,sending=false;
-  const timer=setInterval(()=>{
-   const client=playerClient.current;
-   if(!client||sending||document.hidden||performance.now()-paintedAt.current>500||!heartbeatEnabled.current||manifest.current?.friendlyPause!=='heartbeat-v1')return;
-   sending=true;
-   void client.heartbeat(true).then(state=>{if(active)setSnapshot(state);},error=>{
-    if(active){recoveryVersion.current++;setControlError(poolUserError(error));setReady(false);}
-   }).finally(()=>{sending=false;});
-  },200);
-  return()=>{active=false;clearInterval(timer);};
+  let active=true;
+  const loop=agentHeartbeatLoop(async()=>{
+   const client=playerClient.current;if(!client)return;
+   const state=await client.heartbeat(true);if(active)setSnapshot(state);
+  },()=>!!playerClient.current&&!document.hidden&&performance.now()-paintedAt.current<=500&&heartbeatEnabled.current&&manifest.current?.friendlyPause==='heartbeat-v1',error=>{
+   if(active){recoveryVersion.current++;setControlError(poolUserError(error));setReady(false);}
+  });heartbeatLoop.current=loop;
+  return()=>{active=false;if(heartbeatLoop.current===loop)heartbeatLoop.current=null;void loop.stop();};
  },[refKey]);
+ // The first confirmed playing frame must not wait another timer period before
+ // renewing its initial 500ms credit. The same loop still checks fresh paint.
+ useEffect(()=>{heartbeatLoop.current?.poke();},[refKey,ready,snapshot?.phase,tools,!!view?.result]);
  useEffect(()=>{
   const keys=new Set<string>();const key=(e:KeyboardEvent)=>{if(!['ArrowUp','ArrowDown','KeyW','KeyS'].includes(e.code))return;
    if(e.type==='keyup')keys.delete(e.code);
