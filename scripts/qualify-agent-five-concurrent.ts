@@ -155,6 +155,12 @@ try{
    const active=await read(m.pool,poolAbi,'laneRecord',[0]);
    if(active.ref.id>0n&&active.tournament===BigInt(existingTournament)){
     const ref={chainId:10143 as const,app:active.ref.arena,epoch:String(active.ref.epoch),id:String(active.ref.id)};
+    // A Monad reservation precedes admission on the hosted engine. Observe a
+    // confirmed playing state before probing that match's live snapshot.
+    const health=(await db.query('SELECT stage,detail,updated_at FROM agent_pool.health WHERE app=$1',[ref.app.toLowerCase()])).rows[0];
+    if(!health||health.stage!=='playing'||String(health.detail.epoch)!==ref.epoch||String(health.detail.id)!==ref.id
+     ||Date.now()-new Date(health.updated_at).getTime()>15000){await wait(1000);continue;}
+    report.stage='observe-existing-tournament';save();
     const observer=await createPoolObserver(m,(await reader.match(ref)).value,u=>new WebSocket(u));
     try{
      const state=await observer.read(true);
@@ -255,7 +261,10 @@ try{
  assert(report.people.every((p:any)=>!p.heartbeatError),'An independent player heartbeat failed');
  report.functionalPassed=true;report.latencyPassed=report.people.every((p:any)=>p.p95<=300);report.passed=report.functionalPassed&&report.latencyPassed;
  if(!report.passed){report.error='Actual player command p95 exceeds 300 ms';process.exitCode=1;}
-}catch(e){rejectReady(e);await Promise.allSettled(playingTasks);report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);process.exitCode=1;}
+}catch(e){rejectReady(e);await Promise.allSettled(playingTasks);report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);
+ report.failure={names:[],codes:[],location:String((e as Error)?.stack??'').split('\n').find(line=>line.trim().startsWith('at '))?.trim()};
+ for(let cause:any=e,n=0;cause&&n<8;cause=cause.cause,n++){if(typeof cause.name==='string')report.failure.names.push(cause.name);if(typeof cause.code==='number')report.failure.codes.push(cause.code);}
+ process.exitCode=1;}
 finally{
  await Promise.all(heartbeatStops.map(stop=>stop()));
  clients.forEach(c=>c.close());tournamentObserver?.close();
