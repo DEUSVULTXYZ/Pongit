@@ -8,6 +8,8 @@ import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
 import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
+import {createHash} from 'node:crypto';
+import {assertPrivateSyncBrowserTarget,privateSyncRotation} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
@@ -22,6 +24,16 @@ assert(!process.env.PONG_CATALOGUE_PRIVATE_V3||privateV3);
 const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private';
 assert(!process.env.PONG_CATALOGUE_SYNCHRONIZATION||synchronized);
 assert(!synchronized||privateV3,'Synchronized qualification must use the isolated private API');
+const continuationScope=process.env.PONG_PRIVATE_SYNC_CONTINUATION;
+const deploymentPath=process.env.PONG_CATALOGUE_PRIVATE_DEPLOYMENT;
+assert((continuationScope===undefined)===(deploymentPath===undefined),'Private browser continuation needs its scope and pinned deployment together');
+let continuationRecord:any,deploymentSha256:string|undefined;
+if(continuationScope!==undefined){
+ assert(synchronized&&privateV3,'Continuation cannot target the public browser flow');
+ const bytes=await readFile(deploymentPath!);continuationRecord=JSON.parse(bytes.toString());
+ privateSyncRotation(continuationRecord,continuationScope);
+ deploymentSha256=createHash('sha256').update(bytes).digest('hex');
+}
 if(privateV3)assert(process.env.PONG_CATALOGUE_ASSET_ORIGIN==='http://127.0.0.1:4197'&&!atomicQualification,
  'Private v3 must use its isolated build and actual API capabilities');
 if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(process.env.PONG_SYNC_PROBE==='1'&&process.env.PONG_SYNC_SPECTATOR==='1',
@@ -36,6 +48,7 @@ await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
  virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continuationRecord.common.pool,catalog:continuationRecord.common.catalog,deploymentSha256};
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
@@ -159,7 +172,8 @@ await context.addInitScript(()=>{
 });
 try{
  const config=await (await apiGet('/agents/config')).json();
- if(privateV3)assert(config.pool.toLowerCase()===(synchronized?'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8':'0x550ff3c22e20fc760af9afd68fba2cb531140dc6')&&config.rulesVersion===(synchronized?16:15)&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled&&config.challengeAdmission==='atomic-v1');
+ if(continuationRecord)assertPrivateSyncBrowserTarget(config,continuationRecord,continuationScope);
+ else if(privateV3)assert(config.pool.toLowerCase()===(synchronized?'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8':'0x550ff3c22e20fc760af9afd68fba2cb531140dc6')&&config.rulesVersion===(synchronized?16:15)&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled&&config.challengeAdmission==='atomic-v1');
  assert(config.version===5&&config.houseInstances==='official-v1'&&config.maxMatches===5,'Public five-lane migration is not active');
  report.pool=config.pool;
  await page.goto(report.origin+'/agents',{waitUntil:'domcontentloaded'});

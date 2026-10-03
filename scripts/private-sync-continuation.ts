@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 export const PRIVATE_SYNC_PREDECESSOR='0xd47bc7fece722a237c6547f85b4dd91c2601a4c8';
 export function privateSyncQualification(scope:string|undefined){
  if(scope==='private-sync-velocity-20261003')return {prefix:'reusable-agents-20261003-3',pool:'0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d',results:254n,tournaments:11n,requests:59n,lastTournament:15n,arenas:8};
@@ -55,6 +56,21 @@ export function privateSyncRotation(record:any,scope:string|undefined){
  assert.equal(new Set(record.arenas.map((a:any)=>a.app.toLowerCase())).size,8);
  assert(record.arenas.every((a:any)=>/^0x[0-9a-f]{40}$/i.test(a.app)&&/^0x[0-9a-f]{64}$/i.test(a.runtimeHash)));
  return {source:record.arenas[0],spare:record.arenas[5]};
+}
+
+/** Browser qualification only; never an alternate server or admission path. */
+export function assertPrivateSyncBrowserTarget(config:any,record:any,scope:string|undefined){
+ privateSyncRotation(record,scope);
+ assert.equal(config.chainId,10143);assert.equal(config.engineChainId,4242);
+ assert.equal(config.version,5);assert.equal(config.rulesVersion,16);assert.equal(config.maxMatches,5);
+ assert.equal(config.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());
+ assert.equal(config.enabled,true);assert.equal(config.challengeAdmission,'atomic-v1');
+ assert.equal(config.friendlyPause,'heartbeat-v1');assert.equal(config.houseInstances,'official-v1');
+ assert.equal(config.housePolicy,'progressive-v1');
+ for(const field of ['hub','pool','catalog','tournaments','ratings','qualifications','family','challenges'])
+  assert.equal(config[field].toLowerCase(),record.common[field].toLowerCase(),`Browser API ${field} differs from pinned deployment`);
+ const identities=(arenas:any[])=>arenas.map(a=>`${a.app.toLowerCase()}:${a.runtimeHash.toLowerCase()}`).sort();
+ assert.deepEqual(identities(config.arenas),identities(record.arenas),'Browser API arena/code inventory differs from pinned deployment');
 }
 
 /** Additional backed-up namespaces must not invalidate an otherwise complete

@@ -1,5 +1,40 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 12:42 UTC — browser target guard prepared; recovery unchanged
+
+Production and all remote workers remain unchanged. At12:40:41 UTC, the sole
+queue recovery report still has five closed arenas, zero releases and no error.
+Its13:00:38–13:00:53 actual release times and13:18:21.215385 deadline remain fixed.
+No new driver, archive, import, arena opening or browser server was started.
+
+An independent test-path audit found that the actual catalogue browser harness
+still required the original closed private poold47b. It would reject the new
+continuation even after a correct import. The original predicate reproduced
+three failing regression cases before the change; that failed baseline remains
+in `artifacts/sync-browser-target-baseline-20261003.log`.
+
+The harness now has an explicit continuation option, while retaining its original
+fresh/private and public paths. `PONG_PRIVATE_SYNC_CONTINUATION` and
+`PONG_CATALOGUE_PRIVATE_DEPLOYMENT` must be supplied together. Before any browser
+is launched, the deployment must pass the existing exact velocity scope,
+namespace, catalogue, completed-import and eight-unique-arena guards. Before any
+catalogue interaction, its actual API config must match every common contract,
+both chain IDs, rules16, five-lane capabilities, protective pause, progressive
+house policy and all eight arena runtime hashes. The report records the pinned
+deployment hash, without serializing the deployment contents or credentials.
+Prepared-unimported targets, stale/private predecessor pools, public replacements,
+mismatched code and invalid capabilities are rejected.
+
+Eleven focused tests and root TypeScript pass; diff/secret checks pass. The change
+is limited to qualification scripts and tests. It does not authorize or attempt
+an alternative to the blocked127.0.0.1:4197 startup. The current target is still
+prepared-unimported and would intentionally fail this new browser preflight.
+There is **no new browser, admission, smoothness or hosted-clock result**.
+
+The passing1204 off-VPS restore and pending source finality/import sequence below
+remain current. Next dependent action still requires the sole release worker to
+finish successfully; do not duplicate it or change its mounted scripts.
+
 ## Checkpoint, 3 October 12:30 UTC — off-VPS restore verified; release still waiting
 
 Production remains unchanged. The sole release worker
