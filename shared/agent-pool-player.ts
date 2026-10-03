@@ -46,7 +46,10 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   fenceTimer=setTimeout(()=>{
    if(stopped||!sender)return;
    void refreshFence().then(()=>prefetchFence(),()=>prefetchFence(true));
-  },retry?1500:Math.max(250,Math.min(1500,controlsUntil-now()-1500)));
+  // Keep the cadence anchored to the observation start. A 250ms minimum sleep
+  // after a 1.4s successful read pushes the next result beyond the 3s fence.
+  // Slow reads are single-flight; failures retain the full retry delay.
+  },retry?1500:Math.max(0,Math.min(1500,controlsUntil-now()-1500)));
   // Node-side qualification clients must still close explicitly, but a timer
   // alone must not keep a stopped fixture process alive.
   (fenceTimer as any).unref?.();

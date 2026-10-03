@@ -375,6 +375,24 @@ test('slow prefetch never blocks a valid movement and a new observation recovers
  assert.equal(parseTransaction(f.sent[2]).nonce,2);assert.equal(f.bindings(),1);f.player.close();
 });
 
+test('slow successful prefetch keeps its original cadence instead of adding a validity gap',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1800000000000});
+ const f=fixture(16);await f.player.move(1);
+ let reads=0;const block=f.base.getBlock;
+ f.base.getBlock=async(...args:any[])=>{reads++;await new Promise(r=>setTimeout(r,1410));return block(...args);};
+ const advance=async(ms:number)=>{f.advance(ms);t.mock.timers.tick(ms);await new Promise(r=>setImmediate(r));};
+ try{
+  await advance(1500);assert.equal(reads,1);
+  await advance(1410);
+  await advance(90);
+  assert.equal(reads,2,'The next prefetch starts 1500ms after the previous start, without an extra 250ms sleep');
+  await advance(1410);await advance(91);f.fresh();
+  await f.player.move(-1);
+  assert.equal(f.sent.length,2);assert.equal(f.bindings(),1);
+  assert.equal(parseTransaction(f.sent[1]).nonce,1,'No recovery or replacement nonce');
+ }finally{f.player.close();await advance(2000);}
+});
+
 test('repeated slow fence observations fail closed without an unbounded retry or a command',async()=>{
  const f=fixture(15);await f.player.move(1);f.advance(1600);
  let release!:()=>void;const gate=new Promise<void>(r=>release=r);let reads=0;
