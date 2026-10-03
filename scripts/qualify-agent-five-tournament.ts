@@ -20,7 +20,9 @@ import {privateSyncContinuation,privateSyncQualification} from './private-sync-c
 
 assert.equal(process.env.PONG_FIVE_TOURNAMENT,'bounded-private');
 assert.equal(process.getuid?.(),1000);
-const id=BigInt(process.env.PONG_FIVE_TOURNAMENT_ID??'0');assert(id>=1n&&id<=8n);
+// The exact upper bound belongs to the validated private continuation below.
+// A global cap of eight prevents its reviewed formats 9..11 from starting.
+const id=BigInt(process.env.PONG_FIVE_TOURNAMENT_ID??'0');assert(id>=1n);
 const league=(id-1n)%4n>=2n;
 const poolAbi=[...reusableAgentPoolAbi,...agentPoolAdmissionAbi];
 const attempt=Number(process.env.PONG_FIVE_TOURNAMENT_ATTEMPT??1);assert(Number.isInteger(attempt)&&attempt>=1&&attempt<=3);
