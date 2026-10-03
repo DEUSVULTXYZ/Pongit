@@ -123,8 +123,20 @@ try{
  for(const arena of selected){
   const hub=await readHubDelegation(base,m.hub,arena.app),block=await base.getBlock();
   assert(hub.status===1&&hub.epoch===1n&&hub.batchIndex<2000n&&hubLeaseValid(m.hub,hub.expiresAt,block.timestamp,1800n),'Review original epoch reserve');
-  const h=(await db.query("SELECT stage FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'",[arena.app.toLowerCase()])).rows[0];
-  assert(h?.stage==='available'||h?.stage==='playing'&&(existingTournament||lane.ref.arena.toLowerCase()===arena.app.toLowerCase()&&previous&&!previousCompleted&&String(lane.ref.id)===previous.tournament.id),'Only the preserved tournament may already be playing');
+  // Publication/capture of the independently driven tournament can transition
+  // while this read-only preflight runs. Wait within the original bound; no
+  // account, admission or nonce is created while the requested capacity is busy.
+  const healthDeadline=Math.min(deadline,Date.now()+45000);
+  let healthy=false,lastStage:string|undefined;
+  do{
+   const h=(await db.query("SELECT stage FROM agent_pool.health WHERE app=$1 AND updated_at>now()-interval '20 seconds'",[arena.app.toLowerCase()])).rows[0];
+   lastStage=h?.stage;
+   healthy=h?.stage==='available'||h?.stage==='playing'&&!!(existingTournament||lane.ref.arena.toLowerCase()===arena.app.toLowerCase()&&previous&&!previousCompleted&&String(lane.ref.id)===previous.tournament.id);
+   if(healthy)break;
+   await wait(1000);
+  }while(Date.now()<healthDeadline);
+  (report.preflight??=[]).push({app:arena.app,at:new Date().toISOString(),stage:lastStage??'stale',healthy});save();
+  assert(healthy,'Requested five-game capacity did not become healthy within the bounded preflight');
  }
  assert.equal(await read(m.pool,poolAbi,'publicAdmissions'),false);assert.equal(await read(m.tournaments,bookAbi,'count'),existingTournament?BigInt(existingTournament):previous?1n:0n);
  const catalogue=(await reader.catalog(0n,32)).value;
