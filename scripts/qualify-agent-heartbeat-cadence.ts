@@ -130,7 +130,8 @@ try{
  if(state.phase===2&&!client.journal.pending(family.session.grant.key)){await client.concede();report.deliberateConcession=true;save();}
  while(Date.now()<deadline){const result=(await reader.match(report.ref)).value.result;if(result){report.result=result;break;}await wait(1000);}
  assert(report.result,'Outcome must publish before the original deadline');
- report.passed=report.result.status===3&&report.activeMs>=60_000&&report.pauseTransitions===0&&report.errors.length===0&&report.heartbeats.length>=100&&report.heartbeatP95<=300;
+ report.passed=report.result.status===3&&report.activeMs>=60_000&&report.pauseTransitions===0&&report.errors.length===0
+  &&report.heartbeats.length>=100&&report.heartbeatP95<=300&&report.moves.length>=30&&report.controlP95!==null&&report.controlP95<=300;
  if(!report.passed){report.error='Healthy-cadence liveness or confirmation target failed';process.exitCode=1;}
 }catch(e){report.error=clean(e);process.exitCode=1;}
 finally{
