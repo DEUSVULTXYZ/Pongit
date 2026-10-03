@@ -6,6 +6,7 @@ import {createPublicClient,keccak256,parseAbi,type Address} from 'viem';
 import {baseReadTransport} from '../shared/base-read-transport';
 import {verifyHistoricalRuntime} from '../shared/historical-runtime';
 import {agentPublishedRatingsAbi} from '../shared/abi-AgentPublishedRatings';
+import {assertReviewedRatingContinuation} from '../shared/rating-continuation-audit';
 
 const [ratingText,parentPath,artifactPath,out]=process.argv.slice(2);
 assert(/^0x[\da-f]{40}$/i.test(ratingText)&&parentPath&&artifactPath&&out);
@@ -27,10 +28,11 @@ try{
  const read=(address:Address,fn:string)=>{report.step=fn;return base.readContract({address,abi,functionName:fn,blockNumber:anchor.number} as any) as Promise<any>;};
  const verified=await verifyHistoricalRuntime(ratings,artifact,address=>base.getCode({address,blockNumber:anchor.number}),async()=>{throw Error('Unexpected rating library');});
  report.runtimeHash=keccak256(verified.code);
- // This historical runtime was reviewed against d2c6033: seedRating and
- // seedPair unconditionally revert. A caller-supplied artifact alone cannot
- // establish that property for an arbitrary future continuation.
- assert.equal(report.runtimeHash,'0xa0c4bdc1933c53e332d29a112c549d0d5da9e829319628cb99a42b38745e7bb4','Continuation runtime has not been reviewed for seed rejection');
+ // Preserve the exact historical deployment gate. New instances must match a
+ // separately pinned build, including its immutable masks, before their own
+ // predecessor/audit bindings are checked below.
+ if(report.runtimeHash!=='0xa0c4bdc1933c53e332d29a112c549d0d5da9e829319628cb99a42b38745e7bb4')
+  report.templateHash=assertReviewedRatingContinuation(artifact);
  const source=await read(ratings,'predecessor') as Address;
  assert.equal(source.toLowerCase(),String(parent.ratings).toLowerCase());
  assert.equal(await read(ratings,'emptySeedAudit'),keccak256(parentBytes),'Source audit bytes differ from the pinned evidence');
