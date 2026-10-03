@@ -1,5 +1,76 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 00:49 UTC — dedicated player sponsorship passes real play
+
+Published implementation is `d1c501f`, recovery extension `64361f2`. Production
+is unchanged. Four-copy trial 6 passed at 00:26:09 with 17,649 ms of actual
+five-game overlap and 100 controls for each friendly player. Human trial 3 and
+seven-way observer 3 remain failed: an unsigned acceptance expired while the
+shared lifecycle signer was busy. Both drivers stopped; no seven-game proof.
+
+Human player sponsorship now has its own gas-only signer and queue database.
+Only canonical owner-signed family operations and signed lobby player actions
+are accepted. No lifecycle, arena or financial permission was granted. Existing
+queued, pending, confirmed and failed operations retain their original writer;
+a failed legacy database read cannot move an uncertain command to another key.
+The original operator journal and advisory lock are unchanged. The new role uses
+the existing scoped signer journal and address lock. Its queue is
+`pong_sync_player_sponsor_20261003`; key material remains private. A journalled
+five-test-MON transfer funded address
+`0xd7c73e96aFAd0Bd56F2f4B2DA44D4c65c2beA181`, transaction
+`0xae98440cdd56216df6fb33ef3ffbb836e9d0ab32c739ecb9045d9060bffef99b`.
+Do not repeat it. All 940 TypeScript tests and root typecheck pass. The real
+isolated PostgreSQL regression passed eight checks, including holding the
+legacy lifecycle lock while the new scoped signer confirms a transaction on
+its simulated RPC. Initial test ABI/type errors are retained separately.
+
+Bounded private service `pongit-sync-human-player-20261003-service-1` replaced
+the drained financial service at 00:39:24. It retains the original
+**01:13:31.604614 UTC** deadline. Admission fixture
+`pongit-sync-human-finance-admission-f25729b` retains **01:03:31.604614 UTC**.
+No opening or public service changed. A preparation attempt created the empty
+queue database then failed on a wrong plan field; it did not restart a worker
+or send a transaction. The corrected preparation verified that database empty.
+
+Actual private human trial 4 passed at 00:44:30: Classic
+`340282366920938463463374607431768211470` and Chaos
+`340282366920938463463374607431768211472` played concurrently, ended naturally,
+were captured, and the real-time Chaos payout was checked. Confirmed controls
+were 177/187 for Classic and 173/176 for Chaos, with p95 212.51/164.14 ms and
+193.76/210.48 ms respectively from the VPS. This is synthetic-controller
+evidence, not browser, GPU, Mera, seven-game capacity or catalogue latency proof.
+Report: `sync-human-consent-acbc3e8/evidence/events-live-4.json`.
+
+Chaos championship 4 passed all 28 published fixtures at 00:40:19. Its driver
+and the copy driver are stopped. The sole agent engine worker was stopped after
+all five lanes were empty and its uncertain-command journal was empty. The
+archive worker retains its original **02:36:56.853276 UTC** deadline.
+
+Normal closure of the completed private continuation is now owned solely by
+`pongit-sync-continuation-release-1-20261003`, started 00:45:51 with original
+deadline **02:03:51.651638 UTC**. All five epochs were closed normally after
+exact hosted/Monad root comparison. Their batch counts were 247, 291, 235, 280
+and 232. Actual release deadlines are **01:46:15 through 01:46:38 UTC**.
+Read `sync-continuation-20261002/evidence/sync-release-1.json` before acting.
+Never close again, compete with this worker or reopen these epochs. After
+release verify exact finalized roots and canonical None; the preserved archive
+must finalize history before another immutable continuation. A first runtime
+preparation failed on a wrong environment field before any file or worker change.
+
+Backup `sync-20261003T0041Z` has sixteen SHA-verified off-VPS files, manifest
+`75ee76a4d5592ee2ea329cade4df6fdb052c2ab6b96a96cb7db396a992a0468a`.
+It includes the dedicated sponsor key and database, but precedes final trial-4
+results and normal closes. Refresh before further deployment. Intermediate
+backup offload has an exact 81-file inventory and fresh off-VPS hash receipt;
+removal has not yet been confirmed. Disk remains above 80 percent until checked.
+
+Notification optimization `7f1eb00` remains undeployed. The earlier Chaos
+wall-clock failure is not resolved by these passes. Browser startup approval,
+public legacy hosting, unfinished public tournament 23, compatible public
+migration, real seven-way play, reserve/rotation, all acceptance measurements
+and the final unchanged 24-hour trial remain. No private season replaces public
+history. Necessary test MON is authorized; no funding request is needed.
+
 ## Checkpoint, 3 October 00:21 UTC — financial incompatibility fixed privately
 
 Published source is `a9116d1`. Production remains unchanged. The human Chaos
