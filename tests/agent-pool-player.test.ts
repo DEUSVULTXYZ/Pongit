@@ -118,7 +118,7 @@ function fixture(rules:10|11|15|16=10,onTiming?:(s:PoolPlayerTiming)=>void){
  const binding={id:4n,epoch:1n,a:match.a,b:match.b,controlA:{key:account.address,expires:session.grant.expires,codeHash:zeroHash},controlB:{key:addr(21),expires:session.grant.expires,codeHash:zeroHash}};
  const base:any={getChainId:async()=>10143,getBlock:async(opts?:any)=>{if(failBase)throw Error('RPC timeout');if(hold)await hold();return{number:100n,timestamp:BigInt(at),hash:opts&&reorg?toHex(1n,{size:32}):zeroHash};},
   getCode:async(opts:any)=>{if(opts.blockHash){assert.equal(opts.blockHash,zeroHash);assert.equal(opts.requireCanonical,true);if(reorg)throw Error('Canonical block changed');}return'0x6000';},
-  request:async(request:any)=>{if(typeof request.params[1]==='object'){assert.deepEqual(request.params[1],{blockHash:zeroHash,requireCanonical:true});if(reorg)throw Error('Canonical block changed');}return encodeFunctionResult({abi:hubAbi,functionName:'delegationOf',result:hub});}};
+  request:async(request:any)=>{if(failBase)throw Error('RPC timeout');if(typeof request.params[1]==='object'){assert.deepEqual(request.params[1],{blockHash:zeroHash,requireCanonical:true});if(reorg)throw Error('Canonical block changed');}return encodeFunctionResult({abi:hubAbi,functionName:'delegationOf',result:hub});}};
  let player!:ReturnType<typeof createPoolPlayer>;
  const node:any={getBlockNumber:async()=>10n,getStorageAt:async(r:any)=>{
   assert.equal(r.blockNumber,10n);for(let i=0;i<3;i++){
@@ -177,6 +177,51 @@ test('zero lease on an unknown hub and an expired human grant still fail closed'
  const f=fixture(15);f.hub.expiresAt=0n;await assert.rejects(f.player.move(1),/recovering/);assert.equal(f.sent.length,0);f.player.close();
  f.m.hub=NO_LEASE_HUB;f.session.grant.expires=1n;f.binding.controlA.expires=1n;
  const player=f.create();await assert.rejects(player.move(1),/Renew the active arena authorization/);assert.equal(f.sent.length,0);player.close();
+});
+
+test('rules16 no-lease refresh uses one atomic canonical delegation without changing recovery or nonce ownership',async()=>{
+ const f=fixture(16);f.player.close();f.m.hub=NO_LEASE_HUB;f.hub.expiresAt=0n;const player=f.create();
+ let headers=0;const block=f.base.getBlock,request=f.base.request,calls:any[]=[];
+ f.base.getBlock=async(...a:any[])=>{headers++;return block(...a);};
+ f.base.request=async(r:any)=>{calls.push(r);return request(r);};
+ try{
+  await player.move(1);assert.equal(headers,1);assert.equal(calls[0].params[1].requireCanonical,true);
+  f.advance(3100);f.fresh();await player.move(-1);
+  assert.equal(headers,1,'A no-lease refresh does not need a separate timestamp');
+  assert.equal(calls.length,2);assert.equal(calls[1].params[1],'latest');
+  assert.equal(f.bindings(),1);assert.deepEqual(f.sent.map(r=>parseTransaction(r).nonce),[0,1]);
+  f.advance(3100);f.failBase(true);await assert.rejects(player.move(0),/timeout/);
+  assert.equal(f.sent.length,2,'A failed atomic read cannot extend the fence');
+  f.failBase(false);f.hub.status=2;await assert.rejects(player.move(0),/recovering/);
+  assert.equal(f.sent.length,2);
+ }finally{player.close();}
+});
+
+test('atomic no-lease observation rejects another epoch, unexpected expiry and late results',async()=>{
+ for(const failure of ['epoch','lease','slow','identity']){
+  const f=fixture(16);f.player.close();f.m.hub=NO_LEASE_HUB;f.hub.expiresAt=0n;const player=f.create();
+  try{
+   await player.move(1);f.advance(8500);f.fresh();
+   if(failure==='epoch')f.hub.epoch=2n;
+   if(failure==='lease')f.hub.expiresAt=100n;
+   if(failure==='identity')f.epoch(2);
+   if(failure==='slow'){const request=f.base.request;f.base.request=async(r:any)=>{const answer=await request(r);f.advance(3100);return answer;};}
+   await assert.rejects(player.move(-1));assert.equal(f.sent.length,1,failure);
+   assert.equal(player.journal.pending(f.session.grant.key),undefined);
+  }finally{player.close();}
+ }
+});
+
+test('no-lease atomic refresh never replaces canonical recovery of an uncertain command',async()=>{
+ const f=fixture(16);f.player.close();f.m.hub=NO_LEASE_HUB;f.hub.expiresAt=0n;const player=f.create();
+ try{
+  await player.move(1);f.advance(3100);f.fresh();f.lost(true);await assert.rejects(player.move(-1),/Lost response/);
+  const pending=player.journal.pending(f.session.grant.key)!;assert(pending);
+  f.reorg(true);await assert.rejects(player.recover(),/Canonical block changed/);
+  assert.equal(player.journal.pending(f.session.grant.key)?.hash,pending.hash);assert.equal(f.sent.length,2);
+  f.reorg(false);f.lost(false);f.visible(true);await player.recover();
+  assert.equal(player.journal.pending(f.session.grant.key),undefined);
+ }finally{player.close();}
 });
 
 test('the latest intent replaces a movement waiting behind the second authorization fence',async()=>{

@@ -181,18 +181,27 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // Both must still pass; neither changes the original three-second fence.
    // Refresh identity before watch()'s ten-second deadline. Starting only after
    // expiry suppressed contiguous frames while the identity RPC completed.
-   const [[block,hub]]=await Promise.all([(async()=>{
+   const [{hub,lifetime}]=await Promise.all([(async()=>{
+    if(m.rulesVersion===16&&hubHasNoLease(m.hub,0n)){
+     // On the pinned no-lease hub the fence consumes only this one delegation.
+     // eth_call at latest reads its fields atomically from canonical state;
+     // there is no timestamp/code/second state to join to it. Initial recovery,
+     // permissions and uncertain-command retirement still use canonical hashes.
+     // This is a version-selected read, never a fallback after a failed pin.
+     const hub=await readHubDelegation(options.base,m.hub,arena!.app);
+     return {hub,lifetime:hubHasNoLease(m.hub,hub.expiresAt)?3000:0};
+    }
     const block=await options.base.getBlock();
     if(!block.hash)throw Error('Arena publication has no canonical block');
     const hub=await readHubDelegation(options.base,m.hub,arena!.app,{blockHash:block.hash,requireCanonical:true});
-    return [block,hub] as const;
+    return {hub,lifetime:hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000)};
    })(),identify(false,8000)]);
    if(generation!==fenceGeneration||stopped)return;
    // Read-only prefetch must not retire a pending command behind its owner.
    // The serialized recovery path records canonical closure evidence.
-   if(hub.epoch!==epoch||hub.status!==1||!hubLeaseValid(m.hub,hub.expiresAt,block.timestamp)){controlsUntil=0;throw Error('This arena is recovering; your arcade key is saved');}
+   if(hub.epoch!==epoch||hub.status!==1||lifetime<=0){controlsUntil=0;throw Error('This arena is recovering; your arcade key is saved');}
    // Charge read latency to validity: a slow successful RPC is not a new lease.
-   controlsUntil=started+(hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000));
+   controlsUntil=started+lifetime;
   })();
   fencePending=loading.finally(()=>{fencePending=undefined;});return fencePending;
  }
