@@ -1,5 +1,71 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 06:05 UTC — private source drained, release scheduled
+
+Production remains unchanged. T7 **passed at 05:35:44.714**, all 28 Classic league
+fixtures published, with pool/book gates closed and driver exit0. The final match168
+finished7–1. At canonical **67748117**, the source had168 results, seven completed
+tournaments, five empty lanes, closed pool/public/book/challenge admissions and no
+pending private engine jobs. Its engine/archive workers then stopped cleanly at
+05:39:56, before their original08:29 bound. T8 was never started; its required full
+window did not fit. No existing deadline was extended.
+
+Sole recovery writer **`pongit-sync-optimized-release-1-286b88f`** started05:43:43.959878,
+original deadline **07:01:43.959878 UTC**. It uses the original operator journal and
+normally closed all five private67a6 epoch1 arenas. Published and hosted commitment
+roots matched before closure. Actual batch counts were203,222,251,203,266; each
+normal closure used220,482 gas. Real release deadlines are **06:44:02–06:44:14 UTC**.
+It must verify canonical None and exact sealed roots after release. No forced close,
+new opening, public mutation or claim of worst-case reserve qualification. Inspect
+`sync-optimized-continuation-20261003/evidence/sync-release-1.json`; never compete
+with this worker or resubmit its closes. Its five close hashes are retained there.
+
+Backup **`sync-20261003T0543Z`**,19files, was SHA-verified offVPS before closure,
+manifest `0972f86b770d67c2cca572ee4244aecf3a46f4766b3a88c2f582b1b5b41a9744`.
+Five databases from those exact bytes were successfully restored in an isolated
+networkless scratch PostgreSQL: operator, public agents, optimized private agents,
+private human consent, and player sponsor. The operator journal has13,062 rows and
+all12 new preparation transactions; agents journal400,682 and private31,510 rows.
+Attempt1 restored the operator database but failed to write its report inside the
+PostgreSQL-owned data directory. Attempt2 failed on startup readiness. Attempt3
+preserved those failures, reused the completed operator restore, waited for server
+readiness, restored the other four, and passed with no OOM/exit0 at05:54:57.891.
+Reports and dumps remain. The five successful temporary databases were subsequently
+dropped through PostgreSQL only, reclaiming770,247,243 bytes; container/directory
+and all evidence remain. No production restore or filesystem deletion occurred.
+
+Postclosure backup **`sync-20261003T0600Z`**,19files, is also SHA-verified offVPS;
+manifest `ac1dae90b1e57667ed0c30a05b8467915f0eff922ad43dd5e7ee67418a80d132`.
+It includes the recovery journal/runtime. Another36 intermediate backup files
+(343,923,057 bytes) were offloaded only after exact local hash verification and
+all-container mount/reference checks. Latest, active0543 and mounted0041 backups
+were preserved. Recheck actual disk below80percent before another image build.
+
+Published `9184272` makes the five-copy harness use the browser's immediate,
+non-overlapping heartbeat loop and separates later defense inputs from liveness.
+It now explicitly fails on unexpected protective pauses, even if results publish.
+Forty-five focused tests, root typecheck, then **955 complete TypeScript tests** pass.
+No new concurrent fixture has run on this harness. The earlier failures remain.
+`fab9ac9` adds an explicit private queue-continuation scope, source67a6/168results/
+seven tournaments, limiting next trials to8–11. Existing scopes retain their exact
+old ranges. Eight focused scope/heartbeat tests and root typecheck pass afterward.
+
+Prepared, **not executed**, helper
+`/opt/pongit/tests/fluid-20260928/sync-queue-transition-20261003.py` has guarded
+`archive`, `verify <attempt>`, and `import <attempt> <backup>` operations. It requires
+the current release to pass and exit; archive owns only finality, not admissions.
+Verification requires all168 results and all114 fixtures in seven tournaments to
+be final at one canonical block, resolving historical arenas at their original pools.
+Import requires that verification, stopped source archive and a fresh offVPS backup.
+It continues the prepared private namespace20261003-2 only. No public replacement.
+Afterward, prepare/verify new runtime and actually test waiting-ring admission,
+lower-gas Chaos clock, T8, seven-way controls and all remaining acceptance gates.
+
+Browser4197 remains blocked by the prior automatic approval review and its pending
+specific permission request. Do not launch an alternate server. No final24h trial,
+public migration or complete-release claim. Continue scheduled recovery and useful
+independent work; report the browser blocker before any browser acceptance claim.
+
 ## Checkpoint, 3 October 05:37 UTC — heartbeat proof and cancellation-finality deadlock
 
 Production remains unchanged. Published `3b15a82` adds normal closure of a captured,
