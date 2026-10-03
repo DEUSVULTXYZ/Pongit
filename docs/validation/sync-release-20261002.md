@@ -1,5 +1,48 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 08:45 UTC — atomic control fence, third concurrent trial
+
+Production remains unchanged. Trial2 completed08:33:26.483, exit1: all four
+friendly results and the overlapping tournament result were published/captured.
+Command p95s184.14/221.54/195.94/206.23ms pass; protective pauses0/2/0/1 **fail**.
+The18.122-second five-game overlap is not a full availability qualification.
+These are different matches from trial1;70 to3 pauses is not a paired benchmark.
+Preserve both failed reports unchanged.
+
+`bac6809` removes the second sequential Monad read only from periodic rules16
+control checks on the exact no-lease hub. A single latest-state `delegationOf`
+returns the complete lifecycle tuple atomically; it must report expiry0. Initial
+recovery, bytecode validation, permissions and uncertain nonce retirement remain
+canonical-hash pinned. There is no fallback from a failed pinned read. Epoch,
+status, node identity and the original3000ms lifetime from observation start
+remain enforced; legacy timed leases retain their timestamp/header checks.
+Full965 TypeScript tests, root typecheck and51 focused checks pass. Tests cover
+wrong epoch, unexpected expiry, stale/failing reads, identity changes and lost
+responses. `6e5fb92` RPC priority remains source-only, with no public gateway change.
+
+Read-only probe2 finished08:36:04.862,200 observations/zero errors, exit0. Combined
+read p95/max1014.66/1362.62ms, compared with1444.86/1694.56ms in the earlier205-sample
+probe. This is sequential transport evidence, not browser or game qualification.
+
+Sole four-copy trial3 **pongit-sync-queue-concurrent-3-bac6809** started08:41:04,
+original deadline **09:05:04.596246 UTC**. It uses the existing7e3d2e5 image and one
+read-only player override whose exact hash is recorded in `concurrent-plan-3.json`.
+No engine or RPC override. It adopts one actual young T8 match and requests four
+independent friendly instances of the same archetype. Never duplicate or extend.
+T8 retains10:24:57.077601; engines/archive retain13:25:06.823834 and tick300.
+No human/browser fixture is running. Source releases, private-only continuation
+import and five openings are complete and must never be repeated.
+
+Backup sync-20261003T0825Z,20files, is SHA-verified offVPS at08:28:20.3442300,
+manifest `0abe4e4a5d3f2006beae766675191102ae8c4a8eaf9f96d36d336936801649a2`.
+Latest backup0842,20files, is SHA-verified offVPS08:43:46.3508760 for trial3 keys,
+journal and configuration, manifest
+`3fb55a1ccb024610ab97e327e3cc931ba4eb9459ba5011235a7137ba05ea8ba7`.
+Earlier0543 exact5DB restore remains the completed restore proof; its failed
+attempts remain retained. Browser4197 approval rejection remains pending, with
+no alternate startup. Clock97.2–97.6% remains failed. No final24h, public migration,
+reserve/rotation or browser/admission success is claimed. No funding request.
+
 ## Checkpoint, 3 October 08:25 UTC — authorization stalls reproduced; second concurrent trial
 
 Production remains unchanged. Published candidate fixes are `6e5fb92` (RPC queue

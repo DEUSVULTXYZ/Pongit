@@ -251,7 +251,20 @@ try{
     row.playingAt??=new Date().toISOString();
     if(synchronized&&!presenceStarted){presenceStarted=true;keepPresent(client,row);}
     const pause=s.sync?.pause.status;
-    if(pause===2&&lastPause!==2)row.pauseTransitions=(row.pauseTransitions??0)+1;
+    if(pause===2&&lastPause!==2){
+     row.pauseTransitions=(row.pauseTransitions??0)+1;
+     // A latency percentile hides isolated admission/fence stalls. Preserve the
+     // bounded timing window at the first paused frame without recording keys,
+     // signed commands or grants. Diagnostics never renew heartbeat credit.
+     const at=performance.now();
+     const evidence=row.pauseEvidence??=[];
+     if(evidence.length<16)evidence.push({at:new Date().toISOString(),from:lastPause??null,
+      moves:row.moves,head:String(s.head),processedUs:String(s.state.t),
+      deadlineBlock:String(s.sync!.pause.deadlineBlock),limitUs:String(s.sync!.pause.limitUs),
+      controlsAvailable:client.controlsAvailable(),
+      stages:timings.filter(t=>t.startedAt+t.ms>=at-2000).slice(-48)
+       .map(t=>({stage:t.stage,offset:t.startedAt-at,ms:t.ms}))});
+    }
     lastPause=pause;
    }
    if(s.phase>=3&&!row.engineFinishedAt)row.engineFinishedAt=new Date().toISOString();
