@@ -1,5 +1,40 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 03:03 UTC — five copies published, latency still fails
+
+Production remains unchanged. Optimized copy trial 2 finished at 02:51:27 UTC:
+all four independent friendly matches and the tournament fixture reached natural
+outcomes and published. Each friendly client confirmed 100 controls, with a
+19,458 ms observed five-way overlap. Functional proof passes; latency does not.
+The four command p95 measurements were 174.21, 320.81, 265.97 and 148.96 ms.
+The 300 ms target is unchanged. Its report and exited-1 container remain intact.
+
+Private human trial 5 passed at 02:51:53 with real Classic/Chaos results, bets and
+payout, and 74,685 ms overlap between the two human matches. Seven-way observer 1
+failed: its acquisition found a published result rather than seven live games.
+This is a genuine missed overlap. The last friendly instance finished at 02:48:31,
+before Classic started at 02:48:41; Chaos started at 02:49:24. Do not turn this
+into a seven-way pass or silently ignore a terminal reference.
+
+The next diagnostic adds opt-in, payload-free player timings for queueing,
+authorization, snapshot, sending, receipt processing and observation. Transport
+p95 near 110 ms does not explain the full command tail by itself. Thirty-five
+player tests and root typecheck pass; the diagnostics are not deployed publicly.
+The synthetic fixture will keep defending after its measurement window instead
+of leaving its paddle idle. Scores, time limits and outcomes stay contractual.
+
+Tournament 5 has seven resolved fixtures but its final closure is not yet
+confirmed at this checkpoint. Inspect the original driver before starting 6.
+The original engine/archive bound is still 08:29:45.123254 UTC. Human service
+and admission bounds remain 03:30:31.524561 and 03:15:31.524561. Both game drivers
+and the failed seven-way observer have exited. No replacement trial is running.
+
+Backup `sync-20261003T0300Z` contains eighteen files verified off VPS at 03:00:46,
+manifest `eccb7533c1fde5e014cbb07fb8235cbde54857d9eab82cc7b87981e93a87055f`.
+It includes fresh trial keys and journals. Browser startup approval, actual
+browser/admission targets, optimized Chaos clock, reserve/rotation, compatible
+public migration and final unchanged 24-hour qualification are still outstanding.
+
 ## Checkpoint, 3 October 02:45 UTC — optimized private play and preservation
 
 Production remains unchanged. The private import completed successfully.
@@ -25,8 +60,9 @@ No DNS override, repeated creation, session reset or provider change was made.
 The other four arenas remained operational. Preserve the failed alternate-edge
 read, which did not qualify connectivity. See `hosted-dns-read-{1,2}.json`.
 
-Concurrent trial 1 failed before admitting any human challenge: a live snapshot
-read raced the new tournament reservation and returned `RPC Request failed.`.
+Concurrent trial 1 failed before admitting any human challenge while observing
+a newly reserved tournament fixture: `RPC Request failed.`. Its original report
+did not retain enough detail to establish the exact RPC failure cause.
 All four family authorizations and the queue closure are confirmed; no pending
 operator nonce or previous friendly match remains. The failure stays recorded.
 Qualification fix `c71dd51` waits for a recent matching-epoch, matching-ID hosted

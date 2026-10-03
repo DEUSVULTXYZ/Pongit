@@ -1,7 +1,7 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {decodeFunctionData,encodeAbiParameters,encodeFunctionResult,encodeErrorResult,hashTypedData,keccak256,parseTransaction,toHex,zeroAddress,zeroHash,type Address,type Hex} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
-import {createPoolPlayer,POOL_PLAYER_GAS} from '../shared/agent-pool-player';
+import {createPoolPlayer,POOL_PLAYER_GAS,type PoolPlayerTiming} from '../shared/agent-pool-player';
 import {pooledAgentArenaAbi as abi} from '../shared/abi-PooledAgentArena';
 import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
@@ -30,7 +30,18 @@ test('rules16 heartbeats require fresh perception, preserve pending nonces and s
 test('friendly pause methods cannot be used on a legacy arena',async()=>{
  const f=fixture(15);await assert.rejects(f.player.heartbeat(true),/does not support/);assert.equal(f.sent.length,0);f.player.close();
 });
-function fixture(rules:10|11|15|16=10){
+test('optional player timing cannot change receipt ownership or break controls',async()=>{
+ const samples:PoolPlayerTiming[]=[];
+ const f=fixture(16,s=>{samples.push(s);throw Error('Diagnostic reporter unavailable');});
+ await f.player.move(1);await f.player.read();
+ assert.equal(f.sent.length,1);assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
+ for(const stage of ['queue','fence','snapshot','send','receipt','observation'])assert(samples.some(s=>s.stage===stage));
+ assert(samples.every(s=>s.ms>=0&&Number.isFinite(s.ms)&&Object.keys(s).sort().join(',')==='ms,stage,startedAt'));
+ f.advance(200);f.lost(true);await assert.rejects(f.player.move(-1),/Lost response/);
+ assert.equal(f.player.journal.pending(f.session.grant.key)?.action,'input');
+ f.player.close();
+});
+function fixture(rules:10|11|15|16=10,onTiming?:(s:PoolPlayerTiming)=>void){
  const fixtureAbi=rules===16?synchronizedAgentArenaAbi:rules>=15?reusableAgentArenaAbi:abi;
  const key=generatePrivateKey(),account=privateKeyToAccount(key),owner=privateKeyToAccount(generatePrivateKey()),at=Math.floor(Date.now()/1000);
  const session:PoolFamilySession={key,signature:`0x${'11'.repeat(65)}`,grant:{player:owner.address,key:account.address,issuedAt:BigInt(at),expires:BigInt(at+7200),revision:0n}};
@@ -85,7 +96,7 @@ function fixture(rules:10|11|15|16=10){
  }};
  const feed:any={read:async()=>state,forCommand:async()=>state,receipt:async()=>state,invalidate(){},watch:()=>()=>{}};
  state.observedAt=clock;
- const create=()=>player=createPoolPlayer(m,match,session,{base,storage,now:()=>clock,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
+ const create=()=>player=createPoolPlayer(m,match,session,{base,storage,now:()=>clock,onTiming,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
  return{m,match,session,owner,player,create,hub,state,sent,storage,binding,base,node,feed,
   lost:(v:boolean)=>lost=v,visible:(v:boolean)=>receiptVisible=v,epoch:(v:number)=>nodeEpoch=v,calls:()=>nodeCalls,hold:(v?:()=>Promise<void>)=>hold=v,
   advance:(ms:number)=>{clock+=ms;},fresh:()=>{state.observedAt=clock;},bindings:()=>bindings,nonceReads:()=>nonceReads,

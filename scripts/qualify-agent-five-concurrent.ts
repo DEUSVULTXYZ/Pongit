@@ -17,7 +17,7 @@ import {agentChallengesAbi as challengeAbi} from '../shared/abi-AgentChallenges'
 import {preparePoolFamily,loadPoolFamily} from '../shared/agent-pool-family';
 import {preparePoolChallenge} from '../shared/agent-pool-client';
 import {challengeRefFromReceipt} from '../shared/agent-challenge-receipt';
-import {createPoolPlayer} from '../shared/agent-pool-player';
+import {createPoolPlayer,type PoolPlayerTiming} from '../shared/agent-pool-player';
 import {createPoolObserver} from '../shared/agent-pool-observer';
 import {validateAgentPoolManifest} from '../shared/agent-pool';
 import {AgentPoolReader,poolJson} from '../relayer/src/agents/pool-read';
@@ -67,11 +67,23 @@ const wait=(ms=1000)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clients:ReturnType<typeof createPoolPlayer>[]=[];
 const playingTasks:Promise<void>[]=[];
 const heartbeatStops:(()=>Promise<void>)[]=[];
+function defenseDirection(state:Awaited<ReturnType<ReturnType<typeof createPoolPlayer>['read']>>):-1|0|1{
+ const v=state.state,dt=v.vx<0n?(40_000_000n-v.x)*1_000_000n/v.vx:0n;
+ let target=288_000_000n;
+ if(dt>0n){let y=v.y+v.vy*dt/1_000_000n-6_000_000n;const period=1_128_000_000n;y=((y%period)+period)%period;target=6_000_000n+(y>564_000_000n?period-y:y);}
+ return v.left<target-8_000_000n?1:v.left>target+8_000_000n?-1:0;
+}
 function keepPresent(client:ReturnType<typeof createPoolPlayer>,row:any){
  let stopped=false;
  const loop=(async()=>{
   while(!stopped&&Date.now()<deadline){
-   try{const state=await client.heartbeat(true);if(state.phase>=3){row.engineFinishedAt??=new Date().toISOString();save();return;}}
+   try{const state=await client.heartbeat(true);if(state.phase>=3){row.engineFinishedAt??=new Date().toISOString();save();return;}
+    // Continue real defensive inputs after the measured 100-command window.
+    // Leaving every paddle idle made this a loss-speed fixture and could end
+    // the five matches before independently admitted human matches began.
+    // Scores, duration and the final outcome remain entirely contractual.
+    if(row.controlsFinishedAt&&state.phase===2){const dir=defenseDirection(state);if(dir!==state.state.leftDir){await client.move(dir);row.followupMoves=(row.followupMoves??0)+1;}}
+   }
    catch(e){row.heartbeatError=String((e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160);save();return;}
    await wait(200);
   }
@@ -205,7 +217,8 @@ try{
   const p=secret.people[row.index],storage={getItem:(k:string)=>p.storage[k]??null,setItem:(k:string,v:string)=>{p.storage[k]=v;saveSecret();},removeItem:(k:string)=>{delete p.storage[k];saveSecret();}};
   const view=(await reader.match(row.ref)).value;assert(view.b.toLowerCase()===archetype.toLowerCase()&&view.a.toLowerCase()===row.player.toLowerCase()&&!view.ranked&&view.tournament==='0');
   const session=loadPoolFamily(m,row.player,storage)!;
-  const client=createPoolPlayer(m,view,session,{base,storage,socket:u=>new WebSocket(u)});clients.push(client);client.watch(s=>{if(s.phase>=3&&!row.engineFinishedAt){row.engineFinishedAt=new Date().toISOString();save();}});
+  const timings:PoolPlayerTiming[]=[];
+  const client=createPoolPlayer(m,view,session,{base,storage,socket:u=>new WebSocket(u),onTiming:sample=>{timings.push(sample);if(timings.length>400)timings.shift();}});clients.push(client);client.watch(s=>{if(s.phase>=3&&!row.engineFinishedAt){row.engineFinishedAt=new Date().toISOString();save();}});
   let recovered=false;
   while(Date.now()<deadline){
    try{const s=recovered?await client.read():await client.recover();recovered=true;
@@ -225,11 +238,8 @@ try{
   // not the requested simultaneous-control scenario. No score is injected.
   while(!report.overlapVerifiedAt&&Date.now()<deadline){
    const s=await client.read();assert.equal(s.phase,2,'A waiting player finished before simultaneous controls');
-   const v=s.state,dt=v.vx<0n?(40_000_000n-v.x)*1_000_000n/v.vx:0n;
-   let target=288_000_000n;
-   if(dt>0n){let y=v.y+v.vy*dt/1_000_000n-6_000_000n;const period=1_128_000_000n;y=((y%period)+period)%period;target=6_000_000n+(y>564_000_000n?period-y:y);}
-   const dir=v.left<target-8_000_000n?1:v.left>target+8_000_000n?-1:0;
-   if(dir!==v.leftDir){await client.move(dir);row.preparationMoves=(row.preparationMoves??0)+1;save();}
+   const dir=defenseDirection(s);
+   if(dir!==s.state.leftDir){await client.move(dir);row.preparationMoves=(row.preparationMoves??0)+1;save();}
    await Promise.race([allReady,wait(80)]);
   }
   await allReady;
@@ -238,7 +248,10 @@ try{
    const at=performance.now();await client.move(before.state.leftDir===1?-1:1);
    let after=await client.read();if(after.nonceA<=before.nonceA)after=await client.read(true);
    assert(after.nonceA>before.nonceA,'Direction must consume this human command nonce');
-   row.latencies.push(performance.now()-at);row.moves++;save();await wait(40);
+   const latency=performance.now()-at;
+   row.latencies.push(latency);
+   if(latency>200)(row.slowCommands??=[]).push({index:i,latency,stages:timings.filter(s=>s.startedAt+s.ms>=at).map(s=>({stage:s.stage,offset:s.startedAt-at,ms:s.ms}))});
+   row.moves++;save();await wait(40);
   }
   await client.move(0);row.controlsFinishedAt=new Date().toISOString();row.p95=[...row.latencies].sort((a:number,b:number)=>a-b)[94];save();
   // Let the real game reach its rule-based outcome; no injected score/concession.

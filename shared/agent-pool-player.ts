@@ -17,6 +17,7 @@ import {preparePoolActive} from './agent-pool-active';
 import {hubHasNoLease,hubLeaseValid} from './hub-lease';
 
 export const POOL_PLAYER_GAS=14_800_000n;
+export type PoolPlayerTiming={stage:'queue'|'fence'|'snapshot'|'send'|'receipt'|'observation';startedAt:number;ms:number};
 class UnsentFenceExpired extends Error {
  constructor(){super('Arena authorization is awaiting a fresh observation');}
 }
@@ -25,7 +26,7 @@ class UnsentFenceExpired extends Error {
  * Watching/recovering remains possible when admissions or authorization expire.
  * This client never chooses an agent, starts a game or transports financial calls. */
 export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,session:PoolFamilySession,
- options:{base:PublicClient;storage:PoolSessionStorage;socket:(url:string)=>any;now?:()=>number;onInput?:(input:{id:number;direction:-1|0|1;at:number;acceptedAt?:bigint})=>void;onReconciled?:(state:EngineState)=>void},runtime?:{node:PublicClient;feed:EngineFeed}){
+ options:{base:PublicClient;storage:PoolSessionStorage;socket:(url:string)=>any;now?:()=>number;onInput?:(input:{id:number;direction:-1|0|1;at:number;acceptedAt?:bigint})=>void;onReconciled?:(state:EngineState)=>void;onTiming?:(sample:PoolPlayerTiming)=>void},runtime?:{node:PublicClient;feed:EngineFeed}){
  const m=validateAgentPoolManifest(manifest),arena=m.arenas.find(a=>a.app.toLowerCase()===match.ref.app.toLowerCase()),player=session.grant.player;
  const abi=agentPoolArenaAbi(m),reusable=m.version>=4;
  if(!arena||match.node!==arena.node||!match.currentBinding||match.result||match.ref.chainId!==10143
@@ -57,7 +58,15 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  // older direction: doing so drops a release/reversal after a queued input.
  let acceptedDirection:-1|0|1|undefined;
  const listeners=new Set<()=>void>();
- const serial=<T>(work:()=>Promise<T>)=>{const p=lane.then(work,work);lane=p.catch(()=>{});return p;};
+ // Opt-in qualification diagnostics contain only durations. A reporter must
+ // never affect command ordering, permissions or uncertain nonce ownership.
+ const timing=(stage:PoolPlayerTiming['stage'],startedAt:number)=>{try{options.onTiming?.({stage,startedAt,ms:performance.now()-startedAt});}catch{}};
+ const timed=<T>(stage:PoolPlayerTiming['stage'],work:()=>Promise<T>):Promise<T>=>{
+  if(!options.onTiming)return work();const startedAt=performance.now();return work().finally(()=>timing(stage,startedAt));
+ };
+ const serial=<T>(work:()=>Promise<T>)=>{const startedAt=options.onTiming?performance.now():0;
+  const run=()=>{if(options.onTiming)timing('queue',startedAt);return work();};
+  const p=lane.then(run,run);lane=p.catch(()=>{});return p;};
  const verify=(s:EngineState)=>{if(s.id!==id||s.a.toLowerCase()!==match.a.toLowerCase()||s.b.toLowerCase()!==match.b.toLowerCase())throw Error('Arena state belongs to another match');return s;};
  const permissionPending=()=>{const p=journal.pending(session.grant.key);return p&&['renewActive','revokeActive'].includes(p.action)?p:undefined;};
  async function reconcilePermission(){
@@ -174,7 +183,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  }
  async function sendNow(name:'input'|'concede'|'confirmReady'|'heartbeat'|'resumeReady',args:ArenaArguments){
   if(stopped)throw Error('Arena controls have stopped');
-  await authorizeControls();
+  await timed('fence',authorizeControls);
   if(stopped)throw Error('Arena controls have stopped');
   let boundArgs:readonly unknown[]=[];
   const latestArgs=()=>{
@@ -185,7 +194,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   };
   try{
    let result;
-   try{result=await sender!.send(name,latestArgs);}
+   try{result=await timed('send',()=>sender!.send(name,latestArgs));}
    catch(error){
     // The nonce read/signature can outlive a valid fence. This typed exception
     // originates only before transport/journaling, so no transaction was sent.
@@ -193,7 +202,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
     // Missing receipts or any remote error still take normal reconciliation.
     if(!(error instanceof UnsentFenceExpired)||journal.pending(session.grant.key))throw error;
     await authorizeControls();
-    result=await sender!.send(name,latestArgs);
+    result=await timed('send',()=>sender!.send(name,latestArgs));
    }
    if(name==='input'){
     receivedInputTime=undefined;
@@ -203,7 +212,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
      if(event.eventName==='ControlQueued'&&event.args.id===id&&event.args.sequence===boundArgs[reusable?3:2])receivedInputTime=event.args.gameTime;
     }catch{}
    }
-   lastWriteAt=now();return verify(await feed.receipt(id,result,name,boundArgs,player));
+   lastWriteAt=now();return verify(await timed('receipt',()=>feed.receipt(id,result,name,boundArgs,player)));
   }
   catch(error){
    const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));
@@ -216,8 +225,8 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   moving=(async()=>{while(intention&&!stopped){
    const latest=intention;
    try{await serial(async()=>{
-    await authorizeControls();
-   const s=verify(await feed.forCommand(id));if(s.phase!==2){intention=undefined;return;}
+    await timed('fence',authorizeControls);
+   const s=verify(await timed('snapshot',()=>feed.forCommand(id)));if(s.phase!==2){intention=undefined;return;}
     if(stopped)throw Error('Arena controls have stopped');
     // Coalesce again after awaited recovery; never dispatch an obsolete intent.
     let selected=intention??latest;const side=s.a.toLowerCase()===player.toLowerCase()?0:1;
@@ -264,7 +273,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  return{
   player,journal,
   async launch(){await identify();return reusable?readArenaLaunch(node,arena.app,id,m.countdownClock):undefined;},
-  async read(force=false){await identify(force);return verify(await feed.read(id,force));},
+  read(force=false){return timed('observation',async()=>{await identify(force);return verify(await feed.read(id,force));});},
   watch(listener:(s:EngineState)=>void){const stop=feed.watch(id,s=>{try{if(!stopped&&verifiedAt&&now()-verifiedAt<10000)listener(verify(s));}catch{feed.invalidate();}});listeners.add(stop);return()=>{stop();listeners.delete(stop);};},
   controlsAvailable(){return !stopped&&!!sender&&now()<controlsUntil&&!journal.pending(session.grant.key);},
   async recover(){const s=await serial(recoverNow);if(s.phase===2)intention??={dir:0,id:++inputId,at:now()};if(intention)await pump();return s;},
@@ -300,8 +309,8 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   });},
   heartbeat(resume=false){return serial(async()=>{
    if(m.friendlyPause!=='heartbeat-v1')throw Error('This arena does not support friendly pauses');
-   await authorizeControls();
-   const state=verify(await feed.forCommand(id));
+   await timed('fence',authorizeControls);
+   const state=verify(await timed('snapshot',()=>feed.forCommand(id)));
    if(state.phase!==2||!state.sync?.pause.human)return state;
    // A working write channel alone must not let a blind player keep losing.
    // Require a recently received, identified state before renewing liveness.
