@@ -260,9 +260,11 @@ export function Court({
       ctx.fillText("0,0", 12, 20);
       ctx.fillText("1024 × 576", 912, 560);
       }
-      if(buffered&&s){
-        // The scoreboard and the effect countdowns belong to the frame on screen,
-        // not to the newest snapshot the buffer has yet to reach.
+      if((buffered||coherent)&&s){
+        // Both buffered spectators and coherent players report an actually
+        // painted frame. Player liveness must keep working after F5 and while
+        // paused; coherent rendering deliberately bypasses the spectator buffer.
+        // Score and effects follow this same displayed frame.
         const rally=`${s.scoreA}:${s.scoreB}:${s.finished}:${cp?.state.effects.map(e=>`${e.serial}:${e.remaining}`).join(',')??''}`;
         if(rally!==played||now-playedAt>=250){played=rally;playedAt=now;p.onPlayback({matchId:p.matchId,scoreA:s.scoreA,scoreB:s.scoreB,gameMs:Number(s.t)/1000,finished:s.finished,effects:cp?eventHud(cp.state):[]});}
       }

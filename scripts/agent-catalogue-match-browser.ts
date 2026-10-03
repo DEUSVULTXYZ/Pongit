@@ -5,6 +5,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
 import {decodeFunctionData,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
+import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
 import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
@@ -97,7 +98,25 @@ const savePrivate=async()=>writeFile(privatePath,JSON.stringify({storage:await c
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
 report.sockets=[];
 page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:new Date().toISOString(),messages:0,applied:0,schemas:{}};report.sockets.push(record);
- ws.on('framereceived',event=>{try{const p=JSON.parse(String(event.payload));record.messages++;if(p.params?.result){record.applied++;
+ const writes=new Map<string,{at:number;hash:string;action:string}>();
+ ws.on('framesent',event=>{try{
+  const p=JSON.parse(String(event.payload));if(p.method!=='interlude_sendTransaction')return;
+  const hash=keccak256(p.params[0]),tx=parseTransaction(p.params[0]);
+  const call=decodeFunctionData({abi:synchronized?synchronizedAgentArenaAbi:reusableAgentArenaAbi,data:tx.data!});
+  const at=performance.now();writes.set(String(p.id),{at,hash,action:call.functionName});submitted.set(hash,at);
+  if(call.functionName==='input')controls.set(hash,{direction:Number(call.args[2]),sequence:String(call.args[3])});
+ }catch{/* Decode only in memory; no signed data enters the report. */}});
+ ws.on('framereceived',event=>{try{const p=JSON.parse(String(event.payload));record.messages++;
+  const write=writes.get(String(p.id));if(write){
+   writes.delete(String(p.id));const ms=performance.now()-write.at;
+   report.submissions.push({at:new Date().toISOString(),action:write.action,ms,transport:'websocket',error:!!p.error,
+    ...(p.error?{rpcErrorCode:p.error.code,message:clean(p.error)}:{})});
+   const receipt=p.result;
+   if(receipt?.transactionHash?.toLowerCase()===write.hash.toLowerCase()&&!receipts.has(write.hash)){
+    receipts.add(write.hash);report.receipts.push({ms,sentAt:performance.timeOrigin+write.at,confirmedAt:performance.timeOrigin+performance.now(),status:receipt.status,...controls.get(write.hash)});
+   }
+  }
+  if(p.params?.result){record.applied++;
   const shape=JSON.stringify({method:p.method,keys:Object.keys(p.params.result),logKeys:Object.keys(p.params.result.logs?.[0]??{})});record.schemas[shape]=(record.schemas[shape]??0)+1;}}
  catch{/* Record shape only, never payload. */}});ws.on('close',()=>record.closedAt=new Date().toISOString());});
 const requests=new WeakMap<object,{at:string;method:string;path:string}>();
@@ -284,7 +303,9 @@ try{
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  assert.equal(report.errors.length,0);report.passed=true;
-}catch(e){report.error=clean(e);process.exitCode=1;await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
+}catch(e){report.error=clean(e);process.exitCode=1;
+ report.failureState=await page.evaluate(()=>({hidden:document.hidden,text:document.body.innerText.slice(-1600),controlsDisabled:document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled})).catch(()=>undefined);
+ await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
 finally{
  try{await savePrivate();}catch{report.passed=false;report.error??='Private browser recovery state could not be saved';process.exitCode=1;}
  report.finishedAt=new Date().toISOString();await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();
