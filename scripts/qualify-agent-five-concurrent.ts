@@ -37,7 +37,8 @@ assert(m.version===5&&!m.enabled&&!m.tournamentsEnabled&&m.pool===r.common.pool)
 const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
 const existingTournament=Number(process.env.PONG_FIVE_CONCURRENT_EXISTING??0);
 const inherited=continuation?Number(privateSyncQualification(process.env.PONG_PRIVATE_SYNC_CONTINUATION).tournaments):0;
-assert(existingTournament===0||continuation&&Number.isInteger(existingTournament)&&existingTournament>inherited&&existingTournament<=(inherited===2?4:8),'Only an independently driven private continuation tournament');
+const lastTournament=continuation?Number(privateSyncQualification(process.env.PONG_PRIVATE_SYNC_CONTINUATION).lastTournament):0;
+assert(existingTournament===0||continuation&&Number.isInteger(existingTournament)&&existingTournament>inherited&&existingTournament<=lastTournament,'Only an independently driven private continuation tournament');
 assert(!continuation||existingTournament>0,'Continuation must retain its existing tournament driver');
 const v3=process.env.PONG_FIVE_CONCURRENT_V3==='reviewed-private';
 assert(!process.env.PONG_FIVE_CONCURRENT_V3||v3);

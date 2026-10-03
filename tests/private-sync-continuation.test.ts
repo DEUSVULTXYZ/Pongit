@@ -23,3 +23,19 @@ test('second private continuation preserves its explicit source and cannot accep
   assert.throws(()=>privateSyncContinuation({...next,[field]:wrong},'private-sync-20261003'));
  }
 });
+
+test('queue candidate imports the completed optimized source and keeps earlier trial ranges fixed',()=>{
+ const scope='private-sync-queue-20261003',expected=privateSyncQualification(scope);
+ assert.equal(expected.results,168n);assert.equal(expected.tournaments,7n);assert.equal(expected.lastTournament,11n);
+ const next={...record(),prefix:expected.prefix,continuation:{pool:expected.pool},source:{manifest:{pool:expected.pool}}};
+ assert(privateSyncContinuation(next,scope));
+ assert.throws(()=>privateSyncContinuation(next,'private-sync-20261003'));
+ assert.throws(()=>privateSyncContinuation({...next,migrationPhase:'prepared-unimported'},scope));
+ assert.throws(()=>privateSyncContinuation({...next,prefix:'reusable-agents-20261003-1'},scope));
+ for(const field of ['continuation','source']){
+  const publicPool='0x205d5739136d6cb73d732e1146e1ce034798a613';
+  assert.throws(()=>privateSyncContinuation({...next,[field]:field==='source'?{manifest:{pool:publicPool}}:{pool:publicPool}},scope));
+ }
+ assert.equal(privateSyncQualification('private-sync-20261002').lastTournament,4n);
+ assert.equal(privateSyncQualification('private-sync-20261003').lastTournament,8n);
+});

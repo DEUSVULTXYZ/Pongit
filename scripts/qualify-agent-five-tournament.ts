@@ -30,8 +30,8 @@ const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 assert.equal(r.maxMatches,5);
 const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
 if(continuation){
- const inherited=privateSyncQualification(process.env.PONG_PRIVATE_SYNC_CONTINUATION).tournaments;
- assert(id>inherited&&id<= (inherited===2n?4n:8n),'Only the next reviewed private formats');
+ const {tournaments:inherited,lastTournament}=privateSyncQualification(process.env.PONG_PRIVATE_SYNC_CONTINUATION);
+ assert(id>inherited&&id<=lastTournament,'Only the next reviewed private formats');
 }else assert(id<=4n,'Fresh private season only');
 const v3=process.env.PONG_FIVE_TOURNAMENT_V3==='reviewed-private';
 assert(!process.env.PONG_FIVE_TOURNAMENT_V3||v3);

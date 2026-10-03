@@ -19,7 +19,7 @@ assert.equal(process.env.PONG_SEVEN_WAY,'read-only-private');
 const deadline=Date.parse(process.env.PONG_SEVEN_WAY_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<=Date.now()+20*60_000);
 const trial=process.env.PONG_SEVEN_WAY_RUN??'1';assert(['1','2','3','4'].includes(trial));
-const optimized=process.env.PONG_PRIVATE_SYNC_CONTINUATION==='private-sync-20261003';
+const optimized=['private-sync-20261003','private-sync-queue-20261003'].includes(process.env.PONG_PRIVATE_SYNC_CONTINUATION??'');
 assert(!process.env.PONG_PRIVATE_SYNC_CONTINUATION||optimized);
 const copyRun=optimized?process.env.PONG_SEVEN_WAY_COPY_RUN!:String(Number(trial)+3),humanRun=optimized?process.env.PONG_SEVEN_WAY_HUMAN_RUN!:trial;
 assert(/^[1-9]$/.test(copyRun)&&/^[1-9]$/.test(humanRun));

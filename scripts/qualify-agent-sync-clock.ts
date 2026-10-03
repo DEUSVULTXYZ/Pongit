@@ -15,7 +15,7 @@ const scope=process.env.PONG_PRIVATE_SYNC_CONTINUATION;
 const continuation=scope!==undefined;
 const expected=continuation?privateSyncQualification(scope):undefined;
 const tournament=Number(process.env.PONG_SYNC_CLOCK_TOURNAMENT);
-assert(expected?.tournaments===4n?[5,6,7,8].includes(tournament):continuation?[3,4].includes(tournament):[1,2].includes(tournament));
+assert(Number.isInteger(tournament)&&(expected?tournament>Number(expected.tournaments)&&tournament<=Number(expected.lastTournament):[1,2].includes(tournament)));
 const attempt=Number(process.env.PONG_SYNC_CLOCK_ATTEMPT??1);assert(Number.isInteger(attempt)&&attempt>=1&&attempt<=3);
 const m=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json','utf8')));
 assert(m.rulesVersion===16&&!m.enabled&&!m.tournamentsEnabled);
