@@ -54,7 +54,7 @@ Prepared, **not executed**, helper
 `/opt/pongit/tests/fluid-20260928/sync-queue-transition-20261003.py` has guarded
 `archive`, `verify <attempt>`, and `import <attempt> <backup>` operations. It requires
 the current release to pass and exit; archive owns only finality, not admissions.
-Verification requires all168 results and all114 fixtures in seven tournaments to
+Verification requires all168 results and all112 fixtures in seven tournaments to
 be final at one canonical block, resolving historical arenas at their original pools.
 Import requires that verification, stopped source archive and a fresh offVPS backup.
 It continues the prepared private namespace20261003-2 only. No public replacement.
