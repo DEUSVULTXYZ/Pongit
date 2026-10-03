@@ -1,5 +1,39 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 07:28 UTC — queue candidate hosted, first Chaos match live
+
+Private import completed07:18:13.837, exit0/noOOM. All78 namespace transactions
+(12 preparation plus66 import/configuration) were confirmed, with no pending or
+failed job. New pool **`0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d`** continues only
+private67a6. Canonical preservation **67767799 passes**:eight identities,16ratings,
+168results, seven tournaments,112fixtures and43requests; family and historical
+references also match. Public contracts, services and gates remain unchanged.
+
+Runtime preparation created private database `pong_sync_queue_20261003`; complete
+image7e3d2e5 is used without source overrides. Backup **`sync-20261003T0719Z`**,
+20files, is SHA-verified offVPS at07:20:48.428, manifest
+`c22b6b92610d041022d75b4d8c960d169d1fa6e2baf1e1dfb09703cbd72c3759`.
+Five actually owned openings passed07:24:03.748, all epoch1 at blocks67768768,
+67768780,67768796,67768811,67768826. Setup exited0. Four scoped roles received
+five testMON each through the original operator journal. No public allocation or
+provider-capacity change. These openings alone do not qualify concurrent capacity.
+
+Sole engines/archive: **`pongit-sync-queue-workers-20261003-engines-1`** and
+**`-archive-1`**, started07:25:06.823834, ORIGINAL deadline **13:25:06.823834 UTC**.
+No autonomous admission, opening or closure. Sole tournament driver:
+**`pongit-sync-queue-tournament-8-7e3d2e5`**, ORIGINAL deadline
+**10:24:57.077601 UTC**. It is a Chaos championship. Match169 on0f770 epoch1 was
+actually playing at07:27, with the other four arenas available after hosted
+state-changing publication checks. No friendly-copy/human/browser driver started.
+
+Read-only **`pongit-sync-queue-clock-8-1`** measures the isolated tournament first;
+original390second bound from07:26:21. Do not equate this with browser/GPU proof.
+After its report, the prepared bounded copies/seven-way helpers can exercise the
+same archetype beside the tournament and two private human matches. Respect their
+original bounds and the full worker-window guards. Backup0727 is being created;
+verify its offVPS copy before relying on it. Every prior failure remains retained.
+No final24h, public migration, complete-delivery or new funding claim.
+
 ## Checkpoint, 3 October 07:15 UTC — canonical source passed, private import running
 
 Source finality verification **passes at67766442**:168 final results, seven complete
