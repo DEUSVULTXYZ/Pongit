@@ -1,5 +1,56 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 09:05 UTC — launch-transition regression reproduced and fixed
+
+Production remains unchanged. Trial3 finished08:55:51.272, exit1, all four
+friendly results and the overlapping tournament result published/captured.
+Commands p95s208.39/215.35/215.94/212.93ms pass; protective pauses1/0/0/1 fail.
+Measured five-game overlap18.431seconds. No heartbeat exception. The two pauses
+were already observed before the100-control windows. `five-concurrent-3.json`
+remains failed; none of the previous failures is replaced.
+
+A separate launch mechanism is reproduced: `mergeEngineFrame` correctly requires
+the full header when entering play, but `EngineFeed` only invalidated its cache.
+The browser then waits up to500ms plus the read latency before seeing phase2,
+which can outlast the contract's initial500ms presence credit. The new baseline
+tests fail without the fix. `d1008a3` treats that matching launch notification as
+a hint to immediately read the authoritative header. It never synthesizes phase2.
+It joins an existing read, then makes at most one new read if still loading;
+duplicate notifications coalesce. Failures return to normal polling, and detached
+observers or unrelated/backwards frames do not start background reads. Full969
+TypeScript tests and root typecheck pass. This code is not yet hosted or public.
+
+`116ec10` adds bounded timing context at pause transitions to future private
+trials, without keys, grants or signed commands. Prepared helper
+`sync-queue-launch-copies-20261003.py` has NOT RUN. It requires T8 passed/exited,
+the separately started T9 driver, trial3 complete and all its results captured.
+It allows only run4, an original24-minute bound, at least25minutes remaining on
+the original workers/T9, and four exact source overrides fromd1008a3 over7e:
+player, feed, stream and the diagnostic harness. No engine/RPC override. Source
+bundle is `/opt/pongit/tests/fluid-20260928/sync-launch-d1008a3` with SHA manifest.
+
+The private archive role exhausted its initial gas reserve. Canonical block67786550
+showed0.142720118 test MON; operator118.9220546, publisher47495.461148021516479201.
+The authorized, journaled `1a18a73` operation transferred exactly20 test MON to
+existing archive0x06202a2165F820BfaeDA7efefa3b4C1F680997bF in block67786927,
+transaction0x7d6b8e5750a94a24e4c2a551f3b5ca62240ddbbb35f4a77169e28438c448e420.
+The original archive worker recovered its pending operations. Funding helper
+exited0 at08:55:10; do not repeat its transfer. No user funding request.
+
+T8 remains the sole tournament driver,25/28 resolved at09:03, original deadline
+10:24:57.077601. Engines/archive retain13:25:06.823834. No game/browser driver
+besides T8 remains. Do not extend bounds. T9–11 are not started. Source release,
+private continuation/import and five openings are complete, never repeat them.
+
+137 intermediate backup files,1,235,623,338bytes, were removed from VPS only after
+fresh offVPS hashes and all container mount/reference checks. Their bytes remain
+offVPS; manifests, receipts, latest0842, restore0543 and mounted0041 are preserved.
+Disk reached79.85percent at08:50:52; recheck before builds. Backup0905 is now being
+created/copied for completed trial3 and funding; do not call it verified yet.
+Browser4197 automatic approval rejection remains pending, no alternate startup.
+Clock97.2–97.6% remains failed; no public migration, reserve/rotation, browser/
+admission or unchanged24h pass is claimed.
+
 ## Checkpoint, 3 October 08:45 UTC — atomic control fence, third concurrent trial
 
 Production remains unchanged. Trial2 completed08:33:26.483, exit1: all four
