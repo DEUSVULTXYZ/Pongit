@@ -19,6 +19,7 @@ import {preparePoolChallenge} from '../shared/agent-pool-client';
 import {challengeRefFromReceipt} from '../shared/agent-challenge-receipt';
 import {admissionPasses} from '../shared/agent-pool-sponsor';
 import {createPoolPlayer,type PoolPlayerTiming} from '../shared/agent-pool-player';
+import {agentHeartbeatLoop} from '../shared/agent-heartbeat-loop';
 import {createPoolObserver} from '../shared/agent-pool-observer';
 import {validateAgentPoolManifest} from '../shared/agent-pool';
 import {AgentPoolReader,poolJson} from '../relayer/src/agents/pool-read';
@@ -75,21 +76,20 @@ function defenseDirection(state:Awaited<ReturnType<ReturnType<typeof createPoolP
  return v.left<target-8_000_000n?1:v.left>target+8_000_000n?-1:0;
 }
 function keepPresent(client:ReturnType<typeof createPoolPlayer>,row:any){
- let stopped=false;
- const loop=(async()=>{
-  while(!stopped&&Date.now()<deadline){
-   try{const state=await client.heartbeat(true);if(state.phase>=3){row.engineFinishedAt??=new Date().toISOString();save();return;}
-    // Continue real defensive inputs after the measured 100-command window.
-    // Leaving every paddle idle made this a loss-speed fixture and could end
-    // the five matches before independently admitted human matches began.
-    // Scores, duration and the final outcome remain entirely contractual.
-    if(row.controlsFinishedAt&&state.phase===2){const dir=defenseDirection(state);if(dir!==state.state.leftDir){await client.move(dir);row.followupMoves=(row.followupMoves??0)+1;}}
-   }
-   catch(e){row.heartbeatError=String((e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160);save();return;}
-   await wait(200);
-  }
- })();
- const stop=async()=>{stopped=true;await loop;};heartbeatStops.push(stop);return stop;
+ let stopped=false,moving:Promise<unknown>|undefined,latest:Awaited<ReturnType<typeof client.read>>|undefined;
+ const failed=(e:unknown)=>{stopped=true;row.heartbeatError=String((e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160);save();};
+ // Use exactly the browser's non-overlapping cadence, not RTT plus a 200ms sleep.
+ const loop=agentHeartbeatLoop(async()=>{
+  latest=await client.heartbeat(true);
+  if(latest.phase>=3){row.engineFinishedAt??=new Date().toISOString();stopped=true;save();}
+ },()=>!stopped&&Date.now()<deadline,failed);
+ // Defense after the measurement window cannot delay a liveness pulse.
+ const timer=setInterval(()=>{
+  if(stopped||moving||Date.now()>=deadline||!row.controlsFinishedAt||latest?.phase!==2||latest.sync?.pause.status!==1)return;
+  const dir=defenseDirection(latest);if(dir===latest.state.leftDir)return;
+  moving=client.move(dir).then(()=>{row.followupMoves=(row.followupMoves??0)+1;},failed).finally(()=>{moving=undefined;});
+ },120);
+ const stop=async()=>{stopped=true;clearInterval(timer);await loop.stop();await moving;};heartbeatStops.push(stop);return stop;
 }
 let tournamentObserver:Awaited<ReturnType<typeof createPoolObserver>>|undefined;
 let arrived=0,releaseReady!:()=>void,rejectReady!:(e:unknown)=>void;
@@ -243,16 +243,30 @@ try{
   const view=(await reader.match(row.ref)).value;assert(view.b.toLowerCase()===archetype.toLowerCase()&&view.a.toLowerCase()===row.player.toLowerCase()&&!view.ranked&&view.tournament==='0');
   const session=loadPoolFamily(m,row.player,storage)!;
   const timings:PoolPlayerTiming[]=[];
-  const client=createPoolPlayer(m,view,session,{base,storage,socket:u=>new WebSocket(u),onTiming:sample=>{timings.push(sample);if(timings.length>400)timings.shift();}});clients.push(client);client.watch(s=>{if(s.phase>=3&&!row.engineFinishedAt){row.engineFinishedAt=new Date().toISOString();save();}});
+  const client=createPoolPlayer(m,view,session,{base,storage,socket:u=>new WebSocket(u),onTiming:sample=>{timings.push(sample);if(timings.length>400)timings.shift();}});clients.push(client);
+  let presenceStarted=false,lastPause:number|undefined;
+  const observe=(s:Awaited<ReturnType<typeof client.read>>)=>{
+   if(s.phase===2){
+    row.playingAt??=new Date().toISOString();
+    if(synchronized&&!presenceStarted){presenceStarted=true;keepPresent(client,row);}
+    const pause=s.sync?.pause.status;
+    if(pause===2&&lastPause!==2)row.pauseTransitions=(row.pauseTransitions??0)+1;
+    lastPause=pause;
+   }
+   if(s.phase>=3&&!row.engineFinishedAt)row.engineFinishedAt=new Date().toISOString();
+   save();
+  };
+  client.watch(observe);
   let recovered=false;
   while(Date.now()<deadline){
    try{const s=recovered?await client.read():await client.recover();recovered=true;
-    if(s.phase===1)await client.ready();else if(s.phase===2){row.playingAt=new Date().toISOString();save();break;}else if(s.phase>=3)throw Error('Game ended before controls');
+    observe(s);
+    if(s.phase===1){const ready=await client.ready();observe(ready);if(ready.phase===2)break;}
+    else if(s.phase===2)break;else if(s.phase>=3)throw Error('Game ended before controls');
    }catch(e){row.lastRecovery=String((e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,160);save();if(row.lastRecovery==='Game ended before controls')throw e;recovered=false;}
    await wait(400);
   }
   assert(row.playingAt,'Original readiness deadline');
-  if(synchronized)keepPresent(client,row);
   if(++arrived===4){
    const states=await Promise.all([...clients.map(c=>c.read(true)),tournamentObserver!.read(true)]);
    assert(states.every(s=>s.phase===2),'Five games must actually overlap on the hosted engines');
@@ -297,8 +311,10 @@ try{
  }
  assert(report.result&&report.people.every((p:any)=>p.result),'Original publication deadline');
  assert(report.people.every((p:any)=>!p.heartbeatError),'An independent player heartbeat failed');
- report.functionalPassed=true;report.latencyPassed=report.people.every((p:any)=>p.p95<=300);report.passed=report.functionalPassed&&report.latencyPassed;
- if(!report.passed){report.error='Actual player command p95 exceeds 300 ms';process.exitCode=1;}
+ report.functionalPassed=true;report.latencyPassed=report.people.every((p:any)=>p.p95<=300);
+ report.livenessPassed=report.people.every((p:any)=>!(p.pauseTransitions??0));
+ report.passed=report.functionalPassed&&report.latencyPassed&&report.livenessPassed;
+ if(!report.passed){report.error=report.livenessPassed?'Actual player command p95 exceeds 300 ms':'Unplanned protective pause during normal concurrent controls';process.exitCode=1;}
 }catch(e){rejectReady(e);await Promise.allSettled(playingTasks);report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);
  report.failure={names:[],codes:[],location:String((e as Error)?.stack??'').split('\n').find(line=>line.trim().startsWith('at '))?.trim()};
  for(let cause:any=e,n=0;cause&&n<8;cause=cause.cause,n++){if(typeof cause.name==='string')report.failure.names.push(cause.name);if(typeof cause.code==='number')report.failure.codes.push(cause.code);}
