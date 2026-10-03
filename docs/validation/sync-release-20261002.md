@@ -1,5 +1,50 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 10:17 UTC — third format passes; final championship running
+
+Production remains unchanged. T10 attempt2 finished **PASS7/7** at10:13:25.705,
+exit0/no OOM10:13:27.04677924. Both gates closed. Its original deadline was not
+extended. T10 attempt1 remains failed; its report and the retry final report
+are copied together in `artifacts/sync-queue-final-1014/` alongside T9.
+
+The sole current game driver is **`pongit-sync-queue-tournament-11-9573a35`**,
+started10:13:57.160361706, original deadline **13:12:56.115631 UTC**. It runs the
+Classic championship, with one fixture active at10:16. Engines/archive retain
+their original **13:25:06.823834** bound and7e3d2e5/tick300 runtime. The driver
+mounts only the SHA-recorded9573a35 intermission fix. No friendly, human or browser
+driver. Never duplicate writers, extend bounds or replace an active engine for
+the new physics optimization.
+
+Published4661dc3 prepares the eventual private recovery, **not run**. Shared
+`privateSyncCompleted` binds the exact d8bc pool and namespace, and requires
+254 results,11 completed books, copies4 and T8/T9/T10attempt2/T11 passing reports
+before normal closure. These counts are requirements, not current observations.
+Four scope tests and root TypeScript pass. The normal release keeps hosted and
+Monad roots equal, all five lanes idle and all engine jobs resolved. Public
+pools and the failed T10attempt1 report cannot authorize this operation. Source
+finality verification uses the same exact recovery scope. A new private
+continuation has not been prepared/imported/opened from d8bc.
+
+The reproducible4661dc3 runtime image built10:15:30–10:16:28 at79.922percent usable
+disk, digest `sha256:cde504551cc44d5e4ff61b73c2a39c27515098fe98bb996f7d00b1937596a835`.
+Its audit passed at10:17:45:646 Git source hashes match and104 networkless tests pass (exit0, no OOM). This image
+includes the lower-gas kernel source and recovery tooling but is not deployed;
+exact compiled contract artifacts are mounted separately for actual deployment.
+
+20 intermediate0915 backup files,183766289bytes, and two obsolete source upload
+archives,106424320bytes, were offloaded after fresh offVPS SHA checks and all
+container mount/reference checks. Every byte remains offVPS; latest0955, restore
+0543, mounted0041, manifests, stopped containers and old images remain intact.
+Backup1017 is being created; do not call it verified until its receipt exists.
+Latest verified0955 manifest remains
+`be3130eff8ee0a9d25d62cd917abca4a5c0065260ef650c0cd0d45610cdf6e10`.
+
+Read `sync-acceptance-20261003.md` for the explicit remaining gates. Browser4197
+approval rejection remains unresolved; no alternate launch. Clock97.2–97.6%
+remains failed pending hosted new-kernel evidence. Reserve/rotation, public
+migration, finance/replays and unchanged24h remain incomplete. No funding request,
+no public transaction and no completed-delivery claim.
+
 ## Checkpoint, 3 October 10:02 UTC — contact-search optimization validated privately
 
 Production and hosted workers remain unchanged. The ChaosVelocity extraction
