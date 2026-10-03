@@ -11,13 +11,16 @@ import {agentCatalogAbi as catalogAbi} from '../shared/abi-AgentCatalog';
 import {agentChallengesAbi as queueAbi} from '../shared/abi-AgentChallenges';
 import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerifier';
 import {readHubDelegation} from '../shared/rooms-hub';
-import {PRIVATE_SYNC_PREDECESSOR} from './private-sync-continuation';
+import {PRIVATE_SYNC_PREDECESSOR,privateSyncContinuation} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_SYNC_SOURCE_VERIFY,'read-only-private');
 const r=JSON.parse(await readFile('/metadata/reusable.json','utf8'));
-assert.equal(r.common.pool.toLowerCase(),PRIVATE_SYNC_PREDECESSOR);
+const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
+const expectedPool=continuation?'0xdee98e3f7a0f0049244a8257a9cde304d909e5dc':PRIVATE_SYNC_PREDECESSOR;
+const expectedResults=continuation?110n:34n,expectedTournaments=continuation?4n:2n;
+assert.equal(r.common.pool.toLowerCase(),expectedPool);
 const release=JSON.parse(await readFile('/evidence/sync-release-1.json','utf8'));
-assert(release.passed&&release.arenas.length===5&&release.pool.toLowerCase()===PRIVATE_SYNC_PREDECESSOR);
+assert(release.passed&&release.arenas.length===5&&release.pool.toLowerCase()===expectedPool);
 const output=process.env.PONG_SYNC_SOURCE_REPORT??'/evidence/sync-source-final.json';
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:8000})});
 assert.equal(await base.getChainId(),10143);
@@ -35,22 +38,27 @@ try{
   const root=await read(r.common.verifier,verifierAbi,'finalizedRoots',[row.app,BigInt(row.epoch)]);
   assert.equal(root[0],row.root[2]);assert.equal(String(root[1]),String(row.root[1]));report.arenas.push({app:row.app,epoch:String(d.epoch),root});
  }
- assert.equal(await read(r.common.pool,poolAbi,'nonce'),34n);
- assert.equal(await read(r.common.ratings,ratingsAbi,'count'),34n);
+ assert.equal(await read(r.common.pool,poolAbi,'nonce'),expectedResults);
+ assert.equal(await read(r.common.ratings,ratingsAbi,'count'),expectedResults);
  assert.equal(await read(r.common.ratings,ratingsAbi,'buildGeneration'),0n);
- const [entries,total]=await read(r.common.ratings,ratingsAbi,'resultPage',[0n,50n]);
- assert.equal(total,34n);assert.equal(entries.length,34);assert(entries.every((e:any)=>e.finality),'Source result finality is still reconciling');
+ let seen=0;
+ for(let offset=0n;offset<expectedResults;offset+=50n){
+  const [entries,total]=await read(r.common.ratings,ratingsAbi,'resultPage',[offset,50n]);
+  assert.equal(total,expectedResults);assert.equal(entries.length,Number(expectedResults-offset>50n?50n:expectedResults-offset));
+  assert(entries.every((e:any)=>e.finality),'Source result finality is still reconciling');seen+=entries.length;
+ }
+ assert.equal(seen,Number(expectedResults));report.results=seen;
  assert.equal(await read(r.common.catalog,catalogAbi,'count'),8n);
  for(const bot of r.bots){
   assert.equal((await read(r.common.catalog,catalogAbi,'identity',[bot.agent])).qualified,3);
   assert.equal(BigInt(await read(r.common.catalog,catalogAbi,'participation',[bot.agent])),0n);
   for(let mode=0;mode<2;mode++)report.ratings.push({agent:bot.agent,mode,value:await read(r.common.ratings,ratingsAbi,'ratingOf',[bot.agent,mode])});
  }
- assert.equal(await read(r.common.tournaments,bookAbi,'count'),2n);
- for(let id=1n;id<=2n;id++){
+ assert.equal(await read(r.common.tournaments,bookAbi,'count'),expectedTournaments);
+ for(let id=1n;id<=expectedTournaments;id++){
   const tournament=await read(r.common.tournaments,bookAbi,'tournament',[id]);assert.equal(tournament.status,3);
   const fixtures=[];
-  for(let i=0;i<7;i++){
+  for(let i=0;i<(tournament.league?28:7);i++){
    const f=await read(r.common.tournaments,bookAbi,'fixture',[id,i]);assert(f.bound&&f.resolved&&f.published.finality,'Tournament finality is still reconciling');
    const result=await read(r.common.pool,poolAbi,'result',[f.ref]);assert(result.finality&&result.hash===f.published.hash);
    fixtures.push({index:i,ref:f.ref,hash:result.hash,score:[result.scoreA,result.scoreB]});
