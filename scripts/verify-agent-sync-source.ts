@@ -11,15 +11,12 @@ import {agentCatalogAbi as catalogAbi} from '../shared/abi-AgentCatalog';
 import {agentChallengesAbi as queueAbi} from '../shared/abi-AgentChallenges';
 import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerifier';
 import {readHubDelegation} from '../shared/rooms-hub';
-import {PRIVATE_SYNC_PREDECESSOR,privateSyncContinuation} from './private-sync-continuation';
+import {privateSyncCompleted} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_SYNC_SOURCE_VERIFY,'read-only-private');
 const r=JSON.parse(await readFile('/metadata/reusable.json','utf8'));
-const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
-const optimized=process.env.PONG_PRIVATE_SYNC_CONTINUATION==='private-sync-20261003';
-const expectedPool=optimized?'0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca':continuation?'0xdee98e3f7a0f0049244a8257a9cde304d909e5dc':PRIVATE_SYNC_PREDECESSOR;
-const expectedResults=optimized?168n:continuation?110n:34n,expectedTournaments=optimized?7n:continuation?4n:2n;
-assert.equal(r.common.pool.toLowerCase(),expectedPool);
+const completed=privateSyncCompleted(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
+const expectedPool=completed.pool,expectedResults=completed.results,expectedTournaments=completed.tournaments;
 // A continuation inherits tournament references, not the predecessor's physical
 // result storage. Resolve each immutable arena to its original pool.
 const origins=[{pool:r.common.pool,arenas:r.arenas},...(r.source?.manifest?[r.source.manifest,...(r.source.manifest.history??[])]:[])];

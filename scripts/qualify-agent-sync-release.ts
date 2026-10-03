@@ -14,26 +14,24 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {engineTransport} from '../shared/engine-transport';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
-import {privateSyncContinuation} from './private-sync-continuation';
+import {privateSyncCompleted} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_SYNC_RELEASE,'finished-private-only');
 assert.equal(process.getuid?.(),1000);
 const deadline=Date.parse(process.env.PONG_SYNC_RELEASE_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<Date.now()+80*60000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
-const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
-const optimized=process.env.PONG_PRIVATE_SYNC_CONTINUATION==='private-sync-20261003';
+const completed=privateSyncCompleted(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
 assert(r.maxMatches===5&&r.rulesVersion===16);
-assert.equal(r.common.pool.toLowerCase(),optimized?'0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca':continuation?'0xdee98e3f7a0f0049244a8257a9cde304d909e5dc':'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8');
 assert.equal(r.arenas.length,5);
-// The optimized source completed three additional formats. Its fourth format
-// remains unqualified; releasing idle epochs does not claim that gate passed.
-for(const name of optimized?['five-concurrent-6.json','five-tournament-5.json','five-tournament-6.json','five-tournament-7.json']:continuation?['five-concurrent-6.json','five-tournament-3.json','five-tournament-4.json']:['five-concurrent-1.json','five-tournament-1.json','five-tournament-2.json']){
+// Each private season has a fixed required proof set. Historical partial trials
+// retain their original scope; the queue candidate requires all four formats.
+for(const name of completed.proofs){
  const proof=JSON.parse(await readFile('/evidence/'+name,'utf8'));
  assert(proof.passed&&proof.finishedAt&&proof.pool.toLowerCase()===r.common.pool.toLowerCase());
 }
 const backup=JSON.parse(await readFile('/backup/off-vps.json','utf8'));
-assert(backup.verified&&backup.files===(optimized?19:continuation?16:7));
+assert(backup.verified&&backup.files===completed.backupFiles);
 const file='/evidence/sync-release-1.json';
 const report:any={startedAt:new Date().toISOString(),deadline,pool:r.common.pool,backup,arenas:[],passed:false,
  scope:'Normal closure, release and exact-root sealing of five completed private rules-16 arenas. No forced closure, opening, public mutation or final release claim.'};
@@ -49,7 +47,8 @@ try{
  assert.equal(await read(r.common.tournaments,bookAbi,'admissions'),false);
  assert.equal(await read(r.common.challenges,queueAbi,'admissions'),false);
  const count=await read(r.common.tournaments,bookAbi,'count');
- assert.equal(count,optimized?7n:continuation?4n:2n);
+ assert.equal(count,completed.tournaments);
+ assert.equal(await read(r.common.pool,poolAbi,'nonce'),completed.results);
  assert.equal((await read(r.common.tournaments,bookAbi,'tournament',[count])).status,3,'Finish the tournament before private recovery');
  for(let lane=0;lane<5;lane++)assert.equal((await read(r.common.pool,poolAbi,'laneRecord',[lane])).ref.id,0n);
  assert.equal((await db.query("SELECT count(*)::int AS n FROM agent_pool.engine_jobs WHERE status='pending'")).rows[0].n,0);
