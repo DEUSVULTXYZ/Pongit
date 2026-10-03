@@ -1,6 +1,4 @@
-<Callout title="Testnet preview">
-Agent Arcade is opening as a public testnet preview with eight bots and automatic tournaments. The final continuous 24-hour trial and full tournament qualification are still incomplete. Results and arena renewal can take longer, and requests may wait for an available arena. There are no entry fees, bets or prizes.
-</Callout>
+Agent Arcade has eight reusable bot archetypes and automatic tournaments. The catalogue shows which modes and arena places are ready. The API exposes the current deployment and its measured qualification separately.
 
 ## Choose your opponent
 
@@ -8,16 +6,16 @@ Agent Arcade is opening as a public testnet preview with eight bots and automati
 
 **PONGIT BOT** is an official identity verified by the contract registry. A similar username or avatar does not confer that status. **ON-CHAIN STRATEGY** is a community developer's registered contract. Its creator, modes, qualification and availability are public. Externally hosted community controllers are disabled in this release.
 
-| House bot | Style | Behaviour |
+| House bot | Difficulty | Behaviour |
 | --- | --- | --- |
-| NOVA | Rookie | Slower reactions and larger placement errors |
-| PULSE | Arcade | Balanced reactions and accuracy |
-| ONYX | Expert | Faster, more precise positioning |
-| VECTOR | Wall reader | Anticipates reflected trajectories |
-| DRIFT | Mobile defender | Repositions more actively |
-| ECHO | Adaptive | Uses recently observed trajectories |
-| GLITCH | Unpredictable aim | Deterministic variations in placement |
-| VIPER | Edge chaser | Seeks off-centre returns |
+| NOVA | Rookie · 1/8 | Slow reactions and frequent placement errors |
+| GLITCH | Easy · 2/8 | Varied aim with frequent deliberate errors |
+| DRIFT | Casual · 3/8 | Mobile defence with forgiving mistakes |
+| PULSE | Arcade · 4/8 | Balanced reactions and accuracy |
+| ECHO | Skilled · 5/8 | Adapts to recently observed trajectories |
+| VECTOR | Advanced · 6/8 | Anticipates reflected trajectories |
+| VIPER | Hard · 7/8 | Seeks off-centre returns with few mistakes |
+| ONYX | Expert · 8/8 | Fast reactions and the fewest placement errors |
 
 Controllers use public game state and cannot read future Chaos draws. They do not call a language model for each movement. Tournament learning follows the tournament rather than resetting whenever an arena renews its delegation.
 
@@ -25,9 +23,11 @@ Controllers use public game state and cannot read future Chaos draws. They do no
 
 Choose **Classic** or **Chaos**, then an agent's challenge button, such as **Challenge NOVA**. Connection preserves this choice. The first approval authorizes the agent arena family for two hours without changing your Mera address or granting spending permissions.
 
-Submitting a challenge expresses your agreement to that friendly match. The strategy supplies the other participant; there is no second two-human acceptance screen. A busy agent finishes its current participation first. A tournament participant becomes available after leaving that tournament. **Cancel challenge** removes a waiting request. **Concede match**, in **Tools**, ends a started game.
+Submitting a challenge expresses your agreement to that friendly match. The strategy supplies the other participant; there is no second two-human acceptance screen. Each house-bot challenge has its own controller and game state. NOVA's tournament identity can play while independent NOVA instances face up to four humans. A tournament does not reserve the archetype. Community strategies retain exclusive participation and may need to finish their current activity. **Cancel challenge** removes a waiting request. **Concede match**, in **Tools**, ends a started game.
 
 If no suitable arena is ready, the request waits. Agent traffic never borrows a human arena. F5 in the same tab restores an unexpired limited session and reconciles pending commands. A connection failure alone should not require another passkey ceremony.
+
+Rules 16 friendly matches use a confirmed player heartbeat. When its credit expires, authoritative game time and scoring pause. Resume waits for a new confirmed readiness command. The local warm-up is separate and never creates a ranked result.
 
 ## Match rules
 
@@ -42,6 +42,8 @@ Human challenges are friendly and never change human ELO. Agents have separate C
 **Tournaments** shows the bracket or standings, current match, upcoming fixtures and previous results. The order is elimination Classic, elimination Chaos, championship Classic, championship Chaos, with a one-minute interval after completion.
 
 Each tournament selects eight available, qualified participants. Those who waited longest since their previous tournament have priority; addresses break ties. Official bots fill available places. Contracts lock participants across both modes and freeze strategy versions. A challenge cannot interrupt a fixture or take an agent out of its tournament.
+
+A tournament interrupted during an explicit deployment recovery keeps its published fixtures, scores and earlier attempts. Unplayed fixtures remain unplayed; no champion or extra ELO is invented. The next tournament continues the existing numbering and format cycle.
 
 **Elimination** has quarter-finals, semi-finals and a final. A tie after five minutes enters sudden death for at most one minute. If neither player scores, the higher initial ELO advances; equal ELO uses address order. This is labelled administrative advancement and gives no ELO.
 
