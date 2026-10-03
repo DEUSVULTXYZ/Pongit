@@ -1,5 +1,64 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 02:45 UTC — optimized private play and preservation
+
+Production remains unchanged. The private import completed successfully.
+Pool **0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca**, namespace
+`reusable-agents-20261003-1`, is a continuation of private dee98, never of the
+public season. Preservation passes at canonical block 67709111: eight identities,
+16 ratings, 110 results, four tournaments, 70 fixtures and 26 challenge records.
+Family and historical references match. All five arenas opened in epoch 1 using
+the five actually released source slots; public manifest gates remain false.
+
+The new engine/archive workers `pongit-sync-optimized-workers-20261003-engines-1`
+and `-archive-1` started at 02:29:45, with original **08:29:45.123254 UTC** bound.
+Only tournament driver `pongit-sync-optimized-tournament-5-671f6fb` owns tournament
+admissions; original deadline **03:35:19.751215 UTC**. The read-only Classic clock
+trial passed over 236,942.96 ms of rally time, ratio **0.98673537**. It does not
+prove browser paint, input latency, Chaos clock or 24-hour availability.
+
+Arena 8cf initially exposed only IPv6 through the VPS resolver; this VPS could
+not reach that address. A public DNS read then returned its actual IPv4 and a
+strict-TLS read verified the expected app/epoch/chain. The system resolver caught
+up and the existing worker verified publication before marking it available.
+No DNS override, repeated creation, session reset or provider change was made.
+The other four arenas remained operational. Preserve the failed alternate-edge
+read, which did not qualify connectivity. See `hosted-dns-read-{1,2}.json`.
+
+Concurrent trial 1 failed before admitting any human challenge: a live snapshot
+read raced the new tournament reservation and returned `RPC Request failed.`.
+All four family authorizations and the queue closure are confirmed; no pending
+operator nonce or previous friendly match remains. The failure stays recorded.
+Qualification fix `c71dd51` waits for a recent matching-epoch, matching-ID hosted
+playing observation before probing the candidate fixture, and records safe error
+classes/locations. Typecheck and secret/diff checks pass. This is a harness fix,
+not a passing gameplay proof. Fresh driver
+`pongit-sync-optimized-concurrent-2-c71dd51` started at 02:44:16, original deadline
+**03:08:16.733475 UTC**. Do not start a third driver or extend that bound.
+
+The private human service `pongit-sync-seven-human-20261003-service-1` and its
+existing-epoch admission helper `pongit-sync-seven-human-admission-d285aa9` are
+running, bounded respectively to **03:30:31.524561** and **03:15:31.524561 UTC**.
+No human game-5 or seven-way observer has started yet. After copy trial 2 adopts
+a young tournament fixture and at least two actual friendly references, the
+prepared helpers can start `game copy-2` and `seven copy-2`; never duplicate them.
+
+The two-season private index caught up to block 67708970. All 110 indexed results
+and latest-three retention pass; all 40 retained replay recordings match canonical
+scores/hashes and decode correctly. Its new indexer/Hasura/proof containers are
+stopped. This is not browser replay proof. Reports are under
+`sync-index-277438f/final-proof-20261003`. Backup `sync-20261003T0227Z` has eighteen
+files verified off VPS, manifest
+`7a279ad02e62cc1c88d3125932f84d70e76aab2c15e371035245cccaba82f7ae`.
+It includes imported contracts/keys but predates later openings and trials.
+
+Fresh public inventory at block 67708115 confirms unfinished tournament 23
+(17/28 resolved, 15 final) and non-final historical fixtures in tournament 9.
+Eight competitive identities remain reserved. No implicit cancellation, private
+history substitution or unreviewed public migration. Browser startup approval,
+actual admission/render targets, Chaos clock, seven-game overlap, reserve/rotation,
+public continuity and final unchanged 24-hour trial remain unresolved.
+
 ## Checkpoint, 3 October 02:16 UTC — private source released and finalized
 
 Production is unchanged. The sole normal release worker completed at
