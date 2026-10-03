@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {privateSyncContinuation,privateSyncQualification,privateSyncCompleted,assertPrivateSyncBackup,PRIVATE_SYNC_PREDECESSOR} from '../scripts/private-sync-continuation';
+import {privateSyncContinuation,privateSyncQualification,privateSyncCompleted,privateSyncRotation,assertPrivateSyncBackup,PRIVATE_SYNC_PREDECESSOR} from '../scripts/private-sync-continuation';
 function record(){return {prefix:'reusable-agents-20261002-2',continuation:{pool:PRIVATE_SYNC_PREDECESSOR},source:{manifest:{pool:PRIVATE_SYNC_PREDECESSOR}},migrationPhase:'imported-closed',rulesVersion:16,friendlyPause:'heartbeat-v1',maxMatches:5,common:{pool:'0x1234567890123456789012345678901234567890'}};}
 test('private continuation requires its exact source, namespace and completed import',()=>{
  assert.equal(privateSyncContinuation({},undefined),false);
@@ -22,6 +22,28 @@ test('lower-gas continuation is restricted to the completed queue season and eig
  assert.throws(()=>privateSyncContinuation(next,'private-sync-queue-20261003'));
  assert.throws(()=>privateSyncContinuation({...next,source:{manifest:{pool:'0x205d5739136d6cb73d732e1146e1ce034798a613'}}},scope));
  assert.throws(()=>privateSyncCompleted(next,scope),'Preparing a new trial never authorizes its future closure');
+});
+
+test('rotation cannot select a public, unimported or duplicate-arena deployment',()=>{
+ const scope='private-sync-velocity-20261003',expected=privateSyncQualification(scope);
+ const candidate={...record(),phase:'deployed-closed',prefix:expected.prefix,arenaCount:8,continuation:{pool:expected.pool},source:{manifest:{pool:expected.pool}},
+  common:{...record().common,catalog:'0x0fe9230687fbc6f9f8139e0f86699bac8fb8c7d4'},
+  arenas:Array.from({length:8},(_,i)=>({app:`0x${String(i+1).padStart(40,'0')}`,runtimeHash:`0x${'ab'.repeat(32)}`}))};
+ const plan=privateSyncRotation(candidate,scope);assert.equal(plan.source,candidate.arenas[0]);assert.equal(plan.spare,candidate.arenas[5]);
+ for(const patch of [{phase:'prepared-unimported'},{prefix:'public'},{arenas:candidate.arenas.slice(0,5)},
+  {arenas:[...candidate.arenas.slice(0,7),candidate.arenas[0]]},{common:{...candidate.common,catalog:'0x1111111111111111111111111111111111111111'}}])
+  assert.throws(()=>privateSyncRotation({...candidate,...patch},scope));
+ assert.throws(()=>privateSyncRotation(candidate,'private-sync-queue-20261003'));
+ assert.throws(()=>privateSyncRotation(candidate,undefined));
+});
+
+test('rotation backup binds the new namespace rather than its predecessor database',()=>{
+ const names=['operator.dump','runtime.tar.gz','sync-velocity-continuation.dump','sync-velocity-continuation.tar.gz'];
+ const check=(list:string[])=>{
+  const bytes=Buffer.from(JSON.stringify({files:list.map(name=>({name,size:1,sha256:'a'.repeat(64)}))}));
+  assertPrivateSyncBackup({verified:true,files:list.length,manifestSha256:createHash('sha256').update(bytes).digest('hex')},bytes,'private-sync-velocity-20261003',4);
+ };
+ check(names);assert.throws(()=>check(names.map(n=>n.replace('velocity','queue'))));
 });
 
 test('recovery backup permits extra namespaces only with the bound manifest and required source files',()=>{

@@ -43,6 +43,20 @@ export function privateSyncCompleted(record:any,scope:string|undefined){
  return plan;
 }
 
+/** Only the prepared, privately continued eight-arena deployment may exercise
+ * the new hub's spare rotation. This is not permission to close a public arena
+ * or a match, and does not certify continuous capacity. */
+export function privateSyncRotation(record:any,scope:string|undefined){
+ assert.equal(scope,'private-sync-velocity-20261003');
+ assert(privateSyncContinuation(record,scope));
+ assert.equal(record.phase,'deployed-closed');
+ assert.equal(record.common.catalog.toLowerCase(),'0x0fe9230687fbc6f9f8139e0f86699bac8fb8c7d4');
+ assert.equal(record.arenas.length,8);
+ assert.equal(new Set(record.arenas.map((a:any)=>a.app.toLowerCase())).size,8);
+ assert(record.arenas.every((a:any)=>/^0x[0-9a-f]{40}$/i.test(a.app)&&/^0x[0-9a-f]{64}$/i.test(a.runtimeHash)));
+ return {source:record.arenas[0],spare:record.arenas[5]};
+}
+
 /** Additional backed-up namespaces must not invalidate an otherwise complete
  * recovery backup. Bind the receipt to its exact manifest and require the
  * original operator journal plus the precise source database and runtime. */
@@ -56,7 +70,8 @@ export function assertPrivateSyncBackup(receipt:any,bytes:Uint8Array,scope:strin
   assert(typeof row.name==='string'&&/^[a-z0-9][a-z0-9.-]*$/.test(row.name)&&!names.has(row.name));
   assert(Number.isSafeInteger(row.size)&&row.size>0&&/^[a-f0-9]{64}$/.test(row.sha256));names.add(row.name);
  }
- const source=scope==='private-sync-queue-20261003'?'sync-queue-continuation'
+ const source=scope==='private-sync-velocity-20261003'?'sync-velocity-continuation'
+  :scope==='private-sync-queue-20261003'?'sync-queue-continuation'
   :scope==='private-sync-20261003'?'sync-optimized-continuation'
   :scope==='private-sync-20261002'?'sync-continuation':'sync-private';
  for(const name of ['operator.dump','runtime.tar.gz',source+'.dump',source+'.tar.gz'])assert(names.has(name),`Required backup missing: ${name}`);
