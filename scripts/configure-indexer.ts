@@ -78,14 +78,23 @@ try{
  chaosBindings[address]=binding;
  config+=`      - name: AgentArchive\n        address: "${agents.archive}"\n        start_block: ${start(agents.archiveStartBlock)}\n`;
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+const seriesGroups=new Map<string,{addresses:string[];startBlock:bigint}>();
 for(const [file,rules] of [['agent-series-index.json',11],['agent-reusable-index.json',15]] as const)try{
  const raw=JSON.parse(await readFile('deployments/'+file,'utf8'));
  for(const series of agentIndexDeployments(raw,d.chainId,rules)){
   const emitter=series.pool;if(chaosBindings[emitter])throw Error('Conflicting series archive emitter');
   chaosBindings[emitter]={apps:series.arenas,rulesVersion:series.rulesVersion};
-  config+=`      - name: ${series.archiveContract??'AgentSeriesArchive'}\n        address: "${series.pool}"\n        start_block: ${start(series.startBlock)}\n`;
+  // Envio keys chain bindings by name. Repeating the alias discards an older
+  // emitter. One address list retains all seasons, starting at the earliest
+  // deployment; the per-emitter binding above still selects immutable rules.
+  const name=series.archiveContract??'AgentSeriesArchive',block=BigInt(start(series.startBlock));
+  const group=seriesGroups.get(name);
+  if(group){group.addresses.push(emitter);if(block<group.startBlock)group.startBlock=block;}
+  else seriesGroups.set(name,{addresses:[emitter],startBlock:block});
  }
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+for(const [name,group] of seriesGroups)
+ config+=`      - name: ${name}\n        address: ${JSON.stringify(group.addresses.length===1?group.addresses[0]:group.addresses)}\n        start_block: ${group.startBlock}\n`;
 // Keep the reviewed, hash-checked runtime patch inside the reproducible image.
 // Configuration already generates this build directory; no secret is copied.
 await copyFile('ops/pin-envio-rpc-concurrency.mjs','indexer/pin-envio-rpc-concurrency.mjs');

@@ -4,14 +4,16 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {Pool} from 'pg';
 import {createPublicClient,http,type Address} from 'viem';
 import {monadTestnet} from 'viem/chains';
-import {privateSyncContinuation} from './private-sync-continuation';
+import {privateSyncHistory,privateSyncIndexDatabase} from './private-sync-history';
+import {privateSyncQualification} from './private-sync-continuation';
 import {canonicalContractReads} from '../shared/canonical-contract-reads';
 import {reusableAgentPoolAbi as poolAbi} from '../shared/abi-ReusableAgentPool';
 import {agentPublishedRatingsAbi as ratingsAbi} from '../shared/abi-AgentPublishedRatings';
 assert.equal(process.env.PONG_SYNC_INDEX_VERIFY,'private-read-only');
 const deployment=JSON.parse(await readFile('/metadata/reusable.json','utf8'));
-assert(privateSyncContinuation(deployment,'private-sync-20261002'));
-const uri=new URL(process.env.INDEX_DATABASE_URL!);assert.equal(uri.pathname,'/pong_sync_index_20261002');
+const scope=process.env.PONG_PRIVATE_SYNC_CONTINUATION??'private-sync-20261002';
+const versions=privateSyncHistory(deployment,scope);
+const uri=new URL(process.env.INDEX_DATABASE_URL!);assert.equal(uri.pathname,'/'+privateSyncIndexDatabase(scope));
 const db=new Pool({connectionString:uri.href,max:1,options:'-c default_transaction_read_only=on'});
 const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000})});
 const attempt=process.env.PONG_SYNC_INDEX_ATTEMPT??'1';assert(/^[1-3]$/.test(attempt));
@@ -24,11 +26,10 @@ try{
  const rows=(await db.query('SELECT * FROM indexer."Match" ORDER BY id')).rows;
  const recent=(await db.query('SELECT * FROM indexer."RecentReplays"')).rows;
  await db.query('COMMIT');
- assert(rows.length>=34&&rows.length<=200);assert.equal(Number(metadata[0].chain_id),10143);
+ assert(BigInt(rows.length)>=privateSyncQualification(scope).results);assert.equal(Number(metadata[0].chain_id),10143);
  const block=await base.getBlock({blockNumber:BigInt(metadata[0].latest_processed_block)});assert(block.hash);
  const read=canonicalContractReads(base,block.hash).read;
  const count=await read<bigint>(deployment.common.ratings,ratingsAbi,'count');assert.equal(BigInt(rows.length),count,'Indexer omitted a published result at its processed block');
- const versions=[deployment.source.manifest,{...deployment.common,arenas:deployment.arenas,rulesVersion:16}];
  const retained=new Set(recent.flatMap(p=>p.matches));
  const players=new Set(rows.flatMap(r=>[r.playerA,r.playerB]));
  for(const player of players){
@@ -38,7 +39,7 @@ try{
  }
  for(const row of rows){
   const [chain,arena,epoch,id]=row.id.split(':');assert.equal(chain,'10143');assert(BigInt(row.block)<=block.number);
-  const source=versions.find(v=>v.arenas.some((a:any)=>a.app.toLowerCase()===arena));assert(source,'Unknown historical arena');
+  const source=versions.find(v=>v.arenas.includes(arena));assert(source,'Unknown historical arena');
   const ref={chainId:10143n,arena:arena as Address,epoch:BigInt(epoch),id:BigInt(id)};
   const [record,result]=await Promise.all([read<any>(source.pool,poolAbi,'record',[ref]),read<any>(source.pool,poolAbi,'result',[ref])]);
   assert(record.captured);assert([3,4].includes(result.status));assert.equal(row.rulesVersion,source.rulesVersion);

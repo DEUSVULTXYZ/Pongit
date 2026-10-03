@@ -1,5 +1,48 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 11:45 UTC — historical index routing regression fixed
+
+Production is unchanged. The sole transition watcher remains active in
+`waiting-for-existing-tournament`; T11 reached24/28 at11:44. Its ownership,
+original deadlines and three recorded scripts are unchanged. No second drain,
+backup, recovery, import or game driver was started.
+
+A regression test reproduced duplicate Envio chain aliases after a third
+continuation. `configure-indexer.ts` now emits one address list per archive
+alias, beginning at the earliest effective deployment block, while keeping
+each emitter's immutable rules binding. Existing single-address aliases stay
+unchanged. The five-season synthetic configuration passed actual offline
+Envio3.9.0 code generation and its TypeScript check at11:38:54, in retained
+container `pongit-index-history-codegen-20261003-3`, image
+`sha256:ec33806c2ac31aeaaf37c26c2a299e1809ef9ba4abeaa009d5b17583ae226d24`.
+Earlier attempts1/2 failed to traverse the private fixture directory and remain
+preserved. The successful attempt explicitly used UID1000 with all capabilities
+dropped, no network, read-only fixture and a180-second bound. Evidence is under
+`/opt/pongit/tests/fluid-20260928/index-history-codegen-20261003`; its final report
+is also copied to local `artifacts/index-history-codegen-20261003/report-attempt3.json`.
+The supported address-list format is documented by
+[Envio](https://docs.envio.dev/docs/HyperIndex/configuration-file#addresses).
+
+The read-only index/replay qualifiers now resolve every exact private ancestor
+to its original database instead of recognizing only two seasons. Their scope
+rejects omitted/reordered generations, public authorities and ambiguous arenas.
+The old two-season index remains supported; later trials require the separate
+`pong_sync_history_20261003` database. That database has **not** been created,
+no indexer was restarted, and the new full-history checks have **not** run.
+Any live configuration/resume change still needs an isolated database proof.
+
+Read-only database inspection found34,76 and58 available replay records in the
+first three private seasons. The active queue season had78 available,2 partial
+and2 recording rows at the observation. Partial recordings remain partial;
+these counts are not canonical retention or browser-playback qualification.
+Thirty-three targeted history/retention/continuation tests and root TypeScript
+pass. The first root typecheck failed on a test environment object's inferred
+type; its explicit `NodeJS.ProcessEnv` annotation fixed that test-only error.
+
+The browser startup approval rejection, failed hosted clock threshold, catalogue
+latency, reserve/rotation, public migration, finances/replays and final unchanged
+24-hour trial remain unresolved. No funding request or delivery claim.
+
 ## Checkpoint, 3 October 11:21 UTC — one guarded transition watcher
 
 Production is unchanged. T11 remains the sole game driver, 17/28 fixtures
