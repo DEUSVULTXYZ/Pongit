@@ -9,6 +9,7 @@ import {PublishedRatings} from "./PublishedRatings.sol";
 import {ContractLobby as L} from "../autonomous/ContractLobby.sol";
 import {RoomsState} from "../labs/RoomsState.sol";
 import {Types} from "../../vendor/interlude/interfaces/Types.sol";
+import {HubLease} from "./HubLease.sol";
 
 /// Candidate Monad financial boundary. The live published slot must carry the
 /// exact authoritative admission, and the first proven payment result is kept
@@ -31,7 +32,7 @@ contract ReusableEventsSettlement is IMatchResultV2 {
         (uint256 epoch,uint256 currentId,uint256 sequence,bytes32 hash)=ReusableEventsArena(at).currentAdmission();
         if(epoch!=ticket.epoch||currentId!=id||sequence!=ticket.sequence||hash!=Admission.digest(ticket))return(false,at,ticket.epoch);
         Types.Session memory session=lobby.hub().sessionOf(at,0);
-        if(session.status!=Types.Status.Active||session.epoch!=epoch||session.batchIndex==0||session.expiresAt<=block.timestamp)return(false,at,epoch);
+        if(session.status!=Types.Status.Active||session.epoch!=epoch||session.batchIndex==0||!HubLease.valid(address(lobby.hub()),session.expiresAt,0))return(false,at,epoch);
         RoomsState.Header memory state=ReusableEventsArena(at).getSnapshot(id);
         return(state.phase==2&&state.state.mode==1,at,epoch);
     }

@@ -11,6 +11,8 @@ import {MarketV4} from "../src/v4/MarketV4.sol";
 import {RoomsVault} from "../src/labs/RoomsVault.sol";
 import {LMSRV2} from "../src/v2/MarketV2.sol";
 import {Types} from "../vendor/interlude/interfaces/Types.sol";
+import {IInterludeHub} from "../vendor/interlude/interfaces/IInterludeHub.sol";
+import {IndependentHubFixture} from "./Independent.t.sol";
 
 contract ReusableEventsSettlementTest is ReusableEventsLobbyTest {
     ReusableEventsSettlement settlement;RealtimeMarket market;RoomsVault vault;
@@ -20,19 +22,19 @@ contract ReusableEventsSettlementTest is ReusableEventsLobbyTest {
         market=new RealtimeMarket(address(this),payable(address(this)),settlement,new LMSRV2(),vault);
         vault.registerModule(address(market));vault.seal();vm.deal(address(this),10 ether);vault.depositFor{value:1 ether}(vm.addr(777));
     }
-    function live(uint8 mode) private returns(uint256 room_,uint256 id){
+    function live(uint8 mode) internal returns(uint256 room_,uint256 id){
         (room_,id)=roomAndProposal(mode);lobby.assignNext();(Admission.Ticket memory t,T.Binding memory b)=lobby.ticketOf(id);
         vm.chainId(4242);arena.admit(t,b,sig(BRIDGE,Admission.digest(t)));vm.prank(b.keyA);arena.confirmReady(1,id);vm.prank(b.keyB);arena.confirmReady(1,id);
         arena.start(1,id);vm.warp(vm.getBlockTimestamp()+3);vm.roll(vm.getBlockNumber()+300);arena.start(1,id);vm.chainId(10143);hub.publish(address(arena));
     }
-    function buy(uint256 id,uint8 side) private returns(uint256 cost){
+    function buy(uint256 id,uint8 side) internal returns(uint256 cost){
         (,uint256 version)=settlement.bettingWindow(id,0);
         MarketV4.Bet memory bet=MarketV4.Bet(vm.addr(777),id,side,.005 ether,1 ether,version,market.nonces(vm.addr(777)),uint64(vm.getBlockTimestamp()+60));
         bytes32 domain=keccak256(abi.encode(keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),keccak256("PONG Market"),keccak256("1"),uint256(10143),address(market)));
         bytes memory signature=sig(777,keccak256(abi.encodePacked("\x19\x01",domain,keccak256(abi.encode(market.BET_TYPEHASH(),bet)))));
         cost=market.quote(id,side,bet.shares);market.buy(bet,signature);
     }
-    function finish(uint256 id) private returns(Game.Result memory r){
+    function finish(uint256 id) internal returns(Game.Result memory r){
         vm.warp(vm.getBlockTimestamp()+2);vm.chainId(4242);vm.prank(vm.addr(1102));arena.concede(1,id);r=arena.publishedResult();
         vm.chainId(10143);hub.publish(address(arena));lobby.captureProof(id,r,firstProof());
     }
@@ -70,5 +72,45 @@ contract ReusableEventsSettlementTest is ReusableEventsLobbyTest {
     }
     function testClassicAndBridgeOnlyAdmissionsCannotOpenAMarket() public {
         (,uint256 id)=live(0);vm.expectRevert("no published authorized Chaos match");settlement.openRound(id);
+    }
+    function mockSession(Types.Session memory session) internal {
+        vm.mockCall(address(hub),abi.encodeWithSelector(IInterludeHub.sessionOf.selector,address(arena),bytes32(0)),abi.encode(session));
+    }
+    function testExpiredLeaseClosesFinancialWindow() public {
+        (,uint256 id)=live(1);settlement.openRound(id);
+        Types.Session memory session=hub.sessionOf(address(arena),0);session.expiresAt=uint64(vm.getBlockTimestamp());mockSession(session);
+        (bool allowed,)=settlement.bettingWindow(id,0);assertFalse(allowed);
+    }
+}
+
+contract ReusableEventsUnknownLeaseSettlementTest is ReusableEventsSettlementTest {
+    function testUnknownZeroExpiryCannotOpenFinancialWindow() public {
+        (,uint256 id)=live(1);Types.Session memory session=hub.sessionOf(address(arena),0);session.expiresAt=0;mockSession(session);
+        vm.expectRevert("no published authorized Chaos match");settlement.openRound(id);
+    }
+}
+
+contract ReusableEventsNoLeaseSettlementTest is ReusableEventsSettlementTest {
+    address constant V3=0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e;
+    function createHub() internal override returns(IndependentHubFixture){
+        IndependentHubFixture template=new IndependentHubFixture();vm.etch(V3,address(template).code);return IndependentHubFixture(V3);
+    }
+    function testNoLeasePublishedChaosAllowsBetsAndOnePayment() public {
+        (,uint256 id)=live(1);Types.Session memory session=hub.sessionOf(address(arena),0);session.expiresAt=0;mockSession(session);
+        settlement.openRound(id);(bool allowed,)=settlement.bettingWindow(id,0);assertTrue(allowed);
+        market.open{value:.1 ether}(id,.01 ether);buy(id,0);vm.clearMockedCalls();finish(id);
+        market.claim(id,vm.addr(777));assertEq(vm.addr(777).balance,.005 ether);
+        vm.expectRevert("claim");market.claim(id,vm.addr(777));
+    }
+    function testNoLeaseStillRequiresPublicationEpochAndActiveSession() public {
+        (,uint256 id)=live(1);Types.Session memory original=hub.sessionOf(address(arena),0);original.expiresAt=0;
+        Types.Session memory bad=original;bad.batchIndex=0;mockSession(bad);
+        vm.expectRevert("no published authorized Chaos match");settlement.openRound(id);
+        bad=hub.sessionOf(address(arena),0);bad.batchIndex=1;bad.epoch=2;mockSession(bad);
+        vm.expectRevert("no published authorized Chaos match");settlement.openRound(id);
+        bad.epoch=1;bad.status=Types.Status.Exiting;mockSession(bad);
+        vm.expectRevert("no published authorized Chaos match");settlement.openRound(id);
+        bad.status=Types.Status.Active;mockSession(bad);settlement.openRound(id);
+        bad.status=Types.Status.Challenged;mockSession(bad);(bool allowed,)=settlement.bettingWindow(id,0);assertFalse(allowed);
     }
 }
