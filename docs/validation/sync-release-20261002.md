@@ -1,5 +1,72 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 12:10 UTC — full historical proof and normal recovery dispatched
+
+Production remains unchanged. T11 passed all28 fixtures at11:57:37.582 UTC,
+then exited0/no OOM. T8–T11 now cover both modes and both formats on the queue
+candidate; the lower-gas successor is still unhosted. Original deadlines were
+not extended. At canonical block67823269, hash
+`0xf67061fdae857a1380dc6988d51a56176bbf675f63b00a76db1f60ca71babbc4`,
+the drain guard verified254 results,11 completed books,closed gates,five empty
+lanes and zero pending commands. Both queue workers stopped cleanly at11:58:06.
+
+Watcher33235/PID57856 has exited. Its local and mirrored JSON report passes
+with `phase: recovery-started-not-yet-completed`. Its final console projection
+printed null fields; that console line is not the evidence. The persisted
+reports and actual container confirm dispatch. **Do not restart the watcher or
+repeat its drain, backup or closes.** Backup1157 has21 files verified off VPS
+at12:00:05, manifest
+`d70100679064daaa04b3ed096a6761dd049870b824714c0416fe5fdc5c988281`.
+It is mounted by the release worker and must remain available.
+
+The sole lifecycle worker is `pongit-sync-queue-release-1-9c58ae5`, started
+12:00:21.637 UTC, with its original **13:18:21.215385 UTC** deadline. All five
+private d8bc epoch1 arenas closed normally with matching hosted/Monad roots.
+Their result counts are18,17,17,17,17 and batch counts390,341,372,315,348.
+The real release times are **13:00:38 through13:00:53 UTC**. The worker alone
+owns release and exact sealing through the original operator journal. Its
+`evidence/sync-release-1.json` is still incomplete while the hub delay runs.
+This is not canonical release completion. No new game, import or opening.
+
+The isolated four-season index reached254 rows at12:00:02. Its bounded monitor
+stopped indexer/Hasura at12:00:32: indexer exit143, Hasura exit137 after the
+grace period, neither OOM. The separate read-only verification passed and
+stopped all its containers by12:04:08. Canonical index block67823666/hash
+`0x0a9b34b94c8c0944b19d21a8bb561ec6a16757c6865e8d88392527c9c3f861c2`
+matches all254 results and three-replay retention for66 players. At replay
+block67824066/hash
+`0x203675cdf16892422337ca269faec8e128382b806ef342d6aaa542bbdc8013af`,
+all75 retained recordings decode and match their contract result and terminal
+frame. They cover all four databases:6 original,19 first continuation,16
+optimized and34 queue. All75 are available; the earlier partial records were
+not in the retained set and have not been silently relabelled or deleted.
+This is stored-frame proof, **not browser playback or smoothness proof**.
+
+Evidence is in `/opt/pongit/tests/fluid-20260928/sync-history-index-5027cd9`,
+with copies in `artifacts/sync-history-final-20261003`. All index and verification
+services are stopped, and the old/public indexes were untouched. The pinned
+four-file5027cd9 verification archive SHA256 is
+`20a4f8e52f5f6ade44387943cb09a4341cb09e0db84c87c64280503b302b1968`.
+No new image was built. Source33 targeted tests, root TypeScript and offline
+Envio3.9.0 generation/types remain passing.
+
+Expanded backup `sync-20261003T1204Z` includes the new index database, Compose
+secrets, evidence and exact helpers without modifying the watcher's original
+scripts. **24 files SHA-verified off VPS at12:08:20**, manifest
+`432be802ab420db2e2453e90b49cae0ad9d614efcc0bc6fcd9218ee6f4dbef47`.
+Local copy: `C:/Users/wwwle/.codex/private-backups/pongit/sync-20261003T1204Z`.
+The dedicated pull helper permits only the known `base-manifest.json` in
+addition to normal dump/tar files. All earlier failed attempts remain intact.
+This backup still precedes actual release; refresh after release/finality.
+
+Next: let the sole release worker finish, verify canonical None/exact roots,
+then use the already guarded velocity transition for finality and import only
+after its254/11/182 checks, stopped source archive and a fresh backup. That
+target remains prepared-unimported from private d8bc only. Browser4197 startup
+approval rejection, hosted clock/admission/render bounds, rotation/reserve,
+public migration, final finances/browser replays and unchanged24h remain.
+No funding request or completed delivery claim.
+
 ## Checkpoint, 3 October 11:45 UTC — historical index routing regression fixed
 
 Production is unchanged. The sole transition watcher remains active in
