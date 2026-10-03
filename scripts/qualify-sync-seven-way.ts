@@ -13,15 +13,23 @@ import {independentRules} from '../shared/independent-rules';
 import {EngineFeed} from '../shared/engine-feed';
 import {EngineStream,type EngineState} from '../shared/engine-stream';
 import {engineTransport} from '../shared/engine-transport';
+import {privateSyncContinuation} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_SEVEN_WAY,'read-only-private');
 const deadline=Date.parse(process.env.PONG_SEVEN_WAY_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<=Date.now()+20*60_000);
 const trial=process.env.PONG_SEVEN_WAY_RUN??'1';assert(['1','2','3'].includes(trial));
-const copyRun=String(Number(trial)+3),humanRun=trial;
+const optimized=process.env.PONG_PRIVATE_SYNC_CONTINUATION==='private-sync-20261003';
+assert(!process.env.PONG_PRIVATE_SYNC_CONTINUATION||optimized);
+const copyRun=optimized?process.env.PONG_SEVEN_WAY_COPY_RUN!:String(Number(trial)+3),humanRun=optimized?process.env.PONG_SEVEN_WAY_HUMAN_RUN!:trial;
+assert(/^[1-9]$/.test(copyRun)&&/^[1-9]$/.test(humanRun));
 const agents=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json','utf8')));
 const raw=JSON.parse(await readFile('/human-manifest.json','utf8'));
-assert.equal(agents.pool.toLowerCase(),'0xdee98e3f7a0f0049244a8257a9cde304d909e5dc');
+if(optimized){
+ const record=JSON.parse(await readFile('/metadata/reusable.json','utf8'));
+ assert(privateSyncContinuation(record,process.env.PONG_PRIVATE_SYNC_CONTINUATION));
+ assert.equal(agents.pool.toLowerCase(),record.common.pool.toLowerCase());
+}else assert.equal(agents.pool.toLowerCase(),'0xdee98e3f7a0f0049244a8257a9cde304d909e5dc');
 assert(!agents.enabled&&!agents.tournamentsEnabled&&agents.rulesVersion===16);
 assert.equal(raw.production,false);assert.equal(raw.status,'sealed');
 assert.equal(raw.lobby.toLowerCase(),'0xe4cdf97e582282879219d7a888f8cd0ae629bd31');
@@ -51,7 +59,9 @@ try{
   await wait();
  }
  assert(Date.now()<deadline,'Original reference acquisition deadline');
- assert.equal(copies.existingTournament,4);
+ if(optimized)assert([5,6,7,8].includes(copies.existingTournament));
+ else assert.equal(copies.existingTournament,4);
+ assert.equal(copies.pool.toLowerCase(),agents.pool.toLowerCase());
  assert.deepEqual([...humans.matches.map((m:any)=>m.mode)].sort(),[0,1]);
  const refs=[copies.tournament,...copies.people.map((p:any)=>p.ref),...humans.matches];
  assert.equal(new Set(refs.map((r:any)=>r.app.toLowerCase())).size,7,'All seven games require independent arenas');

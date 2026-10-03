@@ -25,7 +25,7 @@ import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {NO_LEASE_HUB,hubLeaseValid} from '../shared/hub-lease';
 import {agentPoolAdmissionAbi} from '../shared/agent-house-instances';
-import {privateSyncContinuation} from './private-sync-continuation';
+import {privateSyncContinuation,privateSyncQualification} from './private-sync-continuation';
 assert.equal(process.env.PONG_FIVE_CONCURRENT,'bounded-private-five');assert.equal(process.getuid?.(),1000);
 const run=process.env.PONG_FIVE_CONCURRENT_RUN!;assert(/^[1-9]$/.test(run));
 const deadline=Date.parse(process.env.PONG_FIVE_CONCURRENT_DEADLINE??'');assert(deadline>Date.now()&&deadline<Date.now()+25*60_000);
@@ -34,7 +34,8 @@ const m=validateAgentPoolManifest(JSON.parse(readFileSync('/metadata/manifest.js
 assert(m.version===5&&!m.enabled&&!m.tournamentsEnabled&&m.pool===r.common.pool);
 const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
 const existingTournament=Number(process.env.PONG_FIVE_CONCURRENT_EXISTING??0);
-assert(existingTournament===0||continuation&&[3,4].includes(existingTournament),'Only an independently driven private continuation championship');
+const inherited=continuation?Number(privateSyncQualification(process.env.PONG_PRIVATE_SYNC_CONTINUATION).tournaments):0;
+assert(existingTournament===0||continuation&&Number.isInteger(existingTournament)&&existingTournament>inherited&&existingTournament<=(inherited===2?4:8),'Only an independently driven private continuation tournament');
 assert(!continuation||existingTournament>0,'Continuation must retain its existing tournament driver');
 const v3=process.env.PONG_FIVE_CONCURRENT_V3==='reviewed-private';
 assert(!process.env.PONG_FIVE_CONCURRENT_V3||v3);
