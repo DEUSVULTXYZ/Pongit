@@ -16,7 +16,7 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
-import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,writeRetryMs,inspectionSchedule} from '../relayer/src/agents/pool-maintenance';
+import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,cancelledTournamentClosure,tournamentDue,pinnedReads,controlPlaneAnswers,writeRetryMs,inspectionSchedule} from '../relayer/src/agents/pool-maintenance';
 import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget,verifiedRecovery,type ArenaRecoveryWindow} from '../shared/arena-replacement';
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,reusableCapacity,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
@@ -236,6 +236,12 @@ async function step(){
    const result=await read(m.pool,poolAbi,'result',[f.ref]);
    if(doesArchive&&(result.hash!==f.published.hash||result.finality!==f.published.finality||result.status!==f.published.status)&&!cooling(m.tournaments,'synchronize')){await act(m.tournaments,'synchronize',[cursor.id,cursor.index]);return true;}
    if(doesArchive&&!f.resolved&&f.published.status===4&&f.published.finality&&!cooling(m.tournaments,'retryCancelled')){await act(m.tournaments,'retryCancelled',[cursor.id,cursor.index]);return true;}
+   if(doesMaintenance&&!cooling(m.pool,'closeReusableArena')){
+    const a=delegations.find(a=>a.app.toLowerCase()===f.ref.arena.toLowerCase());
+    if(a){const work=await cancelledTournamentClosure(read,m,f,{app:a.app,epoch:a.d.epoch,status:a.d.status,
+     occupied:lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===a.app.toLowerCase())});
+     if(work){await act(work.to,work.method,work.args);return true;}}
+   }
   }
   return false;
  };
@@ -245,6 +251,10 @@ async function step(){
   if(!await tournamentHistory(await read<bigint>(m.tournaments,bookAbi,'count'),false,false))await archiveHistory();
   return;
  }
+ // Cancellation finality remains recoverable with admissions closed, missing
+ // publication budgets or unavailable discovery. Only maintenance may close;
+ // archive retains synchronize/retry ownership and the signed journal is shared.
+ if(doesMaintenance&&await tournamentHistory(await read<bigint>(m.tournaments,bookAbi,'count'),false,false))return;
  // A missing worst-case proof holds NEW admissions only. Recovery above is
  // deliberately still live while qualification or the provider is unavailable.
  mark('recovery');

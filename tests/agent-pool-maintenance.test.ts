@@ -3,7 +3,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
 import {deferReserveEnable} from '../shared/agent-house-instances';
-import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,tournamentDue,pinnedReads,controlPlaneAnswers,inspectionSchedule,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,cancelledTournamentClosure,tournamentDue,pinnedReads,controlPlaneAnswers,inspectionSchedule,type PoolRead} from '../relayer/src/agents/pool-maintenance';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
 
@@ -49,6 +49,36 @@ test('captured current results advance tournaments after lane release or restart
  record.tournament=3n;result.status=4;f.published={...result};f.resolved=false;
  assert.equal((await capturedTournamentWork(read,m,record))?.method,'retryCancelled');
  await assert.rejects(capturedTournamentWork((async()=>{throw Error('lost read');}) as PoolRead,m,record),/lost read/);
+});
+
+test('a captured cancelled fixture requests normal closure without waiting for engine discovery or lease expiry',async()=>{
+ const ref={chainId:10143n,arena:address(22),epoch:20n,id:463n};
+ const published={hash:'0x'+'1'.repeat(64),status:4,finality:false};
+ const fixture={bound:true,resolved:false,ref,published};
+ const record={captured:true,ref:{...ref}},result={...published};
+ const arena={app:ref.arena,epoch:20n,status:1,occupied:false};
+ const read:PoolRead=async(at,abi,fn,args=[])=>{
+  assert.equal(at,m.pool);encodeFunctionData({abi,functionName:fn,args});
+  if(fn==='record')return record as any;if(fn==='result')return result as any;throw Error(fn);
+ };
+ const expected={to:m.pool,method:'closeReusableArena',args:[ref.arena]};
+ assert.deepEqual(await cancelledTournamentClosure(read,m,fixture,arena),expected);
+ // Any active lane, including a later match on this arena, retains ownership.
+ assert.equal(await cancelledTournamentClosure(read,m,fixture,{...arena,occupied:true}),null);
+ for(const status of [0,2])assert.equal(await cancelledTournamentClosure(read,m,fixture,{...arena,status}),null);
+ assert.equal(await cancelledTournamentClosure(read,m,fixture,{...arena,epoch:21n}),null);
+ assert.equal(await cancelledTournamentClosure(read,m,fixture,{...arena,app:address(23)}),null);
+ for(const changed of [{bound:false},{resolved:true},{published:{...published,status:3}},{published:{...published,finality:true}}])
+  assert.equal(await cancelledTournamentClosure(read,m,{...fixture,...changed},arena),null);
+ record.captured=false;assert.equal(await cancelledTournamentClosure(read,m,fixture,arena),null);record.captured=true;
+ for(const changed of [{chainId:1n},{epoch:21n},{id:464n},{arena:address(23)}]){
+  record.ref={...ref,...changed};assert.equal(await cancelledTournamentClosure(read,m,fixture,arena),null);
+ }
+ record.ref={...ref};result.status=3;assert.equal(await cancelledTournamentClosure(read,m,fixture,arena),null);
+ result.status=4;result.finality=true;assert.equal(await cancelledTournamentClosure(read,m,fixture,arena),null);
+ result.finality=false;result.hash=zeroHash;assert.equal(await cancelledTournamentClosure(read,m,fixture,arena),null);
+ result.hash=published.hash;assert.deepEqual(await cancelledTournamentClosure(read,m,fixture,arena),expected);
+ await assert.rejects(cancelledTournamentClosure((async()=>{throw Error('RPC unavailable');}) as PoolRead,m,fixture,arena),/RPC unavailable/);
 });
 
 test('bounded qualification scans eventually reach agents beyond the first 256 and wrap after catalogue changes',async()=>{

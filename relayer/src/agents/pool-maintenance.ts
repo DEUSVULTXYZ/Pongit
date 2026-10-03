@@ -78,6 +78,24 @@ export async function capturedTournamentWork(read:PoolRead,m:Common,record:any){
  return null;
 }
 
+/** A published cancellation cannot be retried until its epoch is final. This
+ * is settlement, not a voluntary rotation: waiting for engine discovery or a
+ * long lease to expire deadlocks the bracket. The caller supplies the owned
+ * arena and all lane reservations from the same pinned block. Normal closure
+ * rechecks settlement on-chain; it cannot discard an unpublished active game. */
+export async function cancelledTournamentClosure(read:PoolRead,m:Common,fixture:any,
+ arena:{app:Address;epoch:bigint;status:number;occupied:boolean}){
+ const ref=fixture.ref,published=fixture.published;
+ if(!fixture.bound||fixture.resolved||published.status!==4||published.finality||!ref.id
+  ||arena.status!==1||arena.occupied||arena.epoch!==ref.epoch||arena.app.toLowerCase()!==ref.arena.toLowerCase())return null;
+ const record=await read(m.pool,poolAbi,'record',[ref]);
+ if(!record.captured||record.ref.chainId!==ref.chainId||record.ref.epoch!==ref.epoch||record.ref.id!==ref.id
+  ||record.ref.arena.toLowerCase()!==ref.arena.toLowerCase())return null;
+ const result=await read(m.pool,poolAbi,'result',[ref]);
+ if(result.status!==4||result.finality||result.hash!==published.hash)return null;
+ return{to:m.pool,method:'closeReusableArena',args:[arena.app]};
+}
+
 /** Resumable inspection of the entire catalogue, without a first-256 cutoff.
  * This never chooses the trial participants; the contract cursor does that. */
 export async function qualificationWork(read:PoolRead,m:Common,cursor:bigint,now:bigint,budget=16,baseBlock?:bigint){
