@@ -5,6 +5,7 @@ import {ChaosState as T} from "./ChaosState.sol";
 import {ChaosEffects as E} from "./ChaosEffects.sol";
 import {ChaosModifiers as M} from "./ChaosModifiers.sol";
 import {ChaosGeometry as G} from "./ChaosGeometry.sol";
+import {ChaosVelocity as V} from "./ChaosVelocity.sol";
 
 /// @notice Movement and force module for candidate rules 6. It stores no state.
 contract ChaosDynamics {
@@ -28,10 +29,7 @@ contract ChaosDynamics {
         for(uint8 i;i<2;i++)if(s.balls[i].alive&&(wind||s.balls[i].curveSteps!=0||well&&s.balls[i].gravity))return true;return false;
     }
     function velocity(T.State memory s,uint8 ball) public pure returns(int256 vx,int256 vy){
-        T.Ball memory b=s.balls[ball];uint256 n=b.powerN;uint256 d=b.powerD;
-        if(d==0||n==0)revert G.NumericRange();
-        if(has(s,23)){n*=5;d*=4;}if(b.warp&&has(s,15)){n*=6;d*=5;}
-        vx=b.vx*int256(n)/int256(d);vy=b.vy*int256(n)/int256(d);G.check(b.x,b.y,vx,vy);
+        return V.velocity(s,ball);
     }
     function move(T.State memory s,uint64 to) external view returns(T.State memory){
         if(to<s.t)revert G.NumericRange();if(to>s.t)s.stalled=0;int256 dt=int256(uint256(to-s.t));M.Paddles memory ps=paddles(s);

@@ -4,6 +4,7 @@ import {ChaosState as T} from "./ChaosState.sol";
 import {ChaosEffects as E} from "./ChaosEffects.sol";
 import {ChaosGeometry as G} from "./ChaosGeometry.sol";
 import {ChaosDynamics as D} from "./ChaosDynamics.sol";
+import {ChaosVelocity as V} from "./ChaosVelocity.sol";
 
 /// @notice Stable collision search for both balls. A pair of simultaneous goal
 /// times is returned separately so one ball cannot score before the other is read.
@@ -38,7 +39,7 @@ contract ChaosContacts {
         best.dt=G.NEVER;best.kind=type(uint8).max;goals=[G.NEVER,G.NEVER];
         for(uint8 ball;ball<2;ball++){
             planes[ball]=[G.NEVER,G.NEVER,G.NEVER];if(!s.balls[ball].alive)continue;
-            T.Ball memory b=s.balls[ball];(int256 vx,int256 vy)=dynamics.velocity(s,ball);
+            T.Ball memory b=s.balls[ball];(int256 vx,int256 vy)=V.velocity(s,ball);
             if(vx!=0){goals[ball]=G.plane(b.x,vx,vx<0?-6*P:1030*P);beneficiaries[ball]=vx<0?2:1;
                 best=offerFast(best,goals[ball],vx<0?5:6,ball,0,0,0,0);
                 if(vx<0&&b.x>=40*P){planes[ball][1]=G.plane(b.x,vx,40*P);best=offerFast(best,planes[ball][1],3,ball,0,0,1,0);}
@@ -97,7 +98,7 @@ contract ChaosContacts {
         search.best.dt=G.NEVER;search.best.kind=type(uint8).max;goals=[G.NEVER,G.NEVER];
         for(uint8 ball;ball<2;ball++){
             planes[ball]=[G.NEVER,G.NEVER,G.NEVER];if(!s.balls[ball].alive)continue;
-            T.Ball memory b=s.balls[ball];(int256 vx,int256 vy)=dynamics.velocity(s,ball);
+            T.Ball memory b=s.balls[ball];(int256 vx,int256 vy)=V.velocity(s,ball);
             if(vx!=0){goals[ball]=G.plane(b.x,vx,vx<0?-6*P:1030*P);beneficiaries[ball]=vx<0?2:1;
                 search=offer(search,goals[ball],vx<0?5:6,ball,0,0,0,0);
                 if(vx<0&&b.x>=40*P){planes[ball][1]=G.plane(b.x,vx,40*P);search=offer(search,planes[ball][1],3,ball,0,0,1,0);}

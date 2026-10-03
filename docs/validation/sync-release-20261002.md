@@ -1,5 +1,48 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 10:02 UTC — contact-search optimization validated privately
+
+Production and hosted workers remain unchanged. The ChaosVelocity extraction
+keeps the exact integer arithmetic and public Dynamics ABI, and uses the same
+pure implementation inside contact search instead of ABI-encoding the entire
+state through an external call per ball/force interval.156 Chaos Solidity
+regressions pass, including24 effects and276 combinations.24 agent pause/clock/
+gas tests pass. All three20-tick physical digests match the pre-change results.
+Relative to579cbb9, Chaos gas falls25037861 to23954900 and Solar Wind104466538
+to98168525; Classic is6059584 versus6059594. These are deterministic local costs,
+not hosted command latency or a fix to the outstanding clock threshold.
+
+The isolated VPS Anvil run `pongit-sync-velocity-parity-20261003` exited0 without
+OOM at09:57:05.958736182, inside its original10:24:49.205133 bound.10,000 Classic,
+10,000 legacy realtime Chaos,10,000 current Chaos,10,000 simultaneous-contact and
+4,000 historical-mode comparisons all pass without a mismatch. Artifact archive
+SHA256 is `cb5587aee19f13574153dd58d94a206cf96092b09bed2d2175b45cff6fbe259b`.
+Reports and run identity are copied to `artifacts/sync-velocity-final/`. No host
+network, game driver, keys, public contract or active tournament was involved.
+The artifact review validates26 modules and126 source hashes. Its first strict
+working-tree comparison found CRLF/LF differences; the retained second report
+records both hashes and accepts only exact LF normalization. No semantic source
+mismatch remains. Changed module runtimes are Dynamics13784 and Contacts19192
+bytes. Nothing from this new kernel has been deployed.
+
+Backup0955,20files including completed copies4/T9 and T10attempt2 configuration,
+is SHA-verified offVPS09:55:42.1333905; manifest
+`be3130eff8ee0a9d25d62cd917abca4a5c0065260ef650c0cd0d45610cdf6e10`.
+T10attempt2 remains the only tournament driver, original10:42:31.766036 bound;
+three fixtures were resolved at09:56. T11 helper is prepared, NOT RUN, and now
+requires attempt2 PASS/exited and its exact9573a35 intermission script. It still
+requires a full three-hour window before workers end13:25:06.823834. No other
+game or browser driver. Preserve every earlier failure and all original bounds.
+
+The official SDK documentation was rechecked3 October. It still identifies hub
+v3 `0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e` and the `v3-boot` hosted node
+generation already used by these private candidates; it does not expose a new
+subsecond clock primitive. This is documentation evidence, not a fresh runtime
+attestation: https://github.com/Veenoway/interlude-sdk/blob/main/docs/DEPLOYMENTS.md.
+No provider setting or game-clock multiplier was changed. Browser4197 approval
+rejection, actual clock/admission targets, reserve/rotation, compatible public
+migration, finance/replays and unchanged24h remain open.
+
 ## Checkpoint, 3 October 09:52 UTC — concurrent launch passes; tournament retry
 
 Production remains unchanged. Four-copy trial4 finished **PASS** at09:24:17.153,
