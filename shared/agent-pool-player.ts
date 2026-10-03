@@ -205,7 +205,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    return boundArgs=reusable?[epoch,...current]:current;
   };
   try{
-   let result;
+   let result,writeStarted=now();
    try{result=await timed('send',()=>sender!.send(name,latestArgs));}
    catch(error){
     // The nonce read/signature can outlive a valid fence. This typed exception
@@ -214,6 +214,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
     // Missing receipts or any remote error still take normal reconciliation.
     if(!(error instanceof UnsentFenceExpired)||journal.pending(session.grant.key))throw error;
     await authorizeControls();
+    writeStarted=now();
     result=await timed('send',()=>sender!.send(name,latestArgs));
    }
    if(name==='input'){
@@ -224,7 +225,10 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
      if(event.eventName==='ControlQueued'&&event.args.id===id&&event.args.sequence===boundArgs[reusable?3:2])receivedInputTime=event.args.gameTime;
     }catch{}
    }
-   lastWriteAt=now();return verify(await timed('receipt',()=>feed.receipt(id,result,name,boundArgs,player)));
+   // Contractual liveness starts during execution, before the response arrives.
+   // Dating it from the acknowledgement could suppress the next heartbeat for
+   // another network round trip and create an otherwise avoidable fair pause.
+   lastWriteAt=writeStarted;return verify(await timed('receipt',()=>feed.receipt(id,result,name,boundArgs,player)));
   }
   catch(error){
    const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));

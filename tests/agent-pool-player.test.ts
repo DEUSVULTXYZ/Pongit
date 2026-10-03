@@ -30,6 +30,23 @@ test('rules16 heartbeats require fresh perception, preserve pending nonces and s
 test('friendly pause methods cannot be used on a legacy arena',async()=>{
  const f=fixture(15);await assert.rejects(f.player.heartbeat(true),/does not support/);assert.equal(f.sent.length,0);f.player.close();
 });
+
+test('receipt latency consumes heartbeat credit rather than postponing the next renewal',async()=>{
+ const f=fixture(16),request=f.node.request;
+ f.node.request=async(r:any)=>{const result=await request(r);if(r.method==='interlude_sendTransaction'){f.advance(200);f.fresh();}return result;};
+ try{
+  await f.player.move(1);f.advance(100);
+  await f.player.heartbeat();
+  assert.equal(f.sent.length,2,'The input was sent 300ms ago even though its acknowledgement is only 100ms old');
+  assert.equal(decodeFunctionData({abi:synchronizedAgentArenaAbi,data:parseTransaction(f.sent[1]).data!}).functionName,'heartbeat');
+ }finally{f.player.close();}
+});
+
+test('an immediately confirmed input still coalesces a redundant heartbeat',async()=>{
+ const f=fixture(16);
+ try{await f.player.move(1);await f.player.heartbeat();assert.equal(f.sent.length,1);f.advance(151);await f.player.heartbeat();assert.equal(f.sent.length,2);}
+ finally{f.player.close();}
+});
 test('optional player timing cannot change receipt ownership or break controls',async()=>{
  const samples:PoolPlayerTiming[]=[];
  const f=fixture(16,s=>{samples.push(s);throw Error('Diagnostic reporter unavailable');});
