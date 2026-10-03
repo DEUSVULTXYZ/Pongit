@@ -1,5 +1,49 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 11:21 UTC — one guarded transition watcher
+
+Production is unchanged. T11 remains the sole game driver, 17/28 fixtures
+resolved at 11:20 UTC. Its original 13:12:56.115631 deadline and the workers'
+13:25:06.823834 deadline remain unchanged. No new game has been admitted by this
+operation, and no new recovery has started.
+
+One local transition watcher is now running: exec session33235, PowerShell
+PID57856, started 11:20:10 UTC with an original deadline of **13:20 UTC**.
+Its state is `artifacts/sync-queue-transition-watch-20261003.json`, mirrored to
+the private queue root's `transition-watch-state.json`. It exclusively owns
+the next drain, backup and recovery dispatch. **Do not duplicate those steps
+or modify its three hash-recorded remote scripts while it is active.**
+
+The watcher waits for the existing T11 passing report and exit0, then verifies
+254 canonical results, 11 completed books, five empty lanes, closed gates and
+zero pending engine commands through the prepared drain guard. It stops only
+the two private queue workers, creates a fresh backup, copies and SHA-verifies
+every file off VPS, and starts the existing sole normal-release helper.
+Any failed guard or deadline stops the watcher with its evidence preserved.
+It never starts another game, imports a season, opens an arena or touches public
+production. A watcher `passed` verdict means **recovery dispatched**, not a
+completed release. Actual release and exact roots still need their own report.
+
+The future private v3 rotation qualifier is updated in a8a3889, **not run**.
+It requires the prepared catalogue, imported private namespace and eight unique
+arenas. Before retiring used capacity, the spare must have a canonical epoch
+publication marker, committed batch, matching identity/code and fresh command
+worker readiness. Fee, validator and original deadline guards remain enforced.
+Readiness failures retain short causes, and health requests are metered. The
+report explicitly leaves continuous capacity unqualified. Thirty-five focused
+tests, root TypeScript, diff and secret checks pass. No hosted rotation is claimed.
+
+Forty intermediate 0955/1017 backup payloads, 373,697,515 bytes, were offloaded
+at 11:15 after fresh off-VPS hashes and every container mount/reference check.
+All bytes remain off VPS; latest1034, restore0543, mounted0041, manifests, old
+images and all failed reports are retained. Usable disk measured79.9827 percent
+afterward. No image was built. Recheck the threshold before any later build.
+
+Lower-gas target remains prepared-unimported. Browser4197 approval rejection,
+the failed Chaos clock threshold, actual catalogue/rendering, reserve/rotation,
+public migration, final finance/replays and unchanged24h remain. No funding
+request or completed-delivery claim.
+
 ## Checkpoint, 3 October 11:06 UTC — exact publication costs and guarded transition
 
 Production is unchanged. T11 remains the only game driver with its original
