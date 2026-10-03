@@ -84,8 +84,8 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   if(journal.pending(session.grant.key))throw Error('The owner permission is awaiting its exact receipt');
   if(!receipt||!['0x1','success'].includes(String(receipt.status)))throw Error('The owner permission reverted. Read its current revision before retrying.');
  }
- async function identify(force=false){
-  if(stopped)throw Error('Arena controls have stopped');if(!force&&verifiedAt&&now()-verifiedAt<10000)return;
+ async function identify(force=false,maxAge=10000){
+  if(stopped)throw Error('Arena controls have stopped');if(!force&&verifiedAt&&now()-verifiedAt<maxAge)return;
   if(identityPending)return identityPending;
   identityPending=(async()=>{
    const [status,rules]:any[]=await Promise.all([node.request({method:'interlude_session',params:[]} as any),
@@ -176,12 +176,14 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // Node identity and the canonical Monad observation are independent reads.
    // Serializing them can exhaust heartbeat credit during periodic refreshes.
    // Both must still pass; neither changes the original three-second fence.
+   // Refresh identity before watch()'s ten-second deadline. Starting only after
+   // expiry suppressed contiguous frames while the identity RPC completed.
    const [[block,hub]]=await Promise.all([(async()=>{
     const block=await options.base.getBlock();
     if(!block.hash)throw Error('Arena publication has no canonical block');
     const hub=await readHubDelegation(options.base,m.hub,arena!.app,{blockHash:block.hash,requireCanonical:true});
     return [block,hub] as const;
-   })(),identify()]);
+   })(),identify(false,8000)]);
    if(generation!==fenceGeneration||stopped)return;
    // Read-only prefetch must not retire a pending command behind its owner.
    // The serialized recovery path records canonical closure evidence.

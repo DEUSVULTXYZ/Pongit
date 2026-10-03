@@ -69,6 +69,17 @@ test('concurrent identity refreshes share one observation without accepting the 
  finally{release();const outcomes=await Promise.allSettled([a,b]);assert(outcomes.every(x=>x.status==='rejected'));f.player.close();}
  assert.equal(f.sent.length,1);assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
 });
+
+test('periodic fence refreshes identity before the ten-second stream validity expires',async()=>{
+ const f=fixture(16);let identities=0;const request=f.node.request;
+ f.node.request=async(r:any)=>{if(r.method==='interlude_session')identities++;return request(r);};
+ await f.player.move(1);assert.equal(identities,1);
+ f.advance(8500);f.fresh();await f.player.move(-1);
+ assert.equal(identities,2,'Do not wait for visible event delivery to become unauthorized');
+ f.advance(3001);f.failBase(true);await assert.rejects(f.player.move(0),/timeout/);
+ assert.equal(f.sent.length,2,'Early identity refresh must not extend the three-second hub fence');
+ f.player.close();
+});
 function fixture(rules:10|11|15|16=10,onTiming?:(s:PoolPlayerTiming)=>void){
  const fixtureAbi=rules===16?synchronizedAgentArenaAbi:rules>=15?reusableAgentArenaAbi:abi;
  const key=generatePrivateKey(),account=privateKeyToAccount(key),owner=privateKeyToAccount(generatePrivateKey()),at=Math.floor(Date.now()/1000);
