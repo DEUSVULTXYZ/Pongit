@@ -1,5 +1,71 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 04:25 UTC — admission history and private archive reserve
+
+Production is unchanged. Tournament 7 remains the sole tournament driver with
+original deadline **06:34:34.836101 UTC**. Engine/archive workers retain their
+original **08:29:45.123254** deadline and unchanged d285aa9 image. Do not extend
+bounds or start another fixture while a lane or journal remains unresolved.
+
+Copy 6 passed at 03:56:56: five published results, 100 confirmed controls per
+human, 18,809 ms five-way overlap, command p95 222.65/221.67/192.14/176.92 ms.
+This does not erase seven-way observer 3's failure. Its 50 samples showed human
+games progressing but repeated protective pause/resume cycles in friendly copies;
+one game ended before five contiguous unpaused seconds across all seven games.
+Human trial 7 passed Classic 4–7, Chaos 5–7, financial checks and 50,451 ms overlap.
+
+Player changes b338429/f47e88d overlap independent identity/canonical-hub reads,
+coalesce identity queries, and refresh before the ten-second stream-identity
+deadline. The original three-second authorization fence, nonce journal and
+500-ms contractual heartbeat credit remain unchanged. Three regression tests
+failed before these fixes; all 38 player tests and root typecheck pass.
+
+Copy 7 used this client with the same hosted engine and failed at 04:07:23,
+before its original 04:25:01 bound: the tournament ended before the fourth
+friendly game started. Each challenge required two successful admission scans,
+the first without an admission. Queued-to-assigned times were 18.0, 21.2, 33.1
+and 31.9 seconds; readiness added about nine seconds each. These are synthetic
+operator-harness measurements, not public catalogue measurements. Seven-way
+observer 4 failed with zero samples when a reference was already historical.
+Human trial 8 separately passed at 04:10:20 with Classic/Chaos, financial checks
+and 17,236 ms overlap. All these original reports and stopped drivers remain.
+The human service/admission still retain **04:44:17/04:34:17** original bounds.
+
+The admission queue reproducibly scans completed/cancelled history. Two new
+tests fail on the baseline after 96 old requests. The local candidate maintains
+a bounded ring of waiting requests while preserving historical IDs, signatures,
+pending ownership, community exclusivity and imported cursor order. It removes
+only admitted/cancelled/explicitly expired entries. Eligibility scans remain
+bounded at 32 and invalidate qualification proof on queue/catalogue changes.
+Fifty-nine focused Solidity tests, including 1,000 randomized cancellation cases,
+pass, followed by a successful full Forge run. This queue change and PoolSteer
+72084b6 remain **undeployed**; neither establishes hosted admission/clock targets.
+
+At block 67732383 only failed copy 142 was captured (contractual cancellation,
+zero winner). Copies 143–145 and tournament match 146 remained unarchived.
+Matching-epoch hosted health was healthy with zero publication errors/pending
+diffs. The private archive worker instead lacked gas: 0.07571336 MON, versus
+209.04985262 MON in the operator reserve. The authorized, journaled 20 test-MON
+top-up confirmed at block **67733056**, transaction
+`0x50337bb17656fc1b46fe5124f1a6d0560de1c99e6411b5159622c5c8098b0b35`.
+Archive balance became 20.07571336 and operator balance 189.047262024 MON.
+Verify canonical capture after the existing archive worker resumes. Do not
+resubmit this transfer or cancel/recover these matches implicitly.
+
+Backup `sync-20261003T0420Z` contains eighteen SHA-verified off-VPS files,
+manifest `31ddf71e52783436a4bf050a11f37957a767322d056ec3020f3c8bb3eb1c3b5d`.
+It predates the latest funding. Seventy verified intermediate backup files
+(653,089,378 bytes) were offloaded; all off-VPS bytes/manifests remain. The first
+cleanup attempt aborted without deletion because stopped recovery mounts 0041;
+that entire mounted backup remains untouched. Disk remains above 80 percent;
+further scoped cleanup is required before an image build.
+
+Browser startup permission after the prior automatic rejection remains pending;
+do not launch an alternate server. Public historical migration, actual browser
+admission/rendering, optimized Chaos clock, seven-way concurrency, publication/
+release reserve and rotation, remaining finances/replays and the unchanged
+24-hour trial remain open. No funding request is needed.
+
 ## Checkpoint, 3 October 03:41 UTC — clock failure isolated, steering reads reduced
 
 Production and active private engine binaries are unchanged. Tournament 6 passed

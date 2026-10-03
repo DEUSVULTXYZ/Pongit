@@ -30,7 +30,67 @@ contract ContinuingAgentChallengesTest is MigratingAgentCatalogTest {
         sourceQueue.setAdmissions(false);_import();
         queue=new ContinuingAgentChallenges(sourceQueue,address(sourceQueue).codehash,next,address(this),address(this));queue.startImport();
     }
-    function _sealQueue() private {_startQueue();queue.importPage(32);queue.sealContinuation();queue.setAdmissions(true);}
+    function _sealQueue() private {_startQueue();while(queue.imported()<queue.inheritedCount())queue.importPage(32);queue.sealContinuation();queue.setAdmissions(true);}
+    function testCompletedHistoryCannotDelayNextChallenge() public {
+        for(uint256 i;i<96;i++){
+            uint256 id=_command(sourceQueue,PLAYER,KEY,1,0);
+            if(i%2==0)_command(sourceQueue,PLAYER,KEY,2,id);
+            else{
+                vm.prank(address(pool));(uint256 taken,,)=sourceQueue.takeNext();
+                // The baseline may need historical scans while preparing its history.
+                while(taken==0){vm.prank(address(pool));(taken,,)=sourceQueue.takeNext();}
+                vm.prank(address(pool));sourceQueue.completed(taken);
+            }
+        }
+        uint256 newest=_command(sourceQueue,PLAYER,KEY,1,0);
+        vm.prank(address(pool));(uint256 nextId,,)=sourceQueue.takeNext();
+        assertEq(nextId,newest,"one scan must reach the only pending challenge");
+    }
+    function testImportedCancelledHistoryCannotDelayOnlyWaitingChallenge() public {
+        for(uint256 i;i<96;i++){
+            uint256 id=_command(sourceQueue,PLAYER,KEY,1,0);_command(sourceQueue,PLAYER,KEY,2,id);
+        }
+        uint256 newest=_command(sourceQueue,PLAYER,KEY,1,0);_sealQueue();
+        assertEq(queue.cursor(),sourceQueue.cursor(),"import retains its historical cursor");
+        (uint256 nextId,,)=queue.takeNext();assertEq(nextId,newest,"history must not hide imported pending request");
+        assertTrue(queue.qualificationsMayStart());
+    }
+    function testBoundedWaitingScanAndImportedCursorSurviveBusyAgents() public {
+        for(uint256 i;i<40;i++){
+            if(i>0)_grant(PLAYER+i,KEY+i);
+            _command(sourceQueue,PLAYER+i,KEY+i,1,0);
+        }
+        address agent=old.house(0);bytes32 token=keccak256("waiting scan");
+        vm.prank(address(pool));old.reserve(agent,0,token);
+        vm.prank(address(pool));(uint256 taken,,)=sourceQueue.takeNext();assertEq(taken,0);
+        assertEq(sourceQueue.cursor(),33);assertFalse(sourceQueue.qualificationsMayStart());
+        vm.prank(address(pool));sourceQueue.takeNext();assertTrue(sourceQueue.qualificationsMayStart());
+        // An availability revision invalidates the completed scan immediately.
+        vm.prank(address(pool));old.release(agent,token);assertFalse(sourceQueue.qualificationsMayStart());
+        uint256 expected=sourceQueue.cursor();_sealQueue();
+        (taken,,)=queue.takeNext();assertEq(taken,expected,"continuation must keep scan order");
+        queue.completed(taken);
+        // Removing the ring head/tail/current through another old tab must not
+        // duplicate a match or erase an adjacent waiting player.
+        _command(sourceQueue,PLAYER,KEY,2,1);_command(sourceQueue,PLAYER+39,KEY+39,2,40);
+        bool[41] memory seen;seen[taken]=true;
+        for(uint256 i;i<37;i++){
+            (taken,,)=queue.takeNext();assertTrue(taken>1&&taken<40);assertFalse(seen[taken]);seen[taken]=true;queue.completed(taken);
+        }
+        (taken,,)=queue.takeNext();assertEq(taken,0);assertTrue(queue.qualificationsMayStart());
+    }
+    function testFuzzCancelledWaitingLinksKeepOtherRequests(uint64 cancelled,uint8 length) public {
+        uint256 size=bound(length,1,48);
+        for(uint256 i;i<size;i++){
+            if(i>0)_grant(PLAYER+i,KEY+i);_command(sourceQueue,PLAYER+i,KEY+i,1,0);
+        }
+        for(uint256 i;i<size;i++)if((uint256(cancelled)>>i)&1!=0)_command(sourceQueue,PLAYER+i,KEY+i,2,i+1);
+        _sealQueue();
+        for(uint256 i;i<size;i++)if((uint256(cancelled)>>i)&1==0){
+            (uint256 taken,,)=queue.takeNext();assertEq(taken,i+1);queue.completed(taken);
+        }
+        (uint256 last,,)=queue.takeNext();assertEq(last,0);assertTrue(queue.qualificationsMayStart());
+    }
     function createNewRequest() external {_command(queue,PLAYER,KEY,1,0);}
     function testWaitingRequestAndFamilySurviveWithoutResigningOrResettingOrder() public {
         uint256 id=_command(sourceQueue,PLAYER,KEY,1,0);bytes32 grant=family.grantDigest(family.grantOf(vm.addr(PLAYER)));

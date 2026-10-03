@@ -17,6 +17,7 @@ contract ContinuingAgentChallenges is HouseInstanceChallenges {
     bool public importStarted;
     bool public continuationSealed;
     bytes32 public importDigest;
+    uint256 private importedWaitingCursor;
     event RequestImported(uint256 indexed id,address indexed player,uint8 status);
     event ContinuationSealed(address indexed source,uint256 count,bytes32 digest);
 
@@ -56,6 +57,7 @@ contract ContinuingAgentChallenges is HouseInstanceChallenges {
             if(status==1){
                 require(predecessor.pending(player)==id&&pending[player]==0,"source waiting request");
                 require(catalog.identity(agent).creator!=address(0),"source agent missing");pending[player]=id;
+                _enqueueWaiting(id);if(importedWaitingCursor==0&&id>=cursor)importedWaitingCursor=id;
             }
             // This is a different EIP-712 domain. Preserve the observed counter
             // for each encountered grant, never its signatures or private key.
@@ -67,7 +69,7 @@ contract ContinuingAgentChallenges is HouseInstanceChallenges {
     function sealContinuation() external {
         require(block.chainid==10143&&msg.sender==owner&&importStarted&&!continuationSealed&&imported==inheritedCount,"incomplete queue import");
         _closedSource();require(predecessor.count()==inheritedCount,"source queue changed");
-        continuationSealed=true;emit ContinuationSealed(address(predecessor),inheritedCount,importDigest);
+        _resumeWaitingAt(importedWaitingCursor);continuationSealed=true;emit ContinuationSealed(address(predecessor),inheritedCount,importDigest);
     }
     function setAdmissions(bool value) public override {
         require(!value||continuationSealed,"queue continuation not sealed");
@@ -80,7 +82,7 @@ contract ContinuingAgentChallenges is HouseInstanceChallenges {
         (,,,uint8 sourceStatus,,)=predecessor.requests(id);
         if(sourceStatus==1)return;
         require(sourceStatus==3,"source request changed unexpectedly");
-        Request storage r=requests[id];r.status=3;
+        Request storage r=requests[id];r.status=3;_removeWaiting(id);
         if(pending[r.player]==id)delete pending[r.player];
         emit ChallengeChanged(id,r.player,r.agent,3);
     }
