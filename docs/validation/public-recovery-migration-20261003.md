@@ -58,3 +58,38 @@ exercise public browser paths. No private trial season may replace this source.
 Service rollback must retain the current DBs and signed nonce journals. Restoring
 an old database over new transactions is prohibited. The interrupted old season
 cannot silently be resumed alongside the new authority.
+
+## 15:25 UTC execution checkpoint
+
+Recovering catalogue `0x333e245f898898c65eadd92e8fdddd0f4b32b166`
+is prepared but not imported. Immutable modules were reused only after matching
+all creation bytes. The public source is still the original `205d` season.
+Target namespace is `reusable-agents-20261003-4`, rules16 and hubv3.
+
+153 Solidity migration tests and41 TypeScript lifecycle/compatibility tests pass.
+Root TypeScript passes. Canonical source inventory at67858746 found463 results,
+9 identities,23 tournaments and67 requests, none pending. Six stale finality
+flags in historical tournament9 were reconciled on their original book without
+changing scores. Two tournament23 results still await actual arena release.
+
+The first retirement worker was stopped at15:20:50 before any release because
+its final verifier lookup incorrectly assumed a browser manifest field. The
+replacement reads the verifier from the canonical pool. A mount-target error
+prevented its first launch before execution; that failed container remains.
+The sole running replacement is `pongit-public-retirement-20261003-3`, report
+`retirement/public-retirement-2.json`. It reuses the original operation IDs,
+eight confirmed closes and original15:57:34 deadline. No close was resent.
+The original report and both stopped containers are preserved.
+
+An exact deployed-hub RPC fork at67862820 accepted16,000 synthetic batches,
+64 changed words/batch,1,024 distinct slots,32 transactions/batch and1,233 raw
+bytes/transaction. Cold release used82,053 gas before refunds; all latest values
+survived. This is a fork bound, not hosted publication/capacity or24-hour proof.
+The production trial will retain qualified=false and explicit experimental
+reserve evidence. Actual public browser controls remain to be exercised.
+
+Prepared control scripts verify source release/roots, final history and import
+preservation; scoped activation then opens new v3 arenas and qualifications.
+Public play/tournaments cannot open through this script before all eight house
+policies have actual Classic and Chaos qualification. Shared family remains
+unchanged. The scheduled Codex follow-up remains paused.

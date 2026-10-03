@@ -18,14 +18,22 @@ assert(deadline>Date.now()&&deadline<Date.now()+80*60000);
 const m=JSON.parse(await readFile('/metadata/source-manifest.json','utf8'));
 assert.equal(m.pool.toLowerCase(),'0x205d5739136d6cb73d732e1146e1ce034798a613');
 assert.equal(m.hub.toLowerCase(),'0x3ef8327f69e09cf721772f345e2a887ea22cd595');
-const report:any={startedAt:new Date().toISOString(),deadline,pool:m.pool,arenas:[],passed:false};
-const path='/evidence/public-retirement-1.json';
+const resume=process.env.PONG_PUBLIC_RETIREMENT_RESUME==='verified-original-deadline';
+assert(!process.env.PONG_PUBLIC_RETIREMENT_RESUME||resume);
+const previous=resume?JSON.parse(await readFile('/evidence/public-retirement-1.json','utf8')):undefined;
+if(previous){assert(!previous.passed&&previous.pool===m.pool&&previous.deadline===deadline);assert(previous.arenas.length===8&&previous.arenas.every((a:any)=>a.close));}
+const report:any=previous?{...previous,resumedAt:new Date().toISOString(),resumeReason:'Canonical verifier lookup; original writer stopped before release; original deadline and journal retained'}:{startedAt:new Date().toISOString(),deadline,pool:m.pool,arenas:[],passed:false};
+const path=resume?'/evidence/public-retirement-2.json':'/evidence/public-retirement-1.json';
 await writeFile(path,JSON.stringify(report),{flag:'wx'});
 const save=async()=>{await writeFile(path+'.next',JSON.stringify(report,(_,v)=>typeof v==='bigint'?String(v):v,2));await rename(path+'.next',path);};
 const t=await chainTools('public-retirement-20261003-1');
 const read=(address:any,abi:any,functionName:string,args:any[]=[])=>t.base.readContract({address,abi,functionName,args}) as Promise<any>;
 const write=(id:string,address:any,abi:any,method:string,args:any[])=>retryOperatorContention(()=>t.write(id,address,abi,method,args));
 try{
+ const verifier=await read(m.pool,poolAbi,'verifier');
+ assert(/^0x[\da-f]{40}$/i.test(verifier)&&BigInt(verifier)!==0n,'Canonical verifier required');
+ if(m.verifier)assert.equal(m.verifier.toLowerCase(),verifier.toLowerCase());
+ report.verifier=verifier;
  assert.equal((await read(m.pool,poolAbi,'owner')).toLowerCase(),t.account.address.toLowerCase());
  assert.equal(await read(m.tournaments,bookAbi,'count'),23n);
  for(const [address,abi,gate] of [[m.pool,poolAbi,'publicAdmissions'],[m.pool,poolAbi,'admissions'],[m.tournaments,bookAbi,'admissions'],[m.challenges,queueAbi,'admissions']] as const){
@@ -35,7 +43,7 @@ try{
  for(let lane=0;lane<5;lane++)assert.equal((await read(m.pool,poolAbi,'laneRecord',[lane])).ref.id,0n,'Never close an occupied lane');
  report.matchNonce=await read(m.pool,poolAbi,'nonce');
  report.tournament=await read(m.tournaments,bookAbi,'tournament',[23n]);
- for(const a of m.arenas){
+ for(const a of resume?[]:m.arenas){
   const d=await readHubDelegation(t.base,m.hub,a.app);
   assert([0,1,2].includes(d.status));
   const root=await read(a.app,arenaAbi,'resultCommitment');
@@ -51,14 +59,14 @@ try{
   const block=await t.base.getBlock();
   for(const row of report.arenas.filter((r:any)=>!r.verified)){
    const d=await readHubDelegation(t.base,m.hub,row.app);
-   assert.equal(d.epoch,row.epoch,'Unexpected reopening');
+   assert.equal(d.epoch,BigInt(row.epoch),'Unexpected reopening');
    if(d.status===2&&d.stakeUnlockAt<=block.timestamp){
     const receipt=await write('release-'+row.app+'-'+row.epoch,m.pool,poolAbi,'releaseArena',[row.app]);
     row.release={hash:receipt.transactionHash,block:receipt.blockNumber};
    }else if(d.status!==0)continue;
    assert.equal((await readHubDelegation(t.base,m.hub,row.app)).status,0);
-   if(row.root[0]===row.epoch){
-    assert.deepEqual(await read(m.verifier,verifierAbi,'finalizedRoots',[row.app,row.epoch]),[row.root[2],row.root[1]],'Exact final root');
+   if(BigInt(row.root[0])===BigInt(row.epoch)){
+    assert.deepEqual(await read(verifier,verifierAbi,'finalizedRoots',[row.app,BigInt(row.epoch)]),[row.root[2],Number(row.root[1])],'Exact final root');
    }
    row.verified=true;await save();
   }

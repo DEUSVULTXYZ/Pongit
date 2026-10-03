@@ -21,9 +21,10 @@ const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
 const atomicQualification=process.env.PONG_CATALOGUE_ATOMIC_QUALIFICATION==='1';
 const privateV3=process.env.PONG_CATALOGUE_PRIVATE_V3==='reviewed-private';
 assert(!process.env.PONG_CATALOGUE_PRIVATE_V3||privateV3);
-const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private';
+const publicSynchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-public';
+const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private'||publicSynchronized;
 assert(!process.env.PONG_CATALOGUE_SYNCHRONIZATION||synchronized);
-assert(!synchronized||privateV3,'Synchronized qualification must use the isolated private API');
+assert(publicSynchronized?!privateV3:!synchronized||privateV3,'Synchronization scope must match the actual public/private API');
 const continuationScope=process.env.PONG_PRIVATE_SYNC_CONTINUATION;
 const deploymentPath=process.env.PONG_CATALOGUE_PRIVATE_DEPLOYMENT;
 assert((continuationScope===undefined)===(deploymentPath===undefined),'Private browser continuation needs its scope and pinned deployment together');
@@ -172,10 +173,11 @@ await context.addInitScript(()=>{
 });
 try{
  const config=await (await apiGet('/agents/config')).json();
+ if(publicSynchronized)assert(config.rulesVersion===16&&config.friendlyPause==='heartbeat-v1'&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled,'Actual public rules-16 migration required');
  if(continuationRecord)assertPrivateSyncBrowserTarget(config,continuationRecord,continuationScope);
  else if(privateV3)assert(config.pool.toLowerCase()===(synchronized?'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8':'0x550ff3c22e20fc760af9afd68fba2cb531140dc6')&&config.rulesVersion===(synchronized?16:15)&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled&&config.challengeAdmission==='atomic-v1');
  assert(config.version===5&&config.houseInstances==='official-v1'&&config.maxMatches===5,'Public five-lane migration is not active');
- report.pool=config.pool;
+ report.pool=config.pool;report.rulesVersion=config.rulesVersion;
  await page.goto(report.origin+'/agents',{waitUntil:'domcontentloaded'});
  // Server-rendered buttons can be visible before their React handlers exist.
  // A loaded actionable catalogue proves hydration; verify the selection too.
