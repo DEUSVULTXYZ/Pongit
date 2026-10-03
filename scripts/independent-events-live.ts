@@ -31,6 +31,8 @@ const m=publicIndependentManifest(raw),rules=independentRules(m),base=createPubl
 const run=process.env.PONG_EVENTS_RUN??'1';assert(/^[1-9][0-9]?$/.test(run));
 const chaosTrackingSeconds=Number(process.env.PONG_EVENTS_CHAOS_TRACK_SECONDS??50);
 assert(Number.isInteger(chaosTrackingSeconds)&&chaosTrackingSeconds>=50&&chaosTrackingSeconds<=180,'Bounded private rotation observation');
+const classicTrackingSeconds=Number(process.env.PONG_EVENTS_CLASSIC_TRACK_SECONDS??50);
+assert(Number.isInteger(classicTrackingSeconds)&&classicTrackingSeconds>=50&&classicTrackingSeconds<=180,'Bounded private Classic observation');
 const secret=`/secrets/events-live-${run}.json`,out=`artifacts/independent-candidate/events-live-${run}.json`;
 try{await readFile(secret);throw Error('Preserve and reconcile the previous fixture before a new run');}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const closedProduction=process.env.PONG_EVENTS_TARGET==='closed-production-qualification';
@@ -178,7 +180,7 @@ async function play(match:Awaited<ReturnType<typeof prepare>>){
    const current=await read();if(current.phase!==2)return;
    const v=current.state,position=side?v.right:v.left;
    let target=50000000n;
-   if(Date.now()-firstPlaying<(mode?chaosTrackingSeconds:50)*1000||mode&&!bought||report.matches.length<2||report.matches.some((x:any)=>!x.playingAt)){
+   if(Date.now()-firstPlaying<(mode?chaosTrackingSeconds:classicTrackingSeconds)*1000||mode&&!bought||report.matches.length<2||report.matches.some((x:any)=>!x.playingAt)){
     const plane=side?984000000n:40000000n,dt=v.vx===0n?0n:(plane-v.x)*1000000n/v.vx;
     let y=v.y+(dt>0n?v.vy*dt/1000000n:0n)-6000000n;const period=1128000000n;y=((y%period)+period)%period;target=6000000n+(y>564000000n?period-y:y);
    }

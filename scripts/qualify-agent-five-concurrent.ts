@@ -16,6 +16,7 @@ import {agentCatalogAbi as catalogAbi} from '../shared/abi-AgentCatalog';
 import {agentChallengesAbi as challengeAbi} from '../shared/abi-AgentChallenges';
 import {preparePoolFamily,loadPoolFamily} from '../shared/agent-pool-family';
 import {preparePoolChallenge} from '../shared/agent-pool-client';
+import {challengeRefFromReceipt} from '../shared/agent-challenge-receipt';
 import {createPoolPlayer} from '../shared/agent-pool-player';
 import {createPoolObserver} from '../shared/agent-pool-observer';
 import {validateAgentPoolManifest} from '../shared/agent-pool';
@@ -158,7 +159,7 @@ try{
      const state=await observer.read(true);
      if(state.phase===2&&state.clock<60_000_000n&&state.state.scoreA+state.state.scoreB<=2){
       assert(catalogue.items.some(v=>v.official&&v.agent.toLowerCase()===active.a.toLowerCase()));
-      report.tournament=ref;archetype=active.a;report.archetype=archetype;report.adoptedExistingTournament=true;adopted=true;save();break;
+      report.tournament=ref;report.adoptedAt=new Date().toISOString();report.adoptedClock=String(state.clock);report.adoptedScore=[state.state.scoreA,state.state.scoreB];archetype=active.a;report.archetype=archetype;report.adoptedExistingTournament=true;adopted=true;save();break;
      }
     }finally{observer.close();}
    }
@@ -174,14 +175,18 @@ try{
   const p=secret.people[row.index],storage={getItem:(k:string)=>p.storage[k]??null,setItem:(k:string,v:string)=>{p.storage[k]=v;saveSecret();},removeItem:(k:string)=>{delete p.storage[k];saveSecret();}};
   const family=loadPoolFamily(m,row.player,storage)!;
   p.call=await preparePoolChallenge(base,m,privateKeyToAccount(family.key),row.player,{agent:archetype,mode:row.mode});saveSecret();
-  await retryOperatorContention(()=>t.submit('challenge-'+row.index,p.call.data,p.call.to));row.queuedAt=new Date().toISOString();save();
+  const receipt=await retryOperatorContention(()=>t.submit('challenge-'+row.index,p.call.data,p.call.to));row.queuedAt=new Date().toISOString();save();
   assert(Date.now()<deadline,'Original admission deadline');
   // Version-5 requests may have been admitted atomically by their own signed
   // command. Resolve the player's assigned lane before asking for another.
-  const lanes=await Promise.all([1,2,3,4].map(i=>read(m.pool,poolAbi,'laneRecord',[i])));
-  const current=lanes.find(v=>v.ref.id>0n&&v.a.toLowerCase()===row.player.toLowerCase());
-  if(current)row.ref={chainId:10143,app:current.ref.arena,epoch:String(current.ref.epoch),id:String(current.ref.id)};
-  else row.ref=extract(await write('admit-'+row.index,m.pool,poolAbi,'admitChallenge'));
+  if((await base.getBlock({blockNumber:receipt.blockNumber})).hash===receipt.blockHash)
+   row.ref=challengeRefFromReceipt(m,receipt,row.player,{agent:archetype,mode:row.mode});
+  if(!row.ref){
+   const lanes=await Promise.all([1,2,3,4].map(i=>read(m.pool,poolAbi,'laneRecord',[i])));
+   const current=lanes.find(v=>v.ref.id>0n&&v.a.toLowerCase()===row.player.toLowerCase());
+   if(current)row.ref={chainId:10143,app:current.ref.arena,epoch:String(current.ref.epoch),id:String(current.ref.id)};
+   else row.ref=extract(await write('admit-'+row.index,m.pool,poolAbi,'admitChallenge'));
+  }
   row.admittedAt=new Date().toISOString();save();
   // An atomic challenge may already own a loading arena. Its player must
   // acknowledge it immediately while the other independent accounts submit.
@@ -207,6 +212,18 @@ try{
    const states=await Promise.all([...clients.map(c=>c.read(true)),tournamentObserver!.read(true)]);
    assert(states.every(s=>s.phase===2),'Five games must actually overlap on the hosted engines');
    report.overlapVerifiedAt=new Date().toISOString();report.overlapStates=states.map(s=>({id:String(s.id),revision:String(s.revision),clock:String(s.state.t),a:s.a,b:s.b}));save();releaseReady();
+  }
+  // The synthetic player actually defends while the other accounts enter.
+  // Keeping its heartbeat alive with a motionless paddle measures idle losses,
+  // not the requested simultaneous-control scenario. No score is injected.
+  while(!report.overlapVerifiedAt&&Date.now()<deadline){
+   const s=await client.read();assert.equal(s.phase,2,'A waiting player finished before simultaneous controls');
+   const v=s.state,dt=v.vx<0n?(40_000_000n-v.x)*1_000_000n/v.vx:0n;
+   let target=288_000_000n;
+   if(dt>0n){let y=v.y+v.vy*dt/1_000_000n-6_000_000n;const period=1_128_000_000n;y=((y%period)+period)%period;target=6_000_000n+(y>564_000_000n?period-y:y);}
+   const dir=v.left<target-8_000_000n?1:v.left>target+8_000_000n?-1:0;
+   if(dir!==v.leftDir){await client.move(dir);row.preparationMoves=(row.preparationMoves??0)+1;save();}
+   await Promise.race([allReady,wait(80)]);
   }
   await allReady;
   for(let i=0;i<100&&Date.now()<deadline;i++){
