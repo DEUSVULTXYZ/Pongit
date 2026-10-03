@@ -102,7 +102,19 @@ try{
  const identities=await Promise.all(r.bots.map((b:any)=>read(r.common.catalog,catalogAbi,'identity',[b.agent])));
  assert.equal(identities.length,8);assert(identities.every(v=>v.qualified===3));
  const count=await read(r.common.tournaments,bookAbi,'count');assert(count===id||count===id-1n);
- if(count===id-1n&&id>1n){assert.equal((await read(r.common.tournaments,bookAbi,'tournament',[id-1n])).status,3);assert((await t.base.getBlock()).timestamp>=await read(r.common.tournaments,bookAbi,'nextAt'));}
+ if(count===id-1n&&id>1n){
+  assert.equal((await read(r.common.tournaments,bookAbi,'tournament',[id-1n])).status,3);
+  // Completion does not remove the contractual minute between tournaments.
+  // Keep admissions closed while waiting inside this trial's original bound.
+  let nextAt=await read(r.common.tournaments,bookAbi,'nextAt');
+  while((await t.base.getBlock()).timestamp<nextAt){
+   assert(Date.now()<deadline,'Original tournament deadline reached during intermission');
+   report.waitingForNextTournament=String(nextAt);await save();await wait();
+   nextAt=await read(r.common.tournaments,bookAbi,'nextAt');
+  }
+  assert(Date.now()<deadline,'Original tournament deadline reached during intermission');
+  delete report.waitingForNextTournament;
+ }
  await write('pool-on',r.common.pool,poolAbi,'setAdmissions',[true]);
  await write('book-on',r.common.tournaments,bookAbi,'setAdmissions',[true]);
  if(count===id-1n)await write('begin',r.common.tournaments,bookAbi,'begin');
@@ -156,7 +168,8 @@ try{
   await write('admit-'+next[0],r.common.pool,poolAbi,'admitTournament',[id]);await wait();
  }
  assert(report.passed,'Original tournament deadline reached');
-}catch(e){report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);process.exitCode=1;}
+}catch(e){report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);
+ report.failureLocation=String((e as Error).stack??'').split('\n').find(line=>line.trim().startsWith('at '))?.trim().replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,250);process.exitCode=1;}
 finally{
  for(const [key,to,abi]of [['pool',r.common.pool,poolAbi],['book',r.common.tournaments,bookAbi]]as const){try{await write('close-'+key,to,abi,'setAdmissions',[false]);report[key+'Closed']=true;}catch{report[key+'Closed']=false;process.exitCode=1;}}
  report.finishedAt=new Date().toISOString();await save();await db.end();await t.close();await closeMetrics();console.log(JSON.stringify({passed:report.passed,error:report.error,fixtures:report.fixtures.length}));
