@@ -12,21 +12,23 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {engineTransport} from '../shared/engine-transport';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {privateSyncContinuation} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_SYNC_RELEASE,'finished-private-only');
 assert.equal(process.getuid?.(),1000);
 const deadline=Date.parse(process.env.PONG_SYNC_RELEASE_DEADLINE??'');
 assert(deadline>Date.now()&&deadline<Date.now()+80*60000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
-assert(r.maxMatches===5&&!r.continuation&&r.rulesVersion===16);
-assert.equal(r.common.pool.toLowerCase(),'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8');
+const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
+assert(r.maxMatches===5&&r.rulesVersion===16);
+assert.equal(r.common.pool.toLowerCase(),continuation?'0xdee98e3f7a0f0049244a8257a9cde304d909e5dc':'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8');
 assert.equal(r.arenas.length,5);
-for(const name of ['five-concurrent-1.json','five-tournament-1.json','five-tournament-2.json']){
+for(const name of continuation?['five-concurrent-6.json','five-tournament-3.json','five-tournament-4.json']:['five-concurrent-1.json','five-tournament-1.json','five-tournament-2.json']){
  const proof=JSON.parse(await readFile('/evidence/'+name,'utf8'));
  assert(proof.passed&&proof.finishedAt&&proof.pool.toLowerCase()===r.common.pool.toLowerCase());
 }
 const backup=JSON.parse(await readFile('/backup/off-vps.json','utf8'));
-assert(backup.verified&&backup.files===7);
+assert(backup.verified&&backup.files===(continuation?16:7));
 const file='/evidence/sync-release-1.json';
 const report:any={startedAt:new Date().toISOString(),deadline,pool:r.common.pool,backup,arenas:[],passed:false,
  scope:'Normal closure, release and exact-root sealing of five completed private rules-16 arenas. No forced closure, opening, public mutation or final release claim.'};
