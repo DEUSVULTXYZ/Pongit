@@ -88,7 +88,9 @@ try{
    for(const [method,arg]of [['registeredBlock',agent],['nonces',old.creator]]as const)assert.equal(await read(r.common.catalog,catalogAbi,method,[arg]),await read(source.catalog,catalogAbi,method,[arg]));
    for(let mode=0;mode<2;mode++){
     assert.deepEqual(await read(r.common.ratings,ratingsAbi,'ratingOf',[agent,mode]),await read(source.ratings,ratingsAbi,'ratingOf',[agent,mode]));
-    assert.equal(await read(r.common.qualifications,qualificationAbi,'retryAt',[agent,mode]),await read(source.qualifications,qualificationAbi,'retryAt',[agent,mode]));
+    // A changed house algorithm must qualify again. Its old compatibility
+    // cooldown is intentionally reset; unchanged community strategies inherit it.
+    assert.equal(await read(r.common.qualifications,qualificationAbi,'retryAt',[agent,mode]),old.house?0n:await read(source.qualifications,qualificationAbi,'retryAt',[agent,mode]),'Qualification retry continuity');
     assert.equal(await read(r.common.catalog,catalogAbi,'qualificationEvidence',[agent,mode]),old.house?zeroHash:await read(source.catalog,catalogAbi,'qualificationEvidence',[agent,mode]));
    }
    report.identities.push({agent,house:old.house});

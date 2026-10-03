@@ -93,3 +93,23 @@ preservation; scoped activation then opens new v3 arenas and qualifications.
 Public play/tournaments cannot open through this script before all eight house
 policies have actual Classic and Chaos qualification. Shared family remains
 unchanged. The scheduled Codex follow-up remains paused.
+
+## 15:50 UTC — source released and public import started
+
+The sole replacement retirement worker exited0 at15:40:55. All eight canonical
+delegations are None with exact finalized roots and counts. Its report is
+`retirement/public-retirement-2.json`; no old arena was reopened. A subsequent
+finality-only scan finished before the archive captured its last result and
+retains a failed/pending report. The existing archive then captured and synchronized
+that result. It stopped cleanly before import.
+
+Canonical source verification at67868667 passed:463 final ordered results,
+9 identities,23 tournaments and67 requests. Tournament23 retains17 resolved
+fixtures, no champion and closed admissions. All five lanes are empty.
+
+Backup `sync-public-20261003T1547Z` contains seven files /153,406,041 bytes.
+The off-VPS copy was SHA-verified at15:48:16, manifest
+`51692749bf0314c209580377005b54b1b2e301febb29c5c9776633fb7c33b3dd`.
+`pongit-public-v3-import-1` started15:49:08 under the original operator journal.
+This imports the actual public205d source, never a private trial season.
+It is not yet a verified import or playable deployment at this checkpoint.
