@@ -1,5 +1,53 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 12:30 UTC — off-VPS restore verified; release still waiting
+
+Production remains unchanged. The sole release worker
+`pongit-sync-queue-release-1-9c58ae5` was still running at12:29:46 UTC:
+five normally closed arenas, zero released, no reported error. Its original
+13:18:21.215385 deadline and actual13:00:38–13:00:53 hub release times are
+unchanged. No new driver, lifecycle writer, import or opening was started.
+
+Backup `sync-20261003T1204Z` now has a full **actual off-VPS restore** proof.
+The12 dump files were uploaded back from the verified Windows copy into a
+new0700 input directory, then SHA/size-checked against manifest
+`432be802ab420db2e2453e90b49cae0ad9d614efcc0bc6fcd9218ee6f4dbef47`.
+All12 were restored sequentially into new scratch database names in the
+existing stopped, network-isolated PostgreSQL container, bounded to512MiB,
+half a CPU and the original15-minute deadline. No application, key, network
+access, public database or blockchain writer was activated.
+
+Verification passed at**12:28:05.108568 UTC**, before12:39:06.801295:
+all12 schemas loaded; the original operator journal retained the12 confirmed
+velocity-preparation transactions; all254 index references/rules/retention
+matched the earlier canonical proof; and all75 retained replay byte hashes
+and decoded frame counts matched across the four original databases. These
+comparisons reuse the pinned canonical proofs at67823666/67824066; this is
+not a new browser or chain-finality measurement.
+
+Only the12 newly restored scratch databases were dropped, after verification.
+The scratch container stopped cleanly, exit0/no OOM. Input dumps, original
+backups, the container and all earlier failures remain preserved. The report is
+[`sync-restore-20261003.json`](sync-restore-20261003.json), SHA256
+`de95e15d074ce9c8c675920ebab3d177497ebd8ddbe86f03c63fab07da5dc518`.
+Remote report: `/opt/pongit/tests/fluid-20260928/sync-restore-1204-20261003/report.json`.
+Helper `sync-restore-1204-20261003.py` SHA256:
+`b33496b24468bf85bb6b3ea55d9af47a26e75a84fabf9a593e2c118be8c46036`.
+Exec63910 finished successfully; do not repeat this restore.
+
+The separate history-backup wrapper now includes the passing restore report
+and helper in future backups, excluding the duplicate uploaded dump directory.
+Its SHA256 is`54e5a97fee93c6b4bc166a5cdedd3fdd1fb6b534343bcec383754fa0f958d7ea`.
+It is syntax-checked and uploaded, **not run again**. The original three
+watcher helpers are unchanged. A new backup remains required after actual
+release and source finality, before private import.
+
+Disk usage is81.32% of usable capacity (`used / (used + available)`), not77.44%
+of raw filesystem blocks including the reserved portion. Recheck and perform
+scoped cleanup before an image build; none was built in this step. Browser
+startup approval, hosted clock, admission, rotation, final finance/public
+migration and unchanged24h remain unresolved. This is backup proof only.
+
 ## Checkpoint, 3 October 12:10 UTC — full historical proof and normal recovery dispatched
 
 Production remains unchanged. T11 passed all28 fixtures at11:57:37.582 UTC,
