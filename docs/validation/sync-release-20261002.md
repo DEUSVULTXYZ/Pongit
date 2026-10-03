@@ -1,5 +1,81 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 05:37 UTC — heartbeat proof and cancellation-finality deadlock
+
+Production remains unchanged. Published `3b15a82` adds normal closure of a captured,
+published tournament cancellation whose retry requires finality. Only maintenance
+can close, only the same owned active epoch, and only without a lane reservation.
+The fixture, captured record and published hash must match; read failures propagate.
+Archive retains synchronization/retry permissions. Recovery runs even with admission
+gates closed, no publication budget or failed discovery. Sixteen focused tests and
+root typecheck pass. The first test attempt lacked the newly introduced export; it
+is not a behavioral baseline proof. The actual canonical deadlock supplies that proof.
+
+Public T23 remains 17/28 resolved. Fixture 17, match 463 on 9b8e epoch 20, is already
+published cancelled, not final, and blocks `nextFixture`. The epoch remains Active
+with one batch and a lease expiring around 8 October. This is not a live result to
+discard. At canonical block **67746644**, the new helper selected normal closure and
+`closeReusableArena` simulated successfully using the existing maintenance address.
+**Zero transactions sent.** Neither the fix nor the recovery was deployed publicly.
+Other nonfinal T23 results are fixtures 10/16 on 028f epoch25 and 76ca epoch21.
+Read-only evidence: `artifacts/sync-public-fixtures-2-20261003.json`,
+`sync-public-finality-20261003.json`, `sync-public-cancel-simulation-20261003.json`.
+The first unpaced audit hit a 15/sec read limit and remains a separate failed report.
+
+Heartbeat client `8db79b0` measures suppression credit from send start, not receipt
+completion. `b01a0d2` introduces a shared single-flight 200-ms loop with an immediate
+first eligible pulse and readiness poke. Stop waits for the existing pulse and
+prevents unsent microtasks. The browser keeps visibility, recent paint, account,
+participant and playing checks; the 500-ms contract credit and three-second fence
+are unchanged. All **954 TypeScript tests**, root typecheck and the Next production
+build pass. No browser server or new public deployment was started.
+
+Actual private cadence trial 1 failed: first heartbeat arrived about 516 ms after
+phase 2, causing one protective pause, and the natural 7–0 result ended before its
+60-second diagnostic minimum. Trial 2 used the immediate pulse and passed at
+**05:12:57.807**: Chaos match **162**, arena 73fd epoch1, **90,414 ms**, 442 heartbeats,
+141 movement commands, no errors or pause transitions. Heartbeat p95 **118.96 ms**,
+command p95 **210.92 ms**. Its deliberate post-measurement concession published
+status3, score4–1, result hash
+`0x7395d66ce83e6f8c98c1e8d17e22486d4980af533db4a3335e5d889b6c338d4c`.
+Both containers exited and reports are preserved. This is a synthetic service-client
+proof, **not browser/GPU/catalogue/seven-way/24-hour qualification**. `b20def3` adds
+the explicit 30-movement/300-ms gate; the retained trial2 also satisfies it.
+
+Private T7 remains the sole tournament driver, original deadline **06:34:34.836101**;
+at 05:32, 27/28 fixtures were resolved. Engines/archive d285aa9 retain **08:29:45.123254**.
+No friendly or human driver remains active; human service3 expired normally at its
+original bound. T8 was not launched: less than the required full three-hour worker
+window remains. Do not weaken the guard or extend the old trial. Finish T7, preserve
+its verdict, then review a distinct trial/candidate after source drain and recovery.
+
+Image `pongit:sync-runtime-20f9c1d`, digest
+`sha256:cd61c0cc73e509cc9ff012dbdbcfad9cf4ed48605d08fa875aec09d99940512d`,
+matches 643 Git source hashes. Its 104 tests and **44,000** isolated EVM/TypeScript
+physics comparisons pass without mismatch. This is not hosted clock proof. The
+waiting-only challenge ring and lower-gas PoolSteer remain unhosted; the existing
+97.29-percent Chaos clock measurement remains failed.
+
+New private continuation root `sync-queue-continuation-20261003`, namespace
+`reusable-agents-20261003-2`, is **prepared-unimported** from private pool67a6 only.
+Twelve operator transactions confirmed, nonces7660–7671; no pending/failed jobs.
+Catalogue `0xb175041536b4425d24ab89f73ea54424d0429641`; fourteen modules prepared.
+No new pool, arena opening, database, source gate change or public migration.
+The source ratings no-seed audit is complete. Import must wait for source drain,
+canonical finality and a fresh verified backup.
+
+Backup `sync-20261003T0520Z`: **19 files SHA-verified off VPS**, manifest
+`f93b497552159ae291e9c86275cad1b5880921d1df3bf65bebe46b769591bca2`.
+It includes the new prepared keys/journal and cadence reports. Another 53 intermediate
+backup files (922.9 MB) were safely offloaded at 04:34; mounted 0041 remains untouched.
+Disk reads 81 percent after the image/backups; scoped cleanup is required before
+another VPS build. The latest backup has not itself been restore-tested yet.
+
+Browser4197 startup approval remains pending after automatic review rejected it;
+no alternate launch. Actual catalogue/rendering, optimized hosted clock, seven-way
+concurrency, reserve/rotation, public compatible migration, finances/replays and
+unchanged24h remain open. No funding request; necessary test-MON spending is authorized.
+
 ## Checkpoint, 3 October 04:25 UTC — admission history and private archive reserve
 
 Production is unchanged. Tournament 7 remains the sole tournament driver with
