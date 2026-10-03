@@ -19,6 +19,9 @@ const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTI
 const expectedPool=continuation?'0xdee98e3f7a0f0049244a8257a9cde304d909e5dc':PRIVATE_SYNC_PREDECESSOR;
 const expectedResults=continuation?110n:34n,expectedTournaments=continuation?4n:2n;
 assert.equal(r.common.pool.toLowerCase(),expectedPool);
+// A continuation inherits tournament references, not the predecessor's physical
+// result storage. Resolve each immutable arena to its original pool.
+const origins=[{pool:r.common.pool,arenas:r.arenas},...(r.source?.manifest?[r.source.manifest,...(r.source.manifest.history??[])]:[])];
 const release=JSON.parse(await readFile('/evidence/sync-release-1.json','utf8'));
 assert(release.passed&&release.arenas.length===5&&release.pool.toLowerCase()===expectedPool);
 const output=process.env.PONG_SYNC_SOURCE_REPORT??'/evidence/sync-source-final.json';
@@ -60,8 +63,10 @@ try{
   const fixtures=[];
   for(let i=0;i<(tournament.league?28:7);i++){
    const f=await read(r.common.tournaments,bookAbi,'fixture',[id,i]);assert(f.bound&&f.resolved&&f.published.finality,'Tournament finality is still reconciling');
-   const result=await read(r.common.pool,poolAbi,'result',[f.ref]);assert(result.finality&&result.hash===f.published.hash);
-   fixtures.push({index:i,ref:f.ref,hash:result.hash,score:[result.scoreA,result.scoreB]});
+   const owners=origins.filter(m=>m.arenas.some((a:any)=>a.app.toLowerCase()===f.ref.arena.toLowerCase()));
+   assert.equal(owners.length,1,'Historical arena must have exactly one canonical origin');
+   const result=await read(owners[0].pool,poolAbi,'result',[f.ref]);assert(result.finality&&result.hash===f.published.hash);
+   fixtures.push({index:i,ref:f.ref,pool:owners[0].pool,hash:result.hash,score:[result.scoreA,result.scoreB]});
   }
   report.tournaments.push({id,tournament,fixtures});
  }
