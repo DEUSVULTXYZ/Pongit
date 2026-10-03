@@ -1,5 +1,44 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 11:06 UTC — exact publication costs and guarded transition
+
+Production is unchanged. T11 remains the only game driver with its original
+13:12:56.115631 deadline. Its report had 10 published fixtures at 10:53 UTC.
+The two private workers retain their original 13:25:06.823834 bound. No new
+game, browser, closure, import or opening was started.
+
+The read-only publication observer exited 0 without OOM at 10:51:24, within its
+original 10:57:15 bound. Canonical blocks 67790801–67793000 span 664 seconds,
+09:14:36–09:25:40 UTC. The five approved arenas account for 146 successful
+commits costing **14.828953086 test MON**. Maximum calldata was 30,916 bytes.
+Each receipt and transaction shares a block hash, and the ending block hash
+was rechecked. Fees use transaction gas limits times effective gas prices.
+The full report is `artifacts/sync-publication-copies4-20261003.json`.
+This window contains only 17.807 seconds of five-way simultaneous play; it is
+not a sustained five-lane daily budget or worst-case release reserve. Failed
+transactions, other applications and operator funding are outside its scope.
+
+The twelve new module-deployment receipts were separately checked against
+their transaction gas limits. All match the previously reported 3.389877996
+test MON. `artifacts/sync-velocity-preparation-gas-basis.json` preserves both
+fields. The first host-side check could not resolve the Docker-only RPC alias;
+the second used the observed container network address and completed read-only.
+
+`artifacts/sync-velocity-transition-20261003.py` is prepared and syntax-checked,
+**not run**. It permits finality reconciliation only after the exact private
+normal release has passed and exited. Import additionally requires 254 final
+results, 11 completed tournaments and 182 verified fixtures, the stopped source
+archive, and a fresh SHA-bound off-VPS backup containing both source and target
+records. Its source override is checked against the release plan's recorded
+hash. The later preservation audit must also verify all 59 historical requests.
+These are requirements, not current observations. Public history is excluded.
+
+Latest verified backup remains 1034 (21 files). Disk measured 80.503 percent;
+no new image build is permitted before scoped cleanup below 80 percent.
+Browser startup approval remains unresolved. Clock, actual catalogue/rendering,
+rotation/reserve, public migration, final finance/replays and unchanged 24 hours
+remain incomplete. No funding request or completed-delivery claim.
+
 ## Checkpoint, 3 October 10:40 UTC — lower-gas modules prepared, no import
 
 Production is unchanged. The only game driver remains T11, original deadline
