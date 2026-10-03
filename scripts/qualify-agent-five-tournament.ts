@@ -16,19 +16,23 @@ import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {NO_LEASE_HUB,hubLeaseValid} from '../shared/hub-lease';
 import {canonicalContractReads} from '../shared/canonical-contract-reads';
-import {privateSyncContinuation} from './private-sync-continuation';
+import {privateSyncContinuation,privateSyncQualification} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_FIVE_TOURNAMENT,'bounded-private');
 assert.equal(process.getuid?.(),1000);
-const id=BigInt(process.env.PONG_FIVE_TOURNAMENT_ID??'0');assert(id>=1n&&id<=4n);
+const id=BigInt(process.env.PONG_FIVE_TOURNAMENT_ID??'0');assert(id>=1n&&id<=8n);
+const league=(id-1n)%4n>=2n;
 const poolAbi=[...reusableAgentPoolAbi,...agentPoolAdmissionAbi];
 const attempt=Number(process.env.PONG_FIVE_TOURNAMENT_ATTEMPT??1);assert(Number.isInteger(attempt)&&attempt>=1&&attempt<=3);
 const deadline=Date.parse(process.env.PONG_FIVE_TOURNAMENT_DEADLINE??'');
-assert(deadline>Date.now()&&deadline<Date.now()+(id>=3n?180:65)*60_000);
+assert(deadline>Date.now()&&deadline<Date.now()+(league?180:65)*60_000);
 const r=JSON.parse(await readFile('/secrets/deployment.json','utf8'));
 assert.equal(r.maxMatches,5);
 const continuation=privateSyncContinuation(r,process.env.PONG_PRIVATE_SYNC_CONTINUATION);
-if(continuation)assert(id===3n||id===4n,'Only the next two private formats');
+if(continuation){
+ const inherited=privateSyncQualification(process.env.PONG_PRIVATE_SYNC_CONTINUATION).tournaments;
+ assert(id>inherited&&id<= (inherited===2n?4n:8n),'Only the next reviewed private formats');
+}else assert(id<=4n,'Fresh private season only');
 const v3=process.env.PONG_FIVE_TOURNAMENT_V3==='reviewed-private';
 assert(!process.env.PONG_FIVE_TOURNAMENT_V3||v3);
 if(v3){assert.equal(r.common.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());assert.equal(r.common.pool.toLowerCase(),'0x550ff3c22e20fc760af9afd68fba2cb531140dc6');}
@@ -44,7 +48,7 @@ const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:1});
 const read=(to:Address,abi:any,fn:string,args:readonly unknown[]=[])=>t.base.readContract({address:to,abi,functionName:fn,args}) as Promise<any>;
 const write=(op:string,to:Address,abi:any,fn:string,args:readonly unknown[]=[])=>retryOperatorContention(()=>t.write(op,to,abi,fn,args));
 const wait=()=>new Promise(resolve=>setTimeout(resolve,2500));
-const expected=id>=3n?28:7;
+const expected=league?28:7;
 const communityReport=process.env.PONG_FIVE_COMMUNITY_REPORT??'five-community-setup-attempt3.json';
 assert(/^five-community-setup(?:-attempt[23])?\.json$/.test(communityReport));
 const community=process.env.PONG_FIVE_TOURNAMENT_COMMUNITY==='true'
@@ -105,7 +109,7 @@ try{
   const anchor=await t.base.getBlock();assert(anchor.hash);
   const pinned=canonicalContractReads(t.base,anchor.hash).read;
   const tournament=await pinned(r.common.tournaments,bookAbi,'tournament',[id]);
-  assert.equal(tournament.mode,Number((id-1n)%2n));assert.equal(tournament.league,id>=3n);
+  assert.equal(tournament.mode,Number((id-1n)%2n));assert.equal(tournament.league,league);
   if(tournament.status===1){await write('select-'+tournament.cursor+'-'+tournament.catalogRevision,r.common.tournaments,bookAbi,'select',[id,32]);continue;}
   assert(tournament.status===2||tournament.status===3,'Tournament correction requires independent reconciliation');
   // Qualification must not itself monopolize the gameplay RPC queue as the

@@ -12,15 +12,18 @@ import {agentTournamentsAbi as bookAbi} from '../shared/abi-AgentTournaments';
 import {agentChallengesAbi as queueAbi} from '../shared/abi-AgentChallenges';
 import {agentQualificationsAbi as qualificationAbi} from '../shared/abi-AgentQualifications';
 import {validateAgentPoolManifest} from '../shared/agent-pool';
-import {privateSyncContinuation} from './private-sync-continuation';
+import {privateSyncContinuation,privateSyncQualification} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_SYNC_CONTINUATION_VERIFY,'read-only-private');
 const r=JSON.parse(await readFile('/metadata/reusable.json','utf8'));
-assert(privateSyncContinuation(r,'private-sync-20261002'));
+const scope=process.env.PONG_PRIVATE_SYNC_CONTINUATION??'private-sync-20261002';
+assert(privateSyncContinuation(r,scope));
+const expected=privateSyncQualification(scope);
 const m=validateAgentPoolManifest(JSON.parse(await readFile('/metadata/manifest.json','utf8')));
 assert.equal(m.pool.toLowerCase(),r.common.pool.toLowerCase());
 assert(!m.enabled&&!m.tournamentsEnabled&&m.verifiedCapacity===0);
-assert.deepEqual(m.history,[r.source.manifest]);
+const {history:priorHistory,...priorManifest}=r.source.manifest;
+assert.deepEqual(m.history,[priorManifest,...(priorHistory??[])]);
 const source=r.source.manifest,target=r.common;
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:8000})});
 assert.equal(await base.getChainId(),10143);
@@ -35,7 +38,7 @@ try{
   for(let lane=0;lane<5;lane++)assert.equal((await read(pool,poolAbi,'laneRecord',[lane])).ref.id,0n);
  }
  assert.equal(await read(target.pool,poolAbi,'nonce'),await read(source.pool,poolAbi,'nonce'));
- assert.equal(await read(target.pool,poolAbi,'nonce'),34n);
+ assert.equal(await read(target.pool,poolAbi,'nonce'),expected.results);
  for(const common of [source,target]){
   assert.equal(await read(common.tournaments,bookAbi,'admissions'),false);
   assert.equal(await read(common.challenges,queueAbi,'admissions'),false);
@@ -58,16 +61,21 @@ try{
   }
   report.identities++;
  }
- const [entries,total]=await read(source.ratings,ratingsAbi,'resultPage',[0n,50n]);
- assert.equal(total,34n);assert.equal(entries.length,34);
- assert.deepEqual(await read(target.ratings,ratingsAbi,'resultPage',[0n,50n]),[entries,total]);
+ for(let offset=0n;offset<expected.results;offset+=50n){
+  const [entries,total]=await read(source.ratings,ratingsAbi,'resultPage',[offset,50n]);
+  assert.equal(total,expected.results);assert.equal(entries.length,Number(expected.results-offset>50n?50n:expected.results-offset));
+  assert(entries.every((entry:any)=>entry.finality),'Historical source is not final');
+  assert.deepEqual(await read(target.ratings,ratingsAbi,'resultPage',[offset,50n]),[entries,total]);report.results+=entries.length;
+ }
  assert.equal(await read(target.ratings,ratingsAbi,'genesisTime'),await read(source.ratings,ratingsAbi,'genesisTime'));
- assert.equal(await read(target.ratings,ratingsAbi,'migrationSealed'),true);report.results=entries.length;
- assert.equal(await read(target.tournaments,bookAbi,'count'),2n);
+ assert.equal(await read(target.ratings,ratingsAbi,'migrationSealed'),true);
+ assert.equal(await read(target.tournaments,bookAbi,'count'),expected.tournaments);
  assert.equal(await read(target.tournaments,bookAbi,'nextAt'),await read(source.tournaments,bookAbi,'nextAt'));
- for(let id=1n;id<=2n;id++){
-  assert.deepEqual(await read(target.tournaments,bookAbi,'tournament',[id]),await read(source.tournaments,bookAbi,'tournament',[id]));
-  for(let index=0;index<7;index++){
+ for(let id=1n;id<=expected.tournaments;id++){
+  const tournament=await read(source.tournaments,bookAbi,'tournament',[id]);
+  assert.equal(tournament.status,3);
+  assert.deepEqual(await read(target.tournaments,bookAbi,'tournament',[id]),tournament);
+  for(let index=0;index<(tournament.league?28:7);index++){
    assert.deepEqual(await read(target.tournaments,bookAbi,'fixture',[id,index]),await read(source.tournaments,bookAbi,'fixture',[id,index]));
    report.fixtures++;
   }
