@@ -25,7 +25,7 @@ export function receiptFrame(receipt:any,app:Address):EngineFrame|null {
 
 /** Events contain physics, not the complete getter. Preserve only known metadata;
  * a missing revision or clock reanchor requires a fresh authoritative read. */
-export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:EngineFrame,now=Date.now()):{state:EngineState;resync:boolean;changed:boolean;gap?:bigint} {
+export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:EngineFrame,now=Date.now()):{state:EngineState;resync:boolean;changed:boolean;gap?:bigint;launch?:boolean} {
  let snapshot:any,completed:any,synchronization:any,request:bigint|undefined,pending:bigint|undefined;
  const collisions:ReturnType<typeof unpackChaosCollision>[]=[];
  for(const log of frame.logs){if(log.address.toLowerCase()!==app.toLowerCase())continue;try{
@@ -41,7 +41,8 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
  if(!snapshot || snapshot.version<=previous.revision)return {state:previous,resync:false,changed:false};
  if(snapshot.version!==previous.revision+1n || frame.head<previous.head || previous.phase<2){
   recordRpc({at:now,target:'interlude',method:frame.head<previous.head?'snapshot.reanchor':previous.phase<2?'snapshot.admission':'snapshot.gap',status:200,ms:0,source:'cache'});
-  return {state:previous,resync:true,changed:false,...(frame.head>=previous.head&&previous.phase>=2&&snapshot.version>previous.revision+1n?{gap:snapshot.version}:{} )};
+  return {state:previous,resync:true,changed:false,...(frame.head>=previous.head&&previous.phase>=2&&snapshot.version>previous.revision+1n?{gap:snapshot.version}:{} ),
+   ...(previous.phase===1&&Number(snapshot.status)===2&&frame.head>=previous.head?{launch:true}:{})};
  }
  try{
   let state:State,chaos=previous.chaos,nonceA=previous.nonceA,nonceB=previous.nonceB;

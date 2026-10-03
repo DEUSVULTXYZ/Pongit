@@ -3,7 +3,7 @@ import {engineState,receiptFrame,mergeEngineFrame,type EngineFrame,type EngineSt
 import {readEngineSnapshot} from "./engine-snapshot";
 import {recordRpc} from "./rpc-metrics";
 
-type Entry={value?:EngineState;fullAt:number;dirty:boolean;gap?:Map<bigint,EngineFrame>;pending?:Promise<EngineState>;progressAt:number;listeners:Set<(s:EngineState)=>void>};
+type Entry={value?:EngineState;fullAt:number;dirty:boolean;gap?:Map<bigint,EngineFrame>;pending?:Promise<EngineState>;launchRead?:Promise<void>;progressAt:number;listeners:Set<(s:EngineState)=>void>};
 /** Snapshot cache belongs to one deployment. HTTP remains the recovery authority. */
 export class EngineFeed {
  private entries=new Map<bigint,Entry>();
@@ -47,6 +47,20 @@ export class EngineFeed {
   if(!entry.value || next.state.t>entry.value.state.t || next.phase!==entry.value.phase)entry.progressAt=this.now();
   entry.value=next;for(const fn of entry.listeners)fn(next);
  }
+ private hydrateLaunch(entry:Entry,id:bigint){
+  if(entry.launchRead||!entry.listeners.size)return;
+  const pending=entry.pending;
+  entry.launchRead=(async()=>{
+   // A loading read issued before the launch may still return the old header.
+   // Join it first, then make at most one fresh read. Only that getter can
+   // expose playing state and its new clock; the notification is merely a hint.
+   if(pending)await pending;
+   if(this.entries.get(id)!==entry||!entry.listeners.size||entry.value?.phase!==1)return;
+   await this.read(id,true);
+  })().catch(()=>{
+   // Keep ordinary polling/recovery responsible for retries after a failure.
+  }).finally(()=>{entry.launchRead=undefined;});
+ }
  apply(frame:EngineFrame){
   for(const entry of this.entries.values()){
    if(!entry.value)continue;
@@ -58,7 +72,9 @@ export class EngineFeed {
     if(merged.gap!==undefined&&(!entry.dirty||entry.gap)&&merged.gap-entry.value.revision<=8n){
      entry.gap??=new Map();entry.gap.set(merged.gap,frame);
     }else entry.gap=undefined;
-    entry.dirty=true;continue;
+    entry.dirty=true;
+    if(merged.launch)this.hydrateLaunch(entry,entry.value.id);
+    continue;
    }
    if(merged.changed){
     this.publish(entry,merged.state);

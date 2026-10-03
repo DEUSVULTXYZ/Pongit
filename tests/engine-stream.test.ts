@@ -12,6 +12,69 @@ function frame(version=6n,head=110n,phase=2,state={...baseline().state,t:200000n
  const event={address:app as Address,topics:encodeEventTopics({abi,eventName:"Snapshot",args:{id:1n}}) as Hex[],data:encodeAbiParameters([{type:"uint256"},{type:"uint256"},{type:"bytes"}],[version,BigInt(phase),encodeAbiParameters([getter.outputs.at(-1)],[state])])};
  return {app,hash:`0x${"a".repeat(64)}`,head,logs:[event]};
 }
+
+test('a launch event immediately reads its authoritative header instead of waiting for polling',async()=>{
+ let reads=0,finish!:(value:Hex)=>void;
+ const loading={...baseline(),phase:1};
+ const encoded=(value:ReturnType<typeof baseline>)=>encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(value) as any});
+ const client={app:app as Address,abi,node:{request:async()=>++reads===1?encoded(loading):new Promise<Hex>(resolve=>{finish=resolve;})}};
+ const feed=new EngineFeed(client,new EngineStream('https://node.invalid',app,()=>new Socket()));
+ const phases:number[]=[],off=feed.watch(1n,s=>phases.push(s.phase));
+ try{
+  await feed.read(1n);feed.apply(frame());
+  await new Promise(r=>setImmediate(r));
+  assert.equal(reads,2,'The launch must not wait another 500ms browser poll');
+  assert.equal(feed.peek(1n)?.phase,1,'An event cannot invent the launch header');
+  finish(encoded({...baseline(),revision:6n,head:110n}));
+  await new Promise(r=>setImmediate(r));
+  assert.equal(feed.peek(1n)?.phase,2);assert.deepEqual(phases,[1,2]);
+ }finally{off();}
+});
+
+test('launch hydration joins an in-flight loading read, then reads once without duplicate requests',async()=>{
+ let reads=0,finish!:(value:Hex)=>void;
+ const loading={...baseline(),phase:1};
+ const encoded=(value:ReturnType<typeof baseline>)=>encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(value) as any});
+ const client={app:app as Address,abi,node:{request:async()=>++reads===1?encoded(loading):new Promise<Hex>(resolve=>{finish=resolve;})}};
+ const feed=new EngineFeed(client,new EngineStream('https://node.invalid',app,()=>new Socket()));
+ const off=feed.watch(1n,()=>{});
+ try{
+  await feed.read(1n);const pending=feed.read(1n,true);
+  feed.apply(frame());feed.apply(frame(7n,120n));
+  assert.equal(reads,2);finish(encoded(loading));await pending;
+  await new Promise(r=>setImmediate(r));assert.equal(reads,3);
+  finish(encoded({...baseline(),revision:7n,head:120n}));
+  await new Promise(r=>setImmediate(r));assert.equal(feed.peek(1n)?.phase,2);assert.equal(reads,3);
+ }finally{off();}
+});
+
+test('failed launch reads preserve loading state and do not retry on their own',async()=>{
+ let reads=0;
+ const loading={...baseline(),phase:1};
+ const client={app:app as Address,abi,node:{request:async()=>{
+  if(++reads>1)throw Error('Snapshot unavailable');
+  return encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(loading) as any});
+ }}};
+ const feed=new EngineFeed(client,new EngineStream('https://node.invalid',app,()=>new Socket())),off=feed.watch(1n,()=>{});
+ try{
+  await feed.read(1n);feed.apply(frame());await new Promise(r=>setImmediate(r));
+  assert.equal(reads,2);assert.equal(feed.peek(1n)?.phase,1);
+  await new Promise(r=>setImmediate(r));assert.equal(reads,2);
+ }finally{off();}
+});
+
+test('unwatched or unrelated launch notifications do not start background reads',async()=>{
+ let reads=0;
+ const client={app:app as Address,abi,node:{request:async()=>{reads++;return encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple({...baseline(),phase:1}) as any});}}};
+ const feed=new EngineFeed(client,new EngineStream('https://node.invalid',app,()=>new Socket()));
+ await feed.read(1n);feed.apply(frame());await new Promise(r=>setImmediate(r));assert.equal(reads,1);
+ const off=feed.watch(1n,()=>{});
+ try{
+  const other=frame();other.logs=other.logs.map(log=>({...log,address:a as Address}));
+  feed.apply(other);await new Promise(r=>setImmediate(r));assert.equal(reads,1);
+  feed.apply(frame(6n,90n));await new Promise(r=>setImmediate(r));assert.equal(reads,1,'A backwards head needs normal recovery');
+ }finally{off();}
+});
 test("applied envelopes reject other apps, failed calls, malformed heads and logs",()=>{
  const v={app,to:app,succeeded:true,hash:zeroHash,blockNumber:100,logs:[]};
  assert(appliedFrame(v,app));assert.equal(appliedFrame({...v,app:a},app),null);assert.equal(appliedFrame({...v,succeeded:undefined},app),null);assert.equal(appliedFrame({...v,blockNumber:NaN},app),null);
