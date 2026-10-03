@@ -1,5 +1,62 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 09:52 UTC — concurrent launch passes; tournament retry
+
+Production remains unchanged. Four-copy trial4 finished **PASS** at09:24:17.153,
+exit0/no OOM: functional, latency and liveness checks all pass. Four independent
+friendly instances of the tournament archetype sent400 controls,100 each, with
+p95s212.359457/214.147934/212.220273/206.526519ms and zero protective pauses or
+heartbeat errors. The five actual games overlapped17.807seconds. All four friendly
+results and the overlapping tournament result were published/captured. This is
+synthetic-controller evidence, not browser, physical Mera or24h proof. Failed
+trials1–3 remain unchanged. Local final report is
+`artifacts/sync-queue-final-0925/five-concurrent-4.json`, SHA256
+`90227eb367821b713c273175528f64fcc0efafdd3609f788c9a22291e567f743`.
+
+T8 Chaos championship passed28/28; T9 Classic elimination passed7/7 at09:38:09.778.
+T10 attempt1 failed before fixtures at09:38:49.700 because its driver did not
+wait for the contractual60-second intermission. Both gates were closed by its
+journaled finally operation. Preserve `evidence/five-tournament-10.json`.
+`9573a35` now waits with admissions closed and the original deadline enforced.
+The sole tournament driver is `pongit-sync-queue-tournament-10-attempt2-9573a35`,
+started09:46:11.191805811, with the **same original10:42:31.766036 deadline**.
+It mounts exactly the9573a35 script, SHA256
+`57a3005109f0c0a4f931c784056d64c01c5e9fdfaf14feb578e1ef10a8645128`.
+Its distinct report/runtime/plan names include `attempt2`. T11 is not started;
+its guard must require this retry PASS/exited, retain the intermission fix, and
+have its complete three-hour window before workers end13:25:06.823834. Never
+duplicate drivers, overwrite failures or extend the original workers.
+
+`579cbb9` removes two external house-memory codec calls without changing stored
+layout or decisions. Independent old-code codec comparisons,63 targeted Solidity
+checks, artifact graph and metadata hashes pass. Paired20-tick physical digests
+are unchanged: Classic gas6302830 to6059594, Chaos25275937 to25037861, Solar Wind
+104704614 to104466538. This is local gas evidence, not hosted clock qualification.
+Reproducible image `pongit:sync-runtime-579cbb9` is built,646 Git file hashes and
+103 isolated tests pass; digest
+`sha256:0ce11e903061a792d1ae237ec2de5e02f880b9dc6a43e8308eccb94c0ac51f88`.
+It is **not deployed**. Active workers still use7e3d2e5 without new overrides.
+
+An uncommitted ChaosVelocity extraction avoids full-state ABI calls during
+contact search.156 Chaos Solidity regressions and24 gas/clock cases pass;
+three paired physical digests are unchanged. Full VPS differential, artifact
+review and hosted clock proof remain required before using it. Do not count
+either optimization as fixing the97.2–97.6percent clock failure.
+
+Canonical balances at67794740: operator92.667161844, archive17.311300282,
+v3 publisher47466.526136963516479201 test MON. No funding request or repeated
+20MON transfer. Latest0915 backup20files is verified offVPS; refresh after these
+completed trials and retry configuration.40 intermediate0842/0905 backup files,
+364796654bytes, were offloaded only after fresh hashes and all mount/reference
+checks; their bytes and manifests remain retained. Usable disk80.04percent at
+09:50, so scoped cleanup is required before another image build.
+
+Browser4197 startup rejection remains pending; no alternate launch. Private d8bc
+continues only PRIVATE67a6, never public history. Source release/import/setup
+are complete and must not be repeated. No human/browser driver. PublicT23 close
+remains simulation only, zero public transactions. Browser/admission, clock,
+reserve/rotation, public migration, finance/replays and unchanged24h remain.
+
 ## Checkpoint, 3 October 09:18 UTC — fourth concurrent launch trial
 
 Production remains unchanged. T8 Chaos championship finished PASS,28/28 resolved,
