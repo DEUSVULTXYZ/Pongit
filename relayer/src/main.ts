@@ -1327,5 +1327,5 @@ for (const signal of ["SIGINT", "SIGTERM"] as const)
     independent?.stop();
     roomsCoordinator?.stop();
     signingLock.release();
-    void Promise.all([pool.end(),...(independentDb!==pool?[independentDb.end()]:[])]).then(() => process.exit(0));
+    void Promise.resolve(independent?.close()).then(()=>Promise.all([pool.end(),...(independentDb!==pool?[independentDb.end()]:[])])).then(() => process.exit(0));
   });

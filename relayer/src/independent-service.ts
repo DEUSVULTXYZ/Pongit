@@ -1,7 +1,7 @@
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {decodeFunctionData,encodeFunctionData,isAddress,zeroAddress,zeroHash,parseEther,verifyMessage,keccak256,type Address,type Hex,type Abi,type PublicClient} from 'viem';
-import type {Pool} from 'pg';
+import {Pool} from 'pg';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {publicIndependentManifest,independentCreditMessage,independentDiagnosticsMessage} from '../../shared/independent';
 import {independentReader} from '../../shared/independent-read';
@@ -18,6 +18,7 @@ import {abi as interludeHubReadAbi} from '../../shared/abi-independent-IInterlud
 import {readHubDelegation} from '../../shared/rooms-hub';
 import {engineReadRetryMs} from '../../shared/engine-read';
 import {independentWriter} from './independent-writer';
+import {independentPlayerCall,independentPlayerRouter} from './independent-player-sponsor';
 import {independentEngine} from './independent-engine';
 import {requestHostedRenewal} from './rooms-hosted-renewal';
 import {independentFinance} from './independent-finance';
@@ -87,6 +88,18 @@ export async function independentService(o:Options){
  }
  if(!await base.readContract({address:m.vault,abi:vaultAbi,functionName:'modulesSealed'})||!await base.readContract({address:m.vault,abi:vaultAbi,functionName:'modules',args:[m.market]})||!await r.profiles('migrationSealed'))throw Error('Independent migration is not sealed');
  const writer=await independentWriter(db,base,o.operatorDb??db);
+ const playerKey=process.env.PONG_INDEPENDENT_PLAYER_SPONSOR_FILE,playerAddress=process.env.PONG_INDEPENDENT_PLAYER_SPONSOR_ADDRESS,playerUrl=process.env.PONG_INDEPENDENT_PLAYER_DATABASE_URL;
+ let playerDb:Pool|undefined,playerWriter:Awaited<ReturnType<typeof independentWriter>>|undefined;
+ if(playerKey||playerAddress||playerUrl){
+  if(!playerKey||!playerAddress||!isAddress(playerAddress)||!playerUrl)throw Error('Complete dedicated player sponsor configuration required');
+  playerDb=new Pool({connectionString:playerUrl,max:8});
+  try{
+   const identity=async(p:Pool)=>(await p.query('SELECT current_database() AS name')).rows[0].name;
+   if(await identity(playerDb)===await identity(db)||await identity(playerDb)===await identity(o.operatorDb??db))throw Error('Player sponsor requires its own queue database');
+   playerWriter=await independentWriter(playerDb,base,o.operatorDb??db,{keyFile:playerKey,address:playerAddress,allowCall:(to,data,value)=>independentPlayerCall(m,to,data,value)},{eager:true});
+  }catch(error){await playerDb.end();await writer.close();throw error;}
+ }
+ const playerSponsor=independentPlayerRouter(m,writer,playerWriter);
  await db.query(`CREATE TABLE IF NOT EXISTS independent_events(lobby text NOT NULL,block_number bigint NOT NULL,block_hash text NOT NULL,tx_hash text NOT NULL,log_index integer NOT NULL,event text NOT NULL,args jsonb NOT NULL,PRIMARY KEY(lobby,tx_hash,log_index));
  CREATE TABLE IF NOT EXISTS independent_cursor(lobby text PRIMARY KEY,block_number bigint NOT NULL);
  CREATE TABLE IF NOT EXISTS independent_rooms(lobby text NOT NULL,id text NOT NULL,PRIMARY KEY(lobby,id));
@@ -304,7 +317,7 @@ export async function independentService(o:Options){
  async function route(req:IncomingMessage,res:ServerResponse,path:string){
   if(!path.startsWith('/independent/'))return false;
   try{
-   if(req.method==='GET'&&path==='/independent/config'){o.send(res,{manifest:m,admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:writer.status()});return true;}
+   if(req.method==='GET'&&path==='/independent/config'){o.send(res,{manifest:m,admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:playerSponsor.status()});return true;}
    if(req.method==='POST'&&path==='/independent/diagnostics'){
     const b=await o.body(req);
     if(!isAddress(b.player)||!Number.isSafeInteger(b.expires)||Math.abs(Date.now()/1000-b.expires)>120||typeof b.instance!=='string'||!/^[a-f0-9-]{36}$/i.test(b.instance)||!Array.isArray(b.samples)||b.samples.length>200||typeof b.signature!=='string'||!/^0x[\da-f]{130}$/i.test(b.signature))throw Error('Invalid diagnostics proof');
@@ -331,7 +344,7 @@ export async function independentService(o:Options){
     res.setHeader('Cache-Control','no-store');o.send(res,{contacts});return true;
    }
    if(req.method==='GET'&&/^\/independent\/operations\/0x[\da-f]{64}$/.test(path)){
-    const operation=await writer.get(path.split('/').at(-1)!);o.send(res,operation??{error:'Unknown operation'},operation?200:404);return true;
+    const operation=await playerSponsor.get(path.split('/').at(-1)!);o.send(res,operation??{error:'Unknown operation'},operation?200:404);return true;
    }
    if(req.method==='GET'&&/^\/independent\/market\/\d+$/.test(path)){
     const q=new URL(req.url!,'http://localhost').searchParams,player=q.get('player')||zeroAddress,side=Number(q.get('side')||0),shares=q.get('shares')||'1000000000000000';
@@ -357,7 +370,7 @@ export async function independentService(o:Options){
      const payout:any=await base.readContract({address:m.market,abi:marketAbi,functionName:'payouts',args:[decoded.args![0] as Hex]});
      o.send(res,await writer.enqueue(b.to,b.data,0n,2,String(payout[3])),202);return true;
     }
-    o.send(res,await writer.enqueue(b.to,b.data,0n,priority),202);return true;
+    o.send(res,await playerSponsor.enqueue(b.to,b.data,0n,priority),202);return true;
    }
    if(req.method==='POST'&&path==='/independent/credit'){
     const b=await o.body(req);if(!isAddress(b.player)||!Number.isSafeInteger(b.expires)||typeof b.signature!=='string'||!/^0x[\da-f]{130}$/i.test(b.signature))throw Error('Invalid credit proof');
@@ -411,5 +424,7 @@ export async function independentService(o:Options){
   run('payment-receipts',finance.recoverSponsoredPayments,6000);
   run('ranking',async()=>{if(await r.ratings('buildGeneration'))await queue(m.ratings,ratingAbi,'rebuild',[32n],0n,2);},10000);
  },rules.events?250:2000);timer.unref();
- return {route,manifest:m,engines,writer,queue,status:()=>({online:health.some(h=>h.online||h.stage==='available'),admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:writer.status()}),stop:()=>{stopped=true;clearInterval(timer);writer.stop();history.stop();diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());}};
+ const stop=()=>{stopped=true;clearInterval(timer);writer.stop();playerWriter?.stop();history.stop();diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());};
+ return {route,manifest:m,engines,writer,queue,status:()=>({online:health.some(h=>h.online||h.stage==='available'),admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:playerSponsor.status(),maintenance:writer.status()}),stop,
+  close:async()=>{stop();await Promise.all([writer.close(),playerWriter?.close()]);await playerDb?.end();}};
 }

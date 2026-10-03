@@ -21,4 +21,5 @@ const server=createServer((req,res)=>{const path=new URL(req.url!,'http://localh
  void service.route(req,res,path).then(handled=>{if(!handled){res.writeHead(404);res.end();}}).catch(()=>{if(!res.headersSent)res.writeHead(503);res.end();});
 });
 server.listen(4012,'0.0.0.0',()=>console.log('Independent qualification service ready on private port 4012'));
-for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>{service.stop();server.close();void Promise.all([db.end(),operatorDb.end()]).then(()=>process.exit());});
+let stopping=false;
+for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>{if(stopping)return;stopping=true;server.close();void service.close().then(()=>Promise.all([db.end(),operatorDb.end()])).then(()=>process.exit());});
