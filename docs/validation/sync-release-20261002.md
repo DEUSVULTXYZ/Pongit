@@ -1,5 +1,87 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 07:00 UTC — release verified, source finality in progress
+
+Production remains unchanged. The sole recovery finished **06:44:46.095 UTC**,
+passed, exit0, without OOM. All five private67a6 epoch1 arenas are released. An
+independent canonical read at **67761937** verifies status None and the exact
+finalized root and count for each. Release gas was386,386 for four arenas and
+399,450 for the fifth. These are actual releases, not worst-case reserve proof.
+Never repeat their closes or releases. Independent-check attempt1 failed because
+the multicall client had no chain configuration; attempt2 failed on the diagnostic
+number/bigint comparison. Both reports remain; attempt3 passes with an explicit
+integer conversion and unchanged exact-root comparison.
+
+Backup **`sync-20261003T0646Z`**,19files, is SHA-verified offVPS at06:48:03;
+manifest `989f090ff0b803a6dd1eb03d3fa3ae981292f09fdf6ba9f2d2fa0f800c9fdae5`.
+It contains the completed recovery journal. Refresh it after the remaining finality
+writes and before import. The earlier0543 five-database restore proof still applies
+to that exact backup, not automatically to the new dump.
+
+The **only active private writer** is
+`pongit-sync-queue-source-finality-20261003-archive-1`, started06:49:54, original
+deadline **07:09:53.655358 UTC**. It finalizes already captured source results and
+tournament references using its scoped archive journal. No engine, admission,
+opening or new game runs. Do not repeat the transition helper's `archive` action.
+After it reconciles all168 results and112 fixtures in seven books, run its read-only
+`verify` gate, stop it cleanly, and refresh the offVPS backup before guarded import.
+The target remains **prepared-unimported**; its12 preparation transactions remain
+confirmed and must not be repeated. T8 has not started.
+
+The prepared fullimage runtime is7e3d2e5, without code overrides. Additional helper
+`sync-queue-copies-20261003.py` prepares one bounded four-copy trial beside a live
+private championship; it has **not run**. Actual browser/admission/clock/seven-way,
+reserve/rotation, compatible public migration, finances/replays and unchanged24h
+remain unqualified. Browser4197 automatic approval rejection remains unresolved;
+no alternative launch. No new funding request or public transaction.
+
+## Checkpoint, 3 October 06:41 UTC — reproducible runtime prepared
+
+Production remains unchanged. The sole recovery worker still owns the five normal
+releases scheduled for 06:44:02–06:44:14, with its original 07:01:43.959878 deadline.
+No new game, browser driver, import or arena opening has started.
+
+The source queue has **43 historical requests**, verified at canonical **67755138**.
+`a4bc4b4` replaces the old verifier's 32-request bound with this exact source-specific
+count; every request must still match after import. `7e3d2e5` removes a redundant
+global tournament-eight cap: the validated continuation still limits this private
+trial to formats 8–11. Eight focused tests and root typecheck pass. These are
+qualification-script fixes, not hosted admission or migration proof.
+
+The complete runtime image **`pongit:sync-runtime-7e3d2e5`**, digest
+`sha256:3f6468f7bc25c09d453ed222460d076cdf20cdc5d2ccd0266bc4223677f76beb`,
+built successfully at 06:32:45. Its **645 expected Git file hashes match** and
+**74 networkless image tests pass**, no OOM, exit0. The build started below80percent
+disk usage, following offload of81 intermediate backup files,1,258,727,097bytes.
+Every file was checked against its exact off-VPS copy and all container mounts;
+active0543, latest0600, mounted0041, production/rollback images and manifests remain.
+At06:37 disk was79.75percent. This image contains the reviewed heartbeat, queue,
+steering and maintenance source together; no source overrides are required for its
+next runtime. It does not establish hosted performance or browser acceptance.
+
+Prepared but **not executed** under `sync-queue-continuation-20261003`:
+`sync-queue-runtime-20261003.py`, `sync-queue-observers-20261003.py`, and
+`sync-queue-tournament-20261003.py`. Runtime preparation requires completed import,
+source finality and the image proofs. Opening requires exact preservation of168
+results, seven books,112fixtures and43requests. Each later tournament requires its
+full window within the original worker bound. Helpers and image reports are copied
+into `operations-prepared-7e3d2e5` for inclusion in the next backup. Older unused
+overlay bundles remain preserved; the prepared runtime selects the complete image.
+The transition helper additionally checks112fixtures and successful verifier exit
+before import. The backup helper now includes the new queue database once created.
+
+Read-only funding check at **67758755**: operator175.767146604 test MON, v3 publisher
+47,580.712149893516479201, source archive15.808072732. No transfer or funding request.
+The existing failed Chaos clock sample remains97.29percent:243,420ms physics versus
+250,199ms wall, with243,160ms engine-block clock. The deficit tracked the engine
+clock, rather than growing physical catch-up alone. Lower-gas hosted measurements
+remain necessary; do not claim that the new runtime fixes this failure yet.
+
+Evidence: local `artifacts/sync-7e3d2e5-vps-evidence`, `sync-queue-count-20261003.json`,
+`sync-reserve-0633-20261003.json`, and `sync-offload-0630-complete.json`; matching VPS
+reports remain. Browser4197 approval rejection is still unresolved. Preserve all
+prior failures and the public T23 cancelled fixture; no public transaction was sent.
+
 ## Checkpoint, 3 October 06:05 UTC — private source drained, release scheduled
 
 Production remains unchanged. T7 **passed at 05:35:44.714**, all 28 Classic league
