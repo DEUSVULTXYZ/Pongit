@@ -1,5 +1,68 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 00:21 UTC — financial incompatibility fixed privately
+
+Published source is `a9116d1`. Production remains unchanged. The human Chaos
+trial exposed a product defect: `ReusableEventsSettlement` treated the pinned
+v3 hub's zero expiry as an expired lease, preventing `openRound`. Both new
+regression cases failed on the old source. Correction `37d0698` reuses the
+existing pinned-hub lease check while retaining admission, epoch, active status
+and published-batch requirements. All 30 settlement tests pass, including
+payment-once, correction, refund and historical slot reuse. The initial test
+compile failure is retained separately. Root TypeScript also passes.
+
+Human trial 2 remains failed (`Timeout: realtime market`), although its Classic
+game completed 4–7 with 135/130 controls. Copy trial 5 and seven-way observer 2
+also failed without proving five/seven-game overlap. The first synthetic player
+was motionless while later players entered and finished before the barrier.
+Do not count these as passing capacity or latency proof. Source `a9116d1` uses
+the existing validated admission receipt shortcut and actively defends during
+the other admissions. Three receipt regression tests and typecheck pass.
+
+Original human service/admission stopped at 00:09:51, with both physical games
+finished and captured. The corrected private financial boundary was then
+deployed through the original operator journal, guarded by drained slots:
+settlement `0xc2e1c19695d70a5a12652d27ebee5f58d88be011`, market
+`0xa5a90d3046be590b7f61a869207f5cecac4689a9`, vault
+`0x247a2574f5e791457f1d08b17c4ca28b3e1ce89c`. Old finance, funds, manifests
+and reports remain intact; no transfer or public route changed. The package
+contains four bytecode-budget-checked artifacts and one script, SHA256
+`14c1e5bd5668cd051fc6b70aca5403dee1ac8a78550a6cc34b15018e2569a2eb`.
+Deployment finished successfully at 00:15:13. New private runtime remains under
+`sync-human-consent-acbc3e8`, with its separate `finance-v3-manifest.json`.
+
+New bounded trials began at 00:20:27 UTC. Inspect them before any other driver:
+
+- Four-copy driver `pongit-sync-continuation-concurrent-6-a9116d1` ends at
+  **00:44:27.108272 UTC**; report `five-concurrent-6.json`.
+- Read-only observer `pongit-sync-seven-3-a9116d1` ends at
+  **00:38:47.108272 UTC**; report `seven-way-3.json`.
+- Human driver `pongit-sync-human-finance-game-3-a9116d1` ends at
+  **00:40:27.108272 UTC**; report `events-live-3.json`.
+- New human service `pongit-sync-human-finance-20261003-service-1` ends at
+  **01:13:31.604614 UTC**. Its admission fixture
+  `pongit-sync-human-finance-admission-f25729b` ends at **01:03:31.604614 UTC**.
+
+Tournament 4 and agent engine/archive retain their original **01:53:22** and
+**02:36:56** bounds. No extension or competing writer. The notification-clock
+optimization `7f1eb00` is still undeployed; the Chaos wall-clock failure remains.
+
+The old empty-human release worker finished successfully. Independent canonical
+verification at block **67683672** confirms both 2114 and ee1b epochs are None,
+with exact sealed count zero and root
+`2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f`.
+Report `sync-human-v3-2c8e025/evidence/empty-recovery-canonical-20261003.json`
+records release, seal and recovery hashes. Never repeat those operations.
+
+Backup `sync-20261003T0010Z` has 15 SHA-verified off-VPS files, manifest
+`6027a6fe301aa7a17702ba18aff204df2638e737627aab9bb618e8b7985fa990`.
+It precedes the release and new financial/trial writes; refresh after them.
+The first backup date guard failed before creating a directory, then was fixed.
+Disk remains 81 percent; scoped cleanup is required before image builds.
+Browser approval, public legacy hosting, unfinished public tournament 23,
+compatible migration, actual admission/synchronization targets and the unchanged
+24-hour gate remain open. No private season replaces public history.
+
 ## Checkpoint, 23:47 UTC — human consent works; seven-game trial remains failed
 
 Published source is `f8d70c1`. Production remains unchanged. The fresh private
