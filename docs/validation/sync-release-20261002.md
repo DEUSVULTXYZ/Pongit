@@ -1,5 +1,58 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 03:41 UTC — clock failure isolated, steering reads reduced
+
+Production and active private engine binaries are unchanged. Tournament 6 passed
+all seven Chaos elimination fixtures at 03:34:05.499 UTC and closed both admission
+gates. Tournament 7, Classic championship, now has the sole tournament driver
+`pongit-sync-optimized-tournament-7-671f6fb`, started 03:35:34.836101 with original
+deadline **06:34:34.836101 UTC**. Original engine/archive deadline remains
+**08:29:45.123254 UTC**. Do not extend either bound.
+
+Optimized Chaos clock trial 6 fails: 243,420 ms of physics over 250,199.055 ms
+of rally wall time, ratio **0.972905353**. A separate ten-sample comparison over
+90 seconds measured one playing Chaos engine at 0.960071 and four idle engines
+at 0.989258–0.990114. Physics follows the hosted block clock; these observations
+do not establish which provider scheduling component accounts for all delay.
+Neither measurement proves browser rendering or input latency.
+
+The local steering candidate removes redundant full-state decoding and duplicate
+opponent-view construction. It calls the same immutable paddle modifier contract
+with the same packed fields; it preserves the absolute decision grid, policy,
+counters and directions. Sixty focused Solidity tests pass, including all 300
+effect pairs with repetition, both targets/global targeting, seven activation/
+expiry/Hot Potato boundaries, and 1,000 arbitrary packed-state comparisons.
+On the existing six-second benchmark, twenty-tick gas falls from 7,134,070 to
+6,302,830 Classic, 28,166,977 to 25,275,937 Chaos, and 107,595,654 to 104,704,614
+Chaos Solar Wind. All three complete state digests match the baseline. This
+candidate is not deployed or qualified on Interlude.
+
+Copy trial 3 failed its transient health preflight before any account/admission.
+Trial 4 exposed a harness assumption: a bounded queue scan can succeed without
+admitting a request after crossing 32 historical entries. The bounded-scan fix
+is published as `1838019`; canonical receipts and player-bound lanes are required.
+Trial 4's two interrupted matches 126/127 were contractually cancelled with zero
+winner and archived; its queued request 33 was cancelled using its own saved
+family key and the original operator journal. Recovery passed at 03:26:51.686;
+never repeat those cancellations. Human trial 6 failed before any transaction
+because its private service lacked the Compose network alias. Service replacement
+now has the alias and the admission container verified its HTTP endpoint.
+
+Copy trial 5, `pongit-sync-optimized-concurrent-5-1838019`, began 03:29:36.056543,
+original deadline **03:53:36.056543 UTC**. At this checkpoint it has four authorized
+test families but no challenge or adopted tournament: T6 ended before a young
+fixture could be adopted. Its original failure/report must be retained; do not
+retarget it to T7 or extend its bound. Human game 7 and observer 3 have NOT started.
+The private human service `pongit-sync-seven2-human-20261003-service-1` retains
+original **04:08:37.431012** bound, admission helper `-admission-d285aa9` retains
+**03:58:37.431012**. No active human match; inspect before any new driver.
+
+The latest off-VPS backup remains 0300 and predates these later fixture keys and
+recovery transactions. Refresh it. Browser startup approval, actual admission/
+render/command gates, seven-way concurrency, reserve/rotation, public historical
+resolution and compatible migration, financial/replay checks and final unchanged
+24-hour trial remain outstanding. No new funding request.
+
 ## Checkpoint, 3 October 03:03 UTC — five copies published, latency still fails
 
 Production remains unchanged. Optimized copy trial 2 finished at 02:51:27 UTC:

@@ -4,7 +4,6 @@ import {AgentSteer as S} from "../AgentSteer.sol";
 import {HousePolicies as P} from "./HousePolicies.sol";
 import {AgentArenaTypes as A} from "./AgentArenaTypes.sol";
 import {ChaosEngine} from "../../chaos/ChaosEngine.sol";
-import {ChaosState as C} from "../../chaos/ChaosState.sol";
 import {ChaosModifiers as M} from "../../chaos/ChaosModifiers.sol";
 import {IPongStrategy} from "../IPongStrategy.sol";
 
@@ -19,11 +18,7 @@ library PoolSteer {
         w[S._key(b.id,53)]=uint256(nowUs/100_000)+1;
         if(b.mode==0)S._capLegacySpeed(w,b.id);else S._capSpeed(w,b.id);
         uint256 control=w[S._key(b.id,8)];M.Paddles memory ps;
-        if(b.mode==1){
-            uint256[8] memory packed;for(uint8 i;i<8;i++)packed[i]=w[S._key(b.id,21+i)];
-            C.State memory state=kernel.codec().unpack(packed,bytes32(w[S._key(b.id,3)]),control);
-            ps=kernel.physics().dynamics().paddles(state);
-        }
+        if(b.mode==1)ps=paddles(w,b.id,kernel,nowUs);
         for(uint8 side;side<2;side++){
             A.Controller memory controller=side==0?b.controlA:b.controlB;
             if(controller.codeHash==0)continue; // human, explicitly bound by pool
@@ -32,7 +27,7 @@ library PoolSteer {
             int8 direction;bool valid=true;uint256 prior=w[S._key(b.id,51+side)];
             if(controller.house!=0){
                 P.View memory v=P.View(seat.balls,side,seat.nowUs,seat.position,seat.half,
-                    S._view(w,b.id,b.mode,side).opponent,bytes32(w[S._key(b.id,3)]),uint32(seat.rally),b.tournament);
+                    opponent(w,b.id,b.mode,side),bytes32(w[S._key(b.id,3)]),uint32(seat.rally),b.tournament);
                 P.Memory memory memory_=policies.unpack(w[S._key(b.id,51+side)]);
                 (direction,memory_)=policies.decide(controller.house-1,v,memory_);
                 w[S._key(b.id,51+side)]=policies.pack(memory_);
@@ -47,6 +42,23 @@ library PoolSteer {
             control=(control&~(uint256(3)<<(side*2)))|(uint256(uint8(direction+1))<<(side*2));
         }
         w[S._key(b.id,8)]=control;return next;
+    }
+    // Steering needs paddle modifiers, not a second decoding/copy of both balls,
+    // collision history and score. Keep the same immutable modifier authority.
+    function paddles(mapping(bytes32=>uint256) storage w,uint256 id,ChaosEngine kernel,uint64 nowUs)
+        internal view returns(M.Paddles memory)
+    {
+        M.Effect[2] memory effects;
+        for(uint8 i;i<2;i++){
+            uint256 e=w[S._key(id,25+i)];
+            effects[i]=M.Effect(uint8(e),uint8(e>>8),uint32(e>>56),uint32(e>>88),false);
+        }
+        uint256 meta=w[S._key(id,28)];
+        return kernel.physics().dynamics().modifiers().calculate(uint32(meta>>101),uint32(meta>>133),effects,nowUs/1000);
+    }
+    function opponent(mapping(bytes32=>uint256) storage w,uint256 id,uint8 mode,uint8 side) internal view returns(int256){
+        if(mode==0)return int256(uint256(uint64(w[S._key(id,7)]>>(side==0?64:0))))*1_000_000;
+        return int256(uint256(uint56(w[S._key(id,27)]>>(side==0?56:0))));
     }
     function ask(address strategy,IPongStrategy.PongView memory v,int8 held) private view returns(int8,bool){
         bytes memory data=abi.encodeCall(IPongStrategy.decide,(v));bool ok;uint256 size;int256 direction;
