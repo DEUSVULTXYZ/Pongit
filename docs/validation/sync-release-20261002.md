@@ -1,5 +1,53 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 10:40 UTC — lower-gas modules prepared, no import
+
+Production is unchanged. The only game driver remains T11, original deadline
+13:12:56.115631 UTC; engines/archive keep 13:25:06.823834. No friendly, human or
+browser driver. No closure, import, reopening or deadline extension was sent.
+
+Private target `sync-velocity-continuation-20261003`, namespace
+`reusable-agents-20261003-3`, is **prepared-unimported** from d8bc only. Its seed
+continuation audit passed at canonical block67805322. The module preparation
+exited0/no OOM at10:32:21.788, within its original10:51:15 bound. Twelve journaled
+transactions are confirmed, none pending/failed; cost3.389877996 test MON.
+Operator balance83.07017034 at67807420. Prepared catalogue:
+`0x0fe9230687fbc6f9f8139e0f86699bac8fb8c7d4`. Current policy modules are reused.
+No arena has been deployed or opened in this stage. The target dimension is
+8 dormant arenas for5 lanes plus experimental rotation/failure reserve. This
+is a provisioned dimension, **not verified capacity or an approved final budget**.
+Source gates and the running tournament were untouched.
+
+The deployment package has46 artifacts,5,569,335bytes, and a full linked-graph
+budget check. Project source hashes match Git4661dc3; external dependency hashes
+match compiled metadata and the pinned lockfile. Archive SHA256:
+`318926da244ca03664f539ff4c1b89bd69bf94a1f9471993c8ae0858d0c1ff87`.
+The first packaging attempt incorrectly treated ignored OpenZeppelin dependency
+files as Git blobs and failed before deployment; its partial directory remains.
+The second package is distinct. The runtime646-hash/104-test audit passed.
+
+Backup1034 has21 files, including the new private keys/runtime and original
+operator journal. SHA-verified offVPS at10:36:29.6108100, manifest
+`9f6e2373bd0ff480e9de38aab2642d109906cb9e515ba1493cd91ba026870888`.
+The recovery backup guard now verifies the exact receipt/manifest hash and
+required source DB/runtime files while permitting additional backed-up private
+namespaces. Six scope/backup tests and root TypeScript pass. No recovery has
+been started. The new trial scope requires254 results/11 books/59 requests;
+these are import requirements. Actual source at67806266 had231 results and59
+requests, with T11 still running. The new scope cannot authorize its own closure.
+
+A descriptive audit of10 completed hosted tournaments covers154 published games.
+NOVA won0/34; ONYX41/46. Classic point share increases across every difficulty
+level from15% to76%; Chaos outcomes include a GLITCH/DRIFT inversion in this
+sample. Reaction/mistake parameters remain linear and their1000-rally test is
+monotonic. This is bot-versus-bot evidence, not human difficulty certification.
+Reports: `artifacts/sync-hosted-bot-results-before.json` and
+`artifacts/sync-hosted-bot-difficulty-summary.json`.
+
+Clock97.2–97.6% remains failed until the new immutable kernel is hosted. Browser
+4197 automatic approval rejection remains pending; no alternate launch. Actual
+catalogue/input/rendering, rotation/reserve, public migration, final finance/
+replays and unchanged24h remain. No funding request or public success claim.
 ## Checkpoint, 3 October 10:17 UTC — third format passes; final championship running
 
 Production remains unchanged. T10 attempt2 finished **PASS7/7** at10:13:25.705,

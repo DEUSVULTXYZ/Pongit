@@ -14,7 +14,7 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {engineTransport} from '../shared/engine-transport';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
-import {privateSyncCompleted} from './private-sync-continuation';
+import {privateSyncCompleted,assertPrivateSyncBackup} from './private-sync-continuation';
 
 assert.equal(process.env.PONG_SYNC_RELEASE,'finished-private-only');
 assert.equal(process.getuid?.(),1000);
@@ -31,7 +31,7 @@ for(const name of completed.proofs){
  assert(proof.passed&&proof.finishedAt&&proof.pool.toLowerCase()===r.common.pool.toLowerCase());
 }
 const backup=JSON.parse(await readFile('/backup/off-vps.json','utf8'));
-assert(backup.verified&&backup.files===completed.backupFiles);
+assertPrivateSyncBackup(backup,await readFile('/backup/manifest.json'),process.env.PONG_PRIVATE_SYNC_CONTINUATION,completed.backupFiles);
 const file='/evidence/sync-release-1.json';
 const report:any={startedAt:new Date().toISOString(),deadline,pool:r.common.pool,backup,arenas:[],passed:false,
  scope:'Normal closure, release and exact-root sealing of five completed private rules-16 arenas. No forced closure, opening, public mutation or final release claim.'};
