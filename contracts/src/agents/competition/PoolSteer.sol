@@ -2,6 +2,7 @@
 pragma solidity ^0.8.30;
 import {AgentSteer as S} from "../AgentSteer.sol";
 import {HousePolicies as P} from "./HousePolicies.sol";
+import {HousePolicyMemory as Memory} from "./HousePolicyMemory.sol";
 import {AgentArenaTypes as A} from "./AgentArenaTypes.sol";
 import {ChaosEngine} from "../../chaos/ChaosEngine.sol";
 import {ChaosModifiers as M} from "../../chaos/ChaosModifiers.sol";
@@ -26,11 +27,7 @@ library PoolSteer {
             if(b.mode==1)seat.half=int256((side==0?ps.heightA:ps.heightB)*500_000);
             int8 direction;bool valid=true;uint256 prior=w[S._key(b.id,51+side)];
             if(controller.house!=0){
-                P.View memory v=P.View(seat.balls,side,seat.nowUs,seat.position,seat.half,
-                    opponent(w,b.id,b.mode,side),bytes32(w[S._key(b.id,3)]),uint32(seat.rally),b.tournament);
-                P.Memory memory memory_=policies.unpack(w[S._key(b.id,51+side)]);
-                (direction,memory_)=policies.decide(controller.house-1,v,memory_);
-                w[S._key(b.id,51+side)]=policies.pack(memory_);
+                direction=houseDecision(w,b,policies,seat,side,controller.house-1);
             }else{
                 address strategy=side==0?b.a:b.b;require(strategy.codehash==controller.codeHash,"strategy code changed");
                 IPongStrategy.PongView memory v=S._view(w,b.id,b.mode,side);v.half=seat.half;
@@ -42,6 +39,15 @@ library PoolSteer {
             control=(control&~(uint256(3)<<(side*2)))|(uint256(uint8(direction+1))<<(side*2));
         }
         w[S._key(b.id,8)]=control;return next;
+    }
+    function houseDecision(mapping(bytes32=>uint256) storage w,A.Binding memory b,P policies,S.Seat memory seat,uint8 side,uint8 style)
+        private returns(int8 direction)
+    {
+        P.View memory v=P.View(seat.balls,side,seat.nowUs,seat.position,seat.half,
+            opponent(w,b.id,b.mode,side),bytes32(w[S._key(b.id,3)]),uint32(seat.rally),b.tournament);
+        P.Memory memory brain=Memory.unpack(w[S._key(b.id,51+side)]);
+        (direction,brain)=policies.decide(style,v,brain);
+        w[S._key(b.id,51+side)]=Memory.pack(brain);
     }
     // Steering needs paddle modifiers, not a second decoding/copy of both balls,
     // collision history and score. Keep the same immutable modifier authority.
