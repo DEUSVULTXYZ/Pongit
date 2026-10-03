@@ -1,5 +1,53 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 02:16 UTC — private source released and finalized
+
+Production is unchanged. The sole normal release worker completed at
+01:47:08 UTC. All five source arenas are canonically None, with the exact sealed
+root and count. Do not close, release or reopen them again. The source archive
+completed reconciliation and was stopped normally at 02:15. No operator lifecycle
+transaction was pending. Its existing failed journal entries remain preserved.
+
+Source finality attempt 1 ran before reconciliation finished and failed. Attempt
+2 found all 110 results final, but its verifier incorrectly read inherited
+tournament results from the current pool. Fix `8182e46` resolves each immutable
+arena to exactly one historical pool, retaining the canonical block and hash
+checks. Attempt 3 passes at block **67707104**: five roots, 110 results, all four
+tournaments and 70 fixtures, and 16 rating records. Both failed attempts remain.
+The passing bytes are saved as `evidence/sync-source-final.json` in
+`sync-continuation-20261002`. This is private source evidence, not public migration.
+
+The new candidate remains prepared-unimported. Its twelve confirmed preparation
+transactions cost 3.36240144 test MON. At block 67700081 the operator held
+264.46170654 MON and the v3 publication account held 47707.013112149516479201 MON.
+No funding request is justified. Delta backup
+`sync-optimized-prepare-20261003T0137Z` is hash-verified off VPS. A fresh complete
+backup `sync-20261003T0216Z` has seventeen files verified off VPS at 02:17:28;
+manifest `65093a4d7046364354eb69700fab1b459bc4dea32e7bed54a21c76c902a7b1ad`.
+The disposable `restore-1` data directory is excluded from that tar.
+Its retained restore report passed: 66 operator, two sponsor and 22 human tables,
+including twelve sponsor operations with twelve distinct, correctly bound
+journal entries. The stopped restore container exited successfully.
+
+The sole import worker `pongit-sync-optimized-import-d285aa9` started at 02:17:59,
+with its original **02:37:59.594892 UTC** deadline. Inspect its record and journal
+before proceeding; no second migration writer. A separate public inventory is
+read-only and bounded to 900 seconds. The private two-season index catch-up
+(`sync-index-277438f/catchup-report-20261003.json`) has a new 1,200-second bound;
+its helper stops only its two new indexer/Hasura containers on completion.
+
+The read-only hosted clock tool now supports only the exact second continuation
+scope (`695be72`); typecheck passes. Prepared bounded helpers for preservation,
+tournaments 5–8, concurrent copies and seven actual games are not running yet.
+Use image `d285aa9`; no new runtime or engine was opened. Human services and
+drivers remain stopped at their previous bounds. Original journals are retained.
+
+Browser startup remains blocked by the earlier automatic approval review; no
+alternative launch is allowed. Public legacy hosting and unfinished tournament
+23 still block a compatible public migration. Hosted optimized clock, real
+browser/admission targets, seven-game concurrency, reserve/rotation, current
+replays and the unchanged 24-hour release qualification remain outstanding.
+
 ## Checkpoint, 3 October 01:30 UTC — reproducible optimized candidate prepared
 
 Published evidence/qualification helpers are `14ef9bd`; the complete runtime
