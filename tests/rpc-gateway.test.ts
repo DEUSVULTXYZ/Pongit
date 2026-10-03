@@ -2,6 +2,40 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
+import {encodeFunctionData,zeroHash} from 'viem';
+import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
+
+test('HTTP gateway serves current authorization ahead of queued catalogue calls',async()=>{
+ const seen:string[]=[],hash=`0x${'ab'.repeat(32)}`,hub='0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e';
+ const fence=encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[hub,zeroHash]});
+ const upstream=createServer(async(req,res)=>{
+  let text='';for await(const part of req)text+=part;const q=JSON.parse(text);
+  const key=q.method==='eth_call'?q.params[0].data:q.method;seen.push(key);
+  res.setHeader('content-type','application/json');
+  res.end(JSON.stringify({jsonrpc:'2.0',id:q.id,result:q.method==='eth_getBlockByNumber'?{number:'0x1000',hash}:'0x01'}));
+ });
+ await new Promise<void>(r=>upstream.listen(0,'127.0.0.1',r));
+ const url=`http://127.0.0.1:${(upstream.address() as any).port}`,probe=createServer();
+ await new Promise<void>(r=>probe.listen(0,'127.0.0.1',r));const port=(probe.address() as any).port;
+ await new Promise<void>(r=>probe.close(()=>r()));
+ const child=spawn(process.execPath,['--import','tsx','relayer/src/rpc-gateway.ts'],{env:{...process.env,RPC_PORT:String(port),RPC_UPSTREAM:url,RPC_UPSTREAM_FALLBACK:url,RPC_SPACING_MS:'75'},stdio:'ignore',windowsHide:true});
+ const base=`http://127.0.0.1:${port}`,health=()=>fetch(base+'/health').then(r=>r.json());
+ const call=(method:string,params:unknown[])=>fetch(base,{method:'POST',body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})}).then(r=>r.json());
+ try{
+  for(let i=0;i<100;i++){try{await health();break;}catch{await new Promise(r=>setTimeout(r,50));}}
+  await call('eth_getBlockByNumber',['latest',false]);
+  const backlog=Array.from({length:12},(_,i)=>call('eth_call',[{to:hub,data:`0x${i.toString(16).padStart(8,'0')}`},{blockHash:hash,requireCanonical:true}]));
+  for(let i=0;i<100&&(await health()).queued.interactive<8;i++)await new Promise(r=>setTimeout(r,5));
+  const before=seen.length;
+  assert((await health()).queued.interactive>=8,'Fixture must create the observed catalogue backlog');
+  const result=await call('eth_call',[{to:hub,data:fence},{blockHash:hash,requireCanonical:true}]);
+  assert.equal(result.result,'0x01');assert(seen.indexOf(fence)-before<=2,'Authorization does not wait for the catalogue tail');
+  assert((await Promise.all(backlog)).every(x=>x.result==='0x01'),'Catalogue still completes');
+  assert.equal((await health()).upstreams.primary.spacingMs,75);
+ }finally{
+  child.kill();upstream.closeAllConnections();await new Promise<void>(r=>upstream.close(()=>r()));
+ }
+});
 
 test("RPC coalesces reads and rebroadcasts only identical signed bytes on failover", async () => {
   const seen: { primary: string[]; secondary: string[] } = {

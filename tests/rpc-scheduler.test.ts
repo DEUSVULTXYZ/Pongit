@@ -1,6 +1,75 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {historicalRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
+import {historicalRpcRequest, controlRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
+import {encodeFunctionData,zeroHash} from 'viem';
+import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
+
+test('current control checks pass a catalogue backlog without changing either upstream rate',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ for(const spacing of [75,85]){
+  const queue=rpcScheduler(spacing),seen:Array<{name:string;at:number}>=[];
+  const take=(name:string,history:boolean,control=false)=>queue.acquire(history,control)
+   .then(()=>seen.push({name,at:Date.now()}));
+  await take('in-flight',false);
+  const start=Date.now(),jobs=[...Array.from({length:8},(_,i)=>take(`catalogue${i}`,false)),
+   ...Array.from({length:5},(_,i)=>take(`history${i}`,true)),take('control',false,true)];
+  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(spacing);await Promise.resolve();}
+  await Promise.all(jobs);
+  assert(seen.find(x=>x.name==='control')!.at-start<=2*spacing,'A fresh authorization must not wait behind eight catalogue reads');
+  assert(seen.every((x,i)=>!i||x.at-seen[i-1].at>=spacing),'No additional upstream budget');
+  assert.equal(queue.spacing(),spacing);assert.equal(seen.length,15);
+ }
+});
+
+test('control priority recognizes actual current delegation fences but never historical or arbitrary calls',()=>{
+ const hash=`0x${'ab'.repeat(32)}`,unknown=`0x${'cd'.repeat(32)}`,hub='0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e';
+ const data=encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[hub,zeroHash]});
+ const priority=(method:string,params:unknown[])=>controlRpcRequest(method,params,1000n,h=>h===hash?1000n:undefined);
+ for(const tag of ['0x3e8',{blockHash:hash,requireCanonical:true}])assert(priority('eth_call',[{to:hub,data},tag]));
+ for(const tag of ['0x3a7','0x3e9','latest','pending',{blockHash:unknown,requireCanonical:true}])
+  assert.equal(priority('eth_call',[{to:hub,data},tag]),false,'Only an observed recent block promotes the fence');
+ assert.equal(priority('eth_call',[{to:hub,data:data.slice(0,-1)+'1'},'0x3e8']),false,'Non-root delegation');
+ assert.equal(priority('eth_call',[{to:hub,data:data+'00'},'0x3e8']),false,'Trailing calldata');
+ assert.equal(priority('eth_call',[{to:hub,data:'0xdeadbeef'},'0x3e8']),false);
+ assert.equal(priority('eth_call',[{to:'0x01',data},'0x3e8']),false);
+ assert.equal(controlRpcRequest('eth_call',[{to:hub,data},'0x3e8']),false,'No invented head');
+ for(const tag of ['latest','pending','0x3e8'])assert(priority('eth_getBlockByNumber',[tag,false]));
+ for(const tag of ['0x3a7','0x3e9','safe','finalized'])assert.equal(priority('eth_getBlockByNumber',[tag,false]),false);
+ assert(priority('eth_getBlockByHash',[hash,false]));assert(!priority('eth_getBlockByHash',[unknown,false]));
+ for(const method of ['eth_getLogs','eth_sendRawTransaction','eth_getTransactionReceipt'])assert(!priority(method,[]));
+});
+
+test('a continuous control backlog preserves ordinary and historical fairness and exact dispatch estimates',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ for(const target of ['control','live','history'] as const){
+  const queue=rpcScheduler(75),seen:Array<{kind:string;at:number}>=[];
+  await queue.acquire(false,true);
+  const take=(kind:'control'|'live'|'history')=>queue.acquire(kind==='history',kind==='control').then(()=>seen.push({kind,at:Date.now()}));
+  const jobs=[...Array.from({length:20},()=>take('control')),...Array.from({length:4},()=>take('live')),...Array.from({length:5},()=>take('history'))];
+  // A dispatch estimate assumes the observed backlog, not future arrivals.
+  const expected=Date.now()+queue.waitMs(target==='history',target==='control');
+  jobs.push(take(target));
+  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(75);await Promise.resolve();}
+  await Promise.all(jobs);
+  assert.deepEqual(seen.slice(0,5).map(x=>x.kind),['control','control','control','history','live']);
+  assert.equal(seen.filter(x=>x.kind===target).at(-1)!.at,expected,target);
+  assert.equal(queue.spacing(),75);assert.deepEqual(queue.pending(),{interactive:0,history:0});
+ }
+});
+
+test('control priority cannot bypass an upstream cooldown or promote historical work',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const queue=rpcScheduler(75),seen:string[]=[];
+ await queue.acquire(false);queue.throttle(2000);
+ const low=queue.acquire(true,true).then(()=>seen.push('historical'));
+ const live=queue.acquire(false).then(()=>seen.push('ordinary'));
+ const urgent=queue.acquire(false,true).then(()=>seen.push('control'));
+ assert.equal(queue.waitMs(false,true),2085);
+ t.mock.timers.tick(1999);await Promise.resolve();assert.deepEqual(seen,[]);
+ t.mock.timers.tick(1);await Promise.resolve();assert.deepEqual(seen,['control']);
+ t.mock.timers.tick(85);await Promise.resolve();t.mock.timers.tick(85);
+ await Promise.all([low,live,urgent]);assert.deepEqual(seen,['control','ordinary','historical']);
+});
 
 test('EIP-1898 archive calls retain historical priority after their header was observed',()=>{
  const blocks=rpcBlockObservations(),old=`0x${'ab'.repeat(32)}`,recent=`0x${'cd'.repeat(32)}`;

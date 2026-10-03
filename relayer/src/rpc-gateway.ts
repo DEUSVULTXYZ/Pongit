@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 import {chunkedLogs,historyGate} from "./log-ranges";
-import { historicalRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
+import { historicalRpcRequest, controlRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
@@ -32,19 +32,21 @@ function throttled(target:Upstream,method:string,response:Response,message=''){
 }
 const blocks=rpcBlockObservations();
 const historical=(method:string,params:unknown[])=>historicalRpcRequest(method,params,blocks.head(),blocks.height);
+const control=(method:string,params:unknown[])=>controlRpcRequest(method,params,blocks.head(),blocks.height);
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 // A block-pinned read has one correct answer. Start with the less loaded provider
 // and ask the other when one throttles, fails or has not got that block. A real
 // execution error is the same on both and is returned at once, unchanged.
 async function spreadRead(method:string,params:unknown[],historical:boolean):Promise<unknown>{
- const load=(u:Upstream)=>schedulerOf(u).waitMs(historical);
+ const priority=control(method,params);
+ const load=(u:Upstream)=>schedulerOf(u).waitMs(historical,priority);
  const first:Upstream=load("secondary")<=load("primary")?"secondary":"primary";
  const order:Upstream[]=[first,first==="primary"?"secondary":"primary"];
  for(let attempt=0;attempt<4;attempt++){
   const target=order[attempt%2];
   if(attempt>=2)await delay(500*(attempt-1));
-  await schedulerOf(target).acquire(historical);
+  await schedulerOf(target).acquire(historical,priority);
   let response:Response;
   try{response=await fetch(upstreams[target],{method:"POST",headers:{"content-type":"application/json"},
    body:JSON.stringify({jsonrpc:"2.0",id:1,method,params}),signal:AbortSignal.timeout(15000)});}catch{continue;}
@@ -80,7 +82,7 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
       if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historical(method,params));
       for (let attempt = 0; attempt < 4; attempt++) {
         const target:Upstream=attempt>0 && (read || method==='eth_sendRawTransaction') && spread ? "secondary" : "primary";
-        await schedulerOf(target).acquire(historical(method,params));
+        await schedulerOf(target).acquire(historical(method,params),control(method,params));
         let response:Response;
         try { response = await fetch(upstreams[target], {
           method: "POST", headers: { "content-type": "application/json" },

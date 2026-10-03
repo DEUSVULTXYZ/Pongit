@@ -32,6 +32,27 @@ export function historicalRpcRequest(method:string, params:readonly unknown[],ob
   return true;
 }
 
+/** Current canonical headers and a single root delegation fence must not wait
+ * behind catalogue scans. This changes scheduling only: no state is cached or
+ * trusted, and old/unknown hash-pinned calls receive no special priority. */
+export function controlRpcRequest(method:string,params:readonly unknown[],observedHead?:bigint,blockHeight?:(hash:string)=>bigint|undefined):boolean{
+ const recent=(tag:unknown)=>{
+  const height=typeof tag==='string'&&/^0x[\da-f]+$/i.test(tag)?BigInt(tag):
+   tag&&typeof tag==='object'&&typeof (tag as {blockHash?:unknown}).blockHash==='string'
+    ?blockHeight?.((tag as {blockHash:string}).blockHash):undefined;
+  return observedHead!==undefined&&height!==undefined&&height<=observedHead&&observedHead-height<=64n;
+ };
+ if(method==='eth_blockNumber')return true;
+ if(method==='eth_getBlockByNumber')return params[0]==='latest'||params[0]==='pending'||recent(params[0]);
+ if(method==='eth_getBlockByHash')return recent({blockHash:params[0]});
+ if(method!=='eth_call'||!recent(params[1]))return false;
+ const call=params[0] as {to?:unknown;data?:unknown}|undefined;
+ // delegationOf(address,bytes32), with the root (zero) subdelegation. Bulk
+ // multicalls, arbitrary calldata and historical delegation scans stay normal.
+ return typeof call?.to==='string'&&/^0x[\da-f]{40}$/i.test(call.to)&&typeof call.data==='string'
+  &&/^0xcd325a310{24}[\da-f]{40}0{64}$/i.test(call.data);
+}
+
 /** Header observations classify scheduling only. They never replace canonical
  * RPC validation or serve cached state. Remember hashes, not heights alone, so
  * a replacement block cannot relabel reads of the orphaned hash. Unknown hashes
@@ -81,30 +102,39 @@ export function pinnedRpcRequest(method:string,params:readonly unknown[]):boolea
 
 /** One upstream rate budget; gameplay reads take priority over historical scans. */
 export function rpcScheduler(spacingMs:number) {
-  const live:Array<()=>void>=[], history:Array<()=>void>=[];
-  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
+  const queues={live:[] as Array<()=>void>,control:[] as Array<()=>void>,history:[] as Array<()=>void>};
+  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,controlRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
+  // One ordinary read after four control checks; one historical read after
+  // four total interactive reads. History does not reset the ordinary quota.
+  const choose=(l:number,c:number,h:number,run:number,urgentRun:number):keyof typeof queues=>
+   h>0&&(!(l+c)||run>=4)?'history':c>0&&(!l||urgentRun<4)?'control':'live';
   function tick(){
     timer=undefined;
-    if(!live.length && !history.length)return;
+    if(!queues.live.length&&!queues.control.length&&!queues.history.length)return;
     const wait=Math.max(0,next-Date.now());
     if(wait){timer=setTimeout(tick,wait);return;}
-    const low=history.length>0 && (!live.length || liveRun>=4);
-    const release=(low?history:live).shift()!;
-    liveRun=low?0:liveRun+1;next=Date.now()+effectiveSpacing;release();
-    if(live.length || history.length)timer=setTimeout(tick,effectiveSpacing);
+    const kind=choose(queues.live.length,queues.control.length,queues.history.length,liveRun,controlRun);
+    const release=queues[kind].shift()!;
+    liveRun=kind==='history'?0:liveRun+1;
+    if(kind!=='history')controlRun=kind==='control'?controlRun+1:0;
+    next=Date.now()+effectiveSpacing;release();
+    if(queues.live.length||queues.control.length||queues.history.length)timer=setTimeout(tick,effectiveSpacing);
   }
   return {
-    acquire(historical:boolean){return new Promise<void>(resolve=>{(historical?history:live).push(resolve);if(!timer)tick();});},
-    pending(){return {interactive:live.length,history:history.length};},
-    waitMs(historical:boolean){
+    acquire(historical:boolean,control=false){return new Promise<void>(resolve=>{queues[historical?'history':control?'control':'live'].push(resolve);if(!timer)tick();});},
+    pending(){return {interactive:queues.live.length+queues.control.length,history:queues.history.length};},
+    waitMs(historical:boolean,control=false){
       // Estimate this caller's dispatch time, including the existing cooldown.
       // An interactive read overtakes archive work; counting the entire history
       // queue made the gateway avoid an upstream that could serve it next.
-      let l=live.length,h=history.length,run=liveRun,before=0;
+      const target=historical?'history':control?'control':'live';
+      const sizes={live:queues.live.length,control:queues.control.length,history:queues.history.length};
+      let run=liveRun,urgentRun=controlRun,before=0;
       for(;;){
-        const low=(h>0||historical)&&(!(l>0||!historical)||run>=4);
-        if(low){if(h===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;h--;run=0;}
-        else {if(l===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;l--;run++;}
+        const kind=choose(sizes.live+Number(target==='live'),sizes.control+Number(target==='control'),sizes.history+Number(target==='history'),run,urgentRun);
+        if(kind===target&&sizes[kind]===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;
+        sizes[kind]--;run=kind==='history'?0:run+1;
+        if(kind!=='history')urgentRun=kind==='control'?urgentRun+1:0;
         before++;
       }
     },
