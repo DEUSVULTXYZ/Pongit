@@ -27,6 +27,7 @@ test('second private continuation preserves its explicit source and cannot accep
 test('queue candidate imports the completed optimized source and keeps earlier trial ranges fixed',()=>{
  const scope='private-sync-queue-20261003',expected=privateSyncQualification(scope);
  assert.equal(expected.results,168n);assert.equal(expected.tournaments,7n);assert.equal(expected.lastTournament,11n);
+ assert.equal(expected.requests,43n);
  const next={...record(),prefix:expected.prefix,continuation:{pool:expected.pool},source:{manifest:{pool:expected.pool}}};
  assert(privateSyncContinuation(next,scope));
  assert.throws(()=>privateSyncContinuation(next,'private-sync-20261003'));
