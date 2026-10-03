@@ -41,6 +41,34 @@ test('optional player timing cannot change receipt ownership or break controls',
  assert.equal(f.player.journal.pending(f.session.grant.key)?.action,'input');
  f.player.close();
 });
+
+test('an expired fence overlaps independent identity and canonical hub observations',async()=>{
+ const f=fixture(16);await f.player.move(1);f.advance(10001);f.fresh();
+ let release!:()=>void;const gate=new Promise<void>(r=>release=r);
+ let hubStarted=false,identityStarted=false;
+ const block=f.base.getBlock,request=f.node.request;
+ f.base.getBlock=async(...args:any[])=>{hubStarted=true;await gate;return block(...args);};
+ f.node.request=async(r:any)=>{if(r.method==='interlude_session'){identityStarted=true;await gate;}return request(r);};
+ const moving=f.player.move(-1);
+ try{
+  await new Promise(r=>setImmediate(r));
+  assert(hubStarted&&identityStarted,'Independent observations must start before either completes');
+  assert.equal(f.sent.length,1,'No command before both observations pass');
+ }finally{release();await moving;f.player.close();}
+ assert.equal(f.sent.length,2);assert.equal(parseTransaction(f.sent[1]).nonce,1);
+});
+
+test('concurrent identity refreshes share one observation without accepting the wrong epoch',async()=>{
+ const f=fixture(16);await f.player.move(1);
+ let release!:()=>void;const gate=new Promise<void>(r=>release=r);let identities=0;
+ const request=f.node.request;
+ f.node.request=async(r:any)=>{if(r.method==='interlude_session'){identities++;await gate;}return request(r);};
+ f.epoch(2);
+ const a=f.player.read(true),b=f.player.read(true);
+ try{await new Promise(r=>setImmediate(r));assert.equal(identities,1);}
+ finally{release();const outcomes=await Promise.allSettled([a,b]);assert(outcomes.every(x=>x.status==='rejected'));f.player.close();}
+ assert.equal(f.sent.length,1);assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
+});
 function fixture(rules:10|11|15|16=10,onTiming?:(s:PoolPlayerTiming)=>void){
  const fixtureAbi=rules===16?synchronizedAgentArenaAbi:rules>=15?reusableAgentArenaAbi:abi;
  const key=generatePrivateKey(),account=privateKeyToAccount(key),owner=privateKeyToAccount(generatePrivateKey()),at=Math.floor(Date.now()/1000);

@@ -40,6 +40,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  let sender:CompactArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
  let fenceGeneration=0;
  let fencePending:Promise<void>|undefined,fenceTimer:ReturnType<typeof setTimeout>|undefined;
+ let identityPending:Promise<void>|undefined;
  const prefetchFence=(retry=false)=>{
   clearTimeout(fenceTimer);if(stopped||!sender)return;
   fenceTimer=setTimeout(()=>{
@@ -85,12 +86,17 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  }
  async function identify(force=false){
   if(stopped)throw Error('Arena controls have stopped');if(!force&&verifiedAt&&now()-verifiedAt<10000)return;
-  const [status,rules]:any[]=await Promise.all([node.request({method:'interlude_session',params:[]} as any),
-   node.readContract({address:arena!.app,abi,functionName:'RULES_VERSION'})]);journal.received('interlude_session',status);
-  if(String(status.app).toLowerCase()!==arena!.app.toLowerCase()||Number(status.chainId)!==4242)throw Error('Unexpected arena engine identity');
-  if(BigInt(status.epoch)!==epoch)throw Error('This match has moved to its published result. Open its original result reference.');
-  if(rules!==BigInt(m.rulesVersion))throw Error('Unexpected arena rules');
-  verifiedAt=now();
+  if(identityPending)return identityPending;
+  identityPending=(async()=>{
+   const [status,rules]:any[]=await Promise.all([node.request({method:'interlude_session',params:[]} as any),
+    node.readContract({address:arena!.app,abi,functionName:'RULES_VERSION'})]);journal.received('interlude_session',status);
+   if(String(status.app).toLowerCase()!==arena!.app.toLowerCase()||Number(status.chainId)!==4242)throw Error('Unexpected arena engine identity');
+   if(BigInt(status.epoch)!==epoch)throw Error('This match has moved to its published result. Open its original result reference.');
+   if(rules!==BigInt(m.rulesVersion))throw Error('Unexpected arena rules');
+   if(stopped)throw Error('Arena controls have stopped');
+   verifiedAt=now();
+  })().finally(()=>{identityPending=undefined;});
+  return identityPending;
  }
  async function recoverNow(){
   if(stopped)throw Error('Arena controls have stopped');
@@ -167,15 +173,19 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   if(fencePending)return fencePending;
   const started=now(),generation=fenceGeneration;
   const loading=(async()=>{
-   const block=await options.base.getBlock();
-   if(!block.hash)throw Error('Arena publication has no canonical block');
-   const hub=await readHubDelegation(options.base,m.hub,arena!.app,{blockHash:block.hash,requireCanonical:true});
+   // Node identity and the canonical Monad observation are independent reads.
+   // Serializing them can exhaust heartbeat credit during periodic refreshes.
+   // Both must still pass; neither changes the original three-second fence.
+   const [[block,hub]]=await Promise.all([(async()=>{
+    const block=await options.base.getBlock();
+    if(!block.hash)throw Error('Arena publication has no canonical block');
+    const hub=await readHubDelegation(options.base,m.hub,arena!.app,{blockHash:block.hash,requireCanonical:true});
+    return [block,hub] as const;
+   })(),identify()]);
    if(generation!==fenceGeneration||stopped)return;
    // Read-only prefetch must not retire a pending command behind its owner.
    // The serialized recovery path records canonical closure evidence.
    if(hub.epoch!==epoch||hub.status!==1||!hubLeaseValid(m.hub,hub.expiresAt,block.timestamp)){controlsUntil=0;throw Error('This arena is recovering; your arcade key is saved');}
-   await identify();
-   if(generation!==fenceGeneration||stopped)return;
    // Charge read latency to validity: a slow successful RPC is not a new lease.
    controlsUntil=started+(hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000));
   })();
