@@ -1,5 +1,94 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 08:25 UTC — authorization stalls reproduced; second concurrent trial
+
+Production remains unchanged. Published candidate fixes are `6e5fb92` (RPC queue
+priority) and `ebff506` (player prefetch cadence). The former is **not deployed**.
+It prioritizes observed current headers and exact root-delegation reads within
+the existing upstream spacing and cooldown. Ordinary reads get a turn after four
+control checks; history keeps one turn after four total interactive reads. No
+state cache, broader authorization or increased RPC rate is introduced. The old
+queue failed the backlog regression; the candidate passes scheduler and actual
+local HTTP integration tests. These are not hosted performance measurements.
+
+The first actual four-copy trial finished at07:53:56.605, exit1. Every friendly
+result and the overlapping tournament result was published and captured, but
+liveness **failed**:29/20/5/16 protective-pause transitions. The four command p95s
+were221.04/278.46/222.26/225.64ms. Several commands waited600–670ms in authorization
+before a roughly110ms send. Its19.762-second five-game overlap and passing latency
+do not cancel that failure. Preserve `evidence/five-concurrent-1.json` unchanged.
+
+Separate private human run9 passed07:52:23.656: real Classic/Chaos,68.123seconds
+of overlap, natural results, captures and realtime payouts. Read-only seven-way1
+observed all seven hosted games advancing for5.620seconds across28samples. This
+short overlap is not a complete seven-game performance run. Both use synthetic
+controllers, not a browser or physical passkey. The human service and admission
+worker were deliberately stopped07:54:33 after both results and zero pending
+admissions; their original bounds were not extended. No human driver remains.
+
+Read-only fence probe1 completed08:14:33.610 with205 observations and zero errors.
+The measured p95/max were: Monad header714/784ms, delegation865/1046ms, hosted
+identity698/706ms, combined1445/1695ms. No command or new match was created. The
+player also imposed a250ms minimum sleep after successful prefetch. A1.41-second
+read plus that sleep pushes the following observation past the unchanged3-second
+fence. This second defect is reproduced in a failing baseline test. `ebff506`
+removes only that artificial sleep; prefetch remains single-flight, failure
+retry remains1500ms, and the original authorization lifetime remains3000ms.
+The full suite passes962 TypeScript tests and root typecheck. All failed
+diagnostic attempts remain retained under local `artifacts/sync-*`.
+
+Sole four-copy trial2 **`pongit-sync-queue-concurrent-2-ebff506`** started08:23:46,
+original deadline **08:47:46.760764 UTC**. It uses the existing7e3d2e5 image with
+one recorded read-only override, `shared/agent-pool-player.ts` fromebff506. The
+override hash is in `concurrent-plan-2.json`. RPC priority is absent; the shared
+gateway and production remain unchanged. This isolates the prefetch correction.
+No human or browser driver is started. Do not duplicate this trial or extend it.
+
+T8 Chaos championship continues under its original10:24:57.077601 deadline;
+16fixtures were resolved at08:21. Engines/archive retain their13:25:06.823834
+deadline and restored tick300. T9–11 are not started. Source releases/import and
+all five openings remain complete; never repeat them. The150-second header
+observer found block-clock ratios97.78–99.06% while timestamps advanced normally.
+Clock target and final unchanged24h still fail/remain outstanding. Do not scale
+physics clocks or claim the RPC patch repairs engine-clock drift.
+
+Backup **sync-20261003T0806Z**,20files, is SHA-verified offVPS at08:08:33.4113179,
+manifest `eeb8291b251e4da87d0b79cbd4ed01e39c457fa6bf82ff6ff4b9bf8513039625`.
+It includes completed trial1/human9 and stopped-human configuration, but predates
+trial2; refresh its new keys, journal and runtime. Browser4197 automatic approval
+rejection remains pending: no alternate startup or substitute browser claim.
+No funding request. Public migration, admission/browser targets, reserve/rotation,
+remaining financial/replay checks and unchanged24h remain unqualified.
+
+## Checkpoint, 3 October 07:46 UTC — cadence experiment failed; concurrent trial running
+
+Production remains unchanged. The isolated Chaos clock observer at tick300 failed:
+97.58565% over286.005seconds, no observer errors. A private tick500 experiment also
+failed:97.240506% over271.271seconds, no observer errors. These different rallies
+are not an exactly paired workload. The engine-block clock is similarly slow;
+there is no evidence that tick500 improves the target. Both reports are preserved.
+The engine returned to tick300 at07:43:50 after a clean exit0, with its original
+13:25:06.823834 deadline intact. Tournament/archive continued. This mixed-cadence
+T8 trial is not an unchanged-final soak. The full image and nonce journals stayed
+identical. No physics clock scaling or provider setting was changed.
+
+Four-copy trial **`pongit-sync-queue-concurrent-1-7e3d2e5`** started07:44:04,
+original deadline **08:08:03.950223 UTC**. All five real hosted preflights passed;
+four synthetic accounts were prepared, and the driver is waiting for a young
+actual T8 fixture before admitting independent copies of its official archetype.
+Do not duplicate it. No human game has started yet. The separate private human
+service started07:44:00, original deadline **08:43:59.995897**; its sole admission
+driver ends **08:33:59.995897**. Only after copy `adoptedAt`, the prepared
+`sync-queue-seven-20261003.py human-game` may start run9 and read-only seven-way1.
+These are real hosted games with synthetic controls, not browser/GPU/passkey proof.
+
+Backup **sync-20261003T0727Z**,20files, is SHA-verified offVPS at07:30:26.4402814,
+manifest `001357d215b58ab6be52f2621611dec84a4c324b0e2cfcc9f6904f616e95d499`.
+It predates the cadence changes and new trial keys; refresh after these writes.
+SDK and CLI official npm latest remain0.2.2, matching the pinned candidate.
+Browser4197 approval rejection remains pending, no alternative launch. All prior
+clock/admission/browser failures remain failures. No final release or24h claim.
+
 ## Checkpoint, 3 October 07:28 UTC — queue candidate hosted, first Chaos match live
 
 Private import completed07:18:13.837, exit0/noOOM. All78 namespace transactions
