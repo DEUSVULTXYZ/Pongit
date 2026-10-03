@@ -1,5 +1,75 @@
 # Synchronization release — 2 October 2026
 
+## Checkpoint, 3 October 01:30 UTC — reproducible optimized candidate prepared
+
+Published evidence/qualification helpers are `14ef9bd`; the complete runtime
+image is built from `d285aa9`. Production is unchanged. Image
+`sha256:5af816035b0724e5164b3d34bb1d29429e63fdecf99d70fdb59cc08cdcabb0c3`
+matches all 638 packaged source files. The 46-artifact package is under
+`/opt/pongit/tests/fluid-20260928/sync-contracts-d285aa9`, including the
+notification optimization `7f1eb00`. No optimized arena is hosted yet.
+
+All 943 TypeScript tests and root typecheck pass. The complete Solidity run
+passed 1,005 tests, with eight external-setup tests skipped. The isolated VPS
+physics container exited successfully: 10,000 Classic and 10,000 historical
+Chaos comparisons, plus 24,000 current Chaos comparisons (random, simultaneous
+contacts and legacy compatibility), with zero mismatches. These are not browser
+or hosted clock measurements. Reports are retained in the contract package's
+`evidence/realtime/differential.json` and `evidence/drand/physics-differential.json`.
+
+The first seed audit of the continuation failed because its tool required the
+original `sealMigration` procedure. The continuation deliberately rejects that
+method and seals through `finishImport`. Failed report
+`ratings-empty-seed-audit-failed-1.json` is preserved. Corrected read-only audit
+`294ffb4` verifies the reviewed immutable runtime template, pinned predecessor
+audit bytes, canonical blocks, sealed import and source bindings. Its second
+report passes for ratings `0xf150d0741f92ff9d41ba54713f2428937b69436e`.
+The runtime template fingerprint also binds immutable masks; altered opcodes,
+mask expansion and unexpected libraries are rejected by tests.
+
+New private root `sync-optimized-continuation-20261003`, namespace
+`reusable-agents-20261003-1`, is **prepared-unimported**. The bounded preparation
+worker `pongit-sync-optimized-prepare-d285aa9` exited successfully. All twelve
+operator transactions, nonces 7340–7351, are confirmed. Fourteen module references
+include reused controllers. Catalogue is
+`0x32d6e652756089f2f6efaf8887a7f713815db59a`. No import, pool opening, public
+switch or source gate changed. The existing sole release worker and original
+operator journal remain authoritative.
+
+The completed source is private pool `0xdee98e3f7a0f0049244a8257a9cde304d909e5dc`:
+110 results and four tournaments. Release remains due **01:46:15–01:46:38 UTC**,
+owned by `pongit-sync-continuation-release-1-20261003`, original deadline
+**02:03:51.651638 UTC**. The original archive alone remains bounded by
+**02:36:56.853276 UTC**. Never repeat closes or reopen source arenas. After its
+normal release, independently verify canonical None and exact roots, let the
+archive finalize all history, then stop it before importing. Source verifier
+`b806349` checks all 110 results and 70 tournament fixtures. Helpers under the
+private root's parent preserve each attempted report; import requires passing
+source finality and a fresh verified off-VPS backup.
+
+Human service `pongit-sync-human-player-20261003-service-1` stopped at its
+original timeout (exit 124, no OOM); the admission fixture is also stopped.
+No game driver is running. The two human hosted epochs and financial contracts
+are preserved. Earlier trial-4 results remain the latest human proof.
+
+Backup `sync-20261003T0120Z` has seventeen SHA-verified off-VPS files, manifest
+`867926f3351deddc54b1d47f5777aece5388ca371a5d700129f0c1821ba6375c`.
+It includes the new private input/audit directory but predates its twelve
+deployment transactions and generated keys; refresh before import. The earlier
+81-file offload completed after hash and mount verification. Two exact source
+archives were also copied off VPS, verified and removed from the VPS. Production,
+rollback, volumes and failed evidence remain. Disk was 79.90% before the build;
+at 01:30 it is 80.17%, so another build requires scoped cleanup.
+
+A fresh read-only check of the two known public legacy nodes timed out after
+eight seconds each at 01:25. No session was recreated or restarted. Public
+tournament 23 remains an unresolved migration gate; no implicit cancellation or
+private-season replacement. Browser startup on 127.0.0.1:4197 remains blocked by
+the earlier automatic approval review, with the specific permission question
+pending. Do not bypass that rejection. Hosted optimized clock, seven-game
+overlap, browser/admission targets, current replays, public compatibility and the
+unchanged 24-hour qualification remain. No new funding request.
+
 ## Checkpoint, 3 October 00:49 UTC — dedicated player sponsorship passes real play
 
 Published implementation is `d1c501f`, recovery extension `64361f2`. Production
