@@ -1,0 +1,9 @@
+{
+  "startedAt": "2026-10-03T13:14:55.481098+00:00",
+  "previousImage": "sha256:505ee1ef641077e12e03252f04a09aaea5b0a1054050203e4ce1ffb3d216428b",
+  "image": "sha256:323203d00e010623aedb8214fd28a64c5af650402fa457b0d6905567839106cc",
+  "source": "214c95a",
+  "passed": true,
+  "finishedAt": "2026-10-03T13:14:57.245025+00:00",
+  "containerStartedAt": "2026-10-03T13:14:56.960497718Z"
+}

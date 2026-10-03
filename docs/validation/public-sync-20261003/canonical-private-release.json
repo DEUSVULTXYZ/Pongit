@@ -1,0 +1,54 @@
+{
+  "at": "2026-10-03T13:19:34.546Z",
+  "block": "67839510",
+  "hash": "0x6aeba5f3699620b7c8d0fd78dd2b75cb29749d3db115c5c5c0d4fce11bb7eeab",
+  "readOnly": true,
+  "passed": true,
+  "arenas": [
+    {
+      "app": "0x0f770d94c3065e8d04b2e7c9c7ba1c8ca9e14915",
+      "epoch": "1",
+      "status": 0,
+      "root": [
+        "0xd2f3ded571b3a21904d24c6545781b56b01e56c3058978c4bc9547728ccbd1c6",
+        18
+      ]
+    },
+    {
+      "app": "0x7471a95729278cbdd72f7419a114a28c8a03074d",
+      "epoch": "1",
+      "status": 0,
+      "root": [
+        "0x035d18bd2fcfc15436a50479416de31dfc5d144829e814e55cfcf6faec2f17b0",
+        17
+      ]
+    },
+    {
+      "app": "0xf6adb38ab5dae87561c8e743e82bc9405d9f8200",
+      "epoch": "1",
+      "status": 0,
+      "root": [
+        "0x4db7d839f663653b82ef04eac61c57d9c9caee2f390cacb7bd9efb060f68158e",
+        17
+      ]
+    },
+    {
+      "app": "0xc955795cb6c30c156dc3405cd404c14d9805febe",
+      "epoch": "1",
+      "status": 0,
+      "root": [
+        "0xd89fbd075f1d49d664b4ec1e8d005d01aa0b6ddcbb9fca9fdc3b652d8b79a797",
+        17
+      ]
+    },
+    {
+      "app": "0x752250f520f57c9516e5740414d7cf818e0bb5b4",
+      "epoch": "1",
+      "status": 0,
+      "root": [
+        "0x36176450240064564a6dde02e745fcfc75249336e154c319ad15f034ea21bb64",
+        17
+      ]
+    }
+  ]
+}

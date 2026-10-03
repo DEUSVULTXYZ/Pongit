@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-03T13:22:20.717863+00:00",
+  "checks": [
+    {
+      "url": "https://interlude-control.fly.dev/config",
+      "status": 503,
+      "body": ""
+    },
+    {
+      "url": "https://il-40178b386730985a.fly.dev/health",
+      "status": 503,
+      "body": ""
+    }
+  ]
+}

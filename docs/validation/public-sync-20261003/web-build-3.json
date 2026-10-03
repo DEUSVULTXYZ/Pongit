@@ -1,0 +1,9 @@
+{
+  "source": "214c95a",
+  "startedAt": "2026-10-03T13:11:25.195832+00:00",
+  "passed": true,
+  "buildDefinition": "Identical dependencies, web-build and web stages; omit unrelated legacy builder stages.",
+  "exitCode": 0,
+  "finishedAt": "2026-10-03T13:14:42.132642+00:00",
+  "image": "sha256:323203d00e010623aedb8214fd28a64c5af650402fa457b0d6905567839106cc"
+}

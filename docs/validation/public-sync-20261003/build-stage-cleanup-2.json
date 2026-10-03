@@ -1,0 +1,20 @@
+{
+  "images": [
+    {
+      "id": "sha256:41622f06f97971e151641cfb934304a3be4ea730d452dbe8c7ac2cb77633a75d",
+      "size": 503136798,
+      "created": "2026-10-01T05:06:07.812505267Z",
+      "unusedPongitBuildStage": true
+    },
+    {
+      "id": "sha256:e2836271e880cd7070871218d9e5666d6cd9c76120a9e5e41107c0218fd6254f",
+      "size": 503161366,
+      "created": "2026-10-01T04:43:02.78968613Z",
+      "unusedPongitBuildStage": true
+    }
+  ],
+  "removed": [
+    "sha256:41622f06f97971e151641cfb934304a3be4ea730d452dbe8c7ac2cb77633a75d",
+    "sha256:e2836271e880cd7070871218d9e5666d6cd9c76120a9e5e41107c0218fd6254f"
+  ]
+}

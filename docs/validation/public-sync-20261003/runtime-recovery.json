@@ -1,0 +1,24 @@
+{
+  "startedAt": "2026-10-03T12:55:25.667194+00:00",
+  "phase": "recovery",
+  "image": "sha256:cde504551cc44d5e4ff61b73c2a39c27515098fe98bb996f7d00b1937596a835",
+  "source": "4661dc3",
+  "backup": "sync-public-20261003T1250Z",
+  "scope": "User-approved public compatible service update. Existing public contracts, authority, DBs, nonce journals, keys and human relayer remain unchanged. Current tournament may finish; next tournament is held for compatible migration. No force-close or fresh private history substitution.",
+  "services": [
+    {
+      "role": "archive",
+      "previousImage": "sha256:fbe848fe0c376c23b245a1e1aedc68aa04a39ffbbfa0ba8bef827973519b942d",
+      "previousStartedAt": "2026-10-01T03:45:50.622981306Z",
+      "startedAt": "2026-10-03T12:55:30.165259238Z"
+    },
+    {
+      "role": "maintenance",
+      "previousImage": "sha256:fb9bfc458943aca48a9d551a4f6be3e3497226ec4425a9a0deb1db2741eab548",
+      "previousStartedAt": "2026-10-01T05:33:20.104055713Z",
+      "startedAt": "2026-10-03T12:56:20.148918399Z"
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-03T12:56:20.553390+00:00"
+}

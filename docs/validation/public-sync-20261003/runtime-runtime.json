@@ -1,0 +1,36 @@
+{
+  "startedAt": "2026-10-03T12:56:59.382291+00:00",
+  "phase": "runtime",
+  "image": "sha256:cde504551cc44d5e4ff61b73c2a39c27515098fe98bb996f7d00b1937596a835",
+  "source": "4661dc3",
+  "backup": "sync-public-20261003T1250Z",
+  "scope": "User-approved public compatible service update. Existing public contracts, authority, DBs, nonce journals, keys and human relayer remain unchanged. Current tournament may finish; next tournament is held for compatible migration. No force-close or fresh private history substitution.",
+  "services": [
+    {
+      "role": "reader",
+      "previousImage": "sha256:6c6fad29224edb6810bfd7aaa78a3e16a92ad7f856c733181a5d457db1b8d68e",
+      "previousStartedAt": "2026-10-01T04:19:29.514026044Z",
+      "startedAt": "2026-10-03T12:57:01.13762402Z"
+    },
+    {
+      "role": "sponsor",
+      "previousImage": "sha256:7b529b37c620af52a81f906d477076a54eee5b915699939056569faed02ed113",
+      "previousStartedAt": "2026-10-01T05:50:38.171747505Z",
+      "startedAt": "2026-10-03T12:57:03.158805482Z"
+    },
+    {
+      "role": "admission",
+      "previousImage": "sha256:9e2f2ffb31bc8bbdcd9f58242aac4c2aba85c33d839613ef913984f60d66698a",
+      "previousStartedAt": "2026-10-01T04:40:44.63969889Z",
+      "startedAt": "2026-10-03T12:57:06.160730316Z"
+    },
+    {
+      "role": "engines",
+      "previousImage": "sha256:fb9bfc458943aca48a9d551a4f6be3e3497226ec4425a9a0deb1db2741eab548",
+      "previousStartedAt": "2026-10-01T05:30:26.995813998Z",
+      "startedAt": "2026-10-03T12:57:16.429497437Z"
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-03T12:57:16.876804+00:00"
+}
