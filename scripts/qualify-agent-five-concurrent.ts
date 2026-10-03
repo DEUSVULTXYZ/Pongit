@@ -17,6 +17,7 @@ import {agentChallengesAbi as challengeAbi} from '../shared/abi-AgentChallenges'
 import {preparePoolFamily,loadPoolFamily} from '../shared/agent-pool-family';
 import {preparePoolChallenge} from '../shared/agent-pool-client';
 import {challengeRefFromReceipt} from '../shared/agent-challenge-receipt';
+import {admissionPasses} from '../shared/agent-pool-sponsor';
 import {createPoolPlayer,type PoolPlayerTiming} from '../shared/agent-pool-player';
 import {createPoolObserver} from '../shared/agent-pool-observer';
 import {validateAgentPoolManifest} from '../shared/agent-pool';
@@ -213,10 +214,22 @@ try{
   if((await base.getBlock({blockNumber:receipt.blockNumber})).hash===receipt.blockHash)
    row.ref=challengeRefFromReceipt(m,receipt,row.player,{agent:archetype,mode:row.mode});
   if(!row.ref){
-   const lanes=await Promise.all([1,2,3,4].map(i=>read(m.pool,poolAbi,'laneRecord',[i])));
-   const current=lanes.find(v=>v.ref.id>0n&&v.a.toLowerCase()===row.player.toLowerCase());
-   if(current)row.ref={chainId:10143,app:current.ref.arena,epoch:String(current.ref.epoch),id:String(current.ref.id)};
-   else row.ref=extract(await write('admit-'+row.index,m.pool,poolAbi,'admitChallenge'));
+   // A successful scan can advance the bounded queue without admitting this
+   // request. In particular, crossing 32 historical entries takes another pass.
+   // Resolve only a receipt/current lane bound to this player, never assume any
+   // successful operator receipt necessarily contains an AdmissionIssued event.
+   const passes=admissionPasses(await read(m.challenges,challengeAbi,'count'))+1;
+   for(let attempt=0;attempt<passes&&!row.ref;attempt++){
+    const lanes=await Promise.all([1,2,3,4].map(i=>read(m.pool,poolAbi,'laneRecord',[i])));
+    const current=lanes.find(v=>v.ref.id>0n&&v.a.toLowerCase()===row.player.toLowerCase());
+    if(current){row.ref={chainId:10143,app:current.ref.arena,epoch:String(current.ref.epoch),id:String(current.ref.id)};break;}
+    assert(Date.now()<deadline,'Original admission deadline');
+    const admission=await write('admit-'+row.index+'-'+attempt,m.pool,poolAbi,'admitChallenge');
+    assert.equal((await base.getBlock({blockNumber:admission.blockNumber})).hash,admission.blockHash,'Admission receipt must remain canonical');
+    row.ref=challengeRefFromReceipt(m,admission,row.player,{agent:archetype,mode:row.mode});
+    (row.admissionSteps??=[]).push({hash:admission.transactionHash,block:String(admission.blockNumber),assigned:!!row.ref});save();
+   }
+   assert(row.ref,'Requested challenge still waiting after bounded admission scans; preserve its queue request');
   }
   row.admittedAt=new Date().toISOString();save();
   // An atomic challenge may already own a loading arena. Its player must
