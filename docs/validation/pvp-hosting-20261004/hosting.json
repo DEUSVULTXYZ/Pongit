@@ -1,0 +1,95 @@
+{
+  "at": "2026-10-04T07:28:28.454493+00:00",
+  "origin": "authorized VPS",
+  "observations": [
+    {
+      "url": "https://pongit.xyz/api/health",
+      "status": 200,
+      "data": {
+        "ok": true,
+        "game": {
+          "online": false,
+          "admission": true,
+          "arenas": [
+            {
+              "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+              "node": "https://il-596562d63e678a2b.fly.dev",
+              "epoch": "63",
+              "id": "0",
+              "stage": "starting",
+              "online": false,
+              "expiresAt": 1791685769000,
+              "releaseAt": 0,
+              "lastProgressAt": 0,
+              "code": "ENGINE_SYNCHRONIZING",
+              "rally": null
+            },
+            {
+              "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+              "node": "https://il-a429e8e01c4b57dd.fly.dev",
+              "epoch": "64",
+              "id": "0",
+              "stage": "starting",
+              "online": false,
+              "expiresAt": 1791680322000,
+              "releaseAt": 0,
+              "lastProgressAt": 0,
+              "code": "ENGINE_SYNCHRONIZING",
+              "rally": null
+            },
+            {
+              "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+              "node": "https://il-9bc7eac922640b0a.fly.dev",
+              "epoch": "62",
+              "id": "0",
+              "stage": "starting",
+              "online": false,
+              "expiresAt": 1791687433000,
+              "releaseAt": 0,
+              "lastProgressAt": 0,
+              "code": "ENGINE_SYNCHRONIZING",
+              "rally": null
+            }
+          ],
+          "sponsor": {
+            "available": true
+          }
+        },
+        "queueError": "",
+        "head": "68055738"
+      }
+    },
+    {
+      "url": "https://interlude-control.fly.dev/config",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://control.interludelayer.xyz/health",
+      "status": 200,
+      "data": {
+        "ok": false,
+        "status": "degraded",
+        "warnings": [
+          "machines near capacity: 50/50"
+        ],
+        "machines": null,
+        "validator": null,
+        "queue": null
+      }
+    },
+    {
+      "url": "https://il-596562d63e678a2b.fly.dev/health",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://il-a429e8e01c4b57dd.fly.dev/health",
+      "error": "The read operation timed out"
+    },
+    {
+      "url": "https://il-9bc7eac922640b0a.fly.dev/health",
+      "error": "The read operation timed out"
+    }
+  ],
+  "writes": false,
+  "pvpRestored": false
+}

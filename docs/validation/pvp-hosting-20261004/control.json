@@ -1,0 +1,72 @@
+{
+  "at": "2026-10-04T07:29:46.907427+00:00",
+  "url": "https://control.interludelayer.xyz/health",
+  "status": 200,
+  "data": {
+    "ok": false,
+    "status": "degraded",
+    "warnings": [
+      "machines near capacity: 50/50"
+    ],
+    "checks": {
+      "rpc": {
+        "ok": true,
+        "block": "68055997"
+      },
+      "writeRpc": {
+        "ok": true
+      },
+      "balances": {
+        "validator": {
+          "address": "0xa375CF27eD39491dB8302Ffc3dF4210Ad263eF43",
+          "wei": "46997682999671516479201",
+          "low": false
+        },
+        "labValidator": {
+          "address": "0x467e0F8277Ca322c28463EACC4FEAbd20487923B",
+          "wei": "169119589269995399820",
+          "low": false
+        }
+      },
+      "nonce": {
+        "validator": {
+          "next": 37163,
+          "resets": {
+            "receiptTimeout": 0,
+            "nonceTooLow": 0,
+            "alreadyKnown": 0,
+            "underpriced": 0,
+            "sendFailed": 0
+          }
+        },
+        "labValidator": {
+          "next": 290,
+          "resets": {
+            "receiptTimeout": 0,
+            "nonceTooLow": 0,
+            "alreadyKnown": 0,
+            "underpriced": 0,
+            "sendFailed": 0
+          }
+        }
+      },
+      "queue": {
+        "commits": 0,
+        "transactions": 0
+      },
+      "validator": {
+        "maxDelegations": 128,
+        "activeEstimate": 9,
+        "freeByBond": 119,
+        "bond": "1282800000000000000000",
+        "reserved": "92600000000000000000"
+      },
+      "machines": {
+        "live": 50,
+        "max": 50,
+        "queued": 0,
+        "perHour": 20
+      }
+    }
+  }
+}
