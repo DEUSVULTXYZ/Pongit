@@ -1,0 +1,71 @@
+{
+  "checkedAt": "2026-10-04T05:25:32.916Z",
+  "passed": true,
+  "block": "68031323",
+  "blockHash": "0xe2e1df0fea8b46957a987a91141e28f41203bcfe557eefcfc8b20a8396585978",
+  "rows": [
+    {
+      "app": "0x8194191a762a54f2a2bc05fe159e8f418cffe36e",
+      "epoch": "2",
+      "status": 0,
+      "root": "0x96aec641f8aec2c7a69e85cd03e6155cf6fd7d795e908e0c631f5023cd8a5dcc",
+      "count": 5
+    },
+    {
+      "app": "0x5f81f9fcc7d97e77c8edda8da103a03db043603b",
+      "epoch": "1",
+      "status": 0,
+      "root": "0xe0442f4d0a53a9b852d3bb1415f6c0e26579b8fe01a240fadafcb68a954c90c5",
+      "count": 12
+    },
+    {
+      "app": "0x064b85b76e37538f8750c5313b0e66d718744265",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x4431ffaf1747581080f5dd843770965abdcd1db0123baecbaf3a36f8cc7da4c8",
+      "count": 12
+    },
+    {
+      "app": "0xe79709cddb0cbf21c3e080b30dc9a74628bde54a",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x74bc9f0cec87b3ee0b9662c26512dc4effe8650f8e08193dcdb19b9fe6148119",
+      "count": 12
+    },
+    {
+      "app": "0x3b435d6e84b0a9a852ce06f5d0fa873638ebeb38",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x23b9d7b497025c3b9141d8f2078b87ff54632e883d6b9111535ce5f3ea3399ff",
+      "count": 11
+    },
+    {
+      "app": "0x05b901fb1423a54d0692730d694126f3eb9f1809",
+      "epoch": "1",
+      "status": 0,
+      "root": "0xfe0d7f1c08fafe92114b20035f2335d309d34ad11588a4bf992f99e70f6e23f8",
+      "count": 8
+    },
+    {
+      "app": "0x5472e6b3638a6f26a1e181b490e9fe5cde005522",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x9d9a55751e7a33ea954bb90aa987a37524f8bd433f2a65e0a0f40e0aa77e86cc",
+      "count": 13
+    },
+    {
+      "app": "0x2b85a8ae733bbd713159f446e4781caa0f9d6110",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x8b901e7b327a224c7cdd0955b1662f3a6afb6c25b6d23e38241d3f633233e2e5",
+      "count": 8
+    },
+    {
+      "app": "0xc63aecc4bb92b9e13906b75b951b09b2f918c0b3",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x34f45f802534d7eb2412b7498e80274d138c254829753044f66955ca1078ae9d",
+      "count": 6
+    }
+  ]
+}

@@ -1,0 +1,734 @@
+{
+  "productCommit": "71afb6e",
+  "scope": "Actual public catalogue/gameplay; virtual Mera PRF. Functional harness PASS is distinct from the performance gates. F5 intentionally suspends presence; contractPauseMs includes that interval. No final 24-hour, physical passkey or mobile-device claim.",
+  "deployment": {
+    "source": "71afb6e",
+    "deployedAt": "2026-10-04T05:14:31.476291089Z",
+    "previousImage": "sha256:1312a2295149134b09bf1f68b4df4c24d923bd3d265e55cf907ad30f715429fd",
+    "image": "sha256:4cc5769ca08672a58a9137ba3f099aff48af55c9411a6eb1a27e237eb9d41043",
+    "http": 200,
+    "backendUnchanged": true,
+    "sourceHashes": {
+      "shared/agent-heartbeat-loop.ts": "021a6a50e175c612f47ea8c03c8e663d186d6a98f8dd58b8eb98abf8160b52d3",
+      "shared/agent-pool-player.ts": "f617b0a789c05010f2e34ff0ebe558dd7085ee7f6906b88b5f327d62586de16e",
+      "shared/engine-feed.ts": "8bba76bb1e5d1645dbfb98c7f1816802c10c4b12ec76d299e23ee28f7b249d96",
+      "shared/engine-stream.ts": "33d121084dfefac56bb2eda83e0b4a01753e79c87707b5ad0129f9751fe4c4ac",
+      "web/components/AgentPoolMatch.tsx": "dce4e553eb33027d700f4b43bdc50b861f466f86ea68e7b1b559a0e9434ae780"
+    }
+  },
+  "trials": [
+    {
+      "run": "sync610-baseline1-20261004",
+      "startedAt": "2026-10-04T04:33:35.939Z",
+      "finishedAt": "2026-10-04T04:34:25.672Z",
+      "browser": "chrome",
+      "mode": 0,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "2",
+        "id": "620"
+      },
+      "virtualPrf": true,
+      "reusedSession": false,
+      "httpOnly": true,
+      "networkDelayEachWayMs": 80,
+      "initialIdleMs": 20000,
+      "functionalPassed": false,
+      "errors": [],
+      "admissionMs": 21815,
+      "player": null,
+      "spectator": null,
+      "files": [
+        {
+          "name": "failed-sync-trace.json",
+          "bytes": 436145,
+          "sha256": "6d244ebdcc8ba074686411dd2ff49e0d956dcf5c0e309b109279f1a7d9f556dd"
+        },
+        {
+          "name": "failure.png",
+          "bytes": 522655,
+          "sha256": "8ea35d5bf054a77b81f03f0e9bdf56513037d04ff40ecd9583e24c10f04f9f5d"
+        },
+        {
+          "name": "initial-idle-trace.json",
+          "bytes": 434041,
+          "sha256": "086595034f1951c24fc2020f92715847615b3d80a01efb94f573213e5f91861a"
+        },
+        {
+          "name": "report.json",
+          "bytes": 39961,
+          "sha256": "b87ce2e978a29472a1c002b2dc566251e3fa4e4c169268db410d9b610acc75a5"
+        }
+      ]
+    },
+    {
+      "run": "sync610-chrome-classic1-20261004",
+      "startedAt": "2026-10-04T04:55:15.175Z",
+      "finishedAt": "2026-10-04T04:57:00.157Z",
+      "browser": "chrome",
+      "mode": 0,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "2",
+        "id": "629"
+      },
+      "virtualPrf": true,
+      "reusedSession": false,
+      "httpOnly": false,
+      "networkDelayEachWayMs": 0,
+      "initialIdleMs": 20000,
+      "functionalPassed": true,
+      "errors": [],
+      "admissionMs": 11294,
+      "input": {
+        "samples": 75,
+        "p95Ms": 17.299999952316284
+      },
+      "submissionP95Ms": 14.715700000000652,
+      "confirmedInput": {
+        "samples": 220,
+        "p95Ms": 17.39208984375,
+        "maxMs": 18.544921875,
+        "mismatches": []
+      },
+      "liveness": {
+        "heartbeats": 132,
+        "resumes": 1
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "player": {
+        "snapshots": 187,
+        "p95FrameMs": 17.199999928474426,
+        "maxHoldMs": 50.10000002384186,
+        "contractPauseMs": 3200,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 200.30000007152557
+      },
+      "spectator": {
+        "snapshots": 377,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 166.79999995231628,
+        "contractPauseMs": 3601.100000023842,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 216.89999997615814
+      },
+      "result": {
+        "hash": "0xbe0ffe52e334ba4b9d10f8e64f9d4da1c8f988018c7d1b2b72047cd35ba5976f",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 7,
+        "elapsedUs": "38572932",
+        "finality": false
+      },
+      "files": [
+        {
+          "name": "court.png",
+          "bytes": 419913,
+          "sha256": "88c28f29aa76d2fd9fd152f7b2e1f706082b3d9689c4f7b1112cda78b3583aef"
+        },
+        {
+          "name": "initial-idle-trace.json",
+          "bytes": 374256,
+          "sha256": "2891d3a66d79eb580e066b336a232c685f42966b0d6bc47069e3647a8616e05d"
+        },
+        {
+          "name": "input-trace.json",
+          "bytes": 36458,
+          "sha256": "dc7c6b56cf8ab4678b72b8d833c50ac644dcfb24ff5e40b9f8e7c17775441a9a"
+        },
+        {
+          "name": "intent-trace.json",
+          "bytes": 8277,
+          "sha256": "b25ba34935ffd14590c07217baf2996247c17b76bfdf73a0f0969c251399fc8d"
+        },
+        {
+          "name": "report.json",
+          "bytes": 142096,
+          "sha256": "8c2a1e5a28fe4369f8efd8f7f02c6fe305d7e261a6cc7dfdbc68b0a841952f12"
+        },
+        {
+          "name": "spectator-trace.json",
+          "bytes": 1007933,
+          "sha256": "88bdf6a013e74b0655b60412f332b6a0931921aac02467349b651e8696897055"
+        },
+        {
+          "name": "spectator.png",
+          "bytes": 417468,
+          "sha256": "5ff44df9cc9409f3de627c53e59b10b3507c73dbc1d822dad06e9edb654bc349"
+        },
+        {
+          "name": "sync-trace.json",
+          "bytes": 536915,
+          "sha256": "184236ba7f4e9f584399e0763518ff01a030717d5df136a5c4ab041ca1150da2"
+        }
+      ]
+    },
+    {
+      "run": "sync610-edge-chaos1-20261004",
+      "startedAt": "2026-10-04T04:52:25.641Z",
+      "finishedAt": "2026-10-04T04:54:09.862Z",
+      "browser": "msedge",
+      "mode": 1,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "2",
+        "id": "627"
+      },
+      "virtualPrf": true,
+      "reusedSession": false,
+      "httpOnly": false,
+      "networkDelayEachWayMs": 0,
+      "initialIdleMs": 20000,
+      "functionalPassed": true,
+      "errors": [],
+      "admissionMs": 10725,
+      "input": {
+        "samples": 75,
+        "p95Ms": 15.900000095367432
+      },
+      "submissionP95Ms": 14.905500000000757,
+      "confirmedInput": {
+        "samples": 218,
+        "p95Ms": 17.603515625,
+        "maxMs": 195.109375,
+        "mismatches": []
+      },
+      "liveness": {
+        "heartbeats": 126,
+        "resumes": 1
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "player": {
+        "snapshots": 174,
+        "p95FrameMs": 17.200000047683716,
+        "maxHoldMs": 199.70000004768372,
+        "contractPauseMs": 3066,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 200.10000002384186
+      },
+      "spectator": {
+        "snapshots": 371,
+        "p95FrameMs": 17.199999928474426,
+        "maxHoldMs": 182.89999997615814,
+        "contractPauseMs": 3683.5,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 216.39999997615814
+      },
+      "result": {
+        "hash": "0xfa7ce20ff2437715be18671f84ebdc155d15192edd9530d683ab3e42ef79b110",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "36822922",
+        "finality": false
+      },
+      "files": [
+        {
+          "name": "court.png",
+          "bytes": 339144,
+          "sha256": "1c68fc2ebb37cacb62e736372960cb38a5710fe5a812d4095e98c671438595db"
+        },
+        {
+          "name": "initial-idle-trace.json",
+          "bytes": 513334,
+          "sha256": "3674581d8f32e112ed5b016cb7e3de8f499a0e5e8ee83c309e94f6f3449a5da3"
+        },
+        {
+          "name": "input-trace.json",
+          "bytes": 36349,
+          "sha256": "83b21d9b45068c4354b0c6604f3ac8e0413b7186375dd5716cd849397a5981d8"
+        },
+        {
+          "name": "intent-trace.json",
+          "bytes": 8358,
+          "sha256": "a616677c7497cc7c3ebca6dcbeb5a7e93bc9472424c388fa3edc6650a840c352"
+        },
+        {
+          "name": "report.json",
+          "bytes": 139726,
+          "sha256": "a4542cbeabad058611cbece5ad9e79f3695a06cdac9bacfc94d6a07d09180f1c"
+        },
+        {
+          "name": "spectator-trace.json",
+          "bytes": 1223394,
+          "sha256": "712aee2036cf7ed8535737d9b9b601065f7089e3e4c735415fad50e77fbec975"
+        },
+        {
+          "name": "spectator.png",
+          "bytes": 337260,
+          "sha256": "f64fbef2ba6b0a70774fdfb74c265dc8ac0e50e6f1e6fe5ba66ae2495d967050"
+        },
+        {
+          "name": "sync-trace.json",
+          "bytes": 498968,
+          "sha256": "503168b773d67a04cffb139628510ec5f46333c52ebd9609a9defb1a9bcb69ee"
+        }
+      ]
+    },
+    {
+      "run": "sync610-edge-final-20261004",
+      "startedAt": "2026-10-04T05:17:46.798Z",
+      "finishedAt": "2026-10-04T05:19:31.168Z",
+      "browser": "msedge",
+      "mode": 1,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "2",
+        "id": "639"
+      },
+      "virtualPrf": true,
+      "reusedSession": true,
+      "httpOnly": true,
+      "networkDelayEachWayMs": 20,
+      "inputHoldMs": 100,
+      "inputGapMs": 100,
+      "initialIdleMs": 0,
+      "functionalPassed": true,
+      "errors": [],
+      "admissionMs": 14035,
+      "input": {
+        "samples": 75,
+        "p95Ms": 15.899999976158142
+      },
+      "submissionP95Ms": 77.26860000000306,
+      "confirmedInput": {
+        "samples": 217,
+        "p95Ms": 80.3310546875,
+        "maxMs": 253.958740234375,
+        "mismatches": []
+      },
+      "liveness": {
+        "heartbeats": 91,
+        "resumes": 1
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "player": {
+        "snapshots": 243,
+        "p95FrameMs": 17.199999928474426,
+        "maxHoldMs": 216.5,
+        "contractPauseMs": 9450.400000095367,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 217.10000002384186
+      },
+      "spectator": {
+        "snapshots": 361,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 150.5,
+        "contractPauseMs": 11001,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 299.89999997615814
+      },
+      "result": {
+        "hash": "0x8dba9f4b61857734422d31291c27e1d222292192e6d31644948c78254f0666c0",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 7,
+        "elapsedUs": "38572923",
+        "finality": false
+      },
+      "files": [
+        {
+          "name": "court.png",
+          "bytes": 338171,
+          "sha256": "ec3ab6d80b2d362b25f0f1c17104fa9457afa0feb0ff0642944d4d11cafb848e"
+        },
+        {
+          "name": "input-trace.json",
+          "bytes": 65837,
+          "sha256": "5c6b5952718f4971d2ac699ce09c0b8509d532788c528cf0d4ed7901a71ce0cf"
+        },
+        {
+          "name": "intent-trace.json",
+          "bytes": 8257,
+          "sha256": "d35bf8b74aa99ffca10061ed7fcba73fb08dc145497f92cb9119f2b4ce7988fd"
+        },
+        {
+          "name": "report.json",
+          "bytes": 123025,
+          "sha256": "0e1f7655dec52cf7d389d8498ec5d61b04d7ddea01ebff1134c11bee5b08162c"
+        },
+        {
+          "name": "spectator-trace.json",
+          "bytes": 1396681,
+          "sha256": "9e2a4903c75ed104bb498711a592b558c4b6d9f93ba17fb9b9819922b49f054e"
+        },
+        {
+          "name": "spectator.png",
+          "bytes": 336243,
+          "sha256": "e704f875db3c0156c70c8622f5e89d8c217ad728e01892e3b6fa6aec366267c2"
+        },
+        {
+          "name": "sync-trace.json",
+          "bytes": 940062,
+          "sha256": "6b66651604688fae6f42ee1255425a445722b09aefc906d69f6c1cc0f961cd63"
+        }
+      ]
+    },
+    {
+      "run": "sync610-fixed1-20261004",
+      "startedAt": "2026-10-04T04:48:52.072Z",
+      "finishedAt": "2026-10-04T04:50:54.962Z",
+      "browser": "chrome",
+      "mode": 0,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "2",
+        "id": "626"
+      },
+      "virtualPrf": true,
+      "reusedSession": false,
+      "httpOnly": true,
+      "networkDelayEachWayMs": 80,
+      "initialIdleMs": 20000,
+      "functionalPassed": false,
+      "errors": [],
+      "admissionMs": 18374,
+      "input": {
+        "samples": 68,
+        "p95Ms": 68.59999990463257
+      },
+      "submissionP95Ms": 196.4896000000008,
+      "confirmedInput": {
+        "samples": 17,
+        "p95Ms": 253.8701171875,
+        "maxMs": 10133.39990234375,
+        "mismatches": []
+      },
+      "performance": {
+        "admission": false,
+        "localInput": false,
+        "confirmedInput": false,
+        "player": true,
+        "spectator": true
+      },
+      "player": {
+        "snapshots": 71,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 333.39999997615814,
+        "contractPauseMs": 11416.899999976158,
+        "correctionJumps": 6,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 816.7000000476837
+      },
+      "spectator": {
+        "snapshots": 247,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 333.2000000476837,
+        "contractPauseMs": 12933.600000023842,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 416.7000000476837
+      },
+      "result": {
+        "hash": "0xbd370a838b86e54024a6ddefa3d1aaa7a4894a2a30c7ea1f15f2f5cff8964202",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927095",
+        "finality": false
+      },
+      "files": [
+        {
+          "name": "court.png",
+          "bytes": 714969,
+          "sha256": "03abef1e857e003a6a3d1e81fe936db7e43077b142f0acd401843b8ec8ba60ea"
+        },
+        {
+          "name": "failed-sync-trace.json",
+          "bytes": 562440,
+          "sha256": "1412bc0c1569b87001a7f609f87ac1c3504234bf75ef2d29da366efabe32e115"
+        },
+        {
+          "name": "failure.png",
+          "bytes": 813477,
+          "sha256": "fa0f32ef3fb905e53b91bdce38a6d2963e651117f638f888c0407e56eca202ae"
+        },
+        {
+          "name": "initial-idle-trace.json",
+          "bytes": 468524,
+          "sha256": "97070e7606342e43bb9525609fe408453574e39669a4667fa78ee52bf943e790"
+        },
+        {
+          "name": "input-trace.json",
+          "bytes": 48207,
+          "sha256": "f5a03e00936ff669058cc90387330fd15a27fa933e6968fedd1fbb9b3c508656"
+        },
+        {
+          "name": "intent-trace.json",
+          "bytes": 8260,
+          "sha256": "43bd758447ab4bbd19c62421bc72d9705a0012ae6579f6ad9318ef87658639b6"
+        },
+        {
+          "name": "report.json",
+          "bytes": 77496,
+          "sha256": "68730d9572e3d1e13fa46ce47a5b81caea9df932a65444af729a9ed6d5fdae28"
+        },
+        {
+          "name": "spectator-trace.json",
+          "bytes": 1137714,
+          "sha256": "34a792f0fd8f69f015060946c704c549eadfeac2f74708f47db3928ed17d8fc4"
+        },
+        {
+          "name": "spectator.png",
+          "bytes": 416201,
+          "sha256": "6a86ed3443487f07f742ef0833649d365e84ca1be8812e4914912258baee74ac"
+        },
+        {
+          "name": "sync-trace.json",
+          "bytes": 562440,
+          "sha256": "1412bc0c1569b87001a7f609f87ac1c3504234bf75ef2d29da366efabe32e115"
+        }
+      ]
+    },
+    {
+      "run": "sync610-slow-classic2-20261004",
+      "startedAt": "2026-10-04T05:05:25.471Z",
+      "finishedAt": "2026-10-04T05:07:28.452Z",
+      "browser": "chrome",
+      "mode": 0,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "2",
+        "id": "633"
+      },
+      "virtualPrf": true,
+      "reusedSession": false,
+      "httpOnly": true,
+      "networkDelayEachWayMs": 80,
+      "inputHoldMs": 150,
+      "inputGapMs": 150,
+      "initialIdleMs": 0,
+      "functionalPassed": false,
+      "errors": [],
+      "admissionMs": 20967,
+      "input": {
+        "samples": 75,
+        "p95Ms": 31.899999976158142
+      },
+      "submissionP95Ms": 192.99440000000322,
+      "confirmedInput": {
+        "samples": 75,
+        "p95Ms": 331.963134765625,
+        "maxMs": 10479.39990234375,
+        "mismatches": []
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": false,
+        "player": true,
+        "spectator": true
+      },
+      "player": {
+        "snapshots": 205,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 166.79999995231628,
+        "contractPauseMs": 10883.899999976158,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 700
+      },
+      "spectator": {
+        "snapshots": 295,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 216.79999995231628,
+        "contractPauseMs": 16051.5,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 316.89999997615814
+      },
+      "result": {
+        "hash": "0x4810a302e318c45d7798611deb62c17050b3a1b3265d1aa94f39bad8493eed67",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625013",
+        "finality": false
+      },
+      "files": [
+        {
+          "name": "court.png",
+          "bytes": 419538,
+          "sha256": "b590673240fa91dcaaa50e8df0e9a1176ff4b5a8e524537bfabaccb24025d857"
+        },
+        {
+          "name": "failed-sync-trace.json",
+          "bytes": 881888,
+          "sha256": "8c7030ca9c38ab28db9589aae91b7fa9166e49a3b3bca64df38ef7514e35dfa3"
+        },
+        {
+          "name": "failure.png",
+          "bytes": 814357,
+          "sha256": "284374e021326cccd53d7df3e2904e59758bcaf824ae8b1c40694a0caa674336"
+        },
+        {
+          "name": "input-trace.json",
+          "bytes": 84762,
+          "sha256": "c78377f3830d8f365088552adaa23aa22aeaffe67da9d500fe81b33467c76ddf"
+        },
+        {
+          "name": "intent-trace.json",
+          "bytes": 8336,
+          "sha256": "acc879fa72be83dfa280198128d4636de8d07d110b6bafd1548fe9a0c4a5dfb5"
+        },
+        {
+          "name": "report.json",
+          "bytes": 98852,
+          "sha256": "4b31d58c91268258c9681cc50a39752e0db0483ec722dc691db31c28efbc72d0"
+        },
+        {
+          "name": "spectator-trace.json",
+          "bytes": 1239255,
+          "sha256": "593465990d6fef361b625d564c78d328f925fa71a4ad2fafa632e5bdee78b359"
+        },
+        {
+          "name": "spectator.png",
+          "bytes": 417447,
+          "sha256": "5b42f8379faec43adb0582b8c4d9c7ccb65e4e11336baca3860f04aee2ba20e4"
+        },
+        {
+          "name": "sync-trace.json",
+          "bytes": 881888,
+          "sha256": "8c7030ca9c38ab28db9589aae91b7fa9166e49a3b3bca64df38ef7514e35dfa3"
+        }
+      ]
+    },
+    {
+      "run": "sync610-slow-classic3-20261004",
+      "startedAt": "2026-10-04T05:14:28.365Z",
+      "finishedAt": "2026-10-04T05:16:27.894Z",
+      "browser": "chrome",
+      "mode": 0,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "2",
+        "id": "637"
+      },
+      "virtualPrf": true,
+      "reusedSession": false,
+      "httpOnly": true,
+      "networkDelayEachWayMs": 80,
+      "inputHoldMs": 150,
+      "inputGapMs": 150,
+      "initialIdleMs": 0,
+      "functionalPassed": true,
+      "errors": [],
+      "admissionMs": 18214,
+      "input": {
+        "samples": 75,
+        "p95Ms": 18.199999928474426
+      },
+      "submissionP95Ms": 190.4577999999965,
+      "confirmedInput": {
+        "samples": 174,
+        "p95Ms": 332.511962890625,
+        "maxMs": 10228.902099609375,
+        "mismatches": []
+      },
+      "liveness": {
+        "heartbeats": 31,
+        "resumes": 1
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": false,
+        "player": true,
+        "spectator": true
+      },
+      "player": {
+        "snapshots": 170,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 133.19999992847443,
+        "contractPauseMs": 10917.100000023842,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 700
+      },
+      "spectator": {
+        "snapshots": 266,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 199.10000002384186,
+        "contractPauseMs": 12734.299999952316,
+        "correctionJumps": 0,
+        "frameGaps": 0,
+        "snapshotGapP95Ms": 333
+      },
+      "result": {
+        "hash": "0x1ff1b6b56954efb389b5ca4f51907e53cb1e392e94a85ee02a26eadb9321419b",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875014",
+        "finality": false
+      },
+      "files": [
+        {
+          "name": "court.png",
+          "bytes": 420394,
+          "sha256": "5af83b450040f00f4f423f5cb41298861d41c5920b9633406133e58d801d27f3"
+        },
+        {
+          "name": "input-trace.json",
+          "bytes": 76338,
+          "sha256": "340864b7a4ca0112d1f3a6f733c52353bd30131e00c3954f0fcb70300dcb8684"
+        },
+        {
+          "name": "intent-trace.json",
+          "bytes": 8252,
+          "sha256": "969d0c277603d222feb636c796d3593bc2fa51cb6449874d7c9ea4387c92c218"
+        },
+        {
+          "name": "report.json",
+          "bytes": 91237,
+          "sha256": "1c550fee428dea5dd7c77d0d99cfc72b7f725906b960759fff4c85e0ad984c87"
+        },
+        {
+          "name": "spectator-trace.json",
+          "bytes": 1072681,
+          "sha256": "55d0910280b74ca96cb4f8ce7cd5071019e75f2f68251d84ceebdf4508152d3c"
+        },
+        {
+          "name": "spectator.png",
+          "bytes": 418357,
+          "sha256": "8f124fbcf083e2cbae33f72ba6600f7efe47b5e12a1f6ba2926a2b802c8d580c"
+        },
+        {
+          "name": "sync-trace.json",
+          "bytes": 718925,
+          "sha256": "4737e212ececc0f6f8f97a964aa5643622e474ac44b088212576f5bfaa394ad2"
+        }
+      ]
+    }
+  ]
+}

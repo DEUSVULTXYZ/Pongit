@@ -86,3 +86,28 @@ References: [Interlude deployment terms](https://github.com/Veenoway/interlude-s
 [hosted limits](https://github.com/Veenoway/interlude-sdk/blob/main/docs/LIMITS.md).
 The measured live hosting limit of 50 takes precedence over the documentation's
 default 40; neither is the validator's 128-delegation limit.
+
+## Completed release, 05:30 UTC
+
+The sole worker completed at **05:24:50.902 UTC**, exited 0, and reported all
+nine normal releases with exact finalized roots. No session was reopened and
+no game was cancelled. Independent canonical verification at block
+**68031323** confirmed all nine delegation statuses `None`, unchanged epochs,
+and exact finalized root/count pairs. See `arena-residues-final-20261004.json`.
+Its first read attempt hit the public RPC's 15 requests/second limit; the
+preserved failure performed no write. The successful repeat paced every read
+by 550 ms and rechecked the pinned block hash.
+
+At 05:29:35 UTC the hosting service still reported **50/50 machines**, while
+its separate validator estimate was nine active / 128 maximum. Therefore the
+on-chain retirement is complete, but recovered hosted-machine capacity is
+**not proved**. No guessed delete/admin endpoint, provider credential or
+session recreation was attempted.
+
+Final backup `arena-residue-20261004T0527Z` contains four files / 62,591,750
+bytes. All file sizes and SHA256 hashes matched the off-VPS Windows copy at
+05:27:30 UTC. Manifest SHA256:
+`84d0184f788fc9d977d0d2606c061d0288e68375f426f78fedbee6a19ae3275e`.
+It preserves the release/sealing transactions and original operator journal.
+Do not repeat the closures or releases. Production arenas and old unresolved
+historical incidents were not changed by this retirement.
