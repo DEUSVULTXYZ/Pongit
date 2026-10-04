@@ -23,6 +23,11 @@ const atomicQualification=process.env.PONG_CATALOGUE_ATOMIC_QUALIFICATION==='1';
 const privateV3=process.env.PONG_CATALOGUE_PRIVATE_V3==='reviewed-private';
 assert(!process.env.PONG_CATALOGUE_PRIVATE_V3||privateV3);
 const publicSynchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-public';
+const initialIdleMs=Number(process.env.PONG_CATALOGUE_INITIAL_IDLE_MS??0);
+const readDelayMs=Number(process.env.PONG_CATALOGUE_READ_DELAY_MS??0);
+const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
+assert(Number.isInteger(initialIdleMs)&&initialIdleMs>=0&&initialIdleMs<=20000);
+assert(Number.isInteger(readDelayMs)&&readDelayMs>=0&&readDelayMs<=400);
 const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private'||publicSynchronized;
 assert(!process.env.PONG_CATALOGUE_SYNCHRONIZATION||synchronized);
 assert(publicSynchronized?!privateV3:!synchronized||privateV3,'Synchronization scope must match the actual public/private API');
@@ -50,11 +55,22 @@ await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
  virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+report.initialIdleMs=initialIdleMs;report.injectedReadLatencyMs=readDelayMs;
+report.httpOnly=httpOnly;
 if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continuationRecord.common.pool,catalog:continuationRecord.common.catalog,deploymentSha256};
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
+if(httpOnly)await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.dev\//,socket=>socket.close());
+// A degraded-network trial still forwards every real RPC. Only read-response
+// delivery is delayed; commands, replies and signed payloads are never invented.
+if(readDelayMs)await context.route('https://il2-eu-*.fly.dev/**',async route=>{
+ const request=route.request();let read=false;
+ try{const body=request.postDataJSON();read=!!body?.method&&!['interlude_sendTransaction','eth_sendRawTransaction'].includes(body.method);}catch{}
+ const response=await route.fetch();if(read)await new Promise(resolve=>setTimeout(resolve,readDelayMs));
+ await route.fulfill({response});
+});
 if(process.env.PONG_SYNC_PROBE==='1')await installSyncProbe(page);
 async function candidateAssets(target:import('@playwright/test').Page){if(process.env.PONG_CATALOGUE_ASSET_ORIGIN){
  const candidate=process.env.PONG_CATALOGUE_ASSET_ORIGIN;assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(candidate));
@@ -134,7 +150,7 @@ page.on('request',r=>{starts.set(r,performance.now());try{
  try{
  const body=r.postDataJSON();if(body?.method!=='interlude_sendTransaction')return;
  const raw=body.params[0],hash=keccak256(raw),tx=parseTransaction(raw);
- const call=decodeFunctionData({abi:reusableAgentArenaAbi,data:tx.data!});
+ const call=decodeFunctionData({abi:synchronized?synchronizedAgentArenaAbi:reusableAgentArenaAbi,data:tx.data!});
  actions.set(r,call.functionName);
  if(call.functionName==='input')controls.set(hash,{direction:Number(call.args[2]),sequence:String(call.args[3])});
 }catch{/* Decode in memory; never retain signed bytes or grants. */}});page.on('pageerror',e=>report.errors.push(clean(e)));
@@ -237,6 +253,14 @@ try{
  report.playingAt=new Date().toISOString();report.digits=await page.evaluate(()=>(window as any).__digits);
  report.countdownAt=await page.evaluate(()=>(window as any).__firstCountdownAt);
  if(report.challengeClickedAt&&report.countdownAt)report.admissionMs=Date.parse(report.countdownAt)-Date.parse(report.challengeClickedAt);
+ if(initialIdleMs){
+  const before=report.submissions.length;await page.waitForTimeout(initialIdleMs);
+  report.initialIdleHeartbeats=report.submissions.slice(before).filter((s:any)=>s.action==='heartbeat'&&!s.error).length;
+  assert(report.initialIdleHeartbeats>=Math.floor(initialIdleMs/1000),'Idle player lost liveness before any movement');
+  const trace=await page.evaluate(()=>(window as any).__syncProbe);
+  if(trace){report.initialIdleTrace=syncMetrics(trace);await writeFile(out+'/initial-idle-trace.json',JSON.stringify(trace));}
+  assert(!await page.getByText('Match paused',{exact:true}).isVisible(),'Stationary player became paused on a responsive connection');
+ }
  assert(report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1'),'Real launch countdown incomplete');
  const before=assertions;
  for(let i=0;i<controlCount;i++){
@@ -309,6 +333,10 @@ try{
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;
+ if(process.env.PONG_SYNC_PROBE==='1'){
+  const trace=await page.evaluate(()=>(window as any).__syncProbe).catch(()=>undefined);
+  if(trace){await writeFile(out+'/failed-sync-trace.json',JSON.stringify(trace));report.failedSync=syncMetrics(trace);}
+ }
  report.failureState=await page.evaluate(()=>({hidden:document.hidden,text:document.body.innerText.slice(-1600),controlsDisabled:document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled})).catch(()=>undefined);
  await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
 finally{

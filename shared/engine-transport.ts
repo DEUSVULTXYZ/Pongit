@@ -4,6 +4,7 @@ import {measuredFetch,recordRpc} from "./rpc-metrics";
 import {EnginePublicationUnavailable,publicationUnavailable} from "./service-error";
 import {agentPublicationHealth} from './agent-publication-health';
 import {createSendRouter,nodeSocketUrl,type SendRouter} from '@interludelayer-sdk/sdk';
+import {boundedEngineSend} from './bounded-engine-send';
 const cooldowns=new Map<string,()=>number>();
 export const engineCooldownMs=(url:string)=>Math.max(0,cooldowns.get(url)?.()??0);
 type EngineGate=<T>(send:()=>Promise<T>)=>Promise<T>;
@@ -12,13 +13,22 @@ const publicationPauses=new Map<string,{until:number}>();
 const sendRouters=new Map<string,ReturnType<typeof boundedSendRouter>&{users:number}>();
 function boundedSendRouter(url:string){
   const clients=new Set<ReturnType<typeof createPublicClient>>();
-  const router=createSendRouter(url,{make:(endpoint,via,socket)=>{
+  // A socket blocked by a proxy must not interrupt every resume countdown.
+  // Keep the HTTP lane for a full match after a loss; a new player client owns
+  // a fresh router. This changes transport only, never retries signed bytes.
+  const router=createSendRouter(url,{firstRestMs:600000,maxRestMs:600000,make:(endpoint,via,socket)=>{
     const ws=new URL(nodeSocketUrl(endpoint));
     if(socket)ws.searchParams.set('interlude_send',String(socket));
     const client=createPublicClient({transport:via==='ws'&&typeof WebSocket!=='undefined'
       ?webSocket(ws.toString(),{retryCount:0,timeout:4000,reconnect:false})
       :http(endpoint,{retryCount:0,timeout:4000})});
-    if(via==='ws')clients.add(client);return client;
+    if(via==='ws'&&typeof WebSocket!=='undefined'){
+      clients.add(client);
+      const request=client.request.bind(client);
+      return {...client,request:(args:any)=>boundedEngineSend(
+        ()=>(client.transport as any).getRpcClient(),()=>request(args))} as typeof client;
+    }
+    return client;
   }});
   return {router,close:()=>{for(const client of clients)(client.transport as any).getRpcClient?.().then((rpc:any)=>rpc.close(),()=>{});clients.clear();}};
 }
