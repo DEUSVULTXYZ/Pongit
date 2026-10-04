@@ -1,5 +1,30 @@
 # Actual PONGIT hosting retry — 4 October 2026
 
+## Fresh user-requested attempt at 13:14 UTC
+
+The user requested another actual provisioning attempt five hours later. A
+single owner-authenticated POST at **13:14:52.634 UTC** returned the same HTTP
+503 and exact capacity-full message below. Health still reports 50/50 live
+machines, zero queued, and 9 estimated active delegations against 128 allowed.
+The same existing arena remains Active in epoch 3 with zero batches at
+canonical block **68124516**. No contract was redeployed or chain transaction
+sent; no MON was spent by this operation. Existing services were not restarted.
+
+The original per-app lock and lifecycle journal were used again. Prior uncertain
+intents remain preserved; the attempt count is now three, not a resolution of
+the earlier ambiguous requests. No automatic POST retry was enabled.
+`hosted-retry-20261004-2.json` contains the sanitized fresh proof.
+
+Six evidence and backup files (7,067,274 bytes, including compressed lifecycle
+backups before and after this attempt) were SHA-256 verified off VPS under the
+private `hosting-retry-20261004/hosting-retry-2` directory. Manifest SHA-256:
+`c22ea44ef4ff57af66a676faa7287e5ad37ae88d8f5a425e88aa0dafd49fee28`.
+The earlier 08:02 attempt and its backups remain unchanged. Hosting operator
+action is still required for the managed hosting path; no provider message was
+sent and the automation remains paused.
+
+## Original attempt at 08:02 UTC
+
 At the user's explicit request, one owner-authenticated `POST /sessions` was
 sent to `https://control.interludelayer.xyz` at **08:02:08 UTC**. This was an
 actual provisioning attempt for an existing new-hub PONGIT arena, not another
