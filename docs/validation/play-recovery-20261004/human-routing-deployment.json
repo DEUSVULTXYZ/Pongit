@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-04T02:20:16.215263+00:00",
+  "source": "9c32fd2",
+  "files": {
+    "relayer/src/rooms-hosted-renewal.ts": "4a94b91734dab01b893168fdfab7dd1b70e49ca6b3a10d5196643d4359d28618",
+    "relayer/src/independent-reusable-pool.ts": "751e02172d21db1aad88bd827f223531b31cae7b9514e7932ae6d209bb575309",
+    "shared/hosted-control.ts": "8959816c31dd9f05804706e66ea27d3f0e0486855885584ba6569786696b5a27",
+    "shared/hub-lease.ts": "93244e58d1bd7ae2d1591bb64c1d1db716edcaa63aa77339109363bbffd4eaa5"
+  },
+  "image": "sha256:e6fa5f722906a48093b89d29c059bc75c44c10cb0c197273798c61882567ac97",
+  "state": "running",
+  "scope": "Only matched-hub hosted routing and voluntary retirement guard. Original human image, grants, journals, contracts and DB retained. No parallel lifecycle writer.",
+  "functional": false
+}

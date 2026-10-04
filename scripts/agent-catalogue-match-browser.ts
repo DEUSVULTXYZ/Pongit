@@ -330,6 +330,7 @@ try{
  if(synchronized){
   report.liveness={heartbeats:report.submissions.filter((s:any)=>s.action==='heartbeat'&&!s.error).length,resumes:report.submissions.filter((s:any)=>s.action==='resumeReady'&&!s.error).length};
   assert(report.liveness.heartbeats>=10,'The actually painted player court must renew liveness while idle');
+  if(process.env.PONG_REQUIRE_NO_STARTUP_PAUSE==='1')assert(report.liveness.resumes<=1,'Only the intentional F5 may require a resume countdown');
  }
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');

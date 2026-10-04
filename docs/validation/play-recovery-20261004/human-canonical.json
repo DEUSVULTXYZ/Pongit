@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-04T02:17:59.706Z",
+  "block": "67994095",
+  "blockHash": "0x7b605735b710754bc6a3dfe86f6b11a3d9f09eff13bf5ea21eb7a2b114079744",
+  "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+  "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "admission": true,
+  "slots": [
+    "0",
+    "0"
+  ],
+  "arenas": [
+    {
+      "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+      "reserved": "0",
+      "status": 2,
+      "epoch": "62",
+      "baseBlock": "67978224",
+      "expiresAt": "1791680299",
+      "batches": "0"
+    },
+    {
+      "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+      "reserved": "0",
+      "status": 1,
+      "epoch": "64",
+      "baseBlock": "67978301",
+      "expiresAt": "1791680322",
+      "batches": "0"
+    },
+    {
+      "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+      "reserved": "0",
+      "status": 2,
+      "epoch": "61",
+      "baseBlock": "67983716",
+      "expiresAt": "1791681957",
+      "batches": "0"
+    }
+  ],
+  "results": "25"
+}

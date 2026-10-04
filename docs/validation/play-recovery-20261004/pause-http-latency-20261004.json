@@ -1,0 +1,32 @@
+{
+  "run": "pause-http-latency-20261004",
+  "startedAt": "2026-10-04T02:08:42.210Z",
+  "finishedAt": "2026-10-04T02:09:52.806Z",
+  "passed": false,
+  "error": "page.waitForFunction: Timeout 60000ms exceeded.",
+  "ref": {
+    "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+    "epoch": "2",
+    "id": "578"
+  },
+  "mode": 0,
+  "actualMode": 0,
+  "initialIdleMs": 20000,
+  "injectedReadLatencyMs": 150,
+  "httpOnly": true,
+  "failedSync": {
+    "frames": 3574,
+    "snapshots": 2,
+    "startupFillMs": 0,
+    "maxHoldMs": 0,
+    "contractPauseMs": 0,
+    "intermissionMs": 0,
+    "holds": [],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 198.5,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "rawReport": "artifacts\\qualification\\catalogue-pause-http-latency-20261004\\report.json",
+  "submissions": {}
+}

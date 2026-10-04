@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-04T02:53:33.710218+00:00",
+  "checks": [
+    {
+      "url": "https://pongit.xyz/api/independent/config",
+      "http": 200,
+      "admission": true,
+      "arenas": [
+        {
+          "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+          "online": false,
+          "stage": "starting"
+        },
+        {
+          "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+          "online": false,
+          "stage": "starting"
+        },
+        {
+          "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+          "online": false,
+          "stage": "closing"
+        }
+      ]
+    },
+    {
+      "url": "https://control.interludelayer.xyz/health",
+      "http": 200,
+      "machines": {
+        "live": 50,
+        "max": 50,
+        "queued": 0,
+        "perHour": 20
+      }
+    },
+    {
+      "url": "https://interlude-control.fly.dev/config",
+      "error": "TimeoutError",
+      "code": null
+    }
+  ]
+}

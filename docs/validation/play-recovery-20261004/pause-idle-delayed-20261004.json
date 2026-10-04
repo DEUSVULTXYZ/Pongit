@@ -1,0 +1,21 @@
+{
+  "run": "pause-idle-delayed-20261004",
+  "startedAt": "2026-10-04T01:59:44.116Z",
+  "finishedAt": "2026-10-04T02:00:02.853Z",
+  "passed": false,
+  "error": "Real launch countdown incomplete",
+  "ref": {
+    "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+    "epoch": "2",
+    "id": "574"
+  },
+  "mode": 0,
+  "actualMode": 0,
+  "initialIdleMs": 20000,
+  "injectedReadLatencyMs": 250,
+  "admissionMs": 12089,
+  "rawReport": "artifacts\\qualification\\catalogue-pause-idle-delayed-20261004\\report.json",
+  "submissions": {
+    "confirmReady:websocket:False": 1
+  }
+}

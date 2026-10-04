@@ -1,0 +1,10 @@
+{
+  "source": "a3d56aa",
+  "baseSource": "9c32fd2",
+  "startedAt": "2026-10-04T02:48:38.167009+00:00",
+  "diskBefore": 72.82951057620383,
+  "passed": true,
+  "image": "sha256:66780d36b04ae06f1f72701c510e45b0985eadd601ceaa50b4318c460ac83c0a",
+  "finishedAt": "2026-10-04T02:50:58.776410+00:00",
+  "logSha256": "2d04a7ac6f3915936c322e43f6713134977b987de09e8a8caa745ca589e735f2"
+}

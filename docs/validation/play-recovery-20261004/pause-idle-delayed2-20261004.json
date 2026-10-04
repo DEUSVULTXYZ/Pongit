@@ -1,0 +1,128 @@
+{
+  "run": "pause-idle-delayed2-20261004",
+  "startedAt": "2026-10-04T02:01:28.388Z",
+  "finishedAt": "2026-10-04T02:03:13.763Z",
+  "passed": true,
+  "ref": {
+    "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+    "epoch": "3",
+    "id": "575"
+  },
+  "mode": 0,
+  "actualMode": 0,
+  "initialIdleMs": 20000,
+  "injectedReadLatencyMs": 250,
+  "initialIdleHeartbeats": 99,
+  "initialIdleTrace": {
+    "frames": 1567,
+    "snapshots": 107,
+    "startupFillMs": 0,
+    "p95FrameMs": 17.100000023841858,
+    "maxHoldMs": 183.10000002384186,
+    "contractPauseMs": 3282.399999976158,
+    "intermissionMs": 0,
+    "holds": [
+      {
+        "at": 21473.199999928474,
+        "ms": 150,
+        "sourceT": 2880,
+        "rally": "1:0"
+      },
+      {
+        "at": 29689.899999976158,
+        "ms": 183.10000002384186,
+        "sourceT": 10980,
+        "rally": "2:2"
+      }
+    ],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 281.40000009536743,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "input": {
+    "samples": 75,
+    "p95Ms": 17
+  },
+  "confirmedInput": {
+    "samples": 220,
+    "p95Ms": 16.762451171875,
+    "maxMs": 18.139404296875,
+    "mismatches": []
+  },
+  "admissionMs": 9616,
+  "sync": {
+    "frames": 1741,
+    "snapshots": 188,
+    "startupFillMs": 0,
+    "p95FrameMs": 17.100000023841858,
+    "maxHoldMs": 66.70000004768372,
+    "contractPauseMs": 3500.4000000953674,
+    "intermissionMs": 0,
+    "holds": [],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 216.79999995231628,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "spectatorSync": {
+    "frames": 3858,
+    "snapshots": 376,
+    "startupFillMs": 480.3000000715256,
+    "p95FrameMs": 17.100000023841858,
+    "maxHoldMs": 182.89999997615814,
+    "contractPauseMs": 9151.50000011921,
+    "intermissionMs": 0,
+    "holds": [
+      {
+        "at": 11509.199999928474,
+        "ms": 165.79999995231628,
+        "sourceT": 690,
+        "rally": "0:0"
+      },
+      {
+        "at": 13958.899999976158,
+        "ms": 166.70000004768372,
+        "sourceT": 3070,
+        "rally": "1:0"
+      },
+      {
+        "at": 22225.5,
+        "ms": 182.89999997615814,
+        "sourceT": 11160,
+        "rally": "2:2"
+      }
+    ],
+    "frameGaps": [],
+    "snapshotGapP95Ms": 217.19999992847443,
+    "engineLagP95Ms": 0,
+    "snapshotJumps": []
+  },
+  "liveness": {
+    "heartbeats": 131,
+    "resumes": 2
+  },
+  "performance": {
+    "admission": false,
+    "localInput": true,
+    "confirmedInput": true,
+    "player": true,
+    "spectator": true
+  },
+  "result": {
+    "hash": "0x742aa1920a030b7a62b572d7f7417dfafe95d05be022ee25b0ff22f505f552da",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 3,
+    "scoreB": 7,
+    "elapsedUs": "35875014",
+    "finality": false
+  },
+  "rawReport": "artifacts\\qualification\\catalogue-pause-idle-delayed2-20261004\\report.json",
+  "submissions": {
+    "confirmReady:websocket:False": 1,
+    "heartbeat:websocket:False": 131,
+    "resumeReady:websocket:False": 2,
+    "input:websocket:False": 221
+  }
+}

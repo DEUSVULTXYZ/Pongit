@@ -1,0 +1,12 @@
+{
+  "source": "a3d56aa",
+  "deployedAt": "2026-10-04T02:51:31.452547+00:00",
+  "previousImage": "sha256:741ccb6fbe2ad62a31738c56d4e07436d9c3a97ce1394af991db586904e0448c",
+  "image": "sha256:66780d36b04ae06f1f72701c510e45b0985eadd601ceaa50b4318c460ac83c0a",
+  "running": true,
+  "backendUnchanged": true,
+  "sourceHashes": {
+    "shared/agent-pool-player.ts": "6319bc0726f8d2d82a0857e9b6917bca3fec53f898bee47edbd35b40f42f23e4",
+    "web/components/AgentPoolMatch.tsx": "1053f428e335a001fd22fa41bfd98cd3dc08763b83164b7ebbbe048be4d11fd8"
+  }
+}

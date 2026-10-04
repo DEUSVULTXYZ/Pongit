@@ -1,0 +1,8 @@
+{
+  "source": "05740dd",
+  "deployedAt": "2026-10-04T02:37:44.906162+00:00",
+  "previousImage": "sha256:2347639615762ce230ea3946c4c47f2ec47cf24d20f812d4c422afb5dd81b667",
+  "image": "sha256:741ccb6fbe2ad62a31738c56d4e07436d9c3a97ce1394af991db586904e0448c",
+  "running": true,
+  "backendUnchanged": true
+}

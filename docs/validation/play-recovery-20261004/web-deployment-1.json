@@ -1,0 +1,8 @@
+{
+  "at": "2026-10-04T02:23:24.228894+00:00",
+  "source": "9c32fd2",
+  "image": "sha256:2347639615762ce230ea3946c4c47f2ec47cf24d20f812d4c422afb5dd81b667",
+  "previous": "sha256:ee52f22c2422e81d5452f1dfb8bbab100b9e1c1dba92d1d674b8bd18e76ec27b",
+  "functional": false,
+  "scope": "Web only; contracts, engine controllers, journals and databases unchanged."
+}

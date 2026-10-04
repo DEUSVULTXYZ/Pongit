@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-04T02:46:18.559034+00:00",
+  "checks": [
+    {
+      "app": "0x2b85a8ae733bbd713159f446e4781caa0f9d6110",
+      "url": "https://il2-eu-2b85a8ae733bbd71.fly.dev",
+      "http": 200,
+      "appReturned": "0x2b85a8ae733bbd713159f446e4781caa0f9d6110",
+      "epoch": 1,
+      "chainId": 4242,
+      "rpcError": null
+    },
+    {
+      "app": "0xc63aecc4bb92b9e13906b75b951b09b2f918c0b3",
+      "url": "https://il2-eu-c63aecc4bb92b9e1.fly.dev",
+      "http": 200,
+      "appReturned": "0xc63aecc4bb92b9e13906b75b951b09b2f918c0b3",
+      "epoch": 1,
+      "chainId": 4242,
+      "rpcError": null
+    },
+    {
+      "app": "0xdd9829bf95abc055792ab862ecefccc257cab8ce",
+      "url": "https://il2-eu-dd9829bf95abc055.fly.dev",
+      "error": "URLError"
+    }
+  ]
+}
