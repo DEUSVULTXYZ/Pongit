@@ -353,6 +353,9 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // Require a recently received, identified state before renewing liveness.
    if(now()-state.observedAt>500)throw Error('Waiting for a fresh arena observation');
    if(resume&&state.sync.pause.status===2)return sendNow('resumeReady',[id]);
+   // A queued movement renews the same liveness credit. Do not put a
+   // redundant heartbeat ahead of it when a slow receipt released the lane.
+   if(intention&&intention.dir!==acceptedDirection)return state;
    if(now()-lastWriteAt<150)return state; // A real input already renewed it.
    return sendNow('heartbeat',[id]);
   });},

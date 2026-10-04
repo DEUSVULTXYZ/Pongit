@@ -104,6 +104,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     .finally(()=>{publishedRequest=undefined;});
   };
   const poll=async()=>{
+   const pollStarted=performance.now();
    let delay=500;
    try{
     if(document.hidden){wasHidden=true;delay=2000;return;}
@@ -181,7 +182,10 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      // Its confirmed launch deadline is immutable; repeated readiness/clock
      // getters used to serialize network round trips across the launch.
      if(!entryLaunch){const launch=await observer.launch();if(!cancelled&&launch){entryLaunch=launch;setCountdown({id:refKey,...launch});}}
-     delay=100;
+     // Near launch, include the getter's latency in the polling interval.
+     // Sleeping another 100ms after a slow read can miss the first 500ms
+     // heartbeat window even though both network directions are healthy.
+     delay=nearLaunch?Math.max(0,100-(performance.now()-pollStarted)):100;
     }
    }catch(e){if(cancelled)return;setError(quiet.failed(poolUserError(e)));setConnection('Reconnecting');delay=arenaEntryRetryMs(e,!firstState,entryStarted?performance.now()-entryStarted:Infinity);}
    finally{if(!cancelled)timer=setTimeout(poll,Math.min(30000,delay));}

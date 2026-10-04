@@ -429,6 +429,19 @@ test('periodic observation joins an in-flight command without treating its journ
  }finally{release();f.player.close();}
 });
 
+test('a movement queued during a slow receipt takes priority over a redundant heartbeat',async()=>{
+ const f=fixture(16);await f.player.move(1);f.advance(200);f.fresh();
+ const request=f.node.request;let release!:()=>void,started!:()=>void;
+ const gate=new Promise<void>(r=>release=r),sent=new Promise<void>(r=>started=r);
+ f.node.request=async(r:any)=>{if(r.method==='interlude_sendTransaction'){started();await gate;f.advance(200);f.fresh();}return request(r);};
+ try{
+  const first=f.player.move(-1);await sent;
+  const pulse=f.player.heartbeat(),latest=f.player.move(0);release();await Promise.all([first,pulse,latest]);
+  const names=f.sent.map(raw=>decodeFunctionData({abi:synchronizedAgentArenaAbi,data:parseTransaction(raw).data!}).functionName);
+  assert.deepEqual(names,['input','input','input']);assert.equal(f.state.state.leftDir,0);
+ }finally{release();f.player.close();}
+});
+
 test('recovery waits for the current intent and exposes its second failure instead of falsely enabling controls',async()=>{
  const f=fixture(11);f.lost(true);await assert.rejects(f.player.move(1),/Lost response/);
  f.visible(true);f.lost(false);
