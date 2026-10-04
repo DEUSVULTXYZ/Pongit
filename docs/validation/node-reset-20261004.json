@@ -1,0 +1,1081 @@
+{
+  "at": "2026-10-04T07:43:18.872Z",
+  "block": "68058727",
+  "blockHash": "0xab0c7f95600f5543eebe245121baaceb62490ba588dd48a0c22b8ac46ba9a3f1",
+  "scope": "Nine fully released private PONGIT sessions. Compute removal only, preserve volumes/history.",
+  "machineDeletionPerformed": false,
+  "providerAccessAvailable": false,
+  "knownPongitContracts": 75,
+  "rows": [
+    {
+      "app": "0x8194191a762a54f2a2bc05fe159e8f418cffe36e",
+      "epoch": "2",
+      "status": 0,
+      "root": "0x96aec641f8aec2c7a69e85cd03e6155cf6fd7d795e908e0c631f5023cd8a5dcc",
+      "count": 5,
+      "flyAppName": "il2-eu-8194191a762a54f2",
+      "node": "https://il2-eu-8194191a762a54f2.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "2",
+      "nodeResponded": false,
+      "directory": {
+        "status": 429,
+        "error": null
+      }
+    },
+    {
+      "app": "0x5f81f9fcc7d97e77c8edda8da103a03db043603b",
+      "epoch": "1",
+      "status": 0,
+      "root": "0xe0442f4d0a53a9b852d3bb1415f6c0e26579b8fe01a240fadafcb68a954c90c5",
+      "count": 12,
+      "flyAppName": "il2-eu-5f81f9fcc7d97e77",
+      "node": "https://il2-eu-5f81f9fcc7d97e77.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "1",
+      "nodeResponded": false,
+      "directory": {
+        "status": 429,
+        "error": null
+      }
+    },
+    {
+      "app": "0x064b85b76e37538f8750c5313b0e66d718744265",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x4431ffaf1747581080f5dd843770965abdcd1db0123baecbaf3a36f8cc7da4c8",
+      "count": 12,
+      "flyAppName": "il2-eu-064b85b76e37538f",
+      "node": "https://il2-eu-064b85b76e37538f.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "1",
+      "nodeResponded": false,
+      "directory": {
+        "status": 429,
+        "error": null
+      }
+    },
+    {
+      "app": "0xe79709cddb0cbf21c3e080b30dc9a74628bde54a",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x74bc9f0cec87b3ee0b9662c26512dc4effe8650f8e08193dcdb19b9fe6148119",
+      "count": 12,
+      "flyAppName": "il2-eu-e79709cddb0cbf21",
+      "node": "https://il2-eu-e79709cddb0cbf21.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "1",
+      "nodeResponded": false,
+      "directory": {
+        "status": "live",
+        "error": null,
+        "url": "https://il2-eu-e79709cddb0cbf21.fly.dev",
+        "name": "il2-eu-e79709cddb0cbf21"
+      }
+    },
+    {
+      "app": "0x3b435d6e84b0a9a852ce06f5d0fa873638ebeb38",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x23b9d7b497025c3b9141d8f2078b87ff54632e883d6b9111535ce5f3ea3399ff",
+      "count": 11,
+      "flyAppName": "il2-eu-3b435d6e84b0a9a8",
+      "node": "https://il2-eu-3b435d6e84b0a9a8.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "1",
+      "nodeResponded": false,
+      "directory": {
+        "status": 429,
+        "error": null
+      }
+    },
+    {
+      "app": "0x05b901fb1423a54d0692730d694126f3eb9f1809",
+      "epoch": "1",
+      "status": 0,
+      "root": "0xfe0d7f1c08fafe92114b20035f2335d309d34ad11588a4bf992f99e70f6e23f8",
+      "count": 8,
+      "flyAppName": "il2-eu-05b901fb1423a54d",
+      "node": "https://il2-eu-05b901fb1423a54d.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "1",
+      "nodeResponded": false,
+      "directory": {
+        "status": 429,
+        "error": null
+      }
+    },
+    {
+      "app": "0x5472e6b3638a6f26a1e181b490e9fe5cde005522",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x9d9a55751e7a33ea954bb90aa987a37524f8bd433f2a65e0a0f40e0aa77e86cc",
+      "count": 13,
+      "flyAppName": "il2-eu-5472e6b3638a6f26",
+      "node": "https://il2-eu-5472e6b3638a6f26.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "1",
+      "nodeResponded": false,
+      "directory": {
+        "status": 429,
+        "error": null
+      }
+    },
+    {
+      "app": "0x2b85a8ae733bbd713159f446e4781caa0f9d6110",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x8b901e7b327a224c7cdd0955b1662f3a6afb6c25b6d23e38241d3f633233e2e5",
+      "count": 8,
+      "flyAppName": "il2-eu-2b85a8ae733bbd71",
+      "node": "https://il2-eu-2b85a8ae733bbd71.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "1",
+      "nodeResponded": false,
+      "directory": {
+        "status": 429,
+        "error": null
+      }
+    },
+    {
+      "app": "0xc63aecc4bb92b9e13906b75b951b09b2f918c0b3",
+      "epoch": "1",
+      "status": 0,
+      "root": "0x34f45f802534d7eb2412b7498e80274d138c254829753044f66955ca1078ae9d",
+      "count": 6,
+      "flyAppName": "il2-eu-c63aecc4bb92b9e1",
+      "node": "https://il2-eu-c63aecc4bb92b9e1.fly.dev",
+      "currentCanonicalStatus": 0,
+      "currentCanonicalEpoch": "1",
+      "nodeResponded": false,
+      "directory": {
+        "status": 429,
+        "error": null
+      }
+    }
+  ],
+  "otherKnownContracts": [
+    {
+      "app": "0x04f5047825f313d78ad1044264b8f72972a70305",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "203",
+        "baseBlock": "67710079",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x73fdcf261faa27e4b4edd5484fba7c6ff290f9b4",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "222",
+        "baseBlock": "67710095",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x6203b0fb911808abbdcb5c68ff8275cca9b17f11",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "251",
+        "baseBlock": "67710109",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x8cf903129aadb4e06be5e49c010212e41baec52f",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "203",
+        "baseBlock": "67710124",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x5611c686be6c5d532de5f6d42660438699e29b5b",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "266",
+        "baseBlock": "67710138",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x0f770d94c3065e8d04b2e7c9c7ba1c8ca9e14915",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "390",
+        "baseBlock": "67768768",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x7471a95729278cbdd72f7419a114a28c8a03074d",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "341",
+        "baseBlock": "67768780",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xf6adb38ab5dae87561c8e743e82bc9405d9f8200",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "372",
+        "baseBlock": "67768796",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xc955795cb6c30c156dc3405cd404c14d9805febe",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "315",
+        "baseBlock": "67768811",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x752250f520f57c9516e5740414d7cf818e0bb5b4",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "348",
+        "baseBlock": "67768826",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xdd9829bf95abc055792ab862ecefccc257cab8ce",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xe4cdf97e582282879219d7a888f8cd0ae629bd31"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x2114c8e3d23e96ba0b1a020a4438e48ba0f08a57",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xf10db99c564fe2af535f755ed8e1d239186f767c"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "0",
+        "baseBlock": "67667569",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xee1b0a4a8dfeea4e494594425fbe873a20673de2",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xf10db99c564fe2af535f755ed8e1d239186f767c"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "0",
+        "baseBlock": "67667645",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xac73ee6c6cf12d3dacfbdf1b4d476586ccce1426",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xf10db99c564fe2af535f755ed8e1d239186f767c"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x16420bcbb68b4bda117540dea0af3e8c6b1bd44c",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "199",
+        "baseBlock": "67592670",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x170958f049dda4ad62d3ce6996f313da007144b3",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "137",
+        "baseBlock": "67598340",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x5a0b0f2c15facec532410c60767afded0b53cd40",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "130",
+        "baseBlock": "67598361",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x2da028d622c2e9b125b1d605fa62ff0a1c0782f6",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "103",
+        "baseBlock": "67598379",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xb674f6d545ab632bf4618cd908e7ec093e1cf209",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "95",
+        "baseBlock": "67598398",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x03d9821c49cc009e0863bb56a34f7212282c59a0",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "247",
+        "baseBlock": "67640080",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x37f89ce4d56bd70e81bb9229834794935a6f2908",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "291",
+        "baseBlock": "67640092",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xef4c39403a0a41fcb5f93b804674d4712e82664d",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "235",
+        "baseBlock": "67640107",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x846b24910179d3ba79192b32bddd35ad9420197e",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "280",
+        "baseBlock": "67640120",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x232ce671e0483d6dfb4589555c701a4ebfa3d080",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "232",
+        "baseBlock": "67640137",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "1312",
+        "baseBlock": "67957423",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "2",
+        "batches": "923",
+        "baseBlock": "67988049",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67908936",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67909109",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67909252",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67908846",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67909162",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb",
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "authority": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67909198",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "12",
+        "batches": "0",
+        "baseBlock": "66300341",
+        "expiresAt": "1791170030"
+      }
+    },
+    {
+      "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "8",
+        "batches": "3427",
+        "baseBlock": "66329741",
+        "expiresAt": "1791179079"
+      }
+    },
+    {
+      "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "2",
+        "batches": "1016",
+        "baseBlock": "64455116",
+        "expiresAt": "1790082300"
+      }
+    },
+    {
+      "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "63",
+        "batches": "0",
+        "baseBlock": "67996341",
+        "expiresAt": "1791685769"
+      }
+    },
+    {
+      "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "64",
+        "batches": "0",
+        "baseBlock": "67978301",
+        "expiresAt": "1791680322"
+      }
+    },
+    {
+      "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "62",
+        "batches": "0",
+        "baseBlock": "68001851",
+        "expiresAt": "1791687433"
+      }
+    },
+    {
+      "app": "0x5d6524e0f513db9bb788c42af28012b077e143a2",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "2",
+        "batches": "789",
+        "baseBlock": "66310125",
+        "expiresAt": "1791173040"
+      }
+    },
+    {
+      "app": "0x9ecb6a0bdcebfc257a26d369f531de284ef43e07",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1449",
+        "baseBlock": "66285932",
+        "expiresAt": "1791165581"
+      }
+    },
+    {
+      "app": "0x5296ba8cac39f205da695b891bfea4dbd8c6da44",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1599",
+        "baseBlock": "66285957",
+        "expiresAt": "1791165589"
+      }
+    },
+    {
+      "app": "0x04356ae994b21b26b061db7919128814685ae564",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1452",
+        "baseBlock": "66285968",
+        "expiresAt": "1791165592"
+      }
+    },
+    {
+      "app": "0x64f61406243246b8b171f295151222a2c248c57d",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1235",
+        "baseBlock": "66285980",
+        "expiresAt": "1791165596"
+      }
+    },
+    {
+      "app": "0x45bf6064d05ecb41a569e71f466b9cce117e9c4b",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1474",
+        "baseBlock": "66298368",
+        "expiresAt": "1791169417"
+      }
+    },
+    {
+      "app": "0xa4c880d75b2a1896ae56d1bb8e460ea18c07f917",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1296",
+        "baseBlock": "66310967",
+        "expiresAt": "1791173301"
+      }
+    },
+    {
+      "app": "0x53bb19f488b9c0771abe115b3ca438065810604e",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [],
+      "canonical": {
+        "status": 2,
+        "epoch": "2",
+        "batches": "8564",
+        "baseBlock": "62316763",
+        "expiresAt": "1789429774"
+      }
+    },
+    {
+      "app": "0xdf06ff134d0969bba67d861cab8dee538e124976",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x41021b1d27eec7d3d21eb841286c716c3232bf15"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "7",
+        "batches": "78",
+        "baseBlock": "64192995",
+        "expiresAt": "1790002008"
+      }
+    },
+    {
+      "app": "0x24caa0e6800204c415e3c046cb8e1da553e0c63d",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x41021b1d27eec7d3d21eb841286c716c3232bf15"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "7",
+        "batches": "59",
+        "baseBlock": "64193040",
+        "expiresAt": "1790002022"
+      }
+    },
+    {
+      "app": "0x34467b8f00d3c929f8f0c327f7cdef3639656598",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x41021b1d27eec7d3d21eb841286c716c3232bf15"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "5",
+        "batches": "40",
+        "baseBlock": "64171957",
+        "expiresAt": "1789995591"
+      }
+    },
+    {
+      "app": "0x983ea4b68129b349afe141727b3a1644fafe3f93",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x82f122b569f4ce2b8be5326f47a05794e1295362"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "2",
+        "batches": "57",
+        "baseBlock": "64101429",
+        "expiresAt": "1789973995"
+      }
+    },
+    {
+      "app": "0x88e89abda6d46244f44f596fdb69a7ddc97e926e",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x82f122b569f4ce2b8be5326f47a05794e1295362"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "2",
+        "batches": "19",
+        "baseBlock": "64102395",
+        "expiresAt": "1789974292"
+      }
+    },
+    {
+      "app": "0x5301c251dc29b9b73cb15db56e1cd4cf1cd40c9a",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x82f122b569f4ce2b8be5326f47a05794e1295362"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0x3a0c55bef5682d531d8b56538b7212ee1933ff6c",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x4ac828012cd2be48ab669a55db5a85cac81b4bcf"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "3",
+        "batches": "300",
+        "baseBlock": "64376410",
+        "expiresAt": "1790057985"
+      }
+    },
+    {
+      "app": "0x98612da5cacbd96dde0a903079aa3bab0b99e8bf",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x4ac828012cd2be48ab669a55db5a85cac81b4bcf"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "136",
+        "baseBlock": "64376425",
+        "expiresAt": "1790057990"
+      }
+    },
+    {
+      "app": "0x18ab50f7710e599abc4d88b5928c532f61ffb071",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x4ac828012cd2be48ab669a55db5a85cac81b4bcf"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "app": "0xb29db94965f9c8d8f9325ade2a8cbccf46e4d7cb",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x4d8d809d72ea74b6ac0a1ab86aebbb41c71146a1"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "16",
+        "batches": "1",
+        "baseBlock": "64207195",
+        "expiresAt": "1790006334"
+      }
+    },
+    {
+      "app": "0x6d96b457b6295fb6f9764f7149acb328ff80a2e4",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x4d8d809d72ea74b6ac0a1ab86aebbb41c71146a1"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "15",
+        "batches": "400",
+        "baseBlock": "64197365",
+        "expiresAt": "1790003339"
+      }
+    },
+    {
+      "app": "0x40178b386730985a9d1df46c3a811f8e7138e4ec",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "22",
+        "batches": "0",
+        "baseBlock": "67399844",
+        "expiresAt": "1791505574"
+      }
+    },
+    {
+      "app": "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "21",
+        "batches": "124",
+        "baseBlock": "67375612",
+        "expiresAt": "1791498255"
+      }
+    },
+    {
+      "app": "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "20",
+        "batches": "0",
+        "baseBlock": "67387661",
+        "expiresAt": "1791501894"
+      }
+    },
+    {
+      "app": "0xf202862714f61d6f6b8b14c1d2f5d3ca7ea3e41b",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "9",
+        "batches": "0",
+        "baseBlock": "67386631",
+        "expiresAt": "1791501583"
+      }
+    },
+    {
+      "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "19",
+        "batches": "0",
+        "baseBlock": "67392159",
+        "expiresAt": "1791503253"
+      }
+    },
+    {
+      "app": "0xaf7c017a6729ec6f5d9d14288c5214489bb5be3b",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "24",
+        "batches": "0",
+        "baseBlock": "67399475",
+        "expiresAt": "1791505462"
+      }
+    },
+    {
+      "app": "0x9b8e61621682da7b59239774f76dcf04071ea059",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "21",
+        "batches": "0",
+        "baseBlock": "67848175",
+        "expiresAt": "1791641016"
+      }
+    },
+    {
+      "app": "0x028f656e76cc1973ced7c41d8584d4f94be9e003",
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "authority": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "25",
+        "batches": "123",
+        "baseBlock": "67368326",
+        "expiresAt": "1791496054"
+      }
+    }
+  ]
+}
