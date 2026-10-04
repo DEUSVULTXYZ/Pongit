@@ -24,3 +24,24 @@ test('stop before the scheduled microtask prevents an unsent pulse',async()=>{
  const c=clock();let calls=0;const loop=agentHeartbeatLoop(async()=>{calls++;},()=>true,()=>assert.fail('Unexpected error'),c);
  await loop.stop();assert.equal(calls,0);
 });
+
+test('a slow confirmed pulse catches up one missed tick without another timer delay',async()=>{
+ const c=clock();let finish!:()=>void,calls=0;
+ const loop=agentHeartbeatLoop(()=>{calls++;return new Promise<void>(r=>{finish=r;});},()=>true,()=>assert.fail('Unexpected error'),c);
+ await turn();c.tick();c.tick();assert.equal(calls,1);
+ finish();await turn();assert.equal(calls,2,'the 400ms receipt/read must not wait until the 600ms tick');
+ finish();await turn();assert.equal(calls,2,'missed ticks coalesce, not a backlog');
+ await loop.stop();
+});
+
+test('a missed tick cannot renew liveness after perception becomes unavailable',async()=>{
+ const c=clock();let finish!:()=>void,calls=0,fresh=true;
+ const loop=agentHeartbeatLoop(()=>{calls++;return new Promise<void>(r=>{finish=r;});},()=>fresh,()=>assert.fail('Unexpected error'),c);
+ await turn();c.tick();fresh=false;finish();await turn();assert.equal(calls,1);await loop.stop();
+});
+
+test('a failed pulse does not immediately replay a missed tick',async()=>{
+ const c=clock();let fail!:(e:Error)=>void,calls=0,errors=0;
+ const loop=agentHeartbeatLoop(()=>{calls++;return new Promise<void>((_,r)=>{fail=r;});},()=>true,()=>{errors++;},c);
+ await turn();c.tick();fail(Error('Lost response'));await turn();assert.equal(calls,1);assert.equal(errors,1);await loop.stop();
+});

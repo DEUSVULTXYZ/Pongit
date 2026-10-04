@@ -25,9 +25,11 @@ assert(!process.env.PONG_CATALOGUE_PRIVATE_V3||privateV3);
 const publicSynchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-public';
 const initialIdleMs=Number(process.env.PONG_CATALOGUE_INITIAL_IDLE_MS??0);
 const readDelayMs=Number(process.env.PONG_CATALOGUE_READ_DELAY_MS??0);
+const networkDelayMs=Number(process.env.PONG_CATALOGUE_NETWORK_DELAY_MS??0);
 const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
 assert(Number.isInteger(initialIdleMs)&&initialIdleMs>=0&&initialIdleMs<=20000);
 assert(Number.isInteger(readDelayMs)&&readDelayMs>=0&&readDelayMs<=400);
+assert(Number.isInteger(networkDelayMs)&&networkDelayMs>=0&&networkDelayMs<=200);
 const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private'||publicSynchronized;
 assert(!process.env.PONG_CATALOGUE_SYNCHRONIZATION||synchronized);
 assert(publicSynchronized?!privateV3:!synchronized||privateV3,'Synchronization scope must match the actual public/private API');
@@ -56,6 +58,7 @@ const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
  virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 report.initialIdleMs=initialIdleMs;report.injectedReadLatencyMs=readDelayMs;
+report.injectedNetworkDelayEachWayMs=networkDelayMs;
 report.httpOnly=httpOnly;
 if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continuationRecord.common.pool,catalog:continuationRecord.common.catalog,deploymentSha256};
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
@@ -63,12 +66,14 @@ const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].repla
 const browser=await chromium.launch({channel,headless:true});
 const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
 if(httpOnly)await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.dev\//,socket=>socket.close());
-// A degraded-network trial still forwards every real RPC. Only read-response
-// delivery is delayed; commands, replies and signed payloads are never invented.
-if(readDelayMs)await context.route('https://il2-eu-*.fly.dev/**',async route=>{
+// A degraded-network trial forwards every real RPC and exact signed payload.
+// Delay every round trip (or only reads), without inventing replies or gameplay.
+if(readDelayMs||networkDelayMs)await context.route('https://il2-eu-*.fly.dev/**',async route=>{
  const request=route.request();let read=false;
  try{const body=request.postDataJSON();read=!!body?.method&&!['interlude_sendTransaction','eth_sendRawTransaction'].includes(body.method);}catch{}
- const response=await route.fetch();if(read)await new Promise(resolve=>setTimeout(resolve,readDelayMs));
+ if(networkDelayMs)await new Promise(resolve=>setTimeout(resolve,networkDelayMs));
+ const response=await route.fetch();
+ if(networkDelayMs||(read&&readDelayMs))await new Promise(resolve=>setTimeout(resolve,networkDelayMs+(read?readDelayMs:0)));
  await route.fulfill({response});
 });
 if(process.env.PONG_SYNC_PROBE==='1')await installSyncProbe(page);

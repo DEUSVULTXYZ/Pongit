@@ -408,6 +408,27 @@ test('periodic UI synchronization reconciles a lost receipt before a new nonce',
  assert.equal(f.sent.length,2);assert.equal(f.sent[0],raw);assert.equal(parseTransaction(f.sent[1]).nonce,1);f.player.close();
 });
 
+test('periodic observation joins an in-flight command without treating its journal as a lost response',async()=>{
+ const f=fixture(16);await f.player.move(1);
+ const bindings=f.bindings(),nonces=f.nonceReads(),request=f.node.request;
+ let release!:()=>void,started!:()=>void;
+ const gate=new Promise<void>(r=>release=r),sent=new Promise<void>(r=>started=r);
+ f.node.request=async(r:any)=>{
+  if(r.method==='interlude_sendTransaction'){
+   await f.player.journal.beforeSend(r.params[0]);started();await gate;
+  }
+  return request(r);
+ };
+ try{
+  const moving=f.player.move(-1);await sent;
+  assert(f.player.journal.pending(f.session.grant.key));
+  const observation=f.player.synchronize();release();await Promise.all([moving,observation]);
+  assert.equal(f.bindings(),bindings,'an expected pending receipt must not rebuild the arena connection');
+  await f.player.move(0);assert.equal(f.nonceReads(),nonces,'the confirmed sender nonce stays usable');
+  assert.deepEqual(f.sent.map(raw=>parseTransaction(raw).nonce),[0,1,2]);
+ }finally{release();f.player.close();}
+});
+
 test('recovery waits for the current intent and exposes its second failure instead of falsely enabling controls',async()=>{
  const f=fixture(11);f.lost(true);await assert.rejects(f.player.move(1),/Lost response/);
  f.visible(true);f.lost(false);

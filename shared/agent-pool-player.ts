@@ -311,7 +311,13 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   async synchronize(){
    // Periodic observation must not rebuild the signer or discard its confirmed
    // nonce. A missing sender/pending command still takes the full recovery path.
-   if(!sender||journal.pending(session.grant.key))return serial(recoverNow);
+   if(!sender||journal.pending(session.grant.key)){
+    // A normal in-flight command owns a pending journal too. Recheck after
+    // its lane settles: rebuilding a successfully confirmed sender here used
+    // to reset prediction and suspend heartbeats every periodic observation.
+    const recovered=await serial(()=>!sender||journal.pending(session.grant.key)?recoverNow():Promise.resolve(undefined));
+    if(recovered)return recovered;
+   }
    await authorizeControls();
    const generation=fenceGeneration;
    try{
