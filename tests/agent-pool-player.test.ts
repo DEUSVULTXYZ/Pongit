@@ -97,6 +97,19 @@ test('periodic fence refreshes identity before the ten-second stream validity ex
  assert.equal(f.sent.length,2,'Early identity refresh must not extend the three-second hub fence');
  f.player.close();
 });
+
+test('launch observation refreshes state without serializing an already verified identity',async()=>{
+ const f=fixture(16);await f.player.recover();let identities=0,freshReads=0;
+ const request=f.node.request,read=f.feed.read;
+ f.node.request=async(r:any)=>{if(r.method==='interlude_session')identities++;return request(r);};
+ f.feed.read=async(id:bigint,force:boolean)=>{assert.equal(id,4n);assert.equal(force,true);freshReads++;return read();};
+ try{
+  await f.player.observeLaunch();assert.equal(freshReads,1);assert.equal(identities,0);
+  f.advance(10001);f.epoch(2);
+  await assert.rejects(f.player.observeLaunch(),/epoch|published result/);
+  assert.equal(identities,1);assert.equal(freshReads,1,'Expired identity must pass before a new snapshot');
+ }finally{f.player.close();}
+});
 function fixture(rules:10|11|15|16=10,onTiming?:(s:PoolPlayerTiming)=>void){
  const fixtureAbi=rules===16?synchronizedAgentArenaAbi:rules>=15?reusableAgentArenaAbi:abi;
  const key=generatePrivateKey(),account=privateKeyToAccount(key),owner=privateKeyToAccount(generatePrivateKey()),at=Math.floor(Date.now()/1000);

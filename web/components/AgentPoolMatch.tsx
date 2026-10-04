@@ -165,7 +165,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     // 500ms liveness credit expires. A cached waiting frame is insufficient
     // at that boundary; use one fresh read, without fabricating playing state.
     const nearLaunch=!!entryLaunch&&arenaLaunchRemaining(entryLaunch.deadline,entryLaunch.clock,entryLaunch.observedAt,performance.now())<=750;
-    const state=await observer.read(wasHidden||nearLaunch);wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');
+    const state=await (nearLaunch&&!wasHidden&&playerClient.current?playerClient.current.observeLaunch():observer.read(wasHidden||nearLaunch));wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');
     if(state.reset){entryReady=false;entryLaunch=undefined;}
     if(state.phase!==1)entryLaunch=undefined;
     if(config.version>=4&&state.phase===1){

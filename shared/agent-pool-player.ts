@@ -302,6 +302,9 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   player,journal,
   async launch(){await identify();return reusable?readArenaLaunch(node,arena.app,id,m.countdownClock):undefined;},
   read(force=false){return timed('observation',async()=>{await identify(force);return verify(await feed.read(id,force));});},
+  // An imminent launch needs a fresh state, not a duplicate identity round trip.
+  // Keep the existing identity TTL and independent canonical command fence.
+  observeLaunch(){return timed('observation',async()=>{await identify();return verify(await feed.read(id,true));});},
   watch(listener:(s:EngineState)=>void){const stop=feed.watch(id,s=>{try{if(!stopped&&verifiedAt&&now()-verifiedAt<10000)listener(verify(s));}catch{feed.invalidate();}});listeners.add(stop);return()=>{stop();listeners.delete(stop);};},
   controlsAvailable(){return !stopped&&!!sender&&now()<controlsUntil&&!journal.pending(session.grant.key);},
   async recover(){const s=await serial(recoverNow);if(s.phase===2)intention??={dir:0,id:++inputId,at:now()};if(intention)await pump();return s;},
