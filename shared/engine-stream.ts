@@ -23,9 +23,9 @@ export function receiptFrame(receipt:any,app:Address):EngineFrame|null {
  return appliedFrame({...receipt,app,to:app,hash:receipt.transactionHash,succeeded:true},app);
 }
 
-/** Events contain physics, not the complete getter. Preserve only known metadata;
- * a missing revision or clock reanchor requires a fresh authoritative read. */
-export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:EngineFrame,now=Date.now()):{state:EngineState;resync:boolean;changed:boolean;gap?:bigint;launch?:boolean} {
+/** Preserve only known metadata. Ordinary gaps and clock reanchors need a full
+ * read; the owning receipt may opt into the complete friendly Classic checkpoint. */
+export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:EngineFrame,now=Date.now(),allowClassicCheckpoint=false):{state:EngineState;resync:boolean;changed:boolean;gap?:bigint;launch?:boolean} {
  let snapshot:any,completed:any,synchronization:any,request:bigint|undefined,pending:bigint|undefined;
  const collisions:ReturnType<typeof unpackChaosCollision>[]=[];
  for(const log of frame.logs){if(log.address.toLowerCase()!==app.toLowerCase())continue;try{
@@ -39,7 +39,15 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
   if(e.eventName==='ChaosCollision')collisions.push(unpackChaosCollision(args.collision));
  }catch{}}
  if(!snapshot || snapshot.version<=previous.revision)return {state:previous,resync:false,changed:false};
- if(snapshot.version!==previous.revision+1n || frame.head<previous.head || previous.phase<2){
+ // A friendly Classic command receipt carries the complete physics, exact
+ // clock, bot brain and queued intent. A few intervening engine ticks require
+ // no second RPC. Chaos can miss draw metadata and still needs a full read.
+ // Only the owning receipt path opts in; disconnect/reset recovery stays strict.
+ const checkpoint=allowClassicCheckpoint&&!previous.chaos&&previous.phase===2&&Number(snapshot.status)===2
+  &&snapshot.version-previous.revision<=8n&&!!previous.sync?.pause.human
+  &&synchronization?.version===snapshot.version&&synchronization.pause.human===previous.sync.pause.human
+  &&synchronization.controllers===previous.sync.controllers;
+ if((snapshot.version!==previous.revision+1n&&!checkpoint) || frame.head<previous.head || previous.phase<2){
   recordRpc({at:now,target:'interlude',method:frame.head<previous.head?'snapshot.reanchor':previous.phase<2?'snapshot.admission':'snapshot.gap',status:200,ms:0,source:'cache'});
   return {state:previous,resync:true,changed:false,...(frame.head>=previous.head&&previous.phase>=2&&snapshot.version>previous.revision+1n?{gap:snapshot.version}:{} ),
    ...(previous.phase===1&&Number(snapshot.status)===2&&frame.head>=previous.head?{launch:true}:{})};

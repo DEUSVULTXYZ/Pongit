@@ -61,10 +61,11 @@ export class EngineFeed {
    // Keep ordinary polling/recovery responsible for retries after a failure.
   }).finally(()=>{entry.launchRead=undefined;});
  }
- apply(frame:EngineFrame){
+ apply(frame:EngineFrame,receiptId?:bigint){
   for(const entry of this.entries.values()){
    if(!entry.value)continue;
-   const merged=mergeEngineFrame(this.client.abi,this.client.app,entry.value,frame,this.now());
+   const checkpoint=receiptId===entry.value.id&&(!entry.dirty||!!entry.gap);
+   const merged=mergeEngineFrame(this.client.abi,this.client.app,entry.value,frame,this.now(),checkpoint);
    if(merged.resync){
     // HTTP receipts and the applied stream may arrive in different orders.
     // Only buffer a short forward gap from a previously clean stream. A
@@ -77,6 +78,7 @@ export class EngineFeed {
     continue;
    }
    if(merged.changed){
+    if(checkpoint&&merged.state.revision>entry.value.revision+1n){entry.gap=undefined;entry.dirty=false;}
     this.publish(entry,merged.state);
     if(entry.gap){
      for(const version of entry.gap.keys())if(version<=entry.value!.revision)entry.gap.delete(version);
@@ -142,7 +144,7 @@ export class EngineFeed {
    const decoded=decodeEventLog({abi:this.client.abi,eventName:"Snapshot",data:log.data,topics:[...log.topics] as any});return (decoded.args as any).id===id;
   }catch{return false;}});
   if(!matches)return this.read(id,true);
-  if(frame)this.apply(frame);
+  if(frame)this.apply(frame,['input','heartbeat','resumeReady'].includes(name)?id:undefined);
   if(!frame||e.dirty||!e.value)await this.read(id,!e.gap);
   // Only the caller's successful, matching receipt proves this input sequence.
   // The event alone intentionally never guesses the other player's nonce.
