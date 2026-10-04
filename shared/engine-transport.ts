@@ -13,6 +13,7 @@ const publicationPauses=new Map<string,{until:number}>();
 const sendRouters=new Map<string,ReturnType<typeof boundedSendRouter>&{users:number}>();
 function boundedSendRouter(url:string){
   const clients=new Set<ReturnType<typeof createPublicClient>>();
+  const ready=new WeakMap<object,()=>boolean>();let closed=false;
   // A socket blocked by a proxy must not interrupt every resume countdown.
   // Keep the HTTP lane for a full match after a loss; a new player client owns
   // a fresh router. This changes transport only, never retries signed bytes.
@@ -25,12 +26,29 @@ function boundedSendRouter(url:string){
     if(via==='ws'&&typeof WebSocket!=='undefined'){
       clients.add(client);
       const request=client.request.bind(client);
-      return {...client,request:(args:any)=>boundedEngineSend(
+      const wrapped={...client,request:(args:any)=>boundedEngineSend(
         ()=>(client.transport as any).getRpcClient(),()=>request(args))} as typeof client;
+      let connected:{socket:{readyState:number};close:()=>void}|undefined;
+      ready.set(wrapped,()=>!closed&&connected?.socket.readyState===1);
+      // Establish only the transport while the player verifies its arena.
+      // Until it is open, select HTTP before any write is handed to a socket.
+      // A lost response after selection still goes through journal recovery.
+      void boundedEngineSend(async()=>{
+        const rpc=await (client.transport as any).getRpcClient();
+        if(closed)rpc.close();return rpc;
+      },async()=>{if(!closed)connected=await (client.transport as any).getRpcClient();})
+        .catch(()=>{if(!closed)router.lost('ws');});
+      return wrapped;
     }
     return client;
   }});
-  return {router,close:()=>{for(const client of clients)(client.transport as any).getRpcClient?.().then((rpc:any)=>rpc.close(),()=>{});clients.clear();}};
+  router.client(); // Optional preconnect; never waits or sends a command.
+  const selecting:SendRouter={
+    client(){const selected=router.client();return selected.via==='ws'&&!ready.get(selected.client)?.()
+      ?{...selected,via:'http'}:selected;},
+    delivered:via=>router.delivered(via),lost:via=>router.lost(via),
+  };
+  return {router:selecting,close:()=>{closed=true;for(const client of clients)(client.transport as any).getRpcClient?.().then((rpc:any)=>rpc.close(),()=>{});clients.clear();}};
 }
 function transportLoss(error:unknown){
  for(let e=error as any,n=0;e&&n<8;e=e.cause,n++)if(typeof e.code==='number'&&e.code!==-1)return false;

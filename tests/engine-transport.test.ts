@@ -6,6 +6,32 @@ import {createSendRouter} from '@interludelayer-sdk/sdk';
 import {WebSocketServer} from 'ws';
 import {createServer} from 'node:http';
 
+test('a stalled socket handshake does not delay the first HTTP command or send it later',async()=>{
+ let http=0,journaled=0,received=0,close=()=>{};
+ const sockets=new Set<any>();
+ const server=createServer((request,response)=>{
+  let body='';request.on('data',chunk=>body+=chunk);request.on('end',()=>{
+   http++;response.setHeader('content-type','application/json');
+   response.end(JSON.stringify({jsonrpc:'2.0',id:JSON.parse(body).id,result:'confirmed'}));
+  });
+ });
+ server.on('upgrade',(_request,socket)=>{sockets.add(socket);socket.on('close',()=>sockets.delete(socket));});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+  const address=server.address();assert(address&&typeof address!=='string');
+  const t=engineTransport(`http://127.0.0.1:${address.port}`,{beforeSend:async()=>{journaled++;},received:()=>{received++;}},true)({} as any);
+  close=()=>t.value?.closeSend();
+  const at=performance.now();
+  assert.equal(await t.request({method:'interlude_sendTransaction',params:['0x0102']}),'confirmed');
+  assert(performance.now()-at<500,'First write must not await the optional socket');
+  assert.equal(http,1);assert.equal(journaled,1);assert.equal(received,1);
+  await new Promise(resolve=>setTimeout(resolve,30));assert.equal(http,1,'No background replay');
+ }finally{
+  close();for(const socket of sockets)socket.destroy();server.closeAllConnections();
+  await new Promise<void>(resolve=>server.close(()=>resolve()));
+ }
+});
+
 test('a stalled HTTP body releases reads and uncertain writes without retry or acknowledgement',async()=>{
  let calls=0,journaled=0,received=0;
  const server=createServer((_request,response)=>{
@@ -33,11 +59,13 @@ test('an unanswered actual send socket releases the lane within the recovery bud
  const server=new WebSocketServer({host:'127.0.0.1',port:0});
  await new Promise<void>((resolve,reject)=>{server.once('listening',resolve);server.once('error',reject);});
  let calls=0,received=0,journaled=0,close=()=>{};
+ const connected=new Promise<void>(resolve=>server.once('connection',()=>resolve()));
  server.on('connection',socket=>socket.on('message',()=>{calls++;}));
  try{
   const address=server.address();assert(address&&typeof address!=='string');
   const t=engineTransport(`http://127.0.0.1:${address.port}`,{beforeSend:async()=>{journaled++;},received:()=>{received++;}},true)({} as any);
   close=()=>t.value?.closeSend();
+  await connected;await new Promise(resolve=>setTimeout(resolve,30));
   const at=performance.now();
   await assert.rejects(t.request({method:'interlude_sendTransaction',params:['0x0102']}));
   const elapsed=performance.now()-at;
