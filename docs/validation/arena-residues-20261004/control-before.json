@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-04T04:22:52.094103+00:00",
+  "machines": {
+    "live": 50,
+    "max": 50,
+    "queued": 0,
+    "perHour": 20
+  },
+  "validator": {
+    "maxDelegations": 128,
+    "activeEstimate": 11,
+    "freeByBond": 116,
+    "bond": "1282800000000000000000",
+    "reserved": "113300000000000000000"
+  }
+}

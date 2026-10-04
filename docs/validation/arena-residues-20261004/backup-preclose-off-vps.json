@@ -1,0 +1,8 @@
+{
+  "verified": true,
+  "files": 4,
+  "backup": "arena-residue-20261004T0425Z",
+  "checkedAt": "2026-10-04T04:21:26.7029418Z",
+  "method": "SCP to Windows; every file size and SHA256 checked",
+  "manifestSha256": "b01d64b4d7dc1233be2d7d2ad00084e67977066e17e02221704ff62e3d4e023b"
+}

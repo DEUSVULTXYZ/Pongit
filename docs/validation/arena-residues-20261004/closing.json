@@ -1,0 +1,223 @@
+{
+  "startedAt": "2026-10-04T04:22:58.328Z",
+  "deadline": 1791092452094,
+  "backup": {
+    "verified": true,
+    "files": 4,
+    "backup": "arena-residue-20261004T0425Z",
+    "checkedAt": "2026-10-04T04:21:26.7029418Z",
+    "method": "SCP to Windows; every file size and SHA256 checked",
+    "manifestSha256": "b01d64b4d7dc1233be2d7d2ad00084e67977066e17e02221704ff62e3d4e023b"
+  },
+  "passed": false,
+  "arenas": [
+    {
+      "app": "0x8194191a762a54f2a2bc05fe159e8f418cffe36e",
+      "authority": "0x550ff3c22e20fc760af9afd68fba2cb531140dc6",
+      "kind": "agents",
+      "epoch": "2",
+      "batches": "340",
+      "verifier": "0x2DB1f49c568ADD10610c4Ae41248D60c98cc1dB2",
+      "root": [
+        "2",
+        5,
+        "0x96aec641f8aec2c7a69e85cd03e6155cf6fd7d795e908e0c631f5023cd8a5dcc"
+      ],
+      "current": [
+        "2",
+        "70"
+      ],
+      "close": {
+        "hash": "0x3aea0d927c5147ab8aae06b45e11a55d02a951f670fc04f4935aa6116430565e",
+        "block": "68019005",
+        "gasUsed": "230050"
+      },
+      "releaseAt": "1791091413"
+    },
+    {
+      "app": "0x5f81f9fcc7d97e77c8edda8da103a03db043603b",
+      "authority": "0x550ff3c22e20fc760af9afd68fba2cb531140dc6",
+      "kind": "agents",
+      "epoch": "1",
+      "batches": "496",
+      "verifier": "0x2DB1f49c568ADD10610c4Ae41248D60c98cc1dB2",
+      "root": [
+        "1",
+        12,
+        "0xe0442f4d0a53a9b852d3bb1415f6c0e26579b8fe01a240fadafcb68a954c90c5"
+      ],
+      "current": [
+        "1",
+        "72"
+      ],
+      "close": {
+        "hash": "0xdb685a9e3c6c86b6932487334ed9c1ca008ee40fea20819209d28e5a45f47395",
+        "block": "68019020",
+        "gasUsed": "220298"
+      },
+      "releaseAt": "1791091417"
+    },
+    {
+      "app": "0x064b85b76e37538f8750c5313b0e66d718744265",
+      "authority": "0x550ff3c22e20fc760af9afd68fba2cb531140dc6",
+      "kind": "agents",
+      "epoch": "1",
+      "batches": "502",
+      "verifier": "0x2DB1f49c568ADD10610c4Ae41248D60c98cc1dB2",
+      "root": [
+        "1",
+        12,
+        "0x4431ffaf1747581080f5dd843770965abdcd1db0123baecbaf3a36f8cc7da4c8"
+      ],
+      "current": [
+        "1",
+        "73"
+      ],
+      "close": {
+        "hash": "0x7ae3066b37eb1567d6f1aadd3f2834da45403ab0c36b06d823adb7341f2b87e4",
+        "block": "68019030",
+        "gasUsed": "220298"
+      },
+      "releaseAt": "1791091420"
+    },
+    {
+      "app": "0xe79709cddb0cbf21c3e080b30dc9a74628bde54a",
+      "authority": "0x550ff3c22e20fc760af9afd68fba2cb531140dc6",
+      "kind": "agents",
+      "epoch": "1",
+      "batches": "530",
+      "verifier": "0x2DB1f49c568ADD10610c4Ae41248D60c98cc1dB2",
+      "root": [
+        "1",
+        12,
+        "0x74bc9f0cec87b3ee0b9662c26512dc4effe8650f8e08193dcdb19b9fe6148119"
+      ],
+      "current": [
+        "1",
+        "74"
+      ],
+      "close": {
+        "hash": "0x09ad5545457e03af4fab1ad786b5b73a5ce28e6fe21c1a83fc0a8623b4ae22aa",
+        "block": "68019043",
+        "gasUsed": "220298"
+      },
+      "releaseAt": "1791091424"
+    },
+    {
+      "app": "0x3b435d6e84b0a9a852ce06f5d0fa873638ebeb38",
+      "authority": "0x550ff3c22e20fc760af9afd68fba2cb531140dc6",
+      "kind": "agents",
+      "epoch": "1",
+      "batches": "425",
+      "verifier": "0x2DB1f49c568ADD10610c4Ae41248D60c98cc1dB2",
+      "root": [
+        "1",
+        11,
+        "0x23b9d7b497025c3b9141d8f2078b87ff54632e883d6b9111535ce5f3ea3399ff"
+      ],
+      "current": [
+        "1",
+        "71"
+      ],
+      "close": {
+        "hash": "0x8d787d19a2957d4033ce341471a2b389292442054360e3edc5a3423243b5efb8",
+        "block": "68019054",
+        "gasUsed": "220298"
+      },
+      "releaseAt": "1791091428"
+    },
+    {
+      "app": "0x05b901fb1423a54d0692730d694126f3eb9f1809",
+      "authority": "0x550ff3c22e20fc760af9afd68fba2cb531140dc6",
+      "kind": "agents",
+      "epoch": "1",
+      "batches": "406",
+      "verifier": "0x2DB1f49c568ADD10610c4Ae41248D60c98cc1dB2",
+      "root": [
+        "1",
+        8,
+        "0xfe0d7f1c08fafe92114b20035f2335d309d34ad11588a4bf992f99e70f6e23f8"
+      ],
+      "current": [
+        "1",
+        "69"
+      ],
+      "close": {
+        "hash": "0xc5aaad6a00ccc805416750da066a6ef952aa0e81e20c16e2d0b0fb6eab66837d",
+        "block": "68019068",
+        "gasUsed": "220298"
+      },
+      "releaseAt": "1791091432"
+    },
+    {
+      "app": "0x5472e6b3638a6f26a1e181b490e9fe5cde005522",
+      "authority": "0x550ff3c22e20fc760af9afd68fba2cb531140dc6",
+      "kind": "agents",
+      "epoch": "1",
+      "batches": "578",
+      "verifier": "0x2DB1f49c568ADD10610c4Ae41248D60c98cc1dB2",
+      "root": [
+        "1",
+        13,
+        "0x9d9a55751e7a33ea954bb90aa987a37524f8bd433f2a65e0a0f40e0aa77e86cc"
+      ],
+      "current": [
+        "1",
+        "75"
+      ],
+      "close": {
+        "hash": "0x3cf739df301bcd194fd23a37e945be803d7e1083b262b65f04298bb6aaacedd3",
+        "block": "68019081",
+        "gasUsed": "220284"
+      },
+      "releaseAt": "1791091436"
+    },
+    {
+      "app": "0x2b85a8ae733bbd713159f446e4781caa0f9d6110",
+      "authority": "0xe4cdf97e582282879219d7a888f8cd0ae629bd31",
+      "kind": "human",
+      "epoch": "1",
+      "batches": "200",
+      "verifier": "0x9F4C79bADC5BF78447026Daf04ad668C14e4fc54",
+      "root": [
+        "1",
+        8,
+        "0x8b901e7b327a224c7cdd0955b1662f3a6afb6c25b6d23e38241d3f633233e2e5"
+      ],
+      "current": [
+        "1",
+        "340282366920938463463374607431768211486"
+      ],
+      "close": {
+        "hash": "0xe94a007e9af34028a7d22b6457f3ac65453d014325269187ac23bbcb95cbefbe",
+        "block": "68019095",
+        "gasUsed": "161763"
+      },
+      "releaseAt": "1791091440"
+    },
+    {
+      "app": "0xc63aecc4bb92b9e13906b75b951b09b2f918c0b3",
+      "authority": "0xe4cdf97e582282879219d7a888f8cd0ae629bd31",
+      "kind": "human",
+      "epoch": "1",
+      "batches": "190",
+      "verifier": "0x9F4C79bADC5BF78447026Daf04ad668C14e4fc54",
+      "root": [
+        "1",
+        6,
+        "0x34f45f802534d7eb2412b7498e80274d138c254829753044f66955ca1078ae9d"
+      ],
+      "current": [
+        "1",
+        "340282366920938463463374607431768211488"
+      ],
+      "close": {
+        "hash": "0xb0fbad0ac2d80ffc6b9bd846954d0bb1794283601b62ef19da1748d4d291b4df",
+        "block": "68019105",
+        "gasUsed": "161763"
+      },
+      "releaseAt": "1791091443"
+    }
+  ],
+  "scope": "Normal close, real cooldown, release and exact-root sealing of seven old private agents and two old private human sessions. No cancellation, opening or production mutation."
+}

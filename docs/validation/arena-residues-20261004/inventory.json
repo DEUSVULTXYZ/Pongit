@@ -1,0 +1,1591 @@
+{
+  "at": "2026-10-04T04:07:23.251Z",
+  "block": "68015831",
+  "blockHash": "0xdd7167cdd4203e8c27d6644a849515da1bab3ecca9b858b79f64d9caafd16275",
+  "arenas": [
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x8194191a762a54f2a2bc05fe159e8f418cffe36e",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/v3-continuation-0ea73a7/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-sponsor/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-reader/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x550ff3c22e20fc760af9afd68fba2cb531140dc6"
+      ],
+      "node": "https://il2-eu-8194191a762a54f2.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "2",
+        "batches": "339",
+        "baseBlock": "67222247",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x5f81f9fcc7d97e77c8edda8da103a03db043603b",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/v3-continuation-0ea73a7/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-sponsor/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-reader/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x550ff3c22e20fc760af9afd68fba2cb531140dc6"
+      ],
+      "node": "https://il2-eu-5f81f9fcc7d97e77.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "1",
+        "batches": "495",
+        "baseBlock": "67202440",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x064b85b76e37538f8750c5313b0e66d718744265",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/v3-continuation-0ea73a7/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-sponsor/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-reader/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x550ff3c22e20fc760af9afd68fba2cb531140dc6"
+      ],
+      "node": "https://il2-eu-064b85b76e37538f.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "1",
+        "batches": "501",
+        "baseBlock": "67202465",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xe79709cddb0cbf21c3e080b30dc9a74628bde54a",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/v3-continuation-0ea73a7/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-sponsor/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-reader/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x550ff3c22e20fc760af9afd68fba2cb531140dc6"
+      ],
+      "node": "https://il2-eu-e79709cddb0cbf21.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "1",
+        "batches": "529",
+        "baseBlock": "67202488",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x3b435d6e84b0a9a852ce06f5d0fa873638ebeb38",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/v3-continuation-0ea73a7/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-sponsor/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-reader/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x550ff3c22e20fc760af9afd68fba2cb531140dc6"
+      ],
+      "node": "https://il2-eu-3b435d6e84b0a9a8.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "1",
+        "batches": "424",
+        "baseBlock": "67202525",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x05b901fb1423a54d0692730d694126f3eb9f1809",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/v3-continuation-0ea73a7/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-sponsor/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-reader/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x550ff3c22e20fc760af9afd68fba2cb531140dc6"
+      ],
+      "node": "https://il2-eu-05b901fb1423a54d.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "1",
+        "batches": "405",
+        "baseBlock": "67202546",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x5472e6b3638a6f26a1e181b490e9fe5cde005522",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/v3-continuation-0ea73a7/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-sponsor/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/catalogue-reader/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/v3-games-6033dbe/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x550ff3c22e20fc760af9afd68fba2cb531140dc6"
+      ],
+      "node": "https://il2-eu-5472e6b3638a6f26.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "1",
+        "batches": "577",
+        "baseBlock": "67230186",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x04f5047825f313d78ad1044264b8f72972a70305",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "node": "https://il2-eu-04f5047825f313d7.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "203",
+        "baseBlock": "67710079",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x73fdcf261faa27e4b4edd5484fba7c6ff290f9b4",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "node": "https://il2-eu-73fdcf261faa27e4.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "222",
+        "baseBlock": "67710095",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x6203b0fb911808abbdcb5c68ff8275cca9b17f11",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "node": "https://il2-eu-6203b0fb911808ab.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "251",
+        "baseBlock": "67710109",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x8cf903129aadb4e06be5e49c010212e41baec52f",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "node": "https://il2-eu-8cf903129aadb4e0.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "203",
+        "baseBlock": "67710124",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x5611c686be6c5d532de5f6d42660438699e29b5b",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/source-manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/secrets/deployment.json"
+      ],
+      "authorities": [
+        "0x67a61b10126c85dce8a5b4e67b7b637d094ce4ca"
+      ],
+      "node": "https://il2-eu-5611c686be6c5d53.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "266",
+        "baseBlock": "67710138",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x0f770d94c3065e8d04b2e7c9c7ba1c8ca9e14915",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-velocity-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "node": "https://il2-eu-0f770d94c3065e8d.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "390",
+        "baseBlock": "67768768",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x7471a95729278cbdd72f7419a114a28c8a03074d",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-velocity-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "node": "https://il2-eu-7471a95729278cbd.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "341",
+        "baseBlock": "67768780",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xf6adb38ab5dae87561c8e743e82bc9405d9f8200",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-velocity-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "node": "https://il2-eu-f6adb38ab5dae875.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "372",
+        "baseBlock": "67768796",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xc955795cb6c30c156dc3405cd404c14d9805febe",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-velocity-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "node": "https://il2-eu-c955795cb6c30c15.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "315",
+        "baseBlock": "67768811",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x752250f520f57c9516e5740414d7cf818e0bb5b4",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-queue-continuation-20261003/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-velocity-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd8bc8424c74aafbe3e00cbd04468538e01f6a27d"
+      ],
+      "node": "https://il2-eu-752250f520f57c95.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "348",
+        "baseBlock": "67768826",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x2b85a8ae733bbd713159f446e4781caa0f9d6110",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/evidence/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/secrets/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/secrets/finance-v3-manifest.json"
+      ],
+      "authorities": [
+        "0xe4cdf97e582282879219d7a888f8cd0ae629bd31"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "1",
+        "batches": "199",
+        "baseBlock": "67675390",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xc63aecc4bb92b9e13906b75b951b09b2f918c0b3",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/evidence/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/secrets/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/secrets/finance-v3-manifest.json"
+      ],
+      "authorities": [
+        "0xe4cdf97e582282879219d7a888f8cd0ae629bd31"
+      ],
+      "canonical": {
+        "status": 1,
+        "epoch": "1",
+        "batches": "189",
+        "baseBlock": "67675418",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xdd9829bf95abc055792ab862ecefccc257cab8ce",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/evidence/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/secrets/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-consent-acbc3e8/secrets/finance-v3-manifest.json"
+      ],
+      "authorities": [
+        "0xe4cdf97e582282879219d7a888f8cd0ae629bd31"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x2114c8e3d23e96ba0b1a020a4438e48ba0f08a57",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-human-v3-2c8e025/evidence/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-v3-2c8e025/secrets/manifest.json"
+      ],
+      "authorities": [
+        "0xf10db99c564fe2af535f755ed8e1d239186f767c"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "0",
+        "baseBlock": "67667569",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xee1b0a4a8dfeea4e494594425fbe873a20673de2",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-human-v3-2c8e025/evidence/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-v3-2c8e025/secrets/manifest.json"
+      ],
+      "authorities": [
+        "0xf10db99c564fe2af535f755ed8e1d239186f767c"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "0",
+        "baseBlock": "67667645",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xac73ee6c6cf12d3dacfbdf1b4d476586ccce1426",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-human-v3-2c8e025/evidence/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-human-v3-2c8e025/secrets/manifest.json"
+      ],
+      "authorities": [
+        "0xf10db99c564fe2af535f755ed8e1d239186f767c"
+      ],
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x16420bcbb68b4bda117540dea0af3e8c6b1bd44c",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "node": "https://il2-eu-16420bcbb68b4bda.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "199",
+        "baseBlock": "67592670",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x170958f049dda4ad62d3ce6996f313da007144b3",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "node": "https://il2-eu-170958f049dda4ad.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "137",
+        "baseBlock": "67598340",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x5a0b0f2c15facec532410c60767afded0b53cd40",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "node": "https://il2-eu-5a0b0f2c15facec5.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "130",
+        "baseBlock": "67598361",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x2da028d622c2e9b125b1d605fa62ff0a1c0782f6",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "node": "https://il2-eu-2da028d622c2e9b1.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "103",
+        "baseBlock": "67598379",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xb674f6d545ab632bf4618cd908e7ec093e1cf209",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-games-b1f72ee/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xd47bc7fece722a237c6547f85b4dd91c2601a4c8"
+      ],
+      "node": "https://il2-eu-b674f6d545ab632b.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "95",
+        "baseBlock": "67598398",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x03d9821c49cc009e0863bb56a34f7212282c59a0",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "node": "https://il2-eu-03d9821c49cc009e.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "247",
+        "baseBlock": "67640080",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x37f89ce4d56bd70e81bb9229834794935a6f2908",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "node": "https://il2-eu-37f89ce4d56bd70e.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "291",
+        "baseBlock": "67640092",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xef4c39403a0a41fcb5f93b804674d4712e82664d",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "node": "https://il2-eu-ef4c39403a0a41fc.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "235",
+        "baseBlock": "67640107",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x846b24910179d3ba79192b32bddd35ad9420197e",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "node": "https://il2-eu-846b24910179d3ba.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "280",
+        "baseBlock": "67640120",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x232ce671e0483d6dfb4589555c701a4ebfa3d080",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/metadata/manifest.json",
+        "/opt/pongit/tests/fluid-20260928/sync-continuation-20261002/secrets/deployment.json",
+        "/opt/pongit/tests/fluid-20260928/sync-optimized-continuation-20261003/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0xdee98e3f7a0f0049244a8257a9cde304d909e5dc"
+      ],
+      "node": "https://il2-eu-232ce671e0483d6d.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "232",
+        "baseBlock": "67640137",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+      "sources": [
+        "/opt/pongit/releases/sync-public-214c95a/migration/secrets/deployment.json",
+        "/opt/pongit/releases/sync-public-214c95a/live-v3/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "node": "https://il2-eu-0a52fc60bf7710b1.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "612",
+        "baseBlock": "67957423",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+      "sources": [
+        "/opt/pongit/releases/sync-public-214c95a/migration/secrets/deployment.json",
+        "/opt/pongit/releases/sync-public-214c95a/live-v3/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "node": "https://il2-eu-34a7e7c09894af4e.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "2",
+        "batches": "359",
+        "baseBlock": "67988049",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+      "sources": [
+        "/opt/pongit/releases/sync-public-214c95a/migration/secrets/deployment.json",
+        "/opt/pongit/releases/sync-public-214c95a/live-v3/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "node": "https://il2-eu-bfc44e0cdb647689.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67908936",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+      "sources": [
+        "/opt/pongit/releases/sync-public-214c95a/migration/secrets/deployment.json",
+        "/opt/pongit/releases/sync-public-214c95a/live-v3/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "node": "https://il2-eu-ef9dfabb2af5f936.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67909109",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+      "sources": [
+        "/opt/pongit/releases/sync-public-214c95a/migration/secrets/deployment.json",
+        "/opt/pongit/releases/sync-public-214c95a/live-v3/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "node": "https://il2-eu-64e8806edf971623.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67909252",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+      "sources": [
+        "/opt/pongit/releases/sync-public-214c95a/migration/secrets/deployment.json",
+        "/opt/pongit/releases/sync-public-214c95a/live-v3/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "node": "https://il2-eu-5572e348c5039d24.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67908846",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+      "sources": [
+        "/opt/pongit/releases/sync-public-214c95a/migration/secrets/deployment.json",
+        "/opt/pongit/releases/sync-public-214c95a/live-v3/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "node": "https://il2-eu-e54eb61b664ced19.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67909162",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+      "app": "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb",
+      "sources": [
+        "/opt/pongit/releases/sync-public-214c95a/migration/secrets/deployment.json",
+        "/opt/pongit/releases/sync-public-214c95a/live-v3/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a"
+      ],
+      "node": "https://il2-eu-f3cfddaa4a069a08.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "3",
+        "batches": "0",
+        "baseBlock": "67909198",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0xf868bdb4669f4de471555ccadc3bac5589a3fcaa",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/pre-candidate-20260928T014102Z/manifest.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/reusable-agents2/runtime-metadata/manifest.json",
+        "/opt/pongit/releases/arcade-d2c6033/migration-input/source-manifest.json",
+        "/opt/pongit/releases/agents-preview-16cf0fa/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5"
+      ],
+      "node": "https://il-f868bdb4669f4de4.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "12",
+        "batches": "0",
+        "baseBlock": "66300341",
+        "expiresAt": "1791170030"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x7fb78a8fbfd597daadbe6971c106720eb1510d7d",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/pre-candidate-20260928T014102Z/manifest.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/reusable-agents2/runtime-metadata/manifest.json",
+        "/opt/pongit/releases/arcade-d2c6033/migration-input/source-manifest.json",
+        "/opt/pongit/releases/agents-preview-16cf0fa/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5"
+      ],
+      "node": "https://il-7fb78a8fbfd597da.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "8",
+        "batches": "3427",
+        "baseBlock": "66329741",
+        "expiresAt": "1791179079"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x1c5ec4b86149249e0b1a24aa2605eda6cb3f267b",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/pre-candidate-20260928T014102Z/manifest.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/reusable-agents2/runtime-metadata/manifest.json",
+        "/opt/pongit/releases/arcade-d2c6033/migration-input/source-manifest.json",
+        "/opt/pongit/releases/agents-preview-16cf0fa/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5"
+      ],
+      "node": "https://il-1c5ec4b86149249e.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "2",
+        "batches": "1016",
+        "baseBlock": "64455116",
+        "expiresAt": "1790082300"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/flow-1f04983/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-replay-f058201/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-receipt-385eb87/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-scan-cbfe406/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/binding-6b24f14/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/assignment-ffc336b/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-a11abf6/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-atomic-0083c13/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/entry-45f346d/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/player-418baf5/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/preview-16cf0fa/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-6e4b59b/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-c4a7461/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-504d7fc/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-0c44f08/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-0192ddc/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-945b03a/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-b87b79c/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-e566b7d/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-fe221fc/deployments/independent.json",
+        "/opt/pongit/releases/7952580/deployments/independent.json",
+        "/opt/pongit/releases/sync-3dff671/deployments/independent.json",
+        "/opt/pongit/releases/arcade-d2c6033/deployments/independent.json",
+        "/opt/pongit/releases/b6d8cd6/deployments/independent.json",
+        "/opt/pongit/releases/748215d/deployments/independent.json",
+        "/opt/pongit/releases/1fa793a/deployments/independent.json",
+        "/opt/pongit/releases/arcade-3f05c33/deployments/independent.json",
+        "/opt/pongit/releases/sync-public-214c95a/play-recovery-web-9c32fd2/deployments/independent.json",
+        "/opt/pongit/releases/e4eceb6/deployments/independent.json",
+        "/opt/pongit/releases/0795816/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212"
+      ],
+      "node": "https://il-596562d63e678a2b.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "63",
+        "batches": "0",
+        "baseBlock": "67996341",
+        "expiresAt": "1791685769"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/flow-1f04983/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-replay-f058201/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-receipt-385eb87/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-scan-cbfe406/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/binding-6b24f14/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/assignment-ffc336b/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-a11abf6/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-atomic-0083c13/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/entry-45f346d/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/player-418baf5/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/preview-16cf0fa/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-6e4b59b/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-c4a7461/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-504d7fc/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-0c44f08/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-0192ddc/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-945b03a/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-b87b79c/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-e566b7d/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-fe221fc/deployments/independent.json",
+        "/opt/pongit/releases/7952580/deployments/independent.json",
+        "/opt/pongit/releases/sync-3dff671/deployments/independent.json",
+        "/opt/pongit/releases/arcade-d2c6033/deployments/independent.json",
+        "/opt/pongit/releases/b6d8cd6/deployments/independent.json",
+        "/opt/pongit/releases/748215d/deployments/independent.json",
+        "/opt/pongit/releases/1fa793a/deployments/independent.json",
+        "/opt/pongit/releases/arcade-3f05c33/deployments/independent.json",
+        "/opt/pongit/releases/sync-public-214c95a/play-recovery-web-9c32fd2/deployments/independent.json",
+        "/opt/pongit/releases/e4eceb6/deployments/independent.json",
+        "/opt/pongit/releases/0795816/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212"
+      ],
+      "node": "https://il-a429e8e01c4b57dd.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "64",
+        "batches": "0",
+        "baseBlock": "67978301",
+        "expiresAt": "1791680322"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/flow-1f04983/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-replay-f058201/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-receipt-385eb87/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-scan-cbfe406/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/binding-6b24f14/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/assignment-ffc336b/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-a11abf6/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/flow-atomic-0083c13/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/entry-45f346d/deployments/independent.json",
+        "/opt/pongit/tests/fluid-20260928/player-418baf5/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/preview-16cf0fa/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-6e4b59b/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-c4a7461/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-504d7fc/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-0c44f08/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-0192ddc/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-945b03a/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-b87b79c/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/agent-polish-e566b7d/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/public-browser-fe221fc/deployments/independent.json",
+        "/opt/pongit/releases/7952580/deployments/independent.json",
+        "/opt/pongit/releases/sync-3dff671/deployments/independent.json",
+        "/opt/pongit/releases/arcade-d2c6033/deployments/independent.json",
+        "/opt/pongit/releases/b6d8cd6/deployments/independent.json",
+        "/opt/pongit/releases/748215d/deployments/independent.json",
+        "/opt/pongit/releases/1fa793a/deployments/independent.json",
+        "/opt/pongit/releases/arcade-3f05c33/deployments/independent.json",
+        "/opt/pongit/releases/sync-public-214c95a/play-recovery-web-9c32fd2/deployments/independent.json",
+        "/opt/pongit/releases/e4eceb6/deployments/independent.json",
+        "/opt/pongit/releases/0795816/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212"
+      ],
+      "node": "https://il-9bc7eac922640b0a.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "62",
+        "batches": "0",
+        "baseBlock": "68001851",
+        "expiresAt": "1791687433"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x5d6524e0f513db9bb788c42af28012b077e143a2",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/runtime-1/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "node": "https://il-5d6524e0f513db9b.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "2",
+        "batches": "789",
+        "baseBlock": "66310125",
+        "expiresAt": "1791173040"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x9ecb6a0bdcebfc257a26d369f531de284ef43e07",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/runtime-1/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "node": "https://il-9ecb6a0bdcebfc25.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1449",
+        "baseBlock": "66285932",
+        "expiresAt": "1791165581"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x5296ba8cac39f205da695b891bfea4dbd8c6da44",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/runtime-1/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "node": "https://il-5296ba8cac39f205.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1599",
+        "baseBlock": "66285957",
+        "expiresAt": "1791165589"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x04356ae994b21b26b061db7919128814685ae564",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/runtime-1/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "node": "https://il-04356ae994b21b26.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1452",
+        "baseBlock": "66285968",
+        "expiresAt": "1791165592"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x64f61406243246b8b171f295151222a2c248c57d",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/runtime-1/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "node": "https://il-64f61406243246b8.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1235",
+        "baseBlock": "66285980",
+        "expiresAt": "1791165596"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x45bf6064d05ecb41a569e71f466b9cce117e9c4b",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/runtime-1/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "node": "https://il-45bf6064d05ecb41.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1474",
+        "baseBlock": "66298368",
+        "expiresAt": "1791169417"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0xa4c880d75b2a1896ae56d1bb8e460ea18c07f917",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/runtime-1/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "node": "https://il-a4c880d75b2a1896.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "1296",
+        "baseBlock": "66310967",
+        "expiresAt": "1791173301"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x53bb19f488b9c0771abe115b3ca438065810604e",
+      "sources": [
+        "/opt/pongit/tests/fluid-20260928/runtime-1/metadata/manifest.json"
+      ],
+      "authorities": [
+        "0x384914dc7195b22ad348b57ea2a617e1e8e6b9f3"
+      ],
+      "node": "https://il-53bb19f488b9c077.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x4cecc7fb9f199fbd91dcc4a6e6ea7156e69247d9",
+      "sources": [
+        "/opt/pongit/tests/agents-20260913/private/backup-20260917/agent-secrets/manifest.json",
+        "/opt/pongit/tests/agents-20260913/private/backup-20260917/agent-secrets/ops/manifest.json",
+        "/opt/pongit/tests/agents-20260913/private/backup-20260914/agent-secrets/manifest.json",
+        "/opt/pongit/tests/agents-20260913/private/backup-20260914/agent-secrets/ops/manifest.json"
+      ],
+      "authorities": [],
+      "canonical": {
+        "status": 2,
+        "epoch": "2",
+        "batches": "8564",
+        "baseBlock": "62316763",
+        "expiresAt": "1789429774"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0xdf06ff134d0969bba67d861cab8dee538e124976",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/4f15031/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/cce188f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/a788eb5/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/f307342/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/a50633f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/42c7cf0/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/7035ebd/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/168b6a9/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/f764566/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/359523f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/7606a64/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/9d6212e/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/d655341/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/484d339/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x41021b1d27eec7d3d21eb841286c716c3232bf15"
+      ],
+      "node": "https://il-df06ff134d0969bb.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "7",
+        "batches": "78",
+        "baseBlock": "64192995",
+        "expiresAt": "1790002008"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x24caa0e6800204c415e3c046cb8e1da553e0c63d",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/4f15031/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/cce188f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/a788eb5/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/f307342/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/a50633f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/42c7cf0/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/7035ebd/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/168b6a9/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/f764566/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/359523f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/7606a64/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/9d6212e/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/d655341/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/484d339/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x41021b1d27eec7d3d21eb841286c716c3232bf15"
+      ],
+      "node": "https://il-24caa0e6800204c4.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "7",
+        "batches": "59",
+        "baseBlock": "64193040",
+        "expiresAt": "1790002022"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x34467b8f00d3c929f8f0c327f7cdef3639656598",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/4f15031/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/cce188f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/a788eb5/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/f307342/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/a50633f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/42c7cf0/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/7035ebd/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/168b6a9/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/f764566/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/359523f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/7606a64/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/9d6212e/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/d655341/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/484d339/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x41021b1d27eec7d3d21eb841286c716c3232bf15"
+      ],
+      "node": "https://il-34467b8f00d3c929.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "5",
+        "batches": "40",
+        "baseBlock": "64171957",
+        "expiresAt": "1789995591"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x983ea4b68129b349afe141727b3a1644fafe3f93",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/939792f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/5e3cae2/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/53cd8d3/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x82f122b569f4ce2b8be5326f47a05794e1295362"
+      ],
+      "node": "https://il-983ea4b68129b349.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "2",
+        "batches": "57",
+        "baseBlock": "64101429",
+        "expiresAt": "1789973995"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x88e89abda6d46244f44f596fdb69a7ddc97e926e",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/939792f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/5e3cae2/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/53cd8d3/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x82f122b569f4ce2b8be5326f47a05794e1295362"
+      ],
+      "node": "https://il-88e89abda6d46244.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "2",
+        "batches": "19",
+        "baseBlock": "64102395",
+        "expiresAt": "1789974292"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x5301c251dc29b9b73cb15db56e1cd4cf1cd40c9a",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/939792f/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/5e3cae2/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/53cd8d3/deployments/independent.json"
+      ],
+      "authorities": [
+        "0x82f122b569f4ce2b8be5326f47a05794e1295362"
+      ],
+      "node": "https://il-5301c251dc29b9b7.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x3a0c55bef5682d531d8b56538b7212ee1933ff6c",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-reopen-20260921T0620Z/browser-deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-3792a0d/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/reusable-web-3e2ec97/metadata/independent.json"
+      ],
+      "authorities": [
+        "0x4ac828012cd2be48ab669a55db5a85cac81b4bcf"
+      ],
+      "node": "https://il-3a0c55bef5682d53.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "3",
+        "batches": "300",
+        "baseBlock": "64376410",
+        "expiresAt": "1790057985"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x98612da5cacbd96dde0a903079aa3bab0b99e8bf",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-reopen-20260921T0620Z/browser-deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-3792a0d/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/reusable-web-3e2ec97/metadata/independent.json"
+      ],
+      "authorities": [
+        "0x4ac828012cd2be48ab669a55db5a85cac81b4bcf"
+      ],
+      "node": "https://il-98612da5cacbd96d.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "1",
+        "batches": "136",
+        "baseBlock": "64376425",
+        "expiresAt": "1790057990"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x18ab50f7710e599abc4d88b5928c532f61ffb071",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-reopen-20260921T0620Z/browser-deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/human-web-3792a0d/deployments/independent.json",
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/reusable-web-3e2ec97/metadata/independent.json"
+      ],
+      "authorities": [
+        "0x4ac828012cd2be48ab669a55db5a85cac81b4bcf"
+      ],
+      "node": "https://il-18ab50f7710e599a.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "0",
+        "batches": "0",
+        "baseBlock": "0",
+        "expiresAt": "0"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0xb29db94965f9c8d8f9325ade2a8cbccf46e4d7cb",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/series3-runtime/public/manifest.json"
+      ],
+      "authorities": [
+        "0x4d8d809d72ea74b6ac0a1ab86aebbb41c71146a1"
+      ],
+      "node": "https://il-b29db94965f9c8d8.fly.dev",
+      "canonical": {
+        "status": 1,
+        "epoch": "16",
+        "batches": "1",
+        "baseBlock": "64207195",
+        "expiresAt": "1790006334"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x6d96b457b6295fb6f9764f7149acb328ff80a2e4",
+      "sources": [
+        "/opt/pongit/tests/arcade-release-20260919/diagnostics/series3-runtime/public/manifest.json"
+      ],
+      "authorities": [
+        "0x4d8d809d72ea74b6ac0a1ab86aebbb41c71146a1"
+      ],
+      "node": "https://il-6d96b457b6295fb6.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "15",
+        "batches": "400",
+        "baseBlock": "64197365",
+        "expiresAt": "1790003339"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x40178b386730985a9d1df46c3a811f8e7138e4ec",
+      "sources": [
+        "/opt/pongit/releases/arcade-d2c6033/five-runtime/metadata/manifest.json",
+        "/opt/pongit/releases/sync-public-214c95a/migration/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "node": "https://il-40178b386730985a.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "22",
+        "batches": "0",
+        "baseBlock": "67399844",
+        "expiresAt": "1791505574"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x76ca139497ff3fa6d20b062bd5f54a5917513226",
+      "sources": [
+        "/opt/pongit/releases/arcade-d2c6033/five-runtime/metadata/manifest.json",
+        "/opt/pongit/releases/sync-public-214c95a/migration/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "node": "https://il-76ca139497ff3fa6.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "21",
+        "batches": "124",
+        "baseBlock": "67375612",
+        "expiresAt": "1791498255"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0xa5f79fc906a238a80604ee5912a4a18998dc7ab4",
+      "sources": [
+        "/opt/pongit/releases/arcade-d2c6033/five-runtime/metadata/manifest.json",
+        "/opt/pongit/releases/sync-public-214c95a/migration/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "node": "https://il-a5f79fc906a238a8.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "20",
+        "batches": "0",
+        "baseBlock": "67387661",
+        "expiresAt": "1791501894"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0xf202862714f61d6f6b8b14c1d2f5d3ca7ea3e41b",
+      "sources": [
+        "/opt/pongit/releases/arcade-d2c6033/five-runtime/metadata/manifest.json",
+        "/opt/pongit/releases/sync-public-214c95a/migration/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "node": "https://il-f202862714f61d6f.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "9",
+        "batches": "0",
+        "baseBlock": "67386631",
+        "expiresAt": "1791501583"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x7a45dcd516896a22e4cded587086ee57b8adf9c6",
+      "sources": [
+        "/opt/pongit/releases/arcade-d2c6033/five-runtime/metadata/manifest.json",
+        "/opt/pongit/releases/sync-public-214c95a/migration/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "node": "https://il-7a45dcd516896a22.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "19",
+        "batches": "0",
+        "baseBlock": "67392159",
+        "expiresAt": "1791503253"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0xaf7c017a6729ec6f5d9d14288c5214489bb5be3b",
+      "sources": [
+        "/opt/pongit/releases/arcade-d2c6033/five-runtime/metadata/manifest.json",
+        "/opt/pongit/releases/sync-public-214c95a/migration/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "node": "https://il-af7c017a6729ec6f.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "24",
+        "batches": "0",
+        "baseBlock": "67399475",
+        "expiresAt": "1791505462"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x9b8e61621682da7b59239774f76dcf04071ea059",
+      "sources": [
+        "/opt/pongit/releases/arcade-d2c6033/five-runtime/metadata/manifest.json",
+        "/opt/pongit/releases/sync-public-214c95a/migration/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "node": "https://il-9b8e61621682da7b.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "21",
+        "batches": "0",
+        "baseBlock": "67848175",
+        "expiresAt": "1791641016"
+      }
+    },
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "app": "0x028f656e76cc1973ced7c41d8584d4f94be9e003",
+      "sources": [
+        "/opt/pongit/releases/arcade-d2c6033/five-runtime/metadata/manifest.json",
+        "/opt/pongit/releases/sync-public-214c95a/migration/metadata/source-manifest.json"
+      ],
+      "authorities": [
+        "0x205d5739136d6cb73d732e1146e1ce034798a613"
+      ],
+      "node": "https://il-028f656e76cc1973.fly.dev",
+      "canonical": {
+        "status": 0,
+        "epoch": "25",
+        "batches": "123",
+        "baseBlock": "67368326",
+        "expiresAt": "1791496054"
+      }
+    }
+  ]
+}
