@@ -26,10 +26,12 @@ const publicSynchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-p
 const initialIdleMs=Number(process.env.PONG_CATALOGUE_INITIAL_IDLE_MS??0);
 const readDelayMs=Number(process.env.PONG_CATALOGUE_READ_DELAY_MS??0);
 const networkDelayMs=Number(process.env.PONG_CATALOGUE_NETWORK_DELAY_MS??0);
+const inputHoldMs=Number(process.env.PONG_CATALOGUE_INPUT_HOLD_MS??80),inputGapMs=Number(process.env.PONG_CATALOGUE_INPUT_GAP_MS??40);
 const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
 assert(Number.isInteger(initialIdleMs)&&initialIdleMs>=0&&initialIdleMs<=20000);
 assert(Number.isInteger(readDelayMs)&&readDelayMs>=0&&readDelayMs<=400);
 assert(Number.isInteger(networkDelayMs)&&networkDelayMs>=0&&networkDelayMs<=200);
+assert(Number.isInteger(inputHoldMs)&&inputHoldMs>=80&&inputHoldMs<=300&&Number.isInteger(inputGapMs)&&inputGapMs>=40&&inputGapMs<=300);
 const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private'||publicSynchronized;
 assert(!process.env.PONG_CATALOGUE_SYNCHRONIZATION||synchronized);
 assert(publicSynchronized?!privateV3:!synchronized||privateV3,'Synchronization scope must match the actual public/private API');
@@ -59,6 +61,7 @@ const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz'
  virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 report.initialIdleMs=initialIdleMs;report.injectedReadLatencyMs=readDelayMs;
 report.injectedNetworkDelayEachWayMs=networkDelayMs;
+report.inputHoldMs=inputHoldMs;report.inputGapMs=inputGapMs;
 report.httpOnly=httpOnly;
 if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continuationRecord.common.pool,catalog:continuationRecord.common.catalog,deploymentSha256};
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
@@ -271,7 +274,7 @@ try{
  assert(report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1'),'Real launch countdown incomplete');
  const before=assertions;
  for(let i=0;i<controlCount;i++){
-  const key=i%2?'ArrowDown':'ArrowUp';await page.keyboard.down(key);await page.waitForTimeout(80);await page.keyboard.up(key);await page.waitForTimeout(40);
+  const key=i%2?'ArrowDown':'ArrowUp';await page.keyboard.down(key);await page.waitForTimeout(inputHoldMs);await page.keyboard.up(key);await page.waitForTimeout(inputGapMs);
   if(i===34){await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
  }
  report.controlsEndedAt=new Date().toISOString();
