@@ -1,0 +1,75 @@
+{
+  "at": "2026-10-04T08:02:03.187Z",
+  "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+  "epoch": "3",
+  "postCount": 1,
+  "chainTransactions": 0,
+  "authorization": "User requested one new hosting attempt on 4 October 2026; prior uncertain intent preserved",
+  "phase": "complete",
+  "previous": {
+    "at": 1791054577453,
+    "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+    "http": 404,
+    "state": "uncertain",
+    "reason": "control-plane-http",
+    "control": "https://control.interludelayer.xyz",
+    "retryAt": 1791100927605,
+    "attempts": 1,
+    "alertedAt": 1791100497390,
+    "stalledAt": 1791054877548,
+    "nodeRetryAt": 1791100926569,
+    "lookupControl": "https://control.interludelayer.xyz"
+  },
+  "canonical": {
+    "block": "68062411",
+    "blockHash": "0xa9c4b28450b5bf3753b8f551fb44d8b174868a31186f289b4ab566f836b20fcd",
+    "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+    "epoch": "3",
+    "baseBlock": "67908936",
+    "batches": "0"
+  },
+  "control": "https://control.interludelayer.xyz",
+  "healthBefore": {
+    "http": 200,
+    "status": "degraded",
+    "machines": {
+      "live": 50,
+      "max": 50,
+      "queued": 0,
+      "perHour": 20
+    },
+    "validator": {
+      "maxDelegations": 128,
+      "activeEstimate": 9,
+      "freeByBond": 119,
+      "bond": "1282800000000000000000",
+      "reserved": "92600000000000000000"
+    },
+    "warnings": [
+      "machines near capacity: 50/50"
+    ]
+  },
+  "sentAt": "2026-10-04T08:02:08.576Z",
+  "response": {
+    "received": true,
+    "http": 503,
+    "error": "hosted capacity is full (50 nodes). try again later or run your own node",
+    "retryAfter": null
+  },
+  "next": {
+    "at": 1791054577453,
+    "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+    "http": 503,
+    "state": "uncertain",
+    "reason": "manual-retry-control-plane-http",
+    "control": "https://control.interludelayer.xyz",
+    "retryAt": 1791100988740,
+    "attempts": 2,
+    "alertedAt": 1791100497390,
+    "stalledAt": 1791054877548,
+    "nodeRetryAt": 1791100926569,
+    "lookupControl": "https://control.interludelayer.xyz",
+    "manualRetryAt": 1791100928740
+  },
+  "completedAt": "2026-10-04T08:02:08.746Z"
+}
