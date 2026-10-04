@@ -33,6 +33,7 @@ import {IconButton} from './IconButton';
 import {AgentReplay} from './AgentReplay';
 import replayStyles from './AgentReplay.module.css';
 import {ArenaCountdown} from './MatchCountdown';
+import {arenaLaunchRemaining} from '../../shared/arena-launch';
 import {quietFailure} from '../lib/quiet-failure';
 import {preparingArena,arenaEntryRetryMs} from '../lib/arena-wait';
 import {useCourtFit} from '../lib/use-court-fit';
@@ -80,6 +81,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   if(lastRef.current!==refKey){lastRef.current=refKey;inputTimeline.current.reset();setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
   let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,retryRecoveryAt=0,recoveredVersion=-1,wasHidden=false;
   let entryStarted=0,firstState=false;
+  let entryReady=false,entryLaunch:Awaited<ReturnType<ReturnType<typeof createPoolPlayer>['launch']>>;
   let publishedRequest:Promise<void>|undefined;
   const controller=new AbortController(),quiet=quietFailure();
   const get=async<T,>(path:string):Promise<T>=>{
@@ -142,7 +144,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
      nextRecovery=performance.now()+10000;
      const version=recoveryVersion.current;
      try{
-      if(recoveredVersion!==version)await playerClient.current.recover();else await playerClient.current.synchronize();
+      if(recoveredVersion!==version){entryReady=false;entryLaunch=undefined;await playerClient.current.recover();}else await playerClient.current.synchronize();
       if(cancelled)return;recoveredVersion=version;retryRecoveryAt=0;
       if(recoveryVersion.current===version){setReady(true);setControlError('');}
      }
@@ -159,17 +161,27 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
       if(!valid&&preparingArena(e)){delay=Math.max(0,retryRecoveryAt-performance.now());return;}
      }
     }
-    const state=await observer.read(wasHidden);wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');
+    // HTTP-only players must observe the real launch before their initial
+    // 500ms liveness credit expires. A cached waiting frame is insufficient
+    // at that boundary; use one fresh read, without fabricating playing state.
+    const nearLaunch=!!entryLaunch&&arenaLaunchRemaining(entryLaunch.deadline,entryLaunch.clock,entryLaunch.observedAt,performance.now())<=750;
+    const state=await observer.read(wasHidden||nearLaunch);wasHidden=false;if(cancelled)return;publish(state);quiet.recovered();setError('');
+    if(state.reset){entryReady=false;entryLaunch=undefined;}
+    if(state.phase!==1)entryLaunch=undefined;
     if(config.version>=4&&state.phase===1){
      // The human seat acknowledges an actually painted court. A hidden tab
      // cannot start a countdown it has never shown to its player.
      const controlled=playerClient.current;
-     if(controlled&&recoveredVersion===recoveryVersion.current){
+     if(controlled&&!entryReady&&recoveredVersion===recoveryVersion.current){
       await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));
       if(cancelled||document.hidden||playerClient.current!==controlled)return;
-      publish(await controlled.ready());
+      publish(await controlled.ready());entryReady=true;
      }
-     const launch=await observer.launch();if(!cancelled&&launch)setCountdown({id:refKey,...launch});
+     // Readiness cannot be undone in this match except by a reconciled reset.
+     // Its confirmed launch deadline is immutable; repeated readiness/clock
+     // getters used to serialize network round trips across the launch.
+     if(!entryLaunch){const launch=await observer.launch();if(!cancelled&&launch){entryLaunch=launch;setCountdown({id:refKey,...launch});}}
+     delay=100;
     }
    }catch(e){if(cancelled)return;setError(quiet.failed(poolUserError(e)));setConnection('Reconnecting');delay=arenaEntryRetryMs(e,!firstState,entryStarted?performance.now()-entryStarted:Infinity);}
    finally{if(!cancelled)timer=setTimeout(poll,Math.min(30000,delay));}

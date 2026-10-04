@@ -256,10 +256,12 @@ try{
  if(initialIdleMs){
   const before=report.submissions.length;await page.waitForTimeout(initialIdleMs);
   report.initialIdleHeartbeats=report.submissions.slice(before).filter((s:any)=>s.action==='heartbeat'&&!s.error).length;
+  report.startupResumes=report.submissions.filter((s:any)=>s.action==='resumeReady'&&!s.error).length;
   assert(report.initialIdleHeartbeats>=Math.floor(initialIdleMs/1000),'Idle player lost liveness before any movement');
   const trace=await page.evaluate(()=>(window as any).__syncProbe);
   if(trace){report.initialIdleTrace=syncMetrics(trace);await writeFile(out+'/initial-idle-trace.json',JSON.stringify(trace));}
   assert(!await page.getByText('Match paused',{exact:true}).isVisible(),'Stationary player became paused on a responsive connection');
+  if(process.env.PONG_REQUIRE_NO_STARTUP_PAUSE==='1')assert.equal(report.startupResumes,0,'Initial countdown unnecessarily became a recovery countdown');
  }
  assert(report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1'),'Real launch countdown incomplete');
  const before=assertions;
