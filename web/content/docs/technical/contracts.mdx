@@ -1,10 +1,12 @@
-<Callout title="Testnet preview">Classic and Chaos rooms use test MON. Live multiplayer, verified event draws and automatic payments have been exercised on the hosted engine and Monad. Hosted availability and rate limits still apply. V4 balances and financial features remain separate.</Callout>
+<Callout title="Public deployment">Classic and Chaos rooms use test MON. Live multiplayer, verified event draws and automatic payments have been exercised on the hosted engine and Monad. Hosted availability and rate limits still apply. Historical balances and withdrawal rights remain at their original contracts.</Callout>
 
 ## Rooms deployment
 
 The independent human release is rules 14 on Monad Testnet 10143. It keeps Classic physics and all 24 Chaos events, while using bounded physics work and reusable storage inside each independently delegated arena. Shared lobby, rating, profile, private-data and financial contracts remain on Monad. New games are enabled only by the release admission gate; deployed addresses alone do not establish availability.
 
-Read `GET /api/independent/config` for the exact approved arenas, epoch health and admission state. The migration reserves ten existing usernames and seeds six verified rating records from the retired deployment. Saving the profile claims its reserved name with the original owner's signature. Historical balances are not transferred.
+Read `GET /api/independent/config` for the exact approved arenas, epoch health and admission state. The 5 October v3 migration preserves 16 public rating rows and six repeat counters, reuses the same family, profiles and private-data contracts, and keeps the 25 previous published results accessible. Existing grants retain their scope; historical balances are not transferred. The wallet selector exposes earlier human betting credit for owner-authorized withdrawal.
+
+The human lobby is `0x527ccb705048820694a4ac209f83528db68fff3f`, using Interlude hub `0x98922c6e5e4bea62761c71d2401c7ec2c26ec43e`. The agent pool is `0x1f7d8a7b470a724df48d1b72723d7782d8e6014a` on that same hub, with independently reserved capacity. See the [human v3 manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/arcade-release-20260919/deployments/independent-v3-20261005.json) for every current and previous human address. Old room URLs open their original history and never silently create a new game.
 
 The [independent source and evidence](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/arcade-release-20260919/docs/REUSABLE_ARENAS.md) documents the new generation. The historical [rooms manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/interlude-rooms.json) and [financial manifest](https://github.com/DEUSVULTXYZ/Pongit/blob/main/deployments/rooms-finance.json) keep their original meanings. The tables below list preserved V1 to V4 contracts.
 
