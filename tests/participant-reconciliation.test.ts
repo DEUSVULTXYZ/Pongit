@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ParticipantReconciliation,type ParticipantPose} from '../web/lib/participant-reconciliation';
+import {projectChaosParticipant} from '../web/lib/participant-projection';
+import {initialChaosEvents} from '../shared/physics-chaos-events';
+import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
 test('a delayed receipt blends its 60px error without reversing a held paddle',()=>{
@@ -52,4 +55,25 @@ test('ordinary motion, intent changes and independent matches acquire no interpo
   assert.deepEqual(a.sample(state,undefined,16),state);
  }
  a.sample(pose(),pose(200),16);assert.deepEqual(b.sample(pose(),undefined,16),pose());
+});
+
+test('Chaos match720 pending -> pre-ack snapshot -> accepted input stays continuous',()=>{
+ // Actual baseline: input predicted at119ms, still unapplied at310ms, only
+ // accepted at440ms. Rebuilding each source directly jumped 34 then23 pixels.
+ const base={...initialChaosEvents(zeroHash),t:100_000n};
+ const projected=(state:typeof base,t:bigint,controls:{side:0;direction:-1;at:bigint}[])=>{
+  const s=projectChaosParticipant(state,t,controls,'complete').state;
+  return pose(Number(s.left)/1e12,Number(s.right)/1e12,Number(s.balls[0].x)/1e12,Number(s.balls[0].y)/1e12);
+ };
+ const inputs=[{side:0 as const,direction:-1 as const,at:119_000n}],view=new ParticipantReconciliation();
+ const before=projected(base,440_000n,inputs);
+ const speculative=projected(base,456_000n,inputs);
+ const receipt={...base,t:440_000n,leftDir:-1};
+ const authoritative=projected(receipt,456_000n,[]);
+ assert(authoritative.paddles[0]-speculative.paddles[0]>50,'fixture must reproduce a real rollback');
+ view.sample(before,undefined,16);
+ const rendered=view.sample(authoritative,speculative,16);
+ assert(rendered.paddles[0]<before.paddles[0],'receipt cannot reverse a held up key');
+ assert(Math.abs(rendered.paddles[0]-before.paddles[0])<4);
+ assert.equal(receipt.left,base.left,'presentation never rewrites canonical physics');
 });
