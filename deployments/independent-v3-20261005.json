@@ -1,0 +1,76 @@
+{
+  "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+  "family": "0x9160FaF0673363998Ffc56fdbBF1486fefFc1E6B",
+  "lobby": "0x527cCB705048820694A4Ac209f83528DB68FFf3F",
+  "ratings": "0x02C58A7771DFd6237B7E80750a1f2f9aF141Ad48",
+  "settlement": "0xB7e46A356C73DBe0FfA87A52E56a4306C5db23Bf",
+  "vault": "0x0c097be115597c9335f29f69A9910C5D114Eb64F",
+  "market": "0xD29dFc7969632cF8F5c806F306AFf7c162AD0C02",
+  "profiles": "0xc43A936339F5b09F635aba094b3137F80De60f63",
+  "privateData": "0xB6ce09f93B84250c1D487a5ae7232fd1dFecF4b0",
+  "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+  "resultVerifier": "0x80E3d43484fc18dB4e09d0AEb27A0E704C336265",
+  "admissionSigner": "0x1614BA9607f48b4B570fe56a94e054295De34c2a",
+  "chainId": 10143,
+  "rulesVersion": 14,
+  "countdownClock": "engine-ticks-v1",
+  "arenas": [
+    {
+      "app": "0x51a8b38327ED29A7D75e4f7EB254cDB98420DEBf",
+      "index": 0,
+      "node": "https://il2-eu-51a8b38327ed29a7.fly.dev"
+    },
+    {
+      "app": "0xbd8F7B674da6942D719234a585DDcf0f8b302aB5",
+      "index": 1,
+      "node": "https://il2-eu-bd8f7b674da6942d.fly.dev"
+    },
+    {
+      "app": "0xFfC12814870d6f453bc7C9ed7a46AD9F927E5771",
+      "index": 2,
+      "node": "https://il2-eu-ffc12814870d6f45.fly.dev"
+    }
+  ],
+  "genesis": 1789323322,
+  "createdAt": "2026-10-05T03:14:48.370Z",
+  "startBlock": "68291407",
+  "previous": [
+    {
+      "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
+      "family": "0x9160FaF0673363998Ffc56fdbBF1486fefFc1E6B",
+      "lobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+      "ratings": "0x10D7C8AeDDCeC23d7638f9c9DBbc73d82f28C5b9",
+      "settlement": "0xedf6944Af4EB9Ef32F129D9924e7C8f2D010bA06",
+      "vault": "0x8D4170596C19Cc55C04E3467EaF6D612D1bBD016",
+      "market": "0xdB5b91128d0b2b3795CF62D2B2E980cFa2C276e4",
+      "profiles": "0xc43A936339F5b09F635aba094b3137F80De60f63",
+      "privateData": "0xB6ce09f93B84250c1D487a5ae7232fd1dFecF4b0",
+      "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+      "resultVerifier": "0xeC8f177312074E7f9a33Fae6CB9F950931DDc96F",
+      "admissionSigner": "0x1614BA9607f48b4B570fe56a94e054295De34c2a",
+      "chainId": 10143,
+      "rulesVersion": 14,
+      "countdownClock": "engine-ticks-v1",
+      "arenas": [
+        {
+          "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+          "index": 0,
+          "node": "https://il-596562d63e678a2b.fly.dev"
+        },
+        {
+          "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+          "index": 1,
+          "node": "https://il-a429e8e01c4b57dd.fly.dev"
+        },
+        {
+          "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+          "index": 2,
+          "node": "https://il-9bc7eac922640b0a.fly.dev"
+        }
+      ],
+      "genesis": 1789323322,
+      "createdAt": "2026-09-21T07:45:50.641Z",
+      "startBlock": "64393211"
+    }
+  ]
+}

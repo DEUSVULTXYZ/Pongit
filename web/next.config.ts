@@ -6,15 +6,11 @@ import {createRequire} from 'node:module';
 // Next's compiled config module does not retain a relative parent filename.
 const {agentPoolCspOrigins}=createRequire(path.resolve('web/next.config.ts'))('../shared/agent-pool-csp.ts') as typeof import('../shared/agent-pool-csp');
 const {INTERLUDE_REGIONS}=createRequire(path.resolve('web/next.config.ts'))('../shared/interlude-regions.ts') as typeof import('../shared/interlude-regions');
+const {independentCspOrigins}=createRequire(path.resolve('web/next.config.ts'))('../shared/independent-csp.ts') as typeof import('../shared/independent-csp');
 const interludeLab=JSON.parse(readFileSync(path.resolve("deployments/interlude-lab.json"),"utf8")) as {node:string};
 const interludeRooms=JSON.parse(readFileSync(path.resolve("deployments/interlude-rooms.json"),"utf8")) as {node:string};
 const independentPath=path.resolve("deployments/independent.json");
-const independentOrigins=existsSync(independentPath)?JSON.parse(readFileSync(independentPath,"utf8")).arenas.flatMap((a:{app:string;node?:string})=>{
- if(!/^0x[\da-fA-F]{40}$/.test(a.app))throw Error("Invalid arena in CSP manifest");
- const node=a.node??`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`;
- if(!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(node))throw Error("Unapproved arena in CSP manifest");
- return [node,node.replace(/^http/,"ws")];
-}).join(" "):"";
+const independentOrigins=existsSync(independentPath)?independentCspOrigins(JSON.parse(readFileSync(independentPath,"utf8"))):"";
 const agentPath=path.resolve('deployments/agents.json');
 const agentOrigins=existsSync(agentPath)?(()=>{
  const m=JSON.parse(readFileSync(agentPath,'utf8'));

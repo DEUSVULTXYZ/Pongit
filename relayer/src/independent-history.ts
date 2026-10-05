@@ -71,7 +71,7 @@ export async function independentHistory(db:Pool,base:PublicClient,m:Independent
     for(const v of data.Match)verified.push({legacy:true,ref:v.id,id:v.rawId,finality:true,latest:{a:v.playerA,b:v.playerB,winner:v.winner,status:v.status,scoreA:v.scoreA,scoreB:v.scoreB,mode:v.mode,ranked:v.ranked},endedBlock:v.endedAt.split(':')[0],replayAvailability:v.replayAvailability});
    }
   }
-  return verified.sort((a,b)=>BigInt(a.endedBlock)===BigInt(b.endedBlock)?b.ref.localeCompare(a.ref):BigInt(a.endedBlock)>BigInt(b.endedBlock)?-1:1).slice(0,3);
+  return verified.sort((a,b)=>BigInt(a.endedBlock)===BigInt(b.endedBlock)?b.ref.localeCompare(a.ref):BigInt(a.endedBlock)>BigInt(b.endedBlock)?-1:1).slice(0,3).map(row=>row.legacy?row:{...row,lobby:m.lobby,rulesVersion:m.rulesVersion});
  }
  async function replay(id:bigint,after:bigint){
   const row=(await db.query('SELECT ref,record,replay FROM independent_history WHERE lobby=$1 AND id=$2',[scope,String(id)])).rows[0];

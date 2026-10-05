@@ -1,6 +1,6 @@
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
-import {decodeFunctionData,encodeFunctionData,isAddress,zeroAddress,zeroHash,parseEther,verifyMessage,keccak256,type Address,type Hex,type Abi,type PublicClient} from 'viem';
+import {decodeFunctionData,encodeAbiParameters,encodeFunctionData,isAddress,zeroAddress,zeroHash,parseEther,verifyMessage,keccak256,type Address,type Hex,type Abi,type PublicClient} from 'viem';
 import {Pool} from 'pg';
 import type {IncomingMessage,ServerResponse} from 'node:http';
 import {publicIndependentManifest,independentCreditMessage,independentDiagnosticsMessage} from '../../shared/independent';
@@ -43,12 +43,14 @@ import {abi as verifierAbi} from '../../shared/abi-independent-PublishedResultVe
 import {privateKeyToAccount} from 'viem/accounts';
 import {canonicalHostedConsent} from '../../shared/hosted-provisioner';
 import {independentProvisioningScope} from '../../shared/independent-provisioning';
+import {previousIndependentManifests,independentScope,mergeIndependentRecent} from '../../shared/independent-history-scope';
 
 type Options={db:Pool;operatorDb?:Pool;legacyDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
 export async function independentService(o:Options){
  const path=process.env.PONG_INDEPENDENT_MANIFEST;if(!path)return null;
  const rawManifest=JSON.parse(await readFile(path,'utf8'));
  const m=independentRuntime(rawManifest),{db,base}=o;
+ const previous=previousIndependentManifests(rawManifest.previous,m);
  const provisioningFile=process.env.PONG_INDEPENDENT_PROVISIONER_FILE;
  const provisioner=rawManifest.hostedProvisioning==='owner-consent-v1'
   ?privateKeyToAccount(JSON.parse(await readFile(provisioningFile??'', 'utf8')).privateKey):undefined;
@@ -182,6 +184,13 @@ export async function independentService(o:Options){
   return operation.status==='failed'?writer.enqueue(at,data,value,priority,context+':after-revert:'+String((await base.getBlockNumber())/50n)):operation;
  };
  const finance=await independentFinance(db,base,m,pressure.privateKey,queue);
+ const historical=await Promise.all(previous.map(async manifest=>({manifest,
+  history:await independentHistory(db,base,manifest,undefined,legacy),
+  finance:await independentFinance(db,base,manifest,pressure.privateKey,queue)})));
+ const scopeOf=(req:IncomingMessage)=>{
+  const selected=independentScope(m,previous,new URL(req.url!,'http://localhost').searchParams.get('lobby'));
+  return selected===m?{manifest:m,history,finance}:historical.find(v=>v.manifest===selected)!;
+ };
  const reusablePool=m.rulesVersion===14?await independentReusablePool(base,m,queue,()=>health,()=>process.env.PONG_INDEPENDENT_ADMISSION==='true'):null;
  const reusableLifecycles=engines.map((e,i)=>reusableResults&&reusableAdmit?independentReusableLifecycle({base,manifest:m,engine:e,health:health[i],results:reusableResults,queue,
   stage:(name,code)=>stage(i,name,code),admit:reusableAdmit,ensureHosted:async epoch=>{
@@ -314,10 +323,19 @@ export async function independentService(o:Options){
   [m.market.toLowerCase(),{abi:marketAbi,methods:['buy','claim','retryPayout']}],
   [m.vault.toLowerCase(),{abi:vaultAbi,methods:['withdraw']}],
  ]);
+ // Historical money stays at its original addresses. Only withdrawal and
+ // settlement remain sponsored; old admissions and new bets are never reopened.
+ for(const old of previous){
+  permitted.set(old.vault.toLowerCase(),{abi:vaultAbi,methods:['withdraw']});
+  permitted.set(old.market.toLowerCase(),{abi:independentRules(old).market,methods:['claim','retryPayout']});
+ }
  async function route(req:IncomingMessage,res:ServerResponse,path:string){
   if(!path.startsWith('/independent/'))return false;
   try{
-   if(req.method==='GET'&&path==='/independent/config'){o.send(res,{manifest:m,admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:playerSponsor.status()});return true;}
+   if(req.method==='GET'&&path==='/independent/config'){
+    const scope=scopeOf(req),archived=scope.manifest!==m;
+    o.send(res,{manifest:scope.manifest,previous,archived,admission:!archived&&process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:archived?[]:health,sponsor:playerSponsor.status()});return true;
+   }
    if(req.method==='POST'&&path==='/independent/diagnostics'){
     const b=await o.body(req);
     if(!isAddress(b.player)||!Number.isSafeInteger(b.expires)||Math.abs(Date.now()/1000-b.expires)>120||typeof b.instance!=='string'||!/^[a-f0-9-]{36}$/i.test(b.instance)||!Array.isArray(b.samples)||b.samples.length>200||typeof b.signature!=='string'||!/^0x[\da-f]{130}$/i.test(b.signature))throw Error('Invalid diagnostics proof');
@@ -332,11 +350,13 @@ export async function independentService(o:Options){
    if(req.method==='GET'&&/^\/independent\/profile-migration\/0x[\da-fA-F]{40}$/.test(path)){o.send(res,profileHints.get(path.split('/').at(-1)!.toLowerCase())??null);return true;}
    if(req.method==='GET'&&/^\/independent\/player\/0x[\da-fA-F]{40}\/(recent|frequent|payments)$/.test(path)){
     const parts=path.split('/'),player=parts[3] as Address,kind=parts[4];
-    o.send(res,kind==='recent'?await history.recent(player):kind==='frequent'?await history.frequent(player):await finance.accountPayments(player));return true;
+    const selected=new URL(req.url!,'http://localhost').searchParams.has('lobby');
+    if(kind==='recent'&&!selected)o.send(res,mergeIndependentRecent(await Promise.all([history,...historical.map(v=>v.history)].map(h=>h.recent(player)))));
+    else {const scoped=scopeOf(req);o.send(res,kind==='recent'?await scoped.history.recent(player):kind==='frequent'?await scoped.history.frequent(player):await scoped.finance.accountPayments(player));}return true;
    }
    if(req.method==='GET'&&/^\/independent\/replay\/\d+$/.test(path)){
     const after=new URL(req.url!,'http://localhost').searchParams.get('after')||'-1';if(!/^-?\d{1,20}$/.test(after))throw Error('Invalid replay cursor');
-    o.send(res,await history.replay(BigInt(path.split('/').at(-1)!),BigInt(after)));return true;
+    o.send(res,await scopeOf(req).history.replay(BigInt(path.split('/').at(-1)!),BigInt(after)));return true;
    }
    if(req.method==='GET'&&path==='/independent/import/contacts'){
     const player=await authenticatedPlayer(req);
@@ -349,10 +369,16 @@ export async function independentService(o:Options){
    if(req.method==='GET'&&/^\/independent\/market\/\d+$/.test(path)){
     const q=new URL(req.url!,'http://localhost').searchParams,player=q.get('player')||zeroAddress,side=Number(q.get('side')||0),shares=q.get('shares')||'1000000000000000';
     if(!isAddress(player)||![0,1].includes(side)||!/^\d{1,22}$/.test(shares))throw Error('Invalid market query');
-    o.send(res,await finance.view(BigInt(path.split('/').at(-1)!),player,side,BigInt(shares)));return true;
+    o.send(res,await scopeOf(req).finance.view(BigInt(path.split('/').at(-1)!),player,side,BigInt(shares)));return true;
    }
    if(req.method==='POST'&&path==='/independent/transactions'){
     const b=await o.body(req);if(!isAddress(b.to)||typeof b.data!=='string'||!/^0x[\da-f]+$/i.test(b.data)||b.data.length>44000)throw Error('Invalid sponsored call');
+    if(previous.some(old=>old.lobby.toLowerCase()===b.to.toLowerCase())){
+     const id=keccak256(encodeAbiParameters([{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[b.to,b.data,0n,'']));
+     const existing=await playerSponsor.get(id);
+     if(existing){o.send(res,existing,202);return true;}
+     throw Object.assign(Error('This arena generation has closed. Return to Play to start a new match.'),{accepted:false});
+    }
     const allowed=permitted.get(b.to.toLowerCase());if(!allowed)throw Error('Contract is outside the arcade scope');
     const decoded=decodeFunctionData({abi:allowed.abi,data:b.data});if(!allowed.methods.includes(decoded.functionName))throw Error('Action is not sponsored');
     let priority=2;
@@ -367,7 +393,7 @@ export async function independentService(o:Options){
     // A deferred payment may be attempted again, but its recipient and reserved
     // amount are still fixed by the contract. No new operation re-credits a claim.
     if(decoded.functionName==='retryPayout'){
-     const payout:any=await base.readContract({address:m.market,abi:marketAbi,functionName:'payouts',args:[decoded.args![0] as Hex]});
+     const payout:any=await base.readContract({address:b.to,abi:allowed.abi,functionName:'payouts',args:[decoded.args![0] as Hex]} as any);
      o.send(res,await writer.enqueue(b.to,b.data,0n,2,String(payout[3])),202);return true;
     }
     o.send(res,await playerSponsor.enqueue(b.to,b.data,0n,priority),202);return true;
@@ -422,9 +448,17 @@ export async function independentService(o:Options){
   run('payment-history',finance.indexPayments,6000);
   run('payment-discovery',finance.discoverPayments,4000);
   run('payment-receipts',finance.recoverSponsoredPayments,6000);
+  for(const old of historical){
+   const key=old.manifest.lobby;
+   run(`historical-history:${key}`,old.history.observe,15000);
+   run(`historical-payments:${key}`,old.finance.payments,6000);
+   run(`historical-payment-history:${key}`,old.finance.indexPayments,15000);
+   run(`historical-payment-discovery:${key}`,old.finance.discoverPayments,15000);
+   run(`historical-payment-receipts:${key}`,old.finance.recoverSponsoredPayments,10000);
+  }
   run('ranking',async()=>{if(await r.ratings('buildGeneration'))await queue(m.ratings,ratingAbi,'rebuild',[32n],0n,2);},10000);
  },rules.events?250:2000);timer.unref();
- const stop=()=>{stopped=true;clearInterval(timer);writer.stop();playerWriter?.stop();history.stop();diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());};
+ const stop=()=>{stopped=true;clearInterval(timer);writer.stop();playerWriter?.stop();history.stop();historical.forEach(v=>v.history.stop());diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());};
  return {route,manifest:m,engines,writer,queue,status:()=>({online:health.some(h=>h.online||h.stage==='available'),admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:playerSponsor.status(),maintenance:writer.status()}),stop,
   close:async()=>{stop();await Promise.all([writer.close(),playerWriter?.close()]);await playerDb?.end();}};
 }

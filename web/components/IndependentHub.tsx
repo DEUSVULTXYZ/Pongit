@@ -21,6 +21,7 @@ import {Outcome} from './Outcome';
 import {IndependentPrivate} from './IndependentPrivate';
 import {IndependentMarket} from './IndependentMarket';
 import {IndependentHistory} from './IndependentHistory';
+import {IndependentArchive} from './IndependentArchive';
 import {arcadeAudio} from '../lib/audio';
 import {connect,rememberedAccount,forgetAccount} from '../lib/wallet';
 import {gameTabLock} from '../lib/game-tab-lock';
@@ -48,6 +49,7 @@ const empty={room:null,proposal:null,queue:null,invitations:[],profiles:{},bindi
 export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentArcade?:boolean}){
  const base=useMemo(independentBase,[]);
  const [manifest,setManifest]=useState<IndependentManifest>(),[config,setConfig]=useState<any>();
+ const [archive,setArchive]=useState<IndependentManifest>();
  const [family,setFamily]=useState<FamilySession|null>(null),[saved,setSaved]=useState<Address>(),[ready,setReady]=useState(false);
  const [view,setView]=useState<any>(empty),[snapshot,setSnapshot]=useState<LabSnapshot|null>(null),[mode,setMode]=useState<0|1>(0);
  const [panel,setPanel]=useState<Panel>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[sync,setSync]=useState('');
@@ -110,7 +112,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
  },[manifest,base,roomId]);
  useEffect(()=>{
   let alive=true,retry:ReturnType<typeof setTimeout>;
-  const load=()=>void independentApi('config').then(c=>{if(!alive)return;const m=publicIndependentManifest(c.manifest);setManifest(m);setConfig(c);setFamily(loadFamily(m));setSaved(rememberedAccount()?.address as Address|undefined);setError('');}).catch(()=>{if(alive){setError('Game services are temporarily unavailable. Retrying automatically.');retry=setTimeout(load,5000);}});
+  const load=()=>void independentApi('config'+(roomId?'?lobby='+encodeURIComponent(roomId.split(':')[0]):'')).then(c=>{if(!alive)return;const m=publicIndependentManifest(c.manifest);if(c.archived){setArchive(m);setError('');return;}setManifest(m);setConfig(c);setFamily(loadFamily(m));setSaved(rememberedAccount()?.address as Address|undefined);setError('');}).catch(()=>{if(alive){setError('Game services are temporarily unavailable. Retrying automatically.');retry=setTimeout(load,5000);}});
   load();return()=>{alive=false;clearTimeout(retry);};
  },[]);
  useEffect(()=>{
@@ -320,6 +322,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
  const networkMessage=engineUnavailable?'This arena is unavailable right now. Your game is saved.':recoveringArena||active&&['publication-paused','recovering','closing','review'].includes(arenaHealth?.stage)?'This arena is getting ready. Your game is saved.':sync||lobbySync;
  useEffect(()=>{if(!cancelQueued||busy)return;setCancelQueued(null);if(queueKey===cancelQueued)void ensure(s=>act(s,'cancelQueue'));},[cancelQueued,busy,queueKey]);
  const pauseLabel=recoveringArena?'Getting the arena ready':snapshot&&arenaHealth?.rally?.id===String(snapshot.id)&&arenaHealth.rally.rally===snapshot.state.scoreA+snapshot.state.scoreB&&arenaHealth.rally.resumeAt===String(snapshot.state.resumeAt)?arenaHealth.rally.label:'Waiting for Chaos bets to be confirmed';
+ if(archive&&roomId)return <IndependentArchive manifest={archive} roomId={roomId}/>;
  return <main className={`cabinet-ui rooms-shell ${active?'rooms-playing':''}`}>
   <ArcadeHeader>
    <ArcadeAmbience onSound={setSound}/><a className="rooms-button" href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><button onClick={()=>setPanel('ranking')}>Ranking</button><button onClick={()=>setPanel('more')}>More</button>
