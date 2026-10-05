@@ -36,6 +36,18 @@ function controlsBetween(from:bigint,to:bigint,inputs:readonly TimedControl[]){
 function steer<T extends {leftDir:number;rightDir:number}>(state:T,input:TimedControl):T{
  return {...state,...(input.side===0?{leftDir:input.direction}:{rightDir:input.direction})};
 }
+/** A predicted goal freezes the ball/score, not a player's next intention.
+ * Continue only paddle presentation inside the same bounded window. The
+ * returned physics time, effects, balls and score remain at the goal fence. */
+function pointPaddles<T extends {t:bigint;left:bigint;right:bigint;leftDir:number;rightDir:number}>(source:T,end:bigint,inputs:readonly TimedControl[],speed:readonly bigint[],half:readonly bigint[],unit:bigint):T{
+ let state={...source},at=source.t;
+ const travel=(to:bigint)=>{const dt=to-at;at=to;
+  const bound=(y:bigint,side:number)=>y<half[side]?half[side]:y>576n*unit-half[side]?576n*unit-half[side]:y;
+  state={...state,left:bound(state.left+BigInt(state.leftDir)*speed[0]*dt/1_000_000n,0),right:bound(state.right+BigInt(state.rightDir)*speed[1]*dt/1_000_000n,1)};
+ };
+ for(const input of controlsBetween(at,end,inputs.filter(i=>i.at>=source.t))){travel(input.at);state=steer(state,input);}
+ travel(end);return state;
+}
 
 /** Ball and both paddles share one reconstruction. Callers must draw these
  * paddle positions, never replace them with an independent local animation. */
@@ -58,10 +70,12 @@ export function projectParticipant(source:State,target:bigint,inputs:readonly Ti
  };
  for(const input of controlsBetween(state.t,end,inputs)){
   advance(input.at);
-  if(waiting)return {state,waiting,pointBoundary};
+  if(waiting)break;
   state=steer(state,input);
  }
- advance(end);return {state,pointBoundary,waiting:waiting||target>end};
+ advance(end);
+ if(pointBoundary)state=pointPaddles(state,end,inputs,[180_000_000n,180_000_000n],[state.halfA,state.halfB],1_000_000n);
+ return {state,pointBoundary,waiting:waiting||target>end};
 }
 
 export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,inputs:readonly TimedControl[],contacts:boolean|'complete',house?:HousePrediction){
@@ -88,10 +102,12 @@ export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,i
  };
  for(const input of controlsBetween(state.t,end,inputs)){
   advance(input.at);
-  if(waiting)return {state,collisions,waiting,pointBoundary};
+  if(waiting)break;
   state=steer(state,input);
   // Curveball uses the last actual movement direction on this same timeline.
   if(input.direction)state={...state,...(input.side===0?{lastLeft:input.direction}:{lastRight:input.direction})};
  }
- advance(end);return {state,collisions,pointBoundary,waiting:waiting||target>end};
+ advance(end);
+ if(pointBoundary){const p=eventPaddles(state);state=pointPaddles(state,end,inputs,[p.speedA*1_000_000n,p.speedB*1_000_000n],[p.heightA*500_000n,p.heightB*500_000n],1_000_000_000_000n);}
+ return {state,collisions,pointBoundary,waiting:waiting||target>end};
 }

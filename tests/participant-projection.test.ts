@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {initial,SCALE} from '../shared/physics-v2';
-import {projectParticipant} from '../web/lib/participant-projection';
+import {projectParticipant,projectChaosParticipant} from '../web/lib/participant-projection';
+import {initialChaosEvents} from '../shared/physics-chaos-events';
+import {zeroHash} from 'viem';
 import {projectLive} from '../web/lib/presentation';
 import {LiveClock} from '../web/lib/live-paddle';
 const source=()=>({...initial(`0x${'ab'.repeat(32)}`),x:80n*SCALE,y:360n*SCALE,vx:-128n*SCALE,vy:64n*SCALE,left:288n*SCALE,leftDir:0});
@@ -36,4 +38,21 @@ test('a queued reversal is not applied before its engine time and projection rem
  assert.equal(projectParticipant(state,400_000n,inputs).state.left,306n*SCALE);
  const late=projectParticipant({...state,x:512n*SCALE,vx:128n*SCALE},5_000_000n,inputs);
  assert.ok(late.state.t<=600_000n);assert.equal(late.waiting,true);
+});
+
+test('a predicted point holds the ball and score while later local paddle intentions keep moving',()=>{
+ const s={...source(),x:1025n*SCALE,y:520n*SCALE,vx:192n*SCALE,vy:96n*SCALE};
+ const still=projectParticipant(s,400_000n,[]),moving=projectParticipant(s,400_000n,[{side:0,direction:1,at:100_000n},{side:0,direction:0,at:300_000n}]);
+ assert.equal(moving.pointBoundary,true);assert.equal(moving.state.left-s.left,36n*SCALE);
+ for(const key of ['x','y','vx','vy','t','scoreA','scoreB'] as const)assert.equal(moving.state[key],still.state[key]);
+ assert.equal(moving.state.leftDir,0);
+});
+
+test('Chaos point confirmation does not swallow a later reversal or fabricate a new rally',()=>{
+ const s=initialChaosEvents(zeroHash);s.balls[0]={...s.balls[0],x:1025_000_000_000_000n,y:520_000_000_000_000n,vx:192_000_000n,vy:96_000_000n};
+ const still=projectChaosParticipant(s,400_000n,[],'complete');
+ const moving=projectChaosParticipant(s,400_000n,[{side:0,direction:1,at:100_000n},{side:0,direction:-1,at:300_000n}],'complete');
+ assert.equal(moving.pointBoundary,true);assert.equal(moving.state.left-s.left,18_000_000_000_000n);
+ assert.deepEqual(moving.state.balls,still.state.balls);assert.deepEqual(moving.state.score,s.score);assert.equal(moving.state.t,still.state.t);assert.equal(moving.state.leftDir,-1);
+ assert.equal(projectChaosParticipant(s,5_000_000n,[{side:0,direction:1,at:100_000n}],'complete').state.left-s.left,90_000_000_000_000n);
 });
