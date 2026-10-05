@@ -7,9 +7,13 @@ const settle=(n:number,dt:number,speed:number)=>{
  const change=n*(1-Math.exp(-dt/100));
  return n-clamp(change,-speed*dt/1000,speed*dt/1000);
 };
+export function participantContinuationTime(previous:bigint,elapsedMs:number,ceiling?:bigint){
+ const next=previous+BigInt(Math.floor(clamp(elapsedMs,0,50)*1000));
+ return ceiling!==undefined&&next>ceiling?ceiling:next;
+}
 
 /** Reconcile the picture, never the authoritative state or input timestamps.
- * On a new receipt compare both reconstructions at the SAME display time. Only
+ * On a new receipt compare both reconstructions for the SAME wall frame. Only
  * their error is blended; ordinary motion and new direction changes keep their
  * full speed. Ball corrections vanish at paddle planes, where the ball shares
  * that paddle's correction. A visible contact therefore uses the same geometry
@@ -38,7 +42,10 @@ export class ParticipantReconciliation {
    // Preserve paddle-plane contacts (x=40/984), including real misses. Blend
    // continuously back to the ball's own correction away from the paddles.
    const left=clamp((168-ball.x)/128,0,1),right=clamp((ball.x-856)/128,0,1),free=1-left-right;
-   return {...ball,x:ball.x+error.x*free,
+   const x=ball.x+error.x*free;
+   // Even a large correction must not move a real bounce through its paddle,
+   // or turn an already missed plane into a second chance.
+   return {...ball,x:ball.x<40?Math.min(40,x):ball.x>984?Math.max(984,x):clamp(x,40,984),
     y:clamp(ball.y+error.y*free+this.paddles[0]*left+this.paddles[1]*right,6,570)};
   });
   for(const id of this.balls.keys())if(!current.balls.some(b=>b.id===id))this.balls.delete(id);

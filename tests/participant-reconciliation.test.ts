@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ParticipantReconciliation,type ParticipantPose} from '../web/lib/participant-reconciliation';
+import {ParticipantReconciliation,participantContinuationTime,type ParticipantPose} from '../web/lib/participant-reconciliation';
 import {projectChaosParticipant} from '../web/lib/participant-projection';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
@@ -76,4 +76,25 @@ test('Chaos match720 pending -> pre-ack snapshot -> accepted input stays continu
  assert(rendered.paddles[0]<before.paddles[0],'receipt cannot reverse a held up key');
  assert(Math.abs(rendered.paddles[0]-before.paddles[0])<4);
  assert.equal(receipt.left,base.left,'presentation never rewrites canonical physics');
+});
+
+test('match727 clock reanchors cannot teleport an otherwise correctly predicted bot',()=>{
+ const priorTime=17_313_000n,dt=16.9,receivedTime=17_370_000n;
+ const next=participantContinuationTime(priorTime,dt);
+ assert.equal(next,17_329_900n);
+ const view=new ParticipantReconciliation();view.sample(pose(288,254),undefined,dt);
+ const continued=pose(288,254-180*dt/1000),received=pose(288,254-180*Number(receivedTime-priorTime)/1e6);
+ const picture=view.sample(received,continued,dt);
+ assert(Math.abs(picture.paddles[1]-254)<5.1,'normal movement plus bounded correction, not a 10px clock jump');
+ assert.equal(participantContinuationTime(0n,16,0n),0n,'countdown cannot pre-simulate movement');
+ assert.equal(participantContinuationTime(400_000n,1000,430_000n),430_000n,'pause credit remains a hard ceiling');
+});
+
+test('large ball correction cannot cross the paddle plane in either direction',()=>{
+ for(const x of [38,42,982,986])for(const error of [-400,400]){
+  const view=new ParticipantReconciliation(),sample=view.sample(pose(288,288,x),pose(288,288,x+error),16);
+  if(x<40)assert(sample.balls[0].x<=40);
+  else if(x>984)assert(sample.balls[0].x>=984);
+  else assert(sample.balls[0].x>=40&&sample.balls[0].x<=984);
+ }
 });

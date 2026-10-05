@@ -15,7 +15,7 @@ import {courtSprites} from '../lib/court-sprites';
 import {chaosContactResolution} from '../../shared/chaos-rules';
 import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
 import {projectParticipant,projectChaosParticipant,type TimedControl,type HousePrediction} from '../lib/participant-projection';
-import {ParticipantReconciliation,type ParticipantPose} from '../lib/participant-reconciliation';
+import {ParticipantReconciliation,participantContinuationTime,type ParticipantPose} from '../lib/participant-reconciliation';
 function participantPose(state:State,chaos?:ChaosDecoded['physics']):ParticipantPose{
  const paddles=chaos?eventPaddles(chaos):null;
  return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
@@ -155,8 +155,11 @@ export function Court({
         const controls=p.coherentControls!.map(c=>`${c.side}:${c.direction}:${c.at}`).join(',');
         const previous=previousParticipant;
         let before:ParticipantPose|undefined;
-        if(previous?.state&&(previous.state!==p.state||previous.chaos!==p.chaos||previousControls!==controls)){
-          const oldTarget=target<previousTarget?previousTarget:target;
+        if(previous?.state&&(previous.state!==p.state||previous.chaos!==p.chaos||previous.clock!==p.clock||previous.progressionLimit!==p.progressionLimit||previousControls!==controls)){
+          // A fresh sample can reanchor the engine clock tens of milliseconds
+          // ahead. Continue the old picture by one real frame, not by that new
+          // clock offset, or perfectly predicted bots still jump on receipt.
+          const oldTarget=participantContinuationTime(previousTarget,dt,previous.progressionLimit);
           if(previous.chaos){
             const old=projectChaosParticipant(previous.chaos.physics,oldTarget,previous.coherentControls!,chaosContactResolution(previous.rulesVersion??10),previous.housePrediction);
             before=participantPose(chaosLegacy(old.state,previous.state.finished),old.state);
