@@ -1,0 +1,592 @@
+{
+  "productCommit": "39a5b72",
+  "image": "sha256:e032424d0862bb49cb633c480acc22180760441a810d528ece2cd8648832e1b6",
+  "targetedTests": 111,
+  "baselineReaudit": {
+    "passed": false,
+    "paddleJumps": 51,
+    "maxPaddleJumpPx": 64.584,
+    "note": "Original harness did not gate paddle discontinuities; original report preserved."
+  },
+  "runs": [
+    {
+      "run": "chaos-rollback-baseline-20261005",
+      "reportSha256": "7c3bdf7edcee5c04db9c889bd557250143d28d8b1c8e456e860ddbdb85626981",
+      "startedAt": "2026-10-05T05:12:25.377Z",
+      "finishedAt": "2026-10-05T05:13:28.975Z",
+      "originalHarnessPassed": true,
+      "reconciliationReauditPassed": false,
+      "ref": {
+        "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+        "epoch": "6",
+        "id": "720"
+      },
+      "mode": 1,
+      "virtualPrf": true,
+      "reusedSession": true,
+      "httpOnly": true,
+      "injectedNetworkDelayEachWayMs": 40,
+      "admissionMs": 10738,
+      "checks": [
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "input": {
+        "samples": 20,
+        "p95Ms": 18.799999952316284
+      },
+      "confirmedInput": {
+        "samples": 39,
+        "p95Ms": 220.171630859375,
+        "maxMs": 469.227294921875,
+        "mismatches": []
+      },
+      "sync": {
+        "frames": 1846,
+        "snapshots": 153,
+        "startupFillMs": 0,
+        "p95FrameMs": 17.200000047683716,
+        "maxHoldMs": 113.69999992847443,
+        "contractPauseMs": 0,
+        "intermissionMs": 0,
+        "holds": [
+          {
+            "at": 17961.299999952316,
+            "ms": 113.69999992847443,
+            "sourceT": 440,
+            "rally": "1"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 350,
+        "engineLagP95Ms": 20,
+        "snapshotJumps": []
+      },
+      "spectatorSync": {
+        "frames": 1904,
+        "snapshots": 160,
+        "startupFillMs": 666.2000000476837,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 16.59999990463257,
+        "contractPauseMs": 0,
+        "intermissionMs": 0,
+        "holds": [],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 333.2000000476837,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": []
+      },
+      "liveness": {
+        "heartbeats": 97,
+        "resumes": 0
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "result": {
+        "hash": "0xf4404eea660f5b1a1ab43bd99411fd7738908a95b0f5341e1197a8b864438f85",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 3,
+        "elapsedUs": "26170000",
+        "finality": false
+      }
+    },
+    {
+      "run": "chaos-rollback-fixed-20261005",
+      "reportSha256": "9d6b3477ce90342d4102fd0acd52018a804d0bc54ddcc4f87521e5f501e06d26",
+      "startedAt": "2026-10-05T05:38:17.654Z",
+      "finishedAt": "2026-10-05T05:39:17.870Z",
+      "passed": false,
+      "error": "Visible reconciliation discontinuities remain",
+      "ref": {
+        "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+        "epoch": "6",
+        "id": "727"
+      },
+      "mode": 1,
+      "virtualPrf": true,
+      "reusedSession": true,
+      "httpOnly": true,
+      "injectedNetworkDelayEachWayMs": 40,
+      "admissionMs": 7000,
+      "checks": [
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "input": {
+        "samples": 20,
+        "p95Ms": 13.899999976158142
+      },
+      "confirmedInput": {
+        "samples": 40,
+        "p95Ms": 210.705078125,
+        "maxMs": 291.302978515625,
+        "mismatches": []
+      },
+      "sync": {
+        "frames": 1860,
+        "snapshots": 163,
+        "startupFillMs": 0,
+        "p95FrameMs": 17.200000047683716,
+        "maxHoldMs": 83,
+        "contractPauseMs": 0,
+        "intermissionMs": 0,
+        "holds": [],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 334,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": [],
+        "paddleSamples": 3720,
+        "paddleJumps": [
+          {
+            "at": 13608.5,
+            "side": 1,
+            "dt": 18.299999952316284,
+            "d": 9.180000000000007,
+            "limit": 7.489999985694885,
+            "from": 288,
+            "to": 297.18,
+            "observedAt": 1791178712772
+          },
+          {
+            "at": 31339.899999976158,
+            "side": 1,
+            "dt": 16.899999976158142,
+            "d": 10.280909656011744,
+            "limit": 7.069999992847443,
+            "from": 253.99595320657843,
+            "to": 243.7150435505667,
+            "observedAt": 1791178730505
+          }
+        ]
+      },
+      "spectatorSync": {
+        "frames": 1863,
+        "snapshots": 170,
+        "startupFillMs": 733.3999999761581,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 182.29999995231628,
+        "contractPauseMs": 0,
+        "intermissionMs": 0,
+        "holds": [
+          {
+            "at": 14323.100000023842,
+            "ms": 132.60000002384186,
+            "sourceT": 7900,
+            "rally": "2"
+          },
+          {
+            "at": 24140.100000023842,
+            "ms": 182.29999995231628,
+            "sourceT": 17560,
+            "rally": "4"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 267,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": [],
+        "paddleSamples": 3726,
+        "paddleJumps": []
+      },
+      "liveness": {
+        "heartbeats": 97,
+        "resumes": 1
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": false,
+        "spectator": true
+      },
+      "result": {
+        "hash": "0xdbc47f61a7a3823498901fdb236e7d8535e7ebb9ec96b06a862622ee69736138",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 4,
+        "elapsedUs": "25620000",
+        "finality": false
+      },
+      "video": {
+        "file": "artifacts/qualification/catalogue-chaos-rollback-fixed-20261005/video/page@610f679b73c1ed807607ae7f9cbfc73e.webm",
+        "bytes": 5503447,
+        "sha256": "e447e354a03d60732cdd59a5f9585c2228360e941df141b612ca3f07b078bc9a"
+      }
+    },
+    {
+      "run": "chaos-rollback-clock-20261005",
+      "reportSha256": "1d0d528bf7d781fa0395b552dd0f37ef41b0e62d4395d71b4053a8aae86ccc37",
+      "startedAt": "2026-10-05T05:47:50.418Z",
+      "finishedAt": "2026-10-05T05:50:55.513Z",
+      "passed": false,
+      "error": "page.waitForURL: Timeout 179659ms exceeded.",
+      "mode": 1,
+      "virtualPrf": true,
+      "reusedSession": true,
+      "httpOnly": true,
+      "injectedNetworkDelayEachWayMs": 40,
+      "checks": [],
+      "video": {
+        "file": "artifacts/qualification/catalogue-chaos-rollback-clock-20261005/video/page@064f371a40f1a4b2bd9caa5e95d2265c.webm",
+        "bytes": 9677104,
+        "sha256": "4601aae53a95332ab1fb2f85854def7433e65cb84f353418f32d048f6423ae89"
+      }
+    },
+    {
+      "run": "chaos-rollback-clock-fresh-20261005",
+      "reportSha256": "b3afa5d4075b6639a4c6e044338cc9bf363dd2bb168c222fbf0f49c405717e6f",
+      "startedAt": "2026-10-05T05:52:05.081Z",
+      "finishedAt": "2026-10-05T05:53:11.392Z",
+      "passed": true,
+      "ref": {
+        "app": "0xE54Eb61B664Ced190B4663e3A3e5C11D7F12b748",
+        "epoch": "6",
+        "id": "731"
+      },
+      "mode": 1,
+      "virtualPrf": true,
+      "reusedSession": false,
+      "httpOnly": true,
+      "injectedNetworkDelayEachWayMs": 40,
+      "admissionMs": 13613,
+      "checks": [
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "input": {
+        "samples": 20,
+        "p95Ms": 15.200000047683716
+      },
+      "confirmedInput": {
+        "samples": 39,
+        "p95Ms": 187.751708984375,
+        "maxMs": 286.304443359375,
+        "mismatches": []
+      },
+      "sync": {
+        "frames": 1894,
+        "snapshots": 162,
+        "startupFillMs": 0,
+        "p95FrameMs": 17.199999928474426,
+        "maxHoldMs": 100.39999997615814,
+        "contractPauseMs": 0,
+        "intermissionMs": 0,
+        "holds": [
+          {
+            "at": 44579.39999997616,
+            "ms": 100.39999997615814,
+            "sourceT": 23450,
+            "rally": "8"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 333.5,
+        "engineLagP95Ms": 120,
+        "snapshotJumps": [],
+        "paddleSamples": 3788,
+        "paddleJumps": []
+      },
+      "spectatorSync": {
+        "frames": 1897,
+        "snapshots": 176,
+        "startupFillMs": 700.2000000476837,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 166,
+        "contractPauseMs": 0,
+        "intermissionMs": 0,
+        "holds": [
+          {
+            "at": 17527.299999952316,
+            "ms": 116.39999997615814,
+            "sourceT": 10590,
+            "rally": "3"
+          },
+          {
+            "at": 25543.899999976158,
+            "ms": 166,
+            "sourceT": 18520,
+            "rally": "6"
+          },
+          {
+            "at": 30960.399999976158,
+            "ms": 116,
+            "sourceT": 23650,
+            "rally": "8"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 283.5,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": [],
+        "paddleSamples": 3794,
+        "paddleJumps": []
+      },
+      "liveness": {
+        "heartbeats": 101,
+        "resumes": 0
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "result": {
+        "hash": "0xaf56aa45e3335f16e6b2d1a6302748de88031303a0bd967270c6de9cf341ff3e",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 5,
+        "elapsedUs": "26920000",
+        "finality": false
+      },
+      "video": {
+        "file": "artifacts/qualification/catalogue-chaos-rollback-clock-fresh-20261005/video/page@8d540abd9c40bed73f9df5d56325cbe3.webm",
+        "bytes": 5577498,
+        "sha256": "1ddde868a6862ce1f113dbb5bbc117b2e83e72641170bddc1bed12ed54683a84"
+      }
+    },
+    {
+      "run": "chaos-rollback-edge-20261005",
+      "reportSha256": "5bbccd6cd8cf50be81dd14f0a9476837d561c10f67277892f2a0f59e2cce7d45",
+      "startedAt": "2026-10-05T05:54:16.535Z",
+      "finishedAt": "2026-10-05T05:55:43.320Z",
+      "passed": true,
+      "ref": {
+        "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+        "epoch": "6",
+        "id": "733"
+      },
+      "mode": 1,
+      "virtualPrf": true,
+      "reusedSession": false,
+      "httpOnly": false,
+      "injectedNetworkDelayEachWayMs": 0,
+      "admissionMs": 11062,
+      "checks": [
+        "F5 reused the Mera grant",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 100 public command submissions and local input latency"
+      ],
+      "input": {
+        "samples": 75,
+        "p95Ms": 28.399999976158142
+      },
+      "confirmedInput": {
+        "samples": 220,
+        "p95Ms": 18.31298828125,
+        "maxMs": 20.751708984375,
+        "mismatches": []
+      },
+      "sync": {
+        "frames": 2038,
+        "snapshots": 280,
+        "startupFillMs": 0,
+        "p95FrameMs": 17.200000047683716,
+        "maxHoldMs": 133.39999997615814,
+        "contractPauseMs": 3148.899999976158,
+        "intermissionMs": 0,
+        "holds": [
+          {
+            "at": 25162.399999976158,
+            "ms": 133.39999997615814,
+            "sourceT": 25240,
+            "rally": "7"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 216.80000007152557,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": [],
+        "paddleSamples": 5604,
+        "paddleJumps": []
+      },
+      "spectatorSync": {
+        "frames": 2714,
+        "snapshots": 382,
+        "startupFillMs": 966.6999999284744,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 166.5,
+        "contractPauseMs": 3918,
+        "intermissionMs": 0,
+        "holds": [
+          {
+            "at": 33656.5,
+            "ms": 133.39999997615814,
+            "sourceT": 22740,
+            "rally": "6"
+          },
+          {
+            "at": 34639.699999928474,
+            "ms": 166.5,
+            "sourceT": 23460,
+            "rally": "6"
+          },
+          {
+            "at": 36672.699999928474,
+            "ms": 150.10000002384186,
+            "sourceT": 25440,
+            "rally": "7"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 216.89999997615814,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": [],
+        "paddleSamples": 6928,
+        "paddleJumps": []
+      },
+      "liveness": {
+        "heartbeats": 120,
+        "resumes": 1
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "result": {
+        "hash": "0x312106bcd314937b5c92a1ed99a2cbe62793813df73ed84ae44c9d75cd624acd",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "35052971",
+        "finality": false
+      },
+      "video": {
+        "file": "artifacts/qualification/catalogue-chaos-rollback-edge-20261005/video/page@4c4f40a8849ea753aee262c052e38fc5.webm",
+        "bytes": 6812576,
+        "sha256": "a9896fefe3ad90d8f9984fdb67660da3be8d6b99c6b658dfbbdc75631c4a6f55"
+      }
+    },
+    {
+      "run": "classic-rollback-20261005",
+      "reportSha256": "e9d4b0fabadf659df3e89ff5abbb6e6d601f9551c6df8ef33c424f860f84fdfa",
+      "startedAt": "2026-10-05T05:57:44.649Z",
+      "finishedAt": "2026-10-05T05:58:36.792Z",
+      "passed": true,
+      "ref": {
+        "app": "0xE54Eb61B664Ced190B4663e3A3e5C11D7F12b748",
+        "epoch": "6",
+        "id": "736"
+      },
+      "mode": 0,
+      "virtualPrf": true,
+      "reusedSession": true,
+      "httpOnly": true,
+      "injectedNetworkDelayEachWayMs": 40,
+      "admissionMs": 8091,
+      "checks": [
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "input": {
+        "samples": 20,
+        "p95Ms": 16.300000071525574
+      },
+      "confirmedInput": {
+        "samples": 40,
+        "p95Ms": 201.19482421875,
+        "maxMs": 289.116943359375,
+        "mismatches": []
+      },
+      "sync": {
+        "frames": 1874,
+        "snapshots": 169,
+        "startupFillMs": 0,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 183,
+        "contractPauseMs": 0,
+        "intermissionMs": 0,
+        "holds": [
+          {
+            "at": 40323.5,
+            "ms": 183,
+            "sourceT": 25260,
+            "rally": "1:5"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 316.60000002384186,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": [],
+        "paddleSamples": 3748,
+        "paddleJumps": []
+      },
+      "spectatorSync": {
+        "frames": 1883,
+        "snapshots": 173,
+        "startupFillMs": 699.3999999761581,
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 167.10000002384186,
+        "contractPauseMs": 0,
+        "intermissionMs": 0,
+        "holds": [
+          {
+            "at": 17155.899999976158,
+            "ms": 149.70000004768372,
+            "sourceT": 10610,
+            "rally": "0:2"
+          },
+          {
+            "at": 32306.200000047684,
+            "ms": 167.10000002384186,
+            "sourceT": 25470,
+            "rally": "1:5"
+          }
+        ],
+        "frameGaps": [],
+        "snapshotGapP95Ms": 283,
+        "engineLagP95Ms": 0,
+        "snapshotJumps": [],
+        "paddleSamples": 3766,
+        "paddleJumps": []
+      },
+      "liveness": {
+        "heartbeats": 104,
+        "resumes": 0
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "result": {
+        "hash": "0xd88609a1118036f32cc40f9cdb8059a89214aa7e18b031a040e34178d75d447a",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 5,
+        "elapsedUs": "26830000",
+        "finality": false
+      },
+      "video": {
+        "file": "artifacts/qualification/catalogue-classic-rollback-20261005/video/page@21ba3f989d12e72c4aa14fa172c74d7e.webm",
+        "bytes": 4267873,
+        "sha256": "89bdb9464f7975cd82c48da9e681980904c8e3b8e762799e4af8dd33203aeffd"
+      }
+    }
+  ],
+  "limits": [
+    "Virtual PRF, not physical passkey qualification.",
+    "The restored expired virtual authenticator could not supply PRF; that attempt failed before admission.",
+    "Fresh-session and slowed-HTTP admission are not certified below eight seconds.",
+    "Paddle gate: physical speed plus 120px/s reconciliation plus two pixels. Ball jump gate: 30px at a same-rally snapshot boundary; smaller bounded corrections may remain on delayed links.",
+    "No unchanged 24-hour qualification."
+  ],
+  "automation": "paused"
+}
