@@ -59,6 +59,17 @@ test('an already missed ball never inherits a later remote-paddle correction whi
  }
 });
 
+test('a ball far above a paddle does not inherit its correction before reaching the plane',()=>{
+ for(const side of [0,1] as const){
+  const view=new ParticipantReconciliation(),current=pose(),previous=pose();
+  current.paddles[side]=244.8;previous.paddles[side]=298.425;
+  current.balls[0]={id:1,x:side===1?955.410944:68.589056,y:66.294528,continuity:'5'};
+  previous.balls[0]={...current.balls[0]};
+  const shown=view.sample(current,previous,16.4);
+  assert.equal(shown.balls[0].y,current.balls[0].y,'The old horizontal-only blend added nearly 40 pixels');
+ }
+});
+
 test('ordinary motion, intent changes and independent matches acquire no interpolation delay',()=>{
  const a=new ParticipantReconciliation(),b=new ParticipantReconciliation();
  for(let i=0;i<20;i++){

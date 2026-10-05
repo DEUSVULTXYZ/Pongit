@@ -46,10 +46,20 @@ export class ParticipantReconciliation {
    // the stationary ball vertically (observed PvP 26480ms: +99px, then -54px).
    const left=ball.x<40?0:clamp((168-ball.x)/128,0,1),right=ball.x>984?0:clamp((ball.x-856)/128,0,1),free=1-left-right;
    const x=ball.x+error.x*free;
+   const ownY=ball.y+error.y;
+   const contact=(side:0|1)=>{
+    const distance=ball.y-current.paddles[side],edge=current.halves[side]+6;
+    if(Math.abs(distance)<=edge)return this.paddles[side]-error.y;
+    // A distant miss has no contact with this paddle. Its correction cannot
+    // drag the ball vertically (+40px in contpvp8 while 178px above it).
+    // Only move a miss if the drawn paddle would otherwise cover its path.
+    const boundary=current.paddles[side]+this.paddles[side]+Math.sign(distance)*(edge+.001);
+    return distance<0?Math.min(0,boundary-ownY):Math.max(0,boundary-ownY);
+   };
    // Even a large correction must not move a real bounce through its paddle,
    // or turn an already missed plane into a second chance.
    return {...ball,x:ball.x<40?Math.min(40,x):ball.x>984?Math.max(984,x):clamp(x,40,984),
-    y:clamp(ball.y+error.y*free+this.paddles[0]*left+this.paddles[1]*right,6,570)};
+    y:clamp(ownY+contact(0)*left+contact(1)*right,6,570)};
   });
   for(const id of this.balls.keys())if(!current.balls.some(b=>b.id===id))this.balls.delete(id);
   return {paddles:current.paddles.map((y,i)=>y+this.paddles[i]) as [number,number],halves:current.halves,balls};
