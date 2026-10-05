@@ -15,6 +15,15 @@ import {courtSprites} from '../lib/court-sprites';
 import {chaosContactResolution} from '../../shared/chaos-rules';
 import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
 import {projectParticipant,projectChaosParticipant,type TimedControl,type HousePrediction} from '../lib/participant-projection';
+import {ParticipantReconciliation,type ParticipantPose} from '../lib/participant-reconciliation';
+function participantPose(state:State,chaos?:ChaosDecoded['physics']):ParticipantPose{
+ const paddles=chaos?eventPaddles(chaos):null;
+ return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
+  halves:paddles?[Number(paddles.heightA)/2e6+(paddles.splitA?8:0),Number(paddles.heightB)/2e6+(paddles.splitB?8:0)]:[Number(state.halfA)/1e6,Number(state.halfB)/1e6],
+  balls:chaos?chaos.balls.flatMap((b,i)=>b.alive?[{id:i+1,x:Number(b.x)/1e12,y:Number(b.y)/1e12,continuity:`${chaos.score.rally}:${b.trailRevision}`}]:[]):
+   [{id:1,x:Number(state.x)/1e6,y:Number(state.y)/1e6,continuity:`${state.scoreA}:${state.scoreB}`}],
+ };
+}
 export type CourtPlayback={matchId:string;scoreA:number;scoreB:number;gameMs:number;finished:boolean;effects:ChaosEffectState[]};
 type Props = {
   state: State | null;
@@ -101,10 +110,12 @@ export function Court({
     const livePaddle = new LivePaddle(), liveClock = new LiveClock();
     const playout=new SpectatorPlayout(),playerPlayout=new SpectatorPlayout(true);
     const spectatorChaos=new SpectatorChaosProjection();
+    const reconciliation=new ParticipantReconciliation();
+    let previousParticipant:typeof current.current|undefined,previousControls='',previousTarget=0n;
     function draw(now: number) {
       let p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
-      if (identity !== context) { played="";playout.reset();playerPlayout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
+      if (identity !== context) { reconciliation.reset();previousParticipant=undefined;played="";playout.reset();playerPlayout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const coherent=p.coherentControls!==undefined&&p.side>=0&&!p.replay;
       const buffered=(p.bufferedSpectator||p.liveEngine)&&!coherent&&!p.replay&&!!p.state;
       const timeline=p.side>=0?playerPlayout:playout;
@@ -139,6 +150,22 @@ export function Court({
       }
       let yA = s ? Number(s.left) / Number(SCALE) : 288,
         yB = s ? Number(s.right) / Number(SCALE) : 288;
+      let participantPicture:ParticipantPose|undefined;
+      if(coherent&&s){
+        const controls=p.coherentControls!.map(c=>`${c.side}:${c.direction}:${c.at}`).join(',');
+        const previous=previousParticipant;
+        let before:ParticipantPose|undefined;
+        if(previous?.state&&(previous.state!==p.state||previous.chaos!==p.chaos||previousControls!==controls)){
+          const oldTarget=target<previousTarget?previousTarget:target;
+          if(previous.chaos){
+            const old=projectChaosParticipant(previous.chaos.physics,oldTarget,previous.coherentControls!,chaosContactResolution(previous.rulesVersion??10),previous.housePrediction);
+            before=participantPose(chaosLegacy(old.state,previous.state.finished),old.state);
+          }else before=participantPose(projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction).state);
+        }
+        participantPicture=reconciliation.sample(participantPose(s,cp?.state),before,dt);
+        [yA,yB]=participantPicture.paddles;
+        previousParticipant=p;previousControls=controls;previousTarget=target;
+      }else{reconciliation.reset();previousParticipant=undefined;}
       if (p.state && !coherent && !cp && !p.replay && target > p.state.t) {
         // Paddles keep moving along their confirmed directions even while the
         // ball waits at an unresolved impact; their bounds are independent.
@@ -190,6 +217,7 @@ export function Court({
       if(el.dataset.rally!==renderedRally)el.dataset.rally=renderedRally;
       if(cp&&p.chaos){
         const f=eventCanvas(cp.state,arcadeAudio.settings.background,reducedMotion.matches);
+        if(participantPicture)for(const ball of f.balls){const picture=participantPicture.balls.find(b=>b.id===ball.id);if(picture){ball.x=picture.x;ball.y=picture.y;}}
         if(!p.replay)for(const ball of f.balls)Object.assign(ball,visibleBall(ball.x,ball.y));
         f.paddles[0].y=yA;f.paddles[1].y=yB;
         const epoch=p.chaos.request>>64n&0xffffffffn;
@@ -219,7 +247,7 @@ export function Court({
         drawChaosPaddles(ctx,f);drawChaosBalls(ctx,f);
       }
       if (s&&!cp) {
-        const points = trail.sample({ x: Number(s.x) / 1e6, y: Number(s.y) / 1e6,
+        const points = trail.sample({ x: participantPicture?.balls[0]?.x??Number(s.x) / 1e6, y: participantPicture?.balls[0]?.y??Number(s.y) / 1e6,
           at: now, clock: s.t, rally: `${p.matchId}:${s.scoreA}:${s.scoreB}` },
           !reducedMotion.matches && !s.finished && !s.awaitingServe);
         ctx.save();
@@ -248,7 +276,7 @@ export function Court({
       if (s&&!cp) {
         // A predicted goal remains unconfirmed. Keep its last visible edge
         // position instead of leaving the spectator with an empty court.
-        const ball=playback?visibleBall(Number(s.x)/1e6,Number(s.y)/1e6):{x:Number(s.x)/1e6,y:Number(s.y)/1e6};
+        const ball=participantPicture?.balls[0]??(playback?visibleBall(Number(s.x)/1e6,Number(s.y)/1e6):{x:Number(s.x)/1e6,y:Number(s.y)/1e6});
         sprites.ball(ball.x,ball.y);
       } else if(!s) {
         ctx.strokeStyle = "#777";
@@ -291,7 +319,7 @@ export function Court({
       }
       frame = requestAnimationFrame(draw);
     }
-    const visibility=()=>{cancelAnimationFrame(frame);playout.reset();playerPlayout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
+    const visibility=()=>{cancelAnimationFrame(frame);reconciliation.reset();previousParticipant=undefined;playout.reset();playerPlayout.reset();trail.reset();chaosTrails.forEach(t=>t.reset());if(!document.hidden){last=lastDraw=performance.now();count=0;previousSound=null;seenEffects=new Set(current.current.chaos?.physics.effects.map(e=>e.serial)||[]);frame=requestAnimationFrame(draw);}};
     document.addEventListener("visibilitychange",visibility);
     if(!document.hidden)frame = requestAnimationFrame(draw);
     return () => {cancelAnimationFrame(frame);document.removeEventListener("visibilitychange",visibility);};

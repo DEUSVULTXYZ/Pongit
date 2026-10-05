@@ -1,4 +1,5 @@
 import type {Page} from '@playwright/test';
+import {eventPaddles} from '../web/lib/chaos-presentation';
 
 /** Same-host epoch timestamps include the browser's queued intent before send.
  * Receipt transport latency alone cannot qualify input-to-confirmation latency. */
@@ -20,13 +21,15 @@ export function confirmedInputMetrics(intents:{at:number;direction:number}[],rec
 /** Test-only instrumentation. Record public court state, never wallet props. */
 export async function installSyncProbe(page:Page){
  await page.addInitScript(()=>{
-  const data={frames:[] as any[],snapshots:[] as any[]};
+  const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[]};
   (window as any).__syncProbe=data;
   let observed=-1,source:any;
   const fill=CanvasRenderingContext2D.prototype.fillRect;
   CanvasRenderingContext2D.prototype.fillRect=function(x,y,w,h){
    fill.call(this,x,y,w,h);
-   if(w!==12||h!==12||this.fillStyle!=='#f3fcff'||!this.canvas.closest('.pool-canvas-slot,.rooms-canvas'))return;
+   const paddle=w===12&&h>40&&(x===22||x===990);
+   const ball=w===12&&h===12&&this.fillStyle==='#f3fcff';
+   if((!paddle&&!ball)||!this.canvas.closest('.pool-canvas-slot,.rooms-canvas'))return;
    let fiber=(this.canvas as any)[Object.keys(this.canvas).find(k=>k.startsWith('__reactFiber$'))??''];
    while(fiber&&!fiber.memoizedProps?.matchId)fiber=fiber.return;
    // React may retain the previous committed tree as alternate.
@@ -36,8 +39,14 @@ export async function installSyncProbe(page:Page){
     observed=props.observedAt;source=props;
     if(data.snapshots.length<20000)data.snapshots.push(JSON.parse(JSON.stringify({at:performance.now(),
      observedAt:props.observedAt,clock:props.clock,state:props.state,chaos:props.chaos,
-     direction:props.direction,side:props.side,controllable:props.controllable,pending:props.pending,pause:props.housePrediction?.pause},
+     direction:props.direction,side:props.side,controllable:props.controllable,pending:props.pending,pause:props.housePrediction?.pause,
+     housePrediction:props.housePrediction,coherentControls:props.coherentControls,progressionLimit:props.progressionLimit},
      (_,v)=>typeof v==='bigint'?v.toString():v)));
+   }
+   if(paddle){
+    if(data.paddles.length<80000)data.paddles.push({at:performance.now(),side:x===22?0:1,y:y+h/2,height:h,
+     rally:this.canvas.dataset.rally,finished:props?.state?.finished,observedAt:observed});
+    return;
    }
    if(data.frames.length<40000)data.frames.push({at:performance.now(),x:x+6,y:y+6,
     sourceT:Number(source?.state?.t??0)/1000,clock:Number(source?.clock??0)/1000,
@@ -47,7 +56,7 @@ export async function installSyncProbe(page:Page){
  });
 }
 
-export function syncMetrics(data:{frames:any[];snapshots:any[]}){
+export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[]}){
  const intervals:number[]=[],jumps:any[]=[],lags:number[]=[],gaps:number[]=[],holds:any[]=[],frameGaps:any[]=[];
  let hold=0,maxHold=0,contractPauseMs=0,intermissionMs=0;
  for(let i=1;i<data.frames.length;i++){
@@ -68,6 +77,21 @@ export function syncMetrics(data:{frames:any[];snapshots:any[]}){
  }
  const p95=(v:number[])=>v.sort((a,b)=>a-b)[Math.floor((v.length-1)*.95)];
  const filling=data.frames.filter(f=>f.sourceT>0&&f.buffering);
+ const paddleJumps:any[]=[],last=new Map<number,any>();
+ const byObservation=new Map(data.snapshots.map(s=>[s.observedAt,s]));
+ for(const b of data.paddles??[]){
+  const a=last.get(b.side);last.set(b.side,b);if(!a||a.finished||b.finished||a.rally!==b.rally)continue;
+  const dt=b.at-a.at;if(dt<=0||dt>50)continue;
+  const snapshot=byObservation.get(b.observedAt);let speed=180;
+  if(snapshot?.chaos){
+   const raw=snapshot.chaos.physics;
+   const mods=eventPaddles({...raw,t:BigInt(raw.t)});
+   speed=Number(b.side===0?mods.speedA:mods.speedB)/1e6;
+  }
+  const d=Math.abs(b.y-a.y),limit=(speed+120)*dt/1000+2;
+  if(d>limit)paddleJumps.push({at:b.at,side:b.side,dt,d,limit,from:a.y,to:b.y,observedAt:b.observedAt});
+ }
  return{frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
-  maxHoldMs:Math.max(maxHold,hold),contractPauseMs,intermissionMs,holds,frameGaps,snapshotGapP95Ms:p95(gaps),engineLagP95Ms:p95(lags),snapshotJumps:jumps};
+  maxHoldMs:Math.max(maxHold,hold),contractPauseMs,intermissionMs,holds,frameGaps,snapshotGapP95Ms:p95(gaps),engineLagP95Ms:p95(lags),snapshotJumps:jumps,
+  paddleSamples:data.paddles?.length??0,paddleJumps};
 }

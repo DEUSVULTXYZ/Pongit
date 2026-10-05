@@ -31,7 +31,7 @@ const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
 assert(Number.isInteger(initialIdleMs)&&initialIdleMs>=0&&initialIdleMs<=20000);
 assert(Number.isInteger(readDelayMs)&&readDelayMs>=0&&readDelayMs<=400);
 assert(Number.isInteger(networkDelayMs)&&networkDelayMs>=0&&networkDelayMs<=200);
-assert(Number.isInteger(inputHoldMs)&&inputHoldMs>=80&&inputHoldMs<=300&&Number.isInteger(inputGapMs)&&inputGapMs>=40&&inputGapMs<=300);
+assert(Number.isInteger(inputHoldMs)&&inputHoldMs>=80&&inputHoldMs<=1500&&Number.isInteger(inputGapMs)&&inputGapMs>=40&&inputGapMs<=300);
 const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private'||publicSynchronized;
 assert(!process.env.PONG_CATALOGUE_SYNCHRONIZATION||synchronized);
 assert(publicSynchronized?!privateV3:!synchronized||privateV3,'Synchronization scope must match the actual public/private API');
@@ -326,7 +326,7 @@ try{
  // Retain every measured gate even when another assertion fails. Diagnostics
  // never turn a failed run into a pass or discard a rejected command.
  report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.confirmedInput.samples>=(cadenceProbe?20:100)&&report.confirmedInput.p95Ms<=300&&report.confirmedInput.mismatches.length===0,
-  player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0:null,
+  player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0&&report.sync.snapshotJumps.length===0&&report.sync.paddleSamples>100&&report.sync.paddleJumps.length===0:null,
   spectator:report.spectatorSync?report.spectatorSync.p95FrameMs<=20&&report.spectatorSync.maxHoldMs<=500&&report.spectatorSync.frameGaps.length===0:null};
  const requiredControls=cadenceProbe?20:100;
  assert(report.submissions.length>=requiredControls,'Insufficient command submissions');
@@ -342,6 +342,7 @@ try{
  }
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
+ if(process.env.PONG_REQUIRE_RECONCILIATION==='1')assert(report.sync?.paddleSamples>100&&report.sync.paddleJumps.length===0&&report.sync.snapshotJumps.length===0,'Visible reconciliation discontinuities remain');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;
  if(process.env.PONG_SYNC_PROBE==='1'){
