@@ -47,6 +47,17 @@ test('corrections converge; score/teleport/multiball boundaries do not drag an o
  assert.equal(view.sample(serve,undefined,16).balls[0].x,512,'removed ball has no residual');
  view.reset();assert.deepEqual(view.sample(state,undefined,16),state);
 });
+test('an already missed ball never inherits a later remote-paddle correction while awaiting its point',()=>{
+ for(const side of [0,1] as const){
+  const view=new ParticipantReconciliation(),current=pose(),previous=pose();
+  current.paddles[side]=172;previous.paddles[side]=273;
+  current.balls[0]={id:1,x:side===0?37.463:986.537,y:50.73,continuity:'10'};
+  previous.balls[0]={...current.balls[0]};
+  const shown=view.sample(current,previous,16.6);
+  assert.equal(shown.balls[0].y,50.73,'No +99px ball jump when the remote paddle is reconciled');
+  assert.equal(shown.balls[0].x,current.balls[0].x,'A missed plane stays missed');
+ }
+});
 
 test('ordinary motion, intent changes and independent matches acquire no interpolation delay',()=>{
  const a=new ParticipantReconciliation(),b=new ParticipantReconciliation();

@@ -41,7 +41,10 @@ export class ParticipantReconciliation {
    this.balls.set(ball.id,error);
    // Preserve paddle-plane contacts (x=40/984), including real misses. Blend
    // continuously back to the ball's own correction away from the paddles.
-   const left=clamp((168-ball.x)/128,0,1),right=clamp((ball.x-856)/128,0,1),free=1-left-right;
+   // Once a missed ball is outside the paddle plane it is awaiting the point,
+   // not a contact. Borrowing a newly corrected paddle's error here teleported
+   // the stationary ball vertically (observed PvP 26480ms: +99px, then -54px).
+   const left=ball.x<40?0:clamp((168-ball.x)/128,0,1),right=ball.x>984?0:clamp((ball.x-856)/128,0,1),free=1-left-right;
    const x=ball.x+error.x*free;
    // Even a large correction must not move a real bounce through its paddle,
    // or turn an already missed plane into a second chance.
