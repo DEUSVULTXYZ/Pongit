@@ -185,7 +185,7 @@ export function Court({
       }
       if(playback&&p.side<0){yA=playback.left;yB=playback.right;}
       if(playback)waiting=playback.stalled||playback.buffering;
-      const cause=presentationWait({stale:!playback&&timing.stale,point:pointBoundary,serve:!!s?.awaitingServe,projection:waiting,interrupted:!!playback?.stalled,paused:(current.current.housePrediction?.pause?.status??0)>=2});
+      const cause=presentationWait({starting:p.state?.t===0n&&p.clock===0n,stale:!playback&&timing.stale,point:pointBoundary,serve:!!s?.awaitingServe,projection:waiting,interrupted:!!playback?.stalled,paused:(current.current.housePrediction?.pause?.status??0)>=2});
       if(el.dataset.waitCause!==(cause??''))el.dataset.waitCause=cause??'';
       if(lastCause!==cause||buffered&&lastWaiting!==waiting){lastCause=cause;lastWaiting=waiting;p.onStats(0,false,waiting,cause);}
       const buffering=String(playback?.buffering??false);

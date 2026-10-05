@@ -14,3 +14,9 @@ test('a genuinely stale or interrupted point still exposes recovery',()=>{
   assert.equal(reconnectingPresentation(cause),true);
  }
 });
+test('a stationary launch clock is preparation, but a paused or advancing game retains recovery',()=>{
+ const o={stale:false,point:false,serve:false,projection:true,interrupted:true};
+ assert.equal(presentationWait({...o,starting:true}),'serve');
+ assert.equal(presentationWait({...o,starting:false}),'interrupted');
+ assert.equal(presentationWait({...o,starting:true,paused:true}),'contract-pause');
+});
