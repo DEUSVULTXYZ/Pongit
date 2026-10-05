@@ -21,6 +21,8 @@ assert.equal(process.getuid?.(),1000);
 const m=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
 assert.equal(m.production,false);assert.equal(m.rulesVersion,14);assert.equal(m.status,'sealed');
 const label=process.env.PONG_REUSABLE_ADMISSION_RUN!;assert(/^[a-z0-9-]{1,32}$/.test(label));
+const maxAssignments=Number(process.env.PONG_REUSABLE_ADMISSION_LIMIT??8);
+assert(Number.isInteger(maxAssignments)&&maxAssignments>=1&&maxAssignments<=8,'Bounded assignment count');
 const existing=(process.env.PONG_REUSABLE_ADMISSION_EXISTING??'').split(',').filter(Boolean).map(BigInt);
 const arenaCount=Number(process.env.PONG_REUSABLE_ADMISSION_COUNT??2);
 assert([1,2,3].includes(arenaCount)&&arenaCount<=m.arenas.length,'Bounded private lanes and one rotating reserve');
@@ -34,8 +36,9 @@ const configUrl=process.env.PONG_REUSABLE_ADMISSION_TARGET==='closed-production-
 const file=`artifacts/reusable-candidate/admission-${label}.json`;
 await mkdir('artifacts/reusable-candidate',{recursive:true});
 let report:any={startedAt:new Date().toISOString(),lobby:m.lobby,arenas:[],assignments:[],passed:false,
+ maxAssignments,
  scope:`${arenaCount} verified idle hosted arenas and at most eight private test assignments over 45 minutes; no production budget or continuity qualification.`};
-try{report=JSON.parse(await readFile(file,'utf8'));assert.equal(report.lobby,m.lobby);assert(!report.finishedAt,'Preserve completed fixture');}
+try{report=JSON.parse(await readFile(file,'utf8'));assert.equal(report.lobby,m.lobby);assert.equal(report.maxAssignments??8,maxAssignments,'Preserve original assignment limit');assert(!report.finishedAt,'Preserve completed fixture');}
 catch(e){if((e as any).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(report,null,2));await rename(file+'.next',file);};
 const t=await chainTools(m.prefix+':admission-test-'+label,measuredFetch('monad'));
@@ -78,7 +81,7 @@ try{
   d=await readHubDelegation(t.base,m.hub,a.app);assert.equal(d.status,1);assert.equal(String(d.epoch),row.epoch);
   row.baseBlock=String(d.baseBlock);row.expiresAt=String(d.expiresAt);await save();
  }
- while(Date.now()<deadline&&report.assignments.length<8){
+ while(Date.now()<deadline&&report.assignments.length<maxAssignments){
   let config:any;
   try{
    const response=await fetch(configUrl,{signal:AbortSignal.timeout(8000)});

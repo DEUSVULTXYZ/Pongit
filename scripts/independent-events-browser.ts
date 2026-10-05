@@ -19,7 +19,7 @@ const origin='https://pongit.xyz',out=`artifacts/independent-candidate/browser${
 assert(!process.env.PONG_BROWSER_PRIVATE_PATH||secret.includes('private-backups'));
 const assets=process.env.PONG_CATALOGUE_ASSET_ORIGIN;
 assert(!assets||publicRelease&&/^http:\/\/127\.0\.0\.1:\d+$/.test(assets));
-const manifest=publicIndependentManifest(JSON.parse(await readFile('deployments/independent.json','utf8')));
+const manifest=publicIndependentManifest(JSON.parse(await readFile(process.env.PONG_HUMAN_BROWSER_MANIFEST??'deployments/independent.json','utf8')));
 assert([12,13,14].includes(manifest.rulesVersion!));const rules=independentRules(manifest);
 const financialBase=createPublicClient({chain:monadTestnet,transport:http('https://testnet-rpc.monad.xyz',{timeout:10000,retryCount:0})});
 const nodes=new Set(manifest.arenas.map(a=>new URL(a.node!).origin));

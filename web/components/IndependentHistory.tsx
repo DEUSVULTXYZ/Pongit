@@ -15,7 +15,7 @@ export function IndependentHistory({player,matchId,rulesVersion=4,lobby}:{player
  const [replayRules,setReplayRules]=useState(rulesVersion);
  async function load(id:string,scope=lobby,version=rulesVersion){
   setReplayRules(version);
-  const current=++request.current;setStage('loading');setMessage('Loading replay');setPlaying(false);setFrames([]);setSelected(id);let after='-1';const loaded:EngineState[]=[];
+  const current=++request.current;setStage('loading');setMessage('Loading replay');setPlaying(false);setFrames([]);setSelected(`${scope??'current'}:${id}`);let after='-1';const loaded:EngineState[]=[];
   try{for(;;){const r=await independentApi(`replay/${id}?after=${after}${scope?'&lobby='+scope:''}`);
    if(current!==request.current)return;
    if(r.availability!=='available'){setStage('unavailable');setMessage(r.availability==='pruned'?'Replay retired. The result and payments remain available.':r.availability==='reorganizing'?'Publication is being reconciled.':'Replay frames were not recorded for this match.');return;}

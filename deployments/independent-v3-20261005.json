@@ -1,39 +1,23 @@
 {
-  "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
-  "family": "0x9160FaF0673363998Ffc56fdbBF1486fefFc1E6B",
-  "lobby": "0x527cCB705048820694A4Ac209f83528DB68FFf3F",
-  "ratings": "0x02C58A7771DFd6237B7E80750a1f2f9aF141Ad48",
-  "settlement": "0xB7e46A356C73DBe0FfA87A52E56a4306C5db23Bf",
-  "vault": "0x0c097be115597c9335f29f69A9910C5D114Eb64F",
-  "market": "0xD29dFc7969632cF8F5c806F306AFf7c162AD0C02",
-  "profiles": "0xc43A936339F5b09F635aba094b3137F80De60f63",
-  "privateData": "0xB6ce09f93B84250c1D487a5ae7232fd1dFecF4b0",
-  "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
-  "resultVerifier": "0x80E3d43484fc18dB4e09d0AEb27A0E704C336265",
-  "admissionSigner": "0x1614BA9607f48b4B570fe56a94e054295De34c2a",
+  "prefix": "public-human-v3-20261005",
+  "purpose": "Public human hub v3 continuation",
+  "production": true,
   "chainId": 10143,
   "rulesVersion": 14,
   "countdownClock": "engine-ticks-v1",
-  "arenas": [
-    {
-      "app": "0x51a8b38327ED29A7D75e4f7EB254cDB98420DEBf",
-      "index": 0,
-      "node": "https://il2-eu-51a8b38327ed29a7.fly.dev"
-    },
-    {
-      "app": "0xbd8F7B674da6942D719234a585DDcf0f8b302aB5",
-      "index": 1,
-      "node": "https://il2-eu-bd8f7b674da6942d.fly.dev"
-    },
-    {
-      "app": "0xFfC12814870d6f453bc7C9ed7a46AD9F927E5771",
-      "index": 2,
-      "node": "https://il2-eu-ffc12814870d6f45.fly.dev"
-    }
-  ],
+  "arenaCount": 3,
+  "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+  "pressureSigner": "0x15E6B4C9fecAC754cE2D9052b6060DD5920e7659",
+  "admissionSigner": "0x1614BA9607f48b4B570fe56a94e054295De34c2a",
+  "hostedProvisioning": "owner-consent-v1",
+  "provisioningOwner": "0x472704C70c69E6B689cc5200410746A185fa7116",
+  "family": "0x9160FaF0673363998Ffc56fdbBF1486fefFc1E6B",
+  "profiles": "0xc43A936339F5b09F635aba094b3137F80De60f63",
+  "privateData": "0xB6ce09f93B84250c1D487a5ae7232fd1dFecF4b0",
   "genesis": 1789323322,
   "createdAt": "2026-10-05T03:14:48.370Z",
   "startBlock": "68291407",
+  "migrationHash": "0x8f663eb71bd2e9c2e1ce31d520bfa9b461bfdb6c6d24fe9ac4226beebddbfa90",
   "previous": [
     {
       "hub": "0x3Ef8327F69e09cf721772F345e2A887eA22cD595",
@@ -72,5 +56,75 @@
       "createdAt": "2026-09-21T07:45:50.641Z",
       "startBlock": "64393211"
     }
-  ]
+  ],
+  "arenas": [
+    {
+      "app": "0x51a8b38327ed29a7d75e4f7eb254cdb98420debf",
+      "index": 0,
+      "runtimeHash": "0xb82f6f927301bc4f66a71618dab5c22d8cac9fcf59414b7ae81f3b506b10a93c"
+    },
+    {
+      "app": "0xbd8f7b674da6942d719234a585ddcf0f8b302ab5",
+      "index": 1,
+      "runtimeHash": "0x5347e060d27919a60784307ad98a2b20ac398009881e39001185a18ed81149f0"
+    },
+    {
+      "app": "0xffc12814870d6f453bc7c9ed7a46ad9f927e5771",
+      "index": 2,
+      "runtimeHash": "0xe14976e07f65763d8fac8657900d111741d5b37db5a390ea8333850fdb8eebb1"
+    }
+  ],
+  "modules": {
+    "ChaosEffects": "0x15b4dfcf64e45acbb853316045f132d123be839d",
+    "ChaosModifiers": "0x7f8597ad5eace2b5467ff1d6bd66d3419109e20a",
+    "ChaosRally": "0xdb85e5440b2e62d05fd4351278f605b7091a937d",
+    "ChaosDynamics": "0xce6bd07edaff4d31cb844573dc2d7afa085316e7",
+    "ChaosContacts": "0xd041a7fcb1a1ae8c01e2773a5dda0abc7bbccccd",
+    "ChaosPhysics": "0xea8b6373d071444a68389bf64502105f8eea27e0",
+    "ChaosCodec": "0x9d12cc146b16a4db27c8e4ad13e6bad3447772c7",
+    "DrandEvmnet": "0x83647dc54d6a0b9f56b8a7738e6e4322897e5275",
+    "ChaosDrawRules": "0x0d61e0367b3f21aedbbf51dd9ecbc8d0cf8bd8a3",
+    "ChaosEngine": "0xd7cad10ebc486df437f333827eb4f3a3db4c5aee"
+  },
+  "lobby": "0x527ccb705048820694a4ac209f83528db68fff3f",
+  "ratings": "0x02c58a7771dfd6237b7e80750a1f2f9af141ad48",
+  "resultVerifier": "0x80e3d43484fc18db4e09d0aeb27a0e704c336265",
+  "settlement": "0xb7e46a356c73dbe0ffa87a52e56a4306c5db23bf",
+  "vault": "0x0c097be115597c9335f29f69a9910c5d114eb64f",
+  "lmsr": "0x22ca4c6b34356c2f046c2cd516bec0e9339d3b12",
+  "market": "0xd29dfc7969632cf8f5c806f306aff7c162ad0c02",
+  "status": "sealed",
+  "libraries": {
+    "ContractLobby": "0x6f70cd9016fb8c05c3b687416b63b2a18792d737",
+    "InvitationIndex": "0x8effb3a779451199b5ab192659766f08d0c9821f",
+    "IndependentSocial": "0x686b02eb4b7d5756f0cf26f4afbf4f3886deb042",
+    "ReusableEventsLobby": "0x527ccb705048820694a4ac209f83528db68fff3f",
+    "PublishedRatings": "0x02c58a7771dfd6237b7e80750a1f2f9af141ad48",
+    "PublishedResultVerifier": "0x80e3d43484fc18db4e09d0aeb27a0e704c336265",
+    "ChaosEffects": "0x15b4dfcf64e45acbb853316045f132d123be839d",
+    "ChaosModifiers": "0x7f8597ad5eace2b5467ff1d6bd66d3419109e20a",
+    "ChaosRally": "0xdb85e5440b2e62d05fd4351278f605b7091a937d",
+    "ChaosDynamics": "0xce6bd07edaff4d31cb844573dc2d7afa085316e7",
+    "ChaosContacts": "0xd041a7fcb1a1ae8c01e2773a5dda0abc7bbccccd",
+    "ChaosPhysics": "0xea8b6373d071444a68389bf64502105f8eea27e0",
+    "ChaosCodec": "0x9d12cc146b16a4db27c8e4ad13e6bad3447772c7",
+    "DrandEvmnet": "0x83647dc54d6a0b9f56b8a7738e6e4322897e5275",
+    "ChaosDrawRules": "0x0d61e0367b3f21aedbbf51dd9ecbc8d0cf8bd8a3",
+    "ChaosEngine": "0xd7cad10ebc486df437f333827eb4f3a3db4c5aee",
+    "ChaosGameFlow": "0xe9d187785d4b06ef932f436bdee540a74794809b",
+    "ReusableAuthorizations": "0xd222baf95387c75ad1fc52bdf3c82cb4eafe6b4f",
+    "PendingControls": "0x0573dab610e10ab23ff057cf4b2bfe695961be14",
+    "ReusableHumanBinding": "0xa8f6a32fe2f77e8348154a5b330a632ee8bf5ff8",
+    "RoomsState": "0xd3c963af50d50b5179dccccf5522a3a94a6997e9",
+    "ReusableGame": "0xc42e68725fad242581d70905c22b96e8b38d176d",
+    "arena-0": "0x51a8b38327ed29a7d75e4f7eb254cdb98420debf",
+    "arena-1": "0xbd8f7b674da6942d719234a585ddcf0f8b302ab5",
+    "arena-2": "0xffc12814870d6f453bc7c9ed7a46ad9f927e5771",
+    "ReusableEventsSettlement": "0xb7e46a356c73dbe0ffa87a52e56a4306c5db23bf",
+    "RoomsVault": "0x0c097be115597c9335f29f69a9910c5d114eb64f",
+    "LMSRV2": "0x22ca4c6b34356c2f046c2cd516bec0e9339d3b12",
+    "RealtimeMarket": "0xd29dfc7969632cf8f5c806f306aff7c162ad0c02"
+  },
+  "qualified": false,
+  "qualificationEvidence": "0x62b06705faa954a9c89e4be0cf2789536c445b0bb2f43bd20fe1c9b1f05ab295"
 }

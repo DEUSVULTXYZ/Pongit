@@ -1,6 +1,6 @@
 # Public human migration to Interlude v3, 5 October 2026
 
-This is a continuation of the PUBLIC human deployment, not an import from any private qualification season. Deployment is complete; hosting, public cutover and real play remain to be verified below.
+This is a continuation of the PUBLIC human deployment, not an import from any private qualification season. Human Classic and Chaos are now open on Interlude v3. Actual public Chrome Classic and Edge Chaos matches completed, including F5, controls, spectators and a disconnected beneficiary payment. Public evaluation is authorized; the final unchanged 24-hour qualification is not claimed.
 
 ## Preserved state and boundaries
 
@@ -31,8 +31,26 @@ Deployment used the original `pong_relayer/il_lifecycle_jobs` journal and adviso
 - Remote root: `/opt/pongit/releases/human-v3-20261005`. Off-VPS root: private backups `human-v3-20261005/backup-before`.
 - First snapshot attempt rejected the sentinel queue id as a room; no mutation occurred. The corrected snapshot excludes only the exact max-uint queue sentinel, preserving all real rooms.
 
-## Outstanding before completion
+## Public cutover and preservation evidence
 
-Verify canonical target/source equality, exact hosting identities and actual publication. Build and switch the human relayer and public web, preserve the shared index bindings, test real Classic/Chaos and human finances, verify historical access, then check public agents/tournaments and all active routes. A deployed contract, open delegation or running process alone is not proof of functional delivery. The scheduled automation remains paused.
+The canonical preservation audit passed at block `68298199`: all 16 imported ratings and six repeat counters match the pinned source, migration is sealed, and all 25 previous results remain unchanged. The family, profiles and private-data contracts retain their original code and addresses. An audit of 621 confirmed social commands found no block preferences requiring import and no pending invitations. Earlier failed audit tooling attempts remain preserved.
+
+The relayer now runs image `sha256:1f71055be3b91b8fcc6be8bb73a3e88bcff62ca25cff720ab057e7c0d2c2492b` from product commit `850f040`. All three new engines passed actual identity and epoch checks. The public web built from that commit admits their exact HTTPS and WebSocket origins. Human admissions opened after the preservation audit and review of the exact v3 hub runtime. The existing 16,000-batch fork release proof matches the current hub bytecode; it is not a hosted throughput or 24-hour proof.
+
+- Public Chrome Classic `browser-v3oct5c`: passed at 03:55:57 UTC, three Mera accounts, countdown, F5 without another permission, controls and matching 7–6 player/spectator result.
+- Public Edge Chaos `browser-chaos-v3oct5e`: passed at 03:58:56 UTC, 304/294 accepted controls, F5 and matching 7–6 result. Match `340282366920938463463374607431768211464` paid 0.006 test MON automatically to its disconnected bettor. Transaction `0xff39d7cdd710f2721aed3fd0e1418ae0d5ad568f3484bcd4e782b78a282c86f5` is retained with the payout evidence.
+- Public Chrome NOVA `catalogue-public-v3-oct5`, match 696: published 1–7, 220 confirmed input observations, local input p95 17 ms, confirmed input p95 17.04 ms, maximum unexplained player hold 200.2 ms and spectator hold 83.7 ms. The single resume follows the deliberate F5. Admission took 15.984 seconds and **fails** the 8-second target.
+- Browser authentication uses virtual PRF authenticators. These are actual public games, not physical passkey or mobile-device qualification.
+- The first synthetic combined driver remains failed: Classic completed, but Chaos encountered an internal transport error. Its two uncertain nonces were resolved only by exact-hash receipts, and its later published 7–2 result is not relabelled as a passing driver.
+
+The additive human indexer uses schema `human_v3_20261005` in the existing shared index database. A backed-up view migration preserves every one of 1,192 prior rows and adds the four new public human results. Actual Hasura GraphQL returns those four rows. Existing last-three replay retention remains downstream of the same view. The human emitter generator now groups repeated aliases without shadowing older ledgers.
+
+Public tournament 35 was waiting because its dedicated admission signer held only 0.009568694 test MON. The original operator journal transferred eight test MON to admission and two to archive; the existing admission worker then started fixture 8 as match 697. No new tournament controller, duplicated nonce or replayed fixture was introduced. Funding attempt 1 failed before process startup on a read-only bind mount and is retained.
+
+The three empty old human epochs are being retired normally by the sole bounded worker `pongit-public-human-v2-retire-20261005`. Their actual release times are 04:38:49–04:39:00 UTC. This worker never force-closes a game or opens another old epoch; final canonical release still needs verification.
+
+## Remaining verification
+
+Verify the final compatibility web build, actual historical routes/replays, renewed tournament progression and all three old epoch releases. Refresh and SHA-verify the final off-VPS backup. Admission latency remains above target and continuous 24-hour availability is unqualified. The scheduled automation remains paused.
 
 Rollback uses the recorded previous image and configuration; it must never restore old databases over transactions or results produced after this migration.

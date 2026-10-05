@@ -23,6 +23,18 @@
         "0xa429e8e01c4b57dddfc6e8c75094cb68333f7f2f",
         "0x9bc7eac922640b0a2c7544a900f50de549790de1"
       ]
+    },
+    {
+      "chainId": 10143,
+      "rulesVersion": 14,
+      "ratings": "0x02C58A7771DFd6237B7E80750a1f2f9aF141Ad48",
+      "startBlock": "68291407",
+      "archiveContract": "CurrentIndependentRatings",
+      "arenas": [
+        "0x51a8b38327ED29A7D75e4f7EB254cDB98420DEBf",
+        "0xbd8F7B674da6942D719234a585DDcf0f8b302aB5",
+        "0xFfC12814870d6f453bc7C9ed7a46AD9F927E5771"
+      ]
     }
   ]
 }

@@ -92,6 +92,10 @@ test('successive continuations do not shadow historical emitters sharing one Env
     const latest={...next,pool:addr(20),startBlock:300,arenas:[addr(21),addr(22),addr(23),addr(24),addr(25)]};
     await writeFile(join(temporary,'deployments/agent-reusable-index.json'),JSON.stringify({version:2,chainId:10143,
       deployments:[old,...[next,latest].map(d=>({...d,rulesVersion:16,archiveContract:'AgentReusableFiveArchive'}))]}));
+    await writeFile(join(temporary,'deployments/independent-index.json'),JSON.stringify({deployments:[
+      {chainId:10143,rulesVersion:14,ratings:addr(200),startBlock:90,arenas:[addr(201)]},
+      {chainId:10143,rulesVersion:14,ratings:addr(202),startBlock:190,arenas:[addr(203)]},
+    ]}));
     const env:NodeJS.ProcessEnv={...process.env,INDEXER_RPC_URL:'http://127.0.0.1:8545'};
     delete env.INDEXER_HISTORY_START_BLOCK;delete env.DEPLOYMENT_FILE;
     execFileSync(process.execPath,[join(root,'node_modules/tsx/dist/cli.mjs'),join(root,'scripts/configure-indexer.ts')],
@@ -100,6 +104,8 @@ test('successive continuations do not shadow historical emitters sharing one Env
     const chain=config.slice(config.indexOf('\nchains:'));
     assert.equal(chain.split('- name: AgentReusableFiveArchive\n').length-1,1,'Envio keys chain bindings by alias');
     assert(chain.includes(`address: ["${next.pool}","${latest.pool}"]\n        start_block: 200`));
+    assert.equal(chain.split('- name: IndependentRatings\n').length-1,1);
+    assert(chain.includes(`address: ["${addr(200)}","${addr(202)}"]\n        start_block: 90`));
     const source=await readFile(join(temporary,'indexer/src/chaos-deployments.ts'),'utf8');
     const bindings=JSON.parse(source.slice(source.indexOf('=')+1,source.lastIndexOf(' as const;')));
     assert.deepEqual(Object.keys(bindings),[old.pool,next.pool,latest.pool]);
@@ -108,6 +114,7 @@ test('successive continuations do not shadow historical emitters sharing one Env
       {cwd:temporary,env:{...env,INDEXER_HISTORY_START_BLOCK:'250'},stdio:'pipe'});
     const fresh=await readFile(join(temporary,'indexer/config.yaml'),'utf8');
     assert(fresh.includes(`address: ["${next.pool}","${latest.pool}"]\n        start_block: 250`));
+    assert(fresh.includes(`address: ["${addr(200)}","${addr(202)}"]\n        start_block: 250`));
   } finally {
     assert(resolve(temporary).startsWith(resolve(tmpdir()))&&temporary.includes('pong-agent-index-'));
     await rm(temporary,{recursive:true,force:true});

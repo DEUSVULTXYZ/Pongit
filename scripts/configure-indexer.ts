@@ -36,6 +36,7 @@ for(const manifest of allDeployments(d).reverse()) {
 }
 const independentBindings:Record<string,IndependentArchiveDeployment>={};
 const independentStarts:Record<string,string>={};
+const independentGroups=new Map<string,{addresses:string[];startBlock:bigint}>();
 for(const file of ['independent.json','independent-index.json'])try{
  const raw=JSON.parse(await readFile('deployments/'+file,'utf8'));
  for(const independent of file==='independent.json'?[raw]:raw.deployments){
@@ -55,9 +56,16 @@ for(const file of ['independent.json','independent-index.json'])try{
    continue;
   }
   independentBindings[ledger]=binding;independentStarts[ledger]=String(independent.startBlock);
-  config+=`      - name: ${independent.archiveContract??'IndependentRatings'}\n        address: "${independent.ratings}"\n        start_block: ${start(independent.startBlock)}\n`;
+  const name=independent.archiveContract??'IndependentRatings',block=BigInt(start(independent.startBlock));
+  const group=independentGroups.get(name);
+  if(group){group.addresses.push(independent.ratings);if(block<group.startBlock)group.startBlock=block;}
+  else independentGroups.set(name,{addresses:[independent.ratings],startBlock:block});
  }
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+// Human migrations may share an alias too. A repeated YAML name would silently
+// discard older ledgers even though their decoder bindings were retained.
+for(const [name,group] of independentGroups)
+ config+=`      - name: ${name}\n        address: ${JSON.stringify(group.addresses.length===1?group.addresses[0]:group.addresses)}\n        start_block: ${group.startBlock}\n`;
 const chaosBindings:Record<string,ChaosArchiveDeployment>={};
 try{
  const finance=JSON.parse(await readFile('deployments/rooms-finance.json','utf8'));

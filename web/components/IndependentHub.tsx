@@ -112,9 +112,9 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
  },[manifest,base,roomId]);
  useEffect(()=>{
   let alive=true,retry:ReturnType<typeof setTimeout>;
-  const load=()=>void independentApi('config'+(roomId?'?lobby='+encodeURIComponent(roomId.split(':')[0]):'')).then(c=>{if(!alive)return;const m=publicIndependentManifest(c.manifest);if(c.archived){setArchive(m);setError('');return;}setManifest(m);setConfig(c);setFamily(loadFamily(m));setSaved(rememberedAccount()?.address as Address|undefined);setError('');}).catch(()=>{if(alive){setError('Game services are temporarily unavailable. Retrying automatically.');retry=setTimeout(load,5000);}});
+  const load=()=>void independentApi('config'+(roomId?'?lobby='+encodeURIComponent(roomId.split(':')[0]):'')).then(c=>{if(!alive)return;const m=publicIndependentManifest(c.manifest);if(c.archived){setArchive(m);setManifest(undefined);setError('');return;}setArchive(undefined);setManifest(m);setConfig(c);setFamily(loadFamily(m));setSaved(rememberedAccount()?.address as Address|undefined);setError('');}).catch(()=>{if(alive){setError('Game services are temporarily unavailable. Retrying automatically.');retry=setTimeout(load,5000);}});
   load();return()=>{alive=false;clearTimeout(retry);};
- },[]);
+ },[roomId]);
  useEffect(()=>{
   if(!manifest)return;let stopped=false;let timer:ReturnType<typeof setTimeout>;
   const poll=async()=>{let delay=3000;try{await refresh();if(current.current.view.binding?.epoch)delay=10000;}catch(e){delay=Math.max(3000,engineReadRetryMs(e));if(!stopped)setLobbySync('Reconnecting to the lobby. Your game is saved.');}finally{if(!stopped)timer=setTimeout(poll,delay);}};
