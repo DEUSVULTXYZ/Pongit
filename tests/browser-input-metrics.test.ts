@@ -12,6 +12,14 @@ test('render metrics separate explicit contract pauses without hiding unmarked s
  assert.equal(mixed.maxHoldMs,600);assert.equal(mixed.contractPauseMs,200);
 });
 
+test('render gate catches paddle rollback even when the ball looks smooth',()=>{
+ const paddle=(at:number,y:number,rally='0')=>({at,y,rally,side:0,observedAt:at,height:96});
+ const failed=syncMetrics({frames:[],snapshots:[],paddles:[paddle(0,228),paddle(16,288)]});
+ assert.equal(failed.paddleJumps.length,1);assert.equal(failed.paddleJumps[0].d,60);
+ const smooth=syncMetrics({frames:[],snapshots:[],paddles:[paddle(0,228),paddle(16,225),paddle(32,200,'1')]});
+ assert.equal(smooth.paddleJumps.length,0,'ordinary motion and new rally remain distinct');
+});
+
 test('confirmed input includes the unsent queue and both sides of F5',()=>{
  const value=confirmedInputMetrics([{at:100,direction:-1},{at:800,direction:0},{at:1200,direction:1}],
   [{sentAt:600,confirmedAt:615,direction:-1,sequence:'1'},

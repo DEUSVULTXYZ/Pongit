@@ -67,7 +67,9 @@ if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continu
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
-const context=await browser.newContext({viewport:{width:1440,height:1000},...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
+const context=await browser.newContext({viewport:{width:1440,height:1000},
+ ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/video',size:{width:1440,height:1000}}}:{}),
+ ...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
 if(httpOnly)await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.dev\//,socket=>socket.close());
 // A degraded-network trial forwards every real RPC and exact signed payload.
 // Delay every round trip (or only reads), without inventing replies or gameplay.
