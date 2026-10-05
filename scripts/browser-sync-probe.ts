@@ -23,11 +23,16 @@ export async function installSyncProbe(page:Page){
  await page.addInitScript(()=>{
   const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[]};
   (window as any).__syncProbe=data;
-  let observed=-1,source:any;
+  let observed=-1,source:any,paint=0;
+  const transform=CanvasRenderingContext2D.prototype.setTransform;
+  CanvasRenderingContext2D.prototype.setTransform=function(...args:any[]){
+   (transform as any).apply(this,args);
+   if(this.canvas.closest('.pool-canvas-slot,.rooms-canvas'))paint++;
+  };
   const fill=CanvasRenderingContext2D.prototype.fillRect;
   CanvasRenderingContext2D.prototype.fillRect=function(x,y,w,h){
    fill.call(this,x,y,w,h);
-   const paddle=w===12&&h>40&&(x===22||x===990);
+   const paddle=w===12&&h>=32&&(x===22||x===990)&&this.fillStyle instanceof CanvasGradient;
    const ball=w===12&&h===12&&this.fillStyle==='#f3fcff';
    if((!paddle&&!ball)||!this.canvas.closest('.pool-canvas-slot,.rooms-canvas'))return;
    let fiber=(this.canvas as any)[Object.keys(this.canvas).find(k=>k.startsWith('__reactFiber$'))??''];
@@ -44,7 +49,10 @@ export async function installSyncProbe(page:Page){
      (_,v)=>typeof v==='bigint'?v.toString():v)));
    }
    if(paddle){
-    if(data.paddles.length<80000)data.paddles.push({at:performance.now(),side:x===22?0:1,y:y+h/2,height:h,
+    const side=x===22?0:1,last=data.paddles.at(-1);
+    // Split-paddle sprites are two pieces of one actor in the same paint.
+    if(last?.paint===paint&&last.side===side){last.top=Math.min(last.top,y);last.bottom=Math.max(last.bottom,y+h);last.y=(last.top+last.bottom)/2;last.height=last.bottom-last.top;}
+    else if(data.paddles.length<80000)data.paddles.push({at:performance.now(),paint,side,y:y+h/2,height:h,top:y,bottom:y+h,
      rally:this.canvas.dataset.rally,finished:props?.state?.finished,observedAt:observed});
     return;
    }

@@ -355,6 +355,8 @@ try{
  await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
 finally{
  try{await savePrivate();}catch{report.passed=false;report.error??='Private browser recovery state could not be saved';process.exitCode=1;}
- report.finishedAt=new Date().toISOString();await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();
+ report.finishedAt=new Date().toISOString();
+ if(page.video())report.video=await page.video()!.path();
+ await writeFile(out+'/report.json',JSON.stringify(report,null,2));await context.close();await browser.close();
  console.log(JSON.stringify({out,passed:report.passed,error:report.error,ref:report.ref,input:report.input,submissionP95Ms:report.submissionP95Ms,receiptP95Ms:report.receiptP95Ms}));
 }
