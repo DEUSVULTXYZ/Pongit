@@ -1,0 +1,262 @@
+{
+  "at": "2026-10-05T04:47:38.908742+00:00",
+  "human": {
+    "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+    "lobby": "0x527cCB705048820694A4Ac209f83528DB68FFf3F",
+    "admission": true,
+    "arenas": [
+      {
+        "app": "0x51a8b38327ED29A7D75e4f7EB254cDB98420DEBf",
+        "node": "https://il2-eu-51a8b38327ed29a7.fly.dev",
+        "epoch": "1",
+        "id": "0",
+        "stage": "available",
+        "online": true,
+        "expiresAt": 0,
+        "releaseAt": 0,
+        "lastProgressAt": 1791172749199,
+        "code": "",
+        "rally": null
+      },
+      {
+        "app": "0xbd8F7B674da6942D719234a585DDcf0f8b302aB5",
+        "node": "https://il2-eu-bd8f7b674da6942d.fly.dev",
+        "epoch": "1",
+        "id": "0",
+        "stage": "available",
+        "online": true,
+        "expiresAt": 0,
+        "releaseAt": 0,
+        "lastProgressAt": 0,
+        "code": "",
+        "rally": null
+      },
+      {
+        "app": "0xFfC12814870d6f453bc7C9ed7a46AD9F927E5771",
+        "node": "https://il2-eu-ffc12814870d6f45.fly.dev",
+        "epoch": "1",
+        "id": "0",
+        "stage": "available",
+        "online": true,
+        "expiresAt": 0,
+        "releaseAt": 0,
+        "lastProgressAt": 0,
+        "code": "",
+        "rally": null
+      }
+    ],
+    "sponsor": {
+      "available": true
+    }
+  },
+  "agents": {
+    "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+    "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+    "enabled": true,
+    "tournamentsEnabled": true,
+    "maxMatches": 5,
+    "qualified": false,
+    "houseInstances": "official-v1",
+    "lanes": {
+      "tournament": 1,
+      "challenge": 4
+    },
+    "arenaAdmissions": "verified-epoch-v1",
+    "observation": {
+      "block": "68309846",
+      "hash": "0x078d90f5f66345acc9d3fee2c0ad1d6a63dc25c4521ccb77cf6c5ccb9ba4a6a0",
+      "timestamp": "1791175657",
+      "revision": "856951ce758bbebed1dbe2ef41e2b4b6efcb66bfe2c57c6c86c0108dff29024b"
+    }
+  },
+  "tournaments": {
+    "items": [
+      {
+        "id": "35",
+        "mode": 0,
+        "format": "championship",
+        "status": "playing",
+        "revision": 0,
+        "champion": "0x0000000000000000000000000000000000000000",
+        "startedAt": "1791101481",
+        "completedAt": "0",
+        "participants": 8
+      },
+      {
+        "id": "34",
+        "mode": 1,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "startedAt": "1791099796",
+        "completedAt": "1791101410",
+        "participants": 8
+      },
+      {
+        "id": "33",
+        "mode": 0,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "startedAt": "1791098010",
+        "completedAt": "1791099724",
+        "participants": 8
+      },
+      {
+        "id": "32",
+        "mode": 1,
+        "format": "championship",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "startedAt": "1791092035",
+        "completedAt": "1791097940",
+        "participants": 8
+      },
+      {
+        "id": "31",
+        "mode": 0,
+        "format": "championship",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "startedAt": "1791086008",
+        "completedAt": "1791091963",
+        "participants": 8
+      },
+      {
+        "id": "30",
+        "mode": 1,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+        "startedAt": "1791084475",
+        "completedAt": "1791085937",
+        "participants": 8
+      },
+      {
+        "id": "29",
+        "mode": 0,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "startedAt": "1791082390",
+        "completedAt": "1791084404",
+        "participants": 8
+      },
+      {
+        "id": "28",
+        "mode": 1,
+        "format": "championship",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "startedAt": "1791071517",
+        "completedAt": "1791082319",
+        "participants": 8
+      },
+      {
+        "id": "27",
+        "mode": 0,
+        "format": "championship",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "startedAt": "1791055985",
+        "completedAt": "1791071445",
+        "participants": 8
+      },
+      {
+        "id": "26",
+        "mode": 1,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "startedAt": "1791054073",
+        "completedAt": "1791055912",
+        "participants": 8
+      },
+      {
+        "id": "25",
+        "mode": 0,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "startedAt": "1791052333",
+        "completedAt": "1791053998",
+        "participants": 8
+      },
+      {
+        "id": "24",
+        "mode": 1,
+        "format": "championship",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "startedAt": "1791046095",
+        "completedAt": "1791052261",
+        "participants": 8
+      },
+      {
+        "id": "23",
+        "mode": 0,
+        "format": "championship",
+        "status": "interrupted",
+        "revision": 0,
+        "champion": "0x0000000000000000000000000000000000000000",
+        "startedAt": "1790888075",
+        "completedAt": "0",
+        "participants": 8
+      },
+      {
+        "id": "22",
+        "mode": 1,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "startedAt": "1790885485",
+        "completedAt": "1790887997",
+        "participants": 8
+      },
+      {
+        "id": "21",
+        "mode": 0,
+        "format": "elimination",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+        "startedAt": "1790882692",
+        "completedAt": "1790885411",
+        "participants": 8
+      },
+      {
+        "id": "20",
+        "mode": 1,
+        "format": "championship",
+        "status": "complete",
+        "revision": 0,
+        "champion": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+        "startedAt": "1790871697",
+        "completedAt": "1790882616",
+        "participants": 8
+      }
+    ],
+    "total": "35",
+    "offset": "0",
+    "next": "16",
+    "nextAt": "1791101470",
+    "observation": {
+      "block": "68309847",
+      "hash": "0x188483203dd3e4b9f603e44f70ce6c1948c6a6e43b5f44d12036c4ce433f34ef",
+      "timestamp": "1791175657",
+      "revision": "34299acfddfc576bcf74cf4eb2cd5504e4801b82e26d064c4425ac46c653ed4a"
+    }
+  }
+}

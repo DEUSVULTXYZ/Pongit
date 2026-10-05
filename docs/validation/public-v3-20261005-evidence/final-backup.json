@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-05T04:40:14.111508+00:00",
+  "passed": true,
+  "path": "/opt/pongit/releases/human-v3-20261005/backup-final",
+  "databases": [
+    "pong_human_rules14",
+    "pong_relayer",
+    "agent_five",
+    "reusable_agents_candidate",
+    "reusable_shared_indexer14"
+  ],
+  "files": 6,
+  "bytes": 71983972,
+  "manifestSha256": "4138c8b4409dca5a04109984aa68301662674d82e9338e9e887f38a543414399"
+}

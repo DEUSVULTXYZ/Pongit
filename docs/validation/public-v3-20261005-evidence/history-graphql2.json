@@ -1,0 +1,34 @@
+{
+  "data": {
+    "Match": [
+      {
+        "id": "10143:0x51a8b38327ed29a7d75e4f7eb254cdb98420debf:1:340282366920938463463374607431768211458",
+        "rawId": "340282366920938463463374607431768211458",
+        "rulesVersion": 14,
+        "status": 3,
+        "replayAvailability": "available"
+      },
+      {
+        "id": "10143:0x51a8b38327ed29a7d75e4f7eb254cdb98420debf:1:340282366920938463463374607431768211462",
+        "rawId": "340282366920938463463374607431768211462",
+        "rulesVersion": 14,
+        "status": 3,
+        "replayAvailability": "available"
+      },
+      {
+        "id": "10143:0x51a8b38327ed29a7d75e4f7eb254cdb98420debf:1:340282366920938463463374607431768211464",
+        "rawId": "340282366920938463463374607431768211464",
+        "rulesVersion": 14,
+        "status": 3,
+        "replayAvailability": "available"
+      },
+      {
+        "id": "10143:0xbd8f7b674da6942d719234a585ddcf0f8b302ab5:1:340282366920938463463374607431768211460",
+        "rawId": "340282366920938463463374607431768211460",
+        "rulesVersion": 14,
+        "status": 3,
+        "replayAvailability": "available"
+      }
+    ]
+  }
+}

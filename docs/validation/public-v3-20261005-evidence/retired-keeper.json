@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-05T04:28:54.152962+00:00",
+  "container": "pongit-agent-public-keeper",
+  "sourcePool": "0x708e32a09a1f5c0d4de2477793a7d6e8d9c1b8e5",
+  "admissions": false,
+  "publicAdmissions": false,
+  "lanesEmpty": true,
+  "pendingJobs": 0,
+  "stopped": true,
+  "restart": "no",
+  "historyAndDatabasesPreserved": true
+}

@@ -26,9 +26,11 @@ const report: any = {at: new Date().toISOString(), passed: false, sender, transf
 try {
   for (const [target, value] of amounts) {
     const address = target as Address;
+    const name = target.slice(2);
+    const known = await t.db.query('SELECT status FROM il_lifecycle_jobs WHERE id=$1', [`public-v3-rebalance-20261005:${name}`]);
     const balance = await t.base.getBalance({address: sender});
-    assert(balance > value + parseEther('75'), 'Keep at least 75 test MON for normal maintenance');
-    const tx = await retryOperatorContention(() => t.submit(target.slice(2), '0x', address, value));
+    assert(known.rowCount || balance > value + parseEther('75'), 'Keep at least 75 test MON for normal maintenance');
+    const tx = await retryOperatorContention(() => t.submit(name, '0x', address, value));
     report.transfers.push({address, amount: formatEther(value), hash: tx.transactionHash, after: formatEther(await t.base.getBalance({address}))});
   }
   report.remaining = formatEther(await t.base.getBalance({address: sender}));

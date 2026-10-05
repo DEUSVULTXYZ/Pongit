@@ -1,0 +1,300 @@
+{
+  "at": "2026-10-05T04:34:48.688Z",
+  "scope": "Actual public v3 migration checks; no physical passkey or 24-hour availability claim",
+  "human": [
+    {
+      "path": "browser-v3oct5c",
+      "passed": true,
+      "lobby": "0x527cCB705048820694A4Ac209f83528DB68FFf3F",
+      "rules": 14,
+      "authenticator": "Chromium virtual PRF, real Mera SDK; no physical-device recovery claim",
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Contract matchmaking, two consents and automatic hosted admission",
+        "Real three-second countdown on both players and spectator",
+        "F5 and direction input without a root passkey ceremony",
+        {
+          "finalScore": "7 : 6"
+        }
+      ],
+      "finishedAt": "2026-10-05T03:55:57.889Z"
+    },
+    {
+      "path": "browser-chaos-v3oct5e",
+      "passed": true,
+      "lobby": "0x527cCB705048820694A4Ac209f83528DB68FFf3F",
+      "rules": 14,
+      "authenticator": "Chromium virtual PRF, real Mera SDK; no physical-device recovery claim",
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Three members in a real Chaos room, dual consent and automatic spectator",
+        "Real three-second countdown on both players and spectator",
+        "Root-signed test MON bet accepted during a live Chaos rally",
+        "F5 and direction input without a root passkey ceremony",
+        {
+          "finalScore": "7 : 6"
+        }
+      ],
+      "finishedAt": "2026-10-05T03:58:56.312Z"
+    }
+  ],
+  "agent": [
+    {
+      "path": "catalogue-public-v3-oct5",
+      "passed": true,
+      "reusedSession": false,
+      "virtualPrf": true,
+      "mode": 0,
+      "ref": {
+        "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+        "epoch": "4",
+        "id": "696"
+      },
+      "result": {
+        "hash": "0x1d2884f9a8ead0ad32644a4c767769026f5ddc05de5293ee917464330c4e1b7e",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927095",
+        "finality": false
+      },
+      "admissionMs": 15984,
+      "input": {
+        "samples": 75,
+        "p95Ms": 17
+      },
+      "confirmedInput": {
+        "samples": 220,
+        "p95Ms": 17.035888671875,
+        "maxMs": 62.188232421875,
+        "mismatches": []
+      },
+      "player": {
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 200.20000004768372,
+        "snapshotJumps": []
+      },
+      "spectator": {
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 83.70000004768372
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "resumes": 1
+    },
+    {
+      "path": "catalogue-public-v3-oct5-chaos",
+      "passed": true,
+      "reusedSession": false,
+      "virtualPrf": true,
+      "mode": 1,
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "3",
+        "id": "703"
+      },
+      "result": {
+        "hash": "0x320682ec07db6304d92e58b9f2d24ce20de6215dd7e37d82113f87493a1b7f0e",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927090",
+        "finality": false
+      },
+      "admissionMs": 13604,
+      "input": {
+        "samples": 75,
+        "p95Ms": 16.100000023841858
+      },
+      "confirmedInput": {
+        "samples": 219,
+        "p95Ms": 17.634521484375,
+        "maxMs": 116.587158203125,
+        "mismatches": []
+      },
+      "player": {
+        "p95FrameMs": 17.200000047683716,
+        "maxHoldMs": 183.19999992847443,
+        "snapshotJumps": []
+      },
+      "spectator": {
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 133.30000007152557
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "resumes": 1
+    },
+    {
+      "path": "catalogue-public-v3-oct5-reuse",
+      "passed": true,
+      "reusedSession": true,
+      "virtualPrf": true,
+      "mode": 0,
+      "ref": {
+        "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+        "epoch": "6",
+        "id": "706"
+      },
+      "result": {
+        "hash": "0xb72d38ac6d69eeb149d04444ae070f22be6d01b80a78c7687d8db503db192c26",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875014",
+        "finality": false
+      },
+      "admissionMs": 7405,
+      "input": {
+        "samples": 75,
+        "p95Ms": 17.600000023841858
+      },
+      "confirmedInput": {
+        "samples": 220,
+        "p95Ms": 16.98779296875,
+        "maxMs": 17.7177734375,
+        "mismatches": []
+      },
+      "player": {
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 166.69999992847443,
+        "snapshotJumps": []
+      },
+      "spectator": {
+        "p95FrameMs": 17.100000023841858,
+        "maxHoldMs": 150.09999990463257
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "resumes": 1
+    }
+  ],
+  "history": {
+    "at": "2026-10-05T04:21:28.766Z",
+    "passed": true,
+    "checks": [
+      {
+        "channel": "chrome",
+        "currentReplay": true,
+        "historicalReplay": true,
+        "historicalWithdrawView": true,
+        "backToCurrent": true,
+        "writes": 0
+      },
+      {
+        "channel": "msedge",
+        "currentReplay": true,
+        "historicalReplay": true,
+        "historicalWithdrawView": true,
+        "backToCurrent": true,
+        "writes": 0
+      }
+    ]
+  },
+  "agentReplay": {
+    "startedAt": "2026-10-05T04:17:23.285Z",
+    "scope": "Actual public replay API and desktop Chrome/Edge with emulated mobile viewport; no engine, passkey or write",
+    "reference": {
+      "chainId": 10143,
+      "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+      "epoch": "4",
+      "id": "696"
+    },
+    "frameCount": 210,
+    "checks": [
+      {
+        "channel": "chrome",
+        "width": 360,
+        "height": 640,
+        "playback": true,
+        "finalScore": [
+          1,
+          7
+        ],
+        "focus": true,
+        "pixelControls": true,
+        "hoverContrast": 13.971506990486423,
+        "blockedRequests": 0
+      },
+      {
+        "channel": "chrome",
+        "width": 1440,
+        "height": 1000,
+        "playback": true,
+        "finalScore": [
+          1,
+          7
+        ],
+        "focus": true,
+        "pixelControls": true,
+        "hoverContrast": 13.971506990486423,
+        "blockedRequests": 0
+      },
+      {
+        "channel": "msedge",
+        "width": 360,
+        "height": 640,
+        "playback": true,
+        "finalScore": [
+          1,
+          7
+        ],
+        "focus": true,
+        "pixelControls": true,
+        "hoverContrast": 13.971506990486423,
+        "blockedRequests": 0
+      },
+      {
+        "channel": "msedge",
+        "width": 1440,
+        "height": 1000,
+        "playback": true,
+        "finalScore": [
+          1,
+          7
+        ],
+        "focus": true,
+        "pixelControls": true,
+        "hoverContrast": 13.971506990486423,
+        "blockedRequests": 0
+      }
+    ],
+    "passed": true,
+    "finishedAt": "2026-10-05T04:17:48.490Z"
+  },
+  "payment": {
+    "at": "2026-10-05T04:16:23.908Z",
+    "passed": true,
+    "player": "0xF2E82585A5fFF649A83dD7981B144C67EBDb3a8b",
+    "id": "340282366920938463463374607431768211464",
+    "market": "0xd29dfc7969632cf8f5c806f306aff7c162ad0c02",
+    "amount": "6000000000000000",
+    "transaction": "0xff39d7cdd710f2721aed3fd0e1418ae0d5ad568f3484bcd4e782b78a282c86f5",
+    "block": "68300269",
+    "before": "0",
+    "after": "6000000000000000",
+    "attempts": 1,
+    "duplicateClaimRejected": true,
+    "duplicateRetryRejected": true
+  }
+}

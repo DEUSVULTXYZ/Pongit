@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-05T04:19:30.740Z",
+  "passed": true,
+  "sender": "0xbeeb456231E970aC08420488a2dB91Bfe257686A",
+  "transfers": [
+    {
+      "address": "0x31a5bb21dbf5d78021e87ab307941cb47db25ec2",
+      "amount": "25",
+      "hash": "0xb6c385d9a8927a2aab33c760cbe2d1fefa97a7a76d6fd5fdc99f668489c69a8c",
+      "after": "30.999255692"
+    },
+    {
+      "address": "0x38078433f7a63b3e6abdef49a726599d655f42c5",
+      "amount": "25",
+      "hash": "0xc274ff8ada620a45aeb6207a7e3af83075bc82ac7d2cee758b52e8f0c96c6f91",
+      "after": "29.373041861756275296"
+    },
+    {
+      "address": "0x369158ac444278541322643e46e0d5b45ac21c4c",
+      "amount": "20",
+      "hash": "0x2024bc8af475279e2e49747cca680640874af192a37707d03c2ebb0ec397006f",
+      "after": "26.43310918"
+    }
+  ],
+  "remaining": "83.660699"
+}

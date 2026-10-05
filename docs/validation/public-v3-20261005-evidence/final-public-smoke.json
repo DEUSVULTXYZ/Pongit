@@ -1,0 +1,134 @@
+{
+  "at": "2026-10-05T04:46:44.841694+00:00",
+  "containers": [
+    {
+      "name": "pongit-public-human-v2-retire-20261005",
+      "image": "sha256:9ff2dc742a7419a79b3f922c86a22459adba9d4a4105218db9cdce0f658257e5",
+      "state": "exited",
+      "exitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-public-v3-restore-20261005",
+      "image": "sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73",
+      "state": "exited",
+      "exitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-agent-public-keeper",
+      "image": "sha256:c4a4329a1f2f464f6c710c3355f286f7c7e78cfb04906cac1fcd2e04f7a4763d",
+      "state": "exited",
+      "exitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-relayer-1",
+      "image": "sha256:1f71055be3b91b8fcc6be8bb73a3e88bcff62ca25cff720ab057e7c0d2c2492b",
+      "state": "running",
+      "exitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-arcade-web-1",
+      "image": "sha256:93d7a3f64523813810b3aa963539822aa450e76c56d36d7205b6689ac8d406e4",
+      "state": "running",
+      "exitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "name": "pongit-arcade-five-human-v3-indexer-1",
+      "image": "sha256:543ac4eb6b2d75c5e382cdb9c2b7007abab8014bd2338f96604e30fd6bc25905",
+      "state": "running",
+      "exitCode": 0,
+      "oomKilled": false
+    }
+  ],
+  "checks": [
+    {
+      "url": "https://pongit.xyz/",
+      "status": 200,
+      "bytes": 17060
+    },
+    {
+      "url": "https://pongit.xyz/agents",
+      "status": 200,
+      "bytes": 17702
+    },
+    {
+      "url": "https://pongit.xyz/agents/tournaments",
+      "status": 200,
+      "bytes": 15974
+    },
+    {
+      "url": "https://pongit.xyz/docs/technical/contracts",
+      "status": 200,
+      "bytes": 59021
+    },
+    {
+      "url": "https://pongit.xyz/api/agents/config",
+      "status": 200,
+      "bytes": 6685,
+      "keys": [
+        "version",
+        "friendlyPause",
+        "publicationProbe",
+        "challengeAdmission",
+        "housePolicy",
+        "releaseStage",
+        "previewEvidence",
+        "countdownClock",
+        "houseInstances",
+        "history",
+        "chainId",
+        "engineChainId",
+        "rulesVersion",
+        "hub",
+        "pool",
+        "catalog",
+        "tournaments",
+        "ratings",
+        "challenges",
+        "qualifications",
+        "family",
+        "arenas",
+        "enabled",
+        "tournamentsEnabled",
+        "verifiedCapacity",
+        "qualificationEvidence",
+        "durationSeconds",
+        "overtimeSeconds",
+        "intervalSeconds",
+        "maxMatches",
+        "lanes",
+        "arenaAdmissions",
+        "qualified",
+        "registration",
+        "financial",
+        "validation",
+        "observation"
+      ],
+      "enabled": true,
+      "qualified": false,
+      "maxMatches": 5
+    },
+    {
+      "url": "https://pongit.xyz/api/independent/config",
+      "status": 200,
+      "bytes": 3144,
+      "keys": [
+        "manifest",
+        "previous",
+        "archived",
+        "admission",
+        "arenas",
+        "sponsor"
+      ]
+    },
+    {
+      "url": "https://pongit.xyz/api/health",
+      "status": 200,
+      "bytes": 948
+    }
+  ]
+}

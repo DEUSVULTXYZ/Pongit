@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-05T04:41:39.215368+00:00",
+  "passed": true,
+  "databases": [
+    {
+      "label": "human",
+      "tables": 22,
+      "dumpSha256": "99c647249715eca2c3fdd0da4b990388c598af0dc1b56dc7016498bdaedef5a5",
+      "humanHistory": {
+        "0x5dbea9692d443e04e1bd0b74fb307b079a5cb212": 25,
+        "0x527ccb705048820694a4ac209f83528db68fff3f": 4
+      }
+    },
+    {
+      "label": "operator",
+      "tables": 66,
+      "dumpSha256": "f1144f834cf60da2cc6af40210364c19aa361e3f4260aaadb1a89fec86d22e5f",
+      "fundingJournalConfirmed": 5
+    },
+    {
+      "label": "agents",
+      "tables": 11,
+      "dumpSha256": "901f1c68b0929067787a5e9c54475a6c62eaced64bfd9603a36f9582fc1ae60a"
+    },
+    {
+      "label": "previous-agents",
+      "tables": 9,
+      "dumpSha256": "54670c6c7c3578d6e9d8bdd9791b856f8ff8f0f5c679745865f9f77a69e76eeb"
+    },
+    {
+      "label": "shared-index",
+      "tables": 181,
+      "dumpSha256": "b2c1bc98b5cb6a12f5eaa6bce8bf37f5ce3e3132712263b1c44bca2841fae002",
+      "newHumanResults": 4,
+      "allResults": 1207
+    }
+  ],
+  "containerExit": 0,
+  "oomKilled": false,
+  "finishedAt": "2026-10-05T04:44:15.182436+00:00"
+}

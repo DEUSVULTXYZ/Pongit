@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-05T03:48:59.491Z",
+  "source": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "target": "0x527cCB705048820694A4Ac209f83528DB68FFf3F",
+  "passed": true,
+  "confirmedSocialCommands": 621,
+  "blockCommands": 0,
+  "pendingInvitations": 0,
+  "ratings": 16,
+  "pairSeeds": 6,
+  "historicalResults": "25",
+  "arenas": [
+    {
+      "app": "0x51a8b38327ED29A7D75e4f7EB254cDB98420DEBf",
+      "epoch": "1",
+      "status": 1,
+      "batches": "10"
+    },
+    {
+      "app": "0xbd8F7B674da6942D719234a585DDcf0f8b302aB5",
+      "epoch": "1",
+      "status": 1,
+      "batches": "7"
+    },
+    {
+      "app": "0xFfC12814870d6f453bc7C9ed7a46AD9F927E5771",
+      "epoch": "1",
+      "status": 1,
+      "batches": "1"
+    }
+  ],
+  "block": "68298199"
+}

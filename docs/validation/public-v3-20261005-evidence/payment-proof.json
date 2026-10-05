@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-05T04:16:23.908Z",
+  "passed": true,
+  "player": "0xF2E82585A5fFF649A83dD7981B144C67EBDb3a8b",
+  "id": "340282366920938463463374607431768211464",
+  "market": "0xd29dfc7969632cf8f5c806f306aff7c162ad0c02",
+  "amount": "6000000000000000",
+  "transaction": "0xff39d7cdd710f2721aed3fd0e1418ae0d5ad568f3484bcd4e782b78a282c86f5",
+  "block": "68300269",
+  "before": "0",
+  "after": "6000000000000000",
+  "attempts": 1,
+  "duplicateClaimRejected": true,
+  "duplicateRetryRejected": true
+}

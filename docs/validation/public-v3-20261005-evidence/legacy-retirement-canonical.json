@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "block": "68308419",
+  "hash": "0xd3316606564cb15049d72354a2c93c971da4aa0270d78d828d72b120f1910c63",
+  "arenas": [
+    {
+      "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+      "epoch": "63",
+      "status": 0,
+      "root": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f",
+      "count": 0
+    },
+    {
+      "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+      "epoch": "64",
+      "status": 0,
+      "root": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f",
+      "count": 0
+    },
+    {
+      "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+      "epoch": "62",
+      "status": 0,
+      "root": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f",
+      "count": 0
+    }
+  ],
+  "at": "2026-10-05T04:40:28.889952+00:00"
+}

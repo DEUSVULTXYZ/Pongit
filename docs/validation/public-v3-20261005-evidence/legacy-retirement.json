@@ -1,0 +1,43 @@
+{
+  "startedAt": "2026-10-05T03:38:33.553Z",
+  "deadline": 1791176193554,
+  "sourceLobby": "0x5DbEA9692D443E04E1bd0B74fB307B079a5cb212",
+  "arenas": [
+    {
+      "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+      "epoch": "63",
+      "count": 0,
+      "root": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f",
+      "close": "0xefcac1062c86b002fe0a8733ce7e61b387cd85df258368c6bd2500c976939e57",
+      "releaseAt": "1791175129",
+      "release": "0x02de18204f34a565b4b62b21112fc1cc0380bb7a7027210602f513d50329834f",
+      "seal": "0x92f023e753e4b1295209a27d11d23f4d684fa983ccfb185974fcf6afb02e7322",
+      "released": true
+    },
+    {
+      "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+      "epoch": "64",
+      "count": 0,
+      "root": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f",
+      "close": "0x9f07f7969ef0a317079fb0a927aa823620345c9b5cc39238377d0589509a1a69",
+      "releaseAt": "1791175135",
+      "release": "0x0509c83b1363aad85a9604ef46ceb60e452b0b803ebab62a7fb864fa295d5d32",
+      "seal": "0xbca0303e60ecbd7385c48454afe96a728769bc0f3101285c2955489bbf5589bc",
+      "released": true
+    },
+    {
+      "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+      "epoch": "62",
+      "count": 0,
+      "root": "0x2733e50f526ec2fa19a22b31e8ed50f23cd1fdf94c9154ed3a7609a2f1ff981f",
+      "close": "0x111e1d4dbe239feac480c24d45fb2be4347b63c25b9958075e266a9fd6424ed4",
+      "releaseAt": "1791175140",
+      "release": "0x5902a77c51f77570f0e3b320d294843b4189bb3b2fadfb7c60c7eeb5e2d9d8c5",
+      "seal": "0x739b4b2a174e4899a773574384539032a452415b66f49b20bf4c67e9aef91578",
+      "released": true
+    }
+  ],
+  "passed": true,
+  "observedAt": "2026-10-05T04:39:29.131Z",
+  "finishedAt": "2026-10-05T04:39:29.132Z"
+}
