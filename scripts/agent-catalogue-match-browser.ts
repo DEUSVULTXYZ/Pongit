@@ -108,6 +108,8 @@ if(atomicQualification)await page.route('https://pongit.xyz/api/agents/config',a
  const response=await route.fetch(),config=await response.json();assert.equal(config.version,5);
  await route.fulfill({response,json:{...config,challengeAdmission:'atomic-v1'}});
 });
+let healthTimer:ReturnType<typeof setInterval>|undefined;
+let healthBusy=false;
 let spectator:import('@playwright/test').Page|undefined;
 if(restored)await context.addInitScript(session=>{
  if(sessionStorage.getItem('pongit:test-restored'))return;
@@ -278,6 +280,15 @@ try{
  const admitted=await (await apiGet(`/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
  report.matchPlayers=[admitted.a.toLowerCase(),admitted.b.toLowerCase()];report.actualMode=admitted.mode;assert.equal(report.actualMode,mode,'The actual contract match must use the selected mode');
  console.log(JSON.stringify({run,event:'admitted',ref:report.ref}));
+ report.health=[];
+ const nodeOrigin='https://il2-eu-'+report.ref.app.slice(2,18).toLowerCase()+'.fly.dev';
+ healthTimer=setInterval(()=>{if(healthBusy)return;healthBusy=true;void (async()=>{
+  const started=performance.timeOrigin+performance.now(),response=await page.request.get(nodeOrigin+'/health',{timeout:3000});
+  const h=await response.json();assert.equal(h.app.toLowerCase(),report.ref.app.toLowerCase());assert.equal(String(h.epoch),report.ref.epoch);
+  report.health.push({at:started,receivedAt:performance.timeOrigin+performance.now(),block:h.ephemeralBlock,timestamp:h.execTimestamp,
+   batches:h.committedBatches,pendingDiffs:h.pendingDiffs,ok:h.ok,sendGated:h.sendGated});
+ })().catch(()=>{report.healthReadErrors=(report.healthReadErrors??0)+1;}).finally(()=>healthBusy=false);},1000);
+
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
   spectator=await browser.newPage({viewport:{width:1440,height:1000}});observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);
   await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
@@ -388,6 +399,7 @@ try{
  report.failureState=await page.evaluate(()=>({hidden:document.hidden,text:document.body.innerText.slice(-1600),controlsDisabled:document.querySelector<HTMLButtonElement>('[aria-label="Move up"]')?.disabled})).catch(()=>undefined);
  await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
 finally{
+ if(healthTimer)clearInterval(healthTimer);
  try{await savePrivate();}catch{report.passed=false;report.error??='Private browser recovery state could not be saved';process.exitCode=1;}
  report.commandTimings=await page.evaluate(()=>(window as any).__commandTimings??[]).catch(()=>[]);
  measurePeer();

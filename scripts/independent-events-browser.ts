@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import {chromium,type Page,type BrowserContext} from '@playwright/test';
-import {parseTransaction,decodeFunctionData,createPublicClient,http,type Address} from 'viem';
+import {parseTransaction,decodeFunctionData,decodeEventLog,createPublicClient,http,type Address} from 'viem';
 import {monadTestnet} from 'viem/chains';
 import {abi as vaultAbi} from '../shared/abi-independent-RoomsVault';
 import {independentRules} from '../shared/independent-rules';
@@ -13,6 +13,7 @@ import {installSyncProbe,syncMetrics} from './browser-sync-probe';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const publicRelease=process.env.PONG_HUMAN_BROWSER_TARGET==='public-release';
 const chaos=process.env.INDEPENDENT_SCENARIO==='chaos';
+const naturalOnly=process.env.PONG_HUMAN_NATURAL==='1';
 const run=process.env.INDEPENDENT_TEST_RUN||'';assert(!run||/^[a-z0-9]{1,16}$/.test(run));
 const suffix=run?'-'+run:'';
 const origin='https://pongit.xyz',out=`artifacts/independent-candidate/browser${chaos?'-chaos':''}${suffix}`,secret=process.env.PONG_BROWSER_PRIVATE_PATH??`/secrets/independent-browser-v2${chaos?'-chaos':''}${suffix}.json`;
@@ -49,7 +50,7 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox'],channel
 const pages:Page[]=[],contexts:BrowserContext[]=[],devices:any[]=[],counts=[0,0,0,0];
 const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:manifest.rulesVersion,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
 report.target=publicRelease?'Public HTTPS web and API, actual hosted game':'Isolated candidate';
-report.resumedFixture=!!restore;
+report.resumedFixture=!!restore;report.naturalOnly=naturalOnly;report.liveControls=[];report.commandReceipts=[];
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 let reporting=false,driving=true;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
 async function until(fn:()=>Promise<any>,label:string,ms=60000){const end=Date.now()+ms;while(Date.now()<end){if(await fn().catch(()=>false))return;await sleep(250);}throw Error('Timed out: '+label);}
@@ -68,7 +69,7 @@ async function persist(){
 async function init(i:number){
  const context=await browser.newContext({viewport:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write'],...(restore?{storageState:saved.players[i].storage}:{})});contexts.push(context);
  if(restore)await context.addInitScript(session=>{for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));},saved.players[i].session);
- await context.addInitScript(()=>{if(location.origin==='https://pongit.xyz')localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));});
+ await context.addInitScript(()=>{sessionStorage.setItem('pongit:measure-controls','1');if(location.origin==='https://pongit.xyz')localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));});
  await context.exposeBinding('recordCountdown',(_source,digit:string)=>{if(/^[123]$/.test(digit)&&!report.countdown[i].includes(digit))report.countdown[i].push(digit);});
  await context.addInitScript({content:"addEventListener('DOMContentLoaded',function(){new MutationObserver(function(){var digit=document.querySelector('.match-countdown-digit')?.textContent?.trim();if(digit)window.recordCountdown(digit);}).observe(document.documentElement,{subtree:true,childList:true,characterData:true});});"});
  if(!publicRelease)await context.route(origin+'/**',async route=>{
@@ -91,12 +92,46 @@ async function init(i:number){
  devices.push({id:authenticatorId,cdp});
  if(restore)for(const credential of saved.players[i].credentials)await cdp.send('WebAuthn.addCredential',{authenticatorId,credential});
  cdp.on('WebAuthn.credentialAsserted',()=>counts[i]++);
+ const clock=()=>performance.timeOrigin+performance.now(),requestTimes=new WeakMap<object,number>();
+ page.on('request',r=>requestTimes.set(r,clock()));
+ page.on('websocket',socket=>{
+  const pending=new Map<string,any>();
+  socket.on('framesent',event=>{try{
+   const v=JSON.parse(String(event.payload));if(v.method!=='interlude_sendTransaction')return;
+   const tx=parseTransaction(v.params[0]),call=decodeFunctionData({abi:rules.arena,data:tx.data!});
+   pending.set(String(v.id),{at:clock(),action:call.functionName});
+  }catch{}});
+  socket.on('framereceived',event=>{try{
+   const v=JSON.parse(String(event.payload)),at=clock(),sent=pending.get(String(v.id));
+   if(sent){pending.delete(String(v.id));const row={player:i,at,method:'interlude_sendTransaction',action:sent.action,ms:at-sent.at,transport:'websocket',error:!!v.error};
+    report.network.push(row);
+    const receipt=v.result;
+    if(['0x1','success'].includes(String(receipt?.status))){
+     for(const log of receipt.logs??[]){try{const e=decodeEventLog({abi:rules.arena,data:log.data,topics:log.topics}) as any;
+      if(e.eventName==='ControlQueued'){
+       const input={player:i,id:String(e.args.id),side:Number(e.args.side),sequence:String(e.args.sequence),direction:Number(e.args.action)-2,sentAt:sent.at,confirmedAt:at,ms:at-sent.at};
+       report.commandReceipts.push(input);report.inputs[i].push(input);
+      }
+     }catch{}}
+    }
+   }
+   for(const log of v.params?.result?.logs??[]){try{const e=decodeEventLog({abi:rules.arena,data:log.data,topics:log.topics}) as any;
+    if(e.eventName==='ControlQueued')report.liveControls.push({observer:i,receivedAt:at,id:String(e.args.id),side:Number(e.args.side),sequence:String(e.args.sequence)});
+   }catch{}}
+  }catch{}});
+ });
  page.on('pageerror',e=>report.checks.push({pageError:e.message.replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,300)}));
  page.on('response',async response=>{const request=response.request(),url=new URL(response.url());if(!request.postData()||!url.hostname.endsWith('.fly.dev'))return;let method='unknown';try{method=request.postDataJSON()?.method;}catch{}
   const row:any={player:i,at:Date.now(),method,status:response.status(),requestBytes:Buffer.byteLength(request.postData()||'')};report.network.push(row);
   if(method==='interlude_sendTransaction'){try{const tx=parseTransaction(request.postDataJSON().params[0]);row.nonce=tx.nonce;row.action=decodeFunctionData({abi:rules.arena,data:tx.data!}).functionName;}catch{}}
   if(method==='eth_getTransactionCount'){try{row.count=(await response.json()).result;}catch{}}
-  try{const body=await response.json();if(['0x1','success'].includes(String(body.result?.status))&&method==='interlude_sendTransaction'){const tx=parseTransaction(request.postDataJSON().params[0]);const call=decodeFunctionData({abi:rules.arena,data:tx.data!});if(call.functionName==='input')report.inputs[i].push({direction:Number(call.args![rules.version===14?2:1]),at:Date.now(),hash:body.result.transactionHash});}if(body.error)row.rpcError={code:body.error.code,message:String(body.error.message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,350)};}catch{}
+  try{const body=await response.json();if(['0x1','success'].includes(String(body.result?.status))&&method==='interlude_sendTransaction'){const tx=parseTransaction(request.postDataJSON().params[0]);const call=decodeFunctionData({abi:rules.arena,data:tx.data!});if(call.functionName==='input'){
+ const sentAt=requestTimes.get(request),confirmedAt=clock();
+ for(const log of body.result.logs??[]){try{const e=decodeEventLog({abi:rules.arena,data:log.data,topics:log.topics}) as any;
+  if(e.eventName==='ControlQueued'&&sentAt!==undefined)report.commandReceipts.push({player:i,id:String(e.args.id),side:Number(e.args.side),sequence:String(e.args.sequence),direction:Number(e.args.action)-2,sentAt,confirmedAt,ms:confirmedAt-sentAt});
+ }catch{}}
+ report.inputs[i].push({direction:Number(call.args![rules.version===14?2:1]),at:Date.now(),hash:body.result.transactionHash});
+ }}if(body.error)row.rpcError={code:body.error.code,message:String(body.error.message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,350)};}catch{}
  });
  await page.goto(origin);const muted=page.getByRole('button',{name:'Enter muted',exact:true});if(await muted.isVisible())await muted.click();
  await page.locator('.rooms-header').waitFor();
@@ -216,10 +251,14 @@ try{
   // The beneficiary browser is disconnected while the relayer settles the payout.
   before[2]=counts[2];await persist();await spectator.goto('about:blank');
  }})();
- await a.reload();await a.locator('.rooms-canvas canvas').waitFor({timeout:45000});assert.equal(counts[0],before[0]);
+ if(!naturalOnly)await a.reload();await a.locator('.rooms-canvas canvas').waitFor({timeout:45000});assert.equal(counts[0],before[0]);
  await until(()=>a.getByRole('button',{name:'Move up',exact:true}).isEnabled(),'restored engine control',90000);
+ if(naturalOnly){
+  const ref=await a.evaluate(()=>{for(const key of Object.keys(sessionStorage).filter(k=>k.startsWith('pongit:last-arena:'))){const v=JSON.parse(sessionStorage.getItem(key)!);if(v.app&&v.id&&v.epoch)return `10143:${v.app}:${v.epoch}:${v.id}`;}return null;});assert(ref);saved.matchRef=ref;
+ }else{
  await a.getByRole('button',{name:'Tools',exact:true}).click();
  const ref=await a.locator('.rooms-dialog .rooms-address').textContent();assert(ref?.startsWith('10143:'));saved.matchRef=ref;await a.getByRole('button',{name:'Close Cabinet tools',exact:true}).click();
+ }
  // Players keep controlling the real match while the spectator funds and signs
  // a bet. Serializing that financial ceremony before the first movement left
  // both paddles idle until the game ended and did not exercise live gameplay.
@@ -236,7 +275,7 @@ try{
  void movement.catch(()=>{});
  await Promise.all([movement,financial]);
  assert(report.inputs[0].length>1&&report.inputs[1].length>1,'Both browsers must have real accepted movement receipts');
- assert.deepEqual(counts,before,'Gameplay unexpectedly requested a passkey');report.checks.push('F5 and direction input without a root passkey ceremony');
+ assert.deepEqual(counts,before,'Gameplay unexpectedly requested a passkey');report.checks.push(naturalOnly?'Natural match with both players controlling':'F5 and direction input without a root passkey ceremony');
  await a.screenshot({path:`${out}/classic.png`});
  await until(async()=>await a.getByRole('dialog',{name:'Confirmed match result'}).isVisible()&&await b.getByRole('dialog',{name:'Confirmed match result'}).isVisible(),'seventh point on both clients',chaos?600000:180000);
  await a.getByRole('button',{name:/Skip animation/}).click().catch(()=>{});
@@ -251,4 +290,9 @@ try{
   const trace=await pages[i].evaluate(()=>(window as any).__syncProbe).catch(()=>null);
   if(trace){await writeFile(`${out}/sync-${i}.json`,JSON.stringify(trace));report.sync??=[];report.sync[i]=syncMetrics(trace);}
  }
+ const p95=(a:number[])=>a.sort((x,y)=>x-y)[Math.floor((a.length-1)*.95)];
+ const paired=report.commandReceipts.map((r:any)=>{const e=report.liveControls.find((x:any)=>x.observer===1-r.player&&x.id===r.id&&x.side===r.side&&x.sequence===r.sequence);return e?e.receivedAt-r.sentAt:undefined;}).filter((v:any)=>Number.isFinite(v));
+ report.peerReception={samples:paired.length,p95Ms:p95(paired),clock:'same Playwright host',sendP95Ms:p95(report.commandReceipts.map((r:any)=>r.ms))};
+ if(naturalOnly){report.syncGates={natural:!!report.passed,render:report.sync?.slice(0,2).every((x:any)=>x.frames>100&&x.maxHoldMs<=500&&x.p95FrameMs<=20&&x.frameGaps.length===0&&x.snapshotJumps.length===0&&x.paddleJumps.length===0),peer:paired.length>=20&&report.peerReception.p95Ms<=report.peerReception.sendP95Ms+50,commands:report.network.filter((x:any)=>x.method==='interlude_sendTransaction').every((x:any)=>!x.error&&!x.rpcError)};
+  if(!Object.values(report.syncGates).every(v=>v===true)){report.passed=false;report.error??='Natural PvP synchronization gate failed';process.exitCode=1;}}
  report.finishedAt=new Date().toISOString();report.passkeyAssertions=counts;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}

@@ -143,3 +143,18 @@ test('known node cooldown does not enter the SDK or discard the last unsent inte
  lane.intent(0);assert.equal(sends,0);assert(!lane.stopped);
  now=2001;await lane.pump(false);assert.equal(sends,1);assert(!lane.stopped);
 });
+
+
+test('an accepted queued direction is not resent while physics still shows its predecessor',async()=>{
+ const f=fixture();let now=1000;
+ const session={send:async(name:string,args:readonly unknown[])=>{
+  f.sent.push({name,args});f.set({nonceA:f.state().nonceA+1n,observedAt:now});return {latencyMs:10};
+ }} as unknown as LabSession;
+ const lane=new LabLane(async()=>f.state(),session,a,()=>{},e=>{throw e;},()=>{},{readMs:500,tickMs:300,now:()=>now});
+ lane.intent(-1);await lane.pump(false);now+=100;await lane.pump(false);
+ assert.equal(f.sent.length,1);assert.equal(f.state().state.leftDir,0);
+ lane.intent(0);await lane.pump(false);assert.deepEqual(f.sent.map(x=>x.args[1]),[-1,0]);
+ lane.intent(1);await lane.pump(false);
+ f.set({state:{...f.state().state,scoreA:1,leftDir:0}});now+=600;await lane.pump(false);
+ assert.deepEqual(f.sent.map(x=>x.args[1]),[-1,0,1,1],'A real point resets controls; preserve held intent in the new rally');
+});

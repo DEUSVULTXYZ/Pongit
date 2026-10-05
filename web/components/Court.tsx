@@ -112,6 +112,7 @@ export function Court({
     const playout=new SpectatorPlayout(),playerPlayout=new SpectatorPlayout(true);
     const spectatorChaos=new SpectatorChaosProjection();
     const reconciliation=new ParticipantReconciliation();
+    const measureControls=sessionStorage.getItem('pongit:measure-controls')==='1';
     let previousParticipant:typeof current.current|undefined,previousControls='',previousTarget=0n;
     function draw(now: number) {
       let p = current.current;
@@ -167,7 +168,11 @@ export function Court({
             before=participantPose(chaosLegacy(old.state,previous.state.finished),old.state);
           }else before=participantPose(projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction).state);
         }
-        participantPicture=reconciliation.sample(participantPose(s,cp?.state),before,dt);
+        const predictedPose=participantPose(s,cp?.state);
+        participantPicture=reconciliation.sample(predictedPose,before,dt);
+        if(measureControls)window.dispatchEvent(new CustomEvent('pongit:presentation-timing',{detail:{ref:p.matchId,frameAt:now,
+         processedUs:String(p.state?.t),displayedUs:String(target),paddleError:participantPicture.paddles.map((y,i)=>y-predictedPose.paddles[i]),
+         ballError:participantPicture.balls.map((b,i)=>({id:b.id,x:b.x-predictedPose.balls[i].x,y:b.y-predictedPose.balls[i].y}))}}));
         [yA,yB]=participantPicture.paddles;
         previousParticipant=p;previousControls=controls;previousTarget=target;
       }else{reconciliation.reset();previousParticipant=undefined;}

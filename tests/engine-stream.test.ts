@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {encodeAbiParameters,encodeEventTopics,encodeFunctionResult,zeroAddress,zeroHash,type Address,type Hex} from "viem";
+import {parseAbi,encodeAbiParameters,encodeEventTopics,encodeFunctionResult,zeroAddress,zeroHash,type Address,type Hex} from "viem";
 import {roomsChaosAbi as abi} from "../shared/abi-PongRoomsTestnet";
 import {initial} from "../shared/physics-v2";
 import {engineState,engineTuple,mergeEngineFrame,appliedFrame,EngineStream,type EngineFrame,type StreamSocket} from "../shared/engine-stream";
@@ -245,4 +245,20 @@ test('fresh contiguous commands bypass a slow consistency read but never bypass 
  const fresh={...baseline(),revision:6n,head:110n,state:{...baseline().state,t:200000n}};
  finish(encodeFunctionResult({abi,functionName:'getSnapshot',result:engineTuple(fresh) as any}));
  await afterGap;off();
+});
+
+
+test('human live snapshots retain only the latest queued intent until its physical time',()=>{
+ const events=parseAbi(['event ControlQueued(uint256 indexed id,uint8 indexed side,uint256 sequence,uint8 action,uint64 gameTime)']);
+ const all=[...abi,...events];
+ const input=(direction:number,sequence:bigint,at:bigint)=>({address:app as Address,topics:encodeEventTopics({abi:events,eventName:'ControlQueued',args:{id:1n,side:1}}) as Hex[],data:encodeAbiParameters([{type:'uint256'},{type:'uint8'},{type:'uint64'}],[sequence,direction+2,at])});
+ const f=frame();f.logs=[input(-1,1n,250000n),...f.logs];
+ const first=mergeEngineFrame(all,app,baseline(),f).state;
+ assert.deepEqual(first.queuedControls,[{side:1,direction:-1,at:250000n}]);
+ const next=frame(7n,115n,2,{...first.state,t:220000n});next.logs=[input(1,2n,270000n),...next.logs];
+ const second=mergeEngineFrame(all,app,first,next).state;
+ assert.deepEqual(second.queuedControls,[{side:1,direction:1,at:270000n}]);
+ assert.deepEqual(mergeEngineFrame(all,app,second,frame(8n,120n,2,{...second.state,t:280000n})).state.queuedControls,[]);
+ const gap=frame(10n);gap.logs=[input(-1,3n,300000n),...gap.logs];
+ assert.equal(mergeEngineFrame(all,app,second,gap).state,second,'A gap cannot manufacture accepted visual controls');
 });

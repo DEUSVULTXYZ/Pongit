@@ -1,5 +1,5 @@
 import {createInterludeClient,webStorageStore,type Session} from "@interludelayer-sdk/sdk";
-import {createPublicClient,http,type Address,type Abi} from "viem";
+import {createPublicClient,http,decodeEventLog,parseAbi,type Address,type Abi} from "viem";
 import {monadTestnet} from "viem/chains";
 import {readContract} from "viem/actions";
 import manifest from "../../deployments/interlude-lab.json";
@@ -7,6 +7,7 @@ import {interludeLabAbi,interludeHubReadAbi} from "../../shared/abi-interlude";
 import type {State} from "../../shared/physics-v2";
 import {engineReadRetryMs} from "../../shared/engine-read";
 import {engineState,type EngineState} from "../../shared/engine-stream";
+import type {InputNotice} from './participant-inputs';
 import type {ArenaSender} from '../../shared/compact-arena-session';
 
 export const labManifest=manifest;
@@ -47,6 +48,9 @@ export class LabLane {
  private observationPending=false;
  private expectedInput?:{id:bigint;side:number;nonce:bigint};
  private expectedTerminal?:bigint;
+ private acceptedIntent?:{id:bigint;direction:number;rally:number};
+ private inputId=0;
+ private intention:InputNotice={id:0,direction:0,at:0};
  private latest?:LabSnapshot;
  private lastObservation=0;
  private lastWrite=0;
@@ -55,9 +59,14 @@ export class LabLane {
   private onResult:(s:LabSnapshot,latency?:number)=>void,private onError:(e:unknown)=>void,
   private onUnavailable:(e:unknown)=>void=()=>{},
   private pacing:{readMs:number;tickMs:number;inputMs?:number;cooldownMs?:()=>number;now?:()=>number}={readMs:0,tickMs:0},
-  private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void}){}
+  private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void;input?:(notice:InputNotice)=>void}){}
  private now(){return (this.pacing.now || Date.now)();}
- intent(direction:number){this.desired=direction;}
+ intent(direction:number){
+  if(![-1,0,1].includes(direction))return;
+  if(direction!==this.desired){this.intention={id:++this.inputId,direction:direction as -1|0|1,at:this.now()};this.stream?.input?.(this.intention);}
+  this.desired=direction;
+ }
+ private held(s:LabSnapshot,side:number){return this.acceptedIntent?.id===s.id&&this.acceptedIntent.rally===s.state.scoreA+s.state.scoreB?this.acceptedIntent.direction:side===0?s.state.leftDir:s.state.rightDir;}
  stop(){this.stopped=true;this.desired=0;}
  ingest(s:LabSnapshot){
   if(!this.latest || s.id!==this.latest.id || s.revision>=this.latest.revision){this.latest=s;this.lastObservation=s.observedAt;}
@@ -101,7 +110,7 @@ export class LabLane {
   if(cooldown>0){this.nextReadAt=this.now()+cooldown;return;}
   const cached=this.latest, cachedSide=labSide(cached || null,this.account);
   const recent=cached && this.now()-this.lastObservation<this.pacing.readMs && !this.observationPending;
-  const newIntent=cached && cachedSide>=0 && (cachedSide===0?cached.state.leftDir:cached.state.rightDir)!==this.desired;
+  const newIntent=cached && cachedSide>=0 && this.held(cached,cachedSide)!==this.desired;
   // Keyboard changes bypass the idle observer cadence. Idle polling does not.
   if(recent && !newIntent && (!allowTick || this.now()-this.lastWrite<this.pacing.tickMs))return;
   this.busy=true;
@@ -114,14 +123,14 @@ export class LabLane {
    // Drain a release/reversal immediately after its predecessor, without
    // waiting for the 100 ms idle-tick interval. Never resend an uncertain call.
    for(let n=0;n<4 && !this.stopped && !this.actionPending && s.phase===2;n++){
-    let changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
+    let changed=this.held(s,side)!==this.desired;
     // A subscribed Chaos pause can remain cached for ten seconds, but input
     // deadlines are only 150 engine blocks ahead. Refresh the head when a
     // player actually moves, not on every idle read of that stationary pause.
     if(this.stream && changed && this.now()-s.observedAt>=1000){
      s=await this.observe(true);
      if(this.stopped||s.phase!==2||labSide(s,this.account)!==side)break;
-     changed=(side===0?s.state.leftDir:s.state.rightDir)!==this.desired;
+     changed=this.held(s,side)!==this.desired;
     }
     if(!changed && (!allowTick||n>0||this.now()-this.lastWrite<this.pacing.tickMs))break;
     if(changed && this.now()-this.lastInputAt<(this.pacing.inputMs??0))break;
@@ -130,7 +139,17 @@ export class LabLane {
     const name=changed?"input":"tick",args=changed?[s.id,this.desired,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n]:[s.id];
     this.stream?.sending?.(true);
     if(changed)this.lastInputAt=this.now();
+    const intent=this.intention;
     const result=await this.session.send(name,args);
+    if(changed){
+     // The receipt acknowledges a queued direction, not necessarily applied physics.
+     // Comparing only state.leftDir resent that same accepted intent up to four times.
+     this.acceptedIntent={id:s.id,direction:Number(args[1]),rally:s.state.scoreA+s.state.scoreB};
+     for(const log of result.receipt?.logs??[]){try{
+      const e=decodeEventLog({abi:parseAbi(['event ControlQueued(uint256 indexed id,uint8 indexed side,uint256 sequence,uint8 action,uint64 gameTime)']),data:log.data,topics:log.topics});
+      if(e.args.id===s.id&&e.args.side===side&&e.args.sequence===args[2])this.stream?.input?.({...intent,acceptedAt:e.args.gameTime});
+     }catch{}}
+    }
     this.lastWrite=this.now();
     this.observationPending=true;
     if(changed)this.expectedInput={id:s.id,side,nonce:(side===0?s.nonceA:s.nonceB)+1n};

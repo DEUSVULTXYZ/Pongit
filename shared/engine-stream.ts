@@ -5,7 +5,7 @@ import {validateSynchronization,type AgentSynchronization} from './agent-synchro
 import {unpackChaos,chaosLegacy,unpackChaosCollision,snapshotHeaderFields,type ChaosDecoded} from './chaos-codec';
 
 export type EngineFrame = {app:Address;hash:Hex;head:bigint;logs:readonly {address:Address;topics:readonly Hex[];data:Hex}[]};
-export type EngineState = {id:bigint;revision:bigint;phase:number;a:Address;b:Address;target:Address;winner:Address;head:bigint;clock:bigint;nonceA:bigint;nonceB:bigint;deadline:bigint;state:State;chaos?:ChaosDecoded;sync?:AgentSynchronization;observedAt:number;reset?:boolean};
+export type EngineState = {id:bigint;revision:bigint;phase:number;a:Address;b:Address;target:Address;winner:Address;head:bigint;clock:bigint;nonceA:bigint;nonceB:bigint;deadline:bigint;state:State;chaos?:ChaosDecoded;sync?:AgentSynchronization;observedAt:number;reset?:boolean;queuedControls?:{side:0|1;direction:-1|0|1;at:bigint}[]};
 export function engineState(v:readonly unknown[],now=Date.now()):EngineState {
  const [id,revision,phase,a,b,target,winner,head,clock,nonceA,nonceB,deadline,state]=v;
  return {id:id as bigint,revision:revision as bigint,phase:Number(phase),a:a as Address,b:b as Address,target:target as Address,winner:winner as Address,head:head as bigint,clock:clock as bigint,nonceA:nonceA as bigint,nonceB:nonceB as bigint,deadline:deadline as bigint,state:state as State,...(v[13]?{chaos:v[13] as ChaosDecoded}:{}),...(v[14]?{sync:v[14] as AgentSynchronization}:{}),observedAt:now};
@@ -27,12 +27,17 @@ export function receiptFrame(receipt:any,app:Address):EngineFrame|null {
  * read; the owning receipt may opt into the complete friendly Classic checkpoint. */
 export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:EngineFrame,now=Date.now(),allowClassicCheckpoint=false):{state:EngineState;resync:boolean;changed:boolean;gap?:bigint;launch?:boolean} {
  let snapshot:any,completed:any,synchronization:any,request:bigint|undefined,pending:bigint|undefined;
+ const queuedControls=[...(previous.queuedControls??[])];
  const collisions:ReturnType<typeof unpackChaosCollision>[]=[];
  for(const log of frame.logs){if(log.address.toLowerCase()!==app.toLowerCase())continue;try{
   const e=decodeEventLog({abi,data:log.data,topics:[...log.topics] as any});const args=e.args as any;
   if(args.id!==previous.id)continue;
   if(e.eventName==="Snapshot")snapshot=args;
   if(e.eventName==="Completed")completed=args;
+  if(e.eventName==='ControlQueued'&&[0,1].includes(args.side)&&[1,2,3].includes(args.action)){
+   const old=queuedControls.findIndex(c=>c.side===args.side);if(old>=0)queuedControls.splice(old,1);
+   queuedControls.push({side:args.side,direction:(args.action-2) as -1|0|1,at:args.gameTime});
+  }
   if(e.eventName==='Synchronization')synchronization=args;
   if(e.eventName==='EventRequested'){request=args.request;pending=0n;}
   if(e.eventName==='RandomnessVerified')pending=args.draw;
@@ -79,7 +84,7 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
   const elapsed=previous.clock+(frame.head-previous.head)*10000n;
   let clock=synchronization?.clock??(phase===2?(elapsed>state.t?elapsed:state.t):state.t);
   if(sync?.pause.human&&clock>sync.pause.limitUs)clock=sync.pause.limitUs;
-  return {state:{...previous,reset:false,revision:snapshot.version,phase,head:frame.head,clock,state,...(chaos?{chaos}:{}),...(sync?{sync}:{}),nonceA,nonceB,winner,observedAt:now},resync:false,changed:true};
+  return {state:{...previous,queuedControls:queuedControls.filter(c=>c.at>state.t),reset:false,revision:snapshot.version,phase,head:frame.head,clock,state,...(chaos?{chaos}:{}),...(sync?{sync}:{}),nonceA,nonceB,winner,observedAt:now},resync:false,changed:true};
  }catch{return {state:previous,resync:true,changed:false};}
 }
 
