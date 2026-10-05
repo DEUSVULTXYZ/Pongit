@@ -1,0 +1,141 @@
+{
+  "at": "2026-10-05T14:34:12.606647+00:00",
+  "containers": [
+    {
+      "name": "pongit-arcade-five-arcade-web-1",
+      "image": "sha256:363ef561c5d5121e8a54accd171cd300891ed25d1363a0bba5aceddef2dd68f6",
+      "startedAt": "2026-10-05T14:17:54.819958171Z",
+      "running": true,
+      "sourceOverrides": []
+    },
+    {
+      "name": "pongit-arcade-five-admission-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-05T13:20:28.683261489Z",
+      "running": true,
+      "sourceOverrides": [
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/continuous-delegation-5d85044.ts",
+          "destination": "/app/shared/continuous-delegation.ts",
+          "sha256": "532f1d22bafdb980479855ff7fa9054d50864fabc1383ece245a2539d6529591"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/shared/agent-keeper-role.ts",
+          "destination": "/app/shared/agent-keeper-role.ts",
+          "sha256": "ce765a96e7e4f22b7238f37e0b50a5115d5d63126a530abc20c15ce82cdabced"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/independent-chain-tools.ts",
+          "destination": "/app/scripts/independent-chain-tools.ts",
+          "sha256": "8442fdf55ae406f18c6085ed9f4730bfbdafe7a9273136494d383048ebe24d18"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/agent-reusable-step.ts",
+          "destination": "/app/scripts/agent-reusable-step.ts",
+          "sha256": "0275144cb9206c4070631e119af01f75e13dc0894a1708ffcf8f4b62587a4e6d"
+        }
+      ]
+    },
+    {
+      "name": "pongit-arcade-five-maintenance-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-05T13:20:28.6707039Z",
+      "running": true,
+      "sourceOverrides": [
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/continuous-delegation-5d85044.ts",
+          "destination": "/app/shared/continuous-delegation.ts",
+          "sha256": "532f1d22bafdb980479855ff7fa9054d50864fabc1383ece245a2539d6529591"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/shared/agent-keeper-role.ts",
+          "destination": "/app/shared/agent-keeper-role.ts",
+          "sha256": "ce765a96e7e4f22b7238f37e0b50a5115d5d63126a530abc20c15ce82cdabced"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/independent-chain-tools.ts",
+          "destination": "/app/scripts/independent-chain-tools.ts",
+          "sha256": "8442fdf55ae406f18c6085ed9f4730bfbdafe7a9273136494d383048ebe24d18"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/agent-reusable-step.ts",
+          "destination": "/app/scripts/agent-reusable-step.ts",
+          "sha256": "0275144cb9206c4070631e119af01f75e13dc0894a1708ffcf8f4b62587a4e6d"
+        }
+      ]
+    },
+    {
+      "name": "pongit-arcade-five-archive-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-05T13:20:28.684032426Z",
+      "running": true,
+      "sourceOverrides": [
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/continuous-delegation-5d85044.ts",
+          "destination": "/app/shared/continuous-delegation.ts",
+          "sha256": "532f1d22bafdb980479855ff7fa9054d50864fabc1383ece245a2539d6529591"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/shared/agent-keeper-role.ts",
+          "destination": "/app/shared/agent-keeper-role.ts",
+          "sha256": "ce765a96e7e4f22b7238f37e0b50a5115d5d63126a530abc20c15ce82cdabced"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/independent-chain-tools.ts",
+          "destination": "/app/scripts/independent-chain-tools.ts",
+          "sha256": "8442fdf55ae406f18c6085ed9f4730bfbdafe7a9273136494d383048ebe24d18"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/agent-reusable-step.ts",
+          "destination": "/app/scripts/agent-reusable-step.ts",
+          "sha256": "0275144cb9206c4070631e119af01f75e13dc0894a1708ffcf8f4b62587a4e6d"
+        }
+      ]
+    },
+    {
+      "name": "pongit-arcade-five-engines-1",
+      "image": "sha256:cec312301e5d7e9bfead34f1cc14aeb3949e34bdff6275f5770b8ab870b4b743",
+      "startedAt": "2026-10-03T16:19:50.159149711Z",
+      "running": true,
+      "sourceOverrides": []
+    },
+    {
+      "name": "pongit-relayer-1",
+      "image": "sha256:1f71055be3b91b8fcc6be8bb73a3e88bcff62ca25cff720ab057e7c0d2c2492b",
+      "startedAt": "2026-10-05T13:20:32.904709268Z",
+      "running": true,
+      "sourceOverrides": [
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/relayer/src/independent-writer.ts",
+          "destination": "/app/relayer/src/independent-writer.ts",
+          "sha256": "623751338002c51d4c079de45ecec730e99c62a2f05f355cfa8f902e0dbb5534"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/relayer/src/rooms-lifecycle.ts",
+          "destination": "/app/relayer/src/rooms-lifecycle.ts",
+          "sha256": "11ad72a1521b8b218e4f9910c90f27945567414e212d0cc09b1ea29df5a7942a"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/continuous-delegation-5d85044.ts",
+          "destination": "/app/shared/continuous-delegation.ts",
+          "sha256": "532f1d22bafdb980479855ff7fa9054d50864fabc1383ece245a2539d6529591"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/relayer/src/independent-reusable-pool.ts",
+          "destination": "/app/relayer/src/independent-reusable-pool.ts",
+          "sha256": "7de4af0baa2cca4e096f9c734b227a317384c133d098325e0b7c2a186f8d0b70"
+        },
+        {
+          "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/relayer/src/independent-reusable-lifecycle.ts",
+          "destination": "/app/relayer/src/independent-reusable-lifecycle.ts",
+          "sha256": "7d19c9b51638d076073e36d7bdbd522cd3849c2708bdf333b08bf22dad889f96"
+        }
+      ]
+    }
+  ],
+  "webSource": "8e0c5dc",
+  "configHashes": {
+    "/opt/pongit/releases/arcade-d2c6033/five-runtime/compose.json": "98c4bc8721404901fc9e52896efc712e111899d3600e1b8db2d6277da336fba6",
+    "/opt/pongit/releases/human-v3-20261005/human-runtime.json": "73eac1665bd3170b0447a9076d000831c0741ce784ee343c90797301abc78790"
+  }
+}

@@ -1,0 +1,533 @@
+{
+  "sourceWeb": "29c411b",
+  "note": "Five natural Chaos runs passed. Classic 794 and PvP contpvp1 remain failed; they are not waived.",
+  "matches": [
+    {
+      "run": "continuous-accept-20261005-1",
+      "channel": "chrome",
+      "mode": 1,
+      "ref": {
+        "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+        "epoch": "8",
+        "id": "789"
+      },
+      "naturalMatch": true,
+      "passed": true,
+      "error": null,
+      "input": {
+        "samples": 43,
+        "p95Ms": 27
+      },
+      "submissionP95Ms": 19.965899999999237,
+      "peerReception": {
+        "samples": 84,
+        "p95Ms": 14.50146484375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "admissionMs": 6723,
+      "liveness": {
+        "heartbeats": 119,
+        "resumes": 0
+      },
+      "result": {
+        "hash": "0x38bcbb6453e209966754c0c9a1b67d2871db6a54286423a12bc8b4c7c8b3bbd1",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "reportSha256": "0a92c08cf9243971896b16ede43260bb254623aa5219e09c6f7af8cc5e5c44bb",
+      "render": {
+        "sync": {
+          "maxHoldMs": 183.29999995231628,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.200000047683716
+        },
+        "spectatorSync": {
+          "maxHoldMs": 216.80000007152557,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.100000023841858
+        }
+      }
+    },
+    {
+      "run": "continuous-accept-20261005-2",
+      "channel": "msedge",
+      "mode": 1,
+      "ref": {
+        "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+        "epoch": "8",
+        "id": "790"
+      },
+      "naturalMatch": true,
+      "passed": true,
+      "error": null,
+      "input": {
+        "samples": 43,
+        "p95Ms": 24.40000009536743
+      },
+      "submissionP95Ms": 16.59809999999925,
+      "peerReception": {
+        "samples": 85,
+        "p95Ms": 17.048095703125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "admissionMs": 7265,
+      "liveness": {
+        "heartbeats": 120,
+        "resumes": 0
+      },
+      "result": {
+        "hash": "0xcf1680bc350d84d8f85b90c790e87010dfda9c23babce503d91224f8ca942969",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "reportSha256": "d5e27ece88fb3d012ddf3b9ef4d0821210cde8b7a1249865a2057e645b54046e",
+      "render": {
+        "sync": {
+          "maxHoldMs": 149.60000002384186,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.199999928474426
+        },
+        "spectatorSync": {
+          "maxHoldMs": 166.60000002384186,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.100000023841858
+        }
+      }
+    },
+    {
+      "run": "continuous-accept-20261005-3",
+      "channel": "chrome",
+      "mode": 1,
+      "ref": {
+        "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+        "epoch": "9",
+        "id": "791"
+      },
+      "naturalMatch": true,
+      "passed": true,
+      "error": null,
+      "input": {
+        "samples": 43,
+        "p95Ms": 24.800000071525574
+      },
+      "submissionP95Ms": 16.216800000001967,
+      "peerReception": {
+        "samples": 84,
+        "p95Ms": 12.46142578125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "admissionMs": 7495,
+      "liveness": {
+        "heartbeats": 119,
+        "resumes": 0
+      },
+      "result": {
+        "hash": "0xa9ab463750fd9cd881399ea40d9629cffedcfc0518b4b01b96765baf0ad7f100",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "reportSha256": "53e84dcaa7be9fb05f5bc30c09d6c7559c35a6f911c1cbe82b8f408b5cb8cda4",
+      "render": {
+        "sync": {
+          "maxHoldMs": 100.5,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.200000047683716
+        },
+        "spectatorSync": {
+          "maxHoldMs": 116.5,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.200000047683716
+        }
+      }
+    },
+    {
+      "run": "continuous-accept-20261005-4",
+      "channel": "msedge",
+      "mode": 1,
+      "ref": {
+        "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+        "epoch": "7",
+        "id": "792"
+      },
+      "naturalMatch": true,
+      "passed": true,
+      "error": null,
+      "input": {
+        "samples": 42,
+        "p95Ms": 25.699999928474426
+      },
+      "submissionP95Ms": 15.641299999999319,
+      "peerReception": {
+        "samples": 82,
+        "p95Ms": 10.18701171875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "admissionMs": 7996,
+      "liveness": {
+        "heartbeats": 117,
+        "resumes": 0
+      },
+      "result": {
+        "hash": "0xff322148c521d3e75132345eb236647fb48c41cfafffa1c4fb2010a8a188b871",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927090",
+        "finality": false
+      },
+      "reportSha256": "646b546da876d750b48671ed9118ebbb1ee09125d86f5e467df924a4c6e74ab3",
+      "render": {
+        "sync": {
+          "maxHoldMs": 166.70000004768372,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.200000047683716
+        },
+        "spectatorSync": {
+          "maxHoldMs": 166.60000002384186,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.200000047683716
+        }
+      }
+    },
+    {
+      "run": "continuous-accept-20261005-5",
+      "channel": "chrome",
+      "mode": 1,
+      "ref": {
+        "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+        "epoch": "9",
+        "id": "793"
+      },
+      "naturalMatch": true,
+      "passed": true,
+      "error": null,
+      "input": {
+        "samples": 53,
+        "p95Ms": 24.100000023841858
+      },
+      "submissionP95Ms": 19.246899999998277,
+      "peerReception": {
+        "samples": 105,
+        "p95Ms": 13.21533203125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "admissionMs": 8430,
+      "liveness": {
+        "heartbeats": 150,
+        "resumes": 0
+      },
+      "result": {
+        "hash": "0xad06b9d0c8cc5f104cb00fd36a70b5ad1f62834b8e0f1815cce39258f26b1dbb",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "44396618",
+        "finality": false
+      },
+      "reportSha256": "0dbf070168ea5084ebd4071a77104f3a6bd7b6b49838cd98db7de6f4406bd89e",
+      "render": {
+        "sync": {
+          "maxHoldMs": 149.70000004768372,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.300000071525574
+        },
+        "spectatorSync": {
+          "maxHoldMs": 183,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.200000047683716
+        }
+      }
+    },
+    {
+      "run": "continuous-accept-20261005-6",
+      "channel": "msedge",
+      "mode": 0,
+      "ref": {
+        "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+        "epoch": "8",
+        "id": "794"
+      },
+      "naturalMatch": true,
+      "passed": false,
+      "error": "Natural-match synchronization gate failed",
+      "input": {
+        "samples": 50,
+        "p95Ms": 25
+      },
+      "submissionP95Ms": 14.938800000003539,
+      "peerReception": {
+        "samples": 99,
+        "p95Ms": 8.27490234375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": false,
+        "spectator": true
+      },
+      "admissionMs": 8011,
+      "liveness": {
+        "heartbeats": 143,
+        "resumes": 0
+      },
+      "result": {
+        "hash": "0x91b2c43eaf0b670a142ec3016c2974455f622836914f5b659fbdb8b71e146aa3",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "42646620",
+        "finality": false
+      },
+      "reportSha256": "35d45762f827a3e4592d15bdbf1840b4c65e24c625c5d4bb796ad69978e22776",
+      "render": {
+        "sync": {
+          "maxHoldMs": 218.60000002384186,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.199999928474426
+        },
+        "spectatorSync": {
+          "maxHoldMs": 216.70000004768372,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.100000023841858
+        }
+      }
+    },
+    {
+      "run": "continuous-baseline-chaos-20261005-1",
+      "channel": "chrome",
+      "mode": 1,
+      "ref": {
+        "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+        "epoch": "9",
+        "id": "781"
+      },
+      "naturalMatch": true,
+      "passed": false,
+      "error": "Local movement latency exceeded 50 ms",
+      "input": {
+        "samples": 48,
+        "p95Ms": 26.5
+      },
+      "submissionP95Ms": 22.394899999999325,
+      "peerReception": null,
+      "naturalGates": null,
+      "admissionMs": 13919,
+      "liveness": null,
+      "result": {
+        "hash": "0x96a49b1b7631fcd0598c2b4e67ddd00ff87c488ca1005597791e77d93cab3665",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 6,
+        "scoreB": 7,
+        "elapsedUs": "39520839",
+        "finality": false
+      },
+      "reportSha256": "3a84cf5d0a70b97dad7dcb4e9fb542d31eaf14547470ac9e052af6fe4bb9b4ce",
+      "render": {
+        "sync": {
+          "maxHoldMs": 416.6999999284744,
+          "contractPauseMs": 0,
+          "visibleResyncs": null,
+          "p95FrameMs": 17.200000047683716
+        },
+        "spectatorSync": {
+          "maxHoldMs": 266.6999999284744,
+          "contractPauseMs": 0,
+          "visibleResyncs": null,
+          "p95FrameMs": 17.200000047683716
+        }
+      }
+    },
+    {
+      "run": "continuous-baseline-read200-20261005-2",
+      "channel": "chrome",
+      "mode": 1,
+      "ref": {
+        "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+        "epoch": "7",
+        "id": "782"
+      },
+      "naturalMatch": true,
+      "passed": true,
+      "error": null,
+      "input": {
+        "samples": 55,
+        "p95Ms": 26.700000047683716
+      },
+      "submissionP95Ms": 16.481800000001385,
+      "peerReception": {
+        "samples": 113,
+        "p95Ms": 11.693115234375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": null,
+      "admissionMs": 16528,
+      "liveness": {
+        "heartbeats": 162,
+        "resumes": 1
+      },
+      "result": {
+        "hash": "0x4b708340caad19df2ceacd50ae9b286cc69d380d569d23b68f97000a06a7ab66",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "45294029",
+        "finality": false
+      },
+      "reportSha256": "5c4f3ee8dcfaaef67591a18c930b1598ba5d82b7cef60799e2f8d2c5409e61b4",
+      "render": {
+        "sync": {
+          "maxHoldMs": 216.20000004768372,
+          "contractPauseMs": 3115.4000000953674,
+          "visibleResyncs": null,
+          "p95FrameMs": 17.200000047683716
+        },
+        "spectatorSync": {
+          "maxHoldMs": 283.2000000476837,
+          "contractPauseMs": 2617.4000000953674,
+          "visibleResyncs": null,
+          "p95FrameMs": 17.199999928474426
+        }
+      }
+    },
+    {
+      "run": "continuous-read200-after-20261005-1",
+      "channel": "chrome",
+      "mode": 1,
+      "ref": {
+        "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+        "epoch": "9",
+        "id": "788"
+      },
+      "naturalMatch": true,
+      "passed": true,
+      "error": null,
+      "input": {
+        "samples": 42,
+        "p95Ms": 21.699999928474426
+      },
+      "submissionP95Ms": 16.20049999999901,
+      "peerReception": {
+        "samples": 83,
+        "p95Ms": 11.93994140625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "admissionMs": 13574,
+      "liveness": {
+        "heartbeats": 119,
+        "resumes": 0
+      },
+      "result": {
+        "hash": "0x7034cb034e31060b4960afc94a1f0dc7f9c76023a31ce2efab769f854c72e7e1",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "35159886",
+        "finality": false
+      },
+      "reportSha256": "1aca21b587012b614b283184427c7554d2635554f7c5e15850f327ad22ea0eb5",
+      "render": {
+        "sync": {
+          "maxHoldMs": 200.09999990463257,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.200000047683716
+        },
+        "spectatorSync": {
+          "maxHoldMs": 183.19999992847443,
+          "contractPauseMs": 0,
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.100000023841858
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-05T14:31:42.105755+00:00",
+  "originalPassed": false,
+  "ref": {
+    "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+    "epoch": "6",
+    "id": "830"
+  },
+  "hash": "0x0f380851da5c574cf65a1eda99152a5a3694acd42e80a9096445e700d67bba78",
+  "nonce": 178,
+  "action": "heartbeat",
+  "journalState": "reverted",
+  "result": {
+    "hash": "0x74482b3b85a7045f743a3dc718af430ab7fcecac07d76a794394324f5b4a45a8",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 4,
+    "scoreB": 7,
+    "elapsedUs": "31427088",
+    "finality": false
+  },
+  "lastReceipt": {
+    "ms": 10.254100000005565,
+    "sentAt": 1791210020362.1404,
+    "confirmedAt": 1791210020372.4092,
+    "status": "0x0"
+  },
+  "lastFrame": {
+    "score": "4:6",
+    "physicsUs": "31250000"
+  },
+  "nextSnapshot": {
+    "score": "4:7",
+    "finished": true,
+    "physicsUs": "31427088",
+    "observedAt": 1791210020379
+  },
+  "visibleResyncs": 0,
+  "pauseMs": 0,
+  "interpretation": "Heartbeat overlaps the final point. The original strict run remains failed; later natural acceptance is separate.",
+  "readOnlyAuditAttempts": [
+    "eth_getTransactionReceipt returned exact reverted hash but no output: error decoding failed.",
+    "interlude_getTransactionReceipt is unsupported (-32601).",
+    "Later eth_getTransactionReceipt returned null; no terminal-event proof or revert selector is claimed."
+  ]
+}

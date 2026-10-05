@@ -1,0 +1,1205 @@
+{
+  "at": "2026-10-05T14:40:37.023793+00:00",
+  "webCommit": "8e0c5dc",
+  "backendPolicyCommits": [
+    "7480ecf",
+    "5d85044"
+  ],
+  "virtualPrfOnly": true,
+  "production": true,
+  "naturalMatches": [
+    {
+      "run": "continuous-final8e-20261005-1",
+      "channel": "chrome",
+      "actualMode": 1,
+      "ref": {
+        "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+        "epoch": "8",
+        "id": "829"
+      },
+      "result": {
+        "hash": "0xbcddee50c5f1224082cd0a923bb713082223b8aac0ed26a88ff56b55a31cdfed",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "input": {
+        "samples": 43,
+        "p95Ms": 23.799999952316284
+      },
+      "admissionMs": 13279,
+      "confirmedInput": {
+        "samples": 84,
+        "p95Ms": 16.939208984375,
+        "maxMs": 33.39306640625,
+        "mismatches": []
+      },
+      "submissionP95Ms": 14.970700000005309,
+      "receiptP95Ms": 14.970700000005309,
+      "peerReception": {
+        "samples": 84,
+        "p95Ms": 9.603759765625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "stream": {
+        "engineWebSocketConnections": 2,
+        "engineWebSocketClosures": 0,
+        "observationInvocations": 153,
+        "note": "Observation calls are not equivalent to full RPC reads; connection count is not a React reconstruction count."
+      },
+      "nodeClockSample": {
+        "samples": 58,
+        "wallSeconds": 57.27053759765625,
+        "blockHz": 98.113274917642,
+        "timestampRatio": 1.0127371320916954,
+        "scope": "whole observed match; cached health and integer seconds, not precise phase timing"
+      },
+      "report": "artifacts/qualification/catalogue-continuous-final8e-20261005-1/report.json",
+      "sha256": "f6a21f229b7080b04d564018b9a3c27fe9b728784eea804267a92114eadcd7e4",
+      "player": {
+        "frames": 2513,
+        "snapshots": 240,
+        "localInput": {
+          "samples": 43,
+          "p95Ms": 21.800000071525574,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17,
+        "maxHoldMs": 133.70000000000073,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 283.5,
+        "correction": {
+          "samples": 5180,
+          "p95Pixels": 1.147248983256702,
+          "maxPixels": 53.717607989905105
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "observer": {
+        "frames": 2466,
+        "snapshots": 245,
+        "localInput": {
+          "samples": 0,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 283.39999997615814,
+        "correction": {
+          "samples": 0
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "maxCommandsPerSecond": 7,
+      "timingsP95Ms": {
+        "fence": 0.10000002384185791,
+        "receipt": 0.7000000476837158,
+        "nonce": 7.400000095367432,
+        "transport": 15.699999928474426,
+        "observation": 8.299999952316284,
+        "send": 16.200000047683716,
+        "snapshot": 0,
+        "signature": 0.40000009536743164,
+        "queue": 0.3999999761581421
+      },
+      "maxObservedPendingDiffs": 24
+    },
+    {
+      "run": "continuous-final8e-20261005-2-retry1",
+      "channel": "msedge",
+      "actualMode": 1,
+      "ref": {
+        "app": "0xbFC44E0cDB647689C138445E6e4796e71C425235",
+        "epoch": "9",
+        "id": "831"
+      },
+      "result": {
+        "hash": "0x7002ab2427db9e45293d9728811ab2023f8b6ab7421e76bf024f2023fe771f2a",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "42646617",
+        "finality": false
+      },
+      "input": {
+        "samples": 51,
+        "p95Ms": 24.199999928474426
+      },
+      "admissionMs": 13171,
+      "confirmedInput": {
+        "samples": 101,
+        "p95Ms": 18.969970703125,
+        "maxMs": 173.34228515625,
+        "mismatches": []
+      },
+      "submissionP95Ms": 14.653800000000047,
+      "receiptP95Ms": 14.653800000000047,
+      "peerReception": {
+        "samples": 101,
+        "p95Ms": 10.19189453125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "stream": {
+        "engineWebSocketConnections": 2,
+        "engineWebSocketClosures": 0,
+        "observationInvocations": 164,
+        "note": "Observation calls are not equivalent to full RPC reads; connection count is not a React reconstruction count."
+      },
+      "nodeClockSample": {
+        "samples": 67,
+        "wallSeconds": 66.48795434570313,
+        "blockHz": 97.92751279647065,
+        "timestampRatio": 0.9926610112988885,
+        "scope": "whole observed match; cached health and integer seconds, not precise phase timing"
+      },
+      "report": "artifacts/qualification/catalogue-continuous-final8e-20261005-2-retry1/report.json",
+      "sha256": "0176786d98395e1508211a90501257d955c89d769fc15c9db433124e3b8aeacb",
+      "player": {
+        "frames": 2905,
+        "snapshots": 276,
+        "localInput": {
+          "samples": 51,
+          "p95Ms": 19.100000023841858,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133.40000000000146,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 300.5,
+        "correction": {
+          "samples": 5920,
+          "p95Pixels": 1.1802990814019836,
+          "maxPixels": 26.39869357228517
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "observer": {
+        "frames": 2922,
+        "snapshots": 283,
+        "localInput": {
+          "samples": 0,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133.5,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 283.7999999523163,
+        "correction": {
+          "samples": 0
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "maxCommandsPerSecond": 8,
+      "timingsP95Ms": {
+        "fence": 0.10000002384185791,
+        "receipt": 0.7000000476837158,
+        "nonce": 7.5,
+        "transport": 15.100000023841858,
+        "observation": 7.5,
+        "send": 15.400000095367432,
+        "snapshot": 0,
+        "signature": 0.3999999761581421,
+        "queue": 0.6000000238418579
+      },
+      "maxObservedPendingDiffs": 24
+    },
+    {
+      "run": "continuous-final8e-20261005-3",
+      "channel": "chrome",
+      "actualMode": 1,
+      "ref": {
+        "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+        "epoch": "8",
+        "id": "832"
+      },
+      "result": {
+        "hash": "0xa14f0c4ee3501a1aaa79da9339ec6ee48db1a489ee782b0d01f8a638e39e456c",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37574502",
+        "finality": false
+      },
+      "input": {
+        "samples": 45,
+        "p95Ms": 22.5
+      },
+      "admissionMs": 13573,
+      "confirmedInput": {
+        "samples": 89,
+        "p95Ms": 16.747314453125,
+        "maxMs": 62.221923828125,
+        "mismatches": []
+      },
+      "submissionP95Ms": 13.665000000000873,
+      "receiptP95Ms": 13.665000000000873,
+      "peerReception": {
+        "samples": 89,
+        "p95Ms": 8.890869140625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "stream": {
+        "engineWebSocketConnections": 2,
+        "engineWebSocketClosures": 0,
+        "observationInvocations": 167,
+        "note": "Observation calls are not equivalent to full RPC reads; connection count is not a React reconstruction count."
+      },
+      "nodeClockSample": {
+        "samples": 64,
+        "wallSeconds": 63.24193115234375,
+        "blockHz": 97.35629332963246,
+        "timestampRatio": 0.9803622196584721,
+        "scope": "whole observed match; cached health and integer seconds, not precise phase timing"
+      },
+      "report": "artifacts/qualification/catalogue-continuous-final8e-20261005-3/report.json",
+      "sha256": "0def3a9deb7157bbdde3b7fe0ce409dc9c90089614404f7109a689bad96ccb90",
+      "player": {
+        "frames": 2650,
+        "snapshots": 252,
+        "localInput": {
+          "samples": 45,
+          "p95Ms": 19,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 266.59999999999854,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 284.5,
+        "correction": {
+          "samples": 5424,
+          "p95Pixels": 1.2016864896022525,
+          "maxPixels": 49.10953502492242
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "observer": {
+        "frames": 2655,
+        "snapshots": 253,
+        "localInput": {
+          "samples": 0,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 149.70000000000073,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 298.89999997615814,
+        "correction": {
+          "samples": 0
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "maxCommandsPerSecond": 8,
+      "timingsP95Ms": {
+        "fence": 0.10000002384185791,
+        "receipt": 0.7999999523162842,
+        "nonce": 5.599999904632568,
+        "transport": 13.799999952316284,
+        "observation": 7.5,
+        "send": 14.100000023841858,
+        "snapshot": 0.09999990463256836,
+        "signature": 0.3999999761581421,
+        "queue": 0.30000007152557373
+      },
+      "maxObservedPendingDiffs": 24
+    },
+    {
+      "run": "continuous-final8e-20261005-4",
+      "channel": "msedge",
+      "actualMode": 1,
+      "ref": {
+        "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+        "epoch": "9",
+        "id": "833"
+      },
+      "result": {
+        "hash": "0xfdf6b972befcf224f79091561c96c1fc92657c783dacba8be4cd12018d184d0b",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "input": {
+        "samples": 43,
+        "p95Ms": 24.5
+      },
+      "admissionMs": 10852,
+      "confirmedInput": {
+        "samples": 85,
+        "p95Ms": 19.145263671875,
+        "maxMs": 33.492919921875,
+        "mismatches": []
+      },
+      "submissionP95Ms": 15.44289999999819,
+      "receiptP95Ms": 15.44289999999819,
+      "peerReception": {
+        "samples": 85,
+        "p95Ms": 9.695068359375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "stream": {
+        "engineWebSocketConnections": 2,
+        "engineWebSocketClosures": 0,
+        "observationInvocations": 151,
+        "note": "Observation calls are not equivalent to full RPC reads; connection count is not a React reconstruction count."
+      },
+      "nodeClockSample": {
+        "samples": 59,
+        "wallSeconds": 58.41673974609375,
+        "blockHz": 96.8557989472246,
+        "timestampRatio": 0.9586293285692078,
+        "scope": "whole observed match; cached health and integer seconds, not precise phase timing"
+      },
+      "report": "artifacts/qualification/catalogue-continuous-final8e-20261005-4/report.json",
+      "sha256": "87db71fd70dc8bfd4758448e008ee1f14c1f6f9456ec6fe07f77a8b2e784853d",
+      "player": {
+        "frames": 2481,
+        "snapshots": 228,
+        "localInput": {
+          "samples": 43,
+          "p95Ms": 17.600000023841858,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17,
+        "maxHoldMs": 266.90000000000146,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 299.7999999523163,
+        "correction": {
+          "samples": 5080,
+          "p95Pixels": 1.3362627695227047,
+          "maxPixels": 57.60802498025805
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "observer": {
+        "frames": 2416,
+        "snapshots": 232,
+        "localInput": {
+          "samples": 0,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17,
+        "maxHoldMs": 266.90000000000146,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 300,
+        "correction": {
+          "samples": 0
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "maxCommandsPerSecond": 8,
+      "timingsP95Ms": {
+        "fence": 0.10000002384185791,
+        "receipt": 0.7999999523162842,
+        "nonce": 6.899999976158142,
+        "transport": 16,
+        "observation": 7.100000023841858,
+        "send": 16.5,
+        "snapshot": 0.09999990463256836,
+        "signature": 0.3999999761581421,
+        "queue": 0.30000007152557373
+      },
+      "maxObservedPendingDiffs": 24
+    },
+    {
+      "run": "continuous-final8e-20261005-5",
+      "channel": "chrome",
+      "actualMode": 1,
+      "ref": {
+        "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+        "epoch": "7",
+        "id": "834"
+      },
+      "result": {
+        "hash": "0x8e48471c6164b030cac5fd3dfffa686448e658e2080e2f0df0b9bfb71f74ae6f",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "33729173",
+        "finality": false
+      },
+      "input": {
+        "samples": 40,
+        "p95Ms": 24.5
+      },
+      "admissionMs": 10835,
+      "confirmedInput": {
+        "samples": 80,
+        "p95Ms": 17.349365234375,
+        "maxMs": 106.26318359375,
+        "mismatches": []
+      },
+      "submissionP95Ms": 14.84150000000227,
+      "receiptP95Ms": 14.84150000000227,
+      "peerReception": {
+        "samples": 79,
+        "p95Ms": 10.177978515625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "stream": {
+        "engineWebSocketConnections": 2,
+        "engineWebSocketClosures": 0,
+        "observationInvocations": 143,
+        "note": "Observation calls are not equivalent to full RPC reads; connection count is not a React reconstruction count."
+      },
+      "nodeClockSample": {
+        "samples": 58,
+        "wallSeconds": 57.33170336914063,
+        "blockHz": 98.30512035743271,
+        "timestampRatio": 0.976771955290318,
+        "scope": "whole observed match; cached health and integer seconds, not precise phase timing"
+      },
+      "report": "artifacts/qualification/catalogue-continuous-final8e-20261005-5/report.json",
+      "sha256": "4939ec25b1ed7ad98e0e069ad88f05c0fa672170ddd1c44ad5a82eb1770f04b9",
+      "player": {
+        "frames": 2305,
+        "snapshots": 220,
+        "localInput": {
+          "samples": 40,
+          "p95Ms": 18.899999976158142,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 183.1999999999971,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 299.60000002384186,
+        "correction": {
+          "samples": 4678,
+          "p95Pixels": 1.5317861846702954,
+          "maxPixels": 31.295697609197305
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "observer": {
+        "frames": 2261,
+        "snapshots": 223,
+        "localInput": {
+          "samples": 0,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 233.59999999999854,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 283.90000009536743,
+        "correction": {
+          "samples": 0
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "maxCommandsPerSecond": 8,
+      "timingsP95Ms": {
+        "fence": 0.10000002384185791,
+        "receipt": 0.7999999523162842,
+        "nonce": 7.300000071525574,
+        "transport": 15.5,
+        "observation": 7.600000023841858,
+        "send": 15.899999976158142,
+        "snapshot": 0.10000002384185791,
+        "signature": 0.3999999761581421,
+        "queue": 0.3999999761581421
+      },
+      "maxObservedPendingDiffs": 28
+    },
+    {
+      "run": "continuous-final8e-20261005-6",
+      "channel": "msedge",
+      "actualMode": 0,
+      "ref": {
+        "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+        "epoch": "9",
+        "id": "835"
+      },
+      "result": {
+        "hash": "0x45cbed30c74cad926dbf0d3fe20e1a8ba297086448dd4b329d5bb9edca1acce1",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625013",
+        "finality": false
+      },
+      "input": {
+        "samples": 45,
+        "p95Ms": 24.200000047683716
+      },
+      "admissionMs": 12154,
+      "confirmedInput": {
+        "samples": 89,
+        "p95Ms": 20.362060546875,
+        "maxMs": 79.19580078125,
+        "mismatches": []
+      },
+      "submissionP95Ms": 15.343000000000757,
+      "receiptP95Ms": 15.343000000000757,
+      "peerReception": {
+        "samples": 88,
+        "p95Ms": 7.414306640625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "stream": {
+        "engineWebSocketConnections": 2,
+        "engineWebSocketClosures": 0,
+        "observationInvocations": 141,
+        "note": "Observation calls are not equivalent to full RPC reads; connection count is not a React reconstruction count."
+      },
+      "nodeClockSample": {
+        "samples": 57,
+        "wallSeconds": 56.342851806640624,
+        "blockHz": 98.55731156557322,
+        "timestampRatio": 0.9939149014356384,
+        "scope": "whole observed match; cached health and integer seconds, not precise phase timing"
+      },
+      "report": "artifacts/qualification/catalogue-continuous-final8e-20261005-6/report.json",
+      "sha256": "ce5cd556a1fb5d1565748fa3711c1dfc5f3cbbe86e0fc770bab3c498bd82ad02",
+      "player": {
+        "frames": 2610,
+        "snapshots": 239,
+        "localInput": {
+          "samples": 45,
+          "p95Ms": 18,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133.29999999999927,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 283.5,
+        "correction": {
+          "samples": 5220,
+          "p95Pixels": 1.2497523942370776,
+          "maxPixels": 14.567999999999984
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "observer": {
+        "frames": 2626,
+        "snapshots": 240,
+        "localInput": {
+          "samples": 0,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133.39999999999782,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 283.5,
+        "correction": {
+          "samples": 0
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "maxCommandsPerSecond": 7,
+      "timingsP95Ms": {
+        "fence": 0.10000002384185791,
+        "receipt": 0.7000000476837158,
+        "nonce": 7.100000023841858,
+        "transport": 15.300000071525574,
+        "observation": 7.5,
+        "send": 15.600000023841858,
+        "snapshot": 0.10000002384185791,
+        "signature": 0.3999999761581421,
+        "queue": 0.3999999761581421
+      },
+      "maxObservedPendingDiffs": 22
+    },
+    {
+      "run": "continuous-final8e-20261005-7",
+      "channel": "chrome",
+      "actualMode": 0,
+      "ref": {
+        "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+        "epoch": "8",
+        "id": "836"
+      },
+      "result": {
+        "hash": "0x39e01ae288fc5fc9bedf28d5c755b877327f5b749da1facfdeabdd87f03930c3",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 7,
+        "elapsedUs": "52672231",
+        "finality": false
+      },
+      "input": {
+        "samples": 62,
+        "p95Ms": 22.299999952316284
+      },
+      "admissionMs": 13220,
+      "confirmedInput": {
+        "samples": 123,
+        "p95Ms": 18.44677734375,
+        "maxMs": 35.699462890625,
+        "mismatches": []
+      },
+      "submissionP95Ms": 14.631000000001222,
+      "receiptP95Ms": 14.631000000001222,
+      "peerReception": {
+        "samples": 123,
+        "p95Ms": 7.5927734375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true
+      },
+      "stream": {
+        "engineWebSocketConnections": 2,
+        "engineWebSocketClosures": 0,
+        "observationInvocations": 177,
+        "note": "Observation calls are not equivalent to full RPC reads; connection count is not a React reconstruction count."
+      },
+      "nodeClockSample": {
+        "samples": 75,
+        "wallSeconds": 74.32691748046875,
+        "blockHz": 98.80673447718074,
+        "timestampRatio": 0.9956016273572134,
+        "scope": "whole observed match; cached health and integer seconds, not precise phase timing"
+      },
+      "report": "artifacts/qualification/catalogue-continuous-final8e-20261005-7/report.json",
+      "sha256": "b385eacd0b0147afa9c5a584ace35c907a15d4262e9b6a7f39615e08ad6792a4",
+      "player": {
+        "frames": 3502,
+        "snapshots": 326,
+        "localInput": {
+          "samples": 62,
+          "p95Ms": 17.100000023841858,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17,
+        "maxHoldMs": 100,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 300,
+        "correction": {
+          "samples": 7004,
+          "p95Pixels": 1.2881941583831065,
+          "maxPixels": 62.57903108413086
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "observer": {
+        "frames": 3520,
+        "snapshots": 333,
+        "localInput": {
+          "samples": 0,
+          "misses": []
+        },
+        "visibleResyncs": 0,
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 166.5,
+        "contractPauseMs": 0,
+        "snapshotGapP95Ms": 299.7999999523163,
+        "correction": {
+          "samples": 0
+        },
+        "paddleJumps": [],
+        "snapshotJumps": [],
+        "frameGaps": []
+      },
+      "maxCommandsPerSecond": 8,
+      "timingsP95Ms": {
+        "fence": 0.10000002384185791,
+        "receipt": 0.6000000238418579,
+        "nonce": 7.200000047683716,
+        "transport": 14.900000095367432,
+        "observation": 7.299999952316284,
+        "send": 15.399999976158142,
+        "snapshot": 0,
+        "signature": 0.3999999761581421,
+        "queue": 0.30000007152557373
+      },
+      "maxObservedPendingDiffs": 27
+    },
+    {
+      "run": "contpvp9",
+      "report": "artifacts/independent-candidate/browser-chaos-contpvp9/report.json",
+      "sha256": "415b81947e46e41eddcec505bdd2db22f052608bff9d2b1a6272228820034453",
+      "gates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 623,
+        "p95Ms": 16.607177734375,
+        "clock": "same Playwright host",
+        "sendP95Ms": 18.310546875
+      },
+      "players": [
+        {
+          "frames": 2474,
+          "snapshots": 566,
+          "localInput": {
+            "samples": 171,
+            "p95Ms": 35.799999952316284,
+            "misses": []
+          },
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.09999999999127,
+          "maxHoldMs": 49.70000000001164,
+          "contractPauseMs": 0,
+          "snapshotGapP95Ms": 183.20000004768372,
+          "correction": {
+            "samples": 4352,
+            "p95Pixels": 10.717770096862381,
+            "maxPixels": 84.13506142845051
+          },
+          "paddleJumps": [],
+          "snapshotJumps": [],
+          "frameGaps": []
+        },
+        {
+          "frames": 2484,
+          "snapshots": 567,
+          "localInput": {
+            "samples": 171,
+            "p95Ms": 32.10000002384186,
+            "misses": []
+          },
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.099999999998545,
+          "maxHoldMs": 49.69999999999709,
+          "contractPauseMs": 0,
+          "snapshotGapP95Ms": 182.79999995231628,
+          "correction": {
+            "samples": 4460,
+            "p95Pixels": 12.368440841565928,
+            "maxPixels": 50.844011524583124
+          },
+          "paddleJumps": [],
+          "snapshotJumps": [],
+          "frameGaps": []
+        }
+      ],
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Three members in a real Chaos room, dual consent and automatic spectator",
+        "Real three-second countdown on both players and spectator",
+        "Root-signed test MON bet accepted during a live Chaos rally",
+        {
+          "pageError": "Failed to read the 'sessionStorage' property from 'Window': Access is denied for this document."
+        },
+        "Natural match with both players controlling",
+        {
+          "finalScore": "7 : 6"
+        }
+      ],
+      "bet": {
+        "matchId": "340282366920938463463374607431768211491",
+        "player": "0x2494c8ad88338906012e1B00D589AE65f0842948",
+        "shares": "6000000000000000",
+        "verifiedAt": "2026-10-05T14:19:56.694Z"
+      }
+    },
+    {
+      "run": "contpvp10",
+      "report": "artifacts/independent-candidate/browser-chaos-contpvp10/report.json",
+      "sha256": "550ef88a61757c7fa8c5f4c9bea85ca0905a14e34dff835949eadf81abb4337c",
+      "gates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 632,
+        "p95Ms": 15.572509765625,
+        "clock": "same Playwright host",
+        "sendP95Ms": 18.1650390625
+      },
+      "players": [
+        {
+          "frames": 2476,
+          "snapshots": 578,
+          "localInput": {
+            "samples": 173,
+            "p95Ms": 38.39999997615814,
+            "misses": []
+          },
+          "visibleResyncs": 0,
+          "p95FrameMs": 17.09999999999127,
+          "maxHoldMs": 50.19999999999709,
+          "contractPauseMs": 0,
+          "snapshotGapP95Ms": 150,
+          "correction": {
+            "samples": 4362,
+            "p95Pixels": 11.565910480763478,
+            "maxPixels": 56.79143270182226
+          },
+          "paddleJumps": [],
+          "snapshotJumps": [],
+          "frameGaps": []
+        },
+        {
+          "frames": 2493,
+          "snapshots": 578,
+          "localInput": {
+            "samples": 173,
+            "p95Ms": 29.800000071525574,
+            "misses": []
+          },
+          "visibleResyncs": 0,
+          "p95FrameMs": 17,
+          "maxHoldMs": 50,
+          "contractPauseMs": 0,
+          "snapshotGapP95Ms": 150,
+          "correction": {
+            "samples": 4466,
+            "p95Pixels": 11.234935834492774,
+            "maxPixels": 56.65074237080813
+          },
+          "paddleJumps": [],
+          "snapshotJumps": [],
+          "frameGaps": []
+        }
+      ],
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Three members in a real Chaos room, dual consent and automatic spectator",
+        "Real three-second countdown on both players and spectator",
+        "Root-signed test MON bet accepted during a live Chaos rally",
+        {
+          "pageError": "Failed to read the 'sessionStorage' property from 'Window': Access is denied for this document."
+        },
+        "Natural match with both players controlling",
+        {
+          "finalScore": "7 : 6"
+        }
+      ],
+      "bet": {
+        "matchId": "340282366920938463463374607431768211494",
+        "player": "0x5984b9dB24DAf1cF7B9A04b8C823519988229125",
+        "shares": "6000000000000000",
+        "verifiedAt": "2026-10-05T14:21:57.049Z"
+      }
+    }
+  ],
+  "faults": [
+    {
+      "report": "artifacts/qualification/catalogue-continuous-fault-f5-20261005-1/report.json",
+      "sha256": "a5b296209c1cb3e5f7a6c1a9f90ce6979aa6c00f5a2b329baf477e6b29ab43d2",
+      "ref": {
+        "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+        "epoch": "9",
+        "id": "800"
+      },
+      "faults": [
+        {
+          "kind": "f5-grant-reused",
+          "at": "2026-10-05T13:14:02.350Z"
+        }
+      ],
+      "result": {
+        "hash": "0xc052c21d80df3c7768777fd0e8b5fbb919cc36c3ed83a71950c05b27f9e458d2",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-fault-disconnect-20261005-1/report.json",
+      "sha256": "1fdb8a7592f07ed15505ae0f6566ad54d4680f1340d30ba86d60901eb4c9ce2f",
+      "ref": {
+        "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+        "epoch": "8",
+        "id": "801"
+      },
+      "faults": [
+        {
+          "kind": "disconnect-pauses-clock-and-resumes",
+          "at": "2026-10-05T13:16:12.700Z",
+          "paused": {
+            "t": "3840000",
+            "a": 1,
+            "b": 0
+          }
+        }
+      ],
+      "result": {
+        "hash": "0x061daea35d1761d93207041373e5e5184faee6b34f6018689a510437b79bfeef",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "43594533",
+        "finality": false
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-fault-reply-20261005-1/report.json",
+      "sha256": "31559c1f9ec1bca93fdf8e6974280a3e14237c8eec1d81b1531048403e651217",
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "6",
+        "id": "802"
+      },
+      "faults": [
+        {
+          "kind": "lost-reply-after-execution",
+          "at": "2026-10-05T13:19:12.927Z",
+          "nonce": 241,
+          "hash": "0x9898aac7948164d36faca57598037f198a3e4b388864f661426703463b0a58df"
+        }
+      ],
+      "result": {
+        "hash": "0xaaf4050a017fb426634168189dd9233b7fd737db5f6101214e50f10c13c1a8f2",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "36822922",
+        "finality": false
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-fault-revoke-20261005-5/report.json",
+      "sha256": "3c4df608a5bcc5f2433f44e99da4c73502829400e34c2429d333515b2a82100a",
+      "ref": {
+        "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+        "epoch": "9",
+        "id": "814"
+      },
+      "faults": [
+        {
+          "kind": "own-match-revoked-and-reauthorized",
+          "at": "2026-10-05T13:44:05.649Z"
+        }
+      ],
+      "result": {
+        "hash": "0xab4a845d7d5d62ae5f212631ef80cdd9737c1ece333ccfdb84d85b25ea631b57",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625007",
+        "finality": false
+      }
+    }
+  ],
+  "failedAttempts": [
+    {
+      "report": "artifacts/qualification/catalogue-continuous-accept-20261005-6/report.json",
+      "sha256": "35d45762f827a3e4592d15bdbf1840b4c65e24c625c5d4bb796ad69978e22776",
+      "error": "Natural-match synchronization gate failed",
+      "ref": {
+        "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+        "epoch": "8",
+        "id": "794"
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-baseline-chaos-20261005-1/report.json",
+      "sha256": "3a84cf5d0a70b97dad7dcb4e9fb542d31eaf14547470ac9e052af6fe4bb9b4ce",
+      "error": "Local movement latency exceeded 50 ms",
+      "ref": {
+        "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+        "epoch": "9",
+        "id": "781"
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-fault-revoke-20261005-1/report.json",
+      "sha256": "cad4cfc3ab2c2edbaad3a44d3476657562e7a35c979fba0c3c24faef0911c5f4",
+      "error": "locator.click: Timeout 60000ms exceeded.",
+      "ref": {
+        "app": "0xbFC44E0cDB647689C138445E6e4796e71C425235",
+        "epoch": "9",
+        "id": "803"
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-fault-revoke-20261005-2/report.json",
+      "sha256": "4d31ad86c7c85fc6606bf82f187dd435b58c747bbc7f5065559aa4beebce4b02",
+      "error": "locator.waitFor: Timeout 15000ms exceeded.",
+      "ref": {
+        "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+        "epoch": "7",
+        "id": "806"
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-fault-revoke-20261005-3/report.json",
+      "sha256": "7d150cb7decaa5f40e2720127d786eb7baa70a8e00137fa33e7b4bb418fc3e80",
+      "error": "locator.waitFor: Timeout 15000ms exceeded.",
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "6",
+        "id": "809"
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-fault-revoke-20261005-4/report.json",
+      "sha256": "528752e7b4514fa197232e09a7c4a6051d9d32302d73d71075a505b4a5e4fa3c",
+      "error": "locator.waitFor: Timeout 15000ms exceeded.",
+      "ref": {
+        "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+        "epoch": "7",
+        "id": "813"
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-final-chaos-20261005-3/report.json",
+      "sha256": "725c43a547349eca3d0867a6b1f5abbacdace99d833a84a81863c1616ff98aa6",
+      "error": "Natural-match synchronization gate failed",
+      "ref": {
+        "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+        "epoch": "7",
+        "id": "799"
+      }
+    },
+    {
+      "report": "artifacts/qualification/catalogue-continuous-final8e-20261005-2/report.json",
+      "sha256": "eb9c131fb49004d7bb716a38a31a3b32abc2c1d02c06a1e88ae9aa8f6302f2fb",
+      "error": "A game command reverted",
+      "ref": {
+        "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+        "epoch": "6",
+        "id": "830"
+      }
+    },
+    {
+      "report": "artifacts/independent-candidate/browser-chaos-contpvp1/report.json",
+      "sha256": "3368e9307e00421ec72b15b0aba1e3fd2165ffe79d4c9240085abfea19cc4d58",
+      "error": "Natural PvP synchronization gate failed",
+      "ref": null
+    },
+    {
+      "report": "artifacts/independent-candidate/browser-chaos-contpvp5/report.json",
+      "sha256": "5020da51e53b970946be177388c7deefb90aeb9ed497f6aeb3756b867c6bfca2",
+      "error": "Natural PvP synchronization gate failed",
+      "ref": null
+    },
+    {
+      "report": "artifacts/independent-candidate/browser-chaos-contpvp6/report.json",
+      "sha256": "032c4f84e59cd7688c53ccad148b087851b54417a4bb6712c89842ee90f9fc11",
+      "error": "Natural PvP synchronization gate failed",
+      "ref": null
+    },
+    {
+      "report": "artifacts/independent-candidate/browser-chaos-contpvp8/report.json",
+      "sha256": "c596a4ddbcea4e7761906a95e2748500e9decbff3959e7de35d21e15b397a61f",
+      "error": "Natural PvP synchronization gate failed",
+      "ref": null
+    }
+  ],
+  "limits": [
+    "Virtual PRF authenticators, no physical passkey/mobile claim.",
+    "Normal desktop frames; not an unchanged 24-hour qualification.",
+    "Delayed publication tested by controlled client regression, not by stopping a production publisher.",
+    "Full TS: 1020/1021; unrelated unreviewed local ContinuingAgentRatings artifact remains rejected.",
+    "Fresh account admission includes authorization and is not an 8-second valid-session p95 proof."
+  ]
+}

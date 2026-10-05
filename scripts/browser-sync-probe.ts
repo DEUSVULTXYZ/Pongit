@@ -21,12 +21,15 @@ export function confirmedInputMetrics(intents:{at:number;direction:number}[],rec
 /** Test-only instrumentation. Record public court state, never wallet props. */
 export async function installSyncProbe(page:Page){
  await page.addInitScript(()=>{
-  const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[],waiting:[] as any[],corrections:[] as any[]};
+  const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[],waiting:[] as any[],corrections:[] as any[],keys:[] as any[]};
+  window.addEventListener('keydown',e=>{const direction=['ArrowUp','KeyW'].includes(e.code)?-1:['ArrowDown','KeyS'].includes(e.code)?1:0;
+   if(direction&&!e.repeat){const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.keys.push({at:performance.now(),direction,side:s.side});}
+  });
   window.addEventListener('pongit:presentation-timing',(e:any)=>{if(data.corrections.length<40000)data.corrections.push(e.detail);});
   let waitKey='',frameAt:number|undefined;
   const raf=requestAnimationFrame;window.requestAnimationFrame=callback=>raf(t=>{frameAt=t;try{callback(t);}finally{frameAt=undefined;}});
-  setInterval(()=>{const court=document.querySelector('.pool-canvas-slot canvas');if(!court)return;
-   const paused=!!document.querySelector('[aria-label="Match paused"]'),sync=!!document.querySelector('.pool-canvas-slot [data-arcade-progress="synchronizing"]'),cause=(court as HTMLElement).dataset.waitCause??'';
+  setInterval(()=>{const court=document.querySelector('.pool-canvas-slot canvas,.rooms-canvas canvas');if(!court)return;
+   const paused=!!document.querySelector('[aria-label="Match paused"]'),sync=!!document.querySelector('.pool-canvas-slot [data-arcade-progress="synchronizing"],.rooms-canvas [data-arcade-progress="synchronizing"]'),cause=(court as HTMLElement).dataset.waitCause??'';
    const key=JSON.stringify([paused,sync,cause]);if(key!==waitKey){waitKey=key;data.waiting.push({at:performance.now(),paused,sync,cause});}
   },50);
   (window as any).__syncProbe=data;
@@ -71,7 +74,7 @@ export async function installSyncProbe(page:Page){
  });
 }
 
-export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];waiting?:any[];corrections?:any[]}){
+export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];waiting?:any[];corrections?:any[];keys?:any[]}){
  const intervals:number[]=[],jumps:any[]=[],lags:number[]=[],gaps:number[]=[],holds:any[]=[],frameGaps:any[]=[];
  let hold=0,maxHold=0,contractPauseMs=0,intermissionMs=0;
  for(let i=1;i<data.frames.length;i++){
@@ -111,7 +114,16 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
  const visibleResyncs=(data.waiting??[]).filter(w=>w.at>=playStart&&w.at<=playEnd&&w.sync&&!w.paused).length;
  const correctionValues=(data.corrections??[]).flatMap(c=>c.paddleError.map(Math.abs));
  const correction={samples:correctionValues.length,p95Pixels:p95(correctionValues),maxPixels:correctionValues.length?Math.max(...correctionValues):undefined};
- return{correction,visibleResyncs,frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
+ const localSamples:number[]=[],localMisses:any[]=[];
+ for(const key of data.keys??[]){const paddles=(data.paddles??[]).filter(p=>p.side===key.side),before=[...paddles].reverse().find(p=>(p.paintedAt??p.at)<=key.at);
+  if(!before||before.finished)continue;
+  // A paddle held at the physical wall cannot move further in that direction.
+  if(key.direction<0&&before.top<=1||key.direction>0&&before.bottom>=575)continue;
+  const after=paddles.find(p=>(p.paintedAt??p.at)>key.at&&(p.paintedAt??p.at)<=key.at+500&&(p.y-before.y)*key.direction>.1);
+  if(after)localSamples.push((after.paintedAt??after.at)-key.at);else localMisses.push(key);
+ }
+ const localInput={samples:localSamples.length,p95Ms:p95(localSamples),misses:localMisses};
+ return{localInput,correction,visibleResyncs,frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
   maxHoldMs:Math.max(maxHold,hold),contractPauseMs,intermissionMs,holds,frameGaps,snapshotGapP95Ms:p95(gaps),engineLagP95Ms:p95(lags),snapshotJumps:jumps,
   paddleSamples:data.paddles?.length??0,paddleJumps};
 }

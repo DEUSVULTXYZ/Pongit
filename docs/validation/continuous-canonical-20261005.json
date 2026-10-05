@@ -1,0 +1,995 @@
+{
+  "validator": "0xa375CF27eD39491dB8302Ffc3dF4210Ad263eF43",
+  "terms": {
+    "resolver": "0x3dd6202F995EFbAAA1a0Ddc413e46f72f96E147E",
+    "spec": 1,
+    "stakePerDelegation": "10000000000000000000",
+    "challengeBond": "100000000000000000000",
+    "delegationFee": "10000000000000000",
+    "maxBatchInterval": "3600",
+    "maxDelegationDuration": "0",
+    "challengeWindow": "3600",
+    "resolutionWindow": "900",
+    "maxDiffsPerCommit": 256,
+    "maxDelegations": 128,
+    "timeoutPenaltyBps": 2000,
+    "open": true
+  },
+  "at": "2026-10-05T14:35:18.269Z",
+  "block": "68426609",
+  "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+  "arenas": [
+    {
+      "app": "0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+      "epoch": "7",
+      "status": 1,
+      "expires": "0",
+      "batches": "47"
+    },
+    {
+      "app": "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+      "epoch": "6",
+      "status": 1,
+      "expires": "0",
+      "batches": "34"
+    },
+    {
+      "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+      "epoch": "9",
+      "status": 1,
+      "expires": "0",
+      "batches": "36"
+    },
+    {
+      "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+      "epoch": "9",
+      "status": 1,
+      "expires": "0",
+      "batches": "74"
+    },
+    {
+      "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+      "epoch": "8",
+      "status": 1,
+      "expires": "0",
+      "batches": "72"
+    },
+    {
+      "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+      "epoch": "9",
+      "status": 1,
+      "expires": "0",
+      "batches": "56"
+    },
+    {
+      "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+      "epoch": "8",
+      "status": 0,
+      "expires": "0",
+      "batches": "40"
+    },
+    {
+      "app": "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb",
+      "epoch": "8",
+      "status": 1,
+      "expires": "0",
+      "batches": "72"
+    },
+    {
+      "app": "0x51a8b38327ED29A7D75e4f7EB254cDB98420DEBf",
+      "epoch": "4",
+      "status": 1,
+      "expires": "0",
+      "batches": "57"
+    },
+    {
+      "app": "0xbd8F7B674da6942D719234a585DDcf0f8b302aB5",
+      "epoch": "3",
+      "status": 1,
+      "expires": "0",
+      "batches": "16"
+    },
+    {
+      "app": "0xFfC12814870d6f453bc7C9ed7a46AD9F927E5771",
+      "epoch": "3",
+      "status": 1,
+      "expires": "0",
+      "batches": "12"
+    }
+  ],
+  "matches": [
+    {
+      "run": "continuous-accept-20261005-1",
+      "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+      "epoch": "8",
+      "id": "789",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x38bcbb6453e209966754c0c9a1b67d2871db6a54286423a12bc8b4c7c8b3bbd1",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0x38bcbb6453e209966754c0c9a1b67d2871db6a54286423a12bc8b4c7c8b3bbd1",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-accept-20261005-2",
+      "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+      "epoch": "8",
+      "id": "790",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xcf1680bc350d84d8f85b90c790e87010dfda9c23babce503d91224f8ca942969",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0xcf1680bc350d84d8f85b90c790e87010dfda9c23babce503d91224f8ca942969",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-accept-20261005-3",
+      "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+      "epoch": "9",
+      "id": "791",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xa9ab463750fd9cd881399ea40d9629cffedcfc0518b4b01b96765baf0ad7f100",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0xa9ab463750fd9cd881399ea40d9629cffedcfc0518b4b01b96765baf0ad7f100",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-accept-20261005-4",
+      "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+      "epoch": "7",
+      "id": "792",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xff322148c521d3e75132345eb236647fb48c41cfafffa1c4fb2010a8a188b871",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927090",
+        "finality": false
+      },
+      "canonicalHash": "0xff322148c521d3e75132345eb236647fb48c41cfafffa1c4fb2010a8a188b871",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-accept-20261005-5",
+      "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+      "epoch": "9",
+      "id": "793",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xad06b9d0c8cc5f104cb00fd36a70b5ad1f62834b8e0f1815cce39258f26b1dbb",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "44396618",
+        "finality": false
+      },
+      "canonicalHash": "0xad06b9d0c8cc5f104cb00fd36a70b5ad1f62834b8e0f1815cce39258f26b1dbb",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-accept-20261005-6",
+      "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+      "epoch": "8",
+      "id": "794",
+      "originalPassed": false,
+      "result": {
+        "hash": "0x91b2c43eaf0b670a142ec3016c2974455f622836914f5b659fbdb8b71e146aa3",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "42646620",
+        "finality": false
+      },
+      "canonicalHash": "0x91b2c43eaf0b670a142ec3016c2974455f622836914f5b659fbdb8b71e146aa3",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-baseline-chaos-20261005-1",
+      "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+      "epoch": "9",
+      "id": "781",
+      "originalPassed": false,
+      "result": {
+        "hash": "0x96a49b1b7631fcd0598c2b4e67ddd00ff87c488ca1005597791e77d93cab3665",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 6,
+        "scoreB": 7,
+        "elapsedUs": "39520839",
+        "finality": false
+      },
+      "canonicalHash": "0x96a49b1b7631fcd0598c2b4e67ddd00ff87c488ca1005597791e77d93cab3665",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-baseline-read200-20261005-2",
+      "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+      "epoch": "7",
+      "id": "782",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x4b708340caad19df2ceacd50ae9b286cc69d380d569d23b68f97000a06a7ab66",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "45294029",
+        "finality": false
+      },
+      "canonicalHash": "0x4b708340caad19df2ceacd50ae9b286cc69d380d569d23b68f97000a06a7ab66",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-fault-disconnect-20261005-1",
+      "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+      "epoch": "8",
+      "id": "801",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x061daea35d1761d93207041373e5e5184faee6b34f6018689a510437b79bfeef",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "43594533",
+        "finality": false
+      },
+      "canonicalHash": "0x061daea35d1761d93207041373e5e5184faee6b34f6018689a510437b79bfeef",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-fault-f5-20261005-1",
+      "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+      "epoch": "9",
+      "id": "800",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xc052c21d80df3c7768777fd0e8b5fbb919cc36c3ed83a71950c05b27f9e458d2",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0xc052c21d80df3c7768777fd0e8b5fbb919cc36c3ed83a71950c05b27f9e458d2",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-fault-reply-20261005-1",
+      "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+      "epoch": "6",
+      "id": "802",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xaaf4050a017fb426634168189dd9233b7fd737db5f6101214e50f10c13c1a8f2",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "36822922",
+        "finality": false
+      },
+      "canonicalHash": "0xaaf4050a017fb426634168189dd9233b7fd737db5f6101214e50f10c13c1a8f2",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-fault-revoke-20261005-5",
+      "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+      "epoch": "9",
+      "id": "814",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xab4a845d7d5d62ae5f212631ef80cdd9737c1ece333ccfdb84d85b25ea631b57",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625007",
+        "finality": false
+      },
+      "canonicalHash": "0xab4a845d7d5d62ae5f212631ef80cdd9737c1ece333ccfdb84d85b25ea631b57",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final-chaos-20261005-1",
+      "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+      "epoch": "8",
+      "id": "797",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x6b3757e6cc168dbf562eb87047d9f330a7bc32fc4809b97d0b50408c1f801698",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "42558963",
+        "finality": false
+      },
+      "canonicalHash": "0x6b3757e6cc168dbf562eb87047d9f330a7bc32fc4809b97d0b50408c1f801698",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final-chaos-20261005-2",
+      "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+      "epoch": "9",
+      "id": "798",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xbe1786e4dacd440c36b7365d0a90b7ef50032c68b3854a1354100fc96bb3a535",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "36822922",
+        "finality": false
+      },
+      "canonicalHash": "0xbe1786e4dacd440c36b7365d0a90b7ef50032c68b3854a1354100fc96bb3a535",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final-chaos-20261005-3",
+      "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+      "epoch": "7",
+      "id": "799",
+      "originalPassed": false,
+      "result": {
+        "hash": "0xb79fbfca3bfd903a6b85401ea656d2038799b79f41051c4dcca16d570cb0ea69",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0xb79fbfca3bfd903a6b85401ea656d2038799b79f41051c4dcca16d570cb0ea69",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final-classic-20261005-1",
+      "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+      "epoch": "6",
+      "id": "795",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xcbeb4d70f9ae979dc4fc191ba4539932a79743756fcb131f341740cbeff0ac36",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 7,
+        "elapsedUs": "38572932",
+        "finality": false
+      },
+      "canonicalHash": "0xcbeb4d70f9ae979dc4fc191ba4539932a79743756fcb131f341740cbeff0ac36",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final-classic-20261005-2",
+      "app": "0xbFC44E0cDB647689C138445E6e4796e71C425235",
+      "epoch": "9",
+      "id": "796",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x2fe3733d58957e8e53f1466dcb75a5c078f1a2c872337074313fc22aa2a27783",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "50776393",
+        "finality": false
+      },
+      "canonicalHash": "0x2fe3733d58957e8e53f1466dcb75a5c078f1a2c872337074313fc22aa2a27783",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final733-20261005-1",
+      "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+      "epoch": "8",
+      "id": "815",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x258a54b6dcb39759b3d3c54f864461da63034544e6adb0857c139e09f31c0422",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34876585",
+        "finality": false
+      },
+      "canonicalHash": "0x258a54b6dcb39759b3d3c54f864461da63034544e6adb0857c139e09f31c0422",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final733-20261005-2",
+      "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+      "epoch": "6",
+      "id": "816",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x0ff463fcd01b7349cce8f840eb72c69bc4aceecbe51b875e3f3e8eba0c040d76",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927090",
+        "finality": false
+      },
+      "canonicalHash": "0x0ff463fcd01b7349cce8f840eb72c69bc4aceecbe51b875e3f3e8eba0c040d76",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final733-20261005-3",
+      "app": "0xbFC44E0cDB647689C138445E6e4796e71C425235",
+      "epoch": "9",
+      "id": "817",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x7dd863c17c9163d2181f0cee56e030f6bc94b645e9453b14732f6cabef32e329",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0x7dd863c17c9163d2181f0cee56e030f6bc94b645e9453b14732f6cabef32e329",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final733-20261005-4",
+      "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+      "epoch": "8",
+      "id": "818",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x259a91104d327efab985d8637dc56ef772106043daa28917c39d396a5fc13572",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37489923",
+        "finality": false
+      },
+      "canonicalHash": "0x259a91104d327efab985d8637dc56ef772106043daa28917c39d396a5fc13572",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final733-20261005-5",
+      "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+      "epoch": "9",
+      "id": "819",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x45674b910b1a514d05545ad7a3c1e1864736ec295a8a3561de7f3776662370f9",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625007",
+        "finality": false
+      },
+      "canonicalHash": "0x45674b910b1a514d05545ad7a3c1e1864736ec295a8a3561de7f3776662370f9",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final733-20261005-6",
+      "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+      "epoch": "7",
+      "id": "820",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xe6656f622387f1bc9dc0e8d1ff6c9047bb9243d0b69156f95ea97805e6fee35a",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875014",
+        "finality": false
+      },
+      "canonicalHash": "0xe6656f622387f1bc9dc0e8d1ff6c9047bb9243d0b69156f95ea97805e6fee35a",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final733-20261005-7",
+      "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+      "epoch": "9",
+      "id": "821",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x1afc92e40f614efe7813c8a4a86af9d129080c1edaa9673fcafe4fb8d2359d14",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "36822933",
+        "finality": false
+      },
+      "canonicalHash": "0x1afc92e40f614efe7813c8a4a86af9d129080c1edaa9673fcafe4fb8d2359d14",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8a-20261005-1",
+      "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+      "epoch": "8",
+      "id": "822",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x9759ab2dbb844daaaed2cfa76209b16b49196bc5e741c354cf0448191ed1d015",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "49974309",
+        "finality": false
+      },
+      "canonicalHash": "0x9759ab2dbb844daaaed2cfa76209b16b49196bc5e741c354cf0448191ed1d015",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8a-20261005-2",
+      "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+      "epoch": "6",
+      "id": "823",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xd450ed8f166843d9cffc73a51cb9f9492631cd52fa326ba6707e3e388c4ce0cd",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 7,
+        "elapsedUs": "46292450",
+        "finality": false
+      },
+      "canonicalHash": "0xd450ed8f166843d9cffc73a51cb9f9492631cd52fa326ba6707e3e388c4ce0cd",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8a-20261005-3",
+      "app": "0xbFC44E0cDB647689C138445E6e4796e71C425235",
+      "epoch": "9",
+      "id": "824",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xf1f197efb926a993cdda8fc06a4e5e106832844772928aea9e2765b7942ab228",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625007",
+        "finality": false
+      },
+      "canonicalHash": "0xf1f197efb926a993cdda8fc06a4e5e106832844772928aea9e2765b7942ab228",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8a-20261005-4",
+      "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+      "epoch": "8",
+      "id": "825",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xde73f7198f5db46dfdaab6dd3c5ee88b8fa7890dad087b2ecc73916781e1f969",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "36822922",
+        "finality": false
+      },
+      "canonicalHash": "0xde73f7198f5db46dfdaab6dd3c5ee88b8fa7890dad087b2ecc73916781e1f969",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8a-20261005-5",
+      "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+      "epoch": "9",
+      "id": "826",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xa3004d7e5ae0271a34c3bb81c478f99a537732a80c546e24cdf941f46108bb67",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "36822922",
+        "finality": false
+      },
+      "canonicalHash": "0xa3004d7e5ae0271a34c3bb81c478f99a537732a80c546e24cdf941f46108bb67",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8a-20261005-6",
+      "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+      "epoch": "7",
+      "id": "827",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x5f2ca3f9551ec069cdbba95eea10a029965a2ba5618441d1f6bc37f8663fd14c",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875014",
+        "finality": false
+      },
+      "canonicalHash": "0x5f2ca3f9551ec069cdbba95eea10a029965a2ba5618441d1f6bc37f8663fd14c",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8a-20261005-7",
+      "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+      "epoch": "9",
+      "id": "828",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xdc61faf7b262c98578f7eb84761eb1a78356a8416772c49beacfa2c674922f53",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927095",
+        "finality": false
+      },
+      "canonicalHash": "0xdc61faf7b262c98578f7eb84761eb1a78356a8416772c49beacfa2c674922f53",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8e-20261005-1",
+      "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+      "epoch": "8",
+      "id": "829",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xbcddee50c5f1224082cd0a923bb713082223b8aac0ed26a88ff56b55a31cdfed",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0xbcddee50c5f1224082cd0a923bb713082223b8aac0ed26a88ff56b55a31cdfed",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8e-20261005-2",
+      "app": "0x34a7e7c09894AF4E0a95B5922A824112257df92A",
+      "epoch": "6",
+      "id": "830",
+      "originalPassed": false,
+      "result": {
+        "hash": "0x74482b3b85a7045f743a3dc718af430ab7fcecac07d76a794394324f5b4a45a8",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 7,
+        "elapsedUs": "31427088",
+        "finality": false
+      },
+      "canonicalHash": "0x74482b3b85a7045f743a3dc718af430ab7fcecac07d76a794394324f5b4a45a8",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8e-20261005-2-retry1",
+      "app": "0xbFC44E0cDB647689C138445E6e4796e71C425235",
+      "epoch": "9",
+      "id": "831",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x7002ab2427db9e45293d9728811ab2023f8b6ab7421e76bf024f2023fe771f2a",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "42646617",
+        "finality": false
+      },
+      "canonicalHash": "0x7002ab2427db9e45293d9728811ab2023f8b6ab7421e76bf024f2023fe771f2a",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8e-20261005-3",
+      "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+      "epoch": "8",
+      "id": "832",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xa14f0c4ee3501a1aaa79da9339ec6ee48db1a489ee782b0d01f8a638e39e456c",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37574502",
+        "finality": false
+      },
+      "canonicalHash": "0xa14f0c4ee3501a1aaa79da9339ec6ee48db1a489ee782b0d01f8a638e39e456c",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8e-20261005-4",
+      "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+      "epoch": "9",
+      "id": "833",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xfdf6b972befcf224f79091561c96c1fc92657c783dacba8be4cd12018d184d0b",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0xfdf6b972befcf224f79091561c96c1fc92657c783dacba8be4cd12018d184d0b",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8e-20261005-5",
+      "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+      "epoch": "7",
+      "id": "834",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x8e48471c6164b030cac5fd3dfffa686448e658e2080e2f0df0b9bfb71f74ae6f",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "33729173",
+        "finality": false
+      },
+      "canonicalHash": "0x8e48471c6164b030cac5fd3dfffa686448e658e2080e2f0df0b9bfb71f74ae6f",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8e-20261005-6",
+      "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+      "epoch": "9",
+      "id": "835",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x45cbed30c74cad926dbf0d3fe20e1a8ba297086448dd4b329d5bb9edca1acce1",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625013",
+        "finality": false
+      },
+      "canonicalHash": "0x45cbed30c74cad926dbf0d3fe20e1a8ba297086448dd4b329d5bb9edca1acce1",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-final8e-20261005-7",
+      "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+      "epoch": "8",
+      "id": "836",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x39e01ae288fc5fc9bedf28d5c755b877327f5b749da1facfdeabdd87f03930c3",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 7,
+        "elapsedUs": "52672231",
+        "finality": false
+      },
+      "canonicalHash": "0x39e01ae288fc5fc9bedf28d5c755b877327f5b749da1facfdeabdd87f03930c3",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-read200-after-20261005-1",
+      "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+      "epoch": "9",
+      "id": "788",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x7034cb034e31060b4960afc94a1f0dc7f9c76023a31ce2efab769f854c72e7e1",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "35159886",
+        "finality": false
+      },
+      "canonicalHash": "0x7034cb034e31060b4960afc94a1f0dc7f9c76023a31ce2efab769f854c72e7e1",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-release58-20261005-1",
+      "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+      "epoch": "8",
+      "id": "804",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x9eee75305d391777df5cdb1d3c2e8bd094da6123a44e8630488694c90bfc3b3e",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37316673",
+        "finality": false
+      },
+      "canonicalHash": "0x9eee75305d391777df5cdb1d3c2e8bd094da6123a44e8630488694c90bfc3b3e",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-release58-20261005-2",
+      "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+      "epoch": "9",
+      "id": "805",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xd207ad2cb6d765a1859f17e9b54a118937b16c4a9c57b856a77aee8d64019c37",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "38343757",
+        "finality": false
+      },
+      "canonicalHash": "0xd207ad2cb6d765a1859f17e9b54a118937b16c4a9c57b856a77aee8d64019c37",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-release58-20261005-3",
+      "app": "0x5572E348C5039D240b9b470c558e188345aDa81b",
+      "epoch": "9",
+      "id": "807",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xc7d72be8d6414900a062a7cf97692e77ea0f67f583bf9111c8cd097bdcb53539",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "44185662",
+        "finality": false
+      },
+      "canonicalHash": "0xc7d72be8d6414900a062a7cf97692e77ea0f67f583bf9111c8cd097bdcb53539",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-release58-20261005-4",
+      "app": "0xF3CFDDaA4a069a08829F76f7BCEf58fd1F9469bB",
+      "epoch": "8",
+      "id": "808",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xe693c46c21d295c097e32f46a2bd77a31a46770a5e435b995fcd47f82434cd95",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 4,
+        "scoreB": 7,
+        "elapsedUs": "38572923",
+        "finality": false
+      },
+      "canonicalHash": "0xe693c46c21d295c097e32f46a2bd77a31a46770a5e435b995fcd47f82434cd95",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-release58-20261005-5",
+      "app": "0xbFC44E0cDB647689C138445E6e4796e71C425235",
+      "epoch": "9",
+      "id": "810",
+      "originalPassed": true,
+      "result": {
+        "hash": "0x1c4be02467d1efc3605f737dc8422e030acf37adc9efc17f5eaca4c4a8ebe6a1",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "canonicalHash": "0x1c4be02467d1efc3605f737dc8422e030acf37adc9efc17f5eaca4c4a8ebe6a1",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-release58-20261005-6",
+      "app": "0x64E8806eDf97162377e2EbcC6aA3c28A5f139395",
+      "epoch": "8",
+      "id": "811",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xa4e12a60e216d782a23e0ef0f98a817e3dd31c25e5442c765486f8be19d9fda4",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "44542458",
+        "finality": false
+      },
+      "canonicalHash": "0xa4e12a60e216d782a23e0ef0f98a817e3dd31c25e5442c765486f8be19d9fda4",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    },
+    {
+      "run": "continuous-release58-20261005-7",
+      "app": "0xeF9Dfabb2af5f9368B6D68C462FfeD6E7c94Ba08",
+      "epoch": "9",
+      "id": "812",
+      "originalPassed": true,
+      "result": {
+        "hash": "0xb518688200a63e620b752b0a920a4919d8564d6bd73643f45974db6d22ab16a0",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625013",
+        "finality": false
+      },
+      "canonicalHash": "0xb518688200a63e620b752b0a920a4919d8564d6bd73643f45974db6d22ab16a0",
+      "canonicalFinality": false,
+      "sameActiveEpoch": true
+    }
+  ]
+}

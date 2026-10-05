@@ -186,6 +186,18 @@ test('a no-lease engine keeps the three-second fence and human authorization',as
  f.failBase(false);await player.move(-1);assert.equal(f.sent.length,2);
  await player.revoke(f.owner);await assert.rejects(player.move(0),/revoked/);player.close();
 });
+test('delayed Monad publication does not serialize live controls or release their epoch',async()=>{
+ const f=fixture(16);f.player.close();f.m.hub=NO_LEASE_HUB;f.hub.expiresAt=0n;f.hub.batchIndex=7n;
+ const player=f.create();
+ try{
+  // Keep the same published batch for thirty seconds while live receipts advance.
+  for(let i=0;i<60;i++){f.advance(500);f.fresh();await player.move(i%2?-1:1);}
+  assert.equal(f.hub.batchIndex,7n);assert.equal(f.sent.length,60);
+  assert.equal(f.state.nonceA,60n);assert.equal(player.journal.pending(f.session.grant.key),undefined);
+  f.hub.batchIndex=8n;f.advance(500);f.fresh();await player.move(0);
+  assert.equal(f.sent.length,61);assert.equal(f.hub.epoch,1n);assert.equal(f.hub.status,1);
+ }finally{player.close();}
+});
 test('zero lease on an unknown hub and an expired human grant still fail closed',async()=>{
  const f=fixture(15);f.hub.expiresAt=0n;await assert.rejects(f.player.move(1),/recovering/);assert.equal(f.sent.length,0);f.player.close();
  f.m.hub=NO_LEASE_HUB;f.session.grant.expires=1n;f.binding.controlA.expires=1n;

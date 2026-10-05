@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-05T14:36:09.862790+00:00",
+  "passed": true,
+  "path": "/opt/pongit/releases/continuous-20261005/backup-after",
+  "databases": [
+    "pong_human_rules14",
+    "pong_relayer",
+    "agent_five",
+    "reusable_agents_candidate",
+    "reusable_shared_indexer14"
+  ],
+  "files": 6,
+  "bytes": 72486177,
+  "manifestSha256": "503fb47c3460ad5be7e80acd298e0e953dffd6b9a07962d29267ebbfeeed2fd3",
+  "offVpsVerifiedAt": "2026-10-05T14:36:51.549781+00:00",
+  "offVpsPath": "C:\\Users\\wwwle\\.codex\\private-backups\\pongit\\continuous-20261005\\backup-after"
+}

@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
-import {decodeEventLog,decodeFunctionData,keccak256,parseTransaction} from 'viem';
+import {decodeErrorResult,decodeEventLog,decodeFunctionData,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
@@ -29,6 +29,10 @@ const readDelayMs=Number(process.env.PONG_CATALOGUE_READ_DELAY_MS??0);
 const networkDelayMs=Number(process.env.PONG_CATALOGUE_NETWORK_DELAY_MS??0);
 const inputHoldMs=Number(process.env.PONG_CATALOGUE_INPUT_HOLD_MS??80),inputGapMs=Number(process.env.PONG_CATALOGUE_INPUT_GAP_MS??40);
 const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
+const fault=process.env.PONG_CATALOGUE_FAULT;
+assert(!fault||['f5','disconnect','lost-reply','revoke'].includes(fault));
+assert(!fault||naturalMatch&&publicSynchronized,'Faults use only the owned public natural friendly fixture');
+assert(fault!=='lost-reply'||httpOnly,'Lost-reply fixture must use the observable HTTP transport');
 assert(Number.isInteger(initialIdleMs)&&initialIdleMs>=0&&initialIdleMs<=20000);
 assert(Number.isInteger(readDelayMs)&&readDelayMs>=0&&readDelayMs<=400);
 assert(Number.isInteger(networkDelayMs)&&networkDelayMs>=0&&networkDelayMs<=200);
@@ -64,6 +68,7 @@ report.initialIdleMs=initialIdleMs;report.injectedReadLatencyMs=readDelayMs;
 report.injectedNetworkDelayEachWayMs=networkDelayMs;
 report.inputHoldMs=inputHoldMs;report.inputGapMs=inputGapMs;
 report.httpOnly=httpOnly;
+report.fault=fault;report.faults=[];
 if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continuationRecord.common.pool,catalog:continuationRecord.common.catalog,deploymentSha256};
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
@@ -72,6 +77,23 @@ const context=await browser.newContext({viewport:{width:1440,height:1000},
  ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/video',size:{width:1440,height:1000}}}:{}),
  ...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
 if(httpOnly)await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.dev\//,socket=>socket.close());
+const faultSockets:import('@playwright/test').WebSocketRoute[]=[];
+if(fault==='disconnect')await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.dev\//,socket=>{
+ socket.connectToServer();faultSockets.push(socket);
+});
+let dropReply=false;
+if(fault==='lost-reply')await context.route('https://il2-eu-*.fly.dev/**',async route=>{
+ const body=route.request().postDataJSON();
+ if(dropReply&&body?.method==='interlude_sendTransaction'){
+  const tx=parseTransaction(body.params[0]);let action='';try{action=decodeFunctionData({abi:synchronizedAgentArenaAbi,data:tx.data!}).functionName;}catch{}
+  if(action==='input'){dropReply=false;const response=await route.fetch(),reply=await response.json();
+   assert(response.ok()&&reply.result?.status==='0x1','Lost reply must follow actual successful execution');
+   report.faults.push({kind:'lost-reply-after-execution',at:new Date().toISOString(),nonce:tx.nonce,hash:reply.result.transactionHash});
+   return route.abort('failed');
+  }
+ }
+ return route.continue();
+});
 // A degraded-network trial forwards every real RPC and exact signed payload.
 // Delay every round trip (or only reads), without inventing replies or gameplay.
 if(readDelayMs||networkDelayMs)await context.route('https://il2-eu-*.fly.dev/**',async route=>{
@@ -124,6 +146,11 @@ let assertions=0;cdp.on('WebAuthn.credentialAsserted',()=>assertions++);
 const savePrivate=async()=>writeFile(privatePath,JSON.stringify({storage:await context.storageState(),
  session:await page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage))),
  credentials:await cdp.send('WebAuthn.getCredentials',{authenticatorId})}),{mode:0o600});
+const receiptMeta=(receipt:any)=>{
+ let revertName:string|undefined;
+ if(typeof receipt?.output==='string')try{revertName=decodeErrorResult({abi:synchronizedAgentArenaAbi,data:receipt.output}).errorName;}catch{}
+ return {hash:receipt?.transactionHash,block:receipt?.blockNumber,...(revertName?{revertName}:{})};
+};
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
 report.sockets=[];report.peerEvents=[];
 const peerSeen=new Set<string>();
@@ -152,7 +179,7 @@ page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:
     ...(p.error?{rpcErrorCode:p.error.code,message:clean(p.error)}:{})});
    const receipt=p.result;
    if(receipt?.transactionHash?.toLowerCase()===write.hash.toLowerCase()&&!receipts.has(write.hash)){
-    receipts.add(write.hash);report.receipts.push({ms,sentAt:performance.timeOrigin+write.at,confirmedAt:performance.timeOrigin+performance.now(),status:receipt.status,side:receiptSide(receipt),...controls.get(write.hash)});
+    receipts.add(write.hash);report.receipts.push({ms,sentAt:performance.timeOrigin+write.at,confirmedAt:performance.timeOrigin+performance.now(),status:receipt.status,action:write.action,...receiptMeta(receipt),side:receiptSide(receipt),...controls.get(write.hash)});
    }
   }
   if(p.params?.result){record.applied++;
@@ -217,15 +244,18 @@ page.on('response',async response=>{try{
    // Interlude returns the executed receipt in the send response. Counting only
    // later receipt polling silently omitted every ordinary successful control.
    if(reply.result?.transactionHash&&['0x1','success'].includes(reply.result.status)&&!receipts.has(hash.toLowerCase())){
-    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,side:receiptSide(reply.result),...controls.get(hash.toLowerCase())});
+    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash.toLowerCase())});
    }
   }
  }else if(reply.result){
   const hash=String(reply.result.transactionHash??body.params?.[0]??'').toLowerCase(),began=submitted.get(hash);
-  if(began!==undefined&&!receipts.has(hash)){receipts.add(hash);report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,side:receiptSide(reply.result),...controls.get(hash)});}
+  if(began!==undefined&&!receipts.has(hash)){receipts.add(hash);report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash)});}
  }
  }catch{/* No request bodies or private authorization data are logged. */}});
 await context.addInitScript(()=>{
+ const get=navigator.credentials.get.bind(navigator.credentials);
+ (window as any).__passkeyTimings=[];
+ navigator.credentials.get=async(...args)=>{const sample:any={startedAt:performance.now()};(window as any).__passkeyTimings.push(sample);try{return await get(...args);}catch(e){sample.error=(e as Error).name;throw e;}finally{sample.finishedAt=performance.now();}};
  localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));
  sessionStorage.setItem('pongit:measure-controls','1');
  (window as any).__commandTimings=[];window.addEventListener('pongit:command-timing',(e:any)=>{const a=(window as any).__commandTimings;if(a.length<20000)a.push(e.detail);});
@@ -314,10 +344,41 @@ try{
  let naturalEnded=false;
  for(let i=0;naturalMatch?Date.now()<naturalDeadline:i<controlCount;i++){
   if(naturalMatch&&await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).isVisible()){naturalEnded=true;break;}
+  if(fault&&i===4){
+   if(fault==='f5'){
+    await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]')?.disabled&&!!document.querySelector('button[aria-label="Move up"]'),{},{timeout:30000});
+    assert.equal(assertions,before);report.faults.push({kind:'f5-grant-reused',at:new Date().toISOString()});
+   }else if(fault==='disconnect'){
+    assert(spectator);await context.setOffline(true);for(const socket of faultSockets)await socket.close();
+    await spectator.waitForFunction(()=>(window as any).__syncProbe?.snapshots.at(-1)?.pause?.status>=2,{},{timeout:10000});
+    const paused=await spectator.evaluate(()=>{const s=(window as any).__syncProbe.snapshots.at(-1);return {t:s.state.t,a:s.state.scoreA,b:s.state.scoreB};});
+    await spectator.waitForTimeout(1000);
+    const held=await spectator.evaluate(()=>{const s=(window as any).__syncProbe.snapshots.at(-1);return {t:s.state.t,a:s.state.scoreA,b:s.state.scoreB};});
+    assert.deepEqual(held,paused,'Real disconnect must pause physics and scoring');
+    await context.setOffline(false);
+    await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:45000});
+    report.faults.push({kind:'disconnect-pauses-clock-and-resumes',at:new Date().toISOString(),paused});
+   }else if(fault==='lost-reply')dropReply=true;
+   else{
+    await page.bringToFront();
+    report.faultStep='opening-tools';await page.getByRole('button',{name:'Tools',exact:true}).first().click();
+    report.faultStep='revoking';await page.getByRole('button',{name:'Sign out of this match',exact:true}).click();
+    try{await page.getByRole('dialog',{name:'Arena tools',exact:true}).waitFor({state:'hidden',timeout:15000});}
+    catch(e){report.passkeyDiagnostic=await page.evaluate(()=>(window as any).__passkeyTimings??[]);report.assertionCount=assertions;
+     report.permissionDiagnostic=await page.getByRole('dialog',{name:'Arena tools',exact:true}).getByRole('alert').allTextContents();throw e;}
+    assert(await page.getByRole('button',{name:'Move up',exact:true}).isDisabled(),'Revoked control must be disabled');
+    report.faultStep='reauthorizing';
+    await page.getByRole('button',{name:'Tools',exact:true}).first().click();await page.getByRole('button',{name:'Sign in again',exact:true}).click();
+    await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:45000});
+    report.faults.push({kind:'own-match-revoked-and-reauthorized',at:new Date().toISOString()});
+   }
+  }
   const key=i%2?'ArrowDown':'ArrowUp';await page.keyboard.down(key);await page.waitForTimeout(inputHoldMs);await page.keyboard.up(key);await page.waitForTimeout(inputGapMs);
   if(!naturalMatch&&i===34){await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
  }
  if(naturalMatch){report.naturalEnded=naturalEnded;assert(naturalEnded,'Natural match exceeded its fixed seven-minute observation window');}
+ if(fault)assert.equal(report.faults.length,1,'The requested fault must be injected and its recovery verified');
  report.controlsEndedAt=new Date().toISOString();
  const trace=await page.evaluate(()=>({paddle:(window as any).__paddle,keys:(window as any).__keys}));
  await writeFile(out+'/input-trace.json',JSON.stringify(trace));
@@ -386,7 +447,7 @@ try{
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  if(process.env.PONG_REQUIRE_RECONCILIATION==='1')assert(report.sync?.paddleSamples>100&&report.sync.paddleJumps.length===0&&report.sync.snapshotJumps.length===0,'Visible reconciliation discontinuities remain');
- if(naturalMatch){
+ if(naturalMatch&&!fault){
   report.naturalGates={noPause:report.sync?.contractPauseMs===0,noResume:report.liveness?.resumes===0,noResync:report.sync?.visibleResyncs===0&&report.spectatorSync?.visibleResyncs===0,peer:report.peerReception.samples>=20&&report.peerReception.p95Ms<=report.submissionP95Ms+50,player:report.performance.player,spectator:report.performance.spectator};
   assert(Object.values(report.naturalGates).every(v=>v===true),'Natural-match synchronization gate failed');
  }
