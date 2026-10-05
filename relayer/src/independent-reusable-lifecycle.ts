@@ -3,6 +3,7 @@ import type {IndependentManifest} from '../../shared/independent';
 import {independentReader} from '../../shared/independent-read';
 import {readHubDelegation} from '../../shared/rooms-hub';
 import {hubLeaseValid} from '../../shared/hub-lease';
+import {continuousDelegation} from '../../shared/continuous-delegation';
 import {reusableAdmissionDigest} from '../../shared/reusable-admission';
 import {EMPTY_RESULT_ROOT} from '../../shared/published-result-tree';
 import {abi as arenaAbi} from '../../shared/abi-independent-ReusableEventsArena';
@@ -85,11 +86,13 @@ export function independentReusableLifecycle(o:Options){
   // These real protocol deadlines may retire an unavailable node, never a
   // guessed local RPC timeout. Simulations/inclusion recheck them on Monad.
   if(!hubLeaseValid(m.hub,d.expiresAt,block.timestamp)){
+   if(continuousDelegation(m.hub)){h.online=false;await o.stage('review','DELEGATION_EXPIRED');await e.reconcile();return;}
    await o.stage('recovering','DELEGATION_EXPIRED');await e.reconcile();
    await queue(m.lobby,lobbyAbi,'closeReusableArena',[e.app],0n,0);return;
   }
   const publicationOverdue=(since:bigint)=>d.maxBatchInterval>0n&&block.timestamp>since+d.maxBatchInterval;
   const closeUnpublished=async()=>{
+   if(continuousDelegation(m.hub)){h.online=false;await o.stage('review','PUBLICATION_SILENCE_DEADLINE');await e.reconcile();return;}
    h.online=false;await o.stage('recovering','PUBLICATION_SILENCE_DEADLINE');await e.reconcile();
    await queue(m.hub,hubCalls,'forceClose',[e.app,zeroHash],0n,0);
   };

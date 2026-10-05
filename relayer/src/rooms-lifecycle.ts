@@ -15,6 +15,7 @@ import { monadTestnet } from "viem/chains";
 import type { Pool, PoolClient } from "pg";
 import { roomsLifecycleHubAbi as hubAbi } from "../../shared/abi-rooms-lifecycle";
 import {readHubDelegation} from "../../shared/rooms-hub";
+import {continuousSubmissionGuard} from "../../shared/continuous-delegation";
 import { roomsMarketAdapterAbi } from "../../shared/abi-RoomsMarketAdapter";
 import { requestHostedRenewal } from "./rooms-hosted-renewal";
 import { roomsDrainBlocker } from "../../shared/rooms-availability";
@@ -131,11 +132,13 @@ export async function roomsLifecycle(o: {
     stage = s;
     console.info(JSON.stringify({event:'rooms-lifecycle-transition',app:o.app,previous,stage:s,...detail,at:new Date().toISOString()}));
   };
+  const continuousCheck=continuousSubmissionGuard(o.base);
   async function submit(id: string, to: Address, data: Hex) {
     let job = (
       await o.db.query("SELECT * FROM il_lifecycle_jobs WHERE id=$1", [id])
     ).rows[0];
     if (!job) {
+      await continuousCheck(to,data);
       const pending = (
         await o.db.query(
           "SELECT * FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending' LIMIT 1",
@@ -163,6 +166,7 @@ export async function roomsLifecycle(o: {
         nonce,
       });
       request.gas = (request.gas * 12n) / 10n;
+      await continuousCheck(to,data);
       const raw = await wallet.signTransaction(request),
         hash = keccak256(raw);
       job = { id, raw, hash, status: "pending" };
@@ -180,6 +184,7 @@ export async function roomsLifecycle(o: {
       .getTransactionReceipt({ hash: job.hash })
       .catch(() => null);
     if (!r) {
+      await continuousCheck(to,data);
       await o.base.sendRawTransaction({ serializedTransaction: job.raw });
       return false;
     }

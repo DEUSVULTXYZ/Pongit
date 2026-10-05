@@ -1,0 +1,2293 @@
+[
+  {
+    "file": "contracts/src/autonomous/AuthorityActions.sol",
+    "line": 240,
+    "methods": [
+      "closeCompletedSession"
+    ],
+    "text": "function closeCompletedSession(uint256 expectedEpoch) external {"
+  },
+  {
+    "file": "contracts/src/autonomous/AuthorityActions.sol",
+    "line": 257,
+    "methods": [
+      "closeDelegation"
+    ],
+    "text": "IAuthorityHost(address(this)).hub().closeDelegation(Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/autonomous/AuthorityActions.sol",
+    "line": 272,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "// releaseStake must not strand renewal after a valid published seal."
+  },
+  {
+    "file": "contracts/src/autonomous/AuthorityActions.sol",
+    "line": 278,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "IAuthorityHost(address(this)).hub().releaseStake(address(this), Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/autonomous/AuthorityActions.sol",
+    "line": 374,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "IAuthorityHost(address(this)).hub().forceClose(address(this), Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/autonomous/AuthorityActions.sol",
+    "line": 382,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "IAuthorityHost(address(this)).hub().releaseStake(address(this), Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/chaos/PongChaosEvents.sol",
+    "line": 139,
+    "methods": [
+      "closeDelegation",
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external virtual {if(block.chainid!=10143||msg.sender!=operator)revert OperatorOnly();if(activeCount()!=0)revert ArenaBusy();hub.closeDelegation(Types.GLOBAL);}"
+  },
+  {
+    "file": "contracts/src/chaos/PongChaosEvents.sol",
+    "line": 140,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "function renewEngine() external payable virtual {"
+  },
+  {
+    "file": "contracts/src/chaos/PongChaosEvents.sol",
+    "line": 145,
+    "methods": [
+      "closeEngine",
+      "renewEngine"
+    ],
+    "text": "return selector==this.registerControls.selector||selector==this.closeEngine.selector||selector==this.renewEngine.selector"
+  },
+  {
+    "file": "contracts/src/independent/IndependentArena.sol",
+    "line": 59,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function openEngine() external payable {"
+  },
+  {
+    "file": "contracts/src/independent/IndependentArena.sol",
+    "line": 68,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external {"
+  },
+  {
+    "file": "contracts/src/independent/IndependentArena.sol",
+    "line": 71,
+    "methods": [
+      "closeDelegation"
+    ],
+    "text": "hub.closeDelegation(Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/independent/IndependentArena.sol",
+    "line": 119,
+    "methods": [
+      "closeEngine",
+      "openEngine"
+    ],
+    "text": "return s == this.prepare.selector || s == this.openEngine.selector || s == this.closeEngine.selector"
+  },
+  {
+    "file": "contracts/src/independent/IndependentEventsArena.sol",
+    "line": 49,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function openEngine() external payable {"
+  },
+  {
+    "file": "contracts/src/independent/IndependentEventsArena.sol",
+    "line": 61,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external override {PoolAdmission.close(words,controls,hub,lobby);}"
+  },
+  {
+    "file": "contracts/src/independent/IndependentEventsArena.sol",
+    "line": 72,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "function renewEngine() external payable override {revert LobbyActionOnly();}"
+  },
+  {
+    "file": "contracts/src/independent/IndependentEventsArena.sol",
+    "line": 90,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "return selector==this.prepare.selector||selector==this.openEngine.selector||selector==this.cancelRecovered.selector"
+  },
+  {
+    "file": "contracts/src/independent/IndependentLobby.sol",
+    "line": 155,
+    "methods": [
+      "openArena"
+    ],
+    "text": "function openArena(uint256 id) external payable virtual {"
+  },
+  {
+    "file": "contracts/src/independent/IndependentLobby.sol",
+    "line": 161,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "a.openEngine{value:msg.value}(); emit ArenaOpened(id,address(a),a.boundMatch().epoch);"
+  },
+  {
+    "file": "contracts/src/independent/IndependentLobby.sol",
+    "line": 182,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "function closeArena(uint256 id) external virtual {"
+  },
+  {
+    "file": "contracts/src/independent/IndependentLobby.sol",
+    "line": 185,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "a.closeEngine(); emit ArenaClosing(id,address(a),a.boundMatch().epoch);"
+  },
+  {
+    "file": "contracts/src/independent/IndependentLobby.sol",
+    "line": 188,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "function recoverExpired(uint256 id) external virtual {"
+  },
+  {
+    "file": "contracts/src/independent/IndependentLobby.sol",
+    "line": 193,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "a.closeEngine(); emit ArenaClosing(id,address(a),s.epoch);"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsArena.sol",
+    "line": 74,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function openEngine() external payable {"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsArena.sol",
+    "line": 87,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external {"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsArena.sol",
+    "line": 91,
+    "methods": [
+      "closeDelegation"
+    ],
+    "text": "hub.closeDelegation(Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsArena.sol",
+    "line": 153,
+    "methods": [
+      "closeEngine",
+      "openEngine"
+    ],
+    "text": "return selector==this.openEngine.selector||selector==this.closeEngine.selector||selector==this.cancelRecovered.selector"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsLobby.sol",
+    "line": 52,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "function openReusableArena(address at) external payable {"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsLobby.sol",
+    "line": 54,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "ReusableEventsArena(at).openEngine{value:msg.value}();"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsLobby.sol",
+    "line": 102,
+    "methods": [
+      "openArena"
+    ],
+    "text": "function openArena(uint256) external payable override {revert(\"use reusable lifecycle and issued ticket\");}"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsLobby.sol",
+    "line": 103,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "function closeArena(uint256) external pure override {revert(\"close reusable arena by address\");}"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsLobby.sol",
+    "line": 104,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "function closeReusableArena(address at) external {"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsLobby.sol",
+    "line": 108,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "ReusableEventsArena(at).closeEngine();"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsLobby.sol",
+    "line": 110,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "function recoverExpired(uint256 id) external override {"
+  },
+  {
+    "file": "contracts/src/independent/ReusableEventsLobby.sol",
+    "line": 112,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "require(s.status==Types.Status.Active&&HubLease.expired(s.expiresAt),\"not expired\");ReusableEventsArena(at).closeEngine();"
+  },
+  {
+    "file": "contracts/src/labs/DrandHostedProbe.sol",
+    "line": 60,
+    "methods": [
+      "closeDelegation"
+    ],
+    "text": "hub.closeDelegation(Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/labs/PongRoomsRealtime.sol",
+    "line": 92,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external {"
+  },
+  {
+    "file": "contracts/src/labs/PongRoomsRealtime.sol",
+    "line": 94,
+    "methods": [
+      "closeDelegation"
+    ],
+    "text": "if (activeCount() != 0) revert ActivePublishedMatches(); hub.closeDelegation(Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/labs/PongRoomsRealtime.sol",
+    "line": 96,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "function renewEngine() external payable {"
+  },
+  {
+    "file": "contracts/src/labs/PongRoomsRealtime.sol",
+    "line": 103,
+    "methods": [
+      "closeEngine",
+      "renewEngine"
+    ],
+    "text": "return selector == this.closeEngine.selector || selector == this.renewEngine.selector || selector == this.submitLivePressure.selector || super._isSessionBlocked(selector);"
+  },
+  {
+    "file": "contracts/src/labs/PongRoomsTestnet.sol",
+    "line": 105,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external {"
+  },
+  {
+    "file": "contracts/src/labs/PongRoomsTestnet.sol",
+    "line": 108,
+    "methods": [
+      "closeDelegation"
+    ],
+    "text": "hub.closeDelegation(Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/labs/PongRoomsTestnet.sol",
+    "line": 110,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "function renewEngine() external payable {"
+  },
+  {
+    "file": "contracts/src/labs/PongRoomsTestnet.sol",
+    "line": 123,
+    "methods": [
+      "closeEngine",
+      "renewEngine"
+    ],
+    "text": "return selector==this.closeEngine.selector || selector==this.renewEngine.selector || super._isSessionBlocked(selector);"
+  },
+  {
+    "file": "contracts/src/labs/PublicationQualificationAuthority.sol",
+    "line": 24,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function open() external payable onlyOwner {require(address(arena)!=address(0),\"bind first\");arena.openEngine{value:msg.value}();}"
+  },
+  {
+    "file": "contracts/src/labs/PublicationQualificationAuthority.sol",
+    "line": 25,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function close() external onlyOwner {arena.closeEngine();}"
+  },
+  {
+    "file": "contracts/src/labs/PublicationQualificationAuthority.sol",
+    "line": 27,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "hub.releaseStake(address(arena),Types.GLOBAL);arena.resultVerifier().sealReleased(address(arena));"
+  },
+  {
+    "file": "contracts/src/labs/RoomsMarketAdapter.sol",
+    "line": 71,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "// Conservative finality: releaseStake must have ended all challenge rights first."
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaPool.sol",
+    "line": 164,
+    "methods": [
+      "openArena"
+    ],
+    "text": "function openArena(T.Ref calldata ref) external payable base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaPool.sol",
+    "line": 168,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "IAgentArena(ref.arena).openEngine{value:msg.value}();Types.Session memory s=hub.sessionOf(ref.arena,Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaPool.sol",
+    "line": 206,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "function closeArena(T.Ref calldata ref) external base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaPool.sol",
+    "line": 208,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "IAgentArena(ref.arena).closeEngine();emit Closing(T.key(ref),ref.epoch);"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaPool.sol",
+    "line": 210,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "function recoverExpired(T.Ref calldata ref) external base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaPool.sol",
+    "line": 214,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "IAgentArena(ref.arena).closeEngine();emit Closing(key,s.epoch);"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaPool.sol",
+    "line": 221,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "hub.releaseStake(ref.arena,Types.GLOBAL);_capture(ref);emit Released(key,ref.epoch);"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaTypes.sol",
+    "line": 19,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function openEngine() external payable;"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentArenaTypes.sol",
+    "line": 20,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external;"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentSeriesPool.sol",
+    "line": 155,
+    "methods": [
+      "openArena"
+    ],
+    "text": "function openArena(address app) external payable base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentSeriesPool.sol",
+    "line": 160,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "SeriesAgentArena(app).openEngine{value:msg.value}();Types.Session memory s=hub.sessionOf(app,0);"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentSeriesPool.sol",
+    "line": 204,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "function closeArena(address app) external base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentSeriesPool.sol",
+    "line": 206,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "SeriesAgentArena(app).closeEngine();emit ArenaClosing(app,arenaEpoch[app]);"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentSeriesPool.sol",
+    "line": 208,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "function recoverExpired(address app) external base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentSeriesPool.sol",
+    "line": 211,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "hub.forceClose(app,0);emit ArenaClosing(app,s.epoch);"
+  },
+  {
+    "file": "contracts/src/agents/competition/AgentSeriesPool.sol",
+    "line": 215,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "hub.releaseStake(app,0);uint256[] storage ids=assigned[app];for(uint256 i;i<ids.length;i++)_capture(ids[i],false);"
+  },
+  {
+    "file": "contracts/src/agents/competition/PoolAdmission.sol",
+    "line": 34,
+    "methods": [
+      "closeDelegation"
+    ],
+    "text": "hub.closeDelegation(Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/agents/competition/PooledAgentArena.sol",
+    "line": 39,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function openEngine() external payable {"
+  },
+  {
+    "file": "contracts/src/agents/competition/PooledAgentArena.sol",
+    "line": 49,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "function renewEngine() external payable override {revert SharedArenaAction();}"
+  },
+  {
+    "file": "contracts/src/agents/competition/PooledAgentArena.sol",
+    "line": 50,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external override {"
+  },
+  {
+    "file": "contracts/src/agents/competition/PooledAgentArena.sol",
+    "line": 96,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "return selector==this.prepare.selector||selector==this.openEngine.selector||selector==this.cancelRecovered.selector"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentArena.sol",
+    "line": 75,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function openEngine() external payable {"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentArena.sol",
+    "line": 76,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "Binding.openEngine(words,hub,lobby,resultVerifier,msg.value);"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentArena.sol",
+    "line": 78,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external {"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentArena.sol",
+    "line": 80,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "Binding.closeEngine(words,hub);"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentArena.sol",
+    "line": 137,
+    "methods": [
+      "closeEngine",
+      "openEngine"
+    ],
+    "text": "return selector==this.openEngine.selector||selector==this.closeEngine.selector||selector==this.cancelRecovered.selector"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentBinding.sol",
+    "line": 20,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function openEngine(mapping(bytes32=>uint256) storage w,IInterludeHub hub,address authority,PublishedResultVerifier verifier,uint256 value) external {"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentBinding.sol",
+    "line": 46,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine(mapping(bytes32=>uint256) storage w,IInterludeHub hub) public {"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentBinding.sol",
+    "line": 50,
+    "methods": [
+      "closeDelegation"
+    ],
+    "text": "hub.closeDelegation(Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentPool.sol",
+    "line": 237,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "function openReusableArena(address app) external payable base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentPool.sol",
+    "line": 241,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "ReusableAgentArena(app).openEngine{value:msg.value}();Types.Session memory session=hub.sessionOf(app,Types.GLOBAL);"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentPool.sol",
+    "line": 273,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "function closeReusableArena(address app) external base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentPool.sol",
+    "line": 278,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "ReusableAgentArena(app).closeEngine();emit Closing(arenaMatch[app],session.epoch);"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentPool.sol",
+    "line": 280,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "function recoverExpired(address app) external base locked {"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentPool.sol",
+    "line": 283,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "ReusableAgentArena(app).closeEngine();emit Closing(arenaMatch[app],session.epoch);"
+  },
+  {
+    "file": "contracts/src/agents/competition/ReusableAgentPool.sol",
+    "line": 287,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "hub.releaseStake(app,Types.GLOBAL);verifier.sealReleased(app);_recover(app);emit Released(arenaMatch[app],arenaEpoch[app]);"
+  },
+  {
+    "file": "contracts/src/agents/competition/SeriesAgentArena.sol",
+    "line": 86,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "function openEngine() external payable {"
+  },
+  {
+    "file": "contracts/src/agents/competition/SeriesAgentArena.sol",
+    "line": 99,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "function renewEngine() external payable override {revert SharedArenaAction();}"
+  },
+  {
+    "file": "contracts/src/agents/competition/SeriesAgentArena.sol",
+    "line": 100,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "function closeEngine() external override {"
+  },
+  {
+    "file": "contracts/src/agents/competition/SeriesAgentArena.sol",
+    "line": 168,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "return selector==this.prepareSeries.selector||selector==this.openEngine.selector||selector==this.cancelRecovered.selector||selector==this.cancelUnstartedRecovered.selector"
+  },
+  {
+    "file": "relayer/src/authority-keeper.ts",
+    "line": 17,
+    "methods": [
+      "closeCompletedSession"
+    ],
+    "text": "\"function closeCompletedSession(uint256 expectedEpoch)\","
+  },
+  {
+    "file": "relayer/src/authority-keeper.ts",
+    "line": 30,
+    "methods": [
+      "closeCompletedSession"
+    ],
+    "text": "| { kind: \"closeCompletedSession\"; epoch: bigint }"
+  },
+  {
+    "file": "relayer/src/authority-keeper.ts",
+    "line": 59,
+    "methods": [
+      "closeCompletedSession"
+    ],
+    "text": "case \"closeCompletedSession\":"
+  },
+  {
+    "file": "relayer/src/authority-recovery.ts",
+    "line": 29,
+    "methods": [
+      "closeCompletedSession"
+    ],
+    "text": "action: \"beginRecovery\" | \"finishRecovery\" | \"closeCompletedSession\","
+  },
+  {
+    "file": "relayer/src/independent-reusable-lifecycle.ts",
+    "line": 64,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "// commitment, and openEngine refuses the next epoch until that root is"
+  },
+  {
+    "file": "relayer/src/independent-reusable-lifecycle.ts",
+    "line": 77,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "if(block.timestamp>=d.stakeUnlockAt)await queue(m.hub,hubAbi,'releaseStake',[e.app,zeroHash],0n,0);"
+  },
+  {
+    "file": "relayer/src/independent-reusable-lifecycle.ts",
+    "line": 91,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await queue(m.lobby,lobbyAbi,'closeReusableArena',[e.app],0n,0);return;"
+  },
+  {
+    "file": "relayer/src/independent-reusable-lifecycle.ts",
+    "line": 97,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "await queue(m.hub,hubCalls,'forceClose',[e.app,zeroHash],0n,0);"
+  },
+  {
+    "file": "relayer/src/independent-reusable-lifecycle.ts",
+    "line": 139,
+    "methods": [
+      "openEngine"
+    ],
+    "text": "// openEngine initializes the commitment epoch but clears the physical"
+  },
+  {
+    "file": "relayer/src/independent-reusable-pool.ts",
+    "line": 48,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);return false;"
+  },
+  {
+    "file": "relayer/src/independent-reusable-pool.ts",
+    "line": 59,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "await queue(m.lobby,lobbyAbi,'openReusableArena',[released.app],terms.delegationFee,0);"
+  },
+  {
+    "file": "relayer/src/independent-reusable-pool.ts",
+    "line": 96,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);"
+  },
+  {
+    "file": "relayer/src/independent-reusable-pool.ts",
+    "line": 109,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);return false;"
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 170,
+    "methods": [
+      "forceClose",
+      "releaseStake"
+    ],
+    "text": "if(name==='releaseStake'||name==='forceClose')context=String((await readHubDelegation(base,m.hub,args[0] as Address)).epoch);"
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 171,
+    "methods": [
+      "closeReusableArena",
+      "openReusableArena"
+    ],
+    "text": "if(rules.version===14&&['openReusableArena','closeReusableArena','recoverReleased','sealReleased'].includes(name))"
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 216,
+    "methods": [
+      "openArena"
+    ],
+    "text": "// executed inside openArena. A local free-slot count never proves admission."
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 219,
+    "methods": [
+      "openArena"
+    ],
+    "text": "await queue(m.lobby,lobbyAbi,'openArena',[b.id],terms.delegationFee,0);"
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 226,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "if(Date.now()>=h.releaseAt)await queue(m.hub,hubAbi,'releaseStake',[a.app,zeroHash],0n,1);"
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 232,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "if(published.status>=3&&d.batchIndex>0n){await queue(m.lobby,lobbyAbi,'closeArena',[b.id],0n,0);await stage(i,'publishing');return;}"
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 237,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "await queue(m.hub,interludeHubReadAbi,'forceClose',[a.app,zeroHash],0n,0);return;"
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 239,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "if(!hubLeaseValid(m.hub,d.expiresAt,BigInt(Math.floor(Date.now()/1000)))){await stage(i,'recovering','DELEGATION_EXPIRED');await e.reconcile();await queue(m.lobby,lobbyAbi,'recoverExpired',[b.id],0n,0);return;}"
+  },
+  {
+    "file": "relayer/src/independent-service.ts",
+    "line": 320,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "[m.lobby.toLowerCase(),{abi:lobbyAbi,methods:['relay','propose','matchmake','expireProposal','expireRoom','cancelUnopened',...(m.rulesVersion===14?[]:['assignNext','capture','closeArena'])]}],"
+  },
+  {
+    "file": "relayer/src/interlude-rooms.ts",
+    "line": 697,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "* resumed (a halted epoch's unsettled end is lost at forceClose, and the next"
+  },
+  {
+    "file": "relayer/src/interlude-rooms.ts",
+    "line": 784,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "// the forceClose, and the next epoch's node resumes that match from"
+  },
+  {
+    "file": "relayer/src/rooms-engine-recovery.ts",
+    "line": 31,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "* makes it obsolete; the closing path after a forceClose never waits on it. */"
+  },
+  {
+    "file": "relayer/src/rooms-finalization.ts",
+    "line": 24,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "* lifecycle's finalizing stage, which runs only after releaseStake. */"
+  },
+  {
+    "file": "relayer/src/rooms-lifecycle.ts",
+    "line": 27,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "\"function closeEngine()\","
+  },
+  {
+    "file": "relayer/src/rooms-lifecycle.ts",
+    "line": 28,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "\"function renewEngine() payable\","
+  },
+  {
+    "file": "relayer/src/rooms-lifecycle.ts",
+    "line": 263,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "// This includes commands still pending: after a forceClose of a halted"
+  },
+  {
+    "file": "relayer/src/rooms-lifecycle.ts",
+    "line": 337,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "encodeFunctionData({ abi: appAbi, functionName: \"closeEngine\" }),"
+  },
+  {
+    "file": "relayer/src/rooms-lifecycle.ts",
+    "line": 352,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "functionName: \"releaseStake\","
+  },
+  {
+    "file": "relayer/src/rooms-lifecycle.ts",
+    "line": 426,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "encodeFunctionData({ abi: appAbi, functionName: \"renewEngine\" }),"
+  },
+  {
+    "file": "relayer/src/agents/pool-maintenance.ts",
+    "line": 96,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "return{to:m.pool,method:'closeReusableArena',args:[arena.app]};"
+  },
+  {
+    "file": "relayer/src/agents/reusable-recovery.ts",
+    "line": 8,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "* The hub simulation/inclusion remains the authority for forceClose. */"
+  },
+  {
+    "file": "scripts/agent-capacity-diagnostic.ts",
+    "line": 15,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "try{await base.call({account:'0x369158Ac444278541322643E46e0D5b45ac21C4C',to:candidate.app,data:encodeFunctionData({abi,functionName:'renewEngine'})});report.admission='simulation passed';}"
+  },
+  {
+    "file": "scripts/agent-lifecycle.ts",
+    "line": 64,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "else{const tx=await t.write(`close-${d.epoch}`,m.app,abi,'closeEngine');await event('closed',{epoch:String(d.epoch),tx:tx.transactionHash,closing:pressure,batches:String(d.batchIndex),ageSeconds:String(age)});}"
+  },
+  {
+    "file": "scripts/agent-lifecycle.ts",
+    "line": 68,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "else{const tx=await t.write(`release-${d.epoch}`,m.hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[m.app,zeroHash]);await event('released',{tx:tx.transactionHash});}"
+  },
+  {
+    "file": "scripts/agent-lifecycle.ts",
+    "line": 74,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "const tx=await t.write(`open-after-${d.epoch}`,m.app,abi,'renewEngine');await event('reopened',{tx:tx.transactionHash});"
+  },
+  {
+    "file": "scripts/agent-pool-step.ts",
+    "line": 61,
+    "methods": [
+      "openArena"
+    ],
+    "text": "await act(m.pool,'openArena',[ref]);return;"
+  },
+  {
+    "file": "scripts/agent-pool-step.ts",
+    "line": 66,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "if(entry.captured){await act(m.pool,'closeArena',[ref]);return;}"
+  },
+  {
+    "file": "scripts/agent-pool-step.ts",
+    "line": 67,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "if(block.timestamp>=hub.expiresAt){await act(m.pool,'recoverExpired',[ref]);return;}"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 166,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "if(!continuous&&d.status===1&&d.expiresAt>0n&&block.timestamp>=d.expiresAt&&!cooling(m.pool,'recoverExpired')){await act(m.pool,'recoverExpired',[app]);return;}"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 172,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "if(!continuous&&role==='legacy'&&d.status===1&&reservation&&!cooling(m.hub,'forceClose')){"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 177,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "await act(m.hub,'forceClose',[app,zeroHash]);return;"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 181,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "if(!continuous&&d.status===1&&!occupied&&(!hubLeaseValid(m.hub,d.expiresAt,block.timestamp,420n)||budget&&!reusableAdmissionBudget(budget,d.batchIndex,d.expiresAt,block.timestamp,m.hub))&&!cooling(m.pool,'closeReusableArena')){"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 182,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await act(m.pool,'closeReusableArena',[app]);return;"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 241,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "if(!continuous&&doesMaintenance&&!cooling(m.pool,'closeReusableArena')){"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 282,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "if(doesMaintenance&&capacity.ready.length<reserveTarget&&!cooling(m.pool,'openReusableArena')){"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 287,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "try{await act(m.pool,'openReusableArena',[app],terms.delegationFee);return;}"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 322,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "if(cooling(m.pool,'closeReusableArena')||!await controlPlaneAnswers(a.app,undefined,undefined,m.hub))continue;"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 325,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await act(m.pool,'closeReusableArena',[a.app]);return;"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 329,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "if(!continuous&&doesMaintenance&&capacity.ready.length>=reserveTarget&&!cooling(m.pool,'closeReusableArena')){"
+  },
+  {
+    "file": "scripts/agent-reusable-step.ts",
+    "line": 337,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await act(m.pool,'closeReusableArena',[candidate.app]);return;"
+  },
+  {
+    "file": "scripts/agent-series-soak.ts",
+    "line": 122,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "// openReusableArena requires its prior record captured before opening;"
+  },
+  {
+    "file": "scripts/agent-series-step.ts",
+    "line": 59,
+    "methods": [
+      "openArena"
+    ],
+    "text": "if(admissions){await act(m.pool,'openArena',[app]);return;}continue;"
+  },
+  {
+    "file": "scripts/agent-series-step.ts",
+    "line": 69,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "if(await read<bigint>(m.pool,poolAbi,'remaining',[app])===0n&&await read<boolean>(app,arenaAbi,'seriesDrained')){await act(m.pool,'closeArena',[app]);return;}"
+  },
+  {
+    "file": "scripts/agent-series-step.ts",
+    "line": 70,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "if(block.timestamp>=d.expiresAt){await act(m.pool,'recoverExpired',[app]);return;}"
+  },
+  {
+    "file": "scripts/chaos-candidate-capacity.ts",
+    "line": 8,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "const response=await fetch(process.env.RPC_URL!,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_call',params:[{from:operator,to:m.app,data:encodeFunctionData({abi,functionName:'renewEngine'})},'latest']})});"
+  },
+  {
+    "file": "scripts/chaos-close-qualification.ts",
+    "line": 33,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "r.closeHash=(await t.write(operation,r.app,a.abi,'closeEngine')).transactionHash;"
+  },
+  {
+    "file": "scripts/chaos-integration-lifecycle.ts",
+    "line": 26,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "r.closeHash=(await t.write('close-qualified-integration',r.app,abi,'closeEngine')).transactionHash;}"
+  },
+  {
+    "file": "scripts/chaos-integration-lifecycle.ts",
+    "line": 30,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "r.releaseHash=(await t.write('release-qualified-integration',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[r.app,zeroHash])).transactionHash;}"
+  },
+  {
+    "file": "scripts/chaos-lifecycle-qualification.ts",
+    "line": 51,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const releaseAbi=parseAbi(['function releaseStake(address,bytes32)']);"
+  },
+  {
+    "file": "scripts/chaos-lifecycle-qualification.ts",
+    "line": 58,
+    "methods": [
+      "closeEngine",
+      "renewEngine"
+    ],
+    "text": "if(to===r.app.toLowerCase())assert(['closeEngine','renewEngine'].includes(decodeFunctionData({abi,data:tx.data}).functionName));"
+  },
+  {
+    "file": "scripts/chaos-open-diagnostic.ts",
+    "line": 11,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "const call={from:out.operator,to:r.app,data:encodeFunctionData({abi:a.abi,functionName:'renewEngine'})};"
+  },
+  {
+    "file": "scripts/chaos-release-qualification.ts",
+    "line": 21,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "r.releaseHash=(await t.write(operation,hub as any,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[r.app,zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/compact-provision-recover.ts",
+    "line": 9,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "const app=(r.app||r.error?.match(/delegateAll reverted on (0x[\\da-f]{40})/i)?.[1]) as Address;assert(app);"
+  },
+  {
+    "file": "scripts/compact-provision-recover.ts",
+    "line": 15,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "let simulation:any;try{await t.base.call({account:owner,to:app,data:encodeFunctionData({abi,functionName:'delegateAll'})});simulation='ok';}catch(e){const x=e as any;simulation={message:x.message,data:x.cause?.data||x.data,causes:[x.cause,x.cause?.cause,x.cause?.cause?.cause].map(c=>c&&({name:c.name,message:c.message,data:c.data,code:c.code}))};}"
+  },
+  {
+    "file": "scripts/compact-provision-recover.ts",
+    "line": 26,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "await t.write('release-completed-chaos-fixture',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[ref.app,zeroHash]);"
+  },
+  {
+    "file": "scripts/compact-provision-recover.ts",
+    "line": 29,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "if((await readHubDelegation(t.base,hub,app)).status===0)await t.write('open-compact-delegation',app,abi,'renewEngine');"
+  },
+  {
+    "file": "scripts/deploy-agent-arcade.ts",
+    "line": 40,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "if(before.status===0){r.openHash=(await t.write('open-candidate',r.app,abi,'renewEngine')).transactionHash;await save();}"
+  },
+  {
+    "file": "scripts/drand-hosted-diagnostic.ts",
+    "line": 9,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "const app=record.app||record.error?.match(/delegateAll reverted on (0x[\\da-f]{40})/i)?.[1];assert(app);"
+  },
+  {
+    "file": "scripts/drand-hosted-diagnostic.ts",
+    "line": 16,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "try{await base.call({account:report.owner,to:app,data:encodeFunctionData({abi:artifact.abi,functionName:'delegateAll'})});report.simulation='ok';}"
+  },
+  {
+    "file": "scripts/drand-hosted-qualification.ts",
+    "line": 28,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "body:JSON.stringify({name:'PONGIT drand verification probe',bytecode:artifact.bytecode.object,abi:artifact.abi.filter((x:any)=>x.type==='constructor'||x.type==='function'&&x.name==='delegateAll')}),signal:AbortSignal.timeout(120000)});"
+  },
+  {
+    "file": "scripts/drand-release-fixture.ts",
+    "line": 25,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "receipt=await t.write('release-completed-browser-fixture',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[app,zeroHash]);"
+  },
+  {
+    "file": "scripts/drand-release-qualified-probe.ts",
+    "line": 18,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const receipt=await t.write('release-qualified-drand-probe',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[app,zeroHash]);record.releaseHash=receipt.transactionHash;}"
+  },
+  {
+    "file": "scripts/drand-resume-qualification.ts",
+    "line": 12,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "const app=(r.app||r.error?.match(/delegateAll reverted on (0x[\\da-f]{40})/i)?.[1]) as Address;"
+  },
+  {
+    "file": "scripts/drand-resume-qualification.ts",
+    "line": 29,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const receipt=await t.write('release-unpublished-drand-probe',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[old.app,zeroHash]);"
+  },
+  {
+    "file": "scripts/independent-events-preflight.ts",
+    "line": 23,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "const probeAbi=parseAbi(['function owner() view returns(address)','function delegateAll() payable']);"
+  },
+  {
+    "file": "scripts/independent-events-preflight.ts",
+    "line": 26,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "try{await base.simulateContract({address:probe,abi:[...probeAbi,...abi.filter((x:any)=>x.type==='error')],functionName:'delegateAll',account:owner,value:terms.delegationFee});}"
+  },
+  {
+    "file": "scripts/independent-lifecycle-evidence.ts",
+    "line": 26,
+    "methods": [
+      "closeArena",
+      "forceClose",
+      "openArena",
+      "releaseStake"
+    ],
+    "text": "if(!['forceClose','releaseStake','closeArena','capture','openArena','buy','claim','retryPayout'].includes(decoded.functionName))continue;"
+  },
+  {
+    "file": "scripts/open-chaos-events-production.ts",
+    "line": 26,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "if(d.status===0){r.openHash=(await t.write('open-production-candidate',r.app,abi,'renewEngine')).transactionHash;await save();}"
+  },
+  {
+    "file": "scripts/open-public-human-v3.ts",
+    "line": 27,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const receipt=await retryOperatorContention(()=>t.write('open-'+a.index,m.lobby,lobbyAbi,'openReusableArena',[a.app],terms.delegationFee));"
+  },
+  {
+    "file": "scripts/provision-independent-rehearsal.ts",
+    "line": 36,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "const probeAbi=parseAbi(['function owner() view returns(address)','function delegateAll() payable']);"
+  },
+  {
+    "file": "scripts/provision-independent-rehearsal.ts",
+    "line": 38,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "try{await base.simulateContract({address:probe,abi:[...probeAbi,...hubArtifact.abi.filter((x:any)=>x.type==='error')],functionName:'delegateAll',account:owner,value:terms.delegationFee});}"
+  },
+  {
+    "file": "scripts/provision-independent-rehearsal.ts",
+    "line": 42,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "const response=await fetch('https://control.interludelayer.xyz/apps',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name:'PongRoomsTestnetRelease',bytecode:game.bytecode.object,abi:game.abi.filter((x:any)=>x.type==='constructor'||x.type==='function'&&x.name==='delegateAll')}),signal:AbortSignal.timeout(120000)});"
+  },
+  {
+    "file": "scripts/provision-realtime.ts",
+    "line": 17,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "const response=await fetch('https://control.interludelayer.xyz/apps',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({name,bytecode:artifact.bytecode.object,abi:artifact.abi.filter((x:any)=>x.type==='constructor'||x.type==='function'&&x.name==='delegateAll')}),signal:AbortSignal.timeout(120000)});"
+  },
+  {
+    "file": "scripts/public-agent-migration-control.ts",
+    "line": 121,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const receipt=await write('open-'+a.app.toLowerCase(),r.common.pool,poolAbi,'openReusableArena',[a.app],terms.delegationFee);"
+  },
+  {
+    "file": "scripts/qualify-agent-five-release.ts",
+    "line": 65,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt = await write('close-' + row.app, 'closeReusableArena', row.app);"
+  },
+  {
+    "file": "scripts/qualify-agent-five-rotation.ts",
+    "line": 82,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "report.openSpare=await write('open-spare',r.common.pool,poolAbi,'openReusableArena',[spare.app],terms.delegationFee);"
+  },
+  {
+    "file": "scripts/qualify-agent-five-rotation.ts",
+    "line": 87,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const close=await write('close-source-epoch1',r.common.pool,poolAbi,'closeReusableArena',[source.app]);report.close={hash:close.transactionHash,gasUsed:close.gasUsed};"
+  },
+  {
+    "file": "scripts/qualify-agent-five-rotation.ts",
+    "line": 102,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const opening=await write('open-source-epoch2',r.common.pool,poolAbi,'openReusableArena',[source.app],terms.delegationFee);report.reopen={hash:opening.transactionHash,block:opening.blockNumber};await save();"
+  },
+  {
+    "file": "scripts/qualify-agent-five-setup.ts",
+    "line": 65,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const receipt=await retryOperatorContention(()=>t.write(id,r.common.pool,abi,'openReusableArena',[a.app],terms.delegationFee));"
+  },
+  {
+    "file": "scripts/qualify-agent-five-spare.ts",
+    "line": 61,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const tx=await retryOperatorContention(()=>t.write('open-arena6',r.common.pool,poolAbi,'openReusableArena',[arena.app],terms.delegationFee));"
+  },
+  {
+    "file": "scripts/qualify-agent-sync-capacity.ts",
+    "line": 52,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const receipt=await retryOperatorContention(()=>t.write('open-'+arena.app.toLowerCase(),r.common.pool,poolAbi,'openReusableArena',[arena.app],terms.delegationFee));"
+  },
+  {
+    "file": "scripts/qualify-agent-sync-release.ts",
+    "line": 71,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt=await write('close-'+row.app,'closeReusableArena',row.app);"
+  },
+  {
+    "file": "scripts/qualify-agent-v3-renewal.ts",
+    "line": 59,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const tx=await retryOperatorContention(()=>t.write('open-8194-epoch2',r.common.pool,poolAbi,'openReusableArena',[arena.app],terms.delegationFee));"
+  },
+  {
+    "file": "scripts/qualify-chaos-events.ts",
+    "line": 45,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "if(before.status===0)await t.write('open-candidate',r.app,artifact.abi,'renewEngine');"
+  },
+  {
+    "file": "scripts/qualify-human-renewal.ts",
+    "line": 53,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const receipt=await retryOperatorContention(()=>t.write('open-'+app.toLowerCase()+'-'+String(old+1n),m.lobby,lobbyAbi,'openReusableArena',[app],0n));"
+  },
+  {
+    "file": "scripts/qualify-human-rotation.ts",
+    "line": 38,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "report.closeHash=(await t.write('close-'+app+'-'+d.epoch,m.lobby,lobbyAbi,'closeReusableArena',[app])).transactionHash;"
+  },
+  {
+    "file": "scripts/qualify-independent-arenas.ts",
+    "line": 72,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "const data=encodeFunctionData({abi:parseAbi(['function closeEngine()']),functionName:'closeEngine'});"
+  },
+  {
+    "file": "scripts/qualify-independent-arenas.ts",
+    "line": 80,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "report.actions.push({arena:i,name:'closeEngine',hash,block:receipt.blockNumber});"
+  },
+  {
+    "file": "scripts/qualify-independent-candidate.ts",
+    "line": 64,
+    "methods": [
+      "openArena"
+    ],
+    "text": "await t.write(`qualify-open-${index}`,m.lobby,l,'openArena',[BigInt(match.id)],terms.delegationFee);"
+  },
+  {
+    "file": "scripts/qualify-independent-candidate.ts",
+    "line": 132,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "await published(index);await t.write(`qualify-close-${index}`,m.lobby,l,'closeArena',[BigInt(state.matches[index].id)]);"
+  },
+  {
+    "file": "scripts/qualify-independent-candidate.ts",
+    "line": 143,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "await t.write('qualify-close-0',m.lobby,l,'closeArena',[BigInt(state.matches[0].id)]);"
+  },
+  {
+    "file": "scripts/qualify-independent-candidate.ts",
+    "line": 151,
+    "methods": [
+      "closeArena"
+    ],
+    "text": "for(const index of [1,2]){await send(index,0,'concede',[BigInt(state.matches[index].id)]);await published(index);await t.write(`qualify-close-${index}`,m.lobby,l,'closeArena',[BigInt(state.matches[index].id)]);}"
+  },
+  {
+    "file": "scripts/qualify-reusable-agent-capacity.ts",
+    "line": 50,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const receipt=await t.write(name,r.common.pool,abi,'openReusableArena',[app],terms.delegationFee);"
+  },
+  {
+    "file": "scripts/qualify-reusable-agent-capacity.ts",
+    "line": 57,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const receipt=await t.write(name,r.common.pool,abi,'openReusableArena',[app],0n);"
+  },
+  {
+    "file": "scripts/qualify-reusable-agent-tournament.ts",
+    "line": 156,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt = await write('rotate-' + arena.app + '-' + arena.d.epoch, r.common.pool, poolAbi, 'closeReusableArena', [arena.app]);"
+  },
+  {
+    "file": "scripts/qualify-reusable-agents.ts",
+    "line": 227,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "await write('open-epoch'+intended,common.pool,poolAbi,'openReusableArena',[app],BigInt(state.opening.fee));"
+  },
+  {
+    "file": "scripts/qualify-reusable-agents.ts",
+    "line": 251,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "assert(!state.jobs.some((j:any)=>j.state==='uncertain'));await write('close-after-qualification',common.pool,poolAbi,'closeReusableArena',[app]);"
+  },
+  {
+    "file": "scripts/qualify-reusable-candidate.ts",
+    "line": 188,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "await t.write('open-reusable-epoch1',m.lobby,lobbyAbi,'openReusableArena',[app],BigInt(state.opening.fee));"
+  },
+  {
+    "file": "scripts/qualify-reusable-candidate.ts",
+    "line": 224,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await t.write('close-after-reusable-qualification',m.lobby,lobbyAbi,'closeReusableArena',[app]);"
+  },
+  {
+    "file": "scripts/qualify-reusable-human-admission.ts",
+    "line": 78,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "const receipt=await write('open-'+a.app+'-'+row.epoch,m.lobby,lobbyAbi,'openReusableArena',[a.app],value);"
+  },
+  {
+    "file": "scripts/qualify-reusable-human-reserve.ts",
+    "line": 33,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "report.hash=(await t.write('open-third',m.lobby,lobbyAbi,'openReusableArena',[app])).transactionHash;"
+  },
+  {
+    "file": "scripts/qualify-reusable-human-reserve.ts",
+    "line": 42,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "report.hash=(await t.write('close-idle-second',m.lobby,lobbyAbi,'closeReusableArena',[app])).transactionHash;"
+  },
+  {
+    "file": "scripts/qualify-reusable-renewal.ts",
+    "line": 42,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const receipt=await write('release-epoch'+epoch,m.hub,hubAbi,'releaseStake',[app,zeroHash]);"
+  },
+  {
+    "file": "scripts/qualify-reusable-tournament-close.ts",
+    "line": 56,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt = await retryOperatorContention(() => t.write('close-published-epoch-' + before.epoch, r.common.pool, poolAbi, 'closeReusableArena', [app]));"
+  },
+  {
+    "file": "scripts/qualify-v3-game-recovery.ts",
+    "line": 57,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const tx=await retryOperatorContention(()=>t.write(action+'-epoch1',r.common.pool,poolAbi,action==='close'?'closeReusableArena':'releaseArena',[app]));"
+  },
+  {
+    "file": "scripts/realtime-admission-check.ts",
+    "line": 14,
+    "methods": [
+      "delegateAll"
+    ],
+    "text": "try{await base.simulateContract({address:app,abi:[...a.abi,...h.abi.filter((x:any)=>x.type==='error')],functionName:'delegateAll',account:owner,value:terms.delegationFee});report.simulation='passed';}"
+  },
+  {
+    "file": "scripts/realtime-open.ts",
+    "line": 12,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "if((await readHubDelegation(t.base,hub,app)).status===0)await t.write('open-recovered-candidate',app,a.abi,'renewEngine');"
+  },
+  {
+    "file": "scripts/realtime-release-fixture.ts",
+    "line": 21,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const receipt=await t.write('release-completed-classic-fixture',hub,abi,'releaseStake',[reference.app,zeroHash]);"
+  },
+  {
+    "file": "scripts/recover-agent-f202-20260930.ts",
+    "line": 24,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "const abi=parseAbi(['function forceClose(address app,bytes32 key)']);"
+  },
+  {
+    "file": "scripts/recover-agent-f202-20260930.ts",
+    "line": 27,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "const receipt=await t.write('force-close-epoch-1',hub,abi,'forceClose',[app,zeroHash]);"
+  },
+  {
+    "file": "scripts/recover-agent-f202-20260930.ts",
+    "line": 30,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "console.log(JSON.stringify({at:new Date().toISOString(),app,epoch:'1',match:'190',action:'forceClose',"
+  },
+  {
+    "file": "scripts/recover-agent-fixture-212-20260930.ts",
+    "line": 26,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt=await t.write('normal-close-unpublished-test',pool,poolAbi,'closeReusableArena',[app]);"
+  },
+  {
+    "file": "scripts/recover-agent-fixture-213-20260930.ts",
+    "line": 26,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt=await t.write('normal-close-unpublished-test',pool,poolAbi,'closeReusableArena',[app]);"
+  },
+  {
+    "file": "scripts/recover-empty-human-qualification.ts",
+    "line": 41,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt=await write('close-'+app,m.lobby,lobbyAbi,'closeReusableArena',[app]);row.close=receipt.transactionHash;"
+  },
+  {
+    "file": "scripts/recover-empty-human-qualification.ts",
+    "line": 46,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "row.release=(await write('release-'+app,m.hub,hubAbi,'releaseStake',[app,zeroHash])).transactionHash;}"
+  },
+  {
+    "file": "scripts/recover-human-epoch.ts",
+    "line": 16,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "const receipt=await t.write('epoch6-force-close',hub,parseAbi(['function forceClose(address,bytes32)']),'forceClose',[app,zeroHash]);"
+  },
+  {
+    "file": "scripts/recover-human-epoch.ts",
+    "line": 18,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "console.log(JSON.stringify({app,epoch:'6',action:'forceClose',hash:receipt.transactionHash,stakeUnlockAt:String(after.stakeUnlockAt),at:new Date().toISOString()}));"
+  },
+  {
+    "file": "scripts/recover-reusable-agent-admission.ts",
+    "line": 31,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt=await write('close-unadmitted',m.common.pool,poolAbi,'closeReusableArena',[app]);"
+  },
+  {
+    "file": "scripts/release-human-epoch.ts",
+    "line": 1,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "// Separate approval from forceClose. This operation neither renews nor opens admission."
+  },
+  {
+    "file": "scripts/release-human-epoch.ts",
+    "line": 27,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const receipt=await t.write('epoch6-release',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[app,zeroHash]);"
+  },
+  {
+    "file": "scripts/release-human-epoch.ts",
+    "line": 29,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "console.log(JSON.stringify({app,epoch:'6',action:'releaseStake',hash:receipt.transactionHash,block:String(receipt.blockNumber),gasUsed:String(receipt.gasUsed),at:new Date().toISOString()}));"
+  },
+  {
+    "file": "scripts/release-independent-candidate.ts",
+    "line": 21,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "await t.write(`release-arena-${a.index}-epoch-${b.epoch}`,m.hub,hub.abi,'releaseStake',[a.app,zeroHash]);"
+  },
+  {
+    "file": "scripts/release-independent-rehearsal.ts",
+    "line": 22,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const abi=parseAbi(['function releaseStake(address,bytes32)','function activeCount() view returns(uint256)']);"
+  },
+  {
+    "file": "scripts/release-independent-rehearsal.ts",
+    "line": 38,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const id=`independent-rehearsal:${app}:${d.epoch}:releaseStake`;"
+  },
+  {
+    "file": "scripts/release-independent-rehearsal.ts",
+    "line": 44,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const data=encodeFunctionData({abi,functionName:'releaseStake',args:[app,zeroHash]});"
+  },
+  {
+    "file": "scripts/renew-human-epoch.ts",
+    "line": 24,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "const report:any={at:new Date().toISOString(),app,action:check?'check-renewal':'renewEngine',results:[],ready:false};"
+  },
+  {
+    "file": "scripts/renew-human-epoch.ts",
+    "line": 71,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "const receipt=await t.write('epoch7-renew',app,abi,'renewEngine');"
+  },
+  {
+    "file": "scripts/retire-archived-agent-capacity.ts",
+    "line": 30,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "report.closeHash=(await t.write('close-drained-predecessor',app,abi,'closeEngine')).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-archived-agent-capacity.ts",
+    "line": 34,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "report.releaseHash=(await t.write('release-drained-predecessor',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[app,zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-completed-agent-lab.ts",
+    "line": 53,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "report.hash=(await t.write('retirement-release-21',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[app,zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-completed-agent-lab.ts",
+    "line": 66,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "await t.base.simulateContract({account:t.account.address,address:app,abi,functionName:'closeEngine'});"
+  },
+  {
+    "file": "scripts/retire-completed-agent-lab.ts",
+    "line": 71,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "report.hash=(await t.write('retirement-close-21',app,abi,'closeEngine')).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-empty-pongit-sessions.ts",
+    "line": 16,
+    "methods": [
+      "forceClose",
+      "releaseStake"
+    ],
+    "text": "'function forceClose(address,bytes32)','function releaseStake(address,bytes32)']);"
+  },
+  {
+    "file": "scripts/retire-empty-pongit-sessions.ts",
+    "line": 33,
+    "methods": [
+      "forceClose",
+      "releaseStake"
+    ],
+    "text": "for(const action of ['forceClose','releaseStake'] as const){"
+  },
+  {
+    "file": "scripts/retire-empty-pongit-sessions.ts",
+    "line": 60,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "row.forceCloseHash=(await t.write(`${app}-${epoch}-forceClose`,hub,abi,'forceClose',[app,zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-empty-pongit-sessions.ts",
+    "line": 66,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "row.releaseStakeHash=(await t.write(`${app}-${epoch}-releaseStake`,hub,abi,'releaseStake',[app,zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-human-migration-source.ts",
+    "line": 33,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "const receipt=await t.write('epoch7-release',hub,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[app,zeroHash]);"
+  },
+  {
+    "file": "scripts/retire-human-migration-source.ts",
+    "line": 46,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "await t.base.simulateContract({address:app,abi:parseAbi(['function closeEngine()']),functionName:'closeEngine',account:t.account.address});"
+  },
+  {
+    "file": "scripts/retire-human-migration-source.ts",
+    "line": 48,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "const receipt=await t.write('epoch7-close',app,parseAbi(['function closeEngine()']),'closeEngine');"
+  },
+  {
+    "file": "scripts/retire-private-residues-20261004.ts",
+    "line": 2,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "// No forceClose, game command, reopening, provider mutation or public arena is allowed."
+  },
+  {
+    "file": "scripts/retire-private-residues-20261004.ts",
+    "line": 74,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "await t.base.simulateContract({address:authority,abi:i<7?poolAbi:lobbyAbi,functionName:'closeReusableArena',args:[app],account:t.account.address});"
+  },
+  {
+    "file": "scripts/retire-private-residues-20261004.ts",
+    "line": 79,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const tx=await write('close-'+row.app,row.authority,row.kind==='agents'?poolAbi:lobbyAbi,'closeReusableArena',[row.app]);"
+  },
+  {
+    "file": "scripts/retire-private-residues-20261004.ts",
+    "line": 90,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": ":await write('release-'+row.app,HUB,parseAbi(['function releaseStake(address,bytes32)']),'releaseStake',[row.app,zeroHash]);"
+  },
+  {
+    "file": "scripts/retire-public-agent-source.ts",
+    "line": 52,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt=await write('close-'+a.app+'-'+d.epoch,m.pool,poolAbi,'closeReusableArena',[a.app]);"
+  },
+  {
+    "file": "scripts/retire-public-human-v2.ts",
+    "line": 34,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "if(d.status===1){row.close=(await write('close-'+a.app+'-'+row.epoch,m.lobby,lobbyAbi,'closeReusableArena',[a.app])).transactionHash;await save();}"
+  },
+  {
+    "file": "scripts/retire-public-human-v2.ts",
+    "line": 40,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "if(d.status===2){row.releaseAt=String(d.stakeUnlockAt);if(block.timestamp>=d.stakeUnlockAt){row.release=(await write('release-'+row.app+'-'+row.epoch,m.hub,hubAbi,'releaseStake',[row.app,zeroHash])).transactionHash;d=await readHubDelegation(t.base,m.hub,row.app);}}"
+  },
+  {
+    "file": "scripts/retire-publication-probes.ts",
+    "line": 19,
+    "methods": [
+      "forceClose",
+      "releaseStake"
+    ],
+    "text": "const abi=parseAbi(['function forceClose(address,bytes32)','function releaseStake(address,bytes32)','function value() view returns(uint256)','function activeCount() view returns(uint256)']);"
+  },
+  {
+    "file": "scripts/retire-publication-probes.ts",
+    "line": 36,
+    "methods": [
+      "forceClose",
+      "releaseStake"
+    ],
+    "text": "const action=d.status===1?'forceClose':'releaseStake',id=`retire-probe:${app}:${d.epoch}:${action}`;"
+  },
+  {
+    "file": "scripts/retire-qualified-human-fixture.ts",
+    "line": 33,
+    "methods": [
+      "closeReusableArena"
+    ],
+    "text": "const receipt=await t.write(`close-${a.app}-${d.epoch}`,m.lobby,lobbyAbi,'closeReusableArena',[a.app]);"
+  },
+  {
+    "file": "scripts/retire-rules8-qualification.ts",
+    "line": 17,
+    "methods": [
+      "closeEngine",
+      "releaseStake"
+    ],
+    "text": "'function closeEngine()', 'function releaseStake(address,bytes32)']);"
+  },
+  {
+    "file": "scripts/retire-rules8-qualification.ts",
+    "line": 33,
+    "methods": [
+      "closeEngine",
+      "releaseStake"
+    ],
+    "text": "for (const method of ['closeEngine', 'releaseStake'] as const) {"
+  },
+  {
+    "file": "scripts/retire-rules8-qualification.ts",
+    "line": 36,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "if (status === 'pending') report[method] = (await t.write(`${method}-epoch2`, method === 'closeEngine' ? app : hub, abi, method,"
+  },
+  {
+    "file": "scripts/retire-rules8-qualification.ts",
+    "line": 37,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "method === 'closeEngine' ? [] : [app, zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-rules8-qualification.ts",
+    "line": 54,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "report.closeEngine = (await t.write('closeEngine-epoch2', app, abi, 'closeEngine')).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-rules8-qualification.ts",
+    "line": 60,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "report.releaseStake = (await t.write('releaseStake-epoch2', hub, abi, 'releaseStake', [app, zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-rules9-qualification.ts",
+    "line": 18,
+    "methods": [
+      "closeEngine",
+      "releaseStake"
+    ],
+    "text": "'function RULES_VERSION() view returns(uint256)', 'function closeEngine()', 'function releaseStake(address,bytes32)']);"
+  },
+  {
+    "file": "scripts/retire-rules9-qualification.ts",
+    "line": 34,
+    "methods": [
+      "closeEngine",
+      "releaseStake"
+    ],
+    "text": "for (const method of ['closeEngine', 'releaseStake'] as const) {"
+  },
+  {
+    "file": "scripts/retire-rules9-qualification.ts",
+    "line": 37,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "if (status === 'pending') report[method] = (await t.write(`${method}-epoch2`, method === 'closeEngine' ? app : hub, abi, method,"
+  },
+  {
+    "file": "scripts/retire-rules9-qualification.ts",
+    "line": 38,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "method === 'closeEngine' ? [] : [app, zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-rules9-qualification.ts",
+    "line": 44,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "else assert.equal((await t.db.query('SELECT status FROM il_lifecycle_jobs WHERE id=$1', ['retire-rules9-empty-20260920:releaseStake-epoch2'])).rows[0]?.status,'confirmed','Require the exact confirmed release journal');"
+  },
+  {
+    "file": "scripts/retire-rules9-qualification.ts",
+    "line": 58,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "report.closeEngine = (await t.write('closeEngine-epoch2', app, abi, 'closeEngine')).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-rules9-qualification.ts",
+    "line": 64,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "report.releaseStake = (await t.write('releaseStake-epoch2', hub, abi, 'releaseStake', [app, zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 4,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "// way. A healthy predecessor closes itself with closeEngine once it has drained; a"
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 19,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "// superseded: a healthy predecessor, drained like any renewal, closed by its own closeEngine."
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 33,
+    "methods": [
+      "forceClose",
+      "releaseStake"
+    ],
+    "text": "const hubAbi=parseAbi(['function forceClose(address,bytes32)','function releaseStake(address,bytes32)']);"
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 44,
+    "methods": [
+      "renewEngine"
+    ],
+    "text": "// A tombstone the retired laboratory's lifecycle checks before any renewEngine, so a keeper"
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 66,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "report.closeHash=(await t.write(`close-${d.epoch}`,app,abi,'closeEngine')).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 73,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "try{await t.base.call({account:t.account.address,to:app,data:encodeFunctionData({abi,functionName:'closeEngine'})});}catch{closeBlocked=true;}"
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 74,
+    "methods": [
+      "closeEngine"
+    ],
+    "text": "assert(closeBlocked,'closeEngine would succeed: retire it as superseded instead');"
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 82,
+    "methods": [
+      "forceClose"
+    ],
+    "text": "report.forceCloseHash=(await t.write(`force-close-${d.epoch}`,hub,hubAbi,'forceClose',[app,zeroHash])).transactionHash;"
+  },
+  {
+    "file": "scripts/retire-stuck-agent-arcade.ts",
+    "line": 88,
+    "methods": [
+      "releaseStake"
+    ],
+    "text": "report.releaseHash=(await t.write(`release-${d.epoch}`,hub,hubAbi,'releaseStake',[app,zeroHash])).transactionHash;"
+  },
+  {
+    "file": "shared/agent-keeper-role.ts",
+    "line": 6,
+    "methods": [
+      "closeReusableArena",
+      "openReusableArena",
+      "recoverExpired"
+    ],
+    "text": "maintenance:{pool:['openReusableArena','closeReusableArena','recoverExpired','releaseArena','recoverReleased']},"
+  },
+  {
+    "file": "shared/agent-keeper-role.ts",
+    "line": 20,
+    "methods": [
+      "openReusableArena"
+    ],
+    "text": "if(value<0n||(decoded.functionName==='openReusableArena'?value>maximumOpeningValue:value!==0n))throw Error('Keeper value exceeds its role');"
+  },
+  {
+    "file": "shared/authority-recovery.ts",
+    "line": 67,
+    "methods": [
+      "closeCompletedSession"
+    ],
+    "text": "action?: \"beginRecovery\" | \"finishRecovery\" | \"closeCompletedSession\";"
+  },
+  {
+    "file": "shared/authority-recovery.ts",
+    "line": 160,
+    "methods": [
+      "closeCompletedSession"
+    ],
+    "text": "return result(\"SESSION_SEALED\", { action: \"closeCompletedSession\" });"
+  },
+  {
+    "file": "shared/authority-recovery.ts",
+    "line": 211,
+    "methods": [
+      "closeCompletedSession"
+    ],
+    "text": ": d.action === \"closeCompletedSession\""
+  },
+  {
+    "file": "shared/continuous-delegation.ts",
+    "line": 9,
+    "methods": [
+      "closeDelegation",
+      "forceClose",
+      "undelegate"
+    ],
+    "text": "'undelegate(bytes32)','undelegate()','closeDelegation(bytes32)','forceClose(address,bytes32)',"
+  },
+  {
+    "file": "shared/continuous-delegation.ts",
+    "line": 10,
+    "methods": [
+      "closeArena",
+      "closeEngine",
+      "closeReusableArena"
+    ],
+    "text": "'closeEngine()','closeReusableArena(address)','closeArena(address)','closeArena(uint256)',"
+  },
+  {
+    "file": "shared/continuous-delegation.ts",
+    "line": 11,
+    "methods": [
+      "closeArena",
+      "recoverExpired"
+    ],
+    "text": "'closeArena((uint256,address,uint256,uint256))','recoverExpired(address)',"
+  },
+  {
+    "file": "shared/continuous-delegation.ts",
+    "line": 12,
+    "methods": [
+      "recoverExpired"
+    ],
+    "text": "'recoverExpired(uint256)','recoverExpired((uint256,address,uint256,uint256))',"
+  },
+  {
+    "file": "shared/continuous-delegation.ts",
+    "line": 16,
+    "methods": [
+      "closeArena",
+      "closeDelegation",
+      "closeEngine",
+      "closeReusableArena",
+      "forceClose",
+      "recoverExpired",
+      "undelegate"
+    ],
+    "text": "export const closingMethod=(name:string)=>['undelegate','closeDelegation','forceClose','closeEngine','closeReusableArena','closeArena','recoverExpired'].includes(name);"
+  }
+]

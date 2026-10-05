@@ -26,6 +26,7 @@ import {verifyHouseInstanceAuthorities,agentPoolAdmissionAbi,deferReserveEnable}
 import {arenaRenewalExclusions} from '../shared/arena-renewal-policy';
 import {keeperLoop} from '../shared/keeper-loop';
 import {hubLeaseValid} from '../shared/hub-lease';
+import {continuousDelegation} from '../shared/continuous-delegation';
 import {keeperRolePolicy,type AgentKeeperRole} from '../shared/agent-keeper-role';
 import {agentContinuationAbi,localTournamentCursor,ratingContinuationWork,ratingFinalityPage} from '../shared/agent-continuation';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
@@ -43,13 +44,14 @@ const role=(process.env.PONG_AGENT_KEEPER_ROLE??'legacy') as AgentKeeperRole|'le
 assert(['legacy','admission','maintenance','archive'].includes(role));
 assert(m.maxMatches===5?role!=='legacy':role==='legacy'||role==='archive','Five-lane services require separate scoped roles');
 const jobsPrefix=prefix+'-maintenance'+(role==='legacy'?'':'-'+role),file=role==='legacy'?legacyFile:legacyFile.replace(/\.json$/,`-${role}.json`);
+const continuous=continuousDelegation(m.hub);
 const doesAdmission=role==='legacy'||role==='admission',doesMaintenance=role==='legacy'||role==='maintenance',doesArchive=role==='legacy'||role==='archive';
 const laneNumbers=Array.from({length:m.maxMatches},(_,i)=>i),currentPoolAbi:Abi=[...poolAbi,...agentPoolAdmissionAbi];
 boot.push(['runtime',Math.round(performance.now())]);
 const currentRatingsAbi:Abi=[...ratingsAbi,...agentContinuationAbi];
 const contracts={pool:{address:m.pool,abi:currentPoolAbi},tournaments:{address:m.tournaments,abi:bookAbi},ratings:{address:m.ratings,abi:currentRatingsAbi},challenges:{address:m.challenges,abi:challengeAbi}};
 const scope=role==='legacy'?undefined:{keyFile:process.env.PONG_AGENT_ROLE_KEY_FILE!,address:process.env.PONG_AGENT_ROLE_ADDRESS! as Address,
- allowCall:keeperRolePolicy(role,contracts,BigInt(process.env.PONG_AGENT_MAX_OPENING_WEI??'0'))};
+ allowCall:keeperRolePolicy(role,contracts,BigInt(process.env.PONG_AGENT_MAX_OPENING_WEI??'0'),m.hub)};
 const metrics=await agentMetrics('/diagnostics/reusable',role==='legacy'?'lifecycle':role),t=await chainTools(jobsPrefix,measuredFetch('monad'),scope);
 boot.push(['chain-tools',Math.round(performance.now())]);
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3});await initializeReusableResultArchive(db);
@@ -161,13 +163,13 @@ async function step(){
    }
   }
   if(d.status===2&&block.timestamp>=d.stakeUnlockAt&&!cooling(m.pool,'releaseArena')){await act(m.pool,'releaseArena',[app]);return;}
-  if(d.status===1&&d.expiresAt>0n&&block.timestamp>=d.expiresAt&&!cooling(m.pool,'recoverExpired')){await act(m.pool,'recoverExpired',[app]);return;}
+  if(!continuous&&d.status===1&&d.expiresAt>0n&&block.timestamp>=d.expiresAt&&!cooling(m.pool,'recoverExpired')){await act(m.pool,'recoverExpired',[app]);return;}
   const reservation=lanes.find(row=>row.ref.id>0n&&row.ref.arena.toLowerCase()===app.toLowerCase());
   const occupied=!!reservation;
   // Terminal engine results may remain unpublished even while /health says
   // OK. Keep their archive and recover only after the real protocol deadline.
   // A new ticket after a long idle interval must never close immediately.
-  if(role==='legacy'&&d.status===1&&reservation&&!cooling(m.hub,'forceClose')){
+  if(!continuous&&role==='legacy'&&d.status===1&&reservation&&!cooling(m.hub,'forceClose')){
    const [ticket]=await read(m.pool,poolAbi,'ticketOf',[reservation.ref]);
    if(ticket.matchId!==reservation.ref.id||ticket.epoch!==reservation.ref.epoch)throw Error('Reservation ticket identity changed');
    const commitment=await read(app,arenaAbi,'resultCommitment');
@@ -176,7 +178,7 @@ async function step(){
    }
   }
   // An active or unpublished game never migrates to a different arena.
-  if(d.status===1&&!occupied&&(!hubLeaseValid(m.hub,d.expiresAt,block.timestamp,420n)||budget&&!reusableAdmissionBudget(budget,d.batchIndex,d.expiresAt,block.timestamp,m.hub))&&!cooling(m.pool,'closeReusableArena')){
+  if(!continuous&&d.status===1&&!occupied&&(!hubLeaseValid(m.hub,d.expiresAt,block.timestamp,420n)||budget&&!reusableAdmissionBudget(budget,d.batchIndex,d.expiresAt,block.timestamp,m.hub))&&!cooling(m.pool,'closeReusableArena')){
    await act(m.pool,'closeReusableArena',[app]);return;
   }
  }
@@ -236,7 +238,7 @@ async function step(){
    const result=await read(m.pool,poolAbi,'result',[f.ref]);
    if(doesArchive&&(result.hash!==f.published.hash||result.finality!==f.published.finality||result.status!==f.published.status)&&!cooling(m.tournaments,'synchronize')){await act(m.tournaments,'synchronize',[cursor.id,cursor.index]);return true;}
    if(doesArchive&&!f.resolved&&f.published.status===4&&f.published.finality&&!cooling(m.tournaments,'retryCancelled')){await act(m.tournaments,'retryCancelled',[cursor.id,cursor.index]);return true;}
-   if(doesMaintenance&&!cooling(m.pool,'closeReusableArena')){
+   if(!continuous&&doesMaintenance&&!cooling(m.pool,'closeReusableArena')){
     const a=delegations.find(a=>a.app.toLowerCase()===f.ref.arena.toLowerCase());
     if(a){const work=await cancelledTournamentClosure(read,m,f,{app:a.app,epoch:a.d.epoch,status:a.d.status,
      occupied:lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===a.app.toLowerCase())});
@@ -296,7 +298,7 @@ async function step(){
  // Replace an idle arena whose engine never comes back while Interlude answers
  // (shared/arena-replacement.ts). Only a fresh report from the engines process
  // counts: a silent engines process is its own outage, not three dead arenas.
- if(doesMaintenance){
+ if(!continuous&&doesMaintenance){
   const now=Date.now(),dead=state.deadSince??={},replaced=state.replaced??={},alerted=state.replacementAlerted??={};
   state.verifiedRecovery??={};state.recoveredAt??={};
   for(const a of active){const key=a.app.toLowerCase(),progress=verifiedRecovery(state.verifiedRecovery[key],{epoch:a.d.epoch,batches:a.d.batchIndex,healthy:serving(a),now});
@@ -324,7 +326,7 @@ async function step(){
   }
   await save();
  }
- if(doesMaintenance&&capacity.ready.length>=reserveTarget&&!cooling(m.pool,'closeReusableArena')){
+ if(!continuous&&doesMaintenance&&capacity.ready.length>=reserveTarget&&!cooling(m.pool,'closeReusableArena')){
   const candidates=active.filter(x=>!lanes.some(l=>l.ref.id>0n&&l.ref.arena.toLowerCase()===x.app.toLowerCase())).sort((a,b)=>a.d.baseBlock<b.d.baseBlock?-1:1);
   for(const candidate of candidates){
    const opening=await t.base.getBlock({blockNumber:candidate.d.baseBlock,includeTransactions:false});

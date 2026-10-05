@@ -8,6 +8,7 @@ import {measuredFetch} from '../../shared/rpc-metrics';
 import {prepareSponsoredTransaction} from './sponsor-prepare';
 import {writerIdentity,type ScopedWriter} from '../../shared/scoped-writer';
 import {operatorNeedsFunding,operatorFundingMessage} from '../../shared/operator-funding';
+import {continuousSubmissionGuard} from '../../shared/continuous-delegation';
 export function confirmedContractRevert(error:unknown){
  let cause:any=error;for(let i=0;cause&&i<10;i++,cause=cause.cause)if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name))return true;return false;
 }
@@ -21,7 +22,8 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  const secret=JSON.parse(await readFile(scope?.keyFile??process.env.ROOMS_LIFECYCLE_KEY_FILE!,'utf8'));
  const account=privateKeyToAccount(secret.privateKey as Hex);
  const identity=writerIdentity(account.address,scope),jobId=(id:string)=>identity.prefix+id;
- const check=(to:Address,data:Hex,value:bigint)=>scope?.allowCall(to,data,value);
+ const continuousCheck=continuousSubmissionGuard(base);
+ const check=async(to:Address,data:Hex,value:bigint)=>{scope?.allowCall(to,data,value);await continuousCheck(to,data);};
  if(await base.getChainId()!==10143)throw Error('Independent sponsoring is testnet only');
  const wallet=createWalletClient({account,chain:monadTestnet,transport:http(process.env.RPC_URL,{timeout:8000,retryCount:0,fetchFn:measuredFetch('monad')})});
  await db.query(`CREATE TABLE IF NOT EXISTS independent_operations(
@@ -42,7 +44,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  };
  async function get(id:string){const r=(await db.query('SELECT id,status,hash,error FROM independent_operations WHERE id=$1',[id])).rows[0];return r?view(r):null;}
  async function enqueue(to:Address,data:Hex,value=0n,priority=1,context=''):Promise<ChainOperation>{
-  check(to,data,value);
+  await check(to,data,value);
   const id=keccak256(encodeAbiParameters([{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[to,data,value,context]));
   const old=await get(id);if(old)return old;
   const inFlight=(await db.query("SELECT * FROM independent_operations WHERE target=$1 AND data=$2 AND value=$3 AND status IN ('queued','pending') ORDER BY created_at LIMIT 1",[to.toLowerCase(),data,String(value)])).rows[0];
@@ -106,14 +108,14 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
      if((await recoverTransactionAddress({serializedTransaction:pending.raw})).toLowerCase()!==identity.owner)throw Error('Operator journal signer mismatch');
      const raw=parseTransaction(pending.raw);if(raw.chainId!==10143||raw.nonce!==Number(pending.nonce))throw Error('Operator journal identity mismatch');
      if(raw.to?.toLowerCase()!==owned.target||raw.data!==owned.data||(raw.value??0n)!==BigInt(owned.value))throw Error('Operator queue identity mismatch');
-     check(owned.target,owned.data,BigInt(owned.value));
+     await check(owned.target,owned.data,BigInt(owned.value));
      await base.sendRawTransaction({serializedTransaction:pending.raw});
      lastError='';lastCode=undefined;
     }
     return;
    }
    const row=(await db.query("SELECT * FROM independent_operations WHERE status='queued' ORDER BY priority,created_at LIMIT 1")).rows[0];if(!row)return;
-   check(row.target,row.data,BigInt(row.value));
+   await check(row.target,row.data,BigInt(row.value));
    let request:Awaited<ReturnType<typeof prepareSponsoredTransaction>>;
    try{request=await prepareSponsoredTransaction(base,account.address,{to:row.target as Address,data:row.data as Hex,value:BigInt(row.value)},scope?.strictEstimate?.(row.target,row.data,BigInt(row.value)));}catch(e){
     // RPC availability does not prove invalid execution. Only a decoded contract revert
@@ -123,6 +125,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
     throw e;
    }
    const nonce=request.nonce;
+   await check(row.target,row.data,BigInt(row.value));
    const raw=await wallet.signTransaction(request),hash=keccak256(raw);
    await journal.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",[jobId(row.id),row.target,account.address.toLowerCase(),nonce,raw,hash]);
    await db.query("UPDATE independent_operations SET status='pending',hash=$2,updated_at=now() WHERE id=$1",[row.id,hash]);

@@ -51,7 +51,16 @@ test('pinned no-lease human arenas admit without bypassing health or publication
  assert.equal(await f.worker.admissionReady(),true);assert.equal(f.jobs.length,0);
  f.health[1].online=false;assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0);
  f.health[1].online=true;f.ds[1].batchIndex=30000n;
- assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.at(-1).name,'closeReusableArena');
+ assert.equal(await f.worker.admissionReady(),false);assert.equal(f.jobs.length,0,'exhaustion blocks admissions, never closes a v3 epoch');
+});
+
+test('continuous human arenas keep the same epoch despite age or failed node replacement',async t=>{
+ const f=await fixture(t);f.m.hub=NO_LEASE_HUB;for(const d of f.ds)d.expiresAt=0n;
+ f.base.getBlock=async(c:any)=>({number:20n,timestamp:c?.blockNumber===3n?1n:80000n});
+ assert.equal(await f.worker.admissionReady(),true);assert.equal(f.jobs.length,0);
+ f.health[1].stage='starting';f.health[1].online=false;
+ await f.worker.admissionReady();f.tick(DEAD_ARENA_MS*3);await f.worker.admissionReady();
+ assert.equal(f.jobs.length,0,'an unavailable node is not permission to close its partition');
 });
 
 test('unknown zero expiry never counts as admissible human capacity',async t=>{

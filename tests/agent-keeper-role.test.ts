@@ -2,10 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,parseAbi,type Abi} from 'viem';
 import {keeperRolePolicy} from '../shared/agent-keeper-role';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 const pool='0x1111111111111111111111111111111111111111',arena='0x2222222222222222222222222222222222222222';
 const abi=parseAbi(['function openReusableArena(address app) payable','function closeReusableArena(address app)','function admitChallenge()','function setAdmissions(bool enabled)']);
 const contracts={pool:{address:pool,abi}} as const;
 const call=(fn:string,args:any[]=[])=>encodeFunctionData({abi:abi as Abi,functionName:fn,args});
+
+test('v3 scoped maintenance can open initial capacity but can never sign a close',()=>{
+ const check=keeperRolePolicy('maintenance',contracts,10n,NO_LEASE_HUB);
+ check(pool,call('openReusableArena',[arena]),10n);
+ assert.throws(()=>check(pool,call('closeReusableArena',[arena]),0n),{code:'CONTINUOUS_DELEGATION'});
+});
 test('maintenance can rotate within funding scope but cannot admit or administer',()=>{
  const check=keeperRolePolicy('maintenance',contracts,10n);
  check(pool,call('openReusableArena',[arena]),10n);check(pool,call('closeReusableArena',[arena]),0n);

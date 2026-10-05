@@ -8,6 +8,7 @@ import {abi as hubAbi} from '../../shared/abi-independent-IInterludeHub';
 import {validateReusableBudget,reusableAdmissionBudget,type ReusablePublicationBudget} from './agents/reusable-budget';
 import {engineReadRetryMs} from '../../shared/engine-read';
 import {hubLeaseValid} from '../../shared/hub-lease';
+import {continuousDelegation} from '../../shared/continuous-delegation';
 import {hostedControl} from '../../shared/hosted-control';
 import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget} from '../../shared/arena-replacement';
 
@@ -42,7 +43,8 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
   if(!enabled()||!budget)return false;
   const block=await base.getBlock(),r=independentReader(base,m,block.number),states=health();
   const arenas=await Promise.all(m.arenas.map(async a=>({app:a.app,reserved:await r.lobby('reservedMatch',[a.app]),d:await readHubDelegation(base,m.hub,a.app,block.number)})));
-  for(const a of arenas)if(a.d.status===1&&!a.reserved&&!hubLeaseValid(m.hub,a.d.expiresAt,block.timestamp,1860n)){
+  const continuous=continuousDelegation(m.hub);
+  for(const a of arenas)if(!continuous&&a.d.status===1&&!a.reserved&&!hubLeaseValid(m.hub,a.d.expiresAt,block.timestamp,1860n)){
    await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);return false;
   }
   const active=arenas.filter(a=>a.d.status===1&&hubLeaseValid(m.hub,a.d.expiresAt,block.timestamp,1860n));
@@ -76,6 +78,7 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
   const t=now();
   for(const key of [...unhealthySince.keys()])if(!idle.some(a=>a.app.toLowerCase()===key))unhealthySince.delete(key);
   for(const a of idle){
+   if(continuous)break;
    const key=a.app.toLowerCase(),h=states.find(s=>s.app.toLowerCase()===key);
    if(!h||h.online||h.stage!=='starting'){unhealthySince.delete(key);continue;}
    const since=unhealthySince.get(key)??t;unhealthySince.set(key,since);
@@ -96,6 +99,7 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
    return false;
   }
   for(const a of idle){
+   if(continuous)break;
    const opening=await base.getBlock({blockNumber:a.d.baseBlock});
    const exhausted=!reusableAdmissionBudget(budget,a.d.batchIndex,a.d.expiresAt,block.timestamp,m.hub);
    const leading=!hubLeaseValid(m.hub,a.d.expiresAt,block.timestamp,BigInt(budget.rotationLeadSeconds));
