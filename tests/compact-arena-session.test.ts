@@ -52,6 +52,22 @@ test('compact controls use the bound key, zero value, exact match and sequential
  await assert.rejects(f.sender.send('withdraw',[8n]),/only permits/);await assert.rejects(f.sender.send('input',[9n,1,1n,200n]),/only permits/);
  assert.equal(f.sent.length,2);
 });
+
+test('loading can prefetch its nonce without signing, and the first control shares an in-flight read',async()=>{
+ const f=await fixture();let release!:()=>void;let reads=0;
+ f.node.getTransactionCount=()=>{reads++;return new Promise<number>(r=>release=()=>r(5));};
+ const preparation=f.sender.prepare();assert.equal(f.sent.length,0);
+ const command=f.sender.send('input',[8n,1,1n,200n]);release();
+ await Promise.all([preparation,command]);await f.sender.send('input',[8n,0,2n,300n]);
+ assert.equal(reads,1);assert.deepEqual(f.sent.map(raw=>parseTransaction(raw).nonce),[5,6]);
+});
+
+test('preparing after a lost response never looks up or frees its uncertain nonce',async()=>{
+ const f=await fixture(()=>{throw Error('lost response');});await f.sender.prepare();
+ await assert.rejects(f.sender.send('tick',[8n]),/lost/);const raw=f.journal.pending(f.account.address)?.raw;
+ await f.sender.prepare();assert.equal(f.reads(),1);assert.equal(f.journal.pending(f.account.address)?.raw,raw);
+ await assert.rejects(f.sender.send('tick',[8n]),/Reconcile/);
+});
 test('lost response keeps exact bytes and blocks any replacement until reconciliation',async()=>{
  const f=await fixture(()=>{throw Error('lost response');});
  await assert.rejects(f.sender.send('tick',[8n]),/lost/);

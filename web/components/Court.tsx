@@ -1,4 +1,5 @@
 "use client";
+import {presentationWait,type PresentationWait} from '../lib/presentation-wait';
 import { useEffect, useRef } from "react";
 import { arcadeAudio } from "../lib/audio";
 import { move, SCALE, type State } from "../../shared/physics-v2";
@@ -48,7 +49,7 @@ type Props = {
   externalIntermission?: boolean;
   onNetwork?:(age:number,correction:number)=>void;
   onPlayback?:(frame:CourtPlayback)=>void;
-  onStats: (fps: number, extrapolated: boolean, waiting: boolean) => void;
+  onStats: (fps: number, extrapolated: boolean, waiting: boolean,cause?:PresentationWait) => void;
 };
 export function Court({
   state,
@@ -106,7 +107,7 @@ export function Court({
       last = performance.now();
     let lastDraw = last, visualY: number | null = null, context = "";
     let anchor=last,anchorObserved=0,anchorAge=0,localDirection=0,localAt=last,correction=0;
-    let played="",playedAt=0,lastWaiting:boolean|undefined;
+    let played="",playedAt=0,lastWaiting:boolean|undefined,lastCause:PresentationWait|undefined;
     const livePaddle = new LivePaddle(), liveClock = new LiveClock();
     const playout=new SpectatorPlayout(),playerPlayout=new SpectatorPlayout(true);
     const spectatorChaos=new SpectatorChaosProjection();
@@ -139,12 +140,13 @@ export function Court({
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
       let target=p.replay||playback?p.clock:p.liveEngine?liveClock.sample(timing.target,p.progressionLimit):timing.target;
       if(p.progressionLimit!==undefined&&target>p.progressionLimit)target=p.progressionLimit;
-      let waiting = false;
+      let waiting = false,pointBoundary=false;
       const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:coherent?projectChaosParticipant(p.chaos.physics,target,p.coherentControls!,chaosContactResolution(p.rulesVersion??10),p.housePrediction):playback?spectatorChaos.sample(p.chaos.physics,target,chaosContactResolution(p.rulesVersion??10)):projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
-      if(cp){s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
+      if(cp){pointBoundary='pointBoundary' in cp&&!!cp.pointBoundary;s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
       else if (s) {
         const projected = p.replay ? { state: s, waiting: false }
           : coherent?projectParticipant(s,target,p.coherentControls!,p.housePrediction):p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
+        pointBoundary='pointBoundary' in projected&&!!projected.pointBoundary;
         s = projected.state;
         waiting = projected.waiting || timing.stale;
       }
@@ -178,7 +180,9 @@ export function Court({
       }
       if(playback&&p.side<0){yA=playback.left;yB=playback.right;}
       if(playback)waiting=playback.stalled||playback.buffering;
-      if(buffered&&lastWaiting!==waiting){lastWaiting=waiting;p.onStats(0,false,waiting);}
+      const cause=presentationWait({stale:!playback&&timing.stale,point:pointBoundary,serve:!!s?.awaitingServe,projection:waiting,interrupted:!!playback?.stalled,paused:(current.current.housePrediction?.pause?.status??0)>=2});
+      if(el.dataset.waitCause!==(cause??''))el.dataset.waitCause=cause??'';
+      if(lastCause!==cause||buffered&&lastWaiting!==waiting){lastCause=cause;lastWaiting=waiting;p.onStats(0,false,waiting,cause);}
       const buffering=String(playback?.buffering??false);
       if(el.dataset.buffering!==buffering)el.dataset.buffering=buffering;
       const mod=cp?eventPaddles(cp.state):null;
@@ -315,7 +319,7 @@ export function Court({
         p.onStats(
           Math.round((count * 1000) / (now - last)),
           !!s && !p.replay && target > (p.state?.t || 0n),
-          waiting,
+          waiting,cause,
         );
         count = 0;
         last = now;

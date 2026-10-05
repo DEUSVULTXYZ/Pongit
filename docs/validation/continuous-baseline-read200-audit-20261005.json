@@ -1,0 +1,13 @@
+{
+  "source": "artifacts\\qualification\\catalogue-continuous-baseline-read200-20261005-2\\report.json",
+  "sourceSha256": "5c4f3ee8dcfaaef67591a18c930b1598ba5d82b7cef60799e2f8d2c5409e61b4",
+  "passed": false,
+  "reason": "Original harness omitted the no-pause acceptance gate. This separate audit does not alter the original report.",
+  "contractPauseMs": 3115.4000000953674,
+  "resumes": 1,
+  "ref": {
+    "app": "0x0A52fc60BF7710b1819BC1Cf46375f048e2e7568",
+    "epoch": "7",
+    "id": "782"
+  }
+}

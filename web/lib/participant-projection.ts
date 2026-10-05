@@ -9,7 +9,7 @@ import type {AgentSynchronization} from '../../shared/agent-synchronization';
 /** Intent times are on the displayed game's clock. Accepted commands retain
  * their engine time until physics reaches it; a queue receipt is not an impact. */
 export type TimedControl={side:0|1;direction:-1|0|1;at:bigint};
-export type HousePrediction=Pick<AgentSynchronization,'brainA'|'brainB'|'decision'|'controllers'>&{progressive:boolean};
+export type HousePrediction=Pick<AgentSynchronization,'brainA'|'brainB'|'decision'|'controllers'>&{progressive:boolean;pause?:AgentSynchronization['pause']};
 const GRID=100_000n,MAX_SPEED=3_000_000_000n;
 function cap<T extends {vx:bigint;vy:bigint}>(ball:T):T{
  const square=ball.vx*ball.vx+ball.vy*ball.vy;if(square<=MAX_SPEED*MAX_SPEED)return ball;
@@ -40,7 +40,7 @@ function steer<T extends {leftDir:number;rightDir:number}>(state:T,input:TimedCo
 /** Ball and both paddles share one reconstruction. Callers must draw these
  * paddle positions, never replace them with an independent local animation. */
 export function projectParticipant(source:State,target:bigint,inputs:readonly TimedControl[],house?:HousePrediction){
- let state={...source},waiting=false;
+ let state={...source},waiting=false,pointBoundary=false;
  if(state.finished||state.awaitingServe)return {state,waiting:false};
  const end=target<state.t?state.t:target>state.t+600_000n?state.t+600_000n:target;
  const bot=predictor(house);
@@ -53,15 +53,15 @@ export function projectParticipant(source:State,target:bigint,inputs:readonly Ti
      half:(side===0?state.halfA:state.halfB)*1_000_000n},side===0?state.leftDir:state.rightDir);
      state={...state,...(side===0?{leftDir:direction}:{rightDir:direction})};}
    }
-   const next=projectLive(state,bot.end(state.t,to));state=next.state;waiting=next.waiting;
+   const next=projectLive(state,bot.end(state.t,to));state=next.state;waiting=next.waiting;pointBoundary=!!next.pointBoundary;
   }
  };
  for(const input of controlsBetween(state.t,end,inputs)){
   advance(input.at);
-  if(waiting)return {state,waiting};
+  if(waiting)return {state,waiting,pointBoundary};
   state=steer(state,input);
  }
- advance(end);return {state,waiting:waiting||target>end};
+ advance(end);return {state,pointBoundary,waiting:waiting||target>end};
 }
 
 export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,inputs:readonly TimedControl[],contacts:boolean|'complete',house?:HousePrediction){

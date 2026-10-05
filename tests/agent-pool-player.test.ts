@@ -53,7 +53,7 @@ test('optional player timing cannot change receipt ownership or break controls',
  await f.player.move(1);await f.player.read();
  assert.equal(f.sent.length,1);assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
  for(const stage of ['queue','fence','snapshot','send','receipt','observation'])assert(samples.some(s=>s.stage===stage));
- assert(samples.every(s=>s.ms>=0&&Number.isFinite(s.ms)&&Object.keys(s).sort().join(',')==='ms,stage,startedAt'));
+ assert(samples.every(s=>s.ms>=0&&Number.isFinite(s.ms)&&Object.keys(s).every(k=>['ms','stage','startedAt','command'].includes(k))&&(!s.command||['input','heartbeat','resumeReady','confirmReady','concede','prepare'].includes(s.command))));
  f.advance(200);f.lost(true);await assert.rejects(f.player.move(-1),/Lost response/);
  assert.equal(f.player.journal.pending(f.session.grant.key)?.action,'input');
  f.player.close();

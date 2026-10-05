@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
-import {decodeFunctionData,keccak256,parseTransaction} from 'viem';
+import {decodeEventLog,decodeFunctionData,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
@@ -18,6 +18,7 @@ const mode=Number(process.env.PONG_CATALOGUE_MODE??0),name=process.env.PONG_CATA
 const privatePath=process.env.PONG_BROWSER_PRIVATE_PATH!;
 const restorePath=process.env.PONG_CATALOGUE_RESTORE_PRIVATE_PATH;
 // Opt-in, bounded cadence samples are separate from the full 100-control gate.
+const naturalMatch=process.env.PONG_CATALOGUE_NATURAL==='1';
 const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
 const atomicQualification=process.env.PONG_CATALOGUE_ATOMIC_QUALIFICATION==='1';
 const privateV3=process.env.PONG_CATALOGUE_PRIVATE_V3==='reviewed-private';
@@ -58,7 +59,7 @@ const restored=restorePath?JSON.parse(await readFile(restorePath,'utf8')):undefi
 await writeFile(privatePath,'{}',{flag:'wx',mode:0o600});
 const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
- virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
+ naturalMatch,virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 report.initialIdleMs=initialIdleMs;report.injectedReadLatencyMs=readDelayMs;
 report.injectedNetworkDelayEachWayMs=networkDelayMs;
 report.inputHoldMs=inputHoldMs;report.inputGapMs=inputGapMs;
@@ -122,10 +123,20 @@ const savePrivate=async()=>writeFile(privatePath,JSON.stringify({storage:await c
  session:await page.evaluate(()=>Object.fromEntries(Object.entries(sessionStorage))),
  credentials:await cdp.send('WebAuthn.getCredentials',{authenticatorId})}),{mode:0o600});
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
-report.sockets=[];
+report.sockets=[];report.peerEvents=[];
+const peerSeen=new Set<string>();
+const observePeer=(peer:import('@playwright/test').Page)=>peer.on('websocket',ws=>ws.on('framereceived',event=>{try{
+ const frame=JSON.parse(String(event.payload)).params?.result;
+ for(const log of frame?.logs??[]){
+  const decoded=decodeEventLog({abi:synchronizedAgentArenaAbi,data:log.data,topics:log.topics}) as any;
+  if(decoded.eventName!=='ControlQueued')continue;
+  const key=`${decoded.args.id}:${decoded.args.side}:${decoded.args.sequence}`;if(peerSeen.has(key))continue;peerSeen.add(key);
+  report.peerEvents.push({receivedAt:performance.timeOrigin+performance.now(),id:String(decoded.args.id),side:Number(decoded.args.side),sequence:String(decoded.args.sequence),direction:Number(decoded.args.action)-2});
+ }
+}catch{/* Only decoded game identifiers/times, never event payloads. */}}));
 page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:new Date().toISOString(),messages:0,applied:0,schemas:{}};report.sockets.push(record);
  const writes=new Map<string,{at:number;hash:string;action:string}>();
- ws.on('framesent',event=>{try{
+ ws.on('framesent',async event=>{try{
   const p=JSON.parse(String(event.payload));if(p.method!=='interlude_sendTransaction')return;
   const hash=keccak256(p.params[0]),tx=parseTransaction(p.params[0]);
   const call=decodeFunctionData({abi:synchronized?synchronizedAgentArenaAbi:reusableAgentArenaAbi,data:tx.data!});
@@ -139,18 +150,29 @@ page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:
     ...(p.error?{rpcErrorCode:p.error.code,message:clean(p.error)}:{})});
    const receipt=p.result;
    if(receipt?.transactionHash?.toLowerCase()===write.hash.toLowerCase()&&!receipts.has(write.hash)){
-    receipts.add(write.hash);report.receipts.push({ms,sentAt:performance.timeOrigin+write.at,confirmedAt:performance.timeOrigin+performance.now(),status:receipt.status,...controls.get(write.hash)});
+    receipts.add(write.hash);report.receipts.push({ms,sentAt:performance.timeOrigin+write.at,confirmedAt:performance.timeOrigin+performance.now(),status:receipt.status,side:receiptSide(receipt),...controls.get(write.hash)});
    }
   }
   if(p.params?.result){record.applied++;
   const shape=JSON.stringify({method:p.method,keys:Object.keys(p.params.result),logKeys:Object.keys(p.params.result.logs?.[0]??{})});record.schemas[shape]=(record.schemas[shape]??0)+1;}}
  catch{/* Record shape only, never payload. */}});ws.on('close',()=>record.closedAt=new Date().toISOString());});
+const receiptSide=(receipt:any)=>{
+ for(const log of receipt?.logs??[]){try{
+  const e=decodeEventLog({abi:synchronizedAgentArenaAbi,data:log.data,topics:log.topics}) as any;
+  if(e.eventName==='ControlQueued')return Number(e.args.side);
+ }catch{}}
+ return undefined;
+};
+const measurePeer=()=>{
+ const paired=report.receipts.filter((r:any)=>r.sequence).map((r:any)=>{const event=report.peerEvents.find((e:any)=>e.sequence===r.sequence&&e.id===report.ref?.id&&e.direction===r.direction&&e.side===r.side);return event?event.receivedAt-r.sentAt:undefined;}).filter((n:any)=>Number.isFinite(n));
+ paired.sort((a:number,b:number)=>a-b);report.peerReception={samples:paired.length,p95Ms:paired[Math.floor((paired.length-1)*.95)],clock:'same Playwright host performance.timeOrigin',basis:'send to independent observer ControlQueued live event'};
+};
 const requests=new WeakMap<object,{at:string;method:string;path:string}>();
 const controls=new Map<string,{direction:number;sequence:string}>();
 const actions=new WeakMap<object,string>();
 const inputIntents:{at:number;direction:number}[]=[];
 const retainInputIntents=async()=>{inputIntents.push(...await page.evaluate(()=>(window as any).__intents??[]));};
-page.on('request',r=>{starts.set(r,performance.now());try{
+page.on('request',async r=>{starts.set(r,performance.now());try{
  const url=new URL(r.url()),body=r.postDataJSON();
  // Timing metadata only: never retain payloads, signatures, grants or URLs
  // containing operation/account identifiers.
@@ -193,16 +215,18 @@ page.on('response',async response=>{try{
    // Interlude returns the executed receipt in the send response. Counting only
    // later receipt polling silently omitted every ordinary successful control.
    if(reply.result?.transactionHash&&['0x1','success'].includes(reply.result.status)&&!receipts.has(hash.toLowerCase())){
-    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,...controls.get(hash.toLowerCase())});
+    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,side:receiptSide(reply.result),...controls.get(hash.toLowerCase())});
    }
   }
  }else if(reply.result){
   const hash=String(reply.result.transactionHash??body.params?.[0]??'').toLowerCase(),began=submitted.get(hash);
-  if(began!==undefined&&!receipts.has(hash)){receipts.add(hash);report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,...controls.get(hash)});}
+  if(began!==undefined&&!receipts.has(hash)){receipts.add(hash);report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,side:receiptSide(reply.result),...controls.get(hash)});}
  }
  }catch{/* No request bodies or private authorization data are logged. */}});
 await context.addInitScript(()=>{
  localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));
+ sessionStorage.setItem('pongit:measure-controls','1');
+ (window as any).__commandTimings=[];window.addEventListener('pongit:command-timing',(e:any)=>{const a=(window as any).__commandTimings;if(a.length<20000)a.push(e.detail);});
  (window as any).__paddle=[];(window as any).__keys=[];(window as any).__digits=[];(window as any).__intents=[];
  window.addEventListener('click',e=>{if((e.target as Element)?.closest('button')?.getAttribute('aria-label')?.startsWith('Challenge '))
   (window as any).__challengeClickedAt=new Date().toISOString();},true);
@@ -252,10 +276,10 @@ try{
  await page.waitForURL(/\/agents\/arenas\//,{timeout:Math.max(1,admissionDeadline-Date.now())});await savePrivate();
  const parts=new URL(page.url()).pathname.split('/');report.ref={app:parts[3],epoch:parts[4],id:parts[5]};
  const admitted=await (await apiGet(`/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
- report.actualMode=admitted.mode;assert.equal(report.actualMode,mode,'The actual contract match must use the selected mode');
+ report.matchPlayers=[admitted.a.toLowerCase(),admitted.b.toLowerCase()];report.actualMode=admitted.mode;assert.equal(report.actualMode,mode,'The actual contract match must use the selected mode');
  console.log(JSON.stringify({run,event:'admitted',ref:report.ref}));
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
-  spectator=await browser.newPage({viewport:{width:1440,height:1000}});await candidateAssets(spectator);await installSyncProbe(spectator);
+  spectator=await browser.newPage({viewport:{width:1440,height:1000}});observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);
   await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
   await spectator.goto(page.url(),{waitUntil:'domcontentloaded'});
  }
@@ -275,10 +299,14 @@ try{
  }
  assert(report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1'),'Real launch countdown incomplete');
  const before=assertions;
- for(let i=0;i<controlCount;i++){
+ const naturalDeadline=Date.now()+420000;
+ let naturalEnded=false;
+ for(let i=0;naturalMatch?Date.now()<naturalDeadline:i<controlCount;i++){
+  if(naturalMatch&&await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).isVisible()){naturalEnded=true;break;}
   const key=i%2?'ArrowDown':'ArrowUp';await page.keyboard.down(key);await page.waitForTimeout(inputHoldMs);await page.keyboard.up(key);await page.waitForTimeout(inputGapMs);
-  if(i===34){await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
+  if(!naturalMatch&&i===34){await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
  }
+ if(naturalMatch){report.naturalEnded=naturalEnded;assert(naturalEnded,'Natural match exceeded its fixed seven-minute observation window');}
  report.controlsEndedAt=new Date().toISOString();
  const trace=await page.evaluate(()=>({paddle:(window as any).__paddle,keys:(window as any).__keys}));
  await writeFile(out+'/input-trace.json',JSON.stringify(trace));
@@ -293,7 +321,7 @@ try{
  if(process.env.PONG_SYNC_PROBE==='1'){
   // Observe ordinary rallies after the burst of controls, instead of treating
   // a fast command acknowledgement as proof of smooth rendered trajectories.
-  report.idleStartedAt=new Date().toISOString();await page.waitForTimeout(idleMs);report.idleEndedAt=new Date().toISOString();
+  report.idleStartedAt=new Date().toISOString();await page.waitForTimeout(naturalMatch?0:idleMs);report.idleEndedAt=new Date().toISOString();
   const data=await page.evaluate(()=>(window as any).__syncProbe);
   await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);
   if(spectator){const observed=await spectator.evaluate(()=>(window as any).__syncProbe);
@@ -303,7 +331,7 @@ try{
  const current=await (await apiGet(`/agents/matches/${report.ref.app}/${report.ref.epoch}/${report.ref.id}`)).json();
  assert.equal(current.mode,mode,'Mode changed after reconnection');
  const resultDialog=page.getByRole('dialog',{name:'Confirmed match result',exact:true});
- if(!current.result&&!await resultDialog.isVisible()){
+ if(!naturalMatch&&!current.result&&!await resultDialog.isVisible()){
   // A natural seventh point can open the result while the slower publication
   // API still has no result. Never click through that modal or wait a minute
   // trying to concede a match that has already finished.
@@ -321,30 +349,36 @@ try{
   if(response.ok()){const value=await response.json();if(value.result?.status===3){report.result=value.result;break;}}
   await page.waitForTimeout(1000);
  }
- assert(report.result,'Conceded fixture must have a published result');
+ assert(report.result,'Completed fixture must have a published result');
+ if(naturalMatch)assert(!report.submissions.some((s:any)=>s.action==='concede'),'A concession is never a natural-match proof');
  await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).waitFor({timeout:10000});
  assert.match(await page.locator('.outcome-score').innerText(),new RegExp(`${report.result.scoreA}\\s*:\\s*${report.result.scoreB}`));
  report.checks.push('Final score and result window survived the delayed terminal frame');
  // Retain every measured gate even when another assertion fails. Diagnostics
  // never turn a failed run into a pass or discard a rejected command.
- report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.confirmedInput.samples>=(cadenceProbe?20:100)&&report.confirmedInput.p95Ms<=300&&report.confirmedInput.mismatches.length===0,
+ measurePeer();
+ report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.confirmedInput.samples>=(naturalMatch||cadenceProbe?20:100)&&report.confirmedInput.p95Ms<=300&&report.confirmedInput.mismatches.length===0,
   player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0&&report.sync.snapshotJumps.length===0&&report.sync.paddleSamples>100&&report.sync.paddleJumps.length===0:null,
   spectator:report.spectatorSync?report.spectatorSync.p95FrameMs<=20&&report.spectatorSync.maxHoldMs<=500&&report.spectatorSync.frameGaps.length===0:null};
- const requiredControls=cadenceProbe?20:100;
+ const requiredControls=naturalMatch||cadenceProbe?20:100;
  assert(report.submissions.length>=requiredControls,'Insufficient command submissions');
  assert(report.submissions.every((s:any)=>!s.error),'At least one command submission was rejected; inspect action and error metadata');
- assert(local.length>=(cadenceProbe?15:50)&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
+ assert(local.length>=(naturalMatch||cadenceProbe?15:50)&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
  assert(report.receipts.filter((r:any)=>r.sequence).length>=requiredControls&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');
  assert(report.receipts.every((r:any)=>['0x1','success'].includes(String(r.status))),'A game command reverted');
  if(synchronized){
   report.liveness={heartbeats:report.submissions.filter((s:any)=>s.action==='heartbeat'&&!s.error).length,resumes:report.submissions.filter((s:any)=>s.action==='resumeReady'&&!s.error).length};
   assert(report.liveness.heartbeats>=10,'The actually painted player court must renew liveness while idle');
-  if(process.env.PONG_REQUIRE_NO_STARTUP_PAUSE==='1')assert(report.liveness.resumes<=1,'Only the intentional F5 may require a resume countdown');
+  if(process.env.PONG_REQUIRE_NO_STARTUP_PAUSE==='1')assert(report.liveness.resumes<=(naturalMatch?0:1),'Unexpected protective resume countdown');
  }
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  if(process.env.PONG_REQUIRE_RECONCILIATION==='1')assert(report.sync?.paddleSamples>100&&report.sync.paddleJumps.length===0&&report.sync.snapshotJumps.length===0,'Visible reconciliation discontinuities remain');
+ if(naturalMatch){
+  report.naturalGates={noPause:report.sync?.contractPauseMs===0,noResume:report.liveness?.resumes===0,noResync:report.sync?.visibleResyncs===0&&report.spectatorSync?.visibleResyncs===0,peer:report.peerReception.samples>=20&&report.peerReception.p95Ms<=report.submissionP95Ms+50,player:report.performance.player,spectator:report.performance.spectator};
+  assert(Object.values(report.naturalGates).every(v=>v===true),'Natural-match synchronization gate failed');
+ }
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;
  if(process.env.PONG_SYNC_PROBE==='1'){
@@ -355,6 +389,8 @@ try{
  await page.screenshot({path:out+'/failure.png',fullPage:true}).catch(()=>{});}
 finally{
  try{await savePrivate();}catch{report.passed=false;report.error??='Private browser recovery state could not be saved';process.exitCode=1;}
+ report.commandTimings=await page.evaluate(()=>(window as any).__commandTimings??[]).catch(()=>[]);
+ measurePeer();
  report.finishedAt=new Date().toISOString();
  if(page.video())report.video=await page.video()!.path();
  await writeFile(out+'/report.json',JSON.stringify(report,null,2));await context.close();await browser.close();

@@ -17,7 +17,7 @@ import {preparePoolActive} from './agent-pool-active';
 import {hubHasNoLease,hubLeaseValid} from './hub-lease';
 
 export const POOL_PLAYER_GAS=14_800_000n;
-export type PoolPlayerTiming={stage:'queue'|'fence'|'snapshot'|'send'|'receipt'|'observation';startedAt:number;ms:number};
+export type PoolPlayerTiming={stage:'queue'|'fence'|'snapshot'|'send'|'receipt'|'observation'|'nonce'|'signature'|'transport';startedAt:number;ms:number;command?:string};
 class UnsentFenceExpired extends Error {
  constructor(){super('Arena authorization is awaiting a fresh observation');}
 }
@@ -147,7 +147,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   // Fence against the hub again shortly. UI health changes must not reset the
   // renderer, session key, last intent or authoritative positions.
   controlsUntil=started+(hubHasNoLease(m.hub,hub.expiresAt)?3000:Math.min(3000,Number(hub.expiresAt-block.timestamp)*1000));
-  sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,...(reusable?{epoch}:{}),expires:control.expires,gas:POOL_PLAYER_GAS,now});
+  sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,...(reusable?{epoch}:{}),expires:control.expires,gas:POOL_PLAYER_GAS,now,onTiming:options.onTiming});
   prefetchFence();
   feed.invalidate();const recovered=verify(await feed.read(id,true));
   options.onReconciled?.(recovered);
@@ -304,7 +304,10 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   read(force=false){return timed('observation',async()=>{await identify(force);return verify(await feed.read(id,force));});},
   // An imminent launch needs a fresh state, not a duplicate identity round trip.
   // Keep the existing identity TTL and independent canonical command fence.
-  observeLaunch(){return timed('observation',async()=>{await identify();return verify(await feed.read(id,true));});},
+  observeLaunch(){return timed('observation',async()=>{
+   if(sender&&!journal.pending(session.grant.key))void sender.prepare().catch(()=>{});
+   await identify();return verify(await feed.read(id,true));
+  });},
   watch(listener:(s:EngineState)=>void){const stop=feed.watch(id,s=>{try{if(!stopped&&verifiedAt&&now()-verifiedAt<10000)listener(verify(s));}catch{feed.invalidate();}});listeners.add(stop);return()=>{stop();listeners.delete(stop);};},
   controlsAvailable(){return !stopped&&!!sender&&now()<controlsUntil&&!journal.pending(session.grant.key);},
   async recover(){const s=await serial(recoverNow);if(s.phase===2)intention??={dir:0,id:++inputId,at:now()};if(intention)await pump();return s;},
@@ -342,7 +345,9 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    if(state.phase!==1)return state;
    const [mask]=await node.readContract({address:arena.app,abi,functionName:'readiness',args:[id]});
    const side=state.a.toLowerCase()===player.toLowerCase()?0:1;
-   return mask&(1<<side)?state:sendNow('confirmReady',[id]);
+   const ready=mask&(1<<side)?state:await sendNow('confirmReady',[id]);
+   if(sender&&!journal.pending(session.grant.key))void sender.prepare().catch(()=>{});
+   return ready;
   });},
   heartbeat(resume=false){return serial(async()=>{
    if(m.friendlyPause!=='heartbeat-v1')throw Error('This arena does not support friendly pauses');

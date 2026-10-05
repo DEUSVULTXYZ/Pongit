@@ -29,14 +29,14 @@ export function projectConfirmed(state: State | import("../../shared/physics").S
 // The low-latency lab can preview paddle collisions using the latest engine
 // trajectory. Do not stall a rally waiting for its next snapshot. A goal is
 // still a confirmation boundary: this function never awards points or serves.
-export function projectLive(state: State, target: bigint): { state: State; waiting: boolean } {
+export function projectLive(state: State, target: bigint): { state: State; waiting: boolean;pointBoundary?:boolean } {
   let s = { ...state };
   if (s.finished || s.awaitingServe || target < s.t) return { state: s, waiting: false };
   for (let i = 0; i < 64; i++) {
     const event = next(s);
     if (event.at > target) return { state: move(s, target), waiting: false };
     if (event.kind >= 5) {
-      return { state: move(s, event.at > s.t ? event.at - 1n : s.t), waiting: true };
+      return { state: move(s, event.at > s.t ? event.at - 1n : s.t), waiting: true,pointBoundary:true };
     }
     // Only walls and paddle planes reach the lab collision routine. Preview
     // uses the same uncapped per-return acceleration as the engine.

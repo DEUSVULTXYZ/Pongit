@@ -21,7 +21,12 @@ export function confirmedInputMetrics(intents:{at:number;direction:number}[],rec
 /** Test-only instrumentation. Record public court state, never wallet props. */
 export async function installSyncProbe(page:Page){
  await page.addInitScript(()=>{
-  const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[]};
+  const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[],waiting:[] as any[]};
+  let waitKey='';
+  setInterval(()=>{const court=document.querySelector('.pool-canvas-slot canvas');if(!court)return;
+   const paused=!!document.querySelector('[aria-label="Match paused"]'),sync=!!document.querySelector('.pool-canvas-slot [data-arcade-progress="synchronizing"]'),cause=(court as HTMLElement).dataset.waitCause??'';
+   const key=JSON.stringify([paused,sync,cause]);if(key!==waitKey){waitKey=key;data.waiting.push({at:performance.now(),paused,sync,cause});}
+  },50);
   (window as any).__syncProbe=data;
   let observed=-1,source:any,paint=0;
   const transform=CanvasRenderingContext2D.prototype.setTransform;
@@ -64,7 +69,7 @@ export async function installSyncProbe(page:Page){
  });
 }
 
-export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[]}){
+export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];waiting?:any[]}){
  const intervals:number[]=[],jumps:any[]=[],lags:number[]=[],gaps:number[]=[],holds:any[]=[],frameGaps:any[]=[];
  let hold=0,maxHold=0,contractPauseMs=0,intermissionMs=0;
  for(let i=1;i<data.frames.length;i++){
@@ -99,7 +104,10 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[]}){
   const d=Math.abs(b.y-a.y),limit=(speed+120)*dt/1000+2;
   if(d>limit)paddleJumps.push({at:b.at,side:b.side,dt,d,limit,from:a.y,to:b.y,observedAt:b.observedAt});
  }
- return{frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
+ const playStart=data.frames.find(f=>f.sourceT>0&&!f.finished)?.at??Infinity;
+ const playEnd=[...data.frames].reverse().find(f=>!f.finished&&f.sourceT>0)?.at??0;
+ const visibleResyncs=(data.waiting??[]).filter(w=>w.at>=playStart&&w.at<=playEnd&&w.sync&&!w.paused).length;
+ return{visibleResyncs,frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
   maxHoldMs:Math.max(maxHold,hold),contractPauseMs,intermissionMs,holds,frameGaps,snapshotGapP95Ms:p95(gaps),engineLagP95Ms:p95(lags),snapshotJumps:jumps,
   paddleSamples:data.paddles?.length??0,paddleJumps};
 }
