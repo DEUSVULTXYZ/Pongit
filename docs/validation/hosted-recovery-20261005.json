@@ -1,0 +1,948 @@
+{
+  "requests": [
+    {
+      "at": "2026-10-05T02:01:04.103Z",
+      "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+      "epoch": "5",
+      "postCount": 1,
+      "chainTransactions": 0,
+      "authorization": "User requested one new hosting attempt on 5 October 2026; prior uncertain intent preserved",
+      "phase": "complete",
+      "previous": {
+        "at": 1791141006851,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 404,
+        "state": "uncertain",
+        "reason": "control-plane-http",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165669333,
+        "attempts": 1,
+        "alertedAt": 1791165319255,
+        "stalledAt": 1791141306939,
+        "nodeRetryAt": 1791165666361,
+        "lookupControl": "https://control.interludelayer.xyz"
+      },
+      "canonical": {
+        "block": "68276757",
+        "blockHash": "0x3cd3cb5481b3ab307d2ab58c985a82cbb07b3434724b465d0cc5550066f3ace6",
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "epoch": "5",
+        "baseBlock": "68195108",
+        "batches": "0"
+      },
+      "control": "https://control.interludelayer.xyz",
+      "healthBefore": {
+        "http": 200,
+        "status": "ok",
+        "machines": {
+          "live": 50,
+          "max": 80,
+          "queued": 0,
+          "perHour": 20
+        },
+        "validator": {
+          "maxDelegations": 128,
+          "activeEstimate": 9,
+          "freeByBond": 119,
+          "bond": "1282800000000000000000",
+          "reserved": "92600000000000000000"
+        },
+        "warnings": []
+      },
+      "sentAt": "2026-10-05T02:01:10.432Z",
+      "response": {
+        "received": true,
+        "http": 200,
+        "retryAfter": null,
+        "status": "starting",
+        "url": "https://il2-eu-bfc44e0cdb647689.fly.dev"
+      },
+      "next": {
+        "at": 1791141006851,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 200,
+        "state": "confirmed",
+        "reason": "manual-retry-url-awaits-identity",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165685421,
+        "attempts": 2,
+        "alertedAt": 1791165319255,
+        "stalledAt": 1791141306939,
+        "nodeRetryAt": 1791165666361,
+        "lookupControl": "https://control.interludelayer.xyz",
+        "manualRetryAt": 1791165675419,
+        "url": "https://il2-eu-bfc44e0cdb647689.fly.dev"
+      },
+      "completedAt": "2026-10-05T02:01:15.427Z"
+    },
+    {
+      "at": "2026-10-05T02:02:15.501Z",
+      "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+      "epoch": "5",
+      "postCount": 1,
+      "chainTransactions": 0,
+      "authorization": "User requested one new hosting attempt on 5 October 2026; prior uncertain intent preserved",
+      "phase": "complete",
+      "previous": {
+        "at": 1791141036600,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 404,
+        "state": "uncertain",
+        "reason": "control-plane-http",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165739956,
+        "attempts": 1,
+        "alertedAt": 1791165349873,
+        "stalledAt": 1791141336683,
+        "nodeRetryAt": 1791165736622,
+        "lookupControl": "https://control.interludelayer.xyz"
+      },
+      "canonical": {
+        "block": "68276994",
+        "blockHash": "0x03d17ae036e1eff56d51f4fb7e3a515727f1a67cd6b8900281f947d1e1def6d9",
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "epoch": "5",
+        "baseBlock": "68195207",
+        "batches": "0"
+      },
+      "control": "https://control.interludelayer.xyz",
+      "healthBefore": {
+        "http": 200,
+        "status": "ok",
+        "machines": {
+          "live": 51,
+          "max": 80,
+          "queued": 0,
+          "perHour": 20
+        },
+        "validator": {
+          "maxDelegations": 128,
+          "activeEstimate": 9,
+          "freeByBond": 119,
+          "bond": "1282800000000000000000",
+          "reserved": "92600000000000000000"
+        },
+        "warnings": []
+      },
+      "sentAt": "2026-10-05T02:02:20.638Z",
+      "response": {
+        "received": true,
+        "http": 200,
+        "retryAfter": null,
+        "status": "starting",
+        "url": "https://il2-eu-ef9dfabb2af5f936.fly.dev"
+      },
+      "next": {
+        "at": 1791141036600,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 200,
+        "state": "confirmed",
+        "reason": "manual-retry-url-awaits-identity",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165755548,
+        "attempts": 2,
+        "alertedAt": 1791165349873,
+        "stalledAt": 1791141336683,
+        "nodeRetryAt": 1791165736622,
+        "lookupControl": "https://control.interludelayer.xyz",
+        "manualRetryAt": 1791165745546,
+        "url": "https://il2-eu-ef9dfabb2af5f936.fly.dev"
+      },
+      "completedAt": "2026-10-05T02:02:25.552Z"
+    },
+    {
+      "at": "2026-10-05T02:02:26.646Z",
+      "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+      "epoch": "5",
+      "postCount": 1,
+      "chainTransactions": 0,
+      "authorization": "User requested one new hosting attempt on 5 October 2026; prior uncertain intent preserved",
+      "phase": "complete",
+      "previous": {
+        "at": 1791141082933,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 404,
+        "state": "uncertain",
+        "reason": "control-plane-http",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165754023,
+        "attempts": 1,
+        "alertedAt": 1791165393940,
+        "stalledAt": 1791141383000,
+        "nodeRetryAt": 1791165750772,
+        "lookupControl": "https://control.interludelayer.xyz"
+      },
+      "canonical": {
+        "block": "68277031",
+        "blockHash": "0xd564d3f72511e2df7aba84e797b4f55b1df5637115f93dc13eb3d29915e473b5",
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "epoch": "5",
+        "baseBlock": "68195359",
+        "batches": "0"
+      },
+      "control": "https://control.interludelayer.xyz",
+      "healthBefore": {
+        "http": 200,
+        "status": "ok",
+        "machines": {
+          "live": 52,
+          "max": 80,
+          "queued": 1,
+          "perHour": 20
+        },
+        "validator": {
+          "maxDelegations": 128,
+          "activeEstimate": 9,
+          "freeByBond": 119,
+          "bond": "1282800000000000000000",
+          "reserved": "92600000000000000000"
+        },
+        "warnings": []
+      },
+      "sentAt": "2026-10-05T02:02:35.158Z",
+      "response": {
+        "received": true,
+        "http": 200,
+        "retryAfter": null,
+        "status": "starting",
+        "url": "https://il2-eu-64e8806edf971623.fly.dev"
+      },
+      "next": {
+        "at": 1791141082933,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 200,
+        "state": "confirmed",
+        "reason": "manual-retry-url-awaits-identity",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165769100,
+        "attempts": 2,
+        "alertedAt": 1791165393940,
+        "stalledAt": 1791141383000,
+        "nodeRetryAt": 1791165750772,
+        "lookupControl": "https://control.interludelayer.xyz",
+        "manualRetryAt": 1791165759098,
+        "url": "https://il2-eu-64e8806edf971623.fly.dev"
+      },
+      "completedAt": "2026-10-05T02:02:39.105Z"
+    },
+    {
+      "at": "2026-10-05T02:02:40.175Z",
+      "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+      "epoch": "5",
+      "postCount": 1,
+      "chainTransactions": 0,
+      "authorization": "User requested one new hosting attempt on 5 October 2026; prior uncertain intent preserved",
+      "phase": "complete",
+      "previous": {
+        "at": 1791141047264,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 404,
+        "state": "uncertain",
+        "reason": "control-plane-http",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165763354,
+        "attempts": 1,
+        "alertedAt": 1791165363264,
+        "stalledAt": 1791141347342,
+        "nodeRetryAt": 1791165760237,
+        "lookupControl": "https://control.interludelayer.xyz"
+      },
+      "canonical": {
+        "block": "68277074",
+        "blockHash": "0xc80767edb89b549ff07aea27ba79e39395623667dc31c876e615129567789884",
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "epoch": "5",
+        "baseBlock": "68195245",
+        "batches": "0"
+      },
+      "control": "https://control.interludelayer.xyz",
+      "healthBefore": {
+        "http": 200,
+        "status": "ok",
+        "machines": {
+          "live": 52,
+          "max": 80,
+          "queued": 1,
+          "perHour": 20
+        },
+        "validator": {
+          "maxDelegations": 128,
+          "activeEstimate": 9,
+          "freeByBond": 119,
+          "bond": "1282800000000000000000",
+          "reserved": "92600000000000000000"
+        },
+        "warnings": []
+      },
+      "sentAt": "2026-10-05T02:02:44.469Z",
+      "response": {
+        "received": true,
+        "http": 200,
+        "retryAfter": null,
+        "status": "starting",
+        "url": "https://il2-eu-5572e348c5039d24.fly.dev"
+      },
+      "next": {
+        "at": 1791141047264,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 200,
+        "state": "confirmed",
+        "reason": "manual-retry-url-awaits-identity",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165778782,
+        "attempts": 2,
+        "alertedAt": 1791165363264,
+        "stalledAt": 1791141347342,
+        "nodeRetryAt": 1791165760237,
+        "lookupControl": "https://control.interludelayer.xyz",
+        "manualRetryAt": 1791165768780,
+        "url": "https://il2-eu-5572e348c5039d24.fly.dev"
+      },
+      "completedAt": "2026-10-05T02:02:48.786Z"
+    },
+    {
+      "at": "2026-10-05T02:02:49.878Z",
+      "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+      "epoch": "5",
+      "postCount": 1,
+      "chainTransactions": 0,
+      "authorization": "User requested one new hosting attempt on 5 October 2026; prior uncertain intent preserved",
+      "phase": "complete",
+      "previous": {
+        "at": 1791141058170,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 404,
+        "state": "uncertain",
+        "reason": "control-plane-http",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165773821,
+        "attempts": 1,
+        "alertedAt": 1791165373731,
+        "stalledAt": 1791141358232,
+        "nodeRetryAt": 1791165770890,
+        "lookupControl": "https://control.interludelayer.xyz"
+      },
+      "canonical": {
+        "block": "68277107",
+        "blockHash": "0xf16224b8d7854e944f558292dc5abaf2ebcce0fe2dda69e648364ca3c4c9445d",
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "epoch": "5",
+        "baseBlock": "68195283",
+        "batches": "0"
+      },
+      "control": "https://control.interludelayer.xyz",
+      "healthBefore": {
+        "http": 200,
+        "status": "ok",
+        "machines": {
+          "live": 54,
+          "max": 80,
+          "queued": 0,
+          "perHour": 20
+        },
+        "validator": {
+          "maxDelegations": 128,
+          "activeEstimate": 9,
+          "freeByBond": 119,
+          "bond": "1282800000000000000000",
+          "reserved": "92600000000000000000"
+        },
+        "warnings": []
+      },
+      "sentAt": "2026-10-05T02:02:54.79Z",
+      "response": {
+        "received": true,
+        "http": 200,
+        "retryAfter": null,
+        "status": "starting",
+        "url": "https://il2-eu-e54eb61b664ced19.fly.dev"
+      },
+      "next": {
+        "at": 1791141058170,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 200,
+        "state": "confirmed",
+        "reason": "manual-retry-url-awaits-identity",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165788501,
+        "attempts": 2,
+        "alertedAt": 1791165373731,
+        "stalledAt": 1791141358232,
+        "nodeRetryAt": 1791165770890,
+        "lookupControl": "https://control.interludelayer.xyz",
+        "manualRetryAt": 1791165778499,
+        "url": "https://il2-eu-e54eb61b664ced19.fly.dev"
+      },
+      "completedAt": "2026-10-05T02:02:58.505Z"
+    },
+    {
+      "at": "2026-10-05T02:02:59.635Z",
+      "app": "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb",
+      "epoch": "5",
+      "postCount": 1,
+      "chainTransactions": 0,
+      "authorization": "User requested one new hosting attempt on 5 October 2026; prior uncertain intent preserved",
+      "phase": "complete",
+      "previous": {
+        "at": 1791141071392,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 404,
+        "state": "uncertain",
+        "reason": "control-plane-http",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165783350,
+        "attempts": 1,
+        "alertedAt": 1791165383255,
+        "stalledAt": 1791141371458,
+        "nodeRetryAt": 1791165780196,
+        "lookupControl": "https://control.interludelayer.xyz"
+      },
+      "canonical": {
+        "block": "68277140",
+        "blockHash": "0x340766e83a6568e2b866debbfbb6d7033b29bd6a49f394261474e171909b24f5",
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "epoch": "5",
+        "baseBlock": "68195321",
+        "batches": "0"
+      },
+      "control": "https://control.interludelayer.xyz",
+      "healthBefore": {
+        "http": 200,
+        "status": "ok",
+        "machines": {
+          "live": 55,
+          "max": 80,
+          "queued": 0,
+          "perHour": 20
+        },
+        "validator": {
+          "maxDelegations": 128,
+          "activeEstimate": 9,
+          "freeByBond": 119,
+          "bond": "1282800000000000000000",
+          "reserved": "92600000000000000000"
+        },
+        "warnings": []
+      },
+      "sentAt": "2026-10-05T02:03:04.235Z",
+      "response": {
+        "received": true,
+        "http": 200,
+        "retryAfter": null,
+        "status": "starting",
+        "url": "https://il2-eu-f3cfddaa4a069a08.fly.dev"
+      },
+      "next": {
+        "at": 1791141071392,
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "http": 200,
+        "state": "confirmed",
+        "reason": "manual-retry-url-awaits-identity",
+        "control": "https://control.interludelayer.xyz",
+        "retryAt": 1791165799399,
+        "attempts": 2,
+        "alertedAt": 1791165383255,
+        "stalledAt": 1791141371458,
+        "nodeRetryAt": 1791165780196,
+        "lookupControl": "https://control.interludelayer.xyz",
+        "manualRetryAt": 1791165789397,
+        "url": "https://il2-eu-f3cfddaa4a069a08.fly.dev"
+      },
+      "completedAt": "2026-10-05T02:03:09.406Z"
+    }
+  ],
+  "finalVerification": {
+    "at": "2026-10-05T02:06:58.519Z",
+    "block": "68277906",
+    "blockHash": "0x3363afb5ee889d9eb2280e8f041b756da1d4371f34a1360b72dc86191e33b97c",
+    "arenas": [
+      {
+        "app": "0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+        "url": "https://il2-eu-0a52fc60bf7710b1.fly.dev",
+        "canonical": {
+          "status": 2,
+          "epoch": "3",
+          "baseBlock": "67957423",
+          "batches": "1529"
+        },
+        "verified": false,
+        "phase": "canonical-not-active"
+      },
+      {
+        "app": "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+        "url": "https://il2-eu-34a7e7c09894af4e.fly.dev",
+        "canonical": {
+          "status": 2,
+          "epoch": "2",
+          "baseBlock": "67988049",
+          "batches": "1160"
+        },
+        "verified": false,
+        "phase": "canonical-not-active"
+      },
+      {
+        "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+        "url": "https://il2-eu-bfc44e0cdb647689.fly.dev",
+        "canonical": {
+          "status": 2,
+          "epoch": "5",
+          "baseBlock": "68195108",
+          "batches": "1"
+        },
+        "verified": false,
+        "phase": "canonical-not-active"
+      },
+      {
+        "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+        "url": "https://il2-eu-ef9dfabb2af5f936.fly.dev",
+        "canonical": {
+          "status": 1,
+          "epoch": "5",
+          "baseBlock": "68195207",
+          "batches": "2"
+        },
+        "verified": true,
+        "phase": "node-health",
+        "evidence": {
+          "chainId": 4242,
+          "baseBlock": "68195207",
+          "rulesVersion": "16",
+          "runtimeHash": "0x323ccbc1a2ba8cbfdaa259778d0cbe28805cfc1ccace5a11baf2cc4571ab3312",
+          "committedBatches": 2,
+          "publicationReady": true
+        },
+        "session": {
+          "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+          "epoch": 5,
+          "chainId": 4242,
+          "baseBlock": 68195207
+        }
+      },
+      {
+        "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+        "url": "https://il2-eu-64e8806edf971623.fly.dev",
+        "canonical": {
+          "status": 1,
+          "epoch": "5",
+          "baseBlock": "68195359",
+          "batches": "1"
+        },
+        "verified": true,
+        "phase": "node-health",
+        "evidence": {
+          "chainId": 4242,
+          "baseBlock": "68195359",
+          "rulesVersion": "16",
+          "runtimeHash": "0x1011a59c93a280470f27894d38f81882384d86e6677adac83fd910202eda90d1",
+          "committedBatches": 1,
+          "publicationReady": true
+        },
+        "session": {
+          "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+          "epoch": 5,
+          "chainId": 4242,
+          "baseBlock": 68195359
+        }
+      },
+      {
+        "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+        "url": "https://il2-eu-5572e348c5039d24.fly.dev",
+        "canonical": {
+          "status": 1,
+          "epoch": "5",
+          "baseBlock": "68195245",
+          "batches": "2"
+        },
+        "verified": true,
+        "phase": "node-health",
+        "evidence": {
+          "chainId": 4242,
+          "baseBlock": "68195245",
+          "rulesVersion": "16",
+          "runtimeHash": "0x654b5f091075bf5a68818397b134805f0428d728ea897fc975a013fc9c61331d",
+          "committedBatches": 2,
+          "publicationReady": true
+        },
+        "session": {
+          "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+          "epoch": 5,
+          "chainId": 4242,
+          "baseBlock": 68195245
+        }
+      },
+      {
+        "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+        "url": "https://il2-eu-e54eb61b664ced19.fly.dev",
+        "canonical": {
+          "status": 1,
+          "epoch": "5",
+          "baseBlock": "68195283",
+          "batches": "2"
+        },
+        "verified": true,
+        "phase": "node-health",
+        "evidence": {
+          "chainId": 4242,
+          "baseBlock": "68195283",
+          "rulesVersion": "16",
+          "runtimeHash": "0x80cc8aaafec43ebd898546022757fe1b25f5ef729fe12e6b5b12e9cbdb56457e",
+          "committedBatches": 2,
+          "publicationReady": true
+        },
+        "session": {
+          "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+          "epoch": 5,
+          "chainId": 4242,
+          "baseBlock": 68195283
+        }
+      },
+      {
+        "app": "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb",
+        "url": "https://il2-eu-f3cfddaa4a069a08.fly.dev",
+        "canonical": {
+          "status": 1,
+          "epoch": "5",
+          "baseBlock": "68195321",
+          "batches": "2"
+        },
+        "verified": true,
+        "phase": "node-health",
+        "evidence": {
+          "chainId": 4242,
+          "baseBlock": "68195321",
+          "rulesVersion": "16",
+          "runtimeHash": "0x17aea1be3e713be5c7055edddaf0554a5ebc40a5fe3743e1bc310656cee66d17",
+          "committedBatches": 2,
+          "publicationReady": true
+        },
+        "session": {
+          "app": "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb",
+          "epoch": 5,
+          "chainId": 4242,
+          "baseBlock": 68195321
+        }
+      }
+    ],
+    "state": [
+      {
+        "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+        "provision_epoch": "5",
+        "provisioning": {
+          "at": 1791141036600,
+          "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+          "url": "https://il2-eu-ef9dfabb2af5f936.fly.dev",
+          "http": 200,
+          "state": "ready",
+          "adopted": {
+            "chainId": 4242,
+            "baseBlock": "68195207",
+            "runtimeHash": "0x323ccbc1a2ba8cbfdaa259778d0cbe28805cfc1ccace5a11baf2cc4571ab3312",
+            "rulesVersion": "16",
+            "committedBatches": 1,
+            "publicationReady": true
+          },
+          "control": "https://control.interludelayer.xyz",
+          "readyAt": 1791165848478,
+          "retryAt": 1791165857474,
+          "attempts": 2,
+          "alertedAt": 1791165349873,
+          "nodeRetryAt": 0,
+          "lookupControl": "https://control.interludelayer.xyz",
+          "manualRetryAt": 1791165745546
+        },
+        "stage": "available",
+        "detail": {
+          "epoch": "5",
+          "releaseAt": "0"
+        },
+        "updated_at": "2026-10-05T02:06:56.303Z"
+      },
+      {
+        "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+        "provision_epoch": "5",
+        "provisioning": {
+          "at": 1791141006851,
+          "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+          "url": "https://il2-eu-bfc44e0cdb647689.fly.dev",
+          "http": 200,
+          "state": "ready",
+          "adopted": {
+            "chainId": 4242,
+            "baseBlock": "68195108",
+            "runtimeHash": "0x506035ae383e471fdb301a388e55ba1689a9778458a67e8f2d283e229639ef33",
+            "rulesVersion": "16",
+            "committedBatches": 0,
+            "publicationReady": true
+          },
+          "control": "https://control.interludelayer.xyz",
+          "readyAt": 1791165681391,
+          "retryAt": 1791165685421,
+          "attempts": 2,
+          "alertedAt": 1791165319255,
+          "nodeRetryAt": 0,
+          "lookupControl": "https://control.interludelayer.xyz",
+          "manualRetryAt": 1791165675419
+        },
+        "stage": "challenge-window",
+        "detail": {
+          "epoch": "5",
+          "releaseAt": "1791169518"
+        },
+        "updated_at": "2026-10-05T02:06:49.499Z"
+      },
+      {
+        "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+        "provision_epoch": "5",
+        "provisioning": {
+          "at": 1791141047264,
+          "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+          "url": "https://il2-eu-5572e348c5039d24.fly.dev",
+          "http": 200,
+          "state": "ready",
+          "adopted": {
+            "chainId": 4242,
+            "baseBlock": "68195245",
+            "runtimeHash": "0x654b5f091075bf5a68818397b134805f0428d728ea897fc975a013fc9c61331d",
+            "rulesVersion": "16",
+            "committedBatches": 1,
+            "publicationReady": true
+          },
+          "control": "https://control.interludelayer.xyz",
+          "readyAt": 1791165901692,
+          "retryAt": 1791165910687,
+          "attempts": 2,
+          "alertedAt": 1791165363264,
+          "nodeRetryAt": 0,
+          "lookupControl": "https://control.interludelayer.xyz",
+          "manualRetryAt": 1791165768780
+        },
+        "stage": "available",
+        "detail": {
+          "epoch": "5",
+          "releaseAt": "0"
+        },
+        "updated_at": "2026-10-05T02:06:51.585Z"
+      },
+      {
+        "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+        "provision_epoch": "5",
+        "provisioning": {
+          "at": 1791141082933,
+          "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+          "url": "https://il2-eu-64e8806edf971623.fly.dev",
+          "http": 200,
+          "state": "ready",
+          "control": "https://control.interludelayer.xyz",
+          "readyAt": 1791165769480,
+          "retryAt": 1791165779104,
+          "attempts": 2,
+          "alertedAt": 1791165393940,
+          "nodeRetryAt": 1791165769791,
+          "lookupControl": "https://control.interludelayer.xyz",
+          "manualRetryAt": 1791165759098
+        },
+        "stage": "available",
+        "detail": {
+          "epoch": "5",
+          "releaseAt": "0"
+        },
+        "updated_at": "2026-10-05T02:06:57.058Z"
+      },
+      {
+        "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+        "provision_epoch": "5",
+        "provisioning": {
+          "at": 1791141058170,
+          "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+          "url": "https://il2-eu-e54eb61b664ced19.fly.dev",
+          "http": 200,
+          "state": "ready",
+          "adopted": {
+            "chainId": 4242,
+            "baseBlock": "68195283",
+            "runtimeHash": "0x80cc8aaafec43ebd898546022757fe1b25f5ef729fe12e6b5b12e9cbdb56457e",
+            "rulesVersion": "16",
+            "committedBatches": 1,
+            "publicationReady": true
+          },
+          "control": "https://control.interludelayer.xyz",
+          "readyAt": 1791165865464,
+          "retryAt": 1791165869459,
+          "attempts": 2,
+          "alertedAt": 1791165373731,
+          "nodeRetryAt": 0,
+          "lookupControl": "https://control.interludelayer.xyz",
+          "manualRetryAt": 1791165778499
+        },
+        "stage": "available",
+        "detail": {
+          "epoch": "5",
+          "releaseAt": "0"
+        },
+        "updated_at": "2026-10-05T02:06:57.84Z"
+      },
+      {
+        "app": "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb",
+        "provision_epoch": "5",
+        "provisioning": {
+          "at": 1791141071392,
+          "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+          "url": "https://il2-eu-f3cfddaa4a069a08.fly.dev",
+          "http": 200,
+          "state": "ready",
+          "adopted": {
+            "chainId": 4242,
+            "baseBlock": "68195321",
+            "runtimeHash": "0x17aea1be3e713be5c7055edddaf0554a5ebc40a5fe3743e1bc310656cee66d17",
+            "rulesVersion": "16",
+            "committedBatches": 1,
+            "publicationReady": true
+          },
+          "control": "https://control.interludelayer.xyz",
+          "readyAt": 1791165861454,
+          "retryAt": 1791165870450,
+          "attempts": 2,
+          "alertedAt": 1791165383255,
+          "nodeRetryAt": 0,
+          "lookupControl": "https://control.interludelayer.xyz",
+          "manualRetryAt": 1791165789397
+        },
+        "stage": "available",
+        "detail": {
+          "epoch": "5",
+          "releaseAt": "0"
+        },
+        "updated_at": "2026-10-05T02:06:58.244Z"
+      },
+      {
+        "app": "0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+        "provision_epoch": "3",
+        "provisioning": {
+          "at": 1791069218389,
+          "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+          "url": "https://il2-eu-0a52fc60bf7710b1.fly.dev",
+          "state": "ready",
+          "adopted": {
+            "chainId": 4242,
+            "baseBlock": "67957423",
+            "runtimeHash": "0xf923b0d2acd409908b5fb5d1454252a8e52f547af85ac48bd7621db210da60dd",
+            "rulesVersion": "16",
+            "committedBatches": 0,
+            "publicationReady": true
+          },
+          "control": "https://control.interludelayer.xyz",
+          "readyAt": 1791069233371,
+          "retryAt": 1791069242366,
+          "attempts": 1,
+          "nodeRetryAt": 0
+        },
+        "stage": "challenge-window",
+        "detail": {
+          "epoch": "3",
+          "releaseAt": "1791169484"
+        },
+        "updated_at": "2026-10-05T02:06:55.213Z"
+      },
+      {
+        "app": "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+        "provision_epoch": "2",
+        "provisioning": {
+          "at": 1791078468394,
+          "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+          "url": "https://il2-eu-34a7e7c09894af4e.fly.dev",
+          "state": "ready",
+          "adopted": {
+            "chainId": 4242,
+            "baseBlock": "67988049",
+            "runtimeHash": "0x05489d6a1f2cdcdc682363804adbef3c15a9ff97d5c83e3b9888ecf873f26ba5",
+            "rulesVersion": "16",
+            "committedBatches": 0,
+            "publicationReady": true
+          },
+          "control": "https://control.interludelayer.xyz",
+          "readyAt": 1791078479075,
+          "retryAt": 1791078488070,
+          "attempts": 1,
+          "nodeRetryAt": 0
+        },
+        "stage": "challenge-window",
+        "detail": {
+          "epoch": "2",
+          "releaseAt": "1791169497"
+        },
+        "updated_at": "2026-10-05T02:06:48.992Z"
+      }
+    ],
+    "chainWrites": 0
+  },
+  "control": {
+    "status": "ok",
+    "machines": {
+      "live": 56,
+      "max": 80,
+      "queued": 0,
+      "perHour": 20
+    },
+    "validator": {
+      "maxDelegations": 128,
+      "activeEstimate": 9,
+      "freeByBond": 119,
+      "bond": "1282800000000000000000",
+      "reserved": "92600000000000000000"
+    }
+  },
+  "humanGame": {
+    "online": false,
+    "admission": true,
+    "arenas": [
+      {
+        "app": "0x596562d63e678a2B391FF01F63CF7DEd99FC2c25",
+        "node": "https://il-596562d63e678a2b.fly.dev",
+        "epoch": "63",
+        "id": "0",
+        "stage": "starting",
+        "online": false,
+        "expiresAt": 1791685769000,
+        "releaseAt": 0,
+        "lastProgressAt": 0,
+        "code": "ENGINE_SYNCHRONIZING",
+        "rally": null
+      },
+      {
+        "app": "0xa429e8E01c4b57ddDfc6e8c75094cB68333F7F2F",
+        "node": "https://il-a429e8e01c4b57dd.fly.dev",
+        "epoch": "64",
+        "id": "0",
+        "stage": "starting",
+        "online": false,
+        "expiresAt": 1791680322000,
+        "releaseAt": 0,
+        "lastProgressAt": 0,
+        "code": "ENGINE_SYNCHRONIZING",
+        "rally": null
+      },
+      {
+        "app": "0x9Bc7eaC922640B0A2C7544A900f50de549790dE1",
+        "node": "https://il-9bc7eac922640b0a.fly.dev",
+        "epoch": "62",
+        "id": "0",
+        "stage": "starting",
+        "online": false,
+        "expiresAt": 1791687433000,
+        "releaseAt": 0,
+        "lastProgressAt": 0,
+        "code": "ENGINE_SYNCHRONIZING",
+        "rally": null
+      }
+    ],
+    "sponsor": {
+      "available": true
+    }
+  },
+  "backup": {
+    "files": 40,
+    "bytes": 171494025.0,
+    "manifestSha": "2956317fd3476cdb782246c9128db72c46f91fa635934956b66d63a9eb951477",
+    "offVpsVerified": true
+  }
+}
