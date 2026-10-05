@@ -93,7 +93,7 @@ function makeWorld(){
     batchIndex:w.delegation.batchIndex,epoch,challenger:zeroAddress,challengerBond:0n,challengeDeadline:0n,challengedBatch:0n,claimedRoot:zeroHash,challengeKind:0,
   } as any});
   const base={
-    readContract:async({functionName}:any)=>functionName==="operator"?operator.address:functionName==="activeCount"?w.published:assert.fail(functionName),
+    readContract:async({functionName}:any)=>functionName==="hub"?hub:functionName==="operator"?operator.address:functionName==="activeCount"?w.published:assert.fail(functionName),
     request:async({method,params}:any)=>{assert.equal(method,"eth_call");assert.equal(params[0].to,hub);return delegationOf();},
     getTransactionCount:async()=>w.nonce,
     call:async()=>({}),

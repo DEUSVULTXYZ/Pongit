@@ -7,13 +7,13 @@ import {LEGACY_HOSTED_HUB} from './hosted-control';
 export function continuousDelegation(hub:string|undefined){return hub?.toLowerCase()===NO_LEASE_HUB.toLowerCase();}
 const signatures=[
  'undelegate(bytes32)','undelegate()','closeDelegation(bytes32)','forceClose(address,bytes32)',
- 'closeEngine()','closeReusableArena(address)','closeArena(address)','closeArena(uint256)',
+ 'closeEngine()','closeCompletedSession(uint256)','close()','closeReusableArena(address)','closeArena(address)','closeArena(uint256)',
  'closeArena((uint256,address,uint256,uint256))','recoverExpired(address)',
  'recoverExpired(uint256)','recoverExpired((uint256,address,uint256,uint256))',
 ] as const;
 const closingSelectors=new Set(signatures.map(s=>toFunctionSelector(s).toLowerCase()));
 export const closesDelegation=(data:Hex)=>closingSelectors.has(data.slice(0,10).toLowerCase());
-export const closingMethod=(name:string)=>['undelegate','closeDelegation','forceClose','closeEngine','closeReusableArena','closeArena','recoverExpired'].includes(name);
+export const closingMethod=(name:string)=>['undelegate','closeDelegation','forceClose','closeEngine','closeCompletedSession','close','closeReusableArena','closeArena','recoverExpired'].includes(name);
 export function assertContinuousDelegation(hub:string|undefined,data:Hex){
  if(continuousDelegation(hub)&&closesDelegation(data))throw Object.assign(
   Error('Continuous delegation forbids automatic closure; retain the epoch and review the incident'),{code:'CONTINUOUS_DELEGATION'});
