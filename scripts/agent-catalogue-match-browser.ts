@@ -7,6 +7,7 @@ import {decodeErrorResult,decodeEventLog,decodeFunctionData,keccak256,parseTrans
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
+import {receiptClockMetrics} from './receipt-clock-metrics';
 import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {createHash} from 'node:crypto';
@@ -175,7 +176,7 @@ page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:
  ws.on('framereceived',event=>{try{const p=JSON.parse(String(event.payload));record.messages++;
   const write=writes.get(String(p.id));if(write){
    writes.delete(String(p.id));const ms=performance.now()-write.at;
-   report.submissions.push({at:new Date().toISOString(),action:write.action,ms,transport:'websocket',error:!!p.error,
+   report.submissions.push({at:new Date().toISOString(),action:write.action,hash:write.hash,ms,transport:'websocket',error:!!p.error,
     ...(p.error?{rpcErrorCode:p.error.code,message:clean(p.error)}:{})});
    const receipt=p.result;
    if(receipt?.transactionHash?.toLowerCase()===write.hash.toLowerCase()&&!receipts.has(write.hash)){
@@ -429,6 +430,7 @@ try{
  // Retain every measured gate even when another assertion fails. Diagnostics
  // never turn a failed run into a pass or discard a rejected command.
  measurePeer();
+ report.executionClock=receiptClockMetrics(report.receipts);
  report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.confirmedInput.samples>=(naturalMatch||cadenceProbe?20:100)&&report.confirmedInput.p95Ms<=300&&report.confirmedInput.mismatches.length===0,
   player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0&&report.sync.snapshotJumps.length===0&&report.sync.paddleSamples>100&&report.sync.paddleJumps.length===0:null,
   spectator:report.spectatorSync?report.spectatorSync.p95FrameMs<=20&&report.spectatorSync.maxHoldMs<=500&&report.spectatorSync.frameGaps.length===0:null};
@@ -448,7 +450,7 @@ try{
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  if(process.env.PONG_REQUIRE_RECONCILIATION==='1')assert(report.sync?.paddleSamples>100&&report.sync.paddleJumps.length===0&&report.sync.snapshotJumps.length===0,'Visible reconciliation discontinuities remain');
  if(naturalMatch&&!fault){
-  report.naturalGates={noPause:report.sync?.contractPauseMs===0,noResume:report.liveness?.resumes===0,noResync:report.sync?.visibleResyncs===0&&report.spectatorSync?.visibleResyncs===0,peer:report.peerReception.samples>=20&&report.peerReception.p95Ms<=report.submissionP95Ms+50,player:report.performance.player,spectator:report.performance.spectator};
+  report.naturalGates={noPause:report.sync?.contractPauseMs===0,noResume:report.liveness?.resumes===0,noResync:report.sync?.visibleResyncs===0&&report.spectatorSync?.visibleResyncs===0,peer:report.peerReception.samples>=20&&report.peerReception.p95Ms<=report.submissionP95Ms+50,player:report.performance.player,spectator:report.performance.spectator,executionClock:report.executionClock.samples>=20&&report.executionClock.stalls.length===0&&report.executionClock.rewinds.length===0};
   assert(Object.values(report.naturalGates).every(v=>v===true),'Natural-match synchronization gate failed');
  }
  assert.equal(report.errors.length,0);report.passed=true;
@@ -464,6 +466,7 @@ finally{
  try{await savePrivate();}catch{report.passed=false;report.error??='Private browser recovery state could not be saved';process.exitCode=1;}
  report.commandTimings=await page.evaluate(()=>(window as any).__commandTimings??[]).catch(()=>[]);
  measurePeer();
+ report.executionClock=receiptClockMetrics(report.receipts);
  report.finishedAt=new Date().toISOString();
  if(page.video())report.video=await page.video()!.path();
  await writeFile(out+'/report.json',JSON.stringify(report,null,2));await context.close();await browser.close();

@@ -1,0 +1,141 @@
+{
+  "at": "2026-10-06T13:22:22.660Z",
+  "report": "artifacts/qualification/catalogue-reship-check-20261006-1/report.json",
+  "reportSha256": "aacacda050d9adbe8e8dd0e81b7f48d2668e8673db17331e277e28211096ed78",
+  "passed": false,
+  "ref": {
+    "app": "0xE54Eb61B664Ced190B4663e3A3e5C11D7F12b748",
+    "epoch": "9",
+    "id": "837"
+  },
+  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
+  "canonical": {
+    "block": "68695956",
+    "blockHash": "0x321673693ce29d2a0f61e3bc7a51577f26272f05e15126c5c9db289fe614f184",
+    "result": {
+      "ref": {
+        "chainId": "10143",
+        "arena": "0xE54Eb61B664Ced190B4663e3A3e5C11D7F12b748",
+        "epoch": "9",
+        "id": "837"
+      },
+      "a": "0xd33F443A9e2F53733Fb55C9690b47ae1B33ACA81",
+      "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "hash": "0x4f01dc57fdc211272825263797db18f6a8687e129fcaaea0fdba0598d5fda991",
+      "mode": 1,
+      "status": 3,
+      "scoreA": 3,
+      "scoreB": 7,
+      "elapsedUs": "35875006",
+      "finality": false
+    },
+    "session": {
+      "status": 1,
+      "epoch": "9",
+      "expiresAt": "0"
+    }
+  },
+  "executionClock": {
+    "samples": 545,
+    "maxSameBlockMs": 2453.361572265625,
+    "stalls": [
+      {
+        "block": "0x9c9d74",
+        "firstAt": 1791292242819.0986,
+        "lastAt": 1791292245272.4602,
+        "receipts": 34,
+        "firstHash": "0x7212ac52b5af2b2666725233e2481babb7c860dd92f019314e4b6c3bc00119b7",
+        "lastHash": "0x0da459045c569bf2083c13692d19677591942e851574a13d6f6b85de603ec4ad",
+        "observedMs": 2453.361572265625
+      }
+    ],
+    "rewinds": []
+  },
+  "latency": {
+    "admissionMs": 17362,
+    "localInput": {
+      "samples": 286,
+      "p95Ms": 28.399999856948853
+    },
+    "receiptP95Ms": 16.11149999999907,
+    "peerReception": {
+      "samples": 541,
+      "p95Ms": 14.21923828125,
+      "clock": "same Playwright host performance.timeOrigin",
+      "basis": "send to independent observer ControlQueued live event"
+    }
+  },
+  "render": {
+    "player": {
+      "maxHoldMs": 200.09999999999854,
+      "contractPauseMs": 0,
+      "visibleResyncs": 0,
+      "p95FrameMs": 17
+    },
+    "spectator": {
+      "maxHoldMs": 1932.9000000000015,
+      "contractPauseMs": 0,
+      "visibleResyncs": 1,
+      "p95FrameMs": 17.099999999998545
+    }
+  },
+  "rejected": [
+    {
+      "at": "2026-10-06T13:10:29.347Z",
+      "action": "heartbeat",
+      "ms": 146.99159999999756,
+      "transport": "websocket",
+      "error": true,
+      "rpcErrorCode": -32603,
+      "message": "the node could not read or record the state this needs; retry shortly"
+    }
+  ],
+  "nodeReceiptCheck": {
+    "at": "2026-10-06T13:18:24.103551+00:00",
+    "node": "https://il2-eu-e54eb61b664ced19.fly.dev",
+    "match": {
+      "app": "0xE54Eb61B664Ced190B4663e3A3e5C11D7F12b748",
+      "epoch": "9",
+      "id": "837"
+    },
+    "receipts": [
+      {
+        "hash": "0x7212ac52b5af2b2666725233e2481babb7c860dd92f019314e4b6c3bc00119b7",
+        "receiptFound": true,
+        "blockNumber": "0x9c9d74",
+        "status": "0x1",
+        "matches": true
+      },
+      {
+        "hash": "0x9739604755ef903b473b9d8bee1e0d57d2f7f1f9c111a848d5aea6068c748f43",
+        "receiptFound": true,
+        "blockNumber": "0x9c9d74",
+        "status": "0x1",
+        "matches": true
+      },
+      {
+        "hash": "0x0da459045c569bf2083c13692d19677591942e851574a13d6f6b85de603ec4ad",
+        "receiptFound": true,
+        "blockNumber": "0x9c9d74",
+        "status": "0x1",
+        "matches": true
+      }
+    ]
+  },
+  "journal": [
+    {
+      "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+      "retained": 16,
+      "states": {
+        "confirmed": 16
+      },
+      "epochs": [
+        "9"
+      ],
+      "matches": [
+        "837"
+      ]
+    }
+  ]
+}

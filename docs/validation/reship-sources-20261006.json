@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-06T13:23:20.308865+00:00",
+  "packages": {
+    "sdk": {
+      "version": "0.2.2",
+      "integrity": "sha512-dUUEGMcJAeaiZcMHGemeCX2/EwDyNYzYXU4L4kYRxmYX3z73C7irlnceWe5jmwGAL1HMyC40QJfs+7WjFs2BOA=="
+    },
+    "cli": {
+      "version": "0.2.2",
+      "integrity": "sha512-D7q+G5odKXKlm3gc3ndcDzhMiSFhx590hy59AlnOBJDI6AN3IbA2TdY1yiGYxcU/kBr3wL+BtXorch8mtSz0qQ=="
+    }
+  },
+  "sdkRepository": {
+    "commit": "7b3fde219d196e3851b14f1d1b0ff80c1417833f",
+    "date": "2026-10-01T02:53:51Z"
+  }
+}
