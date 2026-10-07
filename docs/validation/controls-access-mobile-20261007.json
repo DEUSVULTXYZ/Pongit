@@ -1,0 +1,2306 @@
+{
+  "generatedAt": "2026-10-07T08:23:30.819655+00:00",
+  "candidateSource": "bcde17d",
+  "completeQualification": false,
+  "notes": [
+    "All failed and intermediate reports remain failures.",
+    "A published result is not yet final until its dispute conditions resolve.",
+    "Virtual PRF and desktop touch emulation are not physical device tests.",
+    "No 24-hour or complete project delivery claim."
+  ],
+  "header": {
+    "path": "artifacts/qualification/mobile-header-oct7-public-30/report.json",
+    "sha256": "6fb73020b3f8543d4a00b5d7bb0648888f089b1176211805bfcf5a483daea553"
+  },
+  "games": [
+    {
+      "run": "stop-ack-delay-oct7",
+      "startedAt": "2026-10-07T08:13:30.377Z",
+      "finishedAt": "2026-10-07T08:14:50.525Z",
+      "passed": false,
+      "error": "Natural-match synchronization gate failed",
+      "ref": {
+        "app": "0x81ff3CFd3c7cD728F9258223129FBF4B68FD695A",
+        "epoch": "1",
+        "id": "876"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 75,
+      "httpOnly": true,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x897dc4f3f9f1516268e7d50a153b103867c5b7528fa01f814ef6a91575f37c06",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "45458085",
+        "finality": false
+      },
+      "admissionMs": 9394,
+      "input": {
+        "samples": 70,
+        "p95Ms": 16.199999809265137
+      },
+      "receiptP95Ms": 187.76980000000185,
+      "confirmedInput": {
+        "samples": 113,
+        "p95Ms": 441.7265625,
+        "maxMs": 485.603515625,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 112,
+        "p95Ms": 104.213134765625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": false,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": false,
+        "player": false,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 79,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "bcde17d",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 317.09999999999854,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 6342,
+          "p95Pixels": 55.535819999998864,
+          "maxPixels": 113.27425062741816
+        },
+        "stop": {
+          "samples": 69,
+          "p95DriftPixels": 22.031999999999925,
+          "maxDriftPixels": 22.1039999999997
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 1,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 283.7999999999993,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-delay-oct7/report.json",
+          "sha256": "601e4efd7070a2e8222148f949a817f12dda4b5d7506031d9a7cb9d1f37c8d02",
+          "bytes": 462372
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-delay-oct7/sync-trace.json",
+          "sha256": "f927dbdf239a26d18d3f1623c513ecee18fbdb00fb4a8191d6ff9cbb1afdd8d0",
+          "bytes": 3212834
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-delay-oct7/court.png",
+          "sha256": "8407c222c7ccea6a0662b864aa24f4aa697eb548d2bb56c4369b71df92f51ea9",
+          "bytes": 787647
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-delay-oct7/video/page@f92f59eda2559bb0ebffe73238c232e5.webm",
+          "sha256": "20b2a26c198fcce1a926557c4a19ec1eedd3abd48e2e5de72d9590fd99a80716",
+          "bytes": 6601695
+        }
+      ]
+    },
+    {
+      "run": "stop-ack-normal1-oct7",
+      "startedAt": "2026-10-07T08:15:30.790Z",
+      "finishedAt": "2026-10-07T08:16:46.541Z",
+      "passed": true,
+      "error": null,
+      "ref": {
+        "app": "0x35C617eAEB6Deb8F22d78606b479522299a6C373",
+        "epoch": "1",
+        "id": "877"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x3b44c57696fc0851f5166dd645fcf4ddb912253e1b1da76a09b9e8b894d9e5d0",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "36677091",
+        "finality": false
+      },
+      "admissionMs": 7407,
+      "input": {
+        "samples": 54,
+        "p95Ms": 16.90000009536743
+      },
+      "receiptP95Ms": 14.172700000002806,
+      "confirmedInput": {
+        "samples": 107,
+        "p95Ms": 18.24267578125,
+        "maxMs": 84.776611328125,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 106,
+        "p95Ms": 9.399169921875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 162,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "bcde17d",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 116.59999999999854,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 5100,
+          "p95Pixels": 1.1246026558743552,
+          "maxPixels": 13.295999999999907
+        },
+        "stop": {
+          "samples": 53,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 15.299999999999983
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 149.60000000000218,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal1-oct7/report.json",
+          "sha256": "0701c2b42f76d5ae6fdcecf2a250943083b4035b2fe5d874ddd5aee46d733e57",
+          "bytes": 595009
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal1-oct7/sync-trace.json",
+          "sha256": "0481bdd1b168d987da086f822db7daed27245a7e79734b85a8897aef9dce9f90",
+          "bytes": 2775640
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal1-oct7/court.png",
+          "sha256": "8771292f63e98b07bec497c18e824c4a537b9261c4dc0699dca9cb7a1f043b14",
+          "bytes": 786881
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal1-oct7/video/page@67c9cdc83b99170ae29bc7b9155dbf5f.webm",
+          "sha256": "a4357a96d8885243856384ab6c08a4b8fac13967a435e67fd3d03824fa6f6186",
+          "bytes": 6571838
+        }
+      ]
+    },
+    {
+      "run": "stop-ack-normal3-oct7",
+      "startedAt": "2026-10-07T08:17:53.034Z",
+      "finishedAt": "2026-10-07T08:19:34.119Z",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x87559348DDDa47f42Ce60a60E253F08B979e02BD",
+        "epoch": "1",
+        "id": "879"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x77f5dcb7bb9e54dd2e85ea10d27c8ec9ca23bc4415fb442a44783cdf094e0bbe",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625007",
+        "finality": false
+      },
+      "admissionMs": 8029,
+      "input": {
+        "samples": 55,
+        "p95Ms": 18.59999990463257
+      },
+      "receiptP95Ms": 15.629100000005565,
+      "confirmedInput": {
+        "samples": 110,
+        "p95Ms": 18.078369140625,
+        "maxMs": 23.489013671875,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 110,
+        "p95Ms": 12.79248046875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 163,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "bcde17d",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 233,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 5206,
+          "p95Pixels": 1.284669317698956,
+          "maxPixels": 65.68101975533044
+        },
+        "stop": {
+          "samples": 55,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 233.5,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal3-oct7/report.json",
+          "sha256": "f9d35ba099298723458b4517e57b3855b05a7e4ff6e58cd8a0582f1ab95daece",
+          "bytes": 616115
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal3-oct7/sync-trace.json",
+          "sha256": "cd8ccc0d46e27d537e3538f5ebdbcb16b672e8f5cb4fdf25a3e8ed815398e967",
+          "bytes": 2837895
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal3-oct7/court.png",
+          "sha256": "a9c4950a01a910bf2ed68489d056cc11cb14998e276ef07f34a8f4a15262f95b",
+          "bytes": 651367
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal3-oct7/video/page@19f11dd2302d2c4de4749ecdad126729.webm",
+          "sha256": "26f07e17c5e035a598c3cc76659b049d84f2f52a638b4031e6fa1da7d97eae5a",
+          "bytes": 8079465
+        }
+      ]
+    },
+    {
+      "run": "stop-ack-normal4-oct7",
+      "startedAt": "2026-10-07T08:19:35.660Z",
+      "finishedAt": "2026-10-07T08:20:45.953Z",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0xAf19AE4284b3a61B58aF38174B03A70C0789D1e3",
+        "epoch": "1",
+        "id": "880"
+      },
+      "actualMode": 1,
+      "channel": "msedge",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x860f2d1b9206a8bc41b2b01ce5ec1091a4421ccccab176c4fe6397706c8f27f8",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "admissionMs": 8106,
+      "input": {
+        "samples": 52,
+        "p95Ms": 16.199999809265137
+      },
+      "receiptP95Ms": 14.437200000000303,
+      "confirmedInput": {
+        "samples": 104,
+        "p95Ms": 18.126953125,
+        "maxMs": 25.74609375,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 103,
+        "p95Ms": 9.970458984375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 155,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "bcde17d",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133.09999999999854,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4998,
+          "p95Pixels": 1.3075901365083098,
+          "maxPixels": 25.93686589280952
+        },
+        "stop": {
+          "samples": 51,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 183.39999999999964,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal4-oct7/report.json",
+          "sha256": "4ab464e0fe120ac6fcb3156c9d7d7c8b65757b8b38ef50478abdaa6f33fd853d",
+          "bytes": 581773
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal4-oct7/sync-trace.json",
+          "sha256": "1828b232c38aba1f65e450dfc80b19d84472be8d974cbcca723d7324219359d4",
+          "bytes": 2722135
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal4-oct7/court.png",
+          "sha256": "b7498d71e263230ea9fe566b194a0774c6ee1cc9faa78073191d5e3de269052b",
+          "bytes": 754639
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal4-oct7/video/page@fcf3356e2dea0e1c03e7deadaa4890a2.webm",
+          "sha256": "763b964d843a98f599c85ac0c879b22388b29ed23e7dcc5a626ef6b61b90e943",
+          "bytes": 5869942
+        }
+      ]
+    },
+    {
+      "run": "stop-ack-normal5-oct7",
+      "startedAt": "2026-10-07T08:20:47.548Z",
+      "finishedAt": "2026-10-07T08:21:54.243Z",
+      "passed": true,
+      "error": null,
+      "ref": {
+        "app": "0x123B20c51473f5732F446b87B658FcF7E389F5EA",
+        "epoch": "1",
+        "id": "881"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x1db79dce34e523174db2e44c9ba82bf821e0824cfa2fd20b82254e64dce0a484",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927090",
+        "finality": false
+      },
+      "admissionMs": 7830,
+      "input": {
+        "samples": 51,
+        "p95Ms": 16.200000047683716
+      },
+      "receiptP95Ms": 15.596400000002177,
+      "confirmedInput": {
+        "samples": 102,
+        "p95Ms": 21.244140625,
+        "maxMs": 26.660400390625,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 101,
+        "p95Ms": 13.779052734375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 150,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "bcde17d",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133.09999999999854,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4890,
+          "p95Pixels": 1.2435245374319948,
+          "maxPixels": 17.61180000000016
+        },
+        "stop": {
+          "samples": 50,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 133.29999999999927,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal5-oct7/report.json",
+          "sha256": "798adf23bfa2ab0ddb076c53e417d26185926406c61a71d8c76c69c115dbe51c",
+          "bytes": 560109
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal5-oct7/sync-trace.json",
+          "sha256": "0971cd5d269b3abf86b066f0671af54da9593e0a1336cd4e7ffca261ad3c81eb",
+          "bytes": 2652335
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal5-oct7/court.png",
+          "sha256": "500aa67f1ad1ceeb62cd674bc6fccb82fad0a6e943a5b5843c90bed384e929fb",
+          "bytes": 757133
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-normal5-oct7/video/page@fe97d7d98bc72675e1b3a0b1927b7da5.webm",
+          "sha256": "673cb876a213ce3dcbd54a2bfd66b2409610814a786f1d9eca073e7130fe2ce6",
+          "bytes": 5859753
+        }
+      ]
+    },
+    {
+      "run": "stop-ack-touch-oct7",
+      "startedAt": "2026-10-07T08:16:48.144Z",
+      "finishedAt": "2026-10-07T08:17:51.388Z",
+      "passed": true,
+      "error": null,
+      "ref": {
+        "app": "0x64bF382cdF1d96f0f19819c23f441beeDf0377F5",
+        "epoch": "1",
+        "id": "878"
+      },
+      "actualMode": 1,
+      "channel": "msedge",
+      "touchControls": true,
+      "viewportWidth": 390,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x01cf8ce66bb31edcd526f557ebeff952278ae90f0e90d34bad4686c4792bf5f0",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "admissionMs": 7286,
+      "input": {
+        "samples": 45,
+        "p95Ms": 16.59999990463257
+      },
+      "receiptP95Ms": 114.31660000000193,
+      "confirmedInput": {
+        "samples": 90,
+        "p95Ms": 117.5029296875,
+        "maxMs": 124.8583984375,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 90,
+        "p95Ms": 9.5205078125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 170,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "bcde17d",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 183.70000000000073,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4840,
+          "p95Pixels": 2.0757279597941647,
+          "maxPixels": 25.187999999999988
+        },
+        "stop": {
+          "samples": 45,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 100.29999999999927,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-touch-oct7/report.json",
+          "sha256": "02f46f59ba5bb4a16ad997c832c84ced485383a30355f07356c38eba48064501",
+          "bytes": 563674
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-touch-oct7/sync-trace.json",
+          "sha256": "5be0065a73481f46d37e3424e285985d6c5551e2cd6440d784ae76a7bd72837d",
+          "bytes": 2632537
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-touch-oct7/court.png",
+          "sha256": "f807f5e45f3d399843b1142b39b3e11c566ca320607cecc6142d99a33248483e",
+          "bytes": 181768
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-ack-touch-oct7/video/page@4c8fefe6243c3448e1cf06bf40fc6e10.webm",
+          "sha256": "4f0c7bed586ee520b7444c19f9a9489c60bcee3625219b9eea48d1f51c0fcb77",
+          "bytes": 3027180
+        }
+      ]
+    },
+    {
+      "run": "stop-after-home-oct7",
+      "startedAt": "2026-10-07T07:10:39.720Z",
+      "finishedAt": "2026-10-07T07:11:06.325Z",
+      "passed": false,
+      "error": "Real launch countdown incomplete",
+      "ref": {
+        "app": "0x123B20c51473f5732F446b87B658FcF7E389F5EA",
+        "epoch": "1",
+        "id": "865"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": null,
+      "admissionMs": null,
+      "input": null,
+      "receiptP95Ms": null,
+      "confirmedInput": null,
+      "peerReception": {
+        "samples": 0,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": null,
+      "performance": null,
+      "liveness": null,
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [],
+      "faults": [],
+      "source": "1c56d73",
+      "render": {
+        "p95FrameMs": null,
+        "maxHoldMs": null,
+        "contractPauseMs": null,
+        "visibleResyncs": null,
+        "correction": null,
+        "stop": {},
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": null,
+        "observerResyncs": null
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-after-home-oct7/report.json",
+          "sha256": "e820a42f777d14c83b17e828a67a8b14c37cf80dd073ca887bf638fc1c795c85",
+          "bytes": 78505
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-after-home-oct7/video/page@2c3cc07c8c72c210c44e475dd1f6f37a.webm",
+          "sha256": "6012ff8b64dd27abcdbc5e6b9d45bab4ab1d45ebbc8faad03d00b835801d670b",
+          "bytes": 2643276
+        }
+      ]
+    },
+    {
+      "run": "stop-after-home2-oct7",
+      "startedAt": "2026-10-07T07:14:05.678Z",
+      "finishedAt": "2026-10-07T07:15:23.712Z",
+      "passed": false,
+      "error": "Real launch countdown incomplete",
+      "ref": {
+        "app": "0x9bfb8B3BbAc06632E1dDB5155139215bcD548733",
+        "epoch": "1",
+        "id": "866"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x8a3ed51e948cbf6e38046b2efa4186674b6efd55abc88d5fd51c81930235be24",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "admissionMs": null,
+      "input": {
+        "samples": 52,
+        "p95Ms": 17.300000190734863
+      },
+      "receiptP95Ms": 15.497000000003027,
+      "confirmedInput": {
+        "samples": 104,
+        "p95Ms": 19.623046875,
+        "maxMs": 25.9189453125,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 103,
+        "p95Ms": 9.8759765625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": null,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": null,
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame"
+      ],
+      "faults": [],
+      "source": "1c56d73",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 233.1999999999971,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4986,
+          "p95Pixels": 1.2119999999998186,
+          "maxPixels": 23.843982552212196
+        },
+        "stop": {
+          "samples": 51,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 232.6999999999971,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-after-home2-oct7/report.json",
+          "sha256": "5db0b446d2ef90b7a8902acd1f6315f3d1d95b996ad86b947944f90cab939665",
+          "bytes": 515436
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-after-home2-oct7/sync-trace.json",
+          "sha256": "7085df189810b40898b16a8f01b3f671e98a27391afaffaad56a48a15ace74c0",
+          "bytes": 2647071
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-after-home2-oct7/court.png",
+          "sha256": "2907983d913ad54772b6e143ec48875de33e605597c921b4ccbdfd4f93dd304d",
+          "bytes": 772660
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-after-home2-oct7/video/page@f65f9a3e98e3eab2fe6cc1d0ccecb836.webm",
+          "sha256": "ee7d8ddaf7c3ed30eadddfa02175df97aa7841d4b79da2d37ed9999a7a90acff",
+          "bytes": 6653376
+        }
+      ]
+    },
+    {
+      "run": "stop-baseline-oct7",
+      "startedAt": "2026-10-07T06:21:36.348Z",
+      "finishedAt": "2026-10-07T06:22:43.916Z",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x87559348DDDa47f42Ce60a60E253F08B979e02BD",
+        "epoch": "1",
+        "id": "863"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": null,
+      "viewportWidth": null,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": null,
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x917e04b8031bc9652194661f1bc1052a9363c29992efc67a83efdd01157be64c",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "admissionMs": 10965,
+      "input": {
+        "samples": 52,
+        "p95Ms": 22.200000047683716
+      },
+      "receiptP95Ms": 16.158300000002782,
+      "confirmedInput": {
+        "samples": 104,
+        "p95Ms": 22.052001953125,
+        "maxMs": 30.458740234375,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 104,
+        "p95Ms": 10.59326171875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": null,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 105,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": null,
+      "checks": [
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "04aa0c7",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 200,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4962,
+          "p95Pixels": 1.0581503546637805,
+          "maxPixels": 34.31596478998074
+        },
+        "stop": {},
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 183.20000000000073,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-baseline-oct7/report.json",
+          "sha256": "3583831a815b689ccbcacda8d9cef70ddd189078eecaead8b22dc2a5faa2d417",
+          "bytes": 514606
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-baseline-oct7/sync-trace.json",
+          "sha256": "74a5e64e8ed7077506f8399caf66ebac128ad704bbf4bc6eddd4edcfe586c35b",
+          "bytes": 2698970
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-baseline-oct7/court.png",
+          "sha256": "c25c15bacb1d586757bd4a86d1020a18e79829851be5dd27cd25bed6fcf54240",
+          "bytes": 550402
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-baseline-oct7/video/page@8159631da7eacaf9141d2062fd1cb3a3.webm",
+          "sha256": "7bba6d6e2c5feeb341503b15d6d77a77de3b5f034d18ad466d838fca6dc4b59d",
+          "bytes": 5803224
+        }
+      ]
+    },
+    {
+      "run": "stop-classic-f5-oct7",
+      "startedAt": "2026-10-07T08:00:40.355Z",
+      "finishedAt": "2026-10-07T08:02:03.669Z",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0xB42A4d723083D7b2a56769D0f45BD9629DE09E70",
+        "epoch": "1",
+        "id": "875"
+      },
+      "actualMode": 0,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "f5",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x6c7121acf2898475bc51aba299bf3f8030ae8a56347c9cbb768414ac4b5d4f83",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625013",
+        "finality": false
+      },
+      "admissionMs": 8671,
+      "input": {
+        "samples": 50,
+        "p95Ms": 17.5
+      },
+      "receiptP95Ms": 14.440800000000309,
+      "confirmedInput": {
+        "samples": 108,
+        "p95Ms": 17.361572265625,
+        "maxMs": 24.719970703125,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 109,
+        "p95Ms": 6.630615234375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": null,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 179,
+        "resumes": 1
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [
+        {
+          "kind": "f5-grant-reused",
+          "at": "2026-10-07T08:01:14.418Z"
+        }
+      ],
+      "source": "77082f2",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 166.70000000000073,
+        "contractPauseMs": 3050.2000000000003,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4114,
+          "p95Pixels": 1.2698136584448037,
+          "maxPixels": 17.30399407124372
+        },
+        "stop": {
+          "samples": 49,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 183.3000000000029,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-classic-f5-oct7/report.json",
+          "sha256": "67f594887a1641589e666f3a6c09e1131712e70d031f7b680a06a581abab352b",
+          "bytes": 579677
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-classic-f5-oct7/sync-trace.json",
+          "sha256": "edd0cd7239476458a440cd0307a4827962edb4d1de626afe96f842580039c1b9",
+          "bytes": 2028084
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-classic-f5-oct7/court.png",
+          "sha256": "846d5d846cce7740df6f4d0bb6bc4e701c2cda03ce4ee40a138009d12e73c8b0",
+          "bytes": 718683
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-classic-f5-oct7/video/page@99632fbe00c9494f056546f72413c9d0.webm",
+          "sha256": "b455cb547e910500fe239a157cf0f367756f552b0af803518baac211feab9280",
+          "bytes": 6755479
+        }
+      ]
+    },
+    {
+      "run": "stop-delay-after-oct7",
+      "startedAt": "2026-10-07T07:58:17.695Z",
+      "finishedAt": "2026-10-07T07:59:50.149Z",
+      "passed": false,
+      "error": "Natural-match synchronization gate failed",
+      "ref": {
+        "app": "0x9bfb8B3BbAc06632E1dDB5155139215bcD548733",
+        "epoch": "1",
+        "id": "874"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 75,
+      "httpOnly": true,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x0d718f021bcb5f2b932a14dd440b73d4f8800d8591824d511c30f59bcff9f080",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "46520843",
+        "finality": false
+      },
+      "admissionMs": 9826,
+      "input": {
+        "samples": 70,
+        "p95Ms": 24
+      },
+      "receiptP95Ms": 187.9320000000007,
+      "confirmedInput": {
+        "samples": 124,
+        "p95Ms": 400.22705078125,
+        "maxMs": 476.34521484375,
+        "mismatches": [
+          {
+            "sentAt": 1791359949344.1877,
+            "expected": 1,
+            "actual": 0
+          }
+        ]
+      },
+      "peerReception": {
+        "samples": 124,
+        "p95Ms": 99.874267578125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": false,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": false,
+        "player": false,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 100,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "77082f2",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 216.5,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 6348,
+          "p95Pixels": 40.874377786838636,
+          "maxPixels": 116.33019816224623
+        },
+        "stop": {
+          "samples": 69,
+          "p95DriftPixels": 22.04399999999964,
+          "maxDriftPixels": 30.52800000000019
+        },
+        "paddleJumps": 20,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 133.70000000000073,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-delay-after-oct7/report.json",
+          "sha256": "bebf61dae64829981ebe079da482741490c61e4a1b29a24eb3c519b65e331dbd",
+          "bytes": 528215
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-delay-after-oct7/sync-trace.json",
+          "sha256": "dc9d344e4b84bac9c43d631269fed45591cc2f09f8980555729192d8205a87ec",
+          "bytes": 3307438
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-delay-after-oct7/court.png",
+          "sha256": "fbd9093c8ab91502948bab5824699b13a2745d840682a292bc26c11b5ef10cfe",
+          "bytes": 793359
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-delay-after-oct7/video/page@c6b18c3d3d24cae67fbfbd12f0e510ce.webm",
+          "sha256": "5625d00e72f146629dc31c5bd0efd96c4dd3b772389b2b1c67ada042e281c29e",
+          "bytes": 7420841
+        }
+      ]
+    },
+    {
+      "run": "stop-delay-baseline-oct7",
+      "startedAt": "2026-10-07T06:23:50.336Z",
+      "finishedAt": "2026-10-07T06:25:09.448Z",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0xAf19AE4284b3a61B58aF38174B03A70C0789D1e3",
+        "epoch": "1",
+        "id": "864"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": null,
+      "viewportWidth": null,
+      "injectedNetworkDelayEachWayMs": 75,
+      "httpOnly": true,
+      "fault": null,
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0xd2725aa6960627dcaa87b4cd77175ef44f09452f044cd17be0b9587cf9ff5bab",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625007",
+        "finality": false
+      },
+      "admissionMs": 12732,
+      "input": {
+        "samples": 57,
+        "p95Ms": 31.799999952316284
+      },
+      "receiptP95Ms": 192.54329999999754,
+      "confirmedInput": {
+        "samples": 109,
+        "p95Ms": 421.026123046875,
+        "maxMs": 490.2861328125,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 109,
+        "p95Ms": 105.622802734375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": null,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": false,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 81,
+        "resumes": 1
+      },
+      "unifiedArcadeKeys": null,
+      "checks": [
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "04aa0c7",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 283.70000000000437,
+        "contractPauseMs": 3216.199999999997,
+        "visibleResyncs": 1,
+        "correction": {
+          "samples": 5672,
+          "p95Pixels": 44.522999928080935,
+          "maxPixels": 119.78788016858465
+        },
+        "stop": {},
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 233.09999999999854,
+        "observerResyncs": 1
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-delay-baseline-oct7/report.json",
+          "sha256": "600e76eb6cc212072d092786ec5ffe987aa7e988684e72b99073f10cacae4094",
+          "bytes": 446802
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-delay-baseline-oct7/sync-trace.json",
+          "sha256": "d1e00ea74a90126239ccd30150db1faf3a493762c4d4689a6a22327c292b6b1d",
+          "bytes": 2910471
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-delay-baseline-oct7/court.png",
+          "sha256": "55065a7901971dcee81613e80cd17ab321db12a6045797e60202a554785475bb",
+          "bytes": 651630
+        }
+      ]
+    },
+    {
+      "run": "stop-final-home-oct7",
+      "startedAt": "2026-10-07T07:21:33.694Z",
+      "finishedAt": "2026-10-07T07:22:43.601Z",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0xB42A4d723083D7b2a56769D0f45BD9629DE09E70",
+        "epoch": "1",
+        "id": "867"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x107fa6221eb781f6fae9e6bb3a9fcfb02d0e1248aa263c5c1b23e2ce4897ee0d",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927090",
+        "finality": false
+      },
+      "admissionMs": 8464,
+      "input": {
+        "samples": 51,
+        "p95Ms": 16.90000009536743
+      },
+      "receiptP95Ms": 15.077700000001641,
+      "confirmedInput": {
+        "samples": 101,
+        "p95Ms": 18.1962890625,
+        "maxMs": 21.8583984375,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 100,
+        "p95Ms": 10.36083984375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": null,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 101,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "1c56d73",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 300.7999999999993,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4876,
+          "p95Pixels": 1.1616239902476764,
+          "maxPixels": 28.01999999999981
+        },
+        "stop": {
+          "samples": 50,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 283,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-final-home-oct7/report.json",
+          "sha256": "be3f7e69c5bb82d01ac48d3ceb509290418937786a66f6c814e8431694cd9e7d",
+          "bytes": 498665
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-final-home-oct7/sync-trace.json",
+          "sha256": "e3c087f11a2ca0b003d2c8eade92982a0dcd045191a57bf5245cc70e714a5ee9",
+          "bytes": 2608294
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-final-home-oct7/court.png",
+          "sha256": "23281ced21d6e1f151f6a4bf26fe8961789f207096e1c89ee22d4cfe2b03e47d",
+          "bytes": 786970
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-final-home-oct7/video/page@a6f7b03671027fc4ae9a8a617bfd42d6.webm",
+          "sha256": "324d9e397f9571d80d5bfab21b72e460d6f385562e6d9319e3adf33f3db6d230",
+          "bytes": 5966404
+        }
+      ]
+    },
+    {
+      "run": "stop-heartbeat-fifth-oct7",
+      "startedAt": "2026-10-07T07:55:50.328Z",
+      "finishedAt": "2026-10-07T07:57:07.026Z",
+      "passed": true,
+      "error": null,
+      "ref": {
+        "app": "0x123B20c51473f5732F446b87B658FcF7E389F5EA",
+        "epoch": "1",
+        "id": "873"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x010b849549f865f314c9245f12e871c02d9f7d98ed83d8e39191cd8c9bb3d22b",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927090",
+        "finality": false
+      },
+      "admissionMs": 7483,
+      "input": {
+        "samples": 51,
+        "p95Ms": 17.5
+      },
+      "receiptP95Ms": 18.19919999999911,
+      "confirmedInput": {
+        "samples": 102,
+        "p95Ms": 24.181640625,
+        "maxMs": 30.359619140625,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 102,
+        "p95Ms": 12.123779296875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 152,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "77082f2",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 117,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4908,
+          "p95Pixels": 1.258661526653782,
+          "maxPixels": 4.569325585290926
+        },
+        "stop": {
+          "samples": 50,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 1.259999999999991
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 116.5,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-fifth-oct7/report.json",
+          "sha256": "e6187e3a459b7ebb2ed73fc1538f90aa04cb319bd360925e9098245af14d3f03",
+          "bytes": 572229
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-fifth-oct7/sync-trace.json",
+          "sha256": "de10ac21cbb043b32e1bb235c92297802afdee77c8e09e309bf41a7b006f454f",
+          "bytes": 2663145
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-fifth-oct7/court.png",
+          "sha256": "e40a8f58b22f78e3cf9b2b15c8cdfb483ae515b468703cef08f489106a274bd0",
+          "bytes": 661776
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-fifth-oct7/video/page@16d756ce75beb3ce22fd93ff346a3205.webm",
+          "sha256": "48b72998f3e096a30e5bda9eaec2029f91eaafe190b9e455c4c74c73f005e376",
+          "bytes": 6412954
+        }
+      ]
+    },
+    {
+      "run": "stop-heartbeat-fourth-oct7",
+      "startedAt": "2026-10-07T07:51:51.255Z",
+      "finishedAt": "2026-10-07T07:53:18.682Z",
+      "passed": false,
+      "error": "Natural-match synchronization gate failed",
+      "ref": {
+        "app": "0xAf19AE4284b3a61B58aF38174B03A70C0789D1e3",
+        "epoch": "1",
+        "id": "872"
+      },
+      "actualMode": 1,
+      "channel": "msedge",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0xfc714924578c04f398a79ed1dde72499d673aa0382c326c12b81468e7e149df0",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "43396530",
+        "finality": false
+      },
+      "admissionMs": 8027,
+      "input": {
+        "samples": 67,
+        "p95Ms": 17.700000047683716
+      },
+      "receiptP95Ms": 15.62550000000192,
+      "confirmedInput": {
+        "samples": 139,
+        "p95Ms": 22.691650390625,
+        "maxMs": 909.518798828125,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 138,
+        "p95Ms": 12.490478515625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": false,
+        "noResume": false,
+        "noResync": false,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 199,
+        "resumes": 1
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "77082f2",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 266.1999999999971,
+        "contractPauseMs": 3383.4000000000015,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 6330,
+          "p95Pixels": 1.3541046794746308,
+          "maxPixels": 57.539606132113676
+        },
+        "stop": {
+          "samples": 65,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 21.899999999999977
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 166.70000000000073,
+        "observerResyncs": 1
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-fourth-oct7/report.json",
+          "sha256": "acfbaed9f1dcc7bd0c01ed1919d05f5a95e7b75ba5972642eed4eebd5b4fd2ba",
+          "bytes": 750194
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-fourth-oct7/sync-trace.json",
+          "sha256": "8e30bbe9b20ce0a2a706dbbff85ed997483be968f3c4b2ac6eb1a23fb87f97ac",
+          "bytes": 3456267
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-fourth-oct7/court.png",
+          "sha256": "989c9c4d299f2418648380ea2c099eb836cba43ed337146871720df307d932d8",
+          "bytes": 784868
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-fourth-oct7/video/page@55ae20e8d8d4726f23b843369e03e435.webm",
+          "sha256": "0620ab23b1bc0150c72b6d4ce2b9acef3c84ea3d727adb6b2c5850e9927d6ae7",
+          "bytes": 7443900
+        }
+      ]
+    },
+    {
+      "run": "stop-heartbeat-home-oct7",
+      "startedAt": "2026-10-07T07:42:07.658Z",
+      "finishedAt": "2026-10-07T07:43:11.827Z",
+      "passed": true,
+      "error": null,
+      "ref": {
+        "app": "0x35C617eAEB6Deb8F22d78606b479522299a6C373",
+        "epoch": "1",
+        "id": "869"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x6c390798037af4c5e2c716fbd6aa8590c4625b9bb1f36992c8ff04afd930c3b3",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "admissionMs": 7417,
+      "input": {
+        "samples": 52,
+        "p95Ms": 19
+      },
+      "receiptP95Ms": 15.111099999994622,
+      "confirmedInput": {
+        "samples": 104,
+        "p95Ms": 24.561767578125,
+        "maxMs": 75.838134765625,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 104,
+        "p95Ms": 10.501708984375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 156,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "77082f2",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133.5,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 4980,
+          "p95Pixels": 1.0900421377999123,
+          "maxPixels": 24.050722710317814
+        },
+        "stop": {
+          "samples": 51,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 12.780000000000001
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 133.70000000000073,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-home-oct7/report.json",
+          "sha256": "cee97236fbbb885cb08a39ad5d0d916ffc37716834efa25c666b311c498d00d3",
+          "bytes": 574553
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-home-oct7/sync-trace.json",
+          "sha256": "a24aa9338d8c6c953ea0bae98140f87478600b7f7b9ded3e6112142d85993abf",
+          "bytes": 2705554
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-home-oct7/court.png",
+          "sha256": "d47b14a526e78e3ead6ca09ed1ced65bbb3d76ad573d95fe75640534dccf37ce",
+          "bytes": 681782
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-home-oct7/video/page@a22b9a83f7c2c5627d6f23a25c267b93.webm",
+          "sha256": "fc37ad5fe5bc72ffbe8246a148e233c9816cd5ffdbfbb8db79a119e25e61f0e3",
+          "bytes": 5779401
+        }
+      ]
+    },
+    {
+      "run": "stop-heartbeat-third-oct7",
+      "startedAt": "2026-10-07T07:50:33.147Z",
+      "finishedAt": "2026-10-07T07:51:43.915Z",
+      "passed": true,
+      "error": null,
+      "ref": {
+        "app": "0x87559348DDDa47f42Ce60a60E253F08B979e02BD",
+        "epoch": "1",
+        "id": "871"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x89c65d69b4aae06f3d34ec20a90b070a6c2d4506dfda0516a863a99e246efa66",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37625007",
+        "finality": false
+      },
+      "admissionMs": 7865,
+      "input": {
+        "samples": 55,
+        "p95Ms": 17
+      },
+      "receiptP95Ms": 14.915600000000268,
+      "confirmedInput": {
+        "samples": 109,
+        "p95Ms": 20.08154296875,
+        "maxMs": 32.018310546875,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 109,
+        "p95Ms": 10.19970703125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 165,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "77082f2",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 183.1999999999989,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 5212,
+          "p95Pixels": 1.141409300373141,
+          "maxPixels": 24.64141579414317
+        },
+        "stop": {
+          "samples": 54,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 183.60000000000582,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-third-oct7/report.json",
+          "sha256": "6935677a0d19472c9433fe1a346a6655597fdc4023d9b270f95fb80d4caf7de2",
+          "bytes": 606696
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-third-oct7/sync-trace.json",
+          "sha256": "9ccb2129d2d471a7a324664aafc58e772b4710bc148482af0a90902aa0396eb0",
+          "bytes": 2852267
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-third-oct7/court.png",
+          "sha256": "85fbfc46c35dd8144ac7b101d97e90ab4f64a7ef4ffdcdce50d15afbe22cb645",
+          "bytes": 794120
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-third-oct7/video/page@166454ccfbdb8d453cf90fd096056e14.webm",
+          "sha256": "986877ec7a3393b32b5afaa681e6f75e380e9d88bbee6980009ae06b618fe503",
+          "bytes": 6016085
+        }
+      ]
+    },
+    {
+      "run": "stop-heartbeat-touch-oct7",
+      "startedAt": "2026-10-07T07:43:13.177Z",
+      "finishedAt": "2026-10-07T07:44:44.416Z",
+      "passed": true,
+      "error": null,
+      "ref": {
+        "app": "0x64bF382cdF1d96f0f19819c23f441beeDf0377F5",
+        "epoch": "1",
+        "id": "870"
+      },
+      "actualMode": 1,
+      "channel": "msedge",
+      "touchControls": true,
+      "viewportWidth": 390,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0x3bbcd747e6687ba5efe74814da7d3966df0bd11c522c0b2e3cb2d3ace8120272",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "52435374",
+        "finality": false
+      },
+      "admissionMs": 7489,
+      "input": {
+        "samples": 69,
+        "p95Ms": 16.799999952316284
+      },
+      "receiptP95Ms": 114.93950000000768,
+      "confirmedInput": {
+        "samples": 137,
+        "p95Ms": 119.838623046875,
+        "maxMs": 121.635009765625,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 136,
+        "p95Ms": 10.22314453125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 243,
+        "resumes": 0
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "77082f2",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 216.6999999999971,
+        "contractPauseMs": 0,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 6894,
+          "p95Pixels": 2.5277219778349718,
+          "maxPixels": 21.851820000000373
+        },
+        "stop": {
+          "samples": 68,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 0
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 100.30000000000291,
+        "observerResyncs": 0
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-touch-oct7/report.json",
+          "sha256": "8b28418e18651689a3a3a49d5b67a12f2a8127693d0c9b158a987bc6e99fb97c",
+          "bytes": 816742
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-touch-oct7/sync-trace.json",
+          "sha256": "f51e5ab77360b6afaae12a5d7e11a73443312e4c9977d2d64e58144b7be8127e",
+          "bytes": 3771606
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-touch-oct7/court.png",
+          "sha256": "6c5eb189823cbab2ad227270edc790b0509b1f25dd8c8945c62004a818d241f2",
+          "bytes": 231366
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-heartbeat-touch-oct7/video/page@75e7fd692a3de5bd7b41c30a062fb0aa.webm",
+          "sha256": "965ba924f703f167edff544e6effb6698faa3b0f2dc5eddaee5bf15928c795c9",
+          "bytes": 3530529
+        }
+      ]
+    },
+    {
+      "run": "stop-public-home-oct7",
+      "startedAt": "2026-10-07T07:30:02.531Z",
+      "finishedAt": "2026-10-07T07:31:18.207Z",
+      "passed": false,
+      "error": "Natural-match synchronization gate failed",
+      "ref": {
+        "app": "0x81ff3CFd3c7cD728F9258223129FBF4B68FD695A",
+        "epoch": "1",
+        "id": "868"
+      },
+      "actualMode": 1,
+      "channel": "chrome",
+      "touchControls": false,
+      "viewportWidth": 1440,
+      "injectedNetworkDelayEachWayMs": 0,
+      "httpOnly": false,
+      "fault": "",
+      "virtualPrf": true,
+      "naturalMatch": true,
+      "result": {
+        "hash": "0xa16f4470df6579e729eb31dfef4a9773b228d7703fb3e31c5d0f6a9f2db3cc66",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "37857803",
+        "finality": false
+      },
+      "admissionMs": 7849,
+      "input": {
+        "samples": 57,
+        "p95Ms": 17.300000190734863
+      },
+      "receiptP95Ms": 16.947699999996985,
+      "confirmedInput": {
+        "samples": 121,
+        "p95Ms": 21.134765625,
+        "maxMs": 224.391357421875,
+        "mismatches": []
+      },
+      "peerReception": {
+        "samples": 121,
+        "p95Ms": 14.79248046875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "naturalGates": {
+        "noPause": false,
+        "noResume": false,
+        "noResync": false,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 117,
+        "resumes": 1
+      },
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "checks": [
+        "Human login and agent challenge used one passkey ceremony",
+        "Final score and result window survived the delayed terminal frame",
+        "At least 20 public command submissions and local input latency"
+      ],
+      "faults": [],
+      "source": "c63f7c7",
+      "render": {
+        "p95FrameMs": 17.099999999998545,
+        "maxHoldMs": 133.40000000000146,
+        "contractPauseMs": 3183.7000000000007,
+        "visibleResyncs": 0,
+        "correction": {
+          "samples": 5654,
+          "p95Pixels": 1.2524839391340379,
+          "maxPixels": 34.35599999999994
+        },
+        "stop": {
+          "samples": 55,
+          "p95DriftPixels": 0,
+          "maxDriftPixels": 2.004000000000076
+        },
+        "paddleJumps": 0,
+        "snapshotJumps": 0,
+        "frameGaps": 0,
+        "observerMaxHoldMs": 216.40000000000146,
+        "observerResyncs": 2
+      },
+      "evidence": [
+        {
+          "path": "artifacts/qualification/catalogue-stop-public-home-oct7/report.json",
+          "sha256": "1e5c0473aaec0a5d97ed04fe5eb7486ed700c87165b8171a0005d0437d7f15f5",
+          "bytes": 578224
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-public-home-oct7/sync-trace.json",
+          "sha256": "2715c10760b654822afcb5e391d3d216b07abea284697705899190633ee54776",
+          "bytes": 3013738
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-public-home-oct7/court.png",
+          "sha256": "191c794b1c29f5aff03f8895efc020a5a9624faf4a66daf5344945a6fa21a416",
+          "bytes": 786949
+        },
+        {
+          "path": "artifacts/qualification/catalogue-stop-public-home-oct7/video/page@eeba6571ac1a7d90f6fed53c085f408f.webm",
+          "sha256": "c8b0588ee8026668fdf7ae1f0e3ed0d26e443a51234b1b52e55531d43c24e058",
+          "bytes": 6318925
+        }
+      ]
+    }
+  ],
+  "deployment": {
+    "build": {
+      "source": "bcde17d",
+      "startedAt": "2026-10-07T08:08:09.463599+00:00",
+      "sourceSha256": "553abc15fb91f6395c76f84ac0ad7ee3dbe5d0a9960b15be81a6cac27c31a1fe",
+      "diskBefore": 78.84847280580011,
+      "passed": true,
+      "finishedAt": "2026-10-07T08:13:01.949439+00:00",
+      "logSha256": "66ab7ea4cfe27512bc79f38e4064ee52b1884dc9c085bc8113a3ae384fa67797",
+      "image": "sha256:b992342b139654737b9694a7e6f5d073f7f951d6400cc9f00b9b581ca2225697"
+    },
+    "deploy": {
+      "action": "deploy",
+      "at": "2026-10-07T08:13:12.778029+00:00",
+      "source": "bcde17d",
+      "image": "sha256:b992342b139654737b9694a7e6f5d073f7f951d6400cc9f00b9b581ca2225697",
+      "previous": "sha256:dd56ba7ea162ec8663886a743948590936ff7794af02d26a40834292581f14eb"
+    },
+    "public-health": {
+      "at": "2026-10-07T08:13:30.949935+00:00",
+      "otherServicesUnchanged": 14,
+      "routes": [
+        {
+          "path": "/",
+          "status": 200
+        },
+        {
+          "path": "/agents",
+          "status": 200
+        },
+        {
+          "path": "/agents/tournaments",
+          "status": 200
+        },
+        {
+          "path": "/docs",
+          "status": 200
+        },
+        {
+          "path": "/api/agents/config",
+          "status": 200
+        },
+        {
+          "path": "/api/config",
+          "status": 200
+        }
+      ]
+    }
+  },
+  "finalNormalSeries": {
+    "matches": [
+      {
+        "app": "0x35C617eAEB6Deb8F22d78606b479522299a6C373",
+        "epoch": "1",
+        "id": "877"
+      },
+      {
+        "app": "0x87559348DDDa47f42Ce60a60E253F08B979e02BD",
+        "epoch": "1",
+        "id": "879"
+      },
+      {
+        "app": "0xAf19AE4284b3a61B58aF38174B03A70C0789D1e3",
+        "epoch": "1",
+        "id": "880"
+      },
+      {
+        "app": "0x123B20c51473f5732F446b87B658FcF7E389F5EA",
+        "epoch": "1",
+        "id": "881"
+      },
+      {
+        "app": "0x64bF382cdF1d96f0f19819c23f441beeDf0377F5",
+        "epoch": "1",
+        "id": "878"
+      }
+    ],
+    "overallPasses": 3,
+    "syncPasses": 5,
+    "fullFiveMatchAcceptance": false
+  }
+}
