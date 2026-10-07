@@ -119,3 +119,19 @@ A bounded cleanup removed 36 additional untagged intermediate images found in
 six specific obsolete PONGIT build logs, after checking all container references.
 Usable disk is 78.91 percent. No runtime/rollback image, volume or evidence was
 removed. Source finality/import still waits for the actual release deadlines.
+
+## Canonical retirement — 11:48 UTC
+
+The sole retirement worker exited zero at 11:47:42 with eleven releases and
+eleven exact-root verifications. Independent block 68962169 confirms all eleven
+predecessors have status None and exactly the recorded finalized root/count.
+No force-close was used. Do not restart the worker or repeat these transactions.
+
+Targeted source finality is now running under the retained archive signer. Two
+launch mistakes failed before creating any container or transaction: a singleton
+Compose retained an absent dependency, and the human command was inherited from
+the image. Both failed attempts are preserved; the bounded second attempts use
+the same approved executables. The human source has two canonically final results
+at block 68962465 and its temporary finality helper is stopped (exit 1, no OOM).
+The agent helper is still finalizing the remaining published results; import has
+not begun.

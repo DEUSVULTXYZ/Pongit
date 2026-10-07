@@ -47,6 +47,7 @@ def start(config, role, label, seconds):
     assert not path.exists(), 'Inspect prior phase rather than overwriting it'
     config['services'] = {role: config['services'][role]}
     config['services'][role]['restart'] = 'no'
+    config['services'][role].pop('depends_on', None)
     save(path, config)
     subprocess.run(['docker', 'compose', '-p', 'pongit-reship-repeat-20261007', '-f', str(path), 'run', '-d', '--no-deps', '--name', name, role], check=True, stdout=subprocess.DEVNULL)
     print(json.dumps({'started': name, 'originalTimeoutSeconds': seconds}))
@@ -73,7 +74,12 @@ elif action == 'human-finality':
     s['environment'].update(PONG_INDEPENDENT_ADMISSION='false', ROOMS_ADMISSION_ENABLED='false')
     # The existing finality observer runs, but admissionReady returns before any
     # reserve opening when PONG_INDEPENDENT_ADMISSION is false.
-    s['command'] = ['timeout', '--signal=TERM', '--kill-after=30', '600', *s['command']]
+    command = s.get('command')
+    if command is None:
+        image = json.loads(subprocess.check_output(['docker', 'image', 'inspect', s['image']]))[0]
+        command = image['Config']['Cmd']
+    assert command == ['node', '--import', 'tsx', 'relayer/src/main.ts']
+    s['command'] = ['timeout', '--signal=TERM', '--kill-after=30', '600', *command]
     start(c, 'relayer', 'human-finality', 600)
 elif action == 'roles-audit':
     released()
