@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {chromium,expect} from '@playwright/test';
-import {decodeErrorResult,decodeEventLog,decodeFunctionData,keccak256,parseTransaction} from 'viem';
+import {decodeErrorResult,decodeEventLog,decodeFunctionData,decodeFunctionResult,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
@@ -236,6 +236,10 @@ page.on('response',async response=>{try{
  const request=response.request(),body=request.postDataJSON();if(!body||Array.isArray(body))return;
  if(body.method==='eth_call'&&new URL(response.url()).hostname.endsWith('.fly.dev')){
   const value=await response.json();if(value.error){report.engineReadErrors??=[];report.engineReadErrors.push({at:new Date().toISOString(),message:clean(value.error)});}
+  try{const call=decodeFunctionData({abi:synchronizedAgentArenaAbi,data:body.params[0].data});if(call.functionName==='launchClock'&&value.result){
+   const [deadline,clock]=decodeFunctionResult({abi:synchronizedAgentArenaAbi,functionName:'launchClock',data:value.result});
+   (report.launchReads??=[]).push({at:new Date().toISOString(),deadline:String(deadline),clock:String(clock)});
+  }}catch{/* Retain only the public launch clock, never other call data. */}
  }
  if(!['interlude_sendTransaction','interlude_getTransactionReceipt','eth_getTransactionReceipt'].includes(body.method))return;
  const reply=await response.json();
@@ -280,9 +284,12 @@ await context.addInitScript(()=>{
   (window as any).__keys.push({at:performance.now(),dir:label==='Move up'?'ArrowUp':'ArrowDown'});
   (window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:label==='Move up'?-1:1});
  },true);
- const pointerStop=(e:Event)=>{if((e.target as Element)?.closest('button[aria-label="Move up"],button[aria-label="Move down"]'))
-  (window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:0});};
- window.addEventListener('pointerup',pointerStop,true);window.addEventListener('pointercancel',pointerStop,true);
+ // Keep injected callbacks anonymous: tsx's named-function helper is not part
+ // of the browser init-script closure.
+ window.addEventListener('pointerup',e=>{if((e.target as Element)?.closest('button[aria-label="Move up"],button[aria-label="Move down"]'))
+  (window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:0});},true);
+ window.addEventListener('pointercancel',e=>{if((e.target as Element)?.closest('button[aria-label="Move up"],button[aria-label="Move down"]'))
+  (window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:0});},true);
  setInterval(()=>{const digit=document.querySelector('.match-countdown-digit')?.textContent;if(digit){(window as any).__digits.push(digit);
   (window as any).__firstCountdownAt??=new Date().toISOString();}},30);
 });
@@ -363,7 +370,7 @@ try{
   assert(!await page.getByText('Match paused',{exact:true}).isVisible(),'Stationary player became paused on a responsive connection');
   if(process.env.PONG_REQUIRE_NO_STARTUP_PAUSE==='1')assert.equal(report.startupResumes,0,'Initial countdown unnecessarily became a recovery countdown');
  }
- assert(report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1'),'Real launch countdown incomplete');
+ report.countdownComplete=report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1');
  const before=assertions;
  if(homeLogin){assert.equal(before,report.homeLoginAssertions,'Agent challenge must reuse the human login');report.checks.push('Human login and agent challenge used one passkey ceremony');}
  const naturalDeadline=Date.now()+420000;
@@ -460,6 +467,8 @@ try{
  await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).waitFor({timeout:10000});
  assert.match(await page.locator('.outcome-score').innerText(),new RegExp(`${report.result.scoreA}\\s*:\\s*${report.result.scoreB}`));
  report.checks.push('Final score and result window survived the delayed terminal frame');
+ // Finish the owned fixture and retain movement evidence even if admission or
+ // countdown failed. This never turns that failed gate into a passing trial.
  // Retain every measured gate even when another assertion fails. Diagnostics
  // never turn a failed run into a pass or discard a rejected command.
  measurePeer();
@@ -467,6 +476,7 @@ try{
  report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.confirmedInput.samples>=(naturalMatch||cadenceProbe?20:100)&&report.confirmedInput.p95Ms<=300&&report.confirmedInput.mismatches.length===0,
   player:report.sync?report.sync.p95FrameMs<=20&&report.sync.maxHoldMs<=500&&report.sync.frameGaps.length===0&&report.sync.snapshotJumps.length===0&&report.sync.paddleSamples>100&&report.sync.paddleJumps.length===0:null,
   spectator:report.spectatorSync?report.spectatorSync.p95FrameMs<=20&&report.spectatorSync.maxHoldMs<=500&&report.spectatorSync.frameGaps.length===0:null};
+ assert(report.countdownComplete,'Real launch countdown incomplete');
  const requiredControls=naturalMatch||cadenceProbe?20:100;
  assert(report.submissions.length>=requiredControls,'Insufficient command submissions');
  assert(report.submissions.every((s:any)=>!s.error),'At least one command submission was rejected; inspect action and error metadata');

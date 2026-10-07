@@ -694,47 +694,6 @@
   }
 }
 
-@media (max-width: 767px) and (min-height: 501px) {
-  .rooms-header {
-    display: grid;
-    grid-template-columns: auto auto auto minmax(0, 1fr);
-    gap: 6px 8px;
-  }
-  .rooms-header .brand {
-    grid-column: 1/4;
-    grid-row: 1;
-    min-width: 170px;
-    justify-self: start;
-  }
-  .rooms-header-actions {
-    display: contents;
-  }
-  .rooms-header .arcade-settings-toggle {
-    grid-column: 4;
-    grid-row: 1;
-    max-width: none;
-    margin: 0;
-    justify-self: end;
-  }
-  .rooms-header-actions > a {
-    grid-column: 1;
-    grid-row: 2;
-    justify-self: start;
-  }
-  .rooms-header .rooms-ranking-toggle {
-    grid-column: 2;
-    grid-row: 2;
-  }
-  .rooms-header [aria-label="More arcade activities"] {
-    grid-column: 3;
-    grid-row: 2;
-  }
-  .rooms-header .rooms-account-toggle {
-    grid-column: 4;
-    grid-row: 2;
-    max-width: 150px;
-  }
-}
 @media (max-height: 500px) and (orientation: landscape) {
   .rooms-home {
     margin-top: 16px;

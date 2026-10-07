@@ -5,6 +5,7 @@ import {chromium} from '@playwright/test';
 const run=process.env.PONG_HEADER_RUN!;assert(/^[a-z0-9-]+$/.test(run));
 const out=`artifacts/qualification/${run}`;await mkdir(out,{recursive:true});
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',checks:[],passed:false,physicalMobile:false};
+const candidateGrid=process.env.PONG_HEADER_CANDIDATE_GRID==='1';report.candidateGrid=candidateGrid;
 for(const channel of ['chrome','msedge']){
  const browser=await chromium.launch({channel,headless:true});
  try{for(const [width,height] of [[360,844],[390,844],[768,1024],[1440,1000],[844,390]]){
@@ -13,6 +14,7 @@ for(const channel of ['chrome','msedge']){
   for(const [index,path] of ['/','/agents','/agents/tournaments'].entries()){
    await page.goto(report.origin+path,{waitUntil:'domcontentloaded'});
    await page.getByRole('button',{name:'Arcade settings',exact:true}).waitFor();await page.waitForTimeout(750);
+   if(candidateGrid)await page.addStyleTag({content:'@media(max-width:767px){.rooms-header .rooms-header-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}.rooms-header .rooms-header-actions>:is(a,button):not(.arcade-settings-toggle){grid-area:auto;justify-self:stretch;max-width:none;overflow-wrap:normal}}'});
    const layout=await page.evaluate(()=>{
     const header=document.querySelector('header')!,bounds=header.getBoundingClientRect();
     const items=[...header.querySelectorAll<HTMLElement>('a,button')].filter(e=>e.getBoundingClientRect().width>0).map(e=>{
