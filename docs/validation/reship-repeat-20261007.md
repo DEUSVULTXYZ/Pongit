@@ -60,6 +60,39 @@ The latest input/session/mobile fixes from `bcde17d` remain part of the candidat
 The previously recorded admission and degraded-network failures remain failed.
 No new browser success, public cutover or final qualification is claimed here.
 
+## Preparation update — 11:06 UTC
+
+Interlude control reports all eleven predecessor sessions stopped. The normal
+release worker still owns the real cooldown and exact sealing. Do not reopen
+those apps or repeat their closes. No gameplay driver is running.
+
+Four existing scoped service keys are retained in the target preparation, with
+their original signer journals. No new role funding is necessary. One separately
+journaled transfer moved 40 test MON from the owned sponsor to the original
+operator, leaving 47.445891924 MON in the sponsor and 80.095948356 MON in the
+operator immediately afterward. Transaction:
+`0xe2d4102522d39296866b3dabe22de56b1a2c48cfc43b37991f30c2cf9e5a0440`.
+Do not repeat it. No user funding is requested.
+
+The prepared backup is also off-VPS verified: six files, 73,256,469 bytes,
+manifest `cfb743fee0037746c7dac74fb3f8c7e0654fd4e8bd0386a5391655f24d540211`.
+Its Windows copy is under the same private backup root, `backup-prepared`.
+
+SDK 0.2.3 runtime images built from the exact previous image digests:
+
+- Agents: `sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39`.
+- Human: `sha256:ed30fc81469f50415cb84e284cfac7f6beb6f65ed7d3c78932bcf600913621a1`.
+
+Only the audited SDK/CLI packages and matching lockfile changed in these runtime
+layers. Existing gameplay code and reviewed source mounts are retained. The
+images are prepared, not serving. Web dependency preparation is separate; the
+final web build still needs the new contract manifests.
+
+Five untagged intermediate PONGIT build images were removed after checking their
+original build logs and every active/stopped container reference. Runtime and
+rollback images, volumes and all failed evidence remain intact. Usable disk was
+79.03 percent before the new dependency build.
+
 ## Rollback
 
 Before closure, the previous compatible services could resume. After closure,
