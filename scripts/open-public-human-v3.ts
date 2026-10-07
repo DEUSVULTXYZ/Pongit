@@ -10,9 +10,11 @@ import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {abi as lobbyAbi} from '../shared/abi-independent-ReusableEventsLobby';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 const m=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
-assert.equal(process.env.PONG_PUBLIC_HUMAN_MIGRATION,'public-human-v3-20261005');
-assert.equal(m.prefix,'public-human-v3-20261005');assert.equal(m.status,'sealed');assert.equal(m.hub,NO_LEASE_HUB);
-assert.equal(m.lobby,'0x527ccb705048820694a4ac209f83528db68fff3f');assert.equal(m.arenas.length,3);
+const prefix=process.env.PONG_PUBLIC_HUMAN_MIGRATION!,reship=prefix==='public-human-v3-20261007';
+assert(reship||prefix==='public-human-v3-20261005');
+assert.equal(m.prefix,prefix);assert.equal(m.status,'sealed');assert.equal(m.hub,NO_LEASE_HUB);
+if(reship){assert.equal(m.previous[0].lobby.toLowerCase(),'0x527ccb705048820694a4ac209f83528db68fff3f');assert.notEqual(m.lobby.toLowerCase(),m.previous[0].lobby.toLowerCase());}
+else assert.equal(m.lobby,'0x527ccb705048820694a4ac209f83528db68fff3f');assert.equal(m.arenas.length,3);
 const t=await chainTools(m.prefix+':initial-open'),report:any={startedAt:new Date().toISOString(),lobby:m.lobby,arenas:[],passed:false};
 try{
  for(const a of m.arenas){

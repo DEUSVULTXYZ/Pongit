@@ -20,3 +20,12 @@ test('a different artifact or expanded immutable mask cannot establish seed reje
   (a:any)=>{a.deployedBytecode.linkReferences.extra={Library:[{start:0,length:20}]};},
  ]){const altered=structuredClone(artifact);mutate(altered);assert.throws(()=>assertReviewedRatingContinuation(altered),/not been reviewed/);}
 });
+
+test('compiler AST labels may change without authorizing a different runtime mask',()=>{
+ const altered=structuredClone(artifact);
+ altered.deployedBytecode.immutableReferences=Object.fromEntries(Object.values(artifact.deployedBytecode.immutableReferences).map((v,i)=>['ast-'+i,v]));
+ assert.doesNotThrow(()=>assertReviewedRatingContinuation(altered));
+ const [mask]=Object.values(altered.deployedBytecode.immutableReferences) as {start:number;length:number}[][];
+ altered.deployedBytecode.immutableReferences.duplicate=[mask[0]];
+ assert.throws(()=>assertReviewedRatingContinuation(altered),/not been reviewed/);
+});

@@ -7,10 +7,15 @@ import {monadTestnet} from 'viem/chains';
 import {publicIndependentManifest} from '../shared/independent';
 import {independentReader} from '../shared/independent-read';
 import {readHubDelegation} from '../shared/rooms-hub';
+import {previousIndependentManifests} from '../shared/independent-history-scope';
 
-const source=publicIndependentManifest(JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8')));
-assert.equal(source.lobby.toLowerCase(),'0x5dbea9692d443e04e1bd0b74fb307b079a5cb212');
-assert.equal(source.hub.toLowerCase(),'0x3ef8327f69e09cf721772f345e2a887ea22cd595');
+const sourceRaw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
+const source=publicIndependentManifest(sourceRaw);
+const previous=previousIndependentManifests(sourceRaw.previous,source);
+assert(previous.length<8,'The next public manifest must retain every predecessor');
+const reship=process.env.PONG_PUBLIC_HUMAN_MIGRATION==='public-human-v3-20261007';
+assert.equal(source.lobby.toLowerCase(),reship?'0x527ccb705048820694a4ac209f83528db68fff3f':'0x5dbea9692d443e04e1bd0b74fb307b079a5cb212');
+assert.equal(source.hub.toLowerCase(),reship?'0x98922c6e5e4bea62761c71d2401c7ec2c26ec43e':'0x3ef8327f69e09cf721772f345e2a887ea22cd595');
 const base=createPublicClient({chain:monadTestnet,transport:http(process.env.RPC_URL,{retryCount:0,timeout:20000})});
 const db=new Pool({connectionString:process.env.PONG_INDEPENDENT_DATABASE_URL});
 const stringify=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2);
@@ -37,9 +42,9 @@ try{
  const pending=(await db.query("SELECT id,status FROM independent_operations WHERE status IN ('queued','pending')")).rows;
  const unsettled=(await db.query('SELECT id,player FROM independent_bettors WHERE lobby=$1 AND NOT settled',[source.lobby.toLowerCase()])).rows;
  const arenas=[];for(const a of source.arenas)arenas.push({app:a.app,delegation:await readHubDelegation(base,source.hub,a.app,block.number),reserved:await r.lobby('reservedMatch',[a.app]),bound:await r.arena(a.app,'boundMatch')});
- const codeHashes:Record<string,string>={};for(const at of [source.lobby,source.ratings,source.family,source.profiles,source.privateData,source.vault,source.market])codeHashes[at]=keccak256((await base.getCode({address:at,blockNumber:block.number}))!);
+ const codeHashes:Record<string,string>={};for(const m of [source,...previous])for(const at of [m.lobby,m.ratings,m.family,m.profiles,m.privateData,m.vault,m.market])codeHashes[at]=keccak256((await base.getCode({address:at,blockNumber:block.number}))!);
  assert.equal((await base.getBlock({blockNumber:block.number})).hash,block.hash,'Snapshot reorganized');
- const snapshot={schema:'public-human-continuation-v1',chainId:10143,source,sourceBlock:String(block.number),sourceHash:block.hash,sourceTimestamp:String(block.timestamp),codeHashes,
+ const snapshot={schema:'public-human-continuation-v1',chainId:10143,source,previous,sourceBlock:String(block.number),sourceHash:block.hash,sourceTimestamp:String(block.timestamp),codeHashes,
   count:String(count),revision:String(revision),buildGeneration:String(building),slots:[String(slot0),String(slot1)],genesis:source.genesis,
   ratings,pairSeeds:[...pairCounts].map(([pair,count])=>({pair,count})),profiles:original.profiles,results,rooms,pending,unsettled,arenas,
   ready:slot0===0n&&slot1===0n&&building===0n&&results.every(e=>e.finality)&&pending.length===0&&arenas.every(a=>a.reserved===0n),createdAt:new Date().toISOString()};

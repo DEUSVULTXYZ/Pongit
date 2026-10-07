@@ -28,10 +28,15 @@ assert([15,16].includes(rulesVersion),'Unknown immutable rules');
 const friendlyPause=rulesVersion===16?'heartbeat-v1':undefined;
 const hub=v3?NO_LEASE_HUB:source.hub,arenaArtifact=rulesVersion===16?'ProvisionedSynchronizedAgentArena':v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const rebalanced=process.env.PONG_HOUSE_POLICY==='progressive-v1';
-const recovery=process.env.PONG_RETIRED_TOURNAMENT==='public-23-authorized';
+const reship=process.env.PONG_RETIRED_TOURNAMENT==='public-39-reship-20261007';
+const recovery=reship||process.env.PONG_RETIRED_TOURNAMENT==='public-23-authorized';
 assert(process.env.PONG_RETIRED_TOURNAMENT===undefined||recovery,'Unreviewed tournament retirement');
-if(recovery)assert.equal(source.pool.toLowerCase(),'0x205d5739136d6cb73d732e1146e1ce034798a613','Retirement is bound to the public source');
-const retirementReason=keccak256(new TextEncoder().encode('PONGIT public tournament 23 interrupted for user-authorized v1 hosting recovery, 2026-10-03; published scores preserved; no champion'));
+const retiredId=reship?39:23;
+if(recovery)assert.equal(source.pool.toLowerCase(),reship?'0x1f7d8a7b470a724df48d1b72723d7782d8e6014a':'0x205d5739136d6cb73d732e1146e1ce034798a613','Retirement is bound to the public source');
+if(reship)assert.equal(prefix,'reusable-agents-20261007-1');
+const retirementReason=keccak256(new TextEncoder().encode(reship
+ ?'PONGIT public tournament 39 interrupted for user-authorized complete public reship, 2026-10-07; published scores preserved; no champion'
+ :'PONGIT public tournament 23 interrupted for user-authorized v1 hosting recovery, 2026-10-03; published scores preserved; no champion'));
 assert(process.env.PONG_HOUSE_POLICY===undefined||rebalanced,'Unreviewed house policy');
 assert(rulesVersion!==16||v3&&rebalanced,'Rules 16 require v3 and progressive policies');
 const sourceIndexBytes=await readFile('/metadata/source-agent-index.json');
@@ -108,7 +113,7 @@ try{
  if(r.modules?.RebalancedAgentCatalog&&!recovery)assert.equal(catalogArtifact,'RebalancedAgentCatalog','Existing catalogue cannot change migration type');
  if(recovery){
   assert(!r.common,'Cannot replace an imported public authority');
-  const retired={id:23,reason:retirementReason,sourceBook:source.tournaments};
+  const retired={id:retiredId,reason:retirementReason,sourceBook:source.tournaments};
   if(r.retiredTournament)assert.deepEqual(r.retiredTournament,retired);
   r.retiredTournament=retired;
   if(r.modules?.RebalancedAgentCatalog)assert.equal(await read('MigratingAgentCatalog',r.modules.RebalancedAgentCatalog,'importStarted'),false,'Original prepared catalogue must remain unused');
@@ -123,7 +128,7 @@ try{
  const dynamics=await deploy('ChaosDynamics',[effects,modifiers]),contacts=await deploy('ChaosContacts',[dynamics]),rally=await deploy('ChaosRally');
  const physics=await deploy('ChaosPhysics',[effects,rally,dynamics,contacts]),beacon=await deploy('DrandEvmnet'),draws=await deploy('ChaosDrawRules');
  const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]);await deploy('HouseInstances');
- const policies=catalogMigration.changed?await deploy('ProgressiveHousePolicies'):oldPolicies;
+ const policies=catalogMigration.changed||reship?await deploy('ProgressiveHousePolicies'):oldPolicies;
  assert.equal(await codeHash(policies),catalogMigration.targetPolicyHash,'Target controller differs from the journaled migration');
  Object.assign(r.modules,migratedHousePolicyModules(policies,rebalanced));
  const catalog=await deploy(catalogArtifact,[source.catalog,hashes.catalog,t.account.address,t.account.address,...(catalogMigration.changed||recovery?[policies]:[])]);
@@ -142,7 +147,7 @@ try{
  await frozen();
  const importAnchor=await t.base.getBlock();
  r.importAnchor??={block:String(importAnchor.number),hash:importAnchor.hash};await save();
- if(recovery)await write('catalog-retirement-23','RecoveringAgentCatalog',catalog,'authorizeRetirement',[23n,retirementReason]);
+ if(recovery)await write('catalog-retirement-'+retiredId,'RecoveringAgentCatalog',catalog,'authorizeRetirement',[BigInt(retiredId),retirementReason]);
  await write('catalog-start','MigratingAgentCatalog',catalog,'startImport');
  const pool=await deploy('ContinuingFiveLaneAgentPool',[catalog,hub,t.account.address,bridge,hashes.pool]);
  const verifier=await deploy('PublishedResultVerifier',[pool,hub]);

@@ -11,8 +11,11 @@ import {operatorNeedsFunding,operatorFundingMessage} from '../shared/operator-fu
 import {rebroadcastFundedOperation} from '../shared/operator-rebroadcast';
 import {prepareSponsoredTransaction} from '../relayer/src/sponsor-prepare';
 import {continuousSubmissionGuard} from '../shared/continuous-delegation';
+import {approvedRetirementGuard,type ApprovedRetirement} from '../shared/approved-retirement';
+import {readHubDelegation} from '../shared/rooms-hub';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 
-export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:ScopedWriter){
+export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:ScopedWriter,retirement?:ApprovedRetirement){
  assert.equal(process.env.PONG_INDEPENDENT_WRITE,'authorized-testnet');
  assert(/^[a-z0-9:-]+$/.test(prefix));
  if(scope&&!scope.keyFile)throw Error('Dedicated operator key path required');
@@ -28,9 +31,11 @@ export async function chainTools(prefix:string,fetchFn?:typeof fetch,scope?:Scop
  const db=new Pool({connectionString:process.env.DATABASE_URL});
  const wait=(ms:number)=>new Promise(r=>setTimeout(r,ms));
  const continuousCheck=continuousSubmissionGuard(base);
+ assert(!retirement||!scope,'Service roles cannot use manual retirement approval');
+ const approvedClose=retirement?approvedRetirementGuard(app=>readHubDelegation(base,NO_LEASE_HUB,app),retirement):undefined;
  const check=async(to:Address|undefined,data:Hex,value:bigint)=>{
   if(scope){assert(to,'Scoped roles cannot deploy contracts');scope.allowCall(to,data,value);}
-  await continuousCheck(to,data);
+  if(!approvedClose||!await approvedClose(to,data))await continuousCheck(to,data);
  };
  async function submit(name:string,data:Hex,to?:Address,value=0n){
   const id=`${prefix}:${name}`,c=await db.connect(); let locked=false;

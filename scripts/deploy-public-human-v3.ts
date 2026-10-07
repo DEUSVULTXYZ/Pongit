@@ -7,14 +7,18 @@ import {independentReader} from '../shared/independent-read';
 import {publicIndependentManifest} from '../shared/independent';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {retryOperatorContention} from '../shared/operator-contention';
+import {previousIndependentManifests} from '../shared/independent-history-scope';
 
-assert.equal(process.env.PONG_PUBLIC_HUMAN_MIGRATION,'public-human-v3-20261005');
-const prefix='public-human-v3-20261005',out=process.env.PONG_INDEPENDENT_MANIFEST!;
+const prefix=process.env.PONG_PUBLIC_HUMAN_MIGRATION!,reship=prefix==='public-human-v3-20261007';
+assert(reship||prefix==='public-human-v3-20261005','Explicit public migration required');
+const out=process.env.PONG_INDEPENDENT_MANIFEST!;
 assert(out.startsWith('/secrets/'));
 const text=await readFile(process.env.PONG_INDEPENDENT_SNAPSHOT!,'utf8'),snapshot=JSON.parse(text),migrationHash=keccak256(new TextEncoder().encode(text));
 assert.equal(snapshot.schema,'public-human-continuation-v1');assert.equal(snapshot.ready,true);
 const source=publicIndependentManifest(snapshot.source);
-assert.equal(source.lobby.toLowerCase(),'0x5dbea9692d443e04e1bd0b74fb307b079a5cb212');
+const previous=previousIndependentManifests(snapshot.previous,source);
+assert(previous.length<8,'Preserve every predecessor within the public runtime bound');
+assert.equal(source.lobby.toLowerCase(),reship?'0x527ccb705048820694a4ac209f83528db68fff3f':'0x5dbea9692d443e04e1bd0b74fb307b079a5cb212');
 assert.equal(snapshot.chainId,10143);assert.equal(snapshot.buildGeneration,'0');
 assert(snapshot.results.length===Number(snapshot.count)&&snapshot.results.every((e:any)=>e.finality));
 assert(snapshot.slots.every((x:string)=>x==='0')&&snapshot.pending.length===0);
@@ -39,8 +43,9 @@ try{m=JSON.parse(await readFile(out,'utf8'));}catch(e){if((e as NodeJS.ErrnoExce
 m??={prefix,purpose:'Public human hub v3 continuation',production:false,chainId:10143,rulesVersion:14,countdownClock:'engine-ticks-v1',arenaCount:3,
  hub:NO_LEASE_HUB,pressureSigner:source.pressureSigner,admissionSigner:source.admissionSigner,hostedProvisioning:'owner-consent-v1',provisioningOwner:provisioner,
  family:source.family,profiles:source.profiles,privateData:source.privateData,genesis:source.genesis,createdAt:new Date().toISOString(),startBlock:String(await t.base.getBlockNumber()),
- migrationHash,previous:[source],arenas:[],modules:{}};
+ migrationHash,previous:[source,...previous],arenas:[],modules:{}};
 assert.equal(m.prefix,prefix);assert.equal(m.migrationHash,migrationHash);assert.equal(m.hub,NO_LEASE_HUB);assert.equal(m.provisioningOwner,provisioner);
+assert.deepEqual(m.previous,[source,...previous],'Historical routes changed');
 for(const key of ['family','profiles','privateData','pressureSigner','admissionSigner'] as const)assert.equal(m[key].toLowerCase(),source[key]!.toLowerCase());
 const save=async()=>{await writeFile(out+'.next',JSON.stringify(m,null,2)+'\n',{mode:0o600});await rename(out+'.next',out);};
 try{

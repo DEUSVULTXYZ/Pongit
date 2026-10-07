@@ -7,14 +7,19 @@ import {publicIndependentManifest} from '../shared/independent';
 import {independentReader} from '../shared/independent-read';
 import {independentRules} from '../shared/independent-rules';
 import {readHubDelegation} from '../shared/rooms-hub';
+import {previousIndependentManifests} from '../shared/independent-history-scope';
 const snapshot=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_SNAPSHOT!,'utf8'));
-const m=publicIndependentManifest(JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8')));
+const raw=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
+const m=publicIndependentManifest(raw);
 const base=createPublicClient({transport:http(process.env.RPC_URL,{retryCount:0,timeout:15000})});
 const db=new Pool({connectionString:process.env.PONG_INDEPENDENT_DATABASE_URL});
 const report:any={at:new Date().toISOString(),source:snapshot.source.lobby,target:m.lobby,passed:false};
 try{
  const block=await base.getBlock(),r=independentReader(base,m,block.number),old=independentReader(base,snapshot.source,block.number);
  assert.equal(m.hub.toLowerCase(),'0x98922c6e5e4bea62761c71d2401c7ec2c26ec43e');
+ const previous=previousIndependentManifests(raw.previous,m);
+ assert.deepEqual(previous,[publicIndependentManifest(snapshot.source),...previousIndependentManifests(snapshot.previous,snapshot.source)],'Every historical route and financial address must survive');
+ report.historicalLobbies=previous.map(p=>p.lobby);
  for(const k of ['family','profiles','privateData'] as const){assert.equal(m[k].toLowerCase(),snapshot.source[k].toLowerCase());assert.equal(keccak256((await base.getCode({address:m[k],blockNumber:block.number}))!),snapshot.codeHashes[snapshot.source[k]]);}
  for(const v of snapshot.ratings)assert.deepEqual(await r.ratings('ratingOf',[v.player,v.mode]),await old.ratings('ratingOf',[v.player,v.mode]));
  assert.equal(String(await old.ratings('count')),snapshot.count);assert.equal(String(await old.ratings('revision')),snapshot.revision);
