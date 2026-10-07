@@ -1,0 +1,1141 @@
+{
+  "source": "6bb63f8",
+  "scope": "Compatible web-only fluidity corrections; real production tests, no new delegation or engine deployment, no 24-hour claim",
+  "tests": {
+    "typescript": 1044,
+    "failed": 0,
+    "rootTypecheck": true
+  },
+  "deploy": {
+    "action": "deploy",
+    "at": "2026-10-07T14:11:39.223180+00:00",
+    "source": "6bb63f8",
+    "image": "sha256:a66f847dff8a275cc1e75814bf28314ab5b140a116f95dc082bd321922ec1841",
+    "previous": "sha256:4d3244c434acb9452d31b0931a802e4926a451d475444061f713a200174629b6"
+  },
+  "runtime": {
+    "at": "2026-10-07T14:15:22.432930+00:00",
+    "containers": [
+      {
+        "name": "/pongit-arcade-five-arcade-web-1",
+        "image": "sha256:a66f847dff8a275cc1e75814bf28314ab5b140a116f95dc082bd321922ec1841",
+        "status": "running",
+        "startedAt": "2026-10-07T14:11:38.938898248Z"
+      },
+      {
+        "name": "/pongit-arcade-five-engines-1",
+        "image": "sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39",
+        "status": "running",
+        "startedAt": "2026-10-07T12:15:06.730077828Z"
+      },
+      {
+        "name": "/pongit-arcade-five-admission-1",
+        "image": "sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39",
+        "status": "running",
+        "startedAt": "2026-10-07T12:15:06.759245133Z"
+      },
+      {
+        "name": "/pongit-relayer-1",
+        "image": "sha256:ed30fc81469f50415cb84e284cfac7f6beb6f65ed7d3c78932bcf600913621a1",
+        "status": "running",
+        "startedAt": "2026-10-07T12:20:06.863349176Z"
+      }
+    ]
+  },
+  "publicRoutes": {
+    "/": 200,
+    "/agents": 200,
+    "/agents/tournaments": 200,
+    "/rooms": 200,
+    "/docs": 200
+  },
+  "bots": [
+    {
+      "run": "chaos1",
+      "report": "artifacts/qualification/catalogue-fluid-input-chaos1/report.json",
+      "sha256": "761604ab5bf04742028616a3f2391a97bf89e40356b0dfba2e499cfb5b7240a4",
+      "passed": true,
+      "ref": {
+        "app": "0x413bdd7c91a3A2Fd7d82be93e3c211Db9A83A3ca",
+        "epoch": "1",
+        "id": "892"
+      },
+      "admissionMs": 7342,
+      "error": null,
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "localP95Ms": 17.299999952316284,
+      "receiptP95Ms": 17.51929999999993,
+      "submissionP95Ms": 17.51929999999993,
+      "peerReception": {
+        "samples": 137,
+        "p95Ms": 16.052490234375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 116.79999999999563,
+      "observerMaxHoldMs": 116.5,
+      "visibleResyncs": 0,
+      "contractPauseMs": 0,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    },
+    {
+      "run": "chaos2",
+      "report": "artifacts/qualification/catalogue-fluid-input-chaos2/report.json",
+      "sha256": "835817b6860c2e38d11f4b9115cbc523930156fe2bb524557bdafeca0c992425",
+      "passed": false,
+      "ref": {
+        "app": "0x1b91501024BB2121F0222AEe3a9B3897C8E55f35",
+        "epoch": "1",
+        "id": "894"
+      },
+      "admissionMs": 8129,
+      "error": "Completed fixture must have a published result",
+      "performance": null,
+      "naturalGates": null,
+      "localP95Ms": 16.200000047683716,
+      "receiptP95Ms": 19.886500000000524,
+      "submissionP95Ms": 19.886500000000524,
+      "peerReception": {
+        "samples": 103,
+        "p95Ms": 14.11083984375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 149.89999999999418,
+      "observerMaxHoldMs": 150.20000000000437,
+      "visibleResyncs": 0,
+      "contractPauseMs": 0,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    },
+    {
+      "run": "chaos2b",
+      "report": "artifacts/qualification/catalogue-fluid-input-chaos2b/report.json",
+      "sha256": "64c0a2a921932262f8e8cfa0dfeae2904a63fdb09102fc72a6f209a4c035b846",
+      "passed": true,
+      "ref": {
+        "app": "0x8cfB502183aD448b0B939eF8dbEAD88447Cbe5af",
+        "epoch": "1",
+        "id": "896"
+      },
+      "admissionMs": 7541,
+      "error": null,
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "localP95Ms": 15.600000143051147,
+      "receiptP95Ms": 18.53139999999985,
+      "submissionP95Ms": 18.53139999999985,
+      "peerReception": {
+        "samples": 100,
+        "p95Ms": 15.079833984375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 149.8000000000029,
+      "observerMaxHoldMs": 166.5,
+      "visibleResyncs": 0,
+      "contractPauseMs": 0,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    },
+    {
+      "run": "chaos3",
+      "report": "artifacts/qualification/catalogue-fluid-input-chaos3/report.json",
+      "sha256": "736a22d5018ca1c115e794879a9f62b535628d88b1d5548b452ef84af3429c95",
+      "passed": true,
+      "ref": {
+        "app": "0x835c31294563563F45D093D764E1Fb88D88022Bb",
+        "epoch": "1",
+        "id": "897"
+      },
+      "admissionMs": 7210,
+      "error": null,
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "localP95Ms": 16.90000009536743,
+      "receiptP95Ms": 17.1336999999985,
+      "submissionP95Ms": 17.1336999999985,
+      "peerReception": {
+        "samples": 104,
+        "p95Ms": 15.633544921875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 116.40000000000146,
+      "observerMaxHoldMs": 133,
+      "visibleResyncs": 0,
+      "contractPauseMs": 0,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    },
+    {
+      "run": "chaos4",
+      "report": "artifacts/qualification/catalogue-fluid-input-chaos4/report.json",
+      "sha256": "5eda65e26a6e80f5076447f801b4cb691dad8c380b5e6ec7066dc66c434b9c2b",
+      "passed": true,
+      "ref": {
+        "app": "0xA91e920376Bf963eA56A8b165375C5838ddAd881",
+        "epoch": "1",
+        "id": "898"
+      },
+      "admissionMs": 7592,
+      "error": null,
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "localP95Ms": 16,
+      "receiptP95Ms": 16.572299999999814,
+      "submissionP95Ms": 16.572299999999814,
+      "peerReception": {
+        "samples": 110,
+        "p95Ms": 12.22021484375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 183.29999999999927,
+      "observerMaxHoldMs": 183.40000000000146,
+      "visibleResyncs": 0,
+      "contractPauseMs": 0,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    },
+    {
+      "run": "chaos5",
+      "report": "artifacts/qualification/catalogue-fluid-input-chaos5/report.json",
+      "sha256": "09fefeb80c7d548ef399421bdd1e09c43538ffb27498b42a6f06c0c7cbdb644d",
+      "passed": false,
+      "ref": {
+        "app": "0x392078100693D37501EeA294df51f248C59C0ae1",
+        "epoch": "1",
+        "id": "899"
+      },
+      "admissionMs": 8148,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "localP95Ms": 14.699999809265137,
+      "receiptP95Ms": 15.439800000000105,
+      "submissionP95Ms": 15.439800000000105,
+      "peerReception": {
+        "samples": 109,
+        "p95Ms": 11.210693359375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 133.59999999999854,
+      "observerMaxHoldMs": 83.40000000000146,
+      "visibleResyncs": 0,
+      "contractPauseMs": 0,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    },
+    {
+      "run": "classic1",
+      "report": "artifacts/qualification/catalogue-fluid-input-classic1/report.json",
+      "sha256": "f5339017afb1e0b8848a46d3fa9c6b818586d50693aed69e0d3ae9f6fa9d045d",
+      "passed": false,
+      "ref": {
+        "app": "0x413bdd7c91a3A2Fd7d82be93e3c211Db9A83A3ca",
+        "epoch": "1",
+        "id": "900"
+      },
+      "admissionMs": 9066,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "localP95Ms": 15.900000095367432,
+      "receiptP95Ms": 15.785100000000966,
+      "submissionP95Ms": 15.785100000000966,
+      "peerReception": {
+        "samples": 103,
+        "p95Ms": 11.306396484375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 133.10000000000218,
+      "observerMaxHoldMs": 149.60000000000218,
+      "visibleResyncs": 0,
+      "contractPauseMs": 0,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    },
+    {
+      "run": "classic2",
+      "report": "artifacts/qualification/catalogue-fluid-input-classic2/report.json",
+      "sha256": "66f9f70eb0a4814ce78d831633d5c7a896f311c7b888b894cc6cb7e1a56e7387",
+      "passed": true,
+      "ref": {
+        "app": "0x1b91501024BB2121F0222AEe3a9B3897C8E55f35",
+        "epoch": "1",
+        "id": "902"
+      },
+      "admissionMs": 6805,
+      "error": null,
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "localP95Ms": 15.600000143051147,
+      "receiptP95Ms": 14.692000000002736,
+      "submissionP95Ms": 14.692000000002736,
+      "peerReception": {
+        "samples": 100,
+        "p95Ms": 10.53076171875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 99.70000000000073,
+      "observerMaxHoldMs": 166.79999999999927,
+      "visibleResyncs": 0,
+      "contractPauseMs": 0,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    },
+    {
+      "run": "degraded1",
+      "report": "artifacts/qualification/catalogue-fluid-input-degraded1/report.json",
+      "sha256": "d55436b16b69d7024e5992c1de5b8e695ae20facbbbe931ab251c02695c0b20b",
+      "passed": false,
+      "ref": {
+        "app": "0x5BA62bd34b2408EA18277b75B279020407C0361c",
+        "epoch": "1",
+        "id": "903"
+      },
+      "admissionMs": 9846,
+      "error": "Natural-match synchronization gate failed",
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": false,
+        "player": false,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": false,
+        "noResume": false,
+        "noResync": false,
+        "peer": true,
+        "player": false,
+        "spectator": true,
+        "executionClock": true
+      },
+      "localP95Ms": 48.299999952316284,
+      "receiptP95Ms": 193.50280000000203,
+      "submissionP95Ms": 193.60129999999845,
+      "peerReception": {
+        "samples": 125,
+        "p95Ms": 104.02490234375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "maxHoldMs": 583.4000000000015,
+      "observerMaxHoldMs": 283.59999999999854,
+      "visibleResyncs": 1,
+      "contractPauseMs": 7233.299999999999,
+      "paddleJumps": 0,
+      "snapshotJumps": 0
+    }
+  ],
+  "pvp": [
+    {
+      "run": "browser-fluid7classic",
+      "sha256": "adf05ee96caa4276f0daa0a7c29998801d997b125cb8cb80a45f7b00dea6d551",
+      "report": "artifacts/independent-candidate/browser-fluid7classic/report.json",
+      "passed": true,
+      "error": null,
+      "syncGates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 610,
+        "p95Ms": 17.00341796875,
+        "clock": "same Playwright host",
+        "sendP95Ms": 18.675048828125
+      },
+      "webSocketCommands": 0,
+      "playerMetrics": [
+        {
+          "localP95Ms": 42.5,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 49.80000000000291,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4288,
+            "p95Pixels": 12.694279024600348,
+            "maxPixels": 24.37800000000101
+          }
+        },
+        {
+          "localP95Ms": 34.700000047683716,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 66.30000000000291,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4370,
+            "p95Pixels": 11.336323707806002,
+            "maxPixels": 19.697835218203494
+          }
+        },
+        {
+          "localP95Ms": null,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 66.79999999999927,
+          "frameP95Ms": 17.099999999998545,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 0
+          }
+        }
+      ],
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Contract matchmaking, two consents and automatic hosted admission",
+        "Real three-second countdown on both players and spectator",
+        "Natural match with both players controlling",
+        {
+          "finalScore": "7 : 6"
+        }
+      ]
+    },
+    {
+      "run": "browser-chaos-fluid7chaos",
+      "sha256": "f250f173559e328f772436095faa50e080ad4d5f7c8af919f04c8c63e24ac374",
+      "report": "artifacts/independent-candidate/browser-chaos-fluid7chaos/report.json",
+      "passed": false,
+      "error": "Natural PvP synchronization gate failed",
+      "syncGates": {
+        "natural": true,
+        "render": true,
+        "local": false,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 623,
+        "p95Ms": 20.5986328125,
+        "clock": "same Playwright host",
+        "sendP95Ms": 22.822998046875
+      },
+      "webSocketCommands": 0,
+      "playerMetrics": [
+        {
+          "localP95Ms": 50.5,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 133.3000000000029,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4264,
+            "p95Pixels": 13.360504553960084,
+            "maxPixels": 26.615820000000326
+          }
+        },
+        {
+          "localP95Ms": 35.200000047683716,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 117.09999999999854,
+          "frameP95Ms": 17.099999999998545,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4368,
+            "p95Pixels": 13.286748424181667,
+            "maxPixels": 27.377639999999843
+          }
+        },
+        {
+          "localP95Ms": null,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 0,
+          "frameP95Ms": null,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 0
+          }
+        }
+      ],
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Three members in a real Chaos room, dual consent and automatic spectator",
+        "Real three-second countdown on both players and spectator",
+        "Root-signed test MON bet accepted during a live Chaos rally",
+        {
+          "pageError": "Failed to read the 'sessionStorage' property from 'Window': Access is denied for this document."
+        },
+        "Natural match with both players controlling",
+        {
+          "finalScore": "7 : 6"
+        }
+      ]
+    },
+    {
+      "run": "browser-fluid7bclassic",
+      "sha256": "ab464a6c6fb59237248145f63c4ed9cebe6eae66588b1c9543ab9c1f41026301",
+      "report": "artifacts/independent-candidate/browser-fluid7bclassic/report.json",
+      "passed": false,
+      "error": "Natural PvP synchronization gate failed",
+      "syncGates": {
+        "natural": true,
+        "render": true,
+        "local": false,
+        "noPause": false,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 610,
+        "p95Ms": 16.66748046875,
+        "clock": "same Playwright host",
+        "sendP95Ms": 18.025146484375
+      },
+      "webSocketCommands": 0,
+      "playerMetrics": [
+        {
+          "localP95Ms": 16,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 99.89999999999418,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4570,
+            "p95Pixels": 2.2975805944241188,
+            "maxPixels": 23.54780242069205
+          }
+        },
+        {
+          "localP95Ms": 270.7999999523163,
+          "resyncs": 1,
+          "pauseMs": 0,
+          "maxHoldMs": 99.90000000000873,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4650,
+            "p95Pixels": 17.205230936846192,
+            "maxPixels": 99.18542465607214
+          }
+        },
+        {
+          "localP95Ms": null,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 83.40000000000146,
+          "frameP95Ms": 17.099999999998545,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 0
+          }
+        }
+      ],
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Contract matchmaking, two consents and automatic hosted admission",
+        "Real three-second countdown on both players and spectator",
+        "Natural match with both players controlling",
+        {
+          "finalScore": "2 : 7"
+        }
+      ]
+    },
+    {
+      "run": "browser-fluid7cclassic",
+      "sha256": "1ae1dfd1f2cca9e13721561c0dc6cf1887f74c54ced35bc0610369c07812ef92",
+      "report": "artifacts/independent-candidate/browser-fluid7cclassic/report.json",
+      "passed": true,
+      "error": null,
+      "syncGates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 647,
+        "p95Ms": 19.008544921875,
+        "clock": "same Playwright host",
+        "sendP95Ms": 18.37158203125
+      },
+      "webSocketCommands": 652,
+      "playerMetrics": [
+        {
+          "localP95Ms": 16.600000143051147,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 99.79999999998836,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4262,
+            "p95Pixels": 2.8657427617122835,
+            "maxPixels": 44.76447259113996
+          }
+        },
+        {
+          "localP95Ms": 16.5,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 83.5,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4338,
+            "p95Pixels": 2.596852082055875,
+            "maxPixels": 4.890215224601377
+          }
+        },
+        {
+          "localP95Ms": null,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 100,
+          "frameP95Ms": 17.099999999998545,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 0
+          }
+        }
+      ],
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Contract matchmaking, two consents and automatic hosted admission",
+        "Real three-second countdown on both players and spectator",
+        "Natural match with both players controlling",
+        {
+          "finalScore": "7 : 6"
+        }
+      ]
+    },
+    {
+      "run": "browser-chaos-fluid7cchaos",
+      "sha256": "3cd04095236f86b3b8cb21f243a951ddf6c5df83ea1443ebfa2d165f705f2c59",
+      "report": "artifacts/independent-candidate/browser-chaos-fluid7cchaos/report.json",
+      "passed": true,
+      "error": null,
+      "syncGates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 646,
+        "p95Ms": 16.349609375,
+        "clock": "same Playwright host",
+        "sendP95Ms": 16.478515625
+      },
+      "webSocketCommands": 654,
+      "playerMetrics": [
+        {
+          "localP95Ms": 14.5,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 116.60000000000582,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4312,
+            "p95Pixels": 2.591410606967031,
+            "maxPixels": 10.887060089615545
+          }
+        },
+        {
+          "localP95Ms": 14.200000047683716,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 116.69999999999709,
+          "frameP95Ms": 17.09999999999127,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 4406,
+            "p95Pixels": 2.463137389871747,
+            "maxPixels": 11.373801350674853
+          }
+        },
+        {
+          "localP95Ms": null,
+          "resyncs": 0,
+          "pauseMs": 0,
+          "maxHoldMs": 0,
+          "frameP95Ms": null,
+          "paddleJumps": 0,
+          "snapshotJumps": 0,
+          "correction": {
+            "samples": 0
+          }
+        }
+      ],
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Three members in a real Chaos room, dual consent and automatic spectator",
+        "Real three-second countdown on both players and spectator",
+        "Root-signed test MON bet accepted during a live Chaos rally",
+        {
+          "pageError": "Failed to read the 'sessionStorage' property from 'Window': Access is denied for this document."
+        },
+        "Natural match with both players controlling",
+        {
+          "finalScore": "7 : 6"
+        }
+      ]
+    }
+  ],
+  "touch": {
+    "report": "artifacts/qualification/catalogue-fluid-input-touch1/report.json",
+    "sha256": "80e864a780ad889505792de7b60552d7fee5544ccd0f1085540f752db1065c5d",
+    "passed": true,
+    "ref": {
+      "app": "0x8cfB502183aD448b0B939eF8dbEAD88447Cbe5af",
+      "epoch": "1",
+      "id": "904"
+    },
+    "result": {
+      "hash": "0x5d2bbf80f5365b4ce4d20b7ff6d1b042b1e098b9559e990b6c9369278ffc0246",
+      "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+      "status": 3,
+      "scoreA": 2,
+      "scoreB": 7,
+      "elapsedUs": "37625007",
+      "finality": false
+    },
+    "admissionMs": 7781,
+    "localP95Ms": 15.100000143051147,
+    "receiptP95Ms": 112.83469999999943,
+    "peerReception": {
+      "samples": 94,
+      "p95Ms": 10.00830078125,
+      "clock": "same Playwright host performance.timeOrigin",
+      "basis": "send to independent observer ControlQueued live event"
+    },
+    "naturalGates": {
+      "noPause": true,
+      "noResume": true,
+      "noResync": true,
+      "peer": true,
+      "player": true,
+      "spectator": true,
+      "executionClock": true
+    },
+    "performance": {
+      "admission": true,
+      "localInput": true,
+      "confirmedInput": true,
+      "player": true,
+      "spectator": true
+    },
+    "playerHoldMs": 116.90000000000146,
+    "observerHoldMs": 183.70000000000073,
+    "stopping": {
+      "samples": 47,
+      "p95DriftPixels": 0,
+      "maxDriftPixels": 0
+    }
+  },
+  "degraded": {
+    "ref": {
+      "app": "0x5BA62bd34b2408EA18277b75B279020407C0361c",
+      "epoch": "1",
+      "id": "903"
+    },
+    "naturalEnded": true,
+    "admissionMs": 9846,
+    "submissionP95Ms": 193.60129999999845,
+    "receiptP95Ms": 193.50280000000203,
+    "peerReception": {
+      "samples": 125,
+      "p95Ms": 104.02490234375,
+      "clock": "same Playwright host performance.timeOrigin",
+      "basis": "send to independent observer ControlQueued live event"
+    },
+    "naturalGates": {
+      "noPause": false,
+      "noResume": false,
+      "noResync": false,
+      "peer": true,
+      "player": false,
+      "spectator": true,
+      "executionClock": true
+    },
+    "liveness": {
+      "heartbeats": 84,
+      "resumes": 2
+    },
+    "performance": {
+      "admission": false,
+      "localInput": true,
+      "confirmedInput": false,
+      "player": false,
+      "spectator": true
+    },
+    "sync": {
+      "visibleResyncs": 1,
+      "p95FrameMs": 17.099999999998545,
+      "maxHoldMs": 583.4000000000015,
+      "contractPauseMs": 7233.299999999999,
+      "snapshotJumps": [],
+      "paddleJumps": []
+    },
+    "injectedNetworkDelayEachWayMs": 75,
+    "httpOnly": true
+  },
+  "backup": {
+    "at": "2026-10-07T14:20:22.169907+00:00",
+    "passed": true,
+    "path": "/opt/pongit/releases/fluid-input-6bb63f8/backup-final",
+    "databases": [
+      "pong_human_rules14",
+      "pong_relayer",
+      "agent_five",
+      "reusable_agents_candidate",
+      "reusable_shared_indexer14"
+    ],
+    "files": 6,
+    "bytes": 74093274,
+    "manifestSha256": "068287c898f198a0f93b8a0d307e7c4277aa512ec6f39d469993af9448f4744d"
+  },
+  "offVps": {
+    "manifestSha256": "068287c898f198a0f93b8a0d307e7c4277aa512ec6f39d469993af9448f4744d",
+    "verified": true,
+    "verifiedAt": "2026-10-07T14:20:51.1161324Z"
+  },
+  "retainedFiles": [
+    {
+      "path": "artifacts/fluid-input-20261007/tests-final.log",
+      "sha256": "d6ddac2343b8a346cf48378243053ce0b830ed8cf633018511129843036540cd",
+      "bytes": 102121
+    },
+    {
+      "path": "artifacts/fluid-input-20261007/typecheck-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "artifacts/fluid-input-20261007/neutral-recovery.log",
+      "sha256": "0be408f216122132cd6494cb6642dbee1d2ce41024f39c1bd139bae9df8e9213",
+      "bytes": 2945
+    },
+    {
+      "path": "artifacts/fluid-input-20261007/rollback-first-pvp.json",
+      "sha256": "66f0b7f2012da5e0d8f7e4594db0ace436856fcea54225480b72ca4f0ecd1607",
+      "bytes": 268
+    },
+    {
+      "path": "artifacts/fluid-input-20261007/build-ws.json",
+      "sha256": "694d2bd593ed0880a9226900789e51e4f43e47decfec79ef4a764aa78d69e28f",
+      "bytes": 436
+    },
+    {
+      "path": "artifacts/fluid-input-20261007/archive-reserve.json",
+      "sha256": "838e90d814bc5024c76476920ee26c67c49a410a6da9b3491ec624cbdcee51a5",
+      "bytes": 346
+    },
+    {
+      "path": "artifacts/fluid-input-20261007/degraded1-published.json",
+      "sha256": "fbcf820241522474c49bb27b4c82899aa6de3bd3bca4518b98263e379c8a5016",
+      "bytes": 938
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos1/court.png",
+      "sha256": "69b88a8b0a2535c8d22d00aed29ecd2ce76c2ca666a3cf9eac04d433f45c4d7c",
+      "bytes": 792491
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos1/spectator.png",
+      "sha256": "97fdf49eb6fabfa4c69777a8d72757dd5ce32d8fcb498e0d3d2f55ecdc9b4281",
+      "bytes": 336498
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos1/video/page@26decca0d7ce6b7570c2b35f84c59121.webm",
+      "sha256": "6a52a895c8c41118786eb5038962ba06dd6f6c1a0f58ce31b29d22b7ef4a6f4d",
+      "bytes": 6342713
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos2/court.png",
+      "sha256": "c82d1333647b114b0f937950aa280118672576814fa027eb7b4d92399df82a00",
+      "bytes": 756764
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos2/failure.png",
+      "sha256": "ca968048d19164c70e5c26a111601b9dd975adc109eed7048e6030a3e2980c84",
+      "bytes": 814973
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos2/spectator.png",
+      "sha256": "f9b20bd3bf419f42a101b06e5e7b6c3e62e05666b36d74d5b91d33bffec1c508",
+      "bytes": 337299
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos2/video/page@3d13530298815397300c4615b49e5eb4.webm",
+      "sha256": "47c18659ee22efe59196b24efb32282d7319094357ec308fd9732426c8099156",
+      "bytes": 10836201
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos2b/court.png",
+      "sha256": "5d9691d759508a0c10b7700bc1c2702dd07bcf46f08a8c60e139a5a6c377273e",
+      "bytes": 784658
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos2b/spectator.png",
+      "sha256": "02cecadb4265716612a5be50dc09f1780e25a8c8172b835ec00dac257ce0ad96",
+      "bytes": 335892
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos2b/video/page@cd87a82d5da6e4a7a159db1e9004f31b.webm",
+      "sha256": "51f36f2efc71a231867c0c6ad3d9976f3b3a9cae45d4bb3bbc514397f585f967",
+      "bytes": 5745262
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos3/court.png",
+      "sha256": "b182c0032fdb0a3763a4695bb043e5d2a14cca1290f1b6d2a04c74b601621bbf",
+      "bytes": 661671
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos3/spectator.png",
+      "sha256": "26cccd303f9448cf603fd7bcacffea9063b883d66e7a51cfb0ad0761941dbb5c",
+      "bytes": 337332
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos3/video/page@25fde14cbedb41bb4bfa59baabff2ef0.webm",
+      "sha256": "5b5e6432f8ce05134f910225e209bf501767248ed35e2826c2abf45fa41be383",
+      "bytes": 5765387
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos4/court.png",
+      "sha256": "df2be2799ce3d1eb77c5acc911296bcf0f8cc63c54328df03b50ac0dbc6bd155",
+      "bytes": 784056
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos4/spectator.png",
+      "sha256": "16c9518fd8bb27e8f9c0b7f9d91a79663454dc99316f8de2c836395d87039cdf",
+      "bytes": 336424
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos4/video/page@4c292b3d80e0b9a5db3cf97c9b324df0.webm",
+      "sha256": "380ff33b7b4c33d6322db5c2397e0257a2b356ef7c8f2a945cf7b9f8b18492ec",
+      "bytes": 6048527
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos5/court.png",
+      "sha256": "205eb494add34a354c321fe4d6350477072cfa69cdbe1e5ccfe958154c797d9e",
+      "bytes": 774934
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos5/failure.png",
+      "sha256": "284374e021326cccd53d7df3e2904e59758bcaf824ae8b1c40694a0caa674336",
+      "bytes": 814357
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos5/spectator.png",
+      "sha256": "54106affe707a3e2ff5708d53c8e69fb95aa247956b4a040eda31e3203789525",
+      "bytes": 336549
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-chaos5/video/page@0c2d0e5174a847bd4780065890e7fb80.webm",
+      "sha256": "c369478de6bded92f7e7322ed90cccdae8a118e7f6623283ffdd48b4e5072f9d",
+      "bytes": 5943205
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-classic1/court.png",
+      "sha256": "fdee17044e080c33f9749024a88e964d3ae49b31d2d7db2d0277eefd172852ec",
+      "bytes": 774742
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-classic1/failure.png",
+      "sha256": "ca968048d19164c70e5c26a111601b9dd975adc109eed7048e6030a3e2980c84",
+      "bytes": 814973
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-classic1/spectator.png",
+      "sha256": "e026b89e04733e170b90231663d38f80192cf8541a7500f68b31a1a561a67d5e",
+      "bytes": 417303
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-classic1/video/page@b309fdc2531911cc116609b20b202b9f.webm",
+      "sha256": "3933409a07c425d9bd9cb9a067d780b5180ab0fb600a1fcce3a31023de30bc88",
+      "bytes": 5130839
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-classic2/court.png",
+      "sha256": "99cdc0b6e102c143b3a4ffa16695915d4ee9666dd0c64573375aa3c0ade5b43c",
+      "bytes": 784029
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-classic2/spectator.png",
+      "sha256": "c47ba2d949180211cddd0d5c2de587d12bc8ebafd8bb945b6cda1441be88b691",
+      "bytes": 415842
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-classic2/video/page@74e0a1247ae13f59e28e98b45fe85fd2.webm",
+      "sha256": "decdb6075e8ff621857b69528905586a9b1f2b26c373f72047a17836b9c1f884",
+      "bytes": 4885617
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-degraded1/court.png",
+      "sha256": "2d002eb793bf4d851b8b1f533402b92f9858af3807ae25cf998df1afe9ab6ed6",
+      "bytes": 787043
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-degraded1/failure.png",
+      "sha256": "ca968048d19164c70e5c26a111601b9dd975adc109eed7048e6030a3e2980c84",
+      "bytes": 814973
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-degraded1/spectator.png",
+      "sha256": "bae49a0b677eb87850bfe56a331fe301c23bf234a7abed4494fbba2e8944e9da",
+      "bytes": 337448
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-degraded1/video/page@4bfad5f5f3633e991cd3ece72b9e4a27.webm",
+      "sha256": "6403899e50f81e0c8e7aaeb4fc1e598ed1b00d8444a0163e4e5d39c3753f0058",
+      "bytes": 6574833
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-touch1/court.png",
+      "sha256": "d9ccc2edcc82b5dec7f9632785ee81e9b96064d37996297cf15516c9b90a242e",
+      "bytes": 230833
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-touch1/spectator.png",
+      "sha256": "8a36e01e4bc4083de15322b73edf4b362343c3ccd91d657f39bf253c153e830a",
+      "bytes": 336436
+    },
+    {
+      "path": "artifacts/qualification/catalogue-fluid-input-touch1/video/page@b8247db8594a78bdc2f634e4b51b39e2.webm",
+      "sha256": "06f3b219879b554b80fe1fde02615941a3c0da2cb29568a57406b9cf4c87f910",
+      "bytes": 2969033
+    }
+  ]
+}
