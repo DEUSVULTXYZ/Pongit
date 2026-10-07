@@ -1,5 +1,7 @@
 # Second public reship — 7 October 2026
 
+Current status: second reship is serving publicly; historical checkpoints below remain chronological. Full latency and 24-hour qualification still fail or remain unproven.
+
 The user requested another reship after the preceding complete replacement. This
 operation repeats that authorized replacement with the latest compatible input,
 session and mobile-header fixes. It preserves all accounts, session families,
@@ -164,3 +166,112 @@ New additive index build passed from `b5eda03`, image
 Web build is still running. Initial URL probes before starting host-provisioning
 services were unreachable; these are not publication/readiness passes. Fresh
 hosting and public browser verification remain pending.
+
+## Fresh hosting — 12:16 UTC
+
+Web build passed, image
+`sha256:32abe852817d7c8f2e261e4df1f6739ccf49dbce31961935662ada7f7e0898dd`.
+New SDK0.2.3 backends and the seventh isolated index are running. The additive
+history view preserves all 1,393 previously indexed references.
+
+Cold-start DNS caused an actual readiness delay: the VPS Cloudflare resolvers
+returned ENOTFOUND for new IPv4 names while Windows could resolve them. Direct
+UDP queries to Google and Quad9 agreed on all eleven addresses; exact-hostname TLS
+requests independently verified the expected app, epoch1 and chain4242 for each.
+Only the seven PONGIT runtime services now use those verified resolvers. No host
+was recreated, no delegation was closed, and nonce journals were retained.
+
+All eight new agent nodes have committed their real epoch marker. Three human
+arenas report available/online. The bounded challenge-opening verifier started
+12:15:46, original limit900 seconds. Web/admission cutover and natural browser
+games remain pending; do not equate service readiness with gameplay qualification.
+
+## Public cutover and actual browser games — 12:38 UTC
+
+The web cutover completed at 12:19:59 UTC. Human and friendly agent admissions
+are open on the new contracts. Every public route and all eleven CSP node origins
+were checked. Tournament admission is the remaining guarded opening.
+
+The first browser challenge failed its original 180-second admission deadline.
+The admission signer had only 0.023423044 MON; this was a gas reserve failure,
+not a successful gameplay test. The journaled, authorized five-MON top-up
+`0xb40ade551857c2c1397c7e88dc0ac7d3d3dca300234a63925a47223354381e26`
+completed at 12:28:37. The first funding helper failed before any write because
+it incorrectly selected a scoped operator role; its report is retained. The
+corrected helper uses the original operator journal and advisory lock. No external
+funding request was needed. Request 180 subsequently finished through the normal
+worker without the expired browser driver; it is not a gameplay qualification.
+
+Actual public Chrome Chaos match 883 finished naturally 3–7 and published.
+Zero pauses, resumes and visible resynchronizations; send p95 17.45 ms, independent
+observer reception p95 12.30 ms, local input p95 17.1 ms. It still FAILS the full
+performance gate: admission 9.064 s versus 8 s and one 38.316-pixel paddle jump.
+Player maximum hold was 283.3 ms; spectator maximum hold 167.1 ms. Do not label
+this report a pass or infer that reshipping fixes every reconciliation issue.
+
+Actual public Edge Classic match 884 finished naturally 3–7 and published.
+All natural synchronization gates pass: no pauses/resumes/resynchronizations or
+paddle jumps, send p95 15.51 ms, observer p95 10.99 ms. The report remains FAIL
+because admission was 8.760 s versus 8 s. Player/spectator maximum holds were
+83.4/116.7 ms.
+
+Actual public Edge PvP Classic and Chaos both pass natural-match synchronization
+gates, each finishing 7–6. Independent peer p95 is 14.88/20.36 ms, compared with
+send p95 16.28/22.57 ms. The Chaos browser report retains a sessionStorage access
+error from a document. Its 0.006 MON wager paid the disconnected beneficiary in
+`0x0b66d8d0ee420db0dbb54fdadf904942991f80f909253eaab643f3264dc0fc49`;
+canonical before/after balances and duplicate-claim/retry reverts were verified.
+These use virtual PRF authenticators, not physical passkeys.
+
+New replay 883 passed Chrome/Edge at 360/1440 px: actual playback, final score,
+focus, pixel controls, touch dimensions and contrast. Old route 873 still resolves
+its original contract. No 24-hour or saturated five-plus-two capacity claim is made.
+
+## Tournament restart and final backup � 12:44 UTC
+
+The guarded tournament opening exited zero at 12:39:28 UTC. Only its missing
+`tournament-admissions` transaction was new; earlier successful gate transactions
+were read from the original journal. Reader and sponsor restarted gracefully to
+load the final manifest. Pool, challenge and tournament gates are open;
+`qualified=false` is preserved.
+
+Tournament 41 (Classic elimination) started automatically. Fixture 0, match 885,
+finished 7�0 with its result published; fixture 1, match 886, then started. This is
+actual scheduler progression, not a claim that a full new tournament has passed.
+The interrupted predecessor tournament 40 retains its 20 published fixtures.
+
+Independent block 68972926 still verifies all eleven retired epochs None and
+exact sealed roots/counts; all 881 agent and two human predecessor results are
+final. Block 68972929 verifies all eleven replacements Active, epoch 1, expiry 0,
+and at least two committed batches each. Continuous-delegation guards stay active.
+
+The final backup contains six files, 73,674,700 bytes, manifest SHA-256
+`b8a7bcd07a57c4dd7b143dcc819a8cd96989d92fd441025154b14fcc198e2829`.
+Every file was copied and SHA-verified outside the VPS at 12:44:31 UTC. It includes
+the five databases, new/previous runtime, nonce journals, protected keys, current
+human deployment mount and the additive index configuration. Database dumps are
+sequential consistent database snapshots, not an atomic cross-database snapshot.
+A separate isolated restoration from that actual Windows copy is running.
+
+Executed helpers and nine current image/source-override inventories are recorded
+in `reship-repeat-20261007-production.json`. New public manifests retain historical
+addresses and family identities. Final targeted manifest/artifact/delegation tests:
+12 passed; full 1,035-test SDK verification remains recorded earlier. No further
+contract or product-code change was introduced during these public checks.
+
+## Final recovery proof � 12:48 UTC
+
+The actual off-VPS copy was uploaded into a new restore-input directory, checked
+against every original SHA, and restored sequentially in an isolated PostgreSQL
+container limited to 512 MiB and half a CPU. All five databases passed at
+12:48:14 UTC: 66/22/11/9/251 tables, 197 migration journal jobs and 1,399 historical
+references. Only the five successful scratch databases were dropped. The restore
+container is stopped; input files, dumps and reports are retained. Production
+transactions and databases were never overwritten.
+
+Operational reship is complete: human play, friendly bots and tournaments are
+open on the replacements. Every performance failure above remains unresolved
+and visible in the evidence. The provider does not report a node binary build;
+only fresh node identities, SDK/CLI versions, real calls and commits are proved.
+The scheduled follow-up is still PAUSED. No funding action is needed from the user
+for this completed reship.

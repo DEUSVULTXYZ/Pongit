@@ -1,0 +1,792 @@
+{
+  "new-arenas-final.json": {
+    "passed": true,
+    "at": "2026-10-07T12:42:12.179Z",
+    "block": "68972929",
+    "hash": "0xdfbfdb0361c75d4b057ee0635257122883fbabab88082c75088b31a3b341cbc7",
+    "arenas": [
+      {
+        "app": "0xa91e920376bf963ea56a8b165375c5838ddad881",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "3"
+      },
+      {
+        "app": "0x392078100693d37501eea294df51f248c59c0ae1",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "8"
+      },
+      {
+        "app": "0x413bdd7c91a3a2fd7d82be93e3c211db9a83a3ca",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "7"
+      },
+      {
+        "app": "0xd89a55e3c0bc89830fdba6a63b8fe9b583c3a6f1",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "16"
+      },
+      {
+        "app": "0x1b91501024bb2121f0222aee3a9b3897c8e55f35",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "2"
+      },
+      {
+        "app": "0x5ba62bd34b2408ea18277b75b279020407c0361c",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "2"
+      },
+      {
+        "app": "0x8cfb502183ad448b0b939ef8dbead88447cbe5af",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "2"
+      },
+      {
+        "app": "0x835c31294563563f45d093d764e1fb88d88022bb",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "2"
+      },
+      {
+        "app": "0x687215e337c2cd369c57c97eb6247636e8eace26",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "11"
+      },
+      {
+        "app": "0x47869e85f43d85472e2860d6124695d555c48289",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "2"
+      },
+      {
+        "app": "0xd4a554e7e75eb1482440ccc2ccd5c7b3fa31eace",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "batches": "2"
+      }
+    ]
+  },
+  "source-observation-124228.json": {
+    "block": "68972926",
+    "hash": "0x4d7c99487bfe5443f29ab8ef060d3afc9dfd4d511db4bed353e73b93caf8f52b",
+    "arenas": [
+      {
+        "app": "0x64bf382cdf1d96f0f19819c23f441beedf0377f5",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0x87559348ddda47f42ce60a60e253f08b979e02bd",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0xaf19ae4284b3a61b58af38174b03a70c0789d1e3",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0x123b20c51473f5732f446b87b658fcf7e389f5ea",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0x9bfb8b3bbac06632e1ddb5155139215bcd548733",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0xb42a4d723083d7b2a56769d0f45bd9629de09e70",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0x81ff3cfd3c7cd728f9258223129fbf4b68fd695a",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0x35c617eaeb6deb8f22d78606b479522299a6c373",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0x317fa349ccb00b51d71340456921dfee6313ee74",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0xb3c2f3bffd5894f38a37458d9c4481b9d22245c4",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      },
+      {
+        "app": "0xe7ecfe32b6e27d6492b4afeac2f38b9d5b94c486",
+        "epoch": "1",
+        "status": 0,
+        "exact": true
+      }
+    ],
+    "ledgers": [
+      {
+        "kind": "agent",
+        "count": "881",
+        "final": 881
+      },
+      {
+        "kind": "human",
+        "count": "2",
+        "final": 2
+      }
+    ],
+    "released": true,
+    "allFinal": true,
+    "at": "2026-10-07T12:42:28.947366+00:00"
+  },
+  "final-runtime-sources.json": {
+    "at": "2026-10-07T12:41:30.145025+00:00",
+    "sources": [
+      {
+        "name": "approved-retirement.ts",
+        "sha256": "a84a40aa91b17b9051da8b58dd45ce7bdcb3dae3a024098c1927364b802b2fa2"
+      },
+      {
+        "name": "audit-agent-rating-continuation.ts",
+        "sha256": "af880f86296300f8cd98842656507cf2f661420e0a4f829f6143453a38419d32"
+      },
+      {
+        "name": "backup.py",
+        "sha256": "d3058e06b69bf9c99d105aadfeaff1eb88814daac55ca5c02f3c587895fbfdec"
+      },
+      {
+        "name": "deploy-public-human-v3.ts",
+        "sha256": "bb9f28eb9c63fd2549f01438ba192c10bb3c3362c5b23bbfb2bacc6e6cf73728"
+      },
+      {
+        "name": "dispatch.py",
+        "sha256": "e30121450610fb6575d285c109db5a35f539e2092c1099aefd79144201b3660b"
+      },
+      {
+        "name": "finalize-public-reship-20261007.ts",
+        "sha256": "3792ec9c93931f3063a5a0671626497691e3e2973201e5bdf71941b0c5b4d278"
+      },
+      {
+        "name": "fund-admission-2.ts",
+        "sha256": "539c1d3cb6a69430b38ae8d573e0d54e43dd4ddbd35274c8b6b90bbc040c4aad"
+      },
+      {
+        "name": "fund-admission.ts",
+        "sha256": "fb7553c17122ed98b4a0c1779d541b259c430bc2a22646df09cce5306cd53f1b"
+      },
+      {
+        "name": "fund-reship-repeat-20261007.ts",
+        "sha256": "cf0d08f47b3b75eaff7d0f253f3790e7a5858d4d6b0f4bfa437aed3e92d495bc"
+      },
+      {
+        "name": "independent-chain-tools.ts",
+        "sha256": "a40d9b0c26353fde4d7bb67b65548e94bfff7283a10b635b33ff7165c6ec3ba7"
+      },
+      {
+        "name": "migrate-reusable-agents.ts",
+        "sha256": "dc1ab2c5186b0c2f676dcc415203303c4bed7f2522073c017405ee98e9d75c2f"
+      },
+      {
+        "name": "observe.py",
+        "sha256": "472e8754507dc4c31cb6c712c8b259e3b060b55ec5af416a0ab576c7f4bd1619"
+      },
+      {
+        "name": "open-public-human-v3.ts",
+        "sha256": "dcc5a07c6019091b625d5260579048c78279784f9175c330a5633facc5b5a201"
+      },
+      {
+        "name": "phases.py",
+        "sha256": "af982fa8fd5a816974c5b58ceb3e874c72e9b6f9c91504f2bf2d7cb3d6843fd8"
+      },
+      {
+        "name": "prepare.py",
+        "sha256": "be35f39644c8583542d146de356f384cc12847e584991425862d2e820c3a4424"
+      },
+      {
+        "name": "public-agent-migration-control.ts",
+        "sha256": "50c16b109f1339fd898a1a6e69410006c8816b97425574737f6bd49029c679b4"
+      },
+      {
+        "name": "rating-continuation-audit.ts",
+        "sha256": "c30f07666273d87b3c341ff4ae149c76c49c901d3a9c52e1d915344f8d7c87b6"
+      },
+      {
+        "name": "reship-public-build-20261007.py",
+        "sha256": "00bb6b5e52939f1cfa6bf5ee80ca9ef3a0785a506993c83159cdc845fcd5c975"
+      },
+      {
+        "name": "reship-public-dispatch-20261007.py",
+        "sha256": "26d51ae2ad7d8ff466b3d4278677db10f9f6635ea4eb9f4cbf54f7c24f841419"
+      },
+      {
+        "name": "reship-public-restore-20261007.py",
+        "sha256": "391bbe5b07632d33fb89f87efdd6bfd099ab5678d7cd2cfb1a57c1a7210ef703"
+      },
+      {
+        "name": "reship-public-runtime-20261007.py",
+        "sha256": "3b893cbe06137832617d131c0ea29fb0b1833ec1cc16dd08838b6ac8d17331a6"
+      },
+      {
+        "name": "reship-public-source-observe-20261007.py",
+        "sha256": "95b71f0127f764fd24667ebff20e8a55bb1fd03758c25fe880b08091420b917d"
+      },
+      {
+        "name": "reship-public-stage-20261007.py",
+        "sha256": "4408725f04cfdf5a2f433476dfb1762f62e347988dc46103b96a4f688fa0da90"
+      },
+      {
+        "name": "retire-public-reship-20261007.ts",
+        "sha256": "10d3486c28ff8777db9bc4ca511fc4ae25d764b23e2da25e5c1d4f46ebe313b0"
+      },
+      {
+        "name": "snapshot-public-human-v3.ts",
+        "sha256": "1c6e71774d5d71b02f07def0a74c4d4a1ac7e47c99723c4c336649eddab6b694"
+      },
+      {
+        "name": "verify-public-human-v3.ts",
+        "sha256": "d9358f4a3a5270d888c6476dcb6285b84a765bbc9eaa8bda32ab6308d86e2e0e"
+      }
+    ],
+    "runtime": [
+      {
+        "container": "pongit-relayer-1",
+        "image": "sha256:ed30fc81469f50415cb84e284cfac7f6beb6f65ed7d3c78932bcf600913621a1",
+        "startedAt": "2026-10-07T12:20:06.863349176Z",
+        "sourceOverrides": [
+          {
+            "target": "/app/shared/continuous-delegation.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/continuous-delegation-5d85044.ts",
+            "sha256": "532f1d22bafdb980479855ff7fa9054d50864fabc1383ece245a2539d6529591"
+          },
+          {
+            "target": "/app/relayer/src/independent-reusable-pool.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/relayer/src/independent-reusable-pool.ts",
+            "sha256": "7de4af0baa2cca4e096f9c734b227a317384c133d098325e0b7c2a186f8d0b70"
+          },
+          {
+            "target": "/app/relayer/src/independent-writer.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/relayer/src/independent-writer.ts",
+            "sha256": "623751338002c51d4c079de45ecec730e99c62a2f05f355cfa8f902e0dbb5534"
+          },
+          {
+            "target": "/app/relayer/src/rooms-lifecycle.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/relayer/src/rooms-lifecycle.ts",
+            "sha256": "11ad72a1521b8b218e4f9910c90f27945567414e212d0cc09b1ea29df5a7942a"
+          },
+          {
+            "target": "/app/relayer/src/independent-reusable-lifecycle.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/relayer/src/independent-reusable-lifecycle.ts",
+            "sha256": "7d19c9b51638d076073e36d7bdbd522cd3849c2708bdf333b08bf22dad889f96"
+          }
+        ]
+      },
+      {
+        "container": "pongit-arcade-five-arcade-web-1",
+        "image": "sha256:32abe852817d7c8f2e261e4df1f6739ccf49dbce31961935662ada7f7e0898dd",
+        "startedAt": "2026-10-07T12:20:00.673481697Z",
+        "sourceOverrides": []
+      },
+      {
+        "container": "pongit-arcade-five-reader-1",
+        "image": "sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39",
+        "startedAt": "2026-10-07T12:40:01.61187907Z",
+        "sourceOverrides": []
+      },
+      {
+        "container": "pongit-arcade-five-sponsor-1",
+        "image": "sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39",
+        "startedAt": "2026-10-07T12:40:01.59634738Z",
+        "sourceOverrides": []
+      },
+      {
+        "container": "pongit-arcade-five-engines-1",
+        "image": "sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39",
+        "startedAt": "2026-10-07T12:15:06.730077828Z",
+        "sourceOverrides": []
+      },
+      {
+        "container": "pongit-arcade-five-admission-1",
+        "image": "sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39",
+        "startedAt": "2026-10-07T12:15:06.759245133Z",
+        "sourceOverrides": [
+          {
+            "target": "/app/shared/continuous-delegation.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/continuous-delegation-5d85044.ts",
+            "sha256": "532f1d22bafdb980479855ff7fa9054d50864fabc1383ece245a2539d6529591"
+          },
+          {
+            "target": "/app/shared/agent-keeper-role.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/shared/agent-keeper-role.ts",
+            "sha256": "ce765a96e7e4f22b7238f37e0b50a5115d5d63126a530abc20c15ce82cdabced"
+          },
+          {
+            "target": "/app/scripts/independent-chain-tools.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/independent-chain-tools.ts",
+            "sha256": "8442fdf55ae406f18c6085ed9f4730bfbdafe7a9273136494d383048ebe24d18"
+          },
+          {
+            "target": "/app/scripts/agent-reusable-step.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/agent-reusable-step.ts",
+            "sha256": "0275144cb9206c4070631e119af01f75e13dc0894a1708ffcf8f4b62587a4e6d"
+          }
+        ]
+      },
+      {
+        "container": "pongit-arcade-five-maintenance-1",
+        "image": "sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39",
+        "startedAt": "2026-10-07T12:15:06.798801945Z",
+        "sourceOverrides": [
+          {
+            "target": "/app/scripts/agent-reusable-step.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/agent-reusable-step.ts",
+            "sha256": "0275144cb9206c4070631e119af01f75e13dc0894a1708ffcf8f4b62587a4e6d"
+          },
+          {
+            "target": "/app/shared/continuous-delegation.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/continuous-delegation-5d85044.ts",
+            "sha256": "532f1d22bafdb980479855ff7fa9054d50864fabc1383ece245a2539d6529591"
+          },
+          {
+            "target": "/app/shared/agent-keeper-role.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/shared/agent-keeper-role.ts",
+            "sha256": "ce765a96e7e4f22b7238f37e0b50a5115d5d63126a530abc20c15ce82cdabced"
+          },
+          {
+            "target": "/app/scripts/independent-chain-tools.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/independent-chain-tools.ts",
+            "sha256": "8442fdf55ae406f18c6085ed9f4730bfbdafe7a9273136494d383048ebe24d18"
+          }
+        ]
+      },
+      {
+        "container": "pongit-arcade-five-archive-1",
+        "image": "sha256:3f5947f149c4a98c90a2f88790cd6044e32ce096e2961cf78fc71ce89ac36f39",
+        "startedAt": "2026-10-07T12:15:06.750598651Z",
+        "sourceOverrides": [
+          {
+            "target": "/app/shared/continuous-delegation.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/continuous-delegation-5d85044.ts",
+            "sha256": "532f1d22bafdb980479855ff7fa9054d50864fabc1383ece245a2539d6529591"
+          },
+          {
+            "target": "/app/shared/agent-keeper-role.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/shared/agent-keeper-role.ts",
+            "sha256": "ce765a96e7e4f22b7238f37e0b50a5115d5d63126a530abc20c15ce82cdabced"
+          },
+          {
+            "target": "/app/scripts/independent-chain-tools.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/independent-chain-tools.ts",
+            "sha256": "8442fdf55ae406f18c6085ed9f4730bfbdafe7a9273136494d383048ebe24d18"
+          },
+          {
+            "target": "/app/scripts/agent-reusable-step.ts",
+            "source": "/opt/pongit/releases/continuous-20261005/source-7480ecf/scripts/agent-reusable-step.ts",
+            "sha256": "0275144cb9206c4070631e119af01f75e13dc0894a1708ffcf8f4b62587a4e6d"
+          }
+        ]
+      },
+      {
+        "container": "pongit-arcade-five-reship-repeat-indexer-1",
+        "image": "sha256:f532750f247073ca60cde54ff434ec444d87b3bc815ddb9c26c5c39d7946d53e",
+        "startedAt": "2026-10-07T12:09:15.960682083Z",
+        "sourceOverrides": []
+      }
+    ]
+  },
+  "admission-reserve.json": {
+    "passed": true,
+    "at": "2026-10-07T12:28:37.589Z",
+    "sender": "0x369158ac444278541322643e46e0d5b45ac21c4c",
+    "recipient": "0x12c57dEBC4d9bA127DfD98F88095B87395ae9a7f",
+    "amount": "5",
+    "hash": "0xb40ade551857c2c1397c7e88dc0ac7d3d3dca300234a63925a47223354381e26",
+    "admissionBalance": "5.023423044",
+    "operatorBalance": "5.82192473"
+  },
+  "public-open-1.json": {
+    "startedAt": "2026-10-07T12:38:25.996Z",
+    "action": "public",
+    "sourcePool": "0x89906fadc63704b003c5e5ca8e090f4dca757902",
+    "pool": "0x6b09eb398668cb38db5d3a7dd857c33a371ac308",
+    "passed": true,
+    "transactions": [
+      {
+        "id": "qualification-admissions",
+        "hash": "0x3b02e66fab7f3aa250cfd1bc9694aad9553be58935c713eedaa87744835734a7",
+        "block": "68966749"
+      },
+      {
+        "id": "preview-admission-evidence",
+        "hash": "0x4fe5d006e917009a79991a7cc881e67f6134ec6518f91b8cfb2db0dc9d5e014d",
+        "block": "68968208"
+      },
+      {
+        "id": "challenge-admissions",
+        "hash": "0x2c50835eb28ec6ea099f1f5e5c864054fa328faf59592570472e06f23b683b1f",
+        "block": "68968215"
+      },
+      {
+        "id": "public-admissions",
+        "hash": "0xff4ac579d68b39cd6c014780a2396edc6df23a99a947c0acdd805e5d0be4ab19",
+        "block": "68968224"
+      },
+      {
+        "id": "tournament-admissions",
+        "hash": "0x87c5f006749a1c10e5e4395dbf85350d90aae9dbf2f1a1342a64e3d5eacc3c23",
+        "block": "68972405"
+      }
+    ],
+    "block": "68972198",
+    "blockHash": "0x9bd8750d587be53ea6b25768c8a6c83e91968643b8d57c222bff3342a615ce2c",
+    "results": 881,
+    "tournaments": [
+      {
+        "id": "1",
+        "resolved": 7
+      },
+      {
+        "id": "2",
+        "resolved": 7
+      },
+      {
+        "id": "3",
+        "resolved": 28
+      },
+      {
+        "id": "4",
+        "resolved": 28
+      },
+      {
+        "id": "5",
+        "resolved": 7
+      },
+      {
+        "id": "6",
+        "resolved": 7
+      },
+      {
+        "id": "7",
+        "resolved": 28
+      },
+      {
+        "id": "8",
+        "resolved": 28
+      },
+      {
+        "id": "9",
+        "resolved": 7
+      },
+      {
+        "id": "10",
+        "resolved": 7
+      },
+      {
+        "id": "11",
+        "resolved": 28
+      },
+      {
+        "id": "12",
+        "resolved": 28
+      },
+      {
+        "id": "13",
+        "resolved": 7
+      },
+      {
+        "id": "14",
+        "resolved": 7
+      },
+      {
+        "id": "15",
+        "resolved": 28
+      },
+      {
+        "id": "16",
+        "resolved": 28
+      },
+      {
+        "id": "17",
+        "resolved": 7
+      },
+      {
+        "id": "18",
+        "resolved": 7
+      },
+      {
+        "id": "19",
+        "resolved": 28
+      },
+      {
+        "id": "20",
+        "resolved": 28
+      },
+      {
+        "id": "21",
+        "resolved": 7
+      },
+      {
+        "id": "22",
+        "resolved": 7
+      },
+      {
+        "id": "23",
+        "resolved": 17
+      },
+      {
+        "id": "24",
+        "resolved": 28
+      },
+      {
+        "id": "25",
+        "resolved": 7
+      },
+      {
+        "id": "26",
+        "resolved": 7
+      },
+      {
+        "id": "27",
+        "resolved": 28
+      },
+      {
+        "id": "28",
+        "resolved": 28
+      },
+      {
+        "id": "29",
+        "resolved": 7
+      },
+      {
+        "id": "30",
+        "resolved": 7
+      },
+      {
+        "id": "31",
+        "resolved": 28
+      },
+      {
+        "id": "32",
+        "resolved": 28
+      },
+      {
+        "id": "33",
+        "resolved": 7
+      },
+      {
+        "id": "34",
+        "resolved": 7
+      },
+      {
+        "id": "35",
+        "resolved": 28
+      },
+      {
+        "id": "36",
+        "resolved": 28
+      },
+      {
+        "id": "37",
+        "resolved": 7
+      },
+      {
+        "id": "38",
+        "resolved": 7
+      },
+      {
+        "id": "39",
+        "resolved": 14
+      },
+      {
+        "id": "40",
+        "resolved": 20
+      }
+    ],
+    "requests": "179",
+    "finishedAt": "2026-10-07T12:39:28.808Z"
+  },
+  "history-union.json": {
+    "at": "2026-10-07T12:10:08.778674+00:00",
+    "passed": true,
+    "before": 1393,
+    "after": 1393,
+    "schemas": 7
+  },
+  "dns-comparison.json": {
+    "passed": true,
+    "servers": [
+      "8.8.8.8",
+      "9.9.9.9"
+    ],
+    "rows": [
+      {
+        "app": "0xa91e920376bf963ea56a8b165375c5838ddad881",
+        "host": "il2-eu-a91e920376bf963e.fly.dev",
+        "ipv4": [
+          "66.241.124.113"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964971
+      },
+      {
+        "app": "0x392078100693d37501eea294df51f248c59c0ae1",
+        "host": "il2-eu-392078100693d375.fly.dev",
+        "ipv4": [
+          "66.241.125.97"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964976
+      },
+      {
+        "app": "0x413bdd7c91a3a2fd7d82be93e3c211db9a83a3ca",
+        "host": "il2-eu-413bdd7c91a3a2fd.fly.dev",
+        "ipv4": [
+          "66.241.124.122"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964982
+      },
+      {
+        "app": "0xd89a55e3c0bc89830fdba6a63b8fe9b583c3a6f1",
+        "host": "il2-eu-d89a55e3c0bc8983.fly.dev",
+        "ipv4": [
+          "66.241.125.214"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964988
+      },
+      {
+        "app": "0x1b91501024bb2121f0222aee3a9b3897c8e55f35",
+        "host": "il2-eu-1b91501024bb2121.fly.dev",
+        "ipv4": [
+          "66.241.124.118"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964994
+      },
+      {
+        "app": "0x5ba62bd34b2408ea18277b75b279020407c0361c",
+        "host": "il2-eu-5ba62bd34b2408ea.fly.dev",
+        "ipv4": [
+          "66.241.125.189"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964999
+      },
+      {
+        "app": "0x8cfb502183ad448b0b939ef8dbead88447cbe5af",
+        "host": "il2-eu-8cfb502183ad448b.fly.dev",
+        "ipv4": [
+          "66.241.125.187"
+        ],
+        "epoch": 1,
+        "baseBlock": 68965005
+      },
+      {
+        "app": "0x835c31294563563f45d093d764e1fb88d88022bb",
+        "host": "il2-eu-835c31294563563f.fly.dev",
+        "ipv4": [
+          "66.241.125.245"
+        ],
+        "epoch": 1,
+        "baseBlock": 68965010
+      },
+      {
+        "app": "0x687215e337c2cd369c57c97eb6247636e8eace26",
+        "host": "il2-eu-687215e337c2cd36.fly.dev",
+        "ipv4": [
+          "66.241.124.55"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964555
+      },
+      {
+        "app": "0x47869e85f43d85472e2860d6124695d555c48289",
+        "host": "il2-eu-47869e85f43d8547.fly.dev",
+        "ipv4": [
+          "66.241.124.204"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964562
+      },
+      {
+        "app": "0xd4a554e7e75eb1482440ccc2ccd5c7b3fa31eace",
+        "host": "il2-eu-d4a554e7e75eb148.fly.dev",
+        "ipv4": [
+          "66.241.125.246"
+        ],
+        "epoch": 1,
+        "baseBlock": 68964581
+      }
+    ],
+    "at": "2026-10-07T12:14:59.201818+00:00"
+  },
+  "restore-final.json": {
+    "startedAt": "2026-10-07T12:45:38.238288+00:00",
+    "passed": true,
+    "manifestSha256": "b8a7bcd07a57c4dd7b143dcc819a8cd96989d92fd441025154b14fcc198e2829",
+    "databases": [
+      {
+        "label": "operator",
+        "tables": 66,
+        "reshipJobs": 197
+      },
+      {
+        "label": "human",
+        "tables": 22
+      },
+      {
+        "label": "agents",
+        "tables": 11
+      },
+      {
+        "label": "previous-agents",
+        "tables": 9
+      },
+      {
+        "label": "shared-index",
+        "tables": 251,
+        "historicalReferences": 1399
+      }
+    ],
+    "finishedAt": "2026-10-07T12:48:14.207397+00:00"
+  },
+  "off-vps-final.json": {
+    "at": "2026-10-07T12:44:31.8334334Z",
+    "manifestSha256": "b8a7bcd07a57c4dd7b143dcc819a8cd96989d92fd441025154b14fcc198e2829",
+    "files": 6,
+    "bytes": 73674700,
+    "verified": true
+  }
+}

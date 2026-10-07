@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {readFile, writeFile} from 'node:fs/promises';
 import {createPublicClient, http, parseAbi, formatEther, type Hex, type Address} from 'viem';
+import {monadTestnet} from 'viem/chains';
 import {abi} from '../shared/abi-independent-MarketV4';
 
 const manifest = JSON.parse(await readFile('deployments/independent-v3-20261005.json', 'utf8'));
@@ -9,7 +10,7 @@ const browserReport=process.argv[2]?JSON.parse(await readFile(process.argv[2],'u
 assert(!browserReport||browserReport.bet?.shares==='6000000000000000'&&browserReport.lobby.toLowerCase()===manifest.lobby.toLowerCase());
 const player = (browserReport?.bet.player??'0xF2E82585A5fFF649A83dD7981B144C67EBDb3a8b') as Address;
 const id = BigInt(browserReport?.bet.matchId??'340282366920938463463374607431768211464');
-const base = createPublicClient({transport: http(process.env.RPC_URL ?? 'https://testnet-rpc.monad.xyz', {retryCount: 0, timeout: 15000})});
+const base = createPublicClient({chain:monadTestnet,transport: http(process.env.RPC_URL ?? 'https://testnet-rpc.monad.xyz', {retryCount: 0, timeout: 15000})});
 const rows = await (await fetch(`https://pongit.xyz/api/independent/player/${player}/payments?lobby=${manifest.lobby}`)).json();
 const row = rows.find((v: any) => v.id === String(id));
 assert(row?.payment?.state === 'PayoutPaid');

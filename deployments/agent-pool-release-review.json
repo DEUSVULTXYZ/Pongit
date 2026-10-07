@@ -1,18 +1,19 @@
 {
-  "at": "2026-10-03T16:07:10.903699+00:00",
-  "source": "f4f8fef",
-  "scope": "User-authorized public testnet recovery to rules 16; historical import verified. Full 24-hour, worst hosted workload and latency qualification remain incomplete.",
-  "sourcePool": "0x205d5739136d6cb73d732e1146e1ce034798a613",
-  "pool": "0x1f7d8a7b470a724df48d1b72723d7782d8e6014a",
-  "importSha256": "dedd1295291fb360b62ea7b9580ce70283468255c91ca6be5b9228f8d1d1d61d",
-  "releaseSha256": "4ab3584b4c38ae10024866061f684998634851b8490cc0cb66a27a793658e716",
-  "forkBudgetSha256": "e2aa8405cd59a970c43df088f80e5d0fb08948ba491180f1ffabca0e595b1bb1",
+  "at": "2026-10-07T12:03:46.737534+00:00",
+  "scope": "User-authorized full public reship. Same reviewed executable rules; actual hosting and natural-game latency must be verified anew.",
+  "sourcePool": "0x89906fadc63704b003c5e5ca8e090f4dca757902",
+  "pool": "0x6b09eb398668cb38db5d3a7dd857c33a371ac308",
+  "sourceLobby": "0xb73b6957c0f213B30Ec5E7E47dc307Ce153833b9",
+  "lobby": "0x71a49c00ba733724cb33d7590134d4ae96426156",
+  "importSha256": "bffae786bd11586498fc5c968cfaf436530ab2649fd76a97e273d4af0c39579a",
+  "retirementSha256": "47b6b7e0ca7faeb779568ef0a94907a0c37f748364c81a76610078fe3569712f",
   "qualification": {
     "capacity": false,
     "hostedWorstPublication": false,
     "latency": false,
     "soak24h": false
   },
+  "delegationPolicy": "continuous-v3-no-automatic-close",
   "maxBatches": 16000,
   "matchReserveBatches": 8000
 }

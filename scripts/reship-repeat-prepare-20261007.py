@@ -80,7 +80,10 @@ helper('reship-public-build-20261007.py', [(str(old), str(root)), ('reusable-age
     ('reship-web-cafe26a-20261007', 'reship-repeat-web-cafe26a-20261007'),
     ('reship-index-cafe26a-20261007', 'reship-repeat-index-cafe26a-20261007')])
 helper('reship-public-runtime-20261007.py', [(str(old), str(root)), ("'reship-indexer'", "'reship-repeat-indexer'"),
-    ("'public_reship_20261007'", "'public_reship_repeat_20261007'")])
+    ("'public_reship_20261007'", "'public_reship_repeat_20261007'"),
+    ("['1.1.1.1','1.0.0.1']", "['8.8.8.8','9.9.9.9']"),
+    ('# Cloudflare UDP and exact-hostname TLS were verified before this scoped fix.', '# Google/Quad9 UDP and exact-hostname TLS were verified for all eleven apps.'),
+    ("elif action=='dns':", "elif action=='dns':\n    assert load(root/'evidence/dns-comparison.json')['passed']")])
 helper('reship-public-restore-20261007.py', [(str(old), str(root)), ('pongit-reship-restore-20261007', 'pongit-reship-repeat-restore-20261007'),
     ('reusable-agents-20261007-1:', prefix + ':'), ('public-human-v3-20261007:', human_prefix + ':')])
 

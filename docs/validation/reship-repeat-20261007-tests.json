@@ -1,0 +1,492 @@
+{
+  "at": "2026-10-07T12:44:18.151856+00:00",
+  "operation": "repeat public reship 2026-10-07",
+  "productCommit": "b5eda03",
+  "pool": "0x6b09eb398668cb38db5d3a7dd857c33a371ac308",
+  "humanLobby": "0x71a49c00ba733724cb33d7590134d4ae96426156",
+  "qualification": {
+    "soak24h": false,
+    "fiveAgentsPlusTwoHumans": false,
+    "allPerformanceTargets": false
+  },
+  "browser": [
+    {
+      "startedAt": "2026-10-07T12:20:30.956Z",
+      "finishedAt": "2026-10-07T12:23:40.924Z",
+      "passed": false,
+      "error": "page.waitForURL: Timeout 180000ms exceeded.",
+      "peerReception": {
+        "samples": 0,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "homeLoginAssertions": 0,
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "reusedSession": false,
+      "report": "artifacts/qualification/catalogue-reship-repeat-chaos1/report.json"
+    },
+    {
+      "startedAt": "2026-10-07T12:34:04.479Z",
+      "finishedAt": "2026-10-07T12:35:13.311Z",
+      "passed": false,
+      "error": "Natural-match synchronization gate failed",
+      "ref": {
+        "app": "0x392078100693D37501EeA294df51f248C59C0ae1",
+        "epoch": "1",
+        "id": "883"
+      },
+      "result": {
+        "hash": "0xacf5272699bcb1d28ae973fb580130e86ddbf42a87286036c8320f47d7a1f8c8",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": false,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": false,
+        "spectator": true,
+        "executionClock": true
+      },
+      "admissionMs": 9064,
+      "peerReception": {
+        "samples": 106,
+        "p95Ms": 12.2958984375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "submissionP95Ms": 17.453200000003562,
+      "receiptP95Ms": 17.453200000003562,
+      "input": {
+        "samples": 54,
+        "p95Ms": 17.100000143051147
+      },
+      "reusedSession": true,
+      "report": "artifacts/qualification/catalogue-reship-repeat-chaos2/report.json",
+      "sync": {
+        "visibleResyncs": 0,
+        "contractPauseMs": 0,
+        "maxHoldMs": 283.29999999999563,
+        "p95FrameMs": 17.099999999998545,
+        "paddleJumps": [
+          {
+            "at": 24201.9,
+            "side": 0,
+            "dt": 16.30000000000291,
+            "d": 38.316000000000344,
+            "limit": 6.890000000000873,
+            "from": 237.0120000000003,
+            "to": 198.69599999999997,
+            "observedAt": 1791376469854
+          }
+        ]
+      },
+      "spectatorSync": {
+        "visibleResyncs": 0,
+        "contractPauseMs": 0,
+        "maxHoldMs": 167.10000000000582,
+        "p95FrameMs": 17.099999999998545,
+        "paddleJumps": []
+      }
+    },
+    {
+      "startedAt": "2026-10-07T12:35:53.028Z",
+      "finishedAt": "2026-10-07T12:37:07.916Z",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x413bdd7c91a3A2Fd7d82be93e3c211Db9A83A3ca",
+        "epoch": "1",
+        "id": "884"
+      },
+      "result": {
+        "hash": "0xe8639c201eea12f1dc65bf8901690d5d9e9432b4b38af354c41fb0dba493fc1e",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875014",
+        "finality": false
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "admissionMs": 8760,
+      "peerReception": {
+        "samples": 103,
+        "p95Ms": 10.989990234375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "submissionP95Ms": 15.50909999999567,
+      "receiptP95Ms": 15.50909999999567,
+      "input": {
+        "samples": 52,
+        "p95Ms": 16.09999990463257
+      },
+      "homeLoginAssertions": 0,
+      "unifiedArcadeKeys": {
+        "human": 1,
+        "agents": 1
+      },
+      "reusedSession": false,
+      "report": "artifacts/qualification/catalogue-reship-repeat-classic1/report.json",
+      "sync": {
+        "visibleResyncs": 0,
+        "contractPauseMs": 0,
+        "maxHoldMs": 83.40000000000146,
+        "p95FrameMs": 17.099999999998545,
+        "paddleJumps": []
+      },
+      "spectatorSync": {
+        "visibleResyncs": 0,
+        "contractPauseMs": 0,
+        "maxHoldMs": 116.70000000000073,
+        "p95FrameMs": 17.099999999998545,
+        "paddleJumps": []
+      }
+    },
+    {
+      "startedAt": "2026-10-07T12:20:32.178Z",
+      "finishedAt": "2026-10-07T12:22:30.149Z",
+      "passed": true,
+      "syncGates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 618,
+        "p95Ms": 14.87744140625,
+        "clock": "same Playwright host",
+        "sendP95Ms": 16.2841796875
+      },
+      "passkeyAssertions": [
+        1,
+        1,
+        1,
+        0
+      ],
+      "report": "artifacts/independent-candidate/browser-rpt7classic/report.json"
+    },
+    {
+      "startedAt": "2026-10-07T12:34:15.637Z",
+      "finishedAt": "2026-10-07T12:36:05.865Z",
+      "passed": true,
+      "syncGates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peerReception": {
+        "samples": 611,
+        "p95Ms": 20.355712890625,
+        "clock": "same Playwright host",
+        "sendP95Ms": 22.56689453125
+      },
+      "passkeyAssertions": [
+        1,
+        1,
+        3,
+        0
+      ],
+      "report": "artifacts/independent-candidate/browser-chaos-rpt7chaos/report.json"
+    },
+    {
+      "startedAt": "2026-10-07T12:36:39.530Z",
+      "finishedAt": "2026-10-07T12:37:06.214Z",
+      "passed": true,
+      "reference": {
+        "chainId": 10143,
+        "app": "0x392078100693D37501EeA294df51f248C59C0ae1",
+        "epoch": "1",
+        "id": "883"
+      },
+      "report": "artifacts/qualification/reship-repeat-replay883/report.json"
+    }
+  ],
+  "payout": {
+    "at": "2026-10-07T12:37:32.065Z",
+    "passed": true,
+    "player": "0x713d8D70F79B71D874495C5D3CfBFc71B7F10F10",
+    "id": "340282366920938463463374607431768211460",
+    "market": "0xfc210612193f2e46b9ecd95c7fceb58e1281e126",
+    "amount": "6000000000000000",
+    "refunded": "0",
+    "canonicalPreClaimAmount": "6000000000000000",
+    "transaction": "0x0b66d8d0ee420db0dbb54fdadf904942991f80f909253eaab643f3264dc0fc49",
+    "block": "68971781",
+    "before": "0",
+    "after": "6000000000000000",
+    "attempts": 1,
+    "duplicateClaimRejected": true,
+    "duplicateRetryRejected": true
+  },
+  "tournamentRestart": {
+    "at": "2026-10-07T12:43:39.518056+00:00",
+    "view": {
+      "id": "41",
+      "mode": 0,
+      "format": "elimination",
+      "status": "playing",
+      "revision": 0,
+      "champion": "0x0000000000000000000000000000000000000000",
+      "startedAt": "1791376775",
+      "completedAt": null,
+      "entrants": [
+        {
+          "agent": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+          "controllerHash": "0x635bf8108871af9ac8a482102535ce921932a419df3816ec018f5d8802de1088",
+          "initialElo": 1387
+        },
+        {
+          "agent": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+          "controllerHash": "0x1730f2d995f991daf8d8c1153045526065936103b9c6659540a10520b7884fb6",
+          "initialElo": 628
+        },
+        {
+          "agent": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+          "controllerHash": "0x1730f2d995f991daf8d8c1153045526065936103b9c6659540a10520b7884fb6",
+          "initialElo": 1066
+        },
+        {
+          "agent": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+          "controllerHash": "0x1730f2d995f991daf8d8c1153045526065936103b9c6659540a10520b7884fb6",
+          "initialElo": 946
+        },
+        {
+          "agent": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+          "controllerHash": "0x1730f2d995f991daf8d8c1153045526065936103b9c6659540a10520b7884fb6",
+          "initialElo": 811
+        },
+        {
+          "agent": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+          "controllerHash": "0x1730f2d995f991daf8d8c1153045526065936103b9c6659540a10520b7884fb6",
+          "initialElo": 869
+        },
+        {
+          "agent": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+          "controllerHash": "0x1730f2d995f991daf8d8c1153045526065936103b9c6659540a10520b7884fb6",
+          "initialElo": 1114
+        },
+        {
+          "agent": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+          "controllerHash": "0x1730f2d995f991daf8d8c1153045526065936103b9c6659540a10520b7884fb6",
+          "initialElo": 1123
+        }
+      ],
+      "fixtures": [
+        {
+          "index": 0,
+          "ref": {
+            "chainId": 10143,
+            "app": "0xD89a55e3c0bC89830Fdba6a63b8Fe9B583C3A6f1",
+            "epoch": "1",
+            "id": "885"
+          },
+          "a": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+          "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+          "advanced": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+          "resolved": true,
+          "administrative": false,
+          "attempt": 1,
+          "result": {
+            "hash": "0x3086009aa0596819ef67a50dddfafc5c4b6a5a6d7074d959a7a8f0c59925b267",
+            "winner": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+            "status": 3,
+            "scoreA": 7,
+            "scoreB": 0,
+            "elapsedUs": "146074770",
+            "finality": false
+          }
+        },
+        {
+          "index": 1,
+          "ref": {
+            "chainId": 10143,
+            "app": "0x1b91501024BB2121F0222AEe3a9B3897C8E55f35",
+            "epoch": "1",
+            "id": "886"
+          },
+          "a": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+          "b": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+          "advanced": "0x0000000000000000000000000000000000000000",
+          "resolved": false,
+          "administrative": false,
+          "attempt": 1,
+          "result": null
+        },
+        {
+          "index": 2,
+          "ref": null,
+          "a": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+          "b": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+          "advanced": "0x0000000000000000000000000000000000000000",
+          "resolved": false,
+          "administrative": false,
+          "attempt": 0,
+          "result": null
+        },
+        {
+          "index": 3,
+          "ref": null,
+          "a": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+          "b": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+          "advanced": "0x0000000000000000000000000000000000000000",
+          "resolved": false,
+          "administrative": false,
+          "attempt": 0,
+          "result": null
+        },
+        {
+          "index": 4,
+          "ref": null,
+          "a": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+          "b": "0x0000000000000000000000000000000000000000",
+          "advanced": "0x0000000000000000000000000000000000000000",
+          "resolved": false,
+          "administrative": false,
+          "attempt": 0,
+          "result": null
+        },
+        {
+          "index": 5,
+          "ref": null,
+          "a": "0x0000000000000000000000000000000000000000",
+          "b": "0x0000000000000000000000000000000000000000",
+          "advanced": "0x0000000000000000000000000000000000000000",
+          "resolved": false,
+          "administrative": false,
+          "attempt": 0,
+          "result": null
+        },
+        {
+          "index": 6,
+          "ref": null,
+          "a": "0x0000000000000000000000000000000000000000",
+          "b": "0x0000000000000000000000000000000000000000",
+          "advanced": "0x0000000000000000000000000000000000000000",
+          "resolved": false,
+          "administrative": false,
+          "attempt": 0,
+          "result": null
+        }
+      ],
+      "standings": [
+        {
+          "agent": "0xD36361A5516A73307BF95Cdb7495590bbB49Ae59",
+          "points": 0,
+          "difference": 0,
+          "wins": 0,
+          "initialElo": 1387
+        },
+        {
+          "agent": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+          "points": 0,
+          "difference": 0,
+          "wins": 0,
+          "initialElo": 628
+        },
+        {
+          "agent": "0x23F8A67B448496896416d66A87d4E4994a99Dc98",
+          "points": 0,
+          "difference": 0,
+          "wins": 0,
+          "initialElo": 1066
+        },
+        {
+          "agent": "0x3eCB268AE7b67d66d4627E4CF81D561775D665Df",
+          "points": 0,
+          "difference": 0,
+          "wins": 0,
+          "initialElo": 946
+        },
+        {
+          "agent": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+          "points": 0,
+          "difference": 0,
+          "wins": 0,
+          "initialElo": 811
+        },
+        {
+          "agent": "0x7C9a2e7af249EEba666a9b82fdf80005DD0Ca6db",
+          "points": 0,
+          "difference": 0,
+          "wins": 0,
+          "initialElo": 869
+        },
+        {
+          "agent": "0x8C74f4ED03aa925750C8cF115A3638C1334c7a1f",
+          "points": 0,
+          "difference": 0,
+          "wins": 0,
+          "initialElo": 1114
+        },
+        {
+          "agent": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+          "points": 0,
+          "difference": 0,
+          "wins": 0,
+          "initialElo": 1123
+        }
+      ],
+      "observedBlock": "68973234",
+      "published": true,
+      "nextAt": "1791374150",
+      "observation": {
+        "block": "68973234",
+        "hash": "0xd33393b2af050d02ab7ab1750f64d98961e28ad3349ee14e25b861f5362037e8",
+        "timestamp": "1791377018",
+        "revision": "077cbe5c96d35ff968576cfc4a5f06b9734ac89b63e30c8274f259e37a6e2ef9"
+      }
+    }
+  },
+  "remaining": [
+    "Chaos883 one 38.316px paddle jump; recorded future-control removal is a diagnostic hypothesis only",
+    "Admission 9.064/8.760 seconds still exceeds 8 seconds",
+    "No physical passkey or physical mobile measurements",
+    "Provider node binary version is not reported; fresh sessions and SDK0.2.3 are verified",
+    "No unchanged 24-hour or saturated five-agent/two-human qualification"
+  ],
+  "headers": {
+    "passed": true,
+    "physicalMobile": false,
+    "checks": 30,
+    "report": "artifacts/qualification/reship-repeat-headers-20261007/report.json",
+    "sha256": "1c2527cceeb9acd38ebc9b85dd07b4a9acc9388225e64dbdb97f994788e9a42c"
+  }
+}

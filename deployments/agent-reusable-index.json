@@ -44,6 +44,38 @@
         "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
         "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb"
       ]
+    },
+    {
+      "chainId": 10143,
+      "rulesVersion": 16,
+      "pool": "0x89906fadc63704b003c5e5ca8e090f4dca757902",
+      "startBlock": "68867458",
+      "arenas": [
+        "0x64bf382cdf1d96f0f19819c23f441beedf0377f5",
+        "0x87559348ddda47f42ce60a60e253f08b979e02bd",
+        "0xaf19ae4284b3a61b58af38174b03a70c0789d1e3",
+        "0x123b20c51473f5732f446b87b658fcf7e389f5ea",
+        "0x9bfb8b3bbac06632e1ddb5155139215bcd548733",
+        "0xb42a4d723083d7b2a56769d0f45bd9629de09e70",
+        "0x81ff3cfd3c7cd728f9258223129fbf4b68fd695a",
+        "0x35c617eaeb6deb8f22d78606b479522299a6c373"
+      ]
+    },
+    {
+      "chainId": 10143,
+      "rulesVersion": 16,
+      "pool": "0x6b09eb398668cb38db5d3a7dd857c33a371ac308",
+      "startBlock": "68963478",
+      "arenas": [
+        "0xa91e920376bf963ea56a8b165375c5838ddad881",
+        "0x392078100693d37501eea294df51f248c59c0ae1",
+        "0x413bdd7c91a3a2fd7d82be93e3c211db9a83a3ca",
+        "0xd89a55e3c0bc89830fdba6a63b8fe9b583c3a6f1",
+        "0x1b91501024bb2121f0222aee3a9b3897c8e55f35",
+        "0x5ba62bd34b2408ea18277b75b279020407c0361c",
+        "0x8cfb502183ad448b0b939ef8dbead88447cbe5af",
+        "0x835c31294563563f45d093d764e1fb88d88022bb"
+      ]
     }
   ]
 }
