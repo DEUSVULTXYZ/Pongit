@@ -12,10 +12,12 @@ assert.equal(r.continuation.pool.toLowerCase(),'0x1f7d8a7b470a724df48d1b72723d77
 const proof=JSON.parse(await readFile('/evidence/public-import-1.json','utf8'));assert(proof.passed&&proof.results===837);
 const report:any={at:new Date().toISOString(),pool:r.common.pool,transfers:[],passed:false};
 try{
- for(const source of ['maintenance','sponsor'] as const){
-  const sender=(source==='maintenance'?'0xbeeb456231E970aC08420488a2dB91Bfe257686A':'0x03CaceFD5522f27Ee20322aAA03E76745518FAd1') as Address;
-  const roles=source==='maintenance'?['maintenance','admission','archive']:['sponsor'];
-  const value=parseEther(source==='maintenance'?'10':'100'),reserve=parseEther(source==='maintenance'?'5':'50');
+ // Sponsoring keeps its existing signer, database binding and nonce journal.
+ report.sponsorRetained='0x03CaceFD5522f27Ee20322aAA03E76745518FAd1';
+ for(const source of ['maintenance'] as const){
+  const sender='0xbeeb456231E970aC08420488a2dB91Bfe257686A' as Address;
+  const roles=['maintenance','admission','archive'];
+  const value=parseEther('10'),reserve=parseEther('5');
   const targets=new Set<string>();
   for(const role of roles){
    const key=JSON.parse(await readFile('/secrets/'+role+'.json','utf8')).privateKey;

@@ -24,6 +24,9 @@ assert retired['passed'] and len(retired['arenas']) == 11 and all(a['verified'] 
 for role in ['admission', 'maintenance', 'sponsor', 'engines', 'archive']: stopped('pongit-arcade-five-' + role + '-1')
 stopped('pongit-relayer-1')
 old = load('/opt/pongit/releases/arcade-d2c6033/five-runtime/compose.json')
+retained_sponsor = old['services']['sponsor']['environment']['PONG_AGENT_SPONSOR_ADDRESS']
+assert retained_sponsor.lower() == '0x03cacefd5522f27ee20322aaa03e76745518fad1'
+r['serviceOperators']['sponsor'] = retained_sponsor
 oldhuman = load('/opt/pongit/releases/human-v3-20261005/human-runtime.json')
 previous = load(root / 'source/agents.json')
 assert previous['pool'].lower() == r['continuation']['pool'].lower()
@@ -51,7 +54,8 @@ save(target / 'metadata/reusable-budget.json', {'rulesVersion': 16, 'maxBatches'
 for field, name in [('engineKey', 'engine'), ('admissionKey', 'bridge'), ('provisioningKey', 'provisioning')]: save(target / 'keys' / (name + '.json'), {'privateKey': r[field]})
 for role in ['admission', 'maintenance', 'archive', 'sponsor']:
     path = target / 'keys' / (role + '.json')
-    shutil.copy2(root / 'agents/secrets' / (role + '.json'), path)
+    key_source = pathlib.Path('/opt/pongit/secrets/reusable-agents-20260929-1/sponsor.json') if role == 'sponsor' else root / 'agents/secrets' / (role + '.json')
+    shutil.copy2(key_source, path)
     path.chmod(0o600); os.chown(path, 1000, 1000)
 def human_apps(v): return [a['app'] for a in v['arenas']] + [app for p in v.get('previous', []) for app in human_apps(p)]
 legacy_protected = old['services']['reader']['environment'].get('PONG_HUMAN_APPS', '').split(',')

@@ -84,6 +84,16 @@ elif action in ['verify-source', 'import', 'verify-import', 'setup', 'qualificat
         s['command'] = ['timeout', '--signal=TERM', '--kill-after=30', str(seconds), 'node', '--import', 'tsx', 'scripts/public-agent-migration-control.ts', action]
         s['volumes'].append(str(root / 'public-agent-migration-control.ts') + ':/app/scripts/public-agent-migration-control.ts:ro')
     start(c, 'qualification', 'agents-' + action, seconds)
+elif action == 'fund-roles':
+    source_stopped()
+    assert load(agents / 'evidence/public-import-1.json')['passed']
+    assert load(agents / 'secrets/deployment.json')['phase'] == 'deployed-closed'
+    c = load(agents / 'prepare-runtime-2.json'); s = c['services']['qualification']
+    s['environment']['PONG_PUBLIC_ROLE_FUNDING'] = 'reship-new-roles-20261007'
+    s['volumes'] += [str(agents / 'evidence') + ':/evidence', '/opt/pongit/secrets/reusable-agents-20260929-1:/old-role-keys:ro',
+        str(root / 'fund-reship-service-roles-20261007.ts') + ':/app/scripts/fund-reship-service-roles-20261007.ts:ro']
+    s['command'] = ['timeout', '--signal=TERM', '--kill-after=30', '300', 'node', '--import', 'tsx', 'scripts/fund-reship-service-roles-20261007.ts']
+    start(c, 'qualification', 'fund-roles', 300)
 elif action in ['human-snapshot', 'human-deploy', 'human-open', 'human-audit']:
     if action in ['human-snapshot', 'human-deploy', 'human-open']: source_stopped()
     if action == 'human-deploy': fresh_backup()
