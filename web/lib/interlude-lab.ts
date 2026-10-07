@@ -59,7 +59,11 @@ export class LabLane {
   private onResult:(s:LabSnapshot,latency?:number)=>void,private onError:(e:unknown)=>void,
   private onUnavailable:(e:unknown)=>void=()=>{},
   private pacing:{readMs:number;tickMs:number;inputMs?:number;cooldownMs?:()=>number;now?:()=>number}={readMs:0,tickMs:0},
-  private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void;input?:(notice:InputNotice)=>void;nextInputId?:()=>number}){}
+  private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void;input?:(notice:InputNotice)=>void;nextInputId?:()=>number}){
+  // Recovery may first send a neutral direction, before any new key event.
+  // Its ACK also needs a fresh match-owned ID to retire old unsent intentions.
+  if(stream?.nextInputId)this.intention={id:stream.nextInputId(),direction:0,at:this.now()};
+ }
  private now(){return (this.pacing.now || Date.now)();}
  intent(direction:number,sendNow=false){
   if(![-1,0,1].includes(direction))return;

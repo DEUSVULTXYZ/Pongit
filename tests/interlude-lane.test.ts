@@ -2,7 +2,7 @@ import {test} from "node:test";
 import assert from "node:assert/strict";
 import {LabLane,type LabSession,type LabSnapshot} from "../web/lib/interlude-lab";
 import {initial} from "../shared/physics-v2";
-import {zeroAddress,zeroHash} from "viem";
+import {zeroAddress,zeroHash,encodeEventTopics,encodeAbiParameters,parseAbi} from "viem";
 import {AppRevertError} from "@interludelayer-sdk/sdk";
 import {ParticipantInputs,type InputNotice} from '../web/lib/participant-inputs';
 const a="0x1111111111111111111111111111111111111111",b="0x2222222222222222222222222222222222222222";
@@ -15,7 +15,7 @@ test('a recovered sender cannot reuse old speculative input identities',()=>{
  // The nonce journal recovers independently. A replacement lane shares this
  // match's presentation ledger, including intentions never sent during loss.
  now=2000;const recovered=lane();recovered.intent(-1);
- assert.deepEqual(notices.map(n=>n.id),[1,2,3]);
+ assert.deepEqual(notices.map(n=>n.id),[2,3,5]);
  const accepted={...notices.at(-1)!,acceptedAt:1_020_000n};
  ledger.notice(accepted,1_000_000n,2000);
  assert.deepEqual(ledger.controls(0,1_000_000n),[{side:0,direction:-1,at:1_020_000n}]);
@@ -42,6 +42,21 @@ test('a real control dispatches before the 100ms idle timer, without a second no
  assert.deepEqual(f.sent.map(x=>x.args[1]),[-1,1,0]);
  assert.deepEqual(f.sent.map(x=>x.args[2]),[1n,2n,3n]);
  await f.lane.intent(0,true);assert.equal(f.sent.length,3,'same intention cannot produce an idle tick');
+});
+test('the neutral command after journal recovery retires older unsent directions',async()=>{
+ const f=fixture(),ledger=new ParticipantInputs();
+ ledger.notice({id:ledger.allocateId(),direction:1,at:1000},0n,1000);
+ ledger.notice({id:ledger.allocateId(),direction:-1,at:1100},0n,1000);
+ f.set({clock:500_000n,observedAt:1500,state:{...f.state().state,t:400_000n,leftDir:1}});
+ const abi=parseAbi(['event ControlQueued(uint256 indexed id,uint8 indexed side,uint256 sequence,uint8 action,uint64 gameTime)']);
+ const lane=new LabLane(async()=>f.state(),{send:async()=>{
+  f.set({nonceA:1n});return {latencyMs:10,receipt:{logs:[{topics:encodeEventTopics({abi,eventName:'ControlQueued',args:{id:1n,side:0}}),
+   data:encodeAbiParameters([{type:'uint256'},{type:'uint8'},{type:'uint64'}],[1n,2,500_000n])}]}} as any;
+ }},a,()=>{},e=>{throw e;},()=>{},{readMs:500,tickMs:300,now:()=>1500},
+ {receipt:async()=>f.state(),nextInputId:()=>ledger.allocateId(),input:n=>ledger.notice(n,500_000n,1500)});
+ await lane.pump(false);
+ assert.deepEqual(ledger.controls(0,400_000n),[{side:0,direction:0,at:500_000n}]);
+ assert.deepEqual(ledger.controls(0,500_000n),[]);
 });
 test("Interlude sends the latest release after an in-flight direction, with sequential nonces",async()=>{
  const f=fixture();let release!:()=>void;f.hold(new Promise(r=>release=r));f.lane.intent(-1);const first=f.lane.pump(false);await new Promise(r=>setTimeout(r,0));
