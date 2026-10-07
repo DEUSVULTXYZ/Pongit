@@ -102,3 +102,20 @@ only the failed phase. After cutover, a service rollback must retain the new
 contracts, manifests, accounts and current databases. Never restore a stale dump
 over transactions created after the backup. Old financial contracts remain
 available for historical balances and withdrawals.
+
+## Runtime verification — 11:15 UTC
+
+Both prepared runtime images were executed without network access: Node 24.21.0,
+SDK 0.2.3 and CLI 0.2.3 matched exactly. The first verification attempt used the
+wrong npm scope and failed before importing anything; its exited container and
+report are retained. Correcting the verification path required no image change.
+
+The final web context is now the complete tracked `b5eda03` archive, SHA-256
+`c534b3bb74dd1caa81b4537cc6cf69926a8a2d047f6424529bdfd633620703ec`,
+with future deployment manifests applied explicitly at build time. Historical
+index SQL is prepared to add a seventh schema, preserving all previous IDs.
+
+A bounded cleanup removed 36 additional untagged intermediate images found in
+six specific obsolete PONGIT build logs, after checking all container references.
+Usable disk is 78.91 percent. No runtime/rollback image, volume or evidence was
+removed. Source finality/import still waits for the actual release deadlines.
