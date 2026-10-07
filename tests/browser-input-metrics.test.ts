@@ -41,3 +41,12 @@ test('automatic neutral resend after F5 cannot count one already confirmed keyup
    {sentAt:4000,confirmedAt:4020,direction:0,sequence:'3'}]);
  assert.equal(value.samples,1);assert.equal(value.maxMs,25);
 });
+
+test('release drift measures the stopped interval and excludes the next movement',()=>{
+ const paddles=Array.from({length:30},(_,i)=>({at:100+i*10,side:0,y:i<15?200+i/10:260,finished:false}));
+ const result=syncMetrics({frames:[],snapshots:[],paddles,releases:[{at:100,side:0}],keys:[{at:250,side:0,direction:1}]});
+ assert.equal(result.stopping.samples,1);
+ assert(Math.abs(result.stopping.maxDriftPixels!-.9)<.00001);
+ const short=syncMetrics({frames:[],snapshots:[],paddles:paddles.slice(0,8),releases:[{at:100,side:0}]});
+ assert.equal(short.stopping.samples,0,'A few frames cannot qualify the full release interval');
+});

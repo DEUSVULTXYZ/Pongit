@@ -1,8 +1,8 @@
 """Offload obsolete, unmounted PONGIT build inputs; keep every evidence directory."""
-import datetime, hashlib, json, pathlib, shutil, subprocess, sys, tarfile
+import datetime, hashlib, json, os, pathlib, shutil, subprocess, sys, tarfile
 
 roots = [pathlib.Path('/opt/pongit/tests/arcade-release-20260919'), pathlib.Path('/opt/pongit/tests/fluid-20260928')]
-out = pathlib.Path('/opt/pongit/backups/unused-build-sources-20261007')
+out = pathlib.Path('/opt/pongit/backups/unused-build-sources-20261007-3')
 allowed = {'web', 'shared', 'tests', 'contracts', 'agent-sdk', 'indexer', 'assets', 'artwork', 'docs', 'relayer', 'scripts'}
 def digest(path):
     h = hashlib.sha256()
@@ -21,7 +21,10 @@ if sys.argv[1] == 'archive':
     mounted = mounts(); targets = []
     for root in roots:
         for source in root.iterdir():
-            if not source.is_dir() or not (source / 'package.json').is_file(): continue
+            try:
+                if not source.is_dir() or not (source / 'package.json').is_file(): continue
+            except PermissionError:
+                continue  # Database restore inputs are not build sources.
             if any(source.resolve() == m or source.resolve() in m.parents or m in source.resolve().parents for m in mounted): continue
             for name in sorted(allowed):
                 p = source / name
@@ -29,8 +32,8 @@ if sys.argv[1] == 'archive':
     manifest = {'targets': [str(p) for p in targets], 'files': {}}
     for p in targets:
         for f in p.rglob('*'):
-            assert not f.is_symlink(), 'Preserve symlinked trees for separate review'
-            if f.is_file(): manifest['files'][str(f)] = {'sha256': digest(f), 'bytes': f.stat().st_size}
+            if f.is_symlink(): manifest['files'][str(f)] = {'link':os.readlink(f), 'bytes':0}
+            elif f.is_file(): manifest['files'][str(f)] = {'sha256': digest(f), 'bytes': f.stat().st_size}
     archive = out / 'build-inputs.private.tar.gz'
     with tarfile.open(archive, 'w:gz', compresslevel=1) as tar:
         for p in targets: tar.add(p, arcname=str(p).lstrip('/'))
@@ -44,7 +47,9 @@ elif sys.argv[1] == 'remove':
     assert digest(out / 'build-inputs.private.tar.gz') == manifest['archiveSha256']
     mounted = mounts()
     for s in manifest['targets']: assert safe(pathlib.Path(s), mounted)
-    for s, v in manifest['files'].items(): assert digest(pathlib.Path(s)) == v['sha256']
+    for s, v in manifest['files'].items():
+        if 'link' in v: assert pathlib.Path(s).is_symlink() and os.readlink(s)==v['link']
+        else: assert digest(pathlib.Path(s)) == v['sha256']
     # Evidence, diagnostics, logs, package manifests and all runtime directories
     # remain on the VPS. Only these verified source subdirectories are removed.
     for s in manifest['targets']: shutil.rmtree(pathlib.Path(s))

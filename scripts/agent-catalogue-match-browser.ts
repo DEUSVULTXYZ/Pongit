@@ -31,6 +31,9 @@ const networkDelayMs=Number(process.env.PONG_CATALOGUE_NETWORK_DELAY_MS??0);
 const inputHoldMs=Number(process.env.PONG_CATALOGUE_INPUT_HOLD_MS??80),inputGapMs=Number(process.env.PONG_CATALOGUE_INPUT_GAP_MS??40);
 const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
 const homeLogin=process.env.PONG_CATALOGUE_LOGIN_FROM_HOME==='1';
+const touchControls=process.env.PONG_CATALOGUE_TOUCH==='1';
+const viewportWidth=Number(process.env.PONG_CATALOGUE_WIDTH??1440);
+assert([360,390,768,1440].includes(viewportWidth));
 const fault=process.env.PONG_CATALOGUE_FAULT;
 assert(!fault||['f5','disconnect','lost-reply','revoke'].includes(fault));
 assert(!fault||naturalMatch&&publicSynchronized,'Faults use only the owned public natural friendly fixture');
@@ -67,6 +70,7 @@ const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
  naturalMatch,virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 report.initialIdleMs=initialIdleMs;report.injectedReadLatencyMs=readDelayMs;
+report.touchControls=touchControls;report.viewportWidth=viewportWidth;
 report.injectedNetworkDelayEachWayMs=networkDelayMs;
 report.inputHoldMs=inputHoldMs;report.inputGapMs=inputGapMs;
 report.httpOnly=httpOnly;
@@ -75,7 +79,7 @@ if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continu
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const browser=await chromium.launch({channel,headless:true});
-const context=await browser.newContext({viewport:{width:1440,height:1000},
+const context=await browser.newContext({viewport:{width:viewportWidth,height:viewportWidth<768?844:1000},hasTouch:touchControls,isMobile:touchControls,
  ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/video',size:{width:1440,height:1000}}}:{}),
  ...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
 if(httpOnly)await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.dev\//,socket=>socket.close());
@@ -271,6 +275,14 @@ await context.addInitScript(()=>{
   (window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:e.code==='ArrowUp'?-1:1});
  }});
  window.addEventListener('keyup',e=>{if(['ArrowUp','ArrowDown'].includes(e.code))(window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:0});});
+ window.addEventListener('pointerdown',e=>{const label=(e.target as Element)?.closest('button')?.getAttribute('aria-label');
+  if(label!=='Move up'&&label!=='Move down')return;
+  (window as any).__keys.push({at:performance.now(),dir:label==='Move up'?'ArrowUp':'ArrowDown'});
+  (window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:label==='Move up'?-1:1});
+ },true);
+ const pointerStop=(e:Event)=>{if((e.target as Element)?.closest('button[aria-label="Move up"],button[aria-label="Move down"]'))
+  (window as any).__intents.push({at:performance.timeOrigin+performance.now(),direction:0});};
+ window.addEventListener('pointerup',pointerStop,true);window.addEventListener('pointercancel',pointerStop,true);
  setInterval(()=>{const digit=document.querySelector('.match-countdown-digit')?.textContent;if(digit){(window as any).__digits.push(digit);
   (window as any).__firstCountdownAt??=new Date().toISOString();}},30);
 });
@@ -388,7 +400,15 @@ try{
     report.faults.push({kind:'own-match-revoked-and-reauthorized',at:new Date().toISOString()});
    }
   }
-  const key=i%2?'ArrowDown':'ArrowUp';await page.keyboard.down(key);await page.waitForTimeout(inputHoldMs);await page.keyboard.up(key);await page.waitForTimeout(inputGapMs);
+  const key=i%2?'ArrowDown':'ArrowUp';
+  if(touchControls){
+   const button=page.getByRole('button',{name:i%2?'Move down':'Move up',exact:true});
+   if(await button.isDisabled()){await page.waitForTimeout(100);continue;}
+   await button.scrollIntoViewIfNeeded();const bounds=(await button.boundingBox())!;
+   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2}]});
+   await page.waitForTimeout(inputHoldMs);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  }else{await page.keyboard.down(key);await page.waitForTimeout(inputHoldMs);await page.keyboard.up(key);}
+  await page.waitForTimeout(inputGapMs);
   if(!naturalMatch&&i===34){await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
  }
  if(naturalMatch){report.naturalEnded=naturalEnded;assert(naturalEnded,'Natural match exceeded its fixed seven-minute observation window');}

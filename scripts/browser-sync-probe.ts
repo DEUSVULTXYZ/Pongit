@@ -31,6 +31,9 @@ export async function installSyncProbe(page:Page){
   window.addEventListener('pointerup',e=>{if((e.target as Element)?.closest('button[aria-label="Move up"],button[aria-label="Move down"]')){
    const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.releases.push({at:performance.now(),side:s.side});
   }});
+  window.addEventListener('pointerdown',e=>{const label=(e.target as Element)?.closest('button')?.getAttribute('aria-label');
+   if(label==='Move up'||label==='Move down'){const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.keys.push({at:performance.now(),side:s.side,direction:label==='Move up'?-1:1});}
+  });
   window.addEventListener('pongit:presentation-timing',(e:any)=>{if(data.corrections.length<40000)data.corrections.push(e.detail);});
   let waitKey='',frameAt:number|undefined;
   const raf=requestAnimationFrame;window.requestAnimationFrame=callback=>raf(t=>{frameAt=t;try{callback(t);}finally{frameAt=undefined;}});
