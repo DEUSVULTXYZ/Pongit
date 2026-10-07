@@ -381,7 +381,11 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // A queued movement renews the same liveness credit. Do not put a
    // redundant heartbeat ahead of it when a slow receipt released the lane.
    if(intention&&intention.dir!==acceptedDirection)return state;
-   if(now()-lastWriteAt<150)return state; // A real input already renewed it.
+   // The loop wakes every 200ms. Skipping a pulse 150ms after an input can
+   // leave 350ms between writes and only 150ms for the next transport. Public
+   // match 868 then paused on one 222ms receipt. Coalesce only same-frame
+   // writes (50ms), keeping up to 250ms of the unchanged 500ms credit in reserve.
+   if(now()-lastWriteAt<50)return state;
    return sendNow('heartbeat',[id]);
   });},
   concede(){intention=undefined;return serial(()=>sendNow('concede',[id]));},

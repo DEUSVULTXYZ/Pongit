@@ -44,8 +44,28 @@ test('receipt latency consumes heartbeat credit rather than postponing the next 
 
 test('an immediately confirmed input still coalesces a redundant heartbeat',async()=>{
  const f=fixture(16);
- try{await f.player.move(1);await f.player.heartbeat();assert.equal(f.sent.length,1);f.advance(151);await f.player.heartbeat();assert.equal(f.sent.length,2);}
+ try{await f.player.move(1);await f.player.heartbeat();assert.equal(f.sent.length,1);f.advance(51);await f.player.heartbeat();assert.equal(f.sent.length,2);}
  finally{f.player.close();}
+});
+
+test('match868 pulse at 113ms keeps a subsequent 222ms input inside the 500ms presence credit',async()=>{
+ const f=fixture(16),request=f.node.request;let elapsed=0,lastExecution=0,expired=false;
+ const advance=(ms:number)=>{elapsed+=ms;f.advance(ms);};
+ f.node.request=async(r:any)=>{
+  if(r.method==='interlude_sendTransaction'){
+   const call=decodeFunctionData({abi:synchronizedAgentArenaAbi,data:parseTransaction(r.params[0]).data!});
+   if(call.functionName==='input'&&Number(call.args[2])===0)advance(222);
+   if(elapsed-lastExecution>500)expired=true;
+   lastExecution=elapsed;
+  }
+  return request(r);
+ };
+ try{
+  await f.player.move(-1);advance(113);await f.player.heartbeat();
+  advance(197);await f.player.move(0);
+  assert.equal(expired,false,'Do not skip a useful pulse before a transient transport delay');
+  assert.equal(f.sent.length,3);assert.deepEqual(f.sent.map(r=>parseTransaction(r).nonce),[0,1,2]);
+ }finally{f.player.close();}
 });
 test('optional player timing cannot change receipt ownership or break controls',async()=>{
  const samples:PoolPlayerTiming[]=[];

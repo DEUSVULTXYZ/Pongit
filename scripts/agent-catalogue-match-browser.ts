@@ -490,12 +490,12 @@ try{
   if(process.env.PONG_REQUIRE_NO_STARTUP_PAUSE==='1')assert(report.liveness.resumes<=(naturalMatch?0:1),'Unexpected protective resume countdown');
  }
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
- if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  if(process.env.PONG_REQUIRE_RECONCILIATION==='1')assert(report.sync?.paddleSamples>100&&report.sync.paddleJumps.length===0&&report.sync.snapshotJumps.length===0,'Visible reconciliation discontinuities remain');
  if(naturalMatch&&!fault){
   report.naturalGates={noPause:report.sync?.contractPauseMs===0,noResume:report.liveness?.resumes===0,noResync:report.sync?.visibleResyncs===0&&report.spectatorSync?.visibleResyncs===0,peer:report.peerReception.samples>=20&&report.peerReception.p95Ms<=report.submissionP95Ms+50,player:report.performance.player,spectator:report.performance.spectator,executionClock:report.executionClock.samples>=20&&report.executionClock.stalls.length===0&&report.executionClock.rewinds.length===0};
   assert(Object.values(report.naturalGates).every(v=>v===true),'Natural-match synchronization gate failed');
  }
+ if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  assert.equal(report.errors.length,0);report.passed=true;
 }catch(e){report.error=clean(e);process.exitCode=1;
  if(process.env.PONG_SYNC_PROBE==='1'){
