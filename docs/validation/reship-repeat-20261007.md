@@ -135,3 +135,32 @@ the same approved executables. The human source has two canonically final result
 at block 68962465 and its temporary finality helper is stopped (exit 1, no OOM).
 The agent helper is still finalizing the remaining published results; import has
 not begun.
+
+## Imports verified — 12:05 UTC
+
+Agent import and independent comparison both exited zero: 881 ordered results,
+179 requests, 40 tournament books and nine identities preserved. Tournament 40
+is interrupted in the successor with its 20 resolved fixtures and no champion.
+The human migration preserves 20 rating entries, all three predecessor routes,
+existing families/profiles/private data, and old financial addresses. No unsettled
+human payment or pending operation was found. The first human audit lacked its
+read-only storage-layout input and failed before any write; its report is retained.
+The same pinned artifact layout was copied and the second audit passed.
+
+New agent pool: `0x6b09eb398668cb38db5d3a7dd857c33a371ac308`.
+New human lobby: `0x71a49c00ba733724cb33d7590134d4ae96426156`.
+Eight agent and three human initial delegations passed in epoch 1 with no expiry.
+All four scoped service signers and their journals are retained; no role funding
+transfer was repeated. Public runtime and manifest gates remain closed.
+
+Final-source backup: six files, 73,293,316 bytes, manifest
+`556dc95cbd757e71352958831711f97aed7b582225a0b65f9e66ad1616435b2a`,
+verified off VPS 11:53:03 UTC. Imported backup: six files, 73,820,150 bytes,
+manifest `42fc0f611efc2a18ce2391ae8f0e5310fedebba26484b505fde24e18db30411f`,
+verified off VPS 12:05:52 UTC.
+
+New additive index build passed from `b5eda03`, image
+`sha256:f532750f247073ca60cde54ff434ec444d87b3bc815ddb9c26c5c39d7946d53e`.
+Web build is still running. Initial URL probes before starting host-provisioning
+services were unreachable; these are not publication/readiness passes. Fresh
+hosting and public browser verification remain pending.

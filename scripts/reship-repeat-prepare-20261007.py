@@ -55,7 +55,8 @@ helper('public-agent-migration-control.ts', [
     (old_pool, pool), ('reusable-agents-20261007-1', prefix),
     ('user-authorized-reship-20261007', 'user-authorized-reship-repeat-20261007'),
     ('reship?837n:463n', 'reship?881n:463n'), ('reship?155n:67n', 'reship?179n:67n'),
-    ('reship?39n:23n', 'reship?40n:23n'), ('reship?14:17', 'reship?20:17')])
+    ('reship?39n:23n', 'reship?40n:23n'), ('reship?14:17', 'reship?20:17'),
+    ('reship?839n:467n', 'reship?883n:467n')])
 for name in ['snapshot-public-human-v3.ts', 'deploy-public-human-v3.ts', 'open-public-human-v3.ts']:
     helper(name, [('public-human-v3-20261007', human_prefix), (old_lobby, lobby)])
 helper('verify-public-human-v3.ts')
@@ -91,6 +92,8 @@ for sub in ['secrets', 'evidence']:
     p = root / 'human' / sub
     p.mkdir(mode=0o700)
     os.chown(p, 1000, 1000)
+# Verification uses the same pinned human artifact storage layout.
+shutil.copy2(old / 'human/evidence/ratings-storage-layout.json', root / 'human/evidence/ratings-storage-layout.json')
 meta = root / 'agents/metadata'
 for source, target in [
     (root / 'source/agents.json', meta / 'source-manifest.json'),
