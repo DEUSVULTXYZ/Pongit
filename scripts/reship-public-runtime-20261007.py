@@ -4,7 +4,7 @@ import copy, datetime, json, pathlib, subprocess, sys
 root = pathlib.Path('/opt/pongit/releases/reship-all-20261007')
 live = root / 'live'
 action = sys.argv[1]
-assert action in ['backends', 'index', 'web', 'human-admissions', 'agent-manifest', 'agent-tournaments']
+assert action in ['backends', 'dns', 'index', 'web', 'human-admissions', 'agent-manifest', 'agent-tournaments']
 def load(p): return json.loads(pathlib.Path(p).read_text())
 def save(p, value):
     p.write_text(json.dumps(value, indent=2)+'\n'); p.chmod(0o600)
@@ -26,6 +26,18 @@ if action=='backends':
     manifest=load(live/'metadata/manifest.json');assert not manifest['enabled'] and not manifest['tournamentsEnabled']
     save(canonical_agents,agents);save(canonical_human,human)
     up('pongit-arcade-five',canonical_agents,['reader','sponsor','admission','maintenance','archive','engines'])
+    up('pongit',canonical_human,['relayer'])
+elif action=='dns':
+    # The VPS resolver cached absent IPv4 records before fresh Fly apps existed.
+    # Cloudflare UDP and exact-hostname TLS were verified before this scoped fix.
+    assert not load(live/'metadata/manifest.json')['enabled']
+    assert human['services']['relayer']['environment']['PONG_INDEPENDENT_ADMISSION']=='false'
+    roles=['reader','sponsor','admission','maintenance','archive','engines']
+    for role in roles: agents['services'][role]['dns']=['1.1.1.1','1.0.0.1']
+    human['services']['relayer']['dns']=['1.1.1.1','1.0.0.1']
+    save(live/'agent-compose.json',agents);save(canonical_agents,agents)
+    save(live/'human-runtime.json',human);save(canonical_human,human)
+    up('pongit-arcade-five',canonical_agents,roles)
     up('pongit',canonical_human,['relayer'])
 elif action=='index':
     build=load(root/'build-index-1.json');assert build['passed']
