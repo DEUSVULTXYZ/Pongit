@@ -49,7 +49,10 @@ save(target / 'metadata/reusable.json', {k: v for k, v in r.items() if k not in 
 save(target / 'metadata/reusable-budget.json', {'rulesVersion': 16, 'maxBatches': 16000, 'matchReserveBatches': 8000, 'rotationLeadSeconds': 420, 'serviceSeconds': 7200,
     'evidence': evidence, 'runtimeHashes': [a['runtimeHash'] for a in r['arenas']]})
 for field, name in [('engineKey', 'engine'), ('admissionKey', 'bridge'), ('provisioningKey', 'provisioning')]: save(target / 'keys' / (name + '.json'), {'privateKey': r[field]})
-for role in ['admission', 'maintenance', 'archive', 'sponsor']: shutil.copy2(root / 'agents/secrets' / (role + '.json'), target / 'keys' / (role + '.json'))
+for role in ['admission', 'maintenance', 'archive', 'sponsor']:
+    path = target / 'keys' / (role + '.json')
+    shutil.copy2(root / 'agents/secrets' / (role + '.json'), path)
+    path.chmod(0o600); os.chown(path, 1000, 1000)
 def human_apps(v): return [a['app'] for a in v['arenas']] + [app for p in v.get('previous', []) for app in human_apps(p)]
 legacy_protected = old['services']['reader']['environment'].get('PONG_HUMAN_APPS', '').split(',')
 protected = ','.join(sorted(set(a.lower() for a in [*human_apps(h), *legacy_protected] if a)))
@@ -82,6 +85,7 @@ assert any(v['target'] == '/app/shared/continuous-delegation.ts' for v in sh['vo
 save(target / 'human-runtime.json', ch)
 save(target / 'previous-human-runtime.private.json', oldhuman)
 shutil.copy2('/opt/pongit/releases/human-v3-20261005/secrets/provisioner.json', root / 'human/secrets/provisioner.json')
+os.chown(root / 'human/secrets/provisioner.json', 1000, 1000)
 save(root / 'human/secrets/publication-budget.json', {'rulesVersion': 14, 'maxBatches': 16000, 'matchReserveBatches': 8000, 'rotationLeadSeconds': 1860, 'serviceSeconds': 7200,
     'evidence': evidence, 'runtimeHashes': [a['runtimeHash'] for a in h['arenas']]})
 shutil.copy2(target / 'metadata/publication-review.json', root / 'agents/metadata/publication-review.json')
