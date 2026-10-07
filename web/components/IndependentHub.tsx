@@ -35,7 +35,8 @@ import {poolUserError} from '../../shared/agent-pool-error';
 import {reportIndependentDiagnostics} from '../lib/independent';
 import {readIndependentLobby,readIndependentRanking,independentReader} from '../../shared/independent-read';
 import {publicIndependentManifest,arenaReference,parseRoomReference,roomReference,type IndependentManifest} from '../../shared/independent';
-import {independentApi,independentBase,loadFamily,openFamily,renewIndependentControl,validateFamily,resumeSponsored,lobbyCommand,saveIndependentProfile,disconnectFamily,eraseFamilyLocal,createIndependentArena,type FamilySession} from '../lib/independent';
+import {independentApi,independentBase,loadFamily,renewIndependentControl,validateFamily,resumeSponsored,lobbyCommand,saveIndependentProfile,disconnectFamily,eraseFamilyLocal,createIndependentArena,type FamilySession} from '../lib/independent';
+import {openArcadeAccess} from '../lib/arcade-access';
 import {independentControlArgs} from '../../shared/independent-rules';
 import {SESSION_RENEW_MARGIN} from '../../shared/agent-pool-family';
 import {arenaOutage,arenaWaitStatus,preparingArena} from '../lib/arena-wait';
@@ -161,7 +162,8 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   if(!manifest)return;
   await run(async()=>{
    setActionStage('connecting');const identity=await connect(create,another);setActionStage('preparing');try{
-    const s=await openFamily(manifest,identity,progress);await renewIndependentControl(manifest,identity,s);setFamily(s);current.current.family=s;setSaved(s.grant.player);setReady(true);setPanel(null);setSync('');
+    const access=await openArcadeAccess(identity,{human:manifest},progress),s=access.human!;await renewIndependentControl(manifest,identity,s);setFamily(s);current.current.family=s;setSaved(s.grant.player);setReady(true);setPanel(null);setSync('');
+    if(access.incomplete)setNotice('Human play is ready. Agent access could not be prepared; your saved authorization is kept.');
     const action=pendingAction.current;pendingAction.current=null;if(action)await action(s);await refresh();
    }finally{identity.end();}
   });
@@ -358,7 +360,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
    {panel==='history'&&player&&<IndependentHistory player={player} matchId={replayId} rulesVersion={manifest?.rulesVersion}/>}
    {(panel==='invite'||panel==='create')&&manifest&&player&&<IndependentPrivate manifest={manifest} player={player} kind="contacts" onChallenge={p=>setTarget(p)}/>}
    {(panel==='invite'||panel==='create')&&frequent.length>0&&<section><h3>Recent rivals</h3>{frequent.map(row=><button key={row.player} onClick={()=>setTarget(row.player)}>{name(row.player)} · {row.count} matches</button>)}</section>}
-   {panel==='connect'&&<><button className="primary" disabled={busy} onClick={()=>void login(false)}>Use a passkey</button><button disabled={busy} onClick={()=>void login(true)}>Create a passkey</button></>}
+   {panel==='connect'&&<><p>One confirmation for two hours of human and agent play. Wallet actions still need your approval.</p><button className="primary" disabled={busy} onClick={()=>void login(false)}>Use a passkey</button><button disabled={busy} onClick={()=>void login(true)}>Create a passkey</button></>}
    {panel==='account'&&player&&<><p className="rooms-address">{player}</p><button onClick={()=>void copy(player)}>Copy address</button><label>Username<input value={handle} onChange={e=>setHandle(e.target.value)} maxLength={20} autoComplete="nickname"/></label><AvatarPicker value={avatar} disabled={busy} onChange={setAvatar}/><button className="primary" disabled={busy||!manifest} onClick={()=>void run(async()=>{await saveIndependentProfile(manifest!,player,handle.trim(),avatar);await refresh();setPanel(null);setNotice('Profile saved');})}>Save profile</button><button disabled={busy} onClick={()=>void login(false,true)}>Use another passkey</button><a className="rooms-button" href="/?deployment=v4">Wallet, payments and previous arenas</a></>}
    {(panel==='invite'||panel==='create')&&<><label>Username or address<input value={target} onChange={e=>setTarget(e.target.value)} placeholder={panel==='create'?'Optional rival':'Your rival'} autoComplete="off"/></label><button className="primary" disabled={busy||panel==='invite'&&!target.trim()} onClick={()=>void ensure(async s=>{if(panel==='create'){await act(s,'createRoom',[mode]);if(target.trim()){const id=await independentReader(base,manifest!).lobby('occupancy',[s.grant.player]);await act(s,'inviteToRoom',[id,await resolveTarget()]);}}else{const address=await resolveTarget();await act(s,room?'inviteToRoom':'inviteSomeone',room?[room.id,address]:[address,mode]);}setPanel(null);setTarget('');})}>{panel==='create'?'Create room':'Send challenge'}</button></>}
    {panel==='members'&&room&&<><div className="rooms-member-list">{room.members.map((member:any)=><div className="rooms-contact" key={member.player}><Avatar index={profile(member.player)?.avatar}/><strong>{name(member.player)}</strong><span>{member.away?'Away':equal(member.player,room.host)?'Host':'In queue'}</span><button onClick={()=>void copy(member.player)}>Copy address</button></div>)}</div>{ownRoom&&<button onClick={()=>setPanel('invite')}>Invite someone</button>}</>}

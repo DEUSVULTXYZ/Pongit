@@ -9,12 +9,13 @@ import {privateKeyToAccount} from 'viem/accounts';
 import {preparePoolChallenge} from '../../shared/agent-pool-client';
 import {agentChallengesAbi} from '../../shared/abi-AgentChallenges';
 import {readChallengeAdmission} from '../../shared/agent-challenge-receipt';
-import {preparePoolFamily,loadPoolFamily,observePoolFamily,familyExpiresSoon,SESSION_RENEW_MARGIN,type PoolFamilySession} from '../../shared/agent-pool-family';
+import {loadPoolFamily,observePoolFamily,familyExpiresSoon,type PoolFamilySession} from '../../shared/agent-pool-family';
 import {validateAgentPoolManifest,type AgentPoolManifest,type PoolChallengeView} from '../../shared/agent-pool';
 import type {AgentMatchRef} from '../../shared/agents';
 import {engineReadRetryMs} from '../../shared/engine-read';
 import {poolApi,poolBase,poolBrowserSponsor,finishPoolSponsor} from '../lib/agent-pool';
 import {connect,rememberedAccount} from '../lib/wallet';
+import {openArcadeAccess} from '../lib/arcade-access';
 import {quietFailure} from '../lib/quiet-failure';
 import {short} from '../lib/api';
 import {Avatar} from './Avatar';
@@ -149,11 +150,10 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  async function login(create=false){await run(async()=>{
   if(!config)throw Error('The arcade is reconnecting');if(!await canStart(config)){setConnectOpen(false);return;}setActionStage('connecting');const identity=await connect(create);
   try{
-   setAccount(identity.account.address);setActionStage('preparing');const sponsor=poolBrowserSponsor(config,identity.account.address);await finishPoolSponsor(sponsor,undefined,progress);
-   const prepared=await preparePoolFamily(poolBase(),config,identity.account,sessionStorage,{renewWithin:SESSION_RENEW_MARGIN});
-   if(prepared.call)await finishPoolSponsor(sponsor,prepared.call,progress);
-   session.current=prepared.session;setConnectOpen(false);setRenewing(false);const agent=intent.current;
-   if(agent)await challenge(config,prepared.session,agent);intent.current=null;
+   setAccount(identity.account.address);setActionStage('preparing');
+   const access=await openArcadeAccess(identity,{agents:config},progress),authorized=access.agents!;
+   session.current=authorized;setConnectOpen(false);setRenewing(false);const agent=intent.current;
+   if(agent)await challenge(config,authorized,agent);intent.current=null;
   }finally{identity.end();}
  });}
  async function cancel(){await run(async()=>{
@@ -194,7 +194,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
     {live.filter(g=>watchMode==='all'||g.mode===watchMode).map(g=><article className="agent-card" key={matchHref(g.ref)}><span className="agent-badge">{g.lane.toUpperCase()} · {g.mode===0?'CLASSIC':'CHAOS'}</span><h2>{person(g.a)?.name??short(g.a)} vs {person(g.b)?.name??short(g.b)}</h2><Link className="rooms-button" href={matchHref(g.ref)}>Open arena ↗</Link></article>)}
     {!serviceDown&&!live.some(g=>watchMode==='all'||g.mode===watchMode)&&<ArcadeProgress stage="preparing" title="Next match is on its way" detail="A live match appears here once play starts."/>}</div>}
   </>}
-  {connectOpen&&<Dialog returnFocus={launchFocus} label="Connect to challenge an agent" onClose={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}><IconButton aria-label="Close connection" onClick={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}/><h2>{renewing?'Keep playing':'Your next rival is ready'}</h2><p>{renewing?'Your session ends soon. Confirm once to keep playing.':'Sign in to continue.'}</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void login()}>{renewing?'Continue':'Connect & play'}</button>{!renewing&&<button disabled={busy} onClick={()=>void login(true)}>Create account</button>}</div>{error?<ArcadeProgress stage="error" detail={error} compact/>:busy?<ArcadeProgress stage={actionStage} compact/>:null}</Dialog>}
+  {connectOpen&&<Dialog returnFocus={launchFocus} label="Connect to challenge an agent" onClose={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}><IconButton aria-label="Close connection" onClick={()=>{if(!busy){setConnectOpen(false);intent.current=null;}}}/><h2>{renewing?'Keep playing':account?'Enable agent play':'Your next rival is ready'}</h2><p>{renewing?'Your session ends soon. Confirm once to keep playing.':account?'Your account is connected. Confirm once to add agent play to this arcade session.':'One confirmation for two hours of human and agent play.'} Wallet actions still need your approval.</p><div className="button-row"><button className="primary" disabled={busy} onClick={()=>void login()}>{renewing?'Continue':account?'Enable & play':'Connect & play'}</button>{!renewing&&!account&&<button disabled={busy} onClick={()=>void login(true)}>Create account</button>}</div>{error?<ArcadeProgress stage="error" detail={error} compact/>:busy?<ArcadeProgress stage={actionStage} compact/>:null}</Dialog>}
   {detailAgent&&<Dialog label={`About ${detailAgent.name}`} onClose={()=>setDetailAgent(null)}><IconButton aria-label="Close agent details" onClick={()=>setDetailAgent(null)}/><h2>{detailAgent.name}</h2><p>{detailAgent.difficulty}</p><p>{detailAgent.official?'PONGIT BOT':'COMMUNITY AGENT'} · Creator {detailAgent.official?'PONGIT':short(detailAgent.creator)}</p><p>{detailAgent.modes.map(m=>m===0?'Classic':'Chaos').join(' · ')}</p><p>{detailAgent.official&&config?.houseInstances?'Each friendly match has its own controller. You can play this rival while another instance competes.':'A challenge waits until this agent is free.'}</p></Dialog>}
   <footer className="rooms-footer"><MusicCredit/><EngineCredit/></footer>
  </main>;

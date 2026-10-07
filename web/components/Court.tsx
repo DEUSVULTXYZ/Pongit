@@ -113,7 +113,7 @@ export function Court({
     const spectatorChaos=new SpectatorChaosProjection();
     const reconciliation=new ParticipantReconciliation();
     const measureControls=sessionStorage.getItem('pongit:measure-controls')==='1';
-    let previousParticipant:typeof current.current|undefined,previousControls='',previousTarget=0n;
+    let previousParticipant:typeof current.current|undefined,previousTarget=0n;
     function draw(now: number) {
       let p = current.current;
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
@@ -155,10 +155,11 @@ export function Court({
         yB = s ? Number(s.right) / Number(SCALE) : 288;
       let participantPicture:ParticipantPose|undefined;
       if(coherent&&s){
-        const controls=p.coherentControls!.map(c=>`${c.side}:${c.direction}:${c.at}`).join(',');
         const previous=previousParticipant;
         let before:ParticipantPose|undefined;
-        if(previous?.state&&(previous.state!==p.state||previous.chaos!==p.chaos||previous.clock!==p.clock||previous.progressionLimit!==p.progressionLimit||previousControls!==controls)){
+        // A local key release is an intentional change, not a server correction.
+        // Reconstruct only when an authoritative sample or clock actually changed.
+        if(previous?.state&&(previous.state!==p.state||previous.chaos!==p.chaos||previous.clock!==p.clock||previous.progressionLimit!==p.progressionLimit)){
           // A fresh sample can reanchor the engine clock tens of milliseconds
           // ahead. Continue the old picture by one real frame, not by that new
           // clock offset, or perfectly predicted bots still jump on receipt.
@@ -169,12 +170,12 @@ export function Court({
           }else before=participantPose(projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction).state);
         }
         const predictedPose=participantPose(s,cp?.state);
-        participantPicture=reconciliation.sample(predictedPose,before,dt);
+        participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction});
         if(measureControls)window.dispatchEvent(new CustomEvent('pongit:presentation-timing',{detail:{ref:p.matchId,frameAt:now,
          processedUs:String(p.state?.t),displayedUs:String(target),paddleError:participantPicture.paddles.map((y,i)=>y-predictedPose.paddles[i]),
          ballError:participantPicture.balls.map((b,i)=>({id:b.id,x:b.x-predictedPose.balls[i].x,y:b.y-predictedPose.balls[i].y}))}}));
         [yA,yB]=participantPicture.paddles;
-        previousParticipant=p;previousControls=controls;previousTarget=target;
+        previousParticipant=p;previousTarget=target;
       }else{reconciliation.reset();previousParticipant=undefined;}
       if (p.state && !coherent && !cp && !p.replay && target > p.state.t) {
         // Paddles keep moving along their confirmed directions even while the

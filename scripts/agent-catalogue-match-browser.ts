@@ -30,6 +30,7 @@ const readDelayMs=Number(process.env.PONG_CATALOGUE_READ_DELAY_MS??0);
 const networkDelayMs=Number(process.env.PONG_CATALOGUE_NETWORK_DELAY_MS??0);
 const inputHoldMs=Number(process.env.PONG_CATALOGUE_INPUT_HOLD_MS??80),inputGapMs=Number(process.env.PONG_CATALOGUE_INPUT_GAP_MS??40);
 const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
+const homeLogin=process.env.PONG_CATALOGUE_LOGIN_FROM_HOME==='1';
 const fault=process.env.PONG_CATALOGUE_FAULT;
 assert(!fault||['f5','disconnect','lost-reply','revoke'].includes(fault));
 assert(!fault||naturalMatch&&publicSynchronized,'Faults use only the owned public natural friendly fixture');
@@ -280,6 +281,17 @@ try{
  else if(privateV3)assert(config.pool.toLowerCase()===(synchronized?'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8':'0x550ff3c22e20fc760af9afd68fba2cb531140dc6')&&config.rulesVersion===(synchronized?16:15)&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled&&config.challengeAdmission==='atomic-v1');
  assert(config.version===5&&config.houseInstances==='official-v1'&&config.maxMatches===5,'Public five-lane migration is not active');
  report.pool=config.pool;report.rulesVersion=config.rulesVersion;
+ if(homeLogin){
+  assert(!restored&&!privateV3,'Unified login starts with a fresh public passkey');
+  await page.goto(report.origin,{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:'Connect',exact:true}).click();
+  await page.getByRole('button',{name:'Create a passkey',exact:true}).click();
+  await page.getByRole('dialog',{name:'Connect to play',exact:true}).waitFor({state:'hidden',timeout:60000});
+  report.homeLoginAssertions=assertions;
+  const stored=await page.evaluate(()=>({human:Object.keys(sessionStorage).filter(k=>/^pongit:family:0x[\da-f]{40}$/.test(k)).length,
+   agents:Object.keys(sessionStorage).filter(k=>k.startsWith('pongit:agent-family:')).length}));
+  assert.equal(stored.human,1);assert.equal(stored.agents,1);report.unifiedArcadeKeys=stored;
+ }
  await page.goto(report.origin+'/agents',{waitUntil:'domcontentloaded'});
  // Server-rendered buttons can be visible before their React handlers exist.
  // A loaded actionable catalogue proves hydration; verify the selection too.
@@ -291,8 +303,8 @@ try{
  report.challengeClickedAt=await page.evaluate(()=>(window as any).__challengeClickedAt);
  report.requestedAt=new Date().toISOString();
  const admissionDeadline=Date.now()+180000;
- if(!restored)await page.getByRole('button',{name:'Create account',exact:true}).click();
- else{
+ if(!restored&&!homeLogin)await page.getByRole('button',{name:'Create account',exact:true}).click();
+ else if(!homeLogin){
   const connect=page.getByRole('dialog',{name:'Connect to challenge an agent',exact:true});
   // Capacity and authorization checks precede this dialog. Wait for either
   // real outcome, within the original admission deadline, without guessing how
@@ -341,6 +353,7 @@ try{
  }
  assert(report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1'),'Real launch countdown incomplete');
  const before=assertions;
+ if(homeLogin){assert.equal(before,report.homeLoginAssertions,'Agent challenge must reuse the human login');report.checks.push('Human login and agent challenge used one passkey ceremony');}
  const naturalDeadline=Date.now()+420000;
  let naturalEnded=false;
  for(let i=0;naturalMatch?Date.now()<naturalDeadline:i<controlCount;i++){

@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
-import {decodeFunctionData,encodeAbiParameters,encodeFunctionResult,encodeErrorResult,hashTypedData,keccak256,parseTransaction,toHex,zeroAddress,zeroHash,type Address,type Hex} from 'viem';
+import {decodeFunctionData,encodeAbiParameters,encodeFunctionResult,encodeErrorResult,encodeEventTopics,hashTypedData,keccak256,parseTransaction,toHex,zeroAddress,zeroHash,type Address,type Hex} from 'viem';
 import {generatePrivateKey,privateKeyToAccount} from 'viem/accounts';
 import {createPoolPlayer,POOL_PLAYER_GAS,type PoolPlayerTiming} from '../shared/agent-pool-player';
 import {pooledAgentArenaAbi as abi} from '../shared/abi-PooledAgentArena';
@@ -163,7 +163,7 @@ function fixture(rules:10|11|15|16=10,onTiming?:(s:PoolPlayerTiming)=>void){
   }
   if(lost)throw Error('Lost response');const result=receipts.get(hash);player.journal.received(r.method,result);return result;
  }};
- const feed:any={read:async()=>state,forCommand:async()=>state,receipt:async()=>state,invalidate(){},watch:()=>()=>{}};
+ const feed:any={peek:()=>state,read:async()=>state,forCommand:async()=>state,receipt:async()=>state,invalidate(){},watch:()=>()=>{}};
  state.observedAt=clock;
  const create=()=>player=createPoolPlayer(m,match,session,{base,storage,now:()=>clock,onTiming,socket:()=>{throw Error('No fixture WebSocket');}},{node,feed});create();
  return{m,match,session,owner,player,create,hub,state,sent,storage,binding,base,node,feed,
@@ -516,6 +516,36 @@ test('a release replaces the accepted queued movement even while processed physi
  assert.deepEqual(call.args?.slice(0,4),[1n,4n,0,2n]);
  await f.player.move(0);assert.equal(f.sent.length,2,'An already accepted intention stays deduplicated');
  f.player.close();
+});
+
+test('verified rules16 input releases its lane before slow Chaos metadata hydration',async()=>{
+ const f=fixture(16),request=f.node.request;let finish!:()=>void;
+ const loading=new Promise<void>(resolve=>finish=resolve);
+ const event=synchronizedAgentArenaAbi.find(x=>x.type==='event'&&x.name==='ControlQueued') as any;
+ f.node.request=async(r:any)=>{
+  const receipt=await request(r);if(r.method!=='interlude_sendTransaction')return receipt;
+  const call:any=decodeFunctionData({abi:synchronizedAgentArenaAbi,data:parseTransaction(r.params[0]).data!});
+  const args={id:call.args[1],side:0,action:Number(call.args[2])+2,sequence:call.args[3],gameTime:100000n};
+  return {...receipt,blockNumber:'0x64',logs:[{address:f.m.arenas[0].app,
+   topics:encodeEventTopics({abi:synchronizedAgentArenaAbi,eventName:'ControlQueued',args} as any),
+   data:encodeAbiParameters(event.inputs.filter((x:any)=>!x.indexed),event.inputs.filter((x:any)=>!x.indexed).map((x:any)=>(args as any)[x.name]))}]};
+ };
+ f.feed.receipt=async()=>{await loading;return f.state;};
+ // An older visible snapshot has not received either command yet.
+ f.feed.peek=()=>({...f.state,nonceA:0n});
+ try{
+  let done=false;const move=f.player.move(1).then(()=>{done=true;});
+  await new Promise(r=>setTimeout(r,50));assert(done,'A confirmed input must not wait for the full view');await move;
+  done=false;const stop=f.player.move(0).then(()=>{done=true;});
+  await new Promise(r=>setTimeout(r,50));assert(done,'Release must reach the node while hydration is pending');await stop;
+  const calls=f.sent.map(raw=>decodeFunctionData({abi:synchronizedAgentArenaAbi,data:parseTransaction(raw).data!}) as any);
+  assert.deepEqual(calls.map(c=>[c.args[2],c.args[3]]),[[1,1n],[0,2n]]);
+  assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
+  f.advance(501);let read=false,proceed!:()=>void;
+  const fresh=new Promise<void>(r=>proceed=r);f.feed.forCommand=async()=>{read=true;await fresh;f.fresh();return f.state;};
+  const next=f.player.move(-1);await new Promise(r=>setImmediate(r));assert(read);assert.equal(f.sent.length,2,'Receipts never renew the freshness of the visible state');
+  proceed();await next;
+ }finally{finish();f.player.close();}
 });
 
 test('F5 sends a neutral intent instead of assuming processed physics has no pending direction',async()=>{

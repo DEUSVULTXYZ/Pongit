@@ -21,10 +21,16 @@ export function confirmedInputMetrics(intents:{at:number;direction:number}[],rec
 /** Test-only instrumentation. Record public court state, never wallet props. */
 export async function installSyncProbe(page:Page){
  await page.addInitScript(()=>{
-  const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[],waiting:[] as any[],corrections:[] as any[],keys:[] as any[]};
+  const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[],waiting:[] as any[],corrections:[] as any[],keys:[] as any[],releases:[] as any[]};
   window.addEventListener('keydown',e=>{const direction=['ArrowUp','KeyW'].includes(e.code)?-1:['ArrowDown','KeyS'].includes(e.code)?1:0;
    if(direction&&!e.repeat){const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.keys.push({at:performance.now(),direction,side:s.side});}
   });
+  window.addEventListener('keyup',e=>{if(['ArrowUp','KeyW','ArrowDown','KeyS'].includes(e.code)){
+   const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.releases.push({at:performance.now(),side:s.side});
+  }});
+  window.addEventListener('pointerup',e=>{if((e.target as Element)?.closest('button[aria-label="Move up"],button[aria-label="Move down"]')){
+   const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.releases.push({at:performance.now(),side:s.side});
+  }});
   window.addEventListener('pongit:presentation-timing',(e:any)=>{if(data.corrections.length<40000)data.corrections.push(e.detail);});
   let waitKey='',frameAt:number|undefined;
   const raf=requestAnimationFrame;window.requestAnimationFrame=callback=>raf(t=>{frameAt=t;try{callback(t);}finally{frameAt=undefined;}});
@@ -74,7 +80,7 @@ export async function installSyncProbe(page:Page){
  });
 }
 
-export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];waiting?:any[];corrections?:any[];keys?:any[]}){
+export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];waiting?:any[];corrections?:any[];keys?:any[];releases?:any[]}){
  const intervals:number[]=[],jumps:any[]=[],lags:number[]=[],gaps:number[]=[],holds:any[]=[],frameGaps:any[]=[];
  let hold=0,maxHold=0,contractPauseMs=0,intermissionMs=0;
  for(let i=1;i<data.frames.length;i++){
@@ -123,7 +129,14 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
   if(after)localSamples.push((after.paintedAt??after.at)-key.at);else localMisses.push(key);
  }
  const localInput={samples:localSamples.length,p95Ms:p95(localSamples),misses:localMisses};
- return{localInput,correction,visibleResyncs,frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
+ const stops=(data.releases??[]).flatMap(release=>{
+  const next=(data.keys??[]).find(k=>k.at>release.at)?.at??Infinity;
+  const frames=(data.paddles??[]).filter(p=>p.side===release.side&&p.at>=release.at+50&&p.at<Math.min(next,release.at+250)&&!p.finished);
+  if(frames.length<7)return [];
+  return [{at:release.at,driftPixels:Math.max(...frames.map(p=>p.y))-Math.min(...frames.map(p=>p.y))}];
+ });
+ const stopping={samples:stops.length,p95DriftPixels:p95(stops.map(s=>s.driftPixels)),maxDriftPixels:stops.length?Math.max(...stops.map(s=>s.driftPixels)):undefined,stops};
+ return{localInput,stopping,correction,visibleResyncs,frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
   maxHoldMs:Math.max(maxHold,hold),contractPauseMs,intermissionMs,holds,frameGaps,snapshotGapP95Ms:p95(gaps),engineLagP95Ms:p95(lags),snapshotJumps:jumps,
   paddleSamples:data.paddles?.length??0,paddleJumps};
 }

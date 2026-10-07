@@ -44,12 +44,13 @@
 .action.action:focus-visible {outline:3px solid #c8fbff;outline-offset:4px}
 @media(orientation:landscape) and (max-height:600px){:global(.rooms-playing) .header.header.header{display:none}}
 @media(max-width:767px){.header.header.header{padding:14px;gap:10px}.actions.actions{flex:1 1 100%;justify-content:space-between}.header .actions :is(a,button){font-size:13px;padding:8px;flex:1 1 auto}.heading.heading{align-items:start;flex-direction:column;margin:20px 0;gap:12px;padding:22px}.heading h1{font-size:22px}.heading::after{right:20px;top:20px}.state.state{padding:24px 16px}}
-@media(max-width:767px) and (min-height:601px){
- .header.header.header {display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 96px;padding:10px 12px;gap:6px}
- .header :global(.brand) {grid-column:1/4;grid-row:1;min-width:0}
- .header .actions {display:contents}
- .header .actions :global(.arcade-settings-toggle) {grid-column:4;grid-row:1;font-size:12px!important;max-width:none}
- .header .actions :is(a,button):not(:global(.arcade-settings-toggle)) {position:relative;grid-column:auto;grid-row:2;font-size:12px;padding:6px;min-height:44px;min-width:0;overflow:hidden}
- :global(.agents-shell) .header .actions :is(a,button):not(:global(.arcade-settings-toggle)){grid-column:span 2}
+@media(max-width:767px){
+ .header.header.header {display:flex;align-items:stretch;padding:14px;gap:12px}
+ .header :global(.brand) {justify-content:flex-start;min-width:0;max-width:calc(100% - 100px);padding:0;margin:0}
+ .header :global(.brand-mark) {width:28px;height:28px}
+ .header :global(.brand-word) {font-size:21px}
+ .header .actions {position:static;display:flex;flex:1 1 100%;gap:8px;min-width:0}
+ .header .actions :global(.arcade-settings-toggle) {position:absolute;right:14px;top:14px;width:92px;min-width:44px;max-width:92px;font-size:12px!important;padding:6px}
+ .header .actions :is(a,button):not(:global(.arcade-settings-toggle)) {flex:1 1 0;justify-content:center;font-size:13px;padding:8px 4px;min-height:44px;min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:center}
  .header .actions :global(.arcade-settings-toggle)::before{display:none}
 }

@@ -23,13 +23,19 @@ export class ParticipantReconciliation {
  private paddles:[number,number]=[0,0];
  private balls=new Map<number,{x:number;y:number;continuity:string}>();
  reset(){this.paddles=[0,0];this.balls.clear();}
- sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number):ParticipantPose{
+ sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number}):ParticipantPose{
   const dt=clamp(elapsedMs,0,50);
   for(const side of [0,1] as const){
    if(previous)this.paddles[side]+=previous.paddles[side]-current.paddles[side];
    // Slower than the 180 px/s base paddle: acknowledging a held direction
    // must not visibly reverse it. Bounds consume excess error, not bank it.
-   this.paddles[side]=settle(this.paddles[side],dt,120);
+   // A stopped local paddle must not retain the asymptotic tail of an ACK.
+   // Consume the error at the same bounded correction speed. A normal 3px
+   // receipt difference ends within 25ms instead of sliding for ~400ms.
+   // Large discrepancies still reconcile honestly; never pin a false position.
+   this.paddles[side]=local?.side===side&&local.direction===0
+    ?this.paddles[side]-clamp(this.paddles[side],-120*dt/1000,120*dt/1000)
+    :settle(this.paddles[side],dt,120);
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];
   }
   const balls=current.balls.map(ball=>{

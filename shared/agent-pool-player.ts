@@ -56,6 +56,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  };
  let moving:Promise<void>|undefined,intention:{dir:-1|0|1;id:number;at:number}|undefined,inputId=0;
  let receivedInputTime:bigint|undefined;
+ let inputReceipt:{sequence:bigint;head:bigint}|undefined;
  let lastWriteAt=0;
  // A receipt acknowledges the latest queued intent, not necessarily the
  // direction of physics still catching up. Never deduplicate against that
@@ -103,7 +104,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  }
  async function recoverNow(){
   if(stopped)throw Error('Arena controls have stopped');
-  sender=undefined;acceptedDirection=undefined;controlsUntil=0;fenceGeneration++;clearTimeout(fenceTimer);
+  sender=undefined;acceptedDirection=undefined;inputReceipt=undefined;controlsUntil=0;fenceGeneration++;clearTimeout(fenceTimer);
   const started=now();
   const [chainId,block]=await Promise.all([options.base.getChainId(),options.base.getBlock()]);
   if(chainId!==10143)throw Error('Arena authorization requires Monad Testnet');
@@ -205,7 +206,9 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   })();
   fencePending=loading.finally(()=>{fencePending=undefined;});return fencePending;
  }
- async function sendNow(name:'input'|'concede'|'confirmReady'|'heartbeat'|'resumeReady',args:ArenaArguments){
+ async function sendNow(name:'input',args:ArenaArguments):Promise<void>;
+ async function sendNow(name:'concede'|'confirmReady'|'heartbeat'|'resumeReady',args:ArenaArguments):Promise<EngineState>;
+ async function sendNow(name:'input'|'concede'|'confirmReady'|'heartbeat'|'resumeReady',args:ArenaArguments):Promise<EngineState|void>{
   if(stopped)throw Error('Arena controls have stopped');
   await timed('fence',authorizeControls);
   if(stopped)throw Error('Arena controls have stopped');
@@ -240,12 +243,23 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // Contractual liveness starts during execution, before the response arrives.
    // Dating it from the acknowledgement could suppress the next heartbeat for
    // another network round trip and create an otherwise avoidable fair pause.
-   lastWriteAt=writeStarted;return verify(await timed('receipt',()=>feed.receipt(id,result,name,boundArgs,player)));
+   lastWriteAt=writeStarted;
+   const hydration=timed('receipt',()=>feed.receipt(id,result,name,boundArgs,player));
+   if(name==='input'&&m.rulesVersion===16&&receivedInputTime!==undefined){
+    // The successful matching ControlQueued receipt proves this sequence now.
+    // A missed Chaos event may require a full view for draw metadata, but that
+    // read must not hold a key release behind another network round trip.
+    const acknowledged={sequence:BigInt(boundArgs[reusable?3:2] as bigint),head:BigInt(result.receipt.blockNumber)};
+    inputReceipt=acknowledged;
+    void hydration.then(verify).catch(()=>{if(inputReceipt===acknowledged)inputReceipt=undefined;feed.invalidate();});
+    return;
+   }
+   const hydrated=verify(await hydration);return name==='input'?undefined:hydrated;
   }
   catch(error){
    const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));
-   if(terminal){intention=undefined;return terminal;}
-   sender=undefined;throw error;
+   if(terminal){intention=undefined;return name==='input'?undefined:terminal;}
+   sender=undefined;inputReceipt=undefined;throw error;
   }
  }
  function pump(){
@@ -254,14 +268,20 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    const latest=intention;
    try{await serial(async()=>{
     await timed('fence',authorizeControls);
-   const s=verify(await timed('snapshot',()=>feed.forCommand(id)));if(s.phase!==2){intention=undefined;return;}
+   // Receipt context changes only the owned sequence and block bound. Physics
+   // still comes from the live feed. Never extend its freshness on a receipt:
+   // after 500ms without an observed picture, wait for genuine recovery.
+   const cached=feed.peek(id);
+   const s=verify(inputReceipt&&cached&&cached.phase===2&&now()-cached.observedAt<500?cached:await timed('snapshot',()=>feed.forCommand(id)));if(s.phase!==2){intention=undefined;return;}
     if(stopped)throw Error('Arena controls have stopped');
     // Coalesce again after awaited recovery; never dispatch an obsolete intent.
     let selected=intention??latest;const side=s.a.toLowerCase()===player.toLowerCase()?0:1;
     if(acceptedDirection!==selected.dir){
      await sendNow('input',()=>{
       selected=intention??selected;
-      return[id,selected.dir,(side===0?s.nonceA:s.nonceB)+1n,s.head+150n];
+      const observed=side===0?s.nonceA:s.nonceB,sequence=inputReceipt&&inputReceipt.sequence>observed?inputReceipt.sequence:observed;
+      const head=inputReceipt&&inputReceipt.head>s.head?inputReceipt.head:s.head;
+      return[id,selected.dir,sequence+1n,head+150n];
      });
      acceptedDirection=selected.dir;
      if(receivedInputTime!==undefined)options.onInput?.({id:selected.id,direction:selected.dir,at:selected.at,acceptedAt:receivedInputTime});

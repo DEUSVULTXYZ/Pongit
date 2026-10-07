@@ -49,9 +49,9 @@ export function eraseFamilyLocal(m:IndependentManifest){
  for(const key of keys)if(m.arenas.some(a=>key.toLowerCase().includes(a.app.toLowerCase())))sessionStorage.removeItem(key);
  forgetFamily(m);
 }
-export async function validateFamily(m:IndependentManifest,s:FamilySession){
- const r=independentReader(independentBase(),m),g=await r.family('grantOf',[s.grant.player]);
- return g.key.toLowerCase()===s.grant.key.toLowerCase()&&g.expires===s.grant.expires&&g.revision===s.grant.revision&&g.issuedAt===s.grant.issuedAt;
+export async function validateFamily(m:IndependentManifest,s:FamilySession,renewWithin=0n){
+ const base=independentBase(),r=independentReader(base,m),[g,block]=await Promise.all([r.family('grantOf',[s.grant.player]),base.getBlock()]);
+ return g.key.toLowerCase()===s.grant.key.toLowerCase()&&g.expires===s.grant.expires&&g.revision===s.grant.revision&&g.issuedAt===s.grant.issuedAt&&g.expires>block.timestamp+renewWithin;
 }
 export async function sponsorCall(m:IndependentManifest,to:Address,data:Hex,onProgress?:(op:ChainOperation)=>void){
  const pending={to,data,id:keccak256(encodeAbiParameters([{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[to,data,0n,'']))};
@@ -77,7 +77,7 @@ export async function resumeSponsored(m:IndependentManifest,onProgress?:(op:Chai
 }
 export async function openFamily(m:IndependentManifest,identity:Identity,onProgress?:(op:ChainOperation)=>void):Promise<FamilySession>{
  await resumeSponsored(m,onProgress);
- const existing=loadFamily(m);if(existing&&existing.grant.player.toLowerCase()===identity.account.address.toLowerCase()&&await validateFamily(m,existing))return existing;
+ const existing=loadFamily(m);if(existing&&existing.grant.player.toLowerCase()===identity.account.address.toLowerCase()&&await validateFamily(m,existing,1200n))return existing;
  const base=independentBase(),r=independentReader(base,m),block=await base.getBlock();
  const key=generatePrivateKey(),grant:FamilyGrant={player:identity.account.address,key:privateKeyToAccount(key).address,issuedAt:block.timestamp,expires:block.timestamp+7200n,revision:await r.family('revisions',[identity.account.address])};
  const signature=await identity.account.signTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:grant});

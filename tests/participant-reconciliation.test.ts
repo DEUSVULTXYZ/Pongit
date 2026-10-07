@@ -6,6 +6,15 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('neutral local input consumes a normal acknowledgement without a long sliding tail',()=>{
+ const view=new ParticipantReconciliation(),canonical=pose(232.2);
+ const first=view.sample(canonical,pose(235.2),16,{side:0,direction:0});
+ assert(first.paddles[0]>232.2&&first.paddles[0]<235.2);
+ assert.equal(view.sample(canonical,undefined,16,{side:0,direction:0}).paddles[0],232.2);
+ for(let i=0;i<20;i++)assert.equal(view.sample(canonical,undefined,16,{side:0,direction:0}).paddles[0],232.2);
+ assert.equal(canonical.paddles[0],232.2,'Canonical physics is untouched');
+});
+
 test('a delayed receipt blends its 60px error without reversing a held paddle',()=>{
  const view=new ParticipantReconciliation();
  view.sample(pose(228),undefined,16);
