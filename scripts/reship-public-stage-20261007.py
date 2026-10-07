@@ -51,7 +51,8 @@ save(target / 'metadata/reusable-budget.json', {'rulesVersion': 16, 'maxBatches'
 for field, name in [('engineKey', 'engine'), ('admissionKey', 'bridge'), ('provisioningKey', 'provisioning')]: save(target / 'keys' / (name + '.json'), {'privateKey': r[field]})
 for role in ['admission', 'maintenance', 'archive', 'sponsor']: shutil.copy2(root / 'agents/secrets' / (role + '.json'), target / 'keys' / (role + '.json'))
 def human_apps(v): return [a['app'] for a in v['arenas']] + [app for p in v.get('previous', []) for app in human_apps(p)]
-protected = ','.join(sorted(set(a.lower() for a in human_apps(h))))
+legacy_protected = old['services']['reader']['environment'].get('PONG_HUMAN_APPS', '').split(',')
+protected = ','.join(sorted(set(a.lower() for a in [*human_apps(h), *legacy_protected] if a)))
 c = copy.deepcopy(old)
 for role in ['reader', 'sponsor', 'admission', 'maintenance', 'archive', 'engines']:
     s = c['services'][role]; e = s['environment']; s['restart'] = 'unless-stopped'
