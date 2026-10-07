@@ -61,10 +61,13 @@ export class LabLane {
   private pacing:{readMs:number;tickMs:number;inputMs?:number;cooldownMs?:()=>number;now?:()=>number}={readMs:0,tickMs:0},
   private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void;input?:(notice:InputNotice)=>void}){}
  private now(){return (this.pacing.now || Date.now)();}
- intent(direction:number){
+ intent(direction:number,sendNow=false){
   if(![-1,0,1].includes(direction))return;
   if(direction!==this.desired){this.intention={id:++this.inputId,direction:direction as -1|0|1,at:this.now()};this.stream?.input?.(this.intention);}
   this.desired=direction;
+  // Real controls wake the same serialized lane; the 100ms timer is only for
+  // idle observation/ticks. Recovery can still set intent without sending.
+  if(sendNow)return this.pump(false);
  }
  private held(s:LabSnapshot,side:number){return this.acceptedIntent?.id===s.id&&this.acceptedIntent.rally===s.state.scoreA+s.state.scoreB?this.acceptedIntent.direction:side===0?s.state.leftDir:s.state.rightDir;}
  stop(){this.stopped=true;this.desired=0;}

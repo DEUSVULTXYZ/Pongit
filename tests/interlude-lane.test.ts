@@ -13,6 +13,20 @@ function fixture(){
  const lane=new LabLane(async()=>override?override(s):s,session,a,()=>{},()=>errorCount++);
  return {lane,sent,state:()=>s,set:(v:Partial<LabSnapshot>)=>s={...s,...v},hold:(p:Promise<void>)=>wait=p,fail:()=>reject=true,errors:()=>errorCount,readWith:(fn?:typeof override)=>override=fn};
 }
+
+test('a real control dispatches before the 100ms idle timer, without a second nonce owner',async()=>{
+ const f=fixture();
+ await f.lane.intent(-1,true);
+ assert.deepEqual(f.sent.map(x=>[x.name,x.args[1],x.args[2]]),[['input',-1,1n]]);
+ let release!:()=>void;f.hold(new Promise<void>(resolve=>release=resolve));
+ const next=f.lane.intent(1,true);await new Promise(resolve=>setTimeout(resolve,0));
+ await f.lane.intent(-1,true);await f.lane.intent(0,true);
+ assert.equal(f.sent.length,2,'only one input can be in flight');
+ release();await next;
+ assert.deepEqual(f.sent.map(x=>x.args[1]),[-1,1,0]);
+ assert.deepEqual(f.sent.map(x=>x.args[2]),[1n,2n,3n]);
+ await f.lane.intent(0,true);assert.equal(f.sent.length,3,'same intention cannot produce an idle tick');
+});
 test("Interlude sends the latest release after an in-flight direction, with sequential nonces",async()=>{
  const f=fixture();let release!:()=>void;f.hold(new Promise(r=>release=r));f.lane.intent(-1);const first=f.lane.pump(false);await new Promise(r=>setTimeout(r,0));
  f.lane.intent(1);f.lane.intent(0);await f.lane.pump(false);assert.equal(f.sent.length,1);release();await first;

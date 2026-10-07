@@ -258,7 +258,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   },100);
   return()=>{stopped=true;clearInterval(timer);stop();play?.stop();if(lane.current===play)lane.current=null;setControlled(false);lock.current?.();lock.current=null;};
  },[manifest,view.app,bound?.id,bound?.epoch,family?.grant.key,refresh,recoveringArena,!!ownRoom,spectating]);
- const move=useCallback((d:number)=>{const blocked=current.current.panel||document.querySelector('[aria-modal="true"]');const value=blocked?0:d;lane.current?.intent(value);setDirection(value);},[]);
+ const move=useCallback((d:number)=>{const blocked=current.current.panel||document.querySelector('[aria-modal="true"]');const value=blocked?0:d;setDirection(value);void lane.current?.intent(value,true);},[]);
  useEffect(()=>{
   const keys=new Set<string>(),up=new Set(['w','arrowup']),down=new Set(['s','arrowdown']);
   const release=()=>{keys.clear();move(0);};
