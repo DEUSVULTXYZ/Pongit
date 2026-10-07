@@ -4,7 +4,23 @@ import {LabLane,type LabSession,type LabSnapshot} from "../web/lib/interlude-lab
 import {initial} from "../shared/physics-v2";
 import {zeroAddress,zeroHash} from "viem";
 import {AppRevertError} from "@interludelayer-sdk/sdk";
+import {ParticipantInputs,type InputNotice} from '../web/lib/participant-inputs';
 const a="0x1111111111111111111111111111111111111111",b="0x2222222222222222222222222222222222222222";
+test('a recovered sender cannot reuse old speculative input identities',()=>{
+ const ledger=new ParticipantInputs(),notices:InputNotice[]=[];let now=1000;
+ const lane=()=>new LabLane(async()=>{throw Error('No chain reads for local intent');},{} as LabSession,a,()=>{},()=>{},()=>{},
+  {readMs:500,tickMs:300,now:()=>now},{receipt:async()=>{throw Error('unused');},nextInputId:()=>ledger.allocateId(),
+   input:n=>{notices.push(n);ledger.notice(n,0n,1000);}});
+ const old=lane();old.intent(1);now=1100;old.intent(0);old.stop();
+ // The nonce journal recovers independently. A replacement lane shares this
+ // match's presentation ledger, including intentions never sent during loss.
+ now=2000;const recovered=lane();recovered.intent(-1);
+ assert.deepEqual(notices.map(n=>n.id),[1,2,3]);
+ const accepted={...notices.at(-1)!,acceptedAt:1_020_000n};
+ ledger.notice(accepted,1_000_000n,2000);
+ assert.deepEqual(ledger.controls(0,1_000_000n),[{side:0,direction:-1,at:1_020_000n}]);
+ assert.deepEqual(ledger.controls(0,1_020_000n),[],'ACK removes old unsent intentions after recovery');
+});
 function fixture(){
  let s:LabSnapshot={id:1n,revision:1n,phase:2,a,b,target:zeroAddress,winner:zeroAddress,head:100n,clock:0n,nonceA:0n,nonceB:0n,deadline:10000n,state:initial(zeroHash),observedAt:0};
  const sent:{name:string;args:readonly unknown[]}[]=[];let reject=false,wait:Promise<void>=Promise.resolve(),errorCount=0;

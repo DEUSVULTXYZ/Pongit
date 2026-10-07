@@ -244,7 +244,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
       }
      }
     }
-    play=new LabLane(fresh=>instance.feed.read(id,fresh),session,s.grant.player,receive,e=>{setControlled(false);setSync(recovery.failure(e));retryAt=Date.now()+recoveryDelay(e);},e=>setSync(recovery.failure(e)),{readMs:500,tickMs:300},{receipt:(result,name,args)=>instance.feed.receipt(id,result,name,receiptArgs(args),s.grant.player),sending:value=>pilot.sending(value),input:notice=>{
+    play=new LabLane(fresh=>instance.feed.read(id,fresh),session,s.grant.player,receive,e=>{setControlled(false);setSync(recovery.failure(e));retryAt=Date.now()+recoveryDelay(e);},e=>setSync(recovery.failure(e)),{readMs:500,tickMs:300},{receipt:(result,name,args)=>instance.feed.receipt(id,result,name,receiptArgs(args),s.grant.player),sending:value=>pilot.sending(value),nextInputId:()=>participantInputs.current.allocateId(),input:notice=>{
      const s=latestLive.current;if(stopped||!s)return;participantInputs.current.notice(notice,s.clock,s.observedAt,inputClock.current?.matchId===arenaReference(app,binding.epoch,s.id)?inputClock.current.frame:undefined);inputRevision(v=>v+1);
     }});
     const known=instance.feed.peek(id);if(known)play.ingest(known);lane.current=play;setControlled(true);
@@ -256,7 +256,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
    if(play&&!play.stopped){void play.pump(!!s&&pilot.due(labSide(s,current.current.family?.grant.player),s,performance.now()));}
    else{void observe();void restore();}
   },100);
-  return()=>{stopped=true;clearInterval(timer);stop();play?.stop();if(lane.current===play)lane.current=null;setControlled(false);lock.current?.();lock.current=null;};
+  return()=>{stopped=true;clearInterval(timer);stop();play?.stop();(instance.client.node.transport as any)?.closeSend?.();if(lane.current===play)lane.current=null;setControlled(false);lock.current?.();lock.current=null;};
  },[manifest,view.app,bound?.id,bound?.epoch,family?.grant.key,refresh,recoveringArena,!!ownRoom,spectating]);
  const move=useCallback((d:number)=>{const blocked=current.current.panel||document.querySelector('[aria-modal="true"]');const value=blocked?0:d;setDirection(value);void lane.current?.intent(value,true);},[]);
  useEffect(()=>{

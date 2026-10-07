@@ -59,11 +59,11 @@ export class LabLane {
   private onResult:(s:LabSnapshot,latency?:number)=>void,private onError:(e:unknown)=>void,
   private onUnavailable:(e:unknown)=>void=()=>{},
   private pacing:{readMs:number;tickMs:number;inputMs?:number;cooldownMs?:()=>number;now?:()=>number}={readMs:0,tickMs:0},
-  private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void;input?:(notice:InputNotice)=>void}){}
+  private stream?:{receipt:(result:any,name:string,args:readonly unknown[])=>Promise<LabSnapshot>;sending?:(value:boolean)=>void;input?:(notice:InputNotice)=>void;nextInputId?:()=>number}){}
  private now(){return (this.pacing.now || Date.now)();}
  intent(direction:number,sendNow=false){
   if(![-1,0,1].includes(direction))return;
-  if(direction!==this.desired){this.intention={id:++this.inputId,direction:direction as -1|0|1,at:this.now()};this.stream?.input?.(this.intention);}
+  if(direction!==this.desired){this.intention={id:this.stream?.nextInputId?.()??++this.inputId,direction:direction as -1|0|1,at:this.now()};this.stream?.input?.(this.intention);}
   this.desired=direction;
   // Real controls wake the same serialized lane; the 100ms timer is only for
   // idle observation/ticks. Recovery can still set intent without sending.

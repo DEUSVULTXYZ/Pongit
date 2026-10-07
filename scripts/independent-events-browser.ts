@@ -94,6 +94,12 @@ async function init(i:number){
  cdp.on('WebAuthn.credentialAsserted',()=>counts[i]++);
  const clock=()=>performance.timeOrigin+performance.now(),requestTimes=new WeakMap<object,number>();
  page.on('request',r=>requestTimes.set(r,clock()));
+ page.on('requestfailed',request=>{
+  try{const method=request.postDataJSON()?.method;if(method!=='interlude_sendTransaction')return;
+   report.network.push({player:i,at:clock(),method,status:0,error:request.failure()?.errorText??'request failed',
+    ms:clock()-(requestTimes.get(request)??clock()),transport:'http'});
+  }catch{/* Do not retain request bodies, signatures or grants. */}
+ });
  page.on('websocket',socket=>{
   const pending=new Map<string,any>();
   socket.on('framesent',event=>{try{

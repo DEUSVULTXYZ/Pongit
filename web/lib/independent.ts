@@ -163,7 +163,7 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
  const arenaAbi=independentRules(m).arena;
  const entry=m.arenas.find(a=>a.app.toLowerCase()===app.toLowerCase());if(!entry?.node)throw Error('Unknown arena');
  const journal=new RoomsCommandJournal(sessionStorage,app,arenaAbi as Abi);
- const client=createInterludeClient({app,abi:arenaAbi as Abi,node:entry.node,base:independentBase(),store:webStorageStore(sessionStorage),expirySeconds:7200,transport:engineTransport(entry.node,journal),fastPath:true});
+ const client=createInterludeClient({app,abi:arenaAbi as Abi,node:entry.node,base:independentBase(),store:webStorageStore(sessionStorage),expirySeconds:7200,transport:engineTransport(entry.node,journal,m.rulesVersion===14?true:undefined),fastPath:true});
  const feed=new EngineFeed(client,new EngineStream(entry.node,app,undefined,()=>engineCooldownMs(entry.node!)));
  return {client,feed,journal,async session(s:FamilySession){
   const d=await readHubDelegation(client.base,m.hub,app);if(d.status!==1||!hubLeaseValid(m.hub,d.expiresAt,BigInt(Math.floor(Date.now()/1000))))throw Error('This arena is recovering. Your arcade authorization is unchanged.');

@@ -6,7 +6,10 @@ export type ParticipantPresentationClock={clock:bigint;observedAt:number};
 export class ParticipantInputs {
  private inputs=new Map<number,InputNotice&{predictedAt:bigint}>();
  private confirmedRevision=0;
+ private nextInputId=0;
  get revision(){return this.confirmedRevision;}
+ /** The match owns these IDs; replacing a recovered sender must not reuse them. */
+ allocateId(){return ++this.nextInputId;}
  reset(){this.inputs.clear();this.confirmedRevision++;}
  notice(input:InputNotice,clock:bigint,observedAt:number,presentation?:ParticipantPresentationClock){
   if(input.acceptedAt!==undefined)for(const [id,old] of this.inputs)if(id<input.id&&old.acceptedAt===undefined)this.inputs.delete(id);
