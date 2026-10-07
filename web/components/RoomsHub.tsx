@@ -1274,7 +1274,7 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
               <span className="rooms-choice-stage">
                 <PixelPalaceArt kind="match" />
               </span>
-              <strong>{agentArcade?"Play a person":"Matchmaking"}</strong>
+              <strong>{agentArcade?"Player vs Player":"Matchmaking"}</strong>
               <span>{mode === 1 ? "Chaos" : "Classic"} · Ranked</span>
               <i className="palace-key" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m7 4 13 8-13 8Z" fill="currentColor" /></svg></i>
             </button>
@@ -1286,7 +1286,7 @@ export function RoomsHub({ roomId,agentArcade=false }: { roomId?: string;agentAr
               <span className="rooms-choice-stage">
                 <PixelPalaceArt kind="invite" />
               </span>
-              <strong>{agentArcade?"Play an agent":"Invite someone"}</strong>
+              <strong>{agentArcade?"Player vs Agent":"Invite someone"}</strong>
               <span>{agentArcade?"Choose your opponent":"Your next rival"}</span>
               <i className="palace-key" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m10 8 3-3a4 4 0 0 1 6 6l-3 3m-2 2-3 3a4 4 0 0 1-6-6l3-3m1 5 6-6" /></svg></i>
             </button>

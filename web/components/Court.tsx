@@ -1,6 +1,7 @@
 "use client";
 import {presentationWait,type PresentationWait} from '../lib/presentation-wait';
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
+import {responsiveState,rulesPaddleSpeed} from '../../shared/physics-rules';
 import { arcadeAudio } from "../lib/audio";
 import { move, SCALE, type State } from "../../shared/physics-v2";
 import { predictPaddle, boundedClock, projectConfirmed, projectLive, type PendingInput } from "../lib/presentation";
@@ -52,6 +53,8 @@ type Props = {
   onNetwork?:(age:number,correction:number)=>void;
   onPlayback?:(frame:CourtPlayback)=>void;
   onInputClock?:(matchId:string,frame:ParticipantPresentationClock)=>void;
+  onPaint?:(matchId:string)=>void;
+  readIntent?:(processed:bigint)=>{direction:number;controls:readonly TimedControl[];revision:number};
   onStats: (fps: number, extrapolated: boolean, waiting: boolean,cause?:PresentationWait) => void;
 };
 export function Court({
@@ -66,8 +69,10 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,confirmedInputRevision,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{}, onInputClock,
+  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,confirmedInputRevision,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{}, onInputClock,onPaint,readIntent,
 }: Props) {
+  state=useMemo(()=>state?responsiveState(state,rulesVersion??0):null,[state,rulesVersion]);
+  chaos=useMemo(()=>chaos?{...chaos,physics:responsiveState(chaos.physics,rulesVersion??0)}:undefined,[chaos,rulesVersion]);
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
     state,
@@ -79,7 +84,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback, onInputClock,
+    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback, onInputClock,onPaint,readIntent,
   });
   current.current = {
     state,
@@ -91,7 +96,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback, onInputClock,
+    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback, onInputClock,onPaint,readIntent,
   };
   useEffect(() => {
     const el = canvas.current!;
@@ -119,6 +124,9 @@ export function Court({
     let previousParticipant:typeof current.current|undefined,previousTarget=0n;
     function draw(now: number) {
       let p = current.current;
+      // Keyboard intent and ACKs are stored outside React. An unrelated render
+      // or scoreboard update must never delay the next animation frame.
+      if(p.readIntent&&p.state){const intent=p.readIntent(p.state.t);p={...p,direction:intent.direction,coherentControls:intent.controls,confirmedInputRevision:intent.revision};}
       const identity = `${p.matchId}:${p.side}:${p.replay}:${p.liveEngine}:${p.bufferedSpectator}`;
       if (identity !== context) { reconciliation.reset();previousParticipant=undefined;played="";playout.reset();playerPlayout.reset();spectatorChaos.reset();trail.reset();chaosTrails.forEach(t=>t.reset());seenEffects=new Set(p.chaos?.physics.effects.map(e=>e.serial)||[]);seenHits.clear();impacts=[]; previousSound=null; context = identity; visualY = null; livePaddle.reset(); liveClock.reset(); anchorObserved=0; localDirection=p.direction; localAt=now; }
       const coherent=p.coherentControls!==undefined&&p.side>=0&&!p.replay;
@@ -144,12 +152,14 @@ export function Court({
       const timing=boundedClock(p.clock,anchorAge,now-anchor);
       let target=p.replay||playback?p.clock:p.liveEngine?liveClock.sample(timing.target,p.progressionLimit):timing.target;
       if(p.progressionLimit!==undefined&&target>p.progressionLimit)target=p.progressionLimit;
-      let waiting = false,pointBoundary=false;
+      let waiting = false,pointBoundary=false,contactBoundary=false;
+      let drawnBalls:{id:number;x:number;y:number}[]=[];
       const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:coherent?projectChaosParticipant(p.chaos.physics,target,p.coherentControls!,chaosContactResolution(p.rulesVersion??10),p.housePrediction):playback?spectatorChaos.sample(p.chaos.physics,target,chaosContactResolution(p.rulesVersion??10)):projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
-      if(cp){pointBoundary='pointBoundary' in cp&&!!cp.pointBoundary;s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
+      if(cp){contactBoundary='contactBoundary' in cp&&!!cp.contactBoundary;pointBoundary='pointBoundary' in cp&&!!cp.pointBoundary;s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
       else if (s) {
         const projected = p.replay ? { state: s, waiting: false }
           : coherent?projectParticipant(s,target,p.coherentControls!,p.housePrediction):p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
+        contactBoundary='contactBoundary' in projected&&!!projected.contactBoundary;
         pointBoundary='pointBoundary' in projected&&!!projected.pointBoundary;
         s = projected.state;
         waiting = projected.waiting || timing.stale;
@@ -204,7 +214,7 @@ export function Court({
       // immediate and reconcile against the latest authoritative paddle.
       const ownerState=current.current.state;
       const ownerMods=current.current.chaos?eventPaddles(current.current.chaos.physics):null;
-      const ownerSpeed=ownerMods?Number(p.side===0?ownerMods.speedA:ownerMods.speedB)/1e6:180;
+      const ownerSpeed=ownerMods?Number(p.side===0?ownerMods.speedA:ownerMods.speedB)/1e6:Number(rulesPaddleSpeed(p.rulesVersion??0))/1e6;
       const ownerAge=Math.min(600,Math.max(0,Date.now()-current.current.observedAt))/1000;
       const confirmedY = p.liveEngine&&ownerState?Math.max(half,Math.min(576-half,
         Number(p.side===0?ownerState.left:ownerState.right)/1e6+(p.side===0?ownerState.leftDir:ownerState.rightDir)*ownerSpeed*ownerAge)):p.side === 0 ? yA : yB;
@@ -263,7 +273,7 @@ export function Court({
           ctx.save();for(const point of points){const size=3+6*point.strength;ctx.globalAlpha=.42*point.strength;ctx.fillStyle=ball.id===1?'#84efff':'#d6a0ff';ctx.fillRect(point.x-size/2,point.y-size/2,size,size);}ctx.restore();
         }
         for(let i=0;i<2;i++)if(!cp.state.balls[i].alive)chaosTrails[i].reset();
-        drawChaosPaddles(ctx,f);drawChaosBalls(ctx,f);
+        drawChaosPaddles(ctx,f);drawChaosBalls(ctx,f);drawnBalls=f.balls.map(({id,x,y})=>({id,x,y}));
       }
       if (s&&!cp) {
         const points = trail.sample({ x: participantPicture?.balls[0]?.x??Number(s.x) / 1e6, y: participantPicture?.balls[0]?.y??Number(s.y) / 1e6,
@@ -296,7 +306,7 @@ export function Court({
         // A predicted goal remains unconfirmed. Keep its last visible edge
         // position instead of leaving the spectator with an empty court.
         const ball=participantPicture?.balls[0]??(playback?visibleBall(Number(s.x)/1e6,Number(s.y)/1e6):{x:Number(s.x)/1e6,y:Number(s.y)/1e6});
-        sprites.ball(ball.x,ball.y);
+        sprites.ball(ball.x,ball.y);drawnBalls=[{id:1,x:ball.x,y:ball.y}];
       } else if(!s) {
         ctx.strokeStyle = "#777";
         ctx.strokeRect(506, 282, 12, 12);
@@ -314,6 +324,14 @@ export function Court({
         // Score and effects follow this same displayed frame.
         const rally=`${s.scoreA}:${s.scoreB}:${s.finished}:${cp?.state.effects.map(e=>`${e.serial}:${e.remaining}`).join(',')??''}`;
         if(rally!==played||now-playedAt>=250){played=rally;playedAt=now;p.onPlayback({matchId:p.matchId,scoreA:s.scoreA,scoreB:s.scoreB,gameMs:Number(s.t)/1000,finished:s.finished,effects:cp?eventHud(cp.state):[]});}
+      }
+      if(s&&!document.hidden){
+        p.onPaint?.(p.matchId);
+        if(measureControls)window.dispatchEvent(new CustomEvent('pongit:court-frame',{detail:{ref:p.matchId,at:now,
+         rules:p.rulesVersion,side:p.side,balls:drawnBalls,paddles:[yA,yB],rally:renderedRally,score:[s.scoreA,s.scoreB],
+         sourceUs:String(p.state?.t??0n),renderedUs:String(s.t),contactBoundary,
+         collisions:p.chaos?.collisions.map(h=>({...h,at:String(h.at),x:String(h.x),y:String(h.y)}))??[],
+         sourceVelocity:p.state?{vx:String(p.state.vx),x:String(p.state.x),score:[p.state.scoreA,p.state.scoreB]}:undefined}}));
       }
       count++;
       if (now - last > 1000) {

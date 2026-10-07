@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {zeroHash,type Abi,type Address,type PublicClient} from 'viem';
 import type {IndependentManifest} from '../../shared/independent';
 import {independentReader} from '../../shared/independent-read';
@@ -30,7 +31,7 @@ type Options={base:PublicClient;manifest:IndependentManifest;engine:Engine;healt
  * recovery and real release do not depend on that admission budget. */
 export function independentReusableLifecycle(o:Options){
  const {base,manifest:m,engine:e,health:h,results,queue}=o;
- if(m.rulesVersion!==14||!m.resultVerifier)throw Error('Reusable human lifecycle manifest required');
+ if(!isReusableHumanRules(m.rulesVersion)||!m.resultVerifier)throw Error('Reusable human lifecycle manifest required');
  const verifier=m.resultVerifier;let validated=0n,checked=0;
  async function observeState(){
   // A routine read does not make a previously verified engine unavailable.

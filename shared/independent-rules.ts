@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from './independent-rules-version';
 import type {IndependentManifest} from './independent';
 import {abi as legacyArena} from './abi-independent-IndependentArena';
 import {abi as legacyLobby} from './abi-independent-IndependentLobby';
@@ -17,8 +18,8 @@ import {abi as reusableSettlement} from './abi-independent-ReusableEventsSettlem
  * from a familiar function name or overwrite a historical deployment decoder. */
 export function independentRules(m:Pick<IndependentManifest,'rulesVersion'>){
  const version=m.rulesVersion??4;
- if(version!==4&&version!==12&&version!==13&&version!==14)throw Error('Unsupported independent rules');
- if(version===14)return {version,events:true,arena:reusableArena,lobby:reusableLobby,settlement:reusableSettlement,
+ if(version!==4&&version!==12&&version!==13&&!isReusableHumanRules(version))throw Error('Unsupported independent rules');
+ if(isReusableHumanRules(version))return {version,events:true,arena:reusableArena,lobby:reusableLobby,settlement:reusableSettlement,
   market:eventsMarket,permissionDomain:'PONGIT Reusable Arena'} as const;
  return version!==4
   ?{version,events:true,arena:version===13?readyArena:eventsArena,lobby:version===13?readyLobby:eventsLobby,settlement:eventsSettlement,market:eventsMarket,permissionDomain:'PONGIT Pooled Arena'} as const
@@ -29,7 +30,7 @@ export function independentRules(m:Pick<IndependentManifest,'rulesVersion'>){
  * Legacy UI lanes still express their logical match first; convert once at
  * the transport boundary and use the same arguments for receipt decoding. */
 export function independentControlArgs(version:number,epoch:bigint,args:readonly unknown[]){
- if(version!==14)return args;
+ if(!isReusableHumanRules(version))return args;
  if(epoch<=0n||typeof args[0]!=='bigint'||args[0]<=0n)throw Error('Reusable control needs its epoch and logical match');
  return [epoch,...args];
 }

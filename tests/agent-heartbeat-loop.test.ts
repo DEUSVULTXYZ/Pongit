@@ -1,8 +1,8 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {agentHeartbeatLoop} from '../shared/agent-heartbeat-loop';
 const turn=()=>new Promise(resolve=>setImmediate(resolve));
-function clock(){let tick=()=>{},cleared=false;return{every:(fn:()=>void,ms:number)=>{assert.equal(ms,200);tick=fn;return 1;},clear:(id:unknown)=>{assert.equal(id,1);cleared=true;},tick:()=>tick(),cleared:()=>cleared};}
-test('first eligible heartbeat does not wait for another 200ms timer',async()=>{
+function clock(){let tick=()=>{},cleared=false;return{every:(fn:()=>void,ms:number)=>{assert.equal(ms,100);tick=fn;return 1;},clear:(id:unknown)=>{assert.equal(id,1);cleared=true;},tick:()=>tick(),cleared:()=>cleared};}
+test('first eligible heartbeat does not wait for another 100ms timer',async()=>{
  const c=clock();let calls=0;const loop=agentHeartbeatLoop(async()=>{calls++;},()=>true,()=>assert.fail('Unexpected error'),c);
  try{await turn();assert.equal(calls,1);}finally{await loop.stop();}
 });

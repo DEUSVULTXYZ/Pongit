@@ -29,10 +29,10 @@ contract ReusableEventsLobbyTest is Test {
     PublishedResultVerifier verifier;ReusableEventsArena arena;uint256 constant BRIDGE=812;
     function setUp() public virtual {
         vm.chainId(10143);vm.warp(1_800_000_000);vm.roll(100);vm.setBlockhash(99,keccak256("known Monad block"));
-        hub=createHub();family=new ArcadeFamily();lobby=new ReusableEventsLobby(family,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE),vm.addr(813));
+        hub=createHub();family=new ArcadeFamily();lobby=createLobby();
         verifier=new PublishedResultVerifier(IReusableAdmissionAuthority(address(lobby)),IInterludeHub(address(hub)));lobby.bindVerifier(verifier);
         ratings=new PublishedRatings(address(lobby),address(this),vm.getBlockTimestamp());ratings.sealMigration(keccak256("empty fixture"));lobby.bindRatings(ratings);
-        ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,new ChaosModifiers());
+        ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,createModifiers());
         ChaosPhysics physics=new ChaosPhysics(effects,new ChaosRally(),dynamics,new ChaosContacts(dynamics));
         ChaosEngine kernel=new ChaosEngine(new ChaosCodec(),physics,new DrandEvmnet(),new ChaosDrawRules());
         for(uint256 i;i<3;i++){
@@ -43,6 +43,8 @@ contract ReusableEventsLobbyTest is Test {
         assertLe(address(lobby).code.length,32768,"reviewed Monad authority runtime budget");
     }
     function createHub() internal virtual returns(IndependentHubFixture){return new IndependentHubFixture();}
+    function createLobby() internal virtual returns(ReusableEventsLobby){return new ReusableEventsLobby(family,IInterludeHub(address(hub)),address(this),vm.addr(BRIDGE),vm.addr(813));}
+    function createModifiers() internal virtual returns(ChaosModifiers){return new ChaosModifiers();}
     function createArena(ChaosEngine kernel) internal virtual returns(ReusableEventsArena){
         return new ReusableEventsArena(IInterludeHub(address(hub)),address(lobby),vm.addr(BRIDGE),vm.addr(813),kernel,verifier);
     }

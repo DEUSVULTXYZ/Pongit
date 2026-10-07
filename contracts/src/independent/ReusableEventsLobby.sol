@@ -36,14 +36,14 @@ contract ReusableEventsLobby is IndependentLobby {
         require(msg.sender==setupOwner&&!setupSealed&&address(verifier)==address(0)
             &&address(candidate.authority())==address(this)&&address(candidate.hub())==address(hub),"setup verifier");verifier=candidate;
     }
-    function arenaRulesVersion() external pure returns(uint256){return 14;}
+    function arenaRulesVersion() public pure virtual returns(uint256){return 14;}
     function ticketOf(uint256 id) external view returns(Admission.Ticket memory,T.Binding memory){return(tickets[id],bindings[id]);}
     function addArena(IndependentArena candidate) external override {
         ReusableEventsArena a=ReusableEventsArena(address(candidate));
         require(msg.sender==setupOwner&&!setupSealed&&arenas.length<16&&!registeredArena[address(a)],"setup only");
         require(a.lobby()==address(this)&&a.lifecycleOwner()==address(this)&&address(a.hub())==address(hub)
             &&a.pressureSigner()==pressureSigner&&a.admissionSigner()==admissionSigner
-            &&address(a.resultVerifier())==address(verifier)&&a.RULES_VERSION()==14&&!a.isEphemeral(),"arena configuration");
+            &&address(a.resultVerifier())==address(verifier)&&a.RULES_VERSION()==arenaRulesVersion()&&!a.isEphemeral(),"arena configuration");
         require(hub.statusOf(address(a),Types.GLOBAL)==Types.Status.None,"arena already delegated");
         registeredArena[address(a)]=true;arenas.push(candidate);emit ArenaRegistered(address(a),arenas.length-1);
     }
@@ -81,7 +81,7 @@ contract ReusableEventsLobby is IndependentLobby {
         require(block.number>1&&block.number-1<=type(uint64).max,"source block");
         T.Binding memory binding=T.Binding(id,p.room,p.a,p.b,a.key,b.key,a.expires,b.expires,room_.mode,room_.ranked,uint64(block.number-1),session.epoch);
         Admission.Ticket memory t=Admission.Ticket(address(this),chosen,session.epoch,uint256(count)+1,id,
-            keccak256(abi.encode(binding)),uint64(block.timestamp),uint64(block.timestamp+120),uint64(block.number-1),blockhash(block.number-1),14);
+            keccak256(abi.encode(binding)),uint64(block.timestamp),uint64(block.timestamp+120),uint64(block.number-1),blockhash(block.number-1),arenaRulesVersion());
         require(t.sourceHash!=0&&issuedTicket[chosen][session.epoch][t.sequence]==0,"fresh source/ticket");
         tickets[id]=t;bindings[id]=binding;issuedTicket[chosen][t.epoch][t.sequence]=Admission.digest(t);
         arenaOf[id]=chosen;reservedMatch[chosen]=id;emit ArenaAssigned(id,chosen,p.room);emit AdmissionIssued(id,chosen,t.epoch,t,binding);
@@ -89,7 +89,7 @@ contract ReusableEventsLobby is IndependentLobby {
     function captureProof(uint256 id,Game.Result calldata complete,bytes32[16] calldata proof) external {
         require(setupSealed&&arenaOf[id]!=address(0),"assigned match");Admission.Ticket memory t=tickets[id];T.Binding memory b=bindings[id];T.Result memory r=complete.match_;
         require(r.id==id&&r.arena==t.arena&&r.epoch==t.epoch&&r.a==b.a&&r.b==b.b&&r.mode==b.mode&&r.ranked==b.ranked
-            &&complete.rules==14&&complete.elapsedUs<=1_800_000_000&&complete.finishedAt>0&&complete.finishedAt<=block.timestamp,"canonical result binding");
+            &&complete.rules==arenaRulesVersion()&&complete.elapsedUs<=1_800_000_000&&complete.finishedAt>0&&complete.finishedAt<=block.timestamp,"canonical result binding");
         bool finality=verifier.verify(t,keccak256(abi.encode(complete)),uint32(t.sequence-1),proof);
         if(ratings.indexOf(id)==0){
             ratings.publish(r,finality);bettingCutoff[id]=complete.finishedAt;_releaseParticipation(id,r.winner);

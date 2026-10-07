@@ -41,11 +41,11 @@ export async function initializePoolOperations(db:Pool){await db.query(`
  * permissionless maintenance only; it cannot impersonate a human or spend funds.
  * No pending entry is deleted, including a refusal proven safe to retire. */
 export function createPoolEngine(db:Pool,base:PublicClient,hub:Address,app:Address,url:string,key:Hex,
- ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;rulesVersion?:15|16;publicationProbe?:'epoch-marker-v1';archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number;hubObservation?:()=>Promise<HubObservation>;publicationFetch?:typeof fetch}){
+ ref:{epoch:bigint;id:bigint},onSnapshot?:(state:EngineState)=>void,runtime?:{node?:PublicClient;feed?:EngineFeed;series?:boolean;reusable?:boolean;rulesVersion?:15|16|17;publicationProbe?:'epoch-marker-v1';archive?:(results:ReusableResultCandidate[])=>Promise<void>;now?:()=>number;hubObservation?:()=>Promise<HubObservation>;publicationFetch?:typeof fetch}){
  if(runtime?.series&&runtime?.reusable)throw Error('Choose one arena generation');
  if(runtime?.reusable&&!runtime.archive)throw Error('Reusable results require a durable archive');
- if(runtime?.rulesVersion===16&&!runtime.reusable)throw Error('Synchronized rules require a reusable arena');
- const arenaAbi=runtime?.reusable?(runtime.rulesVersion===16?synchronizedAgentArenaAbi:reusableAgentArenaAbi):runtime?.series?seriesAgentArenaAbi:abi;
+ if((runtime?.rulesVersion===16||runtime?.rulesVersion===17)&&!runtime.reusable)throw Error('Synchronized rules require a reusable arena');
+ const arenaAbi=runtime?.reusable?((runtime.rulesVersion===16||runtime.rulesVersion===17)?synchronizedAgentArenaAbi:reusableAgentArenaAbi):runtime?.series?seriesAgentArenaAbi:abi;
  const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
  const stream=new EngineStream(url,app,u=>new WebSocket(u,{origin:'https://pongit.xyz'}) as any,()=>engineCooldownMs(url));
  const feed=runtime?.feed??new EngineFeed({app,abi:arenaAbi,node},stream),unwatch=feed.watch(ref.id,s=>onSnapshot?.(s));

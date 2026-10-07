@@ -27,7 +27,7 @@ export function AgentReplay({reference,players}:{reference:AgentMatchRef;players
   },80);return()=>clearInterval(t);
  },[playing,frames]);
  const s=frames[index],short=(a:string)=>`${a.slice(0,6)}…${a.slice(-4)}`;
- return <section className={`rooms-shell ${styles.replay}`}>{s?<p role="status">{message}</p>:<ArcadeProgress stage={stage} title={stage==='loading'?'Loading replay':undefined} detail={stage==='loading'?undefined:message} actions={stage!=='loading'&&<button onClick={()=>setRetry(n=>n+1)}>Retry</button>}/>} {s&&<>
+ return <section data-agent-replay className={`rooms-shell ${styles.replay}`}>{s?<p role="status">{message}</p>:<ArcadeProgress stage={stage} title={stage==='loading'?'Loading replay':undefined} detail={stage==='loading'?undefined:message} actions={stage!=='loading'&&<button onClick={()=>setRetry(n=>n+1)}>Retry</button>}/>} {s&&<>
   <div className={`rooms-court ${styles.recording}`}>
   <AgentScoreboard players={players??[{name:short(s.a),avatar:0},{name:short(s.b),avatar:1}]} scores={[s.state.scoreA,s.state.scoreB]} caption={index===frames.length-1?'FINAL SCORE':'RECORDED MATCH'}/>
   <p className={styles.accessibleScore}>{s.state.scoreA} : {s.state.scoreB}</p>

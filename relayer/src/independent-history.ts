@@ -9,6 +9,7 @@ type Graphql=(query:string,variables?:any)=>Promise<any>;
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
 export async function independentHistory(db:Pool,base:PublicClient,m:IndependentManifest,graphql?:Graphql,legacy=independentLegacy(db)){
  const scope=m.lobby.toLowerCase(),r=independentReader(base,m);
+ const ownedArenas=m.ratingsContinuity?new Set(m.arenas.map(a=>a.app.toLowerCase())):null;
  await db.query(`CREATE TABLE IF NOT EXISTS independent_history(lobby text NOT NULL,id text NOT NULL,ref text NOT NULL,record jsonb NOT NULL,block_number bigint NOT NULL,ended_at bigint NOT NULL,replay text NOT NULL DEFAULT 'recording',PRIMARY KEY(lobby,id));
  CREATE TABLE IF NOT EXISTS independent_frames(lobby text NOT NULL,id text NOT NULL,revision bigint NOT NULL,snapshot jsonb NOT NULL,PRIMARY KEY(lobby,id,revision));
  CREATE TABLE IF NOT EXISTS independent_history_cursor(lobby text PRIMARY KEY,block_number bigint NOT NULL);`);
@@ -34,6 +35,10 @@ export async function independentHistory(db:Pool,base:PublicClient,m:Independent
   for(const log of logs){
    if(!['ResultPublished','ResultCorrected','ResultFinal'].includes(log.eventName))continue;
    const id=BigInt((log.args as any).id),entry=await r.ratings('entry',[id]),ref=arenaReference(entry.first.arena,entry.first.epoch,id);
+   // A continuing ledger mirrors corrections/finality for ranking. The original
+   // history observer owns those frames, rules and URLs; do not create a second
+   // replay under the new lobby with the new physics version.
+   if(ownedArenas&&!ownedArenas.has(entry.first.arena.toLowerCase()))continue;
    // Full current ledger state verifies every cached summary. Original payment
    // decisions and corrected results are both retained; no second payout is queued.
    const previous=(await db.query('SELECT record FROM independent_history WHERE lobby=$1 AND id=$2',[scope,String(id)])).rows[0]?.record;

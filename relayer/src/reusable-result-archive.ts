@@ -14,8 +14,8 @@ BEGIN
   SELECT pg_get_constraintdef(oid) INTO definition FROM pg_constraint
    WHERE conrelid=to_regclass(relation_name) AND conname=constraint_name;
   IF definition IS NULL THEN RAISE EXCEPTION 'Missing rules constraint on %',relation_name; END IF;
-  IF definition NOT LIKE '%16%' THEN
-   EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I, ADD CONSTRAINT %I CHECK (rules IN (14,15,16))',relation_name,constraint_name,constraint_name);
+  IF definition NOT LIKE '%18%' OR definition NOT LIKE '%17%' THEN
+   EXECUTE format('ALTER TABLE %I DROP CONSTRAINT %I, ADD CONSTRAINT %I CHECK (rules IN (14,15,16,17,18))',relation_name,constraint_name,constraint_name);
   END IF;
  END LOOP;
 END $upgrade$;`;
@@ -27,7 +27,7 @@ export async function initializeReusableResultArchive(db:Pick<Pool,'query'>){
  await db.query(`CREATE TABLE IF NOT EXISTS il_reusable_results (
   chain_id numeric(78,0) NOT NULL,app text NOT NULL,epoch numeric(78,0) NOT NULL,
   position integer NOT NULL CHECK(position>=0 AND position<65536),leaf text NOT NULL,root text NOT NULL,
-  match_id numeric(78,0) NOT NULL,rules integer NOT NULL CHECK(rules IN (14,15,16)),
+  match_id numeric(78,0) NOT NULL,rules integer NOT NULL CHECK(rules IN (14,15,16,17,18)),
   ticket_hash text NOT NULL,result_hash text NOT NULL,canonical text NOT NULL,
   transaction_hash text NOT NULL,observed_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY(chain_id,app,epoch,position,leaf,root,transaction_hash));
@@ -35,13 +35,13 @@ export async function initializeReusableResultArchive(db:Pick<Pool,'query'>){
  CREATE TABLE IF NOT EXISTS il_reusable_slot_results (
   chain_id numeric(78,0) NOT NULL,app text NOT NULL,epoch numeric(78,0) NOT NULL,
   position integer NOT NULL CHECK(position>=0 AND position<65536),leaf text NOT NULL,root text NOT NULL,
-  match_id numeric(78,0) NOT NULL,rules integer NOT NULL CHECK(rules IN (14,15,16)),
+  match_id numeric(78,0) NOT NULL,rules integer NOT NULL CHECK(rules IN (14,15,16,17,18)),
   ticket_hash text NOT NULL,result_hash text NOT NULL,canonical text NOT NULL,
   observed_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(chain_id,app,epoch,position,leaf,root));`);
  await db.query(reusableResultRulesUpgradeSql);
 }
 function validate(c:ReusableSlotResult){
- if(![14,15,16].includes(c.rules)||!Number.isInteger(c.index)||c.index<0||c.index>=RESULT_TREE_CAPACITY
+ if(![14,15,16,17,18].includes(c.rules)||!Number.isInteger(c.index)||c.index<0||c.index>=RESULT_TREE_CAPACITY
   ||!/^0x[0-9a-f]{64}$/i.test(c.root)
   ||!/^0x(?:[0-9a-f]{2}){1,4096}$/i.test(c.canonical)||keccak256(c.canonical)!==c.resultHash
   ||publishedResultLeaf(c,c.matchId,c.ticketHash,c.resultHash)!==c.leaf)throw Error('Invalid compact result archive entry');
@@ -110,7 +110,7 @@ export function createReusableResultArchive(db:Pool){
   }
   if(!target)throw Error('Match is absent from the published prefix');
   const siblings=tree.proof(target.position,published);
-  return{...ref,matchId,rules:target.rules as 14|15|16,canonical:target.canonical as Hex,ticketHash:target.ticket_hash as Hex,
+  return{...ref,matchId,rules:target.rules as 14|15|16|17|18,canonical:target.canonical as Hex,ticketHash:target.ticket_hash as Hex,
    resultHash:target.result_hash as Hex,index:target.position,leaf:target.leaf as Hex,siblings,root:published.root,count:published.count};
  }
  return{store,storeSlot,proof};

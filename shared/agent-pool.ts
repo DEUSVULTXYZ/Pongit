@@ -31,7 +31,7 @@ export type AgentPoolManifest={
  // Read-only retired authorities. They never supply an admission, signing
  // target, capacity slot or engine origin for the current deployment.
  history?:AgentPoolManifest[];
- version:2|3|4|5;chainId:10143;engineChainId:4242;rulesVersion:10|11|15|16;hub:Address;pool:Address;catalog:Address;
+ version:2|3|4|5;chainId:10143;engineChainId:4242;rulesVersion:10|11|15|16|17;hub:Address;pool:Address;catalog:Address;
  tournaments:Address;ratings:Address;challenges:Address;qualifications:Address;family:Address;arenas:PoolArena[];
  enabled:boolean;tournamentsEnabled:boolean;verifiedCapacity:0|2|5;qualificationEvidence:Hex|null;
  durationSeconds:300;overtimeSeconds:60;intervalSeconds:60;maxMatches:2|5;
@@ -44,9 +44,9 @@ export function validateAgentPoolManifest(m:AgentPoolManifest,humanApps:readonly
  if(m.countdownClock!==undefined&&(m.version<4||m.countdownClock!=='engine-ticks-v1'))throw Error('Unsupported countdown clock');
  if(m.houseInstances!==undefined&&(m.version<4||m.houseInstances!=='official-v1'))throw Error('Unsupported house instances');
  if(m.housePolicy!==undefined&&(m.version!==5||m.housePolicy!=='progressive-v1'))throw Error('Unsupported house difficulty policy');
- if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11||(m.version===4||m.version===5)&&m.rulesVersion===15||m.version===5&&m.rulesVersion===16)||m.chainId!==10143||m.engineChainId!==4242
+ if(!(m.version===2&&m.rulesVersion===10||m.version===3&&m.rulesVersion===11||(m.version===4||m.version===5)&&m.rulesVersion===15||m.version===5&&(m.rulesVersion===16||m.rulesVersion===17))||m.chainId!==10143||m.engineChainId!==4242
   ||m.durationSeconds!==300||m.overtimeSeconds!==60||m.intervalSeconds!==60||m.maxMatches!==(m.version===5?5:2))throw Error('Unsupported Agent Arcade pool rules');
- if(m.rulesVersion===16?m.friendlyPause!=='heartbeat-v1':m.friendlyPause!==undefined)throw Error('Unsupported friendly pause capability');
+ if((m.rulesVersion===16||m.rulesVersion===17)?m.friendlyPause!=='heartbeat-v1':m.friendlyPause!==undefined)throw Error('Unsupported friendly pause capability');
  if(m.version===5){
   if(m.lanes?.tournament!==1||m.lanes?.challenge!==4||m.arenaAdmissions!=='verified-epoch-v1'||m.houseInstances!=='official-v1'||m.countdownClock!=='engine-ticks-v1')
    throw Error('Five-lane authority capabilities are incomplete');

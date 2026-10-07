@@ -83,13 +83,17 @@ library PhysicsV2 {
     }
 
     function move(State memory s, uint64 to) internal pure returns (State memory) {
+        return move(s, to, PADDLE_SPEED);
+    }
+
+    function move(State memory s, uint64 to, int256 paddleSpeed) internal pure returns (State memory) {
         require(to >= s.t, "time reversal");
         if (s.awaitingServe || s.finished) return s;
         int256 dt = int256(uint256(to - s.t));
         s.x += s.vx * dt / SCALE;
         s.y += s.vy * dt / SCALE;
-        s.left = clamp(s.left + int256(s.leftDir) * PADDLE_SPEED * dt / SCALE, s.halfA);
-        s.right = clamp(s.right + int256(s.rightDir) * PADDLE_SPEED * dt / SCALE, s.halfB);
+        s.left = clamp(s.left + int256(s.leftDir) * paddleSpeed * dt / SCALE, s.halfA);
+        s.right = clamp(s.right + int256(s.rightDir) * paddleSpeed * dt / SCALE, s.halfB);
         s.t = to;
         return s;
     }
@@ -142,12 +146,16 @@ library PhysicsV2 {
     }
 
     function advance(State memory s, uint64 target, uint256 limit) internal pure returns (State memory, bool) {
+        return advance(s, target, limit, PADDLE_SPEED);
+    }
+
+    function advance(State memory s, uint64 target, uint256 limit, int256 paddleSpeed) internal pure returns (State memory, bool) {
         require(target >= s.t, "time reversal");
         for (uint256 i; i < limit; i++) {
             if (s.finished || s.awaitingServe) return (s, true);
             Event memory e = next(s);
-            if (e.at > target) return (move(s, target), true);
-            s = collide(move(s, e.at), e.kind);
+            if (e.at > target) return (move(s, target, paddleSpeed), true);
+            s = collide(move(s, e.at, paddleSpeed), e.kind);
         }
         return (s, s.finished || s.awaitingServe || next(s).at > target && s.t == target);
     }

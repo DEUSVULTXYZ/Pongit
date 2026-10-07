@@ -72,10 +72,12 @@ test('optional player timing cannot change receipt ownership or break controls',
  const f=fixture(16,s=>{samples.push(s);throw Error('Diagnostic reporter unavailable');});
  await f.player.move(1);await f.player.read();
  assert.equal(f.sent.length,1);assert.equal(f.player.journal.pending(f.session.grant.key),undefined);
- for(const stage of ['queue','fence','snapshot','send','receipt','observation'])assert(samples.some(s=>s.stage===stage));
- assert(samples.every(s=>s.ms>=0&&Number.isFinite(s.ms)&&Object.keys(s).every(k=>['ms','stage','startedAt','command'].includes(k))&&(!s.command||['input','heartbeat','resumeReady','confirmReady','concede','prepare'].includes(s.command))));
+ for(const stage of ['queue','fence','snapshot','send','receipt','observation','acknowledged'])assert(samples.some(s=>s.stage===stage));
+ assert(samples.every(s=>s.ms>=0&&Number.isFinite(s.ms)&&Object.keys(s).every(k=>['ms','stage','startedAt','command','hash'].includes(k))&&(!s.command||['input','heartbeat','resumeReady','confirmReady','concede','prepare'].includes(s.command))));
+ assert.equal(samples.find(s=>s.stage==='acknowledged')?.hash,keccak256(f.sent[0]));
  f.advance(200);f.lost(true);await assert.rejects(f.player.move(-1),/Lost response/);
  assert.equal(f.player.journal.pending(f.session.grant.key)?.action,'input');
+ assert.equal(samples.filter(s=>s.stage==='acknowledged').length,1,'A lost response is never an acknowledged command');
  f.player.close();
 });
 
@@ -130,14 +132,14 @@ test('launch observation refreshes state without serializing an already verified
   assert.equal(identities,1);assert.equal(freshReads,1,'Expired identity must pass before a new snapshot');
  }finally{f.player.close();}
 });
-function fixture(rules:10|11|15|16=10,onTiming?:(s:PoolPlayerTiming)=>void){
- const fixtureAbi=rules===16?synchronizedAgentArenaAbi:rules>=15?reusableAgentArenaAbi:abi;
+function fixture(rules:10|11|15|16|17=10,onTiming?:(s:PoolPlayerTiming)=>void){
+ const fixtureAbi=(rules===16||rules===17)?synchronizedAgentArenaAbi:rules>=15?reusableAgentArenaAbi:abi;
  const key=generatePrivateKey(),account=privateKeyToAccount(key),owner=privateKeyToAccount(generatePrivateKey()),at=Math.floor(Date.now()/1000);
  const session:PoolFamilySession={key,signature:`0x${'11'.repeat(65)}`,grant:{player:owner.address,key:account.address,issuedAt:BigInt(at),expires:BigInt(at+7200),revision:0n}};
  const m:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(7),family:addr(8),arenas:[9,10,11].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:keccak256('0x6000')})),enabled:false,tournamentsEnabled:false,verifiedCapacity:0,qualificationEvidence:null,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
  if(rules===11){m.version=3;m.rulesVersion=11;}
  if(rules===15){m.version=4;m.rulesVersion=15;}
- if(rules===16){m.version=5;m.rulesVersion=16;m.maxMatches=5;m.friendlyPause='heartbeat-v1';m.lanes={tournament:1,challenge:4};m.arenaAdmissions='verified-epoch-v1';m.houseInstances='official-v1';m.countdownClock='engine-ticks-v1';m.arenas.push(...[12,13].map(n=>({app:addr(n),node:"https://arena-"+n+'.example',runtimeHash:keccak256('0x6000')})));}
+ if(rules===16||rules===17){m.version=5;m.rulesVersion=rules;m.maxMatches=5;m.friendlyPause='heartbeat-v1';m.lanes={tournament:1,challenge:4};m.arenaAdmissions='verified-epoch-v1';m.houseInstances='official-v1';m.countdownClock='engine-ticks-v1';m.arenas.push(...[12,13].map(n=>({app:addr(n),node:"https://arena-"+n+'.example',runtimeHash:keccak256('0x6000')})));}
  const match:PoolMatchView={ref:{chainId:10143,app:addr(9),epoch:'1',id:'4'},a:owner.address,b:addr(21),mode:0,ranked:false,tournament:'0',lane:1,node:m.arenas[0].node,currentBinding:true,regulationSeconds:300,overtimeSeconds:0,result:null};
  const memory=new Map<string,string>(),storage={getItem:(k:string)=>memory.get(k)??null,setItem:(k:string,v:string)=>{memory.set(k,v);},removeItem:(k:string)=>{memory.delete(k);}};
  const fields=hubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
@@ -145,7 +147,7 @@ function fixture(rules:10|11|15|16=10,onTiming?:(s:PoolPlayerTiming)=>void){
  Object.assign(hub,{epoch:1n,status:1,expiresAt:BigInt(at+3600),resolveThreshold:2});
  const state:any={id:4n,phase:2,a:match.a,b:match.b,nonceA:0n,nonceB:0n,head:10n,state:{leftDir:0,rightDir:0}};
  let nodeEpoch=1,nonce=0,readyMask=2,lost=false,receiptVisible=false,hold:(()=>Promise<void>)|undefined,nodeCalls=0,reorg=false,failBase=false;
- if(rules===16)Object.assign(state,{sync:{pause:{status:1,human:1,limitUs:500000n,deadlineBlock:60n,cancelBlock:0n,resumeBlock:0n},brainA:0n,brainB:0n,decision:0n,pendingControls:0n,controllers:256n}});
+ if(rules===16||rules===17)Object.assign(state,{sync:{pause:{status:1,human:1,limitUs:500000n,deadlineBlock:60n,cancelBlock:0n,resumeBlock:0n},brainA:0n,brainB:0n,decision:0n,pendingControls:0n,controllers:256n}});
  let clock=Date.now(),bindings=0,nonceReads=0,rejectName:'InvalidMatch'|'StaleInput'|undefined,rejectPhase=2;
  let overrideKey:Address=zeroAddress,overrideMeta=0n,overrideRevision=0n;const sent:Hex[]=[],receipts=new Map<Hex,any>();
  const binding={id:4n,epoch:1n,a:match.a,b:match.b,controlA:{key:account.address,expires:session.grant.expires,codeHash:zeroHash},controlB:{key:addr(21),expires:session.grant.expires,codeHash:zeroHash}};
@@ -601,4 +603,24 @@ test('an unsupported canonical read never falls back to latest or releases a pen
  f.hub.epoch=2n;let calls=0;f.base.request=async(r:any)=>{calls++;assert.equal(r.params[1].requireCanonical,true);throw Error('EIP-1898 unsupported');};
  await assert.rejects(f.player.recover(),/unsupported/);assert.equal(calls,1);
  assert(f.player.journal.pending(f.session.grant.key));assert.equal(f.sent.length,1);f.player.close();
+});
+
+
+test('rules17 allows only fresh presence during launch and releases its lane before metadata hydration',async()=>{
+ const f=fixture(17);f.state.phase=1;
+ let done!:()=>void;const loading=new Promise<void>(r=>done=r);
+ const original=f.feed.receipt;
+ f.feed.receipt=async()=>{await loading;return original();};
+ try{
+  let completed=false;const pulse=f.player.heartbeat().then(()=>{completed=true;});
+  await new Promise(r=>setTimeout(r,40));assert(completed,'Exact heartbeat receipt releases the command queue');await pulse;
+  assert.equal(decodeFunctionData({abi:synchronizedAgentArenaAbi,data:parseTransaction(f.sent[0]).data!}).functionName,'heartbeat');
+  f.advance(100);f.fresh();await f.player.heartbeat();assert.equal(f.sent.length,2);
+  f.advance(600);await assert.rejects(f.player.heartbeat(),/fresh arena observation/);assert.equal(f.sent.length,2);
+ }finally{done();f.player.close();}
+});
+
+test('legacy rules16 do not send the new launch pulse before play',async()=>{
+ const f=fixture(16);f.state.phase=1;
+ try{await f.player.heartbeat();assert.equal(f.sent.length,0);}finally{f.player.close();}
 });

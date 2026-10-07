@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from './independent-rules-version';
 import {maxUint256,zeroAddress,type Abi,type Address,type PublicClient} from 'viem';
 import {abi as familyAbi} from './abi-independent-ArcadeFamily';
 import {abi as ratingsAbi} from './abi-independent-PublishedRatings';
@@ -45,14 +46,14 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
  const p=await proposal;
  const app=visibleActive?await r.lobby('arenaOf',[visibleActive]):p?.id?await r.lobby('arenaOf',[p.id]):zeroAddress;
  const expectedId=visibleActive||p?.id||0n;
- const binding=app!==zeroAddress?(m.rulesVersion===14?(await r.lobby('ticketOf',[expectedId]))[1]:await r.arena(app,'boundMatch')):null;
+ const binding=app!==zeroAddress?(isReusableHumanRules(m.rulesVersion)?(await r.lobby('ticketOf',[expectedId]))[1]:await r.arena(app,'boundMatch')):null;
  const visibleMatch=binding?.id===visibleActive||binding?.id===p?.id?binding:null;
  const delegation=visibleMatch?.epoch?await readHubDelegation(base,m.hub,app,block.number):null;
  // A closing node may already be offline. Reconnect through the canonical base
  // snapshot without pretending a partial score is a result or enabling inputs.
  let recoverySnapshot=null;
  if(delegation&&delegation.status!==1){
-  const slot=m.rulesVersion===14?await r.arena(app,'boundMatch'):visibleMatch;
+  const slot=isReusableHumanRules(m.rulesVersion)?await r.arena(app,'boundMatch'):visibleMatch;
   // Admission can precede execution, and a recovered physical slot can still
   // contain its previous match. Never label that score as the new ticket.
   if(slot.id===visibleMatch.id&&slot.epoch===visibleMatch.epoch)recoverySnapshot=engineState(await r.snapshot(app,visibleMatch.id));

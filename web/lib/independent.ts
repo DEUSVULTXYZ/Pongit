@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {hubLeaseValid} from '../../shared/hub-lease';
 import {encodeFunctionData,encodeAbiParameters,keccak256,isAddress,zeroAddress,type Address,type Hex,type Abi} from 'viem';
 import {privateKeyToAccount,generatePrivateKey} from 'viem/accounts';
@@ -146,7 +147,7 @@ export async function disconnectFamily(m:IndependentManifest,s:FamilySession,act
    if(active){
     const engine=createIndependentArena(m,active.app),rev=await engine.client.read('authorizationRevision',[player]) as bigint;
     const signature=await identity.account.signTypedData({domain:{name:rules.permissionDomain,version:'1',chainId:10143,verifyingContract:active.app},types:{RevokeArena:[{name:'player',type:'address'},{name:'epoch',type:'uint256'},{name:'matchId',type:'uint256'},{name:'revision',type:'uint256'},{name:'deadline',type:'uint64'}]},primaryType:'RevokeArena',message:{player,epoch:active.binding.epoch,matchId:active.binding.id,revision:rev,deadline}});
-    const args=rules.version===14?[BigInt(active.binding.epoch),BigInt(active.binding.id),player,deadline,signature]:[player,deadline,signature];
+    const args=isReusableHumanRules(rules.version)?[BigInt(active.binding.epoch),BigInt(active.binding.id),player,deadline,signature]:[player,deadline,signature];
     await independentApi('arena-command',{app:active.app,data:encodeFunctionData({abi:arenaAbi as Abi,functionName:'revokeActive',args})});
    }
   }catch{activeError=true;}
@@ -163,15 +164,15 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
  const arenaAbi=independentRules(m).arena;
  const entry=m.arenas.find(a=>a.app.toLowerCase()===app.toLowerCase());if(!entry?.node)throw Error('Unknown arena');
  const journal=new RoomsCommandJournal(sessionStorage,app,arenaAbi as Abi);
- const client=createInterludeClient({app,abi:arenaAbi as Abi,node:entry.node,base:independentBase(),store:webStorageStore(sessionStorage),expirySeconds:7200,transport:engineTransport(entry.node,journal,m.rulesVersion===14?true:undefined),fastPath:true});
+ const client=createInterludeClient({app,abi:arenaAbi as Abi,node:entry.node,base:independentBase(),store:webStorageStore(sessionStorage),expirySeconds:7200,transport:engineTransport(entry.node,journal,isReusableHumanRules(m.rulesVersion)?true:undefined),fastPath:true});
  const feed=new EngineFeed(client,new EngineStream(entry.node,app,undefined,()=>engineCooldownMs(entry.node!)));
  return {client,feed,journal,async session(s:FamilySession){
   const d=await readHubDelegation(client.base,m.hub,app);if(d.status!==1||!hubLeaseValid(m.hub,d.expiresAt,BigInt(Math.floor(Date.now()/1000))))throw Error('This arena is recovering. Your arcade authorization is unchanged.');
   const node=await client.status();if(BigInt(node.epoch)!==d.epoch)throw Error('Waiting for the current arena epoch');
-  if(m.rulesVersion===14&&BigInt((node as any).baseBlock??-1)!==d.baseBlock)throw Error('Waiting for the current arena base state');
+  if(isReusableHumanRules(m.rulesVersion)&&BigInt((node as any).baseBlock??-1)!==d.baseBlock)throw Error('Waiting for the current arena base state');
   const binding:any=await client.read('boundMatch',[]);
   if(BigInt(binding.epoch)!==d.epoch||BigInt(binding.id)===0n||![binding.a,binding.b].some(a=>a.toLowerCase()===s.grant.player.toLowerCase()))throw Error('Arena participant binding changed');
-  journal.bindDirect(s.grant.key,d.epoch,BigInt(binding.id),s.grant.expires,m.rulesVersion===14);
+  journal.bindDirect(s.grant.key,d.epoch,BigInt(binding.id),s.grant.expires,isReusableHumanRules(m.rulesVersion));
   journal.retirePrevious(s.grant.key,d.epoch);
   const pending=journal.pending(s.grant.key);if(pending){
    if(pending.epoch!==String(d.epoch))throw Error('A previous arena command is still being reconciled');
@@ -180,7 +181,7 @@ export function createIndependentArena(m:IndependentManifest,app:Address){
    if(journal.pending(s.grant.key))throw Error('Waiting for confirmation of the previous game command');
   }
   const expires=Number(s.grant.expires)-Math.floor(Date.now()/1000);if(expires<=0)throw Error('Renew arcade session');
-  const compact=compactArenaSession({node:client.node,abi:arenaAbi as Abi,app,key:s.key,match:BigInt(binding.id),expires:s.grant.expires,...(m.rulesVersion===14?{epoch:d.epoch}:{})});
+  const compact=compactArenaSession({node:client.node,abi:arenaAbi as Abi,app,key:s.key,match:BigInt(binding.id),expires:s.grant.expires,...(isReusableHumanRules(m.rulesVersion)?{epoch:d.epoch}:{})});
   return {send:(name:string,args:readonly unknown[]=[])=>compact.send(name,independentControlArgs(m.rulesVersion??4,d.epoch,args))};
  }};
 }

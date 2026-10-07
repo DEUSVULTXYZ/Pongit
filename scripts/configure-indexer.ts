@@ -46,10 +46,12 @@ for(const file of ['independent.json','independent-index.json'])try{
    throw Error('Invalid independent archive contract alias');
   const apps=independent.arenas?.map((a:any)=>typeof a==='string'?a:a.app);
   if(independent.chainId!==d.chainId||!address(independent.ratings)||!/^\d+$/.test(String(independent.startBlock))
-   ||![4,12,13,14].includes(rules)||!Array.isArray(apps)||!apps.length||apps.length>32||!apps.every(address)
+   ||![4,12,13,14,18].includes(rules)||!Array.isArray(apps)||!apps.length||apps.length>32||!apps.every(address)
    ||new Set(apps.map((a:string)=>a.toLowerCase())).size!==apps.length)
    throw Error('Independent indexer manifest requires a verified ledger, arenas, rules and deployment block');
-  const ledger=independent.ratings.toLowerCase(),binding={apps:apps.map((a:string)=>a.toLowerCase()).sort(),rulesVersion:rules as 4|12|13|14};
+  if(independent.ratingsContinuity!==undefined&&(rules!==18||independent.ratingsContinuity!=='ordered-human-v1'||!address(independent.ratingPredecessor)))throw Error('Invalid independent rating continuity');
+  const ledger=independent.ratings.toLowerCase(),binding={apps:apps.map((a:string)=>a.toLowerCase()).sort(),rulesVersion:rules as 4|12|13|14|18,
+   ...(independent.ratingsContinuity?{predecessor:independent.ratingPredecessor.toLowerCase()}:{} )};
   if(independentBindings[ledger]){
    if(JSON.stringify(independentBindings[ledger])!==JSON.stringify(binding)||independentStarts[ledger]!==String(independent.startBlock))
     throw Error('Conflicting independent archive binding');
@@ -62,6 +64,7 @@ for(const file of ['independent.json','independent-index.json'])try{
   else independentGroups.set(name,{addresses:[independent.ratings],startBlock:block});
  }
 }catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
+for(const [ledger,binding]of Object.entries(independentBindings))if(binding.predecessor&&(!independentBindings[binding.predecessor]||binding.predecessor===ledger))throw Error('Independent predecessor index is required');
 // Human migrations may share an alias too. A repeated YAML name would silently
 // discard older ledgers even though their decoder bindings were retained.
 for(const [name,group] of independentGroups)

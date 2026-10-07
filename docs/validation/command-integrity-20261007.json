@@ -1,0 +1,323 @@
+{
+  "at": "2026-10-07T17:59:55.391994+00:00",
+  "status": "candidate-not-deployed",
+  "newRules": {
+    "agents": 17,
+    "humans": 18,
+    "paddleUnitsPerSecond": 300,
+    "historicalPaddleUnitsPerSecond": 180
+  },
+  "automation": "PAUSED",
+  "newContractTransactions": 0,
+  "checks": {
+    "typescript": {
+      "passed": 1066,
+      "failed": 0
+    },
+    "solidity": {
+      "passed": 1095,
+      "failed": 0,
+      "skipped": 8,
+      "suites": 96
+    },
+    "classicParity": 10000,
+    "chaosParity": 20300,
+    "effects": 24,
+    "effectPairs": 276,
+    "artifactGraph": 48,
+    "rootTypeScript": true,
+    "localNextBuild": true,
+    "secretScan": true,
+    "gitDiffWhitespace": true
+  },
+  "baseline": {
+    "match901": {
+      "score": [
+        2,
+        7
+      ],
+      "contractPauses": 3,
+      "firstPauseGameSeconds": 0.5,
+      "clientPredictionRecorded": false
+    },
+    "visibleChrome905": {
+      "natural": true,
+      "virtualPrf": true,
+      "admissionMs": 15499,
+      "releaseDriftP95": 5.170384165910036,
+      "releaseDriftMaximum": 5.544587413489182,
+      "heldWindowsOutsideTarget": 15,
+      "heldWindows": 306,
+      "status": "FAIL",
+      "videoDirectory": "artifacts/qualification/catalogue-integrity-baseline-long-1/video"
+    }
+  },
+  "humanSeedAudit": {
+    "status": "PASS",
+    "sourceBlock": "69021533",
+    "count": "7",
+    "revision": "0",
+    "ratingRows": 28,
+    "seedTransactions": 4,
+    "seedWindow": {
+      "first": "68964187",
+      "last": "68964236",
+      "blocks": 50
+    },
+    "nextGeneration": "2",
+    "sha256": "af1a1a3b286f7cd0f628461b825b8726c564e9a3a486b054646f27c28b3ecd1e",
+    "socialCompleteness": "INCOMPLETE: 40000 of 81018 blocks; no nonce proof yet"
+  },
+  "backup": {
+    "verified": true,
+    "at": "2026-10-07T16:54:14.4978837Z",
+    "manifestSha256": "12ae46a51c305ecffed7640ea4b5b45255573ed7dfa7a5e1278521c63d47aba5",
+    "files": 6,
+    "bytes": 74128811
+  },
+  "restore": {
+    "startedAt": "2026-10-07T16:55:09.967160+00:00",
+    "passed": true,
+    "manifestSha256": "12ae46a51c305ecffed7640ea4b5b45255573ed7dfa7a5e1278521c63d47aba5",
+    "databases": [
+      {
+        "label": "operator",
+        "tables": 66,
+        "reshipJobs": 192,
+        "admissionReserveJobs": 1
+      },
+      {
+        "label": "human",
+        "tables": 22,
+        "archiveUpgrade": {
+          "passed": true,
+          "fingerprints": {
+            "il_reusable_results": "2:f65ede0a244c425a73c4102680f2c17d",
+            "il_reusable_slot_results": "48:a401ddc45a4353426aefb87018a41a2a"
+          },
+          "idempotent": true
+        }
+      },
+      {
+        "label": "agents",
+        "tables": 11,
+        "archiveUpgrade": {
+          "passed": true,
+          "fingerprints": {
+            "il_reusable_results": "40:8696f3bfad1f1a260de08d18afc58216",
+            "il_reusable_slot_results": "40:ade61c52b9294d344de4fbc691c79e34"
+          },
+          "idempotent": true
+        }
+      },
+      {
+        "label": "previous-agents",
+        "tables": 9,
+        "archiveUpgrade": {
+          "passed": true,
+          "fingerprints": {
+            "il_reusable_results": "153:2f569313d227de433057fed8ec683d4a",
+            "il_reusable_slot_results": "168:4967ac45962e946a60d8bcfec29e2ec8"
+          },
+          "idempotent": true
+        }
+      },
+      {
+        "label": "shared-index",
+        "tables": 251,
+        "historicalReferences": 1433
+      }
+    ],
+    "finishedAt": "2026-10-07T16:57:53.544934+00:00"
+  },
+  "restoreSha256": "a9d423f8138fba5f5fffc4d645ff5ed9872145bf6f4d7dfaf850a9e60cefbf41",
+  "funding": {
+    "operator": "0x369158ac444278541322643e46e0d5b45ac21c4c",
+    "chainId": 10143,
+    "at": "2026-10-07T17:45:27.724Z",
+    "block": "69033118",
+    "balanceMON": "1.398815564",
+    "pendingRequestedReserveMON": 1000,
+    "previousFullReshipGasMON": "71.698830318",
+    "perArenaOpeningFeeMON": ".01",
+    "validatorStakeMON": 10,
+    "stakePaidBy": "validator bond, not this operator",
+    "notA24HourCostGuarantee": true
+  },
+  "outstanding": [
+    "complete social nonce proof and final drained snapshots",
+    "fresh candidate review and reproducible images",
+    "funded compatible public migration",
+    "five natural Chaos/NOVA, two Classic/bot and two PvP games on candidate",
+    "actual layout, collision, sustained speed and release metrics",
+    "faults and degraded network",
+    "five agents plus two humans; slots, publication and reserve",
+    "historical finance, payments and replay checks after migration",
+    "unchanged 24-hour production trial"
+  ],
+  "retainedFailures": [
+    "full-ts-3.log",
+    "typecheck-12.log",
+    "typecheck-13.log",
+    "chaos-parity-1.log",
+    "house-calibration-1.log",
+    "human seed audit attempts 1-4",
+    "social audit attempts 1-6; attempt 6 retains resumable public event references"
+  ],
+  "evidence": [
+    {
+      "path": "artifacts/command-integrity-20261007/match901-replay.json",
+      "bytes": 401737,
+      "sha256": "ad905ca45fe3107c50810d9e0075b9592db977e922218123b4fce3af08c9b903"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/baseline-motion.json",
+      "bytes": 1821,
+      "sha256": "617d84ce691ff9f1f84b9566222dedaced4361bf7c651b347fde838f55cf4870"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/full-ts-6.log",
+      "bytes": 104277,
+      "sha256": "fe88dae48fb996571d2eb8c88349596d3183bc7b7281e6f85b6ba06a5e929ac6"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/full-solidity-1.log",
+      "bytes": 100253,
+      "sha256": "e5b87cfad221fe3d85462cde4299e158de31f7002662ba5a7f721ede6a51ce7d"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/typecheck-24.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/web-build-3.log",
+      "bytes": 1251,
+      "sha256": "b2fb2a25de5a6267ced26b5f710e2c354203c3b7937304b086445d9c35646a8e"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/classic-parity-2.log",
+      "bytes": 318,
+      "sha256": "5ee3f98a109b51ddcb6ae32e2f18c8f3b7b2f76fae60dca8e5644cbe7a705784"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/chaos-parity-2.log",
+      "bytes": 23934,
+      "sha256": "30eefddc276c8dde9acb0c28d962d38eb513f3a3f0c57ad265e7e9984b6bd748"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/house-calibration-1.json",
+      "bytes": 3459,
+      "sha256": "9166a4671871f4d7c26a7b39686d4843292d73819fc76c1797b8f82ab7eef345"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/artifact-preflight-1.json",
+      "bytes": 9988,
+      "sha256": "1d8b9d5b25f5e0651c055fb7336ed015630d3420a2981b294dfb195f67c2b8eb"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/timing-focused-1.log",
+      "bytes": 5435,
+      "sha256": "af6d5f9fa3157d5e429d997d505c7f35ec163c04ce949bb28f7c9146850923a3"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/tournament42-after-reserve.json",
+      "bytes": 8834,
+      "sha256": "8fce086ce03d6b0f312cf6c5891c79ce7e11815567de5bed264b17b3f7a1dc04"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/readiness-final.json",
+      "bytes": 2110,
+      "sha256": "f0520c2b0818176540ca987136a5c2a709d924eeb7bf004d212328fa22e462cc"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/admission-reserve.json",
+      "bytes": 346,
+      "sha256": "f5a9173a8d71b3db49746aa373a30427f56501d6e84d9f8726b77c6248bd3059"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/social-final.json",
+      "bytes": 1879,
+      "sha256": "f80ce57478118c014ec72548e7dc875267139fc51b2519cd20b5bfebc7ee64d6"
+    },
+    {
+      "path": "artifacts/command-integrity-20261007/secret-scan-3.log",
+      "bytes": 113,
+      "sha256": "0b563591479c4a668fe1f1c79f196a19210439946689a57351a29cdb906723f8"
+    }
+  ],
+  "baseCommit": "3584242",
+  "productionGameplayChanged": false,
+  "humanSocialAudit": {
+    "report": {
+      "at": "2026-10-07T17:58:19.578027+00:00",
+      "complete": false,
+      "status": "INCOMPLETE",
+      "snapshotHash": "0xa7b633c01bf99811adae6a041282d7e03c1209bc4c86dbe2468c46743d4cffc7",
+      "firstBlock": "68940516",
+      "nextUnreadBlock": "68980516",
+      "lastRequiredBlock": "69021533",
+      "publicEventReferences": 9,
+      "coveredBlocks": 40000,
+      "remainingBlocks": 41018,
+      "attempts": [
+        {
+          "name": "pongit-responsive-social-audit-20261007-1",
+          "status": "exited",
+          "exitCode": 1,
+          "oom": false,
+          "startedAt": "2026-10-07T17:19:13.909123787Z",
+          "finishedAt": "2026-10-07T17:19:48.516324397Z"
+        },
+        {
+          "name": "pongit-responsive-social-audit-20261007-2",
+          "status": "exited",
+          "exitCode": 1,
+          "oom": false,
+          "startedAt": "2026-10-07T17:21:42.360078343Z",
+          "finishedAt": "2026-10-07T17:23:19.915899846Z"
+        },
+        {
+          "name": "pongit-responsive-social-audit-20261007-3",
+          "status": "exited",
+          "exitCode": 1,
+          "oom": false,
+          "startedAt": "2026-10-07T17:26:21.716161737Z",
+          "finishedAt": "2026-10-07T17:28:18.087785775Z"
+        },
+        {
+          "name": "pongit-responsive-social-audit-20261007-4",
+          "status": "exited",
+          "exitCode": 124,
+          "oom": false,
+          "startedAt": "2026-10-07T17:30:03.334372444Z",
+          "finishedAt": "2026-10-07T17:35:03.603784986Z"
+        },
+        {
+          "name": "pongit-responsive-social-audit-20261007-5",
+          "status": "exited",
+          "exitCode": 124,
+          "oom": false,
+          "startedAt": "2026-10-07T17:43:13.316283731Z",
+          "finishedAt": "2026-10-07T17:48:13.572378814Z"
+        },
+        {
+          "name": "pongit-responsive-social-audit-20261007-6",
+          "status": "exited",
+          "exitCode": 124,
+          "oom": false,
+          "startedAt": "2026-10-07T17:51:31.301259618Z",
+          "finishedAt": "2026-10-07T17:56:31.563551098Z"
+        }
+      ],
+      "providerChanged": false,
+      "productionGameplayChanged": false,
+      "newContractTransactions": 0,
+      "nextAttemptNotStarted": 7
+    },
+    "archive": "/opt/pongit/releases/command-integrity-20261007/social-evidence-final-20261007.tar.gz",
+    "bytes": 8196,
+    "sha256": "0aa23f3b5fcdbc9ad4e050421b5a9425bab9868fd7d4f62a54abcc9853645b10",
+    "offVpsVerified": true
+  }
+}

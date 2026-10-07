@@ -2,13 +2,17 @@ import assert from "node:assert/strict";
 import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { toHex, type Abi, type Hex } from "viem";
 import { localChain } from "./local-chain";
-import { initial, advance, accelerate } from "../shared/physics-interlude";
+import { initial as originalInitial, advance, accelerate } from "../shared/physics-interlude";
 import { next } from "../shared/physics-v2";
 
 const reportDirectory=process.env.PONG_QUALIFICATION_OUTPUT??"artifacts/interlude";
+const responsive=process.env.PONG_PHYSICS_RULES==='responsive-300';
+assert(!process.env.PONG_PHYSICS_RULES||responsive);
+const initial=(seed:Hex)=>({...originalInitial(seed),...(responsive?{paddleSpeed:300_000_000n}:{})});
+const physical=(s:ReturnType<typeof initial>)=>{const {paddleSpeed,...physics}=s;return physics;};
 const chain = await localChain();
 try {
-  const a = JSON.parse(await readFile("contracts/out/PhysicsInterlude.sol/PhysicsInterludeHarness.json", "utf8"));
+  const a = JSON.parse(await readFile(responsive?"contracts/out/ResponsivePhysicsHarness.sol/ResponsivePhysicsHarness.json":"contracts/out/PhysicsInterlude.sol/PhysicsInterludeHarness.json", "utf8"));
   const hash = await chain.wallet.deployContract({ abi: a.abi as Abi, bytecode: a.bytecode.object as Hex });
   const address = (await chain.publicClient.waitForTransactionReceipt({ hash })).contractAddress!;
   let seed = 0xc0ffee;
@@ -29,12 +33,13 @@ try {
     });
     await Promise.all(cases.map(async ({s,target,limit,entropy},j) => {
       const actual = await chain.publicClient.readContract({address,abi:a.abi,functionName:"advance",args:[s,target,BigInt(limit)]});
-      assert.deepEqual(actual,advance(s,target,limit),`case ${i+j}`);
-      if(i===0) assert.deepEqual(await chain.publicClient.readContract({address,abi:a.abi,functionName:"initial",args:[entropy]}),initial(entropy));
+      const expected=advance(s,target,limit);
+      assert.deepEqual(actual,[physical(expected[0]),expected[1]],`case ${i+j}`);
+      if(i===0) assert.deepEqual(await chain.publicClient.readContract({address,abi:a.abi,functionName:"initial",args:[entropy]}),physical(initial(entropy)));
     }));
     if(i%1200===0)console.log(`Interlude rules 3: ${Math.min(i+24,10000)}/10000`);
   }
   await mkdir(reportDirectory,{recursive:true});
-  await writeFile(`${reportDirectory}/differential-rules3.json`,JSON.stringify({cases:10000,mismatches:0,rulesVersion:3,seed:"0xc0ffee",checkedAt:new Date().toISOString()},null,2));
-  console.log("PASS: 10000 Interlude rules 3 differential cases.");
+  await writeFile(`${reportDirectory}/differential-classic.json`,JSON.stringify({cases:10000,mismatches:0,rulesVersions:responsive?[17,18]:[3],seed:"0xc0ffee",checkedAt:new Date().toISOString()},null,2));
+  console.log("PASS: 10000 Classic differential cases.");
 } finally {chain.close();}

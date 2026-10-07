@@ -42,6 +42,14 @@ test('tick comparison is explicit and bounded without changing the normal cadenc
  for(const n of ['0','99','5001','NaN','301.5'])assert.throws(()=>agentTickInterval(n));
 });
 
+test('responsive ticks spend the remaining 50ms budget and reject a stale deployment override',()=>{
+ assert.equal(agentTickInterval(undefined,17),50);assert.equal(agentTickInterval('50',17),50);
+ for(const interval of ['0','49','51','100','300'])assert.throws(()=>agentTickInterval(interval,17));
+ for(const elapsed of [0,10,30,40,49])assert.equal(elapsed+agentTickPause(50,elapsed),50);
+ assert.equal(agentTickPause(50,90),1,'An overdue round yields instead of catching up in bursts');
+ assert.equal(agentTickPause(50,90,true),100,'An outstanding command still owns the lane');
+});
+
 test('serial ticks spend only the remaining interval after the receipt and journal',()=>{
  const starts:number[]=[];let now=0,lastProgress=-150;
  for(let i=0;i<30;i++){

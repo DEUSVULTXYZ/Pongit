@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from './independent-rules-version';
 import {isAddress,isHex,type Address,type Hex} from 'viem';
 import {NO_LEASE_HUB} from './hub-lease';
 
@@ -9,7 +10,7 @@ export function independentProvisioningScope(raw:any,app:Address,epoch:bigint,si
   return undefined;
  }
  const arena=raw.arenas.find((a:any)=>a.app.toLowerCase()===app.toLowerCase());
- if(raw.rulesVersion!==14||raw.hostedProvisioning!=='owner-consent-v1'||!isAddress(raw.provisioningOwner)
+ if(!isReusableHumanRules(raw.rulesVersion)||raw.hostedProvisioning!=='owner-consent-v1'||!isAddress(raw.provisioningOwner)
   ||!signer||raw.provisioningOwner.toLowerCase()!==signer.toLowerCase()||BigInt(signer)===0n||epoch<=0n
   ||!arena||!isHex(arena.runtimeHash)||arena.runtimeHash.length!==66||BigInt(arena.runtimeHash)===0n)
   throw Error('Verified human v3 provisioning scope required');

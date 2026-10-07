@@ -3,20 +3,20 @@ import type {EngineFrame} from './engine-stream';
 import {publishedResultLeaf,type ResultEpoch} from './published-result-tree';
 
 export type ReusableResultCandidate=ResultEpoch&{
- rules:14|15|16;matchId:bigint;index:number;ticketHash:Hex;resultHash:Hex;leaf:Hex;root:Hex;canonical:Hex;transactionHash:Hex;
+ rules:14|15|16|17|18;matchId:bigint;index:number;ticketHash:Hex;resultHash:Hex;leaf:Hex;root:Hex;canonical:Hex;transactionHash:Hex;
 };
 export type ReusableSlotResult=Omit<ReusableResultCandidate,'transactionHash'>;
 
 /** Reconnect recovery of the still-retained terminal slot. This is explicitly
  * a state observation, not an invented transaction receipt. Publication must
  * still authenticate the full ordered prefix before it can release a player. */
-export function reusableSlotResult(abi:Abi,ref:ResultEpoch,rules:14|15|16,id:bigint,ticketHash:Hex,sequence:bigint,
+export function reusableSlotResult(abi:Abi,ref:ResultEpoch,rules:14|15|16|17|18,id:bigint,ticketHash:Hex,sequence:bigint,
  result:any,commitment:readonly [bigint,number,Hex]):ReusableSlotResult{
  const [epoch,count,root]=commitment,match=result?.match_,actual=match?.ref??match;
  const output=abi.find(x=>x.type==='function'&&x.name==='publishedResult');
  if(!output||output.type!=='function'||output.outputs.length!==1||!match||!actual
   ||actual.id!==id||actual.epoch!==ref.epoch||actual.arena?.toLowerCase()!==ref.arena.toLowerCase()
-  ||rules>=15&&actual.chainId!==ref.chainId||epoch!==ref.epoch||result.rules!==BigInt(rules)
+  ||[15,16,17].includes(rules)&&actual.chainId!==ref.chainId||epoch!==ref.epoch||result.rules!==BigInt(rules)
   ||!Number.isInteger(count)||count<1||count>65536||BigInt(count)!==sequence||![3,4].includes(match.status))
    throw Error('Terminal slot differs from its admission or result commitment');
  const canonical=encodeAbiParameters(output.outputs,[result]),resultHash=keccak256(canonical);
@@ -27,7 +27,7 @@ export function reusableSlotResult(abi:Abi,ref:ResultEpoch,rules:14|15|16,id:big
  * untrusted publication candidates, not settled results. A consumer must match
  * the issued Monad ticket and build a proof against its canonical published root.
  * No frame history, signature or private authorization is included. */
-export function reusableResults(abi:Abi,app:Address,rules:14|15|16,frame:EngineFrame):ReusableResultCandidate[]{
+export function reusableResults(abi:Abi,app:Address,rules:14|15|16|17|18,frame:EngineFrame):ReusableResultCandidate[]{
  if(frame.app.toLowerCase()!==app.toLowerCase())throw Error('Result frame belongs to another arena');
  const output=abi.find(x=>x.type==='function'&&x.name==='publishedResult');
  if(!output||output.type!=='function'||output.outputs.length!==1)throw Error('Missing canonical result ABI');
@@ -46,7 +46,7 @@ export function reusableResults(abi:Abi,app:Address,rules:14|15|16,frame:EngineF
  for(const [key,c] of committed){
   const e=completed.get(key),result=e?.result,match=result?.match_,ref=match?.ref??match;
   if(!e||!match||ref.id!==c.matchId||ref.epoch!==c.epoch||ref.arena.toLowerCase()!==app.toLowerCase()
-   ||result.rules!==BigInt(rules)||(rules>=15&&ref.chainId!==10143n)||c.epoch<=0n||c.matchId<=0n
+   ||result.rules!==BigInt(rules)||([15,16,17].includes(rules)&&ref.chainId!==10143n)||c.epoch<=0n||c.matchId<=0n
    ||!Number.isInteger(c.index)||c.index<0||c.index>=65536||![3,4].includes(match.status))
    throw Error('Incomplete or mismatched canonical result');
   const canonical=encodeAbiParameters(output.outputs,[result]),resultHash=keccak256(canonical);

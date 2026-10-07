@@ -27,12 +27,12 @@ test('an ACK-only timing change reconciles the public slow-network rollback with
  assert.equal(state.left,288_000_000n,'canonical state is unchanged');
 });
 
-test('neutral local input consumes a normal acknowledgement without a long sliding tail',()=>{
+test('neutral input never slides through a three-unit acknowledgement correction',()=>{
  const view=new ParticipantReconciliation(),canonical=pose(232.2);
  const first=view.sample(canonical,pose(235.2),16,{side:0,direction:0});
  assert(first.paddles[0]>232.2&&first.paddles[0]<235.2);
- assert.equal(view.sample(canonical,undefined,16,{side:0,direction:0}).paddles[0],232.2);
- for(let i=0;i<20;i++)assert.equal(view.sample(canonical,undefined,16,{side:0,direction:0}).paddles[0],232.2);
+ assert(235.2-first.paddles[0]<=2);
+ for(let i=0;i<20;i++)assert.equal(view.sample(canonical,undefined,16,{side:0,direction:0}).paddles[0],first.paddles[0]);
  assert.equal(canonical.paddles[0],232.2,'Canonical physics is untouched');
 });
 
@@ -49,7 +49,7 @@ test('a delayed receipt blends its 60px error without reversing a held paddle',(
  }
 });
 
-test('both paddles and contact points reconcile together; real misses remain misses',()=>{
+test('paddle correction cannot move a confirmed ball to manufacture a contact',()=>{
  for(const side of [0,1] as const){
   const view=new ParticipantReconciliation(),current=pose(),before=pose();
   before.paddles[side]-=60;
@@ -58,11 +58,24 @@ test('both paddles and contact points reconcile together; real misses remain mis
   before.balls=[{id:1,x:plane,y:before.paddles[side]+12,continuity:'0'}];
   const hit=view.sample(current,before,16);
   assert.equal(hit.balls[0].x,plane);
-  assert.equal(hit.balls[0].y-hit.paddles[side],12,'contact follows the drawn paddle');
+  assert.equal(hit.balls[0].y,current.balls[0].y,'live contact geometry is not moved to the displayed paddle');
   current.balls[0].y=current.paddles[side]+80;
   const miss=view.sample(current,undefined,16);
-  assert.equal(miss.balls[0].y-miss.paddles[side],80,'never turn a miss into a visual hit');
+  assert.equal(miss.balls[0].y,current.balls[0].y,'a miss does not follow a correcting paddle');
  }
+});
+
+test('a held local paddle keeps its full speed across a late ACK and stops without a correction tail',()=>{
+ const view=new ParticipantReconciliation();let y=228;
+ view.sample(pose(y),undefined,16,{side:0,direction:-1});
+ let shown=view.sample(pose(288-4.8),pose(y-4.8),16,{side:0,direction:-1});
+ assert(Math.abs(shown.paddles[0]-(y-4.8))<1e-9);
+ for(let i=2;i<=20;i++){
+  const next=view.sample(pose(288-4.8*i),undefined,16,{side:0,direction:-1});
+  assert(Math.abs((shown.paddles[0]-next.paddles[0])/0.016-300)<1e-8,'no correction velocity subtracts from the commanded speed');shown=next;
+ }
+ const stopped=view.sample(pose(192),undefined,16,{side:0,direction:0});
+ for(let i=0;i<20;i++)assert.equal(view.sample(pose(192),undefined,16,{side:0,direction:0}).paddles[0],stopped.paddles[0]);
 });
 
 test('corrections converge; score/teleport/multiball boundaries do not drag an old ball',()=>{

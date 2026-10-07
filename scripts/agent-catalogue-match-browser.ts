@@ -6,7 +6,9 @@ import {chromium,expect} from '@playwright/test';
 import {decodeErrorResult,decodeEventLog,decodeFunctionData,decodeFunctionResult,keccak256,parseTransaction} from 'viem';
 import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
-import {installSyncProbe,syncMetrics,confirmedInputMetrics} from './browser-sync-probe';
+import {installSyncProbe,syncMetrics,confirmedInputMetrics,sustainedInputMetrics} from './browser-sync-probe';
+import {collisionIntegrity} from './collision-integrity-metrics';
+import {visibleAim} from './browser-aim';
 import {receiptClockMetrics} from './receipt-clock-metrics';
 import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
@@ -24,16 +26,22 @@ const cadenceProbe=process.env.PONG_CATALOGUE_CADENCE_PROBE==='1';
 const atomicQualification=process.env.PONG_CATALOGUE_ATOMIC_QUALIFICATION==='1';
 const privateV3=process.env.PONG_CATALOGUE_PRIVATE_V3==='reviewed-private';
 assert(!process.env.PONG_CATALOGUE_PRIVATE_V3||privateV3);
-const publicSynchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-public';
+const responsive=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules17-public';
+const integrity=process.env.PONG_CATALOGUE_INPUT_INTEGRITY==='1';
+const publicSynchronized=responsive||process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-public';
+assert(!integrity||responsive&&naturalMatch,'Integrity qualification requires natural responsive rules');
 const initialIdleMs=Number(process.env.PONG_CATALOGUE_INITIAL_IDLE_MS??0);
 const readDelayMs=Number(process.env.PONG_CATALOGUE_READ_DELAY_MS??0);
 const networkDelayMs=Number(process.env.PONG_CATALOGUE_NETWORK_DELAY_MS??0);
+const networkJitterMs=Number(process.env.PONG_CATALOGUE_NETWORK_JITTER_MS??0);
 const inputHoldMs=Number(process.env.PONG_CATALOGUE_INPUT_HOLD_MS??80),inputGapMs=Number(process.env.PONG_CATALOGUE_INPUT_GAP_MS??40);
 const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
 const homeLogin=process.env.PONG_CATALOGUE_LOGIN_FROM_HOME==='1';
 const touchControls=process.env.PONG_CATALOGUE_TOUCH==='1';
 const viewportWidth=Number(process.env.PONG_CATALOGUE_WIDTH??1440);
-assert([360,390,768,1440].includes(viewportWidth));
+assert([360,390,768,1366,1440].includes(viewportWidth));
+const viewportHeight=Number(process.env.PONG_CATALOGUE_HEIGHT??(viewportWidth<768?844:900));
+assert(Number.isInteger(viewportHeight)&&viewportHeight>=600&&viewportHeight<=1440);
 const fault=process.env.PONG_CATALOGUE_FAULT;
 assert(!fault||['f5','disconnect','lost-reply','revoke'].includes(fault));
 assert(!fault||naturalMatch&&publicSynchronized,'Faults use only the owned public natural friendly fixture');
@@ -41,7 +49,8 @@ assert(fault!=='lost-reply'||httpOnly,'Lost-reply fixture must use the observabl
 assert(Number.isInteger(initialIdleMs)&&initialIdleMs>=0&&initialIdleMs<=20000);
 assert(Number.isInteger(readDelayMs)&&readDelayMs>=0&&readDelayMs<=400);
 assert(Number.isInteger(networkDelayMs)&&networkDelayMs>=0&&networkDelayMs<=200);
-assert(Number.isInteger(inputHoldMs)&&inputHoldMs>=80&&inputHoldMs<=1500&&Number.isInteger(inputGapMs)&&inputGapMs>=40&&inputGapMs<=300);
+assert(Number.isInteger(networkJitterMs)&&networkJitterMs>=0&&networkJitterMs<=networkDelayMs&&networkJitterMs<=50);
+assert(Number.isInteger(inputHoldMs)&&inputHoldMs>=80&&inputHoldMs<=2000&&Number.isInteger(inputGapMs)&&inputGapMs>=40&&inputGapMs<=300);
 const synchronized=process.env.PONG_CATALOGUE_SYNCHRONIZATION==='rules16-private'||publicSynchronized;
 assert(!process.env.PONG_CATALOGUE_SYNCHRONIZATION||synchronized);
 assert(publicSynchronized?!privateV3:!synchronized||privateV3,'Synchronization scope must match the actual public/private API');
@@ -57,6 +66,8 @@ if(continuationScope!==undefined){
 }
 if(privateV3)assert(process.env.PONG_CATALOGUE_ASSET_ORIGIN==='http://127.0.0.1:4197'&&!atomicQualification,
  'Private v3 must use its isolated build and actual API capabilities');
+if(integrity)assert(process.env.PONG_SYNC_PROBE==='1'&&process.env.PONG_SYNC_SPECTATOR==='1'&&inputHoldMs===2000,
+ 'Integrity qualification needs both probes and two-second held-input samples');
 if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(process.env.PONG_SYNC_PROBE==='1'&&process.env.PONG_SYNC_SPECTATOR==='1',
  'Full performance qualification needs both player and spectator probes before creating a fixture');
 const controlCount=cadenceProbe?20:110,idleMs=cadenceProbe?Number(process.env.PONG_CATALOGUE_PROBE_IDLE_MS??8000):45000;
@@ -70,18 +81,42 @@ const out=`artifacts/qualification/catalogue-${run}`;await mkdir(out,{recursive:
 const report:any={startedAt:new Date().toISOString(),origin:'https://pongit.xyz',run,channel,mode,bot:name,
  naturalMatch,virtualPrf:true,reusedSession:!!restored,mockedNetwork:false,privateV3,synchronized,atomicQualification,cadenceProbe,controlCount,idleMs,passed:false,checks:[],errors:[],submissions:[],receipts:[]};
 report.initialIdleMs=initialIdleMs;report.injectedReadLatencyMs=readDelayMs;
-report.touchControls=touchControls;report.viewportWidth=viewportWidth;
+report.touchControls=touchControls;report.viewportWidth=viewportWidth;report.viewportHeight=viewportHeight;
 report.injectedNetworkDelayEachWayMs=networkDelayMs;
+report.injectedNetworkJitterEachWayMs=networkJitterMs;
 report.inputHoldMs=inputHoldMs;report.inputGapMs=inputGapMs;
 report.httpOnly=httpOnly;
 report.fault=fault;report.faults=[];
 if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continuationRecord.common.pool,catalog:continuationRecord.common.catalog,deploymentSha256};
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
-const browser=await chromium.launch({channel,headless:true});
-const context=await browser.newContext({viewport:{width:viewportWidth,height:viewportWidth<768?844:1000},hasTouch:touchControls,isMobile:touchControls,
+const visible=process.env.PONG_CATALOGUE_VISIBLE==='1';
+report.visibleBrowser=visible;
+const browser=await chromium.launch({channel,headless:!visible});
+const context=await browser.newContext({viewport:{width:viewportWidth,height:viewportHeight},hasTouch:touchControls,isMobile:touchControls,
  ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/video',size:{width:1440,height:1000}}}:{}),
  ...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
+// Independent contexts have separate accounts/storage, but both video clocks
+// share this computer's UTC clock. The test-only overlay is outside layout flow.
+const videoClock=async(target:import('@playwright/test').Page)=>{
+ if(process.env.PONG_CATALOGUE_VIDEO!=='1')return;
+ await target.addInitScript(()=>{window.addEventListener('DOMContentLoaded',()=>{
+  const stamp=document.createElement('output');stamp.setAttribute('aria-hidden','true');
+  stamp.style.cssText='position:fixed;left:0;bottom:0;z-index:2147483647;pointer-events:none;font:10px monospace;color:white;background:black';
+  document.body.appendChild(stamp);setInterval(()=>stamp.textContent=new Date().toISOString(),100);
+ });});
+};
+await videoClock(page);
+const alignClock=async(target:import('@playwright/test').Page)=>{
+ const readings=[];
+ for(let i=0;i<5;i++){
+  const before=performance.timeOrigin+performance.now();
+  const remote=await target.evaluate(()=>performance.timeOrigin+performance.now());
+  const after=performance.timeOrigin+performance.now();
+  readings.push({offsetMs:(before+after)/2-remote,uncertaintyMs:(after-before)/2});
+ }
+ return readings.sort((a,b)=>a.uncertaintyMs-b.uncertaintyMs)[0];
+};
 if(httpOnly)await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.dev\//,socket=>socket.close());
 const faultSockets:import('@playwright/test').WebSocketRoute[]=[];
 if(fault==='disconnect')await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.dev\//,socket=>{
@@ -102,12 +137,14 @@ if(fault==='lost-reply')await context.route('https://il2-eu-*.fly.dev/**',async 
 });
 // A degraded-network trial forwards every real RPC and exact signed payload.
 // Delay every round trip (or only reads), without inventing replies or gameplay.
+let delaySample=0;
+const networkDelay=()=>networkDelayMs+(networkJitterMs?(((++delaySample*37)%101)/50-1)*networkJitterMs:0);
 if(readDelayMs||networkDelayMs)await context.route('https://il2-eu-*.fly.dev/**',async route=>{
  const request=route.request();let read=false;
  try{const body=request.postDataJSON();read=!!body?.method&&!['interlude_sendTransaction','eth_sendRawTransaction'].includes(body.method);}catch{}
- if(networkDelayMs)await new Promise(resolve=>setTimeout(resolve,networkDelayMs));
+ if(networkDelayMs)await new Promise(resolve=>setTimeout(resolve,networkDelay()));
  const response=await route.fetch();
- if(networkDelayMs||(read&&readDelayMs))await new Promise(resolve=>setTimeout(resolve,networkDelayMs+(read?readDelayMs:0)));
+ if(networkDelayMs||(read&&readDelayMs))await new Promise(resolve=>setTimeout(resolve,networkDelay()+(read?readDelayMs:0)));
  await route.fulfill({response});
 });
 if(process.env.PONG_SYNC_PROBE==='1')await installSyncProbe(page);
@@ -139,6 +176,7 @@ if(atomicQualification)await page.route('https://pongit.xyz/api/agents/config',a
 let healthTimer:ReturnType<typeof setInterval>|undefined;
 let healthBusy=false;
 let spectator:import('@playwright/test').Page|undefined;
+let spectatorContext:import('@playwright/test').BrowserContext|undefined;
 if(restored)await context.addInitScript(session=>{
  if(sessionStorage.getItem('pongit:test-restored'))return;
  for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));
@@ -199,8 +237,21 @@ const receiptSide=(receipt:any)=>{
  return undefined;
 };
 const measurePeer=()=>{
- const paired=report.receipts.filter((r:any)=>r.sequence).map((r:any)=>{const event=report.peerEvents.find((e:any)=>e.sequence===r.sequence&&e.id===report.ref?.id&&e.direction===r.direction&&e.side===r.side);return event?event.receivedAt-r.sentAt:undefined;}).filter((n:any)=>Number.isFinite(n));
- paired.sort((a:number,b:number)=>a-b);report.peerReception={samples:paired.length,p95Ms:paired[Math.floor((paired.length-1)*.95)],clock:'same Playwright host performance.timeOrigin',basis:'send to independent observer ControlQueued live event'};
+ const paired=report.receipts.filter((r:any)=>r.sequence).map((r:any)=>{
+  const event=report.peerEvents.find((e:any)=>e.sequence===r.sequence&&e.id===report.ref?.id&&e.direction===r.direction&&e.side===r.side);
+  const acknowledgement=commandTimings.find(t=>t.stage==='acknowledged'&&t.hash?.toLowerCase()===r.hash?.toLowerCase());
+  const began=integrity?acknowledgement?.timeOrigin+acknowledgement?.startedAt+report.clockAlignment?.player.offsetMs:r.sentAt;
+  return event?event.receivedAt-began:undefined;
+ }).filter((n:any)=>Number.isFinite(n));
+ paired.sort((a:number,b:number)=>a-b);report.peerReception={samples:paired.length,p95Ms:paired[Math.floor((paired.length-1)*.95)],clock:'same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin',basis:integrity?'compact send entry to independent observer ControlQueued live event':'wire send to independent observer ControlQueued live event'};
+};
+const commandTimings:any[]=[];
+const retainCommandTimings=async()=>{
+ commandTimings.push(...await page.evaluate(()=>{const timings=(window as any).__commandTimings??[];(window as any).__commandTimings=[];return timings;}).catch(()=>[]));
+ report.commandTimings=commandTimings;
+ const confirmed=new Set(report.receipts.filter((r:any)=>r.sequence).map((r:any)=>r.hash?.toLowerCase()));
+ const values=commandTimings.filter(t=>t.stage==='acknowledged'&&t.command==='input'&&confirmed.has(t.hash?.toLowerCase())).map(t=>t.ms).sort((a,b)=>a-b);
+ report.sendLatency={samples:values.length,p95Ms:values[Math.floor((values.length-1)*.95)],basis:'compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration'};
 };
 const requests=new WeakMap<object,{at:string;method:string;path:string}>();
 const controls=new Map<string,{direction:number;sequence:string}>();
@@ -268,7 +319,7 @@ await context.addInitScript(()=>{
  navigator.credentials.get=async(...args)=>{const sample:any={startedAt:performance.now()};(window as any).__passkeyTimings.push(sample);try{return await get(...args);}catch(e){sample.error=(e as Error).name;throw e;}finally{sample.finishedAt=performance.now();}};
  localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));
  sessionStorage.setItem('pongit:measure-controls','1');
- (window as any).__commandTimings=[];window.addEventListener('pongit:command-timing',(e:any)=>{const a=(window as any).__commandTimings;if(a.length<20000)a.push(e.detail);});
+ (window as any).__commandTimings=[];window.addEventListener('pongit:command-timing',(e:any)=>{const a=(window as any).__commandTimings;if(a.length<20000)a.push({...e.detail,timeOrigin:performance.timeOrigin});});
  (window as any).__paddle=[];(window as any).__keys=[];(window as any).__digits=[];(window as any).__intents=[];
  window.addEventListener('click',e=>{if((e.target as Element)?.closest('button')?.getAttribute('aria-label')?.startsWith('Challenge '))
   (window as any).__challengeClickedAt=new Date().toISOString();},true);
@@ -295,7 +346,7 @@ await context.addInitScript(()=>{
 });
 try{
  const config=await (await apiGet('/agents/config')).json();
- if(publicSynchronized)assert(config.rulesVersion===16&&config.friendlyPause==='heartbeat-v1'&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled,'Actual public rules-16 migration required');
+ if(publicSynchronized)assert(config.rulesVersion===(responsive?17:16)&&config.friendlyPause==='heartbeat-v1'&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled,'Actual public synchronized migration required');
  if(continuationRecord)assertPrivateSyncBrowserTarget(config,continuationRecord,continuationScope);
  else if(privateV3)assert(config.pool.toLowerCase()===(synchronized?'0xd47bc7fece722a237c6547f85b4dd91c2601a4c8':'0x550ff3c22e20fc760af9afd68fba2cb531140dc6')&&config.rulesVersion===(synchronized?16:15)&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled&&config.challengeAdmission==='atomic-v1');
  assert(config.version===5&&config.houseInstances==='official-v1'&&config.maxMatches===5,'Public five-lane migration is not active');
@@ -352,9 +403,16 @@ try{
  })().catch(()=>{report.healthReadErrors=(report.healthReadErrors??0)+1;}).finally(()=>healthBusy=false);},1000);
 
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
-  spectator=await browser.newPage({viewport:{width:1440,height:1000}});observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);
+  spectatorContext=await browser.newContext({viewport:{width:1440,height:900},
+   ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/observer-video',size:{width:1440,height:900}}}:{})});
+  spectator=await spectatorContext.newPage();observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);await videoClock(spectator);
   await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
   await spectator.goto(page.url(),{waitUntil:'domcontentloaded'});
+  await page.bringToFront();
+ }
+ if(integrity){
+  report.clockAlignment={player:await alignClock(page),observer:await alignClock(spectator!)};
+  assert(Object.values(report.clockAlignment).every((v:any)=>v.uncertaintyMs<=5),'Client clock measurement uncertainty exceeds 5 ms');
  }
  await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:60000});
  report.playingAt=new Date().toISOString();report.digits=await page.evaluate(()=>(window as any).__digits);
@@ -375,11 +433,12 @@ try{
  if(homeLogin){assert.equal(before,report.homeLoginAssertions,'Agent challenge must reuse the human login');report.checks.push('Human login and agent challenge used one passkey ceremony');}
  const naturalDeadline=Date.now()+420000;
  let naturalEnded=false;
+ report.inputScenarios=[];
  for(let i=0;naturalMatch?Date.now()<naturalDeadline:i<controlCount;i++){
   if(naturalMatch&&await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).isVisible()){naturalEnded=true;break;}
   if(fault&&i===4){
    if(fault==='f5'){
-    await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});
+    await retainInputIntents();await retainCommandTimings();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]')?.disabled&&!!document.querySelector('button[aria-label="Move up"]'),{},{timeout:30000});
     assert.equal(assertions,before);report.faults.push({kind:'f5-grant-reused',at:new Date().toISOString()});
    }else if(fault==='disconnect'){
@@ -407,16 +466,28 @@ try{
     report.faults.push({kind:'own-match-revoked-and-reauthorized',at:new Date().toISOString()});
    }
   }
-  const key=i%2?'ArrowDown':'ArrowUp';
+  let desired:-1|0|1=i%2?1:-1,hold=inputHoldMs,gap=inputGapMs,scenario='held';
+  if(integrity){
+   const segment=i%80;
+   if(segment>=4&&segment<8){hold=80;gap=40;scenario='rapid-reversal';}
+   else if(segment>=8){
+    const picture=await page.evaluate(()=>{const d=(window as any).__syncProbe,s=d?.snapshots.at(-1),side=s?.side;
+     return{previous:d?.poses.at(-4),current:d?.poses.at(-1),side,half:d?.paddles.filter((p:any)=>p.side===side).at(-1)?.height/2};});
+    const aim=visibleAim(picture.previous,picture.current,picture.side===1?1:0,picture.half||48,i%2===0);
+    desired=aim.direction;hold=80;gap=40;scenario=aim.nearContact?'release-at-contact':i%2===0?'aim-edge':'aim-centre';
+   }
+   report.inputScenarios.push({at:Date.now(),scenario,direction:desired,holdMs:hold});
+  }
+  const key=desired>0?'ArrowDown':'ArrowUp';
   if(touchControls){
-   const button=page.getByRole('button',{name:i%2?'Move down':'Move up',exact:true});
+   const button=page.getByRole('button',{name:desired>0?'Move down':'Move up',exact:true});
    if(await button.isDisabled()){await page.waitForTimeout(100);continue;}
    await button.scrollIntoViewIfNeeded();const bounds=(await button.boundingBox())!;
-   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2}]});
-   await page.waitForTimeout(inputHoldMs);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-  }else{await page.keyboard.down(key);await page.waitForTimeout(inputHoldMs);await page.keyboard.up(key);}
-  await page.waitForTimeout(inputGapMs);
-  if(!naturalMatch&&i===34){await retainInputIntents();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
+   if(desired)await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2}]});
+   await page.waitForTimeout(hold);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  }else{if(desired)await page.keyboard.down(key);await page.waitForTimeout(hold);if(desired)await page.keyboard.up(key);}
+  await page.waitForTimeout(gap);
+  if(!naturalMatch&&i===34){await retainInputIntents();await retainCommandTimings();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
  }
  if(naturalMatch){report.naturalEnded=naturalEnded;assert(naturalEnded,'Natural match exceeded its fixed seven-minute observation window');}
  if(fault)assert.equal(report.faults.length,1,'The requested fault must be injected and its recovery verified');
@@ -436,7 +507,7 @@ try{
   // a fast command acknowledgement as proof of smooth rendered trajectories.
   report.idleStartedAt=new Date().toISOString();await page.waitForTimeout(naturalMatch?0:idleMs);report.idleEndedAt=new Date().toISOString();
   const data=await page.evaluate(()=>(window as any).__syncProbe);
-  await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);
+  await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);report.sustained=sustainedInputMetrics(data);report.collisions=collisionIntegrity(data.poses??[]);report.layout=data.layout;
   if(spectator){const observed=await spectator.evaluate(()=>(window as any).__syncProbe);
    await writeFile(out+'/spectator-trace.json',JSON.stringify(observed));report.spectatorSync=syncMetrics(observed);}
  }
@@ -471,6 +542,7 @@ try{
  // countdown failed. This never turns that failed gate into a passing trial.
  // Retain every measured gate even when another assertion fails. Diagnostics
  // never turn a failed run into a pass or discard a rejected command.
+ await retainCommandTimings();
  measurePeer();
  report.executionClock=receiptClockMetrics(report.receipts);
  report.performance={admission:report.admissionMs<=8000,localInput:report.input.p95Ms<=50,confirmedInput:report.confirmedInput.samples>=(naturalMatch||cadenceProbe?20:100)&&report.confirmedInput.p95Ms<=300&&report.confirmedInput.mismatches.length===0,
@@ -492,8 +564,25 @@ try{
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
  if(process.env.PONG_REQUIRE_RECONCILIATION==='1')assert(report.sync?.paddleSamples>100&&report.sync.paddleJumps.length===0&&report.sync.snapshotJumps.length===0,'Visible reconciliation discontinuities remain');
  if(naturalMatch&&!fault){
-  report.naturalGates={noPause:report.sync?.contractPauseMs===0,noResume:report.liveness?.resumes===0,noResync:report.sync?.visibleResyncs===0&&report.spectatorSync?.visibleResyncs===0,peer:report.peerReception.samples>=20&&report.peerReception.p95Ms<=report.submissionP95Ms+50,player:report.performance.player,spectator:report.performance.spectator,executionClock:report.executionClock.samples>=20&&report.executionClock.stalls.length===0&&report.executionClock.rewinds.length===0};
+  const sendP95=integrity?report.sendLatency?.p95Ms:report.submissionP95Ms;
+  report.naturalGates={noPause:report.sync?.contractPauseMs===0,noResume:report.liveness?.resumes===0,noResync:report.sync?.visibleResyncs===0&&report.spectatorSync?.visibleResyncs===0,peer:report.peerReception.samples>=20&&(!integrity||report.sendLatency?.samples>=20)&&report.peerReception.p95Ms<=sendP95+50,player:report.performance.player,spectator:report.performance.spectator,executionClock:report.executionClock.samples>=20&&report.executionClock.stalls.length===0&&report.executionClock.rewinds.length===0};
   assert(Object.values(report.naturalGates).every(v=>v===true),'Natural-match synchronization gate failed');
+ }
+ if(integrity){
+  const counts:Record<string,number>={};for(const s of report.inputScenarios)counts[s.scenario]=(counts[s.scenario]??0)+1;
+  report.scenarioCounts=counts;
+  assert(counts.held>=4&&counts['rapid-reversal']>=4&&counts['aim-centre']>=5&&counts['aim-edge']>=5&&counts['release-at-contact']>=1,'Required visible keyboard scenarios did not all execute');
+  assert(report.sustained.held.samples>=20&&report.sustained.held.outsideTarget===0,'Held movement differs from contractual speed');
+  assert(report.sustained.stopping.samples>=3&&report.sustained.stopping.p95Drift<=2&&report.sustained.stopping.maxDrift<=6,'Release drift exceeds limits');
+  assert(report.collisions.samples>=100&&report.collisions.visiblePaddleBounces>=1&&report.collisions.unconfirmed.length===0,'Visible paddle contact lacks live confirmation');
+  assert(report.layout?.length>0,'Visible court geometry was not recorded');
+  const layouts=report.layout as {width:number;height:number;x:number;y:number;scrollWidth:number;scrollHeight:number;scrollY:number}[];
+  assert(layouts.every(v=>Math.abs(v.width/v.height-16/9)<.02&&v.x>=-1&&v.x+v.width<=viewportWidth+1&&v.scrollWidth<=viewportWidth+1),'Court aspect ratio or horizontal overflow failed');
+  if(viewportWidth>=1366){
+   const minimum=viewportWidth===1440?1100:900;
+   assert(layouts.every(v=>v.width>=minimum&&v.y>=0&&v.y+v.height<=viewportHeight+1&&v.scrollHeight<=viewportHeight+1&&v.scrollY===0),'Desktop court is too small or requires scrolling');
+   assert(Math.max(...layouts.map(v=>v.y))-Math.min(...layouts.map(v=>v.y))<=1,'Court shifted during play');
+  }
  }
  if(process.env.PONG_REQUIRE_PERFORMANCE==='1')assert(Object.values(report.performance).every(value=>value===true),'A required performance gate failed; inspect admission/render measurements');
  assert.equal(report.errors.length,0);report.passed=true;
@@ -507,11 +596,12 @@ try{
 finally{
  if(healthTimer)clearInterval(healthTimer);
  try{await savePrivate();}catch{report.passed=false;report.error??='Private browser recovery state could not be saved';process.exitCode=1;}
- report.commandTimings=await page.evaluate(()=>(window as any).__commandTimings??[]).catch(()=>[]);
+ await retainCommandTimings();
  measurePeer();
  report.executionClock=receiptClockMetrics(report.receipts);
  report.finishedAt=new Date().toISOString();
  if(page.video())report.video=await page.video()!.path();
- await writeFile(out+'/report.json',JSON.stringify(report,null,2));await context.close();await browser.close();
+ if(spectator?.video())report.observerVideo=await spectator.video()!.path();
+ await writeFile(out+'/report.json',JSON.stringify(report,null,2));await context.close();await spectatorContext?.close();await browser.close();
  console.log(JSON.stringify({out,passed:report.passed,error:report.error,ref:report.ref,input:report.input,submissionP95Ms:report.submissionP95Ms,receiptP95Ms:report.receiptP95Ms}));
 }

@@ -17,12 +17,13 @@ import {HubLease} from "./HubLease.sol";
 contract ReusableEventsSettlement is IMatchResultV2 {
     ReusableEventsLobby public immutable lobby;
     PublishedRatings public immutable ledger;
-    uint256 public constant rulesVersion=14;
+    uint256 public immutable rulesVersion;
     struct MarketBinding {address arena;uint256 epoch;}
     mapping(uint256=>MarketBinding) public markets;
     event MarketBound(uint256 indexed id,address indexed arena,uint256 indexed epoch);
     constructor(ReusableEventsLobby authority){
-        require(block.chainid==10143&&authority.setupSealed()&&authority.arenaRulesVersion()==14,"sealed rules14 lobby");
+        require(block.chainid==10143&&authority.setupSealed()&&(authority.arenaRulesVersion()==14||authority.arenaRulesVersion()==18),"sealed reusable lobby");
+        rulesVersion=authority.arenaRulesVersion();
         lobby=authority;ledger=authority.ratings();
     }
     modifier base(){require(block.chainid==10143,"Monad only");_;}

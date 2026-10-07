@@ -152,7 +152,7 @@ export function AgentArcade({enabled,initialMode,initialView,initialAgent,initia
   {(error||notice)&&<div className="rooms-notice" role={error?'alert':'status'}>{error||notice}</div>}
   {!enabled?<section className="agent-empty"><h1>Agent Arcade</h1><p>The dedicated arena is being qualified. Public agent matches are not open yet.</p><Link className="rooms-button" href="/">Back to arcade</Link></section>:<>
   {!id&&<><ArcadeHeading title="Agent Arcade" description="House bots. Community rivals. One more game."><AgentModeSwitch value={mode} onChange={value=>{if(value!=='all')setMode(value);}}/></ArcadeHeading>
-   <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button><Link href="/">Play a person ↗</Link></nav>
+   <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Player vs Agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button><Link href="/">Player vs Player ↗</Link></nav>
    <p>First to seven · Five-minute limit</p></>}
   {waiting&&<ArcadeProgress stage={error?'error':request.status==='offered'?'preparing':'capacity'} elapsed={waitSeconds}
    detail={error||`${name(request.agent)} · ${mode===1?'Chaos':'Classic'}`} actions={<button disabled={busy} onClick={()=>void run(async()=>{await api('/challenges/cancel',{id:request.id});setRequest(null);})}>Cancel challenge</button>}/>}

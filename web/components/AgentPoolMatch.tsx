@@ -1,4 +1,5 @@
 'use client';
+import {adoptLivePicture} from '../../shared/live-picture';
 import {reconnectingPresentation} from '../lib/presentation-wait';
 import {ParticipantInputs,type ParticipantPresentationClock} from '../lib/participant-inputs';
 import {queuedDirections} from '../../shared/agent-synchronization';
@@ -47,17 +48,19 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const [streamPaused,setStreamPaused]=useState(false);
  const [painted,setPainted]=useState<CourtPlayback>();
  const paintedAt=useRef(0);
+ const immediateDirection=useRef<-1|0|1>(0);
  const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState('');
  const playerClient=useRef<ReturnType<typeof createPoolPlayer>|null>(null),manifest=useRef<AgentPoolManifest|null>(null),lastRef=useRef(''),commandVersion=useRef(0),actionBusy=useRef(false),router=useRouter();
  const recoveryVersion=useRef(0);
  const inputClock=useRef<{matchId:string;frame:ParticipantPresentationClock}|null>(null);
  const inputTimeline=useRef(new ParticipantInputs()),latestSnapshot=useRef<EngineState|null>(null);
- const [,inputRevision]=useState(0);latestSnapshot.current=snapshot;
+ const [,inputRevision]=useState(0);
+ const acceptSnapshot=(incoming:EngineState)=>{const next=adoptLivePicture(latestSnapshot.current,incoming);latestSnapshot.current=next;setSnapshot(next);};
  const [countdown,setCountdown]=useState<{id:string;deadline:number;clock:number;observedAt:number}>();
  const side=view&&account?view.a.toLowerCase()===account.toLowerCase()?0:view.b.toLowerCase()===account.toLowerCase()?1:-1:-1;
  const controllable=ready&&side>=0&&snapshot?.phase===2&&!view?.result&&!tools&&(snapshot.sync?.pause.status??0)<2;
  const control=useRef(false);control.current=controllable;
- const heartbeatEnabled=useRef(false);heartbeatEnabled.current=ready&&side>=0&&snapshot?.phase===2&&!view?.result&&!tools;
+ const heartbeatEnabled=useRef(false);heartbeatEnabled.current=ready&&side>=0&&(snapshot?.phase===2||manifest.current?.rulesVersion===17&&snapshot?.phase===1)&&!view?.result&&!tools;
  const heartbeatLoop=useRef<ReturnType<typeof agentHeartbeatLoop>|null>(null);
  const acceptIntent=useRef(false);acceptIntent.current=side>=0&&snapshot?.phase===2&&!view?.result&&!tools;
  const refKey=`${reference.app}:${reference.epoch}:${reference.id}`;
@@ -80,7 +83,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  },[enabled,refKey,courtObserved]);
  useEffect(()=>{
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>,observer:Awaited<ReturnType<typeof createPoolObserver>>|ReturnType<typeof createPoolPlayer>|undefined,release:(()=>void)|undefined;
-  if(lastRef.current!==refKey){lastRef.current=refKey;inputTimeline.current.reset();inputClock.current=null;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
+  if(lastRef.current!==refKey){lastRef.current=refKey;inputTimeline.current.reset();inputClock.current=null;immediateDirection.current=0;latestSnapshot.current=null;setView(null);setSnapshot(null);setDirection(0);}setError('');setConnection('Connecting');setReady(false);
   let config:AgentPoolManifest|undefined,current:PoolMatchView|undefined,nextPublished=0,nextRecovery=0,retryRecoveryAt=0,recoveredVersion=-1,wasHidden=false;
   let entryStarted=0,firstState=false;
   let entryReady=false,entryLaunch:Awaited<ReturnType<ReturnType<typeof createPoolPlayer>['launch']>>;
@@ -90,7 +93,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
    const response=await fetch(`${API}/agents${path}`,{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(30000)])});
    if(!response.ok)throw Error(response.status===404?'This match reference does not exist.':'The arcade is reconnecting. One moment.');return response.json();
   };
-  const publish=(s:EngineState)=>{if(!cancelled){firstState=true;setSnapshot(s);setConnection(s.phase>=3?'Match over':'Live');}};
+  const publish=(s:EngineState)=>{if(!cancelled){firstState=true;acceptSnapshot(s);setConnection(s.phase>=3?'Match over':'Live');}};
   const matchPath=`/matches/${reference.app}/${reference.epoch}/${reference.id}`;
   const acceptView=(value:PoolMatchView)=>{
    if(value.ref.app.toLowerCase()!==reference.app.toLowerCase()||value.ref.epoch!==reference.epoch||value.ref.id!==reference.id)throw Error('Match reference changed unexpectedly');
@@ -196,14 +199,14 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   void poll();return()=>{cancelled=true;controller.abort();clearTimeout(timer);observer?.close();playerClient.current=null;release?.();};
  },[enabled,refKey,retry]);
  async function move(dir:-1|0|1){
-  const client=playerClient.current;if(!client||!acceptIntent.current&&dir!==0)return;const version=++commandVersion.current;setDirection(dir);setPending(true);
+  const client=playerClient.current;if(!client||!acceptIntent.current&&dir!==0)return;const version=++commandVersion.current;immediateDirection.current=dir;setDirection(dir);setPending(true);
   try{await client.move(dir);setControlError('');}catch(e){recoveryVersion.current++;setControlError(poolUserError(e));setReady(false);}finally{if(commandVersion.current===version)setPending(false);}
  }
  useEffect(()=>{
   let active=true;
   const loop=agentHeartbeatLoop(async()=>{
    const client=playerClient.current;if(!client)return;
-   const state=await client.heartbeat(true);if(active)setSnapshot(state);
+   const state=await client.heartbeat(true);if(active)acceptSnapshot(state);
   },()=>!!playerClient.current&&!document.hidden&&performance.now()-paintedAt.current<=500&&heartbeatEnabled.current&&manifest.current?.friendlyPause==='heartbeat-v1',error=>{
    if(active){recoveryVersion.current++;setControlError(poolUserError(error));setReady(false);}
   });heartbeatLoop.current=loop;
@@ -290,10 +293,12 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
       housePrediction={snapshot.sync?{...snapshot.sync,progressive:manifest.current?.housePolicy==='progressive-v1'}:undefined}
       coherentControls={side>=0?[...queuedDirections(snapshot.sync?.pendingControls??0n),...inputTimeline.current.controls(side as 0|1,snapshot.state.t)]:undefined}
       confirmedInputRevision={inputTimeline.current.revision}
+      readIntent={side>=0?processed=>({direction:immediateDirection.current,controls:[...queuedDirections(latestSnapshot.current?.sync?.pendingControls??0n),...inputTimeline.current.controls(side as 0|1,processed)],revision:inputTimeline.current.revision}):undefined}
+      onPaint={id=>{if(id===refKey)paintedAt.current=performance.now();}}
       onInputClock={(matchId,frame)=>{inputClock.current={matchId,frame};}}
       progressionLimit={snapshot.phase!==2?snapshot.state.t:snapshot.sync?.pause.human?snapshot.sync.pause.limitUs:undefined}
       clock={snapshot.clock>BigInt(view.overtimeSeconds?360_000_000:300_000_000)?BigInt(view.overtimeSeconds?360_000_000:300_000_000):snapshot.clock}
-      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onPlayback={frame=>{paintedAt.current=performance.now();setPainted(frame);}} onStats={(_fps,_predicted,_waiting,cause)=>setStreamPaused(reconnectingPresentation(cause??null))}/>{paused?<>{resume!==undefined?<ArenaCountdown id={`${refKey}:resume:${resume}`} deadline={Number(resume)*10} clock={Number(snapshot.head)*10} observedAt={performance.now()-Math.max(0,Date.now()-snapshot.observedAt)}/>:<ArcadeProgress stage="synchronizing" title="Match paused" detail="Reconnecting controls. The match resumes with a countdown." compact overlay/>}</>:error?<ArcadeProgress stage="error" detail={error} actions={<button onClick={()=>setRetry(n=>n+1)}>Retry</button>} compact overlay/>:controlError&&!tools?<ArcadeProgress stage="error" detail={controlError} actions={<button onClick={()=>{void move(0);setTools(true);}}>Account</button>} compact overlay/>:streamPaused&&snapshot.phase===2&&!result?<ArcadeProgress stage="synchronizing" compact overlay/>:null}{(manifest.current?.version??0)>=4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
+      observedAt={snapshot.observedAt} direction={direction} side={side} replay={false} matchId={refKey} controllable={controllable} pending={pending} confirmedNonce={side===0?snapshot.nonceA:snapshot.nonceB} liveEngine bufferedSpectator onPlayback={setPainted} onStats={(_fps,_predicted,_waiting,cause)=>setStreamPaused(reconnectingPresentation(cause??null))}/>{paused?<>{resume!==undefined?<ArenaCountdown id={`${refKey}:resume:${resume}`} deadline={Number(resume)*10} clock={Number(snapshot.head)*10} observedAt={performance.now()-Math.max(0,Date.now()-snapshot.observedAt)}/>:<ArcadeProgress stage="synchronizing" title="Match paused" detail="Reconnecting controls. The match resumes with a countdown." compact overlay/>}</>:error?<ArcadeProgress stage="error" detail={error} actions={<button onClick={()=>setRetry(n=>n+1)}>Retry</button>} compact overlay/>:controlError&&!tools?<ArcadeProgress stage="error" detail={controlError} actions={<button onClick={()=>{void move(0);setTools(true);}}>Account</button>} compact overlay/>:streamPaused&&snapshot.phase===2&&!result?<ArcadeProgress stage="synchronizing" compact overlay/>:null}{(manifest.current?.version??0)>=4&&snapshot.phase===1&&<ArenaCountdown id={refKey} deadline={countdown?.id===refKey?countdown.deadline:undefined} clock={countdown?.clock} observedAt={countdown?.observedAt}/>}</div>
      <div className="rooms-court-controls"><span>{side>=0?'W / S · ↑ / ↓':'SPECTATING'}</span>{side>=0&&<div className="touch-controls">{([-1,1] as const).map(dir=><IconButton key={dir} icon={dir===-1?'up':'down'} aria-label={dir===-1?'Move up':'Move down'} disabled={!controllable} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);void move(dir);}} onPointerUp={()=>void move(0)} onPointerCancel={()=>void move(0)} onLostPointerCapture={()=>void move(0)}/>)}</div>}</div>
     </>:<ArcadeProgress stage={error?'unavailable':'preparing'}/>}
    </section>}

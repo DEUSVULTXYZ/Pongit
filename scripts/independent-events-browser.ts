@@ -9,11 +9,15 @@ import {monadTestnet} from 'viem/chains';
 import {abi as vaultAbi} from '../shared/abi-independent-RoomsVault';
 import {independentRules} from '../shared/independent-rules';
 import {publicIndependentManifest} from '../shared/independent';
-import {installSyncProbe,syncMetrics} from './browser-sync-probe';
+import {installSyncProbe,syncMetrics,sustainedInputMetrics} from './browser-sync-probe';
+import {visibleAim} from './browser-aim';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const publicRelease=process.env.PONG_HUMAN_BROWSER_TARGET==='public-release';
 const chaos=process.env.INDEPENDENT_SCENARIO==='chaos';
 const naturalOnly=process.env.PONG_HUMAN_NATURAL==='1';
+const integrity=process.env.PONG_HUMAN_INPUT_INTEGRITY==='rules18';
+assert(!process.env.PONG_HUMAN_INPUT_INTEGRITY||integrity);
+assert(!integrity||naturalOnly&&publicRelease&&process.env.PONG_SYNC_PROBE==='1');
 const run=process.env.INDEPENDENT_TEST_RUN||'';assert(!run||/^[a-z0-9]{1,16}$/.test(run));
 const suffix=run?'-'+run:'';
 const origin='https://pongit.xyz',out=`artifacts/independent-candidate/browser${chaos?'-chaos':''}${suffix}`,secret=process.env.PONG_BROWSER_PRIVATE_PATH??`/secrets/independent-browser-v2${chaos?'-chaos':''}${suffix}.json`;
@@ -21,7 +25,8 @@ assert(!process.env.PONG_BROWSER_PRIVATE_PATH||secret.includes('private-backups'
 const assets=process.env.PONG_CATALOGUE_ASSET_ORIGIN;
 assert(!assets||publicRelease&&/^http:\/\/127\.0\.0\.1:\d+$/.test(assets));
 const manifest=publicIndependentManifest(JSON.parse(await readFile(process.env.PONG_HUMAN_BROWSER_MANIFEST??'deployments/independent.json','utf8')));
-assert([12,13,14].includes(manifest.rulesVersion!));const rules=independentRules(manifest);
+assert([12,13,14,18].includes(manifest.rulesVersion!));const rules=independentRules(manifest);
+assert(!integrity||manifest.rulesVersion===18,'Responsive PvP requires the actual migrated manifest');
 const financialBase=createPublicClient({chain:monadTestnet,transport:http('https://testnet-rpc.monad.xyz',{timeout:10000,retryCount:0})});
 const nodes=new Set(manifest.arenas.map(a=>new URL(a.node!).origin));
 const restore=process.env.PONG_HUMAN_RESTORE_PRIVATE_PATH;
@@ -46,11 +51,12 @@ if(capacityWait){
  }
  assert(available,'No verified released arena before browser qualification deadline');
 }
-const browser=await chromium.launch({headless:true,args:['--no-sandbox'],channel:process.env.BROWSER_CHANNEL??'chrome'});
+const browser=await chromium.launch({headless:process.env.PONG_BROWSER_VISIBLE!=='1',channel:process.env.BROWSER_CHANNEL??'chrome'});
 const pages:Page[]=[],contexts:BrowserContext[]=[],devices:any[]=[],counts=[0,0,0,0];
 const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:manifest.rulesVersion,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
 report.target=publicRelease?'Public HTTPS web and API, actual hosted game':'Isolated candidate';
 report.resumedFixture=!!restore;report.naturalOnly=naturalOnly;report.liveControls=[];report.commandReceipts=[];
+report.visibleBrowser=process.env.PONG_BROWSER_VISIBLE==='1';report.integrity=integrity;report.inputScenarios=[];
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 let reporting=false,driving=true;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
 async function until(fn:()=>Promise<any>,label:string,ms=60000){const end=Date.now()+ms;while(Date.now()<end){if(await fn().catch(()=>false))return;await sleep(250);}throw Error('Timed out: '+label);}
@@ -67,7 +73,14 @@ async function persist(){
  await writeFile(secret+'.next',JSON.stringify(saved),{mode:0o600});await rename(secret+'.next',secret);
 }
 async function init(i:number){
- const context=await browser.newContext({viewport:{width:1440,height:1000},permissions:['clipboard-read','clipboard-write'],...(restore?{storageState:saved.players[i].storage}:{})});contexts.push(context);
+ const context=await browser.newContext({viewport:{width:1440,height:900},permissions:['clipboard-read','clipboard-write'],
+  ...(process.env.PONG_BROWSER_VIDEO==='1'?{recordVideo:{dir:`${out}/video-${i}`,size:{width:1440,height:900}}}:{}),
+  ...(restore?{storageState:saved.players[i].storage}:{})});contexts.push(context);
+ if(process.env.PONG_BROWSER_VIDEO==='1')await context.addInitScript(()=>{window.addEventListener('DOMContentLoaded',()=>{
+  const stamp=document.createElement('output');stamp.setAttribute('aria-hidden','true');
+  stamp.style.cssText='position:fixed;left:0;bottom:0;z-index:2147483647;pointer-events:none;font:10px monospace;color:white;background:black';
+  document.body.appendChild(stamp);setInterval(()=>stamp.textContent=new Date().toISOString(),100);
+ });});
  if(restore)await context.addInitScript(session=>{for(const [k,v] of Object.entries(session))sessionStorage.setItem(k,String(v));},saved.players[i].session);
  await context.addInitScript(()=>{sessionStorage.setItem('pongit:measure-controls','1');if(location.origin==='https://pongit.xyz')localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'}));});
  await context.exposeBinding('recordCountdown',(_source,digit:string)=>{if(/^[123]$/.test(digit)&&!report.countdown[i].includes(digit))report.countdown[i].push(digit);});
@@ -220,7 +233,7 @@ try{
     await tools.click();const leave=p.getByRole('button',{name:'Leave room',exact:true});if(await leave.isVisible())await leave.click();
     await p.getByRole('button',{name:'Close Cabinet tools',exact:true}).click();
    }
-   const button=p.getByRole('button',{name:/^(Matchmaking|Play a person)/});if(await button.isVisible())await button.click();
+   const button=p.getByRole('button',{name:/^(Matchmaking|Player vs Player|Play a person)/});if(await button.isVisible())await button.click();
    const rejoin=p.getByRole('button',{name:'Rejoin queue',exact:true});if(await rejoin.isVisible())await rejoin.click();
   }));
   await Promise.all([a,b].map(p=>until(async()=>await p.getByRole('button',{name:'Accept',exact:true}).isVisible()||await p.locator('.rooms-canvas canvas').isVisible(),'offer or resumed game',120000)));
@@ -273,9 +286,26 @@ try{
   const end=Date.now()+(chaos?600000:180000);
   for(let i=0;driving&&Date.now()<end;i++){
    if(await a.getByRole('dialog',{name:'Confirmed match result'}).isVisible()||await b.getByRole('dialog',{name:'Confirmed match result'}).isVisible())break;
-   const key=i%2?'s':'w';
-   await Promise.all([a,b].map(async p=>{if(await p.getByRole('button',{name:'Move up',exact:true}).isEnabled({timeout:300}).catch(()=>false))await p.keyboard.down(key);}));
-   await sleep(120);await Promise.all([a,b].map(p=>p.keyboard.up(key)));await sleep(70);
+   if(integrity){
+    await Promise.all([a,b].map(async(p,player)=>{
+     if(!await p.getByRole('button',{name:'Move up',exact:true}).isEnabled({timeout:300}).catch(()=>false))return;
+     const segment=i%80;let direction=i%2?1:-1,hold=2000,scenario='held';
+     if(segment>=4&&segment<8){hold=80;scenario='rapid-reversal';}
+     else if(segment>=8){
+      const picture=await p.evaluate(()=>{const d=(window as any).__syncProbe,s=d?.snapshots.at(-1),side=s?.side;
+       return{previous:d?.poses.at(-4),current:d?.poses.at(-1),side,half:d?.paddles.filter((v:any)=>v.side===side).at(-1)?.height/2};});
+      const aim=visibleAim(picture.previous,picture.current,picture.side===1?1:0,picture.half||48,i%2===0);
+      direction=aim.direction;hold=80;scenario=aim.nearContact?'release-at-contact':i%2===0?'aim-edge':'aim-centre';
+     }
+     report.inputScenarios.push({at:Date.now(),player,scenario,direction,holdMs:hold});
+     const key=direction>0?'ArrowDown':'ArrowUp';if(direction)await p.keyboard.down(key);
+     await sleep(hold);if(direction)await p.keyboard.up(key);
+    }));await sleep(40);
+   }else{
+    const key=i%2?'s':'w';
+    await Promise.all([a,b].map(async p=>{if(await p.getByRole('button',{name:'Move up',exact:true}).isEnabled({timeout:300}).catch(()=>false))await p.keyboard.down(key);}));
+    await sleep(120);await Promise.all([a,b].map(p=>p.keyboard.up(key)));await sleep(70);
+   }
   }
  })();
  void movement.catch(()=>{});
@@ -294,11 +324,19 @@ try{
 }finally{driving=false;clearInterval(progress);
  if(process.env.PONG_SYNC_PROBE==='1')for(let i=0;i<pages.length;i++){
   const trace=await pages[i].evaluate(()=>(window as any).__syncProbe).catch(()=>null);
-  if(trace){await writeFile(`${out}/sync-${i}.json`,JSON.stringify(trace));report.sync??=[];report.sync[i]=syncMetrics(trace);}
+  if(trace){await writeFile(`${out}/sync-${i}.json`,JSON.stringify(trace));report.sync??=[];report.sync[i]=syncMetrics(trace);report.sustained??=[];report.sustained[i]=sustainedInputMetrics(trace);}
  }
  const p95=(a:number[])=>a.sort((x,y)=>x-y)[Math.floor((a.length-1)*.95)];
  const paired=report.commandReceipts.map((r:any)=>{const e=report.liveControls.find((x:any)=>x.observer===1-r.player&&x.id===r.id&&x.side===r.side&&x.sequence===r.sequence);return e?e.receivedAt-r.sentAt:undefined;}).filter((v:any)=>Number.isFinite(v));
  report.peerReception={samples:paired.length,p95Ms:p95(paired),clock:'same Playwright host',sendP95Ms:p95(report.commandReceipts.map((r:any)=>r.ms))};
  if(naturalOnly){report.syncGates={natural:!!report.passed,render:report.sync?.slice(0,2).every((x:any)=>x.frames>100&&x.maxHoldMs<=500&&x.p95FrameMs<=20&&x.frameGaps.length===0&&x.snapshotJumps.length===0&&x.paddleJumps.length===0),local:report.sync?.slice(0,2).every((x:any)=>x.localInput.samples>=20&&x.localInput.p95Ms<=50&&x.localInput.misses.length===0),noPause:report.sync?.slice(0,2).every((x:any)=>x.contractPauseMs===0&&x.visibleResyncs===0),peer:paired.length>=20&&report.peerReception.p95Ms<=report.peerReception.sendP95Ms+50,commands:report.network.filter((x:any)=>x.method==='interlude_sendTransaction').every((x:any)=>!x.error&&!x.rpcError)};
   if(!Object.values(report.syncGates).every(v=>v===true)){report.passed=false;report.error??='Natural PvP synchronization gate failed';process.exitCode=1;}}
- report.finishedAt=new Date().toISOString();report.passkeyAssertions=counts;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}
+ if(integrity){
+  report.integrityGates=[0,1].map(player=>{const s=report.sustained?.[player],scenarios=report.inputScenarios.filter((v:any)=>v.player===player);
+   const count=(name:string)=>scenarios.filter((v:any)=>v.scenario===name).length;
+   return{held:s?.held.samples>=20&&s.held.outsideTarget===0,release:s?.stopping.samples>=3&&s.stopping.p95Drift<=2&&s.stopping.maxDrift<=6,
+    scenarios:count('held')>=4&&count('rapid-reversal')>=4&&count('aim-centre')>=5&&count('aim-edge')>=5&&count('release-at-contact')>=1};});
+  if(!report.integrityGates.every((v:any)=>Object.values(v).every(x=>x===true))){report.passed=false;report.error??='PvP held-input/release qualification failed';process.exitCode=1;}
+ }
+ report.videos=await Promise.all(pages.map(async p=>p.video()?p.video()!.path():null));
+ report.finishedAt=new Date().toISOString();report.passkeyAssertions=counts;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await Promise.all(contexts.map(c=>c.close()));await browser.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}

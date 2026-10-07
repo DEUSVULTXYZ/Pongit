@@ -7,7 +7,7 @@ export const CHAOS_P=1000000000000n;
 const P=CHAOS_P,STEP=10000n,FIFTEEN=261799387799n;
 export type ChaosBall={x:bigint;y:bigint;vx:bigint;vy:bigint;powerN:number;powerD:number;curveSteps:number;curveSign:number;
  lastHitter:number;ghost:number;portalLock:boolean;warp:boolean;gravity:boolean;gravityUsed:bigint;trailRevision:number;alive:boolean};
-export type ChaosPhysicsState={balls:[ChaosBall,ChaosBall];effects:EffectPair;score:ChaosScore;left:bigint;right:bigint;leftDir:number;rightDir:number;lastLeft:number;lastRight:number;
+export type ChaosPhysicsState={paddleSpeed?:bigint;balls:[ChaosBall,ChaosBall];effects:EffectPair;score:ChaosScore;left:bigint;right:bigint;leftDir:number;rightDir:number;lastLeft:number;lastRight:number;
  t:bigint;nextForce:bigint;activeMask:number;collisionSequence:number;bettingA:number;bettingB:number;seed:Hex;cancelled:boolean;cancelReason:number;stalled:number};
 export type ChaosPhysicsCollision={sequence:number;rally:number;ball:number;kind:number;obstacle:number;at:bigint;x:bigint;y:bigint};
 export type ChaosCandidate={dt:bigint;kind:number;ball:number;slot:number;obstacle:number;nx:bigint;ny:bigint};
@@ -18,7 +18,7 @@ export const CHAOS_LOG_STOP=8,CHAOS_LOG_CAPACITY=31;
 const emptyBall=():ChaosBall=>({x:0n,y:0n,vx:0n,vy:0n,powerN:0,powerD:0,curveSteps:0,curveSign:0,lastHitter:0,ghost:0,portalLock:false,warp:false,gravity:false,gravityUsed:0n,trailRevision:0,alive:false});
 function has(s:ChaosPhysicsState,id:number){return s.effects.some(e=>e.id===id&&activeEffect(e,Number(s.t/1000n)));}
 function variant(s:ChaosPhysicsState,id:number){return s.effects.find(e=>e.id===id)?.variant||0;}
-function paddles(s:ChaosPhysicsState){return chaosPaddles(BigInt(s.bettingA),BigInt(s.bettingB),s.effects.map(e=>({...e,startsAt:BigInt(e.startsAt),expiresAt:BigInt(e.expiresAt),consumed:false})) as any,s.t/1000n);}
+function paddles(s:ChaosPhysicsState){return chaosPaddles(BigInt(s.bettingA),BigInt(s.bettingB),s.effects.map(e=>({...e,startsAt:BigInt(e.startsAt),expiresAt:BigInt(e.expiresAt),consumed:false})) as any,s.t/1000n,s.paddleSpeed);}
 const outer=(height:bigint,split:boolean)=>(height+(split?16000000n:0n))*1000000n/2n;
 const clamp=(y:bigint,half:bigint)=>y<half?half:y>576n*P-half?576n*P-half:y;
 function inside(x:bigint,y:bigint,cx:bigint,cy:bigint,r:bigint){const dx=x-cx,dy=y-cy;return dx*dx+dy*dy<=r*r;}

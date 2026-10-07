@@ -19,6 +19,7 @@ import {Session} from "../../vendor/interlude/libraries/Session.sol";
 /// Lifecycle, admission and scoped caller authorization belong to the root.
 library ReusableGame {
     uint256 internal constant RULES=14;
+    function rules(mapping(bytes32=>uint256) storage w) private view returns(uint256){return S.get(w,73)==18?18:RULES;}
     uint256 private constant SLOT=1;
     uint256 private constant MAX_US=1_800_000_000;
     struct Result {T.Result match_; uint64 elapsedUs; uint64 finishedAt; uint256 rules;}
@@ -33,8 +34,8 @@ library ReusableGame {
 
     function phase(mapping(bytes32=>uint256) storage w) internal view returns(uint8){return uint8(S.get(w,0)>>161&7);}
     function admit(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,T.Binding calldata binding,
-        bytes calldata signature,address signer,address authority) external returns(bytes32){
-        return Binding.admit(w,ticket,binding,signature,signer,authority);
+        bytes calldata signature,address signer,address authority,uint256 version) external returns(bytes32){
+        return Binding.admit(w,ticket,binding,signature,signer,authority,version);
     }
     function packed(mapping(bytes32=>uint256) storage w) internal view returns(uint256[8] memory p){for(uint256 i;i<8;i++)p[i]=S.get(w,21+i);}
     function state(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public view returns(PhysicsV2.State memory){
@@ -49,8 +50,8 @@ library ReusableGame {
         publish(w,kernel);
     }
     function cancelAdmission(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,T.Binding calldata binding,
-        bytes calldata signature,address signer,address authority,RoomsRules classic,ChaosEngine kernel) external {
-        Binding.cancelExpired(w,ticket,binding,signature,signer,authority);
+        bytes calldata signature,address signer,address authority,RoomsRules classic,ChaosEngine kernel,uint256 version) external {
+        Binding.cancelExpired(w,ticket,binding,signature,signer,authority,version);
         initialize(w,classic,kernel);finish(w,kernel,4,address(0));publish(w,kernel);
     }
     function publish(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public {
@@ -67,7 +68,7 @@ library ReusableGame {
         address a=address(uint160(m));address b=address(uint160(S.get(w,1)));
         r.match_=T.Result(address(this),S.get(w,31),S.get(w,37),a,b,winner==1?a:winner==2?b:address(0),
             uint8(m>>168&1),m>>160&1==1,phase(w),p.scoreA,p.scoreB,bytes32(S.get(w,9)));
-        r.elapsedUs=p.t;r.finishedAt=uint64(S.get(w,19));r.rules=RULES;
+        r.elapsedUs=p.t;r.finishedAt=uint64(S.get(w,19));r.rules=rules(w);
     }
     function finish(mapping(bytes32=>uint256) storage w,ChaosEngine kernel,uint8 status,address winner) public {
         require(phase(w)>0&&phase(w)<3&&(status==3||status==4),"terminal transition");
@@ -77,7 +78,7 @@ library ReusableGame {
         S.set(w,0,(m&~(uint256(7)<<161))|(uint256(status)<<161)|((winner==a?uint256(1):winner==b?uint256(2):0)<<166));
         S.set(w,8,(S.get(w,8)&~uint256(15))|5);
         PhysicsV2.State memory p=state(w,kernel);
-        S.set(w,9,uint256(keccak256(abi.encode(address(this),RULES,S.get(w,31),S.get(w,37),a,b,winner,
+        S.set(w,9,uint256(keccak256(abi.encode(address(this),rules(w),S.get(w,31),S.get(w,37),a,b,winner,
             status,uint8(m>>168&1),m>>160&1==1,p.scoreA,p.scoreB,p.t,S.get(w,19),S.get(w,36)))));
         Result memory r=result(w,kernel);S.complete(w,keccak256(abi.encode(r)));
         emit Completed(S.get(w,31),S.get(w,37),r);
@@ -121,7 +122,7 @@ library ReusableGame {
             if(phase(w)!=2)return true;
             PhysicsV2.State memory p=state(w,kernel);uint64 end=Pending.next(w,SLOT,p.t,uint64(target));bool complete;
             if(p.mode==0){
-                (p,complete)=classic.advance(p,end,128);RoomsState.save(w,SLOT,p);
+                (p,complete)=rules(w)==18?classic.advanceResponsive(p,end,128):classic.advance(p,end,128);RoomsState.save(w,SLOT,p);
                 if(p.finished){finish(w,kernel,3,address(uint160(S.get(w,p.scoreA==7?0:1))));return true;}
             }else{
                 uint8 outcome;uint8 winner;(complete,outcome,winner)=Flow.advanceAt(w,kernel,hub,SLOT,S.get(w,37),end);

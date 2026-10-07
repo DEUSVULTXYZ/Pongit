@@ -9,7 +9,21 @@
 .controls label { flex: 1; min-width: 0; margin: 0; font-size: 16px; }
 .controls input { display: block; width: 100%; margin: 0; min-height: 44px; }
 .accessibleScore { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-:global(.cabinet-dialog) .modal { width: min(800px, calc(100vw - 24px)); max-width: 800px; border: 8px solid transparent; border-radius: 0; border-image: url('/art/pixel-palace/frame-violet.svg') 40 fill / 12px / 0 stretch; background: var(--palace-panel, #11112c); }
+:global(.cabinet-dialog) .modal { width: min(1360px, calc(100vw - 24px), calc((100dvh - 208px)*16/9 + 200px)); max-width: 1360px; border: 8px solid transparent; border-radius: 0; border-image: url('/art/pixel-palace/frame-violet.svg') 40 fill / 12px / 0 stretch; background: var(--palace-panel, #11112c); }
+@media(min-width:1024px){
+ :global(.cabinet-dialog) .modal{padding:12px 16px;max-height:calc(100dvh - 16px)}
+ .heading{top:-12px;padding-block:0;min-height:44px}
+ .replay>p{margin:4px 0;font-size:14px}
+ .replay .recording{padding:8px;display:grid;grid-template-columns:minmax(0,1fr) 148px;gap:8px 12px}
+ .replay .recording>:global(.scoreboard){grid-column:1/-1;min-height:60px;height:60px;padding:0 4px;margin:0}
+ .replay .recording :global(.score){font-size:40px;line-height:1}
+ .replay .recording :global(.portrait-avatar){width:40px;height:40px}
+ .replay .recording :global(.player-label)>small{display:none}
+ .replay .recording:not(:has([aria-label="Chaos effects"])){grid-template-columns:minmax(0,1fr)}
+ .replay .recording>[aria-label="Chaos effects"]{grid-column:2;grid-row:2;height:auto;margin:0;min-width:0}
+ .replay .recording>.court{grid-column:1;grid-row:2;margin:0}
+ .controls{margin-top:8px}
+}
 /* Dialogs render through a portal, outside the page's pixel control selectors. */
 :global(.cabinet-dialog) .modal button { min-width: 44px; min-height: 44px; border: 2px solid #8672b7; border-radius: 0; background: #211b40; box-shadow: inset 2px 2px #cdbcf542,inset -2px -2px #0b0923,0 3px #070719; color: #eee9fb; }
 :global(.cabinet-dialog) .modal button:hover:not(:disabled) { background: #30244f; border-color: #87eefa; }

@@ -89,7 +89,8 @@ library ReusableAgentGame {
             end=PoolSteer.steer(w,binding,policies,kernel,end);
             if(binding.mode==0){
                 PhysicsV2.State memory p=View.state(w,kernel);
-                (p,complete)=classic.advance(p,end,128);RoomsState.save(w,SLOT,p);
+                (p,complete)=Fair.rules(w)==17?classic.advanceResponsive(p,end,128):classic.advance(p,end,128);
+                RoomsState.save(w,SLOT,p);
                 if(p.finished){finish(w,kernel,3,address(uint160(S.get(w,p.scoreA==7?0:1))));return true;}
             }else{
                 uint8 outcome;uint8 winner;(complete,outcome,winner)=Flow.advanceAt(w,kernel,hub,SLOT,S.get(w,37),end);

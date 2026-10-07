@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {isHex} from 'viem';
 import {publicIndependentManifest} from '../../shared/independent';
 
@@ -5,7 +6,7 @@ import {publicIndependentManifest} from '../../shared/independent';
  * metadata does not replace the pool's publication budget or live hub checks. */
 export function independentRuntime(raw:any,env:Readonly<Record<string,string|undefined>>=process.env){
  const manifest=publicIndependentManifest(raw);
- if(manifest.rulesVersion===14){
+ if(isReusableHumanRules(manifest.rulesVersion)){
   if(env.PONG_INDEPENDENT_REUSABLE_RUNTIME==='reviewed-release'){
    const evidence=env.PONG_INDEPENDENT_RELEASE_EVIDENCE;
    if(raw.production!==true||raw.status!=='sealed'||!evidence||!isHex(evidence)||evidence.length!==66||BigInt(evidence)===0n

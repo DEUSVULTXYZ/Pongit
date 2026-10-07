@@ -8,7 +8,7 @@ import type {ArcadeStage} from '../../shared/arcade-progress';
 import type {EngineState} from '../../shared/engine-stream';
 import {restoreEngineFrame} from '../../shared/engine-frame-json';
 const short=(p:string)=>p.slice(0,6)+'…'+p.slice(-4);
-export function IndependentHistory({player,matchId,rulesVersion=4,lobby}:{player:Address;matchId?:bigint;rulesVersion?:4|12|13|14;lobby?:Address}){
+export function IndependentHistory({player,matchId,rulesVersion=4,lobby}:{player:Address;matchId?:bigint;rulesVersion?:4|12|13|14|18;lobby?:Address}){
  const request=useRef(0);
  const [rows,setRows]=useState<any[]>([]),[frames,setFrames]=useState<EngineState[]>([]),[index,setIndex]=useState(0),[playing,setPlaying]=useState(false),[message,setMessage]=useState('Loading match history'),[selected,setSelected]=useState<string>();
  const [stage,setStage]=useState<ArcadeStage>('loading');

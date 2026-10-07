@@ -32,7 +32,7 @@ export type ReusableAdmissionEvidence={
 function validate(ticket:ReusableTicket,binding:ReusableBinding,e:ReusableAdmissionEvidence,cancel:boolean){
  const same=(a:string,b:string)=>a.toLowerCase()===b.toLowerCase();
  const address=(a:string)=>isAddress(a)&&!same(a,zeroAddress);
- if(e.chainId!==10143||ticket.rules!==14n||!address(ticket.authority)||!address(ticket.arena)
+ if(e.chainId!==10143||![14n,18n].includes(ticket.rules)||!address(ticket.authority)||!address(ticket.arena)
   ||!same(ticket.authority,e.authority)||!same(ticket.arena,e.arena)
   ||ticket.matchId<=0n||ticket.matchId!==e.reservedMatch||ticket.matchId!==binding.id
   ||ticket.epoch<=0n||ticket.epoch!==e.hubEpoch||ticket.epoch!==e.engineEpoch||ticket.epoch!==binding.epoch

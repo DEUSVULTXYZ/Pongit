@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {decodeFunctionData,encodeAbiParameters,encodeFunctionData,isAddress,zeroAddress,zeroHash,parseEther,verifyMessage,keccak256,type Address,type Hex,type Abi,type PublicClient} from 'viem';
@@ -44,6 +45,7 @@ import {privateKeyToAccount} from 'viem/accounts';
 import {canonicalHostedConsent} from '../../shared/hosted-provisioner';
 import {independentProvisioningScope} from '../../shared/independent-provisioning';
 import {previousIndependentManifests,independentScope,mergeIndependentRecent} from '../../shared/independent-history-scope';
+import {humanRatingContinuityAbi} from '../../shared/human-rating-continuity';
 
 type Options={db:Pool;operatorDb?:Pool;legacyDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
 export async function independentService(o:Options){
@@ -67,7 +69,8 @@ export async function independentService(o:Options){
  if(process.env.PONG_INDEPENDENT_SNAPSHOT){
   const source=await readFile(process.env.PONG_INDEPENDENT_SNAPSHOT,'utf8');
   const sourceHash=keccak256(new TextEncoder().encode(source));
-  if(sourceHash!==await r.ratings('migrationEvidence')||(process.env.PONG_INDEPENDENT_REUSABLE_RUNTIME==='reviewed-release'&&sourceHash!==rawManifest.migrationHash))throw Error('Profile migration evidence mismatch');
+  const boundEvidence=m.ratingsContinuity?await base.readContract({address:m.ratings,abi:humanRatingContinuityAbi,functionName:'seedAudit'}):await r.ratings('migrationEvidence');
+  if(sourceHash!==boundEvidence||(process.env.PONG_INDEPENDENT_REUSABLE_RUNTIME==='reviewed-release'&&sourceHash!==rawManifest.migrationHash))throw Error('Profile migration evidence mismatch');
   for(const p of JSON.parse(source).profiles){if(!isAddress(p.player)||!/^[a-z][a-z0-9_]{2,19}$/i.test(p.handle)||!Number.isInteger(p.avatar)||p.avatar<0||p.avatar>11)throw Error('Invalid reserved profile');profileHints.set(p.player.toLowerCase(),{handle:p.handle,avatar:p.avatar});}
  }
  const pressure=JSON.parse(await readFile(process.env.ROOMS_PRESSURE_KEY_FILE!,'utf8'));
@@ -75,7 +78,7 @@ export async function independentService(o:Options){
  if(!await r.lobby('setupSealed')||actual.length!==m.arenas.length||actual.some((a:Address,i:number)=>a.toLowerCase()!==m.arenas[i].app.toLowerCase()))throw Error('Independent deployment is not sealed as declared');
  for(const [read,name,expected] of [[r.lobby,'family',m.family],[r.lobby,'ratings',m.ratings],[r.lobby,'hub',m.hub]] as const){if((await read(name)).toLowerCase()!==expected.toLowerCase())throw Error('Independent linkage mismatch');}
  if(rules.events)for(const a of m.arenas)if(Number(await r.arena(a.app,'RULES_VERSION'))!==rules.version)throw Error('Independent arena rules mismatch');
- if(m.rulesVersion===14){
+ if(isReusableHumanRules(m.rulesVersion)){
   for(const [name,expected] of [['verifier',m.resultVerifier!],['admissionSigner',m.admissionSigner!]] as const)
    if((await r.lobby(name)).toLowerCase()!==expected.toLowerCase())throw Error('Reusable admission authority mismatch');
   for(const a of m.arenas){
@@ -119,15 +122,15 @@ export async function independentService(o:Options){
  const legacy=independentLegacy(o.legacyDb??db);
  const history=await independentHistory(db,base,m,o.graphql,legacy);
  const diagnostics=await createRpcDiagnostics(db,m.lobby,o.collectRpc!==false),diagnosticAt=new Map<string,number>();
- if(m.rulesVersion===14)await initializeReusableResultArchive(db);
- const reusableResults=m.rulesVersion===14?independentReusableResults(db,base,m,(...args)=>queue(...args)):null;
- const reusableAdmit=m.rulesVersion===14?independentReusableAdmission(base,m,JSON.parse(await readFile(process.env.PONG_INDEPENDENT_ADMISSION_KEY_FILE!,'utf8')).privateKey):null;
+ if(isReusableHumanRules(m.rulesVersion))await initializeReusableResultArchive(db);
+ const reusableResults=isReusableHumanRules(m.rulesVersion)?independentReusableResults(db,base,m,(...args)=>queue(...args)):null;
+ const reusableAdmit=isReusableHumanRules(m.rulesVersion)?independentReusableAdmission(base,m,JSON.parse(await readFile(process.env.PONG_INDEPENDENT_ADMISSION_KEY_FILE!,'utf8')).privateKey):null;
  const engines=m.arenas.map(a=>independentEngine(db,base,a.app,a.node!,pressure.privateKey,history.record,{rulesVersion:m.rulesVersion,archive:reusableResults?.archive.store}));
  const eventLoops=engines.map(e=>rules.events?independentEventsLoop({...e,
-  epochCommands:rules.version===14,
+  epochCommands:isReusableHumanRules(rules.version),
   launchAt:async id=>BigInt(await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchAt',args:[id]} as any) as bigint),
   ...(m.countdownClock?{launchClock:async(id:bigint)=>await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchClock',args:[id]} as any) as readonly [bigint,bigint]}:{}),
-  ...(rules.version===13||rules.version===14?{readiness:async(id:bigint)=>await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'readiness',args:[id]} as any) as readonly [number,bigint]}:{}),
+  ...(rules.version===13||isReusableHumanRules(rules.version)?{readiness:async(id:bigint)=>await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'readiness',args:[id]} as any) as readonly [number,bigint]}:{}),
   progressAge:id=>e.feed.progressAge(id)}):null);
  const financialEngines=engines.map((e,i)=>({...e,busy:()=>e.busy()||!!eventLoops[i]?.blocksWrite()}));
  if(engines.some(e=>e.signer.address.toLowerCase()!==m.pressureSigner.toLowerCase()))throw Error('Independent bridge identity mismatch');
@@ -150,7 +153,16 @@ export async function independentService(o:Options){
   await db.query('INSERT INTO independent_incidents(lobby,arena,stage,code) VALUES($1,$2,$3,$4) ON CONFLICT(lobby,arena) DO UPDATE SET stage=$3,code=$4,changed_at=now()',[m.lobby.toLowerCase(),h.app.toLowerCase(),value,code||null]);
   console.info(JSON.stringify({event:'arena-transition',arena:h.app,epoch:h.epoch,match:h.id,previous,stage:value,code:code||undefined,at:new Date().toISOString()}));
  }
+ const deployments=[m,...previous];let historicalRatingOffset=0n;
+ if(m.ratingsContinuity){
+  if(!previous.some(old=>old.ratings.toLowerCase()===m.ratingPredecessor!.toLowerCase()))throw Error('Missing historical rating authority');
+  const source=await base.readContract({address:m.ratings,abi:humanRatingContinuityAbi,functionName:'predecessor'});
+  if(source.toLowerCase()!==m.ratingPredecessor!.toLowerCase())throw Error('Historical rating binding mismatch');
+ }
  const queue=async(at:Address,abi:Abi,name:string,args:readonly unknown[]=[],value=0n,priority=1)=>{
+  // A historical capture must use its own tickets, verifier and retry context.
+  const m=deployments.find(d=>[d.lobby,d.ratings,d.market,d.vault,d.resultVerifier].some(a=>a?.toLowerCase()===at.toLowerCase()))??deployments[0];
+  const r=independentReader(base,m),rules=independentRules(m);
   let context='';
   if(name==='assignNext'){
    const slots=await Promise.all([0n,1n].map(i=>r.lobby('slot',[i])));
@@ -168,13 +180,14 @@ export async function independentService(o:Options){
   if(name==='matchmake')context=String(await r.lobby('queueProgress',[args[0]]))+':'+Math.floor(Date.now()/15000);
   if(name==='capture')context=JSON.stringify(await r.arena(await r.lobby('arenaOf',args),'publishedResult'),(_,v)=>typeof v==='bigint'?String(v):v)+':'+(await readHubDelegation(base,m.hub,await r.lobby('arenaOf',args))).status;
   if(name==='releaseStake'||name==='forceClose')context=String((await readHubDelegation(base,m.hub,args[0] as Address)).epoch);
-  if(rules.version===14&&['openReusableArena','closeReusableArena','recoverReleased','sealReleased'].includes(name))
+  if(isReusableHumanRules(rules.version)&&['openReusableArena','closeReusableArena','recoverReleased','sealReleased'].includes(name))
    context=maintenanceContext('round',[await r.arena(args[0] as Address,'resultCommitment'),(await readHubDelegation(base,m.hub,args[0] as Address)).status]);
-  if(rules.version===14&&['captureProof','captureMissing'].includes(name)){
+  if(isReusableHumanRules(rules.version)&&['captureProof','captureMissing'].includes(name)){
    const [ticket]=await r.lobby('ticketOf',[args[0]]);
    context=maintenanceContext('round',await base.readContract({address:m.resultVerifier!,abi:verifierAbi,functionName:'currentRoot',args:[ticket.arena,ticket.epoch]}));
   }
   if(name==='rebuild')context=String(await r.ratings('buildGeneration'))+':'+String(await r.ratings('cursor'));
+  if(name==='synchronizeHistory')context=String(await base.getBlockNumber());
   if(name==='retryPayout')context=String((await base.readContract({address:m.market,abi:marketAbi,functionName:'payouts',args:[args[0] as Hex]}))[3]);
   const data=encodeFunctionData({abi,functionName:name,args});
   const operation=await writer.enqueue(at,data,value,priority,context);
@@ -186,12 +199,14 @@ export async function independentService(o:Options){
  const finance=await independentFinance(db,base,m,pressure.privateKey,queue);
  const historical=await Promise.all(previous.map(async manifest=>({manifest,
   history:await independentHistory(db,base,manifest,undefined,legacy),
+  results:isReusableHumanRules(manifest.rulesVersion)?independentReusableResults(db,base,manifest,queue):null,
+  publicationOffset:0,
   finance:await independentFinance(db,base,manifest,pressure.privateKey,queue)})));
  const scopeOf=(req:IncomingMessage)=>{
   const selected=independentScope(m,previous,new URL(req.url!,'http://localhost').searchParams.get('lobby'));
   return selected===m?{manifest:m,history,finance}:historical.find(v=>v.manifest===selected)!;
  };
- const reusablePool=m.rulesVersion===14?await independentReusablePool(base,m,queue,()=>health,()=>process.env.PONG_INDEPENDENT_ADMISSION==='true'):null;
+ const reusablePool=isReusableHumanRules(m.rulesVersion)?await independentReusablePool(base,m,queue,()=>health,()=>process.env.PONG_INDEPENDENT_ADMISSION==='true'):null;
  const reusableLifecycles=engines.map((e,i)=>reusableResults&&reusableAdmit?independentReusableLifecycle({base,manifest:m,engine:e,health:health[i],results:reusableResults,queue,
   stage:(name,code)=>stage(i,name,code),admit:reusableAdmit,ensureHosted:async epoch=>{
    await db.query("INSERT INTO il_lifecycle(app,stage,epoch) VALUES($1,'starting',$2) ON CONFLICT(app) DO NOTHING",[e.app,String(epoch)]);
@@ -317,7 +332,7 @@ export async function independentService(o:Options){
  }
  const permitted=new Map<string,{abi:Abi;methods:string[]}>([
   [m.family.toLowerCase(),{abi:familyAbi,methods:['register','revoke']}],
-  [m.lobby.toLowerCase(),{abi:lobbyAbi,methods:['relay','propose','matchmake','expireProposal','expireRoom','cancelUnopened',...(m.rulesVersion===14?[]:['assignNext','capture','closeArena'])]}],
+  [m.lobby.toLowerCase(),{abi:lobbyAbi,methods:['relay','propose','matchmake','expireProposal','expireRoom','cancelUnopened',...(isReusableHumanRules(m.rulesVersion)?[]:['assignNext','capture','closeArena'])]}],
   [m.profiles.toLowerCase(),{abi:profileAbi,methods:['save']}],
   [m.privateData.toLowerCase(),{abi:privateAbi,methods:['begin','put','commit']}],
   [m.market.toLowerCase(),{abi:marketAbi,methods:['buy','claim','retryPayout']}],
@@ -450,12 +465,26 @@ export async function independentService(o:Options){
   run('payment-receipts',finance.recoverSponsoredPayments,6000);
   for(const old of historical){
    const key=old.manifest.lobby;
+   if(old.results)run(`historical-results:${key}`,async()=>{
+    const rows=(await db.query("SELECT id FROM independent_history WHERE lobby=$1 AND record->>'finality'='false' ORDER BY id::numeric LIMIT 8 OFFSET $2",[key.toLowerCase(),old.publicationOffset])).rows;
+    old.publicationOffset=rows.length===8?old.publicationOffset+8:0;
+    for(const row of rows)run(`historical-result:${key}:${row.id}`,async()=>{await old.results!.capture(BigInt(row.id));},15000);
+    const reader=independentReader(base,old.manifest);
+    if(await reader.ratings('buildGeneration'))await queue(old.manifest.ratings,ratingAbi,'rebuild',[32n],0n,2);
+   },15000);
    run(`historical-history:${key}`,old.history.observe,15000);
    run(`historical-payments:${key}`,old.finance.payments,6000);
    run(`historical-payment-history:${key}`,old.finance.indexPayments,15000);
    run(`historical-payment-discovery:${key}`,old.finance.discoverPayments,15000);
    run(`historical-payment-receipts:${key}`,old.finance.recoverSponsoredPayments,10000);
   }
+  if(m.ratingsContinuity)run('historical-ranking-sync',async()=>{
+   // Observe in bounded pages, including finality-only changes. Stable history
+   // must not submit a paid no-op transaction every maintenance cycle.
+   const [changed,next]=await base.readContract({address:m.ratings,abi:humanRatingContinuityAbi,functionName:'historyChanged',args:[historicalRatingOffset,32]});
+   historicalRatingOffset=next;
+   if(changed)await queue(m.ratings,humanRatingContinuityAbi,'synchronizeHistory',[32],0n,1);
+  },10000);
   run('ranking',async()=>{if(await r.ratings('buildGeneration'))await queue(m.ratings,ratingAbi,'rebuild',[32n],0n,2);},10000);
  },rules.events?250:2000);timer.unref();
  const stop=()=>{stopped=true;clearInterval(timer);writer.stop();playerWriter?.stop();history.stop();historical.forEach(v=>v.history.stop());diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());};

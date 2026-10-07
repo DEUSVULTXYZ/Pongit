@@ -24,8 +24,8 @@ export function validateReusableRecord(record:any,humans:readonly string[],manif
   assert.equal(record.houseInstances,'official-v1');
   assert(isAddress(record.modules?.HouseInstances),'Pinned instance library required');
  }
- assert([15,16].includes(record.rulesVersion),'Reusable rules required');
- if(record.rulesVersion===16)assert(record.friendlyPause==='heartbeat-v1'&&record.maxMatches===5&&v3&&record.housePolicy==='progressive-v1','Rules 16 synchronization capabilities required');
+ assert([15,16,17].includes(record.rulesVersion),'Reusable rules required');
+ if((record.rulesVersion===16||record.rulesVersion===17))assert(record.friendlyPause==='heartbeat-v1'&&record.maxMatches===5&&v3&&record.housePolicy==='progressive-v1','Rules 16 synchronization capabilities required');
  else assert(record.friendlyPause===undefined,'Historical rules cannot acquire pause authority');
  if(record.maxMatches!==undefined)assert([2,5].includes(record.maxMatches),'Supported lane count required');
  if(record.maxMatches===5){assert(record.arenaAdmissions==='verified-epoch-v1'&&record.houseInstances==='official-v1'&&record.arenas.length>=5,'Five-lane capabilities required');}

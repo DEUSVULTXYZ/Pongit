@@ -8,11 +8,14 @@ import {IndependentTypes as T} from "./IndependentTypes.sol";
 /// signature/binding validation out of the physics adapter bounds both runtimes.
 library ReusableHumanBinding {
     function admit(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,T.Binding calldata binding,
-        bytes calldata signature,address signer,address authority) external returns(bytes32){
-        return S.admit(w,ticket,binding,signature,signer,authority,14);
+        bytes calldata signature,address signer,address authority,uint256 rules) external returns(bytes32){
+        bytes32 hash=S.admit(w,ticket,binding,signature,signer,authority,rules);
+        if(rules==18)S.set(w,73,rules);
+        return hash;
     }
     function cancelExpired(mapping(bytes32=>uint256) storage w,Admission.Ticket calldata ticket,T.Binding calldata binding,
-        bytes calldata signature,address signer,address authority) external {
-        S.cancelExpired(w,ticket,binding,signature,signer,authority,14);
+        bytes calldata signature,address signer,address authority,uint256 rules) external {
+        S.cancelExpired(w,ticket,binding,signature,signer,authority,rules);
+        if(rules==18)S.set(w,73,rules);
     }
 }

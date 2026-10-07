@@ -1,9 +1,11 @@
+import {isReusableHumanRules} from './independent-rules-version';
 import {getAddress,isAddress,type Address,type Hex} from 'viem';
 import {NO_LEASE_HUB} from './hub-lease';
 import {hostedArenaOrigin} from './hosted-control';
 export type IndependentManifest={
- rulesVersion?:4|12|13|14;
+ rulesVersion?:4|12|13|14|18;
  countdownClock?:'engine-ticks-v1';
+ ratingsContinuity?:'ordered-human-v1';ratingPredecessor?:Address;
  chainId:10143;hub:Address;family:Address;lobby:Address;ratings:Address;settlement:Address;
  vault:Address;market:Address;profiles:Address;privateData:Address;pressureSigner:Address;
  arenas:Array<{app:Address;index:number;node?:string}>;genesis:number;createdAt:string;startBlock?:string;resultVerifier?:Address;admissionSigner?:Address;
@@ -11,8 +13,8 @@ export type IndependentManifest={
 const fields=['hub','family','lobby','ratings','settlement','vault','market','profiles','privateData','pressureSigner'] as const;
 /** Explicit public allowlist: private deployment files are never serialized to clients. */
 export function publicIndependentManifest(raw:any):IndependentManifest{
- if(raw?.rulesVersion!==undefined&&![4,12,13,14].includes(raw.rulesVersion))throw Error('Unsupported independent rules');
- if(raw.countdownClock!==undefined&&(raw.rulesVersion!==14||raw.countdownClock!=='engine-ticks-v1'))throw Error('Unsupported countdown clock');
+ if(raw?.rulesVersion!==undefined&&![4,12,13,14,18].includes(raw.rulesVersion))throw Error('Unsupported independent rules');
+ if(raw.countdownClock!==undefined&&(!isReusableHumanRules(raw.rulesVersion)||raw.countdownClock!=='engine-ticks-v1'))throw Error('Unsupported countdown clock');
  if(raw?.chainId!==10143||!Array.isArray(raw.arenas)||raw.arenas.length<3||raw.arenas.length>16)throw Error('Invalid independent deployment');
  const addresses=Object.fromEntries(fields.map(f=>{if(!isAddress(raw[f]))throw Error(`Invalid ${f} address`);return[f,getAddress(raw[f])];}));
  const arenas=raw.arenas.map((a:any,index:number)=>{
@@ -21,15 +23,17 @@ export function publicIndependentManifest(raw:any):IndependentManifest{
   const v3=raw.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase();
   const expected=v3?hostedArenaOrigin(NO_LEASE_HUB,a.app):`https://il-${a.app.slice(2,18).toLowerCase()}.fly.dev`;
   const node=a.node??expected;
-  if(v3?raw.rulesVersion!==14||node!==expected:!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(node))throw Error('Unapproved hosted node');
+  if(v3?!isReusableHumanRules(raw.rulesVersion)||node!==expected:!/^https:\/\/il-[a-f0-9]+\.fly\.dev$/.test(node))throw Error('Unapproved hosted node');
   return {app:getAddress(a.app),index,node};
  });
  if(new Set(arenas.map((a:{app:Address})=>a.app.toLowerCase())).size!==arenas.length)throw Error('Duplicate arena');
  if(raw.startBlock!==undefined&&!/^\d{1,20}$/.test(String(raw.startBlock)))throw Error('Invalid deployment block');
- const reusable=raw.rulesVersion===14?Object.fromEntries(['resultVerifier','admissionSigner'].map(f=>{
+ const reusable=isReusableHumanRules(raw.rulesVersion)?Object.fromEntries(['resultVerifier','admissionSigner'].map(f=>{
   if(!isAddress(raw[f])||BigInt(raw[f])===0n)throw Error(`Invalid ${f} address`);return[f,getAddress(raw[f])];
  })):{};
- return {...addresses,...reusable,chainId:10143,rulesVersion:raw.rulesVersion??4,...(raw.countdownClock?{countdownClock:raw.countdownClock}:{}),arenas,genesis:Number(raw.genesis),createdAt:String(raw.createdAt),...(raw.startBlock!==undefined?{startBlock:String(raw.startBlock)}:{})} as IndependentManifest;
+ if(raw.ratingsContinuity!==undefined&&(raw.rulesVersion!==18||raw.ratingsContinuity!=='ordered-human-v1'||!isAddress(raw.ratingPredecessor)||BigInt(raw.ratingPredecessor)===0n||raw.ratingPredecessor.toLowerCase()===raw.ratings.toLowerCase()))throw Error('Invalid human rating continuity');
+ if(raw.ratingPredecessor!==undefined&&raw.ratingsContinuity===undefined)throw Error('Missing human rating continuity');
+ return {...addresses,...reusable,chainId:10143,rulesVersion:raw.rulesVersion??4,...(raw.ratingsContinuity?{ratingsContinuity:raw.ratingsContinuity,ratingPredecessor:getAddress(raw.ratingPredecessor)}:{}),...(raw.countdownClock?{countdownClock:raw.countdownClock}:{}),arenas,genesis:Number(raw.genesis),createdAt:String(raw.createdAt),...(raw.startBlock!==undefined?{startBlock:String(raw.startBlock)}:{})} as IndependentManifest;
 }
 export type FamilyGrant={player:Address;key:Address;issuedAt:bigint;expires:bigint;revision:bigint};
 export const familyGrantTypes={ArcadeFamilyGrant:[{name:'player',type:'address'},{name:'key',type:'address'},{name:'issuedAt',type:'uint64'},{name:'expires',type:'uint64'},{name:'revision',type:'uint256'}]} as const;

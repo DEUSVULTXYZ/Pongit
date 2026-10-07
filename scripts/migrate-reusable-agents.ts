@@ -24,9 +24,10 @@ assert([4,5].includes(source.version),'Reviewed predecessor must be a reusable p
 const v3=process.env.PONG_REUSABLE_HUB_V3==='isolated-testnet';
 assert(process.env.PONG_REUSABLE_HUB_V3===undefined||v3,'Unreviewed target hub');
 const rulesVersion=Number(process.env.PONG_REUSABLE_RULES??15);
-assert([15,16].includes(rulesVersion),'Unknown immutable rules');
-const friendlyPause=rulesVersion===16?'heartbeat-v1':undefined;
-const hub=v3?NO_LEASE_HUB:source.hub,arenaArtifact=rulesVersion===16?'ProvisionedSynchronizedAgentArena':v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
+assert([15,16,17].includes(rulesVersion),'Unknown immutable rules');
+const friendlyPause=rulesVersion>=16?'heartbeat-v1':undefined;
+const modifierName=rulesVersion===17?'ResponsiveChaosModifiers':'ChaosModifiers';
+const hub=v3?NO_LEASE_HUB:source.hub,arenaArtifact=rulesVersion===17?'ProvisionedResponsiveAgentArena':rulesVersion===16?'ProvisionedSynchronizedAgentArena':v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const rebalanced=process.env.PONG_HOUSE_POLICY==='progressive-v1';
 const reship=process.env.PONG_RETIRED_TOURNAMENT==='public-39-reship-20261007';
 const recovery=reship||process.env.PONG_RETIRED_TOURNAMENT==='public-23-authorized';
@@ -38,7 +39,7 @@ const retirementReason=keccak256(new TextEncoder().encode(reship
  ?'PONGIT public tournament 39 interrupted for user-authorized complete public reship, 2026-10-07; published scores preserved; no champion'
  :'PONGIT public tournament 23 interrupted for user-authorized v1 hosting recovery, 2026-10-03; published scores preserved; no champion'));
 assert(process.env.PONG_HOUSE_POLICY===undefined||rebalanced,'Unreviewed house policy');
-assert(rulesVersion!==16||v3&&rebalanced,'Rules 16 require v3 and progressive policies');
+assert(rulesVersion<16||v3&&rebalanced,'Rules 16/17 require v3 and progressive policies');
 const sourceIndexBytes=await readFile('/metadata/source-agent-index.json');
 const sourceIndex=agentIndexDeployments(JSON.parse(sourceIndexBytes.toString()),10143,15);
 const indexedSources=[source,...(source.history??[])].filter(s=>s.rulesVersion>=15);
@@ -58,7 +59,7 @@ let r:any;
 try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 try{
- const names=['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
+ const names=['ChaosCodec','ChaosEffects',modifierName,'ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
   'HouseInstances','RebalancedAgentCatalog',...(recovery?['RecoveringAgentCatalog']:[]),...(rebalanced?['ProgressiveHousePolicies']:[]),'ContinuingFiveLaneAgentPool','PublishedResultVerifier','ContinuingAgentTournaments','ContinuingAgentRatings',
   'ContinuingAgentQualifications','ContinuingAgentChallenges',arenaArtifact,
   // These inherited/source ABIs are read even when their bytecode is not deployed.
@@ -124,7 +125,7 @@ try{
   const address=await retryOperatorContention(()=>t.deploy(name,args,instance));r.modules??={};r.modules[instance]=address;await save();return address;
  };
  const write=async(id:string,name:string,address:Address,method:string,args:readonly unknown[]=[])=>retryOperatorContention(async()=>t.write(id,address,(await t.artifact(name)).abi,method,args));
- const codec=await deploy('ChaosCodec'),effects=await deploy('ChaosEffects'),modifiers=await deploy('ChaosModifiers');
+ const codec=await deploy('ChaosCodec'),effects=await deploy('ChaosEffects'),modifiers=await deploy(modifierName);
  const dynamics=await deploy('ChaosDynamics',[effects,modifiers]),contacts=await deploy('ChaosContacts',[dynamics]),rally=await deploy('ChaosRally');
  const physics=await deploy('ChaosPhysics',[effects,rally,dynamics,contacts]),beacon=await deploy('DrandEvmnet'),draws=await deploy('ChaosDrawRules');
  const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]);await deploy('HouseInstances');

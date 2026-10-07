@@ -37,8 +37,8 @@ import {agentRecoveryPause,agentTickInterval,agentTickPause} from '../shared/age
 import {verifyHostedArenaEvidence} from '../shared/hosted-arena-identity';
 
 const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.common,houseInstances:r.houseInstances,maxMatches:r.maxMatches??2};
-const rulesVersion=r.rulesVersion as 15|16,abi=rulesVersion===16?synchronizedAgentArenaAbi:reusableAgentArenaAbi;
-const tickInterval=agentTickInterval(process.env.PONG_AGENT_TICK_INTERVAL_MS);
+const rulesVersion=r.rulesVersion as 15|16|17,abi=(rulesVersion===16||rulesVersion===17)?synchronizedAgentArenaAbi:reusableAgentArenaAbi;
+const tickInterval=agentTickInterval(process.env.PONG_AGENT_TICK_INTERVAL_MS,rulesVersion);
 const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
 await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>base.readContract({address,abi,functionName,args}) as Promise<T>,m);
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:8}),metrics=await agentMetrics('/diagnostics/reusable','controllers');
@@ -236,10 +236,10 @@ async function arenaLoop(app:Address,runtimeHash:string){
    if(s.phase===1){
     const [mask,deadline]=await node.readContract({address:app,abi,functionName:'readiness',args:[ref.id]});
     const launch=await node.readContract({address:app,abi,functionName:'launchAt',args:[ref.id]}),now=(await node.getBlock()).timestamp;
-    if(mask!==3&&now>deadline)await engine.send('cancel-unready','cancelUnready',[ref.epoch,ref.id]);
+    if((mask!==3||rulesVersion===17&&s.sync?.pause.human)&&now>deadline)await engine.send('cancel-unready','cancelUnready',[ref.epoch,ref.id]);
     else if(mask===3&&(!launch||now>=launch)){
      const [deadline,clock]=r.countdownClock&&launch?await node.readContract({address:app,abi,functionName:'launchClock',args:[ref.id]}):[0n,0n];
-     if(clock>=deadline)await engine.send(launch?'start':'launch','start',[ref.epoch,ref.id]);
+     if(clock>=deadline&&!(rulesVersion===17&&launch&&s.sync?.pause.human))await engine.send(launch?'start':'launch','start',[ref.epoch,ref.id]);
     }
     await health(mask===3?'countdown':'waiting-for-player',{epoch:String(ref.epoch),id:String(ref.id),launchAt:String(launch)});pause=500;
    }else if(s.phase===2){

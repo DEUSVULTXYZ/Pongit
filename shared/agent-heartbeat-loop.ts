@@ -10,14 +10,14 @@ export function agentHeartbeatLoop(pulse:()=>Promise<unknown>,eligible:()=>boole
   due=false;
   pending=Promise.resolve().then(()=>{if(!stopped&&eligible())return pulse();}).catch(e=>{due=false;if(!stopped)onError(e);}).finally(()=>{
    pending=undefined;
-   // A receipt plus its authoritative gap read can outlive the 200ms timer.
-   // Skipping that tick and waiting for the next adds up to another 200ms,
+   // A receipt plus its authoritative gap read can outlive the 100ms timer.
+   // Skipping that tick and waiting for the next adds up to another 100ms,
    // exhausting the contract's 500ms credit on an otherwise healthy channel.
    // Coalesce missed ticks into one pulse, still with one command in flight.
    if(due)poke();
   });
  };
- const timer=clock.every(poke,200);
+ const timer=clock.every(poke,100);
  poke();
  return{poke,async stop(){stopped=true;clock.clear(timer);await pending;}};
 }

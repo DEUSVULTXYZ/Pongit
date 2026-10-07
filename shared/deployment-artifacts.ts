@@ -1,7 +1,7 @@
 // Deployment guards apply to the complete linked graph before the first write.
 // Only these reviewed Monad authorities have a 32 KiB allowance.
 const larger=new Set(['SeriesAgentArena','AgentSeriesPool','ReusableAgentPool','ReusableAgentInstancesPool','BalancedAgentInstancesPool','ContinuingAgentInstancesPool','FiveLaneAgentInstancesPool','ContinuingFiveLaneAgentPool','IndependentEventsArena','IndependentEventsLobby',
- 'ReadyIndependentEventsArena','ReadyIndependentEventsLobby','ReusableEventsLobby']);
+ 'ReadyIndependentEventsArena','ReadyIndependentEventsLobby','ReusableEventsLobby','ResponsiveEventsLobby']);
 export type DeploymentArtifact={bytecode:{object:string;linkReferences?:Record<string,Record<string,{start:number;length:number}[]>>};deployedBytecode:{object:string}};
 /** Several named contracts share a source file. Deployment must use the exact
  * compiled artifact, never fail over to a similarly named runtime. */

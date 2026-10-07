@@ -1,6 +1,6 @@
 import type {State} from '../../shared/physics-v2';
 import type {ChaosPhysicsState} from '../../shared/physics-chaos-events';
-import {projectLive} from './presentation';
+import {projectLive,projectConfirmed} from './presentation';
 import {projectChaos,eventPaddles} from './chaos-presentation';
 import {decideHouse,unpackPolicy,type PolicyView} from '../../shared/house-policy';
 import {integerSqrt} from '../../shared/chaos-collision';
@@ -8,7 +8,7 @@ import type {AgentSynchronization} from '../../shared/agent-synchronization';
 
 /** Intent times are on the displayed game's clock. Accepted commands retain
  * their engine time until physics reaches it; a queue receipt is not an impact. */
-export type TimedControl={side:0|1;direction:-1|0|1;at:bigint};
+export type TimedControl={side:0|1;direction:-1|0|1;at:bigint;confirmed?:boolean};
 export type HousePrediction=Pick<AgentSynchronization,'brainA'|'brainB'|'decision'|'controllers'>&{progressive:boolean;pause?:AgentSynchronization['pause']};
 const GRID=100_000n,MAX_SPEED=3_000_000_000n;
 function cap<T extends {vx:bigint;vy:bigint}>(ball:T):T{
@@ -52,7 +52,8 @@ function pointPaddles<T extends {t:bigint;left:bigint;right:bigint;leftDir:numbe
 /** Ball and both paddles share one reconstruction. Callers must draw these
  * paddle positions, never replace them with an independent local animation. */
 export function projectParticipant(source:State,target:bigint,inputs:readonly TimedControl[],house?:HousePrediction){
- let state={...source},waiting=false,pointBoundary=false;
+ let state={...source},waiting=false,pointBoundary=false,contactBoundary=false;
+ const uncertain=inputs.some(i=>i.confirmed===false&&i.at<=target);
  if(state.finished||state.awaitingServe)return {state,waiting:false};
  const end=target<state.t?state.t:target>state.t+600_000n?state.t+600_000n:target;
  const bot=predictor(house);
@@ -65,7 +66,8 @@ export function projectParticipant(source:State,target:bigint,inputs:readonly Ti
      half:(side===0?state.halfA:state.halfB)*1_000_000n},side===0?state.leftDir:state.rightDir);
      state={...state,...(side===0?{leftDir:direction}:{rightDir:direction})};}
    }
-   const next=projectLive(state,bot.end(state.t,to));state=next.state;waiting=next.waiting;pointBoundary=!!next.pointBoundary;
+   const next=uncertain?projectConfirmed(state,bot.end(state.t,to)):projectLive(state,bot.end(state.t,to));state=next.state;waiting=next.waiting;
+   pointBoundary='pointBoundary' in next&&!!next.pointBoundary;contactBoundary=uncertain&&waiting;
   }
  };
  for(const input of controlsBetween(state.t,end,inputs)){
@@ -74,15 +76,16 @@ export function projectParticipant(source:State,target:bigint,inputs:readonly Ti
   state=steer(state,input);
  }
  advance(end);
- if(pointBoundary)state=pointPaddles(state,end,inputs,[180_000_000n,180_000_000n],[state.halfA,state.halfB],1_000_000n);
- return {state,pointBoundary,waiting:waiting||target>end};
+ if(pointBoundary||contactBoundary)state=pointPaddles(state,end,inputs,[state.paddleSpeed??180_000_000n,state.paddleSpeed??180_000_000n],[state.halfA,state.halfB],1_000_000n);
+ return {state,pointBoundary,contactBoundary,waiting:waiting||target>end};
 }
 
 export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,inputs:readonly TimedControl[],contacts:boolean|'complete',house?:HousePrediction){
  let state=source;const collisions:ReturnType<typeof projectChaos>['collisions']=[];
  if(state.score.finished||state.cancelled)return {state,collisions,pointBoundary:false,waiting:false};
  const end=target<state.t?state.t:target>state.t+600_000n?state.t+600_000n:target;
- let waiting=false,pointBoundary=false;const bot=predictor(house);
+ let waiting=false,pointBoundary=false,contactBoundary=false;const bot=predictor(house);
+ const uncertain=inputs.some(i=>i.confirmed===false&&i.at<=target);
  const advance=(to:bigint)=>{
   while(state.t<to&&!waiting){
    if(bot.turn(state.t)){
@@ -96,7 +99,8 @@ export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,i
    }
    // ChaosEngine records the last held nonzero direction at each advance.
    state={...state,lastLeft:state.leftDir||state.lastLeft,lastRight:state.rightDir||state.lastRight};
-   const next=projectChaos(state,bot.end(state.t,to),contacts);state=next.state;collisions.push(...next.collisions);
+   const next=projectChaos(state,bot.end(state.t,to),contacts,uncertain);state=next.state;collisions.push(...next.collisions);
+   contactBoundary=next.contactBoundary;
    waiting=next.waiting;pointBoundary=next.pointBoundary;
   }
  };
@@ -108,6 +112,6 @@ export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,i
   if(input.direction)state={...state,...(input.side===0?{lastLeft:input.direction}:{lastRight:input.direction})};
  }
  advance(end);
- if(pointBoundary){const p=eventPaddles(state);state=pointPaddles(state,end,inputs,[p.speedA*1_000_000n,p.speedB*1_000_000n],[p.heightA*500_000n,p.heightB*500_000n],1_000_000_000_000n);}
- return {state,collisions,pointBoundary,waiting:waiting||target>end};
+ if(pointBoundary||contactBoundary){const p=eventPaddles(state);state=pointPaddles(state,end,inputs,[p.speedA*1_000_000n,p.speedB*1_000_000n],[p.heightA*500_000n,p.heightB*500_000n],1_000_000_000_000n);}
+ return {state,collisions,pointBoundary,contactBoundary,waiting:waiting||target>end};
 }

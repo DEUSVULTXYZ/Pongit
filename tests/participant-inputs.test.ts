@@ -39,9 +39,9 @@ test('release and reversal preserve their visual times until authoritative recei
  ledger.notice({id:3,direction:-1,at:1134},8_210_000n,1000,paint);
  assert.deepEqual(ledger.controls(0,8_210_000n).map(x=>x.at),[8_546_000n,8_552_000n,8_556_000n]);
  ledger.notice({id:2,direction:0,at:1130,acceptedAt:8_350_000n},8_320_000n,1140,{clock:8_600_000n,observedAt:1140});
- assert.deepEqual(ledger.controls(0,8_320_000n),[{side:0,direction:0,at:8_350_000n},{side:0,direction:-1,at:8_556_000n}]);
+ assert.deepEqual(ledger.controls(0,8_320_000n),[{side:0,direction:0,at:8_350_000n,confirmed:true},{side:0,direction:-1,at:8_556_000n,confirmed:false}]);
  assert.equal(ledger.revision,1,'the engine retiming goes through reconciliation');
- assert.deepEqual(ledger.controls(0,8_350_000n),[{side:0,direction:-1,at:8_556_000n}]);
+ assert.deepEqual(ledger.controls(0,8_350_000n),[{side:0,direction:-1,at:8_556_000n,confirmed:false}]);
 });
 
 test('stale or future paint cannot leak into resumed input and fresh raw time remains authoritative',()=>{
@@ -63,7 +63,7 @@ test('coalesced unsent inputs disappear only when a later command is accepted',(
  ledger.notice({id:2,direction:-1,at:1200},100_000n,1000);
  assert.deepEqual(ledger.controls(0,100_000n).map(x=>x.at),[200_000n,300_000n]);
  ledger.notice({id:2,direction:-1,at:1200,acceptedAt:400_000n},200_000n,1300);
- assert.deepEqual(ledger.controls(0,300_000n),[{side:0,direction:-1,at:400_000n}]);
+ assert.deepEqual(ledger.controls(0,300_000n),[{side:0,direction:-1,at:400_000n,confirmed:true}]);
  assert.deepEqual(ledger.controls(0,400_000n),[]);
 });
 
@@ -72,7 +72,7 @@ test('accepted catch-up input remains until its physical time even if another co
  ledger.notice({id:1,direction:1,at:1000,acceptedAt:300_000n},0n,1000);
  ledger.notice({id:2,direction:0,at:1100,acceptedAt:400_000n},0n,1000);
  assert.equal(ledger.controls(1,200_000n).length,2);
- assert.deepEqual(ledger.controls(1,350_000n),[{side:1,direction:0,at:400_000n}]);
+ assert.deepEqual(ledger.controls(1,350_000n),[{side:1,direction:0,at:400_000n,confirmed:true}]);
  ledger.reset();assert.deepEqual(ledger.controls(1,0n),[]);
 });
 

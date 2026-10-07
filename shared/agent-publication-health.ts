@@ -14,17 +14,21 @@ export function agentPublicationHealth(value: unknown, app: string, epoch: bigin
 }
 
 /** Explicit comparison knob; deployments opt in after hosted measurement. */
-export function agentTickInterval(value?:string){
- if(value===undefined)return 300;
+export function agentTickInterval(value?:string,rulesVersion=15){
+ if(value===undefined)return rulesVersion===17?50:300;
  const ms=Number(value);
- if(!Number.isInteger(ms)||ms<100||ms>5000)throw Error('Agent tick interval must be 100..5000 ms');
+ if(!Number.isInteger(ms)||ms<(rulesVersion===17?50:100)||ms>5000)throw Error('Agent tick interval is outside the rules-version bounds');
+ if(rulesVersion===17&&ms>50)throw Error('Rules 17 requires a physics deadline of 50 ms');
  return ms;
 }
 
 /** Account for work already spent in this serial iteration. Never catch up in bursts. */
 export function agentTickPause(interval:number,progressAge:number,blocked=false){
  if(blocked)return 100;
- return Math.max(20,Math.min(100,interval-Math.max(0,progressAge)));
+ // At the responsive 50ms cadence, the historical 20ms minimum sleep would
+ // turn a 40ms confirmed tick into a 60ms cycle. Yield once if already late;
+ // never enqueue catch-up ticks or compete with an outstanding proof/command.
+ return Math.max(interval===50?1:20,Math.min(interval===50?50:100,interval-Math.max(0,progressAge)));
 }
 
 /** Publication holds stop writes, not independent recovery observations.

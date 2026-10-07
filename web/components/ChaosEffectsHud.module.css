@@ -19,12 +19,12 @@
 @media(prefers-reduced-motion:reduce){.card[data-announcing],.card[data-announcing] .icon{animation:none}}
 @media(max-width:600px){.hud{height:84px;gap:6px;margin-bottom:8px}.card{grid-template-columns:24px minmax(0,1fr);grid-template-rows:minmax(0,1fr) 14px;padding:7px 8px 12px;column-gap:7px;row-gap:2px}.icon{width:24px;height:24px}.copy strong{font-size:11px}.time{grid-column:2;text-align:left;font-size:11px}.track{left:8px;right:8px}.slots span::after{margin-top:38px}}
 @media(max-height:500px) and (orientation:landscape){.hud{height:46px;margin-bottom:6px}.card{grid-template-columns:24px minmax(0,1fr) auto;grid-template-rows:minmax(0,1fr);padding:5px 8px 10px;gap:6px}.icon{width:24px;height:24px}.target{display:none}.copy strong{font-size:10px;-webkit-line-clamp:1}.time{grid-column:auto;font-size:11px}.slots span::after{margin-top:20px}}
-@media(max-height:500px) and (orientation:landscape){
- :global(.pool-match-shell) .hud{grid-column:2;grid-row:2;height:100%;margin:0;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:8px}
- :global(.pool-match-shell) .slots{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr))}
- :global(.pool-match-shell) .card{grid-column:1;grid-row:var(--chaos-slot);grid-template-columns:24px minmax(0,1fr);grid-template-rows:24px minmax(0,1fr);padding:7px 8px 12px;gap:4px 6px}
- :global(.pool-match-shell) .icon{grid-column:1;grid-row:1}
- :global(.pool-match-shell) .copy{grid-column:1/-1;grid-row:2}
- :global(.pool-match-shell) .copy strong{font-size:12px;-webkit-line-clamp:2}
- :global(.pool-match-shell) .time{grid-column:2;grid-row:1;text-align:right;font-size:12px}
+@media(max-height:500px) and (orientation:landscape),(min-width:1024px) and (min-height:601px){
+ :global(:is(.pool-match-shell,[data-agent-replay])) .hud{grid-column:2;grid-row:2;height:100%;margin:0;grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr));gap:8px}
+ :global(:is(.pool-match-shell,[data-agent-replay])) .slots{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr))}
+ :global(:is(.pool-match-shell,[data-agent-replay])) .card{grid-column:1;grid-row:var(--chaos-slot);grid-template-columns:24px minmax(0,1fr);grid-template-rows:24px minmax(0,1fr);padding:7px 8px 12px;gap:4px 6px}
+ :global(:is(.pool-match-shell,[data-agent-replay])) .icon{grid-column:1;grid-row:1}
+ :global(:is(.pool-match-shell,[data-agent-replay])) .copy{grid-column:1/-1;grid-row:2}
+ :global(:is(.pool-match-shell,[data-agent-replay])) .copy strong{font-size:12px;-webkit-line-clamp:2}
+ :global(:is(.pool-match-shell,[data-agent-replay])) .time{grid-column:2;grid-row:1;text-align:right;font-size:12px}
 }

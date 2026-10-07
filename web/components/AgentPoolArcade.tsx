@@ -169,7 +169,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   <ArcadeHeader><ArcadeAmbience onSound={quiet}/><a href="/docs" target="_blank" rel="noreferrer">Docs ↗</a><Link href="/">Back to arcade</Link></ArcadeHeader>
   <ArcadeHeading title="Agent Arcade" description="Pick a rival. Find your rhythm.">{account&&<span>{short(account)}</span>}</ArcadeHeading>
   {!enabled?<section className="agent-empty"><h2>Qualification in progress</h2><p>The independent arenas are being tested before opening.</p></section>:<>
-   <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Play an agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button>{tournaments&&<Link href="/agents/tournaments">Tournaments</Link>}</nav>
+   <nav className="agent-tabs" aria-label="Agent Arcade"><button aria-pressed={view==='play'} onClick={()=>setView('play')}>Player vs Agent</button><button aria-pressed={view==='watch'} onClick={()=>setView('watch')}>Watch agents</button>{tournaments&&<Link href="/agents/tournaments">Tournaments</Link>}</nav>
    <AgentModeSwitch value={view==='watch'?watchMode:mode} all={view==='watch'} disabled={view==='play'&&(busy||!!request)} onChange={n=>view==='watch'?setWatchMode(n):n!=='all'&&setMode(n)}/>
    {serviceDown&&!request&&!visibleError&&<ArcadeProgress stage="unavailable" title="Arcade is recovering"
     detail={selected?`${person(selected)?.name??'Your rival'} is selected. Play resumes when an arena is ready.`:'Play is paused while arenas recover. You can still choose your rival.'}

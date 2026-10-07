@@ -8,6 +8,8 @@ export const HALF_PADDLE = 48n * SCALE,
   PADDLE_SPEED = 180n * SCALE;
 export const BLOCK_US = 300_000n;
 export type State = {
+  /** Selected by the verified rules version; never part of the packed state. */
+  paddleSpeed?: bigint;
   x: bigint;
   y: bigint;
   vx: bigint;
@@ -89,8 +91,8 @@ export function move(s: State, to: bigint): State {
     ...s,
     x: s.x + (s.vx * dt) / SCALE,
     y: s.y + (s.vy * dt) / SCALE,
-    left: clamp(s.left + (BigInt(s.leftDir) * PADDLE_SPEED * dt) / SCALE, s.halfA),
-    right: clamp(s.right + (BigInt(s.rightDir) * PADDLE_SPEED * dt) / SCALE, s.halfB),
+    left: clamp(s.left + (BigInt(s.leftDir) * (s.paddleSpeed ?? PADDLE_SPEED) * dt) / SCALE, s.halfA),
+    right: clamp(s.right + (BigInt(s.rightDir) * (s.paddleSpeed ?? PADDLE_SPEED) * dt) / SCALE, s.halfB),
     t: to,
   };
 }

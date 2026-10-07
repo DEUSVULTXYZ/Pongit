@@ -63,9 +63,10 @@ contract ChaosGameFlowGasTest is Test {
     // Via IR may reuse one read of block.number across vm.roll: the tests track the block here.
     uint256 startBlock;uint256 engineBlock;uint256[8] baseWords;bytes32 seed;
 
-    function setUp() public {
+    function createModifiers() internal virtual returns(M){return new M();}
+    function setUp() public virtual {
         vm.chainId(10143);vm.warp(1789314000);vm.roll(100);
-        e=new E();d=new D(e,new M());C c=new C(d);ChaosPhysics k=new ChaosPhysics(e,new R(),d,c);
+        e=new E();d=new D(e,createModifiers());C c=new C(d);ChaosPhysics k=new ChaosPhysics(e,new R(),d,c);
         codec=new ChaosCodec();module=new ChaosEngine(codec,k,new DrandEvmnet(),new ChaosDrawRules());
         game=new ChaosGasHarness(IInterludeHub(HUB),vm.addr(AD),vm.addr(BR),module);
         Types.Session memory s;s.epoch=1;s.status=Types.Status.Active;

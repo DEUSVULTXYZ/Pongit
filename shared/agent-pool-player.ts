@@ -17,7 +17,7 @@ import {preparePoolActive} from './agent-pool-active';
 import {hubHasNoLease,hubLeaseValid} from './hub-lease';
 
 export const POOL_PLAYER_GAS=14_800_000n;
-export type PoolPlayerTiming={stage:'queue'|'fence'|'snapshot'|'send'|'receipt'|'observation'|'nonce'|'signature'|'transport';startedAt:number;ms:number;command?:string};
+export type PoolPlayerTiming={stage:'queue'|'fence'|'snapshot'|'send'|'receipt'|'observation'|'nonce'|'signature'|'transport'|'acknowledged';startedAt:number;ms:number;command?:string;hash?:string};
 class UnsentFenceExpired extends Error {
  constructor(){super('Arena authorization is awaiting a fresh observation');}
 }
@@ -34,7 +34,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   ||BigInt(match.ref.id)>=2n**256n||BigInt(match.ref.epoch)>=2n**256n||![match.a,match.b].some(a=>a.toLowerCase()===player.toLowerCase())
   ||privateKeyToAccount(session.key).address.toLowerCase()!==session.grant.key.toLowerCase())throw Error('This arcade key is not bound to the requested match');
  const id=BigInt(match.ref.id),epoch=BigInt(match.ref.epoch),journal=new RoomsCommandJournal(options.storage,arena.app,abi),now=options.now??Date.now;
- const node=runtime?.node??createPublicClient({transport:engineTransport(arena.node,journal,m.rulesVersion===16?true:undefined),pollingInterval:1000});
+ const node=runtime?.node??createPublicClient({transport:engineTransport(arena.node,journal,(m.rulesVersion===16||m.rulesVersion===17)?true:undefined),pollingInterval:1000});
  const stream=new EngineStream(arena.node,arena.app,options.socket,()=>engineCooldownMs(arena.node));
  const feed=runtime?.feed??new EngineFeed({app:arena.app,abi,node},stream);
  let sender:CompactArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
@@ -183,7 +183,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // Refresh identity before watch()'s ten-second deadline. Starting only after
    // expiry suppressed contiguous frames while the identity RPC completed.
    const [{hub,lifetime}]=await Promise.all([(async()=>{
-    if(m.rulesVersion===16&&hubHasNoLease(m.hub,0n)){
+    if((m.rulesVersion===16||m.rulesVersion===17)&&hubHasNoLease(m.hub,0n)){
      // On the pinned no-lease hub the fence consumes only this one delegation.
      // eth_call at latest reads its fields atomically from canonical state;
      // there is no timestamp/code/second state to join to it. Initial recovery,
@@ -232,6 +232,11 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
     writeStarted=now();
     result=await timed('send',()=>sender!.send(name,latestArgs));
    }
+   // The compact sender exposes the same boundary as SDK send.latencyMs:
+   // send entry through a verified execution receipt, before live hydration.
+   // This is separate from wire latency and contains no signed payload.
+   try{options.onTiming?.({stage:'acknowledged',command:name,hash:result.hash,
+    startedAt:performance.now()-result.latencyMs,ms:result.latencyMs});}catch{}
    if(name==='input'){
     receivedInputTime=undefined;
     for(const log of result.receipt.logs??[])try{
@@ -245,7 +250,17 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
    // another network round trip and create an otherwise avoidable fair pause.
    lastWriteAt=writeStarted;
    const hydration=timed('receipt',()=>feed.receipt(id,result,name,boundArgs,player));
-   if(name==='input'&&m.rulesVersion===16&&receivedInputTime!==undefined){
+   if(name==='heartbeat'&&(m.rulesVersion===16||m.rulesVersion===17)){
+    const picture=feed.peek(id);
+    if(picture&&now()-picture.observedAt<=500){
+     // The exact receipt has resolved the nonce. Hydrating a missing Chaos
+     // event belongs to observation, not to the next input/presence command.
+     // Returning this picture does not date it anew or invent physics.
+     void hydration.then(verify).catch(()=>feed.invalidate());
+     return verify(picture);
+    }
+   }
+   if(name==='input'&&(m.rulesVersion===16||m.rulesVersion===17)&&receivedInputTime!==undefined){
     // The successful matching ControlQueued receipt proves this sequence now.
     // A missed Chaos event may require a full view for draw metadata, but that
     // read must not hold a key release behind another network round trip.
@@ -372,19 +387,19 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   heartbeat(resume=false){return serial(async()=>{
    if(m.friendlyPause!=='heartbeat-v1')throw Error('This arena does not support friendly pauses');
    await timed('fence',authorizeControls);
-   const state=verify(await timed('snapshot',()=>feed.forCommand(id)));
-   if(state.phase!==2||!state.sync?.pause.human)return state;
+   const picture=feed.peek(id);
+   const state=verify(picture&&now()-picture.observedAt<=500?picture:await timed('snapshot',()=>feed.forCommand(id)));
+   if(!state.sync?.pause.human)return state;
+   if(state.phase!==2&&!(m.rulesVersion===17&&state.phase===1))return state;
    // A working write channel alone must not let a blind player keep losing.
    // Require a recently received, identified state before renewing liveness.
    if(now()-state.observedAt>500)throw Error('Waiting for a fresh arena observation');
-   if(resume&&state.sync.pause.status===2)return sendNow('resumeReady',[id]);
+   if(resume&&state.phase===2&&state.sync.pause.status===2)return sendNow('resumeReady',[id]);
    // A queued movement renews the same liveness credit. Do not put a
    // redundant heartbeat ahead of it when a slow receipt released the lane.
    if(intention&&intention.dir!==acceptedDirection)return state;
-   // The loop wakes every 200ms. Skipping a pulse 150ms after an input can
-   // leave 350ms between writes and only 150ms for the next transport. Public
-   // match 868 then paused on one 222ms receipt. Coalesce only same-frame
-   // writes (50ms), keeping up to 250ms of the unchanged 500ms credit in reserve.
+   // Wake every 100ms. Coalesce only same-frame writes (50ms); neither
+   // a completed receipt nor a picture extends the contract's 500ms credit.
    if(now()-lastWriteAt<50)return state;
    return sendNow('heartbeat',[id]);
   });},

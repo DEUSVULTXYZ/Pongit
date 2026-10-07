@@ -18,7 +18,7 @@ test('a recovered sender cannot reuse old speculative input identities',()=>{
  assert.deepEqual(notices.map(n=>n.id),[2,3,5]);
  const accepted={...notices.at(-1)!,acceptedAt:1_020_000n};
  ledger.notice(accepted,1_000_000n,2000);
- assert.deepEqual(ledger.controls(0,1_000_000n),[{side:0,direction:-1,at:1_020_000n}]);
+ assert.deepEqual(ledger.controls(0,1_000_000n),[{side:0,direction:-1,at:1_020_000n,confirmed:true}]);
  assert.deepEqual(ledger.controls(0,1_020_000n),[],'ACK removes old unsent intentions after recovery');
 });
 function fixture(){
@@ -55,7 +55,7 @@ test('the neutral command after journal recovery retires older unsent directions
  }},a,()=>{},e=>{throw e;},()=>{},{readMs:500,tickMs:300,now:()=>1500},
  {receipt:async()=>f.state(),nextInputId:()=>ledger.allocateId(),input:n=>ledger.notice(n,500_000n,1500)});
  await lane.pump(false);
- assert.deepEqual(ledger.controls(0,400_000n),[{side:0,direction:0,at:500_000n}]);
+ assert.deepEqual(ledger.controls(0,400_000n),[{side:0,direction:0,at:500_000n,confirmed:true}]);
  assert.deepEqual(ledger.controls(0,500_000n),[]);
 });
 test("Interlude sends the latest release after an in-flight direction, with sequential nonces",async()=>{

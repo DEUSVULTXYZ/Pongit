@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 /// @notice Pure paddle geometry/speed rules shared by all candidate Chaos effects.
 /// Heights mean total solid paddle height; split paddles add a 16-unit empty gap.
 contract ChaosModifiers {
+    function baseSpeed() public pure virtual returns(uint256){return 180_000_000;}
     uint256 private constant SCALE=1_000_000;
     struct Effect { uint8 id; uint8 target; uint64 startsAt; uint64 expiresAt; bool consumed; }
     struct Paddles { uint256 heightA; uint256 heightB; uint256 speedA; uint256 speedB; bool splitA; bool splitB; }
@@ -36,7 +37,7 @@ contract ChaosModifiers {
             }
         }
         p=Paddles(_bound(sizes[0]*hn[0]/hd[0]),_bound(sizes[1]*hn[1]/hd[1]),
-            180*SCALE*vn[0]/vd[0],180*SCALE*vn[1]/vd[1],split[0],split[1]);
+            baseSpeed()*vn[0]/vd[0],baseSpeed()*vn[1]/vd[1],split[0],split[1]);
     }
     function _bound(uint256 height) private pure returns(uint256){return height<64*SCALE?64*SCALE:height>120*SCALE?120*SCALE:height;}
     /// Outer half-height, used for top/bottom movement bounds and exact drawing.

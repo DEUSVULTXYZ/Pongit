@@ -21,12 +21,22 @@ const event=(id:number)=>({srcAddress:ledger,params:{id:BigInt(id)},block:{numbe
 const ref=(id:number)=>`10143:${app}:2:${id}`;
 const bindings=(rulesVersion:IndependentArchiveDeployment['rulesVersion'])=>({[ledger]:{apps:[app],rulesVersion}});
 
-for(const rules of [4,12,13,14] as const)test(`independent rules ${rules} retain their pinned version and original match reference`,async()=>{
+for(const rules of [4,12,13,14,18] as const)test(`independent rules ${rules} retain their pinned version and original match reference`,async()=>{
  const c=context(),r=record(1);await applyIndependentArchive(c,event(1),r,bindings(rules));
  const indexed=c.Match.rows.get(ref(1));assert.equal(indexed.rulesVersion,rules);assert.equal(indexed.deployment,`10143:${ledger}`);
  assert.deepEqual(c.RecentReplays.rows.get(a).matches,[ref(1)]);
  r.finality=true;await applyIndependentArchive(c,event(1),r,bindings(rules));
  assert.equal(c.Alert.rows.size,0);assert.equal(c.Match.rows.get(ref(1)).endedAt,indexed.endedAt);
+});
+
+test('continued human corrections keep the original replay and decoder owner',async()=>{
+ const c=context(),r=record(1),next='0x5555555555555555555555555555555555555555';
+ const mapping={...bindings(14),[next]:{apps:[b],rulesVersion:18 as const,predecessor:ledger}};
+ await applyIndependentArchive(c,event(1),r,mapping);
+ r.finality=true;await applyIndependentArchive(c,{...event(1),srcAddress:next},r,mapping);
+ assert.equal(c.Match.rows.size,1);assert.equal(c.Match.rows.get(ref(1)).rulesVersion,14);
+ assert.equal(c.Match.rows.get(ref(1)).deployment,`10143:${ledger}`);
+ await assert.rejects(applyIndependentArchive(c,{...event(1),srcAddress:next},r,{[next]:mapping[next]}),/Missing/);
 });
 
 test('foreign ledger, arena and changed identity cannot write a published result',async()=>{

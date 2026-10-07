@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {createPublicClient,encodeFunctionData,keccak256,type Abi,type Address,type Hex,type PublicClient} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import type {Pool,PoolClient} from 'pg';
@@ -13,8 +14,8 @@ import {engineJobIdentity,engineReceiptOutcome,reconcileEngineJobs} from './room
 import {assertCommandEpoch} from './rooms-command-epoch';
 
 /** Each application/epoch has its own journal and writer. Nothing queues behind another arena. */
-export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12|13|14;node?:PublicClient;feed?:EngineFeed;archive?:(results:ReusableResultCandidate[])=>Promise<void>}){
- if(runtime?.rulesVersion===14&&!runtime.archive)throw Error('Reusable human commands require a durable result archive');
+export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12|13|14|18;node?:PublicClient;feed?:EngineFeed;archive?:(results:ReusableResultCandidate[])=>Promise<void>}){
+ if(isReusableHumanRules(runtime?.rulesVersion)&&!runtime.archive)throw Error('Reusable human commands require a durable result archive');
  const rules=independentRules({rulesVersion:runtime?.rulesVersion}),abi=rules.arena;
  const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
  const client={app,abi:abi as Abi,node};
@@ -27,14 +28,14 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
   return true;
  }
  const archiveReceipt=async(receipt:any)=>{
-  if(rules.version!==14)return;
+  if(!isReusableHumanRules(rules.version))return;
   const frame=receiptFrame(receipt,app);if(!frame)throw Error('Reusable receipt logs are incomplete');
-  const results=reusableResults(abi,app,14,frame);if(results.length)await runtime!.archive!(results);
+  const results=reusableResults(abi,app,rules.version,frame);if(results.length)await runtime!.archive!(results);
  };
  async function send(name:'tick'|'submitPressure'|'revokeActive'|'renewActive'|'start'|'submitRandomness'|'submitLivePressure'|'cancelUnready'|'admit'|'cancelAdmission',args:readonly unknown[]=[]){
   const allowed=rules.events?['start','tick','submitRandomness','submitLivePressure','revokeActive','renewActive']:['tick','submitPressure','revokeActive','renewActive'];
-  if(rules.version===13||rules.version===14)allowed.push('cancelUnready');
-  if(rules.version===14)allowed.push('admit','cancelAdmission');
+  if(rules.version===13||isReusableHumanRules(rules.version))allowed.push('cancelUnready');
+  if(isReusableHumanRules(rules.version))allowed.push('admit','cancelAdmission');
   if(!allowed.includes(name))throw Error('Operation is not supported by this arena version');
   if(busy)throw Error('This arena is reconciling a command');busy=true;
   const commandMatch=match,commandEpoch=epoch;
@@ -47,8 +48,8 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
    const data=encodeFunctionData({abi:abi as Abi,functionName:name,args});
    if(!commandMatch||!commandEpoch)throw Error('No current arena binding');
    assertCommandEpoch(abi,data,commandEpoch);
-   const matchOffset=rules.version===14?1:0;
-   if(['tick','submitRandomness','cancelUnready',...(rules.version===14?['start','revokeActive']:[])].includes(name)&&args[matchOffset]!==commandMatch)throw Error('Command belongs to another match');
+   const matchOffset=isReusableHumanRules(rules.version)?1:0;
+   if(['tick','submitRandomness','cancelUnready',...(isReusableHumanRules(rules.version)?['start','revokeActive']:[])].includes(name)&&args[matchOffset]!==commandMatch)throw Error('Command belongs to another match');
    if(['submitPressure','submitLivePressure','renewActive','admit','cancelAdmission'].includes(name)&&(args[0] as {matchId:bigint})?.matchId!==commandMatch)throw Error('Command belongs to another match');
    const requestKey=name==='revokeActive'||name==='renewActive'?keccak256(data):null;
    if(requestKey){

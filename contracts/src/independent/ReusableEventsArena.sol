@@ -31,7 +31,7 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
     RoomsRules public immutable classic;
     PublishedResultVerifier public immutable resultVerifier;
     bytes32 private immutable pressureDomain;
-    uint256 public constant RULES_VERSION=14;
+    function RULES_VERSION() public pure virtual returns(uint256){return 14;}
     uint256 public constant TICK_US=10_000;
     uint256 public constant CAPACITY=1;
     error EngineOnly();
@@ -105,14 +105,14 @@ contract ReusableEventsArena is ReusableEventsArenaInterludeSurface {
         // A thirty-minute safety cancellation plus publication margin must fit.
         // This is a conservative time reserve, not a claim of measured hub capacity.
         require(HubLease.valid(address(hub),hub.sessionOf(address(this),Types.GLOBAL).expiresAt,31 minutes),"session admission reserve");
-        bytes32 hash=Game.admit(words,ticket,binding,signature,admissionSigner,lobby);
+        bytes32 hash=Game.admit(words,ticket,binding,signature,admissionSigner,lobby,RULES_VERSION());
         Game.initialize(words,classic,kernel);emit AdmissionBound(ticket.epoch,ticket.matchId,ticket.sequence,hash,binding);
     }
     function confirmReady(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.ready(words,kernel,Auth.actor(words,msg.sender));}
     /// Expired and never-admitted tickets become published cancellations. The
     /// fixed-slot guard rejects loading/playing matches and committed sequences.
     function cancelAdmission(Admission.Ticket calldata ticket,T.Binding calldata binding,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL){
-        Game.cancelAdmission(words,ticket,binding,signature,admissionSigner,lobby,classic,kernel);
+        Game.cancelAdmission(words,ticket,binding,signature,admissionSigner,lobby,classic,kernel,RULES_VERSION());
     }
     function start(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.start(words,kernel);}
     function cancelUnready(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){

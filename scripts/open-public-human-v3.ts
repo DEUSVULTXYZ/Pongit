@@ -10,10 +10,17 @@ import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {abi as lobbyAbi} from '../shared/abi-independent-ReusableEventsLobby';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 const m=JSON.parse(await readFile(process.env.PONG_INDEPENDENT_MANIFEST!,'utf8'));
-const prefix=process.env.PONG_PUBLIC_HUMAN_MIGRATION!,reship=prefix==='public-human-v3-20261007';
-assert(reship||prefix==='public-human-v3-20261005');
+const prefix=process.env.PONG_PUBLIC_HUMAN_MIGRATION!,reship=prefix==='public-human-v3-20261007',responsive=prefix==='public-responsive-human-20261007';
+assert(reship||responsive||prefix==='public-human-v3-20261005');
 assert.equal(m.prefix,prefix);assert.equal(m.status,'sealed');assert.equal(m.hub,NO_LEASE_HUB);
-if(reship){assert.equal(m.previous[0].lobby.toLowerCase(),'0x527ccb705048820694a4ac209f83528db68fff3f');assert.notEqual(m.lobby.toLowerCase(),m.previous[0].lobby.toLowerCase());}
+if(responsive){
+ assert.equal(m.rulesVersion,18);assert.equal(m.ratingsContinuity,'ordered-human-v1');
+ assert.equal(m.previous[0].lobby.toLowerCase(),'0x71a49c00ba733724cb33d7590134d4ae96426156');
+ const proof=JSON.parse(await readFile('/evidence/preservation-audit.json','utf8'));
+ assert(proof.passed&&proof.target.toLowerCase()===m.lobby.toLowerCase()&&proof.source.toLowerCase()===m.previous[0].lobby.toLowerCase()
+  &&proof.migrationHash===m.migrationHash,'Verified responsive migration required before first opening');
+ assert(Date.now()-Date.parse(proof.at)<30*60_000,'Refresh migration verification before initial openings');
+}else if(reship){assert.equal(m.previous[0].lobby.toLowerCase(),'0x527ccb705048820694a4ac209f83528db68fff3f');assert.notEqual(m.lobby.toLowerCase(),m.previous[0].lobby.toLowerCase());}
 else assert.equal(m.lobby,'0x527ccb705048820694a4ac209f83528db68fff3f');assert.equal(m.arenas.length,3);
 const t=await chainTools(m.prefix+':initial-open'),report:any={startedAt:new Date().toISOString(),lobby:m.lobby,arenas:[],passed:false};
 try{

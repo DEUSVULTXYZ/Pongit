@@ -4,7 +4,9 @@ This section first describes the archived V4 arena. Current rooms use the engine
 
 The V4 deployment reuses GameV3 and PhysicsV2. Solidity and TypeScript share an event-driven model: positions and velocities have a **1,000,000** scale, time is in integer microseconds, division truncates toward zero and event times round up.
 
-The logical court is 1024 × 576, ball radius is 6, default paddle half-height is 48 and paddle speed is 180 logical units per second. The game ends at seven points. Chaos adds individual half-heights. Old deployments have an intermission; rules 5 and 6 immediately serve after each non-decisive point.
+The logical court is 1024 × 576, ball radius is 6 and default paddle half-height is 48. Agent rules 17 and human rules 18 use 300 logical units per second for both paddles. Earlier rules retain 180; an old match never changes speed when a new version is deployed. Human games end at seven points. Chaos adds individual half-heights and speed multipliers. Old deployments have an intermission; rules 5 and 6 immediately serve after each non-decisive point.
+
+Local input predicts only the picture. An unacknowledged command cannot confirm a paddle collision, impact sound or point. Prediction waits at an uncertain contact until live confirmation arrives. Results published on Monad remain distinct from both the live picture and finality after the challenge period.
 
 ## The match clock
 

@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {privateKeyToAccount} from 'viem/accounts';
 import type {Address,Hex,PublicClient} from 'viem';
 import type {IndependentManifest} from '../../shared/independent';
@@ -12,7 +13,7 @@ type Actor={app:Address;node:PublicClient;reference():{id:bigint;epoch:bigint};
  * change its participants or turn a missing engine response into a cancellation.
  * Caller serializes this lane with the arena's existing nonce journal. */
 export function independentReusableAdmission(base:PublicClient,m:IndependentManifest,key:Hex){
- if(m.rulesVersion!==14||!m.admissionSigner)throw Error('Reusable human admission manifest required');
+ if(!isReusableHumanRules(m.rulesVersion)||!m.admissionSigner)throw Error('Reusable human admission manifest required');
  const signer=privateKeyToAccount(key);
  if(signer.address.toLowerCase()!==m.admissionSigner.toLowerCase())throw Error('Admission bridge identity mismatch');
  return async(actor:Actor)=>{

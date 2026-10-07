@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {readFile} from 'node:fs/promises';
 import {keccak256,type Abi,type Address,type PublicClient} from 'viem';
 import type {IndependentManifest} from '../../shared/independent';
@@ -28,7 +29,7 @@ export async function humanControlPlaneAnswers(hub:Address,app:Address,transport
 export async function independentReusablePool(base:PublicClient,m:IndependentManifest,queue:Queue,
  health:()=>readonly {app:Address;epoch:string;stage:string;online:boolean}[],enabled:()=>boolean,
  budgetPath=process.env.PONG_INDEPENDENT_PUBLICATION_BUDGET,control:(app:Address)=>Promise<boolean>=app=>humanControlPlaneAnswers(m.hub,app),now:()=>number=Date.now){
- if(m.rulesVersion!==14)throw Error('Reusable human pool required');
+ if(!isReusableHumanRules(m.rulesVersion))throw Error('Reusable human pool required');
  let reserveRetryAt=0;
  const unhealthySince=new Map<string,number>(),replaced=new Map<string,number[]>(),exhaustionAlerted=new Set<string>();
  let budget:ReusablePublicationBudget|undefined;
@@ -37,7 +38,7 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
   const hashes=await Promise.all(m.arenas.map(async a=>{
    const code=await base.getCode({address:a.app});if(!code||code==='0x')throw Error('Missing deployed human arena');return keccak256(code);
   }));
-  budget=validateReusableBudget(JSON.parse(await readFile(path,'utf8')),hashes,14);
+  budget=validateReusableBudget(JSON.parse(await readFile(path,'utf8')),hashes,m.rulesVersion);
  }
  async function admissionReady(){
   if(!enabled()||!budget)return false;

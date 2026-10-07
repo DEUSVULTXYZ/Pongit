@@ -109,7 +109,11 @@ contract ReusableAgentArena is ReusableAgentArenaInterludeSurface {
         Game.input(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender),direction,sequence,deadlineBlock);
     }
     function tick(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.tick(words,classic,kernel,policies,hub);}
-    function heartbeat(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.heartbeat(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender),false);}
+    function heartbeat(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){
+        uint8 side=Auth.actor(words,msg.sender);
+        if(RULES_VERSION()==17&&Entry.phase(words)==1)Entry.presenceStart(words,kernel,side);
+        else Game.heartbeat(words,classic,kernel,policies,hub,side,false);
+    }
     function resumeReady(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.heartbeat(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender),true);}
     function concede(uint256 epoch,uint256 id) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.concede(words,classic,kernel,policies,hub,Auth.actor(words,msg.sender));}
     function submitRandomness(uint256 epoch,uint256 id,uint256 request,bytes calldata signature) external engine whenNotDelegated(Types.GLOBAL) current(epoch,id){Game.randomness(words,classic,kernel,policies,hub,request,signature);}

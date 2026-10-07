@@ -1,3 +1,4 @@
+import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {decodeAbiParameters,getAbiItem,type Abi,type Address,type PublicClient} from 'viem';
 import type {Pool} from 'pg';
 import type {IndependentManifest} from '../../shared/independent';
@@ -15,7 +16,8 @@ type Enqueue=(address:Address,abi:Abi,action:string,args:readonly unknown[],valu
  * is only an archive source; a canonical published proof is still mandatory.
  * Historical IDs never read whichever different game occupies that slot. */
 export function independentReusableResults(db:Pool,base:PublicClient,m:IndependentManifest,queue:Enqueue){
- if(m.rulesVersion!==14||!m.resultVerifier)throw Error('Reusable result verifier required');
+ if(!isReusableHumanRules(m.rulesVersion)||!m.resultVerifier)throw Error('Reusable result verifier required');
+ const rulesVersion=m.rulesVersion;
  const verifier=m.resultVerifier,archive=createReusableResultArchive(db);
  async function archiveSlot(actor:Actor){
   const ref=actor.reference(),block=await base.getBlock({includeTransactions:false}),r=independentReader(base,m,block.number);
@@ -26,7 +28,7 @@ export function independentReusableResults(db:Pool,base:PublicClient,m:Independe
   const result=await actor.node.readContract({address:actor.app,abi:arenaAbi,functionName:'publishedResult'});
   const after=await actor.node.readContract({address:actor.app,abi:arenaAbi,functionName:'resultCommitment'});
   if(before.some((v,i)=>v!==after[i]))throw Error('Result changed while archiving its retained body');
-  const candidate=reusableSlotResult(arenaAbi,{chainId:10143n,arena:actor.app,epoch:ref.epoch},14,ref.id,reusableAdmissionDigest(ticket),ticket.sequence,result,before);
+  const candidate=reusableSlotResult(arenaAbi,{chainId:10143n,arena:actor.app,epoch:ref.epoch},rulesVersion,ref.id,reusableAdmissionDigest(ticket),ticket.sequence,result,before);
   await archive.storeSlot(candidate);return true;
  }
  async function capture(id:bigint){
@@ -43,7 +45,7 @@ export function independentReusableResults(db:Pool,base:PublicClient,m:Independe
    return false;
   }
   const proof=await archive.proof({chainId:10143n,arena:ticket.arena,epoch:ticket.epoch},{root:root.hash,count:root.count},id);
-  if(proof.rules!==14||BigInt(proof.index)+1n!==ticket.sequence||proof.ticketHash!==reusableAdmissionDigest(ticket))
+  if(proof.rules!==m.rulesVersion||BigInt(proof.index)+1n!==ticket.sequence||proof.ticketHash!==reusableAdmissionDigest(ticket))
    throw Error('Archived result differs from its issued ticket');
   const complete=decodeAbiParameters(getAbiItem({abi:arenaAbi,name:'publishedResult'}).outputs,proof.canonical)[0];
   if(previous?.latest.hash===complete.match_.hash&&previous.finality===finality)return false;

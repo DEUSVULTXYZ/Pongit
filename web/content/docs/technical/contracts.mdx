@@ -2,7 +2,7 @@
 
 ## Rooms deployment
 
-The independent human release is rules 14 on Monad Testnet 10143. It keeps Classic physics and all 24 Chaos events, while using bounded physics work and reusable storage inside each independently delegated arena. Shared lobby, rating, profile, private-data and financial contracts remain on Monad. New games are enabled only by the release admission gate; deployed addresses alone do not establish availability.
+Independent human deployments use rules 14 or 18 on Monad Testnet 10143, as identified by their manifests. Both retain Classic and all 24 Chaos events with bounded physics work and reusable storage inside each independently delegated arena. Rules 18 increase paddle speed to 300 units per second and preserve the predecessor's ordered rating history and original seeds. Shared lobby, rating, profile, private-data and financial contracts remain on Monad. New games are enabled only by the release admission gate; deployed addresses alone do not establish availability.
 
 Read `GET /api/independent/config` for the exact approved arenas, epoch health and admission state. The 5 October v3 migration preserves 16 public rating rows and six repeat counters, reuses the same family, profiles and private-data contracts, and keeps the 25 previous published results accessible. Existing grants retain their scope; historical balances are not transferred. The wallet selector exposes earlier human betting credit for owner-authorized withdrawal.
 

@@ -30,7 +30,7 @@ library ReusableAgentEntry {
         initialize(w,classic,kernel,rules);Game.finish(w,kernel,4,address(0));View.publish(w,kernel);
     }
     function cancelUnready(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) public {
-        require(phase(w)==1&&S.get(w,61)!=3&&block.timestamp>S.get(w,62),"loading not expired");
+        require(phase(w)==1&&(S.get(w,61)!=3||Fair.rules(w)==17&&Fair.enabled(w))&&block.timestamp>S.get(w,62),"loading not expired");
         Game.finish(w,kernel,4,address(0));View.publish(w,kernel);
     }
     function ready(mapping(bytes32=>uint256) storage w,ChaosEngine kernel,uint8 side) external {
@@ -47,6 +47,21 @@ library ReusableAgentEntry {
             S.set(w,60,uint64(block.timestamp+3)|((block.number+300)<<64));View.publish(w,kernel);return;
         }
         require(block.timestamp>=at&&block.number>=uint64(packedLaunch>>64),"countdown pending");
+        // A healthy engine is not proof that the human has received a playable
+        // frame. Rules 17 uses that human's existing authenticated heartbeat
+        // to activate physics, with the same 500 ms protection thereafter.
+        if(Fair.rules(w)==17&&Fair.enabled(w))return;
+        activate(w,kernel);
+    }
+    function presenceStart(mapping(bytes32=>uint256) storage w,ChaosEngine kernel,uint8 side) external {
+        require(phase(w)==1&&Fair.rules(w)==17&&Fair.enabled(w),"presence launch unavailable");
+        require(Fair.inspect(w).human==side+1,"protected human only");
+        require(block.timestamp<=S.get(w,62),"loading expired");
+        uint256 packedLaunch=S.get(w,60);
+        if(S.get(w,61)!=3||packedLaunch==0||block.timestamp<uint64(packedLaunch)||block.number<uint64(packedLaunch>>64))return;
+        activate(w,kernel);
+    }
+    function activate(mapping(bytes32=>uint256) storage w,ChaosEngine kernel) private {
         S.set(w,0,(S.get(w,0)&~(uint256(7)<<161))|(2<<161));
         require(block.number<=type(uint64).max,"engine block overflow");
         S.set(w,2,(S.get(w,2)&(uint256(type(uint64).max)<<128))|uint64(block.number));Fair.start(w,0);View.publish(w,kernel);

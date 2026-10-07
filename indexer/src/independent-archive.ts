@@ -1,10 +1,10 @@
 import {applyChaosArchive} from './chaos-archive';
 import {decodePublishedEntry} from './published-result';
 
-export type IndependentArchiveDeployment = {rulesVersion:4|12|13|14; apps:readonly string[]};
+export type IndependentArchiveDeployment = {rulesVersion:4|12|13|14|18; apps:readonly string[]; predecessor?:string};
 export function independentArchiveRules(bindings:Record<string,IndependentArchiveDeployment>,ledger:string,arena:string){
  const binding=bindings[ledger.toLowerCase()];
- if(!binding||![4,12,13,14].includes(binding.rulesVersion)||!binding.apps.some(a=>a.toLowerCase()===arena.toLowerCase()))
+ if(!binding||![4,12,13,14,18].includes(binding.rulesVersion)||!binding.apps.some(a=>a.toLowerCase()===arena.toLowerCase()))
   throw Error('Unknown independent result deployment');
  return binding.rulesVersion;
 }
@@ -15,6 +15,17 @@ export function independentArchiveRules(bindings:Record<string,IndependentArchiv
 export async function applyIndependentArchive(context:any,event:any,entry:ReturnType<typeof decodePublishedEntry>,
  bindings:Record<string,IndependentArchiveDeployment>){
  const first=entry.first,r=entry.latest;
+ const current=bindings[event.srcAddress.toLowerCase()];
+ if(current?.predecessor&&!current.apps.some(a=>a.toLowerCase()===first.arena.toLowerCase())){
+  const seen=new Set([event.srcAddress.toLowerCase()]);let predecessor:string|undefined=current.predecessor;
+  while(predecessor){
+   const key:string=predecessor.toLowerCase();if(seen.has(key))throw Error('Cyclic independent ledger history');seen.add(key);
+   const old:IndependentArchiveDeployment|undefined=bindings[key];if(!old)throw Error('Missing independent predecessor archive');
+   // The predecessor event remains the only writer for this original reference.
+   if(old.apps.some(a=>a.toLowerCase()===first.arena.toLowerCase()))return;
+   predecessor=old.predecessor;
+  }
+ }
  const rules=independentArchiveRules(bindings,event.srcAddress,first.arena);
  if(String(event.params.id)!==first.id||r.id!==first.id||r.arena!==first.arena||r.epoch!==first.epoch
   ||r.a!==first.a||r.b!==first.b||r.mode!==first.mode||r.ranked!==first.ranked)

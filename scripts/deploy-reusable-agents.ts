@@ -18,14 +18,15 @@ const file='/secrets/deployment.json',hub=v3?NO_LEASE_HUB:'0x3Ef8327F69e09cf7217
 const housePolicy=process.env.PONG_REUSABLE_HOUSE_POLICY;
 assert(housePolicy===undefined||housePolicy==='progressive-v1','Unknown immutable house policy');
 const rulesVersion=Number(process.env.PONG_REUSABLE_RULES??15);
-assert([15,16].includes(rulesVersion),'Unknown immutable rules');
-const friendlyPause=rulesVersion===16?'heartbeat-v1':undefined;
+assert([15,16,17].includes(rulesVersion),'Unknown immutable rules');
+const friendlyPause=rulesVersion>=16?'heartbeat-v1':undefined;
+const modifierName=rulesVersion===17?'ResponsiveChaosModifiers':'ChaosModifiers';
 const policyName=housePolicy?'ProgressiveHousePolicies':'HousePolicies';
-const arenaName=rulesVersion===16?'ProvisionedSynchronizedAgentArena':v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
+const arenaName=rulesVersion===17?'ProvisionedResponsiveAgentArena':rulesVersion===16?'ProvisionedSynchronizedAgentArena':v3?'ProvisionedReusableAgentArena':'ReusableAgentArena';
 const maxMatches=Number(process.env.PONG_REUSABLE_AGENT_LANES??2),arenaCount=Number(process.env.PONG_REUSABLE_ARENA_COUNT??(maxMatches===5?5:3));
 assert([2,5].includes(maxMatches)&&Number.isInteger(arenaCount)&&arenaCount>=(maxMatches===5?5:3)&&arenaCount<=16,'Reviewed private candidate dimensions required');
 assert(!v3||maxMatches===5,'Private v3 candidate requires five-lane authority');
-assert(rulesVersion!==16||v3&&maxMatches===5&&housePolicy==='progressive-v1','Rules 16 require v3, five lanes and progressive policies');
+assert(rulesVersion<16||v3&&maxMatches===5&&housePolicy==='progressive-v1','Rules 16/17 require v3, five lanes and progressive policies');
 // Private qualification only. This script creates a fresh season; a public
 // replacement requires a separate verified identity/rating migration.
 const houseInstances=process.env.PONG_REUSABLE_HOUSE_INSTANCES;
@@ -39,7 +40,7 @@ let r:any;try{r=JSON.parse(await readFile(file,'utf8'));}catch(e){if((e as NodeJ
 const save=async()=>{await writeFile(file+'.next',JSON.stringify(r,null,2),{mode:0o600});await rename(file+'.next',file);};
 const t=await chainTools(prefix);
 try{
- await t.preflight(['ChaosCodec','ChaosEffects','ChaosModifiers','ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
+ await t.preflight(['ChaosCodec','ChaosEffects',modifierName,'ChaosDynamics','ChaosContacts','ChaosRally','ChaosPhysics','DrandEvmnet','ChaosDrawRules','ChaosEngine',
   policyName,'AgentCatalog',poolName,'PublishedResultVerifier','AgentTournaments','AgentPublishedRatings',qualificationName,'ArcadeFamily',challengeName,arenaName,
   // Inherited ABIs are used below even when only the derived bytecode is deployed.
   'ReusableAgentPool','ReusableAgentArena']);
@@ -57,7 +58,7 @@ try{
  const bridge=privateKeyToAccount(r.admissionKey).address;
  const deploy=async(name:string,args:readonly unknown[]=[],instance=name)=>{const a=await retryOperatorContention(()=>t.deploy(name,args,instance));r.modules??={};r.modules[instance]=a;await save();return a;};
  const write=async(op:string,contract:string,at:Address,fn:string,args:readonly unknown[]=[])=>retryOperatorContention(async()=>t.write(op,at,(await t.artifact(contract)).abi,fn,args));
- const codec=await deploy('ChaosCodec'),effects=await deploy('ChaosEffects'),modifiers=await deploy('ChaosModifiers');
+ const codec=await deploy('ChaosCodec'),effects=await deploy('ChaosEffects'),modifiers=await deploy(modifierName);
  const dynamics=await deploy('ChaosDynamics',[effects,modifiers]),contacts=await deploy('ChaosContacts',[dynamics]),rally=await deploy('ChaosRally');
  const physics=await deploy('ChaosPhysics',[effects,rally,dynamics,contacts]),beacon=await deploy('DrandEvmnet'),draws=await deploy('ChaosDrawRules');
  const kernel=await deploy('ChaosEngine',[codec,physics,beacon,draws]),policies=await deploy(policyName);

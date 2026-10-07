@@ -6,7 +6,7 @@ import manifest from '../../deployments/interlude-rooms.json';
 import type {ChaosCanvasFrame} from './chaos-canvas';
 export function eventPaddles(s:ChaosPhysicsState){
  const effect=(i:0|1):ModifierEffect=>({...s.effects[i],startsAt:BigInt(s.effects[i].startsAt),expiresAt:BigInt(s.effects[i].expiresAt),consumed:false});
- return chaosPaddles(BigInt(s.bettingA),BigInt(s.bettingB),[effect(0),effect(1)],s.t/1000n);
+ return chaosPaddles(BigInt(s.bettingA),BigInt(s.bettingB),[effect(0),effect(1)],s.t/1000n,s.paddleSpeed);
 }
 export function eventHud(s:ChaosPhysicsState):ChaosEffectState[]{return s.effects.flatMap((e,slot)=>e.id?[{
  id:chaosEvent(e.id).id,slot:slot as 0|1,target:e.target as 0|1|2,startsAt:e.startsAt,expiresAt:e.expiresAt,variant:e.variant,consumed:false,
@@ -14,9 +14,16 @@ export function eventHud(s:ChaosPhysicsState):ChaosEffectState[]{return s.effect
 }]:[]);}
 /** The contract mirror predicts positions only. It never displays an unconfirmed
  * point, starts a new rally or chooses an event. Work per frame is bounded. */
-export function projectChaos(source:ChaosPhysicsState,target:bigint,everyContact=chaosContactResolution(Number(manifest.rulesVersion))){
+export function projectChaos(source:ChaosPhysicsState,target:bigint,everyContact=chaosContactResolution(Number(manifest.rulesVersion)),uncertainContact=false){
  const limit=source.t+600000n,bounded=target<source.t?source.t:target>limit?limit:target;
  let [state,complete,collisions]=advanceChaosEvents(source,bounded,96,true,everyContact);
+ const contact=uncertainContact?collisions.find(c=>c.kind===3||c.kind===4):undefined;
+ if(contact){
+  // Pending input cannot prove a paddle contact, even if the mirror predicts
+  // a hit. Stop before it; do not emit its sound, trail reversal or score.
+  [state,,collisions]=advanceChaosEvents(source,contact.at>source.t?contact.at-1n:source.t,96,true,everyContact);
+  return {state,collisions,pointBoundary:false,contactBoundary:true,waiting:true};
+ }
  const goal=state.score.rally!==source.score.rally||state.score.finished!==source.score.finished;
  if(goal){
   // The mirror has located a goal, not confirmed it. Keep the visible ball at
@@ -25,7 +32,7 @@ export function projectChaos(source:ChaosPhysicsState,target:bigint,everyContact
   [state,,collisions]=advanceChaosEvents(source,state.t>source.t?state.t-1n:source.t,96,true,everyContact);
   if(state.score.rally!==source.score.rally||state.score.finished!==source.score.finished){state=source;collisions=[];}
  }
- return {state,collisions,pointBoundary:goal,waiting:!complete||target>limit||goal||state.cancelled&&!source.cancelled};
+ return {state,collisions,pointBoundary:goal,contactBoundary:false,waiting:!complete||target>limit||goal||state.cancelled&&!source.cancelled};
 }
 
 /** Buffered spectators already have a confirmed future sample. Advance the
@@ -45,7 +52,7 @@ export class SpectatorChaosProjection {
   if(this.projected?.pointBoundary||previous.score.rally!==source.score.rally||previous.score.finished!==source.score.finished||previous.cancelled&&!source.cancelled)return this.projected!;
   const next=projectChaos(previous,target,everyContact);
   this.projected=next.state.score.rally!==source.score.rally||next.state.score.finished!==source.score.finished
-   ?{state:previous,collisions:[],pointBoundary:true,waiting:true}:next;
+   ?{state:previous,collisions:[],pointBoundary:true,contactBoundary:false,waiting:true}:next;
   return this.projected;
  }
 }

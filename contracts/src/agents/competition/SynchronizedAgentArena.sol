@@ -13,7 +13,7 @@ contract SynchronizedAgentArena is ReusableAgentArena {
     constructor(IInterludeHub protocol,address authority,address admissions,HousePolicies house,
         ChaosEngine physics,PublishedResultVerifier verifier)
         ReusableAgentArena(protocol,authority,admissions,house,physics,verifier){}
-    function RULES_VERSION() public pure override returns(uint256){return 16;}
+    function RULES_VERSION() public pure virtual override returns(uint256){return 16;}
     function synchronizedState(uint256 id) external view returns(bytes memory){
         return View.synchronizedState(words,kernel,id,isEphemeral());
     }

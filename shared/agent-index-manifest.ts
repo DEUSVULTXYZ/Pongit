@@ -1,11 +1,11 @@
 export type AgentIndexDeployment = {
-  chainId: number; rulesVersion: 11 | 15 | 16; pool: string; startBlock: string; arenas: string[];
+  chainId: number; rulesVersion: 11 | 15 | 16 | 17; pool: string; startBlock: string; arenas: string[];
   archiveContract?: 'AgentReusableFiveArchive';
 };
 
 /** Legacy single-pool files remain valid. A migration must list each retired
  * emitter alongside the new one, so later corrections keep their old routes. */
-export function agentIndexDeployments(raw: unknown, chainId: number, rulesVersion: 11 | 15 | 16): AgentIndexDeployment[] {
+export function agentIndexDeployments(raw: unknown, chainId: number, rulesVersion: 11 | 15 | 16 | 17): AgentIndexDeployment[] {
   const value = raw as any;
   const items = value?.version === 2 ? value.deployments : [value];
   if (!value || value.chainId !== chainId || (value.version !== undefined && value.version !== 2)
@@ -16,7 +16,7 @@ export function agentIndexDeployments(raw: unknown, chainId: number, rulesVersio
   const result = items.map((item: any): AgentIndexDeployment => {
     // The reusable archive schema is shared, but each historical emitter keeps
     // its immutable rules. A rules-16 reader must not relabel old results.
-    if (!item || item.chainId !== chainId || !(rulesVersion >= 15 ? [15,16].includes(item.rulesVersion) : item.rulesVersion === rulesVersion) || !address(item.pool)
+    if (!item || item.chainId !== chainId || !(rulesVersion >= 15 ? [15,16,17].includes(item.rulesVersion) : item.rulesVersion === rulesVersion) || !address(item.pool)
       || !/^(0|[1-9]\d*)$/.test(String(item.startBlock))
       || !Array.isArray(item.arenas) || item.arenas.length < (rulesVersion >= 15 ? 3 : 2)
       || item.arenas.length > (rulesVersion >= 15 ? 32 : 16) || !item.arenas.every(address))

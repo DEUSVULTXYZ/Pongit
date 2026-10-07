@@ -34,6 +34,6 @@ export class ParticipantInputs {
   let applied=0;
   for(const input of this.inputs.values())if(input.acceptedAt!==undefined&&input.acceptedAt<=processed)applied=Math.max(applied,input.id);
   for(const id of this.inputs.keys())if(id<=applied)this.inputs.delete(id);
-  return [...this.inputs.values()].map(input=>({side,direction:input.direction,at:input.acceptedAt??input.predictedAt}));
+  return [...this.inputs.values()].map(input=>({side,direction:input.direction,at:input.acceptedAt??input.predictedAt,confirmed:input.acceptedAt!==undefined}));
  }
 }

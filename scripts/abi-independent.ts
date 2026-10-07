@@ -1,8 +1,8 @@
 import {readFile,writeFile} from 'node:fs/promises';
-const names=['ArcadeFamily','IndependentLobby','IndependentArena','IndependentSettlement','IndependentEventsLobby','IndependentEventsArena','ReadyIndependentEventsArena','ReadyIndependentEventsLobby','IndependentEventsSettlement','ReusableEventsArena','ReusableEventsLobby','ReusableEventsSettlement','PublishedResultVerifier','RealtimeMarket','PublishedRatings','ProfileRegistry','PrivateDataStore','RoomsVault','MarketV4','IInterludeHub','ContractLobby'] as const;
+const names=['ArcadeFamily','IndependentLobby','IndependentArena','IndependentSettlement','IndependentEventsLobby','IndependentEventsArena','ReadyIndependentEventsArena','ReadyIndependentEventsLobby','IndependentEventsSettlement','ReusableEventsArena','ReusableEventsLobby','ResponsiveEventsArena','ResponsiveEventsLobby','ContinuingHumanRatings','ReusableEventsSettlement','PublishedResultVerifier','RealtimeMarket','PublishedRatings','ProfileRegistry','PrivateDataStore','RoomsVault','MarketV4','IInterludeHub','ContractLobby'] as const;
 for(const name of names){
  const a=JSON.parse(await readFile(`contracts/out/${name}.sol/${name}.json`,'utf8'));
- if(name==='ReusableEventsArena'){
+ if(name==='ReusableEventsArena'||name==='ResponsiveEventsArena'){
   const seen=new Set(a.abi.map((item:any)=>`${item.type}:${item.name}`));
   for(const library of ['ReusableGame','ReusableHumanBinding','ReusableAdmission','ReusableAuthorizations','ReusableArenaStorage','ChaosGameFlow']){
    const linked=JSON.parse(await readFile(`contracts/out/${library}.sol/${library}.json`,'utf8'));

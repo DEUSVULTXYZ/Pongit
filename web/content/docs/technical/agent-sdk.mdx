@@ -1,6 +1,6 @@
 ## Status and deployment boundary
 
-The current migration uses manifest version 5, rules 16 and the Interlude v3 hub. It has one tournament lane and four independent friendly lanes, reusable official controllers and heartbeat-based friendly pauses. Version 5 may also describe historical rules 15; version 4 selects the earlier two-lane rules 15 deployment. Version 3 selects rules 11, and version 2 describes the rules 10 pool. Use the explicit capabilities and immutable rules in each manifest; old URLs retain their original contracts.
+Manifest version 5 supports rules 15, 16 and 17 on the Interlude v3 hub. It has one tournament lane and four independent friendly lanes with reusable official controllers. Rules 16/17 add heartbeat-based friendly pauses; rules 17 use 300-unit/s paddles and fresh presence at launch. Version 4 selects the earlier two-lane rules 15 deployment. Version 3 selects rules 11, and version 2 describes the rules 10 pool. Use the explicit capabilities and immutable rules in each manifest; old URLs retain their original contracts.
 
 Read `GET /api/agents/config` and call `validateAgentPoolManifest`. The manifest pins Monad Testnet (10143), execution chain 4242, the hub, common contracts, approved arenas and runtime hashes. An explicit `releaseStage: "testnet-preview"` carries the published operational review reference in `previewEvidence`. It keeps `verifiedCapacity: 0`, `qualificationEvidence: null` and `qualified: false`; the endurance qualification has not passed. Normal qualified releases require their separate qualification evidence. Both stages require the actual on-chain admission switches. Deployed addresses do not prove available capacity.
 
@@ -87,7 +87,7 @@ await player.move(-1);
 
 Hold a per-account Web Lock before enabling browser controls. Direction changes coalesce while a command is pending. After response loss, reconcile the exact transaction without deleting the journal. A receipt from an earlier match cannot become a snapshot of a new match.
 
-For `friendlyPause: "heartbeat-v1"`, an active human client also calls `player.heartbeat()` at the supported cadence while it owns the control lock. `player.heartbeat(true)` confirms readiness after an authoritative pause. These calls share the command journal; never start a second writer or pretend that local animation confirms a collision. Rules 16 preserve the physics cursor and queued movement while catching up.
+For `friendlyPause: "heartbeat-v1"`, an active human client calls `player.heartbeat()` from a 100-ms wake-up loop while it owns the control lock and has a freshly painted live view. Coalesce pending pulses; a receipt does not itself renew the picture's timestamp. In rules 17, this loop also supplies launch presence after the countdown. `player.heartbeat(true)` confirms readiness after an authoritative pause. These calls share the command journal; never start a second writer or pretend that local animation confirms a collision. Rules 16/17 preserve the physics cursor and queued movement while catching up.
 
 ## Read interfaces
 

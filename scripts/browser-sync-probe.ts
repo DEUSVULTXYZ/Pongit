@@ -1,3 +1,4 @@
+import {rulesPaddleSpeed} from '../shared/physics-rules';
 import type {Page} from '@playwright/test';
 import {eventPaddles} from '../web/lib/chaos-presentation';
 
@@ -18,10 +19,52 @@ export function confirmedInputMetrics(intents:{at:number;direction:number}[],rec
  return{samples:samples.length,p95Ms:samples[Math.floor((samples.length-1)*.95)],maxMs:samples.at(-1),mismatches};
 }
 
+/** Measure the whole held motion and release, rather than the first pixel.
+ * Windows touching bounds, pauses, rally changes or effects changing geometry
+ * are excluded explicitly, never counted as a passing speed measurement. */
+export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?:any[];releases?:any[]}){
+ const observations=new Map(data.snapshots.map(s=>[s.observedAt,s]));
+ const changes=[...(data.keys??[]),...(data.releases??[]).map(r=>({...r,direction:0}))].sort((a,b)=>a.at-b.at);
+ const ratios:number[]=[],stops:any[]=[],excluded:Record<string,number>={};
+ const reject=(reason:string)=>{excluded[reason]=(excluded[reason]??0)+1;};
+ const speed=(frame:any)=>{const s=observations.get(frame.observedAt);
+  if(!s||!s.controllable||(s.pause?.status??0)>=2)return;
+  if(s.chaos){const raw=s.chaos.physics,p=eventPaddles({...raw,t:BigInt(raw.t),paddleSpeed:rulesPaddleSpeed(s.rulesVersion??0)});
+   return Number(frame.side===0?p.speedA:p.speedB)/1e6;}
+  return Number(rulesPaddleSpeed(s.rulesVersion??0))/1e6;
+ };
+ for(let index=0;index<changes.length;index++){
+  const input=changes[index],end=changes.slice(index+1).find(c=>c.side===input.side)?.at??Infinity;
+  const frames=(data.paddles??[]).filter(p=>p.side===input.side&&p.at>=input.at&&p.at<end&&!p.finished);
+  if(input.direction===0){
+   const prior=[...(data.paddles??[])].reverse().find(p=>p.side===input.side&&p.at<=input.at);
+   const sample=frames.filter(p=>p.at<input.at+250&&p.rally===prior?.rally);
+   if(prior&&sample.length>=7&&sample.every(p=>speed(p)!==undefined))stops.push({at:input.at,drift:Math.max(...sample.map(p=>Math.abs(p.y-prior.y)))});
+   continue;
+  }
+  if(end-input.at<500){reject('short-intent');continue;}
+  for(let i=0;i<frames.length;){
+   const a=frames[i],j=frames.findIndex((p,k)=>k>i&&p.at>=a.at+100);
+   if(j<0)break;
+   const b=frames[j],window=frames.slice(i,j+1);i=j;
+   if(window.some(p=>p.rally!==a.rally||p.height!==a.height)){reject('rally-or-geometry');continue;}
+   if(window.some(p=>p.top<=2||p.bottom>=574)){reject('wall');continue;}
+   if(window.some((p,k)=>k&&p.at-window[k-1].at>50)){reject('render-gap');continue;}
+   const velocities=window.map(speed);
+   if(velocities.some(v=>v===undefined)){reject('pause-or-unavailable');continue;}
+   let expected=0;for(let k=1;k<window.length;k++)expected+=velocities[k-1]!*(window[k].at-window[k-1].at)/1000;
+   if(expected>0)ratios.push((b.y-a.y)*input.direction/expected);
+  }
+ }
+ const q=(values:number[],p:number)=>[...values].sort((a,b)=>a-b)[Math.floor((values.length-1)*p)];
+ return{held:{samples:ratios.length,p05Ratio:q(ratios,.05),p95Ratio:q(ratios,.95),minRatio:ratios.length?Math.min(...ratios):undefined,maxRatio:ratios.length?Math.max(...ratios):undefined,
+  outsideTarget:ratios.filter(r=>r<.95||r>1.05).length},stopping:{samples:stops.length,p95Drift:q(stops.map(s=>s.drift),.95),maxDrift:stops.length?Math.max(...stops.map(s=>s.drift)):undefined,stops},excluded};
+}
+
 /** Test-only instrumentation. Record public court state, never wallet props. */
 export async function installSyncProbe(page:Page){
  await page.addInitScript(()=>{
-  const data={frames:[] as any[],snapshots:[] as any[],paddles:[] as any[],waiting:[] as any[],corrections:[] as any[],keys:[] as any[],releases:[] as any[]};
+  const data={poses:[] as any[],frames:[] as any[],snapshots:[] as any[],paddles:[] as any[],waiting:[] as any[],layout:[] as any[],corrections:[] as any[],keys:[] as any[],releases:[] as any[]};
   window.addEventListener('keydown',e=>{const direction=['ArrowUp','KeyW'].includes(e.code)?-1:['ArrowDown','KeyS'].includes(e.code)?1:0;
    if(direction&&!e.repeat){const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.keys.push({at:performance.now(),direction,side:s.side});}
   });
@@ -34,12 +77,18 @@ export async function installSyncProbe(page:Page){
   window.addEventListener('pointerdown',e=>{const label=(e.target as Element)?.closest('button')?.getAttribute('aria-label');
    if(label==='Move up'||label==='Move down'){const s=data.snapshots.at(-1);if(s?.controllable&&s.side>=0)data.keys.push({at:performance.now(),side:s.side,direction:label==='Move up'?-1:1});}
   });
+  window.addEventListener('pongit:court-frame',(e:any)=>{if(data.poses.length<40000)data.poses.push(e.detail);});
   window.addEventListener('pongit:presentation-timing',(e:any)=>{if(data.corrections.length<40000)data.corrections.push(e.detail);});
-  let waitKey='',frameAt:number|undefined;
+  let waitKey='',layoutKey='',frameAt:number|undefined;
   const raf=requestAnimationFrame;window.requestAnimationFrame=callback=>raf(t=>{frameAt=t;try{callback(t);}finally{frameAt=undefined;}});
   setInterval(()=>{const court=document.querySelector('.pool-canvas-slot canvas,.rooms-canvas canvas');if(!court)return;
    const paused=!!document.querySelector('[aria-label="Match paused"]'),sync=!!document.querySelector('.pool-canvas-slot [data-arcade-progress="synchronizing"],.rooms-canvas [data-arcade-progress="synchronizing"]'),cause=(court as HTMLElement).dataset.waitCause??'';
    const key=JSON.stringify([paused,sync,cause]);if(key!==waitKey){waitKey=key;data.waiting.push({at:performance.now(),paused,sync,cause});}
+   const rect=court.getBoundingClientRect();
+   const layout={x:rect.x,y:rect.y,width:rect.width,height:rect.height,viewportWidth:innerWidth,viewportHeight:innerHeight,
+    scrollY,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight};
+   const nextLayout=JSON.stringify(layout);
+   if(rect.width>0&&nextLayout!==layoutKey&&data.layout.length<10000){layoutKey=nextLayout;data.layout.push({at:performance.now(),...layout});}
   },50);
   (window as any).__syncProbe=data;
   let observed=-1,source:any,paint=0;
@@ -62,7 +111,7 @@ export async function installSyncProbe(page:Page){
    if(props&&props.observedAt!==observed){
     observed=props.observedAt;source=props;
     if(data.snapshots.length<20000)data.snapshots.push(JSON.parse(JSON.stringify({at:performance.now(),
-     observedAt:props.observedAt,clock:props.clock,state:props.state,chaos:props.chaos,
+     observedAt:props.observedAt,rulesVersion:props.rulesVersion,clock:props.clock,state:props.state,chaos:props.chaos,
      direction:props.direction,side:props.side,controllable:props.controllable,pending:props.pending,pause:props.housePrediction?.pause,
      housePrediction:props.housePrediction,coherentControls:props.coherentControls,progressionLimit:props.progressionLimit},
      (_,v)=>typeof v==='bigint'?v.toString():v)));
@@ -109,10 +158,10 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
  for(const b of data.paddles??[]){
   const a=last.get(b.side);last.set(b.side,b);if(!a||a.finished||b.finished||a.rally!==b.rally)continue;
   const dt=b.at-a.at;if(dt<=0||dt>50)continue;
-  const snapshot=byObservation.get(b.observedAt);let speed=180;
+  const snapshot=byObservation.get(b.observedAt);let speed=Number(rulesPaddleSpeed(snapshot?.rulesVersion??0))/1e6;
   if(snapshot?.chaos){
    const raw=snapshot.chaos.physics;
-   const mods=eventPaddles({...raw,t:BigInt(raw.t)});
+   const mods=eventPaddles({...raw,t:BigInt(raw.t),paddleSpeed:rulesPaddleSpeed(snapshot?.rulesVersion??0)});
    speed=Number(b.side===0?mods.speedA:mods.speedB)/1e6;
   }
   const d=Math.abs(b.y-a.y),limit=(speed+120)*dt/1000+2;
