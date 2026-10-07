@@ -1,7 +1,9 @@
 """Compatible web-only release. No gameplay service, database or chain writes."""
-import datetime, hashlib, json, os, pathlib, shutil, subprocess, sys, tarfile
+import datetime, hashlib, json, os, pathlib, re, shutil, subprocess, sys, tarfile
 
-root=pathlib.Path('/opt/pongit/releases/controls-access-1c56d73')
+release=sys.argv[2] if len(sys.argv)>2 else '1c56d73'
+assert re.fullmatch('[a-f0-9]{7}',release)
+root=pathlib.Path('/opt/pongit/releases/controls-access-'+release)
 current=pathlib.Path('/opt/pongit/releases/reship-all-20261007')
 canonical=pathlib.Path('/opt/pongit/releases/arcade-d2c6033/five-runtime/compose.json')
 live=current/'live/agent-compose.json'
@@ -21,9 +23,9 @@ if action=='build':
     manifest.update(enabled=True,tournamentsEnabled=True)
     write(ctx/'deployments/agent-pool.json',manifest)
     assert manifest['pool'].lower()=='0x89906fadc63704b003c5e5ca8e090f4dca757902'
-    report={'source':'1c56d73','startedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'sourceSha256':sha(root/'source.tar.gz'),'diskBefore':used,'passed':False}
+    report={'source':release,'startedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'sourceSha256':sha(root/'source.tar.gz'),'diskBefore':used,'passed':False}
     assert not (root/'build.json').exists();write(root/'build.json',report)
-    tag='pongit:controls-access-1c56d73'
+    tag='pongit:controls-access-'+release
     with (root/'build.log').open('w') as log:
         result=subprocess.run(['docker','build','--memory','1800m','--cpu-quota','150000','-f','Dockerfile.web','--target','web','-t',tag,
             '--build-arg','NEXT_PUBLIC_API_URL=https://pongit.xyz/api','--build-arg','NEXT_PUBLIC_WS_URL=wss://pongit.xyz/ws',
@@ -49,6 +51,6 @@ elif action in ['deploy','rollback']:
     for item in [config,other]: item['services']['arcade-web']['image']=target
     write(canonical,config);write(live,other)
     subprocess.run(['docker','compose','-p','pongit-arcade-five','-f',str(canonical),'up','-d','--no-deps','arcade-web'],check=True)
-    result={'action':action,'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'1c56d73','image':target,'previous':expected}
+    result={'action':action,'at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':release,'image':target,'previous':expected}
     assert not (root/(action+'.json')).exists();write(root/(action+'.json'),result);print(json.dumps(result))
 else: raise ValueError('Unknown action')

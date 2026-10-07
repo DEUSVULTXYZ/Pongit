@@ -16,13 +16,18 @@ for(const channel of ['chrome','msedge']){
    const layout=await page.evaluate(()=>{
     const header=document.querySelector('header')!,bounds=header.getBoundingClientRect();
     const items=[...header.querySelectorAll<HTMLElement>('a,button')].filter(e=>e.getBoundingClientRect().width>0).map(e=>{
-     const r=e.getBoundingClientRect();return {label:e.getAttribute('aria-label')??e.textContent,rect:r.toJSON(),radius:getComputedStyle(e).borderRadius,
+     const r=e.getBoundingClientRect(),brokenWords:string[]=[],walker=document.createTreeWalker(e,NodeFilter.SHOW_TEXT);
+     while(walker.nextNode()){const text=walker.currentNode;for(const match of (text.textContent??'').matchAll(/\S+/g)){
+      const range=document.createRange();range.setStart(text,match.index!);range.setEnd(text,match.index!+match[0].length);
+      if(range.getClientRects().length>1)brokenWords.push(match[0]);
+     }}
+     return {label:e.getAttribute('aria-label')??e.textContent,rect:r.toJSON(),radius:getComputedStyle(e).borderRadius,brokenWords,
       fits:e.scrollWidth<=e.clientWidth+1,contained:r.left>=bounds.left&&r.right<=bounds.right+1&&r.top>=bounds.top&&r.bottom<=bounds.bottom+1};
     });
     const overlaps=items.flatMap((a,i)=>items.slice(i+1).filter(b=>Math.min(a.rect.right,b.rect.right)-Math.max(a.rect.left,b.rect.left)>1&&Math.min(a.rect.bottom,b.rect.bottom)-Math.max(a.rect.top,b.rect.top)>1).map(b=>[a.label,b.label]));
     return {overflow:document.documentElement.scrollWidth>innerWidth,header:bounds.toJSON(),items,overlaps};
    });
-   const passed=!layout.overflow&&!layout.overlaps.length&&layout.items.every(e=>e.contained&&e.fits&&e.rect.width>=44&&e.rect.height>=44);
+   const passed=!layout.overflow&&!layout.overlaps.length&&layout.items.every(e=>e.contained&&e.fits&&!e.brokenWords.length&&e.rect.width>=44&&e.rect.height>=44);
    const screenshot=`${channel}-${width}x${height}-${index}.png`;await page.screenshot({path:out+'/'+screenshot});
    report.checks.push({channel,width,height,path,passed,screenshot,...layout});
   }

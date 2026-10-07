@@ -49,8 +49,8 @@
  .header :global(.brand) {justify-content:flex-start;min-width:0;max-width:calc(100% - 100px);padding:0;margin:0}
  .header :global(.brand-mark) {width:28px;height:28px}
  .header :global(.brand-word) {font-size:21px}
- .header .actions {position:static;display:flex;flex:1 1 100%;gap:8px;min-width:0}
+ .header .actions {position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex:1 1 100%;gap:8px;min-width:0;align-items:stretch}
  .header .actions :global(.arcade-settings-toggle) {position:absolute;right:14px;top:14px;width:92px;min-width:44px;max-width:92px;font-size:12px!important;padding:6px}
- .header .actions :is(a,button):not(:global(.arcade-settings-toggle)) {flex:1 1 0;justify-content:center;font-size:13px;padding:8px 4px;min-height:44px;min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:center}
+ .header .actions :is(a,button):not(:global(.arcade-settings-toggle)) {justify-content:center;font-size:13px;padding:8px 4px;min-height:44px;min-width:0;white-space:normal;overflow-wrap:normal;text-align:center}
  .header .actions :global(.arcade-settings-toggle)::before{display:none}
 }
