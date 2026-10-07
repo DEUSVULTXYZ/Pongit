@@ -1,10 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ParticipantReconciliation,participantContinuationTime,type ParticipantPose} from '../web/lib/participant-reconciliation';
-import {projectChaosParticipant} from '../web/lib/participant-projection';
+import {ParticipantReconciliation,participantContinuationTime,participantSourceChanged,type ParticipantPose} from '../web/lib/participant-reconciliation';
+import {projectParticipant,projectChaosParticipant} from '../web/lib/participant-projection';
+import {ParticipantInputs} from '../web/lib/participant-inputs';
+import {initial} from '../shared/physics-v2';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
+
+test('an ACK-only timing change reconciles the public slow-network rollback without delaying local release',()=>{
+ const ledger=new ParticipantInputs(),state=initial(zeroHash);
+ const source=()=>({state,clock:0n,confirmedInputRevision:ledger.revision});
+ const beforeLocal=source();ledger.notice({id:1,direction:-1,at:1119},0n,1000);
+ assert.equal(participantSourceChanged(beforeLocal,source()),false,'local intent is not a server correction');
+ const previous=source(),oldControls=ledger.controls(0,0n),view=new ParticipantReconciliation();
+ const picture=(controls:ReturnType<ParticipantInputs['controls']>,at:bigint)=>pose(Number(projectParticipant(state,at,controls).state.left)/1e6);
+ const last=picture(oldControls,440_000n);view.sample(last,undefined,16);
+ ledger.notice({id:1,direction:-1,at:1119,acceptedAt:300_000n},0n,1000);
+ assert(participantSourceChanged(previous,source()),'ACK re-times the same source before a physical update');
+ const current=picture(ledger.controls(0,0n),456_000n),continued=picture(oldControls,456_000n);
+ assert(current.paddles[0]-continued.paddles[0]>30,'recorded slow-network rollback magnitude');
+ const reconciled=view.sample(current,continued,16,{side:0,direction:-1});
+ assert(Math.abs(reconciled.paddles[0]-last.paddles[0])<5,'no 30px ACK-only jump');
+ const beforeRelease=source();ledger.notice({id:2,direction:0,at:1470},0n,1000);
+ assert.equal(participantSourceChanged(beforeRelease,source()),false,'release remains immediate');
+ assert.equal(state.left,288_000_000n,'canonical state is unchanged');
+});
 
 test('neutral local input consumes a normal acknowledgement without a long sliding tail',()=>{
  const view=new ParticipantReconciliation(),canonical=pose(232.2);

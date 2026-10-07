@@ -3,6 +3,11 @@ export type ParticipantPose={
  balls:{id:number;x:number;y:number;continuity:string}[];
 };
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
+type ParticipantSource={state:unknown;chaos?:unknown;clock:bigint;progressionLimit?:bigint;confirmedInputRevision?:number};
+export function participantSourceChanged(previous:ParticipantSource,current:ParticipantSource){
+ return previous.state!==current.state||previous.chaos!==current.chaos||previous.clock!==current.clock
+  ||previous.progressionLimit!==current.progressionLimit||previous.confirmedInputRevision!==current.confirmedInputRevision;
+}
 const settle=(n:number,dt:number,speed:number)=>{
  const change=n*(1-Math.exp(-dt/100));
  return n-clamp(change,-speed*dt/1000,speed*dt/1000);

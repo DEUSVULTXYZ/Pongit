@@ -16,7 +16,7 @@ import {courtSprites} from '../lib/court-sprites';
 import {chaosContactResolution} from '../../shared/chaos-rules';
 import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
 import {projectParticipant,projectChaosParticipant,type TimedControl,type HousePrediction} from '../lib/participant-projection';
-import {ParticipantReconciliation,participantContinuationTime,type ParticipantPose} from '../lib/participant-reconciliation';
+import {ParticipantReconciliation,participantContinuationTime,participantSourceChanged,type ParticipantPose} from '../lib/participant-reconciliation';
 function participantPose(state:State,chaos?:ChaosDecoded['physics']):ParticipantPose{
  const paddles=chaos?eventPaddles(chaos):null;
  return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
@@ -41,6 +41,7 @@ type Props = {
   pendingInputs?: PendingInput[];
   confirmedNonce?: bigint;
   coherentControls?:readonly TimedControl[];
+  confirmedInputRevision?:number;
   housePrediction?:HousePrediction;
   progressionLimit?:bigint;
   debug?: boolean;
@@ -63,7 +64,7 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{},
+  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,confirmedInputRevision,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{},
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
@@ -76,7 +77,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce,coherentControls,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
+    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
   });
   current.current = {
     state,
@@ -88,7 +89,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce,coherentControls,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
+    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
   };
   useEffect(() => {
     const el = canvas.current!;
@@ -158,8 +159,8 @@ export function Court({
         const previous=previousParticipant;
         let before:ParticipantPose|undefined;
         // A local key release is an intentional change, not a server correction.
-        // Reconstruct only when an authoritative sample or clock actually changed.
-        if(previous?.state&&(previous.state!==p.state||previous.chaos!==p.chaos||previous.clock!==p.clock||previous.progressionLimit!==p.progressionLimit)){
+        // An ACK may also retime an input before the next physical snapshot.
+        if(previous?.state&&participantSourceChanged(previous,p)){
           // A fresh sample can reanchor the engine clock tens of milliseconds
           // ahead. Continue the old picture by one real frame, not by that new
           // clock offset, or perfectly predicted bots still jump on receipt.

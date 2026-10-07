@@ -6,6 +6,15 @@ import {initial} from '../shared/physics-v2';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 
+test('only confirmation changes and recovery revise the input correction source',()=>{
+ const ledger=new ParticipantInputs();assert.equal(ledger.revision,0);
+ ledger.notice({id:1,direction:1,at:1000},0n,1000);assert.equal(ledger.revision,0);
+ ledger.notice({id:1,direction:1,at:1000,acceptedAt:80_000n},0n,1000);assert.equal(ledger.revision,1);
+ ledger.notice({id:1,direction:1,at:1000,acceptedAt:80_000n},0n,1000);assert.equal(ledger.revision,1);
+ ledger.controls(0,100_000n);assert.equal(ledger.revision,1,'pruning follows physical source update');
+ ledger.reset();assert.equal(ledger.revision,2);
+});
+
 test('coalesced unsent inputs disappear only when a later command is accepted',()=>{
  const ledger=new ParticipantInputs();
  ledger.notice({id:1,direction:1,at:1100},100_000n,1000);
