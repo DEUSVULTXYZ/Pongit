@@ -1,5 +1,5 @@
 """Restore the uploaded off-VPS final backup into isolated, disposable databases."""
-import datetime, hashlib, json, pathlib, subprocess, time
+import datetime, hashlib, json, pathlib, subprocess, sys, time
 
 root=pathlib.Path('/opt/pongit/releases/reship-all-20261007')
 inputs=root/'restore-inputs-final'
@@ -11,11 +11,18 @@ assert len(manifest)==6
 for name,item in manifest.items():
     p=inputs/name;assert p.parent==inputs and p.stat().st_size==item['bytes']
     assert hashlib.sha256(p.read_bytes()).hexdigest()==item['sha256']
-name='pongit-reship-restore-20261007'
+attempt=int(sys.argv[1]) if len(sys.argv)>1 else 1
+assert 1<=attempt<=3
+if attempt>1:
+    previous='pongit-reship-restore-20261007'+('-'+str(attempt-1) if attempt>2 else '')
+    state=json.loads(subprocess.check_output(['docker','inspect','-f','{{json .State}}',previous]))
+    assert not state['Running'], 'Never overlap restore attempts'
+suffix='-'+str(attempt) if attempt>1 else ''
+name='pongit-reship-restore-20261007'+suffix
 assert subprocess.run(['docker','inspect',name],capture_output=True).returncode!=0
 image=subprocess.check_output(['docker','inspect','-f','{{.Image}}','pongit-postgres-1'],text=True).strip()
 report={'startedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'passed':False,'manifestSha256':hashlib.sha256(original.read_bytes()).hexdigest(),'databases':[]}
-output=root/'evidence/restore-final.json';assert not output.exists()
+output=root/('evidence/restore-final'+suffix+'.json');assert not output.exists()
 def save(): output.write_text(json.dumps(report,indent=2))
 def sql(database,query):
     return subprocess.check_output(['docker','exec',name,'psql','-v','ON_ERROR_STOP=1','-U','pongit_restore','-d',database,'-Atc',query],text=True).strip()
@@ -24,7 +31,9 @@ subprocess.run(['docker','run','-d','--name',name,'--network','none','--memory',
     '-e','POSTGRES_USER=pongit_restore','-e','POSTGRES_HOST_AUTH_METHOD=trust',image],check=True,stdout=subprocess.DEVNULL)
 try:
     for _ in range(60):
-        if subprocess.run(['docker','exec',name,'pg_isready','-U','pongit_restore'],capture_output=True).returncode==0: break
+        # The entrypoint's temporary bootstrap server accepts Unix sockets but
+        # stops before the real server starts. TCP readiness excludes that race.
+        if subprocess.run(['docker','exec',name,'pg_isready','-h','127.0.0.1','-U','pongit_restore'],capture_output=True).returncode==0: break
         time.sleep(1)
     else: raise RuntimeError('Isolated restore database did not start')
     for i,label in enumerate(['operator','human','agents','previous-agents','shared-index']):

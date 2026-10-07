@@ -70,3 +70,44 @@ The web build passed at 04:09:45 UTC, image `sha256:008fa6626ee25c5a3e6bf12ba440
 The final-source backup (manifest `1424cc5153b1e941dc9cd56b0ca4f42a40a2698ad26ff815ca3f026327995619`) and imported backup (manifest `bfaa68e88fe9653681b0c546c2b7a7cc49f792a842f8b07828823416767ea2cd`) each contain six files verified outside the VPS. Final cutover backup and an actual restore from the off-VPS copy remain pending. No new browser-game or fluidity pass is claimed.
 
 Sole active bounded control helper: `pongit-reship-agents-challenges-20261007-1`, started 04:13:15 UTC, original timeout 900 seconds. It only opens friendly admissions after every fresh arena has published; tournaments remain closed until natural Classic and Chaos results exist on the new arenas. Do not duplicate its journal operations.
+
+## Public cutover and real browser evidence — 04:28 UTC
+
+The challenge verifier passed at 04:15:13 with an independently observed committed epoch marker on all eight arenas. The new public web started at 04:15:37 and human admissions at 04:15:41. After natural Classic and Chaos results were published on the new apps, the tournament gate passed at 04:21:16. Tournament 40 is running; its first new fixture, match 840, published 7–2 and the following fixture started. This is a public reship verification, **not** a full performance or 24-hour qualification. The API remains `qualified=false`.
+
+All six public page/API checks returned HTTP 200: home, Agent Arcade, tournaments, docs and both configuration endpoints. The delivered CSP includes the eleven new node origins. Old match 837 still resolves its original contract, epoch and final result. Canonical block 68874339 confirms eleven new Active epoch-1/no-expiry delegations and eleven retired None delegations. Accounts and both session families were deliberately retained. Replacing these account contracts would discard continuity; only the gameplay stack and its new financial/coordination modules were replaced.
+
+Actual Chrome/Edge tests use virtual PRF authenticators with the real Mera SDK and unmocked public APIs, hosting and Monad. No physical-passkey or mobile claim is made. Every match ended naturally; no concession was used:
+
+| Scenario | Natural result | Command p95 | Peer p95 | Pause / resync | Verdict |
+|---|---|---:|---:|---|---|
+| Edge human Classic | 7–6 | 16.25 ms | 14.35 ms | None | PASS |
+| Edge human Chaos | 7–6 | 17.96 ms | 15.18 ms | None | PASS |
+| Chrome NOVA Chaos 838 | 3–7 | 15.39 ms | 9.07 ms | 3.384 s protective pause; one spectator resync | FAIL: two node `-32603` state-access errors; admission 13.246 s |
+| Chrome NOVA Classic 839 | 7–6 | 15.04 ms | 6.83 ms | None | FAIL retained: admission 12.341 s; the existing test also demanded ten idle heartbeats although this run continuously sent inputs |
+| Chrome NOVA Chaos 841, explicit four-second idle | 3–7 | 15.44 ms | 11.68 ms | None | FAIL only admission 13.458 s; 21 successful heartbeats |
+| Chrome NOVA Classic 843, reused session and four-second idle | 1–7 | 15.69 ms | 6.47 ms | None | FAIL only admission 8.204 s; 21 successful heartbeats |
+
+All four bot tests had local response p95 at most 29.1 ms and rendered frames p95 17.1 ms. Player/spectator normal-motion holds stayed below 217 ms. No repeated-block clock stall or rewind was found in their receipts. The earlier 2.45-second node-clock failure remains preserved and is not retroactively passed. One successful reused-session trial is not a population p95.
+
+The first bot run rejected `confirmReady` and one `heartbeat` with `-32603`, “the node could not read or record the state this needs; retry shortly”. This still prevents a zero-error/zero-pause claim. A subsequent node-health sample reports upstream clock RPC 429 responses with a 50/second limit on six nodes, without publication failures or an active clock fence. The timing does **not** establish that those 429s caused the earlier state-access errors. No provider configuration or credentials were changed. Fresh sessions are proven; the health API does not expose a binary version that could prove the provider's release identifier.
+
+The human Chaos spectator bought 0.006 winning shares, then left the origin. Read-only canonical verification confirms a single 0.006 MON payout to that disconnected beneficiary, one payment attempt, and rejected duplicate `claim`/`retryPayout` simulations. The first verification helper failed before financial reads because its client lacked chain multicall configuration; the corrected second attempt passed. Both reports are retained. The spectator's recorded `sessionStorage` error occurred on intentional `about:blank`, not during gameplay.
+
+Structured public addresses, measurements, failures, payment proof and node observations are retained in `reship-all-20261007.json`. No browser driver remains. Runtime services continue normal public play; the scheduled task remains PAUSED. Automatic continuous-delegation guards are still mounted and active. Do not rerun retirement, imports, openings or the already confirmed funding transfers.
+
+## Rollback after migration
+
+The retired apps must not be restarted as a gameplay rollback. If a service regression requires rollback, hold new admissions, let active matches finish, and restore the preceding compatible service image **while retaining** the new contract manifest, exact node/CSP origins, original databases and current nonce journals. Keep scoped DNS for the new hosts. Do not restore old database dumps over post-cutover transactions. Existing old financial contracts and historical routes remain readable and withdrawable.
+
+Before opening any replacement again, reconcile pending command and lifecycle journals with canonical receipts. The expiring manual retirement permission was scoped to the old eleven apps; it is not installed as a production automatic-close exception. Any future incompatible contract migration requires a separate preservation plan.
+
+## Final backup, restoration and replay — 04:34 UTC
+
+`backup-final` contains five database dumps and the complete private runtime/configuration archive: six files, 73,499,494 bytes. The manifest SHA-256 is `f29fb3d94bda923ae1cc7c06d597eca7124af9a90d3d8e9c128ead1fe8c58273`. Every byte was copied and SHA-verified outside the VPS at 04:29:22 UTC, then uploaded back from that Windows copy for an actual restore.
+
+The isolated PostgreSQL restore completed at 04:33:18 UTC. All five dumps restored successfully: operator 66 tables / 192 migration jobs, human 22 tables, agent 11 tables, previous-agent nine tables, shared index 216 tables / 1,354 historical references. Only the five successfully verified scratch databases were dropped. Both temporary restore containers are stopped, with inputs and reports preserved. The first attempt failed before restoring data because `pg_isready` observed the entrypoint's temporary Unix-socket bootstrap server; the second correctly waited for TCP readiness. Neither attempt accessed production databases for writes. This is a recoverable data/configuration backup; public transactions continued during the sequential dumps, so no cross-database atomic snapshot is claimed.
+
+Replay 841 has 263 frames and passed actual public playback in Chrome and Edge at 360 and 1,440 px: advancing playback, exact final score, keyboard focus restoration, no overflow, pixel controls with 44-pixel touch targets and hover contrast 13.97. No transaction or engine call was needed. Screenshots and original reports are retained under `artifacts/qualification/reship-oct7-replay`.
+
+The full contract migration and public cutover are delivered. Remaining performance limitations are explicitly recorded above: one bot trial had node state-access failures and a protective pause; the measured reused-session admission is 8.204 s, above the eight-second target. The unchanged 24-hour and full saturated-capacity qualifications have not passed. Do not equate this successful reship with completion of those separate gates.

@@ -1,0 +1,1052 @@
+{
+  "at": "2026-10-07T04:28:15.6072553Z",
+  "migrationVerified": true,
+  "fullFluidityQualified": false,
+  "automation": "PAUSED",
+  "addresses": {
+    "observedAt": "2026-10-07T06:15:07.466163+02:00",
+    "agent": {
+      "namespace": "reusable-agents-20261007-1",
+      "rulesVersion": 16,
+      "contracts": {
+        "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+        "pool": "0x89906fadc63704b003c5e5ca8e090f4dca757902",
+        "catalog": "0x65818f5e31fc462ef3ded73138ba6eaeaa714fd8",
+        "tournaments": "0x3e115097940d7716e7257e583187788af42d8849",
+        "ratings": "0x1c9777271d0f9b9d841ddb2f061a8f2fd50cd58d",
+        "qualifications": "0x360856951787ae39361f84f3c5be8df0dc65a2ad",
+        "family": "0x42007a8d3d7017d4b43fef9e9beeb2e7cb89fccb",
+        "challenges": "0x7caff8d7ca26e3f0e98f7f79e9737cb30f1035f8",
+        "verifier": "0x97f46b41b2d1583711f50af672a3c07b6e24efa9"
+      },
+      "arenas": [
+        {
+          "app": "0x64bf382cdf1d96f0f19819c23f441beedf0377f5",
+          "runtimeHash": "0x03c712f28d3831f9929533021dd7e4fe42839d501170f0e5cac7a6e7d0d5ff02"
+        },
+        {
+          "app": "0x87559348ddda47f42ce60a60e253f08b979e02bd",
+          "runtimeHash": "0x8dcc7e13ccb94fb04be7f543dd7ccb622aa6581cea6837ecdc91d3508670a7d0"
+        },
+        {
+          "app": "0xaf19ae4284b3a61b58af38174b03a70c0789d1e3",
+          "runtimeHash": "0x1b5c8001b621248fbee0a52d53b09c898a950d5623de01dea97ef7ab8cc5ae57"
+        },
+        {
+          "app": "0x123b20c51473f5732f446b87b658fcf7e389f5ea",
+          "runtimeHash": "0xadd9f7ceb57231ddadb3165df1a82be292f85d45fee1853a1cd91e33230984dc"
+        },
+        {
+          "app": "0x9bfb8b3bbac06632e1ddb5155139215bcd548733",
+          "runtimeHash": "0x3c37b8d5df328671c8f7de2a5cdd20728eeaa67092f07efde0fd2448e290255c"
+        },
+        {
+          "app": "0xb42a4d723083d7b2a56769d0f45bd9629de09e70",
+          "runtimeHash": "0x36829d588c293f8a8ad5a0ddaaf9a6974405c476f9d4354a58e5de9fa3950260"
+        },
+        {
+          "app": "0x81ff3cfd3c7cd728f9258223129fbf4b68fd695a",
+          "runtimeHash": "0x0a7640d8765dd6d84080f3d418b8102f294cae365549399f435f12a9862a87a1"
+        },
+        {
+          "app": "0x35c617eaeb6deb8f22d78606b479522299a6c373",
+          "runtimeHash": "0xd91579bcb5e7c4d67691b1ac5772c73e4c1456c2042ed852e7bf7dc7c8207954"
+        }
+      ]
+    },
+    "human": {
+      "rulesVersion": 14,
+      "lobby": "0xb73b6957c0f213b30ec5e7e47dc307ce153833b9",
+      "ratings": "0xf870a597e7325d5231387afe62a081fef04531cc",
+      "settlement": "0xb5b540281c0c3e796c113ef64d872d40ebfda0fa",
+      "vault": "0xcd33ff15f180f8158656c4492348986a13b7f244",
+      "market": "0x7eb36f5d0e90e25c628c18148aad436a4c50af52",
+      "family": "0x9160FaF0673363998Ffc56fdbBF1486fefFc1E6B",
+      "profiles": "0xc43A936339F5b09F635aba094b3137F80De60f63",
+      "privateData": "0xB6ce09f93B84250c1D487a5ae7232fd1dFecF4b0",
+      "resultVerifier": "0x70d9e4527ca78bbaa1f46639eeefe21904f8efb6",
+      "arenas": [
+        {
+          "app": "0x317fa349ccb00b51d71340456921dfee6313ee74",
+          "index": 0,
+          "runtimeHash": "0xe39af8e7e2e146eade04c158585add79f401eb639a439c2ad69cb8d4040df312"
+        },
+        {
+          "app": "0xb3c2f3bffd5894f38a37458d9c4481b9d22245c4",
+          "index": 1,
+          "runtimeHash": "0x5a0b072b42f0a3611b5d8bf6db5cae71a41022de35e51b328f350bc688686c08"
+        },
+        {
+          "app": "0xe7ecfe32b6e27d6492b4afeac2f38b9d5b94c486",
+          "index": 2,
+          "runtimeHash": "0x46e9515b1ea5bd5ffe8eb65d9d270999b2ac4b299acadac1d003020d0626eb20"
+        }
+      ]
+    }
+  },
+  "canonical": {
+    "at": "2026-10-07T04:22:46.597Z",
+    "block": "68874339",
+    "blockHash": "0x6f189a94a8f06d3931ff4b122e7fa92d2b03a4221961b45f1936f1018d104a12",
+    "passed": true,
+    "newArenas": [
+      {
+        "app": "0x64bf382cdf1d96f0f19819c23f441beedf0377f5",
+        "epoch": "1",
+        "status": 1,
+        "batches": "7"
+      },
+      {
+        "app": "0x87559348ddda47f42ce60a60e253f08b979e02bd",
+        "epoch": "1",
+        "status": 1,
+        "batches": "6"
+      },
+      {
+        "app": "0xaf19ae4284b3a61b58af38174b03a70c0789d1e3",
+        "epoch": "1",
+        "status": 1,
+        "batches": "10"
+      },
+      {
+        "app": "0x123b20c51473f5732f446b87b658fcf7e389f5ea",
+        "epoch": "1",
+        "status": 1,
+        "batches": "1"
+      },
+      {
+        "app": "0x9bfb8b3bbac06632e1ddb5155139215bcd548733",
+        "epoch": "1",
+        "status": 1,
+        "batches": "1"
+      },
+      {
+        "app": "0xb42a4d723083d7b2a56769d0f45bd9629de09e70",
+        "epoch": "1",
+        "status": 1,
+        "batches": "2"
+      },
+      {
+        "app": "0x81ff3cfd3c7cd728f9258223129fbf4b68fd695a",
+        "epoch": "1",
+        "status": 1,
+        "batches": "1"
+      },
+      {
+        "app": "0x35c617eaeb6deb8f22d78606b479522299a6c373",
+        "epoch": "1",
+        "status": 1,
+        "batches": "1"
+      },
+      {
+        "app": "0x317Fa349CCB00b51d71340456921DFeE6313ee74",
+        "epoch": "1",
+        "status": 1,
+        "batches": "11"
+      },
+      {
+        "app": "0xB3c2f3bfFd5894F38a37458D9C4481B9D22245C4",
+        "epoch": "1",
+        "status": 1,
+        "batches": "1"
+      },
+      {
+        "app": "0xE7Ecfe32b6e27D6492B4aFeAC2F38b9d5B94c486",
+        "epoch": "1",
+        "status": 1,
+        "batches": "1"
+      }
+    ],
+    "retiredArenas": [
+      {
+        "app": "0x0a52fc60bf7710b1819bc1cf46375f048e2e7568",
+        "epoch": "7",
+        "status": 0
+      },
+      {
+        "app": "0x34a7e7c09894af4e0a95b5922a824112257df92a",
+        "epoch": "6",
+        "status": 0
+      },
+      {
+        "app": "0xbfc44e0cdb647689c138445e6e4796e71c425235",
+        "epoch": "9",
+        "status": 0
+      },
+      {
+        "app": "0xef9dfabb2af5f9368b6d68c462ffed6e7c94ba08",
+        "epoch": "9",
+        "status": 0
+      },
+      {
+        "app": "0x64e8806edf97162377e2ebcc6aa3c28a5f139395",
+        "epoch": "8",
+        "status": 0
+      },
+      {
+        "app": "0x5572e348c5039d240b9b470c558e188345ada81b",
+        "epoch": "9",
+        "status": 0
+      },
+      {
+        "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+        "epoch": "9",
+        "status": 0
+      },
+      {
+        "app": "0xf3cfddaa4a069a08829f76f7bcef58fd1f9469bb",
+        "epoch": "8",
+        "status": 0
+      },
+      {
+        "app": "0x51a8b38327ed29a7d75e4f7eb254cdb98420debf",
+        "epoch": "4",
+        "status": 0
+      },
+      {
+        "app": "0xbd8f7b674da6942d719234a585ddcf0f8b302ab5",
+        "epoch": "3",
+        "status": 0
+      },
+      {
+        "app": "0xffc12814870d6f453bc7c9ed7a46ad9f927e5771",
+        "epoch": "3",
+        "status": 0
+      }
+    ],
+    "payment": {
+      "matchId": "340282366920938463463374607431768211460",
+      "player": "0x251cb2a87351F4Ad15D5D522fE249115df06d58b",
+      "payoutId": "0x3428a454d2dfb563db7d4030678007375e2bb9919c57b44e8c8f9cd427aa8441",
+      "amount": "6000000000000000",
+      "attempts": 1,
+      "duplicateChecks": [
+        "claim",
+        "retryPayout"
+      ],
+      "beneficiaryBrowserDisconnected": true
+    },
+    "historicalMatch": {
+      "ref": {
+        "chainId": 10143,
+        "app": "0xe54eb61b664ced190b4663e3a3e5c11d7f12b748",
+        "epoch": "9",
+        "id": "837"
+      },
+      "result": {
+        "hash": "0x4f01dc57fdc211272825263797db18f6a8687e129fcaaea0fdba0598d5fda991",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": true
+      }
+    }
+  },
+  "agents": [
+    {
+      "run": "chaos1",
+      "passed": false,
+      "error": "At least one command submission was rejected; inspect action and error metadata",
+      "ref": {
+        "app": "0x64bF382cdF1d96f0f19819c23f441beeDf0377F5",
+        "epoch": "1",
+        "id": "838"
+      },
+      "result": {
+        "hash": "0x4d39f402f5d80139a6a74031b9b3c37aa8068e342e68c0f4c23a8ebc3f44e979",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "reusedSession": false,
+      "admissionMs": 13246,
+      "input": {
+        "samples": 283,
+        "p95Ms": 29.09999990463257
+      },
+      "commandP95Ms": 15.385299999998097,
+      "peer": {
+        "samples": 561,
+        "p95Ms": 9.06640625,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": null,
+      "clock": {
+        "samples": 565,
+        "maxSameBlockMs": 0,
+        "stalls": [],
+        "rewinds": []
+      },
+      "player": {
+        "maxHoldMs": 216.59999999999854,
+        "p95FrameMs": 17.099999999998545,
+        "visibleResyncs": 0,
+        "contractPauseMs": 3383.699999999997
+      },
+      "spectator": {
+        "maxHoldMs": 83.09999999999854,
+        "p95FrameMs": 17.099999999998545,
+        "visibleResyncs": 1,
+        "contractPauseMs": 3383.7000000000007
+      },
+      "rejected": [
+        {
+          "at": "2026-10-07T04:16:11.739Z",
+          "action": "confirmReady",
+          "rpcErrorCode": -32603,
+          "message": "the node could not read or record the state this needs; retry shortly"
+        },
+        {
+          "at": "2026-10-07T04:16:19.085Z",
+          "action": "heartbeat",
+          "rpcErrorCode": -32603,
+          "message": "the node could not read or record the state this needs; retry shortly"
+        }
+      ],
+      "finishedAt": "2026-10-07T04:17:14.261Z"
+    },
+    {
+      "run": "classic1",
+      "passed": false,
+      "error": "The actually painted player court must renew liveness while idle",
+      "ref": {
+        "app": "0x87559348DDDa47f42Ce60a60E253F08B979e02BD",
+        "epoch": "1",
+        "id": "839"
+      },
+      "result": {
+        "hash": "0xc10aaf67b46ef77557bdb958ca8b0d21fb4dd5862f76deecd16d71129c21834d",
+        "winner": "0xCa37b44385CBD1Fbf8082d752ce829FDc8Adfe96",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 6,
+        "elapsedUs": "35072934",
+        "finality": false
+      },
+      "reusedSession": false,
+      "admissionMs": 12341,
+      "input": {
+        "samples": 261,
+        "p95Ms": 28.299999952316284
+      },
+      "commandP95Ms": 15.03729999999996,
+      "peer": {
+        "samples": 520,
+        "p95Ms": 6.83251953125,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 1,
+        "resumes": 0
+      },
+      "clock": {
+        "samples": 523,
+        "maxSameBlockMs": 0,
+        "stalls": [],
+        "rewinds": []
+      },
+      "player": {
+        "maxHoldMs": 66.80000000000291,
+        "p95FrameMs": 17.099999999998545,
+        "visibleResyncs": 0,
+        "contractPauseMs": 0
+      },
+      "spectator": {
+        "maxHoldMs": 66.30000000000291,
+        "p95FrameMs": 17.099999999998545,
+        "visibleResyncs": 0,
+        "contractPauseMs": 0
+      },
+      "rejected": [],
+      "finishedAt": "2026-10-07T04:19:26.043Z"
+    },
+    {
+      "run": "chaos2",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x123B20c51473f5732F446b87B658FcF7E389F5EA",
+        "epoch": "1",
+        "id": "841"
+      },
+      "result": {
+        "hash": "0x92f02563035f792a0763b2347d99b9805d09e49679602675cba5facab718b9f4",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "reusedSession": false,
+      "admissionMs": 13458,
+      "input": {
+        "samples": 242,
+        "p95Ms": 29
+      },
+      "commandP95Ms": 15.442699999999604,
+      "peer": {
+        "samples": 479,
+        "p95Ms": 11.6796875,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 21,
+        "resumes": 0
+      },
+      "clock": {
+        "samples": 502,
+        "maxSameBlockMs": 0,
+        "stalls": [],
+        "rewinds": []
+      },
+      "player": {
+        "maxHoldMs": 216.6999999999971,
+        "p95FrameMs": 17.099999999998545,
+        "visibleResyncs": 0,
+        "contractPauseMs": 0
+      },
+      "spectator": {
+        "maxHoldMs": 66.19999999999891,
+        "p95FrameMs": 17.099999999998545,
+        "visibleResyncs": 0,
+        "contractPauseMs": 0
+      },
+      "rejected": [],
+      "finishedAt": "2026-10-07T04:24:53.419Z"
+    },
+    {
+      "run": "classic2",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0xB42A4d723083D7b2a56769D0f45BD9629DE09E70",
+        "epoch": "1",
+        "id": "843"
+      },
+      "result": {
+        "hash": "0x161ba51d07ee9392259548d14c24edf86ac95da403f62ea5217c5e40da0f2789",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927095",
+        "finality": false
+      },
+      "reusedSession": true,
+      "admissionMs": 8204,
+      "input": {
+        "samples": 230,
+        "p95Ms": 29
+      },
+      "commandP95Ms": 15.685000000004948,
+      "peer": {
+        "samples": 458,
+        "p95Ms": 6.466552734375,
+        "clock": "same Playwright host performance.timeOrigin",
+        "basis": "send to independent observer ControlQueued live event"
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 21,
+        "resumes": 0
+      },
+      "clock": {
+        "samples": 481,
+        "maxSameBlockMs": 0,
+        "stalls": [],
+        "rewinds": []
+      },
+      "player": {
+        "maxHoldMs": 33.29999999999927,
+        "p95FrameMs": 17.099999999998545,
+        "visibleResyncs": 0,
+        "contractPauseMs": 0
+      },
+      "spectator": {
+        "maxHoldMs": 100,
+        "p95FrameMs": 17.099999999998545,
+        "visibleResyncs": 0,
+        "contractPauseMs": 0
+      },
+      "rejected": [],
+      "finishedAt": "2026-10-07T04:26:43.886Z"
+    }
+  ],
+  "human": [
+    {
+      "run": "browser-reship7pvp1",
+      "passed": true,
+      "error": null,
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Contract matchmaking, two consents and automatic hosted admission",
+        "Real three-second countdown on both players and spectator",
+        "Natural match with both players controlling",
+        {
+          "finalScore": "7 : 6"
+        }
+      ],
+      "gates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peer": {
+        "samples": 625,
+        "p95Ms": 14.350341796875,
+        "clock": "same Playwright host",
+        "sendP95Ms": 16.24853515625
+      },
+      "render": [
+        {
+          "maxHoldMs": 49.70000000001164,
+          "p95FrameMs": 17.09999999999127,
+          "visibleResyncs": 0,
+          "contractPauseMs": 0
+        },
+        {
+          "maxHoldMs": 33.89999999999418,
+          "p95FrameMs": 17.09999999999127,
+          "visibleResyncs": 0,
+          "contractPauseMs": 0
+        },
+        {
+          "maxHoldMs": 116.29999999999927,
+          "p95FrameMs": 17.099999999998545,
+          "visibleResyncs": 0,
+          "contractPauseMs": 0
+        }
+      ],
+      "bet": null,
+      "finishedAt": "2026-10-07T04:18:28.344Z"
+    },
+    {
+      "run": "browser-chaos-reship7pvp2",
+      "passed": true,
+      "error": null,
+      "checks": [
+        "Delivered CSP includes every human arena",
+        "Three Mera accounts and root-signed unique profiles saved",
+        "Three members in a real Chaos room, dual consent and automatic spectator",
+        "Real three-second countdown on both players and spectator",
+        "Root-signed test MON bet accepted during a live Chaos rally",
+        {
+          "pageError": "Failed to read the 'sessionStorage' property from 'Window': Access is denied for this document."
+        },
+        "Natural match with both players controlling",
+        {
+          "finalScore": "7 : 6"
+        }
+      ],
+      "gates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "peer": {
+        "samples": 610,
+        "p95Ms": 15.181640625,
+        "clock": "same Playwright host",
+        "sendP95Ms": 17.955810546875
+      },
+      "render": [
+        {
+          "maxHoldMs": 33.60000000000582,
+          "p95FrameMs": 17.10000000000582,
+          "visibleResyncs": 0,
+          "contractPauseMs": 0
+        },
+        {
+          "maxHoldMs": 33.5,
+          "p95FrameMs": 17.099999999998545,
+          "visibleResyncs": 0,
+          "contractPauseMs": 0
+        },
+        {
+          "maxHoldMs": 0,
+          "p95FrameMs": null,
+          "visibleResyncs": 0,
+          "contractPauseMs": 0
+        }
+      ],
+      "bet": {
+        "matchId": "340282366920938463463374607431768211460",
+        "player": "0x251cb2a87351F4Ad15D5D522fE249115df06d58b",
+        "shares": "6000000000000000",
+        "verifiedAt": "2026-10-07T04:20:34.894Z"
+      },
+      "finishedAt": "2026-10-07T04:20:42.945Z"
+    }
+  ],
+  "nodeHealth": {
+    "at": "2026-10-07T04:24:51.8907809Z",
+    "arenas": [
+      {
+        "app": "0x64bf382cdf1d96f0f19819c23f441beedf0377f5",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 7,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 991,
+          "failures": 9,
+          "lastFailureAgoMs": 180560,
+          "upstreamHttp429": false,
+          "upstream50PerSecond": false,
+          "readMs": {
+            "max": 1001,
+            "p50": 22,
+            "p99": 818
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 7
+        }
+      },
+      {
+        "app": "0x87559348ddda47f42ce60a60e253f08b979e02bd",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 6,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 1033,
+          "failures": 11,
+          "lastFailureAgoMs": 186415,
+          "upstreamHttp429": true,
+          "upstream50PerSecond": true,
+          "readMs": {
+            "max": 960,
+            "p50": 22,
+            "p99": 593
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 6
+        }
+      },
+      {
+        "app": "0xaf19ae4284b3a61b58af38174b03a70c0789d1e3",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 16,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 1083,
+          "failures": 9,
+          "lastFailureAgoMs": 186600,
+          "upstreamHttp429": true,
+          "upstream50PerSecond": true,
+          "readMs": {
+            "max": 271,
+            "p50": 11,
+            "p99": 47
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 16
+        }
+      },
+      {
+        "app": "0x123b20c51473f5732f446b87b658fcf7e389f5ea",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 6,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 1111,
+          "failures": 5,
+          "lastFailureAgoMs": 32803,
+          "upstreamHttp429": true,
+          "upstream50PerSecond": true,
+          "readMs": {
+            "max": 133,
+            "p50": 11,
+            "p99": 33
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 6
+        }
+      },
+      {
+        "app": "0x9bfb8b3bbac06632e1ddb5155139215bcd548733",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 5,
+        "sendGated": false,
+        "pendingDiffs": 9,
+        "clock": {
+          "fenced": false,
+          "lagMs": 1161,
+          "failures": 4,
+          "lastFailureAgoMs": 34542,
+          "upstreamHttp429": true,
+          "upstream50PerSecond": true,
+          "readMs": {
+            "max": 593,
+            "p50": 14,
+            "p99": 32
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 5
+        }
+      },
+      {
+        "app": "0xb42a4d723083d7b2a56769d0f45bd9629de09e70",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 2,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 1216,
+          "failures": 0,
+          "lastFailureAgoMs": null,
+          "upstreamHttp429": false,
+          "upstream50PerSecond": false,
+          "readMs": {
+            "max": 338,
+            "p50": 12,
+            "p99": 34
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 2
+        }
+      },
+      {
+        "app": "0x81ff3cfd3c7cd728f9258223129fbf4b68fd695a",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 2,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 270,
+          "failures": 2,
+          "lastFailureAgoMs": 55105,
+          "upstreamHttp429": true,
+          "upstream50PerSecond": true,
+          "readMs": {
+            "max": 264,
+            "p50": 18,
+            "p99": 46
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 2
+        }
+      },
+      {
+        "app": "0x35c617eaeb6deb8f22d78606b479522299a6c373",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 2,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 1319,
+          "failures": 8,
+          "lastFailureAgoMs": 177261,
+          "upstreamHttp429": false,
+          "upstream50PerSecond": false,
+          "readMs": {
+            "max": 1001,
+            "p50": 21,
+            "p99": 703
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 2
+        }
+      },
+      {
+        "app": "0x317fa349ccb00b51d71340456921dfee6313ee74",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 11,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 1354,
+          "failures": 0,
+          "lastFailureAgoMs": null,
+          "upstreamHttp429": false,
+          "upstream50PerSecond": false,
+          "readMs": {
+            "max": 355,
+            "p50": 11,
+            "p99": 39
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 11
+        }
+      },
+      {
+        "app": "0xb3c2f3bffd5894f38a37458d9c4481b9d22245c4",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 1,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 408,
+          "failures": 1,
+          "lastFailureAgoMs": 164023,
+          "upstreamHttp429": false,
+          "upstream50PerSecond": false,
+          "readMs": {
+            "max": 1000,
+            "p50": 21,
+            "p99": 62
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 1
+        }
+      },
+      {
+        "app": "0xe7ecfe32b6e27d6492b4afeac2f38b9d5b94c486",
+        "epoch": 1,
+        "ok": true,
+        "committedBatches": 1,
+        "sendGated": false,
+        "pendingDiffs": 0,
+        "clock": {
+          "fenced": false,
+          "lagMs": 1463,
+          "failures": 0,
+          "lastFailureAgoMs": null,
+          "upstreamHttp429": false,
+          "upstream50PerSecond": false,
+          "readMs": {
+            "max": 140,
+            "p50": 12,
+            "p99": 47
+          }
+        },
+        "commits": {
+          "denied": 0,
+          "err": 0,
+          "ok": 1
+        }
+      }
+    ]
+  },
+  "routes": {
+    "at": "2026-10-07T04:26:30.7750326Z",
+    "rows": [
+      {
+        "path": "/",
+        "status": 200
+      },
+      {
+        "path": "/agents",
+        "status": 200
+      },
+      {
+        "path": "/agents/tournaments",
+        "status": 200
+      },
+      {
+        "path": "/docs",
+        "status": 200
+      },
+      {
+        "path": "/api/agents/config",
+        "status": 200
+      },
+      {
+        "path": "/api/independent/config",
+        "status": 200
+      }
+    ]
+  },
+  "finalBackup": {
+    "verified": true,
+    "files": 6,
+    "bytes": 73499494,
+    "manifestSha256": "f29fb3d94bda923ae1cc7c06d597eca7124af9a90d3d8e9c128ead1fe8c58273",
+    "at": "2026-10-07T04:29:22.7936021Z"
+  },
+  "replay": {
+    "startedAt": "2026-10-07T04:30:03.213Z",
+    "scope": "Actual public replay API and desktop Chrome/Edge with emulated mobile viewport; no engine, passkey or write",
+    "reference": {
+      "chainId": 10143,
+      "app": "0x123b20c51473f5732f446b87b658fcf7e389f5ea",
+      "epoch": "1",
+      "id": "841"
+    },
+    "frameCount": 263,
+    "checks": [
+      {
+        "channel": "chrome",
+        "width": 360,
+        "height": 640,
+        "playback": true,
+        "finalScore": [
+          3,
+          7
+        ],
+        "focus": true,
+        "pixelControls": true,
+        "hoverContrast": 13.971506990486423,
+        "blockedRequests": 0
+      },
+      {
+        "channel": "chrome",
+        "width": 1440,
+        "height": 1000,
+        "playback": true,
+        "finalScore": [
+          3,
+          7
+        ],
+        "focus": true,
+        "pixelControls": true,
+        "hoverContrast": 13.971506990486423,
+        "blockedRequests": 0
+      },
+      {
+        "channel": "msedge",
+        "width": 360,
+        "height": 640,
+        "playback": true,
+        "finalScore": [
+          3,
+          7
+        ],
+        "focus": true,
+        "pixelControls": true,
+        "hoverContrast": 13.971506990486423,
+        "blockedRequests": 0
+      },
+      {
+        "channel": "msedge",
+        "width": 1440,
+        "height": 1000,
+        "playback": true,
+        "finalScore": [
+          3,
+          7
+        ],
+        "focus": true,
+        "pixelControls": true,
+        "hoverContrast": 13.971506990486423,
+        "blockedRequests": 0
+      }
+    ],
+    "passed": true,
+    "finishedAt": "2026-10-07T04:30:28.96Z"
+  },
+  "restore": {
+    "startedAt": "2026-10-07T06:30:46.376698+02:00",
+    "passed": true,
+    "manifestSha256": "f29fb3d94bda923ae1cc7c06d597eca7124af9a90d3d8e9c128ead1fe8c58273",
+    "databases": [
+      {
+        "label": "operator",
+        "tables": 66,
+        "reshipJobs": 192
+      },
+      {
+        "label": "human",
+        "tables": 22
+      },
+      {
+        "label": "agents",
+        "tables": 11
+      },
+      {
+        "label": "previous-agents",
+        "tables": 9
+      },
+      {
+        "label": "shared-index",
+        "tables": 216,
+        "historicalReferences": 1354
+      }
+    ],
+    "finishedAt": "2026-10-07T06:33:18.534105+02:00"
+  }
+}
