@@ -46,3 +46,11 @@ Prepared dispatch/stage/backup helpers do not start new services until the prece
 4. Open/host eight new agent and three new human arenas, verify identities and state-changing publication; keep continuous delegation.
 5. Rebuild runtime/web manifests and exact CSP origins, update history/indexing additively, switch the whole public deployment, then run real natural games and preservation/withdrawal/replay checks.
 6. Publish addresses, commit, backups, measurements and any remaining failures. Do not mark delivery complete on container health alone.
+
+## Update — 03:46 UTC
+
+The sole retirement exited zero at 03:36:43.140 UTC. All eleven delegations are canonically None, with exactly matching sealed result roots. Independent block 68866938 rechecked every epoch/root and found all 837 agent entries and all 14 human entries final.
+
+The existing source archive finalized nine agent entries; a bounded, exclusive source-finality helper finalized the remaining 49 and synchronized five fixtures. It exited zero. The first targeted attempt failed before writes because the rating ledger ID hashes the complete match reference; the second resolves that hash against verified archived references and asserts that only finality changes. Its predecessor launch failed Compose dependency validation before container creation. Both failures remain intact.
+
+The human snapshot is ready: 18 ratings, no pending operation or unsettled bettor, and the prior historical manifest retained. All old command services remain stopped. Source verification and a fresh off-VPS backup precede the actual import. The new apps have not yet been opened or hosted. The scheduled task remains paused.

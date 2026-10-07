@@ -11,9 +11,9 @@ import sys
 import urllib.parse
 
 root = pathlib.Path('/opt/pongit/releases/human-v3-20261005')
-label = sys.argv[1]
-assert label in ['backup-final-source', 'backup-imported', 'backup-final']
-destination = pathlib.Path('/opt/pongit/releases/reship-all-20261007') / label
+backup_label = sys.argv[1]
+assert backup_label in ['backup-final-source', 'backup-imported', 'backup-final']
+destination = pathlib.Path('/opt/pongit/releases/reship-all-20261007') / backup_label
 assert not destination.exists(), 'Preserve previous backup'
 destination.mkdir(mode=0o700)
 ids = subprocess.check_output(['docker', 'ps', '-aq'], text=True).split()
@@ -89,5 +89,5 @@ report = {'at': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'passe
           'path': str(destination), 'databases': [v[3] for v in databases],
           'files': len(manifest), 'bytes': sum(v['bytes'] for v in manifest.values()),
           'manifestSha256': hashlib.sha256((destination / 'manifest.json').read_bytes()).hexdigest()}
-(destination.parent / (label + '-report.json')).write_text(json.dumps(report, indent=2))
+(destination.parent / (backup_label + '-report.json')).write_text(json.dumps(report, indent=2))
 print(json.dumps(report))
