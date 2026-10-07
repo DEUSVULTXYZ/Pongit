@@ -6,6 +6,23 @@ import {initial} from '../shared/physics-v2';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 
+for(const mode of ['classic','chaos'] as const)for(const side of [0,1] as const)test(`${mode}: a new direction cannot rewrite the already displayed rally (side ${side})`,()=>{
+ // Chaos 883: a 427 ms command delay left the monotonic display at 8.54s
+ // while the latest live snapshot was at 8.21s. The next key was previously
+ // dated at 8.334s, moving the paddle 37px before the first new frame.
+ const ledger=new ParticipantInputs(),processed=8_210_000n,displayed=8_540_000n;
+ const source={...initial(zeroHash),t:processed,left:205_200_000n,right:205_200_000n};
+ const chaos={...initialChaosEvents(zeroHash),t:processed,left:205_200_000_000_000n,right:205_200_000_000_000n};
+ const position=(target:bigint)=>{
+  const s=mode==='classic'?projectParticipant(source,target,ledger.controls(side,processed)).state:projectChaosParticipant(chaos,target,ledger.controls(side,processed),'complete').state;
+  return Number(side===0?s.left:s.right)/(mode==='classic'?1e6:1e12);
+ };
+ const before=position(displayed);
+ ledger.notice({id:1,direction:-1,at:1124},processed,1000,{clock:displayed,observedAt:1118});
+ assert.ok(Math.abs(position(displayed)-before)<.001,'a fresh key cannot change an already rendered instant');
+ assert.ok(Math.abs(position(displayed+16_000n)-before)<=2.881,'first frame travels at most one frame of paddle speed');
+});
+
 test('only confirmation changes and recovery revise the input correction source',()=>{
  const ledger=new ParticipantInputs();assert.equal(ledger.revision,0);
  ledger.notice({id:1,direction:1,at:1000},0n,1000);assert.equal(ledger.revision,0);
@@ -13,6 +30,31 @@ test('only confirmation changes and recovery revise the input correction source'
  ledger.notice({id:1,direction:1,at:1000,acceptedAt:80_000n},0n,1000);assert.equal(ledger.revision,1);
  ledger.controls(0,100_000n);assert.equal(ledger.revision,1,'pruning follows physical source update');
  ledger.reset();assert.equal(ledger.revision,2);
+});
+
+test('release and reversal preserve their visual times until authoritative receipt',()=>{
+ const ledger=new ParticipantInputs(),paint={clock:8_540_000n,observedAt:1118};
+ ledger.notice({id:1,direction:1,at:1124},8_210_000n,1000,paint);
+ ledger.notice({id:2,direction:0,at:1130},8_210_000n,1000,paint);
+ ledger.notice({id:3,direction:-1,at:1134},8_210_000n,1000,paint);
+ assert.deepEqual(ledger.controls(0,8_210_000n).map(x=>x.at),[8_546_000n,8_552_000n,8_556_000n]);
+ ledger.notice({id:2,direction:0,at:1130,acceptedAt:8_350_000n},8_320_000n,1140,{clock:8_600_000n,observedAt:1140});
+ assert.deepEqual(ledger.controls(0,8_320_000n),[{side:0,direction:0,at:8_350_000n},{side:0,direction:-1,at:8_556_000n}]);
+ assert.equal(ledger.revision,1,'the engine retiming goes through reconciliation');
+ assert.deepEqual(ledger.controls(0,8_350_000n),[{side:0,direction:-1,at:8_556_000n}]);
+});
+
+test('stale or future paint cannot leak into resumed input and fresh raw time remains authoritative',()=>{
+ for(const observedAt of [899,1001]){
+  const ledger=new ParticipantInputs();
+  ledger.notice({id:1,direction:1,at:1000},100_000n,980,{clock:900_000n,observedAt});
+  assert.equal(ledger.controls(0,0n)[0].at,120_000n);
+ }
+ const ledger=new ParticipantInputs();
+ ledger.notice({id:1,direction:1,at:1000},800_000n,980,{clock:700_000n,observedAt:990});
+ assert.equal(ledger.controls(0,0n)[0].at,820_000n);
+ ledger.reset();ledger.notice({id:1,direction:0,at:1010},0n,1000);
+ assert.equal(ledger.controls(1,0n)[0].at,10_000n,'another match starts on its own clock');
 });
 
 test('coalesced unsent inputs disappear only when a later command is accepted',()=>{

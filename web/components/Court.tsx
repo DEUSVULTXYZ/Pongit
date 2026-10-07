@@ -17,6 +17,7 @@ import {chaosContactResolution} from '../../shared/chaos-rules';
 import {SpectatorPlayout,visibleBall} from '../lib/spectator-playout';
 import {projectParticipant,projectChaosParticipant,type TimedControl,type HousePrediction} from '../lib/participant-projection';
 import {ParticipantReconciliation,participantContinuationTime,participantSourceChanged,type ParticipantPose} from '../lib/participant-reconciliation';
+import type {ParticipantPresentationClock} from '../lib/participant-inputs';
 function participantPose(state:State,chaos?:ChaosDecoded['physics']):ParticipantPose{
  const paddles=chaos?eventPaddles(chaos):null;
  return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
@@ -50,6 +51,7 @@ type Props = {
   externalIntermission?: boolean;
   onNetwork?:(age:number,correction:number)=>void;
   onPlayback?:(frame:CourtPlayback)=>void;
+  onInputClock?:(matchId:string,frame:ParticipantPresentationClock)=>void;
   onStats: (fps: number, extrapolated: boolean, waiting: boolean,cause?:PresentationWait) => void;
 };
 export function Court({
@@ -64,7 +66,7 @@ export function Court({
   matchId,
   controllable,
   pending,
-  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,confirmedInputRevision,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{},
+  onStats, pendingInputs = [], confirmedNonce = 0n, coherentControls,confirmedInputRevision,housePrediction,progressionLimit,debug = false, liveEngine = false, bufferedSpectator = false, externalIntermission = false, onNetwork = ()=>{}, onPlayback = ()=>{}, onInputClock,
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const current = useRef({
@@ -77,7 +79,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
+    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback, onInputClock,
   });
   current.current = {
     state,
@@ -89,7 +91,7 @@ export function Court({
     side,
     replay,
     matchId, controllable, pending,
-    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback,
+    onStats, pendingInputs, confirmedNonce,coherentControls,confirmedInputRevision,housePrediction,progressionLimit, debug, liveEngine, bufferedSpectator, externalIntermission, onNetwork, onPlayback, onInputClock,
   };
   useEffect(() => {
     const el = canvas.current!;
@@ -177,6 +179,9 @@ export function Court({
          ballError:participantPicture.balls.map((b,i)=>({id:b.id,x:b.x-predictedPose.balls[i].x,y:b.y-predictedPose.balls[i].y}))}}));
         [yA,yB]=participantPicture.paddles;
         previousParticipant=p;previousTarget=target;
+        // Ref-only callback: input timing must see the most recent paint without
+        // scheduling React renders or waiting for the slower scoreboard update.
+        p.onInputClock?.(p.matchId,{clock:target,observedAt:Date.now()});
       }else{reconciliation.reset();previousParticipant=undefined;}
       if (p.state && !coherent && !cp && !p.replay && target > p.state.t) {
         // Paddles keep moving along their confirmed directions even while the
