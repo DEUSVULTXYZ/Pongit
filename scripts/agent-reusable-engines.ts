@@ -241,7 +241,11 @@ async function arenaLoop(app:Address,runtimeHash:string){
      const [deadline,clock]=r.countdownClock&&launch?await node.readContract({address:app,abi,functionName:'launchClock',args:[ref.id]}):[0n,0n];
      if(clock>=deadline&&!(rulesVersion===17&&launch&&s.sync?.pause.human))await engine.send(launch?'start':'launch','start',[ref.epoch,ref.id]);
     }
-    await health(mask===3?'countdown':'waiting-for-player',{epoch:String(ref.epoch),id:String(ref.id),launchAt:String(launch)});pause=500;
+    // Readiness is an interactive boundary. The old half-second sleep added
+    // another polling window after the player's confirmed ready receipt.
+    // Keep the same checks and single writer; only observe the waiting phase
+    // promptly. No gameplay tick or start is sent before contractual readiness.
+    await health(mask===3?'countdown':'waiting-for-player',{epoch:String(ref.epoch),id:String(ref.id),launchAt:String(launch)});pause=100;
    }else if(s.phase===2){
     await health('playing',{epoch:String(ref.epoch),id:String(ref.id),node:url,mode:s.state.mode,time:String(s.state.t),score:[s.state.scoreA,s.state.scoreB]});
     if(s.chaos&&!proofTask){const actor=engine,id=ref.id,epoch=ref.epoch;
