@@ -216,7 +216,10 @@ const savePrivate=async()=>writeFile(privatePath,JSON.stringify({storage:await c
 const receiptMeta=(receipt:any)=>{
  let revertName:string|undefined;
  if(typeof receipt?.output==='string')try{revertName=decodeErrorResult({abi:synchronizedAgentArenaAbi,data:receipt.output}).errorName;}catch{}
- return {hash:receipt?.transactionHash,block:receipt?.blockNumber,...(revertName?{revertName}:{})};
+ return {hash:receipt?.transactionHash,block:receipt?.blockNumber,
+  ...(typeof receipt?.gasUsed==='string'?{gasUsed:receipt.gasUsed}:{}),
+  ...(Array.isArray(receipt?.logs)?{logCount:receipt.logs.length}:{}),
+  ...(revertName?{revertName}:{})};
 };
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
 report.sockets=[];report.peerEvents=[];
@@ -276,7 +279,7 @@ const retainCommandTimings=async()=>{
  const values=commandTimings.filter(t=>t.stage==='acknowledged'&&t.command==='input'&&confirmed.has(t.hash?.toLowerCase())).map(t=>t.ms).sort((a,b)=>a-b);
  report.sendLatency={samples:values.length,p95Ms:values[Math.floor((values.length-1)*.95)],basis:'compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration'};
 };
-const requests=new WeakMap<object,{at:string;method:string;path:string}>();
+const requests=new WeakMap<object,{at:string;method:string;path:string;rpcMethod?:string}>();
 const controls=new Map<string,{direction:number;sequence:string}>();
 const actions=new WeakMap<object,string>();
 const inputIntents:{at:number;direction:number}[]=[];
@@ -285,7 +288,8 @@ page.on('request',async r=>{starts.set(r,performance.now());try{
  const url=new URL(r.url()),body=r.postDataJSON();
  // Timing metadata only: never retain payloads, signatures, grants or URLs
  // containing operation/account identifiers.
- if(url.origin===report.origin&&url.pathname.startsWith('/api/agents/'))requests.set(r,{at:new Date().toISOString(),method:r.method(),path:url.pathname.replace(/0x[\da-f]+/gi,':id')});
+ if(url.origin===report.origin&&url.pathname.startsWith('/api/agents/'))requests.set(r,{at:new Date().toISOString(),method:r.method(),path:url.pathname.replace(/0x[\da-f]+/gi,':id'),
+  ...(url.pathname==='/api/agents/chain-read'&&typeof body?.method==='string'?{rpcMethod:body.method}:{})});
  else if(typeof body?.method==='string')requests.set(r,{at:new Date().toISOString(),method:body.method,path:'rpc'});
  }catch{/* GET requests do not have JSON bodies. */}
  try{
@@ -298,7 +302,16 @@ page.on('request',async r=>{starts.set(r,performance.now());try{
 page.on('response',async response=>{try{
  const request=response.request(),metadata=requests.get(request);
  if(metadata){
-  const sample={...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status()};
+  let readShape;
+  if(metadata.path==='/api/agents/chain-read'&&response.status()>=400){
+   const body=request.postDataJSON();
+   readShape={method:body?.method,params:body?.params?.map((p:any)=>p&&typeof p==='object'
+    ?{keys:Object.keys(p),dataChars:p.data?.length,gas:p.gas,value:p.value,hasTo:!!p.to,requireCanonical:p.requireCanonical}
+    :typeof p==='string'&&p.length<24?p:typeof p)};
+  }
+  let rpcErrorCode;
+  if(metadata.rpcMethod){const body=await response.json().catch(()=>null);if(Number.isSafeInteger(body?.error?.code))rpcErrorCode=body.error.code;}
+  const sample={...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status(),...(readShape?{readShape}:{}),...(rpcErrorCode===undefined?{}:{rpcErrorCode})};
   if(!report.playingAt){report.admissionNetwork??=[];report.admissionNetwork.push(sample);}
   else{report.gameNetwork??=[];if(report.gameNetwork.length<10000)report.gameNetwork.push(sample);}
  }

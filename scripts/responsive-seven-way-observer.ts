@@ -1,7 +1,8 @@
 // Read-only public evidence. Browser drivers own their own bounded matches.
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
-import {createPublicClient,http,type Address} from 'viem';
+import {createPublicClient,type Address} from 'viem';
+import {baseReadTransport} from '../shared/base-read-transport';
 import {monadTestnet} from 'viem/chains';
 import {WebSocket} from 'ws';
 import {validateAgentPoolManifest} from '../shared/agent-pool';
@@ -29,7 +30,7 @@ assert(agents.enabled&&agents.tournamentsEnabled&&agents.rulesVersion===17&&agen
 assert.equal(agents.pool.toLowerCase(),proof.pool.toLowerCase());assert.equal(human.rulesVersion,18);
 assert.equal(agents.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());assert.equal(human.hub.toLowerCase(),agents.hub.toLowerCase());
 assert(agents.arenas.every(a=>!human.arenas.some(h=>a.app.toLowerCase()===h.app.toLowerCase())));
-const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:8000})});
+const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:baseReadTransport('https://pongit.xyz/api/agents/chain-read')});
 const reader=new AgentPoolReader(base,agents,human.arenas.map(a=>a.app)),rules=independentRules(human);
 const directory='artifacts/qualification/seven-way-'+run;await mkdir(directory,{recursive:true});
 const output=directory+'/report.json';
