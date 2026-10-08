@@ -16,6 +16,12 @@ export function participantContinuationTime(previous:bigint,elapsedMs:number,cei
  const next=previous+BigInt(Math.floor(clamp(elapsedMs,0,50)*1000));
  return ceiling!==undefined&&next>ceiling?ceiling:next;
 }
+/** An old presence ceiling fences ball/clock prediction, not a fresh local
+ * paddle intention. A confirmed pause, disabled controls or stale perception
+ * still stops this visual motion. No collision or authoritative state changes. */
+export function participantMotionMs(elapsedMs:number,controllable:boolean,stale:boolean,finished:boolean){
+ return controllable&&!stale&&!finished?clamp(elapsedMs,0,50):0;
+}
 
 /** Reconcile the picture, never the authoritative state or input timestamps.
  * On a new receipt compare both reconstructions for the SAME wall frame. Only

@@ -1,12 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ParticipantReconciliation,participantContinuationTime,participantSourceChanged,type ParticipantPose} from '../web/lib/participant-reconciliation';
+import {ParticipantReconciliation,participantContinuationTime,participantMotionMs,participantSourceChanged,type ParticipantPose} from '../web/lib/participant-reconciliation';
 import {projectParticipant,projectChaosParticipant} from '../web/lib/participant-projection';
 import {ParticipantInputs} from '../web/lib/participant-inputs';
 import {initial} from '../shared/physics-v2';
 import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
+
+test('public985 delayed presence observation cannot resist a held local paddle or advance its ball',()=>{
+ const view=new ParticipantReconciliation(),fixed=pose(388.08,288,351.31,207.65);
+ view.sample(fixed,undefined,0,{side:0,direction:-1,speed:300,motionMs:0});
+ let shown=fixed,clock=35_387_099n;
+ for(const dt of [17,16.4,16.6]){
+  clock=participantContinuationTime(clock,dt,35_390_000n);
+  shown=view.sample(fixed,undefined,dt,{side:0,direction:-1,speed:300,motionMs:participantMotionMs(dt,true,false,false)});
+ }
+ assert.equal(clock,35_390_000n,'Presence still fences the predicted ball and clock');
+ assert(Math.abs(shown.paddles[0]-(388.08-300*.05))<1e-9,'The local paddle covers the full50ms');
+ assert.deepEqual(shown.balls,fixed.balls,'No invented collision or ball progress');
+ for(const flags of [[false,false,false],[true,true,false],[true,false,true]]){
+  const before=shown.paddles[0];
+  shown=view.sample(fixed,undefined,16,{side:0,direction:-1,speed:300,motionMs:participantMotionMs(16,...flags as [boolean,boolean,boolean])});
+  assert.equal(shown.paddles[0],before,'Disabled, stale or terminal play stops visual motion');
+ }
+ assert.equal(participantMotionMs(1000,true,false,false),50,'No catch-up leap after a frozen render');
+});
 
 test('public Chaos970 miss cannot visually rebound while its incoming velocity is unchanged',()=>{
  for(const side of [0,1]){
