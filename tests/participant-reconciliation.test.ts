@@ -8,6 +8,36 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('public Chaos1121 confirmed contact resumes without the recorded35-unit jump',()=>{
+ for(const side of [0,1]){
+  const view=new ParticipantReconciliation(),mirror=(x:number)=>side?1024-x:x;
+  const waiting=pose(259.2,288,mirror(40.00019969),270.12460999);
+  waiting.contactBoundary=true;waiting.balls[0].vx=side?299676020:-299676020;
+  view.sample(waiting,undefined,16.7);
+  const outgoing=pose(259.2,288,mirror(79.17870351),300.73328468);
+  outgoing.contactBoundary=false;outgoing.balls[0].vx=side?-329643622:329643622;
+  let picture=view.sample(outgoing,waiting,17.2),last=waiting.balls[0];
+  assert(Math.hypot(picture.balls[0].x-last.x,picture.balls[0].y-last.y)<12,'actual baseline jumps35.4 units');
+  assert(side?picture.balls[0].x<last.x:picture.balls[0].x>last.x,'confirmed outgoing movement resumes');
+  for(let i=1;i<=5;i++){
+   last=picture.balls[0];outgoing.balls[0].x+= (side?-1:1)*329.643622*.0167;outgoing.balls[0].y+=257.534079*.0167;
+   picture=view.sample(outgoing,undefined,16.7);
+   assert(Math.hypot(picture.balls[0].x-last.x,picture.balls[0].y-last.y)<18,'no later catch-up jump');
+  }
+  assert.deepEqual(picture.balls,outgoing.balls,'handoff finishes within80ms; no persistent trailing ball');
+ }
+});
+
+test('contact handoff cannot turn a missing confirmation into a rebound or contaminate another rally',()=>{
+ const view=new ParticipantReconciliation(),waiting=pose(288,288,40.0001,90);waiting.contactBoundary=true;waiting.balls[0].vx=-300;
+ view.sample(waiting,undefined,16);
+ const missed=pose(288,288,30,98);missed.balls[0].vx=-300;
+ const shown=view.sample(missed,waiting,16);
+ assert(shown.balls[0].x<40,'confirmed miss remains outside the paddle');
+ const next=pose();next.balls[0].continuity='next-rally';
+ assert.deepEqual(view.sample(next,missed,16).balls,next.balls,'new rally has no contact correction');
+});
+
 test('public985 delayed presence observation cannot resist a held local paddle or advance its ball',()=>{
  const view=new ParticipantReconciliation(),fixed=pose(388.08,288,351.31,207.65);
  view.sample(fixed,undefined,0,{side:0,direction:-1,speed:300,motionMs:0});

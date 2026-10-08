@@ -1,0 +1,158 @@
+{
+  "run": "r2socket1",
+  "startedAt": "2026-10-08T18:43:57.095Z",
+  "finishedAt": "2026-10-08T18:45:49.694Z",
+  "passed": false,
+  "error": "Local movement latency exceeded 50 ms",
+  "ref": {
+    "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+    "epoch": "1",
+    "id": "1112"
+  },
+  "result": {
+    "hash": "0xbd5b9ea8530cf3e956dab9b0dce3f42b1970d2350b91870a04078db75ded387b",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 5,
+    "scoreB": 7,
+    "elapsedUs": "54210238",
+    "finality": false
+  },
+  "admissionMs": 7288,
+  "input": {
+    "samples": 123,
+    "p95Ms": 132.60000014305115
+  },
+  "sendLatency": {
+    "samples": 437,
+    "p95Ms": 18,
+    "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+  },
+  "peerReception": {
+    "samples": 437,
+    "p95Ms": 15.58740234375,
+    "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+    "basis": "compact send entry to independent observer ControlQueued live event"
+  },
+  "performance": {
+    "admission": true,
+    "localInput": false,
+    "confirmedInput": true,
+    "player": false,
+    "spectator": false
+  },
+  "reportSha256": "b3aa813204098b56a099dfc186fc4a3d5f0d7af02d5a2563633914750c073db0",
+  "resumes": 9,
+  "maxPendingDiffs": 23,
+  "tails": [
+    {
+      "hash": "0xfad3c46c1b198f587e74b0e5bc104badb0f131e3ccf25dcc34d6d10b792847e8",
+      "ms": 486.2603999999992,
+      "sentAt": 1791485066624.6394,
+      "confirmedAt": 1791485067110.9146,
+      "block": "0x2358fe",
+      "gasUsed": "0x1380ff",
+      "observerDelayMs": 487.075927734375
+    },
+    {
+      "hash": "0x7651d10c684662a59c82282d3e353862538ab6c2f252ee994f6ac4ac2d4747f7",
+      "ms": 319.3271999999997,
+      "sentAt": 1791485069159.8367,
+      "confirmedAt": 1791485069479.1702,
+      "block": "0x235a1a",
+      "gasUsed": "0x227774",
+      "observerDelayMs": 315.070556640625
+    },
+    {
+      "hash": "0x711be515379d73d6af3961e51280f099432267db6ab91cc5d56dbef15d1beb9b",
+      "ms": 1101.094100000002,
+      "sentAt": 1791485086254.218,
+      "confirmedAt": 1791485087355.3127,
+      "block": "0x236112",
+      "gasUsed": "0xeeada",
+      "observerDelayMs": 1097.2626953125
+    },
+    {
+      "hash": "0x4797fc6cdca335809b8c5260f7e4092f108c58b33cc40f5484ec547de4f2f8d9",
+      "ms": 687.9876999999979,
+      "sentAt": 1791485091203.5413,
+      "confirmedAt": 1791485091891.5303,
+      "block": "0x2362d7",
+      "gasUsed": "0xee836",
+      "observerDelayMs": 684.249267578125
+    },
+    {
+      "hash": "0x5ae0e82526e84fc2ec64537fae1e99cb5c450539704db778dc4ef25ad6f2fadb",
+      "ms": 609.4993000000031,
+      "sentAt": 1791485093460.8384,
+      "confirmedAt": 1791485094070.3386,
+      "block": "0x2363b0",
+      "gasUsed": "0xe6701",
+      "observerDelayMs": 605.138427734375
+    },
+    {
+      "hash": "0x27559cc5095595e988a109d879657384a513026a89dcb7915dbdd424b7dd7382",
+      "ms": 690.7044999999925,
+      "sentAt": 1791485102759.3445,
+      "confirmedAt": 1791485103450.0496,
+      "block": "0x236758",
+      "gasUsed": "0xe06a2",
+      "observerDelayMs": 687.575927734375
+    },
+    {
+      "hash": "0xbfb0590cdaedbbec8f1bba45a3b4bd1d127a3d35fc45a18a8a92caa13b649522",
+      "ms": 416.73730000000796,
+      "sentAt": 1791485105052.2405,
+      "confirmedAt": 1791485105468.9785,
+      "block": "0x23681f",
+      "gasUsed": "0xdc603",
+      "observerDelayMs": 414.61376953125
+    },
+    {
+      "hash": "0x3c5de71ee13d600463d97019acc6cdb0b405e7f7deb440b882dbe24518f6f27b",
+      "ms": 1124.0047999999952,
+      "sentAt": 1791485107266.0889,
+      "confirmedAt": 1791485108390.0947,
+      "block": "0x236942",
+      "gasUsed": "0x23945d",
+      "observerDelayMs": 1111.572509765625
+    },
+    {
+      "hash": "0xc8b4983db9824d0e260aae802423ebfd00633084e019e23c937d2f1a0c7f1d23",
+      "ms": 1055.7866000000067,
+      "sentAt": 1791485109416.7515,
+      "confirmedAt": 1791485110472.54,
+      "block": "0x236a13",
+      "gasUsed": "0xe2734",
+      "observerDelayMs": 1049.407958984375
+    },
+    {
+      "hash": "0xf346a4ba1ca0982494f2bd96880e94999c77217944d24c424b820ae1decdf9ff",
+      "ms": 1019.1894000000029,
+      "sentAt": 1791485121150.5073,
+      "confirmedAt": 1791485122169.698,
+      "block": "0x236ea1",
+      "gasUsed": "0xe0801",
+      "observerDelayMs": 1016.500244140625
+    },
+    {
+      "hash": "0x696f12b55901835f676a3c8eb1481b74384c0a520856148c52519dca06ff6908",
+      "ms": 841.4628000000084,
+      "sentAt": 1791485123460.6943,
+      "confirmedAt": 1791485124302.159,
+      "block": "0x236f76",
+      "gasUsed": "0xdd418",
+      "observerDelayMs": 834.853271484375
+    },
+    {
+      "hash": "0x6cc48fd5f2a40f713e1e42693ee93bba9d8fbf3f77818979cd733cd6991f8620",
+      "ms": 943.9536999999982,
+      "sentAt": 1791485129850.23,
+      "confirmedAt": 1791485130794.185,
+      "block": "0x237200",
+      "gasUsed": "0xe0860",
+      "observerDelayMs": 938.7119140625
+    }
+  ],
+  "conclusion": "The bounded socket recovery did not solve the latency tails. Both HTTP and WebSocket delayed executions occur, beyond the 500ms protection credit. Node clock gaps are observed, but not yet proven as cause. Further read-only clock/lock/timing diagnostics are running; no concurrent-game trial started."
+}

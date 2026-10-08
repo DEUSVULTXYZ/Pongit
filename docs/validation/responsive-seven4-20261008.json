@@ -1,0 +1,159 @@
+{
+  "at": "2026-10-08T19:17:01.410687+00:00",
+  "scope": "Actual public Chrome and Edge natural matches; original reports remain failed",
+  "coordinator": {
+    "startedAt": "2026-10-08T18:53:07.294554+00:00",
+    "deadline": 1791486787294,
+    "passed": false,
+    "children": [
+      {
+        "run": "r2seven4a0",
+        "pid": 35308
+      },
+      {
+        "run": "r2seven4a1",
+        "pid": 22424
+      },
+      {
+        "run": "r2seven4a2",
+        "pid": 50440
+      },
+      {
+        "run": "r2seven4a3",
+        "pid": 31140
+      },
+      {
+        "run": "r2seven4hc",
+        "pid": 19884
+      },
+      {
+        "run": "r2seven4hx",
+        "pid": 68524
+      },
+      {
+        "run": "observer",
+        "pid": 57264
+      }
+    ],
+    "readyAt": "2026-10-08T18:54:13.246693+00:00",
+    "release": {
+      "go": true,
+      "deadline": 1791486787294,
+      "readyCount": 6,
+      "bot": "GLITCH",
+      "tournament": "48",
+      "ref": {
+        "chainId": 10143,
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1117"
+      },
+      "at": "2026-10-08T18:59:32.865173+00:00"
+    },
+    "exitCodes": {
+      "r2seven4a0": 1,
+      "r2seven4a1": 1,
+      "r2seven4a2": 1,
+      "r2seven4a3": 1,
+      "r2seven4hc": 0,
+      "r2seven4hx": 0,
+      "observer": 1
+    },
+    "error": "One or more real browser gates failed",
+    "finishedAt": "2026-10-08T19:04:00.925740+00:00"
+  },
+  "agents": [
+    {
+      "run": "r2seven4a0",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "1119"
+      },
+      "passed": false,
+      "actualMode": 0,
+      "admissionMs": 15129,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 736,
+        "resumes": 0
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements"
+    },
+    {
+      "run": "r2seven4a1",
+      "ref": {
+        "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+        "epoch": "1",
+        "id": "1121"
+      },
+      "passed": false,
+      "actualMode": 1,
+      "admissionMs": 19911,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": false,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 553,
+        "resumes": 0
+      },
+      "error": "Visible reconciliation discontinuities remain"
+    },
+    {
+      "run": "r2seven4a2",
+      "ref": {
+        "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+        "epoch": "1",
+        "id": "1120"
+      },
+      "passed": false,
+      "actualMode": 0,
+      "admissionMs": 15780,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 593,
+        "resumes": 0
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements"
+    },
+    {
+      "run": "r2seven4a3",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1118"
+      },
+      "passed": false,
+      "actualMode": 1,
+      "admissionMs": 9565,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 352,
+        "resumes": 0
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements"
+    }
+  ]
+}

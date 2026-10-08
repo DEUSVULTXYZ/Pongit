@@ -1177,3 +1177,19 @@ Candidate adds a120ms socket receipt check. Only a matching live receipt resolve
 Sourcea8ba724 published;1138 full TypeScript tests/root typecheck pass. Web23 first attempt stopped at80.0217% usable disk before starting Docker; failed report retained. Thirty exact intermediate backup files386849079bytes were reverified against their Windows copies and all container mounts, then removed from VPS only. Manifests/off-VPS proofs/current22+23 backups/images/volumes preserved; resulting usable disk79.602%.
 
 Web23-resume1 builds the same exact archive in its preserved context. Sole build exec19524; no browser/game driver. Backup-socket-23 sixfiles77661844bytes SHA verified offVPS18:34:41, manifest0940246ef01503fece4b878b350297ec01c56c367288b4bcf0061d577907f376. Helperresponsive-socket23-cutover is prepared, not run. It requires this successful build and idle seven slots and changes only web791 to candidatea8ba724. Do not repeat backup/copy or initial build.
+
+
+## 18:51 UTC - exact-hash recovery deployed; next real trial still fails
+
+Weba8ba724 image36d757c8a8a3806740c68250f16f6fdc839f8c84b64185fca719eac79e5f0b80 deployed18:43:40 after canonical69329433 all7idle. No backend/contract/epoch change. Cutover23PASS, backup23 offVPS verified. r2socket1 Chaos1112 naturally5-7 FAIL: nine protective resumes, localp95132.6ms, holds650/883ms, admission7288ms. Held movement100%, zero release drift, all five visible contacts confirmed; these do not compensate the pauses. Both HTTP and socket tails remain, up to1.14s; pendingDiffs never exceeded23. No producer changes or seven4 started. Sole r2socket2 Chrome1440 driver exec7249 uses read-only clock/lock diagnostics at100ms to isolate these delays; no product change. Preserve all original failures. AutomationPAUSED.
+
+
+## 19:17 UTC - concurrent failures preserved; compatible corrections prepared
+
+r2socket2 Chaos1114 on4e9 passed naturally7-6, zero resumes/resync, admission7524ms, localp9515.1ms, send17ms. This does not erase r2socket1. Seven4 completed19:04: two natural PvP passed; all four friendly agent games had zero resumes but admission9565/15129/15780/19911ms failed8s. Chaos1121 also jumped35.4units at a confirmed paddle contact. Tournament1117 was already terminal at the observer acquisition, so seven-way proof remains failed. All original reports/videos retained. No browser or game driver remains.
+
+Exact1121 trace proves the prior picture waited at x40, then a110ms-later live impact reanchored it beyond the paddle. Candidate preserves confirmed impact geometry and blends only the outgoing transition over80ms; no predicted rebound, missed-plane change or indefinite trailing correction. Two regression cases plus24 existing projection/reconciliation cases pass.
+
+Sponsor diagnostics during four simultaneous admissions show nonce/estimate/send/receipt reads taking0.45-1.3s. Foreground hydration had shared the same FIFO as transaction preparation. Candidate separates that foreground queue while preserving original upstream pacing and fairness for ordinary/history reads. No extra signer, nonce allocator, gas or permission changes.21 scheduler/metrics tests pass; full1142TS/rootTS pass. Not deployed yet.
+
+Readonly node probe shows077 occasional275ms tails versus55ms max on4e9, but no errors; it does not establish an Interlude blocker.077 Classic1120 had zero pauses. Retained batches183..193 contain at most211transactions/46394rawbytes; pendingDiffs max23. No node quarantine, redeployment or closure. AutomationPAUSED; final24h not started.

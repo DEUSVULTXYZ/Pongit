@@ -330,7 +330,10 @@ page.on('response',async response=>{try{
   }
   let rpcErrorCode;
   if(metadata.rpcMethod){const body=await response.json().catch(()=>null);if(Number.isSafeInteger(body?.error?.code))rpcErrorCode=body.error.code;}
-  const sample={...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status(),...(readShape?{readShape}:{}),...(rpcErrorCode===undefined?{}:{rpcErrorCode})};
+  const timing=request.timing();
+  const sample={...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status(),
+   timing:{startTime:timing.startTime,requestStart:timing.requestStart,responseStart:timing.responseStart},
+   ...(readShape?{readShape}:{}),...(rpcErrorCode===undefined?{}:{rpcErrorCode})};
   if(!report.playingAt){report.admissionNetwork??=[];report.admissionNetwork.push(sample);}
   else{report.gameNetwork??=[];if(report.gameNetwork.length<10000)report.gameNetwork.push(sample);}
  }
@@ -476,8 +479,11 @@ try{
   const started=performance.timeOrigin+performance.now(),response=await page.request.get(nodeOrigin+'/health',{timeout:3000});
   const h=await response.json();assert.equal(h.app.toLowerCase(),report.ref.app.toLowerCase());assert.equal(String(h.epoch),report.ref.epoch);
   report.health.push({at:started,receivedAt:performance.timeOrigin+performance.now(),block:h.ephemeralBlock,timestamp:h.execTimestamp,
-   batches:h.committedBatches,pendingDiffs:h.pendingDiffs,ok:h.ok,sendGated:h.sendGated});
- })().catch(()=>{report.healthReadErrors=(report.healthReadErrors??0)+1;}).finally(()=>healthBusy=false);},1000);
+   batches:h.committedBatches,pendingDiffs:h.pendingDiffs,ok:h.ok,sendGated:h.sendGated,
+   clock:h.clock?{ageMs:h.clock.ageMs,lagMs:h.clock.lagMs,fenced:h.clock.fenced,failures:h.clock.failures,
+    refreshes:h.clock.refreshes,readMs:h.clock.readMs}:undefined,
+   lock:h.lock?{parked:h.lock.parked,calls:h.lock.calls,sends:h.lock.sends,holds:h.lock.holds}:undefined});
+ })().catch(()=>{report.healthReadErrors=(report.healthReadErrors??0)+1;}).finally(()=>healthBusy=false);},process.env.PONG_CATALOGUE_NODE_DIAGNOSTICS==='read-only'?100:1000);
 
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
   if(spectator)await spectator.goto(page.url(),{waitUntil:'domcontentloaded'});else await prepareSpectator(page.url());

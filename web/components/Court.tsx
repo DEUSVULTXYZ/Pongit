@@ -180,9 +180,12 @@ export function Court({
           if(previous.chaos){
             const old=projectChaosParticipant(previous.chaos.physics,oldTarget,previous.coherentControls!,chaosContactResolution(previous.rulesVersion??10),previous.housePrediction,previous.rulesVersion===17||previous.rulesVersion===18);
             before=participantPose(chaosLegacy(old.state,previous.state.finished),old.state);
-          }else before=participantPose(projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction,previous.rulesVersion===17||previous.rulesVersion===18).state);
+            before.contactBoundary=old.contactBoundary;
+          }else{const old=projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction,previous.rulesVersion===17||previous.rulesVersion===18);
+            before={...participantPose(old.state),contactBoundary:old.contactBoundary};}
         }
         const predictedPose=participantPose(s,cp?.state);
+        predictedPose.contactBoundary=contactBoundary;
         const motion=cp?eventPaddles(cp.state):null;
         const localSpeed=motion?Number(p.side===0?motion.speedA:motion.speedB)/1e6:Number(rulesPaddleSpeed(p.rulesVersion??0))/1e6;
         const responsive=p.rulesVersion===17||p.rulesVersion===18;

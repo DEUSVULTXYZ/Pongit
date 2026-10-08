@@ -249,3 +249,35 @@ test('an upstream throttle holds every queued caller and adapts only that schedu
  t.mock.timers.tick(60000);a.success();assert.equal(a.spacing(),55);a.success();assert.equal(a.spacing(),55);
  t.mock.timers.tick(60000);a.success();assert.equal(a.spacing(),50);
 });
+
+
+test('seven simultaneous entries cannot put hydration ahead of transaction preparation and receipts',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const s=rpcScheduler(60),seen:{name:string;at:number}[]=[];
+ const take=(name:string,history=false,control=false,foreground=false)=>s.acquire(history,control,foreground).then(()=>seen.push({name,at:Date.now()}));
+ await take('initial');
+ const jobs=[...Array.from({length:20},(_,i)=>take('hydration'+i,false,false,true)),
+  ...Array.from({length:10},(_,i)=>take('archive'+i,true)),...Array.from({length:10},(_,i)=>take('ordinary'+i)),
+  ...Array.from({length:16},(_,i)=>take('transaction'+i,false,true))];
+ assert(s.waitMs(false,true)<s.waitMs(false,false,true),'Nonce preparation overtakes the foreground backlog');
+ for(let i=0;i<jobs.length;i++){t.mock.timers.tick(60);await Promise.resolve();}
+ await Promise.all(jobs);
+ assert.deepEqual(seen.slice(1,4).map(v=>v.name),['transaction0','transaction1','transaction2']);
+ assert(seen.findIndex(v=>v.name==='archive0')<=5,'History retains its one-in-five budget');
+ assert(seen.findIndex(v=>v.name==='ordinary0')<=6,'Ordinary reads still progress');
+ assert(seen.findIndex(v=>v.name==='hydration0')<=7,'Foreground reads cannot starve');
+ assert(seen.every((v,i)=>!i||v.at-seen[i-1].at>=60),'No extra upstream throughput');
+ assert.deepEqual(s.pending(),{interactive:0,history:0});
+});
+
+test('foreground admission reads share the provider throttle and exact wait estimate',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const s=rpcScheduler(60);await s.acquire(false);s.throttle(1000);
+ const times:number[]=[];
+ const f=s.acquire(false,false,true).then(()=>times.push(Date.now()));
+ assert.equal(s.waitMs(false,true),1000,'Control can overtake foreground but not the cooldown');
+ const c=s.acquire(false,true).then(()=>times.push(Date.now()));
+ t.mock.timers.tick(999);await Promise.resolve();assert.deepEqual(times,[]);
+ t.mock.timers.tick(1);await Promise.resolve();assert.deepEqual(times,[2000]);
+ t.mock.timers.tick(70);await Promise.all([f,c]);assert.deepEqual(times,[2000,2070]);
+});

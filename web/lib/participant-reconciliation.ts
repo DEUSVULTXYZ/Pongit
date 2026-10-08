@@ -1,5 +1,6 @@
 export type ParticipantPose={
  paddles:[number,number]; halves:[number,number];
+ contactBoundary?:boolean;
  balls:{id:number;x:number;y:number;continuity:string;vx?:number}[];
 };
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
@@ -32,7 +33,7 @@ export function participantMotionMs(elapsedMs:number,controllable:boolean,stale:
  */
 export class ParticipantReconciliation {
  private paddles:[number,number]=[0,0];
- private balls=new Map<number,{x:number;y:number;continuity:string}>();
+ private balls=new Map<number,{x:number;y:number;continuity:string;handoff?:number}>();
  private ballPictures=new Map<number,ParticipantPose['balls'][number]>();
  private localDirection=0;
  private stopCorrection=2;
@@ -82,7 +83,18 @@ export class ParticipantReconciliation {
    if(!error||error.continuity!==ball.continuity)error={x:0,y:0,continuity:ball.continuity};
    const before=previous?.balls.find(b=>b.id===ball.id&&b.continuity===ball.continuity);
    if(before){error.x+=before.x-ball.x;error.y+=before.y-ball.y;}
-   error.x=settle(error.x,dt,120);error.y=settle(error.y,dt,120);
+   // Public Chaos1121: the old reconstruction waited at x40. When the live
+   // impact arrived110ms later, fading its correction at the paddle plane
+   // jumped35 units in one frame. Complete only this confirmed outgoing
+   // transition over80ms. Never activate for a predicted bounce or a miss.
+   if(previous?.contactBoundary&&!current.contactBoundary&&before&&ball.vx!==undefined&&before.vx!==undefined
+     &&((Math.abs(before.x-40)<.002&&before.vx<0&&ball.vx>0&&ball.x>40&&ball.x<168)
+       ||(Math.abs(before.x-984)<.002&&before.vx>0&&ball.vx<0&&ball.x<984&&ball.x>856)))error.handoff=80;
+   const handoff=error.handoff??0;
+   if(handoff>0){
+    const remaining=Math.max(0,handoff-dt);
+    error.x*=remaining/handoff;error.y*=remaining/handoff;error.handoff=remaining;
+   }else{error.x=settle(error.x,dt,120);error.y=settle(error.y,dt,120);}
    this.balls.set(ball.id,error);
    // Preserve paddle-plane contacts (x=40/984), including real misses. Blend
    // continuously back to the ball's own correction away from the paddles.
@@ -90,10 +102,11 @@ export class ParticipantReconciliation {
    // not a contact. Borrowing a newly corrected paddle's error here teleported
    // the stationary ball vertically (observed PvP 26480ms: +99px, then -54px).
    const left=ball.x<40?0:clamp((168-ball.x)/128,0,1),right=ball.x>984?0:clamp((ball.x-856)/128,0,1),free=1-left-right;
-   const x=ball.x+error.x*free;
+   const blend=handoff>0&&!current.contactBoundary&&ball.x>40&&ball.x<984?1:free;
+   const x=ball.x+error.x*blend;
    // The contact position belongs to live physics. Never borrow a paddle's
    // error to manufacture a visible hit, or shift a real miss into a hit.
-   const picture={...ball,x:ball.x<40?Math.min(40,x):ball.x>984?Math.max(984,x):clamp(x,40,984),y:clamp(ball.y+error.y*free,6,570)};
+   const picture={...ball,x:ball.x<40?Math.min(40,x):ball.x>984?Math.max(984,x):clamp(x,40,984),y:clamp(ball.y+error.y*blend,6,570)};
    const last=this.ballPictures.get(ball.id);
    // Match970: decaying clock correction reversed a miss by0.44 units after
    // it had passed x40, although live velocity still pointed toward the goal.

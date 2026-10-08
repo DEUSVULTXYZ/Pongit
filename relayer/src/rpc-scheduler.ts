@@ -126,39 +126,45 @@ export function pinnedRpcRequest(method:string,params:readonly unknown[]):boolea
 
 /** One upstream rate budget; gameplay reads take priority over historical scans. */
 export function rpcScheduler(spacingMs:number) {
-  const queues={live:[] as Array<()=>void>,control:[] as Array<()=>void>,history:[] as Array<()=>void>};
-  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,controlRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
+  const queues={live:[] as Array<()=>void>,control:[] as Array<()=>void>,foreground:[] as Array<()=>void>,history:[] as Array<()=>void>};
+  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,controlRun=0,foregroundRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
   // One ordinary read after four control checks; one historical read after
   // four total interactive reads. History does not reset the ordinary quota.
-  const choose=(l:number,c:number,h:number,run:number,urgentRun:number):keyof typeof queues=>
-   h>0&&(!(l+c)||run>=4)?'history':c>0&&(!l||urgentRun<4)?'control':'live';
+  // A foreground hint must not put every catalogue/match hydration in front
+  // of an already accepted transaction's nonce, fees and receipt. Preserve
+  // the existing upstream budget and both background fairness guarantees.
+  const choose=(l:number,c:number,f:number,h:number,run:number,urgentRun:number,controlBurst:number):keyof typeof queues=>
+   h>0&&(!(l+c+f)||run>=4)?'history':l>0&&(!(c+f)||urgentRun>=4)?'live':
+    c>0&&(!f||controlBurst<4)?'control':'foreground';
   function tick(){
     timer=undefined;
-    if(!queues.live.length&&!queues.control.length&&!queues.history.length)return;
+    if(!queues.live.length&&!queues.control.length&&!queues.foreground.length&&!queues.history.length)return;
     const wait=Math.max(0,next-Date.now());
     if(wait){timer=setTimeout(tick,wait);return;}
-    const kind=choose(queues.live.length,queues.control.length,queues.history.length,liveRun,controlRun);
+    const kind=choose(queues.live.length,queues.control.length,queues.foreground.length,queues.history.length,liveRun,controlRun,foregroundRun);
     const release=queues[kind].shift()!;
     liveRun=kind==='history'?0:liveRun+1;
-    if(kind!=='history')controlRun=kind==='control'?controlRun+1:0;
+    if(kind!=='history')controlRun=kind==='live'?0:controlRun+1;
+    if(kind==='control'||kind==='foreground')foregroundRun=kind==='control'?foregroundRun+1:0;
     next=Date.now()+effectiveSpacing;release();
-    if(queues.live.length||queues.control.length||queues.history.length)timer=setTimeout(tick,effectiveSpacing);
+    if(queues.live.length||queues.control.length||queues.foreground.length||queues.history.length)timer=setTimeout(tick,effectiveSpacing);
   }
   return {
-    acquire(historical:boolean,control=false){return new Promise<void>(resolve=>{queues[historical?'history':control?'control':'live'].push(resolve);if(!timer)tick();});},
-    pending(){return {interactive:queues.live.length+queues.control.length,history:queues.history.length};},
-    waitMs(historical:boolean,control=false){
+    acquire(historical:boolean,control=false,foreground=false){return new Promise<void>(resolve=>{queues[historical?'history':control?'control':foreground?'foreground':'live'].push(resolve);if(!timer)tick();});},
+    pending(){return {interactive:queues.live.length+queues.control.length+queues.foreground.length,history:queues.history.length};},
+    waitMs(historical:boolean,control=false,foreground=false){
       // Estimate this caller's dispatch time, including the existing cooldown.
       // An interactive read overtakes archive work; counting the entire history
       // queue made the gateway avoid an upstream that could serve it next.
-      const target=historical?'history':control?'control':'live';
-      const sizes={live:queues.live.length,control:queues.control.length,history:queues.history.length};
-      let run=liveRun,urgentRun=controlRun,before=0;
+      const target=historical?'history':control?'control':foreground?'foreground':'live';
+      const sizes={live:queues.live.length,control:queues.control.length,foreground:queues.foreground.length,history:queues.history.length};
+      let run=liveRun,urgentRun=controlRun,controlBurst=foregroundRun,before=0;
       for(;;){
-        const kind=choose(sizes.live+Number(target==='live'),sizes.control+Number(target==='control'),sizes.history+Number(target==='history'),run,urgentRun);
+        const kind=choose(sizes.live+Number(target==='live'),sizes.control+Number(target==='control'),sizes.foreground+Number(target==='foreground'),sizes.history+Number(target==='history'),run,urgentRun,controlBurst);
         if(kind===target&&sizes[kind]===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;
         sizes[kind]--;run=kind==='history'?0:run+1;
-        if(kind!=='history')urgentRun=kind==='control'?urgentRun+1:0;
+        if(kind!=='history')urgentRun=kind==='live'?0:urgentRun+1;
+        if(kind==='control'||kind==='foreground')controlBurst=kind==='control'?controlBurst+1:0;
         before++;
       }
     },

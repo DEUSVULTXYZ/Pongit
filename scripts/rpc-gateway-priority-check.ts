@@ -93,6 +93,22 @@ try{
  assert(urgent>=foregroundPrior&&urgent<foregroundPrior+4,'A player read waited behind the catalogue');
  assert.equal(sent.filter(v=>String((v.params[0] as any)?.data).startsWith('0xaa')).length,12,'Catalogue reads starved');
  report.checks.push('Foreground player read overtakes background metadata through the real HTTP gateway','All background reads still complete');
+ const hydration=Array.from({length:20},(_,i)=>rpc('eth_call',[{to:'0x01',data:`0xbb${i.toString(16).padStart(2,'0')}`},'latest'],true));
+ const queueDeadline=Date.now()+5000;
+ for(;;){
+  const health=await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any;
+  if(health.queued.interactive>=15)break;
+  assert(Date.now()<queueDeadline,'Foreground hydration did not queue');await new Promise(r=>setTimeout(r,10));
+ }
+ const controlPrior=sent.length,receiptHash=`0x${'ab'.repeat(32)}`;
+ await Promise.all([...hydration,rpc('eth_getTransactionReceipt',[receiptHash]),rpc('eth_maxPriorityFeePerGas',[])]);
+ for(const method of ['eth_getTransactionReceipt','eth_maxPriorityFeePerGas']){
+  const index=sent.findIndex((v,i)=>i>=controlPrior&&v.method===method);
+  assert(index>=controlPrior&&index<controlPrior+4,`${method} waited behind foreground hydration`);
+ }
+ assert.equal(sent.filter(v=>String((v.params[0] as any)?.data).startsWith('0xbb')).length,20);
+ report.checks.push('Accepted transaction receipts and fees overtake foreground hydration without extra throughput');
+ report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}
 finally{
