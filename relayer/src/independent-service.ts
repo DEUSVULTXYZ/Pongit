@@ -14,6 +14,7 @@ import {abi as privateAbi} from '../../shared/abi-independent-PrivateDataStore';
 import {abi as vaultAbi} from '../../shared/abi-independent-RoomsVault';
 import {independentRules} from '../../shared/independent-rules';
 import {independentEventsLoop} from './independent-events-loop';
+import {agentTickPause} from '../../shared/agent-publication-health';
 import {roomsLifecycleHubAbi as hubAbi} from '../../shared/abi-rooms-lifecycle';
 import {abi as interludeHubReadAbi} from '../../shared/abi-independent-IInterludeHub';
 import {readHubDelegation} from '../../shared/rooms-hub';
@@ -128,6 +129,7 @@ export async function independentService(o:Options){
  const engines=m.arenas.map(a=>independentEngine(db,base,a.app,a.node!,pressure.privateKey,history.record,{rulesVersion:m.rulesVersion,archive:reusableResults?.archive.store}));
  const eventLoops=engines.map(e=>rules.events?independentEventsLoop({...e,
   epochCommands:isReusableHumanRules(rules.version),
+  ...(rules.version===18?{tickDeadlineMs:50 as const}:{}),
   launchAt:async id=>BigInt(await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchAt',args:[id]} as any) as bigint),
   ...(m.countdownClock?{launchClock:async(id:bigint)=>await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'launchClock',args:[id]} as any) as readonly [bigint,bigint]}:{}),
   ...(rules.version===13||isReusableHumanRules(rules.version)?{readiness:async(id:bigint)=>await e.node.readContract({address:e.app,abi:arenaAbi,functionName:'readiness',args:[id]} as any) as readonly [number,bigint]}:{}),
@@ -139,7 +141,7 @@ export async function independentService(o:Options){
  const jobs=new Set<string>(),retry=new Map<string,number>(),reported=new Map<string,{detail:string;at:number}>();let stopped=false,publicationOffset=0,eagerArenasUntil=0;
  const run=(name:string,fn:()=>Promise<void>,interval=2000)=>{
   if(stopped||jobs.has(name)||(retry.get(name)??0)>Date.now())return;
-  jobs.add(name);void fn().then(()=>retry.set(name,Date.now()+interval)).catch(e=>{
+  jobs.add(name);return fn().then(()=>{retry.set(name,Date.now()+interval);}).catch(e=>{
    retry.set(name,Date.now()+Math.max(engineReadRetryMs(e),3000));
    const detail=String(e?.shortMessage||e?.message||'Unavailable').split(/\n(?:Request|Details|URL)/)[0].replace(/0x[\da-f]{130,}/gi,'[signed data omitted]').slice(0,400);
    // A cooldown is the retry itself, not news: it would alternate with the real
@@ -439,9 +441,25 @@ export async function independentService(o:Options){
    o.send(res,{error:rejected?(e as Error).message:'The action could not be accepted. Refresh its state before retrying.',code:rejected?'CONTRACT_REJECTED':'INDEPENDENT_ACTION_UNAVAILABLE',...(rejected?{accepted:false}:{}),source:'pongit',retryAt:Date.now()+3000,requestId},rejected?409:503);return true;
   }
  }
+ // Responsive physics has its own clock. Slow publication, history and arena
+ // observations neither supply its cadence nor queue another tick behind it.
+ const physicsTimers=new Set<ReturnType<typeof setTimeout>>();
+ const schedulePhysics=(i:number,ms=0)=>{
+  const timer=setTimeout(async()=>{
+   physicsTimers.delete(timer);if(stopped)return;
+   await run(`progress:${i}`,()=>progressArena(i),0);
+   if(stopped)return;
+   const h=health[i],e=engines[i],id=e.reference().id;
+   const active=h.online&&h.stage==='playing'&&id>0n;
+   const blocked=e.busy()||!!eventLoops[i]?.blocksWrite()||(retry.get(`progress:${i}`)??0)>Date.now()
+    ||!!e.publicationFailure()&&Date.now()-e.publicationFailure()<30000;
+   schedulePhysics(i,active?agentTickPause(50,e.feed.progressAge(id),blocked):250);
+  },ms);timer.unref();physicsTimers.add(timer);
+ };
+ if(rules.version===18)engines.forEach((_,i)=>schedulePhysics(i));
  const timer=setInterval(()=>{
   const eager=Date.now()<eagerArenasUntil;
-  for(let i=0;i<engines.length;i++){run(`arena:${i}`,()=>observeArena(i),eager?1500:health[i].stage==='available'?10000:3000);run(`progress:${i}`,()=>progressArena(i),rules.events?250:2000);}
+  for(let i=0;i<engines.length;i++){run(`arena:${i}`,()=>observeArena(i),eager?1500:health[i].stage==='available'?10000:3000);if(rules.version!==18)run(`progress:${i}`,()=>progressArena(i),rules.events?250:2000);}
   for(let i=0;i<engines.length;i++)if(health[i].online&&['playing','publication-paused'].includes(health[i].stage)){
    run(`rally:${i}`,async()=>{health[i].rally=await finance.rallyStatus(engines[i].app,await engines[i].read());},3000);
    if(health[i].stage==='playing'){
@@ -487,7 +505,7 @@ export async function independentService(o:Options){
   },10000);
   run('ranking',async()=>{if(await r.ratings('buildGeneration'))await queue(m.ratings,ratingAbi,'rebuild',[32n],0n,2);},10000);
  },rules.events?250:2000);timer.unref();
- const stop=()=>{stopped=true;clearInterval(timer);writer.stop();playerWriter?.stop();history.stop();historical.forEach(v=>v.history.stop());diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());};
+ const stop=()=>{stopped=true;clearInterval(timer);for(const timer of physicsTimers)clearTimeout(timer);physicsTimers.clear();writer.stop();playerWriter?.stop();history.stop();historical.forEach(v=>v.history.stop());diagnostics.stop();eventLoops.forEach(e=>e?.stop());engines.forEach(e=>e.stop());};
  return {route,manifest:m,engines,writer,queue,status:()=>({online:health.some(h=>h.online||h.stage==='available'),admission:process.env.PONG_INDEPENDENT_ADMISSION==='true',arenas:health,sponsor:playerSponsor.status(),maintenance:writer.status()}),stop,
   close:async()=>{stop();await Promise.all([writer.close(),playerWriter?.close()]);await playerDb?.end();}};
 }

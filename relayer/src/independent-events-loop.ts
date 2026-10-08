@@ -11,6 +11,8 @@ type Actor={
  launchClock?(id:bigint):Promise<readonly [bigint,bigint]>;
  readiness?(id:bigint):Promise<readonly [number,bigint]>;
  epochCommands?:boolean;
+ /** Only responsive rules opt into the live driver; legacy fallback stays 1500ms. */
+ tickDeadlineMs?:50;
 };
 /** A proof uses the existing arena writer. Fetch latency never stops ticks;
  * only a ready proof reserves its next turn, after rechecking the full binding. */
@@ -62,7 +64,7 @@ export function independentEventsLoop(actor:Actor,beacon=new ChaosBeaconPump(),l
     if(!deadline||clock<deadline)return;
    }
    if(same(ref)&&!actor.busy()&&(!launch||block.timestamp>=launch))await send(ref,'start',[]);
-  }else if(state.phase===2&&actor.progressAge(ref.id)>=1500&&!lane.blocksTick()&&!actor.busy())await send(ref,'tick',[ref.id]);
+  }else if(state.phase===2&&actor.progressAge(ref.id)>=(actor.tickDeadlineMs??1500)&&!lane.blocksTick()&&!actor.busy())await send(ref,'tick',[ref.id]);
  }
  return {progress,supply,blocksWrite:()=>lane.blocksTick(),stop:()=>{stopped=true;}};
 }

@@ -23,6 +23,15 @@ test('countdown arms once and can start only after the contract engine deadline'
  f.age(900);await loop.progress();assert.equal(f.sent.length,2);
  f.age(1500);await loop.progress();assert.equal(f.sent[2].action,'tick');loop.stop();
 });
+
+test('responsive rules tick at 50ms and skip work already performed by a player command',async()=>{
+ const f=fixture();f.setState({phase:2});const loop=independentEventsLoop({...f.actor,epochCommands:true,tickDeadlineMs:50});
+ f.age(49);await loop.progress();assert.equal(f.sent.length,0);
+ f.age(50);await loop.progress();assert.deepEqual(f.sent,[{action:'tick',args:[3n,20n]}]);
+ f.age(0);await loop.progress();assert.equal(f.sent.length,1,'a received move already advanced the game');
+ f.busy(true);f.age(500);await loop.progress();assert.equal(f.sent.length,1,'one writer, no catch-up queue');
+ loop.stop();f.busy(false);await loop.progress();assert.equal(f.sent.length,1);
+});
 test('proof transport allows ticks; a ready proof uses the same writer only after its current command',async()=>{
  const f=fixture();f.setState({phase:2,chaos:{request:1n,pending:0n} as any});
  let resolve!:(v:any)=>void;const errors:unknown[]=[];
