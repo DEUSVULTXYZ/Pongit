@@ -185,7 +185,10 @@ export function Court({
         const predictedPose=participantPose(s,cp?.state);
         const motion=cp?eventPaddles(cp.state):null;
         const localSpeed=motion?Number(p.side===0?motion.speedA:motion.speedB)/1e6:Number(rulesPaddleSpeed(p.rulesVersion??0))/1e6;
-        participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction,speed:localSpeed});
+        const responsive=p.rulesVersion===17||p.rulesVersion===18;
+        const motionMs=responsive?(!p.controllable||timing.stale||s.finished?0:
+          p.progressionLimit===undefined?dt:Math.min(dt,Math.max(0,Number(p.progressionLimit-previousTarget)/1000))):undefined;
+        participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction,speed:localSpeed,motionMs});
         if(measureControls)window.dispatchEvent(new CustomEvent('pongit:presentation-timing',{detail:{ref:p.matchId,frameAt:now,
          processedUs:String(p.state?.t),displayedUs:String(target),paddleError:participantPicture.paddles.map((y,i)=>y-predictedPose.paddles[i]),
          ballError:participantPicture.balls.map((b,i)=>({id:b.id,x:b.x-predictedPose.balls[i].x,y:b.y-predictedPose.balls[i].y}))}}));

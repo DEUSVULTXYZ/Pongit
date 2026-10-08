@@ -302,7 +302,10 @@ page.on('response',async response=>{try{
  try{
  const request=response.request(),body=request.postDataJSON();if(!body||Array.isArray(body))return;
  if(body.method==='eth_call'&&new URL(response.url()).hostname.endsWith('.fly.dev')){
-  const value=await response.json();if(value.error){report.engineReadErrors??=[];report.engineReadErrors.push({at:new Date().toISOString(),message:clean(value.error)});}
+  const value=await response.json();if(value.error){
+   let method='unknown';try{method=decodeFunctionData({abi:synchronizedAgentArenaAbi,data:body.params[0].data}).functionName;}catch{}
+   report.engineReadErrors??=[];report.engineReadErrors.push({at:new Date().toISOString(),method,message:clean(value.error)});
+  }
   try{const call=decodeFunctionData({abi:synchronizedAgentArenaAbi,data:body.params[0].data});if(call.functionName==='launchClock'&&value.result){
    const [deadline,clock]=decodeFunctionResult({abi:synchronizedAgentArenaAbi,functionName:'launchClock',data:value.result});
    (report.launchReads??=[]).push({at:new Date().toISOString(),deadline:String(deadline),clock:String(clock)});

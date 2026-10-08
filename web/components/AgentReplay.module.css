@@ -1,6 +1,7 @@
-.replay { padding: 0; margin: 0; max-width: none; min-width: 0; min-height: 0; height: auto; display: block; }
+/* The portal shares room colours, but never the full-page room geometry. */
+.replay:global(.rooms-shell) { padding: 0; margin: 0; max-width: none; min-width: 0; min-height: 0; height: auto; display: block; }
 .heading { position: sticky; top: -32px; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; background: var(--palace-panel, #11112c); }
-:global(.cabinet-dialog) .heading h2 { margin: 0; font-size: clamp(18px, 2vw, 28px); }
+:global(.cabinet-dialog) .modal .heading h2 { margin: 0; font-size: clamp(18px, 2vw, 28px); }
 .heading button { flex: none; order: 2; }
 .replay > p { font: 16px/1.5 var(--cabinet-font), sans-serif; }
 .replay .recording { margin: 0; padding: 12px; }
@@ -9,20 +10,24 @@
 .controls label { flex: 1; min-width: 0; margin: 0; font-size: 16px; }
 .controls input { display: block; width: 100%; margin: 0; min-height: 44px; }
 .accessibleScore { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-:global(.cabinet-dialog) .modal { width: min(1360px, calc(100vw - 24px), calc((100dvh - 208px)*16/9 + 200px)); max-width: 1360px; border: 8px solid transparent; border-radius: 0; border-image: url('/art/pixel-palace/frame-violet.svg') 40 fill / 12px / 0 stretch; background: var(--palace-panel, #11112c); }
+:global(.cabinet-dialog) .modal:global(.rooms-dialog):global(.connect-modal) { width: min(1360px, calc(100vw - 24px), calc((100dvh - 244px)*16/9 + 200px)); max-width: 1360px; padding: 20px 16px; border: 8px solid transparent; border-radius: 0; border-image: url('/art/pixel-palace/frame-violet.svg') 40 fill / 12px / 0 stretch; background: var(--palace-panel, #11112c); }
 @media(min-width:1024px){
- :global(.cabinet-dialog) .modal{padding:12px 16px;max-height:calc(100dvh - 16px)}
+ :global(.cabinet-dialog) .modal:global(.rooms-dialog):global(.connect-modal){padding:12px 16px;max-height:calc(100dvh - 24px)}
  .heading{top:-12px;padding-block:0;min-height:44px}
- .replay>p{margin:4px 0;font-size:14px}
- .replay .recording{padding:8px;display:grid;grid-template-columns:minmax(0,1fr) 148px;gap:8px 12px}
- .replay .recording>:global(.scoreboard){grid-column:1/-1;min-height:60px;height:60px;padding:0 4px;margin:0}
+ :global(.cabinet-dialog) .modal .replay>p{margin:2px 0;font-size:14px;line-height:18px}
+ .replay .recording{padding:8px;display:grid;grid-template-columns:minmax(0,1fr) 132px;gap:8px 12px}
+ .replay .recording>:global(.scoreboard){grid-column:1/-1;min-height:44px;height:44px;padding:0 4px;margin:0}
  .replay .recording :global(.score){font-size:40px;line-height:1}
- .replay .recording :global(.portrait-avatar){width:40px;height:40px}
+ .replay .recording :global(.player-label) :global(.avatar){width:40px;height:40px;grid-row:1}
+ .replay .recording :global(.player-label){grid-template-columns:40px minmax(0,1fr);grid-template-rows:1fr;gap:8px}
+ .replay .recording :global(.player-label.right){grid-template-columns:minmax(0,1fr) 40px}
+ .replay .recording :global(.arena-score-module)>small,.replay .recording :global(.arena-rounds){display:none}
  .replay .recording :global(.player-label)>small{display:none}
  .replay .recording:not(:has([aria-label="Chaos effects"])){grid-template-columns:minmax(0,1fr)}
  .replay .recording>[aria-label="Chaos effects"]{grid-column:2;grid-row:2;height:auto;margin:0;min-width:0}
  .replay .recording>.court{grid-column:1;grid-row:2;margin:0}
  .controls{margin-top:8px}
+ :global(.cabinet-dialog) .modal .controls label{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;margin:0;line-height:1;font-size:14px}
 }
 /* Dialogs render through a portal, outside the page's pixel control selectors. */
 :global(.cabinet-dialog) .modal button { min-width: 44px; min-height: 44px; border: 2px solid #8672b7; border-radius: 0; background: #211b40; box-shadow: inset 2px 2px #cdbcf542,inset -2px -2px #0b0923,0 3px #070719; color: #eee9fb; }
@@ -40,7 +45,7 @@
   .controls label { order: -1; flex-basis: 100%; }
   .controls button { width: 100%; }
   .replay .recording { padding: 8px; }
-  :global(.cabinet-dialog) .modal { padding: 20px 12px; }
+  :global(.cabinet-dialog) .modal:global(.rooms-dialog):global(.connect-modal) { padding: 20px 12px; }
   .heading { top: -20px; }
 }
 .court {

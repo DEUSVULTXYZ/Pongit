@@ -400,3 +400,56 @@ closure, provider change or human admission. Four healthy agent nodes remain.
 No game/browser driver active at07:00. Next candidate still requires actual
 Chaos/Classic repeats, faults, mobile, PvP/provider recovery and unchanged24h.
 All prior failed reports/videos retained. Current backend remains eb42374.
+
+
+## 07:27 UTC - movement gates pass; replay migration and layout repaired
+
+Web4094578/image5cd9c746 deployed07:01:48 after canonical69190654 idle lanes.
+Backup-events-4 six files75,320,440bytes SHA-verified off VPS06:59:07, manifest
+e4f3ba171cb76521a11efb6541f5d24bb36cc155ce7747e8ba7218a0d6b0d8b2.
+Natural Chaos945(6-7) and Classic946(7-5) published. BOTH reports remain FAIL
+only for admission8.446/9.709s. All motion/stop/confirmed-contact/pause/resync
+gates pass: localp9524.1/22.3ms, send17/17ms, peer12.88/13.43ms.
+The one-reverted-entry-read diagnostic now records only decoded function names,
+not arguments or signed payloads. Actual Chrome Chaos947 is currently running
+under sole browser exec48516, run responsive-r2-chaos5. Do not duplicate it.
+
+30 public Chrome/Edge header checks passed. Replay tests exposed a real migration
+issue: new index rows were omitted from the shared history view. The guarded
+responsive-history-view helper ran ONCE07:11:34, retaining all1457old rows and
+adding8new rows. Repeatable-read transaction, old EXCEPT new empty, rollback SQL
+saved. Public945 now serves761 retained frames. No replay recording was missing.
+
+Public replay layout failed: rooms full-page padding/min-height and generic
+dialog geometry overrode the replay module. Narrow portal-specific CSS fixes
+that conflict, compacts the scoreboard/controls and preserves the16:9court.
+Candidate CSS on real public data now passes10Chrome/Edge checks at360/390/768/
+1366/1440, playback/end score/focus/no desktop scroll. Earlier baseline2 and
+candidate3/4/5 failures remain. Candidate CSS is NOT public yet.
+
+Seven provider nodes remained stopped at06:45, no additional POST/closure.
+Temporary compiler image21ee8cd removed only after545container checks; initial
+ContainerConfig lookup failed before any deletion. All runtime images retained.
+Intermediate backup-contact-2's six files offloaded07:26 after fresh local+remote
+SHA checks and all mount checks; all75,393,770bytes remain OFFVPS. Remote manifest
+and proof remain; wall3/events4/drained backups remain. Disk79.97 before new
+backup/build. No full release or24h proof; automation remains paused.
+
+
+## 07:34 UTC - an additional held-input fault reproduced and corrected
+
+Chaos947 finished naturally7-4 and published, admission7.310sPASS, all other
+normal gates pass except ONE held-speed window(.763ratio) among126. The failure
+is preserved. Frame24310.4ms repeats rendered target11783700 after a slower fresh
+clock anchor; the held paddle loses a frame before that anchor catches up. This
+is a PONGIT presentation defect, not a provider limit. Narrow rules17/18 change
+uses elapsed local frame time for the held paddle, bounded by actual control,
+presence, finish and stale fences. Ball reconstruction remains authoritative.
+The recorded regression first FAILED, then PASSED33focused tests.1,089fullTS and
+rootTS pass. Existing historical rules keep their previous renderer behaviour.
+No revised product image is public yet. No active game/browser driver remains.
+
+Replay candidate6 passes all10Chrome/Edge viewport checks including1366x768 and
+1440x900, full controls in view and correct final score. Earlier candidate3/4/5
+failures remain. Read-only directory recheck07:28:42 still reports all7nodes
+stopped/Active; no further hosting POST, undelegation or funding request.

@@ -8,6 +8,28 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('public Chaos947 clock catch-up never subtracts a frame from a held local paddle',()=>{
+ for(const side of [0,1] as const)for(const direction of [-1,1])for(const speed of [150,300,450]){
+  const view=new ParticipantReconciliation(),source=pose(),local={side,direction,speed,motionMs:16.7};
+  view.sample(source,undefined,16.7,local);let y=288;
+  // LiveClock temporarily holds its previous target while the newer, slower
+  // anchor catches up. The same reconstructed pose lasts several paints.
+  for(let i=0;i<5;i++){
+   y+=direction*speed*.0167;
+   const picture=view.sample(source,undefined,16.7,local);
+   assert(Math.abs(picture.paddles[side]-y)<1e-8);
+   assert.deepEqual(picture.balls,source.balls,'the ball remains on the confirmed reconstruction');
+  }
+  const limited=view.sample(source,undefined,16.7,{...local,motionMs:5});y+=direction*speed*.005;
+  assert(Math.abs(limited.paddles[side]-y)<1e-8,'never cross the remaining presence credit');
+  assert.equal(view.sample(source,undefined,16.7,{...local,motionMs:0}).paddles[side],y,'pause/stale fences freeze local motion');
+  const reverse=view.sample(source,undefined,16.7,{...local,direction:-direction});y-=direction*speed*.0167;
+  assert(Math.abs(reverse.paddles[side]-y)<1e-8,'inversion takes effect on the next paint');
+  assert.equal(view.sample(source,undefined,16.7,{...local,direction:0}).paddles[side],reverse.paddles[side],'release is immediate');
+  assert.equal(source.paddles[side],288,'source is immutable');
+ }
+});
+
 test('public match941 wall arrival cannot strand a held paddle at79.5 while live is48',()=>{
  for(const side of [0,1] as const)for(const direction of [-1,1])for(const speed of [150,300,450]){
   const view=new ParticipantReconciliation(),wall=direction<0?48:528;
