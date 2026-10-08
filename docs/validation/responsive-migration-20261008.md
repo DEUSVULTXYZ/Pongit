@@ -931,3 +931,33 @@ OFFVPS before removal;24files from four earlier backup copies hash-verified
 OFFVPS before removal. Mounted backup-drained and latest9/10 preserved.
 Three exact unused, untagged completed web compiler cache images removed;
 production and rollback images retained. Disk78.97%after cleanup.
+
+
+## 15:00 UTC - PvP and financial proof pass; profile follow-up prepared
+
+Human-only c45f25e image9b4929eda2faa243b8c4d1fe3f2bd56a9500501c3b029647af10db76ac85d88d
+deployed14:37:24 after canonical69280534 empty slots/zero pending jobs.
+Own tick revision now preserves elapsed send work; newer player revisions still
+postpone redundant ticks. Background nonce proof retains journal fences.
+Actual Edge Chaos r2pvpchaos1 and Chrome Classic r2pvpclassic5 naturally7-4
+PASS; canonical69283990 binds both results. No pauses/resync/jumps, localp95
+15.3ms maximum, peer16.26 against send16.93ms. Classic snapshotgapP95117.1ms
+and hold100.2ms; Chaos gap119ms and hold350.3ms. Before gap350ms/9jumps.
+Chaos actual0.006MON paid to disconnected beneficiary once, duplicate claim
+and retry reverted. See responsive-pvp-20261008.json. EarlierClassic1/2/3
+render failures preserved; Classic4 failed before gameplay on profile timeout.
+
+Classic4 profile transaction confirmed48.4s after intake, while UI abandoned
+its foreground wait at45s. The profile was saved canonically, zero pending
+operations remain. Queue delay cause not proven; no nonce was replayed.
+New e7ae13e adds read-only background observation and late profile closure.
+16focusedtests/rootTS and actual web build PASS; not yet deployed. Sole
+cutover watcher exec88010 waits up to12min for all five agent and both human
+slots empty. First helper failed backup-age guard before writes (wrong old
+backup reference); original helper and failure retained. Second uses fresh
+backup-sponsor-11, six files76349412bytes OFFVPSverified14:56:13 manifest
+1aca8cc800662f769161b942d5a766fc1d5d4e4823781566c58d7fcd28108fb4.
+No game driver active. Seven-browser coordinator/barrier prepared NOTRUN.
+Production agentengine d558/web5486 unchanged, tournament44playing, human
+relayerc45. No redeploy/undelegate/provider changes. AutomationPAUSED.
+Remaining seven-way, delayed-profile actual browser followup, final24h.

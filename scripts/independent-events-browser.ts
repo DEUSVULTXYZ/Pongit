@@ -11,6 +11,7 @@ import {independentRules} from '../shared/independent-rules';
 import {publicIndependentManifest} from '../shared/independent';
 import {installSyncProbe,syncMetrics,sustainedInputMetrics} from './browser-sync-probe';
 import {visibleAim} from './browser-aim';
+import {browserQualificationBarrier} from './browser-qualification-barrier';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const publicRelease=process.env.PONG_HUMAN_BROWSER_TARGET==='public-release';
 const chaos=process.env.INDEPENDENT_SCENARIO==='chaos';
@@ -184,6 +185,7 @@ try{
  }
  await pages[2].setViewportSize({width:1440,height:1000});
  if(saved.stage<1){for(let i=0;i<3;i++)await account(pages[i],i);saved.stage=1;await persist();report.checks.push('Three Mera accounts and root-signed unique profiles saved');}
+ report.coordination=await browserQualificationBarrier(process.env.INDEPENDENT_TEST_RUN!);
  const a=pages[0],b=pages[1],spectator=pages[2];
  if(restore&&saved.roomUrl){
   await spectator.goto(saved.roomUrl);

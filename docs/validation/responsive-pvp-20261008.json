@@ -1,0 +1,159 @@
+{
+  "at": "2026-10-08T14:54:45.808Z",
+  "passed": true,
+  "releaseComplete": false,
+  "web": "5486a5f",
+  "humanRelayer": "c45f25e",
+  "canonicalBlock": "69283990",
+  "canonicalHash": "0x4ddb32fd06e87cbc992cff7a684b0bae82d7c5c4f04baad0bccc46db725f9f1e",
+  "runs": [
+    {
+      "path": "artifacts/independent-candidate/browser-r2pvpclassic5/report.json",
+      "sha256": "772afc44e163690dacd5e39f55c1a6c95c3e1a662b56f9e1c7b03d3ec9b8ab8f",
+      "startedAt": "2026-10-08T14:47:00.704Z",
+      "finishedAt": "2026-10-08T14:49:48.074Z",
+      "result": {
+        "arena": "0xC8e978e3c6581eB5454e486Eb247c503fFbc0e3D",
+        "epoch": "1",
+        "id": "680564733841876926926749214863536422923",
+        "a": "0xAa71f66dCd5f8C04c5B906CF9F637729a0469Ac5",
+        "b": "0x9442d6a56E5C94D5b6069A791446c7C071663743",
+        "winner": "0xAa71f66dCd5f8C04c5B906CF9F637729a0469Ac5",
+        "mode": 0,
+        "ranked": true,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 4,
+        "hash": "0xf0022631a7c2156a45b2bc8970254c6eda46d8a5b562119ae55c254fce513eeb"
+      },
+      "sync": [
+        {
+          "localP95Ms": 15,
+          "heldMaxMs": 100.10000000000582,
+          "frameP95Ms": 17.09999999999127,
+          "snapshotGapP95Ms": 117.09999990463257,
+          "pausesMs": 0,
+          "resyncs": 0,
+          "jumps": 0
+        },
+        {
+          "localP95Ms": 14.900000095367432,
+          "heldMaxMs": 100.19999999999709,
+          "frameP95Ms": 17.09999999999127,
+          "snapshotGapP95Ms": 117.10000014305115,
+          "pausesMs": 0,
+          "resyncs": 0,
+          "jumps": 0
+        }
+      ],
+      "sustained": [
+        {
+          "heldSamples": 224,
+          "outsideTarget": 0,
+          "releaseP95": 0,
+          "releaseMax": 0
+        },
+        {
+          "heldSamples": 224,
+          "outsideTarget": 0,
+          "releaseP95": 0,
+          "releaseMax": 0
+        }
+      ],
+      "peer": {
+        "samples": 826,
+        "p95Ms": 15.1240234375,
+        "clock": "same Playwright host",
+        "sendP95Ms": 15.61181640625
+      },
+      "videos": [
+        "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\independent-candidate\\browser-r2pvpclassic5\\video-0\\page@e79a865f706ad7fa4704f9b2e14b0be1.webm",
+        "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\independent-candidate\\browser-r2pvpclassic5\\video-1\\page@b63a8952531990dc381049a9b8d43830.webm",
+        "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\independent-candidate\\browser-r2pvpclassic5\\video-2\\page@4a5770be0add70cf67c70f27d950a741.webm"
+      ]
+    },
+    {
+      "path": "artifacts/independent-candidate/browser-chaos-r2pvpchaos1/report.json",
+      "sha256": "da1d50965183a1897860318d4e3bbac4c5ed824d1bf18a40b0578a9e7cb31759",
+      "startedAt": "2026-10-08T14:37:34.056Z",
+      "finishedAt": "2026-10-08T14:41:01.390Z",
+      "result": {
+        "arena": "0xC8e978e3c6581eB5454e486Eb247c503fFbc0e3D",
+        "epoch": "1",
+        "id": "680564733841876926926749214863536422920",
+        "a": "0x47A5A2b84BD62c10AdF7Ce3550c39af13FCc42e3",
+        "b": "0xaC4fF26a3217779a27498CbC99E78c30Ca738A12",
+        "winner": "0x47A5A2b84BD62c10AdF7Ce3550c39af13FCc42e3",
+        "mode": 1,
+        "ranked": false,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 4,
+        "hash": "0x14c7249c552fb6f41bb12de050fbf00f1308adf02d9a3eebdfd87a7ccd7893cc"
+      },
+      "sync": [
+        {
+          "localP95Ms": 15.100000143051147,
+          "heldMaxMs": 350.1999999999971,
+          "frameP95Ms": 17.10000000000582,
+          "snapshotGapP95Ms": 118.90000009536743,
+          "pausesMs": 0,
+          "resyncs": 0,
+          "jumps": 0
+        },
+        {
+          "localP95Ms": 15.299999952316284,
+          "heldMaxMs": 350.3000000000029,
+          "frameP95Ms": 17.099999999998545,
+          "snapshotGapP95Ms": 119,
+          "pausesMs": 0,
+          "resyncs": 0,
+          "jumps": 0
+        }
+      ],
+      "sustained": [
+        {
+          "heldSamples": 195,
+          "outsideTarget": 0,
+          "releaseP95": 0.11970000000002301,
+          "releaseMax": 0.12000000000000455
+        },
+        {
+          "heldSamples": 192,
+          "outsideTarget": 0,
+          "releaseP95": 0,
+          "releaseMax": 0
+        }
+      ],
+      "peer": {
+        "samples": 588,
+        "p95Ms": 16.262939453125,
+        "clock": "same Playwright host",
+        "sendP95Ms": 16.924072265625
+      },
+      "videos": [
+        "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\independent-candidate\\browser-chaos-r2pvpchaos1\\video-0\\page@c66da53e01a1c35793ede5c6ebf8b3ca.webm",
+        "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\independent-candidate\\browser-chaos-r2pvpchaos1\\video-1\\page@4b140d6ace3a05a3b3eb710e0d20fcf1.webm",
+        "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\independent-candidate\\browser-chaos-r2pvpchaos1\\video-2\\page@512b1e5503115992c93fdf28c4b581e4.webm"
+      ]
+    }
+  ],
+  "payment": {
+    "at": "2026-10-08T14:45:41.302Z",
+    "passed": true,
+    "player": "0x88936719C5E910b41Cdbe5B9e3e89cB363A6b523",
+    "id": "680564733841876926926749214863536422920",
+    "market": "0x0b0E59C4F71F4c716282E7A7A3ab9AabD87a5aab",
+    "amount": "6000000000000000",
+    "refunded": "0",
+    "canonicalPreClaimAmount": "6000000000000000",
+    "transaction": "0xe02a637dddba63200fe52d073e5d9de45a0945971abe83d489f519350ba9bef8",
+    "block": "69281304",
+    "before": "0",
+    "after": "6000000000000000",
+    "attempts": 1,
+    "duplicateClaimRejected": true,
+    "duplicateRetryRejected": true
+  },
+  "scope": "Two natural actual public Chrome/Edge PvP games with virtual PRF. Chaos beneficiary browser disconnected before automatic payout; duplicate claim/retry simulations revert. Earlier failures remain unchanged. Seven-way and 24-hour gates are separate."
+}

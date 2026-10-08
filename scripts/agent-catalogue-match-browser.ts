@@ -16,10 +16,11 @@ import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {createHash} from 'node:crypto';
 import {assertPrivateSyncBrowserTarget,privateSyncRotation} from './private-sync-continuation';
 import {realBackgroundBrowser,recordBackgroundPage} from './real-background-browser';
+import {browserQualificationBarrier} from './browser-qualification-barrier';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
-const mode=Number(process.env.PONG_CATALOGUE_MODE??0),name=process.env.PONG_CATALOGUE_BOT??'NOVA';
+const mode=Number(process.env.PONG_CATALOGUE_MODE??0);let name=process.env.PONG_CATALOGUE_BOT??'NOVA';
 const privatePath=process.env.PONG_BROWSER_PRIVATE_PATH!;
 const restorePath=process.env.PONG_CATALOGUE_RESTORE_PRIVATE_PATH;
 // Opt-in, bounded cadence samples are separate from the full 100-control gate.
@@ -393,6 +394,7 @@ try{
  await expect(page.getByRole('button',{name:`Challenge ${name}`,exact:true})).toBeEnabled({timeout:60000});
  await page.getByRole('button',{name:mode?'Chaos':'Classic',exact:true}).click();
  await expect(page.getByRole('button',{name:mode?'Chaos':'Classic',exact:true})).toHaveAttribute('aria-pressed','true');
+ const coordinated=await browserQualificationBarrier(run);if(coordinated){name=coordinated.bot;report.bot=name;report.coordination=coordinated;}
  report.clickedAt=new Date().toISOString();
  await page.getByRole('button',{name:`Challenge ${name}`,exact:true}).click();
  report.challengeClickedAt=await page.evaluate(()=>(window as any).__challengeClickedAt);

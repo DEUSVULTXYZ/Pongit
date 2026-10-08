@@ -1,11 +1,12 @@
 # Responsive production release — 8 October 2026
 
-Status: agent controls and presentation fixes deployed; final all-role release is blocked by seven stopped hosted nodes. Public qualification remains false. The scheduled automation remains paused. No new delegation was closed during this intervention.
+Status updated 8 October 14:38 UTC: all eleven current nodes recovered with verified identities and publication. Human admissions and tournaments are reopened. Agent controls and presentation fixes remain deployed; human tick corrections are undergoing actual public PvP qualification. Public qualification remains false. The scheduled automation remains paused. No new delegation was closed during this intervention.
 
 ## Runtime and preservation
 
 - Gameplay web: `5486a5faab7366639307bea3652f51095cc0866b`; image `sha256:bbddf11371df3c99949d08a35bdb262ad8aa9cedcca20651e9d63e87941ace73`.
 - Agent engine: `d55833436dbaff7743bc80c3aa817ba4e0dadf57`; image `sha256:0085e14426dc245e32119646e64deb455f99c714862ed9c55c301fdce57c023d`.
+- Human relayer: `c45f25e`, image `sha256:9b4929eda2faa243b8c4d1fe3f2bd56a9500501c3b029647af10db76ac85d88d` (includes human tick fixes `1714782` and `0b1a599`).
 - Other active services: `eb423745a346bf12c63ae8ba9b262dbc8451fb44`. SDK 0.2.3; Node 24.21.0; hub v3 `0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e`.
 - Rules 17 agent pool: `0xe01c31f482113367c510a04816ff371676477fa3`.
 - Rules 18 human lobby: `0xdf44e1cae317bc9d8bafcf9b292b08bb90996fb7`.
@@ -63,8 +64,8 @@ Final backup `backup-feedback-final-9`: five database dumps and runtime configur
 
 Compatible web rollback: after verifying idle lanes, replace only `arcade-web` in the canonical and mirrored Compose with retained image `sha256:53333cc77fef7916c8b41bde2d62ea279548495a9cd58939c98f9a8e140cfe08`. Keep current contract manifests, no-close guards, databases and all nonce journals. Never restore an old database over new results. Keep agent engine/signers unchanged unless a separately verified compatible rollback is needed.
 
-Seven Interlude directory entries remain stopped despite Active epoch 1 delegations. Four peer nodes execute and publish under the same runtime. Direct failed endpoints time out during TLS before HTTP. One owner-authorized creation/adoption attempt per stopped agent was already journalled; no repeated creation or closure is being used as a workaround. [Minimal provider reproduction and affected addresses](interlude-stopped-nodes-20261008.md).
+Earlier observation, resolved by 13:49 UTC: seven Interlude directory entries were stopped despite Active epoch 1 delegations. Four peer nodes execute and publish under the same runtime. Direct failed endpoints time out during TLS before HTTP. One owner-authorized creation/adoption attempt per stopped agent was already journalled; no repeated creation or closure is being used as a workaround. [Minimal provider reproduction and affected addresses](interlude-stopped-nodes-20261008.md).
 
-Two PvP games, five agents plus two humans, new human financial paths and the unchanged all-role 24-hour qualification remain unproved. The required next external action is recovery of the seven existing hosted nodes without undelegation. Existing healthy agent play remains available; public tournaments and human admissions remain gated. At canonical block 69240854, operator reserve is 49,569.57387803 test MON, archive reserve is 95.212388706 and sponsor reserve is 109.313190646 MON. This is a balance observation, not a guarantee of 24-hour cost. No additional funding request is needed.
+Two natural PvP games and the disconnected Chaos payout now pass at canonical block 69283990; see [PvP evidence](responsive-pvp-20261008.json). Five agents plus two humans and the unchanged all-role 24-hour qualification remain unproved. The seven hosted nodes have since recovered without undelegation or redeployment; all eleven identities are verified at block 69270955. Public tournaments and human admissions are now enabled. Three earlier Classic PvP render failures remain preserved. The c45f25e human-only tick fix passes the subsequent Classic and Chaos runs. See [recovery evidence](responsive-hosting-recovered-20261008.json) and the detailed migration checkpoint. At canonical block 69240854, operator reserve is 49,569.57387803 test MON, archive reserve is 95.212388706 and sponsor reserve is 109.313190646 MON. This is a balance observation, not a guarantee of 24-hour cost. No additional funding request is needed.
 
 Manual checks still required: real physical keyboard/player feel, physical touch/landscape on a handset, and a real authenticator's PRF/session recovery. Automated browser evidence and virtual passkeys are not substitutes for those hardware checks.
