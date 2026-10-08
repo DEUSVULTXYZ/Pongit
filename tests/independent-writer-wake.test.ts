@@ -47,7 +47,8 @@ async function fixture(mode:'confirmed'|'missing'|'mismatch',eager=true){
  }};
  const values:any={eth_chainId:'0x279f',eth_getTransactionCount:'0x1',eth_estimateGas:'0x186a0',eth_maxPriorityFeePerGas:'0x2',eth_gasPrice:'0x12',
   eth_getBlockByNumber:{number:'0x1',timestamp:'0x1',gasLimit:'0x1c9c380',gasUsed:'0x0',baseFeePerGas:'0xf',transactions:[]}};
- const base=createPublicClient({chain:monadTestnet,transport:custom({request:async({method}:any)=>{assert(method in values,'Unexpected RPC '+method);return values[method];}},{retryCount:0})});
+ const requests:string[]=[];
+ const base=createPublicClient({chain:monadTestnet,transport:custom({request:async({method}:any)=>{requests.push(method);assert(method in values,'Unexpected RPC '+method);return values[method];}},{retryCount:0})});
  const client={...base,getTransactionReceipt:async({hash}:any)=>{receipts++;
   if(mode==='missing'||hash!==oldHash)throw Error('Receipt not found');
   return {transactionHash:mode==='mismatch'?`0x${'33'.repeat(32)}`:hash,status:'success'};
@@ -58,7 +59,7 @@ async function fixture(mode:'confirmed'|'missing'|'mismatch',eager=true){
  let writer:Awaited<ReturnType<typeof independentWriter>>;
  try{writer=await independentWriter(db,client as any,db,scope,{eager});}
  catch(error){await rm(directory,{recursive:true,force:true});throw error;}
- return {writer,jobs,operations,signed,locks,receipts:()=>receipts,
+ return {writer,jobs,operations,signed,locks,requests,receipts:()=>receipts,
   close:async()=>{await writer.close();assert(!held);await rm(directory,{recursive:true,force:true});}};
 }
 
@@ -67,7 +68,7 @@ test('verified receipt wakes the same nonce owner without waiting for a timer',a
  try{
   await Promise.all([f.writer.observe(),f.writer.observe()]);
   await f.writer.close(); // Drain the already-woken task, without any timer tick.
-  assert.equal(f.signed.length,1);assert.equal(f.jobs[0].status,'confirmed');
+  assert.equal(f.signed.length,1,JSON.stringify({status:f.writer.status(),requests:f.requests,locks:f.locks}));assert.equal(f.jobs[0].status,'confirmed');
   assert.equal(parseTransaction(f.signed[0]).nonce,1);assert.equal(f.locks.length,1);
   assert.equal(f.operations[1].status,'pending');
  }finally{await f.close();}

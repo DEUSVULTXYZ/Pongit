@@ -1,10 +1,8 @@
-import {createWalletClient,http,keccak256,encodeAbiParameters,parseTransaction,recoverTransactionAddress,type Address,type Hex,type PublicClient} from 'viem';
-import {monadTestnet} from 'viem/chains';
+import {keccak256,encodeAbiParameters,parseTransaction,recoverTransactionAddress,type Address,type Hex,type PublicClient} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {readFile} from 'node:fs/promises';
 import type {Pool,PoolClient} from 'pg';
 import type {ChainOperation} from '../../shared/independent';
-import {measuredFetch} from '../../shared/rpc-metrics';
 import {prepareSponsoredTransaction} from './sponsor-prepare';
 import {writerIdentity,type ScopedWriter} from '../../shared/scoped-writer';
 import {operatorNeedsFunding,operatorFundingMessage} from '../../shared/operator-funding';
@@ -25,7 +23,6 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  const continuousCheck=continuousSubmissionGuard(base);
  const check=async(to:Address,data:Hex,value:bigint)=>{scope?.allowCall(to,data,value);await continuousCheck(to,data);};
  if(await base.getChainId()!==10143)throw Error('Independent sponsoring is testnet only');
- const wallet=createWalletClient({account,chain:monadTestnet,transport:http(process.env.RPC_URL,{timeout:8000,retryCount:0,fetchFn:measuredFetch('monad')})});
  await db.query(`CREATE TABLE IF NOT EXISTS independent_operations(
  id text PRIMARY KEY,target text NOT NULL,data text NOT NULL,value text NOT NULL,priority integer NOT NULL,
  status text NOT NULL DEFAULT 'queued',hash text,error text,created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now());
@@ -132,7 +129,10 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
    }
    const nonce=request.nonce;
    await check(row.target,row.data,BigInt(row.value));
-   const raw=await wallet.signTransaction(request),hash=keccak256(raw);
+   // The client chain was verified at startup and preparation pins EIP-1559
+   // chainId 10143. Local signing needs no second, hidden eth_chainId roundtrip.
+   if(request.chainId!==10143||request.type!=='eip1559')throw Error('Unexpected sponsor transaction chain or type');
+   const raw=await account.signTransaction(request),hash=keccak256(raw);
    await journal.query("INSERT INTO il_lifecycle_jobs(id,app,owner,nonce,raw,hash,status) VALUES($1,$2,$3,$4,$5,$6,'pending')",[jobId(row.id),row.target,account.address.toLowerCase(),nonce,raw,hash]);
    await db.query("UPDATE independent_operations SET status='pending',hash=$2,updated_at=now() WHERE id=$1",[row.id,hash]);
    await base.sendRawTransaction({serializedTransaction:raw});lastError='';lastCode=undefined;
