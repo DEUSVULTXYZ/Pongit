@@ -1,0 +1,695 @@
+{
+  "at": "2026-10-08T09:43:46.416781+00:00",
+  "releaseComplete": false,
+  "product": "c0e687f82d029b0ceb0c1638dec210e3654372fc",
+  "scope": "Mobile emulation evidence. No physical handset proof. Prior failing reports remain unchanged.",
+  "roots": {
+    "touch360-3": {
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "967"
+      },
+      "passed": false,
+      "error": "Unexpected protective resume countdown",
+      "admissionMs": 6292,
+      "liveness": {
+        "heartbeats": 835,
+        "resumes": 11
+      },
+      "startupResumes": 0,
+      "input": {
+        "samples": 121,
+        "p95Ms": 16.600000143051147
+      },
+      "sendLatency": {
+        "samples": 230,
+        "p95Ms": 134,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "confirmedInput": {
+        "samples": 229,
+        "p95Ms": 136.9482421875,
+        "maxMs": 377.863037109375,
+        "mismatches": [
+          {
+            "sentAt": 1791450678862.9119,
+            "expected": 0,
+            "actual": 1
+          }
+        ]
+      },
+      "result": {
+        "hash": "0xb9fb2e869d45a473e55251966cf68baba8c03f5b081d2f6217a6b37f56a1cff3",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "68570917",
+        "finality": false
+      },
+      "reportSha256": "33f803f5614b75bcc1cd0c5822eabb0efec120cc44d0b1764753df17b29e8357"
+    },
+    "touch360-http1": {
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "968"
+      },
+      "passed": false,
+      "error": "Unexpected protective resume countdown",
+      "admissionMs": 6827,
+      "liveness": {
+        "heartbeats": 432,
+        "resumes": 1
+      },
+      "startupResumes": 0,
+      "input": {
+        "samples": 77,
+        "p95Ms": 16.59999990463257
+      },
+      "sendLatency": {
+        "samples": 150,
+        "p95Ms": 134,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "confirmedInput": {
+        "samples": 150,
+        "p95Ms": 137.48193359375,
+        "maxMs": 139.26904296875,
+        "mismatches": []
+      },
+      "result": {
+        "hash": "0x8178501d72ef6b0fe9cd52dacbe01a5ea482587278ab12ce65a40d79fcc65462",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "45508091",
+        "finality": false
+      },
+      "reportSha256": "9c24c09cab309a0942867e51ff1c07b4d0d95a4525fa59f8e6c9d0b0d588cb05"
+    },
+    "desktop-clock1": {
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "969"
+      },
+      "passed": true,
+      "error": null,
+      "admissionMs": 5922,
+      "liveness": {
+        "heartbeats": 440,
+        "resumes": 0
+      },
+      "startupResumes": 0,
+      "input": {
+        "samples": 87,
+        "p95Ms": 15.600000143051147
+      },
+      "sendLatency": {
+        "samples": 181,
+        "p95Ms": 16,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "confirmedInput": {
+        "samples": 181,
+        "p95Ms": 19.158935546875,
+        "maxMs": 33.227783203125,
+        "mismatches": []
+      },
+      "result": {
+        "hash": "0x437fdce425194a2be746fc6c4b4b597b26cd3ec083ec5ec2cc92eabeac5e7a26",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 3,
+        "elapsedUs": "49287570",
+        "finality": false
+      },
+      "reportSha256": "ab8109d3e63cf82f0913ff5703a6b940dd0aba6173bc5ecd77b0f2b3fbd03bd3"
+    },
+    "touch390-1": {
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "970"
+      },
+      "passed": false,
+      "error": "Visible paddle contact lacks live confirmation",
+      "admissionMs": 6518,
+      "liveness": {
+        "heartbeats": 796,
+        "resumes": 0
+      },
+      "startupResumes": 0,
+      "input": {
+        "samples": 124,
+        "p95Ms": 16.700000047683716
+      },
+      "sendLatency": {
+        "samples": 247,
+        "p95Ms": 119,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "confirmedInput": {
+        "samples": 247,
+        "p95Ms": 120.79736328125,
+        "maxMs": 139.216064453125,
+        "mismatches": []
+      },
+      "result": {
+        "hash": "0x59fb4d194c9ba9a7f47c508fdc9a11f2ec77e2b45d65f46ace07bcbd63facc05",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 6,
+        "elapsedUs": "87695295",
+        "finality": false
+      },
+      "reportSha256": "1b89d64eb031e42c69951d78bbc0a600a059a15587e73d8a7ffac50b8a290203"
+    }
+  },
+  "probe": {
+    "at": "2026-10-08T09:39:21.112Z",
+    "arena": "0x264101ca1936cfd1b274f5ceba535e1378597dc4",
+    "passed": true,
+    "scope": "Visible Chrome CDP touch; read-only RULES_VERSION, no game writes. Diagnostic fixture overlay, not gameplay proof.",
+    "rows": [
+      {
+        "at": 2836.5999999046326,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 87.5,
+        "valid": true
+      },
+      {
+        "at": 2836.5999999046326,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 93.59999990463257,
+        "valid": true
+      },
+      {
+        "at": 3186.199999809265,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 91.5,
+        "valid": true
+      },
+      {
+        "at": 3186.199999809265,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 93.60000014305115,
+        "valid": true
+      },
+      {
+        "at": 3544.399999856949,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 90.5,
+        "valid": true
+      },
+      {
+        "at": 3544.399999856949,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 101.60000014305115,
+        "valid": true
+      },
+      {
+        "at": 3904.2999999523163,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 89.59999990463257,
+        "valid": true
+      },
+      {
+        "at": 3904.2999999523163,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 91.79999995231628,
+        "valid": true
+      },
+      {
+        "at": 4263.699999809265,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 84.90000009536743,
+        "valid": true
+      },
+      {
+        "at": 4263.699999809265,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 100.80000019073486,
+        "valid": true
+      },
+      {
+        "at": 4622.199999809265,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 86,
+        "valid": true
+      },
+      {
+        "at": 4622.199999809265,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 92.40000009536743,
+        "valid": true
+      },
+      {
+        "at": 4971.599999904633,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 93.79999995231628,
+        "valid": true
+      },
+      {
+        "at": 4971.599999904633,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 107.79999995231628,
+        "valid": true
+      },
+      {
+        "at": 5334.5,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 90.59999990463257,
+        "valid": true
+      },
+      {
+        "at": 5334.5,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 96.09999990463257,
+        "valid": true
+      },
+      {
+        "at": 5692.599999904633,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 88.59999990463257,
+        "valid": true
+      },
+      {
+        "at": 5692.599999904633,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 103.79999995231628,
+        "valid": true
+      },
+      {
+        "at": 6057.799999952316,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 83,
+        "valid": true
+      },
+      {
+        "at": 6057.799999952316,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 88.20000004768372,
+        "valid": true
+      },
+      {
+        "at": 6409.199999809265,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 90.5,
+        "valid": true
+      },
+      {
+        "at": 6409.199999809265,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 103.20000004768372,
+        "valid": true
+      },
+      {
+        "at": 6765,
+        "mode": "pointer",
+        "transport": "ws",
+        "ms": 91.69999980926514,
+        "valid": true
+      },
+      {
+        "at": 6765,
+        "mode": "pointer",
+        "transport": "http",
+        "ms": 98.09999990463257,
+        "valid": true
+      },
+      {
+        "at": 7119.899999856949,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 88.20000004768372,
+        "valid": true
+      },
+      {
+        "at": 7119.899999856949,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 93.60000014305115,
+        "valid": true
+      },
+      {
+        "at": 7478.699999809265,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 88.20000004768372,
+        "valid": true
+      },
+      {
+        "at": 7478.699999809265,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 101.80000019073486,
+        "valid": true
+      },
+      {
+        "at": 7845.799999952316,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 94.09999990463257,
+        "valid": true
+      },
+      {
+        "at": 7845.799999952316,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 100.20000004768372,
+        "valid": true
+      },
+      {
+        "at": 8212.099999904633,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 88.40000009536743,
+        "valid": true
+      },
+      {
+        "at": 8212.099999904633,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 101.59999990463257,
+        "valid": true
+      },
+      {
+        "at": 8579.5,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 93.39999985694885,
+        "valid": true
+      },
+      {
+        "at": 8579.5,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 99.5,
+        "valid": true
+      },
+      {
+        "at": 8929,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 100.19999980926514,
+        "valid": true
+      },
+      {
+        "at": 8929,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 116.79999995231628,
+        "valid": true
+      },
+      {
+        "at": 9295.799999952316,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 99.59999990463257,
+        "valid": true
+      },
+      {
+        "at": 9295.799999952316,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 117.70000004768372,
+        "valid": true
+      },
+      {
+        "at": 9662.099999904633,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 100.29999995231628,
+        "valid": true
+      },
+      {
+        "at": 9662.099999904633,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 117.09999990463257,
+        "valid": true
+      },
+      {
+        "at": 10028.899999856949,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 100.60000014305115,
+        "valid": true
+      },
+      {
+        "at": 10028.899999856949,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 117.29999995231628,
+        "valid": true
+      },
+      {
+        "at": 10395.599999904633,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 83.29999995231628,
+        "valid": true
+      },
+      {
+        "at": 10395.599999904633,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 100.09999990463257,
+        "valid": true
+      },
+      {
+        "at": 10762.5,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 90.79999995231628,
+        "valid": true
+      },
+      {
+        "at": 10762.5,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 102.19999980926514,
+        "valid": true
+      },
+      {
+        "at": 11129.099999904633,
+        "mode": "cancel-pointer",
+        "transport": "ws",
+        "ms": 83.5,
+        "valid": true
+      },
+      {
+        "at": 11129.099999904633,
+        "mode": "cancel-pointer",
+        "transport": "http",
+        "ms": 101.79999995231628,
+        "valid": true
+      },
+      {
+        "at": 11495.5,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 8.899999856948853,
+        "valid": true
+      },
+      {
+        "at": 11495.5,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 9.199999809265137,
+        "valid": true
+      },
+      {
+        "at": 11853.899999856949,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.200000047683716,
+        "valid": true
+      },
+      {
+        "at": 11853.899999856949,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.200000047683716,
+        "valid": true
+      },
+      {
+        "at": 12216.199999809265,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.200000047683716,
+        "valid": true
+      },
+      {
+        "at": 12216.199999809265,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.6000001430511475,
+        "valid": true
+      },
+      {
+        "at": 12568.5,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.299999952316284,
+        "valid": true
+      },
+      {
+        "at": 12568.5,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.5,
+        "valid": true
+      },
+      {
+        "at": 12924,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.3999998569488525,
+        "valid": true
+      },
+      {
+        "at": 12924,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.599999904632568,
+        "valid": true
+      },
+      {
+        "at": 13283.899999856949,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 4.299999952316284,
+        "valid": true
+      },
+      {
+        "at": 13283.899999856949,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.6000001430511475,
+        "valid": true
+      },
+      {
+        "at": 13642.699999809265,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3,
+        "valid": true
+      },
+      {
+        "at": 13642.699999809265,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.800000190734863,
+        "valid": true
+      },
+      {
+        "at": 13989.099999904633,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.299999952316284,
+        "valid": true
+      },
+      {
+        "at": 13989.099999904633,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.700000047683716,
+        "valid": true
+      },
+      {
+        "at": 14346.699999809265,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.1000001430511475,
+        "valid": true
+      },
+      {
+        "at": 14346.699999809265,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.200000047683716,
+        "valid": true
+      },
+      {
+        "at": 14706,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.3999998569488525,
+        "valid": true
+      },
+      {
+        "at": 14706,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.5,
+        "valid": true
+      },
+      {
+        "at": 15059.399999856949,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.799999952316284,
+        "valid": true
+      },
+      {
+        "at": 15059.399999856949,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.6000001430511475,
+        "valid": true
+      },
+      {
+        "at": 15419.199999809265,
+        "mode": "cancel-touch",
+        "transport": "ws",
+        "ms": 3.3000001907348633,
+        "valid": true
+      },
+      {
+        "at": 15419.199999809265,
+        "mode": "cancel-touch",
+        "transport": "http",
+        "ms": 6.400000095367432,
+        "valid": true
+      }
+    ]
+  },
+  "regression": "Chaos970 miss reversed0.44 units after x40 despite incoming live velocity. New monotonic miss test first failed, then passed. No fictitious bounce, score, physics or increased presence.",
+  "tests": {
+    "typescript": 1093,
+    "focused": 34,
+    "rootTypeScript": true
+  },
+  "references": [
+    "https://chromium.googlesource.com/chromium/src/+/cf8a9fdbb36dbf835ffe270c7d437aef631a7f1e/third_party/blink/renderer/platform/scheduler/main_thread/main_thread_scheduler_impl.cc"
+  ]
+}

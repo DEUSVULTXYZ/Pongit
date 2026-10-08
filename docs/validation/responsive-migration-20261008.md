@@ -644,3 +644,26 @@ Sole game driver touch390-1/exec35532, Edge actualCDPtouch390, match970on9e4c.
 Sole read-only clockobserver2/exec (see live tools),120seconds; observer1 exited.
 No lifecycle writer, no closure/providerchange. Remainingmobile/degraded/revoke
 and root cause; seven stoppednodes stillblockPvP/5+2/24h. Funding ample.
+
+
+## 09:43 UTC - touch scheduling isolated; corrected web building
+
+Chrome/Edge mobile normal inputs take about100ms despite idle read round trips
+under15ms. Visible read-only Chrome touch probe isolates native gesture handling:
+12reads per transport/variant, unconsumed touch WS p9593.8ms/HTTP107.8ms;
+pointer preventDefault does not fix it. Native non-passive touchstart cancellation
+returns WS p958.9ms/HTTP9.2ms. Probe3 PASS72samples; probes1/2 retainedFAIL
+for missing keyboard baseline. No signed transactions or game changes in probe.
+This proves touch reply deferral, not yet elimination of all actual mobile pauses.
+
+Productc0e687f adds native touch consumption on active human/agent controls.
+Pointer ownership, release and cancel remain unchanged. Match970 natural7-6
+showed0resumes but a0.44unit visual reversal after a missed paddle. Regression
+firstfailed; presentation now preserves outgoing direction after the plane,
+allowing real velocity/continuity changes.34focused/1093fullTS/rootTS pass.
+No contract, engine,500ms credit or physics change. Building web8; not deployed.
+
+Six exact completed/unmounted compiler contexts343852695bytes archived OFFVPS
+with SHA/allcontainer checks, then removed; runtime/rollbackimages/evidence kept.
+Backup-faults-7 created09:42:52, fiveDBs plus config75634818bytes; copy pending.
+No game driver active. Next actual public mobile after guarded idle cutover.
