@@ -1,6 +1,6 @@
 export type ParticipantPose={
  paddles:[number,number]; halves:[number,number];
- balls:{id:number;x:number;y:number;continuity:string}[];
+ balls:{id:number;x:number;y:number;continuity:string;vx?:number}[];
 };
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
 type ParticipantSource={state:unknown;chaos?:unknown;clock:bigint;progressionLimit?:bigint;confirmedInputRevision?:number};
@@ -27,11 +27,12 @@ export function participantContinuationTime(previous:bigint,elapsedMs:number,cei
 export class ParticipantReconciliation {
  private paddles:[number,number]=[0,0];
  private balls=new Map<number,{x:number;y:number;continuity:string}>();
+ private ballPictures=new Map<number,ParticipantPose['balls'][number]>();
  private localDirection=0;
  private stopCorrection=2;
  private localPicture?:{side:0|1;y:number};
  private stoppedAt?:number;
- reset(){this.paddles=[0,0];this.balls.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
+ reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
  sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number;motionMs?:number}):ParticipantPose{
   const dt=clamp(elapsedMs,0,50);
   const released=!!local&&local.direction===0&&this.localDirection!==0;
@@ -86,10 +87,19 @@ export class ParticipantReconciliation {
    const x=ball.x+error.x*free;
    // The contact position belongs to live physics. Never borrow a paddle's
    // error to manufacture a visible hit, or shift a real miss into a hit.
-   return {...ball,x:ball.x<40?Math.min(40,x):ball.x>984?Math.max(984,x):clamp(x,40,984),
-    y:clamp(ball.y+error.y*free,6,570)};
+   const picture={...ball,x:ball.x<40?Math.min(40,x):ball.x>984?Math.max(984,x):clamp(x,40,984),y:clamp(ball.y+error.y*free,6,570)};
+   const last=this.ballPictures.get(ball.id);
+   // Match970: decaying clock correction reversed a miss by0.44 units after
+   // it had passed x40, although live velocity still pointed toward the goal.
+   // Keep that outgoing miss monotonic; real reversals and teleports retain
+   // their velocity/continuity change. This never invents a paddle contact.
+   if(last?.continuity===ball.continuity&&ball.vx!==undefined&&last.vx!==undefined){
+    if(ball.x<40&&last.x<40&&ball.vx<0&&last.vx<0)picture.x=Math.min(last.x,picture.x);
+    if(ball.x>984&&last.x>984&&ball.vx>0&&last.vx>0)picture.x=Math.max(last.x,picture.x);
+   }
+   this.ballPictures.set(ball.id,picture);return picture;
   });
-  for(const id of this.balls.keys())if(!current.balls.some(b=>b.id===id))this.balls.delete(id);
+  for(const id of this.balls.keys())if(!current.balls.some(b=>b.id===id)){this.balls.delete(id);this.ballPictures.delete(id);}
   const paddles=current.paddles.map((y,i)=>y+this.paddles[i]) as [number,number];
   if(local)this.localPicture={side:local.side,y:paddles[local.side]};
   return {paddles,halves:current.halves,balls};

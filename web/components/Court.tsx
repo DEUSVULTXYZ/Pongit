@@ -23,8 +23,8 @@ function participantPose(state:State,chaos?:ChaosDecoded['physics']):Participant
  const paddles=chaos?eventPaddles(chaos):null;
  return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
   halves:paddles?[Number(paddles.heightA)/2e6+(paddles.splitA?8:0),Number(paddles.heightB)/2e6+(paddles.splitB?8:0)]:[Number(state.halfA)/1e6,Number(state.halfB)/1e6],
-  balls:chaos?chaos.balls.flatMap((b,i)=>b.alive?[{id:i+1,x:Number(b.x)/1e12,y:Number(b.y)/1e12,continuity:`${chaos.score.rally}:${b.trailRevision}`}]:[]):
-   [{id:1,x:Number(state.x)/1e6,y:Number(state.y)/1e6,continuity:`${state.scoreA}:${state.scoreB}`}],
+  balls:chaos?chaos.balls.flatMap((b,i)=>b.alive?[{id:i+1,x:Number(b.x)/1e12,y:Number(b.y)/1e12,vx:Number(b.vx),continuity:`${chaos.score.rally}:${b.trailRevision}`}]:[]):
+   [{id:1,x:Number(state.x)/1e6,y:Number(state.y)/1e6,vx:Number(state.vx),continuity:`${state.scoreA}:${state.scoreB}`}],
  };
 }
 export type CourtPlayback={matchId:string;scoreA:number;scoreB:number;gameMs:number;finished:boolean;effects:ChaosEffectState[]};

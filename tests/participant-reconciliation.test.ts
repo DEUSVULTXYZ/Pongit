@@ -8,6 +8,20 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('public Chaos970 miss cannot visually rebound while its incoming velocity is unchanged',()=>{
+ for(const side of [0,1]){
+  const sample=(x:number,vx=side?192:-192,continuity='6')=>{const p=pose(288,288,side?1024-x:x);p.balls[0]={...p.balls[0],vx,continuity};return p;};
+  const view=new ParticipantReconciliation(),first=sample(30),older=sample(25);
+  const shown=view.sample(first,older,16.7).balls[0];
+  const next=sample(29.9),after=view.sample(next,undefined,16.7).balls[0];
+  assert(side?after.x>=shown.x:after.x<=shown.x,'decaying correction must not reverse a missed ball');
+  assert.equal(next.balls[0].x,side?994.1:29.9,'canonical projection is never rewritten');
+  const turned=view.sample(sample(36,side?-192:192),undefined,16.7).balls[0];
+  assert(side?turned.x<after.x:turned.x>after.x,'a real velocity reversal remains visible');
+  assert.equal(view.sample(sample(30,side?192:-192,'7'),undefined,16.7).balls[0].x,side?994:30,'new rally resets the visual bound');
+ }
+});
+
 test('public Chaos947 clock catch-up never subtracts a frame from a held local paddle',()=>{
  for(const side of [0,1] as const)for(const direction of [-1,1])for(const speed of [150,300,450]){
   const view=new ParticipantReconciliation(),source=pose(),local={side,direction,speed,motionMs:16.7};
