@@ -156,3 +156,26 @@ and later web/index builds. Python syntax and secret scans pass. Nothing from
 this image is running publicly yet. At block 69162364, tournament 43 has 25 of
 28 resolved fixtures and match 936 playing. No test/migration helper is active.
 Disk is 79.42% usable; recheck before each remaining image build.
+
+## 04:52 UTC — source drained naturally; final audit running
+
+The full candidate TypeScript suite passed 1,076/1,076 with zero skips. Root
+TypeScript also passed after the operational helper repairs. T43 completed all
+28 fixtures naturally. No test game, cancellation or delegation closure was sent.
+
+Freeze attempt 1 applied the four admission gates, then failed because the
+preparation template lacked the source queue database. Attempt 2 failed before
+container creation because its existing Compose network was not marked external.
+Both failures and immutable runtime files remain. `9521248` supplies the actual
+source database and external network, and rejects a missing database before
+signing. Attempt 3 reused all four original journalled receipts and passed at
+block 69164815: 938 results, 194 requests, 43 completed books, zero pending engine
+commands and five empty lanes. All eight source delegations remain Active, epoch
+1, with no expiry.
+
+The immediate drain observation at block 69164871 also proved both human slots
+empty. Six source writer services stopped normally; reader, UI, indexers and
+databases remain. No implicit cancellation. Snapshot 2 passed at block 69165033:
+seven human results, revision zero, no slots or pending operations. Sole bounded
+read-only social audit 3 began 04:52:02 (900-second original limit), extending the
+verified canonical page cache from snapshot 1. Final backup/import has not run.

@@ -5,7 +5,16 @@ import {createPublicClient, http, parseAbi, formatEther, type Hex, type Address}
 import {monadTestnet} from 'viem/chains';
 import {abi} from '../shared/abi-independent-MarketV4';
 
-const manifest = JSON.parse(await readFile('deployments/independent-v3-20261005.json', 'utf8'));
+const manifestPath=process.argv[4]??'deployments/independent-v3-20261005.json';
+const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+if(process.argv[4]){
+ assert.equal(manifest.rulesVersion,18,'Explicit responsive manifest required');
+ const response=await fetch('https://pongit.xyz/api/independent/config',{signal:AbortSignal.timeout(8000)});
+ assert(response.ok,'Public configuration unavailable');
+ const {manifest:current}=await response.json();
+ assert.equal(current.lobby.toLowerCase(),manifest.lobby.toLowerCase(),'Payment evidence must bind the actual public migration');
+ assert.equal(current.market.toLowerCase(),manifest.market.toLowerCase());
+}
 const browserReport=process.argv[2]?JSON.parse(await readFile(process.argv[2],'utf8')):undefined;
 assert(!browserReport||browserReport.bet?.shares==='6000000000000000'&&browserReport.lobby.toLowerCase()===manifest.lobby.toLowerCase());
 const player = (browserReport?.bet.player??'0xF2E82585A5fFF649A83dD7981B144C67EBDb3a8b') as Address;
