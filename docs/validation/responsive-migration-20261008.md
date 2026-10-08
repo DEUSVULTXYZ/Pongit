@@ -200,3 +200,38 @@ the four original scoped service keys. At 05:00 it was importing actual public
 history; no new delegation has opened and no source delegation has closed.
 The admission/queue database fix affects the migration helper, not the immutable
 product image. Earlier failures remain failures.
+
+## 05:14 UTC — immutable registration failure corrected; retry isolated
+
+Import 1 exited 1 at 05:01:34. Its first rules-17 arena deployed, but registration
+was rejected before signing. Canonical reproduction at block 69168987 proves
+`InvalidArenaConfiguration`, rules 17, registered=false, pool
+`0xccff763eef609c3923dd42f0359a1887da21407b`, arena
+`0xd975c95301d2e2cf09897ea4cd8d52a89f117f66`. No delegation opened. The source
+remains intact, with gates closed and writers stopped. This failure is PONGIT's,
+not an Interlude capacity or funding failure.
+
+`eb42374` fixes two missed boundaries: arena registration and canonical result
+capture accepted only rules 15/16. Both now accept exactly 15 through 17, with
+all authority, hub, ticket-version, proof and finality checks retained. Four new
+integration tests use the actual provisioned responsive arena with the pool,
+Classic/Chaos presence and 300-unit movement, publication and duplicate capture,
+friendly ELO preservation, same-epoch reuse, foreign authority and unsupported
+versions. The first compile typo and a fixture's incorrect balanced-selection
+expectation remain failed evidence. Full Solidity: 1,099 passed, zero failed,
+eight external tests explicitly skipped. Runtime size remains 32,757 bytes.
+
+The partially imported immutable authority cannot be rebound safely. It remains
+archived and unopened. A new namespace `reusable-agents-20261008-2` uses the same
+actual public source, original operator journal and retained service signers.
+Root `/opt/pongit/releases/responsive-20261008-r2`; helper transformations are
+hash-recorded. No new import is running yet. Copy ownership was corrected for
+node-readable metadata/audit evidence before starting any candidate service.
+
+Runtime image `sha256:9414d534bc5930795a8b64e707d3e30e25d7fd330a33f285ac9e2dfeb2ae21fa`
+built at 05:13:30 from `eb423745a346bf12c63ae8ba9b262dbc8451fb44`. Source archive
+SHA `36879accc5363e451e172d666ea77bd310c711949450cc581a105b116c308c8e`;
+273-artifact package SHA
+`b8a83d7d406b374a3c3984a1c953924ee26aa03311697be0b5ef8e536b60cac1`.
+Linked deployment graph checks pass. A new r2 backup is running and includes the
+failed target's records. No public product cutover or qualifying browser result.

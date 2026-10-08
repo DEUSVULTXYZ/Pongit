@@ -1,7 +1,9 @@
-param([Parameter(Mandatory=$true)][ValidateSet('backup-preparation','backup-drained','backup-migrated')][string]$Label)
+param([Parameter(Mandatory=$true)][ValidateSet('backup-preparation','backup-drained','backup-migrated')][string]$Label,
+ [ValidateSet('original','r2')][string]$Attempt='original')
 $ErrorActionPreference='Stop'
-$remote='/opt/pongit/releases/responsive-20261008/'+$Label
-$base='C:/Users/wwwle/.codex/private-backups/pongit/responsive-20261008'
+$suffix=$(if($Attempt -eq 'r2'){'-r2'}else{''})
+$remote='/opt/pongit/releases/responsive-20261008'+$suffix+'/'+$Label
+$base='C:/Users/wwwle/.codex/private-backups/pongit/responsive-20261008'+$suffix
 $dest=Join-Path $base $Label
 if(Test-Path -LiteralPath $dest){throw 'Preserve previous copy; inspect it before retrying'}
 New-Item -ItemType Directory -Path $dest | Out-Null

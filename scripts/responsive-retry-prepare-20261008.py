@@ -46,8 +46,9 @@ for name in ['evidence','agents','agents/metadata','agents/evidence','agents/sec
     p=root/name;p.mkdir(exist_ok=True,mode=0o700);os.chown(p,1000,1000)
 shutil.copytree(old/'agents/metadata',root/'agents/metadata',dirs_exist_ok=True)
 shutil.copy2(old/'agents/evidence/freeze-3.json',root/'agents/evidence/freeze-3.json')
-for p in (root/'human-evidence').rglob('*'):
-    os.chown(p,1000,1000)
+for name in ['human-evidence','agents/metadata']:
+    os.chown(root/name,1000,1000)
+    for p in (root/name).rglob('*'):os.chown(p,1000,1000)
 overrides=load(old/'evidence/runtime-source-overrides.json')
 for row in overrides:
     assert sha(row['source'])==row['oldSha256']
