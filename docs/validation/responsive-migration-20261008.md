@@ -867,3 +867,36 @@ already pending; do notduplicate. PvP,5agents+2humans,finance andunchanged24h
 unproved. Human andtournamentgates stayoff;agentsavailable/qualifiedfalse.
 AutomationPAUSED. Stop at this demonstratedexternalblocker; keep evidence
 and alljournals. No finished-releaseclaim. LatestusableDisk80.648,no build.
+
+
+## 2026-10-08 14:08 UTC — hosting recovered; PvP tick bottleneck reproduced
+
+All eleven current v3 arenas are now hosted with correct application, epoch1,
+base block, code/rules17 or18 and positive published batches. Exact verification
+at canonical69270955: responsive-hosting-recovered-20261008.json. Two earlier
+transient RPC failures remain in local/remote evidence. No contract deployment,
+undelegation or provider recreation was needed. The prior stopped-node blocker
+is resolved; its provider-side cause was not established.
+
+Human admission reopened through the existing guarded runtime action, with
+legacy room admission still false. Agent maintenance independently re-enabled
+all eight arenas. Tournament gate confirmed in transaction
+0x4a29324f375c56b66ac05f0454cddc94d9c2c489caf53f0e7219374d8fead5dd
+at69271709. T44 Chaos championship runs through the existing sole scheduler.
+No qualification/capacity claim: qualified=false.
+
+Actual visible Chrome PvP r2pvpclassic1 finished naturally7-4, no pauses,
+local p9514.9/15.4ms and peer15.30ms against send15.51ms. It FAILS:9/8
+ball snapshot jumps, plus one66.3%held-motion sample when the live snapshot
+aged632ms. Player holds350ms. All reports/videos remain unchanged.
+
+Human relayer had174 commands over approximately105s. Read-only VPS timing
+found each warm HTTP simulation/nonce/receipt read cost95–99ms (cold145–185).
+The tick path performed simulation, two serial nonce reads and a receipt miss
+before its write. Its nominal50ms scheduler therefore could not maintain its
+cadence. New rules18-only tick path uses journal-guarded SDK send transport,
+skips redundant tick simulation/fresh receipt miss, and retains a one-second
+nonce proof advanced only by an archived, acknowledged exact receipt. Cache
+is invalidated by binding, error, expiration or another journal owner. Lost
+responses still reconcile original bytes.25 focused tests and root TS pass.
+Not yet deployed; no second PvP proof yet. Automation remains paused.

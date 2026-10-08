@@ -17,13 +17,17 @@ import {assertCommandEpoch} from './rooms-command-epoch';
 export function independentEngine(db:Pool,base:PublicClient,app:Address,url:string,key:Hex,onSnapshot?:(app:Address,epoch:bigint,s:EngineState)=>void,runtime?:{rulesVersion?:4|12|13|14|18;node?:PublicClient;feed?:EngineFeed;archive?:(results:ReusableResultCandidate[])=>Promise<void>}){
  if(isReusableHumanRules(runtime?.rulesVersion)&&!runtime.archive)throw Error('Reusable human commands require a durable result archive');
  const rules=independentRules({rulesVersion:runtime?.rulesVersion}),abi=rules.arena;
- const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url),pollingInterval:1000});
+ let dispatchHash:Hex|undefined,nonceProof:{next:number;until:number;lastHash?:Hex}|undefined;
+ const signer=privateKeyToAccount(key),node=runtime?.node??createPublicClient({transport:engineTransport(url,rules.version===18?{
+  beforeSend:async raw=>{if(typeof raw!=='string'||keccak256(raw as Hex)!==dispatchHash)throw Error('Human command is not the journalled dispatch');},
+  received:()=>{},
+ }:undefined,rules.version===18?true:undefined),pollingInterval:1000});
  const client={app,abi:abi as Abi,node};
  const stream=new EngineStream(url,app,u=>new WebSocket(u,{origin:'https://pongit.xyz'}) as any,()=>engineCooldownMs(url));
  const feed=runtime?.feed??new EngineFeed(client,stream);let busy=false,match=0n,epoch=0n,publicationFailedAt=0,stop:undefined|(()=>void);
  function bind(id:bigint,nextEpoch:bigint){
   if(match===id&&epoch===nextEpoch)return false;
-  stop?.();match=id;epoch=nextEpoch;publicationFailedAt=0;feed.invalidate();
+  stop?.();match=id;epoch=nextEpoch;nonceProof=undefined;publicationFailedAt=0;feed.invalidate();
   if(id&&epoch)stop=feed.watch(id,s=>onSnapshot?.(app,epoch,s));else stop=undefined;
   return true;
  }
@@ -58,33 +62,54 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
    }
    let job=(await db.query("SELECT * FROM il_engine_jobs WHERE app=$1 AND status='pending' ORDER BY epoch,nonce LIMIT 1",[app.toLowerCase()])).rows[0];
    if(job&&BigInt(job.epoch)!==commandEpoch)throw Error('Previous epoch command requires final closure');
+   let unsent=false;
    if(!job){
     // Root signatures and current authority are verified before journaling. A lost
     // response retries the existing journal entry without re-simulating its spent nonce.
-    await node.call({account:signer.address,to:app,data});
-    const nonce=await node.getTransactionCount({address:signer.address,blockTag:'pending'});
-    if(nonce!==await node.getTransactionCount({address:signer.address,blockTag:'latest'}))throw Error('Arena nonce is still in flight');
+    // Rules18 ticks have no owner signature/value to preflight. The contract
+    // verifies the exact epoch/match on execution. Repeating an eth_call and
+    // three serial nonce/receipt reads added ~400ms to every 50ms tick.
+    if(rules.version!==18||name!=='tick')await node.call({account:signer.address,to:app,data});
+    if(nonceProof?.lastHash){
+     const latest=(await db.query('SELECT hash FROM il_engine_jobs WHERE app=$1 AND epoch=$2 AND signer=$3 ORDER BY nonce::numeric DESC LIMIT 1',[app.toLowerCase(),String(commandEpoch),signer.address.toLowerCase()])).rows[0];
+     // The advisory lock is reacquired per command. Another authorized writer
+     // between calls invalidates our proof, even inside its one-second lifetime.
+     if(latest?.hash!==nonceProof.lastHash)nonceProof=undefined;
+    }
+    if(rules.version!==18||!nonceProof||Date.now()>=nonceProof.until){
+     const checked=Date.now();
+     const [pending,latest]=await Promise.all(['pending','latest'].map(blockTag=>node.getTransactionCount({address:signer.address,blockTag:blockTag as 'pending'|'latest'})));
+     if(pending!==latest)throw Error('Arena nonce is still in flight');
+     nonceProof={next:pending,until:checked+1000};
+    }
+    const nonce=nonceProof.next;
     if(match!==commandMatch||epoch!==commandEpoch)throw Error('Arena binding changed before signing');
     const raw=await signer.signTransaction({chainId:4242,type:'eip1559',nonce,to:app,data,value:0n,gas:15000000n,maxFeePerGas:0n,maxPriorityFeePerGas:0n});
     job={id:randomUUID(),app:app.toLowerCase(),epoch:String(commandEpoch),nonce:String(nonce),raw,hash:keccak256(raw),match_id:String(commandMatch)};
     await db.query("INSERT INTO il_engine_jobs(app,id,nonce,raw,hash,status,epoch,signer,action,match_id,request_key) VALUES($1,$2,$3,$4,$5,'pending',$6,$7,$8,$9,$10)",[job.app,job.id,job.nonce,raw,job.hash,String(commandEpoch),signer.address.toLowerCase(),name,String(commandMatch),requestKey]);
+    unsent=true;
    }
    const identity=await engineJobIdentity(job,abi,signer.address);
    if(!allowed.includes(identity.action))throw Error('Unexpected arena operation');
    assertCommandEpoch(abi,identity.data,commandEpoch);
    if(job.match_id&&job.match_id!==String(commandMatch))throw Error('Pending command belongs to another match');
    if(match!==commandMatch||epoch!==commandEpoch)throw Error('Arena binding changed; command remains journalled');
-   let receipt:any=await node.getTransactionReceipt({hash:job.hash}).catch(()=>null);
-   if(!receipt)receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);
+   // Only this invocation's newly journalled bytes are known unsent. Restart
+   // and lost-response recovery always query the original hash first.
+   let receipt:any=unsent?null:await node.getTransactionReceipt({hash:job.hash}).catch(()=>null);
+   if(!receipt){dispatchHash=job.hash;try{receipt=await node.request({method:'interlude_sendTransaction',params:[job.raw]} as any);}finally{dispatchHash=undefined;}}
    const outcome=engineReceiptOutcome(receipt,job.hash);
    if(!outcome)throw Error('Command receipt is not yet available');
    if(outcome==='observed')await archiveReceipt(receipt);
    await db.query('UPDATE il_engine_jobs SET status=$3,resolution=$4,updated_at=now() WHERE app=$1 AND id=$2',[job.app,job.id,outcome,{kind:'receipt',hash:job.hash,blockHash:receipt.blockHash,at:new Date().toISOString()}]);
    if(outcome==='failed'){feed.invalidate();throw Error('Command reverted. Reading current arena state.');}
+   // Only an exact receipt, archived and durably acknowledged, advances this
+   // bounded proof. Receipts do not extend its original RPC check deadline.
+   if(nonceProof&&Date.now()<nonceProof.until){nonceProof.next=Number(job.nonce)+1;nonceProof.lastHash=job.hash;}
    if(identity.data!==data||match!==commandMatch||epoch!==commandEpoch){feed.invalidate();throw Error('Previous command reconciled. Refresh before the next action.');}
    publicationFailedAt=0;await db.query('DELETE FROM independent_engine_health WHERE app=$1 AND epoch=$2',[app.toLowerCase(),String(commandEpoch)]);
    return feed.receipt(commandMatch,{receipt},name,args,signer.address);
-  }catch(e){if(publicationUnavailable(e)){
+  }catch(e){nonceProof=undefined;if(publicationUnavailable(e)){
     const failedAt=Date.now();if(epoch===commandEpoch&&match===commandMatch)publicationFailedAt=failedAt;
     await db.query('INSERT INTO independent_engine_health(app,epoch,failed_at) VALUES($1,$2,$3) ON CONFLICT(app,epoch) DO UPDATE SET failed_at=$3',[app.toLowerCase(),String(commandEpoch),String(failedAt)]);
    }throw e;
@@ -105,6 +130,6 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
   retire:async(closedEpoch:bigint)=>{
    // Caller must establish status None on Monad first. Never retire on a timeout.
    await db.query("UPDATE il_engine_jobs SET status='obsolete',resolution=COALESCE(resolution,'{}'::jsonb)||$3::jsonb,updated_at=now() WHERE app=$1 AND epoch=$2 AND status IN ('pending','quarantined')",[app.toLowerCase(),String(closedEpoch),JSON.stringify({kind:'epoch-closed',epoch:String(closedEpoch),at:new Date().toISOString()})]);
-  },stop:()=>stop?.(),
+  },stop:()=>{nonceProof=undefined;stop?.();(node.transport as any)?.closeSend?.();},
  };
 }
