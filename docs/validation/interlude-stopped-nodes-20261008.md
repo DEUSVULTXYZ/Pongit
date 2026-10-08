@@ -48,3 +48,20 @@ closed while its three nodes are stopped. No five-lane or full-release claim.
 Local evidence: `artifacts/responsive-20261008-r2/hosting-readonly-0607.json`,
 `hosting-canonical-0617.json`, `empty-node-recovery-20261008-1.json`.
 All these reports contain public identifiers only; no credentials or signatures.
+
+
+## Recheck at 08:23 UTC
+
+All seven direct pinned HTTPS health endpoints still fail before HTTP with
+`curl: (28) SSL connection timeout`. TCP connection succeeds in19-24ms, then
+TLS times out at5seconds. The known healthy2641 peer returnsHTTP200 in198ms.
+The public directory still reported stopped/Active at07:59. Canonical69203457
+at08:06:57 retains all11Active epoch1 delegations without expiry. The7unreachable
+apps retain0batches; the4healthy ones have33-42batches. No additional hosting
+creation, restart request, undelegation, forceClose or provider change was sent.
+PONGIT's seven natural visible browser games on healthy nodes now pass their
+strict latency, movement, collision and no-pause gates. This isolates the
+remaining PvP/parallel-capacity blocker from those repaired gameplay defects.
+Read-only evidence: `artifacts/responsive-20261008-r2/hosting-tls-0823.json` and
+`canonical-0806.json`. The required action remains provider recovery of the
+existing stopped machines without closing their delegations.

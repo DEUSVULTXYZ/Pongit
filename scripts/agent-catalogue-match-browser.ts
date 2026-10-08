@@ -560,7 +560,7 @@ try{
   // a fast command acknowledgement as proof of smooth rendered trajectories.
   report.idleStartedAt=new Date().toISOString();await page.waitForTimeout(naturalMatch?0:idleMs);report.idleEndedAt=new Date().toISOString();
   const data=await page.evaluate(()=>(window as any).__syncProbe);
-  await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);report.sustained=sustainedInputMetrics(data);report.collisions=collisionIntegrity(data.poses??[]);report.layout=data.layout;
+  await writeFile(out+'/sync-trace.json',JSON.stringify(data));report.sync=syncMetrics(data);report.sustained=sustainedInputMetrics(data);report.collisions=collisionIntegrity(data.poses??[],data.snapshots??[]);report.layout=data.layout;
   if(spectator){const observed=await spectator.evaluate(()=>(window as any).__syncProbe);
    await writeFile(out+'/spectator-trace.json',JSON.stringify(observed));report.spectatorSync=syncMetrics(observed);}
  }

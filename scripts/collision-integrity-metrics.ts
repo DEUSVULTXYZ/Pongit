@@ -1,7 +1,26 @@
 /** Drawn poses come from the same values passed to the canvas primitives.
  * Match every visible paddle reflection to a live collision, not to another
- * predicted frame. Missing evidence is a failure, not an inferred success. */
-export function collisionIntegrity(poses:any[]){
+ * predicted frame. HTTP reads omit event logs, but preserve the authoritative
+ * contact counter and last hitter. Missing evidence still fails. */
+export function collisionIntegrity(poses:any[],snapshots:any[]=[]){
+ const byTime=new Map<string,any[]>();
+ for(const s of snapshots){const key=String(s.state?.t);byTime.set(key,[...(byTime.get(key)??[]),s]);}
+ const source=(p:any)=>byTime.get(String(p.sourceUs))?.find(s=>s.at<=p.at+5
+  &&s.state.vx===p.sourceVelocity?.vx&&s.state.x===p.sourceVelocity?.x
+  &&s.state.scoreA===p.sourceVelocity?.score?.[0]&&s.state.scoreB===p.sourceVelocity?.score?.[1])?.chaos?.physics;
+ const liveContact=(old:any,p:any,id:number,side:number,dir:number,plane:number)=>{
+  const a=source(old),b=source(p),x=a?.balls?.[id-1],y=b?.balls?.[id-1];
+  if(!a||!b||!x?.alive||!y?.alive)return false;
+  const elapsed=Number(b.t)-Number(a.t);
+  // lastHitter changes only on an actual paddle collision. Require exactly one
+  // intervening collision and the same live ball/rally/score; a wall, portal,
+  // new serve, predicted velocity or later event cannot satisfy this proof.
+  return elapsed>0&&elapsed<=150000&&Number(a.score.rally)===Number(p.rally)&&a.score.rally===b.score.rally
+   &&a.score.a===b.score.a&&a.score.b===b.score.b&&b.collisionSequence===a.collisionSequence+1
+   &&x.lastHitter!==side&&y.lastHitter===side&&x.trailRevision===y.trailRevision
+   &&Math.sign(Number(x.vx))===-dir&&Math.sign(Number(y.vx))===dir
+   &&Math.abs(Number(x.x)/1e12-plane)<100&&Math.abs(Number(y.x)/1e12-plane)<100;
+ };
  const hits=poses.flatMap(p=>(p.collisions??[]).map((h:any)=>({...h,observedAt:p.at})));
  const previous=new Map<number,{pose:any;ball:any;direction:number}>(),bounces:any[]=[];
  for(const p of poses)for(const ball of p.balls??[]){
@@ -20,7 +39,9 @@ export function collisionIntegrity(poses:any[]){
   const classic=!p.collisions?.length&&!String(p.rally).match(/^\d+$/);
   const liveClassic=classic&&poses.some(q=>q.at>=old.pose.at-150&&q.at<=p.at+500&&q.rally===p.rally
    &&Math.sign(Number(q.sourceVelocity?.vx))===dir&&Math.abs(Number(q.sourceVelocity?.x)/1e6-plane)<100);
-  bounces.push({at:p.at,ball:ball.id,side,rally:p.rally,renderedUs:p.renderedUs,confirmed:confirmed||liveClassic});
+  const transition=!confirmed&&liveContact(old.pose,p,ball.id,side,dir,plane);
+  bounces.push({at:p.at,ball:ball.id,side,rally:p.rally,renderedUs:p.renderedUs,confirmed:confirmed||transition||liveClassic,
+   evidence:confirmed?'live-event':transition?'live-contact-transition':liveClassic?'live-classic-reversal':null});
  }
  return{samples:poses.length,visiblePaddleBounces:bounces.length,unconfirmed:bounces.filter(b=>!b.confirmed),bounces};
 }
