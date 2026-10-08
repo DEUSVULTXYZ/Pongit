@@ -11,6 +11,18 @@ export function confirmedContractRevert(error:unknown){
  let cause:any=error;for(let i=0;cause&&i<10;i++,cause=cause.cause)if(['ExecutionRevertedError','ContractFunctionRevertedError'].includes(cause.name))return true;return false;
 }
 
+/** Independent read-only admission checks overlap, but neither persistence nor
+ * signing may begin until both succeed. A transport error proves no rejection. */
+export async function validateSponsoredIntake(simulate:()=>Promise<unknown>,admission?:()=>Promise<void>){
+ await Promise.all([
+  Promise.resolve().then(simulate).catch(e=>{
+   if(confirmedContractRevert(e))throw Object.assign(Error('The contract rejected this action. Reload before retrying.'),{code:'CONTRACT_REJECTED',accepted:false});
+   throw e;
+  }),
+  Promise.resolve().then(admission),
+ ]);
+}
+
 /** A sponsor queue, not a business-state database. Shares the existing operator nonce owner.
  * Network observation never holds a PostgreSQL transaction or a lobby lock. The advisory
  * lock protects only signing/submission; receipts are observed by a separate pump.
@@ -40,7 +52,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
   const task=run();tasks.add(task);void task.finally(()=>tasks.delete(task)).catch(()=>{});return task;
  };
  async function get(id:string){const r=(await db.query('SELECT id,status,hash,error FROM independent_operations WHERE id=$1',[id])).rows[0];return r?view(r):null;}
- async function enqueue(to:Address,data:Hex,value=0n,priority=1,context=''):Promise<ChainOperation>{
+ async function enqueue(to:Address,data:Hex,value=0n,priority=1,context='',admission?:()=>Promise<void>):Promise<ChainOperation>{
   await check(to,data,value);
   const id=keccak256(encodeAbiParameters([{type:'address'},{type:'bytes'},{type:'uint256'},{type:'string'}],[to,data,value,context]));
   const old=await get(id);if(old)return old;
@@ -49,8 +61,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
   if(Number((await db.query("SELECT count(*) FROM independent_operations WHERE status='queued'")).rows[0].count)>=200)throw Error('Sponsoring is busy. Your wallet has not been charged.');
   // All external callers additionally validate the target and selector. Invalid signatures
   // never enter storage. Onchain checks run again at actual inclusion.
-  try{await base.call({account:account.address,to,data,value});}
-  catch(e){if(confirmedContractRevert(e))throw Object.assign(Error('The contract rejected this action. Reload before retrying.'),{code:'CONTRACT_REJECTED',accepted:false});throw e;}
+  await validateSponsoredIntake(()=>base.call({account:account.address,to,data,value}),admission);
   // The simulation is outside this short transaction. Serialize only intake so
   // two contexts cannot enqueue identical calldata between their first checks.
   const c=await db.connect();

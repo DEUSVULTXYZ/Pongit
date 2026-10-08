@@ -92,6 +92,15 @@ test('control priority cannot bypass an upstream cooldown or promote historical 
  await Promise.all([low,live,urgent]);assert.deepEqual(seen,['control','ordinary','historical']);
 });
 
+test('fresh runtime validation overtakes metadata while historical code stays in its lane',()=>{
+ const address=`0x${'12'.repeat(20)}`,hash=`0x${'34'.repeat(32)}`;
+ const priority=(params:unknown[])=>controlRpcRequest('eth_getCode',params,1000n,h=>h===hash?1000n:undefined);
+ for(const tag of ['latest','pending','0x3e8',{blockHash:hash,requireCanonical:true}])assert(priority([address,tag]));
+ for(const tag of ['0x3a7','0x3e9','safe',{blockHash:`0x${'56'.repeat(32)}`,requireCanonical:true}])assert(!priority([address,tag]));
+ assert(!priority(['0x01','latest']));assert(!priority([address,'latest',{}]));
+ assert(!controlRpcRequest('eth_getCode',[address,'0x3e8']),'No invented canonical head');
+});
+
 test('EIP-1898 archive calls retain historical priority after their header was observed',()=>{
  const blocks=rpcBlockObservations(),old=`0x${'ab'.repeat(32)}`,recent=`0x${'cd'.repeat(32)}`;
  blocks.observe('eth_getBlockByNumber',['latest',false],{number:'0x3e8',hash:recent});

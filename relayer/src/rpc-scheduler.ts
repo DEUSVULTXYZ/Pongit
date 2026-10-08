@@ -57,6 +57,10 @@ export function controlRpcRequest(method:string,params:readonly unknown[],observ
  if(method==='eth_blockNumber')return true;
  if(method==='eth_getBlockByNumber')return params[0]==='latest'||params[0]==='pending'||recent(params[0]);
  if(method==='eth_getBlockByHash')return recent({blockHash:params[0]});
+ // Runtime identity is part of a fresh arena authorization. Historical code
+ // audits retain their ordinary/archive lane, including unknown block hashes.
+ if(method==='eth_getCode')return params.length===2&&address(params[0])
+  &&(params[1]==='latest'||params[1]==='pending'||recent(params[1]));
  if(method!=='eth_call'||!(params[1]==='latest'||params[1]==='pending'||recent(params[1])))return false;
  const call=params[0] as {to?:unknown;data?:unknown}|undefined;
  // delegationOf(address,bytes32), with the root (zero) subdelegation. Bulk

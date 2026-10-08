@@ -20,10 +20,10 @@ export function poolSponsorRoutes(m:AgentPoolManifest,writer:Writer,admissions:(
    // Even closed admissions must reconcile an already persisted operation. A
    // gate transition cannot turn an uncertain accepted call into a new intent.
    const prior=await writer.get(poolOperationId(call));if(prior)return{status:202,value:prior};
-   if(call.admission&&!await admissions())throw rejection('AGENT_ADMISSIONS_CLOSED',409);
+   const admission=call.admission?async()=>{if(!await admissions())throw rejection('AGENT_ADMISSIONS_CLOSED',409);}:undefined;
    // enqueue simulates the exact signed call before storing it. A temporary RPC
    // error retains uncertainty; only a decoded contract revert is non-acceptance.
-   return{status:202,value:await writer.enqueue(call.to,call.data,0n,1)};
+   return{status:202,value:await writer.enqueue(call.to,call.data,0n,1,'',admission)};
   }
   return null;
  };

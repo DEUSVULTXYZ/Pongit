@@ -88,7 +88,8 @@ test('sponsor rejects foreign targets, administrative actions, tails, ether and 
 });
 test('paused admission reconciles prior operations and still permits cancellation and revocation',async()=>{
  const rows=new Map<string,ChainOperation>();let simulated=0;
- const writer={get:async(id:string)=>rows.get(id)??null,status:()=>({available:true}),enqueue:async(to:Address,data:PoolSignedCall['data'])=>{
+ const writer={get:async(id:string)=>rows.get(id)??null,status:()=>({available:true}),enqueue:async(to:Address,data:PoolSignedCall['data'],_value?:bigint,_priority?:number,_context?:string,admission?:()=>Promise<void>)=>{
+  await admission?.();
   simulated++;const op:ChainOperation={id:poolOperationId({to,data}),status:'queued'};rows.set(op.id,op);return op;
  }};
  const route=poolSponsorRoutes(m,writer,async()=>false);
