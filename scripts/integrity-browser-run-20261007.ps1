@@ -4,7 +4,8 @@ param(
  [ValidateSet(0,1)][int]$GameMode=1,
  [ValidateSet(360,390,768,1366,1440)][int]$Width=1440,
  [ValidateSet('','f5','disconnect','lost-reply','revoke','background','render-stall','settled-read')][string]$Fault='',
- [switch]$Degraded
+ [switch]$Degraded,
+ [string]$RestoreFrom=''
 )
 $ErrorActionPreference='Stop'
 if($Run -notmatch '^[a-z0-9-]+$'){throw 'Invalid run name'}
@@ -27,7 +28,11 @@ $env:PONG_REQUIRE_PERFORMANCE=$(if($Fault -or $Degraded){'0'}else{'1'})
 $env:PONG_REQUIRE_RECONCILIATION=$(if($Fault -or $Degraded){'0'}else{'1'})
 $env:PONG_REQUIRE_NO_STARTUP_PAUSE='1'
 $env:PONG_CATALOGUE_VIDEO='1'
-$env:PONG_CATALOGUE_LOGIN_FROM_HOME='1'
+$env:PONG_CATALOGUE_LOGIN_FROM_HOME=$(if($RestoreFrom){'0'}else{'1'})
+if($RestoreFrom){
+ if($RestoreFrom -notlike '*private-backups*' -or !(Test-Path -LiteralPath $RestoreFrom -PathType Leaf)){throw 'Existing private session required'}
+ $env:PONG_CATALOGUE_RESTORE_PRIVATE_PATH=$RestoreFrom
+}else{Remove-Item Env:PONG_CATALOGUE_RESTORE_PRIVATE_PATH -ErrorAction SilentlyContinue}
 $env:PONG_CATALOGUE_TOUCH=$(if($Width -lt 768){'1'}else{'0'})
 $env:PONG_CATALOGUE_WIDTH=[string]$Width
 $env:PONG_CATALOGUE_HEIGHT=$(if($Width -eq 1366){'768'}elseif($Width -lt 768){'844'}else{'900'})

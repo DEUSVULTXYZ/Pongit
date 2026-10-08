@@ -453,3 +453,20 @@ Replay candidate6 passes all10Chrome/Edge viewport checks including1366x768 and
 1440x900, full controls in view and correct final score. Earlier candidate3/4/5
 failures remain. Read-only directory recheck07:28:42 still reports all7nodes
 stopped/Active; no further hosting POST, undelegation or funding request.
+
+
+## 07:41 UTC - web04acb95 deployed
+
+Imagee07047bcf2057bb8fd0e54ee93084d828902329b290f4f0be5f1a4ea5d8549c0
+was built from immutable04acb953553d261b286ce9e676dd19250a34b735, source archive
+SHA8af40f96acb5d6c44c89a6a8be832219f8f60f551a91e4eb1245a3748cf9e9fc.
+Build started07:36:17, passed07:40:09. Public web cutover07:40:26 verified idle
+5lanes at canonical69198221. Backendeb/contract17/delegations unchanged. Previous
+web5cd9c746 remains the rollback; never restore old DBs. Fresh backup-replay-5:
+6files75,496,426bytes off-VPS SHA verified07:36:45, manifest
+b27b30ad0d055bebaa4a1e0ae6136bc77eb318bdf7f363cc19fc9dec725f3caa.
+Includes current history-view repair and rollback SQL.
+Intermediate wall3/migrated backup files offloaded only after fresh local/remote
+SHA and545mount checks; all bytes remain OFFVPS, manifests retained. Disk79.926
+before build. No global prune, production/rollback image or volume deletion.
+Public replay-final-7 is the only active browser check; no game driver yet.

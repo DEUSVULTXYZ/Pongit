@@ -449,6 +449,7 @@ try{
  }
  report.countdownComplete=report.digits.includes('3')&&report.digits.includes('2')&&report.digits.includes('1');
  const before=assertions;
+ if(restored){report.existingSessionAssertions=assertions;assert.equal(assertions,0,'A still-valid arcade session must not request another passkey');}
  if(homeLogin){assert.equal(before,report.homeLoginAssertions,'Agent challenge must reuse the human login');report.checks.push('Human login and agent challenge used one passkey ceremony');}
  const naturalDeadline=Date.now()+420000;
  let naturalEnded=false;
