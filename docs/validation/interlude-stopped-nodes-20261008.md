@@ -65,3 +65,19 @@ remaining PvP/parallel-capacity blocker from those repaired gameplay defects.
 Read-only evidence: `artifacts/responsive-20261008-r2/hosting-tls-0823.json` and
 `canonical-0806.json`. The required action remains provider recovery of the
 existing stopped machines without closing their delegations.
+
+
+## Final recheck at 11:19 UTC
+
+The directory still returns stopped/Active for all seven. Canonical69240837
+confirms epoch1, no expiry and zero batches on each. From the production VPS
+over IPv4, all seven establish TCP in18-22ms then fail TLS after5s (curl28).
+Healthy2641 returnsHTTP200 in250ms with the same check. Operator reserve is
+49,569.57387803 testMON: additional funding does not address these stopped nodes.
+
+Read-only evidence: `artifacts/responsive-20261008-r2/canonical-final-1120.json`,
+`hosting-final-1118.json`, `hosting-ipv4-final-1119.json`. No new provider write,
+undelegation or force-close was submitted. Seven normal visible agent matches
+and two recovery trials passed on the latest public build; PvP and full capacity
+remain blocked. Please recover the existing hosted machines without closing
+the delegations.

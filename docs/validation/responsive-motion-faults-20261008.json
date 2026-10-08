@@ -1,0 +1,99 @@
+{
+  "at": "2026-10-08T11:19:40.939Z",
+  "passed": true,
+  "releaseComplete": false,
+  "web": "5486a5f",
+  "engine": "d558334",
+  "block": "69241318",
+  "hash": "0x667030eaa6247a905144274aaa2534d581ff428e3f8352fa3b040921d58e6dfc",
+  "scope": "Actual public visible Chrome/Edge. Existing virtual Mera session restored with no new passkey. Natural finishes. Disconnect held score and authoritative time in independent observer before resuming. Intentional recovery pauses are not normal-network samples.",
+  "runs": [
+    {
+      "fault": "f5",
+      "run": "responsive-r2-motion-f5-1",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "998"
+      },
+      "canonicalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+          "epoch": "1",
+          "id": "998"
+        },
+        "a": "0x2C1b7655e73c396dAd46fe6b32582a34f21e806f",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x2C1b7655e73c396dAd46fe6b32582a34f21e806f",
+        "hash": "0x53f8702ed0b09ddaefd189dab673b23b13eee02b9f41e0520c023ae7a0794693",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 5,
+        "elapsedUs": "54210238",
+        "finality": false
+      },
+      "evidence": [
+        {
+          "kind": "f5-grant-reused",
+          "at": "2026-10-08T11:13:40.197Z"
+        }
+      ],
+      "passkeyAssertions": 0,
+      "intentionalResumes": 1,
+      "localP95Ms": 14.700000047683716,
+      "sendP95Ms": 16,
+      "report": "artifacts/qualification/catalogue-responsive-r2-motion-f5-1/report.json",
+      "sha256": "c0ee34d12b2561350ba03d07fccf9f8ded7a1b2fae627077915041d7c66e2df1",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-motion-f5-1\\video\\page@7dd65eb3dcff6df95a142e28ce728cc7.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-motion-f5-1\\observer-video\\page@826b601dc0cd62e4a56e712a9ca204e6.webm"
+    },
+    {
+      "fault": "disconnect",
+      "run": "responsive-r2-motion-disconnect-1",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "999"
+      },
+      "canonicalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+          "epoch": "1",
+          "id": "999"
+        },
+        "a": "0x2C1b7655e73c396dAd46fe6b32582a34f21e806f",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x2C1b7655e73c396dAd46fe6b32582a34f21e806f",
+        "hash": "0xf8d385e2121d6d898764a414e011d7445ee93afc5c12867da24da84ca50fce5b",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 6,
+        "elapsedUs": "66361534",
+        "finality": false
+      },
+      "evidence": [
+        {
+          "kind": "disconnect-pauses-clock-and-resumes",
+          "at": "2026-10-08T11:15:04.597Z",
+          "paused": {
+            "t": "14380000",
+            "a": 3,
+            "b": 2
+          }
+        }
+      ],
+      "passkeyAssertions": 0,
+      "intentionalResumes": 1,
+      "localP95Ms": 16.5,
+      "sendP95Ms": 18,
+      "report": "artifacts/qualification/catalogue-responsive-r2-motion-disconnect-1/report.json",
+      "sha256": "a3127a2453af8ebbc39277cd68845d3e5a2dcda3e55477efc9d553ac16e45b00",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-motion-disconnect-1\\video\\page@d8aaed62aa7e721cbb190dc28167b523.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-motion-disconnect-1\\observer-video\\page@6c86294c3a97b15c15587673b573b299.webm"
+    }
+  ]
+}
