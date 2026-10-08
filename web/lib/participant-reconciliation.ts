@@ -32,7 +32,7 @@ export class ParticipantReconciliation {
  private localPicture?:{side:0|1;y:number};
  private stoppedAt?:number;
  reset(){this.paddles=[0,0];this.balls.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
- sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number}):ParticipantPose{
+ sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number}):ParticipantPose{
   const dt=clamp(elapsedMs,0,50);
   const released=!!local&&local.direction===0&&this.localDirection!==0;
   if(local&&local.direction!==this.localDirection){
@@ -53,6 +53,16 @@ export class ParticipantReconciliation {
     }
     if(local.direction===0&&this.stoppedAt!==undefined)
      this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],this.stoppedAt-2,this.stoppedAt+2)-current.paddles[side];
+    // A reconciled paddle can trail its live position. When live physics has
+    // already reached a wall, its zero delta must not strand the picture away
+    // from that wall (public match941: live48, picture79.5057, held up).
+    // Finish only that remaining visual distance at the rules' actual speed.
+    const wall=local.direction<0?current.halves[side]:576-current.halves[side];
+    if(local.direction!==0&&local.speed!==undefined&&this.localPicture?.side===side
+      &&Math.abs(current.paddles[side]-wall)<.001){
+     this.paddles[side]=clamp(this.localPicture.y+local.direction*local.speed*dt/1000,
+      current.halves[side],576-current.halves[side])-current.paddles[side];
+    }
    }else this.paddles[side]=settle(this.paddles[side],dt,120);
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];
   }

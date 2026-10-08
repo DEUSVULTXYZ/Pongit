@@ -358,3 +358,20 @@ Seven stopped-host evidence is now documented in interlude-stopped-nodes-2026100
 Canonical69182024 confirms their active epoch1/no expiry/zero batches. Four peers
 publish normally. User action requested to restart existing machines, without
 provider configuration changes or delegation closure. Funds are sufficient.
+
+## 06:36 UTC - contact fix deployed; new wall-limit defect reproduced
+
+Web d2dcd65/imagec3fd99b4 deployed06:30:18 after canonical69184486 five empty
+lanes and fresh six-file backup-contact-2 copied and SHA-verified off VPS06:28:47,
+manifestb361effa91212da4f8d43d5ea001271cc859fcb13acf4474245aaf013f99b39b.
+No backend, contract, delegation or database rollback. Previous86f199 remains.
+Visible Classic941/Chaos942 finished naturally7-3/7-1, both published. Zero pause,
+zero abnormal resync, zero unconfirmed paddle reflection, zero release drift.
+Both still FAIL: held movement sometimes stops short of the wall. Classic trace
+at40977ms: server48, drawn79.5057, held up. Reconciliation retained31.5057offset
+after authoritative geometry had clamped, so raw motion became zero too early.
+The next narrow correction advances only that residual distance at the real
+rules/effect speed until the drawn wall; it does not move balls or change state.
+Regression covers both directions/sides and150/300/450speed,21focused/rootTS pass.
+This additional correction is not deployed yet. Classic admission9.831s still
+fails8s. All previous failures/videos remain; no completed-release claim.

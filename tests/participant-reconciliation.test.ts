@@ -8,6 +8,24 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('public match941 wall arrival cannot strand a held paddle at79.5 while live is48',()=>{
+ for(const side of [0,1] as const)for(const direction of [-1,1])for(const speed of [150,300,450]){
+  const view=new ParticipantReconciliation(),wall=direction<0?48:528;
+  const y=wall-direction*31.5057,first=pose();first.paddles[side]=y;
+  view.sample(first,undefined,16.7,{side,direction,speed});
+  const canonical=pose();canonical.paddles[side]=wall;
+  let last=y;
+  for(let i=0;i<30;i++){
+   const result=view.sample(canonical,i===0?first:undefined,16.7,{side,direction,speed});
+   const expected=Math.max(48,Math.min(528,last+direction*speed*.0167));
+   assert(Math.abs(result.paddles[side]-expected)<1e-9,'full speed until the drawn paddle reaches the wall');
+   assert.equal(canonical.paddles[side],wall,'server physics stays unchanged');
+   assert.deepEqual(result.balls,canonical.balls,'ball never follows visual correction');last=result.paddles[side];
+  }
+  assert.equal(last,wall);
+ }
+});
+
 test('public match939 release between frames cannot add a partial frame or a late receipt tail',()=>{
  const view=new ParticipantReconciliation();
  view.sample(pose(170.69),undefined,16.4,{side:0,direction:-1});

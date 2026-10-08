@@ -183,7 +183,9 @@ export function Court({
           }else before=participantPose(projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction,previous.rulesVersion===17||previous.rulesVersion===18).state);
         }
         const predictedPose=participantPose(s,cp?.state);
-        participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction});
+        const motion=cp?eventPaddles(cp.state):null;
+        const localSpeed=motion?Number(p.side===0?motion.speedA:motion.speedB)/1e6:Number(rulesPaddleSpeed(p.rulesVersion??0))/1e6;
+        participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction,speed:localSpeed});
         if(measureControls)window.dispatchEvent(new CustomEvent('pongit:presentation-timing',{detail:{ref:p.matchId,frameAt:now,
          processedUs:String(p.state?.t),displayedUs:String(target),paddleError:participantPicture.paddles.map((y,i)=>y-predictedPose.paddles[i]),
          ballError:participantPicture.balls.map((b,i)=>({id:b.id,x:b.x-predictedPose.balls[i].x,y:b.y-predictedPose.balls[i].y}))}}));
