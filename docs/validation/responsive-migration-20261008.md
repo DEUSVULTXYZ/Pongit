@@ -1276,3 +1276,23 @@ Candidate3aaa5c2 gives only the scoped admission keeper the existing foreground 
 Backup-keeper-29 sixfiles79394756bytes SHAverifiedOFFVPS22:00:22, manifest7eac13953fd6e54347d09c5bdb67e5107498528316d60538b01f8bf25785b0fb. Prior27sixpayloads78658600bytes rehashedOFFVPS/allmountschecked thenunlinkedonlyremote; manifests/copies/history/volumes/rollbackimages preserved. Builddisk79.91968percent.
 
 Sole idle-only admissioncutover29 exec23661 started22:00:41, original22:12:41deadline. It alone awaitsall7idle/pendingadmissionjournal0; no game/browserdriver or otherwriter. Keeper old9414/RPC893c/webf308/human700a/enginefa86 untilcutoverreport confirmsnewimage. Canonical69368615 at22:00:50 all11correctActiveepoch1/noexpiry; agentbatches291-506,human39-146,operator49554.736295196MON. No fundingrequest orreshipneeded. Finalseries27NOTRUN, seven9failpreserved, automationPAUSED/no24hclaim.
+
+
+## 22:07 UTC - admission keeper deployed, natural browser series running
+
+Admission3aaa5c2/imagefc5b63a9974b1ee80e802079ef2de438be5e6f66d802dc7f7fb29598434527fb deployed22:05:05.769Z aftercanonical69369446/hash7bdd0c1fcafb14bca628fbadabaae2cbfdf7c78583a2ae9ef26fa58e18c43d01 all7idle/pendingadmissionjournal0/oldadmissioncleanexit0. Only this service changed; prior9414 is compatible rollback with preservedjournal. Firstnewtournament1183actuallyadmittedafterrestart. Backup29offVPSverified22:00:22.
+
+Sole finalbrowser-series27 exec29958 started22:06:44.518UTC, originaldeadline23:26:44.511UTC. Seven sequential natural NOVA matches scheduled5Chaos/2Classic, Chrome/Edge1440/1366/768/390/360, sourceweb14c0b29 pluscurrentbackend/RPC. Activefirst r2final27c1. Stopfirstfailure, no deadline extension; not a24htrial. No otherdriver/cutover/build/readonlyobserver active. Do not repeatseven9, whosefailureisretained. AutomationPAUSED.
+
+
+## 22:41 UTC - natural browser evidence and two remaining entry queues
+
+Finalseries27c1 completed Chaos1184 naturally4-7 withzero pauses/resync,localp9515.1ms/send18.186ms, but admission8083msFAIL8s. Series30 completed fiveChaos1188/1189/1191/1192/1194 andtwoClassic1196/1198 naturally onChrome/Edge1440/1366/768/390/360. Allseven motion/pause/resync criteria passed. Admission9701/7574/7211/8675/8092/7785/7009ms includes threefailures. Classic1198 alsoFAILdeliveryEvidence: one HTTP heartbeat RPCcode3 without recordedhash/error detail. Do not retroactively exempt it; failedreports/videos retained.
+
+Source d91efed priority inheritance has old-image HTTP regressionFAIL andcandidateHTTPPASS;1158TS/rootTS pass. RPCbb7b02c43617f9f11e6e3033f6e44b3583d4bf308dc52e96a6d0d1008f455a5f deployed22:29:56.944 aftercanonical69374342/hash b3302eb0d590467f7659dfcb4bac05b97cebadcb03ce6fea29b2075e9f26475e all7idle. Samejournals/rates/nonce/contractauthorities; onlyqueuedcoalescedforegroundreads promoted. Backup30six79565357bytes OFFVPS22:28:03 manifest a3eae2821af9b14130f136c36b446b76f2ea80b028f5bbd73e74b986718b331b. No contracts redeployed or delegations closed.
+
+New Classic1202 naturally3-7:0pauses/resync/rejectedcommands,localp9514.7ms/send15ms,6confirmedvisiblebounces; admission8231msFAIL. Instrumented HTTP now records only publicderivedhash and sanitizederror; signedpayload neverpersisted. This repeatdoesnoterase1198failure. Capacity preflight took1492ms on the critical path and still routed to background reader.336cccc reproduces that HTTP routing defect and prioritizesonlycapacity/savedchallenge plus existingmatchreads.11focused/1159TS/rootTS PASS. Readercandidate1505bf6eed901a13c122d383ec22c9d0e2336ff72f249e93ca473bdb5010edbf built22:39:46; NOTyetdeployedatcheckpoint.
+
+Read-onlypreflight30 (90seconds) FAILavailability0 because its oldimage monitor sampled DBhealth before slow canonicalreads, aging otherwisefresh evidence. Currentalreadycommittedmonitor movesDBsampling aftercanonicalreads and ignorescapturedlanes. Separatepreflight32 runs180secondswithoneexplicitread-onlysourceoverride; no gamewriters or productionoverrides. Itsdeadlineunchanged; not24h. All earlierreportsretained. Oneidle isolated pongit-result-archive-test-db stoppedclean22:23:17 after0clients/noactiveenvdependencies/noports; retained writablelayer/container, no data removed. Rollback dockerstartthatcontainer.
+
+Backup28six78960565bytes andthenbackup29six79394756bytes offloadedonlyaftereachOFFVPSsha plusallmounts checks; allcopies/manifests/rollbackimages/volumes preserved. Disk79.837percent before512MiBreadercandidatebuild/noextraSwap. Fullwebbuildforbiddenwithoutresidentreserveafterearlieroutage. AutomationPAUSED/no final24h/no completionclaim.

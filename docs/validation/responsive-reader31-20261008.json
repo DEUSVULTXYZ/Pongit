@@ -1,0 +1,82 @@
+{
+  "scope": "Compatible read scheduling; not final qualification",
+  "source": "336cccc0e62a313b7511747195a612000dbbde84",
+  "rpcDeployment": {
+    "startedAt": "2026-10-08T22:29:06.975477+00:00",
+    "deadline": 1791499266.975493,
+    "passed": true,
+    "stage": "complete",
+    "previous": "sha256:893cac77dc6f08921eab5aef6583bb1b31c7c12d21ad63b21767c1919d1c2c3e",
+    "image": "sha256:bb7b02c43617f9f11e6e3033f6e44b3583d4bf308dc52e96a6d0d1008f455a5f",
+    "backupManifest": "a3eae2821af9b14130f136c36b446b76f2ea80b028f5bbd73e74b986718b331b",
+    "lastCheck": {
+      "block": "69374303",
+      "hash": "0x473d47aceeaef96fa2884de1ef6a7f13a48e7f937d50e0c879ff01fa3d875c81",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "idle": {
+      "block": "69374342",
+      "hash": "0xb3302eb0d590467f7659dfcb4bac05b97cebadcb03ce6fea29b2075e9f26475e",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "started": "2026-10-08T22:29:56.944418143Z",
+    "finishedAt": "2026-10-08T22:29:59.584368+00:00"
+  },
+  "readerBuild": {
+    "source": "336cccc0e62a313b7511747195a612000dbbde84",
+    "parent": "sha256:dbbf50f57dfa80ebd90a4c9ca23ba168d4aef0255e6411dc1db7d75ff6d285d7",
+    "files": {
+      "relayer/src/agents/pool-server.ts": "fad4ed8321927ab490b7f4c4fd0dfd5c26a65033acb57645d4be3d0dccedaf47",
+      "tests/public-chain-read.test.ts": "ae3127fd635d9441eeadb54da313b2fff080dae547a5e17501152eb2c76f138c",
+      "tests/agent-pool-server.test.ts": "9383020c1f0101abf5c694d3d1b6002a67eed23c30567958dbac1a4c2b109119",
+      "scripts/agent-series-soak.ts": "c284809b529de586a5b1fc09131863b3f5be091432c9461c9ceec18cf4ebe6be"
+    },
+    "startedAt": "2026-10-08T22:38:54.919366+00:00",
+    "diskBefore": 79.83733627629282,
+    "passed": true,
+    "image": "sha256:1505bf6eed901a13c122d383ec22c9d0e2336ff72f249e93ca473bdb5010edbf",
+    "finishedAt": "2026-10-08T22:39:46.005196+00:00"
+  },
+  "readerDeployed": false,
+  "tests": {
+    "focused": 11,
+    "fullTypeScript": 1159,
+    "rootTypeScript": true,
+    "oldReaderRoutingRegression": "FAIL background-capacity != player-capacity"
+  },
+  "browser": {
+    "run": "r2rpc30b1",
+    "match": "1202",
+    "naturalScore": "3-7",
+    "admissionMs": 8231,
+    "admissionPassed": false,
+    "localP95Ms": 14.7,
+    "sendP95Ms": 15,
+    "pauses": 0,
+    "abnormalResyncs": 0,
+    "submissionErrors": 0
+  },
+  "monitor": {
+    "preflight30": "FAIL stale measurement order, retained",
+    "preflight32": {
+      "continuousServiceChecksPassed": false,
+      "availability": 1,
+      "requiredMatches": 5,
+      "reasons": [
+        "full-24-hours-not-observed",
+        "five-simultaneous-games-not-observed"
+      ],
+      "publicOpeningAuthorized": false
+    },
+    "durationSeconds": 180
+  },
+  "final24h": false
+}

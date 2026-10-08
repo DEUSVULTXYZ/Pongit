@@ -2,7 +2,7 @@
 import datetime, json, os, pathlib, subprocess, time, urllib.request, sys, re
 
 root = pathlib.Path(__file__).resolve().parents[1]
-run = sys.argv[1];assert re.fullmatch(r'r2seven[2-9]',run)
+run = sys.argv[1];assert re.fullmatch(r'r2seven(?:[2-9]|1[0-9])',run)
 directory = root/'artifacts/qualification'/run
 directory.mkdir(exist_ok=False)
 node = r'C:/Users/wwwle/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe'
@@ -23,6 +23,8 @@ def launch(name,args,env):
     children.append((name,p));report['children'].append(dict(run=name,pid=p.pid));save()
 try:
     current=get('config');assert current['rulesVersion']==17 and current['maxMatches']==5 and current['enabled'] and current['tournamentsEnabled']
+    nova=next(x for x in get('catalog')['items'] if x.get('official') and x['name']=='NOVA')
+    report['requiredArchetype']=nova['agent'];save()
     for i,name in enumerate(names):
         env=os.environ.copy();env['PONG_BROWSER_BARRIER']=str(directory)
         if i<4:
@@ -40,6 +42,7 @@ try:
     else:raise RuntimeError('Original preparation deadline expired')
     report['readyAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
     # Acquire a fresh live tournament before starting either human room.
+    # Exercise the requested NOVA archetype, including its competitive identity.
     # No keeper operation, artificial extension or changed fixture is involved.
     fixture=None
     while int(time.time()*1000)<deadline:
@@ -48,7 +51,7 @@ try:
         probe=subprocess.run([node,'node_modules/tsx/dist/cli.mjs','scripts/responsive-tournament-window-20261008.ts'],cwd=root,env=env,text=True,capture_output=True,timeout=40)
         if probe.returncode==0:
             window=json.loads(probe.stdout.strip().splitlines()[-1]);report['lastTournamentWindow']=window;save()
-            if window['fresh']:fixture=window['fixture'];break
+            if window['fresh'] and nova['agent'].lower() in [window['fixture']['a'].lower(),window['fixture']['b'].lower()]:fixture=window['fixture'];break
         else:report['windowReadFailedAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
         time.sleep(2)
     assert fixture,'No actual fresh hosted tournament within the original deadline'
@@ -59,7 +62,7 @@ try:
         time.sleep(.25)
     else:raise RuntimeError('Human preparation expired within original admission bound')
     report['humansPlayingAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
-    catalog=get('catalog')['items'];house=next(x for x in catalog if x.get('official') and x['agent'].lower() in [fixture['a'].lower(),fixture['b'].lower()])
+    catalog=get('catalog')['items'];house=next(x for x in catalog if x.get('official') and x['agent'].lower()==nova['agent'].lower())
     release=dict(go=True,deadline=deadline,readyCount=len(names),bot=house['name'],tournament=fixture['tournament'],ref=fixture['ref'],at=datetime.datetime.now(datetime.timezone.utc).isoformat())
     observerEnv=os.environ.copy();observerEnv.update(PONG_SEVEN_WAY='read-only-public-responsive',PONG_SEVEN_WAY_RUN=run,
         PONG_SEVEN_WAY_DEADLINE=datetime.datetime.fromtimestamp(time.time()+15*60,datetime.timezone.utc).isoformat(),

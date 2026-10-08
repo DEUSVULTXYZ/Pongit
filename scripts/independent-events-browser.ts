@@ -219,6 +219,21 @@ try{
  if(saved.stage<1){for(let i=0;i<3;i++)await account(pages[i],i);saved.stage=1;await persist();report.checks.push('Three Mera accounts and root-signed unique profiles saved');}
  report.coordination=await browserQualificationBarrier(process.env.INDEPENDENT_TEST_RUN!);
  const a=pages[0],b=pages[1],spectator=pages[2];
+ // The seven-way coordinator needs actual player readiness, not completion of
+ // the spectator's separate betting-credit ceremony. Observe both rendered
+ // controls independently; do not move the countdown or start either game.
+ const coordinatedPlaying=process.env.PONG_BROWSER_BARRIER?(async()=>{
+  await until(async()=>{
+   const ready=await Promise.all([a,b].map(async p=>{
+    const control=p.getByRole('button',{name:'Move up',exact:true});
+    return await p.locator('.rooms-canvas canvas').isVisible()&&await control.isVisible()&&await control.isEnabled();
+   }));return ready.every(Boolean);
+  },'both coordinated players rendered and ready',Math.min(720000,report.coordination.deadline-Date.now()));
+  await writeFile(process.env.PONG_BROWSER_BARRIER+'/'+run+'.playing.json',JSON.stringify({run,at:new Date().toISOString(),basis:'Both actual player canvases and enabled controls'}),{flag:'wx'});
+ })():undefined;
+ // A setup failure remains a failure; avoid an unhandled rejection while the
+ // main scenario records its own diagnostics and closes browser contexts.
+ void coordinatedPlaying?.catch(()=>{});
  if(restore&&saved.roomUrl){
   await spectator.goto(saved.roomUrl);
   await Promise.all(pages.map(p=>p.locator('.rooms-canvas canvas').waitFor({timeout:30000})));
@@ -287,7 +302,7 @@ try{
  await until(()=>a.getByRole('button',{name:'Move up',exact:true}).isEnabled(),'contract countdown ended',720000);
  if(!restore){for(let i=0;i<3;i++)assert(report.countdown[i].includes('3')&&report.countdown[i].includes('2')&&report.countdown[i].includes('1'),`All three countdown digits missing on browser ${i}`);report.checks.push('Real three-second countdown on both players and spectator');}
  // Controls and F5 must not trigger a root passkey request.
- if(process.env.PONG_BROWSER_BARRIER)await writeFile(process.env.PONG_BROWSER_BARRIER+'/'+run+'.playing.json',JSON.stringify({run,at:new Date().toISOString()}),{flag:'wx'});
+ await coordinatedPlaying;
  const before=counts.slice();
  const financial=(async()=>{if(chaos){
   await spectator.getByRole('button',{name:'Betting',exact:true}).click();

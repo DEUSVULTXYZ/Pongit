@@ -208,5 +208,35 @@
     "focused": 28,
     "typecheck": true
   },
-  "deployed": false
+  "deployed": true,
+  "deployment": {
+    "startedAt": "2026-10-08T22:00:41.070821+00:00",
+    "deadline": 1791497561.0708547,
+    "passed": true,
+    "stage": "complete",
+    "image": "sha256:fc5b63a9974b1ee80e802079ef2de438be5e6f66d802dc7f7fb29598434527fb",
+    "previous": "sha256:9414d534bc5930795a8b64e707d3e30e25d7fd330a33f285ac9e2dfeb2ae21fa",
+    "backupManifest": "7eac13953fd6e54347d09c5bdb67e5107498528316d60538b01f8bf25785b0fb",
+    "lastCheck": {
+      "block": "69369421",
+      "hash": "0x0a6ea0a348b6404cb2e4fe8462bd013f0d892d32fe8d0022d0c914da72d01f10",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "idle": {
+      "block": "69369446",
+      "hash": "0x7bdd0c1fcafb14bca628fbadabaae2cbfdf7c78583a2ae9ef26fa58e18c43d01",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "started": "2026-10-08T22:05:05.7690451Z",
+    "finishedAt": "2026-10-08T22:05:11.124295+00:00"
+  },
+  "productionQualification": "Final browser series running; eight-second target remains unproven"
 }
