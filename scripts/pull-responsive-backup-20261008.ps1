@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][ValidateSet('backup-preparation','backup-drained','backup-migrated','backup-contact-2','backup-wall-3','backup-events-4','backup-replay-5','backup-docs-6','backup-faults-7')][string]$Label,
+param([Parameter(Mandatory=$true)][ValidateSet('backup-preparation','backup-drained','backup-migrated','backup-contact-2','backup-wall-3','backup-events-4','backup-replay-5','backup-docs-6','backup-faults-7','backup-touch-final-8')][string]$Label,
  [ValidateSet('original','r2')][string]$Attempt='original')
 $ErrorActionPreference='Stop'
 $suffix=$(if($Attempt -eq 'r2'){'-r2'}else{''})

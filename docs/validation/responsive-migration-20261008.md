@@ -678,3 +678,20 @@ BuildPASS09:46:37; used79.9517percent at start. No engine/contract/lifecycle cha
 Rollbackdocs6dea/image1e0fb9 remains. Sole game driver touchfix360-1, publicChrome
 360touch, strict normal gates, warmed owned account. Do not duplicate.
 Directory09:46:29 still7stopped/Active; no additionalPOST/providerchange.
+
+
+## 09:57 UTC - three strict mobile/desktop passes; shield classifier corrected
+
+Frozen webc0e687f actual971Chrome360,972Edge390,973Chrome1440 PASS naturally,
+zero startup/runtime resumes or resync; sendp9518/18/16ms, localp9516.2-16.6ms,
+admission7.460/7.083/6.415s. Same2641 that had11resumes before now0.
+974Edge360 naturally7-4,0resumes but originalreport FAIL. Retained trace shows
+actualkind8/sequence11/rally10 shield collision at46.832153s,x1008.000012,
+matching live velocity reversal. Metric incorrectly asked for paddlekind4.
+c3690bf classifies only exact shield geometry/ball/rally/time/live velocity,
+with5regression/rootTS passing; firstnewtest failedbefore fix. Separate974
+reanalysis shows6paddle+1shield,0unconfirmed; originalFAILnever overwritten.
+Productunchanged. Serialdriver90009 now runs freshEdge360-2,Chrome390,then
+Classic1366/360, stops on anyfailure. Prior30131 exited1, neverrestart it.
+Finalbackup-touch-final8 helper preparedNOTRUN. Ownoperator49,569.627333374MON
+at69223913; archive98.518MON/sponsor116.896MON; no fundingrequest.
