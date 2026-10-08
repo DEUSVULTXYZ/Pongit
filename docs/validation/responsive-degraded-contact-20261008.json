@@ -1,0 +1,143 @@
+{
+  "at": "2026-10-08T10:51:45.186495+00:00",
+  "originalRemainsFailed": true,
+  "product": "5486a5f",
+  "engine": "d558334",
+  "ref": {
+    "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+    "epoch": "1",
+    "id": "986"
+  },
+  "originalError": "Visible paddle contact lacks live confirmation",
+  "reportSha256": "edf918cc14b349ce195407b6bc1cd44b97f9b30a84f10c53d197deaf5bd56b32",
+  "traceSha256": "276373bb3416fe4b98017167a41fab72080af30ec9e85a1cdd9897613147018a",
+  "cause": "HTTP fallback under 150 ms RTT and jitter produced authoritative samples 310-350 ms apart. The verifier assumed at most 150 ms and rejected three exactly-one-collision transitions already received before paint.",
+  "proof": "Each transition has unchanged rally/score/ball/trail revision; counter increments exactly once; lastHitter and live horizontal velocity change to the reflected side. Samples are the exact sources used by the rendered pose. The freshness bound is 500 ms; ambiguous/multiple collisions, later-only evidence or outgoing velocity alone still fail.",
+  "collisions": {
+    "at": "2026-10-08T10:49:40.623Z",
+    "originalRemainsFailed": true,
+    "productUnchanged": true,
+    "samples": 3393,
+    "visiblePaddleBounces": 5,
+    "unconfirmed": [],
+    "bounces": [
+      {
+        "at": 25304.5,
+        "ball": 1,
+        "side": 1,
+        "rally": "5",
+        "renderedUs": "13338099",
+        "confirmed": true,
+        "evidence": "live-event"
+      },
+      {
+        "at": 29970.8,
+        "ball": 1,
+        "side": 0,
+        "rally": "5",
+        "renderedUs": "18010000",
+        "confirmed": true,
+        "evidence": "live-contact-transition"
+      },
+      {
+        "at": 36654.2,
+        "ball": 1,
+        "side": 0,
+        "rally": "6",
+        "renderedUs": "24664799",
+        "confirmed": true,
+        "evidence": "live-contact-transition"
+      },
+      {
+        "at": 49170.8,
+        "ball": 1,
+        "side": 1,
+        "rally": "9",
+        "renderedUs": "37193000",
+        "confirmed": true,
+        "evidence": "live-contact-transition"
+      },
+      {
+        "at": 56187.7,
+        "ball": 1,
+        "side": 0,
+        "rally": "10",
+        "renderedUs": "44172000",
+        "confirmed": true,
+        "evidence": "live-event"
+      }
+    ],
+    "subpixelCorrections": [],
+    "shieldBounces": []
+  },
+  "held": {
+    "samples": 95,
+    "p05Ratio": 0.9999999999999986,
+    "p95Ratio": 1.000000000000001,
+    "minRatio": 0.999999999999998,
+    "maxRatio": 1.0000000000000024,
+    "outsideTarget": 0,
+    "outliers": []
+  },
+  "stopping": {
+    "samples": 63,
+    "p95Drift": 2,
+    "maxDrift": 2
+  },
+  "startupResumes": 0,
+  "resumes": 0,
+  "sendP95Ms": 203,
+  "localP95Ms": 16.799999952316284,
+  "maxHoldMs": 399.6999999999989,
+  "snapshotJumps": [
+    {
+      "at": 29970.8,
+      "dt": 16.5,
+      "d": 37.07489543476303,
+      "from": [
+        40.00012159640641,
+        432.0000096019763
+      ],
+      "to": [
+        72.94874130812832,
+        448.9981368691473
+      ],
+      "sourceT": 18000,
+      "clock": 18000
+    },
+    {
+      "at": 36654.2,
+      "dt": 16.099999999998545,
+      "d": 34.408211390517856,
+      "from": [
+        40.00006402764853,
+        52.00003201382426
+      ],
+      "to": [
+        70.63898251225412,
+        36.34175352644715
+      ],
+      "sourceT": 24580,
+      "clock": 24630
+    },
+    {
+      "at": 49170.8,
+      "dt": 16.400000000001455,
+      "d": 33.4908387954804,
+      "from": [
+        983.9999359516271,
+        52.000032024186304
+      ],
+      "to": [
+        954.1700026984832,
+        36.774679307817536
+      ],
+      "sourceT": 37170,
+      "clock": 37190
+    }
+  ],
+  "degraded": true,
+  "normalNetworkQualification": false,
+  "freshRepeat": "responsive-r2-motion-degraded3",
+  "releaseComplete": false
+}

@@ -15,7 +15,11 @@ export function collisionIntegrity(poses:any[],snapshots:any[]=[]){
   // lastHitter changes only on an actual paddle collision. Require exactly one
   // intervening collision and the same live ball/rally/score; a wall, portal,
   // new serve, predicted velocity or later event cannot satisfy this proof.
-  return elapsed>0&&elapsed<=150000&&Number(a.score.rally)===Number(p.rally)&&a.score.rally===b.score.rally
+  // HTTP fallback can observe 310–400 ms apart under the explicit 150 ms RTT
+  // trial. The counter, last hitter and same-pose source prove the collision;
+  // a 150 ms sampling assumption must not discard that proof. Keep the 500 ms
+  // freshness bound and reject every ambiguous multi-collision transition.
+  return elapsed>0&&elapsed<=500000&&Number(a.score.rally)===Number(p.rally)&&a.score.rally===b.score.rally
    &&a.score.a===b.score.a&&a.score.b===b.score.b&&b.collisionSequence===a.collisionSequence+1
    &&x.lastHitter!==side&&y.lastHitter===side&&x.trailRevision===y.trailRevision
    &&Math.sign(Number(x.vx))===-dir&&Math.sign(Number(y.vx))===dir

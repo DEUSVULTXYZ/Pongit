@@ -74,3 +74,22 @@ test('HTTP fallback requires the exact authoritative contact transition already 
  }
  assert.equal(collisionIntegrity(frames,[after]).unconfirmed.length,1,'Outgoing velocity alone cannot confirm a paddle hit');
 });
+
+test('degraded986 HTTP reads prove a single contact without assuming a 150 ms sampling interval',()=>{
+ const frames=[pose(0,45),pose(16,40),pose(32,73)].map((p,i)=>({...p,rally:'5',
+  sourceUs:i<2?'17690000':'18000000',sourceVelocity:{vx:i<2?'-211200000':'232320000',x:i<2?'46272550':'105119206',score:[2,2]}}));
+ const snapshots=[
+  {at:0,state:{t:'17690000',vx:'-211200000',x:'46272550',scoreA:2,scoreB:2},chaos:{physics:{t:'17690000',score:{rally:5,a:2,b:2},collisionSequence:2,
+   balls:[{alive:true,lastHitter:1,vx:'-211200000',x:'46272550400000',trailRevision:0}]}}},
+  {at:32.8,state:{t:'18000000',vx:'232320000',x:'105119206',scoreA:2,scoreB:2},chaos:{physics:{t:'18000000',score:{rally:5,a:2,b:2},collisionSequence:3,
+   balls:[{alive:true,lastHitter:0,vx:'232320000',x:'105119206400000',trailRevision:0}]}}},
+ ];
+ assert.equal(collisionIntegrity(frames,snapshots).bounces[0].evidence,'live-contact-transition');
+ for(const mutate of [
+  (s:any)=>s[1].chaos.physics.collisionSequence=4,
+  (s:any)=>s[1].chaos.physics.balls[0].lastHitter=1,
+  (s:any)=>s[1].chaos.physics.t='18200001',
+  (s:any)=>s[1].at=40,
+  (s:any)=>s[1].chaos.physics.score.a=3,
+ ]){const bad=structuredClone(snapshots);mutate(bad);assert.equal(collisionIntegrity(frames,bad).unconfirmed.length,1);}
+});

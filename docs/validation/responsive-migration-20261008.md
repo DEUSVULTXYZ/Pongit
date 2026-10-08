@@ -788,3 +788,19 @@ then5normalChaos+2Classic warm session. Each original7min+capture bound; series
 80min originaldeadline, stoponfirstfailure. Never duplicate or extend. No other
 game/browser driver. Do not change this running script. Backup-feedback9NOTRUN.
 Automation remainsPAUSED. Seven stopped provider apps stillblockPvP/5+2/full24h.
+
+
+## 10:52 UTC - degraded verifier sampling defect isolated; fresh repeat active
+
+Series10 exited1 on986 natural7-4. OriginalFAIL preserved:3 contacts lacked
+150ms classifier proof. Exact HTTP live counter/lastHitter/velocity transitions
+prove all3 contacts at310-350ms sample intervals. No product change. Test-only
+classifier now accepts unique same-source transitions within500ms, still rejects
+ambiguous counters, stale/later evidence and score/rally changes;6focused/rootTSPASS.
+All95 held intervals100percent; stop-p952/max2;0startup/runtimepauses; maxhold400ms.
+Degraded jumps retained and not a normal-network pass.
+
+SOLE newseries11 exec34717 has its own original80min bound and stoponfirstFAIL.
+Freshdegraded3 match987 on2641 active, then5Chaos/2Classicnormal ifPASS.
+Productionweb5486/engined558 unchanged. Sevenproviderapps stillstopped at10:50:28.
+No new provider calls, closure, transfer or build. Finalbackup9NOTRUN.
