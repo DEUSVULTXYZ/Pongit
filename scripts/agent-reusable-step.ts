@@ -28,6 +28,7 @@ import {keeperLoop} from '../shared/keeper-loop';
 import {hubLeaseValid} from '../shared/hub-lease';
 import {continuousDelegation} from '../shared/continuous-delegation';
 import {keeperRolePolicy,type AgentKeeperRole} from '../shared/agent-keeper-role';
+import {keeperRpcFetch} from '../shared/agent-keeper-rpc';
 import {agentContinuationAbi,localTournamentCursor,ratingContinuationWork,ratingFinalityPage} from '../shared/agent-continuation';
 type Ref={chainId:bigint;arena:Address;epoch:bigint;id:bigint};
 // Process-relative setup times, logged only when profiling is enabled.
@@ -52,7 +53,7 @@ const currentRatingsAbi:Abi=[...ratingsAbi,...agentContinuationAbi];
 const contracts={pool:{address:m.pool,abi:currentPoolAbi},tournaments:{address:m.tournaments,abi:bookAbi},ratings:{address:m.ratings,abi:currentRatingsAbi},challenges:{address:m.challenges,abi:challengeAbi}};
 const scope=role==='legacy'?undefined:{keyFile:process.env.PONG_AGENT_ROLE_KEY_FILE!,address:process.env.PONG_AGENT_ROLE_ADDRESS! as Address,
  allowCall:keeperRolePolicy(role,contracts,BigInt(process.env.PONG_AGENT_MAX_OPENING_WEI??'0'),m.hub)};
-const metrics=await agentMetrics('/diagnostics/reusable',role==='legacy'?'lifecycle':role),t=await chainTools(jobsPrefix,measuredFetch('monad'),scope);
+const metrics=await agentMetrics('/diagnostics/reusable',role==='legacy'?'lifecycle':role),t=await chainTools(jobsPrefix,keeperRpcFetch(role,measuredFetch('monad')),scope);
 boot.push(['chain-tools',Math.round(performance.now())]);
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3});await initializeReusableResultArchive(db);
 boot.push(['archive-init',Math.round(performance.now())]);
