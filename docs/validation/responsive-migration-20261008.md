@@ -771,3 +771,20 @@ Before build disk79.866percent, then source upload. No additional cleanup/transf
 Finalbackup-feedback9 remains preparedNOTRUN. Previousbackup8 verified; remains
 fresh for idle guarded cutover. Sevennormal browser cases and150ms repeat planned.
 Operator49569.600605702MON at69232263; sponsor113.244/archive96.868, nofundrequest.
+
+
+## 10:43 UTC - motion correction public; final serial browser recipe running
+
+Web5486a5f/imagebbddf11371df3c99949d08a35bdb262ad8aa9cedcca20651e9d63e87941ace73
+builtPASS10:41:31, deployed10:41:55.458 after canonical69233891 five idle/captured
+lanes and verifiedbackup8. Engine/contracts unchanged. Rollback05d/image53333
+retained; service-only rollback must keep current journals/data/no-close policy.
+Buildstart79.9269percent after source upload. No new build planned.
+
+SOLE driver exec8673 scripts/responsive-final-browser-series-20261008.ps1,
+status artifacts/responsive-20261008-r2/final-browser-series-10.json. Eight
+sequential public visible fixtures, first freshvirtualPRF Chrome390+150ms/jitter,
+then5normalChaos+2Classic warm session. Each original7min+capture bound; series
+80min originaldeadline, stoponfirstfailure. Never duplicate or extend. No other
+game/browser driver. Do not change this running script. Backup-feedback9NOTRUN.
+Automation remainsPAUSED. Seven stopped provider apps stillblockPvP/5+2/full24h.
