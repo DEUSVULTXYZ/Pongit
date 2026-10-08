@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-08T23:01:59.622969+00:00",
+  "deployed": false,
+  "reproduction": {
+    "run": "r2final33c1",
+    "ref": {
+      "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+      "epoch": "1",
+      "id": "1208"
+    },
+    "naturalEnded": true,
+    "score": {
+      "hash": "0x4cfd1b1788214cdb6cd91120387d9aad917c142b8ec2338db2e8aee6026f4ba6",
+      "winner": "0xCbDce96649FdEce2D43F36F7F3448FfAC222431D",
+      "status": 3,
+      "scoreA": 7,
+      "scoreB": 5,
+      "elapsedUs": "54506126",
+      "finality": false
+    },
+    "admissionMs": 7174,
+    "input": {
+      "samples": 105,
+      "p95Ms": 15.200000047683716
+    },
+    "sendP95Ms": 18.737800000002608,
+    "liveness": {
+      "heartbeats": 495,
+      "resumes": 1
+    },
+    "slowSubmissions": [
+      {
+        "at": "2026-10-08T22:53:46.401Z",
+        "action": "heartbeat",
+        "hash": "0x6854fd578993ab506d0fd3484ddf2a9ffc230960f5eeb1be7ba1a37e9eeb0b7d",
+        "ms": 619.8596999999972,
+        "transport": "websocket",
+        "error": false
+      },
+      {
+        "at": "2026-10-08T22:54:02.554Z",
+        "action": "heartbeat",
+        "ms": 271.89630000000034,
+        "http": 200,
+        "hash": "0x26a9a48c91185fd17df5feb275864015fb8bb7b1cc43de20b99540102b49ab67",
+        "error": false
+      },
+      {
+        "at": "2026-10-08T22:54:16.872Z",
+        "action": "heartbeat",
+        "ms": 1088.9337999999989,
+        "http": 200,
+        "hash": "0x6aaf9452e62e486e7cd46cf0887f2673d3889ff2af965d064902ab7844eec113",
+        "error": false
+      }
+    ],
+    "error": "Unexpected protective resume countdown",
+    "reportSha256": "53194debaf85ae8ef09e9b442d4149b06edb4a1387f0b0a8108777a5f5de00b7"
+  },
+  "rootCause": "After a slow socket recovered by exact receipt, PONGIT stayed on HTTP. This branch did not reconcile a slow live send; a 1087ms transport wait held the single journal while 500ms presence expired. Queue/fence/signature were below 1ms. The independent observer also received this heartbeat late; the precise upstream delay is not established.",
+  "change": "Apply the existing receipt-first 120ms recovery to journaled interlude_sendTransaction over HTTP. Only null permits one identical-byte copy after journal validation. No timeout extension, new nonce or repeated retry.",
+  "validation": {
+    "oldHttpResponseAndDeliveryRegressions": "FAIL as expected, retained",
+    "focused": 28,
+    "fullTypeScript": 1161,
+    "rootTypeScript": "PASS",
+    "readonlyTwoNodeProbe": "289 samples each, no errors, max HTTP39.95ms, max WebSocket15.13ms; idle probe is not hosted gameplay qualification"
+  },
+  "seven10": "Ended before admissions: registered NOVA had completed all 7 fixtures of T52. No actual seven-way result."
+}

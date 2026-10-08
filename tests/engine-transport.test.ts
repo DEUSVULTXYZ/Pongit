@@ -5,6 +5,43 @@ import {engineReadRetryMs} from "../shared/engine-read";
 import {createSendRouter} from '@interludelayer-sdk/sdk';
 import {WebSocketServer} from 'ws';
 import {createServer} from 'node:http';
+import {keccak256} from 'viem';
+
+for(const delayedExecution of [false,true])test(`slow HTTP ${delayedExecution?'delivery':'response'} recovers the exact journaled command before presence expires`,async()=>{
+ const raw='0x0102',hash=keccak256(raw);
+ const receipt={transactionHash:hash,status:'0x1',blockNumber:'0x42',logs:[]};
+ let writes=0,lookups=0,effects=0,journaled=0,received=0,published=false;
+ const execute=()=>{if(!published){published=true;effects++;}return receipt;};
+ const timers=new Set<ReturnType<typeof setTimeout>>();
+ const server=createServer((request,response)=>{
+  let body='';request.on('data',chunk=>body+=chunk);request.on('end',()=>{
+   const message=JSON.parse(body),reply=(result:unknown)=>{response.setHeader('content-type','application/json');response.end(JSON.stringify({jsonrpc:'2.0',id:message.id,result}));};
+   if(message.method==='eth_getTransactionReceipt'){lookups++;assert.equal(message.params[0],hash);reply(published?receipt:null);return;}
+   assert.equal(message.method,'interlude_sendTransaction');assert.equal(message.params[0],raw);writes++;
+   if(writes===1){
+    if(!delayedExecution)execute();
+    const timer=setTimeout(()=>{timers.delete(timer);reply(execute());},650);timers.add(timer);
+   }else reply(execute());
+  });
+ });
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+  const address=server.address();assert(address&&typeof address!=='string');
+  const router={client:()=>({via:'http' as const,client:{} as any}),lost:()=>{},delivered:()=>{}};
+  const t=engineTransport(`http://127.0.0.1:${address.port}`,{
+   beforeSend:async value=>{assert.equal(value,raw);journaled++;},received:()=>{received++;},
+  },router)({} as any);
+  const at=performance.now();
+  assert.deepEqual(await t.request({method:'interlude_sendTransaction',params:[raw]}),receipt);
+  assert(performance.now()-at<400,'A single HTTP stall must not block the 500ms presence credit');
+  await new Promise(resolve=>setTimeout(resolve,700));
+  assert.equal(effects,1);assert.equal(received,1);assert.equal(lookups,1);
+  assert.equal(writes,delayedExecution?2:1);assert.equal(journaled,writes);
+ }finally{
+  for(const timer of timers)clearTimeout(timer);server.closeAllConnections();
+  await new Promise<void>(resolve=>server.close(()=>resolve()));
+ }
+});
 
 test('a stalled socket handshake does not delay the first HTTP command or send it later',async()=>{
  let http=0,journaled=0,received=0,close=()=>{};

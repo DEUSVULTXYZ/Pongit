@@ -1,6 +1,6 @@
 import type {Hex} from 'viem';
 
-/** Recover a slow socket using the already journaled transaction's exact hash.
+/** Recover a slow live send using the already journaled transaction's exact hash.
  * A null receipt permits only one resend of those same bytes, never a new nonce
  * or signature. This is the SDK delivery recovery rule with an earlier deadline.
  * A failed lookup or a node rejection never authorizes that resend. */

@@ -148,7 +148,26 @@ export function engineTransport(url: string,journal?:EngineTransportJournal,send
           // HTTP retains Retry-After and the common traffic instrumentation.
           const at=Date.now();let status=200,deliveredVia=selected.via;
           try{
-            if(selected.via==='http')result=await transport.request(args);
+            if(selected.via==='http'){
+              if(args.method!=='interlude_sendTransaction')result=await transport.request(args);
+              else{
+                // HTTP can stall after a socket fallback too. Keep the same
+                // receipt-first recovery bound: never wait four seconds with
+                // an unresolved command while the 500ms presence credit runs
+                // out. Only an actual null permits one identical-byte copy.
+                const raw=(args.params as any)?.[0] as Hex;
+                const recovered=await reconcileSocketSend({hash:keccak256(raw),
+                  send:()=>transport.request(args),
+                  receipt:()=>requestGate(()=>transport.request({method:'eth_getTransactionReceipt',params:[keccak256(raw)]})),
+                  repeat:()=>requestGate(async()=>{
+                    await journal!.beforeSend(raw);
+                    return transport.request(args);
+                  })});
+                result=recovered.value;
+                if(recovered.recovered)recordRpc({at,target:'interlude',method:'send.http-recovered.'+recovered.recovered,
+                  status:200,ms:Date.now()-at,source:'network'});
+              }
+            }
             else{
               const raw=(args.params as any)?.[0] as Hex;
               const recovered=await reconcileSocketSend({hash:keccak256(raw),
