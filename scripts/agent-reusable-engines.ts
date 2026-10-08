@@ -40,6 +40,10 @@ const {record:r,protectedApps}=await loadReusableRuntime('engines'),m={...r.comm
 const rulesVersion=r.rulesVersion as 15|16|17,abi=(rulesVersion===16||rulesVersion===17)?synchronizedAgentArenaAbi:reusableAgentArenaAbi;
 const tickInterval=agentTickInterval(process.env.PONG_AGENT_TICK_INTERVAL_MS,rulesVersion);
 const base=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
+// Admission and active authorization share the gateway's existing paced
+// foreground lane. Replay/publication scans keep their background client.
+// This hint changes scheduling only; all canonical and ticket checks remain.
+const controlBase=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:8192}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad','engine.admission'),fetchOptions:{headers:{'x-pongit-rpc-foreground':'1'}}})});
 await verifyHouseInstanceAuthorities(<T=any>(address:Address,abi:Abi,functionName:string,args:readonly unknown[]=[])=>base.readContract({address,abi,functionName,args}) as Promise<T>,m);
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:8}),metrics=await agentMetrics('/diagnostics/reusable','controllers');
 await initializePoolOperations(db);await initializePoolObservations(db);await initializePoolReplays(db);await initializeReusableResultArchive(db);
@@ -59,7 +63,7 @@ let stopping=false;process.once('SIGTERM',()=>{stopping=true;});process.once('SI
 const delay=(ms:number)=>new Promise(resolve=>setTimeout(resolve,ms));
 const clean=(e:any)=>String(e?.shortMessage??e?.message??'Arena unavailable').split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,220);
 // One shared canonical observation for all arena loops, no per-tick lobby RPC.
-const {assignments,hub:sharedHub}=agentRuntimeObservations(base,m.pool,m.hub,r.arenas.map((a:any)=>a.app),m.maxMatches);
+const {assignments,hub:sharedHub}=agentRuntimeObservations(controlBase,m.pool,m.hub,r.arenas.map((a:any)=>a.app),m.maxMatches);
 const funding=publisherFunding(base);
 async function replayLoop(){while(!stopping){try{await replays.reconcile(async ref=>(await replayReader.match(ref)).value);}catch{console.error(JSON.stringify({service:'reusable-replays',error:'Reconciliation pending'}));}
  for(let n=0;n<60&&!stopping;n++)await delay(1000);}}
@@ -71,7 +75,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
  let observedRuntimeHash='',observedRuntimeBase:bigint|undefined;
  let publicationPreparedEpoch:bigint|undefined;
  let observations:PoolObservations|undefined,proofTask:Promise<void>|undefined;
- let cachedTicket:{key:string;pair:readonly [ReusableTicket,ReusableAgentBinding]}|undefined,admitted=false;
+ let cachedTicket:{key:string;pair:readonly [ReusableTicket,ReusableAgentBinding];discoveredAt:number;ticketMs:number}|undefined,admitted=false;
  let admission:BackgroundObservation<boolean>|undefined;
  // Refresh the same public fences before they expire. Serial five/ten-second
  // reads used to stop the tick loop even while the last observation was valid.
@@ -179,7 +183,11 @@ async function arenaLoop(app:Address,runtimeHash:string){
    assert.equal(entry.ref.epoch,d.epoch,'Previous result requires historical recovery');
    const ref={epoch:entry.ref.epoch,id:entry.ref.id};
    const ticketKey=`${ref.epoch}:${ref.id}`;
-   if(cachedTicket?.key!==ticketKey)cachedTicket={key:ticketKey,pair:await base.readContract({address:m.pool,abi:poolAbi,functionName:'ticketOf',args:[entry.ref],blockNumber:block.number})};
+   if(cachedTicket?.key!==ticketKey){
+    const discoveredAt=Date.now();
+    const pair=await controlBase.readContract({address:m.pool,abi:poolAbi,functionName:'ticketOf',args:[entry.ref],blockNumber:block.number});
+    cachedTicket={key:ticketKey,pair,discoveredAt,ticketMs:Date.now()-discoveredAt};
+   }
    const [ticket,binding]=cachedTicket.pair;
    if(!engine||engine.ref.epoch!==ref.epoch||engine.ref.id!==ref.id){
     await close();observations=new PoolObservations(db,app,ref);
@@ -211,6 +219,7 @@ async function arenaLoop(app:Address,runtimeHash:string){
    },7500,10000);
    admitted=await admission.read();
    if(!admitted){
+    const proofStarted=Date.now();
     const [[engineEpoch,count],session]=await Promise.all([
      node.readContract({address:app,abi,functionName:'resultCommitment'}),
      node.request({method:'interlude_session',params:[]} as any) as Promise<any>,
@@ -221,14 +230,18 @@ async function arenaLoop(app:Address,runtimeHash:string){
     // Independent evidence shares the same pinned blocks. Wait for every check
     // before signing; a failed code/header/ticket read cannot admit a player.
     const [issuedDigest,source,engineCodeHashA,engineCodeHashB]=await Promise.all([
-     base.readContract({address:m.pool,abi:poolAbi,functionName:'issuedTicket',args:[app,ref.epoch,ticket.sequence],blockNumber:block.number}),
-     base.getBlock({blockNumber:ticket.sourceBlock}),code(binding.controlA,binding.a),code(binding.controlB,binding.b),
+     controlBase.readContract({address:m.pool,abi:poolAbi,functionName:'issuedTicket',args:[app,ref.epoch,ticket.sequence],blockNumber:block.number}),
+     controlBase.getBlock({blockNumber:ticket.sourceBlock}),code(binding.controlA,binding.a),code(binding.controlB,binding.b),
     ]);
     const evidence={chainId:10143,hub:m.hub,authority:m.pool,arena:app,reservedMatch:ref.id,
      issuedDigest,sourceHash:source.hash!,hubEpoch:d.epoch,hubStatus:d.status,hubExpires:d.expiresAt,
      engineEpoch,engineCount:count,now:block.timestamp,engineCodeHashA,engineCodeHashB};
     (cancel?validateReusableAgentCancellation:validateReusableAgentAdmission)(ticket,binding,evidence);
+    const commandStarted=Date.now();
     await engine.send(cancel?'cancel-expired':'admit',cancel?'cancelAdmission':'admit',[ticket,binding,await bridge.sign({hash:reusableAdmissionDigest(ticket)})]);
+    console.log(JSON.stringify({at:new Date().toISOString(),service:'reusable-admission-timing',app,epoch:String(ref.epoch),id:String(ref.id),
+     cancelled:cancel,discoveredAt:new Date(cachedTicket.discoveredAt).toISOString(),ticketMs:cachedTicket.ticketMs,
+     proofMs:commandStarted-proofStarted,commandMs:Date.now()-commandStarted,totalMs:Date.now()-cachedTicket.discoveredAt}));
     admission=undefined;lastProgress=Date.now();continue;
    }
    const s=await engine.read();

@@ -1,0 +1,99 @@
+{
+  "at": "2026-10-08T18:02:56.228Z",
+  "match": 1093,
+  "originalReportUnchanged": true,
+  "scope": "Retrospective collision classification only; original natural report remains failed. Last Chance shield, not a paddle contact.",
+  "sha256": "cc9f3f24eaaad63f30ade4b0fc10c6316e9a6fb7b80d43efdc705e9fe9aabecf",
+  "result": {
+    "samples": 4240,
+    "visiblePaddleBounces": 8,
+    "unconfirmed": [],
+    "bounces": [
+      {
+        "at": 14773.8,
+        "ball": 1,
+        "side": 1,
+        "rally": "1",
+        "renderedUs": "2522000",
+        "confirmed": true,
+        "evidence": "live-event"
+      },
+      {
+        "at": 19190.4,
+        "ball": 1,
+        "side": 0,
+        "rally": "1",
+        "renderedUs": "6938000",
+        "confirmed": true,
+        "evidence": "live-event"
+      },
+      {
+        "at": 23257.3,
+        "ball": 1,
+        "side": 1,
+        "rally": "1",
+        "renderedUs": "11014000",
+        "confirmed": true,
+        "evidence": "live-event"
+      },
+      {
+        "at": 33490.1,
+        "ball": 1,
+        "side": 0,
+        "rally": "2",
+        "renderedUs": "21237000",
+        "confirmed": true,
+        "evidence": "live-event"
+      },
+      {
+        "at": 40673.7,
+        "ball": 1,
+        "side": 1,
+        "rally": "3",
+        "renderedUs": "28427000",
+        "confirmed": true,
+        "evidence": "live-event"
+      },
+      {
+        "at": 50506.8,
+        "ball": 1,
+        "side": 1,
+        "rally": "5",
+        "renderedUs": "38215000",
+        "confirmed": true,
+        "evidence": "live-event"
+      },
+      {
+        "at": 57673.6,
+        "ball": 1,
+        "side": 0,
+        "rally": "6",
+        "renderedUs": "45381000",
+        "confirmed": true,
+        "evidence": "live-event"
+      },
+      {
+        "at": 62173.7,
+        "ball": 1,
+        "side": 1,
+        "rally": "6",
+        "renderedUs": "49881000",
+        "confirmed": true,
+        "evidence": "live-event"
+      }
+    ],
+    "subpixelCorrections": [],
+    "shieldBounces": [
+      {
+        "at": 27040.5,
+        "ball": 1,
+        "side": 0,
+        "rally": "1",
+        "kind": 7,
+        "sequence": 7,
+        "evidence": "live-shield-event",
+        "confirmationDelayMs": 16.5
+      }
+    ]
+  }
+}

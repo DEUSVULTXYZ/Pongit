@@ -81,3 +81,15 @@ undelegation or force-close was submitted. Seven normal visible agent matches
 and two recovery trials passed on the latest public build; PvP and full capacity
 remain blocked. Please recover the existing hosted machines without closing
 the delegations.
+
+
+## Resolved at 13:49 UTC — existing nodes recovered
+
+All eleven original nodes now answer with the expected app, epoch, base block,
+rules and runtime, and positive publication counts. Canonical proof69270955 is
+in responsive-hosting-recovered-20261008.json. No new deployment, closure or
+provider recreation was needed. The earlier provider-side cause is not known.
+The earlier requests for node recovery and their failed evidence are retained;
+they no longer describe a current external blocker. PvP admissions were restored
+and two actual natural browser PvP games subsequently passed their movement,
+collision and no-pause gates. Seven-way capacity and final24h remain unqualified.

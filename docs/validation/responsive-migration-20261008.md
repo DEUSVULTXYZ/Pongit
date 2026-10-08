@@ -1054,3 +1054,100 @@ Postcutover Chaos1071 natural7-5/no pauses/inputp9514.6ms/send13.6ms, but admiss
 preserving exact grant fields, renewal margin and network-error behavior; tested
 but NOTdeployed. New scheduler priority for nonce/receipt/fee/private submission
 is tested but NOTdeployed. No active game driver, no final24h, automationPAUSED.
+
+
+## 17:20 UTC — admission improved, not accepted yet
+
+Web228c5b1 image1e21ba11cc15832b7a2513843dae39bc0f623bcaca047dbf3322f55fb6048323
+and RPCd62f362 image067d468b1ea2640657b6c03b972f776aae3d28342240e1788e163ac85c67abab
+deployed17:07:24/26, canonical69310271 all7idle and empty sponsor queue. Other
+roles, contracts and continuous delegations unchanged. Backup-admission-16
+fiveDB/runtime6files77418730bytes SHAverified OFFVPS17:05:29, manifest
+4f1cfe07568d0669587ad256e962474494fec35b7507dfacc95efbf3eaf61ca5.
+
+Actual visible Chrome r2admit16 Chaos1076 finished naturally4-7 with0pauses,
+0resyncs,83.6ms maximum hold, inputp9515.1ms/send14ms. Admission10.941s FAIL,
+compared with14.589s in r2queue1; these single runs are not a p95 comparison.
+Its preserved trace shows canonical preparation still serializes pending and
+three dependent reads. Source791bef9 coalesces pending+saved grant+domain+nonce
+at the same verified block before signing; pending requests produce no second
+signature. Ten focused and1119fullTS/rootTS pass. Web17 build running; not
+deployed yet. No game/browser driver remains.
+
+Exact v3 hub runtime SHA/keccak verified against canonical69310876 and Sourcify
+exact_match. Local EVM tests with7committee members preserve the last value
+after16000 and100000 real synthetic commits: release117715 EVM gas before
+refunds in both. Scope is local actual bytecode with synthetic app/storage,
+not hosted publication, Monad fee metering or five-lane reserve qualification.
+First compiler parameter failure retained. No production closure; admission
+budget16000/8000 remains unchanged pending full review. Report
+continuous-budget-20261008.json and original sources/logs retained.
+
+Only two exact untagged, unused PONGIT compiler-stage images removed with no
+force after all-container checks. Tagged/running/rollback images untouched.
+Usable disk79.77% before web17. AutomationPAUSED; no final24h/delivery claim.
+
+## 17:37 UTC â€” second admission reduction prepared
+
+Web791bef9 deployed17:24:43 with imagee34276d7c424cea0fd4789dab99021fd90ee64fa6cf2365560673b8d4e6bbbdf;
+canonical69313757 verified all seven slots idle before replacement. Actual visible
+Chrome r2admit17 Chaos1082 finished naturally with no pause/resync, inputp9515.4ms,
+send17ms and independent peer12.963ms. Admission9.190s FAIL; all other performance
+and natural gates pass. Earlier failures remain. Full trace identifies1.04s code
+validation and1.46s sponsor intake; no claimed Interlude fault.
+
+Source28d32cb overlaps independent read-only admission/simulation checks, waiting
+for both before persistence; exact operation IDs and nonce journal unchanged.
+Fresh runtime validation now has the same paced/fair priority as authorization.
+37focused,1124fullTS/rootTS passed. Exact image9980088c91d70b2b9e36861a80074690a277779a2688e689ea23f67a7a5bc62e
+passed37offline tests on VPS, no network. Backup-admission-18 fiveDB/runtime6files
+77583504bytes SHAverified OFFVPS17:36:25, manifest
+b4586795e12bbf1a8d7de7771cf106ce15ea64f739c638e74d6189576038de0a.
+Idle-only cutover18 dispatched, not yet verified here. No game/browser driver.
+Only two exact unused, untagged PONGIT compiler images removed, usable disk79.67%
+before build. No production closure/migration; automationPAUSED; no final24h.
+## 17:49 UTC â€” foreground scheduling candidate
+
+Gateway/sponsor28d32cb image9980088c91d70b2b9e36861a80074690a277779a2688e689ea23f67a7a5bc62e
+deployed17:37:38/41 after canonical69316281 all7idle/empty sponsor queue.
+Actual r2admit18 Chaos1088 natural match passed all motion/presence/peer gates,
+but admission8.820s FAIL. Sponsor POST1.46s ->0.689s and code1.04s ->0.133s;
+new capacity0.780s and ordinary match read1.447s still delay entry. Individual
+runs, not a statistical p95 improvement. Earlier failures kept.
+
+Sourcef85d8a7 gives validated player reads and match entry a foreground hint in
+the same private RPC scheduler. Archive scans cannot promote, per-client limits
+and canonical pins retained, background fairness/rate unchanged.1126fullTS/rootTS,
+24focused and exact VPS image isolated HTTP priority test PASS. Image
+sha256:dbbf50f57dfa80ebd90a4c9ca23ba168d4aef0255e6411dc1db7d75ff6d285d7.
+Backup-admission-19 fiveDB/runtime6files77420667bytes SHAverified OFFVPS17:47:14,
+manifest33d2603a5fe39b17e91b3534ae61ea4908f182be8fbd344867786adf1cd00172.
+Sole idle-only cutover19 exec67813 is waiting; original12min deadline. It replaces
+RPC/sponsor/reader only. No game/browser driver, no contract or closure. Web791
+stays. Check its report before any action; never repeat. AutomationPAUSED.
+## 18:10 UTC — foreground deployed; remaining engine admission delay
+
+RPC/sponsor/reader f85d8a7 image dbbf50f57dfa80ebd90a4c9ca23ba168d4aef0255e6411dc1db7d75ff6d285d7
+deployed17:51:58/17:52:00 after canonical69319127 all7idle/empty sponsor queue.
+Web791 and engine d558 unchanged. No contract, epoch or delegation changes.
+Actual Chrome r2admit19 failed before admission: its saved authorization had less
+than20minutes left (expires18:10:24); imported virtual credential lacked PRF on
+renewal. This does not prove a physical provider failure. No match created.
+Fresh unified login r2admit20 Chaos1093 admitted7.154s, no pause/resync, input14.6ms,
+send16ms. Original collision test FAIL retained: exact trace shows Last Chance
+shield kind7/sequence7 confirmed16.5ms later, not a paddle reflection. Separate
+chaos1093-shield-20261008.json reanalysis; seven regression tests reject wrong,
+missing or late evidence. No renderer change and no original PASS rewrite.
+
+r2admit21 Chaos1096 natural3-7 passes motion and
+collision gates, zero pause/resync; admission8.414s FAIL. Canonical sponsor receipt
+observed18:03:30; actual engine admit journal only created18:03:35.247, confirmed
+35.357. Browser repeatedly observes the not-yet-admitted binding. Current private
+RPC metrics show ordinary reads queuing up to1396ms, versus45ms upstream network,
+zero429. Candidate moves only engine assignment/fence/ticket reads to the existing
+paced foreground lane, leaving archive reads ordinary and nonce authority intact.
+Per-admission stage timings added, no payloads. Not deployed yet.
+
+No game/browser driver active. AutomationPAUSED, no final24h. Offload22 archives
+only two completed unmounted web compiler contexts; remove only after verified
+offVPS copy. Production/rollback images and all prior failed evidence retained.

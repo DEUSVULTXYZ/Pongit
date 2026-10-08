@@ -26,6 +26,29 @@ test('a visible reflection without a live contact fails, even with smooth frames
  assert.equal(collisionIntegrity(frames).unconfirmed.length,0);
  frames[3].collisions[0].ball=2;assert.equal(collisionIntegrity(frames).unconfirmed.length,1);
 });
+
+test('Chaos1093 shield event received one frame later proves the exact shield reflection',()=>{
+ const hit={sequence:7,at:'14779274',rally:1,ball:1,kind:7,x:'15999860000000'};
+ const frames=[pose(27007.1,21.512102326),pose(27023.8,17.224930723),pose(27040.5,19.240107830),pose(27057,23.594575759,[hit])]
+  .map((p,i)=>({...p,renderedUs:String([14758199,14774899,14791599,14812000][i]),
+   sourceUs:i<3?'14710000':'14800000',sourceVelocity:{vx:i<3?'-255552000':'255552000'}}));
+ const r=collisionIntegrity(frames);assert.equal(r.unconfirmed.length,0);assert.equal(r.visiblePaddleBounces,0);
+ assert.equal(r.shieldBounces[0].sequence,7);assert.equal(r.shieldBounces[0].confirmationDelayMs,16.5);
+ for(const mutation of [
+  (f:typeof frames)=>{f[3].at=f[2].at+501;},
+  (f:typeof frames)=>{f[3].sourceUs='14710000';},
+  (f:typeof frames)=>{f[3].sourceVelocity.vx='-255552000';},
+  (f:typeof frames)=>{f[3].collisions[0].ball=2;},
+  (f:typeof frames)=>{f[3].collisions[0].rally=2;},
+  (f:typeof frames)=>{f[3].collisions[0].kind=3;},
+  (f:typeof frames)=>{f[3].collisions[0].x='40000000000000';},
+  (f:typeof frames)=>{f[2].balls[0].x=41;},
+ ]){
+  const bad=structuredClone(frames);mutation(bad);
+  assert.equal(collisionIntegrity(bad).shieldBounces.length,0);
+ }
+ assert.equal(collisionIntegrity(frames.slice(0,3)).unconfirmed.length,1,'No later evidence remains a failure');
+});
 test('a held uncertain contact followed by a real miss invents no reflection',()=>{
  assert.equal(collisionIntegrity([pose(0,50),pose(10,40),pose(20,40),pose(30,35)]).visiblePaddleBounces,0);
 });

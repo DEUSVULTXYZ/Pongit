@@ -58,6 +58,22 @@ export function collisionIntegrity(poses:any[],snapshots:any[]=[]){
     &&Math.sign(Number(incoming))===-dir&&Math.sign(Number(outgoing))===dir){
    shieldBounces.push({at:p.at,ball:ball.id,side,rally:p.rally,kind:shield.kind,sequence:shield.sequence,evidence:'live-shield-event'});continue;
   }
+  // A deterministic Last Chance reflection can be painted one frame before
+  // its live event arrives. Apply the same bounded confirmation window as
+  // paddle events, but also require the matching later authoritative velocity.
+  // Never excuse an inconsistent current event, a reflection at the paddle,
+  // a different ball/rally, or a shield which never actually fired.
+  const laterShield=!shield&&hits.find(h=>h.rally===Number(p.rally)&&h.ball===ball.id&&h.kind===(side===0?7:8)
+   &&h.observedAt>p.at&&h.observedAt<=p.at+500&&Math.abs(Number(h.at)-time)<=150000
+   &&Math.abs(Number(h.x)/1e12-shieldPlane)<.01);
+  const laterShieldPose=laterShield&&poses.find(q=>q.at===laterShield.observedAt&&q.rally===p.rally
+   &&Number(q.sourceUs)>=Number(laterShield.at)
+   &&Math.sign(Number(ball.id===1?q.sourceVelocity?.vx:source(q)?.balls?.[ball.id-1]?.vx))===dir);
+  if(laterShield&&laterShieldPose&&(old.ball.x-plane)*dir<0&&(ball.x-plane)*dir<0
+   &&Math.sign(Number(incoming))===-dir){
+   shieldBounces.push({at:p.at,ball:ball.id,side,rally:p.rally,kind:laterShield.kind,sequence:laterShield.sequence,
+    evidence:'live-shield-event',confirmationDelayMs:laterShield.observedAt-p.at});continue;
+  }
   const confirmed=p.rules>=9
    ?hits.some(h=>h.rally===Number(p.rally)&&h.ball===ball.id&&h.kind===kind&&Math.abs(Number(h.at)-time)<=150000&&h.observedAt<=p.at+500)
    :false;

@@ -10,6 +10,7 @@ import {validateAgentPoolManifest} from '../shared/agent-pool';
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 
 const scope=process.env.PONG_REUSABLE_PUBLICATION_EVIDENCE;
 assert(scope==='read-only-private'||scope==='read-only-public');
@@ -57,13 +58,27 @@ try {
     assert.equal(receipt.status, 'success'); assert.equal(receipt.blockHash, tx.blockHash);
     assert.equal(tx.to?.toLowerCase(), m.hub.toLowerCase());
     const decoded = decodeFunctionData({abi: hubAbi, data: tx.input});
-    const relevant = logs.filter(x => x.transactionHash === hash);
+    const relevant: Array<(typeof logs)[number]> = logs.filter(x => x.transactionHash === hash);
     assert(relevant.every(x => x.blockHash === receipt.blockHash));
+    let payload:object|undefined;
+    if(m.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()){
+      assert.equal(decoded.functionName,'commit');
+      if(decoded.functionName!=='commit')throw Error('Unexpected v3 publication');
+      const [batch,diffs,entries,raws]=decoded.args;
+      assert.equal(relevant.length,1,'One canonical v3 commit event per transaction');
+      assert.equal(batch.app.toLowerCase(),relevant[0].args.app?.toLowerCase());
+      assert.equal(batch.batchIndex,relevant[0].args.batchIndex);
+      assert.equal(entries.length,raws.length,'Published input log length differs');
+      // Counts only. Signed inputs and storage contents never enter evidence.
+      payload={diffs:diffs.length,distinctSlots:new Set(diffs.map(d=>d.slot)).size,
+        entries:entries.length,signedInputBytes:raws.reduce((n,raw)=>n+(raw.length-2)/2,0),
+        withinNodeDiffLimit:diffs.length<=233,withinHubDiffLimit:diffs.length<=256};
+    }
     // Monad charges the transaction gas limit; retain both fields rather than
     // silently presenting EVM execution gas as the fee basis.
     report.transactions.push({hash, block: String(receipt.blockNumber), blockHash: receipt.blockHash,
       publisher: tx.from, method: decoded.functionName, calldataBytes: (tx.input.length - 2) / 2,
-      gasLimit: String(tx.gas), gasUsed: String(receipt.gasUsed), effectiveGasPrice: String(receipt.effectiveGasPrice),
+      gasLimit: String(tx.gas), gasUsed: String(receipt.gasUsed), effectiveGasPrice: String(receipt.effectiveGasPrice),payload,
       chargedFeeWei: String(tx.gas * receipt.effectiveGasPrice),
       commits: relevant.map(x => ({app: x.args.app, batch: String(x.args.batchIndex)}))});
     await save();

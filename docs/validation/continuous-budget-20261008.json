@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-08T17:10:10.110Z",
+  "block": "69310876",
+  "hash": "0xf30691177bb97b14a2554ad3be69d3fcadf425d81a7728e48cf5dbb531f13b08",
+  "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+  "chainId": 10143,
+  "codeHash": "0xe84c1d8f41ad688955549a1cc245d6908bcd44e44709335769284d832e5a61ef",
+  "source": "Sourcify exact_match",
+  "bytes": 34515,
+  "scope": "Local EVM only; exact runtime, synthetic commits and app; no production close or release. EVM gas not a Monad invoice. Not hosted publication/cost/capacity proof.",
+  "sourceSha256": "b148aa02b801b8679e3d9f9663ccd5c141a2506cc849ae3a6595f53972ea0314",
+  "scenarios": [
+    {
+      "batches": 16000,
+      "passed": true,
+      "coldReleaseEvmGasBeforeRefund": 117715,
+      "sourceLog": "artifacts\\hub-v3-source-20261008\\run-16000-attempt2.log"
+    },
+    {
+      "batches": 100000,
+      "passed": true,
+      "coldReleaseEvmGasBeforeRefund": 117715,
+      "sourceLog": "artifacts\\hub-v3-source-20261008\\run-100000.log"
+    }
+  ],
+  "failedAttempts": [
+    "run-16000.log compilation parameter mismatch"
+  ],
+  "committee": 7,
+  "resultPreserved": true
+}
