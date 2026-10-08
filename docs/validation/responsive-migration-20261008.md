@@ -900,3 +900,34 @@ nonce proof advanced only by an archived, acknowledged exact receipt. Cache
 is invalidated by binding, error, expiration or another journal owner. Lost
 responses still reconcile original bytes.25 focused tests and root TS pass.
 Not yet deployed; no second PvP proof yet. Automation remains paused.
+
+
+## 14:25 UTC — recovered services deployed; second PvP failure retained
+
+Human-only1714782 image a56c577c542e91fc82947ad733e314dda0b8c930af2b947832acdbc8abd3c061
+deployed14:14:10 after canonical69275908 verified both human slots empty and
+zero pending/quarantined jobs. Agent services, web and contracts unchanged.
+New backup-recovered-10:75810056bytes/six files, off-VPS verified14:15:43,
+manifest226c4861f0158ac9ed94e6dda061dd66f5ea86992f227360701205f076bba6ff.
+
+Second actual Chrome PvP r2pvpclassic2 naturally3-7 still FAILS render:
+one34.28-unit jump at a confirmed right-paddle contact in each player view.
+No pauses/resync, held speed100%, release max.0303, localp9515.6/15.4ms,
+peer15.60 vs send15.66ms, holds216.7ms. Snapshots p95down350ms to184–201ms.
+Both original failed reports/videos retained. Observer had zero jumps.
+
+Read-only live VPS measurement: six HTTP chainId reads142/102/98/98/96/100ms;
+six WebSocket reads220/93/94/93/93/93ms (first includes handshake). Thus there
+is a real~93ms server/node round trip; replacing HTTP alone cannot remove it.
+DB confirmed ticks~160ms apart, with~258ms nonce-refresh rounds. Scheduler
+reset its age on receipt and then slept another50ms. Candidate accounts for
+actual work time before sleeping and prefetches the same bounded nonce proof
+before expiry. No nonce allocation in the prefetch; stale, changed binding,
+other-owner and lost-response guards remain.37focusedtests/rootTS pass.
+No latest candidate deployment or passing PvP claim yet.
+
+Scoped cleanup: four completed compiler contexts archived and hash-verified
+OFFVPS before removal;24files from four earlier backup copies hash-verified
+OFFVPS before removal. Mounted backup-drained and latest9/10 preserved.
+Three exact unused, untagged completed web compiler cache images removed;
+production and rollback images retained. Disk78.97%after cleanup.

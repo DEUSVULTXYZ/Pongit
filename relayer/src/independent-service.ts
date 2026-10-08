@@ -447,13 +447,16 @@ export async function independentService(o:Options){
  const schedulePhysics=(i:number,ms=0)=>{
   const timer=setTimeout(async()=>{
    physicsTimers.delete(timer);if(stopped)return;
+   const startedAt=Date.now();
    await run(`progress:${i}`,()=>progressArena(i),0);
    if(stopped)return;
    const h=health[i],e=engines[i],id=e.reference().id;
    const active=h.online&&h.stage==='playing'&&id>0n;
    const blocked=e.busy()||!!eventLoops[i]?.blocksWrite()||(retry.get(`progress:${i}`)??0)>Date.now()
     ||!!e.publicationFailure()&&Date.now()-e.publicationFailure()<30000;
-   schedulePhysics(i,active?agentTickPause(50,e.feed.progressAge(id),blocked):250);
+   // A receipt refreshes progressAge to zero. Account for the completed work
+   // too, otherwise every slow round trip adds another full tick interval.
+   schedulePhysics(i,active?agentTickPause(50,e.feed.progressAge(id),blocked,Date.now()-startedAt):250);
   },ms);timer.unref();physicsTimers.add(timer);
  };
  if(rules.version===18)engines.forEach((_,i)=>schedulePhysics(i));

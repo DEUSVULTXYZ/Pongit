@@ -48,6 +48,8 @@ test('responsive ticks spend the remaining 50ms budget and reject a stale deploy
  for(const elapsed of [0,10,30,40,49])assert.equal(elapsed+agentTickPause(50,elapsed),50);
  assert.equal(agentTickPause(50,90),1,'An overdue round yields instead of catching up in bursts');
  assert.equal(agentTickPause(50,90,true),100,'An outstanding command still owns the lane');
+ assert.equal(agentTickPause(50,0,false,40),10,'A receipt resetting progress age must not add a second interval');
+ assert.equal(agentTickPause(50,0,false,110),1,'A slow completed call yields immediately without a burst');
 });
 
 test('serial ticks spend only the remaining interval after the receipt and journal',()=>{

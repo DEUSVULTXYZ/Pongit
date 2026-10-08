@@ -8,7 +8,7 @@ import {resultFixture} from './fixtures/reusable-result';
 const app='0x0000000000000000000000000000000000000012';
 function fixture(version:4|12|14|18=12){
  const jobs:any[]=[],sent:Hex[]=[],receipts=new Map<string,any>();let nonce=0,lose=false,pendingAhead=false,onCall=()=>{};
- let logs:any[]=[],archiveError=false;const archived:any[]=[],reads={simulation:0,nonce:0,receipt:0};
+ let logs:any[]=[],archiveError=false,nonceWait=async()=>{};const archived:any[]=[],reads={simulation:0,nonce:0,receipt:0};
  const db:any={connect:async()=>({query:async()=>({rows:[{ok:true}]}),release:()=>{}}),query:async(sql:string,v:any[]=[])=>{
   if(sql.startsWith('SELECT DISTINCT epoch'))return{rows:jobs.filter(j=>BigInt(j.epoch)<BigInt(v[1])&&['pending','quarantined'].includes(j.status)).map(j=>({epoch:j.epoch}))};
   if(sql.startsWith('SELECT * FROM il_engine_jobs')&&sql.includes('request_key'))return {rows:jobs.filter(j=>j.epoch===v[1]&&j.request_key===v[2]&&['observed','confirmed'].includes(j.status))};
@@ -19,7 +19,7 @@ function fixture(version:4|12|14|18=12){
   else if(sql.startsWith('UPDATE il_engine_jobs')){const j=jobs.find(j=>j.id===v[1]);assert(j);j.status=v[2];}
   return {rows:[]};
  }};
- const node:any={call:async()=>{reads.simulation++;onCall();},getTransactionCount:async(o:any)=>{reads.nonce++;return nonce+(pendingAhead&&o.blockTag==='pending'?1:0);},
+ const node:any={call:async()=>{reads.simulation++;onCall();},getTransactionCount:async(o:any)=>{reads.nonce++;await nonceWait();return nonce+(pendingAhead&&o.blockTag==='pending'?1:0);},
   getTransactionReceipt:async({hash}:any)=>{reads.receipt++;if(!receipts.has(hash))throw Error('not found');return receipts.get(hash);},
   request:async({method,params}:any)=>{assert.equal(method,'interlude_sendTransaction');const raw=params[0];sent.push(raw);nonce++;
    const r={transactionHash:keccak256(raw),status:'0x1',blockHash:zeroHash,blockNumber:'0x40',logs};receipts.set(r.transactionHash,r);
@@ -29,7 +29,7 @@ function fixture(version:4|12|14|18=12){
  const engine=independentEngine(db,{} as any,app,'https://private.invalid',generatePrivateKey(),undefined,{rulesVersion:version,node,feed,
   ...([14,18].includes(version)?{archive:async(results:any[])=>{if(archiveError)throw Error('archive unavailable');archived.push(...results);}}:{})});
  engine.bind(10n,2n);
- return {engine,jobs,sent,archived,reads,logs:(v:any[])=>logs=v,archiveError:(v:boolean)=>archiveError=v,lose:()=>lose=true,ahead:()=>pendingAhead=true,changeDuringSimulation:()=>onCall=()=>{engine.bind(11n,3n);}};
+ return {engine,jobs,sent,archived,reads,nonceDelay:(v:()=>Promise<void>)=>nonceWait=v,logs:(v:any[])=>logs=v,archiveError:(v:boolean)=>archiveError=v,lose:()=>lose=true,ahead:()=>pendingAhead=true,changeDuringSimulation:()=>onCall=()=>{engine.bind(11n,3n);}};
 }
 
 test('responsive ticks reuse only a short receipt-owned nonce proof and do no unsent receipt read',async()=>{
@@ -47,6 +47,18 @@ test('responsive lost replies reconcile the original journal and invalidate the 
  assert.equal(f.sent.length,1);assert.equal(f.reads.receipt,1);
  await f.engine.send('tick',[2n,10n]);assert.equal(f.reads.nonce,4);
  assert.deepEqual(f.jobs.map(j=>j.nonce),['0','1']);f.engine.stop();
+});
+test('responsive nonce refresh runs ahead of expiry without occupying the command lane',async()=>{
+ const f=fixture(18);await f.engine.send('tick',[2n,10n]);
+ await new Promise(resolve=>setTimeout(resolve,550));
+ let release!:()=>void;const pending=new Promise<void>(r=>release=r);f.nonceDelay(()=>pending);
+ await Promise.race([f.engine.send('tick',[2n,10n]),new Promise((_,reject)=>setTimeout(()=>reject(Error('nonce read blocked tick')),100))]);
+ assert.equal(f.reads.nonce,4);assert.equal(f.jobs.length,2);
+ release();await new Promise(resolve=>setTimeout(resolve,5));
+ await new Promise(resolve=>setTimeout(resolve,510));
+ let releaseNext!:()=>void;const next=new Promise<void>(r=>releaseNext=r);f.nonceDelay(()=>next);
+ await Promise.race([f.engine.send('tick',[2n,10n]),new Promise((_,reject)=>setTimeout(()=>reject(Error('prefetched proof expired too soon')),100))]);
+ assert.equal(f.jobs.length,3);f.engine.stop();releaseNext();
 });
 test('another journal owner between locked ticks invalidates the short nonce proof',async()=>{
  const f=fixture(18);await f.engine.send('tick',[2n,10n]);

@@ -25,6 +25,18 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
  const client={app,abi:abi as Abi,node};
  const stream=new EngineStream(url,app,u=>new WebSocket(u,{origin:'https://pongit.xyz'}) as any,()=>engineCooldownMs(url));
  const feed=runtime?.feed??new EngineFeed(client,stream);let busy=false,match=0n,epoch=0n,publicationFailedAt=0,stop:undefined|(()=>void);
+ let nonceRefresh:Promise<void>|undefined;
+ function refreshNonceProof(){
+  const proof=nonceProof,checked=Date.now();
+  if(rules.version!==18||!proof||nonceRefresh||checked>=proof.until||proof.until-checked>500)return;
+  const first=proof.next;
+  // Refresh before expiry without putting read latency ahead of a tick. The
+  // result may be overtaken only by our already acknowledged receipt sequence;
+  // it never allocates a nonce or prolongs a replaced/failed binding's proof.
+  nonceRefresh=Promise.all(['pending','latest'].map(blockTag=>node.getTransactionCount({address:signer.address,blockTag:blockTag as 'pending'|'latest'})))
+   .then(([pending,latest])=>{if(nonceProof===proof&&pending===latest&&pending>=first&&pending<=proof.next)proof.until=checked+1000;})
+   .catch(()=>{}).finally(()=>{nonceRefresh=undefined;});
+ }
  function bind(id:bigint,nextEpoch:bigint){
   if(match===id&&epoch===nextEpoch)return false;
   stop?.();match=id;epoch=nextEpoch;nonceProof=undefined;publicationFailedAt=0;feed.invalidate();
@@ -108,6 +120,7 @@ export function independentEngine(db:Pool,base:PublicClient,app:Address,url:stri
    if(nonceProof&&Date.now()<nonceProof.until){nonceProof.next=Number(job.nonce)+1;nonceProof.lastHash=job.hash;}
    if(identity.data!==data||match!==commandMatch||epoch!==commandEpoch){feed.invalidate();throw Error('Previous command reconciled. Refresh before the next action.');}
    publicationFailedAt=0;await db.query('DELETE FROM independent_engine_health WHERE app=$1 AND epoch=$2',[app.toLowerCase(),String(commandEpoch)]);
+   refreshNonceProof();
    return feed.receipt(commandMatch,{receipt},name,args,signer.address);
   }catch(e){nonceProof=undefined;if(publicationUnavailable(e)){
     const failedAt=Date.now();if(epoch===commandEpoch&&match===commandMatch)publicationFailedAt=failedAt;
