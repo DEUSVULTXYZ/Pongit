@@ -22,14 +22,27 @@ export function collisionIntegrity(poses:any[],snapshots:any[]=[]){
    &&Math.abs(Number(x.x)/1e12-plane)<100&&Math.abs(Number(y.x)/1e12-plane)<100;
  };
  const hits=poses.flatMap(p=>(p.collisions??[]).map((h:any)=>({...h,observedAt:p.at})));
- const previous=new Map<number,{pose:any;ball:any;direction:number}>(),bounces:any[]=[];
- for(const p of poses)for(const ball of p.balls??[]){
+ const previous=new Map<number,{pose:any;ball:any;direction:number}>(),bounces:any[]=[],subpixelCorrections:any[]=[];
+ for(const [frameIndex,p] of poses.entries())for(const ball of p.balls??[]){
   const old=previous.get(ball.id),dx=old?ball.x-old.ball.x:0;
   const dir=Math.abs(dx)>.05?Math.sign(dx):old?.direction??0;
   previous.set(ball.id,{pose:p,ball,direction:dir});
   if(!old||p.rally!==old.pose.rally||p.at-old.pose.at>100||old.direction===0||dir===old.direction)continue;
   const side=old.direction<0&&dir>0?0:1,plane=side===0?40:984;
   if(Math.abs(old.ball.x-plane)>30||Math.abs(ball.x-plane)>60)continue;
+  const next=poses[frameIndex+1],nextBall=next?.balls?.find((b:any)=>b.id===ball.id);
+  // A tiny reconciliation before the contact plane is not a paddle hit. Keep
+  // it separately observable, and only classify it when the very next frame
+  // and both authoritative velocities still travel toward the same paddle.
+  // Larger, sustained, at-contact or velocity-reversing movements still fail.
+  if(ball.id===1&&Math.abs(dx)<=.25&&(old.ball.x-plane)*dir>6&&(ball.x-plane)*dir>6
+   &&Math.sign(Number(old.pose.sourceVelocity?.vx))===old.direction
+   &&Math.sign(Number(p.sourceVelocity?.vx))===old.direction
+   &&next?.rally===p.rally&&next.at-p.at>0&&next.at-p.at<=50&&nextBall
+   &&(nextBall.x-ball.x)*old.direction>.25){
+   subpixelCorrections.push({at:p.at,ball:ball.id,units:Math.abs(dx),x:ball.x});
+   previous.set(ball.id,{pose:p,ball,direction:old.direction});continue;
+  }
   const time=Number(p.renderedUs),kind=side===0?3:4;
   const confirmed=p.rules>=9
    ?hits.some(h=>h.rally===Number(p.rally)&&h.ball===ball.id&&h.kind===kind&&Math.abs(Number(h.at)-time)<=150000&&h.observedAt<=p.at+500)
@@ -43,5 +56,5 @@ export function collisionIntegrity(poses:any[],snapshots:any[]=[]){
   bounces.push({at:p.at,ball:ball.id,side,rally:p.rally,renderedUs:p.renderedUs,confirmed:confirmed||transition||liveClassic,
    evidence:confirmed?'live-event':transition?'live-contact-transition':liveClassic?'live-classic-reversal':null});
  }
- return{samples:poses.length,visiblePaddleBounces:bounces.length,unconfirmed:bounces.filter(b=>!b.confirmed),bounces};
+ return{samples:poses.length,visiblePaddleBounces:bounces.length,unconfirmed:bounces.filter(b=>!b.confirmed),bounces,subpixelCorrections};
 }
