@@ -127,3 +127,32 @@ The restore SQL was copied from the exact candidate source and hash-verified on
 the VPS: `1cd12233727013d2915b357214f424684fff58ccd8e770b64b11002534efb9f7`.
 It has not been executed against a production database. Fresh post-drain backup,
 off-VPS copy and restoration remain prerequisites for the actual migration.
+
+## 04:38 UTC — human physics deadline corrected before cutover
+
+Final source review found that the human event driver still used the legacy
+1,500-ms progress fallback and 250-ms maintenance timer. `123fc74` gives rules 18
+an independent adaptive 50-ms physics deadline. A recent player command skips
+the tick; pending writers, proof priority and publication backoff remain intact.
+Countdown and idle checks remain bounded at 250 ms. Earlier rules are unchanged.
+The no-expiry delegation policy and all contract artifacts are unchanged.
+
+Thirty-one targeted tests and root TypeScript passed. The new regression checks
+49/50-ms boundaries, fresh player progress, busy ownership and stopping. This is
+not yet a measured hosted or browser latency result.
+
+Runtime image 2 built successfully at 04:35:20:
+`pongit:responsive-123fc74-20261008`,
+`sha256:c3ce54309b2baa46c666c0a1280286d031c32ca3fb15df027f602559e901325a`.
+Source commit `123fc74c28301b99a60932c79fa9c387ad52ecd6`, source archive SHA256
+`052397987832623872159421c3dd415b7d3acdc2fdab3b4355e2c99d607c6d18`.
+`build-runtime-current.json` points at this successful immutable record; the first
+build/report/image are retained. Required runtime mount hashes were reviewed and
+recorded separately in `runtime-source-overrides-123fc74.json`. Agent preparation
+transactions and all 273 artifacts are reused, not redeployed by this build.
+
+`01a4996` pins the refreshed image/source directory through migration, staging
+and later web/index builds. Python syntax and secret scans pass. Nothing from
+this image is running publicly yet. At block 69162364, tournament 43 has 25 of
+28 resolved fixtures and match 936 playing. No test/migration helper is active.
+Disk is 79.42% usable; recheck before each remaining image build.
