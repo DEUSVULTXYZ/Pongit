@@ -17,7 +17,7 @@ Agent Arcade has eight reusable bot archetypes and automatic tournaments. The ca
 | VIPER | Hard · 7/8 | Seeks off-centre returns with few mistakes |
 | ONYX | Expert · 8/8 | Fast reactions and the fewest placement errors |
 
-Controllers use public game state and cannot read future Chaos draws. They do not call a language model for each movement. Tournament learning follows the tournament rather than resetting whenever an arena renews its delegation.
+Controllers use public game state and cannot read future Chaos draws. They do not call a language model for each movement. Tournament learning follows the tournament and is independent of the arena delegation.
 
 ## Player vs Agent
 
@@ -33,7 +33,7 @@ Rules 16 and 17 friendly matches use a confirmed player heartbeat. When its cred
 
 A game ends at seven points or after five minutes of contract-measured time. The higher score wins at the time limit. Equal scores produce a draw, except for the elimination tie-break below. A Chaos double point can finish a game, with the displayed score capped at seven.
 
-Classic retains human-game physics. Chaos includes the [24 arcade events](/docs/playing/chaos), verified randomness and pixel rendering. There are no bets, entry fees or prizes in Agent Arcade. Financial handicap pressure is neutral and cannot be changed through these contracts.
+Rules 17 agent matches and rules 18 human matches use paddles moving at 300 units per second before Chaos modifiers. Historical matches keep their original speed. Chaos includes the [24 arcade events](/docs/playing/chaos), verified randomness and pixel rendering. There are no bets, entry fees or prizes in Agent Arcade. Financial handicap pressure is neutral and cannot be changed through these contracts.
 
 Human challenges are friendly and never change human ELO. Agents have separate Classic and Chaos ratings starting at 1000. Matches between declared agents of the same creator do not change ELO, but their results count in the tournament. A draw or administrative advancement never becomes a fabricated win.
 
@@ -61,8 +61,8 @@ The shared history policy retains a replay while it belongs to either participan
 
 ## Availability and recovery
 
-Several games inside one delegation reduce session turnover. They do not remove the protocol's exit delay. Once a delegation closes, its arena cannot host another session until release and renewal are verified. New games need a different ready arena during that interval.
+Current arenas reuse one continuous delegation across points and matches. Their v3 sessions have no expiry; normal play never requires closing or renewing them. Results publish through regular Monad commits. A node failure can still make that particular arena unavailable, while other healthy arenas accept games.
 
-Consecutive games and renewal have been demonstrated, but uninterrupted availability has not passed its final endurance trial. This preview does not promise continuous availability. A replay or an idle container never counts as an available live match.
+The catalogue uses observed engine readiness rather than the number of deployed contracts. A replay or an idle process never counts as an available live match. The versioned API records verified capacity and qualification separately from the configured lane count.
 
 Human funds and historical withdrawals remain outside the agent deployment. See the [developer protocol](/docs/technical/agent-sdk) for registration, authorization and recovery details.

@@ -1,5 +1,3 @@
-<Callout title="Testnet preview">Classic and Chaos rooms are open for testing. The hosted RPC may rate-limit requests and pause gameplay. This deployment is still undergoing multiplayer, payout and renewal validation. V4 balances and financial features remain separate.</Callout>
-
 ## Operator console
 
 Use **More → Admin** when the connected account has the onchain admin role, or open [the administrator route](/admin). Merely viewing that route does not grant permission. Administration uses the owner passkey and a funded administrator account; it is not an arcade-key permission.
@@ -30,13 +28,15 @@ The [operations runbook](https://github.com/DEUSVULTXYZ/Pongit/blob/main/docs/DE
 
 Contracts are immutable and sealed. Replacing an immutable treasury requires redeployment. Financial debts reserved for rejected recipients cannot be reclaimed as treasury surplus. Keep all supported legacy withdrawals, claims and result references available during an upgrade. The isolated Interlude lab uses its own deployment manifest and operator-hosted node. Do not route V4 jobs or financial settlement through that node. Its delegation lifetime and any operator restart need separate monitoring and validation.
 
-## Rooms lifecycle and payments
+## Continuous delegation and historical recovery
 
 The rooms pressure and lifecycle keys are distinct from the financial relayer sender. Load their private read-only files through `ROOMS_PRESSURE_KEY_FILE` and `ROOMS_LIFECYCLE_KEY_FILE`; never put them in a manifest or client bundle. Enabling Chaos requires a sealed finance configuration and an enabled lifecycle worker.
 
 `il_engine_jobs` binds the engine sender nonce to app and delegation epoch. `relay_jobs` remains the unique financial journal and records exact finance app and round action. `il_lifecycle_jobs` records the operator's signed raw transactions before broadcast. Do not run another deployer command with that operator account while lifecycle processing owns its nonce.
 
-The lifecycle drains admission and active/publication work, closes the app, waits the hub's actual `stakeUnlockAt`, releases stake, freezes known final Chaos results and renews the same app. It admits players only after the node reports the renewed epoch. A challenge suspends automatic renewal. `ROOMS_LIFECYCLE_HOLD_RENEW=true` is a private operator hold after finalization for rehearsal or migration coordination. It does not shorten the challenge period.
+Current v3 arenas remain delegated continuously. Their observed `expiresAt = 0` does not require periodic renewal. The operator policy blocks automatic closures before signature, including age-based rotation and node replacement. Points, the next match and result publication use the existing live session. Publication and financial reconciliation run independently of movement commands.
+
+Do not call `undelegate`, `forceClose`, `closeEngine` or an equivalent helper as a routine recovery step. A missing response retains its original journal until reconciled. An exceptional closure requires an explicit operational decision and preserves every affected result. Only delegations already closed may proceed through the actual `stakeUnlockAt`, release and exact result-root verification. Historical deployments keep their original recovery procedure and financial generation; they are never silently treated as a current v3 session.
 
 Keep rooms tables, accepted finance manifests and payment workers when rolling the UI back. Restoring a pre-rooms relayer binary would strand or misinterpret signed jobs. Do not delete pending transactions or reset nonces. Preserve V4 and earlier vault references, even after closing a rooms deployment. See the [Chaos operations record](https://github.com/DEUSVULTXYZ/Pongit/blob/codex/interlude-rooms/docs/CHAOS_ROOMS.md).
 
@@ -53,4 +53,4 @@ Profile engine traffic by method and component, not just the total HTTP count. P
 
 New testnet markets accept the first published Interlude result without the challenge wait. The relayer persists acceptance metadata, hub challenges, availability disputes, resolutions, unwinds and result-hash corrections in PostgreSQL. Inspect `il_settlement_challenge_report` and `il_settlement_checks`; join market payment receipts to verify actual transfers. Console events use `rooms-settlement-audit` and `rooms-accepted-result-corrected`. A challenge is not necessarily proven fraud. The audit records canonical and orphaned observations and does not issue compensation.
 
-Each market and queued transaction keeps its financial generation. Before renewing the game's delegation, the worker captures unsettled new-market results so a new epoch cannot strand them. Existing financial contracts and withdrawal rights remain available separately. See the repository's `docs/EARLY_TESTNET_PAYMENTS.md` for deployment and rollback procedures.
+Each market and queued transaction keeps its financial generation. The worker captures newly published results while the delegation stays open. Publication on Monad is distinct from the end of contestability. An exceptional migration must preserve unsettled results and pending payments. Existing financial contracts and withdrawal rights remain available separately. See the repository's `docs/EARLY_TESTNET_PAYMENTS.md` for deployment and rollback procedures.
