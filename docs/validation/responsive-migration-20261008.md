@@ -492,3 +492,40 @@ were offloaded07:56 after local and remote SHA/mount checks; all bytes remain
 off VPS and manifests remain. No runtime/rollback image or volume was removed.
 No active game/browser driver; sole build is ready-engine-1. Productionweb04ac
 and engineeb remain until its guarded idle/journal cutover. No delivery claim.
+
+
+## 08:17 UTC - seven natural browser matches pass on public responsive gameplay
+
+Engine d558334/image0085e144 deployed07:58:16 after canonical69201718 proved
+five idle lanes and zero pending engine jobs. Only engines restarted; sourceeb
+remains for the other backend roles and web04ac remains. Original journals,
+continuous delegations and rollback image9414 are retained.
+
+Chaos949..953 (Chrome/Edge) and Classic954..955 (Edge1366/Chrome1440) all completed
+naturally and published. All seven strict reports PASS. Admission max7.534s,
+local p95 max16.1ms,1075held windows within95-105percent,173release samples with
+zero drift,55visible contacts with confirmed live events. No contract pause,
+unexpected resume, visible resynchronization, command rejection or unexplained
+hold above500ms. Existing sessions needed zero new passkey assertions. Reports,
+player/observer videos and all earlier failures remain. This uses real visible
+browsers and virtual Mera authenticators; not a physical passkey/mobile claim.
+Public structured evidence: responsive-browser-normal-20261008.json.
+
+Canonical69203457 at08:06:57 shows all11new delegations stillActive,epoch1,
+expiresAt0. Owned operator49,769.645878402MON; no funding request. Four healthy
+agent nodes have33..42batches; the other7havezero. Their directory still reported
+stopped/Active07:59. No repeatPOST or closure. TwoPvP, five simultaneous agents,
+seven-way and unchanged24h are blocked by those hosted nodes. AutomationPAUSED.
+
+Documentation-only6deaa0d removes7obsolete preview/opening notices, fixes the
+welcome actions and replaces obsolete periodic-closure instructions with actual
+continuous delegation.28articles/190sections/61links pass docs validation.
+The web diff since04ac contains only documentation and generated search data;
+no gameplay/CSS/auth change. Its immutable image is building; not public yet.
+Five intermediate source archives215640768bytes were offloaded08:14 with local
+and remote SHA checks plus545container mount checks; all bytes remain OFFVPS.
+No runtime or rollback image removed. Backup-docs-6 sixfiles75,454,744bytes was
+SHA-verified OFFVPS08:16:20, manifest
+1d0ad5224803335812749e5a63f9752dc9c87a32e97b2cfcd7eab4aaed7069e1.
+No game/browser driver active. Sole build is docs-web-6. Fault/mobile trials,
+provider recovery, PvP/parallel workload and24h remain; no complete delivery claim.
