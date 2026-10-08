@@ -820,3 +820,14 @@ No product change, lower acceptance threshold or fabricated control.8tests/rootT
 Series11 stopped. SOLEseries12 exec82012 runs fresh7normal games suffix-2,
 warm grant from989, original80min and7min per game; stoponfirstFAIL. No other
 game driver. Publicweb5486/engined558 frozen. Backup9NOTRUN;7nodesstillstopped.
+
+
+## 11:04 UTC - confirmed Chaos geometry separated from rollback
+
+990Chrome360PASS.991Edge390 originalFAIL:effect23 activation enlarged96to120
+at11000000us, wall-bound centre48to60 in both live contract and canvas. Exact
+confirmed clamp now classified separately; wrong size/centre/missing authority
+stillfails. First fixture/TS halfA-vs-heightA typo retained, then16tests/rootTSPASS.
+No product change. Series12stopped. SOLEseries13exec54872 repeatsEdge390 as
+992 thenremaining5cases;990alreadyPASS. Original80min/7minbounds. Public5486/d558
+unchanged;runtime11:00shows0restarts. Disk80.648;no imagebuild. Finalbackup9NOTRUN.

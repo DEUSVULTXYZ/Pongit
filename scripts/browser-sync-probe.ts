@@ -1,6 +1,7 @@
 import {rulesPaddleSpeed} from '../shared/physics-rules';
 import type {Page} from '@playwright/test';
 import {eventPaddles} from '../web/lib/chaos-presentation';
+import {chaosOuterHalf} from '../shared/chaos-modifiers';
 
 /** Same-host epoch timestamps include the browser's queued intent before send.
  * Receipt transport latency alone cannot qualify input-to-confirmation latency. */
@@ -170,19 +171,31 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
  }
  const p95=(v:number[])=>v.sort((a,b)=>a-b)[Math.floor((v.length-1)*.95)];
  const filling=data.frames.filter(f=>f.sourceT>0&&f.buffering);
- const paddleJumps:any[]=[],last=new Map<number,any>();
+ const paddleJumps:any[]=[],geometryClamps:any[]=[],last=new Map<number,any>();
  const byObservation=new Map(data.snapshots.map(s=>[s.observedAt,s]));
  for(const b of data.paddles??[]){
   const a=last.get(b.side);last.set(b.side,b);if(!a||a.finished||b.finished||a.rally!==b.rally)continue;
   const dt=b.at-a.at;if(dt<=0||dt>50)continue;
   const snapshot=byObservation.get(b.observedAt);let speed=Number(rulesPaddleSpeed(snapshot?.rulesVersion??0))/1e6;
+  let confirmedHalf=Number(snapshot?.state?.[b.side===0?'halfA':'halfB'])/1e6;
   if(snapshot?.chaos){
    const raw=snapshot.chaos.physics;
    const mods=eventPaddles({...raw,t:BigInt(raw.t),paddleSpeed:rulesPaddleSpeed(snapshot?.rulesVersion??0)});
    speed=Number(b.side===0?mods.speedA:mods.speedB)/1e6;
+   confirmedHalf=Number(chaosOuterHalf(b.side===0?mods.heightA:mods.heightB,b.side===0?mods.splitA:mods.splitB))/1e6;
   }
   const d=Math.abs(b.y-a.y),limit=(speed+120)*dt/1000+2;
-  if(d>limit)paddleJumps.push({at:b.at,side:b.side,dt,d,limit,from:a.y,to:b.y,observedAt:b.observedAt});
+  if(d>limit){
+   const clamped=Math.max(confirmedHalf,Math.min(576-confirmedHalf,a.y));
+   const liveCenter=Number(snapshot?.state?.[b.side===0?'left':'right'])/1e6;
+   // An enlarged paddle at the wall must move its centre to stay in bounds.
+   // Classify only the exact live-confirmed clamp, never any jump merely
+   // coinciding with an effect or a different sprite height.
+   if(b.height>a.height&&Math.abs(b.height/2-confirmedHalf)<.001&&Math.abs(clamped-a.y)>.001
+    &&Math.abs(b.y-clamped)<.001&&Math.abs(liveCenter-clamped)<.001){
+    geometryClamps.push({at:b.at,side:b.side,from:a.y,to:b.y,oldHeight:a.height,newHeight:b.height,observedAt:b.observedAt});
+   }else paddleJumps.push({at:b.at,side:b.side,dt,d,limit,from:a.y,to:b.y,observedAt:b.observedAt});
+  }
  }
  const playStart=data.frames.find(f=>f.sourceT>0&&!f.finished)?.at??Infinity;
  const playEnd=[...data.frames].reverse().find(f=>!f.finished&&f.sourceT>0)?.at??0;
@@ -207,5 +220,5 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
  const stopping={samples:stops.length,p95DriftPixels:p95(stops.map(s=>s.driftPixels)),maxDriftPixels:stops.length?Math.max(...stops.map(s=>s.driftPixels)):undefined,stops};
  return{localInput,stopping,correction,visibleResyncs,frames:data.frames.length,snapshots:data.snapshots.length,startupFillMs:filling.length?filling.at(-1).at-filling[0].at:0,p95FrameMs:p95(intervals),
   maxHoldMs:Math.max(maxHold,hold),contractPauseMs,intermissionMs,holds,frameGaps,snapshotGapP95Ms:p95(gaps),engineLagP95Ms:p95(lags),snapshotJumps:jumps,
-  paddleSamples:data.paddles?.length??0,paddleJumps};
+  paddleSamples:data.paddles?.length??0,paddleJumps,geometryClamps};
 }

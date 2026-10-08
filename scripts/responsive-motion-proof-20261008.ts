@@ -5,7 +5,7 @@ import {createPublicClient,http,type Address} from 'viem';
 import {reusableAgentPoolAbi as abi} from '../shared/abi-ReusableAgentPool';
 import {sustainedInputMetrics} from './browser-sync-probe';
 import {collisionIntegrity} from './collision-integrity-metrics';
-const names=['motion-chaos360-2','motion-chaos390-2','motion-chaos1440-2','motion-chaosedge360-2','motion-chaoschrome390-2','motion-classic1366-2','motion-classic360-2'];
+const names=['motion-chaos360-2','motion-chaos390-3','motion-chaos1440-2','motion-chaosedge360-2','motion-chaoschrome390-2','motion-classic1366-2','motion-classic360-2'];
 const client=createPublicClient({transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:15000})});
 const block=await client.getBlock(),runs=[];
 for(const name of names){

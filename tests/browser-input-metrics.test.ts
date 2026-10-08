@@ -33,6 +33,25 @@ test('render gate catches paddle rollback even when the ball looks smooth',()=>{
  assert.equal(smooth.paddleJumps.length,0,'ordinary motion and new rally remain distinct');
 });
 
+test('991 enlarged paddle at the wall is an exact confirmed geometry clamp, not rollback',()=>{
+ const paddles=[{at:0,y:48,rally:'3',side:0,observedAt:0,height:96},
+  {at:16.8,y:60,rally:'3',side:0,observedAt:16,height:120}];
+ const snapshots=[{at:16,observedAt:16,rulesVersion:17,clock:'11000000',state:{t:'11000000',left:'60000000',halfA:'48000000'},
+  chaos:{physics:{t:'11000000',bettingA:96000000,bettingB:96000000,effects:[
+   {id:23,target:2,remaining:0,serial:1,startsAt:11000,expiresAt:19000,variant:476415606},
+   {id:0,target:0,remaining:0,serial:0,startsAt:0,expiresAt:0,variant:0},
+  ]}}}];
+ const result=syncMetrics({frames:[],snapshots,paddles});
+ assert.equal(result.paddleJumps.length,0);assert.equal(result.geometryClamps.length,1);
+ assert.equal(syncMetrics({frames:[],snapshots:[],paddles}).paddleJumps.length,1);
+ for(const change of [
+  (d:any)=>d.paddles[1].y=70,
+  (d:any)=>d.paddles[1].height=100,
+  (d:any)=>d.snapshots[0].state.left='48000000',
+  (d:any)=>d.snapshots[0].chaos.physics.effects[0].id=0,
+ ]){const d=structuredClone({frames:[],snapshots,paddles});change(d);assert.equal(syncMetrics(d).paddleJumps.length,1);}
+});
+
 test('confirmed input includes the unsent queue and both sides of F5',()=>{
  const value=confirmedInputMetrics([{at:100,direction:-1},{at:800,direction:0},{at:1200,direction:1}],
   [{sentAt:600,confirmedAt:615,direction:-1,sequence:'1'},

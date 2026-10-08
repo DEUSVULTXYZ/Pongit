@@ -1,0 +1,35 @@
+{
+  "originalRemainsFailed": true,
+  "ref": {
+    "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+    "epoch": "1",
+    "id": "991"
+  },
+  "originalError": "Visible reconciliation discontinuities remain",
+  "productUnchanged": true,
+  "product": "5486a5f",
+  "cause": "Chaos effect23 confirmed at11000000us enlarges both paddles from96 to120. The human paddle was at the top wall, so its exact contractual centre clamps48to60. The old metric counted12units as a network rollback.",
+  "proof": "Canvas height120 matches confirmed effect modifiers; drawn centre60 equals clamped prior48 and actual live centre60. A different jump, missing live state, unconfirmed size or different live centre still fails.",
+  "reanalysis": {
+    "at": "2026-10-08T11:03:20.366Z",
+    "originalRemainsFailed": true,
+    "productUnchanged": true,
+    "paddleJumps": [],
+    "geometryClamps": [
+      {
+        "at": 23604.3,
+        "side": 0,
+        "from": 48,
+        "to": 60,
+        "oldHeight": 96,
+        "newHeight": 120,
+        "observedAt": 1791457147888
+      }
+    ],
+    "maxHoldMs": 83.39999999999418
+  },
+  "reportSha256": "f0867f7e978aba5ffb933fcf84784b32a6d4ce65df2f314682ec133cfed7b2a5",
+  "traceSha256": "803f33276f0cdc1e58708f70f2dc39d3546949e6afddd7faaeac22035459f2cc",
+  "freshRepeat": "responsive-r2-motion-chaos390-3",
+  "releaseComplete": false
+}
