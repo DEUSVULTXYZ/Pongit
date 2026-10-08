@@ -1,0 +1,212 @@
+{
+  "at": "2026-10-08T21:59:00Z",
+  "scope": "Four actual concurrent browser ONYX challenges and two natural PvP; not a passing seven-way trial",
+  "gatewaySource": "5377e3d",
+  "webSource": "14c0b29",
+  "agents": [
+    {
+      "run": "catalogue-r2seven9a0",
+      "ref": {
+        "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+        "epoch": "1",
+        "id": "1179"
+      },
+      "passed": false,
+      "admissionMs": 19569,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 432,
+        "resumes": 0
+      },
+      "sendLatency": {
+        "samples": 226,
+        "p95Ms": 18,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 226,
+        "p95Ms": 17.02587890625,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "finishedAt": "2026-10-08T21:51:29.728Z"
+    },
+    {
+      "run": "catalogue-r2seven9a1",
+      "ref": {
+        "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+        "epoch": "1",
+        "id": "1177"
+      },
+      "passed": false,
+      "admissionMs": 13569,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 401,
+        "resumes": 0
+      },
+      "sendLatency": {
+        "samples": 299,
+        "p95Ms": 17,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 299,
+        "p95Ms": 14.099365234375,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "finishedAt": "2026-10-08T21:51:22.256Z"
+    },
+    {
+      "run": "catalogue-r2seven9a2",
+      "ref": {
+        "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+        "epoch": "1",
+        "id": "1178"
+      },
+      "passed": false,
+      "admissionMs": 16656,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 549,
+        "resumes": 0
+      },
+      "sendLatency": {
+        "samples": 339,
+        "p95Ms": 17,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 338,
+        "p95Ms": 13.550048828125,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "finishedAt": "2026-10-08T21:51:36.793Z"
+    },
+    {
+      "run": "catalogue-r2seven9a3",
+      "ref": {
+        "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+        "epoch": "1",
+        "id": "1176"
+      },
+      "passed": false,
+      "admissionMs": 10050,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 449,
+        "resumes": 0
+      },
+      "sendLatency": {
+        "samples": 259,
+        "p95Ms": 18,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 259,
+        "p95Ms": 18.8095703125,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "finishedAt": "2026-10-08T21:51:15.838Z"
+    }
+  ],
+  "humans": {
+    "classic": true,
+    "chaos": true
+  },
+  "observer": {
+    "passed": false,
+    "error": "A game ended before sufficient overlap; preserve partial evidence",
+    "finishedAt": "2026-10-08T21:50:11.500Z",
+    "acquisition": {
+      "at": "2026-10-08T21:50:10.034Z",
+      "block": "69366475",
+      "hash": "0xbfc644ddfe6a350a2fc250abe63ea93d9e1c25f6a60edb6d35dee765948175cc",
+      "archetype": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "tournament": "51",
+      "refs": [
+        {
+          "chainId": 10143,
+          "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+          "epoch": "1",
+          "id": "1175"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+          "epoch": "1",
+          "id": "1176"
+        },
+        {
+          "chainId": 10143,
+          "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+          "epoch": "1",
+          "id": "1177"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+          "epoch": "1",
+          "id": "1178"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+          "epoch": "1",
+          "id": "1179"
+        },
+        {
+          "chainId": 10143,
+          "app": "0xC8e978e3c6581eB5454e486Eb247c503fFbc0e3D",
+          "epoch": "1",
+          "id": "680564733841876926926749214863536422960"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x58a5F04Bbad06061eab3a7A27C75291d5Fa63084",
+          "epoch": "1",
+          "id": "680564733841876926926749214863536422961"
+        }
+      ]
+    }
+  },
+  "rootCause": "The admission keeper still used ordinary background RPC scheduling for its canonical authority, pool and ticket-preparation reads. Four serialized admissions therefore incur background queue delays while replay/history remains active. Engine admission proofs also take 3.2-6.4 seconds under load. New candidate promotes only scoped admission reads to the existing foreground queue. This does not yet prove the eight-second target.",
+  "candidate": "3aaa5c2",
+  "tests": {
+    "typescript": 1156,
+    "focused": 28,
+    "typecheck": true
+  },
+  "deployed": false
+}
