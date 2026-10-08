@@ -15,6 +15,7 @@ import {publicationFailureDetails,publicationUnavailable} from '../shared/servic
 import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {createHash} from 'node:crypto';
 import {assertPrivateSyncBrowserTarget,privateSyncRotation} from './private-sync-continuation';
+import {realBackgroundBrowser,recordBackgroundPage} from './real-background-browser';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
@@ -96,10 +97,15 @@ if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE expli
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
 const visible=process.env.PONG_CATALOGUE_VISIBLE==='1';
 report.visibleBrowser=visible;
-const browser=await chromium.launch({channel,headless:!visible});
-const context=await browser.newContext({viewport:{width:viewportWidth,height:viewportHeight},hasTouch:touchControls,isMobile:touchControls,
+const actualBackground=fault==='background'?await realBackgroundBrowser(channel,privatePath+'-profile',restored?.storage):undefined;
+const browser=actualBackground?.browser??await chromium.launch({channel,headless:!visible});
+const context=actualBackground?.context??await browser.newContext({viewport:{width:viewportWidth,height:viewportHeight},hasTouch:touchControls,isMobile:touchControls,
  ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/video',size:{width:1440,height:1000}}}:{}),
  ...(restored?{storageState:restored.storage}:{})}),page=await context.newPage();
+if(actualBackground)await page.setViewportSize({width:viewportWidth,height:viewportHeight});
+report.nativeTabVisibility=!!actualBackground;
+const stopBackgroundVideo=actualBackground?await recordBackgroundPage(page,out):undefined;
+let backgroundObserver:import('@playwright/test').Browser|undefined;
 // Independent contexts have separate accounts/storage, but both video clocks
 // share this computer's UTC clock. The test-only overlay is outside layout flow.
 const videoClock=async(target:import('@playwright/test').Page)=>{
@@ -422,7 +428,8 @@ try{
  })().catch(()=>{report.healthReadErrors=(report.healthReadErrors??0)+1;}).finally(()=>healthBusy=false);},1000);
 
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
-  spectatorContext=await browser.newContext({viewport:{width:1440,height:900},
+  if(actualBackground)backgroundObserver=await chromium.launch({channel,headless:true});
+  spectatorContext=await (backgroundObserver??browser).newContext({viewport:{width:1440,height:900},
    ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/observer-video',size:{width:1440,height:900}}}:{})});
   spectator=await spectatorContext.newPage();observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);await videoClock(spectator);
   await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
@@ -658,7 +665,9 @@ finally{
  report.executionClock=receiptClockMetrics(report.receipts);
  report.finishedAt=new Date().toISOString();
  if(page.video())report.video=await page.video()!.path();
+ if(stopBackgroundVideo)try{report.video=await stopBackgroundVideo();}catch{report.passed=false;report.error??='Actual background video recording failed';process.exitCode=1;}
+ if(actualBackground)report.observerVisibility='headless independent observer; native visible player with focus emulation disabled';
  if(spectator?.video())report.observerVideo=await spectator.video()!.path();
- await writeFile(out+'/report.json',JSON.stringify(report,null,2));await context.close();await spectatorContext?.close();await browser.close();
+ await writeFile(out+'/report.json',JSON.stringify(report,null,2));await context.close();await spectatorContext?.close();await browser.close();await backgroundObserver?.close();actualBackground?.child.kill();
  console.log(JSON.stringify({out,passed:report.passed,error:report.error,ref:report.ref,input:report.input,submissionP95Ms:report.submissionP95Ms,receiptP95Ms:report.receiptP95Ms}));
 }
