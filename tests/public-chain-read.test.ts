@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {validatePublicChainRead,publicChainReads} from '../relayer/src/public-chain-read';
 import {startPoolReadService} from '../relayer/src/agents/pool-server';
 import type {AgentPoolReader} from '../relayer/src/agents/pool-read';
+import {createPublicClient,http} from 'viem';
 
 const address=`0x${'11'.repeat(20)}`,hash=`0x${'22'.repeat(32)}`;
 const call=(id:number,tag:any='latest')=>({jsonrpc:'2.0',id,method:'eth_call',params:[{to:address,data:'0x12345678'},tag]});
@@ -17,6 +18,10 @@ test('public chain reads preserve exact canonical pins and cap execution without
  assert.throws(()=>validatePublicChainRead({...input,params:[input.params[0],'latest',{}]}),'state overrides prohibited');
  assert.throws(()=>validatePublicChainRead([input]));
  assert.throws(()=>validatePublicChainRead(call(1,{blockHash:hash,requireCanonical:false})));
+ assert.deepEqual(validatePublicChainRead({jsonrpc:'2.0',id:1,method:'eth_chainId'}).params,[]);
+ assert.deepEqual(validatePublicChainRead({jsonrpc:'2.0',id:1,method:'eth_blockNumber'}).params,[]);
+ for(const params of [null,{},''])assert.throws(()=>validatePublicChainRead({jsonrpc:'2.0',id:1,method:'eth_chainId',params}));
+ assert.throws(()=>validatePublicChainRead({jsonrpc:'2.0',id:1,method:'eth_call'}));
 });
 test('simultaneous browsers coalesce exact reads but never reuse a stale authorization response',async()=>{
  let requests=0;const releases:((value:unknown)=>void)[]=[];
@@ -47,5 +52,9 @@ test('public HTTP boundary cannot invoke writes; valid reads remain available wh
   assert.equal(requests.length,0);
   const result=await post({jsonrpc:'2.0',id:2,method:'eth_chainId',params:[]});assert.equal(result.status,200);
   assert.deepEqual(await result.json(),{jsonrpc:'2.0',id:2,result:'0x279f'});assert.equal(requests.length,1);
+  // Exercise the same installed client used by the real login, not a manually
+  // shaped JSON-RPC body: getChainId omits params on the wire.
+  assert.equal(await createPublicClient({transport:http(url,{retryCount:0})}).getChainId(),10143);
+  assert.deepEqual(requests.at(-1),{method:'eth_chainId',params:[]});
  }finally{await service.close();}
 });

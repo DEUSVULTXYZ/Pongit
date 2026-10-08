@@ -12,8 +12,10 @@ const tag=(v:unknown):boolean=>typeof v==='string'&&(['latest','pending','safe',
 export function validatePublicChainRead(value:unknown){
  const v=value as any;
  if(!v||Array.isArray(v)||v.jsonrpc!=='2.0'||!(typeof v.id==='string'&&v.id.length<=80||Number.isSafeInteger(v.id))
-  ||typeof v.method!=='string'||!Array.isArray(v.params))throw Error('Invalid public read');
- const p=v.params;let valid=false;
+  ||typeof v.method!=='string'||v.params!==undefined&&!Array.isArray(v.params))throw Error('Invalid public read');
+ // JSON-RPC permits params to be omitted for a zero-argument method. viem's
+ // getChainId does this during account preparation; null is still invalid.
+ const p=v.params??[];let valid=false;
  switch(v.method){
   case 'eth_chainId':case 'eth_blockNumber':valid=p.length===0;break;
   case 'eth_getBlockByNumber':valid=p.length===2&&typeof p[0]==='string'&&tag(p[0])&&p[1]===false;break;
