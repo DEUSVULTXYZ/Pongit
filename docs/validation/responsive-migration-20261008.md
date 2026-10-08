@@ -179,3 +179,24 @@ databases remain. No implicit cancellation. Snapshot 2 passed at block 69165033:
 seven human results, revision zero, no slots or pending operations. Sole bounded
 read-only social audit 3 began 04:52:02 (900-second original limit), extending the
 verified canonical page cache from snapshot 1. Final backup/import has not run.
+
+## 05:00 UTC — final backup restored; public-history import started
+
+The final six-file backup (74,637,732 bytes) was SHA-verified off VPS at 04:54:18,
+manifest `73e70982da8f7f1124da472c3171552f5749f26b2353a788b3bc3e088a7e83b4`.
+Those actual Windows copies were uploaded back into isolated restore inputs.
+Restoration passed at 04:57:42 for all five databases. The original operator
+journal, one reserve transfer, preparation jobs, 1,457 indexed references and
+archive row fingerprints are preserved. The additive rules constraint upgrade
+was applied twice only to scratch databases, with no row changes. Only verified
+scratch databases were dropped; restore container, inputs and report remain.
+
+Snapshot 2/social 3 passed: source block 69165033, seven human results, no queued
+operations or invitations; snapshot hash
+`0xb3f8bee110888d577d45afcaf1b5819f499ac67fe8a37d1166d2446072bcf1c4`.
+The sole migration writer `pongit-responsive-import-20261008-1` started 04:58:38,
+with its original 1,800-second bound. It reuses all preparation transactions and
+the four original scoped service keys. At 05:00 it was importing actual public
+history; no new delegation has opened and no source delegation has closed.
+The admission/queue database fix affects the migration helper, not the immutable
+product image. Earlier failures remain failures.

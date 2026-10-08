@@ -49,6 +49,10 @@ abstract contract ReusableAgentPoolFixture is Test {
     function arenaCount() internal pure virtual returns(uint8){return 3;}
     function beforeSeal() internal virtual {}
     function afterOpen() internal virtual {}
+    function makeArena() internal virtual returns(ReusableAgentPoolHarness){
+        return new ReusableAgentPoolHarness(IInterludeHub(address(hub)),address(pool),vm.addr(BRIDGE),policies,kernel,verifier);
+    }
+    function makeModifiers() internal virtual returns(ChaosModifiers){return new ChaosModifiers();}
     function setUp() public virtual {
         vm.chainId(10143);vm.warp(1_800_000_000);vm.roll(100);vm.setBlockhash(99,keccak256("Monad source"));
         hub=new IndependentHubFixture();policies=new HousePolicies();family=new ArcadeFamily();
@@ -59,7 +63,7 @@ abstract contract ReusableAgentPoolFixture is Test {
         ratings=new AgentPublishedRatings(address(pool),address(this),vm.getBlockTimestamp());ratings.sealMigration(keccak256("empty fixture"));pool.configure(book,ratings);
         queue=makeChallenges();pool.bindChallenges(queue);catalog.configure(address(book),address(pool));
         pool.bindQualifications(makeQualifications());
-        ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,new ChaosModifiers());
+        ChaosEffects effects=new ChaosEffects();ChaosDynamics dynamics=new ChaosDynamics(effects,makeModifiers());
         ChaosPhysics physics=new ChaosPhysics(effects,new ChaosRally(),dynamics,new ChaosContacts(dynamics));
         kernel=new ChaosEngine(new ChaosCodec(),physics,new DrandEvmnet(),new ChaosDrawRules());
         for(uint8 i;i<8;i++){
@@ -67,7 +71,7 @@ abstract contract ReusableAgentPoolFixture is Test {
             catalog.qualify(bot,0,true,bytes32(uint256(1)));catalog.qualify(bot,1,true,bytes32(uint256(1)));
         }
         catalog.seal();delete arenas;for(uint8 i;i<arenaCount();i++){
-            arenas.push(new ReusableAgentPoolHarness(IInterludeHub(address(hub)),address(pool),vm.addr(BRIDGE),policies,kernel,verifier));pool.addArena(arenas[i]);
+            arenas.push(makeArena());pool.addArena(arenas[i]);
         }
         beforeSeal();pool.seal();pool.setAdmissions(true);book.setAdmissions(true);queue.setAdmissions(true);
         ArcadeFamily.Grant memory g=ArcadeFamily.Grant(vm.addr(PLAYER),vm.addr(KEY),uint64(vm.getBlockTimestamp()),uint64(vm.getBlockTimestamp()+7200),0);

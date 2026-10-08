@@ -92,7 +92,7 @@ contract ReusableAgentPool is ICompetitionAuthority {
     function addArena(ReusableAgentArena arena) external base {
         require(msg.sender==owner&&!setupSealed&&arenas.length<32&&!registered[address(arena)],"setup only");
         uint256 rules=arena.RULES_VERSION();
-        if(arena.pool()!=address(this)||address(arena.hub())!=address(hub)||rules<15||rules>16
+        if(arena.pool()!=address(this)||address(arena.hub())!=address(hub)||rules<15||rules>17
             ||arena.admissionSigner()!=admissionSigner||address(arena.resultVerifier())!=address(verifier))revert InvalidArenaConfiguration();
         if(hub.statusOf(address(arena),Types.GLOBAL)!=Types.Status.None||arena.boundMatch().id!=0)revert ArenaNotFresh();
         registered[address(arena)]=true;arenas.push(arena);emit ArenaRegistered(address(arena),address(arena).codehash);

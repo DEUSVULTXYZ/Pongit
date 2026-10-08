@@ -13,7 +13,7 @@ library PoolResultValidation {
         r=complete.match_;
         require(ticket.arena!=address(0)&&ticket.arena==ref.arena&&ticket.epoch==ref.epoch&&ticket.matchId==ref.id&&ref.chainId==10143
             &&T.same(r.ref,ref)&&r.a==binding.a&&r.b==binding.b&&r.mode==binding.mode&&r.hash!=0&&r.status>=3&&r.status<=4
-            &&!r.finality&&(complete.rules==15||complete.rules==16)&&complete.rules==ticket.rules&&r.elapsedUs<=(binding.overtime?360_000_000:300_000_000)
+            &&!r.finality&&complete.rules>=15&&complete.rules<=17&&complete.rules==ticket.rules&&r.elapsedUs<=(binding.overtime?360_000_000:300_000_000)
             &&complete.finishedAt>0&&complete.finishedAt<=block.timestamp,"canonical agent result");
         r.finality=verifier.verify(ticket,keccak256(abi.encode(complete)),uint32(ticket.sequence-1),proof);
     }
