@@ -21,6 +21,7 @@ const source=JSON.parse(await readFile('/metadata/source-manifest.json','utf8'))
 assert.equal(source.pool.toLowerCase(),'0x6b09eb398668cb38db5d3a7dd857c33a371ac308');
 const output=process.env.PONG_RESPONSIVE_REPORT!;
 assert(/^\/evidence\/(freeze|verify-import|open-arenas)-[1-3]\.json$/.test(output)&&output.includes('/'+action+'-'));
+assert(process.env.AGENT_DATABASE_URL,'Explicit source queue database is required before migration writes');
 const t=await chainTools('reusable-agents-20261008-1:public');
 const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:1});
 const report:any={at:new Date().toISOString(),action,sourcePool:source.pool,passed:false,transactions:[]};

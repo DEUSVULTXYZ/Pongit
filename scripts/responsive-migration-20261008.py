@@ -69,13 +69,19 @@ elif action in ['freeze','import','verify-import','open-arenas','challenges','to
     if action not in ['freeze','challenges','tournaments']: stopped();proof('freeze')
     c=load(root/'agent-prepare-runtime-1.json');s=c['services']['qualification']
     s['image']=build['image'];s['environment']['PONG_SOURCE_COMMIT']=build['sourceCommit']
+    current=load('/opt/pongit/releases/arcade-d2c6033/five-runtime/compose.json')
+    # Preparation only needed the operator journal. The cutover verifier also
+    # reads the actual source engine queue, on its separate database network.
+    s['environment']['AGENT_DATABASE_URL']=current['services']['admission']['environment']['AGENT_DATABASE_URL']
+    assert s['environment']['AGENT_DATABASE_URL']
+    c.setdefault('networks',{})['source-store']={'external':True,'name':current['networks']['store']['name']}
+    s['networks']=list(s['networks'])+['source-store']
     s['volumes'] += [str(root/'agents/evidence')+':/evidence']
     seconds=1800 if action=='import' else 1200
     if action=='import':
         backup()
         # Keep four existing scoped signers and their journals. Never silently
         # generate replacement service identities in a continuity migration.
-        current=load('/opt/pongit/releases/arcade-d2c6033/five-runtime/compose.json')
         for role in ['admission','maintenance','archive','sponsor']:
             mounts=current['services'][role]['volumes']
             key=next(v['source'] for v in mounts if v['target']=='/run/role.json')
