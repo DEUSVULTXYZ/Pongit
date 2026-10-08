@@ -183,8 +183,20 @@ export function rpcScheduler(spacingMs:number) {
     next=Date.now()+effectiveSpacing;release();
     if(Object.values(queues).some(q=>q.length))timer=setTimeout(tick,effectiveSpacing);
   }
+  function reserve(historical:boolean,control=false,foreground=false,transaction=false){
+    let kind:keyof typeof queues=historical?'history':transaction?'transaction':control?'control':foreground?'foreground':'live';
+    let release!:()=>void;
+    const done=new Promise<void>(resolve=>{release=resolve;queues[kind].push(resolve);if(!timer)tick();});
+    return {done,promote(){
+      // No history, nonce, fence or already dispatched request is reclassified.
+      if(kind!=='live')return false;
+      const index=queues.live.indexOf(release);if(index<0)return false;
+      queues.live.splice(index,1);queues.foreground.push(release);kind='foreground';return true;
+    }};
+  }
   return {
-    acquire(historical:boolean,control=false,foreground=false,transaction=false){return new Promise<void>(resolve=>{queues[historical?'history':transaction?'transaction':control?'control':foreground?'foreground':'live'].push(resolve);if(!timer)tick();});},
+    reserve,
+    acquire(historical:boolean,control=false,foreground=false,transaction=false){return reserve(historical,control,foreground,transaction).done;},
     pending(){return {interactive:queues.live.length+queues.control.length+queues.foreground.length+queues.transaction.length,history:queues.history.length};},
     waitMs(historical:boolean,control=false,foreground=false,transaction=false){
       // Estimate this caller's dispatch time, including the existing cooldown.

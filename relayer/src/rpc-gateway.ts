@@ -4,6 +4,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import {chunkedLogs,historyGate} from "./log-ranges";
 import { historicalRpcRequest, transactionRpcRequest, controlRpcRequest, foregroundRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
 import {rpcQueueMetrics} from './rpc-queue-metrics';
+import {rpcReadPriority,type RpcReadPriority} from './rpc-read-priority';
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
@@ -33,9 +34,13 @@ function throttled(target:Upstream,method:string,response:Response,message=''){
 }
 const blocks=rpcBlockObservations();
 const timing=rpcQueueMetrics();
-async function acquire(target:Upstream,method:string,history:boolean,priority:0|1|2|3){
- const start=performance.now();await schedulerOf(target).acquire(history,priority===2,priority===1,priority===3);
+let coalescedForegroundPromotions=0;
+async function acquire(target:Upstream,method:string,params:unknown[],history:boolean,priority:0|1|2|3,hint:RpcReadPriority){
+ const start=performance.now(),slot=schedulerOf(target).reserve(history,priority===2,priority===1,priority===3);
+ const unwatch=hint.subscribe(()=>{if(foregroundRpcRequest(method,params,true,blocks.head(),blocks.height)&&slot.promote()){priority=1;coalescedForegroundPromotions++;}});
+ try{await slot.done;}finally{unwatch();}
  timing.record(target,history?'history':priority===3?'transaction':priority===2?'control':priority===1?'foreground':'live',method,'queue',performance.now()-start);
+ return priority;
 }
 async function upstreamFetch(target:Upstream,method:string,params:unknown[],history:boolean,priority:0|1|2|3){
  const start=performance.now();
@@ -46,22 +51,22 @@ async function upstreamFetch(target:Upstream,method:string,params:unknown[],hist
 const historical=(method:string,params:unknown[])=>historicalRpcRequest(method,params,blocks.head(),blocks.height);
 const control=(method:string,params:unknown[],foreground=false):0|1|2|3=>transactionRpcRequest(method,params)?3:controlRpcRequest(method,params,blocks.head(),blocks.height)?2:
  foregroundRpcRequest(method,params,foreground,blocks.head(),blocks.height)?1:0;
-const inflight = new Map<string, Promise<unknown>>();
+const inflight = new Map<string, {operation:Promise<unknown>;hint:RpcReadPriority}>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 // A block-pinned read has one correct answer. Start with the less loaded provider
 // and ask the other when one throttles, fails or has not got that block. A real
 // execution error is the same on both and is returned at once, unchanged.
-async function spreadRead(method:string,params:unknown[],historical:boolean,foreground:boolean):Promise<unknown>{
- const priority=control(method,params,foreground);
+async function spreadRead(method:string,params:unknown[],historical:boolean,hint:RpcReadPriority):Promise<unknown>{
+ const priority=control(method,params,hint.foreground());
  const load=(u:Upstream)=>schedulerOf(u).waitMs(historical,priority===2,priority===1,priority===3);
  const first:Upstream=load("secondary")<=load("primary")?"secondary":"primary";
  const order:Upstream[]=[first,first==="primary"?"secondary":"primary"];
  for(let attempt=0;attempt<4;attempt++){
   const target=order[attempt%2];
   if(attempt>=2)await delay(500*(attempt-1));
-  await acquire(target,method,historical,priority);
+  const actualPriority=await acquire(target,method,params,historical,priority,hint);
   let response:Response;
-  try{response=await upstreamFetch(target,method,params,historical,priority);}catch{continue;}
+  try{response=await upstreamFetch(target,method,params,historical,actualPriority);}catch{continue;}
   if(response.status>=500)continue;
   if(response.status===429){throttled(target,method,response);continue;}
   const result=await response.json().catch(()=>null) as {result?:unknown;error?:{code:number;message:string;data?:unknown}}|null;
@@ -86,16 +91,17 @@ async function request(method: string, params: unknown[],foreground=false):Promi
   if (cached && cached.expires > Date.now()) return cached.result;
   // Coalesce reads only: transaction submission is always forwarded.
   const read = !method.startsWith("eth_send");
-  if (read && inflight.has(key)) return inflight.get(key);
+  const existing=read?inflight.get(key):undefined;
+  if(existing){if(foreground)existing.hint.promote();return existing.operation;}
   if (waiting >= 200) throw new Error("RPC busy; retry shortly");
+  const hint=rpcReadPriority(foreground);
   const operation = (async () => {
     waiting++;
     try {
-      if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historical(method,params),foreground);
+      if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historical(method,params),hint);
       for (let attempt = 0; attempt < 4; attempt++) {
         const target:Upstream=attempt>0 && (read || method==='eth_sendRawTransaction') && spread ? "secondary" : "primary";
-        const history=historical(method,params),priority=control(method,params,foreground);
-        await acquire(target,method,history,priority);
+        const history=historical(method,params),priority=await acquire(target,method,params,history,control(method,params,hint.foreground()),hint);
         let response:Response;
         try { response = await upstreamFetch(target,method,params,history,priority); }
         catch { if(attempt===3)throw new Error("RPC transport unavailable");await delay(250*(attempt+1));continue; }
@@ -122,14 +128,14 @@ async function request(method: string, params: unknown[],foreground=false):Promi
       throw new Error("Upstream RPC rate limit; retry shortly");
     } finally { waiting--; }
   })();
-  if (read) inflight.set(key, operation);
+  if (read) inflight.set(key, {operation,hint});
   try { return await operation; } finally { if (read) inflight.delete(key); }
 }
 createServer(async (req, res) => {
   res.setHeader("content-type", "application/json");
   if (req.method === "GET" && req.url === "/health") {
     res.end(JSON.stringify({ ok: true, waiting, queued:schedulers.primary.pending(), requestsPerSecond: 1000 / spacing,
-      throttled: stats.primary.throttled+stats.secondary.throttled,timing:timing.snapshot(),
+      throttled: stats.primary.throttled+stats.secondary.throttled,coalescedForegroundPromotions,timing:timing.snapshot(),
       upstreams: {primary:{queued:schedulers.primary.pending(),spacingMs:schedulers.primary.spacing(),lastThrottle:lastThrottle.primary,...stats.primary},secondary:schedulers.secondary?{queued:schedulers.secondary.pending(),spacingMs:schedulers.secondary.spacing(),lastThrottle:lastThrottle.secondary,...stats.secondary}:null} })); return;
   }
   let id: unknown = null;

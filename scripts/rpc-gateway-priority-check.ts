@@ -147,6 +147,25 @@ try{
  assert.equal(sent.filter(v=>String((v.params[0] as any)?.data).startsWith('0xcc')).length,20);
  report.checks.push('Canonical shared arena fence overtakes foreground hydration; every other read still completes');
  report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
+ // A UI may join the exact pending read initiated by a background service.
+ // Coalescing must retain one upstream request while inheriting player priority.
+ const sharedBacklog=Array.from({length:16},(_,i)=>rpc('eth_call',[{to:pool,data:`0xdd${i.toString(16).padStart(2,'0')}`},'latest']));
+ const duplicateParams=[{to:pool,data:'0xfeed'},'latest'];
+ const backgroundShared=rpc('eth_call',duplicateParams);
+ const sharedDeadline=Date.now()+5000;
+ while((await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).queued.interactive<14){
+  assert(Date.now()<sharedDeadline);await new Promise(r=>setTimeout(r,10));
+ }
+ const sharedPrior=sent.length,playerShared=rpc('eth_call',duplicateParams,true);
+ const [backgroundResult,playerResult]=await Promise.all([backgroundShared,playerShared]);
+ await Promise.all(sharedBacklog);
+ assert.deepEqual(backgroundResult,playerResult);
+ const forwarded=sent.filter(v=>(v.params[0] as any)?.data==='0xfeed');assert.equal(forwarded.length,1);
+ const sharedIndex=sent.findIndex(v=>(v.params[0] as any)?.data==='0xfeed');
+ assert(sharedIndex>=sharedPrior&&sharedIndex<sharedPrior+4,'Coalesced player read inherited background queue delay');
+ assert((await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).coalescedForegroundPromotions>=1);
+ report.checks.push('A player promotes its identical queued read without duplicate RPC or extra throughput');
+ report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}
 finally{
