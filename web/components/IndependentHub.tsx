@@ -39,6 +39,7 @@ import {readIndependentLobby,readIndependentRanking,independentReader} from '../
 import {publicIndependentManifest,arenaReference,parseRoomReference,roomReference,type IndependentManifest} from '../../shared/independent';
 import {independentApi,independentBase,loadFamily,renewIndependentControl,validateFamily,resumeSponsored,lobbyCommand,saveIndependentProfile,disconnectFamily,eraseFamilyLocal,createIndependentArena,type FamilySession} from '../lib/independent';
 import {openArcadeAccess} from '../lib/arcade-access';
+import {observeSponsored,SponsorPending} from '../lib/independent';
 import {independentControlArgs} from '../../shared/independent-rules';
 import {SESSION_RENEW_MARGIN} from '../../shared/agent-pool-family';
 import {arenaOutage,arenaWaitStatus,preparingArena} from '../lib/arena-wait';
@@ -59,6 +60,8 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
  const [panel,setPanel]=useState<Panel>(null),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[sync,setSync]=useState('');
  const [lobbySync,setLobbySync]=useState('');
  const [actionStage,setActionStage]=useState<ArcadeStage>('preparing'),[cancelQueued,setCancelQueued]=useState<string|null>(null);
+ const [pendingSponsor,setPendingSponsor]=useState<ChainOperation|null>(null);
+ const pendingProfile=useRef<{id:string;player:string}|null>(null);
  const [spectatorRoom,setSpectatorRoom]=useState<string>();
  const [painted,setPainted]=useState<CourtPlayback>();
  const [countdown,setCountdown]=useState<{id:string;deadline:number;clock:number;observedAt:number}>();
@@ -133,13 +136,36 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   void resumeSponsored(manifest).then(refresh).catch(e=>setNotice(poolUserError(e)));
  },[manifest,family?.grant.key,refresh]);
  useEffect(()=>{
+  if(!manifest)return;let stopped=false;let timer:ReturnType<typeof setTimeout>;
+  const poll=async()=>{
+   try{
+    // The foreground action owns its first observation window. Recovery only
+    // reads the same durable operation; it never signs or submits a replacement.
+    if(working.current)return;
+    const op=await observeSponsored(manifest);if(stopped)return;
+    if(!op){setPendingSponsor(null);return;}
+    if(op.status==='queued'||op.status==='pending'){setPendingSponsor(op);setActionStage(sponsorStage(op.status));return;}
+    setPendingSponsor(null);
+    if(op.status==='failed'){setError(op.error||'This action reverted. Reload before retrying.');return;}
+    setError('');setNotice('Action confirmed');
+    if(pendingProfile.current?.id===op.id){
+     if(equal(current.current.family?.grant.player,pendingProfile.current.player)&&current.current.panel==='account')setPanel(null);
+     pendingProfile.current=null;setNotice('Profile saved');
+    }
+    await refresh();
+   }catch{/* An unavailable observation preserves the pending operation. */}
+   finally{if(!stopped)timer=setTimeout(poll,1500);}
+  };
+  void poll();return()=>{stopped=true;clearTimeout(timer);};
+ },[manifest,refresh]);
+ useEffect(()=>{
   if(!manifest||!family)return;let sending=false;const instance=crypto.randomUUID();
   const timer=setInterval(()=>{if(sending)return;sending=true;void reportIndependentDiagnostics(manifest,family,instance).catch(()=>{}).finally(()=>{sending=false;});},10000);
   return()=>clearInterval(timer);
  },[manifest,family?.grant.key]);
  async function run(fn:()=>Promise<void>){
   if(working.current)return;working.current=true;setBusy(true);setActionStage('preparing');setError('');
-  try{await heartbeat.current;await fn();}catch(e){setError(poolUserError(e));}finally{working.current=false;setBusy(false);}
+  try{await heartbeat.current;await fn();}catch(e){if(e instanceof SponsorPending){setActionStage('confirmation');setNotice('Your action is still being confirmed. You can close this window.');}else setError(poolUserError(e));}finally{working.current=false;setBusy(false);}
  }
  const progress=(op:ChainOperation)=>setActionStage(sponsorStage(op.status));
  async function act(s:FamilySession,method:string,args:readonly unknown[]=[]){if(!manifest)return;await lobbyCommand(manifest,s,method,args,progress);await refresh();}
@@ -365,13 +391,13 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
    {(panel==='invite'||panel==='create')&&manifest&&player&&<IndependentPrivate manifest={manifest} player={player} kind="contacts" onChallenge={p=>setTarget(p)}/>}
    {(panel==='invite'||panel==='create')&&frequent.length>0&&<section><h3>Recent rivals</h3>{frequent.map(row=><button key={row.player} onClick={()=>setTarget(row.player)}>{name(row.player)} · {row.count} matches</button>)}</section>}
    {panel==='connect'&&<><p>One confirmation for two hours of human and agent play. Wallet actions still need your approval.</p><button className="primary" disabled={busy} onClick={()=>void login(false)}>Use a passkey</button><button disabled={busy} onClick={()=>void login(true)}>Create a passkey</button></>}
-   {panel==='account'&&player&&<><p className="rooms-address">{player}</p><button onClick={()=>void copy(player)}>Copy address</button><label>Username<input value={handle} onChange={e=>setHandle(e.target.value)} maxLength={20} autoComplete="nickname"/></label><AvatarPicker value={avatar} disabled={busy} onChange={setAvatar}/><button className="primary" disabled={busy||!manifest} onClick={()=>void run(async()=>{await saveIndependentProfile(manifest!,player,handle.trim(),avatar);await refresh();setPanel(null);setNotice('Profile saved');})}>Save profile</button><button disabled={busy} onClick={()=>void login(false,true)}>Use another passkey</button><a className="rooms-button" href="/?deployment=v4">Wallet, payments and previous arenas</a></>}
+   {panel==='account'&&player&&<><p className="rooms-address">{player}</p><button onClick={()=>void copy(player)}>Copy address</button><label>Username<input value={handle} onChange={e=>setHandle(e.target.value)} maxLength={20} autoComplete="nickname"/></label><AvatarPicker value={avatar} disabled={busy} onChange={setAvatar}/><button className="primary" disabled={busy||!!pendingSponsor||!manifest} onClick={()=>void run(async()=>{await saveIndependentProfile(manifest!,player,handle.trim(),avatar,op=>{progress(op);pendingProfile.current={id:op.id,player};});pendingProfile.current=null;await refresh();setPanel(null);setNotice('Profile saved');})}>Save profile</button><button disabled={busy} onClick={()=>void login(false,true)}>Use another passkey</button><a className="rooms-button" href="/?deployment=v4">Wallet, payments and previous arenas</a></>}
    {(panel==='invite'||panel==='create')&&<><label>Username or address<input value={target} onChange={e=>setTarget(e.target.value)} placeholder={panel==='create'?'Optional rival':'Your rival'} autoComplete="off"/></label><button className="primary" disabled={busy||panel==='invite'&&!target.trim()} onClick={()=>void ensure(async s=>{if(panel==='create'){await act(s,'createRoom',[mode]);if(target.trim()){const id=await independentReader(base,manifest!).lobby('occupancy',[s.grant.player]);await act(s,'inviteToRoom',[id,await resolveTarget()]);}}else{const address=await resolveTarget();await act(s,room?'inviteToRoom':'inviteSomeone',room?[room.id,address]:[address,mode]);}setPanel(null);setTarget('');})}>{panel==='create'?'Create room':'Send challenge'}</button></>}
    {panel==='members'&&room&&<><div className="rooms-member-list">{room.members.map((member:any)=><div className="rooms-contact" key={member.player}><Avatar index={profile(member.player)?.avatar}/><strong>{name(member.player)}</strong><span>{member.away?'Away':equal(member.player,room.host)?'Host':'In queue'}</span><button onClick={()=>void copy(member.player)}>Copy address</button></div>)}</div>{ownRoom&&<button onClick={()=>setPanel('invite')}>Invite someone</button>}</>}
    {panel==='tools'&&<><p>{fps} FPS</p><p>{networkMessage||'Connected'}</p><p className="rooms-address">{resultId}</p>{player&&<button onClick={()=>void copy(player)}>Copy address</button>}{active&&side>=0&&<button disabled={busy} onClick={()=>void run(async()=>{await lane.current?.action('concede',[snapshot!.id]);})}>Concede</button>}{!active&&ownRoom&&<button disabled={busy} onClick={()=>void ensure(s=>act(s,'leaveRoom'))}>Leave room</button>}</>}
    {panel==='ranking'&&<><div className="control-segments"><button aria-pressed={mode===0} onClick={()=>setMode(0)}>Classic</button><button aria-pressed={mode===1} onClick={()=>setMode(1)}>Chaos</button></div><p>Published on Monad. Recent results may still be challenged.</p>{ranking?.rebuilding>0n&&<p>Recalculating corrected results</p>}<div className="rooms-ranking">{ranking?.rows.map((row:any,i:number)=><div className="rooms-contact" key={row.player}><span>{i+1}</span><Avatar index={row.profile.avatar}/><strong>{row.profile.handle||short(row.player)}</strong><b>{row.elo} ELO</b><button disabled={busy||equal(row.player,player)} onClick={()=>void ensure(async s=>{await act(s,'inviteSomeone',[row.player,mode]);setPanel(null);})}>Challenge</button></div>)}{ranking&&!ranking.rows.length&&<p>No ranked matches yet.</p>}</div></>}
    {panel==='more'&&<>{player&&<button onClick={()=>{setReplayId(undefined);setPanel('history');}}>My recent matches</button>}<a className="rooms-button" href="/?deployment=v4">Previous arenas · Chaos, tournaments, payments and replays</a><a className="rooms-button" href="/docs" target="_blank" rel="noreferrer">Documentation ↗</a></>}
-   {error?<ArcadeProgress stage="error" detail={error} compact/>:busy&&panel!=='market'?<ArcadeProgress stage={actionStage} compact/>:null}{notice&&<p role="status">{notice}</p>}
+   {error?<ArcadeProgress stage="error" detail={error} compact/>:(busy||pendingSponsor)&&panel!=='market'?<ArcadeProgress stage={pendingSponsor?sponsorStage(pendingSponsor.status):actionStage} compact/>:null}{notice&&<p role="status">{notice}</p>}
   </Dialog>}
  </main>;
 }

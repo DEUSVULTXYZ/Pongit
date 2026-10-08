@@ -19,6 +19,7 @@ import {independentRules,independentControlArgs} from '../../shared/independent-
 import {abi as profileAbi} from '../../shared/abi-independent-ProfileRegistry';
 import {browserBase} from './base-read';
 import {lobbyCommandContext} from '../../shared/independent-command';
+import {observeSponsoredOperation} from '../../shared/sponsored-observation';
 
 const json=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x);
 export const independentBase=()=>browserBase;
@@ -36,6 +37,11 @@ export async function reportIndependentDiagnostics(m:IndependentManifest,s:Famil
 const sessionKey=(m:IndependentManifest)=>`pongit:family:${m.family.toLowerCase()}`;
 const pendingKey=(m:IndependentManifest)=>sessionKey(m)+':operation';
 export class SponsorPending extends Error{constructor(){super('Waiting for the sponsored transaction. Your action is saved; reconnecting your passkey is not necessary.');}}
+export function observeSponsored(m:IndependentManifest){
+ const key=pendingKey(m);
+ return observeSponsoredOperation({saved:()=>{const value=sessionStorage.getItem(key);return value?JSON.parse(value).id:null;},
+  read:id=>independentApi<ChainOperation>(`operations/${id}`),clear:()=>sessionStorage.removeItem(key)});
+}
 export function loadFamily(m:IndependentManifest):FamilySession|null{
  try{
   const s=JSON.parse(sessionStorage.getItem(sessionKey(m))||'null');if(!s)return null;
@@ -60,16 +66,17 @@ export async function sponsorCall(m:IndependentManifest,to:Address,data:Hex,onPr
  if(old&&JSON.parse(old).id!==pending.id)throw new SponsorPending();
  // Includes only the limited gameplay grant or owner-signed action, never wallet key material.
  sessionStorage.setItem(pendingKey(m),json(pending));
+ const clear=()=>{const saved=sessionStorage.getItem(pendingKey(m));if(saved&&JSON.parse(saved).id===pending.id)sessionStorage.removeItem(pendingKey(m));};
  let op:ChainOperation;
  try{op=await independentApi<ChainOperation>('transactions',{to,data});}
- catch(e){if((e as any).accepted===false)sessionStorage.removeItem(pendingKey(m));throw e;}
+ catch(e){if((e as any).accepted===false)clear();throw e;}
  onProgress?.(op);
  const until=Date.now()+45000;
  while(op.status==='queued'||op.status==='pending'){
   if(Date.now()>until)throw new SponsorPending();
   await new Promise(r=>setTimeout(r,750));op=await independentApi<ChainOperation>(`operations/${op.id}`);onProgress?.(op);
  }
- sessionStorage.removeItem(pendingKey(m));
+ clear();
  if(op.status==='failed')throw Error(op.error||'This action reverted. Reload before retrying.');return op;
 }
 export async function resumeSponsored(m:IndependentManifest,onProgress?:(op:ChainOperation)=>void){
@@ -123,7 +130,7 @@ export async function lobbyCommand(m:IndependentManifest,s:FamilySession,name:st
 export async function withOwner<T>(player:Address,fn:(identity:Identity)=>Promise<T>){
  const identity=await connect();try{if(identity.account.address.toLowerCase()!==player.toLowerCase())throw Error('Use the passkey for the connected account.');return await fn(identity);}finally{identity.end();}
 }
-export async function saveIndependentProfile(m:IndependentManifest,player:Address,name:string,avatar:number){
+export async function saveIndependentProfile(m:IndependentManifest,player:Address,name:string,avatar:number,onProgress?:(op:ChainOperation)=>void){
  if(!/^[a-z][a-z0-9_]{2,19}$/i.test(name))throw Error('Use 3 to 20 letters, numbers or underscores, starting with a letter.');
  await resumeSponsored(m);
  return withOwner(player,async identity=>{
@@ -131,7 +138,7 @@ export async function saveIndependentProfile(m:IndependentManifest,player:Addres
   const selector=encodeFunctionData({abi:profileAbi,functionName:'save',args:[player,name,avatar,nonce,deadline,'0x']}).slice(0,10) as Hex;
   const action=keccak256(encodeAbiParameters([{type:'bytes4'},{type:'string'},{type:'uint8'}],[selector,name,avatar]));
   const signature=await identity.account.signTypedData({domain:{name:'PONGIT Profiles',version:'1',chainId:10143,verifyingContract:m.profiles},types:ownerWriteTypes,primaryType:'OwnerWrite',message:{player,action,nonce,deadline}});
-  return sponsorCall(m,m.profiles,encodeFunctionData({abi:profileAbi,functionName:'save',args:[player,name,avatar,nonce,deadline,signature]}));
+  return sponsorCall(m,m.profiles,encodeFunctionData({abi:profileAbi,functionName:'save',args:[player,name,avatar,nonce,deadline,signature]}),onProgress);
  });
 }
 export async function disconnectFamily(m:IndependentManifest,s:FamilySession,active?:{app:Address;binding:any}){
