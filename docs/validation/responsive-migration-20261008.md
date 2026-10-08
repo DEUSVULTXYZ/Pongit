@@ -831,3 +831,17 @@ stillfails. First fixture/TS halfA-vs-heightA typo retained, then16tests/rootTSP
 No product change. Series12stopped. SOLEseries13exec54872 repeatsEdge390 as
 992 thenremaining5cases;990alreadyPASS. Original80min/7minbounds. Public5486/d558
 unchanged;runtime11:00shows0restarts. Disk80.648;no imagebuild. Finalbackup9NOTRUN.
+
+
+## 11:14 UTC - final seven natural public games canonicalPASS
+
+Frozenweb5486a5f/engined558334:990,992,993,994,995Chaos and996,997Classic
+allPASS actualvisibleChrome/Edge keyboard/CDPtouch, independentobservers.
+Canonical69240028 verifiedall7published hashes/scores. Maxadmission7.304s,
+maxsendp9518ms. Full measures/videos in responsive-motion-normal-20261008.json.
+This is not physical-phone, PvP, seven-way or24h proof. All previousFAILpreserved.
+
+Series13exited0. SOLEfaultseries14exec37135:998F5Chrome thenEdge390disconnect,
+original25min bound/7min perfixture, no other writer. This verifies latestlocal
+motion still respects real pause and session restoration. Backup9prepared/uploaded
+NOTRUN; waitforfaultcompletion thenfresh5DB/configOFFVPS. Productionunchanged.
