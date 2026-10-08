@@ -470,3 +470,25 @@ Intermediate wall3/migrated backup files offloaded only after fresh local/remote
 SHA and545mount checks; all bytes remain OFFVPS, manifests retained. Disk79.926
 before build. No global prune, production/rollback image or volume deletion.
 Public replay-final-7 is the only active browser check; no game driver yet.
+
+
+## 07:59 UTC - public replay and held-motion regression verified
+
+Actual public replay-final-7 passed 10 Chrome/Edge viewport checks without
+candidate CSS injection. Court widths are about 906px at1366 and1150px at1440;
+controls/playback/seeking/final6-7/focus and no desktop scroll passed.
+Natural warm-session Chaos948 finished7-4 and published, zero new passkey
+assertions. Report remains FAIL for admission8.016s (8s gate unchanged).
+All other strict gates passed: localp9514.6ms, send latencyMs p9516ms, independent
+observer11.30ms,142held windows at contractual speed,20releases with zero drift,
+5visible contacts all confirmed, no pause/resync/freeze. Video retained.
+
+51 engine/readiness/nonce tests pass; rootTS passes. Productd558334 changes only
+waiting/countdown observation500ms to100ms, keeping readiness and nonce guards.
+It is building, not deployed yet. Initial build preflight refused disk80.235
+before any context/image mutation. One unused compiler imagefb2a was removed
+only after545container checks. Nine intermediate backup/source files204744362B
+were offloaded07:56 after local and remote SHA/mount checks; all bytes remain
+off VPS and manifests remain. No runtime/rollback image or volume was removed.
+No active game/browser driver; sole build is ready-engine-1. Productionweb04ac
+and engineeb remain until its guarded idle/journal cutover. No delivery claim.
