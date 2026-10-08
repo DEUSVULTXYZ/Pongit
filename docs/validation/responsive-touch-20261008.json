@@ -691,5 +691,25 @@
   },
   "references": [
     "https://chromium.googlesource.com/chromium/src/+/cf8a9fdbb36dbf835ffe270c7d437aef631a7f1e/third_party/blink/renderer/platform/scheduler/main_thread/main_thread_scheduler_impl.cc"
-  ]
+  ],
+  "deployment": {
+    "startedAt": "2026-10-08T09:47:05.280564+00:00",
+    "previousImage": "sha256:1e0fb9ed31ca0e9f28466f220e806ba0b8bc500759e0528022333a36854c94f5",
+    "image": "sha256:a54733a76f1062dc0544c659c037a49d32bb5a97cc3471abf27c4dab77fa9b55",
+    "idle": {
+      "block": "69223126",
+      "hash": "0xad225396ad66eb7bdc65ca2a1afd32d4a0c15325e7b0f33e0bce9c4eeb9d59ac",
+      "empty": 5
+    },
+    "backupManifest": "87a484c3ced1b275bb77e11eca887b0dec2b2b86abfaf57dda7d0a3fe72b5e0e",
+    "passed": true,
+    "started": "2026-10-08T09:47:06.829040032Z",
+    "finishedAt": "2026-10-08T09:47:07.199901+00:00"
+  },
+  "backup": {
+    "label": "backup-faults-7",
+    "offVpsVerifiedAt": "2026-10-08T09:44:00.2053475Z",
+    "manifestSha256": "87a484c3ced1b275bb77e11eca887b0dec2b2b86abfaf57dda7d0a3fe72b5e0e"
+  },
+  "browserQualification": "First mobile repeat running, not yet passed"
 }

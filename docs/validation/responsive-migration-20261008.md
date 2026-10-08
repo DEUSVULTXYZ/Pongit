@@ -667,3 +667,14 @@ Six exact completed/unmounted compiler contexts343852695bytes archived OFFVPS
 with SHA/allcontainer checks, then removed; runtime/rollbackimages/evidence kept.
 Backup-faults-7 created09:42:52, fiveDBs plus config75634818bytes; copy pending.
 No game driver active. Next actual public mobile after guarded idle cutover.
+
+
+## 09:47 UTC - touch correction deployed, first actual mobile repeat
+
+Webc0e687f/imagea54733a76f1062dc0544c659c037a49d32bb5a97cc3471abf27c4dab77fa9b55
+deployed09:47:06.829UTC after canonical69223126 proved5idlelanes. Backup-faults7
+OFFVPSverified09:44 manifest87a484c3ced1b275bb77e11eca887b0dec2b2b86abfaf57dda7d0a3fe72b5e0e.
+BuildPASS09:46:37; used79.9517percent at start. No engine/contract/lifecycle change.
+Rollbackdocs6dea/image1e0fb9 remains. Sole game driver touchfix360-1, publicChrome
+360touch, strict normal gates, warmed owned account. Do not duplicate.
+Directory09:46:29 still7stopped/Active; no additionalPOST/providerchange.
