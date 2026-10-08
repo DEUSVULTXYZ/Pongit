@@ -44,3 +44,14 @@ test('whole-motion measurement rejects resistance that a first-pixel latency tes
  assert.equal(sustainedInputMetrics(trace(300)).held.outsideTarget,0);
  assert(sustainedInputMetrics(trace(180)).held.outsideTarget>0);
 });
+
+test('held speed measurement follows the displayed expiry of a Chaos speed effect',()=>{
+ const physics=initialChaosEvents(zeroHash);
+ physics.effects[0]={...physics.effects[0],id:2,target:0,startsAt:0,expiresAt:300};
+ const samples=Array.from({length:60},(_,i)=>{const at=i*10,y=100+390*Math.min(at,300)/1000+300*Math.max(at-300,0)/1000;
+  return {at,side:0,observedAt:0,y,top:y-48,bottom:y+48,height:96,rally:'1'};});
+ const trace={snapshots:[{observedAt:0,rulesVersion:17,controllable:true,chaos:{physics}}],keys:[{at:0,side:0,direction:1}],releases:[{at:600,side:0}],
+  paddles:samples,poses:samples.map(p=>({at:p.at,renderedUs:String(p.at*1000)}))};
+ assert.equal(sustainedInputMetrics(trace).held.outsideTarget,0);
+ assert(sustainedInputMetrics({...trace,poses:undefined}).held.outsideTarget>0,'A stale snapshot clock misclassifies a legitimate expiry');
+});

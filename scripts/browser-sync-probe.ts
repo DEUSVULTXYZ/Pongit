@@ -22,14 +22,15 @@ export function confirmedInputMetrics(intents:{at:number;direction:number}[],rec
 /** Measure the whole held motion and release, rather than the first pixel.
  * Windows touching bounds, pauses, rally changes or effects changing geometry
  * are excluded explicitly, never counted as a passing speed measurement. */
-export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?:any[];releases?:any[]}){
+export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?:any[];releases?:any[];poses?:any[]}){
  const observations=new Map(data.snapshots.map(s=>[s.observedAt,s]));
+ const displayedTime=new Map((data.poses??[]).map(p=>[p.at,BigInt(p.renderedUs)]));
  const changes=[...(data.keys??[]),...(data.releases??[]).map(r=>({...r,direction:0}))].sort((a,b)=>a.at-b.at);
  const ratios:number[]=[],stops:any[]=[],excluded:Record<string,number>={};
  const reject=(reason:string)=>{excluded[reason]=(excluded[reason]??0)+1;};
  const speed=(frame:any)=>{const s=observations.get(frame.observedAt);
   if(!s||!s.controllable||(s.pause?.status??0)>=2)return;
-  if(s.chaos){const raw=s.chaos.physics,p=eventPaddles({...raw,t:BigInt(raw.t),paddleSpeed:rulesPaddleSpeed(s.rulesVersion??0)});
+  if(s.chaos){const raw=s.chaos.physics,p=eventPaddles({...raw,t:displayedTime.get(frame.at)??BigInt(raw.t),paddleSpeed:rulesPaddleSpeed(s.rulesVersion??0)});
    return Number(frame.side===0?p.speedA:p.speedB)/1e6;}
   return Number(rulesPaddleSpeed(s.rulesVersion??0))/1e6;
  };
