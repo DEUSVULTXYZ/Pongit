@@ -32,6 +32,18 @@ test('responsive rules tick at 50ms and skip work already performed by a player 
  f.busy(true);f.age(500);await loop.progress();assert.equal(f.sent.length,1,'one writer, no catch-up queue');
  loop.stop();f.busy(false);await loop.progress();assert.equal(f.sent.length,1);
 });
+
+test('responsive receipt delay consumes the tick interval, while a newer player revision postpones it',async()=>{
+ const f=fixture();let now=1000;f.setState({phase:2});f.age(50);
+ const loop=independentEventsLoop({...f.actor,tickDeadlineMs:50,send:async(action,args)=>{
+  await f.actor.send(action,args);now+=95;f.age(0);f.setState({revision:f.state().revision+1n});return f.state();
+ }},undefined,undefined,()=>now);
+ await loop.progress();assert.equal(f.sent.length,1);
+ await loop.progress();assert.equal(f.sent.length,2,'Do not add another 50ms after a 95ms send');
+ f.setState({revision:f.state().revision+1n});now+=30;
+ await loop.progress();assert.equal(f.sent.length,2,'Newer live player progress owns this interval');
+ f.age(50);await loop.progress();assert.equal(f.sent.length,3);loop.stop();
+});
 test('proof transport allows ticks; a ready proof uses the same writer only after its current command',async()=>{
  const f=fixture();f.setState({phase:2,chaos:{request:1n,pending:0n} as any});
  let resolve!:(v:any)=>void;const errors:unknown[]=[];

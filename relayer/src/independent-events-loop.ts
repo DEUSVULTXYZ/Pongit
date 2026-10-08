@@ -16,8 +16,9 @@ type Actor={
 };
 /** A proof uses the existing arena writer. Fetch latency never stops ticks;
  * only a ready proof reserves its next turn, after rechecking the full binding. */
-export function independentEventsLoop(actor:Actor,beacon=new ChaosBeaconPump(),lane=new PoolProofLane()){
+export function independentEventsLoop(actor:Actor,beacon=new ChaosBeaconPump(),lane=new PoolProofLane(),now=Date.now){
  let stopped=false,proof:Promise<void>|undefined;
+ let ownTick:{id:bigint;epoch:bigint;revision:bigint;startedAt:number}|undefined;
  const same=(ref:{id:bigint;epoch:bigint})=>{const now=actor.reference();return !stopped&&now.id===ref.id&&now.epoch===ref.epoch;};
  const send=(ref:{id:bigint;epoch:bigint},action:Parameters<Actor['send']>[0],args:readonly unknown[])=>{
   if(!same(ref))throw Error('Arena binding changed before command');
@@ -64,7 +65,16 @@ export function independentEventsLoop(actor:Actor,beacon=new ChaosBeaconPump(),l
     if(!deadline||clock<deadline)return;
    }
    if(same(ref)&&!actor.busy()&&(!launch||block.timestamp>=launch))await send(ref,'start',[]);
-  }else if(state.phase===2&&actor.progressAge(ref.id)>=(actor.tickDeadlineMs??1500)&&!lane.blocksTick()&&!actor.busy())await send(ref,'tick',[ref.id]);
+  }else if(state.phase===2){
+   // Receipt arrival is not the beginning of a second tick interval. Count
+   // our completed send's time only while its exact live revision remains
+   // current. Any newer player command again postpones unnecessary physics.
+   const ownAge=actor.tickDeadlineMs&&ownTick&&ownTick.id===ref.id&&ownTick.epoch===ref.epoch&&ownTick.revision===state.revision?now()-ownTick.startedAt:0;
+   if(Math.max(actor.progressAge(ref.id),ownAge)>=(actor.tickDeadlineMs??1500)&&!lane.blocksTick()&&!actor.busy()){
+    const startedAt=now(),result=await send(ref,'tick',[ref.id]) as EngineState|undefined;
+    if(actor.tickDeadlineMs&&result?.id===ref.id&&typeof result.revision==='bigint'&&same(ref))ownTick={...ref,revision:result.revision,startedAt};
+   }
+  }
  }
  return {progress,supply,blocksWrite:()=>lane.blocksTick(),stop:()=>{stopped=true;}};
 }
