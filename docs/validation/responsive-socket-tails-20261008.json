@@ -1,0 +1,79 @@
+{
+  "run": "r2admit22",
+  "passed": false,
+  "reportSha256": "d1f2c9a8a4c6ad68abddb518f53a99c63763bac1925d952b539fdc77a36861e0",
+  "ref": {
+    "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+    "epoch": "1",
+    "id": "1104"
+  },
+  "admissionMs": 6485,
+  "input": {
+    "samples": 122,
+    "p95Ms": 14.699999809265137
+  },
+  "sendLatency": {
+    "samples": 248,
+    "p95Ms": 22,
+    "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+  },
+  "peerReception": {
+    "samples": 248,
+    "p95Ms": 39.142822265625,
+    "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+    "basis": "compact send entry to independent observer ControlQueued live event"
+  },
+  "liveness": {
+    "heartbeats": 641,
+    "resumes": 3
+  },
+  "result": {
+    "hash": "0x61047bb6db87be7ab2c637e6f75e4700b90e273d02ada69816be454143290851",
+    "winner": "0x3D8C53dF22135Df7e3FEbBc3Fe7e5DdfA11f5Aa7",
+    "status": 3,
+    "scoreA": 7,
+    "scoreB": 6,
+    "elapsedUs": "61356073",
+    "finality": false
+  },
+  "tails": [
+    {
+      "action": "heartbeat",
+      "hash": "0x1f39494190e7db1a94c4402f8ba03f5b529a5b443a87fb79c5fee1ec113e62c8",
+      "ms": 744.9503000000004,
+      "sentAt": 1791483693243.8674,
+      "confirmedAt": 1791483693988.832,
+      "block": "0x214430",
+      "observerDelayMs": 1558.734619140625
+    },
+    {
+      "action": "heartbeat",
+      "hash": "0xb8fc3fca61164ef31250710b1a8a5dfc2c62bed20fce86d03ccf655b88561150",
+      "ms": 1142.368599999998,
+      "sentAt": 1791483695137.9265,
+      "confirmedAt": 1791483696280.3386,
+      "block": "0x214513",
+      "observerDelayMs": 1140.3203125
+    },
+    {
+      "action": "heartbeat",
+      "hash": "0x5b503b4f176b3f9875709e1835ea738e6426d944687951994d657ae0ee745de9",
+      "ms": 351.8845999999976,
+      "sentAt": 1791483723748.5042,
+      "confirmedAt": 1791483724100.4106,
+      "block": "0x214f70",
+      "observerDelayMs": 7.973876953125
+    },
+    {
+      "action": "heartbeat",
+      "hash": "0x363ec162965824b97ac5d917edb58fe71536133323e6338cb0032041ac4fa238",
+      "ms": 944.8590000000113,
+      "sentAt": 1791483752548.9983,
+      "confirmedAt": 1791483753493.8728,
+      "block": "0x2159c7",
+      "observerDelayMs": 30.09326171875
+    }
+  ],
+  "cause": "Three socket transport tails exceed the 500ms presence budget. One is independently observed applied after30ms while its caller waits945ms; two are applied late. No local queue/signature delay before those sends. Exact-hash read recovery and at most one identical-byte delivery follows the SDK delivery rule. No new nonce, signature or contract timeout. Candidate not yet deployed.",
+  "sdk": "@interludelayer-sdk/sdk 0.2.3 deliver()/createSendClient, https://github.com/Veenoway/interlude-sdk/blob/main/sdk/README.md"
+}

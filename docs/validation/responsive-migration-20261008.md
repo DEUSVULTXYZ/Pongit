@@ -1151,3 +1151,23 @@ Per-admission stage timings added, no payloads. Not deployed yet.
 No game/browser driver active. AutomationPAUSED, no final24h. Offload22 archives
 only two completed unmounted web compiler contexts; remove only after verified
 offVPS copy. Production/rollback images and all prior failed evidence retained.
+
+## 18:20 UTC — engine admission build and recoverable backup
+
+Source fd1838e exact engine image fa860d15ea69a5da3f8ee3e4392b863718644e5a9a8aa36d54f1b17c93b4dde8 passed isolated tests; 1127 full TypeScript tests and root typecheck passed. Offload22 removed only two completed unmounted compiler contexts after all 4724 files (115392770 bytes) were SHA verified off VPS; active and rollback images retained. Usable disk79.744% before build.
+
+Backup-admission-22 contains five databases and runtime archive, six files77576154bytes, SHA-verified off VPS18:17:56, manifest4a979f8930956c424bf01500b8a5f2f1b3839498597c5d0f52b64f1a78c56788. Prior actual restore proofs retained; this fresh backup has no new restore claim.
+
+Sole cutover22 exec85739 started18:18:15 with original12-minute idle bound. It changes only the engine image after seven idle slots and zero pending engine commands. Current tournament48 match1102 remains live; do not interrupt it, duplicate cutover or extend deadline. No game/browser driver. Public contracts, epoch1, human backend, web and scoped journals stay unchanged. Automation PAUSED.
+
+## 18:21 UTC — foreground engine admission deployed
+
+Cutover22 completed18:20:39 after canonical69324826 (hash8b1d8d18c6536f1a70761c09f386fedc8251f5485a69b75c3fd8cb034fd517ce) verified five idle agent lanes, two empty human slots and zero pending engine jobs. Only engines changed to fa860d15ea69a5da3f8ee3e4392b863718644e5a9a8aa36d54f1b17c93b4dde8/sourcefd1838e, started18:20:31; eight fresh engine health observations followed. RPC/sponsor/readerf85, web791, human c45, all contracts/epochs and journals unchanged. Rollback engine0085e144 only, never old databases.
+
+Sole actual Chrome driver r2admit22 exec71678 started from saved virtual session20. Chaos1104 admitted on077 epoch1; fresh engine timing discovery-to-command1096ms (ticket177/proof351/command417). End-to-end and natural result gates still running; no PASS claim before its report. Automation PAUSED.
+
+## 18:30 UTC — real pause failure and bounded delivery recovery
+
+r2admit22 Chaos1104 naturally ended7-6 but FAIL: admission6485ms/local14.7ms pass; three resumes, one visible resync and8.483s protected pause. Exact heartbeat sends took745/1142/945ms with submillisecond local queues/signatures. Independent observer confirms the last was applied30ms after send while its caller waited945ms. Earlier two were applied late, so not every pause is only a delayed response. Original report/video retained, no seven4 started.
+
+Candidate adds a120ms socket receipt check. Only a matching live receipt resolves the journal; an actual null permits one identical-byte HTTP delivery through the same journal. Failed or mismatched receipt reads do not authorize a resend; explicit RPC errors remain failures. This follows SDK0.2.3 delivery recovery, with bounded earlier recovery and no nonce replacement. The500ms protection remains. Two actual isolated HTTP/WebSocket tests verify both delayed execution and delayed response cause exactly one effect per nonce, including the later socket copy.34 other focused tests and root TypeScript pass. Candidate not yet deployed.

@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-10-08T18:18:15.935335+00:00",
+  "deadline": 1791484215.9353547,
+  "passed": true,
+  "stage": "complete",
+  "previous": "sha256:0085e14426dc245e32119646e64deb455f99c714862ed9c55c301fdce57c023d",
+  "image": "sha256:fa860d15ea69a5da3f8ee3e4392b863718644e5a9a8aa36d54f1b17c93b4dde8",
+  "backupManifest": "4a979f8930956c424bf01500b8a5f2f1b3839498597c5d0f52b64f1a78c56788",
+  "lastCheck": {
+    "block": "69324826",
+    "hash": "0x8b1d8d18c6536f1a70761c09f386fedc8251f5485a69b75c3fd8cb034fd517ce",
+    "idle": true,
+    "humanSlots": [
+      "0",
+      "0"
+    ]
+  },
+  "idle": {
+    "block": "69324826",
+    "hash": "0x8b1d8d18c6536f1a70761c09f386fedc8251f5485a69b75c3fd8cb034fd517ce",
+    "idle": true,
+    "humanSlots": [
+      "0",
+      "0"
+    ]
+  },
+  "started": "2026-10-08T18:20:31.079937356Z",
+  "health": {
+    "fresh": 8
+  },
+  "finishedAt": "2026-10-08T18:20:39.208794+00:00"
+}

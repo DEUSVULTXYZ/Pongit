@@ -1,10 +1,11 @@
-import {createPublicClient,http,webSocket,type Transport} from "viem";
+import {createPublicClient,http,webSocket,keccak256,type Hex,type Transport} from "viem";
 import {engineReadRetryMs} from "./engine-read";
 import {measuredFetch,recordRpc} from "./rpc-metrics";
 import {EnginePublicationUnavailable,publicationUnavailable} from "./service-error";
 import {agentPublicationHealth} from './agent-publication-health';
 import {createSendRouter,nodeSocketUrl,type SendRouter} from '@interludelayer-sdk/sdk';
 import {boundedEngineSend} from './bounded-engine-send';
+import {reconcileSocketSend} from './reconcile-socket-send';
 const cooldowns=new Map<string,()=>number>();
 export const engineCooldownMs=(url:string)=>Math.max(0,cooldowns.get(url)?.()??0);
 type EngineGate=<T>(send:()=>Promise<T>)=>Promise<T>;
@@ -124,9 +125,9 @@ export function engineTransport(url: string,journal?:EngineTransportJournal,send
       return response;
     };
     const transport = http(url, {retryCount: 0, timeout: 4000,fetchFn})(options);
-    // The SDK router picks the next transport but never owns retries/nonces.
-    // After a lost response the exact journaled command must be reconciled by
-    // its existing owner before another call can enter this lane.
+    // The journal owns the exact transaction throughout socket recovery. One
+    // hash lookup may recover its receipt or permit the SDK's identical-byte
+    // HTTP resend; no replacement signature or nonce can enter this lane.
     let router:SendRouter|undefined,closeSend=()=>{};
     if(send&&journal){
       if(send===true){
@@ -145,8 +146,28 @@ export function engineTransport(url: string,journal?:EngineTransportJournal,send
         if(write&&router){
           const selected=router.client();
           // HTTP retains Retry-After and the common traffic instrumentation.
-          const at=Date.now();let status=200;
-          try{result=await(selected.via==='http'?transport.request(args):selected.client.request(args as any));router.delivered(selected.via);}
+          const at=Date.now();let status=200,deliveredVia=selected.via;
+          try{
+            if(selected.via==='http')result=await transport.request(args);
+            else{
+              const raw=(args.params as any)?.[0] as Hex;
+              const recovered=await reconcileSocketSend({hash:keccak256(raw),
+                send:()=>selected.client.request(args as any),
+                receipt:()=>requestGate(()=>transport.request({method:'eth_getTransactionReceipt',params:[keccak256(raw)]})),
+                repeat:()=>requestGate(async()=>{
+                  // Recheck the existing journal binding; the exact same bytes
+                  // are the only permitted copy. Keep future sends on HTTP.
+                  await journal!.beforeSend(raw);router!.lost('ws');
+                  return transport.request(args);
+                })});
+              result=recovered.value;
+              if(recovered.recovered){
+                deliveredVia='http';router.lost('ws');
+                recordRpc({at,target:'interlude',method:'send.recovered.'+recovered.recovered,status:200,ms:Date.now()-at,source:'network'});
+              }
+            }
+            router.delivered(deliveredVia);
+          }
           catch(error){status=engineReadRetryMs(error)?429:0;if(transportLoss(error))router.lost(selected.via);throw error;}
           finally{if(selected.via==='ws')recordRpc({at,target:'interlude',method:args.method,status,ms:Date.now()-at,source:'websocket',requestBytes:new TextEncoder().encode(JSON.stringify(args)).byteLength});}
         }else result=await transport.request(args);
