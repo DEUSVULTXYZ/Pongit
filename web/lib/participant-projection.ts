@@ -51,9 +51,9 @@ function pointPaddles<T extends {t:bigint;left:bigint;right:bigint;leftDir:numbe
 
 /** Ball and both paddles share one reconstruction. Callers must draw these
  * paddle positions, never replace them with an independent local animation. */
-export function projectParticipant(source:State,target:bigint,inputs:readonly TimedControl[],house?:HousePrediction){
+export function projectParticipant(source:State,target:bigint,inputs:readonly TimedControl[],house?:HousePrediction,confirmContacts=false){
  let state={...source},waiting=false,pointBoundary=false,contactBoundary=false;
- const uncertain=inputs.some(i=>i.confirmed===false&&i.at<=target);
+ const uncertain=confirmContacts||inputs.some(i=>i.confirmed===false&&i.at<=target);
  if(state.finished||state.awaitingServe)return {state,waiting:false};
  const end=target<state.t?state.t:target>state.t+600_000n?state.t+600_000n:target;
  const bot=predictor(house);
@@ -80,12 +80,12 @@ export function projectParticipant(source:State,target:bigint,inputs:readonly Ti
  return {state,pointBoundary,contactBoundary,waiting:waiting||target>end};
 }
 
-export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,inputs:readonly TimedControl[],contacts:boolean|'complete',house?:HousePrediction){
+export function projectChaosParticipant(source:ChaosPhysicsState,target:bigint,inputs:readonly TimedControl[],contacts:boolean|'complete',house?:HousePrediction,confirmContacts=false){
  let state=source;const collisions:ReturnType<typeof projectChaos>['collisions']=[];
  if(state.score.finished||state.cancelled)return {state,collisions,pointBoundary:false,waiting:false};
  const end=target<state.t?state.t:target>state.t+600_000n?state.t+600_000n:target;
  let waiting=false,pointBoundary=false,contactBoundary=false;const bot=predictor(house);
- const uncertain=inputs.some(i=>i.confirmed===false&&i.at<=target);
+ const uncertain=confirmContacts||inputs.some(i=>i.confirmed===false&&i.at<=target);
  const advance=(to:bigint)=>{
   while(state.t<to&&!waiting){
    if(bot.turn(state.t)){

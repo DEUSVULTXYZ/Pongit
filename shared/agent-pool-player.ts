@@ -17,7 +17,7 @@ import {preparePoolActive} from './agent-pool-active';
 import {hubHasNoLease,hubLeaseValid} from './hub-lease';
 
 export const POOL_PLAYER_GAS=14_800_000n;
-export type PoolPlayerTiming={stage:'queue'|'fence'|'snapshot'|'send'|'receipt'|'observation'|'nonce'|'signature'|'transport'|'acknowledged';startedAt:number;ms:number;command?:string;hash?:string};
+export type PoolPlayerTiming={stage:'queue'|'fence'|'snapshot'|'send'|'receipt'|'observation'|'nonce'|'signature'|'transport'|'acknowledged'|'terminal';startedAt:number;ms:number;command?:string;hash?:string};
 class UnsentFenceExpired extends Error {
  constructor(){super('Arena authorization is awaiting a fresh observation');}
 }
@@ -273,7 +273,13 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   }
   catch(error){
    const terminal=await terminalAfterRevert(error,id,()=>journal.pending(session.grant.key),async()=>verify(await feed.read(id,true)));
-   if(terminal){intention=undefined;return name==='input'?undefined:terminal;}
+   if(terminal){
+    // A live terminal state with this exact reference resolves the final-point
+    // race. Keep the rejected receipt visible in diagnostics, separately from
+    // actual in-game command failures or uncertain responses.
+    try{options.onTiming?.({stage:'terminal',command:name,hash:(error as any).hash,startedAt:performance.now(),ms:0});}catch{}
+    intention=undefined;return name==='input'?undefined:terminal;
+   }
    sender=undefined;inputReceipt=undefined;throw error;
   }
  }

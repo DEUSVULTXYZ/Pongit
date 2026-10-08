@@ -8,6 +8,18 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('public match939 release between frames cannot add a partial frame or a late receipt tail',()=>{
+ const view=new ParticipantReconciliation();
+ view.sample(pose(170.69),undefined,16.4,{side:0,direction:-1});
+ view.sample(pose(165.74),undefined,16.5,{side:0,direction:-1});
+ const release=view.sample(pose(162.67),pose(162.67),16.9,{side:0,direction:0});
+ assert.equal(release.paddles[0],165.74,'no last 3.07-unit move after keyup');
+ for(let i=0;i<15;i++){
+  const y=view.sample(pose(158),i===3?pose(164):undefined,16.7,{side:0,direction:0}).paddles[0];
+  assert(Math.abs(y-165.74)<=2,'total correction remains bounded from the released picture');
+ }
+});
+
 test('an ACK-only timing change reconciles the public slow-network rollback without delaying local release',()=>{
  const ledger=new ParticipantInputs(),state=initial(zeroHash);
  const source=()=>({state,clock:0n,confirmedInputRevision:ledger.revision});

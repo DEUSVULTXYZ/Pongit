@@ -8,6 +8,20 @@ import {projectLive} from '../web/lib/presentation';
 import {LiveClock} from '../web/lib/live-paddle';
 const source=()=>({...initial(`0x${'ab'.repeat(32)}`),x:80n*SCALE,y:360n*SCALE,vx:-128n*SCALE,vy:64n*SCALE,left:288n*SCALE,leftDir:0});
 
+test('responsive rendering waits for live contact even after the input receipt',()=>{
+ const s={...source(),left:360n*SCALE};
+ const inputs=[{side:0 as const,direction:0 as const,at:0n,confirmed:true}];
+ const next=projectParticipant(s,400_000n,inputs,undefined,true);
+ assert(next.contactBoundary);assert(next.state.vx<0n,'accepted input is not a confirmed collision');
+ assert(next.state.x>=40n*SCALE);assert.deepEqual(s,{...source(),left:360n*SCALE});
+ const chaos=initialChaosEvents(zeroHash);
+ chaos.balls[0]={...chaos.balls[0],x:978_560_000_000_000n,y:521_280_000_000_000n,vx:192_000_000n,vy:96_000_000n};
+ chaos.right=528_000_000_000_000n;
+ const projected=projectChaosParticipant(chaos,100_000n,[],'complete',undefined,true);
+ assert(projected.contactBoundary);assert(projected.state.balls[0].vx>0n);
+ assert(!projected.collisions.some(c=>c.kind===3||c.kind===4),'no predicted paddle sound or impact');
+});
+
 test('a paused presentation clock cannot bank time and jump on resume',()=>{
  const clock=new LiveClock();
  assert.equal(clock.sample(400_000n,500_000n),400_000n);

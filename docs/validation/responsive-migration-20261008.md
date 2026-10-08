@@ -326,3 +326,35 @@ Initial gates are journalled before public admissions. Seven new regression test
 and three nearby house-instance tests pass; root TypeScript passed. This does
 not qualify five simultaneous lanes or the release. No new product image is
 needed for this deployment helper. No public opening or browser result yet.
+
+## 06:19 UTC - public browser failures reproduced; narrow correction prepared
+
+Web eb42374 is public since 06:05:01, image86f199d4. Activation completed at
+06:04:00 with four verified epoch gates, four excluded stopped nodes. Human
+admissions remain closed. Classic939 and Chaos940 finished naturally 7-5 and
+7-4 and published. Actual visible Edge1366x768 and Chrome1440x900 with independent
+observer/video: zero contract pause, zero resync; frame p95 17ms, max holds66/233ms,
+local input p9521.4/20.6ms, compact send p9516ms, peer14.6/12.9ms. Courts931/1166px.
+One passkey ceremony each. Admission7233/8787ms (Chaos fails8s). BOTH reports FAIL.
+Classic stop drift p953.01,max3.07; Chaos3.38,max3.97. Held Classic ratios pass,
+Chaos has two outliers. Reconciliation can still reverse a ball near contact.
+These reports and videos remain under artifacts/qualification/catalogue-responsive-r2-*1.
+
+Trace939 identifies the stop defect: keyup falls between frames165.74 and162.67,
+then stops; a reconstructed partial frame adds3.07units after the last painted
+position. New local release anchors that last picture, caps subsequent correction
+without a tail and preserves held speed. Contacts now wait for live physics in
+rules17/18 even after an input ACK; accepting an intention does not prove a hit.
+Historical projection defaults remain unchanged. A terminal heartbeat in Chaos940
+was rejected InvalidMatch after the last point; existing exact-reference recovery
+returned the finished state. New diagnostics link that consumed receipt hash to
+verified terminal recovery, preserving the rejected receipt separately. Missing
+responses, other errors and unverified results still fail. The original failures
+are not relabelled.88 focused and1,086 complete TypeScript tests pass; rootTS clean.
+First stop regression run failed its no-tail test and is retained in tool output.
+No corrected-image deployment or passing new browser qualification yet.
+
+Seven stopped-host evidence is now documented in interlude-stopped-nodes-20261008.md.
+Canonical69182024 confirms their active epoch1/no expiry/zero batches. Four peers
+publish normally. User action requested to restart existing machines, without
+provider configuration changes or delegation closure. Funds are sufficient.

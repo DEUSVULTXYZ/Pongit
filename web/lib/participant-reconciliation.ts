@@ -29,17 +29,30 @@ export class ParticipantReconciliation {
  private balls=new Map<number,{x:number;y:number;continuity:string}>();
  private localDirection=0;
  private stopCorrection=2;
- reset(){this.paddles=[0,0];this.balls.clear();this.localDirection=0;this.stopCorrection=2;}
+ private localPicture?:{side:0|1;y:number};
+ private stoppedAt?:number;
+ reset(){this.paddles=[0,0];this.balls.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
  sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number}):ParticipantPose{
   const dt=clamp(elapsedMs,0,50);
-  if(local&&local.direction!==this.localDirection){this.localDirection=local.direction;this.stopCorrection=2;}
+  const released=!!local&&local.direction===0&&this.localDirection!==0;
+  if(local&&local.direction!==this.localDirection){
+   this.localDirection=local.direction;this.stopCorrection=2;
+   this.stoppedAt=released&&this.localPicture?.side===local.side?this.localPicture.y:undefined;
+  }
   for(const side of [0,1] as const){
    if(previous)this.paddles[side]+=previous.paddles[side]-current.paddles[side];
    if(local?.side===side){
-    if(local.direction===0){
+    if(released&&this.stoppedAt!==undefined){
+     // A release can land between animation frames. Freeze the last painted
+     // location, not an extra partial frame reconstructed from the new ACK.
+     this.paddles[side]=this.stoppedAt-current.paddles[side];
+     this.stopCorrection=0;
+    }else if(local.direction===0){
      const correction=clamp(this.paddles[side],-this.stopCorrection,this.stopCorrection);
      this.paddles[side]-=correction;this.stopCorrection-=Math.abs(correction);
     }
+    if(local.direction===0&&this.stoppedAt!==undefined)
+     this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],this.stoppedAt-2,this.stoppedAt+2)-current.paddles[side];
    }else this.paddles[side]=settle(this.paddles[side],dt,120);
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];
   }
@@ -63,6 +76,8 @@ export class ParticipantReconciliation {
     y:clamp(ball.y+error.y*free,6,570)};
   });
   for(const id of this.balls.keys())if(!current.balls.some(b=>b.id===id))this.balls.delete(id);
-  return {paddles:current.paddles.map((y,i)=>y+this.paddles[i]) as [number,number],halves:current.halves,balls};
+  const paddles=current.paddles.map((y,i)=>y+this.paddles[i]) as [number,number];
+  if(local)this.localPicture={side:local.side,y:paddles[local.side]};
+  return {paddles,halves:current.halves,balls};
  }
 }

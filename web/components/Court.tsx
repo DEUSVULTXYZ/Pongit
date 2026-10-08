@@ -154,11 +154,11 @@ export function Court({
       if(p.progressionLimit!==undefined&&target>p.progressionLimit)target=p.progressionLimit;
       let waiting = false,pointBoundary=false,contactBoundary=false;
       let drawnBalls:{id:number;x:number;y:number}[]=[];
-      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:coherent?projectChaosParticipant(p.chaos.physics,target,p.coherentControls!,chaosContactResolution(p.rulesVersion??10),p.housePrediction):playback?spectatorChaos.sample(p.chaos.physics,target,chaosContactResolution(p.rulesVersion??10)):projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
+      const cp=p.chaos?(p.replay?{state:p.chaos.physics,collisions:[],waiting:false}:coherent?projectChaosParticipant(p.chaos.physics,target,p.coherentControls!,chaosContactResolution(p.rulesVersion??10),p.housePrediction,p.rulesVersion===17||p.rulesVersion===18):playback?spectatorChaos.sample(p.chaos.physics,target,chaosContactResolution(p.rulesVersion??10)):projectChaos(p.chaos.physics,target,p.rulesVersion===undefined?undefined:chaosContactResolution(p.rulesVersion))):null;
       if(cp){contactBoundary='contactBoundary' in cp&&!!cp.contactBoundary;pointBoundary='pointBoundary' in cp&&!!cp.pointBoundary;s=chaosLegacy(cp.state,p.state?.finished);waiting=cp.waiting||timing.stale;}
       else if (s) {
         const projected = p.replay ? { state: s, waiting: false }
-          : coherent?projectParticipant(s,target,p.coherentControls!,p.housePrediction):p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
+          : coherent?projectParticipant(s,target,p.coherentControls!,p.housePrediction,p.rulesVersion===17||p.rulesVersion===18):p.liveEngine ? projectLive(s, target) : projectConfirmed(s, target);
         contactBoundary='contactBoundary' in projected&&!!projected.contactBoundary;
         pointBoundary='pointBoundary' in projected&&!!projected.pointBoundary;
         s = projected.state;
@@ -178,9 +178,9 @@ export function Court({
           // clock offset, or perfectly predicted bots still jump on receipt.
           const oldTarget=participantContinuationTime(previousTarget,dt,previous.progressionLimit);
           if(previous.chaos){
-            const old=projectChaosParticipant(previous.chaos.physics,oldTarget,previous.coherentControls!,chaosContactResolution(previous.rulesVersion??10),previous.housePrediction);
+            const old=projectChaosParticipant(previous.chaos.physics,oldTarget,previous.coherentControls!,chaosContactResolution(previous.rulesVersion??10),previous.housePrediction,previous.rulesVersion===17||previous.rulesVersion===18);
             before=participantPose(chaosLegacy(old.state,previous.state.finished),old.state);
-          }else before=participantPose(projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction).state);
+          }else before=participantPose(projectParticipant(previous.state,oldTarget,previous.coherentControls!,previous.housePrediction,previous.rulesVersion===17||previous.rulesVersion===18).state);
         }
         const predictedPose=participantPose(s,cp?.state);
         participantPicture=reconciliation.sample(predictedPose,before,dt,{side:p.side as 0|1,direction:p.direction});

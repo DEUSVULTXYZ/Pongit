@@ -10,6 +10,7 @@ import {installSyncProbe,syncMetrics,confirmedInputMetrics,sustainedInputMetrics
 import {collisionIntegrity} from './collision-integrity-metrics';
 import {visibleAim} from './browser-aim';
 import {receiptClockMetrics} from './receipt-clock-metrics';
+import {terminalReceiptRaces} from './terminal-receipt-evidence';
 import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
 import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {createHash} from 'node:crypto';
@@ -603,7 +604,9 @@ try{
  assert(local.length>=(naturalMatch||cadenceProbe?15:50)&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
  assert(report.receipts.filter((r:any)=>r.sequence).length>=requiredControls&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');
- assert(report.receipts.every((r:any)=>['0x1','success'].includes(String(r.status))),'A game command reverted');
+ report.terminalRaces=terminalReceiptRaces(report.receipts,commandTimings);
+ assert(report.receipts.every((r:any)=>['0x1','success'].includes(String(r.status))||report.terminalRaces.includes(r)),
+  'An in-game command reverted without verified terminal recovery');
  if(synchronized){
   report.liveness={heartbeats:report.submissions.filter((s:any)=>s.action==='heartbeat'&&!s.error).length,resumes:report.submissions.filter((s:any)=>s.action==='resumeReady'&&!s.error).length};
   assert(report.liveness.heartbeats>=10,'The actually painted player court must renew liveness while idle');

@@ -59,7 +59,7 @@ export function compactArenaSession(options:{node:PublicClient;abi:Abi;app:Addre
    nonce++;uncertain=false;
    if(!['0x1','success'].includes(String(receipt.status))){
     let errorName='GameReverted';try{errorName=decodeErrorResult({abi,data:receipt.output}).errorName;}catch{}
-    throw Object.assign(new Error(`${errorName}: reading the current game state`),{name:'AppRevertError',errorName});
+    throw Object.assign(new Error(`${errorName}: reading the current game state`),{name:'AppRevertError',errorName,hash});
    }
    // Readiness is a loading handshake, followed by another actor's start and
    // potentially a long idle interval. Read the live EVM count once at entry
