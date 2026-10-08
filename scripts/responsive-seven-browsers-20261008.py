@@ -39,8 +39,19 @@ try:
         time.sleep(1)
     else:raise RuntimeError('Original preparation deadline expired')
     report['readyAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
-    # Room creation/consent is separate from engine concurrency. Start actual
-    # human admission first; their natural game bounds remain unchanged.
+    # Acquire a fresh live tournament before starting either human room.
+    # No keeper operation, artificial extension or changed fixture is involved.
+    fixture=None
+    while int(time.time()*1000)<deadline:
+        assert all(p.poll() is None for _,p in children),'A prepared browser exited'
+        env=os.environ.copy();env['PONG_TOURNAMENT_WINDOW']='read-only-public'
+        probe=subprocess.run([node,'node_modules/tsx/dist/cli.mjs','scripts/responsive-tournament-window-20261008.ts'],cwd=root,env=env,text=True,capture_output=True,timeout=40)
+        if probe.returncode==0:
+            window=json.loads(probe.stdout.strip().splitlines()[-1]);report['lastTournamentWindow']=window;save()
+            if window['fresh']:fixture=window['fixture'];break
+        else:report['windowReadFailedAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
+        time.sleep(2)
+    assert fixture,'No actual fresh hosted tournament within the original deadline'
     (directory/'release-human.json').write_text(json.dumps(dict(go=True,deadline=deadline,readyCount=len(names),bot='NOVA',phase='human-admission',at=datetime.datetime.now(datetime.timezone.utc).isoformat())))
     while int(time.time()*1000)<deadline:
         assert all(p.poll() is None for _,p in children),'A browser failed before the agent release'
@@ -48,17 +59,6 @@ try:
         time.sleep(.25)
     else:raise RuntimeError('Human preparation expired within original admission bound')
     report['humansPlayingAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
-    # Observe the current tournament match without postponing already-playing human
-    # admissions. Never start, alter or cancel a tournament fixture here.
-    previous=None;fixture=None
-    while int(time.time()*1000)<deadline:
-        live=get('live');matches=live.get('matches',live.get('items',[]))
-        active=[m for m in matches if int(m.get('tournament') or 0)>0]
-        if active:
-            candidate=active[0];ref=candidate['ref'];key=(ref['app'].lower(),ref['epoch'],ref['id'])
-            fixture=candidate;break
-        time.sleep(2)
-    assert fixture,'No fresh tournament fixture within original deadline'
     catalog=get('catalog')['items'];house=next(x for x in catalog if x.get('official') and x['agent'].lower() in [fixture['a'].lower(),fixture['b'].lower()])
     release=dict(go=True,deadline=deadline,readyCount=len(names),bot=house['name'],tournament=fixture['tournament'],ref=fixture['ref'],at=datetime.datetime.now(datetime.timezone.utc).isoformat())
     observerEnv=os.environ.copy();observerEnv.update(PONG_SEVEN_WAY='read-only-public-responsive',PONG_SEVEN_WAY_RUN=run,

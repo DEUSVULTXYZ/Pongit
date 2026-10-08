@@ -1206,3 +1206,10 @@ Seven5 finished19:43:21 FAIL. Four ONYX copies admissions7317/13134/18555/16430m
 Readonly human admission audit attempt2: assignNext confirmations19:39:53.749/19:40:21.322, live admit19:40:12.204/19:40:34.398. Human service admission and lifecycle use ordinary Monad reads among archive work; sponsor timings also show nonce/fee/receipt queue waits. First audit failed nonexistent created_at column; retained script/output, second usesactual updated_at. No new productfix yet.
 
 Dense exact-hub localEVM233diffs+256raw entries192KiB after16000/100000batches PASS: publication18.065/18.071millionEVMgasincludingintrinsic, coldrelease117712gasboth. Syntheticapponly; nothostedpublicationcapacity. Existing max16000/reserve8000 unchanged, reviewneeded before24h. No closes, newcontract, fundingrequest, orautomationrestart. Final24hNOTSTARTED.
+
+
+## 8 October 2026, 20:25 UTC - admission deployment and login failure
+
+The compatible f56b4c4 RPC and human-admission images were deployed at 20:13 after canonical block 69347262 proved idle game lanes and the human queue was empty. No contract, epoch, physics or delegated lifecycle changed. All previously stopped admission services resumed. The fresh six-file backup (78,333,601 bytes) is SHA-verified off VPS, manifest caafb0d99301592f41577eda1b5095754d462a0f95ffca48f637b012f872f7c5. The exact cutover evidence is artifacts/responsive-20261008-r2/priority-cutover-25.json.
+
+The seven6 browser trial failed during initial login, before any match admission. Four clients timed out despite confirmed sponsored operations. The two prepared clients received an explicit false barrier; no further games were started. These failures remain retained. Six public login-only clients now diagnose response timing and sanitized RPC errors; this is not a fluidity or seven-way success. The public nodes and identities remain the correct current contracts. Full 24-hour qualification has not started.

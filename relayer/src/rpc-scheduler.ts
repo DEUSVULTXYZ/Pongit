@@ -137,10 +137,13 @@ export function rpcScheduler(spacingMs:number) {
   // A foreground hint must not put every catalogue/match hydration in front
   // of an already accepted transaction's nonce, fees and receipt. Preserve
   // the existing upstream budget and both background fairness guarantees.
-  // Transaction preparation also overtakes routine headers, with one header or
-  // foreground turn after four transaction calls. No queue can starve another.
+  // Transactions and headers share the burst before a foreground turn. Nested
+  // separate bursts previously allowed 16 transactions plus four headers to
+  // delay one login simulation, beyond its HTTP deadline under concurrent login.
+  // A foreground turn does not reset the transaction/header fairness counter.
   const choose=(l:number,c:number,f:number,h:number,t:number,run:number,urgentRun:number,controlBurst:number,transactionBurst:number):keyof typeof queues=>
    h>0&&(!(l+c+f+t)||run>=4)?'history':l>0&&(!(c+f+t)||urgentRun>=4)?'live':
+    f>0&&controlBurst>=4?'foreground':
     t>0&&(!(c+f)||transactionBurst<4)?'transaction':
     c>0&&(!f||controlBurst<4)?'control':'foreground';
   function tick(){
@@ -152,8 +155,8 @@ export function rpcScheduler(spacingMs:number) {
     const release=queues[kind].shift()!;
     liveRun=kind==='history'?0:liveRun+1;
     if(kind!=='history')controlRun=kind==='live'?0:controlRun+1;
-    if(kind==='control'||kind==='foreground')foregroundRun=kind==='control'?foregroundRun+1:0;
-    if(kind==='transaction'||kind==='control'||kind==='foreground')transactionRun=kind==='transaction'?transactionRun+1:0;
+    if(kind==='control'||kind==='foreground'||kind==='transaction')foregroundRun=kind==='foreground'?0:foregroundRun+1;
+    if(kind==='transaction'||kind==='control')transactionRun=kind==='transaction'?transactionRun+1:0;
     next=Date.now()+effectiveSpacing;release();
     if(Object.values(queues).some(q=>q.length))timer=setTimeout(tick,effectiveSpacing);
   }
@@ -172,8 +175,8 @@ export function rpcScheduler(spacingMs:number) {
         if(kind===target&&sizes[kind]===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;
         sizes[kind]--;run=kind==='history'?0:run+1;
         if(kind!=='history')urgentRun=kind==='live'?0:urgentRun+1;
-        if(kind==='control'||kind==='foreground')controlBurst=kind==='control'?controlBurst+1:0;
-        if(kind==='transaction'||kind==='control'||kind==='foreground')transactionBurst=kind==='transaction'?transactionBurst+1:0;
+        if(kind==='control'||kind==='foreground'||kind==='transaction')controlBurst=kind==='foreground'?0:controlBurst+1;
+        if(kind==='transaction'||kind==='control')transactionBurst=kind==='transaction'?transactionBurst+1:0;
         before++;
       }
     },

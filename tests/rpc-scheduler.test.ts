@@ -320,3 +320,23 @@ test('transaction lane validates exact requests and does not inherit routine hea
   ['eth_sendRawTransaction',['0x123']],['eth_gasPrice',[1]],
  ] as const)assert.equal(transactionRpcRequest(method,params),false,method);
 });
+
+test('six login simulations cannot expire behind sustained transactions and canonical headers',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ for(const spacing of [75,85]){
+  const scheduler=rpcScheduler(spacing),seen:{kind:string;at:number}[]=[];
+  await scheduler.acquire(false);
+  const start=Date.now(),take=(kind:string)=>scheduler.acquire(kind==='history',kind==='control',kind==='foreground',kind==='transaction')
+   .then(()=>seen.push({kind,at:Date.now()}));
+  const jobs=[...Array.from({length:60},()=>take('transaction')),...Array.from({length:60},()=>take('control')),
+   ...Array.from({length:30},()=>take('live')),...Array.from({length:30},()=>take('history')),...Array.from({length:6},()=>take('foreground'))];
+  const estimate=scheduler.waitMs(false,false,true);jobs.push(take('foreground'));
+  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(spacing);await Promise.resolve();}
+  await Promise.all(jobs);
+  const player=seen.filter(r=>r.kind==='foreground');
+  assert(player[5].at-start<=5000,'The six first login simulations need a bounded share before the 8/10-second caller timeouts');
+  assert.equal(player[6].at-start,estimate);
+  for(const kind of ['transaction','control','live','history'])assert(seen.slice(0,12).some(r=>r.kind===kind),kind+' must still progress');
+  assert(seen.every((r,i)=>!i||r.at-seen[i-1].at===spacing),'No additional provider throughput');
+ }
+});
