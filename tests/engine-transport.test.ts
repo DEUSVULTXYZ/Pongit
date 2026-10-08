@@ -45,11 +45,15 @@ for(const delayedExecution of [false,true])test(`slow HTTP ${delayedExecution?'d
 
 test('a stalled socket handshake does not delay the first HTTP command or send it later',async()=>{
  let http=0,journaled=0,received=0,close=()=>{};
+ const hash=keccak256('0x0102'),receipt={transactionHash:hash,status:'0x1',blockNumber:'0x42',logs:[]};
  const sockets=new Set<any>();
  const server=createServer((request,response)=>{
   let body='';request.on('data',chunk=>body+=chunk);request.on('end',()=>{
-   http++;response.setHeader('content-type','application/json');
-   response.end(JSON.stringify({jsonrpc:'2.0',id:JSON.parse(body).id,result:'confirmed'}));
+   const message=JSON.parse(body);
+   if(message.method==='interlude_sendTransaction')http++;
+   else{assert.equal(message.method,'eth_getTransactionReceipt');assert.equal(message.params[0],hash);}
+   response.setHeader('content-type','application/json');
+   response.end(JSON.stringify({jsonrpc:'2.0',id:message.id,result:http?receipt:null}));
   });
  });
  server.on('upgrade',(_request,socket)=>{sockets.add(socket);socket.on('close',()=>sockets.delete(socket));});
@@ -59,7 +63,7 @@ test('a stalled socket handshake does not delay the first HTTP command or send i
   const t=engineTransport(`http://127.0.0.1:${address.port}`,{beforeSend:async()=>{journaled++;},received:()=>{received++;}},true)({} as any);
   close=()=>t.value?.closeSend();
   const at=performance.now();
-  assert.equal(await t.request({method:'interlude_sendTransaction',params:['0x0102']}),'confirmed');
+  assert.deepEqual(await t.request({method:'interlude_sendTransaction',params:['0x0102']}),receipt);
   assert(performance.now()-at<500,'First write must not await the optional socket');
   assert.equal(http,1);assert.equal(journaled,1);assert.equal(received,1);
   await new Promise(resolve=>setTimeout(resolve,30));assert.equal(http,1,'No background replay');

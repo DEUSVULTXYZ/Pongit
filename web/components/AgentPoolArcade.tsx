@@ -107,12 +107,18 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   catch{throw Error('Arena availability could not be checked. Please retry.');}
   finally{setChecking(false);}
  }
- async function challenge(m:AgentPoolManifest,s:PoolFamilySession,agent:Address,capacityChecked=false){
+ async function challenge(m:AgentPoolManifest,s:PoolFamilySession,agent:Address){
+  // Availability and authorization have independent read paths. Observe both
+  // now, then require both before signing. Catch immediately so an earlier
+  // journal/canonical-read failure cannot leave an unhandled network rejection.
+  const capacityResult=canStart(m).then(available=>({available,error:undefined as unknown}),error=>({available:false,error}));
+  const admissionPreflight=async()=>{const result=await capacityResult;if(result.error)throw result.error;
+   if(!result.available)throw Object.assign(Error('Arena admission is unavailable'),{code:'POOL_CAPACITY_UNAVAILABLE'});};
   const sponsor=poolBrowserSponsor(m,s.grant.player);await finishPoolSponsor(sponsor,undefined,progress);
-  if(!capacityChecked&&!await canStart(m))return;
   let prepared;
-  try{prepared=await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),s.grant.player,{agent,mode,expectedFamily:s.grant,renewWithin:SESSION_RENEW_MARGIN,checkPending:true});}
+  try{prepared=await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),s.grant.player,{agent,mode,expectedFamily:s.grant,renewWithin:SESSION_RENEW_MARGIN,checkPending:true,admissionPreflight});}
   catch(error){
+   if((error as {code?:string}).code==='POOL_CAPACITY_UNAVAILABLE')return;
    if((error as {code?:string}).code!=='POOL_CHALLENGE_PENDING')throw error;
    const existing=await poolApi<{request:PoolChallengeView|null}>(`challenges/${s.grant.player}`);
    setRequest(existing.request);if(existing.request?.ref)router.push(matchHref(existing.request.ref));setRetry(n=>n+1);return;
@@ -137,9 +143,8 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   if(!canQueueAgent(person(agent)?.availability?.[mode]))return;
   const saved=account?loadPoolFamily(config,account,sessionStorage):null;
   if(saved){
-   if(!await canStart(config))return;
    session.current=saved;
-   try{await challenge(config,saved,agent,true);intent.current=null;return;}
+   try{await challenge(config,saved,agent);intent.current=null;return;}
    catch(error){
     // Only a successful canonical observation can require fresh consent. A
     // network failure preserves the saved key and selected archetype.

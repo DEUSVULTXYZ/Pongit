@@ -206,3 +206,19 @@ test('a reorg during family reads preserves the saved key and does not request n
  await assert.rejects(observePoolFamily(client,m,first.session),/not canonical/);
  assert.equal(headers,2);assert.deepEqual([...f.storage.values],before);
 });
+
+
+test('a fresh persisted intent posts directly but a lost response always reconciles first',async()=>{
+ const store=memory(),id=poolOperationId(request),paths:string[]=[];let accepted=false;
+ const transport=async(path:string,body?:PoolSignedCall)=>{
+  paths.push(path);
+  if(path==='transactions'){
+   assert.equal(store.values.size,1);assert.deepEqual(body,request);accepted=true;throw Error('response lost');
+  }
+  assert.equal(path,`operations/${id}`);if(!accepted)throw missing();return{id,status:'confirmed',hash:zeroHash};
+ };
+ await assert.rejects(createPoolSponsor(m,addr(20),store,transport).send(request),/response lost/);
+ assert.deepEqual(paths,['transactions'],'new POST already checks the immutable operation ID on the server');
+ assert.equal((await createPoolSponsor(m,addr(20),store,transport).resume())?.status,'confirmed');
+ assert.deepEqual(paths,['transactions',`operations/${id}`]);assert.equal(store.values.size,0);
+});

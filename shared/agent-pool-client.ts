@@ -41,7 +41,7 @@ export async function preparePoolRegistration(client:PublicClient,manifest:Agent
  return {to:m.catalog,data:encodeFunctionData({abi:agentCatalogAbi,functionName:'register',args:[registration,signature]}),digest,nonce,deadline:registration.deadline};
 }
 export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoolManifest,key:Signer,player:Address,
- options:{agent:Address;mode:0|1;cancel?:bigint;expectedFamily?:FamilyGrant;renewWithin?:bigint;checkPending?:boolean}):Promise<PreparedPoolCall>{
+ options:{agent:Address;mode:0|1;cancel?:bigint;expectedFamily?:FamilyGrant;renewWithin?:bigint;checkPending?:boolean;admissionPreflight?:()=>Promise<void>}):Promise<PreparedPoolCall>{
  const m=validateAgentPoolManifest(manifest);
  const [chainId,block]=await Promise.all([client.getChainId(),client.getBlock()]);
  if(chainId!==10143)throw Error('Challenges require Monad Testnet');
@@ -65,6 +65,10 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
   expectedGrant?read<bigint>(m.challenges,agentChallengesAbi,'nonces',[expectedGrant]):Promise.resolve(undefined),
  ]);
  if(pending!==0n)throw Object.assign(Error('Resume the existing challenge'),{code:'POOL_CHALLENGE_PENDING',id:pending});
+ // Availability is advisory and independent of the canonical grant reads.
+ // A caller may start that read concurrently, but it must finish before a
+ // renewal prompt or any signature. It can only deny, never grant authority.
+ await options.admissionPreflight?.();
  const active=family.player.toLowerCase()===player.toLowerCase()&&family.key.toLowerCase()===key.address.toLowerCase()&&family.expires>block.timestamp
   &&(!expected||family.player.toLowerCase()===expected.player.toLowerCase()&&family.key.toLowerCase()===expected.key.toLowerCase()
    &&family.issuedAt===expected.issuedAt&&family.expires===expected.expires&&family.revision===expected.revision);

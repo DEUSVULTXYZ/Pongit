@@ -20,3 +20,11 @@ test('HTTP metadata and ISO clocks use the same strict evidence rule without del
  const receipts=[{hash,status:'0x1',confirmedAt:Date.parse('2026-10-08T19:41:15.441Z')}];
  assert.deepEqual(deliveryEvidence([e],receipts).duplicateCopies,[e]);assert(e.rpcError);
 });
+
+
+test('submillisecond observation order is retained without excusing a future receipt',()=>{
+ const e={...error,at:1500,observedAt:1500.9};
+ assert.deepEqual(deliveryEvidence([e],[{hash,status:'0x1',confirmedAt:1500.7}]).duplicateCopies,[e]);
+ assert.deepEqual(deliveryEvidence([e],[{hash,status:'0x1',confirmedAt:1501}]).unresolved,[e]);
+ assert.deepEqual(deliveryEvidence([{...e,observedAt:NaN}],[{hash,status:'0x1',confirmedAt:1500.7}]).unresolved,[{...e,observedAt:NaN}]);
+});

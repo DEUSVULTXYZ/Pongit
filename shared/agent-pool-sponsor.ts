@@ -113,23 +113,28 @@ export function createPoolSponsor(m:AgentPoolManifest,player:Address,storage:Poo
  async function perform(call?:PoolSignedCall){
   if(busy)throw new PoolSponsorPending();busy=true;
   try{
-   let saved=pending();
+   let saved=pending(),fresh=false;
    if(call){const checked=validatePoolSignedCall(m,{to:call.to,data:call.data}),id=poolOperationId(checked);
     if(saved&&saved.id!==id)throw new PoolSponsorPending();
-    if(!saved){saved={to:checked.to,data:checked.data,id};storage.setItem(key,JSON.stringify(saved));}
+    if(!saved){saved={to:checked.to,data:checked.data,id};storage.setItem(key,JSON.stringify(saved));fresh=true;}
    }
    if(!saved)return null;
-   let value:unknown;
-   try{value=await transport(`operations/${saved.id}`);}
-   catch(e){
-    if((e as {status?:number}).status!==404)throw e;
-    try{value=await transport('transactions',{to:saved.to,data:saved.data});}
+   const intent=saved;
+   const submit=async()=>{
+    try{return await transport('transactions',{to:intent.to,data:intent.data});}
     catch(error){
      const rejected=error as {accepted?:boolean;code?:string};
      if(rejected.accepted===false&&['CONTRACT_REJECTED','AGENT_ADMISSIONS_CLOSED','AGENT_CALL_REJECTED'].includes(rejected.code??''))storage.removeItem(key);
      throw error;
     }
-   }
+   };
+   let value:unknown;
+   // A new local intent is already persisted; the server's POST is idempotent
+   // by that same ID. Avoid an expected 404 first. Saved/uncertain intents still
+   // reconcile before any repeat POST, including after a lost response or F5.
+   if(fresh)value=await submit();
+   else try{value=await transport(`operations/${saved.id}`);}
+   catch(e){if((e as {status?:number}).status!==404)throw e;value=await submit();}
    const op=poolOperation(value,saved.id);
    if(op.status==='confirmed'||op.status==='failed')storage.removeItem(key);
    return op;

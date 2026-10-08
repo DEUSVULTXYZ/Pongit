@@ -1,0 +1,161 @@
+{
+  "at": "2026-10-08T23:25:59.129335+00:00",
+  "status": "candidate-not-deployed",
+  "baselineWeb": "25548ad",
+  "naturalBrowserSeries": [
+    {
+      "run": "catalogue-r2final34b1",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1222"
+      },
+      "passed": true,
+      "admissionMs": 7572,
+      "naturalEnded": true,
+      "localP95": 14.5,
+      "sendP95": 15,
+      "resumes": 0,
+      "visibleResyncs": 0,
+      "maxHoldMs": 100,
+      "error": null,
+      "sha256": "680c349c7919864222d601494914e78b2216b80fca7f3651f3ac0dbde24dad0a"
+    },
+    {
+      "run": "catalogue-r2final34b2",
+      "ref": {
+        "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+        "epoch": "1",
+        "id": "1224"
+      },
+      "passed": false,
+      "admissionMs": 8605,
+      "naturalEnded": true,
+      "localP95": 15.299999952316284,
+      "sendP95": 18,
+      "resumes": 3,
+      "visibleResyncs": 1,
+      "maxHoldMs": 266.3999999999942,
+      "error": "At least one command submission was rejected without prior exact successful receipt",
+      "sha256": "4ca572eeeb889fada13a4aa90c236a571d021b807adc2e486106f6b46dd57d80"
+    },
+    {
+      "run": "catalogue-r2final34c1",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1214"
+      },
+      "passed": true,
+      "admissionMs": 7403,
+      "naturalEnded": true,
+      "localP95": 13.900000095367432,
+      "sendP95": 15,
+      "resumes": 0,
+      "visibleResyncs": 0,
+      "maxHoldMs": 50.099999999998545,
+      "error": null,
+      "sha256": "be349ffa0867c3c6d4c28f7f7bab695b3ec2d217ad9cf1d9ea73cf519614e0aa"
+    },
+    {
+      "run": "catalogue-r2final34c2",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "1215"
+      },
+      "passed": false,
+      "admissionMs": 9408,
+      "naturalEnded": true,
+      "localP95": 14.400000095367432,
+      "sendP95": 16,
+      "resumes": 0,
+      "visibleResyncs": 0,
+      "maxHoldMs": 66.89999999999782,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "sha256": "6515a3a9a0c1bce397796e11f144cf23068a564db732f8f8d296adaf70c13b99"
+    },
+    {
+      "run": "catalogue-r2final34c3",
+      "ref": {
+        "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+        "epoch": "1",
+        "id": "1217"
+      },
+      "passed": false,
+      "admissionMs": 8415,
+      "naturalEnded": true,
+      "localP95": 16.40000009536743,
+      "sendP95": 18,
+      "resumes": 0,
+      "visibleResyncs": 0,
+      "maxHoldMs": 99.80000000000291,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "sha256": "056d7e247bfda6e10bab0da35cf8874803e76007e061d048f0ed65816b379a27"
+    },
+    {
+      "run": "catalogue-r2final34c4",
+      "ref": {
+        "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+        "epoch": "1",
+        "id": "1219"
+      },
+      "passed": false,
+      "admissionMs": 8651,
+      "naturalEnded": true,
+      "localP95": 16.59999990463257,
+      "sendP95": 18,
+      "resumes": 0,
+      "visibleResyncs": 0,
+      "maxHoldMs": 100.5,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "sha256": "09ea4a5e5d3d28e53addfc5c0af62b5a8b5443bc9775a9b1389051be2dde9aed"
+    },
+    {
+      "run": "catalogue-r2final34c5",
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1221"
+      },
+      "passed": false,
+      "admissionMs": 8313,
+      "naturalEnded": true,
+      "localP95": 15.700000047683716,
+      "sendP95": 16,
+      "resumes": 0,
+      "visibleResyncs": 0,
+      "maxHoldMs": 83.69999999999709,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "sha256": "1f1fa94ed563f6ba2ba028719dc1af7279f06f36173d057a4d23fc68054e68b9"
+    }
+  ],
+  "cause": "Capacity preflight precedes canonical family/nonce reads although those reads are independent; a newly saved sponsor intent also incurs an expected GET 404 before its idempotent POST.",
+  "correction": "Overlap the advisory capacity read with canonical authorization. Both must succeed before signing or requesting renewal. Reconcile prior saved operations first. A new saved intent posts directly; uncertain intents still reconcile by exact operation ID.",
+  "invariants": [
+    "No contract, gas, nonce, signature, consent, deadline, delegation or physics change",
+    "No existing result or failed browser report rewritten",
+    "Prior rejected copies remain recorded; new diagnostics retain submillisecond observation order"
+  ],
+  "validation": {
+    "targeted": 23,
+    "fullTypeScript": 1164,
+    "firstFullFailure": "Stalled-handshake mock counted the newly permitted exact receipt lookup as a second write under parallel test load. Replaced the fake string response with an exact receipt and counted transaction writes separately; original log retained.",
+    "baselineRegressionFailures": 2,
+    "productionLatency": "not yet measured"
+  },
+  "syncIncident": {
+    "match": 1224,
+    "arena": "0x077df08fa9ff9bbfcba2a3c6879bcf3b21efd3df",
+    "epoch": 1,
+    "heartbeatHash": "0x3142f031b4e007a0d22766f1fafc05fc9f8943052b83719769e4713338412c1f",
+    "sendMs": 1000.6242,
+    "lookupMs": 873.3148,
+    "healthMs": 6.7834,
+    "sendLockOver100msBefore": 6,
+    "sendLockOver100msAfter": 6,
+    "pendingDiffs": 10,
+    "sendGated": false,
+    "rootCause": "Transport/request-path stall unresolved; not attributed to protocol capacity. Next trial includes independent exact-hash receipt observations."
+  }
+}

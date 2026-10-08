@@ -181,3 +181,34 @@ test('challenge refuses a noncanonical observation or wrong family domain before
  failure=false;await assert.rejects(preparePoolChallenge(client,m,signer,addr(99),{agent:addr(20),mode:0}),/domain differs/);
  assert.equal(signed,0);
 });
+
+
+test('independent admission preflight overlaps canonical reads but cannot bypass signing or renewal',async()=>{
+ const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:250n,revision:0n};
+ let signed=0,reads=0,expired=false;
+ const client={getChainId:async()=>10143,getBlock:async()=>({number:44n,timestamp:100n,hash:zeroHash}),readContract:async(c:any)=>{
+  assert.equal(c.blockHash,zeroHash);assert.equal(c.requireCanonical,true);reads++;
+  if(c.functionName==='grantOf')return{...family,expires:expired?99n:family.expires};
+  if(c.functionName==='grantDigest')return grantHash(family);if(c.functionName==='nonces')return 3n;
+  const [grant,action,agent,mode,id,nonce,deadline]=c.args;
+  return hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant,action,agent,mode,id,nonce,deadline}});
+ }} as unknown as PublicClient;canonicalFixture(client);
+ const signer={...key,signTypedData:async(args:any)=>{signed++;return key.signTypedData(args);}};
+ const options={agent:addr(20),mode:1 as const,expectedFamily:family};
+ let allow!:()=>void;
+ const pendingCapacity=new Promise<void>(resolve=>{allow=resolve;});
+ const prepared=preparePoolChallenge(client,m,signer,family.player,{...options,admissionPreflight:()=>pendingCapacity});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert(reads>=3,'canonical grant/domain/nonce reads complete while capacity is pending');
+ assert.equal(signed,0,'neither a fresh nor an existing session may sign before capacity returns');
+ allow();await prepared;assert.equal(signed,1);
+ const unavailable=Object.assign(Error('capacity unavailable'),{code:'POOL_CAPACITY_UNAVAILABLE'});
+ for(const stale of [false,true]){
+  expired=stale;
+  await assert.rejects(preparePoolChallenge(client,m,signer,family.player,{...options,admissionPreflight:async()=>{throw unavailable;}}),e=>e===unavailable);
+ }
+ assert.equal(signed,1,'unavailable capacity cannot sign or request renewal of an expired family');
+ expired=true;
+ await assert.rejects(preparePoolChallenge(client,m,signer,family.player,{...options,admissionPreflight:async()=>{}}),(e:any)=>e.code==='POOL_FAMILY_RENEW');
+ assert.equal(signed,1,'available capacity cannot override canonical expiry');
+});

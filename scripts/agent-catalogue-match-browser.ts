@@ -265,7 +265,7 @@ page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:
  ws.on('framereceived',event=>{try{const p=JSON.parse(String(event.payload));record.messages++;
   const write=writes.get(String(p.id));if(write){
    writes.delete(String(p.id));const ms=performance.now()-write.at;
-   report.submissions.push({at:new Date().toISOString(),action:write.action,hash:write.hash,ms,transport:'websocket',error:!!p.error,
+   report.submissions.push({at:new Date().toISOString(),observedAt:performance.timeOrigin+performance.now(),action:write.action,hash:write.hash,ms,transport:'websocket',error:!!p.error,
     ...(p.error?{rpcErrorCode:p.error.code,message:clean(p.error)}:{})});
    const receipt=p.result;
    if(receipt?.transactionHash?.toLowerCase()===write.hash.toLowerCase()&&!receipts.has(write.hash)){
@@ -317,6 +317,20 @@ page.on('request',async r=>{starts.set(r,performance.now());try{
  const raw=body.params[0],hash=keccak256(raw),tx=parseTransaction(raw);
  const call=decodeFunctionData({abi:synchronized?synchronizedAgentArenaAbi:reusableAgentArenaAbi,data:tx.data!});
  actions.set(r,call.functionName);
+ if(receiptProbe){
+  const endpoint=r.url();
+  // Independent Node HTTP connection distinguishes a delayed browser route
+  // from a node that has not executed this exact command. Read-only, bounded.
+  void (async()=>{for(let probe=0;probe<5;probe++){
+   await new Promise(resolve=>setTimeout(resolve,150));if(receipts.has(hash)||receiptProbeCount>=64)return;
+   receiptProbeCount++;const startedAt=performance.timeOrigin+performance.now();
+   try{
+    const response=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getTransactionReceipt',params:[hash]}),signal:AbortSignal.timeout(1500)});
+    const value:any=await response.json();
+    report.receiptProbe.reads.push({transport:'independent-http',hash,startedAt,finishedAt:performance.timeOrigin+performance.now(),status:response.status,found:value.result?.transactionHash?.toLowerCase()===hash.toLowerCase(),...(value.result?receiptMeta(value.result):{}),...(value.error?{code:value.error.code}:{})});
+   }catch{report.receiptProbe.reads.push({transport:'independent-http',hash,startedAt,finishedAt:performance.timeOrigin+performance.now(),failed:true});}
+  }})();
+ }
  if(call.functionName==='input')controls.set(hash,{direction:Number(call.args[2]),sequence:String(call.args[3])});
 }catch{/* Decode in memory; never retain signed bytes or grants. */}});page.on('pageerror',e=>report.errors.push(clean(e)));
 page.on('response',async response=>{try{
@@ -333,6 +347,7 @@ page.on('response',async response=>{try{
   if(metadata.rpcMethod){const body=await response.json().catch(()=>null);if(Number.isSafeInteger(body?.error?.code))rpcErrorCode=body.error.code;}
   const timing=request.timing();
   const sample={...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status(),
+   requestId:(response.headers()['fly-request-id']??'').slice(0,160),
    timing:{startTime:timing.startTime,requestStart:timing.requestStart,responseStart:timing.responseStart},
    ...(readShape?{readShape}:{}),...(rpcErrorCode===undefined?{}:{rpcErrorCode})};
   if(!report.playingAt){report.admissionNetwork??=[];report.admissionNetwork.push(sample);}
@@ -364,7 +379,7 @@ page.on('response',async response=>{try{
   // Keep only the public transaction identifier, including on rejected HTTP
   // fallback copies. Never persist the signed request used to derive it.
   const expectedHash=typeof body.params?.[0]==='string'&&/^0x[\da-f]+$/i.test(body.params[0])?keccak256(body.params[0] as `0x${string}`):undefined;
-  const began=starts.get(request)??performance.now();report.submissions.push({at:new Date().toISOString(),action:actions.get(request)??'unknown',
+  const began=starts.get(request)??performance.now();report.submissions.push({at:new Date().toISOString(),observedAt:performance.timeOrigin+performance.now(),action:actions.get(request)??'unknown',
    ms:performance.now()-began,http:response.status(),hash:expectedHash,error:!!reply.error,
    ...(reply.error?{message:clean(reply.error)}:{}),
    ...(Number.isSafeInteger(reply.error?.code)?{rpcErrorCode:reply.error.code}:{}),
