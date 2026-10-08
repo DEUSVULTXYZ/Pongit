@@ -3,6 +3,8 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {createPublicClient,http,type Address} from 'viem';
 import {reusableAgentPoolAbi as abi} from '../shared/abi-ReusableAgentPool';
+import {sustainedInputMetrics} from './browser-sync-probe';
+import {collisionIntegrity} from './collision-integrity-metrics';
 const names=['touchfix360-1','touchfix390-1','touchfixdesktop-1','touchfixedge360-2','touchfixchrome390-2','touchfixclassic1366-1','touchfixclassic360-1'];
 const client=createPublicClient({transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:15000})});
 const block=await client.getBlock(),runs=[];
@@ -13,15 +15,20 @@ for(const name of names){
  assert(Date.parse(r.startedAt)>Date.parse('2026-10-08T09:47:07Z'));
  assert.equal(r.startupResumes,0);assert.equal(r.liveness.resumes,0);assert.equal(r.sync.contractPauseMs,0);
  assert(Object.values(r.naturalGates).every(v=>v===true));assert.equal(r.collisions.unconfirmed.length,0);
+ const trace=JSON.parse(await readFile(path.replace('/report.json','/sync-trace.json'),'utf8'));
+ const sustained=sustainedInputMetrics(trace),collisions=collisionIntegrity(trace.poses,trace.snapshots);
+ assert.equal(sustained.held.outsideTarget,0);assert(sustained.stopping.p95Drift<=2&&sustained.stopping.maxDrift!<=6);
+ assert.equal(collisions.unconfirmed.length,0);
  const ref={chainId:10143n,arena:r.ref.app as Address,epoch:BigInt(r.ref.epoch),id:BigInt(r.ref.id)};
  const canonical=await client.readContract({address:'0xe01c31f482113367c510a04816ff371676477fa3',abi,functionName:'result',args:[ref],blockNumber:block.number});
  for(const k of ['hash','status','scoreA','scoreB','winner'] as const)assert.equal(String(canonical[k]).toLowerCase(),String(r.result[k]).toLowerCase());
  assert.equal(canonical.status,3);
  runs.push({run:r.run,mode:r.actualMode,browser:r.channel,viewport:[r.viewportWidth,r.viewportHeight],touch:r.touchControls,ref:r.ref,
   naturalResult:canonical,admissionMs:r.admissionMs,localP95Ms:r.input.p95Ms,sendP95Ms:r.sendLatency.p95Ms,
-  transportP95Ms:r.receiptP95Ms,peerP95Ms:r.peerReception.p95Ms,held:r.sustained.held,
-  stopping:{samples:r.sustained.stopping.samples,p95:r.sustained.stopping.p95Drift,max:r.sustained.stopping.maxDrift},
-  confirmedPaddleContacts:r.collisions.visiblePaddleBounces,confirmedShields:r.collisions.shieldBounces?.length??0,
+  transportP95Ms:r.receiptP95Ms,peerP95Ms:r.peerReception.p95Ms,held:sustained.held,
+  stopping:{samples:sustained.stopping.samples,p95:sustained.stopping.p95Drift,max:sustained.stopping.maxDrift},
+  metricBasis:'All original traces recalculated with exact painted-time membership and confirmed shield classification; original passing reports remain unchanged.',
+  confirmedPaddleContacts:collisions.visiblePaddleBounces,confirmedShields:collisions.shieldBounces.length,
   maxPlayerHoldMs:r.sync.maxHoldMs,maxObserverHoldMs:r.spectatorSync.maxHoldMs,frameP95Ms:r.sync.p95FrameMs,
   contractPauseMs:r.sync.contractPauseMs,resyncs:r.sync.visibleResyncs,passkeyAssertions:r.existingSessionAssertions,
   report:path,sha256:createHash('sha256').update(bytes).digest('hex'),video:r.video,observerVideo:r.observerVideo});

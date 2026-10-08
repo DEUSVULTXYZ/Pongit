@@ -1,0 +1,475 @@
+{
+  "at": "2026-10-08T10:08:24.435Z",
+  "passed": true,
+  "releaseComplete": false,
+  "web": "c0e687f82d029b0ceb0c1638dec210e3654372fc",
+  "engine": "d55833436dbaff7743bc80c3aa817ba4e0dadf57",
+  "canonicalBlock": "69227321",
+  "canonicalHash": "0xf0e039e4d1bb1be22b0291d370916685fd04b3205f9d0d2a14ce70943916fb0e",
+  "physicalPhone": false,
+  "physicalPasskey": false,
+  "scope": "Visible Chrome/Edge public catalogue, actual keyboard and CDP touch, virtual Mera PRF. Independent observers and natural published results. Published is not final. Earlier failed reports preserved.",
+  "runs": [
+    {
+      "run": "responsive-r2-touchfix360-1",
+      "mode": 1,
+      "browser": "chrome",
+      "viewport": [
+        360,
+        844
+      ],
+      "touch": true,
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "971"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+          "epoch": "1",
+          "id": "971"
+        },
+        "a": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "hash": "0x3f74eb04672c645415dd2416aa1d2e7b31a6a8b682f4039dde3cbeff464e0778",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 4,
+        "elapsedUs": "68899637",
+        "finality": false
+      },
+      "admissionMs": 7460,
+      "localP95Ms": 16.5,
+      "sendP95Ms": 18,
+      "transportP95Ms": 16.358800000001793,
+      "peerP95Ms": 11.483642578125,
+      "held": {
+        "samples": 145,
+        "p05Ratio": 0.9999999999999986,
+        "p95Ratio": 1.0000000000000013,
+        "minRatio": 0.9999999999999979,
+        "maxRatio": 1.000000000000003,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 94,
+        "p95": 0.4199999999999875,
+        "max": 0.8703000000000145
+      },
+      "metricBasis": "All original traces recalculated with exact painted-time membership and confirmed shield classification; original passing reports remain unchanged.",
+      "confirmedPaddleContacts": 9,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 83.29999999999927,
+      "maxObserverHoldMs": 50.40000000000873,
+      "frameP95Ms": 17,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-responsive-r2-touchfix360-1/report.json",
+      "sha256": "12588cdb2d6897d2e110774a3666cd7e581584baca18089dbaecb01c80209104",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix360-1\\video\\page@15d08625b6f77969d465c30c5225fa13.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix360-1\\observer-video\\page@98b163718d3af9e00d35eb420652a8e8.webm"
+    },
+    {
+      "run": "responsive-r2-touchfix390-1",
+      "mode": 1,
+      "browser": "msedge",
+      "viewport": [
+        390,
+        844
+      ],
+      "touch": true,
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "972"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+          "epoch": "1",
+          "id": "972"
+        },
+        "a": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "hash": "0x2b2e1974443cefe1250be707559f5ae52f2f26c758e20055d61e9277b02c32c0",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 1,
+        "elapsedUs": "34921672",
+        "finality": false
+      },
+      "admissionMs": 7083,
+      "localP95Ms": 16.600000143051147,
+      "sendP95Ms": 18,
+      "transportP95Ms": 16.55659999999989,
+      "peerP95Ms": 10.14306640625,
+      "held": {
+        "samples": 77,
+        "p05Ratio": 0.9999999999999984,
+        "p95Ratio": 1.000000000000001,
+        "minRatio": 0.9999999999999981,
+        "maxRatio": 1.0000000000000029,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 35,
+        "p95": 0,
+        "max": 0.5100000000000477
+      },
+      "metricBasis": "All original traces recalculated with exact painted-time membership and confirmed shield classification; original passing reports remain unchanged.",
+      "confirmedPaddleContacts": 3,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 50,
+      "maxObserverHoldMs": 50,
+      "frameP95Ms": 17,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-responsive-r2-touchfix390-1/report.json",
+      "sha256": "a4f83dcb984f0a95408cd3c4e6fde3fa41106399f4b3d3d42a64182b5b8098e3",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix390-1\\video\\page@c53f907daf20d91994eae3d3ec19cb28.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix390-1\\observer-video\\page@56dfcd108f648253e776e7926e45567b.webm"
+    },
+    {
+      "run": "responsive-r2-touchfixdesktop-1",
+      "mode": 1,
+      "browser": "chrome",
+      "viewport": [
+        1440,
+        900
+      ],
+      "touch": false,
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "973"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+          "epoch": "1",
+          "id": "973"
+        },
+        "a": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "hash": "0x88d5d94eb5c7741cd5e61a60d2b7c572d242277788a60be820d1897e4a56b323",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 4,
+        "elapsedUs": "43020841",
+        "finality": false
+      },
+      "admissionMs": 6415,
+      "localP95Ms": 16.200000047683716,
+      "sendP95Ms": 16,
+      "transportP95Ms": 13.924399999999878,
+      "peerP95Ms": 10.9482421875,
+      "held": {
+        "samples": 94,
+        "p05Ratio": 0.9999999999999984,
+        "p95Ratio": 1.000000000000002,
+        "minRatio": 0.9999999999999978,
+        "maxRatio": 1.0000000000000029,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 21,
+        "p95": 0,
+        "max": 0
+      },
+      "metricBasis": "All original traces recalculated with exact painted-time membership and confirmed shield classification; original passing reports remain unchanged.",
+      "confirmedPaddleContacts": 3,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 50.20000000000073,
+      "maxObserverHoldMs": 49.79999999999927,
+      "frameP95Ms": 17,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-responsive-r2-touchfixdesktop-1/report.json",
+      "sha256": "331624eea484ced7127f52bddd40f8388424f5ec028ecf31671345972c4fffd2",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixdesktop-1\\video\\page@ab4b3b801c022b775b14a849c69b8292.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixdesktop-1\\observer-video\\page@a664125151ba0beb656bf6abfd39e87a.webm"
+    },
+    {
+      "run": "responsive-r2-touchfixedge360-2",
+      "mode": 1,
+      "browser": "msedge",
+      "viewport": [
+        360,
+        844
+      ],
+      "touch": true,
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "975"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+          "epoch": "1",
+          "id": "975"
+        },
+        "a": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "hash": "0x590f3537753b043c4679eaae35ead805df7920ca461d956965eabd0ccaabeae9",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 5,
+        "elapsedUs": "70825601",
+        "finality": false
+      },
+      "admissionMs": 7723,
+      "localP95Ms": 16.59999990463257,
+      "sendP95Ms": 18,
+      "transportP95Ms": 16.264900000001944,
+      "peerP95Ms": 12.03466796875,
+      "held": {
+        "samples": 143,
+        "p05Ratio": 0.9999999999999982,
+        "p95Ratio": 1.0000000000000018,
+        "minRatio": 0.9999999999999962,
+        "maxRatio": 1.000000000000003,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 87,
+        "p95": 0,
+        "max": 0.30000000000001137
+      },
+      "metricBasis": "All original traces recalculated with exact painted-time membership and confirmed shield classification; original passing reports remain unchanged.",
+      "confirmedPaddleContacts": 9,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 66.80000000000291,
+      "maxObserverHoldMs": 50.400000000001455,
+      "frameP95Ms": 17,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-responsive-r2-touchfixedge360-2/report.json",
+      "sha256": "9003b4d6d66e97b1fbcb0f7a8018a64d229877dd0d0c65607d36bca0ff412d85",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixedge360-2\\video\\page@a8241380859bedc8643e12d285029b7f.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixedge360-2\\observer-video\\page@d8ecef9ec47cf9caf4fbc2007d7f269f.webm"
+    },
+    {
+      "run": "responsive-r2-touchfixchrome390-2",
+      "mode": 1,
+      "browser": "chrome",
+      "viewport": [
+        390,
+        844
+      ],
+      "touch": true,
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "977"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+          "epoch": "1",
+          "id": "977"
+        },
+        "a": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "hash": "0x4a2e07d3f5b3bb9faee3a312fbe6867eeb6677857e072820de6b229761eab357",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 1,
+        "elapsedUs": "43418570",
+        "finality": false
+      },
+      "admissionMs": 6382,
+      "localP95Ms": 16.700000047683716,
+      "sendP95Ms": 18,
+      "transportP95Ms": 16.012299999998504,
+      "peerP95Ms": 11.168701171875,
+      "held": {
+        "samples": 95,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.000000000000001,
+        "minRatio": 0.9999999999999969,
+        "maxRatio": 1.0000000000000022,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 47,
+        "p95": 0,
+        "max": 0
+      },
+      "metricBasis": "All original traces recalculated with exact painted-time membership and confirmed shield classification; original passing reports remain unchanged.",
+      "confirmedPaddleContacts": 5,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 49.70000000000073,
+      "maxObserverHoldMs": 33.20000000000073,
+      "frameP95Ms": 17.099999999998545,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-responsive-r2-touchfixchrome390-2/report.json",
+      "sha256": "037c7488581ac1149725a8857f58c9958ce7f2fc9b68178f75e5c898517294ac",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixchrome390-2\\video\\page@872e1086bcbb27aebc8ce3866e039c0f.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixchrome390-2\\observer-video\\page@e67fe9ca1280a9796f58270ff90f8031.webm"
+    },
+    {
+      "run": "responsive-r2-touchfixclassic1366-1",
+      "mode": 0,
+      "browser": "msedge",
+      "viewport": [
+        1366,
+        768
+      ],
+      "touch": false,
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "978"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+          "epoch": "1",
+          "id": "978"
+        },
+        "a": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "hash": "0x714efd0470bae04721f9678ea7e18a4871da1db4cc00d029fc63f51037362ca5",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 2,
+        "elapsedUs": "33177096",
+        "finality": false
+      },
+      "admissionMs": 6252,
+      "localP95Ms": 15.899999856948853,
+      "sendP95Ms": 16,
+      "transportP95Ms": 13.922699999999168,
+      "peerP95Ms": 9.71923828125,
+      "held": {
+        "samples": 98,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.0000000000000013,
+        "minRatio": 0.9999999999999964,
+        "maxRatio": 1.000000000000004,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 11,
+        "p95": 0,
+        "max": 0
+      },
+      "metricBasis": "All original traces recalculated with exact painted-time membership and confirmed shield classification; original passing reports remain unchanged.",
+      "confirmedPaddleContacts": 2,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 49.900000000001455,
+      "maxObserverHoldMs": 33.29999999999927,
+      "frameP95Ms": 17,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-responsive-r2-touchfixclassic1366-1/report.json",
+      "sha256": "e89b0b2fd7022dc7c7acb2f44db04ffa7fefec488720d8592d190d48e0aaf2ec",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixclassic1366-1\\video\\page@cfd401b875842e6a7dadee3fb48fc3ee.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixclassic1366-1\\observer-video\\page@efa777baadbb46c7c106e7c587192d55.webm"
+    },
+    {
+      "run": "responsive-r2-touchfixclassic360-1",
+      "mode": 0,
+      "browser": "chrome",
+      "viewport": [
+        360,
+        844
+      ],
+      "touch": true,
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "979"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+          "epoch": "1",
+          "id": "979"
+        },
+        "a": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0xC5A6a58551C15EC06Aa4c1926a53A591ebFF81Ee",
+        "hash": "0x5faa8b5307518259b59c3b23ea8c7f50ad412d1d42e38b4db725bf9bfc553ef5",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 3,
+        "elapsedUs": "78369161",
+        "finality": false
+      },
+      "admissionMs": 6623,
+      "localP95Ms": 16.5,
+      "sendP95Ms": 18,
+      "transportP95Ms": 16.423200000004726,
+      "peerP95Ms": 9.656005859375,
+      "held": {
+        "samples": 150,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.0000000000000013,
+        "minRatio": 0.9999999999999969,
+        "maxRatio": 1.000000000000002,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 102,
+        "p95": 0,
+        "max": 0.30000000000001137
+      },
+      "metricBasis": "All original traces recalculated with exact painted-time membership and confirmed shield classification; original passing reports remain unchanged.",
+      "confirmedPaddleContacts": 12,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 83.39999999999782,
+      "maxObserverHoldMs": 49.700000000004366,
+      "frameP95Ms": 17,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-responsive-r2-touchfixclassic360-1/report.json",
+      "sha256": "75a6371d436938b2068b347f3af600e506eb2473dcccdcbdc27ae16a1ef667fa",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixclassic360-1\\video\\page@3bc9fe3ebf76ba1f336dd92feb8a5803.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfixclassic360-1\\observer-video\\page@4bef5aa03088d03f521e4d8f551d753a.webm"
+    }
+  ],
+  "remaining": [
+    "Actual fault/degraded follow-up",
+    "Two PvP games: three human hosted nodes stopped",
+    "Five agents plus two humans: four healthy agent nodes",
+    "Final unchanged all-role 24-hour qualification"
+  ]
+}

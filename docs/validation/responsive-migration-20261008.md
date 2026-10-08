@@ -695,3 +695,36 @@ Productunchanged. Serialdriver90009 now runs freshEdge360-2,Chrome390,then
 Classic1366/360, stops on anyfailure. Prior30131 exited1, neverrestart it.
 Finalbackup-touch-final8 helper preparedNOTRUN. Ownoperator49,569.627333374MON
 at69223913; archive98.518MON/sponsor116.896MON; no fundingrequest.
+
+
+## 10:04 UTC - mobile release measurement boundary repaired
+
+975Edge360 PASS natural7point result,0resumes.976Chrome390 also0resumes but
+originalFAILstop-p954.95units; trace shows actualpaint313.02 held exactly from
+release30044.6ms until nextkey30161.1ms. RAFtimestamp30158.6 belonged to a
+callback that painted30161.4 after the newkey; old metric incorrectly assigned
+that commanded5.13unit motion to the released interval.10bd178 uses actual
+canvaspaint time for interval membership, retains RAF integration time for
+speed. Regression firstFAIL thenPASS;11focused/rootTS pass. Separate976
+reanalysis117releases p950,max0.24,0heldoutliers; originalFAILretained.
+No product change or threshold relaxation. Sole current serialdriverexec6031:
+freshChrome390-2 thenClassic1366/360; original seven-minute match bounds,
+no other game writer. Earlier90009 exited1 and must not restart.
+
+
+## 10:18 UTC - seven natural games canonically verified; permission fault under investigation
+
+Frozen web c0e687f and engine d558334: actual public visible Chrome/Edge games
+971,972,973,975,977 Chaos and978,979 Classic passed naturally. Independent observers,
+keyboard/CDP touch, no mocked game state. Canonical69227321 verifies all7 results.
+Admission6.252-7.723s; sendp9516-18ms; localp9515.9-16.7ms; peerp959.656-12.035ms;
+zero startup/runtime pauses, resyncs or unconfirmed contacts. Full metrics/videos
+in responsive-touch-normal-20261008.json. Mobile emulation, not physical handset.
+No PvP or24h claim;7 stopped provider nodes still block these gates.
+
+980 revoke1 originalFAIL15s tools dialog timeout preserved. No permission command
+was sent; passkey returned in15ms. Its own synthetic fixture later auto-cancelled
+at1-2 after disconnected presence, result recorded. No lifecycle close. A targeted
+alert observer was added to the harness because normal polling clears UI errors.
+Sole next driver exec59303 revoke2 admitted981 on776f; preserve original bounds.
+No concurrent driver, new deployment, closure or funding transfer.

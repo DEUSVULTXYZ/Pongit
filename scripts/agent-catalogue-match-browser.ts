@@ -508,11 +508,18 @@ try{
    }else if(fault==='lost-reply')dropReply=true;
    else{
     await page.bringToFront();
+    await page.evaluate(()=>{
+     const alerts:string[]=[];(window as any).__permissionAlerts=alerts;
+     new MutationObserver(()=>{for(const el of document.querySelectorAll('[role="dialog"] [role="alert"]')){
+      const value=(el.textContent??'').replace(/0x[\da-fA-F]{64,}/g,'[redacted]').slice(0,500);
+      if(value&&alerts.at(-1)!==value)alerts.push(value);
+     }}).observe(document.body,{subtree:true,childList:true,characterData:true});
+    });
     report.faultStep='opening-tools';await page.getByRole('button',{name:'Tools',exact:true}).first().click();
     report.faultStep='revoking';await page.getByRole('button',{name:'Sign out of this match',exact:true}).click();
     try{await page.getByRole('dialog',{name:'Arena tools',exact:true}).waitFor({state:'hidden',timeout:15000});}
     catch(e){report.passkeyDiagnostic=await page.evaluate(()=>(window as any).__passkeyTimings??[]);report.assertionCount=assertions;
-     report.permissionDiagnostic=await page.getByRole('dialog',{name:'Arena tools',exact:true}).getByRole('alert').allTextContents();throw e;}
+     report.permissionDiagnostic=await page.evaluate(()=>(window as any).__permissionAlerts??[]);throw e;}
     assert(await page.getByRole('button',{name:'Move up',exact:true}).isDisabled(),'Revoked control must be disabled');
     report.faultStep='reauthorizing';
     await page.getByRole('button',{name:'Tools',exact:true}).first().click();await page.getByRole('button',{name:'Sign in again',exact:true}).click();
