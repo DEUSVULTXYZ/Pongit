@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {historicalRpcRequest, controlRpcRequest, foregroundRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
+import {historicalRpcRequest, transactionRpcRequest, controlRpcRequest, foregroundRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
 import {encodeFunctionData,zeroHash} from 'viem';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 
@@ -280,4 +280,43 @@ test('foreground admission reads share the provider throttle and exact wait esti
  t.mock.timers.tick(999);await Promise.resolve();assert.deepEqual(times,[]);
  t.mock.timers.tick(1);await Promise.resolve();assert.deepEqual(times,[2000]);
  t.mock.timers.tick(70);await Promise.all([f,c]);assert.deepEqual(times,[2000,2070]);
+});
+
+test('transaction work overtakes routine canonical headers and preserves every queue budget',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const s=rpcScheduler(75),seen:{name:string;at:number}[]=[];
+ const take=(name:string,h=false,c=false,f=false,tx=false)=>s.acquire(h,c,f,tx).then(()=>seen.push({name,at:Date.now()}));
+ await take('initial');
+ const jobs=[...Array.from({length:12},(_,i)=>take('header'+i,false,true)),
+  ...Array.from({length:8},(_,i)=>take('foreground'+i,false,false,true)),
+  ...Array.from({length:8},(_,i)=>take('ordinary'+i)),...Array.from({length:8},(_,i)=>take('archive'+i,true)),
+  ...Array.from({length:16},(_,i)=>take('transaction'+i,false,false,false,true))];
+ const expected=s.waitMs(false,false,false,true);
+ const tail=take('transaction-tail',false,false,false,true);jobs.push(tail);
+ for(let i=0;i<jobs.length;i++){t.mock.timers.tick(75);await Promise.resolve();}
+ await Promise.all(jobs);
+ assert.equal(seen[1].name,'transaction0');
+ assert(seen.findIndex(v=>v.name==='header0')<=8);
+ assert(seen.findIndex(v=>v.name==='foreground0')<40);
+ assert(seen.findIndex(v=>v.name==='ordinary0')<=6);
+ assert(seen.findIndex(v=>v.name==='archive0')<=5);
+ assert.equal(seen.find(v=>v.name==='transaction-tail')!.at-1000,expected);
+ assert(seen.every((v,i)=>!i||v.at-seen[i-1].at===75));
+ assert.deepEqual(s.pending(),{interactive:0,history:0});
+});
+
+
+test('transaction lane validates exact requests and does not inherit routine header priority',()=>{
+ const account=`0x${'12'.repeat(20)}`,hash=`0x${'34'.repeat(32)}`;
+ for(const [method,params] of [
+  ['eth_getTransactionReceipt',[hash]],['eth_getTransactionCount',[account,'pending']],
+  ['eth_getTransactionCount',[account,'latest']],['eth_gasPrice',[]],['eth_maxPriorityFeePerGas',[]],
+  ['eth_estimateGas',[{to:account,from:account,data:'0x1234'},'latest']],['eth_sendRawTransaction',['0x010203']],
+ ] as const)assert(transactionRpcRequest(method,params),method);
+ for(const [method,params] of [
+  ['eth_getBlockByNumber',['latest',false]],['eth_blockNumber',[]],['eth_getCode',[account,'latest']],
+  ['eth_call',[{to:account,data:'0x1234'},'latest']],['eth_getTransactionReceipt',['0x12']],
+  ['eth_getTransactionCount',[account,'0x1000']],['eth_estimateGas',[{to:account},'latest']],
+  ['eth_sendRawTransaction',['0x123']],['eth_gasPrice',[1]],
+ ] as const)assert.equal(transactionRpcRequest(method,params),false,method);
 });

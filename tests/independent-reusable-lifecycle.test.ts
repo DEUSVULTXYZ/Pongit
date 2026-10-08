@@ -19,7 +19,7 @@ test('unknown zero-expiry delegation never becomes a playable human engine',asyn
  const f=fixture();f.d.expiresAt=0n;await f.worker.observe();
  assert.equal(f.health.online,false);assert(f.events.includes('stage:recovering:DELEGATION_EXPIRED'));
 });
-function fixture(){
+function fixture(foreground=false){
  const app=at(1),m:any={rulesVersion:14,arenas:[{app}],resultVerifier:at(2),hub:at(3),lobby:at(4),ratings:at(5)};
  const ticket={authority:m.lobby,arena:app,epoch:2n,sequence:1n,matchId:91n,bindingHash:toHex(2,{size:32}),issuedAt:900n,expires:1020n,sourceBlock:3n,sourceHash:toHex(3,{size:32}),rules:14n};
  const fields=roomsLifecycleHubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
@@ -42,7 +42,10 @@ function fixture(){
   feed:{progressAge:()=>50},publicationFailure:()=>0,
   node:{readContract:async(c:any)=>{encodeFunctionData({abi:c.abi,functionName:c.functionName,args:c.args});if(c.functionName==='resultCommitment')return hostedCommitment;assert.equal(c.functionName,'currentAdmission');return current;}}};
  const results:any={capture:async(id:bigint)=>{events.push('capture:'+id);return true;},archiveSlot:async()=>{events.push('archive');return true;}};
- const worker=independentReusableLifecycle({base,manifest:m,engine,health,results,
+ const background={...base,getBlock:async()=>{throw Error('Admission queued behind archives');},request:async()=>{throw Error('Binding queued behind archives');},readContract:async(c:any)=>{
+  assert.equal(c.functionName,'finalizedRoots','Interactive binding must use foreground');return base.readContract(c);
+ }};
+ const worker=independentReusableLifecycle({base:foreground?background:base,admissionBase:foreground?base:undefined,manifest:m,engine,health,results,
   queue:async(at,abi,name,args)=>{encodeFunctionData({abi,functionName:name,args});jobs.push({at,name,args});},
   stage:async(name,code)=>{events.push('stage:'+name+(code?':'+code:''));},admit:async()=>{events.push('admit');},
   ensureHosted:async epoch=>{events.push('hosted:'+epoch);}});
@@ -180,4 +183,11 @@ test('an epoch released without a single match is still sealed so its arena can 
  f.jobs.length=0;f.events.length=0;f.change({sealed:toHex(9,{size:32})});
  await f.worker.observe();
  assert.equal(f.jobs.length,0);assert(f.events.includes('stage:released'),'once sealed it is released to the reserve opener as before');
+});
+
+
+test('a reserved live match admits while the ordinary archive reader is unavailable',async()=>{
+ const f=fixture(true);await f.worker.observe();
+ assert.equal(f.health.online,true);assert(f.events.includes('admit'));assert(f.events.includes('stage:playing'));
+ assert.equal(f.jobs.length,0,'Admission never needs closure or another delegation');
 });

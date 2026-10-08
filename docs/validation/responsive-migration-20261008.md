@@ -1193,3 +1193,16 @@ Exact1121 trace proves the prior picture waited at x40, then a110ms-later live i
 Sponsor diagnostics during four simultaneous admissions show nonce/estimate/send/receipt reads taking0.45-1.3s. Foreground hydration had shared the same FIFO as transaction preparation. Candidate separates that foreground queue while preserving original upstream pacing and fairness for ordinary/history reads. No extra signer, nonce allocator, gas or permission changes.21 scheduler/metrics tests pass; full1142TS/rootTS pass. Not deployed yet.
 
 Readonly node probe shows077 occasional275ms tails versus55ms max on4e9, but no errors; it does not establish an Interlude blocker.077 Classic1120 had zero pauses. Retained batches183..193 contain at most211transactions/46394rawbytes; pendingDiffs max23. No node quarantine, redeployment or closure. AutomationPAUSED; final24h not started.
+
+
+## 19:48 UTC - web/RPC deployed; individual PASS, concurrency gates remain
+
+Exact ce7968f web58786aab/RPCdb15d5d8 deployed19:32:36/37 after canonical69339116 all7idle. Contracts/epochs/enginefd/humanc45 unchanged. Backup-fix-24 sixfiles77994285bytes SHAverified OFFVPS19:21:46, manifestb479e1a666df2f251cb8dedcf1e0cd5ea33d9662b02bf045c03513656b921eed. Rollback previous web36d757c8/RPCdbbf50f5 only, never old databases.
+
+Actual Chrome r2fix24a Chaos1131 NOVA natural2-7 PASS: admission6652ms, localp9514.8ms, send15.767ms, peer15.809ms; zero pause/resync/resume, sustained100%, release drift0, all11 visible paddle reflections confirmed. Canvas1166px at1440x900. Virtual PRF, not physical passkey.
+
+Seven5 finished19:43:21 FAIL. Four ONYX copies admissions7317/13134/18555/16430ms. Natural motion tests pass but onlyfirst overallPASS. Classic1136 had a late socket nonce rejection while exact successful receipt was already observed332ms earlier; preserve raw failure and analyze separately before changing qualification. BothPvP endednaturally: Classic7-5 synchronization commandgateFAIL; Chaos7-4 bettingwindowtimeoutFAIL. Tournament1132 endedbefore observeracquisition69340839; no thirty-secondsevenwayproof. No game/browser driver active.
+
+Readonly human admission audit attempt2: assignNext confirmations19:39:53.749/19:40:21.322, live admit19:40:12.204/19:40:34.398. Human service admission and lifecycle use ordinary Monad reads among archive work; sponsor timings also show nonce/fee/receipt queue waits. First audit failed nonexistent created_at column; retained script/output, second usesactual updated_at. No new productfix yet.
+
+Dense exact-hub localEVM233diffs+256raw entries192KiB after16000/100000batches PASS: publication18.065/18.071millionEVMgasincludingintrinsic, coldrelease117712gasboth. Syntheticapponly; nothostedpublicationcapacity. Existing max16000/reserve8000 unchanged, reviewneeded before24h. No closes, newcontract, fundingrequest, orautomationrestart. Final24hNOTSTARTED.

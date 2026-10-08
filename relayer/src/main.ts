@@ -104,6 +104,14 @@ const publicClient = createPublicClient({
   ]),
   pollingInterval: 300,
 });
+// Admission is interactive. Historical index/payment work keeps publicClient;
+// the hint reorders reads within the same gateway/upstream rate budget.
+const admissionClient = createPublicClient({
+ chain, batch: deployment.chainId === 10143 ? {multicall:{wait:10,batchSize:16384}} : undefined,
+ transport: fallback([rpc,...(process.env.RPC_FALLBACK_URL&&process.env.RPC_FALLBACK_URL!==rpc?[process.env.RPC_FALLBACK_URL]:[])]
+  .map(url=>http(url,{fetchFn:measuredFetch('monad'),fetchOptions:{headers:{'x-pongit-rpc-foreground':'1'}}}))),
+ pollingInterval:300,
+});
 if ((await publicClient.getChainId()) !== deployment.chainId)
   throw new Error("RPC chain does not match deployment");
 const account = privateKeyToAccount(process.env.RELAYER_PRIVATE_KEY as Hex);
@@ -683,7 +691,7 @@ const roomsCoordinator=await createRoomsCoordinator({db:pool,origin,body,send,gr
 // journal. Legacy data stays in its original database throughout the cutover.
 const independentDb=process.env.PONG_INDEPENDENT_MANIFEST&&process.env.PONG_INDEPENDENT_DATABASE_URL
   ?new Pool({connectionString:process.env.PONG_INDEPENDENT_DATABASE_URL}):pool;
-const independent=await independentService({db:independentDb,operatorDb:pool,legacyDb:pool,base:publicClient,body,send,graphql,collectRpc:!roomsCoordinator});
+const independent=await independentService({db:independentDb,operatorDb:pool,legacyDb:pool,base:publicClient,admissionBase:admissionClient,body,send,graphql,collectRpc:!roomsCoordinator});
 const server = createServer(async (req, res) => {
   try {
     if (req.headers.origin && req.headers.origin !== origin)

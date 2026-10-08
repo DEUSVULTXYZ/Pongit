@@ -32,10 +32,9 @@ export function historicalRpcRequest(method:string, params:readonly unknown[],ob
   return true;
 }
 
-/** Current canonical headers, nonce/receipt reconciliation and a root delegation
- * fence must not wait behind catalogue scans. This changes scheduling only:
- * no state is cached or trusted, and historical contract reads stay ordinary. */
-export function controlRpcRequest(method:string,params:readonly unknown[],observedHead?:bigint,blockHeight?:(hash:string)=>bigint|undefined):boolean{
+/** The durable transaction owner must not queue nonce/receipt work behind the
+ * routine canonical headers of every reader. This grants no extra throughput. */
+export function transactionRpcRequest(method:string,params:readonly unknown[]):boolean{
  const address=(v:unknown)=>typeof v==='string'&&/^0x[\da-f]{40}$/i.test(v);
  if(method==='eth_getTransactionReceipt')return params.length===1&&typeof params[0]==='string'&&/^0x[\da-f]{64}$/i.test(params[0]);
  if(method==='eth_getTransactionCount')return params.length===2&&address(params[0])&&(params[1]==='latest'||params[1]==='pending');
@@ -48,6 +47,11 @@ export function controlRpcRequest(method:string,params:readonly unknown[],observ
    &&(params[1]===undefined||params[1]==='latest'||params[1]==='pending');
  }
  if(method==='eth_sendRawTransaction')return params.length===1&&typeof params[0]==='string'&&/^0x(?:[\da-f]{2})+$/i.test(params[0])&&params[0].length<=131074;
+ return false;
+}
+export function controlRpcRequest(method:string,params:readonly unknown[],observedHead?:bigint,blockHeight?:(hash:string)=>bigint|undefined):boolean{
+ if(transactionRpcRequest(method,params))return true;
+ const address=(v:unknown)=>typeof v==='string'&&/^0x[\da-f]{40}$/i.test(v);
  const recent=(tag:unknown)=>{
   const height=typeof tag==='string'&&/^0x[\da-f]+$/i.test(tag)?BigInt(tag):
    tag&&typeof tag==='object'&&typeof (tag as {blockHash?:unknown}).blockHash==='string'
@@ -69,7 +73,7 @@ export function controlRpcRequest(method:string,params:readonly unknown[],observ
   &&/^0xcd325a310{24}[\da-f]{40}0{64}$/i.test(call.data);
 }
 
-/** A validated foreground read may share the existing control lane. The hint
+/** A validated foreground read has its own bounded priority lane. The hint
  * comes from internal services, never grants extra throughput or write access,
  * and cannot promote archive scans. Unknown methods retain normal scheduling. */
 export function foregroundRpcRequest(method:string,params:readonly unknown[],hint:boolean,head?:bigint,height?:(hash:string)=>bigint|undefined){
@@ -126,45 +130,50 @@ export function pinnedRpcRequest(method:string,params:readonly unknown[]):boolea
 
 /** One upstream rate budget; gameplay reads take priority over historical scans. */
 export function rpcScheduler(spacingMs:number) {
-  const queues={live:[] as Array<()=>void>,control:[] as Array<()=>void>,foreground:[] as Array<()=>void>,history:[] as Array<()=>void>};
-  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,controlRun=0,foregroundRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
+  const queues={live:[] as Array<()=>void>,control:[] as Array<()=>void>,foreground:[] as Array<()=>void>,history:[] as Array<()=>void>,transaction:[] as Array<()=>void>};
+  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,controlRun=0,foregroundRun=0,transactionRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
   // One ordinary read after four control checks; one historical read after
   // four total interactive reads. History does not reset the ordinary quota.
   // A foreground hint must not put every catalogue/match hydration in front
   // of an already accepted transaction's nonce, fees and receipt. Preserve
   // the existing upstream budget and both background fairness guarantees.
-  const choose=(l:number,c:number,f:number,h:number,run:number,urgentRun:number,controlBurst:number):keyof typeof queues=>
-   h>0&&(!(l+c+f)||run>=4)?'history':l>0&&(!(c+f)||urgentRun>=4)?'live':
+  // Transaction preparation also overtakes routine headers, with one header or
+  // foreground turn after four transaction calls. No queue can starve another.
+  const choose=(l:number,c:number,f:number,h:number,t:number,run:number,urgentRun:number,controlBurst:number,transactionBurst:number):keyof typeof queues=>
+   h>0&&(!(l+c+f+t)||run>=4)?'history':l>0&&(!(c+f+t)||urgentRun>=4)?'live':
+    t>0&&(!(c+f)||transactionBurst<4)?'transaction':
     c>0&&(!f||controlBurst<4)?'control':'foreground';
   function tick(){
     timer=undefined;
-    if(!queues.live.length&&!queues.control.length&&!queues.foreground.length&&!queues.history.length)return;
+    if(!Object.values(queues).some(q=>q.length))return;
     const wait=Math.max(0,next-Date.now());
     if(wait){timer=setTimeout(tick,wait);return;}
-    const kind=choose(queues.live.length,queues.control.length,queues.foreground.length,queues.history.length,liveRun,controlRun,foregroundRun);
+    const kind=choose(queues.live.length,queues.control.length,queues.foreground.length,queues.history.length,queues.transaction.length,liveRun,controlRun,foregroundRun,transactionRun);
     const release=queues[kind].shift()!;
     liveRun=kind==='history'?0:liveRun+1;
     if(kind!=='history')controlRun=kind==='live'?0:controlRun+1;
     if(kind==='control'||kind==='foreground')foregroundRun=kind==='control'?foregroundRun+1:0;
+    if(kind==='transaction'||kind==='control'||kind==='foreground')transactionRun=kind==='transaction'?transactionRun+1:0;
     next=Date.now()+effectiveSpacing;release();
-    if(queues.live.length||queues.control.length||queues.foreground.length||queues.history.length)timer=setTimeout(tick,effectiveSpacing);
+    if(Object.values(queues).some(q=>q.length))timer=setTimeout(tick,effectiveSpacing);
   }
   return {
-    acquire(historical:boolean,control=false,foreground=false){return new Promise<void>(resolve=>{queues[historical?'history':control?'control':foreground?'foreground':'live'].push(resolve);if(!timer)tick();});},
-    pending(){return {interactive:queues.live.length+queues.control.length+queues.foreground.length,history:queues.history.length};},
-    waitMs(historical:boolean,control=false,foreground=false){
+    acquire(historical:boolean,control=false,foreground=false,transaction=false){return new Promise<void>(resolve=>{queues[historical?'history':transaction?'transaction':control?'control':foreground?'foreground':'live'].push(resolve);if(!timer)tick();});},
+    pending(){return {interactive:queues.live.length+queues.control.length+queues.foreground.length+queues.transaction.length,history:queues.history.length};},
+    waitMs(historical:boolean,control=false,foreground=false,transaction=false){
       // Estimate this caller's dispatch time, including the existing cooldown.
       // An interactive read overtakes archive work; counting the entire history
       // queue made the gateway avoid an upstream that could serve it next.
-      const target=historical?'history':control?'control':foreground?'foreground':'live';
-      const sizes={live:queues.live.length,control:queues.control.length,foreground:queues.foreground.length,history:queues.history.length};
-      let run=liveRun,urgentRun=controlRun,controlBurst=foregroundRun,before=0;
+      const target=historical?'history':transaction?'transaction':control?'control':foreground?'foreground':'live';
+      const sizes={live:queues.live.length,control:queues.control.length,foreground:queues.foreground.length,history:queues.history.length,transaction:queues.transaction.length};
+      let run=liveRun,urgentRun=controlRun,controlBurst=foregroundRun,transactionBurst=transactionRun,before=0;
       for(;;){
-        const kind=choose(sizes.live+Number(target==='live'),sizes.control+Number(target==='control'),sizes.foreground+Number(target==='foreground'),sizes.history+Number(target==='history'),run,urgentRun,controlBurst);
+        const kind=choose(sizes.live+Number(target==='live'),sizes.control+Number(target==='control'),sizes.foreground+Number(target==='foreground'),sizes.history+Number(target==='history'),sizes.transaction+Number(target==='transaction'),run,urgentRun,controlBurst,transactionBurst);
         if(kind===target&&sizes[kind]===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;
         sizes[kind]--;run=kind==='history'?0:run+1;
         if(kind!=='history')urgentRun=kind==='live'?0:urgentRun+1;
         if(kind==='control'||kind==='foreground')controlBurst=kind==='control'?controlBurst+1:0;
+        if(kind==='transaction'||kind==='control'||kind==='foreground')transactionBurst=kind==='transaction'?transactionBurst+1:0;
         before++;
       }
     },

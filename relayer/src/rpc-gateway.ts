@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 import {chunkedLogs,historyGate} from "./log-ranges";
-import { historicalRpcRequest, controlRpcRequest, foregroundRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
+import { historicalRpcRequest, transactionRpcRequest, controlRpcRequest, foregroundRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
 import {rpcQueueMetrics} from './rpc-queue-metrics';
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
@@ -33,18 +33,18 @@ function throttled(target:Upstream,method:string,response:Response,message=''){
 }
 const blocks=rpcBlockObservations();
 const timing=rpcQueueMetrics();
-async function acquire(target:Upstream,method:string,history:boolean,priority:0|1|2){
- const start=performance.now();await schedulerOf(target).acquire(history,priority===2,priority===1);
- timing.record(target,history?'history':priority===2?'control':priority===1?'foreground':'live',method,'queue',performance.now()-start);
+async function acquire(target:Upstream,method:string,history:boolean,priority:0|1|2|3){
+ const start=performance.now();await schedulerOf(target).acquire(history,priority===2,priority===1,priority===3);
+ timing.record(target,history?'history':priority===3?'transaction':priority===2?'control':priority===1?'foreground':'live',method,'queue',performance.now()-start);
 }
-async function upstreamFetch(target:Upstream,method:string,params:unknown[],history:boolean,priority:0|1|2){
+async function upstreamFetch(target:Upstream,method:string,params:unknown[],history:boolean,priority:0|1|2|3){
  const start=performance.now();
  try{return await fetch(upstreams[target],{method:'POST',headers:{'content-type':'application/json'},
   body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(15000)});}
- finally{timing.record(target,history?'history':priority===2?'control':priority===1?'foreground':'live',method,'network',performance.now()-start);}
+ finally{timing.record(target,history?'history':priority===3?'transaction':priority===2?'control':priority===1?'foreground':'live',method,'network',performance.now()-start);}
 }
 const historical=(method:string,params:unknown[])=>historicalRpcRequest(method,params,blocks.head(),blocks.height);
-const control=(method:string,params:unknown[],foreground=false):0|1|2=>controlRpcRequest(method,params,blocks.head(),blocks.height)?2:
+const control=(method:string,params:unknown[],foreground=false):0|1|2|3=>transactionRpcRequest(method,params)?3:controlRpcRequest(method,params,blocks.head(),blocks.height)?2:
  foregroundRpcRequest(method,params,foreground,blocks.head(),blocks.height)?1:0;
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
@@ -53,7 +53,7 @@ const cache = new Map<string, { expires: number; result: unknown }>();
 // execution error is the same on both and is returned at once, unchanged.
 async function spreadRead(method:string,params:unknown[],historical:boolean,foreground:boolean):Promise<unknown>{
  const priority=control(method,params,foreground);
- const load=(u:Upstream)=>schedulerOf(u).waitMs(historical,priority===2,priority===1);
+ const load=(u:Upstream)=>schedulerOf(u).waitMs(historical,priority===2,priority===1,priority===3);
  const first:Upstream=load("secondary")<=load("primary")?"secondary":"primary";
  const order:Upstream[]=[first,first==="primary"?"secondary":"primary"];
  for(let attempt=0;attempt<4;attempt++){

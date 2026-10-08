@@ -109,6 +109,25 @@ try{
  assert.equal(sent.filter(v=>String((v.params[0] as any)?.data).startsWith('0xbb')).length,20);
  report.checks.push('Accepted transaction receipts and fees overtake foreground hydration without extra throughput');
  report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
+ // Same recent canonical headers as live readers; transaction work must
+ // overtake them, not only eth_call hydration, with the rate cap unchanged.
+ const headers=Array.from({length:16},(_,i)=>rpc('eth_getBlockByNumber',[`0x${(4095-i).toString(16)}`,false]));
+ const headerDeadline=Date.now()+5000;
+ for(;;){
+  const h=await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any;
+  if(h.queued.interactive>=12)break;
+  assert(Date.now()<headerDeadline,'Recent header backlog did not queue');await new Promise(r=>setTimeout(r,10));
+ }
+ const txPrior=sent.length,account=`0x${'12'.repeat(20)}`;
+ await Promise.all([...headers,rpc('eth_getTransactionCount',[account,'pending']),rpc('eth_getTransactionReceipt',[`0x${'cd'.repeat(32)}`])]);
+ for(const method of ['eth_getTransactionCount','eth_getTransactionReceipt']){
+  const index=sent.findIndex((v,i)=>i>=txPrior&&v.method===method);
+  assert(index>=txPrior&&index<txPrior+4,`${method} waited behind routine canonical headers`);
+ }
+ const last=sent.slice(txPrior);
+ assert(last.at(-1)!.at-last[0].at>=(last.length-1)*45,'Transaction priority raised upstream throughput');
+ report.checks.push('Nonce and receipt overtake routine recent headers with unchanged pacing');
+ report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}
 finally{

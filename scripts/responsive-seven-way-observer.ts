@@ -39,6 +39,7 @@ const report:any={startedAt:new Date().toISOString(),deadline,pool:agents.pool,l
 await writeFile(output,poolJson(report),{flag:'wx'});
 const save=async()=>{await writeFile(output+'.next',poolJson(report));await rename(output+'.next',output);};
 const delay=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+async function together(jobs:Promise<unknown>[]){const results=await Promise.allSettled(jobs);const failed=results.find(r=>r.status==='rejected');if(failed?.status==='rejected')throw failed.reason;}
 type Ref={chainId:10143;app:Address;epoch:string;id:string};
 const readers:Array<{ref:Ref;read:()=>Promise<EngineState>}>=[],stops:Array<()=>void>=[];
 try{
@@ -68,18 +69,18 @@ try{
   await delay(1500);
  }
  assert(refs,'Seven games with the same official archetype were not acquired within the original deadline');
- for(const ref of refs.slice(0,5)){
+ await together(refs.slice(0,5).map(async ref=>{
   const observer=await createPoolObserver(agents,(await reader.match(ref)).value,url=>new WebSocket(url));
   stops.push(observer.watch(()=>{}),()=>observer.close());readers.push({ref,read:()=>observer.read(true)});
- }
- for(const ref of refs.slice(5)){
+ }));
+ await together(refs.slice(5).map(async ref=>{
   const arena=human.arenas.find(a=>a.app.toLowerCase()===ref.app.toLowerCase());assert(arena?.node);
   const node=createPublicClient({transport:engineTransport(arena.node)});
   const [session,version]:any[]=await Promise.all([node.request({method:'interlude_session',params:[]} as any),node.readContract({address:arena.app,abi:rules.arena,functionName:'RULES_VERSION'})]);
   assert.equal(session.app.toLowerCase(),ref.app.toLowerCase());assert.equal(session.chainId,4242);assert.equal(String(session.epoch),ref.epoch);assert.equal(version,18n);
   const stream=new EngineStream(arena.node,ref.app,url=>new WebSocket(url) as any),feed=new EngineFeed({app:ref.app,abi:rules.arena,node},stream);
   stops.push(feed.watch(BigInt(ref.id),()=>{}),()=>stream.stop());readers.push({ref,read:()=>feed.read(BigInt(ref.id),true)});
- }
+ }));
  let first:any;
  while(Date.now()<deadline){
   const startedAt=Date.now();

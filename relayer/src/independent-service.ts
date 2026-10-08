@@ -1,3 +1,4 @@
+import {readAdmissionProposals} from './independent-admission-observation';
 import {isReusableHumanRules} from '../../shared/independent-rules-version';
 import {readFile} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
@@ -48,11 +49,11 @@ import {independentProvisioningScope} from '../../shared/independent-provisionin
 import {previousIndependentManifests,independentScope,mergeIndependentRecent} from '../../shared/independent-history-scope';
 import {humanRatingContinuityAbi} from '../../shared/human-rating-continuity';
 
-type Options={db:Pool;operatorDb?:Pool;legacyDb?:Pool;base:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
+type Options={db:Pool;operatorDb?:Pool;legacyDb?:Pool;base:PublicClient;admissionBase?:PublicClient;body:(r:IncomingMessage)=>Promise<any>;send:(r:ServerResponse,b:any,status?:number)=>any;graphql?:(query:string,variables?:any)=>Promise<any>;collectRpc?:boolean};
 export async function independentService(o:Options){
  const path=process.env.PONG_INDEPENDENT_MANIFEST;if(!path)return null;
  const rawManifest=JSON.parse(await readFile(path,'utf8'));
- const m=independentRuntime(rawManifest),{db,base}=o;
+ const m=independentRuntime(rawManifest),{db,base}=o,admissionBase=o.admissionBase??base;
  const previous=previousIndependentManifests(rawManifest.previous,m);
  const provisioningFile=process.env.PONG_INDEPENDENT_PROVISIONER_FILE;
  const provisioner=rawManifest.hostedProvisioning==='owner-consent-v1'
@@ -65,7 +66,7 @@ export async function independentService(o:Options){
  for(const arena of m.arenas)hostingConsent(arena.app,1n);
  const rules=independentRules(m),{arena:arenaAbi,lobby:lobbyAbi,market:marketAbi,settlement:settlementAbi}=rules;
  await independentSchema(db);
- const r=independentReader(base,m);
+ const r=independentReader(admissionBase,m);
  const profileHints=new Map<string,{handle:string;avatar:number}>();
  if(process.env.PONG_INDEPENDENT_SNAPSHOT){
   const source=await readFile(process.env.PONG_INDEPENDENT_SNAPSHOT,'utf8');
@@ -93,7 +94,7 @@ export async function independentService(o:Options){
   if(value.toLowerCase()!==expected.toLowerCase())throw Error('Independent financial linkage mismatch');
  }
  if(!await base.readContract({address:m.vault,abi:vaultAbi,functionName:'modulesSealed'})||!await base.readContract({address:m.vault,abi:vaultAbi,functionName:'modules',args:[m.market]})||!await r.profiles('migrationSealed'))throw Error('Independent migration is not sealed');
- const writer=await independentWriter(db,base,o.operatorDb??db);
+ const writer=await independentWriter(db,admissionBase,o.operatorDb??db,undefined,{eager:true});
  const playerKey=process.env.PONG_INDEPENDENT_PLAYER_SPONSOR_FILE,playerAddress=process.env.PONG_INDEPENDENT_PLAYER_SPONSOR_ADDRESS,playerUrl=process.env.PONG_INDEPENDENT_PLAYER_DATABASE_URL;
  let playerDb:Pool|undefined,playerWriter:Awaited<ReturnType<typeof independentWriter>>|undefined;
  if(playerKey||playerAddress||playerUrl){
@@ -102,7 +103,7 @@ export async function independentService(o:Options){
   try{
    const identity=async(p:Pool)=>(await p.query('SELECT current_database() AS name')).rows[0].name;
    if(await identity(playerDb)===await identity(db)||await identity(playerDb)===await identity(o.operatorDb??db))throw Error('Player sponsor requires its own queue database');
-   playerWriter=await independentWriter(playerDb,base,o.operatorDb??db,{keyFile:playerKey,address:playerAddress,allowCall:(to,data,value)=>independentPlayerCall(m,to,data,value)},{eager:true});
+   playerWriter=await independentWriter(playerDb,admissionBase,o.operatorDb??db,{keyFile:playerKey,address:playerAddress,allowCall:(to,data,value)=>independentPlayerCall(m,to,data,value)},{eager:true});
   }catch(error){await playerDb.end();await writer.close();throw error;}
  }
  const playerSponsor=independentPlayerRouter(m,writer,playerWriter);
@@ -125,7 +126,7 @@ export async function independentService(o:Options){
  const diagnostics=await createRpcDiagnostics(db,m.lobby,o.collectRpc!==false),diagnosticAt=new Map<string,number>();
  if(isReusableHumanRules(m.rulesVersion))await initializeReusableResultArchive(db);
  const reusableResults=isReusableHumanRules(m.rulesVersion)?independentReusableResults(db,base,m,(...args)=>queue(...args)):null;
- const reusableAdmit=isReusableHumanRules(m.rulesVersion)?independentReusableAdmission(base,m,JSON.parse(await readFile(process.env.PONG_INDEPENDENT_ADMISSION_KEY_FILE!,'utf8')).privateKey):null;
+ const reusableAdmit=isReusableHumanRules(m.rulesVersion)?independentReusableAdmission(admissionBase,m,JSON.parse(await readFile(process.env.PONG_INDEPENDENT_ADMISSION_KEY_FILE!,'utf8')).privateKey):null;
  const engines=m.arenas.map(a=>independentEngine(db,base,a.app,a.node!,pressure.privateKey,history.record,{rulesVersion:m.rulesVersion,archive:reusableResults?.archive.store}));
  const eventLoops=engines.map(e=>rules.events?independentEventsLoop({...e,
   epochCommands:isReusableHumanRules(rules.version),
@@ -164,7 +165,7 @@ export async function independentService(o:Options){
  const queue=async(at:Address,abi:Abi,name:string,args:readonly unknown[]=[],value=0n,priority=1)=>{
   // A historical capture must use its own tickets, verifier and retry context.
   const m=deployments.find(d=>[d.lobby,d.ratings,d.market,d.vault,d.resultVerifier].some(a=>a?.toLowerCase()===at.toLowerCase()))??deployments[0];
-  const r=independentReader(base,m),rules=independentRules(m);
+  const r=independentReader(['assignNext','propose','openRound','matchmake'].includes(name)?admissionBase:base,m),rules=independentRules(m);
   let context='';
   if(name==='assignNext'){
    const slots=await Promise.all([0n,1n].map(i=>r.lobby('slot',[i])));
@@ -208,8 +209,8 @@ export async function independentService(o:Options){
   const selected=independentScope(m,previous,new URL(req.url!,'http://localhost').searchParams.get('lobby'));
   return selected===m?{manifest:m,history,finance}:historical.find(v=>v.manifest===selected)!;
  };
- const reusablePool=isReusableHumanRules(m.rulesVersion)?await independentReusablePool(base,m,queue,()=>health,()=>process.env.PONG_INDEPENDENT_ADMISSION==='true'):null;
- const reusableLifecycles=engines.map((e,i)=>reusableResults&&reusableAdmit?independentReusableLifecycle({base,manifest:m,engine:e,health:health[i],results:reusableResults,queue,
+ const reusablePool=isReusableHumanRules(m.rulesVersion)?await independentReusablePool(admissionBase,m,queue,()=>health,()=>process.env.PONG_INDEPENDENT_ADMISSION==='true'):null;
+ const reusableLifecycles=engines.map((e,i)=>reusableResults&&reusableAdmit?independentReusableLifecycle({base,admissionBase,manifest:m,engine:e,health:health[i],results:reusableResults,queue,
   stage:(name,code)=>stage(i,name,code),admit:reusableAdmit,ensureHosted:async epoch=>{
    await db.query("INSERT INTO il_lifecycle(app,stage,epoch) VALUES($1,'starting',$2) ON CONFLICT(app) DO NOTHING",[e.app,String(epoch)]);
    await requestHostedRenewal(db,e.app,epoch,m.arenas[i].node!,undefined,undefined,m.hub,hostingConsent(e.app,epoch));
@@ -290,21 +291,24 @@ export async function independentService(o:Options){
  }
  async function admission(){
   if(process.env.PONG_INDEPENDENT_ADMISSION!=='true')return;
-  const reusableReady=reusablePool?await reusablePool.admissionReady():true;
-  for(let i=0;i<2;i++){
-   const id=await r.lobby('slot',[BigInt(i)]);if(!id)continue;
-   const p=await r.lobby('proposal',[id]);
+  const [reusableReady,proposals]=await Promise.all([
+   reusablePool?reusablePool.admissionReady():Promise.resolve(true),readAdmissionProposals(admissionBase,m),
+  ]);
+  for(const {id,proposal:p,arena} of proposals){
    if(p.status===1&&Number(p.expires)*1000<Date.now())await queue(m.lobby,lobbyAbi,'expireProposal',[id],0n,0);
-   if(p.status===2&&await r.lobby('arenaOf',[id])===zeroAddress&&reusableReady){
-    try{const assigned=await base.simulateContract({address:m.lobby,abi:lobbyAbi,functionName:'assignNext'});
+   if(p.status===2&&arena===zeroAddress&&reusableReady){
+    try{const assigned=await admissionBase.simulateContract({address:m.lobby,abi:lobbyAbi,functionName:'assignNext'});
      if(assigned.result!==zeroAddress){
       await queue(m.lobby,lobbyAbi,'assignNext',[],0n,0);
       // The engine admission follows the reservation: look for it every 1.5 s
       // for a while instead of waiting for the idle ten-second check.
       eagerArenasUntil=Date.now()+20000;for(let k=0;k<engines.length;k++)retry.delete(`arena:${k}`);
-     }
-    }catch{/* Re-evaluate invalid grants without blocking the other slot. */}
-    await queue(m.lobby,lobbyAbi,'cancelUnopened',[id],0n,0).catch(()=>{});
+     }else if(Date.now()>Number(p.expires+180n)*1000)await queue(m.lobby,lobbyAbi,'cancelUnopened',[id],0n,0).catch(()=>{});
+    }catch{
+     // A failed assignment may reflect a revoked grant. Only this path needs
+     // cancellation simulation; a successfully reserved match must keep going.
+     await queue(m.lobby,lobbyAbi,'cancelUnopened',[id],0n,0).catch(()=>{});
+    }
    }
   }
   // No arena online at all: a new proposal could never be served, and players
@@ -413,7 +417,11 @@ export async function independentService(o:Options){
      const payout:any=await base.readContract({address:b.to,abi:allowed.abi,functionName:'payouts',args:[decoded.args![0] as Hex]} as any);
      o.send(res,await writer.enqueue(b.to,b.data,0n,2,String(payout[3])),202);return true;
     }
-    o.send(res,await playerSponsor.enqueue(b.to,b.data,0n,priority),202);return true;
+    const operation=await playerSponsor.enqueue(b.to,b.data,0n,priority);
+    if(decoded.functionName==='relay'){
+     eagerArenasUntil=Date.now()+20000;retry.delete('admission');
+    }
+    o.send(res,operation,202);return true;
    }
    if(req.method==='POST'&&path==='/independent/credit'){
     const b=await o.body(req);if(!isAddress(b.player)||!Number.isSafeInteger(b.expires)||typeof b.signature!=='string'||!/^0x[\da-f]{130}$/i.test(b.signature))throw Error('Invalid credit proof');
@@ -470,7 +478,7 @@ export async function independentService(o:Options){
     if(!eventLoops[i]?.blocksWrite()&&!engines[i].busy())run(`chaos:${i}`,()=>finance.checkpoint(financialEngines[i]));
    }
   }
-  run('index',index,6000);run('room-discovery',discoverRooms,4000);run('history',history.observe,6000);run('admission',admission,4000);
+  run('index',index,6000);run('room-discovery',discoverRooms,4000);run('history',history.observe,6000);run('admission',admission,eager?250:4000);
   // Slow historical rooms never delay accepted proposals or ranked admission.
   if(process.env.PONG_INDEPENDENT_ADMISSION==='true'&&!arenaOutage(!!reusablePool,health))run('room-admission',roomAdmission.run,2000);
   if(reusableResults)run('published-history',async()=>{

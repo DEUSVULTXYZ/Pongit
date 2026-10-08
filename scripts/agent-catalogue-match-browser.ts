@@ -17,6 +17,7 @@ import {createHash} from 'node:crypto';
 import {assertPrivateSyncBrowserTarget,privateSyncRotation} from './private-sync-continuation';
 import {realBackgroundBrowser,recordBackgroundPage} from './real-background-browser';
 import {browserQualificationBarrier} from './browser-qualification-barrier';
+import {deliveryEvidence} from './browser-delivery-evidence';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
@@ -690,7 +691,8 @@ try{
  assert(report.countdownComplete,'Real launch countdown incomplete');
  const requiredControls=naturalMatch||cadenceProbe?20:100;
  assert(report.submissions.length>=requiredControls,'Insufficient command submissions');
- assert(report.submissions.every((s:any)=>!s.error),'At least one command submission was rejected; inspect action and error metadata');
+ report.deliveryEvidence=deliveryEvidence(report.submissions,report.receipts);
+ assert(report.deliveryEvidence.unresolved.length===0,'At least one command submission was rejected without prior exact successful receipt');
  assert(local.length>=(naturalMatch||cadenceProbe?15:50)&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
  assert(report.receipts.filter((r:any)=>r.sequence).length>=requiredControls&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');

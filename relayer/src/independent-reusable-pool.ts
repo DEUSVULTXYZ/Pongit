@@ -43,7 +43,10 @@ export async function independentReusablePool(base:PublicClient,m:IndependentMan
  async function admissionReady(){
   if(!enabled()||!budget)return false;
   const block=await base.getBlock(),r=independentReader(base,m,block.number),states=health();
-  const arenas=await Promise.all(m.arenas.map(async a=>({app:a.app,reserved:await r.lobby('reservedMatch',[a.app]),d:await readHubDelegation(base,m.hub,a.app,block.number)})));
+  const arenas=await Promise.all(m.arenas.map(async a=>{
+   const [reserved,d]=await Promise.all([r.lobby('reservedMatch',[a.app]),readHubDelegation(base,m.hub,a.app,block.number)]);
+   return {app:a.app,reserved,d};
+  }));
   const continuous=continuousDelegation(m.hub);
   for(const a of arenas)if(!continuous&&a.d.status===1&&!a.reserved&&!hubLeaseValid(m.hub,a.d.expiresAt,block.timestamp,1860n)){
    await queue(m.lobby,lobbyAbi,'closeReusableArena',[a.app],0n,0);return false;

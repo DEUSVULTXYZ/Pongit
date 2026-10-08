@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile,rename} from 'node:fs/promises';
 import {chromium,type Page,type BrowserContext} from '@playwright/test';
-import {parseTransaction,decodeFunctionData,decodeEventLog,createPublicClient,http,type Address} from 'viem';
+import {keccak256,parseTransaction,decodeFunctionData,decodeEventLog,createPublicClient,http,type Address} from 'viem';
 import {monadTestnet} from 'viem/chains';
 import {abi as vaultAbi} from '../shared/abi-independent-RoomsVault';
 import {independentRules} from '../shared/independent-rules';
@@ -12,6 +12,7 @@ import {publicIndependentManifest} from '../shared/independent';
 import {installSyncProbe,syncMetrics,sustainedInputMetrics} from './browser-sync-probe';
 import {visibleAim} from './browser-aim';
 import {browserQualificationBarrier} from './browser-qualification-barrier';
+import {deliveryEvidence} from './browser-delivery-evidence';
 assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const publicRelease=process.env.PONG_HUMAN_BROWSER_TARGET==='public-release';
 const chaos=process.env.INDEPENDENT_SCENARIO==='chaos';
@@ -58,7 +59,7 @@ const browser=await chromium.launch({headless:process.env.PONG_BROWSER_VISIBLE!=
 const pages:Page[]=[],contexts:BrowserContext[]=[],devices:any[]=[],counts=[0,0,0,0];
 const report:any={startedAt:new Date().toISOString(),lobby:manifest.lobby,rules:manifest.rulesVersion,checks:[],network:[],viewports:[],countdown:[[],[],[]],inputs:[[],[],[]],authenticator:'Chromium virtual PRF, real Mera SDK; no physical-device recovery claim'};
 report.target=publicRelease?'Public HTTPS web and API, actual hosted game':'Isolated candidate';
-report.resumedFixture=!!restore;report.naturalOnly=naturalOnly;report.liveControls=[];report.commandReceipts=[];
+report.resumedFixture=!!restore;report.naturalOnly=naturalOnly;report.liveControls=[];report.commandReceipts=[];report.deliveryReceipts=[];
 report.visibleBrowser=process.env.PONG_BROWSER_VISIBLE==='1';report.integrity=integrity;report.inputScenarios=[];
 const sleep=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 let reporting=false,driving=true;const progress=setInterval(()=>{if(reporting)return;reporting=true;void Promise.all(pages.map(async(p,i)=>{report.pages??=[];report.pages[i]={url:p.url(),text:(await p.locator('body').innerText({timeout:2000})).slice(0,1800)};})).then(()=>writeFile(out+'/report.json',JSON.stringify(report,null,2))).catch(()=>{}).finally(()=>reporting=false);},5000);
@@ -121,14 +122,15 @@ async function init(i:number){
   socket.on('framesent',event=>{try{
    const v=JSON.parse(String(event.payload));if(v.method!=='interlude_sendTransaction')return;
    const tx=parseTransaction(v.params[0]),call=decodeFunctionData({abi:rules.arena,data:tx.data!});
-   pending.set(String(v.id),{at:clock(),action:call.functionName});
+   pending.set(String(v.id),{at:clock(),action:call.functionName,hash:keccak256(v.params[0])});
   }catch{}});
   socket.on('framereceived',event=>{try{
    const v=JSON.parse(String(event.payload)),at=clock(),sent=pending.get(String(v.id));
-   if(sent){pending.delete(String(v.id));const row={player:i,at,method:'interlude_sendTransaction',action:sent.action,ms:at-sent.at,transport:'websocket',error:!!v.error};
+   if(sent){pending.delete(String(v.id));const row={player:i,at,hash:sent.hash,method:'interlude_sendTransaction',action:sent.action,ms:at-sent.at,transport:'websocket',error:!!v.error,...(v.error?{message:String(v.error.message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,350)}:{})};
     report.network.push(row);
     const receipt=v.result;
     if(['0x1','success'].includes(String(receipt?.status))){
+     if(receipt.transactionHash?.toLowerCase()===sent.hash.toLowerCase())report.deliveryReceipts.push({hash:sent.hash,status:receipt.status,confirmedAt:at});
      for(const log of receipt.logs??[]){try{const e=decodeEventLog({abi:rules.arena,data:log.data,topics:log.topics}) as any;
       if(e.eventName==='ControlQueued'){
        const input={player:i,id:String(e.args.id),side:Number(e.args.side),sequence:String(e.args.sequence),direction:Number(e.args.action)-2,sentAt:sent.at,confirmedAt:at,ms:at-sent.at};
@@ -145,9 +147,11 @@ async function init(i:number){
  page.on('pageerror',e=>report.checks.push({pageError:e.message.replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,300)}));
  page.on('response',async response=>{const request=response.request(),url=new URL(response.url());if(!request.postData()||!url.hostname.endsWith('.fly.dev'))return;let method='unknown';try{method=request.postDataJSON()?.method;}catch{}
   const row:any={player:i,at:Date.now(),method,status:response.status(),requestBytes:Buffer.byteLength(request.postData()||'')};report.network.push(row);
-  if(method==='interlude_sendTransaction'){try{const tx=parseTransaction(request.postDataJSON().params[0]);row.nonce=tx.nonce;row.action=decodeFunctionData({abi:rules.arena,data:tx.data!}).functionName;}catch{}}
+  if(method==='interlude_sendTransaction'){try{const tx=parseTransaction(request.postDataJSON().params[0]);row.hash=keccak256(request.postDataJSON().params[0]);row.nonce=tx.nonce;row.action=decodeFunctionData({abi:rules.arena,data:tx.data!}).functionName;}catch{}}
   if(method==='eth_getTransactionCount'){try{row.count=(await response.json()).result;}catch{}}
-  try{const body=await response.json();if(['0x1','success'].includes(String(body.result?.status))&&method==='interlude_sendTransaction'){const tx=parseTransaction(request.postDataJSON().params[0]);const call=decodeFunctionData({abi:rules.arena,data:tx.data!});if(call.functionName==='input'){
+  try{const body=await response.json();const expected=method==='interlude_sendTransaction'?row.hash:method==='eth_getTransactionReceipt'?request.postDataJSON().params[0]:undefined;
+ if(expected&&body.result?.transactionHash?.toLowerCase()===expected.toLowerCase())report.deliveryReceipts.push({hash:expected,status:body.result.status,confirmedAt:clock()});
+ if(['0x1','success'].includes(String(body.result?.status))&&method==='interlude_sendTransaction'){const tx=parseTransaction(request.postDataJSON().params[0]);const call=decodeFunctionData({abi:rules.arena,data:tx.data!});if(call.functionName==='input'){
  const sentAt=requestTimes.get(request),confirmedAt=clock();
  for(const log of body.result.logs??[]){try{const e=decodeEventLog({abi:rules.arena,data:log.data,topics:log.topics}) as any;
   if(e.eventName==='ControlQueued'&&sentAt!==undefined)report.commandReceipts.push({player:i,id:String(e.args.id),side:Number(e.args.side),sequence:String(e.args.sequence),direction:Number(e.args.action)-2,sentAt,confirmedAt,ms:confirmedAt-sentAt});
@@ -272,6 +276,7 @@ try{
  await until(()=>a.getByRole('button',{name:'Move up',exact:true}).isEnabled(),'contract countdown ended',720000);
  if(!restore){for(let i=0;i<3;i++)assert(report.countdown[i].includes('3')&&report.countdown[i].includes('2')&&report.countdown[i].includes('1'),`All three countdown digits missing on browser ${i}`);report.checks.push('Real three-second countdown on both players and spectator');}
  // Controls and F5 must not trigger a root passkey request.
+ if(process.env.PONG_BROWSER_BARRIER)await writeFile(process.env.PONG_BROWSER_BARRIER+'/'+run+'.playing.json',JSON.stringify({run,at:new Date().toISOString()}),{flag:'wx'});
  const before=counts.slice();
  const financial=(async()=>{if(chaos){
   await spectator.getByRole('button',{name:'Betting',exact:true}).click();
@@ -348,7 +353,8 @@ try{
  const p95=(a:number[])=>a.sort((x,y)=>x-y)[Math.floor((a.length-1)*.95)];
  const paired=report.commandReceipts.map((r:any)=>{const e=report.liveControls.find((x:any)=>x.observer===1-r.player&&x.id===r.id&&x.side===r.side&&x.sequence===r.sequence);return e?e.receivedAt-r.sentAt:undefined;}).filter((v:any)=>Number.isFinite(v));
  report.peerReception={samples:paired.length,p95Ms:p95(paired),clock:'same Playwright host',sendP95Ms:p95(report.commandReceipts.map((r:any)=>r.ms))};
- if(naturalOnly){report.syncGates={natural:!!report.passed,render:report.sync?.slice(0,2).every((x:any)=>x.frames>100&&x.maxHoldMs<=500&&x.p95FrameMs<=20&&x.frameGaps.length===0&&x.snapshotJumps.length===0&&x.paddleJumps.length===0),local:report.sync?.slice(0,2).every((x:any)=>x.localInput.samples>=20&&x.localInput.p95Ms<=50&&x.localInput.misses.length===0),noPause:report.sync?.slice(0,2).every((x:any)=>x.contractPauseMs===0&&x.visibleResyncs===0),peer:paired.length>=20&&report.peerReception.p95Ms<=report.peerReception.sendP95Ms+50,commands:report.network.filter((x:any)=>x.method==='interlude_sendTransaction').every((x:any)=>!x.error&&!x.rpcError)};
+ report.deliveryEvidence=deliveryEvidence(report.network.filter((x:any)=>x.method==='interlude_sendTransaction'),report.deliveryReceipts);
+ if(naturalOnly){report.syncGates={natural:!!report.passed,render:report.sync?.slice(0,2).every((x:any)=>x.frames>100&&x.maxHoldMs<=500&&x.p95FrameMs<=20&&x.frameGaps.length===0&&x.snapshotJumps.length===0&&x.paddleJumps.length===0),local:report.sync?.slice(0,2).every((x:any)=>x.localInput.samples>=20&&x.localInput.p95Ms<=50&&x.localInput.misses.length===0),noPause:report.sync?.slice(0,2).every((x:any)=>x.contractPauseMs===0&&x.visibleResyncs===0),peer:paired.length>=20&&report.peerReception.p95Ms<=report.peerReception.sendP95Ms+50,commands:report.deliveryEvidence.unresolved.length===0};
   if(!Object.values(report.syncGates).every(v=>v===true)){report.passed=false;report.error??='Natural PvP synchronization gate failed';process.exitCode=1;}}
  if(integrity){
   report.integrityGates=[0,1].map(player=>{const s=report.sustained?.[player],scenarios=report.inputScenarios.filter((v:any)=>v.player===player);

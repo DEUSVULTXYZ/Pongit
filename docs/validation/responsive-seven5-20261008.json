@@ -1,0 +1,310 @@
+{
+  "coordinator": {
+    "startedAt": "2026-10-08T19:37:36.751368+00:00",
+    "deadline": 1791489456750,
+    "passed": false,
+    "children": [
+      {
+        "run": "r2seven5a0",
+        "pid": 48840
+      },
+      {
+        "run": "r2seven5a1",
+        "pid": 50448
+      },
+      {
+        "run": "r2seven5a2",
+        "pid": 47396
+      },
+      {
+        "run": "r2seven5a3",
+        "pid": 16340
+      },
+      {
+        "run": "r2seven5hc",
+        "pid": 11052
+      },
+      {
+        "run": "r2seven5hx",
+        "pid": 60024
+      },
+      {
+        "run": "observer",
+        "pid": 38464
+      }
+    ],
+    "readyAt": "2026-10-08T19:38:48.631502+00:00",
+    "humansPlayingAt": "2026-10-08T19:40:38.637332+00:00",
+    "release": {
+      "go": true,
+      "deadline": 1791489456750,
+      "readyCount": 6,
+      "bot": "ONYX",
+      "tournament": "49",
+      "ref": {
+        "chainId": 10143,
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1132"
+      },
+      "at": "2026-10-08T19:40:45.285328+00:00"
+    },
+    "exitCodes": {
+      "r2seven5a0": 0,
+      "r2seven5a1": 1,
+      "r2seven5a2": 1,
+      "r2seven5a3": 1,
+      "r2seven5hc": 1,
+      "r2seven5hx": 1,
+      "observer": 1
+    },
+    "error": "One or more real browser gates failed",
+    "finishedAt": "2026-10-08T19:43:21.329683+00:00"
+  },
+  "agents": [
+    {
+      "run": "r2seven5a0",
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1133"
+      },
+      "passed": true,
+      "admissionMs": 7317,
+      "input": {
+        "samples": 99,
+        "p95Ms": 15.299999952316284
+      },
+      "liveness": {
+        "heartbeats": 474,
+        "resumes": 0
+      },
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "error": null,
+      "finishedAt": "2026-10-08T19:42:13.914Z"
+    },
+    {
+      "run": "r2seven5a1",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1134"
+      },
+      "passed": false,
+      "admissionMs": 13134,
+      "input": {
+        "samples": 132,
+        "p95Ms": 14.700000047683716
+      },
+      "liveness": {
+        "heartbeats": 511,
+        "resumes": 0
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "finishedAt": "2026-10-08T19:42:35.400Z"
+    },
+    {
+      "run": "r2seven5a2",
+      "ref": {
+        "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+        "epoch": "1",
+        "id": "1136"
+      },
+      "passed": false,
+      "admissionMs": 18555,
+      "input": {
+        "samples": 111,
+        "p95Ms": 15.799999952316284
+      },
+      "liveness": null,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": null,
+      "error": "At least one command submission was rejected; inspect action and error metadata",
+      "finishedAt": "2026-10-08T19:42:52.632Z"
+    },
+    {
+      "run": "r2seven5a3",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "1135"
+      },
+      "passed": false,
+      "admissionMs": 16430,
+      "input": {
+        "samples": 112,
+        "p95Ms": 14.700000047683716
+      },
+      "liveness": {
+        "heartbeats": 448,
+        "resumes": 0
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "finishedAt": "2026-10-08T19:42:46.861Z"
+    }
+  ],
+  "humans": [
+    {
+      "report": "artifacts/independent-candidate/browser-r2seven5hc/report.json",
+      "passed": false,
+      "error": "Natural PvP synchronization gate failed",
+      "syncGates": {
+        "natural": true,
+        "render": true,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": false
+      },
+      "integrityGates": [
+        {
+          "held": true,
+          "release": true,
+          "scenarios": true
+        },
+        {
+          "held": true,
+          "release": true,
+          "scenarios": true
+        }
+      ],
+      "finishedAt": "2026-10-08T19:41:46.400Z"
+    },
+    {
+      "report": "artifacts/independent-candidate/browser-chaos-r2seven5hx/report.json",
+      "passed": false,
+      "error": "Timed out: Chaos betting window",
+      "syncGates": {
+        "natural": false,
+        "render": false,
+        "local": true,
+        "noPause": true,
+        "peer": true,
+        "commands": true
+      },
+      "integrityGates": [
+        {
+          "held": true,
+          "release": true,
+          "scenarios": true
+        },
+        {
+          "held": true,
+          "release": true,
+          "scenarios": true
+        }
+      ],
+      "finishedAt": "2026-10-08T19:43:19.051Z"
+    }
+  ],
+  "overlap": {
+    "passed": false,
+    "error": "A game ended before sufficient overlap; preserve partial evidence",
+    "acquisition": {
+      "at": "2026-10-08T19:41:02.349Z",
+      "block": "69340839",
+      "hash": "0x813912833809d4510b9e31c95b879c13fcf2d41c2d7ffffa257a213e48c638d2",
+      "archetype": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+      "tournament": "49",
+      "refs": [
+        {
+          "chainId": 10143,
+          "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+          "epoch": "1",
+          "id": "1132"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+          "epoch": "1",
+          "id": "1133"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+          "epoch": "1",
+          "id": "1134"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+          "epoch": "1",
+          "id": "1135"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+          "epoch": "1",
+          "id": "1136"
+        },
+        {
+          "chainId": 10143,
+          "app": "0xC8e978e3c6581eB5454e486Eb247c503fFbc0e3D",
+          "epoch": "1",
+          "id": "680564733841876926926749214863536422945"
+        },
+        {
+          "chainId": 10143,
+          "app": "0x58a5F04Bbad06061eab3a7A27C75291d5Fa63084",
+          "epoch": "1",
+          "id": "680564733841876926926749214863536422946"
+        }
+      ]
+    },
+    "finishedAt": "2026-10-08T19:41:03.727Z"
+  },
+  "scope": "Original failed results retained. Late duplicate receipt classification requires a separate analysis, not rewriting these reports."
+}

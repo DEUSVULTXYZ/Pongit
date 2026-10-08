@@ -11,7 +11,7 @@ export async function browserQualificationBarrier(run:string){
  await writeFile(resolve(dir,run+'.ready.json'),JSON.stringify({run,readyAt:new Date().toISOString()}),{flag:'wx'});
  while(Date.now()<config.deadline){
   let release:any;
-  try{release=JSON.parse(await readFile(resolve(dir,'release.json'),'utf8'));}catch(e){if((e as any).code!=='ENOENT')throw e;}
+  try{release=JSON.parse(await readFile(resolve(dir,config.humanFirst&&/h[cx]$/.test(run)?'release-human.json':'release.json'),'utf8'));}catch(e){if((e as any).code!=='ENOENT')throw e;}
   if(release){assert.equal(release.deadline,config.deadline);assert.equal(release.readyCount,config.runs.length);assert(release.go===true);
    assert(['NOVA','PULSE','ONYX','VECTOR','DRIFT','ECHO','GLITCH','VIPER'].includes(release.bot));return release;}
   await new Promise(r=>setTimeout(r,250));

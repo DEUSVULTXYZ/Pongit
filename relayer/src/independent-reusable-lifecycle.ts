@@ -19,7 +19,7 @@ type Engine=ReturnType<typeof independentEngine>;
 type Results=ReturnType<typeof independentReusableResults>;
 type Queue=(at:Address,abi:Abi,name:string,args:readonly unknown[],value?:bigint,priority?:number)=>Promise<unknown>;
 export type ReusableHumanHealth={id:string;epoch:string;expiresAt:number;releaseAt:number;online:boolean;lastProgressAt:number};
-type Options={base:PublicClient;manifest:IndependentManifest;engine:Engine;health:ReusableHumanHealth;results:Results;queue:Queue;
+type Options={base:PublicClient;admissionBase?:PublicClient;manifest:IndependentManifest;engine:Engine;health:ReusableHumanHealth;results:Results;queue:Queue;
  stage(name:string,code?:string):Promise<void>;
  admit(e:Engine):Promise<unknown>;
  /** This only locates/starts the already delegated epoch. It cannot open one. */
@@ -32,13 +32,13 @@ type Options={base:PublicClient;manifest:IndependentManifest;engine:Engine;healt
 export function independentReusableLifecycle(o:Options){
  const {base,manifest:m,engine:e,health:h,results,queue}=o;
  if(!isReusableHumanRules(m.rulesVersion)||!m.resultVerifier)throw Error('Reusable human lifecycle manifest required');
- const verifier=m.resultVerifier;let validated=0n,checked=0;
+ const verifier=m.resultVerifier,admissionBase=o.admissionBase??base;let validated=0n,checked=0;
  async function observeState(){
   // A routine read does not make a previously verified engine unavailable.
   // Retain that state while reading the same binding; fail closed on a new
   // binding, a protocol transition or an actual failed observation.
-  const block=await base.getBlock({includeTransactions:false}),r=independentReader(base,m,block.number);
-  const [reserved,d,slot]=await Promise.all([r.lobby('reservedMatch',[e.app]),readHubDelegation(base,m.hub,e.app,block.number),r.arena(e.app,'currentMatch')]);
+  const block=await admissionBase.getBlock({includeTransactions:false}),r=independentReader(admissionBase,m,block.number);
+  const [reserved,d,slot]=await Promise.all([r.lobby('reservedMatch',[e.app]),readHubDelegation(admissionBase,m.hub,e.app,block.number),r.arena(e.app,'currentMatch')]);
   const id=BigInt(reserved||slot[1]),epoch=d.status===0?BigInt(slot[0]):d.epoch;
   h.id=String(reserved);h.epoch=String(epoch);h.expiresAt=Number(d.expiresAt)*1000;h.releaseAt=Number(d.stakeUnlockAt)*1000;
   // Retain the exact last logical match for receipt recovery, including while

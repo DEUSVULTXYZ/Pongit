@@ -1,0 +1,89 @@
+{
+  "run": "r2fix24a",
+  "startedAt": "2026-10-08T19:32:53.384Z",
+  "finishedAt": "2026-10-08T19:34:38.336Z",
+  "ref": {
+    "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+    "epoch": "1",
+    "id": "1131"
+  },
+  "mode": 1,
+  "bot": "NOVA",
+  "passed": true,
+  "admissionMs": 6652,
+  "input": {
+    "samples": 120,
+    "p95Ms": 14.799999952316284
+  },
+  "submissionP95Ms": 15.767000000007101,
+  "liveness": {
+    "heartbeats": 629,
+    "resumes": 0
+  },
+  "naturalGates": {
+    "noPause": true,
+    "noResume": true,
+    "noResync": true,
+    "peer": true,
+    "player": true,
+    "spectator": true,
+    "executionClock": true
+  },
+  "performance": {
+    "admission": true,
+    "localInput": true,
+    "confirmedInput": true,
+    "player": true,
+    "spectator": true
+  },
+  "peerReception": {
+    "samples": 241,
+    "p95Ms": 15.80859375,
+    "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+    "basis": "compact send entry to independent observer ControlQueued live event"
+  },
+  "result": {
+    "hash": "0x651529f961a84df243c9a68754b24add8dff1b8c00e06ab5fed9632686691872",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 2,
+    "scoreB": 7,
+    "elapsedUs": "68710138",
+    "finality": false
+  },
+  "layout": [
+    {
+      "at": 9232.200000047684,
+      "x": 57,
+      "y": 198,
+      "width": 1166,
+      "height": 655.875,
+      "viewportWidth": 1440,
+      "viewportHeight": 900,
+      "scrollY": 0,
+      "scrollWidth": 1440,
+      "scrollHeight": 900
+    }
+  ],
+  "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2fix24a\\video\\page@d3a9eb6d5c3d4320ada242102b1b3a58.webm",
+  "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2fix24a\\observer-video\\page@bd02f1d94b6cf38415bb229b86396513.webm",
+  "sustained": {
+    "held": {
+      "samples": 168,
+      "p05Ratio": 0.9999999999999983,
+      "p95Ratio": 1.000000000000002,
+      "outsideTarget": 0
+    },
+    "stopping": {
+      "samples": 24,
+      "p95Drift": 0,
+      "maxDrift": 0
+    }
+  },
+  "collisions": {
+    "visiblePaddleBounces": 11,
+    "unconfirmed": []
+  },
+  "source": "ce7968fead3fa1f62816d24b2b1a1e10a40c554d",
+  "scope": "Actual visible Chrome with virtual PRF, public catalogue, natural Chaos and independent observer. No physical-authenticator claim."
+}

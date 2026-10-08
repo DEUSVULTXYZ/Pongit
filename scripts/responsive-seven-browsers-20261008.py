@@ -9,7 +9,7 @@ node = r'C:/Users/wwwle/.cache/codex-runtimes/codex-primary-runtime/dependencies
 pwsh = r'C:/Users/wwwle/.cache/codex-runtimes/codex-primary-runtime/dependencies/native/powershell/pwsh.exe'
 names = [run+'a'+str(i) for i in range(4)] + [run+'hc',run+'hx']
 started = time.time(); deadline = int((started+20*60)*1000)
-config = dict(runs=names,deadline=deadline)
+config = dict(runs=names,deadline=deadline,humanFirst=True)
 (directory/'barrier.json').write_text(json.dumps(config))
 report = dict(startedAt=datetime.datetime.now(datetime.timezone.utc).isoformat(),deadline=deadline,passed=False,children=[])
 children=[];handles=[]
@@ -39,7 +39,16 @@ try:
         time.sleep(1)
     else:raise RuntimeError('Original preparation deadline expired')
     report['readyAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
-    # Observe a fresh tournament match to leave enough time for all six browser
+    # Room creation/consent is separate from engine concurrency. Start actual
+    # human admission first; their natural game bounds remain unchanged.
+    (directory/'release-human.json').write_text(json.dumps(dict(go=True,deadline=deadline,readyCount=len(names),bot='NOVA',phase='human-admission',at=datetime.datetime.now(datetime.timezone.utc).isoformat())))
+    while int(time.time()*1000)<deadline:
+        assert all(p.poll() is None for _,p in children),'A browser failed before the agent release'
+        if all((directory/(n+'.playing.json')).exists() for n in names[-2:]):break
+        time.sleep(.25)
+    else:raise RuntimeError('Human preparation expired within original admission bound')
+    report['humansPlayingAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
+    # Observe the current tournament match without postponing already-playing human
     # admissions. Never start, alter or cancel a tournament fixture here.
     previous=None;fixture=None
     while int(time.time()*1000)<deadline:
@@ -47,8 +56,7 @@ try:
         active=[m for m in matches if int(m.get('tournament') or 0)>0]
         if active:
             candidate=active[0];ref=candidate['ref'];key=(ref['app'].lower(),ref['epoch'],ref['id'])
-            if previous is None:previous=key
-            elif key!=previous:fixture=candidate;break
+            fixture=candidate;break
         time.sleep(2)
     assert fixture,'No fresh tournament fixture within original deadline'
     catalog=get('catalog')['items'];house=next(x for x in catalog if x.get('official') and x['agent'].lower() in [fixture['a'].lower(),fixture['b'].lower()])
