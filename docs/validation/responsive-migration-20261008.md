@@ -375,3 +375,28 @@ rules/effect speed until the drawn wall; it does not move balls or change state.
 Regression covers both directions/sides and150/300/450speed,21focused/rootTS pass.
 This additional correction is not deployed yet. Classic admission9.831s still
 fails8s. All previous failures/videos remain; no completed-release claim.
+
+
+## 07:00 UTC - wall correction public; first natural Classic passes
+
+Web467053d/image2c47e24e deployed06:45:34 after canonical69187461 idle lanes.
+Fresh backup-wall-3: six files75,465,260bytes, off-VPS SHA verified06:42:59,
+manifesta121f5b73be0b037130834e8c8fe0bd0e2b76c146588340f06015e6a91813f46.
+Edge Classic943 finished naturally7-2 and PASSED all strict browser gates: admission
+7.224s, localp9518.9ms, sendp9512.13ms, held ratio.999970..1.000009,17release
+samples with zero drift,6confirmed visible contacts, no pause/resync.
+Chrome Chaos944 finished naturally7-4 and remains FAILED: admission9.697s and one
+missing contact event among12. Its motion, zero drift and pause gates passed.
+Trace proves live ball reversal and collisionSequence1 but collision logs empty:
+a newer tick or atomic getter can erase a just-confirmed event before paint.
+4094578 retains bounded confirmed event history without rewinding physics or
+falsely refreshing observation time. Late metadata cannot introduce future hits.
+1,088TypeScript tests/rootTS passed.4daa420 also removes obsolete historical
+request scans/admission retries only on the rules17 waiting-ring contract.
+These two changes are NOT public yet; immutable web4094578 is building.
+
+Seven provider nodes remained stopped at06:45:15. No additional hosting POST,
+closure, provider change or human admission. Four healthy agent nodes remain.
+No game/browser driver active at07:00. Next candidate still requires actual
+Chaos/Classic repeats, faults, mobile, PvP/provider recovery and unchanged24h.
+All prior failed reports/videos retained. Current backend remains eb42374.
