@@ -89,11 +89,13 @@ export type PoolQualification = {
   unknownMs: number;
   maxProgressing: number;
   renewalOutageSamples: number;
+  delegationTransitions: number;
+  nonContinuousSamples: number;
   epochs: Record<string, string[]>;
 };
 export function newPoolQualification(startedAt: number): PoolQualification {
   return {startedAt, lastAt: startedAt, samples: 0, maxGapMs: 0, measuredMs: 0, unavailableMs: 0,
-    unknownMs: 0, maxProgressing: 0, renewalOutageSamples: 0, epochs: {}};
+    unknownMs: 0, maxProgressing: 0, renewalOutageSamples: 0, delegationTransitions: 0, nonContinuousSamples: 0, epochs: {}};
 }
 export function recordPoolSample(state: PoolQualification, sample: PoolSample, previous?: PoolSample) {
   if (!Number.isFinite(sample.at) || sample.at < state.lastAt) throw Error('Qualification clock moved backwards');
@@ -106,6 +108,11 @@ export function recordPoolSample(state: PoolQualification, sample: PoolSample, p
     if (poolAvailability(previous).unavailable || poolAvailability(sample).unavailable) state.unavailableMs += gap;
   } else state.unknownMs += gap;
   const view = poolAvailability(sample);
+  if (sample.arenas.some(a => a.hubStatus !== 1 || a.expiresAt !== 0)) state.nonContinuousSamples++;
+  for (const arena of sample.arenas) {
+    const prior = previous?.arenas.find(a => a.app === arena.app);
+    if (prior && prior.epoch !== arena.epoch) state.delegationTransitions++;
+  }
   if (view.unavailable && (view.closing || view.expired)) state.renewalOutageSamples++;
   state.maxProgressing = Math.max(state.maxProgressing, view.progressing);
   for (const arena of sample.arenas) {
@@ -119,6 +126,7 @@ export function recordPoolSample(state: PoolQualification, sample: PoolSample, p
 export function poolQualificationVerdict(state: PoolQualification, input: {
   last: PoolSample | undefined; stopped: boolean; sourcesUnchanged: boolean; durationMs: number;
   requiredMatches?:2|5;
+  delegationPolicy?: 'renewing' | 'continuous';
 }) {
   const reasons: string[] = [];
   if (input.durationMs < 86400000 || state.lastAt - state.startedAt < input.durationMs) reasons.push('full-24-hours-not-observed');
@@ -130,7 +138,9 @@ export function poolQualificationVerdict(state: PoolQualification, input: {
   if (state.renewalOutageSamples) reasons.push('global-interruption-during-renewal');
   const availability=state.measuredMs?1-state.unavailableMs/state.measuredMs:0;
   if(required===5?availability<.995:state.unavailableMs>0)reasons.push('service-interruptions-observed');
-  if (!Object.values(state.epochs).some(epochs => epochs.length >= 2)) reasons.push('renewal-not-observed');
+  if (input.delegationPolicy === 'continuous') {
+    if (state.nonContinuousSamples || state.delegationTransitions) reasons.push('continuous-delegation-interrupted');
+  } else if (!Object.values(state.epochs).some(epochs => epochs.length >= 2)) reasons.push('renewal-not-observed');
   if (!input.last || poolAvailability(input.last).unavailable) reasons.push('ended-unavailable');
   // This is deliberately not a deployment decision: actual capacity, published
   // results, costs, traffic, all effects and browser evidence need a full review.

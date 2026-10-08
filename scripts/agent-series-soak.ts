@@ -19,9 +19,11 @@ import {readHubDelegation} from '../shared/rooms-hub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {agentMetrics} from '../relayer/src/agents/metrics';
 import {sourceClosure} from './agent-soak-rules';
+import {NO_LEASE_HUB} from '../shared/hub-lease';
 import {newPoolQualification, recordPoolSample, poolQualificationVerdict, type PoolSample} from '../relayer/src/agents/pool-qualification';
 
-assert.equal(process.env.PONG_SERIES_SOAK, 'read-only-private');
+const publicResponsive=process.env.PONG_SERIES_SOAK==='read-only-public-responsive';
+assert(publicResponsive||process.env.PONG_SERIES_SOAK==='read-only-private');
 assert.equal(process.getuid?.(), 1000);
 const manifestPath = process.env.PONG_AGENT_POOL_MANIFEST!;
 const manifestBytes = await readFile(manifestPath);
@@ -32,12 +34,19 @@ assert([3,4,5].includes(manifest.version));
 const reusable = manifest.version >= 4;
 const poolAbi = reusable ? reusableAgentPoolAbi : agentSeriesPoolAbi;
 const budgetPath = '/metadata/reusable-budget.json';
-const budget = reusable ? validateReusableBudget(JSON.parse(await readFile(budgetPath, 'utf8')), manifest.arenas.map(a => a.runtimeHash),manifest.rulesVersion as 15|16) : undefined;
-assert.equal(manifest.enabled, false, 'Final qualification still takes place privately');
+const budget = reusable ? validateReusableBudget(JSON.parse(await readFile(budgetPath, 'utf8')), manifest.arenas.map(a => a.runtimeHash),manifest.rulesVersion as 15|16|17) : undefined;
+if(publicResponsive){
+ const proof=JSON.parse(await readFile('/qualification/import-proof.json','utf8'));
+ assert(proof.passed&&proof.action==='verify-import'&&proof.pool.toLowerCase()===manifest.pool.toLowerCase());
+ assert.equal(proof.sourcePool.toLowerCase(),'0x6b09eb398668cb38db5d3a7dd857c33a371ac308');
+ assert(manifest.version===5&&manifest.rulesVersion===17&&manifest.enabled&&manifest.tournamentsEnabled);
+ assert.equal(manifest.hub.toLowerCase(),NO_LEASE_HUB.toLowerCase());
+}else assert.equal(manifest.enabled, false, 'Private qualification cannot target public admissions');
 const durationMs = Number(process.env.PONG_SERIES_SOAK_HOURS ?? 24) * 3600000;
 assert(Number.isFinite(durationMs) && durationMs >= 60000 && durationMs <= 90000000);
 const api = new URL(process.env.PONG_SERIES_SOAK_API!);
-assert(api.protocol === 'http:' && (manifest.version===5 ? /^pongit-five-\d{8}-[1-9]\d?-reader-1$/ : reusable ? /^pongit-reusable-agents[1-9]\d?-reader-replays$/ : /^pongit-series[3-9]-reader-replays$/).test(api.hostname) && api.port === '4101');
+if(publicResponsive)assert.equal(api.href,'https://pongit.xyz/api/');
+else assert(api.protocol === 'http:' && (manifest.version===5 ? /^pongit-five-\d{8}-[1-9]\d?-reader-1$/ : reusable ? /^pongit-reusable-agents[1-9]\d?-reader-replays$/ : /^pongit-series[3-9]-reader-replays$/).test(api.hostname) && api.port === '4101');
 assert(!api.username && !api.password && !api.search && !api.hash);
 const directory = '/diagnostics/series-soak';
 await mkdir(directory, {recursive: true, mode: 0o700});
@@ -78,7 +87,8 @@ if (reusable) for (const arena of manifest.arenas)
 const started = Date.now(), state = newPoolQualification(started), file = `${directory}/series-${started}.json`;
 const report = {startedAt: new Date(started).toISOString(), durationMs, pool: manifest.pool, sourceHashes,
   state, last: undefined as PoolSample | undefined, storage: [] as {at: number; bytes: string}[],
-  scope: 'Actual published pool state, controller progress and isolated HTTP API. Reusable arenas do not prove provider admission capacity.',
+  scope: 'Actual published pool state, controller progress and HTTP API. This read-only monitor does not prove browser rendering, human concurrency or provider admission capacity.',
+  deployment:publicResponsive?'public-responsive':'private',delegationPolicy:publicResponsive?'continuous':'renewing',
   errors: [] as {at: number; code: string}[], observedChaosEffects: [] as number[],
   sourcesUnchanged: true, stopped: false, complete: false, verdict: {} as object};
 await writeFile(file, JSON.stringify(report, null, 2), {mode: 0o600, flag: 'wx'});
@@ -95,7 +105,7 @@ async function sample(): Promise<PoolSample> {
     db.query('SELECT app,stage,detail,updated_at FROM agent_pool.health'),
     db.query('SELECT app,epoch,match_id,progress_at,effects FROM agent_pool.observations WHERE last_at>=to_timestamp($1/1000.0)', [started]),
     db.query("SELECT app,min(created_at) AS oldest FROM agent_pool.engine_jobs WHERE status='pending' GROUP BY app"),
-    measuredFetch('pongit', 'soak.catalog')(api.origin + '/agents/catalog', {signal: AbortSignal.timeout(8000)}),
+    measuredFetch('pongit', 'soak.catalog')(new URL(publicResponsive?'agents/catalog':'/agents/catalog',api), {signal: AbortSignal.timeout(8000)}),
   ]);
   const body = response.ok ? await response.json() : null;
   const apiReadable = response.ok && Array.isArray(body?.items) && body.items.length >= 8;
@@ -181,7 +191,7 @@ try {
   report.complete = !stopped && state.lastAt - started >= durationMs;
   try { report.sourcesUnchanged &&= JSON.stringify(await hashSources()) === JSON.stringify(sourceHashes); }
   catch { report.sourcesUnchanged = false; }
-  report.verdict = poolQualificationVerdict(state, {last: report.last, stopped, sourcesUnchanged: report.sourcesUnchanged, durationMs,requiredMatches:manifest.maxMatches});
+  report.verdict = poolQualificationVerdict(state, {last: report.last, stopped, sourcesUnchanged: report.sourcesUnchanged, durationMs,requiredMatches:manifest.maxMatches,delegationPolicy:publicResponsive?'continuous':'renewing'});
   await save(); await db.end(); await metrics();
   console.log(JSON.stringify({file, complete: report.complete, verdict: report.verdict}));
 }

@@ -95,3 +95,24 @@ test('five-lane threshold allows at most 0.5 percent outage but never a renewal-
  state.unavailableMs=433000;assert.equal(poolQualificationVerdict(state,input).continuousServiceChecksPassed,false);
  state.unavailableMs=1000;state.renewalOutageSamples=1;assert(poolQualificationVerdict(state,input).reasons.includes('global-interruption-during-renewal'));
 });
+
+test('continuous delegation requires a stable active no-expiry epoch, not an artificial renewal',()=>{
+ const s=sample();s.hub=NO_LEASE_HUB;s.requiredMatches=5;s.arenas[0].expiresAt=0;
+ for(let i=1;i<5;i++)s.arenas.push({...s.arenas[0],app:String(i)});
+ const state=newPoolQualification(at);recordPoolSample(state,s);
+ Object.assign(state,{lastAt:at+86400000,measuredMs:86400000});
+ const input={last:s,stopped:false,sourcesUnchanged:true,durationMs:86400000,requiredMatches:5 as const,delegationPolicy:'continuous' as const};
+ assert.equal(poolQualificationVerdict(state,input).continuousServiceChecksPassed,true);
+ const closed=structuredClone(s);closed.at=state.lastAt;closed.arenas[0].hubStatus=2;
+ recordPoolSample(state,closed,s);
+ assert(poolQualificationVerdict(state,input).reasons.includes('continuous-delegation-interrupted'));
+});
+
+test('a missed close followed by a fresh epoch still fails continuous delegation',()=>{
+ const s=sample();s.arenas[0].expiresAt=0;s.hub=NO_LEASE_HUB;
+ const state=newPoolQualification(at);recordPoolSample(state,s);
+ const next=structuredClone(s);next.at+=15000;next.arenas[0].epoch='3';next.arenas[0].healthEpoch='3';
+ recordPoolSample(state,next,s);
+ assert.equal(state.delegationTransitions,1);
+ assert(poolQualificationVerdict(state,{last:next,stopped:false,sourcesUnchanged:true,durationMs:86400000,delegationPolicy:'continuous'}).reasons.includes('continuous-delegation-interrupted'));
+});
