@@ -587,3 +587,60 @@ normal visible-browser qualification unchanged. RootTS/Python syntax passed.
 Sole running game driver responsive-r2-background-2/exec22873, match963;
 no other driver or lifecycle helper. Backup-faults-7 helper prepared, not run.
 Production gameplay unchanged04ac/d558; docsweb6dea. No24h/delivery claim.
+
+
+## 09:08 UTC - native background and delayed Monad reads pass; mobile qualification
+
+Background963 PASS natural5-7 in Edge with actual tab visibility (noDefaults).
+Independent observer confirmed time14s/score0-2 frozen while hidden, then same
+match resumed. Actual page video background-video/player.mp4 preserved.
+Observer headless for this specific fault to avoid occluding the native window;
+normal seven-game observer videos remain visible browsers. Zero startup resume
+or new passkey assertion. Settled-read964 PASS:13actual browsereth_call responses
+delayed1500ms,244live commands confirmed during those pending reads. This did
+not alter provider commits and is not a delayed-provider-publication proof.
+
+Mobile965 FAIL: test driver emitted touchEnd without touchStart for a neutral
+aim. f89d3ee fixes only this injection; after disconnect its owned test match
+was normally cancelled status4/zero winner/1-2. Mobile966 finished naturally
+and captured; report FAIL for a supposed paddle contact. Exact painted trace
+shows x62.147927929 ->62.221863038 ->53.015920393, still before the contact
+plane40, same incoming live velocity and no collision.0.073935unit is about
+0.024CSSpixel at this court width. Measurement9cf9fe0 reports these corrections
+separately only when below0.25unit, beyond6units from contact, unchanged live
+incoming velocity and immediate incoming continuation. Larger/at-contact/
+sustained/velocity-changing reflections still require proof. Regression checks
+and rootTS pass. Original966FAIL remains with separate reanalysis. No product
+change or relaxed real-collision gate. Sole fresh mobile run touch360-3/exec14803.
+
+Empty compiler imageafdbed734015 removed08:57 with546container checks; no runtime,
+rollback or volume deleted. Disk80.32%, no new image build. Directory08:59 still
+reports all7unreachable nodes stopped/Active. No repeatedPOST or close.
+
+
+## 09:26 UTC - mobile pause gate is FAIL, diagnosis continues
+
+Mobile967 on2641 FAILED with11protective resumes, natural3-7. Actual heartbeat
+transport tails594-1033ms exhaust the unchanged500ms credit; no startup pause.
+Mobile968 HTTP-only on0dcf alsoFAILED with1resume, natural0-7. Both results
+captured. Keep original full traces/videos and failures; do not declare mobile
+qualification or disguise these as intended faults. No product changes yet.
+
+Input mismatch966 was separately traced to CDP observing a send after a release,
+although journal/transport already started2.8ms before that release.3525577
+pairs the exact acknowledged hash to its unique browser transport span. Lost or
+ambiguous spans keep strict fallback; pre-journal releases still fail.11focused
+metrics/rootTS pass. This measurement fix does not alter presence or networking.
+
+Read-only idle transport probe: four nodes RULES_VERSION WS maxima5-14ms, HTTP
+36-46ms. Health now exposes clock/lock diagnostics: upstream extra-1 clock reads
+sometimes timeout1000ms. This is a hypothesis, NOT proven cause of pauses.
+Bounded observer1 (1844samples) saw0fenced/0gated/errors, while clock ages reached
+1.86-1.98s and lag2.48-2.89s.4-6clock read failures pernode. Desktop969 on776f
+PASS natural7-3, sendp9516ms/local15.6ms, no resumes. Therefore do not attribute
+all mobile pauses to the clock based on that observation.
+
+Sole game driver touch390-1/exec35532, Edge actualCDPtouch390, match970on9e4c.
+Sole read-only clockobserver2/exec (see live tools),120seconds; observer1 exited.
+No lifecycle writer, no closure/providerchange. Remainingmobile/degraded/revoke
+and root cause; seven stoppednodes stillblockPvP/5+2/24h. Funding ample.
