@@ -1,0 +1,257 @@
+{
+  "at": "2026-10-08T15:41:50.480562+00:00",
+  "passed": false,
+  "releaseComplete": false,
+  "productionWeb": "e7ae13e",
+  "humanRelayer": "c45f25e",
+  "agentEngine": "d558334",
+  "runs": [
+    {
+      "path": "artifacts\\qualification\\r2seven1\\coordinator.json",
+      "sha256": "e625935cb72c910134ac1a41c762641c27e6ef22771a4552bb763e7e2e0eaaf9",
+      "startedAt": "2026-10-08T15:01:45.349521+00:00",
+      "deadline": 1791472905349,
+      "passed": false,
+      "children": [
+        {
+          "run": "r2seven1a0",
+          "pid": 69676
+        },
+        {
+          "run": "r2seven1a1",
+          "pid": 52604
+        },
+        {
+          "run": "r2seven1a2",
+          "pid": 22312
+        },
+        {
+          "run": "r2seven1a3",
+          "pid": 28552
+        },
+        {
+          "run": "r2seven1hc",
+          "pid": 38528
+        },
+        {
+          "run": "r2seven1hx",
+          "pid": 68080
+        },
+        {
+          "run": "observer",
+          "pid": 64128
+        }
+      ],
+      "readyAt": "2026-10-08T15:03:27.855442+00:00",
+      "release": {
+        "go": true,
+        "deadline": 1791472905349,
+        "readyCount": 6,
+        "bot": "ONYX",
+        "tournament": "44",
+        "ref": {
+          "chainId": 10143,
+          "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+          "epoch": "1",
+          "id": "1027"
+        },
+        "at": "2026-10-08T15:06:20.891986+00:00"
+      },
+      "exitCodes": {
+        "r2seven1a0": 1,
+        "r2seven1a1": 1,
+        "r2seven1a2": 1,
+        "r2seven1a3": 1,
+        "r2seven1hc": 1,
+        "r2seven1hx": 1,
+        "observer": 1
+      },
+      "error": "One or more real browser gates failed",
+      "finishedAt": "2026-10-08T15:08:58.090654+00:00"
+    },
+    {
+      "path": "artifacts\\qualification\\r2seven2\\coordinator.json",
+      "sha256": "1a1be5be1cb79239e6ff4c59cb197ab12f34d201f0d9fabf5b518977ff260f60",
+      "startedAt": "2026-10-08T15:14:18.696926+00:00",
+      "deadline": 1791473658696,
+      "passed": false,
+      "children": [
+        {
+          "run": "r2seven2a0",
+          "pid": 70208
+        },
+        {
+          "run": "r2seven2a1",
+          "pid": 5136
+        },
+        {
+          "run": "r2seven2a2",
+          "pid": 14680
+        },
+        {
+          "run": "r2seven2a3",
+          "pid": 42756
+        },
+        {
+          "run": "r2seven2hc",
+          "pid": 44620
+        },
+        {
+          "run": "r2seven2hx",
+          "pid": 31140
+        },
+        {
+          "run": "observer",
+          "pid": 54832
+        }
+      ],
+      "readyAt": "2026-10-08T15:15:17.130229+00:00",
+      "release": {
+        "go": true,
+        "deadline": 1791473658696,
+        "readyCount": 6,
+        "bot": "DRIFT",
+        "tournament": "45",
+        "ref": {
+          "chainId": 10143,
+          "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+          "epoch": "1",
+          "id": "1034"
+        },
+        "at": "2026-10-08T15:19:27.653842+00:00"
+      },
+      "exitCodes": {
+        "r2seven2a0": 1,
+        "r2seven2a1": 1,
+        "r2seven2a2": 1,
+        "r2seven2a3": 1,
+        "r2seven2hc": 1,
+        "r2seven2hx": 0,
+        "observer": 1
+      },
+      "error": "One or more real browser gates failed",
+      "finishedAt": "2026-10-08T15:22:31.702330+00:00"
+    }
+  ],
+  "findings": [
+    "Four simultaneous friendly admissions took 10.047 to 19.901 seconds: fails eight-second target.",
+    "Match 1035 has a 4,037 ms authorization fence wait while live feed remains fresh; its protective pause is real.",
+    "Match 1038 has heartbeat transport outliers of 435 and 1,035 ms; no frame gap explains these. Node execution/transport cause still unresolved.",
+    "All agent frame and local-input gates pass in second concurrency trial, but this does not compensate for pauses/admission failures.",
+    "Seven-way observer failed a public Monad RPC read before acquisition. No seven-way success claimed."
+  ],
+  "agentMeasurements": [
+    {
+      "path": "artifacts\\qualification\\catalogue-r2seven2a0\\report.json",
+      "sha256": "15f4cb7f2ff373cb3d12d28f7e353fe18d034fdb812e0815f2115aee2a51397b",
+      "ref": {
+        "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+        "epoch": "1",
+        "id": "1035"
+      },
+      "error": "Unexpected protective resume countdown",
+      "admissionMs": 10047,
+      "localP95": 14.199999809265137,
+      "pauseMs": 9533.600000000035,
+      "resumes": 1,
+      "frameP95Ms": 17,
+      "holdMs": 50.20000000001164,
+      "send": {
+        "samples": 267,
+        "p95Ms": 16,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peer": {
+        "samples": 267,
+        "p95Ms": 14.58837890625,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "heldOutliers": 10
+    },
+    {
+      "path": "artifacts\\qualification\\catalogue-r2seven2a1\\report.json",
+      "sha256": "ec6fa73c96e9dbc632c6f490c3f6ebcf6d7543480260b675fbc667423f475021",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1038"
+      },
+      "error": "Unexpected protective resume countdown",
+      "admissionMs": 19901,
+      "localP95": 15.299999952316284,
+      "pauseMs": 6816.5,
+      "resumes": 2,
+      "frameP95Ms": 17,
+      "holdMs": 83.59999999997672,
+      "send": {
+        "samples": 451,
+        "p95Ms": 20,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peer": {
+        "samples": 451,
+        "p95Ms": 20.71484375,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "heldOutliers": 0
+    },
+    {
+      "path": "artifacts\\qualification\\catalogue-r2seven2a2\\report.json",
+      "sha256": "28911eab42351d72e1fb1a66b7eca5b16b6b9e7a5c6b6a00f9df5ae2f46d28a8",
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1037"
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "admissionMs": 18320,
+      "localP95": 14.5,
+      "pauseMs": 0,
+      "resumes": 0,
+      "frameP95Ms": 17,
+      "holdMs": 83.39999999996508,
+      "send": {
+        "samples": 297,
+        "p95Ms": 16,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peer": {
+        "samples": 297,
+        "p95Ms": 12.124755859375,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "heldOutliers": 0
+    },
+    {
+      "path": "artifacts\\qualification\\catalogue-r2seven2a3\\report.json",
+      "sha256": "f60256650b0616a2ad696f366ee33b81e4b40360209516e02738ae020eb2a2df",
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1036"
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "admissionMs": 14040,
+      "localP95": 14.700000047683716,
+      "pauseMs": 0,
+      "resumes": 0,
+      "frameP95Ms": 17,
+      "holdMs": 83.20000000001164,
+      "send": {
+        "samples": 325,
+        "p95Ms": 17,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peer": {
+        "samples": 325,
+        "p95Ms": 14.114990234375,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "heldOutliers": 0
+    }
+  ]
+}

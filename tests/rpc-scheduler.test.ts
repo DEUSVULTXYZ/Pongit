@@ -25,9 +25,10 @@ test('control priority recognizes actual current delegation fences but never his
  const hash=`0x${'ab'.repeat(32)}`,unknown=`0x${'cd'.repeat(32)}`,hub='0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e';
  const data=encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[hub,zeroHash]});
  const priority=(method:string,params:unknown[])=>controlRpcRequest(method,params,1000n,h=>h===hash?1000n:undefined);
- for(const tag of ['0x3e8',{blockHash:hash,requireCanonical:true}])assert(priority('eth_call',[{to:hub,data},tag]));
- for(const tag of ['0x3a7','0x3e9','latest','pending',{blockHash:unknown,requireCanonical:true}])
-  assert.equal(priority('eth_call',[{to:hub,data},tag]),false,'Only an observed recent block promotes the fence');
+ for(const tag of ['latest','pending','0x3e8',{blockHash:hash,requireCanonical:true}])assert(priority('eth_call',[{to:hub,data},tag]));
+ for(const tag of ['0x3a7','0x3e9',{blockHash:unknown,requireCanonical:true}])
+  assert.equal(priority('eth_call',[{to:hub,data},tag]),false,'A concrete block must still be observed and recent');
+ assert.equal(priority('eth_call',[{to:hub,data:'0xdeadbeef'},'latest']),false,'Only a root delegation getter receives live priority');
  assert.equal(priority('eth_call',[{to:hub,data:data.slice(0,-1)+'1'},'0x3e8']),false,'Non-root delegation');
  assert.equal(priority('eth_call',[{to:hub,data:data+'00'},'0x3e8']),false,'Trailing calldata');
  assert.equal(priority('eth_call',[{to:hub,data:'0xdeadbeef'},'0x3e8']),false);

@@ -45,7 +45,7 @@ export function controlRpcRequest(method:string,params:readonly unknown[],observ
  if(method==='eth_blockNumber')return true;
  if(method==='eth_getBlockByNumber')return params[0]==='latest'||params[0]==='pending'||recent(params[0]);
  if(method==='eth_getBlockByHash')return recent({blockHash:params[0]});
- if(method!=='eth_call'||!recent(params[1]))return false;
+ if(method!=='eth_call'||!(params[1]==='latest'||params[1]==='pending'||recent(params[1])))return false;
  const call=params[0] as {to?:unknown;data?:unknown}|undefined;
  // delegationOf(address,bytes32), with the root (zero) subdelegation. Bulk
  // multicalls, arbitrary calldata and historical delegation scans stay normal.

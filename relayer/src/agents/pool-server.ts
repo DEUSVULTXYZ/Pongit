@@ -12,6 +12,7 @@ import {agentMetrics} from './metrics';
 import {readPoolSignedBody,type poolSponsorRoutes} from './pool-sponsor';
 import {Pool} from 'pg';
 import {PoolReplays,initializePoolReplays,poolReplayRetention} from './pool-replays';
+import {publicChainReadBody,publicChainReads} from '../public-chain-read';
 
 // Dedicated version-2 process. Never starts the legacy single-application
 // coordinator and never loads an operator key. A private qualification endpoint
@@ -19,6 +20,7 @@ import {PoolReplays,initializePoolReplays,poolReplayRetention} from './pool-repl
 export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>;sponsorHealth?:()=>{available:boolean;error?:string;code?:string};replays?:PoolReplays}){
  const routes=poolRoutes(reader,undefined,options.replays),rates=new Map<string,{until:number;n:number}>();
  const events=new PoolNotifications(routes,options.public);
+ const chainRead=publicChainReads(reader.client),chainRates=new Map<string,{until:number;n:number}>();
  const normalize=(value:string)=>value.replace(/^::ffff:/,'');
  const proxies=new Set((options.trustedProxies??[]).map(normalize));let global={until:0,n:0};
  const server=createServer(async(req,res)=>{
@@ -34,6 +36,16 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
    // A direct client cannot choose another user's budget via this header.
    if(proxies.has(remote)&&typeof req.headers['x-forwarded-for']==='string'){
     const forwarded=normalize(req.headers['x-forwarded-for'].split(',').at(-1)!.trim());if(isIP(forwarded))ip=forwarded;
+   }
+   if(req.url==='/agents/chain-read'&&options.public&&!options.sponsor){
+    metric='agents.chain-read';
+    if(req.method!=='POST'){send({error:'Use a public JSON read'},405);return;}
+    for(const [key,value] of chainRates)if(value.until<=now)chainRates.delete(key);
+    const rate=chainRates.get(ip)??{until:now+60000,n:0};
+    if(chainRates.size>=2048&&!chainRates.has(ip)||++rate.n>1200){res.setHeader('Retry-After','1');send({error:'Public read rate limited'},429);return;}
+    chainRates.set(ip,rate);
+    let call;try{call=await publicChainReadBody(req);}catch{send({error:'Unsupported public chain read'},400);return;}
+    send(await chainRead(call));return;
    }
    if(global.until<=now)global={until:now+60000,n:0};
    for(const [key,value] of rates)if(value.until<=now)rates.delete(key);

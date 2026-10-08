@@ -297,7 +297,11 @@ page.on('request',async r=>{starts.set(r,performance.now());try{
 }catch{/* Decode in memory; never retain signed bytes or grants. */}});page.on('pageerror',e=>report.errors.push(clean(e)));
 page.on('response',async response=>{try{
  const request=response.request(),metadata=requests.get(request);
- if(metadata&&!report.playingAt){report.admissionNetwork??=[];report.admissionNetwork.push({...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status()});}
+ if(metadata){
+  const sample={...metadata,ms:performance.now()-(starts.get(request)??performance.now()),http:response.status()};
+  if(!report.playingAt){report.admissionNetwork??=[];report.admissionNetwork.push(sample);}
+  else{report.gameNetwork??=[];if(report.gameNetwork.length<10000)report.gameNetwork.push(sample);}
+ }
  }catch{/* Diagnostic failure cannot change gameplay. */}
  try{
   const u=new URL(response.url());if(u.origin===report.origin&&(/^\/api\/agents\/operations\/0x[\da-f]{64}$/i.test(u.pathname)||u.pathname==='/api/agents/transactions')){

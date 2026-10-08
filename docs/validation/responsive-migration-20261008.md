@@ -961,3 +961,28 @@ No game driver active. Seven-browser coordinator/barrier prepared NOTRUN.
 Production agentengine d558/web5486 unchanged, tournament44playing, human
 relayerc45. No redeploy/undelegate/provider changes. AutomationPAUSED.
 Remaining seven-way, delayed-profile actual browser followup, final24h.
+
+
+## Concurrency investigation after 15:25 UTC
+
+Web e7ae13e deployed at 14:59:06 after all seven lanes were canonically idle.
+The delayed profile confirmation fault completed successfully in an actual
+browser; its enclosing first concurrency run remains failed. Both seven-way
+runs are preserved in responsive-concurrency-20261008.json. Four friendly
+copies were admitted, but admission exceeded eight seconds and two copies
+paused. Match 1035 waited four seconds on authorization despite fresh live
+state. Match 1038 has 435/1,035 ms heartbeat transport outliers, not explained
+by rendering. No seven-way or 24-hour qualification is claimed.
+
+Candidate public read proxy shares the existing bounded upstream gateway,
+coalesces only identical in-flight reads, preserves exact canonical pins and
+never accepts writes, estimates, overrides or unbounded log scans. Browser
+reads previously each consumed their own public-provider IP budget: all four
+simultaneous admissions received HTTP 429. Current root-delegation getters
+receive control priority without changing upstream pacing or cache validity.
+25 focused tests and root TypeScript pass. Candidate is not deployed yet.
+The ninety-second monitor preflight completed; it cannot qualify availability
+and records incomplete duration/capacity. No long trial has started.
+Twelve old backup files (151,456,931 bytes) were removed only after every byte
+was reverified in its off-VPS copy and every runtime bind mount was checked.
+Latest backup-sponsor-11, manifests, reports and rollback images remain.
