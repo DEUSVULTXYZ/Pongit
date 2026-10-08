@@ -111,6 +111,17 @@ async function init(i:number){
  cdp.on('WebAuthn.credentialAsserted',()=>counts[i]++);
  const clock=()=>performance.timeOrigin+performance.now(),requestTimes=new WeakMap<object,number>();
  page.on('request',r=>requestTimes.set(r,clock()));
+ page.on('response',async response=>{
+  const url=new URL(response.url());if(!url.pathname.startsWith('/api/independent/'))return;
+  const request=response.request(),row:any={player:i,at:clock(),path:url.pathname.replace(/operations\/[^/]+/,'operations/:id'),http:response.status(),ms:clock()-(requestTimes.get(request)??clock())};
+  report.apiObservations??=[];report.apiObservations.push(row);
+  try{
+   const value=await response.json();
+   if(url.pathname.includes('/market/'))Object.assign(row,{window:value.window?.[0],phase:value.result?.[3],quote:value.quote,shares:url.searchParams.get('shares')});
+   if(url.pathname.includes('/operations/')||url.pathname.endsWith('/transactions'))row.operation={id:value.id,status:value.status,hash:value.hash};
+   if(value.error)row.error=String(value.error).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[hex omitted]').slice(0,220);
+  }catch{row.bodyUnavailable=true;}
+ });
  page.on('requestfailed',request=>{
   try{const method=request.postDataJSON()?.method;if(method!=='interlude_sendTransaction')return;
    report.network.push({player:i,at:clock(),method,status:0,error:request.failure()?.errorText??'request failed',

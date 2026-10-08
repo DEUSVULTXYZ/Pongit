@@ -74,6 +74,9 @@ try:
     report['passed']=True
 except Exception as error:
     report['error']=str(error)
+    # Only clients still before their own admission barrier observe this file.
+    # Already admitted matches keep running to their original natural bound.
+    (directory/'abort.json').write_text(json.dumps(dict(deadline=deadline,error=str(error),at=datetime.datetime.now(datetime.timezone.utc).isoformat())))
 finally:
     report['finishedAt']=datetime.datetime.now(datetime.timezone.utc).isoformat();save()
     for handle in handles:handle.close()

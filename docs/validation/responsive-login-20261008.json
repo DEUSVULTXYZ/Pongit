@@ -1,0 +1,64 @@
+{
+  "scope": "Actual six simultaneous Chrome/Edge home logins, virtual PRF, before scheduling fix; no game admission",
+  "passed": false,
+  "bothFamiliesConfirmed": 1,
+  "clients": 6,
+  "maxForegroundQueueMs": 10687.02117600001,
+  "maxPrimaryForegroundNetworkMs": 44.44735499995295,
+  "maxWaiting": 47,
+  "throttled": 0,
+  "sourceBefore": "f56b4c41895c4584517f6379eeb25afb204d3818",
+  "candidate": "02531539ab3927a8f7e119dd22882d5da23c4c3c",
+  "rootCause": "Nested priority bursts delayed foreground simulations beyond caller deadlines. Transaction and header bursts now share the foreground budget; the foreground turn preserves header fairness.",
+  "localTests": {
+    "targeted": 28,
+    "fullTypescript": 1151,
+    "rootTypescript": true,
+    "regressionFailedBefore": true
+  },
+  "after": {
+    "at": "2026-10-08T20:39:54.481Z",
+    "bothFamiliesConfirmed": 6,
+    "clients": 6,
+    "maxForegroundQueueMs": 6466.753896000002,
+    "maxPrimaryForegroundNetworkMs": 48.514562999998816,
+    "httpTimeouts": 0,
+    "loginDurationsMs": [
+      13549,
+      15966,
+      20024,
+      19283,
+      15300,
+      14959
+    ]
+  },
+  "deployment": {
+    "startedAt": "2026-10-08T20:33:57.004828+00:00",
+    "deadline": 1791492357.0048597,
+    "passed": true,
+    "stage": "complete",
+    "previous": "sha256:343b642674492c08fcb4c7a5348424811112c08d0183de88f128b45aa17bf39a",
+    "image": "sha256:f807f48bbf1a29802a3cbb1394b7c90b0c837608d2060b95237c5ffea0841491",
+    "backupManifest": "55b9e38e1ea4560f537d44f3173b099751dc1c4006b438a66203d7c7a3f0d457",
+    "lastCheck": {
+      "block": "69352265",
+      "hash": "0x809fe0fdfc1aaeb9bf672aef8dbe0077992cb0db500e8eccfb3a1dac370973fc",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "idle": {
+      "block": "69352293",
+      "hash": "0xb20c4df731664e2561d38fc2b993f7e83f6b1ab46f05fd1e5a38c73675f10a56",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "started": "2026-10-08T20:38:55.032994558Z",
+    "finishedAt": "2026-10-08T20:38:57.037054+00:00"
+  }
+}

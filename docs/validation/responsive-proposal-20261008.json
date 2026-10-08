@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-08T21:00:29.399Z",
+  "block": "69356623",
+  "hash": "0x30f62dec4b8a522f40b722b988a128128c4f23fb53e03b14e394134b248a193f",
+  "proposal": {
+    "id": "680564733841876926926749214863536422950",
+    "room": "680564733841876926926749214863536422949",
+    "a": "0xdA5BBF1cd1a5ccc17e837B69C3563B4f87f79615",
+    "b": "0xF658E9A747A72DB04bF4d80287933d0074a6C695",
+    "expires": "1791492465",
+    "accepted": 1,
+    "status": 4
+  },
+  "scope": "Canonical failed ranked admission; no game was started",
+  "candidate": "14c0b29288dc7f4390d63233ab3dbb9b5aa008f4",
+  "firstAcceptanceConfirmedAt": "2026-10-08T20:47:43.398Z",
+  "secondIntakeRejectedAt": "2026-10-08T20:47:50.614Z",
+  "deadline": "2026-10-08T20:47:45+00:00",
+  "tests": {
+    "targeted": 27,
+    "typescript": 1153,
+    "typecheck": true,
+    "oldSourceRegressionFails": true
+  },
+  "deployed": false
+}

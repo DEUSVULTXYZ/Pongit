@@ -10,6 +10,10 @@ export async function browserQualificationBarrier(run:string){
  assert(config.runs.includes(run)&&Number.isFinite(config.deadline)&&config.deadline>Date.now()&&config.deadline<=Date.now()+20*60_000);
  await writeFile(resolve(dir,run+'.ready.json'),JSON.stringify({run,readyAt:new Date().toISOString()}),{flag:'wx'});
  while(Date.now()<config.deadline){
+  try{
+   const aborted=JSON.parse(await readFile(resolve(dir,'abort.json'),'utf8'));
+   assert.equal(aborted.deadline,config.deadline);throw Error('Coordinator stopped preparation before admission; no match requested');
+  }catch(e){if((e as any).code!=='ENOENT')throw e;}
   let release:any;
   try{release=JSON.parse(await readFile(resolve(dir,config.humanFirst&&/h[cx]$/.test(run)?'release-human.json':'release.json'),'utf8'));}catch(e){if((e as any).code!=='ENOENT')throw e;}
   if(release){assert.equal(release.deadline,config.deadline);assert.equal(release.readyCount,config.runs.length);assert(release.go===true);

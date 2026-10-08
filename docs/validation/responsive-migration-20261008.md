@@ -1213,3 +1213,26 @@ Dense exact-hub localEVM233diffs+256raw entries192KiB after16000/100000batches P
 The compatible f56b4c4 RPC and human-admission images were deployed at 20:13 after canonical block 69347262 proved idle game lanes and the human queue was empty. No contract, epoch, physics or delegated lifecycle changed. All previously stopped admission services resumed. The fresh six-file backup (78,333,601 bytes) is SHA-verified off VPS, manifest caafb0d99301592f41577eda1b5095754d462a0f95ffca48f637b012f872f7c5. The exact cutover evidence is artifacts/responsive-20261008-r2/priority-cutover-25.json.
 
 The seven6 browser trial failed during initial login, before any match admission. Four clients timed out despite confirmed sponsored operations. The two prepared clients received an explicit false barrier; no further games were started. These failures remain retained. Six public login-only clients now diagnose response timing and sanitized RPC errors; this is not a fluidity or seven-way success. The public nodes and identities remain the correct current contracts. Full 24-hour qualification has not started.
+
+
+## 20:38 UTC - login queue cause reproduced
+
+Six simultaneous public home logins isolated the admission failure before any game: only one agent family completed in the second strict run. The primary gateway held foreground calls for 10,687 ms although upstream responses took at most 44.45 ms, with no throttling. Nested priority counters allowed transaction bursts to multiply header bursts before granting a foreground turn. Source 0253153 shares their burst counter while preserving header, ordinary and historical progress. The same regression fails on the previous source and passes on the candidate at both actual provider spacings. All 1,151 TypeScript tests, root typecheck, 28 focused checks and the isolated candidate HTTP gateway pass.
+
+First deployment attempt reverted automatically after its immediate readiness guard failed; this failure is retained. The second attempt waits for all seven idle lanes and uses a bounded 30-second startup read. No game is interrupted. Fresh backup-fair-26 (78,357,165 bytes) was verified off VPS at 20:32:20, manifest 55b9e38e1ea4560f537d44f3173b099751dc1c4006b438a66203d7c7a3f0d457. No contract or delegation changes are included. Canonical block 69351892 verifies all eleven current epoch-1 delegations without expiry; operator balance is 49,559.167269174 test MON. Final qualification remains incomplete.
+
+
+## 21:01 UTC - ranked-consent deadline reproduced
+
+RPC0253153 deployed20:38:55, imagef807f48b, after canonical69352293 all seven slots idle. Six simultaneous real Chrome/Edge logins then confirmed both families, compared with one of six before; zero HTTP timeouts. Initial login13.5-20.0seconds is not the valid-session8second admission target. Proof responsive-login-20261008.json records both measurements and the earlier rollback.
+
+Seven7 failed without admitting the four friendly copies. Its actual Chaos PvP finished naturally7-5, confirmed real .006MON shares, localp9515.2ms/maxhold183ms/no pauses or resync. The ranked Classic proposal expired: canonical69356623 has expires20:47:45UTC, accepted mask1 and status4. First acceptance confirmed20:47:43.398; second intake was rejected20:47:50.614. No Classic game started. The unchanged twelve-minute browser timeout and all reports remain preserved.
+
+Source14c0b29 exposes the block-pinned ranked proposal before invitation/profile hydration finishes, and automatic acceptance uses the command path existing authorization+nonce+clock validation without repeating family hydration first. An adversarial blocked-invitation regression fails old source and passes the candidate;27focused/1153fullTS/rootTS pass. No expiry extension, nonce replacement, contract change or new delegation. Web build27 is in progress; candidate NOT yet deployed.
+
+Backup27 completed20:59:05, sixfiles78658600bytes, manifest81a2010f7ebe19179f15c3eef154edfb290cfb4d8f5b5dab164188f14cd40b18; OFFVPS copy is still running at this checkpoint. Scopedoffload27 attempt1 failed before mutation because22/23 were already offloaded. Attempt2 reverified12payloads from24/25 and4sourcearchives against local SHA plus all container mounts, then removed329374295bytes from VPS only. All copies/manifests/failures/images/volumes remain; usable disk79.71percent before backup/build. AutomationPAUSED; no final24h or completed delivery.
+
+
+## 21:05 UTC - VPS unavailable during web build, no deployment
+
+Public HTTPS timed out at8seconds; SSH3333 timed out during banner exchange. Independent public Monad RPC still replies from the same Windows host. Last21:01:21 build log shows Next optimized compilation in isolated compiler fc375fc9393f. Memory1800m/CPU1.5 had been specified; actual cause is not yet established. A bounded SSH attempt to stop ONLY that compiler was dispatched but banner was unavailable. No game services, contracts or databases were changed. Webce remains the last confirmed deployment. Preserve build/cutover failures; do not start another build or game driver. Backup27 OFFVPS verification completed21:00:19. No active local game driver remains.
