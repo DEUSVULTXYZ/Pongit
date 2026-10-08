@@ -2,7 +2,7 @@ import {decodeAbiParameters, decodeEventLog, type Abi, type Address, type Hex} f
 import type {State} from "./physics-v2";
 import {recordRpc} from "./rpc-metrics";
 import {validateSynchronization,type AgentSynchronization} from './agent-synchronization';
-import {unpackChaos,chaosLegacy,unpackChaosCollision,snapshotHeaderFields,type ChaosDecoded} from './chaos-codec';
+import {unpackChaos,chaosLegacy,unpackChaosCollision,snapshotHeaderFields,retainedChaosCollisions,type ChaosDecoded} from './chaos-codec';
 
 export type EngineFrame = {app:Address;hash:Hex;head:bigint;logs:readonly {address:Address;topics:readonly Hex[];data:Hex}[]};
 export type EngineState = {id:bigint;revision:bigint;phase:number;a:Address;b:Address;target:Address;winner:Address;head:bigint;clock:bigint;nonceA:bigint;nonceB:bigint;deadline:bigint;state:State;chaos?:ChaosDecoded;sync?:AgentSynchronization;observedAt:number;reset?:boolean;queuedControls?:{side:0|1;direction:-1|0|1;at:bigint}[]};
@@ -43,7 +43,16 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
   if(e.eventName==='RandomnessVerified')pending=args.draw;
   if(e.eventName==='ChaosCollision')collisions.push(unpackChaosCollision(args.collision));
  }catch{}}
- if(!snapshot || snapshot.version<=previous.revision)return {state:previous,resync:false,changed:false};
+ if(!snapshot || snapshot.version<=previous.revision){
+  // An atomic getter can overtake the collision's applied notification. Keep
+  // that verified log without rolling back physics or refreshing its age.
+  if(snapshot&&previous.chaos&&!previous.reset&&frame.head<=previous.head){
+   const retained=retainedChaosCollisions(previous.chaos.physics,previous.chaos.collisions,collisions);
+   if(retained.some(h=>!previous.chaos!.collisions.some(p=>p.sequence===h.sequence)))
+    return {state:{...previous,chaos:{...previous.chaos,collisions:retained}},resync:false,changed:true};
+  }
+  return {state:previous,resync:false,changed:false};
+ }
  // A friendly Classic command receipt carries the complete physics, exact
  // clock, bot brain and queued intent. A few intervening engine ticks require
  // no second RPC. Chaos can miss draw metadata and still needs a full read.
@@ -64,7 +73,7 @@ export function mergeEngineFrame(abi:Abi,app:Address,previous:EngineState,frame:
    // The packed-state format (ChaosCodec), 6 under rules 6, 7 and 8 alike; not RULES_VERSION.
    if(version!==6)throw Error('Unknown Chaos snapshot');
    const physics=unpackChaos(words,previous.state.seed,control);state=chaosLegacy(physics,Number(snapshot.status)>=3);
-   chaos={physics,request:request??chaos.request,pending:pending??chaos.pending,collisions};
+   chaos={physics,request:request??chaos.request,pending:pending??chaos.pending,collisions:retainedChaosCollisions(physics,chaos.collisions,collisions)};
    nonceA=BigInt.asUintN(64,control>>16n);nonceB=BigInt.asUintN(64,control>>80n);
   }else state=decodeAbiParameters([snapshotHeaderFields(abi)[12]],snapshot.state)[0] as State;
   const phase=Number(snapshot.status);

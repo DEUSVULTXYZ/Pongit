@@ -5,6 +5,16 @@ const bits=(n:bigint,at:number,size:number)=>n>>BigInt(at)&((1n<<BigInt(size))-1
 const number=(n:bigint,at:number,size:number)=>Number(bits(n,at,size));
 const signed=(n:bigint,at:number,size:number)=>BigInt.asIntN(size,bits(n,at,size));
 export type ChaosDecoded={physics:ChaosPhysicsState;request:bigint;pending:bigint;collisions:ChaosPhysicsCollision[]};
+/** Bounded confirmed-event history survives a newer tick before React paints.
+ * A getter contains physics, not event logs. Keep only events that its explicit
+ * collision counter, rally and processed time can already contain. */
+export function retainedChaosCollisions(state:ChaosPhysicsState,...batches:readonly ChaosPhysicsCollision[][]){
+ const hits=new Map<number,ChaosPhysicsCollision>();
+ for(const batch of batches)for(const hit of batch)
+  if(hit.sequence>0&&hit.sequence<=state.collisionSequence&&hit.rally>0&&hit.rally<=state.score.rally&&hit.at<=state.t)
+   hits.set(hit.sequence,hit);
+ return [...hits.values()].sort((a,b)=>a.sequence-b.sequence).slice(-64);
+}
 /** Eight fixed words, matching ChaosCodec exactly. Directions/nonces travel in
  * the header control word, so peers never infer a nonce from a movement event. */
 export function unpackChaos(w:readonly bigint[],seed:Hex,control:bigint):ChaosPhysicsState{

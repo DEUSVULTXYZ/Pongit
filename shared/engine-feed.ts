@@ -2,6 +2,7 @@ import {decodeEventLog} from "viem";
 import {engineState,receiptFrame,mergeEngineFrame,type EngineFrame,type EngineState,type EngineStream} from "./engine-stream";
 import {readEngineSnapshot} from "./engine-snapshot";
 import {recordRpc} from "./rpc-metrics";
+import {retainedChaosCollisions} from './chaos-codec';
 
 type Entry={value?:EngineState;fullAt:number;dirty:boolean;gap?:Map<bigint,EngineFrame>;pending?:Promise<EngineState>;launchRead?:Promise<void>;progressAt:number;listeners:Set<(s:EngineState)=>void>};
 /** Snapshot cache belongs to one deployment. HTTP remains the recovery authority. */
@@ -134,6 +135,8 @@ export class EngineFeed {
     if(incoming.state.t!==current.state.t)throw new Error("Engine clock needs reconciliation");
     incoming={...incoming,reset:true};
    }
+   if(!incoming.reset&&current?.chaos&&incoming.chaos)
+    incoming={...incoming,chaos:{...incoming.chaos,collisions:retainedChaosCollisions(incoming.chaos.physics,current.chaos.collisions,incoming.chaos.collisions)}};
    e.fullAt=this.now();e.dirty=false;e.gap=undefined;this.publish(e,incoming);return incoming;
   }).finally(()=>{e.pending=undefined;});
   return e.pending;
