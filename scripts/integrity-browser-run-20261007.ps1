@@ -6,6 +6,7 @@ param(
  [ValidateSet('','f5','disconnect','lost-reply','revoke','unavailable-prf','background','render-stall','settled-read')][string]$Fault='',
  [switch]$Degraded,
  [switch]$HttpOnly,
+ [switch]$NoVideo,
  [string]$RestoreFrom=''
 )
 $ErrorActionPreference='Stop'
@@ -28,7 +29,7 @@ $env:PONG_SYNC_SPECTATOR='1'
 $env:PONG_REQUIRE_PERFORMANCE=$(if($Fault -or $Degraded){'0'}else{'1'})
 $env:PONG_REQUIRE_RECONCILIATION=$(if($Fault -or $Degraded){'0'}else{'1'})
 $env:PONG_REQUIRE_NO_STARTUP_PAUSE='1'
-$env:PONG_CATALOGUE_VIDEO='1'
+$env:PONG_CATALOGUE_VIDEO=$(if($NoVideo){'0'}else{'1'})
 $env:PONG_CATALOGUE_LOGIN_FROM_HOME=$(if($RestoreFrom){'0'}else{'1'})
 if($RestoreFrom){
  if($RestoreFrom -notlike '*private-backups*' -or !(Test-Path -LiteralPath $RestoreFrom -PathType Leaf)){throw 'Existing private session required'}

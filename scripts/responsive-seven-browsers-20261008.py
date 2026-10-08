@@ -1,8 +1,8 @@
 """One bounded public seven-game trial. Existing service alone drives tournaments."""
-import datetime, json, os, pathlib, subprocess, time, urllib.request
+import datetime, json, os, pathlib, subprocess, time, urllib.request, sys, re
 
 root = pathlib.Path(__file__).resolve().parents[1]
-run = 'r2seven1'
+run = sys.argv[1];assert re.fullmatch(r'r2seven[2-9]',run)
 directory = root/'artifacts/qualification'/run
 directory.mkdir(exist_ok=False)
 node = r'C:/Users/wwwle/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe'
@@ -25,11 +25,13 @@ try:
     current=get('config');assert current['rulesVersion']==17 and current['maxMatches']==5 and current['enabled'] and current['tournamentsEnabled']
     for i,name in enumerate(names):
         env=os.environ.copy();env['PONG_BROWSER_BARRIER']=str(directory)
-        if i==5:env['PONG_HUMAN_PROFILE_DELAY_MS']='50000'
         if i<4:
             args=[pwsh,'-NoProfile','-File','scripts/integrity-browser-run-20261007.ps1','-Run',name,'-GameMode',str(i%2),'-Browser','chrome' if i%2==0 else 'msedge','-Width','768']
         else:
             args=[pwsh,'-NoProfile','-File','scripts/integrity-pvp-run-20261007.ps1','-Run',name,'-Manifest','artifacts/responsive-20261008-r2/human-public-recovered.json','-Mode','classic' if i==4 else 'chaos','-Browser','chrome' if i==4 else 'msedge']
+        # Retain the selected player/observer video. Every other canvas still
+        # records full frame/input traces, without twelve simultaneous encoders.
+        if i!=0:args+=['-NoVideo']
         launch(name,args,env)
     while int(time.time()*1000)<deadline:
         assert all(p.poll() is None for _,p in children),'A browser failed before coordinated admission; preserve its report'

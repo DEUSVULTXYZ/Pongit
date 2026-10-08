@@ -48,13 +48,17 @@ try{
   const slots=await Promise.all([0n,1n].map(i=>read.lobby('slot',[i])));
   if(lanes.every(l=>l.ref.id>0n&&!l.captured)&&slots.every(id=>id>0n)){
    const humanRefs=await Promise.all(slots.map(async id=>{const [ticket,binding]=await read.lobby('ticketOf',[id]);
+    // A lobby slot is occupied during admission, before its ticket is assigned.
+    if(binding.id===0n)return null;
     assert.equal(binding.id,id);return {chainId:10143 as const,app:ticket.arena as Address,epoch:String(binding.epoch),id:String(id)};}));
+   report.lastAdmission={block:String(block.number),slots:slots.map(String),assigned:humanRefs.filter(Boolean).length};await save();
+   if(humanRefs.some(ref=>!ref)){await delay(500);continue;}
    const rival=lanes[1].b;
    const copies=lanes.slice(1).every(l=>l.tournament===0n&&!l.ranked&&l.b===rival);
    const tournament=lanes[0].tournament>0n&&(lanes[0].a===rival||lanes[0].b===rival);
    const identity=await base.readContract({address:agents.catalog,abi:catalogAbi,functionName:'identity',args:[rival],blockNumber:block.number});
    if(copies&&tournament&&identity.house>0){
-    refs=[...lanes.map(l=>({chainId:10143 as const,app:l.ref.arena,epoch:String(l.ref.epoch),id:String(l.ref.id)})),...humanRefs];
+    refs=[...lanes.map(l=>({chainId:10143 as const,app:l.ref.arena,epoch:String(l.ref.epoch),id:String(l.ref.id)})),...humanRefs as Ref[]];
     assert.equal(new Set(refs.map(r=>r.app.toLowerCase())).size,7);
     assert.equal((await base.getBlock({blockNumber:block.number})).hash,block.hash);
     report.acquisition={at:new Date().toISOString(),block:String(block.number),hash:block.hash,archetype:rival,tournament:String(lanes[0].tournament),refs};await save();break;
@@ -89,5 +93,5 @@ try{
   await delay(500);
  }
  assert(report.passed,'No thirty-second seven-way live overlap within the original deadline');
-}catch(e){report.error=String((e as any).shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);process.exitCode=1;}
+}catch(e){report.error=String((e as any).shortMessage??(e as Error).message).replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,600);report.location=String((e as Error).stack??'').split('\n').filter(x=>x.includes('responsive-seven-way-observer')).slice(0,2);process.exitCode=1;}
 finally{for(const stop of stops)stop();report.finishedAt=new Date().toISOString();await save();console.log(poolJson({output,passed:report.passed,overlapMs:report.overlapMs,error:report.error}));}

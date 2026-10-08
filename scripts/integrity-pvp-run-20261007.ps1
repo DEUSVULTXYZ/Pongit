@@ -2,7 +2,8 @@ param(
  [Parameter(Mandatory=$true)][ValidatePattern('^[a-z0-9]{1,16}$')][string]$Run,
  [Parameter(Mandatory=$true)][string]$Manifest,
  [ValidateSet('classic','chaos')][string]$Mode='classic',
- [ValidateSet('chrome','msedge')][string]$Browser='msedge'
+ [ValidateSet('chrome','msedge')][string]$Browser='msedge',
+ [switch]$NoVideo
 )
 $ErrorActionPreference='Stop'
 $manifestPath=(Resolve-Path -LiteralPath $Manifest).Path
@@ -13,7 +14,7 @@ $env:PONG_HUMAN_BROWSER_TARGET='public-release'
 $env:PONG_HUMAN_NATURAL='1'
 $env:PONG_HUMAN_INPUT_INTEGRITY='rules18'
 $env:PONG_BROWSER_VISIBLE='1'
-$env:PONG_BROWSER_VIDEO='1'
+$env:PONG_BROWSER_VIDEO=$(if($NoVideo){'0'}else{'1'})
 $env:INDEPENDENT_SCENARIO=$Mode
 $env:INDEPENDENT_TEST_RUN=$Run
 $env:PONG_BROWSER_PRIVATE_PATH="C:/Users/wwwle/.codex/private-backups/pongit/$Run.json"

@@ -370,6 +370,14 @@ await context.addInitScript(()=>{
  setInterval(()=>{const digit=document.querySelector('.match-countdown-digit')?.textContent;if(digit){(window as any).__digits.push(digit);
   (window as any).__firstCountdownAt??=new Date().toISOString();}},30);
 });
+async function prepareSpectator(url:string){
+ if(actualBackground)backgroundObserver=await chromium.launch({channel,headless:true});
+ spectatorContext=await (backgroundObserver??browser).newContext({viewport:{width:1440,height:900},
+  ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/observer-video',size:{width:1440,height:900}}}:{})});
+ spectator=await spectatorContext.newPage();observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);await videoClock(spectator);
+ await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
+ await spectator.goto(url,{waitUntil:'domcontentloaded'});
+}
 try{
  const config=await (await apiGet('/agents/config')).json();
  if(publicSynchronized)assert(config.rulesVersion===(responsive?17:16)&&config.friendlyPause==='heartbeat-v1'&&config.hub.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&config.enabled,'Actual public synchronized migration required');
@@ -394,6 +402,12 @@ try{
  await expect(page.getByRole('button',{name:`Challenge ${name}`,exact:true})).toBeEnabled({timeout:60000});
  await page.getByRole('button',{name:mode?'Chaos':'Classic',exact:true}).click();
  await expect(page.getByRole('button',{name:mode?'Chaos':'Classic',exact:true})).toHaveAttribute('aria-pressed','true');
+ if(process.env.PONG_BROWSER_BARRIER&&process.env.PONG_SYNC_SPECTATOR==='1'){
+  await prepareSpectator(report.origin+'/agents');
+  report.clockAlignment={player:await alignClock(page),observer:await alignClock(spectator!)};
+  assert(Object.values(report.clockAlignment).every((v:any)=>v.uncertaintyMs<=5),'Pre-admission client clock uncertainty exceeds 5 ms');
+  report.clockAlignedBeforeAdmission=true;
+ }
  const coordinated=await browserQualificationBarrier(run);if(coordinated){name=coordinated.bot;report.bot=name;report.coordination=coordinated;}
  report.clickedAt=new Date().toISOString();
  await page.getByRole('button',{name:`Challenge ${name}`,exact:true}).click();
@@ -430,15 +444,10 @@ try{
  })().catch(()=>{report.healthReadErrors=(report.healthReadErrors??0)+1;}).finally(()=>healthBusy=false);},1000);
 
  if(process.env.PONG_SYNC_SPECTATOR==='1'){
-  if(actualBackground)backgroundObserver=await chromium.launch({channel,headless:true});
-  spectatorContext=await (backgroundObserver??browser).newContext({viewport:{width:1440,height:900},
-   ...(process.env.PONG_CATALOGUE_VIDEO==='1'?{recordVideo:{dir:out+'/observer-video',size:{width:1440,height:900}}}:{})});
-  spectator=await spectatorContext.newPage();observePeer(spectator);await candidateAssets(spectator);await installSyncProbe(spectator);await videoClock(spectator);
-  await spectator.addInitScript(()=>localStorage.setItem('pongit:arcade-audio',JSON.stringify({entered:true,enabled:false,music:.2,effects:.6,background:false,intensity:'off'})));
-  await spectator.goto(page.url(),{waitUntil:'domcontentloaded'});
+  if(spectator)await spectator.goto(page.url(),{waitUntil:'domcontentloaded'});else await prepareSpectator(page.url());
   await page.bringToFront();
  }
- if(integrity){
+ if(integrity&&!report.clockAlignment){
   report.clockAlignment={player:await alignClock(page),observer:await alignClock(spectator!)};
   assert(Object.values(report.clockAlignment).every((v:any)=>v.uncertaintyMs<=5),'Client clock measurement uncertainty exceeds 5 ms');
  }
