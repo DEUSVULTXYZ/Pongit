@@ -538,7 +538,7 @@ try{
    if(await button.isDisabled()){await page.waitForTimeout(100);continue;}
    await button.scrollIntoViewIfNeeded();const bounds=(await button.boundingBox())!;
    if(desired)await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2}]});
-   await page.waitForTimeout(hold);await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   await page.waitForTimeout(hold);if(desired)await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   }else{if(desired)await page.keyboard.down(key);await page.waitForTimeout(hold);if(desired)await page.keyboard.up(key);}
   await page.waitForTimeout(gap);
   if(!naturalMatch&&i===34){await retainInputIntents();await retainCommandTimings();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled;},{},{timeout:30000});assert.equal(assertions,before);report.checks.push('F5 reused the Mera grant');}
