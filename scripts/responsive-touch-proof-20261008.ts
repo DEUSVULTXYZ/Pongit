@@ -3,7 +3,7 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {createPublicClient,http,type Address} from 'viem';
 import {reusableAgentPoolAbi as abi} from '../shared/abi-ReusableAgentPool';
-const names=['touchfix360-1','touchfix390-1','touchfixdesktop-1','touchfixedge360-2','touchfixchrome390-1','touchfixclassic1366-1','touchfixclassic360-1'];
+const names=['touchfix360-1','touchfix390-1','touchfixdesktop-1','touchfixedge360-2','touchfixchrome390-2','touchfixclassic1366-1','touchfixclassic360-1'];
 const client=createPublicClient({transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:15000})});
 const block=await client.getBlock(),runs=[];
 for(const name of names){

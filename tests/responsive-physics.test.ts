@@ -8,6 +8,16 @@ import {chaosPaddles} from '../shared/chaos-modifiers';
 import {projectParticipant,projectChaosParticipant} from '../web/lib/participant-projection';
 import {sustainedInputMetrics} from '../scripts/browser-sync-probe';
 
+test('Chaos976 release window ends at the next real input, not an earlier RAF timestamp',()=>{
+ const frame=(at:number,paintedAt:number,y:number)=>({at,paintedAt,y,side:0,observedAt:0,top:y-48,bottom:y+48,height:96,rally:'1'});
+ const trace={snapshots:[{observedAt:0,rulesVersion:17,controllable:true}],
+  keys:[{at:121,side:0,direction:1}],releases:[{at:10,side:0}],
+  paddles:[frame(0,1,100),...Array.from({length:9},(_,i)=>frame(15+i*11,16+i*11,100)),frame(119,122,105)]};
+ assert.equal(sustainedInputMetrics(trace).stopping.maxDrift,0,'a frame painted after the next key is commanded motion');
+ const drift=structuredClone(trace);drift.paddles[4].y=103;
+ assert.equal(sustainedInputMetrics(drift).stopping.maxDrift,3,'real movement during the released interval must still fail');
+});
+
 test('rules 17 and 18 move both paddles at 300 while historical rules retain 180',()=>{
  for(const rules of [14,15,16,17,18]){
   const speed=rules>=17?300:180;

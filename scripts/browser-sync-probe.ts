@@ -36,6 +36,10 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
  const displayedTime=new Map((data.poses??[]).map(p=>[p.at,BigInt(p.renderedUs)]));
  const changes=[...(data.keys??[]),...(data.releases??[]).map(r=>({...r,direction:0}))].sort((a,b)=>a.at-b.at);
  const ratios:number[]=[],outliers:any[]=[],stops:any[]=[],excluded:Record<string,number>={};
+ // RAF's supplied time can precede a key event even when its callback paints
+ // after that event. Use the actual canvas-call timestamp for input ownership;
+ // retain RAF deltas for the renderer's integrated velocity calculation.
+ const paintedAt=(frame:any)=>Number.isFinite(frame.paintedAt)&&frame.paintedAt>=frame.at?frame.paintedAt:frame.at;
  const reject=(reason:string)=>{excluded[reason]=(excluded[reason]??0)+1;};
  const speed=(frame:any)=>{const s=observations.get(frame.observedAt);
   if(!s||!s.controllable||(s.pause?.status??0)>=2)return;
@@ -45,10 +49,10 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
  };
  for(let index=0;index<changes.length;index++){
   const input=changes[index],end=changes.slice(index+1).find(c=>c.side===input.side)?.at??Infinity;
-  const frames=(data.paddles??[]).filter(p=>p.side===input.side&&p.at>=input.at&&p.at<end&&!p.finished);
+  const frames=(data.paddles??[]).filter(p=>p.side===input.side&&paintedAt(p)>=input.at&&paintedAt(p)<end&&!p.finished);
   if(input.direction===0){
-   const prior=[...(data.paddles??[])].reverse().find(p=>p.side===input.side&&p.at<=input.at);
-   const sample=frames.filter(p=>p.at<input.at+250&&p.rally===prior?.rally);
+   const prior=[...(data.paddles??[])].reverse().find(p=>p.side===input.side&&paintedAt(p)<=input.at);
+   const sample=frames.filter(p=>paintedAt(p)<input.at+250&&p.rally===prior?.rally);
    if(prior&&sample.length>=7&&sample.every(p=>speed(p)!==undefined))stops.push({at:input.at,drift:Math.max(...sample.map(p=>Math.abs(p.y-prior.y)))});
    continue;
   }
