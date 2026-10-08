@@ -1018,3 +1018,39 @@ Read-only receipt lookups for prior1038 slow heartbeats returned no retained
 receipts; this does not prove a provider failure. New browser evidence retains
 receipt gas/log counts and structured read-response failures for diagnosis.
 No final seven-way, 24-hour or complete-delivery claim.
+
+## 16:56 UTC — concurrency failures retained, sponsor repair deployed
+
+Correct app/epoch/rules/code/base/publication checks recovered all11 hosted nodes
+at13:49UTC. No redeploy or closure needed; original outage cause not established.
+Reader ca39773 parameterless fix actually deployed16:09:37, canonical69298840
+all7idle. Web132a51b remains deployed; engine d558/human c45 unchanged.
+
+Seven-browser run r2seven3 completed FAIL: four friendly copies admitted in
+25.801/34.067/45.982/58.979seconds. One startup pause and another match's two
+resumes retained. Two human admissions expired before gameplay; all browser
+children and observer exited. No seven-way qualification. Records summarized
+in responsive-concurrency3-20261008.json, originals and videos retained.
+
+Diagnostic r2wire1 naturalChaos1062 7-6, no pauses/false contacts, admission14.085s
+FAIL. Its slow424ms input was observed by independent live peer at422ms, with
+receipt absent at150/350ms; not merely a late acknowledgement. Node lock health
+had no recent100ms hold. This does not establish an Interlude blocker. Separate
+HTTP trial1065 natural3-7 no pauses but304ms tail and13.101s admissionFAIL.
+No speculative receipt hedge or increased presence credit was deployed.
+
+Gateway/sponsor96bfe24 image51111873f07c5230375c1fe7adf06ca398953eaed9d06bd881de0ee8758f30c4
+actually deployed16:50:36/38, canonical69306944 all7idle and empty sponsor queue.
+Verified receipts now wake the same nonce owner immediately. Local signing no
+longer makes a hidden eth_chainId RPC. Original offline image14 test failed
+because wallet.signTransaction attempted a network read; preserved separately.
+Corrected exact image15 tests5PASS with network disabled. Full1117TS/rootTS pass.
+No journal, grant, contract, closure or nonce-domain changes.
+Backup-queue-14 fiveDB/runtime6files77284495bytes SHAverified OFFVPS16:43:34,
+manifest247dc62105ba36d7d20ad72ba6e74e38f214d022274c2882d379afaca62a9806.
+Postcutover Chaos1071 natural7-5/no pauses/inputp9514.6ms/send13.6ms, but admission
+14.589s FAIL. Gateway bounded metrics prove ordinary current reads queued up to
+1.7s, no upstream429. Source228c5b1 avoids duplicate saved-family validation while
+preserving exact grant fields, renewal margin and network-error behavior; tested
+but NOTdeployed. New scheduler priority for nonce/receipt/fee/private submission
+is tested but NOTdeployed. No active game driver, no final24h, automationPAUSED.

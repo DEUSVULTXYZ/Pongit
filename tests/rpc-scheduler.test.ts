@@ -58,6 +58,26 @@ test('a continuous control backlog preserves ordinary and historical fairness an
  }
 });
 
+test('admission nonce, receipt, fees and submission share the current-state budget without promoting arbitrary calls',async(t)=>{
+ const account=`0x${'12'.repeat(20)}`,hash=`0x${'34'.repeat(32)}`;
+ for(const [method,params] of [
+  ['eth_getTransactionReceipt',[hash]],['eth_getTransactionCount',[account,'pending']],['eth_getTransactionCount',[account,'latest']],
+  ['eth_gasPrice',[]],['eth_maxPriorityFeePerGas',[]],['eth_estimateGas',[{to:account,from:account,data:'0x1234'}]],['eth_sendRawTransaction',['0x1234']],
+ ] as Array<[string,unknown[]]>)assert(controlRpcRequest(method,params),method);
+ for(const [method,params] of [
+  ['eth_getTransactionReceipt',['0x01']],['eth_getTransactionCount',[account,'0x1']],['eth_getTransactionCount',['bad','latest']],
+  ['eth_estimateGas',[{to:account,from:account},'0x1']],['eth_estimateGas',[{to:account}]],['eth_sendRawTransaction',['0x1']],['eth_sendRawTransaction',['0x12',{}]],
+ ] as Array<[string,unknown[]]>)assert(!controlRpcRequest(method,params),method);
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const queue=rpcScheduler(75),seen:string[]=[];
+ await queue.acquire(false);
+ const ordinary=Array.from({length:8},(_,i)=>queue.acquire(false).then(()=>seen.push(`catalogue${i}`)));
+ const receipt=queue.acquire(false,controlRpcRequest('eth_getTransactionReceipt',[hash])).then(()=>seen.push('receipt'));
+ t.mock.timers.tick(75);await Promise.resolve();assert.deepEqual(seen,['receipt']);
+ for(let i=0;i<8;i++){t.mock.timers.tick(75);await Promise.resolve();}
+ await Promise.all([...ordinary,receipt]);assert.equal(queue.spacing(),75);
+});
+
 test('control priority cannot bypass an upstream cooldown or promote historical work',async(t)=>{
  t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
  const queue=rpcScheduler(75),seen:string[]=[];

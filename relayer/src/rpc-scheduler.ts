@@ -32,10 +32,22 @@ export function historicalRpcRequest(method:string, params:readonly unknown[],ob
   return true;
 }
 
-/** Current canonical headers and a single root delegation fence must not wait
- * behind catalogue scans. This changes scheduling only: no state is cached or
- * trusted, and old/unknown hash-pinned calls receive no special priority. */
+/** Current canonical headers, nonce/receipt reconciliation and a root delegation
+ * fence must not wait behind catalogue scans. This changes scheduling only:
+ * no state is cached or trusted, and historical contract reads stay ordinary. */
 export function controlRpcRequest(method:string,params:readonly unknown[],observedHead?:bigint,blockHeight?:(hash:string)=>bigint|undefined):boolean{
+ const address=(v:unknown)=>typeof v==='string'&&/^0x[\da-f]{40}$/i.test(v);
+ if(method==='eth_getTransactionReceipt')return params.length===1&&typeof params[0]==='string'&&/^0x[\da-f]{64}$/i.test(params[0]);
+ if(method==='eth_getTransactionCount')return params.length===2&&address(params[0])&&(params[1]==='latest'||params[1]==='pending');
+ if(method==='eth_gasPrice'||method==='eth_maxPriorityFeePerGas')return params.length===0;
+ // These methods are private-gateway only: the public browser read proxy
+ // rejects both. Prioritizing an estimate never authorizes a signature.
+ if(method==='eth_estimateGas'){
+  const call=params[0] as {to?:unknown;from?:unknown;data?:unknown}|undefined;
+  return params.length<=2&&!!call&&address(call.to)&&address(call.from)
+   &&(params[1]===undefined||params[1]==='latest'||params[1]==='pending');
+ }
+ if(method==='eth_sendRawTransaction')return params.length===1&&typeof params[0]==='string'&&/^0x(?:[\da-f]{2})+$/i.test(params[0])&&params[0].length<=131074;
  const recent=(tag:unknown)=>{
   const height=typeof tag==='string'&&/^0x[\da-f]+$/i.test(tag)?BigInt(tag):
    tag&&typeof tag==='object'&&typeof (tag as {blockHash?:unknown}).blockHash==='string'
