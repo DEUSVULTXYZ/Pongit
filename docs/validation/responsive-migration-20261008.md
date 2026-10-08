@@ -235,3 +235,25 @@ SHA `36879accc5363e451e172d666ea77bd310c711949450cc581a105b116c308c8e`;
 `b8a83d7d406b374a3c3984a1c953924ee26aa03311697be0b5ef8e536b60cac1`.
 Linked deployment graph checks pass. A new r2 backup is running and includes the
 failed target's records. No public product cutover or qualifying browser result.
+
+## 05:25 UTC - restored r2 backup; corrected import running
+
+The r2 backup contains six files and 74,812,841 bytes. Manifest SHA:
+`28c98a1329deb9d86d194a812f597d5deb0058b67c40f738a53a84431ffafceb`.
+Windows copies were verified at 05:16:08 UTC. Restoration of those actual copies
+passed at 05:20:18: five databases, 129 preserved failed-candidate jobs, the single
+reserve transfer, 1,457 historical references and unchanged archive fingerprints.
+Only the five verified scratch databases were dropped. Restore inputs, container
+and reports remain; do not repeat this restore.
+
+Sole import `pongit-responsive-r2-import-20261008-1` is running with its original
+1,800-second bound. At 05:25 it was importing into namespace
+`reusable-agents-20261008-2`, with fourteen modules and no opened arena yet.
+Failed namespace 1 remains preserved and must never be resumed. Production
+writers remain drained and stopped; all source delegations remain continuous.
+
+Fresh off-VPS SHA checks allowed removal of 36 unmounted intermediate backup
+duplicates, 442,188,199 bytes. Manifests, evidence, current drained backups and
+all mounted paths remain. Disk is 79.56% usable. A separate source-offload attempt
+found zero eligible files and removed nothing; its report is retained.
+No public product cutover or browser acceptance claim.
