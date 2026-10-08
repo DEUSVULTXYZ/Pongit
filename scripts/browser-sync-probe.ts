@@ -4,11 +4,20 @@ import {eventPaddles} from '../web/lib/chaos-presentation';
 
 /** Same-host epoch timestamps include the browser's queued intent before send.
  * Receipt transport latency alone cannot qualify input-to-confirmation latency. */
-export function confirmedInputMetrics(intents:{at:number;direction:number}[],receipts:{sentAt?:number;confirmedAt?:number;direction?:number;sequence?:string}[]){
+export function confirmedInputMetrics(intents:{at:number;direction:number}[],receipts:{sentAt?:number;confirmedAt?:number;direction?:number;sequence?:string;hash?:string}[],timings:{stage:string;command?:string;hash?:string;startedAt:number;ms:number;timeOrigin:number}[]=[]){
  const ordered=[...intents].sort((a,b)=>b.at-a.at),confirmed=new Map<number,number>(),mismatches:any[]=[];
  for(const receipt of receipts){
   if(!receipt.sequence||receipt.sentAt===undefined||receipt.confirmedAt===undefined)continue;
-  const intent=ordered.find(i=>i.at<=receipt.sentAt!);
+  // CDP's wire observation can arrive after a new release, although the
+  // previous immutable command was already handed to its journal/transport.
+  // Pair the exact receipt hash with the serialized browser transport span.
+  // Missing or ambiguous timing evidence keeps the original strict fallback.
+  const ack=receipt.hash?timings.filter(t=>t.stage==='acknowledged'&&t.hash?.toLowerCase()===receipt.hash!.toLowerCase()):[];
+  const spans=ack.length===1?timings.filter(t=>t.stage==='transport'&&t.command==='input'
+   &&Math.abs((t.timeOrigin+t.startedAt+t.ms)-(ack[0].timeOrigin+ack[0].startedAt+ack[0].ms))<.5
+   &&t.timeOrigin+t.startedAt<=receipt.sentAt!&&t.timeOrigin+t.startedAt+t.ms<=receipt.confirmedAt!+5):[];
+  const entered=spans.length===1?spans[0].timeOrigin+spans[0].startedAt:receipt.sentAt;
+  const intent=ordered.find(i=>i.at<=entered!);
   if(!intent)continue;
   if(intent.direction!==receipt.direction){mismatches.push({sentAt:receipt.sentAt,expected:intent.direction,actual:receipt.direction});continue;}
   const elapsed=receipt.confirmedAt-intent.at;

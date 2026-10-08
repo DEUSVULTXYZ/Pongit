@@ -5,6 +5,7 @@ param(
  [ValidateSet(360,390,768,1366,1440)][int]$Width=1440,
  [ValidateSet('','f5','disconnect','lost-reply','revoke','background','render-stall','settled-read')][string]$Fault='',
  [switch]$Degraded,
+ [switch]$HttpOnly,
  [string]$RestoreFrom=''
 )
 $ErrorActionPreference='Stop'
@@ -36,7 +37,7 @@ if($RestoreFrom){
 $env:PONG_CATALOGUE_TOUCH=$(if($Width -lt 768){'1'}else{'0'})
 $env:PONG_CATALOGUE_WIDTH=[string]$Width
 $env:PONG_CATALOGUE_HEIGHT=$(if($Width -eq 1366){'768'}elseif($Width -lt 768){'844'}else{'900'})
-$env:PONG_CATALOGUE_HTTP_ONLY=$(if($Degraded -or $Fault -eq 'lost-reply'){'1'}else{'0'})
+$env:PONG_CATALOGUE_HTTP_ONLY=$(if($HttpOnly -or $Degraded -or $Fault -eq 'lost-reply'){'1'}else{'0'})
 $env:PONG_CATALOGUE_NETWORK_DELAY_MS=$(if($Degraded){'75'}else{'0'})
 $env:PONG_CATALOGUE_NETWORK_JITTER_MS=$(if($Degraded){'25'}else{'0'})
 $env:PONG_CATALOGUE_FAULT=$Fault

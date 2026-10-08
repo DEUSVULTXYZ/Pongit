@@ -2,6 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {confirmedInputMetrics,syncMetrics} from '../scripts/browser-sync-probe';
 
+test('a release after journal entry cannot invalidate the previous immutable command',()=>{
+ const intents=[{at:100,direction:-1},{at:203,direction:0}];
+ const receipts=[{sentAt:204,confirmedAt:225,direction:-1,sequence:'77',hash:'0xabc'}];
+ const timings=[{stage:'transport',command:'input',startedAt:200,ms:20,timeOrigin:0},
+  {stage:'acknowledged',command:'input',startedAt:199,ms:21,timeOrigin:0,hash:'0xabc'}];
+ assert.equal(confirmedInputMetrics(intents,receipts,timings).mismatches.length,0);
+ assert.equal(confirmedInputMetrics(intents,receipts,timings).p95Ms,125);
+ assert.equal(confirmedInputMetrics(intents,receipts).mismatches.length,1);
+ assert.equal(confirmedInputMetrics([{at:100,direction:-1},{at:199,direction:0}],receipts,timings).mismatches.length,1);
+ assert.equal(confirmedInputMetrics(intents,receipts,[...timings,timings[0]]).mismatches.length,1);
+ assert.equal(confirmedInputMetrics(intents,receipts,[timings[0],{...timings[1],hash:'0xother'}]).mismatches.length,1);
+});
+
 test('render metrics separate explicit contract pauses without hiding unmarked stalls',()=>{
  const frame=(at:number,pauseStatus=0)=>({at,x:10,y:10,sourceT:1000,clock:1000,observedAt:at,score:'0:0',pauseStatus});
  const stalled=syncMetrics({frames:Array.from({length:9},(_,i)=>frame(i*100)),snapshots:[]});

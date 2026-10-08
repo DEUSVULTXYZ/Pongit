@@ -558,7 +558,7 @@ try{
  const p95=(a:number[])=>[...a].sort((a,b)=>a-b)[Math.floor((a.length-1)*.95)];
  report.input={samples:local.length,p95Ms:p95(local)};report.submissionP95Ms=p95(report.submissions.filter((s:any)=>!s.error).map((s:any)=>s.ms));
  if(report.receipts.length)report.receiptP95Ms=p95(report.receipts.map((r:any)=>r.ms));
- await retainInputIntents();report.confirmedInput=confirmedInputMetrics(inputIntents,report.receipts);
+ await retainInputIntents();await retainCommandTimings();report.confirmedInput=confirmedInputMetrics(inputIntents,report.receipts,commandTimings);
  await writeFile(out+'/intent-trace.json',JSON.stringify(inputIntents));
  await page.screenshot({path:out+'/court.png',fullPage:true});
  if(spectator)await spectator.screenshot({path:out+'/spectator.png',fullPage:true});
