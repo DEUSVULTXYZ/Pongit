@@ -559,3 +559,31 @@ No other driver, no lifecycle writer, no delayed batch of later faults started.
 DirectTLS recheck08:23:37: all7stopped endpoints timeout before HTTP, healthy2641
 returns200/198ms. No repeatPOST/closure/funding request. Dossier updated.
 Automation staysPAUSED. No full release/24h claim.
+
+
+## 08:56 UTC - service reserve and fault recovery
+
+Original operator allocated100TEST MON to archive and100to sponsor through
+its existing advisory701340/il_lifecycle_jobs authority. Both transactions
+confirmed; role-reserve-1 exited0. Archive before0.052109288MON, sponsor
+20.53201326MON. The failed959 browser report remains FAIL for its90second
+capture timeout. Existing archive job resumed without replacement, and its
+7-2 result is canonically captured at69211385, still contestable. No player
+payment, new nonce authority, duplicate result or closure. Main reserve ample.
+
+Lost-response retry960 PASS: exact successful command reply dropped, nonce2374
+retained, natural result captured. Render-stall962 PASS with measured66-67ms
+frames and subsequent natural7-6 result. PreviousF5/disconnect PASS retained.
+Background961 FAIL: Playwright focus emulation prevented document.hidden.
+Its original report/video remain; after clientexit the owned test match followed
+its normal disconnect cancellation, status4/zero winner/1-3, not a natural
+qualification result. No forced close or user-game intervention.
+
+Three empty-browser background preflights failed without writes. Fourth actual
+Edge preflight using documented connectOverCDP(noDefaults:true) passed real
+tab hide/restore. d3ed35d isolates that setup to the background fault only,
+records actual player screencast and independent headless observer, preserves
+normal visible-browser qualification unchanged. RootTS/Python syntax passed.
+Sole running game driver responsive-r2-background-2/exec22873, match963;
+no other driver or lifecycle helper. Backup-faults-7 helper prepared, not run.
+Production gameplay unchanged04ac/d558; docsweb6dea. No24h/delivery claim.
