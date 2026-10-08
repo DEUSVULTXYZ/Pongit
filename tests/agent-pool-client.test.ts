@@ -20,7 +20,7 @@ function canonicalFixture(client:PublicClient){
 
 test('paced browser challenge uses three encoded canonical rounds and fails closed on a rejected batch member',async()=>{
  const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:250n,revision:0n};
- const grant=grantHash(family),hash=`0x${'bc'.repeat(32)}` as Hex;let failed=false,signed=0;
+ const grant=grantHash(family),hash=`0x${'bc'.repeat(32)}` as Hex;let failed=false,signed=0,pending=0n;
  const rounds:string[][]=[];
  const client=createPublicClient({chain:monadTestnet,transport:custom({request:async request=>{
   if(request.method==='eth_chainId')return '0x279f';
@@ -41,6 +41,7 @@ test('paced browser challenge uses three encoded canonical rounds and fails clos
    else if(input.functionName==='count')result=49n;
    else if(input.functionName==='grantDigest')result=grant;
    else if(input.functionName==='nonces')result=3n;
+   else if(input.functionName==='pending')result=pending;
    else{
     assert.equal(input.functionName,'digest');
     const [g,action,agent,mode,id,nonce,deadline]=input.args as any;
@@ -59,6 +60,16 @@ test('paced browser challenge uses three encoded canonical rounds and fails clos
  await assert.rejects(preparePoolChallenge(client,five,signer,family.player,{agent:addr(20),mode:1}));
  assert.equal(signed,1,'A failed member must not create another signed intent');
  assert.equal(rounds.length,2,'No fallback to latest or a partial authorization');
+ failed=false;rounds.length=0;
+ const saved={agent:addr(20),mode:1 as const,expectedFamily:family,checkPending:true};
+ await preparePoolChallenge(client,five,signer,family.player,saved);
+ assert.deepEqual(rounds,[['grantOf','count','pending','grantDigest','nonces'],['digest']]);assert.equal(signed,2);
+ pending=77n;rounds.length=0;
+ await assert.rejects(preparePoolChallenge(client,five,signer,family.player,saved),(e:any)=>e.code==='POOL_CHALLENGE_PENDING'&&e.id===77n);
+ assert.equal(rounds.length,1);assert.equal(signed,2,'An existing request is resumed without a new signature');
+ pending=0n;failed=true;rounds.length=0;
+ await assert.rejects(preparePoolChallenge(client,five,signer,family.player,saved));
+ assert.equal(rounds.length,1);assert.equal(signed,2,'A failed saved-grant batch cannot authorize the digest round');
 });
 test('registration signs the exact creator, strategy, metadata, catalogue and Monad chain',async()=>{
  const owner=privateKeyToAccount(generatePrivateKey());let signed=0;

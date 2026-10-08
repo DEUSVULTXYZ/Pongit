@@ -41,22 +41,30 @@ export async function preparePoolRegistration(client:PublicClient,manifest:Agent
  return {to:m.catalog,data:encodeFunctionData({abi:agentCatalogAbi,functionName:'register',args:[registration,signature]}),digest,nonce,deadline:registration.deadline};
 }
 export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoolManifest,key:Signer,player:Address,
- options:{agent:Address;mode:0|1;cancel?:bigint;expectedFamily?:FamilyGrant;renewWithin?:bigint}):Promise<PreparedPoolCall>{
+ options:{agent:Address;mode:0|1;cancel?:bigint;expectedFamily?:FamilyGrant;renewWithin?:bigint;checkPending?:boolean}):Promise<PreparedPoolCall>{
  const m=validateAgentPoolManifest(manifest);
  const [chainId,block]=await Promise.all([client.getChainId(),client.getBlock()]);
  if(chainId!==10143)throw Error('Challenges require Monad Testnet');
  if(!block.hash)throw Error('Challenge authorization has no canonical block');
  const {read}=canonicalContractReads(client,block.hash);
  if(![0,1].includes(options.mode)||options.cancel!==undefined&&options.cancel<1n)throw Error('Invalid challenge mode or cancellation reference');
- const [family,count]=await Promise.all([
+ const expected=options.expectedFamily;
+ const familyDigest=(family:FamilyGrant)=>hashTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:family});
+ const expectedGrant=expected?familyDigest(expected):undefined;
+ // A saved grant lets its domain and nonce checks share the first canonical
+ // read. None is trusted until grantOf agrees field-for-field below.
+ const [family,count,pending,expectedDomain,expectedNonce]=await Promise.all([
   read(m.family,familyAbi,'grantOf',[player]),
   // The rules17 continuation queue scans only its waiting ring. Historical
   // completed requests no longer need extra admission passes. Keep legacy
   // sizing for old contracts; a full/busy ring still resumes through the keeper.
   m.challengeAdmission==='atomic-v1'&&options.cancel===undefined&&m.rulesVersion!==17?
    read<bigint>(m.challenges,agentChallengesAbi,'count'):Promise.resolve(0n),
+  options.checkPending&&options.cancel===undefined?read<bigint>(m.challenges,agentChallengesAbi,'pending',[player]):Promise.resolve(0n),
+  expected?read<Hex>(m.family,familyAbi,'grantDigest',[expected]):Promise.resolve(undefined),
+  expectedGrant?read<bigint>(m.challenges,agentChallengesAbi,'nonces',[expectedGrant]):Promise.resolve(undefined),
  ]);
- const expected=options.expectedFamily;
+ if(pending!==0n)throw Object.assign(Error('Resume the existing challenge'),{code:'POOL_CHALLENGE_PENDING',id:pending});
  const active=family.player.toLowerCase()===player.toLowerCase()&&family.key.toLowerCase()===key.address.toLowerCase()&&family.expires>block.timestamp
   &&(!expected||family.player.toLowerCase()===expected.player.toLowerCase()&&family.key.toLowerCase()===expected.key.toLowerCase()
    &&family.issuedAt===expected.issuedAt&&family.expires===expected.expires&&family.revision===expected.revision);
@@ -67,8 +75,8 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
   throw Object.assign(Error('Renew arcade session'),{code:'POOL_FAMILY_RENEW',active});
  // Computing the expected digest allows the nonce and domain checks to travel
  // together. No signature is requested unless the deployed family agrees.
- const grant=hashTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:family});
- const [observedGrant,nonce]=await Promise.all([
+ const grant=familyDigest(family);
+ const [observedGrant,nonce]=expected?[expectedDomain!,expectedNonce!]:await Promise.all([
   read<Hex>(m.family,familyAbi,'grantDigest',[family]),
   read<bigint>(m.challenges,agentChallengesAbi,'nonces',[grant]),
  ]);
