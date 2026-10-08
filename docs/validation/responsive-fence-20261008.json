@@ -180,5 +180,35 @@
     "typecheck": true,
     "previousSourceRegression": "artifacts/responsive-20261008-r2/fence28-baseline-fail.log"
   },
-  "deployed": false
+  "deployed": true,
+  "deployment": {
+    "startedAt": "2026-10-08T21:43:04.978693+00:00",
+    "deadline": 1791496504.9787104,
+    "passed": true,
+    "stage": "complete",
+    "previous": "sha256:f807f48bbf1a29802a3cbb1394b7c90b0c837608d2060b95237c5ffea0841491",
+    "image": "sha256:893cac77dc6f08921eab5aef6583bb1b31c7c12d21ad63b21767c1919d1c2c3e",
+    "backupManifest": "a4ee764a4bc10047e6573ce244eadb8103c668d1c766d6fb772177e9418ce012",
+    "lastCheck": {
+      "block": "69365094",
+      "hash": "0x70c880ed012a35c9ebb37d5b501c42ad485eff1de937684d842b58e497a69285",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "idle": {
+      "block": "69365117",
+      "hash": "0xcc5efcdc00455ebb66508619ac3b1d603916ae56133091d8facceeb91ddc1f92",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "started": "2026-10-08T21:43:31.495456074Z",
+    "finishedAt": "2026-10-08T21:43:34.091960+00:00"
+  },
+  "productionQualification": "seven9 is running; improvement not yet proven"
 }
