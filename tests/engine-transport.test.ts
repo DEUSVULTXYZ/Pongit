@@ -73,6 +73,51 @@ test('a stalled socket handshake does not delay the first HTTP command or send i
  }
 });
 
+test('a transient socket loss does not pin the next rally to HTTP for the whole match',async()=>{
+ const receipts=new Map<string,unknown>(),via:string[]=[];let connections=0,received=0,close=()=>{};
+ const server=createServer((request,response)=>{
+  let text='';request.on('data',chunk=>text+=chunk);request.on('end',()=>{
+   const body=JSON.parse(text);let result:unknown;
+   if(body.method==='eth_getTransactionReceipt')result=receipts.get(body.params[0])??null;
+   else{
+    assert.equal(body.method,'interlude_sendTransaction');via.push('http');
+    const hash=keccak256(body.params[0]);result={transactionHash:hash,status:'0x1',blockNumber:'0x42',logs:[]};receipts.set(hash,result);
+   }
+   response.setHeader('content-type','application/json');response.end(JSON.stringify({jsonrpc:'2.0',id:body.id,result}));
+  });
+ });
+ const sockets=new WebSocketServer({server});
+ sockets.on('connection',socket=>{const generation=++connections;socket.on('message',data=>{
+  const body=JSON.parse(String(data));assert.equal(body.method,'interlude_sendTransaction');via.push('ws');
+  const hash=keccak256(body.params[0]),result={transactionHash:hash,status:'0x1',blockNumber:'0x42',logs:[]};receipts.set(hash,result);
+  // First socket loses its response after execution. The exact hash resolves
+  // over HTTP; no second effect or abandoned nonce is permitted.
+  if(generation>1)socket.send(JSON.stringify({jsonrpc:'2.0',id:body.id,result}));
+ });});
+ await new Promise<void>(resolve=>server.listen(0,'127.0.0.1',resolve));
+ try{
+  const address=server.address();assert(address&&typeof address!=='string');
+  const transport=engineTransport(`http://127.0.0.1:${address.port}`,{beforeSend:async()=>{},received:()=>{received++;}},true)({} as any);
+  close=()=>transport.value?.closeSend();
+  for(let i=0;i<50&&connections===0;i++)await new Promise(resolve=>setTimeout(resolve,10));
+  await new Promise(resolve=>setTimeout(resolve,30));
+  await transport.request({method:'interlude_sendTransaction',params:['0x0101']});
+  assert.deepEqual(via,['ws']);assert.equal(received,1,'Exact receipt acknowledges the first command once');
+  await new Promise(resolve=>setTimeout(resolve,2100));
+  // The first command while a replacement socket connects remains HTTP. That
+  // handshake never delays or retransmits the command handed to HTTP.
+  await transport.request({method:'interlude_sendTransaction',params:['0x0102']});
+  for(let i=0;i<50&&connections<2;i++)await new Promise(resolve=>setTimeout(resolve,10));
+  await new Promise(resolve=>setTimeout(resolve,30));
+  await transport.request({method:'interlude_sendTransaction',params:['0x0103']});
+  assert.equal(connections,2,'The SDK should retry a socket after its bounded rest');
+  assert.deepEqual(via,['ws','http','ws']);assert.equal(received,3);assert.equal(receipts.size,3);
+ }finally{
+  close();for(const socket of sockets.clients)socket.terminate();server.closeAllConnections();
+  await new Promise<void>(resolve=>sockets.close(()=>resolve()));await new Promise<void>(resolve=>server.close(()=>resolve()));
+ }
+});
+
 test('a stalled HTTP body releases reads and uncertain writes without retry or acknowledgement',async()=>{
  let calls=0,journaled=0,received=0;
  const server=createServer((_request,response)=>{

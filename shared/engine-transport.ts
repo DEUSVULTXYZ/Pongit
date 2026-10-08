@@ -15,10 +15,10 @@ const sendRouters=new Map<string,ReturnType<typeof boundedSendRouter>&{users:num
 function boundedSendRouter(url:string){
   const clients=new Set<ReturnType<typeof createPublicClient>>();
   const ready=new WeakMap<object,()=>boolean>();let closed=false;
-  // A socket blocked by a proxy must not interrupt every resume countdown.
-  // Keep the HTTP lane for a full match after a loss; a new player client owns
-  // a fresh router. This changes transport only, never retries signed bytes.
-  const router=createSendRouter(url,{firstRestMs:600000,maxRestMs:600000,make:(endpoint,via,socket)=>{
+  // Retry a fresh socket after the SDK's bounded 2s..60s rest. A transient
+  // response loss must not pin an entire match to an unhealthy HTTP path.
+  // Until that socket is ready, commands use HTTP without awaiting a handshake.
+  const router=createSendRouter(url,{make:(endpoint,via,socket)=>{
     const ws=new URL(nodeSocketUrl(endpoint));
     if(socket)ws.searchParams.set('interlude_send',String(socket));
     const client=createPublicClient({transport:via==='ws'&&typeof WebSocket!=='undefined'

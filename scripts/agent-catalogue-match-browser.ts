@@ -210,6 +210,18 @@ if(restored)await context.addInitScript(session=>{
 },restored.session);
 page.setDefaultTimeout(60000);
 const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
+if(receiptProbe){
+ await cdp.send('Network.enable');report.connectionDiagnostics=[];
+ cdp.on('Network.responseReceived',event=>{
+  const response=event.response;
+  if(!new URL(response.url).hostname.endsWith('.fly.dev')||!response.timing)return;
+  const timing=response.timing;
+  if(timing.receiveHeadersStart-timing.sendEnd<100||report.connectionDiagnostics.length>=200)return;
+  report.connectionDiagnostics.push({at:performance.timeOrigin+performance.now(),protocol:response.protocol,
+   remoteAddress:response.remoteIPAddress,reused:response.connectionReused,connectionId:response.connectionId,
+   sendEndMs:timing.sendEnd,headersStartMs:timing.receiveHeadersStart,headersEndMs:timing.receiveHeadersEnd});
+ });
+}
 const {authenticatorId}=await cdp.send('WebAuthn.addVirtualAuthenticator',{options:{protocol:'ctap2',transport:'internal',hasResidentKey:true,hasUserVerification:true,isUserVerified:true,automaticPresenceSimulation:true,hasPrf:true}});
 for(const credential of restored?.credentials?.credentials??[])await cdp.send('WebAuthn.addCredential',{authenticatorId,credential});
 let assertions=0;cdp.on('WebAuthn.credentialAsserted',()=>assertions++);

@@ -1,0 +1,400 @@
+{
+  "at": "2026-10-08T23:52:42.970252+00:00",
+  "status": "candidate-tested-not-deployed",
+  "sourceChange": "Restore the installed SDK send router bounded 2s to 60s socket retry after transient loss; PONGIT previously forced HTTP for 600s. Optional handshake remains off the command path. Exact receipt recovery and nonce journal remain authoritative.",
+  "baseline": {
+    "match": "077 epoch1 /1232",
+    "entryMs": 7560,
+    "sendP95Ms": 18.0038,
+    "unexpectedResumes": 1,
+    "visibleResyncs": 1,
+    "verdict": "FAIL",
+    "maxPendingDiffs": 26,
+    "maxPlayerCommandsPerSecond": 20,
+    "nodeErrors": 0
+  },
+  "controls": {
+    "localInputP95Ms": 14.3,
+    "maxStopDriftUnits": 0,
+    "heldSpeedRatio": 1,
+    "unconfirmedBounces": 0
+  },
+  "diagnostic": {
+    "scope": "Read-only dual-network observation. No transaction or session writes. Not browser acceptance or protocol capacity proof.",
+    "vantages": [
+      {
+        "label": "windows-36",
+        "startedAt": "2026-10-08T23:44:16.404Z",
+        "finishedAt": "2026-10-08T23:48:16.867Z",
+        "rows": 3750,
+        "apps": [
+          {
+            "app": "0x077df08fa9ff9bbfcba2a3c6879bcf3b21efd3df",
+            "ws": {
+              "samples": 469,
+              "p95Ms": 5.0195999999996275,
+              "maxMs": 35.70050000000015,
+              "errors": 0
+            },
+            "http": {
+              "samples": 469,
+              "p95Ms": 11.932399999990594,
+              "maxMs": 96.80100000000016,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 13.066299999998591,
+              "maxMs": 93.77219999999988,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x0dcfdd467f7d3d80194897429e85184f46f43e98",
+            "ws": {
+              "samples": 469,
+              "p95Ms": 4.393299999999726,
+              "maxMs": 21.825799999999845,
+              "errors": 0
+            },
+            "http": {
+              "samples": 469,
+              "p95Ms": 11.516600000002654,
+              "maxMs": 57.5003999999999,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 13.409400000004098,
+              "maxMs": 56.850299999999834,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x21a573b3c39265d27ad98f70e8942fd55af54391",
+            "ws": {
+              "samples": 469,
+              "p95Ms": 4.642999999981839,
+              "maxMs": 21.08979999999997,
+              "errors": 0
+            },
+            "http": {
+              "samples": 469,
+              "p95Ms": 12.163100000005215,
+              "maxMs": 74.42780000000016,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 13.989999999990687,
+              "maxMs": 74.28279999999995,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x264101ca1936cfd1b274f5ceba535e1378597dc4",
+            "ws": {
+              "samples": 469,
+              "p95Ms": 4.600399999995716,
+              "maxMs": 20.19450000001234,
+              "errors": 0
+            },
+            "http": {
+              "samples": 469,
+              "p95Ms": 11.693700000003446,
+              "maxMs": 105.18870000000015,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 13.24199999999837,
+              "maxMs": 103.78559999999993,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x4e9fa437576b1b2b386fe1ec24d26839434effb2",
+            "ws": {
+              "samples": 467,
+              "p95Ms": 4.295299999997951,
+              "maxMs": 29.353800000000092,
+              "errors": 0
+            },
+            "http": {
+              "samples": 467,
+              "p95Ms": 11.798799999996845,
+              "maxMs": 269.53039999998873,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 12.520299999996496,
+              "maxMs": 1493.427399999986,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x776f35918da25f0b594fea72911dde5efc93e48e",
+            "ws": {
+              "samples": 469,
+              "p95Ms": 4.311000000016065,
+              "maxMs": 30.865299999999934,
+              "errors": 0
+            },
+            "http": {
+              "samples": 469,
+              "p95Ms": 11.371500000008382,
+              "maxMs": 84.58889999999997,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 12.932800000009593,
+              "maxMs": 72.0351999999998,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x9e4c76aa3f83db0b854e0ae968df38bce29ab123",
+            "ws": {
+              "samples": 469,
+              "p95Ms": 4.263200000001234,
+              "maxMs": 829.6126999999979,
+              "errors": 0
+            },
+            "http": {
+              "samples": 469,
+              "p95Ms": 11.220200000010664,
+              "maxMs": 769.3781999999774,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 12.174700000003213,
+              "maxMs": 69.88569999999982,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0xcc4fbf1df9b4bf61353660c40e8f05c5135c3b23",
+            "ws": {
+              "samples": 469,
+              "p95Ms": 4.6696999999985565,
+              "maxMs": 30.8420000000001,
+              "errors": 0
+            },
+            "http": {
+              "samples": 469,
+              "p95Ms": 11.01600000000326,
+              "maxMs": 97.6742999999999,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 12.069100000022445,
+              "maxMs": 97.37439999999992,
+              "errors": 0
+            }
+          }
+        ]
+      },
+      {
+        "label": "vps-36",
+        "startedAt": "2026-10-08T23:44:54.282Z",
+        "finishedAt": "2026-10-08T23:48:54.760Z",
+        "rows": 3802,
+        "apps": [
+          {
+            "app": "0x077df08fa9ff9bbfcba2a3c6879bcf3b21efd3df",
+            "ws": {
+              "samples": 474,
+              "p95Ms": 95.13098199999877,
+              "maxMs": 1118.6306739999854,
+              "errors": 0
+            },
+            "http": {
+              "samples": 474,
+              "p95Ms": 100.30673299999762,
+              "maxMs": 410.19322699999975,
+              "errors": 0
+            },
+            "health": {
+              "samples": 117,
+              "p95Ms": 99.96795800000109,
+              "maxMs": 407.24221599999964,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x0dcfdd467f7d3d80194897429e85184f46f43e98",
+            "ws": {
+              "samples": 476,
+              "p95Ms": 93.94178799999645,
+              "maxMs": 185.55508700000019,
+              "errors": 0
+            },
+            "http": {
+              "samples": 476,
+              "p95Ms": 99.80071199999657,
+              "maxMs": 400.49042199999985,
+              "errors": 0
+            },
+            "health": {
+              "samples": 116,
+              "p95Ms": 99.13490200000524,
+              "maxMs": 399.687899,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x21a573b3c39265d27ad98f70e8942fd55af54391",
+            "ws": {
+              "samples": 475,
+              "p95Ms": 90.4402559999944,
+              "maxMs": 118.37765899999977,
+              "errors": 0
+            },
+            "http": {
+              "samples": 475,
+              "p95Ms": 99.80990500000189,
+              "maxMs": 207.019538,
+              "errors": 0
+            },
+            "health": {
+              "samples": 117,
+              "p95Ms": 101.8665949999995,
+              "maxMs": 196.09029199999986,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x264101ca1936cfd1b274f5ceba535e1378597dc4",
+            "ws": {
+              "samples": 476,
+              "p95Ms": 94.33308800001396,
+              "maxMs": 179.89183700000012,
+              "errors": 0
+            },
+            "http": {
+              "samples": 476,
+              "p95Ms": 98.97002299999986,
+              "maxMs": 400.1324629999999,
+              "errors": 0
+            },
+            "health": {
+              "samples": 117,
+              "p95Ms": 100.05127700000594,
+              "maxMs": 317.1002830000002,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x4e9fa437576b1b2b386fe1ec24d26839434effb2",
+            "ws": {
+              "samples": 476,
+              "p95Ms": 93.90149499999825,
+              "maxMs": 193.70542699999987,
+              "errors": 0
+            },
+            "http": {
+              "samples": 476,
+              "p95Ms": 98.94052400000146,
+              "maxMs": 670.6121510000085,
+              "errors": 0
+            },
+            "health": {
+              "samples": 118,
+              "p95Ms": 99.40215000000899,
+              "maxMs": 315.18260499999997,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x776f35918da25f0b594fea72911dde5efc93e48e",
+            "ws": {
+              "samples": 476,
+              "p95Ms": 94.58704900000157,
+              "maxMs": 109.27080299999216,
+              "errors": 0
+            },
+            "http": {
+              "samples": 476,
+              "p95Ms": 99.21186099998886,
+              "maxMs": 331.71107699999993,
+              "errors": 0
+            },
+            "health": {
+              "samples": 116,
+              "p95Ms": 100.50989400000253,
+              "maxMs": 330.5022560000002,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0x9e4c76aa3f83db0b854e0ae968df38bce29ab123",
+            "ws": {
+              "samples": 473,
+              "p95Ms": 89.88025200000266,
+              "maxMs": 1278.4798549999832,
+              "errors": 0
+            },
+            "http": {
+              "samples": 473,
+              "p95Ms": 99.65913000001456,
+              "maxMs": 1615.6443339999823,
+              "errors": 0
+            },
+            "health": {
+              "samples": 116,
+              "p95Ms": 99.39955700000064,
+              "maxMs": 210.248196,
+              "errors": 0
+            }
+          },
+          {
+            "app": "0xcc4fbf1df9b4bf61353660c40e8f05c5135c3b23",
+            "ws": {
+              "samples": 476,
+              "p95Ms": 94.57517800000642,
+              "maxMs": 102.06917000000249,
+              "errors": 0
+            },
+            "http": {
+              "samples": 476,
+              "p95Ms": 98.22847000000183,
+              "maxMs": 422.4685690000001,
+              "errors": 0
+            },
+            "health": {
+              "samples": 117,
+              "p95Ms": 99.21332199999597,
+              "maxMs": 317.4306120000001,
+              "errors": 0
+            }
+          }
+        ]
+      }
+    ],
+    "conclusion": "Read-only eth_blockNumber stalls occurred on both independent paths to 9e4 at 23:47:51-54 UTC, with no publication errors or diff pressure. Other nodes continued answering. This isolates a node or shared upstream path, but does not identify which host component delayed dispatch. Browser pauses remain failures.",
+    "probeSource": "scripts/responsive-node-paths-20261009.mjs",
+    "probeSha256": "60e44b9c62b26424946a690257a547028177b50c308980929fe53222f2a40cff"
+  },
+  "regression": {
+    "oldSource": "FAIL: first response resolves by exact receipt but no socket retry after rest; remains HTTP for full match",
+    "candidate": "PASS: real HTTP/WebSocket server, one effect and acknowledgement per exact command, next healthy socket reused",
+    "focusedTests": 29,
+    "fullTypeScriptTests": 1165,
+    "typecheck": true
+  },
+  "limits": [
+    "This does not explain every hosted latency spike.",
+    "No hosted gameplay acceptance on the new router yet.",
+    "No provider settings, live game, contract, expiry or nonce rules changed.",
+    "No final unchanged 24-hour qualification."
+  ],
+  "failuresPreserved": [
+    "artifacts/qualification/catalogue-r2final35c2",
+    "artifacts/responsive-20261008-r2/socket36-baseline.log",
+    "artifacts/responsive-20261008-r2/node-paths-attempts-36.json"
+  ]
+}
