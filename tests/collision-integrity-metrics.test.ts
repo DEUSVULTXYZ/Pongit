@@ -2,6 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {collisionIntegrity} from '../scripts/collision-integrity-metrics';
 const pose=(at:number,x:number,collisions:any[]=[])=>({at,renderedUs:String(at*1000),rules:17,rally:'1',balls:[{id:1,x,y:200}],collisions});
+
+test('Chaos974 Last Chance shield is a confirmed shield reflection, not an unconfirmed paddle hit',()=>{
+ const hit={at:'18000',rally:1,ball:1,kind:8,x:'1008000012000000'};
+ const frames=[pose(0,1003),pose(10,1007),pose(20,1005,[hit]),pose(30,1001,[hit])]
+  .map((p,i)=>({...p,sourceVelocity:{vx:i<2?'211200000':'-211200000'}}));
+ const r=collisionIntegrity(frames);assert.equal(r.unconfirmed.length,0);assert.equal(r.visiblePaddleBounces,0);
+ assert.equal(r.shieldBounces.length,1);
+ for(const mutation of [
+  (h:any)=>h.ball=2,(h:any)=>h.rally=2,(h:any)=>h.kind=7,
+  (h:any)=>h.at='500000',(h:any)=>h.x='984000000000000',
+ ]){
+  const altered=structuredClone(frames);for(const p of altered)for(const h of p.collisions)mutation(h);
+  assert.equal(collisionIntegrity(altered).unconfirmed.length,1);
+ }
+ const predicted=structuredClone(frames);predicted[2].sourceVelocity.vx='211200000';
+ assert.equal(collisionIntegrity(predicted).unconfirmed.length,1,'a painted reversal still needs matching live velocity');
+});
 test('a visible reflection without a live contact fails, even with smooth frames',()=>{
  const frames=[pose(0,50),pose(10,40),pose(20,42),pose(30,45)];
  assert.equal(collisionIntegrity(frames).unconfirmed.length,1);

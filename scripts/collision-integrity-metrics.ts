@@ -22,7 +22,7 @@ export function collisionIntegrity(poses:any[],snapshots:any[]=[]){
    &&Math.abs(Number(x.x)/1e12-plane)<100&&Math.abs(Number(y.x)/1e12-plane)<100;
  };
  const hits=poses.flatMap(p=>(p.collisions??[]).map((h:any)=>({...h,observedAt:p.at})));
- const previous=new Map<number,{pose:any;ball:any;direction:number}>(),bounces:any[]=[],subpixelCorrections:any[]=[];
+ const previous=new Map<number,{pose:any;ball:any;direction:number}>(),bounces:any[]=[],subpixelCorrections:any[]=[],shieldBounces:any[]=[];
  for(const [frameIndex,p] of poses.entries())for(const ball of p.balls??[]){
   const old=previous.get(ball.id),dx=old?ball.x-old.ball.x:0;
   const dir=Math.abs(dx)>.05?Math.sign(dx):old?.direction??0;
@@ -44,6 +44,16 @@ export function collisionIntegrity(poses:any[],snapshots:any[]=[]){
    previous.set(ball.id,{pose:p,ball,direction:old.direction});continue;
   }
   const time=Number(p.renderedUs),kind=side===0?3:4;
+  const shieldPlane=side===0?16:1008;
+  const incoming=ball.id===1?old.pose.sourceVelocity?.vx:source(old.pose)?.balls?.[ball.id-1]?.vx;
+  const outgoing=ball.id===1?p.sourceVelocity?.vx:source(p)?.balls?.[ball.id-1]?.vx;
+  const shield=(p.collisions??[]).find((h:any)=>h.rally===Number(p.rally)&&h.ball===ball.id&&h.kind===(side===0?7:8)
+   &&Math.abs(Number(h.at)-time)<=150000&&Number(h.at)<=Number(p.sourceUs??time)
+   &&Math.abs(Number(h.x)/1e12-shieldPlane)<.01);
+  if(shield&&(old.ball.x-plane)*dir<0&&(ball.x-plane)*dir<0
+    &&Math.sign(Number(incoming))===-dir&&Math.sign(Number(outgoing))===dir){
+   shieldBounces.push({at:p.at,ball:ball.id,side,rally:p.rally,kind:shield.kind,sequence:shield.sequence,evidence:'live-shield-event'});continue;
+  }
   const confirmed=p.rules>=9
    ?hits.some(h=>h.rally===Number(p.rally)&&h.ball===ball.id&&h.kind===kind&&Math.abs(Number(h.at)-time)<=150000&&h.observedAt<=p.at+500)
    :false;
@@ -56,5 +66,5 @@ export function collisionIntegrity(poses:any[],snapshots:any[]=[]){
   bounces.push({at:p.at,ball:ball.id,side,rally:p.rally,renderedUs:p.renderedUs,confirmed:confirmed||transition||liveClassic,
    evidence:confirmed?'live-event':transition?'live-contact-transition':liveClassic?'live-classic-reversal':null});
  }
- return{samples:poses.length,visiblePaddleBounces:bounces.length,unconfirmed:bounces.filter(b=>!b.confirmed),bounces,subpixelCorrections};
+ return{samples:poses.length,visiblePaddleBounces:bounces.length,unconfirmed:bounces.filter(b=>!b.confirmed),bounces,subpixelCorrections,shieldBounces};
 }
