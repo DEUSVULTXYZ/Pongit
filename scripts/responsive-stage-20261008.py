@@ -24,6 +24,11 @@ def latest(name):
 proof_path,proof=latest('verify-import')
 assert proof['pool']==r['common']['pool'] and int(proof['identities'])>=8 and int(proof['tournaments'])>=43
 assert load(root/'human/evidence/preservation-audit.json')['passed']
+human_binding=load(root/'human-evidence/final-snapshot-binding.json')
+assert human_binding['passed'] and human_binding['snapshotHash']==h['migrationHash']
+assert human_binding['snapshot'] in ['source-audit-'+str(i)+'.json' for i in range(1,5)]
+human_snapshot=root/'human-evidence'/human_binding['snapshot']
+assert load(human_snapshot)['ready']
 assert all(d['status']==1 for d in proof['sourceDelegations'])
 build=load(root/('build-runtime-current.json' if (root/'build-runtime-current.json').exists() else 'build-runtime-1.json'));assert build['passed']
 source_directory=pathlib.Path(build.get('sourceDirectory',str(root/'build-source')))
@@ -116,6 +121,10 @@ eh['PONG_SOURCE_COMMIT']=build['sourceCommit']
 save(target / 'human-runtime.json', ch)
 save(target / 'previous-human-runtime.private.json', oldhuman)
 source_human_mount=next(v['source'] for v in oldhuman['services']['relayer']['volumes'] if v['target']=='/run/pongit-human-v3')
+assert eh['PONG_INDEPENDENT_SNAPSHOT']=='/run/pongit-human-v3/source-snapshot.json'
+shutil.copy2(human_snapshot,root/'human/secrets/source-snapshot.json')
+os.chown(root/'human/secrets/source-snapshot.json',1000,1000)
+assert human_snapshot.read_bytes()==(root/'human/secrets/source-snapshot.json').read_bytes()
 shutil.copy2(pathlib.Path(source_human_mount)/'provisioner.json',root/'human/secrets/provisioner.json')
 os.chown(root / 'human/secrets/provisioner.json', 1000, 1000)
 save(root / 'human/secrets/publication-budget.json', {'rulesVersion': 18, 'maxBatches': 16000, 'matchReserveBatches': 8000, 'rotationLeadSeconds': 1860, 'serviceSeconds': 7200,
