@@ -96,6 +96,9 @@ elif action in ['freeze','import','verify-import','open-arenas','challenges','to
         s['environment'].update(PONG_RESPONSIVE_AGENTS='public-rules17-20261008',PONG_RESPONSIVE_REPORT='/evidence/'+action+'-'+str(attempt)+'.json')
         if action!='freeze':s['environment']['PONG_RESPONSIVE_FREEZE_PROOF']='/evidence/'+proof('freeze')[0].name
         if action in ['open-arenas','challenges','tournaments']:s['environment']['PONG_RESPONSIVE_IMPORT_PROOF']='/evidence/'+proof('verify-import')[0].name
+        if action in ['challenges','tournaments']:
+            s['volumes'] += [str(root/'agent-evaluation-readiness.ts')+':/app/shared/agent-evaluation-readiness.ts:ro',
+                str(root/'live/metadata/publication-review.json')+':/metadata/publication-review.json:ro']
     s['command']=['timeout','--signal=TERM','--kill-after=30',str(seconds),'node','--import','tsx','scripts/'+script,*args]
     start(c,'qualification',action,seconds)
 else:

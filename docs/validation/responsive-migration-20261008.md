@@ -257,3 +257,72 @@ duplicates, 442,188,199 bytes. Manifests, evidence, current drained backups and
 all mounted paths remain. Disk is 79.56% usable. A separate source-offload attempt
 found zero eligible files and removed nothing; its report is retained.
 No public product cutover or browser acceptance claim.
+
+## 05:32 UTC - exact public agent history verified; human migration started
+
+R2 import exited 0 at 05:28:26. The immutable rules-17 pool is
+`0xe01c31f482113367c510a04816ff371676477fa3`. Independent canonical comparison
+passed at block 69172367, 05:30:38: 938 results, 194 challenge requests, 43 books,
+742 fixtures/attempt histories and nine identities, including all eight house
+bots and the community identity. Ratings, nonces, ordering, qualification state,
+family and historical references match the public predecessor. All eight new
+arenas are registered but unopened. All old delegations remain Active.
+
+The human final binding passed using snapshot 2/social 3 and the actual r2 backup.
+Sole human deployment attempt 1 now uses the original operator journal and exact
+public human history. No source closure, implicit cancellation or new game driver.
+
+## 05:54 UTC - contracts migrated; service preparation and hosting recovery
+
+Both migrations are verified. Human lobby
+`0xdf44e1cae317bc9d8bafcf9b292b08bb90996fb7` preserves seven results, 28 ratings,
+20 original player seeds and eight pair seeds; family, profiles, historical
+financial contracts and all previous references remain. Three human and eight
+agent arenas opened in epoch 1, with no source closure. New backend image
+`9414d534...21fa`, index `ad167045...7e0bf` and web `86f199d4...84a00` are built
+from product eb42374. Backends/index are running with admissions closed; web
+cutover has not happened. Actual browser/24h qualification remains unproved.
+
+Two local operational faults were found before admission. The VPS resolver
+cached absent Fly IPv4 records while Cloudflare and the Windows client already
+resolved them; verified HTTPS returned the correct app/epoch. Scoped Compose DNS
+now uses 1.1.1.1/1.0.0.1 only for the seven PONGIT backend roles. No host-wide DNS,
+provider change or repeated creation. Separately, the common runtime image's
+inherited agent-reader CMD started the wrong role for humans. Compose now pins
+`node --import tsx relayer/src/main.ts`; the relayer listens and provisions its
+new arenas. Both exact previous configurations and correction reports remain.
+The first command-correction guard rejected a null Compose command before writes;
+this failure is preserved. Stage source now explicitly pins the human command.
+
+Four agent nodes published their epoch marker. Four others resolve, but the
+public control directory reports stopped and their TLS endpoints fail before
+HTTP. A bounded recovery helper checks the exact new pool, closed admissions,
+zero match, epoch 1, zero batches/pending commands, owner and code. It sends at
+most one owner-consented POST per stopped app, journalled under a unique database
+key while holding the existing per-arena provisioning lock. Its first stdin
+launch failed TypeScript parsing before execution; the corrected Node24 typed
+stdin invocation is running with an original 240-second bound. An acknowledgement
+alone is not session/publication proof. Never repeat an uncertain POST.
+
+Post-migration backup: six files, 75,480,278 bytes, copied and SHA-verified off VPS
+at 05:47:16, manifest
+`5210976d69c4bc00506f4982d81925fb17de3d54a2fe93ac5232d2835429f6c7`.
+This predates the bounded hosting recovery; preserve all newer intent evidence.
+
+## 06:03 UTC - healthy subset activation reviewed
+
+One owner-consented hosting retry per four stopped agent nodes finished at
+05:52:43. All HTTP 200 responses still said stopped: acknowledgement only, no
+recovery or publication proof. Three human nodes are also stopped. Do not repeat
+those agent POSTs or close their delegations. This is separate from the earlier
+resolved PONGIT resolver and human-command faults.
+
+Activation previously required all eight nodes to publish, although the pool
+already supports per-epoch exclusion. The reviewed helper now admits evaluation
+on the healthy subset only, requiring canonical epoch/code/rules, an actual
+published marker, fresh matching live health, and contract admission gates.
+Unhealthy enabled nodes fail the check; disabled unavailable nodes stay excluded.
+Initial gates are journalled before public admissions. Seven new regression tests
+and three nearby house-instance tests pass; root TypeScript passed. This does
+not qualify five simultaneous lanes or the release. No new product image is
+needed for this deployment helper. No public opening or browser result yet.

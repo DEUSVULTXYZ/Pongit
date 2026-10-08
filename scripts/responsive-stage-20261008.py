@@ -117,6 +117,9 @@ for v in sh['volumes']:
 sh['restart'] = 'unless-stopped'
 remove_reviewed_mounts(sh,'pongit-relayer-1')
 sh['image']=build['image']
+# The shared image inherits an agent-reader CMD. The previous human image had
+# its own relayer CMD, absent from Compose; pin the actual role explicitly.
+sh['command']=['node','--import','tsx','relayer/src/main.ts']
 eh['PONG_SOURCE_COMMIT']=build['sourceCommit']
 save(target / 'human-runtime.json', ch)
 save(target / 'previous-human-runtime.private.json', oldhuman)

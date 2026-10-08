@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import {readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {keccak256} from 'viem';
+import {Pool} from 'pg';
+import {agentPoolAdmissionAbi} from '../shared/agent-house-instances';
+import {evaluationReadiness} from '../shared/agent-evaluation-readiness';
 import {chainTools} from './independent-chain-tools';
 import {retryOperatorContention} from '../shared/operator-contention';
 import {canonicalContractReads} from '../shared/canonical-contract-reads';
@@ -25,20 +28,30 @@ const reviewBytes=await readFile('/metadata/publication-review.json'),review=JSO
 assert.equal(review.pool,r.common.pool);assert.equal(review.qualification.capacity,false);assert.equal(review.qualification.soak24h,false);
 const output=process.env.PONG_RESPONSIVE_REPORT!;assert(new RegExp('^/evidence/'+action+'-[1-3]\\.json$').test(output));
 const t=await chainTools('reusable-agents-20261008-1:activate');
+const db=new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:1});
 const report:any={at:new Date().toISOString(),action,pool:r.common.pool,passed:false,publication:[],transactions:[],qualified:false};
 const stringify=(v:unknown)=>JSON.stringify(v,(_,x)=>typeof x==='bigint'?String(x):x,2);
 await writeFile(output,stringify(report),{flag:'wx'});const save=()=>writeFile(output,stringify(report)+'\n');
 try{
  const block=await t.base.getBlock();assert(block.hash);const read=canonicalContractReads(t.base,block.hash).read;
  report.block=block.number;report.blockHash=block.hash;
+ const readiness=[];
  for(const arena of r.arenas){
   const d=await readHubDelegation(t.base,r.common.hub,arena.app,block.number);
-  assert(d.status===1&&d.epoch===1n&&d.expiresAt===0n&&d.batchIndex>0n,'New arena must actually publish its marker');
-  assert.equal(await read(arena.app,a,'publicationCheckpoint'),d.epoch);
+  assert(d.status===1&&d.epoch===1n&&d.expiresAt===0n,'New arena must remain continuously delegated');
+  const checkpoint=await read<bigint>(arena.app,a,'publicationCheckpoint');
+  const enabled=await read<boolean>(r.common.pool,agentPoolAdmissionAbi,'arenaAdmissionEnabled',[arena.app,d.epoch]);
+  readiness.push({app:arena.app,epoch:d.epoch,enabled,batches:d.batchIndex,checkpoint});
   assert.equal(await read(arena.app,a,'RULES_VERSION'),17n);
   assert.equal(keccak256((await t.base.getCode({address:arena.app,blockNumber:block.number}))!),arena.runtimeHash);
-  report.publication.push({app:arena.app,epoch:d.epoch,batches:d.batchIndex});
+  report.publication.push({app:arena.app,epoch:d.epoch,batches:d.batchIndex,checkpoint,admissions:enabled});
  }
+ if(action==='challenges')assert.equal(await read(r.common.pool,p,'publicAdmissions'),false,'Initial activation requires closed public admissions');
+ const observations=(await db.query('SELECT app,stage,detail,updated_at FROM agent_pool.health')).rows;
+ report.readiness=evaluationReadiness(readiness.map(v=>{
+  const health=observations.find(h=>h.app===v.app.toLowerCase());
+  return {...v,health:health?{stage:health.stage,epoch:String(health.detail.epoch),observedAt:new Date(health.updated_at).getTime()}:undefined};
+ }),Date.now(),action==='challenges');
  for(let i=0;i<8;i++){
   const agent=await read(r.common.catalog,c,'house',[i]),identity=await read(r.common.catalog,c,'identity',[agent]);
   assert.equal(identity.qualified,3);assert.equal(identity.house,i+1);
@@ -60,6 +73,9 @@ try{
  };
  if(action==='challenges'){
   assert.equal(await read(r.common.tournaments,b,'admissions'),false);
+  const enable=readiness.filter(v=>!v.enabled&&report.readiness.ready.includes(v.app));
+  if(enable.length)await write('verified-initial-arenas',r.common.pool,agentPoolAdmissionAbi,'setArenaAdmissions',[
+   enable.map(v=>v.app),enable.map(v=>v.epoch),enable.map(()=>true),keccak256(reviewBytes)]);
   await write('qualification-admissions',r.common.pool,p,'setAdmissions',[true]);
   await write('evaluation-evidence',r.common.pool,p,'qualifyCapacity',['0x'+createHash('sha256').update(reviewBytes).digest('hex')]);
   await write('challenge-admissions',r.common.challenges,q,'setAdmissions',[true]);
@@ -67,4 +83,4 @@ try{
  }else await write('tournament-admissions',r.common.tournaments,b,'setAdmissions',[true]);
  report.passed=true;
 }catch(e){report.error=String((e as any)?.shortMessage??(e as Error).message).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);process.exitCode=1;}
-finally{report.finishedAt=new Date().toISOString();await save();await t.close();console.log(JSON.stringify({action,passed:report.passed,error:report.error,qualified:false}));}
+finally{report.finishedAt=new Date().toISOString();await save();await db.end();await t.close();console.log(JSON.stringify({action,passed:report.passed,error:report.error,qualified:false}));}
