@@ -520,7 +520,12 @@ try{
     try{await page.getByRole('dialog',{name:'Arena tools',exact:true}).waitFor({state:'hidden',timeout:15000});}
     catch(e){report.passkeyDiagnostic=await page.evaluate(()=>(window as any).__passkeyTimings??[]);report.assertionCount=assertions;
      report.permissionDiagnostic=await page.evaluate(()=>(window as any).__permissionAlerts??[]);throw e;}
-    assert(await page.getByRole('button',{name:'Move up',exact:true}).isDisabled(),'Revoked control must be disabled');
+    report.revokedState=await page.evaluate(()=>({
+     disabled:document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]')?.disabled,
+     dialogs:[...document.querySelectorAll('[role="dialog"]')].map(el=>el.getAttribute('aria-label')),
+     inert:[...document.body.children].filter(el=>(el as HTMLElement).inert).map(el=>el.tagName),
+    }));
+    assert.equal(report.revokedState.disabled,true,'Revoked control must be disabled');
     report.faultStep='reauthorizing';
     await page.getByRole('button',{name:'Tools',exact:true}).first().click();await page.getByRole('button',{name:'Sign in again',exact:true}).click();
     await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:45000});

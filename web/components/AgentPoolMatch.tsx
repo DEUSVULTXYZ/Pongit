@@ -50,7 +50,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
  const [painted,setPainted]=useState<CourtPlayback>();
  const paintedAt=useRef(0);
  const immediateDirection=useRef<-1|0|1>(0);
- const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState('');
+ const [account,setAccount]=useState<Address>(),[ready,setReady]=useState(false),[direction,setDirection]=useState<-1|0|1>(0),[pending,setPending]=useState(false),[tools,setTools]=useState(false),[busy,setBusy]=useState(false),[controlError,setControlError]=useState(''),[actionError,setActionError]=useState('');
  const playerClient=useRef<ReturnType<typeof createPoolPlayer>|null>(null),manifest=useRef<AgentPoolManifest|null>(null),lastRef=useRef(''),commandVersion=useRef(0),actionBusy=useRef(false),router=useRouter();
  const recoveryVersion=useRef(0);
  const inputClock=useRef<{matchId:string;frame:ParticipantPresentationClock}|null>(null);
@@ -226,7 +226,9 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
   return()=>{window.removeEventListener('keydown',key);window.removeEventListener('keyup',key);window.removeEventListener('blur',stop);document.removeEventListener('visibilitychange',visibility);};
  },[]);
  useEffect(()=>{arcadeAudio.setGameplay(snapshot?.phase===2&&(snapshot.sync?.pause.status??0)<2&&!view?.result);return()=>arcadeAudio.setGameplay(false);},[snapshot?.phase,snapshot?.sync?.pause.status,!!view?.result]);
- async function action(fn:()=>Promise<void>){if(actionBusy.current)return;actionBusy.current=true;setBusy(true);try{await fn();setControlError('');}catch(e){setControlError(poolUserError(e));}finally{actionBusy.current=false;setBusy(false);}}
+ // Background control recovery must not erase a failed explicit owner action.
+ // Keep its explanation until the player retries; gameplay errors stay separate.
+ async function action(fn:()=>Promise<void>){if(actionBusy.current)return;actionBusy.current=true;setBusy(true);setActionError('');try{await fn();}catch(e){setActionError(poolUserError(e));}finally{actionBusy.current=false;setBusy(false);}}
  async function renew(){await action(async()=>{
   const m=manifest.current;if(!m||!view||!account)throw Error('Read this arena before renewing');
   const identity=await connect();try{
@@ -304,7 +306,7 @@ export function AgentPoolMatch({enabled,reference}:{enabled:boolean;reference:Ag
     </>:<ArcadeProgress stage={error?'unavailable':'preparing'}/>}
    </section>}
   </>}
-  {tools&&<Dialog label="Arena tools" onClose={()=>setTools(false)}><IconButton aria-label="Close arena tools" onClick={()=>setTools(false)}/><h2>Arena tools</h2>{controlError&&<p role="alert">{controlError}</p>}
+  {tools&&<Dialog label="Arena tools" onClose={()=>setTools(false)}><IconButton aria-label="Close arena tools" onClick={()=>setTools(false)}/><h2>Arena tools</h2>{(actionError||controlError)&&<p role="alert">{actionError||controlError}</p>}
    <button disabled={busy} onClick={()=>void renew()}>Sign in again</button><button disabled={busy||!playerClient.current} onClick={()=>void revoke()}>Sign out of this match</button><button disabled={busy||!playerClient.current} onClick={()=>void action(async()=>{await playerClient.current!.concede();setTools(false);})}>Concede match</button></Dialog>}
   <Outcome id={refKey} defer={draining} match={snapshot?{playerA:snapshot.a,playerB:snapshot.b,winner:result?.winner??snapshot.winner,status:result?.status??snapshot.phase,state:{...snapshot.state,scoreA,scoreB},ranked:false,mode:view?.mode??0,draw:(result?.status??snapshot.phase)===3&&(result?.winner??snapshot.winner)===zeroAddress}:null}
    account={account??''} rating={null} sound={arcadeAudio.settings.enabled} replay={false} confirmation="engine" rematch={rematch} watch={()=>setReplay(true)} again={()=>router.push('/agents')} againLabel="Choose another agent"/>
