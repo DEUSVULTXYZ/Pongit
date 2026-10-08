@@ -106,7 +106,11 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
    const s=current.current.family,requested=roomId?parseRoomReference(roomId,manifest.lobby):undefined;
    let last:undefined|{app:Address;id:bigint;epoch:bigint;room?:bigint};
    try{const v=JSON.parse(sessionStorage.getItem(`pongit:last-arena:${manifest.lobby}:${s?.grant.player}`)||'null');if(v&&manifest.arenas.some(a=>equal(a.app,v.app)))last={app:v.app,id:BigInt(v.id),epoch:BigInt(v.epoch),room:v.room?BigInt(v.room):undefined};}catch{}
-   const next=await readIndependentLobby(base,manifest,s?.grant.player,requested,last);lobbyClock.observe(Number(next.now)*1000);setView(next);setLobbySync('');
+   const next=await readIndependentLobby(base,manifest,s?.grant.player,requested,last,proposal=>{
+    if(!s||!equal(current.current.family?.grant.player,s.grant.player))return;
+    lobbyClock.observe(Number(proposal.now)*1000);
+    setView((prior:any)=>prior.block>proposal.block?prior:{...prior,...proposal});
+   });lobbyClock.observe(Number(next.now)*1000);setView(next);setLobbySync('');
    if(next.recoverySnapshot){
     lastGame.current={app:next.app,binding:next.binding};
     // Keep a previously displayed live position while closing. A fresh tab starts
@@ -329,7 +333,10 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   const key=String(offer.id);if(autoAccepted.current===key)return;
   const accept=()=>{
    if(document.visibilityState!=='visible'||autoAccepted.current===key||working.current||Number(offer.expires)*1000<Date.now())return;
-   autoAccepted.current=key;void ensure(s=>act(s,'acceptProposal',[offer.id]));
+   // lobbyCommand already verifies the current grant, nonce and chain time at
+   // one block. Repeating family hydration here consumes the proposal window.
+   // run still serializes with queue presence and owns the single signed intent.
+   autoAccepted.current=key;void run(()=>act(family,'acceptProposal',[offer.id]));
   };
   if(document.visibilityState==='visible'){accept();return;}
   const title=document.title;document.title='Match found! · PONGIT';

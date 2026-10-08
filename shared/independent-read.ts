@@ -28,22 +28,30 @@ export function independentReader(base:PublicClient,m:IndependentManifest,blockN
  };
 }
 /** A view is pinned to one base block. No database invents occupancy, consent or capacity. */
-export async function readIndependentLobby(base:PublicClient,m:IndependentManifest,player?:Address,requestedRoom?:bigint,lastMatch?:{app:Address;id:bigint;epoch:bigint;room?:bigint}){
+export async function readIndependentLobby(base:PublicClient,m:IndependentManifest,player?:Address,requestedRoom?:bigint,lastMatch?:{app:Address;id:bigint;epoch:bigint;room?:bigint},onProposal?:(view:any)=>void){
  const block=await base.getBlock(),r=independentReader(base,m,block.number);
  const [occupancy,active,grant]=player?await Promise.all([r.lobby('occupancy',[player]),r.lobby('activeMatchOf',[player]),r.family('grantOf',[player])]):[0n,0n,null];
  // A shared room link observes that room, even if the viewer participates elsewhere.
  // It never borrows the viewer's unrelated active arena or changes occupancy.
  const id=requestedRoom??(occupancy>0n&&occupancy!==maxUint256?occupancy:undefined);
  const visibleActive=requestedRoom&&occupancy!==requestedRoom?0n:active;
- const [room,queue,inbox]=await Promise.all([
+ // Invitations and profiles are decoration. A twenty-second ranked proposal
+ // must reach its participants before those independent reads finish.
+ const invitationWork=(async()=>{
+  const inbox=player?await r.lobby('invitationPage',[player,false,0n,50n]):[[],0n];
+  const rows=await Promise.all((inbox[0] as bigint[]).map(id=>r.lobby('invitation',[id])));
+  return rows.filter(i=>i.status===1&&BigInt(i.expires)>=block.timestamp);
+ })();
+ void invitationWork.catch(()=>{});
+ const [room,queue]=await Promise.all([
   id?r.lobby('room',[id]):null,
   player&&occupancy===maxUint256?r.lobby('queueOf',[player]):null,
-  player?r.lobby('invitationPage',[player,false,0n,50n]):[[],0n],
  ]);
- const invitationRows=await Promise.all((inbox[0] as bigint[]).map(id=>r.lobby('invitation',[id])));
- const invitations=invitationRows.filter(i=>i.status===1&&BigInt(i.expires)>=block.timestamp);
  const proposal=room?.proposal?r.lobby('proposal',[room.proposal]):null;
  const p=await proposal;
+ if(room?.ranked&&p?.status===1&&!visibleActive&&BigInt(p.expires)>=block.timestamp)
+  onProposal?.({block:block.number,now:block.timestamp,occupancy,active,grant,queue,room,proposal:p,
+   binding:null,app:null,delegation:null,recoverySnapshot:null,published:null,publishedSnapshot:null});
  const app=visibleActive?await r.lobby('arenaOf',[visibleActive]):p?.id?await r.lobby('arenaOf',[p.id]):zeroAddress;
  const expectedId=visibleActive||p?.id||0n;
  const binding=app!==zeroAddress?(isReusableHumanRules(m.rulesVersion)?(await r.lobby('ticketOf',[expectedId]))[1]:await r.arena(app,'boundMatch')):null;
@@ -59,6 +67,7 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
   if(slot.id===visibleMatch.id&&slot.epoch===visibleMatch.epoch)recoverySnapshot=engineState(await r.snapshot(app,visibleMatch.id));
  }
  if(recoverySnapshot&&recoverySnapshot.id!==visibleMatch.id)throw Error('Recovery snapshot belongs to another match');
+ const invitations=await invitationWork;
  const addresses=[...new Set([player,...(room?.members??[]).map((x:any)=>x.player),...invitations.flatMap(i=>[i.sender,i.recipient])].filter(Boolean))] as Address[];
  const profiles=Object.fromEntries(await Promise.all(addresses.map(async a=>[a.toLowerCase(),await r.profiles('profileOf',[a])])));
  const sameObservedRoom=requestedRoom!==undefined&&requestedRoom===lastMatch?.room;

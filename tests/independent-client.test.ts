@@ -15,6 +15,43 @@ import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 const address=(i:number)=>toHex(i,{size:20}) as Address;
 const input={chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(i=>({app:address(i)})),genesis:1700000000,createdAt:'2026-09-12T12:00:00Z'};
 
+test('a ranked proposal reaches the player while unrelated invitation/profile hydration is blocked',async()=>{
+ const m=publicIndependentManifest(input),player=address(20),early:any[]=[];
+ let release!:(value:any)=>void,finished=false;
+ const inbox=new Promise(resolve=>{release=resolve;});
+ const base:any={getBlock:async()=>({number:100n,timestamp:200n}),readContract:async(c:any)=>{
+  assert.equal(c.blockNumber,100n);
+  if(c.functionName==='invitationPage')return inbox;
+  const values:any={occupancy:8n,activeMatchOf:0n,grantOf:{key:address(21)},
+   room:{id:8n,ranked:true,proposal:14n,members:[{player}]},proposal:{id:14n,status:1,expires:220n},
+   arenaOf:zeroAddress,profileOf:{handle:'player',avatar:0}};
+  assert(c.functionName in values,c.functionName);return values[c.functionName];
+ }};
+ const result=readIndependentLobby(base,m,player,undefined,undefined,v=>early.push(v)).then(v=>{finished=true;return v;});
+ try{
+  await new Promise(setImmediate);
+  assert.equal(early.length,1,'Ancillary reads must not consume the consent deadline');
+  assert.equal(early[0].proposal.id,14n);assert.equal(early[0].block,100n);assert.equal(early[0].binding,null);
+  assert.equal(finished,false,'The full hydrated view remains independently pending');
+ }finally{release([[],0n]);}
+ const full=await result;assert.equal(full.profiles[player.toLowerCase()].handle,'player');assert.equal(full.proposal,early[0].proposal);
+});
+
+test('early proposal delivery never replaces an active binding or advertises expired/unranked consent',async()=>{
+ for(const scenario of [{status:1,ranked:true,expires:199n,active:0n},{status:2,ranked:true,expires:220n,active:0n},
+  {status:1,ranked:false,expires:220n,active:0n},{status:1,ranked:true,expires:220n,active:15n}]){
+  let callbacks=0;
+  const base:any={getBlock:async()=>({number:100n,timestamp:200n}),readContract:async(c:any)=>{
+   const values:any={occupancy:8n,activeMatchOf:scenario.active,grantOf:{key:address(21)},invitationPage:[[],0n],
+    room:{id:8n,ranked:scenario.ranked,proposal:14n,members:[]},proposal:{id:14n,status:scenario.status,expires:scenario.expires},
+    arenaOf:zeroAddress,profileOf:{handle:'player'}};
+   assert(c.functionName in values,c.functionName);return values[c.functionName];
+  }};
+  await readIndependentLobby(base,publicIndependentManifest(input),address(20),undefined,undefined,()=>callbacks++);
+  assert.equal(callbacks,0);
+ }
+});
+
 test('a consumed queue avoids a heartbeat and only dismisses a proven intake rejection',async()=>{
  let sends=0,reads=0;
  assert.equal(await maintainQueuePresence(async()=>false,async()=>{sends++;}),'left');assert.equal(sends,0);
