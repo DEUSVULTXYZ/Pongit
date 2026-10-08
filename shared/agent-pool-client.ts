@@ -50,7 +50,10 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
  if(![0,1].includes(options.mode)||options.cancel!==undefined&&options.cancel<1n)throw Error('Invalid challenge mode or cancellation reference');
  const [family,count]=await Promise.all([
   read(m.family,familyAbi,'grantOf',[player]),
-  m.challengeAdmission==='atomic-v1'&&options.cancel===undefined?
+  // The rules17 continuation queue scans only its waiting ring. Historical
+  // completed requests no longer need extra admission passes. Keep legacy
+  // sizing for old contracts; a full/busy ring still resumes through the keeper.
+  m.challengeAdmission==='atomic-v1'&&options.cancel===undefined&&m.rulesVersion!==17?
    read<bigint>(m.challenges,agentChallengesAbi,'count'):Promise.resolve(0n),
  ]);
  if(family.player.toLowerCase()!==player.toLowerCase()||family.key.toLowerCase()!==key.address.toLowerCase()||family.expires<=block.timestamp)throw Error('Renew arcade session');

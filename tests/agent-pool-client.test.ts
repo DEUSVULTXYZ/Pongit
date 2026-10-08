@@ -117,6 +117,15 @@ test('new atomic challenge sizes its bounded scan at the same block without chan
  assert.equal(await recoverTypedDataAddress({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant,action,agent,mode,id,nonce,deadline},signature}),key.address);
  reads.length=0;const cancel=await preparePoolChallenge(client,five,key,addr(99),{agent:addr(20),mode:1,cancel:50n});
  assert.equal(cancel.to,m.challenges);assert(!reads.includes('count'),'Cancellation must not scan or admit other players');
+ reads.length=0;
+ const responsive={...five,rulesVersion:17 as const,friendlyPause:'heartbeat-v1' as const};
+ const current=await preparePoolChallenge(client,responsive,key,addr(99),{agent:addr(20),mode:1});
+ const currentBatch=decodeFunctionData({abi:multicall3Abi,data:current.data});
+ assert.equal(currentBatch.functionName,'aggregate3');if(currentBatch.functionName!=='aggregate3')throw Error();
+ assert.equal(currentBatch.args[0].length,2,'one request plus one waiting-ring pass, regardless of completed history');
+ assert.equal(currentBatch.args[0][0].callData,batch.args[0][0].callData,'same player signature, nonce, mode and identity');
+ assert.equal(currentBatch.args[0][1].allowFailure,true,'a filled lane retains the signed queued request');
+ assert(!reads.includes('count'),'history does not consume another canonical read or three empty admission calls');
 });
 
 test('challenge refuses a noncanonical observation or wrong family domain before signing',async()=>{
