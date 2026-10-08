@@ -1,0 +1,76 @@
+{
+  "at": "2026-10-08T10:39:48.572598+00:00",
+  "passed": false,
+  "releaseComplete": false,
+  "ref": {
+    "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+    "epoch": "1",
+    "id": "985"
+  },
+  "reportSha256": "530371888f1feb4fb9b4ad0bafb848f05f9a4bd4aeee64cee814b54be2faa2c8",
+  "web": "05d7711",
+  "delayEachWayMs": 75,
+  "jitterEachWayMs": 25,
+  "result": {
+    "hash": "0xacdf0f3c4fda95720ca5386abf2bed73aef86ea95f6a528ef3abcd3b08e3ea5d",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 3,
+    "scoreB": 7,
+    "elapsedUs": "72930106",
+    "finality": false
+  },
+  "send": {
+    "samples": 152,
+    "p95Ms": 209,
+    "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+  },
+  "peer": {
+    "samples": 152,
+    "p95Ms": 116.375244140625,
+    "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+    "basis": "compact send entry to independent observer ControlQueued live event"
+  },
+  "admissionMs": 8192,
+  "local": {
+    "samples": 164,
+    "p95Ms": 16.700000047683716
+  },
+  "liveness": {
+    "heartbeats": 290,
+    "resumes": 0
+  },
+  "held": {
+    "samples": 150,
+    "p05Ratio": 0.9999999999999982,
+    "p95Ratio": 1.0000000000000016,
+    "minRatio": 0.5304187437687075,
+    "maxRatio": 1.0000000000000033,
+    "outsideTarget": 1,
+    "outliers": [
+      {
+        "from": 48907.6,
+        "to": 49007.9,
+        "side": 0,
+        "direction": -1,
+        "fromY": 388.0799999999996,
+        "toY": 372.1196999999987,
+        "expected": 30.090000000000874,
+        "ratio": 0.5304187437687075
+      }
+    ]
+  },
+  "stop": {
+    "samples": 139,
+    "p95Drift": 2,
+    "maxDrift": 2
+  },
+  "root": "At48924-48958ms an old confirmed presence ceiling35390000 stopped local visual integration while controls remained enabled, recent and unpaused. New live sample35420000 arrived48974ms. Ball/clock ceiling is correct; coupling local visual intent to that old ceiling creates resistance.",
+  "fix": "5486a5f keeps local intent frame-integrated while controllable/fresh/not terminal. Ball prediction, contact fencing, live500ms presence and disconnect suspension remain unchanged.",
+  "validation": {
+    "typescriptTests": 1096,
+    "typecheck": true,
+    "focused": 24,
+    "hosted": "pending"
+  }
+}

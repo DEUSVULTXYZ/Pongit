@@ -750,3 +750,24 @@ build. Backup-touch-final8 fiveDB/config75615667bytes OFFVPSverified10:26:52,
 manifestf49dd6637daefd20000c889e5829e15e7ab299a6eb82e417bd72f93aa2e551a2.
 Read-onlydirectory10:27:40 stillall7stopped/Active. No providerwrites or funding.
 No game driver active. Buildexec15962 only; cutoverhelper preparedNOTRUN.
+
+
+## 10:37 UTC - delayed network exposed a separate local visual ceiling
+
+Feedbackweb05d7711 deployed10:29:25 after idle69231432. Actual984 PRF failure
+feedback/recovery PASS and naturally published7-1. Owned restored virtual PRF
+failure remains visible after2s background reads; close then live play resumes.
+
+985 actualChrome390+75ms eachway/jitter25 finished3-7,0resumes/0startup pauses,
+sendp95209ms/peer116.375ms/local16.7ms. OriginalFAIL: one held interval53percent
+of300units/s. Trace48924-48958 clamps local movement to an old35390000us presence
+ceiling, despite fresh enabled controls and no contract pause. Newlive35420000
+arrives48974ms. Not a protocol shutdown.5486a5f separates local visual motion
+from that old ball/clock ceiling; disables on actualpause/stale/finish. No new
+collision, server motion or500ms credit.24focused,1096fullTS/rootTS pass.
+
+Sole buildexec19192 motion10 source5486a5f; productnotyetdeployed. No game driver.
+Before build disk79.866percent, then source upload. No additional cleanup/transfer.
+Finalbackup-feedback9 remains preparedNOTRUN. Previousbackup8 verified; remains
+fresh for idle guarded cutover. Sevennormal browser cases and150ms repeat planned.
+Operator49569.600605702MON at69232263; sponsor113.244/archive96.868, nofundrequest.

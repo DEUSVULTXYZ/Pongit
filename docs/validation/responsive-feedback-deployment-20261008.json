@@ -1,0 +1,42 @@
+{
+  "releaseComplete": false,
+  "product": "05d7711499feddda0d914128a0d2190ae8d3c35a",
+  "engine": "d55833436dbaff7743bc80c3aa817ba4e0dadf57",
+  "change": "Keep explicit owner action errors independent from automatic control recovery; no physics, command, presence or rendering changes.",
+  "validation": {
+    "typecheck": true,
+    "focusedTests": 55,
+    "actualBrowser": "pending"
+  },
+  "deployment": {
+    "startedAt": "2026-10-08T10:29:23.502429+00:00",
+    "previousImage": "sha256:a54733a76f1062dc0544c659c037a49d32bb5a97cc3471abf27c4dab77fa9b55",
+    "image": "sha256:53333cc77fef7916c8b41bde2d62ea279548495a9cd58939c98f9a8e140cfe08",
+    "idle": {
+      "block": "69231432",
+      "hash": "0x11d5fbe82497bdc0ed6c2510d5fe072caf1d178e28f5f30cd0b13d04ad6d5087",
+      "empty": 5
+    },
+    "backupManifest": "f49dd6637daefd20000c889e5829e15e7ab299a6eb82e417bd72f93aa2e551a2",
+    "passed": true,
+    "started": "2026-10-08T10:29:25.03572976Z",
+    "finishedAt": "2026-10-08T10:29:25.367580+00:00"
+  },
+  "build": {
+    "startedAt": "2026-10-08T10:25:05.713051+00:00",
+    "source": "05d7711499feddda0d914128a0d2190ae8d3c35a",
+    "tag": "pongit:responsive-feedback-web-05d7711-20261008",
+    "bindings": {
+      "agent-pool.json": "a0a65f5306b7ddb3d69d217b9d724c1d642f6d2933f7c38ba48f2e216610cdf9",
+      "agent-pool-release-review.json": "66a6150eea844ab0e397d05c18dbdab0f696e66522358e1e7c4a04eb3fb14ce9",
+      "agent-reusable-index.json": "e9c0b5160042ea582014f42675db6db28682eb37af8d24e483b499905fe4e51c",
+      "independent.json": "e2bba1188e860918f3869880cf4076bbdf0138ed8033af712d4ad541883499fa"
+    },
+    "passed": true,
+    "diskBefore": 79.0478701262346,
+    "image": "sha256:53333cc77fef7916c8b41bde2d62ea279548495a9cd58939c98f9a8e140cfe08",
+    "finishedAt": "2026-10-08T10:28:57.505615+00:00",
+    "logSha256": "98c7165609047f59c76741a9e96f5a4259b928d4c27105d82d7396cc15a6cbec"
+  },
+  "rollback": "Restore previous arcade-web image only in canonical and mirrored Compose, after idle-lane check. Do not restore any database, journals or on-chain state."
+}
