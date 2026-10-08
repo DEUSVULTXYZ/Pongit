@@ -39,6 +39,8 @@ const networkDelayMs=Number(process.env.PONG_CATALOGUE_NETWORK_DELAY_MS??0);
 const networkJitterMs=Number(process.env.PONG_CATALOGUE_NETWORK_JITTER_MS??0);
 const inputHoldMs=Number(process.env.PONG_CATALOGUE_INPUT_HOLD_MS??80),inputGapMs=Number(process.env.PONG_CATALOGUE_INPUT_GAP_MS??40);
 const httpOnly=process.env.PONG_CATALOGUE_HTTP_ONLY==='1';
+const receiptProbe=process.env.PONG_CATALOGUE_RECEIPT_PROBE==='read-only';
+assert(!process.env.PONG_CATALOGUE_RECEIPT_PROBE||receiptProbe);
 const homeLogin=process.env.PONG_CATALOGUE_LOGIN_FROM_HOME==='1';
 const touchControls=process.env.PONG_CATALOGUE_TOUCH==='1';
 const viewportWidth=Number(process.env.PONG_CATALOGUE_WIDTH??1440);
@@ -222,10 +224,12 @@ const receiptMeta=(receipt:any)=>{
   ...(revertName?{revertName}:{})};
 };
 const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
-report.sockets=[];report.peerEvents=[];
+report.sockets=[];report.peerEvents=[];report.peerApplied=[];
+report.receiptProbe={enabled:receiptProbe,reads:[]};let receiptProbeCount=0;
 const peerSeen=new Set<string>();
 const observePeer=(peer:import('@playwright/test').Page)=>peer.on('websocket',ws=>ws.on('framereceived',event=>{try{
  const frame=JSON.parse(String(event.payload)).params?.result;
+ if(typeof frame?.hash==='string'&&/^0x[\da-f]{64}$/i.test(frame.hash))report.peerApplied.push({hash:frame.hash,block:frame.blockNumber,receivedAt:performance.timeOrigin+performance.now()});
  for(const log of frame?.logs??[]){
   const decoded=decodeEventLog({abi:synchronizedAgentArenaAbi,data:log.data,topics:log.topics}) as any;
   if(decoded.eventName!=='ControlQueued')continue;
@@ -240,6 +244,21 @@ page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:
   const hash=keccak256(p.params[0]),tx=parseTransaction(p.params[0]);
   const call=decodeFunctionData({abi:synchronized?synchronizedAgentArenaAbi:reusableAgentArenaAbi,data:tx.data!});
   const at=performance.now();writes.set(String(p.id),{at,hash,action:call.functionName});submitted.set(hash,at);
+  // Diagnostic only: ask for this same command's execution receipt while its
+  // socket response is late. Never resend, change the player journal, or store
+  // signed bytes. At most 64 reads per trial, only after a 150 ms response gap.
+  if(receiptProbe){
+   const endpoint=new URL(ws.url());endpoint.protocol=endpoint.protocol==='wss:'?'https:':'http:';endpoint.search='';
+   void (async()=>{for(let probe=0;probe<5;probe++){
+    await new Promise(r=>setTimeout(r,150));if(!writes.has(String(p.id))||receiptProbeCount>=64)return;
+    receiptProbeCount++;const startedAt=performance.timeOrigin+performance.now();
+    try{
+     const response=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getTransactionReceipt',params:[hash]}),signal:AbortSignal.timeout(1500)});
+     const value:any=await response.json();
+     report.receiptProbe.reads.push({hash,startedAt,finishedAt:performance.timeOrigin+performance.now(),status:response.status,found:value.result?.transactionHash?.toLowerCase()===hash.toLowerCase(),...(value.result?receiptMeta(value.result):{}),...(value.error?{code:value.error.code}:{})});
+    }catch{report.receiptProbe.reads.push({hash,startedAt,finishedAt:performance.timeOrigin+performance.now(),failed:true});}
+   }})();
+  }
   if(call.functionName==='input')controls.set(hash,{direction:Number(call.args[2]),sequence:String(call.args[3])});
  }catch{/* Decode only in memory; no signed data enters the report. */}});
  ws.on('framereceived',event=>{try{const p=JSON.parse(String(event.payload));record.messages++;

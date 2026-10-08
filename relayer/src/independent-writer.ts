@@ -72,7 +72,7 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
  }
  let sending=false,observing=false,lastError='',lastCode:string|undefined;
  async function observe(){
-  if(observing)return;observing=true;
+  if(observing)return;observing=true;let resolved=false;
   try{
    // Includes jobs created by the legacy recovery service. Never recycle their nonces.
    const jobs=(await journal.query("SELECT id,hash FROM il_lifecycle_jobs WHERE owner=$1 AND status='pending' ORDER BY nonce LIMIT 8",[account.address.toLowerCase()])).rows;
@@ -80,7 +80,8 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
     const receipt=await base.getTransactionReceipt({hash:job.hash});
     if(receipt.transactionHash.toLowerCase()!==job.hash.toLowerCase())throw Error('Receipt identity mismatch');
     const status=receipt.status==='success'?'confirmed':'failed';
-    await journal.query('UPDATE il_lifecycle_jobs SET status=$2 WHERE id=$1 AND status=\'pending\'',[job.id,status]);
+    const changed=await journal.query('UPDATE il_lifecycle_jobs SET status=$2 WHERE id=$1 AND status=\'pending\'',[job.id,status]);
+    resolved||=Boolean(changed.rowCount);
     await db.query("UPDATE independent_operations SET status=$2,error=$3,updated_at=now() WHERE hash=$1 AND status IN ('queued','pending')",[job.hash,status,status==='failed'?'Transaction reverted. Reload the contract state before retrying.':null]);
    }));
    // Crash between journal creation and updating the queue row is recoverable by id.
@@ -92,7 +93,12 @@ export async function independentWriter(db:Pool,base:PublicClient,journal:Pool=d
     for(const j of records)await db.query("UPDATE independent_operations SET status=$2,hash=$3,updated_at=now() WHERE id=$1 AND status IN ('queued','pending') AND (status<>$2 OR hash IS DISTINCT FROM $3)",[j.id.slice(identity.prefix.length),j.status,j.hash]);
    }
    if(!jobs.length){lastError='';lastCode=undefined;}
-  }finally{observing=false;}
+  }finally{
+   observing=false;
+   // A verified receipt releases the existing nonce owner immediately. Missing
+   // receipts never wake signing; the same journal/lock still gates dispatch.
+   if(resolved&&options.eager&&running&&!closing)void track(dispatch).catch(()=>{});
+  }
  }
  async function dispatch(){
   if(sending)return;sending=true;let c:PoolClient|undefined,locked=false;

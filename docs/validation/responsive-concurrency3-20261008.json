@@ -1,0 +1,280 @@
+{
+  "passed": false,
+  "runs": [
+    {
+      "path": "artifacts/qualification/catalogue-r2seven3a0/report.json",
+      "sha256": "163e5af25296910ffd1c285f831aa2a083bf6afb3d270c2ee80326490c4a3c45",
+      "passed": false,
+      "error": "Initial countdown unnecessarily became a recovery countdown",
+      "ref": {
+        "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+        "epoch": "1",
+        "id": "1057"
+      },
+      "admissionMs": 45982,
+      "result": null,
+      "performance": null,
+      "liveness": null,
+      "input": null,
+      "sendLatency": {
+        "samples": 0,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 0,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      }
+    },
+    {
+      "path": "artifacts/qualification/catalogue-r2seven3a1/report.json",
+      "sha256": "b01acb4e9861ccd385b0a86a8f8bb04c05ec0c26aaa578bead0133c6ebe0b63a",
+      "passed": false,
+      "error": "Unexpected protective resume countdown",
+      "ref": {
+        "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+        "epoch": "1",
+        "id": "1056"
+      },
+      "admissionMs": 34067,
+      "result": {
+        "hash": "0x291638a7d8b63bc4aaee95a637ca48d35ee5e73fbf268e272a82838aa05c0f8a",
+        "winner": "0xDF345d29dc361d15B3EbD02533E958d41564F3ea",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 6,
+        "elapsedUs": "60951717",
+        "finality": false
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 567,
+        "resumes": 2
+      },
+      "input": {
+        "samples": 122,
+        "p95Ms": 15.5
+      },
+      "sendLatency": {
+        "samples": 275,
+        "p95Ms": 18,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 275,
+        "p95Ms": 19.19580078125,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      }
+    },
+    {
+      "path": "artifacts/qualification/catalogue-r2seven3a2/report.json",
+      "sha256": "58d93efc0632c7bdc080ac97562cf2935c7f74f8eedb9b62be1d8aae9bf95a22",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "1055"
+      },
+      "admissionMs": 25801,
+      "result": {
+        "hash": "0xab22febad15fb7738fac1831eee9a1636ab5606949adae96013c4327c857cb67",
+        "winner": "0x4CE35444a2853eD1a624090DE8457C4Fdc5DF301",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "61929769",
+        "finality": false
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 541,
+        "resumes": 0
+      },
+      "input": {
+        "samples": 130,
+        "p95Ms": 15.400000095367432
+      },
+      "sendLatency": {
+        "samples": 284,
+        "p95Ms": 17,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 283,
+        "p95Ms": 17.189697265625,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      }
+    },
+    {
+      "path": "artifacts/qualification/catalogue-r2seven3a3/report.json",
+      "sha256": "50ab8204200d95c05ef6adad2bc5b83b86775402c7e628b70657199bf6078d5f",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+        "epoch": "1",
+        "id": "1058"
+      },
+      "admissionMs": 58979,
+      "result": {
+        "hash": "0x04e72a4fa199610250739ee3f4c160cb5e6e38f462f555543c9f8af1eec0ff9c",
+        "winner": "0x3AB398AC007793559c99995E7B4E86302a11aAbe",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 5,
+        "elapsedUs": "86702430",
+        "finality": false
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 723,
+        "resumes": 0
+      },
+      "input": {
+        "samples": 180,
+        "p95Ms": 15.700000047683716
+      },
+      "sendLatency": {
+        "samples": 383,
+        "p95Ms": 17,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 383,
+        "p95Ms": 17.245849609375,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      }
+    },
+    {
+      "path": "artifacts/qualification/catalogue-r2chainchaos3/report.json",
+      "sha256": "de5406e468c78be80aaa82fbc41ffcf93ed7b0d4e4a9f30d0977723e2cfc8dec",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1052"
+      },
+      "admissionMs": 15164,
+      "result": {
+        "hash": "0x1241674fa1bbd2bf9dcb5c87b6bb719aa13aa8bc7b594b8ccda9a195a92b55d3",
+        "winner": "0x7531Af80eBDCEA2b1F27B168a6B8d83CfaC84D69",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 2,
+        "elapsedUs": "41668569",
+        "finality": false
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 388,
+        "resumes": 0
+      },
+      "input": {
+        "samples": 65,
+        "p95Ms": 15.700000047683716
+      },
+      "sendLatency": {
+        "samples": 136,
+        "p95Ms": 16,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 136,
+        "p95Ms": 15.299560546875,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      }
+    },
+    {
+      "path": "artifacts/qualification/catalogue-r2wire1/report.json",
+      "sha256": "ed727481db8eb685a26efddf46011c0d3b533526817a36bf4417f54303d2564d",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1062"
+      },
+      "admissionMs": 14085,
+      "result": {
+        "hash": "0x7b60d45cb5569df1b5d361b43f9b150b11273d1c4e28b558d40244ed7cb43e46",
+        "winner": "0x7531Af80eBDCEA2b1F27B168a6B8d83CfaC84D69",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 6,
+        "elapsedUs": "43564401",
+        "finality": false
+      },
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 350,
+        "resumes": 0
+      },
+      "input": {
+        "samples": 116,
+        "p95Ms": 12.799999952316284
+      },
+      "sendLatency": {
+        "samples": 228,
+        "p95Ms": 16,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 228,
+        "p95Ms": 13.008544921875,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      }
+    },
+    {
+      "path": "artifacts/independent-candidate/browser-r2seven3hc/report.json",
+      "sha256": "a08d4f6a6f74547c31d46b8c18e04d1cd33cd7dd51de249ead762377b326a1ed",
+      "passed": false,
+      "error": "locator.waitFor: Timeout 720000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.rooms-canvas canvas') to be visible\u001b[22m\n",
+      "finishedAt": "2026-10-08T16:33:51.217Z"
+    },
+    {
+      "path": "artifacts/independent-candidate/browser-chaos-r2seven3hx/report.json",
+      "sha256": "be5176e7ae8de03dfb432c4235dcacb22accce9724ec17695d552cdd77bfb4d4",
+      "passed": false,
+      "error": "locator.waitFor: Timeout 720000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.rooms-canvas canvas') to be visible\u001b[22m\n",
+      "finishedAt": "2026-10-08T16:34:36.132Z"
+    }
+  ],
+  "note": "Reports are actual visible browser trials. Prior failures retained. No seven-way or 24h qualification."
+}

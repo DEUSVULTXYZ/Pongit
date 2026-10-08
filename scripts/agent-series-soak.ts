@@ -97,23 +97,17 @@ process.once('SIGTERM', () => { stopped = true; wake?.(); });
 process.once('SIGINT', () => { stopped = true; wake?.(); });
 const save = () => writeFile(file, JSON.stringify(report, null, 2));
 async function sample(): Promise<PoolSample> {
-  const at = Date.now(), block = await base.getBlock();
+  const block = await base.getBlock();
   const read = (address: `0x${string}`, abi: any, functionName: string, args: any[] = []) =>
     base.readContract({address, abi, functionName, args, blockNumber: block.number}) as Promise<any>;
-  const [admissions, health, observations, pending, response] = await Promise.all([
+  const [admissions, response] = await Promise.all([
     read(manifest.pool, poolAbi, 'admissions'),
-    db.query('SELECT app,stage,detail,updated_at FROM agent_pool.health'),
-    db.query('SELECT app,epoch,match_id,progress_at,effects FROM agent_pool.observations WHERE last_at>=to_timestamp($1/1000.0)', [started]),
-    db.query("SELECT app,min(created_at) AS oldest FROM agent_pool.engine_jobs WHERE status='pending' GROUP BY app"),
     measuredFetch('pongit', 'soak.catalog')(new URL(publicResponsive?'agents/catalog':'/agents/catalog',api), {signal: AbortSignal.timeout(8000)}),
   ]);
   const body = response.ok ? await response.json() : null;
   const apiReadable = response.ok && Array.isArray(body?.items) && body.items.length >= 8;
-  const observedEffects = new Set<number>(report.observedChaosEffects);
-  for (const o of observations.rows) for (const id of o.effects) if (id >= 1 && id <= 24) observedEffects.add(id);
-  report.observedChaosEffects = [...observedEffects].sort((a, b) => a - b);
   const lanes = reusable ? await Promise.all(agentPoolLanes(manifest).map(l => read(manifest.pool, poolAbi, 'laneRecord', [l]))) : [];
-  const arenas = await Promise.all(manifest.arenas.map(async arena => {
+  const chainArenas = await Promise.all(manifest.arenas.map(async arena => {
     const hub = await readHubDelegation(base, manifest.hub, arena.app, block.number);
     let available: boolean, id: bigint;
     if (reusable) {
@@ -136,7 +130,7 @@ async function sample(): Promise<PoolSample> {
       available = publishedReusableIdle({hub:manifest.hub,status: hub.status, epoch: hub.epoch, expires: hub.expiresAt, now: block.timestamp,
         resultEpoch: BigInt(root[0]), resultCount: Number(root[1]), prior, captured: freshlyOpened || !!entry?.captured,
         currentEpoch: BigInt(current[0]), currentId: BigInt(current[1]), priorId: BigInt(entry?.ref?.id ?? 0), priorStatus: Number(published?.status ?? 0)});
-      id = BigInt(lanes.find(l => l.ref.arena.toLowerCase() === arena.app.toLowerCase() && l.ref.epoch === hub.epoch)?.ref.id ?? 0);
+      id = BigInt(lanes.find(l => !l.captured && l.ref.arena.toLowerCase() === arena.app.toLowerCase() && l.ref.epoch === hub.epoch)?.ref.id ?? 0);
     } else {
       [available, id] = await Promise.all([
         read(manifest.pool, poolAbi, 'available', [arena.app]),
@@ -144,24 +138,38 @@ async function sample(): Promise<PoolSample> {
       ]);
     }
     if(manifest.version===5)available&&=await read(manifest.pool,agentPoolAdmissionAbi,'arenaAdmissionEnabled',[arena.app,hub.epoch]);
-    const app = arena.app.toLowerCase(), h = health.rows.find(x => x.app === app);
-    const o = observations.rows.find(x => x.app === app && x.epoch === String(hub.epoch) && x.match_id === String(id));
+    return {app:arena.app.toLowerCase(),epoch:String(hub.epoch),hubStatus:hub.status,expiresAt:Number(hub.expiresAt),
+      available,batches:String(hub.batchIndex),matchId:id?String(id):null,
+      admissionReady:reusable&&available&&reusableAdmissionBudget(budget,hub.batchIndex,hub.expiresAt,block.timestamp,manifest.hub)};
+  }));
+  assert.equal((await base.getBlock({blockNumber:block.number})).hash,block.hash,'Reorganized sample');
+  // Canonical reads can take several seconds. Sample the controller evidence
+  // afterwards: otherwise the monitor itself ages a fresh health row past its
+  // unchanged fifteen-second gate while waiting on unrelated chain reads.
+  const [health,observations,pending]=await Promise.all([
+    db.query('SELECT app,stage,detail,updated_at FROM agent_pool.health'),
+    db.query('SELECT app,epoch,match_id,progress_at,effects FROM agent_pool.observations WHERE last_at>=to_timestamp($1/1000.0)',[started]),
+    db.query("SELECT app,min(created_at) AS oldest FROM agent_pool.engine_jobs WHERE status='pending' GROUP BY app"),
+  ]);
+  const at=Date.now(),observedEffects=new Set<number>(report.observedChaosEffects);
+  for(const o of observations.rows)for(const id of o.effects)if(id>=1&&id<=24)observedEffects.add(id);
+  report.observedChaosEffects=[...observedEffects].sort((a,b)=>a-b);
+  const arenas=chainArenas.map(arena=>{
+    const {app,epoch,matchId}=arena,h=health.rows.find(x=>x.app===app);
+    const o=observations.rows.find(x=>x.app===app&&x.epoch===epoch&&x.match_id===matchId);
     const p = pending.rows.find(x => x.app === app);
-    return {app, epoch: String(hub.epoch), hubStatus: hub.status, expiresAt: Number(hub.expiresAt),
-      available, batches: String(hub.batchIndex), stage: h?.stage ?? 'unobserved', healthAt: h ? Date.parse(h.updated_at) : 0,
+    return {...arena,stage: h?.stage ?? 'unobserved', healthAt: h ? Date.parse(h.updated_at) : 0,
       healthEpoch: h?.detail?.epoch === undefined ? null : String(h.detail.epoch),
       healthMatchId: h?.detail?.id === undefined ? null : String(h.detail.id),
-      admissionReady: reusable && available && reusableAdmissionBudget(budget, hub.batchIndex, hub.expiresAt, block.timestamp,manifest.hub),
-      matchId: id ? String(id) : null, progressAt: o ? Date.parse(o.progress_at) : null,
+      progressAt: o ? Date.parse(o.progress_at) : null,
       pendingCommandAgeMs: p ? Math.max(0, at - Date.parse(p.oldest)) : 0};
-  }));
+  });
   // The runtime will not choose an idle arena until every selectable idle
   // candidate is healthy and budgeted. Do not invent availability from one.
   if (reusable && manifest.version<5 && arenas.some(a => a.available && (!a.admissionReady || a.healthEpoch !== a.epoch || a.stage !== 'available'
     || at - a.healthAt > 15000 || a.healthAt > at + 2000 || a.pendingCommandAgeMs > 0)))
     for (const arena of arenas) arena.admissionReady = false;
-  assert.equal((await base.getBlock({blockNumber: block.number})).hash, block.hash, 'Reorganized sample');
-  return {hub:manifest.hub,at: Date.now(), blockTimestamp: Number(block.timestamp), admissions, apiReadable, arenas,requiredMatches:manifest.maxMatches};
+  return {hub:manifest.hub,at, blockTimestamp: Number(block.timestamp), admissions, apiReadable, arenas,requiredMatches:manifest.maxMatches};
 }
 try {
   while (!stopped) {

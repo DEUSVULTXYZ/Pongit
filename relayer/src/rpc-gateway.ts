@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 import {chunkedLogs,historyGate} from "./log-ranges";
 import { historicalRpcRequest, controlRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
+import {rpcQueueMetrics} from './rpc-queue-metrics';
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
 const secondary=process.env.RPC_UPSTREAM_FALLBACK || "https://testnet-rpc.monad.xyz";
@@ -31,6 +32,17 @@ function throttled(target:Upstream,method:string,response:Response,message=''){
  schedulerOf(target).throttle(retryMs);
 }
 const blocks=rpcBlockObservations();
+const timing=rpcQueueMetrics();
+async function acquire(target:Upstream,method:string,history:boolean,priority:boolean){
+ const start=performance.now();await schedulerOf(target).acquire(history,priority);
+ timing.record(target,history?'history':priority?'control':'live',method,'queue',performance.now()-start);
+}
+async function upstreamFetch(target:Upstream,method:string,params:unknown[],history:boolean,priority:boolean){
+ const start=performance.now();
+ try{return await fetch(upstreams[target],{method:'POST',headers:{'content-type':'application/json'},
+  body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(15000)});}
+ finally{timing.record(target,history?'history':priority?'control':'live',method,'network',performance.now()-start);}
+}
 const historical=(method:string,params:unknown[])=>historicalRpcRequest(method,params,blocks.head(),blocks.height);
 const control=(method:string,params:unknown[])=>controlRpcRequest(method,params,blocks.head(),blocks.height);
 const inflight = new Map<string, Promise<unknown>>();
@@ -46,10 +58,9 @@ async function spreadRead(method:string,params:unknown[],historical:boolean):Pro
  for(let attempt=0;attempt<4;attempt++){
   const target=order[attempt%2];
   if(attempt>=2)await delay(500*(attempt-1));
-  await schedulerOf(target).acquire(historical,priority);
+  await acquire(target,method,historical,priority);
   let response:Response;
-  try{response=await fetch(upstreams[target],{method:"POST",headers:{"content-type":"application/json"},
-   body:JSON.stringify({jsonrpc:"2.0",id:1,method,params}),signal:AbortSignal.timeout(15000)});}catch{continue;}
+  try{response=await upstreamFetch(target,method,params,historical,priority);}catch{continue;}
   if(response.status>=500)continue;
   if(response.status===429){throttled(target,method,response);continue;}
   const result=await response.json().catch(()=>null) as {result?:unknown;error?:{code:number;message:string;data?:unknown}}|null;
@@ -82,13 +93,11 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
       if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historical(method,params));
       for (let attempt = 0; attempt < 4; attempt++) {
         const target:Upstream=attempt>0 && (read || method==='eth_sendRawTransaction') && spread ? "secondary" : "primary";
-        await schedulerOf(target).acquire(historical(method,params),control(method,params));
+        const history=historical(method,params),priority=control(method,params);
+        await acquire(target,method,history,priority);
         let response:Response;
-        try { response = await fetch(upstreams[target], {
-          method: "POST", headers: { "content-type": "application/json" },
-          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-          signal: AbortSignal.timeout(15000),
-        }); } catch { if(attempt===3)throw new Error("RPC transport unavailable");await delay(250*(attempt+1));continue; }
+        try { response = await upstreamFetch(target,method,params,history,priority); }
+        catch { if(attempt===3)throw new Error("RPC transport unavailable");await delay(250*(attempt+1));continue; }
         if(response.status>=500) {await delay(250*(attempt+1));continue;}
         // Some providers return plain text for HTTP 429. Do not parse it as JSON.
         if(response.status===429){throttled(target,method,response);continue;}
@@ -119,7 +128,7 @@ createServer(async (req, res) => {
   res.setHeader("content-type", "application/json");
   if (req.method === "GET" && req.url === "/health") {
     res.end(JSON.stringify({ ok: true, waiting, queued:schedulers.primary.pending(), requestsPerSecond: 1000 / spacing,
-      throttled: stats.primary.throttled+stats.secondary.throttled,
+      throttled: stats.primary.throttled+stats.secondary.throttled,timing:timing.snapshot(),
       upstreams: {primary:{queued:schedulers.primary.pending(),spacingMs:schedulers.primary.spacing(),lastThrottle:lastThrottle.primary,...stats.primary},secondary:schedulers.secondary?{queued:schedulers.secondary.pending(),spacingMs:schedulers.secondary.spacing(),lastThrottle:lastThrottle.secondary,...stats.secondary}:null} })); return;
   }
   let id: unknown = null;
