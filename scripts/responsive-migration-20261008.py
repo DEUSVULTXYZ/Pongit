@@ -50,7 +50,7 @@ def start(c,role,label,seconds):
     subprocess.run(['docker','compose','-p','pongit-responsive-migration','-f',str(path),'run','-d','--no-deps','--name',name,role],check=True,stdout=subprocess.DEVNULL)
     print(json.dumps({'started':name,'originalTimeoutSeconds':seconds,'delegationClosures':0}))
 
-build=load(root/'build-runtime-1.json');assert build['passed']
+build=load(root/('build-runtime-current.json' if (root/'build-runtime-current.json').exists() else 'build-runtime-1.json'));assert build['passed']
 if action=='stop-drained':
     frozen=proof('freeze')[1]
     assert (datetime.datetime.now(datetime.timezone.utc)-datetime.datetime.fromisoformat(frozen['finishedAt'].replace('Z','+00:00'))).total_seconds()<600
@@ -68,6 +68,7 @@ if action=='stop-drained':
 elif action in ['freeze','import','verify-import','open-arenas','challenges','tournaments']:
     if action not in ['freeze','challenges','tournaments']: stopped();proof('freeze')
     c=load(root/'agent-prepare-runtime-1.json');s=c['services']['qualification']
+    s['image']=build['image'];s['environment']['PONG_SOURCE_COMMIT']=build['sourceCommit']
     s['volumes'] += [str(root/'agents/evidence')+':/evidence']
     seconds=1800 if action=='import' else 1200
     if action=='import':
@@ -103,6 +104,7 @@ else:
     else:
         source=load(root/'human-evidence/final-snapshot-binding.json');assert source['passed']
     c=load(root/'agent-prepare-runtime-1.json');s=c['services']['qualification']
+    s['image']=build['image'];s['environment']['PONG_SOURCE_COMMIT']=build['sourceCommit']
     oldhuman=load('/opt/pongit/releases/human-v3-20261005/human-runtime.json')['services']['relayer']
     e=s['environment'];e.update(PONG_PUBLIC_HUMAN_MIGRATION='public-responsive-human-20261007',
         PONG_INDEPENDENT_MANIFEST='/secrets/manifest.json',PONG_INDEPENDENT_SNAPSHOT='/audit/'+source['snapshot'],

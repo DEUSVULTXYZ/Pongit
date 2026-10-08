@@ -25,8 +25,9 @@ proof_path,proof=latest('verify-import')
 assert proof['pool']==r['common']['pool'] and int(proof['identities'])>=8 and int(proof['tournaments'])>=43
 assert load(root/'human/evidence/preservation-audit.json')['passed']
 assert all(d['status']==1 for d in proof['sourceDelegations'])
-build=load(root/'build-runtime-1.json');assert build['passed']
-overrides=load(root/'evidence/runtime-source-overrides.json')
+build=load(root/('build-runtime-current.json' if (root/'build-runtime-current.json').exists() else 'build-runtime-1.json'));assert build['passed']
+source_directory=pathlib.Path(build.get('sourceDirectory',str(root/'build-source')))
+overrides=load(build.get('overrideAudit',str(root/'evidence/runtime-source-overrides.json')))
 def remove_reviewed_mounts(service,name):
     keep=[]
     for v in service['volumes']:
@@ -34,7 +35,7 @@ def remove_reviewed_mounts(service,name):
             expected=next(o for o in overrides if o['container']==name and o['target']==v['target'])
             assert expected['source']==v['source']
             assert hashlib.sha256(pathlib.Path(v['source']).read_bytes()).hexdigest()==expected['oldSha256']
-            assert hashlib.sha256((root/'build-source'/v['target'][5:]).read_bytes()).hexdigest()==expected['candidateSha256']
+            assert hashlib.sha256((source_directory/v['target'][5:]).read_bytes()).hexdigest()==expected['candidateSha256']
         else:keep.append(v)
     service['volumes']=keep
 for role in ['admission', 'maintenance', 'sponsor', 'engines', 'archive']: stopped('pongit-arcade-five-' + role + '-1')
