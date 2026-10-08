@@ -1,3 +1,26 @@
+import {decodeFunctionData,multicall3Abi} from 'viem';
+import {NO_LEASE_HUB} from '../../shared/hub-lease';
+
+const rootDelegation=(data:unknown):data is string=>typeof data==='string'&&/^0xcd325a310{24}[\da-f]{40}0{64}$/i.test(data);
+function arenaFenceBatch(call:{to?:unknown;data?:unknown}){
+ if(typeof call.to!=='string'||call.to.toLowerCase()!=='0xca11bde05977b3631167028862be2a173976ca11'
+  ||typeof call.data!=='string'||call.data.length>32770)return false;
+ try{
+  const decoded=decodeFunctionData({abi:multicall3Abi,data:call.data as `0x${string}`});
+  if(decoded.functionName!=='aggregate3')return false;
+  const calls=decoded.args[0];if(!calls.length||calls.length>21)return false;
+  let fences=0;
+  for(const item of calls){
+   if(item.target.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&rootDelegation(item.callData)){fences++;continue;}
+   // laneRecord(uint8): at most five small assignment records accompany the
+   // hub checks in the engine's canonical snapshot. Never promote a generic
+   // aggregate, result archive, write simulation or nested multicall.
+   if(!/^0x7057d9dd0{63}[0-4]$/i.test(item.callData))return false;
+  }
+  return fences>0&&calls.length-fences<=5;
+ }catch{return false;}
+}
+
 /** Classify the requested state, not only the RPC method. Current headers are
  * needed for grants, acceptance deadlines and sponsor fees, including while
  * an indexer is downloading old blocks. Receipt/hash reconciliation is also
@@ -67,10 +90,10 @@ export function controlRpcRequest(method:string,params:readonly unknown[],observ
   &&(params[1]==='latest'||params[1]==='pending'||recent(params[1]));
  if(method!=='eth_call'||!(params[1]==='latest'||params[1]==='pending'||recent(params[1])))return false;
  const call=params[0] as {to?:unknown;data?:unknown}|undefined;
- // delegationOf(address,bytes32), with the root (zero) subdelegation. Bulk
- // multicalls, arbitrary calldata and historical delegation scans stay normal.
+ // Direct player and atomic engine fences protect the same three-second
+ // window. Batching the engine reads must not demote them behind hydration.
  return typeof call?.to==='string'&&/^0x[\da-f]{40}$/i.test(call.to)&&typeof call.data==='string'
-  &&/^0xcd325a310{24}[\da-f]{40}0{64}$/i.test(call.data);
+  &&(rootDelegation(call.data)||arenaFenceBatch(call));
 }
 
 /** A validated foreground read has its own bounded priority lane. The hint

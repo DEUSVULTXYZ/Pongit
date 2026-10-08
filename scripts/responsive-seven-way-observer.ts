@@ -39,6 +39,9 @@ const report:any={startedAt:new Date().toISOString(),deadline,pool:agents.pool,l
 await writeFile(output,poolJson(report),{flag:'wx'});
 const save=async()=>{await writeFile(output+'.next',poolJson(report));await rename(output+'.next',output);};
 const delay=(ms:number)=>new Promise(r=>setTimeout(r,ms));
+async function stage<T>(name:string,ref:Ref,work:()=>Promise<T>):Promise<T>{
+ try{return await work();}catch(error){Object.assign(error as object,{qualificationStage:name,qualificationRef:ref});throw error;}
+}
 async function together(jobs:Promise<unknown>[]){const results=await Promise.allSettled(jobs);const failed=results.find(r=>r.status==='rejected');if(failed?.status==='rejected')throw failed.reason;}
 type Ref={chainId:10143;app:Address;epoch:string;id:string};
 const readers:Array<{ref:Ref;read:()=>Promise<EngineState>}>=[],stops:Array<()=>void>=[];
@@ -70,7 +73,8 @@ try{
  }
  assert(refs,'Seven games with the same official archetype were not acquired within the original deadline');
  await together(refs.slice(0,5).map(async ref=>{
-  const observer=await createPoolObserver(agents,(await reader.match(ref)).value,url=>new WebSocket(url));
+  const match=await stage('published-match',ref,()=>reader.match(ref));
+  const observer=await stage('live-identity',ref,()=>createPoolObserver(agents,match.value,url=>new WebSocket(url)));
   stops.push(observer.watch(()=>{}),()=>observer.close());readers.push({ref,read:()=>observer.read(true)});
  }));
  await together(refs.slice(5).map(async ref=>{
@@ -95,5 +99,8 @@ try{
   await delay(500);
  }
  assert(report.passed,'No thirty-second seven-way live overlap within the original deadline');
-}catch(e){report.error=String((e as any).shortMessage??(e as Error).message).replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,600);report.location=String((e as Error).stack??'').split('\n').filter(x=>x.includes('responsive-seven-way-observer')).slice(0,2);process.exitCode=1;}
+}catch(e){report.error=String((e as any).shortMessage??(e as Error).message).replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,600);report.location=String((e as Error).stack??'').split('\n').filter(x=>x.includes('responsive-seven-way-observer')).slice(0,2);
+ report.failedStage=(e as any).qualificationStage;report.failedRef=(e as any).qualificationRef;report.errorCodes=[];
+ for(let cause:any=e;cause&&report.errorCodes.length<6;cause=cause.cause)report.errorCodes.push({name:cause.name,code:cause.code,status:cause.status});
+ process.exitCode=1;}
 finally{for(const stop of stops)stop();report.finishedAt=new Date().toISOString();await save();console.log(poolJson({output,passed:report.passed,overlapMs:report.overlapMs,error:report.error}));}

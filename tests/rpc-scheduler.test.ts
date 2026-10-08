@@ -1,8 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {historicalRpcRequest, transactionRpcRequest, controlRpcRequest, foregroundRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
-import {encodeFunctionData,zeroHash} from 'viem';
+import {encodeFunctionData,multicall3Abi,zeroHash} from 'viem';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
+import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
+
+test('the current atomic arena planning fence overtakes catalogue reads without promoting arbitrary multicalls',()=>{
+ const hub='0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e',pool='0x1111111111111111111111111111111111111111';
+ const root={target:hub,allowFailure:true,callData:encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[pool,zeroHash]})};
+ const lane={target:pool,allowFailure:true,callData:encodeFunctionData({abi:reusableAgentPoolAbi,functionName:'laneRecord',args:[0]})};
+ const call=(calls:any[])=>({to:'0xcA11bde05977b3631167028862bE2a173976CA11',data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[calls]})});
+ const canonical=`0x${'ab'.repeat(32)}`,tag={blockHash:canonical,requireCanonical:true};
+ const priority=(c:any,t:any=tag)=>controlRpcRequest('eth_call',[c,t],1000n,h=>h===canonical?1000n:undefined);
+ assert(priority(call([lane,root])),'The engine batch is the same mutable lifecycle fence as the direct player getter');
+ assert(!priority(call([lane])),'A catalogue/assignment-only batch stays ordinary');
+ assert(!priority(call([root,{...lane,callData:'0xdeadbeef'}])));
+ assert(!priority(call([{...root,target:pool},lane])),'Only the actual no-lease hub is recognized');
+ assert(!priority(call(Array.from({length:22},()=>root))),'Bound the privileged read work');
+ assert(!priority(call([lane,root]),'0x3a7'),'Historical audits retain their original queue');
+ assert(!priority({...call([lane,root]),to:pool}),'No arbitrary multicall contract');
+});
 
 test('current control checks pass a catalogue backlog without changing either upstream rate',async(t)=>{
  t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});

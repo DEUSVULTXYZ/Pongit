@@ -5,6 +5,9 @@ import {createServer} from 'node:http';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {mkdir,writeFile} from 'node:fs/promises';
+import {encodeFunctionData,multicall3Abi,zeroHash} from 'viem';
+import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
+import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
 
 assert.equal(process.env.PONG_GATEWAY_QUALIFICATION,'isolated-vps');
 assert.equal(process.getuid?.(),1000);
@@ -127,6 +130,22 @@ try{
  const last=sent.slice(txPrior);
  assert(last.at(-1)!.at-last[0].at>=(last.length-1)*45,'Transaction priority raised upstream throughput');
  report.checks.push('Nonce and receipt overtake routine recent headers with unchanged pacing');
+ const hub='0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e',pool='0x1111111111111111111111111111111111111111';
+ const fence=encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[[
+  {target:pool,allowFailure:true,callData:encodeFunctionData({abi:reusableAgentPoolAbi,functionName:'laneRecord',args:[0]})},
+  {target:hub,allowFailure:true,callData:encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[pool,zeroHash]})},
+ ]]});
+ const backlog=Array.from({length:20},(_,i)=>rpc('eth_call',[{to:pool,data:`0xcc${i.toString(16).padStart(2,'0')}`},'0x1000'],true));
+ const readyUntil=Date.now()+5000;
+ while((await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).queued.interactive<15){
+  assert(Date.now()<readyUntil);await new Promise(r=>setTimeout(r,10));
+ }
+ const fencePrior=sent.length;
+ await Promise.all([...backlog,rpc('eth_call',[{to:'0xcA11bde05977b3631167028862bE2a173976CA11',data:fence},'0x1000'],true)]);
+ const fenceIndex=sent.findIndex((v,i)=>i>=fencePrior&&(v.params[0] as any)?.data===fence);
+ assert(fenceIndex>=fencePrior&&fenceIndex<fencePrior+4,'Shared engine fence expired behind unrelated hydration');
+ assert.equal(sent.filter(v=>String((v.params[0] as any)?.data).startsWith('0xcc')).length,20);
+ report.checks.push('Canonical shared arena fence overtakes foreground hydration; every other read still completes');
  report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}

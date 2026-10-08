@@ -1,0 +1,184 @@
+{
+  "scope": "Real public Chrome/Edge seven8. All original reports and videos retained. Not a passing seven-way qualification.",
+  "agents": [
+    {
+      "run": "r2seven8a0",
+      "passed": false,
+      "ref": {
+        "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+        "epoch": "1",
+        "id": "1163"
+      },
+      "admissionMs": 28936,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 584,
+        "resumes": 1
+      },
+      "sendLatency": {
+        "samples": 338,
+        "p95Ms": 18,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 338,
+        "p95Ms": 16.406982421875,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "result": {
+        "hash": "0x18b16b4fd78d3d591bb57bcda3b017e828668cf9dcc2a6692887634c2f364571",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "69099098",
+        "finality": false
+      },
+      "error": "Unexpected protective resume countdown"
+    },
+    {
+      "run": "r2seven8a1",
+      "passed": false,
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1164"
+      },
+      "admissionMs": 23474,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 616,
+        "resumes": 1
+      },
+      "sendLatency": {
+        "samples": 320,
+        "p95Ms": 17,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 319,
+        "p95Ms": 14.761962890625,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "result": {
+        "hash": "0x6bf2b6eda50bafda6756bc0fe335735318e5ce2788918b1d0ec434db06e5bee4",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "68917081",
+        "finality": false
+      },
+      "error": "Unexpected protective resume countdown"
+    },
+    {
+      "run": "r2seven8a2",
+      "passed": false,
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1165"
+      },
+      "admissionMs": 25174,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 499,
+        "resumes": 0
+      },
+      "sendLatency": {
+        "samples": 294,
+        "p95Ms": 16,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 293,
+        "p95Ms": 11.00927734375,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "result": {
+        "hash": "0x395d358f0ad1d26a6b177a526f3929d3a2c832e389915c0742359f99e58b1f04",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "status": 3,
+        "scoreA": 0,
+        "scoreB": 7,
+        "elapsedUs": "60677799",
+        "finality": false
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements"
+    },
+    {
+      "run": "r2seven8a3",
+      "passed": false,
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1166"
+      },
+      "admissionMs": 23136,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "liveness": {
+        "heartbeats": 459,
+        "resumes": 0
+      },
+      "sendLatency": {
+        "samples": 213,
+        "p95Ms": 17,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "peerReception": {
+        "samples": 213,
+        "p95Ms": 14.47265625,
+        "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+        "basis": "compact send entry to independent observer ControlQueued live event"
+      },
+      "result": {
+        "hash": "0x3af3e2cc70a0c976507df08ee76a6984601359fef5766b6db9b9602efb067b59",
+        "winner": "0xb710e7F1ec108485Db4c86399573c84Bc04e7Fca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "51050443",
+        "finality": false
+      },
+      "error": "A required performance gate failed; inspect admission/render measurements"
+    }
+  ],
+  "observer": "Canonical block 69360947 acquired seven distinct references, but setup then failed with RPC Request failed. Subsequent sequential public reads passed. Root RPC cause not established.",
+  "humans": "Both complete natural PvP browser runs passed. Classic 7-6; Chaos report retained separately.",
+  "rootCauseEvidence": "Both affected agent clients stopped before a heartbeat while their three-second canonical fence expired. The concurrent Monad fence read took over two seconds; live sends around it completed within tens of milliseconds. Shared engine planning also became stale, delaying all four admissions. Its atomic hub+lane multicall was incorrectly placed in the foreground hydration queue; direct root delegation getters already received control priority.",
+  "candidate": "Recognize only recent, bounded Multicall3 batches of root delegations on the pinned no-lease hub plus at most five laneRecord getters as control work. Preserve old FIFO/rate/fairness limits, authorization window, contract pause and every mutation path.",
+  "tests": {
+    "typescript": 1154,
+    "focused": 30,
+    "typecheck": true,
+    "previousSourceRegression": "artifacts/responsive-20261008-r2/fence28-baseline-fail.log"
+  },
+  "deployed": false
+}
