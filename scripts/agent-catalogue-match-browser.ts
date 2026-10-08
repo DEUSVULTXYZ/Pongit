@@ -46,7 +46,7 @@ const viewportHeight=Number(process.env.PONG_CATALOGUE_HEIGHT??(viewportWidth<76
 assert(Number.isInteger(viewportHeight)&&viewportHeight>=600&&viewportHeight<=1440);
 const fault=process.env.PONG_CATALOGUE_FAULT;
 const normalConditions=!fault&&networkDelayMs===0&&readDelayMs===0;
-assert(!fault||['f5','disconnect','lost-reply','revoke','background','render-stall','settled-read'].includes(fault));
+assert(!fault||['f5','disconnect','lost-reply','revoke','unavailable-prf','background','render-stall','settled-read'].includes(fault));
 assert(!fault||naturalMatch&&publicSynchronized,'Faults use only the owned public natural friendly fixture');
 assert(fault!=='lost-reply'||httpOnly,'Lost-reply fixture must use the observable HTTP transport');
 assert(Number.isInteger(initialIdleMs)&&initialIdleMs>=0&&initialIdleMs<=20000);
@@ -506,6 +506,18 @@ try{
     settledDelayUntil=Date.now()+20000;
     report.faults.push({kind:'delayed-client-settled-observation',startedAt:Date.now(),until:settledDelayUntil,delayMs:1500,providerPublicationUnchanged:true});
    }else if(fault==='lost-reply')dropReply=true;
+   else if(fault==='unavailable-prf'){
+    await page.getByRole('button',{name:'Tools',exact:true}).first().click();
+    await page.getByRole('button',{name:'Sign out of this match',exact:true}).click();
+    const alert=page.getByRole('dialog',{name:'Arena tools',exact:true}).getByRole('alert');
+    await alert.filter({hasText:'does not support PRF'}).waitFor({timeout:10000});
+    await page.waitForTimeout(2000);
+    assert.match(await alert.innerText(),/does not support PRF/,'Live recovery erased the owner action failure');
+    await page.screenshot({path:out+'/permission-error.png',fullPage:true});
+    await page.getByRole('button',{name:'Close arena tools',exact:true}).click();
+    await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:15000});
+    report.faults.push({kind:'unsupported-virtual-prf-error-retained-and-play-resumed',at:new Date().toISOString(),physicalPasskey:false});
+   }
    else{
     await page.bringToFront();
     await page.evaluate(()=>{

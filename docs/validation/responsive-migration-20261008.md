@@ -728,3 +728,25 @@ at1-2 after disconnected presence, result recorded. No lifecycle close. A target
 alert observer was added to the harness because normal polling clears UI errors.
 Sole next driver exec59303 revoke2 admitted981 on776f; preserve original bounds.
 No concurrent driver, new deployment, closure or funding transfer.
+
+
+## 10:28 UTC - owner authorization recovery proved; feedback correction building
+
+Revoke2 failed before submission: restored CDP credentials assert successfully
+but omit PRF, and the actual interface reported unsupported PRF. Message vanished
+because normal control recovery cleared the same error state. Product05d7711
+separates explicit owner action errors from background control errors. RootTS and
+55 focused tests pass. Web feedback9 is building; current publicweb remainsc0e.
+
+Fresh in-context virtual passkey revoke4 on983/2641 PASS: owner revocation confirmed,
+controls disabled, no inert body/dialog, owner renewal confirmed, one deliberate
+protective resume, natural7-1 publication. Revoke3 successful revocation but failed
+at role lookup before renewal; original failed fixture/report retained, later
+contractual cancellation at3-2. No manual cancellation or lifecycle close.
+
+Four exact untagged unused Oct7 PONGIT build images removed withoutforce after546
+container checks; no rollback/tagged/used image touched. Disk78.976percent before
+build. Backup-touch-final8 fiveDB/config75615667bytes OFFVPSverified10:26:52,
+manifestf49dd6637daefd20000c889e5829e15e7ab299a6eb82e417bd72f93aa2e551a2.
+Read-onlydirectory10:27:40 stillall7stopped/Active. No providerwrites or funding.
+No game driver active. Buildexec15962 only; cutoverhelper preparedNOTRUN.

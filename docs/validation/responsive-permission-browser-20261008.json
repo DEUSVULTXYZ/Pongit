@@ -1,0 +1,136 @@
+{
+  "releaseComplete": false,
+  "web": "c0e687f",
+  "engine": "d558334",
+  "physicalPasskey": false,
+  "runs": [
+    {
+      "run": "responsive-r2-touchfix-revoke1",
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "980"
+      },
+      "passed": false,
+      "error": "locator.waitFor: Timeout 15000ms exceeded.",
+      "faultStep": "revoking",
+      "permissionDiagnostic": [],
+      "faults": [],
+      "revokedState": null,
+      "result": null,
+      "sendLatency": {
+        "samples": 8,
+        "p95Ms": 12,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "liveness": null,
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke1\\video\\page@2f7aff8a994b8a917468758ec4676503.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke1\\observer-video\\page@37ddbf1c5c2f095b57efd746846b68b5.webm",
+      "sha256": "f3f6dd26c8252efc5306e44b0bcc9799f2d50a8e232d385c19d95938742ea849",
+      "report": "artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke1\\report.json"
+    },
+    {
+      "run": "responsive-r2-touchfix-revoke2",
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "981"
+      },
+      "passed": false,
+      "error": "locator.waitFor: Timeout 15000ms exceeded.",
+      "faultStep": "revoking",
+      "permissionDiagnostic": [
+        "This passkey provider does not support PRF. Use a compatible synced passkey provider. See the compatibility link."
+      ],
+      "faults": [],
+      "revokedState": null,
+      "result": null,
+      "sendLatency": {
+        "samples": 8,
+        "p95Ms": 15,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "liveness": null,
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke2\\video\\page@9df2381d9874c321f61b9a34d2070f30.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke2\\observer-video\\page@83a67209f69b1c5fdcc77246d3feb95e.webm",
+      "sha256": "b76544f8cce430d0b77f00b2094105f8f7c1e1a6851a6d408b484f262efabf81",
+      "report": "artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke2\\report.json"
+    },
+    {
+      "run": "responsive-r2-touchfix-revoke3",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "982"
+      },
+      "passed": false,
+      "error": "locator.isDisabled: Timeout 60000ms exceeded.",
+      "faultStep": "revoking",
+      "permissionDiagnostic": null,
+      "faults": [],
+      "revokedState": null,
+      "result": null,
+      "sendLatency": {
+        "samples": 8,
+        "p95Ms": 13,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "liveness": null,
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke3\\video\\page@38ad295dcda92d6c3ffd222effecc62a.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke3\\observer-video\\page@b30ea96122dd3f51b7455a55d1bef6a9.webm",
+      "sha256": "5c0d6950e8a0cc1c25b075c5f889186037949b641137d534b55516d8bc14eefc",
+      "report": "artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke3\\report.json"
+    },
+    {
+      "run": "responsive-r2-touchfix-revoke4",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "983"
+      },
+      "passed": true,
+      "error": null,
+      "faultStep": "reauthorizing",
+      "permissionDiagnostic": null,
+      "faults": [
+        {
+          "kind": "own-match-revoked-and-reauthorized",
+          "at": "2026-10-08T10:23:18.765Z"
+        }
+      ],
+      "revokedState": {
+        "disabled": true,
+        "dialogs": [],
+        "inert": []
+      },
+      "result": {
+        "hash": "0xabd3be414c5d729380857fccb01f5e51c0d44c2106abfb581f693ac4f2725a83",
+        "winner": "0xC82b412614B923606b833caAE850A1A952c0cbca",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 1,
+        "elapsedUs": "36074732",
+        "finality": false
+      },
+      "sendLatency": {
+        "samples": 143,
+        "p95Ms": 16,
+        "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+      },
+      "liveness": {
+        "heartbeats": 362,
+        "resumes": 1
+      },
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke4\\video\\page@42f558485aaeef4a895c2c04f80630af.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke4\\observer-video\\page@3e39396352e9dd531ff18b7f933b24b1.webm",
+      "sha256": "c96691bdbdda84ca58a0614c7e966e24945ac724c4d696736fcecc5e32e490a2",
+      "report": "artifacts\\qualification\\catalogue-responsive-r2-touchfix-revoke4\\report.json"
+    }
+  ],
+  "limits": [
+    "Restored CDP credentials lack PRF; fresh in-context virtual passkey succeeded.",
+    "Revoke3 failed at role lookup before attempting renewal; earlier verdict retained.",
+    "Fresh revoke4 confirms disabled controls, no inert body, renewal, one protective resume and natural 7-1 result.",
+    "Feedback persistence patch 05d7711 built separately; not part of these original reports."
+  ]
+}

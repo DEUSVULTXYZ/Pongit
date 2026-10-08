@@ -3,7 +3,7 @@ param(
  [ValidateSet('chrome','msedge')][string]$Browser='chrome',
  [ValidateSet(0,1)][int]$GameMode=1,
  [ValidateSet(360,390,768,1366,1440)][int]$Width=1440,
- [ValidateSet('','f5','disconnect','lost-reply','revoke','background','render-stall','settled-read')][string]$Fault='',
+ [ValidateSet('','f5','disconnect','lost-reply','revoke','unavailable-prf','background','render-stall','settled-read')][string]$Fault='',
  [switch]$Degraded,
  [switch]$HttpOnly,
  [string]$RestoreFrom=''
