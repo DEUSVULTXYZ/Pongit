@@ -8,6 +8,7 @@ import {abi as familyAbi} from '../shared/abi-independent-ArcadeFamily';
 import {publicIndependentManifest} from '../shared/independent';
 import {independentReader} from '../shared/independent-read';
 import {independentRules} from '../shared/independent-rules';
+import {resumeSocialPages,type SocialAnchor} from '../shared/human-social-pages';
 
 assert.equal(process.env.PONG_RESPONSIVE_SOCIAL,'audit-public-rules18-20261007');
 const input=await readFile(process.env.PONG_HUMAN_SOCIAL_SNAPSHOT!,'utf8'),snapshot=JSON.parse(input);
@@ -43,12 +44,20 @@ try{
   low=low>step?low-step:0n;step*=2n;
  }
  while(low<high){const mid=(low+high)/2n;if((await base.getBlock({blockNumber:mid})).timestamp<earliest)low=mid+1n;else high=mid;}
- const first=low;assert(blockNumber-first<200_000n,'Social audit exceeds the reviewed window');
+ // A delayed deployment may span several days. Retain every page; each worker
+ // is still bounded externally and resumes only a verified canonical prefix.
+ const first=low;assert(blockNumber-first<1_000_000n,'Social audit exceeds the reviewed window');
  type EventRef={transactionHash:Hex;blockHash:Hex;blockNumber:string;logIndex:number};
  const cachePath=process.env.PONG_HUMAN_SOCIAL_CACHE!;assert(cachePath.startsWith('/evidence/'));
  let cache={schema:'responsive-social-pages-v1',snapshotHash,first:String(first),next:String(first),events:[] as EventRef[]};
  try{cache=JSON.parse(await readFile(cachePath,'utf8'));}catch(e){if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e;}
- assert(cache.schema==='responsive-social-pages-v1'&&cache.snapshotHash===snapshotHash&&cache.first===String(first));
+ const anchor=(s:any,hash:Hex):SocialAnchor=>({snapshotHash:hash,block:BigInt(s.sourceBlock),hash:s.sourceHash,
+  lobby:s.source.lobby,family:s.source.family,chainId:s.chainId});
+ let previous:SocialAnchor|undefined;
+ if(cache.snapshotHash!==snapshotHash&&process.env.PONG_HUMAN_SOCIAL_PREVIOUS_SNAPSHOT){
+  const bytes=await readFile(process.env.PONG_HUMAN_SOCIAL_PREVIOUS_SNAPSHOT,'utf8');previous=anchor(JSON.parse(bytes),keccak256(new TextEncoder().encode(bytes)));
+ }
+ cache=await resumeSocialPages(cache,anchor(snapshot,snapshotHash),first,previous,async number=>(await base.getBlock({blockNumber:number})).hash);
  const resume=BigInt(cache.next);assert(resume>=first&&resume<=blockNumber+1n&&Array.isArray(cache.events));
  for(const event of cache.events)assert(BigInt(event.blockNumber)>=first&&BigInt(event.blockNumber)<resume);
  const checkpoint=async()=>{await writeFile(cachePath+'.next',JSON.stringify(cache)+'\n',{mode:0o600});await rename(cachePath+'.next',cachePath);};

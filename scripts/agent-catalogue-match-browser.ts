@@ -43,7 +43,8 @@ assert([360,390,768,1366,1440].includes(viewportWidth));
 const viewportHeight=Number(process.env.PONG_CATALOGUE_HEIGHT??(viewportWidth<768?844:900));
 assert(Number.isInteger(viewportHeight)&&viewportHeight>=600&&viewportHeight<=1440);
 const fault=process.env.PONG_CATALOGUE_FAULT;
-assert(!fault||['f5','disconnect','lost-reply','revoke'].includes(fault));
+const normalConditions=!fault&&networkDelayMs===0&&readDelayMs===0;
+assert(!fault||['f5','disconnect','lost-reply','revoke','background','render-stall','settled-read'].includes(fault));
 assert(!fault||naturalMatch&&publicSynchronized,'Faults use only the owned public natural friendly fixture');
 assert(fault!=='lost-reply'||httpOnly,'Lost-reply fixture must use the observable HTTP transport');
 assert(Number.isInteger(initialIdleMs)&&initialIdleMs>=0&&initialIdleMs<=20000);
@@ -87,6 +88,8 @@ report.injectedNetworkJitterEachWayMs=networkJitterMs;
 report.inputHoldMs=inputHoldMs;report.inputGapMs=inputGapMs;
 report.httpOnly=httpOnly;
 report.fault=fault;report.faults=[];
+report.acceptanceClass=fault?'fault-recovery':normalConditions?'normal-network':'degraded-network';
+report.normalNetworkQualification=normalConditions;
 if(continuationRecord)report.privateTarget={scope:continuationScope,pool:continuationRecord.common.pool,catalog:continuationRecord.common.catalog,deploymentSha256};
 if(privateV3)report.notificationTransport='Private JSON bridge rejects SSE explicitly; actual API polling fallback. Engine WebSocket remains direct.';
 const clean=(e:any)=>String(e?.shortMessage??e?.message??e).split('\n')[0].replace(/0x[\da-f]{64,}/gi,'[omitted]').slice(0,240);
@@ -123,6 +126,18 @@ if(fault==='disconnect')await context.routeWebSocket(/wss:\/\/il2-eu-.*\.fly\.de
  socket.connectToServer();faultSockets.push(socket);
 });
 let dropReply=false;
+let settledDelayUntil=0;
+const delayedSettledReads:{startedAt:number;finishedAt:number;method:string}[]=[];
+if(fault==='settled-read')await context.route('https://testnet-rpc.monad.xyz/**',async route=>{
+ const body=route.request().postDataJSON(),calls=Array.isArray(body)?body:[body];
+ const reads=calls.every(v=>['eth_call','eth_getBlockByNumber','eth_blockNumber','eth_getTransactionReceipt','eth_getBalance','eth_getCode'].includes(v?.method));
+ if(Date.now()<settledDelayUntil&&reads){
+  const startedAt=Date.now(),response=await route.fetch();
+  await new Promise(resolve=>setTimeout(resolve,1500));await route.fulfill({response});
+  delayedSettledReads.push({startedAt,finishedAt:Date.now(),method:calls.map(v=>v.method).join(',')});return;
+ }
+ return route.continue();
+});
 if(fault==='lost-reply')await context.route('https://il2-eu-*.fly.dev/**',async route=>{
  const body=route.request().postDataJSON();
  if(dropReply&&body?.method==='interlude_sendTransaction'){
@@ -438,6 +453,9 @@ try{
   if(naturalMatch&&await page.getByRole('dialog',{name:'Confirmed match result',exact:true}).isVisible()){naturalEnded=true;break;}
   if(fault&&i===4){
    if(fault==='f5'){
+    const trace=await page.evaluate(()=>(window as any).__syncProbe);
+    await writeFile(out+'/before-reload-sync-trace.json',JSON.stringify(trace));
+    report.beforeReloadSync=syncMetrics(trace);
     await retainInputIntents();await retainCommandTimings();await savePrivate();await page.reload({waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>!document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]')?.disabled&&!!document.querySelector('button[aria-label="Move up"]'),{},{timeout:30000});
     assert.equal(assertions,before);report.faults.push({kind:'f5-grant-reused',at:new Date().toISOString()});
@@ -451,6 +469,30 @@ try{
     await context.setOffline(false);
     await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:45000});
     report.faults.push({kind:'disconnect-pauses-clock-and-resumes',at:new Date().toISOString(),paused});
+   }else if(fault==='background'){
+    assert(spectator);
+    const tab=await context.newPage();await tab.goto('about:blank');await tab.bringToFront();
+    await page.waitForFunction(()=>document.hidden,{},{timeout:5000});
+    await spectator.waitForFunction(()=>(window as any).__syncProbe?.snapshots.at(-1)?.pause?.status>=2,{},{timeout:10000});
+    const paused=await spectator.evaluate(()=>{const s=(window as any).__syncProbe.snapshots.at(-1);return {t:s.state.t,a:s.state.scoreA,b:s.state.scoreB};});
+    await spectator.waitForTimeout(1000);
+    assert.deepEqual(await spectator.evaluate(()=>{const s=(window as any).__syncProbe.snapshots.at(-1);return {t:s.state.t,a:s.state.scoreA,b:s.state.scoreB};}),paused);
+    await tab.close();await page.bringToFront();
+    await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return !document.hidden&&b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:45000});
+    report.faults.push({kind:'real-background-pauses-clock-and-resumes',at:new Date().toISOString(),paused});
+   }else if(fault==='render-stall'){
+    const frames=await page.evaluate(async()=>{
+     const data=(window as any).__syncProbe,start=performance.now();
+     while(performance.now()-start<2000){const until=performance.now()+80;while(performance.now()<until){};await new Promise(r=>setTimeout(r,20));}
+     return data.frames.filter((f:any)=>f.at>=start).map((f:any)=>f.at) as number[];
+    });
+    const gaps=frames.slice(1).map((at,i)=>at-frames[i]);
+    assert(gaps.filter(ms=>ms>=65).length>=5,'Actual visible frame slowdown was not reproduced');
+    await page.waitForFunction(()=>{const b=document.querySelector<HTMLButtonElement>('button[aria-label="Move up"]');return b&&!b.disabled&&!document.querySelector('.match-countdown');},{},{timeout:45000});
+    report.faults.push({kind:'measured-main-thread-render-stall-recovered',at:new Date().toISOString(),frameGapsMs:gaps});
+   }else if(fault==='settled-read'){
+    settledDelayUntil=Date.now()+20000;
+    report.faults.push({kind:'delayed-client-settled-observation',startedAt:Date.now(),until:settledDelayUntil,delayMs:1500,providerPublicationUnchanged:true});
    }else if(fault==='lost-reply')dropReply=true;
    else{
     await page.bringToFront();
@@ -491,6 +533,12 @@ try{
  }
  if(naturalMatch){report.naturalEnded=naturalEnded;assert(naturalEnded,'Natural match exceeded its fixed seven-minute observation window');}
  if(fault)assert.equal(report.faults.length,1,'The requested fault must be injected and its recovery verified');
+ if(fault==='settled-read'){
+  report.delayedSettledReads=delayedSettledReads;
+  assert(delayedSettledReads.length>0,'No actual settled read was delayed; this is not a passing injection');
+  report.liveReceiptsDuringDelayedRead=report.receipts.filter((r:any)=>delayedSettledReads.some(w=>r.confirmedAt>=w.startedAt&&r.confirmedAt<=w.finishedAt)).length;
+  assert(report.liveReceiptsDuringDelayedRead>=5,'Live commands stopped while a settled read was delayed');
+ }
  report.controlsEndedAt=new Date().toISOString();
  const trace=await page.evaluate(()=>({paddle:(window as any).__paddle,keys:(window as any).__keys}));
  await writeFile(out+'/input-trace.json',JSON.stringify(trace));
@@ -559,11 +607,13 @@ try{
  if(synchronized){
   report.liveness={heartbeats:report.submissions.filter((s:any)=>s.action==='heartbeat'&&!s.error).length,resumes:report.submissions.filter((s:any)=>s.action==='resumeReady'&&!s.error).length};
   assert(report.liveness.heartbeats>=10,'The actually painted player court must renew liveness while idle');
-  if(process.env.PONG_REQUIRE_NO_STARTUP_PAUSE==='1')assert(report.liveness.resumes<=(naturalMatch?0:1),'Unexpected protective resume countdown');
+  // Startup is checked before fault injection above. Recovery from an explicit
+  // disconnection/revocation is a distinct trial, never a normal-network pass.
+  if(process.env.PONG_REQUIRE_NO_STARTUP_PAUSE==='1'&&normalConditions)assert(report.liveness.resumes<=(naturalMatch?0:1),'Unexpected protective resume countdown');
  }
  report.checks.push(`At least ${requiredControls} public command submissions and local input latency`);
  if(process.env.PONG_REQUIRE_RECONCILIATION==='1')assert(report.sync?.paddleSamples>100&&report.sync.paddleJumps.length===0&&report.sync.snapshotJumps.length===0,'Visible reconciliation discontinuities remain');
- if(naturalMatch&&!fault){
+ if(naturalMatch&&normalConditions){
   const sendP95=integrity?report.sendLatency?.p95Ms:report.submissionP95Ms;
   report.naturalGates={noPause:report.sync?.contractPauseMs===0,noResume:report.liveness?.resumes===0,noResync:report.sync?.visibleResyncs===0&&report.spectatorSync?.visibleResyncs===0,peer:report.peerReception.samples>=20&&(!integrity||report.sendLatency?.samples>=20)&&report.peerReception.p95Ms<=sendP95+50,player:report.performance.player,spectator:report.performance.spectator,executionClock:report.executionClock.samples>=20&&report.executionClock.stalls.length===0&&report.executionClock.rewinds.length===0};
   assert(Object.values(report.naturalGates).every(v=>v===true),'Natural-match synchronization gate failed');

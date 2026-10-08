@@ -3,7 +3,7 @@ param(
  [ValidateSet('chrome','msedge')][string]$Browser='chrome',
  [ValidateSet(0,1)][int]$GameMode=1,
  [ValidateSet(360,390,768,1366,1440)][int]$Width=1440,
- [ValidateSet('','f5','disconnect','lost-reply','revoke')][string]$Fault='',
+ [ValidateSet('','f5','disconnect','lost-reply','revoke','background','render-stall','settled-read')][string]$Fault='',
  [switch]$Degraded
 )
 $ErrorActionPreference='Stop'
@@ -23,8 +23,8 @@ $env:PONG_CATALOGUE_INPUT_HOLD_MS='2000'
 $env:PONG_CATALOGUE_INPUT_GAP_MS='300'
 $env:PONG_SYNC_PROBE='1'
 $env:PONG_SYNC_SPECTATOR='1'
-$env:PONG_REQUIRE_PERFORMANCE='1'
-$env:PONG_REQUIRE_RECONCILIATION='1'
+$env:PONG_REQUIRE_PERFORMANCE=$(if($Fault -or $Degraded){'0'}else{'1'})
+$env:PONG_REQUIRE_RECONCILIATION=$(if($Fault -or $Degraded){'0'}else{'1'})
 $env:PONG_REQUIRE_NO_STARTUP_PAUSE='1'
 $env:PONG_CATALOGUE_VIDEO='1'
 $env:PONG_CATALOGUE_LOGIN_FROM_HOME='1'
