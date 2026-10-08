@@ -24,7 +24,7 @@ const exposure=validateAgentSponsorRuntime(manifest,process.env.PONG_AGENT_POOL_
 if(!exposure.public)assert.equal(process.env.PONG_AGENT_PRIVATE_NETWORK,'1','Private sponsor requires an isolated network');
 const metrics = await agentMetrics(manifest.version>=4?'/diagnostics/reusable':'/diagnostics/series', 'sponsor');
 const base = createPublicClient({chain: monadTestnet, batch: {multicall: {wait: 15, batchSize: 8192}},
-  transport: http(process.env.RPC_URL, {timeout: 10000, retryCount: 0, fetchFn: measuredFetch('monad')})});
+  transport: http(process.env.RPC_URL, {timeout: 10000, retryCount: 0, fetchFn: measuredFetch('monad'),fetchOptions:{headers:{'x-pongit-rpc-foreground':'1'}}})});
 assert.equal(await base.getChainId(), 10143);
 if(manifest.version===5){
  const code=await base.getCode({address:POOL_ADMISSION_BATCH});

@@ -26,8 +26,8 @@ const gateway=spawn(process.execPath,['--import','tsx','relayer/src/rpc-gateway.
 });
 let stderr='';gateway.stderr.on('data',chunk=>stderr+=String(chunk));
 const report:{passed:boolean;scope:string;checks:string[];sent?:typeof sent;error?:string}={passed:false,scope:'Actual isolated gateway HTTP queue with synthetic local RPC upstream; no hosted performance claim',checks:[]};
-async function rpc(method:string,params:unknown[]){
- const response=await fetch('http://127.0.0.1:18545',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(10000)});
+async function rpc(method:string,params:unknown[],foreground=false){
+ const response=await fetch('http://127.0.0.1:18545',{method:'POST',headers:{'content-type':'application/json',...(foreground?{'x-pongit-rpc-foreground':'1'}:{})},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:AbortSignal.timeout(10000)});
  const value=await response.json() as any;assert(!value.error);return value.result;
 }
 try{
@@ -80,6 +80,19 @@ try{
  assert(canonical.every(v=>JSON.stringify(v.params[1])===JSON.stringify(pin)),'Canonical validation was changed');
  report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
  report.checks.push('Hash-pinned archive calls use historical scheduling','Sponsor simulation and receipts overtake canonical history','Every archive call retains requireCanonical');
+ const metadata=Array.from({length:12},(_,i)=>rpc('eth_call',[{to:'0x01',data:`0xaa${i.toString(16).padStart(2,'0')}`},'latest']));
+ const foregroundDeadline=Date.now()+5000;
+ for(;;){
+  const health=await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any;
+  if(health.queued.interactive>=8)break;
+  assert(Date.now()<foregroundDeadline,'Background metadata did not queue');await new Promise(r=>setTimeout(r,10));
+ }
+ const foregroundPrior=sent.length;
+ await Promise.all([...metadata,rpc('eth_call',[{to:'0x01',data:'0xfade'},'latest'],true)]);
+ const urgent=sent.findIndex(v=>(v.params[0] as any)?.data==='0xfade');
+ assert(urgent>=foregroundPrior&&urgent<foregroundPrior+4,'A player read waited behind the catalogue');
+ assert.equal(sent.filter(v=>String((v.params[0] as any)?.data).startsWith('0xaa')).length,12,'Catalogue reads starved');
+ report.checks.push('Foreground player read overtakes background metadata through the real HTTP gateway','All background reads still complete');
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}
 finally{

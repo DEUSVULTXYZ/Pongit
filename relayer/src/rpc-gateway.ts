@@ -2,7 +2,7 @@
 import { createServer } from "node:http";
 import { setTimeout as delay } from "node:timers/promises";
 import {chunkedLogs,historyGate} from "./log-ranges";
-import { historicalRpcRequest, controlRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
+import { historicalRpcRequest, controlRpcRequest, foregroundRpcRequest, pinnedRpcRequest, rpcScheduler, rpcBlockObservations } from "./rpc-scheduler";
 import {rpcQueueMetrics} from './rpc-queue-metrics';
 
 const upstream = process.env.RPC_UPSTREAM || "https://testnet-rpc.monad.xyz";
@@ -44,14 +44,15 @@ async function upstreamFetch(target:Upstream,method:string,params:unknown[],hist
  finally{timing.record(target,history?'history':priority?'control':'live',method,'network',performance.now()-start);}
 }
 const historical=(method:string,params:unknown[])=>historicalRpcRequest(method,params,blocks.head(),blocks.height);
-const control=(method:string,params:unknown[])=>controlRpcRequest(method,params,blocks.head(),blocks.height);
+const control=(method:string,params:unknown[],foreground=false)=>controlRpcRequest(method,params,blocks.head(),blocks.height)
+ ||foregroundRpcRequest(method,params,foreground,blocks.head(),blocks.height);
 const inflight = new Map<string, Promise<unknown>>();
 const cache = new Map<string, { expires: number; result: unknown }>();
 // A block-pinned read has one correct answer. Start with the less loaded provider
 // and ask the other when one throttles, fails or has not got that block. A real
 // execution error is the same on both and is returned at once, unchanged.
-async function spreadRead(method:string,params:unknown[],historical:boolean):Promise<unknown>{
- const priority=control(method,params);
+async function spreadRead(method:string,params:unknown[],historical:boolean,foreground:boolean):Promise<unknown>{
+ const priority=control(method,params,foreground);
  const load=(u:Upstream)=>schedulerOf(u).waitMs(historical,priority);
  const first:Upstream=load("secondary")<=load("primary")?"secondary":"primary";
  const order:Upstream[]=[first,first==="primary"?"secondary":"primary"];
@@ -74,7 +75,7 @@ async function spreadRead(method:string,params:unknown[],historical:boolean):Pro
  }
  throw new Error("Upstream RPC unavailable; retry shortly");
 }
-async function request(method: string, params: unknown[]):Promise<unknown> {
+async function request(method: string, params: unknown[],foreground=false):Promise<unknown> {
   if(method==="eth_getLogs" && process.env.RPC_CHUNK_LOGS==="true") {
     const filter=params[0] as any;
     if(!filter?.blockHash && /^0x[\da-f]+$/i.test(filter?.fromBlock) && /^0x[\da-f]+$/i.test(filter?.toBlock) && BigInt(filter.toBlock)-BigInt(filter.fromBlock)>=100n)
@@ -90,10 +91,10 @@ async function request(method: string, params: unknown[]):Promise<unknown> {
   const operation = (async () => {
     waiting++;
     try {
-      if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historical(method,params));
+      if(read&&spread&&pinnedRpcRequest(method,params))return await spreadRead(method,params,historical(method,params),foreground);
       for (let attempt = 0; attempt < 4; attempt++) {
         const target:Upstream=attempt>0 && (read || method==='eth_sendRawTransaction') && spread ? "secondary" : "primary";
-        const history=historical(method,params),priority=control(method,params);
+        const history=historical(method,params),priority=control(method,params,foreground);
         await acquire(target,method,history,priority);
         let response:Response;
         try { response = await upstreamFetch(target,method,params,history,priority); }
@@ -137,7 +138,7 @@ createServer(async (req, res) => {
     for await (const part of req) { data += part; if (data.length > 1000000) throw new Error("Request too large"); }
     const input = JSON.parse(data); id = input.id;
     if (Array.isArray(input) || typeof input.method !== "string" || !/^(eth_|net_|web3_)/.test(input.method)) throw new Error("Unsupported request");
-    const result = await request(input.method, input.params || []);
+    const result = await request(input.method, input.params || [],req.headers['x-pongit-rpc-foreground']==='1');
     res.end(JSON.stringify({ jsonrpc: "2.0", id, result }));
   } catch (e) {
     const error = e as { code?: number; message?: string; data?: unknown };

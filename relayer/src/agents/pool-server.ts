@@ -17,10 +17,11 @@ import {publicChainReadBody,publicChainReads} from '../public-chain-read';
 // Dedicated version-2 process. Never starts the legacy single-application
 // coordinator and never loads an operator key. A private qualification endpoint
 // is bound to loopback unless an isolated Docker network is explicitly selected.
-export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>;sponsorHealth?:()=>{available:boolean;error?:string;code?:string};replays?:PoolReplays}){
+export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>;sponsorHealth?:()=>{available:boolean;error?:string;code?:string};replays?:PoolReplays;foregroundReader?:AgentPoolReader}){
  const routes=poolRoutes(reader,undefined,options.replays),rates=new Map<string,{until:number;n:number}>();
+ const foregroundRoutes=options.foregroundReader?poolRoutes(options.foregroundReader,undefined,options.replays):routes;
  const events=new PoolNotifications(routes,options.public);
- const chainRead=publicChainReads(reader.client),chainRates=new Map<string,{until:number;n:number}>();
+ const chainRead=publicChainReads(options.foregroundReader?.client??reader.client),chainRates=new Map<string,{until:number;n:number}>();
  const normalize=(value:string)=>value.replace(/^::ffff:/,'');
  const proxies=new Set((options.trustedProxies??[]).map(normalize));let global={until:0,n:0};
  const server=createServer(async(req,res)=>{
@@ -67,7 +68,10 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
    // Closing admissions must not close observers, published results or pending
    // requests. These routes contain public contract data only. Config reports
    // the gates; signed writes keep their separate canonical admission checks.
-   const view=await routes(url);
+   // Player entry and direct, validated wallet reads must not wait behind the
+   // catalogue's background refreshes. Both still use the same canonical reads,
+   // per-client limits and private provider scheduler.
+   const view=await (url.pathname.startsWith('/agents/matches/')?foregroundRoutes:routes)(url);
    res.setHeader('ETag',`"${view.revision}"`);
    if(req.headers['if-none-match']===`"${view.revision}"`){res.statusCode=304;res.end();return;}
    send({...view.value,observation:{block:view.observedBlock,hash:view.observedHash,timestamp:view.observedTimestamp,revision:view.revision}});
@@ -90,6 +94,7 @@ if(process.env.PONG_AGENT_POOL_READER==='1'){
  if(!humanApps.length)throw Error('List the protected human deployments before starting the arena pool');
  const metrics=await agentMetrics('/diagnostics/pool','reader');
  const client=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:4096}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad')})});
+ const foreground=createPublicClient({chain:monadTestnet,batch:{multicall:{wait:10,batchSize:4096}},transport:http(process.env.RPC_URL,{retryCount:0,timeout:10000,fetchFn:measuredFetch('monad'),fetchOptions:{headers:{'x-pongit-rpc-foreground':'1'}}})});
  if(await client.getChainId()!==10143)throw Error('Agent pool reader requires Monad Testnet');
  const replayDb=process.env.AGENT_DATABASE_URL?new Pool({connectionString:process.env.AGENT_DATABASE_URL,max:3}):undefined;
  if(replayDb)await initializePoolReplays(replayDb);
@@ -101,6 +106,7 @@ if(process.env.PONG_AGENT_POOL_READER==='1'){
  }:undefined;
  const service=await startPoolReadService(new AgentPoolReader(client,manifest,humanApps,operational),
   {host:process.env.HOST??'127.0.0.1',port:Number(process.env.PORT??4101),public:process.env.PONG_AGENT_POOL_PUBLIC==='1',
-   trustedProxies:(process.env.PONG_AGENT_POOL_TRUSTED_PROXIES??'').split(',').filter(Boolean),replays});
+   trustedProxies:(process.env.PONG_AGENT_POOL_TRUSTED_PROXIES??'').split(',').filter(Boolean),replays,
+   foregroundReader:new AgentPoolReader(foreground,manifest,humanApps,operational)});
  process.once('SIGTERM',()=>void service.close().finally(async()=>{await replayDb?.end();await metrics();}));
 }

@@ -58,3 +58,17 @@ test('public HTTP boundary cannot invoke writes; valid reads remain available wh
   assert.deepEqual(requests.at(-1),{method:'eth_chainId',params:[]});
  }finally{await service.close();}
 });
+
+test('foreground client receives only validated HTTP reads with their canonical block unchanged',async()=>{
+ const calls:any[]=[];
+ const normal={client:{request:async()=>{throw Error('Validated player read entered background queue');}}} as unknown as AgentPoolReader;
+ const foreground={client:{request:async(args:any)=>{calls.push(args);return '0x01';}}} as unknown as AgentPoolReader;
+ const service=await startPoolReadService(normal,{host:'127.0.0.1',port:0,public:true,foregroundReader:foreground});
+ try{
+  const address=service.server.address();assert(address&&typeof address==='object');
+  const post=(body:unknown)=>fetch(`http://127.0.0.1:${address.port}/agents/chain-read`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+  const pin={blockHash:hash,requireCanonical:true};const response=await post(call(1,pin));assert.equal(response.status,200);
+  assert.equal((await response.json()).result,'0x01');assert.equal(calls.length,1);assert.deepEqual(calls[0].params[1],pin);
+  assert.equal((await post({...call(2),method:'eth_sendRawTransaction'})).status,400);assert.equal(calls.length,1);
+ }finally{await service.close();}
+});

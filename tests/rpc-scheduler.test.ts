@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {historicalRpcRequest, controlRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
+import {historicalRpcRequest, controlRpcRequest, foregroundRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
 import {encodeFunctionData,zeroHash} from 'viem';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 
@@ -99,6 +99,18 @@ test('fresh runtime validation overtakes metadata while historical code stays in
  for(const tag of ['0x3a7','0x3e9','safe',{blockHash:`0x${'56'.repeat(32)}`,requireCanonical:true}])assert(!priority([address,tag]));
  assert(!priority(['0x01','latest']));assert(!priority([address,'latest',{}]));
  assert(!controlRpcRequest('eth_getCode',[address,'0x3e8']),'No invented canonical head');
+});
+
+test('foreground hints cannot promote history, logs, writes or unknown RPCs',()=>{
+ const hash=`0x${'12'.repeat(32)}`,height=(h:string)=>h===hash?10n:undefined;
+ for(const method of ['eth_call','eth_getCode','eth_getBalance','eth_getStorageAt']){
+  const args=(tag:unknown)=>method==='eth_getStorageAt'?['0x01','0x0',tag]:['0x01',tag];
+  assert(foregroundRpcRequest(method,args('latest'),true,1000n,height));
+  assert(!foregroundRpcRequest(method,args('latest'),false,1000n,height));
+  for(const tag of ['0x1',{blockHash:hash,requireCanonical:true}])assert(!foregroundRpcRequest(method,args(tag),true,1000n,height));
+ }
+ for(const method of ['eth_getLogs','debug_traceCall','eth_sendRawTransaction','interlude_sendTransaction'])
+  assert(!foregroundRpcRequest(method,[],true,1000n,height));
 });
 
 test('EIP-1898 archive calls retain historical priority after their header was observed',()=>{

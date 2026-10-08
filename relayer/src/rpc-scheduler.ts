@@ -69,6 +69,14 @@ export function controlRpcRequest(method:string,params:readonly unknown[],observ
   &&/^0xcd325a310{24}[\da-f]{40}0{64}$/i.test(call.data);
 }
 
+/** A validated foreground read may share the existing control lane. The hint
+ * comes from internal services, never grants extra throughput or write access,
+ * and cannot promote archive scans. Unknown methods retain normal scheduling. */
+export function foregroundRpcRequest(method:string,params:readonly unknown[],hint:boolean,head?:bigint,height?:(hash:string)=>bigint|undefined){
+ return hint&&!historicalRpcRequest(method,params,head,height)
+  &&['eth_call','eth_getCode','eth_getBalance','eth_getStorageAt'].includes(method);
+}
+
 /** Header observations classify scheduling only. They never replace canonical
  * RPC validation or serve cached state. Remember hashes, not heights alone, so
  * a replacement block cannot relabel reads of the orphaned hash. Unknown hashes
