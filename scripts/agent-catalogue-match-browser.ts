@@ -8,7 +8,7 @@ import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 import {synchronizedAgentArenaAbi} from '../shared/abi-SynchronizedAgentArena';
 import {installSyncProbe,syncMetrics,confirmedInputMetrics,sustainedInputMetrics} from './browser-sync-probe';
 import {collisionIntegrity} from './collision-integrity-metrics';
-import {visibleAim} from './browser-aim';
+import {visibleAim,visibleContactRelease} from './browser-aim';
 import {receiptClockMetrics} from './receipt-clock-metrics';
 import {terminalReceiptRaces} from './terminal-receipt-evidence';
 import {publicationFailureDetails,publicationUnavailable} from '../shared/service-error';
@@ -552,7 +552,9 @@ try{
     const picture=await page.evaluate(()=>{const d=(window as any).__syncProbe,s=d?.snapshots.at(-1),side=s?.side;
      return{previous:d?.poses.at(-4),current:d?.poses.at(-1),side,half:d?.paddles.filter((p:any)=>p.side===side).at(-1)?.height/2};});
     const aim=visibleAim(picture.previous,picture.current,picture.side===1?1:0,picture.half||48,i%2===0);
-    desired=aim.direction;hold=80;gap=40;scenario=aim.nearContact?'release-at-contact':i%2===0?'aim-edge':'aim-centre';
+    const release=visibleContactRelease(aim,picture.current?.paddles?.[picture.side===1?1:0]);
+    desired=release?.direction??aim.direction;hold=release?.holdMs??80;gap=40;
+    scenario=release?'release-at-contact':i%2===0?'aim-edge':'aim-centre';
    }
    report.inputScenarios.push({at:Date.now(),scenario,direction:desired,holdMs:hold});
   }

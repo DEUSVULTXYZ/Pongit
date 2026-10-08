@@ -1,0 +1,137 @@
+{
+  "startedAt": "2026-10-08T10:49:51.765Z",
+  "finishedAt": "2026-10-08T10:51:14.264Z",
+  "passed": true,
+  "run": "responsive-r2-motion-degraded3",
+  "ref": {
+    "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+    "epoch": "1",
+    "id": "987"
+  },
+  "actualMode": 1,
+  "result": {
+    "hash": "0xdd8cf64c4ae52f1dcf6255628d7c53c2fbadaa621955d67aea9a2079306cabea",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 2,
+    "scoreB": 7,
+    "elapsedUs": "54143951",
+    "finality": false
+  },
+  "naturalMatch": true,
+  "visibleBrowser": true,
+  "touchControls": true,
+  "mockedNetwork": false,
+  "injectedNetworkDelayEachWayMs": 75,
+  "injectedNetworkJitterEachWayMs": 25,
+  "httpOnly": true,
+  "admissionMs": 9316,
+  "startupResumes": 0,
+  "input": {
+    "samples": 85,
+    "p95Ms": 16.600000143051147
+  },
+  "sendLatency": {
+    "samples": 87,
+    "p95Ms": 216,
+    "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+  },
+  "peerReception": {
+    "samples": 87,
+    "p95Ms": 120.11474609375,
+    "clock": "same computer epoch clocks: browser performance.timeOrigin and Playwright performance.timeOrigin",
+    "basis": "compact send entry to independent observer ControlQueued live event"
+  },
+  "liveness": {
+    "heartbeats": 241,
+    "resumes": 0
+  },
+  "web": "5486a5f",
+  "engine": "d558334",
+  "normalQualification": false,
+  "releaseComplete": false,
+  "scope": "Deliberate HTTP fallback, 150ms added round trip plus +/-25ms variation per direction. Not a normal-network acceptance sample. Keyboard/CDP touch, virtual PRF, physical phone not tested.",
+  "held": {
+    "samples": 97,
+    "p05Ratio": 0.9999999999999986,
+    "p95Ratio": 1.0000000000000013,
+    "minRatio": 0.9999999999999982,
+    "maxRatio": 1.000000000000002,
+    "outsideTarget": 0,
+    "outliers": []
+  },
+  "stopping": {
+    "samples": 80,
+    "p95Drift": 2,
+    "maxDrift": 2
+  },
+  "collisionCounts": {
+    "visible": 7,
+    "unconfirmed": 0
+  },
+  "maxHoldMs": 383.40000000000146,
+  "snapshotJumps": [
+    {
+      "at": 18268.8,
+      "dt": 16.299999999999272,
+      "d": 31.766565546275,
+      "from": [
+        983.9999360000878,
+        523.9999680000439
+      ],
+      "to": [
+        955.867203900984,
+        538.7534106913563
+      ],
+      "sourceT": 2830,
+      "clock": 2870
+    },
+    {
+      "at": 28118.7,
+      "dt": 16.700000000000728,
+      "d": 36.72000771415379,
+      "from": [
+        983.9999359948308,
+        52.00003200258458
+      ],
+      "to": [
+        951.339175695462,
+        35.218086251430215
+      ],
+      "sourceT": 12540,
+      "clock": 12570
+    },
+    {
+      "at": 36669,
+      "dt": 16.69999999999709,
+      "d": 36.83731513054987,
+      "from": [
+        983.9998493637127,
+        235.99994795736552
+      ],
+      "to": [
+        951.3042401116065,
+        219.0298294645255
+      ],
+      "sourceT": 20960,
+      "clock": 21010
+    },
+    {
+      "at": 51318.6,
+      "dt": 16.299999999995634,
+      "d": 36.68602417755218,
+      "from": [
+        983.9999360563625,
+        52.000031971818814
+      ],
+      "to": [
+        951.3889929353793,
+        35.19554570427872
+      ],
+      "sourceT": 35420,
+      "clock": 35440
+    }
+  ],
+  "visibleResyncs": 0,
+  "remaining": "4 snapshot jumps under deliberately delayed HTTP; admission9.316s. These are reported, not normal-network passes. No unexplained freeze >500ms or contract pause in this trial."
+}

@@ -16,3 +16,13 @@ export function visibleAim(previous:any,current:any,side:0|1,half:number,edge:bo
  const direction=nearContact||Math.abs(target-paddle)<7?0:target<paddle?-1:1;
  return{direction:direction as -1|0|1,nearContact,target,contactIn:incoming?.seconds};
 }
+
+/** Schedule a real held input then release 30 ms before the visually estimated
+ * contact. Sampling only the final 120 ms window can miss it between CDP calls.
+ * This changes only the test player's physical input, never a game snapshot. */
+export function visibleContactRelease(aim:{contactIn?:number;direction:number;target?:number},paddle:number){
+ const seconds=aim.contactIn;
+ if(!Number.isFinite(seconds)||seconds!<.05||seconds!>.35||!Number.isFinite(paddle))return null;
+ const direction=aim.direction||((aim.target??288)<paddle?-1:1);
+ return{direction:direction as -1|1,holdMs:Math.max(10,Math.round((seconds!-.03)*1000)),contactIn:seconds!};
+}

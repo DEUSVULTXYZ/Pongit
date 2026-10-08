@@ -804,3 +804,19 @@ SOLE newseries11 exec34717 has its own original80min bound and stoponfirstFAIL.
 Freshdegraded3 match987 on2641 active, then5Chaos/2Classicnormal ifPASS.
 Productionweb5486/engined558 unchanged. Sevenproviderapps stillstopped at10:50:28.
 No new provider calls, closure, transfer or build. Finalbackup9NOTRUN.
+
+
+## 10:58 UTC - delayed repeat passed; strict contact-release coverage corrected
+
+987 degraded3 PASS natural2-7,0pauses,local16.6ms,send216ms,peer120.115ms,
+held100percent,stop-p95/max2units,maxhold383.4ms. Admission9.316s and4snapshot
+jumps retained as degraded limitations, not normal-network qualification.
+988Chrome360 normalPASS7-6.989Edge390 normal game/latency/contacts passed but
+originalFAIL lacks release-at-contact scenario:120ms sampling window can be
+skipped by CDP input loop. Original report retained. Harness now plans a real
+held input/release30ms before a visually estimated contact (50-350ms horizon).
+No product change, lower acceptance threshold or fabricated control.8tests/rootTSPASS.
+
+Series11 stopped. SOLEseries12 exec82012 runs fresh7normal games suffix-2,
+warm grant from989, original80min and7min per game; stoponfirstFAIL. No other
+game driver. Publicweb5486/engined558 frozen. Backup9NOTRUN;7nodesstillstopped.

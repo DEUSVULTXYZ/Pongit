@@ -5,7 +5,7 @@ import {createPublicClient,http,type Address} from 'viem';
 import {reusableAgentPoolAbi as abi} from '../shared/abi-ReusableAgentPool';
 import {sustainedInputMetrics} from './browser-sync-probe';
 import {collisionIntegrity} from './collision-integrity-metrics';
-const names=['motion-chaos360-1','motion-chaos390-1','motion-chaos1440-1','motion-chaosedge360-1','motion-chaoschrome390-1','motion-classic1366-1','motion-classic360-1'];
+const names=['motion-chaos360-2','motion-chaos390-2','motion-chaos1440-2','motion-chaosedge360-2','motion-chaoschrome390-2','motion-classic1366-2','motion-classic360-2'];
 const client=createPublicClient({transport:http('https://testnet-rpc.monad.xyz',{retryCount:0,timeout:15000})});
 const block=await client.getBlock(),runs=[];
 for(const name of names){
@@ -38,6 +38,6 @@ assert.equal((await client.getBlock({blockNumber:block.number})).hash,block.hash
 const result={at:new Date().toISOString(),passed:true,releaseComplete:false,web:'5486a5faab7366639307bea3652f51095cc0866b',engine:'d55833436dbaff7743bc80c3aa817ba4e0dadf57',
  canonicalBlock:block.number,canonicalHash:block.hash,physicalPhone:false,physicalPasskey:false,
  scope:'Visible Chrome/Edge public catalogue, actual keyboard and CDP touch, virtual Mera PRF. Independent observers and natural published results. Published is not final. Earlier failed reports preserved.',runs,
- remaining:['Actual fault/degraded follow-up','Two PvP games: three human hosted nodes stopped','Five agents plus two humans: four healthy agent nodes','Final unchanged all-role 24-hour qualification']};
+ remaining:['Current product fault follow-up','Two PvP games: three human hosted nodes stopped','Five agents plus two humans: four healthy agent nodes','Final unchanged all-role 24-hour qualification']};
 await writeFile('docs/validation/responsive-motion-normal-20261008.json',JSON.stringify(result,(_,v)=>typeof v==='bigint'?String(v):v,2)+'\n',{flag:'wx'});
 console.log(JSON.stringify({passed:true,runs:runs.length,block:String(block.number),maxAdmission:Math.max(...runs.map(r=>r.admissionMs)),maxSendP95:Math.max(...runs.map(r=>r.sendP95Ms))}));
