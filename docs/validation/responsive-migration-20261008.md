@@ -1236,3 +1236,19 @@ Backup27 completed20:59:05, sixfiles78658600bytes, manifest81a2010f7ebe19179f15c
 ## 21:05 UTC - VPS unavailable during web build, no deployment
 
 Public HTTPS timed out at8seconds; SSH3333 timed out during banner exchange. Independent public Monad RPC still replies from the same Windows host. Last21:01:21 build log shows Next optimized compilation in isolated compiler fc375fc9393f. Memory1800m/CPU1.5 had been specified; actual cause is not yet established. A bounded SSH attempt to stop ONLY that compiler was dispatched but banner was unavailable. No game services, contracts or databases were changed. Webce remains the last confirmed deployment. Preserve build/cutover failures; do not start another build or game driver. Backup27 OFFVPS verification completed21:00:19. No active local game driver remains.
+
+
+## 21:14 UTC - server recovered, compilation completed
+
+SSH/HTTPS recovered by21:10:45. The compiler had already finished and was removed; attempts to stop it sent no successful stop. Build27PASS21:10:06, imagef308911dff8799c9724fe6b2bb61af8b96d46a2d3db6b723396dd356055c7a61. Actual Next log:47seconds compilation,7.3minutes TypeScript. Six main services kept their prior image/start time with zero OOM/restarts. Memory pressure fullavg30031.94percent and I/O someavg30043.52percent,4GiB swap nearly full, loadavg180 at recovery. These establish severe resource pressure during the outage; kernel journal has no OOM kill. Two independent Interlude nodes remainedHTTP200 with correctapp/epoch/no send gate21:09:37. This was not an Interlude capacity finding.
+
+Future full-web build helper now requires available resident memory equal to the compiler limit plus1GiB reserve, and sets memory-swap equal to memory to forbid an extra compiler swap allowance. Syntax checked; no fresh full build is launched to test an outage. Existing successful27image remains usable. The user console stop request was withdrawn immediately on recovery.
+
+Sole idle-only web cutover27 exec41446 started21:12:33 with original12minute bound. It awaits the running tournament; both human slots are empty. No game/browser driver or new writer. Backup27SHAverifiedOFFVPS21:00:19. Finalseries27 and seven8 remain NOTSTARTED. AutomationPAUSED.
+
+
+## 21:17 UTC - web deployed; new seven-way recipe running
+
+Web14c0b29/f308911d deployed21:13:24 after canonical69359171/hash a08273d84ce0b2b30e37e7e0531ae9068a96e707ef5547a2c5ed6f55df05551f verified allsevenidle. Backend/RPC/contracts/epoch1 and all journals unchanged. No game interruption for this cutover. Service-only rollback web58786aab; never oldDBrestore.
+
+Seven8 sole coordinator exec27498 started21:15:00, originalpreparationdeadline21:35:00/total21:45:00. AllsixactualChrome/Edgeclientsready21:16:04; waitingfreshT51fixture, no browsergameadmitted yet. Do not duplicate or extend. Finalbrowser-series27 remains preparedNOTRUN. Seven7disconnectedChaosbeneficiary actual payout0.006MON verified21:16,tx3d818f940817815430b6fc78bcdb3acff274069ff0e3be496ead8f45b1fa6dea; duplicateclaim/retry actualsimulationsreverted. PreservefailedClassicproposal and seven7failure.

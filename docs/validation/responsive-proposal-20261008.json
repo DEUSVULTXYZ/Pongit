@@ -22,5 +22,34 @@
     "typecheck": true,
     "oldSourceRegressionFails": true
   },
-  "deployed": false
+  "deployed": true,
+  "deployment": {
+    "startedAt": "2026-10-08T21:12:33.531530+00:00",
+    "deadline": 1791494673.5315475,
+    "passed": true,
+    "stage": "complete",
+    "previousImage": "sha256:58786aab8808fae485c5d1726864e73612c1f106dcd66655d13a37a87feb2624",
+    "image": "sha256:f308911dff8799c9724fe6b2bb61af8b96d46a2d3db6b723396dd356055c7a61",
+    "backupManifest": "81a2010f7ebe19179f15c3eef154edfb290cfb4d8f5b5dab164188f14cd40b18",
+    "lastCheck": {
+      "block": "69359171",
+      "hash": "0xa08273d84ce0b2b30e37e7e0531ae9068a96e707ef5547a2c5ed6f55df05551f",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "idle": {
+      "block": "69359171",
+      "hash": "0xa08273d84ce0b2b30e37e7e0531ae9068a96e707ef5547a2c5ed6f55df05551f",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "started": "2026-10-08T21:13:24.905175839Z",
+    "finishedAt": "2026-10-08T21:13:26.298284+00:00"
+  }
 }
