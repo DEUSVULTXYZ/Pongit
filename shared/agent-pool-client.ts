@@ -6,7 +6,7 @@ import {agentMetadata} from './agents';
 import {validateAgentPoolManifest,type AgentPoolManifest} from './agent-pool';
 import {validateStrategyRuntime} from './agent-strategy-code';
 import {admissionPasses,batchPoolChallenge} from './agent-pool-sponsor';
-import {familyGrantTypes} from './independent';
+import {familyGrantTypes,type FamilyGrant} from './independent';
 import {canonicalContractReads} from './canonical-contract-reads';
 
 export const poolRegistrationTypes={StrategyRegistration:[
@@ -41,7 +41,7 @@ export async function preparePoolRegistration(client:PublicClient,manifest:Agent
  return {to:m.catalog,data:encodeFunctionData({abi:agentCatalogAbi,functionName:'register',args:[registration,signature]}),digest,nonce,deadline:registration.deadline};
 }
 export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoolManifest,key:Signer,player:Address,
- options:{agent:Address;mode:0|1;cancel?:bigint}):Promise<PreparedPoolCall>{
+ options:{agent:Address;mode:0|1;cancel?:bigint;expectedFamily?:FamilyGrant;renewWithin?:bigint}):Promise<PreparedPoolCall>{
  const m=validateAgentPoolManifest(manifest);
  const [chainId,block]=await Promise.all([client.getChainId(),client.getBlock()]);
  if(chainId!==10143)throw Error('Challenges require Monad Testnet');
@@ -56,7 +56,15 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
   m.challengeAdmission==='atomic-v1'&&options.cancel===undefined&&m.rulesVersion!==17?
    read<bigint>(m.challenges,agentChallengesAbi,'count'):Promise.resolve(0n),
  ]);
- if(family.player.toLowerCase()!==player.toLowerCase()||family.key.toLowerCase()!==key.address.toLowerCase()||family.expires<=block.timestamp)throw Error('Renew arcade session');
+ const expected=options.expectedFamily;
+ const active=family.player.toLowerCase()===player.toLowerCase()&&family.key.toLowerCase()===key.address.toLowerCase()&&family.expires>block.timestamp
+  &&(!expected||family.player.toLowerCase()===expected.player.toLowerCase()&&family.key.toLowerCase()===expected.key.toLowerCase()
+   &&family.issuedAt===expected.issuedAt&&family.expires===expected.expires&&family.revision===expected.revision);
+ if(options.renewWithin!==undefined&&(options.renewWithin<0n||options.renewWithin>7200n||options.cancel!==undefined))throw Error('Invalid challenge renewal margin');
+ // This same canonical observation supplies both the renewal decision and the
+ // signed challenge. Do not read the family twice on the catalogue click.
+ if(!active||options.renewWithin!==undefined&&family.expires-block.timestamp<options.renewWithin)
+  throw Object.assign(Error('Renew arcade session'),{code:'POOL_FAMILY_RENEW',active});
  // Computing the expected digest allows the nonce and domain checks to travel
  // together. No signature is requested unless the deployed family agrees.
  const grant=hashTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:family});

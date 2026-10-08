@@ -9,7 +9,7 @@ import {privateKeyToAccount} from 'viem/accounts';
 import {preparePoolChallenge} from '../../shared/agent-pool-client';
 import {agentChallengesAbi} from '../../shared/abi-AgentChallenges';
 import {readChallengeAdmission} from '../../shared/agent-challenge-receipt';
-import {loadPoolFamily,observePoolFamily,familyExpiresSoon,type PoolFamilySession} from '../../shared/agent-pool-family';
+import {loadPoolFamily,SESSION_RENEW_MARGIN,type PoolFamilySession} from '../../shared/agent-pool-family';
 import {validateAgentPoolManifest,type AgentPoolManifest,type PoolChallengeView} from '../../shared/agent-pool';
 import type {AgentMatchRef} from '../../shared/agents';
 import {engineReadRetryMs} from '../../shared/engine-read';
@@ -116,7 +116,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   if(pending){const existing=await poolApi<{request:PoolChallengeView|null}>(`challenges/${s.grant.player}`);
    setRequest(existing.request);if(existing.request?.ref)router.push(matchHref(existing.request.ref));setRetry(n=>n+1);return;}
   if(!capacityChecked&&!await canStart(m))return;
-  const prepared=await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),s.grant.player,{agent,mode});
+  const prepared=await preparePoolChallenge(poolBase(),m,privateKeyToAccount(s.key),s.grant.player,{agent,mode,expectedFamily:s.grant,renewWithin:SESSION_RENEW_MARGIN});
   const operation=await finishPoolSponsor(sponsor,prepared,progress);
   // Read the actual confirmed receipt instead of waiting behind a pre-submit
   // API snapshot. An optional admission can assign somebody else: validate the
@@ -136,14 +136,16 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
   if(!config)throw Error('The arcade is reconnecting');
   if(!canQueueAgent(person(agent)?.availability?.[mode]))return;
   const saved=account?loadPoolFamily(config,account,sessionStorage):null;
-  if(saved){await finishPoolSponsor(poolBrowserSponsor(config,saved.grant.player),undefined,progress);
-   const [observed,available]=await Promise.all([observePoolFamily(poolBase(),config,saved),canStart(config)]);
-   if(!available)return;
-   // Renew here, in the lobby, rather than let the grant expire mid-match.
-   // Capacity is advisory; reuse this click's observation, not a second serial
-   // request. The sponsored contract still checks the live admission gates.
-   if(observed.active&&!familyExpiresSoon(saved,observed.block.timestamp)){session.current=saved;await challenge(config,saved,agent,true);intent.current=null;return;}
-   setRenewing(observed.active);}
+  if(saved){
+   if(!await canStart(config))return;
+   session.current=saved;
+   try{await challenge(config,saved,agent,true);intent.current=null;return;}
+   catch(error){
+    // Only a successful canonical observation can require fresh consent. A
+    // network failure preserves the saved key and selected archetype.
+    if((error as {code?:string}).code!=='POOL_FAMILY_RENEW')throw error;
+    setRenewing((error as {active:boolean}).active);
+   }}
   else if(!await canStart(config))return;
   setConnectOpen(true);
  });}

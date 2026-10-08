@@ -97,6 +97,31 @@ test('challenge is signed only by the granted arcade key and never exceeds the g
  expired=false;wrongDomain=true;await assert.rejects(preparePoolChallenge(client,m,key,addr(99),{agent:addr(20),mode:1}),/domain/);
 });
 
+test('one canonical family observation preserves renewal, exact saved grant and network-failure semantics',async()=>{
+ const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:7300n,revision:2n};
+ let signed=0,reads=0,networkFailure=false;
+ const client={getBlock:async()=>({number:44n,timestamp:100n,hash:zeroHash}),getChainId:async()=>10143,readContract:async(c:any)=>{
+  assert.equal(c.blockHash,zeroHash);assert.equal(c.requireCanonical,true);
+  if(c.functionName==='grantOf'){reads++;if(networkFailure)throw Error('Unavailable RPC');return family;}
+  if(c.functionName==='grantDigest')return grantHash(family);if(c.functionName==='nonces')return 3n;
+  const [grant,action,agent,mode,id,nonce,deadline]=c.args;
+  return hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant,action,agent,mode,id,nonce,deadline}});
+ }} as unknown as PublicClient;canonicalFixture(client);
+ const signer={...key,signTypedData:async(args:any)=>{signed++;return key.signTypedData(args);}};
+ const options={agent:addr(20),mode:1 as const,expectedFamily:{...family},renewWithin:1200n};
+ await preparePoolChallenge(client,m,signer,family.player,options);assert.equal(reads,1);assert.equal(signed,1);
+ for(const field of ['issuedAt','expires','revision'] as const){
+  await assert.rejects(preparePoolChallenge(client,m,signer,family.player,{...options,expectedFamily:{...family,[field]:family[field]+1n}}),
+   (error:any)=>error.code==='POOL_FAMILY_RENEW'&&!error.active);
+ }
+ family.expires=1100n;
+ await assert.rejects(preparePoolChallenge(client,m,signer,family.player,{...options,expectedFamily:{...family}}),
+  (error:any)=>error.code==='POOL_FAMILY_RENEW'&&error.active);
+ networkFailure=true;
+ await assert.rejects(preparePoolChallenge(client,m,signer,family.player,options),(error:any)=>error.code!=='POOL_FAMILY_RENEW');
+ assert.equal(signed,1,'Neither network recovery nor renewal signs another challenge');
+});
+
 test('new atomic challenge sizes its bounded scan at the same block without changing its signature',async()=>{
  const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:250n,revision:0n},grant=grantHash(family);const reads:string[]=[];
  const five={...m,version:5,rulesVersion:15,maxMatches:5,houseInstances:'official-v1',countdownClock:'engine-ticks-v1',arenaAdmissions:'verified-epoch-v1',
