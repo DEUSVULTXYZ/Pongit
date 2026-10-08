@@ -96,3 +96,34 @@ background-tab, measured main-thread slowdown and delayed client-side settled
 read scenarios; none has run yet. The settled-read test does not claim to halt
 provider publication. Six social-cache and five collision/receipt-clock tests,
 root TypeScript and Python syntax checks passed. Automation remains PAUSED.
+
+## 04:27 UTC — measurement and production concurrency preparation
+
+Tournament 43 continues naturally: 22 of 28 fixtures had resolved at 04:25.
+The last canonical inventory at block 69159296 has no human games, four empty
+friendly lanes and the one normal tournament fixture. No migration, test game
+or lifecycle helper is running. The drain-next flag remains set. Existing arenas
+are all active in epoch 1 with zero expiry; their observed batch counts are
+64–200. No close, release, replacement or new opening was sent.
+
+`495c117` corrects the held-speed measurement to use the actually displayed Chaos
+effect time. A stale snapshot had misclassified an effect expiring during a held
+key. Ten responsive-physics tests and root TypeScript pass, including the new
+regression; this is measurement validation, not a production browser result.
+
+`fff6c4c` gives the read-only soak an explicitly guarded public rules-17 scope
+and continuous-delegation verdict. It must observe stable active no-expiry epochs;
+it no longer demands an artificial renewal on v3. Private historical qualification
+keeps its original requirements. Fifteen qualification tests and root TypeScript
+pass. The monitor has not started and cannot start games or sign transactions.
+
+`2894388` prepares a separate read-only seven-way observer. It requires five
+actual agent matches, two separate human matches, four copies of one official
+archetype also present in the tournament, and 30 seconds of live progression.
+It verifies public rules 17/18 against the actual import proof. It does not claim
+browser input/render proof and has not run. Root TypeScript passes.
+
+The restore SQL was copied from the exact candidate source and hash-verified on
+the VPS: `1cd12233727013d2915b357214f424684fff58ccd8e770b64b11002534efb9f7`.
+It has not been executed against a production database. Fresh post-drain backup,
+off-VPS copy and restoration remain prerequisites for the actual migration.
