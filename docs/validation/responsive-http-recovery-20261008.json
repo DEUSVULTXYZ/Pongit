@@ -1,6 +1,6 @@
 {
   "at": "2026-10-08T23:01:59.622969+00:00",
-  "deployed": false,
+  "deployed": true,
   "reproduction": {
     "run": "r2final33c1",
     "ref": {
@@ -66,5 +66,34 @@
     "rootTypeScript": "PASS",
     "readonlyTwoNodeProbe": "289 samples each, no errors, max HTTP39.95ms, max WebSocket15.13ms; idle probe is not hosted gameplay qualification"
   },
-  "seven10": "Ended before admissions: registered NOVA had completed all 7 fixtures of T52. No actual seven-way result."
+  "seven10": "Ended before admissions: registered NOVA had completed all 7 fixtures of T52. No actual seven-way result.",
+  "cutover": {
+    "startedAt": "2026-10-08T23:06:39.920120+00:00",
+    "deadline": 1791501519.9201374,
+    "passed": true,
+    "stage": "complete",
+    "previousImage": "sha256:f308911dff8799c9724fe6b2bb61af8b96d46a2d3db6b723396dd356055c7a61",
+    "image": "sha256:593816cc70bcbd70af91adfdb1503fd81b89b6ec893b292cf7ac5eafee13f086",
+    "backupManifest": "790549132f542602d79bfa512f3345c81b69202f9a6dddc7bc851d6d85689937",
+    "lastCheck": {
+      "block": "69381973",
+      "hash": "0xeeb782d5c6c2ea9b8ae110c383d12a18ebeadab3aa95be4ecef472e52497ebb2",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "idle": {
+      "block": "69381973",
+      "hash": "0xeeb782d5c6c2ea9b8ae110c383d12a18ebeadab3aa95be4ecef472e52497ebb2",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "started": "2026-10-08T23:08:12.009507509Z",
+    "finishedAt": "2026-10-08T23:08:13.346229+00:00"
+  }
 }

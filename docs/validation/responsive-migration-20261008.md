@@ -1296,3 +1296,32 @@ New Classic1202 naturally3-7:0pauses/resync/rejectedcommands,localp9514.7ms/send
 Read-onlypreflight30 (90seconds) FAILavailability0 because its oldimage monitor sampled DBhealth before slow canonicalreads, aging otherwisefresh evidence. Currentalreadycommittedmonitor movesDBsampling aftercanonicalreads and ignorescapturedlanes. Separatepreflight32 runs180secondswithoneexplicitread-onlysourceoverride; no gamewriters or productionoverrides. Itsdeadlineunchanged; not24h. All earlierreportsretained. Oneidle isolated pongit-result-archive-test-db stoppedclean22:23:17 after0clients/noactiveenvdependencies/noports; retained writablelayer/container, no data removed. Rollback dockerstartthatcontainer.
 
 Backup28six78960565bytes andthenbackup29six79394756bytes offloadedonlyaftereachOFFVPSsha plusallmounts checks; allcopies/manifests/rollbackimages/volumes preserved. Disk79.837percent before512MiBreadercandidatebuild/noextraSwap. Fullwebbuildforbiddenwithoutresidentreserveafterearlieroutage. AutomationPAUSED/no final24h/no completionclaim.
+
+
+## 22:45 UTC - reader deployed, sole seven-game browser coordinator
+
+Reader336cccc/image1505bf6eed901a13c122d383ec22c9d0e2336ff72f249e93ca473bdb5010edbf deployed22:42:16.462 aftercanonical69376829/hash ae42bfe340d4809eb5df2a83be511455e9620c6ba22badd6e354d5bf143ff0db all7idle. Admission/sponsor/human were briefly stopped only afteridle/pending0 and resumed; exactconfigurationbackup +compatiblepriorreaderdbbf preserved. Onlyreader changed. RPCbb7b/webf308/human700a/enginefa86/admissionfc5b unchanged, no closures/redelegations.
+
+Correctedreadonlypreflight32 exited0/noOOM,180seconds complete withavailability1/errors0/sourcesunchanged; honestFAILonlyfull24h/fivewayunobserved. Previous90secondfailure retained. No longmonitor active.
+
+Solegamecoordinator pythonresponsive-seven-browsers r2seven10 exec49138 started22:42:47.903; originalpreparation23:02:47.903UTC andtotal23:12:47.903UTC. Allsixbrowserharnesses ready22:44:05; awaitingactualfreshNOVA tournament, nofriendly/humangameadmitted at22:45. Drivers remainbounded, do not duplicate/extend. Newreadinessobservesbothactualhumancanvases+enabledcontrols withoutwaitingforseparatespectatorcredit; no alteredgame/countdown. FourcopiesmustuseexactregisteredNOVAaddress18368267bdff...; nofixedresult orforcedfixture. Existing T52Chaos1206 playsotherbots. RPCactual22:44:04 shows5coalescedpromotions,zero throttles, butforegroundqueues still1-3seconds under6logins; no claim admissionfixed yet.
+
+Published5acde58 (product336cccc) includesops/failureevidence. AutomationPAUSED. Noothergame/browser/cutover/build/recovery active. No fundingrequest. Final24hnotstarted; no deliveryclaim.
+
+
+## 23:08 UTC - HTTP pause reproduced; local image ready, idle-only cutover pending
+
+Seven10 stopped before any human/friendly admission at22:52:51: NOVA had already completed all seven T52 fixtures, so its bounded fresh-window requirement could not be satisfied. Six prepared clients exited normally through the abort barrier; failure retained, no game cancelled.
+
+Natural Chrome1440 r2final33c1 Chaos1208 on077 finished7-5 butFAILone protective resume/one stale interruption/maxhold650ms. Admission7174ms/localp9515.2ms/send18.738ms. At22:54:15.783 a heartbeat spent1087ms in HTTP transport, queue/fence/signature eachbelow1ms; independentobserver also received itlate. Earlier socketdelay recovered by exactreceipt after148ms, thenrouterstayedonHTTP where noequivalentrecovery existed. Existing500msguardpreserved. Readonly60s289samples/node foundnoerrors,maxHTTP39.95ms/maxWS15.13ms; no provenInterludeprotocol/capacityblocker.
+
+Published25548ad adds the same120msreceipt-firstrecovery to journaled HTTP live sends: onlyactualnull permitsoneidenticalcopy afterexistingjournalvalidation; no newnonce/deadlineextension/blindretry. Both actualisolatedHTTPold-source regressionsFAIL; candidate28focused/1161TS/rootTSPASS. FullLinuxweb builtLOCALLY underDocker in55s, noapplicationserverstarted/noVPScompiler. Image593816cc70bcbd70af91adfdb1503fd81b89b6ec893b292cf7ac5eafee13f086 importedandconfig/rootfsdigestsverified; NOTyetdeployedatcheckpoint. Soleidlecutover34 exec40406 awaitsallsevenidle withoriginal12minbound. No game/browserdriveractive.
+
+Backup-http34 fiveDB/runtime6files79595010bytes SHAverifiedOFFVPS23:05:55, manifest790549132f542602d79bfa512f3345c81b69202f9a6dddc7bc851d6d85689937. Oldbackup30sixfilesplusverifiedlocalimagearchive191522398bytes removedonlyremote afterallcontainer-mount+OFFVPSsha checks;latest34/rollbackimages/allhistorypreserved;disk79.9398percent. Separate19role runtimeidentity/resourceobserver60spreflightPASS, checksactualimage/container/configdigestsandDockerlifecycleevents; noenvvaluesexported. Four regressiontestsPASS. Thiscomplementsstatic sourcehashes; itdoesnotprove24hours. AutomationPAUSED.
+
+
+## 23:09 UTC - HTTP recovery deployed, sole natural browser series34
+
+Web25548ad/image593816cc deployed23:08:12.009507509Z atcanonical69381973/hash eeb782d5c6c2ea9b8ae110c383d12a18ebeadab3aa95be4ecef472e52497ebb2 allsevenidle. Backends/contracts/epoch1/journalsunchanged. Backup34OFFVPSverified; compatiblewebrollbackf308/admission-web34.previous.private.json,neveroldDB.
+
+Solefinalnaturalbrowser-series34 exec28203 started23:08:58UTC (readexactreportdeadline), fiveChaos/twoClassic acrossChrome/Edge1440/1366/768/390/360, reusedvalidPRFsession. No othergame/browserdriver, recovery/cutover/build. Earlier33pauseFAILretained. AutomationPAUSED/no24hstarted. Runtimeobserver34preflightstoppedPASSafter62seconds; no longmonitor.

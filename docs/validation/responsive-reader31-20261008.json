@@ -45,7 +45,7 @@
     "image": "sha256:1505bf6eed901a13c122d383ec22c9d0e2336ff72f249e93ca473bdb5010edbf",
     "finishedAt": "2026-10-08T22:39:46.005196+00:00"
   },
-  "readerDeployed": false,
+  "readerDeployed": true,
   "tests": {
     "focused": 11,
     "fullTypeScript": 1159,
@@ -78,5 +78,34 @@
     },
     "durationSeconds": 180
   },
-  "final24h": false
+  "final24h": false,
+  "readerDeployment": {
+    "startedAt": "2026-10-08T22:41:39.316465+00:00",
+    "deadline": 1791500019.3164833,
+    "passed": true,
+    "stage": "complete",
+    "previous": "sha256:dbbf50f57dfa80ebd90a4c9ca23ba168d4aef0255e6411dc1db7d75ff6d285d7",
+    "image": "sha256:1505bf6eed901a13c122d383ec22c9d0e2336ff72f249e93ca473bdb5010edbf",
+    "backupManifest": "a3eae2821af9b14130f136c36b446b76f2ea80b028f5bbd73e74b986718b331b",
+    "lastCheck": {
+      "block": "69376798",
+      "hash": "0x4e347110beaa684c581ca3a8c32fe3bc876f3f1cb4e4f9779f79c7e5dde6c961",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "idle": {
+      "block": "69376829",
+      "hash": "0xae42bfe340d4809eb5df2a83be511455e9620c6ba22badd6e354d5bf143ff0db",
+      "idle": true,
+      "humanSlots": [
+        "0",
+        "0"
+      ]
+    },
+    "started": "2026-10-08T22:42:16.4624876Z",
+    "finishedAt": "2026-10-08T22:42:23.428818+00:00"
+  }
 }
