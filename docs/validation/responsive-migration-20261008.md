@@ -529,3 +529,33 @@ SHA-verified OFFVPS08:16:20, manifest
 1d0ad5224803335812749e5a63f9752dc9c87a32e97b2cfcd7eab4aaed7069e1.
 No game/browser driver active. Sole build is docs-web-6. Fault/mobile trials,
 provider recovery, PvP/parallel workload and24h remain; no complete delivery claim.
+
+
+## 08:34 UTC - documentation deployed; fault qualification in progress
+
+Docs-onlyweb6deaa0d/image1e0fb9ed deployed08:19:40 after canonical69205936
+verified five idle lanes. Current engine remainsd558334; no contract or gameplay
+source changed. All4 public documentation routes return200 and corrected text.
+F5Chaos956 PASS natural5-7: same game/grant, zero new passkey assertions and no
+startup pause. DisconnectChaos957 PASS natural result: independent observer
+proves game time/score frozen during actual offline interval, then one protective
+resume. These deliberate interruption trials are distinct from normal-no-pause.
+
+HTTP-only lost-reply958 finished naturally5-7 and published, but its original
+report remains FAIL:9of13visible contacts lacked WS collision logs. Inspection
+proves each pose already consumed a newer authoritative HTTP snapshot: incoming
+velocity changes to outgoing, collisionSequence advances exactlyone, lastHitter
+changes to that paddle, sameball/rally/score. The product held each contact until
+that snapshot. It did not invent the rebound. Test92adc75 adds that strict
+alternative to event evidence, matching the exact source time/velocity consumed
+by paint. Negative tests reject future data, missing predecessor, another
+collision, score/rally change, reset ball, wrong last hitter and predicted-only
+movement.14focused tests/rootTS pass; original failing test/output retained.
+Supplemental contact-proof-reanalysis.json confirms9state transitions+4events
+without changing the original verdict. No product change for this correction.
+Sole new browser run responsive-r2-lost-reply-2/exec53272 uses same production.
+No other driver, no lifecycle writer, no delayed batch of later faults started.
+
+DirectTLS recheck08:23:37: all7stopped endpoints timeout before HTTP, healthy2641
+returns200/198ms. No repeatPOST/closure/funding request. Dossier updated.
+Automation staysPAUSED. No full release/24h claim.
