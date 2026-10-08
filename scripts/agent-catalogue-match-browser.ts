@@ -361,8 +361,12 @@ page.on('response',async response=>{try{
  if(!['interlude_sendTransaction','interlude_getTransactionReceipt','eth_getTransactionReceipt'].includes(body.method))return;
  const reply=await response.json();
  if(body.method==='interlude_sendTransaction'){
+  // Keep only the public transaction identifier, including on rejected HTTP
+  // fallback copies. Never persist the signed request used to derive it.
+  const expectedHash=typeof body.params?.[0]==='string'&&/^0x[\da-f]+$/i.test(body.params[0])?keccak256(body.params[0] as `0x${string}`):undefined;
   const began=starts.get(request)??performance.now();report.submissions.push({at:new Date().toISOString(),action:actions.get(request)??'unknown',
-   ms:performance.now()-began,http:response.status(),error:!!reply.error,
+   ms:performance.now()-began,http:response.status(),hash:expectedHash,error:!!reply.error,
+   ...(reply.error?{message:clean(reply.error)}:{}),
    ...(Number.isSafeInteger(reply.error?.code)?{rpcErrorCode:reply.error.code}:{}),
    ...(publicationUnavailable(reply.error)?{publication:publicationFailureDetails(reply.error)}:{})});
   const hash=typeof reply.result==='string'?reply.result:reply.result?.transactionHash;

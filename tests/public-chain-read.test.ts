@@ -72,3 +72,19 @@ test('foreground client receives only validated HTTP reads with their canonical 
   assert.equal((await post({...call(2),method:'eth_sendRawTransaction'})).status,400);assert.equal(calls.length,1);
  }finally{await service.close();}
 });
+
+test('click capacity and saved challenge use foreground reads while catalogue refresh stays background',async()=>{
+ const calls:string[]=[];
+ const view=(name:string)=>async()=>{calls.push(name);return {value:{marker:name},revision:'same-proof',observedBlock:'123',observedHash:hash,observedTimestamp:'456'};};
+ const normal={client:{},capacity:view('background-capacity'),challenge:view('background-challenge'),catalog:view('background-catalog')} as unknown as AgentPoolReader;
+ const foreground={client:{},capacity:view('player-capacity'),challenge:view('player-challenge'),catalog:view('player-catalog')} as unknown as AgentPoolReader;
+ const service=await startPoolReadService(normal,{host:'127.0.0.1',port:0,public:true,foregroundReader:foreground});
+ try{
+  const address=service.server.address();assert(address&&typeof address==='object');
+  for(const [path,expected] of [['capacity','player-capacity'],['challenges/0x0000000000000000000000000000000000000001','player-challenge'],['catalog','background-catalog']]){
+   const response:Response=await fetch(`http://127.0.0.1:${address.port}/agents/${path}`);assert.equal(response.status,200);
+   const result=await response.json();assert.equal(result.marker,expected);assert.equal(result.observation.hash,hash);
+  }
+  assert.deepEqual(calls,['player-capacity','player-challenge','background-catalog']);
+ }finally{await service.close();}
+});

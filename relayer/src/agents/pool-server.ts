@@ -71,7 +71,11 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
    // Player entry and direct, validated wallet reads must not wait behind the
    // catalogue's background refreshes. Both still use the same canonical reads,
    // per-client limits and private provider scheduler.
-   const view=await (url.pathname.startsWith('/agents/matches/')?foregroundRoutes:routes)(url);
+   // Capacity is the explicit click preflight; a saved challenge is the
+   // player's admission continuation. Neither belongs behind catalogue work.
+   const playerEntry=url.pathname==='/agents/capacity'||/^\/agents\/challenges\/0x[\da-fA-F]{40}$/.test(url.pathname)
+    ||url.pathname.startsWith('/agents/matches/');
+   const view=await (playerEntry?foregroundRoutes:routes)(url);
    res.setHeader('ETag',`"${view.revision}"`);
    if(req.headers['if-none-match']===`"${view.revision}"`){res.statusCode=304;res.end();return;}
    send({...view.value,observation:{block:view.observedBlock,hash:view.observedHash,timestamp:view.observedTimestamp,revision:view.revision}});
