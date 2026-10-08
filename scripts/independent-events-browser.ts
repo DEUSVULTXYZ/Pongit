@@ -16,6 +16,8 @@ assert.equal(process.env.ROOMS_BROWSER_TEST,'isolated-vps');
 const publicRelease=process.env.PONG_HUMAN_BROWSER_TARGET==='public-release';
 const chaos=process.env.INDEPENDENT_SCENARIO==='chaos';
 const naturalOnly=process.env.PONG_HUMAN_NATURAL==='1';
+const profileDelayMs=Number(process.env.PONG_HUMAN_PROFILE_DELAY_MS??0);
+assert([0,50000].includes(profileDelayMs));
 const integrity=process.env.PONG_HUMAN_INPUT_INTEGRITY==='rules18';
 assert(!process.env.PONG_HUMAN_INPUT_INTEGRITY||integrity);
 assert(!integrity||naturalOnly&&publicRelease&&process.env.PONG_SYNC_PROBE==='1');
@@ -168,9 +170,24 @@ async function account(page:Page,i:number){
  }
  const header=page.locator('.rooms-header-actions > button').last();await until(()=>header.isEnabled(),'account ready');await header.click();
  await page.getByRole('dialog',{name:'Your account'}).waitFor();
+ let profileOperation:string|undefined,profileDelayedUntil=0;
+ if(profileDelayMs&&i===0){
+  page.on('response',async response=>{
+   if(!response.url().endsWith('/independent/transactions'))return;
+   try{if(response.request().postDataJSON()?.to?.toLowerCase()!==manifest.profiles.toLowerCase())return;
+    const op=await response.json();if(op.id){profileOperation=op.id;profileDelayedUntil=Date.now()+profileDelayMs;report.profileObservationFault={kind:'client-only delayed profile observation',operation:op.id,delayMs:profileDelayMs};}
+   }catch{}
+  });
+  await page.route('**/independent/operations/*',async route=>{
+   if(!profileOperation||!route.request().url().endsWith('/'+profileOperation)||Date.now()>=profileDelayedUntil){await route.continue();return;}
+   const response=await route.fetch(),op=await response.json();
+   await route.fulfill({response,json:op.status==='confirmed'?{...op,status:'pending'}:op});
+  });
+ }
  const handle='qa'+Date.now().toString(36).slice(-6)+i;saved.players[i].handle=handle;
  await page.getByLabel('Username',{exact:true}).fill(handle);await page.getByRole('button',{name:'Save profile',exact:true}).click();
  await until(async()=>await page.getByRole('dialog',{name:'Your account'}).count()===0,'profile closes after confirmed save');await persist();
+ if(profileDelayMs&&i===0){assert(profileOperation&&Date.now()>=profileDelayedUntil);report.profileObservationFault.recoveredAt=new Date().toISOString();}
 }
 try{
  const response=await fetch(publicRelease?origin:'http://independent-web:3000');assert(response.ok);const csp=response.headers.get('content-security-policy')??'';const connect=csp.split(';').find(x=>x.trim().startsWith('connect-src '))?.trim().split(/\s+/).slice(1)??[];for(const node of nodes){assert(connect.includes(node));assert(connect.includes(node.replace(/^http/,'ws')));}report.checks.push('Delivered CSP includes every human arena');

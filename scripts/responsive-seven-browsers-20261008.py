@@ -25,6 +25,7 @@ try:
     current=get('config');assert current['rulesVersion']==17 and current['maxMatches']==5 and current['enabled'] and current['tournamentsEnabled']
     for i,name in enumerate(names):
         env=os.environ.copy();env['PONG_BROWSER_BARRIER']=str(directory)
+        if i==5:env['PONG_HUMAN_PROFILE_DELAY_MS']='50000'
         if i<4:
             args=[pwsh,'-NoProfile','-File','scripts/integrity-browser-run-20261007.ps1','-Run',name,'-GameMode',str(i%2),'-Browser','chrome' if i%2==0 else 'msedge','-Width','768']
         else:
