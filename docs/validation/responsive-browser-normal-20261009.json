@@ -1,0 +1,454 @@
+{
+  "scope": "Seven complete natural visible-browser games. Production web1c6dd1d / engine5f8cab3. Virtual Mera authenticators; mobile emulation, not physical devices. No 24-hour qualification claim.",
+  "passed": true,
+  "rows": [
+    {
+      "run": "r2final53b1",
+      "ref": {
+        "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+        "epoch": "1",
+        "id": "1419"
+      },
+      "browser": "msedge",
+      "mode": 0,
+      "width": 1440,
+      "passed": true,
+      "naturalEnd": true,
+      "admissionMs": 5470,
+      "localInputP95Ms": 15.799999952316284,
+      "confirmedInputP95Ms": 19.859130859375,
+      "sendP95Ms": 15,
+      "independentPeerP95Ms": 12.646484375,
+      "playerFrameP95Ms": 17,
+      "observerFrameP95Ms": 17,
+      "playerHoldMaxMs": 83,
+      "observerHoldMaxMs": 66.70000000000073,
+      "pausesMs": 0,
+      "resyncs": 0,
+      "resumes": 0,
+      "stopDrift": {
+        "samples": 26,
+        "p95Drift": 0,
+        "maxDrift": 0
+      },
+      "held": {
+        "samples": 149,
+        "p05Ratio": 0.9999999999999986,
+        "p95Ratio": 1.000000000000001,
+        "outsideTarget": 0
+      },
+      "visiblePaddleBounces": 7,
+      "unconfirmedBounces": 0,
+      "result": {
+        "hash": "0x07c3c2351dbd7b9ad0892f31a19568df88e1dce88327030067b52a490f9dbbc0",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 2,
+        "scoreB": 7,
+        "elapsedUs": "54240372",
+        "finality": false
+      },
+      "layout": [
+        {
+          "at": 6984.100000143051,
+          "x": 137,
+          "y": 198,
+          "width": 1166,
+          "height": 655.875,
+          "viewportWidth": 1440,
+          "viewportHeight": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "scrollHeight": 900
+        }
+      ],
+      "reusedSession": false,
+      "existingSessionAssertions": null,
+      "reportSha256": "f870dd868319c0de3488dd08c330e5472dd9bfbd02151b6e894bb007324982df"
+    },
+    {
+      "run": "r2final53b2",
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1420"
+      },
+      "browser": "chrome",
+      "mode": 0,
+      "width": 1366,
+      "passed": true,
+      "naturalEnd": true,
+      "admissionMs": 6304,
+      "localInputP95Ms": 15.200000047683716,
+      "confirmedInputP95Ms": 22.0498046875,
+      "sendP95Ms": 17,
+      "independentPeerP95Ms": 12.756591796875,
+      "playerFrameP95Ms": 17,
+      "observerFrameP95Ms": 17,
+      "playerHoldMaxMs": 66.70000000000073,
+      "observerHoldMaxMs": 66.60000000000582,
+      "pausesMs": 0,
+      "resyncs": 0,
+      "resumes": 0,
+      "stopDrift": {
+        "samples": 19,
+        "p95Drift": 0,
+        "maxDrift": 0
+      },
+      "held": {
+        "samples": 134,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.0000000000000016,
+        "outsideTarget": 0
+      },
+      "visiblePaddleBounces": 5,
+      "unconfirmedBounces": 0,
+      "result": {
+        "hash": "0x7a7bdc82ebaec0c346274316f9a2ca98df14e286b0871588ab27cc3769f684dc",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 6,
+        "scoreB": 7,
+        "elapsedUs": "57312519",
+        "finality": false
+      },
+      "layout": [
+        {
+          "at": 8283.400000095367,
+          "x": 217.6999969482422,
+          "y": 198,
+          "width": 931,
+          "height": 523.6875,
+          "viewportWidth": 1366,
+          "viewportHeight": 768,
+          "scrollY": 0,
+          "scrollWidth": 1366,
+          "scrollHeight": 768
+        }
+      ],
+      "reusedSession": true,
+      "existingSessionAssertions": 0,
+      "reportSha256": "3ba54417cb11c11ee8ea054fe028b3168f089018fe21a118151c0492f0314899"
+    },
+    {
+      "run": "r2final53c1",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1422"
+      },
+      "browser": "chrome",
+      "mode": 1,
+      "width": 1440,
+      "passed": true,
+      "naturalEnd": true,
+      "admissionMs": 5397,
+      "localInputP95Ms": 16,
+      "confirmedInputP95Ms": 21.350341796875,
+      "sendP95Ms": 16,
+      "independentPeerP95Ms": 12.736083984375,
+      "playerFrameP95Ms": 17,
+      "observerFrameP95Ms": 17,
+      "playerHoldMaxMs": 66.79999999999927,
+      "observerHoldMaxMs": 66.60000000000582,
+      "pausesMs": 0,
+      "resyncs": 0,
+      "resumes": 0,
+      "stopDrift": {
+        "samples": 13,
+        "p95Drift": 0,
+        "maxDrift": 0
+      },
+      "held": {
+        "samples": 99,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.000000000000001,
+        "outsideTarget": 0
+      },
+      "visiblePaddleBounces": 2,
+      "unconfirmedBounces": 0,
+      "result": {
+        "hash": "0x7b79b2c2313015cbb5112af319206a0e1dbf106dbb8a03c7b102a5cac7feb60d",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 3,
+        "scoreB": 7,
+        "elapsedUs": "35875006",
+        "finality": false
+      },
+      "layout": [
+        {
+          "at": 6118.600000143051,
+          "x": 57,
+          "y": 198,
+          "width": 1166,
+          "height": 655.875,
+          "viewportWidth": 1440,
+          "viewportHeight": 900,
+          "scrollY": 0,
+          "scrollWidth": 1440,
+          "scrollHeight": 900
+        }
+      ],
+      "reusedSession": true,
+      "existingSessionAssertions": 0,
+      "reportSha256": "599ef97c1aee1366def10309f8aa1d3790a519ee0e77596d7f099fdd29c42cae"
+    },
+    {
+      "run": "r2final53c2",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "1423"
+      },
+      "browser": "msedge",
+      "mode": 1,
+      "width": 1366,
+      "passed": true,
+      "naturalEnd": true,
+      "admissionMs": 5345,
+      "localInputP95Ms": 16.200000047683716,
+      "confirmedInputP95Ms": 23.59765625,
+      "sendP95Ms": 16,
+      "independentPeerP95Ms": 12.892333984375,
+      "playerFrameP95Ms": 17,
+      "observerFrameP95Ms": 17,
+      "playerHoldMaxMs": 66.69999999999709,
+      "observerHoldMaxMs": 67,
+      "pausesMs": 0,
+      "resyncs": 0,
+      "resumes": 0,
+      "stopDrift": {
+        "samples": 13,
+        "p95Drift": 0,
+        "maxDrift": 0
+      },
+      "held": {
+        "samples": 100,
+        "p05Ratio": 0.9999999999999988,
+        "p95Ratio": 1.000000000000002,
+        "outsideTarget": 0
+      },
+      "visiblePaddleBounces": 3,
+      "unconfirmedBounces": 0,
+      "result": {
+        "hash": "0x4a1897e8d2d66d7999fe35fae77f0ffb187173f1cc1c77eed8d14e5eb0530d39",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 1,
+        "scoreB": 7,
+        "elapsedUs": "34927090",
+        "finality": false
+      },
+      "layout": [
+        {
+          "at": 6512.300000190735,
+          "x": 137.6999969482422,
+          "y": 198,
+          "width": 931,
+          "height": 523.6875,
+          "viewportWidth": 1366,
+          "viewportHeight": 768,
+          "scrollY": 0,
+          "scrollWidth": 1366,
+          "scrollHeight": 768
+        }
+      ],
+      "reusedSession": true,
+      "existingSessionAssertions": 0,
+      "reportSha256": "c0ea1b919fecfe87501915284c24bcdaac652ba964230a148d72fbca3c7a1b6d"
+    },
+    {
+      "run": "r2final53c3",
+      "ref": {
+        "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+        "epoch": "1",
+        "id": "1424"
+      },
+      "browser": "chrome",
+      "mode": 1,
+      "width": 360,
+      "passed": true,
+      "naturalEnd": true,
+      "admissionMs": 6242,
+      "localInputP95Ms": 16.5,
+      "confirmedInputP95Ms": 27.19384765625,
+      "sendP95Ms": 19,
+      "independentPeerP95Ms": 21.01513671875,
+      "playerFrameP95Ms": 17,
+      "observerFrameP95Ms": 17,
+      "playerHoldMaxMs": 83.5,
+      "observerHoldMaxMs": 265.90000000000146,
+      "pausesMs": 0,
+      "resyncs": 0,
+      "resumes": 0,
+      "stopDrift": {
+        "samples": 120,
+        "p95Drift": 0,
+        "maxDrift": 1.9500000000000455
+      },
+      "held": {
+        "samples": 134,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.0000000000000018,
+        "outsideTarget": 0
+      },
+      "visiblePaddleBounces": 7,
+      "unconfirmedBounces": 0,
+      "result": {
+        "hash": "0x266333e912131a0bf1c6277252bc04963a3f29ea259ad9008c3c5225355793f2",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 6,
+        "scoreB": 7,
+        "elapsedUs": "64995279",
+        "finality": false
+      },
+      "layout": [
+        {
+          "at": 8365.399999856949,
+          "x": 22,
+          "y": 462.20001220703125,
+          "width": 316,
+          "height": 177.75,
+          "viewportWidth": 360,
+          "viewportHeight": 844,
+          "scrollY": 0,
+          "scrollWidth": 360,
+          "scrollHeight": 844
+        }
+      ],
+      "reusedSession": true,
+      "existingSessionAssertions": 0,
+      "reportSha256": "3532230ca158c1bfc7f64f7ad31bcb460008092fbd99daff22d5ab0213bcae45"
+    },
+    {
+      "run": "r2final53c4",
+      "ref": {
+        "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+        "epoch": "1",
+        "id": "1426"
+      },
+      "browser": "msedge",
+      "mode": 1,
+      "width": 390,
+      "passed": true,
+      "naturalEnd": true,
+      "admissionMs": 4757,
+      "localInputP95Ms": 16.5,
+      "confirmedInputP95Ms": 22.46337890625,
+      "sendP95Ms": 18,
+      "independentPeerP95Ms": 12.911376953125,
+      "playerFrameP95Ms": 17,
+      "observerFrameP95Ms": 17,
+      "playerHoldMaxMs": 66.69999999999709,
+      "observerHoldMaxMs": 66.60000000000582,
+      "pausesMs": 0,
+      "resyncs": 0,
+      "resumes": 0,
+      "stopDrift": {
+        "samples": 112,
+        "p95Drift": 0,
+        "maxDrift": 0.38999999999998636
+      },
+      "held": {
+        "samples": 140,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.0000000000000013,
+        "outsideTarget": 0
+      },
+      "visiblePaddleBounces": 11,
+      "unconfirmedBounces": 0,
+      "result": {
+        "hash": "0x0d7daf1756b1c8fd3bb103d9d576f61ffd3d4adb549def12efd2b64958fdc9a5",
+        "winner": "0xc7762C5B5Bc106A70cE290649FaB14835afEC0A3",
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 2,
+        "elapsedUs": "65921598",
+        "finality": false
+      },
+      "layout": [
+        {
+          "at": 6775,
+          "x": 22.200000762939453,
+          "y": 462.20001220703125,
+          "width": 346,
+          "height": 194.625,
+          "viewportWidth": 390,
+          "viewportHeight": 844,
+          "scrollY": 0,
+          "scrollWidth": 390,
+          "scrollHeight": 844
+        }
+      ],
+      "reusedSession": true,
+      "existingSessionAssertions": 0,
+      "reportSha256": "33e2c71dbf31fcb6e8457ba28219be27d047488439b3f5c5de73ab9586ed64fa"
+    },
+    {
+      "run": "r2final53c5",
+      "ref": {
+        "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+        "epoch": "1",
+        "id": "1427"
+      },
+      "browser": "chrome",
+      "mode": 1,
+      "width": 768,
+      "passed": true,
+      "naturalEnd": true,
+      "admissionMs": 5347,
+      "localInputP95Ms": 16.299999952316284,
+      "confirmedInputP95Ms": 25.1572265625,
+      "sendP95Ms": 17,
+      "independentPeerP95Ms": 16.79736328125,
+      "playerFrameP95Ms": 17,
+      "observerFrameP95Ms": 17,
+      "playerHoldMaxMs": 100,
+      "observerHoldMaxMs": 83.09999999999854,
+      "pausesMs": 0,
+      "resyncs": 0,
+      "resumes": 0,
+      "stopDrift": {
+        "samples": 27,
+        "p95Drift": 0,
+        "maxDrift": 0
+      },
+      "held": {
+        "samples": 133,
+        "p05Ratio": 0.9999999999999988,
+        "p95Ratio": 1.000000000000001,
+        "outsideTarget": 0
+      },
+      "visiblePaddleBounces": 5,
+      "unconfirmedBounces": 0,
+      "result": {
+        "hash": "0x57d56a8f3bb1eba2cd14cee7375de769a2707ae4e11f0d918bd537f3515b315d",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "54847390",
+        "finality": false
+      },
+      "layout": [
+        {
+          "at": 7173.700000047684,
+          "x": 80,
+          "y": 443.8000183105469,
+          "width": 608,
+          "height": 342,
+          "viewportWidth": 768,
+          "viewportHeight": 900,
+          "scrollY": 0,
+          "scrollWidth": 768,
+          "scrollHeight": 900
+        }
+      ],
+      "reusedSession": true,
+      "existingSessionAssertions": 0,
+      "reportSha256": "aa424df5799d134394438154fb96a70d581025270b5d0f74f3405d7b7a171262"
+    }
+  ]
+}
