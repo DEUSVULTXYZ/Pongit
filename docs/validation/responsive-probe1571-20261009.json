@@ -1,0 +1,64 @@
+{
+  "passed": true,
+  "kind": "Recorded measurement audit, not a new hosted pass",
+  "originalPassed": false,
+  "ref": {
+    "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+    "epoch": "1",
+    "id": "1571"
+  },
+  "traceSha256": "72ad2d6eae18d31646f70aa8887edfdbc5baa8c445b077e22b4b02da6f6b4755",
+  "reportSha256": "c5d7e7e3d14cc182f0bbe3d805b6a24aaa9911ddcbad94c0f717bb2b9b30a52f",
+  "a": {
+    "at": 15007,
+    "integratedAt": 15007.299999952316,
+    "paintedAt": 15007.799999952316,
+    "paint": 518,
+    "side": 0,
+    "y": 219.23999998569485,
+    "height": 96,
+    "top": 171.23999998569485,
+    "bottom": 267.23999998569485,
+    "rally": "1",
+    "finished": false,
+    "observedAt": 1791550686867
+  },
+  "b": {
+    "at": 15107.2,
+    "integratedAt": 15112.799999952316,
+    "paintedAt": 15113.599999904633,
+    "paint": 524,
+    "side": 0,
+    "y": 187.58999998569487,
+    "height": 96,
+    "top": 139.58999998569487,
+    "bottom": 235.58999998569487,
+    "rally": "1",
+    "finished": false,
+    "observedAt": 1791550687029
+  },
+  "displacement": 31.649999999999977,
+  "rafRatio": 1.052894211576838,
+  "paintRatio": 0.9971644616970552,
+  "integratedRatio": 0.9999999999999993,
+  "held": {
+    "samples": 135,
+    "p05Ratio": 0.9960159376741161,
+    "p95Ratio": 1.0034453045345035,
+    "minRatio": 0.9920870429963303,
+    "maxRatio": 1.0323249070738523,
+    "outsideTarget": 0,
+    "outliers": []
+  },
+  "rawRaf": {
+    "samples": 135,
+    "p05Ratio": 0.9920159690156015,
+    "p95Ratio": 1.012948207646239,
+    "outsideTarget": 1
+  },
+  "productUnchanged": "2499ce1",
+  "thresholdUnchanged": [
+    0.95,
+    1.05
+  ]
+}

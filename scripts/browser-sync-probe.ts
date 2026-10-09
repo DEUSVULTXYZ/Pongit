@@ -39,10 +39,11 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
  for(const p of data.poses??[])if(p.contactBoundary)for(const side of [0,1])
   if(p.balls?.some((b:any)=>Math.abs(b.x-(side===0?40:984))<.002))contacts.add(`${p.at}:${side}`);
  const changes=[...(data.keys??[]),...(data.releases??[]).map(r=>({...r,direction:0}))].sort((a,b)=>a.at-b.at);
- const ratios:number[]=[],allRatios:number[]=[],outliers:any[]=[],stops:any[]=[],excluded:Record<string,number>={};
+ const ratios:number[]=[],rafRatios:number[]=[],allRatios:number[]=[],outliers:any[]=[],stops:any[]=[],excluded:Record<string,number>={};
  // RAF's supplied time can precede a key event even when its callback paints
- // after that event. Use the actual canvas-call timestamp for input ownership;
- // retain RAF deltas for the renderer's integrated velocity calculation.
+ // after that event. Use actual canvas-call times for both input ownership and
+ // displayed speed. Chrome1571 painted one RAF5.6ms late: RAF time invented
+ // 5.29% excess speed although displacement followed actual time exactly.
  const paintedAt=(frame:any)=>Number.isFinite(frame.paintedAt)&&frame.paintedAt>=frame.at?frame.paintedAt:frame.at;
  const reject=(reason:string)=>{excluded[reason]=(excluded[reason]??0)+1;};
  const speed=(frame:any)=>{const s=observations.get(frame.observedAt);
@@ -81,27 +82,30 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
   }
   if(end-input.at<500){reject('short-intent');continue;}
   for(let i=0;i<frames.length;){
-   const a=frames[i],j=frames.findIndex((p,k)=>k>i&&p.at>=a.at+100);
+   const a=frames[i],j=frames.findIndex((p,k)=>k>i&&paintedAt(p)>=paintedAt(a)+100);
    if(j<0)break;
    const b=frames[j],window=frames.slice(i,j+1);i=j;
    if(window.some(p=>p.rally!==a.rally||p.height!==a.height)){reject('rally-or-geometry');continue;}
    if(window.some(p=>p.top<=2||p.bottom>=574)){reject('wall');continue;}
-   if(window.some((p,k)=>k&&p.at-window[k-1].at>50)){reject('render-gap');continue;}
+   if(window.some((p,k)=>k&&paintedAt(p)-paintedAt(window[k-1])>50)){reject('render-gap');continue;}
    const velocities=window.map(speed);
    if(velocities.some(v=>v===undefined)){reject('pause-or-unavailable');continue;}
-   let expected=0;for(let k=1;k<window.length;k++)expected+=velocities[k-1]!*(window[k].at-window[k-1].at)/1000;
+   let expected=0,rafExpected=0;for(let k=1;k<window.length;k++){
+    expected+=velocities[k-1]!*(paintedAt(window[k])-paintedAt(window[k-1]))/1000;
+    rafExpected+=velocities[k-1]!*(window[k].at-window[k-1].at)/1000;
+   }
    if(expected>0){
     const ratio=(b.y-a.y)*input.direction/expected;allRatios.push(ratio);
     // The approved sustained-speed gate excludes collisions. Retain the raw
     // values as well: a contact may never hide ordinary slow held movement.
     if(window.some(p=>contacts.has(`${p.at}:${p.side}`))){reject('contact-confirmation');continue;}
-    ratios.push(ratio);
+    ratios.push(ratio);if(rafExpected>0)rafRatios.push((b.y-a.y)*input.direction/rafExpected);
     if(ratio<.95||ratio>1.05)outliers.push({from:a.at,to:b.at,side:input.side,direction:input.direction,fromY:a.y,toY:b.y,expected,ratio});
    }
   }
  }
  const q=(values:number[],p:number)=>[...values].sort((a,b)=>a-b)[Math.floor((values.length-1)*p)];
- return{heldIncludingContacts:{samples:allRatios.length,p05Ratio:q(allRatios,.05),p95Ratio:q(allRatios,.95),outsideTarget:allRatios.filter(r=>r<.95||r>1.05).length},held:{samples:ratios.length,p05Ratio:q(ratios,.05),p95Ratio:q(ratios,.95),minRatio:ratios.length?Math.min(...ratios):undefined,maxRatio:ratios.length?Math.max(...ratios):undefined,
+ return{heldUsingRafTime:{samples:rafRatios.length,p05Ratio:q(rafRatios,.05),p95Ratio:q(rafRatios,.95),outsideTarget:rafRatios.filter(r=>r<.95||r>1.05).length},heldIncludingContacts:{samples:allRatios.length,p05Ratio:q(allRatios,.05),p95Ratio:q(allRatios,.95),outsideTarget:allRatios.filter(r=>r<.95||r>1.05).length},held:{samples:ratios.length,p05Ratio:q(ratios,.05),p95Ratio:q(ratios,.95),minRatio:ratios.length?Math.min(...ratios):undefined,maxRatio:ratios.length?Math.max(...ratios):undefined,
   outsideTarget:ratios.filter(r=>r<.95||r>1.05).length,outliers},stopping:{samples:stops.length,p95Drift:q(stops.map(s=>s.drift),.95),maxDrift:stops.length?Math.max(...stops.map(s=>s.drift)):undefined,stops},
   stoppingIncludingFrameTail:{p95Drift:q(stops.map(s=>s.includingFrameTail),.95),maxDrift:stops.length?Math.max(...stops.map(s=>s.includingFrameTail)):undefined},excluded};
 }

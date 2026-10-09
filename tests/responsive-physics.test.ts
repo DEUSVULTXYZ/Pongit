@@ -8,6 +8,15 @@ import {chaosPaddles} from '../shared/chaos-modifiers';
 import {projectParticipant,projectChaosParticipant} from '../web/lib/participant-projection';
 import {sustainedInputMetrics} from '../scripts/browser-sync-probe';
 
+test('Chrome1571 held speed uses actual paints when a RAF callback runs late',()=>{
+ const trace=(speed:number)=>({snapshots:[{observedAt:0,rulesVersion:17,controllable:true}],keys:[{at:0,side:0,direction:1}],releases:[{at:600,side:0}],
+  paddles:Array.from({length:60},(_,i)=>{const at=i*10,integratedAt=at+(i===10?8:0),y=100+speed*integratedAt/1000;
+   return{at,integratedAt,paintedAt:integratedAt+.5,side:0,observedAt:0,y,top:y-48,bottom:y+48,height:96,rally:'1'};})});
+ assert.equal(sustainedInputMetrics(trace(300)).held.outsideTarget,0,'same frame number does not mean same actual paint time');
+ assert(sustainedInputMetrics(trace(180)).held.outsideTarget>0,'real resistance remains a failure');
+ assert(sustainedInputMetrics(trace(330)).held.outsideTarget>0,'real excess speed remains a failure');
+});
+
 test('release measurement separates pre-event travel without hiding immediate or later corrections',()=>{
  const frame=(at:number,y:number)=>({at,integratedAt:at,paintedAt:at+.2,y,side:0,observedAt:0,top:y-48,bottom:y+48,height:96,rally:'1'});
  const trace={snapshots:[{observedAt:0,rulesVersion:17,controllable:true}],keys:[{at:0,side:0,direction:1}],releases:[{at:12,side:0}],

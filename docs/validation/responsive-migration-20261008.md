@@ -1853,3 +1853,9 @@ Series62 exitedFAIL12:00:52 after third1550. First1548/1549PASS. Mobile1550 natu
 
 
 2026-10-09T12:53:54.352784+00:00 - product2499ce1 published,1247fullTS/rootTS/secret/buildPASS. Web65 SHAimported imagea77553468d9ccd77922be179a4f8cce3683071d311866d2fca89aabcaf7da8cc; guardedcutover running, no browserdriver. Backup65 sixfiles335867432bytes SHAverifiedOFFVPS12:52:38.0248272Z manifesta51ec35e93fe3b5b983326991555d40d6c2a25a0607101298c28bebf39421b01. Duplicate64 upload and unused60/61/62images archivedOFFVPS with SHA/OCI/allcontainerchecks; current64/rollback63/volumes retained. Usable79.9616 beforebuild. Series67 preparedsame5Chaos/2Classic, exactimageguard,80minonce-started bound.1563failure preserved.
+
+
+2026-10-09T12:56:45.924018+00:00 - web65/2499ce1 DEPLOYED12:56:08.841016138Z, imagea77553468d9ccd77922be179a4f8cce3683071d311866d2fca89aabcaf7da8cc; cutoverPASS12:56:11 after natural1568finish. Canonical69544957/hasha469bb886e523266d094f25615c7f4e387815c8cb102c54d953f94f65fdbf000, idlehuman0/agents0/pending0. Onlywebchanged/allservicesresumed/no closure. Backup65OFFVPS verified12:52:38, rollback64 retainedwithoutDBrestore. Soleheadednormalseries67 started5Chaos/2Classic, fixed80minbound and strictfail-fast. No othergame/lifecycledriver; currentnewmatches notyetqualified.
+
+
+2026-10-09T13:02:31.151281+00:00 - series67 stopped:1570PASS natural7-4/42.418s Chrome360;1571FAIL natural1-7/52.036s Chrome1440 solely held-speed measurement. Both0pauses/resync/crossings/jumps/fakebounces.1571 RAF window100.2ms but actual paints105.8ms; displacement31.65units equals integrated105.5ms exactly. ReadonlyauditPASS realpaint ratio.99716 vs RAF1.05289; originalFAIL retained. Measurement now uses actualpaint intervals, unchanged95..105% threshold and retainsRAFmetrics;47focusedPASS/rootTSrunning. Productweb65/2499ce1 unchanged, no deploymentrequired. No driver active; distinctprospectiveseries68 prepared5Chaos/2Classic. No multiball in1570/1571.
