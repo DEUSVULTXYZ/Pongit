@@ -35,7 +35,7 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
  // It never borrows the viewer's unrelated active arena or changes occupancy.
  const id=requestedRoom??(occupancy>0n&&occupancy!==maxUint256?occupancy:undefined);
  const visibleActive=requestedRoom&&occupancy!==requestedRoom?0n:active;
- // Invitations and profiles are decoration. A twenty-second ranked proposal
+ // Invitations and profiles are decoration. A twenty-second match proposal
  // must reach its participants before those independent reads finish.
  const invitationWork=(async()=>{
   const inbox=player?await r.lobby('invitationPage',[player,false,0n,50n]):[[],0n];
@@ -49,7 +49,7 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
  ]);
  const proposal=room?.proposal?r.lobby('proposal',[room.proposal]):null;
  const p=await proposal;
- if(room?.ranked&&p?.status===1&&!visibleActive&&BigInt(p.expires)>=block.timestamp)
+ if(p?.status===1&&!visibleActive&&BigInt(p.expires)>=block.timestamp)
   onProposal?.({block:block.number,now:block.timestamp,occupancy,active,grant,queue,room,proposal:p,
    binding:null,app:null,delegation:null,recoverySnapshot:null,published:null,publishedSnapshot:null});
  const app=visibleActive?await r.lobby('arenaOf',[visibleActive]):p?.id?await r.lobby('arenaOf',[p.id]):zeroAddress;

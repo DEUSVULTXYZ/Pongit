@@ -3,9 +3,33 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {encodeFunctionData,zeroAddress,zeroHash,type Address} from 'viem';
 import {deferReserveEnable} from '../shared/agent-house-instances';
-import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,cancelledTournamentClosure,tournamentDue,pinnedReads,controlPlaneAnswers,inspectionSchedule,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+import {expiredChallenge,historicalRepairWork,qualificationWork,capturedTournamentWork,currentCapturedTournamentWork,cancelledTournamentClosure,tournamentDue,pinnedReads,controlPlaneAnswers,inspectionSchedule,type PoolRead} from '../relayer/src/agents/pool-maintenance';
+import {reusableAgentArenaAbi} from '../shared/abi-ReusableAgentArena';
 const address=(n:number)=>`0x${n.toString(16).padStart(40,'0')}` as Address;
 const m={pool:address(1),catalog:address(2),qualifications:address(3),challenges:address(4),family:address(5),tournaments:address(6)};
+
+test('current reusable archive reads overlap without changing first eligible work or later error isolation',async()=>{
+ const arenas=Array.from({length:8},(_,i)=>address(20+i)),started:Address[]=[];
+ let release!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;});
+ const read:PoolRead=async(at,abi,fn,args=[])=>{
+  encodeFunctionData({abi,functionName:fn,args});
+  if(fn==='arenaMatch')return '0x'+'1'.repeat(64) as any;
+  if(fn==='currentMatch')return [1n,BigInt(arenas.indexOf(at)+1)] as any;
+  if(fn==='record'){
+   const ref=args[0] as any;started.push(ref.arena);await gate;
+   if(ref.arena===arenas[7])throw Error('later arena read failed');
+   return {captured:true,tournament:3n,fixture:Number(ref.id)-1,ref} as any;
+  }
+  if(fn==='fixture')return {bound:true,ref:{chainId:10143n,arena:arenas[Number(args[1])],epoch:1n,id:BigInt(Number(args[1])+1)},published:{hash:zeroHash,status:0,finality:false}} as any;
+  if(fn==='result')return {hash:'0x'+'1'.repeat(64),status:3,finality:false} as any;
+  throw Error(fn);
+ };
+ const work=currentCapturedTournamentWork(read,m,reusableAgentArenaAbi,arenas,w=>w.args[1]!==0);
+ try{await new Promise(setImmediate);assert.deepEqual(started,arenas,'One batched round must inspect every current slot');}
+ finally{release();}
+ assert.deepEqual(await work,{to:m.tournaments,method:'synchronize',args:[3n,1]},'Cooling first work does not reorder later fixtures');
+ await assert.rejects(currentCapturedTournamentWork(read,m,reusableAgentArenaAbi,arenas,()=>false),/later arena read failed/);
+});
 
 test('an enabled healthy arena serves a waiting challenge before an optional reserve update',()=>{
  assert.equal(deferReserveEnable([{enabled:true}],true,true),true);

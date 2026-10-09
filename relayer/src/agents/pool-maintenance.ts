@@ -5,6 +5,7 @@ import {agentChallengesAbi as challengeAbi} from '../../../shared/abi-AgentChall
 import {abi as familyAbi} from '../../../shared/abi-independent-ArcadeFamily';
 import {agentTournamentsAbi as bookAbi} from '../../../shared/abi-AgentTournaments';
 import {agentArenaPoolAbi as poolAbi} from '../../../shared/abi-AgentArenaPool';
+import {reusableAgentPoolAbi} from '../../../shared/abi-ReusableAgentPool';
 import {houseInstanceAbi} from '../../../shared/agent-house-instances';
 import {hostedControl,LEGACY_HOSTED_HUB} from '../../../shared/hosted-control';
 
@@ -75,6 +76,26 @@ export async function capturedTournamentWork(read:PoolRead,m:Common,record:any){
   return{to:m.tournaments,method:'synchronize',args:[record.tournament,record.fixture]};
  if(!f.resolved&&result.status===4&&result.finality)
   return{to:m.tournaments,method:'retryCancelled',args:[record.tournament,record.fixture]};
+ return null;
+}
+
+/** Start independent slot reads together at the caller's pinned block, so its
+ * multicall batches each dependency round. Consume in deployment order: a
+ * later failed read cannot block earlier eligible work or escape unhandled.
+ * The caller still owns the only write and its nonce journal. */
+export async function currentCapturedTournamentWork(read:PoolRead,m:Common,arenaAbi:Abi,arenas:readonly Address[],
+ available:(work:NonNullable<Awaited<ReturnType<typeof capturedTournamentWork>>>)=>boolean=()=>true){
+ const candidates=arenas.map(async app=>{
+  const key=await read(m.pool,reusableAgentPoolAbi,'arenaMatch',[app]);if(key===zeroHash)return null;
+  const [epoch,id]=await read(app,arenaAbi,'currentMatch');if(!id)return null;
+  const record=await read(m.pool,reusableAgentPoolAbi,'record',[{chainId:10143n,arena:app,epoch,id}]);
+  return capturedTournamentWork(read,m,record);
+ });
+ for(const candidate of candidates)void candidate.catch(()=>{});
+ for(const candidate of candidates){
+  const work=await candidate;
+  if(work&&available(work))return work;
+ }
  return null;
 }
 

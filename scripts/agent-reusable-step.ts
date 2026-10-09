@@ -16,7 +16,7 @@ import {abi as verifierAbi} from '../shared/abi-independent-PublishedResultVerif
 import {abi as hubAbi} from '../shared/abi-independent-IInterludeHub';
 import {measuredFetch} from '../shared/rpc-metrics';
 import {initializeReusableResultArchive,createReusableResultArchive} from '../relayer/src/reusable-result-archive';
-import {qualificationWork,historicalRepairWork,expiredChallenge,capturedTournamentWork,cancelledTournamentClosure,tournamentDue,pinnedReads,controlPlaneAnswers,writeRetryMs,inspectionSchedule} from '../relayer/src/agents/pool-maintenance';
+import {qualificationWork,historicalRepairWork,expiredChallenge,currentCapturedTournamentWork,cancelledTournamentClosure,tournamentDue,pinnedReads,controlPlaneAnswers,writeRetryMs,inspectionSchedule} from '../relayer/src/agents/pool-maintenance';
 import {DEAD_ARENA_MS,DEAD_ARENA_MIN_EPOCH_SECONDS,replacementBudget,verifiedRecovery,type ArenaRecoveryWindow} from '../shared/arena-replacement';
 import {loadReusableRuntime} from '../relayer/src/agents/reusable-runtime';
 import {validateReusableBudget,reusableAdmissionBudget,reusableCapacity,type ReusablePublicationBudget} from '../relayer/src/agents/reusable-budget';
@@ -188,12 +188,9 @@ async function step(){
  // Result capture releases the lane, but nextFixture still waits for the
  // tournament ledger. Do not bury this current result in a rotating scan of
  // all historical fixtures (minutes of artificial downtime in a league).
- if(doesArchive)for(const {app} of delegations){
-  const key=await read(m.pool,poolAbi,'arenaMatch',[app]);if(key===zeroHash)continue;
-  const [epoch,id]=await read(app,arenaAbi,'currentMatch');if(!id)continue;
-  const record=await read(m.pool,poolAbi,'record',[{chainId:10143n,arena:app,epoch,id}]);
-  const work=await capturedTournamentWork(read,m,record);
-  if(work&&!cooling(work.to,work.method)){await act(work.to,work.method,work.args);return;}
+ if(doesArchive){
+  const work=await currentCapturedTournamentWork(read,m,arenaAbi,delegations.map(a=>a.app),w=>!cooling(w.to,w.method));
+  if(work){await act(work.to,work.method,work.args);return;}
  }
  // Read-only finality inspection follows current result capture. Historical
  // records that have not changed neither hold current lanes nor spend gas.

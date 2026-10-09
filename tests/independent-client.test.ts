@@ -15,7 +15,7 @@ import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 const address=(i:number)=>toHex(i,{size:20}) as Address;
 const input={chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(i=>({app:address(i)})),genesis:1700000000,createdAt:'2026-09-12T12:00:00Z'};
 
-test('a ranked proposal reaches the player while unrelated invitation/profile hydration is blocked',async()=>{
+for(const ranked of [true,false])test(`${ranked?'ranked':'manual-room'} consent reaches the player while unrelated invitation/profile hydration is blocked`,async()=>{
  const m=publicIndependentManifest(input),player=address(20),early:any[]=[];
  let release!:(value:any)=>void,finished=false;
  const inbox=new Promise(resolve=>{release=resolve;});
@@ -23,7 +23,7 @@ test('a ranked proposal reaches the player while unrelated invitation/profile hy
   assert.equal(c.blockNumber,100n);
   if(c.functionName==='invitationPage')return inbox;
   const values:any={occupancy:8n,activeMatchOf:0n,grantOf:{key:address(21)},
-   room:{id:8n,ranked:true,proposal:14n,members:[{player}]},proposal:{id:14n,status:1,expires:220n},
+   room:{id:8n,ranked,proposal:14n,members:[{player}]},proposal:{id:14n,status:1,expires:220n},
    arenaOf:zeroAddress,profileOf:{handle:'player',avatar:0}};
   assert(c.functionName in values,c.functionName);return values[c.functionName];
  }};
@@ -37,9 +37,9 @@ test('a ranked proposal reaches the player while unrelated invitation/profile hy
  const full=await result;assert.equal(full.profiles[player.toLowerCase()].handle,'player');assert.equal(full.proposal,early[0].proposal);
 });
 
-test('early proposal delivery never replaces an active binding or advertises expired/unranked consent',async()=>{
- for(const scenario of [{status:1,ranked:true,expires:199n,active:0n},{status:2,ranked:true,expires:220n,active:0n},
-  {status:1,ranked:false,expires:220n,active:0n},{status:1,ranked:true,expires:220n,active:15n}]){
+test('early proposal delivery never replaces an active binding or advertises expired/consumed consent',async()=>{
+ for(const ranked of [true,false])for(const scenario of [{status:1,ranked,expires:199n,active:0n},{status:2,ranked,expires:220n,active:0n},
+  {status:1,ranked,expires:220n,active:15n}]){
   let callbacks=0;
   const base:any={getBlock:async()=>({number:100n,timestamp:200n}),readContract:async(c:any)=>{
    const values:any={occupancy:8n,activeMatchOf:scenario.active,grantOf:{key:address(21)},invitationPage:[[],0n],
