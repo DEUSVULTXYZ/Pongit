@@ -1,0 +1,315 @@
+{
+  "observedAt": "2026-10-09T11:23:07.501Z",
+  "ref": {
+    "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+    "epoch": "1",
+    "id": "1534"
+  },
+  "product": "7d61aac",
+  "passed": false,
+  "naturalResult": {
+    "hash": "0x5ff28a7149f51ed821d5fe05c0a8ee4fb5240b1b68239e0c99d7dff3b9b1261a",
+    "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+    "status": 3,
+    "scoreA": 5,
+    "scoreB": 7,
+    "elapsedUs": "45314402",
+    "finality": false
+  },
+  "naturalGates": {
+    "noPause": true,
+    "noResume": true,
+    "noResync": true,
+    "peer": true,
+    "player": true,
+    "spectator": true,
+    "executionClock": true
+  },
+  "sustained": {
+    "heldIncludingContacts": {
+      "samples": 104,
+      "p05Ratio": 0.9862660952392037,
+      "p95Ratio": 1.005976095617552,
+      "outsideTarget": 3
+    },
+    "held": {
+      "samples": 99,
+      "p05Ratio": 0.9930000019073485,
+      "p95Ratio": 1.0068846815835018,
+      "minRatio": 0.9836769759450056,
+      "maxRatio": 1.016932269966444,
+      "outsideTarget": 0,
+      "outliers": []
+    },
+    "stopping": {
+      "samples": 15,
+      "p95Drift": 4.010599971389837,
+      "maxDrift": 5.330000042915344,
+      "stops": [
+        {
+          "at": 17425.5,
+          "drift": 0
+        },
+        {
+          "at": 19742.200000047684,
+          "drift": 0
+        },
+        {
+          "at": 22060,
+          "drift": 0
+        },
+        {
+          "at": 24378,
+          "drift": 0
+        },
+        {
+          "at": 26388.200000047684,
+          "drift": 5.330000042915344
+        },
+        {
+          "at": 30141.599999904633,
+          "drift": 2.549999928474165
+        },
+        {
+          "at": 34794,
+          "drift": 0
+        },
+        {
+          "at": 35055.700000047684,
+          "drift": 0
+        },
+        {
+          "at": 37239.700000047684,
+          "drift": 0
+        },
+        {
+          "at": 39552.59999990463,
+          "drift": 0
+        },
+        {
+          "at": 41867,
+          "drift": 0
+        },
+        {
+          "at": 44185.5,
+          "drift": 0
+        },
+        {
+          "at": 48089,
+          "drift": 4.010599971389837
+        },
+        {
+          "at": 51530.5,
+          "drift": 3.1100000143051147
+        },
+        {
+          "at": 55180.40000009537,
+          "drift": 1.6103999427796225
+        }
+      ]
+    },
+    "excluded": {
+      "wall": 44,
+      "rally-or-geometry": 5,
+      "short-intent": 122,
+      "contact-confirmation": 5
+    }
+  },
+  "paddleCrossings": {
+    "crossings": [
+      {
+        "at": 13577.201059691357,
+        "ball": 1,
+        "side": 1,
+        "rally": "1",
+        "y": 523.9999999999999,
+        "paddle": 390.4999775912482,
+        "height": 96,
+        "split": false,
+        "penetration": -79.5000224087517,
+        "throughPaddle": false
+      },
+      {
+        "at": 16276.700875794513,
+        "ball": 1,
+        "side": 0,
+        "rally": "2",
+        "y": 524,
+        "paddle": 48,
+        "height": 96,
+        "split": false,
+        "penetration": -422,
+        "throughPaddle": false
+      },
+      {
+        "at": 18977.000951271817,
+        "ball": 1,
+        "side": 1,
+        "rally": "3",
+        "y": 52.00000000000002,
+        "paddle": 184.25021415261796,
+        "height": 96,
+        "split": false,
+        "penetration": -78.25021415261793,
+        "throughPaddle": false
+      },
+      {
+        "at": 30260.2004488711,
+        "ball": 1,
+        "side": 0,
+        "rally": "4",
+        "y": 235.9998838404272,
+        "paddle": 327,
+        "height": 96,
+        "split": false,
+        "penetration": -37.0001161595728,
+        "throughPaddle": false
+      },
+      {
+        "at": 32860.107378295506,
+        "ball": 1,
+        "side": 1,
+        "rally": "5",
+        "y": 52.000000000000036,
+        "paddle": 155.55524071899217,
+        "height": 96,
+        "split": false,
+        "penetration": -49.55524071899214,
+        "throughPaddle": false
+      },
+      {
+        "at": 35577.00319310608,
+        "ball": 1,
+        "side": 0,
+        "rally": "6",
+        "y": 524,
+        "paddle": 435.1796420681739,
+        "height": 96,
+        "split": false,
+        "penetration": -34.820357931826095,
+        "throughPaddle": false
+      },
+      {
+        "at": 38276.70135399072,
+        "ball": 1,
+        "side": 1,
+        "rally": "7",
+        "y": 524,
+        "paddle": 449.19461104907833,
+        "height": 96,
+        "split": false,
+        "penetration": -20.805388950921667,
+        "throughPaddle": false
+      },
+      {
+        "at": 40976.60143155664,
+        "ball": 1,
+        "side": 0,
+        "rally": "8",
+        "y": 52,
+        "paddle": 202.42997053300883,
+        "height": 96,
+        "split": false,
+        "penetration": -96.42997053300883,
+        "throughPaddle": false
+      },
+      {
+        "at": 48177.00081578258,
+        "ball": 1,
+        "side": 0,
+        "rally": "9",
+        "y": 143.99992467744443,
+        "paddle": 228,
+        "height": 96,
+        "split": false,
+        "penetration": -30.000075322555574,
+        "throughPaddle": false
+      },
+      {
+        "at": 50826.90099182731,
+        "ball": 1,
+        "side": 0,
+        "rally": "10",
+        "y": 52,
+        "paddle": 143.6952,
+        "height": 96,
+        "split": false,
+        "penetration": -37.6952,
+        "throughPaddle": false
+      },
+      {
+        "at": 53543.6005365333,
+        "ball": 1,
+        "side": 1,
+        "rally": "11",
+        "y": 52.00000000000004,
+        "paddle": 131.0703643839959,
+        "height": 96,
+        "split": false,
+        "penetration": -25.07036438399585,
+        "throughPaddle": false
+      },
+      {
+        "at": 56226.60068930395,
+        "ball": 1,
+        "side": 0,
+        "rally": "12",
+        "y": 524,
+        "paddle": 283.5543969460047,
+        "height": 96,
+        "split": false,
+        "penetration": -186.44560305399528,
+        "throughPaddle": false
+      }
+    ],
+    "throughPaddle": []
+  },
+  "evidence": {
+    "report.json": "8c7558900a1998e891870678fee70fab69653b38e6c405841df9e507fed24b55",
+    "sync-trace.json": "b319e01663b8b552ee4dfab392dbb34855d265e6ef8c33b2720ae51a89f12922",
+    "input-trace.json": "013497c887243a2cadf48af266d0db26134d38587470be2283e6b31695d16e44",
+    "intent-trace.json": "3daa21f034d4e24a1d371e131d01ec6e31b4926754b3c669b667cf4f35ff1e1d"
+  },
+  "causes": [
+    {
+      "kind": "unnecessary-contact-alignment",
+      "releaseAtMs": 30141.6,
+      "localY": 331.87,
+      "contactPaddleY": 327,
+      "ballY": 235.999925,
+      "half": 48,
+      "consequence": "The ball misses both the live and displayed paddle; resetting the paddle does not protect a collision."
+    },
+    {
+      "kind": "unnecessary-contact-alignment",
+      "releaseAtMs": 48089,
+      "localY": 233.6406,
+      "contactPaddleY": 228,
+      "ballY": 143.99999,
+      "half": 48,
+      "consequence": "A second distant miss triggers the same avoidable correction."
+    },
+    {
+      "kind": "premature-stop-correction",
+      "releaseAtMs": 26388.2,
+      "beforePaintY": 299.32,
+      "afterPaintY": 293.99,
+      "laterConfirmedY": 288,
+      "consequence": "Correction budget is spent before the release receipt, while the source still holds the previous direction."
+    },
+    {
+      "kind": "measurement-frame-tail",
+      "consequence": "Original release metric includes movement before the key release. Candidate records exact integration time, keeps raw measure and still counts the first post-release correction."
+    }
+  ],
+  "candidate": "5a7022f",
+  "candidateHostedProof": false,
+  "scope": "Visual reconstruction and test instrumentation only; no rules, delegation, nonce authority or engine changes.",
+  "checks": {
+    "focusedTs": 53,
+    "fullTs": 1241,
+    "rootTypeScript": "pass after replacing unsupported findLast; initial error log retained",
+    "diff": "pass",
+    "secretScan": "pass"
+  }
+}

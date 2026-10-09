@@ -1781,3 +1781,15 @@ No driver/lifecycle worker active. Web60 install/cutover prepared using still-fr
 ## 2026-10-09 11:22 UTC - web60 live, Edge retry running
 
 Web60 7d61aac started11:21:13.932743268Z, imageb2d862ad7d0c8056df2e40e78dedd614bfb744bffe2b8144f3590216745531d6. Guarded cutoverPASS11:21:16 afteridlecanonical69526302/edd...e46e, all seven slots empty, bothhuman0, pending0. Backup59stillfresh verified11:00:51. Onlyweb changed; no engine/contract/delegation action. Rollbackweb59 retained, neverrestoreoldDB. Soleactualdriver exec23711 r2contact60-edge1 running, original seven-minute natural bound. Do not start competing driver. Product7d61aac/rootTS1237tests/build/secret checks pass; full actual qualification pending.
+
+
+## October9 11:36 UTC - Edge1534 preserved as FAIL; contact follow-up
+
+Edge1534 naturally completed5-7 on web60 with zero painted-paddle crossings, pauses, resyncs or false bounces. Local16ms/send14.06ms; held speed .993..1.0069. Report remainsFAIL for release drift p954.0106/max5.33. No owned browser or recovery driver remains. Trace identifies unnecessary contact alignment when a ball misses by more than40units, plus stop correction spent before the release acknowledgement. Candidate61 now being tested: geometry-consistent contact fences (including split/multiball) and defer stop correction to confirmed release. A separate measurement defect counted pre-release partial-frame motion; new measurements retain that raw value and account for exact frame integration time. These are local changes, NOT deployed; public web60 unchanged. No contract/engine/delegation changes.
+
+
+## October9 11:42 UTC - web61 ready, fresh backup verified
+
+Product5a7022f fixes unnecessary distant-miss paddle resets and defers stop correction until the release is acknowledged. Displayed split geometry and both balls are checked; conflicting contacts retain their fence, no fake bounce.53focused/1241fullTS pass; rootTS repair1PASS after unsupported findLast in measurement code was replaced, original typecheckFAIL retained. Linuxweb61 built from exact commit, image60b662dc55a80e56817a7802972c217071be6173ed9aa3b8ff1f788b9b3cddd4, NOTDEPLOYEDyet. Install19690 running; no game driver.
+
+Backup61 complete five actual DBs/runtime, sixfiles329646397bytes, manifest5e93687b494fd5d4ea8cf907268dd33f9e9f4565bbc5b6e53763b60d911eaff9; OFFVPS verified11:40:08.7351268Z. Existing51c actual restore proof remains, schemas unchanged. Oldbackup59 payloads and duplicateweb60 uploaded archive offloaded only after SHA and allcontainer mount checks; current61/rollbackimages/volumes/history preserved. Disk79.5453beforebuild. Pending guardedweb-onlycutover, then actual browser comparison. Publicweb60 unchanged at this checkpoint; no contract/lifecycle/engine changes.
