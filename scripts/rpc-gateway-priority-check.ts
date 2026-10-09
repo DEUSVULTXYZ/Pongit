@@ -182,6 +182,26 @@ try{
  const receiptHeaderIndex=sent.findIndex((v,i)=>i>=receiptPrior&&v.method==='eth_getBlockByNumber'&&v.params[0]===mined.blockNumber);
  assert(receiptHeaderIndex>=receiptPrior&&receiptHeaderIndex<receiptPrior+4,'New challenge receipt header waited behind backfill');
  report.checks.push('Newer mined challenge receipt keeps its actual canonical header verification interactive');
+ // Concurrent public admissions also flood the existing control/transaction
+ // queues. A live player's short authorization must not expire behind them.
+ const concurrent=[...Array.from({length:16},(_,i)=>rpc('eth_getBlockByNumber',[`0x${(4090-i).toString(16)}`,false])),
+  ...Array.from({length:12},(_,i)=>rpc('eth_getTransactionReceipt',[`0x${(i+300).toString(16).padStart(64,'0')}`]))];
+ const concurrentDeadline=Date.now()+5000;
+ while((await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).queued.interactive<20){
+  assert(Date.now()<concurrentDeadline);await new Promise(r=>setTimeout(r,10));
+ }
+ const urgentPrior=sent.length;
+ const directFences=Array.from({length:4},(_,i)=>encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[`0x${(i+700).toString(16).padStart(40,'0')}`,zeroHash]}));
+ await Promise.all([...concurrent,...directFences.map(data=>rpc('eth_call',[{to:hub,data},'latest']))]);
+ for(const data of directFences){
+  const i=sent.findIndex((v,i)=>i>=urgentPrior&&(v.params[0] as any)?.data===data);
+  assert(i>=urgentPrior&&i<urgentPrior+8,'A gameplay fence expired behind concurrent entry checks');
+ }
+ const concurrentSent=sent.slice(urgentPrior);
+ assert(concurrentSent.at(-1)!.at-concurrentSent[0].at>=(concurrentSent.length-1)*45);
+ const measurements=(await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).timing.groups;
+ assert(measurements['primary:fence:eth_call:queue'].count>=4,'Gameplay queue measurements must be distinct from routine headers');
+ report.checks.push('Four exact gameplay fences overtake concurrent entry headers and receipts without increasing upstream rate');
  report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}

@@ -4,7 +4,7 @@ export function rpcQueueMetrics(now=Date.now){
  let since=now();const groups=new Map<string,{count:number;sum:number;max:number;histogram:number[]}>();
  const rotate=()=>{if(now()-since>=60000){groups.clear();since=now();}};
  return {
-  record(upstream:'primary'|'secondary',kind:'transaction'|'control'|'foreground'|'live'|'history',method:string,stage:'queue'|'network',ms:number){
+  record(upstream:'primary'|'secondary',kind:'fence'|'transaction'|'control'|'foreground'|'live'|'history',method:string,stage:'queue'|'network',ms:number){
    rotate();if(!Number.isFinite(ms)||ms<0)return;
    const name=/^eth_[A-Za-z]{1,35}$/.test(method)?method:'other';
    let key=[upstream,kind,name,stage].join(':');

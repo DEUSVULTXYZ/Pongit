@@ -96,6 +96,15 @@ export function controlRpcRequest(method:string,params:readonly unknown[],observ
   &&(rootDelegation(call.data)||arenaFenceBatch(call));
 }
 
+/** Only the live gameplay authority check needs the short prefetch deadline.
+ * Headers and admission transactions remain interactive, but cannot consume
+ * that whole deadline. No caller hint, arbitrary hub or simulation qualifies. */
+export function fenceRpcRequest(method:string,params:readonly unknown[],head?:bigint,height?:(hash:string)=>bigint|undefined):boolean{
+ if(method!=='eth_call'||params.length!==2||!controlRpcRequest(method,params,head,height))return false;
+ const call=params[0] as {to?:unknown;data?:unknown};
+ return typeof call.to==='string'&&((call.to.toLowerCase()===NO_LEASE_HUB.toLowerCase()&&rootDelegation(call.data))||arenaFenceBatch(call));
+}
+
 /** A validated foreground read has its own bounded priority lane. The hint
  * comes from internal services, never grants extra throughput or write access,
  * and cannot promote archive scans. Unknown methods retain normal scheduling. */
@@ -166,8 +175,8 @@ export function pinnedRpcRequest(method:string,params:readonly unknown[]):boolea
 
 /** One upstream rate budget; gameplay reads take priority over historical scans. */
 export function rpcScheduler(spacingMs:number) {
-  const queues={live:[] as Array<()=>void>,control:[] as Array<()=>void>,foreground:[] as Array<()=>void>,history:[] as Array<()=>void>,transaction:[] as Array<()=>void>};
-  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,controlRun=0,foregroundRun=0,transactionRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
+  const queues={live:[] as Array<()=>void>,control:[] as Array<()=>void>,foreground:[] as Array<()=>void>,history:[] as Array<()=>void>,transaction:[] as Array<()=>void>,fence:[] as Array<()=>void>};
+  let next=0,timer:ReturnType<typeof setTimeout>|undefined,liveRun=0,controlRun=0,foregroundRun=0,transactionRun=0,fenceRun=0,effectiveSpacing=spacingMs,lastAdjustment=-Infinity;
   // One ordinary read after four control checks; one historical read after
   // four total interactive reads. History does not reset the ordinary quota.
   // A foreground hint must not put every catalogue/match hydration in front
@@ -177,8 +186,12 @@ export function rpcScheduler(spacingMs:number) {
   // separate bursts previously allowed 16 transactions plus four headers to
   // delay one login simulation, beyond its HTTP deadline under concurrent login.
   // A foreground turn does not reset the transaction/header fairness counter.
-  const choose=(l:number,c:number,f:number,h:number,t:number,run:number,urgentRun:number,controlBurst:number,transactionBurst:number):keyof typeof queues=>
-   h>0&&(!(l+c+f+t)||run>=4)?'history':l>0&&(!(c+f+t)||urgentRun>=4)?'live':
+  // At most one gameplay fence before another interactive turn. It shares
+  // the same rate/cooldown and history budget; the remaining queues retain
+  // their own existing rotation instead of spending it on fence dispatches.
+  const choose=(l:number,c:number,f:number,h:number,t:number,g:number,run:number,urgentRun:number,controlBurst:number,transactionBurst:number,fenceBurst:number):keyof typeof queues=>
+   h>0&&(!(l+c+f+t+g)||run>=4)?'history':g>0&&(!(l+c+f+t)||fenceBurst<1)?'fence':
+    l>0&&(!(c+f+t)||urgentRun>=4)?'live':
     f>0&&controlBurst>=4?'foreground':
     t>0&&(!(c+f)||transactionBurst<4)?'transaction':
     c>0&&(!f||controlBurst<4)?'control':'foreground';
@@ -187,17 +200,18 @@ export function rpcScheduler(spacingMs:number) {
     if(!Object.values(queues).some(q=>q.length))return;
     const wait=Math.max(0,next-Date.now());
     if(wait){timer=setTimeout(tick,wait);return;}
-    const kind=choose(queues.live.length,queues.control.length,queues.foreground.length,queues.history.length,queues.transaction.length,liveRun,controlRun,foregroundRun,transactionRun);
+    const kind=choose(queues.live.length,queues.control.length,queues.foreground.length,queues.history.length,queues.transaction.length,queues.fence.length,liveRun,controlRun,foregroundRun,transactionRun,fenceRun);
     const release=queues[kind].shift()!;
     liveRun=kind==='history'?0:liveRun+1;
-    if(kind!=='history')controlRun=kind==='live'?0:controlRun+1;
+    if(kind!=='history'&&kind!=='fence')controlRun=kind==='live'?0:controlRun+1;
     if(kind==='control'||kind==='foreground'||kind==='transaction')foregroundRun=kind==='foreground'?0:foregroundRun+1;
     if(kind==='transaction'||kind==='control')transactionRun=kind==='transaction'?transactionRun+1:0;
+    if(kind!=='history')fenceRun=kind==='fence'?fenceRun+1:0;
     next=Date.now()+effectiveSpacing;release();
     if(Object.values(queues).some(q=>q.length))timer=setTimeout(tick,effectiveSpacing);
   }
-  function reserve(historical:boolean,control=false,foreground=false,transaction=false){
-    let kind:keyof typeof queues=historical?'history':transaction?'transaction':control?'control':foreground?'foreground':'live';
+  function reserve(historical:boolean,control=false,foreground=false,transaction=false,fence=false){
+    let kind:keyof typeof queues=historical?'history':fence?'fence':transaction?'transaction':control?'control':foreground?'foreground':'live';
     let release!:()=>void;
     const done=new Promise<void>(resolve=>{release=resolve;queues[kind].push(resolve);if(!timer)tick();});
     return {done,promote(){
@@ -209,22 +223,23 @@ export function rpcScheduler(spacingMs:number) {
   }
   return {
     reserve,
-    acquire(historical:boolean,control=false,foreground=false,transaction=false){return reserve(historical,control,foreground,transaction).done;},
-    pending(){return {interactive:queues.live.length+queues.control.length+queues.foreground.length+queues.transaction.length,history:queues.history.length};},
-    waitMs(historical:boolean,control=false,foreground=false,transaction=false){
+    acquire(historical:boolean,control=false,foreground=false,transaction=false,fence=false){return reserve(historical,control,foreground,transaction,fence).done;},
+    pending(){return {interactive:queues.live.length+queues.control.length+queues.foreground.length+queues.transaction.length+queues.fence.length,history:queues.history.length};},
+    waitMs(historical:boolean,control=false,foreground=false,transaction=false,fence=false){
       // Estimate this caller's dispatch time, including the existing cooldown.
       // An interactive read overtakes archive work; counting the entire history
       // queue made the gateway avoid an upstream that could serve it next.
-      const target=historical?'history':transaction?'transaction':control?'control':foreground?'foreground':'live';
-      const sizes={live:queues.live.length,control:queues.control.length,foreground:queues.foreground.length,history:queues.history.length,transaction:queues.transaction.length};
-      let run=liveRun,urgentRun=controlRun,controlBurst=foregroundRun,transactionBurst=transactionRun,before=0;
+      const target=historical?'history':fence?'fence':transaction?'transaction':control?'control':foreground?'foreground':'live';
+      const sizes={live:queues.live.length,control:queues.control.length,foreground:queues.foreground.length,history:queues.history.length,transaction:queues.transaction.length,fence:queues.fence.length};
+      let run=liveRun,urgentRun=controlRun,controlBurst=foregroundRun,transactionBurst=transactionRun,fenceBurst=fenceRun,before=0;
       for(;;){
-        const kind=choose(sizes.live+Number(target==='live'),sizes.control+Number(target==='control'),sizes.foreground+Number(target==='foreground'),sizes.history+Number(target==='history'),sizes.transaction+Number(target==='transaction'),run,urgentRun,controlBurst,transactionBurst);
+        const kind=choose(sizes.live+Number(target==='live'),sizes.control+Number(target==='control'),sizes.foreground+Number(target==='foreground'),sizes.history+Number(target==='history'),sizes.transaction+Number(target==='transaction'),sizes.fence+Number(target==='fence'),run,urgentRun,controlBurst,transactionBurst,fenceBurst);
         if(kind===target&&sizes[kind]===0)return Math.max(0,next-Date.now())+before*effectiveSpacing;
         sizes[kind]--;run=kind==='history'?0:run+1;
-        if(kind!=='history')urgentRun=kind==='live'?0:urgentRun+1;
+        if(kind!=='history'&&kind!=='fence')urgentRun=kind==='live'?0:urgentRun+1;
         if(kind==='control'||kind==='foreground'||kind==='transaction')controlBurst=kind==='foreground'?0:controlBurst+1;
         if(kind==='transaction'||kind==='control')transactionBurst=kind==='transaction'?transactionBurst+1:0;
+        if(kind!=='history')fenceBurst=kind==='fence'?fenceBurst+1:0;
         before++;
       }
     },

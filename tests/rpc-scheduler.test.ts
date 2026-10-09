@@ -1,9 +1,68 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {historicalRpcRequest, transactionRpcRequest, controlRpcRequest, foregroundRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
+import {historicalRpcRequest, transactionRpcRequest, controlRpcRequest, fenceRpcRequest, foregroundRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
 import {encodeFunctionData,multicall3Abi,zeroHash} from 'viem';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
+
+test('four gameplay authorizations do not expire behind concurrent admission headers and transactions',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ for(const spacing of [75,85]){
+  const queue=rpcScheduler(spacing),seen:Array<{kind:string;at:number}>=[];
+  await queue.acquire(false);
+  const start=Date.now(),take=(kind:string)=>queue.acquire(kind==='history',kind==='control',kind==='foreground',kind==='transaction',kind==='fence')
+   .then(()=>seen.push({kind,at:Date.now()}));
+  const jobs=[...Array.from({length:24},()=>take('control')),...Array.from({length:12},()=>take('transaction')),
+   ...Array.from({length:8},()=>take('foreground')),...Array.from({length:8},()=>take('live')),...Array.from({length:8},()=>take('history'))];
+  const estimate=queue.waitMs(false,false,false,false,true);
+  jobs.push(...Array.from({length:4},()=>take('fence')));
+  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(spacing);await Promise.resolve();}
+  await Promise.all(jobs);
+  const fences=seen.filter(x=>x.kind==='fence');
+  assert.equal(fences[0].at-start,estimate);
+  assert(fences.at(-1)!.at-start<=8*spacing,'Four current gameplay fences must finish within the existing prefetch margin');
+  assert(seen.every((x,i)=>!i||x.at-seen[i-1].at===spacing),'Priority must not increase upstream throughput');
+  for(const kind of ['control','transaction','foreground','live','history'])assert(seen.some(x=>x.kind===kind));
+  assert.deepEqual(queue.pending(),{interactive:0,history:0});
+ }
+});
+
+test('gameplay priority recognizes only exact current hub fences and bounded canonical batches',()=>{
+ const hub='0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e',app=`0x${'12'.repeat(20)}` as const,hash=`0x${'34'.repeat(32)}`;
+ const data=encodeFunctionData({abi:roomsLifecycleHubAbi,functionName:'delegationOf',args:[app,zeroHash]});
+ const qualifies=(method:string,params:unknown[])=>fenceRpcRequest(method,params,1000n,h=>h===hash?1000n:undefined);
+ for(const tag of ['latest','pending','0x3e8',{blockHash:hash,requireCanonical:true}])assert(qualifies('eth_call',[{to:hub,data},tag]));
+ for(const params of [[{to:app,data},'latest'],[{to:hub,data},'0x3a7'],[{to:hub,data},'0x3e9'],[{to:hub,data},'latest',{}],
+  [{to:hub,data:data+'00'},'latest'],[{to:hub,data:'0xdeadbeef'},'latest'],[{to:hub,data},{blockHash:`0x${'56'.repeat(32)}`}],
+ ])assert(!qualifies('eth_call',params));
+ for(const method of ['eth_getTransactionReceipt','eth_getBlockByNumber','eth_blockNumber','eth_estimateGas'])assert(!qualifies(method,['latest']));
+ const calls:Array<{target:`0x${string}`;allowFailure:boolean;callData:`0x${string}`}>= [{target:hub,allowFailure:true,callData:data},{target:app,allowFailure:true,callData:encodeFunctionData({abi:reusableAgentPoolAbi,functionName:'laneRecord',args:[0]})}];
+ const aggregate=(items:typeof calls)=>({to:'0xcA11bde05977b3631167028862bE2a173976CA11',data:encodeFunctionData({abi:multicall3Abi,functionName:'aggregate3',args:[items]})});
+ assert(qualifies('eth_call',[aggregate(calls),{blockHash:hash,requireCanonical:true}]));
+ assert(!qualifies('eth_call',[aggregate(calls.slice(1)),'latest']));
+ assert(!qualifies('eth_call',[aggregate([...calls,{...calls[0],target:app}]),'latest']));
+});
+
+test('sustained gameplay fences retain all queue shares, dispatch estimates and provider cooldowns',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const kinds=['fence','transaction','control','foreground','live','history'] as const;
+ for(const target of kinds){
+  const q=rpcScheduler(75),seen:{kind:string;at:number}[]=[];
+  await q.acquire(false);q.throttle(1000);const start=Date.now();
+  const flags=(kind:typeof kinds[number])=>[kind==='history',kind==='control',kind==='foreground',kind==='transaction',kind==='fence'] as const;
+  const take=(kind:typeof kinds[number])=>q.acquire(...flags(kind)).then(()=>seen.push({kind,at:Date.now()}));
+  const jobs=kinds.flatMap(kind=>Array.from({length:24},()=>take(kind)));
+  const expected=start+q.waitMs(...flags(target));jobs.push(take(target));
+  t.mock.timers.tick(999);await Promise.resolve();assert.equal(seen.length,0);
+  t.mock.timers.tick(1);await Promise.resolve();
+  for(let i=1;i<jobs.length;i++){t.mock.timers.tick(85);await Promise.resolve();}
+  await Promise.all(jobs);
+  assert.equal(seen.filter(x=>x.kind===target).at(-1)!.at,expected);
+  for(const kind of kinds)assert(seen.slice(0,24).some(x=>x.kind===kind),`${kind} must not starve`);
+  assert(seen.every((x,i)=>!i||x.at-seen[i-1].at===85));
+  assert.equal(seen[0].at-start,1000);
+ }
+});
 
 test('the current atomic arena planning fence overtakes catalogue reads without promoting arbitrary multicalls',()=>{
  const hub='0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e',pool='0x1111111111111111111111111111111111111111';
