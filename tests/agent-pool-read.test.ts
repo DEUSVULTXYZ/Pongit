@@ -18,6 +18,26 @@ function withMulticall(client:PublicClient){
 const manifest:AgentPoolManifest={version:2,chainId:10143,engineChainId:4242,rulesVersion:10,hub:addr(1),pool:addr(2),catalog:addr(3),tournaments:addr(4),ratings:addr(5),challenges:addr(6),qualifications:addr(11),family:addr(7),
  arenas:[8,9,10].map(n=>({app:addr(n),node:`https://arena-${n}.example`,runtimeHash:`0x${'a'.repeat(64)}`})),enabled:true,tournamentsEnabled:true,verifiedCapacity:2,qualificationEvidence:evidence,durationSeconds:300,overtimeSeconds:60,intervalSeconds:60,maxMatches:2};
 
+test('overlapping sponsor config checks share only the unfinished canonical observation',async()=>{
+ let release!:()=>void,reads=0,open=true,failing=false;
+ const gate=new Promise<void>(resolve=>release=resolve);
+ const client={getBlock:async()=>({number:50n,hash:zeroHash}),readContract:async(r:any)=>{
+  reads++;await gate;if(failing)throw Error('RPC unavailable');
+  if(r.functionName==='arenaPage')return manifest.arenas.map(a=>a.app);
+  if(r.functionName==='capacityEvidence')return evidence;
+  return open;
+ }} as unknown as PublicClient;
+ const reader=new AgentPoolReader(withMulticall(client),manifest);
+ const first=reader.config(),second=reader.config();
+ await new Promise(resolve=>setImmediate(resolve));release();
+ const values=await Promise.all([first,second]);assert(values.every(v=>v.value.enabled));
+ assert.equal(reads,5,'One shared canonical batch while both validations overlap');
+ open=false;assert.equal((await reader.config()).value.enabled,false,'A later request must observe a newly closed gate');
+ assert.equal(reads,10);
+ failing=true;await assert.rejects(reader.config(),/RPC unavailable/);
+ failing=false;open=true;assert.equal((await reader.config()).value.enabled,true,'A failed observation must not poison recovery');
+});
+
 test('catalogue overlaps instance eligibility with identities without trusting a community house label',async()=>{
  const m:AgentPoolManifest={...manifest,version:5,rulesVersion:15,maxMatches:5,verifiedCapacity:5,
   lanes:{tournament:1,challenge:4},arenaAdmissions:'verified-epoch-v1',houseInstances:'official-v1',countdownClock:'engine-ticks-v1',

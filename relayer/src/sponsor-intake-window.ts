@@ -1,4 +1,4 @@
-/** Join only admissions already being validated. A durable queue item never
+/** Join overlapping admission validations. A durable queue item never
  * waits more than one second, and neither a signer lock nor a nonce is held. */
 export function sponsorIntakeWindow(){
  const pending=new Set<Promise<unknown>>();
@@ -9,12 +9,17 @@ export function sponsorIntakeWindow(){
    void work.finally(()=>pending.delete(work)).catch(()=>{});return work;
   },
   async join(createdAt:number){
-   const remaining=Math.min(1000,createdAt+1000-Date.now());
-   if(!pending.size||!Number.isFinite(remaining)||remaining<=0)return;
-   // Snapshot once: later requests cannot extend this item's deadline.
-   const peers=[...pending];let timer:ReturnType<typeof setTimeout>|undefined;
-   try{await Promise.race([Promise.allSettled(peers),new Promise<void>(resolve=>{timer=setTimeout(resolve,remaining);})]);}
-   finally{if(timer)clearTimeout(timer);}
+   const deadline=Math.min(Date.now()+1000,createdAt+1000);
+   // A peer can begin validating while the first snapshot is in flight. Join
+   // that overlapping work too, but never wait for a future arrival once empty
+   // and never reset the oldest durable item's deadline.
+   while(pending.size){
+    const remaining=deadline-Date.now();
+    if(!Number.isFinite(remaining)||remaining<=0)return;
+    const peers=[...pending];let timer:ReturnType<typeof setTimeout>|undefined;
+    try{await Promise.race([Promise.allSettled(peers),new Promise<void>(resolve=>{timer=setTimeout(resolve,remaining);})]);}
+    finally{if(timer)clearTimeout(timer);}
+   }
   },
  };
 }

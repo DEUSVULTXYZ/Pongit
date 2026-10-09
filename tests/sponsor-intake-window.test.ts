@@ -15,10 +15,23 @@ test('failed admission does not starve valid queued work',async()=>{
  const failed=assert.rejects(work,/rejected/),dispatch=window.join(Date.now());one.reject(Error('rejected'));
  await Promise.all([failed,dispatch]);assert.equal(window.size,0);
 });
-test('late requests cannot extend a dispatch snapshot',async()=>{
+test('an overlapping late validation joins without dropping an admitted peer',async()=>{
  const window=sponsorIntakeWindow(),one=pending(),late=pending();const a=window.track(()=>one.promise);
- const dispatch=window.join(Date.now());const b=window.track(()=>late.promise);
- one.resolve();await a;await dispatch;assert.equal(window.size,1);late.resolve();await b;
+ let dispatched=false;const dispatch=window.join(Date.now()).then(()=>{dispatched=true;});
+ const b=window.track(()=>late.promise);one.resolve();await a;
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(dispatched,false);
+ late.resolve();await b;await dispatch;assert.equal(window.size,0);
+});
+
+test('overlapping arrivals never extend the oldest durable deadline',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:10000});
+ const window=sponsorIntakeWindow(),one=pending(),late=pending();const a=window.track(()=>one.promise);
+ let dispatched=false;const dispatch=window.join(9700).then(()=>{dispatched=true;});
+ t.mock.timers.tick(500);const b=window.track(()=>late.promise);one.resolve();await a;
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(dispatched,false);
+ t.mock.timers.tick(199);await Promise.resolve();assert.equal(dispatched,false);
+ t.mock.timers.tick(1);await dispatch;assert.equal(dispatched,true);
+ assert.equal(window.size,1);late.resolve();await b;
 });
 test('hung validation stops delaying at original durable deadline',async(t)=>{
  t.mock.timers.enable({apis:['Date','setTimeout'],now:10000});const window=sponsorIntakeWindow(),one=pending();

@@ -56,7 +56,17 @@ export class AgentPoolReader {
   return {value,observedBlock:String(block.number),observedHash:block.hash,observedTimestamp:String(block.timestamp),
    revision:createHash('sha256').update(JSON.stringify(value,(k,v)=>['observedBlock','observedAt'].includes(k)?undefined:typeof v==='bigint'?String(v):v)).digest('hex')};
  }
- async config(){
+ private configPending?:ReturnType<AgentPoolReader['readConfig']>;
+ config(){
+  // Concurrent admissions need the same public gates and module identities.
+  // Share only unfinished canonical work; the next completed request starts
+  // a fresh observation, including after a closed gate, failure or reorg.
+  if(this.configPending)return this.configPending;
+  const work=this.readConfig();this.configPending=work;
+  void work.finally(()=>{if(this.configPending===work)this.configPending=undefined;}).catch(()=>{});
+  return work;
+ }
+ private async readConfig(){
   const m=this.manifest;
   return this.snapshot(async (_read,_block,batch)=>{
    // One explicit batch: timer-based grouping can split these ten small reads
