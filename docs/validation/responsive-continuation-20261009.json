@@ -1,0 +1,30 @@
+{
+  "at": "2026-10-09T00:42:22.178703+00:00",
+  "funding": {
+    "passed": true,
+    "at": "2026-10-09T00:30:43.167Z",
+    "sender": "0x369158Ac444278541322643E46e0D5b45ac21C4C",
+    "recipient": "0x12c57debc4d9ba127dfd98f88095b87395ae9a7f",
+    "amountMon": "500",
+    "beforeMon": "0.256857342",
+    "afterMon": "500.256857342",
+    "hash": "0x543e655fe5aed12b4305ceb548f30a4352b0b9b8e94a3f7a10fecfb648545fe3",
+    "block": "69398378",
+    "feeMon": "0.002590596"
+  },
+  "series39": {
+    "passed": false,
+    "error": "Browser gate failed: r2final39b1"
+  },
+  "terminalEvidenceFix": {
+    "productChanged": false,
+    "earlierFailuresPreserved": true,
+    "focusedTests": 10,
+    "typecheck": true
+  },
+  "remaining": [
+    "admission p95 <= 8 seconds",
+    "actual seven-way overlap",
+    "final unchanged 24 hours"
+  ]
+}

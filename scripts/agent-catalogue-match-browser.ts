@@ -251,7 +251,7 @@ const receiptMeta=(receipt:any)=>{
   ...(Array.isArray(receipt?.logs)?{logCount:receipt.logs.length}:{}),
   ...(revertName?{revertName}:{})};
 };
-const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),receipts=new Set<string>();
+const starts=new WeakMap<object,number>(),submitted=new Map<string,number>(),submittedActions=new Map<string,string>(),receipts=new Set<string>();
 report.sockets=[];report.peerEvents=[];report.peerApplied=[];
 report.receiptProbe={enabled:receiptProbe,reads:[]};let receiptProbeCount=0;
 const peerSeen=new Set<string>();
@@ -271,7 +271,7 @@ page.on('websocket',ws=>{const record:any={host:new URL(ws.url()).host,openedAt:
   const p=JSON.parse(String(event.payload));if(p.method!=='interlude_sendTransaction')return;
   const hash=keccak256(p.params[0]),tx=parseTransaction(p.params[0]);
   const call=decodeFunctionData({abi:synchronized?synchronizedAgentArenaAbi:reusableAgentArenaAbi,data:tx.data!});
-  const at=performance.now();writes.set(String(p.id),{at,hash,action:call.functionName});submitted.set(hash,at);
+  const at=performance.now();writes.set(String(p.id),{at,hash,action:call.functionName});submitted.set(hash,at);submittedActions.set(hash,call.functionName);
   // Diagnostic only: ask for this same command's execution receipt while its
   // socket response is late. Never resend, change the player journal, or store
   // signed bytes. At most 64 reads per trial, only after a 150 ms response gap.
@@ -343,7 +343,7 @@ page.on('request',async r=>{starts.set(r,performance.now());try{
  const body=r.postDataJSON();if(body?.method!=='interlude_sendTransaction')return;
  const raw=body.params[0],hash=keccak256(raw),tx=parseTransaction(raw);
  const call=decodeFunctionData({abi:synchronized?synchronizedAgentArenaAbi:reusableAgentArenaAbi,data:tx.data!});
- actions.set(r,call.functionName);
+ actions.set(r,call.functionName);submittedActions.set(hash,call.functionName);
  if(receiptProbe){
   const endpoint=r.url();
   // Independent Node HTTP connection distinguishes a delayed browser route
@@ -419,14 +419,14 @@ page.on('response',async response=>{try{
    submitted.set(hash.toLowerCase(),began);
    // Interlude returns the executed receipt in the send response. Counting only
    // later receipt polling silently omitted every ordinary successful control.
-   if(reply.result?.transactionHash&&['0x1','success'].includes(reply.result.status)&&!receipts.has(hash.toLowerCase())){
-    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:callbackObservedAt,...wire,callbackObservedAt,status:reply.result.status,...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash.toLowerCase())});
+   if(reply.result?.transactionHash&&['0x1','0x0','success','reverted'].includes(reply.result.status)&&!receipts.has(hash.toLowerCase())){
+    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:callbackObservedAt,...wire,callbackObservedAt,status:reply.result.status,action:submittedActions.get(hash.toLowerCase()),...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash.toLowerCase())});
    }
   }
  }else if(reply.result){
   const hash=String(reply.result.transactionHash??body.params?.[0]??'').toLowerCase(),began=submitted.get(hash);
   if(began!==undefined&&!receipts.has(hash)){const sentAt=performance.timeOrigin+began,confirmedAt=wire?.confirmedAt??callbackObservedAt;
-   receipts.add(hash);report.receipts.push({ms:confirmedAt-sentAt,sentAt,confirmedAt,receiptWire:wire,callbackObservedAt,status:reply.result.status,...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash)});}
+   receipts.add(hash);report.receipts.push({ms:confirmedAt-sentAt,sentAt,confirmedAt,receiptWire:wire,callbackObservedAt,status:reply.result.status,action:submittedActions.get(hash),...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash)});}
  }
  }catch{/* No request bodies or private authorization data are logged. */}});
 await context.addInitScript(()=>{
@@ -751,8 +751,8 @@ try{
   submission.at=aligned!==undefined?new Date(aligned).toISOString():NaN;
   submission.observationBasis=aligned!==undefined?'cdp-websocket':'unverified-socket-clock';
  }
- report.deliveryEvidence=deliveryEvidence(report.submissions,report.receipts);
- assert(report.deliveryEvidence.unresolved.length===0,'At least one command submission was rejected without prior exact successful receipt');
+ report.deliveryEvidence=deliveryEvidence(report.submissions,report.receipts,commandTimings);
+ assert(report.deliveryEvidence.unresolved.length===0,'At least one command submission was rejected without prior exact receipt and verified outcome');
  assert(local.length>=(naturalMatch||cadenceProbe?15:50)&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
  assert(report.submissionP95Ms<=300,'Submission response p95 exceeded 300 ms');
  assert(report.receipts.filter((r:any)=>r.sequence).length>=requiredControls&&report.receiptP95Ms<=300,'Executed input receipt p95 exceeded 300 ms or insufficient evidence');

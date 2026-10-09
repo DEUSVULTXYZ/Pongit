@@ -28,3 +28,15 @@ test('submillisecond observation order is retained without excusing a future rec
  assert.deepEqual(deliveryEvidence([e],[{hash,status:'0x1',confirmedAt:1501}]).unresolved,[e]);
  assert.deepEqual(deliveryEvidence([{...e,observedAt:NaN}],[{hash,status:'0x1',confirmedAt:1500.7}]).unresolved,[{...e,observedAt:NaN}]);
 });
+
+test('late duplicate of a terminal revert needs exact earlier receipt and verified terminal recovery',()=>{
+ const receipt={hash,status:'0x0',confirmedAt:1200,action:'heartbeat',revertName:'InvalidMatch'};
+ const timing={stage:'terminal',hash,command:'heartbeat'};
+ const result=deliveryEvidence([error],[receipt],[timing]);
+ assert.deepEqual(result.terminalCopies,[error]);assert.deepEqual(result.duplicateCopies,[]);assert.deepEqual(result.unresolved,[]);
+ for(const r of [{...receipt,revertName:'StaleInput'},{...receipt,confirmedAt:1600},{...receipt,action:'input'}])
+  assert.deepEqual(deliveryEvidence([error],[r],[timing]).unresolved,[error]);
+ assert.deepEqual(deliveryEvidence([error],[receipt]).unresolved,[error]);
+ assert.deepEqual(deliveryEvidence([error],[],[timing]).unresolved,[error]);
+ assert.deepEqual(deliveryEvidence([{...error,message:'NodeBusyError'}],[receipt],[timing]).unresolved.length,1);
+});
