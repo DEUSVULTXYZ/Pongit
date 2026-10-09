@@ -20,6 +20,16 @@ test('release measurement separates pre-event travel without hiding immediate or
  }
 });
 
+test('release measurement never extrapolates held motion through an observed contact hold',()=>{
+ const frame=(at:number,y:number)=>({at,integratedAt:at,paintedAt:at+.2,y,side:0,observedAt:0,top:y-48,bottom:y+48,height:96,rally:'1'});
+ const trace={snapshots:[{observedAt:0,rulesVersion:17,controllable:true}],keys:[{at:-50,side:0,direction:1}],releases:[{at:12,side:0}],
+  paddles:[frame(-16,200),frame(0,200),...Array.from({length:10},(_,i)=>frame(12.1+i*16,201.5))],
+  poses:[-16,0].map(at=>({at,renderedUs:'1000000',contactBoundary:true,balls:[{id:2,x:40.00001,y:220}]}))};
+ assert.equal(sustainedInputMetrics(trace).stopping.maxDrift,1.5);
+ for(const index of [2,7]){const bad=structuredClone(trace);bad.paddles[index].y=205;
+  assert.equal(sustainedInputMetrics(bad).stopping.maxDrift,5,'all post-release corrections remain checked');}
+});
+
 test('Chaos976 release window ends at the next real input, not an earlier RAF timestamp',()=>{
  const frame=(at:number,paintedAt:number,y:number)=>({at,paintedAt,y,side:0,observedAt:0,top:y-48,bottom:y+48,height:96,rally:'1'});
  const trace={snapshots:[{observedAt:0,rulesVersion:17,controllable:true}],

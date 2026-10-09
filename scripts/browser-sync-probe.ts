@@ -65,9 +65,16 @@ export function sustainedInputMetrics(data:{paddles?:any[];snapshots:any[];keys?
     // that would hide an immediate rollback or an excessive stop correction.
     const age=Number.isFinite(prior.integratedAt)?input.at-prior.integratedAt:NaN;
     const velocity=speed(prior);
-    const releaseY=Number.isFinite(age)&&age>=0&&age<=50&&velocity!==undefined
+    const preceding=[...(data.paddles??[])].reverse().find(p=>p.side===input.side&&paintedAt(p)<paintedAt(prior));
+    // A key can remain held while its ball/contact picture is deliberately
+    // fenced. Two observed stationary contact paints prove zero displayed
+    // velocity; extrapolating300u/s invents pre-release movement (Chaos1559).
+    // Keep every subsequent frame, including the very first correction.
+    const contactHeld=preceding&&prior.rally===preceding.rally&&prior.at-preceding.at<=50
+     &&Math.abs(prior.y-preceding.y)<.001&&contacts.has(`${prior.at}:${input.side}`)&&contacts.has(`${preceding.at}:${input.side}`);
+    const releaseY=!contactHeld&&Number.isFinite(age)&&age>=0&&age<=50&&velocity!==undefined
      ?Math.max(prior.height/2,Math.min(576-prior.height/2,prior.y+held*velocity*age/1000)):prior.y;
-    stops.push({at:input.at,releaseY,drift:Math.max(...sample.map(p=>Math.abs(p.y-releaseY))),
+    stops.push({at:input.at,releaseY,contactHeld:!!contactHeld,drift:Math.max(...sample.map(p=>Math.abs(p.y-releaseY))),
      includingFrameTail:Math.max(...sample.map(p=>Math.abs(p.y-prior.y)))});
    }
    continue;

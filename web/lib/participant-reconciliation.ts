@@ -6,6 +6,8 @@ export type ParticipantPose={
  balls:{id:number;x:number;y:number;continuity:string;vx?:number}[];
 };
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
+// Keep half a unit for event-dispatch latency within the two-unit stop target.
+const STOP_CORRECTION=1.5;
 function contacting(pose:ParticipantPose,side:0|1){
  return !!pose.contactBoundary&&!!pose.contactPaddles&&pose.balls.some(b=>
   Math.abs(b.x-(side===0?40:984))<.002&&(side===0?(b.vx??0)<0:(b.vx??0)>0));
@@ -62,15 +64,15 @@ export class ParticipantReconciliation {
  private balls=new Map<number,{x:number;y:number;continuity:string;handoff?:number}>();
  private ballPictures=new Map<number,ParticipantPose['balls'][number]>();
  private localDirection=0;
- private stopCorrection=2;
+ private stopCorrection=STOP_CORRECTION;
  private localPicture?:{side:0|1;y:number};
  private stoppedAt?:number;
- reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
+ reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=STOP_CORRECTION;this.localPicture=undefined;this.stoppedAt=undefined;}
  sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number;motionMs?:number;motion?:readonly {direction:number;ms:number}[];stopConfirmed?:boolean}):ParticipantPose{
   const dt=clamp(elapsedMs,0,50);
   const released=!!local&&local.direction===0&&this.localDirection!==0;
   if(local&&local.direction!==this.localDirection){
-   this.localDirection=local.direction;this.stopCorrection=2;
+   this.localDirection=local.direction;this.stopCorrection=STOP_CORRECTION;
    this.stoppedAt=released&&this.localPicture?.side===local.side?this.localPicture.y:undefined;
   }
   for(const side of [0,1] as const){
@@ -84,7 +86,7 @@ export class ParticipantReconciliation {
      for(const part of local.motion)y=clamp(y+part.direction*local.speed*part.ms/1000,current.halves[side],576-current.halves[side]);
      if(local.direction===0&&local.stopConfirmed!==false){
       // Receipt quantization can still differ slightly from local input time.
-      // Spend at most TWO units in total for this stop, never subtract a
+      // Spend at most1.5 units in total for this stop, never subtract a
       // reconciliation velocity from a held direction or leave a long tail.
       const correction=clamp(current.paddles[side]-y,-this.stopCorrection,this.stopCorrection);
       y+=correction;this.stopCorrection-=Math.abs(correction);
@@ -101,7 +103,7 @@ export class ParticipantReconciliation {
      this.paddles[side]-=correction;this.stopCorrection-=Math.abs(correction);
     }
     if(local.direction===0&&this.stoppedAt!==undefined)
-     this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],this.stoppedAt-2,this.stoppedAt+2)-current.paddles[side];
+     this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],this.stoppedAt-STOP_CORRECTION,this.stoppedAt+STOP_CORRECTION)-current.paddles[side];
     // A reconciled paddle can trail its live position. When live physics has
     // already reached a wall, its zero delta must not strand the picture away
     // from that wall (public match941: live48, picture79.5057, held up).

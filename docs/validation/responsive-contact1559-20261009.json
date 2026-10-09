@@ -1,0 +1,49 @@
+{
+  "at": "2026-10-09T12:30:02.079849+00:00",
+  "ref": {
+    "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+    "epoch": "1",
+    "id": "1559"
+  },
+  "originalPassed": false,
+  "originalError": "Release drift exceeds limits",
+  "naturalResult": {
+    "hash": "0x86bbfdfb5199548a6310e2b97141df36c14d73ced4e616da82ab62a23b12fe5c",
+    "winner": "0x98270BE3803Db330fdda4873270b0591f1c44505",
+    "status": 3,
+    "scoreA": 7,
+    "scoreB": 4,
+    "elapsedUs": "64971049",
+    "finality": false
+  },
+  "naturalGates": {
+    "noPause": true,
+    "noResume": true,
+    "noResync": true,
+    "peer": true,
+    "player": true,
+    "spectator": true,
+    "executionClock": true
+  },
+  "held": {
+    "samples": 117,
+    "p05Ratio": 0.9970029965266153,
+    "p95Ratio": 1.0026109660563811,
+    "minRatio": 0.9760479037157239,
+    "maxRatio": 1.0220000004768357,
+    "outsideTarget": 0
+  },
+  "release": {
+    "samples": 130,
+    "p95Drift": 2.0300000429153613,
+    "maxDrift": 5.790000057220482
+  },
+  "crossings": [],
+  "paddleJumps": [],
+  "maxHoldMs": 66.59999999999854,
+  "reportSha256": "9c5d281d0b38f8fc31d5603945be09f3cb4137813caafb3ccde1e918bd19d1f9",
+  "changes": [
+    "Reserve .5unit for input dispatch inside the2unit release target; correctionbudget1.5 rather than2.",
+    "Release metric retains all postrelease frames but does not extrapolate motion through two observed stationary contact paints. OriginalFAIL retained."
+  ]
+}

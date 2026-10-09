@@ -122,13 +122,13 @@ test('release integrates only movement before its timestamp, then stays still',(
  assert.deepEqual(localMotion(events,32,1000,false),[],'a real pause never integrates hidden time');
 });
 
-test('event-timed motion never pays receipt error while held and spends only two units after release',()=>{
+test('event-timed motion leaves event-dispatch margin within the two-unit release target',()=>{
  const view=new ParticipantReconciliation();view.sample(pose(),undefined,0,{side:0,direction:1,speed:300,motion:[]});
  const moved=view.sample(pose(310),undefined,16,{side:0,direction:1,speed:300,motion:[{direction:1,ms:16}]});
  assert.equal(moved.paddles[0],292.8);
  const stopped=view.sample(pose(312),undefined,0,{side:0,direction:0,speed:300,motion:[]});
- assert.equal(stopped.paddles[0],294.8);
- for(let i=0;i<60;i++)assert.equal(view.sample(pose(312+i),undefined,16,{side:0,direction:0,speed:300,motion:[{direction:0,ms:16}]}).paddles[0],294.8);
+ assert.equal(stopped.paddles[0],294.3);
+ for(let i=0;i<60;i++)assert.equal(view.sample(pose(312+i),undefined,16,{side:0,direction:0,speed:300,motion:[{direction:0,ms:16}]}).paddles[0],294.3);
 });
 
 test('public Chaos1121 confirmed contact resumes without the recorded35-unit jump',()=>{
