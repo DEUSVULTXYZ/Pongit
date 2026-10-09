@@ -23,7 +23,7 @@ export function AgentTournaments({enabled,initialId,preview=false}:{enabled:bool
  const heading=useRef<HTMLHeadingElement>(null),focusRequested=useRef(false);
  const person=(address:string)=>identities.find(x=>x.agent.toLowerCase()===address.toLowerCase());
  const name=(address:string)=>address===zeroAddress?'To be decided':person(address)?.name??short(address);
- useEffect(()=>{if(enabled)return watchAgentChanges(()=>setRetry(n=>n+1));},[enabled]);
+ useEffect(()=>{if(enabled)return watchAgentChanges(()=>setRetry(n=>n+1),undefined,'tournaments');},[enabled]);
  useEffect(()=>{
   if(!enabled)return;let cancelled=false,timer:ReturnType<typeof setTimeout>;const controller=new AbortController();
   const get=async<T,>(path:string):Promise<T&Envelope>=>{

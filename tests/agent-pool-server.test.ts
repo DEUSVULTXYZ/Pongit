@@ -3,6 +3,30 @@ import assert from 'node:assert/strict';
 import {startPoolReadService} from '../relayer/src/agents/pool-server';
 import {poolNotFound,type AgentPoolReader} from '../relayer/src/agents/pool-read';
 
+test('arcade notifications share the displayed catalogue page without loading tournament books',async()=>{
+ const counts={catalog:0,tournaments:0};
+ let release!:()=>void;const ready=new Promise<void>(resolve=>{release=resolve;});
+ const view=(value:any)=>({value,revision:'canonical-124',observedBlock:'124',observedHash:'0x1234',observedTimestamp:'456'});
+ const reader={client:{},config:async()=>view({enabled:true}),live:async()=>view({items:[]}),
+  catalog:async(offset:bigint,limit:number)=>{counts.catalog++;await ready;return view({items:[],offset:String(offset),limit});},
+  tournaments:async()=>{counts.tournaments++;return view({items:[]});}} as unknown as AgentPoolReader;
+ const service=await startPoolReadService(reader,{host:'127.0.0.1',port:0,public:true});
+ const abort=new AbortController();
+ try{
+  const address=service.server.address();assert(address&&typeof address==='object');const base=`http://127.0.0.1:${address.port}/agents/`;
+  const stream=await fetch(base+'events?scope=arcade',{signal:abort.signal});
+  const body=stream.body!.getReader();await body.read();
+  const catalog=fetch(base+'catalog?offset=0&limit=16');
+  await new Promise(resolve=>setTimeout(resolve,30));
+  // Release before assertions so a failed regression cannot strand HTTP shutdown.
+  const observed={...counts};release();const response=await catalog;
+  assert.deepEqual(observed,{catalog:1,tournaments:0});assert.equal(response.status,200);
+  assert.equal(response.headers.get('etag'),'"canonical-124"');assert.equal((await response.json()).limit,16);
+  const event=new TextDecoder().decode((await body.read()).value);assert.match(event,/catalog/);assert.doesNotMatch(event,/tournaments/);
+  assert.equal((await fetch(base+'events?scope=arbitrary-route')).status,400);
+ }finally{release();abort.abort();await service.close();}
+});
+
 test('SSE and HTTP share one pending foreground entry read and retain canonical revisions',async()=>{
  const counts={config:0,challenge:0,backgroundEntry:0};
  let release!:()=>void;const ready=new Promise<void>(resolve=>{release=resolve;});

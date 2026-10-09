@@ -60,7 +60,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  useEffect(()=>{if(enabled)return watchAgentChanges(change=>{
   if(change.resync||change.changed.some(topic=>['config','catalog','live'].includes(topic))){recentCapacity.current=undefined;setCatalogRevision(n=>n+1);}
   if(change.resync||change.changed.some(topic=>topic==='config'||topic===`challenges/${account?.toLowerCase()}`))setChallengeRevision(n=>n+1);
- },account);},[enabled,account]);
+ },account,'arcade');},[enabled,account]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  useEffect(()=>{if(!enabled)return;const remembered=rememberedAccount();if(remembered)setAccount(remembered.address);},[enabled]);
  useEffect(()=>{

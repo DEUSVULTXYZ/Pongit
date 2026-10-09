@@ -70,7 +70,7 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
     if(result){send(result.value,result.status);return;}
    }
    if(req.method!=='GET'){res.setHeader('Allow','GET');send({error:'This endpoint serves published contract views',code:'AGENT_METHOD_NOT_ALLOWED'},405);return;}
-   if(url.pathname==='/agents/events'){metric='agents.events';events.add(res,url.searchParams.get('account'));return;}
+   if(url.pathname==='/agents/events'){metric='agents.events';events.add(res,url.searchParams.get('account'),url.searchParams.get('scope'));return;}
    const section=url.pathname.replace(/^\/agents\//,'/').split('/')[1];
    if(['config','catalog','capacity','live','matches','replay','challenges','tournaments','rankings','healthz'].includes(section))metric=`agents.${section}`;
    if(url.pathname==='/healthz'){send({process:'alive',writes:!!options.sponsor,sponsorship:options.sponsorHealth?.()??{available:false,code:options.sponsor?'SPONSOR_UNVERIFIED':'READ_ONLY_SERVICE'}});return;}

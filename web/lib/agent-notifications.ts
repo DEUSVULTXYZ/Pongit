@@ -3,9 +3,10 @@ import {API} from './api';
 /** Events only invalidate public contract views. Existing bounded polling is
  * retained when EventSource is unavailable, disconnected or rejected. */
 export type AgentChanges={resync:boolean;changed:string[]};
-export function watchAgentChanges(refresh:(changes:AgentChanges)=>void,account?:string){
+export function watchAgentChanges(refresh:(changes:AgentChanges)=>void,account?:string,scope?:'arcade'|'tournaments'){
  if(typeof EventSource==='undefined')return()=>{};
- const stream=new EventSource(`${API}/agents/events${account?`?account=${encodeURIComponent(account)}`:''}`);
+ const query=new URLSearchParams();if(account)query.set('account',account);if(scope)query.set('scope',scope);
+ const stream=new EventSource(`${API}/agents/events${query.size?`?${query}`:''}`);
  let timer:ReturnType<typeof setTimeout>|undefined,closed=false,last='',resync=false;
  const changed=new Set<string>();
  stream.addEventListener('change',event=>{
