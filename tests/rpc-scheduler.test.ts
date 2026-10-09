@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {historicalRpcRequest, transactionRpcRequest, controlRpcRequest, fenceRpcRequest, foregroundRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
+import {historicalRpcRequest, transactionRpcRequest, submissionRpcRequest, controlRpcRequest, fenceRpcRequest, foregroundRpcRequest, rpcScheduler, pinnedRpcRequest, rpcBlockObservations } from "../relayer/src/rpc-scheduler";
 import {encodeFunctionData,multicall3Abi,zeroHash} from 'viem';
 import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 import {reusableAgentPoolAbi} from '../shared/abi-ReusableAgentPool';
@@ -395,6 +395,48 @@ test('transaction lane validates exact requests and does not inherit routine hea
   ['eth_getTransactionCount',[account,'0x1000']],['eth_estimateGas',[{to:account},'latest']],
   ['eth_sendRawTransaction',['0x123']],['eth_gasPrice',[1]],
  ] as const)assert.equal(transactionRpcRequest(method,params),false,method);
+});
+
+test('a journaled send and its receipt overtake unsigned preparation without starving any lane',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ for(const spacing of [75,85]){
+  const q=rpcScheduler(spacing),seen:Array<{kind:string;at:number}>=[];
+  const take=(kind:string)=>q.acquire(kind==='history',kind==='control',kind==='foreground',kind==='transaction'||kind==='submission',kind==='fence',kind==='submission')
+   .then(()=>seen.push({kind,at:Date.now()}));
+  await take('live');const start=Date.now();
+  const jobs=['transaction','control','foreground','live','history','fence'].flatMap(kind=>Array.from({length:30},()=>take(kind)));
+  const expected=q.waitMs(false,false,false,false,false,true);jobs.push(take('submission'));
+  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(spacing);await Promise.resolve();}
+  await Promise.all(jobs);
+  const delay=seen.find(r=>r.kind==='submission')!.at-start;
+  assert(delay<=3*spacing,`Journaled send waited ${delay}ms behind unrelated preparation`);
+  assert.equal(delay,expected);
+  assert(seen.every((r,i)=>!i||r.at-seen[i-1].at===spacing));
+  // Repeated receipt polls cannot starve the unsigned job which must follow.
+  const began=seen.length;
+  const flood=Array.from({length:40},()=>take('submission'));
+  const pending=['transaction','control','foreground','live','history','fence'].map(take);
+  for(let i=0;i<47;i++){t.mock.timers.tick(spacing);await Promise.resolve();}
+  await Promise.all([...flood,...pending]);
+  for(const kind of ['transaction','control','foreground','live','history','fence'])assert(seen.slice(began,began+20).some(r=>r.kind===kind),kind+' starved');
+ }
+});
+
+test('submission priority is limited to exact broadcasts and receipt lookup, with shared cooldown',async(t)=>{
+ assert(submissionRpcRequest('eth_sendRawTransaction',['0x010203']));
+ assert(submissionRpcRequest('eth_getTransactionReceipt',[`0x${'12'.repeat(32)}`]));
+ for(const [method,params] of [
+  ['eth_sendRawTransaction',['0x123']],['eth_getTransactionReceipt',['0x12']],
+  ['eth_getTransactionReceipt',[`0x${'12'.repeat(32)}`,true]],
+  ['eth_estimateGas',[{from:`0x${'12'.repeat(20)}`,to:`0x${'34'.repeat(20)}`},'latest']],
+  ['eth_call',[{to:`0x${'34'.repeat(20)}`,data:'0x0102'},'latest']],['eth_gasPrice',[]],
+ ] as const)assert(!submissionRpcRequest(method,params),method);
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const q=rpcScheduler(75);q.throttle(1000);let sent=false;
+ const request=q.acquire(false,false,false,true,false,true).then(()=>sent=true);
+ assert.equal(q.waitMs(false,false,false,true,false,true),1085);
+ t.mock.timers.tick(999);await Promise.resolve();assert(!sent);
+ t.mock.timers.tick(1);await request;assert(sent);
 });
 
 test('a newly mined challenge receipt keeps its canonical header check ahead of archive scans',async(t)=>{

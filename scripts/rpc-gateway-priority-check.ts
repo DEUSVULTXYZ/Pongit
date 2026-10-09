@@ -202,6 +202,24 @@ try{
  const measurements=(await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).timing.groups;
  assert(measurements['primary:fence:eth_call:queue'].count>=4,'Gameplay queue measurements must be distinct from routine headers');
  report.checks.push('Four exact gameplay fences overtake concurrent entry headers and receipts without increasing upstream rate');
+ // Broadcasting a prepared, journaled transaction must not join a tail of
+ // fee/nonce work. Identical submitted bytes and receipt identity survive.
+ const prep=Array.from({length:20},(_,i)=>rpc('eth_getTransactionCount',[`0x${(i+900).toString(16).padStart(40,'0')}`,'pending']));
+ const prepDeadline=Date.now()+5000;
+ while((await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).queued.interactive<16){
+  assert(Date.now()<prepDeadline);await new Promise(r=>setTimeout(r,10));
+ }
+ const submissionPrior=sent.length;
+ await rpc('eth_sendRawTransaction',['0x010203']);
+ const submitted=sent.findIndex((v,i)=>i>=submissionPrior&&v.method==='eth_sendRawTransaction');
+ assert(submitted>=submissionPrior&&submitted<submissionPrior+4,'Ready transaction waited behind unrelated preparation');
+ assert.deepEqual(sent[submitted].params,['0x010203']);
+ const lookupPrior=sent.length;
+ await rpc('eth_getTransactionReceipt',[`0x${'ac'.repeat(32)}`]);
+ const observed=sent.findIndex((v,i)=>i>=lookupPrior&&v.method==='eth_getTransactionReceipt');
+ assert(observed>=lookupPrior&&observed<lookupPrior+5,'Nonce owner waited behind unrelated preparation');
+ await Promise.all(prep);
+ report.checks.push('Exact broadcast and receipt overtake unsigned preparation; all nonce queries still complete');
  report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}
