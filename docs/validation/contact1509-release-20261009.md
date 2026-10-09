@@ -51,3 +51,19 @@ The shared contact fix was deployed on 9 October at 14:38:44 UTC. Image: `sha256
 Backup68 contains 346,199,300 bytes across five database dumps and the private runtime archive, SHA-verified off VPS at 14:37:39 UTC. Manifest: `7186e334c085b273e335e502fb556b62dacc1a19f6cbf3ab1df8f63924c85b5f`. Immediate service rollback is web67, image `sha256:d45f3c2de3248a3702b005698ae167806e53f27e1e698bbfbc47eaa82b8f7a2c`; preserve all subsequent database writes. This rollback restores the previously documented contact limitations.
 
 PvP74 is the only running browser driver, with an original deadline of 15:09:04 UTC. New normal-agent and multiball series74 are prepared but have not run. Earlier successful series72 does not qualify this changed shared renderer.
+
+
+## PvP75: redundant browser physics delayed a release
+
+PvP74 failed before gameplay because its test read the clipboard before the asynchronous room-link copy finished. The preserved failure is separate from gameplay. The corrected bounded PvP75 Classic ended naturally5-7; all render, input, pause and peer-latency gates passed except one true painted paddle crossing on the local client.
+
+At that contact, a browser tick took155.4ms to return. The key release waited behind its nonce. The local paddle stopped at371.52, while the contract continued to411 before the release arrived. Inspection of the actual production human relayer image verified that it already runs the dedicated50ms rules18 physics loop. The browser pilot was redundant. Commit `55c2c4071b3de087c1211d6abf8f748709f6a426` makes rules18 use that existing server owner and retains the legacy pilot for older rules. It does not change the contract, collision geometry or server cadence. The new regression fails before and passes after;76 focused tests, all1,255 TypeScript tests, root type checking and secret scan pass.
+
+This corrects a demonstrated source of command queuing. It is not proof against arbitrary delivery stalls or a substitute for repeating the actual browser collision gates. Web69 is being built; web68 remains current until the guarded cutover succeeds.
+
+
+## Web69 rollout
+
+The queue correction was deployed on 9 October at 14:56:15 UTC from `55c2c4071b3de087c1211d6abf8f748709f6a426`, image `sha256:f0c58c6ffc486c8ff2251f36933b71f7611bdf37c6fddeba0be84ae97ae66b90`. The guard confirmed idle canonical block 69568623, hash `0x641f53f158f0459a4413060b2ef17f935d918053f0f54062c09529804e3c16c2`. Only the web service changed; all other roles resumed, with no match cancellation or delegation closure. Backup68 was still within its verified freshness bound. The immediate rollback is web68 (`e9aeaa2a...`), without restoring a database.
+
+The bounded headed PvP76 driver is now running. Agent series76 and multiball76 are prepared and have not started. No new passing browser result or final qualification is claimed.

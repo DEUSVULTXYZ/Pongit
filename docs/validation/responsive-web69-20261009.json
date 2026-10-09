@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-10-09T14:55:52.698833+00:00",
+  "deadline": 1791558472.6988657,
+  "passed": true,
+  "stage": "complete",
+  "previous": "sha256:0cb0b8e44f25f83160074ce36507f621df556ce2d9a584795bd2df9f929b1258",
+  "image": "sha256:0cb0b8e44f25f83160074ce36507f621df556ce2d9a584795bd2df9f929b1258",
+  "webImage": "sha256:f0c58c6ffc486c8ff2251f36933b71f7611bdf37c6fddeba0be84ae97ae66b90",
+  "previousWeb": "sha256:e9aeaa2a9e4d2b4577f7b04e630ac0153a33550fc979215313f60f16726bf739",
+  "backupManifest": "7186e334c085b273e335e502fb556b62dacc1a19f6cbf3ab1df8f63924c85b5f",
+  "admissionStoppedAt": "2026-10-09T14:55:53.195085+00:00",
+  "lastCheck": {
+    "block": "69568601",
+    "hash": "0x1964f2ecc7d74dd97f03eb84bda7e54bd83917fe862da20531a73ab84708472e",
+    "idle": true,
+    "humanSlots": [
+      "0",
+      "0"
+    ]
+  },
+  "idle": {
+    "block": "69568623",
+    "hash": "0x641f53f158f0459a4413060b2ef17f935d918053f0f54062c09529804e3c16c2",
+    "idle": true,
+    "humanSlots": [
+      "0",
+      "0"
+    ]
+  },
+  "webStarted": "2026-10-09T14:56:15.113994866Z",
+  "started": "2026-10-09T04:38:38.378910132Z",
+  "finishedAt": "2026-10-09T14:56:17.647706+00:00"
+}
