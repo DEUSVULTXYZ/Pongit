@@ -18,17 +18,18 @@ export function deliveryEvidence(
   const prior=(r:typeof receipts[number])=>r.hash?.toLowerCase()===s.hash!.toLowerCase()
     &&Number.isFinite(r.confirmedAt)&&r.confirmedAt!<=(Number.isFinite(s.observedAt)?s.observedAt!:at(s.at));
   const confirmed=duplicate&&receipts.some(r=>['0x1','success'].includes(String(r.status))&&prior(r));
-  // Network instrumentation can deliver its receipt callback after an HTTP
-  // duplicate response, even though the actual sender already acknowledged the
-  // exact hash. Require that earlier sender acknowledgment AND the matching
-  // successful receipt within 500ms; a future receipt alone remains unresolved.
+  // The HTTP copy can reject just before the original sender's acknowledgment.
+  // Require that original send to have STARTED before the rejection and both
+  // its acknowledgment and exact successful receipt within 500ms. A future
+  // receipt alone, or a send started after the rejection, remains unresolved.
   const rejectedAt=Number.isFinite(s.observedAt)?s.observedAt!:at(s.at);
   const reconciled=duplicate&&receipts.some(r=>r.hash?.toLowerCase()===s.hash!.toLowerCase()
    &&['0x1','success'].includes(String(r.status))&&Number.isFinite(r.confirmedAt)
    &&r.confirmedAt!>=rejectedAt&&r.confirmedAt!-rejectedAt<=500)
    &&timings.some(t=>t.stage==='acknowledged'&&t.hash?.toLowerCase()===s.hash!.toLowerCase()
     &&Number.isFinite(t.startedAt)&&Number.isFinite(t.timeOrigin)&&Number.isFinite(t.ms)&&t.ms!>=0
-    &&t.startedAt!+t.timeOrigin!+t.ms!<=rejectedAt&&rejectedAt-(t.startedAt!+t.timeOrigin!+t.ms!)<=500);
+    &&t.startedAt!+t.timeOrigin!<=rejectedAt
+    &&Math.abs(t.startedAt!+t.timeOrigin!+t.ms!-rejectedAt)<=500);
   // InvalidMatch at a verified terminal boundary remains a reverted command,
   // never a successful move. Its later identical copy may also be rejected.
   const ended=duplicate&&terminal.some(prior);

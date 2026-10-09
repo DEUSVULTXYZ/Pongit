@@ -207,7 +207,9 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
       // Require the two actual rendered poses to straddle its exact time.
       // Missing poses, changed reference/source/rally or early resizing fail.
       const previous=poses.get(a.at),current=poses.get(b.at);
-      if(!previous||!current||previous.ref!==current.ref||String(current.ref).split(':').at(-1)!==String(snapshot.matchId??snapshot.state.id)
+      const identity=String(snapshot.matchId??snapshot.state.id);
+      const matchingRef=identity.includes(':')?current?.ref===identity:String(current?.ref).split(':').at(-1)===identity;
+      if(!previous||!current||previous.ref!==current.ref||!matchingRef
        ||previous.rally!==a.rally||current.rally!==b.rally
        ||BigInt(previous.sourceUs)!==t||BigInt(current.sourceUs)!==t
        ||BigInt(previous.renderedUs)>=end||BigInt(current.renderedUs)<end)continue;

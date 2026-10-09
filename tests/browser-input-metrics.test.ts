@@ -89,6 +89,13 @@ test('known paddle-growth start needs an exact rendered boundary and prompt live
  const metrics=syncMetrics(d);assert.equal(metrics.paddleJumps.length,0);
  assert.equal(metrics.geometryClamps[0].scheduledConfirmation.boundary,'start');
  assert.equal(metrics.geometryClamps[0].scheduledConfirmation.delayMs,50);
+ const fullyBound=structuredClone(d) as any;
+ for(const snapshot of fullyBound.snapshots)snapshot.matchId='10143:arena:1:24';
+ assert.equal(syncMetrics(fullyBound).paddleJumps.length,0,'current probes record the complete match reference');
+ for(const wrong of ['10143:other:1:24','10143:arena:2:24','4242:arena:1:24']){
+  const x=structuredClone(fullyBound);for(const snapshot of x.snapshots)snapshot.matchId=wrong;
+  assert.equal(syncMetrics(x).paddleJumps.length,1,'same numeric ID on another reference is not confirmation');
+ }
  for(const change of [
   (x:any)=>x.poses.pop(),(x:any)=>x.poses[0].renderedUs='66061000',
   (x:any)=>x.poses[1].renderedUs='66059000',(x:any)=>x.poses[1].sourceUs='0',

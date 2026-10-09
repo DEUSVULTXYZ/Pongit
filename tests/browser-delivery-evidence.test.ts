@@ -41,13 +41,14 @@ test('late duplicate of a terminal revert needs exact earlier receipt and verifi
  assert.deepEqual(deliveryEvidence([{...error,message:'NodeBusyError'}],[receipt],[timing]).unresolved.length,1);
 });
 
-test('late instrumentation requires an earlier exact sender acknowledgment and bounded successful receipt',()=>{
+test('late instrumentation requires an earlier exact send and bounded acknowledgment and successful receipt',()=>{
  const receipt={hash,status:'0x1',confirmedAt:1522};
  const ack={stage:'acknowledged',hash,startedAt:1200,timeOrigin:100,ms:193};
  const result=deliveryEvidence([error],[receipt],[ack]);
  assert.deepEqual(result.reconciledCopies,[error]);assert.deepEqual(result.unresolved,[]);
  assert.deepEqual(result.duplicateCopies,[]);
- for(const bad of [{...ack,ms:250},{...ack,hash:'0xdead'},{...ack,stage:'send'},{...ack,timeOrigin:NaN},{...ack,ms:-1}])
+ assert.deepEqual(deliveryEvidence([error],[receipt],[{...ack,ms:202.2}]).reconciledCopies,[error]);
+ for(const bad of [{...ack,ms:701},{...ack,startedAt:1401},{...ack,ms:NaN},{...ack,hash:'0xdead'},{...ack,stage:'send'},{...ack,timeOrigin:NaN},{...ack,ms:-1}])
   assert.deepEqual(deliveryEvidence([error],[receipt],[bad]).unresolved,[error]);
  for(const r of [{...receipt,confirmedAt:2001},{...receipt,status:'0x0'},{...receipt,hash:'0xdead'}])
   assert.deepEqual(deliveryEvidence([error],[r],[ack]).unresolved,[error]);
