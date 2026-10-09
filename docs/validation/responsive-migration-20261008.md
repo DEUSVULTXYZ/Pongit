@@ -1347,3 +1347,28 @@ Natural Classic1229, Chrome1366, HTTP-only, passed7-6 without pauses or abnormal
 ## 23:43 UTC - exact intermittent pause retained
 
 Series35 stopped after Chaos1232/077 finished naturally7-6 but failed one protective resume/one resync. Admission7.560s passed; prior1231 passedallgates. During heartbeat0009bd3c delay1058.6ms, browserHTTP receipt delayed934.9ms, independent Node receipt timedout1500ms, independenthealthalso delayed1518.3ms. All channels wereaffected; thehealth sample initially inferredhealthyfast duringearlier1224 is not evidencefor1232. No newlock/parking/coldslotread/commiterror; lockcountersshowonlypreexisting9hour-oldslowhold. Nodeclockreadmax rose225to705ms atsamewindow. Sourcecause notyetdemonstrated. No new deployment, no node restart orclosure. Driver3914finishedFAIL; no game/browserdriveractive. Capturedual-vantage HTTP/WebSocket/health before changingtransport again. AutomationPAUSED.
+
+
+## 23:55 UTC - bounded socket recovery candidate and dual-network evidence
+
+The read-only probes completed from Windows (3,750 samples) and the VPS (3,802 samples). Both observed delayed eth_blockNumber responses on arena 9e4 during 23:47:51-54 UTC. Health stayed responsive and reported no publication error, batch pressure or new slow execution lock. This narrows the fault to that node or its shared upstream path; it does not identify the responsible component. On a different arena, natural Chaos1233 passed every gate with admission6.923s, sendp9513.15ms, zero pauses and zero resync. Series35 and all earlier failures remain failed.
+
+PONGIT also had a definite recovery defect: a single WebSocket loss forced HTTP for600seconds. Candidatee58531d restores the installed SDK's bounded2s..60s retry. Socket connection is still optional/nonblocking; exact-hash journal reconciliation is unchanged. A real HTTP/WebSocket regression fails on old source and passes on the candidate.29focused and1165full TypeScript tests plus root typecheck pass. No new contract, node, closure, nonce, grant, physics or presence deadline change.
+
+Web36 was built locally in41seconds, image dac55b3166c76cd5562909adb044ec3cca86b00388064fcb63b7698a5b749ca3. Its exact image/config/rootfs digests were verified on import. Backup36 contains five databases and runtime, sixfiles79641704bytes, SHAverified OFFVPS23:55:01; manifest b92d7fc284cee5563ae1773ad507857a03d17e392f4c76890ed725cd3deccd9d. Seven verified old remote duplicate files191556068bytes were removed after off-VPS and all-container mount checks; all images, latest35/36backups, histories and volumes remain. Usable disk80.169percent; no VPS compilation ran.
+
+The sole idle-only cutover36 now waits at its original12minute bound. Public web remains5a524b7 until its report confirms success. No game/browser or lifecycle writer is active. Automation staysPAUSED; no final24h trial or completed delivery claim.
+
+
+## 23:57 UTC - socket recovery deployed; natural series36 running
+
+Web e58531d / image dac55b3166c76cd5562909adb044ec3cca86b00388064fcb63b7698a5b749ca3 deployed23:56:03.242402233Z after canonical69391476/hash3a8fa2c4707fcbe06715a7e2a5e432f13f27ce92714ef26c8d98496ef2245492 confirmed all seven idle. Only web changed. All contracts, epoch1, backends and journals remain unchanged. Backup36 is verified off VPS; compatible rollback is prior web a109aeb using admission-web-36.previous.private.json, never an old database.
+
+Sole actual browser series36 exec3842 now runs five Chaos and two Classic with independent observers. It preserves its original80minute deadline, stops on non-admission failure, and retains every failed report. The saved virtual PRF session reached its legitimate renewal margin and is renewed through the actual UI; no physical passkey claim. No other driver, compilation or lifecycle operation is active. All dual-vantage probes and cutover12373 have ended. Automation stays PAUSED. No final24h proof.
+
+
+## October9 00:05 UTC - first current-web natural match passed; harness failures retained
+
+Series36 failed before admission when its restored virtual WebAuthn credential could not renew PRF after legitimate session expiry. No match was created; this is not proof of a physical passkey defect. Fresh session37 completed natural Chaos1234 on4e9 with all game gates passing, localp9514.6ms and sendp9513.56ms. Its wrapper then failed before second admission because a broad label replacement accidentally changed1366 to1376. Its reader metadata337cccc was also incorrect; actual deployed336cccc did not change. Preserve original reports and scripts.
+
+Corrected explicit-name-only series38 is the sole browser coordinator exec87647, with original80minute bound and the still-valid37c1 session. Production remains webe58531d/reader336cccc/RPCd91efed. No build, lifecycle or other game driver. A simultaneous seven-game coordinator is prepared, not started; it releases both human rooms and four house challenges together once an actual fresh NOVA tournament exists, without changing any match or clock. AutomationPAUSED, no24h or completion claim.

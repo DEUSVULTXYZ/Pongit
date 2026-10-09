@@ -1,0 +1,55 @@
+{
+  "at": "2026-10-09T00:05:00.194299+00:00",
+  "web": "e58531d",
+  "reader": "336cccc",
+  "rpc": "d91efed",
+  "scope": "One natural public browser game; not the full acceptance series",
+  "naturalMatch": {
+    "run": "r2final37c1",
+    "passed": true,
+    "ref": {
+      "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+      "epoch": "1",
+      "id": "1234"
+    },
+    "admissionMs": 7451,
+    "naturalEnded": true,
+    "naturalGates": {
+      "noPause": true,
+      "noResume": true,
+      "noResync": true,
+      "peer": true,
+      "player": true,
+      "spectator": true,
+      "executionClock": true
+    },
+    "performance": {
+      "admission": true,
+      "localInput": true,
+      "confirmedInput": true,
+      "player": true,
+      "spectator": true
+    },
+    "finishedAt": "2026-10-09T00:03:55.252Z"
+  },
+  "failedAttempts": [
+    {
+      "run": "r2final36c1",
+      "stage": "pre-admission",
+      "cause": "Restored virtual WebAuthn credential could not renew PRF after session expiry. No match admitted. No physical authenticator inference."
+    },
+    {
+      "series": 37,
+      "stage": "before second browser",
+      "cause": "Qualification helper accidentally changed viewport1366 to1376 and reader label336cccc to337cccc. Actual first-game production reader was336cccc. Source and failed report retained. No second game admitted."
+    }
+  ],
+  "continuation": {
+    "series": 38,
+    "coordinatorSession": 87647,
+    "from": "r2final37c1 still-valid session",
+    "originalBoundMinutes": 80,
+    "noOtherGameDriver": true
+  },
+  "automation": "paused"
+}
