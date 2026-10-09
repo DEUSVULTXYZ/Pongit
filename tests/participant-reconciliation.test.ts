@@ -20,6 +20,19 @@ test('Edge1534 distant misses do not reset a stopped paddle for either ball',()=
  }
 });
 
+test('Edge1543 real hit holds the bot at contact before its future motion creates a miss',()=>{
+ const view=new ParticipantReconciliation(),p=pose(288,203.918,983.319,236.341);
+ p.balls[0].vx=230;view.sample(p,undefined,16);
+ p.balls[0]={...p.balls[0],x:983.99999,y:236};p.contactBoundary=true;p.contactPaddles=[288,203.4183];
+ let last=203.918;
+ for(let i=0;i<6;i++){
+  p.paddles[1]=199.35-i*4.98;
+  const shown=view.sample(p,undefined,16.6);
+  assert.equal(shown.paddles[1],203.4183);assert(Math.abs(shown.paddles[1]-last)<1);
+  last=shown.paddles[1];
+ }
+});
+
 test('a release spends no correction against an unacknowledged moving prediction',()=>{
  const view=new ParticipantReconciliation();view.sample(pose(300),undefined,0,{side:0,direction:-1,speed:300,motion:[]});
  const pending=view.sample(pose(295),undefined,10,{side:0,direction:0,speed:300,motion:[],stopConfirmed:false});

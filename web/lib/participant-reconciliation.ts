@@ -10,11 +10,11 @@ function contacting(pose:ParticipantPose,side:0|1){
  return !!pose.contactBoundary&&!!pose.contactPaddles&&pose.balls.some(b=>
   Math.abs(b.x-(side===0?40:984))<.002&&(side===0?(b.vx??0)<0:(b.vx??0)>0));
 }
-function contactDisagrees(pose:ParticipantPose,side:0|1,shown:number){
+function contactInteracts(pose:ParticipantPose,side:0|1,shown:number){
  const intersects=(y:number,centre:number)=>Math.abs(y-centre)<=pose.halves[side]+6
   &&(!pose.split?.[side]||Math.abs(y-centre)>=2);
  return pose.balls.some(b=>Math.abs(b.x-(side===0?40:984))<.002&&(side===0?(b.vx??0)<0:(b.vx??0)>0)
-  &&intersects(b.y,shown)!==intersects(b.y,pose.contactPaddles![side]));
+  &&(intersects(b.y,shown)||intersects(b.y,pose.contactPaddles![side])));
 }
 type ParticipantSource={state:unknown;chaos?:unknown;clock:bigint;progressionLimit?:bigint;confirmedInputRevision?:number};
 export function participantSourceChanged(previous:ParticipantSource,current:ParticipantSource){
@@ -108,7 +108,7 @@ export class ParticipantReconciliation {
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];
    const atContact=contacting(current,side);
    if(!atContact)this.contactLocks[side]=false;
-   else if(contactDisagrees(current,side,current.paddles[side]+this.paddles[side]))this.contactLocks[side]=true;
+   else if(contactInteracts(current,side,current.paddles[side]+this.paddles[side]))this.contactLocks[side]=true;
    if(this.contactLocks[side]){
     // Edge1529: the ball waited at the impact instant while this paddle moved
     // 5px into its future. A genuine miss then looked like a traversal. Keep
@@ -116,7 +116,9 @@ export class ParticipantReconciliation {
     // Input transport continues; the other paddle remains immediately live.
     // Edge1534: a ball missing by 40px does not interact with this paddle.
     // Do not interrupt local motion for that unrelated plane crossing. Align
-    // only when the displayed solid geometry contradicts the contact geometry;
+    // when either solid geometry interacts with the ball. Edge1543 also needs
+    // a real hit fenced immediately: waiting until it looks like a miss lets
+    // the bot travel 24px before snapping back to the unresolved contact.
     // retain that fence until this contact resolves, preventing repeated snaps.
     this.paddles[side]=current.contactPaddles![side]-current.paddles[side];
    }
