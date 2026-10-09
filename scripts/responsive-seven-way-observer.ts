@@ -49,8 +49,10 @@ try{
  let refs:Ref[]|undefined;
  while(Date.now()<deadline){
   const block=await base.getBlock(),read=independentReader(base,human,block.number);
-  const lanes=await Promise.all([0,1,2,3,4].map(i=>base.readContract({address:agents.pool,abi:poolAbi,functionName:'laneRecord',args:[i],blockNumber:block.number})));
-  const slots=await Promise.all([0n,1n].map(i=>read.lobby('slot',[i])));
+  const [lanes,slots]=await Promise.all([
+   Promise.all([0,1,2,3,4].map(i=>base.readContract({address:agents.pool,abi:poolAbi,functionName:'laneRecord',args:[i],blockNumber:block.number}))),
+   Promise.all([0n,1n].map(i=>read.lobby('slot',[i]))),
+  ]);
   if(lanes.every(l=>l.ref.id>0n&&!l.captured)&&slots.every(id=>id>0n)){
    const humanRefs=await Promise.all(slots.map(async id=>{const [ticket,binding]=await read.lobby('ticketOf',[id]);
     // A lobby slot is occupied during admission, before its ticket is assigned.
@@ -75,7 +77,10 @@ try{
  await together(refs.slice(0,5).map(async ref=>{
   const match=await stage('published-match',ref,()=>reader.match(ref));
   const observer=await stage('live-identity',ref,()=>createPoolObserver(agents,match.value,url=>new WebSocket(url)));
-  stops.push(observer.watch(()=>{}),()=>observer.close());readers.push({ref,read:()=>observer.read(true)});
+  // Exercise the installed spectator path: live frames plus its normal bounded
+  // identity refresh. Forcing a full reconstruction every sample generated
+  // diagnostic-only RPC traffic. Freshness and reference checks below remain.
+  stops.push(observer.watch(()=>{}),()=>observer.close());readers.push({ref,read:()=>observer.read()});
  }));
  await together(refs.slice(5).map(async ref=>{
   const arena=human.arenas.find(a=>a.app.toLowerCase()===ref.app.toLowerCase());assert(arena?.node);
@@ -83,7 +88,7 @@ try{
   const [session,version]:any[]=await Promise.all([node.request({method:'interlude_session',params:[]} as any),node.readContract({address:arena.app,abi:rules.arena,functionName:'RULES_VERSION'})]);
   assert.equal(session.app.toLowerCase(),ref.app.toLowerCase());assert.equal(session.chainId,4242);assert.equal(String(session.epoch),ref.epoch);assert.equal(version,18n);
   const stream=new EngineStream(arena.node,ref.app,url=>new WebSocket(url) as any),feed=new EngineFeed({app:ref.app,abi:rules.arena,node},stream);
-  stops.push(feed.watch(BigInt(ref.id),()=>{}),()=>stream.stop());readers.push({ref,read:()=>feed.read(BigInt(ref.id),true)});
+  stops.push(feed.watch(BigInt(ref.id),()=>{}),()=>stream.stop());readers.push({ref,read:()=>feed.read(BigInt(ref.id))});
  }));
  let first:any;
  while(Date.now()<deadline){

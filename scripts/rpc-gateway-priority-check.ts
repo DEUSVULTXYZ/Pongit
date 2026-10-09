@@ -18,7 +18,10 @@ const upstream=createServer(async(req,res)=>{
  res.setHeader('content-type','application/json');
  const header=input.method==='eth_getBlockByNumber';
  const number=input.params[0]==='latest'?'0x1000':input.params[0];
- res.end(JSON.stringify({jsonrpc:'2.0',id:input.id,result:header?{number,hash:`0x${String(number).slice(2).padStart(64,'0')}`}:{fixture:true,method:input.method,params:input.params}}));
+ const mined=input.method==='eth_getTransactionReceipt'&&input.params[0]===`0x${'ef'.repeat(32)}`;
+ res.end(JSON.stringify({jsonrpc:'2.0',id:input.id,result:mined
+  ?{transactionHash:input.params[0],blockNumber:'0x1001',blockHash:`0x${'1001'.padStart(64,'0')}`,status:'0x1'}
+  :header?{number,hash:`0x${String(number).slice(2).padStart(64,'0')}`}:{fixture:true,method:input.method,params:input.params}}));
 });
 upstream.listen(0,'127.0.0.1');await once(upstream,'listening');
 const address=upstream.address();assert(address&&typeof address==='object');
@@ -165,6 +168,20 @@ try{
  assert(sharedIndex>=sharedPrior&&sharedIndex<sharedPrior+4,'Coalesced player read inherited background queue delay');
  assert((await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).coalescedForegroundPromotions>=1);
  report.checks.push('A player promotes its identical queued read without duplicate RPC or extra throughput');
+ // Real challenge navigation: receipt first, then verify its newer block hash.
+ // The gateway head poll still says 0x1000 while this receipt is at 0x1001.
+ const mined=await rpc('eth_getTransactionReceipt',[`0x${'ef'.repeat(32)}`]);
+ const history=Array.from({length:16},(_,i)=>rpc('eth_getBlockByNumber',[`0x${(40+i).toString(16)}`,false]));
+ const receiptDeadline=Date.now()+5000;
+ while((await fetch('http://127.0.0.1:18545/health').then(r=>r.json()) as any).queued.history<12){
+  assert(Date.now()<receiptDeadline);await new Promise(r=>setTimeout(r,10));
+ }
+ const receiptPrior=sent.length,canonicalReceipt=await rpc('eth_getBlockByNumber',[mined.blockNumber,false]);
+ await Promise.all(history);
+ assert.equal(canonicalReceipt.hash,mined.blockHash,'The canonical hash check still executes');
+ const receiptHeaderIndex=sent.findIndex((v,i)=>i>=receiptPrior&&v.method==='eth_getBlockByNumber'&&v.params[0]===mined.blockNumber);
+ assert(receiptHeaderIndex>=receiptPrior&&receiptHeaderIndex<receiptPrior+4,'New challenge receipt header waited behind backfill');
+ report.checks.push('Newer mined challenge receipt keeps its actual canonical header verification interactive');
  report.sent=sent.map(v=>({...v,at:Math.round(v.at-sent[0].at)}));
  report.passed=true;
 }catch(error){report.error=error instanceof Error?error.message:'Gateway integration failed';process.exitCode=1;}

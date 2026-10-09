@@ -115,6 +115,19 @@ export function rpcBlockObservations(limit=2048){
   head:()=>head,
   height:(hash:string)=>heights.get(hash.toLowerCase()),
   observe(method:string,params:readonly unknown[],result:unknown){
+   // A mined challenge can precede the next head poll. Its required canonical
+   // header check must not join backfill merely because the receipt is newer.
+   // This is a scheduling hint only: no hash is certified or cached here, and
+   // readChallengeAdmission still fetches and compares the actual block hash.
+   if(method==='eth_getTransactionReceipt'){
+    const receipt=result as {transactionHash?:unknown;blockNumber?:unknown;blockHash?:unknown}|null;
+    const n=number(receipt?.blockNumber);
+    if(typeof params[0]==='string'&&/^0x[\da-f]{64}$/i.test(params[0])
+     &&typeof receipt?.transactionHash==='string'&&receipt.transactionHash.toLowerCase()===params[0].toLowerCase()
+     &&typeof receipt.blockHash==='string'&&/^0x[\da-f]{64}$/i.test(receipt.blockHash)&&n!==undefined
+     &&(head===undefined||n>head))head=n;
+    return;
+   }
    const block=result&&typeof result==='object'?result as {number?:unknown;hash?:unknown}:undefined;
    const n=method==='eth_blockNumber'?number(result):number(block?.number);
    if(method==='eth_blockNumber'||method==='eth_getBlockByNumber'&&params[0]==='latest'){

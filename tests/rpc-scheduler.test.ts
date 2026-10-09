@@ -338,6 +338,45 @@ test('transaction lane validates exact requests and does not inherit routine hea
  ] as const)assert.equal(transactionRpcRequest(method,params),false,method);
 });
 
+test('a newly mined challenge receipt keeps its canonical header check ahead of archive scans',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ const tx=`0x${'12'.repeat(32)}`,hash=`0x${'34'.repeat(32)}`;
+ for(const spacing of [75,85]){
+  const blocks=rpcBlockObservations(),queue=rpcScheduler(spacing),seen:Array<{name:string;at:number}>=[];
+  blocks.observe('eth_blockNumber',[],'0x3e8');
+  // readChallengeAdmission verifies the block hash immediately after receiving
+  // this receipt. The receipt can be newer than the gateway's last head poll.
+  blocks.observe('eth_getTransactionReceipt',[tx],{transactionHash:tx,blockNumber:'0x3e9',blockHash:hash,status:'0x1'});
+  const params=['0x3e9',false];
+  assert.equal(historicalRpcRequest('eth_getBlockByNumber',params,blocks.head(),blocks.height),false);
+  assert(controlRpcRequest('eth_getBlockByNumber',params,blocks.head(),blocks.height));
+  const take=(name:string,history:boolean,control=false)=>queue.acquire(history,control).then(()=>seen.push({name,at:Date.now()}));
+  await take('in-flight',true);const start=Date.now();
+  const jobs=[...Array.from({length:12},(_,i)=>take(`archive${i}`,true)),take('receipt-header',false,true)];
+  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(spacing);await Promise.resolve();}
+  await Promise.all(jobs);
+  assert(seen.find(x=>x.name==='receipt-header')!.at-start<=2*spacing);
+  assert(seen.every((x,i)=>!i||x.at-seen[i-1].at>=spacing),'No extra RPC budget');
+ }
+});
+
+test('receipt scheduling hints validate identity, never certify canonicality and cannot move a head backwards',()=>{
+ const blocks=rpcBlockObservations(),tx=`0x${'12'.repeat(32)}`,hash=`0x${'34'.repeat(32)}`;
+ blocks.observe('eth_blockNumber',[],'0x3e8');
+ const receipt={transactionHash:tx,blockNumber:'0x3e9',blockHash:hash,status:'0x1'};
+ for(const bad of [null,{...receipt,transactionHash:hash},{...receipt,blockHash:null},{...receipt,blockNumber:null}])
+  blocks.observe('eth_getTransactionReceipt',[tx],bad);
+ assert.equal(blocks.head(),1000n);assert.equal(blocks.height(hash),undefined);
+ blocks.observe('eth_getTransactionReceipt',[tx],receipt);
+ assert.equal(blocks.head(),1001n);
+ assert.equal(blocks.height(hash),undefined,'Receipt does not replace the explicit canonical header observation');
+ blocks.observe('eth_getTransactionReceipt',[tx],{...receipt,blockNumber:'0x20'});
+ assert.equal(blocks.head(),1001n,'Historical receipt cannot demote live checks');
+ blocks.observe('eth_blockNumber',[],'0x3e7');
+ assert.equal(blocks.head(),999n,'A subsequent real lower head is still respected');
+ assert(historicalRpcRequest('eth_getBlockByNumber',['0xffff',false],blocks.head()),'Invented future headers remain ordinary archive work');
+});
+
 test('six login simulations cannot expire behind sustained transactions and canonical headers',async(t)=>{
  t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
  for(const spacing of [75,85]){
