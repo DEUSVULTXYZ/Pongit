@@ -1,0 +1,53 @@
+{
+  "startedAt": "2026-10-09T06:36:45.733448+00:00",
+  "passed": true,
+  "scope": "Actual off-VPS restore into isolated local PostgreSQL; no production writes",
+  "image": "sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73",
+  "manifestSha256": "3dafc193891d42958b0ac0fcca15ef36afd3c101c7cfc6af662df93908a2579e",
+  "databases": [
+    {
+      "label": "operator",
+      "tables": 66,
+      "canonicalGroups": 1,
+      "archiveRows": {}
+    },
+    {
+      "label": "human",
+      "tables": 22,
+      "archiveRows": {
+        "il_reusable_results": 27,
+        "il_reusable_slot_results": 81
+      }
+    },
+    {
+      "label": "agents",
+      "tables": 13,
+      "groups": 2,
+      "invalidMembers": 0,
+      "archiveRows": {
+        "il_reusable_results": 987,
+        "il_reusable_slot_results": 1215
+      }
+    },
+    {
+      "label": "previous-agents",
+      "tables": 9,
+      "archiveRows": {
+        "il_reusable_results": 153,
+        "il_reusable_slot_results": 168
+      }
+    },
+    {
+      "label": "shared-index",
+      "tables": 286,
+      "archiveRows": {}
+    }
+  ],
+  "container": {
+    "name": "pongit-entry51c-offvps-restore",
+    "exitCode": 0,
+    "oomKilled": false,
+    "dataVolume": "pongit-entry51c-restore-data"
+  },
+  "finishedAt": "2026-10-09T06:38:22.703873+00:00"
+}

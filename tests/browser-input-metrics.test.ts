@@ -76,6 +76,29 @@ test('1322 known small-paddle expiry needs exact geometry and prompt live confir
   (x:any)=>x.snapshots[1].chaos.physics.effects[1]={...none,id:4,serial:4,startsAt:46500,expiresAt:50000},
  ]){const x=structuredClone(d);change(x);assert.equal(syncMetrics(x).paddleJumps.length,1);}
 });
+test('known paddle-growth start needs an exact rendered boundary and prompt live confirmation',()=>{
+ const effect={id:23,target:2,remaining:0,serial:6,startsAt:66060,expiresAt:74060,variant:63647900};
+ const before={at:100,observedAt:100,rulesVersion:18,clock:'65950000',state:{id:'24',t:'65950000',left:'48000000',scoreA:6,scoreB:4},
+  chaos:{physics:{t:'65950000',bettingA:96000000,bettingB:96000000,effects:[effect,{...effect,id:0,startsAt:0,expiresAt:0}]}}};
+ const after={...structuredClone(before),at:250,observedAt:250,state:{...before.state,t:'66100000',left:'60000000'},
+  chaos:{physics:{...before.chaos.physics,t:'66100000'}}};
+ const d={frames:[],snapshots:[before,after],poses:[{at:180,renderedUs:'66053000',sourceUs:'65950000',ref:'10143:arena:1:24',rally:'11'},
+  {at:197,renderedUs:'66070000',sourceUs:'65950000',ref:'10143:arena:1:24',rally:'11'}],
+  paddles:[{at:180,paintedAt:183,y:48,height:96,rally:'11',side:0,observedAt:100},
+   {at:197,paintedAt:200,y:60,height:120,rally:'11',side:0,observedAt:100}]};
+ const metrics=syncMetrics(d);assert.equal(metrics.paddleJumps.length,0);
+ assert.equal(metrics.geometryClamps[0].scheduledConfirmation.boundary,'start');
+ assert.equal(metrics.geometryClamps[0].scheduledConfirmation.delayMs,50);
+ for(const change of [
+  (x:any)=>x.poses.pop(),(x:any)=>x.poses[0].renderedUs='66061000',
+  (x:any)=>x.poses[1].renderedUs='66059000',(x:any)=>x.poses[1].sourceUs='0',
+  (x:any)=>x.poses[1].ref='10143:other:1:24',(x:any)=>x.poses[1].rally='12',
+  (x:any)=>x.snapshots.pop(),(x:any)=>x.snapshots[1].at=301,
+  (x:any)=>x.snapshots[1].state.left='48000000',(x:any)=>x.paddles[1].y=70,
+  (x:any)=>x.snapshots[0].chaos.physics.effects[0].startsAt=67000,
+ ]){const x=structuredClone(d);change(x);assert.equal(syncMetrics(x).paddleJumps.length,1);}
+});
+
 test('coalesced inputs measure the latest intention and flag obsolete directions',()=>{
  const intents=[{at:100,direction:-1},{at:120,direction:1}];
  const result=confirmedInputMetrics(intents,[{sentAt:10,confirmedAt:15,direction:0,sequence:'1'},

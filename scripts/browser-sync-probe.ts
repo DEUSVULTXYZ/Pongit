@@ -150,7 +150,7 @@ export async function installSyncProbe(page:Page){
  });
 }
 
-export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];waiting?:any[];corrections?:any[];keys?:any[];releases?:any[]}){
+export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];waiting?:any[];corrections?:any[];keys?:any[];releases?:any[];poses?:any[]}){
  const intervals:number[]=[],jumps:any[]=[],lags:number[]=[],gaps:number[]=[],holds:any[]=[],frameGaps:any[]=[];
  let hold=0,maxHold=0,contractPauseMs=0,intermissionMs=0;
  for(let i=1;i<data.frames.length;i++){
@@ -174,6 +174,7 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
  const paddleJumps:any[]=[],geometryClamps:any[]=[],last=new Map<number,any>();
  const byObservation=new Map(data.snapshots.map(s=>[s.observedAt,s]));
  const snapshotIndex=new Map(data.snapshots.map((s,i)=>[s.observedAt,i]));
+ const poses=new Map((data.poses??[]).map(p=>[p.at,p]));
  for(const b of data.paddles??[]){
   const a=last.get(b.side);last.set(b.side,b);if(!a||a.finished||b.finished||a.rally!==b.rally)continue;
   const dt=b.at-a.at;if(dt<=0||dt>50)continue;
@@ -195,12 +196,21 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
    let scheduledConfirmation:any;
    if(b.height>a.height&&snapshot?.chaos){
     const raw=snapshot.chaos.physics,t=BigInt(raw.t),index=snapshotIndex.get(b.observedAt)!;
-    // The mirror may cross an already known expiry before the next live
+    // The mirror may cross an already known effect boundary before the next live
     // frame. Accept only the exact scheduled size/clamp, then require a live
     // confirmation within 100 ms. Unknown effects or unconfirmed predictions
     // remain failures; this is not a general exemption for Chaos jumps.
-    for(const effect of raw.effects){
-     const end=BigInt(effect.expiresAt)*1000n;if(!effect.id||end<=t||end>t+100000n)continue;
+    boundaries:for(const effect of raw.effects)for(const boundary of ['start','expiry'] as const){
+     const end=BigInt(boundary==='start'?effect.startsAt:effect.expiresAt)*1000n;if(!effect.id||end<=t)continue;
+     if(boundary==='start'){
+      // A known future draw can start beyond the old 100 ms expiry window.
+      // Require the two actual rendered poses to straddle its exact time.
+      // Missing poses, changed reference/source/rally or early resizing fail.
+      const previous=poses.get(a.at),current=poses.get(b.at);
+      if(!previous||!current||previous.ref!==current.ref||previous.rally!==a.rally||current.rally!==b.rally
+       ||BigInt(previous.sourceUs)!==t||BigInt(current.sourceUs)!==t
+       ||BigInt(previous.renderedUs)>=end||BigInt(current.renderedUs)<end)continue;
+     }else if(end>t+100000n)continue;
      const predicted=eventPaddles({...raw,t:end,paddleSpeed:rulesPaddleSpeed(snapshot.rulesVersion)});
      const half=Number(chaosOuterHalf(b.side===0?predicted.heightA:predicted.heightB,b.side===0?predicted.splitA:predicted.splitB))/1e6;
      const expected=Math.max(half,Math.min(576-half,a.y));
@@ -211,7 +221,7 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
      if(next.chaos.physics.effects.some((e:any)=>e.id&&!raw.effects.some((old:any)=>old.id===e.id&&old.serial===e.serial&&old.startsAt===e.startsAt&&old.expiresAt===e.expiresAt)))continue;
      const actual=eventPaddles({...next.chaos.physics,t:BigInt(next.chaos.physics.t),paddleSpeed:rulesPaddleSpeed(next.rulesVersion)});
      const actualHalf=Number(chaosOuterHalf(b.side===0?actual.heightA:actual.heightB,b.side===0?actual.splitA:actual.splitB))/1e6;
-     if(Math.abs(actualHalf-half)<.001&&Math.abs(Number(next.state[b.side===0?'left':'right'])/1e6-expected)<.001){scheduledConfirmation={effect:effect.id,expiresAt:effect.expiresAt,confirmedAt:next.at,delayMs:next.at-b.paintedAt};break;}
+     if(Math.abs(actualHalf-half)<.001&&Math.abs(Number(next.state[b.side===0?'left':'right'])/1e6-expected)<.001){scheduledConfirmation={effect:effect.id,boundary,startsAt:effect.startsAt,expiresAt:effect.expiresAt,confirmedAt:next.at,delayMs:next.at-b.paintedAt};break boundaries;}
     }
    }
    if(scheduledConfirmation){
