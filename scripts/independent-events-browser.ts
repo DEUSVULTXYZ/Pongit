@@ -264,7 +264,7 @@ try{
    await a.getByRole('button',{name:'Chaos',exact:true}).click();await a.getByRole('button',{name:/^Create room/}).click();
    await a.getByRole('dialog',{name:'Create room'}).getByRole('button',{name:'Create room',exact:true}).click();
    await until(()=>a.getByRole('button',{name:'Copy room link',exact:true}).isVisible(),'created Chaos room');
-   await a.getByRole('button',{name:'Copy room link',exact:true}).click();saved.roomUrl=await a.evaluate(()=>navigator.clipboard.readText());assert(saved.roomUrl.startsWith(origin+'/rooms/'));await persist();
+   await a.getByRole('button',{name:'Copy room link',exact:true}).click();await until(async()=>{const url=await a.evaluate(()=>navigator.clipboard.readText());if(!url.startsWith(origin+'/rooms/'))return false;saved.roomUrl=url;return true;},'confirmed room-link clipboard write',5000);await persist();
   }
   // Load the third client's room shell before the opponent joins, but do not
   // join it yet: the first two members must remain the actual players. This
@@ -305,7 +305,7 @@ try{
    const rejoin=p.getByRole('button',{name:'Rejoin queue',exact:true});if(await rejoin.isVisible())await rejoin.click();
   }));
   await Promise.all([a,b].map(p=>until(async()=>await p.getByRole('button',{name:'Accept',exact:true}).isVisible()||await p.locator('.rooms-canvas canvas').isVisible(),'offer or resumed game',120000)));
-  await a.getByRole('button',{name:'Copy room link',exact:true}).click();saved.roomUrl=await a.evaluate(()=>navigator.clipboard.readText());assert(saved.roomUrl.startsWith(origin+'/rooms/'));
+  await a.getByRole('button',{name:'Copy room link',exact:true}).click();await until(async()=>{const url=await a.evaluate(()=>navigator.clipboard.readText());if(!url.startsWith(origin+'/rooms/'))return false;saved.roomUrl=url;return true;},'confirmed room-link clipboard write',5000);
   // Players answer their twenty-second proposal immediately. Opening the third
   // browser is independent setup, not a prerequisite for either player's consent.
   // Do not consume the acceptance window waiting for spectator RPC reads.

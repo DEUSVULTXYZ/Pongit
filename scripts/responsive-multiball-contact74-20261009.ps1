@@ -3,7 +3,7 @@ $report='artifacts/responsive-20261008-r2/multiball-contact74.json'
 if(Test-Path -LiteralPath $report){throw 'Preserve the original multiball qualification'}
 # The shared renderer changed. Require new normal agent and human proofs on web68.
 $normal=Get-Content -Raw 'artifacts/responsive-20261008-r2/final-browser-series-74.json' | ConvertFrom-Json
-$human=Get-Content -Raw 'artifacts/responsive-20261008-r2/pvp-contact74.json' | ConvertFrom-Json
+$human=Get-Content -Raw 'artifacts/responsive-20261008-r2/pvp-contact75.json' | ConvertFrom-Json
 if(!$normal.passed -or $normal.web -ne '0df141f' -or $normal.completed.Count -ne 7 -or !$human.passed -or $human.web -ne '0df141f'){throw 'Complete the normal agent and human browser series first'}
 $web=& ssh pongit docker inspect --format '{{.Image}}' pongit-arcade-five-arcade-web-1
 if($LASTEXITCODE -ne 0 -or $web.Trim() -ne 'sha256:e9aeaa2a9e4d2b4577f7b04e630ac0153a33550fc979215313f60f16726bf739'){throw 'Candidate web changed'}

@@ -1,0 +1,18 @@
+{
+  "passed": false,
+  "scope": "Preserved pre-play browser fixture failure; not a gameplay verdict",
+  "source": "0df141f",
+  "startedAt": "2026-10-09T14:39:06.720Z",
+  "finishedAt": "2026-10-09T14:40:03.421Z",
+  "error": "The expression evaluated to a falsy value:\n\n  assert(saved.roomUrl.startsWith(origin+'/rooms/'))\n",
+  "commandReceipts": 0,
+  "reportSha256": "cf9b599b9cfd6832635fdcedab6bfd3b044439cf65fc96df82ef74a2c5ac7b3a",
+  "cause": "Clipboard read raced the asynchronous Copy room link write. The product reports Copied only after its write completes. The test now waits for an actual room URL, retaining the original failed run.",
+  "ownedActiveMatchesCheckedAt": "2026-10-09T14:42:00Z",
+  "ownedActiveMatches": [
+    0,
+    0,
+    0
+  ],
+  "followup": "Bounded PvP75, same deployed image. No closure or cancellation."
+}
