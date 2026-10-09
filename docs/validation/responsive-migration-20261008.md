@@ -1818,3 +1818,12 @@ Series62 exitedFAIL12:00:52 after third1550. First1548/1549PASS. Mobile1550 natu
 
 
 2026-10-09T12:12:41.054401+00:00 - series63 exitedFAIL1554 at12:09; no driver active. Natural5-7/89.8s, zero pauses/resync/crossings/fakebounces, maxhold67ms. Probe fix verified releasep95=2/max2.03. Real18.138unit bot rewind on a delayed MISS preserved; candidate clamps approaching picture at nearest consistent miss edge rather than old anchor, genuine-hit fence unchanged.53focused pass; fullTS/rootTS running. Publicweb62 unchanged until guardedcompatible web-only deployment.
+
+
+2026-10-09T12:14:37.855569+00:00 - candidate4afed04 published;1243fullTS/rootTS/secret checks PASS. Solebackup63 exec43457 running; no browser driver. Duplicateweb62 upload offloaded with SHA/mount checks, allDockerimages retained. Disk80.073 duringbackup; build notstarted. Afterbackup63 OFFVPS verified, offload onlyolder61 payloads with mount/hash checks, then confirmusable<80 beforelocalLinuxbuild63. Guardedweb-onlycutover63 prepared, notrun.
+
+
+2026-10-09T12:17:10.431755+00:00 - candidate68b5f05 published;1244fullTS/rootTS pass. Pure misses stop at nearest consistent edge, genuine hits still hold exact contact; no stale contact lock can transfer between balls. Backup63 sixfiles332925787bytes OFFVPS SHAverified12:16:24.3479554Z manifest5b9364bf2372e121d1fad6d1747e4b1516e21d4fdf4a88c4aac91ee78384132b. Older61 payload offload exec50827 running, exactSHA+mountcheck, latest63/images/volumes retained. No browser or lifecycledriver; publicweb62 unchanged. Build63 waitsusable<80.
+
+
+2026-10-09T12:19:27.641887+00:00 - web63 built/imported68b5f05, image659082c148ce7dbb8cbcb2425666444f5fc562f6f0f1c00f2d8e98c03280c96b.1244TS/rootTS/secret/buildPASS. Sole guardedcutover exec31633 running; no browserdriver. Freshbackup63 SHAOFFVPS12:16, older61 payloads safelyoffloadedSHA/mountchecks. Usable79.9146 beforebuild; production/rollbackimages/volumes/history retained. Series64 prepared, notstarted; exactweb63 guard,5Chaos/2Classic, original80minbound once started.
