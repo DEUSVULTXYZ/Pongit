@@ -1844,3 +1844,12 @@ Series62 exitedFAIL12:00:52 after third1550. First1548/1549PASS. Mobile1550 natu
 
 
 2026-10-09T12:34:24.247785+00:00 - web64/45a22e4 built and SHAimported image74863e4c8066c0fd0c81c94fc708088b21582961e3e50735644cc5c062df83f3. Soleguardedcutover exec83668 running; backup63stillfresh12:16 verifiedOFFVPS. No game driver. Preparedseries66 exactimageguard,5Chaos/2Classic onsameoriginal80minboundwhenstarted, restoresvalidfresh12:24virtualfamily from65c1. Original65/64 failures preserved.
+
+
+2026-10-09T12:40:26.090500+00:00 - web64/45a22e4 DEPLOYED12:39:38.648708828Z image74863e4c8066c0fd0c81c94fc708088b21582961e3e50735644cc5c062df83f3, cutoverPASS12:39:41. Natural tournament1562 completed4-3 at324.2s inclovertime; no cancel. Canonical69541721/hashc89ddc98ca31e2abef32bf3c5b947538e0b293744038349fbef29edc71bb497d allsevenidle/human0/pending0 beforeweb-onlychange; allservicesresumed. Backup63OFFVPSfresh; rollbackweb63 retainedwithoutDBrestore. Soleheadedseries66 started5Chaos/2Classic, original80minbound, samefresh12:24family reuse. No othergame/lifecycleworker; no finalqualificationclaim.
+
+
+2026-10-09T12:49:20.462412+00:00 - series66 exitedFAIL on natural Chaos1563 (Chrome360 touch emulation),3-7/66.695s. Releasep951.53/max1.56,0pauses/crossings/snapshotjumps,maxhold83.3ms. Genuine-hit anchor reset caused12.1731/11.4009unit local jumps despite already-compatible drawn contact. Full report/video retained; no active owned driver. Regression FAIL before/PASS after nearest classification-compatible hit/miss/split intersection;32focused pass, candidate not deployed. Publicweb64 unchanged. Preparing freshbackup65 before next compatible web-onlycutover. No lifecycle/contract changes.
+
+
+2026-10-09T12:53:54.352784+00:00 - product2499ce1 published,1247fullTS/rootTS/secret/buildPASS. Web65 SHAimported imagea77553468d9ccd77922be179a4f8cce3683071d311866d2fca89aabcaf7da8cc; guardedcutover running, no browserdriver. Backup65 sixfiles335867432bytes SHAverifiedOFFVPS12:52:38.0248272Z manifesta51ec35e93fe3b5b983326991555d40d6c2a25a0607101298c28bebf39421b01. Duplicate64 upload and unused60/61/62images archivedOFFVPS with SHA/OCI/allcontainerchecks; current64/rollback63/volumes retained. Usable79.9616 beforebuild. Series67 preparedsame5Chaos/2Classic, exactimageguard,80minonce-started bound.1563failure preserved.
