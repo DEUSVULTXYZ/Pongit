@@ -242,7 +242,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   bindingRef.current=binding;lastGame.current={app,binding};
   sessionStorage.setItem(`pongit:last-arena:${manifest.lobby}:${family?.grant.player}`,JSON.stringify({app,id:String(binding.id),epoch:String(binding.epoch),room:String(binding.room)}));
   const instance=createIndependentArena(manifest,app);arena.current=instance;
-  let stopped=false,retryAt=0,opening=false;let play:LabLane|null=null;const responsive=manifest.rulesVersion===18;const pilot=new TickPilot(responsive?{tickMs:50,takeoverMs:150}:undefined),recovery=new ArenaRecovery();
+  let stopped=false,retryAt=0,opening=false;let play:LabLane|null=null;const responsive=manifest.rulesVersion===18;const pilot=new TickPilot(responsive?{tickMs:50,takeoverMs:150,external:true}:undefined),recovery=new ArenaRecovery();
   const id=BigInt(binding.id),receive=(s:LabSnapshot,latency?:number)=>{
    if(stopped)return;latestLive.current=s;setSnapshot(s);pilot.observe(s,performance.now());play?.ingest(s);setSync(recovery.observed(s.phase>=3,latency!==undefined));
    const before=scoreSeen.current,total=s.state.scoreA+s.state.scoreB;
@@ -284,6 +284,8 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
    }catch(e){retryAt=Date.now()+recoveryDelay(e);if(!stopped)setSync(recovery.failure(e));}finally{opening=false;}
   };
   void observe();void restore();
+  // Rules18 already has a dedicated relayer physics loop. Browser idle ticks
+  // must not occupy its player nonce while a release waits behind delivery.
   const timer=setInterval(()=>{
    const s=instance.feed.peek(id);if(s?.phase&&s.phase>=3)return;
    if(play&&!play.stopped){void play.pump(!!s&&pilot.due(labSide(s,current.current.family?.grant.player),s,performance.now()));}

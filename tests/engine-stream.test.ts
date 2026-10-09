@@ -273,3 +273,10 @@ test('responsive human pilot advances within50ms while commands suppress idle ti
  assert(!pilot.due(1,own,1249));assert(pilot.due(1,own,1250));
  pilot.observe({...s,state:{...s.state,t:300000n}},1260);assert(!pilot.due(1,s,1310),'primary recovery returns ownership');
 });
+
+
+test('server-driven responsive physics never occupies the player command nonce with idle ticks',()=>{
+ const pilot=new TickPilot({tickMs:50,takeoverMs:150,external:true}),s=baseline();pilot.observe(s,1000);
+ for(const side of [0,1])for(const at of [1049,1050,1200,5000])assert.equal(pilot.due(side,s,at),false,
+  'The rules18 relayer already owns the50ms physics loop; a delayed tick cannot queue a key release');
+});

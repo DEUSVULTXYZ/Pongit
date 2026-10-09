@@ -1,0 +1,410 @@
+{
+  "passed": false,
+  "source": "0df141f",
+  "reportSha256": "5ee13c82f4e123acdc483aaa708ee39a4659c5c5db8ebaf028d332278d023805",
+  "traceSha256": "f7bc73c7aaa371bb076772eadbdf2c6bb5ecedac410982b25ddbe472bfa2c62b",
+  "startedAt": "2026-10-09T14:42:24.140Z",
+  "finishedAt": "2026-10-09T14:45:35.441Z",
+  "gates": {
+    "natural": true,
+    "render": true,
+    "local": true,
+    "noPause": true,
+    "peer": true,
+    "commands": true
+  },
+  "integrityGates": [
+    {
+      "held": true,
+      "release": true,
+      "collisions": true,
+      "scenarios": true
+    },
+    {
+      "held": true,
+      "release": true,
+      "collisions": false,
+      "scenarios": true
+    }
+  ],
+  "crossing": [
+    {
+      "at": 174729.29713296183,
+      "ball": 1,
+      "side": 0,
+      "rally": "5:6",
+      "y": 339.9999455800058,
+      "paddle": 371.8251316508068,
+      "height": 96,
+      "split": false,
+      "penetration": 22.17481392919899,
+      "throughPaddle": true
+    }
+  ],
+  "poses": [
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174659.20000004768,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 48.180802867336425,
+          "y": 335.9095440521878
+        }
+      ],
+      "paddles": [
+        371.5199999570846,
+        281.99999999993895
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104330000",
+      "renderedUs": "104490200",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "85403201",
+        "score": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174675.79999995232,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 44.327137131057015,
+          "y": 337.83637642813505
+        }
+      ],
+      "paddles": [
+        371.5199999570846,
+        281.9999999999483
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104330000",
+      "renderedUs": "104506799",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "85403201",
+        "score": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174692.29999995232,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 40.49577198246436,
+          "y": 339.75205900815234
+        }
+      ],
+      "paddles": [
+        371.5199999570846,
+        281.9999999999561
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104330000",
+      "renderedUs": "104523299",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "85403201",
+        "score": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174711.40000009537,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 40.494220778852856,
+          "y": 339.75283461166566
+        }
+      ],
+      "paddles": [
+        371.5199999570846,
+        281.99999999996373
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104410000",
+      "renderedUs": "104523299",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "66817601",
+        "score": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174725.90000009537,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 40.4927962329947,
+          "y": 339.7535468861232
+        }
+      ],
+      "paddles": [
+        371.5199999570846,
+        281.9999999999686
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104410000",
+      "renderedUs": "104523299",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "66817601",
+        "score": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174742.60000014305,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 38.07025421359677,
+          "y": 340.9648207341959
+        }
+      ],
+      "paddles": [
+        373.0199999570846,
+        281.99999999997345
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104550000",
+      "renderedUs": "104560000",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "34292826",
+        "score": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174760.20000004768,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 32.99712353445487,
+          "y": 343.5013870518656
+        }
+      ],
+      "paddles": [
+        373.0199999570846,
+        281.9999999999777
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104550000",
+      "renderedUs": "104577599",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "34292826",
+        "score": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174776,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 28.0492365031933,
+          "y": 345.9753317631377
+        }
+      ],
+      "paddles": [
+        373.0199999570846,
+        281.99999999998096
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104600000",
+      "renderedUs": "104609000",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "22676826",
+        "score": [
+          5,
+          6
+        ]
+      }
+    },
+    {
+      "ref": "10143:0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d:1:680564733841876926926749214863536423056",
+      "at": 174792.60000014305,
+      "rules": 18,
+      "side": 0,
+      "balls": [
+        {
+          "id": 1,
+          "x": 23.051186106348055,
+          "y": 348.4743580299831
+        }
+      ],
+      "paddles": [
+        373.0199999570846,
+        281.99999999998386
+      ],
+      "rally": "5:6",
+      "score": [
+        5,
+        6
+      ],
+      "sourceUs": "104600000",
+      "renderedUs": "104625600",
+      "contactBoundary": false,
+      "collisions": [],
+      "sourceVelocity": {
+        "vx": "-232320000",
+        "x": "22676826",
+        "score": [
+          5,
+          6
+        ]
+      }
+    }
+  ],
+  "network": [
+    {
+      "player": 1,
+      "at": 1791557120706.5088,
+      "hash": "0xabd62fb623ba21949c77f6b40404099edceb272f3381270d6bc0caff9a765560",
+      "method": "interlude_sendTransaction",
+      "action": "input",
+      "ms": 8.613525390625,
+      "transport": "websocket",
+      "error": false
+    },
+    {
+      "player": 1,
+      "at": 1791557120911,
+      "method": "eth_getTransactionReceipt",
+      "status": 200,
+      "requestBytes": 144
+    },
+    {
+      "player": 1,
+      "at": 1791557120921,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 622,
+      "hash": "0xeeafa2b6a4c7f881ca6d12e73ae812d19a088a19e35aa8d7ea16697aaf20bfe6",
+      "nonce": 1411,
+      "action": "input"
+    },
+    {
+      "player": 1,
+      "at": 1791557120935.6655,
+      "hash": "0xf1e4d3eaa780d252f8923045a9a2f1bd2f1d3a44fd0b2800137eef6eaf035b46",
+      "method": "interlude_sendTransaction",
+      "action": "tick",
+      "ms": 155.415283203125,
+      "transport": "websocket",
+      "error": false
+    },
+    {
+      "player": 1,
+      "at": 1791557120963,
+      "method": "eth_call",
+      "status": 200,
+      "requestBytes": 203
+    },
+    {
+      "player": 1,
+      "at": 1791557121022,
+      "method": "interlude_sendTransaction",
+      "status": 200,
+      "requestBytes": 624,
+      "hash": "0x07a3edba65caa4378178357bac42d8d1341cc234ecfd8e224a068f23a627560e",
+      "nonce": 1412,
+      "action": "input"
+    }
+  ],
+  "cause": "An unnecessary browser tick occupied the player nonce for155ms while awaiting socket/receipt delivery. The local release stopped at371.52, but the delayed contract release stopped at411. The rules18 relayer image already contains the independent50ms physics loop. Duplicate browser idle ticks increased queue pressure and blocked the release.",
+  "correction": "Use the existing server physics owner for rules18; keep player nonce for controls. Legacy browser-primary protocols retain their pilot. This does not claim to eliminate arbitrary network delay or independently prove all collision geometry."
+}
