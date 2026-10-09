@@ -1,0 +1,251 @@
+{
+  "observedAt": "2026-10-09T11:48:51.976Z",
+  "ref": {
+    "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+    "epoch": "1",
+    "id": "1543"
+  },
+  "product": "5a7022f",
+  "passed": false,
+  "error": "Visible reconciliation discontinuities remain",
+  "result": {
+    "hash": "0x94ed0c17209d19671fffb71ed054ef03c8de322706ed50d2d2f235bcc3c5c25f",
+    "winner": "0x128638C3fFf23ebb15e66498ECcf666106a39C12",
+    "status": 3,
+    "scoreA": 7,
+    "scoreB": 6,
+    "elapsedUs": "68810002",
+    "finality": false
+  },
+  "metrics": {
+    "localInput": {
+      "samples": 139,
+      "p95Ms": 16
+    },
+    "send": {
+      "samples": 295,
+      "p95Ms": 16,
+      "basis": "compact sender latencyMs: send entry, signing and verified execution receipt; excludes queue and hydration"
+    },
+    "stopping": {
+      "samples": 30,
+      "p95Drift": 0.6299999713897364,
+      "maxDrift": 1.5,
+      "stops": [
+        {
+          "at": 17685.200000047684,
+          "releaseY": 48,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 20003.599999904633,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 22320.299999952316,
+          "releaseY": 48,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 24640.200000047684,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 26659.099999904633,
+          "releaseY": 291.6,
+          "drift": 0.6000000000000227,
+          "includingFrameTail": 5.189999985694897
+        },
+        {
+          "at": 33815.90000009537,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 34078.40000009537,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 34700.09999990463,
+          "releaseY": 438,
+          "drift": 0,
+          "includingFrameTail": 1.8599999427795524
+        },
+        {
+          "at": 37303.40000009537,
+          "releaseY": 48,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 39620.200000047684,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 41939.59999990463,
+          "releaseY": 48,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 44251.700000047684,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 45332.200000047684,
+          "releaseY": 474.6600000143051,
+          "drift": 0.6600000143051261,
+          "includingFrameTail": 2.1000000000000227
+        },
+        {
+          "at": 47300.799999952316,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 47849.59999990463,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 48114.799999952316,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 48381.5,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 48649.200000047684,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 48918.299999952316,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 49182.90000009537,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 49462.09999990463,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 51839.700000047684,
+          "releaseY": 283.5,
+          "drift": 1.5,
+          "includingFrameTail": 5.189999985694897
+        },
+        {
+          "at": 57450.5,
+          "releaseY": 48,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 59760.299999952316,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 62075.700000047684,
+          "releaseY": 48,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 64389,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 65465,
+          "releaseY": 468.62999997138974,
+          "drift": 0.6299999713897364,
+          "includingFrameTail": 2.0099999427795296
+        },
+        {
+          "at": 67874.09999990463,
+          "releaseY": 282.07999997138967,
+          "drift": 0.07999997138966819,
+          "includingFrameTail": 4.15999994277945
+        },
+        {
+          "at": 77426,
+          "releaseY": 48,
+          "drift": 0,
+          "includingFrameTail": 0
+        },
+        {
+          "at": 79742,
+          "releaseY": 528,
+          "drift": 0,
+          "includingFrameTail": 0
+        }
+      ]
+    },
+    "rawStopping": {
+      "p95Drift": 4.15999994277945,
+      "maxDrift": 5.189999985694897
+    },
+    "paddleJumps": [
+      {
+        "at": 71127.1,
+        "side": 1,
+        "dt": 16.60000000000582,
+        "d": 19.294496234401407,
+        "limit": 8.972000000002446,
+        "from": 184.12380376559858,
+        "to": 203.4183,
+        "observedAt": 1791546503269
+      }
+    ],
+    "pauseMs": 0,
+    "resyncs": 0,
+    "crossings": [],
+    "unconfirmedBounces": []
+  },
+  "cause": {
+    "atMs": 71127.1,
+    "side": 1,
+    "ballY": 236,
+    "contactPaddleY": 203.4183,
+    "lastPaintedY": 184.12380376559858,
+    "jump": 19.294496234401407,
+    "explanation": "The bot continued after a genuine hit reached the unconfirmed plane. The conditional fence waited until future motion made the same hit look like a miss. Real hits must retain their contact anchor from the first waiting frame; distant misses remain independent."
+  },
+  "hashes": {
+    "report.json": "427c451373a0a93e3877d76a6d8302cacb26f66e9bdd1da3cad056dbfb8519a4",
+    "sync-trace.json": "d86ce9781b8badc678b6c685479df50a9d4084d03ed156bf9c268856906593ec"
+  }
+}
