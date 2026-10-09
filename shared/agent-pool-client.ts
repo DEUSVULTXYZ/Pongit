@@ -19,6 +19,10 @@ export const poolChallengeTypes={AgentChallenge:[
 ]} as const;
 export type PreparedPoolCall={to:Address;data:Hex;digest:Hex;deadline:bigint;nonce:bigint};
 type Signer=Pick<LocalAccount,'address'|'signTypedData'>;
+// A performance hint only, scoped to the tab's client and exact queue/grant.
+// Every use still reads the actual nonce at the same canonical block. A lost
+// submission, another tab or a reorganisation simply adds the ordinary round.
+const challengeNonceHints=new WeakMap<PublicClient,{queue:string;grant:Hex;next:bigint}>();
 
 /** Produces a signed, contract-verifiable intent, not a transaction. Pass it to
  * the sponsored writer or your own transaction journal. Keep an uncertain call
@@ -51,9 +55,13 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
  const expected=options.expectedFamily;
  const familyDigest=(family:FamilyGrant)=>hashTypedData({domain:{name:'PONGIT Arcade Family',version:'1',chainId:10143,verifyingContract:m.family},types:familyGrantTypes,primaryType:'ArcadeFamilyGrant',message:family});
  const expectedGrant=expected?familyDigest(expected):undefined;
+ const hint=challengeNonceHints.get(client);
+ const anticipatedNonce=expectedGrant&&hint?.queue===m.challenges.toLowerCase()&&hint.grant===expectedGrant?hint.next:0n;
+ const action=options.cancel===undefined?1:2,agent=getAddress(options.agent),id=options.cancel??0n;
+ const anticipatedDeadline=expected?(block.timestamp+120n<expected.expires?block.timestamp+120n:expected.expires):0n;
  // A saved grant lets its domain and nonce checks share the first canonical
  // read. None is trusted until grantOf agrees field-for-field below.
- const [family,count,pending,expectedDomain,expectedNonce]=await Promise.all([
+ const [family,count,pending,expectedDomain,expectedNonce,anticipatedDigest]=await Promise.all([
   read(m.family,familyAbi,'grantOf',[player]),
   // The rules17 continuation queue scans only its waiting ring. Historical
   // completed requests no longer need extra admission passes. Keep legacy
@@ -63,6 +71,8 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
   options.checkPending&&options.cancel===undefined?read<bigint>(m.challenges,agentChallengesAbi,'pending',[player]):Promise.resolve(0n),
   expected?read<Hex>(m.family,familyAbi,'grantDigest',[expected]):Promise.resolve(undefined),
   expectedGrant?read<bigint>(m.challenges,agentChallengesAbi,'nonces',[expectedGrant]):Promise.resolve(undefined),
+  expectedGrant?read<Hex>(m.challenges,agentChallengesAbi,'digest',
+   [expectedGrant,action,agent,options.mode,id,anticipatedNonce,anticipatedDeadline]):Promise.resolve(undefined),
  ]);
  if(pending!==0n)throw Object.assign(Error('Resume the existing challenge'),{code:'POOL_CHALLENGE_PENDING',id:pending});
  // Availability is advisory and independent of the canonical grant reads.
@@ -86,12 +96,16 @@ export async function preparePoolChallenge(client:PublicClient,manifest:AgentPoo
  ]);
  if(grant!==observedGrant)throw Error('Arcade authorization domain differs from the approved family');
  const deadline=block.timestamp+120n<family.expires?block.timestamp+120n:family.expires;
- const message={grant,action:options.cancel===undefined?1:2,agent:getAddress(options.agent),mode:options.mode,id:options.cancel??0n,nonce,deadline};
+ const message={grant,action,agent,mode:options.mode,id,nonce,deadline};
  const typed={domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge' as const,message};
- const digest=hashTypedData(typed),onchain=await read<Hex>(m.challenges,agentChallengesAbi,'digest',
-  [grant,message.action,message.agent,message.mode,message.id,nonce,deadline]);
+ // Reuse a prefetched digest only when ALL its inputs match the observed
+ // message. Never replace domain verification with an assumed local hash.
+ const digest=hashTypedData(typed),onchain=expectedGrant===grant&&nonce===anticipatedNonce&&deadline===anticipatedDeadline
+  ?anticipatedDigest:await read<Hex>(m.challenges,agentChallengesAbi,'digest',
+   [grant,message.action,message.agent,message.mode,message.id,nonce,deadline]);
  if(digest!==onchain)throw Error('Challenge domain differs from the deployed queue');
  const signature=await key.signTypedData(typed);
+ challengeNonceHints.set(client,{queue:m.challenges.toLowerCase(),grant,next:nonce+1n});
  const call=batchPoolChallenge(m,{to:m.challenges,data:encodeFunctionData({abi:agentChallengesAbi,functionName:'command',args:[player,message.action,message.agent,message.mode,message.id,nonce,deadline,signature]})},admissionPasses(count+1n));
  return {...call,digest,nonce,deadline};
 }

@@ -18,6 +18,36 @@ function canonicalFixture(client:PublicClient){
  };
 }
 
+test('saved challenge joins its exact digest to the canonical round, with stale nonce fallback',async()=>{
+ const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:250n,revision:0n};
+ let nonce=0n,rounds=0,signed=0,wrongDigest=false;
+ const client={getChainId:async()=>10143,getBlock:async()=>({number:44n,timestamp:100n,hash:zeroHash}),multicall:async(c:any)=>{
+  rounds++;assert.equal(c.requireCanonical,true);assert.equal(c.blockHash,zeroHash);assert.equal(c.allowFailure,false);
+  return c.contracts.map((r:any)=>{
+   if(r.functionName==='grantOf')return family;
+   if(r.functionName==='grantDigest')return grantHash(family);
+   if(r.functionName==='nonces')return nonce;
+   if(r.functionName==='pending')return 0n;
+   assert.equal(r.functionName,'digest');const [grant,action,agent,mode,id,n,deadline]=r.args;
+   return wrongDigest?zeroHash:hashTypedData({domain:{name:'PONGIT Agent Challenges',version:'1',chainId:10143,verifyingContract:m.challenges},types:poolChallengeTypes,primaryType:'AgentChallenge',message:{grant,action,agent,mode,id,nonce:n,deadline}});
+  });
+ }} as unknown as PublicClient;
+ const signer={...key,signTypedData:async(a:any)=>{signed++;return key.signTypedData(a);}};
+ const options={agent:addr(20),mode:1 as const,expectedFamily:family,checkPending:true};
+ const first=await preparePoolChallenge(client,m,signer,family.player,options);
+ assert.equal(rounds,1,'fresh saved grant needs one canonical contract round');assert.equal(first.nonce,0n);
+ nonce=1n;rounds=0;const next=await preparePoolChallenge(client,m,signer,family.player,options);
+ assert.equal(rounds,1);assert.equal(next.nonce,1n);
+ // A lost submission or another tab makes a hint stale. Actual chain nonce,
+ // actual digest and signature remain mandatory; no inferred increment wins.
+ nonce=9n;rounds=0;const recovered=await preparePoolChallenge(client,m,signer,family.player,options);
+ assert.equal(rounds,2);assert.equal(recovered.nonce,9n);
+ const decoded=decodeFunctionData({abi:agentChallengesAbi,data:recovered.data});assert.equal(decoded.functionName,'command');
+ if(decoded.functionName!=='command')throw Error();assert.equal(decoded.args[5],9n);
+ const before=signed;nonce=10n;wrongDigest=true;
+ await assert.rejects(preparePoolChallenge(client,m,signer,family.player,options),/domain differs/);assert.equal(signed,before);
+});
+
 test('paced browser challenge uses three encoded canonical rounds and fails closed on a rejected batch member',async()=>{
  const key=privateKeyToAccount(generatePrivateKey()),family={player:addr(99),key:key.address,issuedAt:50n,expires:250n,revision:0n};
  const grant=grantHash(family),hash=`0x${'bc'.repeat(32)}` as Hex;let failed=false,signed=0,pending=0n;
@@ -63,7 +93,7 @@ test('paced browser challenge uses three encoded canonical rounds and fails clos
  failed=false;rounds.length=0;
  const saved={agent:addr(20),mode:1 as const,expectedFamily:family,checkPending:true};
  await preparePoolChallenge(client,five,signer,family.player,saved);
- assert.deepEqual(rounds,[['grantOf','count','pending','grantDigest','nonces'],['digest']]);assert.equal(signed,2);
+ assert.deepEqual(rounds,[['grantOf','count','pending','grantDigest','nonces','digest'],['digest']]);assert.equal(signed,2);
  pending=77n;rounds.length=0;
  await assert.rejects(preparePoolChallenge(client,five,signer,family.player,saved),(e:any)=>e.code==='POOL_CHALLENGE_PENDING'&&e.id===77n);
  assert.equal(rounds.length,1);assert.equal(signed,2,'An existing request is resumed without a new signature');
