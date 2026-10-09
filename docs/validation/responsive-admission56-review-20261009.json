@@ -1,0 +1,55 @@
+{
+  "at": "2026-10-09T09:25:39.098840+00:00",
+  "source": "f82eb25766ac2d5752c3fa14ff7c8c0bacc221bb",
+  "passed": true,
+  "productionLatencyPassed": false,
+  "scope": "Candidate code review and isolated regression qualification; hosted admission target still pending.",
+  "changes": [
+    "Overlapping validations join within the original oldest durable one-second deadline; no signer lock or nonce is held.",
+    "Share only unfinished canonical configuration reads; fresh observations after completion, rejection and reorganization."
+  ],
+  "preserved": [
+    "Same signer and PostgreSQL advisory lock",
+    "Durable operation and signed transaction journals",
+    "Identical rebroadcast of uncertain transactions",
+    "No cached completed admission authority",
+    "No contract, engine physics, delegation, web or financial change"
+  ],
+  "regressions": {
+    "baselineLateIntakeFailures": 2,
+    "baselineDuplicateConfigFailure": 1,
+    "focused": 38,
+    "fullTypeScript": 1226,
+    "rootTypeScript": true,
+    "linuxImageTests": 34,
+    "realPostgreSQL": {
+      "passed": true,
+      "kind": "isolated PostgreSQL and deterministic chain transport",
+      "intents": 16,
+      "nonces": 4,
+      "groups": 4,
+      "lateArrivalMs": 150,
+      "concurrentIntakeDelaysMs": [
+        20,
+        220,
+        420,
+        620
+      ],
+      "crossDatabaseCrash": true,
+      "identicalResend": true,
+      "unsigned429": true,
+      "restart": true,
+      "productionTransactions": 0
+    },
+    "oldImageExpectedFailure": {
+      "expectedRegressionFailure": true
+    }
+  },
+  "evidence": {
+    "sponsor-intake56-baseline.log": "7c03717016e0fe76b4a5ca380f0c489b1c73241e310b397f47f9205a0b63b447",
+    "config-intake56-baseline.log": "2661a9611764dbeb2f8ac3c9824189efeedb38c0a0a77dbe842b6edef913f82a",
+    "intake56-focused.log": "cae2dcad9c90f89f7b86a2ba088e50a777a64268ca6eead899b20d91d8e17165",
+    "intake56-full-tests.log": "96729e98fd51750c5ce1d54b5e81935f322bfb0841740680f9b3bbdbfebc982d",
+    "build-sponsor-56.json": "5fe8d18249d49edb947f7ccf406f1ea5b0ba037d4964b15391138ecdcf9bf945"
+  }
+}

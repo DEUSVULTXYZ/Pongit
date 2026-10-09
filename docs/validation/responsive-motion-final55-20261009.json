@@ -1,0 +1,473 @@
+{
+  "at": "2026-10-09T08:58:41.679Z",
+  "passed": true,
+  "releaseComplete": false,
+  "web": "1c6dd1d4857057e84176ddb5029bf092f13f2f91",
+  "engine": "1f06d83e430b466017f59eac04cc8eb80c1084ba",
+  "canonicalBlock": "69498314",
+  "canonicalHash": "0x4f9c8ce68913b23822348f5f3cf36e8877688564ed1b0a4b4ddc3d018d4069b0",
+  "physicalPhone": false,
+  "physicalPasskey": false,
+  "scope": "Visible Chrome/Edge public catalogue, actual keyboard and CDP touch, virtual Mera PRF. Independent observers and natural published results. Published is not final. Earlier failed reports preserved.",
+  "runs": [
+    {
+      "run": "r2final55b1",
+      "mode": 0,
+      "browser": "msedge",
+      "viewport": [
+        1440,
+        900
+      ],
+      "touch": false,
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1460"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+          "epoch": "1",
+          "id": "1460"
+        },
+        "a": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "hash": "0xce4949c4c7b9e4b819f68bd460cd46b9153dfb3582d3c33dc2d821b1aefa75df",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "45314410",
+        "finality": false
+      },
+      "admissionMs": 5465,
+      "localP95Ms": 15,
+      "sendP95Ms": 16,
+      "transportP95Ms": 14.404199999997218,
+      "peerP95Ms": 10.00048828125,
+      "held": {
+        "samples": 111,
+        "p05Ratio": 0.999999999999998,
+        "p95Ratio": 1.000000000000001,
+        "minRatio": 0.9999999999999962,
+        "maxRatio": 1.0000000000000022,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 18,
+        "p95": 0,
+        "max": 0
+      },
+      "metricBasis": "Actual final55 frame, keyboard/touch and exact receipt evidence; original reports remain unchanged.",
+      "confirmedPaddleContacts": 3,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 100.40000000000146,
+      "maxObserverHoldMs": 66.19999999999709,
+      "frameP95Ms": 17.099999999998545,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "report": "artifacts/qualification/catalogue-r2final55b1/report.json",
+      "sha256": "2ae71a8fb10569797f570a419f74075eaabc460c9e9bd8b188f55d35d6d7710a",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55b1\\video\\page@32d80b92d4285ee4078057c2abfe9ef2.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55b1\\observer-video\\page@6a269593b662e1cb84376ad31a4a4adf.webm"
+    },
+    {
+      "run": "r2final55b2",
+      "mode": 0,
+      "browser": "chrome",
+      "viewport": [
+        1366,
+        768
+      ],
+      "touch": false,
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1462"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+          "epoch": "1",
+          "id": "1462"
+        },
+        "a": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "hash": "0xaeb8154e118a926c8e1b23314452e1077ff4feb15cc6b265028672106c77ef51",
+        "mode": 0,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 4,
+        "elapsedUs": "58530077",
+        "finality": false
+      },
+      "admissionMs": 6107,
+      "localP95Ms": 14.300000190734863,
+      "sendP95Ms": 15,
+      "transportP95Ms": 13.633599999986473,
+      "peerP95Ms": 10.17529296875,
+      "held": {
+        "samples": 147,
+        "p05Ratio": 0.999999999999999,
+        "p95Ratio": 1.000000000000001,
+        "minRatio": 0.9999999999999981,
+        "maxRatio": 1.000000000000002,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 29,
+        "p95": 0,
+        "max": 0
+      },
+      "metricBasis": "Actual final55 frame, keyboard/touch and exact receipt evidence; original reports remain unchanged.",
+      "confirmedPaddleContacts": 7,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 83.5,
+      "maxObserverHoldMs": 66.59999999999854,
+      "frameP95Ms": 17.099999999998545,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-r2final55b2/report.json",
+      "sha256": "975147ef1a4b18063a1614a8060c78aa84601841bfb9e04ec780d7f3aa9d9ed2",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55b2\\video\\page@4389fb045ba32025facf24d781c16340.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55b2\\observer-video\\page@f3a2ff3eb30e394b4403e616f9a5cb86.webm"
+    },
+    {
+      "run": "r2final55c1",
+      "mode": 1,
+      "browser": "chrome",
+      "viewport": [
+        1440,
+        900
+      ],
+      "touch": false,
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "1463"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+          "epoch": "1",
+          "id": "1463"
+        },
+        "a": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "hash": "0x2d40bce3a0b9482ac6496c54674160a6e2b0871d59c9c2c0480f55057840e15e",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "69336743",
+        "finality": false
+      },
+      "admissionMs": 6617,
+      "localP95Ms": 15.700000047683716,
+      "sendP95Ms": 16,
+      "transportP95Ms": 14.388699999995879,
+      "peerP95Ms": 12.63134765625,
+      "held": {
+        "samples": 170,
+        "p05Ratio": 0.9999999999999986,
+        "p95Ratio": 1.0000000000000018,
+        "minRatio": 0.999999999999998,
+        "maxRatio": 1.0000000000000042,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 27,
+        "p95": 0,
+        "max": 0
+      },
+      "metricBasis": "Actual final55 frame, keyboard/touch and exact receipt evidence; original reports remain unchanged.",
+      "confirmedPaddleContacts": 10,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 82.89999999999782,
+      "maxObserverHoldMs": 66.69999999999709,
+      "frameP95Ms": 17,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-r2final55c1/report.json",
+      "sha256": "03140ab6fd8376b8617130381b4efb4882201e2f642861c52627daa9cc9f7751",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c1\\video\\page@2f0fd30d1b47946c81b24c1632487898.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c1\\observer-video\\page@232f7f5fd52edc93996b49c8268581e6.webm"
+    },
+    {
+      "run": "r2final55c2",
+      "mode": 1,
+      "browser": "msedge",
+      "viewport": [
+        1366,
+        768
+      ],
+      "touch": false,
+      "ref": {
+        "app": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+        "epoch": "1",
+        "id": "1465"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0xcC4fBF1DF9B4bF61353660c40e8f05C5135C3b23",
+          "epoch": "1",
+          "id": "1465"
+        },
+        "a": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "hash": "0x55449fe0e68f0a1e6dfe75bac39e84e2c3ba8f4676d9cf469a0dbe2c76846d80",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 6,
+        "scoreB": 7,
+        "elapsedUs": "56908155",
+        "finality": false
+      },
+      "admissionMs": 5748,
+      "localP95Ms": 16,
+      "sendP95Ms": 15,
+      "transportP95Ms": 14.496799999993527,
+      "peerP95Ms": 13.444091796875,
+      "held": {
+        "samples": 151,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.0000000000000018,
+        "minRatio": 0.9999999999999966,
+        "maxRatio": 1.0000000000000029,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 25,
+        "p95": 0,
+        "max": 0
+      },
+      "metricBasis": "Actual final55 frame, keyboard/touch and exact receipt evidence; original reports remain unchanged.",
+      "confirmedPaddleContacts": 5,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 116.40000000000146,
+      "maxObserverHoldMs": 99.79999999999927,
+      "frameP95Ms": 17.099999999998545,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-r2final55c2/report.json",
+      "sha256": "cc4d593d6e7d20b0d33b62879514f9d8eaecd82a8bb86afc99dd2032057e4176",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c2\\video\\page@2d00536f977b93e8df98b77ca8a1b019.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c2\\observer-video\\page@1291b99f616808386d3b092308d1b3d1.webm"
+    },
+    {
+      "run": "r2final55c3",
+      "mode": 1,
+      "browser": "chrome",
+      "viewport": [
+        360,
+        844
+      ],
+      "touch": true,
+      "ref": {
+        "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+        "epoch": "1",
+        "id": "1466"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+          "epoch": "1",
+          "id": "1466"
+        },
+        "a": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "hash": "0x82fc84cf2ef1ef83952ce1e114194c7bcffa7a897b2d60c9fbc184affe09e115",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 2,
+        "elapsedUs": "57582157",
+        "finality": false
+      },
+      "admissionMs": 5564,
+      "localP95Ms": 16.59999990463257,
+      "sendP95Ms": 18,
+      "transportP95Ms": 17.922500000000582,
+      "peerP95Ms": 18.318115234375,
+      "held": {
+        "samples": 109,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.000000000000001,
+        "minRatio": 0.999999999999998,
+        "maxRatio": 1.0000000000000027,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 78,
+        "p95": 0,
+        "max": 0.27029999999999177
+      },
+      "metricBasis": "Actual final55 frame, keyboard/touch and exact receipt evidence; original reports remain unchanged.",
+      "confirmedPaddleContacts": 8,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 33.80000000000291,
+      "maxObserverHoldMs": 33.5,
+      "frameP95Ms": 17.09999999999127,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-r2final55c3/report.json",
+      "sha256": "a8eb8bced0831e287f62ab26ce4ff88e85022cde7802149c548a6aefd2b4d891",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c3\\video\\page@9a5275c1cb9c1846f5979fda1fbfb69e.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c3\\observer-video\\page@1d095b56d6fec9286094c22bd091e493.webm"
+    },
+    {
+      "run": "r2final55c4",
+      "mode": 1,
+      "browser": "msedge",
+      "viewport": [
+        390,
+        844
+      ],
+      "touch": true,
+      "ref": {
+        "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+        "epoch": "1",
+        "id": "1467"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+          "epoch": "1",
+          "id": "1467"
+        },
+        "a": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "hash": "0x4ae8ada3ae0118e37b867ca9f72fffcfb023aa3764141e716683c5731f502bd6",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 7,
+        "scoreB": 6,
+        "elapsedUs": "86447783",
+        "finality": false
+      },
+      "admissionMs": 5590,
+      "localP95Ms": 16.700000047683716,
+      "sendP95Ms": 19,
+      "transportP95Ms": 18.56380000000354,
+      "peerP95Ms": 18.30712890625,
+      "held": {
+        "samples": 182,
+        "p05Ratio": 0.9999999999999983,
+        "p95Ratio": 1.000000000000001,
+        "minRatio": 0.999999999999997,
+        "maxRatio": 1.000000000000003,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 119,
+        "p95": 0,
+        "max": 0.6599999999999682
+      },
+      "metricBasis": "Actual final55 frame, keyboard/touch and exact receipt evidence; original reports remain unchanged.",
+      "confirmedPaddleContacts": 12,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 83.69999999999709,
+      "maxObserverHoldMs": 33.10000000000582,
+      "frameP95Ms": 17.09999999999127,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-r2final55c4/report.json",
+      "sha256": "bfe5f0df122b106719af5c55efb2a73fb587f02c2be4f1a7a58564a976af1045",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c4\\video\\page@c25a4c47f6d0276aa46d00e6df342564.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c4\\observer-video\\page@3b06b2797824726cad6b96ee095a3747.webm"
+    },
+    {
+      "run": "r2final55c5",
+      "mode": 1,
+      "browser": "chrome",
+      "viewport": [
+        768,
+        900
+      ],
+      "touch": false,
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1469"
+      },
+      "naturalResult": {
+        "ref": {
+          "chainId": "10143",
+          "arena": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+          "epoch": "1",
+          "id": "1469"
+        },
+        "a": "0x507b78Fb24Fe89248eefa6E2319fa4e073AD63C3",
+        "b": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "winner": "0x18368267bdfFf6C2b018bdF85806c6635BfD16ca",
+        "hash": "0x66d74b621d7d7c6e866ccebb038cc08348d847bd421662ec5d8b885a4ab06952",
+        "mode": 1,
+        "status": 3,
+        "scoreA": 5,
+        "scoreB": 7,
+        "elapsedUs": "54210238",
+        "finality": false
+      },
+      "admissionMs": 5008,
+      "localP95Ms": 14.599999904632568,
+      "sendP95Ms": 15,
+      "transportP95Ms": 13.845200000003388,
+      "peerP95Ms": 12.153564453125,
+      "held": {
+        "samples": 151,
+        "p05Ratio": 0.9999999999999981,
+        "p95Ratio": 1.000000000000001,
+        "minRatio": 0.9999999999999969,
+        "maxRatio": 1.0000000000000027,
+        "outsideTarget": 0,
+        "outliers": []
+      },
+      "stopping": {
+        "samples": 27,
+        "p95": 0,
+        "max": 0
+      },
+      "metricBasis": "Actual final55 frame, keyboard/touch and exact receipt evidence; original reports remain unchanged.",
+      "confirmedPaddleContacts": 6,
+      "confirmedShields": 0,
+      "maxPlayerHoldMs": 83.40000000000146,
+      "maxObserverHoldMs": 33.69999999999709,
+      "frameP95Ms": 17.099999999998545,
+      "contractPauseMs": 0,
+      "resyncs": 0,
+      "passkeyAssertions": 0,
+      "report": "artifacts/qualification/catalogue-r2final55c5/report.json",
+      "sha256": "dd4d3f1deaa18f7f658599fdcd8211ed7835b9305232fb4ad39be2a0e5f3fd12",
+      "video": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c5\\video\\page@ed0a6466476c6314ecdece644030b698.webm",
+      "observerVideo": "C:\\Users\\wwwle\\.codex\\worktrees\\pongit-arcade-release-20260919\\artifacts\\qualification\\catalogue-r2final55c5\\observer-video\\page@0a780e5deb7699bc6bd9eab8ed0703f8.webm"
+    }
+  ],
+  "remaining": [
+    "Prospective concurrent admission cohort",
+    "Final current-product fault follow-up",
+    "Final unchanged all-role 24-hour qualification"
+  ]
+}
