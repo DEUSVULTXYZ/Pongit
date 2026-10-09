@@ -13,7 +13,7 @@ $jobs=@(
  @{Run='r2final41c5';Browser='chrome';Width=768;GameMode=1}
 )
 $deadline=(Get-Date).ToUniversalTime().AddMinutes(80)
-$state=@{startedAt=(Get-Date -AsUTC -Format o);deadline=$deadline.ToString('o');web='1bbb9de';reader='1bbb9de';rpc='6654391';passed=$false;completed=@();active=$null}
+$state=@{startedAt=(Get-Date -AsUTC -Format o);deadline=$deadline.ToString('o');web='3070da6';reader='cf0b458';rpc='2f344cd';passed=$false;completed=@();active=$null}
 $restore=''
 $failures=@()
 try{
