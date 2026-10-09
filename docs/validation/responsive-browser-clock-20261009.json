@@ -1,0 +1,179 @@
+{
+  "at": "2026-10-09T00:23:47.181944+00:00",
+  "runs": [
+    {
+      "run": "r2final38c1",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+        "epoch": "1",
+        "id": "1235"
+      },
+      "naturalEnded": true,
+      "admissionMs": 9760,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "input": {
+        "samples": 125,
+        "p95Ms": 15.100000143051147
+      }
+    },
+    {
+      "run": "r2final38c2",
+      "passed": true,
+      "error": null,
+      "ref": {
+        "app": "0x0dcFDd467f7d3D80194897429E85184f46F43e98",
+        "epoch": "1",
+        "id": "1236"
+      },
+      "naturalEnded": true,
+      "admissionMs": 7014,
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "input": {
+        "samples": 177,
+        "p95Ms": 15.600000143051147
+      }
+    },
+    {
+      "run": "r2final38c3",
+      "passed": false,
+      "error": "A required performance gate failed; inspect admission/render measurements",
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1237"
+      },
+      "naturalEnded": true,
+      "admissionMs": 8360,
+      "performance": {
+        "admission": false,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": {
+        "noPause": true,
+        "noResume": true,
+        "noResync": true,
+        "peer": true,
+        "player": true,
+        "spectator": true,
+        "executionClock": true
+      },
+      "input": {
+        "samples": 99,
+        "p95Ms": 16.5
+      }
+    },
+    {
+      "run": "r2final38c4",
+      "passed": false,
+      "error": "At least one command submission was rejected without prior exact successful receipt",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1238"
+      },
+      "naturalEnded": true,
+      "admissionMs": 6833,
+      "performance": {
+        "admission": true,
+        "localInput": true,
+        "confirmedInput": true,
+        "player": true,
+        "spectator": true
+      },
+      "naturalGates": null,
+      "input": {
+        "samples": 207,
+        "p95Ms": 16.600000143051147
+      }
+    }
+  ],
+  "oldReportsUnchanged": true,
+  "measurementChange": "Native full HTTP response-body and WebSocket error timestamps replace delayed cross-process callbacks for exact-hash duplicate ordering. Conservative aligned-clock bounds; absent timing still fails.",
+  "tests": {
+    "fullTypeScriptBeforeFinalClockBound": 1168,
+    "focusedAfterClockBound": 8,
+    "typecheck": "passed"
+  },
+  "readerCandidate": {
+    "source": "57ff565",
+    "image": "5c035819242e6a225b1b1f244700441427588669919bab7d6cb7e06c0b504b91",
+    "containerTests": "passed",
+    "deployed": true,
+    "cutover": {
+      "startedAt": "2026-10-09T00:22:59.672109+00:00",
+      "deadline": 1791506099.6721277,
+      "passed": true,
+      "stage": "complete",
+      "previous": "sha256:1505bf6eed901a13c122d383ec22c9d0e2336ff72f249e93ca473bdb5010edbf",
+      "image": "sha256:5c035819242e6a225b1b1f244700441427588669919bab7d6cb7e06c0b504b91",
+      "backupManifest": "30e951f2316d1631c119f7be35e4856370352f0d59c92bca8ac71a8d2866ba31",
+      "lastCheck": {
+        "block": "69396856",
+        "hash": "0x9e5c0fb19500f7d0310919e020d54c7616f931f11af46a56cc6c4a7bd3735ef3",
+        "idle": true,
+        "humanSlots": [
+          "0",
+          "0"
+        ]
+      },
+      "idle": {
+        "block": "69396892",
+        "hash": "0x724ad883df1ac0482e8dbd2ec070273ab9d635cbe8b0dedab05c49f6d45455f0",
+        "idle": true,
+        "humanSlots": [
+          "0",
+          "0"
+        ]
+      },
+      "started": "2026-10-09T00:23:18.313127185Z",
+      "finishedAt": "2026-10-09T00:23:25.330576+00:00"
+    }
+  },
+  "offVpsBackup": {
+    "label": "backup-config-39",
+    "files": 6,
+    "bytes": 79780724,
+    "manifestSha256": "30e951f2316d1631c119f7be35e4856370352f0d59c92bca8ac71a8d2866ba31"
+  },
+  "offload": {
+    "files": 31,
+    "bytes": 482130269,
+    "onlyVerifiedRemoteDuplicates": true
+  },
+  "final24Hours": false
+}

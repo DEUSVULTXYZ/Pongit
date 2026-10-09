@@ -18,6 +18,7 @@ import {assertPrivateSyncBrowserTarget,privateSyncRotation} from './private-sync
 import {realBackgroundBrowser,recordBackgroundPage} from './real-background-browser';
 import {browserQualificationBarrier} from './browser-qualification-barrier';
 import {deliveryEvidence} from './browser-delivery-evidence';
+import {browserResponseTiming,browserSocketErrorTiming} from './browser-response-timing';
 
 assert.equal(process.env.PONG_CATALOGUE_MATCH,'authorized-testnet');
 const run=process.env.PONG_CATALOGUE_RUN!,channel=process.env.BROWSER_CHANNEL??'chrome';
@@ -210,8 +211,22 @@ if(restored)await context.addInitScript(session=>{
 },restored.session);
 page.setDefaultTimeout(60000);
 const cdp=await context.newCDPSession(page);await cdp.send('WebAuthn.enable');
+await cdp.send('Network.enable');
+const socketEpochs=new Map<string,number>(),socketCommands=new Map<string,string>();
+report.socketNativeTimings=[];
+cdp.on('Network.webSocketWillSendHandshakeRequest',event=>socketEpochs.set(event.requestId,event.wallTime*1000-event.timestamp*1000));
+cdp.on('Network.webSocketFrameSent',event=>{try{
+ const frame=JSON.parse(event.response.payloadData);
+ if(frame.method==='interlude_sendTransaction')socketCommands.set(`${event.requestId}:${frame.id}`,keccak256(frame.params[0]));
+}catch{/* Never retain signed frames. */}});
+cdp.on('Network.webSocketFrameReceived',event=>{try{
+ const frame=JSON.parse(event.response.payloadData),key=`${event.requestId}:${frame.id}`,hash=socketCommands.get(key),epoch=socketEpochs.get(event.requestId);
+ if(!hash||epoch===undefined)return;socketCommands.delete(key);
+ if(frame.error)report.socketNativeTimings.push({hash,error:true,observedAt:epoch+event.timestamp*1000,
+  callbackObservedAt:performance.timeOrigin+performance.now(),basis:'cdp-websocket'});
+}catch{/* Only a public hash and native response time leave memory. */}});
 if(receiptProbe){
- await cdp.send('Network.enable');report.connectionDiagnostics=[];
+ report.connectionDiagnostics=[];
  cdp.on('Network.responseReceived',event=>{
   const response=event.response;
   if(!new URL(response.url).hostname.endsWith('.fly.dev')||!response.timing)return;
@@ -387,12 +402,15 @@ page.on('response',async response=>{try{
  }
  if(!['interlude_sendTransaction','interlude_getTransactionReceipt','eth_getTransactionReceipt'].includes(body.method))return;
  const reply=await response.json();
+ await response.finished();
+ const callbackObservedAt=performance.timeOrigin+performance.now();
+ const wire=browserResponseTiming(request.timing(),callbackObservedAt,report.clockAlignment?.player);
  if(body.method==='interlude_sendTransaction'){
   // Keep only the public transaction identifier, including on rejected HTTP
   // fallback copies. Never persist the signed request used to derive it.
   const expectedHash=typeof body.params?.[0]==='string'&&/^0x[\da-f]+$/i.test(body.params[0])?keccak256(body.params[0] as `0x${string}`):undefined;
-  const began=starts.get(request)??performance.now();report.submissions.push({at:new Date().toISOString(),observedAt:performance.timeOrigin+performance.now(),action:actions.get(request)??'unknown',
-   ms:performance.now()-began,http:response.status(),hash:expectedHash,error:!!reply.error,
+  const began=starts.get(request)??performance.now();report.submissions.push({at:new Date().toISOString(),observedAt:wire?.confirmedAt??callbackObservedAt,callbackObservedAt,action:actions.get(request)??'unknown',
+   ms:wire?.ms??performance.now()-began,http:response.status(),hash:expectedHash,error:!!reply.error,
    ...(reply.error?{message:clean(reply.error)}:{}),
    ...(Number.isSafeInteger(reply.error?.code)?{rpcErrorCode:reply.error.code}:{}),
    ...(publicationUnavailable(reply.error)?{publication:publicationFailureDetails(reply.error)}:{})});
@@ -402,12 +420,13 @@ page.on('response',async response=>{try{
    // Interlude returns the executed receipt in the send response. Counting only
    // later receipt polling silently omitted every ordinary successful control.
    if(reply.result?.transactionHash&&['0x1','success'].includes(reply.result.status)&&!receipts.has(hash.toLowerCase())){
-    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash.toLowerCase())});
+    receipts.add(hash.toLowerCase());report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:callbackObservedAt,...wire,callbackObservedAt,status:reply.result.status,...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash.toLowerCase())});
    }
   }
  }else if(reply.result){
   const hash=String(reply.result.transactionHash??body.params?.[0]??'').toLowerCase(),began=submitted.get(hash);
-  if(began!==undefined&&!receipts.has(hash)){receipts.add(hash);report.receipts.push({ms:performance.now()-began,sentAt:performance.timeOrigin+began,confirmedAt:performance.timeOrigin+performance.now(),status:reply.result.status,...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash)});}
+  if(began!==undefined&&!receipts.has(hash)){const sentAt=performance.timeOrigin+began,confirmedAt=wire?.confirmedAt??callbackObservedAt;
+   receipts.add(hash);report.receipts.push({ms:confirmedAt-sentAt,sentAt,confirmedAt,receiptWire:wire,callbackObservedAt,status:reply.result.status,...receiptMeta(reply.result),side:receiptSide(reply.result),...controls.get(hash)});}
  }
  }catch{/* No request bodies or private authorization data are logged. */}});
 await context.addInitScript(()=>{
@@ -722,6 +741,16 @@ try{
  assert(report.countdownComplete,'Real launch countdown incomplete');
  const requiredControls=naturalMatch||cadenceProbe?20:100;
  assert(report.submissions.length>=requiredControls,'Insufficient command submissions');
+ // Cross-process callback queues can reverse HTTP/WS observation order. Use
+ // the browser's native network clock for duplicates; without it, stay failed.
+ for(const submission of report.submissions){if(submission.transport!=='websocket'||!submission.error)continue;
+  const native=report.socketNativeTimings.find((sample:any)=>sample.hash===submission.hash);
+  submission.callbackObservedAt=submission.observedAt;
+  const aligned=native?browserSocketErrorTiming(native.observedAt,report.clockAlignment?.player):undefined;
+  submission.observedAt=aligned??NaN;
+  submission.at=aligned!==undefined?new Date(aligned).toISOString():NaN;
+  submission.observationBasis=aligned!==undefined?'cdp-websocket':'unverified-socket-clock';
+ }
  report.deliveryEvidence=deliveryEvidence(report.submissions,report.receipts);
  assert(report.deliveryEvidence.unresolved.length===0,'At least one command submission was rejected without prior exact successful receipt');
  assert(local.length>=(naturalMatch||cadenceProbe?15:50)&&report.input.p95Ms<=50,'Local movement latency exceeded 50 ms');
