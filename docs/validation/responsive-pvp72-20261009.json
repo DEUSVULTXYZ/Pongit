@@ -1,0 +1,98 @@
+{
+  "scope": "Natural Chrome Classic PvP on web66; immutable failed report retained",
+  "reportSha256": "5745f659efb7d47b53cb48b2eaa51f1747a9a5426f1bea4d7a3cd768238e58b5",
+  "finishedAt": "2026-10-09T14:00:06.123Z",
+  "gates": {
+    "natural": true,
+    "render": false,
+    "local": true,
+    "noPause": true,
+    "peer": true,
+    "commands": true
+  },
+  "integrityGates": [
+    {
+      "held": true,
+      "release": false,
+      "collisions": true,
+      "scenarios": true
+    },
+    {
+      "held": true,
+      "release": false,
+      "collisions": true,
+      "scenarios": true
+    }
+  ],
+  "peer": {
+    "samples": 400,
+    "p95Ms": 16.533203125,
+    "clock": "same Playwright host",
+    "sendP95Ms": 17.188232421875
+  },
+  "players": [
+    {
+      "paddleJumps": [
+        {
+          "at": 91049.80000019073,
+          "side": 0,
+          "dt": 17.399999856948853,
+          "d": 40.200903071526,
+          "limit": 9.307999939918517,
+          "from": 445.799999928474,
+          "to": 486.000903,
+          "observedAt": 1791554372296
+        },
+        {
+          "at": 91099.60000014305,
+          "side": 0,
+          "dt": 16.399999856948853,
+          "d": 38.700903071526,
+          "limit": 8.887999939918519,
+          "from": 486.000903,
+          "to": 447.299999928474,
+          "observedAt": 1791554372424
+        },
+        {
+          "at": 93716.5,
+          "side": 0,
+          "dt": 16.799999952316284,
+          "d": 22.661032014305505,
+          "limit": 9.055999979972839,
+          "from": 83.3399999856945,
+          "to": 106.00103200000001,
+          "observedAt": 1791554374941
+        },
+        {
+          "at": 93766.10000014305,
+          "side": 0,
+          "dt": 14.599999904632568,
+          "d": 21.161032014305505,
+          "limit": 8.131999959945679,
+          "from": 106.00103200000001,
+          "to": 84.8399999856945,
+          "observedAt": 1791554375090
+        }
+      ],
+      "maxHoldMs": 183.40000009536743,
+      "release": {
+        "samples": 10,
+        "p95Drift": 22.24103205722085,
+        "maxDrift": 38.700903071526
+      },
+      "crossings": 0
+    },
+    {
+      "paddleJumps": [],
+      "maxHoldMs": 300.2999999523163,
+      "release": {
+        "samples": 12,
+        "p95Drift": 4.139999985694885,
+        "maxDrift": 4.889999985694885
+      },
+      "crossings": 0
+    }
+  ],
+  "cause": "IndependentHub did not record monotonic localIntent, supply localControls, or subscribe Court to immediate input paints. It still used frame-rounded fallback integration; the agents client had all three connections. The accumulated local/live position error forced large contact-compatibility corrections.",
+  "correction": "Connect the existing per-match participant input ledger to all three PvP presentation hooks. No command, nonce, physics or contract changes."
+}
