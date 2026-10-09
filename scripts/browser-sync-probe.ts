@@ -173,6 +173,7 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
  const filling=data.frames.filter(f=>f.sourceT>0&&f.buffering);
  const paddleJumps:any[]=[],geometryClamps:any[]=[],last=new Map<number,any>();
  const byObservation=new Map(data.snapshots.map(s=>[s.observedAt,s]));
+ const snapshotIndex=new Map(data.snapshots.map((s,i)=>[s.observedAt,i]));
  for(const b of data.paddles??[]){
   const a=last.get(b.side);last.set(b.side,b);if(!a||a.finished||b.finished||a.rally!==b.rally)continue;
   const dt=b.at-a.at;if(dt<=0||dt>50)continue;
@@ -191,7 +192,31 @@ export function syncMetrics(data:{frames:any[];snapshots:any[];paddles?:any[];wa
    // An enlarged paddle at the wall must move its centre to stay in bounds.
    // Classify only the exact live-confirmed clamp, never any jump merely
    // coinciding with an effect or a different sprite height.
-   if(b.height>a.height&&Math.abs(b.height/2-confirmedHalf)<.001&&Math.abs(clamped-a.y)>.001
+   let scheduledConfirmation:any;
+   if(b.height>a.height&&snapshot?.chaos){
+    const raw=snapshot.chaos.physics,t=BigInt(raw.t),index=snapshotIndex.get(b.observedAt)!;
+    // The mirror may cross an already known expiry before the next live
+    // frame. Accept only the exact scheduled size/clamp, then require a live
+    // confirmation within 100 ms. Unknown effects or unconfirmed predictions
+    // remain failures; this is not a general exemption for Chaos jumps.
+    for(const effect of raw.effects){
+     const end=BigInt(effect.expiresAt)*1000n;if(!effect.id||end<=t||end>t+100000n)continue;
+     const predicted=eventPaddles({...raw,t:end,paddleSpeed:rulesPaddleSpeed(snapshot.rulesVersion)});
+     const half=Number(chaosOuterHalf(b.side===0?predicted.heightA:predicted.heightB,b.side===0?predicted.splitA:predicted.splitB))/1e6;
+     const expected=Math.max(half,Math.min(576-half,a.y));
+     if(Math.abs(b.height/2-half)>.001||Math.abs(b.y-expected)>.001||Math.abs(expected-a.y)<=.001)continue;
+     const next=data.snapshots.slice(index+1,index+5).find(s=>s.at>=b.paintedAt&&s.at-b.paintedAt<=100&&BigInt(s.state.t)>=end);
+     if(!next?.chaos||next.rulesVersion!==snapshot.rulesVersion||next.state.id!==snapshot.state.id
+      ||next.state.scoreA!==snapshot.state.scoreA||next.state.scoreB!==snapshot.state.scoreB)continue;
+     if(next.chaos.physics.effects.some((e:any)=>e.id&&!raw.effects.some((old:any)=>old.id===e.id&&old.serial===e.serial&&old.startsAt===e.startsAt&&old.expiresAt===e.expiresAt)))continue;
+     const actual=eventPaddles({...next.chaos.physics,t:BigInt(next.chaos.physics.t),paddleSpeed:rulesPaddleSpeed(next.rulesVersion)});
+     const actualHalf=Number(chaosOuterHalf(b.side===0?actual.heightA:actual.heightB,b.side===0?actual.splitA:actual.splitB))/1e6;
+     if(Math.abs(actualHalf-half)<.001&&Math.abs(Number(next.state[b.side===0?'left':'right'])/1e6-expected)<.001){scheduledConfirmation={effect:effect.id,expiresAt:effect.expiresAt,confirmedAt:next.at,delayMs:next.at-b.paintedAt};break;}
+    }
+   }
+   if(scheduledConfirmation){
+    geometryClamps.push({at:b.at,side:b.side,from:a.y,to:b.y,oldHeight:a.height,newHeight:b.height,observedAt:b.observedAt,scheduledConfirmation});
+   }else if(b.height>a.height&&Math.abs(b.height/2-confirmedHalf)<.001&&Math.abs(clamped-a.y)>.001
     &&Math.abs(b.y-clamped)<.001&&Math.abs(liveCenter-clamped)<.001){
     geometryClamps.push({at:b.at,side:b.side,from:a.y,to:b.y,oldHeight:a.height,newHeight:b.height,observedAt:b.observedAt});
    }else paddleJumps.push({at:b.at,side:b.side,dt,d,limit,from:a.y,to:b.y,observedAt:b.observedAt});

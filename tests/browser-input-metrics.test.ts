@@ -59,6 +59,23 @@ test('confirmed input includes the unsent queue and both sides of F5',()=>{
    {sentAt:1230,confirmedAt:1250,direction:1,sequence:'3'}]);
  assert.equal(value.samples,3);assert.equal(value.maxMs,515);assert.deepEqual(value.mismatches,[]);
 });
+
+test('1322 known small-paddle expiry needs exact geometry and prompt live confirmation',()=>{
+ const none={id:0,target:0,remaining:0,serial:0,startsAt:0,expiresAt:0,variant:0};
+ const before={at:100,observedAt:100,rulesVersion:17,clock:'46490000',state:{id:'1322',t:'46490000',left:'38400000',scoreA:1,scoreB:2},
+  chaos:{physics:{t:'46490000',bettingA:96000000,bettingB:96000000,effects:[{...none,id:7,serial:3,startsAt:40500,expiresAt:46500},none]}}};
+ const after={...structuredClone(before),at:150,observedAt:150,state:{...before.state,t:'46540000',left:'48000000'},chaos:{physics:{...before.chaos.physics,t:'46540000',effects:[none,none]}}};
+ const d={frames:[],snapshots:[before,after],paddles:[{at:80,paintedAt:80,y:38.4,height:76.8,rally:'8',side:0,observedAt:100},
+  {at:97,paintedAt:100,y:48,height:96,rally:'8',side:0,observedAt:100}]};
+ const metrics=syncMetrics(d);assert.equal(metrics.paddleJumps.length,0);assert.equal(metrics.geometryClamps[0].scheduledConfirmation.delayMs,50);
+ for(const change of [
+  (x:any)=>x.snapshots.pop(),(x:any)=>x.snapshots[1].at=201,
+  (x:any)=>x.snapshots[1].state.left='47000000',(x:any)=>x.snapshots[1].state.id='other',
+  (x:any)=>x.paddles[1].y=55,(x:any)=>x.paddles[1].height=100,
+  (x:any)=>x.snapshots[0].chaos.physics.effects[0].expiresAt=47000,
+  (x:any)=>x.snapshots[1].chaos.physics.effects[1]={...none,id:4,serial:4,startsAt:46500,expiresAt:50000},
+ ]){const x=structuredClone(d);change(x);assert.equal(syncMetrics(x).paddleJumps.length,1);}
+});
 test('coalesced inputs measure the latest intention and flag obsolete directions',()=>{
  const intents=[{at:100,direction:-1},{at:120,direction:1}];
  const result=confirmedInputMetrics(intents,[{sentAt:10,confirmedAt:15,direction:0,sequence:'1'},

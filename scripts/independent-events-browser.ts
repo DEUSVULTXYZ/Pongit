@@ -217,6 +217,18 @@ try{
  }
  await pages[2].setViewportSize({width:1440,height:1000});
  if(saved.stage<1){for(let i=0;i<3;i++)await account(pages[i],i);saved.stage=1;await persist();report.checks.push('Three Mera accounts and root-signed unique profiles saved');}
+ // A separate root-signed funding ceremony is setup, not gameplay. Complete
+ // it before simultaneous admission so the spectator can observe countdown.
+ if(chaos&&!restore){
+  const spectator=pages[2];
+  await spectator.locator('.rooms-header-actions > button').last().click();
+  await spectator.getByRole('button',{name:'Wallet and payments',exact:true}).click();
+  await spectator.getByRole('button',{name:'Get test betting credit',exact:true}).click();
+  await until(async()=>await financialBase.readContract({address:manifest.vault,abi:vaultAbi,functionName:'balances',args:[saved.players[2].address]})>=6000000000000000n,'confirmed pre-admission betting credit',90000);
+  await until(()=>spectator.getByRole('button',{name:'Get test betting credit',exact:true}).isEnabled(),'credit ceremony completed');
+  await spectator.getByRole('button',{name:'Close Wallet and betting',exact:true}).click();await persist();
+  report.checks.push('Spectator test credit confirmed before admission; no financial ceremony during countdown');
+ }
  report.coordination=await browserQualificationBarrier(process.env.INDEPENDENT_TEST_RUN!);
  const a=pages[0],b=pages[1],spectator=pages[2];
  // The seven-way coordinator needs actual player readiness, not completion of
@@ -262,13 +274,6 @@ try{
    (async()=>{
     await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();
     await until(()=>spectator.getByRole('button',{name:'Members 3',exact:true}).isVisible(),'spectator joined');
-    // Fund while the players finish admission. A fast match can otherwise end
-    // between the credit ceremony and inclusion of the first actual bet.
-    await spectator.getByRole('button',{name:'Betting',exact:true}).click();
-    await spectator.getByRole('button',{name:'Get test betting credit',exact:true}).click();
-    await until(async()=>await financialBase.readContract({address:manifest.vault,abi:vaultAbi,functionName:'balances',args:[saved.players[2].address]})>0n,'confirmed betting credit',90000);
-    await until(()=>spectator.getByRole('button',{name:'Get test betting credit',exact:true}).isEnabled(),'credit ceremony completed');
-    await spectator.getByRole('button',{name:'Close Wallet and betting',exact:true}).click();
    })(),
   ]);await persist();
   await Promise.all([a,b,spectator].map(p=>p.locator('.rooms-canvas canvas').waitFor({timeout:720000})));
@@ -300,7 +305,9 @@ try{
   saved.stage=2;await persist();report.checks.push('Contract matchmaking, two consents and automatic hosted admission');
  }
  await until(()=>a.getByRole('button',{name:'Move up',exact:true}).isEnabled(),'contract countdown ended',720000);
- if(!restore){for(let i=0;i<3;i++)assert(report.countdown[i].includes('3')&&report.countdown[i].includes('2')&&report.countdown[i].includes('1'),`All three countdown digits missing on browser ${i}`);report.checks.push('Real three-second countdown on both players and spectator');}
+ if(!restore){report.countdownPassed=report.countdown.every((digits:string[])=>['3','2','1'].every(d=>digits.includes(d)));
+  if(report.countdownPassed)report.checks.push('Real three-second countdown on both players and spectator');
+  else report.countdownFailure='Missing countdown digits; finish the owned game and retain the failed gate';}
  // Controls and F5 must not trigger a root passkey request.
  await coordinatedPlaying;
  const before=counts.slice();
@@ -389,5 +396,6 @@ try{
     scenarios:count('held')>=4&&count('rapid-reversal')>=4&&count('aim-centre')>=5&&count('aim-edge')>=5&&count('release-at-contact')>=1};});
   if(!report.integrityGates.every((v:any)=>Object.values(v).every(x=>x===true))){report.passed=false;report.error??='PvP held-input/release qualification failed';process.exitCode=1;}
  }
+ if(report.countdownPassed===false){report.passed=false;report.error??=report.countdownFailure;process.exitCode=1;}
  report.videos=await Promise.all(pages.map(async p=>p.video()?p.video()!.path():null));
  report.finishedAt=new Date().toISOString();report.passkeyAssertions=counts;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await Promise.all(contexts.map(c=>c.close()));await browser.close();console.log(JSON.stringify({passed:report.passed,error:report.error,checks:report.checks}));}
