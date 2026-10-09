@@ -56,15 +56,19 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
  const [detailAgent,setDetailAgent]=useState<Person|null>(null),[catalogLoaded,setCatalogLoaded]=useState(false);
  const serviceDown=!!capacity&&agentServiceUnavailable(capacity);
  const capacityBusy=!!capacity&&!serviceDown&&(!capacity.freeChallengeLanes||!capacity.readyArenas);
+ const followingChallenge=busy||!!request;
  const person=(p:string)=>people.find(x=>x.agent.toLowerCase()===p.toLowerCase());
  useEffect(()=>{if(enabled)return watchAgentChanges(change=>{
   if(change.resync||change.changed.some(topic=>['config','catalog','live'].includes(topic))){recentCapacity.current=undefined;setCatalogRevision(n=>n+1);}
   if(change.resync||change.changed.some(topic=>topic==='config'||topic===`challenges/${account?.toLowerCase()}`))setChallengeRevision(n=>n+1);
- },account,'arcade');},[enabled,account]);
+ },account,account&&followingChallenge?'challenge':'arcade');},[enabled,account,followingChallenge]);
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  useEffect(()=>{if(!enabled)return;const remembered=rememberedAccount();if(remembered)setAccount(remembered.address);},[enabled]);
  useEffect(()=>{
-  if(!enabled)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController(),quiet=quietFailure();
+  // The chosen rival stays visible. While its signed request is being sent or
+  // followed, only that request/configuration need fresh observations. Loading
+  // all profiles/live fixtures again competes with admission and nonce checks.
+  if(!enabled||followingChallenge)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController(),quiet=quietFailure();
   const refresh=async()=>{let delay=10000;
    try{
     if(document.hidden)return;
@@ -79,7 +83,7 @@ export function AgentPoolArcade({enabled,tournaments,initialMode,initialView,ini
    }catch(e){if(!stopped){setCatalogError(hasCatalogue.current?quiet.failed(poolUserError(e)):'The arcade could not be loaded. Please retry.');delay=Math.max(10000,engineReadRetryMs(e));}}
    finally{if(!stopped)timer=setTimeout(refresh,delay);}
   };void refresh();return()=>{stopped=true;clearTimeout(timer);abort.abort();};
- },[enabled,retry,catalogRevision,offset]);
+ },[enabled,retry,catalogRevision,offset,followingChallenge]);
  useEffect(()=>{
   if(!config||!account)return;let stopped=false,timer:ReturnType<typeof setTimeout>;const abort=new AbortController(),quiet=quietFailure();
   const poll=async()=>{let delay=2000;try{

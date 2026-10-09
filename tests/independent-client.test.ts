@@ -15,6 +15,31 @@ import {roomsLifecycleHubAbi} from '../shared/abi-rooms-lifecycle';
 const address=(i:number)=>toHex(i,{size:20}) as Address;
 const input={chainId:10143,hub:address(1),family:address(2),lobby:address(3),ratings:address(4),settlement:address(5),vault:address(6),market:address(7),profiles:address(8),privateData:address(9),pressureSigner:address(10),arenas:[11,12,13].map(i=>({app:address(i)})),genesis:1700000000,createdAt:'2026-09-12T12:00:00Z'};
 
+test('a verified active arena reaches players and spectators before profile hydration',async()=>{
+ const m=publicIndependentManifest(input),player=address(20),early:any[]=[];
+ let release!:(value:any)=>void,finished=false;
+ const profiles=new Promise(resolve=>{release=resolve;});
+ const fields=roomsLifecycleHubAbi.find(x=>x.name==='delegationOf')!.outputs[0].components;
+ const delegation:any=Object.fromEntries(fields.map(f=>[f.name,f.type==='address'?zeroAddress:f.type==='bytes32'?zeroHash:/^uint(8|16|32)$/.test(f.type)?0:0n]));
+ Object.assign(delegation,{app:address(11),epoch:2n,status:1,expiresAt:999n});
+ const base:any={getBlock:async()=>({number:100n,timestamp:200n}),request:async()=>encodeFunctionResult({abi:roomsLifecycleHubAbi,functionName:'delegationOf',result:delegation}),readContract:async(c:any)=>{
+  assert.equal(c.blockNumber,100n);
+  if(c.functionName==='profileOf')return profiles;
+  const values:any={occupancy:8n,activeMatchOf:14n,grantOf:{key:address(21)},invitationPage:[[],0n],
+   room:{id:8n,proposal:14n,members:[{player}]},proposal:{id:14n,status:2,expires:220n},arenaOf:address(11),
+   boundMatch:{id:14n,epoch:2n},getDelegation:{epoch:2n,status:1,expiresAt:999n}};
+  assert(c.functionName in values,c.functionName);return values[c.functionName];
+ }};
+ const result=readIndependentLobby(base,m,player,8n,undefined,v=>early.push(v)).then(v=>{finished=true;return v;});
+ try{
+  await new Promise(setImmediate);
+  assert.equal(early.length,1,'An assigned arena must not await decorative profiles');
+  assert.equal(early[0].binding.id,14n);assert.equal(early[0].app,address(11));
+  assert.equal(early[0].delegation.status,1);assert.equal(finished,false);
+ }finally{release({handle:'player',avatar:0});}
+ assert.equal((await result).profiles[player.toLowerCase()].handle,'player');
+});
+
 for(const ranked of [true,false])test(`${ranked?'ranked':'manual-room'} consent reaches the player while unrelated invitation/profile hydration is blocked`,async()=>{
  const m=publicIndependentManifest(input),player=address(20),early:any[]=[];
  let release!:(value:any)=>void,finished=false;

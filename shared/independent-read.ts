@@ -67,6 +67,12 @@ export async function readIndependentLobby(base:PublicClient,m:IndependentManife
   if(slot.id===visibleMatch.id&&slot.epoch===visibleMatch.epoch)recoverySnapshot=engineState(await r.snapshot(app,visibleMatch.id));
  }
  if(recoverySnapshot&&recoverySnapshot.id!==visibleMatch.id)throw Error('Recovery snapshot belongs to another match');
+ // The binding and delegation are already joined at this block. Publish them
+ // before decorative profiles/invitations: otherwise an admitted spectator can
+ // miss the countdown while unrelated account data occupies the RPC queue.
+ if(visibleMatch&&delegation?.status===1)
+  onProposal?.({block:block.number,now:block.timestamp,occupancy,active,grant,queue,room,proposal:p,
+   binding:visibleMatch,app,delegation,recoverySnapshot:null,published:null,publishedSnapshot:null});
  const invitations=await invitationWork;
  const addresses=[...new Set([player,...(room?.members??[]).map((x:any)=>x.player),...invitations.flatMap(i=>[i.sender,i.recipient])].filter(Boolean))] as Address[];
  const profiles=Object.fromEntries(await Promise.all(addresses.map(async a=>[a.toLowerCase(),await r.profiles('profileOf',[a])])));

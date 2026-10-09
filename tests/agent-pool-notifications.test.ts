@@ -30,6 +30,7 @@ test('failed reads retain state and closing admissions delivers a change without
 test('page scopes load only displayed views and reconnect preserves their full revisions',async()=>{
  const account='0x1111111111111111111111111111111111111111';
  for(const [scope,topics] of [
+  ['challenge',['config',`challenges/${account}`]],
   ['arcade',['config','live','catalog?limit=16',`challenges/${account}`]],
   ['tournaments',['config','tournaments?limit=8','catalog?limit=32']],
  ] as const){
@@ -44,6 +45,17 @@ test('page scopes load only displayed views and reconnect preserves their full r
    assert(!b.chunks.join('').includes('not streamed'));
   }finally{hub.close();}
  }
+});
+
+test('challenge-only subscriptions require an account and never load catalogue or tournament hydration',async()=>{
+ const calls:string[]=[];const account='0x1111111111111111111111111111111111111111';
+ const hub=new PoolNotifications(async url=>{calls.push(url.pathname);return{revision:'a',value:{enabled:true}};},true);
+ try{
+  assert.throws(()=>hub.add(new Response() as unknown as ServerResponse,null,'challenge'),{status:400});
+  const response=new Response();hub.add(response as unknown as ServerResponse,account,'challenge');await hub.tick();
+  assert.deepEqual(calls,['/agents/config',`/agents/challenges/${account}`]);
+  assert.deepEqual(response.messages().at(-1).changed,['config',`challenges/${account}`]);
+ }finally{hub.close();}
 });
 
 test('unsupported notification scopes fail before a stream or load is created',()=>{

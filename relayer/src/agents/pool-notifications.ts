@@ -11,12 +11,12 @@ export class PoolNotifications {
  constructor(private load:(url:URL)=>Promise<View>,private publicGate:boolean,private now=Date.now){}
  add(response:ServerResponse,account:string|null,scope:string|null=null){
   if(account&&!isAddress(account))throw Object.assign(Error('Invalid account'),{status:400});
-  if(scope!==null&&scope!=='arcade'&&scope!=='tournaments')throw Object.assign(Error('Invalid notification scope'),{status:400});
+  if(scope!==null&&scope!=='arcade'&&scope!=='tournaments'&&scope!=='challenge'||scope==='challenge'&&!account)throw Object.assign(Error('Invalid notification scope'),{status:400});
   if(this.clients.size>=64)throw Object.assign(Error('Notifications are busy'),{status:503,code:'AGENT_EVENTS_BUSY'});
   // Subscribe to the views actually displayed, using their HTTP page sizes so
   // both transports share the pending canonical read. Legacy clients retain
   // all topics. The whitelist never permits a client-selected internal route.
-  const topics=scope==='arcade'?['config','live','catalog?limit=16']
+  const topics=scope==='challenge'?['config']:scope==='arcade'?['config','live','catalog?limit=16']
    :scope==='tournaments'?['config','tournaments?limit=8','catalog?limit=32']
    :['config','live','tournaments?limit=8','catalog?limit=32'];
   if(account&&scope!=='tournaments')topics.push(`challenges/${account.toLowerCase()}`);
