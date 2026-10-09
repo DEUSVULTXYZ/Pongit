@@ -607,6 +607,62 @@ function entryFixture(){
   validUntil:Number(timestamp)*1000+3000,delegation:{...f.hub}};
  return{...f,observation};
 }
+
+test('initial rules17 admission waits for live binding inside the original canonical window',async()=>{
+ const f=entryFixture();let reads=0,headers=0;const read=f.node.readContract,header=f.base.getBlock;
+ f.state.phase=1;
+ f.base.getBlock=async(...args:any[])=>{headers++;return header(...args);};
+ f.node.readContract=async(r:any)=>{
+  if(r.functionName==='boundMatch'&&++reads<3){f.advance(100);assert.equal(f.sent.length,0);return {...f.binding,id:3n};}
+  return read(r);
+ };
+ const player=f.create();
+ try{await player.recover();assert.equal(reads,3);assert.equal(headers,1);assert.equal(f.sent.length,0);}
+ finally{player.close();}
+});
+
+test('initial binding wait cannot extend the canonical deadline or bypass a revoked permission',async()=>{
+ for(const failure of ['deadline','revoked','future-binding','wrong-epoch']){
+  const f=entryFixture();let reads=0;const read=f.node.readContract;
+  f.node.readContract=async(r:any)=>{
+   if(r.functionName==='boundMatch'){
+    reads++;
+    if(failure==='deadline'){f.advance(3100);return {...f.binding,id:3n};}
+    if(failure==='future-binding')return {...f.binding,id:5n};
+    if(failure==='wrong-epoch')return {...f.binding,epoch:2n};
+    if(reads===1)return {...f.binding,id:3n};
+   }
+   return read(r);
+  };
+  if(failure==='revoked')f.override(zeroAddress,1n<<64n);
+  const player=f.create(f.observation);
+  try{await assert.rejects(player.move(1));assert.equal(f.sent.length,0);assert.equal(reads,failure==='revoked'?2:1);}
+  finally{player.close();}
+ }
+});
+
+test('closing during initial binding preparation stops polling without sending or discarding a journal',async()=>{
+ const f=entryFixture();let reads=0;const read=f.node.readContract;
+ const player=f.create(f.observation);
+ f.node.readContract=async(r:any)=>{
+  if(r.functionName==='boundMatch'){reads++;player.close();return {...f.binding,id:3n};}
+  return read(r);
+ };
+ await assert.rejects(player.recover());assert.equal(reads,1);assert.equal(f.sent.length,0);
+});
+
+test('established controls and uncertain commands do not return to initial binding polling',async()=>{
+ for(const lost of [false,true]){
+  const f=entryFixture(),player=f.create(f.observation);f.lost(lost);
+  if(lost)await assert.rejects(player.move(1),/Lost response/);else await player.move(1);
+  const pending=player.journal.pending(f.session.grant.key)?.hash;
+  let reads=0;const read=f.node.readContract;
+  f.node.readContract=async(r:any)=>{if(r.functionName==='boundMatch'){reads++;return {...f.binding,id:3n};}return read(r);};
+  try{await assert.rejects(player.recover(),/binding changed/);assert.equal(reads,1);assert.equal(f.sent.length,1);
+   assert.equal(player.journal.pending(f.session.grant.key)?.hash,pending);}
+  finally{player.close();}
+ }
+});
 test('fresh entry reuses its canonical observation once but still checks the live binding and permission',async()=>{
  const f=entryFixture();let headers=0;const getBlock=f.base.getBlock;
  f.base.getBlock=async(...args:any[])=>{headers++;return getBlock(...args);};

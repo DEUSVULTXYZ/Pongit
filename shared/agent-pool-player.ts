@@ -40,6 +40,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
  const feed=runtime?.feed??new EngineFeed({app:arena.app,abi,node},stream);
  let sender:CompactArenaSender|undefined,stopped=false,verifiedAt=0,controlsUntil=0,lane:Promise<unknown>=Promise.resolve();
  let entryObservation=options.entryObservation;
+ let initialBinding=true;
  let fenceGeneration=0;
  let fencePending:Promise<void>|undefined,fenceTimer:ReturnType<typeof setTimeout>|undefined;
  let identityPending:Promise<void>|undefined;
@@ -128,7 +129,22 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   if(observation.runtimeHash!==arena!.runtimeHash)throw Error('Arena bytecode differs from the approved deployment');
   await identify(true);
   if(permissionPending()&&hub.status===1&&hubLeaseValid(m.hub,hub.expiresAt,block.timestamp))await reconcilePermission();
-  const b=await node.readContract({address:arena!.app,abi,functionName:'boundMatch'});
+  let b=await node.readContract({address:arena!.app,abi,functionName:'boundMatch'});
+  // A published assignment can precede its live admission. Rebuilding the
+  // canonical handshake on each empty/previous slot multiplied Monad reads
+  // and delayed readiness. Poll only that live slot inside the ORIGINAL fence;
+  // this neither renews authorization nor sends anything before the binding.
+  // Recovery of an existing control session or uncertain nonce never uses it.
+  for(let attempt=0;attempt<30&&initialBinding&&m.version===5&&m.rulesVersion===17
+   &&hub.status===1&&hubHasNoLease(m.hub,hub.expiresAt)&&!journal.pending(session.grant.key)
+   &&!stopped&&b.id<id&&(b.epoch===epoch||b.id===0n&&b.epoch===0n)
+   &&now()+100<observation.validUntil;attempt++){
+   await new Promise<void>(resolve=>setTimeout(resolve,100));
+   if(stopped)throw Error('Arena controls have stopped');
+   if(now()>=observation.validUntil)break;
+   b=await node.readContract({address:arena!.app,abi,functionName:'boundMatch'});
+  }
+  if(stopped)throw Error('Arena controls have stopped');
   if(b.id!==id||b.epoch!==epoch||b.a.toLowerCase()!==match.a.toLowerCase()||b.b.toLowerCase()!==match.b.toLowerCase())throw Error('Arena binding changed');
   const side=b.a.toLowerCase()===player.toLowerCase()?0:1,initial=side===0?b.controlA:b.controlB;
   if(initial.codeHash!==zeroHash)throw Error('Only the bound human participant can use these controls');
@@ -156,6 +172,7 @@ export function createPoolPlayer(manifest:AgentPoolManifest,match:PoolMatchView,
   // renderer, session key, last intent or authoritative positions.
   controlsUntil=observation.validUntil;
   sender=compactArenaSession({node,abi,app:arena!.app,key:session.key,match:id,...(reusable?{epoch}:{}),expires:control.expires,gas:POOL_PLAYER_GAS,now,onTiming:options.onTiming});
+  initialBinding=false;
   prefetchFence();
   feed.invalidate();const recovered=verify(await feed.read(id,true));
   options.onReconciled?.(recovered);
