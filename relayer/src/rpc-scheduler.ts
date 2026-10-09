@@ -182,19 +182,20 @@ export function rpcScheduler(spacingMs:number) {
   // A foreground hint must not put every catalogue/match hydration in front
   // of an already accepted transaction's nonce, fees and receipt. Preserve
   // the existing upstream budget and both background fairness guarantees.
-  // Transactions and headers share the burst before a foreground turn. Nested
-  // separate bursts previously allowed 16 transactions plus four headers to
-  // delay one login simulation, beyond its HTTP deadline under concurrent login.
-  // A foreground turn does not reset the transaction/header fairness counter.
+  // Admission consists of dependent grant, simulation and binding reads, not
+  // one isolated request. Alternate that foreground work with transaction /
+  // header work: a four-to-one burst compounded across those rounds consumed
+  // the whole admission deadline under simultaneous entries. Transactions still
+  // precede headers within their share; every queue keeps a bounded turn.
   // At most one gameplay fence before another interactive turn. It shares
   // the same rate/cooldown and history budget; the remaining queues retain
   // their own existing rotation instead of spending it on fence dispatches.
   const choose=(l:number,c:number,f:number,h:number,t:number,g:number,run:number,urgentRun:number,controlBurst:number,transactionBurst:number,fenceBurst:number):keyof typeof queues=>
    h>0&&(!(l+c+f+t+g)||run>=4)?'history':g>0&&(!(l+c+f+t)||fenceBurst<1)?'fence':
     l>0&&(!(c+f+t)||urgentRun>=4)?'live':
-    f>0&&controlBurst>=4?'foreground':
-    t>0&&(!(c+f)||transactionBurst<4)?'transaction':
-    c>0&&(!f||controlBurst<4)?'control':'foreground';
+    f>0&&controlBurst>=1?'foreground':
+    t>0&&(!(c+f)||transactionBurst<2)?'transaction':
+    c>0&&(!f||controlBurst<1)?'control':'foreground';
   function tick(){
     timer=undefined;
     if(!Object.values(queues).some(q=>q.length))return;

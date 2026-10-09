@@ -338,7 +338,7 @@ test('seven simultaneous entries cannot put hydration ahead of transaction prepa
  assert(s.waitMs(false,true)<s.waitMs(false,false,true),'Nonce preparation overtakes the foreground backlog');
  for(let i=0;i<jobs.length;i++){t.mock.timers.tick(60);await Promise.resolve();}
  await Promise.all(jobs);
- assert.deepEqual(seen.slice(1,4).map(v=>v.name),['transaction0','transaction1','transaction2']);
+ assert.deepEqual(seen.slice(1,4).map(v=>v.name),['transaction0','hydration0','transaction1']);
  assert(seen.findIndex(v=>v.name==='archive0')<=5,'History retains its one-in-five budget');
  assert(seen.findIndex(v=>v.name==='ordinary0')<=6,'Ordinary reads still progress');
  assert(seen.findIndex(v=>v.name==='hydration0')<=7,'Foreground reads cannot starve');
@@ -434,6 +434,27 @@ test('receipt scheduling hints validate identity, never certify canonicality and
  blocks.observe('eth_blockNumber',[],'0x3e7');
  assert.equal(blocks.head(),999n,'A subsequent real lower head is still respected');
  assert(historicalRpcRequest('eth_getBlockByNumber',['0xffff',false],blocks.head()),'Invented future headers remain ordinary archive work');
+});
+
+test('four admissions keep a bounded critical path through three dependent reads under mixed load',async(t)=>{
+ t.mock.timers.enable({apis:['Date','setTimeout'],now:1000});
+ for(const spacing of [75,85]){
+  const scheduler=rpcScheduler(spacing),seen:{kind:string;at:number}[]=[];
+  await scheduler.acquire(false);
+  const start=Date.now(),take=(kind:string)=>scheduler.acquire(kind==='history',kind==='control',kind==='foreground',kind==='transaction',kind==='fence')
+   .then(()=>seen.push({kind,at:Date.now()}));
+  const background=['transaction','control','live','history','fence'].flatMap(kind=>Array.from({length:40},()=>take(kind)));
+  const entries=Array.from({length:4},async()=>{for(let round=0;round<3;round++)await take('foreground');return Date.now()-start;});
+  for(let i=0;i<240;i++){t.mock.timers.tick(spacing);for(let j=0;j<5;j++)await Promise.resolve();}
+  const elapsed=await Promise.all(entries);await Promise.all(background);
+  // This deliberately saturated one-provider case reserves at least 1.5s of
+  // the 8s admission target for work outside these three read rounds. The
+  // actual browser gate remains 8s, including all network and signing work.
+  assert(Math.max(...elapsed)<=6500,`Critical reads consumed ${Math.max(...elapsed)}ms before signing, inclusion and engine setup`);
+  for(const kind of ['transaction','control','live','history','fence'])assert(seen.slice(0,24).some(r=>r.kind===kind),kind+' must still progress');
+  assert(seen.every((r,i)=>!i||r.at-seen[i-1].at===spacing),'No additional provider throughput');
+  assert.deepEqual(scheduler.pending(),{interactive:0,history:0});
+ }
 });
 
 test('six login simulations cannot expire behind sustained transactions and canonical headers',async(t)=>{
