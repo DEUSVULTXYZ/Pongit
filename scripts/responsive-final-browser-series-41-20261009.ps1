@@ -13,8 +13,8 @@ $jobs=@(
  @{Run='r2final41c5';Browser='chrome';Width=768;GameMode=1}
 )
 $deadline=(Get-Date).ToUniversalTime().AddMinutes(80)
-$state=@{startedAt=(Get-Date -AsUTC -Format o);deadline=$deadline.ToString('o');web='e58531d';reader='aa7e0e1';rpc='e31ad5d';passed=$false;completed=@();active=$null}
-$restore='C:/Users/wwwle/.codex/private-backups/pongit/r2final40c5.json'
+$state=@{startedAt=(Get-Date -AsUTC -Format o);deadline=$deadline.ToString('o');web='e58531d';reader='aa7e0e1';rpc='6654391';passed=$false;completed=@();active=$null}
+$restore=''
 $failures=@()
 try{
  foreach($job in $jobs){
