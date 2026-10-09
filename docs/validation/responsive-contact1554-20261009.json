@@ -1,0 +1,172 @@
+{
+  "at": "2026-10-09T12:12:41.054401+00:00",
+  "originalResult": "FAIL",
+  "ref": {
+    "app": "0x4E9fa437576B1b2B386fe1eC24D26839434Effb2",
+    "epoch": "1",
+    "id": "1554"
+  },
+  "source": "4191674",
+  "reportSha256": "fc82601d6a218e28805668d140965faac97e0adf4b02e434126a22268cba0078",
+  "traceSha256": "03b43499c98b41747bcc6ad483ee79ccd89cf1b7483e66e9ed79ef0448550faf",
+  "symptom": [
+    {
+      "at": 90349.4,
+      "side": 1,
+      "dt": 15.39999999999418,
+      "d": 18.138324129545936,
+      "limit": 8.467999999997556,
+      "from": 366.46052412954595,
+      "to": 348.3222,
+      "observedAt": 1791547718911
+    }
+  ],
+  "cause": "A future paddle first approached a held MISS after safely moving for60ms. The contact guard reset it18.14units to the old contact anchor. Preserve the miss at its nearest non-overlapping edge instead. Genuine hits retain their early fence.",
+  "window": [
+    {
+      "at": 90266.1,
+      "paddles": [
+        275.85,
+        346.18881558915217
+      ],
+      "balls": [
+        {
+          "id": 1,
+          "x": 982.2896133655604,
+          "y": 422.4311415316013
+        }
+      ],
+      "contactBoundary": false,
+      "sourceUs": "78360000",
+      "renderedUs": "78393300"
+    },
+    {
+      "at": 90283.2,
+      "paddles": [
+        280.8299999713898,
+        351.2872660676799
+      ],
+      "balls": [
+        {
+          "id": 1,
+          "x": 983.9998335003936,
+          "y": 423.5000291168426
+        }
+      ],
+      "contactBoundary": true,
+      "sourceUs": "78360000",
+      "renderedUs": "78401074"
+    },
+    {
+      "at": 90299.6,
+      "paddles": [
+        285.72000002861023,
+        356.18222036308117
+      ],
+      "balls": [
+        {
+          "id": 1,
+          "x": 983.9998334745233,
+          "y": 423.5000291006736
+        }
+      ],
+      "contactBoundary": true,
+      "sourceUs": "78360000",
+      "renderedUs": "78401074"
+    },
+    {
+      "at": 90316.3,
+      "paddles": [
+        290.72999997138976,
+        361.1703468159635
+      ],
+      "balls": [
+        {
+          "id": 1,
+          "x": 983.999833452197,
+          "y": 423.5000290867197
+        }
+      ],
+      "contactBoundary": true,
+      "sourceUs": "78360000",
+      "renderedUs": "78401074"
+    },
+    {
+      "at": 90332.9,
+      "paddles": [
+        295.7100000143051,
+        366.1316393172586
+      ],
+      "balls": [
+        {
+          "id": 1,
+          "x": 983.9998334334084,
+          "y": 423.50002907497685
+        }
+      ],
+      "contactBoundary": true,
+      "sourceUs": "78360000",
+      "renderedUs": "78401074"
+    },
+    {
+      "at": 90334,
+      "paddles": [
+        295.95,
+        366.46052412954595
+      ],
+      "balls": [
+        {
+          "id": 1,
+          "x": 983.9998334322702,
+          "y": 423.50002907426546
+        }
+      ],
+      "contactBoundary": true,
+      "sourceUs": "78360000",
+      "renderedUs": "78401074"
+    },
+    {
+      "at": 90349.4,
+      "paddles": [
+        295.95,
+        348.3222
+      ],
+      "balls": [
+        {
+          "id": 1,
+          "x": 983.9998334175818,
+          "y": 423.50002906508524
+        }
+      ],
+      "contactBoundary": true,
+      "sourceUs": "78360000",
+      "renderedUs": "78401074"
+    },
+    {
+      "at": 90366.4,
+      "paddles": [
+        294,
+        355.46220000000005
+      ],
+      "balls": [
+        {
+          "id": 1,
+          "x": 986.1075868390973,
+          "y": 425.5356653628553
+        }
+      ],
+      "contactBoundary": false,
+      "sourceUs": "78480000",
+      "renderedUs": "78494000"
+    }
+  ],
+  "testMeasurement": "Capture-phase probe releasep95=2; native-event ordering beforeFAIL/afterPASS preserved separately.",
+  "unchanged": [
+    "authoritative physics",
+    "ball path",
+    "input timestamps",
+    "contracts",
+    "engines",
+    "delegations"
+  ]
+}
