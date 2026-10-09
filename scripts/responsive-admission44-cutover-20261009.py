@@ -2,7 +2,7 @@
 import ast,datetime,hashlib,json,pathlib,subprocess,time,urllib.request
 root=pathlib.Path('/opt/pongit/releases/responsive-20261008-r2')
 output=root/'live/evidence/admission-cutover-44.json';assert not output.exists()
-build=json.loads((root/'build-admission44.json').read_text());web=json.loads((root/'build-admission-web-44.json').read_text())
+build=json.loads((root/'build-admission44b.json').read_text());web=json.loads((root/'build-admission-web-44.json').read_text())
 assert all(b['passed'] and b['source']=='dc05ba9fd98d1b98fa3268a81a0137f880f66510' for b in [build,web])
 previous={'archive':'sha256:9414d534bc5930795a8b64e707d3e30e25d7fd330a33f285ac9e2dfeb2ae21fa',
  'arcade-web':'sha256:f04cf43665ce2613c1e5d2a4673c516aac4a0e42caab560ee8a44286cf1ee098'}
