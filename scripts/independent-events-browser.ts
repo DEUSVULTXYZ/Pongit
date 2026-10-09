@@ -264,6 +264,10 @@ try{
    await until(()=>a.getByRole('button',{name:'Copy room link',exact:true}).isVisible(),'created Chaos room');
    await a.getByRole('button',{name:'Copy room link',exact:true}).click();saved.roomUrl=await a.evaluate(()=>navigator.clipboard.readText());assert(saved.roomUrl.startsWith(origin+'/rooms/'));await persist();
   }
+  // Load the third client's room shell before the opponent joins, but do not
+  // join it yet: the first two members must remain the actual players. This
+  // removes page navigation from the spectator's three-second countdown race.
+  await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).waitFor({timeout:120000});
   await b.goto(saved.roomUrl);await b.getByRole('button',{name:'Accept',exact:true}).click();
   await until(()=>b.getByRole('button',{name:'Members 2',exact:true}).isVisible(),'rival joined');
   report.roomConsent={joinedAt:new Date().toISOString(),offers:[]};
@@ -278,7 +282,7 @@ try{
     await accept.click();
    }),
    (async()=>{
-    await spectator.goto(saved.roomUrl);await spectator.getByRole('button',{name:'Accept',exact:true}).click();
+    await spectator.getByRole('button',{name:'Accept',exact:true}).click();
     await until(()=>spectator.getByRole('button',{name:'Members 3',exact:true}).isVisible(),'spectator joined');
    })(),
   ]);await persist();
