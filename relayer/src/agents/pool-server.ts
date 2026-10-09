@@ -20,7 +20,16 @@ import {publicChainReadBody,publicChainReads} from '../public-chain-read';
 export function startPoolReadService(reader:AgentPoolReader,options:{host:string;port:number;public:boolean;trustedProxies?:string[];sponsor?:ReturnType<typeof poolSponsorRoutes>;sponsorHealth?:()=>{available:boolean;error?:string;code?:string};replays?:PoolReplays;foregroundReader?:AgentPoolReader}){
  const routes=poolRoutes(reader,undefined,options.replays),rates=new Map<string,{until:number;n:number}>();
  const foregroundRoutes=options.foregroundReader?poolRoutes(options.foregroundReader,undefined,options.replays):routes;
- const events=new PoolNotifications(routes,options.public);
+ // Notifications and HTTP entry use the same route cache and priority. The
+ // old notification path repeated config/challenge reads in the background,
+ // so a ready-player notification could wait behind catalogue hydration even
+ // while the HTTP path was already loading the exact same published view.
+ const publishedRoute=(url:URL)=>{
+  const playerEntry=url.pathname==='/agents/config'||url.pathname==='/agents/capacity'||/^\/agents\/challenges\/0x[\da-fA-F]{40}$/.test(url.pathname)
+   ||url.pathname.startsWith('/agents/matches/');
+  return (playerEntry?foregroundRoutes:routes)(url);
+ };
+ const events=new PoolNotifications(publishedRoute,options.public);
  const chainRead=publicChainReads(options.foregroundReader?.client??reader.client),chainRates=new Map<string,{until:number;n:number}>();
  const normalize=(value:string)=>value.replace(/^::ffff:/,'');
  const proxies=new Set((options.trustedProxies??[]).map(normalize));let global={until:0,n:0};
@@ -74,9 +83,7 @@ export function startPoolReadService(reader:AgentPoolReader,options:{host:string
    // Config is also required before an admitted player's first live frame.
    // Keep its existing canonical checks and bounded cache, but do not queue
    // that entry dependency behind catalogue hydration.
-   const playerEntry=url.pathname==='/agents/config'||url.pathname==='/agents/capacity'||/^\/agents\/challenges\/0x[\da-fA-F]{40}$/.test(url.pathname)
-    ||url.pathname.startsWith('/agents/matches/');
-   const view=await (playerEntry?foregroundRoutes:routes)(url);
+   const view=await publishedRoute(url);
    res.setHeader('ETag',`"${view.revision}"`);
    if(req.headers['if-none-match']===`"${view.revision}"`){res.statusCode=304;res.end();return;}
    send({...view.value,observation:{block:view.observedBlock,hash:view.observedHash,timestamp:view.observedTimestamp,revision:view.revision}});
