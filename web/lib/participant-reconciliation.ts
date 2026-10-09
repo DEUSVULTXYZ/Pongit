@@ -12,21 +12,23 @@ function contacting(pose:ParticipantPose,side:0|1){
  return !!pose.contactBoundary&&!!pose.contactPaddles&&pose.balls.some(b=>
   Math.abs(b.x-(side===0?40:984))<.002&&(side===0?(b.vx??0)<0:(b.vx??0)>0));
 }
-function contactHits(pose:ParticipantPose,side:0|1){
- const intersects=(y:number,centre:number)=>Math.abs(y-centre)<=pose.halves[side]+6
-  &&(!pose.split?.[side]||Math.abs(y-centre)>=2);
- return pose.balls.some(b=>Math.abs(b.x-(side===0?40:984))<.002&&(side===0?(b.vx??0)<0:(b.vx??0)>0)
-  &&intersects(b.y,pose.contactPaddles![side]));
-}
-function missedContactPaddle(pose:ParticipantPose,side:0|1,shown:number){
+function contactPaddle(pose:ParticipantPose,side:0|1,shown:number){
  let lower=pose.halves[side],upper=576-lower;
  const anchor=pose.contactPaddles![side],radius=pose.halves[side]+6,margin=.001;
  for(const b of pose.balls){
   if(Math.abs(b.x-(side===0?40:984))>=.002||!(side===0?(b.vx??0)<0:(b.vx??0)>0))continue;
-  // Keep the miss on the SAME side (or in the same split gap). Mobile1554
-  // moved safely for60ms, then rewound18px when it approached a waiting miss.
-  // Stop at the nearest consistent edge instead of resetting to the old pose.
-  if(pose.split?.[side]&&Math.abs(b.y-anchor)<2){lower=Math.max(lower,b.y-2+margin);upper=Math.min(upper,b.y+2-margin);}
+  const distance=Math.abs(b.y-anchor);
+  // Keep each ball's hit/miss and split segment, allowing compatible motion.
+  // Exact anchor resets made mobile1563 jump12px during a genuine hit. A
+  // waiting contact constrains geometry; it does not reset the input clock.
+  if(pose.split?.[side]&&distance<2){lower=Math.max(lower,b.y-2+margin);upper=Math.min(upper,b.y+2-margin);}
+  else if(distance<=radius){
+   lower=Math.max(lower,b.y-radius);upper=Math.min(upper,b.y+radius);
+   if(pose.split?.[side]){
+    if(anchor<b.y)upper=Math.min(upper,b.y-2);
+    else lower=Math.max(lower,b.y+2);
+   }
+  }
   else if(anchor<b.y)upper=Math.min(upper,b.y-radius-margin);
   else lower=Math.max(lower,b.y+radius+margin);
  }
@@ -122,18 +124,7 @@ export class ParticipantReconciliation {
    }else this.paddles[side]=settle(this.paddles[side],dt,120);
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];
    const atContact=contacting(current,side);
-   if(atContact&&contactHits(current,side)){
-    // Edge1529: the ball waited at the impact instant while this paddle moved
-    // 5px into its future. A genuine miss then looked like a traversal. Keep
-    // the contacting pair on one instant until live physics resolves it.
-    // Input transport continues; the other paddle remains immediately live.
-    // Edge1534: a ball missing by 40px does not interact with this paddle.
-    // Do not interrupt local motion for that unrelated plane crossing. Edge1543 needs
-    // a real hit fenced immediately: waiting until it looks like a miss lets
-    // the bot travel 24px before snapping back to the unresolved contact.
-    // Derive the fence from this contact, never from another multiball actor.
-    this.paddles[side]=current.contactPaddles![side]-current.paddles[side];
-   }else if(atContact)this.paddles[side]=missedContactPaddle(current,side,current.paddles[side]+this.paddles[side])-current.paddles[side];
+   if(atContact)this.paddles[side]=contactPaddle(current,side,current.paddles[side]+this.paddles[side])-current.paddles[side];
   }
   const balls=current.balls.map(ball=>{
    let error=this.balls.get(ball.id);

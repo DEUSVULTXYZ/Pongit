@@ -8,6 +8,31 @@ import {initialChaosEvents} from '../shared/physics-chaos-events';
 import {zeroHash} from 'viem';
 const pose=(left=288,right=288,x=512,y=288):ParticipantPose=>({paddles:[left,right],halves:[48,48],balls:[{id:1,x,y,continuity:'0:0'}]});
 
+test('mobile1563 genuine contacts preserve compatible local motion without12-unit anchor snaps',()=>{
+ for(const [shown,anchor,ballY,direction,dt] of [[215.28000004,203.1069,235.999925,-1,16.6],[354.17999997,342.7791,312.35505,1,17]]){
+  const view=new ParticipantReconciliation(),p=pose(shown,288,41.2,ballY);
+  p.balls[0].vx=-232;view.sample(p,undefined,0,{side:0,direction,speed:300,motion:[]});
+  p.paddles[0]=anchor;p.balls[0].x=40.000155;p.contactBoundary=true;p.contactPaddles=[anchor,288];
+  const next=view.sample(p,undefined,dt,{side:0,direction,speed:300,motion:[{direction,ms:dt}]});
+  assert(Math.abs(next.paddles[0]-(shown+direction*.3*dt))<1e-8,'a compatible hit cannot override the immediate local intention');
+  assert(Math.abs(next.paddles[0]-ballY)<=54,'the contact still intersects the paddle');
+  assert.deepEqual(next.balls,p.balls,'the ball is neither relocated nor reflected');
+ }
+});
+
+test('simultaneous multiball constraints preserve both contact classifications in either order',()=>{
+ for(const side of [0,1] as const)for(const split of [false,true])for(const reverse of [false,true]){
+  const p=pose();p.paddles[side]=350;p.contactBoundary=true;p.contactPaddles=[288,288];p.split=[split,split];
+  p.balls=[{id:1,x:side?984:40,y:330,vx:side?220:-220,continuity:'r'},
+   {id:2,x:side?984:40,y:split?288:343,vx:side?220:-220,continuity:'r'}];
+  if(reverse)p.balls.reverse();
+  const result=new ParticipantReconciliation().sample(p,undefined,16),centre=result.paddles[side];
+  const hits=(y:number,c:number)=>Math.abs(y-c)<=54&&(!split||Math.abs(y-c)>=2);
+  for(const b of p.balls)assert.equal(hits(b.y,centre),hits(b.y,288),'each ball keeps its own hit, miss or split-gap classification');
+  assert.deepEqual(result.balls,p.balls);
+ }
+});
+
 test('mobile1554 late approach to a missed contact stops at its edge without an18-unit rewind',()=>{
  const view=new ParticipantReconciliation(),p=pose(288,351.287266,983.999833,423.500029);
  p.contactBoundary=true;p.contactPaddles=[288,348.3222];p.balls[0].vx=220.260483;
@@ -41,7 +66,7 @@ test('Edge1534 distant misses do not reset a stopped paddle for either ball',()=
  }
 });
 
-test('Edge1543 real hit holds the bot at contact before its future motion creates a miss',()=>{
+test('Edge1543 real hit limits future bot motion before it creates a miss or late rewind',()=>{
  const view=new ParticipantReconciliation(),p=pose(288,203.918,983.319,236.341);
  p.balls[0].vx=230;view.sample(p,undefined,16);
  p.balls[0]={...p.balls[0],x:983.99999,y:236};p.contactBoundary=true;p.contactPaddles=[288,203.4183];
@@ -49,7 +74,9 @@ test('Edge1543 real hit holds the bot at contact before its future motion create
  for(let i=0;i<6;i++){
   p.paddles[1]=199.35-i*4.98;
   const shown=view.sample(p,undefined,16.6);
-  assert.equal(shown.paddles[1],203.4183);assert(Math.abs(shown.paddles[1]-last)<1);
+  assert(shown.paddles[1]<=last,'no late rewind to the old contact anchor');
+  assert(last-shown.paddles[1]<=5,'ordinary movement stops at the compatible edge');
+  assert(Math.abs(shown.paddles[1]-236)<=54,'the genuine hit never becomes a miss');
   last=shown.paddles[1];
  }
 });

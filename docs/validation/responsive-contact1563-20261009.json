@@ -1,0 +1,30 @@
+{
+  "sourceReport": "artifacts\\qualification\\catalogue-r2final66c1\\report.json",
+  "sourceSha256": "81db241ebde6ba7a45c4a15f10e2b9aed85a2e93ad9f6ed0ee73998bc1aca2a0",
+  "originalPassed": false,
+  "ref": {
+    "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+    "epoch": "1",
+    "id": "1563"
+  },
+  "failure": "Visible reconciliation discontinuities remain",
+  "rootCause": "Genuine-hit contact fence reset to exact authoritative contact anchor even when local paint already intersected correctly.",
+  "observedJumps": [
+    {
+      "atMs": 37739.9,
+      "before": 215.28000004,
+      "after": 203.1069,
+      "ballY": 235.999925
+    },
+    {
+      "atMs": 57490.1,
+      "before": 354.17999997,
+      "after": 342.7791,
+      "ballY": 312.35505
+    }
+  ],
+  "fix": "Intersect classification-compatible intervals for every incoming ball; retain same split segment; constrain at nearest consistent edge without moving or reflecting a ball.",
+  "beforeRegression": "contact1563-before.log FAIL",
+  "afterRegression": "contact1563-after.log 32 PASS",
+  "hostedCandidateProof": false
+}
