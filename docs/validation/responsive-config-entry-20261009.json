@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-09T00:12:51.501665+00:00",
+  "symptom": "Admission slower than8seconds with capacity available",
+  "example": {
+    "ref": {
+      "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+      "epoch": "1",
+      "id": "1235"
+    },
+    "admissionMs": 9760,
+    "naturalGates": {
+      "noPause": true,
+      "noResume": true,
+      "noResync": true,
+      "peer": true,
+      "player": true,
+      "spectator": true,
+      "executionClock": true
+    },
+    "config": {
+      "at": "2026-10-09T00:04:31.002Z",
+      "method": "GET",
+      "path": "/api/agents/config",
+      "ms": 1659.637999999999,
+      "http": 200
+    }
+  },
+  "cause": "AgentPoolMatch waits for /config before creating live controls, but the reader schedules /config with background catalogue reads. Configuration alone delayed first state by1659.6ms in this trace. Other admission costs remain.",
+  "change": "Route exact /agents/config through the existing bounded foreground reader. Same canonical checks, cache TTL, RPC quota and admission authority; catalogue remains background.",
+  "baseline": "Actual HTTP routing regression fails on production source336cccc.",
+  "candidate": "8HTTP/public-read tests pass. Not deployed; actual latency improvement not yet proven.",
+  "failuresRetained": true
+}
