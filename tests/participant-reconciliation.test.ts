@@ -20,6 +20,15 @@ test('mobile1554 late approach to a missed contact stops at its edge without an1
  }
 });
 
+test('a multiball miss cannot inherit the preceding balls contact lock',()=>{
+ const view=new ParticipantReconciliation(),p=pose(288,288,984,288);
+ p.contactBoundary=true;p.contactPaddles=[288,288];p.balls[0].vx=220;
+ assert.equal(view.sample(p,undefined,16).paddles[1],288);
+ // Ball1 is resolved while ball2 reaches its own plane in the same frame.
+ p.balls=[{id:2,x:984,y:500,vx:220,continuity:'same-rally'}];p.contactPaddles=[288,260];p.paddles[1]=293;
+ assert.equal(view.sample(p,undefined,16).paddles[1],293,'unrelated miss preserves independent motion');
+});
+
 test('Edge1534 distant misses do not reset a stopped paddle for either ball',()=>{
  for(const [live,shown,ballY] of [[327,331.87,235.999925],[228,233.6406,143.99999]])for(const id of [1,2]){
   const view=new ParticipantReconciliation(),p=pose(shown,288,40.00006,ballY);

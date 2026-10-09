@@ -65,8 +65,7 @@ export class ParticipantReconciliation {
  private stopCorrection=2;
  private localPicture?:{side:0|1;y:number};
  private stoppedAt?:number;
- private contactLocks:[boolean,boolean]=[false,false];
- reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;this.contactLocks=[false,false];}
+ reset(){this.paddles=[0,0];this.balls.clear();this.ballPictures.clear();this.localDirection=0;this.stopCorrection=2;this.localPicture=undefined;this.stoppedAt=undefined;}
  sample(current:ParticipantPose,previous:ParticipantPose|undefined,elapsedMs:number,local?:{side:0|1;direction:number;speed?:number;motionMs?:number;motion?:readonly {direction:number;ms:number}[];stopConfirmed?:boolean}):ParticipantPose{
   const dt=clamp(elapsedMs,0,50);
   const released=!!local&&local.direction===0&&this.localDirection!==0;
@@ -121,9 +120,7 @@ export class ParticipantReconciliation {
    }else this.paddles[side]=settle(this.paddles[side],dt,120);
    this.paddles[side]=clamp(current.paddles[side]+this.paddles[side],current.halves[side],576-current.halves[side])-current.paddles[side];
    const atContact=contacting(current,side);
-   if(!atContact)this.contactLocks[side]=false;
-   else if(contactHits(current,side))this.contactLocks[side]=true;
-   if(this.contactLocks[side]){
+   if(atContact&&contactHits(current,side)){
     // Edge1529: the ball waited at the impact instant while this paddle moved
     // 5px into its future. A genuine miss then looked like a traversal. Keep
     // the contacting pair on one instant until live physics resolves it.
@@ -132,7 +129,7 @@ export class ParticipantReconciliation {
     // Do not interrupt local motion for that unrelated plane crossing. Edge1543 needs
     // a real hit fenced immediately: waiting until it looks like a miss lets
     // the bot travel 24px before snapping back to the unresolved contact.
-    // retain that fence until this contact resolves, preventing repeated snaps.
+    // Derive the fence from this contact, never from another multiball actor.
     this.paddles[side]=current.contactPaddles![side]-current.paddles[side];
    }else if(atContact)this.paddles[side]=missedContactPaddle(current,side,current.paddles[side]+this.paddles[side])-current.paddles[side];
   }
