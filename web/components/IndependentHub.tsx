@@ -242,7 +242,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
   bindingRef.current=binding;lastGame.current={app,binding};
   sessionStorage.setItem(`pongit:last-arena:${manifest.lobby}:${family?.grant.player}`,JSON.stringify({app,id:String(binding.id),epoch:String(binding.epoch),room:String(binding.room)}));
   const instance=createIndependentArena(manifest,app);arena.current=instance;
-  let stopped=false,retryAt=0,opening=false;let play:LabLane|null=null;const pilot=new TickPilot(),recovery=new ArenaRecovery();
+  let stopped=false,retryAt=0,opening=false;let play:LabLane|null=null;const responsive=manifest.rulesVersion===18;const pilot=new TickPilot(responsive?{tickMs:50,takeoverMs:150}:undefined),recovery=new ArenaRecovery();
   const id=BigInt(binding.id),receive=(s:LabSnapshot,latency?:number)=>{
    if(stopped)return;latestLive.current=s;setSnapshot(s);pilot.observe(s,performance.now());play?.ingest(s);setSync(recovery.observed(s.phase>=3,latency!==undefined));
    const before=scoreSeen.current,total=s.state.scoreA+s.state.scoreB;
@@ -277,7 +277,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
       }
      }
     }
-    play=new LabLane(fresh=>instance.feed.read(id,fresh),session,s.grant.player,receive,e=>{setControlled(false);setSync(recovery.failure(e));retryAt=Date.now()+recoveryDelay(e);},e=>setSync(recovery.failure(e)),{readMs:500,tickMs:300},{receipt:(result,name,args)=>instance.feed.receipt(id,result,name,receiptArgs(args),s.grant.player),sending:value=>pilot.sending(value),nextInputId:()=>participantInputs.current.allocateId(),input:notice=>{
+    play=new LabLane(fresh=>instance.feed.read(id,fresh),session,s.grant.player,receive,e=>{setControlled(false);setSync(recovery.failure(e));retryAt=Date.now()+recoveryDelay(e);},e=>setSync(recovery.failure(e)),{readMs:500,tickMs:responsive?50:300},{receipt:(result,name,args)=>instance.feed.receipt(id,result,name,receiptArgs(args),s.grant.player),sending:value=>pilot.sending(value),nextInputId:()=>participantInputs.current.allocateId(),input:notice=>{
      const s=latestLive.current;if(stopped||!s)return;participantInputs.current.notice(notice,s.clock,s.observedAt,inputClock.current?.matchId===arenaReference(app,binding.epoch,s.id)?inputClock.current.frame:undefined);inputRevision(v=>v+1);
     }});
     const known=instance.feed.peek(id);if(known)play.ingest(known);lane.current=play;setControlled(true);
@@ -288,7 +288,7 @@ export function IndependentHub({roomId,agentArcade=false}:{roomId?:string;agentA
    const s=instance.feed.peek(id);if(s?.phase&&s.phase>=3)return;
    if(play&&!play.stopped){void play.pump(!!s&&pilot.due(labSide(s,current.current.family?.grant.player),s,performance.now()));}
    else{void observe();void restore();}
-  },100);
+  },responsive?25:100);
   return()=>{stopped=true;clearInterval(timer);stop();play?.stop();(instance.client.node.transport as any)?.closeSend?.();if(lane.current===play)lane.current=null;setControlled(false);lock.current?.();lock.current=null;};
  },[manifest,view.app,bound?.id,bound?.epoch,family?.grant.key,refresh,recoveringArena,!!ownRoom,spectating]);
  const move=useCallback((d:number)=>{const blocked=current.current.panel||document.querySelector('[aria-modal="true"]');const value=blocked?0:Math.sign(d) as -1|0|1;immediateDirection.current=value;participantInputs.current.localIntent(value,performance.now());setDirection(value);void lane.current?.intent(value,true);},[]);

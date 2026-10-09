@@ -1,0 +1,354 @@
+{
+  "scope": "Failed natural headed Edge PvP Chaos73; report retained unchanged",
+  "source": "bea0e24",
+  "reportSha256": "e07fbe2ae8840c6970adc7c9e88c8bc9ff0d5595b25c158bcf58ec67680200ff",
+  "traceSha256": "4b9829fc9e898f5a53c3d2ccaf7fcd112e1c2ab90ff4c820408411589b65f41c",
+  "gates": {
+    "natural": true,
+    "render": false,
+    "local": true,
+    "noPause": true,
+    "peer": true,
+    "commands": true
+  },
+  "integrityGates": [
+    {
+      "held": true,
+      "release": true,
+      "collisions": false,
+      "scenarios": true
+    },
+    {
+      "held": true,
+      "release": true,
+      "collisions": false,
+      "scenarios": true
+    }
+  ],
+  "poses": [
+    {
+      "at": 138068.20000004768,
+      "balls": [
+        {
+          "id": 1,
+          "x": 983.9998802325459,
+          "y": 76.00124055491517
+        }
+      ],
+      "paddles": [
+        48,
+        48.00000137560778
+      ],
+      "rally": "6",
+      "sourceUs": "64300000",
+      "renderedUs": "64409691",
+      "contactBoundary": true,
+      "sourceVelocity": {
+        "vx": "547798406",
+        "x": "923911325",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 138085.09999990463,
+      "balls": [
+        {
+          "id": 1,
+          "x": 967.1778043877914,
+          "y": 84.47101394402435
+        }
+      ],
+      "paddles": [
+        48,
+        48.00000116171302
+      ],
+      "rally": "6",
+      "sourceUs": "64530000",
+      "renderedUs": "64542000",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-602578246",
+        "x": "911505444",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 138101.79999995232,
+      "balls": [
+        {
+          "id": 1,
+          "x": 939.3026176140879,
+          "y": 98.39320729928122
+        }
+      ],
+      "paddles": [
+        48,
+        48.000000983041105
+      ],
+      "rally": "6",
+      "sourceUs": "64550000",
+      "renderedUs": "64566000",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-602578246",
+        "x": "899453879",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 138115.5,
+      "balls": [
+        {
+          "id": 1,
+          "x": 916.4349494133503,
+          "y": 109.81440784078875
+        }
+      ],
+      "paddles": [
+        48.06000001430512,
+        48.00000085718257
+      ],
+      "rally": "6",
+      "sourceUs": "64550000",
+      "renderedUs": "64579700",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-602578246",
+        "x": "899453879",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 138118.5,
+      "balls": [
+        {
+          "id": 1,
+          "x": 911.4274308403842,
+          "y": 112.31540065453805
+        }
+      ],
+      "paddles": [
+        48.960000014305116,
+        48.00000083184899
+      ],
+      "rally": "6",
+      "sourceUs": "64550000",
+      "renderedUs": "64582700",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-602578246",
+        "x": "899453879",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 138135,
+      "balls": [
+        {
+          "id": 1,
+          "x": 886.9659230525706,
+          "y": 124.53093895863172
+        }
+      ],
+      "paddles": [
+        53.91000001430512,
+        48.456319593055774
+      ],
+      "rally": "6",
+      "sourceUs": "64580000",
+      "renderedUs": "64590000",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-602578246",
+        "x": "881376532",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 138151.59999990463,
+      "balls": [
+        {
+          "id": 1,
+          "x": 865.348553322207,
+          "y": 135.327451345121
+        }
+      ],
+      "paddles": [
+        58.88999998569489,
+        53.82508508826174
+      ],
+      "rally": "6",
+      "sourceUs": "64580000",
+      "renderedUs": "64606599",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "-602578246",
+        "x": "881376532",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 139618.5,
+      "balls": [
+        {
+          "id": 1,
+          "x": 40.000143312559004,
+          "y": 548.001653610555
+        }
+      ],
+      "paddles": [
+        494.000653933216,
+        495.64144862926696
+      ],
+      "rally": "6",
+      "sourceUs": "65940000",
+      "renderedUs": "65976294",
+      "contactBoundary": true,
+      "sourceVelocity": {
+        "vx": "-602578246",
+        "x": "61870117",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 139635.70000004768,
+      "balls": [
+        {
+          "id": 1,
+          "x": 44.21767540708277,
+          "y": 550.1920877586239
+        }
+      ],
+      "paddles": [
+        499.1606539475211,
+        500.59579264026894
+      ],
+      "rally": "6",
+      "sourceUs": "66080000",
+      "renderedUs": "66085000",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "602578246",
+        "x": "54489739",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 139652.5,
+      "balls": [
+        {
+          "id": 1,
+          "x": 57.8943243588704,
+          "y": 547.5529820863303
+        }
+      ],
+      "paddles": [
+        504.20065393321596,
+        505.46603251091227
+      ],
+      "rally": "6",
+      "sourceUs": "66080000",
+      "renderedUs": "66101799",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "602578246",
+        "x": "54489739",
+        "score": [
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "at": 139668.40000009537,
+      "balls": [
+        {
+          "id": 1,
+          "x": 70.83946859347658,
+          "y": 545.054670657556
+        }
+      ],
+      "paddles": [
+        508.9706539618262,
+        510.10015825824934
+      ],
+      "rally": "6",
+      "sourceUs": "66080000",
+      "renderedUs": "66117700",
+      "contactBoundary": false,
+      "sourceVelocity": {
+        "vx": "602578246",
+        "x": "54489739",
+        "score": [
+          1,
+          4
+        ]
+      }
+    }
+  ],
+  "confirmedHits": [
+    {
+      "sequence": 30,
+      "rally": 6,
+      "ball": 1,
+      "kind": 4,
+      "obstacle": 0,
+      "at": "64409692",
+      "x": "984000428000000",
+      "y": "76001514000000"
+    },
+    {
+      "sequence": 31,
+      "rally": 6,
+      "ball": 1,
+      "kind": 7,
+      "obstacle": 0,
+      "at": "66016124",
+      "x": "15999451000000",
+      "y": "560001999000000"
+    },
+    {
+      "sequence": 32,
+      "rally": 6,
+      "ball": 1,
+      "kind": 2,
+      "obstacle": 0,
+      "at": "66049309",
+      "x": "35996010000000",
+      "y": "570000000000000"
+    }
+  ],
+  "causes": [
+    "The fixed80ms contact catch-up added excess visual speed after a delayed high-speed hit.",
+    "The waiting paddle-plane picture was blended directly into a state after a real Last Chance shield and wall. This skipped the behind-paddle path and displayed a false paddle rebound.",
+    "Responsive human client still configured300ms idle ticks, unlike the approved50ms bound; natural snapshots were234ms apart around the first contact."
+  ],
+  "correction": "Replay only newly confirmed per-ball shield/wall waypoints, bound catch-up speed, and configure a50ms primary/150ms backup human pilot with25ms wakeups. Preserve single nonce ownership and skip ticks after ordinary command progress. No contract changes."
+}

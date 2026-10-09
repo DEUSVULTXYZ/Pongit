@@ -169,12 +169,12 @@ test('public Chaos1121 confirmed contact resumes without the recorded35-unit jum
   let picture=view.sample(outgoing,waiting,17.2),last=waiting.balls[0];
   assert(Math.hypot(picture.balls[0].x-last.x,picture.balls[0].y-last.y)<12,'actual baseline jumps35.4 units');
   assert(side?picture.balls[0].x<last.x:picture.balls[0].x>last.x,'confirmed outgoing movement resumes');
-  for(let i=1;i<=5;i++){
+  for(let i=1;i<=30;i++){
    last=picture.balls[0];outgoing.balls[0].x+= (side?-1:1)*329.643622*.0167;outgoing.balls[0].y+=257.534079*.0167;
    picture=view.sample(outgoing,undefined,16.7);
    assert(Math.hypot(picture.balls[0].x-last.x,picture.balls[0].y-last.y)<18,'no later catch-up jump');
   }
-  assert.deepEqual(picture.balls,outgoing.balls,'handoff finishes within80ms; no persistent trailing ball');
+  assert.deepEqual(picture.balls,outgoing.balls,'bounded catch-up finishes within500ms; no persistent trailing ball');
  }
 });
 
@@ -427,4 +427,50 @@ test('large ball correction cannot cross the paddle plane in either direction',(
   else if(x>984)assert(sample.balls[0].x>=984);
   else assert(sample.balls[0].x>=40&&sample.balls[0].x<=984);
  }
+});
+
+
+test('human Chaos73 late fast contact cannot accelerate through an80ms correction',()=>{
+ const view=new ParticipantReconciliation(),waiting=pose(48,48,983.99988,76.00124);
+ waiting.contactBoundary=true;waiting.balls[0].vx=547798406;view.sample(waiting,undefined,16.7);
+ const next=pose(48,48,904.2745,115.8645);next.balls[0].vx=-602578246;
+ let shown=view.sample(next,waiting,16.9),last=waiting.balls[0];
+ assert(Math.hypot(shown.balls[0].x-last.x,shown.balls[0].y-last.y)<18);
+ last=shown.balls[0];next.balls[0].x=889.8128;next.balls[0].y=123.0953;
+ shown=view.sample(next,undefined,16.7);
+ assert(Math.hypot(shown.balls[0].x-last.x,shown.balls[0].y-last.y)<20,'the recorded second paint moved31 units');
+});
+
+test('a confirmed shield then wall traverses behind the missed paddle for each ball',()=>{
+ for(const side of [0,1])for(const id of [1,2]){
+  const mirror=(x:number)=>side?1024-x:x,view=new ParticipantReconciliation();
+  const waiting=pose(494,494,mirror(40.00014),548.00165);waiting.contactBoundary=true;
+  waiting.balls[0]={...waiting.balls[0],id,vx:side?602578246:-602578246};view.sample(waiting,undefined,16.7);
+  const next=pose(499,499,mirror(57.5026),559.2467);
+  next.balls[0]={...next.balls[0],id,vx:side?-602578246:602578246,speed:674,
+   contactPath:[{sequence:31,kind:side?8:7,x:mirror(15.999451),y:560.001999},{sequence:32,kind:2,x:mirror(35.99601),y:570}]};
+  let shown=view.sample(next,waiting,17.2),last=waiting.balls[0],outside=false,returned=false;
+  for(let i=0;i<12;i++){
+   const b=shown.balls[0],x=mirror(b.x);outside ||= x<25;returned ||= outside&&x>40;
+   assert(Math.hypot(b.x-last.x,b.y-last.y)<17,'confirmed shield path stays continuous');
+   if(i===0){assert(x<40,'do not fabricate a paddle rebound at the missed contact');assert(Math.abs(548.00165-shown.paddles[side])>54,'the first painted crossing still misses its displayed paddle');}
+   last=b;next.balls[0].x+= (side?-1:1)*602.578246*.0167;next.balls[0].y-=301.289121*.0167;
+   delete next.balls[0].contactPath;shown=view.sample(next,undefined,16.7);
+  }
+  assert(outside&&returned,'paint the actual shield path before continuing the outgoing ball');
+ }
+});
+
+
+test('one multiball shield path cannot be blocked by the other ball waiting at a paddle',()=>{
+ const view=new ParticipantReconciliation(),waiting=pose(494,288,40.00014,548.00165);
+ waiting.contactBoundary=true;waiting.contactPaddles=[494,288];waiting.balls[0].vx=-602578246;
+ waiting.balls.push({id:2,x:984,y:288,vx:200000000,continuity:'0:0'});view.sample(waiting,undefined,16.7);
+ const next={...waiting,balls:waiting.balls.map(b=>({...b}))};
+ next.balls[0]={...next.balls[0],x:57.5026,y:559.2467,vx:602578246,speed:674,
+  contactPath:[{sequence:31,kind:7,x:15.999451,y:560.001999},{sequence:32,kind:2,x:35.99601,y:570}]};
+ const shown=view.sample(next,waiting,17.2);
+ assert(shown.balls[0].x<40,'ball1 paints its independently confirmed shield path');
+ assert.equal(shown.balls[1].x,984,'ball2 remains at its unresolved contact');
+ assert.equal(shown.paddles[1],288);
 });

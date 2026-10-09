@@ -30,7 +30,7 @@ function participantPose(state:State,chaos?:ChaosDecoded['physics']):Participant
  return {paddles:[Number(state.left)/1e6,Number(state.right)/1e6],
   halves:paddles?[Number(paddles.heightA)/2e6+(paddles.splitA?8:0),Number(paddles.heightB)/2e6+(paddles.splitB?8:0)]:[Number(state.halfA)/1e6,Number(state.halfB)/1e6],
   ...(paddles?{split:[paddles.splitA,paddles.splitB] as const}:{}),
-  balls:chaos?chaos.balls.flatMap((b,i)=>b.alive?[{id:i+1,x:Number(b.x)/1e12,y:Number(b.y)/1e12,vx:Number(b.vx),continuity:`${chaos.score.rally}:${b.trailRevision}`}]:[]):
+  balls:chaos?chaos.balls.flatMap((b,i)=>b.alive?[{id:i+1,x:Number(b.x)/1e12,y:Number(b.y)/1e12,vx:Number(b.vx),speed:Math.hypot(Number(b.vx),Number(b.vy))/1e6,continuity:`${chaos.score.rally}:${b.trailRevision}`}]:[]):
    [{id:1,x:Number(state.x)/1e6,y:Number(state.y)/1e6,vx:Number(state.vx),continuity:`${state.scoreA}:${state.scoreB}`}],
  };
 }
@@ -208,6 +208,11 @@ export function Court({
         const predictedPose=participantPose(s,cp?.state);
         predictedPose.contactBoundary=contactBoundary;
         predictedPose.contactPaddles=contactPaddles;
+        if(p.chaos&&previous?.chaos&&p.chaos.physics.score.rally===previous.chaos.physics.score.rally){
+          for(const ball of predictedPose.balls)ball.contactPath=p.chaos.collisions
+            .filter(hit=>hit.ball===ball.id&&hit.rally===p.chaos!.physics.score.rally&&hit.at>previous.chaos!.physics.t&&hit.at<=p.chaos!.physics.t)
+            .map(hit=>({sequence:hit.sequence,kind:hit.kind,x:Number(hit.x)/1e12,y:Number(hit.y)/1e12}));
+        }
         const motion=cp?eventPaddles(cp.state):null;
         const localSpeed=motion?Number(p.side===0?motion.speedA:motion.speedB)/1e6:Number(rulesPaddleSpeed(p.rulesVersion??0))/1e6;
         const responsive=p.rulesVersion===17||p.rulesVersion===18;

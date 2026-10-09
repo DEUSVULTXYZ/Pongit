@@ -1,9 +1,10 @@
+export type ConfirmedContact={sequence:number;kind:number;x:number;y:number};
 export type ParticipantPose={
  paddles:[number,number]; halves:[number,number];
  contactBoundary?:boolean;
  contactPaddles?:readonly [number,number];
  split?:readonly [boolean,boolean];
- balls:{id:number;x:number;y:number;continuity:string;vx?:number}[];
+ balls:{id:number;x:number;y:number;continuity:string;vx?:number;speed?:number;contactPath?:readonly ConfirmedContact[]}[];
 };
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
 // Keep half a unit for event-dispatch latency within the two-unit stop target.
@@ -63,7 +64,7 @@ export function participantMotionMs(elapsedMs:number,controllable:boolean,stale:
  */
 export class ParticipantReconciliation {
  private paddles:[number,number]=[0,0];
- private balls=new Map<number,{x:number;y:number;continuity:string;handoff?:number}>();
+ private balls=new Map<number,{x:number;y:number;continuity:string;handoff?:number;route?:{side:0|1;sequence:number;points:ConfirmedContact[];entry:ParticipantPose}}>();
  private ballPictures=new Map<number,ParticipantPose['balls'][number]>();
  private localDirection=0;
  private stopCorrection=STOP_CORRECTION;
@@ -134,10 +135,42 @@ export class ParticipantReconciliation {
    // Public Chaos1121: the old reconstruction waited at x40. When the live
    // impact arrived110ms later, fading its correction at the paddle plane
    // jumped35 units in one frame. Complete only this confirmed outgoing
-   // transition over80ms. Never activate for a predicted bounce or a miss.
-   if(previous?.contactBoundary&&!current.contactBoundary&&before&&ball.vx!==undefined&&before.vx!==undefined
+   // transition with bounded catch-up. Never invent a speculative bounce.
+   if(previous?.contactBoundary&&before&&ball.vx!==undefined&&before.vx!==undefined
      &&((Math.abs(before.x-40)<.002&&before.vx<0&&ball.vx>0&&ball.x>40&&ball.x<168)
        ||(Math.abs(before.x-984)<.002&&before.vx>0&&ball.vx<0&&ball.x<984&&ball.x>856)))error.handoff=80;
+   // A single live update can cross a missed paddle, a Last Chance shield
+   // and a wall. Preserve those confirmed waypoints rather than reflecting
+   // the waiting picture at the paddle plane (human Chaos73).
+   const shield=ball.contactPath?.find(hit=>hit.kind===7||hit.kind===8);
+   if(shield&&previous?.contactBoundary&&before&&
+    (shield.kind===7&&Math.abs(before.x-40)<.002&&(before.vx??0)<0||shield.kind===8&&Math.abs(before.x-984)<.002&&(before.vx??0)>0))
+    error.route={side:shield.kind===7?0:1,sequence:0,points:[],entry:{...previous,contactPaddles:previous.contactPaddles??previous.paddles,balls:[before]}};
+   if(error.route){
+    for(const hit of ball.contactPath??[])if(hit.sequence>error.route.sequence){error.route.points.push(hit);error.route.sequence=hit.sequence;}
+    const last=this.ballPictures.get(ball.id);
+    if(last?.continuity===ball.continuity){
+     const side=error.route.side;
+     // The first displayed crossing still belongs to the earlier miss. Do
+     // not free the paddle while its ball picture is only now passing it.
+     if(side===0?last.x>=40-.002:last.x<=984+.002)
+      this.paddles[side]=contactPaddle(error.route.entry,side,current.paddles[side]+this.paddles[side])-current.paddles[side];
+     let x=last.x,y=last.y,budget=((ball.speed??Math.abs(ball.vx??0)/1e6)+120)*dt/1000;
+     while(budget>0){
+      const point=error.route.points[0]??ball,dx=point.x-x,dy=point.y-y,distance=Math.hypot(dx,dy);
+      if(distance<=budget){x=point.x;y=point.y;budget-=distance;if(error.route.points.length){error.route.points.shift();continue;}break;}
+      x+=dx*budget/distance;y+=dy*budget/distance;break;
+     }
+     error.x=x-ball.x;error.y=y-ball.y;error.handoff=Math.max(80,Math.hypot(error.x,error.y)*1000/120);
+     if(!error.route.points.length&&(error.route.side===0?x>=40:x<=984))error.route=undefined;
+     const picture={...ball,x,y};this.balls.set(ball.id,error);this.ballPictures.set(ball.id,picture);return picture;
+    }
+    error.route=undefined;
+   }
+   // Bound extra catch-up speed. A fixed80ms deadline turned a late600u/s
+   // return into a31-unit single-frame jump. Small corrections still finish
+   // in80ms; larger ones retain only their existing spatial delay.
+   if((error.handoff??0)>0)error.handoff=Math.max(error.handoff!,Math.hypot(error.x,error.y)*1000/120);
    const handoff=error.handoff??0;
    if(handoff>0){
     const remaining=Math.max(0,handoff-dt);
@@ -150,7 +183,8 @@ export class ParticipantReconciliation {
    // not a contact. Borrowing a newly corrected paddle's error here teleported
    // the stationary ball vertically (observed PvP 26480ms: +99px, then -54px).
    const left=ball.x<40?0:clamp((168-ball.x)/128,0,1),right=ball.x>984?0:clamp((ball.x-856)/128,0,1),free=1-left-right;
-   const blend=handoff>0&&!current.contactBoundary&&ball.x>40&&ball.x<984?1:free;
+   const ownContact=current.contactBoundary&&(Math.abs(ball.x-40)<.002&&(ball.vx??0)<0||Math.abs(ball.x-984)<.002&&(ball.vx??0)>0);
+   const blend=handoff>0&&!ownContact&&ball.x>40&&ball.x<984?1:free;
    const x=ball.x+error.x*blend;
    // The contact position belongs to live physics. Never borrow a paddle's
    // error to manufacture a visible hit, or shift a real miss into a hit.

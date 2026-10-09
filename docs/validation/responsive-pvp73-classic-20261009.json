@@ -1,0 +1,97 @@
+{
+  "reportSha256": "b8fa3f05994a501938c7ae62774f81c59df1ba1f99106353c793db3949206099",
+  "scope": "First natural PvP after wiring local input events; headed Chrome and virtual Mera",
+  "source": "bea0e243c3703a2bdf72375cb633ee52d6aef82e",
+  "passed": true,
+  "checks": [
+    "Delivered CSP includes every human arena",
+    "Three Mera accounts and root-signed unique profiles saved",
+    "Contract matchmaking, two consents and automatic hosted admission",
+    "Real three-second countdown on both players and spectator",
+    "Natural match with both players controlling",
+    {
+      "finalScore": "7 : 5"
+    }
+  ],
+  "syncGates": {
+    "natural": true,
+    "render": true,
+    "local": true,
+    "noPause": true,
+    "peer": true,
+    "commands": true
+  },
+  "integrityGates": [
+    {
+      "held": true,
+      "release": true,
+      "collisions": true,
+      "scenarios": true
+    },
+    {
+      "held": true,
+      "release": true,
+      "collisions": true,
+      "scenarios": true
+    }
+  ],
+  "peer": {
+    "samples": 1016,
+    "p95Ms": 15.77685546875,
+    "clock": "same Playwright host",
+    "sendP95Ms": 16.612548828125
+  },
+  "players": [
+    {
+      "localInput": {
+        "samples": 257,
+        "p95Ms": 15.599999904632568,
+        "misses": []
+      },
+      "maxHoldMs": 134.89999985694885,
+      "p95FrameMs": 17.5,
+      "paddleJumps": [],
+      "stopping": {
+        "samples": 30,
+        "p95Drift": 1.5600000143051034,
+        "maxDrift": 1.5600000143051318
+      },
+      "held": {
+        "samples": 268,
+        "p05Ratio": 0.9979999995231623,
+        "p95Ratio": 1.0019900502257073,
+        "minRatio": 0.9948096894020092,
+        "maxRatio": 1.004310344827584,
+        "outsideTarget": 0
+      },
+      "crossings": [],
+      "unconfirmedBounces": []
+    },
+    {
+      "localInput": {
+        "samples": 244,
+        "p95Ms": 15,
+        "misses": []
+      },
+      "maxHoldMs": 133.90000009536743,
+      "p95FrameMs": 17.5,
+      "paddleJumps": [],
+      "stopping": {
+        "samples": 42,
+        "p95Drift": 1.559999942779541,
+        "maxDrift": 1.5600000143051602
+      },
+      "held": {
+        "samples": 274,
+        "p05Ratio": 0.9979999995231632,
+        "p95Ratio": 1.0019999980926513,
+        "minRatio": 0.9950199203234557,
+        "maxRatio": 1.004975124378108,
+        "outsideTarget": 0
+      },
+      "crossings": [],
+      "unconfirmedBounces": []
+    }
+  ],
+  "finishedAt": "2026-10-09T14:13:42.019Z"
+}

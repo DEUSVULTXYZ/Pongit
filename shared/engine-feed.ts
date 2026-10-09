@@ -163,6 +163,7 @@ export class EngineFeed {
 
 /** The backup takes over after a missed primary heartbeat, not every tick period. */
 export class TickPilot {
+ constructor(private cadence:{tickMs:number;takeoverMs:number}={tickMs:300,takeoverMs:900}){}
  private progress=-1n;
  private at=0;
  private lastOwn=0;
@@ -176,8 +177,8 @@ export class TickPilot {
  }
  due(side:number,s:EngineState,now:number){
   if(side<0||s.phase!==2||s.state.awaitingServe)return false;
-  if(side===0)return now-this.at>=300;
-  if(!this.backup&&now-this.at>=900)this.backup=true;
-  return this.backup&&now-this.at>=300;
+  if(side===0)return now-this.at>=this.cadence.tickMs;
+  if(!this.backup&&now-this.at>=this.cadence.takeoverMs)this.backup=true;
+  return this.backup&&now-this.at>=this.cadence.tickMs;
  }
 }

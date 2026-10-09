@@ -262,3 +262,14 @@ test('human live snapshots retain only the latest queued intent until its physic
  const gap=frame(10n);gap.logs=[input(-1,3n,300000n),...gap.logs];
  assert.equal(mergeEngineFrame(all,app,second,gap).state,second,'A gap cannot manufacture accepted visual controls');
 });
+
+
+test('responsive human pilot advances within50ms while commands suppress idle ticks',()=>{
+ const pilot=new TickPilot({tickMs:50,takeoverMs:150}),s=baseline();pilot.observe(s,1000);
+ assert(!pilot.due(0,s,1049));assert(pilot.due(0,s,1050));assert(!pilot.due(1,s,1149));
+ const next={...s,state:{...s.state,t:200000n}};pilot.observe(next,1050);
+ assert(!pilot.due(0,next,1099));assert(!pilot.due(1,next,1199));assert(pilot.due(1,next,1200));
+ pilot.sending(true);const own={...s,state:{...s.state,t:250000n}};pilot.observe(own,1200);pilot.sending(false);
+ assert(!pilot.due(1,own,1249));assert(pilot.due(1,own,1250));
+ pilot.observe({...s,state:{...s.state,t:300000n}},1260);assert(!pilot.due(1,s,1310),'primary recovery returns ownership');
+});
