@@ -1,0 +1,74 @@
+{
+  "at": "2026-10-09T09:38:55.854058+00:00",
+  "releaseComplete": false,
+  "candidate": "f82eb25766ac2d5752c3fa14ff7c8c0bacc221bb",
+  "runs": [
+    {
+      "run": "r2seven35a0",
+      "ref": {
+        "app": "0x077df08FA9Ff9BBFcBA2a3C6879bCf3B21EFd3Df",
+        "epoch": "1",
+        "id": "1488"
+      },
+      "admissionMs": 7645,
+      "sponsorHash": "0x9f9a931040a3c51424e9bbf7600990f378d9cba3961299d6951fb0aee3b1b5d7",
+      "operation": "0x7239f25bb8a502e48324e6d17a9fad2e31a6efbbfb917cc1ede2368835c5e00f",
+      "sendP95Ms": 20,
+      "noPause": true,
+      "noResync": true,
+      "sha256": "872d5b2b4dd765797b649fb3a39b53dd2ac1a6f59121f038da26ea5ff2d9492c"
+    },
+    {
+      "run": "r2seven35a1",
+      "ref": {
+        "app": "0x776f35918Da25F0b594FeA72911DDe5eFc93e48e",
+        "epoch": "1",
+        "id": "1485"
+      },
+      "admissionMs": 7193,
+      "sponsorHash": "0x9f9a931040a3c51424e9bbf7600990f378d9cba3961299d6951fb0aee3b1b5d7",
+      "operation": "0x0032b42440afeb0e8a677f55b17be810758423a30372ec5a3465980229349d7d",
+      "sendP95Ms": 16,
+      "noPause": true,
+      "noResync": true,
+      "sha256": "5e017175c06e52da29e553135d8523232ecffa1385bb4379f6936f289664223f"
+    },
+    {
+      "run": "r2seven35a2",
+      "ref": {
+        "app": "0x264101cA1936cfd1B274F5CEbA535E1378597dc4",
+        "epoch": "1",
+        "id": "1487"
+      },
+      "admissionMs": 6656,
+      "sponsorHash": "0x9f9a931040a3c51424e9bbf7600990f378d9cba3961299d6951fb0aee3b1b5d7",
+      "operation": "0xa07c10dfc2e3c0313e29dd34ad6fdf04aaa110ea1251c349a54e6d0081cab98e",
+      "sendP95Ms": 16,
+      "noPause": true,
+      "noResync": true,
+      "sha256": "fcfbbcf0ccb50e255ad73cee991327a1ee4de601bf2e5e696bdefc94a2d801ce"
+    },
+    {
+      "run": "r2seven35a3",
+      "ref": {
+        "app": "0x9E4c76aA3F83DB0b854E0aE968dF38BcE29aB123",
+        "epoch": "1",
+        "id": "1486"
+      },
+      "admissionMs": 7508,
+      "sponsorHash": "0x9f9a931040a3c51424e9bbf7600990f378d9cba3961299d6951fb0aee3b1b5d7",
+      "operation": "0x9616e02328ba58fbbb35911adad0c25069028aed4e5489d01a2e5aae48316745",
+      "sendP95Ms": 17,
+      "noPause": true,
+      "noResync": true,
+      "sha256": "b697910b5583669e7babd550ea8646eb185c307ab343ce70b06d3da4a729260b"
+    }
+  ],
+  "sevenWayPassed": false,
+  "groupingPassed": true,
+  "overlapFailure": {
+    "error": "A game ended before sufficient overlap; preserve partial evidence",
+    "sha256": "68da3aca353d685c692e7b1a771cab7395c8def72bedd168e9bcebfd6ff2b7b1",
+    "humanEndedAtFirstSample": true
+  }
+}

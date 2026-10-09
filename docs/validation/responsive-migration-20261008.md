@@ -1695,3 +1695,43 @@ Prospectivecohort55FAILED09:04:35:trial30 complete with fourVECTOR1472..1475 and
 Readonlypreflight55 firstattempt failedmemoryguard beforecreation; secondexited0/noOOM09:04:44, not24h. Tenunused preOctoberwebcontainers stopped09:00:28 after route/consumer/socket checks; allcontainers/images/volumes/configretained, currentservices/recovery3109untouched. Scopeproof unused-web-stop-1.json.
 
 New sponsor56candidate NOTDEPLOYED: overlapping late validation regression2FAIL beforefix; configduplicatebatchregression1FAIL beforefix. Joinnowincludes lateoverlap underSAMEoldest1sdeadline/no waitingforfuturearrivals/no nonce held. Concurrentconfigchecks shareonlyunfinishedcanonicalobservation, no completedauthorizationcache.38focused/rootTSPASS. Fulltests/isolatedPGpending. AgentPoolMatch already deferscosmeticcatalogueuntilcourt; no UIchange proposed. All55productionidentitiesunchanged. No browser/game/cutover/lifecycleworker; automationPAUSED;24hNOTSTARTED. Funding500+900complete, NEVERrepeat.
+
+
+## October9 09:28 UTC - sponsor56 deployed; trial35 active
+
+Productf82eb25766ac2d5752c3fa14ff7c8c0bacc221bb published, compatible sponsor image7d2175f583bc4b3947f5a8649b89dfb4b1929fb8081a087cbe54563b47d329dd.1226fullTS/38focused/rootTS/34LinuximagechecksPASS. RealisolatedPG baseline54 reproduceslate3+1-style splitting; candidate16intents/4nonces/4groupsPASS inclcrash/restart/identicalrebroadcast/unsigned429; no productiontransactions. Code reviewresponsive-admission56-review-20261009.json.
+
+Idle-onlycutover56PASS09:25:55, started09:25:53.391339448Z; canonical69503633/hash23ae30ccdf28bb1e9410217b6ed075efdfed617813adcdcb1449e026fdbb2c02,sevenidle/humanSlots0/journals[0,0,0]. No gamecancelled,contracts/nodes/delegations/physics/UIunchanged. Intake resumed. Exacteightarena journal scope checkedbeforeexecution. Rollback sponsor54/image8946aa plusentry56-sponsor.previous.private.json onlyafteracceptedopsresolve;neveroldDB.
+
+Correctbackup56 fiveactualDB/runtime317663933bytes OFFVPSverified09:23:07.709Z,manifest9ae70b0527cde0bea490a7559fc305339074b82958c25ed8f06d1a8c9ad5ce4b. Prioractual51crestorePASS retained; no schema change. Cleanup56 sixunmountedbackup54payloads308808484bytes archivedOFFVPS308817920bytes SHA0029ecc9de46aae8811b1ad14cf25fe3cbc2f727214da02f18c045023dc3f333 beforeeviction; mountedinputs/current55/rollbackimages/volumes preserved. Disk79.588beforebuild.
+
+Freshpublic09:24 elevennodes correctapp/epoch1/sendGatedfalse; catalogue4free/7ready/all8officialbotsbothmodesavailable. NoInterludeavailabilityblock demonstrated.
+
+SOLEactualbrowsercoordinator24976/r2seven35 started09:26:41UTC, original20minpreparation/30mintotal, sixclients+observer; at09:27preparing. Sourceimagesweb53/engine55/sponsor56 pinned. Noothergame/browser/cutover/lifecyclewriter; no newmonitorrunning. Naturalseries56/cohort56/faults56/preflight56 PREPARED NOTRUN. Final24hNOTSTARTED;automationPAUSED. Earlier500and900MONfundingscomplete/neverrepeat. EvidenceHEADf021a34 beforethischeckpoint.
+
+## October9 09:52 UTC - strict trial56 exposes a one-second live transport stall
+
+Trial35 finished09:35:29: allsix actual browsers passed, four NOVA friendly admissions6656..7645ms shared one sponsor transaction9f9a9310. BothPvP passed. The seven-way observer FAILED because Classic ended before four friendly games began; original evidence retained. No simultaneous-capacity claim from this trial.
+
+Final56 series FAILED on its first natural Classic1491 on21a epoch1. Admission4831ms/localinputp9515.3ms/confirmedp9513.7ms passed, but one genuine protective pause3033.6ms and abnormal resync were recorded. Later six games never started. At Windows09:37:53.749 heartbeat049c7300 took1006ms; same-node receipt HTTP and GET health also took875/988ms. VPS engine journal independently records a1065ms command ending in adjacent block0x7542ba, after browser heartbeat block0x7542b9; VPS clock is approximately2s ahead. Both paths normally return promptly. Pendingdiffs10..12 and committedbatch968 stayed below limits; noNodeBusy/rate/clockfence/newmutexhold evidence. Cause location remains under investigation; no Interlude blocker claim yet. Do not increase500ms protection or change nonce recovery to mask this.
+
+All browser/cohort/build/cutover workers have finished. Production sponsor56/engine55/web53 unchanged. No new fixtures until this failure is understood. Fresh eleven-node identity09:24 verified; redeploy/reship is unnecessary. Funding09:29 operator48130MON/sharedvalidator44990MON; no request or transfer. Current backup56 OFFVPS verified. Final24h NOTSTARTED, automationPAUSED. Preserve all failed reports, journals and prior evidence.
+
+## October9 10:10 UTC - provider trace requested; replay fix qualified locally
+
+The simultaneous one-second hosted transport stall from1491 is preserved in responsive-pause1491-20261009.json and hosted-pause1491-20261009.md. Two bounded read-only Windows/VPS probe pairs are finished. Neither reproduced the simultaneous stall; three isolated VPS samples exceeded500ms, two on an idle node. Windows p95 7..8ms, VPS97..98ms. No quota, batch fullness or new long EVM lock evidence. Interlude internal request timing was requested from the user; no provider change or closing requested. No new game fixture was launched.
+
+Public replay1491 exposed an independent desktop overflow at1366x768; baselineFAIL retained. Producteea90e5 fixes width budgeting separately for Classic and Chaos side rails. Actual CSS-injected public replays pass20Chrome/Edge checks across360/390/768/1366/1440; first Chaos specificity failure retained and corrected. Courts909px at1366 and1144px at1440, controls/focus/playback/no writes pass. Productcommit published. LocalLinuxweb57 buildPASS image0884312126d5a1b024e9b5bf5341c408a0f6dea90f5d02695f8504a2584e6c3f; VPS importPASS, NOTDEPLOYEDyet. Productionweb53 remains.
+
+Correctbackup57 completed10:08:56, fiveactualDB/runtime321560866bytes, manifestda2a9d2dac5b13c66e8ce39fb1f011a0dc075f3a922f04789e8ae1c90723ec7b. Sole OFFVPS pull running; do notduplicate. Idle-onlyweb57 cutoverPREPAREDNOTRUN and requires verified copy. Backup55 sixunmountedpayloads311828420bytes preservedOFFVPS beforeeviction, archiveSHA8d50337b422e093aedbbdd77e11ef3be47f9152d7231671b240bf66c8fd1a1f0; disk79.760beforebuild. Latestelevennodehealth10:09:03 PASS correctapps/epoch1/chain4242/sendGatedfalse. SDK0.2.3 is stillnpmLatest. No reship or transfer; funding adequate. AutomationPAUSED; final24hNOTSTARTED; no completed delivery claim.
+
+
+## October9 10:18 UTC - replay57 deployed and actual public replay checks pass
+
+Webeea90e5/image0884312126d5a1b024e9b5bf5341c408a0f6dea90f5d02695f8504a2584e6c3f deployed10:13:33, cutover50260 PASS10:13:36. Previous competitive game ended naturally after new admissions quiesced. Canonical69513011/hash7647f0833b9b5be59d81328ffe61ffbf086ca8bcfdf2df73bd266c579ab5f5ea verifiedsevenidle/humanSlots0/queuedpending0. Intake restored. Onlywebimagechanged; sponsor56/engine55/RPC49/reader/archive/human/contracts unchanged. Rollbackweb53b246 plusentry57-web.previous.private.json; neverrestoreoldDB. Correctbackup57 OFFVPSverified10:10:22,321560866bytes/manifestda2a9d2dac5b13c66e8ce39fb1f011a0dc075f3a922f04789e8ae1c90723ec7b. Prioractual51c fiveDBrestore remainsPASS; no schema change.
+
+Actual COMPILED PUBLIC Classic1491 and Chaos1486 replays now pass20 checks in headedChrome/Edge at360/390/768/1366/1440, no CSS injection, no writes, correct finalscore/focus/playback/no desktopscroll. Desktopcourts909px/1144px. Candidate andbaseline failures retained. Proofresponsive-replay57-public-20261009.json. RootTypeScriptPASS; LinuxNextbuildPASS. These are replay checks, not new live-game qualification or physicalmobile proof.
+
+Freshcanonical69513289/hash67290a5000305af1ac34435d4fcdd429a9f40d447b9e67f201c4ec900393f896 verifiesall11delegationsActive/epoch1/expiresAt0 andidentifiedhealthy live nodes. Eightagent runtimehashes matchmanifest; humanmanifesthasnoexpectedhash, observedcodehashes recordedseparately. Rules17agents/18humans. No redeploy/reship needed.
+
+Cleanup57b preserved sixunmountedpreviousbackup56payloads317663933bytesOFFVPS beforeeviction;archiveSHA15f1cf0a90d7f822e739dc8d2c6bc2247a74775e5b9488cca545cddf2cd3c81e. Latest57/currentimages/rollback/volumes/mountedinputs untouched. Disk80.094usable afternewbackup/image; below80cleanup required beforeanyfuturebuild. Allcutover/build/backup/probe/browser processes are finished. No new gamefixture or lifecyclewriter.1491 genuinepause remainsFAIL; providerrequesttiming awaited. Cohort56/faults56/24h helpers NOTRUN and remain blocked by failed normalseries56. AutomationconfirmedPAUSED. Fundingadequate/no transfers. No completed delivery claim.

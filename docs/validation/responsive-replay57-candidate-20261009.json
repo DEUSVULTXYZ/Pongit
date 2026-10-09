@@ -1,0 +1,43 @@
+{
+  "source": "eea90e5ae4df600c70387a7478c0fae14a3f404f",
+  "deployed": false,
+  "physicalMobile": false,
+  "realPublicReplay": true,
+  "baselineFailed": true,
+  "checks": [
+    {
+      "run": "r2replay56-1491",
+      "passed": false,
+      "error": "Desktop replay controls must fit without scrolling",
+      "checks": 3,
+      "sha256": "0493f3f9a666467415241915679b19f04e192627a7d9e2bef0440ec87fd27f65",
+      "candidateCss": false
+    },
+    {
+      "run": "r2replay57-classic-candidate",
+      "passed": true,
+      "error": null,
+      "checks": 10,
+      "sha256": "f9efac572469f712c59d5f2d54007a8379bec720e1bef7b9b01410e9b735f588",
+      "candidateCss": true
+    },
+    {
+      "run": "r2replay57-chaos-candidate",
+      "passed": false,
+      "error": "Compact desktop replay must use the large court",
+      "checks": 3,
+      "sha256": "841ba1f4201f4b413d403e7f1c60b54b7ea794f9daaba0c5cb8db74d528ea3e7",
+      "candidateCss": true
+    },
+    {
+      "run": "r2replay57b-chaos-candidate",
+      "passed": true,
+      "error": null,
+      "checks": 10,
+      "sha256": "9318c4f7bb7582cf44e0b8186fd2bff1178fdb9f84fce5925ee0843cca280733",
+      "candidateCss": true
+    }
+  ],
+  "cssSha256": "32e30556d955964560c6236862d79ed2d0939dd5bae121c28d6e9da88f9c4202",
+  "limits": "Candidate CSS was applied to actual public replay pages. Final compiled production verification remains required."
+}

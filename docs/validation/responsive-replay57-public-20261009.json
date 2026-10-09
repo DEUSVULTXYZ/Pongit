@@ -1,0 +1,546 @@
+{
+  "at": "2026-10-09T10:18:26.303870+00:00",
+  "source": "eea90e5ae4df600c70387a7478c0fae14a3f404f",
+  "publicReplayPassed": true,
+  "releaseComplete": false,
+  "physicalMobile": false,
+  "image": "sha256:0884312126d5a1b024e9b5bf5341c408a0f6dea90f5d02695f8504a2584e6c3f",
+  "deployedAt": "2026-10-09T10:13:33.555200953Z",
+  "cutoverSha256": "505d892e3459ce41e014a9fd25446bc18781ed7c6ea9ba9b5b1b69ba487e886d",
+  "backupManifest": "da2a9d2dac5b13c66e8ce39fb1f011a0dc075f3a922f04789e8ae1c90723ec7b",
+  "reports": [
+    {
+      "run": "r2replay57-classic-public",
+      "sha256": "53de9285919bea4551a96f52074a5873b0246d8545c49a846685707a0af28bd2",
+      "ref": "0x21a573b3c39265d27ad98f70e8942fd55af54391/1/1491",
+      "frames": 450,
+      "checks": [
+        {
+          "channel": "chrome",
+          "width": 360,
+          "court": {
+            "x": 40.79999923706055,
+            "y": 360.25,
+            "width": 278.4000129699707,
+            "height": 155.9000244140625
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "chrome",
+          "width": 390,
+          "court": {
+            "x": 40.79999923706055,
+            "y": 351.70001220703125,
+            "width": 308.8000068664551,
+            "height": 173
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "chrome",
+          "width": 768,
+          "court": {
+            "x": 48.79999923706055,
+            "y": 326.0500183105469,
+            "width": 670.4000129699707,
+            "height": 376.3999938964844
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "chrome",
+          "width": 1366,
+          "court": {
+            "x": 228.66250610351562,
+            "y": 159.6750030517578,
+            "width": 909.0624694824219,
+            "height": 510.6374969482422
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "chrome",
+          "width": 1440,
+          "court": {
+            "x": 148.1374969482422,
+            "y": 159.6750030517578,
+            "width": 1143.7250518798828,
+            "height": 642.6374969482422
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 360,
+          "court": {
+            "x": 40.79999923706055,
+            "y": 360.25,
+            "width": 278.4000129699707,
+            "height": 155.9000244140625
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 390,
+          "court": {
+            "x": 40.79999923706055,
+            "y": 351.70001220703125,
+            "width": 308.8000068664551,
+            "height": 173
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 768,
+          "court": {
+            "x": 48.79999923706055,
+            "y": 326.0500183105469,
+            "width": 670.4000129699707,
+            "height": 376.3999938964844
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 1366,
+          "court": {
+            "x": 228.66250610351562,
+            "y": 159.6750030517578,
+            "width": 909.0624694824219,
+            "height": 510.6374969482422
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 1440,
+          "court": {
+            "x": 148.1374969482422,
+            "y": 159.6750030517578,
+            "width": 1143.7250518798828,
+            "height": 642.6374969482422
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        }
+      ]
+    },
+    {
+      "run": "r2replay57-chaos-public",
+      "sha256": "8187aa570bf42a560aa683884bdd1d107b0c6e20746ceb0a4a05ab2a74b7bb2d",
+      "ref": "0x9e4c76aa3f83db0b854e0ae968df38bce29ab123/1/1486",
+      "frames": 431,
+      "checks": [
+        {
+          "channel": "chrome",
+          "width": 360,
+          "court": {
+            "x": 40.79999923706055,
+            "y": 406.25,
+            "width": 278.4000129699707,
+            "height": 155.9000244140625
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "chrome",
+          "width": 390,
+          "court": {
+            "x": 40.79999923706055,
+            "y": 397.70001220703125,
+            "width": 308.8000068664551,
+            "height": 173
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "chrome",
+          "width": 768,
+          "court": {
+            "x": 48.79999923706055,
+            "y": 404.8999938964844,
+            "width": 655.2000007629395,
+            "height": 367.8500061035156
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "chrome",
+          "width": 1366,
+          "court": {
+            "x": 156.66250610351562,
+            "y": 159.6750030517578,
+            "width": 909.0624694824219,
+            "height": 510.6374969482422
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "chrome",
+          "width": 1440,
+          "court": {
+            "x": 76.13750457763672,
+            "y": 159.6750030517578,
+            "width": 1143.7250442504883,
+            "height": 642.6374969482422
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 360,
+          "court": {
+            "x": 40.79999923706055,
+            "y": 406.25,
+            "width": 278.4000129699707,
+            "height": 155.9000244140625
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 390,
+          "court": {
+            "x": 40.79999923706055,
+            "y": 397.70001220703125,
+            "width": 308.8000068664551,
+            "height": 173
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 768,
+          "court": {
+            "x": 48.79999923706055,
+            "y": 404.8999938964844,
+            "width": 655.2000007629395,
+            "height": 367.8500061035156
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 1366,
+          "court": {
+            "x": 156.66250610351562,
+            "y": 159.6750030517578,
+            "width": 909.0624694824219,
+            "height": 510.6374969482422
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        },
+        {
+          "channel": "msedge",
+          "width": 1440,
+          "court": {
+            "x": 76.13750457763672,
+            "y": 159.6750030517578,
+            "width": 1143.7250442504883,
+            "height": 642.6374969482422
+          },
+          "finalScore": [
+            7,
+            6
+          ],
+          "playback": true,
+          "focus": true,
+          "writes": 0
+        }
+      ]
+    }
+  ],
+  "contracts": {
+    "passed": true,
+    "readOnly": true,
+    "at": "2026-10-09T10:14:58.050Z",
+    "hub": "0x98922c6E5e4Bea62761C71D2401c7ec2c26eC43e",
+    "block": "69513289",
+    "hash": "0x67290a5000305af1ac34435d4fcdd429a9f40d447b9e67f201c4ec900393f896",
+    "agentRules": 17,
+    "humanRules": 18,
+    "arenas": [
+      {
+        "space": "agents",
+        "app": "0x264101ca1936cfd1b274f5ceba535e1378597dc4",
+        "node": "https://il2-eu-264101ca1936cfd1.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173551",
+        "codeHash": "0x3bf4c884f4e506e5b8bd9037d2dfecb15ae0de78e2b5ddf74d34e2ab3743ed24",
+        "expectedHash": "0x3bf4c884f4e506e5b8bd9037d2dfecb15ae0de78e2b5ddf74d34e2ab3743ed24",
+        "codeMatches": true,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 1072
+      },
+      {
+        "space": "agents",
+        "app": "0x077df08fa9ff9bbfcba2a3c6879bcf3b21efd3df",
+        "node": "https://il2-eu-077df08fa9ff9bbf.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173557",
+        "codeHash": "0xa20227bac5e2e48b2a22ad05fe5085b0ad0ee7326801c2332910667f649bad8d",
+        "expectedHash": "0xa20227bac5e2e48b2a22ad05fe5085b0ad0ee7326801c2332910667f649bad8d",
+        "codeMatches": true,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 772
+      },
+      {
+        "space": "agents",
+        "app": "0x0dcfdd467f7d3d80194897429e85184f46f43e98",
+        "node": "https://il2-eu-0dcfdd467f7d3d80.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173562",
+        "codeHash": "0x930cdc58d02c0764442640d20999eb7aee540d9433d7a6329be6764d2a17fc8c",
+        "expectedHash": "0x930cdc58d02c0764442640d20999eb7aee540d9433d7a6329be6764d2a17fc8c",
+        "codeMatches": true,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 993
+      },
+      {
+        "space": "agents",
+        "app": "0xcc4fbf1df9b4bf61353660c40e8f05c5135c3b23",
+        "node": "https://il2-eu-cc4fbf1df9b4bf61.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173567",
+        "codeHash": "0x6e5910c2a9b517b6203da03a1902d8933057848c883af8b809ad782166ab8d24",
+        "expectedHash": "0x6e5910c2a9b517b6203da03a1902d8933057848c883af8b809ad782166ab8d24",
+        "codeMatches": true,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 1023
+      },
+      {
+        "space": "agents",
+        "app": "0x776f35918da25f0b594fea72911dde5efc93e48e",
+        "node": "https://il2-eu-776f35918da25f0b.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173573",
+        "codeHash": "0xd645f244ea0459f0279a9b8574d570d349259a9438635fd59841a27757e555b5",
+        "expectedHash": "0xd645f244ea0459f0279a9b8574d570d349259a9438635fd59841a27757e555b5",
+        "codeMatches": true,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 1042
+      },
+      {
+        "space": "agents",
+        "app": "0x4e9fa437576b1b2b386fe1ec24d26839434effb2",
+        "node": "https://il2-eu-4e9fa437576b1b2b.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173578",
+        "codeHash": "0x28024244c25bc89e6aea9ae27797387922977644cf462653c7e8169b688172bd",
+        "expectedHash": "0x28024244c25bc89e6aea9ae27797387922977644cf462653c7e8169b688172bd",
+        "codeMatches": true,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 911
+      },
+      {
+        "space": "agents",
+        "app": "0x21a573b3c39265d27ad98f70e8942fd55af54391",
+        "node": "https://il2-eu-21a573b3c39265d2.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173583",
+        "codeHash": "0x0a1f45a867d1d1b1bddda5d92fb6bf2f8df1b148e9252f891a19473bc783276d",
+        "expectedHash": "0x0a1f45a867d1d1b1bddda5d92fb6bf2f8df1b148e9252f891a19473bc783276d",
+        "codeMatches": true,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 983
+      },
+      {
+        "space": "agents",
+        "app": "0x9e4c76aa3f83db0b854e0ae968df38bce29ab123",
+        "node": "https://il2-eu-9e4c76aa3f83db0b.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173588",
+        "codeHash": "0xc7b4ff37cea69e3d023582f67c966b710d029cb688337cf5fcc9fd4336c5f780",
+        "expectedHash": "0xc7b4ff37cea69e3d023582f67c966b710d029cb688337cf5fcc9fd4336c5f780",
+        "codeMatches": true,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 1100
+      },
+      {
+        "space": "human",
+        "app": "0xC8e978e3c6581eB5454e486Eb247c503fFbc0e3D",
+        "node": "https://il2-eu-c8e978e3c6581eb5.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173455",
+        "codeHash": "0xca157b53ee75c16e252c93b2f76baaec5d09bdf8071f38c1f11ba6bf0fd6afc2",
+        "codeMatches": false,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 366
+      },
+      {
+        "space": "human",
+        "app": "0x58a5F04Bbad06061eab3a7A27C75291d5Fa63084",
+        "node": "https://il2-eu-58a5f04bbad06061.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173461",
+        "codeHash": "0x565f32b42eb4330a159e034d53e1f887489b8bcd0859c499c5b9e0cdf79855dd",
+        "codeMatches": false,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 251
+      },
+      {
+        "space": "human",
+        "app": "0x417236584B76a00A8C19B792fc3896F149b0055e",
+        "node": "https://il2-eu-417236584b76a00a.fly.dev",
+        "status": 1,
+        "epoch": "1",
+        "expiresAt": "0",
+        "baseBlock": "69173467",
+        "codeHash": "0x8ec67173c8a64292e0287b31fca75fb88d1bdbadeca01c793e1b4f01ad24e2eb",
+        "codeMatches": false,
+        "nodeMatches": true,
+        "healthy": true,
+        "committedBatches": 87
+      }
+    ]
+  },
+  "contractsSha256": "14e80693c356224ee6a0046f54c713fd1eea7d9e5dce1174ac5a7e38fdd2a149",
+  "contractCodeComparisonNote": "All eleven addresses have code and matching live application/epoch plus canonical Active/no-expiry delegation. Eight agent code hashes match the manifest. The human public manifest does not contain expected code hashes; its three observed hashes are recorded, not independently compared here.",
+  "remaining": "Match1491 remains a failed fluidity qualification. The final unchanged 24-hour trial has not started."
+}

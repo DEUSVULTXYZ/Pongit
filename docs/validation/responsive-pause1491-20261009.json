@@ -1,0 +1,245 @@
+{
+  "qualificationPassed": false,
+  "ref": {
+    "app": "0x21a573b3c39265d27ad98F70e8942Fd55Af54391",
+    "epoch": "1",
+    "id": "1491"
+  },
+  "rulesVersion": 17,
+  "naturalEnded": true,
+  "originalError": "Unexpected protective resume countdown",
+  "heartbeat": {
+    "ms": 1005.9830000000002,
+    "sentAt": 1791538673749.542,
+    "confirmedAt": 1791538674755.5422,
+    "status": "0x1",
+    "action": "heartbeat",
+    "hash": "0x049c7300b21e6bc9e406fd56e933b40536bb082b1a4847271b74952fa47ebd4f",
+    "block": "0x7542b9",
+    "gasUsed": "0xd9ce0",
+    "logCount": 2
+  },
+  "independentEngineCommand": {
+    "app": "0x21a573b3c39265d27ad98f70e8942fd55af54391",
+    "operation": "match:1491:tick:302:7684677:35830773512",
+    "epoch": 1,
+    "nonce": 60765,
+    "hash": "0x0ee5eea41ceb0d341475b1f14e95689419caf68aab774253894073b7a4dc6796",
+    "status": "observed",
+    "created_at": "2026-10-09T09:37:55.752437+00:00",
+    "updated_at": "2026-10-09T09:37:56.817694+00:00",
+    "resolution_kind": "receipt",
+    "block": "0x7542ba",
+    "elapsed_ms": 1065.257
+  },
+  "concurrentHealth": {
+    "at": 1791538673768.9912,
+    "receivedAt": 1791538674757.0728,
+    "block": 7684794,
+    "timestamp": 1791538676,
+    "batches": 968,
+    "pendingDiffs": 12,
+    "ok": true,
+    "sendGated": false,
+    "clock": {
+      "ageMs": 402,
+      "lagMs": 763,
+      "fenced": false,
+      "failures": 9,
+      "refreshes": 76917,
+      "readMs": {
+        "max": 90,
+        "p50": 11,
+        "p99": 33
+      }
+    },
+    "lock": {
+      "parked": 0,
+      "calls": {
+        "count": 8119,
+        "holdsOver100ms": 1,
+        "maxHoldAgoMs": 70652522,
+        "maxHoldMs": 146.55682,
+        "maxWaitMs": 20.892,
+        "meanWaitMs": 0.010145461263702426,
+        "slow": 4
+      },
+      "sends": {
+        "count": 74656,
+        "holdsOver100ms": 4,
+        "maxHoldAgoMs": 70652770,
+        "maxHoldMs": 403.299387,
+        "maxWaitMs": 9.037,
+        "meanWaitMs": 0.002199903557651093,
+        "slow": 0
+      },
+      "holds": {
+        "count": 8034792,
+        "holdsOver100ms": 5,
+        "maxHoldAgoMs": 70652770,
+        "maxHoldMs": 403.299387
+      }
+    }
+  },
+  "peakPlayerCommandsPerSecond": 20,
+  "connection": [
+    {
+      "at": 1791538674757.8545,
+      "protocol": "h2",
+      "remoteAddress": "66.241.125.69",
+      "reused": true,
+      "connectionId": 929,
+      "sendEndMs": 0.313,
+      "headersStartMs": 865.088,
+      "headersEndMs": 865.153
+    }
+  ],
+  "readOnlyProbes": [
+    {
+      "run": 1,
+      "role": "windows",
+      "node": "21a573b3c39265d2",
+      "samples": 719,
+      "startedAt": "2026-10-09T09:50:57.050119+00:00",
+      "finishedAt": "2026-10-09T09:53:59.153213+00:00",
+      "coldMs": 45.52950011566281,
+      "p95Ms": 6.8274000659585,
+      "maxMs": 29.953200137242675,
+      "errors": 0,
+      "writesObserved": 0,
+      "stalls": []
+    },
+    {
+      "run": 1,
+      "role": "windows",
+      "node": "077df08fa9ff9bbf",
+      "samples": 719,
+      "startedAt": "2026-10-09T09:50:57.050119+00:00",
+      "finishedAt": "2026-10-09T09:53:59.153213+00:00",
+      "coldMs": 86.49860019795597,
+      "p95Ms": 7.59670021943748,
+      "maxMs": 164.54490018077195,
+      "errors": 0,
+      "writesObserved": 0,
+      "stalls": []
+    },
+    {
+      "run": 1,
+      "role": "vps",
+      "node": "21a573b3c39265d2",
+      "samples": 719,
+      "startedAt": "2026-10-09T09:50:49.983936+00:00",
+      "finishedAt": "2026-10-09T09:53:50.049678+00:00",
+      "coldMs": 223.30705728381872,
+      "p95Ms": 97.74887701496482,
+      "maxMs": 300.67434068769217,
+      "errors": 0,
+      "writesObserved": 0,
+      "stalls": []
+    },
+    {
+      "run": 1,
+      "role": "vps",
+      "node": "077df08fa9ff9bbf",
+      "samples": 714,
+      "startedAt": "2026-10-09T09:50:49.983936+00:00",
+      "finishedAt": "2026-10-09T09:53:50.049678+00:00",
+      "coldMs": 137.86213379353285,
+      "p95Ms": 98.08374894782901,
+      "maxMs": 908.2789649255574,
+      "errors": 0,
+      "writesObserved": 0,
+      "stalls": [
+        {
+          "at": 1791539497791.4688,
+          "ms": 890.7210291363299,
+          "requestId": "01M4G16JT6FE3M2BEQDB5JQ57R-yyz",
+          "ephemeralBlock": 7746642,
+          "pendingDiffs": 0
+        },
+        {
+          "at": 1791539499932.5835,
+          "ms": 908.2789649255574,
+          "requestId": "01M4G16MX3H6AG8TZKW6QPH0M5-yyz",
+          "ephemeralBlock": 7746957,
+          "pendingDiffs": 0
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "role": "windows",
+      "node": "4e9fa437576b1b2b",
+      "samples": 1199,
+      "startedAt": "2026-10-09T09:57:04.402688+00:00",
+      "finishedAt": "2026-10-09T10:02:04.465135+00:00",
+      "coldMs": 62.65649991109967,
+      "p95Ms": 6.531200138852,
+      "maxMs": 423.0686000082642,
+      "errors": 0,
+      "writesObserved": 1122,
+      "stalls": []
+    },
+    {
+      "run": 2,
+      "role": "windows",
+      "node": "21a573b3c39265d2",
+      "samples": 1199,
+      "startedAt": "2026-10-09T09:57:04.402688+00:00",
+      "finishedAt": "2026-10-09T10:02:04.465135+00:00",
+      "coldMs": 44.5359000004828,
+      "p95Ms": 7.659099996089935,
+      "maxMs": 213.60769984312356,
+      "errors": 0,
+      "writesObserved": 533,
+      "stalls": []
+    },
+    {
+      "run": 2,
+      "role": "vps",
+      "node": "4e9fa437576b1b2b",
+      "samples": 1198,
+      "startedAt": "2026-10-09T09:56:55.321103+00:00",
+      "finishedAt": "2026-10-09T10:01:55.392382+00:00",
+      "coldMs": 136.00561302155256,
+      "p95Ms": 97.26547123864293,
+      "maxMs": 512.3997218906879,
+      "errors": 0,
+      "writesObserved": 1191,
+      "stalls": [
+        {
+          "at": 1791540034377.4639,
+          "ms": 512.3997218906879,
+          "requestId": "01M4G1PYTHFZ9QM8VGQQ0CPTHX-yyz",
+          "ephemeralBlock": 7811803,
+          "pendingDiffs": 0
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "role": "vps",
+      "node": "21a573b3c39265d2",
+      "samples": 1199,
+      "startedAt": "2026-10-09T09:56:55.321103+00:00",
+      "finishedAt": "2026-10-09T10:01:55.392382+00:00",
+      "coldMs": 131.75994995981455,
+      "p95Ms": 98.48829312250018,
+      "maxMs": 384.0410546399653,
+      "errors": 0,
+      "writesObserved": 533,
+      "stalls": []
+    }
+  ],
+  "sources": {
+    "artifacts/qualification/catalogue-r2final56b1/report.json": "127a557d55cc74fda13793f7695e248a95d5eef11a2bbbf92338dc77a33b8355",
+    "artifacts/responsive-20261008-r2/pause1491-engine-metadata.json": "9039d1414f9b73ebafb9b123b008763c4f28781b84bf86d6dd3cb59b4d6ca392",
+    "artifacts/responsive-20261008-r2/node-read-probe-1-windows.json": "7f30550d0b9ebe6be4a048a67a8f99287606cbf0869d51c6a7e4d84c6dcf4987",
+    "artifacts/responsive-20261008-r2/node-read-probe-1-vps.json": "b42582dd63939945ffa5d26a6e2f6e3865af535801c7e72416729e49e7736d75",
+    "artifacts/responsive-20261008-r2/node-read-probe-2-windows.json": "e89798899341b7bb3d1b72c080bd4607e5aeeda18d476139b781813763f8b084",
+    "artifacts/responsive-20261008-r2/node-read-probe-2-vps.json": "9345ace852851666d8e03e46273937d6ad68c4cf944ba2ab380a42121392858d"
+  },
+  "conclusion": "A live request stalled for about one second while an independent VPS command to the same arena stalled into the adjacent block. The contract then correctly enforced its existing 500ms presence limit. No PONGIT queue, batch-full, signer-rate, clock-fence or long execution-lock evidence explains this interval. The exact cause behind the hosted endpoint remains unresolved.",
+  "limits": "The later bounded probes do not reproduce the simultaneous one-second stall. They detect independent VPS-path tail latency, including on an idle node. These observations are not proof that every rare stall has the same cause. No acceptance gate is waived.",
+  "requestedProviderEvidence": "Trace the two receipt hashes and Fly request 01M4G0DG61C8NY5GK379EWQ1W0-cdg on il2-eu-21a573b3c39265d2 during 2026-10-09 09:37:52..09:37:58 UTC. Inspect request arrival/execution, process scheduling and upstream waits without changing or closing the delegation."
+}
