@@ -1,0 +1,106 @@
+{
+  "source": "55c2c4071b3de087c1211d6abf8f748709f6a426",
+  "passed": true,
+  "scope": "Actual headed Chrome Classic PvP with virtual Mera passkeys; natural completion.",
+  "startedAt": "2026-10-09T14:56:31.172Z",
+  "finishedAt": "2026-10-09T14:59:24.090Z",
+  "reportSha256": "c5714943e380bdbfbabcfe981d7fd1cf64d994f7011b72e87d2a598d4aba135a",
+  "checks": [
+    "Delivered CSP includes every human arena",
+    "Three Mera accounts and root-signed unique profiles saved",
+    "Contract matchmaking, two consents and automatic hosted admission",
+    "Real three-second countdown on both players and spectator",
+    "Natural match with both players controlling",
+    {
+      "finalScore": "3 : 7"
+    }
+  ],
+  "syncGates": {
+    "natural": true,
+    "render": true,
+    "local": true,
+    "noPause": true,
+    "peer": true,
+    "commands": true
+  },
+  "integrityGates": [
+    {
+      "held": true,
+      "release": true,
+      "collisions": true,
+      "scenarios": true
+    },
+    {
+      "held": true,
+      "release": true,
+      "collisions": true,
+      "scenarios": true
+    }
+  ],
+  "peerReception": {
+    "samples": 920,
+    "p95Ms": 15.205322265625,
+    "clock": "same Playwright host",
+    "sendP95Ms": 15.433349609375
+  },
+  "clients": [
+    {
+      "traceSha256": "96ba2eca7fe8c32d7b04489f4bdc7e3361982a9cd7564d12b5fffd48cd436b87",
+      "frames": 5948,
+      "maxHoldMs": 216.40000009536743,
+      "p95FrameMs": 17.299999952316284,
+      "localInput": {
+        "samples": 220,
+        "p95Ms": 15.599999904632568,
+        "misses": []
+      },
+      "pausesMs": 0,
+      "visibleResyncs": 0,
+      "paddleJumps": [],
+      "unconfirmedBounces": [],
+      "throughPaddle": [],
+      "held": {
+        "samples": 203,
+        "p05Ratio": 0.9980039915410325,
+        "p95Ratio": 1.0017182114183956,
+        "minRatio": 0.9974115600475578,
+        "maxRatio": 1.0025862064854858,
+        "outsideTarget": 0
+      },
+      "stopping": {
+        "samples": 17,
+        "p95Drift": 1.5300000429153613,
+        "maxDrift": 1.559999942779541
+      }
+    },
+    {
+      "traceSha256": "61f0587beafb6d998ce204071c877abcc763e6e46e43f4dd63241d8c698e575e",
+      "frames": 6025,
+      "maxHoldMs": 216.70000004768372,
+      "p95FrameMs": 17.299999952316284,
+      "localInput": {
+        "samples": 240,
+        "p95Ms": 15.900000095367432,
+        "misses": []
+      },
+      "pausesMs": 0,
+      "visibleResyncs": 0,
+      "paddleJumps": [],
+      "unconfirmedBounces": [],
+      "throughPaddle": [],
+      "held": {
+        "samples": 198,
+        "p05Ratio": 0.998009949774291,
+        "p95Ratio": 1.0017241383420992,
+        "minRatio": 0.9970029974765029,
+        "maxRatio": 1.0020000004768386,
+        "outsideTarget": 0
+      },
+      "stopping": {
+        "samples": 14,
+        "p95Drift": 1.5,
+        "maxDrift": 1.5299999713897705
+      }
+    }
+  ]
+}

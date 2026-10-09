@@ -1,0 +1,1030 @@
+{
+  "source": "55c2c4071b3de087c1211d6abf8f748709f6a426",
+  "passed": false,
+  "scope": "Actual headed Edge Chaos PvP; natural7-6; failure preserved.",
+  "reportSha256": "85d85f170914d06705d7195ab2a461660e52119cc11d7f9f90ece2a7b7cef416",
+  "startedAt": "2026-10-09T14:59:27.203Z",
+  "finishedAt": "2026-10-09T15:02:08.360Z",
+  "syncGates": {
+    "natural": true,
+    "render": false,
+    "local": false,
+    "noPause": false,
+    "peer": true,
+    "commands": false
+  },
+  "integrityGates": [
+    {
+      "held": true,
+      "release": true,
+      "collisions": true,
+      "scenarios": true
+    },
+    {
+      "held": true,
+      "release": true,
+      "collisions": true,
+      "scenarios": true
+    }
+  ],
+  "peerReception": {
+    "samples": 608,
+    "p95Ms": 15.5029296875,
+    "clock": "same Playwright host",
+    "sendP95Ms": 16.323486328125
+  },
+  "failedDelivery": [
+    {
+      "player": 1,
+      "at": 1791558106164.4207,
+      "hash": "0x7c00d30c7d3c10d8d4c0e4dfe70b677268264a343994ce6c2eb95a13fb117f28",
+      "method": "interlude_sendTransaction",
+      "action": "input",
+      "ms": 1700.5654296875,
+      "transport": "websocket",
+      "error": true,
+      "message": "transaction rejected before execution: transaction validation error: nonce 296 too low, expected 297"
+    }
+  ],
+  "verifiedCall": {
+    "at": "2026-10-09T15:05:45.522810+00:00",
+    "hash": "0x7c00d30c7d3c10d8d4c0e4dfe70b677268264a343994ce6c2eb95a13fb117f28",
+    "found": true,
+    "error": null,
+    "selector": "0xfe8b4fa2",
+    "nonce": "0x128",
+    "blockNumber": "0x94c71d",
+    "call": {
+      "epoch": "1",
+      "matchId": "680564733841876926926749214863536423060",
+      "direction": "0",
+      "sequence": "296",
+      "deadlineBlock": "9750281"
+    },
+    "expiredBlocks": 20
+  },
+  "verifiedReceipt": {
+    "at": "2026-10-09T15:03:29.761561+00:00",
+    "elapsedMs": 102.931,
+    "hash": "0x7c00d30c7d3c10d8d4c0e4dfe70b677268264a343994ce6c2eb95a13fb117f28",
+    "found": true,
+    "receipt": {
+      "transactionHash": "0x7c00d30c7d3c10d8d4c0e4dfe70b677268264a343994ce6c2eb95a13fb117f28",
+      "blockNumber": "0x94c71d",
+      "status": "0x0",
+      "gasUsed": "0x32f2d"
+    },
+    "error": null
+  },
+  "independentJournal": {
+    "at": "2026-10-09T15:06:14.007661+00:00",
+    "readOnly": true,
+    "priorAttempt": "SELECT failed because this journal has no created_at column; no mutation",
+    "rows": [
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19525,
+        "hash": "0x766ee6111d204b544314fe329c26f4234c9f2e6988158a1cbfcd14660e89e251",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:39.055296+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c430"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19526,
+        "hash": "0xa1cdf8a9f61910189f4ed429ef0162068281442be774b6f42e6fbde7dde24fc5",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:39.20013+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c43f"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19527,
+        "hash": "0x3d3d9c16957a97212bc9c0294ea5fcdc85c0e470e4ee6e3f7f60a0e3f7368c25",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:39.346789+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c44e"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19528,
+        "hash": "0x3ab95c31a013f3853a35935099d7cb6ccbbcdb7afbd36b4ef1cbe87b9af2aa5d",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:39.489665+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c45c"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19529,
+        "hash": "0x32c04ee106274b8959b9accb6801e64592270ca08a3486ec10d007ffacc03605",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:39.63426+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c46a"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19530,
+        "hash": "0x031164bde3dc4981250230d41927e0400e0a81215320b878dcaa37a166d2b0df",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:39.778449+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c479"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19531,
+        "hash": "0xf68f7274ef09fab3fb9167c1757c2e66004347c95267bfc6839b66bc1bea0bd7",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:39.930009+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c488"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19532,
+        "hash": "0xf102394841a257dae797ad8518eeff53b09084bdbc394f35a0f5eb6079a03693",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:40.076478+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c497"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19533,
+        "hash": "0x1521be40f03d186d9a7003a6da7fce6da17a409284aa0df719393c306c231751",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:40.225615+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c4a6"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19534,
+        "hash": "0x0fd01b1d00522f8d23dd37186205ba407ec87e3b4e65a467c1137219b603f7d0",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:40.367561+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c4b4"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19535,
+        "hash": "0x57ae98b8fff68814a74b1185e03743d751f99ece19a219c6ef12800aa8993488",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:40.517473+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c4c3"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19536,
+        "hash": "0x7c7eb8224d2e8e2b3140526c3e6a04a71c516db608cf1b9748749b6af9343b75",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:40.663934+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c4d1"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19537,
+        "hash": "0xe661365263d79c146acf9503d4cfec8ad7db2d6ef414dfc193e00a2b45fdf8c4",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:40.814633+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c4e0"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19538,
+        "hash": "0x12b27a10835ccbb290c3a542939a2d7c1e45f0fb698b806b84543545279392da",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:40.96121+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c4ef"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19539,
+        "hash": "0x1d54bb9bbf71b1157bb6a783cfc438ce1ed76320262f8c03a2cc09000353a63e",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:41.11077+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c4fe"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19540,
+        "hash": "0x34b78e1c969e09389353c28ded5083894e198d3f262b8aa8401eb6fb2a93753c",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:41.269046+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c50d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19541,
+        "hash": "0x09265e6a96f3cdeb14a54613472c89d3b9c9a8f572d9e4aa7cd8cbf07399b4a8",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:41.435238+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c51e"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19542,
+        "hash": "0x0332eaa2cb4e4e89ec6c59df1130d1fe3878905f04ec5719efa61fe79754a5c1",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:41.587471+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c52e"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19543,
+        "hash": "0x0ca3c6b634fd48c3e4cf388255237b2796fb38c60a8892c596c90fc72bd5edc4",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:41.738231+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c53d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19544,
+        "hash": "0x2e1ede215bd13b401588570171ae05fdc854207847cc13143ee5b03a95dcb247",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:41.896537+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c54d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19545,
+        "hash": "0x7bdae9e84158ba1065a2721511a42de0006c88b5106aa413536561b084de6358",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:42.046928+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c55c"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19546,
+        "hash": "0x57dcd4e956cd9d7b1b7390c3b6c6ddcbf821090ade3c344c9d11ab7f49f50afa",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:42.204161+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c56b"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19547,
+        "hash": "0xb69553d984903e466cd6e647eeaee0b2e19fd23a8ab3b56523d62ab84998058b",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:42.350628+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c57a"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19548,
+        "hash": "0x2aa8350a8cc2c059ffd2beaf1a3f0d9d0c0bcd9d54ff3fafe6229ec9687de895",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:42.499586+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c589"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19549,
+        "hash": "0x38c900c99a1a18d4e0fe77232f23f885b5887dec8a34d20bf2112f509e49612f",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:42.645928+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c598"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19550,
+        "hash": "0x2be6a270ea14139e195a261818f8317b3e4c2688a1f2fce2615340c946d3d66e",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:42.792993+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c5a6"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19551,
+        "hash": "0x190268cc077bef337f30e8b9b97fd2d0de7ee64259d10951f885dd37918bc527",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:42.942479+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c5b5"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19552,
+        "hash": "0xc78f0f46a038e4ea57fb5115cbf348d608a37b6ef3aa864be32eaafbaa066f69",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:43.098082+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c5c5"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19553,
+        "hash": "0x1c36868c892081130eaaa590e839cfd45120db4778ed1d21ba5c930ddd38b0be",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:43.244823+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c5d3"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19554,
+        "hash": "0x61f2143d2d89234c9951263cef68654110107042bf6e056388a9e6d7664f134a",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:43.386634+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c5e2"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19555,
+        "hash": "0x6ceb1f937f592d3b2379f9615f738c8504469fe1885932ce276b95b37b23034e",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:43.534714+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c5f0"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19556,
+        "hash": "0xe5700b2a09897567c0f8632708a2014cb2cf59f76fa080fc1522688fad699447",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:43.682672+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c5ff"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19557,
+        "hash": "0xeb42a79c45d43564691e789f45b3cc42bf7d6323a917fddaf9a2560b1e0d52e3",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:43.826667+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c60d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19558,
+        "hash": "0x9fe25ae8580ad733a289633728538421c4ccadd865c92644f51ecad792e3c5cb",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:43.986042+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c61d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19559,
+        "hash": "0xfbc7c8af4834d4498f5193c94c0d050222f1602819a6e3b528686d1480c10f08",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:44.137397+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c62d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19560,
+        "hash": "0x7080bd6e5822fb525f4118cca070bb7f66d7678e0a87c61fb674c3f5db6c635a",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:44.28441+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c63b"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19561,
+        "hash": "0x12e726ed982aa789050983ba3e48d3204546468642667d02e87b36a06d6e3cd0",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:44.666402+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c64a"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19562,
+        "hash": "0x0acd76ac08831356038e66618d29819643e083a570c9053706a4958d36aa2e73",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:44.837397+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c673"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19563,
+        "hash": "0xe0025e9c962ac5b66298e3053c8a918375fc4d884236268a026cd7c63cba29cc",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:46.168196+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c6f7"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19564,
+        "hash": "0xdefc2c411cf2c16bcf123896e3288f006d605bb8e60bc0231f50c400b43ac013",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:46.453553+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c714"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19565,
+        "hash": "0x89ff2a308e18d979e0ee68fe48b3432e3865be9e7edaf1a128cba723d56418c8",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:46.606503+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c724"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19566,
+        "hash": "0x94e976b4d87ba64af0532bfc4d2957318f762134e547f770c3cdaac52f29b779",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:46.7554+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c732"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19567,
+        "hash": "0xeb72b5ed712865a97276b7f8a824d6c4e48c8723186c8a051be1ca4b47fbef11",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:46.900878+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c741"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19568,
+        "hash": "0x0801cd54115a2b38f892c83dea1a3d5bf49d8eb9a82fabe780b6d36459e9e0b3",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:47.049756+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c750"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19569,
+        "hash": "0x39f326b912a18c06540d861995e589ebba9076194549ec83075cc7e35fae237c",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:47.192391+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c75e"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19570,
+        "hash": "0xa8e422cfaa455d890620b7e7859423daa8f0c68eecbdffadd1ca18d54890a422",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:47.334712+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c76c"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "submitRandomness",
+        "epoch": 1,
+        "nonce": 19571,
+        "hash": "0xc107abd965275c61a552f7e149fde99a98d726d1da74212b13e81ea043e25f74",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:47.590542+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c786"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19572,
+        "hash": "0x1ced701692eeaf521a61f9851dce765df5207d5cef902c675593ff06416a9b99",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:47.789355+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c79a"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19573,
+        "hash": "0xcda60903757778a92b59c1dccc0f8517c7075789e8ca7663edee34eef49131d4",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:47.938423+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c7a8"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19574,
+        "hash": "0xe808e840bd0f212043490ab12916a472fc76a5fa0c9063720b7904301381bb27",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:48.085824+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c7b7"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19575,
+        "hash": "0x8ba68a66af9718b4e14a8a5ae8abc3c9315a613b1dcf0696f1d812e17eed607e",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:48.233876+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c7c6"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19576,
+        "hash": "0x426a1af9454e722babbc17bb1e9f9c0f8d374491dfe8a85c7ac26c3440d83977",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:48.378483+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c7d5"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19577,
+        "hash": "0xdcde42b239b332a0151c4b804af8e5eedf84375001ef6d48a2848e991cf5b00a",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:48.521685+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c7e3"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19578,
+        "hash": "0xf69867926d5f004bf0530d331194f8fe4baefbda609b1c5659c77c9756dd3752",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:48.669777+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c7f2"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19579,
+        "hash": "0xaadc506dedcca1c40b26a78023ed1a71c017667b83c0342fbaab16d7bf394bff",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:48.814717+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c800"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19580,
+        "hash": "0x8868dfc71d42adc1a0dd69da64911669012aa8ea3d2e8bc1d9114e858555b86c",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:48.96445+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c80f"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19581,
+        "hash": "0xbfce5dd62c6dc6f1942046b0c91e9350b5d09b95f91dd20be9afca33f5d88d5d",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:49.112492+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c81e"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19582,
+        "hash": "0x5c1a4d3ec145d42730a820ac6d5d07ddfb2c7722048d75f3904e0c3f54b25471",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:49.267922+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c82d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19583,
+        "hash": "0xebf26380ce62a6b93df78a92013bf2ceb4233930e28f2015d0b91df9ccd6ed58",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:49.420115+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c83d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19584,
+        "hash": "0x5db9ef3598f5dd7c2b7ac7d2e7c51ac262727294fe8f9284f50a6dd595d9cf90",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:49.571557+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c84c"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19585,
+        "hash": "0xd6c713714cbf30555d41d554f74de06fea6811c10062ce0b7ae6361e7420d015",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:49.719075+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c85b"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19586,
+        "hash": "0xf5fbf95b5170d801fd11a94dce15702e600b5651a6011d5243e666af6ad1ab03",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:49.871251+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c86a"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19587,
+        "hash": "0x69d12b25aaffb174b4274e8c4ca8857471c1d3f2931a43ad16e305800fa907d7",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:50.030329+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c87a"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19588,
+        "hash": "0x4070a97a014a2c7774bedd0677c7345d3fb1d8432334076d2e244f58afb30809",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:50.177767+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c889"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19589,
+        "hash": "0x45643b577fcbac8330b3f3a2b684d6466cb789c952c860fb11c1d7a674d9bf5e",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:50.32389+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c897"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19590,
+        "hash": "0x21f164d933eaacc4f7cb2cbd4f0799c29e75995834b21b26bed7bc463b19dd76",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:50.46924+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c8a6"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19591,
+        "hash": "0x8cf2ebef5ba895db6d78ab3f658e2d388803d997a424ba7e72ad801c9415dfa9",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:50.615071+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c8b4"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19592,
+        "hash": "0xf5fa3960fbce069c465d9e1a7bf1494630250233976eafe869dacb4b7160e12b",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:50.866189+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c8cd"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19593,
+        "hash": "0xece64a9028ad2c961a442ca8a0a465300c8426548d7e1078c1f797a6f7cb64fc",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:51.027193+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c8dd"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19594,
+        "hash": "0x00d05a02a626ea818362a7ecbb87e47385c392d9d90b620a07e6565a5b9b0769",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:51.184873+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c8ed"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19595,
+        "hash": "0x81bcc82bfdb51e13314843f9cb106e854cb824dd40abc6dc2e6aabd8ea3e1cfe",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:51.36295+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c8ff"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19596,
+        "hash": "0x9e7faa8f3e08f362ed7bff50c08ff4f8c558a801c05ac498e879376aa82ced7b",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:51.513208+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c90e"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19597,
+        "hash": "0xc21d92efc43f96c30fd3a347a91f11c2e8860850d9656a14956da18cc2dc59af",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:51.661904+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c91d"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19598,
+        "hash": "0xe43b47baf58dbc8a00ef82d219c09a58b24864776be4745fa1259ff258dcbc6f",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:51.810809+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c92c"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19599,
+        "hash": "0x19ef0543c54fdc6b936f6de276b0a79c031a02f51aeb0487da3755d8a66d818e",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:51.957505+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c93b"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19600,
+        "hash": "0x16d92abe81689b4d379688f4af93efad29d84a4efec9663f845a088c50b9c649",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:52.11054+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c94a"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19601,
+        "hash": "0xc94a45f4117b24b6170815645c79777828425e93830d03dedc73d8dc7f91ee26",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:52.260296+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c959"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19602,
+        "hash": "0x9b3c5d7d18226db5d16bd34166f6ce3c4392dd44d5f062be08d37d812b9ca0b8",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:52.41299+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c968"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19603,
+        "hash": "0x592569f5a6c781b4da0f7cebc0fcc1fab54e198ed70f6b98075ccc221755f4ef",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:52.563818+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c977"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19604,
+        "hash": "0x07b17c4256ad545498de63514c9971a23f93bf1ebc48641bf4af8f16981798c6",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:52.727661+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c988"
+      },
+      {
+        "app": "0xc8e978e3c6581eb5454e486eb247c503ffbc0e3d",
+        "action": "tick",
+        "epoch": 1,
+        "nonce": 19605,
+        "hash": "0x23e0b3540229779663d0ffb22e32de4fa57100c8947f38a2506c87e8a2207727",
+        "status": "observed",
+        "updated_at": "2026-10-09T15:01:52.892271+00:00",
+        "resolution_kind": "receipt",
+        "block_hash": "0x000000000000000000000000000000000000000000000000000000000094c998"
+      }
+    ]
+  },
+  "sources": {
+    "artifacts\\responsive-20261009-match1509\\pvp76-call-read.json": "5dc9c86cf9305c0938ddf82a689fc8168e4823aa89f0bcf0bae746b4a619b5a9",
+    "artifacts\\responsive-20261009-match1509\\pvp76-receipt-read.json": "b5d7dfff6b233369b501423c90a8c3639a4eb8ce5066205e947314e476575ba4",
+    "artifacts\\responsive-20261009-match1509\\pvp76-engine-metadata.json": "cef7ec3d94cedf29f8d2576bf1e46dfee92b9dc4b19f60e8925d6f955d5696f7"
+  },
+  "clients": [
+    {
+      "traceSha256": "956f6343b41c93151c3813462d2ee137220dbec716c4eceddc28d2fda370cb44",
+      "maxHoldMs": 1132.9000000953674,
+      "p95FrameMs": 17.799999952316284,
+      "localInput": {
+        "samples": 151,
+        "p95Ms": 15.700000047683716,
+        "misses": []
+      },
+      "contractPauseMs": 0,
+      "visibleResyncs": 0,
+      "throughPaddle": [],
+      "unconfirmedBounces": []
+    },
+    {
+      "traceSha256": "6424fd01246cdab0b7b8c3ec72acd474432bd4e534fe90c95b6e098e0a3a9c9f",
+      "maxHoldMs": 1134.1000001430511,
+      "p95FrameMs": 18,
+      "localInput": {
+        "samples": 157,
+        "p95Ms": 16.09999990463257,
+        "misses": [
+          {
+            "at": 91900.79999995232,
+            "direction": -1,
+            "side": 1
+          },
+          {
+            "at": 92051.39999985695,
+            "direction": -1,
+            "side": 1
+          },
+          {
+            "at": 92204.09999990463,
+            "direction": -1,
+            "side": 1
+          }
+        ]
+      },
+      "contractPauseMs": 0,
+      "visibleResyncs": 1,
+      "throughPaddle": [],
+      "unconfirmedBounces": []
+    }
+  ],
+  "conclusion": "No painted paddle crossing, unconfirmed bounce or paddle jump. Both clients held the same live rally for about1.13s. A neutral input was executed20 blocks after its deadline and reverted; an identical delayed WebSocket copy then reported nonce296 too low. The independent server tick journal has a concurrent1.331s receipt gap. The exact source of the common live delay remains unproven. This is not a passing normal-network qualification.",
+  "limits": "The isolated receipt read proves a reverted nonce, not that the command succeeded. No late evidence changes the original failed report. No provider-internal cause, batch saturation or quota failure is inferred without the corresponding health evidence."
+}

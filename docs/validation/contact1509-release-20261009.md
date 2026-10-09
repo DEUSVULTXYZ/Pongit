@@ -67,3 +67,12 @@ This corrects a demonstrated source of command queuing. It is not proof against 
 The queue correction was deployed on 9 October at 14:56:15 UTC from `55c2c4071b3de087c1211d6abf8f748709f6a426`, image `sha256:f0c58c6ffc486c8ff2251f36933b71f7611bdf37c6fddeba0be84ae97ae66b90`. The guard confirmed idle canonical block 69568623, hash `0x641f53f158f0459a4413060b2ef17f935d918053f0f54062c09529804e3c16c2`. Only the web service changed; all other roles resumed, with no match cancellation or delegation closure. Backup68 was still within its verified freshness bound. The immediate rollback is web68 (`e9aeaa2a...`), without restoring a database.
 
 The bounded headed PvP76 driver is now running. Agent series76 and multiball76 are prepared and have not started. No new passing browser result or final qualification is claimed.
+
+
+## Web69 browser results so far
+
+PvP76 Classic passed naturally3-7. Both clients passed collision, held-speed and release gates; peer reception p95 was15.21ms against15.43ms send p95, local response p95 below16ms and maximum stop drift1.56 units.
+
+PvP76 Chaos ended naturally7-6 with no painted paddle crossing, unconfirmed bounce or paddle jump. It nevertheless **failed**: both clients held a rally for about1.13s, and one showed a brief resynchronization. The neutral input's exact receipt reverted after its deadline by20 blocks. The server tick journal has a concurrent1.331s receipt gap. This establishes a common live delay, not its internal cause. Original reports/videos remain unchanged; no performance gate is waived.
+
+The disconnected beneficiary's actual0.006MON payout is confirmed, with duplicate claim and retry rejected. The new normal agent series76 is running. Separate multiball77 is prepared to diagnose that effect after the normal series; its report explicitly retains the failed human qualification, which does not justify leaving multiball untested.
